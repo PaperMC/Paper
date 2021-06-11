@@ -1,0 +1,29 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: TheMolkaPL <themolkapl@gmail.com>
+Date: Sun, 21 Jun 2020 17:21:46 +0200
+Subject: [PATCH] Fix interact event not being called in adventure
+
+Call PlayerInteractEvent when left-clicking on a block in adventure mode
+
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index e50e42cce60c725cdd981d8927e379c5760d9200..cb6568b622abeb939a1195f4656accc8a1c3f1fc 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -1701,7 +1701,7 @@ public class ServerGamePacketListenerImpl implements ServerGamePacketListener {
+                     MutableComponent ichatmutablecomponent = (new TranslatableComponent("build.tooHigh", new Object[]{this.server.getMaxBuildHeight()})).withStyle(ChatFormatting.RED);
+ 
+                     this.player.connection.send(new ClientboundChatPacket(ichatmutablecomponent, ChatType.GAME_INFO, Util.NIL_UUID));
+-                } else if (enuminteractionresult.shouldSwing()) {
++                } else if (enuminteractionresult.shouldSwing() && !this.player.gameMode.interactResult) {
+                     this.player.swing(enumhand, true);
+                 }
+             }
+@@ -2202,7 +2202,7 @@ public class ServerGamePacketListenerImpl implements ServerGamePacketListener {
+         Vec3 vec3d1 = vec3d.add((double) f7 * d3, (double) f6 * d3, (double) f8 * d3);
+         HitResult movingobjectposition = this.player.level.clip(new ClipContext(vec3d, vec3d1, ClipContext.Block.OUTLINE, ClipContext.Fluid.NONE, player));
+ 
+-        if (movingobjectposition == null || movingobjectposition.getType() != HitResult.Type.BLOCK) {
++        if (movingobjectposition == null || movingobjectposition.getType() != HitResult.Type.BLOCK || this.player.gameMode.getGameModeForPlayer() == GameType.ADVENTURE) { // Paper - call PlayerInteractEvent when left-clicking on a block in adventure mode
+             CraftEventFactory.callPlayerInteractEvent(this.player, Action.LEFT_CLICK_AIR, this.player.inventory.getSelected(), InteractionHand.MAIN_HAND);
+         }
+ 

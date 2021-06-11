@@ -1,0 +1,101 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <spottedleaf@spottedleaf.dev>
+Date: Mon, 6 Jul 2020 20:46:50 -0700
+Subject: [PATCH] Improve inlinig for some hot IBlockData methods
+
+
+diff --git a/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java b/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java
+index f2fefdad26057c722085e60ba837fe2c117f55f7..17baae6b11f191f4738a107c7e62ea5bdac17a3c 100644
+--- a/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java
++++ b/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java
+@@ -390,7 +390,14 @@ public abstract class BlockBehaviour {
+         }
+         // Paper end
+ 
++        // Paper start
++        protected boolean isTicking;
++        protected FluidState fluid;
++        // Paper end
++
+         public void initCache() {
++            this.fluid = this.getBlock().getFluidState(this.asState()); // Paper - moved from getFluid()
++            this.isTicking = this.getBlock().isRandomlyTicking(this.asState()); // Paper - moved from isTicking()
+             if (!this.getBlock().hasDynamicShape()) {
+                 this.cache = new BlockBehaviour.BlockStateBase.Cache(this.asState());
+             }
+@@ -429,19 +436,19 @@ public abstract class BlockBehaviour {
+             return this.getBlock().getOcclusionShape(this.asState(), world, pos);
+         }
+ 
+-        public boolean hasLargeCollisionShape() {
++        public final boolean hasLargeCollisionShape() { // Paper
+             return this.cache == null || this.cache.largeCollisionShape;
+         }
+ 
+-        public boolean useShapeForLightOcclusion() {
++        public final boolean useShapeForLightOcclusion() { // Paper
+             return this.useShapeForLightOcclusion;
+         }
+ 
+-        public int getLightEmission() {
++        public final int getLightEmission() { // Paper
+             return this.lightEmission;
+         }
+ 
+-        public boolean isAir() {
++        public final boolean isAir() { // Paper
+             return this.isAir;
+         }
+ 
+@@ -507,7 +514,7 @@ public abstract class BlockBehaviour {
+             }
+         }
+ 
+-        public boolean canOcclude() {
++        public final boolean canOcclude() { // Paper
+             return this.canOcclude;
+         }
+ 
+@@ -679,12 +686,12 @@ public abstract class BlockBehaviour {
+             return this.getBlock().is(block);
+         }
+ 
+-        public FluidState getFluidState() {
+-            return this.getBlock().getFluidState(this.asState());
++        public final FluidState getFluidState() { // Paper
++            return this.fluid; // Paper - moved into init
+         }
+ 
+-        public boolean isRandomlyTicking() {
+-            return this.getBlock().isRandomlyTicking(this.asState());
++        public final boolean isRandomlyTicking() { // Paper
++            return this.isTicking; // Paper - moved into init
+         }
+ 
+         public SoundType getSoundType() {
+diff --git a/src/main/java/net/minecraft/world/level/material/FluidState.java b/src/main/java/net/minecraft/world/level/material/FluidState.java
+index c077e4a7ce6a484956206eaab9dfde057b7e429a..69cf9e149c207336c537a00f08251a2252752df6 100644
+--- a/src/main/java/net/minecraft/world/level/material/FluidState.java
++++ b/src/main/java/net/minecraft/world/level/material/FluidState.java
+@@ -20,8 +20,12 @@ public final class FluidState extends StateHolder<Fluid, FluidState> {
+ 
+     public static final Codec<FluidState> CODEC = codec((Codec) Registry.FLUID, Fluid::defaultFluidState).stable();
+ 
++    // Paper start
++    protected final boolean isEmpty;
++    // Paper end
+     public FluidState(Fluid fluid, ImmutableMap<Property<?>, Comparable<?>> propertiesMap, MapCodec<FluidState> mapcodec) {
+         super(fluid, propertiesMap, mapcodec);
++        this.isEmpty = fluid.isEmpty(); // Paper - moved from isEmpty()
+     }
+ 
+     public Fluid getType() {
+@@ -33,7 +37,7 @@ public final class FluidState extends StateHolder<Fluid, FluidState> {
+     }
+ 
+     public boolean isEmpty() {
+-        return this.getType().isEmpty();
++        return this.isEmpty; // Paper - moved into constructor
+     }
+ 
+     public float getHeight(BlockGetter world, BlockPos pos) {

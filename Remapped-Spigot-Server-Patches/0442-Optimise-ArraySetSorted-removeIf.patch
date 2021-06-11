@@ -1,0 +1,65 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Wed, 15 Apr 2020 18:23:28 -0700
+Subject: [PATCH] Optimise ArraySetSorted#removeIf
+
+Remove iterator allocation and ensure the call is always O(n)
+
+diff --git a/src/main/java/net/minecraft/util/SortedArraySet.java b/src/main/java/net/minecraft/util/SortedArraySet.java
+index 93813a508be1e1e600a8211f9822f2087328de70..8f03847eeb95ccdb69ad181b38b8724c9c72a76b 100644
+--- a/src/main/java/net/minecraft/util/SortedArraySet.java
++++ b/src/main/java/net/minecraft/util/SortedArraySet.java
+@@ -10,8 +10,8 @@ import java.util.NoSuchElementException;
+ public class SortedArraySet<T> extends AbstractSet<T> {
+ 
+     private final Comparator<T> comparator;
+-    private T[] contents;
+-    private int size;
++    private T[] contents; private final T[] getBackingArray() { return this.contents; } // Paper - OBFHELPER
++    private int size; private final int getSize() { return this.size; } private final void setSize(int value) { this.size = value; } // Paper - OBFHELPER
+ 
+     private SortedArraySet(int initialCapacity, Comparator<T> comparator) {
+         this.comparator = comparator;
+@@ -22,6 +22,42 @@ public class SortedArraySet<T> extends AbstractSet<T> {
+         }
+     }
+ 
++    // Paper start - optimise removeIf
++    @Override
++    public boolean removeIf(java.util.function.Predicate<? super T> filter) {
++        // prev. impl used an iterator, which could be n^2 and creates garbage
++        int i = 0, len = this.getSize();
++        T[] backingArray = this.getBackingArray();
++
++        for (;;) {
++            if (i >= len) {
++                return false;
++            }
++            if (!filter.test(backingArray[i])) {
++                ++i;
++                continue;
++            }
++            break;
++        }
++
++        // we only want to write back to backingArray if we really need to
++
++        int lastIndex = i; // this is where new elements are shifted to
++
++        for (; i < len; ++i) {
++            T curr = backingArray[i];
++            if (!filter.test(curr)) { // if test throws we're screwed
++                backingArray[lastIndex++] = curr;
++            }
++        }
++
++        // cleanup end
++        Arrays.fill(backingArray, lastIndex, len, null);
++        this.setSize(lastIndex);
++        return true;
++    }
++    // Paper end - optimise removeIf
++
+     public static <T extends Comparable<T>> SortedArraySet<T> create(int initialCapacity) {
+         return new SortedArraySet<>(initialCapacity, (Comparator)Comparator.naturalOrder()); // Paper - decompile fix
+     }

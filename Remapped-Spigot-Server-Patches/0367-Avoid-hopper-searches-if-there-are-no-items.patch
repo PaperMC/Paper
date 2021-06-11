@@ -1,0 +1,127 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: CullanP <cullanpage@gmail.com>
+Date: Thu, 3 Mar 2016 02:13:38 -0600
+Subject: [PATCH] Avoid hopper searches if there are no items
+
+Hoppers searching for items and minecarts is the most expensive part of hopper ticking.
+We keep track of the number of minecarts and items in a chunk.
+If there are no items in the chunk, we skip searching for items.
+If there are no minecarts in the chunk, we skip searching for them.
+
+Usually hoppers aren't near items, so we can skip most item searches.
+And since minecart hoppers are used _very_ rarely near we can avoid alot of searching there.
+
+Combined, this adds up a lot.
+
+diff --git a/src/main/java/net/minecraft/world/entity/EntitySelector.java b/src/main/java/net/minecraft/world/entity/EntitySelector.java
+index d3640975c5a33b4911428760691215905b987385..e7facd849e3511c64b4ae44b34382f4a4985f2a4 100644
+--- a/src/main/java/net/minecraft/world/entity/EntitySelector.java
++++ b/src/main/java/net/minecraft/world/entity/EntitySelector.java
+@@ -16,6 +16,7 @@ public final class EntitySelector {
+     public static final Predicate<Entity> ENTITY_NOT_BEING_RIDDEN = (entity) -> {
+         return entity.isAlive() && !entity.isVehicle() && !entity.isPassenger();
+     };
++    public static final Predicate<Entity> isInventory() { return CONTAINER_ENTITY_SELECTOR; } // Paper - OBFHELPER
+     public static final Predicate<Entity> CONTAINER_ENTITY_SELECTOR = (entity) -> {
+         return entity instanceof Container && entity.isAlive();
+     };
+diff --git a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
+index 85861545ec4620a6cfd06876dad091637bd29b0b..4fef3abe4b416cbebe1b456468b5c3e162de18f1 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
++++ b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
+@@ -31,10 +31,13 @@ import net.minecraft.server.level.ChunkHolder;
+ import net.minecraft.server.level.ServerChunkCache;
+ import net.minecraft.server.level.ServerLevel;
+ import net.minecraft.util.Mth;
++import net.minecraft.world.Container;
+ import net.minecraft.world.entity.Entity;
++import net.minecraft.world.entity.EntitySelector;
+ import net.minecraft.world.entity.EntityType;
+ import net.minecraft.world.entity.boss.EnderDragonPart;
+ import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
++import net.minecraft.world.entity.item.ItemEntity;
+ import net.minecraft.world.level.ChunkPos;
+ import net.minecraft.world.level.ChunkTickList;
+ import net.minecraft.world.level.EmptyTickList;
+@@ -122,6 +125,10 @@ public class LevelChunk implements ChunkAccess {
+             return removed;
+         }
+     }
++    // Track the number of minecarts and items
++    // Keep this synced with entitySlices.add() and entitySlices.remove()
++    private final int[] itemCounts = new int[16];
++    private final int[] inventoryEntityCounts = new int[16];
+     // Paper end
+ 
+     public LevelChunk(Level world, ChunkPos pos, ChunkBiomeContainer biomes, UpgradeData upgradeData, TickList<Block> blockTickScheduler, TickList<Fluid> fluidTickScheduler, long inhabitedTime, @Nullable LevelChunkSection[] sections, @Nullable Consumer<LevelChunk> loadToWorldConsumer) {
+@@ -581,6 +588,13 @@ public class LevelChunk implements ChunkAccess {
+         entity.zChunk = this.chunkPos.z;
+         this.entities.add(entity); // Paper - per chunk entity list
+         this.entitySlices[k].add(entity);
++        // Paper start
++        if (entity instanceof ItemEntity) {
++            itemCounts[k]++;
++        } else if (entity instanceof Container) {
++            inventoryEntityCounts[k]++;
++        }
++        // Paper end
+         entity.entitySlice = this.entitySlices[k]; // Paper
+         this.markUnsaved(); // Paper
+     }
+@@ -614,6 +628,11 @@ public class LevelChunk implements ChunkAccess {
+         if (!this.entitySlices[section].remove(entity)) {
+             return;
+         }
++        if (entity instanceof ItemEntity) {
++            itemCounts[section]--;
++        } else if (entity instanceof Container) {
++            inventoryEntityCounts[section]--;
++        }
+         entityCounts.decrement(entity.getMinecraftKeyString());
+         this.markUnsaved(); // Paper
+         // Paper end
+@@ -899,6 +918,14 @@ public class LevelChunk implements ChunkAccess {
+         for (int k = i; k <= j; ++k) {
+             Iterator iterator = this.entitySlices[k].iterator(); // Spigot
+ 
++            // Paper start - Don't search for inventories if we have none, and that is all we want
++            /*
++             * We check if they want inventories by seeing if it is the static `IEntitySelector.d`
++             *
++             * Make sure the inventory selector stays in sync.
++             * It should be the one that checks `var1 instanceof IInventory && var1.isAlive()`
++             */
++            if (predicate == EntitySelector.isInventory() && inventoryEntityCounts[k] <= 0) continue;
+             while (iterator.hasNext()) {
+                 T entity = (T) iterator.next(); // CraftBukkit - decompile error
+                 if (entity.shouldBeRemoved) continue; // Paper
+@@ -919,9 +946,29 @@ public class LevelChunk implements ChunkAccess {
+         i = Mth.clamp(i, 0, this.entitySlices.length - 1);
+         j = Mth.clamp(j, 0, this.entitySlices.length - 1);
+ 
++        // Paper start
++        int[] counts;
++        if (ItemEntity.class.isAssignableFrom(entityClass)) {
++            counts = itemCounts;
++        } else if (Container.class.isAssignableFrom(entityClass)) {
++            counts = inventoryEntityCounts;
++        } else {
++            counts = null;
++        }
++        // Paper end
+         for (int k = i; k <= j; ++k) {
++            if (counts != null && counts[k] <= 0) continue; // Paper - Don't check a chunk if it doesn't have the type we are looking for
+             Iterator iterator = this.entitySlices[k].iterator(); // Spigot
+ 
++            // Paper start - Don't search for inventories if we have none, and that is all we want
++            /*
++             * We check if they want inventories by seeing if it is the static `IEntitySelector.d`
++             *
++             * Make sure the inventory selector stays in sync.
++             * It should be the one that checks `var1 instanceof IInventory && var1.isAlive()`
++             */
++            if (predicate == EntitySelector.isInventory() && inventoryEntityCounts[k] <= 0) continue;
++            // Paper end
+             while (iterator.hasNext()) {
+                 T t0 = (T) iterator.next(); // CraftBukkit - decompile error
+                 if (t0.shouldBeRemoved) continue; // Paper

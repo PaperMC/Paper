@@ -1,0 +1,27 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: kickash32 <kickash32@gmail.com>
+Date: Fri, 15 May 2020 01:10:03 -0400
+Subject: [PATCH] Ensure safe gateway teleport
+
+
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/TheEndGatewayBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/TheEndGatewayBlockEntity.java
+index b70e0633435a272ae1e9fbd12d7f18862de0b951..3491956cb09b825bbfc99667b058d67cef127332 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/TheEndGatewayBlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/TheEndGatewayBlockEntity.java
+@@ -86,9 +86,14 @@ public class TheEndGatewayBlockEntity extends TheEndPortalBlockEntity implements
+         } else if (!this.level.isClientSide) {
+             List<Entity> list = this.level.getEntitiesOfClass(Entity.class, new AABB(this.getBlockPos()), TheEndGatewayBlockEntity::canEntityTeleport);
+ 
+-            if (!list.isEmpty()) {
+-                this.teleportEntity((Entity) list.get(this.level.random.nextInt(list.size())));
++            // Paper start
++            for (Entity entity : list) {
++                if (entity.canChangeDimensions()) {
++                    this.teleportEntity(entity);
++                    break;
++                }
+             }
++            // Paper end
+ 
+             if (this.age % 2400L == 0L) {
+                 this.triggerCooldown();

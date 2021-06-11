@@ -1,0 +1,44 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sat, 15 Jun 2013 19:51:17 -0400
+Subject: [PATCH] Improve EntityShootBowEvent
+
+Adds missing call to Illagers and also adds Arrow ItemStack to skeltons
+
+diff --git a/src/main/java/net/minecraft/world/entity/monster/AbstractSkeleton.java b/src/main/java/net/minecraft/world/entity/monster/AbstractSkeleton.java
+index e8ad820b11dd1b89e442bb057d5761c90c4b1923..76027a7c9615495af64102744e264d7ba7c9b87e 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/AbstractSkeleton.java
++++ b/src/main/java/net/minecraft/world/entity/monster/AbstractSkeleton.java
+@@ -197,7 +197,7 @@ public abstract class AbstractSkeleton extends Monster implements RangedAttackMo
+ 
+         entityarrow.shoot(d0, d1 + d3 * 0.20000000298023224D, d2, 1.6F, (float) (14 - this.level.getDifficulty().getId() * 4));
+         // CraftBukkit start
+-        org.bukkit.event.entity.EntityShootBowEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityShootBowEvent(this, this.getMainHandItem(), null, entityarrow, net.minecraft.world.InteractionHand.MAIN_HAND, 0.8F, true);
++        org.bukkit.event.entity.EntityShootBowEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityShootBowEvent(this, this.getMainHandItem(), entityarrow.getOriginalItemStack(), entityarrow, net.minecraft.world.InteractionHand.MAIN_HAND, 0.8F, true); // Paper
+         if (event.isCancelled()) {
+             event.getProjectile().remove();
+             return;
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Illusioner.java b/src/main/java/net/minecraft/world/entity/monster/Illusioner.java
+index ab8c41e72c15ee9e5256eba2ba2681a33ce8a8d9..2d07e9cf4c84bc32a7624f65173c4e8a6dc07165 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Illusioner.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Illusioner.java
+@@ -171,8 +171,18 @@ public class Illusioner extends SpellcasterIllager implements RangedAttackMob {
+         double d3 = (double) Mth.sqrt(d0 * d0 + d2 * d2);
+ 
+         entityarrow.shoot(d0, d1 + d3 * 0.20000000298023224D, d2, 1.6F, (float) (14 - this.level.getDifficulty().getId() * 4));
++        // Paper start
++        org.bukkit.event.entity.EntityShootBowEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityShootBowEvent(this, this.getMainHandItem(), entityarrow.getOriginalItemStack(), entityarrow, target.getUsedItemHand(), 0.8F, true);
++        if (event.isCancelled()) {
++            event.getProjectile().remove();
++            return;
++        }
++
++        if (event.getProjectile() == entityarrow.getBukkitEntity()) {
++            this.level.addFreshEntity(entityarrow);
++        }
+         this.playSound(SoundEvents.SKELETON_SHOOT, 1.0F, 1.0F / (this.getRandom().nextFloat() * 0.4F + 0.8F));
+-        this.level.addFreshEntity(entityarrow);
++        // Paper end
+     }
+ 
+     class IllusionerBlindnessSpellGoal extends SpellcasterIllager.SpellcasterUseSpellGoal {

@@ -1,0 +1,341 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: BillyGalbreath <Blake.Galbreath@GMail.com>
+Date: Thu, 2 Aug 2018 08:44:35 -0500
+Subject: [PATCH] Add hand to bucket events
+
+
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index d34da1eb172a7dcda564680afecf3dc145bf09f3..125a75576442eaa4f1ff6dd153bdb31097497a3f 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -724,7 +724,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         // CraftBukkit end
+ 
+         MinecraftServer.LOGGER.info("Preparing start region for dimension {}", worldserver.dimension().location());
+-        BlockPos blockposition = worldserver.getSharedSpawnPos();
++        BlockPos blockposition = worldserver.getSpawn();
+ 
+         worldloadlistener.updateSpawnPos(new ChunkPos(blockposition));
+         ServerChunkCache chunkproviderserver = worldserver.getChunkSource();
+@@ -1897,7 +1897,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+     public CommandSourceStack createCommandSourceStack() {
+         ServerLevel worldserver = this.overworld();
+ 
+-        return new CommandSourceStack(this, worldserver == null ? Vec3.ZERO : Vec3.atLowerCornerOf((Vec3i) worldserver.getSharedSpawnPos()), Vec2.ZERO, worldserver, 4, "Server", new TextComponent("Server"), this, (Entity) null);
++        return new CommandSourceStack(this, worldserver == null ? Vec3.ZERO : Vec3.atLowerCornerOf((Vec3i) worldserver.getSpawn()), Vec2.ZERO, worldserver, 4, "Server", new TextComponent("Server"), this, (Entity) null);
+     }
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
+index 883e05ba87c3bdec9a0d4bbd035b90c795448239..9143fe99e43236bf65e6f098a30d522302ad78b7 100644
+--- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
++++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
+@@ -526,7 +526,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+         } else if (this.getSpawnProtectionRadius() <= 0) {
+             return false;
+         } else {
+-            BlockPos blockposition1 = world.getSharedSpawnPos();
++            BlockPos blockposition1 = world.getSpawn();
+             int i = Mth.abs(pos.getX() - blockposition1.getX());
+             int j = Mth.abs(pos.getZ() - blockposition1.getZ());
+             int k = Math.max(i, j);
+diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
+index 84b2cd661697545186677ab7966556d9288c650b..2ab221e5315dde4e556ee49a6962ae0091ccf616 100644
+--- a/src/main/java/net/minecraft/server/level/ServerLevel.java
++++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
+@@ -1651,15 +1651,17 @@ public class ServerLevel extends net.minecraft.world.level.Level implements Worl
+         this.getServer().getPlayerList().broadcastAll(new ClientboundSetDefaultSpawnPositionPacket(pos, angle));
+     }
+ 
+-    public BlockPos getSharedSpawnPos() {
+-        BlockPos blockposition = new BlockPos(this.levelData.getXSpawn(), this.levelData.getYSpawn(), this.levelData.getZSpawn());
+-
+-        if (!this.getWorldBorder().isWithinBounds(blockposition)) {
+-            blockposition = this.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING, new BlockPos(this.getWorldBorder().getCenterX(), 0.0D, this.getWorldBorder().getCenterZ()));
+-        }
+-
+-        return blockposition;
+-    }
++    // Paper - moved up to World
++    //public BlockPosition getSpawn() {
++    //    BlockPosition blockposition = new BlockPosition(this.worldData.a(), this.worldData.b(), this.worldData.c());
++    //
++    //    if (!this.getWorldBorder().a(blockposition)) {
++    //        blockposition = this.getHighestBlockYAt(HeightMap.Type.MOTION_BLOCKING, new BlockPosition(this.getWorldBorder().getCenterX(), 0.0D, this.getWorldBorder().getCenterZ()));
++    //    }
++    //
++    //    return blockposition;
++    //}
++    // Paper end
+ 
+     public float getSharedSpawnAngle() {
+         return this.levelData.getSpawnAngle();
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+index 1441a461e749dbfa303095f6b51d655c45f68ce0..5664e292046d4fcdb81340df8cee8d04aa27ca55 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+@@ -231,7 +231,7 @@ public class ServerPlayer extends Player implements ContainerListener {
+     public final com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<ServerPlayer> cachedSingleHashSet; // Paper
+ 
+     public ServerPlayer(MinecraftServer server, ServerLevel world, GameProfile profile, ServerPlayerGameMode interactionManager) {
+-        super(world, world.getSharedSpawnPos(), world.getSharedSpawnAngle(), profile);
++        super(world, world.getSpawn(), world.getSharedSpawnAngle(), profile);
+         this.respawnDimension = Level.OVERWORLD;
+         interactionManager.player = this;
+         this.gameMode = interactionManager;
+@@ -254,7 +254,7 @@ public class ServerPlayer extends Player implements ContainerListener {
+     // Yes, this doesn't match Vanilla, but it's the best we can do for now.
+     // If this is an issue, PRs are welcome
+     public final BlockPos getSpawnPoint(ServerLevel worldserver) {
+-        BlockPos blockposition = worldserver.getSharedSpawnPos();
++        BlockPos blockposition = worldserver.getSpawn();
+ 
+         if (worldserver.dimensionType().hasSkyLight() && worldserver.worldDataServer.getGameType() != GameType.ADVENTURE) {
+             int i = Math.max(0, this.server.getSpawnRadius(worldserver));
+@@ -291,7 +291,7 @@ public class ServerPlayer extends Player implements ContainerListener {
+     // CraftBukkit end
+ 
+     private void fudgeSpawnLocation(ServerLevel world) {
+-        BlockPos blockposition = world.getSharedSpawnPos();
++        BlockPos blockposition = world.getSpawn();
+ 
+         if (world.dimensionType().hasSkyLight() && world.worldDataServer.getGameType() != GameType.ADVENTURE) { // CraftBukkit
+             int i = Math.max(0, this.server.getSpawnRadius(world));
+@@ -464,7 +464,7 @@ public class ServerPlayer extends Player implements ContainerListener {
+             }
+             if (world == null || position == null) {
+                 world = ((CraftWorld) Bukkit.getServer().getWorlds().get(0)).getHandle();
+-                position = Vec3.atCenterOf(((ServerLevel) world).getSharedSpawnPos());
++                position = Vec3.atCenterOf(((ServerLevel) world).getSpawn());
+             }
+             this.level = world;
+             this.setPos(position.x(), position.y(), position.z());
+diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
+index 51b1ce465d23b971f7e08a3175319a33183d0398..0bb397407b55bd1c464ac603ec4c189045aabbb2 100644
+--- a/src/main/java/net/minecraft/server/players/PlayerList.java
++++ b/src/main/java/net/minecraft/server/players/PlayerList.java
+@@ -808,7 +808,7 @@ public abstract class PlayerList {
+         entityplayer1.setShiftKeyDown(false);
+ 
+         // entityplayer1.playerConnection.a(entityplayer1.locX(), entityplayer1.locY(), entityplayer1.locZ(), entityplayer1.yaw, entityplayer1.pitch);
+-        entityplayer1.connection.send(new ClientboundSetDefaultSpawnPositionPacket(worldserver1.getSharedSpawnPos(), worldserver1.getSharedSpawnAngle()));
++        entityplayer1.connection.send(new ClientboundSetDefaultSpawnPositionPacket(worldserver1.getSpawn(), worldserver1.getSharedSpawnAngle()));
+         entityplayer1.connection.send(new ClientboundChangeDifficultyPacket(worlddata.getDifficulty(), worlddata.isDifficultyLocked()));
+         entityplayer1.connection.send(new ClientboundSetExperiencePacket(entityplayer1.experienceProgress, entityplayer1.totalExperience, entityplayer1.experienceLevel));
+         this.sendLevelInfo(entityplayer1, worldserver1);
+@@ -1090,7 +1090,7 @@ public abstract class PlayerList {
+ 
+         player.connection.send(new ClientboundSetBorderPacket(worldborder, ClientboundSetBorderPacket.Type.INITIALIZE));
+         player.connection.send(new ClientboundSetTimePacket(world.getGameTime(), world.getDayTime(), world.getGameRules().getBoolean(GameRules.RULE_DAYLIGHT)));
+-        player.connection.send(new ClientboundSetDefaultSpawnPositionPacket(world.getSharedSpawnPos(), world.getSharedSpawnAngle()));
++        player.connection.send(new ClientboundSetDefaultSpawnPositionPacket(world.getSpawn(), world.getSharedSpawnAngle()));
+         if (world.isRaining()) {
+             // CraftBukkit start - handle player weather
+             // entityplayer.playerConnection.sendPacket(new PacketPlayOutGameStateChange(PacketPlayOutGameStateChange.b, 0.0F));
+diff --git a/src/main/java/net/minecraft/server/rcon/RconConsoleSource.java b/src/main/java/net/minecraft/server/rcon/RconConsoleSource.java
+index c283ea9528493fb95088870c84c6d6e3963aabb7..2633aca30601682a53b0236b94a12f0f18a87fc2 100644
+--- a/src/main/java/net/minecraft/server/rcon/RconConsoleSource.java
++++ b/src/main/java/net/minecraft/server/rcon/RconConsoleSource.java
+@@ -33,7 +33,7 @@ public class RconConsoleSource implements CommandSource {
+     public CommandSourceStack createCommandSourceStack() {
+         ServerLevel worldserver = this.server.overworld();
+ 
+-        return new CommandSourceStack(this, Vec3.atLowerCornerOf((Vec3i) worldserver.getSharedSpawnPos()), Vec2.ZERO, worldserver, 4, "Rcon", RconConsoleSource.RCON_COMPONENT, this.server, (Entity) null);
++        return new CommandSourceStack(this, Vec3.atLowerCornerOf((Vec3i) worldserver.getSpawn()), Vec2.ZERO, worldserver, 4, "Rcon", RconConsoleSource.RCON_COMPONENT, this.server, (Entity) null);
+     }
+ 
+     // CraftBukkit start - Send a String
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index 5bf6bc6a01ccde8a4d67b49293bb326cb09248d8..4503bd65b3454bad94bb7b869f4e72e3121d8a3d 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -2688,7 +2688,7 @@ public abstract class Entity implements Nameable, CommandSource, net.minecraft.s
+             if (flag1) {
+                 blockposition1 = ServerLevel.END_SPAWN_POINT;
+             } else {
+-                blockposition1 = destination.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, destination.getSharedSpawnPos());
++                blockposition1 = destination.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, destination.getSpawn());
+             }
+             // CraftBukkit start
+             CraftPortalEvent event = callPortalEvent(this, destination, blockposition1, PlayerTeleportEvent.TeleportCause.END_PORTAL, 0, 0);
+diff --git a/src/main/java/net/minecraft/world/entity/animal/Cow.java b/src/main/java/net/minecraft/world/entity/animal/Cow.java
+index 90393bb196c0895f387259c2dccbb29e2ca11c87..9c67b603d4d0ee5cb7f86b25ed8754afaf9cf7b3 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/Cow.java
++++ b/src/main/java/net/minecraft/world/entity/animal/Cow.java
+@@ -87,7 +87,7 @@ public class Cow extends Animal {
+ 
+         if (itemstack.getItem() == Items.BUCKET && !this.isBaby()) {
+             // CraftBukkit start - Got milk?
+-            org.bukkit.event.player.PlayerBucketFillEvent event = CraftEventFactory.callPlayerBucketFillEvent((ServerLevel) player.level, player, this.blockPosition(), this.blockPosition(), null, itemstack, Items.MILK_BUCKET);
++            org.bukkit.event.player.PlayerBucketFillEvent event = CraftEventFactory.callPlayerBucketFillEvent((ServerLevel) player.level, player, this.blockPosition(), this.blockPosition(), null, itemstack, Items.MILK_BUCKET, hand); // Paper - add enumHand
+ 
+             if (event.isCancelled()) {
+                 return InteractionResult.PASS;
+diff --git a/src/main/java/net/minecraft/world/item/BucketItem.java b/src/main/java/net/minecraft/world/item/BucketItem.java
+index b426e155d13a1b2eb5ddb24a2d83cd7d1e92026b..d0e847e58483695d2af1c1410826bb25231cd6f6 100644
+--- a/src/main/java/net/minecraft/world/item/BucketItem.java
++++ b/src/main/java/net/minecraft/world/item/BucketItem.java
+@@ -69,7 +69,7 @@ public class BucketItem extends Item {
+                     if (iblockdata.getBlock() instanceof BucketPickup) {
+                         // CraftBukkit start
+                         Fluid dummyFluid = ((BucketPickup) iblockdata.getBlock()).takeLiquid(DummyGeneratorAccess.INSTANCE, blockposition, iblockdata);
+-                        PlayerBucketFillEvent event = CraftEventFactory.callPlayerBucketFillEvent((ServerLevel) world, user, blockposition, blockposition, movingobjectpositionblock.getDirection(), itemstack, dummyFluid.getBucket());
++                        PlayerBucketFillEvent event = CraftEventFactory.callPlayerBucketFillEvent((ServerLevel) world, user, blockposition, blockposition, movingobjectpositionblock.getDirection(), itemstack, dummyFluid.getBucket(), hand); // Paper - add enumhand
+ 
+                         if (event.isCancelled()) {
+                             ((ServerPlayer) user).connection.send(new ClientboundBlockUpdatePacket(world, blockposition)); // SPIGOT-5163 (see PlayerInteractManager)
+@@ -97,7 +97,7 @@ public class BucketItem extends Item {
+                     iblockdata = world.getBlockState(blockposition);
+                     BlockPos blockposition2 = iblockdata.getBlock() instanceof LiquidBlockContainer && this.content == Fluids.WATER ? blockposition : blockposition1;
+ 
+-                    if (this.a(user, world, blockposition2, movingobjectpositionblock1, movingobjectpositionblock1.getDirection(), blockposition, itemstack)) { // CraftBukkit
++                    if (this.a(user, world, blockposition2, movingobjectpositionblock1, movingobjectpositionblock1.getDirection(), blockposition, itemstack, hand)) { // CraftBukkit // Paper - add enumhand
+                         this.checkExtraContent(world, itemstack, blockposition2);
+                         if (user instanceof ServerPlayer) {
+                             CriteriaTriggers.PLACED_BLOCK.trigger((ServerPlayer) user, blockposition2, itemstack);
+@@ -122,10 +122,12 @@ public class BucketItem extends Item {
+     public void checkExtraContent(Level world, ItemStack stack, BlockPos pos) {}
+ 
+     public boolean emptyBucket(@Nullable Player player, Level world, BlockPos pos, @Nullable BlockHitResult movingobjectpositionblock) {
+-        return a(player, world, pos, movingobjectpositionblock, null, null, null);
++        // Paper start - add enumHand
++        return a(player, world, pos, movingobjectpositionblock, null, null, null, null);
+     }
+ 
+-    public boolean a(Player entityhuman, Level world, BlockPos blockposition, @Nullable BlockHitResult movingobjectpositionblock, Direction enumdirection, BlockPos clicked, ItemStack itemstack) {
++    public boolean a(Player entityhuman, Level world, BlockPos blockposition, @Nullable BlockHitResult movingobjectpositionblock, Direction enumdirection, BlockPos clicked, ItemStack itemstack, InteractionHand enumhand) {
++        // Paper end
+         // CraftBukkit end
+         if (!(this.content instanceof FlowingFluid)) {
+             return false;
+@@ -138,7 +140,7 @@ public class BucketItem extends Item {
+ 
+             // CraftBukkit start
+             if (flag1 && entityhuman != null) {
+-                PlayerBucketEmptyEvent event = CraftEventFactory.callPlayerBucketEmptyEvent((ServerLevel) world, entityhuman, blockposition, clicked, enumdirection, itemstack);
++                PlayerBucketEmptyEvent event = CraftEventFactory.callPlayerBucketEmptyEvent((ServerLevel) world, entityhuman, blockposition, clicked, enumdirection, itemstack, enumhand); // Paper - add enumhand
+                 if (event.isCancelled()) {
+                     ((ServerPlayer) entityhuman).connection.send(new ClientboundBlockUpdatePacket(world, blockposition)); // SPIGOT-4238: needed when looking through entity
+                     ((ServerPlayer) entityhuman).getBukkitEntity().updateInventory(); // SPIGOT-4541
+@@ -147,7 +149,7 @@ public class BucketItem extends Item {
+             }
+             // CraftBukkit end
+             if (!flag1) {
+-                return movingobjectpositionblock != null && this.a(entityhuman, world, movingobjectpositionblock.getBlockPos().relative(movingobjectpositionblock.getDirection()), (BlockHitResult) null, enumdirection, clicked, itemstack); // CraftBukkit
++                return movingobjectpositionblock != null && this.a(entityhuman, world, movingobjectpositionblock.getBlockPos().relative(movingobjectpositionblock.getDirection()), (BlockHitResult) null, enumdirection, clicked, itemstack, enumhand); // CraftBukkit // Paper - add enumhand
+             } else if (world.dimensionType().ultraWarm() && this.content.is((Tag) FluidTags.WATER)) {
+                 int i = blockposition.getX();
+                 int j = blockposition.getY();
+diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
+index 7a9ccd203885b9b369767d1fb8c53783201d0f0f..b75ffafb6840b6acab6e5b0ef5e222c4fa130977 100644
+--- a/src/main/java/net/minecraft/world/level/Level.java
++++ b/src/main/java/net/minecraft/world/level/Level.java
+@@ -277,6 +277,17 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+     }
+     // Paper end
+ 
++    // Paper start - moved up from WorldServer
++    public BlockPos getSpawn() {
++        BlockPos blockposition = new BlockPos(this.levelData.getXSpawn(), this.levelData.getYSpawn(), this.levelData.getZSpawn());
++
++        if (!this.getWorldBorder().isWithinBounds(blockposition)) {
++            blockposition = this.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING, new BlockPos(this.getWorldBorder().getCenterX(), 0.0D, this.getWorldBorder().getCenterZ()));
++        }
++
++        return blockposition;
++    }
++    // Paper end
+     @Override
+     public boolean isClientSide() {
+         return this.isClientSide;
+diff --git a/src/main/java/net/minecraft/world/level/NaturalSpawner.java b/src/main/java/net/minecraft/world/level/NaturalSpawner.java
+index 8a71eaf2855be0d415d1f7b18dbec98353fe5b47..b90a275a0dc2913809ce16659eed445501e486de 100644
+--- a/src/main/java/net/minecraft/world/level/NaturalSpawner.java
++++ b/src/main/java/net/minecraft/world/level/NaturalSpawner.java
+@@ -268,7 +268,7 @@ public final class NaturalSpawner {
+     private static boolean isRightDistanceToPlayerAndSpawnPoint(ServerLevel world, ChunkAccess chunk, BlockPos.MutableBlockPos pos, double squaredDistance) {
+         if (squaredDistance <= 576.0D) {
+             return false;
+-        } else if (world.getSharedSpawnPos().closerThan((Position) (new Vec3((double) pos.getX() + 0.5D, (double) pos.getY(), (double) pos.getZ() + 0.5D)), 24.0D)) {
++        } else if (world.getSpawn().closerThan((Position) (new Vec3((double) pos.getX() + 0.5D, (double) pos.getY(), (double) pos.getZ() + 0.5D)), 24.0D)) {
+             return false;
+         } else {
+             ChunkPos chunkcoordintpair = new ChunkPos(pos);
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+index 9807612aed6c4393cbe1f4b6078e45bf1ba3deb2..159c32d6678e83f2d98ea6a1ad48346c9de017e1 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+@@ -327,7 +327,7 @@ public class CraftWorld implements World {
+ 
+     @Override
+     public Location getSpawnLocation() {
+-        BlockPos spawn = world.getSharedSpawnPos();
++        BlockPos spawn = world.getSpawn();
+         return new Location(this, spawn.getX(), spawn.getY(), spawn.getZ());
+     }
+ 
+@@ -1926,7 +1926,7 @@ public class CraftWorld implements World {
+     public void setKeepSpawnInMemory(boolean keepLoaded) {
+         world.keepSpawnInMemory = keepLoaded;
+         // Grab the worlds spawn chunk
+-        BlockPos chunkcoordinates = this.world.getSharedSpawnPos();
++        BlockPos chunkcoordinates = this.world.getSpawn();
+         if (keepLoaded) {
+             world.getChunkSource().addRegionTicket(TicketType.START, new ChunkPos(chunkcoordinates), 11, Unit.INSTANCE);
+         } else {
+diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+index 4cd08821305590e21a01cc4dda05370c2b721ac2..1877267344df1ff5b4de6a4e0c239f488cd52c1f 100644
+--- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
++++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+@@ -222,7 +222,7 @@ public class CraftEventFactory {
+     public static Entity entityDamage; // For use in EntityDamageByEntityEvent
+ 
+     // helper methods
+-    private static boolean canBuild(ServerLevel world, Player player, int x, int z) {
++    private static boolean canBuild(Level world, Player player, int x, int z) {
+         int spawnSize = Bukkit.getServer().getSpawnRadius();
+ 
+         if (world.dimension() != Level.OVERWORLD) return true;
+@@ -230,7 +230,7 @@ public class CraftEventFactory {
+         if (((CraftServer) Bukkit.getServer()).getHandle().getOps().isEmpty()) return true;
+         if (player.isOp()) return true;
+ 
+-        BlockPos chunkcoordinates = world.getSharedSpawnPos();
++        BlockPos chunkcoordinates = world.getSpawn();
+ 
+         int distanceFromSpawn = Math.max(Math.abs(x - chunkcoordinates.getX()), Math.abs(z - chunkcoordinates.getZ()));
+         return distanceFromSpawn > spawnSize;
+@@ -412,6 +412,20 @@ public class CraftEventFactory {
+     }
+ 
+     private static PlayerEvent getPlayerBucketEvent(boolean isFilling, ServerLevel world, net.minecraft.world.entity.player.Player who, BlockPos changed, BlockPos clicked, Direction clickedFace, ItemStack itemstack, net.minecraft.world.item.Item item) {
++        // Paper start - add enumHand
++        return getPlayerBucketEvent(isFilling, world, who, changed, clicked, clickedFace, itemstack, item, null);
++    }
++
++    public static PlayerBucketEmptyEvent callPlayerBucketEmptyEvent(Level world, net.minecraft.world.entity.player.Player who, BlockPos changed, BlockPos clicked, Direction clickedFace, ItemStack itemstack, InteractionHand enumHand) {
++        return (PlayerBucketEmptyEvent) getPlayerBucketEvent(false, world, who, changed, clicked, clickedFace, itemstack, Items.BUCKET, enumHand);
++    }
++
++    public static PlayerBucketFillEvent callPlayerBucketFillEvent(Level world, net.minecraft.world.entity.player.Player who, BlockPos changed, BlockPos clicked, Direction clickedFace, ItemStack itemInHand, net.minecraft.world.item.Item bucket, InteractionHand enumHand) {
++        return (PlayerBucketFillEvent) getPlayerBucketEvent(true, world, who, clicked, changed, clickedFace, itemInHand, bucket, enumHand);
++    }
++
++    private static PlayerEvent getPlayerBucketEvent(boolean isFilling, Level world, net.minecraft.world.entity.player.Player who, BlockPos changed, BlockPos clicked, Direction clickedFace, ItemStack itemstack, net.minecraft.world.item.Item item, InteractionHand enumHand) {
++        // Paper end
+         Player player = (Player) who.getBukkitEntity();
+         CraftItemStack itemInHand = CraftItemStack.asNewCraftStack(item);
+         Material bucket = CraftMagicNumbers.getMaterial(itemstack.getItem());
+@@ -424,10 +438,10 @@ public class CraftEventFactory {
+ 
+         PlayerEvent event;
+         if (isFilling) {
+-            event = new PlayerBucketFillEvent(player, block, blockClicked, blockFace, bucket, itemInHand);
++            event = new PlayerBucketFillEvent(player, block, blockClicked, blockFace, bucket, itemInHand, enumHand == null ? null : enumHand == InteractionHand.OFF_HAND ? EquipmentSlot.OFF_HAND : EquipmentSlot.HAND); // Paper - add enumHand
+             ((PlayerBucketFillEvent) event).setCancelled(!canBuild(world, player, changed.getX(), changed.getZ()));
+         } else {
+-            event = new PlayerBucketEmptyEvent(player, block, blockClicked, blockFace, bucket, itemInHand);
++            event = new PlayerBucketEmptyEvent(player, block, blockClicked, blockFace, bucket, itemInHand, enumHand == null ? null : enumHand == InteractionHand.OFF_HAND ? EquipmentSlot.OFF_HAND : EquipmentSlot.HAND); // Paper - add enumHand
+             ((PlayerBucketEmptyEvent) event).setCancelled(!canBuild(world, player, changed.getX(), changed.getZ()));
+         }
+ 

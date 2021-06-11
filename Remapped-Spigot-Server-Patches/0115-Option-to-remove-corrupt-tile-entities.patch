@@ -1,0 +1,37 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Zach Brown <zach.brown@destroystokyo.com>
+Date: Wed, 5 Oct 2016 16:27:36 -0500
+Subject: [PATCH] Option to remove corrupt tile entities
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 6eca3f300020006f02dd36253b522db442e3cc33..622affa0dc3cc1eadaed400511f2ca2cde3fca2a 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -300,4 +300,9 @@ public class PaperWorldConfig {
+         preventTntFromMovingInWater = getBoolean("prevent-tnt-from-moving-in-water", false);
+         log("Prevent TNT from moving in water: " + preventTntFromMovingInWater);
+     }
++
++    public boolean removeCorruptTEs = false;
++    private void removeCorruptTEs() {
++        removeCorruptTEs = getBoolean("remove-corrupt-tile-entities", false);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
+index 70f5b025c2b803df3de8a51cbcfafbe915866f42..d69ccb1f31f31ebeee477df20ce1410f9e485eb7 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
++++ b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
+@@ -678,6 +678,12 @@ public class LevelChunk implements ChunkAccess {
+                             "Chunk coordinates: " + (this.chunkPos.x * 16) + "," + (this.chunkPos.z * 16));
+             e.printStackTrace();
+             ServerInternalException.reportInternalException(e);
++
++            if (this.world.paperConfig.removeCorruptTEs) {
++                this.removeBlockEntity(blockEntity.getBlockPos());
++                this.markUnsaved();
++                org.bukkit.Bukkit.getLogger().info("Removing corrupt tile entity");
++            }
+             // Paper end
+             // CraftBukkit end
+         }

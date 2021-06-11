@@ -1,0 +1,59 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Alexander <protonull@protonmail.com>
+Date: Thu, 6 May 2021 13:01:25 +0100
+Subject: [PATCH] Have CraftMerchantCustom emit PlayerPurchaseEvent
+
+
+diff --git a/src/main/java/net/minecraft/world/item/trading/Merchant.java b/src/main/java/net/minecraft/world/item/trading/Merchant.java
+index 8298e667aa3a17d987bbc4cc2b63600af48beabc..334df355470bff98db63396b33c8db6a0abcc61a 100644
+--- a/src/main/java/net/minecraft/world/item/trading/Merchant.java
++++ b/src/main/java/net/minecraft/world/item/trading/Merchant.java
+@@ -19,7 +19,7 @@ public interface Merchant {
+ 
+     MerchantOffers getOffers();
+ 
+-    void notifyTrade(MerchantOffer offer);
++    void notifyTrade(MerchantOffer offer); default void handlePurchase(MerchantOffer merchantRecipe) { notifyTrade(merchantRecipe); } // Paper - OBFHELPER
+ 
+     void notifyTradeUpdated(ItemStack stack);
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMerchantCustom.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMerchantCustom.java
+index 306c6483708ae1b41bd16f122d36beec1916a776..d52192545c39734be3c97c7978652a54d7b9f029 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMerchantCustom.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMerchantCustom.java
+@@ -81,6 +81,35 @@ public class CraftMerchantCustom extends CraftMerchant {
+ 
+         @Override
+         public void notifyTrade(MerchantOffer offer) {
++            // Paper start
++            /** Based on {@link net.minecraft.world.entity.npc.EntityVillagerAbstract#b(MerchantRecipe)} */
++            if (getTradingPlayer() instanceof net.minecraft.server.level.ServerPlayer) {
++                final net.minecraft.server.level.ServerPlayer trader = (net.minecraft.server.level.ServerPlayer) getTradingPlayer();
++                final io.papermc.paper.event.player.PlayerPurchaseEvent event = new io.papermc.paper.event.player.PlayerPurchaseEvent(
++                    trader.getBukkitEntity(),
++                    offer.asBukkit(),
++                    false, // reward xp?
++                    true); // should increase uses?
++                event.callEvent();
++                if (event.isCancelled()) {
++                    return;
++                }
++                final org.bukkit.inventory.MerchantRecipe eventTrade = event.getTrade();
++                if (event.willIncreaseTradeUses()) {
++                    eventTrade.setUses(eventTrade.getUses() + 1);
++                }
++                if (event.isRewardingExp() && eventTrade.hasExperienceReward()) {
++                    /** Based on {@link net.minecraft.world.entity.npc.EntityVillagerTrader#b(MerchantRecipe)} */
++                    final int xp = 3 + net.minecraft.world.entity.Entity.SHARED_RANDOM.nextInt(4);
++                    final Level world = trader.getCommandSenderWorld();
++                    world.addFreshEntity(new net.minecraft.world.entity.ExperienceOrb(
++                        world, trader.getX(), trader.getY() + 0.5d, trader.getZ(), xp,
++                        org.bukkit.entity.ExperienceOrb.SpawnReason.VILLAGER_TRADE, trader, null));
++                }
++                return;
++            }
++            // Paper end
++
+             // increase recipe's uses
+             offer.increaseUses();
+         }

@@ -1,0 +1,96 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sun, 26 Aug 2018 20:49:50 -0400
+Subject: [PATCH] Optimize RegistryMaterials
+
+Use larger initial sizes to increase bucket capacity on the BiMap
+
+BiMap.get was seen to be using a good bit of CPU time.
+
+diff --git a/src/main/java/net/minecraft/core/MappedRegistry.java b/src/main/java/net/minecraft/core/MappedRegistry.java
+index 928d4b980a1f703915454ffb304dc329fa4223df..da3733db4a5817673703f6c0cf37b5ee3bf91a99 100644
+--- a/src/main/java/net/minecraft/core/MappedRegistry.java
++++ b/src/main/java/net/minecraft/core/MappedRegistry.java
+@@ -30,6 +30,7 @@ import net.minecraft.Util;
+ import net.minecraft.resources.RegistryDataPackCodec;
+ import net.minecraft.resources.ResourceKey;
+ import net.minecraft.resources.ResourceLocation;
++import it.unimi.dsi.fastutil.objects.Reference2IntOpenHashMap; // Paper
+ import org.apache.commons.lang3.Validate;
+ import org.apache.logging.log4j.LogManager;
+ import org.apache.logging.log4j.Logger;
+@@ -38,7 +39,7 @@ public class MappedRegistry<T> extends WritableRegistry<T> {
+ 
+     protected static final Logger LOGGER = LogManager.getLogger();
+     private final ObjectList<T> byId = new ObjectArrayList(256);
+-    private final Object2IntMap<T> toId = new Object2IntOpenCustomHashMap(Util.identityStrategy());
++    private final Reference2IntOpenHashMap<T> bg = new Reference2IntOpenHashMap<T>(2048);// Paper - use bigger expected size to reduce collisions and direct intent for FastUtil to be identity map
+     private final BiMap<ResourceLocation, T> storage;
+     private final BiMap<ResourceKey<T>, T> keyStorage;
+     private final Map<T, Lifecycle> lifecycles;
+@@ -48,10 +49,10 @@ public class MappedRegistry<T> extends WritableRegistry<T> {
+ 
+     public MappedRegistry(ResourceKey<? extends Registry<T>> key, Lifecycle lifecycle) {
+         super(key, lifecycle);
+-        this.toId.defaultReturnValue(-1);
+-        this.storage = HashBiMap.create();
+-        this.keyStorage = HashBiMap.create();
+-        this.lifecycles = Maps.newIdentityHashMap();
++        this.bg.defaultReturnValue(-1);
++        this.storage = HashBiMap.create(2048); // Paper - use bigger expected size to reduce collisions
++        this.keyStorage = HashBiMap.create(2048); // Paper - use bigger expected size to reduce collisions
++        this.lifecycles = new java.util.IdentityHashMap<>(2048); // Paper - use bigger expected size to reduce collisions
+         this.elementsLifecycle = lifecycle;
+     }
+ 
+@@ -77,7 +78,7 @@ public class MappedRegistry<T> extends WritableRegistry<T> {
+         Validate.notNull(entry);
+         this.byId.size(Math.max(this.byId.size(), rawId + 1));
+         this.byId.set(rawId, entry);
+-        this.toId.put(entry, rawId);
++        this.bg.put(entry, rawId);
+         this.randomCache = null;
+         if (checkDuplicateKeys && this.keyStorage.containsKey(key)) {
+             MappedRegistry.LOGGER.debug("Adding duplicate key '{}' to registry", key);
+@@ -113,12 +114,12 @@ public class MappedRegistry<T> extends WritableRegistry<T> {
+         if (t0 == null) {
+             i = rawId.isPresent() ? rawId.getAsInt() : this.nextId;
+         } else {
+-            i = this.toId.getInt(t0);
++            i = this.bg.getInt(t0);
+             if (rawId.isPresent() && rawId.getAsInt() != i) {
+                 throw new IllegalStateException("ID mismatch");
+             }
+ 
+-            this.toId.removeInt(t0);
++            this.bg.removeInt(t0);
+             this.lifecycles.remove(t0);
+         }
+ 
+@@ -138,7 +139,7 @@ public class MappedRegistry<T> extends WritableRegistry<T> {
+ 
+     @Override
+     public int getId(@Nullable T entry) {
+-        return this.toId.getInt(entry);
++        return this.bg.getInt(entry);
+     }
+ 
+     @Nullable
+@@ -195,7 +196,7 @@ public class MappedRegistry<T> extends WritableRegistry<T> {
+             this.randomCache = collection.toArray(new Object[collection.size()]);
+         }
+ 
+-        return Util.getRandom(this.randomCache, random);
++        return (T) Util.getRandom(this.randomCache, random);  // Paper - Decompile fix
+     }
+ 
+     public static <T> Codec<MappedRegistry<T>> networkCodec(ResourceKey<? extends Registry<T>> resourcekey, Lifecycle lifecycle, Codec<T> entryCodec) {
+@@ -215,7 +216,7 @@ public class MappedRegistry<T> extends WritableRegistry<T> {
+             Iterator iterator = registrymaterials.iterator();
+ 
+             while (iterator.hasNext()) {
+-                T t0 = iterator.next();
++                T t0 = (T) iterator.next(); // Paper - Decompile fix
+ 
+                 builder.add(new MappedRegistry.RegistryEntry<>((ResourceKey) registrymaterials.getResourceKey(t0).get(), registrymaterials.getId(t0), t0));
+             }

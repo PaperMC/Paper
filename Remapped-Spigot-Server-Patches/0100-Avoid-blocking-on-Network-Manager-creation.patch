@@ -1,0 +1,45 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Mon, 16 May 2016 23:19:16 -0400
+Subject: [PATCH] Avoid blocking on Network Manager creation
+
+Per Paper issue 294
+
+diff --git a/src/main/java/net/minecraft/server/network/ServerConnectionListener.java b/src/main/java/net/minecraft/server/network/ServerConnectionListener.java
+index 9680b0b3879c72776d6225a6a5a89fdfa3520598..6cb51a4fe3c11f53fbb556ce6b0d64b735254d51 100644
+--- a/src/main/java/net/minecraft/server/network/ServerConnectionListener.java
++++ b/src/main/java/net/minecraft/server/network/ServerConnectionListener.java
+@@ -52,6 +52,15 @@ public class ServerConnectionListener {
+     public volatile boolean running;
+     private final List<ChannelFuture> channels = Collections.synchronizedList(Lists.newArrayList());
+     private final List<Connection> connections = Collections.synchronizedList(Lists.newArrayList());
++    // Paper start - prevent blocking on adding a new network manager while the server is ticking
++    private final java.util.Queue<Connection> pending = new java.util.concurrent.ConcurrentLinkedQueue<>();
++    private void addPending() {
++        Connection manager = null;
++        while ((manager = pending.poll()) != null) {
++            connections.add(manager);
++        }
++    }
++    // Paper end
+ 
+     public ServerConnectionListener(MinecraftServer server) {
+         this.server = server;
+@@ -87,7 +96,8 @@ public class ServerConnectionListener {
+                     int j = ServerConnectionListener.this.server.getRateLimitPacketsPerSecond();
+                     Object object = j > 0 ? new RateKickingConnection(j) : new Connection(PacketFlow.SERVERBOUND);
+ 
+-                    ServerConnectionListener.this.connections.add((Connection) object); // CraftBukkit - decompile error
++                    //ServerConnection.this.connectedChannels.add((NetworkManager) object); // CraftBukkit - decompile error
++                    pending.add((Connection) object); // Paper
+                     channel.pipeline().addLast("packet_handler", (ChannelHandler) object);
+                     ((Connection) object).setListener(new ServerHandshakePacketListenerImpl(ServerConnectionListener.this.server, (Connection) object));
+                 }
+@@ -126,6 +136,7 @@ public class ServerConnectionListener {
+ 
+         synchronized (this.connections) {
+             // Spigot Start
++            this.addPending(); // Paper
+             // This prevents players from 'gaming' the server, and strategically relogging to increase their position in the tick order
+             if ( org.spigotmc.SpigotConfig.playerShuffle > 0 && MinecraftServer.currentTick % org.spigotmc.SpigotConfig.playerShuffle == 0 )
+             {

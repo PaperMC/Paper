@@ -1,0 +1,53 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Tom <cryptite@gmail.com>
+Date: Fri, 26 Feb 2021 16:24:25 -0600
+Subject: [PATCH] Expose Tracked Players
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index 87c719caf796f54296ff7e412548062e02af270e..ec30f886585d407fbd122e05107ebca44895c585 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -170,7 +170,7 @@ public abstract class Entity implements Nameable, CommandSource, net.minecraft.s
+     public com.destroystokyo.paper.loottable.PaperLootableInventoryData lootableData; // Paper
+     private CraftEntity bukkitEntity;
+ 
+-    ChunkMap.TrackedEntity tracker; // Paper
++    public ChunkMap.TrackedEntity tracker; // Paper package private -> public
+     public boolean collisionLoadChunks = false; // Paper
+     public Throwable addedToWorldStack; // Paper - entity debug
+     public CraftEntity getBukkitEntity() {
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index d2d179cdef8129653983b01d94928ba83f64f644..ec8c7499662c0a810f1337ebc0fa24d2f3ca79e7 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -16,6 +16,7 @@ import java.net.InetSocketAddress;
+ import java.net.SocketAddress;
+ import java.util.ArrayList;
+ import java.util.Collection;
++import java.util.Collections; // Paper
+ import java.util.HashMap;
+ import java.util.HashSet;
+ import java.util.LinkedHashMap;
+@@ -2305,6 +2306,21 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+     }
+     // Paper end
+ 
++    // Paper start
++    @Override
++    public Set<Player> getTrackedPlayers() {
++        if (entity.tracker == null) {
++            return Collections.emptySet();
++        }
++
++        Set<Player> set = new HashSet<>(entity.tracker.seenBy.size());
++        for (ServerPlayer entityPlayer : entity.tracker.seenBy) {
++            set.add(entityPlayer.getBukkitEntity().getPlayer());
++        }
++        return set;
++    }
++    // Paper end
++
+     // Spigot start
+     private final Player.Spigot spigot = new Player.Spigot()
+     {

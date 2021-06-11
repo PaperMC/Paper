@@ -1,0 +1,253 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <spottedleaf@spottedleaf.dev>
+Date: Mon, 6 Apr 2020 17:53:29 -0700
+Subject: [PATCH] Remove streams from Mob AI System
+
+The streams hurt performance and allocate tons of garbage, so
+replace them with the standard iterator.
+
+Also optimise the stream.anyMatch statement to move to a bitset
+where we can replace the call with a single bitwise operation.
+
+diff --git a/src/main/java/net/minecraft/world/entity/ai/goal/Goal.java b/src/main/java/net/minecraft/world/entity/ai/goal/Goal.java
+index 558dd72c47930f6993952467f83b5a54ead95d92..acc6306d659cd65a043d12cd42dcbaf55aaf5250 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/goal/Goal.java
++++ b/src/main/java/net/minecraft/world/entity/ai/goal/Goal.java
+@@ -1,10 +1,12 @@
+ package net.minecraft.world.entity.ai.goal;
+ 
++import com.destroystokyo.paper.util.set.OptimizedSmallEnumSet; // Paper - remove streams from pathfindergoalselector
+ import java.util.EnumSet;
+ 
+ public abstract class Goal {
+ 
+-    private final EnumSet<Goal.Flag> flags = EnumSet.noneOf(Goal.Flag.class);
++    private final EnumSet<Goal.Flag> flags = EnumSet.noneOf(Goal.Flag.class); // Paper unused, but dummy to prevent plugins from crashing as hard. Theyll need to support paper in a special case if this is super important, but really doesn't seem like it would be.
++    private final OptimizedSmallEnumSet<Flag> goalTypes = new OptimizedSmallEnumSet<>(Goal.Flag.class); // Paper - remove streams from pathfindergoalselector
+ 
+     public Goal() {}
+ 
+@@ -28,16 +30,20 @@ public abstract class Goal {
+     public void tick() {}
+ 
+     public void setFlags(EnumSet<Goal.Flag> controls) {
+-        this.flags.clear();
+-        this.flags.addAll(controls);
++        // Paper start - remove streams from pathfindergoalselector
++        this.goalTypes.clear();
++        this.goalTypes.addAllUnchecked(controls);
++        // Paper end - remove streams from pathfindergoalselector
+     }
+ 
+     public String toString() {
+         return this.getClass().getSimpleName();
+     }
+ 
+-    public EnumSet<Goal.Flag> getFlags() {
+-        return this.flags;
++    // Paper start - remove streams from pathfindergoalselector
++    public com.destroystokyo.paper.util.set.OptimizedSmallEnumSet<Goal.Flag> getGoalTypes() {
++        return this.goalTypes;
++        // Paper end - remove streams from pathfindergoalselector
+     }
+ 
+     public static enum Flag {
+diff --git a/src/main/java/net/minecraft/world/entity/ai/goal/GoalSelector.java b/src/main/java/net/minecraft/world/entity/ai/goal/GoalSelector.java
+index 9bd2ee05a0de6678ad8933a8ffbe0ae66bd073b4..5da2d780c17522e07c733a5e23b17ec760c7b342 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/goal/GoalSelector.java
++++ b/src/main/java/net/minecraft/world/entity/ai/goal/GoalSelector.java
+@@ -1,8 +1,10 @@
+ package net.minecraft.world.entity.ai.goal;
+ 
++import com.destroystokyo.paper.util.set.OptimizedSmallEnumSet; // Paper - remove streams from pathfindergoalselector
+ import com.google.common.collect.Sets;
+ import java.util.EnumMap;
+ import java.util.EnumSet;
++import java.util.Iterator; // Paper - remove streams from pathfindergoalselector
+ import java.util.Map;
+ import java.util.Set;
+ import java.util.function.Supplier;
+@@ -28,7 +30,8 @@ public class GoalSelector {
+     private final Map<Goal.Flag, WrappedGoal> lockedFlags = new EnumMap(Goal.Flag.class);
+     private final Set<WrappedGoal> availableGoals = Sets.newLinkedHashSet(); private Set<WrappedGoal> getTasks() { return availableGoals; }// Paper - OBFHELPER
+     private final Supplier<ProfilerFiller> profiler;
+-    private final EnumSet<Goal.Flag> disabledFlags = EnumSet.noneOf(Goal.Flag.class);
++    private final EnumSet<Goal.Flag> disabledFlags = EnumSet.noneOf(Goal.Flag.class); // Paper unused, but dummy to prevent plugins from crashing as hard. Theyll need to support paper in a special case if this is super important, but really doesn't seem like it would be.
++    private final OptimizedSmallEnumSet<Goal.Flag> goalTypes = new OptimizedSmallEnumSet<>(Goal.Flag.class); // Paper - remove streams from pathfindergoalselector
+     private int newGoalRate = 3;private int getTickRate() { return newGoalRate; } // Paper - OBFHELPER
+     private int curRate;private int getCurRate() { return curRate; } private void incRate() { this.curRate++; } // Paper TODO
+ 
+@@ -56,35 +59,38 @@ public class GoalSelector {
+     // Paper end
+ 
+     public void removeGoal(Goal goal) {
+-        this.availableGoals.stream().filter((pathfindergoalwrapped) -> {
+-            return pathfindergoalwrapped.getGoal() == goal;
+-        }).filter(WrappedGoal::isRunning).forEach(WrappedGoal::stop);
+-        this.availableGoals.removeIf((pathfindergoalwrapped) -> {
+-            return pathfindergoalwrapped.getGoal() == goal;
+-        });
++        // Paper start - remove streams from pathfindergoalselector
++        for (Iterator<WrappedGoal> iterator = this.availableGoals.iterator(); iterator.hasNext();) {
++            WrappedGoal goalWrapped = iterator.next();
++            if (goalWrapped.getGoal() != goal) {
++                continue;
++            }
++            if (goalWrapped.isRunning()) {
++                goalWrapped.stop();
++            }
++            iterator.remove();
++        }
++        // Paper end - remove streams from pathfindergoalselector
+     }
+ 
++    private static final Goal.Flag[] PATHFINDER_GOAL_TYPES = Goal.Flag.values(); // Paper - remove streams from pathfindergoalselector
++
+     public void tick() {
+         ProfilerFiller gameprofilerfiller = (ProfilerFiller) this.profiler.get();
+ 
+         gameprofilerfiller.push("goalCleanup");
+-        this.getRunningGoals().filter((pathfindergoalwrapped) -> {
+-            boolean flag;
+-
+-            if (pathfindergoalwrapped.isRunning()) {
+-                Stream stream = pathfindergoalwrapped.getFlags().stream();
+-                EnumSet enumset = this.disabledFlags;
+-
+-                this.disabledFlags.getClass();
+-                if (!stream.anyMatch(enumset::contains) && pathfindergoalwrapped.canContinueToUse()) {
+-                    flag = false;
+-                    return flag;
+-                }
++        // Paper start - remove streams from pathfindergoalselector
++        for (Iterator<WrappedGoal> iterator = this.availableGoals.iterator(); iterator.hasNext();) {
++            WrappedGoal wrappedGoal = iterator.next();
++            if (!wrappedGoal.isRunning()) {
++                continue;
+             }
+-
+-            flag = true;
+-            return flag;
+-        }).forEach(Goal::stop);
++            if (!this.goalTypes.hasCommonElements(wrappedGoal.getGoalTypes()) && wrappedGoal.canContinueToUse()) {
++                continue;
++            }
++            wrappedGoal.stop();
++        }
++        // Paper end - remove streams from pathfindergoalselector
+         this.lockedFlags.forEach((pathfindergoal_type, pathfindergoalwrapped) -> {
+             if (!pathfindergoalwrapped.isRunning()) {
+                 this.lockedFlags.remove(pathfindergoal_type);
+@@ -93,30 +99,58 @@ public class GoalSelector {
+         });
+         gameprofilerfiller.pop();
+         gameprofilerfiller.push("goalUpdate");
+-        this.availableGoals.stream().filter((pathfindergoalwrapped) -> {
+-            return !pathfindergoalwrapped.isRunning();
+-        }).filter((pathfindergoalwrapped) -> {
+-            Stream stream = pathfindergoalwrapped.getFlags().stream();
+-            EnumSet enumset = this.disabledFlags;
+-
+-            this.disabledFlags.getClass();
+-            return stream.noneMatch(enumset::contains);
+-        }).filter((pathfindergoalwrapped) -> {
+-            return pathfindergoalwrapped.getFlags().stream().allMatch((pathfindergoal_type) -> {
+-                return ((WrappedGoal) this.lockedFlags.getOrDefault(pathfindergoal_type, GoalSelector.NO_GOAL)).canBeReplacedBy(pathfindergoalwrapped);
+-            });
+-        }).filter(WrappedGoal::canUse).forEach((pathfindergoalwrapped) -> {
+-            pathfindergoalwrapped.getFlags().forEach((pathfindergoal_type) -> {
+-                WrappedGoal pathfindergoalwrapped1 = (WrappedGoal) this.lockedFlags.getOrDefault(pathfindergoal_type, GoalSelector.NO_GOAL);
+-
+-                pathfindergoalwrapped1.stop();
+-                this.lockedFlags.put(pathfindergoal_type, pathfindergoalwrapped);
+-            });
+-            pathfindergoalwrapped.start();
+-        });
++        // Paper start - remove streams from pathfindergoalselector
++        goal_update_loop: for (Iterator<WrappedGoal> iterator = this.availableGoals.iterator(); iterator.hasNext();) {
++            WrappedGoal wrappedGoal = iterator.next();
++            if (wrappedGoal.isRunning()) {
++                continue;
++            }
++
++            OptimizedSmallEnumSet<Goal.Flag> wrappedGoalSet = wrappedGoal.getGoalTypes();
++
++            if (this.goalTypes.hasCommonElements(wrappedGoalSet)) {
++                continue;
++            }
++
++            long iterator1 = wrappedGoalSet.getBackingSet();
++            int wrappedGoalSize = wrappedGoalSet.size();
++            for (int i = 0; i < wrappedGoalSize; ++i) {
++                Goal.Flag type = PATHFINDER_GOAL_TYPES[Long.numberOfTrailingZeros(iterator1)];
++                iterator1 ^= com.destroystokyo.paper.util.math.IntegerUtil.getTrailingBit(iterator1);
++                WrappedGoal wrapped = this.lockedFlags.getOrDefault(type, GoalSelector.NO_GOAL);
++                if (!wrapped.canBeReplacedBy(wrappedGoal)) {
++                    continue goal_update_loop;
++                }
++            }
++
++            if (!wrappedGoal.canUse()) {
++                continue;
++            }
++
++            iterator1 = wrappedGoalSet.getBackingSet();
++            wrappedGoalSize = wrappedGoalSet.size();
++            for (int i = 0; i < wrappedGoalSize; ++i) {
++                Goal.Flag type = PATHFINDER_GOAL_TYPES[Long.numberOfTrailingZeros(iterator1)];
++                iterator1 ^= com.destroystokyo.paper.util.math.IntegerUtil.getTrailingBit(iterator1);
++                WrappedGoal wrapped = this.lockedFlags.getOrDefault(type, GoalSelector.NO_GOAL);
++
++                wrapped.stop();
++                this.lockedFlags.put(type, wrappedGoal);
++            }
++
++            wrappedGoal.start();
++        }
++        // Paper end - remove streams from pathfindergoalselector
+         gameprofilerfiller.pop();
+         gameprofilerfiller.push("goalTick");
+-        this.getRunningGoals().forEach(WrappedGoal::tick);
++        // Paper start - remove streams from pathfindergoalselector
++        for (Iterator<WrappedGoal> iterator = this.availableGoals.iterator(); iterator.hasNext();) {
++            WrappedGoal wrappedGoal = iterator.next();
++            if (wrappedGoal.isRunning()) {
++                wrappedGoal.tick();
++            }
++        }
++        // Paper end - remove streams from pathfindergoalselector
+         gameprofilerfiller.pop();
+     }
+ 
+@@ -125,11 +159,11 @@ public class GoalSelector {
+     }
+ 
+     public void disableControlFlag(Goal.Flag control) {
+-        this.disabledFlags.add(control);
++        this.goalTypes.addUnchecked(control); // Paper - remove streams from pathfindergoalselector
+     }
+ 
+     public void enableControlFlag(Goal.Flag control) {
+-        this.disabledFlags.remove(control);
++        this.goalTypes.removeUnchecked(control); // Paper - remove streams from pathfindergoalselector
+     }
+ 
+     public void setControlFlag(Goal.Flag control, boolean enabled) {
+diff --git a/src/main/java/net/minecraft/world/entity/ai/goal/WrappedGoal.java b/src/main/java/net/minecraft/world/entity/ai/goal/WrappedGoal.java
+index 81b4618a7979ee8dd25e1749c084de9262318ef4..984146b2b6eb3e498433b1c4971397848166d9c9 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/goal/WrappedGoal.java
++++ b/src/main/java/net/minecraft/world/entity/ai/goal/WrappedGoal.java
+@@ -59,9 +59,10 @@ public class WrappedGoal extends Goal {
+         this.goal.setFlags(controls);
+     }
+ 
+-    @Override
+-    public EnumSet<Goal.Flag> getFlags() {
+-        return this.goal.getFlags();
++    // Paper start - remove streams from pathfindergoalselector
++    public com.destroystokyo.paper.util.set.OptimizedSmallEnumSet<Goal.Flag> getGoalTypes() {
++        return this.goal.getGoalTypes();
++        // Paper end - remove streams from pathfindergoalselector
+     }
+ 
+     public boolean isRunning() { return this.isRunning(); } // Paper - OBFHELPER

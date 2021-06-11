@@ -1,0 +1,46 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Shane Freeder <theboyetronic@gmail.com>
+Date: Mon, 5 Nov 2018 04:23:51 +0000
+Subject: [PATCH] Restore custom InventoryHolder support
+
+Upstream removed the ability to consistently use a custom InventoryHolder,
+However, the implementation does not use an InventoryHolder in any form
+outside of custom inventories.
+
+We can take that knowledge and apply some expected behavior, if we're given
+an inventory holder, we should use it and return a custom inventory with the
+holder, otherwise, create an inventory backed by the intended inventory, as
+per upstream behavior.
+
+This provides a "best of both worlds" scenario: plugins with InventoryHolder's
+will always work as intended in the past, those without will create implementation
+based inventories.
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/util/CraftInventoryCreator.java b/src/main/java/org/bukkit/craftbukkit/inventory/util/CraftInventoryCreator.java
+index 94d807c5d09f165c6eedd0a1c4026c2b833806a0..3e56de295be0d03dddd3e54fcd7b05d4b9c74dc4 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/util/CraftInventoryCreator.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/util/CraftInventoryCreator.java
+@@ -40,6 +40,11 @@ public final class CraftInventoryCreator {
+     }
+ 
+     public Inventory createInventory(InventoryHolder holder, InventoryType type) {
++        // Paper start
++        if (holder != null) {
++            return DEFAULT_CONVERTER.createInventory(holder, type);
++        }
++        //noinspection ConstantConditions // Paper end
+         return converterMap.get(type).createInventory(holder, type);
+     }
+ 
+@@ -55,6 +60,11 @@ public final class CraftInventoryCreator {
+     // Paper end
+ 
+     public Inventory createInventory(InventoryHolder holder, InventoryType type, String title) {
++        // Paper start
++        if (holder != null) {
++            return DEFAULT_CONVERTER.createInventory(holder, type, title);
++        }
++        //noinspection ConstantConditions // Paper end
+         return converterMap.get(type).createInventory(holder, type, title);
+     }
+ 

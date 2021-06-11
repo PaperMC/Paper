@@ -1,0 +1,61 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sat, 7 Jan 2017 15:24:46 -0500
+Subject: [PATCH] Provide E/TE/Chunk count stat methods
+
+Provides counts without the ineffeciency of using .getEntities().size()
+which creates copy of the collections.
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+index ca189e5d160d2655175c9fab9366ff93bded2fee..6782888f7df4eea4e6378ee850424e14c5136afd 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+@@ -264,6 +264,48 @@ public class CraftWorld implements World {
+     private int waterAmbientSpawn = -1;
+     private int ambientSpawn = -1;
+ 
++    // Paper start - Provide fast information methods
++    public int getEntityCount() {
++        int ret = 0;
++        for (net.minecraft.world.entity.Entity entity : world.entitiesById.values()) {
++            if (entity.isChunkLoaded()) {
++                ++ret;
++            }
++        }
++        return ret;
++    }
++    public int getTileEntityCount() {
++        // We don't use the full world tile entity list, so we must iterate chunks
++        Long2ObjectLinkedOpenHashMap<ChunkHolder> chunks = world.getChunkSource().chunkMap.visibleChunkMap;
++        int size = 0;
++        for (ChunkHolder playerchunk : chunks.values()) {
++            net.minecraft.world.level.chunk.LevelChunk chunk = playerchunk.getTickingChunk();
++            if (chunk == null) {
++                continue;
++            }
++            size += chunk.blockEntities.size();
++        }
++        return size;
++    }
++    public int getTickableTileEntityCount() {
++        return world.tickableBlockEntities.size();
++    }
++    public int getChunkCount() {
++        int ret = 0;
++
++        for (ChunkHolder chunkHolder : world.getChunkSource().chunkMap.visibleChunkMap.values()) {
++            if (chunkHolder.getTickingChunk() != null) {
++                ++ret;
++            }
++        }
++
++        return ret;
++    }
++    public int getPlayerCount() {
++        return world.players.size();
++    }
++    // Paper end
++
+     private static final Random rand = new Random();
+ 
+     public CraftWorld(ServerLevel world, ChunkGenerator gen, Environment env) {

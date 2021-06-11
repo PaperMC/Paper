@@ -1,0 +1,156 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: KennyTV <jahnke.nassim@gmail.com>
+Date: Fri, 29 Jan 2021 15:13:11 +0100
+Subject: [PATCH] Add dropLeash variable to EntityUnleashEvent
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/Mob.java b/src/main/java/net/minecraft/world/entity/Mob.java
+index 87dd6c012bf1ca6a1e8df44dc0957c4c67d02adc..ea34306858116e5626383af408529091836c2752 100644
+--- a/src/main/java/net/minecraft/world/entity/Mob.java
++++ b/src/main/java/net/minecraft/world/entity/Mob.java
+@@ -86,6 +86,7 @@ import org.bukkit.event.entity.EntityTargetEvent;
+ import org.bukkit.event.entity.EntityTransformEvent;
+ import org.bukkit.event.entity.EntityUnleashEvent;
+ import org.bukkit.event.entity.EntityUnleashEvent.UnleashReason;
++import org.bukkit.event.player.PlayerUnleashEntityEvent; // Paper
+ // CraftBukkit end
+ 
+ public abstract class Mob extends LivingEntity {
+@@ -1205,12 +1206,15 @@ public abstract class Mob extends LivingEntity {
+             return InteractionResult.PASS;
+         } else if (this.getLeashHolder() == player) {
+             // CraftBukkit start - fire PlayerUnleashEntityEvent
+-            if (CraftEventFactory.callPlayerUnleashEntityEvent(this, player).isCancelled()) {
++            // Paper start - drop leash variable
++            PlayerUnleashEntityEvent event = CraftEventFactory.callPlayerUnleashEntityEvent(this, player, !player.abilities.instabuild);
++            if (event.isCancelled()) {
++                // Paper end
+                 ((ServerPlayer) player).connection.send(new ClientboundSetEntityLinkPacket(this, this.getLeashHolder()));
+                 return InteractionResult.PASS;
+             }
+             // CraftBukkit end
+-            this.dropLeash(true, !player.abilities.instabuild);
++            this.dropLeash(true, event.isDropLeash()); // Paper - drop leash variable
+             return InteractionResult.sidedSuccess(this.level.isClientSide);
+         } else {
+             InteractionResult enuminteractionresult = this.checkAndHandleImportantInteractions(player, hand);
+@@ -1364,8 +1368,11 @@ public abstract class Mob extends LivingEntity {
+ 
+         if (this.leashHolder != null) {
+             if (!this.isAlive() || !this.leashHolder.isAlive()) {
+-                this.level.getCraftServer().getPluginManager().callEvent(new EntityUnleashEvent(this.getBukkitEntity(), (!this.isAlive()) ? UnleashReason.PLAYER_UNLEASH : UnleashReason.HOLDER_GONE)); // CraftBukkit
+-                this.dropLeash(true, true);
++                // Paper start - drop leash variable
++                EntityUnleashEvent event = new EntityUnleashEvent(this.getBukkitEntity(), (!this.isAlive()) ? UnleashReason.PLAYER_UNLEASH : UnleashReason.HOLDER_GONE, true);
++                this.level.getCraftServer().getPluginManager().callEvent(event); // CraftBukkit
++                this.dropLeash(true, event.isDropLeash());
++                // Paper end
+             }
+ 
+         }
+@@ -1433,8 +1440,11 @@ public abstract class Mob extends LivingEntity {
+         boolean flag1 = super.startRiding(entity, force);
+ 
+         if (flag1 && this.isLeashed()) {
+-            this.level.getCraftServer().getPluginManager().callEvent(new EntityUnleashEvent(this.getBukkitEntity(), UnleashReason.UNKNOWN)); // CraftBukkit
+-            this.dropLeash(true, true);
++            // Paper start - drop leash variable
++            EntityUnleashEvent event = new EntityUnleashEvent(this.getBukkitEntity(), UnleashReason.UNKNOWN, true);
++            this.level.getCraftServer().getPluginManager().callEvent(event); // CraftBukkit
++            this.dropLeash(true, event.isDropLeash());
++            // Paper end
+         }
+ 
+         return flag1;
+@@ -1636,7 +1646,10 @@ public abstract class Mob extends LivingEntity {
+     @Override
+     protected void removeAfterChangingDimensions() {
+         super.removeAfterChangingDimensions();
+-        this.level.getCraftServer().getPluginManager().callEvent(new EntityUnleashEvent(this.getBukkitEntity(), UnleashReason.UNKNOWN)); // CraftBukkit
+-        this.dropLeash(true, false);
++        // Paper start - drop leash variable
++        EntityUnleashEvent event = new EntityUnleashEvent(this.getBukkitEntity(), UnleashReason.UNKNOWN, false);
++        this.level.getCraftServer().getPluginManager().callEvent(event); // CraftBukkit
++        this.dropLeash(true, event.isDropLeash());
++        // Paper end
+     }
+ }
+diff --git a/src/main/java/net/minecraft/world/entity/PathfinderMob.java b/src/main/java/net/minecraft/world/entity/PathfinderMob.java
+index a884940cc576704951d42c6b0d00f5a319297c29..d16a7bab5495d58ea9e6811d4b507667cfa3d264 100644
+--- a/src/main/java/net/minecraft/world/entity/PathfinderMob.java
++++ b/src/main/java/net/minecraft/world/entity/PathfinderMob.java
+@@ -47,8 +47,11 @@ public abstract class PathfinderMob extends Mob {
+ 
+             if (this instanceof TamableAnimal && ((TamableAnimal) this).isInSittingPose()) {
+                 if (f > entity.level.paperConfig.maxLeashDistance) { // Paper
+-                    this.level.getCraftServer().getPluginManager().callEvent(new EntityUnleashEvent(this.getBukkitEntity(), EntityUnleashEvent.UnleashReason.DISTANCE)); // CraftBukkit
+-                    this.dropLeash(true, true);
++                    // Paper start - drop leash variable
++                    EntityUnleashEvent event = new EntityUnleashEvent(this.getBukkitEntity(), EntityUnleashEvent.UnleashReason.DISTANCE, true);
++                    this.level.getCraftServer().getPluginManager().callEvent(event); // CraftBukkit
++                    this.dropLeash(true, event.isDropLeash());
++                    // Paper end
+                 }
+ 
+                 return;
+@@ -56,8 +59,11 @@ public abstract class PathfinderMob extends Mob {
+ 
+             this.onLeashDistance(f);
+             if (f > entity.level.paperConfig.maxLeashDistance) { // Paper
+-                this.level.getCraftServer().getPluginManager().callEvent(new EntityUnleashEvent(this.getBukkitEntity(), EntityUnleashEvent.UnleashReason.DISTANCE)); // CraftBukkit
+-                this.dropLeash(true, true);
++                // Paper start - drop leash variable
++                EntityUnleashEvent event = new EntityUnleashEvent(this.getBukkitEntity(), EntityUnleashEvent.UnleashReason.DISTANCE, true);
++                this.level.getCraftServer().getPluginManager().callEvent(event); // CraftBukkit
++                this.dropLeash(true, event.isDropLeash());
++                // Paper end
+                 this.goalSelector.disableControlFlag(Goal.Flag.MOVE);
+             } else if (f > 6.0F) {
+                 double d0 = (entity.getX() - this.getX()) / (double) f;
+diff --git a/src/main/java/net/minecraft/world/entity/decoration/LeashFenceKnotEntity.java b/src/main/java/net/minecraft/world/entity/decoration/LeashFenceKnotEntity.java
+index 465548de7e32028a2aed4b6e9543e1bd9b73700b..1f54c020cc2b1928b2e7edda9ddf7b9d61e6424b 100644
+--- a/src/main/java/net/minecraft/world/entity/decoration/LeashFenceKnotEntity.java
++++ b/src/main/java/net/minecraft/world/entity/decoration/LeashFenceKnotEntity.java
+@@ -28,6 +28,8 @@ import net.minecraft.world.phys.AABB;
+ import org.bukkit.craftbukkit.event.CraftEventFactory;
+ // CraftBukkit end
+ 
++import org.bukkit.event.player.PlayerUnleashEntityEvent; // Paper
++
+ public class LeashFenceKnotEntity extends HangingEntity {
+ 
+     public LeashFenceKnotEntity(EntityType<? extends LeashFenceKnotEntity> type, Level world) {
+@@ -123,11 +125,14 @@ public class LeashFenceKnotEntity extends HangingEntity {
+                         entityinsentient = (Mob) iterator.next();
+                         if (entityinsentient.isLeashed() && entityinsentient.getLeashHolder() == this) {
+                             // CraftBukkit start
+-                            if (CraftEventFactory.callPlayerUnleashEntityEvent(entityinsentient, player).isCancelled()) {
++                            // Paper start - drop leash variable
++                            PlayerUnleashEntityEvent event = CraftEventFactory.callPlayerUnleashEntityEvent(entityinsentient, player, !player.abilities.instabuild);
++                            if (event.isCancelled()) {
++                                // Paper end
+                                 die = false;
+                                 continue;
+                             }
+-                            entityinsentient.dropLeash(true, !player.abilities.instabuild); // false -> survival mode boolean
++                            entityinsentient.dropLeash(true, event.isDropLeash()); // false -> survival mode boolean // Paper - drop leash variable
+                             // CraftBukkit end
+                         }
+                     }
+diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+index 34c0216baa69206aca51821aec421484b18cb04c..ea7c30ef17fc66c1fb55d5909f94651c98b181be 100644
+--- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
++++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+@@ -1460,8 +1460,10 @@ public class CraftEventFactory {
+         return itemInHand;
+     }
+ 
+-    public static PlayerUnleashEntityEvent callPlayerUnleashEntityEvent(Mob entity, net.minecraft.world.entity.player.Player player) {
+-        PlayerUnleashEntityEvent event = new PlayerUnleashEntityEvent(entity.getBukkitEntity(), (Player) player.getBukkitEntity());
++    // Paper start - drop leash variable
++    public static PlayerUnleashEntityEvent callPlayerUnleashEntityEvent(Mob entity, net.minecraft.world.entity.player.Player player, boolean dropLeash) {
++        PlayerUnleashEntityEvent event = new PlayerUnleashEntityEvent(entity.getBukkitEntity(), (Player) player.getBukkitEntity(), dropLeash);
++        // Paper end
+         entity.level.getCraftServer().getPluginManager().callEvent(event);
+         return event;
+     }

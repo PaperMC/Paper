@@ -1,0 +1,31 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: BillyGalbreath <Blake.Galbreath@GMail.com>
+Date: Sat, 21 Jul 2018 01:59:59 -0500
+Subject: [PATCH] PlayerElytraBoostEvent
+
+
+diff --git a/src/main/java/net/minecraft/world/item/FireworkRocketItem.java b/src/main/java/net/minecraft/world/item/FireworkRocketItem.java
+index dba52063d402eb2371441fa244b730a3313444fc..28cffbe299acccc59c34d5dbd2cf458704be5ee5 100644
+--- a/src/main/java/net/minecraft/world/item/FireworkRocketItem.java
++++ b/src/main/java/net/minecraft/world/item/FireworkRocketItem.java
+@@ -45,11 +45,16 @@ public class FireworkRocketItem extends Item {
+                 // Paper start
+                 final FireworkRocketEntity entityfireworks = new FireworkRocketEntity(world, itemstack, user);
+                 entityfireworks.spawningEntity = user.getUUID();
+-                world.addFreshEntity(entityfireworks);
+-                // Paper end
+-                if (!user.abilities.instabuild) {
+-                    itemstack.shrink(1);
++                // Paper start
++                com.destroystokyo.paper.event.player.PlayerElytraBoostEvent event = new com.destroystokyo.paper.event.player.PlayerElytraBoostEvent((org.bukkit.entity.Player) user.getBukkitEntity(), org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemstack), (org.bukkit.entity.Firework) entityfireworks.getBukkitEntity());
++                if (event.callEvent() && world.addFreshEntity(entityfireworks)) {
++                    if (event.shouldConsume() && !user.abilities.instabuild) {
++                        itemstack.shrink(1);
++                    } else ((EntityPlayer) user).getBukkitEntity().updateInventory();
++                } else if (user instanceof EntityPlayer) {
++                    ((EntityPlayer) user).getBukkitEntity().updateInventory();
+                 }
++                // Paper end
+             }
+ 
+             return InteractionResultHolder.sidedSuccess(user.getItemInHand(hand), world.isClientSide());

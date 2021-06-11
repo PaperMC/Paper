@@ -1,0 +1,56 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: giacomo <32515303+giacomozama@users.noreply.github.com>
+Date: Sat, 10 Oct 2020 12:15:33 +0200
+Subject: [PATCH] Fixed TileEntityBell memory leak
+
+TileEntityBell has a list of entities (entitiesAtRing) that was not being cleared at the right time, causing leaks whenever a bell would be rung near a crowd of entities.
+
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/BellBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/BellBlockEntity.java
+index aa45a142aa11acc9fd08b4877891741f3cbd936d..3f9179a7678091875161a34d13b6ec0e78025c4c 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/BellBlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/BellBlockEntity.java
+@@ -27,8 +27,8 @@ public class BellBlockEntity extends BlockEntity implements TickableBlockEntity
+     public int ticks;
+     public boolean shaking;
+     public Direction clickDirection;
+-    private List<LivingEntity> nearbyEntities;
+-    private boolean resonating;
++    private List<LivingEntity> nearbyEntities; private List<LivingEntity> getEntitiesAtRing() { return this.nearbyEntities; } // Paper - OBFHELPER
++    private boolean resonating; private boolean getShouldReveal() { return this.resonating; } // Paper - OBFHELPER
+     private int resonationTicks;
+ 
+     public BellBlockEntity() {
+@@ -57,6 +57,11 @@ public class BellBlockEntity extends BlockEntity implements TickableBlockEntity
+ 
+         if (this.ticks >= 50) {
+             this.shaking = false;
++            // Paper start
++            if (!this.getShouldReveal()) {
++                this.getEntitiesAtRing().clear();
++            }
++            // Paper end
+             this.ticks = 0;
+         }
+ 
+@@ -71,6 +76,7 @@ public class BellBlockEntity extends BlockEntity implements TickableBlockEntity
+             } else {
+                 this.makeRaidersGlow(this.level);
+                 this.showBellParticles(this.level);
++                this.getEntitiesAtRing().clear(); // Paper
+                 this.resonating = false;
+             }
+         }
+@@ -111,11 +117,12 @@ public class BellBlockEntity extends BlockEntity implements TickableBlockEntity
+                 LivingEntity entityliving = (LivingEntity) iterator.next();
+ 
+                 if (entityliving.isAlive() && !entityliving.removed && blockposition.closerThan((Position) entityliving.position(), 32.0D)) {
+-                    entityliving.getBrain().setMemory(MemoryModuleType.HEARD_BELL_TIME, (Object) this.level.getGameTime());
++                    entityliving.getBrain().setMemory(MemoryModuleType.HEARD_BELL_TIME, this.level.getGameTime()); // Paper - decompile fix
+                 }
+             }
+         }
+ 
++        this.getEntitiesAtRing().removeIf(e -> !e.isAlive()); // Paper
+     }
+ 
+     private boolean areRaidersNearby() {

@@ -1,0 +1,157 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jedediah Smith <jedediah@silencegreys.com>
+Date: Tue, 1 Mar 2016 14:47:52 -0600
+Subject: [PATCH] Player affects spawning API
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index 706417f44c1eebc7cc5e8e7053fa0ab21f4caeba..392f2f2d67b688d5b37f77c8e4b3036348472d77 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -1353,6 +1353,7 @@ public abstract class Entity implements Nameable, CommandSource, net.minecraft.s
+         return Mth.sqrt(f * f + f1 * f1 + f2 * f2);
+     }
+ 
++    public double getDistanceSquared(double x, double y, double z) { return distanceToSqr(x, y, z); } // Paper - OBFHELPER
+     public double distanceToSqr(double x, double y, double z) {
+         double d3 = this.getX() - x;
+         double d4 = this.getY() - y;
+diff --git a/src/main/java/net/minecraft/world/entity/EntitySelector.java b/src/main/java/net/minecraft/world/entity/EntitySelector.java
+index f8c13881f59ccaccf8d8e5496d2f8f49ba7d7343..a3bad391a719363077740aa810c9412df34b4ae5 100644
+--- a/src/main/java/net/minecraft/world/entity/EntitySelector.java
++++ b/src/main/java/net/minecraft/world/entity/EntitySelector.java
+@@ -29,6 +29,12 @@ public final class EntitySelector {
+         return !entity.isSpectator();
+     };
+ 
++    // Paper start
++    public static final Predicate<Entity> affectsSpawning = (entity) -> {
++        return !entity.isSpectator() && entity.isAlive() && (entity instanceof EntityPlayer) && ((EntityPlayer) entity).affectsSpawning;
++    };
++    // Paper end
++
+     public static Predicate<Entity> withinDistance(double x, double y, double z, double d3) {
+         double d4 = d3 * d3;
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/Mob.java b/src/main/java/net/minecraft/world/entity/Mob.java
+index 4d3000067ae3d46b7ed4dda6146a21993199c6d9..09d39b73e8a3987e58a502bd914a6451b807421b 100644
+--- a/src/main/java/net/minecraft/world/entity/Mob.java
++++ b/src/main/java/net/minecraft/world/entity/Mob.java
+@@ -755,7 +755,7 @@ public abstract class Mob extends LivingEntity {
+         if (this.level.getDifficulty() == Difficulty.PEACEFUL && this.shouldDespawnInPeaceful()) {
+             this.remove();
+         } else if (!this.isPersistenceRequired() && !this.requiresCustomPersistence()) {
+-            Player entityhuman = this.level.getNearestPlayer(this, -1.0D);
++            Player entityhuman = this.level.findNearbyPlayer(this, -1.0D, EntitySelector.affectsSpawning); // Paper
+ 
+             if (entityhuman != null) {
+                 double d0 = entityhuman.distanceToSqr((Entity) this); // CraftBukkit - decompile error
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Silverfish.java b/src/main/java/net/minecraft/world/entity/monster/Silverfish.java
+index 4ce9e37d7334ba0557c397c0ebd2cb7928c7c564..cfdbaec1de6add7a189c26eb66701dfa5f40fe4f 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Silverfish.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Silverfish.java
+@@ -122,7 +122,7 @@ public class Silverfish extends Monster {
+         if (checkAnyLightMonsterSpawnRules(type, world, spawnReason, pos, random)) {
+             Player entityhuman = world.getNearestPlayer((double) pos.getX() + 0.5D, (double) pos.getY() + 0.5D, (double) pos.getZ() + 0.5D, 5.0D, true);
+ 
+-            return entityhuman == null;
++            return !(entityhuman != null && !entityhuman.affectsSpawning) && entityhuman == null; // Paper - Affects Spawning API
+         } else {
+             return false;
+         }
+diff --git a/src/main/java/net/minecraft/world/entity/player/Player.java b/src/main/java/net/minecraft/world/entity/player/Player.java
+index 91f605c803c021c8743de87b67dcb0fb9fc807e9..3b451e75a7f49ea6b543aee9f0a51c0be3c4dfba 100644
+--- a/src/main/java/net/minecraft/world/entity/player/Player.java
++++ b/src/main/java/net/minecraft/world/entity/player/Player.java
+@@ -161,6 +161,9 @@ public abstract class Player extends LivingEntity {
+     private final ItemCooldowns cooldowns;
+     @Nullable
+     public FishingHook fishing;
++    // Paper start
++    public boolean affectsSpawning = true;
++    // Paper end
+ 
+     // CraftBukkit start
+     public boolean fauxSleeping;
+diff --git a/src/main/java/net/minecraft/world/level/BaseSpawner.java b/src/main/java/net/minecraft/world/level/BaseSpawner.java
+index 98f85d59bc48451ef6381a47fe341f77b9920981..10058d3c3565382faa893b79119c5caf845bf29a 100644
+--- a/src/main/java/net/minecraft/world/level/BaseSpawner.java
++++ b/src/main/java/net/minecraft/world/level/BaseSpawner.java
+@@ -66,7 +66,7 @@ public abstract class BaseSpawner {
+     private boolean isNearPlayer() {
+         BlockPos blockposition = this.getPos();
+ 
+-        return this.getLevel().hasNearbyAlivePlayer((double) blockposition.getX() + 0.5D, (double) blockposition.getY() + 0.5D, (double) blockposition.getZ() + 0.5D, (double) this.requiredPlayerRange);
++        return this.getLevel().isAffectsSpawningPlayerNearby((double) blockposition.getX() + 0.5D, (double) blockposition.getY() + 0.5D, (double) blockposition.getZ() + 0.5D, (double) this.requiredPlayerRange); // Paper
+     }
+ 
+     public void tick() {
+diff --git a/src/main/java/net/minecraft/world/level/EntityGetter.java b/src/main/java/net/minecraft/world/level/EntityGetter.java
+index 7e7a58b9a9ececdcc37fc33b33703428eb1d5faf..66681b9f0e2531d3da25629e44180417b32b4d66 100644
+--- a/src/main/java/net/minecraft/world/level/EntityGetter.java
++++ b/src/main/java/net/minecraft/world/level/EntityGetter.java
+@@ -92,8 +92,9 @@ public interface EntityGetter {
+         }
+     }
+ 
+-    @Nullable
+-    default Player getNearestPlayer(double x, double y, double z, double maxDistance, @Nullable Predicate<Entity> targetPredicate) {
++    default Player findNearbyPlayer(Entity entity, double d0, @Nullable Predicate<Entity> predicate) { return this.findNearbyPlayer(entity.getX(), entity.getY(), entity.getZ(), d0, predicate); } // Paper
++    @Nullable default Player findNearbyPlayer(double d0, double d1, double d2, double d3, @Nullable Predicate<Entity> predicate) { return getNearestPlayer(d0, d1, d2, d3, predicate); } // Paper - OBFHELPER
++    @Nullable default Player getNearestPlayer(double x, double y, double z, double maxDistance, @Nullable Predicate<Entity> targetPredicate) { // Paper
+         double d4 = -1.0D;
+         Player entityhuman = null;
+         Iterator iterator = this.players().iterator();
+@@ -126,6 +127,27 @@ public interface EntityGetter {
+         return this.getNearestPlayer(x, y, z, maxDistance, predicate);
+     }
+ 
++    // Paper end
++    default boolean isAffectsSpawningPlayerNearby(double d0, double d1, double d2, double d3) {
++        Iterator iterator = this.players().iterator();
++        double d4;
++        do {
++            Player entityhuman;
++            do {
++                if (!iterator.hasNext()) {
++                    return false;
++                }
++
++                entityhuman = (Player) iterator.next();
++            } while (!EntitySelector.affectsSpawning.test(entityhuman));
++
++            d4 = entityhuman.getDistanceSquared(d0, d1, d2);
++        } while (d3 >= 0.0D && d4 >= d3 * d3);
++
++        return true;
++    }
++    // Paper end
++
+     default boolean hasNearbyAlivePlayer(double x, double y, double z, double range) {
+         Iterator iterator = this.players().iterator();
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index 50d11611702e3d1f0e980fb8f2280b05b891167b..e6c39c822c6a910f63e9b4899d53b7d75e1b77cf 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -1768,8 +1768,20 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+     @Override
+     public String getLocale() {
+         return getHandle().locale;
++
++    }
++
++    // Paper start
++    public void setAffectsSpawning(boolean affects) {
++        this.getHandle().affectsSpawning = affects;
+     }
+ 
++    @Override
++    public boolean getAffectsSpawning() {
++        return this.getHandle().affectsSpawning;
++    }
++    // Paper end
++
+     @Override
+     public void updateCommands() {
+         if (getHandle().connection == null) return;

@@ -1,0 +1,45 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sun, 18 Mar 2018 11:45:57 -0400
+Subject: [PATCH] Ability to change PlayerProfile in AsyncPreLoginEvent
+
+This will allow you to change the players name or skin on login.
+
+diff --git a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
+index ff83fb15d0d0adb62c630fc7aafc134972bf15fc..e5be45ac86907c1f8cc154bd38fd624a2320180f 100644
+--- a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
+@@ -1,5 +1,7 @@
+ package net.minecraft.server.network;
+ 
++import com.destroystokyo.paper.profile.CraftPlayerProfile;
++import com.destroystokyo.paper.profile.PlayerProfile;
+ import com.mojang.authlib.GameProfile;
+ import com.mojang.authlib.exceptions.AuthenticationUnavailableException;
+ import java.math.BigInteger;
+@@ -36,6 +38,7 @@ import org.apache.commons.lang3.Validate;
+ import org.apache.logging.log4j.LogManager;
+ import org.apache.logging.log4j.Logger;
+ import io.papermc.paper.adventure.PaperAdventure; // Paper
++import org.bukkit.Bukkit;
+ import org.bukkit.craftbukkit.util.Waitable;
+ import org.bukkit.event.player.AsyncPlayerPreLoginEvent;
+ import org.bukkit.event.player.PlayerPreLoginEvent;
+@@ -314,8 +317,16 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener
+                         java.util.UUID uniqueId = gameProfile.getId();
+                         final org.bukkit.craftbukkit.CraftServer server = ServerLoginPacketListenerImpl.this.server.server;
+ 
+-                        AsyncPlayerPreLoginEvent asyncEvent = new AsyncPlayerPreLoginEvent(playerName, address, uniqueId);
++                            // Paper start
++                            PlayerProfile profile = Bukkit.createProfile(uniqueId, playerName);
++                            AsyncPlayerPreLoginEvent asyncEvent = new AsyncPlayerPreLoginEvent(playerName, address, uniqueId, profile);
+                         server.getPluginManager().callEvent(asyncEvent);
++                            profile = asyncEvent.getPlayerProfile();
++                            profile.complete();
++                            gameProfile = CraftPlayerProfile.asAuthlibCopy(profile);
++                            playerName = gameProfile.getName();
++                            uniqueId = gameProfile.getId();
++                            // Paper end
+ 
+                         if (PlayerPreLoginEvent.getHandlerList().getRegisteredListeners().length != 0) {
+                             final PlayerPreLoginEvent event = new PlayerPreLoginEvent(playerName, address, uniqueId);

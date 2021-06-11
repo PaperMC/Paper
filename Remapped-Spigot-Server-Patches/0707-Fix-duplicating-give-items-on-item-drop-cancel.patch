@@ -1,0 +1,113 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Alphaesia <creepashadowz@gmail.com>
+Date: Fri, 23 Apr 2021 09:57:56 +1200
+Subject: [PATCH] Fix duplicating /give items on item drop cancel
+
+Fixes SPIGOT-2942 (Give command fires PlayerDropItemEvent, cancelling it causes item duplication).
+
+For every stack of items to give, /give puts the item stack straight
+into the player's inventory. However, it also summons a "fake item"
+at the player's location. When the PlayerDropItemEvent for this fake
+item is cancelled, the server attempts to put the item back into the
+player's inventory. The result is that the fake item, which is never
+meant to be obtained, is combined with the real items injected directly
+into the player's inventory. This means more items than the amount
+specified in /give are given to the player - one for every stack of
+items given. (e.g. /give @s dirt 1 gives you 2 dirt).
+
+While this isn't a big issue for general building usage, it can affect
+e.g. adventure maps where the number of items the player receives is
+important (and you want to restrict the player from throwing items).
+
+If there are any overflow items that didn't make it into the inventory
+(insufficient space), those items are dropped as a real item instead
+of a fake one. While cancelling this drop would also result in the
+server attempting to put those items into the inventory, since it is
+full this has no effect.
+
+Just ignoring cancellation of the PlayerDropItemEvent seems like the
+cleanest and least intrusive way to fix it.
+
+diff --git a/src/main/java/net/minecraft/server/commands/GiveCommand.java b/src/main/java/net/minecraft/server/commands/GiveCommand.java
+index a6259e9160f291cf527a4ea5533a2e5530471874..3b8a7b9bdd2445afa93e4f2dc971a1d252c1463a 100644
+--- a/src/main/java/net/minecraft/server/commands/GiveCommand.java
++++ b/src/main/java/net/minecraft/server/commands/GiveCommand.java
+@@ -49,7 +49,7 @@ public class GiveCommand {
+ 
+                 if (flag && itemstack.isEmpty()) {
+                     itemstack.setCount(1);
+-                    entityitem = entityplayer.drop(itemstack, false);
++                    entityitem = entityplayer.drop(itemstack, false, false, true); // Paper - Fix duplicating /give items on item drop cancel
+                     if (entityitem != null) {
+                         entityitem.makeFakeItem();
+                     }
+diff --git a/src/main/java/net/minecraft/world/entity/player/Player.java b/src/main/java/net/minecraft/world/entity/player/Player.java
+index 4817b8ab259d348b48bc325d34ba9351ffe951df..cfb9bd6b9863a0f6f0f50181b7553adce90cfebe 100644
+--- a/src/main/java/net/minecraft/world/entity/player/Player.java
++++ b/src/main/java/net/minecraft/world/entity/player/Player.java
+@@ -639,7 +639,14 @@ public abstract class Player extends LivingEntity {
+ 
+     @Nullable
+     public ItemEntity drop(ItemStack stack, boolean throwRandomly, boolean retainOwnership) {
+-        if (stack.isEmpty()) {
++        // Paper start - Fix duplicating /give items on item drop cancel
++        return this.drop(stack, throwRandomly, retainOwnership, false);
++    }
++
++    @Nullable
++    public ItemEntity drop(ItemStack itemstack, boolean flag, boolean flag1, boolean alwaysSucceed) {
++        // Paper end
++        if (itemstack.isEmpty()) {
+             return null;
+         } else {
+             if (this.level.isClientSide) {
+@@ -647,17 +654,17 @@ public abstract class Player extends LivingEntity {
+             }
+ 
+             double d0 = this.getEyeY() - 0.30000001192092896D;
+-            ItemEntity entityitem = new ItemEntity(this.level, this.getX(), d0, this.getZ(), stack);
++            ItemEntity entityitem = new ItemEntity(this.level, this.getX(), d0, this.getZ(), itemstack);
+ 
+             entityitem.setPickUpDelay(40);
+-            if (retainOwnership) {
++            if (flag1) {
+                 entityitem.setThrower(this.getUUID());
+             }
+ 
+             float f;
+             float f1;
+ 
+-            if (throwRandomly) {
++            if (flag) {
+                 f = this.random.nextFloat() * 0.5F;
+                 f1 = this.random.nextFloat() * 6.2831855F;
+                 entityitem.setDeltaMovement((double) (-Mth.sin(f1) * f), 0.20000000298023224D, (double) (Mth.cos(f1) * f));
+@@ -680,12 +687,12 @@ public abstract class Player extends LivingEntity {
+             PlayerDropItemEvent event = new PlayerDropItemEvent(player, drop);
+             this.level.getCraftServer().getPluginManager().callEvent(event);
+ 
+-            if (event.isCancelled()) {
++            if (event.isCancelled() && !alwaysSucceed) { // Paper - Fix duplicating /give items on item drop cancel
+                 org.bukkit.inventory.ItemStack cur = player.getInventory().getItemInHand();
+-                if (retainOwnership && (cur == null || cur.getAmount() == 0)) {
++                if (flag1 && (cur == null || cur.getAmount() == 0)) {
+                     // The complete stack was dropped
+                     player.getInventory().setItemInHand(drop.getItemStack());
+-                } else if (retainOwnership && cur.isSimilar(drop.getItemStack()) && cur.getAmount() < cur.getMaxStackSize() && drop.getItemStack().getAmount() == 1) {
++                } else if (flag1 && cur.isSimilar(drop.getItemStack()) && cur.getAmount() < cur.getMaxStackSize() && drop.getItemStack().getAmount() == 1) {
+                     // Only one item is dropped
+                     cur.setAmount(cur.getAmount() + 1);
+                     player.getInventory().setItemInHand(cur);
+@@ -697,9 +704,9 @@ public abstract class Player extends LivingEntity {
+             }
+             // CraftBukkit end
+             // Paper start - remove player from map on drop
+-            if (stack.getItem() == Items.FILLED_MAP) {
+-                MapItemSavedData worldmap = MapItem.getOrCreateSavedData(stack, this.level);
+-                worldmap.updateSeenPlayers(this, stack);
++            if (itemstack.getItem() == Items.FILLED_MAP) {
++                MapItemSavedData worldmap = MapItem.getOrCreateSavedData(itemstack, this.level);
++                worldmap.updateSeenPlayers(this, itemstack);
+             }
+             // Paper end
+ 

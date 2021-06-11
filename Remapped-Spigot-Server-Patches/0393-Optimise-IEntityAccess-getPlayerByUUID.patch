@@ -1,0 +1,44 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Sat, 11 Jan 2020 21:50:56 -0800
+Subject: [PATCH] Optimise IEntityAccess#getPlayerByUUID
+
+Use the world entity map instead of iterating over all players
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
+index 01f879a8dd0e1ffec380e02072567330152eaceb..40d7dbc4f1deda88d4a539b89d84b595217051b6 100644
+--- a/src/main/java/net/minecraft/server/level/ServerLevel.java
++++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
+@@ -283,6 +283,15 @@ public class ServerLevel extends net.minecraft.world.level.Level implements Worl
+     }
+     // Paper end
+ 
++    // Paper start - optimise getPlayerByUUID
++    @Nullable
++    @Override
++    public Player getPlayerByUUID(UUID uuid) {
++        Entity player = this.entitiesByUuid.get(uuid);
++        return (player instanceof Player) ? (Player)player : null;
++    }
++    // Paper end
++
+     // Add env and gen to constructor, WorldData -> WorldDataServer
+     public ServerLevel(MinecraftServer minecraftserver, Executor executor, LevelStorageSource.LevelStorageAccess convertable_conversionsession, ServerLevelData iworlddataserver, ResourceKey<net.minecraft.world.level.Level> resourcekey, DimensionType dimensionmanager, ChunkProgressListener worldloadlistener, ChunkGenerator chunkgenerator, boolean flag, long i, List<CustomSpawner> list, boolean flag1, org.bukkit.World.Environment env, org.bukkit.generator.ChunkGenerator gen) {
+         super(iworlddataserver, resourcekey, dimensionmanager, minecraftserver::getProfiler, false, flag, i, gen, env, executor); // Paper pass executor
+diff --git a/src/main/java/net/minecraft/world/level/EntityGetter.java b/src/main/java/net/minecraft/world/level/EntityGetter.java
+index 6a5430fe54a5c8ad119a0f3842961825a54d8d7a..b9606465ace8b320eafbbad3d60c01b87a859c44 100644
+--- a/src/main/java/net/minecraft/world/level/EntityGetter.java
++++ b/src/main/java/net/minecraft/world/level/EntityGetter.java
+@@ -277,6 +277,12 @@ public interface EntityGetter {
+ 
+     @Nullable
+     default Player getPlayerByUUID(UUID uuid) {
++        // Paper start - allow WorldServer to override
++        return this.getPlayerByUUID(uuid);
++    }
++    @Nullable
++    default Player getPlayerByUUID(UUID uuid) {
++        // Paper end
+         for (int i = 0; i < this.players().size(); ++i) {
+             Player entityhuman = (Player) this.players().get(i);
+ 

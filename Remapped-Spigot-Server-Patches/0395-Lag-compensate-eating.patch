@@ -1,0 +1,83 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Tue, 14 Jan 2020 15:28:28 -0800
+Subject: [PATCH] Lag compensate eating
+
+When the server is lagging, players will wait longer when eating.
+Change to also use a time check instead if it passes.
+
+diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+index b49d4772932a58852b3195f5f56ff93dbcabf766..016fcc4ae20e1e48728a848be28633e624ae49a7 100644
+--- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
++++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+@@ -211,7 +211,7 @@ public abstract class LivingEntity extends Entity {
+     private int noJumpDelay;
+     private float absorptionAmount;
+     public ItemStack useItem; // Paper - public
+-    protected int useItemRemaining;
++    protected int useItemRemaining; protected final int getEatTimeTicks() { return this.useItemRemaining; } protected final void setEatTimeTicks(int value) { this.useItemRemaining = value; } // Paper - OBFHELPER
+     protected int fallFlyTicks;
+     private BlockPos lastPos;
+     private Optional<BlockPos> lastClimbablePos;
+@@ -3148,6 +3148,11 @@ public abstract class LivingEntity extends Entity {
+         return ((Byte) this.entityData.get(LivingEntity.DATA_LIVING_ENTITY_FLAGS) & 2) > 0 ? InteractionHand.OFF_HAND : InteractionHand.MAIN_HAND;
+     }
+ 
++    // Paper start - lag compensate eating
++    protected long eatStartTime;
++    protected int totalEatTimeTicks;
++    // Paper end
++
+     private void updatingUsingItem() {
+         if (this.isUsingItem()) {
+             if (ItemStack.isSameIgnoreDurability(this.getItemInHand(this.getUsedItemHand()), this.useItem)) {
+@@ -3157,7 +3162,12 @@ public abstract class LivingEntity extends Entity {
+                     this.triggerItemUseEffects(this.useItem, 5);
+                 }
+ 
+-                if (--this.useItemRemaining == 0 && !this.level.isClientSide && !this.useItem.useOnRelease()) {
++                // Paper start - lag compensate eating
++                // we add 1 to the expected time to avoid lag compensating when we should not
++                boolean shouldLagCompensate = this.useItem.getItem().isEdible() && this.eatStartTime != -1 && (System.nanoTime() - this.eatStartTime) > ((1 + this.totalEatTimeTicks) * 50 * (1000 * 1000));
++                if ((--this.useItemRemaining == 0 || shouldLagCompensate) && !this.level.isClientSide && !this.useItem.useOnRelease()) {
++                    this.setEatTimeTicks(0);
++                    // Paper end
+                     this.completeUsingItem();
+                 }
+             } else {
+@@ -3207,7 +3217,10 @@ public abstract class LivingEntity extends Entity {
+ 
+         if (!itemstack.isEmpty() && !this.isUsingItem() || forceUpdate) { // Paper use override flag
+             this.useItem = itemstack;
+-            this.useItemRemaining = itemstack.getUseDuration();
++            // Paper start - lag compensate eating
++            this.useItemRemaining = this.totalEatTimeTicks = itemstack.getUseDuration();
++            this.eatStartTime = System.nanoTime();
++            // Paper end
+             if (!this.level.isClientSide) {
+                 this.setLivingEntityFlag(1, true);
+                 this.setLivingEntityFlag(2, enumhand == InteractionHand.OFF_HAND);
+@@ -3231,7 +3244,10 @@ public abstract class LivingEntity extends Entity {
+                 }
+             } else if (!this.isUsingItem() && !this.useItem.isEmpty()) {
+                 this.useItem = ItemStack.EMPTY;
+-                this.useItemRemaining = 0;
++                // Paper start - lag compensate eating
++                this.useItemRemaining = this.totalEatTimeTicks = 0;
++                this.eatStartTime = -1L;
++                // Paper end
+             }
+         }
+ 
+@@ -3359,7 +3375,10 @@ public abstract class LivingEntity extends Entity {
+         }
+ 
+         this.useItem = ItemStack.EMPTY;
+-        this.useItemRemaining = 0;
++        // Paper start - lag compensate eating
++        this.useItemRemaining = this.totalEatTimeTicks = 0;
++        this.eatStartTime = -1L;
++        // Paper end
+     }
+ 
+     public boolean isBlocking() {

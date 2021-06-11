@@ -1,0 +1,51 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Zach Brown <zach.brown@destroystokyo.com>
+Date: Tue, 1 Mar 2016 13:09:16 -0600
+Subject: [PATCH] Configurable baby zombie movement speed
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 3618cc017feb60e257a28f67cbddca3f792a9833..796c17e0941922a9716212c6eae91643d8360418 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -78,4 +78,15 @@ public class PaperWorldConfig {
+         log("Max height for cactus growth " + cactusMaxHeight + ". Max height for reed growth " + reedMaxHeight + ". Max height for bamboo growth " + bambooMaxHeight + ". Min height for fully-grown bamboo " + bambooMinHeight + ".");
+ 
+     }
++
++    public double babyZombieMovementModifier;
++    private void babyZombieMovementModifier() {
++        babyZombieMovementModifier = getDouble("baby-zombie-movement-modifier", 0.5D);
++        if (PaperConfig.version < 20) {
++            babyZombieMovementModifier = getDouble("baby-zombie-movement-speed", 0.5D);
++            set("baby-zombie-movement-modifier", babyZombieMovementModifier);
++        }
++
++        log("Baby zombies will move at the speed of " + babyZombieMovementModifier);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Zombie.java b/src/main/java/net/minecraft/world/entity/monster/Zombie.java
+index 992c9646c274350b30c1abb75e0469adc471397f..94e2a8f74e74d68d4a9b82b667fbff24b7e9e629 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Zombie.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Zombie.java
+@@ -79,7 +79,7 @@ import org.bukkit.event.entity.EntityTransformEvent;
+ public class Zombie extends Monster {
+ 
+     private static final UUID SPEED_MODIFIER_BABY_UUID = UUID.fromString("B9766B59-9566-4402-BC1F-2EE2A276D836");
+-    private static final AttributeModifier SPEED_MODIFIER_BABY = new AttributeModifier(Zombie.SPEED_MODIFIER_BABY_UUID, "Baby speed boost", 0.5D, AttributeModifier.Operation.MULTIPLY_BASE);
++    private final AttributeModifier SPEED_MODIFIER_BABY = new AttributeModifier(Zombie.SPEED_MODIFIER_BABY_UUID, "Baby speed boost", 0.5D, AttributeModifier.Operation.MULTIPLY_BASE); private final AttributeModifier babyModifier = this.SPEED_MODIFIER_BABY; // Paper - remove static - Make baby speed configurable
+     private static final EntityDataAccessor<Boolean> DATA_BABY_ID = SynchedEntityData.defineId(Zombie.class, EntityDataSerializers.BOOLEAN);
+     private static final EntityDataAccessor<Integer> DATA_SPECIAL_TYPE_ID = SynchedEntityData.defineId(Zombie.class, EntityDataSerializers.INT);
+     public static final EntityDataAccessor<Boolean> DATA_DROWNED_CONVERSION_ID = SynchedEntityData.defineId(Zombie.class, EntityDataSerializers.BOOLEAN);
+@@ -182,9 +182,9 @@ public class Zombie extends Monster {
+         if (this.level != null && !this.level.isClientSide) {
+             AttributeInstance attributemodifiable = this.getAttribute(Attributes.MOVEMENT_SPEED);
+ 
+-            attributemodifiable.removeModifier(Zombie.SPEED_MODIFIER_BABY);
++            attributemodifiable.removeModifier(this.babyModifier); // Paper
+             if (baby) {
+-                attributemodifiable.addTransientModifier(Zombie.SPEED_MODIFIER_BABY);
++                attributemodifiable.addTransientModifier(this.babyModifier); // Paper
+             }
+         }
+ 

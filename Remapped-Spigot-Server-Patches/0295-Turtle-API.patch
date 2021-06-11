@@ -1,0 +1,150 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: BillyGalbreath <Blake.Galbreath@GMail.com>
+Date: Sat, 29 Sep 2018 16:08:23 -0500
+Subject: [PATCH] Turtle API
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/ai/goal/MoveToBlockGoal.java b/src/main/java/net/minecraft/world/entity/ai/goal/MoveToBlockGoal.java
+index 4584fad16a65f06e77e97a0804d88dbe83f7c5c1..c8680e795deeb68e0662eac7c760a103d1c767b4 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/goal/MoveToBlockGoal.java
++++ b/src/main/java/net/minecraft/world/entity/ai/goal/MoveToBlockGoal.java
+@@ -14,7 +14,7 @@ public abstract class MoveToBlockGoal extends Goal {
+     protected int nextStartTick;
+     protected int tryTicks;
+     private int maxStayTicks;
+-    protected BlockPos blockPos;
++    protected BlockPos blockPos;public final BlockPos getTargetPosition() { return this.blockPos; } // Paper - OBFHELPER
+     private boolean reachedTarget;
+     private final int searchRange;
+     private final int verticalSearchRange;
+diff --git a/src/main/java/net/minecraft/world/entity/animal/Turtle.java b/src/main/java/net/minecraft/world/entity/animal/Turtle.java
+index c54f4b83b9f2fdb15ddb363be0a179a05eb3693b..42b636c4ebb6eb83c8a9f3f5f9a766d37d065dc3 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/Turtle.java
++++ b/src/main/java/net/minecraft/world/entity/animal/Turtle.java
+@@ -14,6 +14,7 @@ import net.minecraft.nbt.CompoundTag;
+ import net.minecraft.network.syncher.EntityDataAccessor;
+ import net.minecraft.network.syncher.EntityDataSerializers;
+ import net.minecraft.network.syncher.SynchedEntityData;
++import net.minecraft.server.MCUtil;
+ import net.minecraft.server.level.ServerLevel;
+ import net.minecraft.server.level.ServerPlayer;
+ import net.minecraft.sounds.SoundEvent;
+@@ -93,7 +94,7 @@ public class Turtle extends Animal {
+         this.entityData.set(Turtle.HOME_POS, pos);
+     }
+ 
+-    private BlockPos getHomePos() {
++    public BlockPos getHomePos() { // Paper - public
+         return (BlockPos) this.entityData.get(Turtle.HOME_POS);
+     }
+ 
+@@ -109,31 +110,37 @@ public class Turtle extends Animal {
+         return (Boolean) this.entityData.get(Turtle.HAS_EGG);
+     }
+ 
+-    private void setHasEgg(boolean hasEgg) {
++    public void setHasEgg(boolean hasEgg) { // Paper
+         this.entityData.set(Turtle.HAS_EGG, hasEgg);
+     }
+ 
++    public final boolean isDigging() { return this.isLayingEgg(); } // Paper - OBFHELPER
+     public boolean isLayingEgg() {
+         return (Boolean) this.entityData.get(Turtle.LAYING_EGG);
+     }
+ 
++    public final void setDigging(boolean digging) { this.setLayingEgg(digging); } // Paper - OBFHELPER
+     private void setLayingEgg(boolean diggingSand) {
+         this.layEggCounter = diggingSand ? 1 : 0;
+         this.entityData.set(Turtle.LAYING_EGG, diggingSand);
+     }
+ 
++    public final boolean isGoingHome() { return this.isGoingHome(); } // Paper - OBFHELPER
+     private boolean isGoingHome() {
+         return (Boolean) this.entityData.get(Turtle.GOING_HOME);
+     }
+ 
++    public final void setGoingHome(boolean goingHome) { this.setGoingHome(goingHome); } // Paper - OBFHELPER
+     private void setGoingHome(boolean landBound) {
+         this.entityData.set(Turtle.GOING_HOME, landBound);
+     }
+ 
++    public final boolean isTravelling() { return this.isTravelling(); } // Paper - OBFHELPER
+     private boolean isTravelling() {
+         return (Boolean) this.entityData.get(Turtle.TRAVELLING);
+     }
+ 
++    public final void setTravelling(boolean travelling) { this.setTravelling(travelling); } // Paper - OBFHELPER
+     private void setTravelling(boolean travelling) {
+         this.entityData.set(Turtle.TRAVELLING, travelling);
+     }
+@@ -500,14 +507,17 @@ public class Turtle extends Animal {
+ 
+             if (!this.turtle.isInWater() && this.isReachedTarget()) {
+                 if (this.turtle.layEggCounter < 1) {
+-                    this.turtle.setLayingEgg(true);
++                    this.turtle.setDigging(new com.destroystokyo.paper.event.entity.TurtleStartDiggingEvent((org.bukkit.entity.Turtle) this.turtle.getBukkitEntity(), MCUtil.toLocation(this.turtle.level, this.getTargetPosition())).callEvent()); // Paper
+                 } else if (this.turtle.layEggCounter > 200) {
+                     Level world = this.turtle.level;
+ 
+                     // CraftBukkit start
+-                    if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(this.turtle, this.blockPos.above(), (BlockState) Blocks.TURTLE_EGG.defaultBlockState().setValue(TurtleEggBlock.EGGS, this.turtle.random.nextInt(4) + 1)).isCancelled()) {
++                    // Paper start
++                    int eggCount = this.turtle.random.nextInt(4) + 1;
++                    com.destroystokyo.paper.event.entity.TurtleLayEggEvent layEggEvent = new com.destroystokyo.paper.event.entity.TurtleLayEggEvent((org.bukkit.entity.Turtle) this.turtle.getBukkitEntity(), MCUtil.toLocation(this.turtle.level, this.blockPos.above()), eggCount);
++                    if (layEggEvent.callEvent() && !org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(this.turtle, this.blockPos.above(), Blocks.TURTLE_EGG.defaultBlockState().setValue(TurtleEggBlock.EGGS, layEggEvent.getEggCount())).isCancelled()) {
+                     world.playSound((Player) null, blockposition, SoundEvents.TURTLE_LAY_EGG, SoundSource.BLOCKS, 0.3F, 0.9F + world.random.nextFloat() * 0.2F);
+-                    world.setBlock(this.blockPos.above(), (BlockState) Blocks.TURTLE_EGG.defaultBlockState().setValue(TurtleEggBlock.EGGS, this.turtle.random.nextInt(4) + 1), 3);
++                    world.setBlock(this.blockPos.above(), (BlockState) Blocks.TURTLE_EGG.defaultBlockState().setValue(TurtleEggBlock.EGGS, layEggEvent.getEggCount()), 3);
+                     }
+                     // CraftBukkit end
+                     this.turtle.setHasEgg(false);
+@@ -636,7 +646,7 @@ public class Turtle extends Animal {
+ 
+         @Override
+         public boolean canUse() {
+-            return this.turtle.isBaby() ? false : (this.turtle.hasEgg() ? true : (this.turtle.getRandom().nextInt(700) != 0 ? false : !this.turtle.getHomePos().closerThan((Position) this.turtle.position(), 64.0D)));
++            return this.turtle.isBaby() ? false : (this.turtle.hasEgg() ? true : (this.turtle.getRandom().nextInt(700) != 0 ? false : !this.turtle.getHomePos().closerThan((Position) this.turtle.position(), 64.0D))) && new com.destroystokyo.paper.event.entity.TurtleGoHomeEvent((org.bukkit.entity.Turtle) this.turtle.getBukkitEntity()).callEvent(); // Paper
+         }
+ 
+         @Override
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftTurtle.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftTurtle.java
+index ed08089f21c8958fc9fc7e6e73a2b6ff9108242c..e50f6051baf34981707adce56ab2d3e1f341fb4c 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftTurtle.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftTurtle.java
+@@ -24,4 +24,36 @@ public class CraftTurtle extends CraftAnimals implements Turtle {
+     public EntityType getType() {
+         return EntityType.TURTLE;
+     }
++
++    // Paper start
++    @Override
++    public org.bukkit.Location getHome() {
++        return net.minecraft.server.MCUtil.toLocation(getHandle().level, getHandle().getHomePos());
++    }
++
++    @Override
++    public void setHome(org.bukkit.Location location) {
++        getHandle().setHomePos(net.minecraft.server.MCUtil.toBlockPosition(location));
++    }
++
++    @Override
++    public boolean isGoingHome() {
++        return getHandle().isGoingHome();
++    }
++
++    @Override
++    public boolean isDigging() {
++        return getHandle().isDigging();
++    }
++
++    @Override
++    public boolean hasEgg() {
++        return getHandle().hasEgg();
++    }
++
++    @Override
++    public void setHasEgg(boolean hasEgg) {
++        getHandle().setHasEgg(hasEgg);
++    }
++    // Paper end
+ }

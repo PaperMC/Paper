@@ -1,0 +1,54 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Wed, 6 May 2020 05:00:57 -0400
+Subject: [PATCH] Handle Oversized Tile Entities in chunks
+
+Splits out Extra Packets if too many TE's are encountered to prevent
+creating too large of a packet to sed.
+
+Co authored by Spottedleaf
+
+diff --git a/src/main/java/net/minecraft/network/protocol/game/ClientboundLevelChunkPacket.java b/src/main/java/net/minecraft/network/protocol/game/ClientboundLevelChunkPacket.java
+index b7d303b5f51a35504888933efef74564fa01e59d..b587f774c8f88f2a1c3ea489f7e4fe0bbdeb5a41 100644
+--- a/src/main/java/net/minecraft/network/protocol/game/ClientboundLevelChunkPacket.java
++++ b/src/main/java/net/minecraft/network/protocol/game/ClientboundLevelChunkPacket.java
+@@ -34,7 +34,15 @@ public class ClientboundLevelChunkPacket implements Packet<ClientGamePacketListe
+     private boolean fullChunk;
+ 
+     public ClientboundLevelChunkPacket() {}
++    // Paper start
++    private final java.util.List<Packet> extraPackets = new java.util.ArrayList<>();
++    private static final int TE_LIMIT = Integer.getInteger("Paper.excessiveTELimit", 750);
+ 
++    @Override
++    public java.util.List<Packet> getExtraPackets() {
++        return extraPackets;
++    }
++    // Paper end
+     public ClientboundLevelChunkPacket(LevelChunk chunk, int includedSectionsMask) {
+         ChunkPos chunkcoordintpair = chunk.getPos();
+ 
+@@ -61,6 +69,7 @@ public class ClientboundLevelChunkPacket implements Packet<ClientGamePacketListe
+         this.availableSections = this.extractChunkData(new FriendlyByteBuf(this.getWriteBuffer()), chunk, includedSectionsMask);
+         this.blockEntitiesTags = Lists.newArrayList();
+         iterator = chunk.getBlockEntities().entrySet().iterator();
++        int totalTileEntities = 0; // Paper
+ 
+         while (iterator.hasNext()) {
+             entry = (Entry) iterator.next();
+@@ -69,6 +78,15 @@ public class ClientboundLevelChunkPacket implements Packet<ClientGamePacketListe
+             int j = blockposition.getY() >> 4;
+ 
+             if (this.isFullChunk() || (includedSectionsMask & 1 << j) != 0) {
++                // Paper start - improve oversized chunk data packet handling
++                if (++totalTileEntities > TE_LIMIT) {
++                    ClientboundBlockEntityDataPacket updatePacket = tileentity.getUpdatePacket();
++                    if (updatePacket != null) {
++                        this.extraPackets.add(updatePacket);
++                        continue;
++                    }
++                }
++                // Paper end
+                 CompoundTag nbttagcompound = tileentity.getUpdateTag();
+                 if (tileentity instanceof SkullBlockEntity) { SkullBlockEntity.sanitizeTileEntityUUID(nbttagcompound); } // Paper
+ 

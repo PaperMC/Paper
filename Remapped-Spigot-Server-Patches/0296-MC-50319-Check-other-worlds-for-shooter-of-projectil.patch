@@ -1,0 +1,36 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Wed, 17 Oct 2018 19:17:27 -0400
+Subject: [PATCH] MC-50319: Check other worlds for shooter of projectiles
+
+Say a player shoots an arrow through a nether portal, the game
+would lose the shooter for determining things such as Player Kills,
+because the entity is in another world.
+
+If the projectile fails to find the shooter in the current world, check
+other worlds.
+
+diff --git a/src/main/java/net/minecraft/world/entity/projectile/Projectile.java b/src/main/java/net/minecraft/world/entity/projectile/Projectile.java
+index d1dd173c11d751b15c3afd4309e386931fd9cf8d..d385fb6eee5000951c350b6ced5669dc3dcce725 100644
+--- a/src/main/java/net/minecraft/world/entity/projectile/Projectile.java
++++ b/src/main/java/net/minecraft/world/entity/projectile/Projectile.java
+@@ -44,7 +44,18 @@ public abstract class Projectile extends Entity {
+ 
+     @Nullable
+     public Entity getOwner() {
+-        return this.ownerUUID != null && this.level instanceof ServerLevel ? ((ServerLevel) this.level).getEntity(this.ownerUUID) : (this.ownerNetworkId != 0 ? this.level.getEntity(this.ownerNetworkId) : null);
++        // Paper start - MC-50319 - shooter might be in another world (arrows through portals)
++        Entity entity = this.ownerUUID != null && this.level instanceof ServerLevel ? ((ServerLevel) this.level).getEntity(this.ownerUUID) : (this.ownerNetworkId != 0 ? this.level.getEntity(this.ownerNetworkId) : null);
++        if (entity == null) {
++            for (ServerLevel world : level.getServer().getAllLevels()) {
++                entity = world.getEntity(this.ownerUUID);
++                if (entity != null) {
++                    break;
++                }
++            }
++        }
++        return entity;
++        // Paper end
+     }
+ 
+     @Override

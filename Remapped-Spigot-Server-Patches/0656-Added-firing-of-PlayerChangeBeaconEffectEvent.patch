@@ -1,0 +1,39 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Wed, 24 Jun 2020 15:14:51 -0600
+Subject: [PATCH] Added firing of PlayerChangeBeaconEffectEvent
+
+
+diff --git a/src/main/java/net/minecraft/world/inventory/BeaconMenu.java b/src/main/java/net/minecraft/world/inventory/BeaconMenu.java
+index 1371bfe4a4b5bb065de4d2118b2b32f4ee0b78d9..20069eeece4e03827ed4b3b4e2b713c43b23a366 100644
+--- a/src/main/java/net/minecraft/world/inventory/BeaconMenu.java
++++ b/src/main/java/net/minecraft/world/inventory/BeaconMenu.java
+@@ -11,6 +11,10 @@ import net.minecraft.world.level.block.Blocks;
+ import org.bukkit.craftbukkit.inventory.CraftInventoryView;
+ // CraftBukkit end
+ 
++// Paper start
++import io.papermc.paper.event.player.PlayerChangeBeaconEffectEvent;
++// Paper end
++
+ public class BeaconMenu extends AbstractContainerMenu {
+ 
+     private final Container beacon;
+@@ -137,9 +141,15 @@ public class BeaconMenu extends AbstractContainerMenu {
+ 
+     public void updateEffects(int primaryEffectId, int secondaryEffectId) {
+         if (this.paymentSlot.hasItem()) {
+-            this.beaconData.set(1, primaryEffectId);
+-            this.beaconData.set(2, secondaryEffectId);
++            // Paper start
++            PlayerChangeBeaconEffectEvent event = new PlayerChangeBeaconEffectEvent((org.bukkit.entity.Player) this.player.player.getBukkitEntity(), org.bukkit.potion.PotionEffectType.getById(primaryEffectId), org.bukkit.potion.PotionEffectType.getById(secondaryEffectId), this.access.getLocation().getBlock());
++            if (event.callEvent()) {
++                this.beaconData.set(1, event.getPrimary() == null ? 0 : event.getPrimary().getId());
++                this.beaconData.set(2, event.getSecondary() == null ? 0 : event.getSecondary().getId());
++                if (!event.willConsumeItem()) return;
+             this.paymentSlot.a(1);
++            }
++            // Paper end
+         }
+ 
+     }

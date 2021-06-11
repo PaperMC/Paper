@@ -1,0 +1,57 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sun, 24 Mar 2019 01:01:32 -0400
+Subject: [PATCH] Only count Natural Spawned mobs towards natural spawn mob
+ limit
+
+This resolves the super common complaint about mobs not spawning.
+
+This was ultimately a flaw in the vanilla count algorithim that allows
+spawners and other misc mobs to count against the mob limit, which are
+not bounded, and can prevent the entire world from spawning new.
+
+I believe Bukkits changes around persistence may of actually made it
+worse than vanilla.
+
+This should fully solve all of the issues around it so that only natural
+influences natural spawns.
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index c45493e88bf7e8811be2759ff9ac19e3fe9d938a..384cb363eed794551bee6b0ec11ba1be92a3d7ac 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -464,6 +464,16 @@ public class PaperWorldConfig {
+         maxAutoSaveChunksPerTick = getInt("max-auto-save-chunks-per-tick", 24);
+     }
+ 
++    public boolean countAllMobsForSpawning = false;
++    private void countAllMobsForSpawning() {
++        countAllMobsForSpawning = getBoolean("count-all-mobs-for-spawning", false);
++        if (countAllMobsForSpawning) {
++            log("Counting all mobs for spawning. Mob farms may reduce natural spawns elsewhere in world.");
++        } else {
++            log("Using improved mob spawn limits (Only Natural Spawns impact spawn limits for more natural spawns)");
++        }
++    }
++
+     public boolean antiXray;
+     public EngineMode engineMode;
+     public int maxChunkSectionIndex;
+diff --git a/src/main/java/net/minecraft/world/level/NaturalSpawner.java b/src/main/java/net/minecraft/world/level/NaturalSpawner.java
+index e23875ae07c23fed1161ea070e63bbc3a30168a0..0fb69f9194078e5e05e36ed909eb48424b6465b4 100644
+--- a/src/main/java/net/minecraft/world/level/NaturalSpawner.java
++++ b/src/main/java/net/minecraft/world/level/NaturalSpawner.java
+@@ -79,6 +79,13 @@ public final class NaturalSpawner {
+             MobCategory enumcreaturetype = entity.getType().getCategory();
+ 
+             if (enumcreaturetype != MobCategory.MISC) {
++                // Paper start - Only count natural spawns
++                if (!entity.level.paperConfig.countAllMobsForSpawning &&
++                    !(entity.spawnReason == org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.NATURAL ||
++                        entity.spawnReason == org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.CHUNK_GEN)) {
++                    continue;
++                }
++                // Paper end
+                 BlockPos blockposition = entity.blockPosition();
+                 long j = ChunkPos.asLong(blockposition.getX() >> 4, blockposition.getZ() >> 4);
+ 

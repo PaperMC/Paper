@@ -1,0 +1,62 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: BillyGalbreath <Blake.Galbreath@GMail.com>
+Date: Sat, 21 Jul 2018 01:51:27 -0500
+Subject: [PATCH] EnderDragon Events
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/boss/enderdragon/phases/DragonSittingFlamingPhase.java b/src/main/java/net/minecraft/world/entity/boss/enderdragon/phases/DragonSittingFlamingPhase.java
+index 0c2a5f5c4d7d7516793eba20205b5703fe1450d5..6b28cfb1e79903c43702f6e78e226dc78e3ccec2 100644
+--- a/src/main/java/net/minecraft/world/entity/boss/enderdragon/phases/DragonSittingFlamingPhase.java
++++ b/src/main/java/net/minecraft/world/entity/boss/enderdragon/phases/DragonSittingFlamingPhase.java
+@@ -80,7 +80,11 @@ public class DragonSittingFlamingPhase extends AbstractDragonSittingPhase {
+             this.flame.setDuration(200);
+             this.flame.setParticle(ParticleTypes.DRAGON_BREATH);
+             this.flame.addEffect(new MobEffectInstance(MobEffects.HARM));
++            if (new com.destroystokyo.paper.event.entity.EnderDragonFlameEvent((org.bukkit.entity.EnderDragon) this.dragon.getBukkitEntity(), (org.bukkit.entity.AreaEffectCloud) this.flame.getBukkitEntity()).callEvent()) { // Paper
+             this.dragon.level.addFreshEntity(this.flame);
++            } else {
++                this.removeAreaEffect();
++            }
+         }
+ 
+     }
+@@ -91,8 +95,8 @@ public class DragonSittingFlamingPhase extends AbstractDragonSittingPhase {
+         ++this.flameCount;
+     }
+ 
+-    @Override
+-    public void end() {
++    public final void removeAreaEffect() { this.end(); } // Paper - OBFHELPER
++    @Override public void end() {
+         if (this.flame != null) {
+             this.flame.remove();
+             this.flame = null;
+diff --git a/src/main/java/net/minecraft/world/entity/boss/enderdragon/phases/DragonStrafePlayerPhase.java b/src/main/java/net/minecraft/world/entity/boss/enderdragon/phases/DragonStrafePlayerPhase.java
+index 01442af7b0c7340f0ece2fa0faa0f783b1b81c48..a43ef94f8a5c7a9d1581667beb4516cc26f30a0d 100644
+--- a/src/main/java/net/minecraft/world/entity/boss/enderdragon/phases/DragonStrafePlayerPhase.java
++++ b/src/main/java/net/minecraft/world/entity/boss/enderdragon/phases/DragonStrafePlayerPhase.java
+@@ -81,7 +81,9 @@ public class DragonStrafePlayerPhase extends AbstractDragonPhaseInstance {
+                         DragonFireball entitydragonfireball = new DragonFireball(this.dragon.level, this.dragon, d9, d10, d11);
+ 
+                         entitydragonfireball.moveTo(d6, d7, d8, 0.0F, 0.0F);
++                        if (new com.destroystokyo.paper.event.entity.EnderDragonShootFireballEvent((org.bukkit.entity.EnderDragon) dragon.getBukkitEntity(), (org.bukkit.entity.DragonFireball) entitydragonfireball.getBukkitEntity()).callEvent()) // Paper
+                         this.dragon.level.addFreshEntity(entitydragonfireball);
++                        else entitydragonfireball.remove(); // Paper
+                         this.fireballCharge = 0;
+                         if (this.currentPath != null) {
+                             while (!this.currentPath.isDone()) {
+diff --git a/src/main/java/net/minecraft/world/entity/projectile/DragonFireball.java b/src/main/java/net/minecraft/world/entity/projectile/DragonFireball.java
+index 76dc15e07ce9ef01ad7908e289a0d695b65b2fc9..1629e409a83b11b76e1627247a838c9ebd11a648 100644
+--- a/src/main/java/net/minecraft/world/entity/projectile/DragonFireball.java
++++ b/src/main/java/net/minecraft/world/entity/projectile/DragonFireball.java
+@@ -58,8 +58,10 @@ public class DragonFireball extends AbstractHurtingProjectile {
+                     }
+                 }
+ 
++                if (new com.destroystokyo.paper.event.entity.EnderDragonFireballHitEvent((org.bukkit.entity.DragonFireball) this.getBukkitEntity(), list.stream().map(LivingEntity::getBukkitLivingEntity).collect(java.util.stream.Collectors.toList()), (org.bukkit.entity.AreaEffectCloud) entityareaeffectcloud.getBukkitEntity()).callEvent()) { // Paper
+                 this.level.levelEvent(2006, this.blockPosition(), this.isSilent() ? -1 : 1);
+                 this.level.addFreshEntity(entityareaeffectcloud);
++                } else entityareaeffectcloud.remove(); // Paper
+                 this.remove();
+             }
+ 

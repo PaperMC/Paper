@@ -1,0 +1,32 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Thu, 3 Nov 2016 20:28:12 -0400
+Subject: [PATCH] Don't load Chunks from Hoppers and other things
+
+Hoppers call this to I guess "get the primary side" of a double sided chest.
+
+If the double sided chest crosses chunk lines, it causes the chunk to load.
+This will end up causing sync chunk loads, which will unload with Chunk GC,
+only to be reloaded again the next tick.
+
+This of course is undesirable, so just return the loaded side as "primary"
+and treat it as a single chest if the other sides are unloaded
+
+diff --git a/src/main/java/net/minecraft/world/level/block/DoubleBlockCombiner.java b/src/main/java/net/minecraft/world/level/block/DoubleBlockCombiner.java
+index a4f16b2093c867e9fd1c2e07b67c49c3c5ec7506..df20b3616929657d2e8061159ed97f500b33d192 100644
+--- a/src/main/java/net/minecraft/world/level/block/DoubleBlockCombiner.java
++++ b/src/main/java/net/minecraft/world/level/block/DoubleBlockCombiner.java
+@@ -29,7 +29,12 @@ public class DoubleBlockCombiner {
+                 return new DoubleBlockCombiner.NeighborCombineResult.Single<>(s0);
+             } else {
+                 BlockPos blockposition1 = pos.relative((Direction) function1.apply(state));
+-                BlockState iblockdata1 = world.getBlockState(blockposition1);
++                // Paper start
++                BlockState iblockdata1 = world.getTypeIfLoaded(blockposition1);
++                if (iblockdata1 == null) {
++                    return new DoubleBlockCombiner.NeighborCombineResult.Single<>(s0);
++                }
++                // Paper end
+ 
+                 if (iblockdata1.is(state.getBlock())) {
+                     DoubleBlockCombiner.BlockType doubleblockfinder_blocktype1 = (DoubleBlockCombiner.BlockType) typeMapper.apply(iblockdata1);

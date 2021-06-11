@@ -1,0 +1,60 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: JRoy <joshroy126@gmail.com>
+Date: Wed, 7 Oct 2020 12:04:01 -0400
+Subject: [PATCH] Add EntityLoadCrossbowEvent
+
+
+diff --git a/src/main/java/net/minecraft/world/item/CrossbowItem.java b/src/main/java/net/minecraft/world/item/CrossbowItem.java
+index e1e58b7035e6dbafdad0a04cc5333464fc4febb8..32e927375daeaf16f4ea763bc9f7c4a244797bba 100644
+--- a/src/main/java/net/minecraft/world/item/CrossbowItem.java
++++ b/src/main/java/net/minecraft/world/item/CrossbowItem.java
+@@ -3,6 +3,8 @@ package net.minecraft.world.item;
+ import com.google.common.collect.Lists;
+ import com.mojang.math.Quaternion;
+ import com.mojang.math.Vector3f;
++import org.bukkit.inventory.EquipmentSlot; // Paper
++import io.papermc.paper.event.entity.EntityLoadCrossbowEvent; // Paper - EntityLoadCrossbowEvent namespace conflicts
+ import java.util.List;
+ import java.util.Random;
+ import java.util.function.Predicate;
+@@ -73,7 +75,11 @@ public class CrossbowItem extends ProjectileWeaponItem implements Vanishable {
+         int j = this.getUseDuration(stack) - remainingUseTicks;
+         float f = getPowerForTime(j, stack);
+ 
+-        if (f >= 1.0F && !isCharged(stack) && tryLoadProjectiles(user, stack)) {
++        // Paper start - EntityLoadCrossbowEvent
++        if (f >= 1.0F && !isCharged(stack) /*&& a(entityliving, itemstack)*/) {
++            final EntityLoadCrossbowEvent event = new EntityLoadCrossbowEvent(user.getBukkitLivingEntity(), stack.asBukkitMirror(), user.getUsedItemHand() == InteractionHand.MAIN_HAND ? EquipmentSlot.HAND : EquipmentSlot.OFF_HAND);
++            if (!event.callEvent() || !attemptProjectileLoad(user, stack, event.shouldConsumeItem())) return;
++        // Paper end
+             setCharged(stack, true);
+             SoundSource soundcategory = user instanceof Player ? SoundSource.PLAYERS : SoundSource.HOSTILE;
+ 
+@@ -82,11 +88,14 @@ public class CrossbowItem extends ProjectileWeaponItem implements Vanishable {
+ 
+     }
+ 
+-    private static boolean tryLoadProjectiles(LivingEntity shooter, ItemStack projectile) {
+-        int i = EnchantmentHelper.getItemEnchantmentLevel(Enchantments.MULTISHOT, projectile);
++    private static boolean attemptProjectileLoad(LivingEntity ent, ItemStack bow) { return tryLoadProjectiles(ent, bow); } // Paper - EntityLoadCrossbowEvent - OBFHELPER
++    private static boolean attemptProjectileLoad(LivingEntity ent, ItemStack bow, boolean consume) { return a(ent, bow, consume); } // Paper - EntityLoadCrossbowEvent - OBFHELPER
++    private static boolean tryLoadProjectiles(LivingEntity shooter, ItemStack projectile) { return a(shooter, projectile, true); };// Paper - add consume
++    private static boolean a(LivingEntity entityliving, ItemStack itemstack, boolean consume) { // Paper - add consume
++        int i = EnchantmentHelper.getItemEnchantmentLevel(Enchantments.MULTISHOT, itemstack);
+         int j = i == 0 ? 1 : 3;
+-        boolean flag = shooter instanceof Player && ((Player) shooter).abilities.instabuild;
+-        ItemStack itemstack1 = shooter.getProjectile(projectile);
++        boolean flag = !consume || entityliving instanceof Player && ((Player) entityliving).abilities.instabuild; // Paper - add consme
++        ItemStack itemstack1 = entityliving.getProjectile(itemstack);
+         ItemStack itemstack2 = itemstack1.copy();
+ 
+         for (int k = 0; k < j; ++k) {
+@@ -103,7 +112,7 @@ public class CrossbowItem extends ProjectileWeaponItem implements Vanishable {
+                 // CraftBukkit end
+             }
+ 
+-            if (!loadProjectile(shooter, projectile, itemstack1, k > 0, flag)) {
++            if (!loadProjectile(entityliving, itemstack, itemstack1, k > 0, flag)) {
+                 return false;
+             }
+         }

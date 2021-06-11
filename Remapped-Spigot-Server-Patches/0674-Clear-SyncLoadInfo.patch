@@ -1,0 +1,40 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Tom <cryptite@gmail.com>
+Date: Fri, 26 Feb 2021 16:10:53 -0600
+Subject: [PATCH] Clear SyncLoadInfo
+
+This patch merely adds the extra argument "clear" after /paper syncloadinfo to clear currently stored syncload info.
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperCommand.java b/src/main/java/com/destroystokyo/paper/PaperCommand.java
+index 6fad9329213e4e8a3ef9ce7fb568ad22484a11f3..a6b2b69a5a79fb8cea81e55018ee7f57c8820e56 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperCommand.java
++++ b/src/main/java/com/destroystokyo/paper/PaperCommand.java
+@@ -295,6 +295,13 @@ public class PaperCommand extends Command {
+             sender.sendMessage(ChatColor.RED + "This command requires the server startup flag '-Dpaper.debug-sync-loads=true' to be set.");
+             return;
+         }
++
++        if (args.length > 1 && args[1].equals("clear")) {
++            SyncLoadFinder.clear();
++            sender.sendMessage(ChatColor.GRAY + "Sync load data cleared.");
++            return;
++        }
++
+         File file = new File(new File(new File("."), "debug"),
+             "sync-load-info" + DateTimeFormatter.ofPattern("yyyy-MM-dd_HH.mm.ss").format(LocalDateTime.now()) + ".txt");
+         file.getParentFile().mkdirs();
+diff --git a/src/main/java/com/destroystokyo/paper/io/SyncLoadFinder.java b/src/main/java/com/destroystokyo/paper/io/SyncLoadFinder.java
+index 524f33371b9de1d4dd6972fe59ffbe1804d7c5f3..0bb4aaa546939b67a5d22865190f30478a9337c1 100644
+--- a/src/main/java/com/destroystokyo/paper/io/SyncLoadFinder.java
++++ b/src/main/java/com/destroystokyo/paper/io/SyncLoadFinder.java
+@@ -26,6 +26,10 @@ public class SyncLoadFinder {
+         public final Long2IntOpenHashMap coordinateTimes = new Long2IntOpenHashMap();
+     }
+ 
++    public static void clear() {
++        SYNC_LOADS.clear();
++    }
++
+     public static void logSyncLoad(final Level world, final int chunkX, final int chunkZ) {
+         if (!ENABLED) {
+             return;

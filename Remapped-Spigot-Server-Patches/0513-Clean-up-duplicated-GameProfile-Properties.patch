@@ -1,0 +1,68 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Wed, 1 Jul 2020 03:12:06 -0400
+Subject: [PATCH] Clean up duplicated GameProfile Properties
+
+We had a bug where we accidently cloned properties resulting in skulls
+growing to large sizes and preventing login.
+
+This now automatically cleans up the extra properties.
+
+diff --git a/src/main/java/net/minecraft/nbt/NbtUtils.java b/src/main/java/net/minecraft/nbt/NbtUtils.java
+index f57c5e441045a81072a2edfed0f199d90e6d7fde..3abfd21ea84c54aec6256008b3b9e6bbc7ae694c 100644
+--- a/src/main/java/net/minecraft/nbt/NbtUtils.java
++++ b/src/main/java/net/minecraft/nbt/NbtUtils.java
+@@ -59,8 +59,8 @@ public final class NbtUtils {
+                 while (iterator.hasNext()) {
+                     String s1 = (String) iterator.next();
+                     ListTag nbttaglist = nbttagcompound1.getList(s1, 10);
+-
+-                    for (int i = 0; i < nbttaglist.size(); ++i) {
++                    if (nbttaglist.size() == 0) continue; // Paper - remove duplicate properties
++                    for (int i = nbttaglist.size() - 1; i < nbttaglist.size(); ++i) { // Paper - remove duplicate properties
+                         CompoundTag nbttagcompound2 = nbttaglist.getCompound(i);
+                         String s2 = nbttagcompound2.getString("Value");
+ 
+@@ -246,7 +246,7 @@ public final class NbtUtils {
+         Optional<T> optional = property.getValue(propertiesTag.getString(key));
+ 
+         if (optional.isPresent()) {
+-            return (StateHolder) state.setValue(property, (Comparable) optional.get());
++            return state.setValue(property, optional.get()); // Paper - decompile error
+         } else {
+             NbtUtils.LOGGER.warn("Unable to read property: {} with value: {} for blockstate: {}", key, propertiesTag.getString(key), mainTag.toString());
+             return state;
+@@ -276,8 +276,8 @@ public final class NbtUtils {
+         return nbttagcompound;
+     }
+ 
+-    private static <T extends Comparable<T>> String getName(net.minecraft.world.level.block.state.properties.Property<T> property, Comparable<?> value) {
+-        return property.value(value);
++    private static <T extends Comparable<T>> String getName(net.minecraft.world.level.block.state.properties.Property<T> property, Comparable<T> value) {// Paper - decompile error
++        return property.getName((T) value);// Paper - decompile error
+     }
+ 
+     public static CompoundTag update(DataFixer fixer, DataFixTypes fixTypes, CompoundTag tag, int oldVersion) {
+diff --git a/src/main/java/net/minecraft/world/item/PlayerHeadItem.java b/src/main/java/net/minecraft/world/item/PlayerHeadItem.java
+index 1cb67832a849db96f1cce95c32b41574e990e5b7..d97be7a1dfa7ad413afb8ff7668189fd37baf264 100644
+--- a/src/main/java/net/minecraft/world/item/PlayerHeadItem.java
++++ b/src/main/java/net/minecraft/world/item/PlayerHeadItem.java
+@@ -59,6 +59,18 @@ public class PlayerHeadItem extends StandingAndWallBlockItem {
+             return true;
+         } else {
+             // CraftBukkit start
++            // Paper start - clean up old duplicated properties
++            CompoundTag properties = tag.getCompound("SkullOwner").getCompound("Properties");
++            for (String key : properties.getAllKeys()) {
++                net.minecraft.nbt.ListTag values = properties.getList(key, 10);
++                if (values.size() > 1) {
++                    net.minecraft.nbt.Tag texture = values.get(values.size() - 1);
++                    values = new net.minecraft.nbt.ListTag();
++                    values.add(texture);
++                    properties.put(key, values);
++                }
++            }
++            // Paper end
+             net.minecraft.nbt.ListTag textures = tag.getCompound("SkullOwner").getCompound("Properties").getList("textures", 10); // Safe due to method contracts
+             for (int i = 0; i < textures.size(); i++) {
+                 if (textures.get(i) instanceof CompoundTag && !((CompoundTag) textures.get(i)).contains("Signature", 8) && ((CompoundTag) textures.get(i)).getString("Value").trim().isEmpty()) {

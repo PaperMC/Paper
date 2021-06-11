@@ -1,0 +1,41 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: dfsek <dfsek@protonmail.com>
+Date: Wed, 16 Sep 2020 01:12:29 -0700
+Subject: [PATCH] Add StructureLocateEvent
+
+
+diff --git a/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java b/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java
+index 860af116dbc7dd9d691ff27d28a2d10dbec83df4..29310d96eb562ead1e568a97b6f3019e43ca0a88 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java
++++ b/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java
+@@ -2,6 +2,7 @@ package net.minecraft.world.level.chunk;
+ 
+ import com.google.common.collect.Lists;
+ import com.mojang.serialization.Codec;
++import io.papermc.paper.event.world.StructureLocateEvent; // Paper - Add import due to naming conflict.
+ import java.util.BitSet;
+ import java.util.Iterator;
+ import java.util.List;
+@@ -160,6 +161,22 @@ public abstract class ChunkGenerator {
+ 
+     @Nullable
+     public BlockPos findNearestMapFeature(ServerLevel world, StructureFeature<?> feature, BlockPos center, int radius, boolean skipExistingChunks) {
++        // Paper start
++        org.bukkit.World world1 = world.getWorld();
++        org.bukkit.Location originLocation = new org.bukkit.Location(world1, center.getX(), center.getY(), center.getZ());
++        StructureLocateEvent event = new StructureLocateEvent(world1, originLocation, org.bukkit.StructureType.getStructureTypes().get(feature.getFeatureName()), radius, skipExistingChunks);
++        if(!event.callEvent()) return null;
++        // If event call set a final location, skip structure finding and just return set result.
++        if(event.getResult() != null) return new BlockPos(event.getResult().getBlockX(), event.getResult().getBlockY(), event.getResult().getBlockZ());
++        // Get origin location (re)defined by event call.
++        center = new BlockPos(event.getOrigin().getBlockX(), event.getOrigin().getBlockY(), event.getOrigin().getBlockZ());
++        // Get world (re)defined by event call.
++        world = ((org.bukkit.craftbukkit.CraftWorld) event.getOrigin().getWorld()).getHandle();
++        // Get radius and whether to find unexplored structures (re)defined by event call.
++        radius = event.getRadius();
++        skipExistingChunks = event.shouldFindUnexplored();
++        feature = StructureFeature.STRUCTURES_REGISTRY.get(event.getType().getName());
++        // Paper end
+         if (!this.biomeSource.canGenerateStructure(feature)) {
+             return null;
+         } else if (feature == StructureFeature.STRONGHOLD) {

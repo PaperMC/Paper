@@ -1,0 +1,95 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <spottedleaf@spottedleaf.dev>
+Date: Fri, 24 Jul 2020 15:56:05 -0700
+Subject: [PATCH] Fix some rails connecting improperly
+
+
+diff --git a/src/main/java/net/minecraft/world/level/block/BaseRailBlock.java b/src/main/java/net/minecraft/world/level/block/BaseRailBlock.java
+index 1a44c8b41928a83a22b53d1b6f45ce39b4caf2b2..7cef6d1fc2045c62d4e96a0fd0a311d089cb1406 100644
+--- a/src/main/java/net/minecraft/world/level/block/BaseRailBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/BaseRailBlock.java
+@@ -62,6 +62,7 @@ public abstract class BaseRailBlock extends Block {
+         state = this.updateDir(world, pos, state, true);
+         if (this.isStraight) {
+             state.neighborChanged(world, pos, this, pos, notify);
++            state = world.getBlockState(pos); // Paper - don't desync, update again
+         }
+ 
+         return state;
+diff --git a/src/main/java/net/minecraft/world/level/block/DetectorRailBlock.java b/src/main/java/net/minecraft/world/level/block/DetectorRailBlock.java
+index 0ab1e15d8575c3e90a10b80b94030e15a01faac9..1854809e045300e84a713dc7c3a8264f53ec6c0f 100644
+--- a/src/main/java/net/minecraft/world/level/block/DetectorRailBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/DetectorRailBlock.java
+@@ -70,6 +70,7 @@ public class DetectorRailBlock extends BaseRailBlock {
+ 
+     private void checkPressed(Level world, BlockPos pos, BlockState state) {
+         if (this.canSurvive(state, world, pos)) {
++            if (state.getBlock() != this) { return; } // Paper - not our block, don't do anything
+             boolean flag = (Boolean) state.getValue(DetectorRailBlock.POWERED);
+             boolean flag1 = false;
+             List<AbstractMinecart> list = this.getInteractingMinecartOfType(world, pos, AbstractMinecart.class, (Predicate) null);
+diff --git a/src/main/java/net/minecraft/world/level/block/RailState.java b/src/main/java/net/minecraft/world/level/block/RailState.java
+index 0d824ab98dcdd6ea9dac025c37970fb4ec464131..4c17bec369fb19f47760e30b391b2128cee6b276 100644
+--- a/src/main/java/net/minecraft/world/level/block/RailState.java
++++ b/src/main/java/net/minecraft/world/level/block/RailState.java
+@@ -12,13 +12,19 @@ import net.minecraft.world.level.block.state.properties.RailShape;
+ 
+ public class RailState {
+ 
+-    private final Level level;
+-    private final BlockPos pos;
++    private final Level level; public final Level getWorld() { return this.level; } // Paper - OBFHELPER
++    private final BlockPos pos; public final BlockPos getPos() { return this.pos; } // Paper - OBFHELPER
+     private final BaseRailBlock block;
+-    private BlockState state;
++    private BlockState state; public final BlockState getRailState() { return this.state; } // Paper - OBFHELPER
+     private final boolean isStraight;
+     private final List<BlockPos> connections = Lists.newArrayList();
+ 
++    // Paper start - prevent desync
++    public boolean isValid() {
++        return this.getWorld().getBlockState(this.getPos()).getBlock() == this.getRailState().getBlock();
++    }
++    // Paper end - prevent desync
++
+     public RailState(Level world, BlockPos pos, BlockState state) {
+         this.level = world;
+         this.pos = pos;
+@@ -153,6 +159,11 @@ public class RailState {
+     }
+ 
+     private void connectTo(RailState placementHelper) {
++        // Paper start - prevent desync
++        if (!this.isValid() || !placementHelper.isValid()) {
++            return;
++        }
++        // Paper end - prevent desync
+         this.connections.add(placementHelper.pos);
+         BlockPos blockposition = this.pos.north();
+         BlockPos blockposition1 = this.pos.south();
+@@ -347,11 +358,16 @@ public class RailState {
+         this.state = (BlockState) this.state.setValue(this.block.getShapeProperty(), blockpropertytrackposition1);
+         if (forceUpdate || this.level.getBlockState(this.pos) != this.state) {
+             this.level.setBlock(this.pos, this.state, 3);
++            // Paper start - prevent desync
++            if (!this.isValid()) {
++                return this;
++            }
++            // Paper end - prevent desync
+ 
+             for (int i = 0; i < this.connections.size(); ++i) {
+                 RailState minecarttracklogic = this.getRail((BlockPos) this.connections.get(i));
+ 
+-                if (minecarttracklogic != null) {
++                if (minecarttracklogic != null && minecarttracklogic.isValid()) { // Paper - prevent desync
+                     minecarttracklogic.removeSoftConnections();
+                     if (minecarttracklogic.canConnectTo(this)) {
+                         minecarttracklogic.connectTo(this);
+@@ -364,6 +380,6 @@ public class RailState {
+     }
+ 
+     public BlockState getState() {
+-        return this.state;
++        return this.getWorld().getBlockState(this.getPos()); // Paper - prevent desync
+     }
+ }

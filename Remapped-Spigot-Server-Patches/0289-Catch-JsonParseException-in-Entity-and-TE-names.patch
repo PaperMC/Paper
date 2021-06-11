@@ -1,0 +1,110 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Zach Brown <zach.brown@destroystokyo.com>
+Date: Sat, 22 Sep 2018 15:56:59 -0400
+Subject: [PATCH] Catch JsonParseException in Entity and TE names
+
+As a result, data that no longer parses correctly will not crash the server
+instead just logging the exception and continuing (and in most cases should
+fix the data)
+
+Player data is fixed pretty much immediately but some block data (like
+Shulkers) may need to be changed in order for it to re-save properly
+
+No more crashing though.
+
+diff --git a/src/main/java/net/minecraft/server/MCUtil.java b/src/main/java/net/minecraft/server/MCUtil.java
+index 68c3f069f8f832ab3d146748348aded69b5ad823..1fecc81b25109592907623741225a6222a8c5ccc 100644
+--- a/src/main/java/net/minecraft/server/MCUtil.java
++++ b/src/main/java/net/minecraft/server/MCUtil.java
+@@ -7,6 +7,8 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
+ import it.unimi.dsi.fastutil.objects.ObjectRBTreeSet;
+ import net.minecraft.core.BlockPos;
+ import net.minecraft.core.Direction;
++import net.minecraft.nbt.CompoundTag;
++import net.minecraft.network.chat.Component;
+ import net.minecraft.server.level.ServerLevel;
+ import net.minecraft.world.entity.Entity;
+ import net.minecraft.world.level.ChunkPos;
+@@ -514,4 +516,19 @@ public final class MCUtil {
+                 return null;
+         }
+     }
++
++    @Nullable
++    public static Component getBaseComponentFromNbt(String key, CompoundTag compound) {
++        if (!compound.contains(key)) {
++            return null;
++        }
++        String string = compound.getString(key);
++        try {
++            return Component.Serializer.jsonToComponent(string);
++        } catch (com.google.gson.JsonParseException e) {
++            org.bukkit.Bukkit.getLogger().warning("Unable to parse " + key + " from " + compound +": " + e.getMessage());
++        }
++
++        return null;
++    }
+ }
+diff --git a/src/main/java/net/minecraft/world/level/BaseCommandBlock.java b/src/main/java/net/minecraft/world/level/BaseCommandBlock.java
+index 9ad077259563a3d960d32a59d4b6fc3cfbe3440c..00dc4cd436023b946d7005f17a7ba983a4bbdfb6 100644
+--- a/src/main/java/net/minecraft/world/level/BaseCommandBlock.java
++++ b/src/main/java/net/minecraft/world/level/BaseCommandBlock.java
+@@ -12,6 +12,7 @@ import net.minecraft.commands.CommandSourceStack;
+ import net.minecraft.nbt.CompoundTag;
+ import net.minecraft.network.chat.Component;
+ import net.minecraft.network.chat.TextComponent;
++import net.minecraft.server.MCUtil;
+ import net.minecraft.server.MinecraftServer;
+ import net.minecraft.server.level.ServerLevel;
+ import net.minecraft.util.StringUtil;
+@@ -72,7 +73,7 @@ public abstract class BaseCommandBlock implements CommandSource {
+         this.command = tag.getString("Command");
+         this.successCount = tag.getInt("SuccessCount");
+         if (tag.contains("CustomName", 8)) {
+-            this.setName(Component.Serializer.fromJson(tag.getString("CustomName")));
++            this.setName(MCUtil.getBaseComponentFromNbt("CustomName", tag)); // Paper - Catch ParseException
+         }
+ 
+         if (tag.contains("TrackOutput", 1)) {
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/BannerBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/BannerBlockEntity.java
+index 2e3ec85e7bd1c375db0662dba2617d8924dbd2a6..2c885be67b9c992b96f5caf78130d46abb455ceb 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/BannerBlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/BannerBlockEntity.java
+@@ -9,6 +9,7 @@ import net.minecraft.nbt.ListTag;
+ import net.minecraft.network.chat.Component;
+ import net.minecraft.network.chat.TranslatableComponent;
+ import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
++import net.minecraft.server.MCUtil;
+ import net.minecraft.world.Nameable;
+ import net.minecraft.world.item.DyeColor;
+ import net.minecraft.world.item.ItemStack;
+@@ -70,7 +71,7 @@ public class BannerBlockEntity extends BlockEntity implements Nameable {
+     public void load(BlockState state, CompoundTag tag) {
+         super.load(state, tag);
+         if (tag.contains("CustomName", 8)) {
+-            this.name = Component.Serializer.fromJson(tag.getString("CustomName"));
++            this.name = MCUtil.getBaseComponentFromNbt("CustomName", tag); // Paper - Catch ParseException
+         }
+ 
+         if (this.hasLevel()) {
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/BaseContainerBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/BaseContainerBlockEntity.java
+index a7358274fe367a113b304a5ce332b8dcf721b7af..2b420109e9bed184aaa4ffbcee666b4c325c5a28 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/BaseContainerBlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/BaseContainerBlockEntity.java
+@@ -4,6 +4,7 @@ import javax.annotation.Nullable;
+ import net.minecraft.nbt.CompoundTag;
+ import net.minecraft.network.chat.Component;
+ import net.minecraft.network.chat.TranslatableComponent;
++import net.minecraft.server.MCUtil;
+ import net.minecraft.sounds.SoundEvents;
+ import net.minecraft.sounds.SoundSource;
+ import net.minecraft.world.Container;
+@@ -30,7 +31,7 @@ public abstract class BaseContainerBlockEntity extends BlockEntity implements Co
+         super.load(state, tag);
+         this.lockKey = LockCode.fromTag(tag);
+         if (tag.contains("CustomName", 8)) {
+-            this.name = Component.Serializer.fromJson(tag.getString("CustomName"));
++            this.name = MCUtil.getBaseComponentFromNbt("CustomName", tag); // Paper - Catch ParseException
+         }
+ 
+     }

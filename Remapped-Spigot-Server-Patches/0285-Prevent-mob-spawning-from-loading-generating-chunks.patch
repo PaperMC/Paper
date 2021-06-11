@@ -1,0 +1,32 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Wed, 12 Sep 2018 21:12:57 -0400
+Subject: [PATCH] Prevent mob spawning from loading/generating chunks
+
+also prevents if out of world border bounds
+
+diff --git a/src/main/java/net/minecraft/world/level/NaturalSpawner.java b/src/main/java/net/minecraft/world/level/NaturalSpawner.java
+index b90a275a0dc2913809ce16659eed445501e486de..e23875ae07c23fed1161ea070e63bbc3a30168a0 100644
+--- a/src/main/java/net/minecraft/world/level/NaturalSpawner.java
++++ b/src/main/java/net/minecraft/world/level/NaturalSpawner.java
+@@ -174,9 +174,9 @@ public final class NaturalSpawner {
+         StructureFeatureManager structuremanager = world.structureFeatureManager();
+         ChunkGenerator chunkgenerator = world.getChunkSource().getGenerator();
+         int i = pos.getY();
+-        BlockState iblockdata = chunk.getBlockState(pos);
++        BlockState iblockdata = world.getTypeIfLoadedAndInBounds(pos); // Paper - don't load chunks for mob spawn
+ 
+-        if (!iblockdata.isRedstoneConductor(chunk, pos)) {
++        if (iblockdata != null && !iblockdata.isRedstoneConductor(chunk, pos)) { // Paper - don't load chunks for mob spawn
+             BlockPos.MutableBlockPos blockposition_mutableblockposition = new BlockPos.MutableBlockPos();
+             int j = 0;
+             int k = 0;
+@@ -205,7 +205,7 @@ public final class NaturalSpawner {
+                             if (entityhuman != null) {
+                                 double d2 = entityhuman.distanceToSqr(d0, (double) i, d1);
+ 
+-                                if (isRightDistanceToPlayerAndSpawnPoint(world, chunk, blockposition_mutableblockposition, d2)) {
++                                if (isRightDistanceToPlayerAndSpawnPoint(world, chunk, blockposition_mutableblockposition, d2) && world.isLoadedAndInBounds(blockposition_mutableblockposition)) { // Paper - don't load chunks for mob spawn
+                                     if (biomesettingsmobs_c == null) {
+                                         biomesettingsmobs_c = getRandomSpawnMobAt(world, structuremanager, chunkgenerator, group, world.random, (BlockPos) blockposition_mutableblockposition);
+                                         if (biomesettingsmobs_c == null) {

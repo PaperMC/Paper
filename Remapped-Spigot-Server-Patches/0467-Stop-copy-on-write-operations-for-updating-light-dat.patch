@@ -1,0 +1,320 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <spottedleaf@spottedleaf.dev>
+Date: Mon, 27 Apr 2020 04:05:38 -0700
+Subject: [PATCH] Stop copy-on-write operations for updating light data
+
+Causes huge memory allocations + gc issues
+
+diff --git a/src/main/java/net/minecraft/world/level/lighting/BlockLightSectionStorage.java b/src/main/java/net/minecraft/world/level/lighting/BlockLightSectionStorage.java
+index 9f33fa8f84d10f8f4089030074ad6c0d81269ce8..a1ad4d73ddaf6afe97a1f1ff7e0622b52fac8761 100644
+--- a/src/main/java/net/minecraft/world/level/lighting/BlockLightSectionStorage.java
++++ b/src/main/java/net/minecraft/world/level/lighting/BlockLightSectionStorage.java
+@@ -10,7 +10,7 @@ import net.minecraft.world.level.chunk.LightChunkGetter;
+ public class BlockLightSectionStorage extends LayerLightSectionStorage<BlockLightSectionStorage.BlockDataLayerStorageMap> {
+ 
+     protected BlockLightSectionStorage(LightChunkGetter chunkProvider) {
+-        super(LightLayer.BLOCK, chunkProvider, new BlockLightSectionStorage.BlockDataLayerStorageMap(new Long2ObjectOpenHashMap()));
++        super(LightLayer.BLOCK, chunkProvider, new BlockLightSectionStorage.BlockDataLayerStorageMap(new com.destroystokyo.paper.util.map.QueuedChangesMapLong2Object<>(), false)); // Paper - avoid copying light data
+     }
+ 
+     @Override
+@@ -23,13 +23,13 @@ public class BlockLightSectionStorage extends LayerLightSectionStorage<BlockLigh
+ 
+     public static final class BlockDataLayerStorageMap extends DataLayerStorageMap<BlockLightSectionStorage.BlockDataLayerStorageMap> {
+ 
+-        public BlockDataLayerStorageMap(Long2ObjectOpenHashMap<DataLayer> arrays) {
+-            super(arrays);
++        public BlockDataLayerStorageMap(com.destroystokyo.paper.util.map.QueuedChangesMapLong2Object<DataLayer> long2objectopenhashmap, boolean isVisible) { // Paper - avoid copying light data
++            super(long2objectopenhashmap, isVisible); // Paper - avoid copying light data
+         }
+ 
+         @Override
+         public BlockLightSectionStorage.BlockDataLayerStorageMap copy() {
+-            return new BlockLightSectionStorage.BlockDataLayerStorageMap(this.map.clone());
++            return new BlockDataLayerStorageMap(this.data, true); // Paper - avoid copying light data
+         }
+     }
+ }
+diff --git a/src/main/java/net/minecraft/world/level/lighting/DataLayerStorageMap.java b/src/main/java/net/minecraft/world/level/lighting/DataLayerStorageMap.java
+index 01ae1c811862f56317a90e3811fe2ef4b593695f..4c9041f1c1cb4b3ec114fbd0c5d4db50a6f2526d 100644
+--- a/src/main/java/net/minecraft/world/level/lighting/DataLayerStorageMap.java
++++ b/src/main/java/net/minecraft/world/level/lighting/DataLayerStorageMap.java
+@@ -9,10 +9,23 @@ public abstract class DataLayerStorageMap<M extends DataLayerStorageMap<M>> {
+     private final long[] lastSectionKeys = new long[2];
+     private final DataLayer[] lastSections = new DataLayer[2];
+     private boolean cacheEnabled;
+-    protected final Long2ObjectOpenHashMap<DataLayer> map;
+-
+-    protected DataLayerStorageMap(Long2ObjectOpenHashMap<DataLayer> arrays) {
+-        this.map = arrays;
++    protected final com.destroystokyo.paper.util.map.QueuedChangesMapLong2Object<DataLayer> data; // Paper - avoid copying light data
++    protected final boolean isVisible; // Paper - avoid copying light data
++    java.util.function.Function<Long, DataLayer> lookup; // Paper - faster branchless lookup
++
++    // Paper start - avoid copying light data
++    protected DataLayerStorageMap(com.destroystokyo.paper.util.map.QueuedChangesMapLong2Object<DataLayer> data, boolean isVisible) {
++        if (isVisible) {
++            data.performUpdatesLockMap();
++        }
++        this.data = data;
++        this.isVisible = isVisible;
++        if (isVisible) {
++            lookup = data::getVisibleAsync;
++        } else {
++            lookup = data::getUpdating;
++        }
++        // Paper end - avoid copying light data
+         this.clearCache();
+         this.cacheEnabled = true;
+     }
+@@ -20,16 +33,17 @@ public abstract class DataLayerStorageMap<M extends DataLayerStorageMap<M>> {
+     public abstract M copy();
+ 
+     public void copyDataLayer(long pos) {
+-        this.map.put(pos, ((DataLayer) this.map.get(pos)).copy());
++        if (this.isVisible) { throw new IllegalStateException("writing to visible data"); } // Paper - avoid copying light data
++        this.data.queueUpdate(pos, ((DataLayer) this.data.getUpdating(pos)).copy()); // Paper - avoid copying light data
+         this.clearCache();
+     }
+ 
+     public boolean hasLayer(long chunkPos) {
+-        return this.map.containsKey(chunkPos);
++        return lookup.apply(chunkPos) != null; // Paper - avoid copying light data
+     }
+ 
+     @Nullable
+-    public DataLayer getLayer(long chunkPos) {
++    public final DataLayer getLayer(long chunkPos) { // Paper - final
+         if (this.cacheEnabled) {
+             for (int j = 0; j < 2; ++j) {
+                 if (chunkPos == this.lastSectionKeys[j]) {
+@@ -38,7 +52,7 @@ public abstract class DataLayerStorageMap<M extends DataLayerStorageMap<M>> {
+             }
+         }
+ 
+-        DataLayer nibblearray = (DataLayer) this.map.get(chunkPos);
++        DataLayer nibblearray = lookup.apply(chunkPos); // Paper - avoid copying light data
+ 
+         if (nibblearray == null) {
+             return null;
+@@ -59,11 +73,13 @@ public abstract class DataLayerStorageMap<M extends DataLayerStorageMap<M>> {
+ 
+     @Nullable
+     public DataLayer removeLayer(long chunkPos) {
+-        return (DataLayer) this.map.remove(chunkPos);
++        if (this.isVisible) { throw new IllegalStateException("writing to visible data"); } // Paper - avoid copying light data
++        return (DataLayer) this.data.queueRemove(chunkPos); // Paper - avoid copying light data
+     }
+ 
+     public void setLayer(long pos, DataLayer data) {
+-        this.map.put(pos, data);
++        if (this.isVisible) { throw new IllegalStateException("writing to visible data"); } // Paper - avoid copying light data
++        this.data.queueUpdate(pos, data); // Paper - avoid copying light data
+     }
+ 
+     public void clearCache() {
+@@ -71,7 +87,6 @@ public abstract class DataLayerStorageMap<M extends DataLayerStorageMap<M>> {
+             this.lastSectionKeys[i] = Long.MAX_VALUE;
+             this.lastSections[i] = null;
+         }
+-
+     }
+ 
+     public void disableCache() {
+diff --git a/src/main/java/net/minecraft/world/level/lighting/LayerLightSectionStorage.java b/src/main/java/net/minecraft/world/level/lighting/LayerLightSectionStorage.java
+index 45be10a0d7c26e4b6e5738ba994ce343265210f5..177dae992d13674bb285a60b8427df9ea843dc99 100644
+--- a/src/main/java/net/minecraft/world/level/lighting/LayerLightSectionStorage.java
++++ b/src/main/java/net/minecraft/world/level/lighting/LayerLightSectionStorage.java
+@@ -26,8 +26,8 @@ public abstract class LayerLightSectionStorage<M extends DataLayerStorageMap<M>>
+     protected final LongSet dataSectionSet = new LongOpenHashSet();
+     protected final LongSet toMarkNoData = new LongOpenHashSet();
+     protected final LongSet toMarkData = new LongOpenHashSet();
+-    protected volatile M visibleSectionData;
+-    protected final M updatingSectionData;
++    protected volatile M e_visible; protected final Object visibleUpdateLock = new Object(); // Paper - diff on change, should be "visible" - force compile fail on usage change
++    protected final M updatingSectionData; // Paper - diff on change, should be "updating"
+     protected final LongSet changedSections = new LongOpenHashSet();
+     protected final LongSet sectionsAffectedByLightUpdates = new LongOpenHashSet();
+     protected final Long2ObjectMap<DataLayer> queuedSections = Long2ObjectMaps.synchronize(new Long2ObjectOpenHashMap());
+@@ -41,8 +41,8 @@ public abstract class LayerLightSectionStorage<M extends DataLayerStorageMap<M>>
+         this.layer = lightType;
+         this.chunkSource = chunkProvider;
+         this.updatingSectionData = lightData;
+-        this.visibleSectionData = lightData.copy();
+-        this.visibleSectionData.disableCache();
++        this.e_visible = lightData.copy(); // Paper - avoid copying light data
++        this.e_visible.disableCache(); // Paper - avoid copying light data
+     }
+ 
+     protected boolean storingLightForSection(long sectionPos) {
+@@ -51,7 +51,15 @@ public abstract class LayerLightSectionStorage<M extends DataLayerStorageMap<M>>
+ 
+     @Nullable
+     protected DataLayer getDataLayer(long sectionPos, boolean cached) {
+-        return this.getDataLayer(cached ? this.updatingSectionData : this.visibleSectionData, sectionPos);
++        // Paper start - avoid copying light data
++        if (cached) {
++            return this.getDataLayer(this.updatingSectionData, sectionPos);
++        } else {
++            synchronized (this.visibleUpdateLock) {
++                return this.getDataLayer(this.e_visible, sectionPos);
++            }
++        }
++        // Paper end - avoid copying light data
+     }
+ 
+     @Nullable
+@@ -364,10 +372,12 @@ public abstract class LayerLightSectionStorage<M extends DataLayerStorageMap<M>>
+ 
+     protected void swapSectionMap() {
+         if (!this.changedSections.isEmpty()) {
++            synchronized (this.visibleUpdateLock) { // Paper - avoid copying light data
+             M m0 = this.updatingSectionData.copy();
+ 
+             m0.disableCache();
+-            this.visibleSectionData = m0;
++            this.e_visible = m0; // Paper - avoid copying light data
++            } // Paper - avoid copying light data
+             this.changedSections.clear();
+         }
+ 
+diff --git a/src/main/java/net/minecraft/world/level/lighting/SkyLightSectionStorage.java b/src/main/java/net/minecraft/world/level/lighting/SkyLightSectionStorage.java
+index c304637ae8f80c65b58e8ba8a27609b532bb1184..410fcfa8c01b7e3d3e3829ebdb92a11badff16ea 100644
+--- a/src/main/java/net/minecraft/world/level/lighting/SkyLightSectionStorage.java
++++ b/src/main/java/net/minecraft/world/level/lighting/SkyLightSectionStorage.java
+@@ -23,15 +23,16 @@ public class SkyLightSectionStorage extends LayerLightSectionStorage<SkyLightSec
+     private volatile boolean hasSourceInconsistencies;
+ 
+     protected SkyLightSectionStorage(LightChunkGetter chunkProvider) {
+-        super(LightLayer.SKY, chunkProvider, new SkyLightSectionStorage.SkyDataLayerStorageMap(new Long2ObjectOpenHashMap(), new Long2IntOpenHashMap(), Integer.MAX_VALUE));
++        super(LightLayer.SKY, chunkProvider, new SkyLightSectionStorage.SkyDataLayerStorageMap(new com.destroystokyo.paper.util.map.QueuedChangesMapLong2Object<>(), new com.destroystokyo.paper.util.map.QueuedChangesMapLong2Int(), Integer.MAX_VALUE, false)); // Paper - avoid copying light data
+     }
+ 
+     @Override
+     protected int getLightValue(long blockPos) {
+         long j = SectionPos.blockToSection(blockPos);
+         int k = SectionPos.y(j);
+-        SkyLightSectionStorage.SkyDataLayerStorageMap lightenginestoragesky_a = (SkyLightSectionStorage.SkyDataLayerStorageMap) this.visibleSectionData;
+-        int l = lightenginestoragesky_a.topSections.get(SectionPos.getZeroNode(j));
++        synchronized (this.visibleUpdateLock) { // Paper - avoid copying light data
++        SkyLightSectionStorage.SkyDataLayerStorageMap lightenginestoragesky_a = (SkyLightSectionStorage.SkyDataLayerStorageMap) this.e_visible; // Paper - avoid copying light data - must be after lock acquire
++        int l = lightenginestoragesky_a.otherData.getVisibleAsync(SectionPos.getZeroNode(j)); // Paper - avoid copying light data
+ 
+         if (l != lightenginestoragesky_a.currentLowestY && k < l) {
+             DataLayer nibblearray = this.getDataLayer(lightenginestoragesky_a, j); // Paper - decompile fix
+@@ -52,6 +53,7 @@ public class SkyLightSectionStorage extends LayerLightSectionStorage<SkyLightSec
+         } else {
+             return 15;
+         }
++        } // Paper - avoid copying light data
+     }
+ 
+     @Override
+@@ -60,14 +62,14 @@ public class SkyLightSectionStorage extends LayerLightSectionStorage<SkyLightSec
+ 
+         if (((SkyLightSectionStorage.SkyDataLayerStorageMap) this.updatingSectionData).currentLowestY > j) {
+             ((SkyLightSectionStorage.SkyDataLayerStorageMap) this.updatingSectionData).currentLowestY = j;
+-            ((SkyLightSectionStorage.SkyDataLayerStorageMap) this.updatingSectionData).topSections.defaultReturnValue(((SkyLightSectionStorage.SkyDataLayerStorageMap) this.updatingSectionData).currentLowestY);
++            ((SkyLightSectionStorage.SkyDataLayerStorageMap) this.updatingSectionData).otherData.queueDefaultReturnValue(((SkyLightSectionStorage.SkyDataLayerStorageMap) this.updatingSectionData).currentLowestY); // Paper - avoid copying light data
+         }
+ 
+         long k = SectionPos.getZeroNode(sectionPos);
+-        int l = ((SkyLightSectionStorage.SkyDataLayerStorageMap) this.updatingSectionData).topSections.get(k);
++        int l = ((SkyLightSectionStorage.SkyDataLayerStorageMap) this.updatingSectionData).otherData.getUpdating(k); // Paper - avoid copying light data
+ 
+         if (l < j + 1) {
+-            ((SkyLightSectionStorage.SkyDataLayerStorageMap) this.updatingSectionData).topSections.put(k, j + 1);
++            ((SkyLightSectionStorage.SkyDataLayerStorageMap) this.updatingSectionData).otherData.queueUpdate(k, j + 1); // Paper - avoid copying light data
+             if (this.columnsWithSkySources.contains(k)) {
+                 this.queueAddSource(sectionPos);
+                 if (l > ((SkyLightSectionStorage.SkyDataLayerStorageMap) this.updatingSectionData).currentLowestY) {
+@@ -107,7 +109,7 @@ public class SkyLightSectionStorage extends LayerLightSectionStorage<SkyLightSec
+ 
+         int k = SectionPos.y(sectionPos);
+ 
+-        if (((SkyLightSectionStorage.SkyDataLayerStorageMap) this.updatingSectionData).topSections.get(j) == k + 1) {
++        if (((SkyLightSectionStorage.SkyDataLayerStorageMap) this.updatingSectionData).otherData.getUpdating(j) == k + 1) { // Paper - avoid copying light data
+             long l;
+ 
+             for (l = sectionPos; !this.storingLightForSection(l) && this.hasSectionsBelow(k); l = SectionPos.offset(l, Direction.DOWN)) {
+@@ -115,12 +117,12 @@ public class SkyLightSectionStorage extends LayerLightSectionStorage<SkyLightSec
+             }
+ 
+             if (this.storingLightForSection(l)) {
+-                ((SkyLightSectionStorage.SkyDataLayerStorageMap) this.updatingSectionData).topSections.put(j, k + 1);
++                ((SkyLightSectionStorage.SkyDataLayerStorageMap) this.updatingSectionData).otherData.queueUpdate(j, k + 1); // Paper - avoid copying light data
+                 if (flag) {
+                     this.queueAddSource(l);
+                 }
+             } else {
+-                ((SkyLightSectionStorage.SkyDataLayerStorageMap) this.updatingSectionData).topSections.remove(j);
++                ((SkyLightSectionStorage.SkyDataLayerStorageMap) this.updatingSectionData).otherData.queueRemove(j); // Paper - avoid copying light data
+             }
+         }
+ 
+@@ -134,7 +136,7 @@ public class SkyLightSectionStorage extends LayerLightSectionStorage<SkyLightSec
+     protected void enableLightSources(long columnPos, boolean enabled) {
+         this.runAllUpdates();
+         if (enabled && this.columnsWithSkySources.add(columnPos)) {
+-            int j = ((SkyLightSectionStorage.SkyDataLayerStorageMap) this.updatingSectionData).topSections.get(columnPos);
++            int j = ((SkyLightSectionStorage.SkyDataLayerStorageMap) this.updatingSectionData).otherData.getUpdating(columnPos); // Paper - avoid copying light data
+ 
+             if (j != ((SkyLightSectionStorage.SkyDataLayerStorageMap) this.updatingSectionData).currentLowestY) {
+                 long k = SectionPos.asLong(SectionPos.x(columnPos), j - 1, SectionPos.z(columnPos));
+@@ -161,7 +163,7 @@ public class SkyLightSectionStorage extends LayerLightSectionStorage<SkyLightSec
+             return nibblearray;
+         } else {
+             long j = SectionPos.offset(sectionPos, Direction.UP);
+-            int k = ((SkyLightSectionStorage.SkyDataLayerStorageMap) this.updatingSectionData).topSections.get(SectionPos.getZeroNode(sectionPos));
++            int k = ((SkyLightSectionStorage.SkyDataLayerStorageMap) this.updatingSectionData).otherData.getUpdating(SectionPos.getZeroNode(sectionPos)); // Paper - avoid copying light data
+ 
+             if (k != ((SkyLightSectionStorage.SkyDataLayerStorageMap) this.updatingSectionData).currentLowestY && SectionPos.y(j) < k) {
+                 DataLayer nibblearray1;
+@@ -304,7 +306,7 @@ public class SkyLightSectionStorage extends LayerLightSectionStorage<SkyLightSec
+             if (!this.columnsWithSkySources.contains(l)) {
+                 return false;
+             } else {
+-                int i1 = ((SkyLightSectionStorage.SkyDataLayerStorageMap) this.updatingSectionData).topSections.get(l);
++                int i1 = ((SkyLightSectionStorage.SkyDataLayerStorageMap) this.updatingSectionData).otherData.getUpdating(l); // Paper - avoid copying light data
+ 
+                 return SectionPos.sectionToBlockCoord(i1) == j + 16;
+             }
+@@ -313,7 +315,7 @@ public class SkyLightSectionStorage extends LayerLightSectionStorage<SkyLightSec
+ 
+     protected boolean isAboveData(long sectionPos) {
+         long j = SectionPos.getZeroNode(sectionPos);
+-        int k = ((SkyLightSectionStorage.SkyDataLayerStorageMap) this.updatingSectionData).topSections.get(j);
++        int k = ((SkyLightSectionStorage.SkyDataLayerStorageMap) this.updatingSectionData).otherData.getUpdating(j); // Paper - avoid copying light data
+ 
+         return k == ((SkyLightSectionStorage.SkyDataLayerStorageMap) this.updatingSectionData).currentLowestY || SectionPos.y(sectionPos) >= k;
+     }
+@@ -327,18 +329,21 @@ public class SkyLightSectionStorage extends LayerLightSectionStorage<SkyLightSec
+     public static final class SkyDataLayerStorageMap extends DataLayerStorageMap<SkyLightSectionStorage.SkyDataLayerStorageMap> {
+ 
+         private int currentLowestY;
+-        private final Long2IntOpenHashMap topSections;
+-
+-        public SkyDataLayerStorageMap(Long2ObjectOpenHashMap<DataLayer> arrays, Long2IntOpenHashMap columnToTopSection, int minSectionY) {
+-            super(arrays);
+-            this.topSections = columnToTopSection;
+-            columnToTopSection.defaultReturnValue(minSectionY);
+-            this.currentLowestY = minSectionY;
++        private final com.destroystokyo.paper.util.map.QueuedChangesMapLong2Int otherData; // Paper - avoid copying light data
++
++        // Paper start - avoid copying light data
++        public SkyDataLayerStorageMap(com.destroystokyo.paper.util.map.QueuedChangesMapLong2Object<DataLayer> data, com.destroystokyo.paper.util.map.QueuedChangesMapLong2Int otherData, int i, boolean isVisible) {
++            super(data, isVisible);
++            this.otherData = otherData;
++            otherData.queueDefaultReturnValue(i);
++            // Paper end - avoid copying light data
++            this.currentLowestY = i;
+         }
+ 
+         @Override
+         public SkyLightSectionStorage.SkyDataLayerStorageMap copy() {
+-            return new SkyLightSectionStorage.SkyDataLayerStorageMap(this.map.clone(), this.topSections.clone(), this.currentLowestY);
++            this.otherData.performUpdatesLockMap(); // Paper - avoid copying light data
++            return new SkyLightSectionStorage.SkyDataLayerStorageMap(this.data, this.otherData, this.currentLowestY, true); // Paper - avoid copying light data
+         }
+     }
+ }

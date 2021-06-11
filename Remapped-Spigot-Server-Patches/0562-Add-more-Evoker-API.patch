@@ -1,0 +1,57 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: BillyGalbreath <Blake.Galbreath@GMail.com>
+Date: Sun, 23 Aug 2020 15:28:35 +0200
+Subject: [PATCH] Add more Evoker API
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Evoker.java b/src/main/java/net/minecraft/world/entity/monster/Evoker.java
+index c0a5b0074480aad717177c92b28fa27b8a1d707d..617075955506500dc2d9c734398c48b8fc10b69d 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Evoker.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Evoker.java
+@@ -40,7 +40,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
+ 
+ public class Evoker extends SpellcasterIllager {
+ 
+-    private Sheep wololoTarget;
++    private Sheep wololoTarget; public final Sheep getWololoTarget() { return this.wololoTarget; } public final void setWololoTarget(Sheep sheep) { this.wololoTarget = sheep; } // Paper - OBFHELPER
+ 
+     public Evoker(EntityType<? extends Evoker> type, Level world) {
+         super(type, world);
+@@ -59,7 +59,7 @@ public class Evoker extends SpellcasterIllager {
+         this.goalSelector.addGoal(8, new RandomStrollGoal(this, 0.6D));
+         this.goalSelector.addGoal(9, new LookAtPlayerGoal(this, Player.class, 3.0F, 1.0F));
+         this.goalSelector.addGoal(10, new LookAtPlayerGoal(this, Mob.class, 8.0F));
+-        this.targetSelector.addGoal(1, (new HurtByTargetGoal(this, new Class[]{Raider.class})).canUse());
++        this.targetSelector.addGoal(1, (new HurtByTargetGoal(this, new Class[]{Raider.class})).setAlertOthers(new Class[0])); // Paper - decompile fix
+         this.targetSelector.addGoal(2, (new NearestAttackableTargetGoal<>(this, Player.class, true)).setUnseenMemoryTicks(300));
+         this.targetSelector.addGoal(3, (new NearestAttackableTargetGoal<>(this, AbstractVillager.class, false)).setUnseenMemoryTicks(300));
+         this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, IronGolem.class, false));
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEvoker.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEvoker.java
+index 29fec87c938c4252cf5c9473ce9e5c1908ea9063..950e35f67f88138cc2ce923be1ea7976bd317d1f 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEvoker.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftEvoker.java
+@@ -1,5 +1,6 @@
+ package org.bukkit.craftbukkit.entity;
+ 
++import net.minecraft.world.entity.animal.Sheep;
+ import net.minecraft.world.entity.monster.SpellcasterIllager;
+ import org.bukkit.craftbukkit.CraftServer;
+ import org.bukkit.entity.EntityType;
+@@ -35,4 +36,17 @@ public class CraftEvoker extends CraftSpellcaster implements Evoker {
+     public void setCurrentSpell(Evoker.Spell spell) {
+         getHandle().setIsCastingSpell(spell == null ? SpellcasterIllager.IllagerSpell.NONE : SpellcasterIllager.IllagerSpell.byId(spell.ordinal()));
+     }
++
++    // Paper start
++    @Override
++    public org.bukkit.entity.Sheep getWololoTarget() {
++        Sheep sheep = getHandle().getWololoTarget();
++        return sheep == null ? null : (org.bukkit.entity.Sheep) sheep.getBukkitEntity();
++    }
++
++    @Override
++    public void setWololoTarget(org.bukkit.entity.Sheep sheep) {
++        getHandle().setWololoTarget(sheep == null ? null : ((org.bukkit.craftbukkit.entity.CraftSheep) sheep).getHandle());
++    }
++    // Paper end
+ }

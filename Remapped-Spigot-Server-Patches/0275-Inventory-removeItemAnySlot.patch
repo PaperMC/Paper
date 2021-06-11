@@ -1,0 +1,58 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Zach Brown <zach.brown@destroystokyo.com>
+Date: Tue, 28 Aug 2018 23:04:15 -0400
+Subject: [PATCH] Inventory#removeItemAnySlot
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventory.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventory.java
+index 9d70ef8c3967596491a804e4d66f2ec1b13992c9..ef2d18d19a86b3701855aa1ac126462e663f8fcd 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventory.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventory.java
+@@ -222,10 +222,16 @@ public class CraftInventory implements Inventory {
+     }
+ 
+     private int first(ItemStack item, boolean withAmount) {
++        // Paper start
++        return first(item, withAmount, getStorageContents());
++    }
++
++    private int first(ItemStack item, boolean withAmount, ItemStack[] inventory) {
++        // Paper end
+         if (item == null) {
+             return -1;
+         }
+-        ItemStack[] inventory = getStorageContents();
++        //ItemStack[] inventory = getStorageContents(); // Paper - let param deal
+         for (int i = 0; i < inventory.length; i++) {
+             if (inventory[i] == null) continue;
+ 
+@@ -348,6 +354,17 @@ public class CraftInventory implements Inventory {
+ 
+     @Override
+     public HashMap<Integer, ItemStack> removeItem(ItemStack... items) {
++        // Paper start
++        return removeItem(false, items);
++    }
++
++    @Override
++    public HashMap<Integer, ItemStack> removeItemAnySlot(ItemStack... items) {
++        return removeItem(true, items);
++    }
++
++    private HashMap<Integer, ItemStack> removeItem(boolean searchEntire, ItemStack... items) {
++        // Paper end
+         Validate.notNull(items, "Items cannot be null");
+         HashMap<Integer, ItemStack> leftover = new HashMap<Integer, ItemStack>();
+ 
+@@ -358,7 +375,10 @@ public class CraftInventory implements Inventory {
+             int toDelete = item.getAmount();
+ 
+             while (true) {
+-                int first = first(item, false);
++                // Paper start - Allow searching entire contents
++                ItemStack[] toSearch = searchEntire ? getContents() : getStorageContents();
++                int first = first(item, false, toSearch);
++                // Paper end
+ 
+                 // Drat! we don't have this type in the inventory
+                 if (first == -1) {

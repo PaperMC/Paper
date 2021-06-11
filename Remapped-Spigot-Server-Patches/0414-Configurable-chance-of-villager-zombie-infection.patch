@@ -1,0 +1,44 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Zero <zero@cock.li>
+Date: Sat, 22 Feb 2020 16:10:31 -0500
+Subject: [PATCH] Configurable chance of villager zombie infection
+
+This allows you to solve an issue in vanilla behavior where:
+* On easy difficulty your villagers will NEVER get infected, meaning they will always die.
+* On normal difficulty they will have a 50% of getting infected or dying.
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index fe1c9dd8258ec8c3fdf343d4a44de2be2ae3d35f..525d702d78a609af987ebd2c32169b873e5c05ed 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -604,4 +604,9 @@ public class PaperWorldConfig {
+     private void nerfNetherPortalPigmen() {
+         nerfNetherPortalPigmen = getBoolean("game-mechanics.nerf-pigmen-from-nether-portals", nerfNetherPortalPigmen);
+     }
++
++    public double zombieVillagerInfectionChance = -1.0;
++    private void zombieVillagerInfectionChance() {
++        zombieVillagerInfectionChance = getDouble("zombie-villager-infection-chance", zombieVillagerInfectionChance);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Zombie.java b/src/main/java/net/minecraft/world/entity/monster/Zombie.java
+index 6fecf4188fc0247143edc688c03e645376960687..1e7c2c603b967c8c606efd94ce95a17c856f78d7 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Zombie.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Zombie.java
+@@ -447,10 +447,14 @@ public class Zombie extends Monster {
+     @Override
+     public void killed(ServerLevel worldserver, LivingEntity entityliving) {
+         super.killed(worldserver, entityliving);
+-        if ((worldserver.getDifficulty() == Difficulty.NORMAL || worldserver.getDifficulty() == Difficulty.HARD) && entityliving instanceof Villager) {
+-            if (worldserver.getDifficulty() != Difficulty.HARD && this.random.nextBoolean()) {
++        // Paper start
++        if (level.paperConfig.zombieVillagerInfectionChance != 0.0 && (level.paperConfig.zombieVillagerInfectionChance != -1.0 || worldserver.getDifficulty() == Difficulty.NORMAL || worldserver.getDifficulty() == Difficulty.HARD) && entityliving instanceof Villager) {
++            if (level.paperConfig.zombieVillagerInfectionChance == -1.0 && worldserver.getDifficulty() != Difficulty.HARD && this.random.nextBoolean()) {
+                 return;
+             }
++            if (level.paperConfig.zombieVillagerInfectionChance != -1.0 && (this.random.nextDouble() * 100.0) > level.paperConfig.zombieVillagerInfectionChance) {
++                return;
++            } // Paper end
+ 
+             Villager entityvillager = (Villager) entityliving;
+             // CraftBukkit start

@@ -1,0 +1,249 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sat, 21 Jul 2018 14:27:34 -0400
+Subject: [PATCH] Duplicate UUID Resolve Option
+
+Due to a bug in https://github.com/PaperMC/Paper/commit/2e29af3df05ec0a383f48be549d1c03200756d24
+which was added all the way back in March of 2016, it was unknown (potentially not at the time)
+that an entity might actually change the seed of the random object.
+
+At some point, EntitySquid did start setting the seed. Due to this shared random, this caused
+every entity to use a Random object with a predictable seed.
+
+This has caused entities to potentially generate with the same UUID....
+
+Over the years, servers have had entities disappear, but no sign of trouble
+because CraftBukkit removed the log lines indicating that something was wrong.
+
+We have fixed the root issue causing duplicate UUID's, however we now have chunk
+files full of entities that have the same UUID as another entity!
+
+When these chunks load, the 2nd entity will not be added to the world correctly.
+
+If that chunk loads in a different order in the future, then it will reverse and the
+missing one is now the one added to the world and not the other. This results in very
+inconsistent entity behavior.
+
+This change allows you to recover any duplicate entity by generating a new UUID for it.
+This also lets you delete them instead if you don't want to risk having new entities added to
+the world that you previously did not see.
+
+But for those who are ok with leaving this inconsistent behavior, you may use WARN or NOTHING options.
+
+It is recommended you regenerate the entities, as these were legit entities, and deserve your love.
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index fbf3ccfb347a5ba6e895339e9576629d940d1aa4..38d25a12c6a52d8a83214e2a0f43a218cf15ceac 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -401,4 +401,43 @@ public class PaperWorldConfig {
+     private void preventMovingIntoUnloadedChunks() {
+         preventMovingIntoUnloadedChunks = getBoolean("prevent-moving-into-unloaded-chunks", false);
+     }
++
++    public enum DuplicateUUIDMode {
++        SAFE_REGEN, DELETE, NOTHING, WARN
++    }
++    public DuplicateUUIDMode duplicateUUIDMode = DuplicateUUIDMode.SAFE_REGEN;
++    public int duplicateUUIDDeleteRange = 32;
++    private void repairDuplicateUUID() {
++        String desiredMode = getString("duplicate-uuid-resolver", "saferegen").toLowerCase().trim();
++        duplicateUUIDDeleteRange = getInt("duplicate-uuid-saferegen-delete-range", duplicateUUIDDeleteRange);
++        switch (desiredMode.toLowerCase()) {
++            case "regen":
++            case "regenerate":
++            case "saferegen":
++            case "saferegenerate":
++                duplicateUUIDMode = DuplicateUUIDMode.SAFE_REGEN;
++                log("Duplicate UUID Resolve: Regenerate New UUID if distant (Delete likely duplicates within " + duplicateUUIDDeleteRange + " blocks)");
++                break;
++            case "remove":
++            case "delete":
++                duplicateUUIDMode = DuplicateUUIDMode.DELETE;
++                log("Duplicate UUID Resolve: Delete Entity");
++                break;
++            case "silent":
++            case "nothing":
++                duplicateUUIDMode = DuplicateUUIDMode.NOTHING;
++                logError("Duplicate UUID Resolve: Do Nothing (no logs) - Warning, may lose indication of bad things happening");
++                break;
++            case "log":
++            case "warn":
++                duplicateUUIDMode = DuplicateUUIDMode.WARN;
++                log("Duplicate UUID Resolve: Warn (do nothing but log it happened, may be spammy)");
++                break;
++            default:
++                duplicateUUIDMode = DuplicateUUIDMode.WARN;
++                logError("Warning: Invalid duplicate-uuid-resolver config " + desiredMode + " - must be one of: regen, delete, nothing, warn");
++                log("Duplicate UUID Resolve: Warn (do nothing but log it happened, may be spammy)");
++                break;
++        }
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
+index 083db6c1899b5391231b6d5d5044a334212f148c..5d87a282042d7112415b7d7175031f734219f2c9 100644
+--- a/src/main/java/net/minecraft/server/level/ChunkMap.java
++++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
+@@ -1,6 +1,7 @@
+ package net.minecraft.server.level;
+ 
+ import co.aikar.timings.Timing; // Paper
++import com.destroystokyo.paper.PaperWorldConfig; // Paper
+ import com.google.common.collect.ImmutableList;
+ import com.google.common.collect.Iterables;
+ import com.google.common.collect.ComparisonChain; // Paper
+@@ -23,14 +24,17 @@ import it.unimi.dsi.fastutil.objects.ObjectIterator;
+ import java.io.File;
+ import java.io.IOException;
+ import java.io.Writer;
++import java.util.HashMap; // Paper
+ import java.util.Collection;
+ import java.util.Iterator;
+ import java.util.List;
++import java.util.Map; // Paper
+ import java.util.Objects;
+ import java.util.Optional;
+ import java.util.Queue;
+ import java.util.Set;
+ import java.util.concurrent.CancellationException;
++import java.util.UUID; // Paper
+ import java.util.concurrent.CompletableFuture;
+ import java.util.concurrent.CompletionException;
+ import java.util.concurrent.Executor;
+@@ -71,6 +75,7 @@ import net.minecraft.world.entity.ai.village.poi.PoiManager;
+ import net.minecraft.world.entity.boss.EnderDragonPart;
+ import net.minecraft.world.level.ChunkPos;
+ import net.minecraft.world.level.GameRules;
++import net.minecraft.world.level.Level;
+ import net.minecraft.world.level.chunk.ChunkAccess;
+ import net.minecraft.world.level.chunk.ChunkGenerator;
+ import net.minecraft.world.level.chunk.ChunkStatus;
+@@ -697,18 +702,18 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+                             if (chunk.needsDecoration) {
+                                 net.minecraft.server.dedicated.DedicatedServer server = this.level.getCraftServer().getServer();
+                                 if (!server.areNpcsEnabled() && entity instanceof net.minecraft.world.entity.npc.Npc) {
+-                                    entity.remove();
++                                    entity.removed = true; // Paper
+                                     needsRemoval = true;
+                                 }
+ 
+                                 if (!server.isSpawningAnimals() && (entity instanceof net.minecraft.world.entity.animal.Animal || entity instanceof net.minecraft.world.entity.animal.WaterAnimal)) {
+-                                    entity.remove();
++                                    entity.removed = true; // Paper
+                                     needsRemoval = true;
+                                 }
+                             }
+-
+-                            if (!(entity instanceof net.minecraft.world.entity.player.Player) && (needsRemoval || !this.level.loadFromChunk(entity))) {
+-                                // CraftBukkit end
++                            // CraftBukkit end
++                            checkDupeUUID(entity); // Paper
++                            if (!(entity instanceof net.minecraft.world.entity.player.Player) && (entity.removed || !this.level.loadFromChunk(entity))) { // Paper
+                                 if (list == null) {
+                                     list = Lists.newArrayList(new Entity[]{entity});
+                                 } else {
+@@ -735,6 +740,44 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+         });
+     }
+ 
++    // Paper start
++    private void checkDupeUUID(Entity entity) {
++        PaperWorldConfig.DuplicateUUIDMode mode = level.paperConfig.duplicateUUIDMode;
++        if (mode != PaperWorldConfig.DuplicateUUIDMode.WARN
++            && mode != PaperWorldConfig.DuplicateUUIDMode.DELETE
++            && mode != PaperWorldConfig.DuplicateUUIDMode.SAFE_REGEN) {
++            return;
++        }
++        Entity other = level.getEntity(entity.getUUID());
++
++        if (mode == PaperWorldConfig.DuplicateUUIDMode.SAFE_REGEN && other != null && !other.removed
++                && Objects.equals(other.getEncodeId(), entity.getEncodeId())
++                && entity.getBukkitEntity().getLocation().distance(other.getBukkitEntity().getLocation()) < level.paperConfig.duplicateUUIDDeleteRange
++        ) {
++            if (Level.DEBUG_ENTITIES) LOGGER.warn("[DUPE-UUID] Duplicate UUID found used by " + other + ", deleted entity " + entity + " because it was near the duplicate and likely an actual duplicate. See https://github.com/PaperMC/Paper/issues/1223 for discussion on what this is about.");
++            entity.removed = true;
++            return;
++        }
++        if (other != null && !other.removed) {
++            switch (mode) {
++                case SAFE_REGEN: {
++                    entity.setUUID(UUID.randomUUID());
++                    if (Level.DEBUG_ENTITIES) LOGGER.warn("[DUPE-UUID] Duplicate UUID found used by " + other + ", regenerated UUID for " + entity + ". See https://github.com/PaperMC/Paper/issues/1223 for discussion on what this is about.");
++                    break;
++                }
++                case DELETE: {
++                    if (Level.DEBUG_ENTITIES) LOGGER.warn("[DUPE-UUID] Duplicate UUID found used by " + other + ", deleted entity " + entity + ". See https://github.com/PaperMC/Paper/issues/1223 for discussion on what this is about.");
++                    entity.removed = true;
++                    break;
++                }
++                default:
++                    if (Level.DEBUG_ENTITIES) LOGGER.warn("[DUPE-UUID] Duplicate UUID found used by " + other + ", doing nothing to " + entity + ". See https://github.com/PaperMC/Paper/issues/1223 for discussion on what this is about.");
++                    break;
++            }
++        }
++    }
++    // Paper end
++
+     public CompletableFuture<Either<LevelChunk, ChunkHolder.ChunkLoadingFailure>> postProcess(ChunkHolder holder) {
+         ChunkPos chunkcoordintpair = holder.getPos();
+         CompletableFuture<Either<List<ChunkAccess>, ChunkHolder.ChunkLoadingFailure>> completablefuture = this.getChunkRangeFuture(chunkcoordintpair, 1, (i) -> {
+diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
+index 99883c83c126405fc93becefed8a1d0727b94aa7..20b74fc8e1273fcd07ea4417eaedc8bd9aba93b3 100644
+--- a/src/main/java/net/minecraft/server/level/ServerLevel.java
++++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
+@@ -4,6 +4,8 @@ import com.google.common.annotations.VisibleForTesting;
+ import com.google.common.collect.Iterables;
+ import co.aikar.timings.TimingHistory; // Paper
+ import co.aikar.timings.Timings; // Paper
++
++import com.destroystokyo.paper.PaperWorldConfig; // Paper
+ import com.google.common.collect.Lists;
+ import com.google.common.collect.Maps;
+ import com.google.common.collect.Queues;
+@@ -1102,7 +1104,22 @@ public class ServerLevel extends net.minecraft.world.level.Level implements Worl
+         if (entity1 == null) {
+             return false;
+         } else {
++            // Paper start
++            if (entity1.removed) {
++                onEntityRemoved(entity1); // remove the existing entity
++                return false;
++            }
++            // Paper end
+             ServerLevel.LOGGER.warn("Trying to add entity with duplicated UUID {}. Existing {}#{}, new: {}#{}", uuid, EntityType.getKey(entity1.getType()), entity1.getId(), EntityType.getKey(entity.getType()), entity.getId()); // CraftBukkit // Paper
++            // Paper start
++            if (DEBUG_ENTITIES && entity.level.paperConfig.duplicateUUIDMode != PaperWorldConfig.DuplicateUUIDMode.NOTHING) {
++                if (entity1.addedToWorldStack != null) {
++                    entity1.addedToWorldStack.printStackTrace();
++                }
++
++                getAddToWorldStackTrace(entity).printStackTrace();
++            }
++            // Paper end
+             return true;
+         }
+     }
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index 6faac8773136412ca129dfa884178f311e197f6e..af86c370c6f834514115a8e40659f5e1aaabec75 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -2803,6 +2803,7 @@ public abstract class Entity implements Nameable, CommandSource, net.minecraft.s
+         });
+     }
+ 
++    public final void setUUID(UUID uuid) { setUUID(uuid); } // Paper - OBFHELPER
+     public void setUUID(UUID uuid) {
+         this.uuid = uuid;
+         this.stringUUID = this.uuid.toString();
+diff --git a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
+index db28bfe95c885cdefa855c7aaa3bcf92bc52df26..55872a17060a35b727a597bc414fecec3ada3515 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
++++ b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
+@@ -541,6 +541,7 @@ public class LevelChunk implements ChunkAccess {
+         if (i != this.chunkPos.x || j != this.chunkPos.z) {
+             LevelChunk.LOGGER.warn("Wrong location! ({}, {}) should be ({}, {}), {}", i, j, this.chunkPos.x, this.chunkPos.z, entity);
+             entity.removed = true;
++            return; // Paper
+         }
+ 
+         int k = Mth.floor(entity.getY() / 16.0D);

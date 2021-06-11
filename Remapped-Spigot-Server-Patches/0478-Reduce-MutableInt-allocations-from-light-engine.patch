@@ -1,0 +1,50 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <spottedleaf@spottedleaf.dev>
+Date: Mon, 27 Apr 2020 02:48:06 -0700
+Subject: [PATCH] Reduce MutableInt allocations from light engine
+
+We can abuse the fact light is single threaded and share an instance
+per light engine instance
+
+diff --git a/src/main/java/net/minecraft/world/level/lighting/BlockLightEngine.java b/src/main/java/net/minecraft/world/level/lighting/BlockLightEngine.java
+index 8979101a52537f4ec03a5f43030264b8e72fcea4..709fc42057f8a0282c3c942067e63abb874d9042 100644
+--- a/src/main/java/net/minecraft/world/level/lighting/BlockLightEngine.java
++++ b/src/main/java/net/minecraft/world/level/lighting/BlockLightEngine.java
+@@ -16,6 +16,7 @@ public final class BlockLightEngine extends LayerLightEngine<BlockLightSectionSt
+ 
+     private static final Direction[] DIRECTIONS = Direction.values();
+     private final BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
++    private final MutableInt mutableint = new MutableInt(); // Paper
+ 
+     public BlockLightEngine(LightChunkGetter chunkProvider) {
+         super(chunkProvider, LightLayer.BLOCK, new BlockLightSectionStorage(chunkProvider));
+@@ -47,7 +48,7 @@ public final class BlockLightEngine extends LayerLightEngine<BlockLightSectionSt
+             if (enumdirection == null) {
+                 return 15;
+             } else {
+-                MutableInt mutableint = new MutableInt();
++                //MutableInt mutableint = new MutableInt(); // Paper - share mutableint, single threaded
+                 BlockState iblockdata = this.getStateAndOpacity(targetId, mutableint);
+ 
+                 if (mutableint.getValue() >= 15) {
+diff --git a/src/main/java/net/minecraft/world/level/lighting/SkyLightEngine.java b/src/main/java/net/minecraft/world/level/lighting/SkyLightEngine.java
+index d99890121bdf1e499e364bdc953e628c04d69b95..ff1fbc46776b26ca56c3293e40ed55028230ec46 100644
+--- a/src/main/java/net/minecraft/world/level/lighting/SkyLightEngine.java
++++ b/src/main/java/net/minecraft/world/level/lighting/SkyLightEngine.java
+@@ -15,6 +15,7 @@ public final class SkyLightEngine extends LayerLightEngine<SkyLightSectionStorag
+ 
+     private static final Direction[] DIRECTIONS = Direction.values();
+     private static final Direction[] HORIZONTALS = new Direction[]{Direction.NORTH, Direction.SOUTH, Direction.WEST, Direction.EAST};
++    private final MutableInt mutableint = new MutableInt(); // Paper
+ 
+     public SkyLightEngine(LightChunkGetter chunkProvider) {
+         super(chunkProvider, LightLayer.SKY, new SkyLightSectionStorage(chunkProvider));
+@@ -36,7 +37,7 @@ public final class SkyLightEngine extends LayerLightEngine<SkyLightSectionStorag
+             if (level >= 15) {
+                 return level;
+             } else {
+-                MutableInt mutableint = new MutableInt();
++                //MutableInt mutableint = new MutableInt(); // Paper - share mutableint, single threaded
+                 BlockState iblockdata = this.getStateAndOpacity(targetId, mutableint);
+ 
+                 if (mutableint.getValue() >= 15) {

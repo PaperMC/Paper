@@ -1,0 +1,109 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Fri, 27 Nov 2020 17:14:27 -0800
+Subject: [PATCH] Added PlayerStonecutterRecipeSelectEvent
+
+Co-Authored-By: MiniDigger <admin@minidigger.me>
+
+diff --git a/src/main/java/net/minecraft/world/inventory/AbstractContainerMenu.java b/src/main/java/net/minecraft/world/inventory/AbstractContainerMenu.java
+index d2f762371f82d54bcec8b1a0a02d0866e55fd174..b5eeb2749237d589eafdfbea073bfe90e609600b 100644
+--- a/src/main/java/net/minecraft/world/inventory/AbstractContainerMenu.java
++++ b/src/main/java/net/minecraft/world/inventory/AbstractContainerMenu.java
+@@ -117,7 +117,7 @@ public abstract class AbstractContainerMenu {
+         return slot;
+     }
+ 
+-    protected DataSlot addDataSlot(DataSlot containerproperty) {
++    protected DataSlot addDataSlot(DataSlot containerproperty) { return addDataSlot(containerproperty); } protected DataSlot addDataSlot(DataSlot containerproperty) { // Paper - OBFHELPER
+         this.dataSlots.add(containerproperty);
+         return containerproperty;
+     }
+diff --git a/src/main/java/net/minecraft/world/inventory/DataSlot.java b/src/main/java/net/minecraft/world/inventory/DataSlot.java
+index 56d99e39f8cfe46a780bd17a0f99c3cbbe01c719..e851d6c8e5ad58091a58d489a48cd3ec379ce0da 100644
+--- a/src/main/java/net/minecraft/world/inventory/DataSlot.java
++++ b/src/main/java/net/minecraft/world/inventory/DataSlot.java
+@@ -20,7 +20,7 @@ public abstract class DataSlot {
+         };
+     }
+ 
+-    public static DataSlot shared(final int[] array, final int index) {
++    public static DataSlot shared(final int[] aint, final int i) { return shared(aint, i); } public static DataSlot shared(final int[] array, final int index) { // Paper - OBFHELPER
+         return new DataSlot() {
+             @Override
+             public int get() {
+@@ -54,7 +54,7 @@ public abstract class DataSlot {
+ 
+     public abstract void set(int value);
+ 
+-    public boolean checkAndClearUpdateFlag() {
++    public boolean checkAndClearUpdateFlag() { return checkAndClearUpdateFlag(); } public boolean checkAndClearUpdateFlag() { // Paper - OBFHELPER
+         int i = this.get();
+         boolean flag = i != this.prevValue;
+ 
+diff --git a/src/main/java/net/minecraft/world/inventory/StonecutterMenu.java b/src/main/java/net/minecraft/world/inventory/StonecutterMenu.java
+index 072bac443e7c54ac2b92e1d93b757bdacf230fbb..beb02f953719170d1668ada1c09d073d84bb7baf 100644
+--- a/src/main/java/net/minecraft/world/inventory/StonecutterMenu.java
++++ b/src/main/java/net/minecraft/world/inventory/StonecutterMenu.java
+@@ -21,13 +21,14 @@ import org.bukkit.craftbukkit.inventory.CraftInventoryStonecutter;
+ import org.bukkit.craftbukkit.inventory.CraftInventoryView;
+ import org.bukkit.entity.Player;
+ // CraftBukkit end
++import io.papermc.paper.event.player.PlayerStonecutterRecipeSelectEvent; // Paper
+ 
+ public class StonecutterMenu extends AbstractContainerMenu {
+ 
+     private final ContainerLevelAccess access;
+     private final DataSlot selectedRecipeIndex;
+     private final Level level;
+-    private List<StonecutterRecipe> recipes;
++    private List<StonecutterRecipe> recipes; public final List<StonecutterRecipe> getRecipes() { return this.recipes; } // Paper - OBFHELPER
+     private ItemStack input;
+     private long lastSoundTime;
+     final Slot inputSlot;
+@@ -57,7 +58,7 @@ public class StonecutterMenu extends AbstractContainerMenu {
+ 
+     public StonecutterMenu(int syncId, Inventory playerInventory, final ContainerLevelAccess context) {
+         super(MenuType.STONECUTTER, syncId);
+-        this.selectedRecipeIndex = DataSlot.standalone();
++        this.selectedRecipeIndex = addDataSlot(DataSlot.shared(new int[1], 0)); // Paper - allow replication
+         this.recipes = Lists.newArrayList();
+         this.input = ItemStack.EMPTY;
+         this.slotUpdateListener = () -> {
+@@ -135,13 +136,36 @@ public class StonecutterMenu extends AbstractContainerMenu {
+     @Override
+     public boolean clickMenuButton(net.minecraft.world.entity.player.Player player, int id) {
+         if (this.isValidRecipeIndex(id)) {
+-            this.selectedRecipeIndex.set(id);
++            // Paper start
++            int recipeIndex = id;
++            this.selectedRecipeIndex.set(recipeIndex);
++            this.selectedRecipeIndex.checkAndClearUpdateFlag(); // mark as changed
++            if (this.isValidRecipeIndex(id)) {
++                PlayerStonecutterRecipeSelectEvent event = new PlayerStonecutterRecipeSelectEvent((Player) player.getBukkitEntity(), (org.bukkit.inventory.StonecutterInventory) getBukkitView().getTopInventory(), (org.bukkit.inventory.StonecuttingRecipe) this.getRecipes().get(id).toBukkitRecipe());
++                if (!event.callEvent()) {
++                    ((Player) player.getBukkitEntity()).updateInventory();
++                    return false;
++                }
++                int newRecipeIndex;
++                if (!this.getRecipes().get(recipeIndex).getId().equals(org.bukkit.craftbukkit.util.CraftNamespacedKey.toMinecraft(event.getStonecuttingRecipe().getKey()))) { // If the recipe did NOT stay the same
++                    for (newRecipeIndex = 0; newRecipeIndex < this.getRecipes().size(); newRecipeIndex++) {
++                        if (this.getRecipes().get(newRecipeIndex).getId().equals(org.bukkit.craftbukkit.util.CraftNamespacedKey.toMinecraft(event.getStonecuttingRecipe().getKey()))) {
++                            recipeIndex = newRecipeIndex;
++                            break;
++                        }
++                    }
++                }
++            }
++            ((Player) player.getBukkitEntity()).updateInventory();
++            this.selectedRecipeIndex.set(recipeIndex); // set new index, so that listeners can read it
++            // Paper end
+             this.setupResultSlot();
+         }
+ 
+         return true;
+     }
+ 
++    private boolean isValidRecipeIndex(int index) { return this.isValidRecipeIndex(index); } // Paper - OBFHELPER
+     private boolean isValidRecipeIndex(int i) {
+         return i >= 0 && i < this.recipes.size();
+     }

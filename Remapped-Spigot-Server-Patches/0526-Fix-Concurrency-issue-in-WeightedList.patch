@@ -1,0 +1,153 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Mon, 6 Jul 2020 18:36:41 -0400
+Subject: [PATCH] Fix Concurrency issue in WeightedList
+
+if multiple threads from worldgen sort at same time, it will crash.
+So make a copy of the list for sorting purposes.
+
+diff --git a/src/main/java/net/minecraft/world/entity/ai/behavior/GateBehavior.java b/src/main/java/net/minecraft/world/entity/ai/behavior/GateBehavior.java
+index 0a65e442ddc31c06f3bb0ff5aa152daee7a210af..a81ad258b39b7472312ab1bedeeacaf26ffae4f7 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/behavior/GateBehavior.java
++++ b/src/main/java/net/minecraft/world/entity/ai/behavior/GateBehavior.java
+@@ -17,7 +17,7 @@ public class GateBehavior<E extends LivingEntity> extends Behavior<E> {
+     private final Set<MemoryModuleType<?>> exitErasedMemories;
+     private final GateBehavior.OrderPolicy orderPolicy;
+     private final GateBehavior.RunningPolicy runningPolicy;
+-    private final WeightedList<Behavior<? super E>> behaviors = new WeightedList<>();
++    private final WeightedList<Behavior<? super E>> behaviors = new WeightedList<>(false); // Paper - don't use a clone
+ 
+     public GateBehavior(Map<MemoryModuleType<?>, MemoryStatus> requiredMemoryState, Set<MemoryModuleType<?>> memoriesToForgetWhenStopped, GateBehavior.OrderPolicy order, GateBehavior.RunningPolicy runMode, List<Pair<Behavior<? super E>, Integer>> tasks) {
+         super(requiredMemoryState);
+@@ -65,10 +65,9 @@ public class GateBehavior<E extends LivingEntity> extends Behavior<E> {
+         }).forEach((behavior) -> {
+             behavior.g(world, entity, time);
+         });
+-        Set set = this.exitErasedMemories;
+         Brain behaviorcontroller = entity.getBrain();
+ 
+-        set.forEach(behaviorcontroller::removeMemory);
++        this.exitErasedMemories.forEach(behaviorcontroller::eraseMemory); // Paper - decomp fix
+     }
+ 
+     @Override
+@@ -111,11 +110,11 @@ public class GateBehavior<E extends LivingEntity> extends Behavior<E> {
+     static enum OrderPolicy {
+ 
+         ORDERED((weightedlist) -> {
+-        }), SHUFFLED(WeightedList::a);
++        }), SHUFFLED(WeightedList::shuffle);
+ 
+         private final Consumer<WeightedList<?>> consumer;
+ 
+-        private OrderPolicy(Consumer consumer) {
++        private OrderPolicy(Consumer<WeightedList<?>> consumer) { // Paper - decomp fix
+             this.consumer = consumer;
+         }
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/ai/behavior/WeightedList.java b/src/main/java/net/minecraft/world/entity/ai/behavior/WeightedList.java
+index e4c1c58e9a9c744c7ebb9948a27766b84a081b9e..85df30ef7c03c2f8ae741a8cac8bf601490d2539 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/behavior/WeightedList.java
++++ b/src/main/java/net/minecraft/world/entity/ai/behavior/WeightedList.java
+@@ -6,7 +6,7 @@ import com.mojang.serialization.Codec;
+ import com.mojang.serialization.DataResult;
+ import com.mojang.serialization.Dynamic;
+ import com.mojang.serialization.DynamicOps;
+-import com.mojang.serialization.OptionalDynamic;
++
+ import java.util.Comparator;
+ import java.util.List;
+ import java.util.Random;
+@@ -14,26 +14,32 @@ import java.util.stream.Stream;
+ 
+ public class WeightedList<U> {
+ 
+-    protected final List<WeightedList.WeightedEntry<U>> entries;
++    protected final List<WeightedList.WeightedEntry<U>> list; // Paper - decompile conflict
+     private final Random random;
++    private final boolean isUnsafe; // Paper
+ 
+-    public WeightedList() {
+-        this(Lists.newArrayList());
++    // Paper start - add useClone option
++    public WeightedList() { this(true); }
++    public WeightedList(boolean isUnsafe) {
++        this(Lists.newArrayList(), isUnsafe);
+     }
+ 
+-    private WeightedList(List<WeightedList.WeightedEntry<U>> entries) {
++    private WeightedList(List<WeightedList.WeightedEntry<U>> entries) { this(entries, true); }
++    private WeightedList(List<WeightedList.WeightedEntry<U>> list, boolean isUnsafe) {
++        this.isUnsafe = isUnsafe;
++        // Paper end
+         this.random = new Random();
+-        this.entries = Lists.newArrayList(entries);
++        this.list = Lists.newArrayList(list); // Paper - decompile conflict
+     }
+ 
+     public static <U> Codec<WeightedList<U>> codec(Codec<U> codec) {
+-        return WeightedList.entries.a(codec).listOf().xmap(WeightedList::new, (weightedlist) -> {
+-            return weightedlist.a;
++        return WeightedList.WeightedEntry.codec(codec).listOf().xmap(WeightedList::new, (weightedlist) -> { // Paper - decompile conflict
++            return weightedlist.list; // Paper - decompile conflict
+         });
+     }
+ 
+     public WeightedList<U> add(U item, int weight) {
+-        this.entries.add(new WeightedList.WeightedEntry<>(item, weight));
++        this.list.add(new WeightedList.WeightedEntry<>(item, weight)); // Paper - decompile conflict
+         return this;
+     }
+ 
+@@ -42,21 +48,20 @@ public class WeightedList<U> {
+     }
+ 
+     public WeightedList<U> shuffle(Random random) {
+-        this.entries.forEach((weightedlist_a) -> {
+-            weightedlist_a.setRandom(random.nextFloat());
+-        });
+-        this.entries.sort(Comparator.comparingDouble((object) -> {
+-            return ((WeightedList.WeightedEntry) object).getRandWeight();
+-        }));
+-        return this;
++        // Paper start - make concurrent safe, work off a clone of the list
++        List<WeightedList.WeightedEntry<U>> list = isUnsafe ? new java.util.ArrayList<WeightedList.WeightedEntry<U>>(this.list) : this.list;
++        list.forEach((weightedlist_a) -> weightedlist_a.setRandom(random.nextFloat()));
++        list.sort(Comparator.comparingDouble(WeightedEntry::getRandWeight));
++        return isUnsafe ? new WeightedList<>(list, isUnsafe) : this;
++        // Paper end
+     }
+ 
+     public boolean isEmpty() {
+-        return this.entries.isEmpty();
++        return this.list.isEmpty(); // Paper - decompile conflict
+     }
+ 
+     public Stream<U> stream() {
+-        return this.entries.stream().map(WeightedList.entries::a);
++        return this.list.stream().map(WeightedList.WeightedEntry::getData); // Paper - decompile conflict
+     }
+ 
+     public U getOne(Random random) {
+@@ -64,7 +69,7 @@ public class WeightedList<U> {
+     }
+ 
+     public String toString() {
+-        return "WeightedList[" + this.entries + "]";
++        return "WeightedList[" + this.list + "]"; // Paper - decompile conflict
+     }
+ 
+     public static class WeightedEntry<T> {
+@@ -98,11 +103,7 @@ public class WeightedList<U> {
+             return new Codec<WeightedList.WeightedEntry<E>>() {
+                 public <T> DataResult<Pair<WeightedList.WeightedEntry<E>, T>> decode(DynamicOps<T> dynamicops, T t0) {
+                     Dynamic<T> dynamic = new Dynamic(dynamicops, t0);
+-                    OptionalDynamic optionaldynamic = dynamic.get("data");
+-                    Codec codec1 = codec;
+-
+-                    codec.getClass();
+-                    return optionaldynamic.flatMap(codec1::parse).map((object) -> {
++                    return dynamic.get("data").flatMap(codec::parse).map((object) -> { // Paper - decompile error
+                         return new WeightedList.WeightedEntry<>(object, dynamic.get("weight").asInt(1));
+                     }).map((weightedlist_a) -> {
+                         return Pair.of(weightedlist_a, dynamicops.empty());

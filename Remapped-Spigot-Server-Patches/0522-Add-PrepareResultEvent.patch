@@ -1,0 +1,164 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: William Blake Galbreath <Blake.Galbreath@GMail.com>
+Date: Fri, 3 Jul 2020 11:58:56 -0500
+Subject: [PATCH] Add PrepareResultEvent
+
+Adds a new event for all crafting stations that generate a result slot item
+
+Anvil, Grindstone and Smithing now extend this event
+
+diff --git a/src/main/java/net/minecraft/world/inventory/AbstractContainerMenu.java b/src/main/java/net/minecraft/world/inventory/AbstractContainerMenu.java
+index 72b0cfcc5aab03e14e63440c734436e9c1432111..bc39e7464646d712b085251dc0277a5b1ec0a393 100644
+--- a/src/main/java/net/minecraft/world/inventory/AbstractContainerMenu.java
++++ b/src/main/java/net/minecraft/world/inventory/AbstractContainerMenu.java
+@@ -141,6 +141,7 @@ public abstract class AbstractContainerMenu {
+         return nonnulllist;
+     }
+ 
++    public final void notifyListeners() { this.broadcastChanges(); } // Paper - OBFHELPER
+     public void broadcastChanges() {
+         int i;
+ 
+diff --git a/src/main/java/net/minecraft/world/inventory/AnvilMenu.java b/src/main/java/net/minecraft/world/inventory/AnvilMenu.java
+index 3d53edae7e3d5bb00913384ad0eb67551a65750e..492a42ad5dc460717de8179d522d042cee11db60 100644
+--- a/src/main/java/net/minecraft/world/inventory/AnvilMenu.java
++++ b/src/main/java/net/minecraft/world/inventory/AnvilMenu.java
+@@ -307,6 +307,7 @@ public class AnvilMenu extends ItemCombinerMenu {
+         }
+ 
+         this.createResult();
++        org.bukkit.craftbukkit.event.CraftEventFactory.callPrepareResultEvent(this, 2); // Paper
+     }
+ 
+     // CraftBukkit start
+diff --git a/src/main/java/net/minecraft/world/inventory/CartographyTableMenu.java b/src/main/java/net/minecraft/world/inventory/CartographyTableMenu.java
+index 6183e33237a231be388a8ace0ca3b56720db13ee..464f27d3f0cc694257a550cf873a0ee4534e2189 100644
+--- a/src/main/java/net/minecraft/world/inventory/CartographyTableMenu.java
++++ b/src/main/java/net/minecraft/world/inventory/CartographyTableMenu.java
+@@ -146,6 +146,7 @@ public class CartographyTableMenu extends AbstractContainerMenu {
+             this.setupResultSlot(itemstack, itemstack1, itemstack2);
+         }
+ 
++        org.bukkit.craftbukkit.event.CraftEventFactory.callPrepareResultEvent(this, 2); // Paper
+     }
+ 
+     private void setupResultSlot(ItemStack map, ItemStack item, ItemStack oldResult) {
+diff --git a/src/main/java/net/minecraft/world/inventory/GrindstoneMenu.java b/src/main/java/net/minecraft/world/inventory/GrindstoneMenu.java
+index e9e830117fe3e4e02a51eef8671a3d3b48c2858e..329a6d70d53c13cd554c64996f2ddc489bdc1e94 100644
+--- a/src/main/java/net/minecraft/world/inventory/GrindstoneMenu.java
++++ b/src/main/java/net/minecraft/world/inventory/GrindstoneMenu.java
+@@ -156,6 +156,7 @@ public class GrindstoneMenu extends AbstractContainerMenu {
+         super.slotsChanged(inventory);
+         if (inventory == this.repairSlots) {
+             this.createResult();
++            org.bukkit.craftbukkit.event.CraftEventFactory.callPrepareResultEvent(this, 2); // Paper
+         }
+ 
+     }
+diff --git a/src/main/java/net/minecraft/world/inventory/ItemCombinerMenu.java b/src/main/java/net/minecraft/world/inventory/ItemCombinerMenu.java
+index d944cbcdf4d886d3b8b171edd8e2ac8a54dc19b9..8704c4dbead1ff661d84b751479babac5ebc5839 100644
+--- a/src/main/java/net/minecraft/world/inventory/ItemCombinerMenu.java
++++ b/src/main/java/net/minecraft/world/inventory/ItemCombinerMenu.java
+@@ -71,6 +71,7 @@ public abstract class ItemCombinerMenu extends AbstractContainerMenu {
+         super.slotsChanged(inventory);
+         if (inventory == this.inputSlots) {
+             this.createResult();
++            org.bukkit.craftbukkit.event.CraftEventFactory.callPrepareResultEvent(this, 2); // Paper
+         }
+ 
+     }
+diff --git a/src/main/java/net/minecraft/world/inventory/LoomMenu.java b/src/main/java/net/minecraft/world/inventory/LoomMenu.java
+index b33daf92752841e46f2fd9fa20dc1cfa79aa423a..3460fb2bb1451b8456a7fe42449ec4dbce641f40 100644
+--- a/src/main/java/net/minecraft/world/inventory/LoomMenu.java
++++ b/src/main/java/net/minecraft/world/inventory/LoomMenu.java
+@@ -188,7 +188,8 @@ public class LoomMenu extends AbstractContainerMenu {
+         }
+ 
+         this.setupResultSlot();
+-        this.broadcastChanges();
++        //this.c(); // Paper - done below
++        org.bukkit.craftbukkit.event.CraftEventFactory.callPrepareResultEvent(this, 3); // Paper
+     }
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/inventory/SmithingMenu.java b/src/main/java/net/minecraft/world/inventory/SmithingMenu.java
+index befb2e6294c3d0a16ae4766c3804d04fd4e1bba5..44aa1f4f91ae9f84fc7ed38cc6b3c11f07d55ba1 100644
+--- a/src/main/java/net/minecraft/world/inventory/SmithingMenu.java
++++ b/src/main/java/net/minecraft/world/inventory/SmithingMenu.java
+@@ -78,6 +78,7 @@ public class SmithingMenu extends ItemCombinerMenu {
+             // CraftBukkit end
+         }
+ 
++        org.bukkit.craftbukkit.event.CraftEventFactory.callPrepareResultEvent(this, 2); // Paper
+     }
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/inventory/StonecutterMenu.java b/src/main/java/net/minecraft/world/inventory/StonecutterMenu.java
+index febf7fa112c470888af171e585ab6a052abb46ca..072bac443e7c54ac2b92e1d93b757bdacf230fbb 100644
+--- a/src/main/java/net/minecraft/world/inventory/StonecutterMenu.java
++++ b/src/main/java/net/minecraft/world/inventory/StonecutterMenu.java
+@@ -155,6 +155,7 @@ public class StonecutterMenu extends AbstractContainerMenu {
+             this.setupRecipeList(inventory, itemstack);
+         }
+ 
++        org.bukkit.craftbukkit.event.CraftEventFactory.callPrepareResultEvent(this, 1); // Paper
+     }
+ 
+     private void setupRecipeList(Container input, ItemStack stack) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+index 87fe7f4f5ed70bf1b3dc1e2a392ba42a1f8f568b..64cfa14aa4e32430a6970fd4f3654a56146ba807 100644
+--- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
++++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+@@ -1522,19 +1522,44 @@ public class CraftEventFactory {
+         return event;
+     }
+ 
+-    public static PrepareAnvilEvent callPrepareAnvilEvent(InventoryView view, ItemStack item) {
+-        PrepareAnvilEvent event = new PrepareAnvilEvent(view, CraftItemStack.asCraftMirror(item).clone());
+-        event.getView().getPlayer().getServer().getPluginManager().callEvent(event);
++    // Paper start - disable this method, handled below
++    public static void callPrepareAnvilEvent(InventoryView view, ItemStack item) { // Paper - verify nothing uses return - handled below in PrepareResult
++        PrepareAnvilEvent event = new PrepareAnvilEvent(view, CraftItemStack.asCraftMirror(item)); // Paper - remove clone
++        //event.getView().getPlayer().getServer().getPluginManager().callEvent(event); // disable event
+         event.getInventory().setItem(2, event.getResult());
+-        return event;
++        //return event; // Paper
+     }
++    // Paper end
+ 
+-    public static PrepareSmithingEvent callPrepareSmithingEvent(InventoryView view, ItemStack item) {
+-        PrepareSmithingEvent event = new PrepareSmithingEvent(view, CraftItemStack.asCraftMirror(item).clone());
+-        event.getView().getPlayer().getServer().getPluginManager().callEvent(event);
++    // Paper start - disable this method, handled in callPrepareResultEvent
++    public static void callPrepareSmithingEvent(InventoryView view, ItemStack item) { // Paper - verify nothing uses return - handled below in PrepareResult
++        PrepareSmithingEvent event = new PrepareSmithingEvent(view, CraftItemStack.asCraftMirror(item)); // Paper - remove clone
++        //event.getView().getPlayer().getServer().getPluginManager().callEvent(event); // Paper - disable event
+         event.getInventory().setItem(2, event.getResult());
+-        return event;
++        //return event; // Paper
+     }
++    // Paper end
++
++    // Paper start - support specific overrides for prepare result
++    public static void callPrepareResultEvent(AbstractContainerMenu container, int resultSlot) {
++        com.destroystokyo.paper.event.inventory.PrepareResultEvent event;
++        InventoryView view = container.getBukkitView();
++        org.bukkit.inventory.ItemStack origItem = view.getTopInventory().getItem(resultSlot);
++        CraftItemStack result = origItem != null ? CraftItemStack.asCraftCopy(origItem) : null;
++        if (view.getTopInventory() instanceof org.bukkit.inventory.AnvilInventory) {
++            event = new PrepareAnvilEvent(view, result);
++        } else if (view.getTopInventory() instanceof org.bukkit.inventory.GrindstoneInventory) {
++            event = new com.destroystokyo.paper.event.inventory.PrepareGrindstoneEvent(view, result);
++        } else if (view.getTopInventory() instanceof org.bukkit.inventory.SmithingInventory) {
++            event = new PrepareSmithingEvent(view, result);
++        } else {
++            event = new com.destroystokyo.paper.event.inventory.PrepareResultEvent(view, result);
++        }
++        event.callEvent();
++        event.getInventory().setItem(resultSlot, event.getResult());
++        container.notifyListeners();
++    }
++    // Paper end
+ 
+     /**
+      * Mob spawner event.

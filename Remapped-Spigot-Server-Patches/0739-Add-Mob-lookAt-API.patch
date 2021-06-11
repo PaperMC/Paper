@@ -1,0 +1,127 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: BillyGalbreath <blake.galbreath@gmail.com>
+Date: Fri, 14 May 2021 13:42:17 -0500
+Subject: [PATCH] Add Mob#lookAt API
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/Mob.java b/src/main/java/net/minecraft/world/entity/Mob.java
+index ea34306858116e5626383af408529091836c2752..5692b497875ba2ee455859bc8a88d7888afd86fc 100644
+--- a/src/main/java/net/minecraft/world/entity/Mob.java
++++ b/src/main/java/net/minecraft/world/entity/Mob.java
+@@ -850,14 +850,17 @@ public abstract class Mob extends LivingEntity {
+ 
+     protected void customServerAiStep() {}
+ 
++    public int getMaxHeadXRot() { return getMaxHeadXRot(); } // Paper - OBFHELPER
+     public int getMaxHeadXRot() {
+         return 40;
+     }
+ 
++    public int getMaxHeadYRot() { return getMaxHeadYRot(); } // Paper - OBFHELPER
+     public int getMaxHeadYRot() {
+         return 75;
+     }
+ 
++    public int getHeadRotSpeed() { return getHeadRotSpeed(); } // Paper - OBFHELPER
+     public int getHeadRotSpeed() {
+         return 10;
+     }
+diff --git a/src/main/java/net/minecraft/world/entity/ai/control/LookControl.java b/src/main/java/net/minecraft/world/entity/ai/control/LookControl.java
+index faba4a95883bb0fcfd4f65c3f62bd6f476ded249..3fe159c4bdc3ad3e95354e18e2921305af121725 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/control/LookControl.java
++++ b/src/main/java/net/minecraft/world/entity/ai/control/LookControl.java
+@@ -20,18 +20,28 @@ public class LookControl {
+         this.mob = entity;
+     }
+ 
++    public void lookAt(Vec3 vec3d) { setLookAt(vec3d); } // Paper - OBFHELPER
+     public void setLookAt(Vec3 direction) {
+         this.setLookAt(direction.x, direction.y, direction.z);
+     }
+ 
++    // Paper start
++    public void lookAt(Entity entity) {
++        this.lookAt(entity.getX(), getWantedY(entity), entity.getZ());
++    }
++    // Paper end
++
++    public void lookAt(Entity entity, float f, float f1) { setLookAt(entity, f, f1); } // Paper - OBFHELPER
+     public void setLookAt(Entity entity, float yawSpeed, float pitchSpeed) {
+         this.setLookAt(entity.getX(), getWantedY(entity), entity.getZ(), yawSpeed, pitchSpeed);
+     }
+ 
++    public void lookAt(double d0, double d1, double d2) { setLookAt(d0, d1, d2); } // Paper - OBFHELPER
+     public void setLookAt(double x, double y, double z) {
+         this.setLookAt(x, y, z, (float) this.mob.getHeadRotSpeed(), (float) this.mob.getMaxHeadXRot());
+     }
+ 
++    public void lookAt(double d0, double d1, double d2, float f, float f1) { setLookAt(d0, d1, d2, f, f1); } // Paper - OBFHELPER
+     public void setLookAt(double x, double y, double z, float yawSpeed, float pitchSpeed) {
+         this.wantedX = x;
+         this.wantedY = y;
+@@ -103,6 +113,7 @@ public class LookControl {
+         return from + f4;
+     }
+ 
++    public static double getWantedY(Entity entity) { return getWantedY(entity); } // Paper - OBFHELPER
+     private static double getWantedY(Entity entity) {
+         return entity instanceof LivingEntity ? entity.getEyeY() : (entity.getBoundingBox().minY + entity.getBoundingBox().maxY) / 2.0D;
+     }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftMob.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftMob.java
+index 1e3a0851c75d8067d2699f00bb3f6621d1d739d8..f597cf70779fde265cc45868aba3ae9db898fb6e 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftMob.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftMob.java
+@@ -83,5 +83,53 @@ public abstract class CraftMob extends CraftLivingEntity implements Mob {
+     public boolean isInDaylight() {
+         return getHandle().isInDaylight();
+     }
++
++    @Override
++    public void lookAt(@org.jetbrains.annotations.NotNull org.bukkit.Location location) {
++        com.google.common.base.Preconditions.checkNotNull(location, "location cannot be null");
++        com.google.common.base.Preconditions.checkArgument(location.getWorld().equals(getWorld()), "location in a different world");
++        getHandle().getLookControl().lookAt(location.getX(), location.getY(), location.getZ());
++    }
++
++    @Override
++    public void lookAt(@org.jetbrains.annotations.NotNull org.bukkit.Location location, float headRotationSpeed, float maxHeadPitch) {
++        com.google.common.base.Preconditions.checkNotNull(location, "location cannot be null");
++        com.google.common.base.Preconditions.checkArgument(location.getWorld().equals(getWorld()), "location in a different world");
++        getHandle().getLookControl().lookAt(location.getX(), location.getY(), location.getZ(), headRotationSpeed, maxHeadPitch);
++    }
++
++    @Override
++    public void lookAt(@org.jetbrains.annotations.NotNull org.bukkit.entity.Entity entity) {
++        com.google.common.base.Preconditions.checkNotNull(entity, "entity cannot be null");
++        com.google.common.base.Preconditions.checkArgument(entity.getWorld().equals(getWorld()), "entity in a different world");
++        getHandle().getLookControl().lookAt(((CraftEntity) entity).getHandle());
++    }
++
++    @Override
++    public void lookAt(@org.jetbrains.annotations.NotNull org.bukkit.entity.Entity entity, float headRotationSpeed, float maxHeadPitch) {
++        com.google.common.base.Preconditions.checkNotNull(entity, "entity cannot be null");
++        com.google.common.base.Preconditions.checkArgument(entity.getWorld().equals(getWorld()), "entity in a different world");
++        getHandle().getLookControl().lookAt(((CraftEntity) entity).getHandle(), headRotationSpeed, maxHeadPitch);
++    }
++
++    @Override
++    public void lookAt(double x, double y, double z) {
++        getHandle().getLookControl().lookAt(x, y, z);
++    }
++
++    @Override
++    public void lookAt(double x, double y, double z, float headRotationSpeed, float maxHeadPitch) {
++        getHandle().getLookControl().lookAt(x, y, z, headRotationSpeed, maxHeadPitch);
++    }
++
++    @Override
++    public int getHeadRotationSpeed() {
++        return getHandle().getHeadRotSpeed();
++    }
++
++    @Override
++    public int getMaxHeadPitch() {
++        return getHandle().getMaxHeadXRot();
++    }
+     // Paper end
+ }

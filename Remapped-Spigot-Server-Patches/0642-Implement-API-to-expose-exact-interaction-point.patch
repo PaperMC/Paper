@@ -1,0 +1,59 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Matthew Miller <mnmiller1@me.com>
+Date: Mon, 4 Jan 2021 16:40:27 +1000
+Subject: [PATCH] Implement API to expose exact interaction point
+
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java b/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
+index 6269e37f2859417a80e6de16045f1c2325f9746f..37761176861027d0ee06f50d60584687fdac669b 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
+@@ -495,7 +495,7 @@ public class ServerPlayerGameMode {
+             cancelledBlock = true;
+         }
+ 
+-        PlayerInteractEvent event = CraftEventFactory.callPlayerInteractEvent(player, Action.RIGHT_CLICK_BLOCK, blockposition, hitResult.getDirection(), stack, cancelledBlock, hand);
++        PlayerInteractEvent event = CraftEventFactory.callPlayerInteractEvent(player, Action.RIGHT_CLICK_BLOCK, blockposition, hitResult.getDirection(), stack, cancelledBlock, hand, hitResult.getLocation()); // Paper
+         firedInteract = true;
+         interactResult = event.useItemInHand() == Event.Result.DENY;
+         interactPosition = blockposition.immutable();
+diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+index 8829ef03d0be16d8317aaf05bcd286b74f20656a..586d21eed8189adf696ca6d3642afebbe752d1b5 100644
+--- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
++++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+@@ -58,7 +58,9 @@ import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
+ import net.minecraft.world.phys.BlockHitResult;
+ import net.minecraft.world.phys.EntityHitResult;
+ import net.minecraft.world.phys.HitResult;
++import net.minecraft.world.phys.Vec3;
+ import org.bukkit.Bukkit;
++import org.bukkit.Location; // Paper
+ import org.bukkit.Material;
+ import org.bukkit.NamespacedKey;
+ import org.bukkit.Server;
+@@ -475,7 +477,13 @@ public class CraftEventFactory {
+         return callPlayerInteractEvent(who, action, position, direction, itemstack, false, hand);
+     }
+ 
++    // Paper start - Add interactionPoint
+     public static PlayerInteractEvent callPlayerInteractEvent(net.minecraft.world.entity.player.Player who, Action action, BlockPos position, Direction direction, ItemStack itemstack, boolean cancelledBlock, InteractionHand hand) {
++        return callPlayerInteractEvent(who, action, position, direction, itemstack, cancelledBlock, hand, null);
++    }
++
++    public static PlayerInteractEvent callPlayerInteractEvent(net.minecraft.world.entity.player.Player who, Action action, BlockPos position, Direction direction, ItemStack itemstack, boolean cancelledBlock, InteractionHand hand, Vec3 hitVec) {
++        // Paper end
+         Player player = (who == null) ? null : (Player) who.getBukkitEntity();
+         CraftItemStack itemInHand = CraftItemStack.asCraftMirror(itemstack);
+ 
+@@ -501,7 +509,10 @@ public class CraftEventFactory {
+             itemInHand = null;
+         }
+ 
+-        PlayerInteractEvent event = new PlayerInteractEvent(player, action, itemInHand, blockClicked, blockFace, (hand == null) ? null : ((hand == InteractionHand.OFF_HAND) ? EquipmentSlot.OFF_HAND : EquipmentSlot.HAND));
++        // Paper start
++        Location interactionPoint =  hitVec == null ? null : new Location(craftWorld, hitVec.x, hitVec.y, hitVec.z);
++        PlayerInteractEvent event = new PlayerInteractEvent(player, action, itemInHand, blockClicked, blockFace, (hand == null) ? null : ((hand == InteractionHand.OFF_HAND) ? EquipmentSlot.OFF_HAND : EquipmentSlot.HAND), interactionPoint);
++        // Paper end
+         if (cancelledBlock) {
+             event.setUseInteractedBlock(Event.Result.DENY);
+         }

@@ -1,0 +1,46 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: MisterVector <whizkid3000@hotmail.com>
+Date: Tue, 13 Aug 2019 19:45:06 -0700
+Subject: [PATCH] Implement PlayerFlowerPotManipulateEvent
+
+
+diff --git a/src/main/java/net/minecraft/world/level/block/FlowerPotBlock.java b/src/main/java/net/minecraft/world/level/block/FlowerPotBlock.java
+index ae74e70457f8f46ee71bf0902ade3468da272e81..a1d1f3416df8e313688fedad47dd264444d7c465 100644
+--- a/src/main/java/net/minecraft/world/level/block/FlowerPotBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/FlowerPotBlock.java
+@@ -20,6 +20,7 @@ import net.minecraft.world.level.pathfinder.PathComputationType;
+ import net.minecraft.world.phys.BlockHitResult;
+ import net.minecraft.world.phys.shapes.CollisionContext;
+ import net.minecraft.world.phys.shapes.VoxelShape;
++import io.papermc.paper.event.player.PlayerFlowerPotManipulateEvent; // Paper
+ 
+ public class FlowerPotBlock extends Block {
+ 
+@@ -52,6 +53,27 @@ public class FlowerPotBlock extends Block {
+         boolean flag1 = this.content == Blocks.AIR;
+ 
+         if (flag != flag1) {
++            // Paper start
++            org.bukkit.entity.Player player1 = (org.bukkit.entity.Player) player.getBukkitEntity();
++            boolean placing = flag1;
++            org.bukkit.block.Block bukkitblock = org.bukkit.craftbukkit.block.CraftBlock.at(world, pos);
++            org.bukkit.inventory.ItemStack bukkititemstack = org.bukkit.craftbukkit.inventory.CraftItemStack.asBukkitCopy(itemstack);
++            org.bukkit.Material mat = org.bukkit.craftbukkit.util.CraftMagicNumbers.getMaterial(content);
++            org.bukkit.inventory.ItemStack bukkititemstack1 = new org.bukkit.inventory.ItemStack(mat, 1);
++            org.bukkit.inventory.ItemStack whichitem = placing ? bukkititemstack : bukkititemstack1;
++
++            PlayerFlowerPotManipulateEvent event = new PlayerFlowerPotManipulateEvent(player1, bukkitblock, whichitem, placing);
++            player1.getServer().getPluginManager().callEvent(event);
++
++            if (event.isCancelled()) {
++                // Update client
++                player1.sendBlockChange(bukkitblock.getLocation(), bukkitblock.getBlockData());
++                player1.updateInventory();
++
++                return InteractionResult.PASS;
++            }
++            // Paper end
++
+             if (flag1) {
+                 world.setBlock(pos, block.defaultBlockState(), 3);
+                 player.awardStat(Stats.POT_FLOWER);

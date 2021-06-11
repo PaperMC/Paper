@@ -1,0 +1,73 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Wed, 15 Aug 2018 01:16:34 -0400
+Subject: [PATCH] Ability to get Tile Entities from a chunk without snapshots
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftChunk.java b/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
+index 93b9e9d5932764f7e946dd3f8ab8191189c5d38f..423594177fe78600755d913f169f28dd1bfa2b37 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
+@@ -3,8 +3,10 @@ package org.bukkit.craftbukkit;
+ import com.google.common.base.Preconditions;
+ import com.google.common.base.Predicates;
+ import java.lang.ref.WeakReference;
++import java.util.ArrayList;
+ import java.util.Arrays;
+ import java.util.Collection;
++import java.util.List;
+ import java.util.function.Predicate;
+ import net.minecraft.core.BlockPos;
+ import net.minecraft.core.Registry;
+@@ -129,9 +131,16 @@ public class CraftChunk implements Chunk {
+ 
+     @Override
+     public BlockState[] getTileEntities() {
++        // Paper start
++        return getTileEntities(true);
++    }
++
++    @Override
++    public BlockState[] getTileEntities(boolean useSnapshot) {
+         if (!isLoaded()) {
+             getWorld().getChunkAt(x, z); // Transient load for this tick
+         }
++        // Paper end
+         int index = 0;
+         net.minecraft.world.level.chunk.LevelChunk chunk = getHandle();
+ 
+@@ -143,11 +152,33 @@ public class CraftChunk implements Chunk {
+             }
+ 
+             BlockPos position = (BlockPos) obj;
+-            entities[index++] = worldServer.getWorld().getBlockAt(position.getX(), position.getY(), position.getZ()).getState();
++            entities[index++] = worldServer.getWorld().getBlockAt(position.getX(), position.getY(), position.getZ()).getState(useSnapshot); // Paper
++        }
++
++        return entities;
++    }
++
++    // Paper start
++    @Override
++    public Collection<BlockState> getTileEntities(Predicate<Block> blockPredicate, boolean useSnapshot) {
++        Preconditions.checkNotNull(blockPredicate, "blockPredicate");
++        if (!isLoaded()) {
++            getWorld().getChunkAt(x, z); // Transient load for this tick
++        }
++        net.minecraft.world.level.chunk.LevelChunk chunk = getHandle();
++
++        List<BlockState> entities = new ArrayList<>();
++
++        for (BlockPos position : chunk.blockEntities.keySet()) {
++            Block block = worldServer.getWorld().getBlockAt(position.getX(), position.getY(), position.getZ());
++            if (blockPredicate.test(block)) {
++                entities.add(block.getState(useSnapshot));
++            }
+         }
+ 
+         return entities;
+     }
++    // Paper end
+ 
+     @Override
+     public boolean isLoaded() {
