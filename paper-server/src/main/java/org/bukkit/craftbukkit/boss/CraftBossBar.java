@@ -97,13 +97,13 @@ public class CraftBossBar implements BossBar {
 
     @Override
     public String getTitle() {
-        return CraftChatMessage.fromComponent(handle.title);
+        return CraftChatMessage.fromComponent(handle.name);
     }
 
     @Override
     public void setTitle(String title) {
-        handle.title = CraftChatMessage.fromString(title, true)[0];
-        handle.sendUpdate(PacketPlayOutBoss.Action.UPDATE_NAME);
+        handle.name = CraftChatMessage.fromString(title, true)[0];
+        handle.sendUpdate(PacketPlayOutBoss::createUpdateNamePacket);
     }
 
     @Override
@@ -114,18 +114,18 @@ public class CraftBossBar implements BossBar {
     @Override
     public void setColor(BarColor color) {
         handle.color = convertColor(color);
-        handle.sendUpdate(PacketPlayOutBoss.Action.UPDATE_STYLE);
+        handle.sendUpdate(PacketPlayOutBoss::createUpdatePropertiesPacket);
     }
 
     @Override
     public BarStyle getStyle() {
-        return convertStyle(handle.style);
+        return convertStyle(handle.overlay);
     }
 
     @Override
     public void setStyle(BarStyle style) {
-        handle.style = convertStyle(style);
-        handle.sendUpdate(PacketPlayOutBoss.Action.UPDATE_STYLE);
+        handle.overlay = convertStyle(style);
+        handle.sendUpdate(PacketPlayOutBoss::createUpdatePropertiesPacket);
     }
 
     @Override
@@ -167,7 +167,7 @@ public class CraftBossBar implements BossBar {
     @Override
     public void addPlayer(Player player) {
         Preconditions.checkArgument(player != null, "player == null");
-        Preconditions.checkArgument(((CraftPlayer) player).getHandle().playerConnection != null, "player is not fully connected (wait for PlayerJoinEvent)");
+        Preconditions.checkArgument(((CraftPlayer) player).getHandle().connection != null, "player is not fully connected (wait for PlayerJoinEvent)");
 
         handle.addPlayer(((CraftPlayer) player).getHandle());
     }

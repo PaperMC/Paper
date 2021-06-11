@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/animal/horse/EntityHorseAbstract.java
 +++ b/net/minecraft/world/entity/animal/horse/EntityHorseAbstract.java
-@@ -68,6 +68,8 @@
+@@ -70,6 +70,8 @@
  import net.minecraft.world.phys.AxisAlignedBB;
  import net.minecraft.world.phys.Vec3D;
  
@@ -8,25 +8,25 @@
 +
  public abstract class EntityHorseAbstract extends EntityAnimal implements IInventoryListener, IJumpable, ISaddleable {
  
-     private static final Predicate<EntityLiving> bw = (entityliving) -> {
-@@ -95,6 +97,7 @@
-     private float bK;
-     protected boolean bu = true;
-     protected int bv;
+     public static final int EQUIPMENT_SLOT_OFFSET = 400;
+@@ -109,6 +111,7 @@
+     private float mouthAnimO;
+     protected boolean canGallop = true;
+     protected int gallopSoundCounter;
 +    public int maxDomestication = 100; // CraftBukkit - store max domestication value
  
      protected EntityHorseAbstract(EntityTypes<? extends EntityHorseAbstract> entitytypes, World world) {
          super(entitytypes, world);
-@@ -279,7 +282,7 @@
+@@ -293,7 +296,7 @@
      public void loadChest() {
-         InventorySubcontainer inventorysubcontainer = this.inventoryChest;
+         InventorySubcontainer inventorysubcontainer = this.inventory;
  
--        this.inventoryChest = new InventorySubcontainer(this.getChestSlots());
-+        this.inventoryChest = new InventorySubcontainer(this.getChestSlots(), (org.bukkit.entity.AbstractHorse) this.getBukkitEntity()); // CraftBukkit
+-        this.inventory = new InventorySubcontainer(this.getChestSlots());
++        this.inventory = new InventorySubcontainer(this.getChestSlots(), (org.bukkit.entity.AbstractHorse) this.getBukkitEntity()); // CraftBukkit
          if (inventorysubcontainer != null) {
              inventorysubcontainer.b((IInventoryListener) this);
-             int i = Math.min(inventorysubcontainer.getSize(), this.inventoryChest.getSize());
-@@ -395,7 +398,7 @@
+             int i = Math.min(inventorysubcontainer.getSize(), this.inventory.getSize());
+@@ -409,7 +412,7 @@
      }
  
      public int getMaxDomestication() {
@@ -35,7 +35,7 @@
      }
  
      @Override
-@@ -466,7 +469,7 @@
+@@ -479,7 +482,7 @@
          }
  
          if (this.getHealth() < this.getMaxHealth() && f > 0.0F) {
@@ -44,24 +44,24 @@
              flag = true;
          }
  
-@@ -542,7 +545,7 @@
+@@ -556,7 +559,7 @@
          super.movementTick();
-         if (!this.world.isClientSide && this.isAlive()) {
-             if (this.random.nextInt(900) == 0 && this.deathTicks == 0) {
+         if (!this.level.isClientSide && this.isAlive()) {
+             if (this.random.nextInt(900) == 0 && this.deathTime == 0) {
 -                this.heal(1.0F);
 +                this.heal(1.0F, RegainReason.REGEN); // CraftBukkit
              }
  
-             if (this.fl()) {
-@@ -779,6 +782,7 @@
+             if (this.fU()) {
+@@ -794,6 +797,7 @@
          if (this.getOwnerUUID() != null) {
              nbttagcompound.a("Owner", this.getOwnerUUID());
          }
 +        nbttagcompound.setInt("Bukkit.MaxDomestication", this.maxDomestication); // CraftBukkit
  
-         if (!this.inventoryChest.getItem(0).isEmpty()) {
-             nbttagcompound.set("SaddleItem", this.inventoryChest.getItem(0).save(new NBTTagCompound()));
-@@ -806,6 +810,11 @@
+         if (!this.inventory.getItem(0).isEmpty()) {
+             nbttagcompound.set("SaddleItem", this.inventory.getItem(0).save(new NBTTagCompound()));
+@@ -821,6 +825,11 @@
          if (uuid != null) {
              this.setOwnerUUID(uuid);
          }
@@ -73,7 +73,7 @@
  
          if (nbttagcompound.hasKeyOfType("SaddleItem", 10)) {
              ItemStack itemstack = ItemStack.a(nbttagcompound.getCompound("SaddleItem"));
-@@ -857,6 +866,18 @@
+@@ -903,6 +912,18 @@
  
      @Override
      public void b(int i) {
@@ -89,6 +89,6 @@
 +            return;
 +        }
 +        // CraftBukkit end
-         this.canSlide = true;
-         this.eU();
-         this.fn();
+         this.allowStandSliding = true;
+         this.fD();
+         this.fW();

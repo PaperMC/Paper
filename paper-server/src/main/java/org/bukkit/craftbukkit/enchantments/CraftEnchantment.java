@@ -30,7 +30,7 @@ public class CraftEnchantment extends Enchantment {
 
     @Override
     public EnchantmentTarget getItemTarget() {
-        switch (target.itemTarget) {
+        switch (target.category) {
         case ARMOR:
             return EnchantmentTarget.ARMOR;
         case ARMOR_FEET:
@@ -82,7 +82,7 @@ public class CraftEnchantment extends Enchantment {
     @Override
     public String getName() {
         // PAIL: migration paths
-        switch (IRegistry.ENCHANTMENT.a(target)) {
+        switch (IRegistry.ENCHANTMENT.getId(target)) {
         case 0:
             return "PROTECTION_ENVIRONMENTAL";
         case 1:
@@ -160,7 +160,7 @@ public class CraftEnchantment extends Enchantment {
         case 37:
             return "VANISHING_CURSE";
         default:
-            return "UNKNOWN_ENCHANT_" + IRegistry.ENCHANTMENT.a(target);
+            return "UNKNOWN_ENCHANT_" + IRegistry.ENCHANTMENT.getId(target);
         }
     }
 

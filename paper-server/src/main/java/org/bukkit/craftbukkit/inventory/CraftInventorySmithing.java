@@ -39,7 +39,7 @@ public class CraftInventorySmithing extends CraftResultInventory implements Smit
 
     @Override
     public Recipe getRecipe() {
-        IRecipe recipe = getResultInventory().ak_();
+        IRecipe recipe = getResultInventory().getRecipeUsed();
         return (recipe == null) ? null : recipe.toBukkitRecipe();
     }
 }

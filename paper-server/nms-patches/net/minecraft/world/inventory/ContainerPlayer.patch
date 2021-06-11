@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/inventory/ContainerPlayer.java
 +++ b/net/minecraft/world/inventory/ContainerPlayer.java
-@@ -11,6 +11,12 @@
+@@ -12,6 +12,12 @@
  import net.minecraft.world.item.crafting.IRecipe;
  import net.minecraft.world.item.enchantment.EnchantmentManager;
  
@@ -12,18 +12,18 @@
 +
  public class ContainerPlayer extends ContainerRecipeBook<InventoryCrafting> {
  
-     public static final MinecraftKey c = new MinecraftKey("textures/atlas/blocks.png");
-@@ -21,15 +27,28 @@
-     public static final MinecraftKey h = new MinecraftKey("item/empty_armor_slot_shield");
-     private static final MinecraftKey[] j = new MinecraftKey[]{ContainerPlayer.g, ContainerPlayer.f, ContainerPlayer.e, ContainerPlayer.d};
-     private static final EnumItemSlot[] k = new EnumItemSlot[]{EnumItemSlot.HEAD, EnumItemSlot.CHEST, EnumItemSlot.LEGS, EnumItemSlot.FEET};
--    private final InventoryCrafting craftInventory = new InventoryCrafting(this, 2, 2);
--    private final InventoryCraftResult resultInventory = new InventoryCraftResult();
+     public static final int CONTAINER_ID = 0;
+@@ -33,15 +39,28 @@
+     public static final MinecraftKey EMPTY_ARMOR_SLOT_SHIELD = new MinecraftKey("item/empty_armor_slot_shield");
+     static final MinecraftKey[] TEXTURE_EMPTY_SLOTS = new MinecraftKey[]{ContainerPlayer.EMPTY_ARMOR_SLOT_BOOTS, ContainerPlayer.EMPTY_ARMOR_SLOT_LEGGINGS, ContainerPlayer.EMPTY_ARMOR_SLOT_CHESTPLATE, ContainerPlayer.EMPTY_ARMOR_SLOT_HELMET};
+     private static final EnumItemSlot[] SLOT_IDS = new EnumItemSlot[]{EnumItemSlot.HEAD, EnumItemSlot.CHEST, EnumItemSlot.LEGS, EnumItemSlot.FEET};
+-    private final InventoryCrafting craftSlots = new InventoryCrafting(this, 2, 2);
+-    private final InventoryCraftResult resultSlots = new InventoryCraftResult();
 +    // CraftBukkit start
-+    private final InventoryCrafting craftInventory;
-+    private final InventoryCraftResult resultInventory;
++    private final InventoryCrafting craftSlots;
++    private final InventoryCraftResult resultSlots;
 +    // CraftBukkit end
-     public final boolean i;
+     public final boolean active;
      private final EntityHuman owner;
 +    // CraftBukkit start
 +    private CraftInventoryView bukkitEntity = null;
@@ -32,30 +32,21 @@
  
      public ContainerPlayer(PlayerInventory playerinventory, boolean flag, EntityHuman entityhuman) {
          super((Containers) null, 0);
-         this.i = flag;
+         this.active = flag;
          this.owner = entityhuman;
 +        // CraftBukkit start
-+        this.resultInventory = new InventoryCraftResult(); // CraftBukkit - moved to before InventoryCrafting construction
-+        this.craftInventory = new InventoryCrafting(this, 2, 2, playerinventory.player); // CraftBukkit - pass player
-+        this.craftInventory.resultInventory = this.resultInventory; // CraftBukkit - let InventoryCrafting know about its result slot
++        this.resultSlots = new InventoryCraftResult(); // CraftBukkit - moved to before InventoryCrafting construction
++        this.craftSlots = new InventoryCrafting(this, 2, 2, playerinventory.player); // CraftBukkit - pass player
++        this.craftSlots.resultInventory = this.resultSlots; // CraftBukkit - let InventoryCrafting know about its result slot
 +        this.player = playerinventory; // CraftBukkit - save player
 +        setTitle(new ChatMessage("container.crafting")); // SPIGOT-4722: Allocate title for player inventory
 +        // CraftBukkit end
-         this.a((Slot) (new SlotResult(playerinventory.player, this.craftInventory, this.resultInventory, 0, 154, 28)));
+         this.a((Slot) (new SlotResult(playerinventory.player, this.craftSlots, this.resultSlots, 0, 154, 28)));
  
          int i;
-@@ -96,7 +115,7 @@
- 
-     @Override
-     public void a(IInventory iinventory) {
--        ContainerWorkbench.a(this.windowId, this.owner.world, this.owner, this.craftInventory, this.resultInventory);
-+        ContainerWorkbench.a(this.windowId, this.owner.world, this.owner, this.craftInventory, this.resultInventory, this); // CraftBukkit
-     }
- 
-     @Override
-@@ -203,4 +222,17 @@
-     public InventoryCrafting j() {
-         return this.craftInventory;
+@@ -242,4 +261,17 @@
+     public boolean d(int i) {
+         return i != this.j();
      }
 +
 +    // CraftBukkit start
@@ -65,7 +56,7 @@
 +            return bukkitEntity;
 +        }
 +
-+        CraftInventoryCrafting inventory = new CraftInventoryCrafting(this.craftInventory, this.resultInventory);
++        CraftInventoryCrafting inventory = new CraftInventoryCrafting(this.craftSlots, this.resultSlots);
 +        bukkitEntity = new CraftInventoryView(this.player.player.getBukkitEntity(), inventory, this);
 +        return bukkitEntity;
 +    }

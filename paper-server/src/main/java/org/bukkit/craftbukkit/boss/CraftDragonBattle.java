@@ -20,27 +20,27 @@ public class CraftDragonBattle implements DragonBattle {
 
     @Override
     public EnderDragon getEnderDragon() {
-        Entity entity = handle.world.getEntity(handle.dragonUUID);
+        Entity entity = handle.level.getEntity(handle.dragonUUID);
         return (entity != null) ? (EnderDragon) entity.getBukkitEntity() : null;
     }
 
     @Override
     public BossBar getBossBar() {
-        return new CraftBossBar(handle.bossBattle);
+        return new CraftBossBar(handle.dragonEvent);
     }
 
     @Override
     public Location getEndPortalLocation() {
-        if (handle.exitPortalLocation == null) {
+        if (handle.portalLocation == null) {
             return null;
         }
 
-        return new Location(handle.world.getWorld(), handle.exitPortalLocation.getX(), handle.exitPortalLocation.getY(), handle.exitPortalLocation.getZ());
+        return new Location(handle.level.getWorld(), handle.portalLocation.getX(), handle.portalLocation.getY(), handle.portalLocation.getZ());
     }
 
     @Override
     public boolean generateEndPortal(boolean withPortals) {
-        if (handle.exitPortalLocation != null || handle.getExitPortalShape() != null) {
+        if (handle.portalLocation != null || handle.getExitPortalShape() != null) {
             return false;
         }
 
@@ -60,14 +60,14 @@ public class CraftDragonBattle implements DragonBattle {
 
     @Override
     public RespawnPhase getRespawnPhase() {
-        return toBukkitRespawnPhase(handle.respawnPhase);
+        return toBukkitRespawnPhase(handle.respawnStage);
     }
 
     @Override
     public boolean setRespawnPhase(RespawnPhase phase) {
         Preconditions.checkArgument(phase != null && phase != RespawnPhase.NONE, "Invalid respawn phase provided: %s", phase);
 
-        if (handle.respawnPhase == null) {
+        if (handle.respawnStage == null) {
             return false;
         }
 

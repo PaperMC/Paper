@@ -13,7 +13,7 @@ public class CraftLargeFireball extends CraftSizedFireball implements LargeFireb
     @Override
     public void setYield(float yield) {
         super.setYield(yield);
-        getHandle().yield = (int) yield;
+        getHandle().explosionPower = (int) yield;
     }
 
     @Override

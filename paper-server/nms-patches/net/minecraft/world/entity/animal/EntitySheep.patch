@@ -1,7 +1,7 @@
 --- a/net/minecraft/world/entity/animal/EntitySheep.java
 +++ b/net/minecraft/world/entity/animal/EntitySheep.java
-@@ -60,10 +60,18 @@
- import net.minecraft.world.level.block.state.IBlockData;
+@@ -64,11 +64,19 @@
+ import net.minecraft.world.level.gameevent.GameEvent;
  import net.minecraft.world.level.storage.loot.LootTables;
  
 +// CraftBukkit start
@@ -14,57 +14,60 @@
 +
  public class EntitySheep extends EntityAnimal implements IShearable {
  
-     private static final DataWatcherObject<Byte> bo = DataWatcher.a(EntitySheep.class, DataWatcherRegistry.a);
--    private static final Map<EnumColor, IMaterial> bp = (Map) SystemUtils.a((Object) Maps.newEnumMap(EnumColor.class), (enummap) -> {
-+    private static final Map<EnumColor, IMaterial> bp = (Map) SystemUtils.a(Maps.newEnumMap(EnumColor.class), (enummap) -> { // CraftBukkit - decompile error
+     private static final int EAT_ANIMATION_TICKS = 40;
+     private static final DataWatcherObject<Byte> DATA_WOOL_ID = DataWatcher.a(EntitySheep.class, DataWatcherRegistry.BYTE);
+-    private static final Map<EnumColor, IMaterial> ITEM_BY_DYE = (Map) SystemUtils.a((Object) Maps.newEnumMap(EnumColor.class), (enummap) -> {
++    private static final Map<EnumColor, IMaterial> ITEM_BY_DYE = (Map) SystemUtils.a(Maps.newEnumMap(EnumColor.class), (enummap) -> { // CraftBukkit - decompile error
          enummap.put(EnumColor.WHITE, Blocks.WHITE_WOOL);
          enummap.put(EnumColor.ORANGE, Blocks.ORANGE_WOOL);
          enummap.put(EnumColor.MAGENTA, Blocks.MAGENTA_WOOL);
-@@ -190,6 +198,11 @@
+@@ -223,6 +231,11 @@
  
-         if (itemstack.getItem() == Items.SHEARS) {
-             if (!this.world.isClientSide && this.canShear()) {
+         if (itemstack.a(Items.SHEARS)) {
+             if (!this.level.isClientSide && this.canShear()) {
 +                // CraftBukkit start
 +                if (!CraftEventFactory.handlePlayerShearEntityEvent(entityhuman, this, itemstack, enumhand)) {
 +                    return EnumInteractionResult.PASS;
 +                }
 +                // CraftBukkit end
                  this.shear(SoundCategory.PLAYERS);
+                 this.a(GameEvent.SHEAR, (Entity) entityhuman);
                  itemstack.damage(1, entityhuman, (entityhuman1) -> {
-                     entityhuman1.broadcastItemBreak(enumhand);
-@@ -210,7 +223,9 @@
+@@ -244,7 +257,9 @@
          int i = 1 + this.random.nextInt(3);
  
          for (int j = 0; j < i; ++j) {
 +            this.forceDrops = true; // CraftBukkit
-             EntityItem entityitem = this.a((IMaterial) EntitySheep.bp.get(this.getColor()), 1);
+             EntityItem entityitem = this.a((IMaterial) EntitySheep.ITEM_BY_DYE.get(this.getColor()), 1);
 +            this.forceDrops = false; // CraftBukkit
  
              if (entityitem != null) {
                  entityitem.setMot(entityitem.getMot().add((double) ((this.random.nextFloat() - this.random.nextFloat()) * 0.1F), (double) (this.random.nextFloat() * 0.05F), (double) ((this.random.nextFloat() - this.random.nextFloat()) * 0.1F)));
-@@ -300,6 +315,12 @@
+@@ -334,6 +349,12 @@
  
      @Override
      public void blockEaten() {
 +        // CraftBukkit start
 +        SheepRegrowWoolEvent event = new SheepRegrowWoolEvent((org.bukkit.entity.Sheep) this.getBukkitEntity());
-+        this.world.getServer().getPluginManager().callEvent(event);
++        this.level.getServer().getPluginManager().callEvent(event);
 +
 +        if (event.isCancelled()) return;
 +        // CraftBukkit end
          this.setSheared(false);
          if (this.isBaby()) {
              this.setAge(60);
-@@ -318,7 +339,7 @@
+@@ -352,8 +373,8 @@
          EnumColor enumcolor = ((EntitySheep) entityanimal).getColor();
          EnumColor enumcolor1 = ((EntitySheep) entityanimal1).getColor();
          InventoryCrafting inventorycrafting = a(enumcolor, enumcolor1);
--        Optional optional = this.world.getCraftingManager().craft(Recipes.CRAFTING, inventorycrafting, this.world).map((recipecrafting) -> {
-+        Optional<Item> optional = this.world.getCraftingManager().craft(Recipes.CRAFTING, inventorycrafting, this.world).map((recipecrafting) -> { // Eclipse fail
-             return recipecrafting.a(inventorycrafting);
+-        Optional optional = this.level.getCraftingManager().craft(Recipes.CRAFTING, inventorycrafting, this.level).map((recipecrafting) -> {
+-            return recipecrafting.a((IInventory) inventorycrafting);
++        Optional<Item> optional = this.level.getCraftingManager().craft(Recipes.CRAFTING, inventorycrafting, this.level).map((recipecrafting) -> { // Eclipse fail
++            return recipecrafting.a(inventorycrafting); // CraftBukkit - decompile error
          }).map(ItemStack::getItem);
  
-@@ -336,10 +357,18 @@
+         Objects.requireNonNull(ItemDye.class);
+@@ -370,10 +391,18 @@
              public boolean canUse(EntityHuman entityhuman) {
                  return false;
              }

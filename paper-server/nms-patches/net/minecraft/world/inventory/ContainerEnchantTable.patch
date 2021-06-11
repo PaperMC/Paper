@@ -24,15 +24,15 @@
      private final IInventory enchantSlots;
 @@ -29,6 +44,10 @@
      public final int[] costs;
-     public final int[] enchantments;
-     public final int[] levels;
+     public final int[] enchantClue;
+     public final int[] levelClue;
 +    // CraftBukkit start
 +    private CraftInventoryView bukkitEntity = null;
 +    private Player player;
 +    // CraftBukkit end
  
      public ContainerEnchantTable(int i, PlayerInventory playerinventory) {
-         this(i, playerinventory, ContainerAccess.a);
+         this(i, playerinventory, ContainerAccess.NULL);
 @@ -42,6 +61,13 @@
                  super.update();
                  ContainerEnchantTable.this.a((IInventory) this);
@@ -45,12 +45,12 @@
 +            }
 +            // CraftBukkit end
          };
-         this.h = new Random();
-         this.i = ContainerProperty.a();
+         this.random = new Random();
+         this.enchantmentSeed = ContainerProperty.a();
 @@ -89,6 +115,9 @@
-         this.a(ContainerProperty.a(this.levels, 0));
-         this.a(ContainerProperty.a(this.levels, 1));
-         this.a(ContainerProperty.a(this.levels, 2));
+         this.a(ContainerProperty.a(this.levelClue, 0));
+         this.a(ContainerProperty.a(this.levelClue, 1));
+         this.a(ContainerProperty.a(this.levelClue, 2));
 +        // CraftBukkit start
 +        player = (Player) playerinventory.player.getBukkitEntity();
 +        // CraftBukkit end
@@ -63,17 +63,10 @@
  
 -            if (!itemstack.isEmpty() && itemstack.canEnchant()) {
 +            if (!itemstack.isEmpty()) { // CraftBukkit - relax condition
-                 this.containerAccess.a((world, blockposition) -> {
+                 this.access.a((world, blockposition) -> {
                      int i = 0;
  
-@@ -152,12 +181,47 @@
-                             if (list != null && !list.isEmpty()) {
-                                 WeightedRandomEnchant weightedrandomenchant = (WeightedRandomEnchant) list.get(this.h.nextInt(list.size()));
- 
--                                this.enchantments[j] = IRegistry.ENCHANTMENT.a((Object) weightedrandomenchant.enchantment);
-+                                this.enchantments[j] = IRegistry.ENCHANTMENT.a(weightedrandomenchant.enchantment); // CraftBukkit - decompile error
-                                 this.levels[j] = weightedrandomenchant.level;
-                             }
+@@ -158,6 +187,41 @@
                          }
                      }
  
@@ -81,19 +74,19 @@
 +                    CraftItemStack item = CraftItemStack.asCraftMirror(itemstack);
 +                    org.bukkit.enchantments.EnchantmentOffer[] offers = new EnchantmentOffer[3];
 +                    for (j = 0; j < 3; ++j) {
-+                        org.bukkit.enchantments.Enchantment enchantment = (this.enchantments[j] >= 0) ? org.bukkit.enchantments.Enchantment.getByKey(CraftNamespacedKey.fromMinecraft(IRegistry.ENCHANTMENT.getKey(IRegistry.ENCHANTMENT.fromId(this.enchantments[j])))) : null;
-+                        offers[j] = (enchantment != null) ? new EnchantmentOffer(enchantment, this.levels[j], this.costs[j]) : null;
++                        org.bukkit.enchantments.Enchantment enchantment = (this.enchantClue[j] >= 0) ? org.bukkit.enchantments.Enchantment.getByKey(CraftNamespacedKey.fromMinecraft(IRegistry.ENCHANTMENT.getKey(IRegistry.ENCHANTMENT.fromId(this.enchantClue[j])))) : null;
++                        offers[j] = (enchantment != null) ? new EnchantmentOffer(enchantment, this.levelClue[j], this.costs[j]) : null;
 +                    }
 +
-+                    PrepareItemEnchantEvent event = new PrepareItemEnchantEvent(player, this.getBukkitView(), containerAccess.getLocation().getBlock(), item, offers, i);
++                    PrepareItemEnchantEvent event = new PrepareItemEnchantEvent(player, this.getBukkitView(), access.getLocation().getBlock(), item, offers, i);
 +                    event.setCancelled(!itemstack.canEnchant());
 +                    world.getServer().getPluginManager().callEvent(event);
 +
 +                    if (event.isCancelled()) {
 +                        for (j = 0; j < 3; ++j) {
 +                            this.costs[j] = 0;
-+                            this.enchantments[j] = -1;
-+                            this.levels[j] = -1;
++                            this.enchantClue[j] = -1;
++                            this.levelClue[j] = -1;
 +                        }
 +                        return;
 +                    }
@@ -102,17 +95,17 @@
 +                        EnchantmentOffer offer = event.getOffers()[j];
 +                        if (offer != null) {
 +                            this.costs[j] = offer.getCost();
-+                            this.enchantments[j] = IRegistry.ENCHANTMENT.a(IRegistry.ENCHANTMENT.get(CraftNamespacedKey.toMinecraft(offer.getEnchantment().getKey())));
-+                            this.levels[j] = offer.getEnchantmentLevel();
++                            this.enchantClue[j] = IRegistry.ENCHANTMENT.getId(IRegistry.ENCHANTMENT.get(CraftNamespacedKey.toMinecraft(offer.getEnchantment().getKey())));
++                            this.levelClue[j] = offer.getEnchantmentLevel();
 +                        } else {
 +                            this.costs[j] = 0;
-+                            this.enchantments[j] = -1;
-+                            this.levels[j] = -1;
++                            this.enchantClue[j] = -1;
++                            this.levelClue[j] = -1;
 +                        }
 +                    }
 +                    // CraftBukkit end
 +
-                     this.c();
+                     this.d();
                  });
              } else {
 @@ -184,9 +248,24 @@
@@ -124,7 +117,7 @@
 +                // CraftBukkit start
 +                if (true || !list.isEmpty()) {
 +                    // entityhuman.enchantDone(itemstack, j); // Moved down
-                     boolean flag = itemstack.getItem() == Items.BOOK;
+                     boolean flag = itemstack.a(Items.BOOK);
 +                    Map<org.bukkit.enchantments.Enchantment, Integer> enchants = new java.util.HashMap<org.bukkit.enchantments.Enchantment, Integer>();
 +                    for (Object obj : list) {
 +                        WeightedRandomEnchant instance = (WeightedRandomEnchant) obj;
@@ -132,11 +125,11 @@
 +                    }
 +                    CraftItemStack item = CraftItemStack.asCraftMirror(itemstack2);
 +
-+                    EnchantItemEvent event = new EnchantItemEvent((Player) entityhuman.getBukkitEntity(), this.getBukkitView(), containerAccess.getLocation().getBlock(), item, this.costs[i], enchants, i);
++                    EnchantItemEvent event = new EnchantItemEvent((Player) entityhuman.getBukkitEntity(), this.getBukkitView(), access.getLocation().getBlock(), item, this.costs[i], enchants, i);
 +                    world.getServer().getPluginManager().callEvent(event);
 +
 +                    int level = event.getExpLevelCost();
-+                    if (event.isCancelled() || (level > entityhuman.expLevel && !entityhuman.abilities.canInstantlyBuild) || event.getEnchantsToAdd().isEmpty()) {
++                    if (event.isCancelled() || (level > entityhuman.experienceLevel && !entityhuman.getAbilities().instabuild) || event.getEnchantsToAdd().isEmpty()) {
 +                        return;
 +                    }
  
@@ -175,18 +168,18 @@
 +                    // CraftBukkit end
 +
 +                    // CraftBukkit - TODO: let plugins change this
-                     if (!entityhuman.abilities.canInstantlyBuild) {
+                     if (!entityhuman.getAbilities().instabuild) {
                          itemstack1.subtract(j);
                          if (itemstack1.isEmpty()) {
-@@ -255,6 +347,7 @@
+@@ -265,6 +357,7 @@
  
      @Override
      public boolean canUse(EntityHuman entityhuman) {
 +        if (!this.checkReachable) return true; // CraftBukkit
-         return a(this.containerAccess, entityhuman, Blocks.ENCHANTING_TABLE);
+         return a(this.access, entityhuman, Blocks.ENCHANTING_TABLE);
      }
  
-@@ -306,4 +399,17 @@
+@@ -316,4 +409,17 @@
  
          return itemstack;
      }

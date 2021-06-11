@@ -10,17 +10,17 @@ public class CraftMerchantRecipe extends MerchantRecipe {
     private final net.minecraft.world.item.trading.MerchantRecipe handle;
 
     public CraftMerchantRecipe(net.minecraft.world.item.trading.MerchantRecipe merchantRecipe) {
-        super(CraftItemStack.asBukkitCopy(merchantRecipe.sellingItem), 0);
+        super(CraftItemStack.asBukkitCopy(merchantRecipe.result), 0);
         this.handle = merchantRecipe;
-        addIngredient(CraftItemStack.asBukkitCopy(merchantRecipe.buyingItem1));
-        addIngredient(CraftItemStack.asBukkitCopy(merchantRecipe.buyingItem2));
+        addIngredient(CraftItemStack.asBukkitCopy(merchantRecipe.baseCostA));
+        addIngredient(CraftItemStack.asBukkitCopy(merchantRecipe.costB));
     }
 
     public CraftMerchantRecipe(ItemStack result, int uses, int maxUses, boolean experienceReward, int experience, float priceMultiplier) {
         super(result, uses, maxUses, experienceReward, experience, priceMultiplier);
         this.handle = new net.minecraft.world.item.trading.MerchantRecipe(
-                net.minecraft.world.item.ItemStack.b,
-                net.minecraft.world.item.ItemStack.b,
+                net.minecraft.world.item.ItemStack.EMPTY,
+                net.minecraft.world.item.ItemStack.EMPTY,
                 CraftItemStack.asNMSCopy(result),
                 uses,
                 maxUses,
@@ -84,9 +84,9 @@ public class CraftMerchantRecipe extends MerchantRecipe {
     public net.minecraft.world.item.trading.MerchantRecipe toMinecraft() {
         List<ItemStack> ingredients = getIngredients();
         Preconditions.checkState(!ingredients.isEmpty(), "No offered ingredients");
-        handle.buyingItem1 = CraftItemStack.asNMSCopy(ingredients.get(0));
+        handle.baseCostA = CraftItemStack.asNMSCopy(ingredients.get(0));
         if (ingredients.size() > 1) {
-            handle.buyingItem2 = CraftItemStack.asNMSCopy(ingredients.get(1));
+            handle.costB = CraftItemStack.asNMSCopy(ingredients.get(1));
         }
         return handle;
     }

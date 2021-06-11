@@ -13,16 +13,7 @@
 +
  public class MobEffectList {
  
-     private final Map<AttributeBase, AttributeModifier> a = Maps.newHashMap();
-@@ -33,7 +40,7 @@
-     }
- 
-     public static int getId(MobEffectList mobeffectlist) {
--        return IRegistry.MOB_EFFECT.a((Object) mobeffectlist);
-+        return IRegistry.MOB_EFFECT.a(mobeffectlist); // CraftBukkit - decompile error
-     }
- 
-     protected MobEffectList(MobEffectInfo mobeffectinfo, int i) {
+     private final Map<AttributeBase, AttributeModifier> attributeModifiers = Maps.newHashMap();
 @@ -44,26 +51,37 @@
      public void tick(EntityLiving entityliving, int i) {
          if (this == MobEffects.REGENERATION) {
@@ -41,7 +32,7 @@
 -            ((EntityHuman) entityliving).applyExhaustion(0.005F * (float) (i + 1));
 +            ((EntityHuman) entityliving).applyExhaustion(0.005F * (float) (i + 1), org.bukkit.event.entity.EntityExhaustionEvent.ExhaustionReason.HUNGER_EFFECT); // CraftBukkit - EntityExhaustionEvent
          } else if (this == MobEffects.SATURATION && entityliving instanceof EntityHuman) {
-             if (!entityliving.world.isClientSide) {
+             if (!entityliving.level.isClientSide) {
 -                ((EntityHuman) entityliving).getFoodData().eat(i + 1, 1.0F);
 +                // CraftBukkit start
 +                EntityHuman entityhuman = (EntityHuman) entityliving;
@@ -53,11 +44,11 @@
 +                    entityhuman.getFoodData().eat(event.getFoodLevel() - oldFoodLevel, 1.0F);
 +                }
 +
-+                ((EntityPlayer) entityhuman).playerConnection.sendPacket(new PacketPlayOutUpdateHealth(((EntityPlayer) entityhuman).getBukkitEntity().getScaledHealth(), entityhuman.getFoodData().foodLevel, entityhuman.getFoodData().saturationLevel));
++                ((EntityPlayer) entityhuman).connection.sendPacket(new PacketPlayOutUpdateHealth(((EntityPlayer) entityhuman).getBukkitEntity().getScaledHealth(), entityhuman.getFoodData().foodLevel, entityhuman.getFoodData().saturationLevel));
 +                // CraftBukkit end
              }
-         } else if ((this != MobEffects.HEAL || entityliving.dj()) && (this != MobEffects.HARM || !entityliving.dj())) {
-             if (this == MobEffects.HARM && !entityliving.dj() || this == MobEffects.HEAL && entityliving.dj()) {
+         } else if ((this != MobEffects.HEAL || entityliving.dT()) && (this != MobEffects.HARM || !entityliving.dT())) {
+             if (this == MobEffects.HARM && !entityliving.dT() || this == MobEffects.HEAL && entityliving.dT()) {
                  entityliving.damageEntity(DamageSource.MAGIC, (float) (6 << i));
              }
          } else {

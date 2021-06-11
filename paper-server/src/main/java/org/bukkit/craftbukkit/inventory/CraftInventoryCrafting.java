@@ -105,7 +105,7 @@ public class CraftInventoryCrafting extends CraftInventory implements CraftingIn
             if (i < contents.length) {
                 getMatrixInventory().setItem(i, CraftItemStack.asNMSCopy(contents[i]));
             } else {
-                getMatrixInventory().setItem(i, net.minecraft.world.item.ItemStack.b);
+                getMatrixInventory().setItem(i, net.minecraft.world.item.ItemStack.EMPTY);
             }
         }
     }

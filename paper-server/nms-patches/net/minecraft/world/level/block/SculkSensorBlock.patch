@@ -1,0 +1,52 @@
+--- a/net/minecraft/world/level/block/SculkSensorBlock.java
++++ b/net/minecraft/world/level/block/SculkSensorBlock.java
+@@ -38,11 +38,16 @@
+ import net.minecraft.world.phys.shapes.VoxelShape;
+ import net.minecraft.world.phys.shapes.VoxelShapeCollision;
+ 
++// CraftBukkit start
++import org.bukkit.craftbukkit.block.CraftBlock;
++import org.bukkit.event.block.BlockRedstoneEvent;
++// CraftBukkit end
++
+ public class SculkSensorBlock extends BlockTileEntity implements IBlockWaterlogged {
+ 
+     public static final int ACTIVE_TICKS = 40;
+     public static final int COOLDOWN_TICKS = 1;
+-    public static final Object2IntMap<GameEvent> VIBRATION_STRENGTH_FOR_EVENT = Object2IntMaps.unmodifiable((Object2IntMap) SystemUtils.a((Object) (new Object2IntOpenHashMap()), (object2intopenhashmap) -> {
++    public static final Object2IntMap<GameEvent> VIBRATION_STRENGTH_FOR_EVENT = Object2IntMaps.unmodifiable((Object2IntMap) SystemUtils.a((new Object2IntOpenHashMap()), (object2intopenhashmap) -> { // CraftBukkit - decompile error
+         object2intopenhashmap.put(GameEvent.STEP, 1);
+         object2intopenhashmap.put(GameEvent.FLAP, 2);
+         object2intopenhashmap.put(GameEvent.SWIM, 3);
+@@ -216,6 +221,15 @@
+     }
+ 
+     public static void a(World world, BlockPosition blockposition, IBlockData iblockdata) {
++        // CraftBukkit start
++        BlockRedstoneEvent eventRedstone = new BlockRedstoneEvent(CraftBlock.at(world, blockposition), iblockdata.get(SculkSensorBlock.POWER), 0);
++        world.getServer().getPluginManager().callEvent(eventRedstone);
++
++        if (eventRedstone.getNewCurrent() > 0) {
++            world.setTypeAndData(blockposition, iblockdata.set(SculkSensorBlock.POWER, eventRedstone.getNewCurrent()), 3);
++            return;
++        }
++        // CraftBukkit end
+         world.setTypeAndData(blockposition, (IBlockData) ((IBlockData) iblockdata.set(SculkSensorBlock.PHASE, SculkSensorPhase.COOLDOWN)).set(SculkSensorBlock.POWER, 0), 3);
+         world.getBlockTickList().a(new BlockPosition(blockposition), iblockdata.getBlock(), 1);
+         if (!(Boolean) iblockdata.get(SculkSensorBlock.WATERLOGGED)) {
+@@ -226,6 +240,15 @@
+     }
+ 
+     public static void a(World world, BlockPosition blockposition, IBlockData iblockdata, int i) {
++        // CraftBukkit start
++        BlockRedstoneEvent eventRedstone = new BlockRedstoneEvent(CraftBlock.at(world, blockposition), iblockdata.get(SculkSensorBlock.POWER), i);
++        world.getServer().getPluginManager().callEvent(eventRedstone);
++
++        if (eventRedstone.getNewCurrent() <= 0) {
++            return;
++        }
++        i = eventRedstone.getNewCurrent();
++        // CraftBukkit end
+         world.setTypeAndData(blockposition, (IBlockData) ((IBlockData) iblockdata.set(SculkSensorBlock.PHASE, SculkSensorPhase.ACTIVE)).set(SculkSensorBlock.POWER, i), 3);
+         world.getBlockTickList().a(new BlockPosition(blockposition), iblockdata.getBlock(), 40);
+         a(world, blockposition);

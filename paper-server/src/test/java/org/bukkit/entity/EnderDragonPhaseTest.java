@@ -28,7 +28,7 @@ public class EnderDragonPhaseTest {
         Assert.assertEquals("ROAR_BEFORE_ATTACK", CraftEnderDragon.getMinecraftPhase(EnderDragon.Phase.ROAR_BEFORE_ATTACK), DragonControllerPhase.SITTING_ATTACKING);
         Assert.assertEquals("CHARGE_PLAYER", CraftEnderDragon.getMinecraftPhase(EnderDragon.Phase.CHARGE_PLAYER), DragonControllerPhase.CHARGING_PLAYER);
         Assert.assertEquals("DYING", CraftEnderDragon.getMinecraftPhase(EnderDragon.Phase.DYING), DragonControllerPhase.DYING);
-        Assert.assertEquals("HOVER", CraftEnderDragon.getMinecraftPhase(EnderDragon.Phase.HOVER), DragonControllerPhase.HOVER);
+        Assert.assertEquals("HOVER", CraftEnderDragon.getMinecraftPhase(EnderDragon.Phase.HOVER), DragonControllerPhase.HOVERING);
     }
 
     @Test
@@ -43,6 +43,6 @@ public class EnderDragonPhaseTest {
         Assert.assertEquals("ROAR_BEFORE_ATTACK", CraftEnderDragon.getBukkitPhase(DragonControllerPhase.SITTING_ATTACKING), EnderDragon.Phase.ROAR_BEFORE_ATTACK);
         Assert.assertEquals("CHARGE_PLAYER", CraftEnderDragon.getBukkitPhase(DragonControllerPhase.CHARGING_PLAYER), EnderDragon.Phase.CHARGE_PLAYER);
         Assert.assertEquals("DYING", CraftEnderDragon.getBukkitPhase(DragonControllerPhase.DYING), EnderDragon.Phase.DYING);
-        Assert.assertEquals("HOVER", CraftEnderDragon.getBukkitPhase(DragonControllerPhase.HOVER), EnderDragon.Phase.HOVER);
+        Assert.assertEquals("HOVER", CraftEnderDragon.getBukkitPhase(DragonControllerPhase.HOVERING), EnderDragon.Phase.HOVER);
     }
 }

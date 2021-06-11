@@ -35,16 +35,16 @@ public class CraftHoglin extends CraftAnimals implements Hoglin {
     @Override
     public int getConversionTime() {
         Preconditions.checkState(isConverting(), "Entity not converting");
-        return getHandle().conversionTicks;
+        return getHandle().timeInOverworld;
     }
 
     @Override
     public void setConversionTime(int time) {
         if (time < 0) {
-            getHandle().conversionTicks = -1;
+            getHandle().timeInOverworld = -1;
             getHandle().setImmuneToZombification(false);
         } else {
-            getHandle().conversionTicks = time;
+            getHandle().timeInOverworld = time;
         }
     }
 

@@ -8,7 +8,7 @@
 +
  public class EntityWitherSkull extends EntityFireball {
  
-     private static final DataWatcherObject<Boolean> e = DataWatcher.a(EntityWitherSkull.class, DataWatcherRegistry.i);
+     private static final DataWatcherObject<Boolean> DATA_DANGEROUS = DataWatcher.a(EntityWitherSkull.class, DataWatcherRegistry.BOOLEAN);
 @@ -64,7 +66,7 @@
                      if (entity.isAlive()) {
                          this.a(entityliving, entity);
@@ -22,23 +22,23 @@
                  }
  
                  if (b0 > 0) {
--                    ((EntityLiving) entity).addEffect(new MobEffect(MobEffects.WITHER, 20 * b0, 1));
-+                    ((EntityLiving) entity).addEffect(new MobEffect(MobEffects.WITHER, 20 * b0, 1), org.bukkit.event.entity.EntityPotionEffectEvent.Cause.ATTACK); // CraftBukkit
+-                    ((EntityLiving) entity).addEffect(new MobEffect(MobEffects.WITHER, 20 * b0, 1), this.x());
++                    ((EntityLiving) entity).addEffect(new MobEffect(MobEffects.WITHER, 20 * b0, 1), this.x(), org.bukkit.event.entity.EntityPotionEffectEvent.Cause.ATTACK); // CraftBukkit
                  }
              }
  
 @@ -94,7 +96,15 @@
-         if (!this.world.isClientSide) {
-             Explosion.Effect explosion_effect = this.world.getGameRules().getBoolean(GameRules.MOB_GRIEFING) ? Explosion.Effect.DESTROY : Explosion.Effect.NONE;
+         if (!this.level.isClientSide) {
+             Explosion.Effect explosion_effect = this.level.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING) ? Explosion.Effect.DESTROY : Explosion.Effect.NONE;
  
--            this.world.createExplosion(this, this.locX(), this.locY(), this.locZ(), 1.0F, false, explosion_effect);
+-            this.level.createExplosion(this, this.locX(), this.locY(), this.locZ(), 1.0F, false, explosion_effect);
 +            // CraftBukkit start
-+            // this.world.createExplosion(this, this.locX(), this.locY(), this.locZ(), 1.0F, false, explosion_effect);
++            // this.level.createExplosion(this, this.locX(), this.locY(), this.locZ(), 1.0F, false, explosion_effect);
 +            ExplosionPrimeEvent event = new ExplosionPrimeEvent(this.getBukkitEntity(), 1.0F, false);
-+            this.world.getServer().getPluginManager().callEvent(event);
++            this.level.getServer().getPluginManager().callEvent(event);
 +
 +            if (!event.isCancelled()) {
-+                this.world.createExplosion(this, this.locX(), this.locY(), this.locZ(), event.getRadius(), event.getFire(), explosion_effect);
++                this.level.createExplosion(this, this.locX(), this.locY(), this.locZ(), event.getRadius(), event.getFire(), explosion_effect);
 +            }
 +            // CraftBukkit end
              this.die();

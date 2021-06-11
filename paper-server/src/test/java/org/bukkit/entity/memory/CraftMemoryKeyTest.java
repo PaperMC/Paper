@@ -49,7 +49,7 @@ public class CraftMemoryKeyTest extends AbstractTestingBase {
 
     @Test
     public void shouldReturnNullWhenBukkitRepresentationOfKeyisNotAvailable() {
-        MemoryKey bukkitNoKey = CraftMemoryKey.toMemoryKey(MemoryModuleType.MOBS);
+        MemoryKey bukkitNoKey = CraftMemoryKey.toMemoryKey(MemoryModuleType.NEAREST_LIVING_ENTITIES);
         Assert.assertNull("MemoryModuleType should be null", bukkitNoKey);
     }
 

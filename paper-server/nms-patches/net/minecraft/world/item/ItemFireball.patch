@@ -1,26 +1,12 @@
 --- a/net/minecraft/world/item/ItemFireball.java
 +++ b/net/minecraft/world/item/ItemFireball.java
-@@ -26,12 +26,28 @@
-         boolean flag = false;
- 
-         if (BlockCampfire.h(iblockdata)) {
-+            // CraftBukkit start - fire BlockIgniteEvent
-+            if (org.bukkit.craftbukkit.event.CraftEventFactory.callBlockIgniteEvent(world, blockposition, org.bukkit.event.block.BlockIgniteEvent.IgniteCause.FIREBALL, itemactioncontext.getEntity()).isCancelled()) {
-+                if (!itemactioncontext.getEntity().abilities.canInstantlyBuild) {
-+                    itemactioncontext.getItemStack().subtract(1);
-+                }
-+                return EnumInteractionResult.PASS;
-+            }
-+            // CraftBukkit end
-             this.a(world, blockposition);
-             world.setTypeUpdate(blockposition, (IBlockData) iblockdata.set(BlockCampfire.LIT, true));
-             flag = true;
-         } else {
+@@ -34,12 +34,28 @@
+         if (!BlockCampfire.h(iblockdata) && !CandleBlock.g(iblockdata) && !CandleCakeBlock.g(iblockdata)) {
              blockposition = blockposition.shift(itemactioncontext.getClickedFace());
-             if (BlockFireAbstract.a(world, blockposition, itemactioncontext.f())) {
+             if (BlockFireAbstract.a(world, blockposition, itemactioncontext.g())) {
 +                // CraftBukkit start - fire BlockIgniteEvent
 +                if (org.bukkit.craftbukkit.event.CraftEventFactory.callBlockIgniteEvent(world, blockposition, org.bukkit.event.block.BlockIgniteEvent.IgniteCause.FIREBALL, itemactioncontext.getEntity()).isCancelled()) {
-+                    if (!itemactioncontext.getEntity().abilities.canInstantlyBuild) {
++                    if (!itemactioncontext.getEntity().getAbilities().instabuild) {
 +                        itemactioncontext.getItemStack().subtract(1);
 +                    }
 +                    return EnumInteractionResult.PASS;
@@ -28,4 +14,18 @@
 +                // CraftBukkit end
                  this.a(world, blockposition);
                  world.setTypeUpdate(blockposition, BlockFireAbstract.a((IBlockAccess) world, blockposition));
+                 world.a((Entity) itemactioncontext.getEntity(), GameEvent.BLOCK_PLACE, blockposition);
                  flag = true;
+             }
+         } else {
++            // CraftBukkit start - fire BlockIgniteEvent
++            if (org.bukkit.craftbukkit.event.CraftEventFactory.callBlockIgniteEvent(world, blockposition, org.bukkit.event.block.BlockIgniteEvent.IgniteCause.FIREBALL, itemactioncontext.getEntity()).isCancelled()) {
++                if (!itemactioncontext.getEntity().getAbilities().instabuild) {
++                    itemactioncontext.getItemStack().subtract(1);
++                }
++                return EnumInteractionResult.PASS;
++            }
++            // CraftBukkit end
+             this.a(world, blockposition);
+             world.setTypeUpdate(blockposition, (IBlockData) iblockdata.set(BlockProperties.LIT, true));
+             world.a((Entity) itemactioncontext.getEntity(), GameEvent.BLOCK_PLACE, blockposition);

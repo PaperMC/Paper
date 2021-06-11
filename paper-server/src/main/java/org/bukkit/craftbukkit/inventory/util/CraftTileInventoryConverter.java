@@ -4,6 +4,7 @@ import net.minecraft.core.BlockPosition;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.IInventory;
 import net.minecraft.world.level.World;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.TileEntityBlastFurnace;
 import net.minecraft.world.level.block.entity.TileEntityBrewingStand;
 import net.minecraft.world.level.block.entity.TileEntityDispenser;
@@ -49,8 +50,7 @@ public abstract class CraftTileInventoryConverter implements CraftInventoryCreat
 
         @Override
         public IInventory getTileEntity() {
-            TileEntityFurnace furnace = new TileEntityFurnaceFurnace();
-            furnace.setLocation(MinecraftServer.getServer().getWorldServer(World.OVERWORLD), BlockPosition.ZERO); // TODO: customize this if required
+            TileEntityFurnace furnace = new TileEntityFurnaceFurnace(BlockPosition.ZERO, Blocks.FURNACE.getBlockData()); // TODO: customize this if required
             return furnace;
         }
 
@@ -71,7 +71,7 @@ public abstract class CraftTileInventoryConverter implements CraftInventoryCreat
 
         @Override
         public IInventory getTileEntity() {
-            return new TileEntityBrewingStand();
+            return new TileEntityBrewingStand(BlockPosition.ZERO, Blocks.BREWING_STAND.getBlockData());
         }
 
         @Override
@@ -94,7 +94,7 @@ public abstract class CraftTileInventoryConverter implements CraftInventoryCreat
 
         @Override
         public IInventory getTileEntity() {
-            return new TileEntityDispenser();
+            return new TileEntityDispenser(BlockPosition.ZERO, Blocks.DISPENSER.getBlockData());
         }
     }
 
@@ -102,7 +102,7 @@ public abstract class CraftTileInventoryConverter implements CraftInventoryCreat
 
         @Override
         public IInventory getTileEntity() {
-            return new TileEntityDropper();
+            return new TileEntityDropper(BlockPosition.ZERO, Blocks.DROPPER.getBlockData());
         }
     }
 
@@ -110,7 +110,7 @@ public abstract class CraftTileInventoryConverter implements CraftInventoryCreat
 
         @Override
         public IInventory getTileEntity() {
-            return new TileEntityHopper();
+            return new TileEntityHopper(BlockPosition.ZERO, Blocks.HOPPER.getBlockData());
         }
     }
 
@@ -118,7 +118,7 @@ public abstract class CraftTileInventoryConverter implements CraftInventoryCreat
 
         @Override
         public IInventory getTileEntity() {
-            return new TileEntityBlastFurnace();
+            return new TileEntityBlastFurnace(BlockPosition.ZERO, Blocks.BLAST_FURNACE.getBlockData());
         }
     }
 
@@ -126,7 +126,7 @@ public abstract class CraftTileInventoryConverter implements CraftInventoryCreat
 
         @Override
         public IInventory getTileEntity() {
-            return new TileEntityLectern().inventory;
+            return new TileEntityLectern(BlockPosition.ZERO, Blocks.LECTERN.getBlockData()).bookAccess;
         }
     }
 
@@ -134,7 +134,7 @@ public abstract class CraftTileInventoryConverter implements CraftInventoryCreat
 
         @Override
         public IInventory getTileEntity() {
-            return new TileEntitySmoker();
+            return new TileEntitySmoker(BlockPosition.ZERO, Blocks.SMOKER.getBlockData());
         }
     }
 }

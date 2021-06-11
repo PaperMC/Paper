@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/inventory/ContainerWorkbench.java
 +++ b/net/minecraft/world/inventory/ContainerWorkbench.java
-@@ -14,12 +14,21 @@
+@@ -14,6 +14,11 @@
  import net.minecraft.world.level.World;
  import net.minecraft.world.level.block.Blocks;
  
@@ -11,68 +11,53 @@
 +
  public class ContainerWorkbench extends ContainerRecipeBook<InventoryCrafting> {
  
-     private final InventoryCrafting craftInventory;
-     private final InventoryCraftResult resultInventory;
-     public final ContainerAccess containerAccess;
-     private final EntityHuman f;
+     public static final int RESULT_SLOT = 0;
+@@ -27,6 +32,9 @@
+     private final InventoryCraftResult resultSlots;
+     public final ContainerAccess access;
+     private final EntityHuman player;
 +    // CraftBukkit start
 +    private CraftInventoryView bukkitEntity = null;
-+    private PlayerInventory player;
 +    // CraftBukkit end
  
      public ContainerWorkbench(int i, PlayerInventory playerinventory) {
-         this(i, playerinventory, ContainerAccess.a);
-@@ -27,8 +36,12 @@
+         this(i, playerinventory, ContainerAccess.NULL);
+@@ -34,8 +42,11 @@
  
      public ContainerWorkbench(int i, PlayerInventory playerinventory, ContainerAccess containeraccess) {
          super(Containers.CRAFTING, i);
--        this.craftInventory = new InventoryCrafting(this, 3, 3);
+-        this.craftSlots = new InventoryCrafting(this, 3, 3);
 +        // CraftBukkit start - Switched order of IInventory construction and stored player
-         this.resultInventory = new InventoryCraftResult();
-+        this.craftInventory = new InventoryCrafting(this, 3, 3, playerinventory.player); // CraftBukkit - pass player
-+        this.craftInventory.resultInventory = this.resultInventory;
-+        this.player = playerinventory;
+         this.resultSlots = new InventoryCraftResult();
++        this.craftSlots = new InventoryCrafting(this, 3, 3, playerinventory.player); // CraftBukkit - pass player
++        this.craftSlots.resultInventory = this.resultSlots;
 +        // CraftBukkit end
-         this.containerAccess = containeraccess;
-         this.f = playerinventory.player;
-         this.a((Slot) (new SlotResult(playerinventory.player, this.craftInventory, this.resultInventory, 0, 124, 35)));
-@@ -54,7 +67,7 @@
+         this.access = containeraccess;
+         this.player = playerinventory.player;
+         this.a((Slot) (new SlotResult(playerinventory.player, this.craftSlots, this.resultSlots, 0, 124, 35)));
+@@ -71,9 +82,10 @@
+                 RecipeCrafting recipecrafting = (RecipeCrafting) optional.get();
  
-     }
- 
--    protected static void a(int i, World world, EntityHuman entityhuman, InventoryCrafting inventorycrafting, InventoryCraftResult inventorycraftresult) {
-+    protected static void a(int i, World world, EntityHuman entityhuman, InventoryCrafting inventorycrafting, InventoryCraftResult inventorycraftresult, Container container) { // CraftBukkit
-         if (!world.isClientSide) {
-             EntityPlayer entityplayer = (EntityPlayer) entityhuman;
-             ItemStack itemstack = ItemStack.b;
-@@ -67,6 +80,7 @@
-                     itemstack = recipecrafting.a(inventorycrafting);
+                 if (inventorycraftresult.setRecipeUsed(world, entityplayer, recipecrafting)) {
+-                    itemstack = recipecrafting.a((IInventory) inventorycrafting);
++                    itemstack = recipecrafting.a(inventorycrafting); // CraftBukkit - decompile error
                  }
              }
 +            itemstack = org.bukkit.craftbukkit.event.CraftEventFactory.callPreCraftEvent(inventorycrafting, inventorycraftresult, itemstack, container.getBukkitView(), false); // CraftBukkit
  
              inventorycraftresult.setItem(0, itemstack);
-             entityplayer.playerConnection.sendPacket(new PacketPlayOutSetSlot(i, 0, itemstack));
-@@ -76,7 +90,7 @@
-     @Override
-     public void a(IInventory iinventory) {
-         this.containerAccess.a((world, blockposition) -> {
--            a(this.windowId, world, this.f, this.craftInventory, this.resultInventory);
-+            a(this.windowId, world, this.f, this.craftInventory, this.resultInventory, this); // CraftBukkit
-         });
-     }
- 
-@@ -106,6 +120,7 @@
+             container.a(0, itemstack);
+@@ -114,6 +126,7 @@
  
      @Override
      public boolean canUse(EntityHuman entityhuman) {
 +        if (!this.checkReachable) return true; // CraftBukkit
-         return a(this.containerAccess, entityhuman, Blocks.CRAFTING_TABLE);
+         return a(this.access, entityhuman, Blocks.CRAFTING_TABLE);
      }
  
-@@ -180,4 +195,17 @@
-     public int h() {
-         return this.craftInventory.f();
+@@ -202,4 +215,17 @@
+     public boolean d(int i) {
+         return i != this.j();
      }
 +
 +    // CraftBukkit start
@@ -82,8 +67,8 @@
 +            return bukkitEntity;
 +        }
 +
-+        CraftInventoryCrafting inventory = new CraftInventoryCrafting(this.craftInventory, this.resultInventory);
-+        bukkitEntity = new CraftInventoryView(this.player.player.getBukkitEntity(), inventory, this);
++        CraftInventoryCrafting inventory = new CraftInventoryCrafting(this.craftSlots, this.resultSlots);
++        bukkitEntity = new CraftInventoryView(this.player.getBukkitEntity(), inventory, this);
 +        return bukkitEntity;
 +    }
 +    // CraftBukkit end

@@ -47,7 +47,7 @@ public class CraftShapedRecipe extends ShapedRecipe implements CraftRecipe {
         String[] shape = this.getShape();
         Map<Character, org.bukkit.inventory.RecipeChoice> ingred = this.getChoiceMap();
         int width = shape[0].length();
-        NonNullList<RecipeItemStack> data = NonNullList.a(shape.length * width, RecipeItemStack.a);
+        NonNullList<RecipeItemStack> data = NonNullList.a(shape.length * width, RecipeItemStack.EMPTY);
 
         for (int i = 0; i < shape.length; i++) {
             String row = shape[i];

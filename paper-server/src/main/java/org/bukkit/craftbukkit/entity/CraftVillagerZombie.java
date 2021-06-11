@@ -68,17 +68,17 @@ public class CraftVillagerZombie extends CraftZombie implements ZombieVillager {
     public int getConversionTime() {
         Preconditions.checkState(isConverting(), "Entity not converting");
 
-        return getHandle().conversionTime;
+        return getHandle().villagerConversionTime;
     }
 
     @Override
     public void setConversionTime(int time) {
         if (time < 0) {
-            getHandle().conversionTime = -1;
-            getHandle().getDataWatcher().set(EntityZombieVillager.CONVERTING, false);
-            getHandle().persistent = false; // CraftBukkit - SPIGOT-4684 update persistence
-            getHandle().conversionPlayer = null;
-            getHandle().removeEffect(MobEffects.INCREASE_DAMAGE, org.bukkit.event.entity.EntityPotionEffectEvent.Cause.CONVERSION);
+            getHandle().villagerConversionTime = -1;
+            getHandle().getDataWatcher().set(EntityZombieVillager.DATA_CONVERTING_ID, false);
+            getHandle().persistenceRequired = false; // CraftBukkit - SPIGOT-4684 update persistence
+            getHandle().conversionStarter = null;
+            getHandle().removeEffect(MobEffects.DAMAGE_BOOST, org.bukkit.event.entity.EntityPotionEffectEvent.Cause.CONVERSION);
         } else {
             getHandle().startConversion((UUID) null, time);
         }
@@ -86,12 +86,12 @@ public class CraftVillagerZombie extends CraftZombie implements ZombieVillager {
 
     @Override
     public OfflinePlayer getConversionPlayer() {
-        return (getHandle().conversionPlayer == null) ? null : Bukkit.getOfflinePlayer(getHandle().conversionPlayer);
+        return (getHandle().conversionStarter == null) ? null : Bukkit.getOfflinePlayer(getHandle().conversionStarter);
     }
 
     @Override
     public void setConversionPlayer(OfflinePlayer conversionPlayer) {
         if (!this.isConverting()) return;
-        getHandle().conversionPlayer = (conversionPlayer == null) ? null : conversionPlayer.getUniqueId();
+        getHandle().conversionStarter = (conversionPlayer == null) ? null : conversionPlayer.getUniqueId();
     }
 }

@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/item/EntityFallingBlock.java
 +++ b/net/minecraft/world/entity/item/EntityFallingBlock.java
-@@ -43,6 +43,8 @@
+@@ -45,6 +45,8 @@
  import net.minecraft.world.phys.MovingObjectPositionBlock;
  import net.minecraft.world.phys.Vec3D;
  
@@ -8,35 +8,44 @@
 +
  public class EntityFallingBlock extends Entity {
  
-     private IBlockData block;
-@@ -109,7 +111,7 @@
+     private IBlockData blockState;
+@@ -114,7 +116,7 @@
  
-             if (this.ticksLived++ == 0) {
+             if (this.time++ == 0) {
                  blockposition = this.getChunkCoordinates();
--                if (this.world.getType(blockposition).a(block)) {
-+                if (this.world.getType(blockposition).a(block) && !CraftEventFactory.callEntityChangeBlockEvent(this, blockposition, Blocks.AIR.getBlockData()).isCancelled()) {
-                     this.world.a(blockposition, false);
-                 } else if (!this.world.isClientSide) {
+-                if (this.level.getType(blockposition).a(block)) {
++                if (this.level.getType(blockposition).a(block) && !CraftEventFactory.callEntityChangeBlockEvent(this, blockposition, Blocks.AIR.getBlockData()).isCancelled()) {
+                     this.level.a(blockposition, false);
+                 } else if (!this.level.isClientSide) {
                      this.die();
-@@ -161,6 +163,11 @@
-                                     this.block = (IBlockData) this.block.set(BlockProperties.C, true);
+@@ -165,6 +167,11 @@
+                                     this.blockState = (IBlockData) this.blockState.set(BlockProperties.WATERLOGGED, true);
                                  }
  
 +                                // CraftBukkit start
-+                                if (CraftEventFactory.callEntityChangeBlockEvent(this, blockposition, this.block).isCancelled()) {
++                                if (CraftEventFactory.callEntityChangeBlockEvent(this, blockposition, this.blockState).isCancelled()) {
 +                                    return;
 +                                }
 +                                // CraftBukkit end
-                                 if (this.world.setTypeAndData(blockposition, this.block, 3)) {
-                                     if (block instanceof BlockFalling) {
-                                         ((BlockFalling) block).a(this.world, blockposition, this.block, iblockdata, this);
-@@ -217,7 +224,9 @@
-                 while (iterator.hasNext()) {
-                     Entity entity = (Entity) iterator.next();
+                                 if (this.level.setTypeAndData(blockposition, this.blockState, 3)) {
+                                     ((WorldServer) this.level).getChunkProvider().chunkMap.broadcast(this, new PacketPlayOutBlockChange(blockposition, this.level.getType(blockposition)));
+                                     this.die();
+@@ -238,7 +245,7 @@
+             if (i < 0) {
+                 return false;
+             } else {
+-                Predicate predicate;
++                Predicate<Entity> predicate; // CraftBukkit - decompile error
+                 DamageSource damagesource1;
  
+                 if (this.blockState.getBlock() instanceof Fallable) {
+@@ -254,7 +261,9 @@
+                 float f2 = (float) Math.min(MathHelper.d((float) i * this.fallDamagePerDistance), this.fallDamageMax);
+ 
+                 this.level.getEntities(this, this.getBoundingBox(), predicate).forEach((entity) -> {
 +                    CraftEventFactory.entityDamage = this; // CraftBukkit
-                     entity.damageEntity(damagesource, (float) Math.min(MathHelper.d((float) i * this.fallHurtAmount), this.fallHurtMax));
+                     entity.damageEntity(damagesource1, f2);
 +                    CraftEventFactory.entityDamage = null; // CraftBukkit
-                 }
+                 });
+                 boolean flag = this.blockState.a((Tag) TagsBlock.ANVIL);
  
-                 if (flag && (double) this.random.nextFloat() < 0.05000000074505806D + (double) i * 0.05D) {

@@ -1,20 +1,20 @@
 --- a/net/minecraft/world/level/block/entity/TileEntityShulkerBox.java
 +++ b/net/minecraft/world/level/block/entity/TileEntityShulkerBox.java
-@@ -29,6 +29,11 @@
+@@ -32,6 +32,11 @@
+ import net.minecraft.world.phys.AxisAlignedBB;
  import net.minecraft.world.phys.Vec3D;
- import net.minecraft.world.phys.shapes.VoxelShapes;
  
 +// CraftBukkit start
 +import org.bukkit.craftbukkit.entity.CraftHumanEntity;
 +import org.bukkit.entity.HumanEntity;
 +// CraftBukkit end
 +
- public class TileEntityShulkerBox extends TileEntityLootable implements IWorldInventory, ITickable {
+ public class TileEntityShulkerBox extends TileEntityLootable implements IWorldInventory {
  
-     private static final int[] a = IntStream.range(0, 27).toArray();
-@@ -41,6 +46,37 @@
-     private EnumColor l;
-     private boolean m;
+     public static final int COLUMNS = 9;
+@@ -51,6 +56,37 @@
+     @Nullable
+     private final EnumColor color;
  
 +    // CraftBukkit start - add fields and methods
 +    public List<HumanEntity> transaction = new java.util.ArrayList<HumanEntity>();
@@ -22,7 +22,7 @@
 +    public boolean opened;
 +
 +    public List<ItemStack> getContents() {
-+        return this.contents;
++        return this.itemStacks;
 +    }
 +
 +    public void onOpen(CraftHumanEntity who) {
@@ -47,22 +47,22 @@
 +    }
 +    // CraftBukkit end
 +
-     public TileEntityShulkerBox(@Nullable EnumColor enumcolor) {
-         super(TileEntityTypes.SHULKER_BOX);
-         this.contents = NonNullList.a(27, ItemStack.b);
-@@ -203,6 +239,7 @@
+     public TileEntityShulkerBox(@Nullable EnumColor enumcolor, BlockPosition blockposition, IBlockData iblockdata) {
+         super(TileEntityTypes.SHULKER_BOX, blockposition, iblockdata);
+         this.itemStacks = NonNullList.a(27, ItemStack.EMPTY);
+@@ -163,6 +199,7 @@
              }
  
-             ++this.viewingCount;
+             ++this.openCount;
 +            if (opened) return; // CraftBukkit - only animate if the ShulkerBox hasn't been forced open already by an API call.
-             this.world.playBlockAction(this.position, this.getBlock().getBlock(), 1, this.viewingCount);
-             if (this.viewingCount == 1) {
-                 this.world.playSound((EntityHuman) null, this.position, SoundEffects.BLOCK_SHULKER_BOX_OPEN, SoundCategory.BLOCKS, 0.5F, this.world.random.nextFloat() * 0.1F + 0.9F);
-@@ -215,6 +252,7 @@
+             this.level.playBlockAction(this.worldPosition, this.getBlock().getBlock(), 1, this.openCount);
+             if (this.openCount == 1) {
+                 this.level.a((Entity) entityhuman, GameEvent.CONTAINER_OPEN, this.worldPosition);
+@@ -176,6 +213,7 @@
      public void closeContainer(EntityHuman entityhuman) {
          if (!entityhuman.isSpectator()) {
-             --this.viewingCount;
+             --this.openCount;
 +            if (opened) return; // CraftBukkit - only animate if the ShulkerBox hasn't been forced open already by an API call.
-             this.world.playBlockAction(this.position, this.getBlock().getBlock(), 1, this.viewingCount);
-             if (this.viewingCount <= 0) {
-                 this.world.playSound((EntityHuman) null, this.position, SoundEffects.BLOCK_SHULKER_BOX_CLOSE, SoundCategory.BLOCKS, 0.5F, this.world.random.nextFloat() * 0.1F + 0.9F);
+             this.level.playBlockAction(this.worldPosition, this.getBlock().getBlock(), 1, this.openCount);
+             if (this.openCount <= 0) {
+                 this.level.a((Entity) entityhuman, GameEvent.CONTAINER_CLOSE, this.worldPosition);

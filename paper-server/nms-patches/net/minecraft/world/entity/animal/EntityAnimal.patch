@@ -1,7 +1,7 @@
 --- a/net/minecraft/world/entity/animal/EntityAnimal.java
 +++ b/net/minecraft/world/entity/animal/EntityAnimal.java
-@@ -27,10 +27,17 @@
- import net.minecraft.world.level.block.Blocks;
+@@ -28,11 +28,18 @@
+ import net.minecraft.world.level.gameevent.GameEvent;
  import net.minecraft.world.level.pathfinder.PathType;
  
 +// CraftBukkit start
@@ -12,13 +12,14 @@
 +
  public abstract class EntityAnimal extends EntityAgeable {
  
-     public int loveTicks;
-     public UUID breedCause;
+     static final int PARENT_AGE_AFTER_BREEDING = 6000;
+     public int inLove;
+     public UUID loveCause;
 +    public ItemStack breedItem; // CraftBukkit - Add breedItem variable
  
      protected EntityAnimal(EntityTypes<? extends EntityAnimal> entitytypes, World world) {
          super(entitytypes, world);
-@@ -67,6 +74,9 @@
+@@ -69,6 +76,9 @@
  
      }
  
@@ -28,7 +29,7 @@
      @Override
      public boolean damageEntity(DamageSource damagesource, float f) {
          if (this.isInvulnerable(damagesource)) {
-@@ -76,6 +86,7 @@
+@@ -78,6 +88,7 @@
              return super.damageEntity(damagesource, f);
          }
      }
@@ -36,32 +37,32 @@
  
      @Override
      public float a(BlockPosition blockposition, IWorldReader iworldreader) {
-@@ -166,10 +177,17 @@
+@@ -170,10 +181,17 @@
      }
  
      public void g(@Nullable EntityHuman entityhuman) {
--        this.loveTicks = 600;
+-        this.inLove = 600;
 +        // CraftBukkit start
 +        EntityEnterLoveModeEvent entityEnterLoveModeEvent = CraftEventFactory.callEntityEnterLoveModeEvent(entityhuman, this, 600);
 +        if (entityEnterLoveModeEvent.isCancelled()) {
 +            return;
 +        }
-+        this.loveTicks = entityEnterLoveModeEvent.getTicksInLove();
++        this.inLove = entityEnterLoveModeEvent.getTicksInLove();
 +        // CraftBukkit end
          if (entityhuman != null) {
-             this.breedCause = entityhuman.getUniqueID();
+             this.loveCause = entityhuman.getUniqueID();
          }
-+        this.breedItem = entityhuman.inventory.getItemInHand(); // CraftBukkit
++        this.breedItem = entityhuman.getInventory().getItemInHand(); // CraftBukkit
  
-         this.world.broadcastEntityEffect(this, (byte) 18);
+         this.level.broadcastEntityEffect(this, (byte) 18);
      }
-@@ -209,11 +227,26 @@
+@@ -213,11 +231,26 @@
          EntityAgeable entityageable = this.createChild(worldserver, entityanimal);
  
          if (entityageable != null) {
 +            // CraftBukkit start - set persistence for tame animals
 +            if (entityageable instanceof EntityTameableAnimal && ((EntityTameableAnimal) entityageable).isTamed()) {
-+                entityageable.persistent = true;
++                entityageable.persistenceRequired = true;
 +            }
 +            // CraftBukkit end
              EntityPlayer entityplayer = this.getBreedCause();
@@ -82,7 +83,7 @@
  
              if (entityplayer != null) {
                  entityplayer.a(StatisticList.ANIMALS_BRED);
-@@ -224,12 +257,14 @@
+@@ -228,12 +261,14 @@
              entityanimal.setAgeRaw(6000);
              this.resetLove();
              entityanimal.resetLove();
@@ -91,7 +92,7 @@
 -            worldserver.addAllEntities(entityageable);
 +            worldserver.addAllEntities(entityageable, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.BREEDING); // CraftBukkit - added SpawnReason
              worldserver.broadcastEntityEffect(this, (byte) 18);
-             if (worldserver.getGameRules().getBoolean(GameRules.DO_MOB_LOOT)) {
+             if (worldserver.getGameRules().getBoolean(GameRules.RULE_DOMOBLOOT)) {
 -                worldserver.addEntity(new EntityExperienceOrb(worldserver, this.locX(), this.locY(), this.locZ(), this.getRandom().nextInt(7) + 1));
 +                // CraftBukkit start - use event experience
 +                if (experience > 0) {

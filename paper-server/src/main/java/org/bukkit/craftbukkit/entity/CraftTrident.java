@@ -20,12 +20,12 @@ public class CraftTrident extends CraftArrow implements Trident {
 
     @Override
     public ItemStack getItem() {
-        return CraftItemStack.asBukkitCopy(getHandle().trident);
+        return CraftItemStack.asBukkitCopy(getHandle().tridentItem);
     }
 
     @Override
     public void setItem(ItemStack itemStack) {
-        getHandle().trident = CraftItemStack.asNMSCopy(itemStack);
+        getHandle().tridentItem = CraftItemStack.asNMSCopy(itemStack);
     }
 
     @Override

@@ -3,17 +3,27 @@ package org.bukkit.craftbukkit;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
+import com.mojang.math.Vector3fa;
 import java.util.HashMap;
 import java.util.Map;
+import net.minecraft.core.BlockPosition;
 import net.minecraft.core.IRegistry;
+import net.minecraft.core.particles.DustColorTransitionOptions;
 import net.minecraft.core.particles.ParticleParam;
 import net.minecraft.core.particles.ParticleParamBlock;
 import net.minecraft.core.particles.ParticleParamItem;
 import net.minecraft.core.particles.ParticleParamRedstone;
 import net.minecraft.core.particles.ParticleType;
+import net.minecraft.core.particles.VibrationParticleOption;
 import net.minecraft.resources.MinecraftKey;
+import net.minecraft.world.level.gameevent.BlockPositionSource;
+import net.minecraft.world.level.gameevent.EntityPositionSource;
+import net.minecraft.world.level.gameevent.PositionSource;
+import net.minecraft.world.level.gameevent.vibrations.VibrationPath;
 import org.bukkit.Color;
+import org.bukkit.Location;
 import org.bukkit.Particle;
+import org.bukkit.Vibration;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
@@ -98,6 +108,23 @@ public enum CraftParticle {
     LANDING_OBSIDIAN_TEAR("landing_obsidian_tear"),
     REVERSE_PORTAL("reverse_portal"),
     WHITE_ASH("white_ash"),
+    LIGHT("light"),
+    DUST_COLOR_TRANSITION("dust_color_transition"),
+    VIBRATION("vibration"),
+    FALLING_SPORE_BLOSSOM("falling_spore_blossom"),
+    SPORE_BLOSSOM_AIR("spore_blossom_air"),
+    SMALL_FLAME("small_flame"),
+    SNOWFLAKE("snowflake"),
+    DRIPPING_DRIPSTONE_LAVA("dripping_dripstone_lava"),
+    FALLING_DRIPSTONE_LAVA("falling_dripstone_lava"),
+    DRIPPING_DRIPSTONE_WATER("dripping_dripstone_water"),
+    FALLING_DRIPSTONE_WATER("falling_dripstone_water"),
+    GLOW_SQUID_INK("glow_squid_ink"),
+    GLOW("glow"),
+    WAX_ON("wax_on"),
+    WAX_OFF("wax_off"),
+    ELECTRIC_SPARK("electric_spark"),
+    SCRAPE("scrape"),
     // ----- Legacy Separator -----
     LEGACY_BLOCK_CRACK("block"),
     LEGACY_BLOCK_DUST("block"),
@@ -159,7 +186,30 @@ public enum CraftParticle {
         if (particle.getDataType() == Particle.DustOptions.class) {
             Particle.DustOptions data = (Particle.DustOptions) obj;
             Color color = data.getColor();
-            return new ParticleParamRedstone(color.getRed() / 255.0f, color.getGreen() / 255.0f, color.getBlue() / 255.0f, data.getSize());
+            return new ParticleParamRedstone(new Vector3fa(color.getRed() / 255.0f, color.getGreen() / 255.0f, color.getBlue() / 255.0f), data.getSize());
+        }
+        if (particle.getDataType() == Particle.DustTransition.class) {
+            Particle.DustTransition data = (Particle.DustTransition) obj;
+            Color from = data.getColor();
+            Color to = data.getToColor();
+            return new DustColorTransitionOptions(new Vector3fa(from.getRed() / 255.0f, from.getGreen() / 255.0f, from.getBlue() / 255.0f), new Vector3fa(to.getRed() / 255.0f, to.getGreen() / 255.0f, to.getBlue() / 255.0f), data.getSize());
+        }
+        if (particle.getDataType() == Vibration.class) {
+            Vibration vibration = (Vibration) obj;
+            Location origin = vibration.getOrigin();
+
+            PositionSource source;
+            if (vibration.getDestination() instanceof Vibration.Destination.BlockDestination) {
+                Location destination = ((Vibration.Destination.BlockDestination) vibration.getDestination()).getLocation();
+                source = new BlockPositionSource(new BlockPosition(destination.getBlockX(), destination.getBlockY(), destination.getBlockZ()));
+            } else if (vibration.getDestination() instanceof Vibration.Destination.EntityDestination) {
+                source = new EntityPositionSource(((Vibration.Destination.EntityDestination) vibration.getDestination()).getEntity().getEntityId());
+            } else {
+                throw new IllegalArgumentException("Unknown vibration destination " + vibration.getDestination());
+            }
+
+            VibrationPath path = new VibrationPath(new BlockPosition(origin.getBlockX(), origin.getBlockY(), origin.getBlockZ()), source, vibration.getArrivalTime());
+            return new VibrationParticleOption(path);
         }
         throw new IllegalArgumentException(particle.getDataType().toString());
     }

@@ -1,7 +1,5 @@
 package org.bukkit.craftbukkit.inventory;
 
-import net.minecraft.network.chat.ChatComponentText;
-import net.minecraft.network.protocol.game.PacketPlayOutOpenWindow;
 import net.minecraft.world.IInventory;
 import net.minecraft.world.entity.player.EntityHuman;
 import net.minecraft.world.entity.player.PlayerInventory;
@@ -29,7 +27,6 @@ import net.minecraft.world.inventory.ContainerWorkbench;
 import net.minecraft.world.inventory.Containers;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
-import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.inventory.Inventory;
@@ -39,9 +36,7 @@ public class CraftContainer extends Container {
 
     private final InventoryView view;
     private InventoryType cachedType;
-    private String cachedTitle;
     private Container delegate;
-    private final int cachedSize;
 
     public CraftContainer(InventoryView view, EntityHuman player, int id) {
         super(getNotchInventoryType(view.getTopInventory()), id);
@@ -50,8 +45,6 @@ public class CraftContainer extends Container {
         IInventory top = ((CraftInventory) view.getTopInventory()).getInventory();
         PlayerInventory bottom = (PlayerInventory) ((CraftInventory) view.getBottomInventory()).getInventory();
         cachedType = view.getType();
-        cachedTitle = view.getTitle();
-        cachedSize = getSize();
         setupSlots(top, bottom, player);
     }
 
@@ -89,38 +82,6 @@ public class CraftContainer extends Container {
         return view;
     }
 
-    private int getSize() {
-        return view.getTopInventory().getSize();
-    }
-
-    @Override
-    public boolean c(EntityHuman entityhuman) {
-        if (cachedType == view.getType() && cachedSize == getSize() && cachedTitle.equals(view.getTitle())) {
-            return true;
-        }
-        // If the window type has changed for some reason, update the player
-        // This method will be called every tick or something, so it's
-        // as good a place as any to put something like this.
-        boolean typeChanged = (cachedType != view.getType());
-        cachedType = view.getType();
-        cachedTitle = view.getTitle();
-        if (view.getPlayer() instanceof CraftPlayer) {
-            CraftPlayer player = (CraftPlayer) view.getPlayer();
-            Containers<?> type = getNotchInventoryType(view.getTopInventory());
-            IInventory top = ((CraftInventory) view.getTopInventory()).getInventory();
-            PlayerInventory bottom = (PlayerInventory) ((CraftInventory) view.getBottomInventory()).getInventory();
-            this.items.clear();
-            this.slots.clear();
-            if (typeChanged) {
-                setupSlots(top, bottom, player.getHandle());
-            }
-            int size = getSize();
-            player.getHandle().playerConnection.sendPacket(new PacketPlayOutOpenWindow(this.windowId, type, new ChatComponentText(cachedTitle)));
-            player.updateInventory();
-        }
-        return true;
-    }
-
     public static Containers getNotchInventoryType(Inventory inventory) {
         switch (inventory.getType()) {
             case PLAYER:
@@ -129,18 +90,18 @@ public class CraftContainer extends Container {
             case BARREL:
                 switch (inventory.getSize()) {
                     case 9:
-                        return Containers.GENERIC_9X1;
+                        return Containers.GENERIC_9x1;
                     case 18:
-                        return Containers.GENERIC_9X2;
+                        return Containers.GENERIC_9x2;
                     case 27:
-                        return Containers.GENERIC_9X3;
+                        return Containers.GENERIC_9x3;
                     case 36:
                     case 41: // PLAYER
-                        return Containers.GENERIC_9X4;
+                        return Containers.GENERIC_9x4;
                     case 45:
-                        return Containers.GENERIC_9X5;
+                        return Containers.GENERIC_9x5;
                     case 54:
-                        return Containers.GENERIC_9X6;
+                        return Containers.GENERIC_9x6;
                     default:
                         throw new IllegalArgumentException("Unsupported custom inventory size " + inventory.getSize());
                 }
@@ -149,7 +110,7 @@ public class CraftContainer extends Container {
             case FURNACE:
                 return Containers.FURNACE;
             case DISPENSER:
-                return Containers.GENERIC_3X3;
+                return Containers.GENERIC_3x3;
             case ENCHANTING:
                 return Containers.ENCHANTMENT;
             case BREWING:
@@ -163,7 +124,7 @@ public class CraftContainer extends Container {
             case HOPPER:
                 return Containers.HOPPER;
             case DROPPER:
-                return Containers.GENERIC_3X3;
+                return Containers.GENERIC_3x3;
             case SHULKER_BOX:
                 return Containers.SHULKER_BOX;
             case BLAST_FURNACE:
@@ -186,7 +147,7 @@ public class CraftContainer extends Container {
                 throw new IllegalArgumentException("Can't open a " + inventory.getType() + " inventory!");
             default:
                 // TODO: If it reaches the default case, should we throw an error?
-                return Containers.GENERIC_9X3;
+                return Containers.GENERIC_9x3;
         }
     }
 
@@ -199,7 +160,7 @@ public class CraftContainer extends Container {
             case CHEST:
             case ENDER_CHEST:
             case BARREL:
-                delegate = new ContainerChest(Containers.GENERIC_9X3, windowId, bottom, top, top.getSize() / 9);
+                delegate = new ContainerChest(Containers.GENERIC_9x3, windowId, bottom, top, top.getSize() / 9);
                 break;
             case DISPENSER:
             case DROPPER:
@@ -260,7 +221,7 @@ public class CraftContainer extends Container {
         }
 
         if (delegate != null) {
-            this.items = delegate.items;
+            this.lastSlots = delegate.lastSlots;
             this.slots = delegate.slots;
         }
 

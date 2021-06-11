@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/network/LoginListener.java
 +++ b/net/minecraft/server/network/LoginListener.java
-@@ -35,6 +35,13 @@
+@@ -36,6 +36,13 @@
  import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
  
@@ -13,16 +13,16 @@
 +
  public class LoginListener implements PacketLoginInListener {
  
-     private static final AtomicInteger b = new AtomicInteger(0);
-@@ -49,6 +56,7 @@
-     private final String j;
-     private SecretKey loginKey;
-     private EntityPlayer l;
+     private static final AtomicInteger UNIQUE_THREAD_ID = new AtomicInteger(0);
+@@ -52,6 +59,7 @@
+     private final String serverId;
+     @Nullable
+     private EntityPlayer delayedAcceptPlayer;
 +    public String hostname = ""; // CraftBukkit - add field
  
      public LoginListener(MinecraftServer minecraftserver, NetworkManager networkmanager) {
-         this.g = LoginListener.EnumProtocolState.HELLO;
-@@ -77,6 +85,20 @@
+         this.state = LoginListener.EnumProtocolState.HELLO;
+@@ -80,6 +88,20 @@
  
      }
  
@@ -32,8 +32,8 @@
 +        try {
 +            IChatBaseComponent ichatbasecomponent = new ChatComponentText(s);
 +            LoginListener.LOGGER.info("Disconnecting {}: {}", this.d(), s);
-+            this.networkManager.sendPacket(new PacketLoginOutDisconnect(ichatbasecomponent));
-+            this.networkManager.close(ichatbasecomponent);
++            this.connection.sendPacket(new PacketLoginOutDisconnect(ichatbasecomponent));
++            this.connection.close(ichatbasecomponent);
 +        } catch (Exception exception) {
 +            LoginListener.LOGGER.error("Error whilst disconnecting player", exception);
 +        }
@@ -42,14 +42,14 @@
 +
      @Override
      public NetworkManager a() {
-         return this.networkManager;
-@@ -98,10 +120,12 @@
-             this.i = this.a(this.i);
+         return this.connection;
+@@ -101,10 +123,12 @@
+             this.gameProfile = this.a(this.gameProfile);
          }
  
--        IChatBaseComponent ichatbasecomponent = this.server.getPlayerList().attemptLogin(this.networkManager.getSocketAddress(), this.i);
+-        IChatBaseComponent ichatbasecomponent = this.server.getPlayerList().attemptLogin(this.connection.getSocketAddress(), this.gameProfile);
 +        // CraftBukkit start - fire PlayerLoginEvent
-+        EntityPlayer s = this.server.getPlayerList().attemptLogin(this, this.i, hostname);
++        EntityPlayer s = this.server.getPlayerList().attemptLogin(this, this.gameProfile, hostname);
  
 -        if (ichatbasecomponent != null) {
 -            this.disconnect(ichatbasecomponent);
@@ -57,32 +57,29 @@
 +            // this.disconnect(ichatbasecomponent);
 +            // CraftBukkit end
          } else {
-             this.g = LoginListener.EnumProtocolState.ACCEPTED;
-             if (this.server.ax() >= 0 && !this.networkManager.isLocal()) {
-@@ -115,9 +139,9 @@
+             this.state = LoginListener.EnumProtocolState.ACCEPTED;
+             if (this.server.aw() >= 0 && !this.connection.isLocal()) {
+@@ -117,7 +141,7 @@
+             EntityPlayer entityplayer = this.server.getPlayerList().getPlayer(this.gameProfile.getId());
  
-             if (entityplayer != null) {
-                 this.g = LoginListener.EnumProtocolState.DELAY_ACCEPT;
--                this.l = this.server.getPlayerList().processLogin(this.i);
-+                this.l = this.server.getPlayerList().processLogin(this.i, s); // CraftBukkit - add player reference
-             } else {
--                this.server.getPlayerList().a(this.networkManager, this.server.getPlayerList().processLogin(this.i));
-+                this.server.getPlayerList().a(this.networkManager, this.server.getPlayerList().processLogin(this.i, s)); // CraftBukkit - add player reference
-             }
-         }
+             try {
+-                EntityPlayer entityplayer1 = this.server.getPlayerList().processLogin(this.gameProfile);
++                EntityPlayer entityplayer1 = this.server.getPlayerList().processLogin(this.gameProfile, s); // CraftBukkit - add player reference
  
-@@ -175,6 +199,43 @@
+                 if (entityplayer != null) {
+                     this.state = LoginListener.EnumProtocolState.DELAY_ACCEPT;
+@@ -191,6 +215,43 @@
                  try {
-                     LoginListener.this.i = LoginListener.this.server.getMinecraftSessionService().hasJoinedServer(new GameProfile((UUID) null, gameprofile.getName()), s, this.a());
-                     if (LoginListener.this.i != null) {
+                     LoginListener.this.gameProfile = LoginListener.this.server.getMinecraftSessionService().hasJoinedServer(new GameProfile((UUID) null, gameprofile.getName()), s, this.a());
+                     if (LoginListener.this.gameProfile != null) {
 +                        // CraftBukkit start - fire PlayerPreLoginEvent
-+                        if (!networkManager.isConnected()) {
++                        if (!connection.isConnected()) {
 +                            return;
 +                        }
 +
-+                        String playerName = i.getName();
-+                        java.net.InetAddress address = ((java.net.InetSocketAddress) networkManager.getSocketAddress()).getAddress();
-+                        java.util.UUID uniqueId = i.getId();
++                        String playerName = gameProfile.getName();
++                        java.net.InetAddress address = ((java.net.InetSocketAddress) connection.getSocketAddress()).getAddress();
++                        java.util.UUID uniqueId = gameProfile.getId();
 +                        final org.bukkit.craftbukkit.CraftServer server = LoginListener.this.server.server;
 +
 +                        AsyncPlayerPreLoginEvent asyncEvent = new AsyncPlayerPreLoginEvent(playerName, address, uniqueId);
@@ -112,10 +109,10 @@
 +                            }
 +                        }
 +                        // CraftBukkit end
-                         LoginListener.LOGGER.info("UUID of player {} is {}", LoginListener.this.i.getName(), LoginListener.this.i.getId());
-                         LoginListener.this.g = LoginListener.EnumProtocolState.READY_TO_ACCEPT;
+                         LoginListener.LOGGER.info("UUID of player {} is {}", LoginListener.this.gameProfile.getName(), LoginListener.this.gameProfile.getId());
+                         LoginListener.this.state = LoginListener.EnumProtocolState.READY_TO_ACCEPT;
                      } else if (LoginListener.this.server.isEmbeddedServer()) {
-@@ -194,6 +255,11 @@
+@@ -210,6 +271,11 @@
                          LoginListener.this.disconnect(new ChatMessage("multiplayer.disconnect.authservers_down"));
                          LoginListener.LOGGER.error("Couldn't verify username because servers are unavailable");
                      }

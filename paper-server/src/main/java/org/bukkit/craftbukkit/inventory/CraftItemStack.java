@@ -25,16 +25,16 @@ public final class CraftItemStack extends ItemStack {
     public static net.minecraft.world.item.ItemStack asNMSCopy(ItemStack original) {
         if (original instanceof CraftItemStack) {
             CraftItemStack stack = (CraftItemStack) original;
-            return stack.handle == null ? net.minecraft.world.item.ItemStack.b : stack.handle.cloneItemStack();
+            return stack.handle == null ? net.minecraft.world.item.ItemStack.EMPTY : stack.handle.cloneItemStack();
         }
         if (original == null || original.getType() == Material.AIR) {
-            return net.minecraft.world.item.ItemStack.b;
+            return net.minecraft.world.item.ItemStack.EMPTY;
         }
 
         Item item = CraftMagicNumbers.getItem(original.getType(), original.getDurability());
 
         if (item == null) {
-            return net.minecraft.world.item.ItemStack.b;
+            return net.minecraft.world.item.ItemStack.EMPTY;
         }
 
         net.minecraft.world.item.ItemStack stack = new net.minecraft.world.item.ItemStack(item, original.getAmount());
@@ -521,6 +521,7 @@ public final class CraftItemStack extends ItemStack {
             case SMOKER:
             case BEEHIVE:
             case BEE_NEST:
+            case SCULK_SENSOR:
                 return new CraftMetaBlockState(item.getTag(), CraftMagicNumbers.getMaterial(item.getItem()));
             case TROPICAL_FISH_BUCKET:
                 return new CraftMetaTropicalFishBucket(item.getTag());
@@ -536,6 +537,8 @@ public final class CraftItemStack extends ItemStack {
                 return new CraftMetaEntityTag(item.getTag());
             case COMPASS:
                 return new CraftMetaCompass(item.getTag());
+            case BUNDLE:
+                return new CraftMetaBundle(item.getTag());
             default:
                 return new CraftMetaItem(item.getTag());
         }

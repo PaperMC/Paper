@@ -1,0 +1,90 @@
+--- a/net/minecraft/world/level/block/PointedDripstoneBlock.java
++++ b/net/minecraft/world/level/block/PointedDripstoneBlock.java
+@@ -43,6 +43,11 @@
+ import net.minecraft.world.phys.shapes.VoxelShapeCollision;
+ import net.minecraft.world.phys.shapes.VoxelShapes;
+ 
++// CraftBukkit start
++import org.bukkit.craftbukkit.block.CraftBlock;
++import org.bukkit.craftbukkit.event.CraftEventFactory;
++// CraftBukkit end
++
+ public class PointedDripstoneBlock extends Block implements Fallable, IBlockWaterlogged {
+ 
+     public static final BlockStateDirection TIP_DIRECTION = BlockProperties.VERTICAL_DIRECTION;
+@@ -125,6 +130,11 @@
+         BlockPosition blockposition = movingobjectpositionblock.getBlockPosition();
+ 
+         if (!world.isClientSide && iprojectile.a(world, blockposition) && iprojectile instanceof EntityThrownTrident && iprojectile.getMot().f() > 0.6D) {
++            // CraftBukkit start
++            if (CraftEventFactory.callEntityChangeBlockEvent(iprojectile, blockposition, Blocks.AIR.getBlockData()).isCancelled()) {
++                return;
++            }
++            // CraftBukkit end
+             world.b(blockposition, true);
+         }
+ 
+@@ -133,7 +143,9 @@
+     @Override
+     public void fallOn(World world, IBlockData iblockdata, BlockPosition blockposition, Entity entity, float f) {
+         if (iblockdata.get(PointedDripstoneBlock.TIP_DIRECTION) == EnumDirection.UP && iblockdata.get(PointedDripstoneBlock.THICKNESS) == DripstoneThickness.TIP) {
++            CraftEventFactory.blockDamage = CraftBlock.at(world, blockposition); // CraftBukkit
+             entity.a(f + 2.0F, 2.0F, DamageSource.STALAGMITE);
++            CraftEventFactory.blockDamage = null; // CraftBukkit
+         } else {
+             super.fallOn(world, iblockdata, blockposition, entity, f);
+         }
+@@ -397,15 +409,15 @@
+         if (a(iblockdata, enumdirection.opposite())) {
+             c(iblockdata, (GeneratorAccess) worldserver, blockposition1);
+         } else if (iblockdata.isAir() || iblockdata.a(Blocks.WATER)) {
+-            a((GeneratorAccess) worldserver, blockposition1, enumdirection, DripstoneThickness.TIP);
++            a((GeneratorAccess) worldserver, blockposition1, enumdirection, DripstoneThickness.TIP, blockposition); // CraftBukkit
+         }
+ 
+     }
+ 
+-    private static void a(GeneratorAccess generatoraccess, BlockPosition blockposition, EnumDirection enumdirection, DripstoneThickness dripstonethickness) {
++    private static void a(GeneratorAccess generatoraccess, BlockPosition blockposition, EnumDirection enumdirection, DripstoneThickness dripstonethickness, BlockPosition source) {
+         IBlockData iblockdata = (IBlockData) ((IBlockData) ((IBlockData) Blocks.POINTED_DRIPSTONE.getBlockData().set(PointedDripstoneBlock.TIP_DIRECTION, enumdirection)).set(PointedDripstoneBlock.THICKNESS, dripstonethickness)).set(PointedDripstoneBlock.WATERLOGGED, generatoraccess.getFluid(blockposition).getType() == FluidTypes.WATER);
+ 
+-        generatoraccess.setTypeAndData(blockposition, iblockdata, 3);
++        org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockSpreadEvent(generatoraccess, source, blockposition, iblockdata, 3); // CraftBukkit
+     }
+ 
+     private static void c(IBlockData iblockdata, GeneratorAccess generatoraccess, BlockPosition blockposition) {
+@@ -420,8 +432,8 @@
+             blockposition1 = blockposition.down();
+         }
+ 
+-        a(generatoraccess, blockposition2, EnumDirection.DOWN, DripstoneThickness.TIP_MERGE);
+-        a(generatoraccess, blockposition1, EnumDirection.UP, DripstoneThickness.TIP_MERGE);
++        a(generatoraccess, blockposition2, EnumDirection.DOWN, DripstoneThickness.TIP_MERGE, blockposition); // CraftBukkit
++        a(generatoraccess, blockposition1, EnumDirection.UP, DripstoneThickness.TIP_MERGE, blockposition); // CraftBukkit
+     }
+ 
+     public static void a(World world, BlockPosition blockposition, IBlockData iblockdata) {
+@@ -454,7 +466,7 @@
+ 
+             return (BlockPosition) a(generatoraccess, blockposition, enumdirection.e(), predicate, (iblockdata1) -> {
+                 return a(iblockdata1, flag);
+-            }, i).orElse((Object) null);
++            }, i).orElse(null); // CraftBukkit - decompile error
+         }
+     }
+ 
+@@ -567,12 +579,12 @@
+             return iblockdata.getBlock() instanceof AbstractCauldronBlock && ((AbstractCauldronBlock) iblockdata.getBlock()).a(fluidtype);
+         };
+ 
+-        return (BlockPosition) a(world, blockposition, EnumDirection.DOWN.e(), BlockBase.BlockData::isAir, predicate, 11).orElse((Object) null);
++        return (BlockPosition) a(world, blockposition, EnumDirection.DOWN.e(), BlockBase.BlockData::isAir, predicate, 11).orElse(null); // CraftBukkit - decompile error
+     }
+ 
+     @Nullable
+     public static BlockPosition a(World world, BlockPosition blockposition) {
+-        return (BlockPosition) a(world, blockposition, EnumDirection.UP.e(), BlockBase.BlockData::isAir, PointedDripstoneBlock::h, 11).orElse((Object) null);
++        return (BlockPosition) a(world, blockposition, EnumDirection.UP.e(), BlockBase.BlockData::isAir, PointedDripstoneBlock::h, 11).orElse(null); // CraftBukkit - decompile error
+     }
+ 
+     public static FluidType b(World world, BlockPosition blockposition) {

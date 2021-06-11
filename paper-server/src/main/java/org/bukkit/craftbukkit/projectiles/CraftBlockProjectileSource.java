@@ -99,7 +99,7 @@ public class CraftBlockProjectileSource implements BlockProjectileSource {
             } else {
                 launch = new EntityTippedArrow(world, iposition.getX(), iposition.getY(), iposition.getZ());
             }
-            ((EntityArrow) launch).fromPlayer = EntityArrow.PickupStatus.ALLOWED;
+            ((EntityArrow) launch).pickup = EntityArrow.PickupStatus.ALLOWED;
             ((EntityArrow) launch).projectileSource = this;
         } else if (Fireball.class.isAssignableFrom(projectile)) {
             double d0 = iposition.getX() + (double) ((float) enumdirection.getAdjacentX() * 0.3F);
@@ -115,19 +115,19 @@ public class CraftBlockProjectileSource implements BlockProjectileSource {
             } else if (WitherSkull.class.isAssignableFrom(projectile)) {
                 launch = EntityTypes.WITHER_SKULL.a(world);
                 launch.setPosition(d0, d1, d2);
-                double d6 = (double) MathHelper.sqrt(d3 * d3 + d4 * d4 + d5 * d5);
+                double d6 = Math.sqrt(d3 * d3 + d4 * d4 + d5 * d5);
 
-                ((EntityFireball) launch).dirX = d3 / d6 * 0.1D;
-                ((EntityFireball) launch).dirY = d4 / d6 * 0.1D;
-                ((EntityFireball) launch).dirZ = d5 / d6 * 0.1D;
+                ((EntityFireball) launch).xPower = d3 / d6 * 0.1D;
+                ((EntityFireball) launch).yPower = d4 / d6 * 0.1D;
+                ((EntityFireball) launch).zPower = d5 / d6 * 0.1D;
             } else {
                 launch = EntityTypes.FIREBALL.a(world);
                 launch.setPosition(d0, d1, d2);
-                double d6 = (double) MathHelper.sqrt(d3 * d3 + d4 * d4 + d5 * d5);
+                double d6 = Math.sqrt(d3 * d3 + d4 * d4 + d5 * d5);
 
-                ((EntityFireball) launch).dirX = d3 / d6 * 0.1D;
-                ((EntityFireball) launch).dirY = d4 / d6 * 0.1D;
-                ((EntityFireball) launch).dirZ = d5 / d6 * 0.1D;
+                ((EntityFireball) launch).xPower = d3 / d6 * 0.1D;
+                ((EntityFireball) launch).yPower = d4 / d6 * 0.1D;
+                ((EntityFireball) launch).zPower = d5 / d6 * 0.1D;
             }
 
             ((EntityFireball) launch).projectileSource = this;

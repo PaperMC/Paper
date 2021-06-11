@@ -193,6 +193,9 @@ public class Commodore
                                     case "ZOMBIE_PIGMAN_SPAWN_EGG":
                                         name = "ZOMBIFIED_PIGLIN_SPAWN_EGG";
                                         break;
+                                    case "GRASS_PATH":
+                                        name = "DIRT_PATH";
+                                        break;
                                 }
                             }
 

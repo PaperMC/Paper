@@ -36,6 +36,7 @@ import org.bukkit.inventory.meta.BannerMeta;
 import org.bukkit.inventory.meta.BlockDataMeta;
 import org.bukkit.inventory.meta.BlockStateMeta;
 import org.bukkit.inventory.meta.BookMeta;
+import org.bukkit.inventory.meta.BundleMeta;
 import org.bukkit.inventory.meta.CrossbowMeta;
 import org.bukkit.inventory.meta.EnchantmentStorageMeta;
 import org.bukkit.inventory.meta.FireworkEffectMeta;
@@ -338,6 +339,14 @@ public class ItemMetaTest extends AbstractTestingBase {
                 @Override ItemStack operate(ItemStack cleanStack) {
                     final CraftMetaCompass meta = ((CraftMetaCompass) cleanStack.getItemMeta());
                     meta.setLodestoneTracked(true);
+                    cleanStack.setItemMeta(meta);
+                    return cleanStack;
+                }
+            },
+            new StackProvider(Material.BUNDLE) {
+                @Override ItemStack operate(ItemStack cleanStack) {
+                    final BundleMeta meta = (BundleMeta) cleanStack.getItemMeta();
+                    meta.addItem(new ItemStack(Material.STONE));
                     cleanStack.setItemMeta(meta);
                     return cleanStack;
                 }

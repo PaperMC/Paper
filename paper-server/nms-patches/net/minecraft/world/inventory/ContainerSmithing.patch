@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/inventory/ContainerSmithing.java
 +++ b/net/minecraft/world/inventory/ContainerSmithing.java
-@@ -12,12 +12,17 @@
+@@ -11,12 +11,17 @@
  import net.minecraft.world.level.block.Blocks;
  import net.minecraft.world.level.block.state.IBlockData;
  
@@ -8,37 +8,37 @@
 +
  public class ContainerSmithing extends ContainerAnvilAbstract {
  
-     private final World g;
+     private final World level;
      @Nullable
-     private RecipeSmithing h;
-     private final List<RecipeSmithing> i;
+     private RecipeSmithing selectedRecipe;
+     private final List<RecipeSmithing> recipes;
 +    // CraftBukkit start
 +    private CraftInventoryView bukkitEntity;
 +    // CraftBukkit end
  
      public ContainerSmithing(int i, PlayerInventory playerinventory) {
-         this(i, playerinventory, ContainerAccess.a);
-@@ -63,13 +68,15 @@
-         List<RecipeSmithing> list = this.g.getCraftingManager().b(Recipes.SMITHING, this.repairInventory, this.g);
+         this(i, playerinventory, ContainerAccess.NULL);
+@@ -61,13 +66,15 @@
+         List<RecipeSmithing> list = this.level.getCraftingManager().b(Recipes.SMITHING, this.inputSlots, this.level);
  
          if (list.isEmpty()) {
--            this.resultInventory.setItem(0, ItemStack.b);
-+            org.bukkit.craftbukkit.event.CraftEventFactory.callPrepareSmithingEvent(getBukkitView(), ItemStack.b); // CraftBukkit
+-            this.resultSlots.setItem(0, ItemStack.EMPTY);
++            org.bukkit.craftbukkit.event.CraftEventFactory.callPrepareSmithingEvent(getBukkitView(), ItemStack.EMPTY); // CraftBukkit
          } else {
-             this.h = (RecipeSmithing) list.get(0);
-             ItemStack itemstack = this.h.a(this.repairInventory);
+             this.selectedRecipe = (RecipeSmithing) list.get(0);
+             ItemStack itemstack = this.selectedRecipe.a(this.inputSlots);
  
-             this.resultInventory.a((IRecipe) this.h);
--            this.resultInventory.setItem(0, itemstack);
+             this.resultSlots.setRecipeUsed(this.selectedRecipe);
+-            this.resultSlots.setItem(0, itemstack);
 +            // CraftBukkit start
 +            org.bukkit.craftbukkit.event.CraftEventFactory.callPrepareSmithingEvent(getBukkitView(), itemstack);
 +            // CraftBukkit end
          }
  
      }
-@@ -85,4 +92,18 @@
+@@ -83,4 +90,18 @@
      public boolean a(ItemStack itemstack, Slot slot) {
-         return slot.inventory != this.resultInventory && super.a(itemstack, slot);
+         return slot.container != this.resultSlots && super.a(itemstack, slot);
      }
 +
 +    // CraftBukkit start
@@ -49,7 +49,7 @@
 +        }
 +
 +        org.bukkit.craftbukkit.inventory.CraftInventory inventory = new org.bukkit.craftbukkit.inventory.CraftInventorySmithing(
-+                containerAccess.getLocation(), this.repairInventory, this.resultInventory);
++                access.getLocation(), this.inputSlots, this.resultSlots);
 +        bukkitEntity = new CraftInventoryView(this.player.getBukkitEntity(), inventory, this);
 +        return bukkitEntity;
 +    }

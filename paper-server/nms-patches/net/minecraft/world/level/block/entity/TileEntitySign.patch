@@ -1,16 +1,16 @@
 --- a/net/minecraft/world/level/block/entity/TileEntitySign.java
 +++ b/net/minecraft/world/level/block/entity/TileEntitySign.java
-@@ -23,7 +23,7 @@
+@@ -25,7 +25,7 @@
  import net.minecraft.world.phys.Vec2F;
  import net.minecraft.world.phys.Vec3D;
  
 -public class TileEntitySign extends TileEntity {
 +public class TileEntitySign extends TileEntity implements ICommandListener { // CraftBukkit - implements
  
-     public final IChatBaseComponent[] lines;
-     public boolean isEditable;
-@@ -49,6 +49,12 @@
-             nbttagcompound.setString("Text" + (i + 1), s);
+     public static final int LINES = 4;
+     private static final String[] RAW_TEXT_FIELD_NAMES = new String[]{"Text1", "Text2", "Text3", "Text4"};
+@@ -65,6 +65,12 @@
+             }
          }
  
 +        // CraftBukkit start
@@ -19,56 +19,46 @@
 +        }
 +        // CraftBukkit end
 +
-         nbttagcompound.setString("Color", this.color.c());
+         nbttagcompound.setString("Color", this.color.b());
+         nbttagcompound.setBoolean("GlowingText", this.hasGlowingText);
          return nbttagcompound;
-     }
-@@ -59,18 +65,38 @@
-         super.load(iblockdata, nbttagcompound);
+@@ -76,8 +82,24 @@
+         super.load(nbttagcompound);
          this.color = EnumColor.a(nbttagcompound.getString("Color"), EnumColor.BLACK);
  
 +        // CraftBukkit start - Add an option to convert signs correctly
 +        // This is done with a flag instead of all the time because
 +        // we have no way to tell whether a sign is from 1.7.10 or 1.8
-+
 +        boolean oldSign = Boolean.getBoolean("convertLegacySigns") && !nbttagcompound.getBoolean("Bukkit.isConverted");
++        // CraftBukkit end
 +
          for (int i = 0; i < 4; ++i) {
-             String s = nbttagcompound.getString("Text" + (i + 1));
--            IChatMutableComponent ichatmutablecomponent = IChatBaseComponent.ChatSerializer.a(s.isEmpty() ? "\"\"" : s);
+             String s = nbttagcompound.getString(TileEntitySign.RAW_TEXT_FIELD_NAMES[i]);
++            // CraftBukkit start
 +            if (s != null && s.length() > 2048) {
 +                s = "\"\"";
 +            }
 +
-+            try {
-+                IChatMutableComponent ichatmutablecomponent = IChatBaseComponent.ChatSerializer.a(s.isEmpty() ? "\"\"" : s);
++            if (oldSign) {
++                messages[i] = org.bukkit.craftbukkit.util.CraftChatMessage.fromString(s)[0];
++                continue;
++            }
++            // CraftBukkit end
+             IChatBaseComponent ichatbasecomponent = this.a(s);
  
--            if (this.world instanceof WorldServer) {
--                try {
--                    this.lines[i] = ChatComponentUtils.filterForDisplay(this.a((EntityPlayer) null), ichatmutablecomponent, (Entity) null, 0);
--                } catch (CommandSyntaxException commandsyntaxexception) {
-+                if (oldSign) {
-+                    lines[i] = org.bukkit.craftbukkit.util.CraftChatMessage.fromString(s)[0];
-+                    continue;
-+                }
-+                // CraftBukkit end
-+
-+                if (this.world instanceof WorldServer) {
-+                    try {
-+                        this.lines[i] = ChatComponentUtils.filterForDisplay(this.a((EntityPlayer) null), ichatmutablecomponent, (Entity) null, 0);
-+                    } catch (CommandSyntaxException commandsyntaxexception) {
-+                        this.lines[i] = ichatmutablecomponent;
-+                    }
-+                } else {
-                     this.lines[i] = ichatmutablecomponent;
-                 }
--            } else {
--                this.lines[i] = ichatmutablecomponent;
-+            } catch (com.google.gson.JsonParseException jsonparseexception) {
-+                this.lines[i] = new ChatComponentText(s);
+             this.messages[i] = ichatbasecomponent;
+@@ -115,6 +137,10 @@
+             if (ichatmutablecomponent != null) {
+                 return ichatmutablecomponent;
              }
- 
-             this.g[i] = null;
-@@ -131,11 +157,37 @@
++            // CraftBukkit start
++        } catch (com.google.gson.JsonParseException jsonparseexception) {
++            return new ChatComponentText(s);
++            // CraftBukkit end
+         } catch (Exception exception) {
+             ;
+         }
+@@ -207,11 +233,37 @@
          return true;
      }
  
@@ -97,22 +87,21 @@
 +    }
 +    // CraftBukkit end
 +
-     public CommandListenerWrapper a(@Nullable EntityPlayer entityplayer) {
+     public CommandListenerWrapper b(@Nullable EntityPlayer entityplayer) {
          String s = entityplayer == null ? "Sign" : entityplayer.getDisplayName().getString();
          Object object = entityplayer == null ? new ChatComponentText("Sign") : entityplayer.getScoreboardDisplayName();
  
--        return new CommandListenerWrapper(ICommandListener.DUMMY, Vec3D.a((BaseBlockPosition) this.position), Vec2F.a, (WorldServer) this.world, 2, s, (IChatBaseComponent) object, this.world.getMinecraftServer(), entityplayer);
+-        return new CommandListenerWrapper(ICommandListener.NULL, Vec3D.a((BaseBlockPosition) this.worldPosition), Vec2F.ZERO, (WorldServer) this.level, 2, s, (IChatBaseComponent) object, this.level.getMinecraftServer(), entityplayer);
 +        // CraftBukkit - this
-+        return new CommandListenerWrapper(this, Vec3D.a((BaseBlockPosition) this.position), Vec2F.a, (WorldServer) this.world, 2, s, (IChatBaseComponent) object, this.world.getMinecraftServer(), entityplayer);
++        return new CommandListenerWrapper(this, Vec3D.a((BaseBlockPosition) this.worldPosition), Vec2F.ZERO, (WorldServer) this.level, 2, s, (IChatBaseComponent) object, this.level.getMinecraftServer(), entityplayer);
      }
  
      public EnumColor getColor() {
-@@ -146,7 +198,7 @@
-         if (enumcolor != this.getColor()) {
-             this.color = enumcolor;
-             this.update();
--            this.world.notify(this.getPosition(), this.getBlock(), this.getBlock(), 3);
-+            if (this.world != null) this.world.notify(this.getPosition(), this.getBlock(), this.getBlock(), 3); // CraftBukkit - skip notify if world is null (SPIGOT-5122)
-             return true;
-         } else {
-             return false;
+@@ -244,6 +296,6 @@
+ 
+     private void i() {
+         this.update();
+-        this.level.notify(this.getPosition(), this.getBlock(), this.getBlock(), 3);
++        if (this.level != null) this.level.notify(this.getPosition(), this.getBlock(), this.getBlock(), 3); // CraftBukkit - skip notify if world is null (SPIGOT-5122)
+     }
+ }

@@ -1,100 +1,100 @@
 --- a/net/minecraft/server/ScoreboardServer.java
 +++ b/net/minecraft/server/ScoreboardServer.java
-@@ -32,7 +32,7 @@
+@@ -34,7 +34,7 @@
      public void handleScoreChanged(ScoreboardScore scoreboardscore) {
          super.handleScoreChanged(scoreboardscore);
-         if (this.b.contains(scoreboardscore.getObjective())) {
--            this.a.getPlayerList().sendAll(new PacketPlayOutScoreboardScore(ScoreboardServer.Action.CHANGE, scoreboardscore.getObjective().getName(), scoreboardscore.getPlayerName(), scoreboardscore.getScore()));
+         if (this.trackedObjectives.contains(scoreboardscore.getObjective())) {
+-            this.server.getPlayerList().sendAll(new PacketPlayOutScoreboardScore(ScoreboardServer.Action.CHANGE, scoreboardscore.getObjective().getName(), scoreboardscore.getPlayerName(), scoreboardscore.getScore()));
 +            this.sendAll(new PacketPlayOutScoreboardScore(ScoreboardServer.Action.CHANGE, scoreboardscore.getObjective().getName(), scoreboardscore.getPlayerName(), scoreboardscore.getScore()));
          }
  
-         this.b();
-@@ -41,7 +41,7 @@
+         this.a();
+@@ -43,7 +43,7 @@
      @Override
      public void handlePlayerRemoved(String s) {
          super.handlePlayerRemoved(s);
--        this.a.getPlayerList().sendAll(new PacketPlayOutScoreboardScore(ScoreboardServer.Action.REMOVE, (String) null, s, 0));
+-        this.server.getPlayerList().sendAll(new PacketPlayOutScoreboardScore(ScoreboardServer.Action.REMOVE, (String) null, s, 0));
 +        this.sendAll(new PacketPlayOutScoreboardScore(ScoreboardServer.Action.REMOVE, (String) null, s, 0));
-         this.b();
+         this.a();
      }
  
-@@ -49,7 +49,7 @@
+@@ -51,7 +51,7 @@
      public void a(String s, ScoreboardObjective scoreboardobjective) {
          super.a(s, scoreboardobjective);
-         if (this.b.contains(scoreboardobjective)) {
--            this.a.getPlayerList().sendAll(new PacketPlayOutScoreboardScore(ScoreboardServer.Action.REMOVE, scoreboardobjective.getName(), s, 0));
+         if (this.trackedObjectives.contains(scoreboardobjective)) {
+-            this.server.getPlayerList().sendAll(new PacketPlayOutScoreboardScore(ScoreboardServer.Action.REMOVE, scoreboardobjective.getName(), s, 0));
 +            this.sendAll(new PacketPlayOutScoreboardScore(ScoreboardServer.Action.REMOVE, scoreboardobjective.getName(), s, 0));
          }
  
-         this.b();
-@@ -62,7 +62,7 @@
+         this.a();
+@@ -64,7 +64,7 @@
          super.setDisplaySlot(i, scoreboardobjective);
          if (scoreboardobjective1 != scoreboardobjective && scoreboardobjective1 != null) {
              if (this.h(scoreboardobjective1) > 0) {
--                this.a.getPlayerList().sendAll(new PacketPlayOutScoreboardDisplayObjective(i, scoreboardobjective));
+-                this.server.getPlayerList().sendAll(new PacketPlayOutScoreboardDisplayObjective(i, scoreboardobjective));
 +                this.sendAll(new PacketPlayOutScoreboardDisplayObjective(i, scoreboardobjective));
              } else {
                  this.g(scoreboardobjective1);
              }
-@@ -70,7 +70,7 @@
+@@ -72,7 +72,7 @@
  
          if (scoreboardobjective != null) {
-             if (this.b.contains(scoreboardobjective)) {
--                this.a.getPlayerList().sendAll(new PacketPlayOutScoreboardDisplayObjective(i, scoreboardobjective));
+             if (this.trackedObjectives.contains(scoreboardobjective)) {
+-                this.server.getPlayerList().sendAll(new PacketPlayOutScoreboardDisplayObjective(i, scoreboardobjective));
 +                this.sendAll(new PacketPlayOutScoreboardDisplayObjective(i, scoreboardobjective));
              } else {
                  this.e(scoreboardobjective);
              }
-@@ -82,7 +82,7 @@
+@@ -84,7 +84,7 @@
      @Override
      public boolean addPlayerToTeam(String s, ScoreboardTeam scoreboardteam) {
          if (super.addPlayerToTeam(s, scoreboardteam)) {
--            this.a.getPlayerList().sendAll(new PacketPlayOutScoreboardTeam(scoreboardteam, Arrays.asList(s), 3));
-+            this.sendAll(new PacketPlayOutScoreboardTeam(scoreboardteam, Arrays.asList(s), 3));
-             this.b();
+-            this.server.getPlayerList().sendAll(PacketPlayOutScoreboardTeam.a(scoreboardteam, s, PacketPlayOutScoreboardTeam.a.ADD));
++            this.sendAll(PacketPlayOutScoreboardTeam.a(scoreboardteam, s, PacketPlayOutScoreboardTeam.a.ADD));
+             this.a();
              return true;
          } else {
-@@ -93,7 +93,7 @@
+@@ -95,7 +95,7 @@
      @Override
      public void removePlayerFromTeam(String s, ScoreboardTeam scoreboardteam) {
          super.removePlayerFromTeam(s, scoreboardteam);
--        this.a.getPlayerList().sendAll(new PacketPlayOutScoreboardTeam(scoreboardteam, Arrays.asList(s), 4));
-+        this.sendAll(new PacketPlayOutScoreboardTeam(scoreboardteam, Arrays.asList(s), 4));
-         this.b();
+-        this.server.getPlayerList().sendAll(PacketPlayOutScoreboardTeam.a(scoreboardteam, s, PacketPlayOutScoreboardTeam.a.REMOVE));
++        this.sendAll(PacketPlayOutScoreboardTeam.a(scoreboardteam, s, PacketPlayOutScoreboardTeam.a.REMOVE));
+         this.a();
      }
  
-@@ -107,7 +107,7 @@
+@@ -109,7 +109,7 @@
      public void handleObjectiveChanged(ScoreboardObjective scoreboardobjective) {
          super.handleObjectiveChanged(scoreboardobjective);
-         if (this.b.contains(scoreboardobjective)) {
--            this.a.getPlayerList().sendAll(new PacketPlayOutScoreboardObjective(scoreboardobjective, 2));
+         if (this.trackedObjectives.contains(scoreboardobjective)) {
+-            this.server.getPlayerList().sendAll(new PacketPlayOutScoreboardObjective(scoreboardobjective, 2));
 +            this.sendAll(new PacketPlayOutScoreboardObjective(scoreboardobjective, 2));
          }
  
-         this.b();
-@@ -126,21 +126,21 @@
+         this.a();
+@@ -128,21 +128,21 @@
      @Override
      public void handleTeamAdded(ScoreboardTeam scoreboardteam) {
          super.handleTeamAdded(scoreboardteam);
--        this.a.getPlayerList().sendAll(new PacketPlayOutScoreboardTeam(scoreboardteam, 0));
-+        this.sendAll(new PacketPlayOutScoreboardTeam(scoreboardteam, 0));
-         this.b();
+-        this.server.getPlayerList().sendAll(PacketPlayOutScoreboardTeam.a(scoreboardteam, true));
++        this.sendAll(PacketPlayOutScoreboardTeam.a(scoreboardteam, true));
+         this.a();
      }
  
      @Override
      public void handleTeamChanged(ScoreboardTeam scoreboardteam) {
          super.handleTeamChanged(scoreboardteam);
--        this.a.getPlayerList().sendAll(new PacketPlayOutScoreboardTeam(scoreboardteam, 2));
-+        this.sendAll(new PacketPlayOutScoreboardTeam(scoreboardteam, 2));
-         this.b();
+-        this.server.getPlayerList().sendAll(PacketPlayOutScoreboardTeam.a(scoreboardteam, false));
++        this.sendAll(PacketPlayOutScoreboardTeam.a(scoreboardteam, false));
+         this.a();
      }
  
      @Override
      public void handleTeamRemoved(ScoreboardTeam scoreboardteam) {
          super.handleTeamRemoved(scoreboardteam);
--        this.a.getPlayerList().sendAll(new PacketPlayOutScoreboardTeam(scoreboardteam, 1));
-+        this.sendAll(new PacketPlayOutScoreboardTeam(scoreboardteam, 1));
-         this.b();
+-        this.server.getPlayerList().sendAll(PacketPlayOutScoreboardTeam.a(scoreboardteam));
++        this.sendAll(PacketPlayOutScoreboardTeam.a(scoreboardteam));
+         this.a();
      }
  
 @@ -189,6 +189,7 @@
@@ -113,15 +113,15 @@
              Iterator iterator1 = list.iterator();
  
              while (iterator1.hasNext()) {
-@@ -245,6 +247,16 @@
-         return i;
+@@ -257,6 +259,16 @@
+         return this.b().b(nbttagcompound);
      }
  
 +    // CraftBukkit start - Send to players
 +    private void sendAll(Packet packet) {
-+        for (EntityPlayer entityplayer : (List<EntityPlayer>) this.a.getPlayerList().players) {
++        for (EntityPlayer entityplayer : (List<EntityPlayer>) this.server.getPlayerList().players) {
 +            if (entityplayer.getBukkitEntity().getScoreboard().getHandle() == this) {
-+                entityplayer.playerConnection.sendPacket(packet);
++                entityplayer.connection.sendPacket(packet);
 +            }
 +        }
 +    }

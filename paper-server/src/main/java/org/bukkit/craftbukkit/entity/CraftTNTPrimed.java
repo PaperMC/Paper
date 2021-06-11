@@ -69,9 +69,9 @@ public class CraftTNTPrimed extends CraftEntity implements TNTPrimed {
     @Override
     public void setSource(Entity source) {
         if (source instanceof LivingEntity) {
-            getHandle().source = ((CraftLivingEntity) source).getHandle();
+            getHandle().owner = ((CraftLivingEntity) source).getHandle();
         } else {
-            getHandle().source = null;
+            getHandle().owner = null;
         }
     }
 }

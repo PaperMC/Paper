@@ -31,7 +31,7 @@ public class StatisticsAndAchievementsTest extends AbstractTestingBase {
     @SuppressWarnings("unchecked")
     public void verifyStatisticMapping() throws Throwable {
         HashMultiset<Statistic> statistics = HashMultiset.create();
-        for (StatisticWrapper wrapper : IRegistry.STATS) {
+        for (StatisticWrapper wrapper : IRegistry.STAT_TYPE) {
             for (Object child : wrapper.getRegistry()) {
                 net.minecraft.stats.Statistic<?> statistic = wrapper.b(child);
                 String message = String.format("org.bukkit.Statistic is missing: '%s'", statistic);

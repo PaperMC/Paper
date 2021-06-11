@@ -50,7 +50,7 @@ public class CraftFireball extends AbstractProjectile implements Fireball {
 
     @Override
     public Vector getDirection() {
-        return new Vector(getHandle().dirX, getHandle().dirY, getHandle().dirZ);
+        return new Vector(getHandle().xPower, getHandle().yPower, getHandle().zPower);
     }
 
     @Override

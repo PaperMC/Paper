@@ -39,7 +39,7 @@ public class CraftShapelessRecipe extends ShapelessRecipe implements CraftRecipe
     @Override
     public void addToCraftingManager() {
         List<org.bukkit.inventory.RecipeChoice> ingred = this.getChoiceList();
-        NonNullList<RecipeItemStack> data = NonNullList.a(ingred.size(), RecipeItemStack.a);
+        NonNullList<RecipeItemStack> data = NonNullList.a(ingred.size(), RecipeItemStack.EMPTY);
         for (int i = 0; i < ingred.size(); i++) {
             data.set(i, toNMS(ingred.get(i), true));
         }

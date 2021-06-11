@@ -1,0 +1,46 @@
+--- a/net/minecraft/world/level/block/AzaleaBlock.java
++++ b/net/minecraft/world/level/block/AzaleaBlock.java
+@@ -12,6 +12,13 @@
+ import net.minecraft.world.phys.shapes.VoxelShapeCollision;
+ import net.minecraft.world.phys.shapes.VoxelShapes;
+ 
++// CraftBukkit start
++import org.bukkit.Location;
++import org.bukkit.TreeType;
++import org.bukkit.block.BlockState;
++import org.bukkit.event.world.StructureGrowEvent;
++// CraftBukkit end
++
+ public class AzaleaBlock extends BlockPlant implements IBlockFragilePlantElement {
+ 
+     private static final AzaleaTreeGrower TREE_GROWER = new AzaleaTreeGrower();
+@@ -43,6 +50,29 @@
+ 
+     @Override
+     public void a(WorldServer worldserver, Random random, BlockPosition blockposition, IBlockData iblockdata) {
++        // CraftBukkit start
++        worldserver.captureTreeGeneration = true;
++        // CraftBukkit end
+         AzaleaBlock.TREE_GROWER.a(worldserver, worldserver.getChunkProvider().getChunkGenerator(), blockposition, iblockdata, random);
++        // CraftBukkit start
++        worldserver.captureTreeGeneration = false;
++        if (worldserver.capturedBlockStates.size() > 0) {
++            TreeType treeType = BlockSapling.treeType;
++            BlockSapling.treeType = null;
++            Location location = new Location(worldserver.getWorld(), blockposition.getX(), blockposition.getY(), blockposition.getZ());
++            java.util.List<BlockState> blocks = new java.util.ArrayList<>(worldserver.capturedBlockStates.values());
++            worldserver.capturedBlockStates.clear();
++            StructureGrowEvent event = null;
++            if (treeType != null) {
++                event = new StructureGrowEvent(location, treeType, false, null, blocks);
++                org.bukkit.Bukkit.getPluginManager().callEvent(event);
++            }
++            if (event == null || !event.isCancelled()) {
++                for (BlockState blockstate : blocks) {
++                    blockstate.update(true);
++                }
++            }
++        }
++        // CraftBukkit end
+     }
+ }

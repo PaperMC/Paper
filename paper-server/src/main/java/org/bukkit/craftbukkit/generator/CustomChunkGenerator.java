@@ -3,21 +3,25 @@ package org.bukkit.craftbukkit.generator;
 import com.google.common.base.Preconditions;
 import com.mojang.serialization.Codec;
 import java.util.Random;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 import net.minecraft.core.BlockPosition;
 import net.minecraft.core.IRegistry;
 import net.minecraft.core.IRegistryCustom;
 import net.minecraft.server.level.RegionLimitedWorldAccess;
 import net.minecraft.server.level.WorldServer;
+import net.minecraft.world.level.BlockColumn;
 import net.minecraft.world.level.GeneratorAccess;
 import net.minecraft.world.level.GeneratorAccessSeed;
 import net.minecraft.world.level.IBlockAccess;
+import net.minecraft.world.level.LevelHeightAccessor;
 import net.minecraft.world.level.StructureManager;
 import net.minecraft.world.level.biome.BiomeBase;
 import net.minecraft.world.level.biome.BiomeManager;
 import net.minecraft.world.level.biome.WorldChunkManager;
-import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.ITileEntity;
 import net.minecraft.world.level.block.entity.TileEntity;
+import net.minecraft.world.level.block.state.IBlockData;
 import net.minecraft.world.level.chunk.BiomeStorage;
 import net.minecraft.world.level.chunk.ChunkSection;
 import net.minecraft.world.level.chunk.IChunkAccess;
@@ -60,13 +64,13 @@ public class CustomChunkGenerator extends InternalChunkGenerator {
 
         @Override
         public Biome getBiome(int x, int y, int z) {
-            return CraftBlock.biomeBaseToBiome((IRegistry<BiomeBase>) biome.registry, biome.getBiome(x >> 2, y >> 2, z >> 2));
+            return CraftBlock.biomeBaseToBiome((IRegistry<BiomeBase>) biome.biomeRegistry, biome.getBiome(x >> 2, y >> 2, z >> 2));
         }
 
         @Override
         public void setBiome(int x, int y, int z, Biome bio) {
             Preconditions.checkArgument(bio != Biome.CUSTOM, "Cannot set the biome to %s", bio);
-            biome.setBiome(x >> 2, y >> 2, z >> 2, CraftBlock.biomeToBiomeBase((IRegistry<BiomeBase>) biome.registry, bio));
+            biome.setBiome(x >> 2, y >> 2, z >> 2, CraftBlock.biomeToBiomeBase((IRegistry<BiomeBase>) biome.biomeRegistry, bio));
         }
     }
 
@@ -76,6 +80,11 @@ public class CustomChunkGenerator extends InternalChunkGenerator {
         this.world = world;
         this.delegate = delegate;
         this.generator = generator;
+    }
+
+    @Override
+    public net.minecraft.world.level.chunk.ChunkGenerator withSeed(long i) {
+        return new CustomChunkGenerator(this.world, delegate.withSeed(i), this.generator);
     }
 
     @Override
@@ -106,7 +115,7 @@ public class CustomChunkGenerator extends InternalChunkGenerator {
         random.setSeed((long) x * 341873128712L + (long) z * 132897987541L);
 
         // Get default biome data for chunk
-        CustomBiomeGrid biomegrid = new CustomBiomeGrid(new BiomeStorage(world.r().b(IRegistry.ay), ichunkaccess.getPos(), this.getWorldChunkManager()));
+        CustomBiomeGrid biomegrid = new CustomBiomeGrid(new BiomeStorage(world.t().d(IRegistry.BIOME_REGISTRY), regionlimitedworldaccess, ichunkaccess.getPos(), this.getWorldChunkManager()));
 
         ChunkData data;
         if (generator.isParallelCapable()) {
@@ -142,11 +151,11 @@ public class CustomChunkGenerator extends InternalChunkGenerator {
                 int tx = pos.getX();
                 int ty = pos.getY();
                 int tz = pos.getZ();
-                Block block = craftData.getTypeId(tx, ty, tz).getBlock();
+                IBlockData block = craftData.getTypeId(tx, ty, tz);
 
                 if (block.isTileEntity()) {
-                    TileEntity tile = ((ITileEntity) block).createTile(world);
-                    ichunkaccess.setTileEntity(new BlockPosition((x << 4) + tx, ty, (z << 4) + tz), tile);
+                    TileEntity tile = ((ITileEntity) block).createTile(new BlockPosition((x << 4) + tx, ty, (z << 4) + tz), block);
+                    ichunkaccess.setTileEntity(tile);
                 }
             }
         }
@@ -170,13 +179,14 @@ public class CustomChunkGenerator extends InternalChunkGenerator {
     }
 
     @Override
-    public void buildNoise(GeneratorAccess generatoraccess, StructureManager structuremanager, IChunkAccess ichunkaccess) {
+    public CompletableFuture<IChunkAccess> buildNoise(Executor executor, StructureManager structuremanager, IChunkAccess ichunkaccess) {
         // Disable vanilla generation
+        return CompletableFuture.completedFuture(ichunkaccess);
     }
 
     @Override
-    public int getBaseHeight(int i, int j, HeightMap.Type heightmap_type) {
-        return delegate.getBaseHeight(i, j, heightmap_type);
+    public int getBaseHeight(int i, int j, HeightMap.Type heightmap_type, LevelHeightAccessor levelheightaccessor) {
+       return delegate.getBaseHeight(i, j, heightmap_type, levelheightaccessor);
     }
 
     @Override
@@ -194,8 +204,8 @@ public class CustomChunkGenerator extends InternalChunkGenerator {
     }
 
     @Override
-    public int getSpawnHeight() {
-        return delegate.getSpawnHeight();
+    public int getSpawnHeight(LevelHeightAccessor levelheightaccessor) {
+        return delegate.getSpawnHeight(levelheightaccessor);
     }
 
     @Override
@@ -204,8 +214,8 @@ public class CustomChunkGenerator extends InternalChunkGenerator {
     }
 
     @Override
-    public IBlockAccess a(int i, int j) {
-        return delegate.a(i, j);
+    public BlockColumn getBaseColumn(int i, int j, LevelHeightAccessor levelheightaccessor) {
+        return delegate.getBaseColumn(i, j, levelheightaccessor);
     }
 
     @Override

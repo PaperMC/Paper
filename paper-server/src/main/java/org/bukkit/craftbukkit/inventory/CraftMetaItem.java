@@ -156,6 +156,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
                     .put(CraftMetaSuspiciousStew.class, "SUSPICIOUS_STEW")
                     .put(CraftMetaEntityTag.class, "ENTITY_TAG")
                     .put(CraftMetaCompass.class, "COMPASS")
+                    .put(CraftMetaBundle.class, "BUNDLE")
                     .put(CraftMetaItem.class, "UNSPECIFIC")
                     .build();
 
@@ -1406,7 +1407,8 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
                         CraftMetaSuspiciousStew.EFFECTS.NBT,
                         CraftMetaCompass.LODESTONE_DIMENSION.NBT,
                         CraftMetaCompass.LODESTONE_POS.NBT,
-                        CraftMetaCompass.LODESTONE_TRACKED.NBT
+                        CraftMetaCompass.LODESTONE_TRACKED.NBT,
+                        CraftMetaBundle.ITEMS.NBT
                 ));
             }
             return HANDLED_TAGS;

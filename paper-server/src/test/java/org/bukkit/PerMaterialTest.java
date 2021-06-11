@@ -27,7 +27,6 @@ import org.bukkit.enchantments.EnchantmentTarget;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.support.AbstractTestingBase;
-import org.bukkit.support.Util;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -41,7 +40,7 @@ public class PerMaterialTest extends AbstractTestingBase {
 
     @BeforeClass
     public static void getFireValues() {
-        fireValues = Util.getInternalState(BlockFire.class, Blocks.FIRE, "flameChances");
+        fireValues = ((BlockFire) Blocks.FIRE).flameOdds;
     }
 
     @Parameters(name = "{index}: {0}")
@@ -232,7 +231,7 @@ public class PerMaterialTest extends AbstractTestingBase {
     @Test
     public void testBlockHardness() {
         if (material.isBlock()) {
-            assertThat(material.getHardness(), is(CraftMagicNumbers.getBlock(material).getBlockData().strength));
+            assertThat(material.getHardness(), is(CraftMagicNumbers.getBlock(material).getBlockData().destroySpeed));
         }
     }
 
@@ -263,7 +262,7 @@ public class PerMaterialTest extends AbstractTestingBase {
     @Test
     public void testEquipmentSlot() {
         if (material.isItem()) {
-            EquipmentSlot expected = CraftEquipmentSlot.getSlot(EntityInsentient.j(CraftItemStack.asNMSCopy(new ItemStack(material)))); // PAIL rename getEquipmentSlotForItem
+            EquipmentSlot expected = CraftEquipmentSlot.getSlot(EntityInsentient.getEquipmentSlotForItem(CraftItemStack.asNMSCopy(new ItemStack(material))));
             assertThat(material.getEquipmentSlot(), is(expected));
         }
     }

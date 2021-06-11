@@ -51,7 +51,7 @@ public class CraftMerchantCustom extends CraftMerchant {
         public void setTradingPlayer(EntityHuman entityhuman) {
             this.tradingPlayer = entityhuman;
             if (entityhuman != null) {
-                this.tradingWorld = entityhuman.world;
+                this.tradingWorld = entityhuman.level;
             }
         }
 
@@ -72,7 +72,7 @@ public class CraftMerchantCustom extends CraftMerchant {
         }
 
         @Override
-        public void k(ItemStack itemstack) {
+        public void m(ItemStack itemstack) {
         }
 
         public IChatBaseComponent getScoreboardDisplayName() {
@@ -100,7 +100,11 @@ public class CraftMerchantCustom extends CraftMerchant {
 
         @Override
         public SoundEffect getTradeSound() {
-            return SoundEffects.ENTITY_VILLAGER_YES;
+            return SoundEffects.VILLAGER_YES;
+        }
+
+        @Override
+        public void a(MerchantRecipeList merchantrecipelist) {
         }
     }
 }

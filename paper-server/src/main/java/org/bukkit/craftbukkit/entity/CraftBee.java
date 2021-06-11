@@ -85,7 +85,7 @@ public class CraftBee extends CraftAnimals implements Bee {
 
     @Override
     public int getCannotEnterHiveTicks() {
-        return getHandle().cannotEnterHiveTicks;
+        return getHandle().stayOutOfHiveCountdown;
     }
 
     @Override

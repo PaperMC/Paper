@@ -11,13 +11,13 @@
 +
  public class BlockConcretePowder extends BlockFalling {
  
-     private final IBlockData a;
+     private final IBlockData concrete;
 @@ -25,7 +30,7 @@
      @Override
      public void a(World world, BlockPosition blockposition, IBlockData iblockdata, IBlockData iblockdata1, EntityFallingBlock entityfallingblock) {
          if (canHarden(world, blockposition, iblockdata1)) {
--            world.setTypeAndData(blockposition, this.a, 3);
-+            org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockFormEvent(world, blockposition, this.a, 3); // CraftBukkit
+-            world.setTypeAndData(blockposition, this.concrete, 3);
++            org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockFormEvent(world, blockposition, this.concrete, 3); // CraftBukkit
          }
  
      }
@@ -25,7 +25,7 @@
          BlockPosition blockposition = blockactioncontext.getClickPosition();
          IBlockData iblockdata = world.getType(blockposition);
  
--        return canHarden(world, blockposition, iblockdata) ? this.a : super.getPlacedState(blockactioncontext);
+-        return canHarden(world, blockposition, iblockdata) ? this.concrete : super.getPlacedState(blockactioncontext);
 +        // CraftBukkit start
 +        if (!canHarden(world, blockposition, iblockdata)) {
 +            return super.getPlacedState(blockactioncontext);
@@ -33,7 +33,7 @@
 +
 +        // TODO: An event factory call for methods like this
 +        CraftBlockState blockState = CraftBlockState.getBlockState(world, blockposition);
-+        blockState.setData(this.a);
++        blockState.setData(this.concrete);
 +
 +        BlockFormEvent event = new BlockFormEvent(blockState.getBlock(), blockState);
 +        world.getMinecraftServer().server.getPluginManager().callEvent(event);
@@ -47,19 +47,19 @@
      }
  
      private static boolean canHarden(IBlockAccess iblockaccess, BlockPosition blockposition, IBlockData iblockdata) {
-@@ -72,6 +94,24 @@
+@@ -72,7 +94,25 @@
  
      @Override
      public IBlockData updateState(IBlockData iblockdata, EnumDirection enumdirection, IBlockData iblockdata1, GeneratorAccess generatoraccess, BlockPosition blockposition, BlockPosition blockposition1) {
--        return a((IBlockAccess) generatoraccess, blockposition) ? this.a : super.updateState(iblockdata, enumdirection, iblockdata1, generatoraccess, blockposition, blockposition1);
+-        return a((IBlockAccess) generatoraccess, blockposition) ? this.concrete : super.updateState(iblockdata, enumdirection, iblockdata1, generatoraccess, blockposition, blockposition1);
 +        // CraftBukkit start
 +        if (a((IBlockAccess) generatoraccess, blockposition)) {
 +            // Suppress during worldgen
 +            if (!(generatoraccess instanceof World)) {
-+                return this.a;
++                return this.concrete;
 +            }
 +            CraftBlockState blockState = CraftBlockState.getBlockState(generatoraccess, blockposition);
-+            blockState.setData(this.a);
++            blockState.setData(this.concrete);
 +
 +            BlockFormEvent event = new BlockFormEvent(blockState.getBlock(), blockState);
 +            ((World) generatoraccess).getServer().getPluginManager().callEvent(event);
@@ -72,4 +72,5 @@
 +        return super.updateState(iblockdata, enumdirection, iblockdata1, generatoraccess, blockposition, blockposition1);
 +        // CraftBukkit end
      }
- }
+ 
+     @Override

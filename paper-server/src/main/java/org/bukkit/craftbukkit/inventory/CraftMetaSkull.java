@@ -90,9 +90,10 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
 
         if (profile != null) {
             // Fill in textures
-            setProfile(TileEntitySkull.b(profile));
-
-            tag.set(SKULL_OWNER.NBT, serializedProfile);
+            TileEntitySkull.a(profile, (filledProfile) -> {
+                setProfile(filledProfile);
+                tag.set(SKULL_OWNER.NBT, serializedProfile);
+            });
         }
     }
 

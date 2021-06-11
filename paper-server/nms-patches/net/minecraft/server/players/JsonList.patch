@@ -1,29 +1,29 @@
 --- a/net/minecraft/server/players/JsonList.java
 +++ b/net/minecraft/server/players/JsonList.java
-@@ -52,7 +52,7 @@
+@@ -54,7 +54,7 @@
      @Nullable
      public V get(K k0) {
          this.g();
--        return (JsonListEntry) this.d.get(this.a(k0));
-+        return (V) this.d.get(this.a(k0)); // CraftBukkit - fix decompile error
+-        return (JsonListEntry) this.map.get(this.a(k0));
++        return (V) this.map.get(this.a(k0)); // CraftBukkit - fix decompile error
      }
  
      public void remove(K k0) {
-@@ -74,6 +74,12 @@
-         return (String[]) this.d.keySet().toArray(new String[this.d.size()]);
+@@ -76,6 +76,12 @@
+         return (String[]) this.map.keySet().toArray(new String[0]);
      }
  
 +    // CraftBukkit start
 +    public Collection<V> getValues() {
-+        return this.d.values();
++        return this.map.values();
 +    }
 +    // CraftBukkit end
 +
      public boolean isEmpty() {
-         return this.d.size() < 1;
+         return this.map.size() < 1;
      }
-@@ -91,7 +97,7 @@
-         Iterator iterator = this.d.values().iterator();
+@@ -93,7 +99,7 @@
+         Iterator iterator = this.map.values().iterator();
  
          while (iterator.hasNext()) {
 -            V v0 = (JsonListEntry) iterator.next();
@@ -31,30 +31,35 @@
  
              if (v0.hasExpired()) {
                  list.add(v0.getKey());
-@@ -101,7 +107,7 @@
+@@ -103,7 +109,7 @@
          iterator = list.iterator();
  
          while (iterator.hasNext()) {
 -            K k0 = iterator.next();
 +            K k0 = (K) iterator.next(); // CraftBukkit - decompile error
  
-             this.d.remove(this.a(k0));
+             this.map.remove(this.a(k0));
          }
-@@ -121,7 +127,7 @@
+@@ -118,11 +124,11 @@
+ 
+     public void save() throws IOException {
+         JsonArray jsonarray = new JsonArray();
+-        Stream stream = this.map.values().stream().map((jsonlistentry) -> {
++        Stream<JsonObject> stream = this.map.values().stream().map((jsonlistentry) -> { // CraftBukkit - decompile error
              JsonObject jsonobject = new JsonObject();
  
-             jsonlistentry.getClass();
+             Objects.requireNonNull(jsonlistentry);
 -            return (JsonObject) SystemUtils.a((Object) jsonobject, jsonlistentry::a);
 +            return (JsonObject) SystemUtils.a(jsonobject, jsonlistentry::a); // CraftBukkit - decompile error
-         }).forEach(jsonarray::add);
-         BufferedWriter bufferedwriter = Files.newWriter(this.c, StandardCharsets.UTF_8);
-         Throwable throwable = null;
+         });
+ 
+         Objects.requireNonNull(jsonarray);
 @@ -165,7 +171,7 @@
                      JsonListEntry<K> jsonlistentry = this.a(jsonobject);
  
                      if (jsonlistentry.getKey() != null) {
--                        this.d.put(this.a(jsonlistentry.getKey()), jsonlistentry);
-+                        this.d.put(this.a(jsonlistentry.getKey()), (V) jsonlistentry); // CraftBukkit - fix decompile error
+-                        this.map.put(this.a(jsonlistentry.getKey()), jsonlistentry);
++                        this.map.put(this.a(jsonlistentry.getKey()), (V) jsonlistentry); // CraftBukkit - fix decompile error
                      }
                  }
-             } catch (Throwable throwable1) {
+             } catch (Throwable throwable) {

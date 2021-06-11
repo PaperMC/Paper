@@ -81,12 +81,12 @@ public class CraftHanging extends CraftEntity implements Hanging {
         }
 
         WorldServer world = ((CraftWorld) getWorld()).getHandle();
-        PlayerChunkMap.EntityTracker entityTracker = world.getChunkProvider().playerChunkMap.trackedEntities.get(getEntityId());
+        PlayerChunkMap.EntityTracker entityTracker = world.getChunkProvider().chunkMap.entityMap.get(getEntityId());
 
         if (entityTracker == null) {
             return;
         }
 
-        entityTracker.broadcast(getHandle().P());
+        entityTracker.broadcast(getHandle().getPacket());
     }
 }

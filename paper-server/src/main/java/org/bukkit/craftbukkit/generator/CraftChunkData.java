@@ -18,20 +18,24 @@ import org.bukkit.material.MaterialData;
  * Data to be used for the block types and data in a newly generated chunk.
  */
 public final class CraftChunkData implements ChunkGenerator.ChunkData {
+    private final int minHeight;
     private final int maxHeight;
     private final ChunkSection[] sections;
     private Set<BlockPosition> tiles;
 
     public CraftChunkData(World world) {
-        this(world.getMaxHeight());
+        this(world.getMinHeight(), world.getMaxHeight());
     }
 
-    /* pp for tests */ CraftChunkData(int maxHeight) {
-        if (maxHeight > 256) {
-            throw new IllegalArgumentException("World height exceeded max chunk height");
-        }
+    /* pp for tests */ CraftChunkData(int minHeight, int maxHeight) {
+        this.minHeight = minHeight;
         this.maxHeight = maxHeight;
-        sections = new ChunkSection[maxHeight >> 4];
+        sections = new ChunkSection[(maxHeight - minHeight) >> 4];
+    }
+
+    @Override
+    public int getMinHeight() {
+        return minHeight;
     }
 
     @Override
@@ -92,8 +96,8 @@ public final class CraftChunkData implements ChunkGenerator.ChunkData {
         if (xMin < 0) {
             xMin = 0;
         }
-        if (yMin < 0) {
-            yMin = 0;
+        if (yMin < minHeight) {
+            yMin = minHeight;
         }
         if (zMin < 0) {
             zMin = 0;
@@ -122,7 +126,7 @@ public final class CraftChunkData implements ChunkGenerator.ChunkData {
     }
 
     public IBlockData getTypeId(int x, int y, int z) {
-        if (x != (x & 0xf) || y < 0 || y >= maxHeight || z != (z & 0xf)) {
+        if (x != (x & 0xf) || y < minHeight || y >= maxHeight || z != (z & 0xf)) {
             return Blocks.AIR.getBlockData();
         }
         ChunkSection section = getChunkSection(y, false);
@@ -139,13 +143,13 @@ public final class CraftChunkData implements ChunkGenerator.ChunkData {
     }
 
     private void setBlock(int x, int y, int z, IBlockData type) {
-        if (x != (x & 0xf) || y < 0 || y >= maxHeight || z != (z & 0xf)) {
+        if (x != (x & 0xf) || y < minHeight || y >= maxHeight || z != (z & 0xf)) {
             return;
         }
         ChunkSection section = getChunkSection(y, true);
         section.setType(x, y & 0xf, z, type);
 
-        if (type.getBlock().isTileEntity()) {
+        if (type.isTileEntity()) {
             if (tiles == null) {
                 tiles = new HashSet<>();
             }
@@ -155,9 +159,10 @@ public final class CraftChunkData implements ChunkGenerator.ChunkData {
     }
 
     private ChunkSection getChunkSection(int y, boolean create) {
-        ChunkSection section = sections[y >> 4];
+        int offset = (y - minHeight) >> 4;
+        ChunkSection section = sections[offset];
         if (create && section == null) {
-            sections[y >> 4] = section = new ChunkSection(y >> 4 << 4);
+            sections[offset] = section = new ChunkSection(offset << 4);
         }
         return section;
     }

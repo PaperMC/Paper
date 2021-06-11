@@ -1,7 +1,7 @@
 --- a/net/minecraft/core/dispenser/DispenseBehaviorShears.java
 +++ b/net/minecraft/core/dispenser/DispenseBehaviorShears.java
-@@ -23,6 +23,12 @@
- import net.minecraft.world.level.block.state.IBlockData;
+@@ -25,6 +25,12 @@
+ import net.minecraft.world.level.gameevent.GameEvent;
  import net.minecraft.world.phys.AxisAlignedBB;
  
 +// CraftBukkit start
@@ -13,7 +13,7 @@
  public class DispenseBehaviorShears extends DispenseBehaviorMaybe {
  
      public DispenseBehaviorShears() {}
-@@ -30,11 +36,34 @@
+@@ -32,11 +38,34 @@
      @Override
      protected ItemStack a(ISourceBlock isourceblock, ItemStack itemstack) {
          WorldServer worldserver = isourceblock.getWorld();
@@ -33,15 +33,15 @@
 +        if (!event.getItem().equals(craftItem)) {
 +            // Chain to handler for new item
 +            ItemStack eventStack = CraftItemStack.asNMSCopy(event.getItem());
-+            IDispenseBehavior idispensebehavior = (IDispenseBehavior) BlockDispenser.REGISTRY.get(eventStack.getItem());
-+            if (idispensebehavior != IDispenseBehavior.NONE && idispensebehavior != this) {
++            IDispenseBehavior idispensebehavior = (IDispenseBehavior) BlockDispenser.DISPENSER_REGISTRY.get(eventStack.getItem());
++            if (idispensebehavior != IDispenseBehavior.NOOP && idispensebehavior != this) {
 +                idispensebehavior.dispense(isourceblock, eventStack);
 +                return itemstack;
 +            }
 +        }
 +        // CraftBukkit end
  
-         if (!worldserver.s_()) {
+         if (!worldserver.isClientSide()) {
              BlockPosition blockposition = isourceblock.getBlockPosition().shift((EnumDirection) isourceblock.getBlockData().get(BlockDispenser.FACING));
  
 -            this.a(a((WorldServer) worldserver, blockposition) || b((WorldServer) worldserver, blockposition));
@@ -49,16 +49,16 @@
              if (this.a() && itemstack.isDamaged(1, worldserver.getRandom(), (EntityPlayer) null)) {
                  itemstack.setCount(0);
              }
-@@ -60,7 +89,7 @@
+@@ -63,7 +92,7 @@
          return false;
      }
  
 -    private static boolean b(WorldServer worldserver, BlockPosition blockposition) {
 +    private static boolean b(WorldServer worldserver, BlockPosition blockposition, org.bukkit.block.Block bukkitBlock, CraftItemStack craftItem) { // CraftBukkit - add args
-         List<EntityLiving> list = worldserver.a(EntityLiving.class, new AxisAlignedBB(blockposition), IEntitySelector.g);
+         List<EntityLiving> list = worldserver.a(EntityLiving.class, new AxisAlignedBB(blockposition), IEntitySelector.NO_SPECTATORS);
          Iterator iterator = list.iterator();
  
-@@ -71,6 +100,11 @@
+@@ -74,6 +103,11 @@
                  IShearable ishearable = (IShearable) entityliving;
  
                  if (ishearable.canShear()) {
@@ -68,5 +68,5 @@
 +                    }
 +                    // CraftBukkit end
                      ishearable.shear(SoundCategory.BLOCKS);
+                     worldserver.a((Entity) null, GameEvent.SHEAR, blockposition);
                      return true;
-                 }

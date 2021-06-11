@@ -15,7 +15,7 @@ public class MapTest {
 
     @Test
     public void testColors() {
-        MaterialMapColor[] nmsColors = MaterialMapColor.a;
+        MaterialMapColor[] nmsColors = MaterialMapColor.MATERIAL_COLORS;
         Color[] bukkitColors = MapPalette.colors;
 
         boolean fail = false;
@@ -23,7 +23,7 @@ public class MapTest {
             if (nmsColors[i] == null) {
                 break;
             }
-            int rgb = nmsColors[i].rgb;
+            int rgb = nmsColors[i].col;
 
             int r = (rgb >> 16) & 0xFF;
             int g = (rgb >> 8) & 0xFF;

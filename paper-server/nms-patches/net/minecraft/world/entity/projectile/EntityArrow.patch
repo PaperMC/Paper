@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/projectile/EntityArrow.java
 +++ b/net/minecraft/world/entity/projectile/EntityArrow.java
-@@ -45,6 +45,12 @@
+@@ -44,6 +44,12 @@
  import net.minecraft.world.phys.Vec3D;
  import net.minecraft.world.phys.shapes.VoxelShape;
  
@@ -12,17 +12,17 @@
 +
  public abstract class EntityArrow extends IProjectile {
  
-     private static final DataWatcherObject<Byte> f = DataWatcher.a(EntityArrow.class, DataWatcherRegistry.a);
-@@ -181,7 +187,7 @@
+     private static final double ARROW_BASE_DAMAGE = 2.0D;
+@@ -210,7 +216,7 @@
                  }
  
                  if (object != null && !flag) {
 -                    this.a((MovingObjectPosition) object);
 +                    this.preOnHit((MovingObjectPosition) object); // CraftBukkit - projectile hit event
-                     this.impulse = true;
+                     this.hasImpulse = true;
                  }
  
-@@ -328,7 +334,13 @@
+@@ -357,7 +363,13 @@
          int k = entity.getFireTicks();
  
          if (this.isBurning() && !flag) {
@@ -37,28 +37,27 @@
          }
  
          if (entity.damageEntity(damagesource, (float) i)) {
-@@ -495,9 +507,23 @@
+@@ -519,7 +531,22 @@
      @Override
      public void pickup(EntityHuman entityhuman) {
-         if (!this.world.isClientSide && (this.inGround || this.t()) && this.shake <= 0) {
+         if (!this.level.isClientSide && (this.inGround || this.t()) && this.shakeTime <= 0) {
+-            if (this.a(entityhuman)) {
 +            // CraftBukkit start
 +            ItemStack itemstack = this.getItemStack();
-+            if (this.fromPlayer == PickupStatus.ALLOWED && !itemstack.isEmpty() && entityhuman.inventory.canHold(itemstack) > 0) {
-+                EntityItem item = new EntityItem(this.world, this.locX(), this.locY(), this.locZ(), itemstack);
-+                PlayerPickupArrowEvent event = new PlayerPickupArrowEvent((org.bukkit.entity.Player) entityhuman.getBukkitEntity(), new org.bukkit.craftbukkit.entity.CraftItem(this.world.getServer(), this, item), (org.bukkit.entity.AbstractArrow) this.getBukkitEntity());
++            if (this.pickup == PickupStatus.ALLOWED && !itemstack.isEmpty() && entityhuman.getInventory().canHold(itemstack) > 0) {
++                EntityItem item = new EntityItem(this.level, this.locX(), this.locY(), this.locZ(), itemstack);
++                PlayerPickupArrowEvent event = new PlayerPickupArrowEvent((org.bukkit.entity.Player) entityhuman.getBukkitEntity(), new org.bukkit.craftbukkit.entity.CraftItem(this.level.getServer(), this, item), (org.bukkit.entity.AbstractArrow) this.getBukkitEntity());
 +                // event.setCancelled(!entityhuman.canPickUpLoot); TODO
-+                this.world.getServer().getPluginManager().callEvent(event);
++                this.level.getServer().getPluginManager().callEvent(event);
 +
 +                if (event.isCancelled()) {
 +                    return;
 +                }
 +                itemstack = item.getItemStack();
 +            }
-             boolean flag = this.fromPlayer == EntityArrow.PickupStatus.ALLOWED || this.fromPlayer == EntityArrow.PickupStatus.CREATIVE_ONLY && entityhuman.abilities.canInstantlyBuild || this.t() && this.getShooter().getUniqueID() == entityhuman.getUniqueID();
- 
--            if (this.fromPlayer == EntityArrow.PickupStatus.ALLOWED && !entityhuman.inventory.pickup(this.getItemStack())) {
-+            if (this.fromPlayer == EntityArrow.PickupStatus.ALLOWED && !entityhuman.inventory.pickup(itemstack)) {
++
++            if ((this.pickup == EntityArrow.PickupStatus.ALLOWED && entityhuman.getInventory().pickup(itemstack)) || (this.pickup == EntityArrow.PickupStatus.CREATIVE_ONLY && entityhuman.getAbilities().instabuild)) {
 +                // CraftBukkit end
-                 flag = false;
+                 entityhuman.receive(this, 1);
+                 this.die();
              }
- 

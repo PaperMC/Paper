@@ -26,7 +26,7 @@ public abstract class CraftRaider extends CraftMonster implements Raider {
 
     @Override
     public Block getPatrolTarget() {
-        return getHandle().getPatrolTarget() == null ? null : CraftBlock.at(getHandle().world, getHandle().getPatrolTarget());
+        return getHandle().getPatrolTarget() == null ? null : CraftBlock.at(getHandle().level, getHandle().getPatrolTarget());
     }
 
     @Override

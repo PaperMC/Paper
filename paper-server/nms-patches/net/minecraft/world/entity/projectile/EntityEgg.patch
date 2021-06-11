@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/projectile/EntityEgg.java
 +++ b/net/minecraft/world/entity/projectile/EntityEgg.java
-@@ -10,6 +10,15 @@
+@@ -12,6 +12,15 @@
  import net.minecraft.world.phys.MovingObjectPosition;
  import net.minecraft.world.phys.MovingObjectPositionEntity;
  
@@ -16,10 +16,10 @@
  public class EntityEgg extends EntityProjectileThrowable {
  
      public EntityEgg(EntityTypes<? extends EntityEgg> entitytypes, World world) {
-@@ -34,20 +43,40 @@
+@@ -48,20 +57,40 @@
      protected void a(MovingObjectPosition movingobjectposition) {
          super.a(movingobjectposition);
-         if (!this.world.isClientSide) {
+         if (!this.level.isClientSide) {
 -            if (this.random.nextInt(8) == 0) {
 +            boolean hatching = this.random.nextInt(8) == 0; // CraftBukkit
 +            if (true) {
@@ -30,7 +30,7 @@
                  }
  
 -                for (int i = 0; i < b0; ++i) {
--                    EntityChicken entitychicken = (EntityChicken) EntityTypes.CHICKEN.a(this.world);
+-                    EntityChicken entitychicken = (EntityChicken) EntityTypes.CHICKEN.a(this.level);
 +                // CraftBukkit start
 +                if (!hatching) {
 +                    b0 = 0;
@@ -40,7 +40,7 @@
 +                Entity shooter = this.getShooter();
 +                if (shooter instanceof EntityPlayer) {
 +                    PlayerEggThrowEvent event = new PlayerEggThrowEvent((Player) shooter.getBukkitEntity(), (org.bukkit.entity.Egg) this.getBukkitEntity(), hatching, b0, hatchingType);
-+                    this.world.getServer().getPluginManager().callEvent(event);
++                    this.level.getServer().getPluginManager().callEvent(event);
 +
 +                    b0 = event.getNumHatches();
 +                    hatching = event.isHatching();
@@ -48,18 +48,18 @@
 +                }
  
 -                    entitychicken.setAgeRaw(-24000);
--                    entitychicken.setPositionRotation(this.locX(), this.locY(), this.locZ(), this.yaw, 0.0F);
--                    this.world.addEntity(entitychicken);
+-                    entitychicken.setPositionRotation(this.locX(), this.locY(), this.locZ(), this.getYRot(), 0.0F);
+-                    this.level.addEntity(entitychicken);
 +                if (hatching) {
 +                    for (int i = 0; i < b0; ++i) {
-+                        Entity entity = world.getWorld().createEntity(new org.bukkit.Location(world.getWorld(), this.locX(), this.locY(), this.locZ(), this.yaw, 0.0F), hatchingType.getEntityClass());
++                        Entity entity = level.getWorld().createEntity(new org.bukkit.Location(level.getWorld(), this.locX(), this.locY(), this.locZ(), this.getYRot(), 0.0F), hatchingType.getEntityClass());
 +                        if (entity.getBukkitEntity() instanceof Ageable) {
 +                            ((Ageable) entity.getBukkitEntity()).setBaby();
 +                        }
-+                        world.getWorld().addEntity(entity, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.EGG);
++                        level.getWorld().addEntity(entity, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.EGG);
 +                    }
                  }
 +                // CraftBukkit end
              }
  
-             this.world.broadcastEntityEffect(this, (byte) 3);
+             this.level.broadcastEntityEffect(this, (byte) 3);

@@ -1,18 +1,9 @@
 --- a/net/minecraft/world/item/ItemFlintAndSteel.java
 +++ b/net/minecraft/world/item/ItemFlintAndSteel.java
-@@ -28,7 +28,7 @@
-         BlockPosition blockposition = itemactioncontext.getClickPosition();
-         IBlockData iblockdata = world.getType(blockposition);
- 
--        if (BlockCampfire.h(iblockdata)) {
-+        if (BlockCampfire.h(iblockdata) && !org.bukkit.craftbukkit.event.CraftEventFactory.callBlockIgniteEvent(world, blockposition, entityhuman).isCancelled()) { // CraftBukkit
-             world.playSound(entityhuman, blockposition, SoundEffects.ITEM_FLINTANDSTEEL_USE, SoundCategory.BLOCKS, 1.0F, ItemFlintAndSteel.RANDOM.nextFloat() * 0.4F + 0.8F);
-             world.setTypeAndData(blockposition, (IBlockData) iblockdata.set(BlockProperties.r, true), 11);
-             if (entityhuman != null) {
-@@ -42,6 +42,14 @@
+@@ -36,6 +36,14 @@
              BlockPosition blockposition1 = blockposition.shift(itemactioncontext.getClickedFace());
  
-             if (BlockFireAbstract.a(world, blockposition1, itemactioncontext.f())) {
+             if (BlockFireAbstract.a(world, blockposition1, itemactioncontext.g())) {
 +                // CraftBukkit start - Store the clicked block
 +                if (org.bukkit.craftbukkit.event.CraftEventFactory.callBlockIgniteEvent(world, blockposition1, org.bukkit.event.block.BlockIgniteEvent.IgniteCause.FLINT_AND_STEEL, entityhuman).isCancelled()) {
 +                    itemactioncontext.getItemStack().damage(1, entityhuman, (entityhuman1) -> {
@@ -21,6 +12,21 @@
 +                    return EnumInteractionResult.PASS;
 +                }
 +                // CraftBukkit end
-                 world.playSound(entityhuman, blockposition1, SoundEffects.ITEM_FLINTANDSTEEL_USE, SoundCategory.BLOCKS, 1.0F, ItemFlintAndSteel.RANDOM.nextFloat() * 0.4F + 0.8F);
+                 world.playSound(entityhuman, blockposition1, SoundEffects.FLINTANDSTEEL_USE, SoundCategory.BLOCKS, 1.0F, world.getRandom().nextFloat() * 0.4F + 0.8F);
                  IBlockData iblockdata1 = BlockFireAbstract.a((IBlockAccess) world, blockposition1);
  
+@@ -55,6 +63,14 @@
+                 return EnumInteractionResult.FAIL;
+             }
+         } else {
++            // CraftBukkit start - Store the clicked block
++            if (org.bukkit.craftbukkit.event.CraftEventFactory.callBlockIgniteEvent(world, blockposition, org.bukkit.event.block.BlockIgniteEvent.IgniteCause.FLINT_AND_STEEL, entityhuman).isCancelled()) {
++                itemactioncontext.getItemStack().damage(1, entityhuman, (entityhuman1) -> {
++                    entityhuman1.broadcastItemBreak(itemactioncontext.getHand());
++                });
++                return EnumInteractionResult.PASS;
++            }
++            // CraftBukkit end
+             world.playSound(entityhuman, blockposition, SoundEffects.FLINTANDSTEEL_USE, SoundCategory.BLOCKS, 1.0F, world.getRandom().nextFloat() * 0.4F + 0.8F);
+             world.setTypeAndData(blockposition, (IBlockData) iblockdata.set(BlockProperties.LIT, true), 11);
+             world.a((Entity) entityhuman, GameEvent.BLOCK_PLACE, blockposition);

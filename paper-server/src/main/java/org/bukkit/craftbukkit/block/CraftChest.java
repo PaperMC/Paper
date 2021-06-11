@@ -5,6 +5,7 @@ import net.minecraft.world.ITileInventory;
 import net.minecraft.world.level.block.BlockChest;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.TileEntityChest;
+import net.minecraft.world.level.block.state.IBlockData;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.Chest;
@@ -59,22 +60,22 @@ public class CraftChest extends CraftLootable<TileEntityChest> implements Chest 
     @Override
     public void open() {
         requirePlaced();
-        if (!getTileEntity().opened) {
-            net.minecraft.world.level.block.Block block = getTileEntity().getBlock().getBlock();
-            getTileEntity().getWorld().playBlockAction(getTileEntity().getPosition(), block, 1, getTileEntity().viewingCount + 1);
-            getTileEntity().playOpenSound(SoundEffects.BLOCK_CHEST_OPEN);
+        if (!getTileEntity().openersCounter.opened) {
+            IBlockData block = getTileEntity().getBlock();
+            getTileEntity().getWorld().playBlockAction(getPosition(), block.getBlock(), 1, getTileEntity().openersCounter.getOpenerCount() + 1);
+            TileEntityChest.playOpenSound(getTileEntity().getWorld(), getPosition(), block, SoundEffects.CHEST_OPEN);
         }
-        getTileEntity().opened = true;
+        getTileEntity().openersCounter.opened = true;
     }
 
     @Override
     public void close() {
         requirePlaced();
-        if (getTileEntity().opened) {
-            net.minecraft.world.level.block.Block block = getTileEntity().getBlock().getBlock();
-            getTileEntity().getWorld().playBlockAction(getTileEntity().getPosition(), block, 1, 0);
-            getTileEntity().playOpenSound(SoundEffects.BLOCK_CHEST_CLOSE);
+        if (getTileEntity().openersCounter.opened) {
+            IBlockData block = getTileEntity().getBlock();
+            getTileEntity().getWorld().playBlockAction(getPosition(), block.getBlock(), 1, 0);
+            TileEntityChest.playOpenSound(getTileEntity().getWorld(), getPosition(), block, SoundEffects.CHEST_OPEN);
         }
-        getTileEntity().opened = false;
+        getTileEntity().openersCounter.opened = false;
     }
 }

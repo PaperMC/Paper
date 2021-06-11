@@ -42,12 +42,12 @@ public class CraftItemFrame extends CraftHanging implements ItemFrame {
         super.update();
 
         // mark dirty, so that the client gets updated with item and rotation
-        for (DataWatcher.Item<?> dataItem : getHandle().getDataWatcher().c()) {
+        for (DataWatcher.Item<?> dataItem : getHandle().getDataWatcher().getAll()) {
             getHandle().getDataWatcher().markDirty(dataItem.a());
         }
 
         // update redstone
-        getHandle().getWorld().updateAdjacentComparators(getHandle().blockPosition, Blocks.AIR);
+        getHandle().getWorld().updateAdjacentComparators(getHandle().pos, Blocks.AIR);
     }
 
     @Override
@@ -67,13 +67,13 @@ public class CraftItemFrame extends CraftHanging implements ItemFrame {
 
     @Override
     public float getItemDropChance() {
-        return getHandle().itemDropChance;
+        return getHandle().dropChance;
     }
 
     @Override
     public void setItemDropChance(float chance) {
         Preconditions.checkArgument(0.0 <= chance && chance <= 1.0, "Chance outside range [0, 1]");
-        getHandle().itemDropChance = chance;
+        getHandle().dropChance = chance;
     }
 
     @Override

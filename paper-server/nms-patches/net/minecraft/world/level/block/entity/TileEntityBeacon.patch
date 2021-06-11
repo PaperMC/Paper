@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/block/entity/TileEntityBeacon.java
 +++ b/net/minecraft/world/level/block/entity/TileEntityBeacon.java
-@@ -38,6 +38,11 @@
+@@ -40,6 +40,11 @@
  import net.minecraft.world.level.levelgen.HeightMap;
  import net.minecraft.world.phys.AxisAlignedBB;
  
@@ -9,38 +9,38 @@
 +import org.bukkit.potion.PotionEffect;
 +// CraftBukkit end
 +
- public class TileEntityBeacon extends TileEntity implements ITileInventory, ITickable {
+ public class TileEntityBeacon extends TileEntity implements ITileInventory {
  
-     public static final MobEffectList[][] a = new MobEffectList[][]{{MobEffects.FASTER_MOVEMENT, MobEffects.FASTER_DIG}, {MobEffects.RESISTANCE, MobEffects.JUMP}, {MobEffects.INCREASE_DAMAGE}, {MobEffects.REGENERATION}};
-@@ -54,6 +59,15 @@
-     public IChatBaseComponent customName;
-     public ChestLock chestLock;
-     private final IContainerProperties containerProperties;
+     private static final int MAX_LEVELS = 4;
+@@ -62,6 +67,15 @@
+     public IChatBaseComponent name;
+     public ChestLock lockKey;
+     private final IContainerProperties dataAccess;
 +    // CraftBukkit start - add fields and methods
 +    public PotionEffect getPrimaryEffect() {
-+        return (this.primaryEffect != null) ? CraftPotionUtil.toBukkit(new MobEffect(this.primaryEffect, getLevel(), getAmplification(), true, true)) : null;
++        return (this.primaryPower != null) ? CraftPotionUtil.toBukkit(new MobEffect(this.primaryPower, getLevel(this.levels), getAmplification(levels, primaryPower, secondaryPower), true, true)) : null;
 +    }
 +
 +    public PotionEffect getSecondaryEffect() {
-+        return (hasSecondaryEffect()) ? CraftPotionUtil.toBukkit(new MobEffect(this.secondaryEffect, getLevel(), getAmplification(), true, true)) : null;
++        return (hasSecondaryEffect(levels, primaryPower, secondaryPower)) ? CraftPotionUtil.toBukkit(new MobEffect(this.secondaryPower, getLevel(this.levels), getAmplification(levels, primaryPower, secondaryPower), true, true)) : null;
 +    }
 +    // CraftBukkit end
  
-     public TileEntityBeacon() {
-         super(TileEntityTypes.BEACON);
-@@ -222,39 +236,78 @@
-         super.al_();
+     public TileEntityBeacon(BlockPosition blockposition, IBlockData iblockdata) {
+         super(TileEntityTypes.BEACON, blockposition, iblockdata);
+@@ -230,39 +244,78 @@
+         super.aa_();
      }
  
--    private void applyEffects() {
--        if (!this.world.isClientSide && this.primaryEffect != null) {
--            double d0 = (double) (this.levels * 10 + 10);
+-    private static void applyEffects(World world, BlockPosition blockposition, int i, @Nullable MobEffectList mobeffectlist, @Nullable MobEffectList mobeffectlist1) {
+-        if (!world.isClientSide && mobeffectlist != null) {
+-            double d0 = (double) (i * 10 + 10);
 +    // CraftBukkit start - split into components
-+    private byte getAmplification() {
++    private static byte getAmplification(int i, @Nullable MobEffectList mobeffectlist, @Nullable MobEffectList mobeffectlist1) {
 +        {
              byte b0 = 0;
  
-             if (this.levels >= 4 && this.primaryEffect == this.secondaryEffect) {
+             if (i >= 4 && mobeffectlist == mobeffectlist1) {
                  b0 = 1;
              }
  
@@ -48,25 +48,25 @@
 +        }
 +    }
 +
-+    private int getLevel() {
++    private static int getLevel(int i) {
 +        {
-             int i = (9 + this.levels * 2) * 20;
-+            return i;
+             int j = (9 + i * 2) * 20;
++            return j;
 +        }
 +    }
 +
-+    public List getHumansInRange() {
++    public static List getHumansInRange(World world, BlockPosition blockposition, int i) {
 +        {
-+            double d0 = (double) (this.levels * 10 + 10);
++            double d0 = (double) (i * 10 + 10);
 +
-             AxisAlignedBB axisalignedbb = (new AxisAlignedBB(this.position)).g(d0).b(0.0D, (double) this.world.getBuildHeight(), 0.0D);
-             List<EntityHuman> list = this.world.a(EntityHuman.class, axisalignedbb);
+             AxisAlignedBB axisalignedbb = (new AxisAlignedBB(blockposition)).g(d0).b(0.0D, (double) world.getHeight(), 0.0D);
+             List<EntityHuman> list = world.a(EntityHuman.class, axisalignedbb);
 +
 +            return list;
 +        }
 +    }
 +
-+    private void applyEffect(List list, MobEffectList effects, int i, int b0) {
++    private static void applyEffect(List list, MobEffectList mobeffectlist, int j, int b0) {
 +        {
              Iterator iterator = list.iterator();
  
@@ -74,20 +74,20 @@
  
              while (iterator.hasNext()) {
                  entityhuman = (EntityHuman) iterator.next();
--                entityhuman.addEffect(new MobEffect(this.primaryEffect, i, b0, true, true));
-+                entityhuman.addEffect(new MobEffect(effects, i, b0, true, true), org.bukkit.event.entity.EntityPotionEffectEvent.Cause.BEACON);
+-                entityhuman.addEffect(new MobEffect(mobeffectlist, j, b0, true, true));
++                entityhuman.addEffect(new MobEffect(mobeffectlist, j, b0, true, true), org.bukkit.event.entity.EntityPotionEffectEvent.Cause.BEACON);
              }
 +        }
 +    }
  
-+    private boolean hasSecondaryEffect() {
++    private static boolean hasSecondaryEffect(int i, @Nullable MobEffectList mobeffectlist, @Nullable MobEffectList mobeffectlist1) {
 +        {
-             if (this.levels >= 4 && this.primaryEffect != this.secondaryEffect && this.secondaryEffect != null) {
+             if (i >= 4 && mobeffectlist != mobeffectlist1 && mobeffectlist1 != null) {
 -                iterator = list.iterator();
 -
 -                while (iterator.hasNext()) {
 -                    entityhuman = (EntityHuman) iterator.next();
--                    entityhuman.addEffect(new MobEffect(this.secondaryEffect, i, 0, true, true));
+-                    entityhuman.addEffect(new MobEffect(mobeffectlist1, j, 0, true, true));
 -                }
 +                return true;
              }
@@ -96,38 +96,38 @@
          }
      }
  
-+    private void applyEffects() {
-+        if (!this.world.isClientSide && this.primaryEffect != null) {
-+            double d0 = (double) (this.levels * 10 + 10);
-+            byte b0 = getAmplification();
++    private static void applyEffects(World world, BlockPosition blockposition, int i, @Nullable MobEffectList mobeffectlist, @Nullable MobEffectList mobeffectlist1) {
++        if (!world.isClientSide && mobeffectlist != null) {
++            double d0 = (double) (i * 10 + 10);
++            byte b0 = getAmplification(i, mobeffectlist, mobeffectlist1);
 +
-+            int i = getLevel();
-+            List list = getHumansInRange();
++            int j = getLevel(i);
++            List list = getHumansInRange(world, blockposition, i);
 +
-+            applyEffect(list, this.primaryEffect, i, b0);
++            applyEffect(list, mobeffectlist, j, b0);
 +
-+            if (hasSecondaryEffect()) {
-+                applyEffect(list, this.secondaryEffect, i, 0);
++            if (hasSecondaryEffect(i, mobeffectlist, mobeffectlist1)) {
++                applyEffect(list, mobeffectlist1, j, 0);
 +            }
 +        }
 +
 +    }
 +    // CraftBukkit end
 +
-     public void a(SoundEffect soundeffect) {
-         this.world.playSound((EntityHuman) null, this.position, soundeffect, SoundCategory.BLOCKS, 1.0F, 1.0F);
+     public static void a(World world, BlockPosition blockposition, SoundEffect soundeffect) {
+         world.playSound((EntityHuman) null, blockposition, soundeffect, SoundCategory.BLOCKS, 1.0F, 1.0F);
      }
-@@ -284,8 +337,11 @@
+@@ -292,8 +345,11 @@
      @Override
-     public void load(IBlockData iblockdata, NBTTagCompound nbttagcompound) {
-         super.load(iblockdata, nbttagcompound);
--        this.primaryEffect = b(nbttagcompound.getInt("Primary"));
--        this.secondaryEffect = b(nbttagcompound.getInt("Secondary"));
+     public void load(NBTTagCompound nbttagcompound) {
+         super.load(nbttagcompound);
+-        this.primaryPower = a(nbttagcompound.getInt("Primary"));
+-        this.secondaryPower = a(nbttagcompound.getInt("Secondary"));
 +        // CraftBukkit start - persist manually set non-default beacon effects (SPIGOT-3598)
-+        this.primaryEffect = MobEffectList.fromId(nbttagcompound.getInt("Primary"));
-+        this.secondaryEffect = MobEffectList.fromId(nbttagcompound.getInt("Secondary"));
++        this.primaryPower = MobEffectList.fromId(nbttagcompound.getInt("Primary"));
++        this.secondaryPower = MobEffectList.fromId(nbttagcompound.getInt("Secondary"));
 +        this.levels = nbttagcompound.getInt("Levels"); // SPIGOT-5053, use where available
 +        // CraftBukkit end
          if (nbttagcompound.hasKeyOfType("CustomName", 8)) {
-             this.customName = IChatBaseComponent.ChatSerializer.a(nbttagcompound.getString("CustomName"));
+             this.name = IChatBaseComponent.ChatSerializer.a(nbttagcompound.getString("CustomName"));
          }

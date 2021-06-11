@@ -1,0 +1,47 @@
+--- a/net/minecraft/world/entity/animal/goat/Goat.java
++++ b/net/minecraft/world/entity/animal/goat/Goat.java
+@@ -50,6 +50,11 @@
+ import net.minecraft.world.level.pathfinder.Pathfinder;
+ import net.minecraft.world.level.pathfinder.PathfinderNormal;
+ 
++// CraftBukkit start
++import org.bukkit.craftbukkit.event.CraftEventFactory;
++import org.bukkit.craftbukkit.inventory.CraftItemStack;
++// CraftBukkit end
++
+ public class Goat extends EntityAnimal {
+ 
+     public static final EntitySize LONG_JUMPING_DIMENSIONS = EntitySize.b(0.9F, 1.3F).a(0.7F);
+@@ -123,13 +128,13 @@
+ 
+     @Override
+     public BehaviorController<Goat> getBehaviorController() {
+-        return super.getBehaviorController();
++        return (BehaviorController<Goat>) super.getBehaviorController(); // CraftBukkit - decompile error
+     }
+ 
+     @Override
+     protected void mobTick() {
+         this.level.getMethodProfiler().enter("goatBrain");
+-        this.getBehaviorController().a((WorldServer) this.level, (EntityLiving) this);
++        this.getBehaviorController().a((WorldServer) this.level, this); // CraftBukkit - decompile error
+         this.level.getMethodProfiler().exit();
+         this.level.getMethodProfiler().enter("goatActivityUpdate");
+         GoatAi.b(this);
+@@ -161,8 +166,15 @@
+         ItemStack itemstack = entityhuman.b(enumhand);
+ 
+         if (itemstack.a(Items.BUCKET) && !this.isBaby()) {
++            // CraftBukkit start - Got milk?
++            org.bukkit.event.player.PlayerBucketFillEvent event = CraftEventFactory.callPlayerBucketFillEvent((WorldServer) entityhuman.level, entityhuman, this.getChunkCoordinates(), this.getChunkCoordinates(), null, itemstack, Items.MILK_BUCKET);
++
++            if (event.isCancelled()) {
++                return EnumInteractionResult.PASS;
++            }
++            // CraftBukkit end
+             entityhuman.playSound(this.t(), 1.0F, 1.0F);
+-            ItemStack itemstack1 = ItemLiquidUtil.a(itemstack, entityhuman, Items.MILK_BUCKET.createItemStack());
++            ItemStack itemstack1 = ItemLiquidUtil.a(itemstack, entityhuman, CraftItemStack.asNMSCopy(event.getItemStack())); // CraftBukkit
+ 
+             entityhuman.a(enumhand, itemstack1);
+             return EnumInteractionResult.a(this.level.isClientSide);

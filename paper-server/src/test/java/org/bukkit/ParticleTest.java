@@ -22,6 +22,10 @@ public class ParticleTest extends AbstractTestingBase {
                 data = new MaterialData(Material.LEGACY_STONE);
             } else if (bukkit.getDataType() == Particle.DustOptions.class) {
                 data = new Particle.DustOptions(Color.BLACK, 0);
+            } else if (bukkit.getDataType() == Particle.DustTransition.class) {
+                data = new Particle.DustTransition(Color.BLACK, Color.WHITE, 0);
+            } else if (bukkit.getDataType() == Vibration.class) {
+                data = new Vibration(new Location(null, 0, 0, 0), new Vibration.Destination.BlockDestination(new Location(null, 0, 0, 0)), 0);
             } else if (bukkit.getDataType() == BlockData.class) {
                 data = CraftBlockData.newData(Material.STONE, "");
             }

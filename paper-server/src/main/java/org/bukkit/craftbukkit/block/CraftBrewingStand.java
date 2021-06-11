@@ -43,11 +43,11 @@ public class CraftBrewingStand extends CraftContainer<TileEntityBrewingStand> im
 
     @Override
     public int getFuelLevel() {
-        return this.getSnapshot().fuelLevel;
+        return this.getSnapshot().fuel;
     }
 
     @Override
     public void setFuelLevel(int level) {
-        this.getSnapshot().fuelLevel = level;
+        this.getSnapshot().fuel = level;
     }
 }

@@ -8,17 +8,17 @@
 +
  public class CraftingManager extends ResourceDataJson {
  
-     private static final Gson a = (new GsonBuilder()).setPrettyPrinting().disableHtmlEscaping().create();
+     private static final Gson GSON = (new GsonBuilder()).setPrettyPrinting().disableHtmlEscaping().create();
      private static final Logger LOGGER = LogManager.getLogger();
 -    public Map<Recipes<?>, Map<MinecraftKey, IRecipe<?>>> recipes = ImmutableMap.of();
 +    public Map<Recipes<?>, Object2ObjectLinkedOpenHashMap<MinecraftKey, IRecipe<?>>> recipes = ImmutableMap.of(); // CraftBukkit
-     private boolean d;
+     private boolean hasErrors;
  
      public CraftingManager() {
 @@ -47,7 +49,12 @@
  
      protected void a(Map<MinecraftKey, JsonElement> map, IResourceManager iresourcemanager, GameProfilerFiller gameprofilerfiller) {
-         this.d = false;
+         this.hasErrors = false;
 -        Map<Recipes<?>, Builder<MinecraftKey, IRecipe<?>>> map1 = Maps.newHashMap();
 +        // CraftBukkit start - SPIGOT-5667 make sure all types are populated and mutable
 +        Map<Recipes<?>, Object2ObjectLinkedOpenHashMap<MinecraftKey, IRecipe<?>>> map1 = Maps.newHashMap();
@@ -29,7 +29,7 @@
          Iterator iterator = map.entrySet().iterator();
  
          while (iterator.hasNext()) {
-@@ -57,24 +64,42 @@
+@@ -57,28 +64,46 @@
              try {
                  IRecipe<?> irecipe = a(minecraftkey, ChatDeserializer.m((JsonElement) entry.getValue(), "top element"));
  
@@ -65,6 +65,10 @@
 +    }
 +    // CraftBukkit end
 +
+     public boolean a() {
+         return this.hasErrors;
+     }
+ 
      public <C extends IInventory, T extends IRecipe<C>> Optional<T> craft(Recipes<T> recipes, C c0, World world) {
 -        return this.b(recipes).values().stream().flatMap((irecipe) -> {
 +        // CraftBukkit start
@@ -77,7 +81,7 @@
      }
  
      public <C extends IInventory, T extends IRecipe<C>> List<T> a(Recipes<T> recipes) {
-@@ -92,7 +117,7 @@
+@@ -96,7 +121,7 @@
      }
  
      private <C extends IInventory, T extends IRecipe<C>> Map<MinecraftKey, IRecipe<C>> b(Recipes<T> recipes) {
@@ -86,7 +90,7 @@
      }
  
      public <C extends IInventory, T extends IRecipe<C>> NonNullList<ItemStack> c(Recipes<T> recipes, C c0, World world) {
-@@ -113,7 +138,7 @@
+@@ -117,7 +142,7 @@
  
      public Optional<? extends IRecipe<?>> getRecipe(MinecraftKey minecraftkey) {
          return this.recipes.values().stream().map((map) -> {
@@ -95,9 +99,23 @@
          }).filter(Objects::nonNull).findFirst();
      }
  
-@@ -136,4 +161,14 @@
-             return new JsonSyntaxException("Invalid or unsupported recipe type '" + s + "'");
-         })).a(minecraftkey, jsonobject);
+@@ -143,11 +168,11 @@
+ 
+     public void a(Iterable<IRecipe<?>> iterable) {
+         this.hasErrors = false;
+-        Map<Recipes<?>, Map<MinecraftKey, IRecipe<?>>> map = Maps.newHashMap();
++        Map<Recipes<?>, Object2ObjectLinkedOpenHashMap<MinecraftKey, IRecipe<?>>> map = Maps.newHashMap(); // CraftBukkit
+ 
+         iterable.forEach((irecipe) -> {
+             Map<MinecraftKey, IRecipe<?>> map1 = (Map) map.computeIfAbsent(irecipe.g(), (recipes) -> {
+-                return Maps.newHashMap();
++                return new Object2ObjectLinkedOpenHashMap<>(); // CraftBukkit
+             });
+             IRecipe<?> irecipe1 = (IRecipe) map1.put(irecipe.getKey(), irecipe);
+ 
+@@ -157,4 +182,14 @@
+         });
+         this.recipes = ImmutableMap.copyOf(map);
      }
 +
 +    // CraftBukkit start

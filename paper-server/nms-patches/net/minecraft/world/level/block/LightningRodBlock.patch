@@ -1,0 +1,42 @@
+--- a/net/minecraft/world/level/block/LightningRodBlock.java
++++ b/net/minecraft/world/level/block/LightningRodBlock.java
+@@ -33,6 +33,11 @@
+ import net.minecraft.world.phys.MovingObjectPositionBlock;
+ import net.minecraft.world.phys.Vec3D;
+ 
++// CraftBukkit start
++import org.bukkit.craftbukkit.block.CraftBlock;
++import org.bukkit.event.block.BlockRedstoneEvent;
++// CraftBukkit end
++
+ public class LightningRodBlock extends RodBlock implements IBlockWaterlogged {
+ 
+     public static final BlockStateBoolean WATERLOGGED = BlockProperties.WATERLOGGED;
+@@ -79,6 +84,18 @@
+     }
+ 
+     public void d(IBlockData iblockdata, World world, BlockPosition blockposition) {
++        // CraftBukkit start
++        boolean powered = iblockdata.get(LightningRodBlock.POWERED);
++        int old = (powered) ? 15 : 0;
++        int current = (!powered) ? 15 : 0;
++
++        BlockRedstoneEvent eventRedstone = new BlockRedstoneEvent(CraftBlock.at(world, blockposition), old, current);
++        world.getServer().getPluginManager().callEvent(eventRedstone);
++
++        if (eventRedstone.getNewCurrent() <= 0) {
++            return;
++        }
++        // CraftBukkit end
+         world.setTypeAndData(blockposition, (IBlockData) iblockdata.set(LightningRodBlock.POWERED, true), 3);
+         this.e(iblockdata, world, blockposition);
+         world.getBlockTickList().a(blockposition, this, 8);
+@@ -135,7 +152,7 @@
+                 Entity entity = iprojectile.getShooter();
+ 
+                 entitylightning.b(entity instanceof EntityPlayer ? (EntityPlayer) entity : null);
+-                world.addEntity(entitylightning);
++                ((WorldServer) world).strikeLightning(entitylightning, org.bukkit.event.weather.LightningStrikeEvent.Cause.TRIDENT); // CraftBukkit
+                 world.playSound((EntityHuman) null, blockposition, SoundEffects.TRIDENT_THUNDER, SoundCategory.WEATHER, 5.0F, 1.0F);
+             }
+         }

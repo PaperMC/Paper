@@ -3,7 +3,7 @@
  */
 package org.bukkit.craftbukkit.block.impl;
 
-public final class CraftMinecartDetector extends org.bukkit.craftbukkit.block.data.CraftBlockData implements org.bukkit.block.data.type.RedstoneRail, org.bukkit.block.data.Powerable, org.bukkit.block.data.Rail {
+public final class CraftMinecartDetector extends org.bukkit.craftbukkit.block.data.CraftBlockData implements org.bukkit.block.data.type.RedstoneRail, org.bukkit.block.data.Powerable, org.bukkit.block.data.Rail, org.bukkit.block.data.Waterlogged {
 
     public CraftMinecartDetector() {
         super();
@@ -44,5 +44,19 @@ public final class CraftMinecartDetector extends org.bukkit.craftbukkit.block.da
     @Override
     public java.util.Set<org.bukkit.block.data.Rail.Shape> getShapes() {
         return getValues(SHAPE, org.bukkit.block.data.Rail.Shape.class);
+    }
+
+    // org.bukkit.craftbukkit.block.data.CraftWaterlogged
+
+    private static final net.minecraft.world.level.block.state.properties.BlockStateBoolean WATERLOGGED = getBoolean(net.minecraft.world.level.block.BlockMinecartDetector.class, "waterlogged");
+
+    @Override
+    public boolean isWaterlogged() {
+        return get(WATERLOGGED);
+    }
+
+    @Override
+    public void setWaterlogged(boolean waterlogged) {
+        set(WATERLOGGED, waterlogged);
     }
 }

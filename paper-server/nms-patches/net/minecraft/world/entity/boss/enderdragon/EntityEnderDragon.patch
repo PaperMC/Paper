@@ -1,12 +1,13 @@
 --- a/net/minecraft/world/entity/boss/enderdragon/EntityEnderDragon.java
 +++ b/net/minecraft/world/entity/boss/enderdragon/EntityEnderDragon.java
-@@ -51,6 +51,17 @@
+@@ -53,6 +53,18 @@
  import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
  
 +// CraftBukkit start
 +import net.minecraft.world.item.ItemStack;
 +import net.minecraft.world.level.Explosion;
++import net.minecraft.world.level.block.Block;
 +import net.minecraft.world.level.block.entity.TileEntity;
 +import net.minecraft.world.level.storage.loot.LootTableInfo;
 +import net.minecraft.world.level.storage.loot.parameters.LootContextParameters;
@@ -18,31 +19,31 @@
  public class EntityEnderDragon extends EntityInsentient implements IMonster {
  
      private static final Logger LOGGER = LogManager.getLogger();
-@@ -82,6 +93,7 @@
-     private final PathPoint[] bJ = new PathPoint[24];
-     private final int[] bK = new int[24];
-     private final Path bL = new Path();
+@@ -89,6 +101,7 @@
+     private final PathPoint[] nodes = new PathPoint[24];
+     private final int[] nodeAdjacency = new int[24];
+     private final Path openSet = new Path();
 +    private Explosion explosionSource = new Explosion(null, this, null, null, Double.NaN, Double.NaN, Double.NaN, Float.NaN, true, Explosion.Effect.DESTROY); // CraftBukkit - reusable source for CraftTNTPrimed.getSource()
  
      public EntityEnderDragon(EntityTypes<? extends EntityEnderDragon> entitytypes, World world) {
          super(EntityTypes.ENDER_DRAGON, world);
-@@ -219,7 +231,7 @@
+@@ -236,7 +249,7 @@
  
                      Vec3D vec3d1 = idragoncontroller.g();
  
 -                    if (vec3d1 != null) {
-+                    if (vec3d1 != null && idragoncontroller.getControllerPhase() != DragonControllerPhase.HOVER) { // CraftBukkit - Don't move when hovering
++                    if (vec3d1 != null && idragoncontroller.getControllerPhase() != DragonControllerPhase.HOVERING) { // CraftBukkit - Don't move when hovering
                          d0 = vec3d1.x - this.locX();
                          d1 = vec3d1.y - this.locY();
                          d2 = vec3d1.z - this.locZ();
-@@ -357,7 +369,14 @@
-             if (this.currentEnderCrystal.dead) {
-                 this.currentEnderCrystal = null;
-             } else if (this.ticksLived % 10 == 0 && this.getHealth() < this.getMaxHealth()) {
+@@ -378,7 +391,14 @@
+             if (this.nearestCrystal.isRemoved()) {
+                 this.nearestCrystal = null;
+             } else if (this.tickCount % 10 == 0 && this.getHealth() < this.getMaxHealth()) {
 -                this.setHealth(this.getHealth() + 1.0F);
 +                // CraftBukkit start
 +                EntityRegainHealthEvent event = new EntityRegainHealthEvent(this.getBukkitEntity(), 1.0F, EntityRegainHealthEvent.RegainReason.ENDER_CRYSTAL);
-+                this.world.getServer().getPluginManager().callEvent(event);
++                this.level.getServer().getPluginManager().callEvent(event);
 +
 +                if (!event.isCancelled()) {
 +                    this.setHealth((float) (this.getHealth() + event.getAmount()));
@@ -51,7 +52,7 @@
              }
          }
  
-@@ -432,6 +451,9 @@
+@@ -453,6 +473,9 @@
          int j1 = MathHelper.floor(axisalignedbb.maxZ);
          boolean flag = false;
          boolean flag1 = false;
@@ -61,20 +62,20 @@
  
          for (int k1 = i; k1 <= l; ++k1) {
              for (int l1 = j; l1 <= i1; ++l1) {
-@@ -442,7 +464,11 @@
+@@ -462,7 +485,11 @@
  
                      if (!iblockdata.isAir() && iblockdata.getMaterial() != Material.FIRE) {
-                         if (this.world.getGameRules().getBoolean(GameRules.MOB_GRIEFING) && !TagsBlock.DRAGON_IMMUNE.isTagged(block)) {
--                            flag1 = this.world.a(blockposition, false) || flag1;
+                         if (this.level.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING) && !iblockdata.a((Tag) TagsBlock.DRAGON_IMMUNE)) {
+-                            flag1 = this.level.a(blockposition, false) || flag1;
 +                            // CraftBukkit start - Add blocks to list rather than destroying them
-+                            // flag1 = this.world.a(blockposition, false) || flag1;
++                            // flag1 = this.level.a(blockposition, false) || flag1;
 +                            flag1 = true;
-+                            destroyedBlocks.add(CraftBlock.at(world, blockposition));
++                            destroyedBlocks.add(CraftBlock.at(level, blockposition));
 +                            // CraftBukkit end
                          } else {
                              flag = true;
                          }
-@@ -451,6 +477,51 @@
+@@ -471,6 +498,51 @@
              }
          }
  
@@ -94,7 +95,7 @@
 +        } else if (event.getYield() == 0F) {
 +            // Yield zero ==> no drops
 +            for (org.bukkit.block.Block block : event.blockList()) {
-+                this.world.a(new BlockPosition(block.getX(), block.getY(), block.getZ()), false);
++                this.level.a(new BlockPosition(block.getX(), block.getY(), block.getZ()), false);
 +            }
 +        } else {
 +            for (org.bukkit.block.Block block : event.blockList()) {
@@ -108,17 +109,17 @@
 +
 +                Block nmsBlock = craftBlock.getNMS().getBlock();
 +                if (nmsBlock.a(explosionSource)) {
-+                    TileEntity tileentity = nmsBlock.isTileEntity() ? this.world.getTileEntity(blockposition) : null;
-+                    LootTableInfo.Builder loottableinfo_builder = (new LootTableInfo.Builder((WorldServer) this.world)).a(this.world.random).set(LootContextParameters.ORIGIN, Vec3D.a(blockposition)).set(LootContextParameters.TOOL, ItemStack.b).set(LootContextParameters.EXPLOSION_RADIUS, 1.0F / event.getYield()).setOptional(LootContextParameters.BLOCK_ENTITY, tileentity);
++                    TileEntity tileentity = craftBlock.getNMS().isTileEntity() ? this.level.getTileEntity(blockposition) : null;
++                    LootTableInfo.Builder loottableinfo_builder = (new LootTableInfo.Builder((WorldServer) this.level)).a(this.level.random).set(LootContextParameters.ORIGIN, Vec3D.a(blockposition)).set(LootContextParameters.TOOL, ItemStack.EMPTY).set(LootContextParameters.EXPLOSION_RADIUS, 1.0F / event.getYield()).setOptional(LootContextParameters.BLOCK_ENTITY, tileentity);
 +
 +                    craftBlock.getNMS().a(loottableinfo_builder).forEach((itemstack) -> {
-+                        Block.a(world, blockposition, itemstack);
++                        Block.a(level, blockposition, itemstack);
 +                    });
-+                    craftBlock.getNMS().dropNaturally((WorldServer) world, blockposition, ItemStack.b);
++                    craftBlock.getNMS().dropNaturally((WorldServer) level, blockposition, ItemStack.EMPTY);
 +                }
-+                nmsBlock.wasExploded(world, blockposition, explosionSource);
++                nmsBlock.wasExploded(level, blockposition, explosionSource);
 +
-+                this.world.a(blockposition, false);
++                this.level.a(blockposition, false);
 +            }
 +        }
 +        // CraftBukkit end

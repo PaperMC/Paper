@@ -1,7 +1,7 @@
 --- a/net/minecraft/world/entity/item/EntityItem.java
 +++ b/net/minecraft/world/entity/item/EntityItem.java
-@@ -31,6 +31,12 @@
- import net.minecraft.world.level.World;
+@@ -33,6 +33,12 @@
+ import net.minecraft.world.level.gameevent.GameEvent;
  import net.minecraft.world.phys.Vec3D;
  
 +// CraftBukkit start
@@ -12,16 +12,16 @@
 +
  public class EntityItem extends Entity {
  
-     private static final DataWatcherObject<ItemStack> ITEM = DataWatcher.a(EntityItem.class, DataWatcherRegistry.g);
-@@ -40,6 +46,7 @@
+     private static final DataWatcherObject<ItemStack> DATA_ITEM = DataWatcher.a(EntityItem.class, DataWatcherRegistry.ITEM_STACK);
+@@ -45,6 +51,7 @@
      private UUID thrower;
      private UUID owner;
-     public final float b;
+     public final float bobOffs;
 +    private int lastTick = MinecraftServer.currentTick - 1; // CraftBukkit
  
      public EntityItem(EntityTypes<? extends EntityItem> entitytypes, World world) {
          super(entitytypes, world);
-@@ -75,9 +82,12 @@
+@@ -94,9 +101,12 @@
              this.die();
          } else {
              super.tick();
@@ -35,10 +35,10 @@
 +            this.lastTick = MinecraftServer.currentTick;
 +            // CraftBukkit end
  
-             this.lastX = this.locX();
-             this.lastY = this.locY();
-@@ -133,9 +143,11 @@
-                 }
+             this.xo = this.locX();
+             this.yo = this.locY();
+@@ -148,9 +158,11 @@
+                 this.mergeNearby();
              }
  
 +            /* CraftBukkit start - moved up
@@ -47,12 +47,12 @@
              }
 +            // CraftBukkit end */
  
-             this.impulse |= this.aK();
-             if (!this.world.isClientSide) {
-@@ -147,6 +159,12 @@
+             this.hasImpulse |= this.aR();
+             if (!this.level.isClientSide) {
+@@ -162,6 +174,12 @@
              }
  
-             if (!this.world.isClientSide && this.age >= 6000) {
+             if (!this.level.isClientSide && this.age >= 6000) {
 +                // CraftBukkit start - fire ItemDespawnEvent
 +                if (org.bukkit.craftbukkit.event.CraftEventFactory.callItemDespawnEvent(this).isCancelled()) {
 +                    this.age = 0;
@@ -62,7 +62,7 @@
                  this.die();
              }
  
-@@ -222,10 +240,11 @@
+@@ -237,10 +255,11 @@
      private static void a(EntityItem entityitem, ItemStack itemstack, ItemStack itemstack1) {
          ItemStack itemstack2 = a(itemstack, itemstack1, 64);
  
@@ -75,7 +75,7 @@
          a(entityitem, itemstack, itemstack1);
          entityitem.pickupDelay = Math.max(entityitem.pickupDelay, entityitem1.pickupDelay);
          entityitem.age = Math.min(entityitem.age, entityitem1.age);
-@@ -249,6 +268,11 @@
+@@ -264,6 +283,11 @@
          } else if (!this.getItemStack().getItem().a(damagesource)) {
              return false;
          } else {
@@ -85,22 +85,22 @@
 +            }
 +            // CraftBukkit end
              this.velocityChanged();
-             this.f = (int) ((float) this.f - f);
-             if (this.f <= 0) {
-@@ -310,6 +334,46 @@
+             this.health = (int) ((float) this.health - f);
+             this.a(GameEvent.ENTITY_DAMAGED, damagesource.getEntity());
+@@ -327,6 +351,46 @@
              Item item = itemstack.getItem();
              int i = itemstack.getCount();
  
 +            // CraftBukkit start - fire PlayerPickupItemEvent
-+            int canHold = entityhuman.inventory.canHold(itemstack);
++            int canHold = entityhuman.getInventory().canHold(itemstack);
 +            int remaining = i - canHold;
 +
 +            if (this.pickupDelay <= 0 && canHold > 0) {
 +                itemstack.setCount(canHold);
 +                // Call legacy event
 +                PlayerPickupItemEvent playerEvent = new PlayerPickupItemEvent((org.bukkit.entity.Player) entityhuman.getBukkitEntity(), (org.bukkit.entity.Item) this.getBukkitEntity(), remaining);
-+                playerEvent.setCancelled(!entityhuman.canPickUpLoot);
-+                this.world.getServer().getPluginManager().callEvent(playerEvent);
++                playerEvent.setCancelled(!playerEvent.getPlayer().getCanPickupItems());
++                this.level.getServer().getPluginManager().callEvent(playerEvent);
 +                if (playerEvent.isCancelled()) {
 +                    itemstack.setCount(i); // SPIGOT-5294 - restore count
 +                    return;
@@ -108,8 +108,8 @@
 +
 +                // Call newer event afterwards
 +                EntityPickupItemEvent entityEvent = new EntityPickupItemEvent((org.bukkit.entity.Player) entityhuman.getBukkitEntity(), (org.bukkit.entity.Item) this.getBukkitEntity(), remaining);
-+                entityEvent.setCancelled(!entityhuman.canPickUpLoot);
-+                this.world.getServer().getPluginManager().callEvent(entityEvent);
++                entityEvent.setCancelled(!entityEvent.getEntity().getCanPickupItems());
++                this.level.getServer().getPluginManager().callEvent(entityEvent);
 +                if (entityEvent.isCancelled()) {
 +                    itemstack.setCount(i); // SPIGOT-5294 - restore count
 +                    return;
@@ -131,16 +131,16 @@
 +            }
 +            // CraftBukkit end
 +
-             if (this.pickupDelay == 0 && (this.owner == null || this.owner.equals(entityhuman.getUniqueID())) && entityhuman.inventory.pickup(itemstack)) {
+             if (this.pickupDelay == 0 && (this.owner == null || this.owner.equals(entityhuman.getUniqueID())) && entityhuman.getInventory().pickup(itemstack)) {
                  entityhuman.receive(this, i);
                  if (itemstack.isEmpty()) {
-@@ -353,7 +417,9 @@
+@@ -370,7 +434,9 @@
      }
  
      public void setItemStack(ItemStack itemstack) {
 +        com.google.common.base.Preconditions.checkArgument(!itemstack.isEmpty(), "Cannot drop air"); // CraftBukkit
-         this.getDataWatcher().set(EntityItem.ITEM, itemstack);
-+        this.getDataWatcher().markDirty(EntityItem.ITEM); // CraftBukkit - SPIGOT-4591, must mark dirty
+         this.getDataWatcher().set(EntityItem.DATA_ITEM, itemstack);
++        this.getDataWatcher().markDirty(EntityItem.DATA_ITEM); // CraftBukkit - SPIGOT-4591, must mark dirty
      }
  
      @Override

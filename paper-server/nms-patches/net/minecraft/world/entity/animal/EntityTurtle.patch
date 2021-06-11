@@ -1,9 +1,9 @@
 --- a/net/minecraft/world/entity/animal/EntityTurtle.java
 +++ b/net/minecraft/world/entity/animal/EntityTurtle.java
 @@ -314,7 +314,9 @@
-     protected void m() {
-         super.m();
-         if (!this.isBaby() && this.world.getGameRules().getBoolean(GameRules.DO_MOB_LOOT)) {
+     protected void n() {
+         super.n();
+         if (!this.isBaby() && this.level.getGameRules().getBoolean(GameRules.RULE_DOMOBLOOT)) {
 +            this.forceDrops = true; // CraftBukkit
              this.a((IMaterial) Items.SCUTE, 1);
 +            this.forceDrops = false; // CraftBukkit
@@ -15,30 +15,21 @@
      @Override
      public void onLightningStrike(WorldServer worldserver, EntityLightning entitylightning) {
 +        org.bukkit.craftbukkit.event.CraftEventFactory.entityDamage = entitylightning; // CraftBukkit
-         this.damageEntity(DamageSource.LIGHTNING, Float.MAX_VALUE);
+         this.damageEntity(DamageSource.LIGHTNING_BOLT, Float.MAX_VALUE);
 +        org.bukkit.craftbukkit.event.CraftEventFactory.entityDamage = null; // CraftBukkit
      }
  
-     static class g extends NavigationGuardian {
-@@ -500,8 +504,12 @@
-                 } else if (this.g.bv > 200) {
-                     World world = this.g.world;
+     private static class e extends ControllerMove {
+@@ -487,8 +491,12 @@
+                 } else if (this.turtle.layEggCounter > 200) {
+                     World world = this.turtle.level;
  
 +                    // CraftBukkit start
-+                    if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(this.g, this.e.up(), (IBlockData) Blocks.TURTLE_EGG.getBlockData().set(BlockTurtleEgg.b, this.g.random.nextInt(4) + 1)).isCancelled()) {
-                     world.playSound((EntityHuman) null, blockposition, SoundEffects.ENTITY_TURTLE_LAY_EGG, SoundCategory.BLOCKS, 0.3F, 0.9F + world.random.nextFloat() * 0.2F);
-                     world.setTypeAndData(this.e.up(), (IBlockData) Blocks.TURTLE_EGG.getBlockData().set(BlockTurtleEgg.b, this.g.random.nextInt(4) + 1), 3);
++                    if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(this.turtle, this.blockPos.up(), (IBlockData) Blocks.TURTLE_EGG.getBlockData().set(BlockTurtleEgg.EGGS, this.turtle.random.nextInt(4) + 1)).isCancelled()) {
+                     world.playSound((EntityHuman) null, blockposition, SoundEffects.TURTLE_LAY_EGG, SoundCategory.BLOCKS, 0.3F, 0.9F + world.random.nextFloat() * 0.2F);
+                     world.setTypeAndData(this.blockPos.up(), (IBlockData) Blocks.TURTLE_EGG.getBlockData().set(BlockTurtleEgg.EGGS, this.turtle.random.nextInt(4) + 1), 3);
 +                    }
 +                    // CraftBukkit end
-                     this.g.setHasEgg(false);
-                     this.g.u(false);
-                     this.g.setLoveTicks(600);
-@@ -581,7 +589,7 @@
-                 --this.e;
-                 return false;
-             } else {
--                this.d = this.b.world.a(EntityTurtle.i.a, (EntityLiving) this.b);
-+                this.d = this.b.world.a(this.a, (EntityLiving) this.b); // CraftBukkit - decompile error
-                 return this.d == null ? false : this.a(this.d.getItemInMainHand()) || this.a(this.d.getItemInOffHand());
-             }
-         }
+                     this.turtle.setHasEgg(false);
+                     this.turtle.w(false);
+                     this.turtle.setLoveTicks(600);

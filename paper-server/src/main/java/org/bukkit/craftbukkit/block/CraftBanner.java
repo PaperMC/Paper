@@ -35,9 +35,9 @@ public class CraftBanner extends CraftBlockEntityState<TileEntityBanner> impleme
         base = DyeColor.getByWoolData((byte) ((BlockBannerAbstract) this.data.getBlock()).getColor().getColorIndex());
         patterns = new ArrayList<Pattern>();
 
-        if (banner.patterns != null) {
-            for (int i = 0; i < banner.patterns.size(); i++) {
-                NBTTagCompound p = (NBTTagCompound) banner.patterns.get(i);
+        if (banner.itemPatterns != null) {
+            for (int i = 0; i < banner.itemPatterns.size(); i++) {
+                NBTTagCompound p = (NBTTagCompound) banner.itemPatterns.get(i);
                 patterns.add(new Pattern(DyeColor.getByWoolData((byte) p.getInt("Color")), PatternType.getByIdentifier(p.getString("Pattern"))));
             }
         }
@@ -93,7 +93,7 @@ public class CraftBanner extends CraftBlockEntityState<TileEntityBanner> impleme
     public void applyTo(TileEntityBanner banner) {
         super.applyTo(banner);
 
-        banner.color = EnumColor.fromColorIndex(base.getWoolData());
+        banner.baseColor = EnumColor.fromColorIndex(base.getWoolData());
 
         NBTTagList newPatterns = new NBTTagList();
 
@@ -103,6 +103,6 @@ public class CraftBanner extends CraftBlockEntityState<TileEntityBanner> impleme
             compound.setString("Pattern", p.getPattern().getIdentifier());
             newPatterns.add(compound);
         }
-        banner.patterns = newPatterns;
+        banner.itemPatterns = newPatterns;
     }
 }

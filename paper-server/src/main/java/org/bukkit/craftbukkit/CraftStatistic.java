@@ -30,11 +30,12 @@ public enum CraftStatistic {
     DROP_COUNT(StatisticList.DROP),
     DROP(new MinecraftKey("dropped")),
     PICKUP(new MinecraftKey("picked_up")),
-    PLAY_ONE_MINUTE(StatisticList.PLAY_ONE_MINUTE),
+    PLAY_ONE_MINUTE(StatisticList.PLAY_TIME),
+    TOTAL_WORLD_TIME(StatisticList.TOTAL_WORLD_TIME),
     WALK_ONE_CM(StatisticList.WALK_ONE_CM),
     WALK_ON_WATER_ONE_CM(StatisticList.WALK_ON_WATER_ONE_CM),
     FALL_ONE_CM(StatisticList.FALL_ONE_CM),
-    SNEAK_TIME(StatisticList.SNEAK_TIME),
+    SNEAK_TIME(StatisticList.CROUCH_TIME),
     CLIMB_ONE_CM(StatisticList.CLIMB_ONE_CM),
     FLY_ONE_CM(StatisticList.FLY_ONE_CM),
     WALK_UNDER_WATER_ONE_CM(StatisticList.WALK_UNDER_WATER_ONE_CM),
@@ -122,7 +123,7 @@ public enum CraftStatistic {
 
     public static org.bukkit.Statistic getBukkitStatistic(net.minecraft.stats.Statistic<?> statistic) {
         IRegistry statRegistry = statistic.getWrapper().getRegistry();
-        MinecraftKey nmsKey = IRegistry.STATS.getKey(statistic.getWrapper());
+        MinecraftKey nmsKey = IRegistry.STAT_TYPE.getKey(statistic.getWrapper());
 
         if (statRegistry == IRegistry.CUSTOM_STAT) {
             nmsKey = (MinecraftKey) statistic.b();

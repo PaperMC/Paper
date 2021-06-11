@@ -17,7 +17,7 @@ public class CraftPainting extends CraftHanging implements Painting {
 
     @Override
     public Art getArt() {
-        Paintings art = getHandle().art;
+        Paintings art = getHandle().motive;
         return CraftArt.NotchToBukkit(art);
     }
 
@@ -29,12 +29,12 @@ public class CraftPainting extends CraftHanging implements Painting {
     @Override
     public boolean setArt(Art art, boolean force) {
         EntityPainting painting = this.getHandle();
-        Paintings oldArt = painting.art;
-        painting.art = CraftArt.BukkitToNotch(art);
+        Paintings oldArt = painting.motive;
+        painting.motive = CraftArt.BukkitToNotch(art);
         painting.setDirection(painting.getDirection());
         if (!force && !painting.survives()) {
             // Revert painting since it doesn't fit
-            painting.art = oldArt;
+            painting.motive = oldArt;
             painting.setDirection(painting.getDirection());
             return false;
         }

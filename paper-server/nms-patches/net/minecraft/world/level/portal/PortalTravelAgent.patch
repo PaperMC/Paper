@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/portal/PortalTravelAgent.java
 +++ b/net/minecraft/world/level/portal/PortalTravelAgent.java
-@@ -30,13 +30,19 @@
+@@ -43,13 +43,19 @@
      }
  
      public Optional<BlockUtil.Rectangle> findPortal(BlockPosition blockposition, boolean flag) {
@@ -9,20 +9,20 @@
 +    }
 +
 +    public Optional<BlockUtil.Rectangle> findPortal(BlockPosition blockposition, int i) {
-         VillagePlace villageplace = this.world.y();
+         VillagePlace villageplace = this.level.A();
 -        int i = flag ? 16 : 128;
 +        // int i = flag ? 16 : 128;
 +        // CraftBukkit end
  
-         villageplace.a(this.world, blockposition, i);
+         villageplace.a(this.level, blockposition, i);
          Optional<VillagePlaceRecord> optional = villageplace.b((villageplacetype) -> {
-             return villageplacetype == VillagePlaceType.v;
+             return villageplacetype == VillagePlaceType.NETHER_PORTAL;
 -        }, blockposition, i, VillagePlace.Occupancy.ANY).sorted(Comparator.comparingDouble((villageplacerecord) -> {
 +        }, blockposition, i, VillagePlace.Occupancy.ANY).sorted(Comparator.comparingDouble((VillagePlaceRecord villageplacerecord) -> { // CraftBukkit - decompile error
              return villageplacerecord.f().j(blockposition);
          }).thenComparingInt((villageplacerecord) -> {
              return villageplacerecord.f().getY();
-@@ -57,6 +63,12 @@
+@@ -70,6 +76,12 @@
      }
  
      public Optional<BlockUtil.Rectangle> createPortal(BlockPosition blockposition, EnumDirection.EnumAxis enumdirection_enumaxis) {
@@ -35,55 +35,55 @@
          EnumDirection enumdirection = EnumDirection.a(EnumDirection.EnumAxisDirection.POSITIVE, enumdirection_enumaxis);
          double d0 = -1.0D;
          BlockPosition blockposition1 = null;
-@@ -65,7 +77,7 @@
-         WorldBorder worldborder = this.world.getWorldBorder();
-         int i = this.world.getHeight() - 1;
+@@ -78,7 +90,7 @@
+         WorldBorder worldborder = this.level.getWorldBorder();
+         int i = Math.min(this.level.getMaxBuildHeight(), this.level.getMinBuildHeight() + this.level.getLogicalHeight()) - 1;
          BlockPosition.MutableBlockPosition blockposition_mutableblockposition = blockposition.i();
 -        Iterator iterator = BlockPosition.a(blockposition, 16, EnumDirection.EAST, EnumDirection.SOUTH).iterator();
 +        Iterator iterator = BlockPosition.a(blockposition, createRadius, EnumDirection.EAST, EnumDirection.SOUTH).iterator(); // CraftBukkit
  
          int j;
- 
-@@ -119,6 +131,7 @@
- 
+         int k;
+@@ -133,6 +145,7 @@
          int j1;
+         int k1;
  
-+        org.bukkit.craftbukkit.util.BlockStateListPopulator blockList = new org.bukkit.craftbukkit.util.BlockStateListPopulator(this.world); // CraftBukkit - Use BlockStateListPopulator
++        org.bukkit.craftbukkit.util.BlockStateListPopulator blockList = new org.bukkit.craftbukkit.util.BlockStateListPopulator(this.level); // CraftBukkit - Use BlockStateListPopulator
          if (d0 == -1.0D) {
-             blockposition1 = (new BlockPosition(blockposition.getX(), MathHelper.clamp(blockposition.getY(), 70, this.world.getHeight() - 10), blockposition.getZ())).immutableCopy();
-             EnumDirection enumdirection1 = enumdirection.g();
-@@ -133,7 +146,7 @@
-                         IBlockData iblockdata = k1 < 0 ? Blocks.OBSIDIAN.getBlockData() : Blocks.AIR.getBlockData();
+             j1 = Math.max(this.level.getMinBuildHeight() - -1, 70);
+             k1 = i - 9;
+@@ -153,7 +166,7 @@
+                         IBlockData iblockdata = l < 0 ? Blocks.OBSIDIAN.getBlockData() : Blocks.AIR.getBlockData();
  
-                         blockposition_mutableblockposition.a((BaseBlockPosition) blockposition1, j * enumdirection.getAdjacentX() + j1 * enumdirection1.getAdjacentX(), k1, j * enumdirection.getAdjacentZ() + j1 * enumdirection1.getAdjacentZ());
--                        this.world.setTypeUpdate(blockposition_mutableblockposition, iblockdata);
+                         blockposition_mutableblockposition.a((BaseBlockPosition) blockposition1, k * enumdirection.getAdjacentX() + l1 * enumdirection1.getAdjacentX(), l, k * enumdirection.getAdjacentZ() + l1 * enumdirection1.getAdjacentZ());
+-                        this.level.setTypeUpdate(blockposition_mutableblockposition, iblockdata);
 +                        blockList.setTypeAndData(blockposition_mutableblockposition, iblockdata, 3); // CraftBukkit
                      }
                  }
              }
-@@ -143,7 +156,7 @@
-             for (j1 = -1; j1 < 4; ++j1) {
-                 if (l1 == -1 || l1 == 2 || j1 == -1 || j1 == 3) {
-                     blockposition_mutableblockposition.a((BaseBlockPosition) blockposition1, l1 * enumdirection.getAdjacentX(), j1, l1 * enumdirection.getAdjacentZ());
--                    this.world.setTypeAndData(blockposition_mutableblockposition, Blocks.OBSIDIAN.getBlockData(), 3);
+@@ -163,7 +176,7 @@
+             for (k1 = -1; k1 < 4; ++k1) {
+                 if (j1 == -1 || j1 == 2 || k1 == -1 || k1 == 3) {
+                     blockposition_mutableblockposition.a((BaseBlockPosition) blockposition1, j1 * enumdirection.getAdjacentX(), k1, j1 * enumdirection.getAdjacentZ());
+-                    this.level.setTypeAndData(blockposition_mutableblockposition, Blocks.OBSIDIAN.getBlockData(), 3);
 +                    blockList.setTypeAndData(blockposition_mutableblockposition, Blocks.OBSIDIAN.getBlockData(), 3); // CraftBukkit
                  }
              }
          }
-@@ -153,10 +166,20 @@
-         for (j1 = 0; j1 < 2; ++j1) {
+@@ -173,10 +186,20 @@
+         for (k1 = 0; k1 < 2; ++k1) {
              for (j = 0; j < 3; ++j) {
-                 blockposition_mutableblockposition.a((BaseBlockPosition) blockposition1, j1 * enumdirection.getAdjacentX(), j, j1 * enumdirection.getAdjacentZ());
--                this.world.setTypeAndData(blockposition_mutableblockposition, iblockdata1, 18);
+                 blockposition_mutableblockposition.a((BaseBlockPosition) blockposition1, k1 * enumdirection.getAdjacentX(), j, k1 * enumdirection.getAdjacentZ());
+-                this.level.setTypeAndData(blockposition_mutableblockposition, iblockdata1, 18);
 +                blockList.setTypeAndData(blockposition_mutableblockposition, iblockdata1, 18); // CraftBukkit
              }
          }
  
 +        // CraftBukkit start
-+        org.bukkit.World bworld = this.world.getWorld();
++        org.bukkit.World bworld = this.level.getWorld();
 +        org.bukkit.event.world.PortalCreateEvent event = new org.bukkit.event.world.PortalCreateEvent((java.util.List<org.bukkit.block.BlockState>) (java.util.List) blockList.getList(), bworld, (entity == null) ? null : entity.getBukkitEntity(), org.bukkit.event.world.PortalCreateEvent.CreateReason.NETHER_PAIR);
 +
-+        this.world.getServer().getPluginManager().callEvent(event);
++        this.level.getServer().getPluginManager().callEvent(event);
 +        if (event.isCancelled()) {
 +            return Optional.empty();
 +        }

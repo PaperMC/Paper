@@ -1,7 +1,7 @@
 --- a/net/minecraft/world/entity/monster/EntityPigZombie.java
 +++ b/net/minecraft/world/entity/monster/EntityPigZombie.java
-@@ -69,7 +69,7 @@
-     protected void m() {
+@@ -71,7 +71,7 @@
+     protected void n() {
          this.goalSelector.a(2, new PathfinderGoalZombieAttack(this, 1.0D, false));
          this.goalSelector.a(7, new PathfinderGoalRandomStrollLand(this, 1.0D));
 -        this.targetSelector.a(1, (new PathfinderGoalHurtByTarget(this, new Class[0])).a());
@@ -9,25 +9,25 @@
          this.targetSelector.a(2, new PathfinderGoalNearestAttackableTarget<>(this, EntityHuman.class, 10, true, false, this::a_));
          this.targetSelector.a(3, new PathfinderGoalUniversalAngerReset<>(this, true));
      }
-@@ -142,7 +142,7 @@
+@@ -144,7 +144,7 @@
          }).filter((entitypigzombie) -> {
-             return !entitypigzombie.r(this.getGoalTarget());
+             return !entitypigzombie.p(this.getGoalTarget());
          }).forEach((entitypigzombie) -> {
 -            entitypigzombie.setGoalTarget(this.getGoalTarget());
 +            entitypigzombie.setGoalTarget(this.getGoalTarget(), org.bukkit.event.entity.EntityTargetEvent.TargetReason.TARGET_ATTACKED_NEARBY_ENTITY, true); // CraftBukkit
          });
      }
  
-@@ -151,7 +151,7 @@
+@@ -153,7 +153,7 @@
      }
  
      @Override
 -    public void setGoalTarget(@Nullable EntityLiving entityliving) {
 +    public boolean setGoalTarget(@Nullable EntityLiving entityliving, org.bukkit.event.entity.EntityTargetEvent.TargetReason reason, boolean fireEvent) { // CraftBukkit - signature
          if (this.getGoalTarget() == null && entityliving != null) {
-             this.bo = EntityPigZombie.d.a(this.random);
-             this.bt = EntityPigZombie.bs.a(this.random);
-@@ -161,12 +161,21 @@
+             this.playFirstAngerSoundIn = EntityPigZombie.FIRST_ANGER_SOUND_DELAY.a(this.random);
+             this.ticksUntilNextAlert = EntityPigZombie.ALERT_INTERVAL.a(this.random);
+@@ -163,12 +163,21 @@
              this.e((EntityHuman) entityliving);
          }
  
@@ -37,11 +37,11 @@
  
      @Override
      public void anger() {
--        this.setAnger(EntityPigZombie.bp.a(this.random));
+-        this.setAnger(EntityPigZombie.PERSISTENT_ANGER_TIME.a(this.random));
 +        // CraftBukkit start
-+        Entity entity = ((WorldServer) this.world).getEntity(getAngerTarget());
-+        org.bukkit.event.entity.PigZombieAngerEvent event = new org.bukkit.event.entity.PigZombieAngerEvent((org.bukkit.entity.PigZombie) this.getBukkitEntity(), (entity == null) ? null : entity.getBukkitEntity(), EntityPigZombie.bp.a(this.random));
-+        this.world.getServer().getPluginManager().callEvent(event);
++        Entity entity = ((WorldServer) this.level).getEntity(getAngerTarget());
++        org.bukkit.event.entity.PigZombieAngerEvent event = new org.bukkit.event.entity.PigZombieAngerEvent((org.bukkit.entity.PigZombie) this.getBukkitEntity(), (entity == null) ? null : entity.getBukkitEntity(), EntityPigZombie.PERSISTENT_ANGER_TIME.a(this.random));
++        this.level.getServer().getPluginManager().callEvent(event);
 +        if (event.isCancelled()) {
 +            this.setAngerTarget(null);
 +            return;

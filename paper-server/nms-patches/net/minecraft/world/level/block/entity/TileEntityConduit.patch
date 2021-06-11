@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/block/entity/TileEntityConduit.java
 +++ b/net/minecraft/world/level/block/entity/TileEntityConduit.java
-@@ -27,6 +27,11 @@
+@@ -29,6 +29,11 @@
  import net.minecraft.world.phys.AxisAlignedBB;
  import net.minecraft.world.phys.Vec3D;
  
@@ -9,49 +9,31 @@
 +import org.bukkit.craftbukkit.event.CraftEventFactory;
 +// CraftBukkit end
 +
- public class TileEntityConduit extends TileEntity implements ITickable {
+ public class TileEntityConduit extends TileEntity {
  
-     private static final Block[] b = new Block[]{Blocks.PRISMARINE, Blocks.PRISMARINE_BRICKS, Blocks.SEA_LANTERN, Blocks.DARK_PRISMARINE};
-@@ -178,7 +183,7 @@
+     private static final int BLOCK_REFRESH_RATE = 2;
+@@ -205,7 +210,7 @@
                  EntityHuman entityhuman = (EntityHuman) iterator.next();
  
-                 if (this.position.a((BaseBlockPosition) entityhuman.getChunkCoordinates(), (double) j) && entityhuman.isInWaterOrRain()) {
+                 if (blockposition.a((BaseBlockPosition) entityhuman.getChunkCoordinates(), (double) j) && entityhuman.isInWaterOrRain()) {
 -                    entityhuman.addEffect(new MobEffect(MobEffects.CONDUIT_POWER, 260, 0, true, true));
 +                    entityhuman.addEffect(new MobEffect(MobEffects.CONDUIT_POWER, 260, 0, true, true), org.bukkit.event.entity.EntityPotionEffectEvent.Cause.CONDUIT); // CraftBukkit
                  }
              }
  
-@@ -195,7 +200,7 @@
-             this.target = this.x();
-             this.k = null;
-         } else if (this.target == null) {
--            List<EntityLiving> list = this.world.a(EntityLiving.class, this.m(), (entityliving1) -> {
-+            List<EntityLiving> list = this.world.a(EntityLiving.class, this.m(), (java.util.function.Predicate<EntityLiving>) (entityliving1) -> { // CraftBukkit - decompile error
-                 return entityliving1 instanceof IMonster && entityliving1.isInWaterOrRain();
-             });
- 
-@@ -207,8 +212,13 @@
+@@ -234,8 +239,13 @@
          }
  
-         if (this.target != null) {
--            this.world.playSound((EntityHuman) null, this.target.locX(), this.target.locY(), this.target.locZ(), SoundEffects.BLOCK_CONDUIT_ATTACK_TARGET, SoundCategory.BLOCKS, 1.0F, 1.0F);
--            this.target.damageEntity(DamageSource.MAGIC, 4.0F);
+         if (tileentityconduit.destroyTarget != null) {
+-            world.playSound((EntityHuman) null, tileentityconduit.destroyTarget.locX(), tileentityconduit.destroyTarget.locY(), tileentityconduit.destroyTarget.locZ(), SoundEffects.CONDUIT_ATTACK_TARGET, SoundCategory.BLOCKS, 1.0F, 1.0F);
+-            tileentityconduit.destroyTarget.damageEntity(DamageSource.MAGIC, 4.0F);
 +            // CraftBukkit start
-+            CraftEventFactory.blockDamage = CraftBlock.at(this.world, this.position);
-+            if (this.target.damageEntity(DamageSource.MAGIC, 4.0F)) {
-+                this.world.playSound((EntityHuman) null, this.target.locX(), this.target.locY(), this.target.locZ(), SoundEffects.BLOCK_CONDUIT_ATTACK_TARGET, SoundCategory.BLOCKS, 1.0F, 1.0F);
++            CraftEventFactory.blockDamage = CraftBlock.at(world, blockposition);
++            if (tileentityconduit.destroyTarget.damageEntity(DamageSource.MAGIC, 4.0F)) {
++                world.playSound((EntityHuman) null, tileentityconduit.destroyTarget.locX(), tileentityconduit.destroyTarget.locY(), tileentityconduit.destroyTarget.locZ(), SoundEffects.CONDUIT_ATTACK_TARGET, SoundCategory.BLOCKS, 1.0F, 1.0F);
 +            }
 +            CraftEventFactory.blockDamage = null;
 +            // CraftBukkit end
          }
  
-         if (entityliving != this.target) {
-@@ -241,7 +251,7 @@
- 
-     @Nullable
-     private EntityLiving x() {
--        List<EntityLiving> list = this.world.a(EntityLiving.class, this.m(), (entityliving) -> {
-+        List<EntityLiving> list = this.world.a(EntityLiving.class, this.m(), (java.util.function.Predicate<EntityLiving>) (entityliving) -> { // CraftBukkit - decompile error
-             return entityliving.getUniqueID().equals(this.k);
-         });
- 
+         if (entityliving != tileentityconduit.destroyTarget) {

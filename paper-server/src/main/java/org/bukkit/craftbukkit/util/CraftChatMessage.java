@@ -38,7 +38,7 @@ public final class CraftChatMessage {
     }
 
     public static ChatColor getColor(EnumChatFormat format) {
-        return ChatColor.getByChar(format.character);
+        return ChatColor.getByChar(format.code);
     }
 
     private static final class StringMessage {
@@ -46,11 +46,11 @@ public final class CraftChatMessage {
         // Separate pattern with no group 3, new lines are part of previous string
         private static final Pattern INCREMENTAL_PATTERN_KEEP_NEWLINES = Pattern.compile("(" + String.valueOf(org.bukkit.ChatColor.COLOR_CHAR) + "[0-9a-fk-orx])|((?:(?:https?):\\/\\/)?(?:[-\\w_\\.]{2,}\\.[a-z]{2,4}.*?(?=[\\.\\?!,;:]?(?:[" + String.valueOf(org.bukkit.ChatColor.COLOR_CHAR) + " ]|$))))", Pattern.CASE_INSENSITIVE);
         // ChatColor.b does not explicitly reset, its more of empty
-        private static final ChatModifier RESET = ChatModifier.a.setBold(false).setItalic(false).setUnderline(false).setStrikethrough(false).setRandom(false);
+        private static final ChatModifier RESET = ChatModifier.EMPTY.setBold(false).setItalic(false).setUnderline(false).setStrikethrough(false).setRandom(false);
 
         private final List<IChatBaseComponent> list = new ArrayList<IChatBaseComponent>();
         private IChatMutableComponent currentChatComponent = new ChatComponentText("");
-        private ChatModifier modifier = ChatModifier.a;
+        private ChatModifier modifier = ChatModifier.EMPTY;
         private final IChatBaseComponent[] output;
         private int currentIndex;
         private StringBuilder hex;

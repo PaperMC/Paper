@@ -1,58 +1,60 @@
 --- a/net/minecraft/world/entity/animal/EntityCat.java
 +++ b/net/minecraft/world/entity/animal/EntityCat.java
-@@ -78,7 +78,7 @@
-     private static final DataWatcherObject<Boolean> bt = DataWatcher.a(EntityCat.class, DataWatcherRegistry.i);
-     private static final DataWatcherObject<Boolean> bu = DataWatcher.a(EntityCat.class, DataWatcherRegistry.i);
-     private static final DataWatcherObject<Integer> bv = DataWatcher.a(EntityCat.class, DataWatcherRegistry.b);
--    public static final Map<Integer, MinecraftKey> bq = (Map) SystemUtils.a((Object) Maps.newHashMap(), (hashmap) -> {
-+    public static final Map<Integer, MinecraftKey> bq = (Map) SystemUtils.a(Maps.newHashMap(), (hashmap) -> { // CraftBukkit - decompile error
+@@ -95,7 +95,7 @@
+     public static final int TYPE_ALL_BLACK = 10;
+     private static final int NUMBER_OF_CAT_TYPES = 11;
+     private static final int NUMBER_OF_CAT_TYPES_EXCEPT_ALL_BLACK = 10;
+-    public static final Map<Integer, MinecraftKey> TEXTURE_BY_TYPE = (Map) SystemUtils.a((Object) Maps.newHashMap(), (hashmap) -> {
++    public static final Map<Integer, MinecraftKey> TEXTURE_BY_TYPE = (Map) SystemUtils.a(Maps.newHashMap(), (hashmap) -> { // CraftBukkit - decompile error
          hashmap.put(0, new MinecraftKey("textures/entity/cat/tabby.png"));
          hashmap.put(1, new MinecraftKey("textures/entity/cat/black.png"));
          hashmap.put(2, new MinecraftKey("textures/entity/cat/red.png"));
-@@ -404,7 +404,7 @@
+@@ -433,7 +433,7 @@
                  }
-             } else if (this.k(itemstack)) {
-                 this.a(entityhuman, itemstack);
+             } else if (this.n(itemstack)) {
+                 this.a(entityhuman, enumhand, itemstack);
 -                if (this.random.nextInt(3) == 0) {
 +                if (this.random.nextInt(3) == 0 && !org.bukkit.craftbukkit.event.CraftEventFactory.callEntityTameEvent(this, entityhuman).isCancelled()) { // CraftBukkit
                      this.tame(entityhuman);
                      this.setWillSit(true);
-                     this.world.broadcastEntityEffect(this, (byte) 7);
-@@ -562,7 +562,15 @@
+                     this.level.broadcastEntityEffect(this, (byte) 7);
+@@ -490,7 +490,7 @@
+     private static class PathfinderGoalTemptChance extends PathfinderGoalTempt {
+ 
+         @Nullable
+-        private EntityHuman selectedPlayer;
++        private EntityLiving selectedPlayer; // CraftBukkit
+         private final EntityCat cat;
+ 
+         public PathfinderGoalTemptChance(EntityCat entitycat, double d0, RecipeItemStack recipeitemstack, boolean flag) {
+@@ -629,7 +629,15 @@
              while (iterator.hasNext()) {
                  ItemStack itemstack = (ItemStack) iterator.next();
  
--                this.a.world.addEntity(new EntityItem(this.a.world, (double) blockposition_mutableblockposition.getX() - (double) MathHelper.sin(this.a.aA * 0.017453292F), (double) blockposition_mutableblockposition.getY(), (double) blockposition_mutableblockposition.getZ() + (double) MathHelper.cos(this.a.aA * 0.017453292F), itemstack));
+-                this.cat.level.addEntity(new EntityItem(this.cat.level, (double) blockposition_mutableblockposition.getX() - (double) MathHelper.sin(this.cat.yBodyRot * 0.017453292F), (double) blockposition_mutableblockposition.getY(), (double) blockposition_mutableblockposition.getZ() + (double) MathHelper.cos(this.cat.yBodyRot * 0.017453292F), itemstack));
 +                // CraftBukkit start
-+                EntityItem entityitem = new EntityItem(this.a.world, (double) blockposition_mutableblockposition.getX() - (double) MathHelper.sin(this.a.aA * 0.017453292F), (double) blockposition_mutableblockposition.getY(), (double) blockposition_mutableblockposition.getZ() + (double) MathHelper.cos(this.a.aA * 0.017453292F), itemstack);
-+                org.bukkit.event.entity.EntityDropItemEvent event = new org.bukkit.event.entity.EntityDropItemEvent(this.a.getBukkitEntity(), (org.bukkit.entity.Item) entityitem.getBukkitEntity());
-+                entityitem.world.getServer().getPluginManager().callEvent(event);
++                EntityItem entityitem = new EntityItem(this.cat.level, (double) blockposition_mutableblockposition.getX() - (double) MathHelper.sin(this.cat.yBodyRot * 0.017453292F), (double) blockposition_mutableblockposition.getY(), (double) blockposition_mutableblockposition.getZ() + (double) MathHelper.cos(this.cat.yBodyRot * 0.017453292F), itemstack);
++                org.bukkit.event.entity.EntityDropItemEvent event = new org.bukkit.event.entity.EntityDropItemEvent(this.cat.getBukkitEntity(), (org.bukkit.entity.Item) entityitem.getBukkitEntity());
++                entityitem.level.getServer().getPluginManager().callEvent(event);
 +                if (event.isCancelled()) {
 +                    continue;
 +                }
-+                this.a.world.addEntity(entityitem);
++                this.cat.level.addEntity(entityitem);
 +                // CraftBukkit end
              }
  
          }
-@@ -592,7 +600,7 @@
-     static class PathfinderGoalTemptChance extends PathfinderGoalTempt {
- 
-         @Nullable
--        private EntityHuman chosenTarget;
-+        private EntityLiving chosenTarget; // CraftBukkit
-         private final EntityCat d;
- 
-         public PathfinderGoalTemptChance(EntityCat entitycat, double d0, RecipeItemStack recipeitemstack, boolean flag) {
-@@ -627,9 +635,9 @@
-         private final EntityCat i;
+@@ -661,10 +669,10 @@
+         private final EntityCat cat;
  
          public a(EntityCat entitycat, Class<T> oclass, float f, double d0, double d1) {
--            Predicate predicate = IEntitySelector.e;
+-            Predicate predicate = IEntitySelector.NO_CREATIVE_OR_SPECTATOR;
 +            // Predicate predicate = IEntitySelector.e; // CraftBukkit - decompile error
  
+-            Objects.requireNonNull(predicate);
 -            super(entitycat, oclass, f, d0, d1, predicate::test);
-+            super(entitycat, oclass, f, d0, d1, IEntitySelector.e::test); // CraftBukkit - decompile error
-             this.i = entitycat;
++            // Objects.requireNonNull(predicate); // CraftBukkit - decompile error
++            super(entitycat, oclass, f, d0, d1, IEntitySelector.NO_CREATIVE_OR_SPECTATOR::test); // CraftBukkit - decompile error
+             this.cat = entitycat;
          }
  

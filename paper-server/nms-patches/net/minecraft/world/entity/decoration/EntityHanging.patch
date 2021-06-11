@@ -14,16 +14,16 @@
 +
  public abstract class EntityHanging extends Entity {
  
-     protected static final Predicate<Entity> b = (entity) -> {
+     protected static final Predicate<Entity> HANGING_ENTITY = (entity) -> {
 @@ -57,26 +65,37 @@
  
      protected void updateBoundingBox() {
          if (this.direction != null) {
--            double d0 = (double) this.blockPosition.getX() + 0.5D;
--            double d1 = (double) this.blockPosition.getY() + 0.5D;
--            double d2 = (double) this.blockPosition.getZ() + 0.5D;
+-            double d0 = (double) this.pos.getX() + 0.5D;
+-            double d1 = (double) this.pos.getY() + 0.5D;
+-            double d2 = (double) this.pos.getZ() + 0.5D;
 +            // CraftBukkit start code moved in to calculateBoundingBox
-+            this.a(calculateBoundingBox(this, this.blockPosition, this.direction, this.getHangingWidth(), this.getHangingHeight()));
++            this.a(calculateBoundingBox(this, this.pos, this.direction, this.getHangingWidth(), this.getHangingHeight()));
 +            // CraftBukkit end
 +        }
 +    }
@@ -81,12 +81,12 @@
          return i % 32 == 0 ? 0.5D : 0.0D;
      }
  
-@@ -103,6 +123,24 @@
-             if (this.e++ == 100) {
-                 this.e = 0;
-                 if (!this.dead && !this.survives()) {
+@@ -100,6 +120,24 @@
+             if (this.checkInterval++ == 100) {
+                 this.checkInterval = 0;
+                 if (!this.isRemoved() && !this.survives()) {
 +                    // CraftBukkit start - fire break events
-+                    Material material = this.world.getType(this.getChunkCoordinates()).getMaterial();
++                    Material material = this.level.getType(this.getChunkCoordinates()).getMaterial();
 +                    HangingBreakEvent.RemoveCause cause;
 +
 +                    if (!material.equals(Material.AIR)) {
@@ -97,19 +97,19 @@
 +                    }
 +
 +                    HangingBreakEvent event = new HangingBreakEvent((Hanging) this.getBukkitEntity(), cause);
-+                    this.world.getServer().getPluginManager().callEvent(event);
++                    this.level.getServer().getPluginManager().callEvent(event);
 +
-+                    if (dead || event.isCancelled()) {
++                    if (this.isRemoved() || event.isCancelled()) {
 +                        return;
 +                    }
 +                    // CraftBukkit end
                      this.die();
                      this.a((Entity) null);
                  }
-@@ -166,6 +204,22 @@
+@@ -163,6 +201,22 @@
              return false;
          } else {
-             if (!this.dead && !this.world.isClientSide) {
+             if (!this.isRemoved() && !this.level.isClientSide) {
 +                // CraftBukkit start - fire break events
 +                Entity damager = (damagesource instanceof EntityDamageSourceIndirect) ? ((EntityDamageSourceIndirect) damagesource).getProximateDamageSource() : damagesource.getEntity();
 +                HangingBreakEvent event;
@@ -119,41 +119,41 @@
 +                    event = new HangingBreakEvent((Hanging) this.getBukkitEntity(), damagesource.isExplosion() ? HangingBreakEvent.RemoveCause.EXPLOSION : HangingBreakEvent.RemoveCause.DEFAULT);
 +                }
 +
-+                this.world.getServer().getPluginManager().callEvent(event);
++                this.level.getServer().getPluginManager().callEvent(event);
 +
-+                if (this.dead || event.isCancelled()) {
++                if (this.isRemoved() || event.isCancelled()) {
 +                    return true;
 +                }
 +                // CraftBukkit end
 +
-                 this.die();
+                 this.killEntity();
                  this.velocityChanged();
                  this.a(damagesource.getEntity());
-@@ -178,6 +232,18 @@
+@@ -175,6 +229,18 @@
      @Override
      public void move(EnumMoveType enummovetype, Vec3D vec3d) {
-         if (!this.world.isClientSide && !this.dead && vec3d.g() > 0.0D) {
-+            if (this.dead) return; // CraftBukkit
+         if (!this.level.isClientSide && !this.isRemoved() && vec3d.g() > 0.0D) {
++            if (this.isRemoved()) return; // CraftBukkit
 +
 +            // CraftBukkit start - fire break events
 +            // TODO - Does this need its own cause? Seems to only be triggered by pistons
 +            HangingBreakEvent event = new HangingBreakEvent((Hanging) this.getBukkitEntity(), HangingBreakEvent.RemoveCause.PHYSICS);
-+            this.world.getServer().getPluginManager().callEvent(event);
++            this.level.getServer().getPluginManager().callEvent(event);
 +
-+            if (this.dead || event.isCancelled()) {
++            if (this.isRemoved() || event.isCancelled()) {
 +                return;
 +            }
 +            // CraftBukkit end
 +
-             this.die();
+             this.killEntity();
              this.a((Entity) null);
          }
-@@ -186,7 +252,7 @@
+@@ -183,7 +249,7 @@
  
      @Override
      public void i(double d0, double d1, double d2) {
--        if (!this.world.isClientSide && !this.dead && d0 * d0 + d1 * d1 + d2 * d2 > 0.0D) {
-+        if (false && !this.world.isClientSide && !this.dead && d0 * d0 + d1 * d1 + d2 * d2 > 0.0D) { // CraftBukkit - not needed
-             this.die();
+-        if (!this.level.isClientSide && !this.isRemoved() && d0 * d0 + d1 * d1 + d2 * d2 > 0.0D) {
++        if (false && !this.level.isClientSide && !this.isRemoved() && d0 * d0 + d1 * d1 + d2 * d2 > 0.0D) { // CraftBukkit - not needed
+             this.killEntity();
              this.a((Entity) null);
          }

@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/storage/Convertable.java
 +++ b/net/minecraft/world/level/storage/Convertable.java
-@@ -47,6 +47,10 @@
+@@ -60,6 +60,10 @@
  import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
  
@@ -10,34 +10,40 @@
 +
  public class Convertable {
  
-     private static final Logger LOGGER = LogManager.getLogger();
-@@ -96,21 +100,21 @@
+     static final Logger LOGGER = LogManager.getLogger();
+@@ -105,26 +109,26 @@
+         Logger logger = Convertable.LOGGER;
+ 
+         Objects.requireNonNull(logger);
+-        return Pair.of((GeneratorSettings) dataresult.resultOrPartial(SystemUtils.a("WorldGenSettings: ", logger::error)).orElseGet(() -> {
++        return Pair.of(dataresult.resultOrPartial(SystemUtils.a("WorldGenSettings: ", (java.util.function.Consumer<String>) logger::error)).orElseGet(() -> { // CraftBukkit - decompile error
+             DataResult dataresult1 = RegistryLookupCodec.a(IRegistry.DIMENSION_TYPE_REGISTRY).codec().parse(dynamic2);
              Logger logger1 = Convertable.LOGGER;
  
-             logger1.getClass();
+             Objects.requireNonNull(logger1);
 -            IRegistry<DimensionManager> iregistry = (IRegistry) dataresult1.resultOrPartial(SystemUtils.a("Dimension type registry: ", logger1::error)).orElseThrow(() -> {
-+            IRegistry<DimensionManager> iregistry = (IRegistry) ((DataResult<IRegistry<DimensionManager>>) dataresult1).resultOrPartial(SystemUtils.a("Dimension type registry: ", logger1::error)).orElseThrow(() -> { // CraftBukkit - decompile error
++            IRegistry<DimensionManager> iregistry = (IRegistry) ((DataResult<IRegistry<DimensionManager>>) dataresult1).resultOrPartial(SystemUtils.a("Dimension type registry: ", (java.util.function.Consumer<String>) logger1::error)).orElseThrow(() -> { // CraftBukkit - decompile error
                  return new IllegalStateException("Failed to get dimension registry");
              });
  
-             dataresult1 = RegistryLookupCodec.a(IRegistry.ay).codec().parse(dynamic2);
+             dataresult1 = RegistryLookupCodec.a(IRegistry.BIOME_REGISTRY).codec().parse(dynamic2);
              logger1 = Convertable.LOGGER;
-             logger1.getClass();
+             Objects.requireNonNull(logger1);
 -            IRegistry<BiomeBase> iregistry1 = (IRegistry) dataresult1.resultOrPartial(SystemUtils.a("Biome registry: ", logger1::error)).orElseThrow(() -> {
-+            IRegistry<BiomeBase> iregistry1 = (IRegistry) ((DataResult<IRegistry<BiomeBase>>) dataresult1).resultOrPartial(SystemUtils.a("Biome registry: ", logger1::error)).orElseThrow(() -> { // CraftBukkit - decompile error
++            IRegistry<BiomeBase> iregistry1 = (IRegistry) ((DataResult<IRegistry<BiomeBase>>) dataresult1).resultOrPartial(SystemUtils.a("Biome registry: ", (java.util.function.Consumer<String>) logger1::error)).orElseThrow(() -> { // CraftBukkit - decompile error
                  return new IllegalStateException("Failed to get biome registry");
              });
  
-             dataresult1 = RegistryLookupCodec.a(IRegistry.ar).codec().parse(dynamic2);
+             dataresult1 = RegistryLookupCodec.a(IRegistry.NOISE_GENERATOR_SETTINGS_REGISTRY).codec().parse(dynamic2);
              logger1 = Convertable.LOGGER;
-             logger1.getClass();
+             Objects.requireNonNull(logger1);
 -            IRegistry<GeneratorSettingBase> iregistry2 = (IRegistry) dataresult1.resultOrPartial(SystemUtils.a("Noise settings registry: ", logger1::error)).orElseThrow(() -> {
-+            IRegistry<GeneratorSettingBase> iregistry2 = (IRegistry) ((DataResult<IRegistry<GeneratorSettingBase>>) dataresult1).resultOrPartial(SystemUtils.a("Noise settings registry: ", logger1::error)).orElseThrow(() -> { // CraftBukkit - decompile error
++            IRegistry<GeneratorSettingBase> iregistry2 = (IRegistry) ((DataResult<IRegistry<GeneratorSettingBase>>) dataresult1).resultOrPartial(SystemUtils.a("Noise settings registry: ", (java.util.function.Consumer<String>) logger1::error)).orElseThrow(() -> { // CraftBukkit - decompile error
                  return new IllegalStateException("Failed to get noise settings registry");
              });
  
-@@ -218,9 +222,23 @@
-         };
+@@ -294,9 +298,23 @@
+         return this.backupDir;
      }
  
 -    public Convertable.ConversionSession c(String s) throws IOException {
@@ -50,9 +56,9 @@
 +    public static File getFolder(File file, ResourceKey<WorldDimension> dimensionType) {
 +        if (dimensionType == WorldDimension.OVERWORLD) {
 +            return file;
-+        } else if (dimensionType == WorldDimension.THE_NETHER) {
++        } else if (dimensionType == WorldDimension.NETHER) {
 +            return new File(file, "DIM-1");
-+        } else if (dimensionType == WorldDimension.THE_END) {
++        } else if (dimensionType == WorldDimension.END) {
 +            return new File(file, "DIM1");
 +        } else {
 +            return new File(file, "dimensions/" + dimensionType.a().getNamespace() + "/" + dimensionType.a().getKey());
@@ -62,10 +68,10 @@
  
      public class ConversionSession implements AutoCloseable {
  
-@@ -228,8 +246,12 @@
-         public final Path folder;
-         private final String levelName;
-         private final Map<SavedFile, Path> e = Maps.newHashMap();
+@@ -304,8 +322,12 @@
+         public final Path levelPath;
+         private final String levelId;
+         private final Map<SavedFile, Path> resources = Maps.newHashMap();
 +        // CraftBukkit start
 +        private final ResourceKey<WorldDimension> dimensionType;
  
@@ -73,15 +79,15 @@
 +        public ConversionSession(String s, ResourceKey<WorldDimension> dimensionType) throws IOException {
 +            this.dimensionType = dimensionType;
 +            // CraftBukkit end
-             this.levelName = s;
-             this.folder = Convertable.this.universe.resolve(s);
-             this.lock = SessionLock.a(this.folder);
-@@ -246,7 +268,7 @@
+             this.levelId = s;
+             this.levelPath = Convertable.this.baseDir.resolve(s);
+             this.lock = SessionLock.a(this.levelPath);
+@@ -322,7 +344,7 @@
          }
  
          public File a(ResourceKey<World> resourcekey) {
--            return DimensionManager.a(resourcekey, this.folder.toFile());
-+            return getFolder(this.folder.toFile(), this.dimensionType); // CraftBukkit
+-            return DimensionManager.a(resourcekey, this.levelPath.toFile());
++            return getFolder(this.levelPath.toFile(), this.dimensionType); // CraftBukkit
          }
  
          private void checkSession() {

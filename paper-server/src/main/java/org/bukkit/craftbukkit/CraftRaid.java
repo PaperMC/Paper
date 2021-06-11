@@ -87,7 +87,7 @@ public final class CraftRaid implements Raid {
 
     @Override
     public Set<UUID> getHeroes() {
-        return Collections.unmodifiableSet(handle.heroes);
+        return Collections.unmodifiableSet(handle.heroesOfTheVillage);
     }
 
     @Override

@@ -252,6 +252,7 @@ public final class CraftItemFactory implements ItemFactory {
         case SMOKER:
         case BEEHIVE:
         case BEE_NEST:
+        case SCULK_SENSOR:
             return new CraftMetaBlockState(meta, material);
         case TROPICAL_FISH_BUCKET:
             return meta instanceof CraftMetaTropicalFishBucket ? meta : new CraftMetaTropicalFishBucket(meta);
@@ -267,6 +268,8 @@ public final class CraftItemFactory implements ItemFactory {
             return meta instanceof CraftMetaEntityTag ? meta : new CraftMetaEntityTag(meta);
         case COMPASS:
             return meta instanceof CraftMetaCompass ? meta : new CraftMetaCompass(meta);
+        case BUNDLE:
+            return meta instanceof CraftMetaBundle ? meta : new CraftMetaBundle(meta);
         default:
             return new CraftMetaItem(meta);
         }

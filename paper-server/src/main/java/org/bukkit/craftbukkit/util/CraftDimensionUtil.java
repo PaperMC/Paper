@@ -11,12 +11,12 @@ public class CraftDimensionUtil {
 
     public static ResourceKey<World> getMainDimensionKey(World world) {
         ResourceKey<DimensionManager> typeKey = world.getTypeKey();
-        if (typeKey == DimensionManager.OVERWORLD) {
+        if (typeKey == DimensionManager.OVERWORLD_LOCATION) {
             return World.OVERWORLD;
-        } else if (typeKey == DimensionManager.THE_NETHER) {
-            return World.THE_NETHER;
-        } else if (typeKey == DimensionManager.THE_END) {
-            return World.THE_END;
+        } else if (typeKey == DimensionManager.NETHER_LOCATION) {
+            return World.NETHER;
+        } else if (typeKey == DimensionManager.END_LOCATION) {
+            return World.END;
         }
 
         return world.getDimensionKey();

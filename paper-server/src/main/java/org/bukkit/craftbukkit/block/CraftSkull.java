@@ -33,7 +33,7 @@ public class CraftSkull extends CraftBlockEntityState<TileEntitySkull> implement
     public void load(TileEntitySkull skull) {
         super.load(skull);
 
-        profile = skull.gameProfile;
+        profile = skull.owner;
     }
 
     static int getSkullType(SkullType type) {

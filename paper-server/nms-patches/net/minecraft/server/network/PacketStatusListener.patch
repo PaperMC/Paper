@@ -18,21 +18,21 @@
 +
  public class PacketStatusListener implements PacketStatusInListener {
  
-     private static final IChatBaseComponent a = new ChatMessage("multiplayer.status.request_handled");
+     private static final IChatBaseComponent DISCONNECT_REASON = new ChatMessage("multiplayer.status.request_handled");
 @@ -36,8 +48,96 @@
-             this.networkManager.close(PacketStatusListener.a);
+             this.connection.close(PacketStatusListener.DISCONNECT_REASON);
          } else {
-             this.d = true;
--            this.networkManager.sendPacket(new PacketStatusOutServerInfo(this.minecraftServer.getServerPing()));
+             this.hasRequestedStatus = true;
+-            this.connection.sendPacket(new PacketStatusOutServerInfo(this.server.getServerPing()));
 +            // CraftBukkit start
 +            // this.networkManager.sendPacket(new PacketStatusOutServerInfo(this.minecraftServer.getServerPing()));
-+            final Object[] players = minecraftServer.getPlayerList().players.toArray();
++            final Object[] players = server.getPlayerList().players.toArray();
 +            class ServerListPingEvent extends org.bukkit.event.server.ServerListPingEvent {
 +
-+                CraftIconCache icon = minecraftServer.server.getServerIcon();
++                CraftIconCache icon = server.server.getServerIcon();
 +
 +                ServerListPingEvent() {
-+                    super(((InetSocketAddress) networkManager.getSocketAddress()).getAddress(), minecraftServer.getMotd(), minecraftServer.getPlayerList().getMaxPlayers());
++                    super(((InetSocketAddress) connection.getSocketAddress()).getAddress(), server.getMotd(), server.getPlayerList().getMaxPlayers());
 +                }
 +
 +                @Override
@@ -92,7 +92,7 @@
 +            }
 +
 +            ServerListPingEvent event = new ServerListPingEvent();
-+            this.minecraftServer.server.getPluginManager().callEvent(event);
++            this.server.server.getPluginManager().callEvent(event);
 +
 +            java.util.List<GameProfile> profiles = new java.util.ArrayList<GameProfile>(players.length);
 +            for (Object player : players) {
@@ -109,9 +109,9 @@
 +            ping.setMOTD(CraftChatMessage.fromString(event.getMotd(), true)[0]);
 +            ping.setPlayerSample(playerSample);
 +            int version = SharedConstants.getGameVersion().getProtocolVersion();
-+            ping.setServerInfo(new ServerPing.ServerData(minecraftServer.getServerModName() + " " + minecraftServer.getVersion(), version));
++            ping.setServerInfo(new ServerPing.ServerData(server.getServerModName() + " " + server.getVersion(), version));
 +
-+            this.networkManager.sendPacket(new PacketStatusOutServerInfo(ping));
++            this.connection.sendPacket(new PacketStatusOutServerInfo(ping));
          }
 +        // CraftBukkit end
      }

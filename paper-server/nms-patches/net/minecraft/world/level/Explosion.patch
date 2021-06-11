@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/Explosion.java
 +++ b/net/minecraft/world/level/Explosion.java
-@@ -42,6 +42,14 @@
+@@ -43,6 +43,14 @@
  import net.minecraft.world.phys.MovingObjectPosition;
  import net.minecraft.world.phys.Vec3D;
  
@@ -14,43 +14,46 @@
 +
  public class Explosion {
  
-     private static final ExplosionDamageCalculator a = new ExplosionDamageCalculator();
-@@ -59,11 +67,12 @@
-     private final ExplosionDamageCalculator l;
-     private final List<BlockPosition> blocks = Lists.newArrayList();
-     private final Map<EntityHuman, Vec3D> n = Maps.newHashMap();
+     private static final ExplosionDamageCalculator EXPLOSION_DAMAGE_CALCULATOR = new ExplosionDamageCalculator();
+@@ -61,6 +69,7 @@
+     private final ExplosionDamageCalculator damageCalculator;
+     private final List<BlockPosition> toBlow;
+     private final Map<EntityHuman, Vec3D> hitPlayers;
 +    public boolean wasCanceled = false; // CraftBukkit - add field
  
-     public Explosion(World world, @Nullable Entity entity, @Nullable DamageSource damagesource, @Nullable ExplosionDamageCalculator explosiondamagecalculator, double d0, double d1, double d2, float f, boolean flag, Explosion.Effect explosion_effect) {
-         this.world = world;
+     public Explosion(World world, @Nullable Entity entity, double d0, double d1, double d2, float f) {
+         this(world, entity, d0, d1, d2, f, false, Explosion.Effect.DESTROY);
+@@ -85,7 +94,7 @@
+         this.hitPlayers = Maps.newHashMap();
+         this.level = world;
          this.source = entity;
--        this.size = f;
-+        this.size = (float) Math.max(f, 0.0); // CraftBukkit - clamp bad values
-         this.posX = d0;
-         this.posY = d1;
-         this.posZ = d2;
-@@ -113,6 +122,11 @@
+-        this.radius = f;
++        this.radius = (float) Math.max(f, 0.0); // CraftBukkit - clamp bad values
+         this.x = d0;
+         this.y = d1;
+         this.z = d2;
+@@ -135,6 +144,11 @@
      }
  
      public void a() {
 +        // CraftBukkit start
-+        if (this.size < 0.1F) {
++        if (this.radius < 0.1F) {
 +            return;
 +        }
 +        // CraftBukkit end
+         this.level.a(this.source, GameEvent.EXPLODE, new BlockPosition(this.x, this.y, this.z));
          Set<BlockPosition> set = Sets.newHashSet();
          boolean flag = true;
- 
-@@ -146,7 +160,7 @@
+@@ -174,7 +188,7 @@
                                  f -= ((Float) optional.get() + 0.3F) * 0.3F;
                              }
  
--                            if (f > 0.0F && this.l.a(this, this.world, blockposition, iblockdata, f)) {
-+                            if (f > 0.0F && this.l.a(this, this.world, blockposition, iblockdata, f) && blockposition.getY() < 256 && blockposition.getY() >= 0) { // CraftBukkit - don't wrap explosions
+-                            if (f > 0.0F && this.damageCalculator.a(this, this.level, blockposition, iblockdata, f)) {
++                            if (f > 0.0F && this.damageCalculator.a(this, this.level, blockposition, iblockdata, f) && blockposition.getY() < 256 && blockposition.getY() >= 0) { // CraftBukkit - don't wrap explosions
                                  set.add(blockposition);
                              }
  
-@@ -190,7 +204,16 @@
+@@ -218,7 +232,16 @@
                          double d12 = (double) a(vec3d, entity);
                          double d13 = (1.0D - d7) * d12;
  
@@ -68,18 +71,18 @@
                          double d14 = d13;
  
                          if (entity instanceof EntityLiving) {
-@@ -232,6 +255,51 @@
+@@ -260,6 +283,51 @@
  
-             Collections.shuffle(this.blocks, this.world.random);
-             Iterator iterator = this.blocks.iterator();
+             Collections.shuffle(this.toBlow, this.level.random);
+             Iterator iterator = this.toBlow.iterator();
 +            // CraftBukkit start
-+            org.bukkit.World bworld = this.world.getWorld();
++            org.bukkit.World bworld = this.level.getWorld();
 +            org.bukkit.entity.Entity explode = this.source == null ? null : this.source.getBukkitEntity();
-+            Location location = new Location(bworld, this.posX, this.posY, this.posZ);
++            Location location = new Location(bworld, this.x, this.y, this.z);
 +
 +            List<org.bukkit.block.Block> blockList = Lists.newArrayList();
-+            for (int i1 = this.blocks.size() - 1; i1 >= 0; i1--) {
-+                BlockPosition cpos = (BlockPosition) this.blocks.get(i1);
++            for (int i1 = this.toBlow.size() - 1; i1 >= 0; i1--) {
++                BlockPosition cpos = (BlockPosition) this.toBlow.get(i1);
 +                org.bukkit.block.Block bblock = bworld.getBlockAt(cpos.getX(), cpos.getY(), cpos.getZ());
 +                if (!bblock.getType().isAir()) {
 +                    blockList.add(bblock);
@@ -91,24 +94,24 @@
 +            float yield;
 +
 +            if (explode != null) {
-+                EntityExplodeEvent event = new EntityExplodeEvent(explode, location, blockList, this.c == Explosion.Effect.DESTROY ? 1.0F / this.size : 1.0F);
-+                this.world.getServer().getPluginManager().callEvent(event);
++                EntityExplodeEvent event = new EntityExplodeEvent(explode, location, blockList, this.blockInteraction == Explosion.Effect.DESTROY ? 1.0F / this.radius : 1.0F);
++                this.level.getServer().getPluginManager().callEvent(event);
 +                cancelled = event.isCancelled();
 +                bukkitBlocks = event.blockList();
 +                yield = event.getYield();
 +            } else {
-+                BlockExplodeEvent event = new BlockExplodeEvent(location.getBlock(), blockList, this.c == Explosion.Effect.DESTROY ? 1.0F / this.size : 1.0F);
-+                this.world.getServer().getPluginManager().callEvent(event);
++                BlockExplodeEvent event = new BlockExplodeEvent(location.getBlock(), blockList, this.blockInteraction == Explosion.Effect.DESTROY ? 1.0F / this.radius : 1.0F);
++                this.level.getServer().getPluginManager().callEvent(event);
 +                cancelled = event.isCancelled();
 +                bukkitBlocks = event.blockList();
 +                yield = event.getYield();
 +            }
 +
-+            this.blocks.clear();
++            this.toBlow.clear();
 +
 +            for (org.bukkit.block.Block bblock : bukkitBlocks) {
 +                BlockPosition coords = new BlockPosition(bblock.getX(), bblock.getY(), bblock.getZ());
-+                blocks.add(coords);
++                toBlow.add(coords);
 +            }
 +
 +            if (cancelled) {
@@ -116,35 +119,35 @@
 +                return;
 +            }
 +            // CraftBukkit end
-+            iterator = this.blocks.iterator();
++            iterator = this.toBlow.iterator();
  
              while (iterator.hasNext()) {
                  BlockPosition blockposition = (BlockPosition) iterator.next();
-@@ -246,8 +314,8 @@
-                         TileEntity tileentity = block.isTileEntity() ? this.world.getTileEntity(blockposition) : null;
-                         LootTableInfo.Builder loottableinfo_builder = (new LootTableInfo.Builder((WorldServer) this.world)).a(this.world.random).set(LootContextParameters.ORIGIN, Vec3D.a((BaseBlockPosition) blockposition)).set(LootContextParameters.TOOL, ItemStack.b).setOptional(LootContextParameters.BLOCK_ENTITY, tileentity).setOptional(LootContextParameters.THIS_ENTITY, this.source);
+@@ -274,8 +342,8 @@
+                         TileEntity tileentity = iblockdata.isTileEntity() ? this.level.getTileEntity(blockposition) : null;
+                         LootTableInfo.Builder loottableinfo_builder = (new LootTableInfo.Builder((WorldServer) this.level)).a(this.level.random).set(LootContextParameters.ORIGIN, Vec3D.a((BaseBlockPosition) blockposition)).set(LootContextParameters.TOOL, ItemStack.EMPTY).setOptional(LootContextParameters.BLOCK_ENTITY, tileentity).setOptional(LootContextParameters.THIS_ENTITY, this.source);
  
--                        if (this.c == Explosion.Effect.DESTROY) {
--                            loottableinfo_builder.set(LootContextParameters.EXPLOSION_RADIUS, this.size);
-+                        if (this.c == Explosion.Effect.DESTROY || yield < 1.0F) { // CraftBukkit - add yield
+-                        if (this.blockInteraction == Explosion.Effect.DESTROY) {
+-                            loottableinfo_builder.set(LootContextParameters.EXPLOSION_RADIUS, this.radius);
++                        if (this.blockInteraction == Explosion.Effect.DESTROY || yield < 1.0F) { // CraftBukkit - add yield
 +                            loottableinfo_builder.set(LootContextParameters.EXPLOSION_RADIUS, 1.0F / yield); // CraftBukkit - add yield
                          }
  
                          iblockdata.a(loottableinfo_builder).forEach((itemstack) -> {
-@@ -277,7 +345,11 @@
+@@ -305,7 +373,11 @@
                  BlockPosition blockposition2 = (BlockPosition) iterator1.next();
  
-                 if (this.d.nextInt(3) == 0 && this.world.getType(blockposition2).isAir() && this.world.getType(blockposition2.down()).i(this.world, blockposition2.down())) {
--                    this.world.setTypeUpdate(blockposition2, BlockFireAbstract.a((IBlockAccess) this.world, blockposition2));
+                 if (this.random.nextInt(3) == 0 && this.level.getType(blockposition2).isAir() && this.level.getType(blockposition2.down()).i(this.level, blockposition2.down())) {
+-                    this.level.setTypeUpdate(blockposition2, BlockFireAbstract.a((IBlockAccess) this.level, blockposition2));
 +                    // CraftBukkit start - Ignition by explosion
-+                    if (!org.bukkit.craftbukkit.event.CraftEventFactory.callBlockIgniteEvent(this.world, blockposition2.getX(), blockposition2.getY(), blockposition2.getZ(), this).isCancelled()) {
-+                        this.world.setTypeUpdate(blockposition2, BlockFireAbstract.a((IBlockAccess) this.world, blockposition2));
++                    if (!org.bukkit.craftbukkit.event.CraftEventFactory.callBlockIgniteEvent(this.level, blockposition2.getX(), blockposition2.getY(), blockposition2.getZ(), this).isCancelled()) {
++                        this.level.setTypeUpdate(blockposition2, BlockFireAbstract.a((IBlockAccess) this.level, blockposition2));
 +                    }
 +                    // CraftBukkit end
                  }
              }
          }
-@@ -285,6 +357,7 @@
+@@ -313,6 +385,7 @@
      }
  
      private static void a(ObjectArrayList<Pair<ItemStack, BlockPosition>> objectarraylist, ItemStack itemstack, BlockPosition blockposition) {

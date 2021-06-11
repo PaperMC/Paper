@@ -26,7 +26,7 @@ public class CraftArrow extends AbstractProjectile implements AbstractArrow {
 
     @Override
     public int getKnockbackStrength() {
-        return getHandle().knockbackStrength;
+        return getHandle().knockback;
     }
 
     @Override
@@ -94,13 +94,13 @@ public class CraftArrow extends AbstractProjectile implements AbstractArrow {
 
     @Override
     public PickupStatus getPickupStatus() {
-        return PickupStatus.values()[getHandle().fromPlayer.ordinal()];
+        return PickupStatus.values()[getHandle().pickup.ordinal()];
     }
 
     @Override
     public void setPickupStatus(PickupStatus status) {
         Preconditions.checkNotNull(status, "status");
-        getHandle().fromPlayer = EntityArrow.PickupStatus.a(status.ordinal());
+        getHandle().pickup = EntityArrow.PickupStatus.a(status.ordinal());
     }
 
     @Override
@@ -108,7 +108,7 @@ public class CraftArrow extends AbstractProjectile implements AbstractArrow {
         super.setTicksLived(value);
 
         // Second field for EntityArrow
-        getHandle().despawnCounter = value;
+        getHandle().life = value;
     }
 
     @Override

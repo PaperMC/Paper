@@ -1,26 +1,25 @@
 --- a/net/minecraft/world/level/block/entity/TileEntityChest.java
 +++ b/net/minecraft/world/level/block/entity/TileEntityChest.java
-@@ -27,6 +27,12 @@
+@@ -24,6 +24,12 @@
+ import net.minecraft.world.level.block.state.IBlockData;
  import net.minecraft.world.level.block.state.properties.BlockPropertyChestType;
- import net.minecraft.world.phys.AxisAlignedBB;
  
 +// CraftBukkit start
-+import net.minecraft.world.level.block.Blocks;
++import java.util.List;
 +import org.bukkit.craftbukkit.entity.CraftHumanEntity;
 +import org.bukkit.entity.HumanEntity;
 +// CraftBukkit end
 +
- public class TileEntityChest extends TileEntityLootable implements ITickable {
+ public class TileEntityChest extends TileEntityLootable implements LidBlockEntity {
  
-     private NonNullList<ItemStack> items;
-@@ -35,6 +41,37 @@
-     public int viewingCount;
-     private int j;
+     private static final int EVENT_SET_OPEN_COUNT = 1;
+@@ -31,6 +37,36 @@
+     public final ContainerOpenersCounter openersCounter;
+     private final ChestLidController chestLidController;
  
 +    // CraftBukkit start - add fields and methods
 +    public List<HumanEntity> transaction = new java.util.ArrayList<HumanEntity>();
 +    private int maxStack = MAX_STACK;
-+    public boolean opened;
 +
 +    public List<ItemStack> getContents() {
 +        return this.items;
@@ -48,75 +47,12 @@
 +    }
 +    // CraftBukkit end
 +
-     protected TileEntityChest(TileEntityTypes<?> tileentitytypes) {
-         super(tileentitytypes);
-         this.items = NonNullList.a(27, ItemStack.b);
-@@ -85,6 +122,13 @@
-         this.b = this.a;
-         float f = 0.1F;
+     protected TileEntityChest(TileEntityTypes<?> tileentitytypes, BlockPosition blockposition, IBlockData iblockdata) {
+         super(tileentitytypes, blockposition, iblockdata);
+         this.items = NonNullList.a(27, ItemStack.EMPTY);
+@@ -200,4 +236,11 @@
  
-+        // CraftBukkit start - If chest is forced open by API, remove a viewer due to playBlockAction() call and don't tick to prevent sound effects.
-+        if (opened) {
-+            this.viewingCount--;
-+            return;
-+        }
-+        // CraftBukkit end
-+
-         if (this.viewingCount > 0 && this.a == 0.0F) {
-             this.playOpenSound(SoundEffects.BLOCK_CHEST_OPEN);
-         }
-@@ -179,8 +223,20 @@
-             if (this.viewingCount < 0) {
-                 this.viewingCount = 0;
-             }
-+            int oldPower = Math.max(0, Math.min(15, this.viewingCount)); // CraftBukkit - Get power before new viewer is added
- 
-             ++this.viewingCount;
-+            if (this.world == null) return; // CraftBukkit
-+
-+            // CraftBukkit start - Call redstone event
-+            if (this.getBlock().getBlock() == Blocks.TRAPPED_CHEST) {
-+                int newPower = Math.max(0, Math.min(15, this.viewingCount));
-+
-+                if (oldPower != newPower) {
-+                    org.bukkit.craftbukkit.event.CraftEventFactory.callRedstoneChange(world, position, oldPower, newPower);
-+                }
-+            }
-+            // CraftBukkit end
-             this.onOpen();
-         }
- 
-@@ -189,7 +245,18 @@
-     @Override
-     public void closeContainer(EntityHuman entityhuman) {
-         if (!entityhuman.isSpectator()) {
-+            int oldPower = Math.max(0, Math.min(15, this.viewingCount)); // CraftBukkit - Get power before new viewer is added
-             --this.viewingCount;
-+
-+            // CraftBukkit start - Call redstone event
-+            if (this.getBlock().getBlock() == Blocks.TRAPPED_CHEST) {
-+                int newPower = Math.max(0, Math.min(15, this.viewingCount));
-+
-+                if (oldPower != newPower) {
-+                    org.bukkit.craftbukkit.event.CraftEventFactory.callRedstoneChange(world, position, oldPower, newPower);
-+                }
-+            }
-+            // CraftBukkit end
-             this.onOpen();
-         }
- 
-@@ -199,7 +266,7 @@
-         Block block = this.getBlock().getBlock();
- 
-         if (block instanceof BlockChest) {
--            this.world.playBlockAction(this.position, block, 1, this.viewingCount);
-+            if (!opened) this.world.playBlockAction(this.position, block, 1, this.viewingCount); // CraftBukkit
-             this.world.applyPhysics(this.position, block);
-         }
- 
-@@ -240,4 +307,11 @@
-     protected Container createContainer(int i, PlayerInventory playerinventory) {
-         return ContainerChest.a(i, playerinventory, this);
+         world.playBlockAction(blockposition, block, 1, j);
      }
 +
 +    // CraftBukkit start

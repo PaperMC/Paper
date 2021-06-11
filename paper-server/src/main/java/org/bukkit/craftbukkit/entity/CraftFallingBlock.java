@@ -64,6 +64,6 @@ public class CraftFallingBlock extends CraftEntity implements FallingBlock {
         super.setTicksLived(value);
 
         // Second field for EntityFallingBlock
-        getHandle().ticksLived = value;
+        getHandle().time = value;
     }
 }

@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/SpawnerCreature.java
 +++ b/net/minecraft/world/level/SpawnerCreature.java
-@@ -45,6 +45,11 @@
+@@ -47,6 +47,11 @@
  import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
  
@@ -12,7 +12,7 @@
  public final class SpawnerCreature {
  
      private static final Logger LOGGER = LogManager.getLogger();
-@@ -66,7 +71,8 @@
+@@ -73,7 +78,8 @@
              if (entity instanceof EntityInsentient) {
                  EntityInsentient entityinsentient = (EntityInsentient) entity;
  
@@ -22,8 +22,8 @@
                      continue;
                  }
              }
-@@ -101,10 +107,49 @@
-         EnumCreatureType[] aenumcreaturetype = SpawnerCreature.c;
+@@ -108,10 +114,49 @@
+         EnumCreatureType[] aenumcreaturetype = SpawnerCreature.SPAWNING_CATEGORIES;
          int i = aenumcreaturetype.length;
  
 +        // CraftBukkit start - Other mob type spawn tick rate
@@ -39,7 +39,7 @@
              EnumCreatureType enumcreaturetype = aenumcreaturetype[j];
 +            // CraftBukkit start - Use per-world spawn limits
 +            boolean spawnThisTick = true;
-+            int limit = enumcreaturetype.c();
++            int limit = enumcreaturetype.b();
 +            switch (enumcreaturetype) {
 +                case MONSTER:
 +                    spawnThisTick = spawnMonsterThisTick;
@@ -70,10 +70,10 @@
 +
 +            if ((flag || !enumcreaturetype.d()) && (flag1 || enumcreaturetype.d()) && (flag2 || !enumcreaturetype.e()) && spawnercreature_d.a(enumcreaturetype, limit)) {
 +                // CraftBukkit end
-                 a(enumcreaturetype, worldserver, chunk, (entitytypes, blockposition, ichunkaccess) -> {
-                     return spawnercreature_d.a(entitytypes, blockposition, ichunkaccess);
-                 }, (entityinsentient, ichunkaccess) -> {
-@@ -179,10 +224,14 @@
+                 Objects.requireNonNull(spawnercreature_d);
+                 SpawnerCreature.c spawnercreature_c = spawnercreature_d::a;
+ 
+@@ -196,10 +241,14 @@
                                          entityinsentient.setPositionRotation(d0, (double) i, d1, worldserver.random.nextFloat() * 360.0F, 0.0F);
                                          if (a(worldserver, entityinsentient, d2)) {
                                              groupdataentity = entityinsentient.prepare(worldserver, worldserver.getDamageScaler(entityinsentient.getChunkCoordinates()), EnumMobSpawn.NATURAL, groupdataentity, (NBTTagCompound) null);
@@ -83,7 +83,7 @@
 -                                            spawnercreature_a.run(entityinsentient, ichunkaccess);
 +                                            // CraftBukkit start
 +                                            worldserver.addAllEntities(entityinsentient, SpawnReason.NATURAL);
-+                                            if (!entityinsentient.dead) {
++                                            if (!entityinsentient.isRemoved()) {
 +                                                ++j;
 +                                                ++k1;
 +                                                spawnercreature_a.run(entityinsentient, ichunkaccess);
@@ -92,25 +92,25 @@
                                              if (j >= entityinsentient.getMaxSpawnGroup()) {
                                                  return;
                                              }
-@@ -365,7 +414,7 @@
+@@ -370,7 +419,7 @@
  
-                                 if (entityinsentient.a((GeneratorAccess) worldaccess, EnumMobSpawn.CHUNK_GENERATION) && entityinsentient.a((IWorldReader) worldaccess)) {
-                                     groupdataentity = entityinsentient.prepare(worldaccess, worldaccess.getDamageScaler(entityinsentient.getChunkCoordinates()), EnumMobSpawn.CHUNK_GENERATION, groupdataentity, (NBTTagCompound) null);
--                                    worldaccess.addAllEntities(entityinsentient);
-+                                    worldaccess.addAllEntities(entityinsentient, SpawnReason.CHUNK_GEN); // CraftBukkit
-                                     flag = true;
+                                     if (entityinsentient.a((GeneratorAccess) worldaccess, EnumMobSpawn.CHUNK_GENERATION) && entityinsentient.a((IWorldReader) worldaccess)) {
+                                         groupdataentity = entityinsentient.prepare(worldaccess, worldaccess.getDamageScaler(entityinsentient.getChunkCoordinates()), EnumMobSpawn.CHUNK_GENERATION, groupdataentity, (NBTTagCompound) null);
+-                                        worldaccess.addAllEntities(entityinsentient);
++                                        worldaccess.addAllEntities(entityinsentient, SpawnReason.CHUNK_GEN); // CraftBukkit
+                                         flag = true;
+                                     }
                                  }
-                             }
-@@ -488,8 +537,10 @@
-             return this.d;
+@@ -486,8 +535,10 @@
+             return this.unmodifiableMobCategoryCounts;
          }
  
--        private boolean a(EnumCreatureType enumcreaturetype) {
--            int i = enumcreaturetype.c() * this.a / SpawnerCreature.b;
+-        boolean a(EnumCreatureType enumcreaturetype) {
+-            int i = enumcreaturetype.b() * this.spawnableChunkCount / SpawnerCreature.MAGIC_NUMBER;
 +        // CraftBukkit start
-+        private boolean a(EnumCreatureType enumcreaturetype, int limit) {
-+            int i = limit * this.a / SpawnerCreature.b;
++        boolean a(EnumCreatureType enumcreaturetype, int limit) {
++            int i = limit * this.spawnableChunkCount / SpawnerCreature.MAGIC_NUMBER;
 +            // CraftBukkit end
  
-             return this.b.getInt(enumcreaturetype) < i;
+             return this.mobCategoryCounts.getInt(enumcreaturetype) < i;
          }

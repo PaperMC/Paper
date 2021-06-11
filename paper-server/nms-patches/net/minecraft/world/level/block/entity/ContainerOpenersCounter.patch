@@ -1,0 +1,58 @@
+--- a/net/minecraft/world/level/block/entity/ContainerOpenersCounter.java
++++ b/net/minecraft/world/level/block/entity/ContainerOpenersCounter.java
+@@ -13,6 +13,7 @@
+ 
+     private static final int CHECK_TICK_DELAY = 5;
+     private int openCount;
++    public boolean opened; // CraftBukkit
+ 
+     public ContainerOpenersCounter() {}
+ 
+@@ -25,8 +26,19 @@
+     protected abstract boolean a(EntityHuman entityhuman);
+ 
+     public void a(EntityHuman entityhuman, World world, BlockPosition blockposition, IBlockData iblockdata) {
++        int oldPower = Math.max(0, Math.min(15, this.openCount)); // CraftBukkit - Get power before new viewer is added
+         int i = this.openCount++;
+ 
++        // CraftBukkit start - Call redstone event
++        if (world.getType(blockposition).a(net.minecraft.world.level.block.Blocks.TRAPPED_CHEST)) {
++            int newPower = Math.max(0, Math.min(15, this.openCount));
++
++            if (oldPower != newPower) {
++                org.bukkit.craftbukkit.event.CraftEventFactory.callRedstoneChange(world, blockposition, oldPower, newPower);
++            }
++        }
++        // CraftBukkit end
++
+         if (i == 0) {
+             this.a(world, blockposition, iblockdata);
+             world.a((Entity) entityhuman, GameEvent.CONTAINER_OPEN, blockposition);
+@@ -37,8 +49,19 @@
+     }
+ 
+     public void b(EntityHuman entityhuman, World world, BlockPosition blockposition, IBlockData iblockdata) {
++        int oldPower = Math.max(0, Math.min(15, this.openCount)); // CraftBukkit - Get power before new viewer is added
+         int i = this.openCount--;
+ 
++        // CraftBukkit start - Call redstone event
++        if (world.getType(blockposition).a(net.minecraft.world.level.block.Blocks.TRAPPED_CHEST)) {
++            int newPower = Math.max(0, Math.min(15, this.openCount));
++
++            if (oldPower != newPower) {
++                org.bukkit.craftbukkit.event.CraftEventFactory.callRedstoneChange(world, blockposition, oldPower, newPower);
++            }
++        }
++        // CraftBukkit end
++
+         if (this.openCount == 0) {
+             this.b(world, blockposition, iblockdata);
+             world.a((Entity) entityhuman, GameEvent.CONTAINER_CLOSE, blockposition);
+@@ -59,6 +82,7 @@
+ 
+     public void c(World world, BlockPosition blockposition, IBlockData iblockdata) {
+         int i = this.a(world, blockposition);
++        if (opened) i++; // CraftBukkit - add dummy count from API
+         int j = this.openCount;
+ 
+         if (j != i) {

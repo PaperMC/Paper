@@ -48,8 +48,8 @@ public class CraftBlockState implements BlockState {
         return new CraftBlockState(CraftBlock.at(world, pos));
     }
 
-    public static CraftBlockState getBlockState(net.minecraft.world.level.World world, net.minecraft.core.BlockPosition pos, int flag) {
-        return new CraftBlockState(world.getWorld().getBlockAt(pos.getX(), pos.getY(), pos.getZ()), flag);
+    public static CraftBlockState getBlockState(GeneratorAccess world, net.minecraft.core.BlockPosition pos, int flag) {
+        return new CraftBlockState(CraftBlock.at(world, pos), flag);
     }
 
     @Override

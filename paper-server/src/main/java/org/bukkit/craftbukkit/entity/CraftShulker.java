@@ -32,34 +32,34 @@ public class CraftShulker extends CraftGolem implements Shulker {
 
     @Override
     public DyeColor getColor() {
-        return DyeColor.getByWoolData(getHandle().getDataWatcher().get(EntityShulker.COLOR));
+        return DyeColor.getByWoolData(getHandle().getDataWatcher().get(EntityShulker.DATA_COLOR_ID));
     }
 
     @Override
     public void setColor(DyeColor color) {
-        getHandle().getDataWatcher().set(EntityShulker.COLOR, (color == null) ? 16 : color.getWoolData());
+        getHandle().getDataWatcher().set(EntityShulker.DATA_COLOR_ID, (color == null) ? 16 : color.getWoolData());
     }
 
     @Override
     public float getPeek() {
-        return (float) getHandle().eN() / 100; // PAIL rename getPeek
+        return (float) getHandle().getPeek() / 100;
     }
 
     @Override
     public void setPeek(float value) {
         Preconditions.checkArgument(value >= 0 && value <= 1, "value needs to be in between or equal to 0 and 1");
-        getHandle().a((int) (value * 100)); // PAIL rename setPeek
+        getHandle().setPeek((int) (value * 100));
     }
 
     @Override
     public BlockFace getAttachedFace() {
-        return CraftBlock.notchToBlockFace(getHandle().eL()); // PAIL rename getAttachedFace
+        return CraftBlock.notchToBlockFace(getHandle().getAttachFace());
     }
 
     @Override
     public void setAttachedFace(BlockFace face) {
         Preconditions.checkNotNull(face, "face cannot be null");
         Preconditions.checkArgument(face.isCartesian(), "%s is not a valid block face to attach a shulker to, a cartesian block face is expected", face);
-        getHandle().getDataWatcher().set(EntityShulker.b, CraftBlock.blockFaceToNotch(face));
+        getHandle().setAttachFace(CraftBlock.blockFaceToNotch(face));
     }
 }

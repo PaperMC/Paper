@@ -30,7 +30,7 @@ public class CraftLectern extends CraftBlockEntityState<TileEntityLectern> imple
 
     @Override
     public Inventory getSnapshotInventory() {
-        return new CraftInventoryLectern(this.getSnapshot().inventory);
+        return new CraftInventoryLectern(this.getSnapshot().bookAccess);
     }
 
     @Override
@@ -39,7 +39,7 @@ public class CraftLectern extends CraftBlockEntityState<TileEntityLectern> imple
             return this.getSnapshotInventory();
         }
 
-        return new CraftInventoryLectern(this.getTileEntity().inventory);
+        return new CraftInventoryLectern(this.getTileEntity().bookAccess);
     }
 
     @Override

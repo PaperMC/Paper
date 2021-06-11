@@ -74,7 +74,7 @@ public class CraftPiglin extends CraftPiglinAbstract implements Piglin {
 
     @Override
     public Inventory getInventory() {
-        return new CraftInventory(getHandle().bu);
+        return new CraftInventory(getHandle().inventory);
     }
 
     @Override

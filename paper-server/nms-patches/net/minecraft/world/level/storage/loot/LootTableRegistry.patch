@@ -1,29 +1,29 @@
 --- a/net/minecraft/world/level/storage/loot/LootTableRegistry.java
 +++ b/net/minecraft/world/level/storage/loot/LootTableRegistry.java
-@@ -21,6 +21,7 @@
+@@ -22,6 +22,7 @@
      private static final Logger LOGGER = LogManager.getLogger();
-     private static final Gson b = LootSerialization.c().create();
-     private Map<MinecraftKey, LootTable> keyToLootTable = ImmutableMap.of();
+     private static final Gson GSON = LootSerialization.c().create();
+     private Map<MinecraftKey, LootTable> tables = ImmutableMap.of();
 +    public Map<LootTable, MinecraftKey> lootTableToKey = ImmutableMap.of(); // CraftBukkit
-     private final LootPredicateManager d;
+     private final LootPredicateManager predicateManager;
  
      public LootTableRegistry(LootPredicateManager lootpredicatemanager) {
-@@ -56,7 +57,7 @@
-         LootPredicateManager lootpredicatemanager = this.d;
+@@ -57,7 +58,7 @@
+         LootPredicateManager lootpredicatemanager = this.predicateManager;
  
-         this.d.getClass();
+         Objects.requireNonNull(this.predicateManager);
 -        Function function = lootpredicatemanager::a;
 +        Function<MinecraftKey, net.minecraft.world.level.storage.loot.predicates.LootItemCondition> function = lootpredicatemanager::a; // CraftBukkit - decompile error
  
-         immutablemap.getClass();
+         Objects.requireNonNull(immutablemap);
          LootCollector lootcollector = new LootCollector(lootcontextparameterset, function, immutablemap::get);
-@@ -68,6 +69,11 @@
-             LootTableRegistry.LOGGER.warn("Found validation problem in " + s + ": " + s1);
+@@ -69,6 +70,11 @@
+             LootTableRegistry.LOGGER.warn("Found validation problem in {}: {}", s, s1);
          });
-         this.keyToLootTable = immutablemap;
+         this.tables = immutablemap;
 +        // CraftBukkit start - build a reversed registry map
 +        ImmutableMap.Builder<LootTable, MinecraftKey> lootTableToKeyBuilder = ImmutableMap.builder();
-+        this.keyToLootTable.forEach((lootTable, key) -> lootTableToKeyBuilder.put(key, lootTable));
++        this.tables.forEach((lootTable, key) -> lootTableToKeyBuilder.put(key, lootTable));
 +        this.lootTableToKey = lootTableToKeyBuilder.build();
 +        // CraftBukkit end
      }

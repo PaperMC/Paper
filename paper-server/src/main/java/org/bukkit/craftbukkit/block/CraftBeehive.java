@@ -26,14 +26,14 @@ public class CraftBeehive extends CraftBlockEntityState<TileEntityBeehive> imple
 
     @Override
     public Location getFlower() {
-        BlockPosition flower = getSnapshot().flowerPos;
+        BlockPosition flower = getSnapshot().savedFlowerPos;
         return (flower == null) ? null : new Location(getWorld(), flower.getX(), flower.getY(), flower.getZ());
     }
 
     @Override
     public void setFlower(Location location) {
         Preconditions.checkArgument(location == null || this.getWorld().equals(location.getWorld()), "Flower must be in same world");
-        getSnapshot().flowerPos = (location == null) ? null : new BlockPosition(location.getBlockX(), location.getBlockY(), location.getBlockZ());
+        getSnapshot().savedFlowerPos = (location == null) ? null : new BlockPosition(location.getBlockX(), location.getBlockY(), location.getBlockZ());
     }
 
     @Override

@@ -1,13 +1,13 @@
 --- a/net/minecraft/server/network/ServerConnection.java
 +++ b/net/minecraft/server/network/ServerConnection.java
-@@ -87,14 +87,24 @@
-                     int j = ServerConnection.this.e.k();
+@@ -96,14 +96,24 @@
+                     int j = ServerConnection.this.server.l();
                      Object object = j > 0 ? new NetworkManagerServer(j) : new NetworkManager(EnumProtocolDirection.SERVERBOUND);
  
--                    ServerConnection.this.connectedChannels.add(object);
-+                    ServerConnection.this.connectedChannels.add((NetworkManager) object); // CraftBukkit - decompile error
+-                    ServerConnection.this.connections.add(object);
++                    ServerConnection.this.connections.add((NetworkManager) object); // CraftBukkit - decompile error
                      channel.pipeline().addLast("packet_handler", (ChannelHandler) object);
-                     ((NetworkManager) object).setPacketListener(new HandshakeListener(ServerConnection.this.e, (NetworkManager) object));
+                     ((NetworkManager) object).setPacketListener(new HandshakeListener(ServerConnection.this.server, (NetworkManager) object));
                  }
 -            }).group((EventLoopGroup) lazyinitvar.a()).localAddress(inetaddress, i)).bind().syncUninterruptibly());
 +            }).group((EventLoopGroup) lazyinitvar.a()).localAddress(inetaddress, i)).option(ChannelOption.AUTO_READ, false).bind().syncUninterruptibly()); // CraftBukkit
@@ -16,14 +16,14 @@
  
 +    // CraftBukkit start
 +    public void acceptConnections() {
-+        synchronized (this.listeningChannels) {
-+            for (ChannelFuture future : this.listeningChannels) {
++        synchronized (this.channels) {
++            for (ChannelFuture future : this.channels) {
 +                future.channel().config().setAutoRead(true);
 +            }
 +        }
 +    }
 +    // CraftBukkit end
 +
-     public void b() {
-         this.c = false;
-         Iterator iterator = this.listeningChannels.iterator();
+     public SocketAddress a() {
+         List list = this.channels;
+         ChannelFuture channelfuture;

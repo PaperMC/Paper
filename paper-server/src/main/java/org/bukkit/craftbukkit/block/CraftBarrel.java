@@ -37,26 +37,26 @@ public class CraftBarrel extends CraftLootable<TileEntityBarrel> implements Barr
     @Override
     public void open() {
         requirePlaced();
-        if (!getTileEntity().opened) {
+        if (!getTileEntity().openersCounter.opened) {
             IBlockData blockData = getTileEntity().getBlock();
             boolean open = blockData.get(BlockBarrel.OPEN);
 
             if (!open) {
                 getTileEntity().setOpenFlag(blockData, true);
-                getTileEntity().playOpenSound(blockData, SoundEffects.BLOCK_BARREL_OPEN);
+                getTileEntity().playOpenSound(blockData, SoundEffects.BARREL_OPEN);
             }
         }
-        getTileEntity().opened = true;
+        getTileEntity().openersCounter.opened = true;
     }
 
     @Override
     public void close() {
         requirePlaced();
-        if (getTileEntity().opened) {
+        if (getTileEntity().openersCounter.opened) {
             IBlockData blockData = getTileEntity().getBlock();
             getTileEntity().setOpenFlag(blockData, false);
-            getTileEntity().playOpenSound(blockData, SoundEffects.BLOCK_BARREL_CLOSE);
+            getTileEntity().playOpenSound(blockData, SoundEffects.BARREL_CLOSE);
         }
-        getTileEntity().opened = false;
+        getTileEntity().openersCounter.opened = false;
     }
 }

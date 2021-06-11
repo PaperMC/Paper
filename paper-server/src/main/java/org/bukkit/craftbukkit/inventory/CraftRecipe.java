@@ -16,7 +16,7 @@ public interface CraftRecipe extends Recipe {
         RecipeItemStack stack;
 
         if (bukkit == null) {
-            stack = RecipeItemStack.a;
+            stack = RecipeItemStack.EMPTY;
         } else if (bukkit instanceof RecipeChoice.MaterialChoice) {
             stack = new RecipeItemStack(((RecipeChoice.MaterialChoice) bukkit).getChoices().stream().map((mat) -> new net.minecraft.world.item.crafting.RecipeItemStack.StackProvider(CraftItemStack.asNMSCopy(new ItemStack(mat)))));
         } else if (bukkit instanceof RecipeChoice.ExactChoice) {
@@ -27,7 +27,7 @@ public interface CraftRecipe extends Recipe {
         }
 
         stack.buildChoices();
-        if (requireNotEmpty && stack.choices.length == 0) {
+        if (requireNotEmpty && stack.itemStacks.length == 0) {
             throw new IllegalArgumentException("Recipe requires at least one non-air choice!");
         }
 
@@ -37,21 +37,21 @@ public interface CraftRecipe extends Recipe {
     public static RecipeChoice toBukkit(RecipeItemStack list) {
         list.buildChoices();
 
-        if (list.choices.length == 0) {
+        if (list.itemStacks.length == 0) {
             return null;
         }
 
         if (list.exact) {
-            List<org.bukkit.inventory.ItemStack> choices = new ArrayList<>(list.choices.length);
-            for (net.minecraft.world.item.ItemStack i : list.choices) {
+            List<org.bukkit.inventory.ItemStack> choices = new ArrayList<>(list.itemStacks.length);
+            for (net.minecraft.world.item.ItemStack i : list.itemStacks) {
                 choices.add(CraftItemStack.asBukkitCopy(i));
             }
 
             return new RecipeChoice.ExactChoice(choices);
         } else {
 
-            List<org.bukkit.Material> choices = new ArrayList<>(list.choices.length);
-            for (net.minecraft.world.item.ItemStack i : list.choices) {
+            List<org.bukkit.Material> choices = new ArrayList<>(list.itemStacks.length);
+            for (net.minecraft.world.item.ItemStack i : list.itemStacks) {
                 choices.add(CraftMagicNumbers.getMaterial(i.getItem()));
             }
 

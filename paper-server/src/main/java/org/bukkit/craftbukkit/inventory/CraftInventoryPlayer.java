@@ -44,7 +44,7 @@ public class CraftInventoryPlayer extends CraftInventory implements org.bukkit.i
 
     @Override
     public ItemStack getItemInOffHand() {
-        return CraftItemStack.asCraftMirror(getInventory().extraSlots.get(0));
+        return CraftItemStack.asCraftMirror(getInventory().offhand.get(0));
     }
 
     @Override
@@ -74,7 +74,7 @@ public class CraftInventoryPlayer extends CraftInventory implements org.bukkit.i
         super.setItem(index, item);
         if (this.getHolder() == null) return;
         EntityPlayer player = ((CraftPlayer) this.getHolder()).getHandle();
-        if (player.playerConnection == null) return;
+        if (player.connection == null) return;
         // PacketPlayOutSetSlot places the items differently than setItem()
         //
         // Between, and including, index 9 (the first index outside of the hotbar) and index 35 (the last index before
@@ -110,7 +110,7 @@ public class CraftInventoryPlayer extends CraftInventory implements org.bukkit.i
         } else if (index > 35) {
             index = 8 - (index - 36);
         }
-        player.playerConnection.sendPacket(new PacketPlayOutSetSlot(player.defaultContainer.windowId, index, CraftItemStack.asNMSCopy(item)));
+        player.connection.sendPacket(new PacketPlayOutSetSlot(player.inventoryMenu.containerId, index, CraftItemStack.asNMSCopy(item)));
     }
 
     @Override
@@ -170,14 +170,14 @@ public class CraftInventoryPlayer extends CraftInventory implements org.bukkit.i
 
     @Override
     public int getHeldItemSlot() {
-        return getInventory().itemInHandIndex;
+        return getInventory().selected;
     }
 
     @Override
     public void setHeldItemSlot(int slot) {
         Validate.isTrue(slot >= 0 && slot < PlayerInventory.getHotbarSize(), "Slot is not between 0 and 8 inclusive");
-        this.getInventory().itemInHandIndex = slot;
-        ((CraftPlayer) this.getHolder()).getHandle().playerConnection.sendPacket(new PacketPlayOutHeldItemSlot(slot));
+        this.getInventory().selected = slot;
+        ((CraftPlayer) this.getHolder()).getHandle().connection.sendPacket(new PacketPlayOutHeldItemSlot(slot));
     }
 
     @Override
@@ -272,12 +272,12 @@ public class CraftInventoryPlayer extends CraftInventory implements org.bukkit.i
 
     @Override
     public ItemStack[] getExtraContents() {
-        return asCraftMirror(getInventory().extraSlots);
+        return asCraftMirror(getInventory().offhand);
     }
 
     @Override
     public void setExtraContents(ItemStack[] items) {
-        setSlots(items, getInventory().items.size() + getInventory().armor.size(), getInventory().extraSlots.size());
+        setSlots(items, getInventory().items.size() + getInventory().armor.size(), getInventory().offhand.size());
     }
 
     @Override

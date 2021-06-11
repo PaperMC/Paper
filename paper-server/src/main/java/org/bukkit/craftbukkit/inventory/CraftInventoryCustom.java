@@ -55,7 +55,7 @@ public class CraftInventoryCustom extends CraftInventory {
 
         public MinecraftInventory(InventoryHolder owner, int size, String title) {
             Validate.notNull(title, "Title cannot be null");
-            this.items = NonNullList.a(size, ItemStack.b);
+            this.items = NonNullList.a(size, ItemStack.EMPTY);
             this.title = title;
             this.viewers = new ArrayList<HumanEntity>();
             this.owner = owner;
@@ -76,9 +76,9 @@ public class CraftInventoryCustom extends CraftInventory {
         public ItemStack splitStack(int i, int j) {
             ItemStack stack = this.getItem(i);
             ItemStack result;
-            if (stack == ItemStack.b) return stack;
+            if (stack == ItemStack.EMPTY) return stack;
             if (stack.getCount() <= j) {
-                this.setItem(i, ItemStack.b);
+                this.setItem(i, ItemStack.EMPTY);
                 result = stack;
             } else {
                 result = CraftItemStack.copyNMSStack(stack, j);
@@ -92,7 +92,7 @@ public class CraftInventoryCustom extends CraftInventory {
         public ItemStack splitWithoutUpdate(int i) {
             ItemStack stack = this.getItem(i);
             ItemStack result;
-            if (stack == ItemStack.b) return stack;
+            if (stack == ItemStack.EMPTY) return stack;
             if (stack.getCount() <= 1) {
                 this.setItem(i, null);
                 result = stack;
@@ -106,7 +106,7 @@ public class CraftInventoryCustom extends CraftInventory {
         @Override
         public void setItem(int i, ItemStack itemstack) {
             items.set(i, itemstack);
-            if (itemstack != ItemStack.b && this.getMaxStackSize() > 0 && itemstack.getCount() > this.getMaxStackSize()) {
+            if (itemstack != ItemStack.EMPTY && this.getMaxStackSize() > 0 && itemstack.getCount() > this.getMaxStackSize()) {
                 itemstack.setCount(this.getMaxStackSize());
             }
         }

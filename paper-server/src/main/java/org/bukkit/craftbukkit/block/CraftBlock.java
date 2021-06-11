@@ -472,6 +472,8 @@ public class CraftBlock implements Block {
             case BEEHIVE:
             case BEE_NEST:
                 return new CraftBeehive(this);
+            case SCULK_SENSOR:
+                return new CraftSculkSensor(this);
             default:
                 TileEntity tileEntity = world.getTileEntity(position);
                 if (tileEntity != null) {
@@ -583,7 +585,7 @@ public class CraftBlock implements Block {
     }
 
     private static int getPower(int i, IBlockData iblockdata) {
-        if (!iblockdata.getBlock().a(Blocks.REDSTONE_WIRE)) {
+        if (!iblockdata.a(Blocks.REDSTONE_WIRE)) {
             return i;
         } else {
             int j = iblockdata.get(BlockRedstoneWire.POWER);
@@ -637,7 +639,7 @@ public class CraftBlock implements Block {
     @Override
     public boolean applyBoneMeal(BlockFace face) {
         EnumDirection direction = blockFaceToNotch(face);
-        ItemActionContext context = new ItemActionContext(getCraftWorld().getHandle(), null, EnumHand.MAIN_HAND, Items.BONE_MEAL.createItemStack(), new MovingObjectPositionBlock(Vec3D.ORIGIN, direction, getPosition(), false));
+        ItemActionContext context = new ItemActionContext(getCraftWorld().getHandle(), null, EnumHand.MAIN_HAND, Items.BONE_MEAL.createItemStack(), new MovingObjectPositionBlock(Vec3D.ZERO, direction, getPosition(), false));
 
         return ItemBoneMeal.applyBonemeal(context) == EnumInteractionResult.SUCCESS;
     }

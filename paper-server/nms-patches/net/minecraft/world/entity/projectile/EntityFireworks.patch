@@ -6,22 +6,22 @@
  
 +import org.bukkit.craftbukkit.event.CraftEventFactory; // CraftBukkit
 +
- public class EntityFireworks extends IProjectile {
+ public class EntityFireworks extends IProjectile implements ItemSupplier {
  
-     public static final DataWatcherObject<ItemStack> FIREWORK_ITEM = DataWatcher.a(EntityFireworks.class, DataWatcherRegistry.g);
-@@ -130,7 +132,7 @@
+     public static final DataWatcherObject<ItemStack> DATA_ID_FIREWORKS_ITEM = DataWatcher.a(EntityFireworks.class, DataWatcherRegistry.ITEM_STACK);
+@@ -141,7 +143,7 @@
          MovingObjectPosition movingobjectposition = ProjectileHelper.a((Entity) this, this::a);
  
-         if (!this.noclip) {
+         if (!this.noPhysics) {
 -            this.a(movingobjectposition);
 +            this.preOnHit(movingobjectposition); // CraftBukkit - projectile hit event
-             this.impulse = true;
+             this.hasImpulse = true;
          }
  
-@@ -145,7 +147,11 @@
+@@ -156,7 +158,11 @@
          }
  
-         if (!this.world.isClientSide && this.ticksFlown > this.expectedLifespan) {
+         if (!this.level.isClientSide && this.life > this.lifetime) {
 -            this.explode();
 +            // CraftBukkit start
 +            if (!org.bukkit.craftbukkit.event.CraftEventFactory.callFireworkExplodeEvent(this).isCancelled()) {
@@ -31,10 +31,10 @@
          }
  
      }
-@@ -160,7 +166,11 @@
+@@ -172,7 +178,11 @@
      protected void a(MovingObjectPositionEntity movingobjectpositionentity) {
          super.a(movingobjectpositionentity);
-         if (!this.world.isClientSide) {
+         if (!this.level.isClientSide) {
 -            this.explode();
 +            // CraftBukkit start
 +            if (!org.bukkit.craftbukkit.event.CraftEventFactory.callFireworkExplodeEvent(this).isCancelled()) {
@@ -44,10 +44,10 @@
          }
      }
  
-@@ -170,7 +180,11 @@
+@@ -182,7 +192,11 @@
  
-         this.world.getType(blockposition).a(this.world, blockposition, (Entity) this);
-         if (!this.world.s_() && this.hasExplosions()) {
+         this.level.getType(blockposition).a(this.level, blockposition, (Entity) this);
+         if (!this.level.isClientSide() && this.hasExplosions()) {
 -            this.explode();
 +            // CraftBukkit start
 +            if (!org.bukkit.craftbukkit.event.CraftEventFactory.callFireworkExplodeEvent(this).isCancelled()) {
@@ -57,19 +57,19 @@
          }
  
          super.a(movingobjectpositionblock);
-@@ -196,7 +210,9 @@
+@@ -208,7 +222,9 @@
  
          if (f > 0.0F) {
-             if (this.ridingEntity != null) {
+             if (this.attachedToEntity != null) {
 +                CraftEventFactory.entityDamage = this; // CraftBukkit
-                 this.ridingEntity.damageEntity(DamageSource.a(this, this.getShooter()), 5.0F + (float) (nbttaglist.size() * 2));
+                 this.attachedToEntity.damageEntity(DamageSource.a(this, this.getShooter()), 5.0F + (float) (nbttaglist.size() * 2));
 +                CraftEventFactory.entityDamage = null; // CraftBukkit
              }
  
              double d0 = 5.0D;
-@@ -223,7 +239,9 @@
+@@ -235,7 +251,9 @@
                      if (flag) {
-                         float f1 = f * (float) Math.sqrt((5.0D - (double) this.g((Entity) entityliving)) / 5.0D);
+                         float f1 = f * (float) Math.sqrt((5.0D - (double) this.e((Entity) entityliving)) / 5.0D);
  
 +                        CraftEventFactory.entityDamage = this; // CraftBukkit
                          entityliving.damageEntity(DamageSource.a(this, this.getShooter()), f1);

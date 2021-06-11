@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/projectile/EntityLargeFireball.java
 +++ b/net/minecraft/world/entity/projectile/EntityLargeFireball.java
-@@ -11,16 +11,20 @@
+@@ -11,17 +11,21 @@
  import net.minecraft.world.phys.MovingObjectPosition;
  import net.minecraft.world.phys.MovingObjectPositionEntity;
  
@@ -8,43 +8,44 @@
 +
  public class EntityLargeFireball extends EntityFireballFireball {
  
-     public int yield = 1;
+     public int explosionPower = 1;
  
      public EntityLargeFireball(EntityTypes<? extends EntityLargeFireball> entitytypes, World world) {
          super(entitytypes, world);
-+        isIncendiary = this.world.getGameRules().getBoolean(GameRules.MOB_GRIEFING); // CraftBukkit
++        isIncendiary = this.level.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING); // CraftBukkit
      }
  
-     public EntityLargeFireball(World world, EntityLiving entityliving, double d0, double d1, double d2) {
+     public EntityLargeFireball(World world, EntityLiving entityliving, double d0, double d1, double d2, int i) {
          super(EntityTypes.FIREBALL, entityliving, d0, d1, d2, world);
-+        isIncendiary = this.world.getGameRules().getBoolean(GameRules.MOB_GRIEFING); // CraftBukkit
+         this.explosionPower = i;
++        isIncendiary = this.level.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING); // CraftBukkit
      }
  
      @Override
-@@ -29,7 +33,15 @@
-         if (!this.world.isClientSide) {
-             boolean flag = this.world.getGameRules().getBoolean(GameRules.MOB_GRIEFING);
+@@ -30,7 +34,15 @@
+         if (!this.level.isClientSide) {
+             boolean flag = this.level.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING);
  
--            this.world.createExplosion((Entity) null, this.locX(), this.locY(), this.locZ(), (float) this.yield, flag, flag ? Explosion.Effect.DESTROY : Explosion.Effect.NONE);
+-            this.level.createExplosion((Entity) null, this.locX(), this.locY(), this.locZ(), (float) this.explosionPower, flag, flag ? Explosion.Effect.DESTROY : Explosion.Effect.NONE);
 +            // CraftBukkit start - fire ExplosionPrimeEvent
 +            ExplosionPrimeEvent event = new ExplosionPrimeEvent((org.bukkit.entity.Explosive) this.getBukkitEntity());
-+            this.world.getServer().getPluginManager().callEvent(event);
++            this.level.getServer().getPluginManager().callEvent(event);
 +
 +            if (!event.isCancelled()) {
 +                // give 'this' instead of (Entity) null so we know what causes the damage
-+                this.world.createExplosion(this, this.locX(), this.locY(), this.locZ(), event.getRadius(), event.getFire(), flag ? Explosion.Effect.DESTROY : Explosion.Effect.NONE);
++                this.level.createExplosion(this, this.locX(), this.locY(), this.locZ(), event.getRadius(), event.getFire(), flag ? Explosion.Effect.DESTROY : Explosion.Effect.NONE);
 +            }
 +            // CraftBukkit end
              this.die();
          }
  
-@@ -60,7 +72,8 @@
+@@ -61,7 +73,8 @@
      public void loadData(NBTTagCompound nbttagcompound) {
          super.loadData(nbttagcompound);
          if (nbttagcompound.hasKeyOfType("ExplosionPower", 99)) {
--            this.yield = nbttagcompound.getInt("ExplosionPower");
+-            this.explosionPower = nbttagcompound.getByte("ExplosionPower");
 +            // CraftBukkit - set bukkitYield when setting explosionpower
-+            bukkitYield = this.yield = nbttagcompound.getInt("ExplosionPower");
++            bukkitYield = this.explosionPower = nbttagcompound.getByte("ExplosionPower");
          }
  
      }

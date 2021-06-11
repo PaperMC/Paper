@@ -8,31 +8,31 @@
 +
  public class EntityTNTPrimed extends Entity {
  
-     private static final DataWatcherObject<Integer> FUSE_TICKS = DataWatcher.a(EntityTNTPrimed.class, DataWatcherRegistry.b);
+     private static final DataWatcherObject<Integer> DATA_FUSE_ID = DataWatcher.a(EntityTNTPrimed.class, DataWatcherRegistry.INT);
+     private static final int DEFAULT_FUSE_TIME = 80;
      @Nullable
-     public EntityLiving source;
-     private int fuseTicks;
+     public EntityLiving owner;
 +    public float yield = 4; // CraftBukkit - add field
 +    public boolean isIncendiary = false; // CraftBukkit - add field
  
      public EntityTNTPrimed(EntityTypes<? extends EntityTNTPrimed> entitytypes, World world) {
          super(entitytypes, world);
-@@ -72,10 +76,13 @@
+@@ -73,10 +77,13 @@
  
-         --this.fuseTicks;
-         if (this.fuseTicks <= 0) {
+         this.setFuseTicks(i);
+         if (i <= 0) {
 -            this.die();
 +            // CraftBukkit start - Need to reverse the order of the explosion and the entity death so we have a location for the event
 +            // this.die();
-             if (!this.world.isClientSide) {
+             if (!this.level.isClientSide) {
                  this.explode();
              }
 +            this.die();
 +            // CraftBukkit end
          } else {
-             this.aK();
-             if (this.world.isClientSide) {
-@@ -86,9 +93,16 @@
+             this.aR();
+             if (this.level.isClientSide) {
+@@ -87,9 +94,16 @@
      }
  
      private void explode() {
@@ -40,12 +40,12 @@
 +        // CraftBukkit start
 +        // float f = 4.0F;
  
--        this.world.explode(this, this.locX(), this.e(0.0625D), this.locZ(), 4.0F, Explosion.Effect.BREAK);
+-        this.level.explode(this, this.locX(), this.e(0.0625D), this.locZ(), 4.0F, Explosion.Effect.BREAK);
 +        ExplosionPrimeEvent event = new ExplosionPrimeEvent((org.bukkit.entity.Explosive) this.getBukkitEntity());
-+        this.world.getServer().getPluginManager().callEvent(event);
++        this.level.getServer().getPluginManager().callEvent(event);
 +
 +        if (!event.isCancelled()) {
-+            this.world.createExplosion(this, this.locX(), this.e(0.0625D), this.locZ(), event.getRadius(), event.getFire(), Explosion.Effect.BREAK);
++            this.level.createExplosion(this, this.locX(), this.e(0.0625D), this.locZ(), event.getRadius(), event.getFire(), Explosion.Effect.BREAK);
 +        }
 +        // CraftBukkit end
      }

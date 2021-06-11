@@ -35,21 +35,21 @@ public class CraftCampfire extends CraftBlockEntityState<TileEntityCampfire> imp
 
     @Override
     public int getCookTime(int index) {
-        return getSnapshot().cookingTimes[index];
+        return getSnapshot().cookingProgress[index];
     }
 
     @Override
     public void setCookTime(int index, int cookTime) {
-        getSnapshot().cookingTimes[index] = cookTime;
+        getSnapshot().cookingProgress[index] = cookTime;
     }
 
     @Override
     public int getCookTimeTotal(int index) {
-        return getSnapshot().cookingTotalTimes[index];
+        return getSnapshot().cookingTime[index];
     }
 
     @Override
     public void setCookTimeTotal(int index, int cookTimeTotal) {
-        getSnapshot().cookingTotalTimes[index] = cookTimeTotal;
+        getSnapshot().cookingTime[index] = cookTimeTotal;
     }
 }

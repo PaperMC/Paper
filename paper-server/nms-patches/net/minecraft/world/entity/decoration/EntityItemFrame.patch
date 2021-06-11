@@ -1,11 +1,11 @@
 --- a/net/minecraft/world/entity/decoration/EntityItemFrame.java
 +++ b/net/minecraft/world/entity/decoration/EntityItemFrame.java
-@@ -83,16 +83,27 @@
+@@ -91,16 +91,27 @@
      @Override
      protected void updateBoundingBox() {
          if (this.direction != null) {
 +            // CraftBukkit start code moved in to calculateBoundingBox
-+            this.a(calculateBoundingBox(this, this.blockPosition, this.direction, this.getHangingWidth(), this.getHangingHeight()));
++            this.a(calculateBoundingBox(this, this.pos, this.direction, this.getHangingWidth(), this.getHangingHeight()));
 +            // CraftBukkit end
 +        }
 +    }
@@ -14,9 +14,9 @@
 +    public static AxisAlignedBB calculateBoundingBox(@Nullable Entity entity, BlockPosition blockPosition, EnumDirection direction, int width, int height) {
 +        {
              double d0 = 0.46875D;
--            double d1 = (double) this.blockPosition.getX() + 0.5D - (double) this.direction.getAdjacentX() * 0.46875D;
--            double d2 = (double) this.blockPosition.getY() + 0.5D - (double) this.direction.getAdjacentY() * 0.46875D;
--            double d3 = (double) this.blockPosition.getZ() + 0.5D - (double) this.direction.getAdjacentZ() * 0.46875D;
+-            double d1 = (double) this.pos.getX() + 0.5D - (double) this.direction.getAdjacentX() * 0.46875D;
+-            double d2 = (double) this.pos.getY() + 0.5D - (double) this.direction.getAdjacentY() * 0.46875D;
+-            double d3 = (double) this.pos.getZ() + 0.5D - (double) this.direction.getAdjacentZ() * 0.46875D;
 -
 -            this.setPositionRaw(d1, d2, d3);
 -            double d4 = (double) this.getHangingWidth();
@@ -37,7 +37,7 @@
  
              switch (enumdirection_enumaxis) {
                  case X:
-@@ -108,9 +119,10 @@
+@@ -116,9 +127,10 @@
              d4 /= 32.0D;
              d5 /= 32.0D;
              d6 /= 32.0D;
@@ -49,19 +49,19 @@
  
      @Override
      public boolean survives() {
-@@ -160,6 +172,11 @@
+@@ -168,6 +180,11 @@
              return false;
          } else if (!damagesource.isExplosion() && !this.getItem().isEmpty()) {
-             if (!this.world.isClientSide) {
+             if (!this.level.isClientSide) {
 +                // CraftBukkit start - fire EntityDamageEvent
-+                if (org.bukkit.craftbukkit.event.CraftEventFactory.handleNonLivingEntityDamageEvent(this, damagesource, f, false) || this.dead) {
++                if (org.bukkit.craftbukkit.event.CraftEventFactory.handleNonLivingEntityDamageEvent(this, damagesource, f, false) || this.isRemoved()) {
 +                    return true;
 +                }
 +                // CraftBukkit end
                  this.b(damagesource.getEntity(), false);
-                 this.playSound(SoundEffects.ENTITY_ITEM_FRAME_REMOVE_ITEM, 1.0F, 1.0F);
+                 this.playSound(this.h(), 1.0F, 1.0F);
              }
-@@ -247,6 +264,12 @@
+@@ -277,6 +294,12 @@
      }
  
      public void setItem(ItemStack itemstack, boolean flag) {
@@ -74,12 +74,12 @@
          if (!itemstack.isEmpty()) {
              itemstack = itemstack.cloneItemStack();
              itemstack.setCount(1);
-@@ -254,7 +277,7 @@
+@@ -284,7 +307,7 @@
          }
  
-         this.getDataWatcher().set(EntityItemFrame.ITEM, itemstack);
+         this.getDataWatcher().set(EntityItemFrame.DATA_ITEM, itemstack);
 -        if (!itemstack.isEmpty()) {
 +        if (!itemstack.isEmpty() && playSound) { // CraftBukkit
-             this.playSound(SoundEffects.ENTITY_ITEM_FRAME_ADD_ITEM, 1.0F, 1.0F);
+             this.playSound(this.l(), 1.0F, 1.0F);
          }
  

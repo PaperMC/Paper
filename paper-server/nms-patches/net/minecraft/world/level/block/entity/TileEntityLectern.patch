@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/block/entity/TileEntityLectern.java
 +++ b/net/minecraft/world/level/block/entity/TileEntityLectern.java
-@@ -27,9 +27,67 @@
+@@ -27,13 +27,71 @@
  import net.minecraft.world.phys.Vec2F;
  import net.minecraft.world.phys.Vec3D;
  
@@ -18,9 +18,14 @@
 +// CraftBukkit end
 +
 +public class TileEntityLectern extends TileEntity implements Clearable, ITileInventory, ICommandListener { // CraftBukkit - ICommandListener
-+
+ 
+     public static final int DATA_PAGE = 0;
+     public static final int NUM_DATA = 1;
+     public static final int SLOT_BOOK = 0;
+     public static final int NUM_SLOTS = 1;
+-    public final IInventory bookAccess = new IInventory() {
 +    // CraftBukkit start - add fields and methods
-+    public final IInventory inventory = new LecternInventory();
++    public final IInventory bookAccess = new LecternInventory();
 +    public class LecternInventory implements IInventory {
 +
 +        public List<HumanEntity> transaction = new ArrayList<>();
@@ -53,7 +58,7 @@
 +
 +        @Override
 +        public Location getLocation() {
-+            return new Location(world.getWorld(), position.getX(), position.getY(), position.getZ());
++            return new Location(level.getWorld(), worldPosition.getX(), worldPosition.getY(), worldPosition.getZ());
 +        }
 +
 +        @Override
@@ -65,12 +70,11 @@
 +            return TileEntityLectern.this;
 +        }
 +        // CraftBukkit end
- 
--    public final IInventory inventory = new IInventory() {
++
          @Override
          public int getSize() {
              return 1;
-@@ -74,11 +132,20 @@
+@@ -78,11 +136,20 @@
          }
  
          @Override
@@ -93,16 +97,16 @@
          }
  
          @Override
-@@ -160,7 +227,7 @@
+@@ -162,7 +229,7 @@
          if (j != this.page) {
              this.page = j;
              this.update();
 -            BlockLectern.a(this.getWorld(), this.getPosition(), this.getBlock());
-+            if (this.world != null) BlockLectern.a(this.getWorld(), this.getPosition(), this.getBlock()); // CraftBukkit
++            if (this.level != null) BlockLectern.a(this.getWorld(), this.getPosition(), this.getBlock()); // CraftBukkit
          }
  
      }
-@@ -183,6 +250,32 @@
+@@ -185,6 +252,32 @@
          return itemstack;
      }
  
@@ -135,22 +139,22 @@
      private CommandListenerWrapper a(@Nullable EntityHuman entityhuman) {
          String s;
          Object object;
-@@ -197,7 +290,8 @@
+@@ -199,7 +292,8 @@
  
-         Vec3D vec3d = Vec3D.a((BaseBlockPosition) this.position);
+         Vec3D vec3d = Vec3D.a((BaseBlockPosition) this.worldPosition);
  
--        return new CommandListenerWrapper(ICommandListener.DUMMY, vec3d, Vec2F.a, (WorldServer) this.world, 2, s, (IChatBaseComponent) object, this.world.getMinecraftServer(), entityhuman);
+-        return new CommandListenerWrapper(ICommandListener.NULL, vec3d, Vec2F.ZERO, (WorldServer) this.level, 2, s, (IChatBaseComponent) object, this.level.getMinecraftServer(), entityhuman);
 +        // CraftBukkit - this
-+        return new CommandListenerWrapper(this, vec3d, Vec2F.a, (WorldServer) this.world, 2, s, (IChatBaseComponent) object, this.world.getMinecraftServer(), entityhuman);
++        return new CommandListenerWrapper(this, vec3d, Vec2F.ZERO, (WorldServer) this.level, 2, s, (IChatBaseComponent) object, this.level.getMinecraftServer(), entityhuman);
      }
  
      @Override
-@@ -236,7 +330,7 @@
+@@ -238,7 +332,7 @@
  
      @Override
      public Container createMenu(int i, PlayerInventory playerinventory, EntityHuman entityhuman) {
--        return new ContainerLectern(i, this.inventory, this.containerProperties);
-+        return new ContainerLectern(i, this.inventory, this.containerProperties, playerinventory); // CraftBukkit
+-        return new ContainerLectern(i, this.bookAccess, this.dataAccess);
++        return new ContainerLectern(i, this.bookAccess, this.dataAccess, playerinventory); // CraftBukkit
      }
  
      @Override

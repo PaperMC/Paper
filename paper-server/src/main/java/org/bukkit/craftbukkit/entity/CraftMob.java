@@ -53,16 +53,16 @@ public abstract class CraftMob extends CraftLivingEntity implements Mob {
 
     @Override
     public void setLootTable(LootTable table) {
-        getHandle().lootTableKey = (table == null) ? null : CraftNamespacedKey.toMinecraft(table.getKey());
+        getHandle().lootTable = (table == null) ? null : CraftNamespacedKey.toMinecraft(table.getKey());
     }
 
     @Override
     public LootTable getLootTable() {
-        if (getHandle().lootTableKey == null) {
-            getHandle().lootTableKey = getHandle().getLootTable();
+        if (getHandle().lootTable == null) {
+            getHandle().lootTable = getHandle().getDefaultLootTable();
         }
 
-        NamespacedKey key = CraftNamespacedKey.fromMinecraft(getHandle().lootTableKey);
+        NamespacedKey key = CraftNamespacedKey.fromMinecraft(getHandle().lootTable);
         return Bukkit.getLootTable(key);
     }
 

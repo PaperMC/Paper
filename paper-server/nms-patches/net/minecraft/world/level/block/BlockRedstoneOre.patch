@@ -11,7 +11,7 @@
 +
  public class BlockRedstoneOre extends Block {
  
-     public static final BlockStateBoolean a = BlockRedstoneTorch.LIT;
+     public static final BlockStateBoolean LIT = BlockRedstoneTorch.LIT;
 @@ -32,14 +37,30 @@
  
      @Override
@@ -22,24 +22,24 @@
      }
  
      @Override
-     public void stepOn(World world, BlockPosition blockposition, Entity entity) {
--        interact(world.getType(blockposition), world, blockposition);
--        super.stepOn(world, blockposition, entity);
+     public void stepOn(World world, BlockPosition blockposition, IBlockData iblockdata, Entity entity) {
+-        interact(iblockdata, world, blockposition);
+-        super.stepOn(world, blockposition, iblockdata, entity);
 +        // CraftBukkit start
-+        // interact(world.getType(blockposition), world, blockposition);
-+        // super.stepOn(world, blockposition, entity);
++        // interact(iblockdata, world, blockposition);
++        // super.stepOn(world, blockposition, iblockdata, entity);
 +        if (entity instanceof EntityHuman) {
 +            org.bukkit.event.player.PlayerInteractEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerInteractEvent((EntityHuman) entity, org.bukkit.event.block.Action.PHYSICAL, blockposition, null, null, null);
 +            if (!event.isCancelled()) {
 +                interact(world.getType(blockposition), world, blockposition, entity); // add entity
-+                super.stepOn(world, blockposition, entity);
++                super.stepOn(world, blockposition, iblockdata, entity);
 +            }
 +        } else {
 +            EntityInteractEvent event = new EntityInteractEvent(entity.getBukkitEntity(), world.getWorld().getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ()));
 +            world.getServer().getPluginManager().callEvent(event);
 +            if (!event.isCancelled()) {
 +                interact(world.getType(blockposition), world, blockposition, entity); // add entity
-+                super.stepOn(world, blockposition, entity);
++                super.stepOn(world, blockposition, iblockdata, entity);
 +            }
 +        }
 +        // CraftBukkit end
@@ -62,25 +62,25 @@
 -    private static void interact(IBlockData iblockdata, World world, BlockPosition blockposition) {
 +    private static void interact(IBlockData iblockdata, World world, BlockPosition blockposition, Entity entity) { // CraftBukkit - add Entity
          playEffect(world, blockposition);
-         if (!(Boolean) iblockdata.get(BlockRedstoneOre.a)) {
+         if (!(Boolean) iblockdata.get(BlockRedstoneOre.LIT)) {
 +            // CraftBukkit start
-+            if (CraftEventFactory.callEntityChangeBlockEvent(entity, blockposition, iblockdata.set(BlockRedstoneOre.a, true)).isCancelled()) {
++            if (CraftEventFactory.callEntityChangeBlockEvent(entity, blockposition, iblockdata.set(BlockRedstoneOre.LIT, true)).isCancelled()) {
 +                return;
 +            }
 +            // CraftBukkit end
-             world.setTypeAndData(blockposition, (IBlockData) iblockdata.set(BlockRedstoneOre.a, true), 3);
+             world.setTypeAndData(blockposition, (IBlockData) iblockdata.set(BlockRedstoneOre.LIT, true), 3);
          }
  
 @@ -71,6 +97,11 @@
      @Override
      public void tick(IBlockData iblockdata, WorldServer worldserver, BlockPosition blockposition, Random random) {
-         if ((Boolean) iblockdata.get(BlockRedstoneOre.a)) {
+         if ((Boolean) iblockdata.get(BlockRedstoneOre.LIT)) {
 +            // CraftBukkit start
-+            if (CraftEventFactory.callBlockFadeEvent(worldserver, blockposition, iblockdata.set(BlockRedstoneOre.a, false)).isCancelled()) {
++            if (CraftEventFactory.callBlockFadeEvent(worldserver, blockposition, iblockdata.set(BlockRedstoneOre.LIT, false)).isCancelled()) {
 +                return;
 +            }
 +            // CraftBukkit end
-             worldserver.setTypeAndData(blockposition, (IBlockData) iblockdata.set(BlockRedstoneOre.a, false), 3);
+             worldserver.setTypeAndData(blockposition, (IBlockData) iblockdata.set(BlockRedstoneOre.LIT, false), 3);
          }
  
 @@ -79,12 +110,25 @@
@@ -108,4 +108,4 @@
 +        // CraftBukkit end
      }
  
-     private static void playEffect(World world, BlockPosition blockposition) {
+     @Override

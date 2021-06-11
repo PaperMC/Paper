@@ -3,19 +3,19 @@
  */
 package org.bukkit.craftbukkit.block.impl;
 
-public final class CraftTallSeaGrass extends org.bukkit.craftbukkit.block.data.CraftBlockData implements org.bukkit.block.data.Bisected {
+public final class CraftTallSeagrass extends org.bukkit.craftbukkit.block.data.CraftBlockData implements org.bukkit.block.data.Bisected {
 
-    public CraftTallSeaGrass() {
+    public CraftTallSeagrass() {
         super();
     }
 
-    public CraftTallSeaGrass(net.minecraft.world.level.block.state.IBlockData state) {
+    public CraftTallSeagrass(net.minecraft.world.level.block.state.IBlockData state) {
         super(state);
     }
 
     // org.bukkit.craftbukkit.block.data.CraftBisected
 
-    private static final net.minecraft.world.level.block.state.properties.BlockStateEnum<?> HALF = getEnum(net.minecraft.world.level.block.BlockTallSeaGrass.class, "half");
+    private static final net.minecraft.world.level.block.state.properties.BlockStateEnum<?> HALF = getEnum(net.minecraft.world.level.block.TallSeagrassBlock.class, "half");
 
     @Override
     public org.bukkit.block.data.Bisected.Half getHalf() {

@@ -71,7 +71,7 @@ public class CraftFishHook extends CraftProjectile implements FishHook {
         EntityFishingHook hook = getHandle();
 
         if (this.biteChance == -1) {
-            if (hook.world.isRainingAt(new BlockPosition(MathHelper.floor(hook.locX()), MathHelper.floor(hook.locY()) + 1, MathHelper.floor(hook.locZ())))) {
+            if (hook.level.isRainingAt(new BlockPosition(MathHelper.floor(hook.locX()), MathHelper.floor(hook.locY()) + 1, MathHelper.floor(hook.locZ())))) {
                 return 1 / 300.0;
             }
             return 1 / 500.0;
@@ -92,7 +92,7 @@ public class CraftFishHook extends CraftProjectile implements FishHook {
 
     @Override
     public Entity getHookedEntity() {
-        net.minecraft.world.entity.Entity hooked = getHandle().hooked;
+        net.minecraft.world.entity.Entity hooked = getHandle().hookedIn;
         return (hooked != null) ? hooked.getBukkitEntity() : null;
     }
 
@@ -100,23 +100,23 @@ public class CraftFishHook extends CraftProjectile implements FishHook {
     public void setHookedEntity(Entity entity) {
         EntityFishingHook hook = getHandle();
 
-        hook.hooked = (entity != null) ? ((CraftEntity) entity).getHandle() : null;
-        hook.getDataWatcher().set(EntityFishingHook.HOOKED_ENTITY, hook.hooked != null ? hook.hooked.getId() + 1 : 0);
+        hook.hookedIn = (entity != null) ? ((CraftEntity) entity).getHandle() : null;
+        hook.getDataWatcher().set(EntityFishingHook.DATA_HOOKED_ENTITY, hook.hookedIn != null ? hook.hookedIn.getId() + 1 : 0);
     }
 
     @Override
     public boolean pullHookedEntity() {
         EntityFishingHook hook = getHandle();
-        if (hook.hooked == null) {
+        if (hook.hookedIn == null) {
             return false;
         }
 
-        hook.reel();
+        hook.reel(hook.hookedIn);
         return true;
     }
 
     @Override
     public HookState getState() {
-        return HookState.values()[getHandle().hookState.ordinal()];
+        return HookState.values()[getHandle().currentState.ordinal()];
     }
 }

@@ -19,23 +19,23 @@ public abstract class CraftContainer<T extends TileEntityContainer> extends Craf
 
     @Override
     public boolean isLocked() {
-        return !this.getSnapshot().chestLock.key.isEmpty();
+        return !this.getSnapshot().lockKey.key.isEmpty();
     }
 
     @Override
     public String getLock() {
-        return this.getSnapshot().chestLock.key;
+        return this.getSnapshot().lockKey.key;
     }
 
     @Override
     public void setLock(String key) {
-        this.getSnapshot().chestLock = (key == null) ? ChestLock.a : new ChestLock(key);
+        this.getSnapshot().lockKey = (key == null) ? ChestLock.NO_LOCK : new ChestLock(key);
     }
 
     @Override
     public String getCustomName() {
         T container = this.getSnapshot();
-        return container.customName != null ? CraftChatMessage.fromComponent(container.getCustomName()) : null;
+        return container.name != null ? CraftChatMessage.fromComponent(container.getCustomName()) : null;
     }
 
     @Override
@@ -47,7 +47,7 @@ public abstract class CraftContainer<T extends TileEntityContainer> extends Craf
     public void applyTo(T container) {
         super.applyTo(container);
 
-        if (this.getSnapshot().customName == null) {
+        if (this.getSnapshot().name == null) {
             container.setCustomName(null);
         }
     }

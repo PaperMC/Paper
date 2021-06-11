@@ -12,38 +12,38 @@
 +
  public class BlockTurtleEgg extends Block {
  
-     private static final VoxelShape c = Block.a(3.0D, 0.0D, 3.0D, 12.0D, 7.0D, 12.0D);
+     public static final int MAX_HATCH_LEVEL = 2;
 @@ -62,6 +68,19 @@
-                 IBlockData iblockdata = world.getType(blockposition);
- 
-                 if (iblockdata.a(Blocks.TURTLE_EGG)) {
-+                    // CraftBukkit start - Step on eggs
-+                    org.bukkit.event.Cancellable cancellable;
-+                    if (entity instanceof EntityHuman) {
-+                        cancellable = CraftEventFactory.callPlayerInteractEvent((EntityHuman) entity, org.bukkit.event.block.Action.PHYSICAL, blockposition, null, null, null);
-+                    } else {
-+                        cancellable = new EntityInteractEvent(entity.getBukkitEntity(), CraftBlock.at(world, blockposition));
-+                        world.getServer().getPluginManager().callEvent((EntityInteractEvent) cancellable);
-+                    }
+     private void a(World world, IBlockData iblockdata, BlockPosition blockposition, Entity entity, int i) {
+         if (this.a(world, entity)) {
+             if (!world.isClientSide && world.random.nextInt(i) == 0 && iblockdata.a(Blocks.TURTLE_EGG)) {
++                // CraftBukkit start - Step on eggs
++                org.bukkit.event.Cancellable cancellable;
++                if (entity instanceof EntityHuman) {
++                    cancellable = CraftEventFactory.callPlayerInteractEvent((EntityHuman) entity, org.bukkit.event.block.Action.PHYSICAL, blockposition, null, null, null);
++                } else {
++                    cancellable = new EntityInteractEvent(entity.getBukkitEntity(), CraftBlock.at(world, blockposition));
++                    world.getServer().getPluginManager().callEvent((EntityInteractEvent) cancellable);
++                }
 +
-+                    if (cancellable.isCancelled()) {
-+                        return;
-+                    }
-+                    // CraftBukkit end
-                     this.a(world, blockposition, iblockdata);
-                 }
-             }
-@@ -88,9 +107,19 @@
-             int i = (Integer) iblockdata.get(BlockTurtleEgg.a);
- 
-             if (i < 2) {
-+                // CraftBukkit start - Call BlockGrowEvent
-+                if (!CraftEventFactory.handleBlockGrowEvent(worldserver, blockposition, iblockdata.set(BlockTurtleEgg.a, i + 1), 2)) {
++                if (cancellable.isCancelled()) {
 +                    return;
 +                }
 +                // CraftBukkit end
-                 worldserver.playSound((EntityHuman) null, blockposition, SoundEffects.ENTITY_TURTLE_EGG_CRACK, SoundCategory.BLOCKS, 0.7F, 0.9F + random.nextFloat() * 0.2F);
--                worldserver.setTypeAndData(blockposition, (IBlockData) iblockdata.set(BlockTurtleEgg.a, i + 1), 2);
+                 this.a(world, blockposition, iblockdata);
+             }
+ 
+@@ -87,9 +106,19 @@
+             int i = (Integer) iblockdata.get(BlockTurtleEgg.HATCH);
+ 
+             if (i < 2) {
++                // CraftBukkit start - Call BlockGrowEvent
++                if (!CraftEventFactory.handleBlockGrowEvent(worldserver, blockposition, iblockdata.set(BlockTurtleEgg.HATCH, i + 1), 2)) {
++                    return;
++                }
++                // CraftBukkit end
+                 worldserver.playSound((EntityHuman) null, blockposition, SoundEffects.TURTLE_EGG_CRACK, SoundCategory.BLOCKS, 0.7F, 0.9F + random.nextFloat() * 0.2F);
+-                worldserver.setTypeAndData(blockposition, (IBlockData) iblockdata.set(BlockTurtleEgg.HATCH, i + 1), 2);
 +                // worldserver.setTypeAndData(blockposition, (IBlockData) iblockdata.set(BlockTurtleEgg.a, i + 1), 2); // CraftBukkit - handled above
              } else {
 +                // CraftBukkit start - Call BlockFadeEvent
@@ -51,10 +51,10 @@
 +                    return;
 +                }
 +                // CraftBukkit end
-                 worldserver.playSound((EntityHuman) null, blockposition, SoundEffects.ENTITY_TURTLE_EGG_HATCH, SoundCategory.BLOCKS, 0.7F, 0.9F + random.nextFloat() * 0.2F);
+                 worldserver.playSound((EntityHuman) null, blockposition, SoundEffects.TURTLE_EGG_HATCH, SoundCategory.BLOCKS, 0.7F, 0.9F + random.nextFloat() * 0.2F);
                  worldserver.a(blockposition, false);
  
-@@ -101,7 +130,7 @@
+@@ -100,7 +129,7 @@
                      entityturtle.setAgeRaw(-24000);
                      entityturtle.setHomePos(blockposition);
                      entityturtle.setPositionRotation((double) blockposition.getX() + 0.3D + (double) j * 0.2D, (double) blockposition.getY(), (double) blockposition.getZ() + 0.3D, 0.0F, 0.0F);

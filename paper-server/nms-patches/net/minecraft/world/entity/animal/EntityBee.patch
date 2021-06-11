@@ -1,24 +1,24 @@
 --- a/net/minecraft/world/entity/animal/EntityBee.java
 +++ b/net/minecraft/world/entity/animal/EntityBee.java
-@@ -211,7 +211,7 @@
+@@ -243,7 +243,7 @@
                  }
  
                  if (b0 > 0) {
--                    ((EntityLiving) entity).addEffect(new MobEffect(MobEffects.POISON, b0 * 20, 0));
-+                    ((EntityLiving) entity).addEffect(new MobEffect(MobEffects.POISON, b0 * 20, 0), org.bukkit.event.entity.EntityPotionEffectEvent.Cause.ATTACK); // CraftBukkit
+-                    ((EntityLiving) entity).addEffect(new MobEffect(MobEffects.POISON, b0 * 20, 0), this);
++                    ((EntityLiving) entity).addEffect(new MobEffect(MobEffects.POISON, b0 * 20, 0), this, org.bukkit.event.entity.EntityPotionEffectEvent.Cause.ATTACK); // CraftBukkit
                  }
              }
  
-@@ -586,11 +586,15 @@
+@@ -642,11 +642,15 @@
+         if (this.isInvulnerable(damagesource)) {
+             return false;
          } else {
-             Entity entity = damagesource.getEntity();
- 
--            if (!this.world.isClientSide) {
+-            if (!this.level.isClientSide) {
 +            // CraftBukkit start
 +            boolean result = super.damageEntity(damagesource, f);
 +
-+            if (result && !this.world.isClientSide) {
-                 this.bC.l();
++            if (result && !this.level.isClientSide) {
+                 this.beePollinateGoal.l();
              }
  
 -            return super.damageEntity(damagesource, f);
@@ -27,75 +27,30 @@
          }
      }
  
-@@ -611,7 +615,7 @@
-     class d extends EntityBee.a {
- 
-         private d() {
--            super(null);
-+            super(); // CraftBukkit - decompile error
-         }
- 
-         @Override
-@@ -671,7 +675,7 @@
-     class g extends EntityBee.a {
- 
-         private g() {
--            super(null);
-+            super(); // CraftBukkit - decompile error
-         }
- 
-         @Override
-@@ -720,7 +724,7 @@
+@@ -1216,7 +1220,7 @@
                              }
                          }
  
 -                        if (flag) {
 +                        if (flag && !org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(EntityBee.this, blockposition, iblockdata.set(blockstateinteger, (Integer) iblockdata.get(blockstateinteger) + 1)).isCancelled()) { // Spigot
-                             EntityBee.this.world.triggerEffect(2005, blockposition, 0);
-                             EntityBee.this.world.setTypeUpdate(blockposition, (IBlockData) iblockdata.set(blockstateinteger, (Integer) iblockdata.get(blockstateinteger) + 1));
-                             EntityBee.this.fi();
-@@ -735,7 +739,7 @@
-     class i extends EntityBee.a {
- 
-         private i() {
--            super(null);
-+            super(); // CraftBukkit - decompile error
-         }
- 
-         @Override
-@@ -799,7 +803,7 @@
-         private int h = 0;
- 
-         k() {
--            super(null);
-+            super(); // CraftBukkit - decompile error
-             this.a(EnumSet.of(PathfinderGoal.Type.MOVE));
-         }
- 
-@@ -983,7 +987,7 @@
-         private int c;
- 
-         f() {
--            super(null);
-+            super(); // CraftBukkit - decompile error
-             this.c = EntityBee.this.world.random.nextInt(10);
-             this.a(EnumSet.of(PathfinderGoal.Type.MOVE));
-         }
-@@ -1041,7 +1045,7 @@
-         private int f;
- 
-         e() {
--            super(null);
-+            super(); // CraftBukkit - decompile error
-             this.c = EntityBee.this.world.random.nextInt(10);
-             this.d = Lists.newArrayList();
-             this.e = null;
-@@ -1261,7 +1265,7 @@
+                             EntityBee.this.level.triggerEffect(2005, blockposition, 0);
+                             EntityBee.this.level.setTypeUpdate(blockposition, (IBlockData) iblockdata.set(blockstateinteger, (Integer) iblockdata.get(blockstateinteger) + 1));
+                             EntityBee.this.fR();
+@@ -1289,7 +1293,7 @@
          @Override
          protected void a(EntityInsentient entityinsentient, EntityLiving entityliving) {
-             if (entityinsentient instanceof EntityBee && this.e.hasLineOfSight(entityliving)) {
+             if (entityinsentient instanceof EntityBee && this.mob.hasLineOfSight(entityliving)) {
 -                entityinsentient.setGoalTarget(entityliving);
 +                entityinsentient.setGoalTarget(entityliving, org.bukkit.event.entity.EntityTargetEvent.TargetReason.TARGET_ATTACKED_ENTITY, true); // CraftBukkit - reason
              }
  
          }
+@@ -1298,7 +1302,7 @@
+     private static class c extends PathfinderGoalNearestAttackableTarget<EntityHuman> {
+ 
+         c(EntityBee entitybee) {
+-            Objects.requireNonNull(entitybee);
++            // Objects.requireNonNull(entitybee); // CraftBukkit - decompile error
+             super(entitybee, EntityHuman.class, 10, true, false, entitybee::a_);
+         }
+ 

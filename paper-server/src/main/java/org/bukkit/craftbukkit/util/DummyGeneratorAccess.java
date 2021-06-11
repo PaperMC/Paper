@@ -4,8 +4,10 @@ import java.util.List;
 import java.util.Random;
 import java.util.function.Predicate;
 import net.minecraft.core.BlockPosition;
+import net.minecraft.core.EnumDirection;
 import net.minecraft.core.IRegistryCustom;
 import net.minecraft.core.particles.ParticleParam;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.WorldServer;
 import net.minecraft.sounds.SoundCategory;
 import net.minecraft.sounds.SoundEffect;
@@ -25,6 +27,8 @@ import net.minecraft.world.level.chunk.ChunkStatus;
 import net.minecraft.world.level.chunk.IChunkAccess;
 import net.minecraft.world.level.chunk.IChunkProvider;
 import net.minecraft.world.level.dimension.DimensionManager;
+import net.minecraft.world.level.entity.EntityTypeTest;
+import net.minecraft.world.level.gameevent.GameEvent;
 import net.minecraft.world.level.levelgen.HeightMap;
 import net.minecraft.world.level.lighting.LightEngine;
 import net.minecraft.world.level.material.Fluid;
@@ -60,6 +64,11 @@ public class DummyGeneratorAccess implements GeneratorAccess {
     }
 
     @Override
+    public MinecraftServer getMinecraftServer() {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
     public IChunkProvider getChunkProvider() {
         throw new UnsupportedOperationException("Not supported yet.");
     }
@@ -81,6 +90,11 @@ public class DummyGeneratorAccess implements GeneratorAccess {
 
     @Override
     public void a(EntityHuman entityhuman, int i, BlockPosition blockposition, int j) {
+        // Used by PowderSnowBlock.removeFluid
+    }
+
+    @Override
+    public void a(Entity entity, GameEvent gameevent, BlockPosition blockposition) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
@@ -90,7 +104,7 @@ public class DummyGeneratorAccess implements GeneratorAccess {
     }
 
     @Override
-    public IRegistryCustom r() {
+    public IRegistryCustom t() {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
@@ -100,7 +114,7 @@ public class DummyGeneratorAccess implements GeneratorAccess {
     }
 
     @Override
-    public <T extends Entity> List<T> a(Class<? extends T> type, AxisAlignedBB aabb, Predicate<? super T> prdct) {
+    public <T extends Entity> List<T> a(EntityTypeTest<Entity, T> ett, AxisAlignedBB aabb, Predicate<? super T> prdct) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
@@ -120,12 +134,12 @@ public class DummyGeneratorAccess implements GeneratorAccess {
     }
 
     @Override
-    public int c() {
+    public int n_() {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
     @Override
-    public BiomeManager d() {
+    public BiomeManager r_() {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
@@ -135,8 +149,8 @@ public class DummyGeneratorAccess implements GeneratorAccess {
     }
 
     @Override
-    public boolean s_() {
-        throw new UnsupportedOperationException("Not supported yet.");
+    public boolean isClientSide() {
+        return false;
     }
 
     @Override
@@ -150,7 +164,12 @@ public class DummyGeneratorAccess implements GeneratorAccess {
     }
 
     @Override
-    public LightEngine e() {
+    public float a(EnumDirection ed, boolean bln) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public LightEngine k_() {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
@@ -176,6 +195,11 @@ public class DummyGeneratorAccess implements GeneratorAccess {
 
     @Override
     public boolean a(BlockPosition bp, Predicate<IBlockData> prdct) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public boolean b(BlockPosition bp, Predicate<Fluid> prdct) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 

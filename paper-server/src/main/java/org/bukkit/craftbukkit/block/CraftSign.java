@@ -29,8 +29,8 @@ public class CraftSign extends CraftBlockEntityState<TileEntitySign> implements 
         if (lines == null) {
             // Lazy initialization:
             TileEntitySign sign = this.getSnapshot();
-            lines = new String[sign.lines.length];
-            System.arraycopy(revertComponents(sign.lines), 0, lines, 0, lines.length);
+            lines = new String[sign.messages.length];
+            System.arraycopy(revertComponents(sign.messages), 0, lines, 0, lines.length);
             originalLines = new String[lines.length];
             System.arraycopy(lines, 0, originalLines, 0, originalLines.length);
         }
@@ -58,6 +58,16 @@ public class CraftSign extends CraftBlockEntityState<TileEntitySign> implements 
     }
 
     @Override
+    public boolean isGlowingText() {
+        return getSnapshot().hasGlowingText();
+    }
+
+    @Override
+    public void setGlowingText(boolean glowing) {
+        getSnapshot().setHasGlowingText(glowing);
+    }
+
+    @Override
     public DyeColor getColor() {
         return DyeColor.getByWoolData((byte) getSnapshot().getColor().getColorIndex());
     }
@@ -77,7 +87,7 @@ public class CraftSign extends CraftBlockEntityState<TileEntitySign> implements 
                 if (line.equals(originalLines[i])) {
                     continue; // The line contents are still the same, skip.
                 }
-                sign.lines[i] = CraftChatMessage.fromString(line)[0];
+                sign.a(i, CraftChatMessage.fromString(line)[0]);
             }
         }
     }

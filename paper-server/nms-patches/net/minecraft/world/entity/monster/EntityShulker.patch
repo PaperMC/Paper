@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/monster/EntityShulker.java
 +++ b/net/minecraft/world/entity/monster/EntityShulker.java
-@@ -47,11 +47,17 @@
+@@ -57,6 +57,12 @@
  import net.minecraft.world.phys.AxisAlignedBB;
  import net.minecraft.world.phys.Vec3D;
  
@@ -12,29 +12,23 @@
 +
  public class EntityShulker extends EntityGolem implements IMonster {
  
-     private static final UUID bp = UUID.fromString("7E0292F2-9434-48D5-A29F-9583AF7DF27F");
-     private static final AttributeModifier bq = new AttributeModifier(EntityShulker.bp, "Covered armor bonus", 20.0D, AttributeModifier.Operation.ADDITION);
--    protected static final DataWatcherObject<EnumDirection> b = DataWatcher.a(EntityShulker.class, DataWatcherRegistry.n);
-+    public static final DataWatcherObject<EnumDirection> b = DataWatcher.a(EntityShulker.class, DataWatcherRegistry.n); // PAIL protected -> public, rename ATTACH_FACE
-     protected static final DataWatcherObject<Optional<BlockPosition>> c = DataWatcher.a(EntityShulker.class, DataWatcherRegistry.m);
-     protected static final DataWatcherObject<Byte> d = DataWatcher.a(EntityShulker.class, DataWatcherRegistry.a);
-     public static final DataWatcherObject<Byte> COLOR = DataWatcher.a(EntityShulker.class, DataWatcherRegistry.a);
-@@ -71,7 +77,7 @@
+     private static final UUID COVERED_ARMOR_MODIFIER_UUID = UUID.fromString("7E0292F2-9434-48D5-A29F-9583AF7DF27F");
+@@ -95,7 +101,7 @@
          this.goalSelector.a(4, new EntityShulker.a());
-         this.goalSelector.a(7, new EntityShulker.e());
+         this.goalSelector.a(7, new EntityShulker.f());
          this.goalSelector.a(8, new PathfinderGoalRandomLookaround(this));
--        this.targetSelector.a(1, (new PathfinderGoalHurtByTarget(this, new Class[0])).a());
-+        this.targetSelector.a(1, (new PathfinderGoalHurtByTarget(this, new Class[0])).a(new Class[0])); // CraftBukkit - decompile error
-         this.targetSelector.a(2, new EntityShulker.d(this));
+-        this.targetSelector.a(1, (new PathfinderGoalHurtByTarget(this, new Class[]{this.getClass()})).a());
++        this.targetSelector.a(1, (new PathfinderGoalHurtByTarget(this, new Class[]{this.getClass()})).a(new Class[0])); // CraftBukkit - decompile error
+         this.targetSelector.a(2, new EntityShulker.e(this));
          this.targetSelector.a(3, new EntityShulker.c(this));
      }
-@@ -319,6 +325,16 @@
+@@ -405,6 +411,16 @@
                      EnumDirection enumdirection = this.g(blockposition1);
  
                      if (enumdirection != null) {
 +                        // CraftBukkit start
-+                        EntityTeleportEvent teleport = new EntityTeleportEvent(this.getBukkitEntity(), this.getBukkitEntity().getLocation(), new Location(this.world.getWorld(), blockposition1.getX(), blockposition1.getY(), blockposition1.getZ()));
-+                        this.world.getServer().getPluginManager().callEvent(teleport);
++                        EntityTeleportEvent teleport = new EntityTeleportEvent(this.getBukkitEntity(), this.getBukkitEntity().getLocation(), new Location(this.level.getWorld(), blockposition1.getX(), blockposition1.getY(), blockposition1.getZ()));
++                        this.level.getServer().getPluginManager().callEvent(teleport);
 +                        if (!teleport.isCancelled()) {
 +                            Location to = teleport.getTo();
 +                            blockposition1 = new BlockPosition(to.getX(), to.getY(), to.getZ());
@@ -42,14 +36,15 @@
 +                            return false;
 +                        }
 +                        // CraftBukkit end
-                         this.datawatcher.set(EntityShulker.b, enumdirection);
-                         this.playSound(SoundEffects.ENTITY_SHULKER_TELEPORT, 1.0F, 1.0F);
-                         this.datawatcher.set(EntityShulker.c, Optional.of(blockposition1));
-@@ -359,6 +375,7 @@
+                         this.decouple();
+                         this.setAttachFace(enumdirection);
+                         this.playSound(SoundEffects.SHULKER_TELEPORT, 1.0F, 1.0F);
+@@ -477,7 +493,7 @@
                  }
  
-                 this.g((double) blockposition.getX() + 0.5D, (double) blockposition.getY(), (double) blockposition.getZ() + 0.5D);
-+                if (valid) ((WorldServer) world).chunkCheck(this); // CraftBukkit
+                 entityshulker.d(vec3d);
+-                this.level.addEntity(entityshulker);
++                this.level.addEntity(entityshulker, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.BREEDING); // CraftBukkit - the mysteries of life
              }
          }
- 
+     }

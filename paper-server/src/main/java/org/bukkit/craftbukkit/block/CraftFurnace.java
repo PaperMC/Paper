@@ -34,33 +34,33 @@ public abstract class CraftFurnace<T extends TileEntityFurnace> extends CraftCon
 
     @Override
     public short getBurnTime() {
-        return (short) this.getSnapshot().burnTime;
+        return (short) this.getSnapshot().litTime;
     }
 
     @Override
     public void setBurnTime(short burnTime) {
-        this.getSnapshot().burnTime = burnTime;
+        this.getSnapshot().litTime = burnTime;
         // SPIGOT-844: Allow lighting and relighting using this API
         this.data = this.data.set(BlockFurnace.LIT, burnTime > 0);
     }
 
     @Override
     public short getCookTime() {
-        return (short) this.getSnapshot().cookTime;
+        return (short) this.getSnapshot().cookingProgress;
     }
 
     @Override
     public void setCookTime(short cookTime) {
-        this.getSnapshot().cookTime = cookTime;
+        this.getSnapshot().cookingProgress = cookTime;
     }
 
     @Override
     public int getCookTimeTotal() {
-        return this.getSnapshot().cookTimeTotal;
+        return this.getSnapshot().cookingTotalTime;
     }
 
     @Override
     public void setCookTimeTotal(int cookTimeTotal) {
-        this.getSnapshot().cookTimeTotal = cookTimeTotal;
+        this.getSnapshot().cookingTotalTime = cookTimeTotal;
     }
 }

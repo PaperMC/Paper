@@ -1,64 +1,64 @@
 --- a/net/minecraft/server/level/ChunkMapDistance.java
 +++ b/net/minecraft/server/level/ChunkMapDistance.java
-@@ -65,7 +65,7 @@
+@@ -73,7 +73,7 @@
          while (objectiterator.hasNext()) {
              Entry<ArraySetSorted<Ticket<?>>> entry = (Entry) objectiterator.next();
  
 -            if (((ArraySetSorted) entry.getValue()).removeIf((ticket) -> {
 +            if ((entry.getValue()).removeIf((ticket) -> { // CraftBukkit - decompile error
-                 return ticket.b(this.currentTick);
+                 return ticket.b(this.ticketTickCounter);
              })) {
-                 this.ticketLevelTracker.update(entry.getLongKey(), getLowestTicketLevel((ArraySetSorted) entry.getValue()), false);
-@@ -101,10 +101,25 @@
+                 this.ticketTracker.update(entry.getLongKey(), getLowestTicketLevel((ArraySetSorted) entry.getValue()), false);
+@@ -109,10 +109,25 @@
          }
  
-         if (!this.pendingChunkUpdates.isEmpty()) {
--            this.pendingChunkUpdates.forEach((playerchunk) -> {
+         if (!this.chunksToUpdateFutures.isEmpty()) {
+-            this.chunksToUpdateFutures.forEach((playerchunk) -> {
 +            // CraftBukkit start
 +            // Iterate pending chunk updates with protection against concurrent modification exceptions
-+            java.util.Iterator<PlayerChunk> iter = this.pendingChunkUpdates.iterator();
-+            int expectedSize = this.pendingChunkUpdates.size();
++            java.util.Iterator<PlayerChunk> iter = this.chunksToUpdateFutures.iterator();
++            int expectedSize = this.chunksToUpdateFutures.size();
 +            do {
 +                PlayerChunk playerchunk = iter.next();
 +                iter.remove();
 +                expectedSize--;
 +
-                 playerchunk.a(playerchunkmap);
+                 playerchunk.a(playerchunkmap, this.mainThreadExecutor);
 -            });
--            this.pendingChunkUpdates.clear();
+-            this.chunksToUpdateFutures.clear();
 +
 +                // Reset iterator if set was modified using add()
-+                if (this.pendingChunkUpdates.size() != expectedSize) {
-+                    expectedSize = this.pendingChunkUpdates.size();
-+                    iter = this.pendingChunkUpdates.iterator();
++                if (this.chunksToUpdateFutures.size() != expectedSize) {
++                    expectedSize = this.chunksToUpdateFutures.size();
++                    iter = this.chunksToUpdateFutures.iterator();
 +                }
 +            } while (iter.hasNext());
 +            // CraftBukkit end
 +
              return true;
          } else {
-             if (!this.l.isEmpty()) {
-@@ -140,23 +155,25 @@
+             if (!this.ticketsToRelease.isEmpty()) {
+@@ -148,23 +163,25 @@
          }
      }
  
--    private void addTicket(long i, Ticket<?> ticket) {
-+    private boolean addTicket(long i, Ticket<?> ticket) { // CraftBukkit - void -> boolean
+-    void addTicket(long i, Ticket<?> ticket) {
++    boolean addTicket(long i, Ticket<?> ticket) { // CraftBukkit - void -> boolean
          ArraySetSorted<Ticket<?>> arraysetsorted = this.e(i);
          int j = getLowestTicketLevel(arraysetsorted);
 -        Ticket<?> ticket1 = (Ticket) arraysetsorted.a((Object) ticket);
 +        Ticket<?> ticket1 = (Ticket) arraysetsorted.a(ticket); // CraftBukkit - decompile error
  
-         ticket1.a(this.currentTick);
+         ticket1.a(this.ticketTickCounter);
          if (ticket.b() < j) {
-             this.ticketLevelTracker.update(i, ticket.b(), true);
+             this.ticketTracker.update(i, ticket.b(), true);
          }
  
 +        return ticket == ticket1; // CraftBukkit
      }
  
--    private void removeTicket(long i, Ticket<?> ticket) {
-+    private boolean removeTicket(long i, Ticket<?> ticket) { // CraftBukkit - void -> boolean
+-    void removeTicket(long i, Ticket<?> ticket) {
++    boolean removeTicket(long i, Ticket<?> ticket) { // CraftBukkit - void -> boolean
          ArraySetSorted<Ticket<?>> arraysetsorted = this.e(i);
  
 +        boolean removed = false; // CraftBukkit
@@ -68,10 +68,10 @@
          }
  
          if (arraysetsorted.isEmpty()) {
-@@ -164,16 +181,29 @@
+@@ -172,16 +189,29 @@
          }
  
-         this.ticketLevelTracker.update(i, getLowestTicketLevel(arraysetsorted), false);
+         this.ticketTracker.update(i, getLowestTicketLevel(arraysetsorted), false);
 +        return removed; // CraftBukkit
      }
  
@@ -101,16 +101,16 @@
      }
  
      public <T> void addTicket(TicketType<T> tickettype, ChunkCoordIntPair chunkcoordintpair, int i, T t0) {
-@@ -216,6 +246,7 @@
+@@ -224,6 +254,7 @@
      public void b(SectionPosition sectionposition, EntityPlayer entityplayer) {
          long i = sectionposition.r().pair();
-         ObjectSet<EntityPlayer> objectset = (ObjectSet) this.c.get(i);
+         ObjectSet<EntityPlayer> objectset = (ObjectSet) this.playersPerChunk.get(i);
 +        if (objectset == null) return; // CraftBukkit - SPIGOT-6208
  
          objectset.remove(entityplayer);
          if (objectset.isEmpty()) {
-@@ -257,6 +288,26 @@
-         return this.i.a();
+@@ -300,6 +331,26 @@
+ 
      }
  
 +    // CraftBukkit start
@@ -122,7 +122,7 @@
 +            ArraySetSorted<Ticket<?>> tickets = entry.getValue();
 +            if (tickets.remove(target)) {
 +                // copied from removeTicket
-+                this.ticketLevelTracker.update(entry.getLongKey(), getLowestTicketLevel(tickets), false);
++                this.ticketTracker.update(entry.getLongKey(), getLowestTicketLevel(tickets), false);
 +
 +                // can't use entry after it's removed
 +                if (tickets.isEmpty()) {
@@ -133,6 +133,6 @@
 +    }
 +    // CraftBukkit end
 +
-     class a extends ChunkMap {
+     private class a extends ChunkMap {
  
          public a() {

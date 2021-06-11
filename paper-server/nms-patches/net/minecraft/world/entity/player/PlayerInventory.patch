@@ -1,7 +1,7 @@
 --- a/net/minecraft/world/entity/player/PlayerInventory.java
 +++ b/net/minecraft/world/entity/player/PlayerInventory.java
 @@ -26,6 +26,13 @@
- import net.minecraft.world.level.World;
+ import net.minecraft.world.item.ItemStack;
  import net.minecraft.world.level.block.state.IBlockData;
  
 +// CraftBukkit start
@@ -13,18 +13,18 @@
 +
  public class PlayerInventory implements IInventory, INamableTileEntity {
  
-     public final NonNullList<ItemStack> items;
-@@ -37,6 +44,54 @@
-     private ItemStack carried;
-     private int h;
+     public static final int POP_TIME_DURATION = 5;
+@@ -43,6 +50,54 @@
+     public final EntityHuman player;
+     private int timesChanged;
  
 +    // CraftBukkit start - add fields and methods
 +    public List<HumanEntity> transaction = new java.util.ArrayList<HumanEntity>();
 +    private int maxStack = MAX_STACK;
 +
 +    public List<ItemStack> getContents() {
-+        List<ItemStack> combined = new ArrayList<ItemStack>(items.size() + armor.size() + extraSlots.size());
-+        for (List<net.minecraft.world.item.ItemStack> sub : this.f) {
++        List<ItemStack> combined = new ArrayList<ItemStack>(items.size() + armor.size() + offhand.size());
++        for (List<net.minecraft.world.item.ItemStack> sub : this.compartments) {
 +            combined.addAll(sub);
 +        }
 +
@@ -67,10 +67,10 @@
 +    // CraftBukkit end
 +
      public PlayerInventory(EntityHuman entityhuman) {
-         this.items = NonNullList.a(36, ItemStack.b);
-         this.armor = NonNullList.a(4, ItemStack.b);
-@@ -62,6 +117,28 @@
-         return itemstack.getItem() == itemstack1.getItem() && ItemStack.equals(itemstack, itemstack1);
+         this.items = NonNullList.a(36, ItemStack.EMPTY);
+         this.armor = NonNullList.a(4, ItemStack.EMPTY);
+@@ -63,6 +118,28 @@
+         return !itemstack.isEmpty() && ItemStack.e(itemstack, itemstack1) && itemstack.isStackable() && itemstack.getCount() < itemstack.getMaxStackSize() && itemstack.getCount() < this.getMaxStackSize();
      }
  
 +    // CraftBukkit start - Watch method above! :D
@@ -98,26 +98,3 @@
      public int getFirstEmptySlotIndex() {
          for (int i = 0; i < this.items.size(); ++i) {
              if (((ItemStack) this.items.get(i)).isEmpty()) {
-@@ -501,8 +578,9 @@
-                 ItemStack itemstack = (ItemStack) this.armor.get(i);
- 
-                 if ((!damagesource.isFire() || !itemstack.getItem().u()) && itemstack.getItem() instanceof ItemArmor) {
-+                    int finalI = i; // CraftBukkit - decompile error
-                     itemstack.damage((int) f, this.player, (entityhuman) -> {
--                        entityhuman.broadcastItemBreak(EnumItemSlot.a(EnumItemSlot.Function.ARMOR, i));
-+                        entityhuman.broadcastItemBreak(EnumItemSlot.a(EnumItemSlot.Function.ARMOR, finalI)); // CraftBukkit - decompile error
-                     });
-                 }
-             }
-@@ -538,6 +616,11 @@
-     }
- 
-     public ItemStack getCarried() {
-+        // CraftBukkit start
-+        if (this.carried.isEmpty()) {
-+            this.setCarried(ItemStack.b);
-+        }
-+        // CraftBukkit end
-         return this.carried;
-     }
- 

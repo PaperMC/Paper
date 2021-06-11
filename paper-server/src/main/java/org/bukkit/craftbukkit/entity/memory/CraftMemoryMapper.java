@@ -21,6 +21,8 @@ public final class CraftMemoryMapper {
             return (UUID) object;
         } else if (object instanceof Boolean) {
             return (Boolean) object;
+        } else if (object instanceof Integer) {
+            return (Integer) object;
         }
 
         throw new UnsupportedOperationException("Do not know how to map " + object);
@@ -37,6 +39,8 @@ public final class CraftMemoryMapper {
             return (UUID) object;
         } else if (object instanceof Boolean) {
             return (Boolean) object;
+        } else if (object instanceof Integer) {
+            return (Integer) object;
         }
 
         throw new UnsupportedOperationException("Do not know how to map " + object);

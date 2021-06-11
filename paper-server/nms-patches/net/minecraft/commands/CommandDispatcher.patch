@@ -1,6 +1,6 @@
 --- a/net/minecraft/commands/CommandDispatcher.java
 +++ b/net/minecraft/commands/CommandDispatcher.java
-@@ -102,12 +102,21 @@
+@@ -103,6 +103,14 @@
  import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
  
@@ -15,27 +15,28 @@
  public class CommandDispatcher {
  
      private static final Logger LOGGER = LogManager.getLogger();
-     private final com.mojang.brigadier.CommandDispatcher<CommandListenerWrapper> b = new com.mojang.brigadier.CommandDispatcher();
+@@ -114,6 +122,7 @@
+     private final com.mojang.brigadier.CommandDispatcher<CommandListenerWrapper> dispatcher = new com.mojang.brigadier.CommandDispatcher();
  
      public CommandDispatcher(CommandDispatcher.ServerType commanddispatcher_servertype) {
 +        this(); // CraftBukkit
-         CommandAdvancement.a(this.b);
-         CommandAttribute.a(this.b);
-         CommandExecute.a(this.b);
-@@ -188,17 +197,61 @@
+         CommandAdvancement.a(this.dispatcher);
+         CommandAttribute.a(this.dispatcher);
+         CommandExecute.a(this.dispatcher);
+@@ -195,17 +204,61 @@
          }
  
-         this.b.findAmbiguities((commandnode, commandnode1, commandnode2, collection) -> {
--            CommandDispatcher.LOGGER.warn("Ambiguity between arguments {} and {} with inputs: {}", this.b.getPath(commandnode1), this.b.getPath(commandnode2), collection);
+         this.dispatcher.findAmbiguities((commandnode, commandnode1, commandnode2, collection) -> {
+-            CommandDispatcher.LOGGER.warn("Ambiguity between arguments {} and {} with inputs: {}", this.dispatcher.getPath(commandnode1), this.dispatcher.getPath(commandnode2), collection);
 +            // CommandDispatcher.LOGGER.warn("Ambiguity between arguments {} and {} with inputs: {}", this.b.getPath(commandnode1), this.b.getPath(commandnode2), collection); // CraftBukkit
          });
--        this.b.setConsumer((commandcontext, flag, i) -> {
+-        this.dispatcher.setConsumer((commandcontext, flag, i) -> {
 -            ((CommandListenerWrapper) commandcontext.getSource()).a(commandcontext, flag, i);
 +    }
 +
 +    // CraftBukkit start
 +    public CommandDispatcher() {
-+        this.b.setConsumer((commandcontext, flag1, i) -> {
++        this.dispatcher.setConsumer((commandcontext, flag1, i) -> {
 +            ((CommandListenerWrapper) commandcontext.getSource()).a(commandcontext, flag1, i);
          });
      }
@@ -88,7 +89,7 @@
              stringreader.skip();
          }
  
-@@ -222,7 +275,7 @@
+@@ -229,7 +282,7 @@
                  if (commandsyntaxexception.getInput() != null && commandsyntaxexception.getCursor() >= 0) {
                      int j = Math.min(commandsyntaxexception.getInput().length(), commandsyntaxexception.getCursor());
                      IChatMutableComponent ichatmutablecomponent = (new ChatComponentText("")).a(EnumChatFormat.GRAY).format((chatmodifier) -> {
@@ -97,7 +98,7 @@
                      });
  
                      if (j > 10) {
-@@ -272,11 +325,36 @@
+@@ -279,11 +332,36 @@
      }
  
      public void a(EntityPlayer entityplayer) {
@@ -114,8 +115,8 @@
 +        // Now build the global commands in a second pass
          RootCommandNode<ICompletionProvider> rootcommandnode = new RootCommandNode();
  
-         map.put(this.b.getRoot(), rootcommandnode);
-         this.a(this.b.getRoot(), rootcommandnode, entityplayer.getCommandListener(), (Map) map);
+         map.put(this.dispatcher.getRoot(), rootcommandnode);
+         this.a(this.dispatcher.getRoot(), rootcommandnode, entityplayer.getCommandListener(), (Map) map);
 +
 +        Collection<String> bukkit = new LinkedHashSet<>();
 +        for (CommandNode node : rootcommandnode.getChildren()) {
@@ -132,10 +133,10 @@
 +            }
 +        }
 +        // CraftBukkit end
-         entityplayer.playerConnection.sendPacket(new PacketPlayOutCommands(rootcommandnode));
+         entityplayer.connection.sendPacket(new PacketPlayOutCommands(rootcommandnode));
      }
  
-@@ -287,7 +365,7 @@
+@@ -294,7 +372,7 @@
              CommandNode<CommandListenerWrapper> commandnode2 = (CommandNode) iterator.next();
  
              if (commandnode2.canUse(commandlistenerwrapper)) {
@@ -144,7 +145,7 @@
  
                  argumentbuilder.requires((icompletionprovider) -> {
                      return true;
-@@ -310,7 +388,7 @@
+@@ -317,7 +395,7 @@
                      argumentbuilder.redirect((CommandNode) map.get(argumentbuilder.getRedirect()));
                  }
  

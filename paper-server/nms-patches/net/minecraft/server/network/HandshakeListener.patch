@@ -15,25 +15,25 @@
 +    private static final HashMap<InetAddress, Long> throttleTracker = new HashMap<InetAddress, Long>();
 +    private static int throttleCounter = 0;
 +    // CraftBukkit end
-     private static final IChatBaseComponent a = new ChatComponentText("Ignoring status request");
-     private final MinecraftServer b;
-     private final NetworkManager c;
+     private static final IChatBaseComponent IGNORE_STATUS_REASON = new ChatComponentText("Ignoring status request");
+     private final MinecraftServer server;
+     private final NetworkManager connection;
 @@ -27,6 +36,40 @@
          switch (packethandshakinginsetprotocol.b()) {
              case LOGIN:
-                 this.c.setProtocol(EnumProtocol.LOGIN);
+                 this.connection.setProtocol(EnumProtocol.LOGIN);
 +                // CraftBukkit start - Connection throttle
 +                try {
 +                    long currentTime = System.currentTimeMillis();
-+                    long connectionThrottle = this.b.server.getConnectionThrottle();
-+                    InetAddress address = ((java.net.InetSocketAddress) this.c.getSocketAddress()).getAddress();
++                    long connectionThrottle = this.server.server.getConnectionThrottle();
++                    InetAddress address = ((java.net.InetSocketAddress) this.connection.getSocketAddress()).getAddress();
 +
 +                    synchronized (throttleTracker) {
 +                        if (throttleTracker.containsKey(address) && !"127.0.0.1".equals(address.getHostAddress()) && currentTime - throttleTracker.get(address) < connectionThrottle) {
 +                            throttleTracker.put(address, currentTime);
 +                            ChatMessage chatmessage = new ChatMessage("Connection throttled! Please wait before reconnecting.");
-+                            this.c.sendPacket(new PacketLoginOutDisconnect(chatmessage));
-+                            this.c.close(chatmessage);
++                            this.connection.sendPacket(new PacketLoginOutDisconnect(chatmessage));
++                            this.connection.close(chatmessage);
 +                            return;
 +                        }
 +
@@ -60,10 +60,10 @@
                      ChatMessage chatmessage;
  
 @@ -40,6 +83,7 @@
-                     this.c.close(chatmessage);
+                     this.connection.close(chatmessage);
                  } else {
-                     this.c.setPacketListener(new LoginListener(this.b, this.c));
-+                    ((LoginListener) this.c.j()).hostname = packethandshakinginsetprotocol.hostname + ":" + packethandshakinginsetprotocol.port; // CraftBukkit - set hostname
+                     this.connection.setPacketListener(new LoginListener(this.server, this.connection));
++                    ((LoginListener) this.connection.j()).hostname = packethandshakinginsetprotocol.hostName + ":" + packethandshakinginsetprotocol.port; // CraftBukkit - set hostname
                  }
                  break;
              case STATUS:
