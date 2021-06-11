@@ -6,7 +6,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.entity.EntityType;
 import org.bukkit.support.environment.AllFeatures;
 import org.junit.jupiter.api.Test;
 
@@ -17,8 +16,8 @@ public class EntityTypesTest {
     public void testMaps() {
         Set<EntityType> allBukkit = Arrays.stream(EntityType.values()).filter((b) -> b.getName() != null).collect(Collectors.toSet());
 
-        for (EntityType<?> nms : BuiltInRegistries.ENTITY_TYPE) {
-            ResourceLocation key = EntityType.getKey(nms);
+        for (net.minecraft.world.entity.EntityType<?> nms : BuiltInRegistries.ENTITY_TYPE) { // Paper - remap fix
+            ResourceLocation key = net.minecraft.world.entity.EntityType.getKey(nms); // Paper - remap fix
 
             org.bukkit.entity.EntityType bukkit = org.bukkit.entity.EntityType.fromName(key.getPath());
             assertNotNull(bukkit, "Missing nms->bukkit " + key);

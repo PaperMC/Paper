@@ -31,17 +31,17 @@ public class RegistryConstantsTest {
 
     @Test
     public void testTrimMaterial() {
-        this.testExcessConstants(TrimMaterial.class, Registry.TRIM_MATERIAL);
+        this.testExcessConstants(TrimMaterial.class, org.bukkit.Registry.TRIM_MATERIAL); // Paper - remap fix
         this.testMissingConstants(TrimMaterial.class, Registries.TRIM_MATERIAL);
     }
 
     @Test
     public void testTrimPattern() {
-        this.testExcessConstants(TrimPattern.class, Registry.TRIM_PATTERN);
+        this.testExcessConstants(TrimPattern.class, org.bukkit.Registry.TRIM_PATTERN); // Paper - remap fix
         this.testMissingConstants(TrimPattern.class, Registries.TRIM_PATTERN);
     }
 
-    private <T extends Keyed> void testExcessConstants(Class<T> clazz, Registry<T> registry) {
+    private <T extends Keyed> void testExcessConstants(Class<T> clazz, org.bukkit.Registry<T> registry) { // Paper - remap fix
         List<NamespacedKey> excessKeys = new ArrayList<>();
 
         for (Field field : clazz.getFields()) {

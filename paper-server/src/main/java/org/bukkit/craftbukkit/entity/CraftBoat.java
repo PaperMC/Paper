@@ -133,7 +133,7 @@ public abstract class CraftBoat extends CraftVehicle implements Boat {
         throw new EnumConstantNotPresentException(Type.class, boatType.toString());
     }
 
-    public static Status boatStatusFromNms(net.minecraft.world.entity.vehicle.Boat.EnumStatus enumStatus) {
+    public static Status boatStatusFromNms(net.minecraft.world.entity.vehicle.AbstractBoat.Status enumStatus) { // Paper - remap fixes
         return switch (enumStatus) {
             default -> throw new EnumConstantNotPresentException(Status.class, enumStatus.name());
             case IN_AIR -> Status.IN_AIR;
