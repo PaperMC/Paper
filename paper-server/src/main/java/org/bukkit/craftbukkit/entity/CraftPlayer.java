@@ -90,6 +90,7 @@ import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.Statistic;
 import org.bukkit.WeatherType;
+import org.bukkit.block.Block;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
 import org.bukkit.conversations.Conversation;
@@ -531,6 +532,11 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
         int datavalue = data == null ? 0 : CraftEffect.getDataValue(effect, data);
         playEffect(loc, effect, datavalue);
+    }
+
+    @Override
+    public boolean breakBlock(Block block) {
+        return getHandle().gameMode.breakBlock(new BlockPosition(block.getX(), block.getY(), block.getZ()));
     }
 
     @Override
