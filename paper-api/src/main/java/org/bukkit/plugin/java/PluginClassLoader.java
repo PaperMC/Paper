@@ -116,20 +116,22 @@ final class PluginClassLoader extends URLClassLoader {
             // This ignores the libraries of other plugins, unless they are transitive dependencies.
             Class<?> result = loader.getClassByName(name, resolve, description);
 
-            // If the class was loaded from a library instead of a PluginClassLoader, we can assume that its associated plugin is a transitive dependency and can therefore skip this check.
-            if (result != null && result.getClassLoader() instanceof PluginClassLoader) {
-                PluginDescriptionFile provider = ((PluginClassLoader) result.getClassLoader()).description;
+            if (result != null) {
+                // If the class was loaded from a library instead of a PluginClassLoader, we can assume that its associated plugin is a transitive dependency and can therefore skip this check.
+                if (result.getClassLoader() instanceof PluginClassLoader) {
+                    PluginDescriptionFile provider = ((PluginClassLoader) result.getClassLoader()).description;
 
-                if (provider != description
-                        && !seenIllegalAccess.contains(provider.getName())
-                        && !((SimplePluginManager) loader.server.getPluginManager()).isTransitiveDepend(description, provider)) {
+                    if (provider != description
+                            && !seenIllegalAccess.contains(provider.getName())
+                            && !((SimplePluginManager) loader.server.getPluginManager()).isTransitiveDepend(description, provider)) {
 
-                    seenIllegalAccess.add(provider.getName());
-                    if (plugin != null) {
-                        plugin.getLogger().log(Level.WARNING, "Loaded class {0} from {1} which is not a depend, softdepend or loadbefore of this plugin.", new Object[]{name, provider.getFullName()});
-                    } else {
-                        // In case the bad access occurs on construction
-                        loader.server.getLogger().log(Level.WARNING, "[{0}] Loaded class {1} from {2} which is not a depend, softdepend or loadbefore of this plugin.", new Object[]{description.getName(), name, provider.getFullName()});
+                        seenIllegalAccess.add(provider.getName());
+                        if (plugin != null) {
+                            plugin.getLogger().log(Level.WARNING, "Loaded class {0} from {1} which is not a depend, softdepend or loadbefore of this plugin.", new Object[]{name, provider.getFullName()});
+                        } else {
+                            // In case the bad access occurs on construction
+                            loader.server.getLogger().log(Level.WARNING, "[{0}] Loaded class {1} from {2} which is not a depend, softdepend or loadbefore of this plugin.", new Object[]{description.getName(), name, provider.getFullName()});
+                        }
                     }
                 }
 
