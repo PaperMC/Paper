@@ -1,0 +1,76 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Kyle Wood <demonwav@gmail.com>
+Date: Thu, 10 Dec 2020 20:50:33 -0800
+Subject: [PATCH] Convert project to Gradle
+
+
+diff --git a/.gitignore b/.gitignore
+index e431e3435737e28394d81b56568a08b3c3148b9b..c484aff2c192bf42059b5689327909e4af654401 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -1,3 +1,5 @@
++.gradle/
++
+ # Eclipse stuff
+ /.classpath
+ /.project
+diff --git a/build.gradle.kts b/build.gradle.kts
+new file mode 100644
+index 0000000000000000000000000000000000000000..a0f1c1d1ac63fdcce942922ffe68a8d44c712513
+--- /dev/null
++++ b/build.gradle.kts
+@@ -0,0 +1,54 @@
++plugins {
++    `java-library`
++    checkstyle
++}
++
++java {
++    withSourcesJar()
++    withJavadocJar()
++}
++
++dependencies {
++    // api dependencies are listed transitively to API consumers
++    api("commons-lang:commons-lang:2.6")
++    api("com.google.guava:guava:21.0")
++    api("com.google.code.gson:gson:2.8.0")
++    api("net.md-5:bungeecord-chat:1.16-R0.4")
++    api("org.yaml:snakeyaml:1.29")
++
++    compileOnly("org.apache.maven:maven-resolver-provider:3.8.1")
++    compileOnly("org.apache.maven.resolver:maven-resolver-connector-basic:1.7.0")
++    compileOnly("org.apache.maven.resolver:maven-resolver-transport-http:1.7.0")
++
++    val annotations = "org.jetbrains:annotations-java5:21.0.1"
++    compileOnly(annotations)
++    testCompileOnly(annotations)
++
++    testImplementation("junit:junit:4.13.1")
++    testImplementation("org.hamcrest:hamcrest-library:1.3")
++    testImplementation("org.ow2.asm:asm-tree:9.1")
++
++    checkstyle("com.puppycrawl.tools:checkstyle:8.39")
++}
++
++tasks.jar {
++    manifest {
++        attributes += mapOf(
++            "Automatic-Module-Name" to "org.bukkit"
++        )
++    }
++}
++
++tasks.withType<Javadoc>().configureEach {
++    (options as StandardJavadocDocletOptions).links(
++        "https://guava.dev/releases/21.0/api/docs/",
++        "https://javadoc.io/doc/org.yaml/snakeyaml/1.27/",
++        "https://javadoc.io/doc/org.jetbrains/annotations-java5/20.1.0/",
++        "https://javadoc.io/doc/net.md-5/bungeecord-chat/1.16-R0.4/"
++    )
++}
++
++checkstyle {
++    configFile = file("checkstyle.xml")
++    sourceSets = listOf(project.sourceSets.main.get(), project.sourceSets.test.get())
++}
