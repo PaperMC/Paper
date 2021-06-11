@@ -3,7 +3,7 @@
  */
 package org.bukkit.craftbukkit.block.impl;
 
-public final class CraftSmallDripleaf extends org.bukkit.craftbukkit.block.data.CraftBlockData implements org.bukkit.block.data.type.Dripleaf, org.bukkit.block.data.Directional, org.bukkit.block.data.Waterlogged {
+public final class CraftSmallDripleaf extends org.bukkit.craftbukkit.block.data.CraftBlockData implements org.bukkit.block.data.type.SmallDripleaf, org.bukkit.block.data.type.Dripleaf, org.bukkit.block.data.Bisected, org.bukkit.block.data.Directional, org.bukkit.block.data.Waterlogged {
 
     public CraftSmallDripleaf() {
         super();
@@ -11,6 +11,20 @@ public final class CraftSmallDripleaf extends org.bukkit.craftbukkit.block.data.
 
     public CraftSmallDripleaf(net.minecraft.world.level.block.state.IBlockData state) {
         super(state);
+    }
+
+    // org.bukkit.craftbukkit.block.data.CraftBisected
+
+    private static final net.minecraft.world.level.block.state.properties.BlockStateEnum<?> HALF = getEnum(net.minecraft.world.level.block.SmallDripleafBlock.class, "half");
+
+    @Override
+    public org.bukkit.block.data.Bisected.Half getHalf() {
+        return get(HALF, org.bukkit.block.data.Bisected.Half.class);
+    }
+
+    @Override
+    public void setHalf(org.bukkit.block.data.Bisected.Half half) {
+        set(HALF, half);
     }
 
     // org.bukkit.craftbukkit.block.data.CraftDirectional
