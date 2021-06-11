@@ -1,7 +1,7 @@
 plugins {
     java
     id("com.github.johnrengelman.shadow") version "7.0.0" apply false
-    id("io.papermc.paperweight") version "1.0.0-SNAPSHOT"
+    id("io.papermc.paperweight.core") version "1.0.0-SNAPSHOT"
 }
 
 group = "com.destroystokyo.paper"
@@ -15,7 +15,7 @@ allprojects {
 
     java {
         toolchain {
-            languageVersion.set(JavaLanguageVersion.of(11))
+            languageVersion.set(JavaLanguageVersion.of(16))
         }
     }
 }
@@ -62,7 +62,7 @@ repositories {
 }
 
 dependencies {
-    paramMappings("org.quiltmc:yarn:1.16.5+build.6:mergedv2")
+    paramMappings("org.quiltmc:yarn:1.17+build.2:mergedv2")
     remapper("org.quiltmc:tiny-remapper:0.3.2:fat@jar")
     decompiler("net.minecraftforge:forgeflower:1.5.498.5@jar")
     paperclip("io.papermc:paperclip:2.0.0-SNAPSHOT@jar")
@@ -77,7 +77,5 @@ paperweight {
         mappingsPatch.set(file("build-data/mappings-patch.tiny"))
 
         additionalSpigotMemberMappings.set(file("build-data/additional-spigot-member-mappings.csrg"))
-
-        craftBukkitPatchPatchesDir.set(file("build-data/craftbukkit-patch-patches"))
     }
 }
