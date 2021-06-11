@@ -113,9 +113,11 @@ final class PluginClassLoader extends URLClassLoader {
         }
 
         if (checkGlobal) {
+            // This ignores the libraries of other plugins, unless they are transitive dependencies.
             Class<?> result = loader.getClassByName(name, resolve, description);
 
-            if (result != null) {
+            // If the class was loaded from a library instead of a PluginClassLoader, we can assume that its associated plugin is a transitive dependency and can therefore skip this check.
+            if (result != null && result.getClassLoader() instanceof PluginClassLoader) {
                 PluginDescriptionFile provider = ((PluginClassLoader) result.getClassLoader()).description;
 
                 if (provider != description
