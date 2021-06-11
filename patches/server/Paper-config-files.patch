@@ -227,7 +227,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                    ChunkPos chunk = new ChunkPos(e.xChunk, e.zChunk);
 +                    info.left++;
 +                    info.right.put(chunk, info.right.getOrDefault(chunk, 0) + 1);
-+                    if (!chunkProviderServer.isInEntityTickingChunk(e)) {
++                    if (!chunkProviderServer.isPositionTicking(e)) {
 +                        nonEntityTicking.merge(key, Integer.valueOf(1), Integer::sum);
 +                    }
 +                });
@@ -243,7 +243,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                    sender.sendMessage("Entity: " + name + " Total Ticking: " + (info.getLeft() - nonTicking) + ", Total Non-Ticking: " + nonTicking);
 +                    info.getRight().entrySet().stream()
 +                            .sorted((a, b) -> !a.getValue().equals(b.getValue()) ? b.getValue() - a.getValue() : a.getKey().toString().compareTo(b.getKey().toString()))
-+                            .limit(10).forEach(e -> sender.sendMessage("  " + e.getValue() + ": " + e.getKey().x + ", " + e.getKey().z + (chunkProviderServer.isEntityTickingChunk(e.getKey()) ? " (Ticking)" : " (Non-Ticking)")));
++                            .limit(10).forEach(e -> sender.sendMessage("  " + e.getValue() + ": " + e.getKey().x + ", " + e.getKey().z + (chunkProviderServer.isPositionTicking(e.getKey().toLong()) ? " (Ticking)" : " (Non-Ticking)")));
 +                } else {
 +                    List<Pair<ResourceLocation, Integer>> info = list.entrySet().stream()
 +                            .filter(e -> names.contains(e.getKey()))
@@ -567,7 +567,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/Main.java
 +++ b/src/main/java/net/minecraft/server/Main.java
 @@ -0,0 +0,0 @@ public class Main {
-             DedicatedServerSettings dedicatedserversettings = new DedicatedServerSettings(iregistrycustom_dimension, optionset); // CraftBukkit - CLI argument support
+             DedicatedServerSettings dedicatedserversettings = new DedicatedServerSettings(optionset); // CraftBukkit - CLI argument support
  
              dedicatedserversettings.forceSave();
 +            // Paper start - load config files for access below if needed
@@ -576,8 +576,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            org.bukkit.configuration.file.YamlConfiguration paperConfiguration = loadConfigFile((File) optionset.valueOf("paper-settings"));
 +            // Paper end
 +
-             java.nio.file.Path java_nio_file_path1 = Paths.get("eula.txt");
-             Eula eula = new Eula(java_nio_file_path1);
+             Path path1 = Paths.get("eula.txt");
+             Eula eula = new Eula(path1);
  
 @@ -0,0 +0,0 @@ public class Main {
  
@@ -624,41 +624,42 @@ diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/sr
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
+@@ -0,0 +0,0 @@ import net.minecraft.core.BlockPos;
+ import net.minecraft.core.SectionPos;
+ import net.minecraft.network.protocol.Packet;
+ import net.minecraft.server.level.progress.ChunkProgressListener;
++import net.minecraft.util.Mth;
+ import net.minecraft.util.VisibleForDebug;
+ import net.minecraft.util.profiling.ProfilerFiller;
+ import net.minecraft.util.thread.BlockableEventLoop;
 @@ -0,0 +0,0 @@ public class ServerChunkCache extends ChunkSource {
          }
      }
  
--    @Override
--    public boolean isEntityTickingChunk(Entity entity) {
-+    public final boolean isInEntityTickingChunk(Entity entity) { return this.isEntityTickingChunk(entity); } // Paper - OBFHELPER
-+    @Override public boolean isEntityTickingChunk(Entity entity) {
-         long i = ChunkPos.asLong(Mth.floor(entity.getX()) >> 4, Mth.floor(entity.getZ()) >> 4);
- 
-         return this.checkChunkFuture(i, (Function<ChunkHolder, CompletableFuture<Either<LevelChunk, ChunkHolder.ChunkLoadingFailure>>>) ChunkHolder::getEntityTickingChunkFuture); // CraftBukkit - decompile error
++    // Paper start - helper
++    public boolean isPositionTicking(Entity entity) {
++        return this.isPositionTicking(ChunkPos.asLong(Mth.floor(entity.getX()) >> 4, Mth.floor(entity.getZ()) >> 4));
++    }
++    // Paper end
++
+     public boolean isPositionTicking(long i) {
+         return this.checkChunkFuture(i, (Function<ChunkHolder, CompletableFuture<Either<LevelChunk, ChunkHolder.ChunkLoadingFailure>>>) ChunkHolder::getTickingChunkFuture); // CraftBukkit - decompile error
      }
- 
--    @Override
--    public boolean isEntityTickingChunk(ChunkPos pos) {
-+    public final boolean isEntityTickingChunk(ChunkPos chunkcoordintpair) { return this.isEntityTickingChunk(chunkcoordintpair); } // Paper - OBFHELPER
-+    @Override public boolean isEntityTickingChunk(ChunkPos pos) {
-         return this.checkChunkFuture(pos.toLong(), (Function<ChunkHolder, CompletableFuture<Either<LevelChunk, ChunkHolder.ChunkLoadingFailure>>>) ChunkHolder::getEntityTickingChunkFuture); // CraftBukkit - decompile error
-     }
- 
 diff --git a/src/main/java/net/minecraft/world/entity/EntityType.java b/src/main/java/net/minecraft/world/entity/EntityType.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/EntityType.java
 +++ b/src/main/java/net/minecraft/world/entity/EntityType.java
-@@ -0,0 +0,0 @@ package net.minecraft.world.entity;
- 
- import com.google.common.collect.ImmutableSet;
+@@ -0,0 +0,0 @@ import com.google.common.collect.ImmutableSet;
+ import java.util.List;
  import java.util.Optional;
+ import java.util.Spliterator;
 +import java.util.Set; // Paper
  import java.util.UUID;
+ import java.util.function.Consumer;
  import java.util.function.Function;
- import java.util.stream.Stream;
-@@ -0,0 +0,0 @@ public class EntityType<T extends Entity> {
-             return new EntityType<>(this.factory, this.category, this.serialize, this.summon, this.fireImmune, this.canSpawnFarFromPlayer, this.immuneTo, this.dimensions, this.clientTrackingRange, this.updateInterval);
-         }
+@@ -0,0 +0,0 @@ public class EntityType<T extends Entity> implements EntityTypeTest<Entity, T> {
+ 
+         T create(EntityType<T> type, Level world);
      }
 +
 +    // Paper start
@@ -697,8 +698,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
          org.spigotmc.SpigotConfig.init((File) console.options.valueOf("spigot-settings")); // Spigot
 +        com.destroystokyo.paper.PaperConfig.init((File) console.options.valueOf("paper-settings")); // Paper
-         for (ServerLevel world : console.getAllLevels()) {
-             world.worldDataServer.setDifficulty(config.difficulty);
+         for (ServerLevel world : this.console.getAllLevels()) {
+             world.serverLevelData.setDifficulty(config.difficulty);
              world.setSpawnSettings(config.spawnMonsters, config.spawnAnimals);
 @@ -0,0 +0,0 @@ public final class CraftServer implements Server {
                  world.ticksPerAmbientSpawns = this.getTicksPerAmbientSpawns();
@@ -707,17 +708,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            world.paperConfig.init(); // Paper
          }
  
-         pluginManager.clearPlugins();
+         this.pluginManager.clearPlugins();
 @@ -0,0 +0,0 @@ public final class CraftServer implements Server {
-         resetRecipes();
-         reloadData();
+         this.resetRecipes();
+         this.reloadData();
          org.spigotmc.SpigotConfig.registerCommands(); // Spigot
 +        com.destroystokyo.paper.PaperConfig.registerCommands(); // Paper
-         overrideAllCommandBlockCommands = commandsConfiguration.getStringList("command-block-overrides").contains("*");
-         ignoreVanillaPermissions = commandsConfiguration.getBoolean("ignore-vanilla-permissions");
+         this.overrideAllCommandBlockCommands = this.commandsConfiguration.getStringList("command-block-overrides").contains("*");
+         this.ignoreVanillaPermissions = this.commandsConfiguration.getBoolean("ignore-vanilla-permissions");
  
 @@ -0,0 +0,0 @@ public final class CraftServer implements Server {
-         return spigot;
+         return this.spigot;
      }
      // Spigot end
 +
@@ -776,45 +777,45 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/org/spigotmc/SpigotWorldConfig.java
 +++ b/src/main/java/org/spigotmc/SpigotWorldConfig.java
 @@ -0,0 +0,0 @@ public class SpigotWorldConfig
-         config.set( "world-settings.default." + path, val );
+         this.config.set( "world-settings.default." + path, val );
      }
  
 -    private boolean getBoolean(String path, boolean def)
 +    public boolean getBoolean(String path, boolean def) // Paper - private -> public
      {
-         config.addDefault( "world-settings.default." + path, def );
-         return config.getBoolean( "world-settings." + worldName + "." + path, config.getBoolean( "world-settings.default." + path ) );
+         this.config.addDefault( "world-settings.default." + path, def );
+         return this.config.getBoolean( "world-settings." + this.worldName + "." + path, this.config.getBoolean( "world-settings.default." + path ) );
      }
  
 -    private double getDouble(String path, double def)
 +    public double getDouble(String path, double def) // Paper - private -> public
      {
-         config.addDefault( "world-settings.default." + path, def );
-         return config.getDouble( "world-settings." + worldName + "." + path, config.getDouble( "world-settings.default." + path ) );
+         this.config.addDefault( "world-settings.default." + path, def );
+         return this.config.getDouble( "world-settings." + this.worldName + "." + path, this.config.getDouble( "world-settings.default." + path ) );
      }
  
 -    private int getInt(String path)
 +    public int getInt(String path) // Paper - private -> public
      {
-         return config.getInt( "world-settings." + worldName + "." + path );
+         return this.config.getInt( "world-settings." + this.worldName + "." + path );
      }
  
 -    private int getInt(String path, int def)
 +    public int getInt(String path, int def) // Paper - private -> public
      {
-         config.addDefault( "world-settings.default." + path, def );
-         return config.getInt( "world-settings." + worldName + "." + path, config.getInt( "world-settings.default." + path ) );
+         this.config.addDefault( "world-settings.default." + path, def );
+         return this.config.getInt( "world-settings." + this.worldName + "." + path, this.config.getInt( "world-settings.default." + path ) );
      }
  
 -    private <T> List getList(String path, T def)
 +    public <T> List getList(String path, T def) // Paper - private -> public
      {
-         config.addDefault( "world-settings.default." + path, def );
-         return (List<T>) config.getList( "world-settings." + worldName + "." + path, config.getList( "world-settings.default." + path ) );
+         this.config.addDefault( "world-settings.default." + path, def );
+         return (List<T>) this.config.getList( "world-settings." + this.worldName + "." + path, this.config.getList( "world-settings.default." + path ) );
      }
  
 -    private String getString(String path, String def)
 +    public String getString(String path, String def) // Paper - private -> public
      {
-         config.addDefault( "world-settings.default." + path, def );
-         return config.getString( "world-settings." + worldName + "." + path, config.getString( "world-settings.default." + path ) );
+         this.config.addDefault( "world-settings.default." + path, def );
+         return this.config.getString( "world-settings." + this.worldName + "." + path, this.config.getString( "world-settings.default." + path ) );
