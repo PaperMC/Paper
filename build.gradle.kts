@@ -1,7 +1,7 @@
 plugins {
     java
     id("com.github.johnrengelman.shadow") version "7.0.0" apply false
-    id("io.papermc.paperweight.core") version "1.0.0-LOCAL-SNAPSHOT"
+    id("io.papermc.paperweight.core") version "1.0.0-SNAPSHOT"
 }
 
 group = "io.papermc.paper"
@@ -81,5 +81,6 @@ paperweight {
         mappingsPatch.set(file("build-data/mappings-patch.tiny"))
 
         additionalSpigotMemberMappings.set(file("build-data/additional-spigot-member-mappings.csrg"))
+        craftBukkitPatchPatchesDir.set(file("build-data/craftbukkit-patch-patches"))
     }
 }
