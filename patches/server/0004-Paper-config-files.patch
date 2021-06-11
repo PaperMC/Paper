@@ -7,10 +7,10 @@ Loads each yml file for early init too so it can be used for early options
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperCommand.java b/src/main/java/com/destroystokyo/paper/PaperCommand.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..94cc5b494cdbc163fb70d0f4a6708d6ca2f42288
+index 0000000000000000000000000000000000000000..bee2fa2bfbb61209381f24ed6508d3d1c73a344a
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/PaperCommand.java
-@@ -0,0 +1,286 @@
+@@ -0,0 +1,285 @@
 +package com.destroystokyo.paper;
 +
 +import com.google.common.base.Functions;
@@ -65,7 +65,7 @@ index 0000000000000000000000000000000000000000..94cc5b494cdbc163fb70d0f4a6708d6c
 +
 +    private static boolean testPermission(CommandSender commandSender, String permission) {
 +        if (commandSender.hasPermission(BASE_PERM + permission) || commandSender.hasPermission("bukkit.command.paper")) return true;
-+        commandSender.sendMessage(Bukkit.getPermissionMessage());
++        commandSender.sendMessage(ChatColor.RED + "I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error."); // Sorry, kashike
 +        return false;
 +    }
 +
@@ -151,7 +151,7 @@ index 0000000000000000000000000000000000000000..94cc5b494cdbc163fb70d0f4a6708d6c
 +            case "ver":
 +                if (!testPermission(sender, "version")) break; // "ver" needs a special check because it's an alias. All other commands are checked up before the switch statement (because they are present in the SUBCOMMANDS set)
 +            case "version":
-+                Command ver = org.bukkit.Bukkit.getServer().getCommandMap().getCommand("version");
++                Command ver = MinecraftServer.getServer().server.getCommandMap().getCommand("version");
 +                if (ver != null) {
 +                    ver.execute(sender, commandLabel, new String[0]);
 +                    break;
@@ -219,12 +219,11 @@ index 0000000000000000000000000000000000000000..94cc5b494cdbc163fb70d0f4a6708d6c
 +                Map<ResourceLocation, Integer> nonEntityTicking = Maps.newHashMap();
 +                ServerChunkCache chunkProviderServer = world.getChunkSource();
 +
-+                Collection<Entity> entities = world.entitiesById.values();
-+                entities.forEach(e -> {
++                world.getAllEntities().forEach(e -> {
 +                    ResourceLocation key = new ResourceLocation(""); // TODO: update in next patch
 +
 +                    MutablePair<Integer, Map<ChunkPos, Integer>> info = list.computeIfAbsent(key, k -> MutablePair.of(0, Maps.newHashMap()));
-+                    ChunkPos chunk = new ChunkPos(e.xChunk, e.zChunk);
++                    ChunkPos chunk = e.chunkPosition();
 +                    info.left++;
 +                    info.right.put(chunk, info.right.getOrDefault(chunk, 0) + 1);
 +                    if (!chunkProviderServer.isPositionTicking(e)) {
