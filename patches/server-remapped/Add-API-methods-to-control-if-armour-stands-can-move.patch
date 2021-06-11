@@ -1,0 +1,106 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Riley Park <rileysebastianpark@gmail.com>
+Date: Wed, 21 Dec 2016 11:47:25 -0600
+Subject: [PATCH] Add API methods to control if armour stands can move
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/Mob.java b/src/main/java/net/minecraft/world/entity/Mob.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/entity/Mob.java
++++ b/src/main/java/net/minecraft/world/entity/Mob.java
+@@ -0,0 +0,0 @@
+ package net.minecraft.world.entity;
+ 
+-import PathfinderGoalFloat;
+ import com.google.common.collect.Maps;
+ import java.util.Arrays;
+ import java.util.Iterator;
+@@ -0,0 +0,0 @@ import net.minecraft.world.entity.ai.control.BodyRotationControl;
+ import net.minecraft.world.entity.ai.control.JumpControl;
+ import net.minecraft.world.entity.ai.control.LookControl;
+ import net.minecraft.world.entity.ai.control.MoveControl;
++import net.minecraft.world.entity.ai.goal.FloatGoal;
+ import net.minecraft.world.entity.ai.goal.Goal;
+ import net.minecraft.world.entity.ai.goal.GoalSelector;
+ import net.minecraft.world.entity.ai.navigation.GroundPathNavigation;
+@@ -0,0 +0,0 @@ import net.minecraft.world.entity.ai.sensing.Sensing;
+ import net.minecraft.world.entity.decoration.HangingEntity;
+ import net.minecraft.world.entity.decoration.LeashFenceKnotEntity;
+ import net.minecraft.world.entity.item.ItemEntity;
++import net.minecraft.world.entity.monster.Blaze;
++import net.minecraft.world.entity.monster.EnderMan;
+ import net.minecraft.world.entity.monster.Enemy;
+ import net.minecraft.world.entity.player.Player;
+ import net.minecraft.world.entity.vehicle.Boat;
+@@ -0,0 +0,0 @@ public abstract class Mob extends LivingEntity {
+     private final BodyRotationControl bodyRotationControl;
+     protected PathNavigation navigation;
+     public GoalSelector goalSelector;
+-    @Nullable public PathfinderGoalFloat goalFloat; // Paper
++    @Nullable public FloatGoal goalFloat; // Paper
+     public GoalSelector targetSelector;
+     private LivingEntity target;
+     private final Sensing sensing;
+@@ -0,0 +0,0 @@ public abstract class Mob extends LivingEntity {
+                 if (goalFloat.validConditions()) goalFloat.update();
+                 this.getJumpControl().jumpIfSet();
+             }
+-            if ((this instanceof EntityBlaze || this instanceof EntityEnderman) && isInWaterOrRainOrBubble()) {
++            if ((this instanceof Blaze || this instanceof EnderMan) && isInWaterOrRainOrBubble()) {
+                 hurt(DamageSource.DROWN, 1.0F);
+             }
+             return;
+diff --git a/src/main/java/net/minecraft/world/entity/decoration/ArmorStand.java b/src/main/java/net/minecraft/world/entity/decoration/ArmorStand.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/entity/decoration/ArmorStand.java
++++ b/src/main/java/net/minecraft/world/entity/decoration/ArmorStand.java
+@@ -0,0 +0,0 @@ import net.minecraft.world.entity.HumanoidArm;
+ import net.minecraft.world.entity.LightningBolt;
+ import net.minecraft.world.entity.LivingEntity;
+ import net.minecraft.world.entity.Mob;
++import net.minecraft.world.entity.MoverType;
+ import net.minecraft.world.entity.Pose;
+ import net.minecraft.world.entity.projectile.AbstractArrow;
+ import net.minecraft.world.entity.vehicle.AbstractMinecart;
+@@ -0,0 +0,0 @@ public class ArmorStand extends LivingEntity {
+     public Rotations rightArmPose;
+     public Rotations leftLegPose;
+     public Rotations rightLegPose;
++    public boolean canMove = true; // Paper
+ 
+     public ArmorStand(EntityType<? extends ArmorStand> type, Level world) {
+         super(type, world);
+@@ -0,0 +0,0 @@ public class ArmorStand extends LivingEntity {
+     private EntityDimensions getDimensionsMarker(boolean flag) {
+         return flag ? ArmorStand.MARKER_DIMENSIONS : (this.isBaby() ? ArmorStand.BABY_DIMENSIONS : this.getType().getDimensions());
+     }
++
++    // Paper start
++    @Override
++    public void move(MoverType type, Vec3 movement) {
++        if (this.canMove) {
++            super.move(type, movement);
++        }
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftArmorStand.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftArmorStand.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftArmorStand.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftArmorStand.java
+@@ -0,0 +0,0 @@ public class CraftArmorStand extends CraftLivingEntity implements ArmorStand {
+     public boolean hasEquipmentLock(EquipmentSlot equipmentSlot, LockType lockType) {
+         return (getHandle().disabledSlots & (1 << CraftEquipmentSlot.getNMS(equipmentSlot).getFilterFlag() + lockType.ordinal() * 8)) != 0;
+     }
++    // Paper start
++    @Override
++    public boolean canMove() {
++        return getHandle().canMove;
++    }
++
++    @Override
++    public void setCanMove(boolean move) {
++        getHandle().canMove = move;
++    }
++    // Paper end
+ }

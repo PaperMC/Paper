@@ -1,0 +1,90 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Wed, 13 Apr 2016 00:25:28 -0400
+Subject: [PATCH] Remove unused World Tile Entity List
+
+Massive hit to performance and it is completely unnecessary.
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/level/ServerLevel.java
++++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
+@@ -0,0 +0,0 @@ public class ServerLevel extends net.minecraft.world.level.Level implements Worl
+             }
+ 
+             bufferedwriter.write(String.format("entities: %d\n", this.entitiesById.size()));
+-            bufferedwriter.write(String.format("block_entities: %d\n", this.blockEntityList.size()));
++            bufferedwriter.write(String.format("block_entities: %d\n", this.tickableBlockEntities.size())); // Paper - remove unused list
+             bufferedwriter.write(String.format("block_ticks: %d\n", this.getBlockTicks().size()));
+             bufferedwriter.write(String.format("fluid_ticks: %d\n", this.getLiquidTicks().size()));
+             bufferedwriter.write("distance_manager: " + playerchunkmap.getDistanceManager().getDebugStatus() + "\n");
+@@ -0,0 +0,0 @@ public class ServerLevel extends net.minecraft.world.level.Level implements Worl
+ 
+     private void dumpBlockEntities(Writer writer) throws IOException {
+         CsvOutput csvwriter = CsvOutput.builder().addColumn("x").addColumn("y").addColumn("z").addColumn("type").build(writer);
+-        Iterator iterator = this.blockEntityList.iterator();
++        Iterator iterator = this.tickableBlockEntities.iterator(); // Paper - remove unused list
+ 
+         while (iterator.hasNext()) {
+             BlockEntity tileentity = (BlockEntity) iterator.next();
+diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/level/Level.java
++++ b/src/main/java/net/minecraft/world/level/Level.java
+@@ -0,0 +0,0 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+     public static final ResourceKey<Level> NETHER = ResourceKey.create(Registry.DIMENSION_REGISTRY, new ResourceLocation("the_nether"));
+     public static final ResourceKey<Level> END = ResourceKey.create(Registry.DIMENSION_REGISTRY, new ResourceLocation("the_end"));
+     private static final Direction[] DIRECTIONS = Direction.values();
+-    public final List<BlockEntity> blockEntityList = Lists.newArrayList();
++    //public final List<TileEntity> tileEntityList = Lists.newArrayList(); // Paper - remove unused list
+     public final List<BlockEntity> tickableBlockEntities = Lists.newArrayList();
+     protected final List<BlockEntity> pendingBlockEntities = Lists.newArrayList();
+     protected final java.util.Set<BlockEntity> tileEntityListUnload = com.google.common.collect.Sets.newHashSet();
+@@ -0,0 +0,0 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+                     }, blockEntity::getBlockPos});
+         }
+ 
+-        boolean flag = this.blockEntityList.add(blockEntity);
++        boolean flag = true; // Paper - remove unused list
+ 
+-        if (flag && blockEntity instanceof TickableBlockEntity) {
++        if (flag && blockEntity instanceof TickableBlockEntity && !this.tickableBlockEntities.contains(blockEntity)) { // Paper
+             this.tickableBlockEntities.add(blockEntity);
+         }
+ 
+@@ -0,0 +0,0 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+         timings.tileEntityTick.startTiming(); // Spigot
+         if (!this.tileEntityListUnload.isEmpty()) {
+             this.tickableBlockEntities.removeAll(this.tileEntityListUnload);
+-            this.blockEntityList.removeAll(this.tileEntityListUnload);
++            //this.tileEntityList.removeAll(this.tileEntityListUnload); // Paper - remove unused list
+             this.tileEntityListUnload.clear();
+         }
+ 
+@@ -0,0 +0,0 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+                 tilesThisCycle--;
+                 this.tickableBlockEntities.remove(tileTickPosition--);
+                 // Spigot end
+-                this.blockEntityList.remove(tileentity);
++                //this.tileEntityList.remove(tileentity); // Paper - remove unused list
+                 if (this.hasChunkAt(tileentity.getBlockPos())) {
+                     this.getChunkAt(tileentity.getBlockPos()).removeBlockEntity(tileentity.getBlockPos());
+                 }
+@@ -0,0 +0,0 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+                         this.sendBlockUpdated(tileentity1.getBlockPos(), iblockdata, iblockdata, 3);
+                         // CraftBukkit start
+                         // From above, don't screw this up - SPIGOT-1746
+-                        if (!this.blockEntityList.contains(tileentity1)) {
++                        if (true) { // Paper - remove unused list
+                             this.addBlockEntity(tileentity1);
+                         }
+                         // CraftBukkit end
+@@ -0,0 +0,0 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+         } else {
+             if (tileentity != null) {
+                 this.pendingBlockEntities.remove(tileentity);
+-                this.blockEntityList.remove(tileentity);
++                //this.tileEntityList.remove(tileentity); // Paper - remove unused list
+                 this.tickableBlockEntities.remove(tileentity);
+             }
+ 
