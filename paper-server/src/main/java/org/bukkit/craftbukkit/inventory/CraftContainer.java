@@ -223,6 +223,7 @@ public class CraftContainer extends Container {
         if (delegate != null) {
             this.lastSlots = delegate.lastSlots;
             this.slots = delegate.slots;
+            this.remoteSlots = delegate.remoteSlots;
         }
 
         // SPIGOT-4598 - we should still delegate the shift click handler
