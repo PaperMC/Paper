@@ -1,0 +1,44 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Thonk <30448663+ExcessiveAmountsOfZombies@users.noreply.github.com>
+Date: Wed, 6 Jan 2021 12:04:03 -0800
+Subject: [PATCH] Add recipe to cook events
+
+
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/AbstractFurnaceBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/AbstractFurnaceBlockEntity.java
+index f47b46cebd43faa509b8139d2a51cc8f87615893..2dcabfc765cbf6341546a7e2c48156fd921fcc82 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/AbstractFurnaceBlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/AbstractFurnaceBlockEntity.java
+@@ -393,7 +393,7 @@ public abstract class AbstractFurnaceBlockEntity extends BaseContainerBlockEntit
+             CraftItemStack source = CraftItemStack.asCraftMirror(itemstack);
+             org.bukkit.inventory.ItemStack result = CraftItemStack.asBukkitCopy(itemstack1);
+ 
+-            FurnaceSmeltEvent furnaceSmeltEvent = new FurnaceSmeltEvent(this.level.getWorld().getBlockAt(worldPosition.getX(), worldPosition.getY(), worldPosition.getZ()), source, result);
++            FurnaceSmeltEvent furnaceSmeltEvent = new FurnaceSmeltEvent(this.level.getWorld().getBlockAt(worldPosition.getX(), worldPosition.getY(), worldPosition.getZ()), source, result, (org.bukkit.inventory.CookingRecipe<?>) recipe.toBukkitRecipe()); // Paper
+             this.level.getCraftServer().getPluginManager().callEvent(furnaceSmeltEvent);
+ 
+             if (furnaceSmeltEvent.isCancelled()) {
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/CampfireBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/CampfireBlockEntity.java
+index 6c38361d744eae763b6c131ad314485f5a88fcfc..39b4782df965c785be7946d6964e0b7a4381ff74 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/CampfireBlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/CampfireBlockEntity.java
+@@ -73,7 +73,10 @@ public class CampfireBlockEntity extends BlockEntity implements Clearable, Ticka
+ 
+                 if (this.cookingProgress[i] >= this.cookingTime[i]) {
+                     SimpleContainer inventorysubcontainer = new SimpleContainer(new ItemStack[]{itemstack});
+-                    ItemStack itemstack1 = (ItemStack) this.level.getRecipeManager().getRecipeFor(RecipeType.CAMPFIRE_COOKING, inventorysubcontainer, this.level).map((recipecampfire) -> {
++                    // Paper start
++                    Optional<CampfireCookingRecipe> recipe = this.level.getRecipeManager().getRecipeFor(RecipeType.CAMPFIRE_COOKING, inventorysubcontainer, this.level);
++                    ItemStack itemstack1 = (ItemStack) recipe.map((recipecampfire) -> {
++                        // Paper end
+                         return recipecampfire.assemble(inventorysubcontainer);
+                     }).orElse(itemstack);
+                     BlockPos blockposition = this.getBlockPos();
+@@ -82,7 +85,7 @@ public class CampfireBlockEntity extends BlockEntity implements Clearable, Ticka
+                     CraftItemStack source = CraftItemStack.asCraftMirror(itemstack);
+                     org.bukkit.inventory.ItemStack result = CraftItemStack.asBukkitCopy(itemstack1);
+ 
+-                    BlockCookEvent blockCookEvent = new BlockCookEvent(CraftBlock.at(this.level, this.worldPosition), source, result);
++                    BlockCookEvent blockCookEvent = new BlockCookEvent(CraftBlock.at(this.level, this.worldPosition), source, result, (org.bukkit.inventory.CookingRecipe<?>) recipe.map(CampfireCookingRecipe::toBukkitRecipe).orElse(null)); // Paper
+                     this.level.getCraftServer().getPluginManager().callEvent(blockCookEvent);
+ 
+                     if (blockCookEvent.isCancelled()) {

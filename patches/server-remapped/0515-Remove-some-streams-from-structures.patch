@@ -1,0 +1,143 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: JRoy <joshroy126@gmail.com>
+Date: Mon, 29 Jun 2020 17:03:06 -0400
+Subject: [PATCH] Remove some streams from structures
+
+This showed up a lot in the spark profiler, should have a low-medium performance improvement.
+
+diff --git a/src/main/java/net/minecraft/world/level/StructureFeatureManager.java b/src/main/java/net/minecraft/world/level/StructureFeatureManager.java
+index e842dbc586234799a05b6df213b686e17b8ed1ac..2f88e015708cadb43a348ba2b144c3dd92bb95a5 100644
+--- a/src/main/java/net/minecraft/world/level/StructureFeatureManager.java
++++ b/src/main/java/net/minecraft/world/level/StructureFeatureManager.java
+@@ -2,21 +2,22 @@
+ package net.minecraft.world.level;
+ 
+ import com.mojang.datafixers.DataFixUtils;
++import it.unimi.dsi.fastutil.objects.ObjectArrayList; // Paper
+ import java.util.stream.Stream;
+ import javax.annotation.Nullable;
+ import net.minecraft.core.BlockPos;
+ import net.minecraft.core.SectionPos;
+-import net.minecraft.core.Vec3i;
+ import net.minecraft.server.level.WorldGenRegion;
+ import net.minecraft.world.level.chunk.ChunkStatus;
+ import net.minecraft.world.level.chunk.FeatureAccess;
+ import net.minecraft.world.level.levelgen.WorldGenSettings;
+ import net.minecraft.world.level.levelgen.feature.StructureFeature;
++import net.minecraft.world.level.levelgen.structure.StructurePiece;
+ import net.minecraft.world.level.levelgen.structure.StructureStart;
+ 
+ public class StructureFeatureManager {
+ 
+-    private final LevelAccessor level;
++    private final LevelAccessor level; public LevelAccessor getLevel() { return level; } // Paper - OBFHELPER
+     private final WorldGenSettings worldGenSettings;
+ 
+     public StructureFeatureManager(LevelAccessor world, WorldGenSettings options) {
+@@ -42,6 +43,20 @@ public class StructureFeatureManager {
+         });
+     }
+ 
++    // Paper start - remove structure streams
++    public java.util.List<StructureStart<?>> getFeatureStarts(SectionPos sectionPosition, StructureFeature<?> structureGenerator) {
++        java.util.List<StructureStart<?>> list = new ObjectArrayList<>();
++        for (Long curLong: getLevel().getChunk(sectionPosition.x(), sectionPosition.z(), ChunkStatus.STRUCTURE_REFERENCES).getReferencesForFeature(structureGenerator)) {
++            SectionPos sectionPosition1 = SectionPos.of(new ChunkPos(curLong), 0);
++            StructureStart<?> structurestart = getStartForFeature(sectionPosition1, structureGenerator, getLevel().getChunk(sectionPosition1.x(), sectionPosition1.z(), ChunkStatus.STRUCTURE_STARTS));
++            if (structurestart != null && structurestart.e()) {
++                list.add(structurestart);
++            }
++        }
++        return list;
++    }
++    // Paper end
++
+     @Nullable
+     public StructureStart<?> getStartForFeature(SectionPos pos, StructureFeature<?> feature, FeatureAccess holder) {
+         return holder.getStartForFeature(feature);
+@@ -60,13 +75,21 @@ public class StructureFeatureManager {
+     }
+ 
+     public StructureStart<?> getStructureAt(BlockPos pos, boolean matchChildren, StructureFeature<?> feature) {
+-        return (StructureStart) DataFixUtils.orElse(this.startsForFeature(SectionPos.of(pos), feature).filter((structurestart) -> {
+-            return structurestart.c().b((Vec3i) pos);
+-        }).filter((structurestart) -> {
+-            return !matchChildren || structurestart.d().stream().anyMatch((structurepiece) -> {
+-                return structurepiece.g().b((BaseBlockPosition) blockposition);
+-            });
+-        }).findFirst(), StructureStart.a);
++        // Paper start - remove structure streams
++        for (StructureStart<?> structurestart : getFeatureStarts(SectionPos.of(pos), feature)) {
++            if (structurestart.c().b(pos)) {
++                if (!matchChildren) {
++                    return structurestart;
++                }
++                for (StructurePiece structurepiece : structurestart.d()) {
++                    if (structurepiece.g().b(pos)) {
++                        return structurestart;
++                    }
++                }
++            }
++        }
++        return StructureStart.a;
++        // Paper end
+     }
+ 
+     // Spigot start
+diff --git a/src/main/java/net/minecraft/world/level/biome/Biome.java b/src/main/java/net/minecraft/world/level/biome/Biome.java
+index ed83335175bb882741dfaef251ab30ce1590f74c..2422dbb8691b8c45401a68602a33d4d7f1718dfb 100644
+--- a/src/main/java/net/minecraft/world/level/biome/Biome.java
++++ b/src/main/java/net/minecraft/world/level/biome/Biome.java
+@@ -39,6 +39,7 @@ import net.minecraft.world.level.levelgen.WorldgenRandom;
+ import net.minecraft.world.level.levelgen.feature.ConfiguredFeature;
+ import net.minecraft.world.level.levelgen.feature.StructureFeature;
+ import net.minecraft.world.level.levelgen.structure.BoundingBox;
++import net.minecraft.world.level.levelgen.structure.StructureStart;
+ import net.minecraft.world.level.levelgen.surfacebuilders.ConfiguredSurfaceBuilder;
+ import net.minecraft.world.level.levelgen.synth.PerlinSimplexNoise;
+ import net.minecraft.world.level.material.FluidState;
+@@ -238,9 +239,11 @@ public final class Biome {
+                     int l1 = j1 << 4;
+ 
+                     try {
+-                        structureAccessor.startsForFeature(SectionPos.of(pos), structuregenerator).forEach((structurestart) -> {
+-                            structurestart.a(region, structureAccessor, chunkGenerator, random, new BoundingBox(k1, l1, k1 + 15, l1 + 15), new ChunkPos(i1, j1));
+-                        });
++                        // Paper start - remove structure streams
++                        for (StructureStart<?> structureStart : structureAccessor.getFeatureStarts(SectionPos.of(pos), structuregenerator)) {
++                            structureStart.a(region, structureAccessor, chunkGenerator, random, new BoundingBox(k1, l1, k1 + 15, l1 + 15), new ChunkPos(i1, j1));
++                        }
++                        // Paper end
+                     } catch (Exception exception) {
+                         CrashReport crashreport = CrashReport.forThrowable(exception, "Feature placement");
+ 
+diff --git a/src/main/java/net/minecraft/world/level/levelgen/NoiseBasedChunkGenerator.java b/src/main/java/net/minecraft/world/level/levelgen/NoiseBasedChunkGenerator.java
+index 04adec255e4650ead8d80bee32a681c98686fb95..20f3899b7e39033ebc0f833e75fbdba29777a168 100644
+--- a/src/main/java/net/minecraft/world/level/levelgen/NoiseBasedChunkGenerator.java
++++ b/src/main/java/net/minecraft/world/level/levelgen/NoiseBasedChunkGenerator.java
+@@ -41,6 +41,7 @@ import net.minecraft.world.level.levelgen.feature.structures.StructureTemplatePo
+ import net.minecraft.world.level.levelgen.structure.BoundingBox;
+ import net.minecraft.world.level.levelgen.structure.PoolElementStructurePiece;
+ import net.minecraft.world.level.levelgen.structure.StructurePiece;
++import net.minecraft.world.level.levelgen.structure.StructureStart;
+ import net.minecraft.world.level.levelgen.synth.ImprovedNoise;
+ import net.minecraft.world.level.levelgen.synth.PerlinNoise;
+ import net.minecraft.world.level.levelgen.synth.PerlinSimplexNoise;
+@@ -455,7 +456,7 @@ public final class NoiseBasedChunkGenerator extends ChunkGenerator {
+         while (iterator.hasNext()) {
+             StructureFeature<?> structuregenerator = (StructureFeature) iterator.next();
+ 
+-            accessor.startsForFeature(SectionPos.of(chunkcoordintpair, 0), structuregenerator).forEach((structurestart) -> {
++            for (StructureStart<?> structurestart : accessor.getFeatureStarts(SectionPos.of(chunkcoordintpair, 0), structuregenerator)) { // Paper - remove structure streams
+                 Iterator iterator1 = structurestart.d().iterator();
+ 
+                 while (iterator1.hasNext()) {
+@@ -487,7 +488,7 @@ public final class NoiseBasedChunkGenerator extends ChunkGenerator {
+                     }
+                 }
+ 
+-            });
++            } // Paper - remove structure streams
+         }
+ 
+         double[][][] adouble = new double[2][this.chunkCountZ + 1][this.chunkCountY + 1];

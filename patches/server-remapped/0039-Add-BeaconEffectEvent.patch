@@ -1,0 +1,103 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Byteflux <byte@byteflux.net>
+Date: Wed, 2 Mar 2016 23:30:53 -0600
+Subject: [PATCH] Add BeaconEffectEvent
+
+
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/BeaconBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/BeaconBlockEntity.java
+index c91f7bcfab2da6a23114a3cff63ca31dab443393..5f75c6d653a31f65fcf9c0e280d796e15d059c00 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/BeaconBlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/BeaconBlockEntity.java
+@@ -25,7 +25,6 @@ import net.minecraft.world.effect.MobEffect;
+ import net.minecraft.world.effect.MobEffectInstance;
+ import net.minecraft.world.effect.MobEffects;
+ import net.minecraft.world.entity.player.Inventory;
+-import net.minecraft.world.entity.player.Player;
+ import net.minecraft.world.inventory.AbstractContainerMenu;
+ import net.minecraft.world.inventory.BeaconMenu;
+ import net.minecraft.world.inventory.ContainerData;
+@@ -41,6 +40,11 @@ import net.minecraft.world.phys.AABB;
+ import org.bukkit.craftbukkit.potion.CraftPotionUtil;
+ import org.bukkit.potion.PotionEffect;
+ // CraftBukkit end
++// Paper start
++import org.bukkit.craftbukkit.event.CraftEventFactory;
++import org.bukkit.entity.Player;
++import com.destroystokyo.paper.event.block.BeaconEffectEvent;
++// Paper end
+ 
+ public class BeaconBlockEntity extends BlockEntity implements MenuProvider, TickableBlockEntity {
+ 
+@@ -260,21 +264,37 @@ public class BeaconBlockEntity extends BlockEntity implements MenuProvider, Tick
+             double d0 = (double) (this.levels * 10 + 10);
+ 
+             AABB axisalignedbb = (new AABB(this.worldPosition)).inflate(d0).expandTowards(0.0D, (double) this.level.getMaxBuildHeight(), 0.0D);
+-            List<Player> list = this.level.getEntitiesOfClass(Player.class, axisalignedbb);
++            List<net.minecraft.world.entity.player.Player> list = this.level.getEntitiesOfClass(net.minecraft.world.entity.player.Player.class, axisalignedbb);
+ 
+             return list;
+         }
+     }
+ 
+     private void applyEffect(List list, MobEffect effects, int i, int b0) {
++        // Paper - BeaconEffectEvent
++        applyEffect(list, effects, i, b0, true);
++    }
++
++    private void applyEffect(List list, MobEffect effects, int i, int b0, boolean isPrimary) {
++        // Paper - BeaconEffectEvent
+         {
+             Iterator iterator = list.iterator();
+ 
+-            Player entityhuman;
++            net.minecraft.world.entity.player.Player entityhuman;
++
++            // Paper start - BeaconEffectEvent
++            org.bukkit.block.Block block = level.getWorld().getBlockAt(worldPosition.getX(), worldPosition.getY(), worldPosition.getZ());
++            PotionEffect effect = CraftPotionUtil.toBukkit(new MobEffectInstance(effects, i, b0, true, true));
++            // Paper end
+ 
+             while (iterator.hasNext()) {
+-                entityhuman = (Player) iterator.next();
+-                entityhuman.addEffect(new MobEffectInstance(effects, i, b0, true, true), org.bukkit.event.entity.EntityPotionEffectEvent.Cause.BEACON);
++                entityhuman = (net.minecraft.world.entity.player.Player) iterator.next();
++
++                // Paper start - BeaconEffectEvent
++                BeaconEffectEvent event = new BeaconEffectEvent(block, effect, (Player) entityhuman.getBukkitEntity(), isPrimary);
++                if (CraftEventFactory.callEvent(event).isCancelled()) continue;
++                entityhuman.addEffect(new MobEffectInstance(CraftPotionUtil.fromBukkit(event.getEffect())), org.bukkit.event.entity.EntityPotionEffectEvent.Cause.BEACON);
++                // Paper end
+             }
+         }
+     }
+@@ -297,10 +317,10 @@ public class BeaconBlockEntity extends BlockEntity implements MenuProvider, Tick
+             int i = getLevelCb();
+             List list = getHumansInRange();
+ 
+-            applyEffect(list, this.primaryPower, i, b0);
++            applyEffect(list, this.primaryPower, i, b0, true); // Paper - BeaconEffectEvent
+ 
+             if (hasSecondaryEffect()) {
+-                applyEffect(list, this.secondaryPower, i, 0);
++                applyEffect(list, this.secondaryPower, i, 0, false); // Paper - BeaconEffectEvent
+             }
+         }
+ 
+@@ -308,7 +328,7 @@ public class BeaconBlockEntity extends BlockEntity implements MenuProvider, Tick
+     // CraftBukkit end
+ 
+     public void playSound(SoundEvent soundeffect) {
+-        this.level.playSound((Player) null, this.worldPosition, soundeffect, SoundSource.BLOCKS, 1.0F, 1.0F);
++        this.level.playSound((net.minecraft.world.entity.player.Player) null, this.worldPosition, soundeffect, SoundSource.BLOCKS, 1.0F, 1.0F);
+     }
+ 
+     public int getLevels() {
+@@ -368,7 +388,7 @@ public class BeaconBlockEntity extends BlockEntity implements MenuProvider, Tick
+ 
+     @Nullable
+     @Override
+-    public AbstractContainerMenu createMenu(int syncId, Inventory inv, Player player) {
++    public AbstractContainerMenu createMenu(int syncId, Inventory inv, net.minecraft.world.entity.player.Player player) {
+         return BaseContainerBlockEntity.canUnlock(player, this.lockKey, this.getDisplayName()) ? new BeaconMenu(syncId, inv, this.dataAccess, ContainerLevelAccess.create(this.level, this.getBlockPos())) : null;
+     }
+ 

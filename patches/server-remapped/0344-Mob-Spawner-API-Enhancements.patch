@@ -1,0 +1,139 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: William Blake Galbreath <blake.galbreath@gmail.com>
+Date: Fri, 19 Apr 2019 12:41:13 -0500
+Subject: [PATCH] Mob Spawner API Enhancements
+
+
+diff --git a/src/main/java/net/minecraft/world/level/BaseSpawner.java b/src/main/java/net/minecraft/world/level/BaseSpawner.java
+index 3a7aec9bd2f3fd1b4a1981fb6a8c64b69e4875f8..6ca378ec7868b855d46c749910c656f82ddb009f 100644
+--- a/src/main/java/net/minecraft/world/level/BaseSpawner.java
++++ b/src/main/java/net/minecraft/world/level/BaseSpawner.java
+@@ -65,6 +65,7 @@ public abstract class BaseSpawner {
+         this.spawnPotentials.clear(); // CraftBukkit - SPIGOT-3496, MC-92282
+     }
+ 
++    public boolean isActivated() { return isNearPlayer(); } // Paper - OBFHELPER
+     private boolean isNearPlayer() {
+         BlockPos blockposition = this.getPos();
+ 
+@@ -221,6 +222,7 @@ public abstract class BaseSpawner {
+         }
+     }
+ 
++    public void resetTimer() { delay(); } // Paper - OBFHELPER
+     private void delay() {
+         if (this.maxSpawnDelay <= this.minSpawnDelay) {
+             this.spawnDelay = this.minSpawnDelay;
+@@ -238,7 +240,13 @@ public abstract class BaseSpawner {
+     }
+ 
+     public void load(CompoundTag tag) {
++        // Paper start - use larger int if set
++        if (tag.contains("Paper.Delay")) {
++            this.spawnDelay = tag.getInt("Paper.Delay");
++        } else {
+         this.spawnDelay = tag.getShort("Delay");
++        }
++        // Paper end
+         this.spawnPotentials.clear();
+         if (tag.contains("SpawnPotentials", 9)) {
+             ListTag nbttaglist = tag.getList("SpawnPotentials", 10);
+@@ -253,10 +261,15 @@ public abstract class BaseSpawner {
+         } else if (!this.spawnPotentials.isEmpty()) {
+             this.setNextSpawnData((SpawnData) WeighedRandom.getRandomItem(this.getLevel().random, this.spawnPotentials));
+         }
+-
++        // Paper start - use ints if set
++        if (tag.contains("Paper.MinSpawnDelay", 99)) {
++            this.minSpawnDelay = tag.getInt("Paper.MinSpawnDelay");
++            this.maxSpawnDelay = tag.getInt("Paper.MaxSpawnDelay");
++            this.spawnCount = tag.getShort("SpawnCount");
++        } else // Paper end
+         if (tag.contains("MinSpawnDelay", 99)) {
+-            this.minSpawnDelay = tag.getShort("MinSpawnDelay");
+-            this.maxSpawnDelay = tag.getShort("MaxSpawnDelay");
++            this.minSpawnDelay = tag.getInt("MinSpawnDelay");
++            this.maxSpawnDelay = tag.getInt("MaxSpawnDelay");
+             this.spawnCount = tag.getShort("SpawnCount");
+         }
+ 
+@@ -281,9 +294,20 @@ public abstract class BaseSpawner {
+         if (minecraftkey == null) {
+             return tag;
+         } else {
+-            tag.putShort("Delay", (short) this.spawnDelay);
+-            tag.putShort("MinSpawnDelay", (short) this.minSpawnDelay);
+-            tag.putShort("MaxSpawnDelay", (short) this.maxSpawnDelay);
++            // Paper start
++            if (spawnDelay > Short.MAX_VALUE) {
++                tag.putInt("Paper.Delay", this.spawnDelay);
++            }
++            tag.putShort("Delay", (short) Math.min(Short.MAX_VALUE, this.spawnDelay));
++
++            if (minSpawnDelay > Short.MAX_VALUE || maxSpawnDelay > Short.MAX_VALUE) {
++                tag.putInt("Paper.MinSpawnDelay", this.minSpawnDelay);
++                tag.putInt("Paper.MaxSpawnDelay", this.maxSpawnDelay);
++            }
++
++            tag.putShort("MinSpawnDelay", (short) Math.min(Short.MAX_VALUE, this.minSpawnDelay));
++            tag.putShort("MaxSpawnDelay", (short) Math.min(Short.MAX_VALUE, this.maxSpawnDelay));
++            // Paper end
+             tag.putShort("SpawnCount", (short) this.spawnCount);
+             tag.putShort("MaxNearbyEntities", (short) this.maxNearbyEntities);
+             tag.putShort("RequiredPlayerRange", (short) this.requiredPlayerRange);
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftCreatureSpawner.java b/src/main/java/org/bukkit/craftbukkit/block/CraftCreatureSpawner.java
+index daaf861041cf7c8f59c85535ecb99e402ab4f658..a5b88b545e08eaabf894305a9bee31c55c5b1b87 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/CraftCreatureSpawner.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/CraftCreatureSpawner.java
+@@ -1,12 +1,20 @@
+ package org.bukkit.craftbukkit.block;
+ 
+ import com.google.common.base.Preconditions;
++import net.minecraft.core.Registry;
++import net.minecraft.nbt.CompoundTag;
+ import net.minecraft.resources.ResourceLocation;
++import net.minecraft.world.level.SpawnData;
+ import net.minecraft.world.level.block.entity.SpawnerBlockEntity;
+ import org.bukkit.Material;
+ import org.bukkit.block.Block;
+ import org.bukkit.block.CreatureSpawner;
+ import org.bukkit.entity.EntityType;
++// Paper start
++import org.bukkit.craftbukkit.inventory.CraftItemStack;
++import org.bukkit.craftbukkit.util.CraftMagicNumbers;
++import org.bukkit.inventory.ItemStack;
++// Paper end
+ 
+ public class CraftCreatureSpawner extends CraftBlockEntityState<SpawnerBlockEntity> implements CreatureSpawner {
+ 
+@@ -120,4 +128,30 @@ public class CraftCreatureSpawner extends CraftBlockEntityState<SpawnerBlockEnti
+     public void setSpawnRange(int spawnRange) {
+         this.getSnapshot().getSpawner().spawnRange = spawnRange;
+     }
++
++    // Paper start
++    @Override
++    public boolean isActivated() {
++        return this.getSnapshot().getSpawner().isActivated();
++    }
++
++    @Override
++    public void resetTimer() {
++        this.getSnapshot().getSpawner().resetTimer();
++    }
++
++    @Override
++    public void setSpawnedItem(ItemStack itemStack) {
++        Preconditions.checkArgument(itemStack != null && !itemStack.getType().isAir(), "spawners cannot spawn air");
++        net.minecraft.world.item.ItemStack item = CraftItemStack.asNMSCopy(itemStack);
++        CompoundTag compound = new CompoundTag();
++        CompoundTag entity = new CompoundTag();
++        entity.putString("id", Registry.ENTITY_TYPE.getKey(net.minecraft.world.entity.EntityType.ITEM).toString());
++        entity.put("Item", item.save(new CompoundTag()));
++        compound.put("Entity", entity);
++        compound.putInt("Weight", this.getSnapshotNBT().contains("Weight", CraftMagicNumbers.NBT.TAG_ANY_NUMBER) ? this.getSnapshotNBT().getInt("Weight") : 1);
++        this.getSnapshot().getSpawner().setNextSpawnData(new SpawnData(compound));
++        this.getSnapshot().getSpawner().spawnPotentials.clear();
++    }
++    // Paper end
+ }

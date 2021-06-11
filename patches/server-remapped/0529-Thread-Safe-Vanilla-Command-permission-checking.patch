@@ -1,0 +1,53 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sat, 11 Jul 2020 03:54:28 -0400
+Subject: [PATCH] Thread Safe Vanilla Command permission checking
+
+Datapacks check this on load and are built concurrently. This was breaking them badly due
+to race conditions.
+
+Plus, .canUse we want to be safe for async anyways.
+
+diff --git a/src/main/java/com/mojang/brigadier/tree/CommandNode.java b/src/main/java/com/mojang/brigadier/tree/CommandNode.java
+index 5c35cef42af4053332c02b4960c227fe95d4c197..757ed7a0887f4bdb187ca7c757db5c188362f1a0 100644
+--- a/src/main/java/com/mojang/brigadier/tree/CommandNode.java
++++ b/src/main/java/com/mojang/brigadier/tree/CommandNode.java
+@@ -74,10 +74,10 @@ public abstract class CommandNode<S> implements Comparable<CommandNode<S>> {
+     public synchronized boolean canUse(final S source) {
+         if (source instanceof CommandSourceStack) {
+             try {
+-                ((CommandSourceStack) source).currentCommand = this;
++                ((CommandSourceStack) source).currentCommand.set(this); // Paper
+                 return requirement.test(source);
+             } finally {
+-                ((CommandSourceStack) source).currentCommand = null;
++                ((CommandSourceStack) source).currentCommand.set(null); // Paper
+             }
+         }
+         // CraftBukkit end
+diff --git a/src/main/java/net/minecraft/commands/CommandSourceStack.java b/src/main/java/net/minecraft/commands/CommandSourceStack.java
+index e1f4ffaa36bfffb7741c74b7a094e26a03a9a1e6..2c024f8f8b949dc8cebd29a10415eeac6d50902e 100644
+--- a/src/main/java/net/minecraft/commands/CommandSourceStack.java
++++ b/src/main/java/net/minecraft/commands/CommandSourceStack.java
+@@ -54,7 +54,7 @@ public class CommandSourceStack implements SharedSuggestionProvider, com.destroy
+     private final ResultConsumer<CommandSourceStack> consumer;
+     private final EntityAnchorArgument.Anchor anchor;
+     private final Vec2 rotation;
+-    public volatile CommandNode currentCommand; // CraftBukkit
++    public ThreadLocal<CommandNode> currentCommand = new ThreadLocal<>(); // CraftBukkit // Paper
+ 
+     public CommandSourceStack(CommandSource output, Vec3 pos, Vec2 rot, ServerLevel world, int level, String simpleName, Component name, MinecraftServer server, @Nullable Entity entity) {
+         this(output, pos, rot, world, level, simpleName, name, server, entity, false, (commandcontext, flag, j) -> {
+@@ -171,9 +171,11 @@ public class CommandSourceStack implements SharedSuggestionProvider, com.destroy
+     @Override
+     public boolean hasPermission(int level) {
+         // CraftBukkit start
+-        CommandNode currentCommand = this.currentCommand;
++        // Paper start - fix concurrency issue
++        CommandNode currentCommand = this.currentCommand.get();
+         if (currentCommand != null) {
+             return hasPermission(level, org.bukkit.craftbukkit.command.VanillaCommandWrapper.getPermission(currentCommand));
++            // Paper end
+         }
+         // CraftBukkit end
+ 

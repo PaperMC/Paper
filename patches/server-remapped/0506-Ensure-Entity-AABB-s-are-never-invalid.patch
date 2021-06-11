@@ -1,0 +1,48 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sun, 10 May 2020 22:12:46 -0400
+Subject: [PATCH] Ensure Entity AABB's are never invalid
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index d9bb00752ac81b2171d3ad25fd84904467a18e3b..728379292728cf58f5512feae3cdc74392980f68 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -66,6 +66,7 @@ import net.minecraft.world.Nameable;
+ import net.minecraft.world.damagesource.DamageSource;
+ import net.minecraft.world.entity.animal.AbstractFish;
+ import net.minecraft.world.entity.animal.Animal;
++import net.minecraft.world.entity.decoration.HangingEntity;
+ import net.minecraft.world.entity.item.ItemEntity;
+ import net.minecraft.world.entity.player.Player;
+ import net.minecraft.world.entity.vehicle.AbstractMinecart;
+@@ -478,7 +479,7 @@ public abstract class Entity implements Nameable, CommandSource, net.minecraft.s
+ 
+     public void setPos(double x, double y, double z) {
+         this.setPosRaw(x, y, z);
+-        this.setBoundingBox(this.dimensions.makeBoundingBox(x, y, z));
++        //this.a(this.size.a(d0, d1, d2)); // Paper - move into setPositionRaw
+         if (valid) ((ServerLevel) level).updateChunkPos(this); // CraftBukkit
+     }
+ 
+@@ -2998,6 +2999,7 @@ public abstract class Entity implements Nameable, CommandSource, net.minecraft.s
+         return new AABB(vec3d, vec3d1);
+     }
+ 
++    public final void setBoundingBox(AABB axisalignedbb) { setBoundingBox(axisalignedbb); } // Paper - OBFHELPER
+     public void setBoundingBox(AABB boundingBox) {
+         // CraftBukkit start - block invalid bounding boxes
+         double minX = boundingBox.minX,
+@@ -3436,6 +3438,12 @@ public abstract class Entity implements Nameable, CommandSource, net.minecraft.s
+     }
+ 
+     public void setPosRaw(double x, double y, double z) {
++        // Paper start - never allow AABB to become desynced from position
++        // hanging has its own special logic
++        if (!(this instanceof HangingEntity) && (this.position.x != x || this.position.y != y || this.position.z != z)) {
++            this.setBoundingBox(this.dimensions.makeBoundingBox(x, y, z));
++        }
++        // Paper end
+         if (this.position.x != x || this.position.y != y || this.position.z != z) {
+             this.position = new Vec3(x, y, z);
+             int i = Mth.floor(x);

@@ -1,0 +1,49 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Zach Brown <zach.brown@destroystokyo.com>
+Date: Sat, 12 Nov 2016 23:25:22 -0600
+Subject: [PATCH] Filter bad data from ArmorStand and SpawnEgg items
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 622affa0dc3cc1eadaed400511f2ca2cde3fca2a..e83216be5a00d5b927d8c2fc364551bd3077c974 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -2,6 +2,7 @@ package com.destroystokyo.paper;
+ 
+ import java.util.List;
+ 
++import org.bukkit.Bukkit;
+ import org.bukkit.configuration.file.YamlConfiguration;
+ import org.spigotmc.SpigotWorldConfig;
+ 
+@@ -305,4 +306,12 @@ public class PaperWorldConfig {
+     private void removeCorruptTEs() {
+         removeCorruptTEs = getBoolean("remove-corrupt-tile-entities", false);
+     }
++
++    public boolean filterNBTFromSpawnEgg = true;
++    private void fitlerNBTFromSpawnEgg() {
++        filterNBTFromSpawnEgg = getBoolean("filter-nbt-data-from-spawn-eggs-and-related", true);
++        if (!filterNBTFromSpawnEgg) {
++            Bukkit.getLogger().warning("Spawn Egg and Armor Stand NBT filtering disabled, this is a potential security risk");
++        }
++    }
+ }
+diff --git a/src/main/java/net/minecraft/world/entity/item/FallingBlockEntity.java b/src/main/java/net/minecraft/world/entity/item/FallingBlockEntity.java
+index 1d87717cc9002ea202ee2ca614aaa8a4c7ea3cb2..ff8f7e4569a889ead1512b7c9908f9c5cad9eed5 100644
+--- a/src/main/java/net/minecraft/world/entity/item/FallingBlockEntity.java
++++ b/src/main/java/net/minecraft/world/entity/item/FallingBlockEntity.java
+@@ -270,6 +270,13 @@ public class FallingBlockEntity extends Entity {
+     @Override
+     protected void readAdditionalSaveData(CompoundTag tag) {
+         this.blockState = NbtUtils.readBlockState(tag.getCompound("BlockState"));
++        // Paper start - Block FallingBlocks with Command Blocks
++        // Check mappings on update - dc = "repeating_command_block" - dd = "chain_command_block"
++        final Block b = this.blockState.getBlock();
++        if (this.level.paperConfig.filterNBTFromSpawnEgg && (b == Blocks.COMMAND_BLOCK || b == Blocks.REPEATING_COMMAND_BLOCK || b == Blocks.CHAIN_COMMAND_BLOCK)) {
++            this.blockState = Blocks.STONE.defaultBlockState();
++        }
++        // Paper end
+         this.time = tag.getInt("Time");
+         if (tag.contains("HurtEntities", 99)) {
+             this.hurtEntities = tag.getBoolean("HurtEntities");

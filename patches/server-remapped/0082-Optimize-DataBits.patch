@@ -1,0 +1,84 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Tue, 5 Apr 2016 21:38:58 -0400
+Subject: [PATCH] Optimize DataBits
+
+Remove Debug checks as these are super hot and causing noticeable hits
+
+Before: http://i.imgur.com/nQsMzAE.png
+After: http://i.imgur.com/nJ46crB.png
+
+Optimize redundant converting of static fields into an unsigned long each call by precomputing it in ctor
+
+diff --git a/src/main/java/net/minecraft/util/BitStorage.java b/src/main/java/net/minecraft/util/BitStorage.java
+index 97bde5f8402452e59b0da94edfe1b970cdb86748..dd84984f28484cf7129c294222696784e128221a 100644
+--- a/src/main/java/net/minecraft/util/BitStorage.java
++++ b/src/main/java/net/minecraft/util/BitStorage.java
+@@ -13,8 +13,8 @@ public class BitStorage {
+     private final long mask;
+     private final int size;
+     private final int valuesPerLong;
+-    private final int divideMul;
+-    private final int divideAdd;
++    private final int divideMul;private final long g_unsigned; // Paper - referenced in b(int) with 2 Integer.toUnsignedLong calls
++    private final int divideAdd;private final long h_unsigned; // Paper
+     private final int divideShift;
+ 
+     public BitStorage(int elementBits, int size) {
+@@ -29,8 +29,8 @@ public class BitStorage {
+         this.valuesPerLong = (char) (64 / elementBits);
+         int k = 3 * (this.valuesPerLong - 1);
+ 
+-        this.divideMul = BitStorage.MAGIC[k + 0];
+-        this.divideAdd = BitStorage.MAGIC[k + 1];
++        this.divideMul = BitStorage.MAGIC[k + 0]; this.g_unsigned = Integer.toUnsignedLong(this.divideMul); // Paper
++        this.divideAdd = BitStorage.MAGIC[k + 1]; this.h_unsigned = Integer.toUnsignedLong(this.divideAdd); // Paper
+         this.divideShift = BitStorage.MAGIC[k + 2];
+         int l = (size + this.valuesPerLong - 1) / this.valuesPerLong;
+ 
+@@ -47,15 +47,15 @@ public class BitStorage {
+     }
+ 
+     private int cellIndex(int i) {
+-        long j = Integer.toUnsignedLong(this.divideMul);
+-        long k = Integer.toUnsignedLong(this.divideAdd);
++        //long j = Integer.toUnsignedLong(this.g); // Paper
++        //long k = Integer.toUnsignedLong(this.h); // Paper
+ 
+-        return (int) ((long) i * j + k >> 32 >> this.divideShift);
++        return (int) ((long) i * this.g_unsigned + this.h_unsigned >> 32 >> this.divideShift); // Paper
+     }
+ 
+-    public int getAndSet(int index, int value) {
+-        Validate.inclusiveBetween(0L, (long) (this.size - 1), (long) index);
+-        Validate.inclusiveBetween(0L, this.mask, (long) value);
++    public final int getAndSet(int index, int value) { // Paper - make final for inline
++        //Validate.inclusiveBetween(0L, (long) (this.e - 1), (long) i); // Paper
++        //Validate.inclusiveBetween(0L, this.d, (long) j); // Paper
+         int k = this.cellIndex(index);
+         long l = this.data[k];
+         int i1 = (index - k * this.valuesPerLong) * this.bits;
+@@ -65,9 +65,9 @@ public class BitStorage {
+         return j1;
+     }
+ 
+-    public void set(int index, int value) {
+-        Validate.inclusiveBetween(0L, (long) (this.size - 1), (long) index);
+-        Validate.inclusiveBetween(0L, this.mask, (long) value);
++    public final void set(int index, int value) { // Paper - make final for inline
++        //Validate.inclusiveBetween(0L, (long) (this.e - 1), (long) i); // Paper
++        //Validate.inclusiveBetween(0L, this.d, (long) j); // Paper
+         int k = this.cellIndex(index);
+         long l = this.data[k];
+         int i1 = (index - k * this.valuesPerLong) * this.bits;
+@@ -75,8 +75,8 @@ public class BitStorage {
+         this.data[k] = l & ~(this.mask << i1) | ((long) value & this.mask) << i1;
+     }
+ 
+-    public int get(int index) {
+-        Validate.inclusiveBetween(0L, (long) (this.size - 1), (long) index);
++    public final int get(int index) { // Paper - make final for inline
++        //Validate.inclusiveBetween(0L, (long) (this.e - 1), (long) i); // Paper
+         int j = this.cellIndex(index);
+         long k = this.data[j];
+         int l = (index - j * this.valuesPerLong) * this.bits;

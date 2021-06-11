@@ -1,0 +1,131 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Wed, 13 Apr 2016 02:10:49 -0400
+Subject: [PATCH] Configurable Player Collision
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+index 439dcc6effdc91830d2b7ede9063982998b37120..504efea7b6f50a0d17f4f353781953dfb18bdeca 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+@@ -232,4 +232,9 @@ public class PaperConfig {
+     private static void regionFileCacheSize() {
+         regionFileCacheSize = Math.max(getInt("settings.region-file-cache-size", 256), 4);
+     }
++
++    public static boolean enablePlayerCollisions = true;
++    private static void enablePlayerCollisions() {
++        enablePlayerCollisions = getBoolean("settings.enable-player-collisions", true);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/network/protocol/game/ClientboundSetPlayerTeamPacket.java b/src/main/java/net/minecraft/network/protocol/game/ClientboundSetPlayerTeamPacket.java
+index 53f284b720d97ba8ce8fac90bc26e7930dcec6b2..d70e7079ea2c84edbc2a8501f115194e2a4ef2e4 100644
+--- a/src/main/java/net/minecraft/network/protocol/game/ClientboundSetPlayerTeamPacket.java
++++ b/src/main/java/net/minecraft/network/protocol/game/ClientboundSetPlayerTeamPacket.java
+@@ -112,7 +112,7 @@ public class ClientboundSetPlayerTeamPacket implements Packet<ClientGamePacketLi
+             buf.writeComponent(this.displayName);
+             buf.writeByte(this.options);
+             buf.writeUtf(this.nametagVisibility);
+-            buf.writeUtf(this.collisionRule);
++            buf.writeUtf(!com.destroystokyo.paper.PaperConfig.enablePlayerCollisions ? "never" : this.collisionRule); // Paper
+             buf.writeEnum((Enum) this.color);
+             buf.writeComponent(this.playerPrefix);
+             buf.writeComponent(this.playerSuffix);
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index f7763a773bce4d8d947c8c859fe84d8a601034c5..d639ead95c36985fa0f5a9c51898c4237e373f0e 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -150,6 +150,7 @@ import net.minecraft.world.level.storage.loot.LootTables;
+ import net.minecraft.world.level.storage.loot.PredicateManager;
+ import net.minecraft.world.phys.Vec2;
+ import net.minecraft.world.phys.Vec3;
++import net.minecraft.world.scores.PlayerTeam;
+ import net.minecraft.world.scores.Scoreboard;
+ import net.minecraft.world.scores.ScoreboardSaveData;
+ import org.apache.commons.lang3.Validate;
+@@ -549,6 +550,20 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+             this.server.getPluginManager().callEvent(new org.bukkit.event.world.WorldLoadEvent(worldserver.getWorld()));
+         }
+ 
++        // Paper start - Handle collideRule team for player collision toggle
++        final Scoreboard scoreboard = this.getScoreboard();
++        final java.util.Collection<String> toRemove = scoreboard.getTeams().stream().filter(team -> team.getName().startsWith("collideRule_")).map(PlayerTeam::getName).collect(java.util.stream.Collectors.toList());
++        for (String teamName : toRemove) {
++            scoreboard.removeTeam(scoreboard.getTeam(teamName)); // Clean up after ourselves
++        }
++
++        if (!com.destroystokyo.paper.PaperConfig.enablePlayerCollisions) {
++            this.getPlayerList().collideRuleTeamName = org.apache.commons.lang3.StringUtils.left("collideRule_" + java.util.concurrent.ThreadLocalRandom.current().nextInt(), 16);
++            PlayerTeam collideTeam = scoreboard.createTeam(this.getPlayerList().collideRuleTeamName);
++            collideTeam.setSeeFriendlyInvisibles(false); // Because we want to mimic them not being on a team at all
++        }
++        // Paper end
++
+         this.server.enablePlugins(org.bukkit.plugin.PluginLoadOrder.POSTWORLD);
+         this.server.getPluginManager().callEvent(new ServerLoadEvent(ServerLoadEvent.LoadType.STARTUP));
+         this.connection.acceptConnections();
+diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
+index aa440a6341a6d30aba8fd5f6bcd122bd5d8760cd..59fb19cfebe4f488fd02f02db31029d44b65e408 100644
+--- a/src/main/java/net/minecraft/server/players/PlayerList.java
++++ b/src/main/java/net/minecraft/server/players/PlayerList.java
+@@ -79,6 +79,7 @@ import net.minecraft.world.level.storage.PlayerDataStorage;
+ import net.minecraft.world.phys.Vec3;
+ import net.minecraft.world.scores.Objective;
+ import net.minecraft.world.scores.PlayerTeam;
++import net.minecraft.world.scores.Scoreboard;
+ import net.minecraft.world.scores.Team;
+ import org.apache.logging.log4j.LogManager;
+ import org.apache.logging.log4j.Logger;
+@@ -141,6 +142,7 @@ public abstract class PlayerList {
+     // CraftBukkit start
+     private CraftServer cserver;
+     private final Map<String,ServerPlayer> playersByName = new java.util.HashMap<>();
++    public @Nullable String collideRuleTeamName; // Paper - Team name used for collideRule
+ 
+     public PlayerList(MinecraftServer server, RegistryAccess.RegistryHolder registryManager, PlayerDataStorage saveHandler, int maxPlayers) {
+         this.cserver = server.server = new CraftServer((DedicatedServer) server, this);
+@@ -372,6 +374,13 @@ public abstract class PlayerList {
+         }
+ 
+         player.initMenu();
++        // Paper start - Add to collideRule team if needed
++        final Scoreboard scoreboard = this.getServer().getLevel(Level.OVERWORLD).getScoreboard();
++        final PlayerTeam collideRuleTeam = scoreboard.getTeam(collideRuleTeamName);
++        if (this.collideRuleTeamName != null && collideRuleTeam != null && player.getTeam() == null) {
++            scoreboard.addPlayerToTeam(player.getScoreboardName(), collideRuleTeam);
++        }
++        // Paper end
+         // CraftBukkit - Moved from above, added world
+         PlayerList.LOGGER.info("{}[{}] logged in with entity id {} at ([{}]{}, {}, {})", player.getName().getString(), s1, player.getId(), worldserver1.worldDataServer.getLevelName(), player.getX(), player.getY(), player.getZ());
+     }
+@@ -492,6 +501,16 @@ public abstract class PlayerList {
+         entityplayer.doTick(); // SPIGOT-924
+         // CraftBukkit end
+ 
++        // Paper start - Remove from collideRule team if needed
++        if (this.collideRuleTeamName != null) {
++            final Scoreboard scoreBoard = this.server.getLevel(Level.OVERWORLD).getScoreboard();
++            final PlayerTeam team = scoreBoard.getTeam(this.collideRuleTeamName);
++            if (entityplayer.getTeam() == team && team != null) {
++                scoreBoard.removePlayerFromTeam(entityplayer.getScoreboardName(), team);
++            }
++        }
++        // Paper end
++
+         this.save(entityplayer);
+         if (entityplayer.isPassenger()) {
+             Entity entity = entityplayer.getRootVehicle();
+@@ -1140,6 +1159,13 @@ public abstract class PlayerList {
+         }
+         // CraftBukkit end
+ 
++        // Paper start - Remove collideRule team if it exists
++        if (this.collideRuleTeamName != null) {
++            final Scoreboard scoreboard = this.getServer().getLevel(Level.OVERWORLD).getScoreboard();
++            final PlayerTeam team = scoreboard.getTeam(this.collideRuleTeamName);
++            if (team != null) scoreboard.removeTeam(team);
++        }
++        // Paper end
+     }
+ 
+     // CraftBukkit start

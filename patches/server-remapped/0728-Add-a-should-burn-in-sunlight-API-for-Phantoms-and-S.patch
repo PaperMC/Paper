@@ -1,0 +1,126 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: MeFisto94 <MeFisto94@users.noreply.github.com>
+Date: Tue, 11 May 2021 00:48:33 +0200
+Subject: [PATCH] Add a "should burn in sunlight" API for Phantoms and
+ Skeletons
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/monster/AbstractSkeleton.java b/src/main/java/net/minecraft/world/entity/monster/AbstractSkeleton.java
+index 68e52e3a31e70569d1a92602aff4b7b81c594757..a8a0dba43453b7ac73e8e0faf7728445d9bcc2cd 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/AbstractSkeleton.java
++++ b/src/main/java/net/minecraft/world/entity/monster/AbstractSkeleton.java
+@@ -98,9 +98,15 @@ public abstract class AbstractSkeleton extends Monster implements RangedAttackMo
+         return MobType.UNDEAD;
+     }
+ 
++    // Paper start
++    private boolean shouldBurnInDay = true;
++    public boolean shouldBurnInDay() { return shouldBurnInDay; }
++    public void setShouldBurnInDay(boolean shouldBurnInDay) { this.shouldBurnInDay = shouldBurnInDay; }
++    // Paper end
++
+     @Override
+     public void aiStep() {
+-        boolean flag = this.isSunBurnTick();
++        boolean flag = shouldBurnInDay && this.isSunBurnTick(); // Paper - Configurable Burning
+ 
+         if (flag) {
+             ItemStack itemstack = this.getItemBySlot(EquipmentSlot.HEAD);
+@@ -224,7 +230,16 @@ public abstract class AbstractSkeleton extends Monster implements RangedAttackMo
+     public void readAdditionalSaveData(CompoundTag tag) {
+         super.readAdditionalSaveData(tag);
+         this.reassessWeaponGoal();
++        this.shouldBurnInDay = tag.getBoolean("Paper.ShouldBurnInDay"); // Paper
++    }
++
++    // Paper start
++    @Override
++    public void addAdditionalSaveData(CompoundTag tag) {
++        super.addAdditionalSaveData(tag);
++        tag.putBoolean("Paper.ShouldBurnInDay", shouldBurnInDay);
+     }
++    // Paper end
+ 
+     @Override
+     public void setItemSlot(EquipmentSlot slot, ItemStack stack) {
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Phantom.java b/src/main/java/net/minecraft/world/entity/monster/Phantom.java
+index a40c23e824652cff59633b7c314e27ec9a515c07..8f4dd4540330966689e71568e9e9ef77f82a786a 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Phantom.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Phantom.java
+@@ -134,7 +134,7 @@ public class Phantom extends FlyingMob implements Enemy {
+ 
+     @Override
+     public void aiStep() {
+-        if (this.isAlive() && this.isSunBurnTick()) {
++        if (this.isAlive() && shouldBurnInDay && this.isSunBurnTick()) { // Paper - Configurable Burning
+             this.setSecondsOnFire(8);
+         }
+ 
+@@ -165,6 +165,7 @@ public class Phantom extends FlyingMob implements Enemy {
+         if (tag.hasUUID("Paper.SpawningEntity")) {
+             this.spawningEntity = tag.getUUID("Paper.SpawningEntity");
+         }
++        this.shouldBurnInDay = tag.getBoolean("Paper.ShouldBurnInDay");
+         // Paper end
+     }
+ 
+@@ -179,6 +180,7 @@ public class Phantom extends FlyingMob implements Enemy {
+         if (this.spawningEntity != null) {
+             tag.setUUID("Paper.SpawningEntity", this.spawningEntity);
+         }
++        tag.putBoolean("Paper.ShouldBurnInDay", shouldBurnInDay);
+         // Paper end
+     }
+ 
+@@ -233,6 +235,10 @@ public class Phantom extends FlyingMob implements Enemy {
+         return spawningEntity;
+     }
+     public void setSpawningEntity(java.util.UUID entity) { this.spawningEntity = entity; }
++
++    private boolean shouldBurnInDay = true;
++    public boolean shouldBurnInDay() { return shouldBurnInDay; }
++    public void setShouldBurnInDay(boolean shouldBurnInDay) { this.shouldBurnInDay = shouldBurnInDay; }
+     // Paper end
+ 
+     class PhantomAttackPlayerTargetGoal extends Goal {
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPhantom.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPhantom.java
+index 92162fa22f5e98b7837bde5830bd47c31b8b52d8..011ad2224a3a3a2d255b2498e406fbb047359240 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPhantom.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPhantom.java
+@@ -39,5 +39,15 @@ public class CraftPhantom extends CraftFlying implements Phantom {
+     public java.util.UUID getSpawningEntity() {
+         return getHandle().getSpawningEntity();
+     }
++
++    @Override
++    public boolean shouldBurnInDay() {
++        return getHandle().shouldBurnInDay();
++    }
++
++    @Override
++    public void setShouldBurnInDay(boolean shouldBurnInDay) {
++        getHandle().setShouldBurnInDay(shouldBurnInDay);
++    }
+     // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftSkeleton.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftSkeleton.java
+index b2d3244cca4d9d108159f3537d8a9aace3f8e77f..28dda8beb1793fad47b2c9db815c0b6cf6ed781a 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftSkeleton.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftSkeleton.java
+@@ -36,4 +36,16 @@ public class CraftSkeleton extends CraftMonster implements Skeleton, com.destroy
+     public void setSkeletonType(SkeletonType type) {
+         throw new UnsupportedOperationException("Not supported.");
+     }
++
++    // Paper start
++    @Override
++    public boolean shouldBurnInDay() {
++        return getHandle().shouldBurnInDay();
++    }
++
++    @Override
++    public void setShouldBurnInDay(boolean shouldBurnInDay) {
++        getHandle().setShouldBurnInDay(shouldBurnInDay);
++    }
++    // Paper end
+ }

@@ -1,0 +1,97 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Wed, 12 Sep 2018 21:47:01 -0400
+Subject: [PATCH] Optimize Biome Mob Lookups for Mob Spawning
+
+Uses an EnumMap as well as a Set paired List for O(1) contains calls.
+
+diff --git a/src/main/java/net/minecraft/world/level/biome/MobSpawnSettings.java b/src/main/java/net/minecraft/world/level/biome/MobSpawnSettings.java
+index 58ee27a994b4cd845b8bb28e80cc2102c860f097..528f42c63a1186b8827bfe7cf6193e14da938cb3 100644
+--- a/src/main/java/net/minecraft/world/level/biome/MobSpawnSettings.java
++++ b/src/main/java/net/minecraft/world/level/biome/MobSpawnSettings.java
+@@ -30,19 +30,28 @@ public class MobSpawnSettings {
+     }, (enumcreaturetype) -> {
+         return ImmutableList.of();
+     })), ImmutableMap.of(), false);
++    // Paper start- decompile error workaround
++    private static class bProxy extends MobSpawnSettings.MobSpawnCost {
++        private bProxy(double gravityLimit, double mass) {
++            super(gravityLimit, mass);
++        }
++    }
++    private static class cProxy extends MobSpawnSettings.SpawnerData {
++        public cProxy(EntityType<?> type, int weight, int minGroupSize, int maxGroupSize) {
++            super(type, weight, minGroupSize, maxGroupSize);
++        }
++    };
++    // Paper end
+     public static final MapCodec<MobSpawnSettings> CODEC = RecordCodecBuilder.mapCodec((instance) -> {
+-        RecordCodecBuilder recordcodecbuilder = Codec.FLOAT.optionalFieldOf("creature_spawn_probability", 0.1F).forGetter((biomesettingsmobs) -> {
+-            return biomesettingsmobs.d;
++        RecordCodecBuilder<MobSpawnSettings, Float> recordcodecbuilder = Codec.FLOAT.optionalFieldOf("creature_spawn_probability", 0.1F).forGetter((biomesettingsmobs) -> { // Paper - add type to builder
++            return biomesettingsmobs.creatureGenerationProbability;
+         });
+-        Codec codec = MobCategory.CODEC;
+-        Codec codec1 = BiomeSettingsMobs.c.b.listOf();
+-        Logger logger = MobSpawnSettings.LOGGER;
+-
+-        logger.getClass();
+-        return instance.group(recordcodecbuilder, Codec.simpleMap(codec, codec1.promotePartial(Util.prefix("Spawn data: ", logger::error)), StringRepresentable.keys(MobCategory.values())).fieldOf("spawners").forGetter((biomesettingsmobs) -> {
+-            return biomesettingsmobs.e;
+-        }), Codec.simpleMap(Registry.ENTITY_TYPE, BiomeSettingsMobs.b.a, Registry.ENTITY_TYPE).fieldOf("spawn_costs").forGetter((biomesettingsmobs) -> {
+-            return biomesettingsmobs.f;
++        // Paper - remove unused vars
++
++        return instance.group(recordcodecbuilder, Codec.simpleMap(MobCategory.CODEC, cProxy.CODEC.listOf().promotePartial(Util.prefix("Spawn data: ", MobSpawnSettings.LOGGER::error)), StringRepresentable.keys(MobCategory.values())).fieldOf("spawners").forGetter((biomesettingsmobs) -> { // Paper - inline codec, cProxy, LOGGER
++            return biomesettingsmobs.spawners;
++        }), Codec.simpleMap(Registry.ENTITY_TYPE, bProxy.CODEC, Registry.ENTITY_TYPE).fieldOf("spawn_costs").forGetter((biomesettingsmobs) -> { // Paper - decompile error - bProxy
++            return biomesettingsmobs.mobSpawnCosts;
+         }), Codec.BOOL.fieldOf("player_spawn_friendly").orElse(false).forGetter(MobSpawnSettings::playerSpawnFriendly)).apply(instance, MobSpawnSettings::new);
+     });
+     private final float creatureGenerationProbability;
+@@ -76,11 +85,43 @@ public class MobSpawnSettings {
+ 
+     public static class Builder {
+ 
+-        private final Map<MobCategory, List<MobSpawnSettings.SpawnerData>> spawners = (Map) Stream.of(MobCategory.values()).collect(ImmutableMap.toImmutableMap((enumcreaturetype) -> {
++        // Paper start - keep track of data in a pair set to give O(1) contains calls - we have to hook removals incase plugins mess with it
++        public static class MobList extends java.util.ArrayList<MobSpawnSettings.SpawnerData> {
++            java.util.Set<MobSpawnSettings.SpawnerData> biomes = new java.util.HashSet<>();
++
++            @Override
++            public boolean contains(Object o) {
++                return biomes.contains(o);
++            }
++
++            @Override
++            public boolean add(MobSpawnSettings.SpawnerData BiomeSettingsMobs) {
++                biomes.add(BiomeSettingsMobs);
++                return super.add(BiomeSettingsMobs);
++            }
++
++            @Override
++            public MobSpawnSettings.SpawnerData remove(int index) {
++                MobSpawnSettings.SpawnerData removed = super.remove(index);
++                if (removed != null) {
++                    biomes.remove(removed);
++                }
++                return removed;
++            }
++
++            @Override
++            public void clear() {
++                biomes.clear();
++                super.clear();
++            }
++        }
++        // use toImmutableEnumMap collector
++        private final Map<MobCategory, List<MobSpawnSettings.SpawnerData>> spawners = (Map) Stream.of(MobCategory.values()).collect(Maps.toImmutableEnumMap((enumcreaturetype) -> {
+             return enumcreaturetype;
+         }, (enumcreaturetype) -> {
+-            return Lists.newArrayList();
++            return new MobList(); // Use MobList instead of ArrayList
+         }));
++        // Paper end
+         private final Map<EntityType<?>, MobSpawnSettings.MobSpawnCost> mobSpawnCosts = Maps.newLinkedHashMap();
+         private float creatureGenerationProbability = 0.1F;
+         private boolean playerCanSpawn;

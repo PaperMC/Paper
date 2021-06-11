@@ -1,0 +1,173 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Techcable <Techcable@outlook.com>
+Date: Thu, 3 Mar 2016 02:32:10 -0600
+Subject: [PATCH] Player Tab List and Title APIs
+
+
+diff --git a/src/main/java/net/minecraft/network/FriendlyByteBuf.java b/src/main/java/net/minecraft/network/FriendlyByteBuf.java
+index 59788eaef0dae5ee01ceba1bf45e85cb07f88e53..b4542ce6a8c37ab31e6ecaeb4cbad4742cca0f9b 100644
+--- a/src/main/java/net/minecraft/network/FriendlyByteBuf.java
++++ b/src/main/java/net/minecraft/network/FriendlyByteBuf.java
+@@ -170,6 +170,11 @@ public class FriendlyByteBuf extends ByteBuf {
+     public FriendlyByteBuf writeComponent(final net.kyori.adventure.text.Component component) {
+         return this.writeUtf(PaperAdventure.asJsonString(component, this.adventure$locale), 262144);
+     }
++
++    @Deprecated
++    public FriendlyByteBuf writeComponent(final net.md_5.bungee.api.chat.BaseComponent[] component) {
++        return this.writeUtf(net.md_5.bungee.chat.ComponentSerializer.toString(component), 262144);
++    }
+     // Paper end
+ 
+     public FriendlyByteBuf writeComponent(Component text) {
+diff --git a/src/main/java/net/minecraft/network/chat/Component.java b/src/main/java/net/minecraft/network/chat/Component.java
+index 54d186a195aca6d0a4c412ed609d8c86dcc76072..06e9246f05e130be6a63ebb0c9def10c6c9675b7 100644
+--- a/src/main/java/net/minecraft/network/chat/Component.java
++++ b/src/main/java/net/minecraft/network/chat/Component.java
+@@ -363,6 +363,7 @@ public interface Component extends Message, FormattedText, Iterable<Component> {
+             return Component.Serializer.GSON.toJsonTree(text);
+         }
+ 
++        @Nullable public static Component jsonToComponent(String json) { return fromJson(json);} // Paper - OBFHELPER
+         @Nullable
+         public static MutableComponent fromJson(String json) {
+             return (MutableComponent) GsonHelper.fromJson(Component.Serializer.GSON, json, MutableComponent.class, false);
+diff --git a/src/main/java/net/minecraft/network/protocol/game/ClientboundSetTitlesPacket.java b/src/main/java/net/minecraft/network/protocol/game/ClientboundSetTitlesPacket.java
+index 69ff8df7340e60c476803256750a48f0b43414d3..df444daeb181ff78170f7b92bd02f1f1862dfa2e 100644
+--- a/src/main/java/net/minecraft/network/protocol/game/ClientboundSetTitlesPacket.java
++++ b/src/main/java/net/minecraft/network/protocol/game/ClientboundSetTitlesPacket.java
+@@ -47,6 +47,17 @@ public class ClientboundSetTitlesPacket implements Packet<ClientGamePacketListen
+         }
+ 
+     }
++    // Paper start
++    public net.md_5.bungee.api.chat.BaseComponent[] components;
++
++    public ClientboundSetTitlesPacket(Type action, net.md_5.bungee.api.chat.BaseComponent[] components, int fadeIn, int stay, int fadeOut) {
++        this.type = action;
++        this.components = components;
++        this.fadeInTime = fadeIn;
++        this.stayTime = stay;
++        this.fadeOutTime = fadeOut;
++    }
++    // Paper end
+ 
+     @Override
+     public void write(FriendlyByteBuf buf) throws IOException {
+@@ -55,6 +66,8 @@ public class ClientboundSetTitlesPacket implements Packet<ClientGamePacketListen
+             // Paper start
+             if (this.adventure$text != null) {
+                 buf.writeComponent(this.adventure$text);
++            } else if (this.components != null) {
++                buf.writeComponent(this.components);
+             } else
+             // Paper end
+             buf.writeComponent(this.text);
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index 2920ba3d8eeb62670897ea19b50aaf395ab84c5a..63933bd455ad72a772d4db160e946600b84a1791 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -1,5 +1,6 @@
+ package org.bukkit.craftbukkit.entity;
+ 
++import com.destroystokyo.paper.Title;
+ import com.google.common.base.Preconditions;
+ import com.google.common.collect.ImmutableSet;
+ import com.google.common.io.BaseEncoding;
+@@ -236,6 +237,96 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+         }
+     }
+ 
++    // Paper start
++    @Override
++    public void setPlayerListHeaderFooter(BaseComponent[] header, BaseComponent[] footer) {
++         if (header != null) {
++             String headerJson = net.md_5.bungee.chat.ComponentSerializer.toString(header);
++             playerListHeader = net.kyori.adventure.text.serializer.gson.GsonComponentSerializer.gson().deserialize(headerJson);
++         } else {
++             playerListHeader = null;
++         }
++
++        if (footer != null) {
++             String footerJson = net.md_5.bungee.chat.ComponentSerializer.toString(footer);
++             playerListFooter = net.kyori.adventure.text.serializer.gson.GsonComponentSerializer.gson().deserialize(footerJson);
++        } else {
++             playerListFooter = null;
++         }
++
++         updatePlayerListHeaderFooter();
++    }
++
++    @Override
++    public void setPlayerListHeaderFooter(BaseComponent header, BaseComponent footer) {
++        this.setPlayerListHeaderFooter(header == null ? null : new BaseComponent[]{header},
++                footer == null ? null : new BaseComponent[]{footer});
++    }
++
++
++    @Override
++    public void setTitleTimes(int fadeInTicks, int stayTicks, int fadeOutTicks) {
++        getHandle().connection.send(new ClientboundSetTitlesPacket(ClientboundSetTitlesPacket.Type.TIMES, (BaseComponent[]) null, fadeInTicks, stayTicks, fadeOutTicks));
++    }
++
++    @Override
++    public void setSubtitle(BaseComponent[] subtitle) {
++        getHandle().connection.send(new ClientboundSetTitlesPacket(ClientboundSetTitlesPacket.Type.SUBTITLE, subtitle, 0, 0, 0));
++    }
++
++    @Override
++    public void setSubtitle(BaseComponent subtitle) {
++        setSubtitle(new BaseComponent[]{subtitle});
++    }
++
++    @Override
++    public void showTitle(BaseComponent[] title) {
++        getHandle().connection.send(new ClientboundSetTitlesPacket(ClientboundSetTitlesPacket.Type.TITLE, title, 0, 0, 0));
++    }
++
++    @Override
++    public void showTitle(BaseComponent title) {
++        showTitle(new BaseComponent[]{title});
++    }
++
++    @Override
++    public void showTitle(BaseComponent[] title, BaseComponent[] subtitle, int fadeInTicks, int stayTicks, int fadeOutTicks) {
++        setTitleTimes(fadeInTicks, stayTicks, fadeOutTicks);
++        setSubtitle(subtitle);
++        showTitle(title);
++    }
++
++    @Override
++    public void showTitle(BaseComponent title, BaseComponent subtitle, int fadeInTicks, int stayTicks, int fadeOutTicks) {
++        setTitleTimes(fadeInTicks, stayTicks, fadeOutTicks);
++        setSubtitle(subtitle);
++        showTitle(title);
++    }
++
++    @Override
++    public void sendTitle(Title title) {
++        Preconditions.checkNotNull(title, "Title is null");
++        setTitleTimes(title.getFadeIn(), title.getStay(), title.getFadeOut());
++        setSubtitle(title.getSubtitle() == null ? new BaseComponent[0] : title.getSubtitle());
++        showTitle(title.getTitle());
++    }
++
++    @Override
++    public void updateTitle(Title title) {
++        Preconditions.checkNotNull(title, "Title is null");
++        setTitleTimes(title.getFadeIn(), title.getStay(), title.getFadeOut());
++        if (title.getSubtitle() != null) {
++            setSubtitle(title.getSubtitle());
++        }
++        showTitle(title.getTitle());
++    }
++
++    @Override
++    public void hideTitle() {
++        getHandle().connection.send(new ClientboundSetTitlesPacket(ClientboundSetTitlesPacket.Type.CLEAR, (BaseComponent[]) null, 0, 0, 0));
++    }
++    // Paper end
++
+     @Override
+     public String getDisplayName() {
+         if(true) return io.papermc.paper.adventure.DisplayNames.getLegacy(this); // Paper

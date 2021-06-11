@@ -1,0 +1,74 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: commandblockguy <commandblockguy1@gmail.com>
+Date: Fri, 14 Aug 2020 14:44:14 -0500
+Subject: [PATCH] Prevent headless pistons from being created
+
+Prevent headless pistons from being created by explosions or tree/mushroom growth.
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+index fdbd8b89bb8bf3b61f60b812b90483c98a3d5ccb..faa1b775e45563b93ac1d5b904938b1f5ad8d80c 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+@@ -441,6 +441,12 @@ public class PaperConfig {
+         set("settings.unsupported-settings.allow-tnt-duplication", null);
+     }
+ 
++    public static boolean allowHeadlessPistons;
++    private static void allowHeadlessPistons() {
++        config.set("settings.unsupported-settings.allow-headless-pistons-readme", "This setting controls if players should be able to create headless pistons.");
++        allowHeadlessPistons = getBoolean("settings.unsupported-settings.allow-headless-pistons", false);
++    }
++
+     public static int playerAutoSaveRate = -1;
+     public static int maxPlayerAutoSavePerTick = 10;
+     private static void playerAutoSaveRate() {
+diff --git a/src/main/java/net/minecraft/world/level/Explosion.java b/src/main/java/net/minecraft/world/level/Explosion.java
+index 0f0a5fa2be5a7c69291b593a04cad83e069ba5b1..f7ca5294fe571770e3b0036e92563c5a099f76b1 100644
+--- a/src/main/java/net/minecraft/world/level/Explosion.java
++++ b/src/main/java/net/minecraft/world/level/Explosion.java
+@@ -15,6 +15,7 @@ import java.util.Random;
+ import java.util.Set;
+ import javax.annotation.Nullable;
+ import net.minecraft.core.BlockPos;
++import net.minecraft.core.Direction;
+ import net.minecraft.core.Vec3i;
+ import net.minecraft.core.particles.ParticleTypes;
+ import net.minecraft.server.level.ServerLevel;
+@@ -35,6 +36,8 @@ import net.minecraft.world.level.block.BaseFireBlock;
+ import net.minecraft.world.level.block.Block;
+ import net.minecraft.world.level.block.Blocks;
+ import net.minecraft.world.level.block.entity.BlockEntity;
++import net.minecraft.world.level.block.piston.PistonHeadBlock;
++import net.minecraft.world.level.block.piston.PistonMovingBlockEntity;
+ import net.minecraft.world.level.block.state.BlockState;
+ import net.minecraft.world.level.material.FluidState;
+ import net.minecraft.world.level.storage.loot.LootContext;
+@@ -161,6 +164,15 @@ public class Explosion {
+ 
+                             if (f > 0.0F && this.damageCalculator.a(this, this.level, blockposition, iblockdata, f) && blockposition.getY() < 256 && blockposition.getY() >= 0) { // CraftBukkit - don't wrap explosions
+                                 set.add(blockposition);
++                                // Paper start - prevent headless pistons from forming
++                                if (!com.destroystokyo.paper.PaperConfig.allowHeadlessPistons && iblockdata.getBlock() == Blocks.MOVING_PISTON) {
++                                    BlockEntity extension = this.level.getBlockEntity(blockposition);
++                                    if (extension instanceof PistonMovingBlockEntity && ((PistonMovingBlockEntity) extension).isHead()) {
++                                       Direction direction = iblockdata.getValue(PistonHeadBlock.FACING);
++                                       set.add(blockposition.relative(direction.getOpposite()));
++                                    }
++                                }
++                                // Paper end
+                             }
+ 
+                             d4 += d0 * 0.30000001192092896D;
+diff --git a/src/main/java/net/minecraft/world/level/block/piston/PistonMovingBlockEntity.java b/src/main/java/net/minecraft/world/level/block/piston/PistonMovingBlockEntity.java
+index 001e90da8b09e16b6df4849a5bac4f4821000c94..81f3c6fb7bab9de364537d3f3b2ea0f32795e5f1 100644
+--- a/src/main/java/net/minecraft/world/level/block/piston/PistonMovingBlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/piston/PistonMovingBlockEntity.java
+@@ -65,6 +65,8 @@ public class PistonMovingBlockEntity extends BlockEntity implements TickableBloc
+         return this.direction;
+     }
+ 
++    public final boolean isHead() { return this.isSourcePiston(); } // Paper - OBFHELPER
++
+     public boolean isSourcePiston() {
+         return this.isSourcePiston;
+     }

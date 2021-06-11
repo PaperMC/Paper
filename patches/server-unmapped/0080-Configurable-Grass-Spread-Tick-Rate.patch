@@ -1,0 +1,41 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sun, 3 Apr 2016 16:28:17 -0400
+Subject: [PATCH] Configurable Grass Spread Tick Rate
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 74ba5dbb83c13ce1721619b755036a7864a1fb90..db2dddd12f54e6d15916c4cee623676541de37fb 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -248,4 +248,10 @@ public class PaperWorldConfig {
+         }
+         fixedInhabitedTime = getInt("fixed-chunk-inhabited-time", -1);
+     }
++
++    public int grassUpdateRate = 1;
++    private void grassUpdateRate() {
++        grassUpdateRate = Math.max(0, getInt("grass-spread-tick-rate", grassUpdateRate));
++        log("Grass Spread Tick Rate: " + grassUpdateRate);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/world/level/block/BlockDirtSnowSpreadable.java b/src/main/java/net/minecraft/world/level/block/BlockDirtSnowSpreadable.java
+index a98392f06e66959ec1b75df8d2ecf3b5267980af..712596420af83e6e1b9d147ae2fd8d8a1f36e1b9 100644
+--- a/src/main/java/net/minecraft/world/level/block/BlockDirtSnowSpreadable.java
++++ b/src/main/java/net/minecraft/world/level/block/BlockDirtSnowSpreadable.java
+@@ -3,6 +3,7 @@ package net.minecraft.world.level.block;
+ import java.util.Random;
+ import net.minecraft.core.BlockPosition;
+ import net.minecraft.core.EnumDirection;
++import net.minecraft.server.MinecraftServer;
+ import net.minecraft.server.level.WorldServer;
+ import net.minecraft.tags.Tag;
+ import net.minecraft.tags.TagsFluid;
+@@ -41,6 +42,7 @@ public abstract class BlockDirtSnowSpreadable extends BlockDirtSnow {
+ 
+     @Override
+     public void tick(IBlockData iblockdata, WorldServer worldserver, BlockPosition blockposition, Random random) {
++        if (this instanceof BlockGrass && worldserver.paperConfig.grassUpdateRate != 1 && (worldserver.paperConfig.grassUpdateRate < 1 || (MinecraftServer.currentTick + blockposition.hashCode()) % worldserver.paperConfig.grassUpdateRate != 0)) { return; } // Paper
+         if (!b(iblockdata, (IWorldReader) worldserver, blockposition)) {
+             // CraftBukkit start
+             if (org.bukkit.craftbukkit.event.CraftEventFactory.callBlockFadeEvent(worldserver, blockposition, Blocks.DIRT.getBlockData()).isCancelled()) {

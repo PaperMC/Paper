@@ -1,0 +1,94 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Byteflux <byte@byteflux.net>
+Date: Tue, 1 Mar 2016 14:14:15 -0600
+Subject: [PATCH] Drop falling block and tnt entities at the specified height
+
+* Dec 2, 2020 Added tnt nerf for tnt minecarts - Machine_Maker
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 89e76dd73811fd0f6f8c8e7e5af804d5a4bb5a75..d16ae924bcbe31c964f7fb448757c748e5c4418c 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -124,4 +124,14 @@ public class PaperWorldConfig {
+         keepSpawnInMemory = getBoolean("keep-spawn-loaded", true);
+         log("Keep spawn chunk loaded: " + keepSpawnInMemory);
+     }
++
++    public int fallingBlockHeightNerf;
++    public int entityTNTHeightNerf;
++    private void heightNerfs() {
++        fallingBlockHeightNerf = getInt("falling-block-height-nerf", 0);
++        entityTNTHeightNerf = getInt("tnt-entity-height-nerf", 0);
++
++        if (fallingBlockHeightNerf != 0) log("Falling Block Height Limit set to Y: " + fallingBlockHeightNerf);
++        if (entityTNTHeightNerf != 0) log("TNT Entity Height Limit set to Y: " + entityTNTHeightNerf);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index 584e83441a9fef88eb1b0a29bec8bda29d6a0c9c..706417f44c1eebc7cc5e8e7053fa0ab21f4caeba 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -1849,6 +1849,7 @@ public abstract class Entity implements Nameable, CommandSource, net.minecraft.s
+         return this.spawnAtLocation(stack, 0.0F);
+     }
+ 
++    @Nullable public final ItemEntity dropItem(ItemStack itemstack, float offset) { return this.spawnAtLocation(itemstack, offset); } // Paper - OBFHELPER
+     @Nullable
+     public ItemEntity spawnAtLocation(ItemStack stack, float yOffset) {
+         if (stack.isEmpty()) {
+diff --git a/src/main/java/net/minecraft/world/entity/item/FallingBlockEntity.java b/src/main/java/net/minecraft/world/entity/item/FallingBlockEntity.java
+index 8a9e2316b9f5756503dc06e27981525d2cd7d1a5..5394bc6336cb84025c1c748fb5b3d38e0648a590 100644
+--- a/src/main/java/net/minecraft/world/entity/item/FallingBlockEntity.java
++++ b/src/main/java/net/minecraft/world/entity/item/FallingBlockEntity.java
+@@ -122,6 +122,17 @@ public class FallingBlockEntity extends Entity {
+             }
+ 
+             this.move(MoverType.SELF, this.getDeltaMovement());
++
++            // Paper start - Configurable EntityFallingBlock height nerf
++            if (this.level.paperConfig.fallingBlockHeightNerf != 0 && this.getY() > this.level.paperConfig.fallingBlockHeightNerf) {
++                if (this.dropItem && this.level.getGameRules().getBoolean(GameRules.RULE_DOENTITYDROPS)) {
++                    this.spawnAtLocation(block);
++                }
++
++                this.remove();
++                return;
++            }
++            // Paper end
+             if (!this.level.isClientSide) {
+                 blockposition = this.blockPosition();
+                 boolean flag = this.blockState.getBlock() instanceof ConcretePowderBlock;
+diff --git a/src/main/java/net/minecraft/world/entity/item/PrimedTnt.java b/src/main/java/net/minecraft/world/entity/item/PrimedTnt.java
+index ff15a372b7cad5fa88b7ef6de1f3441d93f9c67e..4c4262b8f0cb44b8cea8cb46194a6e70d4ce56f4 100644
+--- a/src/main/java/net/minecraft/world/entity/item/PrimedTnt.java
++++ b/src/main/java/net/minecraft/world/entity/item/PrimedTnt.java
+@@ -69,6 +69,12 @@ public class PrimedTnt extends Entity {
+         }
+ 
+         this.move(MoverType.SELF, this.getDeltaMovement());
++        // Paper start - Configurable TNT entity height nerf
++        if (this.level.paperConfig.entityTNTHeightNerf != 0 && this.getY() > this.level.paperConfig.entityTNTHeightNerf) {
++            this.remove();
++            return;
++        }
++        // Paper end
+         this.setDeltaMovement(this.getDeltaMovement().scale(0.98D));
+         if (this.onGround) {
+             this.setDeltaMovement(this.getDeltaMovement().multiply(0.7D, -0.5D, 0.7D));
+diff --git a/src/main/java/net/minecraft/world/entity/vehicle/MinecartTNT.java b/src/main/java/net/minecraft/world/entity/vehicle/MinecartTNT.java
+index c2ed3ba42d29a50386c94b109fdd3b2f2f1b433b..3b5e96f2325e14a94de0fb2d6da86812cecc7395 100644
+--- a/src/main/java/net/minecraft/world/entity/vehicle/MinecartTNT.java
++++ b/src/main/java/net/minecraft/world/entity/vehicle/MinecartTNT.java
+@@ -47,6 +47,12 @@ public class MinecartTNT extends AbstractMinecart {
+     public void tick() {
+         super.tick();
+         if (this.fuse > 0) {
++            // Paper start - Configurable TNT entity height nerf
++            if (this.level.paperConfig.entityTNTHeightNerf != 0 && this.getY() > this.level.paperConfig.entityTNTHeightNerf) {
++                this.remove();
++                return;
++            }
++            // Paper end
+             --this.fuse;
+             this.level.addParticle(ParticleTypes.SMOKE, this.getX(), this.getY() + 0.5D, this.getZ(), 0.0D, 0.0D, 0.0D);
+         } else if (this.fuse == 0) {

@@ -1,0 +1,154 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Minecrell <minecrell@minecrell.net>
+Date: Wed, 11 Oct 2017 19:30:51 +0200
+Subject: [PATCH] Call PaperServerListPingEvent for legacy pings
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/network/PaperLegacyStatusClient.java b/src/main/java/com/destroystokyo/paper/network/PaperLegacyStatusClient.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..74c012fd40491f1d870fbc1aa8c318a2197eb106
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/network/PaperLegacyStatusClient.java
+@@ -0,0 +1,73 @@
++package com.destroystokyo.paper.network;
++
++import com.destroystokyo.paper.event.server.PaperServerListPingEvent;
++import net.minecraft.server.MinecraftServer;
++import org.apache.commons.lang3.StringUtils;
++import org.bukkit.ChatColor;
++
++import java.net.InetSocketAddress;
++
++import javax.annotation.Nullable;
++
++public final class PaperLegacyStatusClient implements StatusClient {
++
++    private final InetSocketAddress address;
++    private final int protocolVersion;
++    @Nullable private final InetSocketAddress virtualHost;
++
++    private PaperLegacyStatusClient(InetSocketAddress address, int protocolVersion, @Nullable InetSocketAddress virtualHost) {
++        this.address = address;
++        this.protocolVersion = protocolVersion;
++        this.virtualHost = virtualHost;
++    }
++
++    @Override
++    public InetSocketAddress getAddress() {
++        return this.address;
++    }
++
++    @Override
++    public int getProtocolVersion() {
++        return this.protocolVersion;
++    }
++
++    @Nullable
++    @Override
++    public InetSocketAddress getVirtualHost() {
++        return this.virtualHost;
++    }
++
++    @Override
++    public boolean isLegacy() {
++        return true;
++    }
++
++    public static PaperServerListPingEvent processRequest(MinecraftServer server,
++            InetSocketAddress address, int protocolVersion, @Nullable InetSocketAddress virtualHost) {
++
++        PaperServerListPingEvent event =  new PaperServerListPingEventImpl(server,
++                new PaperLegacyStatusClient(address, protocolVersion, virtualHost), Byte.MAX_VALUE, null);
++        server.server.getPluginManager().callEvent(event);
++
++        if (event.isCancelled()) {
++            return null;
++        }
++
++        return event;
++    }
++
++    public static String getMotd(PaperServerListPingEvent event) {
++        return getFirstLine(event.getMotd());
++    }
++
++    public static String getUnformattedMotd(PaperServerListPingEvent event) {
++        // Strip color codes and all other occurrences of the color char (because it's used as delimiter)
++        return getFirstLine(StringUtils.remove(ChatColor.stripColor(event.getMotd()), ChatColor.COLOR_CHAR));
++    }
++
++    private static String getFirstLine(String s) {
++        int pos = s.indexOf('\n');
++        return pos >= 0 ? s.substring(0, pos) : s;
++    }
++
++}
+diff --git a/src/main/java/net/minecraft/server/network/LegacyQueryHandler.java b/src/main/java/net/minecraft/server/network/LegacyQueryHandler.java
+index 1d11802876c1a94ecf991cd8249bd6a911c0ac20..dfe2cd46f2432dca2028b7436c4108e3f190787f 100644
+--- a/src/main/java/net/minecraft/server/network/LegacyQueryHandler.java
++++ b/src/main/java/net/minecraft/server/network/LegacyQueryHandler.java
+@@ -1,5 +1,7 @@
+ package net.minecraft.server.network;
+ 
++import com.destroystokyo.paper.network.PaperLegacyStatusClient;
++
+ import io.netty.buffer.ByteBuf;
+ import io.netty.buffer.Unpooled;
+ import io.netty.channel.ChannelFutureListener;
+@@ -46,12 +48,19 @@ public class LegacyQueryHandler extends ChannelInboundHandlerAdapter {
+             MinecraftServer minecraftserver = this.serverConnectionListener.getServer();
+             int i = bytebuf.readableBytes();
+             String s;
+-            org.bukkit.event.server.ServerListPingEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callServerListPingEvent(minecraftserver.server, inetsocketaddress.getAddress(), minecraftserver.getMotd(), minecraftserver.getPlayerCount(), minecraftserver.getMaxPlayers()); // CraftBukkit
++            //org.bukkit.event.server.ServerListPingEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callServerListPingEvent(minecraftserver.server, inetsocketaddress.getAddress(), minecraftserver.getMotd(), minecraftserver.getPlayerCount(), minecraftserver.getMaxPlayers()); // CraftBukkit // Paper
++            com.destroystokyo.paper.event.server.PaperServerListPingEvent event; // Paper
+ 
+             switch (i) {
+                 case 0:
+                     LegacyQueryHandler.LOGGER.debug("Ping: (<1.3.x) from {}:{}", inetsocketaddress.getAddress(), inetsocketaddress.getPort());
+-                    s = String.format("%s\u00a7%d\u00a7%d", event.getMotd(), event.getNumPlayers(), event.getMaxPlayers()); // CraftBukkit
++                // Paper start - Call PaperServerListPingEvent and use results
++                event = PaperLegacyStatusClient.processRequest(minecraftserver, inetsocketaddress, 39, null);
++                if (event == null) {
++                    channelhandlercontext.close();
++                    break;
++                }
++                s = String.format("%s\u00a7%d\u00a7%d", PaperLegacyStatusClient.getUnformattedMotd(event), event.getNumPlayers(), event.getMaxPlayers());
+                     this.sendFlushAndClose(channelhandlercontext, this.createReply(s));
+                     break;
+                 case 1:
+@@ -60,7 +69,14 @@ public class LegacyQueryHandler extends ChannelInboundHandlerAdapter {
+                     }
+ 
+                     LegacyQueryHandler.LOGGER.debug("Ping: (1.4-1.5.x) from {}:{}", inetsocketaddress.getAddress(), inetsocketaddress.getPort());
+-                    s = String.format("\u00a71\u0000%d\u0000%s\u0000%s\u0000%d\u0000%d", 127, minecraftserver.getServerVersion(), event.getMotd(), event.getNumPlayers(), event.getMaxPlayers()); // CraftBukkit
++                // Paper start - Call PaperServerListPingEvent and use results
++                event = PaperLegacyStatusClient.processRequest(minecraftserver, inetsocketaddress, 127, null); // Paper
++                if (event == null) {
++                    channelhandlercontext.close();
++                    break;
++                }
++                s = String.format("\u00a71\u0000%d\u0000%s\u0000%s\u0000%d\u0000%d", new Object[] { event.getProtocolVersion(), minecraftserver.getServerVersion(), event.getMotd(), event.getNumPlayers(), event.getMaxPlayers()}); // CraftBukkit
++                // Paper end
+                     this.sendFlushAndClose(channelhandlercontext, this.createReply(s));
+                     break;
+                 default:
+@@ -170,8 +186,16 @@ public class LegacyQueryHandler extends ChannelInboundHandlerAdapter {
+ 
+         LOGGER.debug("Ping: (1.6) from {}", ctx.channel().remoteAddress());
+ 
+-        String response = String.format("\u00a71\u0000%d\u0000%s\u0000%s\u0000%d\u0000%d",
+-                Byte.MAX_VALUE, server.getServerVersion(), server.getMotd(), server.getPlayerCount(), server.getMaxPlayers());
++        InetSocketAddress virtualHost = com.destroystokyo.paper.network.PaperNetworkClient.prepareVirtualHost(host, port);
++        com.destroystokyo.paper.event.server.PaperServerListPingEvent event = PaperLegacyStatusClient.processRequest(
++                server, (InetSocketAddress) ctx.channel().remoteAddress(), protocolVersion, virtualHost);
++        if (event == null) {
++            ctx.close();
++            return;
++        }
++
++        String response = String.format("\u00a71\u0000%d\u0000%s\u0000%s\u0000%d\u0000%d", event.getProtocolVersion(), event.getVersion(),
++            PaperLegacyStatusClient.getMotd(event), event.getNumPlayers(), event.getMaxPlayers());
+         this.sendFlushAndClose(ctx, this.createReply(response));
+     }
+ 

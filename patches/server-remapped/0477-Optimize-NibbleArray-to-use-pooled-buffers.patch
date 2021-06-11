@@ -1,0 +1,394 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Wed, 6 May 2020 23:30:30 -0400
+Subject: [PATCH] Optimize NibbleArray to use pooled buffers
+
+Massively reduces memory allocation of 2048 byte buffers by using
+an object pool for these.
+
+Uses lots of advanced new capabilities of the Paper codebase :)
+
+diff --git a/src/main/java/net/minecraft/network/protocol/game/ClientboundLightUpdatePacket.java b/src/main/java/net/minecraft/network/protocol/game/ClientboundLightUpdatePacket.java
+index bc1b4cc2e0a4181bde5ac05ce0a20a651cb0c4c3..902f14e2e5ac5aa11b545a68ac69e9b0282df7f4 100644
+--- a/src/main/java/net/minecraft/network/protocol/game/ClientboundLightUpdatePacket.java
++++ b/src/main/java/net/minecraft/network/protocol/game/ClientboundLightUpdatePacket.java
+@@ -1,12 +1,16 @@
+ package net.minecraft.network.protocol.game;
+ 
+ import com.google.common.collect.Lists;
++import io.netty.channel.ChannelFuture; // Paper
++
+ import java.io.IOException;
+ import java.util.Iterator;
+ import java.util.List;
+ import net.minecraft.core.SectionPos;
+ import net.minecraft.network.FriendlyByteBuf;
+ import net.minecraft.network.protocol.Packet;
++import net.minecraft.server.MCUtil;
++import net.minecraft.server.level.ServerPlayer;
+ import net.minecraft.world.level.ChunkPos;
+ import net.minecraft.world.level.LightLayer;
+ import net.minecraft.world.level.chunk.DataLayer;
+@@ -24,14 +28,43 @@ public class ClientboundLightUpdatePacket implements Packet<ClientGamePacketList
+     private List<byte[]> blockUpdates;
+     private boolean trustEdges;
+ 
++    // Paper start
++    java.lang.Runnable cleaner1;
++    java.lang.Runnable cleaner2;
++    java.util.concurrent.atomic.AtomicInteger remainingSends = new java.util.concurrent.atomic.AtomicInteger(0);
++
++    @Override
++    public void onPacketDispatch(ServerPlayer player) {
++        remainingSends.incrementAndGet();
++    }
++
++    @Override
++    public void onPacketDispatchFinish(ServerPlayer player, ChannelFuture future) {
++        if (remainingSends.decrementAndGet() <= 0) {
++            // incase of any race conditions, schedule this delayed
++            MCUtil.scheduleTask(5, () -> {
++                if (remainingSends.get() == 0) {
++                    cleaner1.run();
++                    cleaner2.run();
++                }
++            }, "Light Packet Release");
++        }
++    }
++
++    @Override
++    public boolean hasFinishListener() {
++        return true;
++    }
++
++    // Paper end
+     public ClientboundLightUpdatePacket() {}
+ 
+     public ClientboundLightUpdatePacket(ChunkPos chunkcoordintpair, LevelLightEngine lightengine, boolean flag) {
+         this.x = chunkcoordintpair.x;
+         this.z = chunkcoordintpair.z;
+         this.trustEdges = flag;
+-        this.skyUpdates = Lists.newArrayList();
+-        this.blockUpdates = Lists.newArrayList();
++        this.skyUpdates = Lists.newArrayList();cleaner1 = MCUtil.registerListCleaner(this, this.skyUpdates, DataLayer::releaseBytes); // Paper
++        this.blockUpdates = Lists.newArrayList();cleaner2 = MCUtil.registerListCleaner(this, this.blockUpdates, DataLayer::releaseBytes); // Paper
+ 
+         for (int i = 0; i < 18; ++i) {
+             DataLayer nibblearray = lightengine.getLayerListener(LightLayer.SKY).getDataLayerData(SectionPos.of(chunkcoordintpair, -1 + i));
+@@ -42,7 +75,7 @@ public class ClientboundLightUpdatePacket implements Packet<ClientGamePacketList
+                     this.emptySkyYMask |= 1 << i;
+                 } else {
+                     this.skyYMask |= 1 << i;
+-                    this.skyUpdates.add(nibblearray.getData().clone());
++                    this.skyUpdates.add(nibblearray.getCloneIfSet()); // Paper
+                 }
+             }
+ 
+@@ -51,7 +84,7 @@ public class ClientboundLightUpdatePacket implements Packet<ClientGamePacketList
+                     this.emptyBlockYMask |= 1 << i;
+                 } else {
+                     this.blockYMask |= 1 << i;
+-                    this.blockUpdates.add(nibblearray1.getData().clone());
++                    this.blockUpdates.add(nibblearray1.getCloneIfSet()); // Paper
+                 }
+             }
+         }
+@@ -64,8 +97,8 @@ public class ClientboundLightUpdatePacket implements Packet<ClientGamePacketList
+         this.trustEdges = flag;
+         this.skyYMask = skyLightMask;
+         this.blockYMask = blockLightMask;
+-        this.skyUpdates = Lists.newArrayList();
+-        this.blockUpdates = Lists.newArrayList();
++        this.skyUpdates = Lists.newArrayList();cleaner1 = MCUtil.registerListCleaner(this, this.skyUpdates, DataLayer::releaseBytes); // Paper
++        this.blockUpdates = Lists.newArrayList();cleaner2 = MCUtil.registerListCleaner(this, this.blockUpdates, DataLayer::releaseBytes); // Paper
+ 
+         for (int k = 0; k < 18; ++k) {
+             DataLayer nibblearray;
+@@ -73,7 +106,7 @@ public class ClientboundLightUpdatePacket implements Packet<ClientGamePacketList
+             if ((this.skyYMask & 1 << k) != 0) {
+                 nibblearray = lightProvider.getLayerListener(LightLayer.SKY).getDataLayerData(SectionPos.of(pos, -1 + k));
+                 if (nibblearray != null && !nibblearray.isEmpty()) {
+-                    this.skyUpdates.add(nibblearray.getData().clone());
++                    this.skyUpdates.add(nibblearray.getCloneIfSet()); // Paper
+                 } else {
+                     this.skyYMask &= ~(1 << k);
+                     if (nibblearray != null) {
+@@ -85,7 +118,7 @@ public class ClientboundLightUpdatePacket implements Packet<ClientGamePacketList
+             if ((this.blockYMask & 1 << k) != 0) {
+                 nibblearray = lightProvider.getLayerListener(LightLayer.BLOCK).getDataLayerData(SectionPos.of(pos, -1 + k));
+                 if (nibblearray != null && !nibblearray.isEmpty()) {
+-                    this.blockUpdates.add(nibblearray.getData().clone());
++                    this.blockUpdates.add(nibblearray.getCloneIfSet()); // Paper
+                 } else {
+                     this.blockYMask &= ~(1 << k);
+                     if (nibblearray != null) {
+diff --git a/src/main/java/net/minecraft/world/level/chunk/DataLayer.java b/src/main/java/net/minecraft/world/level/chunk/DataLayer.java
+index 2b798f4e556302f6f79d54182a309f4716a84f04..83e9d8bff9a31fe13a0e22445cd6eecb7abe8561 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/DataLayer.java
++++ b/src/main/java/net/minecraft/world/level/chunk/DataLayer.java
+@@ -1,18 +1,78 @@
+ // mc-dev import
+ package net.minecraft.world.level.chunk;
+ 
++import com.destroystokyo.paper.util.pooled.PooledObjects; // Paper
++
++import javax.annotation.Nonnull;
+ import javax.annotation.Nullable;
+ import net.minecraft.Util;
++import net.minecraft.server.MCUtil;
+ 
+ public class DataLayer {
+ 
+-    @Nullable
+-    protected byte[] data;
++    // Paper start
++    public static byte[] EMPTY_NIBBLE = new byte[2048];
++    private static final int nibbleBucketSizeMultiplier = Integer.getInteger("Paper.nibbleBucketSize", 3072);
++    private static final int maxPoolSize = Integer.getInteger("Paper.maxNibblePoolSize", (int) Math.min(6, Math.max(1, Runtime.getRuntime().maxMemory() / 1024 / 1024 / 1024)) * (nibbleBucketSizeMultiplier * 8));
++    public static final PooledObjects<byte[]> BYTE_2048 = new PooledObjects<>(() -> new byte[2048], maxPoolSize);
++    public static void releaseBytes(byte[] bytes) {
++        if (bytes != null && bytes != EMPTY_NIBBLE && bytes.length == 2048) {
++            System.arraycopy(EMPTY_NIBBLE, 0, bytes, 0, 2048);
++            BYTE_2048.release(bytes);
++        }
++    }
++
++    public DataLayer markPoolSafe(byte[] bytes) {
++        if (bytes != EMPTY_NIBBLE) this.data = bytes;
++        return markPoolSafe();
++    }
++    public DataLayer markPoolSafe() {
++        poolSafe = true;
++        return this;
++    }
++    public byte[] getIfSet() {
++        return this.data != null ? this.data : EMPTY_NIBBLE;
++    }
++    public byte[] getCloneIfSet() {
++        if (data == null) {
++            return EMPTY_NIBBLE;
++        }
++        byte[] ret = BYTE_2048.acquire();
++        System.arraycopy(getIfSet(), 0, ret, 0, 2048);
++        return ret;
++    }
++
++    public DataLayer cloneAndSet(byte[] bytes) {
++        if (bytes != null && bytes != EMPTY_NIBBLE) {
++            this.data = BYTE_2048.acquire();
++            System.arraycopy(bytes, 0, this.data, 0, 2048);
++        }
++        return this;
++    }
++    boolean poolSafe = false;
++    public java.lang.Runnable cleaner;
++    private void registerCleaner() {
++        if (!poolSafe) {
++            cleaner = MCUtil.registerCleaner(this, this.data, DataLayer::releaseBytes);
++        } else {
++            cleaner = MCUtil.once(() -> DataLayer.releaseBytes(this.data));
++        }
++    }
++    // Paper end
++    @Nullable protected byte[] data;
++
+ 
+     public DataLayer() {}
+ 
+     public DataLayer(byte[] abyte) {
++        // Paper start
++        this(abyte, false);
++    }
++    public DataLayer(byte[] abyte, boolean isSafe) {
+         this.data = abyte;
++        if (!isSafe) this.data = getCloneIfSet(); // Paper - clone for safety
++        registerCleaner();
++        // Paper end
+         if (abyte.length != 2048) {
+             throw (IllegalArgumentException) Util.pauseInIde((Throwable) (new IllegalArgumentException("ChunkNibbleArrays should be 2048 bytes not: " + abyte.length)));
+         }
+@@ -46,7 +106,8 @@ public class DataLayer {
+ 
+     public void set(int index, int value) { // PAIL: private -> public
+         if (this.data == null) {
+-            this.data = new byte[2048];
++            this.data = BYTE_2048.acquire(); // Paper
++            registerCleaner();// Paper
+         }
+ 
+         int k = this.getPosition(index);
+@@ -68,14 +129,36 @@ public class DataLayer {
+     public byte[] getData() {
+         if (this.data == null) {
+             this.data = new byte[2048];
++        } else { // Paper start
++            // Accessor may need this object past garbage collection so need to clone it and return pooled value
++            // If we know its safe for pre GC access, use asBytesPoolSafe(). If you just need read, use getIfSet()
++            Runnable cleaner = this.cleaner;
++            if (cleaner != null) {
++                this.data = this.data.clone();
++                cleaner.run(); // release the previously pooled value
++                this.cleaner = null;
++            }
++        }
++        // Paper end
++
++        return this.data;
++    }
++
++    @Nonnull
++    public byte[] asBytesPoolSafe() {
++        if (this.data == null) {
++            this.data = BYTE_2048.acquire(); // Paper
++            registerCleaner(); // Paper
+         }
+ 
++        //noinspection ConstantConditions
+         return this.data;
+     }
++    // Paper end
+ 
+     public DataLayer copy() { return this.copy(); } // Paper - OBFHELPER
+     public DataLayer copy() {
+-        return this.data == null ? new DataLayer() : new DataLayer((byte[]) this.data.clone());
++        return this.data == null ? new DataLayer() : new DataLayer(this.data); // Paper - clone in ctor
+     }
+ 
+     public String toString() {
+diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
+index 6c28a611b9b79c3322ab07883972c07b3bfc3073..1e58958c3d7b10da5a5f22fc9591d9183e53e3cc 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
++++ b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
+@@ -435,11 +435,11 @@ public class ChunkSerializer {
+                 }
+ 
+                 if (nibblearray != null && !nibblearray.isEmpty()) {
+-                    nbttagcompound2.putByteArray("BlockLight", nibblearray.getData());
++                    nbttagcompound2.putByteArray("BlockLight", nibblearray.asBytesPoolSafe().clone()); // Paper
+                 }
+ 
+                 if (nibblearray1 != null && !nibblearray1.isEmpty()) {
+-                    nbttagcompound2.putByteArray("SkyLight", nibblearray1.getData());
++                    nbttagcompound2.putByteArray("SkyLight", nibblearray1.asBytesPoolSafe().clone()); // Paper
+                 }
+ 
+                 nbttaglist.add(nbttagcompound2);
+diff --git a/src/main/java/net/minecraft/world/level/lighting/DataLayerStorageMap.java b/src/main/java/net/minecraft/world/level/lighting/DataLayerStorageMap.java
+index 4c9041f1c1cb4b3ec114fbd0c5d4db50a6f2526d..54cca3b376e5ce02936edc8b9c17e67e17f07147 100644
+--- a/src/main/java/net/minecraft/world/level/lighting/DataLayerStorageMap.java
++++ b/src/main/java/net/minecraft/world/level/lighting/DataLayerStorageMap.java
+@@ -2,6 +2,7 @@ package net.minecraft.world.level.lighting;
+ 
+ import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
+ import javax.annotation.Nullable;
++import net.minecraft.server.MCUtil;
+ import net.minecraft.world.level.chunk.DataLayer;
+ 
+ public abstract class DataLayerStorageMap<M extends DataLayerStorageMap<M>> {
+@@ -34,7 +35,9 @@ public abstract class DataLayerStorageMap<M extends DataLayerStorageMap<M>> {
+ 
+     public void copyDataLayer(long pos) {
+         if (this.isVisible) { throw new IllegalStateException("writing to visible data"); } // Paper - avoid copying light data
+-        this.data.queueUpdate(pos, ((DataLayer) this.data.getUpdating(pos)).copy()); // Paper - avoid copying light data
++        DataLayer updating = this.data.getUpdating(pos); // Paper - pool nibbles
++        this.data.queueUpdate(pos, new DataLayer().markPoolSafe(updating.getCloneIfSet())); // Paper - avoid copying light data - pool safe clone
++        if (updating.cleaner != null) MCUtil.scheduleTask(2, updating.cleaner, "Light Engine Release"); // Paper - delay clean incase anything holding ref was still using it
+         this.clearCache();
+     }
+ 
+diff --git a/src/main/java/net/minecraft/world/level/lighting/FlatDataLayer.java b/src/main/java/net/minecraft/world/level/lighting/FlatDataLayer.java
+index 9b95ae0ff193d7f52650f406c70e76e3f7e07e1c..c0d356ac4d54b952fe9ddaf5125b07177ac44d1f 100644
+--- a/src/main/java/net/minecraft/world/level/lighting/FlatDataLayer.java
++++ b/src/main/java/net/minecraft/world/level/lighting/FlatDataLayer.java
+@@ -10,7 +10,7 @@ public class FlatDataLayer extends DataLayer {
+ 
+     public FlatDataLayer(DataLayer nibblearray, int i) {
+         super(128);
+-        System.arraycopy(nibblearray.getData(), i * 128, this.data, 0, 128);
++        System.arraycopy(nibblearray.getIfSet(), i * 128, this.data, 0, 128); // Paper
+     }
+ 
+     @Override
+@@ -20,7 +20,7 @@ public class FlatDataLayer extends DataLayer {
+ 
+     @Override
+     public byte[] getData() {
+-        byte[] abyte = new byte[2048];
++        byte[] abyte = BYTE_2048.acquire(); // Paper
+ 
+         for (int i = 0; i < 16; ++i) {
+             System.arraycopy(this.data, 0, abyte, i * 128, 128);
+diff --git a/src/main/java/net/minecraft/world/level/lighting/LayerLightSectionStorage.java b/src/main/java/net/minecraft/world/level/lighting/LayerLightSectionStorage.java
+index 177dae992d13674bb285a60b8427df9ea843dc99..5757bcfded35f112d52a7c81586850ba50e0d8dd 100644
+--- a/src/main/java/net/minecraft/world/level/lighting/LayerLightSectionStorage.java
++++ b/src/main/java/net/minecraft/world/level/lighting/LayerLightSectionStorage.java
+@@ -156,7 +156,7 @@ public abstract class LayerLightSectionStorage<M extends DataLayerStorageMap<M>>
+     protected DataLayer createDataLayer(long sectionPos) {
+         DataLayer nibblearray = (DataLayer) this.queuedSections.get(sectionPos);
+ 
+-        return nibblearray != null ? nibblearray : new DataLayer();
++        return nibblearray != null ? nibblearray : new DataLayer().markPoolSafe(); // Paper
+     }
+ 
+     protected void clearQueuedSectionBlocks(LayerLightEngine<?, ?> storage, long sectionPos) {
+@@ -338,12 +338,12 @@ public abstract class LayerLightSectionStorage<M extends DataLayerStorageMap<M>>
+ 
+     protected void queueSectionData(long sectionPos, @Nullable DataLayer array, boolean flag) {
+         if (array != null) {
+-            this.queuedSections.put(sectionPos, array);
++            DataLayer remove = this.queuedSections.put(sectionPos, array); if (remove != null && remove.cleaner != null) remove.cleaner.run(); // Paper - clean up when removed
+             if (!flag) {
+                 this.untrustedSections.add(sectionPos);
+             }
+         } else {
+-            this.queuedSections.remove(sectionPos);
++            DataLayer remove = this.queuedSections.remove(sectionPos); if (remove != null && remove.cleaner != null) remove.cleaner.run(); // Paper - clean up when removed
+         }
+ 
+     }
+diff --git a/src/main/java/net/minecraft/world/level/lighting/SkyLightSectionStorage.java b/src/main/java/net/minecraft/world/level/lighting/SkyLightSectionStorage.java
+index 410fcfa8c01b7e3d3e3829ebdb92a11badff16ea..88f168f9d4c29cfc93500227bf8a60de4b6e4d8a 100644
+--- a/src/main/java/net/minecraft/world/level/lighting/SkyLightSectionStorage.java
++++ b/src/main/java/net/minecraft/world/level/lighting/SkyLightSectionStorage.java
+@@ -172,9 +172,9 @@ public class SkyLightSectionStorage extends LayerLightSectionStorage<SkyLightSec
+                     j = SectionPos.offset(j, Direction.UP);
+                 }
+ 
+-                return new DataLayer((new FlatDataLayer(nibblearray1, 0)).getData());
++                return new DataLayer().markPoolSafe(new FlatDataLayer(nibblearray1, 0).getData()); // Paper - mark pool use as safe (no auto cleaner)
+             } else {
+-                return new DataLayer();
++                return new DataLayer().markPoolSafe(); // Paper - mark pool use as safe (no auto cleaner)
+             }
+         }
+     }
+@@ -203,7 +203,7 @@ public class SkyLightSectionStorage extends LayerLightSectionStorage<SkyLightSec
+                                 ((SkyLightSectionStorage.SkyDataLayerStorageMap) this.updatingSectionData).copyDataLayer(i);
+                             }
+ 
+-                            Arrays.fill(this.getDataLayer(i, true).getData(), (byte) -1);
++                            Arrays.fill(this.getDataLayer(i, true).asBytesPoolSafe(), (byte) -1); // Paper
+                             k = SectionPos.sectionToBlockCoord(SectionPos.x(i));
+                             l = SectionPos.sectionToBlockCoord(SectionPos.y(i));
+                             int i1 = SectionPos.sectionToBlockCoord(SectionPos.z(i));
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftChunk.java b/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
+index 0f45f4b2486e910d11fd94b260bcd68e49eae31e..77584a2552c0d59d4308342253ad42edaa794c97 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
+@@ -298,14 +298,14 @@ public class CraftChunk implements Chunk {
+                     sectionSkyLights[i] = emptyLight;
+                 } else {
+                     sectionSkyLights[i] = new byte[2048];
+-                    System.arraycopy(skyLightArray.getData(), 0, sectionSkyLights[i], 0, 2048);
++                    System.arraycopy(skyLightArray.getIfSet(), 0, sectionSkyLights[i], 0, 2048); // Paper
+                 }
+                 DataLayer emitLightArray = lightengine.getLayerListener(LightLayer.BLOCK).getDataLayerData(SectionPos.of(x, i, z));
+                 if (emitLightArray == null) {
+                     sectionEmitLights[i] = emptyLight;
+                 } else {
+                     sectionEmitLights[i] = new byte[2048];
+-                    System.arraycopy(emitLightArray.getData(), 0, sectionEmitLights[i], 0, 2048);
++                    System.arraycopy(emitLightArray.getIfSet(), 0, sectionEmitLights[i], 0, 2048); // Paper
+                 }
+             }
+         }

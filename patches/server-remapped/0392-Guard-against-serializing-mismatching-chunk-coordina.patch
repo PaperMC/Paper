@@ -1,0 +1,62 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Fri, 27 Dec 2019 09:42:26 -0800
+Subject: [PATCH] Guard against serializing mismatching chunk coordinate
+
+Should help if something dumb happens
+
+diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
+index be67dc16bf70e4517efd213ca9002f116f60b57c..6c28a611b9b79c3322ab07883972c07b3bfc3073 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
++++ b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
+@@ -67,6 +67,13 @@ public class ChunkSerializer {
+ 
+     private static final Logger LOGGER = LogManager.getLogger();
+ 
++    // Paper start - guard against serializing mismatching coordinates
++    // TODO Note: This needs to be re-checked each update
++    public static ChunkPos getChunkCoordinate(CompoundTag chunkData) {
++        CompoundTag levelData = chunkData.getCompound("Level");
++        return new ChunkPos(levelData.getInt("xPos"), levelData.getInt("zPos"));
++    }
++    // Paper end
+     // Paper start
+     public static final class InProgressChunkHolder {
+ 
+@@ -92,8 +99,8 @@ public class ChunkSerializer {
+         // Paper end
+         ChunkGenerator chunkgenerator = worldserver.getChunkSource().getGenerator();
+         BiomeSource worldchunkmanager = chunkgenerator.getBiomeSource();
+-        CompoundTag nbttagcompound1 = nbttagcompound.getCompound("Level");
+-        ChunkPos chunkcoordintpair1 = new ChunkPos(nbttagcompound1.getInt("xPos"), nbttagcompound1.getInt("zPos"));
++        CompoundTag nbttagcompound1 = nbttagcompound.getCompound("Level"); // Paper - diff on change, see ChunkRegionLoader#getChunkCoordinate
++        ChunkPos chunkcoordintpair1 = new ChunkPos(nbttagcompound1.getInt("xPos"), nbttagcompound1.getInt("zPos")); // Paper - diff on change, see ChunkRegionLoader#getChunkCoordinate
+ 
+         if (!Objects.equals(chunkcoordintpair, chunkcoordintpair1)) {
+             ChunkSerializer.LOGGER.error("Chunk file at {} is in the wrong location; relocating. (Expected {}, got {})", chunkcoordintpair, chunkcoordintpair, chunkcoordintpair1);
+diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkStorage.java b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkStorage.java
+index 684442b7175e30b6d4cafb2f7d2d4c10517cc33d..1af804c5c6fb2b20ea3f020610763c1d7dcee110 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkStorage.java
++++ b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkStorage.java
+@@ -13,6 +13,7 @@ import net.minecraft.SharedConstants;
+ import net.minecraft.nbt.CompoundTag;
+ import net.minecraft.nbt.NbtUtils;
+ import net.minecraft.resources.ResourceKey;
++import net.minecraft.server.level.ChunkMap;
+ import net.minecraft.server.level.ServerChunkCache;
+ import net.minecraft.server.level.ServerLevel;
+ import net.minecraft.util.datafix.DataFixTypes;
+@@ -119,6 +120,13 @@ public class ChunkStorage implements AutoCloseable {
+ 
+     public void write(ChunkPos chunkcoordintpair, CompoundTag nbttagcompound) throws IOException { write(chunkcoordintpair, nbttagcompound); } // Paper OBFHELPER
+     public void write(ChunkPos chunkcoordintpair, CompoundTag nbttagcompound) throws IOException { // Paper - OBFHELPER - (Switched around for safety)
++        // Paper start
++        if (!chunkcoordintpair.equals(ChunkSerializer.getChunkCoordinate(nbttagcompound))) {
++            String world = (this instanceof ChunkMap) ? ((ChunkMap)this).level.getWorld().getName() : null;
++            throw new IllegalArgumentException("Chunk coordinate and serialized data do not have matching coordinates, trying to serialize coordinate " + chunkcoordintpair.toString()
++                + " but compound says coordinate is " + ChunkSerializer.getChunkCoordinate(nbttagcompound).toString() + (world == null ? " for an unknown world" : (" for world: " + world)));
++        }
++        // Paper end
+         this.regionFileCache.write(chunkcoordintpair, nbttagcompound);
+         if (this.legacyStructureHandler != null) {
+             synchronized (this.persistentDataLock) { // Paper - Async chunk loading

@@ -1,0 +1,58 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Hugo Manrique <hugmanrique@gmail.com>
+Date: Mon, 23 Jul 2018 12:57:39 +0200
+Subject: [PATCH] Option to prevent armor stands from doing entity lookups
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 4813f62d1e382d5ac6971b2244df3f13c80d1950..3562950df4868b1393790b1a1ff1fe0dc589c155 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -379,4 +379,9 @@ public class PaperWorldConfig {
+     private void scanForLegacyEnderDragon() {
+         scanForLegacyEnderDragon = getBoolean("game-mechanics.scan-for-legacy-ender-dragon", true);
+     }
++
++    public boolean armorStandEntityLookups = true;
++    private void armorStandEntityLookups() {
++        armorStandEntityLookups = getBoolean("armor-stands-do-collision-entity-lookups", true);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/world/entity/decoration/ArmorStand.java b/src/main/java/net/minecraft/world/entity/decoration/ArmorStand.java
+index 59239e202e8e99870ce3be515d2f040ad9786892..7fc69adc8afa971ee3cf815c6002628ae2149a5b 100644
+--- a/src/main/java/net/minecraft/world/entity/decoration/ArmorStand.java
++++ b/src/main/java/net/minecraft/world/entity/decoration/ArmorStand.java
+@@ -352,6 +352,7 @@ public class ArmorStand extends LivingEntity {
+ 
+     @Override
+     protected void pushEntities() {
++        if (!level.paperConfig.armorStandEntityLookups) return; // Paper
+         List<Entity> list = this.level.getEntities(this, this.getBoundingBox(), ArmorStand.RIDABLE_MINECARTS);
+ 
+         for (int i = 0; i < list.size(); ++i) {
+diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
+index 0c6c3b211b05eda8f9ab47ef0a01cc520ae28201..7b135a3951bc168ccebdbb4e3acdc07397a820d3 100644
+--- a/src/main/java/net/minecraft/world/level/Level.java
++++ b/src/main/java/net/minecraft/world/level/Level.java
+@@ -39,6 +39,7 @@ import net.minecraft.world.DifficultyInstance;
+ import net.minecraft.world.damagesource.DamageSource;
+ import net.minecraft.world.entity.Entity;
+ import net.minecraft.world.entity.EntityType;
++import net.minecraft.world.entity.decoration.ArmorStand;
+ import net.minecraft.world.entity.item.ItemEntity;
+ import net.minecraft.world.entity.player.Player;
+ import net.minecraft.world.item.ItemStack;
+@@ -854,6 +855,13 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+             // Paper end
+         }
+     }
++    // Paper start - Prevent armor stands from doing entity lookups
++    @Override
++    public boolean noCollision(@Nullable Entity entity, AABB box) {
++        if (entity instanceof ArmorStand && !entity.level.paperConfig.armorStandEntityLookups) return false;
++        return LevelAccessor.super.noCollision(entity, box);
++    }
++    // Paper end
+ 
+     public Explosion explode(@Nullable Entity entity, double x, double y, double z, float power, Explosion.BlockInteraction destructionType) {
+         return this.explode(entity, (DamageSource) null, (ExplosionDamageCalculator) null, x, y, z, power, false, destructionType);

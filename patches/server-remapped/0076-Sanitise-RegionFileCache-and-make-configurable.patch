@@ -1,0 +1,39 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Antony Riley <antony@cyberiantiger.org>
+Date: Tue, 29 Mar 2016 08:22:55 +0300
+Subject: [PATCH] Sanitise RegionFileCache and make configurable.
+
+RegionFileCache prior to this patch would close every single open region
+file upon reaching a size of 256.
+This patch modifies that behaviour so it closes the the least recently
+used RegionFile.
+The implementation uses a LinkedHashMap as an LRU cache (modified from HashMap).
+The maximum size of the RegionFileCache is also made configurable.
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+index 716f285e67019b8a62922d09c15883c99f9421aa..439dcc6effdc91830d2b7ede9063982998b37120 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+@@ -227,4 +227,9 @@ public class PaperConfig {
+     private static void loadPermsBeforePlugins() {
+         loadPermsBeforePlugins = getBoolean("settings.load-permissions-yml-before-plugins", true);
+     }
++
++    public static int regionFileCacheSize = 256;
++    private static void regionFileCacheSize() {
++        regionFileCacheSize = Math.max(getInt("settings.region-file-cache-size", 256), 4);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
+index 97a58da9d64d812942ceb71426d35b490bbbe817..f33a5fc725d1d5e895f8878d82ebc4172237ad29 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
++++ b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
+@@ -33,7 +33,7 @@ public final class RegionFileStorage implements AutoCloseable {
+         if (regionfile != null) {
+             return regionfile;
+         } else {
+-            if (this.regionCache.size() >= 256) {
++            if (this.regionCache.size() >= com.destroystokyo.paper.PaperConfig.regionFileCacheSize) { // Paper - configurable
+                 ((RegionFile) this.regionCache.removeLast()).close();
+             }
+ 

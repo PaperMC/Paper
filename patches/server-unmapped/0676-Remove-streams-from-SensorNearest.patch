@@ -1,0 +1,120 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Bjarne Koll <lynxplay101@gmail.com>
+Date: Wed, 3 Mar 2021 12:48:48 +0100
+Subject: [PATCH] Remove streams from SensorNearest
+
+The behavioural nearby sensors are validated every tick on the entities
+that registered the respective sensors and are therefore a good subject
+to performance improvements.
+
+More specifically this commit replaces the Stream#filter usage with
+ArrayList#removeIf as the removeIf method on an array list is heavily
+optimized towards a single internal array re-allocation without any
+further overhead on the removeIf call.
+
+The only negative of this change is the rather agressive diff these
+patches introduce as the methods are basically being reimplemented
+compared to the previous stream-based implementation.
+
+See: https://nipafx.dev/java-stream-performance/
+
+diff --git a/src/main/java/net/minecraft/world/entity/ai/sensing/SensorNearestItems.java b/src/main/java/net/minecraft/world/entity/ai/sensing/SensorNearestItems.java
+index 418cd6d8b40d35aa3be73eb12f2e3b75597238b9..2e3149a0b15299468079796bd3ea56eabdb4998c 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/sensing/SensorNearestItems.java
++++ b/src/main/java/net/minecraft/world/entity/ai/sensing/SensorNearestItems.java
+@@ -27,18 +27,16 @@ public class SensorNearestItems extends Sensor<EntityInsentient> {
+         List<EntityItem> list = worldserver.a(EntityItem.class, entityinsentient.getBoundingBox().grow(8.0D, 4.0D, 8.0D), (entityitem) -> {
+             return true;
+         });
+-
+-        entityinsentient.getClass();
++        // Paper start - remove streams in favour of lists
+         list.sort(Comparator.comparingDouble(entityinsentient::h));
+-        Stream stream = list.stream().filter((entityitem) -> {
+-            return entityinsentient.i(entityitem.getItemStack());
+-        }).filter((entityitem) -> {
+-            return entityitem.a((Entity) entityinsentient, 9.0D);
+-        });
+-
+-        entityinsentient.getClass();
+-        Optional<EntityItem> optional = stream.filter(entityinsentient::hasLineOfSight).findFirst();
+-
+-        behaviorcontroller.setMemory(MemoryModuleType.NEAREST_VISIBLE_WANTED_ITEM, optional);
++        EntityItem nearest = null;
++        for (EntityItem entityItem : list) {
++            if (entityinsentient.i(entityItem.getItemStack()) && entityItem.a(entityinsentient, 9.0D) && entityinsentient.hasLineOfSight(entityItem)) {
++                nearest = entityItem;
++                break;
++            }
++        }
++        behaviorcontroller.setMemory(MemoryModuleType.NEAREST_VISIBLE_WANTED_ITEM, Optional.ofNullable(nearest));
++        // Paper end
+     }
+ }
+diff --git a/src/main/java/net/minecraft/world/entity/ai/sensing/SensorNearestLivingEntities.java b/src/main/java/net/minecraft/world/entity/ai/sensing/SensorNearestLivingEntities.java
+index d3bb1c02d80fcd3586030b07f84e7ebdd97d873e..0bc17d148e91277efdf72541e5470fa56d455670 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/sensing/SensorNearestLivingEntities.java
++++ b/src/main/java/net/minecraft/world/entity/ai/sensing/SensorNearestLivingEntities.java
+@@ -26,10 +26,12 @@ public class SensorNearestLivingEntities extends Sensor<EntityLiving> {
+         list.sort(Comparator.comparingDouble(entityliving::h));
+         BehaviorController<?> behaviorcontroller = entityliving.getBehaviorController();
+ 
+-        behaviorcontroller.setMemory(MemoryModuleType.MOBS, (Object) list);
+-        behaviorcontroller.setMemory(MemoryModuleType.VISIBLE_MOBS, list.stream().filter((entityliving1) -> {
+-            return a(entityliving, entityliving1);
+-        }).collect(Collectors.toList()));
++        behaviorcontroller.setMemory(MemoryModuleType.MOBS, list); // Paper - decompile error
++        // Paper start - remove streams in favour of lists
++        List<EntityLiving> visibleMobs = new java.util.ArrayList<>(list);
++        visibleMobs.removeIf(otherEntityLiving -> !Sensor.a(entityliving, otherEntityLiving));
++        behaviorcontroller.setMemory(MemoryModuleType.VISIBLE_MOBS, visibleMobs);
++        // Paper end
+     }
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/entity/ai/sensing/SensorNearestPlayers.java b/src/main/java/net/minecraft/world/entity/ai/sensing/SensorNearestPlayers.java
+index 29abc7feec5358dce7d16958f0c5807f4bda992f..60e4da9217d4d950b5077baf6b50eaee20f8df09 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/sensing/SensorNearestPlayers.java
++++ b/src/main/java/net/minecraft/world/entity/ai/sensing/SensorNearestPlayers.java
+@@ -26,22 +26,26 @@ public class SensorNearestPlayers extends Sensor<EntityLiving> {
+ 
+     @Override
+     protected void a(WorldServer worldserver, EntityLiving entityliving) {
+-        Stream stream = worldserver.getPlayers().stream().filter(IEntitySelector.g).filter((entityplayer) -> {
+-            return entityliving.a((Entity) entityplayer, 16.0D);
+-        });
++        // Paper start - remove streams in favour of lists
++        List<EntityHuman> players = new java.util.ArrayList<>(worldserver.getPlayers());
++        players.removeIf(player -> !IEntitySelector.notSpectator().test(player) || !entityliving.a(player, 16.0D)); // Paper - removeIf only re-allocates once compared to iterator
++        players.sort(Comparator.comparingDouble(entityliving::h));
+ 
+-        entityliving.getClass();
+-        List<EntityHuman> list = (List) stream.sorted(Comparator.comparingDouble(entityliving::h)).collect(Collectors.toList());
+         BehaviorController<?> behaviorcontroller = entityliving.getBehaviorController();
+-
+-        behaviorcontroller.setMemory(MemoryModuleType.NEAREST_PLAYERS, (Object) list);
+-        List<EntityHuman> list1 = (List) list.stream().filter((entityhuman) -> {
+-            return a(entityliving, (EntityLiving) entityhuman);
+-        }).collect(Collectors.toList());
+-
+-        behaviorcontroller.setMemory(MemoryModuleType.NEAREST_VISIBLE_PLAYER, (Object) (list1.isEmpty() ? null : (EntityHuman) list1.get(0)));
+-        Optional<EntityHuman> optional = list1.stream().filter(IEntitySelector.f).findFirst();
+-
+-        behaviorcontroller.setMemory(MemoryModuleType.NEAREST_VISIBLE_TARGETABLE_PLAYER, optional);
++        behaviorcontroller.setMemory(MemoryModuleType.NEAREST_PLAYERS, players);
++
++        EntityHuman nearest = null, nearestTargetable = null;
++        for (EntityHuman player : players) {
++            if (Sensor.a(entityliving, player)) {
++                if (nearest == null) nearest = player;
++                if (IEntitySelector.canAITarget().test(player)) {
++                    nearestTargetable = player;
++                    break; // Both variables are assigned, no reason to loop further
++                }
++            }
++        }
++        behaviorcontroller.setMemory(MemoryModuleType.NEAREST_VISIBLE_PLAYER, nearest);
++        behaviorcontroller.setMemory(MemoryModuleType.NEAREST_VISIBLE_TARGETABLE_PLAYER, nearestTargetable);
++        // Paper end
+     }
+ }

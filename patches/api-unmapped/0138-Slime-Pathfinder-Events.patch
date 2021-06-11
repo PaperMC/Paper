@@ -1,0 +1,217 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: BillyGalbreath <Blake.Galbreath@GMail.com>
+Date: Fri, 24 Aug 2018 08:18:27 -0500
+Subject: [PATCH] Slime Pathfinder Events
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/event/entity/SlimeChangeDirectionEvent.java b/src/main/java/com/destroystokyo/paper/event/entity/SlimeChangeDirectionEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..2638bbd3e1392b3d8640be58163f6eb2789dee4a
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/event/entity/SlimeChangeDirectionEvent.java
+@@ -0,0 +1,38 @@
++package com.destroystokyo.paper.event.entity;
++
++import org.bukkit.entity.Slime;
++import org.bukkit.event.Cancellable;
++import org.jetbrains.annotations.NotNull;
++
++/**
++ * Fired when a Slime decides to change it's facing direction.
++ * <p>
++ * This event does not fire for the entity's actual movement. Only when it
++ * is choosing to change direction.
++ */
++public class SlimeChangeDirectionEvent extends SlimePathfindEvent implements Cancellable {
++    private float yaw;
++
++    public SlimeChangeDirectionEvent(@NotNull Slime slime, float yaw) {
++        super(slime);
++        this.yaw = yaw;
++    }
++
++    /**
++     * Get the new chosen yaw
++     *
++     * @return Chosen yaw
++     */
++    public float getNewYaw() {
++        return yaw;
++    }
++
++    /**
++     * Set the new chosen yaw
++     *
++     * @param yaw Chosen yaw
++     */
++    public void setNewYaw(float yaw) {
++        this.yaw = yaw;
++    }
++}
+diff --git a/src/main/java/com/destroystokyo/paper/event/entity/SlimePathfindEvent.java b/src/main/java/com/destroystokyo/paper/event/entity/SlimePathfindEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..14b67da109321ae6521eab2ac6f6945f05d02db5
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/event/entity/SlimePathfindEvent.java
+@@ -0,0 +1,53 @@
++package com.destroystokyo.paper.event.entity;
++
++import org.bukkit.entity.Slime;
++import org.bukkit.event.Cancellable;
++import org.bukkit.event.HandlerList;
++import org.bukkit.event.entity.EntityEvent;
++import org.jetbrains.annotations.NotNull;
++
++/**
++ * Fired when a Slime decides to start pathfinding.
++ * <p>
++ * This event does not fire for the entity's actual movement. Only when it
++ * is choosing to start moving.
++ */
++public class SlimePathfindEvent extends EntityEvent implements Cancellable {
++    public SlimePathfindEvent(@NotNull Slime slime) {
++        super(slime);
++    }
++
++    /**
++     * The Slime that is pathfinding.
++     *
++     * @return The Slime that is pathfinding.
++     */
++    @NotNull
++    public Slime getEntity() {
++        return (Slime) entity;
++    }
++
++    private static final HandlerList handlers = new HandlerList();
++
++    @NotNull
++    public HandlerList getHandlers() {
++        return handlers;
++    }
++
++    @NotNull
++    public static HandlerList getHandlerList() {
++        return handlers;
++    }
++
++    private boolean cancelled = false;
++
++    @Override
++    public boolean isCancelled() {
++        return cancelled;
++    }
++
++    @Override
++    public void setCancelled(boolean cancel) {
++        cancelled = cancel;
++    }
++}
+diff --git a/src/main/java/com/destroystokyo/paper/event/entity/SlimeSwimEvent.java b/src/main/java/com/destroystokyo/paper/event/entity/SlimeSwimEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..c8dd49d11da5a90a1bac965a75f2b65fd825f3f7
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/event/entity/SlimeSwimEvent.java
+@@ -0,0 +1,17 @@
++package com.destroystokyo.paper.event.entity;
++
++import org.bukkit.entity.Slime;
++import org.bukkit.event.Cancellable;
++import org.jetbrains.annotations.NotNull;
++
++/**
++ * Fired when a Slime decides to start jumping while swimming in water/lava.
++ * <p>
++ * This event does not fire for the entity's actual movement. Only when it
++ * is choosing to start jumping.
++ */
++public class SlimeSwimEvent extends SlimeWanderEvent implements Cancellable {
++    public SlimeSwimEvent(@NotNull Slime slime) {
++        super(slime);
++    }
++}
+diff --git a/src/main/java/com/destroystokyo/paper/event/entity/SlimeTargetLivingEntityEvent.java b/src/main/java/com/destroystokyo/paper/event/entity/SlimeTargetLivingEntityEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..e9ba32799ed838779e49cd4c5011b7515b3363cb
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/event/entity/SlimeTargetLivingEntityEvent.java
+@@ -0,0 +1,31 @@
++package com.destroystokyo.paper.event.entity;
++
++import org.bukkit.entity.LivingEntity;
++import org.bukkit.entity.Slime;
++import org.bukkit.event.Cancellable;
++import org.jetbrains.annotations.NotNull;
++
++/**
++ * Fired when a Slime decides to change direction to target a LivingEntity.
++ * <p>
++ * This event does not fire for the entity's actual movement. Only when it
++ * is choosing to start moving.
++ */
++public class SlimeTargetLivingEntityEvent extends SlimePathfindEvent implements Cancellable {
++    @NotNull private final LivingEntity target;
++
++    public SlimeTargetLivingEntityEvent(@NotNull Slime slime, @NotNull LivingEntity target) {
++        super(slime);
++        this.target = target;
++    }
++
++    /**
++     * Get the targeted entity
++     *
++     * @return Targeted entity
++     */
++    @NotNull
++    public LivingEntity getTarget() {
++        return target;
++    }
++}
+diff --git a/src/main/java/com/destroystokyo/paper/event/entity/SlimeWanderEvent.java b/src/main/java/com/destroystokyo/paper/event/entity/SlimeWanderEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..4683a7237d2ed527fc85b9b4e5b2eaaf5ae3d797
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/event/entity/SlimeWanderEvent.java
+@@ -0,0 +1,17 @@
++package com.destroystokyo.paper.event.entity;
++
++import org.bukkit.entity.Slime;
++import org.bukkit.event.Cancellable;
++import org.jetbrains.annotations.NotNull;
++
++/**
++ * Fired when a Slime decides to start wandering.
++ * <p>
++ * This event does not fire for the entity's actual movement. Only when it
++ * is choosing to start moving.
++ */
++public class SlimeWanderEvent extends SlimePathfindEvent implements Cancellable {
++    public SlimeWanderEvent(@NotNull Slime slime) {
++        super(slime);
++    }
++}
+diff --git a/src/main/java/org/bukkit/entity/Slime.java b/src/main/java/org/bukkit/entity/Slime.java
+index 1119e26e270bb45f517955b19d95a9ec3d113634..c4791f95d788d3a9e013dc89d8e64103ad8480a1 100644
+--- a/src/main/java/org/bukkit/entity/Slime.java
++++ b/src/main/java/org/bukkit/entity/Slime.java
+@@ -14,4 +14,20 @@ public interface Slime extends Mob {
+      * @param sz The new size of the slime.
+      */
+     public void setSize(int sz);
++
++    // Paper start
++    /**
++     * Get whether this slime can randomly wander/jump around on its own
++     *
++     * @return true if can wander
++     */
++    public boolean canWander();
++
++    /**
++     * Set whether this slime can randomly wander/jump around on its own
++     *
++     * @param canWander true if can wander
++     */
++    public void setWander(boolean canWander);
++    // Paper end
+ }

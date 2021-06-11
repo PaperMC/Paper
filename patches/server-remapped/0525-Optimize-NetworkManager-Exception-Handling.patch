@@ -1,0 +1,117 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Andrew Steinborn <git@steinborn.me>
+Date: Sun, 5 Jul 2020 22:38:18 -0400
+Subject: [PATCH] Optimize NetworkManager Exception Handling
+
+
+diff --git a/src/main/java/net/minecraft/network/ConnectionProtocol.java b/src/main/java/net/minecraft/network/ConnectionProtocol.java
+index fca778d131aa10e88d5f7ed8d57eda6803318184..47a5ee9db64184f173af5984765e9b6d1a8ec367 100644
+--- a/src/main/java/net/minecraft/network/ConnectionProtocol.java
++++ b/src/main/java/net/minecraft/network/ConnectionProtocol.java
+@@ -151,6 +151,7 @@ public enum ConnectionProtocol {
+ 
+         @Nullable
+         public Packet<?> createPacket(int id) {
++            if (id < 0 || id >= this.idToConstructor.size()) return null; // Paper
+             Supplier<? extends Packet<T>> supplier = (Supplier) this.idToConstructor.get(id);
+ 
+             return supplier != null ? (Packet) supplier.get() : null;
+diff --git a/src/main/java/net/minecraft/network/Varint21FrameDecoder.java b/src/main/java/net/minecraft/network/Varint21FrameDecoder.java
+index 8363b63f8dbd16948eeba3f912dc43605ad8db6a..fbebef6525a0872fecc081c7f63f27c1a04e11dc 100644
+--- a/src/main/java/net/minecraft/network/Varint21FrameDecoder.java
++++ b/src/main/java/net/minecraft/network/Varint21FrameDecoder.java
+@@ -9,11 +9,21 @@ import java.util.List;
+ 
+ public class Varint21FrameDecoder extends ByteToMessageDecoder {
+ 
++    private final byte[] lenBuf = new byte[3]; // Paper
+     public Varint21FrameDecoder() {}
+ 
+     protected void decode(ChannelHandlerContext channelhandlercontext, ByteBuf bytebuf, List<Object> list) throws Exception {
++        // Paper start - if channel is not active just discard the packet
++        if (!channelhandlercontext.channel().isActive()) {
++            bytebuf.skipBytes(bytebuf.readableBytes());
++            return;
++        }
++        // Paper end
+         bytebuf.markReaderIndex();
+-        byte[] abyte = new byte[3];
++        // Paper start - reuse temporary length buffer
++        byte[] abyte = lenBuf;
++        java.util.Arrays.fill(abyte, (byte) 0);
++        // Paper end
+ 
+         for (int i = 0; i < abyte.length; ++i) {
+             if (!bytebuf.isReadable()) {
+diff --git a/src/main/java/net/minecraft/network/protocol/Packet.java b/src/main/java/net/minecraft/network/protocol/Packet.java
+index 22db5d0d2cc33498ca40162c66aa3b5fbf2f569f..3163502cb9bbbb5a00e7f06cf0032b1ad93c354d 100644
+--- a/src/main/java/net/minecraft/network/protocol/Packet.java
++++ b/src/main/java/net/minecraft/network/protocol/Packet.java
+@@ -2,8 +2,10 @@ package net.minecraft.network.protocol;
+ 
+ import io.netty.channel.ChannelFuture; // Paper
+ import java.io.IOException;
++import net.minecraft.network.Connection;
+ import net.minecraft.network.FriendlyByteBuf;
+ import net.minecraft.network.PacketListener;
++import net.minecraft.server.level.ServerPlayer;
+ 
+ public interface Packet<T extends PacketListener> {
+ 
+@@ -18,17 +20,17 @@ public interface Packet<T extends PacketListener> {
+     /**
+      * @param player Null if not at PLAY stage yet
+      */
+-    default void onPacketDispatch(@javax.annotation.Nullable EntityPlayer player) {}
++    default void onPacketDispatch(@javax.annotation.Nullable ServerPlayer player) {}
+ 
+     /**
+      * @param player Null if not at PLAY stage yet
+      * @param future Can be null if packet was cancelled
+      */
+-    default void onPacketDispatchFinish(@javax.annotation.Nullable EntityPlayer player, @javax.annotation.Nullable ChannelFuture future) {}
++    default void onPacketDispatchFinish(@javax.annotation.Nullable ServerPlayer player, @javax.annotation.Nullable ChannelFuture future) {}
+     default boolean hasFinishListener() { return false; }
+     default boolean isReady() { return true; }
+     default java.util.List<Packet> getExtraPackets() { return null; }
+-    default boolean packetTooLarge(NetworkManager manager) {
++    default boolean packetTooLarge(Connection manager) {
+         return false;
+     }
+     // Paper end
+diff --git a/src/main/java/net/minecraft/network/protocol/PacketUtils.java b/src/main/java/net/minecraft/network/protocol/PacketUtils.java
+index 4ae8201d7dcffeb3298a4e593f978e15ffc5ac15..5812e518222e419da141ab0f70d1e7a3939a0df0 100644
+--- a/src/main/java/net/minecraft/network/protocol/PacketUtils.java
++++ b/src/main/java/net/minecraft/network/protocol/PacketUtils.java
+@@ -1,6 +1,9 @@
+ package net.minecraft.network.protocol;
+ 
++import net.minecraft.network.Connection;
+ import net.minecraft.network.PacketListener;
++import net.minecraft.network.chat.TextComponent;
++import net.minecraft.network.protocol.game.ClientboundDisconnectPacket;
+ import org.apache.logging.log4j.LogManager;
+ import org.apache.logging.log4j.Logger;
+ import co.aikar.timings.MinecraftTimings; // Paper
+@@ -30,6 +33,21 @@ public class PacketUtils {
+                     try (Timing ignored = timing.startTiming()) { // Paper - timings
+                     packet.handle(listener);
+                     } // Paper - timings
++                    // Paper start
++                    catch (Exception e) {
++                        Connection networkmanager = listener.a();
++                        if (networkmanager.getPlayer() != null) {
++                            LOGGER.error("Error whilst processing packet {} for {}[{}]", packet, networkmanager.getPlayer().getScoreboardName(), networkmanager.getRemoteAddress(), e);
++                        } else {
++                            LOGGER.error("Error whilst processing packet {} for connection from {}", packet, networkmanager.getRemoteAddress(), e);
++                        }
++                        TextComponent error = new TextComponent("Packet processing error");
++                        networkmanager.send(new ClientboundDisconnectPacket(error), (future) -> {
++                            networkmanager.disconnect(error);
++                        });
++                        networkmanager.setReadOnly();
++                    }
++                    // Paper end
+                 } else {
+                     PacketUtils.LOGGER.debug("Ignoring packet due to disconnection: " + packet);
+                 }

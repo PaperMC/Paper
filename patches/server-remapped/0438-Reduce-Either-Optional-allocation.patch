@@ -1,0 +1,48 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <spottedleaf@spottedleaf.dev>
+Date: Mon, 6 Apr 2020 18:35:09 -0700
+Subject: [PATCH] Reduce Either Optional allocation
+
+In order to get chunk values, we shouldn't need to create
+an optional each time.
+
+diff --git a/src/main/java/com/mojang/datafixers/util/Either.java b/src/main/java/com/mojang/datafixers/util/Either.java
+index fc8dbdf43833d76d8dc5f4e92575ca2965afa93a..ab71cdb3a8c2bec036ece630a0e0f088653e928f 100644
+--- a/src/main/java/com/mojang/datafixers/util/Either.java
++++ b/src/main/java/com/mojang/datafixers/util/Either.java
+@@ -22,7 +22,7 @@ public abstract class Either<L, R> implements App<Either.Mu<R>, L> {
+     }
+ 
+     private static final class Left<L, R> extends Either<L, R> {
+-        private final L value;
++        private final L value; private Optional<L> valueOptional; // Paper - reduce the optional allocation...
+ 
+         public Left(final L value) {
+             this.value = value;
+@@ -51,7 +51,7 @@ public abstract class Either<L, R> implements App<Either.Mu<R>, L> {
+ 
+         @Override
+         public Optional<L> left() {
+-            return Optional.of(value);
++            return this.valueOptional == null ? this.valueOptional = Optional.of(this.value) : this.valueOptional; // Paper - reduce the optional allocation...
+         }
+ 
+         @Override
+@@ -83,7 +83,7 @@ public abstract class Either<L, R> implements App<Either.Mu<R>, L> {
+     }
+ 
+     private static final class Right<L, R> extends Either<L, R> {
+-        private final R value;
++        private final R value; private Optional<R> valueOptional; // Paper - reduce the optional allocation...
+ 
+         public Right(final R value) {
+             this.value = value;
+@@ -117,7 +117,7 @@ public abstract class Either<L, R> implements App<Either.Mu<R>, L> {
+ 
+         @Override
+         public Optional<R> right() {
+-            return Optional.of(value);
++            return this.valueOptional == null ? this.valueOptional = Optional.of(this.value) : this.valueOptional; // Paper - reduce the optional allocation...
+         }
+ 
+         @Override

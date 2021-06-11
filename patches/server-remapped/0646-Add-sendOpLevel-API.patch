@@ -1,0 +1,65 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Mariell Hoversholm <proximyst@proximyst.com>
+Date: Tue, 29 Dec 2020 15:03:03 +0100
+Subject: [PATCH] Add sendOpLevel API
+
+
+diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
+index 9d1116f601b79dabf7a0d9e5ecf5c2a0306f9aa4..c962b6fc0c65dc5e2ea636220727bca63bf4b740 100644
+--- a/src/main/java/net/minecraft/server/players/PlayerList.java
++++ b/src/main/java/net/minecraft/server/players/PlayerList.java
+@@ -1134,22 +1134,29 @@ public abstract class PlayerList {
+     }
+ 
+     private void sendPlayerPermissionLevel(ServerPlayer player, int permissionLevel) {
+-        if (player.connection != null) {
++        // Paper start - add recalculatePermissions parameter
++        this.sendPlayerOperatorStatus(player, permissionLevel, true);
++    }
++    public void sendPlayerOperatorStatus(ServerPlayer entityplayer, int i, boolean recalculatePermissions) {
++        // Paper end
++        if (entityplayer.connection != null) {
+             byte b0;
+ 
+-            if (permissionLevel <= 0) {
++            if (i <= 0) {
+                 b0 = 24;
+-            } else if (permissionLevel >= 4) {
++            } else if (i >= 4) {
+                 b0 = 28;
+             } else {
+-                b0 = (byte) (24 + permissionLevel);
++                b0 = (byte) (24 + i);
+             }
+ 
+-            player.connection.send(new ClientboundEntityEventPacket(player, b0));
++            entityplayer.connection.send(new ClientboundEntityEventPacket(entityplayer, b0));
+         }
+ 
+-        player.getBukkitEntity().recalculatePermissions(); // CraftBukkit
+-        this.server.getCommands().sendCommands(player);
++        if (recalculatePermissions) { // Paper
++        entityplayer.getBukkitEntity().recalculatePermissions(); // CraftBukkit
++        this.server.getCommands().sendCommands(entityplayer);
++        } // Paper
+     }
+ 
+     // Paper start
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index 40380fff222cc1f3340cf6a6c4afbe60aaa5d3a6..d2d179cdef8129653983b01d94928ba83f64f644 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -2296,6 +2296,13 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+             ? (org.bukkit.entity.Firework) entity.getBukkitEntity()
+             : null;
+     }
++
++    @Override
++    public void sendOpLevel(byte level) {
++        Preconditions.checkArgument(level >= 0 && level <= 4, "Level must be within [0, 4]");
++
++        this.getHandle().getServer().getPlayerList().sendPlayerOperatorStatus(this.getHandle(), level, false);
++    }
+     // Paper end
+ 
+     // Spigot start

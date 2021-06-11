@@ -1,0 +1,23 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sat, 18 Apr 2020 15:59:41 -0400
+Subject: [PATCH] Don't crash if player is attempted to be removed from
+ untracked chunk.
+
+I suspect it deals with teleporting as it uses players current x/y/z
+
+diff --git a/src/main/java/net/minecraft/server/level/DistanceManager.java b/src/main/java/net/minecraft/server/level/DistanceManager.java
+index 71a51cc99e26579e765f88340588e23956888929..90429d3f5c5b725098cfb001d54c70608f3df7bb 100644
+--- a/src/main/java/net/minecraft/server/level/DistanceManager.java
++++ b/src/main/java/net/minecraft/server/level/DistanceManager.java
+@@ -245,8 +245,8 @@ public abstract class DistanceManager {
+         ObjectSet<ServerPlayer> objectset = (ObjectSet) this.playersPerChunk.get(i);
+         if (objectset == null) return; // CraftBukkit - SPIGOT-6208
+ 
+-        objectset.remove(player);
+-        if (objectset.isEmpty()) {
++        if (objectset != null) objectset.remove(player); // Paper - some state corruption happens here, don't crash, clean up gracefully.
++        if (objectset == null || objectset.isEmpty()) { // Paper
+             this.playersPerChunk.remove(i);
+             this.naturalSpawnChunkCounter.update(i, Integer.MAX_VALUE, false);
+             this.playerTicketManager.update(i, Integer.MAX_VALUE, false);

@@ -1,0 +1,68 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Thu, 31 Mar 2016 19:17:58 -0400
+Subject: [PATCH] Do not load chunks for Pathfinding
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/ai/navigation/PathNavigation.java b/src/main/java/net/minecraft/world/entity/ai/navigation/PathNavigation.java
+index ae8d430382b20ddd837c47e39515c7995f25312a..25bc3adfad956157cef0953e6e632b7b7e352f3a 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/navigation/PathNavigation.java
++++ b/src/main/java/net/minecraft/world/entity/ai/navigation/PathNavigation.java
+@@ -48,7 +48,7 @@ public abstract class PathNavigation {
+     private BlockPos targetPos;
+     private int reachRange;
+     private float maxVisitedNodesMultiplier;
+-    private final PathFinder pathFinder;
++    private final PathFinder pathFinder; public PathFinder getPathfinder() { return this.pathFinder; } // Paper - OBFHELPER
+     private boolean isStuck;
+ 
+     public PathNavigation(Mob mob, Level world) {
+diff --git a/src/main/java/net/minecraft/world/level/pathfinder/PathFinder.java b/src/main/java/net/minecraft/world/level/pathfinder/PathFinder.java
+index 99f3f0b895295229b75d93e98141c0cd75789b69..ba8ee93032aabe7ec4ecf52d452e1a580d6ebc20 100644
+--- a/src/main/java/net/minecraft/world/level/pathfinder/PathFinder.java
++++ b/src/main/java/net/minecraft/world/level/pathfinder/PathFinder.java
+@@ -20,7 +20,7 @@ public class PathFinder {
+ 
+     private final Node[] neighbors = new Node[32];
+     private final int maxVisitedNodes;
+-    private final NodeEvaluator nodeEvaluator;
++    private final NodeEvaluator nodeEvaluator; public NodeEvaluator getPathfinder() { return this.nodeEvaluator; }  // Paper - OBFHELPER
+     private final BinaryHeap openSet = new BinaryHeap();
+ 
+     public PathFinder(NodeEvaluator pathNodeMaker, int range) {
+diff --git a/src/main/java/net/minecraft/world/level/pathfinder/WalkNodeEvaluator.java b/src/main/java/net/minecraft/world/level/pathfinder/WalkNodeEvaluator.java
+index 0b378348cb9e9576e2a209e651264e2caccfd182..7ae24381b91c282745b7fe5f6897865e74bc0acf 100644
+--- a/src/main/java/net/minecraft/world/level/pathfinder/WalkNodeEvaluator.java
++++ b/src/main/java/net/minecraft/world/level/pathfinder/WalkNodeEvaluator.java
+@@ -479,7 +479,12 @@ public class WalkNodeEvaluator extends NodeEvaluator {
+                 for (int j1 = -1; j1 <= 1; ++j1) {
+                     if (l != 0 || j1 != 0) {
+                         blockposition_mutableblockposition.set(i + l, j + i1, k + j1);
+-                        BlockState iblockdata = iblockaccess.getBlockState(blockposition_mutableblockposition);
++                        // Paper start
++                        BlockState iblockdata = iblockaccess.getTypeIfLoaded(blockposition_mutableblockposition);
++                        if (iblockdata == null) {
++                            pathtype = BlockPathTypes.BLOCKED;
++                        } else {
++                        // Paper end
+ 
+                         if (iblockdata.is(Blocks.CACTUS)) {
+                             return BlockPathTypes.DANGER_CACTUS;
+@@ -496,6 +501,7 @@ public class WalkNodeEvaluator extends NodeEvaluator {
+                         if (iblockaccess.getFluidState(blockposition_mutableblockposition).is((Tag) FluidTags.WATER)) {
+                             return BlockPathTypes.WATER_BORDER;
+                         }
++                        } // Paper
+                     }
+                 }
+             }
+@@ -505,7 +511,8 @@ public class WalkNodeEvaluator extends NodeEvaluator {
+     }
+ 
+     protected static BlockPathTypes getBlockPathTypeRaw(BlockGetter iblockaccess, BlockPos blockposition) {
+-        BlockState iblockdata = iblockaccess.getBlockState(blockposition);
++        BlockState iblockdata = iblockaccess.getTypeIfLoaded(blockposition); // Paper
++        if (iblockdata == null) return BlockPathTypes.BLOCKED; // Paper
+         Block block = iblockdata.getBlock();
+         Material material = iblockdata.getMaterial();
+ 

@@ -1,0 +1,130 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: BillyGalbreath <Blake.Galbreath@GMail.com>
+Date: Thu, 2 Aug 2018 08:44:20 -0500
+Subject: [PATCH] Add hand to bucket events
+
+
+diff --git a/src/main/java/org/bukkit/event/player/PlayerBucketEmptyEvent.java b/src/main/java/org/bukkit/event/player/PlayerBucketEmptyEvent.java
+index 7f225baa9fd3ff6f4f950ae70f9500141c674f66..25bd8153ef2ab7ab1052cf756bb599f1095732e7 100644
+--- a/src/main/java/org/bukkit/event/player/PlayerBucketEmptyEvent.java
++++ b/src/main/java/org/bukkit/event/player/PlayerBucketEmptyEvent.java
+@@ -5,6 +5,7 @@ import org.bukkit.block.Block;
+ import org.bukkit.block.BlockFace;
+ import org.bukkit.entity.Player;
+ import org.bukkit.event.HandlerList;
++import org.bukkit.inventory.EquipmentSlot;
+ import org.bukkit.inventory.ItemStack;
+ import org.jetbrains.annotations.NotNull;
+ 
+@@ -22,6 +23,16 @@ public class PlayerBucketEmptyEvent extends PlayerBucketEvent {
+     public PlayerBucketEmptyEvent(@NotNull final Player who, @NotNull final Block block, @NotNull final Block blockClicked, @NotNull final BlockFace blockFace, @NotNull final Material bucket, @NotNull final ItemStack itemInHand) {
+         super(who, block, blockClicked, blockFace, bucket, itemInHand);
+     }
++    // Paper start - add EquipmentSlot
++    @Deprecated
++    public PlayerBucketEmptyEvent(@NotNull final Player who, @NotNull final Block blockClicked, @NotNull final BlockFace blockFace, @NotNull final Material bucket, @NotNull final ItemStack itemInHand, @org.jetbrains.annotations.Nullable final EquipmentSlot hand) {
++        super(who, blockClicked, blockFace, bucket, itemInHand, hand);
++    }
++
++    public PlayerBucketEmptyEvent(@NotNull final Player who, @NotNull final Block block, @NotNull final Block blockClicked, @NotNull final BlockFace blockFace, @NotNull final Material bucket, @NotNull final ItemStack itemInHand, @org.jetbrains.annotations.Nullable final EquipmentSlot hand) {
++        super(who, block, blockClicked, blockFace, bucket, itemInHand, hand);
++    }
++    // Paper end
+ 
+     @NotNull
+     @Override
+diff --git a/src/main/java/org/bukkit/event/player/PlayerBucketEvent.java b/src/main/java/org/bukkit/event/player/PlayerBucketEvent.java
+index 0e4fa04ea73baaf2f9ad86725d379b569d7d6381..1e0f7ee7d198c08ce421ce105be42c4d01dc924f 100644
+--- a/src/main/java/org/bukkit/event/player/PlayerBucketEvent.java
++++ b/src/main/java/org/bukkit/event/player/PlayerBucketEvent.java
+@@ -5,6 +5,7 @@ import org.bukkit.block.Block;
+ import org.bukkit.block.BlockFace;
+ import org.bukkit.entity.Player;
+ import org.bukkit.event.Cancellable;
++import org.bukkit.inventory.EquipmentSlot;
+ import org.bukkit.inventory.ItemStack;
+ import org.jetbrains.annotations.NotNull;
+ import org.jetbrains.annotations.Nullable;
+@@ -19,6 +20,7 @@ public abstract class PlayerBucketEvent extends PlayerEvent implements Cancellab
+     private final Block blockClicked;
+     private final BlockFace blockFace;
+     private final Material bucket;
++    private final EquipmentSlot hand; // Paper - add EquipmentSlot
+ 
+     @Deprecated
+     public PlayerBucketEvent(@NotNull final Player who, @NotNull final Block blockClicked, @NotNull final BlockFace blockFace, @NotNull final Material bucket, @NotNull final ItemStack itemInHand) {
+@@ -26,12 +28,24 @@ public abstract class PlayerBucketEvent extends PlayerEvent implements Cancellab
+     }
+ 
+     public PlayerBucketEvent(@NotNull final Player who, @NotNull final Block block, @NotNull final Block blockClicked, @NotNull final BlockFace blockFace, @NotNull final Material bucket, @NotNull final ItemStack itemInHand) {
++        // Paper start - add EquipmentSlot
++        this(who, block, blockClicked, blockFace, bucket, itemInHand, null);
++    }
++
++    @Deprecated
++    public PlayerBucketEvent(@NotNull final Player who,@NotNull final Block blockClicked, @NotNull final BlockFace blockFace, @NotNull final Material bucket, @NotNull final ItemStack itemInHand, @Nullable  final EquipmentSlot hand) {
++        this(who, null, blockClicked, blockFace, bucket, itemInHand, hand);
++    }
++
++    public PlayerBucketEvent(@NotNull final Player who, @NotNull final Block block, @NotNull final Block blockClicked, @NotNull final BlockFace blockFace, @NotNull final Material bucket, @NotNull final ItemStack itemInHand, @Nullable  final EquipmentSlot hand) {
++        // Paper end
+         super(who);
+         this.block = block;
+         this.blockClicked = blockClicked;
+         this.blockFace = blockFace;
+         this.itemStack = itemInHand;
+         this.bucket = bucket;
++        this.hand = hand == null ? player.getInventory().getItemInMainHand().equals(itemInHand) ? EquipmentSlot.HAND : EquipmentSlot.OFF_HAND : hand; // Paper - add EquipmentSlot
+     }
+ 
+     /**
+@@ -93,6 +107,18 @@ public abstract class PlayerBucketEvent extends PlayerEvent implements Cancellab
+         return blockFace;
+     }
+ 
++    // Paper start
++    /**
++     * The hand used to perform this action.
++     *
++     * @return the hand used
++     */
++    @NotNull
++    public EquipmentSlot getHand() {
++        return hand;
++    }
++    // Paper end
++
+     @Override
+     public boolean isCancelled() {
+         return cancelled;
+diff --git a/src/main/java/org/bukkit/event/player/PlayerBucketFillEvent.java b/src/main/java/org/bukkit/event/player/PlayerBucketFillEvent.java
+index 77c3a6e5c89ffde564d63b98b2d9e36c356d79fd..56f1cc2d773d2c58207ee291bac596692980a731 100644
+--- a/src/main/java/org/bukkit/event/player/PlayerBucketFillEvent.java
++++ b/src/main/java/org/bukkit/event/player/PlayerBucketFillEvent.java
+@@ -5,6 +5,7 @@ import org.bukkit.block.Block;
+ import org.bukkit.block.BlockFace;
+ import org.bukkit.entity.Player;
+ import org.bukkit.event.HandlerList;
++import org.bukkit.inventory.EquipmentSlot;
+ import org.bukkit.inventory.ItemStack;
+ import org.jetbrains.annotations.NotNull;
+ 
+@@ -23,6 +24,18 @@ public class PlayerBucketFillEvent extends PlayerBucketEvent {
+         super(who, block, blockClicked, blockFace, bucket, itemInHand);
+     }
+ 
++    // Paper start - add EquipmentSlot
++    @Deprecated
++    public PlayerBucketFillEvent(@NotNull final Player who, @NotNull final Block blockClicked, @NotNull final BlockFace blockFace, @NotNull final Material bucket, @NotNull final ItemStack itemInHand, @org.jetbrains.annotations.Nullable final EquipmentSlot hand) {
++        super(who, blockClicked, blockFace, bucket, itemInHand, hand);
++    }
++
++    // Paper start - add EquipmentSlot
++    public PlayerBucketFillEvent(@NotNull final Player who, @NotNull Block block, @NotNull final Block blockClicked, @NotNull final BlockFace blockFace, @NotNull final Material bucket, @NotNull final ItemStack itemInHand, @org.jetbrains.annotations.Nullable final EquipmentSlot hand) {
++        super(who, block, blockClicked, blockFace, bucket, itemInHand, hand);
++    }
++    // Paper end
++
+     @NotNull
+     @Override
+     public HandlerList getHandlers() {

@@ -1,0 +1,175 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sun, 3 May 2020 22:35:09 -0400
+Subject: [PATCH] Optimize Voxel Shape Merging
+
+This method shows up as super hot in profiler, and also a high "self" time.
+
+Upon analyzing, it appears most usages of this method fall down to the final
+else statement of the nasty ternary.
+
+Upon even further analyzation, it appears then the majority of those have a
+consistent list 1.... One with Infinity head and Tails.
+
+First optimization is to detect these infinite states and immediately return that
+VoxelShapeMergerList so we can avoid testing the rest for most cases.
+
+Break the method into 2 to help the JVM promote inlining of this fast path.
+
+Then it was also noticed that VoxelShapeMergerList constructor is also a hotspot
+with a high self time...
+
+Well, knowing that in most cases our list 1 is actualy the same value, it allows
+us to know that with an infinite list1, the result on the merger is essentially
+list2 as the final values.
+
+This let us analyze the 2 potential states (Infinite with 2 sources or 4 sources)
+and compute a deterministic result for the MergerList values.
+
+Additionally, this lets us avoid even allocating new objects for this too, further
+reducing memory usage.
+
+diff --git a/src/main/java/net/minecraft/world/phys/shapes/IndirectMerger.java b/src/main/java/net/minecraft/world/phys/shapes/IndirectMerger.java
+index f0e74daa5bb9e88c028225e7c71deb04c481a7ac..abbe05b07831423eccf8779e854251dec5fbc2ae 100644
+--- a/src/main/java/net/minecraft/world/phys/shapes/IndirectMerger.java
++++ b/src/main/java/net/minecraft/world/phys/shapes/IndirectMerger.java
+@@ -6,10 +6,16 @@ import it.unimi.dsi.fastutil.ints.IntArrayList;
+ 
+ public final class IndirectMerger implements IndexMerger {
+ 
+-    private final DoubleArrayList result;
++    private final DoubleList a; // Paper
+     private final IntArrayList firstIndices;
+     private final IntArrayList secondIndices;
+ 
++    // Paper start
++    private static final IntArrayList INFINITE_B_1 = new IntArrayList(new int[]{1, 1});
++    private static final IntArrayList INFINITE_B_0 = new IntArrayList(new int[]{0, 0});
++    private static final IntArrayList INFINITE_C = new IntArrayList(new int[]{0, 1});
++    // Paper end
++
+     protected IndirectMerger(DoubleList first, DoubleList second, boolean includeFirstOnly, boolean includeSecondOnly) {
+         int i = 0;
+         int j = 0;
+@@ -18,7 +24,23 @@ public final class IndirectMerger implements IndexMerger {
+         int l = second.size();
+         int i1 = k + l;
+ 
+-        this.result = new DoubleArrayList(i1);
++        // Paper start - optimize common path of infinity doublelist
++        int size = first.size();
++        double tail = first.getDouble(size - 1);
++        double head = first.getDouble(0);
++        if (head == Double.NEGATIVE_INFINITY && tail == Double.POSITIVE_INFINITY && !includeFirstOnly && !includeSecondOnly && (size == 2 || size == 4)) {
++            this.a = second;
++            if (size == 2) {
++                this.firstIndices = INFINITE_B_0;
++            } else {
++                this.firstIndices = INFINITE_B_1;
++            }
++            this.secondIndices = INFINITE_C;
++            return;
++        }
++        // Paper end
++
++        this.a = new DoubleArrayList(i1);
+         this.firstIndices = new IntArrayList(i1);
+         this.secondIndices = new IntArrayList(i1);
+ 
+@@ -27,8 +49,8 @@ public final class IndirectMerger implements IndexMerger {
+             boolean flag3 = j < l;
+ 
+             if (!flag2 && !flag3) {
+-                if (this.result.isEmpty()) {
+-                    this.result.add(Math.min(first.getDouble(k - 1), second.getDouble(l - 1)));
++                if (this.a.isEmpty()) {
++                    this.a.add(Math.min(first.getDouble(k - 1), second.getDouble(l - 1)));
+                 }
+ 
+                 return;
+@@ -41,9 +63,9 @@ public final class IndirectMerger implements IndexMerger {
+                 if (!(d0 >= d1 - 1.0E-7D)) { // Paper - decompile error - welcome to hell
+                     this.firstIndices.add(i - 1);
+                     this.secondIndices.add(j - 1);
+-                    this.result.add(d1);
++                    this.a.add(d1);
+                     d0 = d1;
+-                } else if (!this.result.isEmpty()) {
++                } else if (!this.a.isEmpty()) {
+                     this.firstIndices.set(this.firstIndices.size() - 1, i - 1);
+                     this.secondIndices.set(this.secondIndices.size() - 1, j - 1);
+                 }
+@@ -53,7 +75,7 @@ public final class IndirectMerger implements IndexMerger {
+ 
+     @Override
+     public boolean forMergedIndexes(IndexMerger.IndexConsumer predicate) {
+-        for (int i = 0; i < this.result.size() - 1; ++i) {
++        for (int i = 0; i < this.a.size() - 1; ++i) {
+             if (!predicate.merge(this.firstIndices.getInt(i), this.secondIndices.getInt(i), i)) {
+                 return false;
+             }
+@@ -64,6 +86,6 @@ public final class IndirectMerger implements IndexMerger {
+ 
+     @Override
+     public DoubleList getList() {
+-        return this.result;
++        return this.a;
+     }
+ }
+diff --git a/src/main/java/net/minecraft/world/phys/shapes/Shapes.java b/src/main/java/net/minecraft/world/phys/shapes/Shapes.java
+index c14d5ebe16a693834ed218af8f737714065b2e17..1603eb3f7d90a4b3a028b20776566db77d09c123 100644
+--- a/src/main/java/net/minecraft/world/phys/shapes/Shapes.java
++++ b/src/main/java/net/minecraft/world/phys/shapes/Shapes.java
+@@ -329,19 +329,46 @@ public final class Shapes {
+     }
+ 
+     @VisibleForTesting
+-    protected static IndexMerger createIndexMerger(int size, DoubleList first, DoubleList second, boolean includeFirst, boolean includeSecond) {
+-        int j = first.size() - 1;
+-        int k = second.size() - 1;
++    private static IndexMerger createIndexMerger(int size, DoubleList first, DoubleList second, boolean includeFirst, boolean includeSecond) { // Paper - private
++        // Paper start - fast track the most common scenario
++        // doublelist is usually a DoubleArrayList with Infinite head/tails that falls to the final else clause
++        // This is actually the most common path, so jump to it straight away
++        if (first.getDouble(0) == Double.NEGATIVE_INFINITY && first.getDouble(first.size() - 1) == Double.POSITIVE_INFINITY) {
++            return new IndirectMerger(first, second, includeFirst, includeSecond);
++        }
++        // Split out rest to hopefully inline the above
++        return lessCommonMerge(size, first, second, includeFirst, includeSecond);
++    }
++
++    private static IndexMerger lessCommonMerge(int i, DoubleList doublelist, DoubleList doublelist1, boolean flag, boolean flag1) {
++        int j = doublelist.size() - 1;
++        int k = doublelist1.size() - 1;
++        // Paper note - Rewrite below as optimized order if instead of nasty ternary
+ 
+-        if (first instanceof CubePointRange && second instanceof CubePointRange) {
++        if (doublelist instanceof CubePointRange && doublelist1 instanceof CubePointRange) {
+             long l = lcm(j, k);
+ 
+-            if ((long) size * l <= 256L) {
++            if ((long) i * l <= 256L) {
+                 return new DiscreteCubeMerger(j, k);
+             }
+         }
+ 
+-        return (IndexMerger) (first.getDouble(j) < second.getDouble(0) - 1.0E-7D ? new NonOverlappingMerger(first, second, false) : (second.getDouble(k) < first.getDouble(0) - 1.0E-7D ? new NonOverlappingMerger(second, first, true) : (j == k && Objects.equals(first, second) ? (first instanceof IdenticalMerger ? (IndexMerger) first : (second instanceof IdenticalMerger ? (IndexMerger) second : new IdenticalMerger(first))) : new IndirectMerger(first, second, includeFirst, includeSecond))));
++        // Identical happens more often than Disjoint
++        if (j == k && Objects.equals(doublelist, doublelist1)) {
++            if (doublelist instanceof IdenticalMerger) {
++                return (IndexMerger) doublelist;
++            } else if (doublelist1 instanceof IdenticalMerger) {
++                return (IndexMerger) doublelist1;
++            }
++            return new IdenticalMerger(doublelist);
++        } else if (doublelist.getDouble(j) < doublelist1.getDouble(0) - 1.0E-07) {
++            return new NonOverlappingMerger(doublelist, doublelist1, false);
++        } else if (doublelist1.getDouble(k) < doublelist.getDouble(0) - 1.0E-07) {
++            return new NonOverlappingMerger(doublelist1, doublelist, true);
++        } else {
++            return new IndirectMerger(doublelist, doublelist1, flag, flag1);
++        }
++        // Paper end
+     }
+ 
+     public interface DoubleLineConsumer {

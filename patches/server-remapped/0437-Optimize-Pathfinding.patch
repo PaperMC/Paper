@@ -1,0 +1,61 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Thu, 3 Mar 2016 02:02:07 -0600
+Subject: [PATCH] Optimize Pathfinding
+
+Prevents pathfinding from spamming failures for things such as
+arrow attacks.
+
+diff --git a/src/main/java/net/minecraft/world/entity/ai/navigation/PathNavigation.java b/src/main/java/net/minecraft/world/entity/ai/navigation/PathNavigation.java
+index a362506f38e8d30543b6cd6d215db561290dac76..c501e42b6fef4af065807182dc5b4c444e74e310 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/navigation/PathNavigation.java
++++ b/src/main/java/net/minecraft/world/entity/ai/navigation/PathNavigation.java
+@@ -11,6 +11,7 @@ import net.minecraft.core.Position;
+ import net.minecraft.core.Vec3i;
+ import net.minecraft.network.protocol.game.DebugPackets;
+ import net.minecraft.server.MCUtil;
++import net.minecraft.server.MinecraftServer;
+ import net.minecraft.util.Mth;
+ import net.minecraft.world.entity.Entity;
+ import net.minecraft.world.entity.Mob;
+@@ -32,7 +33,7 @@ public abstract class PathNavigation {
+     protected final Mob mob; public Entity getEntity() { return mob; } // Paper - OBFHELPER
+     protected final Level level;
+     @Nullable
+-    protected Path path;
++    protected Path path; protected final Path getCurrentPath() { return this.path; } // Paper - OBFHELPER
+     protected double speedModifier;
+     protected int tick;
+     protected int lastStuckCheck;
+@@ -184,10 +185,30 @@ public abstract class PathNavigation {
+         return this.moveTo(this.createPath(x, y, z, 1), speed);
+     }
+ 
++    // Paper start - optimise pathfinding
++    private int lastFailure = 0;
++    private int pathfindFailures = 0;
++    // Paper end
++
+     public boolean moveTo(Entity entity, double speed) {
++        // Paper start - Pathfinding optimizations
++        if (this.pathfindFailures > 10 && this.getCurrentPath() == null && MinecraftServer.currentTick < this.lastFailure + 40) {
++            return false;
++        }
++        // Paper end
+         Path pathentity = this.createPath(entity, 1);
+ 
+-        return pathentity != null && this.moveTo(pathentity, speed);
++        // Paper start - Pathfinding optimizations
++        if (pathentity != null && this.moveTo(pathentity, speed)) {
++            this.lastFailure = 0;
++            this.pathfindFailures = 0;
++            return true;
++        } else {
++            this.pathfindFailures++;
++            this.lastFailure = MinecraftServer.currentTick;
++            return false;
++        }
++        // Paper end
+     }
+ 
+     public boolean setDestination(@Nullable Path pathentity, double speed) { return moveTo(pathentity, speed); } // Paper - OBFHELPER

@@ -1,0 +1,126 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: MeFisto94 <MeFisto94@users.noreply.github.com>
+Date: Tue, 11 Aug 2020 19:16:09 +0200
+Subject: [PATCH] Add a way to get translation keys for blocks, entities and
+ materials
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/EntityType.java b/src/main/java/net/minecraft/world/entity/EntityType.java
+index ae50030df7512c56c552e800b74ef4c69ec6d6d2..d38828485d6deb08036e11d8bf16b3d63a60fbae 100644
+--- a/src/main/java/net/minecraft/world/entity/EntityType.java
++++ b/src/main/java/net/minecraft/world/entity/EntityType.java
+@@ -278,6 +278,7 @@ public class EntityType<T extends Entity> {
+         return Registry.ENTITY_TYPE.getKey(type);
+     }
+ 
++    public static Optional<EntityType<?>> getByName(String name) { return byString(name); } // Paper - OBFHELPER
+     public static Optional<EntityType<?>> byString(String id) {
+         return Registry.ENTITY_TYPE.getOptional(ResourceLocation.tryParse(id));
+     }
+@@ -431,6 +432,7 @@ public class EntityType<T extends Entity> {
+         return this.category;
+     }
+ 
++    public String getDescriptionId() { return getDescriptionId(); } // Paper - OBFHELPER
+     public String getDescriptionId() {
+         if (this.descriptionId == null) {
+             this.descriptionId = Util.makeDescriptionId("entity", Registry.ENTITY_TYPE.getKey(this));
+diff --git a/src/main/java/net/minecraft/world/item/Item.java b/src/main/java/net/minecraft/world/item/Item.java
+index 6fce16e89c5492654c891d5754714360a7649bca..58400e84830c93675b0a1fe632be5e217c19a932 100644
+--- a/src/main/java/net/minecraft/world/item/Item.java
++++ b/src/main/java/net/minecraft/world/item/Item.java
+@@ -56,7 +56,7 @@ public class Item implements ItemLike {
+     private final FoodProperties foodProperties;
+ 
+     public static int getId(Item item) {
+-        return item == null ? 0 : Registry.ITEM.getId((Object) item);
++        return item == null ? 0 : Registry.ITEM.getId(item);  // Paper - Fix Decompiler Issue
+     }
+ 
+     public static Item byId(int id) {
+@@ -152,6 +152,7 @@ public class Item implements ItemLike {
+         return Registry.ITEM.getKey(this).getPath();
+     }
+ 
++    public String getOrCreateDescriptionId() { return getOrCreateDescriptionId(); } // Paper - OBFHELPER
+     protected String getOrCreateDescriptionId() {
+         if (this.descriptionId == null) {
+             this.descriptionId = Util.makeDescriptionId("item", Registry.ITEM.getKey(this));
+@@ -164,6 +165,7 @@ public class Item implements ItemLike {
+         return this.getOrCreateDescriptionId();
+     }
+ 
++    public String getDescriptionId(ItemStack itemStack) { return getDescriptionId(itemStack); } // Paper - OBFHELPER
+     public String getDescriptionId(ItemStack stack) {
+         return this.getDescriptionId();
+     }
+diff --git a/src/main/java/net/minecraft/world/level/block/Block.java b/src/main/java/net/minecraft/world/level/block/Block.java
+index 5b84ee4091e354c4b6500f58a31931f2a6827ffc..baa587e73a71d6324bb7817fa4702a7c3a2db726 100644
+--- a/src/main/java/net/minecraft/world/level/block/Block.java
++++ b/src/main/java/net/minecraft/world/level/block/Block.java
+@@ -318,6 +318,7 @@ public class Block extends BlockBehaviour implements ItemLike {
+         return !this.material.isBuildable() && !this.material.isLiquid();
+     }
+ 
++    public String getOrCreateDescriptionId() { return getDescriptionId(); } // Paper - OBFHELPER
+     public String getDescriptionId() {
+         if (this.descriptionId == null) {
+             this.descriptionId = Util.makeDescriptionId("block", Registry.BLOCK.getKey(this));
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java b/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java
+index 05f0833f762436bf8f5f5875c7e3cfed1da11e1c..e09f65f0b06c8fb9a965b921c2c8e68ae2ac1e55 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java
+@@ -761,5 +761,10 @@ public class CraftBlock implements Block {
+     public com.destroystokyo.paper.block.BlockSoundGroup getSoundGroup() {
+         return new com.destroystokyo.paper.block.CraftBlockSoundGroup(getNMSBlock().defaultBlockState().getSoundType());
+     }
++
++    @Override
++    public String getTranslationKey() {
++        return org.bukkit.Bukkit.getUnsafe().getTranslationKey(this);
++    }
+     // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
+index a5a5038a84434e69fda8f6b41d2f00b4989e25ae..de5d02a1345f9886200f0540ac08be0df5878708 100644
+--- a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
++++ b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
+@@ -43,6 +43,7 @@ import org.bukkit.Registry;
+ import org.bukkit.UnsafeValues;
+ import org.bukkit.advancement.Advancement;
+ import org.bukkit.block.data.BlockData;
++import org.bukkit.craftbukkit.block.CraftBlock;
+ import org.bukkit.craftbukkit.block.data.CraftBlockData;
+ import org.bukkit.craftbukkit.inventory.CraftItemStack;
+ import org.bukkit.craftbukkit.legacy.CraftLegacy;
+@@ -418,6 +419,30 @@ public final class CraftMagicNumbers implements UnsafeValues {
+             throw new RuntimeException();
+         }
+     }
++
++    @Override
++    public String getTranslationKey(Material mat) {
++        if (mat.isBlock()) {
++            return getBlock(mat).getOrCreateDescriptionId();
++        }
++        return getItem(mat).getDescriptionId();
++    }
++
++    @Override
++    public String getTranslationKey(org.bukkit.block.Block block) {
++        return ((org.bukkit.craftbukkit.block.CraftBlock)block).getNMS().getBlock().getOrCreateDescriptionId();
++    }
++
++    @Override
++    public String getTranslationKey(org.bukkit.entity.EntityType type) {
++        return net.minecraft.world.entity.EntityType.getByName(type.getName()).map(net.minecraft.world.entity.EntityType::getDescriptionId).orElse(null);
++    }
++
++    @Override
++    public String getTranslationKey(org.bukkit.inventory.ItemStack itemStack) {
++        net.minecraft.world.item.ItemStack nmsItemStack = CraftItemStack.asNMSCopy(itemStack);
++        return nmsItemStack.getItem().getDescriptionId(nmsItemStack);
++    }
+     // Paper end
+ 
+     /**

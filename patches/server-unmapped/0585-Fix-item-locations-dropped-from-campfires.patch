@@ -1,0 +1,32 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: William Blake Galbreath <Blake.Galbreath@GMail.com>
+Date: Sat, 3 Oct 2020 20:32:25 -0500
+Subject: [PATCH] Fix item locations dropped from campfires
+
+Fixes #4259 by not flooring the blockposition among other weirdness
+
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/TileEntityCampfire.java b/src/main/java/net/minecraft/world/level/block/entity/TileEntityCampfire.java
+index df010dc740f2dd647a418ba4e425ce3a3b1d79e2..62a19f39405cff27f34a3b98fb9310b1c9c27563 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/TileEntityCampfire.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/TileEntityCampfire.java
+@@ -14,6 +14,7 @@ import net.minecraft.world.Clearable;
+ import net.minecraft.world.ContainerUtil;
+ import net.minecraft.world.InventorySubcontainer;
+ import net.minecraft.world.InventoryUtils;
++import net.minecraft.world.entity.item.EntityItem;
+ import net.minecraft.world.item.ItemStack;
+ import net.minecraft.world.item.crafting.RecipeCampfire;
+ import net.minecraft.world.item.crafting.Recipes;
+@@ -92,7 +93,11 @@ public class TileEntityCampfire extends TileEntity implements Clearable, ITickab
+                     result = blockCookEvent.getResult();
+                     itemstack1 = CraftItemStack.asNMSCopy(result);
+                     // CraftBukkit end
+-                    InventoryUtils.dropItem(this.world, (double) blockposition.getX(), (double) blockposition.getY(), (double) blockposition.getZ(), itemstack1);
++                    // Paper start
++                    EntityItem droppedItem = new EntityItem(this.world, blockposition.getX() + 0.5D, blockposition.getY() + 0.5D, blockposition.getZ() + 0.5D, itemstack1.cloneAndSubtract(this.world.random.nextInt(21) + 10));
++                    droppedItem.setMot(this.world.random.nextGaussian() * 0.05D, this.world.random.nextGaussian() * 0.05D + 0.2D, this.world.random.nextGaussian() * 0.05D);
++                    this.world.addEntity(droppedItem);
++                    // Paper end
+                     this.items.set(i, ItemStack.b);
+                     this.k();
+                 }

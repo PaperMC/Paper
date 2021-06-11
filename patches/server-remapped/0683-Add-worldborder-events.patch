@@ -1,0 +1,122 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Mon, 4 Jan 2021 22:40:34 -0800
+Subject: [PATCH] Add worldborder events
+
+
+diff --git a/src/main/java/net/minecraft/world/level/border/WorldBorder.java b/src/main/java/net/minecraft/world/level/border/WorldBorder.java
+index aaa6251838483de5c46913534413151b5cb1d3fe..4ad686f4fcd3a23c4230faa03946db1f338bc904 100644
+--- a/src/main/java/net/minecraft/world/level/border/WorldBorder.java
++++ b/src/main/java/net/minecraft/world/level/border/WorldBorder.java
+@@ -14,6 +14,9 @@ import net.minecraft.world.phys.AABB;
+ import net.minecraft.world.phys.shapes.BooleanOp;
+ import net.minecraft.world.phys.shapes.Shapes;
+ import net.minecraft.world.phys.shapes.VoxelShape;
++import io.papermc.paper.event.world.border.WorldBorderBoundsChangeFinishEvent; // Paper
++import io.papermc.paper.event.world.border.WorldBorderCenterChangeEvent; // Paper
++import io.papermc.paper.event.world.border.WorldBorderBoundsChangeEvent; // Paper
+ 
+ public class WorldBorder {
+ 
+@@ -102,15 +105,19 @@ public class WorldBorder {
+     }
+ 
+     public void setCenter(double x, double z) {
+-        this.centerX = x;
+-        this.centerZ = z;
++        // Paper start
++        WorldBorderCenterChangeEvent event = new WorldBorderCenterChangeEvent(world.getWorld(), world.getWorld().getWorldBorder(), new org.bukkit.Location(world.getWorld(), this.getCenterX(), 0, this.getCenterZ()), new org.bukkit.Location(world.getWorld(), x, 0, z));
++        if (!event.callEvent()) return;
++        this.centerX = event.getNewCenter().getX();
++        this.centerZ = event.getNewCenter().getZ();
++        // Paper end
+         this.extent.onCenterChange();
+         Iterator iterator = this.getListeners().iterator();
+ 
+         while (iterator.hasNext()) {
+             BorderChangeListener iworldborderlistener = (BorderChangeListener) iterator.next();
+ 
+-            iworldborderlistener.onBorderCenterSet(this, x, z);
++            iworldborderlistener.onBorderCenterSet(this, event.getNewCenter().getX(), event.getNewCenter().getZ()); // Paper
+         }
+ 
+     }
+@@ -128,25 +135,43 @@ public class WorldBorder {
+     }
+ 
+     public void setSize(double size) {
+-        this.extent = new WorldBorder.StaticBorderExtent(size);
++        // Paper start
++        WorldBorderBoundsChangeEvent event = new WorldBorderBoundsChangeEvent(world.getWorld(), world.getWorld().getWorldBorder(), WorldBorderBoundsChangeEvent.Type.INSTANT_MOVE, getSize(), size, 0);
++        if (!event.callEvent()) return;
++        if (event.getType() == WorldBorderBoundsChangeEvent.Type.STARTED_MOVE && event.getDuration() > 0) { // If changed to a timed transition
++            lerpSizeBetween(event.getOldSize(), event.getNewSize(), event.getDuration());
++            return;
++        }
++        this.extent = new WorldBorder.StaticBorderExtent(event.getNewSize());
++        // Paper end
+         Iterator iterator = this.getListeners().iterator();
+ 
+         while (iterator.hasNext()) {
+             BorderChangeListener iworldborderlistener = (BorderChangeListener) iterator.next();
+ 
+-            iworldborderlistener.onBorderSizeSet(this, size);
++            iworldborderlistener.onBorderSizeSet(this, event.getNewSize()); // Paper
+         }
+ 
+     }
+ 
+     public void lerpSizeBetween(double fromSize, double toSize, long time) {
+-        this.extent = (WorldBorder.BorderExtent) (fromSize == toSize ? new WorldBorder.StaticBorderExtent(toSize) : new WorldBorder.MovingBorderExtent(fromSize, toSize, time));
++        // Paper start
++        WorldBorderBoundsChangeEvent.Type type;
++        if (fromSize == toSize) { // new size = old size
++            type = WorldBorderBoundsChangeEvent.Type.INSTANT_MOVE; // Use INSTANT_MOVE because below it creates a Static border if they are equal.
++        } else {
++            type = WorldBorderBoundsChangeEvent.Type.STARTED_MOVE;
++        }
++        WorldBorderBoundsChangeEvent event = new WorldBorderBoundsChangeEvent(world.getWorld(), world.getWorld().getWorldBorder(), type, fromSize, toSize, time);
++        if (!event.callEvent()) return;
++        this.extent = (WorldBorder.BorderExtent) (fromSize == event.getNewSize() ? new WorldBorder.StaticBorderExtent(event.getNewSize()) : new WorldBorder.MovingBorderExtent(fromSize, event.getNewSize(), event.getDuration()));
++        // Paper end
+         Iterator iterator = this.getListeners().iterator();
+ 
+         while (iterator.hasNext()) {
+             BorderChangeListener iworldborderlistener = (BorderChangeListener) iterator.next();
+ 
+-            iworldborderlistener.onBorderSizeLerping(this, fromSize, toSize, time);
++            iworldborderlistener.onBorderSizeLerping(this, fromSize, event.getNewSize(), event.getDuration()); // Paper
+         }
+ 
+     }
+@@ -434,11 +459,11 @@ public class WorldBorder {
+ 
+     class MovingBorderExtent implements WorldBorder.BorderExtent {
+ 
+-        private final double from;
+-        private final double to;
++        private final double from; public final double getOldSize() { return this.from; } // Paper - OBFHELPER
++        private final double to; public final double getNewSize() { return this.to; } // Paper - OBFHELPER
+         private final long lerpEnd;
+         private final long lerpBegin;
+-        private final double lerpDuration;
++        private final double lerpDuration; public final double getDuration() { return this.lerpDuration; } // Paper - OBFHELPER
+ 
+         private MovingBorderExtent(double d0, double d1, long i) {
+             this.from = d0;
+@@ -493,6 +518,7 @@ public class WorldBorder {
+ 
+         @Override
+         public WorldBorder.BorderExtent update() {
++            if (this.getLerpTimeRemaining() <= 0L) new WorldBorderBoundsChangeFinishEvent(world.getWorld(), world.getWorld().getWorldBorder(), getOldSize(), getNewSize(), getDuration()).callEvent(); // Paper
+             return (WorldBorder.BorderExtent) (this.getLerpRemainingTime() <= 0L ? WorldBorder.this.new StaticBorderExtent(this.to) : this);
+         }
+ 
+@@ -514,6 +540,7 @@ public class WorldBorder {
+ 
+         double getSize();
+ 
++        default long getLerpTimeRemaining() { return getLerpRemainingTime(); } // Paper - OBFHELPER
+         long getLerpRemainingTime();
+ 
+         double getLerpTarget();

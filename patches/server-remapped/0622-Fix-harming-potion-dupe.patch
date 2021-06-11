@@ -1,0 +1,59 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: PepperCode1 <44146161+PepperCode1@users.noreply.github.com>
+Date: Thu, 23 Jul 2020 14:25:07 -0700
+Subject: [PATCH] Fix harming potion dupe
+
+EntityLiving#applyInstantEffect() immediately kills the player and drops their inventory.
+Before this patch, instant effects would be applied before the potion ItemStack is removed and replaced with a glass bottle. This caused the potion ItemStack to be dropped before it was supposed to be removed from the inventory. It also caused the glass bottle to be put into a dead player's inventory.
+This patch makes it so that instant effects are applied after the potion ItemStack is removed, and the glass bottle is only put into the player's inventory if the player is not dead. Otherwise, the glass bottle is dropped on the ground.
+
+diff --git a/src/main/java/net/minecraft/world/item/PotionItem.java b/src/main/java/net/minecraft/world/item/PotionItem.java
+index 36ccec8ad2f605d5bceae476e26c2fbfbdae39d8..ba2bc044b259b0a5ba590d4ae6fd36e5c415ddff 100644
+--- a/src/main/java/net/minecraft/world/item/PotionItem.java
++++ b/src/main/java/net/minecraft/world/item/PotionItem.java
+@@ -15,6 +15,7 @@ import net.minecraft.world.entity.player.Player;
+ import net.minecraft.world.item.alchemy.Potion;
+ import net.minecraft.world.item.alchemy.PotionUtils;
+ import net.minecraft.world.item.alchemy.Potions;
++import net.minecraft.world.level.GameRules;
+ import net.minecraft.world.level.Level;
+ 
+ public class PotionItem extends Item {
+@@ -36,6 +37,7 @@ public class PotionItem extends Item {
+             CriteriaTriggers.CONSUME_ITEM.trigger((ServerPlayer) entityhuman, stack);
+         }
+ 
++        List<MobEffectInstance> instantLater = new java.util.ArrayList<>(); // Paper - Fix harming potion dupe
+         if (!world.isClientSide) {
+             List<MobEffectInstance> list = PotionUtils.getMobEffects(stack);
+             Iterator iterator = list.iterator();
+@@ -44,7 +46,7 @@ public class PotionItem extends Item {
+                 MobEffectInstance mobeffect = (MobEffectInstance) iterator.next();
+ 
+                 if (mobeffect.getMobEffect().isInstant()) {
+-                    mobeffect.getMobEffect().applyInstantEffect(entityhuman, entityhuman, user, mobeffect.getAmplifier(), 1.0D);
++                    instantLater.add(mobeffect); // Paper - Fix harming potion dupe
+                 } else {
+                     user.addEffect(new MobEffectInstance(mobeffect), org.bukkit.event.entity.EntityPotionEffectEvent.Cause.POTION_DRINK); // CraftBukkit
+                 }
+@@ -58,7 +60,20 @@ public class PotionItem extends Item {
+             }
+         }
+ 
++        // Paper start - Fix harming potion dupe
++        for (MobEffectInstance mobeffect : instantLater) {
++            mobeffect.getMobEffect().applyInstantEffect(entityhuman, entityhuman, user, mobeffect.getAmplifier(), 1.0D);
++        }
++        // Paper end
++
+         if (entityhuman == null || !entityhuman.abilities.instabuild) {
++            // Paper start - Fix harming potion dupe
++            if (user.getHealth() <= 0 && !user.level.getGameRules().getBoolean(GameRules.RULE_KEEPINVENTORY)) {
++                user.dropItem(new ItemStack(Items.GLASS_BOTTLE), 0);
++                return ItemStack.NULL_ITEM;
++            }
++            // Paper end
++
+             if (stack.isEmpty()) {
+                 return new ItemStack(Items.GLASS_BOTTLE);
+             }

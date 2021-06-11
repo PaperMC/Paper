@@ -1,0 +1,72 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Byteflux <byte@byteflux.net>
+Date: Wed, 8 Aug 2018 16:33:21 -0600
+Subject: [PATCH] Configurable speed for water flowing over lava
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 5ab0e7183e48134b7a0f736462516b1a8a333b04..f280dbff4a09bc611a9ca565c6d697d08801f53b 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -390,4 +390,10 @@ public class PaperWorldConfig {
+         this.armorStandTick = this.getBoolean("armor-stands-tick", this.armorStandTick);
+         log("ArmorStand ticking is " + (this.armorStandTick ? "enabled" : "disabled") + " by default");
+     }
++
++    public int waterOverLavaFlowSpeed;
++    private void waterOverLavaFlowSpeed() {
++        waterOverLavaFlowSpeed = getInt("water-over-lava-flow-speed", 5);
++        log("Water over lava flow speed: " + waterOverLavaFlowSpeed);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/world/level/block/BlockFluids.java b/src/main/java/net/minecraft/world/level/block/BlockFluids.java
+index 0654c77ab059dea2ad06cb16d07950e153d3f15d..0ed8d938b8fafdb03e01a00a201ba3f8597ac6e9 100644
+--- a/src/main/java/net/minecraft/world/level/block/BlockFluids.java
++++ b/src/main/java/net/minecraft/world/level/block/BlockFluids.java
+@@ -23,6 +23,7 @@ import net.minecraft.world.level.material.Fluid;
+ import net.minecraft.world.level.material.FluidType;
+ import net.minecraft.world.level.material.FluidTypeFlowing;
+ import net.minecraft.world.level.material.FluidTypes;
++import net.minecraft.world.level.material.Material;
+ import net.minecraft.world.level.pathfinder.PathMode;
+ import net.minecraft.world.level.storage.loot.LootTableInfo;
+ import net.minecraft.world.phys.shapes.VoxelShape;
+@@ -100,11 +101,28 @@ public class BlockFluids extends Block implements IFluidSource {
+     @Override
+     public void onPlace(IBlockData iblockdata, World world, BlockPosition blockposition, IBlockData iblockdata1, boolean flag) {
+         if (this.a(world, blockposition, iblockdata)) {
+-            world.getFluidTickList().a(blockposition, iblockdata.getFluid().getType(), this.b.a((IWorldReader) world));
++            world.getFluidTickList().a(blockposition, iblockdata.getFluid().getType(), this.getFlowSpeed(world, blockposition)); // Paper
+         }
+ 
+     }
+ 
++    // Paper start - Get flow speed. Throttle if its water and flowing adjacent to lava
++    public int getFlowSpeed(World world, BlockPosition blockposition) {
++        if (this.material == Material.WATER) {
++            if (
++                world.getMaterialIfLoaded(blockposition.north(1)) == Material.LAVA ||
++                world.getMaterialIfLoaded(blockposition.south(1)) == Material.LAVA ||
++                world.getMaterialIfLoaded(blockposition.west(1)) == Material.LAVA ||
++                world.getMaterialIfLoaded(blockposition.east(1)) == Material.LAVA
++            ) {
++                return world.paperConfig.waterOverLavaFlowSpeed;
++            }
++        }
++        return this.b.a(world);
++    }
++    // Paper end
++
++
+     @Override
+     public IBlockData updateState(IBlockData iblockdata, EnumDirection enumdirection, IBlockData iblockdata1, GeneratorAccess generatoraccess, BlockPosition blockposition, BlockPosition blockposition1) {
+         if (iblockdata.getFluid().isSource() || iblockdata1.getFluid().isSource()) {
+@@ -117,7 +135,7 @@ public class BlockFluids extends Block implements IFluidSource {
+     @Override
+     public void doPhysics(IBlockData iblockdata, World world, BlockPosition blockposition, Block block, BlockPosition blockposition1, boolean flag) {
+         if (this.a(world, blockposition, iblockdata)) {
+-            world.getFluidTickList().a(blockposition, iblockdata.getFluid().getType(), this.b.a((IWorldReader) world));
++            world.getFluidTickList().a(blockposition, iblockdata.getFluid().getType(), this.getFlowSpeed(world, blockposition)); // Paper
+         }
+ 
+     }

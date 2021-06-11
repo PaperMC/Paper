@@ -1,0 +1,84 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Alfie Cleveland <alfeh@me.com>
+Date: Fri, 19 Aug 2016 01:52:56 +0100
+Subject: [PATCH] Optimise BlockState's hashCode/equals
+
+These are singleton "single instance" objects. We can rely on
+object identity checks safely.
+
+Use a simpler optimized hashcode
+
+diff --git a/src/main/java/net/minecraft/world/level/block/state/properties/BlockStateBoolean.java b/src/main/java/net/minecraft/world/level/block/state/properties/BlockStateBoolean.java
+index 0701c1a178852345b6bf01bce8b1d0559c535d45..f2f94950681b198ae7a4c31a044fd62e98e448ab 100644
+--- a/src/main/java/net/minecraft/world/level/block/state/properties/BlockStateBoolean.java
++++ b/src/main/java/net/minecraft/world/level/block/state/properties/BlockStateBoolean.java
+@@ -30,8 +30,7 @@ public class BlockStateBoolean extends IBlockState<Boolean> {
+         return obool.toString();
+     }
+ 
+-    @Override
+-    public boolean equals(Object object) {
++    public boolean equals_unused(Object object) { // Paper
+         if (this == object) {
+             return true;
+         } else if (object instanceof BlockStateBoolean && super.equals(object)) {
+diff --git a/src/main/java/net/minecraft/world/level/block/state/properties/BlockStateEnum.java b/src/main/java/net/minecraft/world/level/block/state/properties/BlockStateEnum.java
+index de85894beae7ee7d276cf2af3daa77377ce131c3..3079cd13ea1465f4221fde4fec7df639f7c1eb49 100644
+--- a/src/main/java/net/minecraft/world/level/block/state/properties/BlockStateEnum.java
++++ b/src/main/java/net/minecraft/world/level/block/state/properties/BlockStateEnum.java
+@@ -50,8 +50,7 @@ public class BlockStateEnum<T extends Enum<T> & INamable> extends IBlockState<T>
+         return ((INamable) t0).getName();
+     }
+ 
+-    @Override
+-    public boolean equals(Object object) {
++    public boolean equals_unused(Object object) { // Paper
+         if (this == object) {
+             return true;
+         } else if (object instanceof BlockStateEnum && super.equals(object)) {
+diff --git a/src/main/java/net/minecraft/world/level/block/state/properties/BlockStateInteger.java b/src/main/java/net/minecraft/world/level/block/state/properties/BlockStateInteger.java
+index 518c2ebe4cdfe4704bbec2abe81522cbca38da55..190978c889222185b47065e9e5f96a82e59c7b4e 100644
+--- a/src/main/java/net/minecraft/world/level/block/state/properties/BlockStateInteger.java
++++ b/src/main/java/net/minecraft/world/level/block/state/properties/BlockStateInteger.java
+@@ -38,8 +38,7 @@ public class BlockStateInteger extends IBlockState<Integer> {
+         return this.a;
+     }
+ 
+-    @Override
+-    public boolean equals(Object object) {
++    public boolean equals_unused(Object object) { // Paper
+         if (this == object) {
+             return true;
+         } else if (object instanceof BlockStateInteger && super.equals(object)) {
+diff --git a/src/main/java/net/minecraft/world/level/block/state/properties/IBlockState.java b/src/main/java/net/minecraft/world/level/block/state/properties/IBlockState.java
+index e3969bad5be64bb41e2973751605d6820c16f021..759d6a4adaa511488ace5e2650eb685cbb6c4c16 100644
+--- a/src/main/java/net/minecraft/world/level/block/state/properties/IBlockState.java
++++ b/src/main/java/net/minecraft/world/level/block/state/properties/IBlockState.java
+@@ -60,23 +60,17 @@ public abstract class IBlockState<T extends Comparable<T>> {
+     }
+ 
+     public boolean equals(Object object) {
+-        if (this == object) {
+-            return true;
+-        } else if (!(object instanceof IBlockState)) {
+-            return false;
+-        } else {
+-            IBlockState<?> iblockstate = (IBlockState) object;
+-
+-            return this.a.equals(iblockstate.a) && this.b.equals(iblockstate.b);
+-        }
++        return this == object; // Paper - only one instance per configuration
+     }
+ 
++    private static final java.util.concurrent.atomic.AtomicInteger hashId = new java.util.concurrent.atomic.AtomicInteger(1); // Paper - only one instance per configuration
++    private final int hashCode = 92821 * hashId.getAndIncrement(); // Paper - only one instance per configuration
+     public final int hashCode() {
+         if (this.c == null) {
+             this.c = this.b();
+         }
+ 
+-        return this.c;
++        return this.hashCode; // Paper - only one instance per configuration
+     }
+ 
+     public int b() {

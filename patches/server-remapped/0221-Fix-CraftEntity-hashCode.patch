@@ -1,0 +1,46 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sun, 10 Jun 2018 20:20:15 -0400
+Subject: [PATCH] Fix CraftEntity hashCode
+
+hashCodes are not allowed to change, however bukkit used a value
+that does change, the entityId.
+
+When an entity is teleported dimensions, the entity reference is
+replaced with a new one with a new entity ID.
+
+For hashCode, we can simply use the UUID's hashCode to keep
+the hashCode from changing.
+
+equals() is ok to use getEntityId() because equals() should only
+be true if both the left and right are the same reference.
+
+Since entity ids can not duplicate during runtime, this
+check is essentially the same as this.getHandle() == other.getHandle()
+
+However, replaced it too to make it clearer of intent.
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
+index ecb5f5ca547930f91602d539e541964cd9f10287..e1bbaf620f3ed2a6cb9ce8007a78c4cee47b653e 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
+@@ -745,14 +745,15 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
+             return false;
+         }
+         final CraftEntity other = (CraftEntity) obj;
+-        return (this.getEntityId() == other.getEntityId());
++        return (this.getHandle() == other.getHandle()); // Paper - while logically the same, this is clearer
+     }
+ 
++    // Paper - Fix hashCode. entity ID's are not static.
++    // A CraftEntity can change reference to a new entity with a new ID, and hash codes should never change
+     @Override
+     public int hashCode() {
+-        int hash = 7;
+-        hash = 29 * hash + this.getEntityId();
+-        return hash;
++        return getUniqueId().hashCode();
++        // Paper end
+     }
+ 
+     @Override

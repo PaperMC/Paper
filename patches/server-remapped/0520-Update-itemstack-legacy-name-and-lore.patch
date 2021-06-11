@@ -1,0 +1,79 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: William Blake Galbreath <Blake.Galbreath@GMail.com>
+Date: Wed, 1 Jul 2020 11:57:40 -0500
+Subject: [PATCH] Update itemstack legacy name and lore
+
+
+diff --git a/src/main/java/net/minecraft/world/item/ItemStack.java b/src/main/java/net/minecraft/world/item/ItemStack.java
+index 458cdfbeac9d757c9721acd4557a548affa0ede1..04b717326524f400da3562655c25db59e72814ec 100644
+--- a/src/main/java/net/minecraft/world/item/ItemStack.java
++++ b/src/main/java/net/minecraft/world/item/ItemStack.java
+@@ -49,6 +49,7 @@ import net.minecraft.core.Registry;
+ import net.minecraft.nbt.CompoundTag;
+ import net.minecraft.nbt.ListTag;
+ import net.minecraft.nbt.NbtOps;
++import net.minecraft.nbt.StringTag;
+ import net.minecraft.nbt.Tag;
+ import net.minecraft.network.chat.Component;
+ import net.minecraft.network.chat.ComponentUtils;
+@@ -135,6 +136,44 @@ public final class ItemStack {
+             list.sort((Comparator<? super Tag>) enchantSorter); // Paper
+         } catch (Exception ignored) {}
+     }
++
++    private void processText() {
++        CompoundTag display = getSubTag("display");
++        if (display != null) {
++            if (display.contains("Name", 8)) {
++                String json = display.getString("Name");
++                if (json != null && json.contains("\u00A7")) {
++                    try {
++                        display.put("Name", convert(json));
++                    } catch (JsonParseException jsonparseexception) {
++                        display.remove("Name");
++                    }
++                }
++            }
++            if (display.contains("Lore", 9)) {
++                ListTag list = display.getList("Lore", 8);
++                for (int index = 0; index < list.size(); index++) {
++                    String json = list.getString(index);
++                    if (json != null && json.contains("\u00A7")) { // Only try if it has legacy in the unparsed json
++                        try {
++                            list.set(index, convert(json));
++                        } catch (JsonParseException e) {
++                            list.set(index, StringTag.create(org.bukkit.craftbukkit.util.CraftChatMessage.toJSON(new TextComponent(""))));
++                        }
++                    }
++                }
++            }
++        }
++    }
++
++    private StringTag convert(String json) {
++        Component component = Component.Serializer.jsonToComponent(json);
++        if (component instanceof TextComponent && component.getContents().contains("\u00A7") && component.getSiblings().isEmpty()) {
++            // Only convert if the root component is a single comp with legacy in it, don't convert already normal components
++            component = org.bukkit.craftbukkit.util.CraftChatMessage.fromString(component.getContents())[0];
++        }
++        return StringTag.create(org.bukkit.craftbukkit.util.CraftChatMessage.toJSON(component));
++    }
+     // Paper end
+ 
+     public ItemStack(ItemLike item) {
+@@ -180,6 +219,7 @@ public final class ItemStack {
+             // CraftBukkit start - make defensive copy as this data may be coming from the save thread
+             this.tag = (CompoundTag) nbttagcompound.getCompound("tag").copy();
+             processEnchantOrder(this.tag); // Paper
++            processText(); // Paper
+             this.getItem().verifyTagAfterLoad(this.tag);
+             // CraftBukkit end
+         }
+@@ -663,6 +703,7 @@ public final class ItemStack {
+         }
+     }
+ 
++    @Nullable public CompoundTag getSubTag(String s) { return getTagElement(s); } // Paper - OBFHELPER
+     @Nullable
+     public CompoundTag getTagElement(String key) {
+         return this.tag != null && this.tag.contains(key, 10) ? this.tag.getCompound(key) : null;

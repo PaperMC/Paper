@@ -1,0 +1,47 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Tue, 31 May 2016 22:53:50 -0400
+Subject: [PATCH] Only send Dragon/Wither Death sounds to same world
+
+Also fix view distance lookup
+
+diff --git a/src/main/java/net/minecraft/world/entity/boss/enderdragon/EnderDragon.java b/src/main/java/net/minecraft/world/entity/boss/enderdragon/EnderDragon.java
+index 8d1b3cbb21fe798c27ad2d39bccffa9cc983cf96..39298b69918da890c3faa516f80d1a69adb88fe2 100644
+--- a/src/main/java/net/minecraft/world/entity/boss/enderdragon/EnderDragon.java
++++ b/src/main/java/net/minecraft/world/entity/boss/enderdragon/EnderDragon.java
+@@ -619,8 +619,9 @@ public class EnderDragon extends Mob implements Enemy {
+             if (this.dragonDeathTime == 1 && !this.isSilent()) {
+                 // CraftBukkit start - Use relative location for far away sounds
+                 // this.world.b(1028, this.getChunkCoordinates(), 0);
+-                int viewDistance = ((ServerLevel) this.level).getCraftServer().getViewDistance() * 16;
+-                for (net.minecraft.server.level.ServerPlayer player : this.level.getServer().getPlayerList().players) {
++                //int viewDistance = ((WorldServer) this.world).getServer().getViewDistance() * 16; // Paper - updated to use worlds actual view distance incase we have to uncomment this due to removal of player view distance API
++                for (net.minecraft.server.level.ServerPlayer player : (List<net.minecraft.server.level.ServerPlayer>) ((ServerLevel)level).players()) {
++                    final int viewDistance = player.getViewDistance(); // TODO apply view distance api patch
+                     double deltaX = this.getX() - player.getX();
+                     double deltaZ = this.getZ() - player.getZ();
+                     double distanceSquared = deltaX * deltaX + deltaZ * deltaZ;
+diff --git a/src/main/java/net/minecraft/world/entity/boss/wither/WitherBoss.java b/src/main/java/net/minecraft/world/entity/boss/wither/WitherBoss.java
+index 61c982ead18334a29438ef8e024d97ead178a2c8..3a80869dc3c16cb81ac87100f28d63eee722067f 100644
+--- a/src/main/java/net/minecraft/world/entity/boss/wither/WitherBoss.java
++++ b/src/main/java/net/minecraft/world/entity/boss/wither/WitherBoss.java
+@@ -46,7 +46,6 @@ import net.minecraft.network.syncher.EntityDataSerializers;
+ import net.minecraft.network.syncher.SynchedEntityData;
+ import net.minecraft.server.MinecraftServer;
+ import net.minecraft.server.level.ServerBossEvent;
+-import net.minecraft.server.level.ServerLevel;
+ import net.minecraft.server.level.ServerPlayer;
+ import net.minecraft.sounds.SoundEvent;
+ import net.minecraft.sounds.SoundEvents;
+@@ -256,8 +255,9 @@ public class WitherBoss extends Monster implements RangedAttackMob {
+                 if (!this.isSilent()) {
+                     // CraftBukkit start - Use relative location for far away sounds
+                     // this.world.b(1023, new BlockPosition(this), 0);
+-                    int viewDistance = ((ServerLevel) this.level).getCraftServer().getViewDistance() * 16;
+-                    for (ServerPlayer player : (List<ServerPlayer>) MinecraftServer.getServer().getPlayerList().players) {
++                    //int viewDistance = ((WorldServer) this.world).getServer().getViewDistance() * 16; // Paper - updated to use worlds actual view distance incase we have to uncomment this due to removal of player view distance API
++                    for (ServerPlayer player : (List<ServerPlayer>)this.level.players()) {
++                        final int viewDistance = player.getViewDistance(); // TODO apply view distance api patch
+                         double deltaX = this.getX() - player.getX();
+                         double deltaZ = this.getZ() - player.getZ();
+                         double distanceSquared = deltaX * deltaX + deltaZ * deltaZ;

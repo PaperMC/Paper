@@ -1,0 +1,28 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: kickash32 <kickash32@gmail.com>
+Date: Sat, 9 May 2020 02:01:48 -0400
+Subject: [PATCH] Ensure EntityRaider respects game and entity rules for
+ picking up items
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/raid/Raider.java b/src/main/java/net/minecraft/world/entity/raid/Raider.java
+index 6406b0a03b67ea61083b704cd24b9b25a0f33c87..5502615be430d9eba0c1c68e3f10826d75b08672 100644
+--- a/src/main/java/net/minecraft/world/entity/raid/Raider.java
++++ b/src/main/java/net/minecraft/world/entity/raid/Raider.java
+@@ -523,7 +523,7 @@ public abstract class Raider extends PatrollingMonster {
+ 
+     public class ObtainRaidLeaderBannerGoal<T extends Raider> extends Goal {
+ 
+-        private final T mob;
++        private final T mob; private T getRaider() { return mob; } // Paper - obfhelper
+ 
+         public ObtainRaidLeaderBannerGoal(T entityraider) { // CraftBukkit - decompile error
+             this.mob = entityraider;
+@@ -532,6 +532,7 @@ public abstract class Raider extends PatrollingMonster {
+ 
+         @Override
+         public boolean canUse() {
++            if (!getRaider().level.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING) || !getRaider().canPickUpLoot()) return false; // Paper - respect game and entity rules for picking up items
+             Raid raid = this.mob.getCurrentRaid();
+ 
+             if (this.mob.hasActiveRaid() && !this.mob.getCurrentRaid().isOver() && this.mob.canBeLeader() && !ItemStack.matches(this.mob.getItemBySlot(EquipmentSlot.HEAD), Raid.getLeaderBannerInstance())) {

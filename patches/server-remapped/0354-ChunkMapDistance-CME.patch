@@ -1,0 +1,93 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Shane Freeder <theboyetronic@gmail.com>
+Date: Wed, 29 May 2019 04:01:22 +0100
+Subject: [PATCH] ChunkMapDistance CME
+
+
+diff --git a/src/main/java/net/minecraft/server/level/ChunkHolder.java b/src/main/java/net/minecraft/server/level/ChunkHolder.java
+index 0b8cbf75ff01b9825141be00d63679f7bcc58a9f..89e90806b78d94d5c1d781113da420dafa47930a 100644
+--- a/src/main/java/net/minecraft/server/level/ChunkHolder.java
++++ b/src/main/java/net/minecraft/server/level/ChunkHolder.java
+@@ -44,6 +44,7 @@ public class ChunkHolder {
+     private static final CompletableFuture<Either<LevelChunk, ChunkHolder.ChunkLoadingFailure>> UNLOADED_LEVEL_CHUNK_FUTURE = CompletableFuture.completedFuture(ChunkHolder.UNLOADED_LEVEL_CHUNK);
+     private static final List<ChunkStatus> CHUNK_STATUSES = ChunkStatus.getStatusList();
+     private static final ChunkHolder.FullChunkStatus[] FULL_CHUNK_STATUSES = ChunkHolder.FullChunkStatus.values();
++    boolean isUpdateQueued = false; // Paper
+     private final AtomicReferenceArray<CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>>> futures;
+     private volatile CompletableFuture<Either<LevelChunk, ChunkHolder.ChunkLoadingFailure>> fullChunkFuture; private int fullChunkCreateCount; private volatile boolean isFullChunkReady; // Paper - cache chunk ticking stage
+     private volatile CompletableFuture<Either<LevelChunk, ChunkHolder.ChunkLoadingFailure>> tickingChunkFuture; private volatile boolean isTickingReady; // Paper - cache chunk ticking stage
+diff --git a/src/main/java/net/minecraft/server/level/DistanceManager.java b/src/main/java/net/minecraft/server/level/DistanceManager.java
+index 8f993f15ae02c2e4af9cc732cd1b040cce0a67e8..71a51cc99e26579e765f88340588e23956888929 100644
+--- a/src/main/java/net/minecraft/server/level/DistanceManager.java
++++ b/src/main/java/net/minecraft/server/level/DistanceManager.java
+@@ -39,7 +39,16 @@ public abstract class DistanceManager {
+     private final DistanceManager.ChunkTicketTracker ticketTracker = new DistanceManager.ChunkTicketTracker();
+     private final DistanceManager.FixedPlayerDistanceChunkTracker naturalSpawnChunkCounter = new DistanceManager.FixedPlayerDistanceChunkTracker(8);
+     private final DistanceManager.PlayerTicketTracker playerTicketManager = new DistanceManager.PlayerTicketTracker(33);
+-    private final Set<ChunkHolder> chunksToUpdateFutures = Sets.newHashSet();
++    // Paper start use a queue, but still keep unique requirement
++    public final java.util.Queue<ChunkHolder> pendingChunkUpdates = new java.util.ArrayDeque<ChunkHolder>() {
++        @Override
++        public boolean add(ChunkHolder o) {
++            if (o.isUpdateQueued) return true;
++            o.isUpdateQueued = true;
++            return super.add(o);
++        }
++    };
++    // Paper end
+     private final ChunkTaskPriorityQueueSorter ticketThrottler;
+     private final ProcessorHandle<ChunkTaskPriorityQueueSorter.Message<Runnable>> ticketThrottlerInput;
+     private final ProcessorHandle<ChunkTaskPriorityQueueSorter.Release> ticketThrottlerReleaser;
+@@ -100,26 +109,14 @@ public abstract class DistanceManager {
+             ;
+         }
+ 
+-        if (!this.chunksToUpdateFutures.isEmpty()) {
+-            // CraftBukkit start
+-            // Iterate pending chunk updates with protection against concurrent modification exceptions
+-            java.util.Iterator<ChunkHolder> iter = this.chunksToUpdateFutures.iterator();
+-            int expectedSize = this.chunksToUpdateFutures.size();
+-            do {
+-                ChunkHolder playerchunk = iter.next();
+-                iter.remove();
+-                expectedSize--;
+-
+-                playerchunk.updateFutures(chunkStorage);
+-
+-                // Reset iterator if set was modified using add()
+-                if (this.chunksToUpdateFutures.size() != expectedSize) {
+-                    expectedSize = this.chunksToUpdateFutures.size();
+-                    iter = this.chunksToUpdateFutures.iterator();
+-                }
+-            } while (iter.hasNext());
+-            // CraftBukkit end
+-
++        // Paper start
++        if (!this.pendingChunkUpdates.isEmpty()) {
++            while(!this.pendingChunkUpdates.isEmpty()) {
++                ChunkHolder remove = this.pendingChunkUpdates.remove();
++                remove.isUpdateQueued = false;
++                remove.updateFutures(chunkStorage);
++            }
++            // Paper end
+             return true;
+         } else {
+             if (!this.ticketsToRelease.isEmpty()) {
+@@ -342,7 +339,7 @@ public abstract class DistanceManager {
+             if (k != level) {
+                 playerchunk = DistanceManager.this.updateChunkScheduling(id, level, playerchunk, k);
+                 if (playerchunk != null) {
+-                    DistanceManager.this.chunksToUpdateFutures.add(playerchunk);
++                    DistanceManager.this.pendingChunkUpdates.add(playerchunk);
+                 }
+ 
+             }
+@@ -373,7 +370,7 @@ public abstract class DistanceManager {
+             ObjectIterator objectiterator = this.chunks.long2ByteEntrySet().iterator();
+ 
+             while (objectiterator.hasNext()) {
+-                it.unimi.dsi.fastutil.longs.Long2ByteMap.Entry it_unimi_dsi_fastutil_longs_long2bytemap_entry = (it.unimi.dsi.fastutil.longs.Long2ByteMap.Entry) objectiterator.next();
++                Long2ByteMap.Entry it_unimi_dsi_fastutil_longs_long2bytemap_entry = (Long2ByteMap.Entry) objectiterator.next(); // Paper - decompile fix
+                 byte b0 = it_unimi_dsi_fastutil_longs_long2bytemap_entry.getByteValue();
+                 long j = it_unimi_dsi_fastutil_longs_long2bytemap_entry.getLongKey();
+ 

@@ -1,0 +1,47 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Zach Brown <zach@zachbr.io>
+Date: Thu, 31 Jan 2019 16:33:36 -0500
+Subject: [PATCH] Fire BlockPistonRetractEvent for all empty pistons
+
+There is an explicit check in the handling code for empty pistons that
+prevents sticky pistons from firing the event. However when we look back
+at the history we see that this check was originally added so that ONLY
+sticky pistons would fire the retract event. I'm not sure why.
+https://hub.spigotmc.org/stash/projects/SPIGOT/repos/craftbukkit/commits/1092acbddf07edfa4100bc6824504ac75088e913
+
+Over the course of several updates, the meaning of that field appears to
+have changed from "is NOT sticky" to "is sticky". So now its having the
+opposite effect. Only normal pistons fire the retraction event. And like
+all things in CB, it's just been carried around since.
+
+If we are to believe the history, the correct fix for this issue is to
+flip it so it only fires for sticky pistons, but that puts us in a
+bind. It's already firing for non-sticky pistons, changing it now would
+likely result in breakage. Furthermore, there is little documentation as
+to WHY that was ever intended to be the case.
+
+Instead we opt to remove the check entirely so that the event fires for
+all piston types.
+
+diff --git a/src/main/java/net/minecraft/world/level/block/piston/PistonBaseBlock.java b/src/main/java/net/minecraft/world/level/block/piston/PistonBaseBlock.java
+index 878cec21b52fb62369310c2f85001e859a270dd8..dc9584a30c18d964afd9cc118c81c24a80beba63 100644
+--- a/src/main/java/net/minecraft/world/level/block/piston/PistonBaseBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/piston/PistonBaseBlock.java
+@@ -140,7 +140,7 @@ public class PistonBaseBlock extends DirectionalBlock {
+             }
+ 
+             // CraftBukkit start
+-            if (!this.isSticky) {
++            //if (!this.sticky) { // Paper - Prevents empty sticky pistons from firing retract - history behind is odd
+                 org.bukkit.block.Block block = world.getWorld().getBlockAt(pos.getX(), pos.getY(), pos.getZ());
+                 BlockPistonRetractEvent event = new BlockPistonRetractEvent(block, ImmutableList.<org.bukkit.block.Block>of(), CraftBlock.notchToBlockFace(enumdirection));
+                 world.getCraftServer().getPluginManager().callEvent(event);
+@@ -148,7 +148,7 @@ public class PistonBaseBlock extends DirectionalBlock {
+                 if (event.isCancelled()) {
+                     return;
+                 }
+-            }
++            //} // Paper
+             // PAIL: checkME - what happened to setTypeAndData?
+             // CraftBukkit end
+             world.blockEvent(pos, this, b0, enumdirection.get3DDataValue());

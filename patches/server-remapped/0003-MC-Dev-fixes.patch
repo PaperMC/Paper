@@ -1,0 +1,929 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Wed, 30 Mar 2016 19:36:20 -0400
+Subject: [PATCH] MC Dev fixes
+
+
+diff --git a/src/main/java/net/minecraft/Util.java b/src/main/java/net/minecraft/Util.java
+index 16220ce9a7db722c8b351f8016fd1df066ffcb98..8c378d3f3138953b3b22b289fecdb6b40a09ab63 100644
+--- a/src/main/java/net/minecraft/Util.java
++++ b/src/main/java/net/minecraft/Util.java
+@@ -65,8 +65,8 @@ public class Util {
+         return Collectors.toMap(Entry::getKey, Entry::getValue);
+     }
+ 
+-    public static <T extends Comparable<T>> String getPropertyName(Property<T> iblockstate, Object object) {
+-        return iblockstate.value((Comparable) object);
++    public static <T extends Comparable<T>> String a(Property<T> iblockstate, T object) { // Paper - decompile fix
++        return iblockstate.getName(object); // Paper - decompile fix
+     }
+ 
+     public static String makeDescriptionId(String type, @Nullable ResourceLocation id) {
+@@ -234,8 +234,8 @@ public class Util {
+     public static <T> T findPreviousInIterable(Iterable<T> iterable, @Nullable T t0) {
+         Iterator<T> iterator = iterable.iterator();
+ 
+-        Object object;
+-        Object object1;
++        T object; // Paper - decompile fix
++        T object1; // Paper - decompile fix
+ 
+         for (object1 = null; iterator.hasNext(); object1 = object) {
+             object = iterator.next();
+@@ -260,7 +260,7 @@ public class Util {
+     }
+ 
+     public static <K> Strategy<K> identityStrategy() {
+-        return Util.IdentityStrategy.INSTANCE;
++        return (Strategy<K>) Util.IdentityStrategy.INSTANCE; // Paper - decompile fix
+     }
+ 
+     public static <V> CompletableFuture<List<V>> sequence(List<? extends CompletableFuture<? extends V>> futures) {
+@@ -271,7 +271,7 @@ public class Util {
+         futures.forEach((completablefuture1) -> {
+             int i = list1.size();
+ 
+-            list1.add((Object) null);
++            list1.add(null); // Paper - decompile fix
+             acompletablefuture[i] = completablefuture1.whenComplete((object, throwable) -> {
+                 if (throwable != null) {
+                     completablefuture.completeExceptionally(throwable);
+diff --git a/src/main/java/net/minecraft/core/BlockPos.java b/src/main/java/net/minecraft/core/BlockPos.java
+index aa35d67cc27a4f982575eab3be46f4187f29d3fe..88147a1f25cf2fd549412b653b8f0eb5c60bb55d 100644
+--- a/src/main/java/net/minecraft/core/BlockPos.java
++++ b/src/main/java/net/minecraft/core/BlockPos.java
+@@ -241,8 +241,8 @@ public class BlockPos extends Vec3i {
+         };
+     }
+ 
+-    public static Iterable<BlockPos> withinManhattan(BlockPos center, int xRange, int yRange, int zRange) {
+-        int l = xRange + yRange + zRange;
++    public static Iterable<BlockPos> withinManhattan(BlockPos center, int xRange, int yRange, int zRange) { // Paper - decompile issues - variable name conflicts to inner class field refs
++        int l_decompiled = xRange + yRange + zRange; // Paper - decompile issues
+         int i1 = center.getX();
+         int j1 = center.getY();
+         int k1 = center.getZ();
+@@ -270,15 +270,15 @@ public class BlockPos extends Vec3i {
+                                 ++this.x;
+                                 if (this.x > this.maxX) {
+                                     ++this.currentDepth;
+-                                    if (this.currentDepth > x) {
++                                    if (this.currentDepth > l_decompiled) { // Paper - use proper l above (first line of this method)
+                                         return (BlockPos) this.endOfData();
+                                     }
+ 
+-                                    this.maxX = Math.min(currentDepth, this.currentDepth);
++                                    this.maxX = Math.min(xRange, this.currentDepth); // Paper - decompile issues
+                                     this.x = -this.maxX;
+                                 }
+ 
+-                                this.maxY = Math.min(maxX, this.currentDepth - Math.abs(this.x));
++                                this.maxY = Math.min(yRange, this.currentDepth - Math.abs(this.x)); // Paper - decompile issues
+                                 this.y = -this.maxY;
+                             }
+ 
+@@ -286,7 +286,7 @@ public class BlockPos extends Vec3i {
+                             int i2 = this.y;
+                             int j2 = this.currentDepth - Math.abs(l1) - Math.abs(i2);
+ 
+-                            if (j2 <= maxY) {
++                            if (j2 <= zRange) { // Paper - decompile issues
+                                 this.zMirror = j2 != 0;
+                                 blockposition_mutableblockposition = this.cursor.set(i1 + l1, j1 + i2, k1 + j2);
+                             }
+@@ -355,13 +355,13 @@ public class BlockPos extends Vec3i {
+         };
+     }
+ 
+-    public static Iterable<BlockPos.MutableBlockPos> spiralAround(BlockPos blockposition, int i, Direction enumdirection, Direction enumdirection1) {
++    public static Iterable<BlockPos.MutableBlockPos> spiralAround(BlockPos blockposition, int I, Direction enumdirection, Direction enumdirection1) { // Paper - decompile fix
+         Validate.validState(enumdirection.getAxis() != enumdirection1.getAxis(), "The two directions cannot be on the same axis", new Object[0]);
+         return () -> {
+             return new AbstractIterator<BlockPos.MutableBlockPos>() {
+                 private final Direction[] directions = new Direction[]{enumdirection, enumdirection1, enumdirection.getOpposite(), enumdirection1.getOpposite()};
+                 private final BlockPos.MutableBlockPos cursor = blockposition.mutable().move(enumdirection1);
+-                private final int legs = 4 * legSize;
++                private final int legs = 4 * I;
+                 private int leg = -1;
+                 private int legSize;
+                 private int legIndex;
+diff --git a/src/main/java/net/minecraft/core/IdMapper.java b/src/main/java/net/minecraft/core/IdMapper.java
+index 71c591487853bec3cecf5777c09ddc05bd658b64..424c6cacc2e7c7b1c9d0b92fe198237033a3fcbd 100644
+--- a/src/main/java/net/minecraft/core/IdMapper.java
++++ b/src/main/java/net/minecraft/core/IdMapper.java
+@@ -27,7 +27,7 @@ public class IdMapper<T> implements IdMap<T> {
+         this.tToId.put(value, id);
+ 
+         while (this.idToT.size() <= id) {
+-            this.idToT.add((Object) null);
++            this.idToT.add(null); // Paper - decompile fix
+         }
+ 
+         this.idToT.set(id, value);
+@@ -41,6 +41,13 @@ public class IdMapper<T> implements IdMap<T> {
+         this.addMapping(value, this.nextId);
+     }
+ 
++    // Paper start - decompile fix
++    @Override
++    public int a(T t) {
++        return getId(t);
++    }
++    // Paper end
++
+     public int getId(T entry) {
+         Integer integer = (Integer) this.tToId.get(entry);
+ 
+diff --git a/src/main/java/net/minecraft/nbt/ListTag.java b/src/main/java/net/minecraft/nbt/ListTag.java
+index efc632a8ac13f77aaf2229a09e84416c09c86255..084340dc73acb3d972e0717b48da820c027a5137 100644
+--- a/src/main/java/net/minecraft/nbt/ListTag.java
++++ b/src/main/java/net/minecraft/nbt/ListTag.java
+@@ -53,7 +53,7 @@ public class ListTag extends CollectionTag<Tag> {
+             return "TAG_List";
+         }
+     };
+-    private static final ByteSet INLINE_ELEMENT_TYPES = new ByteOpenHashSet(Arrays.asList(1, 2, 3, 4, 5, 6));
++    private static final ByteSet INLINE_ELEMENT_TYPES = new ByteOpenHashSet(Arrays.asList((byte) 1, (byte) 2, (byte) 3, (byte) 4, (byte) 5, (byte) 6)); // Paper - decompiler fix
+     private final List<Tag> list;
+     private byte type;
+ 
+diff --git a/src/main/java/net/minecraft/nbt/NbtIo.java b/src/main/java/net/minecraft/nbt/NbtIo.java
+index 5494db9e8e04d976aa1b005a108b452cd481d0bb..c4fbc0bc8b80d16f09d3c6642acc7476a0817868 100644
+--- a/src/main/java/net/minecraft/nbt/NbtIo.java
++++ b/src/main/java/net/minecraft/nbt/NbtIo.java
+@@ -18,6 +18,7 @@ import java.util.zip.GZIPOutputStream;
+ import net.minecraft.CrashReport;
+ import net.minecraft.CrashReportCategory;
+ import net.minecraft.ReportedException;
++import io.netty.buffer.ByteBufInputStream; // Paper
+ 
+ public class NbtIo {
+ 
+@@ -137,7 +138,7 @@ public class NbtIo {
+ 
+     public static CompoundTag read(DataInput input, NbtAccounter tracker) throws IOException {
+         // Spigot start
+-        if ( input instanceof io.netty.buffer.ByteBufInputStream )
++        if ( input instanceof ByteBufInputStream) // Paper
+         {
+             input = new DataInputStream(new org.spigotmc.LimitStream((InputStream) input, tracker));
+         }
+diff --git a/src/main/java/net/minecraft/nbt/Tag.java b/src/main/java/net/minecraft/nbt/Tag.java
+index 483c33e9b2d64c1a003d3bb543486b8a545bc96a..85e9c5f4620fcf48cb3655fbb2db58b3fb31aa74 100644
+--- a/src/main/java/net/minecraft/nbt/Tag.java
++++ b/src/main/java/net/minecraft/nbt/Tag.java
+@@ -20,7 +20,7 @@ public interface Tag {
+ 
+     TagType<?> getType();
+ 
+-    Tag copy();
++    public Tag copy(); // Paper - decompile fix
+ 
+     default String getAsString() {
+         return this.toString();
+diff --git a/src/main/java/net/minecraft/network/ConnectionProtocol.java b/src/main/java/net/minecraft/network/ConnectionProtocol.java
+index a12d169edf4e087b18fedf7199d6eb7ee58f0305..fca778d131aa10e88d5f7ed8d57eda6803318184 100644
+--- a/src/main/java/net/minecraft/network/ConnectionProtocol.java
++++ b/src/main/java/net/minecraft/network/ConnectionProtocol.java
+@@ -14,23 +14,29 @@ import net.minecraft.network.protocol.Packet;
+ import net.minecraft.network.protocol.PacketFlow;
+ import net.minecraft.network.protocol.game.*;
+ import net.minecraft.network.protocol.handshake.ClientIntentionPacket;
++import net.minecraft.network.protocol.handshake.ServerHandshakePacketListener;
++import net.minecraft.network.protocol.login.ClientLoginPacketListener;
+ import net.minecraft.network.protocol.login.ClientboundCustomQueryPacket;
+ import net.minecraft.network.protocol.login.ClientboundGameProfilePacket;
+ import net.minecraft.network.protocol.login.ClientboundHelloPacket;
+ import net.minecraft.network.protocol.login.ClientboundLoginCompressionPacket;
+ import net.minecraft.network.protocol.login.ClientboundLoginDisconnectPacket;
++import net.minecraft.network.protocol.login.ServerLoginPacketListener;
+ import net.minecraft.network.protocol.login.ServerboundCustomQueryPacket;
+ import net.minecraft.network.protocol.login.ServerboundHelloPacket;
+ import net.minecraft.network.protocol.login.ServerboundKeyPacket;
++import net.minecraft.network.protocol.status.ClientStatusPacketListener;
+ import net.minecraft.network.protocol.status.ClientboundPongResponsePacket;
+ import net.minecraft.network.protocol.status.ClientboundStatusResponsePacket;
++import net.minecraft.network.protocol.status.ServerStatusPacketListener;
+ import net.minecraft.network.protocol.status.ServerboundPingRequestPacket;
+ import net.minecraft.network.protocol.status.ServerboundStatusRequestPacket;
+ import org.apache.logging.log4j.LogManager;
+ 
+ public enum ConnectionProtocol {
+ 
+-    HANDSHAKING(-1, protocol().addFlow(PacketFlow.SERVERBOUND, (new ConnectionProtocol.PacketSet<>()).addPacket(ClientIntentionPacket.class, ClientIntentionPacket::new))), PLAY(0, protocol().addFlow(PacketFlow.CLIENTBOUND, (new ConnectionProtocol.PacketSet<>()).addPacket(ClientboundAddEntityPacket.class, ClientboundAddEntityPacket::new).a(ClientboundAddExperienceOrbPacket.class, ClientboundAddExperienceOrbPacket::new).a(ClientboundAddMobPacket.class, ClientboundAddMobPacket::new).a(ClientboundAddPaintingPacket.class, ClientboundAddPaintingPacket::new).a(ClientboundAddPlayerPacket.class, ClientboundAddPlayerPacket::new).a(ClientboundAnimatePacket.class, ClientboundAnimatePacket::new).a(ClientboundAwardStatsPacket.class, ClientboundAwardStatsPacket::new).a(ClientboundBlockBreakAckPacket.class, ClientboundBlockBreakAckPacket::new).a(ClientboundBlockDestructionPacket.class, ClientboundBlockDestructionPacket::new).a(ClientboundBlockEntityDataPacket.class, ClientboundBlockEntityDataPacket::new).a(ClientboundBlockEventPacket.class, ClientboundBlockEventPacket::new).a(ClientboundBlockUpdatePacket.class, ClientboundBlockUpdatePacket::new).a(ClientboundBossEventPacket.class, ClientboundBossEventPacket::new).a(ClientboundChangeDifficultyPacket.class, ClientboundChangeDifficultyPacket::new).a(ClientboundChatPacket.class, ClientboundChatPacket::new).a(ClientboundCommandSuggestionsPacket.class, ClientboundCommandSuggestionsPacket::new).a(ClientboundCommandsPacket.class, ClientboundCommandsPacket::new).a(ClientboundContainerAckPacket.class, ClientboundContainerAckPacket::new).a(ClientboundContainerClosePacket.class, ClientboundContainerClosePacket::new).a(ClientboundContainerSetContentPacket.class, ClientboundContainerSetContentPacket::new).a(ClientboundContainerSetDataPacket.class, ClientboundContainerSetDataPacket::new).a(ClientboundContainerSetSlotPacket.class, ClientboundContainerSetSlotPacket::new).a(ClientboundCooldownPacket.class, ClientboundCooldownPacket::new).a(ClientboundCustomPayloadPacket.class, ClientboundCustomPayloadPacket::new).a(ClientboundCustomSoundPacket.class, ClientboundCustomSoundPacket::new).a(ClientboundDisconnectPacket.class, ClientboundDisconnectPacket::new).a(ClientboundEntityEventPacket.class, ClientboundEntityEventPacket::new).a(ClientboundExplodePacket.class, ClientboundExplodePacket::new).a(ClientboundForgetLevelChunkPacket.class, ClientboundForgetLevelChunkPacket::new).a(ClientboundGameEventPacket.class, ClientboundGameEventPacket::new).a(ClientboundHorseScreenOpenPacket.class, ClientboundHorseScreenOpenPacket::new).a(ClientboundKeepAlivePacket.class, ClientboundKeepAlivePacket::new).a(ClientboundLevelChunkPacket.class, ClientboundLevelChunkPacket::new).a(ClientboundLevelEventPacket.class, ClientboundLevelEventPacket::new).a(ClientboundLevelParticlesPacket.class, ClientboundLevelParticlesPacket::new).a(ClientboundLightUpdatePacket.class, ClientboundLightUpdatePacket::new).a(ClientboundLoginPacket.class, ClientboundLoginPacket::new).a(ClientboundMapItemDataPacket.class, ClientboundMapItemDataPacket::new).a(ClientboundMerchantOffersPacket.class, ClientboundMerchantOffersPacket::new).a(ClientboundMoveEntityPacket.Pos.class, ClientboundMoveEntityPacket.Pos::new).a(ClientboundMoveEntityPacket.PosRot.class, ClientboundMoveEntityPacket.PosRot::new).a(ClientboundMoveEntityPacket.Rot.class, ClientboundMoveEntityPacket.Rot::new).a(ClientboundMoveEntityPacket.class, ClientboundMoveEntityPacket::new).a(ClientboundMoveVehiclePacket.class, ClientboundMoveVehiclePacket::new).a(ClientboundOpenBookPacket.class, ClientboundOpenBookPacket::new).a(ClientboundOpenScreenPacket.class, ClientboundOpenScreenPacket::new).a(ClientboundOpenSignEditorPacket.class, ClientboundOpenSignEditorPacket::new).a(ClientboundPlaceGhostRecipePacket.class, ClientboundPlaceGhostRecipePacket::new).a(ClientboundPlayerAbilitiesPacket.class, ClientboundPlayerAbilitiesPacket::new).a(ClientboundPlayerCombatPacket.class, ClientboundPlayerCombatPacket::new).a(ClientboundPlayerInfoPacket.class, ClientboundPlayerInfoPacket::new).a(ClientboundPlayerLookAtPacket.class, ClientboundPlayerLookAtPacket::new).a(ClientboundPlayerPositionPacket.class, ClientboundPlayerPositionPacket::new).a(ClientboundRecipePacket.class, ClientboundRecipePacket::new).a(ClientboundRemoveEntitiesPacket.class, ClientboundRemoveEntitiesPacket::new).a(ClientboundRemoveMobEffectPacket.class, ClientboundRemoveMobEffectPacket::new).a(ClientboundResourcePackPacket.class, ClientboundResourcePackPacket::new).a(ClientboundRespawnPacket.class, ClientboundRespawnPacket::new).a(ClientboundRotateHeadPacket.class, ClientboundRotateHeadPacket::new).a(ClientboundSectionBlocksUpdatePacket.class, ClientboundSectionBlocksUpdatePacket::new).a(ClientboundSelectAdvancementsTabPacket.class, ClientboundSelectAdvancementsTabPacket::new).a(ClientboundSetBorderPacket.class, ClientboundSetBorderPacket::new).a(ClientboundSetCameraPacket.class, ClientboundSetCameraPacket::new).a(ClientboundSetCarriedItemPacket.class, ClientboundSetCarriedItemPacket::new).a(ClientboundSetChunkCacheCenterPacket.class, ClientboundSetChunkCacheCenterPacket::new).a(ClientboundSetChunkCacheRadiusPacket.class, ClientboundSetChunkCacheRadiusPacket::new).a(ClientboundSetDefaultSpawnPositionPacket.class, ClientboundSetDefaultSpawnPositionPacket::new).a(ClientboundSetDisplayObjectivePacket.class, ClientboundSetDisplayObjectivePacket::new).a(ClientboundSetEntityDataPacket.class, ClientboundSetEntityDataPacket::new).a(ClientboundSetEntityLinkPacket.class, ClientboundSetEntityLinkPacket::new).a(ClientboundSetEntityMotionPacket.class, ClientboundSetEntityMotionPacket::new).a(ClientboundSetEquipmentPacket.class, ClientboundSetEquipmentPacket::new).a(ClientboundSetExperiencePacket.class, ClientboundSetExperiencePacket::new).a(ClientboundSetHealthPacket.class, ClientboundSetHealthPacket::new).a(ClientboundSetObjectivePacket.class, ClientboundSetObjectivePacket::new).a(ClientboundSetPassengersPacket.class, ClientboundSetPassengersPacket::new).a(ClientboundSetPlayerTeamPacket.class, ClientboundSetPlayerTeamPacket::new).a(ClientboundSetScorePacket.class, ClientboundSetScorePacket::new).a(ClientboundSetTimePacket.class, ClientboundSetTimePacket::new).a(ClientboundSetTitlesPacket.class, ClientboundSetTitlesPacket::new).a(ClientboundSoundEntityPacket.class, ClientboundSoundEntityPacket::new).a(ClientboundSoundPacket.class, ClientboundSoundPacket::new).a(ClientboundStopSoundPacket.class, ClientboundStopSoundPacket::new).a(ClientboundTabListPacket.class, ClientboundTabListPacket::new).a(ClientboundTagQueryPacket.class, ClientboundTagQueryPacket::new).a(ClientboundTakeItemEntityPacket.class, ClientboundTakeItemEntityPacket::new).a(ClientboundTeleportEntityPacket.class, ClientboundTeleportEntityPacket::new).a(ClientboundUpdateAdvancementsPacket.class, ClientboundUpdateAdvancementsPacket::new).a(ClientboundUpdateAttributesPacket.class, ClientboundUpdateAttributesPacket::new).a(ClientboundUpdateMobEffectPacket.class, ClientboundUpdateMobEffectPacket::new).a(ClientboundUpdateRecipesPacket.class, ClientboundUpdateRecipesPacket::new).a(ClientboundUpdateTagsPacket.class, ClientboundUpdateTagsPacket::new)).a(PacketFlow.SERVERBOUND, (new ConnectionProtocol.PacketSet<>()).addPacket(ServerboundAcceptTeleportationPacket.class, ServerboundAcceptTeleportationPacket::new).a(ServerboundBlockEntityTagQuery.class, ServerboundBlockEntityTagQuery::new).a(ServerboundChangeDifficultyPacket.class, ServerboundChangeDifficultyPacket::new).a(ServerboundChatPacket.class, ServerboundChatPacket::new).a(ServerboundClientCommandPacket.class, ServerboundClientCommandPacket::new).a(ServerboundClientInformationPacket.class, ServerboundClientInformationPacket::new).a(ServerboundCommandSuggestionPacket.class, ServerboundCommandSuggestionPacket::new).a(ServerboundContainerAckPacket.class, ServerboundContainerAckPacket::new).a(ServerboundContainerButtonClickPacket.class, ServerboundContainerButtonClickPacket::new).a(ServerboundContainerClickPacket.class, ServerboundContainerClickPacket::new).a(ServerboundContainerClosePacket.class, ServerboundContainerClosePacket::new).a(ServerboundCustomPayloadPacket.class, ServerboundCustomPayloadPacket::new).a(ServerboundEditBookPacket.class, ServerboundEditBookPacket::new).a(ServerboundEntityTagQuery.class, ServerboundEntityTagQuery::new).a(ServerboundInteractPacket.class, ServerboundInteractPacket::new).a(ServerboundJigsawGeneratePacket.class, ServerboundJigsawGeneratePacket::new).a(ServerboundKeepAlivePacket.class, ServerboundKeepAlivePacket::new).a(ServerboundLockDifficultyPacket.class, ServerboundLockDifficultyPacket::new).a(ServerboundMovePlayerPacket.Pos.class, ServerboundMovePlayerPacket.Pos::new).a(ServerboundMovePlayerPacket.PosRot.class, ServerboundMovePlayerPacket.PosRot::new).a(ServerboundMovePlayerPacket.Rot.class, ServerboundMovePlayerPacket.Rot::new).a(ServerboundMovePlayerPacket.class, ServerboundMovePlayerPacket::new).a(ServerboundMoveVehiclePacket.class, ServerboundMoveVehiclePacket::new).a(ServerboundPaddleBoatPacket.class, ServerboundPaddleBoatPacket::new).a(ServerboundPickItemPacket.class, ServerboundPickItemPacket::new).a(ServerboundPlaceRecipePacket.class, ServerboundPlaceRecipePacket::new).a(ServerboundPlayerAbilitiesPacket.class, ServerboundPlayerAbilitiesPacket::new).a(ServerboundPlayerActionPacket.class, ServerboundPlayerActionPacket::new).a(ServerboundPlayerCommandPacket.class, ServerboundPlayerCommandPacket::new).a(ServerboundPlayerInputPacket.class, ServerboundPlayerInputPacket::new).a(ServerboundRecipeBookChangeSettingsPacket.class, ServerboundRecipeBookChangeSettingsPacket::new).a(ServerboundRecipeBookSeenRecipePacket.class, ServerboundRecipeBookSeenRecipePacket::new).a(ServerboundRenameItemPacket.class, ServerboundRenameItemPacket::new).a(ServerboundResourcePackPacket.class, ServerboundResourcePackPacket::new).a(ServerboundSeenAdvancementsPacket.class, ServerboundSeenAdvancementsPacket::new).a(ServerboundSelectTradePacket.class, ServerboundSelectTradePacket::new).a(ServerboundSetBeaconPacket.class, ServerboundSetBeaconPacket::new).a(ServerboundSetCarriedItemPacket.class, ServerboundSetCarriedItemPacket::new).a(ServerboundSetCommandBlockPacket.class, ServerboundSetCommandBlockPacket::new).a(ServerboundSetCommandMinecartPacket.class, ServerboundSetCommandMinecartPacket::new).a(ServerboundSetCreativeModeSlotPacket.class, ServerboundSetCreativeModeSlotPacket::new).a(ServerboundSetJigsawBlockPacket.class, ServerboundSetJigsawBlockPacket::new).a(ServerboundSetStructureBlockPacket.class, ServerboundSetStructureBlockPacket::new).a(ServerboundSignUpdatePacket.class, ServerboundSignUpdatePacket::new).a(ServerboundSwingPacket.class, ServerboundSwingPacket::new).a(ServerboundTeleportToEntityPacket.class, ServerboundTeleportToEntityPacket::new).a(ServerboundUseItemOnPacket.class, ServerboundUseItemOnPacket::new).a(ServerboundUseItemPacket.class, ServerboundUseItemPacket::new))), STATUS(1, protocol().addFlow(PacketFlow.SERVERBOUND, (new ConnectionProtocol.PacketSet<>()).addPacket(ServerboundStatusRequestPacket.class, ServerboundStatusRequestPacket::new).a(ServerboundPingRequestPacket.class, ServerboundPingRequestPacket::new)).a(PacketFlow.CLIENTBOUND, (new ConnectionProtocol.PacketSet<>()).addPacket(ClientboundStatusResponsePacket.class, ClientboundStatusResponsePacket::new).a(ClientboundPongResponsePacket.class, ClientboundPongResponsePacket::new))), LOGIN(2, protocol().addFlow(PacketFlow.CLIENTBOUND, (new ConnectionProtocol.PacketSet<>()).addPacket(ClientboundLoginDisconnectPacket.class, ClientboundLoginDisconnectPacket::new).a(ClientboundHelloPacket.class, ClientboundHelloPacket::new).a(ClientboundGameProfilePacket.class, ClientboundGameProfilePacket::new).a(ClientboundLoginCompressionPacket.class, ClientboundLoginCompressionPacket::new).a(ClientboundCustomQueryPacket.class, ClientboundCustomQueryPacket::new)).a(PacketFlow.SERVERBOUND, (new ConnectionProtocol.PacketSet<>()).addPacket(ServerboundHelloPacket.class, ServerboundHelloPacket::new).a(ServerboundKeyPacket.class, ServerboundKeyPacket::new).a(ServerboundCustomQueryPacket.class, ServerboundCustomQueryPacket::new)));
++    // Paper - fix decompile error - add generic names to < > like PacketListenerPlayOut
++    HANDSHAKING(-1, protocol().addFlow(PacketFlow.SERVERBOUND, (new ConnectionProtocol.PacketSet<ServerHandshakePacketListener>()).addPacket(ClientIntentionPacket.class, ClientIntentionPacket::new))), PLAY(0, protocol().addFlow(PacketFlow.CLIENTBOUND, (new ConnectionProtocol.PacketSet<ClientGamePacketListener>()).addPacket(ClientboundAddEntityPacket.class, ClientboundAddEntityPacket::new).addPacket(ClientboundAddExperienceOrbPacket.class, ClientboundAddExperienceOrbPacket::new).addPacket(ClientboundAddMobPacket.class, ClientboundAddMobPacket::new).addPacket(ClientboundAddPaintingPacket.class, ClientboundAddPaintingPacket::new).addPacket(ClientboundAddPlayerPacket.class, ClientboundAddPlayerPacket::new).addPacket(ClientboundAnimatePacket.class, ClientboundAnimatePacket::new).addPacket(ClientboundAwardStatsPacket.class, ClientboundAwardStatsPacket::new).addPacket(ClientboundBlockBreakAckPacket.class, ClientboundBlockBreakAckPacket::new).addPacket(ClientboundBlockDestructionPacket.class, ClientboundBlockDestructionPacket::new).addPacket(ClientboundBlockEntityDataPacket.class, ClientboundBlockEntityDataPacket::new).addPacket(ClientboundBlockEventPacket.class, ClientboundBlockEventPacket::new).addPacket(ClientboundBlockUpdatePacket.class, ClientboundBlockUpdatePacket::new).addPacket(ClientboundBossEventPacket.class, ClientboundBossEventPacket::new).addPacket(ClientboundChangeDifficultyPacket.class, ClientboundChangeDifficultyPacket::new).addPacket(ClientboundChatPacket.class, ClientboundChatPacket::new).addPacket(ClientboundCommandSuggestionsPacket.class, ClientboundCommandSuggestionsPacket::new).addPacket(ClientboundCommandsPacket.class, ClientboundCommandsPacket::new).addPacket(ClientboundContainerAckPacket.class, ClientboundContainerAckPacket::new).addPacket(ClientboundContainerClosePacket.class, ClientboundContainerClosePacket::new).addPacket(ClientboundContainerSetContentPacket.class, ClientboundContainerSetContentPacket::new).addPacket(ClientboundContainerSetDataPacket.class, ClientboundContainerSetDataPacket::new).addPacket(ClientboundContainerSetSlotPacket.class, ClientboundContainerSetSlotPacket::new).addPacket(ClientboundCooldownPacket.class, ClientboundCooldownPacket::new).addPacket(ClientboundCustomPayloadPacket.class, ClientboundCustomPayloadPacket::new).addPacket(ClientboundCustomSoundPacket.class, ClientboundCustomSoundPacket::new).addPacket(ClientboundDisconnectPacket.class, ClientboundDisconnectPacket::new).addPacket(ClientboundEntityEventPacket.class, ClientboundEntityEventPacket::new).addPacket(ClientboundExplodePacket.class, ClientboundExplodePacket::new).addPacket(ClientboundForgetLevelChunkPacket.class, ClientboundForgetLevelChunkPacket::new).addPacket(ClientboundGameEventPacket.class, ClientboundGameEventPacket::new).addPacket(ClientboundHorseScreenOpenPacket.class, ClientboundHorseScreenOpenPacket::new).addPacket(ClientboundKeepAlivePacket.class, ClientboundKeepAlivePacket::new).addPacket(ClientboundLevelChunkPacket.class, ClientboundLevelChunkPacket::new).addPacket(ClientboundLevelEventPacket.class, ClientboundLevelEventPacket::new).addPacket(ClientboundLevelParticlesPacket.class, ClientboundLevelParticlesPacket::new).addPacket(ClientboundLightUpdatePacket.class, ClientboundLightUpdatePacket::new).addPacket(ClientboundLoginPacket.class, ClientboundLoginPacket::new).addPacket(ClientboundMapItemDataPacket.class, ClientboundMapItemDataPacket::new).addPacket(ClientboundMerchantOffersPacket.class, ClientboundMerchantOffersPacket::new).addPacket(ClientboundMoveEntityPacket.Pos.class, ClientboundMoveEntityPacket.Pos::new).addPacket(ClientboundMoveEntityPacket.PosRot.class, ClientboundMoveEntityPacket.PosRot::new).addPacket(ClientboundMoveEntityPacket.Rot.class, ClientboundMoveEntityPacket.Rot::new).addPacket(ClientboundMoveEntityPacket.class, ClientboundMoveEntityPacket::new).addPacket(ClientboundMoveVehiclePacket.class, ClientboundMoveVehiclePacket::new).addPacket(ClientboundOpenBookPacket.class, ClientboundOpenBookPacket::new).addPacket(ClientboundOpenScreenPacket.class, ClientboundOpenScreenPacket::new).addPacket(ClientboundOpenSignEditorPacket.class, ClientboundOpenSignEditorPacket::new).addPacket(ClientboundPlaceGhostRecipePacket.class, ClientboundPlaceGhostRecipePacket::new).addPacket(ClientboundPlayerAbilitiesPacket.class, ClientboundPlayerAbilitiesPacket::new).addPacket(ClientboundPlayerCombatPacket.class, ClientboundPlayerCombatPacket::new).addPacket(ClientboundPlayerInfoPacket.class, ClientboundPlayerInfoPacket::new).addPacket(ClientboundPlayerLookAtPacket.class, ClientboundPlayerLookAtPacket::new).addPacket(ClientboundPlayerPositionPacket.class, ClientboundPlayerPositionPacket::new).addPacket(ClientboundRecipePacket.class, ClientboundRecipePacket::new).addPacket(ClientboundRemoveEntitiesPacket.class, ClientboundRemoveEntitiesPacket::new).addPacket(ClientboundRemoveMobEffectPacket.class, ClientboundRemoveMobEffectPacket::new).addPacket(ClientboundResourcePackPacket.class, ClientboundResourcePackPacket::new).addPacket(ClientboundRespawnPacket.class, ClientboundRespawnPacket::new).addPacket(ClientboundRotateHeadPacket.class, ClientboundRotateHeadPacket::new).addPacket(ClientboundSectionBlocksUpdatePacket.class, ClientboundSectionBlocksUpdatePacket::new).addPacket(ClientboundSelectAdvancementsTabPacket.class, ClientboundSelectAdvancementsTabPacket::new).addPacket(ClientboundSetBorderPacket.class, ClientboundSetBorderPacket::new).addPacket(ClientboundSetCameraPacket.class, ClientboundSetCameraPacket::new).addPacket(ClientboundSetCarriedItemPacket.class, ClientboundSetCarriedItemPacket::new).addPacket(ClientboundSetChunkCacheCenterPacket.class, ClientboundSetChunkCacheCenterPacket::new).addPacket(ClientboundSetChunkCacheRadiusPacket.class, ClientboundSetChunkCacheRadiusPacket::new).addPacket(ClientboundSetDefaultSpawnPositionPacket.class, ClientboundSetDefaultSpawnPositionPacket::new).addPacket(ClientboundSetDisplayObjectivePacket.class, ClientboundSetDisplayObjectivePacket::new).addPacket(ClientboundSetEntityDataPacket.class, ClientboundSetEntityDataPacket::new).addPacket(ClientboundSetEntityLinkPacket.class, ClientboundSetEntityLinkPacket::new).addPacket(ClientboundSetEntityMotionPacket.class, ClientboundSetEntityMotionPacket::new).addPacket(ClientboundSetEquipmentPacket.class, ClientboundSetEquipmentPacket::new).addPacket(ClientboundSetExperiencePacket.class, ClientboundSetExperiencePacket::new).addPacket(ClientboundSetHealthPacket.class, ClientboundSetHealthPacket::new).addPacket(ClientboundSetObjectivePacket.class, ClientboundSetObjectivePacket::new).addPacket(ClientboundSetPassengersPacket.class, ClientboundSetPassengersPacket::new).addPacket(ClientboundSetPlayerTeamPacket.class, ClientboundSetPlayerTeamPacket::new).addPacket(ClientboundSetScorePacket.class, ClientboundSetScorePacket::new).addPacket(ClientboundSetTimePacket.class, ClientboundSetTimePacket::new).addPacket(ClientboundSetTitlesPacket.class, ClientboundSetTitlesPacket::new).addPacket(ClientboundSoundEntityPacket.class, ClientboundSoundEntityPacket::new).addPacket(ClientboundSoundPacket.class, ClientboundSoundPacket::new).addPacket(ClientboundStopSoundPacket.class, ClientboundStopSoundPacket::new).addPacket(ClientboundTabListPacket.class, ClientboundTabListPacket::new).addPacket(ClientboundTagQueryPacket.class, ClientboundTagQueryPacket::new).addPacket(ClientboundTakeItemEntityPacket.class, ClientboundTakeItemEntityPacket::new).addPacket(ClientboundTeleportEntityPacket.class, ClientboundTeleportEntityPacket::new).addPacket(ClientboundUpdateAdvancementsPacket.class, ClientboundUpdateAdvancementsPacket::new).addPacket(ClientboundUpdateAttributesPacket.class, ClientboundUpdateAttributesPacket::new).addPacket(ClientboundUpdateMobEffectPacket.class, ClientboundUpdateMobEffectPacket::new).addPacket(ClientboundUpdateRecipesPacket.class, ClientboundUpdateRecipesPacket::new).addPacket(ClientboundUpdateTagsPacket.class, ClientboundUpdateTagsPacket::new)).addFlow(PacketFlow.SERVERBOUND, (new ConnectionProtocol.PacketSet<ServerGamePacketListener>()).addPacket(ServerboundAcceptTeleportationPacket.class, ServerboundAcceptTeleportationPacket::new).addPacket(ServerboundBlockEntityTagQuery.class, ServerboundBlockEntityTagQuery::new).addPacket(ServerboundChangeDifficultyPacket.class, ServerboundChangeDifficultyPacket::new).addPacket(ServerboundChatPacket.class, ServerboundChatPacket::new).addPacket(ServerboundClientCommandPacket.class, ServerboundClientCommandPacket::new).addPacket(ServerboundClientInformationPacket.class, ServerboundClientInformationPacket::new).addPacket(ServerboundCommandSuggestionPacket.class, ServerboundCommandSuggestionPacket::new).addPacket(ServerboundContainerAckPacket.class, ServerboundContainerAckPacket::new).addPacket(ServerboundContainerButtonClickPacket.class, ServerboundContainerButtonClickPacket::new).addPacket(ServerboundContainerClickPacket.class, ServerboundContainerClickPacket::new).addPacket(ServerboundContainerClosePacket.class, ServerboundContainerClosePacket::new).addPacket(ServerboundCustomPayloadPacket.class, ServerboundCustomPayloadPacket::new).addPacket(ServerboundEditBookPacket.class, ServerboundEditBookPacket::new).addPacket(ServerboundEntityTagQuery.class, ServerboundEntityTagQuery::new).addPacket(ServerboundInteractPacket.class, ServerboundInteractPacket::new).addPacket(ServerboundJigsawGeneratePacket.class, ServerboundJigsawGeneratePacket::new).addPacket(ServerboundKeepAlivePacket.class, ServerboundKeepAlivePacket::new).addPacket(ServerboundLockDifficultyPacket.class, ServerboundLockDifficultyPacket::new).addPacket(ServerboundMovePlayerPacket.Pos.class, ServerboundMovePlayerPacket.Pos::new).addPacket(ServerboundMovePlayerPacket.PosRot.class, ServerboundMovePlayerPacket.PosRot::new).addPacket(ServerboundMovePlayerPacket.Rot.class, ServerboundMovePlayerPacket.Rot::new).addPacket(ServerboundMovePlayerPacket.class, ServerboundMovePlayerPacket::new).addPacket(ServerboundMoveVehiclePacket.class, ServerboundMoveVehiclePacket::new).addPacket(ServerboundPaddleBoatPacket.class, ServerboundPaddleBoatPacket::new).addPacket(ServerboundPickItemPacket.class, ServerboundPickItemPacket::new).addPacket(ServerboundPlaceRecipePacket.class, ServerboundPlaceRecipePacket::new).addPacket(ServerboundPlayerAbilitiesPacket.class, ServerboundPlayerAbilitiesPacket::new).addPacket(ServerboundPlayerActionPacket.class, ServerboundPlayerActionPacket::new).addPacket(ServerboundPlayerCommandPacket.class, ServerboundPlayerCommandPacket::new).addPacket(ServerboundPlayerInputPacket.class, ServerboundPlayerInputPacket::new).addPacket(ServerboundRecipeBookChangeSettingsPacket.class, ServerboundRecipeBookChangeSettingsPacket::new).addPacket(ServerboundRecipeBookSeenRecipePacket.class, ServerboundRecipeBookSeenRecipePacket::new).addPacket(ServerboundRenameItemPacket.class, ServerboundRenameItemPacket::new).addPacket(ServerboundResourcePackPacket.class, ServerboundResourcePackPacket::new).addPacket(ServerboundSeenAdvancementsPacket.class, ServerboundSeenAdvancementsPacket::new).addPacket(ServerboundSelectTradePacket.class, ServerboundSelectTradePacket::new).addPacket(ServerboundSetBeaconPacket.class, ServerboundSetBeaconPacket::new).addPacket(ServerboundSetCarriedItemPacket.class, ServerboundSetCarriedItemPacket::new).addPacket(ServerboundSetCommandBlockPacket.class, ServerboundSetCommandBlockPacket::new).addPacket(ServerboundSetCommandMinecartPacket.class, ServerboundSetCommandMinecartPacket::new).addPacket(ServerboundSetCreativeModeSlotPacket.class, ServerboundSetCreativeModeSlotPacket::new).addPacket(ServerboundSetJigsawBlockPacket.class, ServerboundSetJigsawBlockPacket::new).addPacket(ServerboundSetStructureBlockPacket.class, ServerboundSetStructureBlockPacket::new).addPacket(ServerboundSignUpdatePacket.class, ServerboundSignUpdatePacket::new).addPacket(ServerboundSwingPacket.class, ServerboundSwingPacket::new).addPacket(ServerboundTeleportToEntityPacket.class, ServerboundTeleportToEntityPacket::new).addPacket(ServerboundUseItemOnPacket.class, ServerboundUseItemOnPacket::new).addPacket(ServerboundUseItemPacket.class, ServerboundUseItemPacket::new))), STATUS(1, protocol().addFlow(PacketFlow.SERVERBOUND, (new ConnectionProtocol.PacketSet<ServerStatusPacketListener>()).addPacket(ServerboundStatusRequestPacket.class, ServerboundStatusRequestPacket::new).addPacket(ServerboundPingRequestPacket.class, ServerboundPingRequestPacket::new)).addFlow(PacketFlow.CLIENTBOUND, (new ConnectionProtocol.PacketSet<ClientStatusPacketListener>()).addPacket(ClientboundStatusResponsePacket.class, ClientboundStatusResponsePacket::new).addPacket(ClientboundPongResponsePacket.class, ClientboundPongResponsePacket::new))), LOGIN(2, protocol().addFlow(PacketFlow.CLIENTBOUND, (new ConnectionProtocol.PacketSet<ClientLoginPacketListener>()).addPacket(ClientboundLoginDisconnectPacket.class, ClientboundLoginDisconnectPacket::new).addPacket(ClientboundHelloPacket.class, ClientboundHelloPacket::new).addPacket(ClientboundGameProfilePacket.class, ClientboundGameProfilePacket::new).addPacket(ClientboundLoginCompressionPacket.class, ClientboundLoginCompressionPacket::new).addPacket(ClientboundCustomQueryPacket.class, ClientboundCustomQueryPacket::new)).addFlow(PacketFlow.SERVERBOUND, (new ConnectionProtocol.PacketSet<ServerLoginPacketListener>()).addPacket(ServerboundHelloPacket.class, ServerboundHelloPacket::new).addPacket(ServerboundKeyPacket.class, ServerboundKeyPacket::new).addPacket(ServerboundCustomQueryPacket.class, ServerboundCustomQueryPacket::new)));
+ 
+     private static final ConnectionProtocol[] LOOKUP = new ConnectionProtocol[4];
+     private static final Map<Class<? extends Packet<?>>, ConnectionProtocol> PROTOCOL_BY_PACKET = Maps.newHashMap();
+@@ -115,7 +121,7 @@ public enum ConnectionProtocol {
+         private final List<Supplier<? extends Packet<T>>> idToConstructor;
+ 
+         private PacketSet() {
+-            this.classToId = (Object2IntMap) Util.make((Object) (new Object2IntOpenHashMap()), (object2intopenhashmap) -> {
++            this.classToId = (Object2IntMap) Util.make(new Object2IntOpenHashMap(), (object2intopenhashmap) -> { // Paper - fix decompile error
+                 object2intopenhashmap.defaultReturnValue(-1);
+             });
+             this.idToConstructor = Lists.newArrayList();
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 21f461ce884bc547dbe81c5430be530423c1605c..37a51dee4cd37844e80fdd5c9853947201151dfc 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -1673,9 +1673,9 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+             PackRepository resourcepackrepository = this.packRepository;
+ 
+             this.packRepository.getClass();
+-            return stream.map(resourcepackrepository::getPack).filter(Objects::nonNull).map(Pack::open).collect(ImmutableList.toImmutableList()); // CraftBukkit - decompile error
++            return stream.<Pack>map(resourcepackrepository::getPack).filter(Objects::nonNull).map(Pack::open).collect(ImmutableList.toImmutableList()); // CraftBukkit - decompile error // Paper - decompile error
+         }, this).thenCompose((immutablelist) -> {
+-            return ServerResources.loadResources(immutablelist, this.isDedicatedServer() ? Commands.CommandSelection.DEDICATED : Commands.CommandSelection.INTEGRATED, this.getFunctionCompilationLevel(), this.executor, this);
++            return ServerResources.loadResources(immutablelist, this.isDedicatedServer() ? Commands.CommandSelection.DEDICATED : Commands.CommandSelection.INTEGRATED, this.getFunctionCompilationLevel(), this.executor, this); // Paper - decompile error
+         }).thenAcceptAsync((datapackresources) -> {
+             this.resources.close();
+             this.resources = datapackresources;
+diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
+index 37e938b258ee4eb5f5bab56145e83b640d80bcc7..23506a8903ce64fbfe849bb94e589bdbb6e61a74 100644
+--- a/src/main/java/net/minecraft/server/level/ServerLevel.java
++++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
+@@ -1913,7 +1913,7 @@ public class ServerLevel extends net.minecraft.world.level.Level implements Worl
+             }
+ 
+             // CraftBukkit - decompile error
+-            return (String) object2intopenhashmap.object2IntEntrySet().stream().sorted(Comparator.comparing(it.unimi.dsi.fastutil.objects.Object2IntMap.Entry<ResourceLocation>::getIntValue).reversed()).limit(5L).map((it_unimi_dsi_fastutil_objects_object2intmap_entry) -> {
++            return (String) object2intopenhashmap.object2IntEntrySet().stream().sorted(Comparator.comparing(Object2IntMap.Entry<ResourceLocation>::getIntValue).reversed()).limit(5L).map((it_unimi_dsi_fastutil_objects_object2intmap_entry) -> { // Paper - decompile fix
+                 return it_unimi_dsi_fastutil_objects_object2intmap_entry.getKey() + ":" + it_unimi_dsi_fastutil_objects_object2intmap_entry.getIntValue();
+             }).collect(Collectors.joining(","));
+         } catch (Exception exception) {
+diff --git a/src/main/java/net/minecraft/server/level/ThreadedLevelLightEngine.java b/src/main/java/net/minecraft/server/level/ThreadedLevelLightEngine.java
+index ad8a9d14e17b5e40b2cc3a83154931734d6c73d7..cc4190b3a8904d1eaae0f542a3b3090583f5ff82 100644
+--- a/src/main/java/net/minecraft/server/level/ThreadedLevelLightEngine.java
++++ b/src/main/java/net/minecraft/server/level/ThreadedLevelLightEngine.java
+@@ -179,9 +179,9 @@ public class ThreadedLevelLightEngine extends LevelLightEngine implements AutoCl
+ 
+     public void tryScheduleUpdate() {
+         if ((!this.lightTasks.isEmpty() || super.hasLightWork()) && this.scheduled.compareAndSet(false, true)) {
+-            this.taskMailbox.tell((Object) (() -> {
+-                this.b();
+-                this.g.set(false);
++            this.taskMailbox.tell((() -> { // Paper - decompile error
++                this.runUpdate();
++                this.scheduled.set(false);
+             }));
+         }
+ 
+diff --git a/src/main/java/net/minecraft/server/level/Ticket.java b/src/main/java/net/minecraft/server/level/Ticket.java
+index 90df41ec5081fe4ef2bc507e7289b18e0fea6e53..0c118d482e304c567fe7fe778c6ff386f960bdde 100644
+--- a/src/main/java/net/minecraft/server/level/Ticket.java
++++ b/src/main/java/net/minecraft/server/level/Ticket.java
+@@ -23,7 +23,7 @@ public final class Ticket<T> implements Comparable<Ticket<?>> {
+         } else {
+             int j = Integer.compare(System.identityHashCode(this.type), System.identityHashCode(ticket.type));
+ 
+-            return j != 0 ? j : this.type.getComparator().compare(this.key, ticket.key);
++            return j != 0 ? j : this.type.getComparator().compare(this.key, (T)ticket.key); // Paper - decompile fix
+         }
+     }
+ 
+diff --git a/src/main/java/net/minecraft/stats/ServerStatsCounter.java b/src/main/java/net/minecraft/stats/ServerStatsCounter.java
+index d624c390f8550c6aa44ca5920d127c901903ce27..7d435998680a363ad06c2e08139010c2573f7fb3 100644
+--- a/src/main/java/net/minecraft/stats/ServerStatsCounter.java
++++ b/src/main/java/net/minecraft/stats/ServerStatsCounter.java
+@@ -203,7 +203,7 @@ public class ServerStatsCounter extends StatsCounter {
+         ObjectIterator objectiterator = this.stats.object2IntEntrySet().iterator();
+ 
+         while (objectiterator.hasNext()) {
+-            it.unimi.dsi.fastutil.objects.Object2IntMap.Entry<Stat<?>> it_unimi_dsi_fastutil_objects_object2intmap_entry = (it.unimi.dsi.fastutil.objects.Object2IntMap.Entry) objectiterator.next();
++            Object2IntMap.Entry<Stat<?>> it_unimi_dsi_fastutil_objects_object2intmap_entry = (Object2IntMap.Entry) objectiterator.next(); // Paper - decompile fix
+             Stat<?> statistic = (Stat) it_unimi_dsi_fastutil_objects_object2intmap_entry.getKey();
+ 
+             ((JsonObject) map.computeIfAbsent(statistic.getType(), (statisticwrapper) -> {
+diff --git a/src/main/java/net/minecraft/util/CrudeIncrementalIntIdentityHashBiMap.java b/src/main/java/net/minecraft/util/CrudeIncrementalIntIdentityHashBiMap.java
+index 74eb1ed6b3fafeaca7e65a88a982d759d6836853..66ad412e4368a8615cc66a97ac442c572813a3dd 100644
+--- a/src/main/java/net/minecraft/util/CrudeIncrementalIntIdentityHashBiMap.java
++++ b/src/main/java/net/minecraft/util/CrudeIncrementalIntIdentityHashBiMap.java
+@@ -18,11 +18,18 @@ public class CrudeIncrementalIntIdentityHashBiMap<K> implements IdMap<K> {
+ 
+     public CrudeIncrementalIntIdentityHashBiMap(int size) {
+         size = (int) ((float) size / 0.8F);
+-        this.keys = (Object[]) (new Object[size]);
++        this.keys = (K[]) (new Object[size]); // Paper - decompile fix
+         this.values = new int[size];
+-        this.byId = (Object[]) (new Object[size]);
++        this.byId = (K[]) (new Object[size]); // Paper - decompile fix
+     }
+ 
++    // Paper start - decompile fix
++    @Override
++    public int a(K k) {
++        return getId(k);
++    }
++    // Paper end
++
+     public int getId(@Nullable K entry) {
+         return this.getValue(this.indexOf(entry, this.hash(entry)));
+     }
+@@ -56,9 +63,9 @@ public class CrudeIncrementalIntIdentityHashBiMap<K> implements IdMap<K> {
+         K[] ak = this.keys;
+         int[] aint = this.values;
+ 
+-        this.keys = (Object[]) (new Object[newSize]);
++        this.keys = (K[]) (new Object[newSize]); // Paper - decompile fix
+         this.values = new int[newSize];
+-        this.byId = (Object[]) (new Object[newSize]);
++        this.byId = (K[]) (new Object[newSize]); // Paper - decompile fix
+         this.nextId = 0;
+         this.size = 0;
+ 
+diff --git a/src/main/java/net/minecraft/util/SortedArraySet.java b/src/main/java/net/minecraft/util/SortedArraySet.java
+index be40fc388c501c311d661927025f1c572f3b3493..93813a508be1e1e600a8211f9822f2087328de70 100644
+--- a/src/main/java/net/minecraft/util/SortedArraySet.java
++++ b/src/main/java/net/minecraft/util/SortedArraySet.java
+@@ -23,11 +23,11 @@ public class SortedArraySet<T> extends AbstractSet<T> {
+     }
+ 
+     public static <T extends Comparable<T>> SortedArraySet<T> create(int initialCapacity) {
+-        return new SortedArraySet<>(initialCapacity, Comparator.naturalOrder());
++        return new SortedArraySet<>(initialCapacity, (Comparator)Comparator.naturalOrder()); // Paper - decompile fix
+     }
+ 
+     private static <T> T[] castRawArray(Object[] array) {
+-        return (Object[]) array;
++        return (T[])array; // Paper - decompile fix
+     }
+ 
+     private int findIndex(T object) {
+@@ -101,7 +101,7 @@ public class SortedArraySet<T> extends AbstractSet<T> {
+     }
+ 
+     public boolean remove(Object object) {
+-        int i = this.findIndex(object);
++        int i = this.findIndex((T)object); // Paper - decompile fix
+ 
+         if (i >= 0) {
+             this.removeInternal(i);
+@@ -116,7 +116,7 @@ public class SortedArraySet<T> extends AbstractSet<T> {
+     }
+ 
+     public boolean contains(Object object) {
+-        int i = this.findIndex(object);
++        int i = this.findIndex((T)object); // Paper - decompile fix
+ 
+         return i >= 0;
+     }
+@@ -135,7 +135,7 @@ public class SortedArraySet<T> extends AbstractSet<T> {
+ 
+     public <U> U[] toArray(U[] au) {
+         if (au.length < this.size) {
+-            return (Object[]) Arrays.copyOf(this.contents, this.size, au.getClass());
++            return (U[])Arrays.copyOf(this.contents, this.size, au.getClass()); // Paper - decompile fix
+         } else {
+             System.arraycopy(this.contents, 0, au, 0, this.size);
+             if (au.length > this.size) {
+diff --git a/src/main/java/net/minecraft/util/thread/BlockableEventLoop.java b/src/main/java/net/minecraft/util/thread/BlockableEventLoop.java
+index d9375f83de6d069f603f8a48cc5b02194e940052..03831adce7905916423d8c3834c42c90f3a1ca8f 100644
+--- a/src/main/java/net/minecraft/util/thread/BlockableEventLoop.java
++++ b/src/main/java/net/minecraft/util/thread/BlockableEventLoop.java
+@@ -55,7 +55,7 @@ public abstract class BlockableEventLoop<R extends Runnable> implements Processo
+             return this.submitAsync(task);
+         } else {
+             task.run();
+-            return CompletableFuture.completedFuture((Object) null);
++            return CompletableFuture.completedFuture(null); // Paper - decompile fix
+         }
+     }
+ 
+@@ -90,14 +90,14 @@ public abstract class BlockableEventLoop<R extends Runnable> implements Processo
+     }
+ 
+     protected boolean pollTask() {
+-        R r0 = (Runnable) this.pendingRunnables.peek();
++        R r0 = this.pendingRunnables.peek(); // Paper - decompile fix
+ 
+         if (r0 == null) {
+             return false;
+         } else if (this.blockingCount == 0 && !this.shouldRun(r0)) {
+             return false;
+         } else {
+-            this.doRunTask((Runnable) this.pendingRunnables.remove());
++            this.doRunTask(this.pendingRunnables.remove()); // Paper - decompile fix
+             return true;
+         }
+     }
+diff --git a/src/main/java/net/minecraft/util/thread/ProcessorMailbox.java b/src/main/java/net/minecraft/util/thread/ProcessorMailbox.java
+index cc77767947e458e7205e616dce3bea8da09ca0cf..c763aa0c0cf49dd844af94a820103258b49021ae 100644
+--- a/src/main/java/net/minecraft/util/thread/ProcessorMailbox.java
++++ b/src/main/java/net/minecraft/util/thread/ProcessorMailbox.java
+@@ -100,7 +100,7 @@ public class ProcessorMailbox<T> implements ProcessorHandle<T>, AutoCloseable, R
+ 
+     public void run() {
+         try {
+-            this.pollUntil((i) -> {
++            this.pollUntil((int i) -> { // Paper - decompile fix
+                 return i == 0;
+             });
+         } finally {
+diff --git a/src/main/java/net/minecraft/world/entity/ai/village/poi/PoiManager.java b/src/main/java/net/minecraft/world/entity/ai/village/poi/PoiManager.java
+index 8f686f8608771d0a444dfd51dd4eabc90c6b2262..33a8604fa6c6431ccc5f61e484c163e09f1625a0 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/village/poi/PoiManager.java
++++ b/src/main/java/net/minecraft/world/entity/ai/village/poi/PoiManager.java
+@@ -191,9 +191,9 @@ public class PoiManager extends SectionStorage<PoiSection> {
+     }
+ 
+     private static boolean mayHavePoi(LevelChunkSection chunksection) {
+-        Set set = PoiType.ALL_STATES;
++        Set<BlockState> set = PoiType.ALL_STATES; // Paper - decompile error
+ 
+-        set.getClass();
++        //set.getClass(); // Paper - decompile error
+         return chunksection.maybeHas(set::contains);
+     }
+ 
+@@ -211,7 +211,7 @@ public class PoiManager extends SectionStorage<PoiSection> {
+         SectionPos.aroundChunk(new ChunkPos(pos), Math.floorDiv(radius, 16)).map((sectionposition) -> {
+             return Pair.of(sectionposition, this.getOrLoad(sectionposition.asLong()));
+         }).filter((pair) -> {
+-            return !(Boolean) ((Optional) pair.getSecond()).map(PoiSection::a).orElse(false);
++            return !(Boolean) (pair.getSecond()).map(PoiSection::isValid).orElse(false); // Paper - decompile fix
+         }).map((pair) -> {
+             return ((SectionPos) pair.getFirst()).chunk();
+         }).filter((chunkcoordintpair) -> {
+@@ -257,13 +257,13 @@ public class PoiManager extends SectionStorage<PoiSection> {
+ 
+     public static enum Occupancy {
+ 
+-        HAS_SPACE(PoiRecord::d), IS_OCCUPIED(PoiRecord::e), ANY((villageplacerecord) -> {
++        HAS_SPACE(PoiRecord::hasSpace), IS_OCCUPIED(PoiRecord::isOccupied), ANY((villageplacerecord) -> {
+             return true;
+         });
+ 
+         private final Predicate<? super PoiRecord> test;
+ 
+-        private Occupancy(Predicate predicate) {
++        private Occupancy(Predicate<? super PoiRecord> predicate) { // Paper - decompile fix
+             this.test = predicate;
+         }
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Vindicator.java b/src/main/java/net/minecraft/world/entity/monster/Vindicator.java
+index 97317517a729877e307407ca9fab5fa58657fe38..a41f61daf6cbbb13d0b86cdbad8a4cae00368653 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Vindicator.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Vindicator.java
+@@ -65,7 +65,7 @@ public class Vindicator extends AbstractIllager {
+         this.goalSelector.addGoal(2, new AbstractIllager.RaiderOpenDoorGoal(this));
+         this.goalSelector.addGoal(3, new Raider.HoldGroundAttackGoal(this, 10.0F));
+         this.goalSelector.addGoal(4, new Vindicator.VindicatorMeleeAttackGoal(this));
+-        this.targetSelector.addGoal(1, (new HurtByTargetGoal(this, new Class[]{Raider.class})).canUse());
++        this.targetSelector.addGoal(1, (new HurtByTargetGoal(this, new Class[]{Raider.class})).setAlertOthers(new Class[0])); // Paper - decompile fix
+         this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Player.class, true));
+         this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, AbstractVillager.class, true));
+         this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, IronGolem.class, true));
+diff --git a/src/main/java/net/minecraft/world/entity/npc/VillagerTrades.java b/src/main/java/net/minecraft/world/entity/npc/VillagerTrades.java
+index ad4e181b24829980dc12f46807ec1c5226bd8e0c..fd1b84baae5f333c58dbbdcbfaa9198328f0961d 100644
+--- a/src/main/java/net/minecraft/world/entity/npc/VillagerTrades.java
++++ b/src/main/java/net/minecraft/world/entity/npc/VillagerTrades.java
+@@ -47,12 +47,12 @@ import net.minecraft.world.level.saveddata.maps.MapItemSavedData;
+ 
+ public class VillagerTrades {
+ 
+-    public static final Map<VillagerProfession, Int2ObjectMap<VillagerTrades.ItemListing[]>> TRADES = (Map) Util.make((Object) Maps.newHashMap(), (hashmap) -> {
++    public static final Map<VillagerProfession, Int2ObjectMap<VillagerTrades.ItemListing[]>> TRADES = Util.make(Maps.newHashMap(), (hashmap) -> { // Paper - decompile fix
+         hashmap.put(VillagerProfession.FARMER, toIntMap(ImmutableMap.of(1, new VillagerTrades.ItemListing[]{new VillagerTrades.EmeraldForItems(Items.WHEAT, 20, 16, 2), new VillagerTrades.EmeraldForItems(Items.POTATO, 26, 16, 2), new VillagerTrades.EmeraldForItems(Items.CARROT, 22, 16, 2), new VillagerTrades.EmeraldForItems(Items.BEETROOT, 15, 16, 2), new VillagerTrades.ItemsForEmeralds(Items.BREAD, 1, 6, 16, 1)}, 2, new VillagerTrades.ItemListing[]{new VillagerTrades.EmeraldForItems(Blocks.PUMPKIN, 6, 12, 10), new VillagerTrades.ItemsForEmeralds(Items.PUMPKIN_PIE, 1, 4, 5), new VillagerTrades.ItemsForEmeralds(Items.APPLE, 1, 4, 16, 5)}, 3, new VillagerTrades.ItemListing[]{new VillagerTrades.ItemsForEmeralds(Items.COOKIE, 3, 18, 10), new VillagerTrades.EmeraldForItems(Blocks.MELON, 4, 12, 20)}, 4, new VillagerTrades.ItemListing[]{new VillagerTrades.ItemsForEmeralds(Blocks.CAKE, 1, 1, 12, 15), new VillagerTrades.SuspisciousStewForEmerald(MobEffects.NIGHT_VISION, 100, 15), new VillagerTrades.SuspisciousStewForEmerald(MobEffects.JUMP, 160, 15), new VillagerTrades.SuspisciousStewForEmerald(MobEffects.WEAKNESS, 140, 15), new VillagerTrades.SuspisciousStewForEmerald(MobEffects.BLINDNESS, 120, 15), new VillagerTrades.SuspisciousStewForEmerald(MobEffects.POISON, 280, 15), new VillagerTrades.SuspisciousStewForEmerald(MobEffects.SATURATION, 7, 15)}, 5, new VillagerTrades.ItemListing[]{new VillagerTrades.ItemsForEmeralds(Items.GOLDEN_CARROT, 3, 3, 30), new VillagerTrades.ItemsForEmeralds(Items.GLISTERING_MELON_SLICE, 4, 3, 30)})));
+-        hashmap.put(VillagerProfession.FISHERMAN, toIntMap(ImmutableMap.of(1, new VillagerTrades.ItemListing[]{new VillagerTrades.EmeraldForItems(Items.STRING, 20, 16, 2), new VillagerTrades.EmeraldForItems(Items.COAL, 10, 16, 2), new VillagerTrades.ItemsAndEmeraldsToItems(Items.COD, 6, Items.COOKED_COD, 6, 16, 1), new VillagerTrades.ItemsForEmeralds(Items.COD_BUCKET, 3, 1, 16, 1)}, 2, new VillagerTrades.ItemListing[]{new VillagerTrades.EmeraldForItems(Items.COD, 15, 16, 10), new VillagerTrades.ItemsAndEmeraldsToItems(Items.SALMON, 6, Items.COOKED_SALMON, 6, 16, 5), new VillagerTrades.ItemsForEmeralds(Items.rn, 2, 1, 5)}, 3, new VillagerTrades.ItemListing[]{new VillagerTrades.EmeraldForItems(Items.SALMON, 13, 16, 20), new VillagerTrades.EnchantedItemForEmeralds(Items.FISHING_ROD, 3, 3, 10, 0.2F)}, 4, new VillagerTrades.ItemListing[]{new VillagerTrades.EmeraldForItems(Items.TROPICAL_FISH, 6, 12, 30)}, 5, new VillagerTrades.ItemListing[]{new VillagerTrades.EmeraldForItems(Items.PUFFERFISH, 4, 12, 30), new VillagerTrades.EmeraldsForVillagerTypeItem(1, 12, 30, ImmutableMap.builder().put(VillagerType.PLAINS, Items.OAK_BOAT).put(VillagerType.TAIGA, Items.SPRUCE_BOAT).put(VillagerType.SNOW, Items.SPRUCE_BOAT).put(VillagerType.DESERT, Items.JUNGLE_BOAT).put(VillagerType.JUNGLE, Items.JUNGLE_BOAT).put(VillagerType.SAVANNA, Items.ACACIA_BOAT).put(VillagerType.SWAMP, Items.DARK_OAK_BOAT).build())})));
++        hashmap.put(VillagerProfession.FISHERMAN, toIntMap(ImmutableMap.of(1, new VillagerTrades.ItemListing[]{new VillagerTrades.EmeraldForItems(Items.STRING, 20, 16, 2), new VillagerTrades.EmeraldForItems(Items.COAL, 10, 16, 2), new VillagerTrades.ItemsAndEmeraldsToItems(Items.COD, 6, Items.COOKED_COD, 6, 16, 1), new VillagerTrades.ItemsForEmeralds(Items.COD_BUCKET, 3, 1, 16, 1)}, 2, new VillagerTrades.ItemListing[]{new VillagerTrades.EmeraldForItems(Items.COD, 15, 16, 10), new VillagerTrades.ItemsAndEmeraldsToItems(Items.SALMON, 6, Items.COOKED_SALMON, 6, 16, 5), new VillagerTrades.ItemsForEmeralds(Items.rn, 2, 1, 5)}, 3, new VillagerTrades.ItemListing[]{new VillagerTrades.EmeraldForItems(Items.SALMON, 13, 16, 20), new VillagerTrades.EnchantedItemForEmeralds(Items.FISHING_ROD, 3, 3, 10, 0.2F)}, 4, new VillagerTrades.ItemListing[]{new VillagerTrades.EmeraldForItems(Items.TROPICAL_FISH, 6, 12, 30)}, 5, new VillagerTrades.ItemListing[]{new VillagerTrades.EmeraldForItems(Items.PUFFERFISH, 4, 12, 30), new VillagerTrades.EmeraldsForVillagerTypeItem(1, 12, 30, ImmutableMap.<VillagerType, Item>builder().put(VillagerType.PLAINS, Items.OAK_BOAT).put(VillagerType.TAIGA, Items.SPRUCE_BOAT).put(VillagerType.SNOW, Items.SPRUCE_BOAT).put(VillagerType.DESERT, Items.JUNGLE_BOAT).put(VillagerType.JUNGLE, Items.JUNGLE_BOAT).put(VillagerType.SAVANNA, Items.ACACIA_BOAT).put(VillagerType.SWAMP, Items.DARK_OAK_BOAT).build())}))); // Paper - add <VillagerType, Item> to ImmutableMap.<VillagerType, Item>.builder()
+         hashmap.put(VillagerProfession.SHEPHERD, toIntMap(ImmutableMap.of(1, new VillagerTrades.ItemListing[]{new VillagerTrades.EmeraldForItems(Blocks.WHITE_WOOL, 18, 16, 2), new VillagerTrades.EmeraldForItems(Blocks.BROWN_WOOL, 18, 16, 2), new VillagerTrades.EmeraldForItems(Blocks.BLACK_WOOL, 18, 16, 2), new VillagerTrades.EmeraldForItems(Blocks.GRAY_WOOL, 18, 16, 2), new VillagerTrades.ItemsForEmeralds(Items.SHEARS, 2, 1, 1)}, 2, new VillagerTrades.ItemListing[]{new VillagerTrades.EmeraldForItems(Items.WHITE_DYE, 12, 16, 10), new VillagerTrades.EmeraldForItems(Items.GRAY_DYE, 12, 16, 10), new VillagerTrades.EmeraldForItems(Items.BLACK_DYE, 12, 16, 10), new VillagerTrades.EmeraldForItems(Items.LIGHT_BLUE_DYE, 12, 16, 10), new VillagerTrades.EmeraldForItems(Items.LIME_DYE, 12, 16, 10), new VillagerTrades.ItemsForEmeralds(Blocks.WHITE_WOOL, 1, 1, 16, 5), new VillagerTrades.ItemsForEmeralds(Blocks.ORANGE_WOOL, 1, 1, 16, 5), new VillagerTrades.ItemsForEmeralds(Blocks.MAGENTA_WOOL, 1, 1, 16, 5), new VillagerTrades.ItemsForEmeralds(Blocks.LIGHT_BLUE_WOOL, 1, 1, 16, 5), new VillagerTrades.ItemsForEmeralds(Blocks.YELLOW_WOOL, 1, 1, 16, 5), new VillagerTrades.ItemsForEmeralds(Blocks.LIME_WOOL, 1, 1, 16, 5), new VillagerTrades.ItemsForEmeralds(Blocks.PINK_WOOL, 1, 1, 16, 5), new VillagerTrades.ItemsForEmeralds(Blocks.GRAY_WOOL, 1, 1, 16, 5), new VillagerTrades.ItemsForEmeralds(Blocks.LIGHT_GRAY_WOOL, 1, 1, 16, 5), new VillagerTrades.ItemsForEmeralds(Blocks.CYAN_WOOL, 1, 1, 16, 5), new VillagerTrades.ItemsForEmeralds(Blocks.PURPLE_WOOL, 1, 1, 16, 5), new VillagerTrades.ItemsForEmeralds(Blocks.BLUE_WOOL, 1, 1, 16, 5), new VillagerTrades.ItemsForEmeralds(Blocks.BROWN_WOOL, 1, 1, 16, 5), new VillagerTrades.ItemsForEmeralds(Blocks.GREEN_WOOL, 1, 1, 16, 5), new VillagerTrades.ItemsForEmeralds(Blocks.RED_WOOL, 1, 1, 16, 5), new VillagerTrades.ItemsForEmeralds(Blocks.BLACK_WOOL, 1, 1, 16, 5), new VillagerTrades.ItemsForEmeralds(Blocks.WHITE_CARPET, 1, 4, 16, 5), new VillagerTrades.ItemsForEmeralds(Blocks.ORANGE_CARPET, 1, 4, 16, 5), new VillagerTrades.ItemsForEmeralds(Blocks.MAGENTA_CARPET, 1, 4, 16, 5), new VillagerTrades.ItemsForEmeralds(Blocks.LIGHT_BLUE_CARPET, 1, 4, 16, 5), new VillagerTrades.ItemsForEmeralds(Blocks.YELLOW_CARPET, 1, 4, 16, 5), new VillagerTrades.ItemsForEmeralds(Blocks.LIME_CARPET, 1, 4, 16, 5), new VillagerTrades.ItemsForEmeralds(Blocks.PINK_CARPET, 1, 4, 16, 5), new VillagerTrades.ItemsForEmeralds(Blocks.GRAY_CARPET, 1, 4, 16, 5), new VillagerTrades.ItemsForEmeralds(Blocks.LIGHT_GRAY_CARPET, 1, 4, 16, 5), new VillagerTrades.ItemsForEmeralds(Blocks.CYAN_CARPET, 1, 4, 16, 5), new VillagerTrades.ItemsForEmeralds(Blocks.PURPLE_CARPET, 1, 4, 16, 5), new VillagerTrades.ItemsForEmeralds(Blocks.BLUE_CARPET, 1, 4, 16, 5), new VillagerTrades.ItemsForEmeralds(Blocks.BROWN_CARPET, 1, 4, 16, 5), new VillagerTrades.ItemsForEmeralds(Blocks.GREEN_CARPET, 1, 4, 16, 5), new VillagerTrades.ItemsForEmeralds(Blocks.RED_CARPET, 1, 4, 16, 5), new VillagerTrades.ItemsForEmeralds(Blocks.BLACK_CARPET, 1, 4, 16, 5)}, 3, new VillagerTrades.ItemListing[]{new VillagerTrades.EmeraldForItems(Items.YELLOW_DYE, 12, 16, 20), new VillagerTrades.EmeraldForItems(Items.LIGHT_GRAY_DYE, 12, 16, 20), new VillagerTrades.EmeraldForItems(Items.ORANGE_DYE, 12, 16, 20), new VillagerTrades.EmeraldForItems(Items.RED_DYE, 12, 16, 20), new VillagerTrades.EmeraldForItems(Items.PINK_DYE, 12, 16, 20), new VillagerTrades.ItemsForEmeralds(Blocks.WHITE_BED, 3, 1, 12, 10), new VillagerTrades.ItemsForEmeralds(Blocks.YELLOW_BED, 3, 1, 12, 10), new VillagerTrades.ItemsForEmeralds(Blocks.RED_BED, 3, 1, 12, 10), new VillagerTrades.ItemsForEmeralds(Blocks.BLACK_BED, 3, 1, 12, 10), new VillagerTrades.ItemsForEmeralds(Blocks.BLUE_BED, 3, 1, 12, 10), new VillagerTrades.ItemsForEmeralds(Blocks.BROWN_BED, 3, 1, 12, 10), new VillagerTrades.ItemsForEmeralds(Blocks.CYAN_BED, 3, 1, 12, 10), new VillagerTrades.ItemsForEmeralds(Blocks.GRAY_BED, 3, 1, 12, 10), new VillagerTrades.ItemsForEmeralds(Blocks.GREEN_BED, 3, 1, 12, 10), new VillagerTrades.ItemsForEmeralds(Blocks.LIGHT_BLUE_BED, 3, 1, 12, 10), new VillagerTrades.ItemsForEmeralds(Blocks.LIGHT_GRAY_BED, 3, 1, 12, 10), new VillagerTrades.ItemsForEmeralds(Blocks.LIME_BED, 3, 1, 12, 10), new VillagerTrades.ItemsForEmeralds(Blocks.MAGENTA_BED, 3, 1, 12, 10), new VillagerTrades.ItemsForEmeralds(Blocks.ORANGE_BED, 3, 1, 12, 10), new VillagerTrades.ItemsForEmeralds(Blocks.PINK_BED, 3, 1, 12, 10), new VillagerTrades.ItemsForEmeralds(Blocks.PURPLE_BED, 3, 1, 12, 10)}, 4, new VillagerTrades.ItemListing[]{new VillagerTrades.EmeraldForItems(Items.BROWN_DYE, 12, 16, 30), new VillagerTrades.EmeraldForItems(Items.PURPLE_DYE, 12, 16, 30), new VillagerTrades.EmeraldForItems(Items.BLUE_DYE, 12, 16, 30), new VillagerTrades.EmeraldForItems(Items.GREEN_DYE, 12, 16, 30), new VillagerTrades.EmeraldForItems(Items.MAGENTA_DYE, 12, 16, 30), new VillagerTrades.EmeraldForItems(Items.CYAN_DYE, 12, 16, 30), new VillagerTrades.ItemsForEmeralds(Items.WHITE_BANNER, 3, 1, 12, 15), new VillagerTrades.ItemsForEmeralds(Items.BLUE_BANNER, 3, 1, 12, 15), new VillagerTrades.ItemsForEmeralds(Items.LIGHT_BLUE_BANNER, 3, 1, 12, 15), new VillagerTrades.ItemsForEmeralds(Items.RED_BANNER, 3, 1, 12, 15), new VillagerTrades.ItemsForEmeralds(Items.PINK_BANNER, 3, 1, 12, 15), new VillagerTrades.ItemsForEmeralds(Items.GREEN_BANNER, 3, 1, 12, 15), new VillagerTrades.ItemsForEmeralds(Items.LIME_BANNER, 3, 1, 12, 15), new VillagerTrades.ItemsForEmeralds(Items.GRAY_BANNER, 3, 1, 12, 15), new VillagerTrades.ItemsForEmeralds(Items.BLACK_BANNER, 3, 1, 12, 15), new VillagerTrades.ItemsForEmeralds(Items.PURPLE_BANNER, 3, 1, 12, 15), new VillagerTrades.ItemsForEmeralds(Items.MAGENTA_BANNER, 3, 1, 12, 15), new VillagerTrades.ItemsForEmeralds(Items.CYAN_BANNER, 3, 1, 12, 15), new VillagerTrades.ItemsForEmeralds(Items.BROWN_BANNER, 3, 1, 12, 15), new VillagerTrades.ItemsForEmeralds(Items.YELLOW_BANNER, 3, 1, 12, 15), new VillagerTrades.ItemsForEmeralds(Items.ORANGE_BANNER, 3, 1, 12, 15), new VillagerTrades.ItemsForEmeralds(Items.LIGHT_GRAY_BANNER, 3, 1, 12, 15)}, 5, new VillagerTrades.ItemListing[]{new VillagerTrades.ItemsForEmeralds(Items.PAINTING, 2, 3, 30)})));
+         hashmap.put(VillagerProfession.FLETCHER, toIntMap(ImmutableMap.of(1, new VillagerTrades.ItemListing[]{new VillagerTrades.EmeraldForItems(Items.STICK, 32, 16, 2), new VillagerTrades.ItemsForEmeralds(Items.ARROW, 1, 16, 1), new VillagerTrades.ItemsAndEmeraldsToItems(Blocks.GRAVEL, 10, Items.FLINT, 10, 12, 1)}, 2, new VillagerTrades.ItemListing[]{new VillagerTrades.EmeraldForItems(Items.FLINT, 26, 12, 10), new VillagerTrades.ItemsForEmeralds(Items.BOW, 2, 1, 5)}, 3, new VillagerTrades.ItemListing[]{new VillagerTrades.EmeraldForItems(Items.STRING, 14, 16, 20), new VillagerTrades.ItemsForEmeralds(Items.CROSSBOW, 3, 1, 10)}, 4, new VillagerTrades.ItemListing[]{new VillagerTrades.EmeraldForItems(Items.FEATHER, 24, 16, 30), new VillagerTrades.EnchantedItemForEmeralds(Items.BOW, 2, 3, 15)}, 5, new VillagerTrades.ItemListing[]{new VillagerTrades.EmeraldForItems(Items.es, 8, 12, 30), new VillagerTrades.EnchantedItemForEmeralds(Items.CROSSBOW, 3, 3, 15), new VillagerTrades.TippedArrowForItemsAndEmeralds(Items.ARROW, 5, Items.TIPPED_ARROW, 5, 2, 12, 30)})));
+-        hashmap.put(VillagerProfession.LIBRARIAN, toIntMap(ImmutableMap.builder().put(1, new VillagerTrades.ItemListing[]{new VillagerTrades.EmeraldForItems(Items.PAPER, 24, 16, 2), new VillagerTrades.EnchantBookForEmeralds(1), new VillagerTrades.ItemsForEmeralds(Blocks.BOOKSHELF, 9, 1, 12, 1)}).put(2, new VillagerTrades.ItemListing[]{new VillagerTrades.EmeraldForItems(Items.BOOK, 4, 12, 10), new VillagerTrades.EnchantBookForEmeralds(5), new VillagerTrades.ItemsForEmeralds(Items.rk, 1, 1, 5)}).put(3, new VillagerTrades.ItemListing[]{new VillagerTrades.EmeraldForItems(Items.INK_SAC, 5, 12, 20), new VillagerTrades.EnchantBookForEmeralds(10), new VillagerTrades.ItemsForEmeralds(Items.az, 1, 4, 10)}).put(4, new VillagerTrades.ItemListing[]{new VillagerTrades.EmeraldForItems(Items.WRITABLE_BOOK, 2, 12, 30), new VillagerTrades.EnchantBookForEmeralds(15), new VillagerTrades.ItemsForEmeralds(Items.CLOCK, 5, 1, 15), new VillagerTrades.ItemsForEmeralds(Items.COMPASS, 4, 1, 15)}).put(5, new VillagerTrades.ItemListing[]{new VillagerTrades.ItemsForEmeralds(Items.NAME_TAG, 20, 1, 30)}).build()));
++        hashmap.put(VillagerProfession.LIBRARIAN, toIntMap(ImmutableMap.<Integer, ItemListing[]>builder().put(1, new VillagerTrades.ItemListing[]{new VillagerTrades.EmeraldForItems(Items.PAPER, 24, 16, 2), new VillagerTrades.EnchantBookForEmeralds(1), new VillagerTrades.ItemsForEmeralds(Blocks.BOOKSHELF, 9, 1, 12, 1)}).put(2, new VillagerTrades.ItemListing[]{new VillagerTrades.EmeraldForItems(Items.BOOK, 4, 12, 10), new VillagerTrades.EnchantBookForEmeralds(5), new VillagerTrades.ItemsForEmeralds(Items.rk, 1, 1, 5)}).put(3, new VillagerTrades.ItemListing[]{new VillagerTrades.EmeraldForItems(Items.INK_SAC, 5, 12, 20), new VillagerTrades.EnchantBookForEmeralds(10), new VillagerTrades.ItemsForEmeralds(Items.az, 1, 4, 10)}).put(4, new VillagerTrades.ItemListing[]{new VillagerTrades.EmeraldForItems(Items.WRITABLE_BOOK, 2, 12, 30), new VillagerTrades.EnchantBookForEmeralds(15), new VillagerTrades.ItemsForEmeralds(Items.CLOCK, 5, 1, 15), new VillagerTrades.ItemsForEmeralds(Items.COMPASS, 4, 1, 15)}).put(5, new VillagerTrades.ItemListing[]{new VillagerTrades.ItemsForEmeralds(Items.NAME_TAG, 20, 1, 30)}).build())); // Paper - add <Integer, IMerchantRecipeOption[]> to ImmutableMap.<Integer, IMerchantRecipeOption[]>.builder()
+         hashmap.put(VillagerProfession.CARTOGRAPHER, toIntMap(ImmutableMap.of(1, new VillagerTrades.ItemListing[]{new VillagerTrades.EmeraldForItems(Items.PAPER, 24, 16, 2), new VillagerTrades.ItemsForEmeralds(Items.MAP, 7, 1, 1)}, 2, new VillagerTrades.ItemListing[]{new VillagerTrades.EmeraldForItems(Items.dP, 11, 16, 10), new VillagerTrades.TreasureMapForEmeralds(13, StructureFeature.OCEAN_MONUMENT, MapDecoration.Type.MONUMENT, 12, 5)}, 3, new VillagerTrades.ItemListing[]{new VillagerTrades.EmeraldForItems(Items.COMPASS, 1, 12, 20), new VillagerTrades.TreasureMapForEmeralds(14, StructureFeature.WOODLAND_MANSION, MapDecoration.Type.MANSION, 12, 10)}, 4, new VillagerTrades.ItemListing[]{new VillagerTrades.ItemsForEmeralds(Items.ITEM_FRAME, 7, 1, 15), new VillagerTrades.ItemsForEmeralds(Items.WHITE_BANNER, 3, 1, 15), new VillagerTrades.ItemsForEmeralds(Items.BLUE_BANNER, 3, 1, 15), new VillagerTrades.ItemsForEmeralds(Items.LIGHT_BLUE_BANNER, 3, 1, 15), new VillagerTrades.ItemsForEmeralds(Items.RED_BANNER, 3, 1, 15), new VillagerTrades.ItemsForEmeralds(Items.PINK_BANNER, 3, 1, 15), new VillagerTrades.ItemsForEmeralds(Items.GREEN_BANNER, 3, 1, 15), new VillagerTrades.ItemsForEmeralds(Items.LIME_BANNER, 3, 1, 15), new VillagerTrades.ItemsForEmeralds(Items.GRAY_BANNER, 3, 1, 15), new VillagerTrades.ItemsForEmeralds(Items.BLACK_BANNER, 3, 1, 15), new VillagerTrades.ItemsForEmeralds(Items.PURPLE_BANNER, 3, 1, 15), new VillagerTrades.ItemsForEmeralds(Items.MAGENTA_BANNER, 3, 1, 15), new VillagerTrades.ItemsForEmeralds(Items.CYAN_BANNER, 3, 1, 15), new VillagerTrades.ItemsForEmeralds(Items.BROWN_BANNER, 3, 1, 15), new VillagerTrades.ItemsForEmeralds(Items.YELLOW_BANNER, 3, 1, 15), new VillagerTrades.ItemsForEmeralds(Items.ORANGE_BANNER, 3, 1, 15), new VillagerTrades.ItemsForEmeralds(Items.LIGHT_GRAY_BANNER, 3, 1, 15)}, 5, new VillagerTrades.ItemListing[]{new VillagerTrades.ItemsForEmeralds(Items.GLOBE_BANNER_PATTERN, 8, 1, 30)})));
+         hashmap.put(VillagerProfession.CLERIC, toIntMap(ImmutableMap.of(1, new VillagerTrades.ItemListing[]{new VillagerTrades.EmeraldForItems(Items.ROTTEN_FLESH, 32, 16, 2), new VillagerTrades.ItemsForEmeralds(Items.REDSTONE, 1, 2, 1)}, 2, new VillagerTrades.ItemListing[]{new VillagerTrades.EmeraldForItems(Items.GOLD_INGOT, 3, 12, 10), new VillagerTrades.ItemsForEmeralds(Items.LAPIS_LAZULI, 1, 1, 5)}, 3, new VillagerTrades.ItemListing[]{new VillagerTrades.EmeraldForItems(Items.RABBIT_FOOT, 2, 12, 20), new VillagerTrades.ItemsForEmeralds(Blocks.GLOWSTONE, 4, 1, 12, 10)}, 4, new VillagerTrades.ItemListing[]{new VillagerTrades.EmeraldForItems(Items.SCUTE, 4, 12, 30), new VillagerTrades.EmeraldForItems(Items.GLASS_BOTTLE, 9, 12, 30), new VillagerTrades.ItemsForEmeralds(Items.ENDER_PEARL, 5, 1, 15)}, 5, new VillagerTrades.ItemListing[]{new VillagerTrades.EmeraldForItems(Items.NETHER_WART, 22, 12, 30), new VillagerTrades.ItemsForEmeralds(Items.EXPERIENCE_BOTTLE, 3, 1, 30)})));
+         hashmap.put(VillagerProfession.ARMORER, toIntMap(ImmutableMap.of(1, new VillagerTrades.ItemListing[]{new VillagerTrades.EmeraldForItems(Items.COAL, 15, 16, 2), new VillagerTrades.ItemsForEmeralds(new ItemStack(Items.IRON_LEGGINGS), 7, 1, 12, 1, 0.2F), new VillagerTrades.ItemsForEmeralds(new ItemStack(Items.IRON_BOOTS), 4, 1, 12, 1, 0.2F), new VillagerTrades.ItemsForEmeralds(new ItemStack(Items.IRON_HELMET), 5, 1, 12, 1, 0.2F), new VillagerTrades.ItemsForEmeralds(new ItemStack(Items.IRON_CHESTPLATE), 9, 1, 12, 1, 0.2F)}, 2, new VillagerTrades.ItemListing[]{new VillagerTrades.EmeraldForItems(Items.IRON_INGOT, 4, 12, 10), new VillagerTrades.ItemsForEmeralds(new ItemStack(Items.rj), 36, 1, 12, 5, 0.2F), new VillagerTrades.ItemsForEmeralds(new ItemStack(Items.CHAINMAIL_BOOTS), 1, 1, 12, 5, 0.2F), new VillagerTrades.ItemsForEmeralds(new ItemStack(Items.CHAINMAIL_LEGGINGS), 3, 1, 12, 5, 0.2F)}, 3, new VillagerTrades.ItemListing[]{new VillagerTrades.EmeraldForItems(Items.LAVA_BUCKET, 1, 12, 20), new VillagerTrades.EmeraldForItems(Items.DIAMOND, 1, 12, 20), new VillagerTrades.ItemsForEmeralds(new ItemStack(Items.CHAINMAIL_HELMET), 1, 1, 12, 10, 0.2F), new VillagerTrades.ItemsForEmeralds(new ItemStack(Items.CHAINMAIL_CHESTPLATE), 4, 1, 12, 10, 0.2F), new VillagerTrades.ItemsForEmeralds(new ItemStack(Items.SHIELD), 5, 1, 12, 10, 0.2F)}, 4, new VillagerTrades.ItemListing[]{new VillagerTrades.EnchantedItemForEmeralds(Items.DIAMOND_LEGGINGS, 14, 3, 15, 0.2F), new VillagerTrades.EnchantedItemForEmeralds(Items.DIAMOND_BOOTS, 8, 3, 15, 0.2F)}, 5, new VillagerTrades.ItemListing[]{new VillagerTrades.EnchantedItemForEmeralds(Items.DIAMOND_HELMET, 8, 3, 30, 0.2F), new VillagerTrades.EnchantedItemForEmeralds(Items.DIAMOND_CHESTPLATE, 16, 3, 30, 0.2F)})));
+diff --git a/src/main/java/net/minecraft/world/item/crafting/RecipeManager.java b/src/main/java/net/minecraft/world/item/crafting/RecipeManager.java
+index 86d7af20fad04405f95c71e078d41070abdc43ad..c4777997cfff364818fbaee70afd7c79099213fb 100644
+--- a/src/main/java/net/minecraft/world/item/crafting/RecipeManager.java
++++ b/src/main/java/net/minecraft/world/item/crafting/RecipeManager.java
+@@ -75,7 +75,7 @@ public class RecipeManager extends SimpleJsonResourceReloadListener {
+         }
+ 
+         this.recipes = (Map) map1.entrySet().stream().collect(ImmutableMap.toImmutableMap(Entry::getKey, (entry1) -> {
+-            return (entry1.getValue()); // CraftBukkit
++            return entry1.getValue(); // CraftBukkit // Paper - decompile fix - *shrugs internally*
+         }));
+         RecipeManager.LOGGER.info("Loaded {} recipes", map1.size());
+     }
+diff --git a/src/main/java/net/minecraft/world/level/EntityGetter.java b/src/main/java/net/minecraft/world/level/EntityGetter.java
+index 1276769b22ae21f0ff4271ecc72d4aa39ddff23f..7e7a58b9a9ececdcc37fc33b33703428eb1d5faf 100644
+--- a/src/main/java/net/minecraft/world/level/EntityGetter.java
++++ b/src/main/java/net/minecraft/world/level/EntityGetter.java
+@@ -167,22 +167,22 @@ public interface EntityGetter {
+ 
+     @Nullable
+     default <T extends LivingEntity> T getNearestEntity(Class<? extends T> entityClass, TargetingConditions targetPredicate, @Nullable LivingEntity entity, double x, double y, double z, AABB box) {
+-        return this.getNearestEntity(this.getEntitiesOfClass(entityClass, box, (Predicate) null), targetPredicate, entity, x, y, z);
++        return this.getNearestEntity(this.getEntitiesOfClass(entityClass, box, null), targetPredicate, entity, x, y, z); // Paper - decompile fix
+     }
+ 
+     @Nullable
+     default <T extends LivingEntity> T getNearestLoadedEntity(Class<? extends T> entityClass, TargetingConditions targetPredicate, @Nullable LivingEntity entity, double x, double y, double z, AABB box) {
+-        return this.getNearestEntity(this.getLoadedEntitiesOfClass(entityClass, box, (Predicate) null), targetPredicate, entity, x, y, z);
++        return this.getNearestEntity(this.getLoadedEntitiesOfClass(entityClass, box, null), targetPredicate, entity, x, y, z); // Paper - decompile fix
+     }
+ 
+     @Nullable
+     default <T extends LivingEntity> T getNearestEntity(List<? extends T> entityList, TargetingConditions targetPredicate, @Nullable LivingEntity entity, double x, double y, double z) {
+         double d3 = -1.0D;
+         T t0 = null;
+-        Iterator iterator = entityList.iterator();
++        Iterator<? extends T> iterator = entityList.iterator(); // Paper - decompile fix
+ 
+         while (iterator.hasNext()) {
+-            T t1 = (LivingEntity) iterator.next();
++            T t1 = iterator.next(); // Paper - decompile fix
+ 
+             if (targetPredicate.test(entity, t1)) {
+                 double d4 = t1.distanceToSqr(x, y, z);
+@@ -215,10 +215,10 @@ public interface EntityGetter {
+     default <T extends LivingEntity> List<T> getNearbyEntities(Class<? extends T> entityClass, TargetingConditions targetPredicate, LivingEntity targetingEntity, AABB box) {
+         List<T> list = this.getEntitiesOfClass(entityClass, box, (Predicate) null);
+         List<T> list1 = Lists.newArrayList();
+-        Iterator iterator = list.iterator();
++        Iterator<T> iterator = list.iterator(); // Paper - decompile fix
+ 
+         while (iterator.hasNext()) {
+-            T t0 = (LivingEntity) iterator.next();
++            T t0 = iterator.next(); // Paper - decompile fix
+ 
+             if (targetPredicate.test(targetingEntity, t0)) {
+                 list1.add(t0);
+diff --git a/src/main/java/net/minecraft/world/level/TickNextTickData.java b/src/main/java/net/minecraft/world/level/TickNextTickData.java
+index c6e64c5182d564664464e26df27e6b5f7da418e6..d97e266b83bb331fcd4031046a5843d29ce53164 100644
+--- a/src/main/java/net/minecraft/world/level/TickNextTickData.java
++++ b/src/main/java/net/minecraft/world/level/TickNextTickData.java
+@@ -38,13 +38,13 @@ public class TickNextTickData<T> {
+         return this.pos.hashCode();
+     }
+ 
+-    public static <T> Comparator<TickNextTickData<T>> createTimeComparator() {
++    public static <T> Comparator<Object> createTimeComparator() { // Paper - decompile fix
+         return Comparator.comparingLong((nextticklistentry) -> {
+-            return nextticklistentry.b;
++            return ((TickNextTickData<T>) nextticklistentry).triggerTick; // Paper - decompile fix
+         }).thenComparing((nextticklistentry) -> {
+-            return nextticklistentry.c;
++            return ((TickNextTickData<T>) nextticklistentry).priority; // Paper - decompile fix
+         }).thenComparingLong((nextticklistentry) -> {
+-            return nextticklistentry.f;
++            return ((TickNextTickData<T>) nextticklistentry).c; // Paper - decompile fix
+         });
+     }
+ 
+diff --git a/src/main/java/net/minecraft/world/level/biome/Biome.java b/src/main/java/net/minecraft/world/level/biome/Biome.java
+index 79be56c26b66351bcfcd96c9967f0ce91e40d5ce..ed83335175bb882741dfaef251ab30ce1590f74c 100644
+--- a/src/main/java/net/minecraft/world/level/biome/Biome.java
++++ b/src/main/java/net/minecraft/world/level/biome/Biome.java
+@@ -49,36 +49,43 @@ import org.apache.logging.log4j.Logger;
+ public final class Biome {
+ 
+     public static final Logger LOGGER = LogManager.getLogger();
++    // Paper start
++    private static class dProxy extends Biome.ClimateSettings {
++        private dProxy(Precipitation precipitation, float temperature, TemperatureModifier temperatureModifier, float downfall) {
++            super(precipitation, temperature, temperatureModifier, downfall);
++        }
++    };
++    // Paper end
+     public static final Codec<Biome> DIRECT_CODEC = RecordCodecBuilder.create((instance) -> {
+-        return instance.group(BiomeBase.d.a.forGetter((biomebase) -> {
+-            return biomebase.j;
++        return instance.group(dProxy.CODEC.forGetter((biomebase) -> { // Paper
++            return biomebase.climateSettings;
+         }), Biome.BiomeCategory.CODEC.fieldOf("category").forGetter((biomebase) -> {
+-            return biomebase.o;
++            return biomebase.biomeCategory;
+         }), Codec.FLOAT.fieldOf("depth").forGetter((biomebase) -> {
+-            return biomebase.m;
++            return biomebase.depth;
+         }), Codec.FLOAT.fieldOf("scale").forGetter((biomebase) -> {
+-            return biomebase.n;
++            return biomebase.scale;
+         }), BiomeSpecialEffects.CODEC.fieldOf("effects").forGetter((biomebase) -> {
+-            return biomebase.p;
++            return biomebase.specialEffects;
+         }), BiomeGenerationSettings.CODEC.forGetter((biomebase) -> {
+-            return biomebase.k;
++            return biomebase.generationSettings;
+         }), MobSpawnSettings.CODEC.forGetter((biomebase) -> {
+-            return biomebase.l;
++            return biomebase.mobSettings;
+         })).apply(instance, Biome::new);
+     });
+     public static final Codec<Biome> NETWORK_CODEC = RecordCodecBuilder.create((instance) -> {
+-        return instance.group(BiomeBase.d.a.forGetter((biomebase) -> {
+-            return biomebase.j;
++        return instance.group(dProxy.CODEC.forGetter((biomebase) -> { // Paper
++            return biomebase.climateSettings;
+         }), Biome.BiomeCategory.CODEC.fieldOf("category").forGetter((biomebase) -> {
+-            return biomebase.o;
++            return biomebase.biomeCategory;
+         }), Codec.FLOAT.fieldOf("depth").forGetter((biomebase) -> {
+-            return biomebase.m;
++            return biomebase.depth;
+         }), Codec.FLOAT.fieldOf("scale").forGetter((biomebase) -> {
+-            return biomebase.n;
++            return biomebase.scale;
+         }), BiomeSpecialEffects.CODEC.fieldOf("effects").forGetter((biomebase) -> {
+-            return biomebase.p;
++            return biomebase.specialEffects;
+         })).apply(instance, (biomebase_d, biomebase_geography, ofloat, ofloat1, biomefog) -> {
+-            return new BiomeBase(biomebase_d, biomebase_geography, ofloat, ofloat1, biomefog, BiomeSettingsGeneration.b, BiomeSettingsMobs.b);
++            return new Biome(biomebase_d, biomebase_geography, ofloat, ofloat1, biomefog, BiomeGenerationSettings.EMPTY, MobSpawnSettings.EMPTY);
+         });
+     });
+     public static final Codec<Supplier<Biome>> CODEC = RegistryFileCodec.a(Registry.BIOME_REGISTRY, Biome.DIRECT_CODEC);
+diff --git a/src/main/java/net/minecraft/world/level/block/piston/PistonMovingBlockEntity.java b/src/main/java/net/minecraft/world/level/block/piston/PistonMovingBlockEntity.java
+index 94a02cb23a210ee0cc789db15853b6672ec673f4..73888713746e7ddd72ba9ac9d33d8e616eb3bd25 100644
+--- a/src/main/java/net/minecraft/world/level/block/piston/PistonMovingBlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/piston/PistonMovingBlockEntity.java
+@@ -160,7 +160,7 @@ public class PistonMovingBlockEntity extends BlockEntity implements TickableBloc
+     private static void moveEntityByPiston(Direction enumdirection, Entity entity, double d0, Direction enumdirection1) {
+         PistonMovingBlockEntity.NOCLIP.set(enumdirection);
+         entity.move(MoverType.PISTON, new Vec3(d0 * (double) enumdirection1.getStepX(), d0 * (double) enumdirection1.getStepY(), d0 * (double) enumdirection1.getStepZ()));
+-        PistonMovingBlockEntity.NOCLIP.set((Object) null);
++        PistonMovingBlockEntity.NOCLIP.set(null); // Paper - decompile fix
+     }
+ 
+     private void moveStuckEntities(float f) {
+diff --git a/src/main/java/net/minecraft/world/level/block/state/StateHolder.java b/src/main/java/net/minecraft/world/level/block/state/StateHolder.java
+index 95ad396fc46a587d08b87943aa05dd72d35efd3a..60ce75c7f94c995d3753c40bc8d1ec09b4d37b1a 100644
+--- a/src/main/java/net/minecraft/world/level/block/state/StateHolder.java
++++ b/src/main/java/net/minecraft/world/level/block/state/StateHolder.java
+@@ -28,12 +28,12 @@ public abstract class StateHolder<O, S> {
+             } else {
+                 Property<?> iblockstate = (Property) entry.getKey();
+ 
+-                return iblockstate.getName() + "=" + this.getName(iblockstate, (Comparable) entry.getValue());
++                return iblockstate.getName() + "=" + this.getName((Property) iblockstate, (Comparable) entry.getValue()); // Paper - decompile fix
+             }
+         }
+ 
+-        private <T extends Comparable<T>> String getName(Property<T> property, Comparable<?> value) {
+-            return property.value(value);
++        private <T extends Comparable<T>> String getName(Property<T> property, T value) { // Paper - decompile error
++            return property.getName(value);
+         }
+     };
+     protected final O owner;
+@@ -48,11 +48,11 @@ public abstract class StateHolder<O, S> {
+     }
+ 
+     public <T extends Comparable<T>> S cycle(Property<T> property) {
+-        return this.setValue(property, (Comparable) findNextInCollection(property.getPossibleValues(), (Object) this.getValue(property)));
++        return this.setValue(property, findNextInCollection(property.getPossibleValues(), this.getValue(property))); // Paper - decompile error
+     }
+ 
+     protected static <T> T findNextInCollection(Collection<T> values, T value) {
+-        Iterator iterator = values.iterator();
++        Iterator<T> iterator = values.iterator(); // Paper
+ 
+         do {
+             if (!iterator.hasNext()) {
+@@ -94,7 +94,7 @@ public abstract class StateHolder<O, S> {
+         if (comparable == null) {
+             throw new IllegalArgumentException("Cannot get property " + property + " as it does not exist in " + this.owner);
+         } else {
+-            return (Comparable) property.getValueClass().cast(comparable);
++            return property.getValueClass().cast(comparable); // Paper - decompile error
+         }
+     }
+ 
+@@ -110,7 +110,7 @@ public abstract class StateHolder<O, S> {
+         if (comparable == null) {
+             throw new IllegalArgumentException("Cannot set property " + property + " as it does not exist in " + this.owner);
+         } else if (comparable == value) {
+-            return this;
++            return (S) this; // Paper - decompile error
+         } else {
+             S s0 = this.neighbours.get(property, value);
+ 
+@@ -162,7 +162,7 @@ public abstract class StateHolder<O, S> {
+         return codec.dispatch("Name", (iblockdataholder) -> {
+             return iblockdataholder.owner;
+         }, (object) -> {
+-            S s0 = (StateHolder) ownerToStateFunction.apply(object);
++            S s0 = ownerToStateFunction.apply(object); // Paper - decompile error
+ 
+             return s0.getValues().isEmpty() ? Codec.unit(s0) : s0.propertiesCodec.fieldOf("Properties").codec();
+         });
+diff --git a/src/main/java/net/minecraft/world/level/block/state/properties/EnumProperty.java b/src/main/java/net/minecraft/world/level/block/state/properties/EnumProperty.java
+index 9e0724c4bf06d207898e477e35412c09f3aa0f74..b5817645727f2af2785e0987ba824f431d4e9e32 100644
+--- a/src/main/java/net/minecraft/world/level/block/state/properties/EnumProperty.java
++++ b/src/main/java/net/minecraft/world/level/block/state/properties/EnumProperty.java
+@@ -21,10 +21,10 @@ public class EnumProperty<T extends Enum<T> & StringRepresentable> extends Prope
+     protected EnumProperty(String name, Class<T> type, Collection<T> values) {
+         super(name, type);
+         this.values = ImmutableSet.copyOf(values);
+-        Iterator iterator = values.iterator();
++        Iterator<T> iterator = values.iterator(); // Paper - decompile fix
+ 
+         while (iterator.hasNext()) {
+-            T t0 = (Enum) iterator.next();
++            T t0 = iterator.next(); // Paper - Decompile fix
+             String s1 = ((StringRepresentable) t0).getSerializedName();
+ 
+             if (this.names.containsKey(s1)) {
+diff --git a/src/main/java/net/minecraft/world/level/block/state/properties/Property.java b/src/main/java/net/minecraft/world/level/block/state/properties/Property.java
+index 5a16a0079bc297fb4572d2e6e9b07a9d1a53c906..8cc07c70fde81e44679f3ea7d9a4c6b2447885d4 100644
+--- a/src/main/java/net/minecraft/world/level/block/state/properties/Property.java
++++ b/src/main/java/net/minecraft/world/level/block/state/properties/Property.java
+@@ -17,12 +17,10 @@ public abstract class Property<T extends Comparable<T>> {
+     private final Codec<Property.Value<T>> valueCodec;
+ 
+     protected Property(String name, Class<T> type) {
+-        this.codec = Codec.STRING.comapFlatMap((s1) -> {
+-            return (DataResult) this.getValue(s1).map(DataResult::success).orElseGet(() -> {
+-                return DataResult.error("Unable to read property: " + this + " with value: " + s1);
+-            });
+-        }, this::getName);
+-        this.valueCodec = this.codec.xmap(this::b, Property.clazz::b);
++        this.codec = Codec.STRING.comapFlatMap((s1) -> this.getValue(s1).map(DataResult::success).orElseGet(() -> { // Paper - decompile error
++            return DataResult.error("Unable to read property: " + this + " with value: " + s1);
++        }), this::getName);
++        this.valueCodec = this.codec.xmap(this::value, (Property.Value<T> param) -> param.value()); // Paper - decompile fix
+         this.clazz = type;
+         this.name = name;
+     }
+diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/IOWorker.java b/src/main/java/net/minecraft/world/level/chunk/storage/IOWorker.java
+index 977ac6db5fbdd001c306ee6aa396bb395384dd8f..7de765786b3504dcffab98bb0d9dac64b30b3325 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/storage/IOWorker.java
++++ b/src/main/java/net/minecraft/world/level/chunk/storage/IOWorker.java
+@@ -89,7 +89,7 @@ public class IOWorker implements AutoCloseable {
+             return this.submitTask(() -> {
+                 try {
+                     this.storage.flush();
+-                    return Either.left((Object) null);
++                    return Either.left(null); // Paper - decompile error
+                 } catch (Exception exception) {
+                     IOWorker.LOGGER.warn("Failed to synchronized chunks", exception);
+                     return Either.right(exception);
+@@ -123,13 +123,13 @@ public class IOWorker implements AutoCloseable {
+     }
+ 
+     private void tellStorePending() {
+-        this.mailbox.tell((Object) (new StrictQueue.IntRunnable(IOWorker.Priority.LOW.ordinal(), this::storePendingChunk)));
++        this.mailbox.tell((new StrictQueue.IntRunnable(IOWorker.Priority.LOW.ordinal(), this::storePendingChunk))); // Paper - decompile error
+     }
+ 
+     private void runStore(ChunkPos pos, IOWorker.PendingStore ioworker_a) {
+         try {
+             this.storage.write(pos, ioworker_a.data);
+-            ioworker_a.result.complete((Object) null);
++            ioworker_a.result.complete(null); // Paper - decompile fix
+         } catch (Exception exception) {
+             IOWorker.LOGGER.error("Failed to store chunk {}", pos, exception);
+             ioworker_a.result.completeExceptionally(exception);
+diff --git a/src/main/java/net/minecraft/world/level/dimension/end/EndDragonFight.java b/src/main/java/net/minecraft/world/level/dimension/end/EndDragonFight.java
+index 217065b88178342159154490ffabe0fe7d32d7bf..2386ffeec60851ba192b89bc6fd7ffff9c56aff5 100644
+--- a/src/main/java/net/minecraft/world/level/dimension/end/EndDragonFight.java
++++ b/src/main/java/net/minecraft/world/level/dimension/end/EndDragonFight.java
+@@ -430,7 +430,7 @@ public class EndDragonFight {
+             }
+         }
+ 
+-        worldgenendtrophy.configured((FeatureConfiguration) FeatureConfiguration.NONE).a(this.level, this.level.getChunkSource().getGenerator(), new Random(), this.portalLocation);
++        worldgenendtrophy.configured(FeatureConfiguration.NONE).place(this.level, this.level.getChunkSource().getGenerator(), new Random(), this.portalLocation); // Paper - decompile fix
+     }
+ 
+     private EnderDragon createNewDragon() {
+diff --git a/src/main/java/net/minecraft/world/level/levelgen/feature/StructureFeature.java b/src/main/java/net/minecraft/world/level/levelgen/feature/StructureFeature.java
+index 418abfdc85de157d23807059670a2dfc964cbd5f..9f60abfe0a37e30c5528a1ca0546295b00598798 100644
+--- a/src/main/java/net/minecraft/world/level/levelgen/feature/StructureFeature.java
++++ b/src/main/java/net/minecraft/world/level/levelgen/feature/StructureFeature.java
+@@ -71,13 +71,13 @@ public abstract class StructureFeature<C extends FeatureConfiguration> {
+     public static final StructureFeature<JigsawConfiguration> BASTION_REMNANT = register("Bastion_Remnant", new BastionFeature(JigsawConfiguration.CODEC), GenerationStep.Decoration.SURFACE_STRUCTURES);
+     public static final List<StructureFeature<?>> NOISE_AFFECTING_FEATURES = ImmutableList.of(StructureFeature.PILLAGER_OUTPOST, StructureFeature.VILLAGE, StructureFeature.NETHER_FOSSIL);
+     private static final ResourceLocation JIGSAW_RENAME = new ResourceLocation("jigsaw");
+-    private static final Map<ResourceLocation, ResourceLocation> RENAMES = ImmutableMap.builder().put(new ResourceLocation("nvi"), StructureFeature.JIGSAW_RENAME).put(new ResourceLocation("pcp"), StructureFeature.JIGSAW_RENAME).put(new ResourceLocation("bastionremnant"), StructureFeature.JIGSAW_RENAME).put(new ResourceLocation("runtime"), StructureFeature.JIGSAW_RENAME).build();
++    private static final Map<ResourceLocation, ResourceLocation> RENAMES = ImmutableMap.<ResourceLocation, ResourceLocation>builder().put(new ResourceLocation("nvi"), StructureFeature.JIGSAW_RENAME).put(new ResourceLocation("pcp"), StructureFeature.JIGSAW_RENAME).put(new ResourceLocation("bastionremnant"), StructureFeature.JIGSAW_RENAME).put(new ResourceLocation("runtime"), StructureFeature.JIGSAW_RENAME).build(); // Paper - decompile fix
+     private final Codec<ConfiguredStructureFeature<C, StructureFeature<C>>> y;
+ 
+     private static <F extends StructureFeature<?>> F register(String name, F structureFeature, GenerationStep.Decoration step) {
+         StructureFeature.STRUCTURES_REGISTRY.put(name.toLowerCase(Locale.ROOT), structureFeature);
+         StructureFeature.STEP.put(structureFeature, step);
+-        return (StructureFeature) Registry.registerDefaulted(Registry.STRUCTURE_FEATURE, name.toLowerCase(Locale.ROOT), (Object) structureFeature);
++        return (F) Registry.<StructureFeature<?>>register(Registry.STRUCTURE_FEATURE, name.toLowerCase(Locale.ROOT), structureFeature); // Paper - decomp fix
+     }
+ 
+     public StructureFeature(Codec<C> codec) {
+diff --git a/src/main/java/net/minecraft/world/level/lighting/SkyLightSectionStorage.java b/src/main/java/net/minecraft/world/level/lighting/SkyLightSectionStorage.java
+index cd2efdd5802605de5d3d636ce1b4a796e0c13310..c304637ae8f80c65b58e8ba8a27609b532bb1184 100644
+--- a/src/main/java/net/minecraft/world/level/lighting/SkyLightSectionStorage.java
++++ b/src/main/java/net/minecraft/world/level/lighting/SkyLightSectionStorage.java
+@@ -34,10 +34,10 @@ public class SkyLightSectionStorage extends LayerLightSectionStorage<SkyLightSec
+         int l = lightenginestoragesky_a.topSections.get(SectionPos.getZeroNode(j));
+ 
+         if (l != lightenginestoragesky_a.currentLowestY && k < l) {
+-            DataLayer nibblearray = this.getDataLayer((DataLayerStorageMap) lightenginestoragesky_a, j);
++            DataLayer nibblearray = this.getDataLayer(lightenginestoragesky_a, j); // Paper - decompile fix
+ 
+             if (nibblearray == null) {
+-                for (blockPos = BlockPos.getFlatIndex(blockPos); nibblearray == null; nibblearray = this.getDataLayer((DataLayerStorageMap) lightenginestoragesky_a, j)) {
++                for (blockPos = BlockPos.getFlatIndex(blockPos); nibblearray == null; nibblearray = this.getDataLayer(lightenginestoragesky_a, j)) { // Paper - decompile fix
+                     j = SectionPos.offset(j, Direction.UP);
+                     ++k;
+                     if (k >= l) {
+diff --git a/src/main/java/net/minecraft/world/level/storage/DimensionDataStorage.java b/src/main/java/net/minecraft/world/level/storage/DimensionDataStorage.java
+index b106f2458361fc2a9168bbef8c9e5b35d8e359fb..60b7fdf9c092e8105d41f4af02a08651624f3eb9 100644
+--- a/src/main/java/net/minecraft/world/level/storage/DimensionDataStorage.java
++++ b/src/main/java/net/minecraft/world/level/storage/DimensionDataStorage.java
+@@ -44,7 +44,7 @@ public class DimensionDataStorage {
+         if (t0 != null) {
+             return t0;
+         } else {
+-            T t1 = (SavedData) factory.get();
++            T t1 = factory.get(); // Paper - decompile fix
+ 
+             this.set(t1);
+             return t1;
+@@ -53,7 +53,7 @@ public class DimensionDataStorage {
+ 
+     @Nullable
+     public <T extends SavedData> T get(Supplier<T> factory, String id) {
+-        SavedData persistentbase = (SavedData) this.cache.get(id);
++        T persistentbase = (T) this.cache.get(id); // Paper - decompile fix
+ 
+         if (persistentbase == null && !this.cache.containsKey(id)) {
+             persistentbase = this.readSavedData(factory, id);
+@@ -69,7 +69,7 @@ public class DimensionDataStorage {
+             File file = this.getDataFile(id);
+ 
+             if (file.exists()) {
+-                T t0 = (SavedData) factory.get();
++                T t0 = factory.get(); // Paper - decompile fix
+                 CompoundTag nbttagcompound = this.readTagFromDisk(id, SharedConstants.getCurrentVersion().getWorldVersion());
+ 
+                 t0.load(nbttagcompound.getCompound("data"));
+diff --git a/src/main/java/net/minecraft/world/level/storage/loot/entries/LootPoolEntryContainer.java b/src/main/java/net/minecraft/world/level/storage/loot/entries/LootPoolEntryContainer.java
+index 4093a4a1f924ac722d60599be9688a88d26a5c1a..802eb7fe690adae03c80db3fc0f72ea2788a3b2c 100644
+--- a/src/main/java/net/minecraft/world/level/storage/loot/entries/LootPoolEntryContainer.java
++++ b/src/main/java/net/minecraft/world/level/storage/loot/entries/LootPoolEntryContainer.java
+@@ -42,7 +42,7 @@ public abstract class LootPoolEntryContainer implements ComposableEntryContainer
+ 
+         // CraftBukkit start
+         @Override
+-        public final void serialize(JsonObject json, T entry, JsonSerializationContext context) {
++        public void serialize(JsonObject json, T entry, JsonSerializationContext context) { // Paper - remove final
+             if (!org.apache.commons.lang3.ArrayUtils.isEmpty(entry.conditions)) {
+                 json.add("conditions", context.serialize(entry.conditions));
+             }
+diff --git a/src/main/java/net/minecraft/world/level/storage/loot/entries/LootPoolSingletonContainer.java b/src/main/java/net/minecraft/world/level/storage/loot/entries/LootPoolSingletonContainer.java
+index c942459e0a492dd9fab296ef60d272651d13f049..ceb5e5405ed20c8de954847bbb269109107a43fc 100644
+--- a/src/main/java/net/minecraft/world/level/storage/loot/entries/LootPoolSingletonContainer.java
++++ b/src/main/java/net/minecraft/world/level/storage/loot/entries/LootPoolSingletonContainer.java
+@@ -132,7 +132,7 @@ public abstract class LootPoolSingletonContainer extends LootPoolEntryContainer
+         @Override
+         public T b(LootItemFunction.Builder lootitemfunction_a) {
+             this.functions.add(lootitemfunction_a.b());
+-            return (LootPoolSingletonContainer.Builder) this.getThis();
++            return this.getThis(); // Paper - decompile fix
+         }
+ 
+         protected LootItemFunction[] getFunctions() {
+@@ -141,12 +141,12 @@ public abstract class LootPoolSingletonContainer extends LootPoolEntryContainer
+ 
+         public T setWeight(int weight) {
+             this.weight = weight;
+-            return (LootPoolSingletonContainer.Builder) this.getThis();
++            return this.getThis(); // Paper - decompile fix
+         }
+ 
+         public T setQuality(int quality) {
+             this.quality = quality;
+-            return (LootPoolSingletonContainer.Builder) this.getThis();
++            return this.getThis(); // Paper - decompile fix
+         }
+     }
+ 
+diff --git a/src/main/java/net/minecraft/world/level/storage/loot/functions/ExplorationMapFunction.java b/src/main/java/net/minecraft/world/level/storage/loot/functions/ExplorationMapFunction.java
+index b77c921548ff55bab62bf37fa411ad1fd8d38f82..a3ce120b0da62f9be938c58c3414ce997f5d30ea 100644
+--- a/src/main/java/net/minecraft/world/level/storage/loot/functions/ExplorationMapFunction.java
++++ b/src/main/java/net/minecraft/world/level/storage/loot/functions/ExplorationMapFunction.java
+@@ -89,7 +89,7 @@ public class ExplorationMapFunction extends LootItemConditionalFunction {
+         public Serializer() {}
+ 
+         public void serialize(JsonObject json, ExplorationMapFunction object, JsonSerializationContext context) {
+-            super.serialize(json, (LootItemConditionalFunction) object, context);
++            super.serialize(json, object, context); // Paper - decompile fix
+             if (!object.destination.equals(ExplorationMapFunction.DEFAULT_FEATURE)) {
+                 json.add("destination", context.serialize(object.destination.getFeatureName()));
+             }
+diff --git a/src/main/java/net/minecraft/world/phys/shapes/IndirectMerger.java b/src/main/java/net/minecraft/world/phys/shapes/IndirectMerger.java
+index bc1798f130184d6b107d7a9ba972cab686534439..f0e74daa5bb9e88c028225e7c71deb04c481a7ac 100644
+--- a/src/main/java/net/minecraft/world/phys/shapes/IndirectMerger.java
++++ b/src/main/java/net/minecraft/world/phys/shapes/IndirectMerger.java
+@@ -38,7 +38,7 @@ public final class IndirectMerger implements IndexMerger {
+             double d1 = flag4 ? first.getDouble(i++) : second.getDouble(j++);
+ 
+             if ((i != 0 && flag2 || flag4 || includeSecondOnly) && (j != 0 && flag3 || !flag4 || includeFirstOnly)) {
+-                if (d0 < d1 - 1.0E-7D) {
++                if (!(d0 >= d1 - 1.0E-7D)) { // Paper - decompile error - welcome to hell
+                     this.firstIndices.add(i - 1);
+                     this.secondIndices.add(j - 1);
+                     this.result.add(d1);

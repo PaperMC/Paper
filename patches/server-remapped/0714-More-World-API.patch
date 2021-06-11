@@ -1,0 +1,146 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Tue, 7 Jul 2020 10:52:34 -0700
+Subject: [PATCH] More World API
+
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
+index a7553a856b9c99bee8f75d514b97cfab952bfd33..511e6a941d441c55a4b38660f0f7f8c47fa689dd 100644
+--- a/src/main/java/net/minecraft/server/level/ServerLevel.java
++++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
+@@ -1863,6 +1863,7 @@ public class ServerLevel extends net.minecraft.world.level.Level implements Worl
+         return !this.worldDataServer.worldGenSettings().generateFeatures() ? null : this.getChunkSource().getGenerator().findNearestMapFeature(this, feature, pos, radius, skipExistingChunks); // CraftBukkit
+     }
+ 
++    public BlockPos getNearestBiome(Biome biomeBase, BlockPos blockPosition, int radius, int step) { return this.findNearestBiome(biomeBase, blockPosition, radius, step); } // Paper - OBFHELPER
+     @Nullable
+     public BlockPos findNearestBiome(Biome biome, BlockPos pos, int radius, int j) {
+         return this.getChunkSource().getGenerator().getBiomeSource().findBiomeHorizontal(pos.getX(), pos.getY(), pos.getZ(), radius, j, (biomebase1) -> {
+@@ -1885,6 +1886,7 @@ public class ServerLevel extends net.minecraft.world.level.Level implements Worl
+         return this.noSave;
+     }
+ 
++    public RegistryAccess getWorldCustomRegistry() { return registryAccess(); } // Paper - OBFHELPER
+     @Override
+     public RegistryAccess registryAccess() {
+         return this.server.registryAccess();
+diff --git a/src/main/java/net/minecraft/world/level/dimension/DimensionType.java b/src/main/java/net/minecraft/world/level/dimension/DimensionType.java
+index 7dead90a0d77e936816c2a54fe70c87d92dc8e5b..fb2bdfbeb44de6ce967af2deb4738972b44dcf44 100644
+--- a/src/main/java/net/minecraft/world/level/dimension/DimensionType.java
++++ b/src/main/java/net/minecraft/world/level/dimension/DimensionType.java
+@@ -142,10 +142,10 @@ public class DimensionType {
+     public static RegistryAccess.RegistryHolder registerBuiltin(RegistryAccess.RegistryHolder registryManager) {
+         WritableRegistry<DimensionType> iregistrywritable = registryManager.registryOrThrow(Registry.DIMENSION_TYPE_REGISTRY);
+ 
+-        iregistrywritable.register(DimensionType.OVERWORLD_LOCATION, (Object) DimensionType.DEFAULT_OVERWORLD, Lifecycle.stable());
+-        iregistrywritable.register(DimensionType.OVERWORLD_CAVES_LOCATION, (Object) DimensionType.DEFAULT_OVERWORLD_CAVES, Lifecycle.stable());
+-        iregistrywritable.register(DimensionType.NETHER_LOCATION, (Object) DimensionType.DEFAULT_NETHER, Lifecycle.stable());
+-        iregistrywritable.register(DimensionType.END_LOCATION, (Object) DimensionType.DEFAULT_END, Lifecycle.stable());
++        iregistrywritable.register(DimensionType.OVERWORLD_LOCATION, DimensionType.DEFAULT_OVERWORLD, Lifecycle.stable()); // Paper - decompile fix
++        iregistrywritable.register(DimensionType.OVERWORLD_CAVES_LOCATION, DimensionType.DEFAULT_OVERWORLD_CAVES, Lifecycle.stable()); // Paper - decompile fix
++        iregistrywritable.register(DimensionType.NETHER_LOCATION, DimensionType.DEFAULT_NETHER, Lifecycle.stable()); // Paper - decompile fix
++        iregistrywritable.register(DimensionType.END_LOCATION, DimensionType.DEFAULT_END, Lifecycle.stable()); // Paper - decompile fix
+         return registryManager;
+     }
+ 
+@@ -164,10 +164,10 @@ public class DimensionType {
+     public static MappedRegistry<LevelStem> defaultDimensions(Registry<DimensionType> dimensionRegistry, Registry<Biome> biomeRegistry, Registry<NoiseGeneratorSettings> chunkGeneratorSettingsRegistry, long seed) {
+         MappedRegistry<LevelStem> registrymaterials = new MappedRegistry<>(Registry.LEVEL_STEM_REGISTRY, Lifecycle.experimental());
+ 
+-        registrymaterials.register(LevelStem.NETHER, (Object) (new LevelStem(() -> {
++        registrymaterials.register(LevelStem.NETHER, (new LevelStem(() -> { // Paper - decompile fix
+             return (DimensionType) dimensionRegistry.getOrThrow(DimensionType.NETHER_LOCATION);
+         }, defaultNetherGenerator(biomeRegistry, chunkGeneratorSettingsRegistry, seed))), Lifecycle.stable());
+-        registrymaterials.register(LevelStem.END, (Object) (new LevelStem(() -> {
++        registrymaterials.register(LevelStem.END, (new LevelStem(() -> { // Paper - decompile fix
+             return (DimensionType) dimensionRegistry.getOrThrow(DimensionType.END_LOCATION);
+         }, defaultEndGenerator(biomeRegistry, chunkGeneratorSettingsRegistry, seed))), Lifecycle.stable());
+         return registrymaterials;
+@@ -256,6 +256,7 @@ public class DimensionType {
+         return this.brightnessRamp[i];
+     }
+ 
++    public Tag<Block> getInfiniburnTag() { return infiniburn(); } // Paper - OBFHELPER
+     public Tag<Block> infiniburn() {
+         Tag<Block> tag = BlockTags.getAllTags().getTag(this.infiniburn);
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+index b44e83d93bba579e439b93e5093350675137b070..a1fa2d5e00bd125abd38a00e0bc3936f2fb8186f 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+@@ -2515,6 +2515,75 @@ public class CraftWorld implements World {
+         return (nearest == null) ? null : new Location(this, nearest.getX(), nearest.getY(), nearest.getZ());
+     }
+ 
++    // Paper start
++    @Override
++    public Location locateNearestBiome(Location origin, Biome biome, int radius) {
++        return this.locateNearestBiome(origin, biome, radius, 8);
++    }
++
++    @Override
++    public Location locateNearestBiome(Location origin, Biome biome, int radius, int step) {
++        BlockPos originPos = new BlockPos(origin.getX(), origin.getY(), origin.getZ());
++        BlockPos nearest = getHandle().getNearestBiome(CraftBlock.biomeToBiomeBase(getHandle().getWorldCustomRegistry().registryOrThrow(Registry.BIOME_REGISTRY), biome), originPos, radius, step);
++        return (nearest == null) ? null : new Location(this, nearest.getX(), nearest.getY(), nearest.getZ());
++    }
++
++    @Override
++    public boolean isUltrawarm() {
++        return getHandle().dimensionType().ultraWarm();
++    }
++
++    @Override
++    public boolean isNatural() {
++        return getHandle().dimensionType().natural();
++    }
++
++    @Override
++    public double getCoordinateScale() {
++        return getHandle().dimensionType().coordinateScale();
++    }
++
++    @Override
++    public boolean hasSkylight() {
++        return getHandle().dimensionType().hasSkyLight();
++    }
++
++    @Override
++    public boolean hasBedrockCeiling() {
++        return getHandle().dimensionType().hasSkyLight();
++    }
++
++    @Override
++    public boolean isPiglinSafe() {
++        return getHandle().dimensionType().piglinSafe();
++    }
++
++    @Override
++    public boolean doesBedWork() {
++        return getHandle().dimensionType().bedWorks();
++    }
++
++    @Override
++    public boolean doesRespawnAnchorWork() {
++        return getHandle().dimensionType().respawnAnchorWorks();
++    }
++
++    @Override
++    public boolean hasRaids() {
++        return getHandle().dimensionType().hasRaids();
++    }
++
++    @Override
++    public boolean isFixedTime() {
++        return getHandle().dimensionType().hasFixedTime();
++    }
++
++    @Override
++    public Collection<org.bukkit.Material> getInfiniburn() {
++        return com.google.common.collect.Sets.newHashSet(com.google.common.collect.Iterators.transform(getHandle().dimensionType().getInfiniburnTag().getTagged().iterator(), CraftMagicNumbers::getMaterial));
++    }
++    // Paper end
++
+     @Override
+     public Raid locateNearestRaid(Location location, int radius) {
+         Validate.notNull(location, "Location cannot be null");

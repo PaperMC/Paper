@@ -1,0 +1,102 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Tassu <git@tassu.me>
+Date: Thu, 13 Sep 2018 08:45:21 +0300
+Subject: [PATCH] Implement furnace cook speed multiplier API
+
+Signed-off-by: Tassu <git@tassu.me>
+
+Fixed an issue where a furnace's cook-speed multiplier rounds down
+to the nearest Integer when updating its current cook time.
+
+Modified by: Eric Su <ericsu@alumni.usc.edu>
+
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/AbstractFurnaceBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/AbstractFurnaceBlockEntity.java
+index 8c55c1d88ef2e20e82bcdae0b9b3d381e562051f..4126a36dbc7750108a883f0be14dcb0d2e6d7ae8 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/AbstractFurnaceBlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/AbstractFurnaceBlockEntity.java
+@@ -38,6 +38,7 @@ import net.minecraft.world.level.block.Blocks;
+ import net.minecraft.world.level.block.state.BlockState;
+ import net.minecraft.world.phys.Vec3;
+ // CraftBukkit start
++import java.util.List;
+ import org.bukkit.craftbukkit.block.CraftBlock;
+ import org.bukkit.craftbukkit.entity.CraftHumanEntity;
+ import org.bukkit.craftbukkit.inventory.CraftItemStack;
+@@ -56,6 +57,7 @@ public abstract class AbstractFurnaceBlockEntity extends BaseContainerBlockEntit
+     protected NonNullList<ItemStack> items;
+     public int litTime;
+     private int litDuration;
++    public double cookSpeedMultiplier = 1.0; // Paper - cook speed multiplier API
+     public int cookingProgress;
+     public int cookingTotalTime;
+     protected final ContainerData dataAccess;
+@@ -256,6 +258,11 @@ public abstract class AbstractFurnaceBlockEntity extends BaseContainerBlockEntit
+             this.recipesUsed.put(new ResourceLocation(s), nbttagcompound1.getInt(s));
+         }
+ 
++        // Paper start - cook speed API
++        if (tag.contains("Paper.CookSpeedMultiplier")) {
++            this.cookSpeedMultiplier = tag.getDouble("Paper.CookSpeedMultiplier");
++        }
++        // Paper end
+     }
+ 
+     @Override
+@@ -264,6 +271,7 @@ public abstract class AbstractFurnaceBlockEntity extends BaseContainerBlockEntit
+         tag.putShort("BurnTime", (short) this.litTime);
+         tag.putShort("CookTime", (short) this.cookingProgress);
+         tag.putShort("CookTimeTotal", (short) this.cookingTotalTime);
++        tag.putDouble("Paper.CookSpeedMultiplier", this.cookSpeedMultiplier); // Paper - cook speed multiplier API
+         ContainerHelper.saveAllItems(tag, this.items);
+         CompoundTag nbttagcompound1 = new CompoundTag();
+ 
+@@ -324,7 +332,7 @@ public abstract class AbstractFurnaceBlockEntity extends BaseContainerBlockEntit
+ 
+                 if (this.isLit() && this.canBurn(irecipe)) {
+                     ++this.cookingProgress;
+-                    if (this.cookingProgress == this.cookingTotalTime) {
++                    if (this.cookingProgress >= this.cookingTotalTime) { // Paper - cook speed multiplier API
+                         this.cookingProgress = 0;
+                         this.cookingTotalTime = this.getTotalCookTime();
+                         this.burn(irecipe);
+@@ -424,9 +432,13 @@ public abstract class AbstractFurnaceBlockEntity extends BaseContainerBlockEntit
+         }
+     }
+ 
+-    protected int getTotalCookTime() {
+-        return (this.hasLevel()) ? (Integer) this.level.getRecipeManager().getRecipeFor((RecipeType<AbstractCookingRecipe>) this.recipeType, this, this.level).map(AbstractCookingRecipe::getCookingTime).orElse(200) : 200; // CraftBukkit - SPIGOT-4302 // Eclipse fail
++    // Paper begin - Expose this function so CraftFurnace can correctly scale the total cooking time to a new multiplier
++    public int getTotalCookTime() {
++        /* Scale the recipe's cooking time to the current cookSpeedMultiplier */
++        int cookTime = (this.hasLevel()) ? (Integer) this.level.getRecipeManager().getRecipeFor((RecipeType<AbstractCookingRecipe>) this.recipeType, this, this.level).map(AbstractCookingRecipe::getCookingTime).orElse(200) : 200; // CraftBukkit - SPIGOT-4302 // Eclipse fail
++        return (int) Math.ceil (cookTime / this.cookSpeedMultiplier);
+     }
++    // Paper end
+ 
+     public static boolean isFuel(ItemStack stack) {
+         return getFuel().containsKey(stack.getItem());
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftFurnace.java b/src/main/java/org/bukkit/craftbukkit/block/CraftFurnace.java
+index 5028a6388f95a14df8d1590cddd7414d8de5bf78..a69785c331c6cee34ba4e93f47865ab8e29ec9b8 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/CraftFurnace.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/CraftFurnace.java
+@@ -63,4 +63,20 @@ public abstract class CraftFurnace<T extends AbstractFurnaceBlockEntity> extends
+     public void setCookTimeTotal(int cookTimeTotal) {
+         this.getSnapshot().cookingTotalTime = cookTimeTotal;
+     }
++
++    // Paper start - cook speed multiplier API
++    @Override
++    public double getCookSpeedMultiplier() {
++        return this.getSnapshot().cookSpeedMultiplier;
++    }
++
++    @Override
++    public void setCookSpeedMultiplier(double multiplier) {
++        com.google.common.base.Preconditions.checkArgument(multiplier >= 0, "Furnace speed multiplier cannot be negative");
++        com.google.common.base.Preconditions.checkArgument(multiplier <= 200, "Furnace speed multiplier cannot more than 200");
++        T snapshot = this.getSnapshot();
++        snapshot.cookSpeedMultiplier = multiplier;
++        snapshot.cookingTotalTime = snapshot.getTotalCookTime(); // Update the snapshot's current total cook time to scale with the newly set multiplier
++    }
++    // Paper end
+ }

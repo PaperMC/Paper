@@ -1,0 +1,62 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: BillyGalbreath <Blake.Galbreath@GMail.com>
+Date: Sat, 21 Jul 2018 01:51:27 -0500
+Subject: [PATCH] EnderDragon Events
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/boss/enderdragon/phases/DragonControllerLandedFlame.java b/src/main/java/net/minecraft/world/entity/boss/enderdragon/phases/DragonControllerLandedFlame.java
+index 5adbd9fe858aad9c775a10254eb53b34719a9bd6..91de4e6c1d478e001c8672d34b4ffe57f6cba0a6 100644
+--- a/src/main/java/net/minecraft/world/entity/boss/enderdragon/phases/DragonControllerLandedFlame.java
++++ b/src/main/java/net/minecraft/world/entity/boss/enderdragon/phases/DragonControllerLandedFlame.java
+@@ -80,7 +80,11 @@ public class DragonControllerLandedFlame extends AbstractDragonControllerLanded
+             this.d.setDuration(200);
+             this.d.setParticle(Particles.DRAGON_BREATH);
+             this.d.addEffect(new MobEffect(MobEffects.HARM));
++            if (new com.destroystokyo.paper.event.entity.EnderDragonFlameEvent((org.bukkit.entity.EnderDragon) this.a.getBukkitEntity(), (org.bukkit.entity.AreaEffectCloud) this.d.getBukkitEntity()).callEvent()) { // Paper
+             this.a.world.addEntity(this.d);
++            } else {
++                this.removeAreaEffect();
++            }
+         }
+ 
+     }
+@@ -91,8 +95,8 @@ public class DragonControllerLandedFlame extends AbstractDragonControllerLanded
+         ++this.c;
+     }
+ 
+-    @Override
+-    public void e() {
++    public final void removeAreaEffect() { this.e(); } // Paper - OBFHELPER
++    @Override public void e() {
+         if (this.d != null) {
+             this.d.die();
+             this.d = null;
+diff --git a/src/main/java/net/minecraft/world/entity/boss/enderdragon/phases/DragonControllerStrafe.java b/src/main/java/net/minecraft/world/entity/boss/enderdragon/phases/DragonControllerStrafe.java
+index db3cef26c8d5cdf740bb151a5525d8740a0e8bbd..1a5d5d39d3090acc3914e40e8d30c4a09789dbc9 100644
+--- a/src/main/java/net/minecraft/world/entity/boss/enderdragon/phases/DragonControllerStrafe.java
++++ b/src/main/java/net/minecraft/world/entity/boss/enderdragon/phases/DragonControllerStrafe.java
+@@ -81,7 +81,9 @@ public class DragonControllerStrafe extends AbstractDragonController {
+                         EntityDragonFireball entitydragonfireball = new EntityDragonFireball(this.a.world, this.a, d9, d10, d11);
+ 
+                         entitydragonfireball.setPositionRotation(d6, d7, d8, 0.0F, 0.0F);
++                        if (new com.destroystokyo.paper.event.entity.EnderDragonShootFireballEvent((org.bukkit.entity.EnderDragon) a.getBukkitEntity(), (org.bukkit.entity.DragonFireball) entitydragonfireball.getBukkitEntity()).callEvent()) // Paper
+                         this.a.world.addEntity(entitydragonfireball);
++                        else entitydragonfireball.die(); // Paper
+                         this.c = 0;
+                         if (this.d != null) {
+                             while (!this.d.c()) {
+diff --git a/src/main/java/net/minecraft/world/entity/projectile/EntityDragonFireball.java b/src/main/java/net/minecraft/world/entity/projectile/EntityDragonFireball.java
+index 59b5484731a5f71005c3efa56cbe40012d9641b5..27853f510e15e40c66da2cb4905c43f5e8f99d3d 100644
+--- a/src/main/java/net/minecraft/world/entity/projectile/EntityDragonFireball.java
++++ b/src/main/java/net/minecraft/world/entity/projectile/EntityDragonFireball.java
+@@ -58,8 +58,10 @@ public class EntityDragonFireball extends EntityFireball {
+                     }
+                 }
+ 
++                if (new com.destroystokyo.paper.event.entity.EnderDragonFireballHitEvent((org.bukkit.entity.DragonFireball) this.getBukkitEntity(), list.stream().map(EntityLiving::getBukkitLivingEntity).collect(java.util.stream.Collectors.toList()), (org.bukkit.entity.AreaEffectCloud) entityareaeffectcloud.getBukkitEntity()).callEvent()) { // Paper
+                 this.world.triggerEffect(2006, this.getChunkCoordinates(), this.isSilent() ? -1 : 1);
+                 this.world.addEntity(entityareaeffectcloud);
++                } else entityareaeffectcloud.die(); // Paper
+                 this.die();
+             }
+ 

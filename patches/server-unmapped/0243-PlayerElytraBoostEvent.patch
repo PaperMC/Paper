@@ -1,0 +1,31 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: BillyGalbreath <Blake.Galbreath@GMail.com>
+Date: Sat, 21 Jul 2018 01:59:59 -0500
+Subject: [PATCH] PlayerElytraBoostEvent
+
+
+diff --git a/src/main/java/net/minecraft/world/item/ItemFireworks.java b/src/main/java/net/minecraft/world/item/ItemFireworks.java
+index a2950faa48021782f10db0673d12d178443f7ccc..79e9be800385b94c4493bd8970620d76bfbd65ae 100644
+--- a/src/main/java/net/minecraft/world/item/ItemFireworks.java
++++ b/src/main/java/net/minecraft/world/item/ItemFireworks.java
+@@ -45,11 +45,16 @@ public class ItemFireworks extends Item {
+                 // Paper start
+                 final EntityFireworks entityfireworks = new EntityFireworks(world, itemstack, entityhuman);
+                 entityfireworks.spawningEntity = entityhuman.getUniqueID();
+-                world.addEntity(entityfireworks);
+-                // Paper end
+-                if (!entityhuman.abilities.canInstantlyBuild) {
+-                    itemstack.subtract(1);
++                // Paper start
++                com.destroystokyo.paper.event.player.PlayerElytraBoostEvent event = new com.destroystokyo.paper.event.player.PlayerElytraBoostEvent((org.bukkit.entity.Player) entityhuman.getBukkitEntity(), org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemstack), (org.bukkit.entity.Firework) entityfireworks.getBukkitEntity());
++                if (event.callEvent() && world.addEntity(entityfireworks)) {
++                    if (event.shouldConsume() && !entityhuman.abilities.canInstantlyBuild) {
++                        itemstack.subtract(1);
++                    } else ((EntityPlayer) entityhuman).getBukkitEntity().updateInventory();
++                } else if (entityhuman instanceof EntityPlayer) {
++                    ((EntityPlayer) entityhuman).getBukkitEntity().updateInventory();
+                 }
++                // Paper end
+             }
+ 
+             return InteractionResultWrapper.a(entityhuman.b(enumhand), world.s_());

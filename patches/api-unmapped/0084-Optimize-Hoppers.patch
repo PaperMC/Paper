@@ -1,0 +1,39 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Thu, 18 Jan 2018 01:00:27 -0500
+Subject: [PATCH] Optimize Hoppers
+
+Adds data about what Item related methods were used in InventoryMoveItem event
+so that the server can improve the performance of this event.
+
+diff --git a/src/main/java/org/bukkit/event/inventory/InventoryMoveItemEvent.java b/src/main/java/org/bukkit/event/inventory/InventoryMoveItemEvent.java
+index a8c48f5a416326e96c431e5fa22edee04825530e..04d4a83bfc4f86341f9d72128458154d08c8ec43 100644
+--- a/src/main/java/org/bukkit/event/inventory/InventoryMoveItemEvent.java
++++ b/src/main/java/org/bukkit/event/inventory/InventoryMoveItemEvent.java
+@@ -31,6 +31,8 @@ public class InventoryMoveItemEvent extends Event implements Cancellable {
+     private final Inventory destinationInventory;
+     private ItemStack itemStack;
+     private final boolean didSourceInitiate;
++    public boolean calledGetItem; // Paper
++    public boolean calledSetItem; // Paper
+ 
+     public InventoryMoveItemEvent(@NotNull final Inventory sourceInventory, @NotNull final ItemStack itemStack, @NotNull final Inventory destinationInventory, final boolean didSourceInitiate) {
+         Validate.notNull(itemStack, "ItemStack cannot be null");
+@@ -58,7 +60,8 @@ public class InventoryMoveItemEvent extends Event implements Cancellable {
+      */
+     @NotNull
+     public ItemStack getItem() {
+-        return itemStack.clone();
++        calledGetItem = true; // Paper - record this method was used for auto detection of mode
++        return itemStack; // Paper - Removed clone, handled better in Server
+     }
+ 
+     /**
+@@ -70,6 +73,7 @@ public class InventoryMoveItemEvent extends Event implements Cancellable {
+      */
+     public void setItem(@NotNull ItemStack itemStack) {
+         Validate.notNull(itemStack, "ItemStack cannot be null.  Cancel the event if you want nothing to be transferred.");
++        calledSetItem = true; // Paper - record this method was used for auto detection of mode
+         this.itemStack = itemStack.clone();
+     }
+ 

@@ -1,0 +1,28 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: BillyGalbreath <Blake.Galbreath@GMail.com>
+Date: Fri, 20 Jul 2018 23:37:03 -0500
+Subject: [PATCH] AnvilDamageEvent
+
+
+diff --git a/src/main/java/net/minecraft/world/inventory/AnvilMenu.java b/src/main/java/net/minecraft/world/inventory/AnvilMenu.java
+index aa4b03dc9a0d6b3f387f081a1887672b90c60ef9..3d53edae7e3d5bb00913384ad0eb67551a65750e 100644
+--- a/src/main/java/net/minecraft/world/inventory/AnvilMenu.java
++++ b/src/main/java/net/minecraft/world/inventory/AnvilMenu.java
+@@ -80,7 +80,16 @@ public class AnvilMenu extends ItemCombinerMenu {
+ 
+             if (!player.abilities.instabuild && iblockdata.is((Tag) BlockTags.ANVIL) && player.getRandom().nextFloat() < 0.12F) {
+                 BlockState iblockdata1 = AnvilBlock.damage(iblockdata);
+-
++                // Paper start
++                com.destroystokyo.paper.event.block.AnvilDamagedEvent event = new com.destroystokyo.paper.event.block.AnvilDamagedEvent(getBukkitView(), iblockdata1 != null ? org.bukkit.craftbukkit.block.data.CraftBlockData.fromData(iblockdata1) : null);
++                if (!event.callEvent()) {
++                    return;
++                } else if (event.getDamageState() == com.destroystokyo.paper.event.block.AnvilDamagedEvent.DamageState.BROKEN) {
++                    iblockdata1 = null;
++                } else {
++                    iblockdata1 = ((org.bukkit.craftbukkit.block.data.CraftBlockData) event.getDamageState().getMaterial().createBlockData()).getState().setValue(AnvilBlock.FACING, iblockdata.getValue(AnvilBlock.FACING));
++                }
++                // Paper end
+                 if (iblockdata1 == null) {
+                     world.removeBlock(blockposition, false);
+                     world.levelEvent(1029, blockposition, 0);

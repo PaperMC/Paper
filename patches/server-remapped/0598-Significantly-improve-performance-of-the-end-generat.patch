@@ -1,0 +1,77 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: SuperCoder7979 <25208576+SuperCoder7979@users.noreply.github.com>
+Date: Tue, 3 Nov 2020 23:48:05 -0600
+Subject: [PATCH] Significantly improve performance of the end generation
+
+This patch implements a noise cache for the end which significantly reduces the computation time of generation. This results in about a 3x improvement.
+
+Original code by SuperCoder7979 and Gegy in Lithium, licensed under LGPL-3.0 (Source: https://github.com/jellysquid3/lithium-fabric)
+
+Co-authored-by: Gegy <gegy1000@gmail.com>
+Co-authored-by: Dylan Xaldin <Puremin0rez515@gmail.com>
+Co-authored-by: pop4959 <pop4959@gmail.com>
+
+diff --git a/src/main/java/net/minecraft/world/level/biome/TheEndBiomeSource.java b/src/main/java/net/minecraft/world/level/biome/TheEndBiomeSource.java
+index 063369d3a64b4afc9cc6e1d20360900595e1a05f..f01d1b01ebc31f0967a73871f278aac9e414fb67 100644
+--- a/src/main/java/net/minecraft/world/level/biome/TheEndBiomeSource.java
++++ b/src/main/java/net/minecraft/world/level/biome/TheEndBiomeSource.java
+@@ -3,10 +3,12 @@ package net.minecraft.world.level.biome;
+ import com.google.common.collect.ImmutableList;
+ import com.mojang.serialization.Codec;
+ import com.mojang.serialization.codecs.RecordCodecBuilder;
++import it.unimi.dsi.fastutil.HashCommon; // Paper
+ import java.util.List;
+ import net.minecraft.core.Registry;
+ import net.minecraft.resources.RegistryLookupCodec;
+ import net.minecraft.util.Mth;
++import net.minecraft.world.level.ChunkPos;
+ import net.minecraft.world.level.levelgen.WorldgenRandom;
+ import net.minecraft.world.level.levelgen.synth.SimplexNoise;
+ 
+@@ -27,6 +29,16 @@ public class TheEndBiomeSource extends BiomeSource {
+     private final Biome midlands;
+     private final Biome islands;
+     private final Biome barrens;
++    // Paper start
++    private static final class NoiseCache {
++        public long[] keys = new long[8192];
++        public float[] values = new float[8192];
++        public NoiseCache() {
++            java.util.Arrays.fill(keys, Long.MIN_VALUE);
++        }
++    }
++    private static final ThreadLocal<java.util.Map<SimplexNoise, NoiseCache>> noiseCache = ThreadLocal.withInitial(java.util.WeakHashMap::new);
++    // Paper end
+ 
+     public TheEndBiomeSource(Registry<Biome> biomeRegistry, long seed) {
+         this(biomeRegistry, seed, (Biome) biomeRegistry.lifecycle(Biomes.THE_END), (Biome) biomeRegistry.lifecycle(Biomes.END_HIGHLANDS), (Biome) biomeRegistry.lifecycle(Biomes.END_MIDLANDS), (Biome) biomeRegistry.lifecycle(Biomes.SMALL_END_ISLANDS), (Biome) biomeRegistry.lifecycle(Biomes.END_BARRENS));
+@@ -81,13 +93,27 @@ public class TheEndBiomeSource extends BiomeSource {
+ 
+         f = Mth.clamp(f, -100.0F, 80.0F);
+ 
++        NoiseCache cache = noiseCache.get().computeIfAbsent(noisegenerator3handler, m -> new NoiseCache()); // Paper
+         for (int k1 = -12; k1 <= 12; ++k1) {
+             for (int l1 = -12; l1 <= 12; ++l1) {
+                 long i2 = (long) (k + k1);
+                 long j2 = (long) (l + l1);
+ 
+-                if (i2 * i2 + j2 * j2 > 4096L && noisegenerator3handler.getValue((double) i2, (double) j2) < -0.8999999761581421D) {
+-                    float f1 = (Mth.abs((float) i2) * 3439.0F + Mth.abs((float) j2) * 147.0F) % 13.0F + 9.0F;
++                // Paper start - Significantly improve end generation performance by using a noise cache
++                long key = ChunkPos.asLong((int) i2, (int) j2);
++                int index = (int) HashCommon.mix(key) & 8191;
++                float f1 = Float.MIN_VALUE;
++                if (cache.keys[index] == key) {
++                    f1 = cache.values[index];
++                } else {
++                    if (i2 * i2 + j2 * j2 > 4096L && noisegenerator3handler.getValue((double) i2, (double) j2) < -0.8999999761581421D) {
++                        f1 = (Mth.abs((float) i2) * 3439.0F + Mth.abs((float) j2) * 147.0F) % 13.0F + 9.0F;
++                    }
++                    cache.keys[index] = key;
++                    cache.values[index] = f1;
++                }
++                if (f1 != Float.MIN_VALUE) {
++                    // Paper end
+                     float f2 = (float) (i1 - k1 * 2);
+                     float f3 = (float) (j1 - l1 * 2);
+                     float f4 = 100.0F - Mth.sqrt(f2 * f2 + f3 * f3) * f1;

@@ -1,0 +1,80 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Brokkonaut <hannos17@gmx.de>
+Date: Tue, 31 Oct 2017 03:26:18 +0100
+Subject: [PATCH] Send attack SoundEffects only to players who can see the
+ attacker
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/player/Player.java b/src/main/java/net/minecraft/world/entity/player/Player.java
+index 3205bc2fb6c9031be68ff46dfca927e681163fa8..43868c1e2d2c858a4f02119c3238f615f9b1ee72 100644
+--- a/src/main/java/net/minecraft/world/entity/player/Player.java
++++ b/src/main/java/net/minecraft/world/entity/player/Player.java
+@@ -28,6 +28,7 @@ import net.minecraft.network.chat.MutableComponent;
+ import net.minecraft.network.chat.TextComponent;
+ import net.minecraft.network.chat.TranslatableComponent;
+ import net.minecraft.network.protocol.game.ClientboundSetEntityMotionPacket;
++import net.minecraft.network.protocol.game.ClientboundSoundPacket;
+ import net.minecraft.network.syncher.EntityDataAccessor;
+ import net.minecraft.network.syncher.EntityDataSerializers;
+ import net.minecraft.network.syncher.SynchedEntityData;
+@@ -1123,7 +1124,7 @@ public abstract class Player extends LivingEntity {
+                     int i = b0 + EnchantmentHelper.getKnockbackBonus((LivingEntity) this);
+ 
+                     if (this.isSprinting() && flag) {
+-                        this.level.playSound((Player) null, this.getX(), this.getY(), this.getZ(), SoundEvents.PLAYER_ATTACK_KNOCKBACK, this.getSoundSource(), 1.0F, 1.0F);
++                        sendSoundEffect(this, this.getX(), this.getY(), this.getZ(), SoundEvents.PLAYER_ATTACK_KNOCKBACK, this.getSoundSource(), 1.0F, 1.0F); // Paper - send while respecting visibility
+                         ++i;
+                         flag1 = true;
+                     }
+@@ -1198,7 +1199,7 @@ public abstract class Player extends LivingEntity {
+                                 }
+                             }
+ 
+-                            this.level.playSound((Player) null, this.getX(), this.getY(), this.getZ(), SoundEvents.PLAYER_ATTACK_SWEEP, this.getSoundSource(), 1.0F, 1.0F);
++                            sendSoundEffect(this, this.getX(), this.getY(), this.getZ(), SoundEvents.PLAYER_ATTACK_SWEEP, this.getSoundSource(), 1.0F, 1.0F); // Paper - send while respecting visibility
+                             this.sweepAttack();
+                         }
+ 
+@@ -1226,15 +1227,15 @@ public abstract class Player extends LivingEntity {
+                         }
+ 
+                         if (flag2) {
+-                            this.level.playSound((Player) null, this.getX(), this.getY(), this.getZ(), SoundEvents.PLAYER_ATTACK_CRIT, this.getSoundSource(), 1.0F, 1.0F);
++                            sendSoundEffect(this, this.getX(), this.getY(), this.getZ(), SoundEvents.PLAYER_ATTACK_CRIT, this.getSoundSource(), 1.0F, 1.0F); // Paper - send while respecting visibility
+                             this.crit(target);
+                         }
+ 
+                         if (!flag2 && !flag3) {
+                             if (flag) {
+-                                this.level.playSound((Player) null, this.getX(), this.getY(), this.getZ(), SoundEvents.PLAYER_ATTACK_STRONG, this.getSoundSource(), 1.0F, 1.0F);
++                                sendSoundEffect(this, this.getX(), this.getY(), this.getZ(), SoundEvents.PLAYER_ATTACK_STRONG, this.getSoundSource(), 1.0F, 1.0F); // Paper - send while respecting visibility
+                             } else {
+-                                this.level.playSound((Player) null, this.getX(), this.getY(), this.getZ(), SoundEvents.PLAYER_ATTACK_WEAK, this.getSoundSource(), 1.0F, 1.0F);
++                                sendSoundEffect(this, this.getX(), this.getY(), this.getZ(), SoundEvents.PLAYER_ATTACK_WEAK, this.getSoundSource(), 1.0F, 1.0F); // Paper - send while respecting visibility
+                             }
+                         }
+ 
+@@ -1286,7 +1287,7 @@ public abstract class Player extends LivingEntity {
+ 
+                         this.applyExhaustion(level.spigotConfig.combatExhaustion, EntityExhaustionEvent.ExhaustionReason.ATTACK); // CraftBukkit - EntityExhaustionEvent // Spigot - Change to use configurable value
+                     } else {
+-                        this.level.playSound((Player) null, this.getX(), this.getY(), this.getZ(), SoundEvents.PLAYER_ATTACK_NODAMAGE, this.getSoundSource(), 1.0F, 1.0F);
++                        sendSoundEffect(this, this.getX(), this.getY(), this.getZ(), SoundEvents.PLAYER_ATTACK_NODAMAGE, this.getSoundSource(), 1.0F, 1.0F); // Paper - send while respecting visibility
+                         if (flag4) {
+                             target.clearFire();
+                         }
+@@ -1721,6 +1722,14 @@ public abstract class Player extends LivingEntity {
+     public int getXpNeededForNextLevel() {
+         return this.experienceLevel >= 30 ? 112 + (this.experienceLevel - 30) * 9 : (this.experienceLevel >= 15 ? 37 + (this.experienceLevel - 15) * 5 : 7 + this.experienceLevel * 2);
+     }
++    // Paper start - send SoundEffect to everyone who can see fromEntity
++    private static void sendSoundEffect(Player fromEntity, double x, double y, double z, SoundEvent soundEffect, SoundSource soundCategory, float volume, float pitch) {
++        fromEntity.level.playSound(fromEntity, x, y, z, soundEffect, soundCategory, volume, pitch); // This will not send the effect to the entity himself
++        if (fromEntity instanceof ServerPlayer) {
++            ((ServerPlayer) fromEntity).connection.send(new ClientboundSoundPacket(soundEffect, soundCategory, x, y, z, volume, pitch));
++        }
++    }
++    // Paper end
+ 
+     // CraftBukkit start
+     public void causeFoodExhaustion(float exhaustion) {

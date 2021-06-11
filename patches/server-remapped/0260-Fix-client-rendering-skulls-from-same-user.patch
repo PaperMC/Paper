@@ -1,0 +1,147 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Tue, 22 Nov 2016 00:40:42 -0500
+Subject: [PATCH] Fix client rendering skulls from same user
+
+See: https://github.com/PaperMC/Paper/issues/1304
+
+Changes the UUID sent to client to be based on either
+the texture payload, or random.
+
+This allows the client to render multiple skull textures from the same user,
+for when different skins were used when skull was made.
+
+diff --git a/src/main/java/net/minecraft/network/FriendlyByteBuf.java b/src/main/java/net/minecraft/network/FriendlyByteBuf.java
+index b4542ce6a8c37ab31e6ecaeb4cbad4742cca0f9b..10f1e3d761af83507bf71a00092641e22d0c8049 100644
+--- a/src/main/java/net/minecraft/network/FriendlyByteBuf.java
++++ b/src/main/java/net/minecraft/network/FriendlyByteBuf.java
+@@ -37,6 +37,7 @@ import net.minecraft.network.chat.Component;
+ import net.minecraft.resources.ResourceLocation;
+ import net.minecraft.world.item.Item;
+ import net.minecraft.world.item.ItemStack;
++import net.minecraft.world.level.block.entity.SkullBlockEntity;
+ import net.minecraft.world.phys.BlockHitResult;
+ import net.minecraft.world.phys.Vec3;
+ import org.bukkit.craftbukkit.inventory.CraftItemStack; // CraftBukkit
+@@ -310,9 +311,18 @@ public class FriendlyByteBuf extends ByteBuf {
+             if (item.canBeDepleted() || item.shouldOverrideMultiplayerNbt()) {
+                 // Spigot start - filter
+                 itemstack = itemstack.copy();
+-                CraftItemStack.setItemMeta(itemstack, CraftItemStack.getItemMeta(itemstack));
++                //CraftItemStack.setItemMeta(itemstack, CraftItemStack.getItemMeta(itemstack)); // Paper - This is no longer needed due to NBT being supported
+                 // Spigot end
+                 nbttagcompound = itemstack.getTag();
++                // Paper start
++                if (nbttagcompound != null && nbttagcompound.contains("SkullOwner", 10)) {
++                    CompoundTag owner = nbttagcompound.getCompound("SkullOwner");
++                    if (owner.hasUUID("Id")) {
++                        nbttagcompound.setUUID("SkullOwnerOrig", owner.getUUID("Id"));
++                        SkullBlockEntity.sanitizeUUID(owner);
++                    }
++                }
++                // Paper end
+             }
+ 
+             this.writeNbt(nbttagcompound);
+@@ -332,7 +342,16 @@ public class FriendlyByteBuf extends ByteBuf {
+             itemstack.setTag(this.readNbt());
+             // CraftBukkit start
+             if (itemstack.getTag() != null) {
+-                CraftItemStack.setItemMeta(itemstack, CraftItemStack.getItemMeta(itemstack));
++                // Paper start - Fix skulls of same owner - restore orig ID since we changed it on send to client
++                if (itemstack.tag.contains("SkullOwnerOrig")) {
++                    CompoundTag owner = itemstack.tag.getCompound("SkullOwner");
++                    if (itemstack.tag.contains("SkullOwnerOrig")) {
++                        owner.tags.put("Id", itemstack.tag.tags.get("SkullOwnerOrig"));
++                        itemstack.tag.remove("SkullOwnerOrig");
++                    }
++                }
++                // Paper end
++                // CraftItemStack.setItemMeta(itemstack, CraftItemStack.getItemMeta(itemstack)); // Paper - This is no longer needed due to NBT being supported
+             }
+             // CraftBukkit end
+             return itemstack;
+diff --git a/src/main/java/net/minecraft/network/protocol/game/ClientboundLevelChunkPacket.java b/src/main/java/net/minecraft/network/protocol/game/ClientboundLevelChunkPacket.java
+index e5d4363edb8c494d2db69d2e0223a2db1519f64b..4fe15aa331ca18319ca46d1b426f0d6fd24341f0 100644
+--- a/src/main/java/net/minecraft/network/protocol/game/ClientboundLevelChunkPacket.java
++++ b/src/main/java/net/minecraft/network/protocol/game/ClientboundLevelChunkPacket.java
+@@ -15,6 +15,7 @@ import net.minecraft.network.FriendlyByteBuf;
+ import net.minecraft.network.protocol.Packet;
+ import net.minecraft.world.level.ChunkPos;
+ import net.minecraft.world.level.block.entity.BlockEntity;
++import net.minecraft.world.level.block.entity.SkullBlockEntity;
+ import net.minecraft.world.level.chunk.ChunkBiomeContainer;
+ import net.minecraft.world.level.chunk.LevelChunk;
+ import net.minecraft.world.level.chunk.LevelChunkSection;
+@@ -69,6 +70,7 @@ public class ClientboundLevelChunkPacket implements Packet<ClientGamePacketListe
+ 
+             if (this.isFullChunk() || (includedSectionsMask & 1 << j) != 0) {
+                 CompoundTag nbttagcompound = tileentity.getUpdateTag();
++                if (tileentity instanceof SkullBlockEntity) { SkullBlockEntity.sanitizeTileEntityUUID(nbttagcompound); } // Paper
+ 
+                 this.blockEntitiesTags.add(nbttagcompound);
+             }
+diff --git a/src/main/java/net/minecraft/world/item/ItemStack.java b/src/main/java/net/minecraft/world/item/ItemStack.java
+index 34187197efd5ceff0503682dc6ce313220ca916f..79a7c37f15840dbd97510874ac12437d2b854999 100644
+--- a/src/main/java/net/minecraft/world/item/ItemStack.java
++++ b/src/main/java/net/minecraft/world/item/ItemStack.java
+@@ -112,7 +112,7 @@ public final class ItemStack {
+     private int popTime;
+     @Deprecated
+     private Item item;
+-    private CompoundTag tag;
++    public CompoundTag tag; // Paper private -> public
+     private boolean emptyCacheFlag;
+     private Entity entityRepresentation;
+     private BlockInWorld cachedBreakBlock;
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/SkullBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/SkullBlockEntity.java
+index eebaeaccc3ba1a9ec089d84b8de6c9d36034868f..6a1289424421083876d1808b7328cd3f01063a7e 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/SkullBlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/SkullBlockEntity.java
+@@ -25,6 +25,7 @@ import java.util.concurrent.Executors;
+ import java.util.concurrent.Future;
+ import java.util.concurrent.TimeUnit;
+ import net.minecraft.nbt.CompoundTag;
++import net.minecraft.nbt.ListTag;
+ import net.minecraft.nbt.NbtUtils;
+ import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
+ import net.minecraft.server.MinecraftServer;
+@@ -152,9 +153,37 @@ public class SkullBlockEntity extends BlockEntity /*implements ITickable*/ { //
+     @Nullable
+     @Override
+     public ClientboundBlockEntityDataPacket getUpdatePacket() {
+-        return new ClientboundBlockEntityDataPacket(this.worldPosition, 4, this.getUpdateTag());
++        return new ClientboundBlockEntityDataPacket(this.worldPosition, 4, sanitizeTileEntityUUID(this.getUpdateTag())); // Paper
+     }
+ 
++    // Paper start
++    public static CompoundTag sanitizeTileEntityUUID(CompoundTag cmp) {
++        CompoundTag owner = cmp.getCompound("Owner");
++        if (!owner.isEmpty()) {
++            sanitizeUUID(owner);
++        }
++        return cmp;
++    }
++
++    public static void sanitizeUUID(CompoundTag owner) {
++        CompoundTag properties = owner.getCompound("Properties");
++        ListTag list = null;
++        if (!properties.isEmpty()) {
++            list = properties.getList("textures", 10);
++        }
++
++        if (list != null && !list.isEmpty()) {
++            String textures = ((CompoundTag)list.get(0)).getString("Value");
++            if (textures != null && textures.length() > 3) {
++                UUID uuid = UUID.nameUUIDFromBytes(textures.getBytes());
++                owner.setUUID("Id", uuid);
++                return;
++            }
++        }
++        owner.setUUID("Id", UUID.randomUUID());
++    }
++    // Paper end
++
+     @Override
+     public CompoundTag getUpdateTag() {
+         return this.save(new CompoundTag());

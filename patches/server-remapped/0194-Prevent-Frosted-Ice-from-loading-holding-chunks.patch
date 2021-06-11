@@ -1,0 +1,31 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sat, 10 Mar 2018 16:33:15 -0500
+Subject: [PATCH] Prevent Frosted Ice from loading/holding chunks
+
+
+diff --git a/src/main/java/net/minecraft/world/level/block/FrostedIceBlock.java b/src/main/java/net/minecraft/world/level/block/FrostedIceBlock.java
+index ae2f5acd008d5d7163b56cb4a2d29354299959ca..99843f1ca4737d40ae0626fce931c97bbf5ab81d 100644
+--- a/src/main/java/net/minecraft/world/level/block/FrostedIceBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/FrostedIceBlock.java
+@@ -40,7 +40,8 @@ public class FrostedIceBlock extends IceBlock {
+                 Direction enumdirection = aenumdirection[j];
+ 
+                 blockposition_mutableblockposition.setWithOffset((Vec3i) pos, enumdirection);
+-                BlockState iblockdata1 = world.getBlockState(blockposition_mutableblockposition);
++                BlockState iblockdata1 = world.getTypeIfLoaded(blockposition_mutableblockposition); // Paper
++                if (iblockdata1 == null) { continue; } // Paper
+ 
+                 if (iblockdata1.is((Block) this) && !this.slightlyMelt(iblockdata1, (Level) world, blockposition_mutableblockposition)) {
+                     world.getBlockTicks().scheduleTick(blockposition_mutableblockposition, this, Mth.nextInt(random, world.paperConfig.frostedIceDelayMin, world.paperConfig.frostedIceDelayMax)); // Paper - use configurable min/max delay
+@@ -83,7 +84,9 @@ public class FrostedIceBlock extends IceBlock {
+             Direction enumdirection = aenumdirection[l];
+ 
+             blockposition_mutableblockposition.setWithOffset((Vec3i) pos, enumdirection);
+-            if (world.getBlockState(blockposition_mutableblockposition).is((Block) this)) {
++            // Paper start
++            BlockState type = world.getTypeIfLoaded(blockposition_mutableblockposition);
++            if (type != null && type.is((Block) this)) { // Paper end
+                 ++j;
+                 if (j >= maxNeighbors) {
+                     return false;

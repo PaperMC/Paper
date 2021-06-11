@@ -1,0 +1,47 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Tue, 20 Dec 2016 15:15:11 -0500
+Subject: [PATCH] Bound Treasure Maps to World Border
+
+Make it so a Treasure Map does not target a structure outside of the
+World Border, where players are not even able to reach.
+
+This also would help the case where a players close to the border, and one
+that is outside happens to be closer, but unreachable, yet another reachable
+one is in border that would of been missed.
+
+diff --git a/src/main/java/net/minecraft/world/level/border/WorldBorder.java b/src/main/java/net/minecraft/world/level/border/WorldBorder.java
+index 0846f649dca3422dbab3bb0a4826e27430cc8186..7a728ca96ee2eaf776c391ba8351196a526e18ec 100644
+--- a/src/main/java/net/minecraft/world/level/border/WorldBorder.java
++++ b/src/main/java/net/minecraft/world/level/border/WorldBorder.java
+@@ -36,6 +36,18 @@ public class WorldBorder {
+         return (double) (pos.getX() + 1) > this.getMinX() && (double) pos.getX() < this.getMaxX() && (double) (pos.getZ() + 1) > this.getMinZ() && (double) pos.getZ() < this.getMaxZ();
+     }
+ 
++    // Paper start
++    private final BlockPos.MutableBlockPos mutPos = new BlockPos.MutableBlockPos();
++    public boolean isBlockInBounds(int chunkX, int chunkZ) {
++        this.mutPos.setValues(chunkX, 64, chunkZ);
++        return this.isInBounds(this.mutPos);
++    }
++    public boolean isChunkInBounds(int chunkX, int chunkZ) {
++        this.mutPos.setValues(((chunkX << 4) + 15), 64, (chunkZ << 4) + 15);
++        return this.isInBounds(this.mutPos);
++    }
++    // Paper end
++
+     public boolean isWithinBounds(ChunkPos pos) {
+         return (double) pos.getMaxBlockX() > this.getMinX() && (double) pos.getMinBlockX() < this.getMaxX() && (double) pos.getMaxBlockZ() > this.getMinZ() && (double) pos.getMinBlockZ() < this.getMaxZ();
+     }
+diff --git a/src/main/java/net/minecraft/world/level/levelgen/feature/StructureFeature.java b/src/main/java/net/minecraft/world/level/levelgen/feature/StructureFeature.java
+index 9f60abfe0a37e30c5528a1ca0546295b00598798..0624b8270bc28c83c5479cd51fa4633ed5c36f44 100644
+--- a/src/main/java/net/minecraft/world/level/levelgen/feature/StructureFeature.java
++++ b/src/main/java/net/minecraft/world/level/levelgen/feature/StructureFeature.java
+@@ -175,6 +175,7 @@ public abstract class StructureFeature<C extends FeatureConfiguration> {
+                             int i2 = l + k * k1;
+                             int j2 = i1 + k * l1;
+                             ChunkPos chunkcoordintpair = this.getPotentialFeatureChunk(config, worldSeed, seededrandom, i2, j2);
++                            if (!world.getWorldBorder().isChunkInBounds(chunkcoordintpair.x, chunkcoordintpair.z)) { continue; } // Paper
+                             ChunkAccess ichunkaccess = world.getChunk(chunkcoordintpair.x, chunkcoordintpair.z, ChunkStatus.STRUCTURE_STARTS);
+                             StructureStart<?> structurestart = structureAccessor.getStartForFeature(SectionPos.of(ichunkaccess.getPos(), 0), this, ichunkaccess);
+ 

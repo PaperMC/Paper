@@ -1,0 +1,59 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sat, 16 Apr 2016 00:39:33 -0400
+Subject: [PATCH] Configurable RCON IP address
+
+For servers with multiple IP's, ability to bind to a specific interface.
+
+diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServerProperties.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServerProperties.java
+index 0ecff9f5e2ba444b196d80da341ff851dd5ce26f..b7cf02301c02ed0a6b696384e656426762ae2105 100644
+--- a/src/main/java/net/minecraft/server/dedicated/DedicatedServerProperties.java
++++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServerProperties.java
+@@ -67,6 +67,8 @@ public class DedicatedServerProperties extends PropertyManager<DedicatedServerPr
+     public final PropertyManager<DedicatedServerProperties>.EditableProperty<Boolean> whiteList;
+     public final GeneratorSettings generatorSettings;
+ 
++    public final String rconIp; // Paper - Add rcon ip
++
+     // CraftBukkit start
+     public DedicatedServerProperties(Properties properties, IRegistryCustom iregistrycustom, OptionSet optionset) {
+         super(properties, optionset);
+@@ -118,6 +120,10 @@ public class DedicatedServerProperties extends PropertyManager<DedicatedServerPr
+         this.textFilteringConfig = this.getString("text-filtering-config", "");
+         this.playerIdleTimeout = this.b("player-idle-timeout", 0);
+         this.whiteList = this.b("white-list", false);
++        // Paper start - Configurable rcon ip
++        final String rconIp = this.getSettingIfExists("rcon.ip");
++        this.rconIp = rconIp == null ? this.serverIp : rconIp;
++        // Paper end
+         this.generatorSettings = GeneratorSettings.a(iregistrycustom, properties);
+     }
+ 
+diff --git a/src/main/java/net/minecraft/server/dedicated/PropertyManager.java b/src/main/java/net/minecraft/server/dedicated/PropertyManager.java
+index cb85d8bc1b81f9e5fa95c4dfeffbe689667f56a2..03dd6dc3a1aa8d1be6990c750f96e8a280bc1f25 100644
+--- a/src/main/java/net/minecraft/server/dedicated/PropertyManager.java
++++ b/src/main/java/net/minecraft/server/dedicated/PropertyManager.java
+@@ -129,8 +129,8 @@ public abstract class PropertyManager<T extends PropertyManager<T>> {
+         };
+     }
+ 
+-    @Nullable
+-    private String c(String s) {
++    @Nullable String getSettingIfExists(final String path) { return this.c(path); } // Paper - OBFHELPER
++    @Nullable private String c(String s) { // Paper - OBFHELPER
+         return (String) getOverride(s, this.properties.getProperty(s)); // CraftBukkit
+     }
+ 
+diff --git a/src/main/java/net/minecraft/server/rcon/thread/RemoteControlListener.java b/src/main/java/net/minecraft/server/rcon/thread/RemoteControlListener.java
+index 797a450a08da1b799e32fae2a71a7a50bb90d127..3b3e21d1d86629d6c5e06108e53d1c5e807074d8 100644
+--- a/src/main/java/net/minecraft/server/rcon/thread/RemoteControlListener.java
++++ b/src/main/java/net/minecraft/server/rcon/thread/RemoteControlListener.java
+@@ -62,7 +62,7 @@ public class RemoteControlListener extends RemoteConnectionThread {
+     @Nullable
+     public static RemoteControlListener a(IMinecraftServer iminecraftserver) {
+         DedicatedServerProperties dedicatedserverproperties = iminecraftserver.getDedicatedServerProperties();
+-        String s = iminecraftserver.h_();
++        String s = dedicatedserverproperties.rconIp; // Paper - Configurable rcon ip
+ 
+         if (s.isEmpty()) {
+             s = "0.0.0.0";

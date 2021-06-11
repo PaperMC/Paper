@@ -1,0 +1,58 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Eearslya Sleiarion <eearslya@gmail.com>
+Date: Sun, 23 Aug 2020 13:04:02 +0200
+Subject: [PATCH] Add BellRingEvent
+
+Add a new event, BellRingEvent, to trigger whenever a player rings a
+village bell. Passes along the bell block and the player who rang it.
+
+diff --git a/src/main/java/net/minecraft/world/level/block/BellBlock.java b/src/main/java/net/minecraft/world/level/block/BellBlock.java
+index affae471e50354bfa9594e188e6dcea183b9b5c9..dc5dc9e533c71908b7a9a3cc9e614bd4a0dcde98 100644
+--- a/src/main/java/net/minecraft/world/level/block/BellBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/BellBlock.java
+@@ -1,8 +1,11 @@
+ package net.minecraft.world.level.block;
+ 
++import io.papermc.paper.event.block.BellRingEvent;
++
+ import javax.annotation.Nullable;
+ import net.minecraft.core.BlockPos;
+ import net.minecraft.core.Direction;
++import net.minecraft.server.MCUtil;
+ import net.minecraft.sounds.SoundEvents;
+ import net.minecraft.sounds.SoundSource;
+ import net.minecraft.stats.Stats;
+@@ -89,7 +92,7 @@ public class BellBlock extends BaseEntityBlock {
+         boolean flag1 = !flag || this.isProperHit(state, enumdirection, movingobjectpositionblock.getLocation().y - (double) blockposition.getY());
+ 
+         if (flag1) {
+-            boolean flag2 = this.attemptToRing(world, blockposition, enumdirection);
++            boolean flag2 = this.handleBellRing(world, blockposition, enumdirection, entityhuman); // Paper
+ 
+             if (flag2 && entityhuman != null) {
+                 entityhuman.awardStat(Stats.BELL_RING);
+@@ -123,15 +126,21 @@ public class BellBlock extends BaseEntityBlock {
+     }
+ 
+     public boolean attemptToRing(Level world, BlockPos pos, @Nullable Direction enumdirection) {
+-        BlockEntity tileentity = world.getBlockEntity(pos);
++        // Paper start - add ringer param
++        return this.handleBellRing(world, pos, enumdirection, null);
++    }
++    public boolean handleBellRing(Level world, BlockPos blockposition, @Nullable Direction enumdirection, @Nullable Entity ringer) {
++        // Paper end
++        BlockEntity tileentity = world.getBlockEntity(blockposition);
+ 
+         if (!world.isClientSide && tileentity instanceof BellBlockEntity) {
+             if (enumdirection == null) {
+-                enumdirection = (Direction) world.getBlockState(pos).getValue(BellBlock.FACING);
++                enumdirection = (Direction) world.getBlockState(blockposition).getValue(BellBlock.FACING);
+             }
+ 
++            if (!new BellRingEvent(world.getWorld().getBlockAt(MCUtil.toLocation(world, blockposition)), ringer == null ? null : ringer.getBukkitEntity()).callEvent()) return false; // Paper - BellRingEvent
+             ((BellBlockEntity) tileentity).onHit(enumdirection);
+-            world.playSound((Player) null, pos, SoundEvents.BELL_BLOCK, SoundSource.BLOCKS, 2.0F, 1.0F);
++            world.playSound((Player) null, blockposition, SoundEvents.BELL_BLOCK, SoundSource.BLOCKS, 2.0F, 1.0F);
+             return true;
+         } else {
+             return false;

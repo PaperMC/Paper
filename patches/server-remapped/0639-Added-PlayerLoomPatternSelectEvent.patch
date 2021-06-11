@@ -1,0 +1,63 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Wed, 25 Nov 2020 16:33:27 -0800
+Subject: [PATCH] Added PlayerLoomPatternSelectEvent
+
+
+diff --git a/src/main/java/net/minecraft/world/inventory/LoomMenu.java b/src/main/java/net/minecraft/world/inventory/LoomMenu.java
+index 3460fb2bb1451b8456a7fe42449ec4dbce641f40..0dc1b0b7181c0f93dcf6213c63baffcd4694d70c 100644
+--- a/src/main/java/net/minecraft/world/inventory/LoomMenu.java
++++ b/src/main/java/net/minecraft/world/inventory/LoomMenu.java
+@@ -20,6 +20,7 @@ import org.bukkit.craftbukkit.inventory.CraftInventoryLoom;
+ import org.bukkit.craftbukkit.inventory.CraftInventoryView;
+ import org.bukkit.entity.Player;
+ // CraftBukkit end
++import io.papermc.paper.event.player.PlayerLoomPatternSelectEvent; // Paper
+ 
+ public class LoomMenu extends AbstractContainerMenu {
+ 
+@@ -39,7 +40,7 @@ public class LoomMenu extends AbstractContainerMenu {
+     }
+     // CraftBukkit end
+     private final ContainerLevelAccess access;
+-    private final DataSlot selectedBannerPatternIndex;
++    private final DataSlot selectedBannerPatternIndex; public final DataSlot getSelectedBannerPattern() { return this.selectedBannerPatternIndex; }; // Paper - OBFHELPER
+     private Runnable slotUpdateListener;
+     private final Slot bannerSlot;
+     private final Slot dyeSlot;
+@@ -158,7 +159,22 @@ public class LoomMenu extends AbstractContainerMenu {
+     @Override
+     public boolean clickMenuButton(net.minecraft.world.entity.player.Player player, int id) {
+         if (id > 0 && id <= BannerPattern.AVAILABLE_PATTERNS) {
+-            this.selectedBannerPatternIndex.set(id);
++            // Paper start
++            int enumBannerPatternTypeOrdinal = id;
++            PlayerLoomPatternSelectEvent event = new PlayerLoomPatternSelectEvent((Player) player.getBukkitEntity(), ((CraftInventoryLoom) getBukkitView().getTopInventory()), org.bukkit.block.banner.PatternType.getByIdentifier(BannerPattern.values()[id].getIdentifier()));
++            if (!event.callEvent()) {
++                ((Player) player.getBukkitEntity()).updateInventory();
++                return false;
++            }
++            for (BannerPattern nms : BannerPattern.values()) {
++                if (event.getPatternType().getIdentifier().equals(nms.getIdentifier())) {
++                    enumBannerPatternTypeOrdinal = nms.ordinal();
++                    break;
++                }
++            }
++            ((Player) player.getBukkitEntity()).updateInventory();
++            this.getSelectedBannerPattern().set(enumBannerPatternTypeOrdinal);
++            // Paper end
+             this.setupResultSlot();
+             return true;
+         } else {
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/BannerPattern.java b/src/main/java/net/minecraft/world/level/block/entity/BannerPattern.java
+index 9ea01d5888a21b0dedb555d118a4dc07af2b50fd..9ee3f8bb2294fc552735a64efbddf661d39602c7 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/BannerPattern.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/BannerPattern.java
+@@ -33,6 +33,7 @@ public enum BannerPattern {
+         this.hasPatternItem = flag;
+     }
+ 
++    public String getIdentifier() { return this.getHashname(); } // Paper - OBFHELPER
+     public String getHashname() {
+         return this.hashname;
+     }

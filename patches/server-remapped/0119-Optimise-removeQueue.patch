@@ -1,0 +1,67 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Alfie Cleveland <alfeh@me.com>
+Date: Fri, 25 Nov 2016 13:22:40 +0000
+Subject: [PATCH] Optimise removeQueue
+
+
+diff --git a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
+index 9dbb3bb79ae2de6635f71e5ee5bebeb5e57b624e..e3c1460c580ea348ee6d436018244441a5a1206e 100644
+--- a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
+@@ -114,6 +114,12 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener
+ 
+     }
+ 
++    // Paper start - Cache authenticator threads
++    private static final AtomicInteger threadId = new AtomicInteger(0);
++    private static final java.util.concurrent.ExecutorService authenticatorPool = java.util.concurrent.Executors.newCachedThreadPool(
++            r -> new Thread(r, "User Authenticator #" + threadId.incrementAndGet())
++    );
++    // Paper end
+     // Spigot start
+     public void initUUID()
+     {
+@@ -193,8 +199,8 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener
+             this.connection.send(new ClientboundHelloPacket("", this.server.getKeyPair().getPublic().getEncoded(), this.nonce));
+         } else {
+             // Spigot start
+-            new Thread("User Authenticator #" + ServerLoginPacketListenerImpl.UNIQUE_THREAD_ID.incrementAndGet()) {
+-
++            // Paper start - Cache authenticator threads
++            authenticatorPool.execute(new Runnable() {
+                 @Override
+                 public void run() {
+                     try {
+@@ -205,7 +211,8 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener
+                         server.server.getLogger().log(java.util.logging.Level.WARNING, "Exception verifying " + gameProfile.getName(), ex);
+                     }
+                 }
+-            }.start();
++            });
++            // Paper end
+             // Spigot end
+         }
+ 
+@@ -234,7 +241,8 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener
+             throw new IllegalStateException("Protocol error", cryptographyexception);
+         }
+ 
+-        Thread thread = new Thread("User Authenticator #" + ServerLoginPacketListenerImpl.UNIQUE_THREAD_ID.incrementAndGet()) {
++        // Paper start - Cache authenticator threads
++        authenticatorPool.execute(new Runnable() {
+             public void run() {
+                 GameProfile gameprofile = ServerLoginPacketListenerImpl.this.gameProfile;
+ 
+@@ -279,10 +287,8 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener
+ 
+                 return ServerLoginPacketListenerImpl.this.server.getPreventProxyConnections() && socketaddress instanceof InetSocketAddress ? ((InetSocketAddress) socketaddress).getAddress() : null;
+             }
+-        };
+-
+-        thread.setUncaughtExceptionHandler(new DefaultUncaughtExceptionHandler(ServerLoginPacketListenerImpl.LOGGER));
+-        thread.start();
++        });
++        // Paper end
+     }
+ 
+     // Spigot start

@@ -1,0 +1,44 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Thonk <30448663+ExcessiveAmountsOfZombies@users.noreply.github.com>
+Date: Wed, 6 Jan 2021 12:04:03 -0800
+Subject: [PATCH] Add recipe to cook events
+
+
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/TileEntityCampfire.java b/src/main/java/net/minecraft/world/level/block/entity/TileEntityCampfire.java
+index 62a19f39405cff27f34a3b98fb9310b1c9c27563..08759f461ec947c0d5655557f49d8717afee6f00 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/TileEntityCampfire.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/TileEntityCampfire.java
+@@ -74,7 +74,10 @@ public class TileEntityCampfire extends TileEntity implements Clearable, ITickab
+ 
+                 if (this.cookingTimes[i] >= this.cookingTotalTimes[i]) {
+                     InventorySubcontainer inventorysubcontainer = new InventorySubcontainer(new ItemStack[]{itemstack});
+-                    ItemStack itemstack1 = (ItemStack) this.world.getCraftingManager().craft(Recipes.CAMPFIRE_COOKING, inventorysubcontainer, this.world).map((recipecampfire) -> {
++                    // Paper start
++                    Optional<RecipeCampfire> recipe = this.world.getCraftingManager().craft(Recipes.CAMPFIRE_COOKING, inventorysubcontainer, this.world);
++                    ItemStack itemstack1 = (ItemStack) recipe.map((recipecampfire) -> {
++                        // Paper end
+                         return recipecampfire.a(inventorysubcontainer);
+                     }).orElse(itemstack);
+                     BlockPosition blockposition = this.getPosition();
+@@ -83,7 +86,7 @@ public class TileEntityCampfire extends TileEntity implements Clearable, ITickab
+                     CraftItemStack source = CraftItemStack.asCraftMirror(itemstack);
+                     org.bukkit.inventory.ItemStack result = CraftItemStack.asBukkitCopy(itemstack1);
+ 
+-                    BlockCookEvent blockCookEvent = new BlockCookEvent(CraftBlock.at(this.world, this.position), source, result);
++                    BlockCookEvent blockCookEvent = new BlockCookEvent(CraftBlock.at(this.world, this.position), source, result, (org.bukkit.inventory.CookingRecipe<?>) recipe.map(RecipeCampfire::toBukkitRecipe).orElse(null)); // Paper
+                     this.world.getServer().getPluginManager().callEvent(blockCookEvent);
+ 
+                     if (blockCookEvent.isCancelled()) {
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/TileEntityFurnace.java b/src/main/java/net/minecraft/world/level/block/entity/TileEntityFurnace.java
+index 54316a8079b4331a48cac3c43f3f8c506a4af091..1997139fb87dc1947acfdf02e1f116577c3fa943 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/TileEntityFurnace.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/TileEntityFurnace.java
+@@ -395,7 +395,7 @@ public abstract class TileEntityFurnace extends TileEntityContainer implements I
+             CraftItemStack source = CraftItemStack.asCraftMirror(itemstack);
+             org.bukkit.inventory.ItemStack result = CraftItemStack.asBukkitCopy(itemstack1);
+ 
+-            FurnaceSmeltEvent furnaceSmeltEvent = new FurnaceSmeltEvent(this.world.getWorld().getBlockAt(position.getX(), position.getY(), position.getZ()), source, result);
++            FurnaceSmeltEvent furnaceSmeltEvent = new FurnaceSmeltEvent(this.world.getWorld().getBlockAt(position.getX(), position.getY(), position.getZ()), source, result, (org.bukkit.inventory.CookingRecipe<?>) irecipe.toBukkitRecipe()); // Paper
+             this.world.getServer().getPluginManager().callEvent(furnaceSmeltEvent);
+ 
+             if (furnaceSmeltEvent.isCancelled()) {

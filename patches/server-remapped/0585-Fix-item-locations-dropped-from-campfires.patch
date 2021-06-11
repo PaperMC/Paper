@@ -1,0 +1,32 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: William Blake Galbreath <Blake.Galbreath@GMail.com>
+Date: Sat, 3 Oct 2020 20:32:25 -0500
+Subject: [PATCH] Fix item locations dropped from campfires
+
+Fixes #4259 by not flooring the blockposition among other weirdness
+
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/CampfireBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/CampfireBlockEntity.java
+index 0c90b1b13611843ba4402c8ccf0b15781b85e773..6c38361d744eae763b6c131ad314485f5a88fcfc 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/CampfireBlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/CampfireBlockEntity.java
+@@ -14,6 +14,7 @@ import net.minecraft.world.Clearable;
+ import net.minecraft.world.ContainerHelper;
+ import net.minecraft.world.Containers;
+ import net.minecraft.world.SimpleContainer;
++import net.minecraft.world.entity.item.ItemEntity;
+ import net.minecraft.world.item.ItemStack;
+ import net.minecraft.world.item.crafting.CampfireCookingRecipe;
+ import net.minecraft.world.item.crafting.RecipeType;
+@@ -91,7 +92,11 @@ public class CampfireBlockEntity extends BlockEntity implements Clearable, Ticka
+                     result = blockCookEvent.getResult();
+                     itemstack1 = CraftItemStack.asNMSCopy(result);
+                     // CraftBukkit end
+-                    Containers.dropItemStack(this.level, (double) blockposition.getX(), (double) blockposition.getY(), (double) blockposition.getZ(), itemstack1);
++                    // Paper start
++                    ItemEntity droppedItem = new ItemEntity(this.level, blockposition.getX() + 0.5D, blockposition.getY() + 0.5D, blockposition.getZ() + 0.5D, itemstack1.split(this.level.random.nextInt(21) + 10));
++                    droppedItem.setDeltaMovement(this.level.random.nextGaussian() * 0.05D, this.level.random.nextGaussian() * 0.05D + 0.2D, this.level.random.nextGaussian() * 0.05D);
++                    this.level.addFreshEntity(droppedItem);
++                    // Paper end
+                     this.items.set(i, ItemStack.EMPTY);
+                     this.markUpdated();
+                 }

@@ -1,0 +1,71 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Shane Freeder <theboyetronic@gmail.com>
+Date: Wed, 19 Aug 2020 05:05:54 +0100
+Subject: [PATCH] Buffer joins to world
+
+This patch buffers the number of logins which will attempt to join
+the world per tick, this attempts to reduce the impact that join floods
+has on the server
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+index faa1b775e45563b93ac1d5b904938b1f5ad8d80c..545948f20efd6c8dd42140b565af94cd6b52b661 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+@@ -457,4 +457,9 @@ public class PaperConfig {
+             maxPlayerAutoSavePerTick = (playerAutoSaveRate == -1 || playerAutoSaveRate > 100) ? 10 : 20;
+         }
+     }
++
++    public static int maxJoinsPerTick;
++    private static void maxJoinsPerTick() {
++        maxJoinsPerTick = getInt("settings.max-joins-per-tick", 3);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/network/Connection.java b/src/main/java/net/minecraft/network/Connection.java
+index fc63df21aecd4721efdb45d4744666ed0b562c1b..6f7cbce5a049d87d4a0ed7cc4517cb4e8694efb5 100644
+--- a/src/main/java/net/minecraft/network/Connection.java
++++ b/src/main/java/net/minecraft/network/Connection.java
+@@ -32,6 +32,7 @@ import net.minecraft.network.protocol.game.ClientboundDisconnectPacket;
+ import net.minecraft.network.protocol.game.ClientboundKeepAlivePacket;
+ import net.minecraft.network.protocol.game.ClientboundSetTitlesPacket;
+ import net.minecraft.server.MCUtil;
++import net.minecraft.server.MinecraftServer;
+ import net.minecraft.server.RunningOnDifferentThreadException;
+ import net.minecraft.server.level.ServerPlayer;
+ import net.minecraft.server.network.ServerGamePacketListenerImpl;
+@@ -382,10 +383,22 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+     }
+     // Paper end
+ 
++    private static final int MAX_PER_TICK = com.destroystokyo.paper.PaperConfig.maxJoinsPerTick; // Paper
++    private static int joinAttemptsThisTick; // Paper
++    private static int currTick; // Paper
+     public void tick() {
+         this.p();
++        // Paper start
++        if (currTick != MinecraftServer.currentTick) {
++            currTick = MinecraftServer.currentTick;
++            joinAttemptsThisTick = 0;
++        }
++        // Paper end
+         if (this.packetListener instanceof ServerLoginPacketListenerImpl) {
++            if ( ((ServerLoginPacketListenerImpl) this.packetListener).getLoginState() != ServerLoginPacketListenerImpl.State.READY_TO_ACCEPT // Paper
++                     || (joinAttemptsThisTick++ < MAX_PER_TICK)) { // Paper - limit the number of joins which can be processed each tick
+             ((ServerLoginPacketListenerImpl) this.packetListener).tick();
++            } // Paper
+         }
+ 
+         if (this.packetListener instanceof ServerGamePacketListenerImpl) {
+diff --git a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
+index e229c7735ba88be3d8721440104958408a2a075e..659bf14cf3c949b896d0333f893a3d5e16ab9c92 100644
+--- a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
+@@ -420,7 +420,7 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener
+         return new GameProfile(uuid, profile.getName());
+     }
+ 
+-    static enum State {
++    public enum State { // Paper - package private -> public
+ 
+         HELLO, KEY, AUTHENTICATING, NEGOTIATING, READY_TO_ACCEPT, DELAY_ACCEPT, ACCEPTED;
+ 

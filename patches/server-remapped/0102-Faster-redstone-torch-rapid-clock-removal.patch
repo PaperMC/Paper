@@ -1,0 +1,98 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Martin Panzer <postremus1996@googlemail.com>
+Date: Mon, 23 May 2016 12:12:37 +0200
+Subject: [PATCH] Faster redstone torch rapid clock removal
+
+Only resize the the redstone torch list once, since resizing arrays / lists is costly
+
+diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
+index 8f0fec38b482465285057d3fd27d456cf036f2fd..5f3d17cb247156fc8aaa7a763e402c2bbb42a7ec 100644
+--- a/src/main/java/net/minecraft/world/level/Level.java
++++ b/src/main/java/net/minecraft/world/level/Level.java
+@@ -48,6 +48,7 @@ import net.minecraft.world.level.biome.BiomeManager;
+ import net.minecraft.world.level.block.BaseFireBlock;
+ import net.minecraft.world.level.block.Block;
+ import net.minecraft.world.level.block.Blocks;
++import net.minecraft.world.level.block.RedstoneTorchBlock;
+ import net.minecraft.world.level.block.entity.BlockEntity;
+ import net.minecraft.world.level.block.entity.BlockEntityType;
+ import net.minecraft.world.level.block.entity.TickableBlockEntity;
+@@ -142,6 +143,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+     private org.spigotmc.TickLimiter tileLimiter;
+     private int tileTickPosition;
+     public final Map<Explosion.CacheKey, Float> explosionDensityCache = new HashMap<>(); // Paper - Optimize explosions
++    public java.util.ArrayDeque<RedstoneTorchBlock.Toggle> redstoneUpdateInfos; // Paper - Move from Map in BlockRedstoneTorch to here
+ 
+     public CraftWorld getWorld() {
+         return this.world;
+diff --git a/src/main/java/net/minecraft/world/level/block/RedstoneTorchBlock.java b/src/main/java/net/minecraft/world/level/block/RedstoneTorchBlock.java
+index 7d71c99c2268174fbea4297f028b75a3a0f43c11..dd4391086aff05bdea81e62b950b88cfab5ac6b8 100644
+--- a/src/main/java/net/minecraft/world/level/block/RedstoneTorchBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/RedstoneTorchBlock.java
+@@ -21,7 +21,7 @@ import org.bukkit.event.block.BlockRedstoneEvent; // CraftBukkit
+ public class RedstoneTorchBlock extends TorchBlock {
+ 
+     public static final BooleanProperty LIT = BlockStateProperties.LIT;
+-    private static final Map<BlockGetter, List<RedstoneTorchBlock.Toggle>> RECENT_TOGGLES = new WeakHashMap();
++    // Paper - Move the mapped list to World
+ 
+     protected RedstoneTorchBlock(BlockBehaviour.Properties settings) {
+         super(settings, DustParticleOptions.REDSTONE);
+@@ -68,11 +68,15 @@ public class RedstoneTorchBlock extends TorchBlock {
+     @Override
+     public void tick(BlockState state, ServerLevel world, BlockPos pos, Random random) {
+         boolean flag = this.hasNeighborSignal((Level) world, pos, state);
+-        List list = (List) RedstoneTorchBlock.RECENT_TOGGLES.get(world);
+-
+-        while (list != null && !list.isEmpty() && world.getGameTime() - ((RedstoneTorchBlock.Toggle) list.get(0)).when > 60L) {
+-            list.remove(0);
++        // Paper start
++        java.util.ArrayDeque<RedstoneTorchBlock.Toggle> redstoneUpdateInfos = world.redstoneUpdateInfos;
++        if (redstoneUpdateInfos != null) {
++            RedstoneTorchBlock.Toggle curr;
++            while ((curr = redstoneUpdateInfos.peek()) != null && world.getGameTime() - curr.getTime() > 60L) {
++                redstoneUpdateInfos.poll();
++            }
+         }
++        // Paper end
+ 
+         // CraftBukkit start
+         org.bukkit.plugin.PluginManager manager = world.getCraftServer().getPluginManager();
+@@ -137,9 +141,12 @@ public class RedstoneTorchBlock extends TorchBlock {
+     }
+ 
+     private static boolean isToggledTooFrequently(Level world, BlockPos pos, boolean addNew) {
+-        List<RedstoneTorchBlock.Toggle> list = (List) RedstoneTorchBlock.RECENT_TOGGLES.computeIfAbsent(world, (iblockaccess) -> {
+-            return Lists.newArrayList();
+-        });
++        // Paper start
++        java.util.ArrayDeque<RedstoneTorchBlock.Toggle> list = world.redstoneUpdateInfos;
++        if (list == null) {
++            list = world.redstoneUpdateInfos = new java.util.ArrayDeque<>();
++        }
++
+ 
+         if (addNew) {
+             list.add(new RedstoneTorchBlock.Toggle(pos.immutable(), world.getGameTime()));
+@@ -147,9 +154,9 @@ public class RedstoneTorchBlock extends TorchBlock {
+ 
+         int i = 0;
+ 
+-        for (int j = 0; j < list.size(); ++j) {
+-            RedstoneTorchBlock.Toggle blockredstonetorch_redstoneupdateinfo = (RedstoneTorchBlock.Toggle) list.get(j);
+-
++        for (java.util.Iterator<RedstoneTorchBlock.Toggle> iterator = list.iterator(); iterator.hasNext();) {
++            RedstoneTorchBlock.Toggle blockredstonetorch_redstoneupdateinfo = iterator.next();
++            // Paper end
+             if (blockredstonetorch_redstoneupdateinfo.pos.equals(pos)) {
+                 ++i;
+                 if (i >= 8) {
+@@ -164,7 +171,7 @@ public class RedstoneTorchBlock extends TorchBlock {
+     public static class Toggle {
+ 
+         private final BlockPos pos;
+-        private final long when;
++        private final long when; final long getTime() { return this.when; } // Paper - OBFHELPER
+ 
+         public Toggle(BlockPos pos, long time) {
+             this.pos = pos;

@@ -1,0 +1,55 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Andrew Steinborn <git@steinborn.me>
+Date: Mon, 18 Jan 2021 20:45:25 -0500
+Subject: [PATCH] Inline shift direction fields
+
+Removes a layer of indirection for EnumDirection.getAdjacent(X|Y|Z)(), which is in the
+critical section for much of the server, including the lighting engine.
+
+diff --git a/src/main/java/net/minecraft/core/Direction.java b/src/main/java/net/minecraft/core/Direction.java
+index 3ebc62fe93a0cd0048e07b0343fc724f2c056010..51217f7e5288162b8e76c8717506b393cd262537 100644
+--- a/src/main/java/net/minecraft/core/Direction.java
++++ b/src/main/java/net/minecraft/core/Direction.java
+@@ -53,6 +53,11 @@ public enum Direction implements StringRepresentable {
+     }, (enumdirection, enumdirection1) -> {
+         throw new IllegalArgumentException("Duplicate keys");
+     }, Long2ObjectOpenHashMap::new));
++    // Paper start
++    private final int adjX;
++    private final int adjY;
++    private final int adjZ;
++    // Paper end
+ 
+     private Direction(int i, int j, int k, String s, Direction.AxisDirection enumdirection_enumaxisdirection, Direction.Axis enumdirection_enumaxis, Vec3i baseblockposition) {
+         this.data3d = i;
+@@ -62,6 +67,11 @@ public enum Direction implements StringRepresentable {
+         this.axis = enumdirection_enumaxis;
+         this.axisDirection = enumdirection_enumaxisdirection;
+         this.normal = baseblockposition;
++        // Paper start
++        this.adjX = baseblockposition.getX();
++        this.adjY = baseblockposition.getY();
++        this.adjZ = baseblockposition.getZ();
++        // Paper end
+     }
+ 
+     public static Direction[] orderedByNearest(Entity entity) {
+@@ -137,15 +147,15 @@ public enum Direction implements StringRepresentable {
+     }
+ 
+     public int getStepX() {
+-        return this.normal.getX();
++        return this.adjX; // Paper
+     }
+ 
+     public int getStepY() {
+-        return this.normal.getY();
++        return this.adjY; // Paper
+     }
+ 
+     public int getStepZ() {
+-        return this.normal.getZ();
++        return this.adjZ; // Paper
+     }
+ 
+     public String getName() {

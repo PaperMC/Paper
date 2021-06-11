@@ -1,0 +1,74 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Mon, 4 Jan 2021 19:49:15 -0800
+Subject: [PATCH] fix converting txt to json file
+
+
+diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedPlayerList.java b/src/main/java/net/minecraft/server/dedicated/DedicatedPlayerList.java
+index 603b4f841bcc276997d130f1545c4cf550dcac2d..2eafb7e27d06a975cee48cc18c7596d610483d16 100644
+--- a/src/main/java/net/minecraft/server/dedicated/DedicatedPlayerList.java
++++ b/src/main/java/net/minecraft/server/dedicated/DedicatedPlayerList.java
+@@ -18,6 +18,11 @@ public class DedicatedPlayerList extends PlayerList {
+ 
+         this.setViewDistance(dedicatedserverproperties.viewDistance);
+         super.setUsingWhiteList((Boolean) dedicatedserverproperties.whiteList.get());
++        // Paper start - moved from constructor
++    }
++    @Override
++    public void loadAndSaveFiles() {
++        // Paper end
+         this.loadUserBanList();
+         this.saveUserBanList();
+         this.loadIpBanList();
+diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
+index 95f9863bbccaa23d08c409792314df4f2397a317..c2947313cc0eda3247fb4b20ddd1d0b86c37c50a 100644
+--- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
++++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
+@@ -195,6 +195,12 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+         org.spigotmc.SpigotConfig.init((java.io.File) options.valueOf("spigot-settings"));
+         org.spigotmc.SpigotConfig.registerCommands();
+         // Spigot end
++        // Paper start - moved up to right after PlayerList creation but before file load/save
++        if (this.convertOldUsers()) {
++            this.getProfileCache().save(false); // Paper
++        }
++        this.getPlayerList().loadAndSaveFiles(); // Must be after convertNames
++        // Paper end
+         // Paper start
+         try {
+             com.destroystokyo.paper.PaperConfig.init((java.io.File) options.valueOf("paper-settings"));
+@@ -257,10 +263,6 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+             DedicatedServer.LOGGER.warn("To change this, set \"online-mode\" to \"true\" in the server.properties file.");
+         }
+ 
+-        if (this.convertOldUsers()) {
+-            this.getProfileCache().b(false); // Paper
+-        }
+-
+         if (!OldUsersConverter.serverReadyAfterUserconversion(this)) {
+             return false;
+         } else {
+diff --git a/src/main/java/net/minecraft/server/players/GameProfileCache.java b/src/main/java/net/minecraft/server/players/GameProfileCache.java
+index 941b7e356c377fd8ad4e27409cd74c0046878396..f23ca6bebf2c0b7e02dc6aa51e384cee4e3d12c3 100644
+--- a/src/main/java/net/minecraft/server/players/GameProfileCache.java
++++ b/src/main/java/net/minecraft/server/players/GameProfileCache.java
+@@ -243,6 +243,7 @@ public class GameProfileCache {
+         return arraylist;
+     }
+ 
++    public void save(boolean asyncSave) { b(asyncSave); } // Paper - OBFHELPER
+     public void b(boolean asyncSave) { // Paper
+         JsonArray jsonarray = new JsonArray();
+         DateFormat dateformat = createDateFormat();
+diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
+index c962b6fc0c65dc5e2ea636220727bca63bf4b740..dd121ec8f779b3786eeb7fe85519cf9e472f5adf 100644
+--- a/src/main/java/net/minecraft/server/players/PlayerList.java
++++ b/src/main/java/net/minecraft/server/players/PlayerList.java
+@@ -171,6 +171,7 @@ public abstract class PlayerList {
+         this.maxPlayers = maxPlayers;
+         this.playerIo = saveHandler;
+     }
++    abstract public void loadAndSaveFiles(); // Paper - moved from DedicatedPlayerList constructor
+ 
+     public void placeNewPlayer(Connection connection, ServerPlayer player) {
+         ServerPlayer prev = pendingPlayers.put(player.getUUID(), player);// Paper

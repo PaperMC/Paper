@@ -1,0 +1,41 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Anton Lindroth <ntoonio@gmail.com>
+Date: Wed, 15 Apr 2020 01:54:02 +0200
+Subject: [PATCH] Allow using signs inside spawn protection
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index eb367b8feda8219a97a547c3ef6ab82d278d2f25..108a005c296c4ed370de4af636163088971bed13 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -811,4 +811,9 @@ public class PaperWorldConfig {
+         fixWitherTargetingBug = getBoolean("fix-wither-targeting-bug", false);
+         log("Withers properly target players: " + fixWitherTargetingBug);
+     }
++
++    public boolean allowUsingSignsInsideSpawnProtection = false;
++    private void allowUsingSignsInsideSpawnProtection() {
++        allowUsingSignsInsideSpawnProtection = getBoolean("allow-using-signs-inside-spawn-protection", allowUsingSignsInsideSpawnProtection);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index cb6568b622abeb939a1195f4656accc8a1c3f1fc..1add53082ab9382cb2e90dc8305b8c71ef1c6a46 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -152,6 +152,7 @@ import net.minecraft.world.level.Level;
+ import net.minecraft.world.level.LevelReader;
+ import net.minecraft.world.level.block.Blocks;
+ import net.minecraft.world.level.block.CommandBlock;
++import net.minecraft.world.level.block.SignBlock;
+ import net.minecraft.world.level.block.entity.BlockEntity;
+ import net.minecraft.world.level.block.entity.CommandBlockEntity;
+ import net.minecraft.world.level.block.entity.JigsawBlockEntity;
+@@ -1690,7 +1691,7 @@ public class ServerGamePacketListenerImpl implements ServerGamePacketListener {
+ 
+         this.player.resetLastActionTime();
+         if (blockposition.getY() < this.server.getMaxBuildHeight()) {
+-            if (this.awaitingPositionFromClient == null && this.player.distanceToSqr((double) blockposition.getX() + 0.5D, (double) blockposition.getY() + 0.5D, (double) blockposition.getZ() + 0.5D) < 64.0D && worldserver.mayInteract((net.minecraft.world.entity.player.Player) this.player, blockposition)) {
++            if (this.awaitingPositionFromClient == null && this.player.distanceToSqr((double) blockposition.getX() + 0.5D, (double) blockposition.getY() + 0.5D, (double) blockposition.getZ() + 0.5D) < 64.0D && (worldserver.mayInteract((net.minecraft.world.entity.player.Player) this.player, blockposition) || (worldserver.paperConfig.allowUsingSignsInsideSpawnProtection && worldserver.getBlockState(blockposition).getBlock() instanceof SignBlock))) { // Paper
+                 // CraftBukkit start - Check if we can actually do something over this large a distance
+                 // Paper - move check up
+                 this.player.stopUsingItem(); // SPIGOT-4706

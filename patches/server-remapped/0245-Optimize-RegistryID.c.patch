@@ -1,0 +1,67 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Andrew Steinborn <git@steinborn.me>
+Date: Mon, 23 Jul 2018 13:08:19 -0400
+Subject: [PATCH] Optimize RegistryID.c()
+
+This is a frequent hotspot for world loading/saving.
+
+diff --git a/src/main/java/net/minecraft/util/CrudeIncrementalIntIdentityHashBiMap.java b/src/main/java/net/minecraft/util/CrudeIncrementalIntIdentityHashBiMap.java
+index 66ad412e4368a8615cc66a97ac442c572813a3dd..fa4a2d29b3b4c20d7396e973801d69c4acadddda 100644
+--- a/src/main/java/net/minecraft/util/CrudeIncrementalIntIdentityHashBiMap.java
++++ b/src/main/java/net/minecraft/util/CrudeIncrementalIntIdentityHashBiMap.java
+@@ -15,12 +15,14 @@ public class CrudeIncrementalIntIdentityHashBiMap<K> implements IdMap<K> {
+     private K[] byId;
+     private int nextId;
+     private int size;
++    private java.util.BitSet usedIds; // Paper
+ 
+     public CrudeIncrementalIntIdentityHashBiMap(int size) {
+         size = (int) ((float) size / 0.8F);
+         this.keys = (K[]) (new Object[size]); // Paper - decompile fix
+         this.values = new int[size];
+         this.byId = (K[]) (new Object[size]); // Paper - decompile fix
++        this.usedIds = new java.util.BitSet(); // Paper
+     }
+ 
+     // Paper start - decompile fix
+@@ -52,9 +54,14 @@ public class CrudeIncrementalIntIdentityHashBiMap<K> implements IdMap<K> {
+     }
+ 
+     private int nextId() {
+-        while (this.nextId < this.byId.length && this.byId[this.nextId] != null) {
+-            ++this.nextId;
++        // Paper start
++        /*
++        while (this.e < this.d.length && this.d[this.e] != null) {
++            ++this.e;
+         }
++        */
++        this.nextId = this.usedIds.nextClearBit(0);
++        // Paper end
+ 
+         return this.nextId;
+     }
+@@ -68,6 +75,7 @@ public class CrudeIncrementalIntIdentityHashBiMap<K> implements IdMap<K> {
+         this.byId = (K[]) (new Object[newSize]); // Paper - decompile fix
+         this.nextId = 0;
+         this.size = 0;
++        this.usedIds.clear(); // Paper
+ 
+         for (int j = 0; j < ak.length; ++j) {
+             if (ak[j] != null) {
+@@ -93,6 +101,7 @@ public class CrudeIncrementalIntIdentityHashBiMap<K> implements IdMap<K> {
+         this.keys[k] = value;
+         this.values[k] = id;
+         this.byId[id] = value;
++        this.usedIds.set(id); // Paper
+         ++this.size;
+         if (id == this.nextId) {
+             ++this.nextId;
+@@ -157,6 +166,7 @@ public class CrudeIncrementalIntIdentityHashBiMap<K> implements IdMap<K> {
+         Arrays.fill(this.byId, (Object) null);
+         this.nextId = 0;
+         this.size = 0;
++        this.usedIds.clear(); // Paper
+     }
+ 
+     public int size() {

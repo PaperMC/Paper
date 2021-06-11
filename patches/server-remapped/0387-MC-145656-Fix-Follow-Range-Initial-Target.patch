@@ -1,0 +1,73 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: William Blake Galbreath <Blake.Galbreath@GMail.com>
+Date: Wed, 18 Dec 2019 22:21:35 -0600
+Subject: [PATCH] MC-145656 Fix Follow Range Initial Target
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index e726b6213cf2e8f5b326f05c0438b8f1ee2b73c5..edda2121f8c1046478beaa77030ebb36d403b334 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -580,4 +580,9 @@ public class PaperWorldConfig {
+     private void pillagerSettings() {
+         disablePillagerPatrols = getBoolean("game-mechanics.disable-pillager-patrols", disablePillagerPatrols);
+     }
++
++    public boolean entitiesTargetWithFollowRange = false;
++    private void entitiesTargetWithFollowRange() {
++        entitiesTargetWithFollowRange = getBoolean("entities-target-with-follow-range", entitiesTargetWithFollowRange);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/world/entity/ai/goal/target/NearestAttackableTargetGoal.java b/src/main/java/net/minecraft/world/entity/ai/goal/target/NearestAttackableTargetGoal.java
+index 7bba2ac71a3cd34a06ec865a3c1828b10decd644..93845edab0e1b0e2ad300cad051b0182cadd46e5 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/goal/target/NearestAttackableTargetGoal.java
++++ b/src/main/java/net/minecraft/world/entity/ai/goal/target/NearestAttackableTargetGoal.java
+@@ -32,6 +32,7 @@ public class NearestAttackableTargetGoal<T extends LivingEntity> extends TargetG
+         this.randomInterval = reciprocalChance;
+         this.setFlags(EnumSet.of(Goal.Flag.TARGET));
+         this.targetConditions = (new TargetingConditions()).range(this.getFollowDistance()).selector(targetPredicate);
++        if (mob.level.paperConfig.entitiesTargetWithFollowRange) this.targetConditions.useFollowRange(); // Paper
+     }
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/entity/ai/targeting/TargetingConditions.java b/src/main/java/net/minecraft/world/entity/ai/targeting/TargetingConditions.java
+index 1714507fa744b2767e8a66cdb5db7f43c21f5c56..e1a0104a3b52990a83e7732491029d8a20976dc3 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/targeting/TargetingConditions.java
++++ b/src/main/java/net/minecraft/world/entity/ai/targeting/TargetingConditions.java
+@@ -4,6 +4,8 @@ import java.util.function.Predicate;
+ import javax.annotation.Nullable;
+ import net.minecraft.world.entity.LivingEntity;
+ import net.minecraft.world.entity.Mob;
++import net.minecraft.world.entity.ai.attributes.AttributeInstance;
++import net.minecraft.world.entity.ai.attributes.Attributes;
+ 
+ public class TargetingConditions {
+ 
+@@ -82,7 +84,7 @@ public class TargetingConditions {
+ 
+                 if (this.range > 0.0D) {
+                     double d0 = this.testInvisible ? targetEntity.getVisibilityPercent(baseEntity) : 1.0D;
+-                    double d1 = Math.max(this.range * d0, 2.0D);
++                    double d1 = Math.max((useFollowRange ? getFollowRange(baseEntity) : this.range) * d0, 2.0D); // Paper
+                     double d2 = baseEntity.distanceToSqr(targetEntity.getX(), targetEntity.getY(), targetEntity.getZ());
+ 
+                     if (d2 > d1 * d1) {
+@@ -98,4 +100,18 @@ public class TargetingConditions {
+             return true;
+         }
+     }
++
++    // Paper start
++    private boolean useFollowRange = false;
++
++    public TargetingConditions useFollowRange() {
++        this.useFollowRange = true;
++        return this;
++    }
++
++    private double getFollowRange(LivingEntity entityliving) {
++        AttributeInstance attributeinstance = entityliving.getAttribute(Attributes.FOLLOW_RANGE);
++        return attributeinstance == null ? 16.0D : attributeinstance.getValue();
++    }
++    // Paper end
+ }

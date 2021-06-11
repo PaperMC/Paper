@@ -1,0 +1,32 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Shane Freeder <theboyetronic@gmail.com>
+Date: Sat, 9 Jun 2018 14:08:39 +0200
+Subject: [PATCH] Implement EntityTeleportEndGatewayEvent
+
+
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/TileEntityEndGateway.java b/src/main/java/net/minecraft/world/level/block/entity/TileEntityEndGateway.java
+index 2808cd0b100bd65a730aba315ab47a59a4621b30..b7548d0b3938d95328fc86db4000190532eaa8f5 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/TileEntityEndGateway.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/TileEntityEndGateway.java
+@@ -194,9 +194,20 @@ public class TileEntityEndGateway extends TileEntityEnderPortal implements ITick
+ 
+                 }
+                 // CraftBukkit end
++                // Paper start - EntityTeleportEndGatewayEvent - replicated from above
++                org.bukkit.craftbukkit.entity.CraftEntity bukkitEntity = entity.getBukkitEntity();
++                org.bukkit.Location location = new Location(world.getWorld(), (double) blockposition.getX() + 0.5D, (double) blockposition.getY() + 0.5D, (double) blockposition.getZ() + 0.5D);
++                location.setPitch(bukkitEntity.getLocation().getPitch());
++                location.setYaw(bukkitEntity.getLocation().getYaw());
++
++                com.destroystokyo.paper.event.entity.EntityTeleportEndGatewayEvent event = new com.destroystokyo.paper.event.entity.EntityTeleportEndGatewayEvent(bukkitEntity, bukkitEntity.getLocation(), location, new org.bukkit.craftbukkit.block.CraftEndGateway(MCUtil.toLocation(world, this.getPosition()).getBlock()));
++                if (!event.callEvent()) {
++                    return;
++                }
++                // Paper end
+ 
+                 entity1.resetPortalCooldown();
+-                entity1.enderTeleportAndLoad((double) blockposition.getX() + 0.5D, (double) blockposition.getY(), (double) blockposition.getZ() + 0.5D);
++                entity1.enderTeleportAndLoad(event.getTo().getX(), event.getTo().getY(), event.getTo().getZ()); // Paper
+             }
+ 
+             this.h();

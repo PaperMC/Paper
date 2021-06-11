@@ -1,0 +1,265 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Mark Vainomaa <mikroskeem@mikroskeem.eu>
+Date: Sun, 17 Mar 2019 21:46:56 +0200
+Subject: [PATCH] Fire event on GS4 query
+
+
+diff --git a/src/main/java/net/minecraft/server/rcon/NetworkDataOutputStream.java b/src/main/java/net/minecraft/server/rcon/NetworkDataOutputStream.java
+index d10de580430d754204b36de809376538a14591e6..f6f0539a8e6edbeb1c412cee753a282b24a38046 100644
+--- a/src/main/java/net/minecraft/server/rcon/NetworkDataOutputStream.java
++++ b/src/main/java/net/minecraft/server/rcon/NetworkDataOutputStream.java
+@@ -18,15 +18,27 @@ public class NetworkDataOutputStream {
+         this.dataOutputStream.write(abyte, 0, abyte.length);
+     }
+ 
++    public void writeString(String string) throws IOException { this.writeString(string); } // Paper - OBFHELPER
+     public void writeString(String s) throws IOException {
+         this.dataOutputStream.writeBytes(s);
+         this.dataOutputStream.write(0);
+     }
++    // Paper start - unchecked exception variant to use in Stream API
++    public void writeStringUnchecked(String string) {
++        try {
++            writeString(string);
++        } catch (IOException e) {
++            com.destroystokyo.paper.util.SneakyThrow.sneaky(e);
++        }
++    }
++    // Paper end
+ 
++    public void writeInt(int i) throws IOException { this.write(i); } // Paper - OBFHELPER
+     public void write(int i) throws IOException {
+         this.dataOutputStream.write(i);
+     }
+ 
++    public void writeShort(short i) throws IOException { this.writeShort(i); } // Paper - OBFHELPER
+     public void writeShort(short short0) throws IOException {
+         this.dataOutputStream.writeShort(Short.reverseBytes(short0));
+     }
+diff --git a/src/main/java/net/minecraft/server/rcon/thread/QueryThreadGs4.java b/src/main/java/net/minecraft/server/rcon/thread/QueryThreadGs4.java
+index 170d047463154bd6851199f06fe343ccb1896213..5562a3caff328bb08857b4f06a79b1e52f390fdd 100644
+--- a/src/main/java/net/minecraft/server/rcon/thread/QueryThreadGs4.java
++++ b/src/main/java/net/minecraft/server/rcon/thread/QueryThreadGs4.java
+@@ -16,6 +16,7 @@ import java.util.Random;
+ import javax.annotation.Nullable;
+ import net.minecraft.Util;
+ import net.minecraft.server.ServerInterface;
++import net.minecraft.server.dedicated.DedicatedServer;
+ import net.minecraft.server.rcon.NetworkDataOutputStream;
+ import net.minecraft.server.rcon.PktUtils;
+ import org.apache.logging.log4j.LogManager;
+@@ -26,18 +27,18 @@ public class QueryThreadGs4 extends GenericThread {
+     private static final Logger LOGGER = LogManager.getLogger();
+     private long lastChallengeCheck;
+     private final int port;
+-    private final int serverPort;
+-    private final int maxPlayers;
+-    private final String serverName;
+-    private final String worldName;
++    private final int serverPort; private final int getServerPort() { return this.serverPort; } // Paper - OBFHELPER
++    private final int maxPlayers; private final int getMaxPlayers() { return this.maxPlayers; } // Paper - OBFHELPER
++    private final String serverName; private final String getMotd() { return this.serverName; } // Paper - OBFHELPER
++    private final String worldName; private final String getWorldName() { return this.worldName; } // Paper - OBFHELPER
+     private DatagramSocket socket;
+     private final byte[] buffer = new byte[1460];
+-    private String hostIp;
++    private String hostIp; public final String getServerHost() { return this.hostIp; } // Paper - OBFHELPER
+     private String serverIp;
+     private final Map<SocketAddress, QueryThreadGs4.RequestChallenge> validChallenges;
+-    private final NetworkDataOutputStream rulesResponse;
++    private final NetworkDataOutputStream rulesResponse; private final NetworkDataOutputStream getCachedFullResponse() { return this.rulesResponse; } // Paper - OBFHELPER
+     private long lastRulesResponse;
+-    private final ServerInterface serverInterface;
++    private final ServerInterface serverInterface; private final ServerInterface getServer() { return this.serverInterface; } // Paper - OBFHELPER
+ 
+     private QueryThreadGs4(ServerInterface server, int queryPort) {
+         super("Query Listener");
+@@ -107,13 +108,39 @@ public class QueryThreadGs4 extends GenericThread {
+ 
+                         remotestatusreply.write((int) 0);
+                         remotestatusreply.writeBytes(this.getIdentBytes(packet.getSocketAddress()));
+-                        remotestatusreply.writeString(this.serverName);
++                        /* Paper start - GS4 Query event
++                        remotestatusreply.a(this.i);
++                        remotestatusreply.a("SMP");
++                        remotestatusreply.a(this.j);
++                        remotestatusreply.a(Integer.toString(this.r.getPlayerCount()));
++                        remotestatusreply.a(Integer.toString(this.h));
++                        remotestatusreply.a((short) this.g);
++                        remotestatusreply.a(this.m);
++                        */
++                        com.destroystokyo.paper.event.server.GS4QueryEvent.QueryType queryType =
++                            com.destroystokyo.paper.event.server.GS4QueryEvent.QueryType.BASIC;
++                        com.destroystokyo.paper.event.server.GS4QueryEvent.QueryResponse queryResponse = com.destroystokyo.paper.event.server.GS4QueryEvent.QueryResponse.builder()
++                            .motd(this.getMotd())
++                            .map(this.getWorldName())
++                            .currentPlayers(this.getServer().getPlayerCount())
++                            .maxPlayers(this.getMaxPlayers())
++                            .port(this.getServerPort())
++                            .hostname(this.getServerHost())
++                            .gameVersion(this.getServer().getServerVersion())
++                            .serverVersion(org.bukkit.Bukkit.getServer().getName() + " on " + org.bukkit.Bukkit.getServer().getBukkitVersion())
++                            .build();
++                        com.destroystokyo.paper.event.server.GS4QueryEvent queryEvent =
++                            new com.destroystokyo.paper.event.server.GS4QueryEvent(queryType, packet.getAddress(), queryResponse);
++                        queryEvent.callEvent();
++                        queryResponse = queryEvent.getResponse();
++                        remotestatusreply.writeString(queryResponse.getMotd());
+                         remotestatusreply.writeString("SMP");
+-                        remotestatusreply.writeString(this.worldName);
+-                        remotestatusreply.writeString(Integer.toString(this.serverInterface.getPlayerCount()));
+-                        remotestatusreply.writeString(Integer.toString(this.maxPlayers));
+-                        remotestatusreply.writeShort((short) this.serverPort);
+-                        remotestatusreply.writeString(this.hostIp);
++                        remotestatusreply.writeString(queryResponse.getMap());
++                        remotestatusreply.writeString(Integer.toString(queryResponse.getCurrentPlayers()));
++                        remotestatusreply.writeString(Integer.toString(queryResponse.getMaxPlayers()));
++                        remotestatusreply.writeShort((short) queryResponse.getPort());
++                        remotestatusreply.writeString(queryResponse.getHostname());
++                        // Paper end
+                         this.sendTo(remotestatusreply.toByteArray(), packet);
+                         QueryThreadGs4.LOGGER.debug("Status [{}]", socketaddress);
+                     }
+@@ -150,41 +177,115 @@ public class QueryThreadGs4 extends GenericThread {
+             this.rulesResponse.writeString("splitnum");
+             this.rulesResponse.write((int) 128);
+             this.rulesResponse.write((int) 0);
+-            this.rulesResponse.writeString("hostname");
+-            this.rulesResponse.writeString(this.serverName);
+-            this.rulesResponse.writeString("gametype");
+-            this.rulesResponse.writeString("SMP");
+-            this.rulesResponse.writeString("game_id");
+-            this.rulesResponse.writeString("MINECRAFT");
+-            this.rulesResponse.writeString("version");
+-            this.rulesResponse.writeString(this.serverInterface.getServerVersion());
+-            this.rulesResponse.writeString("plugins");
+-            this.rulesResponse.writeString(this.serverInterface.getPluginNames());
+-            this.rulesResponse.writeString("map");
+-            this.rulesResponse.writeString(this.worldName);
+-            this.rulesResponse.writeString("numplayers");
+-            this.rulesResponse.writeString("" + this.serverInterface.getPlayerCount());
+-            this.rulesResponse.writeString("maxplayers");
+-            this.rulesResponse.writeString("" + this.maxPlayers);
+-            this.rulesResponse.writeString("hostport");
+-            this.rulesResponse.writeString("" + this.serverPort);
+-            this.rulesResponse.writeString("hostip");
+-            this.rulesResponse.writeString(this.hostIp);
+-            this.rulesResponse.write((int) 0);
+-            this.rulesResponse.write((int) 1);
+-            this.rulesResponse.writeString("player_");
+-            this.rulesResponse.write((int) 0);
+-            String[] astring = this.serverInterface.getPlayerNames();
++            /* Paper start - GS4 Query event
++            this.p.a("hostname");
++            this.p.a(this.i);
++            this.p.a("gametype");
++            this.p.a("SMP");
++            this.p.a("game_id");
++            this.p.a("MINECRAFT");
++            this.p.a("version");
++            this.p.a(this.r.getVersion());
++            this.p.a("plugins");
++            this.p.a(this.r.getPlugins());
++            this.p.a("map");
++            this.p.a(this.j);
++            this.p.a("numplayers");
++            this.p.a("" + this.r.getPlayerCount());
++            this.p.a("maxplayers");
++            this.p.a("" + this.h);
++            this.p.a("hostport");
++            this.p.a("" + this.g);
++            this.p.a("hostip");
++            this.p.a(this.m);
++            this.p.a((int) 0);
++            this.p.a((int) 1);
++            this.p.a("player_");
++            this.p.a((int) 0);
++            String[] astring = this.r.getPlayers();
+             String[] astring1 = astring;
+             int j = astring.length;
+ 
+             for (int k = 0; k < j; ++k) {
+                 String s = astring1[k];
+ 
+-                this.rulesResponse.writeString(s);
++                this.p.a(s);
+             }
+ 
+-            this.rulesResponse.write((int) 0);
++            this.p.a((int) 0);
++            */
++            // Pack plugins
++            java.util.List<com.destroystokyo.paper.event.server.GS4QueryEvent.QueryResponse.PluginInformation> plugins = java.util.Collections.emptyList();
++            org.bukkit.plugin.Plugin[] bukkitPlugins;
++            if (((DedicatedServer) this.getServer()).server.getQueryPlugins() && (bukkitPlugins = org.bukkit.Bukkit.getPluginManager().getPlugins()).length > 0) {
++                plugins = java.util.stream.Stream.of(bukkitPlugins)
++                    .map(plugin -> com.destroystokyo.paper.event.server.GS4QueryEvent.QueryResponse.PluginInformation.of(plugin.getName(), plugin.getDescription().getVersion()))
++                    .collect(java.util.stream.Collectors.toList());
++            }
++
++            com.destroystokyo.paper.event.server.GS4QueryEvent.QueryResponse queryResponse = com.destroystokyo.paper.event.server.GS4QueryEvent.QueryResponse.builder()
++                .motd(this.getMotd())
++                .map(this.getWorldName())
++                .currentPlayers(this.getServer().getPlayerCount())
++                .maxPlayers(this.getMaxPlayers())
++                .port(this.getServerPort())
++                .hostname(this.getServerHost())
++                .plugins(plugins)
++                .players(this.getServer().getPlayerNames())
++                .gameVersion(this.getServer().getServerVersion())
++                .serverVersion(org.bukkit.Bukkit.getServer().getName() + " on " + org.bukkit.Bukkit.getServer().getBukkitVersion())
++                .build();
++            com.destroystokyo.paper.event.server.GS4QueryEvent.QueryType queryType =
++                com.destroystokyo.paper.event.server.GS4QueryEvent.QueryType.FULL;
++            com.destroystokyo.paper.event.server.GS4QueryEvent queryEvent =
++                new com.destroystokyo.paper.event.server.GS4QueryEvent(queryType, packet.getAddress(), queryResponse);
++            queryEvent.callEvent();
++            queryResponse = queryEvent.getResponse();
++            this.getCachedFullResponse().writeString("hostname");
++            this.getCachedFullResponse().writeString(queryResponse.getMotd());
++            this.getCachedFullResponse().writeString("gametype");
++            this.getCachedFullResponse().writeString("SMP");
++            this.getCachedFullResponse().writeString("game_id");
++            this.getCachedFullResponse().writeString("MINECRAFT");
++            this.getCachedFullResponse().writeString("version");
++            this.getCachedFullResponse().writeString(queryResponse.getGameVersion());
++            this.getCachedFullResponse().writeString("plugins");
++            java.lang.StringBuilder pluginsString = new java.lang.StringBuilder();
++            pluginsString.append(queryResponse.getServerVersion());
++            if (!queryResponse.getPlugins().isEmpty()) {
++                pluginsString.append(": ");
++                java.util.Iterator<com.destroystokyo.paper.event.server.GS4QueryEvent.QueryResponse.PluginInformation> iter = queryResponse.getPlugins().iterator();
++                while (iter.hasNext()) {
++                    com.destroystokyo.paper.event.server.GS4QueryEvent.QueryResponse.PluginInformation info = iter.next();
++                    pluginsString.append(info.getName());
++                    if (info.getVersion() != null) {
++                        pluginsString.append(' ').append(info.getVersion().replace(";", ","));
++                    }
++                    if (iter.hasNext()) {
++                        pluginsString.append(';').append(' ');
++                    }
++                }
++            }
++            this.getCachedFullResponse().writeString(pluginsString.toString());
++            this.getCachedFullResponse().writeString("map");
++            this.getCachedFullResponse().writeString(queryResponse.getMap());
++            this.getCachedFullResponse().writeString("numplayers");
++            this.getCachedFullResponse().writeString(Integer.toString(queryResponse.getCurrentPlayers()));
++            this.getCachedFullResponse().writeString("maxplayers");
++            this.getCachedFullResponse().writeString(Integer.toString(queryResponse.getMaxPlayers()));
++            this.getCachedFullResponse().writeString("hostport");
++            this.getCachedFullResponse().writeString(Integer.toString(queryResponse.getPort()));
++            this.getCachedFullResponse().writeString("hostip");
++            this.getCachedFullResponse().writeString(queryResponse.getHostname());
++            // The "meaningless data" start, copied from above
++            this.getCachedFullResponse().writeInt(0);
++            this.getCachedFullResponse().writeInt(1);
++            this.getCachedFullResponse().writeString("player_");
++            this.getCachedFullResponse().writeInt(0);
++            // "Meaningless data" end
++            queryResponse.getPlayers().forEach(this.getCachedFullResponse()::writeStringUnchecked);
++            this.getCachedFullResponse().writeInt(0);
++            // Paper end
+             return this.rulesResponse.toByteArray();
+         }
+     }

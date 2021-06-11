@@ -1,0 +1,58 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: jmp <jasonpenilla2@me.com>
+Date: Fri, 19 Mar 2021 16:07:21 -0700
+Subject: [PATCH] Only set despawnTimer for Wandering Traders spawned by
+ MobSpawnerTrader
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/EntityType.java b/src/main/java/net/minecraft/world/entity/EntityType.java
+index d38828485d6deb08036e11d8bf16b3d63a60fbae..f6d2aca2fe3ee9b69a0b200c8b2ea35f222fb521 100644
+--- a/src/main/java/net/minecraft/world/entity/EntityType.java
++++ b/src/main/java/net/minecraft/world/entity/EntityType.java
+@@ -319,6 +319,12 @@ public class EntityType<T extends Entity> {
+ 
+     @Nullable
+     public T spawnCreature(ServerLevel worldserver, @Nullable CompoundTag nbttagcompound, @Nullable Component ichatbasecomponent, @Nullable Player entityhuman, BlockPos blockposition, MobSpawnType enummobspawn, boolean flag, boolean flag1, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason spawnReason) {
++        // Paper start - add consumer to modify entity before spawn
++        return this.spawnCreature(worldserver, nbttagcompound, ichatbasecomponent, entityhuman, blockposition, enummobspawn, flag, flag1, spawnReason, null);
++    }
++    @Nullable
++    public T spawnCreature(ServerLevel worldserver, @Nullable CompoundTag nbttagcompound, @Nullable Component ichatbasecomponent, @Nullable Player entityhuman, BlockPos blockposition, MobSpawnType enummobspawn, boolean flag, boolean flag1, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason spawnReason, @Nullable java.util.function.Consumer<T> op) {
++        // Paper end
+         // Paper start - Call PreCreatureSpawnEvent
+         org.bukkit.entity.EntityType type = org.bukkit.entity.EntityType.fromName(EntityType.getKey(this).getPath());
+         if (type != null) {
+@@ -334,6 +340,7 @@ public class EntityType<T extends Entity> {
+         }
+         // Paper end
+         T t0 = this.create(worldserver, nbttagcompound, ichatbasecomponent, entityhuman, blockposition, enummobspawn, flag, flag1);
++        if (t0 != null && op != null) op.accept(t0); // Paper
+ 
+         if (t0 != null) {
+             worldserver.addAllEntities(t0, spawnReason);
+diff --git a/src/main/java/net/minecraft/world/entity/npc/WanderingTrader.java b/src/main/java/net/minecraft/world/entity/npc/WanderingTrader.java
+index 69d92590d265abe8a04d8bf48bbe9a6ae606ae50..04c4cca4be8886feb59f180915977b77f9c7dde8 100644
+--- a/src/main/java/net/minecraft/world/entity/npc/WanderingTrader.java
++++ b/src/main/java/net/minecraft/world/entity/npc/WanderingTrader.java
+@@ -61,7 +61,7 @@ public class WanderingTrader extends net.minecraft.world.entity.npc.AbstractVill
+     public WanderingTrader(EntityType<? extends WanderingTrader> type, Level world) {
+         super(type, world);
+         this.forcedLoading = true;
+-        this.setDespawnDelay(48000); // CraftBukkit - set default from MobSpawnerTrader
++        //this.setDespawnDelay(48000); // CraftBukkit - set default from MobSpawnerTrader // Paper - move back to MobSpawnerTrader - Vanilla behavior is that only traders spawned by it have this value set.
+     }
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/entity/npc/WanderingTraderSpawner.java b/src/main/java/net/minecraft/world/entity/npc/WanderingTraderSpawner.java
+index 9074d57e1576db2da3e4c76add4f7e07e5567879..f861d83affbb0b5eaf7440a909ca3b5f7a604da7 100644
+--- a/src/main/java/net/minecraft/world/entity/npc/WanderingTraderSpawner.java
++++ b/src/main/java/net/minecraft/world/entity/npc/WanderingTraderSpawner.java
+@@ -114,7 +114,7 @@ public class WanderingTraderSpawner implements CustomSpawner {
+                     return false;
+                 }
+ 
+-                WanderingTrader entityvillagertrader = (WanderingTrader) EntityType.WANDERING_TRADER.spawnCreature(worldserver, (CompoundTag) null, (Component) null, (Player) null, blockposition2, MobSpawnType.EVENT, false, false, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.NATURAL); // CraftBukkit
++                WanderingTrader entityvillagertrader = EntityType.WANDERING_TRADER.spawnCreature(worldserver, null, null, null, blockposition2, MobSpawnType.EVENT, false, false, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.NATURAL, trader -> trader.setDespawnDelay(48000)); // CraftBukkit // Paper - set despawnTimer before spawn events called
+ 
+                 if (entityvillagertrader != null) {
+                     for (int i = 0; i < 2; ++i) {

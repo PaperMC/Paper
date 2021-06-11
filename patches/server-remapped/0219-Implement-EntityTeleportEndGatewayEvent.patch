@@ -1,0 +1,32 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Shane Freeder <theboyetronic@gmail.com>
+Date: Sat, 9 Jun 2018 14:08:39 +0200
+Subject: [PATCH] Implement EntityTeleportEndGatewayEvent
+
+
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/TheEndGatewayBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/TheEndGatewayBlockEntity.java
+index 2c974f9801d209907733bed8e6c4c9ef46e2b610..b70e0633435a272ae1e9fbd12d7f18862de0b951 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/TheEndGatewayBlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/TheEndGatewayBlockEntity.java
+@@ -191,9 +191,20 @@ public class TheEndGatewayBlockEntity extends TheEndPortalBlockEntity implements
+ 
+                 }
+                 // CraftBukkit end
++                // Paper start - EntityTeleportEndGatewayEvent - replicated from above
++                org.bukkit.craftbukkit.entity.CraftEntity bukkitEntity = entity.getBukkitEntity();
++                org.bukkit.Location location = new Location(level.getWorld(), (double) blockposition.getX() + 0.5D, (double) blockposition.getY() + 0.5D, (double) blockposition.getZ() + 0.5D);
++                location.setPitch(bukkitEntity.getLocation().getPitch());
++                location.setYaw(bukkitEntity.getLocation().getYaw());
++
++                com.destroystokyo.paper.event.entity.EntityTeleportEndGatewayEvent event = new com.destroystokyo.paper.event.entity.EntityTeleportEndGatewayEvent(bukkitEntity, bukkitEntity.getLocation(), location, new org.bukkit.craftbukkit.block.CraftEndGateway(MCUtil.toLocation(level, this.getBlockPos()).getBlock()));
++                if (!event.callEvent()) {
++                    return;
++                }
++                // Paper end
+ 
+                 entity1.setPortalCooldown();
+-                entity1.teleportToWithTicket((double) blockposition.getX() + 0.5D, (double) blockposition.getY(), (double) blockposition.getZ() + 0.5D);
++                entity1.teleportToWithTicket(event.getTo().getX(), event.getTo().getY(), event.getTo().getZ()); // Paper
+             }
+ 
+             this.triggerCooldown();

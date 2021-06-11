@@ -1,0 +1,84 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: BillyGalbreath <blake.galbreath@gmail.com>
+Date: Tue, 8 Dec 2020 20:24:52 -0600
+Subject: [PATCH] MC-4: Fix item position desync
+
+This fixes item position desync (MC-4) by running the item coordinates
+through the encode/decode methods of the packet that causes the precision
+loss, which forces the server to lose the same precision as the client
+keeping them in sync.
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+index 652d87fc5d566dba8018c81676329f0e0bca471b..c56e7fb18f9a56c8025eb70a524f028b5942da37 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+@@ -474,4 +474,9 @@ public class PaperConfig {
+     private static void trackPluginScoreboards() {
+         trackPluginScoreboards = getBoolean("settings.track-plugin-scoreboards", false);
+     }
++
++    public static boolean fixEntityPositionDesync = true;
++    private static void fixEntityPositionDesync() {
++        fixEntityPositionDesync = getBoolean("settings.fix-entity-position-desync", fixEntityPositionDesync);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/network/protocol/game/ClientboundMoveEntityPacket.java b/src/main/java/net/minecraft/network/protocol/game/ClientboundMoveEntityPacket.java
+index cb10c87728b5f9062c4bdd1fe5e4b2c7a558f323..6b97d60d923e772c7284e674bc3f2e9a5a0ddead 100644
+--- a/src/main/java/net/minecraft/network/protocol/game/ClientboundMoveEntityPacket.java
++++ b/src/main/java/net/minecraft/network/protocol/game/ClientboundMoveEntityPacket.java
+@@ -19,11 +19,11 @@ public class ClientboundMoveEntityPacket implements Packet<ClientGamePacketListe
+     protected boolean hasPos;
+ 
+     public static long entityToPacket(double coord) {
+-        return Mth.lfloor(coord * 4096.0D);
++        return Mth.lfloor(coord * 4096.0D); // Paper - check EntityItem#setPositionRaw on update
+     }
+ 
+     public static Vec3 packetToEntity(long x, long y, long z) {
+-        return (new Vec3((double) x, (double) y, (double) z)).scale(2.44140625E-4D);
++        return (new Vec3((double) x, (double) y, (double) z)).scale(2.44140625E-4D); // Paper - check EntityItem#setPositionRaw on update
+     }
+ 
+     public ClientboundMoveEntityPacket() {}
+diff --git a/src/main/java/net/minecraft/util/Mth.java b/src/main/java/net/minecraft/util/Mth.java
+index a595617fb8efd8fd399f14b5f48ced7c040bb0f4..18cd1b6965ef042ecd4e3afc758ae046aee3bf22 100644
+--- a/src/main/java/net/minecraft/util/Mth.java
++++ b/src/main/java/net/minecraft/util/Mth.java
+@@ -9,7 +9,7 @@ import net.minecraft.core.Vec3i;
+ public class Mth {
+ 
+     public static final float SQRT_OF_TWO = sqrt(2.0F);
+-    private static final float[] SIN = (float[]) Util.make((Object) (new float[65536]), (afloat) -> {
++    private static final float[] SIN = (float[]) Util.make((new float[65536]), (afloat) -> { // Paper - decompile error
+         for (int i = 0; i < afloat.length; ++i) {
+             afloat[i] = (float) Math.sin((double) i * 3.141592653589793D * 2.0D / 65536.0D);
+         }
+@@ -49,6 +49,7 @@ public class Mth {
+         return d0 < (double) i ? i - 1 : i;
+     }
+ 
++    public static long floorLong(double d0) { return lfloor(d0); } // Paper - OBFHELPER
+     public static long lfloor(double d0) {
+         long i = (long) d0;
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/item/ItemEntity.java b/src/main/java/net/minecraft/world/entity/item/ItemEntity.java
+index 9311f9f411d09d4460f0be8235957fab9e195b7a..7476ae301fb4ee503944d39022cb25ccb19f1232 100644
+--- a/src/main/java/net/minecraft/world/entity/item/ItemEntity.java
++++ b/src/main/java/net/minecraft/world/entity/item/ItemEntity.java
+@@ -549,4 +549,16 @@ public class ItemEntity extends Entity {
+     public Packet<?> getAddEntityPacket() {
+         return new ClientboundAddEntityPacket(this);
+     }
++
++    // Paper start - fix MC-4
++    public void setPosRaw(double x, double y, double z) {
++        if (com.destroystokyo.paper.PaperConfig.fixEntityPositionDesync) {
++            // encode/decode from PacketPlayOutEntity
++            x = Mth.floorLong(x * 4096.0D) * (1 / 4096.0D);
++            y = Mth.floorLong(y * 4096.0D) * (1 / 4096.0D);
++            z = Mth.floorLong(z * 4096.0D) * (1 / 4096.0D);
++        }
++        super.setPosRaw(x, y, z);
++    }
++    // Paper end - fix MC-4
+ }

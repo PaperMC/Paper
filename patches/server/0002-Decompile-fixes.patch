@@ -1,0 +1,77 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Kyle Wood <kyle@denwav.dev>
+Date: Fri, 11 Jun 2021 05:25:03 -0500
+Subject: [PATCH] Decompile fixes
+
+
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 3aecce56bdac0a316742a55e340c522bea737321..6b4d84faba50d9f3f87e48251cf1294479d4a3a0 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -1138,7 +1138,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         }
+     }
+ 
+-    protected void doRunTask(TickTask ticktask) {
++    public void doRunTask(TickTask ticktask) { // Paper - decomp fix
+         this.getProfiler().incrementCounter("runTask");
+         super.doRunTask(ticktask);
+     }
+diff --git a/src/main/java/net/minecraft/server/commands/SummonCommand.java b/src/main/java/net/minecraft/server/commands/SummonCommand.java
+index 71c22f72b6e7507e85ecb6be3166b809b7409ab2..fb9fca76a42479363c9c9764fdae6adb4b5e703f 100644
+--- a/src/main/java/net/minecraft/server/commands/SummonCommand.java
++++ b/src/main/java/net/minecraft/server/commands/SummonCommand.java
+@@ -54,9 +54,9 @@ public class SummonCommand {
+ 
+             nbttagcompound1.putString("id", entity.toString());
+             ServerLevel worldserver = source.getLevel();
+-            Entity entity1 = EntityType.loadEntityRecursive(nbttagcompound1, worldserver, (entity1) -> {
+-                entity1.moveTo(pos.x, pos.y, pos.z, entity1.getYRot(), entity1.getXRot());
+-                return entity1;
++            Entity entity1 = EntityType.loadEntityRecursive(nbttagcompound1, worldserver, (loadedEntity) -> { // Paper - decomp fix
++                loadedEntity.moveTo(pos.x, pos.y, pos.z, loadedEntity.getYRot(), loadedEntity.getXRot()); // Paper - decomp fix
++                return loadedEntity; // Paper - decomp fix
+             });
+ 
+             if (entity1 == null) {
+diff --git a/src/main/java/net/minecraft/world/entity/ai/behavior/BehaviorUtils.java b/src/main/java/net/minecraft/world/entity/ai/behavior/BehaviorUtils.java
+index 88a8c2bc4aa30f478122a05fd119486a0107db82..5f00e3f4c86196db47bf1007973445d40866afdd 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/behavior/BehaviorUtils.java
++++ b/src/main/java/net/minecraft/world/entity/ai/behavior/BehaviorUtils.java
+@@ -169,8 +169,8 @@ public class BehaviorUtils {
+ 
+         return optional.map((uuid) -> {
+             return ((ServerLevel) entity.level).getEntity(uuid);
+-        }).map((entity) -> {
+-            return entity instanceof LivingEntity ? (LivingEntity) entity : null;
++        }).map((entity2) -> { // Paper - decomp fix
++            return entity2 instanceof LivingEntity ? (LivingEntity) entity2 : null; // Paper - decomp fix
+         });
+     }
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Phantom.java b/src/main/java/net/minecraft/world/entity/monster/Phantom.java
+index c88dc823ca0c2f83bc10886208d498ea77523d68..dcfd0b107ac7bd1633f3b681cd5f5e26ce87bd63 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Phantom.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Phantom.java
+@@ -522,7 +522,7 @@ public class Phantom extends FlyingMob implements Enemy {
+                 List<Player> list = Phantom.this.level.getNearbyPlayers(this.attackTargeting, (LivingEntity) Phantom.this, Phantom.this.getBoundingBox().inflate(16.0D, 64.0D, 16.0D));
+ 
+                 if (!list.isEmpty()) {
+-                    list.sort(Comparator.comparing(Entity::getY).reversed());
++                    list.sort(Comparator.<Player, Double>comparing(Entity::getY).reversed()); // Paper - decomp fix
+                     Iterator iterator = list.iterator();
+ 
+                     while (iterator.hasNext()) {
+diff --git a/src/main/java/net/minecraft/world/item/crafting/RecipeManager.java b/src/main/java/net/minecraft/world/item/crafting/RecipeManager.java
+index b4a5709b03e400d00504f33a9b34019d2b7bf115..2d79d4014770081fcd58a929e5fe0a26ac1b8023 100644
+--- a/src/main/java/net/minecraft/world/item/crafting/RecipeManager.java
++++ b/src/main/java/net/minecraft/world/item/crafting/RecipeManager.java
+@@ -172,7 +172,7 @@ public class RecipeManager extends SimpleJsonResourceReloadListener {
+         Map<RecipeType<?>, Object2ObjectLinkedOpenHashMap<ResourceLocation, Recipe<?>>> map = Maps.newHashMap(); // CraftBukkit
+ 
+         recipes.forEach((irecipe) -> {
+-            Map<ResourceLocation, Recipe<?>> map1 = (Map) map.computeIfAbsent(irecipe.getType(), (recipes) -> {
++            Map<ResourceLocation, Recipe<?>> map1 = (Map) map.computeIfAbsent(irecipe.getType(), (recipes_) -> { // Paper - decomp fix
+                 return new Object2ObjectLinkedOpenHashMap<>(); // CraftBukkit
+             });
+             Recipe<?> irecipe1 = (Recipe) map1.put(irecipe.getId(), irecipe);

@@ -1,0 +1,95 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Mon, 28 Mar 2016 19:55:45 -0400
+Subject: [PATCH] Only process BlockPhysicsEvent if a plugin has a listener
+
+Saves on some object allocation and processing when no plugin listens to this
+
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 901d5497667706c049718dc4fca37a1bc489c465..f7763a773bce4d8d947c8c859fe84d8a601034c5 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -1290,6 +1290,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+ 
+         while (iterator.hasNext()) {
+             ServerLevel worldserver = (ServerLevel) iterator.next();
++            worldserver.hasPhysicsEvent =  org.bukkit.event.block.BlockPhysicsEvent.getHandlerList().getRegisteredListeners().length > 0; // Paper
+ 
+             this.profiler.push(() -> {
+                 return worldserver + " " + worldserver.dimension().location();
+diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
+index 22c687e3db79bcfbc512ce3993d6e8a6db062360..8b0a384caa09848d61b3a6259dd56590cd52d0a0 100644
+--- a/src/main/java/net/minecraft/server/level/ServerLevel.java
++++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
+@@ -190,6 +190,7 @@ public class ServerLevel extends net.minecraft.world.level.Level implements Worl
+     private int tickPosition;
+     public final LevelStorageSource.LevelStorageAccess convertable;
+     public final UUID uuid;
++    public boolean hasPhysicsEvent = true; // Paper
+ 
+     @Override public LevelChunk getChunkIfLoaded(int x, int z) { // Paper - this was added in world too but keeping here for NMS ABI
+         return this.chunkSource.getChunk(x, z, false);
+diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
+index 24a6429059f58f51c97386ca2823ca0910288dec..d47ed15382f98aabd509e32a3c202a91088adf6b 100644
+--- a/src/main/java/net/minecraft/world/level/Level.java
++++ b/src/main/java/net/minecraft/world/level/Level.java
+@@ -458,7 +458,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+                 // CraftBukkit start
+                 iblockdata1.updateIndirectNeighbourShapes(this, blockposition, k, j - 1); // Don't call an event for the old block to limit event spam
+                 CraftWorld world = ((ServerLevel) this).getWorld();
+-                if (world != null) {
++                if (world != null && ((ServerLevel)this).hasPhysicsEvent) { // Paper
+                     BlockPhysicsEvent event = new BlockPhysicsEvent(world.getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ()), CraftBlockData.fromData(iblockdata));
+                     this.getCraftServer().getPluginManager().callEvent(event);
+ 
+@@ -560,7 +560,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+             try {
+                 // CraftBukkit start
+                 CraftWorld world = ((ServerLevel) this).getWorld();
+-                if (world != null) {
++                if (world != null && ((ServerLevel)this).hasPhysicsEvent) { // Paper
+                     BlockPhysicsEvent event = new BlockPhysicsEvent(world.getBlockAt(sourcePos.getX(), sourcePos.getY(), sourcePos.getZ()), CraftBlockData.fromData(iblockdata), world.getBlockAt(neighborPos.getX(), neighborPos.getY(), neighborPos.getZ()));
+                     this.getCraftServer().getPluginManager().callEvent(event);
+ 
+diff --git a/src/main/java/net/minecraft/world/level/block/BushBlock.java b/src/main/java/net/minecraft/world/level/block/BushBlock.java
+index d6cb341d4d8e20b77979a241dd2e4346455796d7..42635b6115187abeffb290ca040350fd97cf89f7 100644
+--- a/src/main/java/net/minecraft/world/level/block/BushBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/BushBlock.java
+@@ -2,6 +2,7 @@ package net.minecraft.world.level.block;
+ 
+ import net.minecraft.core.BlockPos;
+ import net.minecraft.core.Direction;
++import net.minecraft.server.level.ServerLevel;
+ import net.minecraft.world.level.BlockGetter;
+ import net.minecraft.world.level.LevelAccessor;
+ import net.minecraft.world.level.LevelReader;
+@@ -23,7 +24,7 @@ public class BushBlock extends Block {
+     public BlockState updateShape(BlockState state, Direction direction, BlockState newState, LevelAccessor world, BlockPos pos, BlockPos posFrom) {
+         // CraftBukkit start
+         if (!state.canSurvive(world, pos)) {
+-            if (!org.bukkit.craftbukkit.event.CraftEventFactory.callBlockPhysicsEvent(world, pos).isCancelled()) {
++            if (!(world instanceof ServerLevel && ((ServerLevel) world).hasPhysicsEvent) || !org.bukkit.craftbukkit.event.CraftEventFactory.callBlockPhysicsEvent(world, pos).isCancelled()) { // Paper
+                 return Blocks.AIR.defaultBlockState();
+             }
+         }
+diff --git a/src/main/java/net/minecraft/world/level/block/DoublePlantBlock.java b/src/main/java/net/minecraft/world/level/block/DoublePlantBlock.java
+index db444689092f537dd736dc73c532bd540fadcf86..86c5025d1b21dc35782124eca66288c63626147a 100644
+--- a/src/main/java/net/minecraft/world/level/block/DoublePlantBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/DoublePlantBlock.java
+@@ -3,6 +3,7 @@ package net.minecraft.world.level.block;
+ import javax.annotation.Nullable;
+ import net.minecraft.core.BlockPos;
+ import net.minecraft.core.Direction;
++import net.minecraft.server.level.ServerLevel;
+ import net.minecraft.world.entity.LivingEntity;
+ import net.minecraft.world.entity.player.Player;
+ import net.minecraft.world.item.ItemStack;
+@@ -83,7 +84,7 @@ public class DoublePlantBlock extends BushBlock {
+ 
+     protected static void preventCreativeDropFromBottomPart(Level world, BlockPos pos, BlockState state, Player player) {
+         // CraftBukkit start
+-        if (org.bukkit.craftbukkit.event.CraftEventFactory.callBlockPhysicsEvent(world, pos).isCancelled()) {
++        if (((ServerLevel)world).hasPhysicsEvent && org.bukkit.craftbukkit.event.CraftEventFactory.callBlockPhysicsEvent(world, pos).isCancelled()) { // Paper
+             return;
+         }
+         // CraftBukkit end

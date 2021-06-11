@@ -1,0 +1,66 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Mon, 23 Nov 2020 12:58:51 -0800
+Subject: [PATCH] Added PlayerLecternPageChangeEvent
+
+
+diff --git a/src/main/java/net/minecraft/world/inventory/AbstractContainerMenu.java b/src/main/java/net/minecraft/world/inventory/AbstractContainerMenu.java
+index bc39e7464646d712b085251dc0277a5b1ec0a393..b5d79635cd8b0eb6b17962450b347010aeb52654 100644
+--- a/src/main/java/net/minecraft/world/inventory/AbstractContainerMenu.java
++++ b/src/main/java/net/minecraft/world/inventory/AbstractContainerMenu.java
+@@ -561,6 +561,7 @@ public abstract class AbstractContainerMenu {
+         this.getSlot(slot).set(stack);
+     }
+ 
++    public void setData(int index, int value) { this.setData(index, value); } // Paper - OBFHELPER
+     public void setData(int id, int value) {
+         ((DataSlot) this.dataSlots.get(id)).set(value);
+     }
+diff --git a/src/main/java/net/minecraft/world/inventory/LecternMenu.java b/src/main/java/net/minecraft/world/inventory/LecternMenu.java
+index 29e8dbc6be57faf50a8ca68eed6bf2e203b7e87a..a7be91a9336065899c409526a890e55f37b98751 100644
+--- a/src/main/java/net/minecraft/world/inventory/LecternMenu.java
++++ b/src/main/java/net/minecraft/world/inventory/LecternMenu.java
+@@ -11,6 +11,7 @@ import org.bukkit.craftbukkit.inventory.CraftInventoryView;
+ import org.bukkit.entity.Player;
+ import org.bukkit.event.player.PlayerTakeLecternBookEvent;
+ // CraftBukkit end
++import io.papermc.paper.event.player.PlayerLecternPageChangeEvent; // Paper
+ 
+ public class LecternMenu extends AbstractContainerMenu {
+ 
+@@ -58,6 +59,7 @@ public class LecternMenu extends AbstractContainerMenu {
+     @Override
+     public boolean clickMenuButton(net.minecraft.world.entity.player.Player player, int id) {
+         int j;
++        PlayerLecternPageChangeEvent playerLecternPageChangeEvent; CraftInventoryLectern bukkitView; // Paper
+ 
+         if (id >= 100) {
+             j = id - 100;
+@@ -67,11 +69,25 @@ public class LecternMenu extends AbstractContainerMenu {
+             switch (id) {
+                 case 1:
+                     j = this.lecternData.get(0);
+-                    this.setData(0, j - 1);
++                    // Paper start
++                    bukkitView = (CraftInventoryLectern) getBukkitView().getTopInventory();
++                    playerLecternPageChangeEvent = new PlayerLecternPageChangeEvent((org.bukkit.entity.Player) player.getBukkitEntity(), bukkitView.getHolder(), bukkitView.getBook(), PlayerLecternPageChangeEvent.PageChangeDirection.LEFT, j, j - 1);
++                    if (!playerLecternPageChangeEvent.callEvent()) {
++                        return false;
++                    }
++                    this.setData(0, playerLecternPageChangeEvent.getNewPage());
++                    // Paper end
+                     return true;
+                 case 2:
+                     j = this.lecternData.get(0);
+-                    this.setData(0, j + 1);
++                    // Paper start
++                    bukkitView = (CraftInventoryLectern) getBukkitView().getTopInventory();
++                    playerLecternPageChangeEvent = new PlayerLecternPageChangeEvent((org.bukkit.entity.Player) player.getBukkitEntity(), bukkitView.getHolder(), bukkitView.getBook(), PlayerLecternPageChangeEvent.PageChangeDirection.RIGHT, j, j + 1);
++                    if (!playerLecternPageChangeEvent.callEvent()) {
++                        return false;
++                    }
++                    this.setData(0, playerLecternPageChangeEvent.getNewPage());
++                    // Paper end
+                     return true;
+                 case 3:
+                     if (!player.mayBuild()) {

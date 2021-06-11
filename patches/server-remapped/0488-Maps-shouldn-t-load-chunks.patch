@@ -1,0 +1,32 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Phoenix616 <mail@moep.tv>
+Date: Sun, 7 Jun 2020 21:43:42 +0100
+Subject: [PATCH] Maps shouldn't load chunks
+
+Previously maps would load all chunks in a certain radius depending on
+ their scale when trying to update their content. This would result in
+ main thread chunk loads when they weren't really necessary, especially
+ on low view distances or "slow" async chunk loads after teleports or
+ other prioritisation.
+
+ This changes it to only try to render already loaded chunks based on
+ the assumption that the chunks around the player will get loaded
+ eventually anyways and that maps will get checked for update every
+ five ticks that movement occur in anyways.
+
+diff --git a/src/main/java/net/minecraft/world/item/MapItem.java b/src/main/java/net/minecraft/world/item/MapItem.java
+index 1736d2eb33e5f2221210a0a4f3ceb8905555a162..05759dc6edaa790a5e3f2ca2e0ae27e53cfa4397 100644
+--- a/src/main/java/net/minecraft/world/item/MapItem.java
++++ b/src/main/java/net/minecraft/world/item/MapItem.java
+@@ -119,9 +119,9 @@ public class MapItem extends ComplexItem {
+                             int k2 = (j / i + k1 - 64) * i;
+                             int l2 = (k / i + l1 - 64) * i;
+                             Multiset<MaterialColor> multiset = LinkedHashMultiset.create();
+-                            LevelChunk chunk = world.getChunkAt(new BlockPos(k2, 0, l2));
++                            LevelChunk chunk = world.getChunkIfLoaded(new BlockPos(k2, 0, l2)); // Paper - Maps shouldn't load chunks
+ 
+-                            if (!chunk.isEmpty()) {
++                            if (chunk != null && !chunk.isEmpty()) { // Paper - Maps shouldn't load chunks
+                                 ChunkPos chunkcoordintpair = chunk.getPos();
+                                 int i3 = k2 & 15;
+                                 int j3 = l2 & 15;

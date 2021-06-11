@@ -1,0 +1,55 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: William Blake Galbreath <Blake.Galbreath@GMail.com>
+Date: Sun, 26 Jan 2020 16:30:19 -0600
+Subject: [PATCH] Bees get gravity in void. Fixes MC-167279
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/ai/control/ControllerMove.java b/src/main/java/net/minecraft/world/entity/ai/control/ControllerMove.java
+index 4044861622294a317fef7e93aa86e96e8474b513..2aa5789437ba7eb20579da238c407a65a25b1d44 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/control/ControllerMove.java
++++ b/src/main/java/net/minecraft/world/entity/ai/control/ControllerMove.java
+@@ -16,7 +16,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
+ 
+ public class ControllerMove {
+ 
+-    protected final EntityInsentient a;
++    protected final EntityInsentient a; public final EntityInsentient getEntity() { return a; } // Paper - OBFHELPER
+     protected double b;
+     protected double c;
+     protected double d;
+diff --git a/src/main/java/net/minecraft/world/entity/ai/control/ControllerMoveFlying.java b/src/main/java/net/minecraft/world/entity/ai/control/ControllerMoveFlying.java
+index 80cba36bc59e89c40c96ca556594a4285f06fc6f..d0cbc429144b89498a7f4dc6ff64924c5ba54ad8 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/control/ControllerMoveFlying.java
++++ b/src/main/java/net/minecraft/world/entity/ai/control/ControllerMoveFlying.java
+@@ -16,7 +16,7 @@ public class ControllerMoveFlying extends ControllerMove {
+     }
+ 
+     @Override
+-    public void a() {
++    public void a() { tick(); } public void tick() { // Paper - OBFHELPER
+         if (this.h == ControllerMove.Operation.MOVE_TO) {
+             this.h = ControllerMove.Operation.WAIT;
+             this.a.setNoGravity(true);
+diff --git a/src/main/java/net/minecraft/world/entity/animal/EntityBee.java b/src/main/java/net/minecraft/world/entity/animal/EntityBee.java
+index 1ecf73f874f404f58a99316ae027f76db6b557db..7ce8eaeb9af3547869f467910b6a458118c63c1f 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/EntityBee.java
++++ b/src/main/java/net/minecraft/world/entity/animal/EntityBee.java
+@@ -111,7 +111,17 @@ public class EntityBee extends EntityAnimal implements IEntityAngerable, EntityB
+ 
+     public EntityBee(EntityTypes<? extends EntityBee> entitytypes, World world) {
+         super(entitytypes, world);
+-        this.moveController = new ControllerMoveFlying(this, 20, true);
++        // Paper start - apply gravity to bees when they get stuck in the void, fixes MC-167279
++        this.moveController = new ControllerMoveFlying(this, 20, true) {
++            @Override
++            public void tick() {
++                if (getEntity().locY() <= 0) {
++                    getEntity().setNoGravity(false);
++                }
++                super.tick();
++            }
++        };
++        // Paper end
+         this.lookController = new EntityBee.j(this);
+         this.a(PathType.DANGER_FIRE, -1.0F);
+         this.a(PathType.WATER, -1.0F);

@@ -1,0 +1,41 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: BillyGalbreath <Blake.Galbreath@GMail.com>
+Date: Sun, 11 Jun 2017 16:30:30 -0500
+Subject: [PATCH] PlayerAttemptPickupItemEvent
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/item/ItemEntity.java b/src/main/java/net/minecraft/world/entity/item/ItemEntity.java
+index 72d1e83ac5e4ae3c943ca5ec1058f0d7ad2903cd..de69f7c3c0ee1e74682b0db91bdaae09175690e9 100644
+--- a/src/main/java/net/minecraft/world/entity/item/ItemEntity.java
++++ b/src/main/java/net/minecraft/world/entity/item/ItemEntity.java
+@@ -35,6 +35,7 @@ import net.minecraft.stats.Stats;
+ import org.bukkit.event.entity.EntityPickupItemEvent;
+ import org.bukkit.event.player.PlayerPickupItemEvent;
+ // CraftBukkit end
++import org.bukkit.event.player.PlayerAttemptPickupItemEvent; // Paper
+ 
+ public class ItemEntity extends Entity {
+ 
+@@ -364,6 +365,22 @@ public class ItemEntity extends Entity {
+             int remaining = i - canHold;
+             boolean flyAtPlayer = false; // Paper
+ 
++            // Paper start
++            if (this.pickupDelay <= 0) {
++                PlayerAttemptPickupItemEvent attemptEvent = new PlayerAttemptPickupItemEvent((org.bukkit.entity.Player) player.getBukkitEntity(), (org.bukkit.entity.Item) this.getBukkitEntity(), remaining);
++                this.level.getCraftServer().getPluginManager().callEvent(attemptEvent);
++
++                flyAtPlayer = attemptEvent.getFlyAtPlayer();
++                if (attemptEvent.isCancelled()) {
++                    if (flyAtPlayer) {
++                        player.take(this, i);
++                    }
++
++                    return;
++                }
++            }
++            // Paper end
++
+             if (this.pickupDelay <= 0 && canHold > 0) {
+                 itemstack.setCount(canHold);
+                 // Call legacy event

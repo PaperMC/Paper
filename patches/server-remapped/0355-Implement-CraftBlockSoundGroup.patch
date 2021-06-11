@@ -1,0 +1,83 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: simpleauthority <jacob@algorithmjunkie.com>
+Date: Tue, 28 May 2019 03:48:51 -0700
+Subject: [PATCH] Implement CraftBlockSoundGroup
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/block/CraftBlockSoundGroup.java b/src/main/java/com/destroystokyo/paper/block/CraftBlockSoundGroup.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..9a516520d975f52169e346adc4ec6d9db843db2f
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/block/CraftBlockSoundGroup.java
+@@ -0,0 +1,38 @@
++package com.destroystokyo.paper.block;
++
++import net.minecraft.world.level.block.SoundType;
++import org.bukkit.Sound;
++import org.bukkit.craftbukkit.CraftSound;
++
++public class CraftBlockSoundGroup implements BlockSoundGroup {
++    private final SoundType soundEffectType;
++
++    public CraftBlockSoundGroup(SoundType soundEffectType) {
++        this.soundEffectType = soundEffectType;
++    }
++
++    @Override
++    public Sound getBreakSound() {
++        return CraftSound.getBukkit(soundEffectType.getBreakSound());
++    }
++
++    @Override
++    public Sound getStepSound() {
++        return CraftSound.getBukkit(soundEffectType.getStepSound());
++    }
++
++    @Override
++    public Sound getPlaceSound() {
++        return CraftSound.getBukkit(soundEffectType.getPlaceSound());
++    }
++
++    @Override
++    public Sound getHitSound() {
++        return CraftSound.getBukkit(soundEffectType.getHitSound());
++    }
++
++    @Override
++    public Sound getFallSound() {
++        return CraftSound.getBukkit(soundEffectType.getFallSound());
++    }
++}
+diff --git a/src/main/java/net/minecraft/world/level/block/SoundType.java b/src/main/java/net/minecraft/world/level/block/SoundType.java
+index 1d3acbbc80a38998fb38e0ce37af52103f677721..44394adbe60b5e9c4654ee2f437d465bef5909a8 100644
+--- a/src/main/java/net/minecraft/world/level/block/SoundType.java
++++ b/src/main/java/net/minecraft/world/level/block/SoundType.java
+@@ -54,10 +54,10 @@ public class SoundType {
+     public static final SoundType GILDED_BLACKSTONE = new SoundType(1.0F, 1.0F, SoundEvents.GILDED_BLACKSTONE_BREAK, SoundEvents.GILDED_BLACKSTONE_STEP, SoundEvents.GILDED_BLACKSTONE_PLACE, SoundEvents.GILDED_BLACKSTONE_HIT, SoundEvents.GILDED_BLACKSTONE_FALL);
+     public final float volume;
+     public final float pitch;
+-    public final SoundEvent breakSound;
++    public final SoundEvent breakSound; public final SoundEvent getBreakSound() { return this.breakSound; } // Paper - OBFHELPER // PAIL private -> public, rename breakSound
+     private final SoundEvent stepSound;
+     private final SoundEvent placeSound;
+-    public final SoundEvent hitSound;
++    public final SoundEvent hitSound; public final SoundEvent getHitSound() { return this.hitSound; } // Paper - OBFHELPER // PAIL private -> public, rename hitSound
+     private final SoundEvent fallSound;
+ 
+     public SoundType(float volume, float pitch, SoundEvent breakSound, SoundEvent stepSound, SoundEvent placeSound, SoundEvent hitSound, SoundEvent fallSound) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java b/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java
+index d73086970db19531db66c2e8af52da91d0b1ea28..5bff313dbbb3049105874846d995883e827fbc00 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java
+@@ -747,4 +747,11 @@ public class CraftBlock implements Block {
+         AABB aabb = shape.bounds();
+         return new BoundingBox(getX() + aabb.minX, getY() + aabb.minY, getZ() + aabb.minZ, getX() + aabb.maxX, getY() + aabb.maxY, getZ() + aabb.maxZ);
+     }
++
++    // Paper start
++    @Override
++    public com.destroystokyo.paper.block.BlockSoundGroup getSoundGroup() {
++        return new com.destroystokyo.paper.block.CraftBlockSoundGroup(getNMSBlock().defaultBlockState().getSoundType());
++    }
++    // Paper end
+ }

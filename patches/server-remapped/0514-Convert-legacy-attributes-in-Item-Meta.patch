@@ -1,0 +1,44 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Wed, 1 Jul 2020 04:50:22 -0400
+Subject: [PATCH] Convert legacy attributes in Item Meta
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/attribute/CraftAttributeMap.java b/src/main/java/org/bukkit/craftbukkit/attribute/CraftAttributeMap.java
+index 2d547810125f00680ef7e60dd791d0bddd9ebd3e..320fd6780af2fa99e4e4f4193cbc9338d492dc6d 100644
+--- a/src/main/java/org/bukkit/craftbukkit/attribute/CraftAttributeMap.java
++++ b/src/main/java/org/bukkit/craftbukkit/attribute/CraftAttributeMap.java
+@@ -11,6 +11,20 @@ import org.bukkit.craftbukkit.util.CraftNamespacedKey;
+ public class CraftAttributeMap implements Attributable {
+ 
+     private final AttributeMap handle;
++    // Paper start - convert legacy attributes
++    private static final com.google.common.collect.ImmutableMap<String, String> legacyNMS = com.google.common.collect.ImmutableMap.<String, String>builder().put("generic.maxHealth", "generic.max_health").put("Max Health", "generic.max_health").put("zombie.spawnReinforcements", "zombie.spawn_reinforcements").put("Spawn Reinforcements Chance", "zombie.spawn_reinforcements").put("horse.jumpStrength", "horse.jump_strength").put("Jump Strength", "horse.jump_strength").put("generic.followRange", "generic.follow_range").put("Follow Range", "generic.follow_range").put("generic.knockbackResistance", "generic.knockback_resistance").put("Knockback Resistance", "generic.knockback_resistance").put("generic.movementSpeed", "generic.movement_speed").put("Movement Speed", "generic.movement_speed").put("generic.flyingSpeed", "generic.flying_speed").put("Flying Speed", "generic.flying_speed").put("generic.attackDamage", "generic.attack_damage").put("generic.attackKnockback", "generic.attack_knockback").put("generic.attackSpeed", "generic.attack_speed").put("generic.armorToughness", "generic.armor_toughness").build();
++
++    public static String convertIfNeeded(String nms) {
++        if (nms == null) {
++            return null;
++        }
++        nms = legacyNMS.getOrDefault(nms, nms);
++        if (!nms.toLowerCase().equals(nms) || nms.indexOf(' ') != -1) {
++            return null;
++        }
++        return nms;
++    }
++    // Paper end
+ 
+     public CraftAttributeMap(AttributeMap handle) {
+         this.handle = handle;
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
+index 45abfebf3f947dcbd2e7b1d95be8ba918f044e51..cb66998dbaa9d93e92ef4045b83efbb0fd486234 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
+@@ -480,7 +480,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+ 
+             AttributeModifier attribMod = CraftAttributeInstance.convert(nmsModifier);
+ 
+-            String attributeName = entry.getString(ATTRIBUTES_IDENTIFIER.NBT);
++            String attributeName = CraftAttributeMap.convertIfNeeded(entry.getString(ATTRIBUTES_IDENTIFIER.NBT)); // Paper
+             if (attributeName == null || attributeName.isEmpty()) {
+                 continue;
+             }

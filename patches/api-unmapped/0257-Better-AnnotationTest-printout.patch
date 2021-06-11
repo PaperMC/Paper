@@ -1,0 +1,69 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Thu, 3 Dec 2020 14:04:57 -0800
+Subject: [PATCH] Better AnnotationTest printout
+
+
+diff --git a/pom.xml b/pom.xml
+index 6b71d9a397dd5b72320402a47b8e7197d24e061c..73fbd5d5a591871a3a386fb5c455cd96a3992e7a 100644
+--- a/pom.xml
++++ b/pom.xml
+@@ -257,6 +257,19 @@
+                     <shadedArtifactAttached>true</shadedArtifactAttached>
+                 </configuration>
+             </plugin>
++            <plugin>
++                <groupId>org.apache.maven.plugins</groupId>
++                <artifactId>maven-surefire-plugin</artifactId>
++                <version>2.22.2</version>
++                <configuration>
++                    <properties>
++                        <property>
++                            <name>listener</name>
++                            <value>io.papermc.paper.JunitEventListener</value>
++                        </property>
++                    </properties>
++                </configuration>
++            </plugin>
+             <plugin>
+                 <groupId>org.apache.maven.plugins</groupId>
+                 <artifactId>maven-javadoc-plugin</artifactId>
+diff --git a/src/test/java/io/papermc/paper/JunitEventListener.java b/src/test/java/io/papermc/paper/JunitEventListener.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..072ac1a96394b8d494f42fca8dfe08115eaed3fe
+--- /dev/null
++++ b/src/test/java/io/papermc/paper/JunitEventListener.java
+@@ -0,0 +1,6 @@
++package io.papermc.paper;
++
++import org.junit.runner.notification.RunListener;
++
++public class JunitEventListener extends RunListener {
++}
+diff --git a/src/test/java/org/bukkit/AnnotationTest.java b/src/test/java/org/bukkit/AnnotationTest.java
+index 03229d5f4ec36a82197beb391356d791ff67fb2f..19271057cf24329757c9419fa6c97848e008a96c 100644
+--- a/src/test/java/org/bukkit/AnnotationTest.java
++++ b/src/test/java/org/bukkit/AnnotationTest.java
+@@ -107,13 +107,18 @@ public class AnnotationTest {
+ 
+         Collections.sort(errors);
+ 
+-        System.out.println(errors.size() + " missing annotation(s):");
++        StringBuilder builder = new StringBuilder()
++            .append("There ")
++            .append(errors.size() != 1 ? "are " : "is ")
++            .append(errors.size())
++            .append(" missing annotation")
++            .append(errors.size() != 1 ? "s:\n" : ":\n");
++
+         for (String message : errors) {
+-            System.out.print("\t");
+-            System.out.println(message);
++            builder.append("\t").append(message).append("\n");
+         }
+ 
+-        Assert.fail("There " + errors.size() + " are missing annotation(s)");
++        Assert.fail(builder.toString());
+     }
+ 
+     private static void collectClasses(@NotNull File from, @NotNull Map<String, ClassNode> to) throws IOException {
