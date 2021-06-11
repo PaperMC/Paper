@@ -12,7 +12,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@
 +package co.aikar.timings;
 +
-+import Timing;
 +import com.google.common.collect.MapMaker;
 +import net.minecraft.commands.CommandFunction;
 +import net.minecraft.network.protocol.Packet;
@@ -230,9 +229,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import static co.aikar.util.JSONUtil.toArrayMapper;
 +import static co.aikar.util.JSONUtil.toObjectMapper;
 +
-+import TimingHistory;
-+import TimingsReportListener;
-+
 +@SuppressWarnings({"rawtypes", "SuppressionAnnotation"})
 +public class TimingsExport extends Thread {
 +
@@ -282,9 +278,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            pair("end", System.currentTimeMillis() / 1000),
 +            pair("online-mode", Bukkit.getServer().getOnlineMode()),
 +            pair("sampletime", (System.currentTimeMillis() - TimingsManager.timingStart) / 1000),
-+            pair("datapacks", toArrayMapper(MinecraftServer.getServer().getPackRepository().getSelectedIds(), pack -> {
-+                // Don't feel like obf helper'ing these, non fatal if its temp missed.
-+                return ChatColor.stripColor(CraftChatMessage.fromComponent(pack.a(true)));
++            pair("datapacks", toArrayMapper(MinecraftServer.getServer().getPackRepository().getSelectedPacks(), pack -> {
++                return ChatColor.stripColor(CraftChatMessage.fromComponent(pack.getChatLink(true)));
 +            }))
 +        );
 +        if (!TimingsManager.privacy) {
@@ -321,12 +316,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        );
 +
 +        parent.put("worlds", toObjectMapper(MinecraftServer.getServer().getAllLevels(), world -> {
-+            if (world.getWorldData().getName().equals("worldeditregentempworld")) return null;
-+            return pair(world.getWorldData().getName(), createObject(
++            if (world.serverLevelData.getLevelName().equals("worldeditregentempworld")) return null;
++            return pair(world.serverLevelData.getLevelName(), createObject(
 +                pair("gamerules", toObjectMapper(world.getWorld().getGameRules(), rule -> {
 +                    return pair(rule, world.getWorld().getGameRuleValue(rule));
 +                })),
-+                pair("ticking-distance", world.getChunkProvider().playerChunkMap.getEffectiveViewDistance())
++                pair("ticking-distance", world.getChunkSource().chunkMap.getEffectiveViewDistance())
 +            ));
 +        }));
 +
@@ -556,7 +551,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@
 +package co.aikar.timings;
 +
-+import Timing;
 +import net.minecraft.server.level.ServerLevel;
 +import net.minecraft.world.level.Level;
 +import net.minecraft.world.level.storage.PrimaryLevelData;
