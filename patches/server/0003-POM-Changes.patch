@@ -1,0 +1,84 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Zach Brown <zach.brown@destroystokyo.com>
+Date: Mon, 29 Feb 2016 20:40:33 -0600
+Subject: [PATCH] POM Changes
+
+
+diff --git a/build.gradle.kts b/build.gradle.kts
+index fddf2f440356425d948f40dcf9d9853a374ddc8e..332930391943da8b1601401f70e13f076b205e7c 100644
+--- a/build.gradle.kts
++++ b/build.gradle.kts
+@@ -15,21 +15,24 @@ repositories {
+ dependencies {
+     implementation(project(":Paper-API"))
+     implementation("jline:jline:2.12.1")
+-    implementation("org.apache.logging.log4j:log4j-iostreams:2.14.1") {
+-        exclude(group = "org.apache.logging.log4j", module = "log4j-api")
+-    }
++    implementation("org.apache.logging.log4j:log4j-iostreams:2.14.1") // Paper
++    implementation("org.apache.logging.log4j:log4j-api:2.14.1") // Paper
++    implementation("org.apache.logging.log4j:log4j-slf4j-impl:2.14.1") // Paper
+     implementation("org.ow2.asm:asm:9.1")
+     implementation("com.googlecode.json-simple:json-simple:1.1.1") {
+         // This includes junit transitively for whatever reason
+         isTransitive = false
+     }
+     runtimeOnly("org.xerial:sqlite-jdbc:3.34.0")
+-    runtimeOnly("mysql:mysql-connector-java:5.1.49")
++    runtimeOnly("mysql:mysql-connector-java:8.0.23") // Paper
+ 
+     runtimeOnly("org.apache.maven:maven-resolver-provider:3.8.1")
+     runtimeOnly("org.apache.maven.resolver:maven-resolver-connector-basic:1.7.0")
+     runtimeOnly("org.apache.maven.resolver:maven-resolver-transport-http:1.7.0")
+ 
++    implementation("co.aikar:cleaner:1.0-SNAPSHOT") // Paper
++    implementation("io.netty:netty-all:4.1.50-Final") // Paper
++
+     testImplementation("junit:junit:4.13.1")
+     testImplementation("org.hamcrest:hamcrest-library:1.3")
+ }
+@@ -42,7 +45,8 @@ tasks.jar {
+             "Implementation-Vendor" to Instant.now().epochSecond,
+             "Specification-Title" to "Bukkit",
+             "Specification-Version" to project.version,
+-            "Specification-Vendor" to "Bukkit Team"
++            "Specification-Vendor" to "Bukkit Team",
++            "Multi-Release" to "true" // Paper
+         ))
+         for (tld in listOf("net", "com", "org")) {
+             attributes(mapOf(
+@@ -54,7 +58,7 @@ tasks.jar {
+ 
+ tasks.shadowJar {
+     listOf(
+-        "jline", "it.unimi", "org.apache.commons.codec", "org.apache.commons.io",
++        "jline", "org.apache.commons.codec", "org.apache.commons.io", // Paper - don't relocate fastutil
+         "org.apache.commons.lang3", "org.objectweb.asm"
+     ).forEach { pack ->
+         relocate(pack, "org.bukkit.craftbukkit.libs.$pack")
+diff --git a/src/main/java/org/bukkit/craftbukkit/Main.java b/src/main/java/org/bukkit/craftbukkit/Main.java
+index dfe101d9f5db1bd7cfc59dfe9adc9abb643586cc..24e08ca0fca3e87f8a6b7670b266f3c2900b798c 100644
+--- a/src/main/java/org/bukkit/craftbukkit/Main.java
++++ b/src/main/java/org/bukkit/craftbukkit/Main.java
+@@ -190,7 +190,7 @@ public class Main {
+                 }
+ 
+                 if (Main.class.getPackage().getImplementationVendor() != null && System.getProperty("IReallyKnowWhatIAmDoingISwear") == null) {
+-                    Date buildDate = new Date(Integer.parseInt(Main.class.getPackage().getImplementationVendor()) * 1000L);
++                    Date buildDate = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'").parse(Main.class.getPackage().getImplementationVendor()); // Paper
+ 
+                     Calendar deadline = Calendar.getInstance();
+                     deadline.add(Calendar.DAY_OF_YEAR, -3);
+diff --git a/src/main/java/org/bukkit/craftbukkit/util/Versioning.java b/src/main/java/org/bukkit/craftbukkit/util/Versioning.java
+index 93046379d0cefd5d3236fc59e698809acdc18f80..774556a62eb240da42e84db4502e2ed43495be17 100644
+--- a/src/main/java/org/bukkit/craftbukkit/util/Versioning.java
++++ b/src/main/java/org/bukkit/craftbukkit/util/Versioning.java
+@@ -11,7 +11,7 @@ public final class Versioning {
+     public static String getBukkitVersion() {
+         String result = "Unknown-Version";
+ 
+-        InputStream stream = Bukkit.class.getClassLoader().getResourceAsStream("META-INF/maven/org.spigotmc/spigot-api/pom.properties");
++        InputStream stream = Bukkit.class.getClassLoader().getResourceAsStream("META-INF/maven/io.papermc.paper/paper-api/pom.properties");
+         Properties properties = new Properties();
+ 
+         if (stream != null) {
