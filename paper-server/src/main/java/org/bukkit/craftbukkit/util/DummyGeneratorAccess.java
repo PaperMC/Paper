@@ -20,6 +20,7 @@ import net.minecraft.world.level.TickListEmpty;
 import net.minecraft.world.level.biome.BiomeBase;
 import net.minecraft.world.level.biome.BiomeManager;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.TileEntity;
 import net.minecraft.world.level.block.state.IBlockData;
 import net.minecraft.world.level.border.WorldBorder;
@@ -180,7 +181,7 @@ public class DummyGeneratorAccess implements GeneratorAccess {
 
     @Override
     public IBlockData getType(BlockPosition blockposition) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        return Blocks.AIR.getBlockData(); // SPIGOT-6515
     }
 
     @Override
@@ -215,6 +216,6 @@ public class DummyGeneratorAccess implements GeneratorAccess {
 
     @Override
     public boolean a(BlockPosition blockposition, boolean flag, Entity entity, int i) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        return false; // SPIGOT-6515
     }
 }
