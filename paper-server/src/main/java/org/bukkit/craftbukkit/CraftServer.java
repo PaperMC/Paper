@@ -1364,9 +1364,10 @@ public final class CraftServer implements Server {
     public CraftMapView createMap(World world) {
         Validate.notNull(world, "World cannot be null");
 
-        net.minecraft.world.item.ItemStack stack = new net.minecraft.world.item.ItemStack(Items.MAP, 1);
-        WorldMap worldmap = ItemWorldMap.getSavedMap(stack, ((CraftWorld) world).getHandle());
-        return worldmap.mapView;
+        net.minecraft.world.level.World minecraftWorld = ((CraftWorld) world).getHandle();
+        // creates a new map at world spawn with the scale of 3, with out tracking position and unlimited tracking
+        int newId = ItemWorldMap.a(minecraftWorld, minecraftWorld.getWorldData().a(), minecraftWorld.getWorldData().c(), 3, false, false, minecraftWorld.getDimensionKey());
+        return minecraftWorld.a(ItemWorldMap.a(newId)).mapView;
     }
 
     @Override
