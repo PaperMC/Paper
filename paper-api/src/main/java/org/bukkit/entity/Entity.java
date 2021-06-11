@@ -205,14 +205,14 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
     public void setFireTicks(int ticks);
 
     /**
-     * Gets if the entity has visual fire (it will always appear to be on fire).
+     * Sets if the entity has visual fire (it will always appear to be on fire).
      *
      * @param fire whether visual fire is enabled
      */
     void setVisualFire(boolean fire);
 
     /**
-     * Sets if the entity has visual fire (it will always appear to be on fire).
+     * Gets if the entity has visual fire (it will always appear to be on fire).
      *
      * @return whether visual fire is enabled
      */
