@@ -2348,7 +2348,7 @@ index f484cf19e1ed6f4e14a6c324c59511e822335ba7..f4b5792e080d5181184eb661d005ce6c
          return this.distSqr((double)vec.getX(), (double)vec.getY(), (double)vec.getZ(), true);
      }
 diff --git a/src/main/java/net/minecraft/nbt/CompoundTag.java b/src/main/java/net/minecraft/nbt/CompoundTag.java
-index 3d374000cd61d4a29dae21035c5ee9a93a1ff0f9..4760fc27b1d4938a248c05af17fc93ab37084c00 100644
+index 3d374000cd61d4a29dae21035c5ee9a93a1ff0f9..750df4ab2fbfdcf759f4d3451340e66b6764391d 100644
 --- a/src/main/java/net/minecraft/nbt/CompoundTag.java
 +++ b/src/main/java/net/minecraft/nbt/CompoundTag.java
 @@ -60,7 +60,7 @@ public class CompoundTag implements Tag {
@@ -2360,7 +2360,7 @@ index 3d374000cd61d4a29dae21035c5ee9a93a1ff0f9..4760fc27b1d4938a248c05af17fc93ab
  
      protected CompoundTag(Map<String, Tag> entries) {
          this.tags = entries;
-@@ -119,10 +119,16 @@ public class CompoundTag implements Tag {
+@@ -119,10 +119,15 @@ public class CompoundTag implements Tag {
          this.tags.put(key, LongTag.valueOf(value));
      }
  
@@ -2373,7 +2373,6 @@ index 3d374000cd61d4a29dae21035c5ee9a93a1ff0f9..4760fc27b1d4938a248c05af17fc93ab
 +    /**
 +     * You must use {@link #hasUUID(String)} before or else it <b>will</b> throw an NPE.
 +     */
-+    public UUID getUUID(String prefix) { return getUUID(prefix); } // Paper - OBFHELPER
      public UUID getUUID(String key) {
          return NbtUtils.loadUUID(this.get(key));
      }
@@ -2390,26 +2389,26 @@ index 0ae24c8080391410756f101a1e40c2eef887c739..3b8207046d38d3d14719ff6761a22e60
          for (int j = 1; j < 5; ++j) {
              if ((value & -1 << j * 7) == 0) {
 diff --git a/src/main/java/net/minecraft/network/PacketEncoder.java b/src/main/java/net/minecraft/network/PacketEncoder.java
-index f189a72bd101a99d9350072a06953665fc5d6fee..02d253243eb66c30d4f7f6b0e7361518516eefec 100644
+index f189a72bd101a99d9350072a06953665fc5d6fee..83e99af925c87433b59f9bed30dfbf4e490c1b84 100644
 --- a/src/main/java/net/minecraft/network/PacketEncoder.java
 +++ b/src/main/java/net/minecraft/network/PacketEncoder.java
-@@ -46,6 +46,7 @@ public class PacketEncoder extends MessageToByteEncoder<Packet<?>> {
+@@ -45,7 +45,7 @@ public class PacketEncoder extends MessageToByteEncoder<Packet<?>> {
+                         throw new IllegalArgumentException("Packet too big (is " + j + ", should be less than 2097152): " + packet);
                      }
                  } catch (Throwable var9) {
-                     LOGGER.error(var9);
-+                    throwable.printStackTrace(); // Paper - WHAT WAS IT? WHO DID THIS TO YOU? WHAT DID YOU SEE?
+-                    LOGGER.error(var9);
++                    LOGGER.error("Packet encoding of packet ID {} threw (skippable? {})", integer, packet.isSkippable(), var9); // Paper - WHAT WAS IT? WHO DID THIS TO YOU? WHAT DID YOU SEE?
                      if (packet.isSkippable()) {
                          throw new SkipPacketException(var9);
                      } else {
 diff --git a/src/main/java/net/minecraft/server/MCUtil.java b/src/main/java/net/minecraft/server/MCUtil.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..d29fe67b7d39e368a873368a6be16042429e9209
+index 0000000000000000000000000000000000000000..80f8d6ce6dd717d4b37b78539c65b6ac814ec93d
 --- /dev/null
 +++ b/src/main/java/net/minecraft/server/MCUtil.java
-@@ -0,0 +1,510 @@
+@@ -0,0 +1,496 @@
 +package net.minecraft.server;
 +
-+import com.destroystokyo.paper.block.TargetBlockInfo;
 +import com.google.common.util.concurrent.ThreadFactoryBuilder;
 +import it.unimi.dsi.fastutil.objects.ObjectRBTreeSet;
 +import net.minecraft.core.BlockPos;
@@ -2883,19 +2882,6 @@ index 0000000000000000000000000000000000000000..d29fe67b7d39e368a873368a6be16042
 +
 +    public static ServerLevel getNMSWorld(@Nonnull org.bukkit.entity.Entity entity) {
 +        return getNMSWorld(entity.getWorld());
-+    }
-+
-+    public static ClipContext.Fluid getNMSFluidCollisionOption(TargetBlockInfo.FluidMode fluidMode) {
-+        if (fluidMode == TargetBlockInfo.FluidMode.NEVER) {
-+            return ClipContext.Fluid.NONE;
-+        }
-+        if (fluidMode == TargetBlockInfo.FluidMode.SOURCE_ONLY) {
-+            return ClipContext.Fluid.SOURCE_ONLY;
-+        }
-+        if (fluidMode == TargetBlockInfo.FluidMode.ALWAYS) {
-+            return ClipContext.Fluid.ANY;
-+        }
-+        return null;
 +    }
 +
 +    public static BlockFace toBukkitBlockFace(Direction enumDirection) {
@@ -4322,23 +4308,10 @@ index 1441888430687b9de2a67f21ed426f16d5b30538..2da42f1bc6922adae32d782aac780a7e
      public synchronized DataInputStream getChunkDataInputStream(ChunkPos pos) throws IOException {
          int i = this.getOffset(pos);
 diff --git a/src/main/java/net/minecraft/world/phys/AABB.java b/src/main/java/net/minecraft/world/phys/AABB.java
-index 120498a39b7ca7aee9763084507508d4a1c425aa..aa33a12b8b8ce6bb9a3278bcfa5b9017b3b432da 100644
+index 120498a39b7ca7aee9763084507508d4a1c425aa..4eeb186231551a9df453ec9d6a8a9dc9f8835464 100644
 --- a/src/main/java/net/minecraft/world/phys/AABB.java
 +++ b/src/main/java/net/minecraft/world/phys/AABB.java
-@@ -223,10 +223,12 @@ public class AABB {
-         return this.move(vec.x, vec.y, vec.z);
-     }
- 
-+    public final boolean intersects(AABB axisalignedbb) { return this.intersects(axisalignedbb); } // Paper - OBFHELPER
-     public boolean intersects(AABB box) {
-         return this.intersects(box.minX, box.minY, box.minZ, box.maxX, box.maxY, box.maxZ);
-     }
- 
-+    public final boolean intersects(double d0, double d1, double d2, double d3, double d4, double d5) { return intersects(d0, d1, d2, d3, d4, d5); } // Paper - OBFHELPER
-     public boolean intersects(double minX, double minY, double minZ, double maxX, double maxY, double maxZ) {
-         return this.minX < maxX && this.maxX > minX && this.minY < maxY && this.maxY > minY && this.minZ < maxZ && this.maxZ > minZ;
-     }
-@@ -243,6 +245,7 @@ public class AABB {
+@@ -243,6 +243,7 @@ public class AABB {
          return x >= this.minX && x < this.maxX && y >= this.minY && y < this.maxY && z >= this.minZ && z < this.maxZ;
      }
  
@@ -4347,15 +4320,10 @@ index 120498a39b7ca7aee9763084507508d4a1c425aa..aa33a12b8b8ce6bb9a3278bcfa5b9017
          double d = this.getXsize();
          double e = this.getYsize();
 diff --git a/src/main/java/net/minecraft/world/phys/shapes/Shapes.java b/src/main/java/net/minecraft/world/phys/shapes/Shapes.java
-index 5af90e0f7222356cb0e905a9b6e0c4eac5617a41..4f466cc1b196abdfd3a0282cae58f66de0a6be4f 100644
+index 5af90e0f7222356cb0e905a9b6e0c4eac5617a41..5d4d953f197afc402248ab73daeb6ef59134f48f 100644
 --- a/src/main/java/net/minecraft/world/phys/shapes/Shapes.java
 +++ b/src/main/java/net/minecraft/world/phys/shapes/Shapes.java
-@@ -30,10 +30,12 @@ public final class Shapes {
-     public static final VoxelShape INFINITY = box(Double.NEGATIVE_INFINITY, Double.NEGATIVE_INFINITY, Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY);
-     private static final VoxelShape EMPTY = new ArrayVoxelShape(new BitSetDiscreteVoxelShape(0, 0, 0), (DoubleList)(new DoubleArrayList(new double[]{0.0D})), (DoubleList)(new DoubleArrayList(new double[]{0.0D})), (DoubleList)(new DoubleArrayList(new double[]{0.0D})));
- 
-+    public static final VoxelShape empty() {return empty();} // Paper - OBFHELPER
-     public static VoxelShape empty() {
+@@ -34,6 +34,7 @@ public final class Shapes {
          return EMPTY;
      }
  

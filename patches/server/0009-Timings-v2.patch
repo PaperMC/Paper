@@ -6,13 +6,12 @@ Subject: [PATCH] Timings v2
 
 diff --git a/src/main/java/co/aikar/timings/MinecraftTimings.java b/src/main/java/co/aikar/timings/MinecraftTimings.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..be3a62f543a5fec4739c14821fe5a443c1fa3f5b
+index 0000000000000000000000000000000000000000..72f9e1978394afb6e5cc1c0d085d41586d69b84e
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/MinecraftTimings.java
-@@ -0,0 +1,152 @@
+@@ -0,0 +1,151 @@
 +package co.aikar.timings;
 +
-+import Timing;
 +import com.google.common.collect.MapMaker;
 +import net.minecraft.commands.CommandFunction;
 +import net.minecraft.network.protocol.Packet;
@@ -164,10 +163,10 @@ index 0000000000000000000000000000000000000000..be3a62f543a5fec4739c14821fe5a443
 +}
 diff --git a/src/main/java/co/aikar/timings/TimingsExport.java b/src/main/java/co/aikar/timings/TimingsExport.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..94adf0275a2e7093c152cc3b8b0a5747b3a13a86
+index 0000000000000000000000000000000000000000..2afec58d8eadc9357d8aa6b171d9249cdc5b8c4a
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/TimingsExport.java
-@@ -0,0 +1,380 @@
+@@ -0,0 +1,376 @@
 +/*
 + * This file is licensed under the MIT License (MIT).
 + *
@@ -230,9 +229,6 @@ index 0000000000000000000000000000000000000000..94adf0275a2e7093c152cc3b8b0a5747
 +import static co.aikar.util.JSONUtil.toArrayMapper;
 +import static co.aikar.util.JSONUtil.toObjectMapper;
 +
-+import TimingHistory;
-+import TimingsReportListener;
-+
 +@SuppressWarnings({"rawtypes", "SuppressionAnnotation"})
 +public class TimingsExport extends Thread {
 +
@@ -282,9 +278,8 @@ index 0000000000000000000000000000000000000000..94adf0275a2e7093c152cc3b8b0a5747
 +            pair("end", System.currentTimeMillis() / 1000),
 +            pair("online-mode", Bukkit.getServer().getOnlineMode()),
 +            pair("sampletime", (System.currentTimeMillis() - TimingsManager.timingStart) / 1000),
-+            pair("datapacks", toArrayMapper(MinecraftServer.getServer().getPackRepository().getSelectedIds(), pack -> {
-+                // Don't feel like obf helper'ing these, non fatal if its temp missed.
-+                return ChatColor.stripColor(CraftChatMessage.fromComponent(pack.a(true)));
++            pair("datapacks", toArrayMapper(MinecraftServer.getServer().getPackRepository().getSelectedPacks(), pack -> {
++                return ChatColor.stripColor(CraftChatMessage.fromComponent(pack.getChatLink(true)));
 +            }))
 +        );
 +        if (!TimingsManager.privacy) {
@@ -321,12 +316,12 @@ index 0000000000000000000000000000000000000000..94adf0275a2e7093c152cc3b8b0a5747
 +        );
 +
 +        parent.put("worlds", toObjectMapper(MinecraftServer.getServer().getAllLevels(), world -> {
-+            if (world.getWorldData().getName().equals("worldeditregentempworld")) return null;
-+            return pair(world.getWorldData().getName(), createObject(
++            if (world.serverLevelData.getLevelName().equals("worldeditregentempworld")) return null;
++            return pair(world.serverLevelData.getLevelName(), createObject(
 +                pair("gamerules", toObjectMapper(world.getWorld().getGameRules(), rule -> {
 +                    return pair(rule, world.getWorld().getGameRuleValue(rule));
 +                })),
-+                pair("ticking-distance", world.getChunkProvider().playerChunkMap.getEffectiveViewDistance())
++                pair("ticking-distance", world.getChunkSource().chunkMap.getEffectiveViewDistance())
 +            ));
 +        }));
 +
@@ -550,13 +545,12 @@ index 0000000000000000000000000000000000000000..94adf0275a2e7093c152cc3b8b0a5747
 +}
 diff --git a/src/main/java/co/aikar/timings/WorldTimingsHandler.java b/src/main/java/co/aikar/timings/WorldTimingsHandler.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..79ede25e4fe7a648b1d29c49d876482a2158f892
+index 0000000000000000000000000000000000000000..0fda52841b5e1643efeda92106124998abc4e0aa
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/WorldTimingsHandler.java
-@@ -0,0 +1,120 @@
+@@ -0,0 +1,119 @@
 +package co.aikar.timings;
 +
-+import Timing;
 +import net.minecraft.server.level.ServerLevel;
 +import net.minecraft.world.level.Level;
 +import net.minecraft.world.level.storage.PrimaryLevelData;
