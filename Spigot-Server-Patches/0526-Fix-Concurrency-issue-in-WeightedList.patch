@@ -16,7 +16,7 @@ index dc926f7e59fa350902d4a24aefc3df3eac7d75db..2d4345de154fb2d31f34695672ebdb4d
      private final BehaviorGate.Execution d;
 -    private final WeightedList<Behavior<? super E>> e = new WeightedList<>();
 +    private final WeightedList<Behavior<? super E>> e = new WeightedList<>(false); // Paper - don't use a clone
- 
+
      public BehaviorGate(Map<MemoryModuleType<?>, MemoryStatus> map, Set<MemoryModuleType<?>> set, BehaviorGate.Order behaviorgate_order, BehaviorGate.Execution behaviorgate_execution, List<Pair<Behavior<? super E>, Integer>> list) {
          super(map);
 @@ -65,10 +65,9 @@ public class BehaviorGate<E extends EntityLiving> extends Behavior<E> {
@@ -25,25 +25,25 @@ index dc926f7e59fa350902d4a24aefc3df3eac7d75db..2d4345de154fb2d31f34695672ebdb4d
          });
 -        Set set = this.b;
          BehaviorController behaviorcontroller = e0.getBehaviorController();
- 
+
 -        set.forEach(behaviorcontroller::removeMemory);
 +        this.b.forEach(behaviorcontroller::removeMemory); // Paper - decomp fix
      }
- 
+
      @Override
 @@ -115,7 +114,7 @@ public class BehaviorGate<E extends EntityLiving> extends Behavior<E> {
- 
+
          private final Consumer<WeightedList<?>> c;
- 
+
 -        private Order(Consumer consumer) {
 +        private Order(Consumer<WeightedList<?>> consumer) { // Paper - decomp fix
              this.c = consumer;
          }
- 
-diff --git a/src/main/java/net/minecraft/world/entity/ai/behavior/WeightedList.java b/src/main/java/net/minecraft/world/entity/ai/behavior/WeightedList.java
+
+diff --git a/src/main/java/net/minecraft/util/random/WeightedRandomList.java b/src/main/java/net/minecraft/util/random/WeightedRandomList.java
 index f6f8c68ff3642e28901094e8b501fcf8ec2cecd7..1ca9b0595ae9d914d23590ec0b0c2e857c39b250 100644
---- a/src/main/java/net/minecraft/world/entity/ai/behavior/WeightedList.java
-+++ b/src/main/java/net/minecraft/world/entity/ai/behavior/WeightedList.java
+--- a/src/main/java/net/minecraft/util/random/WeightedRandomList.java
++++ b/src/main/java/net/minecraft/util/random/WeightedRandomList.java
 @@ -6,7 +6,7 @@ import com.mojang.serialization.Codec;
  import com.mojang.serialization.DataResult;
  import com.mojang.serialization.Dynamic;
@@ -54,14 +54,14 @@ index f6f8c68ff3642e28901094e8b501fcf8ec2cecd7..1ca9b0595ae9d914d23590ec0b0c2e85
  import java.util.List;
  import java.util.Random;
 @@ -14,26 +14,32 @@ import java.util.stream.Stream;
- 
+
  public class WeightedList<U> {
- 
+
 -    protected final List<WeightedList.a<U>> a;
 +    protected final List<WeightedList.a<U>> list; // Paper - decompile conflict
      private final Random b;
 +    private final boolean isUnsafe; // Paper
- 
+
 -    public WeightedList() {
 -        this(Lists.newArrayList());
 +    // Paper start - add useClone option
@@ -69,7 +69,7 @@ index f6f8c68ff3642e28901094e8b501fcf8ec2cecd7..1ca9b0595ae9d914d23590ec0b0c2e85
 +    public WeightedList(boolean isUnsafe) {
 +        this(Lists.newArrayList(), isUnsafe);
      }
- 
+
 -    private WeightedList(List<WeightedList.a<U>> list) {
 +    private WeightedList(List<WeightedList.a<U>> list) { this(list, true); }
 +    private WeightedList(List<WeightedList.a<U>> list, boolean isUnsafe) {
@@ -79,7 +79,7 @@ index f6f8c68ff3642e28901094e8b501fcf8ec2cecd7..1ca9b0595ae9d914d23590ec0b0c2e85
 -        this.a = Lists.newArrayList(list);
 +        this.list = Lists.newArrayList(list); // Paper - decompile conflict
      }
- 
+
      public static <U> Codec<WeightedList<U>> a(Codec<U> codec) {
 -        return WeightedList.a.a(codec).listOf().xmap(WeightedList::new, (weightedlist) -> {
 -            return weightedlist.a;
@@ -87,16 +87,16 @@ index f6f8c68ff3642e28901094e8b501fcf8ec2cecd7..1ca9b0595ae9d914d23590ec0b0c2e85
 +            return weightedlist.list; // Paper - decompile conflict
          });
      }
- 
+
      public WeightedList<U> a(U u0, int i) {
 -        this.a.add(new WeightedList.a<>(u0, i));
 +        this.list.add(new WeightedList.a<>(u0, i)); // Paper - decompile conflict
          return this;
      }
- 
+
 @@ -42,21 +48,20 @@ public class WeightedList<U> {
      }
- 
+
      public WeightedList<U> a(Random random) {
 -        this.a.forEach((weightedlist_a) -> {
 -            weightedlist_a.a(random.nextFloat());
@@ -112,26 +112,26 @@ index f6f8c68ff3642e28901094e8b501fcf8ec2cecd7..1ca9b0595ae9d914d23590ec0b0c2e85
 +        return isUnsafe ? new WeightedList<>(list, isUnsafe) : this;
 +        // Paper end
      }
- 
+
      public boolean b() {
 -        return this.a.isEmpty();
 +        return this.list.isEmpty(); // Paper - decompile conflict
      }
- 
+
      public Stream<U> c() {
 -        return this.a.stream().map(WeightedList.a::a);
 +        return this.list.stream().map(WeightedList.a::a); // Paper - decompile conflict
      }
- 
+
      public U b(Random random) {
 @@ -64,7 +69,7 @@ public class WeightedList<U> {
      }
- 
+
      public String toString() {
 -        return "WeightedList[" + this.a + "]";
 +        return "WeightedList[" + this.list + "]"; // Paper - decompile conflict
      }
- 
+
      public static class a<T> {
 @@ -98,11 +103,7 @@ public class WeightedList<U> {
              return new Codec<WeightedList.a<E>>() {

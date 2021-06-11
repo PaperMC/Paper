@@ -18,7 +18,7 @@ index 5f1c5dd7902f6cff5acae05e8c6bf58a1ba5bdf1..df459918c14589155a574730205cb35d
 +        return this.writeUtf(net.md_5.bungee.chat.ComponentSerializer.toString(component), 262144);
 +    }
      // Paper end
- 
+
      public PacketDataSerializer a(IChatBaseComponent ichatbasecomponent) {
 diff --git a/src/main/java/net/minecraft/network/chat/IChatBaseComponent.java b/src/main/java/net/minecraft/network/chat/IChatBaseComponent.java
 index e96fa348a37a39c381b6659f612232933686c2a7..a002125e454f8a86924e9010e0b20a95742fa04b 100644
@@ -27,49 +27,18 @@ index e96fa348a37a39c381b6659f612232933686c2a7..a002125e454f8a86924e9010e0b20a95
 @@ -364,6 +364,7 @@ public interface IChatBaseComponent extends Message, IChatFormatted, Iterable<IC
              return IChatBaseComponent.ChatSerializer.a.toJsonTree(ichatbasecomponent);
          }
- 
+
 +        @Nullable public static IChatBaseComponent jsonToComponent(String json) { return a(json);} // Paper - OBFHELPER
          @Nullable
          public static IChatMutableComponent a(String s) {
              return (IChatMutableComponent) ChatDeserializer.a(IChatBaseComponent.ChatSerializer.a, s, IChatMutableComponent.class, false);
-diff --git a/src/main/java/net/minecraft/network/protocol/game/PacketPlayOutTitle.java b/src/main/java/net/minecraft/network/protocol/game/PacketPlayOutTitle.java
-index fff22c40ba38575951e8e4821ade22b29d580a89..c397c52e8e24b85d892e4906178720cc70edc143 100644
---- a/src/main/java/net/minecraft/network/protocol/game/PacketPlayOutTitle.java
-+++ b/src/main/java/net/minecraft/network/protocol/game/PacketPlayOutTitle.java
-@@ -47,6 +47,17 @@ public class PacketPlayOutTitle implements Packet<PacketListenerPlayOut> {
-         }
- 
-     }
-+    // Paper start
-+    public net.md_5.bungee.api.chat.BaseComponent[] components;
-+
-+    public PacketPlayOutTitle(EnumTitleAction action, net.md_5.bungee.api.chat.BaseComponent[] components, int fadeIn, int stay, int fadeOut) {
-+        this.a = action;
-+        this.components = components;
-+        this.c = fadeIn;
-+        this.d = stay;
-+        this.e = fadeOut;
-+    }
-+    // Paper end
- 
-     @Override
-     public void b(PacketDataSerializer packetdataserializer) throws IOException {
-@@ -55,6 +66,8 @@ public class PacketPlayOutTitle implements Packet<PacketListenerPlayOut> {
-             // Paper start
-             if (this.adventure$text != null) {
-                 packetdataserializer.writeComponent(this.adventure$text);
-+            } else if (this.components != null) {
-+                packetdataserializer.writeComponent(this.components);
-             } else
-             // Paper end
-             packetdataserializer.a(this.b);
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index 62f8d96f996ece87b7ab8d5d05d1dc214d10dbfa..9837f7364f3efd0aa22d33058bec369c41cd03ef 100644
+index fb792de46ff80a6bad77a47954861cddfd17f2d9..1ad5863dc12b2288a38efed71b7fa4b84296d96d 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 @@ -1,5 +1,6 @@
  package org.bukkit.craftbukkit.entity;
- 
+
 +import com.destroystokyo.paper.Title;
  import com.google.common.base.Preconditions;
  import com.google.common.collect.ImmutableSet;
@@ -77,7 +46,7 @@ index 62f8d96f996ece87b7ab8d5d05d1dc214d10dbfa..9837f7364f3efd0aa22d33058bec369c
 @@ -238,6 +239,96 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          }
      }
- 
+
 +    // Paper start
 +    @Override
 +    public void setPlayerListHeaderFooter(BaseComponent[] header, BaseComponent[] footer) {
