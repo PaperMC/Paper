@@ -5,36 +5,68 @@ Subject: [PATCH] Add PlayerUseUnknownEntityEvent
 
 
 diff --git a/src/main/java/net/minecraft/network/protocol/game/ServerboundInteractPacket.java b/src/main/java/net/minecraft/network/protocol/game/ServerboundInteractPacket.java
-index 1b316ecf2d8725b9c91a4869e6c2362c1443160d..964101d314f182574efba09bfe3907fbbf97fb13 100644
+index 1b316ecf2d8725b9c91a4869e6c2362c1443160d..70d309ddb215c62805b6ee13be50d8f93cdc38ba 100644
 --- a/src/main/java/net/minecraft/network/protocol/game/ServerboundInteractPacket.java
 +++ b/src/main/java/net/minecraft/network/protocol/game/ServerboundInteractPacket.java
-@@ -10,7 +10,7 @@ import net.minecraft.world.entity.Entity;
+@@ -10,8 +10,8 @@ import net.minecraft.world.entity.Entity;
  import net.minecraft.world.phys.Vec3;
  
  public class ServerboundInteractPacket implements Packet<ServerGamePacketListener> {
 -    private final int entityId;
+-    private final ServerboundInteractPacket.Action action;
 +    private final int entityId; public final int getEntityId() { return this.entityId; } // Paper - add accessor
-     private final ServerboundInteractPacket.Action action;
++    private final ServerboundInteractPacket.Action action; public final ServerboundInteractPacket.ActionType getActionType() { return this.action.getType(); } // Paper - add accessor
      private final boolean usingSecondaryAction;
      static final ServerboundInteractPacket.Action ATTACK_ACTION = new ServerboundInteractPacket.Action() {
+         @Override
+@@ -88,7 +88,7 @@ public class ServerboundInteractPacket implements Packet<ServerGamePacketListene
+         void write(FriendlyByteBuf buf);
+     }
+ 
+-    static enum ActionType {
++    public static enum ActionType { // Paper - package-private -> public
+         INTERACT(ServerboundInteractPacket.InteractionAction::new),
+         ATTACK((friendlyByteBuf) -> {
+             return ServerboundInteractPacket.ATTACK_ACTION;
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index 714fb0d766b654ad05134dea9b1e1b628a939993..c8f17466fe4ccfd8fa727e15281d015c2de2aaee 100644
+index 714fb0d766b654ad05134dea9b1e1b628a939993..6cd0fd57503723a58b30a7c33b1c863afc2401e2 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-@@ -1630,6 +1630,16 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
-                 }
+@@ -2202,8 +2202,37 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+                 });
              }
          }
 +        // Paper start - fire event
 +        else {
-+            this.craftServer.getPluginManager().callEvent(new com.destroystokyo.paper.event.player.PlayerUseUnknownEntityEvent(
-+                this.getPlayer(),
-+                packet.getEntityId(),
-+                packet.getAction() == ServerboundInteractPacket.Action.ATTACK,
-+                packet.getHand() == InteractionHand.MAIN_HAND ? EquipmentSlot.HAND : EquipmentSlot.OFF_HAND
-+            ));
++            packet.dispatch(new net.minecraft.network.protocol.game.ServerboundInteractPacket.Handler() {
++                @Override
++                public void onInteraction(net.minecraft.world.InteractionHand hand) {
++                    ServerGamePacketListenerImpl.this.callPlayerUseUnknownEntityEvent(packet, hand);
++                }
++
++                @Override
++                public void onInteraction(net.minecraft.world.InteractionHand hand, net.minecraft.world.phys.Vec3 pos) {
++                    ServerGamePacketListenerImpl.this.callPlayerUseUnknownEntityEvent(packet, hand);
++                }
++
++                @Override
++                public void onAttack() {
++                    ServerGamePacketListenerImpl.this.callPlayerUseUnknownEntityEvent(packet, net.minecraft.world.InteractionHand.MAIN_HAND);
++                }
++            });
 +        }
-+        // Paper end
++
++    }
  
++    private void callPlayerUseUnknownEntityEvent(ServerboundInteractPacket packet, InteractionHand hand) {
++        this.cserver.getPluginManager().callEvent(new com.destroystokyo.paper.event.player.PlayerUseUnknownEntityEvent(
++            this.getCraftPlayer(),
++            packet.getEntityId(),
++            packet.getActionType() == ServerboundInteractPacket.ActionType.ATTACK,
++            hand == InteractionHand.MAIN_HAND ? EquipmentSlot.HAND : EquipmentSlot.OFF_HAND
++        ));
      }
++    // Paper end
  
+     @Override
+     public void handleClientCommand(ServerboundClientCommandPacket packet) {
