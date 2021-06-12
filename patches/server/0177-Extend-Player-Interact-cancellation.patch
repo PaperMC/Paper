@@ -13,19 +13,11 @@ Update adjacent blocks of doors, double plants, pistons and beds
 when cancelling interaction.
 
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java b/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
-index 26ce794cb8d089c03fab5dd0a0c910783d10b72e..b1a53093eb5b5f359eedb6c252cf6d0d1ae8e409 100644
+index 9d303a962950c7464d1d4a2a0ce3f658628cc785..a67b7c82236d448bf10c257ab0a10476372ce89c 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
-@@ -23,6 +23,7 @@ import net.minecraft.core.BlockPos;
- import net.minecraft.core.Direction;
- import net.minecraft.network.protocol.game.ClientboundBlockBreakAckPacket;
- import net.minecraft.network.protocol.game.ClientboundBlockUpdatePacket;
-+import net.minecraft.network.protocol.game.ClientboundContainerClosePacket;
- import net.minecraft.network.protocol.game.ClientboundPlayerInfoPacket;
- import net.minecraft.network.protocol.game.ServerboundPlayerActionPacket;
- import net.minecraft.server.MinecraftServer;
-@@ -180,6 +181,11 @@ public class ServerPlayerGameMode {
-                 PlayerInteractEvent event = CraftEventFactory.callPlayerInteractEvent(this.player, Action.LEFT_CLICK_BLOCK, pos, direction, this.player.inventory.getSelected(), InteractionHand.MAIN_HAND);
+@@ -178,6 +178,11 @@ public class ServerPlayerGameMode {
+                 PlayerInteractEvent event = CraftEventFactory.callPlayerInteractEvent(this.player, Action.LEFT_CLICK_BLOCK, pos, direction, this.player.getInventory().getSelected(), InteractionHand.MAIN_HAND);
                  if (event.isCancelled()) {
                      // Let the client know the block still exists
 +                    // Paper start - brute force neighbor blocks for any attached blocks
@@ -36,23 +28,15 @@ index 26ce794cb8d089c03fab5dd0a0c910783d10b72e..b1a53093eb5b5f359eedb6c252cf6d0d
                      this.player.connection.send(new ClientboundBlockUpdatePacket(this.level, pos));
                      // Update any tile entity data for this block
                      BlockEntity tileentity = this.level.getBlockEntity(pos);
-@@ -484,6 +490,7 @@ public class ServerPlayerGameMode {
-         interactItemStack = stack.copy();
- 
-         if (event.useInteractedBlock() == Event.Result.DENY) {
-+
-             // If we denied a door from opening, we need to send a correcting update to the client, as it already opened the door.
-             if (iblockdata.getBlock() instanceof DoorBlock) {
-                 boolean bottom = iblockdata.getValue(DoorBlock.HALF) == DoubleBlockHalf.LOWER;
-@@ -496,7 +503,13 @@ public class ServerPlayerGameMode {
+@@ -493,7 +498,13 @@ public class ServerPlayerGameMode {
  
                  // send a correcting update to the client for the block above as well, this because of replaceable blocks (such as grass, sea grass etc)
                  player.connection.send(new ClientboundBlockUpdatePacket(world, blockposition.above()));
 +            // Paper start  - extend Player Interact cancellation // TODO: consider merging this into the extracted method
-+            } else if (iblockdata.getBlock() instanceof StructureBlock) {
-+                player.connection.send(new ClientboundContainerClosePacket());
-+            } else if (iblockdata.getBlock() instanceof CommandBlock) {
-+                player.connection.send(new ClientboundContainerClosePacket());
++            } else if (iblockdata.getBlock() instanceof net.minecraft.world.level.block.StructureBlock) {
++                player.connection.send(new net.minecraft.network.protocol.game.ClientboundContainerClosePacket(this.player.containerMenu.containerId));
++            } else if (iblockdata.getBlock() instanceof net.minecraft.world.level.block.CommandBlock) {
++                player.connection.send(new net.minecraft.network.protocol.game.ClientboundContainerClosePacket(this.player.containerMenu.containerId));
              }
 +            // Paper end - extend Player Interact cancellation
              player.getBukkitEntity().updateInventory(); // SPIGOT-2867

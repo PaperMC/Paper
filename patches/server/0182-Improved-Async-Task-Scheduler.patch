@@ -159,7 +159,7 @@ index 0000000000000000000000000000000000000000..3c1992e212a6d6f1db4d5b807b38d719
 +    }
 +}
 diff --git a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
-index 0e0f361c3af363539d5d1d865603114bdb84fd67..ca90237a53c9a026919d28adaedf483ca3c7c2a8 100644
+index 6435d53dcddc1a43420f1ea66fa08e154b82586d..dd1e8b170e87bff2089f642f41dcf7442a8ccd16 100644
 --- a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
 +++ b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
 @@ -63,7 +63,7 @@ public class CraftScheduler implements BukkitScheduler {
@@ -190,7 +190,7 @@ index 0e0f361c3af363539d5d1d865603114bdb84fd67..ca90237a53c9a026919d28adaedf483c
 @@ -94,12 +95,31 @@ public class CraftScheduler implements BukkitScheduler {
          }
      };
-     private CraftAsyncDebugger debugTail = debugHead;
+     private CraftAsyncDebugger debugTail = this.debugHead;
 +
 +    */ // Paper end
      private static final int RECENT_TICKS;
@@ -223,8 +223,8 @@ index 0e0f361c3af363539d5d1d865603114bdb84fd67..ca90237a53c9a026919d28adaedf483c
          } else if (period < CraftTask.NO_REPEATING) {
              period = CraftTask.NO_REPEATING;
          }
--        return handle(new CraftAsyncTask(runners, plugin, runnable, nextId(), period), delay);
-+        return handle(new CraftAsyncTask(this.asyncScheduler.runners, plugin, runnable, nextId(), period), delay); // Paper
+-        return this.handle(new CraftAsyncTask(this.runners, plugin, runnable, this.nextId(), period), delay);
++        return this.handle(new CraftAsyncTask(this.asyncScheduler.runners, plugin, runnable, this.nextId(), period), delay); // Paper
      }
  
      @Override
@@ -237,7 +237,7 @@ index 0e0f361c3af363539d5d1d865603114bdb84fd67..ca90237a53c9a026919d28adaedf483c
 +            this.asyncScheduler.cancelTask(taskId);
 +        }
 +        // Paper end
-         CraftTask task = runners.get(taskId);
+         CraftTask task = this.runners.get(taskId);
          if (task != null) {
              task.cancel0();
 @@ -280,6 +305,11 @@ public class CraftScheduler implements BukkitScheduler {
@@ -257,13 +257,13 @@ index 0e0f361c3af363539d5d1d865603114bdb84fd67..ca90237a53c9a026919d28adaedf483c
      @Override
      public boolean isCurrentlyRunning(final int taskId) {
 +        // Paper start
-+        if (!isAsyncScheduler) {
++        if (!this.isAsyncScheduler) {
 +            if (this.asyncScheduler.isCurrentlyRunning(taskId)) {
 +                return true;
 +            }
 +        }
 +        // Paper end
-         final CraftTask task = runners.get(taskId);
+         final CraftTask task = this.runners.get(taskId);
          if (task == null) {
              return false;
 @@ -337,6 +374,11 @@ public class CraftScheduler implements BukkitScheduler {
@@ -275,7 +275,7 @@ index 0e0f361c3af363539d5d1d865603114bdb84fd67..ca90237a53c9a026919d28adaedf483c
 +            return true;
 +        }
 +        // Paper end
-         for (CraftTask task = head.getNext(); task != null; task = task.getNext()) {
+         for (CraftTask task = this.head.getNext(); task != null; task = task.getNext()) {
              if (task.getTaskId() == taskId) {
                  return task.getPeriod() >= CraftTask.NO_REPEATING; // The task will run
 @@ -348,6 +390,12 @@ public class CraftScheduler implements BukkitScheduler {
@@ -289,7 +289,7 @@ index 0e0f361c3af363539d5d1d865603114bdb84fd67..ca90237a53c9a026919d28adaedf483c
 +        }
 +        // Paper end
          final ArrayList<BukkitWorker> workers = new ArrayList<BukkitWorker>();
-         for (final CraftTask taskObj : runners.values()) {
+         for (final CraftTask taskObj : this.runners.values()) {
              // Iterator will be a best-effort (may fail to grab very new values) if called from an async thread
 @@ -385,6 +433,11 @@ public class CraftScheduler implements BukkitScheduler {
                  pending.add(task);
@@ -314,18 +314,18 @@ index 0e0f361c3af363539d5d1d865603114bdb84fd67..ca90237a53c9a026919d28adaedf483c
 +        // Paper end
          this.currentTick = currentTick;
          final List<CraftTask> temp = this.temp;
-         parsePending();
+         this.parsePending();
 @@ -431,7 +489,7 @@ public class CraftScheduler implements BukkitScheduler {
-                 parsePending();
+                 this.parsePending();
              } else {
-                 //debugTail = debugTail.setNext(new CraftAsyncDebugger(currentTick + RECENT_TICKS, task.getOwner(), task.getTaskClass())); // Paper
--                executor.execute(new ServerSchedulerReportingWrapper(task)); // Paper
+                 //this.debugTail = this.debugTail.setNext(new CraftAsyncDebugger(currentTick + CraftScheduler.RECENT_TICKS, task.getOwner(), task.getTaskClass())); // Paper
+-                this.executor.execute(new ServerSchedulerReportingWrapper(task)); // Paper
 +                task.getOwner().getLogger().log(Level.SEVERE, "Unexpected Async Task in the Sync Scheduler. Report this to Paper"); // Paper
                  // We don't need to parse pending
                  // (async tasks must live with race-conditions if they attempt to cancel between these few lines of code)
              }
 @@ -450,7 +508,7 @@ public class CraftScheduler implements BukkitScheduler {
-         //debugHead = debugHead.getNextHead(currentTick); // Paper
+         //this.debugHead = this.debugHead.getNextHead(currentTick); // Paper
      }
  
 -    private void addTask(final CraftTask task) {
@@ -345,11 +345,11 @@ index 0e0f361c3af363539d5d1d865603114bdb84fd67..ca90237a53c9a026919d28adaedf483c
 +            return task;
 +        }
 +        // Paper end
-         task.setNextRun(currentTick + delay);
-         addTask(task);
+         task.setNextRun(this.currentTick + delay);
+         this.addTask(task);
          return task;
 @@ -478,8 +542,8 @@ public class CraftScheduler implements BukkitScheduler {
-         return ids.incrementAndGet();
+         return this.ids.incrementAndGet();
      }
  
 -    private void parsePending() {
