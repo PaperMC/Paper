@@ -8,36 +8,22 @@ Currently the server only supports the English language. To override this,
 You must replace the language file embedded in the server jar.
 
 diff --git a/src/main/java/net/minecraft/locale/Language.java b/src/main/java/net/minecraft/locale/Language.java
-index 8a0d2e510aee160ec3a817fd72c23bc9dfeb6287..756b78a7dc3d3e76dc0a37375b304db0b6ecf684 100644
+index f06452538f45e2430611aad54d060e040b32bb58..67f5448d0a03c1e018f71bdb76610a85867cc0b8 100644
 --- a/src/main/java/net/minecraft/locale/Language.java
 +++ b/src/main/java/net/minecraft/locale/Language.java
-@@ -30,7 +30,7 @@ public abstract class Language {
- 
-     private static Language loadDefault() {
-         Builder<String, String> builder = ImmutableMap.builder();
--        BiConsumer biconsumer = builder::put;
-+        BiConsumer<String, String> biconsumer = builder::put; // Paper - decompile fix
- 
-         try {
-             InputStream inputstream = Language.class.getResourceAsStream("/assets/minecraft/lang/en_us.json");
-@@ -87,10 +87,12 @@ public abstract class Language {
- 
+@@ -107,6 +107,7 @@ public abstract class Language {
+         instance = language;
      }
  
-+    public static Language getInstance() { return getInstance(); } // Paper - OBFHELPER
-     public static Language getInstance() {
-         return Language.instance;
-     }
- 
-+    public String translateKey(String key) { return getOrDefault(key); } // Paper - OBFHELPER
++    @Deprecated public String translateKey(String key) { return getOrDefault(key); } // Paper - OBFHELPER
      public abstract String getOrDefault(String key);
  
      public abstract boolean has(String key);
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java
-index 41c8bbf93039add43695a52d2bfc0c2cef88463d..746755f76ae177b2eeccf66f8cd95e6ffd5acad9 100644
+index 0bf6c27fdcc2a4342c68441670244cabf40f8e7e..6ec39de514ceed7e5ffe9a8dc94c2ffd2902cd98 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java
-@@ -352,5 +352,18 @@ public final class CraftItemFactory implements ItemFactory {
+@@ -355,5 +355,18 @@ public final class CraftItemFactory implements ItemFactory {
      public ItemStack ensureServerConversions(ItemStack item) {
          return CraftItemStack.asCraftMirror(CraftItemStack.asNMSCopy(item));
      }
@@ -52,7 +38,7 @@ index 41c8bbf93039add43695a52d2bfc0c2cef88463d..746755f76ae177b2eeccf66f8cd95e6f
 +            nms = CraftItemStack.asNMSCopy(item);
 +        }
 +
-+        return nms != null ? net.minecraft.locale.Language.getInstance().translateKey(nms.getItem().getDescriptionId()) : null;
++        return nms != null ? net.minecraft.locale.Language.getInstance().getOrDefault(nms.getItem().getDescriptionId()) : null;
 +    }
      // Paper end
  }
