@@ -1,0 +1,96 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sat, 15 Jun 2013 19:51:17 -0400
+Subject: [PATCH] Improve EntityShootBowEvent
+
+Adds missing call to Illagers and also adds Arrow ItemStack to skeltons
+
+diff --git a/src/main/java/net/minecraft/world/entity/monster/AbstractSkeleton.java b/src/main/java/net/minecraft/world/entity/monster/AbstractSkeleton.java
+index d7bca8fa71e325ba1967537d4102ccb207c4d717..3d8f3e22223e4effeaf52cb18c14c60276d4689c 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/AbstractSkeleton.java
++++ b/src/main/java/net/minecraft/world/entity/monster/AbstractSkeleton.java
+@@ -196,7 +196,7 @@ public abstract class AbstractSkeleton extends Monster implements RangedAttackMo
+ 
+         entityarrow.shoot(d0, d1 + d3 * 0.20000000298023224D, d2, 1.6F, (float) (14 - this.level.getDifficulty().getId() * 4));
+         // CraftBukkit start
+-        org.bukkit.event.entity.EntityShootBowEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityShootBowEvent(this, this.getMainHandItem(), null, entityarrow, net.minecraft.world.InteractionHand.MAIN_HAND, 0.8F, true);
++        org.bukkit.event.entity.EntityShootBowEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityShootBowEvent(this, this.getMainHandItem(), entityarrow.getPickupItem(), entityarrow, net.minecraft.world.InteractionHand.MAIN_HAND, 0.8F, true); // Paper
+         if (event.isCancelled()) {
+             event.getProjectile().remove();
+             return;
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Illusioner.java b/src/main/java/net/minecraft/world/entity/monster/Illusioner.java
+index ff38ad2ac16ff49a290976e392175e96fa986925..c9fa01b910de7ecb494d3000afebea9a2bd1276a 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Illusioner.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Illusioner.java
+@@ -196,8 +196,18 @@ public class Illusioner extends SpellcasterIllager implements RangedAttackMob {
+         double d3 = Math.sqrt(d0 * d0 + d2 * d2);
+ 
+         entityarrow.shoot(d0, d1 + d3 * 0.20000000298023224D, d2, 1.6F, (float) (14 - this.level.getDifficulty().getId() * 4));
++        // Paper start
++        org.bukkit.event.entity.EntityShootBowEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityShootBowEvent(this, this.getMainHandItem(), entityarrow.getPickupItem(), entityarrow, target.getUsedItemHand(), 0.8F, true);
++        if (event.isCancelled()) {
++            event.getProjectile().remove();
++            return;
++        }
++
++        if (event.getProjectile() == entityarrow.getBukkitEntity()) {
++            this.level.addFreshEntity(entityarrow);
++        }
+         this.playSound(SoundEvents.SKELETON_SHOOT, 1.0F, 1.0F / (this.getRandom().nextFloat() * 0.4F + 0.8F));
+-        this.level.addFreshEntity(entityarrow);
++        // Paper end
+     }
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java b/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java
+index 71f0de893fe0243cc226fd36685f2a3fba02575f..988986d549dae93cfcb8147126c84f263efe3452 100644
+--- a/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java
++++ b/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java
+@@ -586,7 +586,7 @@ public abstract class AbstractArrow extends Projectile {
+         }
+     }
+ 
+-    protected abstract ItemStack getPickupItem();
++    public abstract ItemStack getPickupItem(); // Paper - protected -> public
+ 
+     @Override
+     protected Entity.MovementEmission getMovementEmission() {
+diff --git a/src/main/java/net/minecraft/world/entity/projectile/Arrow.java b/src/main/java/net/minecraft/world/entity/projectile/Arrow.java
+index 1b71df52df1e1d408d2cdf5bef5fbea95fdced80..c0a3bfde24ef5e4b9c1bb1c0b8fbffdde3604513 100644
+--- a/src/main/java/net/minecraft/world/entity/projectile/Arrow.java
++++ b/src/main/java/net/minecraft/world/entity/projectile/Arrow.java
+@@ -244,7 +244,7 @@ public class Arrow extends AbstractArrow {
+     }
+ 
+     @Override
+-    protected ItemStack getPickupItem() {
++    public ItemStack getPickupItem() { // Paper - protected -> public
+         if (this.effects.isEmpty() && this.potion == Potions.EMPTY) {
+             return new ItemStack(Items.ARROW);
+         } else {
+diff --git a/src/main/java/net/minecraft/world/entity/projectile/SpectralArrow.java b/src/main/java/net/minecraft/world/entity/projectile/SpectralArrow.java
+index 4f62f72d125504602d4b0278119247d36d58b3c9..f6081e0fdf71d6b2b80c94f2ffd3395c08fb84a7 100644
+--- a/src/main/java/net/minecraft/world/entity/projectile/SpectralArrow.java
++++ b/src/main/java/net/minecraft/world/entity/projectile/SpectralArrow.java
+@@ -36,7 +36,7 @@ public class SpectralArrow extends AbstractArrow {
+     }
+ 
+     @Override
+-    protected ItemStack getPickupItem() {
++    public ItemStack getPickupItem() { // Paper - protected -> public
+         return new ItemStack(Items.SPECTRAL_ARROW);
+     }
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/projectile/ThrownTrident.java b/src/main/java/net/minecraft/world/entity/projectile/ThrownTrident.java
+index 04c6c3bf372186182b91a03e11dba0495357393d..227cb0834a075cbe2db136bf6dc9820d2a04c458 100644
+--- a/src/main/java/net/minecraft/world/entity/projectile/ThrownTrident.java
++++ b/src/main/java/net/minecraft/world/entity/projectile/ThrownTrident.java
+@@ -98,7 +98,7 @@ public class ThrownTrident extends AbstractArrow {
+     }
+ 
+     @Override
+-    protected ItemStack getPickupItem() {
++    public ItemStack getPickupItem() { // Paper - protected -> public
+         return this.tridentItem.copy();
+     }
+ 
