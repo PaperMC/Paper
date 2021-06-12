@@ -536,6 +536,9 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     @Override
     public boolean breakBlock(Block block) {
+        Preconditions.checkArgument(block != null, "Block cannot be null");
+        Preconditions.checkArgument(block.getWorld().equals(getWorld()), "Cannot break blocks across worlds");
+
         return getHandle().gameMode.breakBlock(new BlockPosition(block.getX(), block.getY(), block.getZ()));
     }
 
