@@ -26,33 +26,42 @@ index c611b5a63498f5ad1f50a75ccd5d7299e27df7e3..9d1cddc6038f0fd0286e4a32013ae98f
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index ecc393ad94332ec2a59d29f30bd60bade4e1f18e..6a922e3522ac99a8e317a5f5f51fbb597baaf63e 100644
+index 624776a85a3e3268665571635f0b837cb810a62e..acee61af1b01c7e66c3b5c7e164ddd9a88e53606 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-@@ -2051,6 +2051,13 @@ public class ServerGamePacketListenerImpl implements ServerGamePacketListener {
+@@ -2056,6 +2056,13 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
          switch (packet.getAction()) {
              case PRESS_SHIFT_KEY:
                  this.player.setShiftKeyDown(true);
 +
-+            // Paper start - Hang on!
-+            if (this.player.level.paperConfig.parrotsHangOnBetter) {
-+                this.player.removeEntitiesOnShoulder();
-+            }
-+            // Paper end
++                // Paper start - Hang on!
++                if (this.player.level.paperConfig.parrotsHangOnBetter) {
++                    this.player.removeEntitiesOnShoulder();
++                }
++                // Paper end
 +
                  break;
              case RELEASE_SHIFT_KEY:
                  this.player.setShiftKeyDown(false);
 diff --git a/src/main/java/net/minecraft/world/entity/player/Player.java b/src/main/java/net/minecraft/world/entity/player/Player.java
-index c11d5aa115d10e3c12863cf9d42c60194d63b690..ae10c531ae69eaf6b78a342dcedb89c39fd8dbcc 100644
+index e8768625e55f849cd31784cb46e67293bcd93abf..73277b04a45444edce02cce3e033741ebaf2ad0c 100644
 --- a/src/main/java/net/minecraft/world/entity/player/Player.java
 +++ b/src/main/java/net/minecraft/world/entity/player/Player.java
-@@ -529,7 +529,7 @@ public abstract class Player extends LivingEntity {
+@@ -579,7 +579,7 @@ public abstract class Player extends LivingEntity {
          this.playShoulderEntityAmbientSound(this.getShoulderEntityLeft());
          this.playShoulderEntityAmbientSound(this.getShoulderEntityRight());
-         if (!this.level.isClientSide && (this.fallDistance > 0.5F || this.isInWater()) || this.abilities.flying || this.isSleeping()) {
+         if (!this.level.isClientSide && (this.fallDistance > 0.5F || this.isInWater()) || this.abilities.flying || this.isSleeping() || this.isInPowderSnow) {
 -            this.removeEntitiesOnShoulder();
 +            if (!this.level.paperConfig.parrotsHangOnBetter) this.removeEntitiesOnShoulder(); // Paper - Hang on!
          }
  
      }
+@@ -1939,7 +1939,7 @@ public abstract class Player extends LivingEntity {
+         }
+     }
+ 
+-    protected void removeEntitiesOnShoulder() {
++    public void removeEntitiesOnShoulder() { // Paper - protected -> public
+         if (this.timeEntitySatOnShoulder + 20L < this.level.getGameTime()) {
+             // CraftBukkit start
+             if (this.spawnEntityFromShoulder(this.getShoulderEntityLeft())) {
