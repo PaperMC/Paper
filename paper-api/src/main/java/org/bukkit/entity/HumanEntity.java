@@ -294,6 +294,16 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
     public boolean isHandRaised();
 
     /**
+     * Gets the item that the player is using (eating food, drawing back a bow,
+     * blocking, etc.)
+     *
+     * @return the item being used by the player, or null if they are not using
+     * an item
+     */
+    @Nullable
+    public ItemStack getItemInUse();
+
+    /**
      * Get the total amount of experience required for the player to level
      *
      * @return Experience required to level up

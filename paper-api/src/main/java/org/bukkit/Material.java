@@ -9653,6 +9653,36 @@ public enum Material implements Keyed {
     }
 
     /**
+     * Returns a value that represents how 'slippery' the block is.
+     *
+     * Blocks with higher slipperiness, like {@link Material#ICE} can be slid on
+     * further by the player and other entities.
+     *
+     * Most blocks have a default slipperiness of {@code 0.6f}.
+     *
+     * Only available when {@link #isBlock()} is true.
+     *
+     * @return the slipperiness of this block
+     */
+    public float getSlipperiness() {
+        Validate.isTrue(isBlock(), "The Material is not a block!");
+        switch (this) {
+            // <editor-fold defaultstate="collapsed" desc="getSlipperiness">
+            default:
+                return 0.6F;
+            case SLIME_BLOCK:
+                return 0.8F;
+            case FROSTED_ICE:
+            case ICE:
+            case PACKED_ICE:
+                return 0.98F;
+            case BLUE_ICE:
+                return 0.989F;
+            // </editor-fold>
+        }
+    }
+
+    /**
      * Determines the remaining item in a crafting grid after crafting with this
      * ingredient.
      * <br>
