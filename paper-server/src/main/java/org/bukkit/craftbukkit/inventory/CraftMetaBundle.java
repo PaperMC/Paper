@@ -116,7 +116,7 @@ public class CraftMetaBundle extends CraftMetaItem implements BundleMeta {
 
     @Override
     public void setItems(List<ItemStack> items) {
-        items = null;
+        this.items = null;
 
         if (items == null) {
             return;
