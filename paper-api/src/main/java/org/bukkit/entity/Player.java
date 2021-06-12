@@ -413,6 +413,8 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * <p>
      * Additionally, a {@link BlockDropItemEvent} is called for the items
      * dropped by this method (if successful).
+     * <p>
+     * The block must be in the same world as the player.
      *
      * @param block the block to break
      *
