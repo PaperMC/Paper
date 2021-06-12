@@ -17,19 +17,23 @@ from networking or during connections flood of chunk packets on slower clients,
  at the cost of dead connections being kept open for longer.
 
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index f0aab8639c7d8440e4d70dd096200313d7958780..525728268f56470fdc24c4fd2f19d66943447778 100644
+index 6049c63b4f7abde0840738638d4bf19172a01200..b2bbd25e5572f59add71579b676d5a4c719be239 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-@@ -221,7 +221,7 @@ public class ServerGamePacketListenerImpl implements ServerGamePacketListener {
+@@ -222,9 +222,9 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
      private final MinecraftServer server;
      public ServerPlayer player;
      private int tickCount;
 -    private long keepAliveTime; private void setLastPing(long lastPing) { this.keepAliveTime = lastPing;}; private long getLastPing() { return this.keepAliveTime;}; // Paper - OBFHELPER
-+    private long keepAliveTime = Util.getMillis(); private void setLastPing(long lastPing) { this.keepAliveTime = lastPing;}; private long getLastPing() { return this.keepAliveTime;}; // Paper - OBFHELPER
-     private boolean keepAlivePending; private void setPendingPing(boolean isPending) { this.keepAlivePending = isPending;}; private boolean isPendingPing() { return this.keepAlivePending;}; // Paper - OBFHELPER
-     private long keepAliveChallenge; private void setKeepAliveID(long keepAliveID) { this.keepAliveChallenge = keepAliveID;}; private long getKeepAliveID() {return this.keepAliveChallenge; };  // Paper - OBFHELPER
+-    private boolean keepAlivePending; private void setPendingPing(boolean isPending) { this.keepAlivePending = isPending;}; private boolean isPendingPing() { return this.keepAlivePending;}; // Paper - OBFHELPER
+-    private long keepAliveChallenge; private void setKeepAliveID(long keepAliveID) { this.keepAliveChallenge = keepAliveID;}; private long getKeepAliveID() {return this.keepAliveChallenge; };  // Paper - OBFHELPER
++    private long keepAliveTime = Util.getMillis();
++    private boolean keepAlivePending;
++    private long keepAliveChallenge;
      // CraftBukkit start - multithreaded fields
-@@ -252,6 +252,7 @@ public class ServerGamePacketListenerImpl implements ServerGamePacketListener {
+     private AtomicInteger chatSpamTickCount = new AtomicInteger();
+     // CraftBukkit end
+@@ -253,6 +253,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
      private int aboveGroundVehicleTickCount;
      private int receivedMovePacketCount;
      private int knownMovePacketCount;
@@ -37,7 +41,7 @@ index f0aab8639c7d8440e4d70dd096200313d7958780..525728268f56470fdc24c4fd2f19d669
  
      public ServerGamePacketListenerImpl(MinecraftServer server, Connection connection, ServerPlayer player) {
          this.server = server;
-@@ -338,18 +339,25 @@ public class ServerGamePacketListenerImpl implements ServerGamePacketListener {
+@@ -335,18 +336,25 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
          }
  
          this.server.getProfiler().push("keepAlive");
@@ -47,26 +51,24 @@ index f0aab8639c7d8440e4d70dd096200313d7958780..525728268f56470fdc24c4fd2f19d669
 -            if (this.keepAlivePending) {
 -                this.disconnect(new TranslatableComponent("disconnect.timeout"));
 -            } else {
--                this.keepAlivePending = true;
--                this.keepAliveTime = i;
--                this.keepAliveChallenge = i;
--                this.send(new ClientboundKeepAlivePacket(this.keepAliveChallenge));
 +        // Paper Start - give clients a longer time to respond to pings as per pre 1.12.2 timings
 +        // This should effectively place the keepalive handling back to "as it was" before 1.12.2
 +        long currentTime = Util.getMillis();
-+        long elapsedTime = currentTime - this.getLastPing();
++        long elapsedTime = currentTime - this.keepAliveTime;
 +
-+        if (this.isPendingPing()) {
++        if (this.keepAlivePending) {
 +            if (!this.processedDisconnect && elapsedTime >= KEEPALIVE_LIMIT) { // check keepalive limit, don't fire if already disconnected
 +                ServerGamePacketListenerImpl.LOGGER.warn("{} was kicked due to keepalive timeout!", this.player.getScoreboardName()); // more info
 +                this.disconnect(new TranslatableComponent("disconnect.timeout", new Object[0]));
 +            }
 +        } else {
 +            if (elapsedTime >= 15000L) { // 15 seconds
-+                this.setPendingPing(true);
-+                this.setLastPing(currentTime);
-+                this.setKeepAliveID(currentTime);
-+                this.send(new ClientboundKeepAlivePacket(this.getKeepAliveID()));
+                 this.keepAlivePending = true;
+-                this.keepAliveTime = i;
+-                this.keepAliveChallenge = i;
++                this.keepAliveTime = currentTime;
++                this.keepAliveChallenge = currentTime;
+                 this.send(new ClientboundKeepAlivePacket(this.keepAliveChallenge));
              }
          }
 +        // Paper end
