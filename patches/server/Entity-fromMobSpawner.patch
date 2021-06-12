@@ -8,7 +8,7 @@ diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/jav
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
-@@ -0,0 +0,0 @@ public abstract class Entity implements Nameable, CommandSource, net.minecraft.s
+@@ -0,0 +0,0 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, n
      public final org.spigotmc.ActivationRange.ActivationType activationType = org.spigotmc.ActivationRange.initializeEntityActivationType(this);
      public final boolean defaultActivationState;
      public long activatedTick = Integer.MIN_VALUE;
@@ -16,23 +16,23 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      protected int numCollisions = 0; // Paper
      public void inactiveTick() { }
      // Spigot end
-@@ -0,0 +0,0 @@ public abstract class Entity implements Nameable, CommandSource, net.minecraft.s
-                 tag.setUUID("Paper.OriginWorld", origin.getWorld().getUID());
-                 tag.put("Paper.Origin", this.createList(origin.getX(), origin.getY(), origin.getZ()));
+@@ -0,0 +0,0 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, n
+                 nbt.setUUID("Paper.OriginWorld", origin.getWorld().getUID());
+                 nbt.put("Paper.Origin", this.newDoubleList(origin.getX(), origin.getY(), origin.getZ()));
              }
 +            // Save entity's from mob spawner status
 +            if (spawnedViaMobSpawner) {
-+                tag.putBoolean("Paper.FromMobSpawner", true);
++                nbt.putBoolean("Paper.FromMobSpawner", true);
 +            }
              // Paper end
-             return tag;
+             return nbt;
          } catch (Throwable throwable) {
-@@ -0,0 +0,0 @@ public abstract class Entity implements Nameable, CommandSource, net.minecraft.s
+@@ -0,0 +0,0 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, n
                  }
                  origin = new org.bukkit.Location(originWorld, originTag.getDoubleAt(0), originTag.getDoubleAt(1), originTag.getDoubleAt(2));
              }
 +
-+            spawnedViaMobSpawner = tag.getBoolean("Paper.FromMobSpawner"); // Restore entity's from mob spawner status
++            spawnedViaMobSpawner = nbt.getBoolean("Paper.FromMobSpawner"); // Restore entity's from mob spawner status
              // Paper end
  
          } catch (Throwable throwable) {
@@ -41,13 +41,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/world/level/BaseSpawner.java
 +++ b/src/main/java/net/minecraft/world/level/BaseSpawner.java
 @@ -0,0 +0,0 @@ public abstract class BaseSpawner {
-                                 }
-                                 // Spigot End
+                             if (this.nextSpawnData.getTag().size() == 1 && this.nextSpawnData.getTag().contains("id", 8)) {
+                                 ((Mob) entity).finalizeSpawn(world, world.getCurrentDifficultyAt(entity.blockPosition()), MobSpawnType.SPAWNER, (SpawnGroupData) null, (CompoundTag) null);
                              }
-+                        entity.spawnedViaMobSpawner = true; // Paper
++                            entity.spawnedViaMobSpawner = true; // Paper
                              // Spigot Start
-                             if (org.bukkit.craftbukkit.event.CraftEventFactory.callSpawnerSpawnEvent(entity, blockposition).isCancelled()) {
-                                 Entity vehicle = entity.getVehicle();
+                             if (entityinsentient.level.spigotConfig.nerfSpawnerMobs) {
+                                 entityinsentient.aware = false;
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
