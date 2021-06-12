@@ -178,50 +178,17 @@ diff --git a/src/main/java/net/minecraft/network/protocol/status/ClientboundStat
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/network/protocol/status/ClientboundStatusResponsePacket.java
 +++ b/src/main/java/net/minecraft/network/protocol/status/ClientboundStatusResponsePacket.java
-@@ -0,0 +0,0 @@ package net.minecraft.network.protocol.status;
- 
- import com.google.gson.Gson;
- import com.google.gson.GsonBuilder;
-+import io.papermc.paper.adventure.AdventureComponent; // Paper
- import java.io.IOException;
- import net.minecraft.network.FriendlyByteBuf;
- import net.minecraft.network.chat.Component;
-@@ -0,0 +0,0 @@ import net.minecraft.util.LowerCaseEnumTypeAdapterFactory;
+@@ -0,0 +0,0 @@ import net.minecraft.util.GsonHelper;
+ import net.minecraft.util.LowerCaseEnumTypeAdapterFactory;
  
  public class ClientboundStatusResponsePacket implements Packet<ClientStatusPacketListener> {
- 
 -    private static final Gson GSON = (new GsonBuilder()).registerTypeAdapter(ServerStatus.Version.class, new ServerStatus.Version.Serializer()).registerTypeAdapter(ServerStatus.Players.class, new ServerStatus.Players.Serializer()).registerTypeAdapter(ServerStatus.class, new ServerStatus.Serializer()).registerTypeHierarchyAdapter(Component.class, new Component.Serializer()).registerTypeHierarchyAdapter(Style.class, new Style.Serializer()).registerTypeAdapterFactory(new LowerCaseEnumTypeAdapterFactory()).create();
 +    private static final Gson GSON = (new GsonBuilder()).registerTypeAdapter(ServerStatus.Version.class, new ServerStatus.Version.Serializer()).registerTypeAdapter(ServerStatus.Players.class, new ServerStatus.Players.Serializer()).registerTypeAdapter(ServerStatus.class, new ServerStatus.Serializer()).registerTypeHierarchyAdapter(Component.class, new Component.Serializer()).registerTypeHierarchyAdapter(Style.class, new Style.Serializer()).registerTypeAdapterFactory(new LowerCaseEnumTypeAdapterFactory())
-+        .registerTypeAdapter(AdventureComponent.class, new AdventureComponent.Serializer())
++        .registerTypeAdapter(io.papermc.paper.adventure.AdventureComponent.class, new io.papermc.paper.adventure.AdventureComponent.Serializer())
 +        .create();
-     private ServerStatus status;
+     private final ServerStatus status;
  
-     public ClientboundStatusResponsePacket() {}
-diff --git a/src/main/java/net/minecraft/network/protocol/status/ServerStatus.java b/src/main/java/net/minecraft/network/protocol/status/ServerStatus.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/network/protocol/status/ServerStatus.java
-+++ b/src/main/java/net/minecraft/network/protocol/status/ServerStatus.java
-@@ -0,0 +0,0 @@ public class ServerStatus {
-         this.description = description;
-     }
- 
-+    public Players getPlayers() { return getPlayers(); } // Paper - OBFHELPER
-     public ServerStatus.Players getPlayers() {
-         return this.players;
-     }
-@@ -0,0 +0,0 @@ public class ServerStatus {
-             return this.numPlayers;
-         }
- 
-+        public GameProfile[] getSample() { return getSample(); } // Paper - OBFHELPER
-         public GameProfile[] getSample() {
-             return this.sample;
-         }
- 
-+        public void setSample(GameProfile[] sample) { setSample(sample); } // Paper - OBFHELPER
-         public void setSample(GameProfile[] sample) {
-             this.sample = sample;
-         }
+     public ClientboundStatusResponsePacket(ServerStatus metadata) {
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
@@ -249,24 +216,6 @@ diff --git a/src/main/java/net/minecraft/server/network/ServerStatusPacketListen
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/network/ServerStatusPacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerStatusPacketListenerImpl.java
-@@ -0,0 +0,0 @@
- package net.minecraft.server.network;
- 
- import net.minecraft.server.MinecraftServer;
--import net.minecraft.server.level.ServerPlayer;
-+
- // CraftBukkit start
- import com.mojang.authlib.GameProfile;
- import java.net.InetSocketAddress;
-@@ -0,0 +0,0 @@ import net.minecraft.network.Connection;
- import net.minecraft.network.chat.Component;
- import net.minecraft.network.chat.TranslatableComponent;
- import net.minecraft.network.protocol.status.ClientboundPongResponsePacket;
--import net.minecraft.network.protocol.status.ClientboundStatusResponsePacket;
--import net.minecraft.network.protocol.status.ServerStatus;
- import net.minecraft.network.protocol.status.ServerStatusPacketListener;
- import net.minecraft.network.protocol.status.ServerboundPingRequestPacket;
- import net.minecraft.network.protocol.status.ServerboundStatusRequestPacket;
 @@ -0,0 +0,0 @@ public class ServerStatusPacketListenerImpl implements ServerStatusPacketListene
              this.connection.disconnect(ServerStatusPacketListenerImpl.DISCONNECT_REASON);
          } else {
@@ -275,88 +224,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            /*
              // CraftBukkit start
              // this.networkManager.sendPacket(new PacketStatusOutServerInfo(this.minecraftServer.getServerPing()));
--            final Object[] players = server.getPlayerList().players.toArray();
-+            final Object[] players = minecraftServer.getPlayerList().players.toArray();
-             class ServerListPingEvent extends org.bukkit.event.server.ServerListPingEvent {
- 
--                CraftIconCache icon = server.server.getServerIcon();
-+                CraftIconCache icon = minecraftServer.server.getServerIcon();
- 
-                 ServerListPingEvent() {
--                    super(((InetSocketAddress) connection.getRemoteAddress()).getAddress(), server.server.motd(), server.getPlayerList().getMaxPlayers()); // Paper - Adventure
-+                    super(((InetSocketAddress) networkManager.getSocketAddress()).getAddress(), minecraftServer.server.motd(), minecraftServer.getPlayerList().getMaxPlayers()); // Paper - Adventure
-                 }
- 
-                 @Override
+             final Object[] players = this.server.getPlayerList().players.toArray();
 @@ -0,0 +0,0 @@ public class ServerStatusPacketListenerImpl implements ServerStatusPacketListene
-                     return new Iterator<Player>() {
-                         int i;
-                         int ret = Integer.MIN_VALUE;
--                        ServerPlayer player;
-+                        EntityPlayer player;
+             ping.setVersion(new ServerStatus.Version(this.server.getServerModName() + " " + this.server.getServerVersion(), version));
  
-                         @Override
-                         public boolean hasNext() {
-@@ -0,0 +0,0 @@ public class ServerStatusPacketListenerImpl implements ServerStatusPacketListene
-                             }
-                             final Object[] currentPlayers = players;
-                             for (int length = currentPlayers.length, i = this.i; i < length; i++) {
--                                final ServerPlayer player = (ServerPlayer) currentPlayers[i];
-+                                final EntityPlayer player = (EntityPlayer) currentPlayers[i];
-                                 if (player != null) {
-                                     this.i = i + 1;
-                                     this.player = player;
-@@ -0,0 +0,0 @@ public class ServerStatusPacketListenerImpl implements ServerStatusPacketListene
-                             if (!hasNext()) {
-                                 throw new java.util.NoSuchElementException();
-                             }
--                            final ServerPlayer player = this.player;
-+                            final EntityPlayer player = this.player;
-                             this.player = null;
-                             this.ret = this.i - 1;
-                             return player.getBukkitEntity();
-@@ -0,0 +0,0 @@ public class ServerStatusPacketListenerImpl implements ServerStatusPacketListene
-             }
- 
-             ServerListPingEvent event = new ServerListPingEvent();
--            this.server.server.getPluginManager().callEvent(event);
-+            this.minecraftServer.server.getPluginManager().callEvent(event);
- 
-             java.util.List<GameProfile> profiles = new java.util.ArrayList<GameProfile>(players.length);
-             for (Object player : players) {
-                 if (player != null) {
--                    profiles.add(((ServerPlayer) player).getGameProfile());
-+                    profiles.add(((EntityPlayer) player).getProfile());
-                 }
-             }
- 
--            ServerStatus.Players playerSample = new ServerStatus.Players(event.getMaxPlayers(), profiles.size());
-+            ServerPing.ServerPingPlayerSample playerSample = new ServerPing.ServerPingPlayerSample(event.getMaxPlayers(), profiles.size());
-             // Spigot Start
-             if ( !profiles.isEmpty() )
-             {
-@@ -0,0 +0,0 @@ public class ServerStatusPacketListenerImpl implements ServerStatusPacketListene
-                 profiles = profiles.subList( 0, Math.min( profiles.size(), org.spigotmc.SpigotConfig.playerSample ) ); // Cap the sample to n (or less) displayed players, ie: Vanilla behaviour
-             }
-             // Spigot End
--            playerSample.setSample(profiles.toArray(new GameProfile[profiles.size()]));
-+            playerSample.a(profiles.toArray(new GameProfile[profiles.size()]));
- 
--            ServerStatus ping = new ServerStatus();
-+            ServerPing ping = new ServerPing();
-             ping.setFavicon(event.icon.value);
--            ping.setDescription(CraftChatMessage.fromString(event.getMotd(), true)[0]);
--            ping.setPlayers(playerSample);
--            int version = SharedConstants.getCurrentVersion().getProtocolVersion();
--            ping.setVersion(new ServerStatus.Version(server.getServerModName() + " " + server.getServerVersion(), version));
--
--            this.connection.send(new ClientboundStatusResponsePacket(ping));
-+            ping.setMOTD(CraftChatMessage.fromString(event.getMotd(), true)[0]);
-+            ping.setPlayerSample(playerSample);
-+            int version = SharedConstants.getGameVersion().getProtocolVersion();
-+            ping.setServerInfo(new ServerPing.ServerData(minecraftServer.getServerModName() + " " + minecraftServer.getVersion(), version));
-+
-+            this.networkManager.sendPacket(new PacketStatusOutServerInfo(ping));
+             this.connection.send(new ClientboundStatusResponsePacket(ping));
 +            */
 +            com.destroystokyo.paper.network.StandardPaperServerListPingEventImpl.processRequest(this.server, this.connection);
 +            // Paper end
@@ -371,8 +243,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public static int playerSample;
      private static void playerSample()
      {
--        playerSample = getInt( "settings.sample-count", 12 );
-+        playerSample = Math.max( getInt( "settings.sample-count", 12 ), 0 ); // Paper - Avoid negative counts
+-        SpigotConfig.playerSample = SpigotConfig.getInt( "settings.sample-count", 12 );
++        SpigotConfig.playerSample = Math.max( SpigotConfig.getInt( "settings.sample-count", 12 ), 0 ); // Paper - Avoid negative counts
          Bukkit.getLogger().log( Level.INFO, "Server Ping Player Sample Count: {0}", playerSample ); // Paper - Use logger
      }
  
