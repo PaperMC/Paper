@@ -928,7 +928,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     @Override
     public void setGlowing(boolean flag) {
-        getHandle().setGlowingTag(true);
+        getHandle().setGlowingTag(flag);
     }
 
     @Override
