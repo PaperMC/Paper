@@ -46,60 +46,43 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              MinecraftServer.LOGGER.info("Saving players");
              this.playerList.saveAll();
 -            this.playerList.removeAll();
-+            this.playerList.shutdown(this.isRestarting); // Paper
++            this.playerList.removeAll(this.isRestarting); // Paper
              try { Thread.sleep(100); } catch (InterruptedException ex) {} // CraftBukkit - SPIGOT-625 - give server at least a chance to send packets
          }
  
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
-         return this.running;
      }
  
-+    // Paper start - allow passing of the intent to restart
      public void halt(boolean flag) {
++        // Paper start - allow passing of the intent to restart
 +        this.safeShutdown(flag, false);
 +    }
 +    public void safeShutdown(boolean flag, boolean isRestarting) {
-         this.running = false;
 +        this.isRestarting = isRestarting;
++        // Paper end
+         this.running = false;
          if (flag) {
              try {
-                 this.serverThread.join();
-@@ -0,0 +0,0 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
-         }
- 
-     }
-+    // Paper end
- 
-     // Spigot Start
-     private static double calcTps(double avg, double exp, double tps)
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/players/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/players/PlayerList.java
 @@ -0,0 +0,0 @@ public abstract class PlayerList {
-         player.gameMode.updateGameMode(world.worldDataServer.getGameType()); // CraftBukkit
      }
  
-+    // Paper start - Extract method to allow for restarting flag
      public void removeAll() {
-+        this.shutdown(false);
++        // Paper start - Extract method to allow for restarting flag
++        this.removeAll(false);
 +    }
 +
-+    public void shutdown(boolean isRestarting) {
++    public void removeAll(boolean isRestarting) {
++        // Paper end
          // CraftBukkit start - disconnect safely
          for (ServerPlayer player : this.players) {
 +            if (isRestarting) player.connection.disconnect(org.spigotmc.SpigotConfig.restartMessage); else // Paper
              player.connection.disconnect(this.server.server.shutdownMessage()); // CraftBukkit - add custom shutdown message // Paper - Adventure
          }
          // CraftBukkit end
-@@ -0,0 +0,0 @@ public abstract class PlayerList {
-         }
-         // Paper end
-     }
-+    // Paper end
- 
-     // CraftBukkit start
-     public void sendMessage(Component[] iChatBaseComponents) {
 diff --git a/src/main/java/org/spigotmc/RestartCommand.java b/src/main/java/org/spigotmc/RestartCommand.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/spigotmc/RestartCommand.java

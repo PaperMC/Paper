@@ -9,29 +9,20 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
 @@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
-     private final PlayerMap playerMap;
-     public final Int2ObjectMap<ChunkMap.TrackedEntity> entityMap;
-     private final Long2ByteMap chunkTypeCache;
--    private final Queue<Runnable> unloadQueue;
-+    private final Queue<Runnable> unloadQueue; private final Queue<Runnable> getUnloadQueueTasks() { return this.unloadQueue; } // Paper - OBFHELPER
-     private int viewDistance;
- 
-     // CraftBukkit start - recursion-safe executor for Chunk loadCallback() and unloadCallback()
-@@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          this.playerMap = new PlayerMap();
          this.entityMap = new Int2ObjectOpenHashMap();
          this.chunkTypeCache = new Long2ByteOpenHashMap();
 -        this.unloadQueue = Queues.newConcurrentLinkedQueue();
 +        this.unloadQueue = new com.destroystokyo.paper.utils.CachedSizeConcurrentLinkedQueue<>(); // Paper - need constant-time size()
-         this.structureManager = definedstructuremanager;
-         this.storageFolder = convertable_conversionsession.getDimensionPath(worldserver.dimension());
-         this.level = worldserver;
+         this.structureManager = structureManager;
+         this.storageFolder = session.getDimensionPath(world.dimension());
+         this.level = world;
 @@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          // Spigot start
          org.spigotmc.SlackActivityAccountant activityAccountant = this.level.getServer().slackActivityAccountant;
          activityAccountant.startActivity(0.5);
--        int targetSize = (int) (this.toDrop.size() * UNLOAD_QUEUE_RESIZE_FACTOR);
-+        int targetSize = Math.min(this.toDrop.size() - 100,  (int) (this.toDrop.size() * UNLOAD_QUEUE_RESIZE_FACTOR)); // Paper - Make more aggressive
+-        int targetSize = (int) (this.toDrop.size() * ChunkMap.UNLOAD_QUEUE_RESIZE_FACTOR);
++        int targetSize = Math.min(this.toDrop.size() - 100,  (int) (this.toDrop.size() * ChunkMap.UNLOAD_QUEUE_RESIZE_FACTOR)); // Paper - Make more aggressive
          // Spigot end
          while (longiterator.hasNext()) { // Spigot
              long j = longiterator.nextLong();
@@ -40,8 +31,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          Runnable runnable;
  
 -        while ((shouldKeepTicking.getAsBoolean() || this.unloadQueue.size() > 2000) && (runnable = (Runnable) this.unloadQueue.poll()) != null) {
-+        int queueTarget = Math.min(this.getUnloadQueueTasks().size() - 100, (int) (this.getUnloadQueueTasks().size() * UNLOAD_QUEUE_RESIZE_FACTOR)); // Paper - Target this queue as well
-+        while ((shouldKeepTicking.getAsBoolean() || this.getUnloadQueueTasks().size() > queueTarget) && (runnable = (Runnable)this.getUnloadQueueTasks().poll()) != null) { // Paper - Target this queue as well
++        int queueTarget = Math.min(this.unloadQueue.size() - 100, (int) (this.unloadQueue.size() * UNLOAD_QUEUE_RESIZE_FACTOR)); // Paper - Target this queue as well
++        while ((shouldKeepTicking.getAsBoolean() || this.unloadQueue.size() > queueTarget) && (runnable = (Runnable)this.unloadQueue.poll()) != null) { // Paper - Target this queue as well
              runnable.run();
          }
  
