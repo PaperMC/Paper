@@ -1,0 +1,35 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Tue, 27 Dec 2016 15:02:42 -0500
+Subject: [PATCH] String based Action Bar API
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index d50ce7fc675fcc57f591e90eb0bbb99a4ab21b02..1da034d28732a5f5b9bd9b31966da21830efdc9f 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -247,6 +247,24 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+     }
+ 
+     // Paper start
++    @Override
++    public void sendActionBar(BaseComponent[] message) {
++        if (getHandle().connection == null) return;
++        getHandle().connection.send(new net.minecraft.network.protocol.game.ClientboundSetActionBarTextPacket(Component.Serializer.fromJson(net.md_5.bungee.chat.ComponentSerializer.toString(message))));
++    }
++
++    @Override
++    public void sendActionBar(String message) {
++        if (getHandle().connection == null || message == null || message.isEmpty()) return;
++        getHandle().connection.send(new net.minecraft.network.protocol.game.ClientboundSetActionBarTextPacket(CraftChatMessage.fromStringOrNull(message)));
++    }
++
++    @Override
++    public void sendActionBar(char alternateChar, String message) {
++        if (message == null || message.isEmpty()) return;
++        sendActionBar(org.bukkit.ChatColor.translateAlternateColorCodes(alternateChar, message));
++    }
++
+     @Override
+     public void setPlayerListHeaderFooter(BaseComponent[] header, BaseComponent[] footer) {
+          if (header != null) {

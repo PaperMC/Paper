@@ -5,14 +5,21 @@ Subject: [PATCH] Prevent Pathfinding out of World Border
 
 This prevents Entities from trying to run outside of the World Border
 
+TODO: This doesn't prevent the pathfinder from using blocks outside the world border as nodes. We can fix this
+by adding code to all overrides in:
+    NodeEvaluator:
+    public abstract BlockPathTypes getBlockPathType(BlockGetter world, int x, int y, int z);
+
+to return BLOCKED if it is outside the world border.
+
 diff --git a/src/main/java/net/minecraft/world/entity/ai/navigation/PathNavigation.java b/src/main/java/net/minecraft/world/entity/ai/navigation/PathNavigation.java
-index 25bc3adfad956157cef0953e6e632b7b7e352f3a..c3082f5dd64413a47421cb01538bec846bf21d2c 100644
+index 6c063351c76e92a8a91142a12db846d1c1f11921..8212aab2884c2a894bc981850e483ce31814c708 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/navigation/PathNavigation.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/navigation/PathNavigation.java
-@@ -148,7 +148,7 @@ public abstract class PathNavigation {
+@@ -156,7 +156,7 @@ public abstract class PathNavigation {
              // Paper start - Pathfind event
              boolean copiedSet = false;
-             for (BlockPos possibleTarget : set) {
+             for (BlockPos possibleTarget : positions) {
 -                if (!new com.destroystokyo.paper.event.entity.EntityPathfindEvent(getEntity().getBukkitEntity(),
 +                if (!getEntity().getCommandSenderWorld().getWorldBorder().isInBounds(possibleTarget) || !new com.destroystokyo.paper.event.entity.EntityPathfindEvent(getEntity().getBukkitEntity(), // Paper - don't path out of world border
                      MCUtil.toLocation(getEntity().level, possibleTarget), target == null ? null : target.getBukkitEntity()).callEvent()) {
