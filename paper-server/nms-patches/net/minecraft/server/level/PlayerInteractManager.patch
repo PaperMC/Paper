@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/level/PlayerInteractManager.java
 +++ b/net/minecraft/server/level/PlayerInteractManager.java
-@@ -25,6 +25,25 @@
+@@ -25,6 +25,27 @@
  import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
  
@@ -15,18 +15,34 @@
 +import net.minecraft.world.level.block.BlockTrapdoor;
 +import net.minecraft.world.level.block.Blocks;
 +import net.minecraft.world.level.block.state.properties.BlockPropertyDoubleBlockHalf;
++import org.bukkit.GameMode;
 +import org.bukkit.craftbukkit.block.CraftBlock;
 +import org.bukkit.event.block.BlockBreakEvent;
 +import org.bukkit.craftbukkit.event.CraftEventFactory;
 +import org.bukkit.event.Event;
 +import org.bukkit.event.block.Action;
++import org.bukkit.event.player.PlayerGameModeChangeEvent;
 +import org.bukkit.event.player.PlayerInteractEvent;
 +// CraftBukkit end
 +
  public class PlayerInteractManager {
  
      private static final Logger LOGGER = LogManager.getLogger();
-@@ -65,7 +84,7 @@
+@@ -55,6 +76,13 @@
+         if (enumgamemode == this.gameModeForPlayer) {
+             return false;
+         } else {
++            // CraftBukkit start
++            PlayerGameModeChangeEvent event = new PlayerGameModeChangeEvent(player.getBukkitEntity(), GameMode.getByValue(enumgamemode.getId()));
++            level.getCraftServer().getPluginManager().callEvent(event);
++            if (event.isCancelled()) {
++                return false;
++            }
++            // CraftBukkit end
+             this.a(enumgamemode, this.gameModeForPlayer);
+             return true;
+         }
+@@ -65,7 +93,7 @@
          this.gameModeForPlayer = enumgamemode;
          enumgamemode.a(this.player.getAbilities());
          this.player.updateAbilities();
@@ -35,7 +51,7 @@
          this.level.everyoneSleeping();
      }
  
-@@ -87,7 +106,7 @@
+@@ -87,7 +115,7 @@
      }
  
      public void a() {
@@ -44,7 +60,7 @@
          IBlockData iblockdata;
  
          if (this.hasDelayedDestroy) {
-@@ -143,9 +162,31 @@
+@@ -143,9 +171,31 @@
  
              if (packetplayinblockdig_enumplayerdigtype == PacketPlayInBlockDig.EnumPlayerDigType.START_DESTROY_BLOCK) {
                  if (!this.level.a((EntityHuman) this.player, blockposition)) {
@@ -76,7 +92,7 @@
  
                  if (this.isCreative()) {
                      this.a(blockposition, packetplayinblockdig_enumplayerdigtype, "creative destroy");
-@@ -161,11 +202,43 @@
+@@ -161,11 +211,43 @@
                  float f = 1.0F;
  
                  iblockdata = this.level.getType(blockposition);
@@ -121,7 +137,7 @@
                  if (!iblockdata.isAir() && f >= 1.0F) {
                      this.a(blockposition, packetplayinblockdig_enumplayerdigtype, "insta mine");
                  } else {
-@@ -209,7 +282,7 @@
+@@ -209,7 +291,7 @@
              } else if (packetplayinblockdig_enumplayerdigtype == PacketPlayInBlockDig.EnumPlayerDigType.ABORT_DESTROY_BLOCK) {
                  this.isDestroyingBlock = false;
                  if (!Objects.equals(this.destroyPos, blockposition)) {
@@ -130,7 +146,7 @@
                      this.level.a(this.player.getId(), this.destroyPos, -1);
                      this.player.connection.sendPacket(new PacketPlayOutBlockBreak(this.destroyPos, this.level.getType(this.destroyPos), packetplayinblockdig_enumplayerdigtype, true, "aborted mismatched destroying"));
                  }
-@@ -225,17 +298,72 @@
+@@ -225,17 +307,72 @@
          if (this.breakBlock(blockposition)) {
              this.player.connection.sendPacket(new PacketPlayOutBlockBreak(blockposition, this.level.getType(blockposition), packetplayinblockdig_enumplayerdigtype, true, s));
          } else {
@@ -171,8 +187,7 @@
 +            if (nmsBlock != null && !event.isCancelled() && !this.isCreative() && this.player.hasBlock(nmsBlock.getBlockData())) {
 +                event.setExpToDrop(nmsBlock.getExpDrop(nmsData, this.level, blockposition, itemstack));
 +            }
- 
--        if (!this.player.getItemInMainHand().getItem().a(iblockdata, (World) this.level, blockposition, (EntityHuman) this.player)) {
++
 +            this.level.getCraftServer().getPluginManager().callEvent(event);
 +
 +            if (event.isCancelled()) {
@@ -186,7 +201,8 @@
 +                for (EnumDirection dir : EnumDirection.values()) {
 +                    this.player.connection.sendPacket(new PacketPlayOutBlockChange(level, blockposition.shift(dir)));
 +                }
-+
+ 
+-        if (!this.player.getItemInMainHand().getItem().a(iblockdata, (World) this.level, blockposition, (EntityHuman) this.player)) {
 +                // Update any tile entity data for this block
 +                TileEntity tileentity = this.level.getTileEntity(blockposition);
 +                if (tileentity != null) {
@@ -205,7 +221,7 @@
              TileEntity tileentity = this.level.getTileEntity(blockposition);
              Block block = iblockdata.getBlock();
  
-@@ -245,6 +373,10 @@
+@@ -245,6 +382,10 @@
              } else if (this.player.a((World) this.level, blockposition, this.gameModeForPlayer)) {
                  return false;
              } else {
@@ -216,7 +232,7 @@
                  block.a((World) this.level, blockposition, iblockdata, (EntityHuman) this.player);
                  boolean flag = this.level.a(blockposition, false);
  
-@@ -253,19 +385,32 @@
+@@ -253,19 +394,32 @@
                  }
  
                  if (this.isCreative()) {
@@ -239,20 +255,20 @@
 +                // CraftBukkit start
 +                if (event.isDropItems()) {
 +                    org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockDropItemEvent(bblock, state, this.player, level.captureDrops);
-                 }
++                }
 +                level.captureDrops = null;
 +
 +                // Drop event experience
 +                if (flag && event != null) {
 +                    iblockdata.getBlock().dropExperience(this.level, blockposition, event.getExpToDrop());
-+                }
+                 }
 +
 +                return true;
 +                // CraftBukkit end
              }
          }
      }
-@@ -307,12 +452,52 @@
+@@ -307,12 +461,52 @@
          }
      }
  
@@ -305,7 +321,7 @@
  
              if (itileinventory != null) {
                  entityplayer.openContainer(itileinventory);
-@@ -326,7 +511,7 @@
+@@ -326,7 +520,7 @@
              ItemStack itemstack1 = itemstack.cloneItemStack();
  
              if (!flag1) {
@@ -314,7 +330,7 @@
  
                  if (enuminteractionresult.a()) {
                      CriterionTriggers.ITEM_USED_ON_BLOCK.a(entityplayer, blockposition, itemstack1);
-@@ -334,17 +519,17 @@
+@@ -334,17 +528,17 @@
                  }
              }
  
@@ -335,7 +351,7 @@
                  }
  
                  if (enuminteractionresult1.a()) {
-@@ -352,10 +537,10 @@
+@@ -352,10 +546,10 @@
                  }
  
                  return enuminteractionresult1;
