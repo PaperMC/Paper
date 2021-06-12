@@ -34,7 +34,7 @@ public class MapTest {
                     int mr = (r * modi) / 255;
                     int mg = (g * modi) / 255;
                     int mb = (b * modi) / 255;
-                    logger.log(Level.WARNING, "Missing color: c({0}, {1}, {2})", new Object[]{mr, mg, mb});
+                    logger.log(Level.WARNING, "Missing color (check CraftMapView#render): c({0}, {1}, {2})", new Object[]{mr, mg, mb});
                 }
                 fail = true;
             } else {
