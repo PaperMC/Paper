@@ -243,6 +243,13 @@ public class PerMaterialTest extends AbstractTestingBase {
     }
 
     @Test
+    public void testSlipperiness() {
+        if (material.isBlock()) {
+            assertThat(material.getSlipperiness(), is(CraftMagicNumbers.getBlock(material).getFrictionFactor()));
+        }
+    }
+
+    @Test
     public void testBlockDataCreation() {
         if (material.isBlock()) {
             assertNotNull(material.createBlockData());
