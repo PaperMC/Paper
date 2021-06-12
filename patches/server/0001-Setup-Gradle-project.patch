@@ -17,12 +17,17 @@ index 67fb370cad6924895a6b27052dbd5c1767e3f0c9..3e05459f27c4c5697ae65da504d67a6a
  /.project
 diff --git a/build.gradle.kts b/build.gradle.kts
 new file mode 100644
-index 0000000000000000000000000000000000000000..fddf2f440356425d948f40dcf9d9853a374ddc8e
+index 0000000000000000000000000000000000000000..b038528ba5ab9790a6bdb1c51ff072f9b8a64bf8
 --- /dev/null
 +++ b/build.gradle.kts
-@@ -0,0 +1,72 @@
+@@ -0,0 +1,84 @@
 +import com.github.jengelman.gradle.plugins.shadow.transformers.AppendingTransformer
-+import java.time.Instant
++import com.github.jengelman.gradle.plugins.shadow.transformers.Log4j2PluginsCacheFileTransformer
++import com.github.jengelman.gradle.plugins.shadow.transformers.Transformer
++import org.gradle.api.file.FileTreeElement
++import shadow.org.apache.logging.log4j.core.config.plugins.processor.PluginProcessor.PLUGIN_CACHE_FILE
++import java.util.Date
++import java.text.SimpleDateFormat
 +
 +plugins {
 +    java
@@ -62,7 +67,7 @@ index 0000000000000000000000000000000000000000..fddf2f440356425d948f40dcf9d9853a
 +        attributes(mapOf(
 +            "Main-Class" to "org.bukkit.craftbukkit.Main",
 +            "Implementation-Title" to "CraftBukkit",
-+            "Implementation-Vendor" to Instant.now().epochSecond,
++            "Implementation-Vendor" to SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'").format(Date()), // Paper
 +            "Specification-Title" to "Bukkit",
 +            "Specification-Version" to project.version,
 +            "Specification-Vendor" to "Bukkit Team"
@@ -88,8 +93,15 @@ index 0000000000000000000000000000000000000000..fddf2f440356425d948f40dcf9d9853a
 +    transform(AppendingTransformer::class.java) {
 +        resource = "META-INF/services/java.sql.Driver"
 +    }
++    transform(ModifiedLog4j2PluginsCacheFileTransformer::class.java)
 +}
 +
 +tasks.test {
 +    exclude("org/bukkit/craftbukkit/inventory/ItemStack*Test.class")
++}
++
++class ModifiedLog4j2PluginsCacheFileTransformer : Transformer by Log4j2PluginsCacheFileTransformer() {
++    override fun canTransformResource(element: FileTreeElement): Boolean {
++        return PLUGIN_CACHE_FILE == element.name || element.name == "Log4j2Plugins.dat"
++    }
 +}
