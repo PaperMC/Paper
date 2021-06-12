@@ -48,28 +48,28 @@ diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListener
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-@@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl implements ServerGamePacketListener {
+@@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+     private long keepAliveChallenge;
      // CraftBukkit start - multithreaded fields
-     private volatile int chatSpamTickCount;
-     private static final AtomicIntegerFieldUpdater chatSpamField = AtomicIntegerFieldUpdater.newUpdater(ServerGamePacketListenerImpl.class, "chatThrottle");
+     private AtomicInteger chatSpamTickCount = new AtomicInteger();
 +    private final java.util.concurrent.atomic.AtomicInteger tabSpamLimiter = new java.util.concurrent.atomic.AtomicInteger(); // Paper - configurable tab spam limits
      // CraftBukkit end
      private int dropSpamTickCount;
-     private final Int2ShortMap expectedAcks = new Int2ShortOpenHashMap();
-@@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl implements ServerGamePacketListener {
+     private double firstGoodX;
+@@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
          this.server.getProfiler().pop();
          // CraftBukkit start
-         for (int spam; (spam = this.chatSpamTickCount) > 0 && !chatSpamField.compareAndSet(this, spam, spam - 1); ) ;
+         for (int spam; (spam = this.chatSpamTickCount.get()) > 0 && !this.chatSpamTickCount.compareAndSet(spam, spam - 1); ) ;
 +        if (tabSpamLimiter.get() > 0) tabSpamLimiter.getAndDecrement(); // Paper - split to seperate variable
          /* Use thread-safe field access instead
-         if (this.chatThrottle > 0) {
-             --this.chatThrottle;
-@@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl implements ServerGamePacketListener {
+         if (this.chatSpamTickCount > 0) {
+             --this.chatSpamTickCount;
+@@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
      public void handleCustomCommandSuggestions(ServerboundCommandSuggestionPacket packet) {
          // PlayerConnectionUtils.ensureMainThread(packetplayintabcomplete, this, this.player.getWorldServer()); // Paper - run this async
          // CraftBukkit start
--        if (chatSpamField.addAndGet(this, 1) > 500 && !this.server.getPlayerList().isOp(this.player.getGameProfile())) {
-+        if (tabSpamLimiter.addAndGet(com.destroystokyo.paper.PaperConfig.tabSpamIncrement) > com.destroystokyo.paper.PaperConfig.tabSpamLimit && !this.server.getPlayerList().isOp(this.player.getGameProfile())) { // Paper start - split and make configurable
+-        if (this.chatSpamTickCount.addAndGet(1) > 500 && !this.server.getPlayerList().isOp(this.player.getGameProfile())) {
++        if (this.chatSpamTickCount.addAndGet(com.destroystokyo.paper.PaperConfig.tabSpamIncrement) > com.destroystokyo.paper.PaperConfig.tabSpamLimit && !this.server.getPlayerList().isOp(this.player.getGameProfile())) { // Paper start - split and make configurable
              server.scheduleOnMain(() -> this.disconnect(new TranslatableComponent("disconnect.spam", new Object[0]))); // Paper
              return;
          }

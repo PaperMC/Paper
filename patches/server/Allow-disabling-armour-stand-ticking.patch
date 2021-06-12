@@ -37,8 +37,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public ArmorStand(EntityType<? extends ArmorStand> type, Level world) {
          super(type, world);
 +        if (world != null) this.canTick = world.paperConfig.armorStandTick; // Paper - armour stand ticking
-         this.handItems = NonNullList.a(2, ItemStack.EMPTY);
-         this.armorItems = NonNullList.a(4, ItemStack.EMPTY);
+         this.handItems = NonNullList.withSize(2, ItemStack.EMPTY);
+         this.armorItems = NonNullList.withSize(4, ItemStack.EMPTY);
          this.headPose = ArmorStand.DEFAULT_HEAD_POSE;
 @@ -0,0 +0,0 @@ public class ArmorStand extends LivingEntity {
                  this.armorItems.set(enumitemslot.getIndex(), itemstack);
@@ -51,22 +51,22 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public class ArmorStand extends LivingEntity {
          }
  
-         tag.put("Pose", this.writePose());
-+        if (this.canTickSetByAPI) tag.putBoolean("Paper.CanTickOverride", this.canTick); // Paper - persist no tick setting
+         nbt.put("Pose", this.writePose());
++        if (this.canTickSetByAPI) nbt.putBoolean("Paper.CanTickOverride", this.canTick); // Paper - persist no tick setting
      }
  
      @Override
 @@ -0,0 +0,0 @@ public class ArmorStand extends LivingEntity {
-         this.setNoBasePlate(tag.getBoolean("NoBasePlate"));
-         this.setMarker(tag.getBoolean("Marker"));
+         this.setNoBasePlate(nbt.getBoolean("NoBasePlate"));
+         this.setMarker(nbt.getBoolean("Marker"));
          this.noPhysics = !this.hasPhysics();
 +        // Paper start - persist no tick
-+        if (tag.contains("Paper.CanTickOverride")) {
-+            this.canTick = tag.getBoolean("Paper.CanTickOverride");
++        if (nbt.contains("Paper.CanTickOverride")) {
++            this.canTick = nbt.getBoolean("Paper.CanTickOverride");
 +            this.canTickSetByAPI = true;
 +        }
 +        // Paper end
-         CompoundTag nbttagcompound1 = tag.getCompound("Pose");
+         CompoundTag nbttagcompound1 = nbt.getCompound("Pose");
  
          this.readPose(nbttagcompound1);
 @@ -0,0 +0,0 @@ public class ArmorStand extends LivingEntity {
@@ -100,49 +100,50 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
          if (!this.headPose.equals(vector3f)) {
 @@ -0,0 +0,0 @@ public class ArmorStand extends LivingEntity {
-     public void setHeadPose(Rotations vector3f) {
-         this.headPose = vector3f;
-         this.entityData.set(ArmorStand.DATA_HEAD_POSE, vector3f);
+     public void setHeadPose(Rotations angle) {
+         this.headPose = angle;
+         this.entityData.set(ArmorStand.DATA_HEAD_POSE, angle);
 +        this.noTickPoseDirty = true; // Paper - Allow updates when not ticking
      }
  
-     public void setBodyPose(Rotations vector3f) {
-         this.bodyPose = vector3f;
-         this.entityData.set(ArmorStand.DATA_BODY_POSE, vector3f);
+     public void setBodyPose(Rotations angle) {
+         this.bodyPose = angle;
+         this.entityData.set(ArmorStand.DATA_BODY_POSE, angle);
 +        this.noTickPoseDirty = true; // Paper - Allow updates when not ticking
      }
  
-     public void setLeftArmPose(Rotations vector3f) {
-         this.leftArmPose = vector3f;
-         this.entityData.set(ArmorStand.DATA_LEFT_ARM_POSE, vector3f);
+     public void setLeftArmPose(Rotations angle) {
+         this.leftArmPose = angle;
+         this.entityData.set(ArmorStand.DATA_LEFT_ARM_POSE, angle);
 +        this.noTickPoseDirty = true; // Paper - Allow updates when not ticking
      }
  
-     public void setRightArmPose(Rotations vector3f) {
-         this.rightArmPose = vector3f;
-         this.entityData.set(ArmorStand.DATA_RIGHT_ARM_POSE, vector3f);
+     public void setRightArmPose(Rotations angle) {
+         this.rightArmPose = angle;
+         this.entityData.set(ArmorStand.DATA_RIGHT_ARM_POSE, angle);
 +        this.noTickPoseDirty = true; // Paper - Allow updates when not ticking
      }
  
-     public void setLeftLegPose(Rotations vector3f) {
+     public void setLeftLegPose(Rotations angle) {
+         this.leftLegPose = angle;
+         this.entityData.set(ArmorStand.DATA_LEFT_LEG_POSE, angle);
 +        this.noTickPoseDirty = true; // Paper - Allow updates when not ticking
-         this.leftLegPose = vector3f;
-         this.entityData.set(ArmorStand.DATA_LEFT_LEG_POSE, vector3f);
-+
      }
  
-     public void setRightLegPose(Rotations vector3f) {
+     public void setRightLegPose(Rotations angle) {
+         this.rightLegPose = angle;
+         this.entityData.set(ArmorStand.DATA_RIGHT_LEG_POSE, angle);
 +        this.noTickPoseDirty = true; // Paper - Allow updates when not ticking
-         this.rightLegPose = vector3f;
-         this.entityData.set(ArmorStand.DATA_RIGHT_LEG_POSE, vector3f);
      }
+ 
+     public Rotations getHeadPose() {
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftArmorStand.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftArmorStand.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftArmorStand.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftArmorStand.java
 @@ -0,0 +0,0 @@ public class CraftArmorStand extends CraftLivingEntity implements ArmorStand {
-     public boolean isSlotDisabled(org.bukkit.inventory.EquipmentSlot slot) {
-         return getHandle().isSlotDisabled(org.bukkit.craftbukkit.CraftEquipmentSlot.getNMS(slot));
+     public void setCanMove(boolean move) {
+         getHandle().canMove = move;
      }
 +
 +    @Override

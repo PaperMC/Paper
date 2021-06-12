@@ -56,13 +56,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      @Override
      public void reload() {
 +        org.spigotmc.WatchdogThread.hasStarted = false; // Paper - Disable watchdog early timeout on reload
-         reloadCount++;
-         configuration = YamlConfiguration.loadConfiguration(getConfigFile());
-         commandsConfiguration = YamlConfiguration.loadConfiguration(getCommandsConfigFile());
+         this.reloadCount++;
+         this.configuration = YamlConfiguration.loadConfiguration(this.getConfigFile());
+         this.commandsConfiguration = YamlConfiguration.loadConfiguration(this.getCommandsConfigFile());
 @@ -0,0 +0,0 @@ public final class CraftServer implements Server {
-         enablePlugins(PluginLoadOrder.STARTUP);
-         enablePlugins(PluginLoadOrder.POSTWORLD);
-         getPluginManager().callEvent(new ServerLoadEvent(ServerLoadEvent.LoadType.RELOAD));
+         this.enablePlugins(PluginLoadOrder.STARTUP);
+         this.enablePlugins(PluginLoadOrder.POSTWORLD);
+         this.getPluginManager().callEvent(new ServerLoadEvent(ServerLoadEvent.LoadType.RELOAD));
 +        org.spigotmc.WatchdogThread.hasStarted = true; // Paper - Disable watchdog early timeout on reload
      }
  
@@ -72,9 +72,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/org/spigotmc/SpigotConfig.java
 +++ b/src/main/java/org/spigotmc/SpigotConfig.java
 @@ -0,0 +0,0 @@ public class SpigotConfig
-         restartScript = getString( "settings.restart-script", restartScript );
-         restartMessage = transform( getString( "messages.restart", "Server is restarting" ) );
-         commands.put( "restart", new RestartCommand( "restart" ) );
+         SpigotConfig.restartScript = SpigotConfig.getString( "settings.restart-script", SpigotConfig.restartScript );
+         SpigotConfig.restartMessage = SpigotConfig.transform( SpigotConfig.getString( "messages.restart", "Server is restarting" ) );
+         SpigotConfig.commands.put( "restart", new RestartCommand( "restart" ) );
 -        WatchdogThread.doStart( timeoutTime, restartOnCrash );
 +        //WatchdogThread.doStart( timeoutTime, restartOnCrash ); // Paper - moved to PaperConfig
      }
@@ -113,15 +113,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      private static long monotonicMillis()
 @@ -0,0 +0,0 @@ public class WatchdogThread extends Thread
-     {
-         while ( !stopping )
+         while ( !this.stopping )
          {
--            //
--            if ( lastTick != 0 && timeoutTime > 0 && monotonicMillis() > lastTick + timeoutTime && !Boolean.getBoolean("disable.watchdog")) // Paper - Add property to disable
+             //
+-            if ( this.lastTick != 0 && this.timeoutTime > 0 && WatchdogThread.monotonicMillis() > this.lastTick + this.timeoutTime && !Boolean.getBoolean("disable.watchdog")) // Paper - Add property to disable
 +            // Paper start
 +            Logger log = Bukkit.getServer().getLogger();
-+            long currentTime = monotonicMillis();
-+            if ( lastTick != 0 && timeoutTime > 0 && currentTime > lastTick + earlyWarningEvery && !Boolean.getBoolean("disable.watchdog") )
++            long currentTime = WatchdogThread.monotonicMillis();
++            if ( this.lastTick != 0 && this.timeoutTime > 0 && currentTime > this.lastTick + this.earlyWarningEvery && !Boolean.getBoolean("disable.watchdog")) // Paper - Add property to disable
              {
 -                Logger log = Bukkit.getServer().getLogger();
 +                boolean isLongTimeout = currentTime > lastTick + timeoutTime;
@@ -146,7 +145,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                // Paper end - Different message for short timeout
                  log.log( Level.SEVERE, "------------------------------" );
                  log.log( Level.SEVERE, "Server thread dump (Look for plugins here before reporting to Paper!):" ); // Paper
-                 dumpThread( ManagementFactory.getThreadMXBean().getThreadInfo( MinecraftServer.getServer().serverThread.getId(), Integer.MAX_VALUE ), log );
+                 WatchdogThread.dumpThread( ManagementFactory.getThreadMXBean().getThreadInfo( MinecraftServer.getServer().serverThread.getId(), Integer.MAX_VALUE ), log );
                  log.log( Level.SEVERE, "------------------------------" );
                  //
 +                // Paper start - Only print full dump on long timeouts
@@ -156,18 +155,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  ThreadInfo[] threads = ManagementFactory.getThreadMXBean().dumpAllThreads( true, true );
                  for ( ThreadInfo thread : threads )
                  {
-                     dumpThread( thread, log );
+                     WatchdogThread.dumpThread( thread, log );
                  }
 +                } else {
 +                    log.log(Level.SEVERE, "--- DO NOT REPORT THIS TO PAPER - THIS IS NOT A BUG OR A CRASH ---");
 +                }
 +
-+
                  log.log( Level.SEVERE, "------------------------------" );
  
 +                if ( isLongTimeout )
 +                {
-                 if ( restart && !MinecraftServer.getServer().hasStopped() )
+                 if ( this.restart && !MinecraftServer.getServer().hasStopped() )
                  {
                      RestartCommand.restart();
                  }
