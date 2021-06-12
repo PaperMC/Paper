@@ -28,7 +28,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              buf.writeUtf(this.nametagVisibility);
 -            buf.writeUtf(this.collisionRule);
 +            buf.writeUtf(!com.destroystokyo.paper.PaperConfig.enablePlayerCollisions ? "never" : this.collisionRule); // Paper
-             buf.writeEnum((Enum) this.color);
+             buf.writeEnum(this.color);
              buf.writeComponent(this.playerPrefix);
              buf.writeComponent(this.playerSuffix);
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
@@ -39,24 +39,24 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  import net.minecraft.world.level.storage.loot.PredicateManager;
  import net.minecraft.world.phys.Vec2;
  import net.minecraft.world.phys.Vec3;
-+import net.minecraft.world.scores.PlayerTeam;
- import net.minecraft.world.scores.Scoreboard;
- import net.minecraft.world.scores.ScoreboardSaveData;
++import net.minecraft.world.scores.PlayerTeam; // Paper
  import org.apache.commons.lang3.Validate;
+ import org.apache.logging.log4j.LogManager;
+ import org.apache.logging.log4j.Logger;
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
              this.server.getPluginManager().callEvent(new org.bukkit.event.world.WorldLoadEvent(worldserver.getWorld()));
          }
  
 +        // Paper start - Handle collideRule team for player collision toggle
-+        final Scoreboard scoreboard = this.getScoreboard();
-+        final java.util.Collection<String> toRemove = scoreboard.getTeams().stream().filter(team -> team.getName().startsWith("collideRule_")).map(PlayerTeam::getName).collect(java.util.stream.Collectors.toList());
++        final ServerScoreboard scoreboard = this.getScoreboard();
++        final java.util.Collection<String> toRemove = scoreboard.getPlayerTeams().stream().filter(team -> team.getName().startsWith("collideRule_")).map(PlayerTeam::getName).collect(java.util.stream.Collectors.toList());
 +        for (String teamName : toRemove) {
-+            scoreboard.removeTeam(scoreboard.getTeam(teamName)); // Clean up after ourselves
++            scoreboard.removePlayerTeam(scoreboard.getPlayersTeam(teamName)); // Clean up after ourselves
 +        }
 +
 +        if (!com.destroystokyo.paper.PaperConfig.enablePlayerCollisions) {
 +            this.getPlayerList().collideRuleTeamName = org.apache.commons.lang3.StringUtils.left("collideRule_" + java.util.concurrent.ThreadLocalRandom.current().nextInt(), 16);
-+            PlayerTeam collideTeam = scoreboard.createTeam(this.getPlayerList().collideRuleTeamName);
++            PlayerTeam collideTeam = scoreboard.addPlayerTeam(this.getPlayerList().collideRuleTeamName);
 +            collideTeam.setSeeFriendlyInvisibles(false); // Because we want to mimic them not being on a team at all
 +        }
 +        // Paper end
@@ -72,7 +72,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  import net.minecraft.world.phys.Vec3;
  import net.minecraft.world.scores.Objective;
  import net.minecraft.world.scores.PlayerTeam;
-+import net.minecraft.world.scores.Scoreboard;
++import net.minecraft.world.scores.Scoreboard; // Paper
  import net.minecraft.world.scores.Team;
  import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
@@ -85,19 +85,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public PlayerList(MinecraftServer server, RegistryAccess.RegistryHolder registryManager, PlayerDataStorage saveHandler, int maxPlayers) {
          this.cserver = server.server = new CraftServer((DedicatedServer) server, this);
 @@ -0,0 +0,0 @@ public abstract class PlayerList {
-         }
  
-         player.initMenu();
+         player.initInventoryMenu();
+         // CraftBukkit - Moved from above, added world
 +        // Paper start - Add to collideRule team if needed
 +        final Scoreboard scoreboard = this.getServer().getLevel(Level.OVERWORLD).getScoreboard();
-+        final PlayerTeam collideRuleTeam = scoreboard.getTeam(collideRuleTeamName);
++        final PlayerTeam collideRuleTeam = scoreboard.getPlayersTeam(this.collideRuleTeamName);
 +        if (this.collideRuleTeamName != null && collideRuleTeam != null && player.getTeam() == null) {
 +            scoreboard.addPlayerToTeam(player.getScoreboardName(), collideRuleTeam);
 +        }
 +        // Paper end
-         // CraftBukkit - Moved from above, added world
-         PlayerList.LOGGER.info("{}[{}] logged in with entity id {} at ([{}]{}, {}, {})", player.getName().getString(), s1, player.getId(), worldserver1.worldDataServer.getLevelName(), player.getX(), player.getY(), player.getZ());
+         PlayerList.LOGGER.info("{}[{}] logged in with entity id {} at ([{}]{}, {}, {})", player.getName().getString(), s1, player.getId(), worldserver1.serverLevelData.getLevelName(), player.getX(), player.getY(), player.getZ());
      }
+ 
 @@ -0,0 +0,0 @@ public abstract class PlayerList {
          entityplayer.doTick(); // SPIGOT-924
          // CraftBukkit end
@@ -105,7 +105,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        // Paper start - Remove from collideRule team if needed
 +        if (this.collideRuleTeamName != null) {
 +            final Scoreboard scoreBoard = this.server.getLevel(Level.OVERWORLD).getScoreboard();
-+            final PlayerTeam team = scoreBoard.getTeam(this.collideRuleTeamName);
++            final PlayerTeam team = scoreBoard.getPlayersTeam(this.collideRuleTeamName);
 +            if (entityplayer.getTeam() == team && team != null) {
 +                scoreBoard.removePlayerFromTeam(entityplayer.getScoreboardName(), team);
 +            }
@@ -122,8 +122,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        // Paper start - Remove collideRule team if it exists
 +        if (this.collideRuleTeamName != null) {
 +            final Scoreboard scoreboard = this.getServer().getLevel(Level.OVERWORLD).getScoreboard();
-+            final PlayerTeam team = scoreboard.getTeam(this.collideRuleTeamName);
-+            if (team != null) scoreboard.removeTeam(team);
++            final PlayerTeam team = scoreboard.getPlayersTeam(this.collideRuleTeamName);
++            if (team != null) scoreboard.removePlayerTeam(team);
 +        }
 +        // Paper end
      }

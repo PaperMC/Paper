@@ -49,7 +49,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@
 +package com.destroystokyo.paper.loottable;
 +
-+import LootableInventory;
 +import net.minecraft.core.BlockPos;
 +import net.minecraft.world.level.Level;
 +import net.minecraft.world.level.block.entity.RandomizableContainerBlockEntity;
@@ -125,7 +124,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +package com.destroystokyo.paper.loottable;
 +
 +import org.bukkit.loot.Lootable;
-+import LootableInventory;
 +import java.util.UUID;
 +import net.minecraft.world.level.Level;
 +
@@ -204,7 +202,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import com.destroystokyo.paper.PaperWorldConfig;
 +import org.bukkit.entity.Player;
 +import org.bukkit.loot.LootTable;
-+
 +import javax.annotation.Nullable;
 +import net.minecraft.nbt.CompoundTag;
 +import net.minecraft.nbt.ListTag;
@@ -387,7 +384,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@
 +package com.destroystokyo.paper.loottable;
 +
-+import LootableInventory;
 +import net.minecraft.world.entity.Entity;
 +import net.minecraft.world.entity.vehicle.AbstractMinecartContainer;
 +import net.minecraft.world.level.Level;
@@ -456,7 +452,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@
 +package com.destroystokyo.paper.loottable;
 +
-+import LootableInventory;
 +import net.minecraft.server.MCUtil;
 +import net.minecraft.world.level.Level;
 +import net.minecraft.world.level.block.entity.RandomizableContainerBlockEntity;
@@ -524,7 +519,7 @@ diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/jav
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
-@@ -0,0 +0,0 @@ public abstract class Entity implements Nameable, CommandSource, net.minecraft.s
+@@ -0,0 +0,0 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, n
      };
      // Paper end
  
@@ -546,31 +541,31 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
 @@ -0,0 +0,0 @@ public abstract class AbstractMinecartContainer extends AbstractMinecart impleme
      @Override
-     protected void addAdditionalSaveData(CompoundTag tag) {
-         super.addAdditionalSaveData(tag);
-+        this.lootableData.saveNbt(tag); // Paper
+     protected void addAdditionalSaveData(CompoundTag nbt) {
+         super.addAdditionalSaveData(nbt);
++        this.lootableData.saveNbt(nbt); // Paper
          if (this.lootTable != null) {
-             tag.putString("LootTable", this.lootTable.toString());
+             nbt.putString("LootTable", this.lootTable.toString());
              if (this.lootTableSeed != 0L) {
-                 tag.putLong("LootTableSeed", this.lootTableSeed);
+                 nbt.putLong("LootTableSeed", this.lootTableSeed);
              }
 -        } else {
 +        } if (true) { // Paper - Always save the items, Table may stick around
-             ContainerHelper.saveAllItems(tag, this.itemStacks);
+             ContainerHelper.saveAllItems(nbt, this.itemStacks);
          }
  
 @@ -0,0 +0,0 @@ public abstract class AbstractMinecartContainer extends AbstractMinecart impleme
      @Override
-     protected void readAdditionalSaveData(CompoundTag tag) {
-         super.readAdditionalSaveData(tag);
-+        this.lootableData.loadNbt(tag); // Paper
-         this.itemStacks = NonNullList.a(this.getContainerSize(), ItemStack.EMPTY);
-         if (tag.contains("LootTable", 8)) {
-             this.lootTable = new ResourceLocation(tag.getString("LootTable"));
-             this.lootTableSeed = tag.getLong("LootTableSeed");
+     protected void readAdditionalSaveData(CompoundTag nbt) {
+         super.readAdditionalSaveData(nbt);
++        this.lootableData.loadNbt(nbt); // Paper
+         this.itemStacks = NonNullList.withSize(this.getContainerSize(), ItemStack.EMPTY);
+         if (nbt.contains("LootTable", 8)) {
+             this.lootTable = new ResourceLocation(nbt.getString("LootTable"));
+             this.lootTableSeed = nbt.getLong("LootTableSeed");
 -        } else {
 +        } if (true) { // Paper - always load the items, table may still remain
-             ContainerHelper.loadAllItems(tag, this.itemStacks);
+             ContainerHelper.loadAllItems(nbt, this.itemStacks);
          }
  
 @@ -0,0 +0,0 @@ public abstract class AbstractMinecartContainer extends AbstractMinecart impleme
@@ -601,17 +596,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public long lootTableSeed;
 +    public final com.destroystokyo.paper.loottable.PaperLootableInventoryData lootableData = new com.destroystokyo.paper.loottable.PaperLootableInventoryData(new com.destroystokyo.paper.loottable.PaperTileEntityLootableInventory(this)); // Paper
  
-     protected RandomizableContainerBlockEntity(BlockEntityType<?> type) {
-         super(type);
+     protected RandomizableContainerBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
+         super(type, pos, state);
 @@ -0,0 +0,0 @@ public abstract class RandomizableContainerBlockEntity extends BaseContainerBloc
      }
  
-     protected boolean tryLoadLootTable(CompoundTag nbttagcompound) {
-+        this.lootableData.loadNbt(nbttagcompound); // Paper
-         if (nbttagcompound.contains("LootTable", 8)) {
-             this.lootTable = new ResourceLocation(nbttagcompound.getString("LootTable"));
+     protected boolean tryLoadLootTable(CompoundTag nbt) {
++        this.lootableData.loadNbt(nbt); // Paper
+         if (nbt.contains("LootTable", 8)) {
+             this.lootTable = new ResourceLocation(nbt.getString("LootTable"));
 +            try { org.bukkit.craftbukkit.util.CraftNamespacedKey.fromMinecraft(this.lootTable); } catch (IllegalArgumentException ex) { this.lootTable = null; } // Paper - validate
-             this.lootTableSeed = nbttagcompound.getLong("LootTableSeed");
+             this.lootTableSeed = nbt.getLong("LootTableSeed");
 -            return true;
 +            return false; // Paper - always load the items, table may still remain
          } else {
@@ -619,13 +614,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          }
      }
  
-     protected boolean trySaveLootTable(CompoundTag nbttagcompound) {
-+        this.lootableData.saveNbt(nbttagcompound); // Paper
+     protected boolean trySaveLootTable(CompoundTag nbt) {
++        this.lootableData.saveNbt(nbt); // Paper
          if (this.lootTable == null) {
              return false;
          } else {
 @@ -0,0 +0,0 @@ public abstract class RandomizableContainerBlockEntity extends BaseContainerBloc
-                 nbttagcompound.putLong("LootTableSeed", this.lootTableSeed);
+                 nbt.putLong("LootTableSeed", this.lootTableSeed);
              }
  
 -            return true;
@@ -636,18 +631,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public void unpackLootTable(@Nullable Player player) {
 -        if (this.lootTable != null && this.level.getServer() != null) {
 +        if (this.lootableData.shouldReplenish(player) && this.level.getServer() != null) { // Paper
-             LootTable loottable = this.level.getServer().getLootTables().get(this.lootTable);
- 
+             LootTable lootTable = this.level.getServer().getLootTables().get(this.lootTable);
              if (player instanceof ServerPlayer) {
-                 CriteriaTriggers.GENERATE_LOOT.trigger((ServerPlayer) player, this.lootTable);
+                 CriteriaTriggers.GENERATE_LOOT.trigger((ServerPlayer)player, this.lootTable);
              }
  
 -            this.lootTable = null;
 +            //this.lootTable = null; // Paper
 +            this.lootableData.processRefill(player); // Paper
-             LootContext.Builder loottableinfo_builder = (new LootContext.Builder((ServerLevel) this.level)).withParameter(LootContextParams.ORIGIN, Vec3.atCenterOf((Vec3i) this.worldPosition)).withOptionalRandomSeed(this.lootTableSeed);
- 
+             LootContext.Builder builder = (new LootContext.Builder((ServerLevel)this.level)).withParameter(LootContextParams.ORIGIN, Vec3.atCenterOf(this.worldPosition)).withOptionalRandomSeed(this.lootTableSeed);
              if (player != null) {
+                 builder.withLuck(player.getLuck()).withParameter(LootContextParams.THIS_ENTITY, player);
 diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftBlockEntityState.java b/src/main/java/org/bukkit/craftbukkit/block/CraftBlockEntityState.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/block/CraftBlockEntityState.java
@@ -658,7 +652,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      // gets the wrapped TileEntity
 -    protected T getTileEntity() {
 +    public T getTileEntity() { // Paper - protected -> public
-         return tileEntity;
+         return this.tileEntity;
      }
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftChest.java b/src/main/java/org/bukkit/craftbukkit/block/CraftChest.java
@@ -690,7 +684,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public CraftLootable(Block block, Class<T> tileEntityClass) {
          super(block, tileEntityClass);
 @@ -0,0 +0,0 @@ public abstract class CraftLootable<T extends RandomizableContainerBlockEntity>
-         setLootTable(getLootTable(), seed);
+         this.setLootTable(this.getLootTable(), seed);
      }
  
 -    private void setLootTable(LootTable table, long seed) {
@@ -716,13 +710,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftMinecartContainer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftMinecartContainer.java
 @@ -0,0 +0,0 @@ public abstract class CraftMinecartContainer extends CraftMinecart implements Lo
-         return getHandle().lootTableSeed;
+         return this.getHandle().lootTableSeed;
      }
  
 -    private void setLootTable(LootTable table, long seed) {
-+    public void setLootTable(LootTable table, long seed) { // Paper
++    @Override public void setLootTable(LootTable table, long seed) { // Paper
          ResourceLocation newKey = (table == null) ? null : CraftNamespacedKey.toMinecraft(table.getKey());
-         getHandle().setLootTable(newKey, seed);
+         this.getHandle().setLootTable(newKey, seed);
      }
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftMinecartHopper.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftMinecartHopper.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644

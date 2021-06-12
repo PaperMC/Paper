@@ -17,13 +17,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
 @@ -0,0 +0,0 @@ public class ServerLevel extends net.minecraft.world.level.Level implements Worl
-                         {
-                             if ( iter.next().player == entity )
                              {
-+                                map.decorations.remove(entity.getName().getString()); // Paper
-                                 iter.remove();
+                                 if ( iter.next().player == entity )
+                                 {
++                                    map.decorations.remove(entity.getName().getString()); // Paper
+                                     iter.remove();
+                                 }
                              }
-                         }
 diff --git a/src/main/java/net/minecraft/world/entity/player/Player.java b/src/main/java/net/minecraft/world/entity/player/Player.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/player/Player.java
@@ -32,7 +32,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  import net.minecraft.world.item.ItemCooldowns;
  import net.minecraft.world.item.ItemStack;
  import net.minecraft.world.item.Items;
-+import net.minecraft.world.item.MapItem;
++import net.minecraft.world.item.MapItem; // Paper
  import net.minecraft.world.item.ProjectileWeaponItem;
  import net.minecraft.world.item.SwordItem;
  import net.minecraft.world.item.crafting.Recipe;
@@ -40,7 +40,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  import net.minecraft.world.level.block.entity.StructureBlockEntity;
  import net.minecraft.world.level.block.state.BlockState;
  import net.minecraft.world.level.block.state.pattern.BlockInWorld;
-+import net.minecraft.world.level.saveddata.maps.MapItemSavedData;
++import net.minecraft.world.level.saveddata.maps.MapItemSavedData; // Paper
  import net.minecraft.world.phys.AABB;
  import net.minecraft.world.phys.Vec3;
  import net.minecraft.world.scores.PlayerTeam;
@@ -50,8 +50,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              // CraftBukkit end
 +            // Paper start - remove player from map on drop
 +            if (stack.getItem() == Items.FILLED_MAP) {
-+                MapItemSavedData worldmap = MapItem.getOrCreateSavedData(stack, this.level);
-+                worldmap.updateSeenPlayers(this, stack);
++                MapItemSavedData worldmap = MapItem.getSavedData(stack, this.level);
++                worldmap.tickCarriedBy(this, stack);
 +            }
 +            // Paper end
  
@@ -62,44 +62,36 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/world/level/saveddata/maps/MapItemSavedData.java
 +++ b/src/main/java/net/minecraft/world/level/saveddata/maps/MapItemSavedData.java
 @@ -0,0 +0,0 @@ public class MapItemSavedData extends SavedData {
-     private final Map<String, MapBanner> bannerMarkers = Maps.newHashMap();
      public final Map<String, MapDecoration> decorations = Maps.newLinkedHashMap();
      private final Map<String, MapFrame> frameMarkers = Maps.newHashMap();
+     private int trackedDecorationCount;
 +    private org.bukkit.craftbukkit.map.RenderData vanillaRender = new org.bukkit.craftbukkit.map.RenderData(); // Paper
  
      // CraftBukkit start
      public final CraftMapView mapView;
 @@ -0,0 +0,0 @@ public class MapItemSavedData extends SavedData {
          // CraftBukkit start
-         mapView = new CraftMapView(this);
-         server = (CraftServer) org.bukkit.Bukkit.getServer();
-+        vanillaRender.buffer = colors; // Paper
+         this.mapView = new CraftMapView(this);
+         this.server = (CraftServer) org.bukkit.Bukkit.getServer();
++        this.vanillaRender.buffer = colors; // Paper
          // CraftBukkit end
      }
  
 @@ -0,0 +0,0 @@ public class MapItemSavedData extends SavedData {
-             this.bannerMarkers.put(mapiconbanner.getId(), mapiconbanner);
-             this.addDecoration(mapiconbanner.getDecoration(), (LevelAccessor) null, mapiconbanner.getId(), (double) mapiconbanner.getPos().getX(), (double) mapiconbanner.getPos().getZ(), 180.0D, mapiconbanner.getName());
+         if (abyte.length == 16384) {
+             worldmap.colors = abyte;
          }
-+        this.vanillaRender.buffer = colors; // Paper
++        worldmap.vanillaRender.buffer = abyte; // Paper
  
-         ListTag nbttaglist1 = tag.getList("frames", 10);
+         ListTag nbttaglist = nbt.getList("banners", 10);
  
-@@ -0,0 +0,0 @@ public class MapItemSavedData extends SavedData {
-         this.setDirty();
-     }
- 
-+    public void updateSeenPlayers(Player entityhuman, ItemStack itemstack) { this.tickCarriedBy(entityhuman, itemstack); } // Paper - OBFHELPER
-     public void tickCarriedBy(Player player, ItemStack stack) {
-         if (!this.carriedByPlayers.containsKey(player)) {
-             MapItemSavedData.HoldingPlayer worldmap_worldmaphumantracker = new MapItemSavedData.HoldingPlayer(player);
 @@ -0,0 +0,0 @@ public class MapItemSavedData extends SavedData {
  
      public class HoldingPlayer {
  
 +        // Paper start
 +        private void addSeenPlayers(java.util.Collection<MapDecoration> icons) {
-+            org.bukkit.entity.Player player = (org.bukkit.entity.Player) player.getBukkitEntity();
++            org.bukkit.entity.Player player = (org.bukkit.entity.Player) this.player.getBukkitEntity();
 +            MapItemSavedData.this.decorations.forEach((name, mapIcon) -> {
 +                // If this cursor is for a player check visibility with vanish system
 +                org.bukkit.entity.Player other = org.bukkit.Bukkit.getPlayerExact(name); // Spigot
@@ -117,18 +109,24 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          private int minDirtyX;
 @@ -0,0 +0,0 @@ public class MapItemSavedData extends SavedData {
          @Nullable
-         public Packet<?> nextUpdatePacket(ItemStack stack) {
-             // CraftBukkit start
+         Packet<?> nextUpdatePacket(int mapId) {
+             MapItemSavedData.MapPatch worldmap_b;
 -            org.bukkit.craftbukkit.map.RenderData render = MapItemSavedData.this.mapView.render((org.bukkit.craftbukkit.entity.CraftPlayer) this.player.getBukkitEntity()); // CraftBukkit
 +            if (!this.dirtyData && this.tick % 5 != 0) { this.tick++; return null; } // Paper - this won't end up sending, so don't render it!
 +            boolean vanillaMaps = shouldUseVanillaMap(); // Paper
 +            org.bukkit.craftbukkit.map.RenderData render = !vanillaMaps ? MapItemSavedData.this.mapView.render((org.bukkit.craftbukkit.entity.CraftPlayer) this.player.getBukkitEntity()) : MapItemSavedData.this.vanillaRender; // CraftBukkit // Paper
  
-             java.util.Collection<MapDecoration> icons = new java.util.ArrayList<MapDecoration>();
-+            if (vanillaMaps) addSeenPlayers(icons); // Paper
+             if (this.dirtyData) {
+                 this.dirtyData = false;
+@@ -0,0 +0,0 @@ public class MapItemSavedData extends SavedData {
+                 // CraftBukkit start
+                 java.util.Collection<MapDecoration> icons = new java.util.ArrayList<MapDecoration>();
  
-             for ( org.bukkit.map.MapCursor cursor : render.cursors) {
- 
++                if (vanillaMaps) addSeenPlayers(icons); // Paper
++
+                 for (org.bukkit.map.MapCursor cursor : render.cursors) {
+                     if (cursor.isVisible()) {
+                         icons.add(new MapDecoration(MapDecoration.Type.byIcon(cursor.getRawType()), cursor.getX(), cursor.getY(), cursor.getDirection(), PaperAdventure.asVanilla(cursor.caption()))); // Paper - Adventure
 diff --git a/src/main/java/org/bukkit/craftbukkit/map/RenderData.java b/src/main/java/org/bukkit/craftbukkit/map/RenderData.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/map/RenderData.java

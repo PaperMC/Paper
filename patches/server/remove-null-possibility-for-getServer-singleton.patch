@@ -15,16 +15,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
 +    private static MinecraftServer SERVER; // Paper
      public static final Logger LOGGER = LogManager.getLogger();
-     public static final File USERID_CACHE_FILE = new File("usercache.json");
-     public static final LevelSettings DEMO_SETTINGS = new LevelSettings("Demo World", GameType.SURVIVAL, false, Difficulty.NORMAL, false, new GameRules(), DataPackConfig.DEFAULT);
+     private static final float AVERAGE_TICK_TIME_SMOOTHING = 0.8F;
+     private static final int TICK_STATS_SPAN = 100;
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
  
-     public MinecraftServer(OptionSet options, DataPackConfig datapackconfiguration, Thread thread, RegistryAccess.RegistryHolder iregistrycustom_dimension, LevelStorageSource.LevelStorageAccess convertable_conversionsession, WorldData savedata, PackRepository resourcepackrepository, Proxy proxy, DataFixer datafixer, ServerResources datapackresources, MinecraftSessionService minecraftsessionservice, GameProfileRepository gameprofilerepository, GameProfileCache usercache, ChunkProgressListenerFactory worldloadlistenerfactory) {
+     public MinecraftServer(OptionSet options, DataPackConfig datapackconfiguration, Thread thread, RegistryAccess.RegistryHolder iregistrycustom_dimension, LevelStorageSource.LevelStorageAccess convertable_conversionsession, WorldData savedata, PackRepository resourcepackrepository, Proxy proxy, DataFixer datafixer, ServerResources datapackresources, @Nullable MinecraftSessionService minecraftsessionservice, @Nullable GameProfileRepository gameprofilerepository, @Nullable GameProfileCache usercache, ChunkProgressListenerFactory worldloadlistenerfactory) {
          super("Server");
 +        SERVER = this; // Paper - better singleton
-         this.continousProfiler = new ContinuousProfiler(Util.timeSource, this::getTickCount);
-         this.profiler = InactiveProfiler.INSTANCE;
-         this.status = new ServerStatus();
+         this.metricsRecorder = InactiveMetricsRecorder.INSTANCE;
+         this.profiler = this.metricsRecorder.getProfiler();
+         this.onMetricsRecordingStopped = (methodprofilerresults) -> {
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
  
      @Deprecated
