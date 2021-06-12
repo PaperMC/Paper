@@ -5,20 +5,20 @@ Subject: [PATCH] PlayerPickupItemEvent#setFlyAtPlayer
 
 
 diff --git a/src/main/java/net/minecraft/world/entity/item/ItemEntity.java b/src/main/java/net/minecraft/world/entity/item/ItemEntity.java
-index 7aba507e171f34e213b3c034e345e7397a44d2b5..72d1e83ac5e4ae3c943ca5ec1058f0d7ad2903cd 100644
+index 9611388a6aeebb86b19d89c526f53dfed4d3ed27..d17af2ec8f72bf0cbe5928e7a83c06ba5ad4503d 100644
 --- a/src/main/java/net/minecraft/world/entity/item/ItemEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/item/ItemEntity.java
-@@ -362,6 +362,7 @@ public class ItemEntity extends Entity {
+@@ -379,6 +379,7 @@ public class ItemEntity extends Entity {
              // CraftBukkit start - fire PlayerPickupItemEvent
-             int canHold = player.inventory.canHold(itemstack);
+             int canHold = player.getInventory().canHold(itemstack);
              int remaining = i - canHold;
 +            boolean flyAtPlayer = false; // Paper
  
              if (this.pickupDelay <= 0 && canHold > 0) {
                  itemstack.setCount(canHold);
-@@ -369,8 +370,14 @@ public class ItemEntity extends Entity {
+@@ -386,8 +387,14 @@ public class ItemEntity extends Entity {
                  PlayerPickupItemEvent playerEvent = new PlayerPickupItemEvent((org.bukkit.entity.Player) player.getBukkitEntity(), (org.bukkit.entity.Item) this.getBukkitEntity(), remaining);
-                 playerEvent.setCancelled(!player.canPickUpLoot);
+                 playerEvent.setCancelled(!playerEvent.getPlayer().getCanPickupItems());
                  this.level.getCraftServer().getPluginManager().callEvent(playerEvent);
 +                flyAtPlayer = playerEvent.getFlyAtPlayer(); // Paper
                  if (playerEvent.isCancelled()) {
@@ -31,10 +31,10 @@ index 7aba507e171f34e213b3c034e345e7397a44d2b5..72d1e83ac5e4ae3c943ca5ec1058f0d7
                      return;
                  }
  
-@@ -400,7 +407,11 @@ public class ItemEntity extends Entity {
+@@ -417,7 +424,11 @@ public class ItemEntity extends Entity {
              // CraftBukkit end
  
-             if (this.pickupDelay == 0 && (this.owner == null || this.owner.equals(player.getUUID())) && player.inventory.add(itemstack)) {
+             if (this.pickupDelay == 0 && (this.owner == null || this.owner.equals(player.getUUID())) && player.getInventory().add(itemstack)) {
 -                player.take(this, i);
 +                // Paper Start
 +                if (flyAtPlayer) {
@@ -42,5 +42,5 @@ index 7aba507e171f34e213b3c034e345e7397a44d2b5..72d1e83ac5e4ae3c943ca5ec1058f0d7
 +                }
 +                // Paper End
                  if (itemstack.isEmpty()) {
-                     this.remove();
+                     this.discard();
                      itemstack.setCount(i);

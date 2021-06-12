@@ -5,13 +5,13 @@ Subject: [PATCH] Item#canEntityPickup
 
 
 diff --git a/src/main/java/net/minecraft/world/entity/Mob.java b/src/main/java/net/minecraft/world/entity/Mob.java
-index 46f0ebfc99352ec8b64bdff2c6bb8d17ecfeb619..eb35c69bb777ba8d83b2304ff9f862512643e745 100644
+index b13774873f795b149c15fddb8053d9419f1841ca..2ed756c73b0cfddb559126d85316f37c3f958c0c 100644
 --- a/src/main/java/net/minecraft/world/entity/Mob.java
 +++ b/src/main/java/net/minecraft/world/entity/Mob.java
-@@ -605,6 +605,11 @@ public abstract class Mob extends LivingEntity {
+@@ -614,6 +614,11 @@ public abstract class Mob extends LivingEntity {
                  ItemEntity entityitem = (ItemEntity) iterator.next();
  
-                 if (!entityitem.removed && !entityitem.getItem().isEmpty() && !entityitem.hasPickUpDelay() && this.wantsToPickUp(entityitem.getItem())) {
+                 if (!entityitem.isRemoved() && !entityitem.getItem().isEmpty() && !entityitem.hasPickUpDelay() && this.wantsToPickUp(entityitem.getItem())) {
 +                    // Paper Start
 +                    if (!entityitem.canMobPickup) {
 +                        continue;
@@ -21,10 +21,10 @@ index 46f0ebfc99352ec8b64bdff2c6bb8d17ecfeb619..eb35c69bb777ba8d83b2304ff9f86251
                  }
              }
 diff --git a/src/main/java/net/minecraft/world/entity/item/ItemEntity.java b/src/main/java/net/minecraft/world/entity/item/ItemEntity.java
-index 78dc5ac986afaba04176f64afbb035442cd41d38..7aba507e171f34e213b3c034e345e7397a44d2b5 100644
+index bf6daeefef5a60ebc612c0347eb34d581fb8851a..9611388a6aeebb86b19d89c526f53dfed4d3ed27 100644
 --- a/src/main/java/net/minecraft/world/entity/item/ItemEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/item/ItemEntity.java
-@@ -46,6 +46,7 @@ public class ItemEntity extends Entity {
+@@ -51,6 +51,7 @@ public class ItemEntity extends Entity {
      private UUID owner;
      public final float bobOffs;
      private int lastTick = MinecraftServer.currentTick - 1; // CraftBukkit
@@ -33,18 +33,20 @@ index 78dc5ac986afaba04176f64afbb035442cd41d38..7aba507e171f34e213b3c034e345e739
      public ItemEntity(EntityType<? extends ItemEntity> type, Level world) {
          super(type, world);
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftItem.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftItem.java
-index 6e394ce6ea4177e1758e27074a4fd54d716edc3d..9a410f557988d737c3b930a79ef2ccb2b5c8b406 100644
+index b9044654d22a47cfa952dcf25754ad0d87fc0844..0d262c99c7e9ef06e297612b1802c493700f64ae 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftItem.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftItem.java
-@@ -49,6 +49,16 @@ public class CraftItem extends CraftEntity implements Item {
+@@ -49,6 +49,18 @@ public class CraftItem extends CraftEntity implements Item {
          item.age = value;
      }
  
 +    // Paper Start
++    @Override
 +    public boolean canMobPickup() {
 +        return item.canMobPickup;
 +    }
 +
++    @Override
 +    public void setCanMobPickup(boolean canMobPickup) {
 +        item.canMobPickup = canMobPickup;
 +    }
@@ -52,4 +54,4 @@ index 6e394ce6ea4177e1758e27074a4fd54d716edc3d..9a410f557988d737c3b930a79ef2ccb2
 +
      @Override
      public void setOwner(UUID uuid) {
-         item.setOwner(uuid);
+         this.item.setOwner(uuid);
