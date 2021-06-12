@@ -14,37 +14,28 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              this.flame.addEffect(new MobEffectInstance(MobEffects.HARM));
 +            if (new com.destroystokyo.paper.event.entity.EnderDragonFlameEvent((org.bukkit.entity.EnderDragon) this.dragon.getBukkitEntity(), (org.bukkit.entity.AreaEffectCloud) this.flame.getBukkitEntity()).callEvent()) { // Paper
              this.dragon.level.addFreshEntity(this.flame);
++            // Paper start
 +            } else {
-+                this.removeAreaEffect();
++                this.end();
 +            }
++            // Paper end
          }
  
      }
-@@ -0,0 +0,0 @@ public class DragonSittingFlamingPhase extends AbstractDragonSittingPhase {
-         ++this.flameCount;
-     }
- 
--    @Override
--    public void end() {
-+    public final void removeAreaEffect() { this.end(); } // Paper - OBFHELPER
-+    @Override public void end() {
-         if (this.flame != null) {
-             this.flame.remove();
-             this.flame = null;
 diff --git a/src/main/java/net/minecraft/world/entity/boss/enderdragon/phases/DragonStrafePlayerPhase.java b/src/main/java/net/minecraft/world/entity/boss/enderdragon/phases/DragonStrafePlayerPhase.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/boss/enderdragon/phases/DragonStrafePlayerPhase.java
 +++ b/src/main/java/net/minecraft/world/entity/boss/enderdragon/phases/DragonStrafePlayerPhase.java
 @@ -0,0 +0,0 @@ public class DragonStrafePlayerPhase extends AbstractDragonPhaseInstance {
-                         DragonFireball entitydragonfireball = new DragonFireball(this.dragon.level, this.dragon, d9, d10, d11);
  
-                         entitydragonfireball.moveTo(d6, d7, d8, 0.0F, 0.0F);
-+                        if (new com.destroystokyo.paper.event.entity.EnderDragonShootFireballEvent((org.bukkit.entity.EnderDragon) dragon.getBukkitEntity(), (org.bukkit.entity.DragonFireball) entitydragonfireball.getBukkitEntity()).callEvent()) // Paper
-                         this.dragon.level.addFreshEntity(entitydragonfireball);
-+                        else entitydragonfireball.remove(); // Paper
+                         DragonFireball dragonFireball = new DragonFireball(this.dragon.level, this.dragon, r, s, t);
+                         dragonFireball.moveTo(o, p, q, 0.0F, 0.0F);
++                        if (new com.destroystokyo.paper.event.entity.EnderDragonShootFireballEvent((org.bukkit.entity.EnderDragon) dragon.getBukkitEntity(), (org.bukkit.entity.DragonFireball) dragonFireball.getBukkitEntity()).callEvent()) // Paper
+                         this.dragon.level.addFreshEntity(dragonFireball);
++                        else dragonFireball.discard(); // Paper
                          this.fireballCharge = 0;
                          if (this.currentPath != null) {
-                             while (!this.currentPath.isDone()) {
+                             while(!this.currentPath.isDone()) {
 diff --git a/src/main/java/net/minecraft/world/entity/projectile/DragonFireball.java b/src/main/java/net/minecraft/world/entity/projectile/DragonFireball.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/projectile/DragonFireball.java
@@ -53,10 +44,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                      }
                  }
  
-+                if (new com.destroystokyo.paper.event.entity.EnderDragonFireballHitEvent((org.bukkit.entity.DragonFireball) this.getBukkitEntity(), list.stream().map(LivingEntity::getBukkitLivingEntity).collect(java.util.stream.Collectors.toList()), (org.bukkit.entity.AreaEffectCloud) entityareaeffectcloud.getBukkitEntity()).callEvent()) { // Paper
++                if (new com.destroystokyo.paper.event.entity.EnderDragonFireballHitEvent((org.bukkit.entity.DragonFireball) this.getBukkitEntity(), list.stream().map(LivingEntity::getBukkitLivingEntity).collect(java.util.stream.Collectors.toList()), (org.bukkit.entity.AreaEffectCloud) areaEffectCloud.getBukkitEntity()).callEvent()) { // Paper
                  this.level.levelEvent(2006, this.blockPosition(), this.isSilent() ? -1 : 1);
-                 this.level.addFreshEntity(entityareaeffectcloud);
-+                } else entityareaeffectcloud.remove(); // Paper
-                 this.remove();
+                 this.level.addFreshEntity(areaEffectCloud);
++                } else areaEffectCloud.discard(); // Paper
+                 this.discard();
              }
  
