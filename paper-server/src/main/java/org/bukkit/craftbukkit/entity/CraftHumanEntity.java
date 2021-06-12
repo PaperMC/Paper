@@ -109,15 +109,15 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
 
     @Override
     public ItemStack getItemOnCursor() {
-        return CraftItemStack.asCraftMirror(getHandle().inventoryMenu.getCarried());
+        return CraftItemStack.asCraftMirror(getHandle().containerMenu.getCarried());
     }
 
     @Override
     public void setItemOnCursor(ItemStack item) {
         net.minecraft.world.item.ItemStack stack = CraftItemStack.asNMSCopy(item);
-        getHandle().inventoryMenu.setCarried(stack);
+        getHandle().containerMenu.setCarried(stack);
         if (this instanceof CraftPlayer) {
-            getHandle().inventoryMenu.broadcastCarriedItem(); // Send set slot for cursor
+            getHandle().containerMenu.broadcastCarriedItem(); // Send set slot for cursor
         }
     }
 
