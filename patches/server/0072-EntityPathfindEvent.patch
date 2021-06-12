@@ -6,10 +6,10 @@ Subject: [PATCH] EntityPathfindEvent
 Fires when an Entity decides to start moving to a location.
 
 diff --git a/src/main/java/net/minecraft/world/entity/ai/navigation/FlyingPathNavigation.java b/src/main/java/net/minecraft/world/entity/ai/navigation/FlyingPathNavigation.java
-index 0af2c5dde41043a6fb2fcd07db96288c7f96e0c7..5e7e678c4469e34c7ae39656f547243fbcf1d0da 100644
+index 3afe97f4e330016164e741934c888f5b85824e67..48a42a8374641f4737d5eb6a460bf80a12c2cae5 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/navigation/FlyingPathNavigation.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/navigation/FlyingPathNavigation.java
-@@ -37,7 +37,7 @@ public class FlyingPathNavigation extends PathNavigation {
+@@ -35,7 +35,7 @@ public class FlyingPathNavigation extends PathNavigation {
  
      @Override
      public Path createPath(Entity entity, int distance) {
@@ -19,10 +19,10 @@ index 0af2c5dde41043a6fb2fcd07db96288c7f96e0c7..5e7e678c4469e34c7ae39656f547243f
  
      @Override
 diff --git a/src/main/java/net/minecraft/world/entity/ai/navigation/GroundPathNavigation.java b/src/main/java/net/minecraft/world/entity/ai/navigation/GroundPathNavigation.java
-index cd7cb7cbe55a36282de394efc95f4ba7cc6a75cf..01be1de9d9ca0a86d69b2e82693bd0fea61a969f 100644
+index d2e71f1e70a8b3360110f7e5e6c5ec278218ae27..0ac90b5fefa9720a9d0130f5438e5ef55fccf29a 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/navigation/GroundPathNavigation.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/navigation/GroundPathNavigation.java
-@@ -75,7 +75,7 @@ public class GroundPathNavigation extends PathNavigation {
+@@ -70,7 +70,7 @@ public class GroundPathNavigation extends PathNavigation {
  
      @Override
      public Path createPath(Entity entity, int distance) {
@@ -32,27 +32,27 @@ index cd7cb7cbe55a36282de394efc95f4ba7cc6a75cf..01be1de9d9ca0a86d69b2e82693bd0fe
  
      private int getSurfaceY() {
 diff --git a/src/main/java/net/minecraft/world/entity/ai/navigation/PathNavigation.java b/src/main/java/net/minecraft/world/entity/ai/navigation/PathNavigation.java
-index 3cfd913e31236e35e7225ba19d292cacb8b4134a..ae8d430382b20ddd837c47e39515c7995f25312a 100644
+index 92e1c43b0b7d901636b7fee7136e573f440e0179..e6a2f836e70a267da36ec87e0df68e36bae3626c 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/navigation/PathNavigation.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/navigation/PathNavigation.java
 @@ -10,6 +10,7 @@ import net.minecraft.core.BlockPos;
- import net.minecraft.core.Position;
  import net.minecraft.core.Vec3i;
  import net.minecraft.network.protocol.game.DebugPackets;
+ import net.minecraft.tags.BlockTags;
 +import net.minecraft.server.MCUtil;
  import net.minecraft.util.Mth;
  import net.minecraft.world.entity.Entity;
  import net.minecraft.world.entity.Mob;
-@@ -28,7 +29,7 @@ import net.minecraft.world.phys.Vec3;
+@@ -26,7 +27,7 @@ import net.minecraft.world.phys.Vec3;
  
  public abstract class PathNavigation {
- 
+     private static final int MAX_TIME_RECOMPUTE = 20;
 -    protected final Mob mob;
 +    protected final Mob mob; public Entity getEntity() { return mob; } // Paper - OBFHELPER
      protected final Level level;
      @Nullable
      protected Path path;
-@@ -115,36 +116,63 @@ public abstract class PathNavigation {
+@@ -108,7 +109,12 @@ public abstract class PathNavigation {
  
      @Nullable
      public Path createPath(BlockPos target, int distance) {
@@ -60,66 +60,59 @@ index 3cfd913e31236e35e7225ba19d292cacb8b4134a..ae8d430382b20ddd837c47e39515c799
 +        // Paper start - add target parameter
 +        return this.a(target, null, distance);
 +    }
-+    @Nullable public Path a(BlockPos blockposition, Entity target, int i) {
-+        return this.a(ImmutableSet.of(blockposition), target, 8, false, i);
++    @Nullable public Path a(BlockPos blockposition, Entity target, int distance) {
++        return this.createPath(ImmutableSet.of(blockposition), target, 8, false, distance);
 +        // Paper end
      }
+ 
+     @Nullable
+@@ -118,7 +124,7 @@ public abstract class PathNavigation {
  
      @Nullable
      public Path createPath(Entity entity, int distance) {
 -        return this.createPath(ImmutableSet.of(entity.blockPosition()), 16, true, distance);
-+        return this.a(ImmutableSet.of(entity.blockPosition()), entity, 16, true, distance); // Paper
++        return this.createPath(ImmutableSet.of(entity.blockPosition()), entity, 16, true, distance); // Paper
      }
  
      @Nullable
-+    // Paper start - Add target
-     protected Path createPath(Set<BlockPos> positions, int range, boolean flag, int distance) {
--        if (positions.isEmpty()) {
-+        return this.a(positions, null, range, flag, distance);
+@@ -128,6 +134,16 @@ public abstract class PathNavigation {
+ 
+     @Nullable
+     protected Path createPath(Set<BlockPos> positions, int range, boolean useHeadPos, int distance, float followRange) {
++        return this.createPath(positions, null, range, useHeadPos, distance, (float) this.mob.getAttributeValue(Attributes.FOLLOW_RANGE));
 +    }
-+    @Nullable protected Path a(Set<BlockPos> set, Entity target, int i, boolean flag, int j) {
++
++    @Nullable
++    protected Path createPath(Set<BlockPos> positions, Entity target, int range, boolean useHeadPos, int distance) {
++        return this.createPath(positions, target, range, useHeadPos, distance, (float) this.mob.getAttributeValue(Attributes.FOLLOW_RANGE));
++    }
++
++    @Nullable protected Path createPath(Set<BlockPos> positions, Entity target, int range, boolean useHeadPos, int distance, float followRange) {
 +        // Paper end
-+        if (set.isEmpty()) {
+         if (positions.isEmpty()) {
              return null;
-         } else if (this.mob.getY() < 0.0D) {
-             return null;
-         } else if (!this.canUpdatePath()) {
-             return null;
--        } else if (this.path != null && !this.path.isDone() && positions.contains(this.targetPos)) {
-+        } else if (this.path != null && !this.path.isDone() && set.contains(this.targetPos)) {
+         } else if (this.mob.getY() < (double)this.level.getMinBuildHeight()) {
+@@ -137,6 +153,23 @@ public abstract class PathNavigation {
+         } else if (this.path != null && !this.path.isDone() && positions.contains(this.targetPos)) {
              return this.path;
          } else {
 +            // Paper start - Pathfind event
 +            boolean copiedSet = false;
-+            for (BlockPos possibleTarget : set) {
++            for (BlockPos possibleTarget : positions) {
 +                if (!new com.destroystokyo.paper.event.entity.EntityPathfindEvent(getEntity().getBukkitEntity(),
 +                    MCUtil.toLocation(getEntity().level, possibleTarget), target == null ? null : target.getBukkitEntity()).callEvent()) {
 +                    if (!copiedSet) {
 +                        copiedSet = true;
-+                        set = new java.util.HashSet<>(set);
++                        positions = new java.util.HashSet<>(positions);
 +                    }
 +                    // note: since we copy the set this remove call is safe, since we're iterating over the old copy
-+                    set.remove(possibleTarget);
-+                    if (set.isEmpty()) {
++                    positions.remove(possibleTarget);
++                    if (positions.isEmpty()) {
 +                        return null;
 +                    }
 +                }
 +            }
 +            // Paper end
              this.level.getProfiler().push("pathfind");
-             float f = (float) this.mob.getAttributeValue(Attributes.FOLLOW_RANGE);
-             BlockPos blockposition = flag ? this.mob.blockPosition().above() : this.mob.blockPosition();
--            int k = (int) (f + (float) range);
-+            int k = (int) (f + (float) i);
-             PathNavigationRegion chunkcache = new PathNavigationRegion(this.level, blockposition.offset(-k, -k, -k), blockposition.offset(k, k, k));
--            Path pathentity = this.pathFinder.findPath(chunkcache, this.mob, positions, f, distance, this.maxVisitedNodesMultiplier);
-+            Path pathentity = this.pathFinder.findPath(chunkcache, this.mob, set, f, j, this.maxVisitedNodesMultiplier);
- 
-             this.level.getProfiler().pop();
-             if (pathentity != null && pathentity.getTarget() != null) {
-                 this.targetPos = pathentity.getTarget();
--                this.reachRange = distance;
-+                this.reachRange = j;
-                 this.resetStuckTimeout();
-             }
- 
+             BlockPos blockPos = useHeadPos ? this.mob.blockPosition().above() : this.mob.blockPosition();
+             int i = (int)(followRange + (float)range);
