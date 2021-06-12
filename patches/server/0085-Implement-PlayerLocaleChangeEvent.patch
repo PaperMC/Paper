@@ -5,10 +5,10 @@ Subject: [PATCH] Implement PlayerLocaleChangeEvent
 
 
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-index ffad931c72e52855a3f139354f5e85c460e2a80b..bd3d9182dfb2c0ae1d8c3b9aa360f94c33252592 100644
+index b68a58abf254289a806636ca28521be39c13a82f..0a59e3b405d5074ab326e6ddb265a714e4038e86 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-@@ -1692,7 +1692,7 @@ public class ServerPlayer extends Player implements ContainerListener {
+@@ -1712,7 +1712,7 @@ public class ServerPlayer extends Player {
          return s;
      }
  
@@ -17,30 +17,30 @@ index ffad931c72e52855a3f139354f5e85c460e2a80b..bd3d9182dfb2c0ae1d8c3b9aa360f94c
      public java.util.Locale adventure$locale = java.util.Locale.US; // Paper
      public void updateOptions(ServerboundClientInformationPacket packet) {
          // CraftBukkit start
-@@ -1700,9 +1700,10 @@ public class ServerPlayer extends Player implements ContainerListener {
-             PlayerChangedMainHandEvent event = new PlayerChangedMainHandEvent(getBukkitEntity(), getMainArm() == HumanoidArm.LEFT ? MainHand.LEFT : MainHand.RIGHT);
+@@ -1720,9 +1720,10 @@ public class ServerPlayer extends Player {
+             PlayerChangedMainHandEvent event = new PlayerChangedMainHandEvent(this.getBukkitEntity(), getMainArm() == HumanoidArm.LEFT ? MainHand.LEFT : MainHand.RIGHT);
              this.server.server.getPluginManager().callEvent(event);
          }
 -        if (!this.locale.equals(packet.language)) {
 +        if (this.locale == null || !this.locale.equals(packet.language)) { // Paper - check for null
-             PlayerLocaleChangeEvent event = new PlayerLocaleChangeEvent(getBukkitEntity(), packet.language);
+             PlayerLocaleChangeEvent event = new PlayerLocaleChangeEvent(this.getBukkitEntity(), packet.language);
              this.server.server.getPluginManager().callEvent(event);
 +            new com.destroystokyo.paper.event.player.PlayerLocaleChangeEvent(this.getBukkitEntity(), this.locale, packet.language).callEvent(); // Paper
          }
          this.locale = packet.language;
          // Paper start
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index b264cbe5f91da9e31c5fd00ee285735a19aaad35..fc19b4cacd223b928fbdf922b828beaed630bf2e 100644
+index b93a02dce55952321874528016ea48e5a35bd772..b9320aa8e3fc3216753f7d4e3d4b2bda9ec403ef 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-@@ -1875,8 +1875,10 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -1878,8 +1878,10 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
  
      @Override
      public String getLocale() {
--        return getHandle().locale;
+-        return this.getHandle().locale;
 -
 +        // Paper start - Locale change event
-+        final String locale = getHandle().locale;
++        final String locale = this.getHandle().locale;
 +        return locale != null ? locale : "en_us";
 +        // Paper end
      }
