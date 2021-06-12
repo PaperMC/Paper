@@ -56,44 +56,19 @@ diff --git a/src/main/java/net/minecraft/world/level/storage/loot/entries/LootPo
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/storage/loot/entries/LootPoolSingletonContainer.java
 +++ b/src/main/java/net/minecraft/world/level/storage/loot/entries/LootPoolSingletonContainer.java
-@@ -0,0 +0,0 @@ import java.util.List;
- import java.util.function.BiFunction;
- import java.util.function.Consumer;
- import net.minecraft.util.GsonHelper;
--import net.minecraft.util.Mth;
- import net.minecraft.world.item.ItemStack;
- import net.minecraft.world.level.storage.loot.LootContext;
- import net.minecraft.world.level.storage.loot.ValidationContext;
-@@ -0,0 +0,0 @@ import org.apache.commons.lang3.ArrayUtils;
- 
- public abstract class LootPoolSingletonContainer extends LootPoolEntryContainer {
- 
--    protected final int weight;
--    protected final int quality;
-+    protected final int weight; public int getWeight() { return weight; } // Paper - OBFHELPER
-+    protected final int quality; public int getQuality() { return quality; } // Paper - OBFHELPER
-     protected final LootItemFunction[] functions;
-     private final BiFunction<ItemStack, LootContext, ItemStack> compositeFunction;
-     private final LootPoolEntry entry = new LootPoolSingletonContainer.EntryBase() {
 @@ -0,0 +0,0 @@ public abstract class LootPoolSingletonContainer extends LootPoolEntryContainer
- 
-     public abstract class EntryBase implements LootPoolEntry {
- 
--        protected EntryBase() {}
-+        protected EntryBase() {
-+        }
- 
+     protected abstract class EntryBase implements LootPoolEntry {
          @Override
          public int getWeight(float luck) {
--            return Math.max(Mth.floor((float) LootPoolSingletonContainer.this.weight + (float) LootPoolSingletonContainer.this.quality * luck), 0);
+-            return Math.max(Mth.floor((float)LootPoolSingletonContainer.this.weight + (float)LootPoolSingletonContainer.this.quality * luck), 0);
 +            // Paper start - Offer an alternative loot formula to refactor how luck bonus applies
 +            // SEE: https://luckformula.emc.gs for details and data
-+            if (lastLuck != null && lastLuck == luck) {
++            if (LootPoolSingletonContainer.this.lastLuck != null && LootPoolSingletonContainer.this.lastLuck == luck) {
 +                return lastWeight;
 +            }
 +            // This is vanilla
-+            float qualityModifer = (float) getQuality() * luck;
-+            double baseWeight = (getWeight() + qualityModifer);
++            float qualityModifer = (float) LootPoolSingletonContainer.this.quality * luck;
++            double baseWeight = (LootPoolSingletonContainer.this.weight + qualityModifer);
 +            if (com.destroystokyo.paper.PaperConfig.useAlternativeLuckFormula) {
 +                // Random boost to avoid losing precision in the final int cast on return
 +                final int weightBoost = 100;
@@ -107,12 +82,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                // =B2 - (C2 *($B$7/100))
 +                baseWeight = Math.ceil(baseWeight - (impacted * luckModifier));
 +            }
-+            lastLuck = luck;
-+            lastWeight = (int) Math.max(0, Math.floor(baseWeight));
++            LootPoolSingletonContainer.this.lastLuck = luck;
++            LootPoolSingletonContainer.this.lastWeight = (int) Math.max(Math.floor(baseWeight), 0);
 +            return lastWeight;
          }
      }
 +    private Float lastLuck = null;
 +    private int lastWeight = 0;
 +    // Paper end
- }
+ 
+     @FunctionalInterface
+     protected interface EntryConstructor {

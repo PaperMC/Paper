@@ -32,15 +32,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/network/LegacyQueryHandler.java
 +++ b/src/main/java/net/minecraft/server/network/LegacyQueryHandler.java
 @@ -0,0 +0,0 @@ public class LegacyQueryHandler extends ChannelInboundHandlerAdapter {
- 
      private static final Logger LOGGER = LogManager.getLogger();
+     public static final int FAKE_PROTOCOL_VERSION = 127;
      private final ServerConnectionListener serverConnectionListener;
 +    private ByteBuf buf; // Paper
  
      public LegacyQueryHandler(ServerConnectionListener networkIo) {
          this.serverConnectionListener = networkIo;
 @@ -0,0 +0,0 @@ public class LegacyQueryHandler extends ChannelInboundHandlerAdapter {
-     public void channelRead(ChannelHandlerContext channelhandlercontext, Object object) throws Exception {
+     public void channelRead(ChannelHandlerContext channelhandlercontext, Object object) {
          ByteBuf bytebuf = (ByteBuf) object;
  
 +        // Paper start - Make legacy ping handler more reliable
@@ -68,19 +68,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
                      flag1 &= bytebuf.readUnsignedByte() == 250;
 @@ -0,0 +0,0 @@ public class LegacyQueryHandler extends ChannelInboundHandlerAdapter {
-                         return;
-                     }
- 
--                    LegacyQueryHandler.LOGGER.debug("Ping: (1.6) from {}:{}", inetsocketaddress.getAddress(), inetsocketaddress.getPort());
--                    String s1 = String.format("\u00a71\u0000%d\u0000%s\u0000%s\u0000%d\u0000%d", 127, minecraftserver.getServerVersion(), event.getMotd(), event.getNumPlayers(), event.getMaxPlayers()); // CraftBukkit
--                    ByteBuf bytebuf1 = this.createReply(s1);
-+                    LegacyPingHandler.LOGGER.debug("Ping: (1.6) from {}:{}", inetsocketaddress.getAddress(), inetsocketaddress.getPort());
-+                    String s1 = String.format("\u00a71\u0000%d\u0000%s\u0000%s\u0000%d\u0000%d", 127, minecraftserver.getVersion(), event.getMotd(), event.getNumPlayers(), event.getMaxPlayers()); // CraftBukkit
-+                    ByteBuf bytebuf1 = this.a(s1);
- 
-                     try {
--                        this.sendFlushAndClose(channelhandlercontext, bytebuf1);
-+                        this.a(channelhandlercontext, bytebuf1);
                      } finally {
                          bytebuf1.release();
                      }
