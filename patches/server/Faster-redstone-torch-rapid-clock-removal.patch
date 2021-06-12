@@ -9,19 +9,11 @@ diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
 +++ b/src/main/java/net/minecraft/world/level/Level.java
-@@ -0,0 +0,0 @@ import net.minecraft.world.level.biome.BiomeManager;
- import net.minecraft.world.level.block.BaseFireBlock;
- import net.minecraft.world.level.block.Block;
- import net.minecraft.world.level.block.Blocks;
-+import net.minecraft.world.level.block.RedstoneTorchBlock;
- import net.minecraft.world.level.block.entity.BlockEntity;
- import net.minecraft.world.level.block.entity.BlockEntityType;
- import net.minecraft.world.level.block.entity.TickableBlockEntity;
 @@ -0,0 +0,0 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
      private org.spigotmc.TickLimiter tileLimiter;
      private int tileTickPosition;
      public final Map<Explosion.CacheKey, Float> explosionDensityCache = new HashMap<>(); // Paper - Optimize explosions
-+    public java.util.ArrayDeque<RedstoneTorchBlock.Toggle> redstoneUpdateInfos; // Paper - Move from Map in BlockRedstoneTorch to here
++    public java.util.ArrayDeque<net.minecraft.world.level.block.RedstoneTorchBlock.Toggle> redstoneUpdateInfos; // Paper - Move from Map in BlockRedstoneTorch to here
  
      public CraftWorld getWorld() {
          return this.world;
@@ -35,9 +27,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public static final BooleanProperty LIT = BlockStateProperties.LIT;
 -    private static final Map<BlockGetter, List<RedstoneTorchBlock.Toggle>> RECENT_TOGGLES = new WeakHashMap();
 +    // Paper - Move the mapped list to World
- 
-     protected RedstoneTorchBlock(BlockBehaviour.Properties settings) {
-         super(settings, DustParticleOptions.REDSTONE);
+     public static final int RECENT_TOGGLE_TIMER = 60;
+     public static final int MAX_RECENT_TOGGLES = 8;
+     public static final int RESTART_DELAY = 160;
 @@ -0,0 +0,0 @@ public class RedstoneTorchBlock extends TorchBlock {
      @Override
      public void tick(BlockState state, ServerLevel world, BlockPos pos, Random random) {
@@ -50,7 +42,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        java.util.ArrayDeque<RedstoneTorchBlock.Toggle> redstoneUpdateInfos = world.redstoneUpdateInfos;
 +        if (redstoneUpdateInfos != null) {
 +            RedstoneTorchBlock.Toggle curr;
-+            while ((curr = redstoneUpdateInfos.peek()) != null && world.getGameTime() - curr.getTime() > 60L) {
++            while ((curr = redstoneUpdateInfos.peek()) != null && world.getGameTime() - curr.when > 60L) {
 +                redstoneUpdateInfos.poll();
 +            }
          }
@@ -87,12 +79,3 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              if (blockredstonetorch_redstoneupdateinfo.pos.equals(pos)) {
                  ++i;
                  if (i >= 8) {
-@@ -0,0 +0,0 @@ public class RedstoneTorchBlock extends TorchBlock {
-     public static class Toggle {
- 
-         private final BlockPos pos;
--        private final long when;
-+        private final long when; final long getTime() { return this.when; } // Paper - OBFHELPER
- 
-         public Toggle(BlockPos pos, long time) {
-             this.pos = pos;

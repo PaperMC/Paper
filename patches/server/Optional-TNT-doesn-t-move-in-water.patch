@@ -8,14 +8,6 @@ diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/m
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-@@ -0,0 +0,0 @@ package com.destroystokyo.paper;
- 
- import java.util.List;
- 
--import org.bukkit.Bukkit;
- import org.bukkit.configuration.file.YamlConfiguration;
- import org.spigotmc.SpigotWorldConfig;
- 
 @@ -0,0 +0,0 @@ public class PaperWorldConfig {
              );
          }
@@ -39,67 +31,36 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      private boolean wasRiding;
      private boolean wasOnGround;
      // CraftBukkit start
--    private final Set<ServerPlayer> trackedPlayers;
-+    final Set<ServerPlayer> trackedPlayers; // Paper - private -> package
-     // Paper start
-     private java.util.Map<ServerPlayer, Boolean> trackedPlayerMap = null;
+-    private final Set<ServerPlayerConnection> trackedPlayers;
++    final Set<ServerPlayerConnection> trackedPlayers; // Paper - private -> package
  
-diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/world/entity/Entity.java
-+++ b/src/main/java/net/minecraft/world/entity/Entity.java
-@@ -0,0 +0,0 @@ public abstract class Entity implements Nameable, CommandSource, net.minecraft.s
-     }
- 
-     public boolean isPushedByFluid() {
-+        // Paper start
-+        return this.pushedByWater();
-+    }
-+    public boolean pushedByWater() {
-+        // Paper end
-         return true;
-     }
- 
+     public ServerEntity(ServerLevel worldserver, Entity entity, int i, boolean flag, Consumer<Packet<?>> consumer, Set<ServerPlayerConnection> trackedPlayers) {
+         this.trackedPlayers = trackedPlayers;
 diff --git a/src/main/java/net/minecraft/world/entity/item/PrimedTnt.java b/src/main/java/net/minecraft/world/entity/item/PrimedTnt.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/item/PrimedTnt.java
 +++ b/src/main/java/net/minecraft/world/entity/item/PrimedTnt.java
-@@ -0,0 +0,0 @@ import net.minecraft.core.particles.ParticleTypes;
- import net.minecraft.nbt.CompoundTag;
- import net.minecraft.network.protocol.Packet;
- import net.minecraft.network.protocol.game.ClientboundAddEntityPacket;
-+import net.minecraft.network.protocol.game.ClientboundSetEntityMotionPacket;
-+import net.minecraft.network.protocol.game.ClientboundTeleportEntityPacket;
- import net.minecraft.network.syncher.EntityDataAccessor;
- import net.minecraft.network.syncher.EntityDataSerializers;
- import net.minecraft.network.syncher.SynchedEntityData;
-+import net.minecraft.server.level.ChunkMap;
-+import net.minecraft.server.level.ServerLevel;
- import net.minecraft.world.entity.Entity;
- import net.minecraft.world.entity.EntityDimensions;
- import net.minecraft.world.entity.EntityType;
 @@ -0,0 +0,0 @@ public class PrimedTnt extends Entity {
-                 this.level.addParticle(ParticleTypes.SMOKE, this.getX(), this.getY() + 0.5D, this.getZ(), 0.0D, 0.0D, 0.0D);
              }
          }
--
+ 
 +        // Paper start - Optional prevent TNT from moving in water
-+        if (!this.removed && this.wasTouchingWater && this.level.paperConfig.preventTntFromMovingInWater) {
++        if (!this.isRemoved() && this.wasTouchingWater && this.level.paperConfig.preventTntFromMovingInWater) {
 +            /*
 +             * Author: Jedediah Smith <jedediah@silencegreys.com>
 +             */
 +            // Send position and velocity updates to nearby players on every tick while the TNT is in water.
 +            // This does pretty well at keeping their clients in sync with the server.
-+            ChunkMap.TrackedEntity ete = ((ServerLevel)this.level).getChunkSource().chunkMap.entityMap.get(this.getId());
++            net.minecraft.server.level.ChunkMap.TrackedEntity ete = ((net.minecraft.server.level.ServerLevel)this.level).getChunkSource().chunkMap.entityMap.get(this.getId());
 +            if (ete != null) {
-+                ClientboundSetEntityMotionPacket velocityPacket = new ClientboundSetEntityMotionPacket(this);
-+                ClientboundTeleportEntityPacket positionPacket = new ClientboundTeleportEntityPacket(this);
++                net.minecraft.network.protocol.game.ClientboundSetEntityMotionPacket velocityPacket = new net.minecraft.network.protocol.game.ClientboundSetEntityMotionPacket(this);
++                net.minecraft.network.protocol.game.ClientboundTeleportEntityPacket positionPacket = new net.minecraft.network.protocol.game.ClientboundTeleportEntityPacket(this);
 +
 +                ete.seenBy.stream()
-+                    .filter(viewer -> (viewer.getX() - this.getX()) * (viewer.getY() - this.getY()) * (viewer.getZ() - this.getZ()) < 16 * 16)
++                    .filter(viewer -> (viewer.getPlayer().getX() - this.getX()) * (viewer.getPlayer().getY() - this.getY()) * (viewer.getPlayer().getZ() - this.getZ()) < 16 * 16)
 +                    .forEach(viewer -> {
-+                        viewer.connection.send(velocityPacket);
-+                        viewer.connection.send(positionPacket);
++                        viewer.send(velocityPacket);
++                        viewer.send(positionPacket);
 +                    });
 +            }
 +        }
@@ -114,8 +75,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    // Paper start - Optional prevent TNT from moving in water
 +    @Override
-+    public boolean pushedByWater() {
-+        return !level.paperConfig.preventTntFromMovingInWater && super.pushedByWater();
++    public boolean isPushedByFluid() {
++        return !level.paperConfig.preventTntFromMovingInWater && super.isPushedByFluid();
 +    }
 +    // Paper end
  }
