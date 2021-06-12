@@ -1,0 +1,35 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sun, 26 Aug 2018 20:49:50 -0400
+Subject: [PATCH] Optimize MappedRegistry
+
+Use larger initial sizes to increase bucket capacity on the BiMap
+
+BiMap.get was seen to be using a good bit of CPU time.
+
+diff --git a/src/main/java/net/minecraft/core/MappedRegistry.java b/src/main/java/net/minecraft/core/MappedRegistry.java
+index 889c213205738ba637a28895977714df2d025b6d..87ea9b851531ac98a2dce66651f1730c5eb5e7d4 100644
+--- a/src/main/java/net/minecraft/core/MappedRegistry.java
++++ b/src/main/java/net/minecraft/core/MappedRegistry.java
+@@ -37,7 +37,7 @@ import org.apache.logging.log4j.Logger;
+ public class MappedRegistry<T> extends WritableRegistry<T> {
+     protected static final Logger LOGGER = LogManager.getLogger();
+     private final ObjectList<T> byId = new ObjectArrayList<>(256);
+-    private final Object2IntMap<T> toId = new Object2IntOpenCustomHashMap<>(Util.identityStrategy());
++    private final it.unimi.dsi.fastutil.objects.Reference2IntOpenHashMap<T> toId = new it.unimi.dsi.fastutil.objects.Reference2IntOpenHashMap<T>(2048);// Paper - use bigger expected size to reduce collisions and direct intent for FastUtil to be identity map
+     private final BiMap<ResourceLocation, T> storage;
+     private final BiMap<ResourceKey<T>, T> keyStorage;
+     private final Map<T, Lifecycle> lifecycles;
+@@ -48,9 +48,9 @@ public class MappedRegistry<T> extends WritableRegistry<T> {
+     public MappedRegistry(ResourceKey<? extends Registry<T>> key, Lifecycle lifecycle) {
+         super(key, lifecycle);
+         this.toId.defaultReturnValue(-1);
+-        this.storage = HashBiMap.create();
+-        this.keyStorage = HashBiMap.create();
+-        this.lifecycles = Maps.newIdentityHashMap();
++        this.storage = HashBiMap.create(2048); // Paper - use bigger expected size to reduce collisions
++        this.keyStorage = HashBiMap.create(2048); // Paper - use bigger expected size to reduce collisions
++        this.lifecycles = new java.util.IdentityHashMap<>(2048); // Paper - use bigger expected size to reduce collisions
+         this.elementsLifecycle = lifecycle;
+     }
+ 
