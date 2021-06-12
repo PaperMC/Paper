@@ -38,7 +38,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -    public static Entry<EquipmentSlot, ItemStack> getRandomItemWith(Enchantment enchantment, LivingEntity entity) {
 +    public static @javax.annotation.Nonnull ItemStack getRandomEquippedItemWithEnchant(Enchantment enchantment, LivingEntity entityliving) { Entry<EquipmentSlot, ItemStack> entry = getRandomItemWith(enchantment, entityliving); return entry != null ? entry.getValue() : ItemStack.NULL_ITEM; } // Paper - OBFHELPER
 +    @Nullable public static Entry<EquipmentSlot, ItemStack> getRandomItemWith(Enchantment enchantment, LivingEntity entity) {
-         return getRandomItemWith(enchantment, entity, (itemstack) -> {
+         return getRandomItemWith(enchantment, entity, (stack) -> {
              return true;
          });
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
@@ -58,15 +58,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import net.minecraft.world.item.enchantment.EnchantmentHelper;
 +import net.minecraft.world.item.enchantment.Enchantments;
  import net.minecraft.world.level.GameType;
+ import net.minecraft.world.level.block.Blocks;
  import net.minecraft.world.level.block.entity.SignBlockEntity;
- import net.minecraft.world.level.saveddata.maps.MapDecoration;
 @@ -0,0 +0,0 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
-         return GameMode.getByValue(getHandle().gameMode.getGameModeForPlayer().getId());
+         return GameMode.getByValue(this.getHandle().gameMode.getGameModeForPlayer().getId());
      }
  
 +    // Paper start
-     @Override
--    public void giveExp(int exp) {
++    @Override
 +    public int applyMending(int amount) {
 +        ServerPlayer handle = getHandle();
 +        // Logic copied from EntityExperienceOrb and remapped to unobfuscated methods/properties
@@ -90,12 +89,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return amount;
 +    }
 +
-+    @Override
+     @Override
+-    public void giveExp(int exp) {
 +    public void giveExp(int exp, boolean applyMending) {
 +        if (applyMending) {
 +            exp = this.applyMending(exp);
 +        }
 +        // Paper end
-         getHandle().giveExperiencePoints(exp);
+         this.getHandle().giveExperiencePoints(exp);
      }
  
