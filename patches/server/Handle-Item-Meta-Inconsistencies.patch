@@ -21,18 +21,18 @@ diff --git a/src/main/java/net/minecraft/world/item/ItemStack.java b/src/main/ja
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/item/ItemStack.java
 +++ b/src/main/java/net/minecraft/world/item/ItemStack.java
-@@ -0,0 +0,0 @@ import com.mojang.serialization.Codec;
- import com.mojang.serialization.codecs.RecordCodecBuilder;
- import java.text.DecimalFormat;
- import java.text.DecimalFormatSymbols;
+@@ -0,0 +0,0 @@ import java.text.DecimalFormatSymbols;
+ import java.util.Collection;
+ import java.util.Iterator;
+ import java.util.List;
 +import java.util.Collections;
 +import java.util.Comparator;
  import java.util.Locale;
+ import java.util.Map.Entry;
  import java.util.Objects;
- import java.util.Optional;
 @@ -0,0 +0,0 @@ public final class ItemStack {
-     private BlockInWorld cachedPlaceBlock;
-     private boolean cachedPlaceBlockResult;
+         return this.getItem().getTooltipImage(this);
+     }
  
 +    // Paper start
 +    private static final java.util.Comparator<? super CompoundTag> enchantSorter = java.util.Comparator.comparing(o -> o.getString("id"));
@@ -46,7 +46,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +        try {
 +            //noinspection unchecked
-+            list.sort((Comparator<? super Tag>) enchantSorter); // Paper
++            list.sort((Comparator<? super net.minecraft.nbt.Tag>) enchantSorter); // Paper
 +        } catch (Exception ignored) {}
 +    }
 +    // Paper end
@@ -55,13 +55,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          this(item, 1);
      }
 @@ -0,0 +0,0 @@ public final class ItemStack {
-         if (nbttagcompound.contains("tag", 10)) {
              // CraftBukkit start - make defensive copy as this data may be coming from the save thread
              this.tag = (CompoundTag) nbttagcompound.getCompound("tag").copy();
-+            processEnchantOrder(this.tag); // Paper
-             this.getItem().verifyTagAfterLoad(this.tag);
              // CraftBukkit end
++            this.processEnchantOrder(this.tag); // Paper
+             this.getItem().verifyTagAfterLoad(this.tag);
          }
+ 
 @@ -0,0 +0,0 @@ public final class ItemStack {
      // Paper end
      public void setTag(@Nullable CompoundTag tag) {
@@ -94,13 +94,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public void addUnsafeEnchantment(Enchantment ench, int level) {
          Validate.notNull(ench, "Cannot add null enchantment");
  
--        if (!makeTag(handle)) {
+-        if (!CraftItemStack.makeTag(this.handle)) {
 -            return;
 -        }
--        ListTag list = getEnchantmentList(handle);
+-        ListTag list = CraftItemStack.getEnchantmentList(this.handle);
 -        if (list == null) {
 -            list = new ListTag();
--            handle.getTag().put(ENCHANTMENTS.NBT, list);
+-            this.handle.getTag().put(ENCHANTMENTS.NBT, list);
 -        }
 -        int size = list.size();
 -
@@ -117,9 +117,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -        tag.putShort(ENCHANTMENTS_LVL.NBT, (short) level);
 -        list.add(tag);
 +        // Paper start - Replace whole method
-+        final ItemMeta itemMeta = getItemMeta();
++        final ItemMeta itemMeta = this.getItemMeta();
 +        itemMeta.addEnchant(ench, level, true);
-+        setItemMeta(itemMeta);
++        this.setItemMeta(itemMeta);
 +        // Paper end
      }
  
@@ -128,25 +128,25 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      @Override
      public boolean containsEnchantment(Enchantment ench) {
--        return getEnchantmentLevel(ench) > 0;
-+        return hasItemMeta() && getItemMeta().hasEnchant(ench); // Paper - use meta
+-        return this.getEnchantmentLevel(ench) > 0;
++        return this.hasItemMeta() && this.getItemMeta().hasEnchant(ench); // Paper - use meta
      }
  
      @Override
      public int getEnchantmentLevel(Enchantment ench) {
 -        Validate.notNull(ench, "Cannot find null enchantment");
--        if (handle == null) {
+-        if (this.handle == null) {
 -            return 0;
 -        }
 -        return EnchantmentHelper.getItemEnchantmentLevel(CraftEnchantment.getRaw(ench), handle);
-+        return hasItemMeta() ? getItemMeta().getEnchantLevel(ench) : 0; // Paper - replace entire method with meta
++        return this.hasItemMeta() ? this.getItemMeta().getEnchantLevel(ench) : 0; // Paper - replace entire method with meta
      }
  
      @Override
      public int removeEnchantment(Enchantment ench) {
          Validate.notNull(ench, "Cannot remove null enchantment");
  
--        ListTag list = getEnchantmentList(handle), listCopy;
+-        ListTag list = CraftItemStack.getEnchantmentList(this.handle), listCopy;
 -        if (list == null) {
 -            return 0;
 -        }
@@ -168,9 +168,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -            return 0;
 -        }
 -        if (size == 1) {
--            handle.getTag().remove(ENCHANTMENTS.NBT);
--            if (handle.getTag().isEmpty()) {
--                handle.setTag(null);
+-            this.handle.getTag().remove(ENCHANTMENTS.NBT);
+-            if (this.handle.getTag().isEmpty()) {
+-                this.handle.setTag(null);
 -            }
 -            return level;
 -        }
@@ -182,13 +182,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -                listCopy.add(list.get(i));
 -            }
 +        // Paper start - replace entire method
-+        final ItemMeta itemMeta = getItemMeta();
++        final ItemMeta itemMeta = this.getItemMeta();
 +        int level = itemMeta.getEnchantLevel(ench);
 +        if (level > 0) {
 +            itemMeta.removeEnchant(ench);
-+            setItemMeta(itemMeta);
++            this.setItemMeta(itemMeta);
          }
--        handle.getTag().put(ENCHANTMENTS.NBT, listCopy);
+-        this.handle.getTag().put(ENCHANTMENTS.NBT, listCopy);
 +        // Paper end
  
          return level;
@@ -196,8 +196,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      @Override
      public Map<Enchantment, Integer> getEnchantments() {
--        return getEnchantments(handle);
-+        return hasItemMeta() ? getItemMeta().getEnchants() : ImmutableMap.<Enchantment, Integer>of(); // Paper - use Item Meta
+-        return CraftItemStack.getEnchantments(this.handle);
++        return this.hasItemMeta() ? this.getItemMeta().getEnchants() : ImmutableMap.<Enchantment, Integer>of(); // Paper - use Item Meta
      }
  
      static Map<Enchantment, Integer> getEnchantments(net.minecraft.world.item.ItemStack item) {
@@ -244,7 +244,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      private CompoundTag internalTag;
 -    private final Map<String, Tag> unhandledTags = new HashMap<String, Tag>();
 +    private final Map<String, Tag> unhandledTags = new TreeMap<>(); // Paper
-     private CraftPersistentDataContainer persistentDataContainer = new CraftPersistentDataContainer(DATA_TYPE_REGISTRY);
+     private CraftPersistentDataContainer persistentDataContainer = new CraftPersistentDataContainer(CraftMetaItem.DATA_TYPE_REGISTRY);
  
      private int version = CraftMagicNumbers.INSTANCE.getDataVersion(); // Internal use only
 @@ -0,0 +0,0 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
@@ -292,16 +292,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      @Override
      public Map<Enchantment, Integer> getEnchants() {
--        return hasEnchants() ? ImmutableMap.copyOf(enchantments) : ImmutableMap.<Enchantment, Integer>of();
-+        return hasEnchants() ? ImmutableSortedMap.copyOfSorted(enchantments) : ImmutableMap.<Enchantment, Integer>of(); // Paper
+-        return this.hasEnchants() ? ImmutableMap.copyOf(enchantments) : ImmutableMap.<Enchantment, Integer>of();
++        return this.hasEnchants() ? ImmutableSortedMap.copyOfSorted(this.enchantments) : ImmutableMap.<Enchantment, Integer>of(); // Paper
      }
  
      @Override
      public boolean addEnchant(Enchantment ench, int level, boolean ignoreRestrictions) {
          Validate.notNull(ench, "Enchantment cannot be null");
-         if (enchantments == null) {
--            enchantments = new LinkedHashMap<Enchantment, Integer>(4);
-+            enchantments = new EnchantmentMap(); // Paper
+         if (this.enchantments == null) {
+-            this.enchantments = new LinkedHashMap<Enchantment, Integer>(4);
++            this.enchantments = new EnchantmentMap(); // Paper
          }
  
          if (ignoreRestrictions || level >= ench.getStartLevel() && level <= ench.getMaxLevel()) {
@@ -315,7 +315,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              if (this.hasAttributeModifiers()) {
                  clone.attributeModifiers = LinkedHashMultimap.create(this.attributeModifiers);
 @@ -0,0 +0,0 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
-             return HANDLED_TAGS;
+             return CraftMetaItem.HANDLED_TAGS;
          }
      }
 +

@@ -23,43 +23,40 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/world/level/BaseSpawner.java
 +++ b/src/main/java/net/minecraft/world/level/BaseSpawner.java
 @@ -0,0 +0,0 @@ public abstract class BaseSpawner {
-     public int maxNearbyEntities = 6;
-     public int requiredPlayerRange = 16;
-     public int spawnRange = 4;
+     public int requiredPlayerRange;
+     public int spawnRange;
+     private final Random random;
 +    private int tickDelay = 0; // Paper
  
-     public BaseSpawner() {}
- 
+     public BaseSpawner() {
+         this.spawnPotentials = BaseSpawner.EMPTY_POTENTIALS;
 @@ -0,0 +0,0 @@ public abstract class BaseSpawner {
      }
  
-     public void tick() {
+     public void serverTick(ServerLevel world, BlockPos pos) {
 +        // Paper start - Configurable mob spawner tick rate
 +        if (spawnDelay > 0 && --tickDelay > 0) return;
-+        tickDelay = this.getLevel().paperConfig.mobSpawnerTickRate;
++        tickDelay = world.paperConfig.mobSpawnerTickRate;
 +        // Paper end
-         if (!this.isNearPlayer()) {
-             this.oSpin = this.spin;
-         } else {
-@@ -0,0 +0,0 @@ public abstract class BaseSpawner {
-                 world.addParticle(ParticleTypes.SMOKE, d0, d1, d2, 0.0D, 0.0D, 0.0D);
-                 world.addParticle(ParticleTypes.FLAME, d0, d1, d2, 0.0D, 0.0D, 0.0D);
-                 if (this.spawnDelay > 0) {
--                    --this.spawnDelay;
-+                    this.spawnDelay -= tickDelay; // Paper
-                 }
+         if (this.isNearPlayer(world, pos)) {
+-            if (this.spawnDelay == -1) {
++            if (this.spawnDelay < -tickDelay) {
+                 this.delay(world, pos);
+             }
  
-                 this.oSpin = this.spin;
-                 this.spin = (this.spin + (double) (1000.0F / ((float) this.spawnDelay + 200.0F))) % 360.0D;
+             if (this.spawnDelay > 0) {
+-                --this.spawnDelay;
++                this.spawnDelay -= tickDelay; // Paper
              } else {
--                if (this.spawnDelay == -1) {
-+                if (this.spawnDelay < -tickDelay) { // Paper
-                     this.delay();
-                 }
+                 boolean flag = false;
  
-                 if (this.spawnDelay > 0) {
--                    --this.spawnDelay;
-+                    this.spawnDelay -= tickDelay; // Paper
-                     return;
-                 }
- 
+@@ -0,0 +0,0 @@ public abstract class BaseSpawner {
+                                 ((Mob) entity).finalizeSpawn(world, world.getCurrentDifficultyAt(entity.blockPosition()), MobSpawnType.SPAWNER, (SpawnGroupData) null, (CompoundTag) null);
+                             }
+                             // Spigot Start
+-                            if ( entityinsentient.level.spigotConfig.nerfSpawnerMobs )
+-                            {
++                            if (entityinsentient.level.spigotConfig.nerfSpawnerMobs) {
+                                 entityinsentient.aware = false;
+                             }
+                             // Spigot End
