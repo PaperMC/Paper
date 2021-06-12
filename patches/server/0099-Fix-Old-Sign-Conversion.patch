@@ -9,10 +9,10 @@ Subject: [PATCH] Fix Old Sign Conversion
    This causes Igloos and such to render broken signs. We fix this by ignoring sign conversion for Defined Structures
 
 diff --git a/src/main/java/net/minecraft/world/level/block/entity/BlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/BlockEntity.java
-index 13115d1b28dfa2d87b45a50bd0feaa7f57769122..d08ed44884726ca2ba4578226b8aa6244778f4c7 100644
+index d6a4a2a59f1be0cc2e373dc326287b60db5559d2..9d777fce673c8f6b3ee2d69f5a6360a8a5ad8e84 100644
 --- a/src/main/java/net/minecraft/world/level/block/entity/BlockEntity.java
 +++ b/src/main/java/net/minecraft/world/level/block/entity/BlockEntity.java
-@@ -34,6 +34,7 @@ public abstract class BlockEntity implements net.minecraft.server.KeyedObject {
+@@ -30,6 +30,7 @@ public abstract class BlockEntity implements net.minecraft.server.KeyedObject {
      public CraftPersistentDataContainer persistentDataContainer;
      // CraftBukkit end
      private static final Logger LOGGER = LogManager.getLogger();
@@ -21,38 +21,28 @@ index 13115d1b28dfa2d87b45a50bd0feaa7f57769122..d08ed44884726ca2ba4578226b8aa624
      @Nullable
      protected Level level;
 diff --git a/src/main/java/net/minecraft/world/level/block/entity/SignBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/SignBlockEntity.java
-index e747f729326fb3bacfb3f983ac7701c0fb0f0e6a..e4eab82855649fec654c60b2e94ba7b71c2ac5a2 100644
+index dbb59775422b80fb4b60a8cfd2c0bd81c1646e88..589fbdd5c86655244aa92a42e5f45747b5c5026e 100644
 --- a/src/main/java/net/minecraft/world/level/block/entity/SignBlockEntity.java
 +++ b/src/main/java/net/minecraft/world/level/block/entity/SignBlockEntity.java
-@@ -78,13 +78,14 @@ public class SignBlockEntity extends BlockEntity implements CommandSource { // C
+@@ -95,7 +95,7 @@ public class SignBlockEntity extends BlockEntity implements CommandSource { // C
+                 s = "\"\"";
              }
  
-             try {
--                MutableComponent ichatmutablecomponent = Component.Serializer.fromJson(s.isEmpty() ? "\"\"" : s);
-+                //IChatMutableComponent ichatmutablecomponent = IChatBaseComponent.ChatSerializer.a(s.isEmpty() ? "\"\"" : s); // Paper - move down - the old format might throw a json error
- 
--                if (oldSign) {
-+                if (oldSign && !isLoadingStructure) { // Paper - saved structures will be in the new format, but will not have isConverted
-                     messages[i] = org.bukkit.craftbukkit.util.CraftChatMessage.fromString(s)[0];
-                     continue;
-                 }
-                 // CraftBukkit end
-+                MutableComponent ichatmutablecomponent = Component.Serializer.fromJson(s.isEmpty() ? "\"\"" : s); // Paper - after old sign
- 
-                 if (this.level instanceof ServerLevel) {
-                     try {
+-            if (oldSign) {
++            if (oldSign && !this.isLoadingStructure) { // Paper - saved structures will be in the new format, but will not have isConverted
+                 this.messages[i] = org.bukkit.craftbukkit.util.CraftChatMessage.fromString(s)[0];
+                 continue;
+             }
 diff --git a/src/main/java/net/minecraft/world/level/levelgen/structure/templatesystem/StructureTemplate.java b/src/main/java/net/minecraft/world/level/levelgen/structure/templatesystem/StructureTemplate.java
-index 8da00ee410e3f8f09b8ac273095a3d22d6c4d92b..d4cf5d3bdbe629081f6ec9d4ea94004560c93ebc 100644
+index e396c3aede9ca22ec98e1bd25c7da35ed6406f4f..80d3787d9c07f8dd740c2e5979e1cc14891b8829 100644
 --- a/src/main/java/net/minecraft/world/level/levelgen/structure/templatesystem/StructureTemplate.java
 +++ b/src/main/java/net/minecraft/world/level/levelgen/structure/templatesystem/StructureTemplate.java
-@@ -278,9 +278,11 @@ public class StructureTemplate {
+@@ -283,7 +283,9 @@ public class StructureTemplate {
                                          definedstructure_blockinfo.nbt.putLong("LootTableSeed", random.nextLong());
                                      }
  
 +                                    tileentity.isLoadingStructure = true; // Paper
-                                     tileentity.load(definedstructure_blockinfo.state, definedstructure_blockinfo.nbt);
-                                     tileentity.mirror(placementData.getMirror());
-                                     tileentity.rotate(placementData.getRotation());
+                                     tileentity.load(definedstructure_blockinfo.nbt);
 +                                    tileentity.isLoadingStructure = false; // Paper
                                  }
                              }
