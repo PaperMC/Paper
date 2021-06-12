@@ -29,16 +29,16 @@ diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListener
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-@@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl implements ServerGamePacketListener {
+@@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
          switch (packet.getAction()) {
              case PRESS_SHIFT_KEY:
                  this.player.setShiftKeyDown(true);
 +
-+            // Paper start - Hang on!
-+            if (this.player.level.paperConfig.parrotsHangOnBetter) {
-+                this.player.removeEntitiesOnShoulder();
-+            }
-+            // Paper end
++                // Paper start - Hang on!
++                if (this.player.level.paperConfig.parrotsHangOnBetter) {
++                    this.player.removeEntitiesOnShoulder();
++                }
++                // Paper end
 +
                  break;
              case RELEASE_SHIFT_KEY:
@@ -50,9 +50,18 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public abstract class Player extends LivingEntity {
          this.playShoulderEntityAmbientSound(this.getShoulderEntityLeft());
          this.playShoulderEntityAmbientSound(this.getShoulderEntityRight());
-         if (!this.level.isClientSide && (this.fallDistance > 0.5F || this.isInWater()) || this.abilities.flying || this.isSleeping()) {
+         if (!this.level.isClientSide && (this.fallDistance > 0.5F || this.isInWater()) || this.abilities.flying || this.isSleeping() || this.isInPowderSnow) {
 -            this.removeEntitiesOnShoulder();
 +            if (!this.level.paperConfig.parrotsHangOnBetter) this.removeEntitiesOnShoulder(); // Paper - Hang on!
          }
  
      }
+@@ -0,0 +0,0 @@ public abstract class Player extends LivingEntity {
+         }
+     }
+ 
+-    protected void removeEntitiesOnShoulder() {
++    public void removeEntitiesOnShoulder() { // Paper - protected -> public
+         if (this.timeEntitySatOnShoulder + 20L < this.level.getGameTime()) {
+             // CraftBukkit start
+             if (this.spawnEntityFromShoulder(this.getShoulderEntityLeft())) {
