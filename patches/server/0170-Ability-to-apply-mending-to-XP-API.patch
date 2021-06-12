@@ -10,10 +10,10 @@ of giving the player experience points.
 Both an API To standalone mend, and apply mending logic to .giveExp has been added.
 
 diff --git a/src/main/java/net/minecraft/world/entity/ExperienceOrb.java b/src/main/java/net/minecraft/world/entity/ExperienceOrb.java
-index 885c5a920204a31b24c7d360390eaf4177c30698..52b90ef3a145325209d3d903a2b7c9a44c332cbe 100644
+index 8203c93dcb56646df2614f2233aaf3a36f745d1c..71fb831ed3359e7986e279c987211f39c581ab23 100644
 --- a/src/main/java/net/minecraft/world/entity/ExperienceOrb.java
 +++ b/src/main/java/net/minecraft/world/entity/ExperienceOrb.java
-@@ -264,10 +264,12 @@ public class ExperienceOrb extends Entity {
+@@ -344,10 +344,12 @@ public class ExperienceOrb extends Entity {
          }
      }
  
@@ -27,10 +27,10 @@ index 885c5a920204a31b24c7d360390eaf4177c30698..52b90ef3a145325209d3d903a2b7c9a4
          return experienceAmount * 2;
      }
 diff --git a/src/main/java/net/minecraft/world/item/enchantment/EnchantmentHelper.java b/src/main/java/net/minecraft/world/item/enchantment/EnchantmentHelper.java
-index 045f937f0b7acd73469b65897bea2ca9036acf22..c82e1b6e3ec98530099fd6452fdaaefebfd99b33 100644
+index 27cdfbeb6cb2159075b35dd4f9e9557ec0eac7c2..d2d7b303e66bbba489e2003cc130dcd53e2a9854 100644
 --- a/src/main/java/net/minecraft/world/item/enchantment/EnchantmentHelper.java
 +++ b/src/main/java/net/minecraft/world/item/enchantment/EnchantmentHelper.java
-@@ -269,8 +269,8 @@ public class EnchantmentHelper {
+@@ -246,8 +246,8 @@ public class EnchantmentHelper {
          return getItemEnchantmentLevel(Enchantments.CHANNELING, stack) > 0;
      }
  
@@ -38,14 +38,14 @@ index 045f937f0b7acd73469b65897bea2ca9036acf22..c82e1b6e3ec98530099fd6452fdaaefe
 -    public static Entry<EquipmentSlot, ItemStack> getRandomItemWith(Enchantment enchantment, LivingEntity entity) {
 +    public static @javax.annotation.Nonnull ItemStack getRandomEquippedItemWithEnchant(Enchantment enchantment, LivingEntity entityliving) { Entry<EquipmentSlot, ItemStack> entry = getRandomItemWith(enchantment, entityliving); return entry != null ? entry.getValue() : ItemStack.NULL_ITEM; } // Paper - OBFHELPER
 +    @Nullable public static Entry<EquipmentSlot, ItemStack> getRandomItemWith(Enchantment enchantment, LivingEntity entity) {
-         return getRandomItemWith(enchantment, entity, (itemstack) -> {
+         return getRandomItemWith(enchantment, entity, (stack) -> {
              return true;
          });
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index 8a5bf0b83c1e65f07e14da0e053a64c34976b91a..efdcb8dac8db15c4bbaed84a7861ce98339e516a 100644
+index ed1c57f22adc8b96012eca426ed1e7b409e7d663..b1778f53de7974e03c7b56b0df69e31cdae8dd62 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-@@ -58,11 +58,14 @@ import net.minecraft.server.level.ServerPlayer;
+@@ -61,11 +61,14 @@ import net.minecraft.server.level.ServerPlayer;
  import net.minecraft.server.network.ServerGamePacketListenerImpl;
  import net.minecraft.server.players.UserWhiteListEntry;
  import net.minecraft.world.entity.Entity;
@@ -58,15 +58,14 @@ index 8a5bf0b83c1e65f07e14da0e053a64c34976b91a..efdcb8dac8db15c4bbaed84a7861ce98
 +import net.minecraft.world.item.enchantment.EnchantmentHelper;
 +import net.minecraft.world.item.enchantment.Enchantments;
  import net.minecraft.world.level.GameType;
+ import net.minecraft.world.level.block.Blocks;
  import net.minecraft.world.level.block.entity.SignBlockEntity;
- import net.minecraft.world.level.saveddata.maps.MapDecoration;
-@@ -1176,8 +1179,37 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
-         return GameMode.getByValue(getHandle().gameMode.getGameModeForPlayer().getId());
+@@ -1189,8 +1192,37 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+         return GameMode.getByValue(this.getHandle().gameMode.getGameModeForPlayer().getId());
      }
  
 +    // Paper start
-     @Override
--    public void giveExp(int exp) {
++    @Override
 +    public int applyMending(int amount) {
 +        ServerPlayer handle = getHandle();
 +        // Logic copied from EntityExperienceOrb and remapped to unobfuscated methods/properties
@@ -90,12 +89,13 @@ index 8a5bf0b83c1e65f07e14da0e053a64c34976b91a..efdcb8dac8db15c4bbaed84a7861ce98
 +        return amount;
 +    }
 +
-+    @Override
+     @Override
+-    public void giveExp(int exp) {
 +    public void giveExp(int exp, boolean applyMending) {
 +        if (applyMending) {
 +            exp = this.applyMending(exp);
 +        }
 +        // Paper end
-         getHandle().giveExperiencePoints(exp);
+         this.getHandle().giveExperiencePoints(exp);
      }
  
