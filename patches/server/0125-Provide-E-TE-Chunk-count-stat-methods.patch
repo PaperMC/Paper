@@ -1,0 +1,96 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sat, 7 Jan 2017 15:24:46 -0500
+Subject: [PATCH] Provide E/TE/Chunk count stat methods
+
+Provides counts without the ineffeciency of using .getEntities().size()
+which creates copy of the collections.
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
+index 8323ddb363f49d266dd95f11241a30a9a27250aa..2cd34f326f374e3ad46a4eea8c84be326cd489a0 100644
+--- a/src/main/java/net/minecraft/server/level/ServerLevel.java
++++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
+@@ -173,7 +173,7 @@ public class ServerLevel extends net.minecraft.world.level.Level implements Worl
+     public static final BlockPos END_SPAWN_POINT = new BlockPos(100, 50, 0);
+     private static final Logger LOGGER = LogManager.getLogger();
+     private static final int EMPTY_TIME_NO_TICK = 300;
+-    final List<ServerPlayer> players;
++    final List<ServerPlayer> players; public final int getPlayerListSize() { return this.players.size(); } // Paper
+     public final ServerChunkCache chunkSource; // Paper - public
+     private final MinecraftServer server;
+     public final PrimaryLevelData serverLevelData; // CraftBukkit - type
+diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
+index 52d80086deff664fcfd8952b7cabbfa1f48ad131..a86b5272c0ac4dd64f796f7fd025c7a34a5d2f8d 100644
+--- a/src/main/java/net/minecraft/world/level/Level.java
++++ b/src/main/java/net/minecraft/world/level/Level.java
+@@ -110,7 +110,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+     public static final int TICKS_PER_DAY = 24000;
+     public static final int MAX_ENTITY_SPAWN_Y = 20000000;
+     public static final int MIN_ENTITY_SPAWN_Y = -20000000;
+-    protected final List<TickingBlockEntity> blockEntityTickers = Lists.newArrayList();
++    protected final List<TickingBlockEntity> blockEntityTickers = Lists.newArrayList(); public final int getTotalTileEntityTickers() { return this.blockEntityTickers.size(); } // Paper
+     private final List<TickingBlockEntity> pendingBlockEntityTickers = Lists.newArrayList();
+     private boolean tickingBlockEntities;
+     public final Thread thread;
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+index 5133febf4b3a83b2870fee2f9e45b1d12894df54..e11a1a21bff1fc5e730d6c63c5b0c623b3b2e037 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+@@ -270,6 +270,57 @@ public class CraftWorld implements World {
+     private int waterAmbientSpawn = -1;
+     private int ambientSpawn = -1;
+ 
++    // Paper start - Provide fast information methods
++    @Override
++    public int getEntityCount() {
++        int ret = 0;
++        for (net.minecraft.world.entity.Entity entity : world.getEntities().getAll()) {
++            if (entity.isChunkLoaded()) {
++                ++ret;
++            }
++        }
++        return ret;
++    }
++
++    @Override
++    public int getTileEntityCount() {
++        // We don't use the full world tile entity list, so we must iterate chunks
++        Long2ObjectLinkedOpenHashMap<ChunkHolder> chunks = world.getChunkSource().chunkMap.visibleChunkMap;
++        int size = 0;
++        for (ChunkHolder playerchunk : chunks.values()) {
++            net.minecraft.world.level.chunk.LevelChunk chunk = playerchunk.getTickingChunk();
++            if (chunk == null) {
++                continue;
++            }
++            size += chunk.blockEntities.size();
++        }
++        return size;
++    }
++
++    @Override
++    public int getTickableTileEntityCount() {
++        return world.getTotalTileEntityTickers();
++    }
++
++    @Override
++    public int getChunkCount() {
++        int ret = 0;
++
++        for (ChunkHolder chunkHolder : world.getChunkSource().chunkMap.visibleChunkMap.values()) {
++            if (chunkHolder.getTickingChunk() != null) {
++                ++ret;
++            }
++        }
++
++        return ret;
++    }
++
++    @Override
++    public int getPlayerCount() {
++        return world.getPlayerListSize();
++    }
++    // Paper end
++
+     private static final Random rand = new Random();
+ 
+     public CraftWorld(ServerLevel world, ChunkGenerator gen, Environment env) {
