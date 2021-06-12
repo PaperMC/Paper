@@ -1,0 +1,71 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Byteflux <byte@byteflux.net>
+Date: Wed, 8 Aug 2018 16:33:21 -0600
+Subject: [PATCH] Configurable speed for water flowing over lava
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 8bb33e1b631c3aa99cef2a63c140f0b0e11325e0..c17c504acdc12b6ef37d6643eb98a57fa5ca40c9 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -384,4 +384,10 @@ public class PaperWorldConfig {
+         this.armorStandTick = this.getBoolean("armor-stands-tick", this.armorStandTick);
+         log("ArmorStand ticking is " + (this.armorStandTick ? "enabled" : "disabled") + " by default");
+     }
++
++    public int waterOverLavaFlowSpeed;
++    private void waterOverLavaFlowSpeed() {
++        waterOverLavaFlowSpeed = getInt("water-over-lava-flow-speed", 5);
++        log("Water over lava flow speed: " + waterOverLavaFlowSpeed);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/world/level/block/LiquidBlock.java b/src/main/java/net/minecraft/world/level/block/LiquidBlock.java
+index db4bcb600ab43439ef65d4510fb20d770ce9dba3..087601ffdeea97ec4cbb9959607bdcbcbae7c6fa 100644
+--- a/src/main/java/net/minecraft/world/level/block/LiquidBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/LiquidBlock.java
+@@ -26,6 +26,7 @@ import net.minecraft.world.level.block.state.properties.IntegerProperty;
+ import net.minecraft.world.level.material.FlowingFluid;
+ import net.minecraft.world.level.material.Fluid;
+ import net.minecraft.world.level.material.FluidState;
++import net.minecraft.world.level.material.Material;
+ import net.minecraft.world.level.pathfinder.PathComputationType;
+ import net.minecraft.world.level.storage.loot.LootContext;
+ import net.minecraft.world.phys.shapes.CollisionContext;
+@@ -109,11 +110,27 @@ public class LiquidBlock extends Block implements BucketPickup {
+     @Override
+     public void onPlace(BlockState state, Level world, BlockPos pos, BlockState oldState, boolean notify) {
+         if (this.shouldSpreadLiquid(world, pos, state)) {
+-            world.getLiquidTicks().scheduleTick(pos, state.getFluidState().getType(), this.fluid.getTickDelay((LevelReader) world));
++            world.getLiquidTicks().scheduleTick(pos, state.getFluidState().getType(), this.getFlowSpeed(world, pos)); // Paper
+         }
+ 
+     }
+ 
++    // Paper start - Get flow speed. Throttle if its water and flowing adjacent to lava
++    public int getFlowSpeed(Level world, BlockPos blockposition) {
++        if (this.material == Material.WATER) {
++            if (
++                world.getMaterialIfLoaded(blockposition.north(1)) == Material.LAVA ||
++                world.getMaterialIfLoaded(blockposition.south(1)) == Material.LAVA ||
++                world.getMaterialIfLoaded(blockposition.west(1)) == Material.LAVA ||
++                world.getMaterialIfLoaded(blockposition.east(1)) == Material.LAVA
++            ) {
++                return world.paperConfig.waterOverLavaFlowSpeed;
++            }
++        }
++        return this.fluid.getTickDelay(world);
++    }
++    // Paper end
++
+     @Override
+     public BlockState updateShape(BlockState state, Direction direction, BlockState neighborState, LevelAccessor world, BlockPos pos, BlockPos neighborPos) {
+         if (state.getFluidState().isSource() || neighborState.getFluidState().isSource()) {
+@@ -126,7 +143,7 @@ public class LiquidBlock extends Block implements BucketPickup {
+     @Override
+     public void neighborChanged(BlockState state, Level world, BlockPos pos, Block block, BlockPos fromPos, boolean notify) {
+         if (this.shouldSpreadLiquid(world, pos, state)) {
+-            world.getLiquidTicks().scheduleTick(pos, state.getFluidState().getType(), this.fluid.getTickDelay((LevelReader) world));
++            world.getLiquidTicks().scheduleTick(pos, state.getFluidState().getType(), this.getFlowSpeed(world, pos)); // Paper
+         }
+ 
+     }
