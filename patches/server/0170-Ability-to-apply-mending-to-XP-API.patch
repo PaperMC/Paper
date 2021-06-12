@@ -27,22 +27,25 @@ index 8203c93dcb56646df2614f2233aaf3a36f745d1c..71fb831ed3359e7986e279c987211f39
          return experienceAmount * 2;
      }
 diff --git a/src/main/java/net/minecraft/world/item/enchantment/EnchantmentHelper.java b/src/main/java/net/minecraft/world/item/enchantment/EnchantmentHelper.java
-index 27cdfbeb6cb2159075b35dd4f9e9557ec0eac7c2..d2d7b303e66bbba489e2003cc130dcd53e2a9854 100644
+index 27cdfbeb6cb2159075b35dd4f9e9557ec0eac7c2..069ce59faab5184ab9da8ca3fe1cebf7449cd7fe 100644
 --- a/src/main/java/net/minecraft/world/item/enchantment/EnchantmentHelper.java
 +++ b/src/main/java/net/minecraft/world/item/enchantment/EnchantmentHelper.java
-@@ -246,8 +246,8 @@ public class EnchantmentHelper {
+@@ -246,8 +246,11 @@ public class EnchantmentHelper {
          return getItemEnchantmentLevel(Enchantments.CHANNELING, stack) > 0;
      }
  
 -    @Nullable
 -    public static Entry<EquipmentSlot, ItemStack> getRandomItemWith(Enchantment enchantment, LivingEntity entity) {
-+    public static @javax.annotation.Nonnull ItemStack getRandomEquippedItemWithEnchant(Enchantment enchantment, LivingEntity entityliving) { Entry<EquipmentSlot, ItemStack> entry = getRandomItemWith(enchantment, entityliving); return entry != null ? entry.getValue() : ItemStack.NULL_ITEM; } // Paper - OBFHELPER
++    public static @javax.annotation.Nonnull ItemStack getRandomEquippedItemWithEnchant(Enchantment enchantment, LivingEntity entityliving) {
++        Entry<EquipmentSlot, ItemStack> entry = getRandomItemWith(enchantment, entityliving);
++        return entry != null ? entry.getValue() : ItemStack.EMPTY;
++    } // Paper - OBFHELPER
 +    @Nullable public static Entry<EquipmentSlot, ItemStack> getRandomItemWith(Enchantment enchantment, LivingEntity entity) {
          return getRandomItemWith(enchantment, entity, (stack) -> {
              return true;
          });
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index ed1c57f22adc8b96012eca426ed1e7b409e7d663..b1778f53de7974e03c7b56b0df69e31cdae8dd62 100644
+index ed1c57f22adc8b96012eca426ed1e7b409e7d663..75963a28b39f8835f1daba3d1b44655603124bf3 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 @@ -61,11 +61,14 @@ import net.minecraft.server.level.ServerPlayer;
@@ -80,7 +83,7 @@ index ed1c57f22adc8b96012eca426ed1e7b409e7d663..b1778f53de7974e03c7b56b0df69e31c
 +            int i = Math.min(orb.xpToDur(amount), itemstack.getDamageValue());
 +            org.bukkit.event.player.PlayerItemMendEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerItemMendEvent(handle, orb, itemstack, i);
 +            i = event.getRepairAmount();
-+            orb.removed = true;
++            orb.discard();
 +            if (!event.isCancelled()) {
 +                amount -= orb.durToXp(i);
 +                itemstack.setDamageValue(itemstack.getDamageValue() - i);
