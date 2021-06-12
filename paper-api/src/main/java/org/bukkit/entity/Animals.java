@@ -1,6 +1,9 @@
 package org.bukkit.entity;
 
 import java.util.UUID;
+import org.bukkit.Material;
+import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -50,4 +53,24 @@ public interface Animals extends Breedable {
      * @param ticks the love mode ticks. Must be positive
      */
     void setLoveModeTicks(int ticks);
+
+    /**
+     * Check if the provided ItemStack is the correct item used for breeding
+     * this entity.
+     *
+     * @param stack ItemStack to check.
+     * @return if the provided ItemStack is the correct food item for this
+     * entity.
+     */
+    boolean isBreedItem(@NotNull ItemStack stack);
+
+    /**
+     * Check if the provided ItemStack is the correct item used for breeding
+     * this entity..
+     *
+     * @param material Material to check.
+     * @return if the provided ItemStack is the correct food item for this
+     * entity.
+     */
+    boolean isBreedItem(@NotNull Material material);
 }
