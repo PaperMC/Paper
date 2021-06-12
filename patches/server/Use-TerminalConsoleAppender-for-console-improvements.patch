@@ -18,60 +18,29 @@ Other changes:
   - Server starts 1-2 seconds faster thanks to optimizations in Log4j
     configuration
 
-diff --git a/pom.xml b/pom.xml
+diff --git a/build.gradle.kts b/build.gradle.kts
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/pom.xml
-+++ b/pom.xml
-@@ -0,0 +0,0 @@
-             <scope>compile</scope>
-         </dependency>
-         <dependency>
--            <groupId>jline</groupId>
--            <artifactId>jline</artifactId>
--            <version>2.12.1</version>
--            <scope>compile</scope>
-+            <groupId>net.minecrell</groupId>
-+            <artifactId>terminalconsoleappender</artifactId>
-+            <version>1.2.0</version>
-+        </dependency>
-+        <dependency>
-+            <groupId>org.jline</groupId>
-+            <artifactId>jline-terminal-jansi</artifactId>
-+            <version>3.12.1</version>
-+            <scope>runtime</scope>
-+        </dependency>
-+        <!--
+--- a/build.gradle.kts
++++ b/build.gradle.kts
+@@ -0,0 +0,0 @@ repositories {
+ 
+ dependencies {
+     implementation(project(":Paper-API"))
+-    implementation("jline:jline:2.12.1")
++    // Paper start
++    implementation("org.jline:jline-terminal-jansi:3.12.1")
++    implementation("net.minecrell:terminalconsoleappender:1.2.0")
++    /*
 +          Required to add the missing Log4j2Plugins.dat file from log4j-core
 +          which has been removed by Mojang. Without it, log4j has to classload
 +          all its classes to check if they are plugins.
 +          Scanning takes about 1-2 seconds so adding this speeds up the server start.
-+        -->
-+        <dependency>
-+            <groupId>org.apache.logging.log4j</groupId>
-+            <artifactId>log4j-core</artifactId>
-+            <scope>runtime</scope>
-         </dependency>
-         <dependency>
-             <groupId>org.apache.logging.log4j</groupId>
-@@ -0,0 +0,0 @@
-                                 <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
-                                     <resource>META-INF/services/java.sql.Driver</resource>
-                                 </transformer>
-+                                <transformer implementation="com.github.edwgiz.maven_shade_plugin.log4j2_cache_transformer.PluginsCacheFileTransformer" />
-                             </transformers>
-                         </configuration>
-                     </execution>
-                 </executions>
-+                <dependencies>
-+                    <dependency>
-+                        <groupId>com.github.edwgiz</groupId>
-+                        <artifactId>maven-shade-plugin.log4j2-cachefile-transformer</artifactId>
-+                        <version>2.13.1</version>
-+                    </dependency>
-+                </dependencies>
-             </plugin>
-             <plugin>
-                 <groupId>org.apache.maven.plugins</groupId>
++     */
++    runtimeOnly("org.apache.logging.log4j:log4j-core:2.14.1")
++    // Paper end
+     implementation("org.apache.logging.log4j:log4j-iostreams:2.14.1") // Paper
+     implementation("org.apache.logging.log4j:log4j-api:2.14.1") // Paper
+     implementation("org.apache.logging.log4j:log4j-slf4j-impl:2.14.1") // Paper
 diff --git a/src/main/java/com/destroystokyo/paper/console/PaperConsole.java b/src/main/java/com/destroystokyo/paper/console/PaperConsole.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
@@ -152,8 +121,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  import io.netty.buffer.Unpooled;
 +import io.papermc.paper.adventure.PaperAdventure; // Paper
  import it.unimi.dsi.fastutil.longs.LongIterator;
+ import java.awt.GraphicsEnvironment;
  import java.awt.image.BufferedImage;
- import java.io.BufferedWriter;
 @@ -0,0 +0,0 @@ import org.apache.logging.log4j.Logger;
  import com.mojang.serialization.DynamicOps;
  import com.mojang.serialization.Lifecycle;
@@ -183,7 +152,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              System.setProperty("jline.terminal", "jline.UnsupportedTerminal");
              Main.useJline = false;
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
-                 LOGGER.warn((String) null, ex);
+                 MinecraftServer.LOGGER.warn((String) null, ex);
              }
          }
 +        */
@@ -195,7 +164,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  org.spigotmc.WatchdogThread.doStop(); // Spigot
                  // CraftBukkit start - Restore terminal to original settings
                  try {
--                    reader.getTerminal().restore();
+-                    this.reader.getTerminal().restore();
 +                    net.minecrell.terminalconsole.TerminalConsoleAppender.close(); // Paper - Use TerminalConsoleAppender
                  } catch (Exception ignored) {
                  }
@@ -203,7 +172,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
  
      @Override
-     public void sendMessage(Component message, UUID senderUuid) {
+     public void sendMessage(Component message, UUID sender) {
 -        MinecraftServer.LOGGER.info(message.getString());
 +        MinecraftServer.LOGGER.info(PaperAdventure.LEGACY_SECTION_UXRC.serialize(PaperAdventure.asAdventure(message))); // Paper - Log message with colors
      }
@@ -295,7 +264,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  import net.minecraft.server.bossevents.CustomBossEvent;
  import net.minecraft.server.commands.ReloadCommand;
 @@ -0,0 +0,0 @@ public final class CraftServer implements Server {
-         return logger;
+         return this.logger;
      }
  
 +    // Paper start - JLine update
@@ -343,12 +312,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                // Paper end
  
                  if (options.has("noconsole")) {
-                     useConsole = false;
+                     Main.useConsole = false;
 +                    useJline = false; // Paper
 +                    System.setProperty(TerminalConsoleAppender.JLINE_OVERRIDE_PROPERTY, "false"); // Paper
                  }
  
-                 if (false && Main.class.getPackage().getImplementationVendor() != null && System.getProperty("IReallyKnowWhatIAmDoingISwear") == null) {
+                 if (Main.class.getPackage().getImplementationVendor() != null && System.getProperty("IReallyKnowWhatIAmDoingISwear") == null) {
 @@ -0,0 +0,0 @@ public class Main {
                      System.out.println("Unable to read system info");
                  }
@@ -427,7 +396,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          Waitable<List<String>> waitable = new Waitable<List<String>>() {
              @Override
              protected List<String> evaluate() {
-@@ -0,0 +0,0 @@ public class ConsoleCommandCompleter implements Completer {
+-                List<String> offers = ConsoleCommandCompleter.this.server.getCommandMap().tabComplete(ConsoleCommandCompleter.this.server.getConsoleSender(), buffer);
++                List<String> offers = server.getCommandMap().tabComplete(server.getConsoleSender(), buffer); // Paper - fix remap
+ 
+-                TabCompleteEvent tabEvent = new TabCompleteEvent(ConsoleCommandCompleter.this.server.getConsoleSender(), buffer, (offers == null) ? Collections.EMPTY_LIST : offers);
+-                ConsoleCommandCompleter.this.server.getPluginManager().callEvent(tabEvent);
++                TabCompleteEvent tabEvent = new TabCompleteEvent(server.getConsoleSender(), buffer, (offers == null) ? Collections.EMPTY_LIST : offers); // Paper - fix remap
++                server.getPluginManager().callEvent(tabEvent); // Paper - fix remap
+ 
                  return tabEvent.isCancelled() ? Collections.EMPTY_LIST : tabEvent.getCompletions();
              }
          };
@@ -475,7 +451,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/org/bukkit/craftbukkit/util/ServerShutdownThread.java
 +++ b/src/main/java/org/bukkit/craftbukkit/util/ServerShutdownThread.java
 @@ -0,0 +0,0 @@ public class ServerShutdownThread extends Thread {
-             server.close();
+             this.server.close();
          } finally {
              try {
 -                server.reader.getTerminal().restore();

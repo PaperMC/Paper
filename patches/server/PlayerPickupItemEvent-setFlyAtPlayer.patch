@@ -10,7 +10,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +++ b/src/main/java/net/minecraft/world/entity/item/ItemEntity.java
 @@ -0,0 +0,0 @@ public class ItemEntity extends Entity {
              // CraftBukkit start - fire PlayerPickupItemEvent
-             int canHold = player.inventory.canHold(itemstack);
+             int canHold = player.getInventory().canHold(itemstack);
              int remaining = i - canHold;
 +            boolean flyAtPlayer = false; // Paper
  
@@ -18,7 +18,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  itemstack.setCount(canHold);
 @@ -0,0 +0,0 @@ public class ItemEntity extends Entity {
                  PlayerPickupItemEvent playerEvent = new PlayerPickupItemEvent((org.bukkit.entity.Player) player.getBukkitEntity(), (org.bukkit.entity.Item) this.getBukkitEntity(), remaining);
-                 playerEvent.setCancelled(!player.canPickUpLoot);
+                 playerEvent.setCancelled(!playerEvent.getPlayer().getCanPickupItems());
                  this.level.getCraftServer().getPluginManager().callEvent(playerEvent);
 +                flyAtPlayer = playerEvent.getFlyAtPlayer(); // Paper
                  if (playerEvent.isCancelled()) {
@@ -34,7 +34,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public class ItemEntity extends Entity {
              // CraftBukkit end
  
-             if (this.pickupDelay == 0 && (this.owner == null || this.owner.equals(player.getUUID())) && player.inventory.add(itemstack)) {
+             if (this.pickupDelay == 0 && (this.owner == null || this.owner.equals(player.getUUID())) && player.getInventory().add(itemstack)) {
 -                player.take(this, i);
 +                // Paper Start
 +                if (flyAtPlayer) {
@@ -42,5 +42,5 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                }
 +                // Paper End
                  if (itemstack.isEmpty()) {
-                     this.remove();
+                     this.discard();
                      itemstack.setCount(i);
