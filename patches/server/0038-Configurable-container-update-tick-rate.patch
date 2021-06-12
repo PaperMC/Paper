@@ -1,0 +1,46 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Sudzzy <originmc@outlook.com>
+Date: Wed, 2 Mar 2016 23:34:44 -0600
+Subject: [PATCH] Configurable container update tick rate
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 4de86b09c6bc3c1974ce61b550ccb73d37f6f170..5a4c3a8c511f22c8c3240c9c7cd83a65119c1054 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -181,4 +181,9 @@ public class PaperWorldConfig {
+     private void mobSpawnerTickRate() {
+         mobSpawnerTickRate = getInt("mob-spawner-tick-rate", 1);
+     }
++
++    public int containerUpdateTickRate;
++    private void containerUpdateTickRate() {
++        containerUpdateTickRate = getInt("container-update-tick-rate", 1);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+index b25f9a2d2d7f0af0fef60c4f1817cf165fed9cd6..b68a58abf254289a806636ca28521be39c13a82f 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+@@ -214,6 +214,7 @@ public class ServerPlayer extends Player {
+     private int containerCounter;
+     public int latency;
+     public boolean wonGame;
++    private int containerUpdateDelay; // Paper
+ 
+     // CraftBukkit start
+     public String displayName;
+@@ -589,7 +590,12 @@ public class ServerPlayer extends Player {
+             --this.invulnerableTime;
+         }
+ 
+-        this.containerMenu.broadcastChanges();
++        // Paper start - Configurable container update tick rate
++        if (--containerUpdateDelay <= 0) {
++            this.containerMenu.broadcastChanges();
++            containerUpdateDelay = level.paperConfig.containerUpdateTickRate;
++        }
++        // Paper end
+         if (!this.level.isClientSide && !this.containerMenu.stillValid(this)) {
+             this.closeContainer();
+             this.containerMenu = this.inventoryMenu;
