@@ -106,9 +106,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public void send(Packet<?> packet, @Nullable GenericFutureListener<? extends Future<? super Void>> callback) {
 -        if (this.isConnected()) {
 -            this.flushQueue();
--            this.sendPacket(packet, callback);
--        } else {
--            this.queue.add(new Connection.PacketHolder(packet, callback));
 +        // Paper start - handle oversized packets better
 +        boolean connected = this.isConnected();
 +        if (!connected && !preparing) {
@@ -119,7 +116,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            net.minecraft.server.MCUtil.isMainThread() && packet.isReady() && this.queue.isEmpty() &&
 +            (packet.getExtraPackets() == null || packet.getExtraPackets().isEmpty())
 +        ))) {
-+            this.send(packet, callback);
+             this.sendPacket(packet, callback);
+-        } else {
+-            this.queue.add(new Connection.PacketHolder(packet, callback));
 +            return;
          }
 +        // write the packets to the queue, then flush - antixray hooks there already
