@@ -18,9 +18,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      private boolean addEntity0(Entity entity, CreatureSpawnEvent.SpawnReason spawnReason) {
          org.spigotmc.AsyncCatcher.catchOp("entity add"); // Spigot
 +        if (entity.spawnReason == null) entity.spawnReason = spawnReason; // Paper
-         // Paper start
-         if (entity.valid) {
-             MinecraftServer.LOGGER.error("Attempted Double World add on " + entity, new Throwable());
+         if (entity.isRemoved()) {
+             // WorldServer.LOGGER.warn("Tried to add entity {} but it was marked as removed already", EntityTypes.getName(entity.getEntityType())); // CraftBukkit
+             return false;
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/players/PlayerList.java
@@ -47,30 +47,30 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  import net.minecraft.world.entity.item.ItemEntity;
  import net.minecraft.world.entity.player.Player;
  import net.minecraft.world.entity.vehicle.Boat;
-@@ -0,0 +0,0 @@ public abstract class Entity implements Nameable, CommandSource, net.minecraft.s
+@@ -0,0 +0,0 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, n
+             }
          }
      };
-     public List<Entity> entitySlice = null;
 +    public org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason spawnReason;
      // Paper end
  
      public com.destroystokyo.paper.loottable.PaperLootableInventoryData lootableData; // Paper
-@@ -0,0 +0,0 @@ public abstract class Entity implements Nameable, CommandSource, net.minecraft.s
-                 tag.setUUID("Paper.OriginWorld", origin.getWorld().getUID());
-                 tag.put("Paper.Origin", this.createList(origin.getX(), origin.getY(), origin.getZ()));
+@@ -0,0 +0,0 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, n
+                 nbt.setUUID("Paper.OriginWorld", origin.getWorld().getUID());
+                 nbt.put("Paper.Origin", this.newDoubleList(origin.getX(), origin.getY(), origin.getZ()));
              }
 +            if (spawnReason != null) {
-+                tag.putString("Paper.SpawnReason", spawnReason.name());
++                nbt.putString("Paper.SpawnReason", spawnReason.name());
 +            }
              // Save entity's from mob spawner status
              if (spawnedViaMobSpawner) {
-                 tag.putBoolean("Paper.FromMobSpawner", true);
-@@ -0,0 +0,0 @@ public abstract class Entity implements Nameable, CommandSource, net.minecraft.s
+                 nbt.putBoolean("Paper.FromMobSpawner", true);
+@@ -0,0 +0,0 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, n
              }
  
-             spawnedViaMobSpawner = tag.getBoolean("Paper.FromMobSpawner"); // Restore entity's from mob spawner status
-+            if (tag.contains("Paper.SpawnReason")) {
-+                String spawnReasonName = tag.getString("Paper.SpawnReason");
+             spawnedViaMobSpawner = nbt.getBoolean("Paper.FromMobSpawner"); // Restore entity's from mob spawner status
++            if (nbt.contains("Paper.SpawnReason")) {
++                String spawnReasonName = nbt.getString("Paper.SpawnReason");
 +                try {
 +                    spawnReason = org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.valueOf(spawnReasonName);
 +                } catch (Exception ignored) {
@@ -81,7 +81,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                if (spawnedViaMobSpawner) {
 +                    spawnReason = org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.SPAWNER;
 +                } else if (this instanceof Mob && (this instanceof Animal || this instanceof AbstractFish) && !((Mob) this).removeWhenFarAway(0.0)) {
-+                    if (!tag.getBoolean("PersistenceRequired")) {
++                    if (!nbt.getBoolean("PersistenceRequired")) {
 +                        spawnReason = org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.NATURAL;
 +                    }
 +                }
@@ -97,13 +97,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/world/level/BaseSpawner.java
 +++ b/src/main/java/net/minecraft/world/level/BaseSpawner.java
 @@ -0,0 +0,0 @@ public abstract class BaseSpawner {
-                                 // Spigot End
-                             }
+                             // Spigot End
+                         }
                          entity.spawnedViaMobSpawner = true; // Paper
-+                            entity.spawnReason = org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.SPAWNER; // Paper
-                             flag = true; // Paper
-                             // Spigot Start
-                             if (org.bukkit.craftbukkit.event.CraftEventFactory.callSpawnerSpawnEvent(entity, blockposition).isCancelled()) {
++                        entity.spawnReason = org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.SPAWNER; // Paper
+                         flag = true; // Paper
+                         // Spigot Start
+                         if (org.bukkit.craftbukkit.event.CraftEventFactory.callSpawnerSpawnEvent(entity, pos).isCancelled()) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
