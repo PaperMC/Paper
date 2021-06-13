@@ -212,7 +212,7 @@ index 1fa190e098079522e0fe3593fa261c1b7ad4e24b..71ffa66973d8994e2a480435ac1ada3f
       * Ported from MinecraftForge - author: LexManos <LexManos@gmail.com> - License: LGPLv2.1
       */
 diff --git a/src/main/java/net/minecraft/server/MCUtil.java b/src/main/java/net/minecraft/server/MCUtil.java
-index 0df3961919f04f27eb265ab316aa5a0f15a70854..e31dbb1346ba6755bc367a3eab6f87574b4eb3c4 100644
+index 0df3961919f04f27eb265ab316aa5a0f15a70854..bb0a07a280c7d4885165e9d6488e7741aaa7b47c 100644
 --- a/src/main/java/net/minecraft/server/MCUtil.java
 +++ b/src/main/java/net/minecraft/server/MCUtil.java
 @@ -8,13 +8,27 @@ import net.minecraft.core.BlockPos;
@@ -341,10 +341,10 @@ index 0df3961919f04f27eb265ab316aa5a0f15a70854..e31dbb1346ba6755bc367a3eab6f8757
 +
 +            // sorting by coordinate makes the log easier to read
 +            allChunks.sort((ChunkHolder v1, ChunkHolder v2) -> {
-+                if (v1.location.x != v2.location.x) {
-+                    return Integer.compare(v1.location.x, v2.location.x);
++                if (v1.pos.x != v2.pos.x) {
++                    return Integer.compare(v1.pos.x, v2.pos.x);
 +                }
-+                return Integer.compare(v1.location.z, v2.location.z);
++                return Integer.compare(v1.pos.z, v2.pos.z);
 +            });
 +
 +            worldData.addProperty("name", world.getWorld().getName());
@@ -376,14 +376,14 @@ index 0df3961919f04f27eb265ab316aa5a0f15a70854..e31dbb1346ba6755bc367a3eab6f8757
 +            for (ChunkHolder playerChunk : allChunks) {
 +                JsonObject chunkData = new JsonObject();
 +
-+                Set<Ticket<?>> tickets = chunkMapDistance.tickets.get(playerChunk.pos.pair());
++                Set<Ticket<?>> tickets = chunkMapDistance.tickets.get(playerChunk.pos.longKey);
 +                ChunkStatus status = getChunkStatus(playerChunk);
 +
-+                chunkData.addProperty("x", playerChunk.location.x);
-+                chunkData.addProperty("z", playerChunk.location.z);
++                chunkData.addProperty("x", playerChunk.pos.x);
++                chunkData.addProperty("z", playerChunk.pos.z);
 +                chunkData.addProperty("ticket-level", playerChunk.getTicketLevel());
 +                chunkData.addProperty("state", ChunkHolder.getFullChunkStatus(playerChunk.getTicketLevel()).toString());
-+                chunkData.addProperty("queued-for-unload", chunkMap.toDrop.contains(playerChunk.pos.pair()));
++                chunkData.addProperty("queued-for-unload", chunkMap.toDrop.contains(playerChunk.pos.longKey));
 +                chunkData.addProperty("status", status == null ? "unloaded" : status.toString());
 +
 +                JsonArray ticketsData = new JsonArray();
@@ -428,6 +428,19 @@ index 0df3961919f04f27eb265ab316aa5a0f15a70854..e31dbb1346ba6755bc367a3eab6f8757
      public static int getTicketLevelFor(net.minecraft.world.level.chunk.ChunkStatus status) {
          return net.minecraft.server.level.ChunkMap.MAX_VIEW_DISTANCE + net.minecraft.world.level.chunk.ChunkStatus.getDistance(status);
      }
+diff --git a/src/main/java/net/minecraft/server/level/ChunkHolder.java b/src/main/java/net/minecraft/server/level/ChunkHolder.java
+index 84831fc611589c19320b5e3af107080596b1fbdc..fa6d91886d433c0b7d77c1d059a23ee194ae14a4 100644
+--- a/src/main/java/net/minecraft/server/level/ChunkHolder.java
++++ b/src/main/java/net/minecraft/server/level/ChunkHolder.java
+@@ -61,7 +61,7 @@ public class ChunkHolder {
+     public int oldTicketLevel;
+     private int ticketLevel;
+     private int queueLevel;
+-    final ChunkPos pos;
++    public final ChunkPos pos; // Paper - package->public
+     private boolean hasChangedSections;
+     private final ShortSet[] changedBlocksPerSection;
+     private final BitSet blockChangedLightSectionFilter;
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
 index 95ac30f56a9268f14d2518974c5a52e08f40ea18..25826b41812f2d9ac29806ad7a9242e5674376fc 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
@@ -454,8 +467,21 @@ index 71ac5cf0fdedcfe422bf6f5e6ffb15ce4138aa04..77bb2fb280293da4a38f9acc6503e849
      private final DistanceManager distanceManager;
      public final ChunkGenerator generator;
      final ServerLevel level;
+diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
+index 74a5dcde184c20129cb5fdcfb34ef1c3aecb1842..736521c0925339dc74c2648641932104a947708e 100644
+--- a/src/main/java/net/minecraft/server/level/ServerLevel.java
++++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
+@@ -174,7 +174,7 @@ public class ServerLevel extends net.minecraft.world.level.Level implements Worl
+     public static final BlockPos END_SPAWN_POINT = new BlockPos(100, 50, 0);
+     private static final Logger LOGGER = LogManager.getLogger();
+     private static final int EMPTY_TIME_NO_TICK = 300;
+-    final List<ServerPlayer> players;
++    public final List<ServerPlayer> players; // Paper - package->public
+     public final ServerChunkCache chunkSource; // Paper - public
+     private final MinecraftServer server;
+     public final PrimaryLevelData serverLevelData; // CraftBukkit - type
 diff --git a/src/main/java/net/minecraft/server/level/Ticket.java b/src/main/java/net/minecraft/server/level/Ticket.java
-index b346fa94b23d81da7da073f71dd12e672e0f079c..95f5050518109c4ae0b6846be65204cc29afc723 100644
+index b346fa94b23d81da7da073f71dd12e672e0f079c..8b0c6e1a649400908dbb674dfb4cdd1aa0ce1d38 100644
 --- a/src/main/java/net/minecraft/server/level/Ticket.java
 +++ b/src/main/java/net/minecraft/server/level/Ticket.java
 @@ -5,8 +5,8 @@ import java.util.Objects;
@@ -469,11 +495,3 @@ index b346fa94b23d81da7da073f71dd12e672e0f079c..95f5050518109c4ae0b6846be65204cc
  
      protected Ticket(TicketType<T> type, int level, T argument) {
          this.type = type;
-@@ -51,6 +51,7 @@ public final class Ticket<T> implements Comparable<Ticket<?>> {
-         return this.type;
-     }
- 
-+    public final int getTicketLevel() { return this.getTicketLevel(); } // Paper - OBFHELPER
-     public int getTicketLevel() {
-         return this.ticketLevel;
-     }
