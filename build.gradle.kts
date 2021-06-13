@@ -38,8 +38,7 @@ subprojects {
 }
 
 repositories {
-    mavenLocal()
-
+    mavenCentral()
     maven("https://wav.jfrog.io/artifactory/repo/") {
         content {
             onlyForConfigurations("paperclip")
@@ -59,7 +58,7 @@ repositories {
 
 dependencies {
     paramMappings("org.quiltmc:yarn:1.17+build.2:mergedv2")
-    remapper("org.quiltmc:tiny-remapper:0.3.2:fat@jar")
+    remapper("org.quiltmc:tiny-remapper:0.4.1")
     decompiler("net.minecraftforge:forgeflower:1.5.498.12@jar")
     paperclip("io.papermc:paperclip:2.0.0-SNAPSHOT@jar")
 }
