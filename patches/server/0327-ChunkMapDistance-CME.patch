@@ -5,26 +5,26 @@ Subject: [PATCH] ChunkMapDistance CME
 
 
 diff --git a/src/main/java/net/minecraft/server/level/ChunkHolder.java b/src/main/java/net/minecraft/server/level/ChunkHolder.java
-index 0b8cbf75ff01b9825141be00d63679f7bcc58a9f..89e90806b78d94d5c1d781113da420dafa47930a 100644
+index 00f5cd29170e3594fe2ac194e04e403cef685912..84831fc611589c19320b5e3af107080596b1fbdc 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkHolder.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkHolder.java
-@@ -44,6 +44,7 @@ public class ChunkHolder {
-     private static final CompletableFuture<Either<LevelChunk, ChunkHolder.ChunkLoadingFailure>> UNLOADED_LEVEL_CHUNK_FUTURE = CompletableFuture.completedFuture(ChunkHolder.UNLOADED_LEVEL_CHUNK);
-     private static final List<ChunkStatus> CHUNK_STATUSES = ChunkStatus.getStatusList();
-     private static final ChunkHolder.FullChunkStatus[] FULL_CHUNK_STATUSES = ChunkHolder.FullChunkStatus.values();
+@@ -73,6 +73,7 @@ public class ChunkHolder {
+     private boolean resendLight;
+     private CompletableFuture<Void> pendingFullStateConfirmation;
+ 
 +    boolean isUpdateQueued = false; // Paper
-     private final AtomicReferenceArray<CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>>> futures;
-     private volatile CompletableFuture<Either<LevelChunk, ChunkHolder.ChunkLoadingFailure>> fullChunkFuture; private int fullChunkCreateCount; private volatile boolean isFullChunkReady; // Paper - cache chunk ticking stage
-     private volatile CompletableFuture<Either<LevelChunk, ChunkHolder.ChunkLoadingFailure>> tickingChunkFuture; private volatile boolean isTickingReady; // Paper - cache chunk ticking stage
+     private final ChunkMap chunkMap; // Paper
+ 
+     public ChunkHolder(ChunkPos pos, int level, LevelHeightAccessor world, LevelLightEngine lightingProvider, ChunkHolder.LevelChangeListener levelUpdateListener, ChunkHolder.PlayerProvider playersWatchingChunkProvider) {
 diff --git a/src/main/java/net/minecraft/server/level/DistanceManager.java b/src/main/java/net/minecraft/server/level/DistanceManager.java
-index 8f993f15ae02c2e4af9cc732cd1b040cce0a67e8..71a51cc99e26579e765f88340588e23956888929 100644
+index 48bb57d3a431ea466425eb7da821c0aea900bd4c..45c7ebe67019cdbe88b6617a95d5c40d3a68286c 100644
 --- a/src/main/java/net/minecraft/server/level/DistanceManager.java
 +++ b/src/main/java/net/minecraft/server/level/DistanceManager.java
-@@ -39,7 +39,16 @@ public abstract class DistanceManager {
+@@ -47,7 +47,16 @@ public abstract class DistanceManager {
      private final DistanceManager.ChunkTicketTracker ticketTracker = new DistanceManager.ChunkTicketTracker();
      private final DistanceManager.FixedPlayerDistanceChunkTracker naturalSpawnChunkCounter = new DistanceManager.FixedPlayerDistanceChunkTracker(8);
      private final DistanceManager.PlayerTicketTracker playerTicketManager = new DistanceManager.PlayerTicketTracker(33);
--    private final Set<ChunkHolder> chunksToUpdateFutures = Sets.newHashSet();
+-    final Set<ChunkHolder> chunksToUpdateFutures = Sets.newHashSet();
 +    // Paper start use a queue, but still keep unique requirement
 +    public final java.util.Queue<ChunkHolder> pendingChunkUpdates = new java.util.ArrayDeque<ChunkHolder>() {
 +        @Override
@@ -35,10 +35,10 @@ index 8f993f15ae02c2e4af9cc732cd1b040cce0a67e8..71a51cc99e26579e765f88340588e239
 +        }
 +    };
 +    // Paper end
-     private final ChunkTaskPriorityQueueSorter ticketThrottler;
-     private final ProcessorHandle<ChunkTaskPriorityQueueSorter.Message<Runnable>> ticketThrottlerInput;
-     private final ProcessorHandle<ChunkTaskPriorityQueueSorter.Release> ticketThrottlerReleaser;
-@@ -100,26 +109,14 @@ public abstract class DistanceManager {
+     final ChunkTaskPriorityQueueSorter ticketThrottler;
+     final ProcessorHandle<ChunkTaskPriorityQueueSorter.Message<Runnable>> ticketThrottlerInput;
+     final ProcessorHandle<ChunkTaskPriorityQueueSorter.Release> ticketThrottlerReleaser;
+@@ -108,26 +117,14 @@ public abstract class DistanceManager {
              ;
          }
  
@@ -52,7 +52,7 @@ index 8f993f15ae02c2e4af9cc732cd1b040cce0a67e8..71a51cc99e26579e765f88340588e239
 -                iter.remove();
 -                expectedSize--;
 -
--                playerchunk.updateFutures(chunkStorage);
+-                playerchunk.updateFutures(playerchunkmap, this.mainThreadExecutor);
 -
 -                // Reset iterator if set was modified using add()
 -                if (this.chunksToUpdateFutures.size() != expectedSize) {
@@ -67,13 +67,13 @@ index 8f993f15ae02c2e4af9cc732cd1b040cce0a67e8..71a51cc99e26579e765f88340588e239
 +            while(!this.pendingChunkUpdates.isEmpty()) {
 +                ChunkHolder remove = this.pendingChunkUpdates.remove();
 +                remove.isUpdateQueued = false;
-+                remove.updateFutures(chunkStorage);
++                remove.updateFutures(playerchunkmap, this.mainThreadExecutor);
 +            }
 +            // Paper end
              return true;
          } else {
              if (!this.ticketsToRelease.isEmpty()) {
-@@ -342,7 +339,7 @@ public abstract class DistanceManager {
+@@ -385,7 +382,7 @@ public abstract class DistanceManager {
              if (k != level) {
                  playerchunk = DistanceManager.this.updateChunkScheduling(id, level, playerchunk, k);
                  if (playerchunk != null) {
@@ -82,12 +82,3 @@ index 8f993f15ae02c2e4af9cc732cd1b040cce0a67e8..71a51cc99e26579e765f88340588e239
                  }
  
              }
-@@ -373,7 +370,7 @@ public abstract class DistanceManager {
-             ObjectIterator objectiterator = this.chunks.long2ByteEntrySet().iterator();
- 
-             while (objectiterator.hasNext()) {
--                it.unimi.dsi.fastutil.longs.Long2ByteMap.Entry it_unimi_dsi_fastutil_longs_long2bytemap_entry = (it.unimi.dsi.fastutil.longs.Long2ByteMap.Entry) objectiterator.next();
-+                Long2ByteMap.Entry it_unimi_dsi_fastutil_longs_long2bytemap_entry = (Long2ByteMap.Entry) objectiterator.next(); // Paper - decompile fix
-                 byte b0 = it_unimi_dsi_fastutil_longs_long2bytemap_entry.getByteValue();
-                 long j = it_unimi_dsi_fastutil_longs_long2bytemap_entry.getLongKey();
- 

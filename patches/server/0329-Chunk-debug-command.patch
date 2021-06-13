@@ -32,7 +32,7 @@ https://bugs.mojang.com/browse/MC-141484?focusedCommentId=528273&page=com.atlass
 https://bugs.mojang.com/browse/MC-141484?focusedCommentId=528577&page=com.atlassian.jira.plugin.system.issuetabpanels%3Acomment-tabpanel#comment-528577
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperCommand.java b/src/main/java/com/destroystokyo/paper/PaperCommand.java
-index 8fd716bf2e1402694798b8be03fd85821153be44..53dd6c18de8e80378852bbb141016d9574d42162 100644
+index 1fa190e098079522e0fe3593fa261c1b7ad4e24b..71ffa66973d8994e2a480435ac1ada3fe61600a4 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperCommand.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperCommand.java
 @@ -6,13 +6,15 @@ import com.google.common.collect.ImmutableSet;
@@ -212,10 +212,10 @@ index 8fd716bf2e1402694798b8be03fd85821153be44..53dd6c18de8e80378852bbb141016d95
       * Ported from MinecraftForge - author: LexManos <LexManos@gmail.com> - License: LGPLv2.1
       */
 diff --git a/src/main/java/net/minecraft/server/MCUtil.java b/src/main/java/net/minecraft/server/MCUtil.java
-index 1fecc81b25109592907623741225a6222a8c5ccc..a16551c81a444685f6337a65b6d7862b8c0dc684 100644
+index 0df3961919f04f27eb265ab316aa5a0f15a70854..e31dbb1346ba6755bc367a3eab6f87574b4eb3c4 100644
 --- a/src/main/java/net/minecraft/server/MCUtil.java
 +++ b/src/main/java/net/minecraft/server/MCUtil.java
-@@ -9,13 +9,27 @@ import net.minecraft.core.BlockPos;
+@@ -8,13 +8,27 @@ import net.minecraft.core.BlockPos;
  import net.minecraft.core.Direction;
  import net.minecraft.nbt.CompoundTag;
  import net.minecraft.network.chat.Component;
@@ -243,7 +243,7 @@ index 1fecc81b25109592907623741225a6222a8c5ccc..a16551c81a444685f6337a65b6d7862b
  import org.bukkit.Location;
  import org.bukkit.block.BlockFace;
  import org.bukkit.craftbukkit.CraftWorld;
-@@ -24,8 +38,11 @@ import org.spigotmc.AsyncCatcher;
+@@ -23,8 +37,11 @@ import org.spigotmc.AsyncCatcher;
  
  import javax.annotation.Nonnull;
  import javax.annotation.Nullable;
@@ -255,11 +255,10 @@ index 1fecc81b25109592907623741225a6222a8c5ccc..a16551c81a444685f6337a65b6d7862b
  import java.util.concurrent.CompletableFuture;
  import java.util.concurrent.ExecutionException;
  import java.util.concurrent.LinkedBlockingQueue;
-@@ -531,4 +548,170 @@ public final class MCUtil {
- 
+@@ -530,6 +547,172 @@ public final class MCUtil {
          return null;
      }
-+
+ 
 +    public static ChunkStatus getChunkStatus(ChunkHolder chunk) {
 +        List<ChunkStatus> statuses = ServerChunkCache.getPossibleChunkStatuses();
 +        for (int i = statuses.size() - 1; i >= 0; --i) {
@@ -425,25 +424,15 @@ index 1fecc81b25109592907623741225a6222a8c5ccc..a16551c81a444685f6337a65b6d7862b
 +            out.print(fileData);
 +        }
 +    }
- }
-diff --git a/src/main/java/net/minecraft/server/level/ChunkHolder.java b/src/main/java/net/minecraft/server/level/ChunkHolder.java
-index 89e90806b78d94d5c1d781113da420dafa47930a..a89b9dab043ad4536014141d5a942670b4152a95 100644
---- a/src/main/java/net/minecraft/server/level/ChunkHolder.java
-+++ b/src/main/java/net/minecraft/server/level/ChunkHolder.java
-@@ -53,7 +53,7 @@ public class ChunkHolder {
-     public int oldTicketLevel;
-     private int ticketLevel;
-     private int queueLevel;
--    private final ChunkPos pos;
-+    final ChunkPos pos; // Paper - private -> package
-     private boolean hasChangedSections;
-     private final ShortSet[] changedBlocksPerSection;
-     private int blockChangedLightSectionFilter;
++
+     public static int getTicketLevelFor(net.minecraft.world.level.chunk.ChunkStatus status) {
+         return net.minecraft.server.level.ChunkMap.MAX_VIEW_DISTANCE + net.minecraft.world.level.chunk.ChunkStatus.getDistance(status);
+     }
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index 5d87a282042d7112415b7d7175031f734219f2c9..7585b6f87b72f53deccbcb8627a13503921fc682 100644
+index 95ac30f56a9268f14d2518974c5a52e08f40ea18..25826b41812f2d9ac29806ad7a9242e5674376fc 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
-@@ -104,7 +104,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -110,7 +110,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
      public final Long2ObjectLinkedOpenHashMap<ChunkHolder> updatingChunkMap = new Long2ObjectLinkedOpenHashMap();
      public volatile Long2ObjectLinkedOpenHashMap<ChunkHolder> visibleChunkMap;
      private final Long2ObjectLinkedOpenHashMap<ChunkHolder> pendingUnloads;
@@ -453,10 +442,10 @@ index 5d87a282042d7112415b7d7175031f734219f2c9..7585b6f87b72f53deccbcb8627a13503
      private final ThreadedLevelLightEngine lightEngine;
      private final BlockableEventLoop<Runnable> mainThreadExecutor;
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-index a7122a0411f4a8656efd4facde3403c8093bc8a6..6d33c1ee44bc732b58d18a8f6b0fd4bbdcb2dcd6 100644
+index 71ac5cf0fdedcfe422bf6f5e6ffb15ce4138aa04..77bb2fb280293da4a38f9acc6503e84997ecb399 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-@@ -46,7 +46,7 @@ import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap; // Paper
+@@ -49,7 +49,7 @@ import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap; // Paper
  
  public class ServerChunkCache extends ChunkSource {
  
@@ -464,13 +453,13 @@ index a7122a0411f4a8656efd4facde3403c8093bc8a6..6d33c1ee44bc732b58d18a8f6b0fd4bb
 +    private static final List<ChunkStatus> CHUNK_STATUSES = ChunkStatus.getStatusList(); public static final List<ChunkStatus> getPossibleChunkStatuses() { return ServerChunkCache.CHUNK_STATUSES; } // Paper - OBFHELPER
      private final DistanceManager distanceManager;
      public final ChunkGenerator generator;
-     private final ServerLevel level;
+     final ServerLevel level;
 diff --git a/src/main/java/net/minecraft/server/level/Ticket.java b/src/main/java/net/minecraft/server/level/Ticket.java
-index 0c118d482e304c567fe7fe778c6ff386f960bdde..c6b5f32153b63ac92df9c4b31b8de168481f79f2 100644
+index b346fa94b23d81da7da073f71dd12e672e0f079c..95f5050518109c4ae0b6846be65204cc29afc723 100644
 --- a/src/main/java/net/minecraft/server/level/Ticket.java
 +++ b/src/main/java/net/minecraft/server/level/Ticket.java
-@@ -6,8 +6,8 @@ public final class Ticket<T> implements Comparable<Ticket<?>> {
- 
+@@ -5,8 +5,8 @@ import java.util.Objects;
+ public final class Ticket<T> implements Comparable<Ticket<?>> {
      private final TicketType<T> type;
      private final int ticketLevel;
 -    public final T key;
