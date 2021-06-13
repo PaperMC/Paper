@@ -4,13 +4,10 @@ plugins {
     id("io.papermc.paperweight.core") version "1.0.0-SNAPSHOT"
 }
 
-group = "io.papermc.paper"
-version = providers.gradleProperty("projectVersion").forUseAtConfigurationTime().get()
-
 val mcVersion = providers.gradleProperty("mcVersion")
 val packageVersion = providers.gradleProperty("packageVersion")
 
-allprojects {
+subprojects {
     apply(plugin = "java")
 
     java {
@@ -18,9 +15,7 @@ allprojects {
             languageVersion.set(JavaLanguageVersion.of(16))
         }
     }
-}
 
-subprojects {
     tasks.withType<JavaCompile>().configureEach {
         options.encoding = "UTF-8"
         options.release.set(16)
