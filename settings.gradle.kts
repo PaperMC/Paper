@@ -1,6 +1,5 @@
 pluginManagement {
     repositories {
-        mavenLocal()
         gradlePluginPortal()
         maven("https://wav.jfrog.io/artifactory/repo/")
     }
