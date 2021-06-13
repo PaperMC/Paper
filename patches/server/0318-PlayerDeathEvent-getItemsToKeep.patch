@@ -8,10 +8,10 @@ Exposes a mutable array on items a player should keep on death
 Example Usage: https://gist.github.com/aikar/5bb202de6057a051a950ce1f29feb0b4
 
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-index fd2717a00a85f91ee23a1c0f929f856972892a9b..d6cfe68be1a944ff5d5780666467f5fd8e2794e3 100644
+index 955a7fcd80a57f920e402a5533f5029b9683104c..679f1e3ef4c19ab466cf2d06c47b1018aabaa7bf 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-@@ -692,6 +692,46 @@ public class ServerPlayer extends Player implements ContainerListener {
+@@ -729,6 +729,46 @@ public class ServerPlayer extends Player {
          });
      }
  
@@ -32,7 +32,7 @@ index fd2717a00a85f91ee23a1c0f929f856972892a9b..d6cfe68be1a944ff5d5780666467f5fd
 +        for (int i = 0; i < inv.size(); ++i) {
 +            ItemStack item = inv.get(i);
 +            if (EnchantmentHelper.hasVanishingCurse(item) || itemsToKeep.isEmpty() || item.isEmpty()) {
-+                inv.set(i, ItemStack.NULL_ITEM);
++                inv.set(i, ItemStack.EMPTY);
 +                continue;
 +            }
 +
@@ -49,7 +49,7 @@ index fd2717a00a85f91ee23a1c0f929f856972892a9b..d6cfe68be1a944ff5d5780666467f5fd
 +            }
 +
 +            if (!keep) {
-+                inv.set(i, ItemStack.NULL_ITEM);
++                inv.set(i, ItemStack.EMPTY);
 +            }
 +        }
 +    }
@@ -58,13 +58,12 @@ index fd2717a00a85f91ee23a1c0f929f856972892a9b..d6cfe68be1a944ff5d5780666467f5fd
      @Override
      public void die(DamageSource source) {
          boolean flag = this.level.getGameRules().getBoolean(GameRules.RULE_SHOWDEATHMESSAGES);
-@@ -775,7 +815,12 @@ public class ServerPlayer extends Player implements ContainerListener {
-         this.dropExperience();
+@@ -813,6 +853,12 @@ public class ServerPlayer extends Player {
          // we clean the player's inventory after the EntityDeathEvent is called so plugins can get the exact state of the inventory.
          if (!event.getKeepInventory()) {
--            this.inventory.clearContent();
+             this.getInventory().clearContent();
 +            // Paper start - replace logic
-+            for (NonNullList<ItemStack> inv : this.inventory.getComponents()) {
++            for (NonNullList<ItemStack> inv : this.getInventory().getComponents()) {
 +                processKeep(event, inv);
 +            }
 +            processKeep(event, null);
