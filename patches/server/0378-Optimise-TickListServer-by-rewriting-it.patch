@@ -61,7 +61,7 @@ index 8bf4d2b8c38c02d6a5b2fea37113689a252f1571..da93d38fe63035e4ff198ada84a4431f
          ConfigurationSection section;
 diff --git a/src/main/java/com/destroystokyo/paper/server/ticklist/PaperTickList.java b/src/main/java/com/destroystokyo/paper/server/ticklist/PaperTickList.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..1ce556fb808a8c93106e26da7b24f9a2d579909b
+index 0000000000000000000000000000000000000000..da13ff17609b7bc8076d9297edf8decf01a2ed88
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/server/ticklist/PaperTickList.java
 @@ -0,0 +1,628 @@
@@ -168,7 +168,7 @@ index 0000000000000000000000000000000000000000..1ce556fb808a8c93106e26da7b24f9a2
 +
 +    private void queueEntryForTick(final TickNextTickData<T> entry, final ServerChunkCache chunkProvider) {
 +        if (entry.tickState == STATE_SCHEDULED) {
-+            if (chunkProvider.isTickingReadyMainThread(entry.getPosition())) {
++            if (chunkProvider.isTickingReadyMainThread(entry.pos)) {
 +                this.toTickThisTick.add(entry);
 +                entry.tickState = STATE_PENDING_TICK;
 +            } else {
@@ -179,13 +179,13 @@ index 0000000000000000000000000000000000000000..1ce556fb808a8c93106e26da7b24f9a2
 +    }
 +
 +    private void addToNotTickingReady(final TickNextTickData<T> entry) {
-+        this.pendingChunkTickLoad.computeIfAbsent(MCUtil.getCoordinateKey(entry.getPosition()), (long keyInMap) -> {
++        this.pendingChunkTickLoad.computeIfAbsent(MCUtil.getCoordinateKey(entry.pos), (long keyInMap) -> {
 +            return new ArrayList<>();
 +        }).add(entry);
 +    }
 +
 +    private void addToSchedule(final TickNextTickData<T> entry) {
-+        long delay = entry.getTargetTick() - (this.currentTick + 1);
++        long delay = entry.triggerTick - (this.currentTick + 1);
 +        if (delay < SHORT_SCHEDULE_TICK_THRESHOLD) {
 +            if (delay < 0) {
 +                // longScheduled orders by tick time, short scheduled does not
@@ -202,7 +202,7 @@ index 0000000000000000000000000000000000000000..1ce556fb808a8c93106e26da7b24f9a2
 +        entry.tickState = STATE_CANCELLED_TICK;
 +        // short/long scheduled will skip the entry
 +
-+        final BlockPos pos = entry.getPosition();
++        final BlockPos pos = entry.pos;
 +        final long blockKey = MCUtil.getBlockKey(pos);
 +
 +        final ArrayList<TickNextTickData<T>> currentEntries = this.entriesByBlock.get(blockKey);
@@ -221,7 +221,7 @@ index 0000000000000000000000000000000000000000..1ce556fb808a8c93106e26da7b24f9a2
 +            }
 +        }
 +
-+        final long chunkKey = MCUtil.getCoordinateKey(entry.getPosition());
++        final long chunkKey = MCUtil.getCoordinateKey(entry.pos);
 +
 +        ObjectRBTreeSet<TickNextTickData<T>> set = this.entriesByChunk.get(chunkKey);
 +
@@ -246,7 +246,7 @@ index 0000000000000000000000000000000000000000..1ce556fb808a8c93106e26da7b24f9a2
 +            }
 +        }
 +
-+        long delay = entry.getTargetTick() - (this.currentTick + 1);
++        long delay = entry.triggerTick - (this.currentTick + 1);
 +        if (delay >= SHORT_SCHEDULE_TICK_THRESHOLD) {
 +            this.longScheduled.remove(entry);
 +        }
@@ -274,7 +274,7 @@ index 0000000000000000000000000000000000000000..1ce556fb808a8c93106e26da7b24f9a2
 +
 +        // we don't remove items from shortScheduled (but do from longScheduled) because they're cleared at the end of
 +        // this tick
-+        if (this.longScheduled.isEmpty() || this.longScheduled.first().getTargetTick() > currentTick) {
++        if (this.longScheduled.isEmpty() || this.longScheduled.first().triggerTick > currentTick) {
 +            // nothing in longScheduled to worry about
 +            final TickListServerInterval<T> interval = this.shortScheduled[this.shortScheduledIndex];
 +            for (int i = 0, len = interval.byPriority.length; i < len; ++i) {
@@ -300,7 +300,7 @@ index 0000000000000000000000000000000000000000..1ce556fb808a8c93106e26da7b24f9a2
 +                            longScheduledIterator.remove();
 +                            if (longScheduledIterator.hasNext()) {
 +                                longCurrent = longScheduledIterator.next();
-+                                if (longCurrent.getTargetTick() > currentTick) {
++                                if (longCurrent.triggerTick > currentTick) {
 +                                    longCurrent = null;
 +                                    break;
 +                                }
@@ -316,7 +316,7 @@ index 0000000000000000000000000000000000000000..1ce556fb808a8c93106e26da7b24f9a2
 +
 +            // add remaining from long scheduled
 +            for (;;) {
-+                if (longCurrent == null || longCurrent.getTargetTick() > currentTick) {
++                if (longCurrent == null || longCurrent.triggerTick > currentTick) {
 +                    break;
 +                }
 +                longScheduledIterator.remove();
@@ -368,7 +368,7 @@ index 0000000000000000000000000000000000000000..1ce556fb808a8c93106e26da7b24f9a2
 +                continue;
 +            }
 +            try {
-+                if (chunkProvider.isTickingReadyMainThread(toTick.getPosition())) {
++                if (chunkProvider.isTickingReadyMainThread(toTick.pos)) {
 +                    toTick.tickState = STATE_TICKING;
 +                    this.tickFunction.accept(toTick);
 +                    if (toTick.tickState == STATE_TICKING) {
@@ -384,7 +384,7 @@ index 0000000000000000000000000000000000000000..1ce556fb808a8c93106e26da7b24f9a2
 +                CrashReport crashreport = CrashReport.forThrowable(thr, "Exception while ticking");
 +                CrashReportCategory crashreportsystemdetails = crashreport.addCategory("Block being ticked");
 +
-+                CrashReportCategory.populateBlockDetails(crashreportsystemdetails, toTick.getPosition(), (BlockState) null);
++                CrashReportCategory.populateBlockDetails(crashreportsystemdetails, this.world, toTick.pos, (BlockState) null);
 +                throw new ReportedException(crashreport);
 +                // end copy from TickListServer
 +            }
@@ -413,7 +413,7 @@ index 0000000000000000000000000000000000000000..1ce556fb808a8c93106e26da7b24f9a2
 +        }
 +        entry.tickState = STATE_UNSCHEDULED;
 +
-+        final BlockPos pos = entry.getPosition();
++        final BlockPos pos = entry.pos;
 +        final long blockKey = MCUtil.getBlockKey(pos);
 +
 +        final ArrayList<TickNextTickData<T>> currentEntries = this.entriesByBlock.get(blockKey);
@@ -432,7 +432,7 @@ index 0000000000000000000000000000000000000000..1ce556fb808a8c93106e26da7b24f9a2
 +            }
 +        }
 +
-+        final long chunkKey = MCUtil.getCoordinateKey(entry.getPosition());
++        final long chunkKey = MCUtil.getCoordinateKey(entry.pos);
 +
 +        ObjectRBTreeSet<TickNextTickData<T>> set = this.entriesByChunk.get(chunkKey);
 +
@@ -446,7 +446,7 @@ index 0000000000000000000000000000000000000000..1ce556fb808a8c93106e26da7b24f9a2
 +    }
 +
 +    @Override
-+    public boolean isPendingTickThisTick(final BlockPos blockposition, final T data) {
++    public boolean willTickThisTick(final BlockPos blockposition, final T data) {
 +        final ArrayList<TickNextTickData<T>> entries = this.entriesByBlock.get(MCUtil.getBlockKey(blockposition));
 +
 +        if (entries == null) {
@@ -455,7 +455,7 @@ index 0000000000000000000000000000000000000000..1ce556fb808a8c93106e26da7b24f9a2
 +
 +        for (int i = 0, size = entries.size(); i < size; ++i) {
 +            final TickNextTickData<T> entry = entries.get(i);
-+            if (entry.getData() == data && entry.tickState == STATE_PENDING_TICK) {
++            if (entry.getType() == data && entry.tickState == STATE_PENDING_TICK) {
 +                return true;
 +            }
 +        }
@@ -464,7 +464,7 @@ index 0000000000000000000000000000000000000000..1ce556fb808a8c93106e26da7b24f9a2
 +    }
 +
 +    @Override
-+    public boolean isScheduledForTick(final BlockPos blockposition, final T data) {
++    public boolean hasScheduledTick(final BlockPos blockposition, final T data) {
 +        final ArrayList<TickNextTickData<T>> entries = this.entriesByBlock.get(MCUtil.getBlockKey(blockposition));
 +
 +        if (entries == null) {
@@ -473,7 +473,7 @@ index 0000000000000000000000000000000000000000..1ce556fb808a8c93106e26da7b24f9a2
 +
 +        for (int i = 0, size = entries.size(); i < size; ++i) {
 +            final TickNextTickData<T> entry = entries.get(i);
-+            if (entry.getData() == data && entry.tickState == STATE_SCHEDULED) {
++            if (entry.getType() == data && entry.tickState == STATE_SCHEDULED) {
 +                return true;
 +            }
 +        }
@@ -482,22 +482,22 @@ index 0000000000000000000000000000000000000000..1ce556fb808a8c93106e26da7b24f9a2
 +    }
 +
 +    @Override
-+    public void schedule(BlockPos blockPosition, T t, int i, TickPriority tickListPriority) {
++    public void scheduleTick(BlockPos blockPosition, T t, int i, TickPriority tickListPriority) {
 +        this.schedule(blockPosition, t, i + this.currentTick, tickListPriority);
 +    }
 +
 +    public void schedule(final TickNextTickData<T> entry) {
-+        this.schedule(entry.getPosition(), entry.getData(), entry.getTargetTick(), entry.getPriority());
++        this.schedule(entry.pos, entry.getType(), entry.triggerTick, entry.priority);
 +    }
 +
 +    public void schedule(final BlockPos pos, final T data, final long targetTick, final TickPriority priority) {
 +        final TickNextTickData<T> entry = new TickNextTickData<>(pos, data, targetTick, priority);
-+        if (this.excludeFromScheduling.test(entry.getData())) {
++        if (this.excludeFromScheduling.test(entry.getType())) {
 +            return;
 +        }
 +
 +        if (WARN_ON_EXCESSIVE_DELAY) {
-+            final long delay = entry.getTargetTick() - this.currentTick;
++            final long delay = entry.triggerTick - this.currentTick;
 +            if (delay >= EXCESSIVE_DELAY_THRESHOLD) {
 +                MinecraftServer.LOGGER.warn("Entry " + entry.toString() + " has been scheduled with an excessive delay of: " + delay, new Throwable());
 +            }
@@ -514,7 +514,7 @@ index 0000000000000000000000000000000000000000..1ce556fb808a8c93106e26da7b24f9a2
 +                final TickNextTickData<T> currentEntry = currentEntries.get(i);
 +
 +                // entries are only blocked from scheduling if currentEntry.equals(toSchedule) && currentEntry is scheduled to tick (NOT including pending)
-+                if (currentEntry.getData() == entry.getData() && currentEntry.tickState == STATE_SCHEDULED) {
++                if (currentEntry.getType() == entry.getType() && currentEntry.tickState == STATE_SCHEDULED) {
 +                    // can't add
 +                    return;
 +                }
@@ -524,7 +524,7 @@ index 0000000000000000000000000000000000000000..1ce556fb808a8c93106e26da7b24f9a2
 +
 +        entry.tickState = STATE_SCHEDULED;
 +
-+        this.entriesByChunk.computeIfAbsent(MCUtil.getCoordinateKey(entry.getPosition()), (final long keyInMap) -> {
++        this.entriesByChunk.computeIfAbsent(MCUtil.getCoordinateKey(entry.pos), (final long keyInMap) -> {
 +            return new ObjectRBTreeSet<>(TickListServerInterval.ENTRY_COMPARATOR);
 +        }).add(entry);
 +
@@ -541,19 +541,19 @@ index 0000000000000000000000000000000000000000..1ce556fb808a8c93106e26da7b24f9a2
 +    // i.e the y value is ignored? the x, z calc isn't correct?
 +    // however for the copy op they use the correct intersection, after using this one of course...
 +    private static boolean isBlockInSortof(final BoundingBox boundingBox, final BlockPos pos) {
-+        return pos.getX() >= boundingBox.getMinX() && pos.getX() < boundingBox.getMaxX() && pos.getZ() >= boundingBox.getMinZ() && pos.getZ() < boundingBox.getMaxZ();
++        return pos.getX() >= boundingBox.minX() && pos.getX() < boundingBox.maxX() && pos.getZ() >= boundingBox.minZ() && pos.getZ() < boundingBox.maxZ();
 +    }
 +
 +    @Override
-+    public List<TickNextTickData<T>> getEntriesInBoundingBox(final BoundingBox structureboundingbox, final boolean removeReturned, final boolean excludeTicked) {
-+        if (structureboundingbox.getMinX() == structureboundingbox.getMaxX() || structureboundingbox.getMinZ() == structureboundingbox.getMaxZ()) {
++    public List<TickNextTickData<T>> fetchTicksInArea(final BoundingBox structureboundingbox, final boolean removeReturned, final boolean excludeTicked) {
++        if (structureboundingbox.minX() == structureboundingbox.maxX() || structureboundingbox.minZ() == structureboundingbox.maxZ()) {
 +            return Collections.emptyList(); // vanilla behaviour, check isBlockInSortof above
 +        }
 +
-+        final int lowerChunkX = structureboundingbox.getMinX() >> 4;
-+        final int upperChunkX = (structureboundingbox.getMaxX() - 1) >> 4; // subtract 1 since maxX is exclusive
-+        final int lowerChunkZ = structureboundingbox.getMinZ() >> 4;
-+        final int upperChunkZ = (structureboundingbox.getMaxZ() - 1) >> 4; // subtract 1 since maxZ is exclusive
++        final int lowerChunkX = structureboundingbox.minX() >> 4;
++        final int upperChunkX = (structureboundingbox.maxX() - 1) >> 4; // subtract 1 since maxX is exclusive
++        final int lowerChunkZ = structureboundingbox.minZ() >> 4;
++        final int upperChunkZ = (structureboundingbox.maxZ() - 1) >> 4; // subtract 1 since maxZ is exclusive
 +
 +        final int xChunksLength = (upperChunkX - lowerChunkX + 1);
 +        final int zChunksLength = (upperChunkZ - lowerChunkZ + 1);
@@ -579,7 +579,7 @@ index 0000000000000000000000000000000000000000..1ce556fb808a8c93106e26da7b24f9a2
 +        final int matchOne = (STATE_SCHEDULED | STATE_PENDING_TICK) | (excludeTicked ? 0 : (STATE_TICKING | STATE_TICKED));
 +
 +        MCUtil.mergeSortedSets((TickNextTickData<T> entry) -> {
-+            if (!isBlockInSortof(structureboundingbox, entry.getPosition())) {
++            if (!isBlockInSortof(structureboundingbox, entry.pos)) {
 +                return;
 +            }
 +            final int tickState = entry.tickState;
@@ -603,24 +603,24 @@ index 0000000000000000000000000000000000000000..1ce556fb808a8c93106e26da7b24f9a2
 +    @Override
 +    public void copy(BoundingBox structureboundingbox, BlockPos blockposition) {
 +        // start copy from TickListServer // TODO check on update
-+        List<TickNextTickData<T>> list = this.getEntriesInBoundingBox(structureboundingbox, false, false);
++        List<TickNextTickData<T>> list = this.fetchTicksInArea(structureboundingbox, false, false);
 +        Iterator<TickNextTickData<T>> iterator = list.iterator();
 +
 +        while (iterator.hasNext()) {
 +            TickNextTickData<T> nextticklistentry = iterator.next();
 +
-+            if (structureboundingbox.hasPoint( nextticklistentry.getPosition())) {
-+                BlockPos blockposition1 = nextticklistentry.getPosition().add(blockposition);
-+                T t0 = nextticklistentry.getData();
++            if (structureboundingbox.isInside( nextticklistentry.pos)) {
++                BlockPos blockposition1 = nextticklistentry.pos.offset(blockposition);
++                T t0 = nextticklistentry.getType();
 +
-+                this.schedule(new TickNextTickData<>(blockposition1, t0, nextticklistentry.getTargetTick(), nextticklistentry.getPriority()));
++                this.schedule(new TickNextTickData<>(blockposition1, t0, nextticklistentry.triggerTick, nextticklistentry.priority));
 +            }
 +        }
 +        // end copy from TickListServer
 +    }
 +
 +    @Override
-+    public List<TickNextTickData<T>> getEntriesInChunk(ChunkPos chunkPos, boolean removeReturned, boolean excludeTicked) {
++    public List<TickNextTickData<T>> fetchTicksInChunk(ChunkPos chunkPos, boolean removeReturned, boolean excludeTicked) {
 +        // Vanilla DOES get the entries 2 blocks out of the chunk too, but that doesn't matter since we ignore chunks
 +        // not at ticking status, and ticking status requires neighbours loaded
 +        // so with this method we will reduce scheduler churning
@@ -651,16 +651,16 @@ index 0000000000000000000000000000000000000000..1ce556fb808a8c93106e26da7b24f9a2
 +    }
 +
 +    @Override
-+    public ListTag serialize(ChunkPos chunkcoordintpair) {
++    public ListTag save(ChunkPos chunkcoordintpair) {
 +        // start copy from TickListServer  // TODO check on update
-+        List<TickNextTickData<T>> list = this.getEntriesInChunk(chunkcoordintpair, false, true);
++        List<TickNextTickData<T>> list = this.fetchTicksInChunk(chunkcoordintpair, false, true);
 +
-+        return ServerTickList.serialize(this.getMinecraftKeyFrom, list, this.currentTick);
++        return ServerTickList.saveTickList(this.getMinecraftKeyFrom, list, this.currentTick);
 +        // end copy from TickListServer
 +    }
 +
 +    @Override
-+    public int getTotalScheduledEntries() {
++    public int size() {
 +        // good thing this is only used in debug reports // TODO check on update
 +        int ret = 0;
 +
@@ -695,7 +695,7 @@ index 0000000000000000000000000000000000000000..1ce556fb808a8c93106e26da7b24f9a2
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/server/ticklist/TickListServerInterval.java b/src/main/java/com/destroystokyo/paper/server/ticklist/TickListServerInterval.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..d40a7aff6c27883f3ae8ba878a94c97242619f2c
+index 0000000000000000000000000000000000000000..a1e6f49274a7ae8057a9112e0dd6597a8e58e6da
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/server/ticklist/TickListServerInterval.java
 @@ -0,0 +1,41 @@
@@ -713,7 +713,7 @@ index 0000000000000000000000000000000000000000..d40a7aff6c27883f3ae8ba878a94c972
 +    public static final Comparator<TickNextTickData<?>> ENTRY_COMPARATOR_BY_ID = (entry1, entry2) -> {
 +        return Long.compare(entry1.getId(), entry2.getId());
 +    };
-+    public static final Comparator<TickNextTickData<?>> ENTRY_COMPARATOR = (Comparator)TickNextTickData.comparator();
++    public static final Comparator<TickNextTickData<?>> ENTRY_COMPARATOR = (Comparator)TickNextTickData.createTimeComparator();
 +
 +    // we do not record the interval, this class is meant to be used on a ring buffer
 +
@@ -727,11 +727,11 @@ index 0000000000000000000000000000000000000000..d40a7aff6c27883f3ae8ba878a94c972
 +    }
 +
 +    public void addEntryLast(final TickNextTickData<T> entry) {
-+        this.byPriority[entry.getPriority().ordinal()].addLast(entry);
++        this.byPriority[entry.priority.ordinal()].addLast(entry);
 +    }
 +
 +    public void addEntryFirst(final TickNextTickData<T> entry) {
-+        this.byPriority[entry.getPriority().ordinal()].addFirst(entry);
++        this.byPriority[entry.priority.ordinal()].addFirst(entry);
 +    }
 +
 +    public void clear() {
@@ -888,64 +888,63 @@ index 0000000000000000000000000000000000000000..118988c39e58f28e8a2851792b9c014f
 +        }
 +    }
 +}
-diff --git a/src/main/java/net/minecraft/core/BlockPos.java b/src/main/java/net/minecraft/core/BlockPos.java
-index 3db77d9eda98eacb099135643aff5e94751f4c7c..595abf528a7862478100770987906af1b13439fe 100644
---- a/src/main/java/net/minecraft/core/BlockPos.java
-+++ b/src/main/java/net/minecraft/core/BlockPos.java
-@@ -111,6 +111,7 @@ public class BlockPos extends Vec3i {
-         return x == 0 && y == 0 && z == 0 ? this : new BlockPos(this.getX() + x, this.getY() + y, this.getZ() + z);
-     }
- 
-+    public final BlockPos add(Vec3i baseblockposition) { return this.offset(baseblockposition); } // Paper - OBFHELPER
-     public BlockPos offset(Vec3i pos) {
-         return this.offset(pos.getX(), pos.getY(), pos.getZ());
-     }
 diff --git a/src/main/java/net/minecraft/server/level/ChunkHolder.java b/src/main/java/net/minecraft/server/level/ChunkHolder.java
-index 77d3969200ac6f88f3af9add05def0b627ce6db3..d12d5459c847d3f0d655c85e31d81c27b7a2face 100644
+index 995d7977233f0d7683c00a75c3833f9a1eba7f92..58369d70bcd8b2c25609b6f101d9cbe2031df352 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkHolder.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkHolder.java
-@@ -495,7 +495,9 @@ public class ChunkHolder {
+@@ -86,6 +86,19 @@ public class ChunkHolder {
+         return null;
+     }
+     // Paper end - no-tick view distance
++    // Paper start
++    public final boolean isEntityTickingReady() {
++        return this.isEntityTickingReady;
++    }
++
++    public final boolean isTickingReady() {
++        return this.isTickingReady;
++    }
++
++    public final boolean isFullChunkReady() {
++        return this.isFullChunkReady;
++    }
++    // Paper end
+ 
+     public ChunkHolder(ChunkPos pos, int level, LevelHeightAccessor world, LevelLightEngine lightingProvider, ChunkHolder.LevelChangeListener levelUpdateListener, ChunkHolder.PlayerProvider playersWatchingChunkProvider) {
+         this.futures = new AtomicReferenceArray(ChunkHolder.CHUNK_STATUSES.size());
+@@ -547,6 +560,10 @@ public class ChunkHolder {
+                 either.ifLeft(chunk -> {
+                     // note: Here is a very good place to add callbacks to logic waiting on this.
                      ChunkHolder.this.isTickingReady = true;
- 
- 
--
++
 +                    // Paper start - rewrite ticklistserver
 +                    ChunkHolder.this.chunkMap.level.onChunkSetTicking(ChunkHolder.this.pos.x, ChunkHolder.this.pos.z);
 +                    // Paper end - rewrite ticklistserver
- 
-                 }
+                 });
              });
+             // Paper end
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-index 3aeb8426b0461ec572c1499116be80f968bb4104..e2b1541042bceac965411e3176d08c61f217c07f 100644
+index 7cbd3db81c73d466a6e6012c1c91698b53a0cb86..382a68c76e8946840de62f05483870689de80278 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-@@ -21,6 +21,7 @@ import net.minecraft.Util;
- import net.minecraft.core.BlockPos;
- import net.minecraft.core.SectionPos;
- import net.minecraft.network.protocol.Packet;
-+import net.minecraft.server.MCUtil;
- import net.minecraft.server.level.progress.ChunkProgressListener;
- import net.minecraft.util.Mth;
- import net.minecraft.util.profiling.ProfilerFiller;
-@@ -217,6 +218,13 @@ public class ServerChunkCache extends ChunkSource {
+@@ -220,6 +220,12 @@ public class ServerChunkCache extends ChunkSource {
+         }, this.mainThreadProcessor);
      }
      // Paper end
- 
 +    // Paper start - rewrite ticklistserver
 +    public final boolean isTickingReadyMainThread(BlockPos pos) {
-+        ChunkHolder chunk = this.chunkMap.getUpdatingChunkIfPresent(MCUtil.getCoordinateKey(pos));
++        ChunkHolder chunk = this.chunkMap.getUpdatingChunkIfPresent(net.minecraft.server.MCUtil.getCoordinateKey(pos));
 +        return chunk != null && chunk.isTickingReady();
 +    }
 +    // Paper end - rewrite ticklistserver
-+
-     public ServerChunkCache(ServerLevel worldserver, LevelStorageSource.LevelStorageAccess convertable_conversionsession, DataFixer dataFixer, StructureManager structureManager, Executor workerExecutor, ChunkGenerator chunkGenerator, int viewDistance, boolean flag, ChunkProgressListener worldloadlistener, Supplier<DimensionDataStorage> supplier) {
-         this.level = worldserver;
-         this.mainThreadProcessor = new ServerChunkCache.MainThreadExecutor(worldserver);
+ 
+     public ServerChunkCache(ServerLevel world, LevelStorageSource.LevelStorageAccess session, DataFixer dataFixer, StructureManager structureManager, Executor workerExecutor, ChunkGenerator chunkGenerator, int viewDistance, boolean flag, ChunkProgressListener worldGenerationProgressListener, ChunkStatusUpdateListener chunkstatusupdatelistener, Supplier<DimensionDataStorage> supplier) {
+         this.level = world;
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index 5d85895456b5d65954889cadf932027ea23b400b..9da0d98bc2ed7876a00a734690ed42f01b9a9a9b 100644
+index ecb9c5a1958c89494417bdb3e6c6363f3fc84534..385b8e707406173ea5258aff87af719ce93aecf3 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
-@@ -292,6 +292,15 @@ public class ServerLevel extends net.minecraft.world.level.Level implements Worl
+@@ -286,6 +286,15 @@ public class ServerLevel extends net.minecraft.world.level.Level implements Worl
      }
      // Paper end
  
@@ -960,273 +959,127 @@ index 5d85895456b5d65954889cadf932027ea23b400b..9da0d98bc2ed7876a00a734690ed42f0
 +
      // Add env and gen to constructor, WorldData -> WorldDataServer
      public ServerLevel(MinecraftServer minecraftserver, Executor executor, LevelStorageSource.LevelStorageAccess convertable_conversionsession, ServerLevelData iworlddataserver, ResourceKey<net.minecraft.world.level.Level> resourcekey, DimensionType dimensionmanager, ChunkProgressListener worldloadlistener, ChunkGenerator chunkgenerator, boolean flag, long i, List<CustomSpawner> list, boolean flag1, org.bukkit.World.Environment env, org.bukkit.generator.ChunkGenerator gen) {
-         super(iworlddataserver, resourcekey, dimensionmanager, minecraftserver::getProfiler, false, flag, i, gen, env, executor); // Paper pass executor
-@@ -299,12 +308,21 @@ public class ServerLevel extends net.minecraft.world.level.Level implements Worl
-         convertable = convertable_conversionsession;
-         uuid = WorldUUID.getUUID(convertable_conversionsession.levelPath.toFile());
-         // CraftBukkit end
--        this.blockTicks = new ServerTickList<>(this, (block) -> {
--            return block == null || block.defaultBlockState().isAir();
--        }, Registry.BLOCK::getKey, this::tickBlock, "Blocks"); // Paper - Timings
--        this.liquidTicks = new ServerTickList<>(this, (fluidtype) -> {
--            return fluidtype == null || fluidtype == Fluids.EMPTY;
--        }, Registry.FLUID::getKey, this::tickLiquid, "Fluids"); // Paper - Timings
+         // Objects.requireNonNull(minecraftserver); // CraftBukkit - decompile error
+@@ -302,13 +311,19 @@ public class ServerLevel extends net.minecraft.world.level.Level implements Worl
+         DefaultedRegistry registryblocks = Registry.BLOCK;
+ 
+         Objects.requireNonNull(registryblocks);
+-        this.blockTicks = new ServerTickList<>(this, predicate, Registry.BLOCK::getKey, this::tickBlock, "Blocks"); // CraftBukkit - decompile error // Paper - Timings
++        // this.blockTicks = new ServerTickList<>(this, predicate, Registry.BLOCK::getKey, this::tickBlock, "Blocks"); // CraftBukkit - decompile error // Paper - Timings // Paper - copied down
+         Predicate<Fluid> predicate2 = (fluidtype) -> { // CraftBukkit - decompile error
+             return fluidtype == null || fluidtype == Fluids.EMPTY;
+         };
+         registryblocks = Registry.FLUID;
+         Objects.requireNonNull(registryblocks);
 +        if (com.destroystokyo.paper.PaperConfig.useOptimizedTickList) {
-+            this.blockTicks = new com.destroystokyo.paper.server.ticklist.PaperTickList<>(this, (block) -> {
-+                return block == null || block.defaultBlockState().isAir();
-+            }, Registry.BLOCK::getKey, this::tickBlock, "Blocks"); // Paper - Timings
-+            this.liquidTicks = new com.destroystokyo.paper.server.ticklist.PaperTickList<>(this, (fluidtype) -> {
-+                return fluidtype == null || fluidtype == Fluids.EMPTY;
-+            }, Registry.FLUID::getKey, this::tickLiquid, "Fluids"); // Paper - Timings
++            this.blockTicks = new com.destroystokyo.paper.server.ticklist.PaperTickList<>(this, predicate, Registry.BLOCK::getKey, this::tickBlock, "Blocks"); // Paper - Timings
++            this.liquidTicks = new com.destroystokyo.paper.server.ticklist.PaperTickList<>(this, predicate2, Registry.FLUID::getKey, this::tickLiquid, "Fluids"); // Paper timings
 +        } else {
-+            this.blockTicks = new ServerTickList<>(this, (block) -> {
-+                return block == null || block.defaultBlockState().isAir();
-+            }, Registry.BLOCK::getKey, this::tickBlock, "Blocks"); // Paper - Timings
-+            this.liquidTicks = new ServerTickList<>(this, (fluidtype) -> {
-+                return fluidtype == null || fluidtype == Fluids.EMPTY;
-+            }, Registry.FLUID::getKey, this::tickLiquid, "Fluids"); // Paper - Timings
++            this.blockTicks = new ServerTickList<>(this, predicate, Registry.BLOCK::getKey, this::tickBlock, "Blocks"); // CraftBukkit - decompile error // Paper - Timings & copied from above
+         this.liquidTicks = new ServerTickList<>(this, predicate2, Registry.FLUID::getKey, this::tickLiquid, "Fluids"); // CraftBukkit - decompile error // Paper - Timings
 +        }
-         this.navigations = Sets.newHashSet();
+         this.navigatingMobs = new ObjectOpenHashSet();
          this.blockEvents = new ObjectLinkedOpenHashSet();
-         this.tickTime = flag1;
-@@ -639,7 +657,9 @@ public class ServerLevel extends net.minecraft.world.level.Level implements Worl
+         this.dragonParts = new Int2ObjectOpenHashMap();
+@@ -629,7 +644,9 @@ public class ServerLevel extends net.minecraft.world.level.Level implements Worl
          if (this.tickTime) {
              long i = this.levelData.getGameTime() + 1L;
  
--            this.worldDataServer.setGameTime(i);
-+            this.worldDataServer.setGameTime(i); // Paper - diff on change, we want the below to be ran right after this
+-            this.serverLevelData.setGameTime(i);
++            this.serverLevelData.setGameTime(i); ; // Paper - diff on change, we want the below to be ran right after this
 +            this.blockTicks.nextTick(); // Paper
 +            this.liquidTicks.nextTick(); // Paper
-             this.worldDataServer.getScheduledEvents().tick(this.server, i);
+             this.serverLevelData.getScheduledEvents().tick(this.server, i);
              if (this.levelData.getGameRules().getBoolean(GameRules.RULE_DAYLIGHT)) {
                  this.setDayTime(this.levelData.getDayTime() + 1L);
 diff --git a/src/main/java/net/minecraft/world/level/ChunkTickList.java b/src/main/java/net/minecraft/world/level/ChunkTickList.java
-index 16757eb9c03c0dab51a7a1b569daff81cf9654f3..3008e0c42efe908e45dba1a1437928d4d4378f24 100644
+index 1a05edf041cf4aeee7c165fec564ce45adbdd5c7..febc837d324cbe2cd83aea6c1e0d298c70f45f78 100644
 --- a/src/main/java/net/minecraft/world/level/ChunkTickList.java
 +++ b/src/main/java/net/minecraft/world/level/ChunkTickList.java
-@@ -9,6 +9,7 @@ import net.minecraft.core.BlockPos;
- import net.minecraft.nbt.CompoundTag;
- import net.minecraft.nbt.ListTag;
- import net.minecraft.resources.ResourceLocation;
-+import net.minecraft.server.MinecraftServer;
+@@ -15,7 +15,7 @@ public class ChunkTickList<T> implements TickList<T> {
  
- public class ChunkTickList<T> implements TickList<T> {
+     public ChunkTickList(Function<T, ResourceLocation> identifierProvider, List<TickNextTickData<T>> scheduledTicks, long startTime) {
+         this(identifierProvider, scheduledTicks.stream().map((tickNextTickData) -> {
+-            return new ChunkTickList.ScheduledTick(tickNextTickData.getType(), tickNextTickData.pos, (int)(tickNextTickData.triggerTick - startTime), tickNextTickData.priority);
++            return new ChunkTickList.ScheduledTick<>(tickNextTickData.getType(), tickNextTickData.pos, (int)(tickNextTickData.triggerTick - startTime), tickNextTickData.priority); // Paper - decompile error
+         }).collect(Collectors.toList()));
+     }
  
-@@ -61,6 +62,8 @@ public class ChunkTickList<T> implements TickList<T> {
-         return nbttaglist;
+@@ -56,6 +56,7 @@ public class ChunkTickList<T> implements TickList<T> {
+         return listTag;
      }
  
 +    private static final int MAX_TICK_DELAY = Integer.getInteger("paper.ticklist-max-tick-delay", -1).intValue(); // Paper - clean up broken entries
-+
-     public static <T> ChunkTickList<T> create(ListTag ticks, Function<T, ResourceLocation> function, Function<ResourceLocation, T> function1) {
+     public static <T> ChunkTickList<T> create(ListTag ticks, Function<T, ResourceLocation> function, Function<ResourceLocation, T> function2) {
          List<ChunkTickList.ScheduledTick<T>> list = Lists.newArrayList();
  
-@@ -71,7 +74,14 @@ public class ChunkTickList<T> implements TickList<T> {
-             if (t0 != null) {
-                 BlockPos blockposition = new BlockPos(nbttagcompound.getInt("x"), nbttagcompound.getInt("y"), nbttagcompound.getInt("z"));
- 
--                list.add(new ChunkTickList.ScheduledTick<>(t0, blockposition, nbttagcompound.getInt("t"), TickPriority.byValue(nbttagcompound.getInt("p"))));
+@@ -64,7 +65,14 @@ public class ChunkTickList<T> implements TickList<T> {
+             T object = function2.apply(new ResourceLocation(compoundTag.getString("i")));
+             if (object != null) {
+                 BlockPos blockPos = new BlockPos(compoundTag.getInt("x"), compoundTag.getInt("y"), compoundTag.getInt("z"));
+-                list.add(new ChunkTickList.ScheduledTick<>(object, blockPos, compoundTag.getInt("t"), TickPriority.byValue(compoundTag.getInt("p"))));
 +                // Paper start - clean up broken entries
-+                int delay = nbttagcompound.getInt("t");
++                int delay = compoundTag.getInt("t");
 +                if (MAX_TICK_DELAY > 0 && delay > MAX_TICK_DELAY) {
-+                    MinecraftServer.LOGGER.warn("Dropping tick for pos " + blockposition + ", tick delay " + delay);
++                    net.minecraft.server.MinecraftServer.LOGGER.warn("Dropping tick for pos " + blockPos + ", tick delay " + delay);
 +                    continue;
 +                }
-+                list.add(new ChunkTickList.ScheduledTick<>(t0, blockposition, delay, TickPriority.byValue(nbttagcompound.getInt("p"))));
 +                // Paper end - clean up broken entries
++                list.add(new ChunkTickList.ScheduledTick<>(object, blockPos, delay, TickPriority.byValue(compoundTag.getInt("p"))));
              }
          }
  
 diff --git a/src/main/java/net/minecraft/world/level/ServerTickList.java b/src/main/java/net/minecraft/world/level/ServerTickList.java
-index 10ac1ba0a3d192486f22c2127d5bc30353f0edb6..65b3a16f40a295c2916be2a9fd019b452fb65e4f 100644
+index 702203f4a4fa4fc03c35ec974a97e08ed0f3c67c..609c8ece9e9f151875bf8191cc671206ee1e5f68 100644
 --- a/src/main/java/net/minecraft/world/level/ServerTickList.java
 +++ b/src/main/java/net/minecraft/world/level/ServerTickList.java
-@@ -50,7 +50,16 @@ public class ServerTickList<T> implements TickList<T> {
+@@ -49,6 +49,9 @@ public class ServerTickList<T> implements TickList<T> {
      private final co.aikar.timings.Timing timingTicking; // Paper
      // Paper end
  
 +    // Paper start
 +    public void nextTick() {}
 +    // Paper end
-+
-+    public void tick() {
-+        // Paper start - allow overriding
-+        this.tick();
-+    }
      public void tick() {
-+        // Paper end
          int i = this.tickNextTickList.size();
  
-         if (false) { // CraftBukkit
-@@ -118,28 +127,43 @@ public class ServerTickList<T> implements TickList<T> {
- 
-     @Override
-     public boolean willTickThisTick(BlockPos pos, T object) {
--        return this.currentlyTicking.contains(new TickNextTickData<>(pos, object));
-+        // Paper start - allow overriding
-+        return this.isPendingTickThisTick(pos, object);
-+    }
-+    public boolean isPendingTickThisTick(BlockPos blockposition, T t0) {
-+        // Paper end
-+        return this.currentlyTicking.contains(new TickNextTickData<>(blockposition, t0));
+@@ -190,7 +193,7 @@ public class ServerTickList<T> implements TickList<T> {
+         return ServerTickList.saveTickList(this.toId, list, this.level.getGameTime());
      }
  
-     public List<TickNextTickData<T>> fetchTicksInChunk(ChunkPos chunkcoordintpair, boolean updateState, boolean getStaleTicks) {
-+        // Paper start - allow overriding
-+        return this.getEntriesInChunk(chunkcoordintpair, updateState, getStaleTicks);
-+    }
-+    public List<TickNextTickData<T>> getEntriesInChunk(ChunkPos chunkcoordintpair, boolean flag, boolean flag1) {
-+        // Paper end
-         int i = (chunkcoordintpair.x << 4) - 2;
-         int j = i + 16 + 2;
-         int k = (chunkcoordintpair.z << 4) - 2;
-         int l = k + 16 + 2;
- 
--        return this.fetchTicksInArea(new BoundingBox(i, 0, k, j, 256, l), updateState, getStaleTicks);
-+        return this.fetchTicksInArea(new BoundingBox(i, 0, k, j, 256, l), flag, flag1);
-     }
- 
-     public List<TickNextTickData<T>> fetchTicksInArea(BoundingBox bounds, boolean updateState, boolean getStaleTicks) {
--        List<TickNextTickData<T>> list = this.fetchTicksInArea((List) null, this.tickNextTickList, bounds, updateState);
-+        // Paper start - allow overriding
-+        return this.getEntriesInBoundingBox(bounds, updateState, getStaleTicks);
-+    }
-+    public List<TickNextTickData<T>> getEntriesInBoundingBox(BoundingBox structureboundingbox, boolean flag, boolean flag1) {
-+        // Paper end
-+        List<TickNextTickData<T>> list = this.fetchTicksInArea((List) null, this.tickNextTickList, structureboundingbox, flag);
- 
--        if (updateState && list != null) {
-+        if (flag && list != null) {
-             this.tickNextTickSet.removeAll(list);
-         }
- 
--        list = this.fetchTicksInArea(list, this.currentlyTicking, bounds, updateState);
--        if (!getStaleTicks) {
--            list = this.fetchTicksInArea(list, this.alreadyTicked, bounds, updateState);
-+        list = this.fetchTicksInArea(list, this.currentlyTicking, structureboundingbox, flag);
-+        if (!flag1) {
-+            list = this.fetchTicksInArea(list, this.alreadyTicked, structureboundingbox, flag);
-         }
- 
-         return list == null ? Collections.emptyList() : list;
-@@ -170,14 +194,19 @@ public class ServerTickList<T> implements TickList<T> {
-     }
- 
-     public void copy(BoundingBox box, BlockPos offset) {
--        List<TickNextTickData<T>> list = this.fetchTicksInArea(box, false, false);
-+        // Paper start - allow overriding
-+        this.copy(box, offset);
-+    }
-+    public void copy(BoundingBox structureboundingbox, BlockPos blockposition) {
-+        // Paper end
-+        List<TickNextTickData<T>> list = this.fetchTicksInArea(structureboundingbox, false, false);
-         Iterator iterator = list.iterator();
- 
-         while (iterator.hasNext()) {
-             TickNextTickData<T> nextticklistentry = (TickNextTickData) iterator.next();
- 
--            if (box.isInside((Vec3i) nextticklistentry.pos)) {
--                BlockPos blockposition1 = nextticklistentry.pos.offset((Vec3i) offset);
-+            if (structureboundingbox.isInside((Vec3i) nextticklistentry.pos)) {
-+                BlockPos blockposition1 = nextticklistentry.pos.offset((Vec3i) blockposition);
-                 T t0 = nextticklistentry.getType();
- 
-                 this.addTickData(new TickNextTickData<>(blockposition1, t0, nextticklistentry.triggerTick, nextticklistentry.priority));
-@@ -187,11 +216,17 @@ public class ServerTickList<T> implements TickList<T> {
-     }
- 
-     public ListTag save(ChunkPos chunkcoordintpair) {
-+        // Paper start - allow overriding
-+        return this.serialize(chunkcoordintpair);
-+    }
-+    public ListTag serialize(ChunkPos chunkcoordintpair) {
-+        // Paper end
-         List<TickNextTickData<T>> list = this.fetchTicksInChunk(chunkcoordintpair, false, true);
- 
-         return saveTickList(this.toId, list, this.level.getGameTime());
-     }
- 
-+    public static <T> ListTag serialize(Function<T, ResourceLocation> function, Iterable<TickNextTickData<T>> iterable, long i) { return ServerTickList.saveTickList(function, iterable, i); } // Paper - OBFHELPER
-     private static <T> ListTag saveTickList(Function<T, ResourceLocation> identifierProvider, Iterable<TickNextTickData<T>> scheduledTicks, long time) {
+-    private static <T> ListTag saveTickList(Function<T, ResourceLocation> identifierProvider, Iterable<TickNextTickData<T>> scheduledTicks, long time) {
++    public static <T> ListTag saveTickList(Function<T, ResourceLocation> identifierProvider, Iterable<TickNextTickData<T>> scheduledTicks, long time) { // Paper - private -> public
          ListTag nbttaglist = new ListTag();
          Iterator iterator = scheduledTicks.iterator();
-@@ -214,13 +249,23 @@ public class ServerTickList<T> implements TickList<T> {
  
-     @Override
-     public boolean hasScheduledTick(BlockPos pos, T object) {
--        return this.tickNextTickSet.contains(new TickNextTickData<>(pos, object));
-+        // Paper start - allow overriding
-+        return this.isScheduledForTick(pos, object);
-+    }
-+    public boolean isScheduledForTick(BlockPos blockposition, T t0) {
-+        // Paper end
-+        return this.tickNextTickSet.contains(new TickNextTickData<>(blockposition, t0));
-     }
- 
-     @Override
-     public void scheduleTick(BlockPos pos, T object, int delay, TickPriority priority) {
--        if (!this.ignore.test(object)) {
--            this.addTickData(new TickNextTickData<>(pos, object, (long) delay + this.level.getGameTime(), priority));
-+        // Paper start - allow overriding
-+        this.schedule(pos, object, delay, priority);
-+    }
-+    public void schedule(BlockPos blockposition, T t0, int i, TickPriority ticklistpriority) {
-+        // Paper end
-+        if (!this.ignore.test(t0)) {
-+            this.addTickData(new TickNextTickData<>(blockposition, t0, (long) i + this.level.getGameTime(), ticklistpriority));
-         }
- 
-     }
-@@ -234,6 +279,11 @@ public class ServerTickList<T> implements TickList<T> {
-     }
- 
-     public int size() {
-+        // Paper start - allow overriding
-+        return this.getTotalScheduledEntries();
-+    }
-+    public int getTotalScheduledEntries() {
-+        // Paper end
-         return this.tickNextTickSet.size();
-     }
- }
 diff --git a/src/main/java/net/minecraft/world/level/TickNextTickData.java b/src/main/java/net/minecraft/world/level/TickNextTickData.java
-index 90833389022d7412bdda8868a356b84f62a00e03..61cdaf45368dcc40f3311e8b7f8637a6c93a2d76 100644
+index 3b8c04f6ffd7e6c197465aa1caf633ba92529472..6b4b7c290b623a9821734ef74a2e566343e3c5bd 100644
 --- a/src/main/java/net/minecraft/world/level/TickNextTickData.java
 +++ b/src/main/java/net/minecraft/world/level/TickNextTickData.java
-@@ -6,11 +6,13 @@ import net.minecraft.core.BlockPos;
- public class TickNextTickData<T> {
- 
-     private static final java.util.concurrent.atomic.AtomicLong COUNTER = new java.util.concurrent.atomic.AtomicLong(); // Paper - async chunk loading
--    private final T type;
--    public final BlockPos pos;
--    public final long triggerTick;
--    public final TickPriority priority;
+@@ -9,7 +9,9 @@ public class TickNextTickData<T> {
+     public final BlockPos pos;
+     public final long triggerTick;
+     public final TickPriority priority;
 -    private final long c;
-+    private final T type; public final T getData() { return this.type; } // Paper - OBFHELPER
-+    public final BlockPos pos; public final BlockPos getPosition() { return this.pos; } // Paper - OBFHELPER
-+    public final long triggerTick; public final long getTargetTick() { return this.triggerTick; } // Paper - OBFHELPER
-+    public final TickPriority priority; public final TickPriority getPriority() { return this.priority; } // Paper - OBFHELPER
 +    private final long c; public final long getId() { return this.c; } // Paper - OBFHELPER
 +    private final int hash; // Paper
 +    public int tickState; // Paper
  
      public TickNextTickData(BlockPos pos, T t) {
          this(pos, t, 0L, TickPriority.NORMAL);
-@@ -22,6 +24,7 @@ public class TickNextTickData<T> {
+@@ -21,6 +23,7 @@ public class TickNextTickData<T> {
          this.type = t;
          this.triggerTick = time;
          this.priority = priority;
 +        this.hash = this.computeHash(); // Paper
      }
  
-     public boolean equals(Object object) {
-@@ -34,19 +37,31 @@ public class TickNextTickData<T> {
-         }
-     }
+     @Override
+@@ -35,17 +38,27 @@ public class TickNextTickData<T> {
  
-+    // Paper start - optimize hashcode
-+    @Override
+     @Override
      public int hashCode() {
++        // Paper start - optimize hashcode
 +        return this.hash;
 +    }
 +    public final int computeHash() {
@@ -1234,68 +1087,26 @@ index 90833389022d7412bdda8868a356b84f62a00e03..61cdaf45368dcc40f3311e8b7f8637a6
          return this.pos.hashCode();
      }
  
--    public static <T> Comparator<Object> createTimeComparator() { // Paper - decompile fix
--        return Comparator.comparingLong((nextticklistentry) -> {
--            return ((TickNextTickData<T>) nextticklistentry).triggerTick; // Paper - decompile fix
--        }).thenComparing((nextticklistentry) -> {
--            return ((TickNextTickData<T>) nextticklistentry).priority; // Paper - decompile fix
--        }).thenComparingLong((nextticklistentry) -> {
--            return ((TickNextTickData<T>) nextticklistentry).c; // Paper - decompile fix
+     public static <T> Comparator<TickNextTickData<T>> createTimeComparator() {
+-        return Comparator.<TickNextTickData<T>>comparingLong((tickNextTickData) -> { // Paper - decompile fix
+-            return tickNextTickData.triggerTick;
+-        }).thenComparing((tickNextTickData) -> {
+-            return tickNextTickData.priority;
+-        }).thenComparingLong((tickNextTickData) -> {
+-            return tickNextTickData.c;
 -        });
-+    // Paper start - let's not use more functional code for no reason.
-+    public static <T> Comparator<Object> comparator() { return TickNextTickData.createTimeComparator(); } // Paper - OBFHELPER
-+    public static <T> Comparator<Object> createTimeComparator() {
-+        return (Comparator)(Comparator<TickNextTickData>)(TickNextTickData nextticklistentry, TickNextTickData nextticklistentry1) -> {
-+            int i = Long.compare(nextticklistentry.getTargetTick(), nextticklistentry1.getTargetTick());
++        // Paper start - let's not use more functional code for no reason.
++        return (Comparator) (Comparator<TickNextTickData>) (TickNextTickData nextticklistentry, TickNextTickData nextticklistentry1) -> {
++            int i = Long.compare(nextticklistentry.triggerTick, nextticklistentry1.triggerTick);
 +
 +            if (i != 0) {
 +                return i;
 +            } else {
-+                i = nextticklistentry.getPriority().compareTo(nextticklistentry1.getPriority());
++                i = nextticklistentry.priority.compareTo(nextticklistentry1.priority);
 +                return i != 0 ? i : Long.compare(nextticklistentry.getId(), nextticklistentry1.getId());
 +            }
 +        };
-     }
-+    // Paper end - let's not use more functional code for no reason.
- 
-     public String toString() {
-         return this.type + ": " + this.pos + ", " + this.triggerTick + ", " + this.priority + ", " + this.c;
-diff --git a/src/main/java/net/minecraft/world/level/levelgen/structure/BoundingBox.java b/src/main/java/net/minecraft/world/level/levelgen/structure/BoundingBox.java
-index 76bea58d35d352ee6f3d4bd0d10af3b6d615ae2c..4288fa253668196e6c32a876f18ec496fb3abad6 100644
---- a/src/main/java/net/minecraft/world/level/levelgen/structure/BoundingBox.java
-+++ b/src/main/java/net/minecraft/world/level/levelgen/structure/BoundingBox.java
-@@ -8,12 +8,12 @@ import net.minecraft.nbt.IntArrayTag;
- 
- public class BoundingBox {
- 
--    public int x0;
--    public int y0;
--    public int z0;
--    public int x1;
--    public int y1;
--    public int z1;
-+    public int x0; public final int getMinX() { return this.x0; } // Paper - OBFHELPER
-+    public int y0; public final int getMinY() { return this.y0; } // Paper - OBFHELPER
-+    public int z0; public final int getMinZ() { return this.z0; } // Paper - OBFHELPER
-+    public int x1; public final int getMaxX() { return this.x1; } // Paper - OBFHELPER
-+    public int y1; public final int getMaxY() { return this.y1; } // Paper - OBFHELPER
-+    public int z1; public final int getMaxZ() { return this.z1; } // Paper - OBFHELPER
- 
-     public BoundingBox() {}
- 
-@@ -92,6 +92,7 @@ public class BoundingBox {
-         this.y1 = 512;
++        // Paper end - let's not use more functional code for no reason.
      }
  
-+    public final boolean intersects(BoundingBox boundingBox) { return this.intersects(boundingBox); } // Paper - OBFHELPER
-     public boolean intersects(BoundingBox other) {
-         return this.x1 >= other.x0 && this.x0 <= other.x1 && this.z1 >= other.z0 && this.z0 <= other.z1 && this.y1 >= other.y0 && this.y0 <= other.y1;
-     }
-@@ -126,6 +127,7 @@ public class BoundingBox {
-         this.move(baseblockposition.getX(), baseblockposition.getY(), baseblockposition.getZ());
-     }
- 
-+    public final boolean hasPoint(Vec3i baseblockposition) { return this.isInside(baseblockposition); } // Paper - OBFHELPER
-     public boolean isInside(Vec3i vec) {
-         return vec.getX() >= this.x0 && vec.getX() <= this.x1 && vec.getZ() >= this.z0 && vec.getZ() <= this.z1 && vec.getY() >= this.y0 && vec.getY() <= this.y1;
-     }
+     @Override
