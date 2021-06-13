@@ -29,21 +29,20 @@
          Iterator iterator = map.entrySet().iterator();
  
          while (iterator.hasNext()) {
-@@ -57,28 +64,46 @@
+@@ -57,8 +64,10 @@
              try {
                  IRecipe<?> irecipe = a(minecraftkey, ChatDeserializer.m((JsonElement) entry.getValue(), "top element"));
  
 -                ((Builder) map1.computeIfAbsent(irecipe.g(), (recipes) -> {
 -                    return ImmutableMap.builder();
--                })).put(minecraftkey, irecipe);
-+                // CraftBukkit start - SPIGOT-4638: last recipe gets priority
++                // CraftBukkit start
 +                (map1.computeIfAbsent(irecipe.g(), (recipes) -> {
 +                    return new Object2ObjectLinkedOpenHashMap<>();
-+                })).putAndMoveToFirst(minecraftkey, irecipe);
-+                // CraftBukkit end
++                    // CraftBukkit end
+                 })).put(minecraftkey, irecipe);
              } catch (IllegalArgumentException | JsonParseException jsonparseexception) {
                  CraftingManager.LOGGER.error("Parsing error loading recipe {}", minecraftkey, jsonparseexception);
-             }
+@@ -66,19 +75,35 @@
          }
  
          this.recipes = (Map) map1.entrySet().stream().collect(ImmutableMap.toImmutableMap(Entry::getKey, (entry1) -> {
