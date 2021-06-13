@@ -7,32 +7,20 @@ This lets you run /paper fixlight <chunkRadius> (max 5) to automatically
 fix all light data in the chunks.
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperCommand.java b/src/main/java/com/destroystokyo/paper/PaperCommand.java
-index ff718bc7f521575e6a670e17fcf59a2d30841705..528c860fc0c04431e0ebb2ae6bc96bf9c2d04789 100644
+index 71ffa66973d8994e2a480435ac1ada3fe61600a4..7b5afc5d34b78e6404c1a5c6bb823d9589471f13 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperCommand.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperCommand.java
-@@ -11,16 +11,20 @@ import com.google.common.collect.Maps;
- import com.google.gson.JsonObject;
- import com.google.gson.internal.Streams;
- import com.google.gson.stream.JsonWriter;
-+import net.minecraft.core.BlockPos;
-+import net.minecraft.network.protocol.game.ClientboundLightUpdatePacket;
- import net.minecraft.resources.ResourceLocation;
- import net.minecraft.server.MCUtil;
- import net.minecraft.server.MinecraftServer;
+@@ -10,7 +10,8 @@ import net.minecraft.server.MinecraftServer;
  import net.minecraft.server.level.ChunkHolder;
  import net.minecraft.server.level.ServerChunkCache;
  import net.minecraft.server.level.ServerLevel;
+-import net.minecraft.world.entity.Entity;
 +import net.minecraft.server.level.ServerPlayer;
 +import net.minecraft.server.level.ThreadedLevelLightEngine;
- import net.minecraft.world.entity.Entity;
  import net.minecraft.world.entity.EntityType;
  import net.minecraft.world.level.ChunkPos;
--import net.minecraft.server.MCUtil;
-+import net.minecraft.world.level.chunk.LevelChunk;
- import org.apache.commons.lang3.tuple.MutablePair;
- import org.apache.commons.lang3.tuple.Pair;
- import org.bukkit.Bukkit;
-@@ -31,6 +35,7 @@ import org.bukkit.command.Command;
+ import net.minecraft.resources.ResourceLocation;
+@@ -25,15 +26,18 @@ import org.bukkit.command.Command;
  import org.bukkit.command.CommandSender;
  import org.bukkit.craftbukkit.CraftServer;
  import org.bukkit.craftbukkit.CraftWorld;
@@ -40,8 +28,6 @@ index ff718bc7f521575e6a670e17fcf59a2d30841705..528c860fc0c04431e0ebb2ae6bc96bf9
  import org.bukkit.entity.Player;
  
  import java.io.File;
-@@ -39,10 +44,12 @@ import java.io.PrintStream;
- import java.io.StringWriter;
  import java.time.LocalDateTime;
  import java.time.format.DateTimeFormatter;
 +import java.util.ArrayDeque;
@@ -53,18 +39,18 @@ index ff718bc7f521575e6a670e17fcf59a2d30841705..528c860fc0c04431e0ebb2ae6bc96bf9
  import java.util.Iterator;
  import java.util.List;
  import java.util.Locale;
-@@ -52,7 +59,7 @@ import java.util.stream.Collectors;
+@@ -43,7 +47,7 @@ import java.util.stream.Collectors;
  
  public class PaperCommand extends Command {
      private static final String BASE_PERM = "bukkit.command.paper.";
--    private static final ImmutableSet<String> SUBCOMMANDS = ImmutableSet.<String>builder().add("heap", "entity", "reload", "version", "debug", "chunkinfo", "dumpwaiting", "syncloadinfo").build();
-+    private static final ImmutableSet<String> SUBCOMMANDS = ImmutableSet.<String>builder().add("heap", "entity", "reload", "version", "debug", "chunkinfo", "dumpwaiting", "syncloadinfo", "fixlight").build();
+-    private static final ImmutableSet<String> SUBCOMMANDS = ImmutableSet.<String>builder().add("heap", "entity", "reload", "version", "debug", "chunkinfo").build();
++    private static final ImmutableSet<String> SUBCOMMANDS = ImmutableSet.<String>builder().add("heap", "entity", "reload", "version", "debug", "chunkinfo", "fixlight").build();
  
      public PaperCommand(String name) {
          super(name);
-@@ -173,6 +180,9 @@ public class PaperCommand extends Command {
-             case "syncloadinfo":
-                 this.doSyncLoadInfo(sender, args);
+@@ -158,6 +162,9 @@ public class PaperCommand extends Command {
+             case "chunkinfo":
+                 doChunkInfo(sender, args);
                  break;
 +            case "fixlight":
 +                this.doFixLight(sender, args);
@@ -72,10 +58,10 @@ index ff718bc7f521575e6a670e17fcf59a2d30841705..528c860fc0c04431e0ebb2ae6bc96bf9
              case "ver":
                  if (!testPermission(sender, "version")) break; // "ver" needs a special check because it's an alias. All other commands are checked up before the switch statement (because they are present in the SUBCOMMANDS set)
              case "version":
-@@ -190,6 +200,77 @@ public class PaperCommand extends Command {
-         return true;
-     }
+@@ -413,4 +420,74 @@ public class PaperCommand extends Command {
  
+         Command.broadcastCommandMessage(sender, ChatColor.GREEN + "Paper config reload complete.");
+     }
 +    private void doFixLight(CommandSender sender, String[] args) {
 +        if (!(sender instanceof Player)) {
 +            sender.sendMessage("Only players can use this command");
@@ -97,7 +83,7 @@ index ff718bc7f521575e6a670e17fcf59a2d30841705..528c860fc0c04431e0ebb2ae6bc96bf9
 +        ServerLevel world = (ServerLevel) handle.level;
 +        ThreadedLevelLightEngine lightengine = world.getChunkSource().getLightEngine();
 +
-+        BlockPos center = MCUtil.toBlockPosition(player.getLocation());
++        net.minecraft.core.BlockPos center = MCUtil.toBlockPosition(player.getLocation());
 +        Deque<ChunkPos> queue = new ArrayDeque<>(MCUtil.getSpiralOutChunks(center, radius));
 +        updateLight(sender, world, lightengine, queue);
 +    }
@@ -114,7 +100,7 @@ index ff718bc7f521575e6a670e17fcf59a2d30841705..528c860fc0c04431e0ebb2ae6bc96bf9
 +                updateLight(sender, world, lightengine, queue);
 +                return;
 +            }
-+            LevelChunk chunk = (LevelChunk) either.left().orElse(null);
++            net.minecraft.world.level.chunk.LevelChunk chunk = (net.minecraft.world.level.chunk.LevelChunk) either.left().orElse(null);
 +            if (chunk == null) {
 +                updateLight(sender, world, lightengine, queue);
 +                return;
@@ -126,7 +112,7 @@ index ff718bc7f521575e6a670e17fcf59a2d30841705..528c860fc0c04431e0ebb2ae6bc96bf9
 +            for (int y = 0; y < world.getHeight(); y++) {
 +                for (int x = 0; x < 16; x++) {
 +                    for (int z = 0; z < 16; z++) {
-+                        BlockPos pos = new BlockPos(cx + x, y, cz + z);
++                        net.minecraft.core.BlockPos pos = new net.minecraft.core.BlockPos(cx + x, y, cz + z);
 +                        lightengine.checkBlock(pos);
 +                    }
 +                }
@@ -136,7 +122,7 @@ index ff718bc7f521575e6a670e17fcf59a2d30841705..528c860fc0c04431e0ebb2ae6bc96bf9
 +            if (visibleChunk != null) {
 +                world.getChunkSource().chunkMap.addLightTask(visibleChunk, () -> {
 +                    MinecraftServer.getServer().processQueue.add(() -> {
-+                        visibleChunk.sendPacketToTrackedPlayers(new ClientboundLightUpdatePacket(chunk.getPos(), lightengine, true), false);
++                        visibleChunk.broadcast(new net.minecraft.network.protocol.game.ClientboundLightUpdatePacket(chunk.getPos(), lightengine, null, null, true), false);
 +                        updateLight(sender, world, lightengine, queue);
 +                    });
 +                });
@@ -146,37 +132,48 @@ index ff718bc7f521575e6a670e17fcf59a2d30841705..528c860fc0c04431e0ebb2ae6bc96bf9
 +            lightengine.setTaskPerBatch(world.paperConfig.lightQueueSize);
 +        }, MinecraftServer.getServer());
 +    }
-+
-     private void doSyncLoadInfo(CommandSender sender, String[] args) {
-         if (!SyncLoadFinder.ENABLED) {
-             sender.sendMessage(ChatColor.RED + "This command requires the server startup flag '-Dpaper.debug-sync-loads=true' to be set.");
+ }
 diff --git a/src/main/java/net/minecraft/server/level/ChunkHolder.java b/src/main/java/net/minecraft/server/level/ChunkHolder.java
-index 9ebcfca10071cc42d4f1df02c25de5042c065f38..d907872d80f840b343419f49a6708082da6f921b 100644
+index 56e292e6550b19d0cae9ebad369da730ca1cabd8..3653ec6f93d627092e63cede51f4db2e12b10613 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkHolder.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkHolder.java
-@@ -349,6 +349,7 @@ public class ChunkHolder {
+@@ -312,7 +312,7 @@ public class ChunkHolder {
  
      }
  
-+    public void sendPacketToTrackedPlayers(Packet<?> packet, boolean flag) { broadcast(packet, flag); } // Paper - OBFHELPER
-     private void broadcast(Packet<?> packet, boolean onlyOnWatchDistanceEdge) {
-         // Paper start - per player view distance
-         // there can be potential desync with player's last mapped section and the view distance map, so use the
+-    private void broadcast(Packet<?> packet, boolean onlyOnWatchDistanceEdge) {
++    public void broadcast(Packet<?> packet, boolean onlyOnWatchDistanceEdge) { // Paper - private -> public
+         this.playerProvider.getPlayers(this.pos, onlyOnWatchDistanceEdge).forEach((entityplayer) -> {
+             entityplayer.connection.send(packet);
+         });
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index 6b51a082cf42bc3ffc550614e385d3956c5f2efb..67f748d5955453ba4873b0c9bb741b5bfe52d655 100644
+index 5473b22d21ea981f245f4826c4d47295890f88ef..480c361c919bbfbebacf9ac94418eac5ed38e233 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
-@@ -344,11 +344,12 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
-         ProcessorHandle<Runnable> mailbox = ProcessorHandle.of("main", mainThreadExecutor::tell);
+@@ -123,6 +123,12 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+     private final ChunkTaskPriorityQueueSorter queueSorter;
+     private final ProcessorHandle<ChunkTaskPriorityQueueSorter.Message<Runnable>> worldgenMailbox;
+     private final ProcessorHandle<ChunkTaskPriorityQueueSorter.Message<Runnable>> mainThreadMailbox;
++    // Paper start
++    final ProcessorHandle<ChunkTaskPriorityQueueSorter.Message<Runnable>> mailboxLight;
++    public void addLightTask(ChunkHolder playerchunk, Runnable run) {
++        this.mailboxLight.tell(ChunkTaskPriorityQueueSorter.message(playerchunk, run));
++    }
++    // Paper end
+     public final ChunkProgressListener progressListener;
+     private final ChunkStatusUpdateListener chunkStatusListener;
+     public final ChunkMap.ChunkDistanceManager distanceManager;
+@@ -199,11 +205,12 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
  
          this.progressListener = worldGenerationProgressListener;
--        ProcessorMailbox<Runnable> threadedmailbox1 = ProcessorMailbox.create(workerExecutor, "light");
-+        ProcessorMailbox<Runnable> lightthreaded; ProcessorMailbox<Runnable> threadedmailbox1 = lightthreaded = ProcessorMailbox.create(workerExecutor, "light"); // Paper
+         this.chunkStatusListener = chunkStatusChangeListener;
+-        ProcessorMailbox<Runnable> threadedmailbox1 = ProcessorMailbox.create(executor, "light");
++        ProcessorMailbox<Runnable> lightthreaded; ProcessorMailbox<Runnable> threadedmailbox1 = lightthreaded = ProcessorMailbox.create(executor, "light"); // Paper
  
-         this.queueSorter = new ChunkTaskPriorityQueueSorter(ImmutableList.of(threadedmailbox, mailbox, threadedmailbox1), workerExecutor, Integer.MAX_VALUE);
+         this.queueSorter = new ChunkTaskPriorityQueueSorter(ImmutableList.of(threadedmailbox, mailbox, threadedmailbox1), executor, Integer.MAX_VALUE);
          this.worldgenMailbox = this.queueSorter.getProcessor(threadedmailbox, false);
          this.mainThreadMailbox = this.queueSorter.getProcessor(mailbox, false);
 +        this.mailboxLight = this.queueSorter.getProcessor(lightthreaded, false);// Paper
          this.lightEngine = new ThreadedLevelLightEngine(chunkProvider, this, this.level.dimensionType().hasSkyLight(), threadedmailbox1, this.queueSorter.getProcessor(threadedmailbox1, false));
-         this.distanceManager = new ChunkMap.ChunkDistanceManager(workerExecutor, mainThreadExecutor); this.distanceManager.chunkMap = this; // Paper
-         this.overworldDataStorage = supplier;
+         this.distanceManager = new ChunkMap.ChunkDistanceManager(executor, mainThreadExecutor);
+         this.overworldDataStorage = persistentStateManagerFactory;
