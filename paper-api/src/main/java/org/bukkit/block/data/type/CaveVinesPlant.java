@@ -1,9 +1,11 @@
 package org.bukkit.block.data.type;
 
+import org.bukkit.block.data.BlockData;
+
 /**
  * 'berries' indicates whether the block has berries.
  */
-public interface CaveVinesPlant {
+public interface CaveVinesPlant extends BlockData {
 
     /**
      * Gets the value of the 'berries' property.
