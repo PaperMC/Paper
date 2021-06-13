@@ -6,7 +6,7 @@ Subject: [PATCH] Adding enhanced Material/Item Color(Type)-API
 
 diff --git a/src/main/java/io/papermc/paper/item/ColorType.java b/src/main/java/io/papermc/paper/item/ColorType.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..ce781b163a0cf89a96bd16ba035bcd2e1fc87cee
+index 0000000000000000000000000000000000000000..798b495da96ed63548a8763d55b269cd624f30af
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/item/ColorType.java
 @@ -0,0 +1,329 @@
@@ -85,7 +85,7 @@ index 0000000000000000000000000000000000000000..ce781b163a0cf89a96bd16ba035bcd2e
 +     * @return the {@link ColorType} of the {@link Material} <i>material</i>, or null if it has no supported color
 +     */
 +    @Nullable
-+    public static ColorType getColorType(Material material) {
++    public static ColorType getColorType(@NotNull Material material) {
 +        Set<Material> allVariants = getAllVariants();
 +        if (allVariants.stream().anyMatch(it -> it == material)) {
 +            for (Material loopMaterial : allVariants) {
@@ -341,7 +341,7 @@ index 0000000000000000000000000000000000000000..ce781b163a0cf89a96bd16ba035bcd2e
 +}
 diff --git a/src/main/java/io/papermc/paper/item/DyeableMaterial.java b/src/main/java/io/papermc/paper/item/DyeableMaterial.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..aed08e566f03aac906dc7483d3cf0ca3badb5376
+index 0000000000000000000000000000000000000000..cdfc0f3c2d16fca92abfc74d89850c16b5170ea4
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/item/DyeableMaterial.java
 @@ -0,0 +1,100 @@
@@ -388,7 +388,7 @@ index 0000000000000000000000000000000000000000..aed08e566f03aac906dc7483d3cf0ca3
 +     * @return the colored {@link DyeableMaterial}
 +     */
 +    @NotNull
-+    public Material withColor(ColorType colorType) {
++    public Material withColor(@NotNull ColorType colorType) {
 +        return colorToMaterialProcess.apply(colorType);
 +    }
 +
@@ -435,7 +435,7 @@ index 0000000000000000000000000000000000000000..aed08e566f03aac906dc7483d3cf0ca3
 +     * @return the non-colored {@link DyeableMaterial} of the <i>material</i>, or null if the <i>material</i> has no {@link DyeableMaterial}-group
 +     */
 +    @Nullable
-+    public static DyeableMaterial fromMaterial(Material material) {
++    public static DyeableMaterial fromMaterial(@NotNull Material material) {
 +        for (DyeableMaterial dyeableMaterial : values()) {
 +            if (material.name().endsWith(dyeableMaterial.name())) {
 +                return dyeableMaterial;
@@ -446,7 +446,7 @@ index 0000000000000000000000000000000000000000..aed08e566f03aac906dc7483d3cf0ca3
 +
 +}
 diff --git a/src/main/java/org/bukkit/Material.java b/src/main/java/org/bukkit/Material.java
-index e2b3470e3c9a97671723f5a67f722fb86fb07fbf..b4cb136d18fa8b0c75eecf288a3b464bad178cb3 100644
+index e2b3470e3c9a97671723f5a67f722fb86fb07fbf..d4d8c228c92167cb31f84a721441d9eae6d0181d 100644
 --- a/src/main/java/org/bukkit/Material.java
 +++ b/src/main/java/org/bukkit/Material.java
 @@ -5,6 +5,8 @@ import java.lang.reflect.Constructor;
@@ -478,7 +478,7 @@ index e2b3470e3c9a97671723f5a67f722fb86fb07fbf..b4cb136d18fa8b0c75eecf288a3b464b
 +     * @return the {@link ColorType} of this {@link Material}, or <i>other</i> if it has no supported {@link ColorType} color
 +     */
 +    @NotNull
-+    public ColorType getColorTypeOrOther(ColorType other) {
++    public ColorType getColorTypeOrOther(@NotNull ColorType other) {
 +        ColorType currentType = getColorType();
 +        return currentType != null ? currentType : other;
 +    }
@@ -517,7 +517,7 @@ index e2b3470e3c9a97671723f5a67f722fb86fb07fbf..b4cb136d18fa8b0c75eecf288a3b464b
 +     * @throws IllegalArgumentException if the material has no {@link DyeableMaterial}-group
 +     */
 +    @NotNull
-+    public Material changeColor(ColorType newColor) throws IllegalArgumentException {
++    public Material changeColor(@NotNull ColorType newColor) throws IllegalArgumentException {
 +            DyeableMaterial material = getDyeableMaterial();
 +            if (material != null) {
 +                return material.withColor(newColor);
@@ -527,7 +527,7 @@ index e2b3470e3c9a97671723f5a67f722fb86fb07fbf..b4cb136d18fa8b0c75eecf288a3b464b
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/inventory/ItemStack.java b/src/main/java/org/bukkit/inventory/ItemStack.java
-index a7909406e9d54c1ab4789b984ed6b1da50837fce..d1891b8085b10adc11c940485ab57ef11b3e83a9 100644
+index a7909406e9d54c1ab4789b984ed6b1da50837fce..28a7120c7a33a363039d1457bc69413e575c2123 100644
 --- a/src/main/java/org/bukkit/inventory/ItemStack.java
 +++ b/src/main/java/org/bukkit/inventory/ItemStack.java
 @@ -5,6 +5,8 @@ import java.util.LinkedHashMap;
@@ -558,7 +558,7 @@ index a7909406e9d54c1ab4789b984ed6b1da50837fce..d1891b8085b10adc11c940485ab57ef1
 +     * @return the color of this {@link ItemStack}s-Material, or <i>other</i> if it has no supported color
 +     */
 +    @NotNull
-+    public ColorType getColorTypeOrOther(ColorType other) {
++    public ColorType getColorTypeOrOther(@NotNull ColorType other) {
 +        ColorType output = getColorType();
 +        return output != null ? output : other;
 +    }
@@ -586,7 +586,7 @@ index a7909406e9d54c1ab4789b984ed6b1da50837fce..d1891b8085b10adc11c940485ab57ef1
 +     * @param newColor the new color, which the {@link Material} will become
 +     * @throws IllegalArgumentException if the {@link ItemStack} {@link Material} has no {@link DyeableMaterial}-group
 +     */
-+    public void changeColor(ColorType newColor) throws IllegalArgumentException {
++    public void changeColor(@NotNull ColorType newColor) throws IllegalArgumentException {
 +        type = type.changeColor(newColor);
 +    }
 +
