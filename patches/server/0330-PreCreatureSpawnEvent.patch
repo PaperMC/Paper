@@ -15,18 +15,10 @@ instead and save a lot of server resources.
 See: https://github.com/PaperMC/Paper/issues/917
 
 diff --git a/src/main/java/net/minecraft/world/entity/EntityType.java b/src/main/java/net/minecraft/world/entity/EntityType.java
-index 9f5f2bd9bdfce14da030b09f56c821ec1989e12f..ee607ad6521aa689105d022c0e86307124b5182d 100644
+index 9f5f2bd9bdfce14da030b09f56c821ec1989e12f..872f92ac1a6bc86ce54700dbf555ceea4fab2057 100644
 --- a/src/main/java/net/minecraft/world/entity/EntityType.java
 +++ b/src/main/java/net/minecraft/world/entity/EntityType.java
-@@ -21,6 +21,7 @@ import net.minecraft.nbt.ListTag;
- import net.minecraft.network.chat.Component;
- import net.minecraft.network.chat.TranslatableComponent;
- import net.minecraft.resources.ResourceLocation;
-+import net.minecraft.server.MCUtil;
- import net.minecraft.server.MinecraftServer;
- import net.minecraft.server.level.ServerLevel;
- import net.minecraft.tags.Tag;
-@@ -333,6 +334,20 @@ public class EntityType<T extends Entity> implements EntityTypeTest<Entity, T> {
+@@ -333,6 +333,20 @@ public class EntityType<T extends Entity> implements EntityTypeTest<Entity, T> {
  
      @Nullable
      public T spawnCreature(ServerLevel worldserver, @Nullable CompoundTag nbttagcompound, @Nullable Component ichatbasecomponent, @Nullable Player entityhuman, BlockPos blockposition, MobSpawnType enummobspawn, boolean flag, boolean flag1, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason spawnReason) {
@@ -35,7 +27,7 @@ index 9f5f2bd9bdfce14da030b09f56c821ec1989e12f..ee607ad6521aa689105d022c0e863071
 +        if (type != null) {
 +            com.destroystokyo.paper.event.entity.PreCreatureSpawnEvent event;
 +            event = new com.destroystokyo.paper.event.entity.PreCreatureSpawnEvent(
-+                MCUtil.toLocation(worldserver, blockposition),
++                net.minecraft.server.MCUtil.toLocation(worldserver, blockposition),
 +                type,
 +                spawnReason
 +            );
@@ -48,25 +40,17 @@ index 9f5f2bd9bdfce14da030b09f56c821ec1989e12f..ee607ad6521aa689105d022c0e863071
  
          if (t0 != null) {
 diff --git a/src/main/java/net/minecraft/world/entity/npc/Villager.java b/src/main/java/net/minecraft/world/entity/npc/Villager.java
-index 6a9e2105b2d9a4ee83c0a2516d5ef26dc3b99053..4cda049e475fcbd33f9e8e45c79e0a614221416b 100644
+index 6a9e2105b2d9a4ee83c0a2516d5ef26dc3b99053..aec77679584a2acab5818e26e2586b5316118e84 100644
 --- a/src/main/java/net/minecraft/world/entity/npc/Villager.java
 +++ b/src/main/java/net/minecraft/world/entity/npc/Villager.java
-@@ -34,6 +34,7 @@ import net.minecraft.network.protocol.game.DebugPackets;
- import net.minecraft.network.syncher.EntityDataAccessor;
- import net.minecraft.network.syncher.EntityDataSerializers;
- import net.minecraft.network.syncher.SynchedEntityData;
-+import net.minecraft.server.MCUtil;
- import net.minecraft.server.MinecraftServer;
- import net.minecraft.server.level.ServerLevel;
- import net.minecraft.sounds.SoundEvent;
-@@ -987,6 +988,21 @@ public class Villager extends AbstractVillager implements ReputationEventHandler
+@@ -987,6 +987,21 @@ public class Villager extends AbstractVillager implements ReputationEventHandler
              BlockPos blockposition1 = this.findSpawnPositionForGolemInColumn(blockposition, d0, d1);
  
              if (blockposition1 != null) {
 +                // Paper start - Call PreCreatureSpawnEvent
 +                com.destroystokyo.paper.event.entity.PreCreatureSpawnEvent event;
 +                event = new com.destroystokyo.paper.event.entity.PreCreatureSpawnEvent(
-+                    MCUtil.toLocation(level, blockposition1),
++                    net.minecraft.server.MCUtil.toLocation(level, blockposition1),
 +                    org.bukkit.entity.EntityType.IRON_GOLEM,
 +                    org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.VILLAGE_DEFENSE
 +                );
@@ -119,7 +103,7 @@ index c6298b12e4e0c20be20e7e493be728f028f9eb31..68ce2732dfdc25ddadc15c43c30a609f
  }
 +
 diff --git a/src/main/java/net/minecraft/world/level/NaturalSpawner.java b/src/main/java/net/minecraft/world/level/NaturalSpawner.java
-index 30ba1e3cb75d994770b006b9dfd6669000a9c1a4..22d6e440e920f4de82de13c1b05d3a317984cb11 100644
+index 30ba1e3cb75d994770b006b9dfd6669000a9c1a4..6204bf41d410df9784b32f993b46d7adb2af5f13 100644
 --- a/src/main/java/net/minecraft/world/level/NaturalSpawner.java
 +++ b/src/main/java/net/minecraft/world/level/NaturalSpawner.java
 @@ -231,7 +231,13 @@ public final class NaturalSpawner {
@@ -142,7 +126,7 @@ index 30ba1e3cb75d994770b006b9dfd6669000a9c1a4..22d6e440e920f4de82de13c1b05d3a31
      }
  
 -    private static boolean isValidSpawnPostitionForType(ServerLevel world, MobCategory group, StructureFeatureManager structureAccessor, ChunkGenerator chunkGenerator, MobSpawnSettings.SpawnerData spawnEntry, BlockPos.MutableBlockPos pos, double squaredDistance) {
-+    private static Boolean isValidSpawnPostitionForType(ServerLevel world, MobCategory group, StructureFeatureManager structureAccessor, ChunkGenerator chunkGenerator, MobSpawnSettings.SpawnerData spawnEntry, BlockPos.MutableBlockPos pos, double squaredDistance) {
++    private static Boolean isValidSpawnPostitionForType(ServerLevel world, MobCategory group, StructureFeatureManager structureAccessor, ChunkGenerator chunkGenerator, MobSpawnSettings.SpawnerData spawnEntry, BlockPos.MutableBlockPos pos, double squaredDistance) { // Paper
          EntityType<?> entitytypes = spawnEntry.type;
  
 +        // Paper start
