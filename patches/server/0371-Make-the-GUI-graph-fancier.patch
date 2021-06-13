@@ -109,7 +109,7 @@ index 0000000000000000000000000000000000000000..186fc722965e403f76b1480e1c2381fc
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/gui/GuiStatsComponent.java b/src/main/java/com/destroystokyo/paper/gui/GuiStatsComponent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..0f29ad583e798c09b2fe3f568ed50cbc719e40e2
+index 0000000000000000000000000000000000000000..537bc6213545e8ff1b7b51bc4b27fd5b2a740883
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/gui/GuiStatsComponent.java
 @@ -0,0 +1,41 @@
@@ -149,14 +149,14 @@ index 0000000000000000000000000000000000000000..0f29ad583e798c09b2fe3f568ed50cbc
 +        return new Dimension(350, 200);
 +    }
 +
-+    public void stop() { a(); } public void a() {
++    public void close() {
 +        timer.stop();
 +        ramGraph.stop();
 +    }
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/gui/RAMDetails.java b/src/main/java/com/destroystokyo/paper/gui/RAMDetails.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..c0923ec75ecced2e0a1c0d3ec2c046d69af3e9a9
+index 0000000000000000000000000000000000000000..23239679d6584f1088b2b94c46eb9a5c1f9ad91d
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/gui/RAMDetails.java
 @@ -0,0 +1,73 @@
@@ -176,7 +176,7 @@ index 0000000000000000000000000000000000000000..c0923ec75ecced2e0a1c0d3ec2c046d6
 +import java.util.Vector;
 +
 +public class RAMDetails extends JList<String> {
-+    public static final DecimalFormat DECIMAL_FORMAT = Util.peek(new DecimalFormat("########0.000"), (format)
++    public static final DecimalFormat DECIMAL_FORMAT = Util.make(new DecimalFormat("########0.000"), (format)
 +        -> format.setDecimalFormatSymbols(DecimalFormatSymbols.getInstance(Locale.ROOT)));
 +
 +    private final MinecraftServer server;
@@ -221,7 +221,7 @@ index 0000000000000000000000000000000000000000..c0923ec75ecced2e0a1c0d3ec2c046d6
 +        Vector<String> vector = new Vector<>();
 +        vector.add("Memory use: " + (data.getUsedMem() / 1024L / 1024L) + " mb (" + (data.getFree() * 100L / data.getMax()) + "% free)");
 +        vector.add("Heap: " + (data.getTotal() / 1024L / 1024L) + " / " + (data.getMax() / 1024L / 1024L) + " mb");
-+        vector.add("Avg tick: " + DECIMAL_FORMAT.format(getAverage(server.getTickTimes())) + " ms");
++        vector.add("Avg tick: " + DECIMAL_FORMAT.format(getAverage(server.tickTimes)) + " ms");
 +        setListData(vector);
 +    }
 +
@@ -383,57 +383,16 @@ index 0000000000000000000000000000000000000000..c3e54da4ab6440811aab2f9dd1e21880
 +        timer.stop();
 +    }
 +}
-diff --git a/src/main/java/net/minecraft/Util.java b/src/main/java/net/minecraft/Util.java
-index cec5ad5052c8cf6059e9b117117846bdb217748f..c2f747226f10479c826849af898538610a2dd659 100644
---- a/src/main/java/net/minecraft/Util.java
-+++ b/src/main/java/net/minecraft/Util.java
-@@ -259,6 +259,7 @@ public class Util {
-         return factory.get();
-     }
- 
-+    public static <T> T peek(T t0, Consumer<T> consumer) { return make(t0, consumer); } // Paper - OBFHELPER
-     public static <T> T make(T object, Consumer<T> initializer) {
-         initializer.accept(object);
-         return object;
-diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 7038897b8fb4c18ca97b95a3b24c30b40b62b005..e33189dc8375a3034910087654607fb531061636 100644
---- a/src/main/java/net/minecraft/server/MinecraftServer.java
-+++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -216,7 +216,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
-     private String motd;
-     private int maxBuildHeight;
-     private int playerIdleTimeout;
--    public final long[] tickTimes;
-+    public final long[] tickTimes; public long[] getTickTimes() { return tickTimes; } // Paper - OBFHELPER
-     @Nullable
-     private KeyPair keyPair;
-     @Nullable
 diff --git a/src/main/java/net/minecraft/server/gui/MinecraftServerGui.java b/src/main/java/net/minecraft/server/gui/MinecraftServerGui.java
-index 2299349e701ffd5ee53cc5fe25f4d1e271cc3d65..2567c588a1dcf732800e6cf87352b020c7bb84d6 100644
+index 737ae68ab486a324628e994586862ef7397ae278..703d2bb93d6ab76fc117a320f155570addcc543c 100644
 --- a/src/main/java/net/minecraft/server/gui/MinecraftServerGui.java
 +++ b/src/main/java/net/minecraft/server/gui/MinecraftServerGui.java
-@@ -91,9 +91,9 @@ public class MinecraftServerGui extends JComponent {
+@@ -95,7 +95,7 @@ public class MinecraftServerGui extends JComponent {
  
      private JComponent buildInfoPanel() {
          JPanel jpanel = new JPanel(new BorderLayout());
 -        StatsComponent guistatscomponent = new StatsComponent(this.server);
 +        com.destroystokyo.paper.gui.GuiStatsComponent guistatscomponent = new com.destroystokyo.paper.gui.GuiStatsComponent(this.server); // Paper
+         Collection<Runnable> collection = this.finalizers; // CraftBukkit - decompile error
  
--        this.finalizers.add(guistatscomponent::close);
-+        this.finalizers.add(guistatscomponent::a);
-         jpanel.add(guistatscomponent, "North");
-         jpanel.add(this.buildPlayerPanel(), "Center");
-         jpanel.setBorder(new TitledBorder(new EtchedBorder(), "Stats"));
-diff --git a/src/main/java/net/minecraft/server/gui/StatsComponent.java b/src/main/java/net/minecraft/server/gui/StatsComponent.java
-index 30960738de03edf7aa8745a176b3a2be86eaf282..09414d04208a843f8d337569b53f61b34e64ed92 100644
---- a/src/main/java/net/minecraft/server/gui/StatsComponent.java
-+++ b/src/main/java/net/minecraft/server/gui/StatsComponent.java
-@@ -13,7 +13,7 @@ import net.minecraft.server.MinecraftServer;
- 
- public class StatsComponent extends JComponent {
- 
--    private static final DecimalFormat DECIMAL_FORMAT = (DecimalFormat) Util.make((Object) (new DecimalFormat("########0.000")), (decimalformat) -> {
-+    private static final DecimalFormat DECIMAL_FORMAT = (DecimalFormat) Util.make(new DecimalFormat("########0.000"), (decimalformat) -> { // Paper - decompile error
-         decimalformat.setDecimalFormatSymbols(DecimalFormatSymbols.getInstance(Locale.ROOT));
-     });
-     private final int[] values = new int[256];
+         Objects.requireNonNull(guistatscomponent);

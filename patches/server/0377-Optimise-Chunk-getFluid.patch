@@ -8,22 +8,24 @@ faster on its own, however removing the try catch makes it
 easier to inline due to code size
 
 diff --git a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
-index 87d7a87a2925f2c062658e960bb5128738828d9f..8a14bdda4a408ec1e2b51efeb35467835f62b42c 100644
+index 88b053d8181d2a5abdb2c5527529a81855e1de7c..59a77541bbda880ae8f84e3535a2b6112caa78fb 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
-@@ -430,25 +430,29 @@ public class LevelChunk implements ChunkAccess {
+@@ -461,18 +461,20 @@ public class LevelChunk implements ChunkAccess {
      }
  
      public FluidState getFluidState(int x, int y, int z) {
 -        try {
--            if (y >= 0 && y >> 4 < this.sections.length) {
--                LevelChunkSection chunksection = this.sections[y >> 4];
+-            int l = this.getSectionIndex(y);
+-
+-            if (l >= 0 && l < this.sections.length) {
+-                LevelChunkSection chunksection = this.sections[l];
 -
 -                if (!LevelChunkSection.isEmpty(chunksection)) {
 -                    return chunksection.getFluidState(x & 15, y & 15, z & 15);
-+        //try {  // Paper - remove try catch
++        // try {  // Paper - remove try catch
 +        // Paper start - reduce the number of ops in this call
-+        int index = y >> 4;
++        int index = this.getSectionIndex(y);
 +            if (index >= 0 && index < this.sections.length) {
 +                LevelChunkSection chunksection = this.sections[index];
 +
@@ -34,17 +36,11 @@ index 87d7a87a2925f2c062658e960bb5128738828d9f..8a14bdda4a408ec1e2b51efeb3546783
              }
  
              return Fluids.EMPTY.defaultFluidState();
--        } catch (Throwable throwable) {
--            CrashReport crashreport = CrashReport.forThrowable(throwable, "Getting fluid state");
--            CrashReportCategory crashreportsystemdetails = crashreport.addCategory("Block being got");
-+        /*} catch (Throwable throwable) { // Paper - remove try catch
-+            CrashReport crashreport = CrashReport.a(throwable, "Getting fluid state");
-+            CrashReportSystemDetails crashreportsystemdetails = crashreport.a("Block being got");
- 
--            crashreportsystemdetails.setDetail("Location", () -> {
--                return CrashReportCategory.formatLocation(x, y, z);
-+            crashreportsystemdetails.a("Location", () -> {
-+                return CrashReportSystemDetails.a(i, j, k);
++        /* // Paper - remove try catch
+         } catch (Throwable throwable) {
+             CrashReport crashreport = CrashReport.forThrowable(throwable, "Getting fluid state");
+             CrashReportCategory crashreportsystemdetails = crashreport.addCategory("Block being got");
+@@ -482,6 +484,7 @@ public class LevelChunk implements ChunkAccess {
              });
              throw new ReportedException(crashreport);
          }
@@ -53,15 +49,15 @@ index 87d7a87a2925f2c062658e960bb5128738828d9f..8a14bdda4a408ec1e2b51efeb3546783
  
      // CraftBukkit start
 diff --git a/src/main/java/net/minecraft/world/level/chunk/LevelChunkSection.java b/src/main/java/net/minecraft/world/level/chunk/LevelChunkSection.java
-index c44d32f966c61497b4a8892eb51da3a71ad031d9..5e7f6000df129100ef306703f325af9f60da8ae6 100644
+index b5497272bc03a290298b5a829bdf653ac986866b..fa350db3f4ada07a385d9f57b46aa799effb6039 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/LevelChunkSection.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/LevelChunkSection.java
-@@ -45,7 +45,7 @@ public class LevelChunkSection {
+@@ -42,7 +42,7 @@ public class LevelChunkSection {
      }
  
      public FluidState getFluidState(int x, int y, int z) {
--        return ((BlockState) this.states.get(x, y, z)).getFluidState();
-+        return ((BlockState) this.states.get(x, y, z)).getFluidState(); // Paper - diff on change - we expect this to be effectively just getType(x, y, z).getFluid(). If this changes we need to check other patches that use IBlockData#getFluid.
+-        return this.states.get(x, y, z).getFluidState();
++        return this.states.get(x, y, z).getFluidState(); // Paper - diff on change - we expect this to be effectively just getType(x, y, z).getFluid(). If this changes we need to check other patches that use IBlockData#getFluid.
      }
  
      public void acquire() {
