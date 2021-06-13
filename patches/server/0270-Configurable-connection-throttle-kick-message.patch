@@ -5,10 +5,10 @@ Subject: [PATCH] Configurable connection throttle kick message
 
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-index 62621562137cba4804f0465c58d25ca2786328e5..7178b37f7978c7e9031a22726005c5099fd78fe0 100644
+index ee8ead249d89bc81f87bfff6a1f594a9aeb21250..585be2fcbd63a59f911df69136eae07ce665053c 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-@@ -281,6 +281,11 @@ public class PaperConfig {
+@@ -282,6 +282,11 @@ public class PaperConfig {
          authenticationServersDownKickMessage = Strings.emptyToNull(getString("messages.kick.authentication-servers-down", authenticationServersDownKickMessage));
      }
  
@@ -21,13 +21,13 @@ index 62621562137cba4804f0465c58d25ca2786328e5..7178b37f7978c7e9031a22726005c509
          Object val = config.get("settings.save-player-data");
          if (val instanceof Boolean) {
 diff --git a/src/main/java/net/minecraft/server/network/ServerHandshakePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerHandshakePacketListenerImpl.java
-index 45c9dc9c2a580a5cd57fd4e891fbaa2b1336f5c5..6f98be2b9b00f71dd041e7511c70166fdecf0749 100644
+index 484221e5a9c246aa91e0eacef3911b0e9ecff401..c09d3cdb3acb04b6a833c30a619ff2af5e8b6b18 100644
 --- a/src/main/java/net/minecraft/server/network/ServerHandshakePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerHandshakePacketListenerImpl.java
 @@ -50,7 +50,7 @@ public class ServerHandshakePacketListenerImpl implements ServerHandshakePacketL
-                     synchronized (throttleTracker) {
-                         if (throttleTracker.containsKey(address) && !"127.0.0.1".equals(address.getHostAddress()) && currentTime - throttleTracker.get(address) < connectionThrottle) {
-                             throttleTracker.put(address, currentTime);
+                     synchronized (ServerHandshakePacketListenerImpl.throttleTracker) {
+                         if (ServerHandshakePacketListenerImpl.throttleTracker.containsKey(address) && !"127.0.0.1".equals(address.getHostAddress()) && currentTime - ServerHandshakePacketListenerImpl.throttleTracker.get(address) < connectionThrottle) {
+                             ServerHandshakePacketListenerImpl.throttleTracker.put(address, currentTime);
 -                            TranslatableComponent chatmessage = new TranslatableComponent("Connection throttled! Please wait before reconnecting.");
 +                            TranslatableComponent chatmessage = new TranslatableComponent(com.destroystokyo.paper.PaperConfig.connectionThrottleKickMessage); // Paper - Configurable connection throttle kick message
                              this.connection.send(new ClientboundLoginDisconnectPacket(chatmessage));

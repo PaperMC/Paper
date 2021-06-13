@@ -5,23 +5,23 @@ Subject: [PATCH] Turtle API
 
 
 diff --git a/src/main/java/net/minecraft/world/entity/ai/goal/MoveToBlockGoal.java b/src/main/java/net/minecraft/world/entity/ai/goal/MoveToBlockGoal.java
-index 4584fad16a65f06e77e97a0804d88dbe83f7c5c1..c8680e795deeb68e0662eac7c760a103d1c767b4 100644
+index 70a51ba19fb34f652858b18f24554261787d97e2..065d0752db0e3ae2a89d707aaa2145807f50ecad 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/goal/MoveToBlockGoal.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/goal/MoveToBlockGoal.java
 @@ -14,7 +14,7 @@ public abstract class MoveToBlockGoal extends Goal {
      protected int nextStartTick;
      protected int tryTicks;
      private int maxStayTicks;
--    protected BlockPos blockPos;
-+    protected BlockPos blockPos;public final BlockPos getTargetPosition() { return this.blockPos; } // Paper - OBFHELPER
+-    protected BlockPos blockPos = BlockPos.ZERO;
++    protected BlockPos blockPos = BlockPos.ZERO; public final BlockPos getTargetPosition() { return this.blockPos; } // Paper - OBFHELPER
      private boolean reachedTarget;
      private final int searchRange;
      private final int verticalSearchRange;
 diff --git a/src/main/java/net/minecraft/world/entity/animal/Turtle.java b/src/main/java/net/minecraft/world/entity/animal/Turtle.java
-index c54f4b83b9f2fdb15ddb363be0a179a05eb3693b..42b636c4ebb6eb83c8a9f3f5f9a766d37d065dc3 100644
+index b782d278463a72b8514719e9b14986f268828772..e638d982b4bd1d261a7282cad6dab98ad0b55213 100644
 --- a/src/main/java/net/minecraft/world/entity/animal/Turtle.java
 +++ b/src/main/java/net/minecraft/world/entity/animal/Turtle.java
-@@ -14,6 +14,7 @@ import net.minecraft.nbt.CompoundTag;
+@@ -11,6 +11,7 @@ import net.minecraft.nbt.CompoundTag;
  import net.minecraft.network.syncher.EntityDataAccessor;
  import net.minecraft.network.syncher.EntityDataSerializers;
  import net.minecraft.network.syncher.SynchedEntityData;
@@ -33,56 +33,50 @@ index c54f4b83b9f2fdb15ddb363be0a179a05eb3693b..42b636c4ebb6eb83c8a9f3f5f9a766d3
          this.entityData.set(Turtle.HOME_POS, pos);
      }
  
--    private BlockPos getHomePos() {
+-    BlockPos getHomePos() {
 +    public BlockPos getHomePos() { // Paper - public
          return (BlockPos) this.entityData.get(Turtle.HOME_POS);
      }
  
-@@ -109,31 +110,37 @@ public class Turtle extends Animal {
+@@ -109,7 +110,7 @@ public class Turtle extends Animal {
          return (Boolean) this.entityData.get(Turtle.HAS_EGG);
      }
  
--    private void setHasEgg(boolean hasEgg) {
+-    void setHasEgg(boolean hasEgg) {
 +    public void setHasEgg(boolean hasEgg) { // Paper
          this.entityData.set(Turtle.HAS_EGG, hasEgg);
      }
  
-+    public final boolean isDigging() { return this.isLayingEgg(); } // Paper - OBFHELPER
-     public boolean isLayingEgg() {
-         return (Boolean) this.entityData.get(Turtle.LAYING_EGG);
-     }
- 
-+    public final void setDigging(boolean digging) { this.setLayingEgg(digging); } // Paper - OBFHELPER
-     private void setLayingEgg(boolean diggingSand) {
-         this.layEggCounter = diggingSand ? 1 : 0;
+@@ -122,19 +123,19 @@ public class Turtle extends Animal {
          this.entityData.set(Turtle.LAYING_EGG, diggingSand);
      }
  
-+    public final boolean isGoingHome() { return this.isGoingHome(); } // Paper - OBFHELPER
-     private boolean isGoingHome() {
+-    boolean isGoingHome() {
++    public boolean isGoingHome() { // Paper - public
          return (Boolean) this.entityData.get(Turtle.GOING_HOME);
      }
  
-+    public final void setGoingHome(boolean goingHome) { this.setGoingHome(goingHome); } // Paper - OBFHELPER
-     private void setGoingHome(boolean landBound) {
+-    void setGoingHome(boolean landBound) {
++    public void setGoingHome(boolean landBound) { // Paper - public
          this.entityData.set(Turtle.GOING_HOME, landBound);
      }
  
-+    public final boolean isTravelling() { return this.isTravelling(); } // Paper - OBFHELPER
-     private boolean isTravelling() {
+-    boolean isTravelling() {
++    public boolean isTravelling() { // Paper - public
          return (Boolean) this.entityData.get(Turtle.TRAVELLING);
      }
  
-+    public final void setTravelling(boolean travelling) { this.setTravelling(travelling); } // Paper - OBFHELPER
-     private void setTravelling(boolean travelling) {
+-    void setTravelling(boolean travelling) {
++    public void setTravelling(boolean travelling) { // Paper - public
          this.entityData.set(Turtle.TRAVELLING, travelling);
      }
-@@ -500,14 +507,17 @@ public class Turtle extends Animal {
+ 
+@@ -487,14 +488,17 @@ public class Turtle extends Animal {
  
              if (!this.turtle.isInWater() && this.isReachedTarget()) {
                  if (this.turtle.layEggCounter < 1) {
 -                    this.turtle.setLayingEgg(true);
-+                    this.turtle.setDigging(new com.destroystokyo.paper.event.entity.TurtleStartDiggingEvent((org.bukkit.entity.Turtle) this.turtle.getBukkitEntity(), MCUtil.toLocation(this.turtle.level, this.getTargetPosition())).callEvent()); // Paper
++                    this.turtle.setLayingEgg(new com.destroystokyo.paper.event.entity.TurtleStartDiggingEvent((org.bukkit.entity.Turtle) this.turtle.getBukkitEntity(), MCUtil.toLocation(this.turtle.level, this.getTargetPosition())).callEvent()); // Paper
                  } else if (this.turtle.layEggCounter > 200) {
                      Level world = this.turtle.level;
  
@@ -98,7 +92,7 @@ index c54f4b83b9f2fdb15ddb363be0a179a05eb3693b..42b636c4ebb6eb83c8a9f3f5f9a766d3
                      }
                      // CraftBukkit end
                      this.turtle.setHasEgg(false);
-@@ -636,7 +646,7 @@ public class Turtle extends Animal {
+@@ -562,7 +566,7 @@ public class Turtle extends Animal {
  
          @Override
          public boolean canUse() {
@@ -108,7 +102,7 @@ index c54f4b83b9f2fdb15ddb363be0a179a05eb3693b..42b636c4ebb6eb83c8a9f3f5f9a766d3
  
          @Override
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftTurtle.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftTurtle.java
-index ed08089f21c8958fc9fc7e6e73a2b6ff9108242c..e50f6051baf34981707adce56ab2d3e1f341fb4c 100644
+index ed08089f21c8958fc9fc7e6e73a2b6ff9108242c..a3849ebba14b47b33f1af57c47f94c02aebea232 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftTurtle.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftTurtle.java
 @@ -24,4 +24,36 @@ public class CraftTurtle extends CraftAnimals implements Turtle {
@@ -134,7 +128,7 @@ index ed08089f21c8958fc9fc7e6e73a2b6ff9108242c..e50f6051baf34981707adce56ab2d3e1
 +
 +    @Override
 +    public boolean isDigging() {
-+        return getHandle().isDigging();
++        return getHandle().isLayingEgg();
 +    }
 +
 +    @Override

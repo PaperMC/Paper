@@ -19,10 +19,10 @@ spectate the target entity.
 Co-authored-by: Spottedleaf <Spottedleaf@users.noreply.github.com>
 
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-index 75419c866641ab654349cde6ca3fbdef701dd8d9..92139b271eb6c305787662ef8c7d221fb42296f7 100644
+index bea1461ee3bd65f02bf6add6ed967555092fd675..b2324b53b3cec3e577a8ec8c45b113c232d220a6 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-@@ -1818,14 +1818,58 @@ public class ServerPlayer extends Player implements ContainerListener {
+@@ -1822,14 +1822,58 @@ public class ServerPlayer extends Player {
      }
  
      public void setCamera(Entity entity) {
@@ -32,7 +32,7 @@ index 75419c866641ab654349cde6ca3fbdef701dd8d9..92139b271eb6c305787662ef8c7d221f
 -        this.camera = (Entity) (entity == null ? this : entity);
 -        if (entity1 != this.camera) {
 -            this.connection.send(new ClientboundSetCameraPacket(this.camera));
--            this.connection.a(this.camera.getX(), this.camera.getY(), this.camera.getZ(), this.yRot, this.xRot, TeleportCause.SPECTATE); // CraftBukkit
+-            this.connection.b(this.camera.getX(), this.camera.getY(), this.camera.getZ(), this.getYRot(), this.getXRot(), TeleportCause.SPECTATE); // CraftBukkit
 +        if (entity == null) {
 +            entity = this;
          }
@@ -54,7 +54,7 @@ index 75419c866641ab654349cde6ca3fbdef701dd8d9..92139b271eb6c305787662ef8c7d221f
 +        }
 +        // Validate
 +        if (entity != this) {
-+            if (entity.removed || entity.shouldBeRemoved || !entity.valid || entity.level == null) {
++            if (entity.isRemoved() || !entity.valid || entity.level == null) {
 +                MinecraftServer.LOGGER.info("Blocking player " + this.toString() + " from spectating invalid entity " + entity.toString());
 +                return;
 +            }
@@ -70,7 +70,7 @@ index 75419c866641ab654349cde6ca3fbdef701dd8d9..92139b271eb6c305787662ef8c7d221f
 +        if (entity != this) {
 +            // Make sure we're in the right place
 +            this.ejectPassengers(); // teleport can fail if we have passengers...
-+            this.getBukkitEntity().teleport(new Location(entity.getCommandSenderWorld().getWorld(), entity.getX(), entity.getY(), entity.getZ(), this.yRot, this.xRot), TeleportCause.SPECTATE); // Correctly handle cross-world entities from api calls by using CB teleport
++            this.getBukkitEntity().teleport(new Location(entity.getCommandSenderWorld().getWorld(), entity.getX(), entity.getY(), entity.getZ(), this.getYRot(), this.getXRot()), TeleportCause.SPECTATE); // Correctly handle cross-world entities from api calls by using CB teleport
 +
 +            // Make sure we're tracking the entity before sending
 +            ChunkMap.TrackedEntity tracker = ((ServerLevel)entity.level).getChunkSource().chunkMap.entityMap.get(entity.getId());
@@ -78,7 +78,7 @@ index 75419c866641ab654349cde6ca3fbdef701dd8d9..92139b271eb6c305787662ef8c7d221f
 +                tracker.updatePlayer(this);
 +            }
 +        } else {
-+            this.connection.teleport(this.camera.getX(), this.camera.getY(), this.camera.getZ(), this.yRot, this.xRot, TeleportCause.SPECTATE); // CraftBukkit
++            this.connection.teleport(this.camera.getX(), this.camera.getY(), this.camera.getZ(), this.getYRot(), this.getXRot(), TeleportCause.SPECTATE); // CraftBukkit
 +        }
 +        this.connection.send(new ClientboundSetCameraPacket(entity));
 +        // Paper end
@@ -86,14 +86,23 @@ index 75419c866641ab654349cde6ca3fbdef701dd8d9..92139b271eb6c305787662ef8c7d221f
  
      @Override
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index 900c9b1106a153bc386f6c3d9c11226f8ac69f86..4fd8d775790c037e82f9b0d29ed0eccf03c2dc66 100644
+index a29b8c83be940e4b3db06d881b59b03120e931ab..06922b26ca1f2e31f7c8a527f1a8fdda4a8554c0 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-@@ -1353,6 +1353,7 @@ public class ServerGamePacketListenerImpl implements ServerGamePacketListener {
+@@ -1068,7 +1068,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+         }
      }
  
-     // CraftBukkit start - Delegate to teleport(Location)
+-    private void a(List<TextFilter.FilteredText> list, UnaryOperator<String> unaryoperator, ItemStack itemstack, int slot, ItemStack old) { // CraftBukkit
++    public void a(List<TextFilter.FilteredText> list, UnaryOperator<String> unaryoperator, ItemStack itemstack, int slot, ItemStack old) { // CraftBukkit // Paper - make public
+         ListTag nbttaglist = new ListTag();
+ 
+         if (this.player.isTextFilteringEnabled()) {
+@@ -1381,6 +1381,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+         this.a(x, y, z, yaw, pitch, PlayerTeleportEvent.TeleportCause.UNKNOWN);
+     }
+ 
 +    public final void teleport(double d0, double d1, double d2, float f, float f1, PlayerTeleportEvent.TeleportCause cause) { this.a(d0, d1, d2, f, f1, cause); } // Paper - OBFHELPER
      public void a(double d0, double d1, double d2, float f, float f1, PlayerTeleportEvent.TeleportCause cause) {
-         this.a(d0, d1, d2, f, f1, Collections.<ClientboundPlayerPositionPacket.RelativeArgument>emptySet(), cause);
+         this.a(d0, d1, d2, f, f1, Collections.emptySet(), true, cause);
      }
