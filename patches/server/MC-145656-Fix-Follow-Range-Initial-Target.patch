@@ -18,6 +18,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        entitiesTargetWithFollowRange = getBoolean("entities-target-with-follow-range", entitiesTargetWithFollowRange);
 +    }
  }
+ 
 diff --git a/src/main/java/net/minecraft/world/entity/ai/goal/target/NearestAttackableTargetGoal.java b/src/main/java/net/minecraft/world/entity/ai/goal/target/NearestAttackableTargetGoal.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/goal/target/NearestAttackableTargetGoal.java
@@ -25,7 +26,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public class NearestAttackableTargetGoal<T extends LivingEntity> extends TargetG
          this.randomInterval = reciprocalChance;
          this.setFlags(EnumSet.of(Goal.Flag.TARGET));
-         this.targetConditions = (new TargetingConditions()).range(this.getFollowDistance()).selector(targetPredicate);
+         this.targetConditions = TargetingConditions.forCombat().range(this.getFollowDistance()).selector(targetPredicate);
 +        if (mob.level.paperConfig.entitiesTargetWithFollowRange) this.targetConditions.useFollowRange(); // Paper
      }
  
@@ -34,24 +35,15 @@ diff --git a/src/main/java/net/minecraft/world/entity/ai/targeting/TargetingCond
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/targeting/TargetingConditions.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/targeting/TargetingConditions.java
-@@ -0,0 +0,0 @@ import java.util.function.Predicate;
- import javax.annotation.Nullable;
- import net.minecraft.world.entity.LivingEntity;
- import net.minecraft.world.entity.Mob;
-+import net.minecraft.world.entity.ai.attributes.AttributeInstance;
-+import net.minecraft.world.entity.ai.attributes.Attributes;
- 
- public class TargetingConditions {
- 
 @@ -0,0 +0,0 @@ public class TargetingConditions {
  
                  if (this.range > 0.0D) {
-                     double d0 = this.testInvisible ? targetEntity.getVisibilityPercent(baseEntity) : 1.0D;
--                    double d1 = Math.max(this.range * d0, 2.0D);
-+                    double d1 = Math.max((useFollowRange ? getFollowRange(baseEntity) : this.range) * d0, 2.0D); // Paper
-                     double d2 = baseEntity.distanceToSqr(targetEntity.getX(), targetEntity.getY(), targetEntity.getZ());
- 
-                     if (d2 > d1 * d1) {
+                     double d = this.testInvisible ? targetEntity.getVisibilityPercent(baseEntity) : 1.0D;
+-                    double e = Math.max(this.range * d, 2.0D);
++                    double e = Math.max((this.useFollowRange ? this.getFollowRange(baseEntity) : this.range) * d, 2.0D); // Paper
+                     double f = baseEntity.distanceToSqr(targetEntity.getX(), targetEntity.getY(), targetEntity.getZ());
+                     if (f > e * e) {
+                         return false;
 @@ -0,0 +0,0 @@ public class TargetingConditions {
              return true;
          }
@@ -66,7 +58,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +
 +    private double getFollowRange(LivingEntity entityliving) {
-+        AttributeInstance attributeinstance = entityliving.getAttribute(Attributes.FOLLOW_RANGE);
++        net.minecraft.world.entity.ai.attributes.AttributeInstance attributeinstance = entityliving.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.FOLLOW_RANGE);
 +        return attributeinstance == null ? 16.0D : attributeinstance.getValue();
 +    }
 +    // Paper end
