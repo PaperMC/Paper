@@ -50,6 +50,7 @@ import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.craftbukkit.util.CraftRayTraceResult;
+import org.bukkit.craftbukkit.util.CraftVoxelShape;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -745,5 +746,11 @@ public class CraftBlock implements Block {
 
         AxisAlignedBB aabb = shape.getBoundingBox();
         return new BoundingBox(getX() + aabb.minX, getY() + aabb.minY, getZ() + aabb.minZ, getX() + aabb.maxX, getY() + aabb.maxY, getZ() + aabb.maxZ);
+    }
+
+    @Override
+    public org.bukkit.util.VoxelShape getCollisionShape() {
+        VoxelShape shape = getNMS().getCollisionShape(world, position);
+        return new CraftVoxelShape(shape);
     }
 }
