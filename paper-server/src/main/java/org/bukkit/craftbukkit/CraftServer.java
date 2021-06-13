@@ -1056,6 +1056,7 @@ public final class CraftServer implements Server {
         console.levels.put(internal.getDimensionKey(), internal);
 
         getServer().loadSpawn(internal.getChunkProvider().chunkMap.progressListener, internal);
+        internal.entityManager.a(); // SPIGOT-6526: Load pending entities so they are available to the API
 
         pluginManager.callEvent(new WorldLoadEvent(internal.getWorld()));
         return internal.getWorld();
