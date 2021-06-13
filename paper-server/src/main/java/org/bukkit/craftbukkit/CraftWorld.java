@@ -1807,6 +1807,7 @@ public class CraftWorld implements World {
             entity = new EntityEvokerFangs(world, x, y, z, (float) Math.toRadians(yaw), 0, null);
         } else if (Marker.class.isAssignableFrom(clazz)) {
             entity = EntityTypes.MARKER.a(world);
+            entity.setPosition(x, y, z);
         }
 
         if (entity != null) {
