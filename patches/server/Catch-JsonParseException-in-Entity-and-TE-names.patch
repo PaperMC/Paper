@@ -26,10 +26,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  import net.minecraft.world.entity.Entity;
  import net.minecraft.world.level.ChunkPos;
 @@ -0,0 +0,0 @@ public final class MCUtil {
-                 return null;
          }
      }
-+
+ 
 +    @Nullable
 +    public static Component getBaseComponentFromNbt(String key, CompoundTag compound) {
 +        if (!compound.contains(key)) {
@@ -44,7 +43,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +        return null;
 +    }
- }
++
+     public static int getTicketLevelFor(net.minecraft.world.level.chunk.ChunkStatus status) {
+         return net.minecraft.server.level.ChunkMap.MAX_VIEW_DISTANCE + net.minecraft.world.level.chunk.ChunkStatus.getDistance(status);
+     }
 diff --git a/src/main/java/net/minecraft/world/level/BaseCommandBlock.java b/src/main/java/net/minecraft/world/level/BaseCommandBlock.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/BaseCommandBlock.java
@@ -58,14 +60,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  import net.minecraft.server.level.ServerLevel;
  import net.minecraft.util.StringUtil;
 @@ -0,0 +0,0 @@ public abstract class BaseCommandBlock implements CommandSource {
-         this.command = tag.getString("Command");
-         this.successCount = tag.getInt("SuccessCount");
-         if (tag.contains("CustomName", 8)) {
--            this.setName(Component.Serializer.fromJson(tag.getString("CustomName")));
-+            this.setName(MCUtil.getBaseComponentFromNbt("CustomName", tag)); // Paper - Catch ParseException
+         this.command = nbt.getString("Command");
+         this.successCount = nbt.getInt("SuccessCount");
+         if (nbt.contains("CustomName", 8)) {
+-            this.setName(Component.Serializer.fromJson(nbt.getString("CustomName")));
++            this.setName(MCUtil.getBaseComponentFromNbt("CustomName", nbt)); // Paper - Catch ParseException
          }
  
-         if (tag.contains("TrackOutput", 1)) {
+         if (nbt.contains("TrackOutput", 1)) {
 diff --git a/src/main/java/net/minecraft/world/level/block/entity/BannerBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/BannerBlockEntity.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/block/entity/BannerBlockEntity.java
@@ -79,19 +81,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  import net.minecraft.world.item.DyeColor;
  import net.minecraft.world.item.ItemStack;
 @@ -0,0 +0,0 @@ public class BannerBlockEntity extends BlockEntity implements Nameable {
-     public void load(BlockState state, CompoundTag tag) {
-         super.load(state, tag);
-         if (tag.contains("CustomName", 8)) {
--            this.name = Component.Serializer.fromJson(tag.getString("CustomName"));
-+            this.name = MCUtil.getBaseComponentFromNbt("CustomName", tag); // Paper - Catch ParseException
+     public void load(CompoundTag nbt) {
+         super.load(nbt);
+         if (nbt.contains("CustomName", 8)) {
+-            this.name = Component.Serializer.fromJson(nbt.getString("CustomName"));
++            this.name = MCUtil.getBaseComponentFromNbt("CustomName", nbt); // Paper - Catch ParseException
          }
  
-         if (this.hasLevel()) {
+         this.itemPatterns = nbt.getList("Patterns", 10);
 diff --git a/src/main/java/net/minecraft/world/level/block/entity/BaseContainerBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/BaseContainerBlockEntity.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/block/entity/BaseContainerBlockEntity.java
 +++ b/src/main/java/net/minecraft/world/level/block/entity/BaseContainerBlockEntity.java
-@@ -0,0 +0,0 @@ import javax.annotation.Nullable;
+@@ -0,0 +0,0 @@ import net.minecraft.core.BlockPos;
  import net.minecraft.nbt.CompoundTag;
  import net.minecraft.network.chat.Component;
  import net.minecraft.network.chat.TranslatableComponent;
@@ -100,11 +102,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  import net.minecraft.sounds.SoundSource;
  import net.minecraft.world.Container;
 @@ -0,0 +0,0 @@ public abstract class BaseContainerBlockEntity extends BlockEntity implements Co
-         super.load(state, tag);
-         this.lockKey = LockCode.fromTag(tag);
-         if (tag.contains("CustomName", 8)) {
--            this.name = Component.Serializer.fromJson(tag.getString("CustomName"));
-+            this.name = MCUtil.getBaseComponentFromNbt("CustomName", tag); // Paper - Catch ParseException
+         super.load(nbt);
+         this.lockKey = LockCode.fromTag(nbt);
+         if (nbt.contains("CustomName", 8)) {
+-            this.name = Component.Serializer.fromJson(nbt.getString("CustomName"));
++            this.name = MCUtil.getBaseComponentFromNbt("CustomName", nbt); // Paper - Catch ParseException
          }
  
      }

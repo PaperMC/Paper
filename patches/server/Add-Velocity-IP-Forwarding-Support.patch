@@ -35,10 +35,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      public static int packetInSpamThreshold = 300;
 @@ -0,0 +0,0 @@ public class PaperConfig {
-         }
          tabSpamLimit = getInt("settings.spam-limiter.tab-spam-limit", tabSpamLimit);
      }
-+
+ 
 +    public static boolean velocitySupport;
 +    public static boolean velocityOnlineMode;
 +    public static byte[] velocitySecretKey;
@@ -52,7 +51,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            velocitySecretKey = secret.getBytes(StandardCharsets.UTF_8);
 +        }
 +    }
- }
++
+     public static boolean asyncChunks = false;
+     private static void asyncChunks() {
+         ConfigurationSection section;
 diff --git a/src/main/java/com/destroystokyo/paper/proxy/VelocityProxy.java b/src/main/java/com/destroystokyo/paper/proxy/VelocityProxy.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
@@ -106,11 +108,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +
 +    public static InetAddress readAddress(final FriendlyByteBuf buf) {
-+        return InetAddresses.forString(buf.readUTF(Short.MAX_VALUE));
++        return InetAddresses.forString(buf.readUtf(Short.MAX_VALUE));
 +    }
 +
 +    public static GameProfile createProfile(final FriendlyByteBuf buf) {
-+        final GameProfile profile = new GameProfile(buf.readUUID(), buf.readUTF(16));
++        final GameProfile profile = new GameProfile(buf.readUUID(), buf.readUtf(16));
 +        readProperties(buf, profile);
 +        return profile;
 +    }
@@ -118,75 +120,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    private static void readProperties(final FriendlyByteBuf buf, final GameProfile profile) {
 +        final int properties = buf.readVarInt();
 +        for (int i1 = 0; i1 < properties; i1++) {
-+            final String name = buf.readUTF(Short.MAX_VALUE);
-+            final String value = buf.readUTF(Short.MAX_VALUE);
-+            final String signature = buf.readBoolean() ? buf.readUTF(Short.MAX_VALUE) : null;
++            final String name = buf.readUtf(Short.MAX_VALUE);
++            final String value = buf.readUtf(Short.MAX_VALUE);
++            final String signature = buf.readBoolean() ? buf.readUtf(Short.MAX_VALUE) : null;
 +            profile.getProperties().put(name, new Property(name, value, signature));
 +        }
 +    }
 +}
-diff --git a/src/main/java/net/minecraft/network/FriendlyByteBuf.java b/src/main/java/net/minecraft/network/FriendlyByteBuf.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/network/FriendlyByteBuf.java
-+++ b/src/main/java/net/minecraft/network/FriendlyByteBuf.java
-@@ -0,0 +0,0 @@ public class FriendlyByteBuf extends ByteBuf {
-         return this.writeVarInt(oenum.ordinal());
-     }
- 
-+    public int readVarInt() { return readVarInt(); } // Paper - OBFHELPER
-     public int readVarInt() {
-         int i = 0;
-         int j = 0;
-@@ -0,0 +0,0 @@ public class FriendlyByteBuf extends ByteBuf {
-         return this;
-     }
- 
-+    public UUID readUUID() { return readUUID(); } // Paper - OBFHELPER
-     public UUID readUUID() {
-         return new UUID(this.readLong(), this.readLong());
-     }
-@@ -0,0 +0,0 @@ public class FriendlyByteBuf extends ByteBuf {
-         }
-     }
- 
-+    public String readUTF(int maxLength) { return this.readUtf(maxLength); } // Paper - OBFHELPER
-     public String readUtf(int i) {
-         int j = this.readVarInt();
- 
-diff --git a/src/main/java/net/minecraft/network/protocol/login/ClientboundCustomQueryPacket.java b/src/main/java/net/minecraft/network/protocol/login/ClientboundCustomQueryPacket.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/network/protocol/login/ClientboundCustomQueryPacket.java
-+++ b/src/main/java/net/minecraft/network/protocol/login/ClientboundCustomQueryPacket.java
-@@ -0,0 +0,0 @@ public class ClientboundCustomQueryPacket implements Packet<ClientLoginPacketLis
- 
-     public ClientboundCustomQueryPacket() {}
- 
-+    // Paper start
-+    public ClientboundCustomQueryPacket(int id, ResourceLocation channel, FriendlyByteBuf buf) {
-+        this.transactionId = id;
-+        this.identifier = channel;
-+        this.data = buf;
-+    }
-+    // Paper end
-+
-     @Override
-     public void read(FriendlyByteBuf buf) throws IOException {
-         this.transactionId = buf.readVarInt();
-diff --git a/src/main/java/net/minecraft/network/protocol/login/ServerboundCustomQueryPacket.java b/src/main/java/net/minecraft/network/protocol/login/ServerboundCustomQueryPacket.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/network/protocol/login/ServerboundCustomQueryPacket.java
-+++ b/src/main/java/net/minecraft/network/protocol/login/ServerboundCustomQueryPacket.java
-@@ -0,0 +0,0 @@ import net.minecraft.network.protocol.Packet;
- 
- public class ServerboundCustomQueryPacket implements Packet<ServerLoginPacketListener> {
- 
--    private int transactionId;
--    private FriendlyByteBuf data;
-+    private int transactionId; public int getId() { return transactionId; } // Paper - OBFHELPER
-+    private FriendlyByteBuf data; public FriendlyByteBuf getBuf() { return data; } // Paper - OBFHELPER
- 
-     public ServerboundCustomQueryPacket() {}
- 
 diff --git a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
@@ -199,10 +139,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  import net.minecraft.network.chat.Component;
  import net.minecraft.network.chat.TextComponent;
  import net.minecraft.network.chat.TranslatableComponent;
-+import net.minecraft.network.protocol.login.ClientboundCustomQueryPacket;
- import net.minecraft.network.protocol.login.ClientboundGameProfilePacket;
- import net.minecraft.network.protocol.login.ClientboundHelloPacket;
- import net.minecraft.network.protocol.login.ClientboundLoginCompressionPacket;
 @@ -0,0 +0,0 @@ import org.bukkit.craftbukkit.util.Waitable;
  import org.bukkit.event.player.AsyncPlayerPreLoginEvent;
  import org.bukkit.event.player.PlayerPreLoginEvent;
@@ -212,7 +148,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener {
  
 @@ -0,0 +0,0 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener
-     private SecretKey secretKey;
+     @Nullable
      private ServerPlayer delayedAcceptPlayer;
      public String hostname = ""; // CraftBukkit - add field
 +    private int velocityLoginMessageId = -1; // Paper - Velocity support
@@ -226,7 +162,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            // Paper start - Velocity support
 +            if (com.destroystokyo.paper.PaperConfig.velocitySupport) {
 +                this.velocityLoginMessageId = java.util.concurrent.ThreadLocalRandom.current().nextInt();
-+                ClientboundCustomQueryPacket packet1 = new ClientboundCustomQueryPacket(this.velocityLoginMessageId, com.destroystokyo.paper.proxy.VelocityProxy.PLAYER_INFO_CHANNEL, new FriendlyByteBuf(Unpooled.EMPTY_BUFFER));
++                net.minecraft.network.protocol.login.ClientboundCustomQueryPacket packet1 = new net.minecraft.network.protocol.login.ClientboundCustomQueryPacket(this.velocityLoginMessageId, com.destroystokyo.paper.proxy.VelocityProxy.PLAYER_INFO_CHANNEL, new FriendlyByteBuf(Unpooled.EMPTY_BUFFER));
 +                this.connection.send(packet1);
 +                return;
 +            }
@@ -238,22 +174,22 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public class LoginHandler {
  
          public void fireEvents() throws Exception {
-+                        // Paper start - Velocity support
-+                        if (ServerLoginPacketListenerImpl.this.velocityLoginMessageId == -1 && com.destroystokyo.paper.PaperConfig.velocitySupport) {
-+                            disconnect("This server requires you to connect with Velocity.");
-+                            return;
-+                        }
-+                        // Paper end
-                         String playerName = gameProfile.getName();
-                         java.net.InetAddress address = ((java.net.InetSocketAddress) connection.getRemoteAddress()).getAddress();
-                         java.util.UUID uniqueId = gameProfile.getId();
++                            // Paper start - Velocity support
++                            if (ServerLoginPacketListenerImpl.this.velocityLoginMessageId == -1 && com.destroystokyo.paper.PaperConfig.velocitySupport) {
++                                disconnect("This server requires you to connect with Velocity.");
++                                return;
++                            }
++                            // Paper end
+                         String playerName = ServerLoginPacketListenerImpl.this.gameProfile.getName();
+                         java.net.InetAddress address = ((java.net.InetSocketAddress) ServerLoginPacketListenerImpl.this.connection.getRemoteAddress()).getAddress();
+                         java.util.UUID uniqueId = ServerLoginPacketListenerImpl.this.gameProfile.getId();
 @@ -0,0 +0,0 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener
      // Spigot end
  
      public void handleCustomQueryPacket(ServerboundCustomQueryPacket packet) {
 +        // Paper start - Velocity support
-+        if (com.destroystokyo.paper.PaperConfig.velocitySupport && packet.getId() == this.velocityLoginMessageId) {
-+            FriendlyByteBuf buf = packet.getBuf();
++        if (com.destroystokyo.paper.PaperConfig.velocitySupport && packet.getTransactionId() == this.velocityLoginMessageId) {
++            FriendlyByteBuf buf = packet.getData();
 +            if (buf == null) {
 +                this.disconnect("This server requires you to connect with Velocity.");
 +                return;
@@ -271,7 +207,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            }
 +            this.connection.address = new java.net.InetSocketAddress(com.destroystokyo.paper.proxy.VelocityProxy.readAddress(buf), port);
 +
-+            this.setGameProfile(com.destroystokyo.paper.proxy.VelocityProxy.createProfile(buf));
++            this.gameProfile = com.destroystokyo.paper.proxy.VelocityProxy.createProfile(buf);
 +
 +            // Proceed with login
 +            authenticatorPool.execute(() -> {
