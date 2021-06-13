@@ -15,6 +15,7 @@ import org.bukkit.metadata.Metadatable;
 import org.bukkit.util.BoundingBox;
 import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
+import org.bukkit.util.VoxelShape;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -501,4 +502,13 @@ public interface Block extends Metadatable {
      */
     @NotNull
     BoundingBox getBoundingBox();
+
+    /**
+     * Gets the collision shape of this block.
+     *
+     * @return a {@link VoxelShape} representing the collision shape of this
+     * block.
+     */
+    @NotNull
+    VoxelShape getCollisionShape();
 }
