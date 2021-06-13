@@ -5,10 +5,10 @@ Subject: [PATCH] Add more Zombie API
 
 
 diff --git a/src/main/java/net/minecraft/world/entity/monster/Zombie.java b/src/main/java/net/minecraft/world/entity/monster/Zombie.java
-index 94e2a8f74e74d68d4a9b82b667fbff24b7e9e629..ad4eeb15771750193a28116117992270c72a3644 100644
+index 017d8de4d09f524aed2ee03af7ef79468503edf0..c60d9775230b2ff554eeb38136f8e7c32c47d8cf 100644
 --- a/src/main/java/net/minecraft/world/entity/monster/Zombie.java
 +++ b/src/main/java/net/minecraft/world/entity/monster/Zombie.java
-@@ -91,6 +91,7 @@ public class Zombie extends Monster {
+@@ -96,6 +96,7 @@ public class Zombie extends Monster {
      private int inWaterTime;
      public int conversionTime;
      private int lastTick = MinecraftServer.currentTick; // CraftBukkit - add field
@@ -16,7 +16,7 @@ index 94e2a8f74e74d68d4a9b82b667fbff24b7e9e629..ad4eeb15771750193a28116117992270
  
      public Zombie(EntityType<? extends Zombie> type, Level world) {
          super(type, world);
-@@ -259,6 +260,12 @@ public class Zombie extends Monster {
+@@ -264,6 +265,12 @@ public class Zombie extends Monster {
          super.aiStep();
      }
  
@@ -29,47 +29,47 @@ index 94e2a8f74e74d68d4a9b82b667fbff24b7e9e629..ad4eeb15771750193a28116117992270
      public void startUnderWaterConversion(int ticksUntilWaterConversion) {
          this.lastTick = MinecraftServer.currentTick; // CraftBukkit
          this.conversionTime = ticksUntilWaterConversion;
-@@ -287,9 +294,16 @@ public class Zombie extends Monster {
+@@ -292,10 +299,17 @@ public class Zombie extends Monster {
  
      }
  
-+    public boolean shouldBurnInDay() { return isSunSensitive(); } // Paper - OBFHELPER
++    public boolean isSunSensitivePublic() { return this.isSunSensitive(); } // Paper - public getter
      protected boolean isSunSensitive() {
 -        return true;
 +        return this.shouldBurnInDay; // Paper - use api value instead
-+    }
-+
+     }
+ 
 +    // Paper start
 +    public void setShouldBurnInDay(boolean shouldBurnInDay) {
 +        this.shouldBurnInDay = shouldBurnInDay;
-     }
++    }
 +    // Paper end
- 
++
      @Override
      public boolean hurt(DamageSource source, float amount) {
-@@ -410,6 +424,7 @@ public class Zombie extends Monster {
-         tag.putBoolean("CanBreakDoors", this.canBreakDoors());
-         tag.putInt("InWaterTime", this.isInWater() ? this.inWaterTime : -1);
-         tag.putInt("DrownedConversionTime", this.isUnderWaterConverting() ? this.conversionTime : -1);
-+        tag.putBoolean("Paper.ShouldBurnInDay", shouldBurnInDay); // Paper
+         if (!super.hurt(source, amount)) {
+@@ -415,6 +429,7 @@ public class Zombie extends Monster {
+         nbt.putBoolean("CanBreakDoors", this.canBreakDoors());
+         nbt.putInt("InWaterTime", this.isInWater() ? this.inWaterTime : -1);
+         nbt.putInt("DrownedConversionTime", this.isUnderWaterConverting() ? this.conversionTime : -1);
++        nbt.putBoolean("Paper.ShouldBurnInDay", this.shouldBurnInDay); // Paper
      }
  
      @Override
-@@ -421,7 +436,11 @@ public class Zombie extends Monster {
-         if (tag.contains("DrownedConversionTime", 99) && tag.getInt("DrownedConversionTime") > -1) {
-             this.startUnderWaterConversion(tag.getInt("DrownedConversionTime"));
+@@ -426,6 +441,11 @@ public class Zombie extends Monster {
+         if (nbt.contains("DrownedConversionTime", 99) && nbt.getInt("DrownedConversionTime") > -1) {
+             this.startUnderWaterConversion(nbt.getInt("DrownedConversionTime"));
          }
--
 +        // Paper start
-+        if (tag.contains("Paper.ShouldBurnInDay")) {
-+            shouldBurnInDay = tag.getBoolean("Paper.ShouldBurnInDay");
++        if (nbt.contains("Paper.ShouldBurnInDay")) {
++            this.shouldBurnInDay = nbt.getBoolean("Paper.ShouldBurnInDay");
 +        }
 +        // Paper end
+ 
      }
  
-     @Override
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftZombie.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftZombie.java
-index 038793987338c2e4b73784a10836f85c7061175a..86f65c07806a118c49e900c59be86c2bd2eb124c 100644
+index 2e643e92569512ac4e75c0ef2ee7aa4b688e7356..41b5059f6fde8a1afa8c70b983750854ac0207a6 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftZombie.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftZombie.java
 @@ -93,6 +93,42 @@ public class CraftZombie extends CraftMonster implements Zombie {
@@ -94,7 +94,7 @@ index 038793987338c2e4b73784a10836f85c7061175a..86f65c07806a118c49e900c59be86c2b
 +
 +    @Override
 +    public boolean shouldBurnInDay() {
-+        return getHandle().shouldBurnInDay();
++        return getHandle().isSunSensitivePublic();
 +    }
 +
 +    @Override

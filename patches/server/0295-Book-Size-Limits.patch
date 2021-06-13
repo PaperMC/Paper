@@ -6,32 +6,34 @@ Subject: [PATCH] Book Size Limits
 Puts some limits on the size of books.
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-index 3139c194f9b1bc3510d51a81f13ae43d00a3dc29..13edb435b3fa65b4980bd7472aa5a5196f4d5b2b 100644
+index 11d628869a9a6eda8bf21a4f213ff23ad753b18e..8bf4d2b8c38c02d6a5b2fea37113689a252f1571 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-@@ -339,4 +339,11 @@ public class PaperConfig {
-             velocitySecretKey = secret.getBytes(StandardCharsets.UTF_8);
+@@ -347,6 +347,13 @@ public class PaperConfig {
          }
      }
-+
+ 
 +    public static int maxBookPageSize = 2560;
 +    public static double maxBookTotalSizeMultiplier = 0.98D;
 +    private static void maxBookSize() {
 +        maxBookPageSize = getInt("settings.book-size.page-max", maxBookPageSize);
 +        maxBookTotalSizeMultiplier = getDouble("settings.book-size.total-multiplier", maxBookTotalSizeMultiplier);
 +    }
- }
++
+     public static boolean asyncChunks = false;
+     private static void asyncChunks() {
+         ConfigurationSection section;
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index a6ad7747396f94def688b4d2783137180dc2bb84..b1c505d3fdcc2fb3496f80bee85e4895b9069dcb 100644
+index 8b716c625c363d7143fe6fbc26d3d674d62a5833..f1a8470d0b314c8fa5eade198cffc1f8cd5e6832 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-@@ -999,6 +999,52 @@ public class ServerGamePacketListenerImpl implements ServerGamePacketListener {
+@@ -1002,6 +1002,52 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
  
      @Override
      public void handleEditBook(ServerboundEditBookPacket packet) {
 +        // Paper start
 +        ItemStack testStack = packet.getBook();
-+        if (!craftServer.isPrimaryThread() && !testStack.isEmpty() && testStack.getTag() != null) {
++        if (!this.cserver.isPrimaryThread() && !testStack.isEmpty() && testStack.getTag() != null) {
 +            ListTag pageList = testStack.getTag().getList("pages", 8);
 +            if (pageList.size() > 100) {
 +                ServerGamePacketListenerImpl.LOGGER.warn(this.player.getScoreboardName() + " tried to send a book with too many pages");

@@ -22,10 +22,10 @@ it only impacts data sent from the client.
 Set -DPaper.maxSignLength=XX to change limit or -1 to disable
 
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index 276773e17149f57038cd21485fd9d9061670ff2d..d6d8d83bc16572474d56a278dd119eacc2c52476 100644
+index f1a8470d0b314c8fa5eade198cffc1f8cd5e6832..defebf7b45e4f006fa7e575b5dbd01ac1e231d5a 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-@@ -254,6 +254,7 @@ public class ServerGamePacketListenerImpl implements ServerGamePacketListener {
+@@ -255,6 +255,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
      private int aboveGroundVehicleTickCount;
      private int receivedMovePacketCount;
      private int knownMovePacketCount;
@@ -33,22 +33,26 @@ index 276773e17149f57038cd21485fd9d9061670ff2d..d6d8d83bc16572474d56a278dd119eac
      private static final long KEEPALIVE_LIMIT = Long.getLong("paper.playerconnection.keepalive", 30) * 1000; // Paper - provide property to set keepalive limit
  
      public ServerGamePacketListenerImpl(MinecraftServer server, Connection connection, ServerPlayer player) {
-@@ -2860,7 +2861,17 @@ public class ServerGamePacketListenerImpl implements ServerGamePacketListener {
+@@ -2867,10 +2868,20 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
              List<net.kyori.adventure.text.Component> lines = new java.util.ArrayList<>();
  
              for (int i = 0; i < list.size(); ++i) {
--                lines.add(net.kyori.adventure.text.Component.text(SharedConstants.filterAllowedChatCharacters(list.get(i)))); // Paper - Replaced with anvil color stripping method to stop exploits that allow colored signs to be created.
 +                // Paper start - cap line length - modified clients can send longer data than normal
-+                String currentLine = list.get(i);
-+                if (MAX_SIGN_LINE_LENGTH > 0 && currentLine.length() > MAX_SIGN_LINE_LENGTH) {
++                net.minecraft.server.network.TextFilter.FilteredText currentLine = list.get(i);
++                if (MAX_SIGN_LINE_LENGTH > 0 && currentLine.getRaw().length() > MAX_SIGN_LINE_LENGTH) {
 +                    // This handles multibyte characters as 1
-+                    int offset = currentLine.codePoints().limit(MAX_SIGN_LINE_LENGTH).map(Character::charCount).sum();
-+                    if (offset < currentLine.length()) {
-+                        list.set(i, currentLine = currentLine.substring(0, offset));
++                    int offset = currentLine.getRaw().codePoints().limit(MAX_SIGN_LINE_LENGTH).map(Character::charCount).sum();
++                    if (offset < currentLine.getRaw().length()) {
++                        list.set(i, currentLine = net.minecraft.server.network.TextFilter.FilteredText.passThrough(currentLine.getRaw().substring(0, offset))); // this will break any filtering, but filtering is NYI as of 1.17
 +                    }
 +                }
 +                // Paper end
-+                lines.add(net.kyori.adventure.text.Component.text(SharedConstants.filterAllowedChatCharacters(currentLine))); // Paper - Replaced with anvil color stripping method to stop exploits that allow colored signs to be created.
+                 if (this.player.isTextFilteringEnabled()) {
+-                    lines.add(net.kyori.adventure.text.Component.text(SharedConstants.filterText(list.get(i).getFiltered())));
++                    lines.add(net.kyori.adventure.text.Component.text(SharedConstants.filterText(currentLine.getFiltered())));
+                 } else {
+-                    lines.add(net.kyori.adventure.text.Component.text(SharedConstants.filterText(list.get(i).getRaw())));
++                    lines.add(net.kyori.adventure.text.Component.text(SharedConstants.filterText(currentLine.getRaw())));
+                 }
              }
-             SignChangeEvent event = new SignChangeEvent(org.bukkit.craftbukkit.block.CraftBlock.at(worldserver, blockposition), this.getPlayer(), lines);
-             this.craftServer.getPluginManager().callEvent(event);
+             SignChangeEvent event = new SignChangeEvent((org.bukkit.craftbukkit.block.CraftBlock) player.getWorld().getBlockAt(x, y, z), this.cserver.getPlayer(this.player), lines);
