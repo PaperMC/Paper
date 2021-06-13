@@ -17,39 +17,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      private StateDefinition<Block, BlockState> definition;
      private BlockState state;
      @Nullable
-@@ -0,0 +0,0 @@ public class BlockStateParser {
-         return this.nbt;
-     }
- 
-+    public final @Nullable ResourceLocation getTagKey() { return getTag(); } // Paper - OBFHELPER
-     @Nullable
-     public ResourceLocation getTag() {
-         return this.tag;
-     }
- 
-+    public final BlockStateParser parse(boolean parseTile) throws CommandSyntaxException { return this.parse(parseTile); } // Paper - OBFHELPER
-     public BlockStateParser parse(boolean allowNbt) throws CommandSyntaxException {
-         this.suggestions = this::suggestBlockIdOrTag;
-         if (this.reader.canRead() && this.reader.peek() == '#') {
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
-@@ -0,0 +0,0 @@ import java.util.logging.Level;
- import java.util.logging.Logger;
- import javax.annotation.Nonnull;
- import javax.annotation.Nullable;
-+import net.minecraft.commands.arguments.blocks.BlockStateParser;
- import net.minecraft.nbt.CompoundTag;
- import net.minecraft.nbt.ListTag;
- import net.minecraft.nbt.NbtIo;
- import net.minecraft.nbt.StringTag;
- import net.minecraft.nbt.Tag;
- import net.minecraft.network.chat.TextComponent;
-+import net.minecraft.resources.ResourceLocation;
- import net.minecraft.world.item.BlockItem;
- import org.apache.commons.codec.binary.Base64;
- import org.apache.commons.lang.Validate;
 @@ -0,0 +0,0 @@ import org.bukkit.persistence.PersistentDataContainer;
  import static org.spigotmc.ValidateUtils.*;
  // Spigot end
@@ -102,7 +73,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          this.persistentDataContainer.putAll(meta.persistentDataContainer.getRaw());
  
 @@ -0,0 +0,0 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
-                 persistentDataContainer.put(key, compound.get(key));
+                 this.persistentDataContainer.put(key, compound.get(key));
              }
          }
 +        // Paper start - Implement an API for CanPlaceOn and CanDestroy NBT values
@@ -134,7 +105,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          Set<String> keys = tag.getAllKeys();
          for (String key : keys) {
 @@ -0,0 +0,0 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
-             setDamage(damage);
+             this.setDamage(damage);
          }
  
 +        // Paper start - Implement an API for CanPlaceOn and CanDestroy NBT values
@@ -169,7 +140,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          if (internal != null) {
              ByteArrayInputStream buf = new ByteArrayInputStream(Base64.decodeBase64(internal));
 @@ -0,0 +0,0 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
-         if (hasDamage()) {
+         if (this.hasDamage()) {
              itemTag.putInt(DAMAGE.NBT, damage);
          }
 +        // Paper start - Implement an API for CanPlaceOn and CanDestroy NBT values
@@ -190,7 +161,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +        // Paper end
  
-         for (Map.Entry<String, Tag> e : unhandledTags.entrySet()) {
+         for (Map.Entry<String, Tag> e : this.unhandledTags.entrySet()) {
              itemTag.put(e.getKey(), e.getValue());
 @@ -0,0 +0,0 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
          }
@@ -218,8 +189,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      @Overridden
      boolean isEmpty() {
--        return !(hasDisplayName() || hasLocalizedName() || hasEnchants() || (lore != null) || hasCustomModelData() || hasBlockData() || hasRepairCost() || !unhandledTags.isEmpty() || !persistentDataContainer.isEmpty() || hideFlag != 0 || isUnbreakable() || hasDamage() || hasAttributeModifiers());
-+        return !(hasDisplayName() || hasLocalizedName() || hasEnchants() || (lore != null) || hasCustomModelData() || hasBlockData() || hasRepairCost() || !unhandledTags.isEmpty() || !persistentDataContainer.isEmpty() || hideFlag != 0 || isUnbreakable() || hasDamage() || hasAttributeModifiers() || hasPlaceableKeys() || hasDestroyableKeys()); // Paper - Implement an API for CanPlaceOn and CanDestroy NBT values
+-        return !(this.hasDisplayName() || this.hasLocalizedName() || this.hasEnchants() || (this.lore != null) || this.hasCustomModelData() || this.hasBlockData() || this.hasRepairCost() || !this.unhandledTags.isEmpty() || !this.persistentDataContainer.isEmpty() || this.hideFlag != 0 || this.isUnbreakable() || this.hasDamage() || this.hasAttributeModifiers());
++        return !(this.hasDisplayName() || this.hasLocalizedName() || this.hasEnchants() || (this.lore != null) || this.hasCustomModelData() || this.hasBlockData() || this.hasRepairCost() || !this.unhandledTags.isEmpty() || !this.persistentDataContainer.isEmpty() || this.hideFlag != 0 || this.isUnbreakable() || this.hasDamage() || this.hasAttributeModifiers() || this.hasPlaceableKeys() || this.hasDestroyableKeys()); // Paper - Implement an API for CanPlaceOn and CanDestroy NBT values
      }
  
      // Paper start
@@ -237,12 +208,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      /**
 @@ -0,0 +0,0 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
-         hash = 61 * hash + (hasDamage() ? this.damage : 0);
-         hash = 61 * hash + (hasAttributeModifiers() ? this.attributeModifiers.hashCode() : 0);
-         hash = 61 * hash + version;
+         hash = 61 * hash + (this.hasDamage() ? this.damage : 0);
+         hash = 61 * hash + (this.hasAttributeModifiers() ? this.attributeModifiers.hashCode() : 0);
+         hash = 61 * hash + this.version;
 +        // Paper start - Implement an API for CanPlaceOn and CanDestroy NBT values
-+        hash = 61 * hash + (hasPlaceableKeys() ? this.placeableKeys.hashCode() : 0);
-+        hash = 61 * hash + (hasDestroyableKeys() ? this.destroyableKeys.hashCode() : 0);
++        hash = 61 * hash + (this.hasPlaceableKeys() ? this.placeableKeys.hashCode() : 0);
++        hash = 61 * hash + (this.hasDestroyableKeys() ? this.destroyableKeys.hashCode() : 0);
 +        // Paper end
          return hash;
      }
@@ -267,7 +238,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          }
  
 +        // Paper start - Implement an API for CanPlaceOn and CanDestroy NBT values
-+        if (hasPlaceableKeys()) {
++        if (this.hasPlaceableKeys()) {
 +            List<String> cerealPlaceable = this.placeableKeys.stream()
 +                .map(this::serializeNamespaced)
 +                .collect(java.util.stream.Collectors.toList());
@@ -275,7 +246,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            builder.put(CAN_PLACE_ON.BUKKIT, cerealPlaceable);
 +        }
 +
-+        if (hasDestroyableKeys()) {
++        if (this.hasDestroyableKeys()) {
 +            List<String> cerealDestroyable = this.destroyableKeys.stream()
 +                .map(this::serializeNamespaced)
 +                .collect(java.util.stream.Collectors.toList());
@@ -283,9 +254,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            builder.put(CAN_DESTROY.BUKKIT, cerealDestroyable);
 +        }
 +        // Paper end
-+
-         final Map<String, Tag> internalTags = new HashMap<String, Tag>(unhandledTags);
-         serializeInternal(internalTags);
+         final Map<String, Tag> internalTags = new HashMap<String, Tag>(this.unhandledTags);
+         this.serializeInternal(internalTags);
          if (!internalTags.isEmpty()) {
 @@ -0,0 +0,0 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
                          CraftMetaArmorStand.SHOW_ARMS.NBT,
@@ -392,7 +362,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    private @Nullable Namespaced deserializeNamespaced(String raw) {
 +        boolean isTag = raw.length() > 0 && raw.codePointAt(0) == '#';
-+        BlockStateParser blockParser = new BlockStateParser(new com.mojang.brigadier.StringReader(raw), true);
++        net.minecraft.commands.arguments.blocks.BlockStateParser blockParser = new net.minecraft.commands.arguments.blocks.BlockStateParser(new com.mojang.brigadier.StringReader(raw), true);
 +        try {
 +            blockParser = blockParser.parse(false);
 +        } catch (com.mojang.brigadier.exceptions.CommandSyntaxException e) {
@@ -400,9 +370,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            return null;
 +        }
 +
-+        ResourceLocation key;
++        net.minecraft.resources.ResourceLocation key;
 +        if (isTag) {
-+            key = blockParser.getTagKey();
++            key = blockParser.getTag();
 +        } else {
 +            key = blockParser.getBlockKey();
 +        }

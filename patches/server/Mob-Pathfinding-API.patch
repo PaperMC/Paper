@@ -18,12 +18,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import org.bukkit.craftbukkit.entity.CraftLivingEntity;
 +import org.bukkit.entity.LivingEntity;
 +import org.bukkit.entity.Mob;
-+
 +import javax.annotation.Nonnull;
 +import javax.annotation.Nullable;
 +import net.minecraft.world.level.pathfinder.Node;
 +import net.minecraft.world.level.pathfinder.Path;
-+import PathResult;
 +import java.util.ArrayList;
 +import java.util.List;
 +
@@ -171,11 +169,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      @Nullable
 -    public Path createPath(Entity entity, int distance) {
 +    public final Path calculateDestination(Entity entity) { return createPath(entity, 0); }  public Path createPath(Entity entity, int distance) {
-         return this.a(ImmutableSet.of(entity.blockPosition()), entity, 16, true, distance); // Paper
+         return this.createPath(ImmutableSet.of(entity.blockPosition()), entity, 16, true, distance); // Paper
      }
  
 @@ -0,0 +0,0 @@ public abstract class PathNavigation {
-         return pathentity != null && this.moveTo(pathentity, speed);
+         return path != null && this.moveTo(path, speed);
      }
  
 +    public boolean setDestination(@Nullable Path pathentity, double speed) { return moveTo(pathentity, speed); } // Paper - OBFHELPER
@@ -204,9 +202,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/world/level/pathfinder/Node.java
 +++ b/src/main/java/net/minecraft/world/level/pathfinder/Node.java
 @@ -0,0 +0,0 @@ import net.minecraft.util.Mth;
+ import net.minecraft.world.phys.Vec3;
  
  public class Node {
- 
 -    public final int x;
 -    public final int y;
 -    public final int z;
@@ -231,20 +229,21 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    protected boolean canOpenDoors; public boolean shouldOpenDoors() { return canOpenDoors; } public void setShouldOpenDoors(boolean b) { canOpenDoors = b; } // Paper - obfhelper
 +    protected boolean canFloat; public boolean shouldFloat() { return canFloat; } public void setShouldFloat(boolean b) { canFloat = b; } // Paper - obfhelper
  
-     public NodeEvaluator() {}
- 
+     public void prepare(PathNavigationRegion cachedWorld, Mob entity) {
+         this.level = cachedWorld;
 diff --git a/src/main/java/net/minecraft/world/level/pathfinder/Path.java b/src/main/java/net/minecraft/world/level/pathfinder/Path.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/pathfinder/Path.java
 +++ b/src/main/java/net/minecraft/world/level/pathfinder/Path.java
-@@ -0,0 +0,0 @@ import net.minecraft.world.phys.Vec3;
+@@ -0,0 +0,0 @@ import net.minecraft.world.entity.Entity;
+ import net.minecraft.world.phys.Vec3;
  
  public class Path {
- 
 -    private final List<Node> nodes;
 +    private final List<Node> nodes; public List<Node> getPoints() { return nodes; } // Paper - OBFHELPER
      private Node[] openSet = new Node[0];
      private Node[] closedSet = new Node[0];
+     private Set<Target> targetNodes;
 -    private int nextNodeIndex;
 +    private int nextNodeIndex; public int getNextIndex() { return this.nextNodeIndex; } // Paper - OBFHELPER
      private final BlockPos target;
@@ -260,7 +259,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      @Nullable
 -    public Node getEndNode() {
 +    public Node getFinalPoint() { return getEndNode(); } @Nullable public Node getEndNode() { // Paper - OBFHELPER
-         return !this.nodes.isEmpty() ? (Node) this.nodes.get(this.nodes.size() - 1) : null;
+         return !this.nodes.isEmpty() ? this.nodes.get(this.nodes.size() - 1) : null;
      }
  
 @@ -0,0 +0,0 @@ public class Path {
@@ -269,7 +268,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
 -    public BlockPos getNextNodePos() {
 +    public BlockPos getNext() { return getNextNodePos(); } public BlockPos getNextNodePos() { // Paper - OBFHELPER
-         return ((Node) this.nodes.get(this.nextNodeIndex)).asBlockPos();
+         return this.nodes.get(this.nextNodeIndex).asBlockPos();
      }
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftMob.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftMob.java
@@ -287,4 +286,4 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    @Override public com.destroystokyo.paper.entity.Pathfinder getPathfinder() { return paperPathfinder; } // Paper
      @Override
      public void setTarget(LivingEntity target) {
-         net.minecraft.world.entity.Mob entity = getHandle();
+         net.minecraft.world.entity.Mob entity = this.getHandle();
