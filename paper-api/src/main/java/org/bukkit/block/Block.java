@@ -9,6 +9,7 @@ import org.bukkit.World;
 import org.bukkit.block.data.Bisected;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.metadata.Metadatable;
 import org.bukkit.util.BoundingBox;
@@ -440,6 +441,22 @@ public interface Block extends Metadatable {
      * @return true if the tool is preferred for breaking this block.
      */
     boolean isPreferredTool(@NotNull ItemStack tool);
+
+    /**
+     * Gets the speed at which the given player would break this block, taking
+     * into account tools, potion effects, whether or not the player is in
+     * water, enchantments, etc.
+     *
+     * The returned value is the amount of progress made in breaking the block.
+     * When the total breaking progress reaches {@code 1.0f}, the block is
+     * broken. Note that the break speed can change in the course of breaking a
+     * block, e.g. if a potion effect is applied or expires, or the player
+     * jumps/enters water.
+     *
+     * @param player player breaking the block
+     * @return the speed at which the player breaks this block
+     */
+    float getBreakSpeed(@NotNull Player player);
 
     /**
      * Checks if this block is passable.
