@@ -13,25 +13,26 @@ diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/ma
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-@@ -0,0 +0,0 @@ public class ServerPlayer extends Player implements ContainerListener {
+@@ -0,0 +0,0 @@ public class ServerPlayer extends Player {
          this.stats = server.getPlayerList().getStatisticManager(this);
          this.advancements = server.getPlayerList().getPlayerAdvancements(this);
          this.maxUpStep = 1.0F;
 -        this.fudgeSpawnLocation(world);
 +        //this.c(worldserver); // Paper - don't move to spawn on login, only first join
-         this.textFilter = server.createTextFilterForPlayer(this);
  
          this.cachedSingleHashSet = new com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<>(this); // Paper
-@@ -0,0 +0,0 @@ public class ServerPlayer extends Player implements ContainerListener {
+ 
+@@ -0,0 +0,0 @@ public class ServerPlayer extends Player {
      }
      // CraftBukkit end
  
-+    public final void moveToSpawn(ServerLevel worldserver) { fudgeSpawnLocation(worldserver); } // Paper - OBFHELPER
-     private void fudgeSpawnLocation(ServerLevel world) {
-         BlockPos blockposition = world.getSpawn();
+-    private void fudgeSpawnLocation(ServerLevel world) {
++    public void fudgeSpawnLocation(ServerLevel world) { // Paper - private -> public
+         BlockPos blockposition = world.getSharedSpawnPos();
  
-@@ -0,0 +0,0 @@ public class ServerPlayer extends Player implements ContainerListener {
-                 position = Vec3.atCenterOf(((ServerLevel) world).getSpawn());
+         if (world.dimensionType().hasSkyLight() && world.serverLevelData.getGameType() != GameType.ADVENTURE) { // CraftBukkit
+@@ -0,0 +0,0 @@ public class ServerPlayer extends Player {
+                 position = Vec3.atCenterOf(((ServerLevel) world).getSharedSpawnPos());
              }
              this.level = world;
 -            this.setPos(position.x(), position.y(), position.z());
@@ -47,8 +48,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              worldserver1 = worldserver;
          }
  
-+        if (nbttagcompound == null) player.moveToSpawn(worldserver1); // Paper - only move to spawn on first login, otherwise, stay where you are....
++        if (nbttagcompound == null) player.fudgeSpawnLocation(worldserver1); // Paper - only move to spawn on first login, otherwise, stay where you are....
 +
          player.setLevel(worldserver1);
-         player.gameMode.setLevel((ServerLevel) player.level);
          String s1 = "local";
+ 

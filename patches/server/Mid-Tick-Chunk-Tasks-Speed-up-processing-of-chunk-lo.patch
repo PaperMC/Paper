@@ -66,7 +66,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                    midTickChunksTasksRan = 0; // Paper
                      // Spigot end
  
-                     //MinecraftServer.currentTick = (int) (System.currentTimeMillis() / 50); // CraftBukkit // Paper - don't overwrite current tick time
+                     if (this.debugCommandProfilerDelayStart) {
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
  
      }
@@ -111,7 +111,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
      }
  
-     protected void tickChildren(BooleanSupplier shouldKeepTicking) {
+     public void tickChildren(BooleanSupplier shouldKeepTicking) {
 +        midTickLoadChunks(); // Paper
          MinecraftTimings.bukkitSchedulerTimer.startTiming(); // Spigot // Paper
          this.server.getScheduler().mainThreadHeartbeat(this.tickCount); // CraftBukkit
@@ -126,7 +126,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          Iterator iterator = this.getAllLevels().iterator();
  
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
-             processQueue.remove().run();
+             this.processQueue.remove().run();
          }
          MinecraftTimings.processQueueTimer.stopTiming(); // Spigot
 -
@@ -150,14 +150,6 @@ diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/sr
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-@@ -0,0 +0,0 @@ import net.minecraft.core.BlockPos;
- import net.minecraft.core.SectionPos;
- import net.minecraft.network.protocol.Packet;
- import net.minecraft.server.MCUtil;
-+import net.minecraft.server.MinecraftServer;
- import net.minecraft.server.level.progress.ChunkProgressListener;
- import net.minecraft.util.Mth;
- import net.minecraft.util.profiling.ProfilerFiller;
 @@ -0,0 +0,0 @@ public class ServerChunkCache extends ChunkSource {
          this.level.getProfiler().push("purge");
          this.level.timings.doChunkMap.startTiming(); // Spigot
@@ -169,7 +161,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public class ServerChunkCache extends ChunkSource {
          this.level.timings.doChunkUnload.startTiming(); // Spigot
          this.level.getProfiler().popPush("unload");
-         this.chunkMap.tick(shouldKeepTicking);
+         this.chunkMap.tick(booleansupplier);
 +        this.level.getServer().midTickLoadChunks(); // Paper
          this.level.timings.doChunkUnload.stopTiming(); // Spigot
          this.level.getProfiler().pop();
@@ -184,13 +176,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
                  if (optional.isPresent()) {
 @@ -0,0 +0,0 @@ public class ServerChunkCache extends ChunkSource {
-                             //this.world.timings.chunkTicks.startTiming(); // Spigot // Paper
-                             this.level.tickChunk(chunk, k);
-                             //this.world.timings.chunkTicks.stopTiming(); // Spigot // Paper
+                         chunk.setInhabitedTime(chunk.getInhabitedTime() + j);
+                         if (flag1 && (this.spawnEnemies || this.spawnFriendlies) && this.level.getWorldBorder().isWithinBounds(chunk.getPos()) && !this.chunkMap.isOutsideOfRange(chunkcoordintpair, true)) { // Spigot
+                             NaturalSpawner.spawnForChunk(this.level, chunk, spawnercreature_d, this.spawnFriendlies, this.spawnEnemies, flag2);
 +                            if (chunksTicked[0]++ % 10 == 0) this.level.getServer().midTickLoadChunks(); // Paper
                          }
-                     }
-                 }
+ 
+                         // this.level.timings.doTickTiles.startTiming(); // Spigot // Paper
 @@ -0,0 +0,0 @@ public class ServerChunkCache extends ChunkSource {
              super.doRunTask(task);
          }
@@ -210,7 +202,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            return false;
 +        }
 +        public void midTickLoadChunks() {
-+            MinecraftServer server = ServerChunkCache.this.level.getServer();
++            net.minecraft.server.MinecraftServer server = ServerChunkCache.this.level.getServer();
 +            // always try to load chunks, restrain generation/other updates only. don't count these towards tick count
 +            //noinspection StatementWithEmptyBody
 +            while (pollChunkLoadTasks()) {}
@@ -231,8 +223,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        // Paper end
 +
          @Override
-         protected boolean pollTask() {
          // CraftBukkit start - process pending Chunk loadCallback() and unloadCallback() after each run task
+         public boolean pollTask() {
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
@@ -251,21 +243,18 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          timings.doSounds.stopTiming(); // Spigot
 +        this.getServer().midTickLoadChunks(); // Paper
          this.handlingTick = false;
-         gameprofilerfiller.popPush("entities");
+         gameprofilerfiller.pop();
          boolean flag3 = true || !this.players.isEmpty() || !this.getForcedChunks().isEmpty(); // CraftBukkit - this prevents entity cleanup, other issues on servers with no players
 @@ -0,0 +0,0 @@ public class ServerLevel extends net.minecraft.world.level.Level implements Worl
              timings.entityTick.stopTiming(); // Spigot
- 
-             this.tickingEntities = false;
-+            this.getServer().midTickLoadChunks(); // Paper
- 
-             Entity entity2;
- 
-@@ -0,0 +0,0 @@ public class ServerLevel extends net.minecraft.world.level.Level implements Worl
-             }
- 
              timings.tickEntities.stopTiming(); // Spigot
+             gameprofilerfiller.pop();
 +            this.getServer().midTickLoadChunks(); // Paper
              this.tickBlockEntities();
          }
  
+         gameprofilerfiller.push("entityManagement");
++        this.getServer().midTickLoadChunks(); // Paper
+         this.entityManager.tick();
+         gameprofilerfiller.pop();
+     }

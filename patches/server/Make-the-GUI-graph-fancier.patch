@@ -149,7 +149,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return new Dimension(350, 200);
 +    }
 +
-+    public void stop() { a(); } public void a() {
++    public void close() {
 +        timer.stop();
 +        ramGraph.stop();
 +    }
@@ -176,7 +176,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import java.util.Vector;
 +
 +public class RAMDetails extends JList<String> {
-+    public static final DecimalFormat DECIMAL_FORMAT = Util.peek(new DecimalFormat("########0.000"), (format)
++    public static final DecimalFormat DECIMAL_FORMAT = Util.make(new DecimalFormat("########0.000"), (format)
 +        -> format.setDecimalFormatSymbols(DecimalFormatSymbols.getInstance(Locale.ROOT)));
 +
 +    private final MinecraftServer server;
@@ -221,7 +221,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        Vector<String> vector = new Vector<>();
 +        vector.add("Memory use: " + (data.getUsedMem() / 1024L / 1024L) + " mb (" + (data.getFree() * 100L / data.getMax()) + "% free)");
 +        vector.add("Heap: " + (data.getTotal() / 1024L / 1024L) + " / " + (data.getMax() / 1024L / 1024L) + " mb");
-+        vector.add("Avg tick: " + DECIMAL_FORMAT.format(getAverage(server.getTickTimes())) + " ms");
++        vector.add("Avg tick: " + DECIMAL_FORMAT.format(getAverage(server.tickTimes)) + " ms");
 +        setListData(vector);
 +    }
 +
@@ -383,31 +383,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        timer.stop();
 +    }
 +}
-diff --git a/src/main/java/net/minecraft/Util.java b/src/main/java/net/minecraft/Util.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/Util.java
-+++ b/src/main/java/net/minecraft/Util.java
-@@ -0,0 +0,0 @@ public class Util {
-         return factory.get();
-     }
- 
-+    public static <T> T peek(T t0, Consumer<T> consumer) { return make(t0, consumer); } // Paper - OBFHELPER
-     public static <T> T make(T object, Consumer<T> initializer) {
-         initializer.accept(object);
-         return object;
-diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/MinecraftServer.java
-+++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -0,0 +0,0 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
-     private String motd;
-     private int maxBuildHeight;
-     private int playerIdleTimeout;
--    public final long[] tickTimes;
-+    public final long[] tickTimes; public long[] getTickTimes() { return tickTimes; } // Paper - OBFHELPER
-     @Nullable
-     private KeyPair keyPair;
-     @Nullable
 diff --git a/src/main/java/net/minecraft/server/gui/MinecraftServerGui.java b/src/main/java/net/minecraft/server/gui/MinecraftServerGui.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/gui/MinecraftServerGui.java
@@ -418,22 +393,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          JPanel jpanel = new JPanel(new BorderLayout());
 -        StatsComponent guistatscomponent = new StatsComponent(this.server);
 +        com.destroystokyo.paper.gui.GuiStatsComponent guistatscomponent = new com.destroystokyo.paper.gui.GuiStatsComponent(this.server); // Paper
+         Collection<Runnable> collection = this.finalizers; // CraftBukkit - decompile error
  
--        this.finalizers.add(guistatscomponent::close);
-+        this.finalizers.add(guistatscomponent::a);
-         jpanel.add(guistatscomponent, "North");
-         jpanel.add(this.buildPlayerPanel(), "Center");
-         jpanel.setBorder(new TitledBorder(new EtchedBorder(), "Stats"));
-diff --git a/src/main/java/net/minecraft/server/gui/StatsComponent.java b/src/main/java/net/minecraft/server/gui/StatsComponent.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/gui/StatsComponent.java
-+++ b/src/main/java/net/minecraft/server/gui/StatsComponent.java
-@@ -0,0 +0,0 @@ import net.minecraft.server.MinecraftServer;
- 
- public class StatsComponent extends JComponent {
- 
--    private static final DecimalFormat DECIMAL_FORMAT = (DecimalFormat) Util.make((Object) (new DecimalFormat("########0.000")), (decimalformat) -> {
-+    private static final DecimalFormat DECIMAL_FORMAT = (DecimalFormat) Util.make(new DecimalFormat("########0.000"), (decimalformat) -> { // Paper - decompile error
-         decimalformat.setDecimalFormatSymbols(DecimalFormatSymbols.getInstance(Locale.ROOT));
-     });
-     private final int[] values = new int[256];
+         Objects.requireNonNull(guistatscomponent);
