@@ -45,11 +45,13 @@ import org.bukkit.craftbukkit.CraftFluidCollisionMode;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.craftbukkit.entity.CraftEntity;
+import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.craftbukkit.util.CraftRayTraceResult;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.metadata.MetadataValue;
 import org.bukkit.plugin.Plugin;
@@ -673,6 +675,12 @@ public class CraftBlock implements Block {
         IBlockData iblockdata = getNMS();
         net.minecraft.world.item.ItemStack nms = CraftItemStack.asNMSCopy(item);
         return isPreferredTool(iblockdata, nms);
+    }
+
+    @Override
+    public float getBreakSpeed(Player player) {
+        Preconditions.checkArgument(player != null, "player cannot be null");
+        return getNMS().getDamage(((CraftPlayer) player).getHandle(), world, position);
     }
 
     private boolean isPreferredTool(IBlockData iblockdata, net.minecraft.world.item.ItemStack nmsItem) {
