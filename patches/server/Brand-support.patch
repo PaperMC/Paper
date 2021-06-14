@@ -8,14 +8,14 @@ diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListener
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-@@ -0,0 +0,0 @@ import com.google.common.primitives.Doubles;
+@@ -0,0 +0,0 @@ import com.google.common.collect.Lists;
  import com.google.common.primitives.Floats;
  import com.mojang.brigadier.ParseResults;
  import com.mojang.brigadier.StringReader;
 +import io.netty.buffer.Unpooled;
  import io.netty.util.concurrent.Future;
  import io.netty.util.concurrent.GenericFutureListener;
- import it.unimi.dsi.fastutil.ints.Int2ShortMap;
+ import it.unimi.dsi.fastutil.ints.Int2ObjectMap.Entry;
 @@ -0,0 +0,0 @@ import net.minecraft.nbt.ListTag;
  import net.minecraft.nbt.StringTag;
  import net.minecraft.nbt.Tag;
@@ -24,7 +24,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  import net.minecraft.network.chat.ChatType;
  import net.minecraft.network.chat.Component;
  import net.minecraft.network.chat.MutableComponent;
-@@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl implements ServerGamePacketListener {
+@@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
      private static final int MAX_SIGN_LINE_LENGTH = Integer.getInteger("Paper.maxSignLength", 80);
      private static final long KEEPALIVE_LIMIT = Long.getLong("paper.playerconnection.keepalive", 30) * 1000; // Paper - provide property to set keepalive limit
  
@@ -33,7 +33,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public ServerGamePacketListenerImpl(MinecraftServer server, Connection connection, ServerPlayer player) {
          this.server = server;
          this.connection = connection;
-@@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl implements ServerGamePacketListener {
+@@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
      private static final ResourceLocation CUSTOM_REGISTER = new ResourceLocation("register");
      private static final ResourceLocation CUSTOM_UNREGISTER = new ResourceLocation("unregister");
  
@@ -42,24 +42,23 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      @Override
      public void handleCustomPayload(ServerboundCustomPayloadPacket packet) {
          PacketUtils.ensureRunningOnSameThread(packet, this, this.player.getLevel());
-@@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl implements ServerGamePacketListener {
+@@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
              try {
                  byte[] data = new byte[packet.data.readableBytes()];
                  packet.data.readBytes(data);
-+
 +                // Paper start - Brand support
 +                if (packet.identifier.equals(MINECRAFT_BRAND)) {
 +                    try {
-+                        this.clientBrandName = new FriendlyByteBuf(Unpooled.copiedBuffer(data)).readUTF(256);
++                        this.clientBrandName = new FriendlyByteBuf(Unpooled.copiedBuffer(data)).readUtf(256);
 +                    } catch (StringIndexOutOfBoundsException ex) {
 +                        this.clientBrandName = "illegal";
 +                    }
 +                }
 +                // Paper end
-                 craftServer.getMessenger().dispatchIncomingMessage(player.getBukkitEntity(), packet.identifier.toString(), data);
+                 this.cserver.getMessenger().dispatchIncomingMessage(this.player.getBukkitEntity(), packet.identifier.toString(), data);
              } catch (Exception ex) {
                  ServerGamePacketListenerImpl.LOGGER.error("Couldn\'t dispatch custom payload", ex);
-@@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl implements ServerGamePacketListener {
+@@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
  
      }
  
@@ -89,4 +88,4 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
      public Player.Spigot spigot()
      {
-         return spigot;
+         return this.spigot;

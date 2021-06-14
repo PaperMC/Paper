@@ -29,35 +29,43 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
-         //if (autosavePeriod > 0 && this.ticks % autosavePeriod == 0) { // CraftBukkit // Paper - move down
-             //MinecraftServer.LOGGER.debug("Autosave started"); // Paper
-             serverAutoSave = (autosavePeriod > 0 && this.tickCount % autosavePeriod == 0); // Paper
-+            // Paper start
-+            int playerSaveInterval = com.destroystokyo.paper.PaperConfig.playerAutoSaveRate;
-+            if (playerSaveInterval < 0) {
-+                playerSaveInterval = autosavePeriod;
-+            }
-+            // Paper end
-             this.profiler.push("save");
--            if (autosavePeriod > 0 && this.tickCount % autosavePeriod == 0) { // Paper
+ 
+         if (this.playerList != null) {
+             MinecraftServer.LOGGER.info("Saving players");
 -            this.playerList.saveAll();
-+            if (playerSaveInterval > 0) { // Paper
+             this.playerList.removeAll(this.isRestarting); // Paper
+             try { Thread.sleep(100); } catch (InterruptedException ex) {} // CraftBukkit - SPIGOT-625 - give server at least a chance to send packets
+         }
+@@ -0,0 +0,0 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         // if (this.autosavePeriod > 0 && this.tickCount % this.autosavePeriod == 0) { // CraftBukkit // Paper - move down
+         //     MinecraftServer.LOGGER.debug("Autosave started"); // Paper
+         serverAutoSave = (autosavePeriod > 0 && this.tickCount % autosavePeriod == 0); // Paper
++        // Paper start
++        int playerSaveInterval = com.destroystokyo.paper.PaperConfig.playerAutoSaveRate;
++        if (playerSaveInterval < 0) {
++            playerSaveInterval = autosavePeriod;
++        }
++        // Paper end
+             this.profiler.push("save");
+-        if (this.autosavePeriod > 0 && this.tickCount % this.autosavePeriod == 0) { // Paper - moved from above
+-            this.playerList.saveAll();
++        if (playerSaveInterval > 0) { // Paper
 +            this.playerList.savePlayers(playerSaveInterval); // Paper
-             }// Paper
-             // Paper start
-             for (ServerLevel world : getAllLevels()) {
+             // this.saveAllChunks(true, false, false); // Paper - saved incrementally below
+         } // Paper start
+         for (ServerLevel level : this.getAllLevels()) {
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-@@ -0,0 +0,0 @@ import org.bukkit.inventory.MainHand;
- public class ServerPlayer extends Player implements ContainerListener {
+@@ -0,0 +0,0 @@ public class ServerPlayer extends Player {
+     public final int getViewDistance() { return this.getLevel().getChunkSource().chunkMap.viewDistance - 1; } // Paper - placeholder
  
      private static final Logger LOGGER = LogManager.getLogger();
 +    public long lastSave = MinecraftServer.currentTick; // Paper
+     private static final int NEUTRAL_MOB_DEATH_NOTIFICATION_RADII_XZ = 32;
+     private static final int NEUTRAL_MOB_DEATH_NOTIFICATION_RADII_Y = 10;
      public ServerGamePacketListenerImpl connection;
-     public Connection networkManager; // Paper
-     public final MinecraftServer server;
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/players/PlayerList.java
@@ -74,16 +82,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
      public void saveAll() {
+-        net.minecraft.server.MCUtil.ensureMain("Save Players" , () -> { // Paper - Ensure main
 +        // Paper start - incremental player saving
 +        savePlayers(null);
 +    }
 +    public void savePlayers(Integer interval) {
-         MCUtil.ensureMain("Save Players" , () -> { // Paper - Ensure main
++        MCUtil.ensureMain("Save Players" , () -> { // Paper - Ensure main
          MinecraftTimings.savePlayers.startTiming(); // Paper
 +        int numSaved = 0;
 +        long now = MinecraftServer.currentTick;
          for (int i = 0; i < this.players.size(); ++i) {
--            this.save((ServerPlayer) this.players.get(i));
+-            this.save(this.players.get(i));
 +            ServerPlayer entityplayer = this.players.get(i);
 +            if (interval == null || now - entityplayer.lastSave >= interval) {
 +                this.save(entityplayer);

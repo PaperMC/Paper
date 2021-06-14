@@ -8,7 +8,7 @@ diff --git a/src/main/java/net/minecraft/world/level/block/BaseRailBlock.java b/
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/block/BaseRailBlock.java
 +++ b/src/main/java/net/minecraft/world/level/block/BaseRailBlock.java
-@@ -0,0 +0,0 @@ public abstract class BaseRailBlock extends Block {
+@@ -0,0 +0,0 @@ public abstract class BaseRailBlock extends Block implements SimpleWaterloggedBl
          state = this.updateDir(world, pos, state, true);
          if (this.isStraight) {
              state.neighborChanged(world, pos, this, pos, notify);
@@ -27,15 +27,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            if (state.getBlock() != this) { return; } // Paper - not our block, don't do anything
              boolean flag = (Boolean) state.getValue(DetectorRailBlock.POWERED);
              boolean flag1 = false;
-             List<AbstractMinecart> list = this.getInteractingMinecartOfType(world, pos, AbstractMinecart.class, (Predicate) null);
+             List<AbstractMinecart> list = this.getInteractingMinecartOfType(world, pos, AbstractMinecart.class, (entity) -> {
 diff --git a/src/main/java/net/minecraft/world/level/block/RailState.java b/src/main/java/net/minecraft/world/level/block/RailState.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/block/RailState.java
 +++ b/src/main/java/net/minecraft/world/level/block/RailState.java
-@@ -0,0 +0,0 @@ import net.minecraft.world.level.block.state.properties.RailShape;
+@@ -0,0 +0,0 @@ import net.minecraft.world.level.block.state.BlockState;
+ import net.minecraft.world.level.block.state.properties.RailShape;
  
  public class RailState {
- 
 -    private final Level level;
 -    private final BlockPos pos;
 +    private final Level level; public final Level getWorld() { return this.level; } // Paper - OBFHELPER
@@ -65,10 +65,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +        // Paper end - prevent desync
          this.connections.add(placementHelper.pos);
-         BlockPos blockposition = this.pos.north();
-         BlockPos blockposition1 = this.pos.south();
+         BlockPos blockPos = this.pos.north();
+         BlockPos blockPos2 = this.pos.south();
 @@ -0,0 +0,0 @@ public class RailState {
-         this.state = (BlockState) this.state.setValue(this.block.getShapeProperty(), blockpropertytrackposition1);
+         this.state = this.state.setValue(this.block.getShapeProperty(), railShape2);
          if (forceUpdate || this.level.getBlockState(this.pos) != this.state) {
              this.level.setBlock(this.pos, this.state, 3);
 +            // Paper start - prevent desync
@@ -77,14 +77,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            }
 +            // Paper end - prevent desync
  
-             for (int i = 0; i < this.connections.size(); ++i) {
-                 RailState minecarttracklogic = this.getRail((BlockPos) this.connections.get(i));
- 
--                if (minecarttracklogic != null) {
-+                if (minecarttracklogic != null && minecarttracklogic.isValid()) { // Paper - prevent desync
-                     minecarttracklogic.removeSoftConnections();
-                     if (minecarttracklogic.canConnectTo(this)) {
-                         minecarttracklogic.connectTo(this);
+             for(int i = 0; i < this.connections.size(); ++i) {
+                 RailState railState = this.getRail(this.connections.get(i));
+-                if (railState != null) {
++                if (railState != null && railState.isValid()) { // Paper - prevent desync
+                     railState.removeSoftConnections();
+                     if (railState.canConnectTo(this)) {
+                         railState.connectTo(this);
 @@ -0,0 +0,0 @@ public class RailState {
      }
  
