@@ -41,7 +41,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    public void onPlace(BlockState iblockdata, Level world, BlockPos blockposition, BlockState iblockdata1, boolean flag, UseOnContext itemActionContext) {
 +        // Paper end
 +        if (!iblockdata1.is(iblockdata.getBlock())) {
-             if (inPortalDimension(world)) {
+             if (BaseFireBlock.inPortalDimension(world)) {
 -                Optional<PortalShape> optional = PortalShape.findEmptyPortalShape((LevelAccessor) world, pos, Direction.Axis.X);
 +                Optional<PortalShape> optional = PortalShape.findEmptyPortalShape((LevelAccessor) world, blockposition, Direction.Axis.X);
  
@@ -53,7 +53,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              }
  
 -            if (!state.canSurvive(world, pos)) {
--                fireExtinguished(world, pos); // CraftBukkit - fuel block broke
+-                this.fireExtinguished(world, pos); // CraftBukkit - fuel block broke
 +            if (!iblockdata.canSurvive(world, blockposition)) {
 +                fireExtinguished(world, blockposition); // CraftBukkit - fuel block broke
              }
@@ -63,8 +63,8 @@ diff --git a/src/main/java/net/minecraft/world/level/block/FireBlock.java b/src/
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/block/FireBlock.java
 +++ b/src/main/java/net/minecraft/world/level/block/FireBlock.java
-@@ -0,0 +0,0 @@ import net.minecraft.core.Vec3i;
- import net.minecraft.server.MCUtil;
+@@ -0,0 +0,0 @@ import net.minecraft.core.Direction;
+ import net.minecraft.core.Vec3i;
  import net.minecraft.server.level.ServerLevel;
  import net.minecraft.world.item.context.BlockPlaceContext;
 +import net.minecraft.world.item.context.UseOnContext;
@@ -77,12 +77,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      @Override
 -    public void onPlace(BlockState state, Level world, BlockPos pos, BlockState oldState, boolean notify) {
 -        super.onPlace(state, world, pos, oldState, notify);
--        world.getBlockTicks().a(pos, this, getFireTickDelay(world.random));
+-        world.getBlockTicks().scheduleTick(pos, this, FireBlock.getFireTickDelay(world.random));
 +    // Paper start - ItemActionContext param
 +    public void onPlace(BlockState iblockdata, Level world, BlockPos blockposition, BlockState iblockdata1, boolean flag, UseOnContext itemActionContext) {
 +        super.onPlace(iblockdata, world, blockposition, iblockdata1, flag, itemActionContext);
 +        // Paper end
-+        world.getBlockTicks().a(blockposition, this, getFireTickDelay(world.random));
++        world.getBlockTicks().scheduleTick(blockposition, this, getFireTickDelay(world.random));
      }
  
      private static int getFireTickDelay(Random random) {
@@ -132,16 +132,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    @Deprecated public boolean createPortal() { return this.createPortal(null); }
 +    public boolean createPortal(UseOnContext itemActionContext) {
 +        // Paper end
-         org.bukkit.World bworld = this.level.getLevel().getWorld();
+         org.bukkit.World bworld = this.level.getMinecraftWorld().getWorld();
  
          // Copy below for loop
 @@ -0,0 +0,0 @@ public class PortalShape {
-         BlockPos.betweenClosed(this.bottomLeft, this.bottomLeft.relative(Direction.UP, this.height - 1).relative(this.rightDir, this.width - 1)).forEach((blockposition) -> {
-             blocks.setBlock(blockposition, iblockdata, 18);
+             this.blocks.setBlock(blockposition, iblockdata, 18);
          });
--
--        PortalCreateEvent event = new PortalCreateEvent((java.util.List<org.bukkit.block.BlockState>) (java.util.List) blocks.getList(), bworld, null, PortalCreateEvent.CreateReason.FIRE);
+ 
+-        PortalCreateEvent event = new PortalCreateEvent((java.util.List<org.bukkit.block.BlockState>) (java.util.List) this.blocks.getList(), bworld, null, PortalCreateEvent.CreateReason.FIRE);
 +        PortalCreateEvent event = new PortalCreateEvent((java.util.List<org.bukkit.block.BlockState>) (java.util.List) blocks.getList(), bworld, itemActionContext == null || itemActionContext.getPlayer() == null ? null : itemActionContext.getPlayer().getBukkitEntity(), PortalCreateEvent.CreateReason.FIRE); // Paper - pass entity param
-         this.level.getLevel().getServer().server.getPluginManager().callEvent(event);
+         this.level.getMinecraftWorld().getServer().server.getPluginManager().callEvent(event);
  
          if (event.isCancelled()) {
