@@ -11,23 +11,23 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/world/entity/ai/behavior/StopAttackingIfTargetInvalid.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/behavior/StopAttackingIfTargetInvalid.java
 @@ -0,0 +0,0 @@ public class StopAttackingIfTargetInvalid<E extends Mob> extends Behavior<E> {
+         LivingEntity entityliving = this.getAttackTarget(entity);
  
-     protected void start(ServerLevel world, E entity, long time) {
-         if (isTiredOfTryingToReachTarget((LivingEntity) entity)) {
+         if (!entity.canAttack(entityliving)) {
 -            this.clearAttackTarget(entity);
-+            this.d(entity, org.bukkit.event.entity.EntityTargetEvent.TargetReason.FORGOT_TARGET); // Paper
++            this.clearAttackTarget(entity, org.bukkit.event.entity.EntityTargetEvent.TargetReason.TARGET_INVALID); // Paper
+         } else if (StopAttackingIfTargetInvalid.isTiredOfTryingToReachTarget((LivingEntity) entity)) {
+-            this.clearAttackTarget(entity);
++            this.clearAttackTarget(entity, org.bukkit.event.entity.EntityTargetEvent.TargetReason.FORGOT_TARGET); // Paper
          } else if (this.isCurrentTargetDeadOrRemoved(entity)) {
 -            this.clearAttackTarget(entity);
-+            this.d(entity, org.bukkit.event.entity.EntityTargetEvent.TargetReason.TARGET_DIED); // Paper
++            this.clearAttackTarget(entity, org.bukkit.event.entity.EntityTargetEvent.TargetReason.TARGET_DIED); // Paper
          } else if (this.isCurrentTargetInDifferentLevel(entity)) {
 -            this.clearAttackTarget(entity);
-+            this.d(entity, org.bukkit.event.entity.EntityTargetEvent.TargetReason.TARGET_OTHER_LEVEL); // Paper
-         } else if (!EntitySelector.ATTACK_ALLOWED.test(this.getAttackTarget(entity))) {
--            this.clearAttackTarget(entity);
-+            this.d(entity, org.bukkit.event.entity.EntityTargetEvent.TargetReason.TARGET_INVALID); // Paper
++            this.clearAttackTarget(entity, org.bukkit.event.entity.EntityTargetEvent.TargetReason.TARGET_OTHER_LEVEL); // Paper
          } else if (this.stopAttackingWhen.test(this.getAttackTarget(entity))) {
 -            this.clearAttackTarget(entity);
-+            this.d(entity, org.bukkit.event.entity.EntityTargetEvent.TargetReason.TARGET_INVALID); // Paper
++            this.clearAttackTarget(entity, org.bukkit.event.entity.EntityTargetEvent.TargetReason.TARGET_INVALID); // Paper
          }
      }
  
@@ -35,8 +35,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          return optional.isPresent() && !((LivingEntity) optional.get()).isAlive();
      }
  
--    private void clearAttackTarget(E entity) {
-+    private void d(E e0, EntityTargetEvent.TargetReason reason) {
+-    protected void clearAttackTarget(E entity) {
++    protected void clearAttackTarget(E e0, EntityTargetEvent.TargetReason reason) {
          // CraftBukkit start
 -        LivingEntity old = entity.getBrain().getMemory(MemoryModuleType.ATTACK_TARGET).orElse(null);
 -        EntityTargetEvent event = CraftEventFactory.callEntityTargetLivingEvent(entity, null, (old != null && !old.isAlive()) ? EntityTargetEvent.TargetReason.TARGET_DIED : EntityTargetEvent.TargetReason.FORGOT_TARGET);
@@ -56,7 +56,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }*/
 +        // Paper end
          // CraftBukkit end
+-        this.onTargetErased.accept(entity);
 -        entity.getBrain().eraseMemory(MemoryModuleType.ATTACK_TARGET);
-+        e0.getBrain().eraseMemory(MemoryModuleType.ATTACK_TARGET);
++        this.onTargetErased.accept(e0);
      }
  }

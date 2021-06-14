@@ -11,74 +11,36 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public enum ConnectionProtocol {
  
          @Nullable
-         public Packet<?> createPacket(int id) {
-+            if (id < 0 || id >= this.idToConstructor.size()) return null; // Paper
-             Supplier<? extends Packet<T>> supplier = (Supplier) this.idToConstructor.get(id);
- 
-             return supplier != null ? (Packet) supplier.get() : null;
+         public Packet<?> createPacket(int id, FriendlyByteBuf buf) {
++            if (id < 0 || id >= this.idToDeserializer.size()) return null; // Paper
+             Function<FriendlyByteBuf, ? extends Packet<T>> function = this.idToDeserializer.get(id);
+             return function != null ? function.apply(buf) : null;
+         }
 diff --git a/src/main/java/net/minecraft/network/Varint21FrameDecoder.java b/src/main/java/net/minecraft/network/Varint21FrameDecoder.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/network/Varint21FrameDecoder.java
 +++ b/src/main/java/net/minecraft/network/Varint21FrameDecoder.java
-@@ -0,0 +0,0 @@ import java.util.List;
+@@ -0,0 +0,0 @@ import io.netty.handler.codec.CorruptedFrameException;
+ import java.util.List;
  
  public class Varint21FrameDecoder extends ByteToMessageDecoder {
- 
 +    private final byte[] lenBuf = new byte[3]; // Paper
-     public Varint21FrameDecoder() {}
- 
-     protected void decode(ChannelHandlerContext channelhandlercontext, ByteBuf bytebuf, List<Object> list) throws Exception {
+     @Override
+     protected void decode(ChannelHandlerContext channelHandlerContext, ByteBuf byteBuf, List<Object> list) {
 +        // Paper start - if channel is not active just discard the packet
-+        if (!channelhandlercontext.channel().isActive()) {
-+            bytebuf.skipBytes(bytebuf.readableBytes());
++        if (!channelHandlerContext.channel().isActive()) {
++            byteBuf.skipBytes(byteBuf.readableBytes());
 +            return;
 +        }
 +        // Paper end
-         bytebuf.markReaderIndex();
--        byte[] abyte = new byte[3];
+         byteBuf.markReaderIndex();
 +        // Paper start - reuse temporary length buffer
 +        byte[] abyte = lenBuf;
 +        java.util.Arrays.fill(abyte, (byte) 0);
 +        // Paper end
+         byte[] bs = new byte[3];
  
-         for (int i = 0; i < abyte.length; ++i) {
-             if (!bytebuf.isReadable()) {
-diff --git a/src/main/java/net/minecraft/network/protocol/Packet.java b/src/main/java/net/minecraft/network/protocol/Packet.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/network/protocol/Packet.java
-+++ b/src/main/java/net/minecraft/network/protocol/Packet.java
-@@ -0,0 +0,0 @@ package net.minecraft.network.protocol;
- 
- import io.netty.channel.ChannelFuture; // Paper
- import java.io.IOException;
-+import net.minecraft.network.Connection;
- import net.minecraft.network.FriendlyByteBuf;
- import net.minecraft.network.PacketListener;
-+import net.minecraft.server.level.ServerPlayer;
- 
- public interface Packet<T extends PacketListener> {
- 
-@@ -0,0 +0,0 @@ public interface Packet<T extends PacketListener> {
-     /**
-      * @param player Null if not at PLAY stage yet
-      */
--    default void onPacketDispatch(@javax.annotation.Nullable EntityPlayer player) {}
-+    default void onPacketDispatch(@javax.annotation.Nullable ServerPlayer player) {}
- 
-     /**
-      * @param player Null if not at PLAY stage yet
-      * @param future Can be null if packet was cancelled
-      */
--    default void onPacketDispatchFinish(@javax.annotation.Nullable EntityPlayer player, @javax.annotation.Nullable ChannelFuture future) {}
-+    default void onPacketDispatchFinish(@javax.annotation.Nullable ServerPlayer player, @javax.annotation.Nullable ChannelFuture future) {}
-     default boolean hasFinishListener() { return false; }
-     default boolean isReady() { return true; }
-     default java.util.List<Packet> getExtraPackets() { return null; }
--    default boolean packetTooLarge(NetworkManager manager) {
-+    default boolean packetTooLarge(Connection manager) {
-         return false;
-     }
-     // Paper end
+         for(int i = 0; i < bs.length; ++i) {
 diff --git a/src/main/java/net/minecraft/network/protocol/PacketUtils.java b/src/main/java/net/minecraft/network/protocol/PacketUtils.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/network/protocol/PacketUtils.java
@@ -113,5 +75,5 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                    }
 +                    // Paper end
                  } else {
-                     PacketUtils.LOGGER.debug("Ignoring packet due to disconnection: " + packet);
+                     PacketUtils.LOGGER.debug("Ignoring packet due to disconnection: {}", packet);
                  }
