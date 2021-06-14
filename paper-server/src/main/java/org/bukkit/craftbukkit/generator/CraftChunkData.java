@@ -30,7 +30,7 @@ public final class CraftChunkData implements ChunkGenerator.ChunkData {
     /* pp for tests */ CraftChunkData(int minHeight, int maxHeight) {
         this.minHeight = minHeight;
         this.maxHeight = maxHeight;
-        sections = new ChunkSection[(maxHeight - minHeight) >> 4];
+        sections = new ChunkSection[(((maxHeight - 1) >> 4) + 1) - (minHeight >> 4)];
     }
 
     @Override
@@ -162,7 +162,7 @@ public final class CraftChunkData implements ChunkGenerator.ChunkData {
         int offset = (y - minHeight) >> 4;
         ChunkSection section = sections[offset];
         if (create && section == null) {
-            sections[offset] = section = new ChunkSection(offset << 4);
+            sections[offset] = section = new ChunkSection(offset + (minHeight >> 4));
         }
         return section;
     }
