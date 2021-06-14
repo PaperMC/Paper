@@ -97,6 +97,11 @@ public interface Villager extends AbstractVillager {
     public void wakeup();
 
     /**
+     * Causes this villager to shake his head.
+     */
+    public void shakeHead();
+
+    /**
      * Represents Villager type, usually corresponding to what biome they spawn
      * in.
      */
