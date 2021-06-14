@@ -75,3 +75,98 @@ index b4a5709b03e400d00504f33a9b34019d2b7bf115..2d79d4014770081fcd58a929e5fe0a26
                  return new Object2ObjectLinkedOpenHashMap<>(); // CraftBukkit
              });
              Recipe<?> irecipe1 = (Recipe) map1.put(irecipe.getId(), irecipe);
+diff --git a/src/test/java/org/bukkit/DyeColorsTest.java b/src/test/java/org/bukkit/DyeColorsTest.java
+index ad52c3fc6210939a39ef77a382c640a24ee44838..5d811797ce8e14195a23fc71c8a3afbdca7691eb 100644
+--- a/src/test/java/org/bukkit/DyeColorsTest.java
++++ b/src/test/java/org/bukkit/DyeColorsTest.java
+@@ -4,7 +4,6 @@ import static org.hamcrest.Matchers.*;
+ import static org.junit.Assert.*;
+ import java.util.ArrayList;
+ import java.util.List;
+-import net.minecraft.world.item.DyeColor;
+ import org.bukkit.support.AbstractTestingBase;
+ import org.junit.Test;
+ import org.junit.runner.RunWith;
+@@ -29,7 +28,7 @@ public class DyeColorsTest extends AbstractTestingBase {
+     @Test
+     public void checkColor() {
+         Color color = this.dye.getColor();
+-        float[] nmsColorArray = DyeColor.byId(this.dye.getWoolData()).getTextureDiffuseColors();
++        float[] nmsColorArray = net.minecraft.world.item.DyeColor.byId(this.dye.getWoolData()).getTextureDiffuseColors();
+         Color nmsColor = Color.fromRGB((int) (nmsColorArray[0] * 255), (int) (nmsColorArray[1] * 255), (int) (nmsColorArray[2] * 255));
+         assertThat(color, is(nmsColor));
+     }
+@@ -37,7 +36,7 @@ public class DyeColorsTest extends AbstractTestingBase {
+     @Test
+     public void checkFireworkColor() {
+         Color color = this.dye.getFireworkColor();
+-        int nmsColor = DyeColor.byId(this.dye.getWoolData()).getFireworkColor();
++        int nmsColor = net.minecraft.world.item.DyeColor.byId(this.dye.getWoolData()).getFireworkColor();
+         assertThat(color, is(Color.fromRGB(nmsColor)));
+     }
+ }
+diff --git a/src/test/java/org/bukkit/PerMaterialTest.java b/src/test/java/org/bukkit/PerMaterialTest.java
+index 90baf6e3329d64495da9edd580d5fbc80df8c165..185fa8bf7308bb2980a0feecf0d7696a59e507ac 100644
+--- a/src/test/java/org/bukkit/PerMaterialTest.java
++++ b/src/test/java/org/bukkit/PerMaterialTest.java
+@@ -221,7 +221,7 @@ public class PerMaterialTest extends AbstractTestingBase {
+         if (this.material.isBlock()) {
+             assertThat(this.material.isInteractable(),
+                     is(!CraftMagicNumbers.getBlock(material).getClass()
+-                            .getMethod("interact", BlockState.class, net.minecraft.world.level.Level.class, BlockPos.class, Player.class, InteractionHand.class, BlockHitResult.class)
++                            .getMethod("use", BlockState.class, net.minecraft.world.level.Level.class, BlockPos.class, Player.class, InteractionHand.class, BlockHitResult.class)
+                             .getDeclaringClass().equals(BlockBehaviour.class)));
+         } else {
+             assertFalse(this.material.isInteractable());
+diff --git a/src/test/java/org/bukkit/entity/EntityTypesTest.java b/src/test/java/org/bukkit/entity/EntityTypesTest.java
+index 8c4ad718e113f24a30fd11b345d34d6ca1ef73b0..085b0c17fb54fd8229838fee666120d9e59d942b 100644
+--- a/src/test/java/org/bukkit/entity/EntityTypesTest.java
++++ b/src/test/java/org/bukkit/entity/EntityTypesTest.java
+@@ -5,7 +5,6 @@ import java.util.Set;
+ import java.util.stream.Collectors;
+ import net.minecraft.core.Registry;
+ import net.minecraft.resources.ResourceLocation;
+-import net.minecraft.world.entity.EntityType;
+ import org.bukkit.support.AbstractTestingBase;
+ import org.junit.Assert;
+ import org.junit.Test;
+@@ -16,8 +15,8 @@ public class EntityTypesTest extends AbstractTestingBase {
+     public void testMaps() {
+         Set<EntityType> allBukkit = Arrays.stream(EntityType.values()).filter((b) -> b.getName() != null).collect(Collectors.toSet());
+ 
+-        for (EntityType<?> nms : Registry.ENTITY_TYPE) {
+-            ResourceLocation key = EntityType.getKey(nms);
++        for (net.minecraft.world.entity.EntityType<?> nms : Registry.ENTITY_TYPE) {
++            ResourceLocation key = net.minecraft.world.entity.EntityType.getKey(nms);
+ 
+             org.bukkit.entity.EntityType bukkit = org.bukkit.entity.EntityType.fromName(key.getPath());
+             Assert.assertNotNull("Missing nms->bukkit " + key, bukkit);
+diff --git a/src/test/java/org/bukkit/entity/PandaGeneTest.java b/src/test/java/org/bukkit/entity/PandaGeneTest.java
+index 76e2ad676ae68846bdff3c3ef711751445fb0f3c..bee1bd015f161a00df1311b6ef272739fcff6834 100644
+--- a/src/test/java/org/bukkit/entity/PandaGeneTest.java
++++ b/src/test/java/org/bukkit/entity/PandaGeneTest.java
+@@ -1,6 +1,5 @@
+ package org.bukkit.entity;
+ 
+-import net.minecraft.world.entity.animal.Panda;
+ import org.bukkit.craftbukkit.entity.CraftPanda;
+ import org.junit.Assert;
+ import org.junit.Test;
+@@ -10,7 +9,7 @@ public class PandaGeneTest {
+     @Test
+     public void testBukkit() {
+         for (Panda.Gene gene : Panda.Gene.values()) {
+-            Panda.Gene nms = CraftPanda.toNms(gene);
++            net.minecraft.world.entity.animal.Panda.Gene nms = CraftPanda.toNms(gene);
+ 
+             Assert.assertNotNull("NMS gene null for " + gene, nms);
+             Assert.assertEquals("Recessive status did not match " + gene, gene.isRecessive(), nms.isRecessive());
+@@ -20,7 +19,7 @@ public class PandaGeneTest {
+ 
+     @Test
+     public void testNMS() {
+-        for (Panda.Gene gene : Panda.Gene.values()) {
++        for (net.minecraft.world.entity.animal.Panda.Gene gene : net.minecraft.world.entity.animal.Panda.Gene.values()) {
+             org.bukkit.entity.Panda.Gene bukkit = CraftPanda.fromNms(gene);
+ 
+             Assert.assertNotNull("Bukkit gene null for " + gene, bukkit);
