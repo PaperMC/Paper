@@ -607,6 +607,11 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     }
 
     @Override
+    public boolean isClimbing() {
+        return getHandle().isClimbing();
+    }
+
+    @Override
     public AttributeInstance getAttribute(Attribute attribute) {
         return getHandle().craftAttributes.getAttribute(attribute);
     }
