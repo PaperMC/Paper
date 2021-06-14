@@ -70,25 +70,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          while (cause instanceof CompletionException && cause.getCause() != null) {
              cause = cause.getCause();
          }
-diff --git a/src/main/java/net/minecraft/Util.java b/src/main/java/net/minecraft/Util.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/Util.java
-+++ b/src/main/java/net/minecraft/Util.java
-@@ -0,0 +0,0 @@ public class Util {
-         return Util.IO_POOL;
-     }
- 
-+    public static void shutdownServerThreadPool() { shutdownExecutors(); } // Paper - OBFHELPER
-     public static void shutdownExecutors() {
-         shutdownExecutor(Util.BACKGROUND_EXECUTOR);
-         shutdownExecutor(Util.IO_POOL);
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+     public java.util.Queue<Runnable> processQueue = new java.util.concurrent.ConcurrentLinkedQueue<Runnable>();
      public int autosavePeriod;
-     public boolean serverAutoSave = false; // Paper
      public Commands vanillaCommandDispatcher;
 -    private boolean forceTicks;
 +    public boolean forceTicks; // Paper
@@ -112,10 +100,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    public volatile boolean hasFullyShutdown = false; // Paper
      private final Object stopLock = new Object();
      public final boolean hasStopped() {
-         synchronized (stopLock) {
+         synchronized (this.stopLock) {
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
-             if (hasStopped) return;
-             hasStopped = true;
+             if (this.hasStopped) return;
+             this.hasStopped = true;
          }
 +        // Paper start - kill main thread, and kill it hard
 +        shutdownThread = Thread.currentThread();
@@ -128,24 +116,20 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                    Thread.sleep(1);
 +                } catch (InterruptedException e) {}
 +            }
-+            // We've just obliterated the main thread, this will prevent stop from dying when removing players
-+            MinecraftServer.getServer().getAllLevels().forEach(world -> {
-+                world.tickingEntities = false;
-+            });
 +        }
 +        // Paper end
          // CraftBukkit end
          MinecraftServer.LOGGER.info("Stopping server");
          MinecraftTimings.stopServer(); // Paper
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
-             this.getProfileCache().b(false); // Paper
+             this.getProfileCache().save(false); // Paper
          }
          // Spigot end
 +        // Paper start - move final shutdown items here
 +        LOGGER.info("Flushing Chunk IO");
          com.destroystokyo.paper.io.PaperFileIOThread.Holder.INSTANCE.close(true, true); // Paper
 +        LOGGER.info("Closing Thread Pool");
-+        Util.shutdownServerThreadPool(); // Paper
++        Util.shutdownExecutors(); // Paper
 +        LOGGER.info("Closing Server");
 +        try {
 +            net.minecrell.terminalconsole.TerminalConsoleAppender.close(); // Paper - Use TerminalConsoleAppender
@@ -237,7 +221,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  // Spigot End
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
              this.packRepository.setSelected(datapacks);
-             this.worldData.setDataPackConfig(getSelectedPacks(this.packRepository));
+             this.worldData.setDataPackConfig(MinecraftServer.getSelectedPacks(this.packRepository));
              datapackresources.updateGlobals();
 -            this.getPlayerList().saveAll();
 +            if (Thread.currentThread() != this.serverThread) return; // Paper
@@ -289,25 +273,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  mutableboolean.setFalse();
                  list.stream().map((playerchunk) -> {
                      CompletableFuture completablefuture;
-diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/level/ServerLevel.java
-+++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
-@@ -0,0 +0,0 @@ public class ServerLevel extends net.minecraft.world.level.Level implements Worl
-     private final Queue<Entity> toAddAfterTick = Queues.newArrayDeque();
-     public final List<ServerPlayer> players = Lists.newArrayList(); // Paper - private -> public
-     public final ServerChunkCache chunkSource; // Paper - public
--    boolean tickingEntities;
-+    public boolean tickingEntities; // Paper - expose for watchdog
-     // Paper start
-     List<java.lang.Runnable> afterEntityTickingTasks = Lists.newArrayList();
-     public void doIfNotEntityTicking(java.lang.Runnable run) {
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/players/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/players/PlayerList.java
 @@ -0,0 +0,0 @@ public abstract class PlayerList {
-         cserver.getPluginManager().callEvent(playerQuitEvent);
+         this.cserver.getPluginManager().callEvent(playerQuitEvent);
          entityplayer.getBukkitEntity().disconnect(playerQuitEvent.getQuitMessage());
  
 -        entityplayer.doTick(); // SPIGOT-924
@@ -319,26 +290,18 @@ diff --git a/src/main/java/net/minecraft/util/thread/BlockableEventLoop.java b/s
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/util/thread/BlockableEventLoop.java
 +++ b/src/main/java/net/minecraft/util/thread/BlockableEventLoop.java
-@@ -0,0 +0,0 @@ public abstract class BlockableEventLoop<R extends Runnable> implements Processo
+@@ -0,0 +0,0 @@ public abstract class BlockableEventLoop<R extends Runnable> implements Profiler
          try {
              task.run();
-         } catch (Exception exception) {
-+            if (exception.getCause() instanceof ThreadDeath) throw exception; // Paper
-             BlockableEventLoop.LOGGER.fatal("Error executing task on {}", this.name(), exception);
+         } catch (Exception var3) {
++            if (var3.getCause() instanceof ThreadDeath) throw var3; // Paper
+             LOGGER.fatal("Error executing task on {}", this.name(), var3);
          }
  
 diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
 +++ b/src/main/java/net/minecraft/world/level/Level.java
-@@ -0,0 +0,0 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
- 
-                         gameprofilerfiller.pop();
-                     } catch (Throwable throwable) {
-+                        if (throwable instanceof ThreadDeath) throw throwable; // Paper
-                         // Paper start - Prevent tile entity and entity crashes
-                         String msg = "TileEntity threw exception at " + tileentity.getLevel().getWorld().getName() + ":" + tileentity.getBlockPos().getX() + "," + tileentity.getBlockPos().getY() + "," + tileentity.getBlockPos().getZ();
-                         System.err.println(msg);
 @@ -0,0 +0,0 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
          try {
              tickConsumer.accept(entity);
@@ -347,6 +310,18 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              // Paper start - Prevent tile entity and entity crashes
              String msg = "Entity threw exception at " + entity.level.getWorld().getName() + ":" + entity.getX() + "," + entity.getY() + "," + entity.getZ();
              System.err.println(msg);
+diff --git a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
++++ b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
+@@ -0,0 +0,0 @@ public class LevelChunk implements ChunkAccess {
+ 
+                         gameprofilerfiller.pop();
+                     } catch (Throwable throwable) {
++                        if (throwable instanceof ThreadDeath) throw throwable; // Paper
+                         // Paper start - Prevent tile entity and entity crashes
+                         String msg = "TileEntity threw exception at " + LevelChunk.this.getLevel().getWorld().getName() + ":" + this.getPos().getX() + "," + this.getPos().getY() + "," + this.getPos().getZ();
+                         System.err.println(msg);
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
@@ -496,7 +471,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              org.spigotmc.AsyncCatcher.enabled = false; // Spigot
              org.spigotmc.AsyncCatcher.shuttingDown = true; // Paper
 +            server.forceTicks = true;
-             server.close();
+             this.server.close();
 +            while (!server.hasFullyShutdown) Thread.sleep(1000);
 +        } catch (InterruptedException e) {
 +            e.printStackTrace();
@@ -535,19 +510,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      private boolean restart;
 @@ -0,0 +0,0 @@ public class WatchdogThread extends Thread
      {
-         if ( instance == null )
+         if ( WatchdogThread.instance == null )
          {
 +            if (timeoutTime <= 0) timeoutTime = 300; // Paper
-             instance = new WatchdogThread( timeoutTime * 1000L, restart );
-             instance.start();
+             WatchdogThread.instance = new WatchdogThread( timeoutTime * 1000L, restart );
+             WatchdogThread.instance.start();
          } else
 @@ -0,0 +0,0 @@ public class WatchdogThread extends Thread
              // Paper start
              Logger log = Bukkit.getServer().getLogger();
-             long currentTime = monotonicMillis();
--            if ( lastTick != 0 && timeoutTime > 0 && currentTime > lastTick + earlyWarningEvery && !Boolean.getBoolean("disable.watchdog") )
+             long currentTime = WatchdogThread.monotonicMillis();
+-            if ( this.lastTick != 0 && this.timeoutTime > 0 && currentTime > this.lastTick + this.earlyWarningEvery && !Boolean.getBoolean("disable.watchdog")) // Paper - Add property to disable
 +            MinecraftServer server = MinecraftServer.getServer();
-+            if (lastTick != 0 && timeoutTime > 0 && hasStarted && (!server.isRunning() || (currentTime > lastTick + earlyWarningEvery && !DISABLE_WATCHDOG) ))
++            if ( this.lastTick != 0 && this.timeoutTime > 0 && WatchdogThread.hasStarted && (!server.isRunning() || (currentTime > this.lastTick + this.earlyWarningEvery && !DISABLE_WATCHDOG) )) // Paper - add property to disable
              {
 -                boolean isLongTimeout = currentTime > lastTick + timeoutTime;
 +                boolean isLongTimeout = currentTime > lastTick + timeoutTime || (!server.isRunning() && !server.hasStopped() && currentTime > lastTick + 1000);
@@ -561,9 +536,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public class WatchdogThread extends Thread
                  log.log( Level.SEVERE, "------------------------------" );
                  log.log( Level.SEVERE, "Server thread dump (Look for plugins here before reporting to Paper!):" ); // Paper
-                 ChunkTaskManager.dumpAllChunkLoadInfo(); // Paper
--                dumpThread( ManagementFactory.getThreadMXBean().getThreadInfo( MinecraftServer.getServer().serverThread.getId(), Integer.MAX_VALUE ), log );
-+                dumpThread( ManagementFactory.getThreadMXBean().getThreadInfo( server.serverThread.getId(), Integer.MAX_VALUE ), log );
+                 com.destroystokyo.paper.io.chunk.ChunkTaskManager.dumpAllChunkLoadInfo(); // Paper
+-                WatchdogThread.dumpThread( ManagementFactory.getThreadMXBean().getThreadInfo( MinecraftServer.getServer().serverThread.getId(), Integer.MAX_VALUE ), log );
++                WatchdogThread.dumpThread( ManagementFactory.getThreadMXBean().getThreadInfo( server.serverThread.getId(), Integer.MAX_VALUE ), log );
                  log.log( Level.SEVERE, "------------------------------" );
                  //
                  // Paper start - Only print full dump on long timeouts
@@ -571,7 +546,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
                  if ( isLongTimeout )
                  {
--                if ( restart && !MinecraftServer.getServer().hasStopped() )
+-                if ( this.restart && !MinecraftServer.getServer().hasStopped() )
 +                if ( !server.hasStopped() )
                  {
 -                    RestartCommand.restart();

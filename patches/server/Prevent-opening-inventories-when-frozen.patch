@@ -8,7 +8,7 @@ diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/ma
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-@@ -0,0 +0,0 @@ public class ServerPlayer extends Player implements ContainerListener {
+@@ -0,0 +0,0 @@ public class ServerPlayer extends Player {
              containerUpdateDelay = level.paperConfig.containerUpdateTickRate;
          }
          // Paper end
@@ -17,24 +17,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              this.closeContainer(org.bukkit.event.inventory.InventoryCloseEvent.Reason.CANT_USE); // Paper
              this.containerMenu = this.inventoryMenu;
          }
-@@ -0,0 +0,0 @@ public class ServerPlayer extends Player implements ContainerListener {
+@@ -0,0 +0,0 @@ public class ServerPlayer extends Player {
              } else {
                  // CraftBukkit start
                  this.containerMenu = container;
 -                this.connection.send(new ClientboundOpenScreenPacket(container.containerId, container.getType(), container.getTitle()));
 +                if (!isImmobile()) this.connection.send(new ClientboundOpenScreenPacket(container.containerId, container.getType(), container.getTitle())); // Paper
                  // CraftBukkit end
-                 container.addSlotListener(this);
+                 this.initMenu(container);
                  return OptionalInt.of(this.containerCounter);
-@@ -0,0 +0,0 @@ public class ServerPlayer extends Player implements ContainerListener {
-     }
- 
-     @Override
--    protected boolean isImmobile() {
-+    public boolean isImmobile() { // Paper - protected > public
-         return super.isImmobile() || (this.connection != null && this.connection.isDisconnected()); // Paper
-     }
- 
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java
@@ -45,8 +36,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          //player.playerConnection.sendPacket(new PacketPlayOutOpenWindow(container.windowId, windowType, CraftChatMessage.fromString(title)[0])); // Paper // Paper - comment
 -        player.connection.send(new ClientboundOpenScreenPacket(container.containerId, windowType, io.papermc.paper.adventure.PaperAdventure.asVanilla(adventure$title))); // Paper
 +        if (!player.isImmobile()) player.connection.send(new ClientboundOpenScreenPacket(container.containerId, windowType, io.papermc.paper.adventure.PaperAdventure.asVanilla(adventure$title))); // Paper
-         getHandle().containerMenu = container;
-         getHandle().containerMenu.addSlotListener(player);
+         player.containerMenu = container;
+         player.initMenu(container);
      }
 @@ -0,0 +0,0 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
          net.kyori.adventure.text.Component adventure$title = inventory.title(); // Paper
@@ -55,5 +46,5 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -        player.connection.send(new ClientboundOpenScreenPacket(container.containerId, windowType, io.papermc.paper.adventure.PaperAdventure.asVanilla(adventure$title))); // Paper
 +        if (!player.isImmobile()) player.connection.send(new ClientboundOpenScreenPacket(container.containerId, windowType, io.papermc.paper.adventure.PaperAdventure.asVanilla(adventure$title))); // Paper
          player.containerMenu = container;
-         player.containerMenu.addSlotListener(player);
+         player.initMenu(container);
      }

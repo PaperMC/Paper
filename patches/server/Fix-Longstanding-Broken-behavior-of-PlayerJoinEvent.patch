@@ -32,7 +32,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
 @@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
-         });
+         // Paper end - per player view distance
      }
  
 -    protected void addEntity(Entity entity) {
@@ -52,7 +52,7 @@ diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/ma
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-@@ -0,0 +0,0 @@ public class ServerPlayer extends Player implements ContainerListener {
+@@ -0,0 +0,0 @@ public class ServerPlayer extends Player {
      public double maxHealthCache;
      public boolean joining = true;
      public boolean sentListPacket = false;
@@ -75,8 +75,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        mountSavedVehicle(player, worldserver1, nbttagcompound);
 +        // Paper end
          // CraftBukkit start
-         PlayerJoinEvent playerJoinEvent = new org.bukkit.event.player.PlayerJoinEvent(cserver.getPlayer(player), PaperAdventure.asAdventure(chatmessage)); // Paper - Adventure
-         cserver.getPluginManager().callEvent(playerJoinEvent);
+         PlayerJoinEvent playerJoinEvent = new org.bukkit.event.player.PlayerJoinEvent(this.cserver.getPlayer(player), PaperAdventure.asAdventure(chatmessage)); // Paper - Adventure
+         this.cserver.getPluginManager().callEvent(playerJoinEvent);
 @@ -0,0 +0,0 @@ public abstract class PlayerList {
              player.connection.send(new ClientboundPlayerInfoPacket(ClientboundPlayerInfoPacket.Action.ADD_PLAYER, new ServerPlayer[] { entityplayer1}));
          }
@@ -93,57 +93,27 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        // Paper start - move vehicle into method so it can be called above - short circuit around that code
 +        onPlayerJoinFinish(player, worldserver1, s1);
 +    }
-+    private void mountSavedVehicle(ServerPlayer entityplayer, ServerLevel worldserver1, CompoundTag nbttagcompound) {
++    private void mountSavedVehicle(ServerPlayer player, ServerLevel worldserver1, CompoundTag nbttagcompound) {
 +        // Paper end
          if (nbttagcompound != null && nbttagcompound.contains("RootVehicle", 10)) {
              CompoundTag nbttagcompound1 = nbttagcompound.getCompound("RootVehicle");
              // CraftBukkit start
 @@ -0,0 +0,0 @@ public abstract class PlayerList {
-                 Entity entity1;
- 
-                 if (entity.getUUID().equals(uuid)) {
--                    player.startRiding(entity, true);
-+                    entityplayer.startRiding(entity, true);
-                 } else {
-                     iterator1 = entity.getIndirectPassengers().iterator();
- 
-                     while (iterator1.hasNext()) {
-                         entity1 = (Entity) iterator1.next();
-                         if (entity1.getUUID().equals(uuid)) {
--                            player.startRiding(entity1, true);
-+                            entityplayer.startRiding(entity1, true);
-                             break;
-                         }
-                     }
-                 }
- 
--                if (!player.isPassenger()) {
-+                if (!entityplayer.isPassenger()) {
-                     PlayerList.LOGGER.warn("Couldn't reattach entity to player");
-                     worldserver1.despawn(entity);
-                     iterator1 = entity.getIndirectPassengers().iterator();
-@@ -0,0 +0,0 @@ public abstract class PlayerList {
              }
          }
  
--        player.initMenu();
 +        // Paper start
 +    }
-+    public void onPlayerJoinFinish(ServerPlayer entityplayer, ServerLevel worldserver1, String s1) {
++    public void onPlayerJoinFinish(ServerPlayer player, ServerLevel worldserver1, String s1) {
 +        // Paper end
-+        entityplayer.initMenu();
+         player.initInventoryMenu();
+         // CraftBukkit - Moved from above, added world
          // Paper start - Add to collideRule team if needed
-         final Scoreboard scoreboard = this.getServer().getLevel(Level.OVERWORLD).getScoreboard();
-         final PlayerTeam collideRuleTeam = scoreboard.getTeam(collideRuleTeamName);
--        if (this.collideRuleTeamName != null && collideRuleTeam != null && player.getTeam() == null) {
--            scoreboard.addPlayerToTeam(player.getScoreboardName(), collideRuleTeam);
-+        if (this.collideRuleTeamName != null && collideRuleTeam != null && entityplayer.getTeam() == null) {
-+            scoreboard.addPlayerToTeam(entityplayer.getScoreboardName(), collideRuleTeam);
+@@ -0,0 +0,0 @@ public abstract class PlayerList {
+             scoreboard.addPlayerToTeam(player.getScoreboardName(), collideRuleTeam);
          }
          // Paper end
-         // CraftBukkit - Moved from above, added world
--        PlayerList.LOGGER.info("{}[{}] logged in with entity id {} at ([{}]{}, {}, {})", player.getName().getString(), s1, player.getId(), worldserver1.worldDataServer.getLevelName(), player.getX(), player.getY(), player.getZ());
-+        PlayerList.LOGGER.info("{}[{}] logged in with entity id {} at ([{}]{}, {}, {})", entityplayer.getName().getString(), s1, entityplayer.getId(), worldserver1.worldDataServer.getLevelName(), entityplayer.getX(), entityplayer.getY(), entityplayer.getZ());
++        // CraftBukkit - Moved from above, added world
+         PlayerList.LOGGER.info("{}[{}] logged in with entity id {} at ([{}]{}, {}, {})", player.getName().getString(), s1, player.getId(), worldserver1.serverLevelData.getLevelName(), player.getX(), player.getY(), player.getZ());
      }
  
-     public void updateEntireScoreboard(ServerScoreboard scoreboard, ServerPlayer player) {

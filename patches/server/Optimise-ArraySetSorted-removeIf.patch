@@ -9,27 +9,16 @@ diff --git a/src/main/java/net/minecraft/util/SortedArraySet.java b/src/main/jav
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/util/SortedArraySet.java
 +++ b/src/main/java/net/minecraft/util/SortedArraySet.java
-@@ -0,0 +0,0 @@ import java.util.NoSuchElementException;
- public class SortedArraySet<T> extends AbstractSet<T> {
- 
-     private final Comparator<T> comparator;
--    private T[] contents;
--    private int size;
-+    private T[] contents; private final T[] getBackingArray() { return this.contents; } // Paper - OBFHELPER
-+    private int size; private final int getSize() { return this.size; } private final void setSize(int value) { this.size = value; } // Paper - OBFHELPER
- 
-     private SortedArraySet(int initialCapacity, Comparator<T> comparator) {
-         this.comparator = comparator;
 @@ -0,0 +0,0 @@ public class SortedArraySet<T> extends AbstractSet<T> {
+             this.contents = (T[])castRawArray(new Object[initialCapacity]);
          }
      }
- 
 +    // Paper start - optimise removeIf
 +    @Override
 +    public boolean removeIf(java.util.function.Predicate<? super T> filter) {
 +        // prev. impl used an iterator, which could be n^2 and creates garbage
-+        int i = 0, len = this.getSize();
-+        T[] backingArray = this.getBackingArray();
++        int i = 0, len = this.size;
++        T[] backingArray = this.contents;
 +
 +        for (;;) {
 +            if (i >= len) {
@@ -55,11 +44,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +        // cleanup end
 +        Arrays.fill(backingArray, lastIndex, len, null);
-+        this.setSize(lastIndex);
++        this.size = lastIndex;
 +        return true;
 +    }
 +    // Paper end - optimise removeIf
-+
-     public static <T extends Comparable<T>> SortedArraySet<T> create(int initialCapacity) {
-         return new SortedArraySet<>(initialCapacity, (Comparator)Comparator.naturalOrder()); // Paper - decompile fix
-     }
+ 
+     public static <T extends Comparable<T>> SortedArraySet<T> create() {
+         return create(10);

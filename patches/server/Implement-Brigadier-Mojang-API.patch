@@ -9,6 +9,18 @@ Adds AsyncPlayerSendCommandsEvent
 Adds CommandRegisteredEvent
   - Allows manipulating the CommandNode to add more children/metadata for the client
 
+diff --git a/build.gradle.kts b/build.gradle.kts
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/build.gradle.kts
++++ b/build.gradle.kts
+@@ -0,0 +0,0 @@ repositories {
+ 
+ dependencies {
+     implementation(project(":Paper-API"))
++    implementation(project(":Paper-MojangAPI"))
+     // Paper start
+     implementation("org.jline:jline-terminal-jansi:3.12.1")
+     implementation("net.minecrell:terminalconsoleappender:1.2.0")
 diff --git a/src/main/java/net/minecraft/commands/CommandSourceStack.java b/src/main/java/net/minecraft/commands/CommandSourceStack.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/commands/CommandSourceStack.java
@@ -72,14 +84,14 @@ diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListener
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-@@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl implements ServerGamePacketListener {
+@@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
                      ParseResults<CommandSourceStack> parseresults = this.server.getCommands().getDispatcher().parse(stringreader, this.player.createCommandSourceStack());
  
                      this.server.getCommands().getDispatcher().getCompletionSuggestions(parseresults).thenAccept((suggestions) -> {
 -                        if (suggestions.isEmpty()) return; // CraftBukkit - don't send through empty suggestions - prevents [<args>] from showing for plugins with nothing more to offer
 -                        this.connection.send(new ClientboundCommandSuggestionsPacket(packet.getId(), suggestions));
 +                        // Paper start
-+                        com.destroystokyo.paper.event.brigadier.AsyncPlayerSendSuggestionsEvent suggestEvent = new com.destroystokyo.paper.event.brigadier.AsyncPlayerSendSuggestionsEvent(this.getPlayer(), suggestions, buffer);
++                        com.destroystokyo.paper.event.brigadier.AsyncPlayerSendSuggestionsEvent suggestEvent = new com.destroystokyo.paper.event.brigadier.AsyncPlayerSendSuggestionsEvent(this.getCraftPlayer(), suggestions, buffer);
 +                        suggestEvent.setCancelled(suggestions.isEmpty());
 +                        if (!suggestEvent.callEvent()) return;
 +                        this.connection.send(new ClientboundCommandSuggestionsPacket(packet.getId(), (com.mojang.brigadier.suggestion.Suggestions) suggestEvent.getSuggestions())); // CraftBukkit - decompile error // Paper
@@ -87,13 +99,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                      });
                  });
              }
-@@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl implements ServerGamePacketListener {
+@@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
  
              builder = builder.createOffset(builder.getInput().lastIndexOf(' ') + 1);
              completions.forEach(builder::suggest);
 -            player.connection.send(new ClientboundCommandSuggestionsPacket(packet.getId(), builder.buildFuture().join()));
 +            com.mojang.brigadier.suggestion.Suggestions suggestions = builder.buildFuture().join();
-+            com.destroystokyo.paper.event.brigadier.AsyncPlayerSendSuggestionsEvent suggestEvent = new com.destroystokyo.paper.event.brigadier.AsyncPlayerSendSuggestionsEvent(this.getPlayer(), suggestions, buffer);
++            com.destroystokyo.paper.event.brigadier.AsyncPlayerSendSuggestionsEvent suggestEvent = new com.destroystokyo.paper.event.brigadier.AsyncPlayerSendSuggestionsEvent(this.getCraftPlayer(), suggestions, buffer);
 +            suggestEvent.setCancelled(suggestions.isEmpty());
 +            if (!suggestEvent.callEvent()) return;
 +            this.connection.send(new ClientboundCommandSuggestionsPacket(packet.getId(), suggestEvent.getSuggestions()));

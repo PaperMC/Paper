@@ -7,4 +7,4 @@ pluginManagement {
 
 rootProject.name = "Paper"
 
-include("Paper-API", "Paper-Server")
+include("Paper-API", "Paper-Server", "Paper-MojangAPI")

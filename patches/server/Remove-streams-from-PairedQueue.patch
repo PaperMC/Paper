@@ -11,54 +11,21 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/util/thread/StrictQueue.java
 +++ b/src/main/java/net/minecraft/util/thread/StrictQueue.java
 @@ -0,0 +0,0 @@ public interface StrictQueue<T, F> {
- 
-     public static final class FixedPriorityQueue implements StrictQueue<StrictQueue.IntRunnable, Runnable> {
- 
--        private final List<Queue<Runnable>> queueList;
-+        private final List<Queue<Runnable>> queueList; private final List<Queue<Runnable>> getQueues() { return this.queueList; } // Paper - OBFHELPER
+         private final List<Queue<Runnable>> queueList;
  
          public FixedPriorityQueue(int priorityCount) {
--            this.queueList = (List) IntStream.range(0, priorityCount).mapToObj((j) -> {
+-            this.queueList = IntStream.range(0, priorityCount).mapToObj((i) -> {
 -                return Queues.newConcurrentLinkedQueue();
 -            }).collect(Collectors.toList());
 +            // Paper start - remove streams
 +            this.queueList = new java.util.ArrayList<>(priorityCount); // queues
 +            for (int j = 0; j < priorityCount; ++j) {
-+                this.getQueues().add(Queues.newConcurrentLinkedQueue());
++                this.queueList.add(Queues.newConcurrentLinkedQueue());
 +            }
 +            // Paper end - remove streams
          }
  
          @Nullable
-         @Override
-         public Runnable pop() {
--            Iterator iterator = this.queueList.iterator();
--
--            Runnable runnable;
--
--            do {
--                if (!iterator.hasNext()) {
--                    return null;
-+            // Paper start - remove iterator creation
-+            for (int i = 0, len = this.getQueues().size(); i < len; ++i) {
-+                Queue<Runnable> queue = this.getQueues().get(i);
-+                Runnable ret = queue.poll();
-+                if (ret != null) {
-+                    return ret;
-                 }
--
--                Queue<Runnable> queue = (Queue) iterator.next();
--
--                runnable = (Runnable) queue.poll();
--            } while (runnable == null);
--
--            return runnable;
-+            }
-+            return null;
-+            // Paper end - remove iterator creation
-         }
- 
-         public boolean push(StrictQueue.IntRunnable message) {
 @@ -0,0 +0,0 @@ public interface StrictQueue<T, F> {
  
          @Override
@@ -66,8 +33,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -            return this.queueList.stream().allMatch(Collection::isEmpty);
 +            // Paper start - remove streams
 +            // why are we doing streams every time we might want to execute a task?
-+            for (int i = 0, len = this.getQueues().size(); i < len; ++i) {
-+                Queue<Runnable> queue = this.getQueues().get(i);
++            for (int i = 0, len = this.queueList.size(); i < len; ++i) {
++                Queue<Runnable> queue = this.queueList.get(i);
 +                if (!queue.isEmpty()) {
 +                    return false;
 +                }
@@ -75,5 +42,5 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            return true;
 +            // Paper end - remove streams
          }
-     }
  
+         @Override

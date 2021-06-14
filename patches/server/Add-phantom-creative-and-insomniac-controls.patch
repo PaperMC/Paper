@@ -9,44 +9,31 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 @@ -0,0 +0,0 @@ public class PaperWorldConfig {
-     private void lightQueueSize() {
          lightQueueSize = getInt("light-queue-size", lightQueueSize);
      }
-+
+ 
 +    public boolean phantomIgnoreCreative = true;
 +    public boolean phantomOnlyAttackInsomniacs = true;
 +    private void phantomSettings() {
 +        phantomIgnoreCreative = getBoolean("phantoms-do-not-spawn-on-creative-players", phantomIgnoreCreative);
 +        phantomOnlyAttackInsomniacs = getBoolean("phantoms-only-attack-insomniacs", phantomOnlyAttackInsomniacs);
 +    }
- }
++
+     public int noTickViewDistance;
+     private void viewDistance() {
+         this.noTickViewDistance = this.getInt("viewdistances.no-tick-view-distance", -1);
 diff --git a/src/main/java/net/minecraft/world/entity/EntitySelector.java b/src/main/java/net/minecraft/world/entity/EntitySelector.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/EntitySelector.java
 +++ b/src/main/java/net/minecraft/world/entity/EntitySelector.java
-@@ -0,0 +0,0 @@ package net.minecraft.world.entity;
- import com.google.common.base.Predicates;
- import java.util.function.Predicate;
- import javax.annotation.Nullable;
-+import net.minecraft.server.level.ServerPlayer;
-+import net.minecraft.stats.Stats;
-+import net.minecraft.util.Mth;
- import net.minecraft.world.Container;
- import net.minecraft.world.Difficulty;
- import net.minecraft.world.entity.player.Player;
 @@ -0,0 +0,0 @@ public final class EntitySelector {
      public static final Predicate<Entity> NO_SPECTATORS = (entity) -> {
          return !entity.isSpectator();
      };
-+    public static Predicate<Player> isInsomniac = (player) -> Mth.clamp(((ServerPlayer) player).getStats().getValue(Stats.CUSTOM.get(Stats.TIME_SINCE_REST)), 1, Integer.MAX_VALUE) >= 72000; // Paper
++    public static Predicate<Player> isInsomniac = (player) -> net.minecraft.util.Mth.clamp(((net.minecraft.server.level.ServerPlayer) player).getStats().getValue(net.minecraft.stats.Stats.CUSTOM.get(net.minecraft.stats.Stats.TIME_SINCE_REST)), 1, Integer.MAX_VALUE) >= 72000; // Paper
  
+     private EntitySelector() {}
      // Paper start
-     public static final Predicate<Entity> affectsSpawning = (entity) -> {
--        return !entity.isSpectator() && entity.isAlive() && (entity instanceof EntityPlayer) && ((EntityPlayer) entity).affectsSpawning;
-+        return !entity.isSpectator() && entity.isAlive() && (entity instanceof ServerPlayer) && ((ServerPlayer) entity).affectsSpawning;
-     };
-     // Paper end
- 
 diff --git a/src/main/java/net/minecraft/world/entity/monster/Phantom.java b/src/main/java/net/minecraft/world/entity/monster/Phantom.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/monster/Phantom.java

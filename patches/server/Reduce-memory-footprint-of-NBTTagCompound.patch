@@ -11,29 +11,21 @@ diff --git a/src/main/java/net/minecraft/nbt/CompoundTag.java b/src/main/java/ne
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/nbt/CompoundTag.java
 +++ b/src/main/java/net/minecraft/nbt/CompoundTag.java
-@@ -0,0 +0,0 @@ import net.minecraft.ReportedException;
- import net.minecraft.network.chat.Component;
- import net.minecraft.network.chat.MutableComponent;
- import net.minecraft.network.chat.TextComponent;
-+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap; // Paper
- import org.apache.logging.log4j.LogManager;
- import org.apache.logging.log4j.Logger;
- 
 @@ -0,0 +0,0 @@ public class CompoundTag implements Tag {
              if (i > 512) {
                  throw new RuntimeException("Tried to read NBT tag with too high complexity, depth > 512");
              } else {
--                HashMap hashmap = Maps.newHashMap();
-+                Object2ObjectOpenHashMap<String, Tag> hashmap = new Object2ObjectOpenHashMap<>(8, 0.8f); // Paper - reduce memory footprint of NBTTagCompound
+-                Map<String, Tag> map = Maps.newHashMap();
++                it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap<String, Tag> map = new it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap<>(8, 0.8f); // Paper - reduce memory footprint of NBTTagCompound
  
-                 byte b0;
- 
+                 byte b;
+                 while((b = CompoundTag.readNamedTagType(dataInput, nbtAccounter)) != 0) {
 @@ -0,0 +0,0 @@ public class CompoundTag implements Tag {
      }
  
      public CompoundTag() {
 -        this(Maps.newHashMap());
-+        this(new Object2ObjectOpenHashMap<>(8, 0.8f)); // Paper - reduce memory footprint of NBTTagCompound
++        this(new it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap<>(8, 0.8f)); // Paper - reduce memory footprint of NBTTagCompound
      }
  
      @Override
@@ -42,11 +34,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      @Override
      public CompoundTag copy() {
 -        Map<String, Tag> map = Maps.newHashMap(Maps.transformValues(this.tags, Tag::copy));
-+        // Paper start - reduce memory footprint of NBTTagCompound
-+        Object2ObjectOpenHashMap<String, Tag> ret = new Object2ObjectOpenHashMap<>(this.tags.size(), 0.8f);
- 
 -        return new CompoundTag(map);
-+        Iterator<Map.Entry<String, Tag>> iterator = (this.tags instanceof Object2ObjectOpenHashMap) ? ((Object2ObjectOpenHashMap)this.tags).object2ObjectEntrySet().fastIterator() : this.tags.entrySet().iterator();
++        // Paper start - reduce memory footprint of NBTTagCompound
++        it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap<String, Tag> ret = new it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap<>(this.tags.size(), 0.8f);
++        java.util.Iterator<java.util.Map.Entry<String, Tag>> iterator = (this.tags instanceof it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap) ? ((it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap)this.tags).object2ObjectEntrySet().fastIterator() : this.tags.entrySet().iterator();
 +        while (iterator.hasNext()) {
 +            Map.Entry<String, Tag> entry = iterator.next();
 +            ret.put(entry.getKey(), entry.getValue().copy());
@@ -56,4 +47,4 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        // Paper end - reduce memory footprint of NBTTagCompound
      }
  
-     public boolean equals(Object object) {
+     @Override
