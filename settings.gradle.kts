@@ -1,7 +1,7 @@
 pluginManagement {
     repositories {
         gradlePluginPortal()
-        maven("https://wav.jfrog.io/artifactory/repo/")
+        maven("https://papermc.io/repo/repository/maven-public/")
     }
 }
 
