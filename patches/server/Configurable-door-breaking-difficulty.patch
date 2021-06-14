@@ -17,9 +17,35 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import net.minecraft.world.Difficulty;
 +import net.minecraft.world.entity.monster.Vindicator;
 +import net.minecraft.world.entity.monster.Zombie;
- import com.destroystokyo.paper.antixray.ChunkPacketBlockControllerAntiXray.EngineMode;
  import org.bukkit.Bukkit;
  import org.bukkit.Material;
+ import org.bukkit.configuration.ConfigurationSection;
+@@ -0,0 +0,0 @@ public class PaperWorldConfig {
+         disableMobSpawnerSpawnEggTransformation = getBoolean("game-mechanics.disable-mob-spawner-spawn-egg-transformation", disableMobSpawnerSpawnEggTransformation);
+     }
+ 
++    public List<Difficulty> zombieBreakDoors;
++    public List<Difficulty> vindicatorBreakDoors;
++    private void setupEntityBreakingDoors() {
++        zombieBreakDoors = getEnumList(
++            "door-breaking-difficulty.zombie",
++            java.util.Arrays.stream(Difficulty.values())
++                .filter(Zombie.DOOR_BREAKING_PREDICATE)
++                .collect(Collectors.toList()),
++            Difficulty.class
++        );
++        vindicatorBreakDoors = getEnumList(
++            "door-breaking-difficulty.vindicator",
++            java.util.Arrays.stream(Difficulty.values())
++                .filter(Vindicator.DOOR_BREAKING_PREDICATE)
++                .collect(Collectors.toList()),
++            Difficulty.class
++        );
++    }
++
+     public short keepLoadedRange;
+     private void keepLoadedRange() {
+         keepLoadedRange = (short) (getInt("keep-spawn-loaded-range", Math.min(spigotConfig.viewDistance, 10)) * 16);
 @@ -0,0 +0,0 @@ public class PaperWorldConfig {
          return config.getString("world-settings." + worldName + "." + path, config.getString("world-settings.default." + path));
      }
@@ -32,30 +58,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public int cactusMaxHeight;
      public int reedMaxHeight;
      public int bambooMaxHeight;
-@@ -0,0 +0,0 @@ public class PaperWorldConfig {
-     private void disableMobSpawnerSpawnEggTransformation() {
-         disableMobSpawnerSpawnEggTransformation = getBoolean("game-mechanics.disable-mob-spawner-spawn-egg-transformation", disableMobSpawnerSpawnEggTransformation);
-     }
-+
-+    public List<Difficulty> zombieBreakDoors;
-+    public List<Difficulty> vindicatorBreakDoors;
-+    private void setupEntityBreakingDoors() {
-+        zombieBreakDoors = getEnumList(
-+            "door-breaking-difficulty.zombie",
-+            Arrays.stream(Difficulty.values())
-+                .filter(Zombie.getDoorBreakingPredicate())
-+                .collect(Collectors.toList()),
-+            Difficulty.class
-+        );
-+        vindicatorBreakDoors = getEnumList(
-+            "door-breaking-difficulty.vindicator",
-+            Arrays.stream(Difficulty.values())
-+                .filter(Vindicator.getDoorBreakingPredicate())
-+                .collect(Collectors.toList()),
-+            Difficulty.class
-+        );
-+    }
- }
 diff --git a/src/main/java/net/minecraft/world/entity/monster/Vindicator.java b/src/main/java/net/minecraft/world/entity/monster/Vindicator.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/monster/Vindicator.java
@@ -63,14 +65,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ import net.minecraft.world.level.ServerLevelAccessor;
  
  public class Vindicator extends AbstractIllager {
- 
-+    public static final Predicate<Difficulty> getDoorBreakingPredicate() { return DOOR_BREAKING_PREDICATE; } // Paper - OBFHELPER
-     private static final Predicate<Difficulty> DOOR_BREAKING_PREDICATE = (enumdifficulty) -> {
-         return enumdifficulty == Difficulty.NORMAL || enumdifficulty == Difficulty.HARD;
+     private static final String TAG_JOHNNY = "Johnny";
+-    static final Predicate<Difficulty> DOOR_BREAKING_PREDICATE = (difficulty) -> {
++    public static final Predicate<Difficulty> DOOR_BREAKING_PREDICATE = (difficulty) -> { // Paper - package private -> public
+         return difficulty == Difficulty.NORMAL || difficulty == Difficulty.HARD;
      };
+     private boolean isJohnny; public boolean isJohnny() { return this.isJohnny; } public void setJohnny(boolean johnny) { this.isJohnny = johnny; } // Paper - OBFHELPER
 @@ -0,0 +0,0 @@ public class Vindicator extends AbstractIllager {
-     static class VindicatorBreakDoorGoal extends BreakDoorGoal {
  
+     static class VindicatorBreakDoorGoal extends BreakDoorGoal {
          public VindicatorBreakDoorGoal(Mob mob) {
 -            super(mob, 6, Vindicator.DOOR_BREAKING_PREDICATE);
 +            super(mob, 6, com.google.common.base.Predicates.in(mob.level.paperConfig.vindicatorBreakDoors)); // Paper
@@ -82,13 +85,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/world/entity/monster/Zombie.java
 +++ b/src/main/java/net/minecraft/world/entity/monster/Zombie.java
 @@ -0,0 +0,0 @@ public class Zombie extends Monster {
-     private static final EntityDataAccessor<Boolean> DATA_BABY_ID = SynchedEntityData.defineId(Zombie.class, EntityDataSerializers.BOOLEAN);
-     private static final EntityDataAccessor<Integer> DATA_SPECIAL_TYPE_ID = SynchedEntityData.defineId(Zombie.class, EntityDataSerializers.INT);
-     public static final EntityDataAccessor<Boolean> DATA_DROWNED_CONVERSION_ID = SynchedEntityData.defineId(Zombie.class, EntityDataSerializers.BOOLEAN);
-+    public static final Predicate<Difficulty> getDoorBreakingPredicate() { return DOOR_BREAKING_PREDICATE; } // Paper - OBFHELPER
-     private static final Predicate<Difficulty> DOOR_BREAKING_PREDICATE = (enumdifficulty) -> {
+     public static final int REINFORCEMENT_RANGE_MAX = 40;
+     public static final int REINFORCEMENT_RANGE_MIN = 7;
+     private static final float BREAK_DOOR_CHANCE = 0.1F;
+-    private static final Predicate<Difficulty> DOOR_BREAKING_PREDICATE = (enumdifficulty) -> {
++    public static final Predicate<Difficulty> DOOR_BREAKING_PREDICATE = (enumdifficulty) -> { // Paper - private -> public
          return enumdifficulty == Difficulty.HARD;
      };
+     private final BreakDoorGoal breakDoorGoal;
 @@ -0,0 +0,0 @@ public class Zombie extends Monster {
  
      public Zombie(EntityType<? extends Zombie> type, Level world) {

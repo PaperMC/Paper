@@ -12,10 +12,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          int i = tileentitydispenser.getRandomSlot();
  
          if (i < 0) {
-+            if (org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockFailedDispenseEvent(worldserver, pos)) // Paper - BlockFailedDispenseEvent is called here
-             worldserver.levelEvent(1001, pos, 0);
++            if (org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockFailedDispenseEvent(world, pos)) {// Paper - BlockFailedDispenseEvent is called here
+             world.levelEvent(1001, pos, 0);
+             world.gameEvent(GameEvent.DISPENSE_FAIL, pos);
++            } // Paper
          } else {
              ItemStack itemstack = tileentitydispenser.getItem(i);
+             DispenseItemBehavior idispensebehavior = this.getDispenseMethod(itemstack);
 diff --git a/src/main/java/net/minecraft/world/level/block/DropperBlock.java b/src/main/java/net/minecraft/world/level/block/DropperBlock.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/block/DropperBlock.java
@@ -24,39 +27,23 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          int i = tileentitydispenser.getRandomSlot();
  
          if (i < 0) {
-+            if (org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockFailedDispenseEvent(worldserver, pos)) // Paper - BlockFailedDispenseEvent is called here
-             worldserver.levelEvent(1001, pos, 0);
++            if (org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockFailedDispenseEvent(world, pos)) // Paper - BlockFailedDispenseEvent is called here
+             world.levelEvent(1001, pos, 0);
          } else {
              ItemStack itemstack = tileentitydispenser.getItem(i);
 diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 +++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-@@ -0,0 +0,0 @@ import com.google.common.base.Function;
- import com.google.common.base.Functions;
- import com.google.common.collect.Lists;
- import com.mojang.datafixers.util.Either;
-+import io.papermc.paper.event.block.BlockFailedDispenseEvent;
- import java.net.InetAddress;
- import java.util.ArrayList;
- import java.util.Collections;
-@@ -0,0 +0,0 @@ import org.bukkit.entity.ThrownPotion;
- import org.bukkit.entity.Vehicle;
- import org.bukkit.entity.Villager;
- import org.bukkit.entity.Villager.Profession;
--import org.bukkit.entity.ExperienceOrb; // Paper
- import org.bukkit.event.Cancellable;
- import org.bukkit.event.Event;
- import org.bukkit.event.Event.Result;
 @@ -0,0 +0,0 @@ public class CraftEventFactory {
          Bukkit.getPluginManager().callEvent(event);
          return event;
      }
 +
 +    // Paper start
-+    public static boolean handleBlockFailedDispenseEvent(ServerLevel worldserver, BlockPos blockposition) {
-+        org.bukkit.block.Block block = worldserver.getWorld().getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ());
-+        BlockFailedDispenseEvent event = new BlockFailedDispenseEvent(block);
++    public static boolean handleBlockFailedDispenseEvent(ServerLevel serverLevel, BlockPos blockposition) {
++        org.bukkit.block.Block block = serverLevel.getWorld().getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ());
++        io.papermc.paper.event.block.BlockFailedDispenseEvent event = new io.papermc.paper.event.block.BlockFailedDispenseEvent(block);
 +        return event.callEvent();
 +    }
 +    // Paper end
