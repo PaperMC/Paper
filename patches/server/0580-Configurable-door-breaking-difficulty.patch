@@ -1,0 +1,104 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sun, 3 Jan 2021 22:27:43 -0800
+Subject: [PATCH] Configurable door breaking difficulty
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index b0b414a31192a2b0e5c69d00b982f883b66e77fd..dd5c092a035a30c477fe828b58bc918fc48daa03 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -4,7 +4,10 @@ import java.util.EnumMap;
+ import java.util.HashMap;
+ import java.util.List;
+ import java.util.Map;
+-
++import java.util.stream.Collectors;
++import net.minecraft.world.Difficulty;
++import net.minecraft.world.entity.monster.Vindicator;
++import net.minecraft.world.entity.monster.Zombie;
+ import org.bukkit.Bukkit;
+ import org.bukkit.Material;
+ import org.bukkit.configuration.ConfigurationSection;
+@@ -92,6 +95,25 @@ public class PaperWorldConfig {
+         disableMobSpawnerSpawnEggTransformation = getBoolean("game-mechanics.disable-mob-spawner-spawn-egg-transformation", disableMobSpawnerSpawnEggTransformation);
+     }
+ 
++    public List<Difficulty> zombieBreakDoors;
++    public List<Difficulty> vindicatorBreakDoors;
++    private void setupEntityBreakingDoors() {
++        zombieBreakDoors = getEnumList(
++            "door-breaking-difficulty.zombie",
++            java.util.Arrays.stream(Difficulty.values())
++                .filter(Zombie.DOOR_BREAKING_PREDICATE)
++                .collect(Collectors.toList()),
++            Difficulty.class
++        );
++        vindicatorBreakDoors = getEnumList(
++            "door-breaking-difficulty.vindicator",
++            java.util.Arrays.stream(Difficulty.values())
++                .filter(Vindicator.DOOR_BREAKING_PREDICATE)
++                .collect(Collectors.toList()),
++            Difficulty.class
++        );
++    }
++
+     public short keepLoadedRange;
+     private void keepLoadedRange() {
+         keepLoadedRange = (short) (getInt("keep-spawn-loaded-range", Math.min(spigotConfig.viewDistance, 10)) * 16);
+@@ -143,6 +165,11 @@ public class PaperWorldConfig {
+         return config.getString("world-settings." + worldName + "." + path, config.getString("world-settings.default." + path));
+     }
+ 
++    private <T extends Enum<T>> List<T> getEnumList(String path, List<T> def, Class<T> type) {
++        config.addDefault("world-settings.default." + path, def.stream().map(Enum::name).collect(Collectors.toList()));
++        return ((List<String>) (config.getList("world-settings." + worldName + "." + path, config.getList("world-settings.default." + path)))).stream().map(s -> Enum.valueOf(type, s)).collect(Collectors.toList());
++    }
++
+     public int cactusMaxHeight;
+     public int reedMaxHeight;
+     public int bambooMaxHeight;
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Vindicator.java b/src/main/java/net/minecraft/world/entity/monster/Vindicator.java
+index dcaec42b0756cf36da813815b4a54e4d6c4e293a..53a9e4b0fda9f5a3b23a874c53d93fbe931b0cfb 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Vindicator.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Vindicator.java
+@@ -48,7 +48,7 @@ import net.minecraft.world.level.ServerLevelAccessor;
+ 
+ public class Vindicator extends AbstractIllager {
+     private static final String TAG_JOHNNY = "Johnny";
+-    static final Predicate<Difficulty> DOOR_BREAKING_PREDICATE = (difficulty) -> {
++    public static final Predicate<Difficulty> DOOR_BREAKING_PREDICATE = (difficulty) -> { // Paper - package private -> public
+         return difficulty == Difficulty.NORMAL || difficulty == Difficulty.HARD;
+     };
+     private boolean isJohnny; public boolean isJohnny() { return this.isJohnny; } public void setJohnny(boolean johnny) { this.isJohnny = johnny; } // Paper - OBFHELPER
+@@ -195,7 +195,7 @@ public class Vindicator extends AbstractIllager {
+ 
+     static class VindicatorBreakDoorGoal extends BreakDoorGoal {
+         public VindicatorBreakDoorGoal(Mob mob) {
+-            super(mob, 6, Vindicator.DOOR_BREAKING_PREDICATE);
++            super(mob, 6, com.google.common.base.Predicates.in(mob.level.paperConfig.vindicatorBreakDoors)); // Paper
+             this.setFlags(EnumSet.of(Goal.Flag.MOVE));
+         }
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Zombie.java b/src/main/java/net/minecraft/world/entity/monster/Zombie.java
+index 03acacd30b84452733aa2bdeed515455a1f271f8..9e535cf3293cf624b1e2e1b7fb40a446b888b099 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Zombie.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Zombie.java
+@@ -88,7 +88,7 @@ public class Zombie extends Monster {
+     public static final int REINFORCEMENT_RANGE_MAX = 40;
+     public static final int REINFORCEMENT_RANGE_MIN = 7;
+     private static final float BREAK_DOOR_CHANCE = 0.1F;
+-    private static final Predicate<Difficulty> DOOR_BREAKING_PREDICATE = (enumdifficulty) -> {
++    public static final Predicate<Difficulty> DOOR_BREAKING_PREDICATE = (enumdifficulty) -> { // Paper - private -> public
+         return enumdifficulty == Difficulty.HARD;
+     };
+     private final BreakDoorGoal breakDoorGoal;
+@@ -100,7 +100,7 @@ public class Zombie extends Monster {
+ 
+     public Zombie(EntityType<? extends Zombie> type, Level world) {
+         super(type, world);
+-        this.breakDoorGoal = new BreakDoorGoal(this, Zombie.DOOR_BREAKING_PREDICATE);
++        this.breakDoorGoal = new BreakDoorGoal(this, com.google.common.base.Predicates.in(world.paperConfig.zombieBreakDoors)); // Paper
+     }
+ 
+     public Zombie(Level world) {
