@@ -39,7 +39,7 @@ subprojects {
 
 repositories {
     mavenCentral()
-    maven("https://papermc.io/repo/repository/maven-public/") {
+    maven("https://wav.jfrog.io/artifactory/repo/") { // TODO replace with "https://papermc.io/repo/repository/maven-public/" once paperclip is deplyoed there
         content {
             onlyForConfigurations("paperclip")
         }
