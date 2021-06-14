@@ -1,0 +1,107 @@
+--- a/net/minecraft/world/level/block/BigDripleafBlock.java
++++ b/net/minecraft/world/level/block/BigDripleafBlock.java
+@@ -40,12 +40,17 @@
+ import net.minecraft.world.phys.shapes.VoxelShapeCollision;
+ import net.minecraft.world.phys.shapes.VoxelShapes;
+ 
++// CraftBukkit start
++import org.bukkit.craftbukkit.event.CraftEventFactory;
++import org.bukkit.event.entity.EntityInteractEvent;
++// CraftBukkit end
++
+ public class BigDripleafBlock extends BlockFacingHorizontal implements IBlockFragilePlantElement, IBlockWaterlogged {
+ 
+     private static final BlockStateBoolean WATERLOGGED = BlockProperties.WATERLOGGED;
+     private static final BlockStateEnum<Tilt> TILT = BlockProperties.TILT;
+     private static final int NO_TICK = -1;
+-    private static final Object2IntMap<Tilt> DELAY_UNTIL_NEXT_TILT_STATE = (Object2IntMap) SystemUtils.a((Object) (new Object2IntArrayMap()), (object2intarraymap) -> {
++    private static final Object2IntMap<Tilt> DELAY_UNTIL_NEXT_TILT_STATE = (Object2IntMap) SystemUtils.a((new Object2IntArrayMap()), (object2intarraymap) -> { // CraftBukkit - decompile error
+         object2intarraymap.defaultReturnValue(-1);
+         object2intarraymap.put(Tilt.UNSTABLE, 10);
+         object2intarraymap.put(Tilt.PARTIAL, 10);
+@@ -108,7 +113,7 @@
+ 
+     @Override
+     public void a(World world, IBlockData iblockdata, MovingObjectPositionBlock movingobjectpositionblock, IProjectile iprojectile) {
+-        this.a(iblockdata, world, movingobjectpositionblock.getBlockPosition(), Tilt.FULL, SoundEffects.BIG_DRIPLEAF_TILT_DOWN);
++        this.a(iblockdata, world, movingobjectpositionblock.getBlockPosition(), Tilt.FULL, SoundEffects.BIG_DRIPLEAF_TILT_DOWN, iprojectile); // CraftBukkit
+     }
+ 
+     @Override
+@@ -167,7 +172,20 @@
+     public void a(IBlockData iblockdata, World world, BlockPosition blockposition, Entity entity) {
+         if (!world.isClientSide) {
+             if (iblockdata.get(BigDripleafBlock.TILT) == Tilt.NONE && a(blockposition, entity) && !world.isBlockIndirectlyPowered(blockposition)) {
+-                this.a(iblockdata, world, blockposition, Tilt.UNSTABLE, (SoundEffect) null);
++                // CraftBukkit start - tilt dripleaf
++                org.bukkit.event.Cancellable cancellable;
++                if (entity instanceof EntityHuman) {
++                    cancellable = CraftEventFactory.callPlayerInteractEvent((EntityHuman) entity, org.bukkit.event.block.Action.PHYSICAL, blockposition, null, null, null);
++                } else {
++                    cancellable = new EntityInteractEvent(entity.getBukkitEntity(), world.getWorld().getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ()));
++                    world.getCraftServer().getPluginManager().callEvent((EntityInteractEvent) cancellable);
++                }
++
++                if (cancellable.isCancelled()) {
++                    return;
++                }
++                // CraftBukkit end
++                this.a(iblockdata, world, blockposition, Tilt.UNSTABLE, (SoundEffect) null, entity);
+             }
+ 
+         }
+@@ -181,9 +199,9 @@
+             Tilt tilt = (Tilt) iblockdata.get(BigDripleafBlock.TILT);
+ 
+             if (tilt == Tilt.UNSTABLE) {
+-                this.a(iblockdata, (World) worldserver, blockposition, Tilt.PARTIAL, SoundEffects.BIG_DRIPLEAF_TILT_DOWN);
++                this.a(iblockdata, (World) worldserver, blockposition, Tilt.PARTIAL, SoundEffects.BIG_DRIPLEAF_TILT_DOWN, null); // CraftBukkit
+             } else if (tilt == Tilt.PARTIAL) {
+-                this.a(iblockdata, (World) worldserver, blockposition, Tilt.FULL, SoundEffects.BIG_DRIPLEAF_TILT_DOWN);
++                this.a(iblockdata, (World) worldserver, blockposition, Tilt.FULL, SoundEffects.BIG_DRIPLEAF_TILT_DOWN, null); // CraftBukkit
+             } else if (tilt == Tilt.FULL) {
+                 d(iblockdata, worldserver, blockposition);
+             }
+@@ -209,8 +227,10 @@
+         return entity.isOnGround() && entity.getPositionVector().y > (double) ((float) blockposition.getY() + 0.6875F);
+     }
+ 
+-    private void a(IBlockData iblockdata, World world, BlockPosition blockposition, Tilt tilt, @Nullable SoundEffect soundeffect) {
+-        a(iblockdata, world, blockposition, tilt);
++    // CraftBukkit start
++    private void a(IBlockData iblockdata, World world, BlockPosition blockposition, Tilt tilt, @Nullable SoundEffect soundeffect, @Nullable Entity entity) {
++        if (!a(iblockdata, world, blockposition, tilt, entity)) return;
++        // CraftBukkit end
+         if (soundeffect != null) {
+             a(world, blockposition, soundeffect);
+         }
+@@ -224,19 +244,27 @@
+     }
+ 
+     private static void d(IBlockData iblockdata, World world, BlockPosition blockposition) {
+-        a(iblockdata, world, blockposition, Tilt.NONE);
++        a(iblockdata, world, blockposition, Tilt.NONE, null); // CraftBukkit
+         if (iblockdata.get(BigDripleafBlock.TILT) != Tilt.NONE) {
+             a(world, blockposition, SoundEffects.BIG_DRIPLEAF_TILT_UP);
+         }
+ 
+     }
+ 
+-    private static void a(IBlockData iblockdata, World world, BlockPosition blockposition, Tilt tilt) {
++    // CraftBukkit start
++    private static boolean a(IBlockData iblockdata, World world, BlockPosition blockposition, Tilt tilt, @Nullable Entity entity) {
++        if (entity != null) {
++            if (CraftEventFactory.callEntityChangeBlockEvent(entity, blockposition, iblockdata.set(BigDripleafBlock.TILT, tilt)).isCancelled()) {
++                return false;
++            }
++        }
++        // CraftBukkit end
+         world.setTypeAndData(blockposition, (IBlockData) iblockdata.set(BigDripleafBlock.TILT, tilt), 2);
+         if (tilt.a()) {
+             world.a(GameEvent.BLOCK_CHANGE, blockposition);
+         }
+ 
++        return true; // CraftBukkit
+     }
+ 
+     @Override
