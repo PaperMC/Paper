@@ -44,8 +44,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                              BlockState iblockdata = this.level.getBlockState(blockposition);
 +                            if (!iblockdata.isDestroyable()) continue; // Paper
                              FluidState fluid = iblockdata.getFluidState(); // Paper
-                             Optional<Float> optional = this.damageCalculator.a(this, this.level, blockposition, iblockdata, fluid);
  
+                             if (!this.level.isInWorldBounds(blockposition)) {
 @@ -0,0 +0,0 @@ public class Explosion {
                  BlockState iblockdata = this.level.getBlockState(blockposition);
                  Block block = iblockdata.getBlock();
@@ -67,7 +67,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            BlockState type = getBlockState(pos);
 +            if (!type.isDestroyable()) return false;
 +            // Paper end
-             CraftBlockState blockstate = capturedBlockStates.get(pos);
+             CraftBlockState blockstate = this.capturedBlockStates.get(pos);
              if (blockstate == null) {
                  blockstate = CapturedBlockState.getTreeBlockState(this, pos, flags);
 diff --git a/src/main/java/net/minecraft/world/level/block/Block.java b/src/main/java/net/minecraft/world/level/block/Block.java
@@ -115,8 +115,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              BlockState iblockdata1 = (BlockState) ((BlockState) Blocks.MOVING_PISTON.defaultBlockState().setValue(MovingPistonBlock.FACING, enumdirection)).setValue(MovingPistonBlock.TYPE, this.isSticky ? PistonType.STICKY : PistonType.DEFAULT);
  
              world.setBlock(pos, iblockdata1, 20);
--            world.setBlockEntity(pos, MovingPistonBlock.newMovingBlockEntity((BlockState) this.defaultBlockState().setValue(PistonBaseBlock.FACING, Direction.from3DDataValue(data & 7)), enumdirection, false, true));
-+            world.setBlockEntity(pos, MovingPistonBlock.newMovingBlockEntity((BlockState) this.defaultBlockState().setValue(PistonBaseBlock.FACING, Direction.from3DDataValue(data & 7)), enumdirection, false, true)); // Paper - diff on change, j is facing direction - copy this above
+-            world.setBlockEntity(MovingPistonBlock.newMovingBlockEntity(pos, iblockdata1, (BlockState) this.defaultBlockState().setValue(PistonBaseBlock.FACING, Direction.from3DDataValue(data & 7)), enumdirection, false, true));
++            world.setBlockEntity(MovingPistonBlock.newMovingBlockEntity(pos, iblockdata1, (BlockState) this.defaultBlockState().setValue(PistonBaseBlock.FACING, Direction.from3DDataValue(data & 7)), enumdirection, false, true)); // Paper - diff on change
              world.blockUpdated(pos, iblockdata1.getBlock());
              iblockdata1.updateNeighbourShapes(world, pos, 2);
              if (this.isSticky) {
@@ -144,8 +144,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      @Deprecated
      public boolean canBeReplaced(BlockState state, BlockPlaceContext context) {
--        return this.material.isReplaceable() && (context.getItemInHand().isEmpty() || context.getItemInHand().getItem() != this.asItem());
-+        return this.material.isReplaceable() && (context.getItemInHand().isEmpty() || context.getItemInHand().getItem() != this.asItem()) && (state.isDestroyable() || (context.getPlayer() != null && context.getPlayer().abilities.instabuild)); // Paper
+-        return this.material.isReplaceable() && (context.getItemInHand().isEmpty() || !context.getItemInHand().is(this.asItem()));
++        return this.material.isReplaceable() && (context.getItemInHand().isEmpty() || !context.getItemInHand().is(this.asItem())) && (state.isDestroyable() || (context.getPlayer() != null && context.getPlayer().getAbilities().instabuild)); // Paper
      }
  
      @Deprecated

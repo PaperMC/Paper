@@ -26,13 +26,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import net.minecraft.nbt.Tag;
  import net.minecraft.server.level.ServerChunkCache;
  import net.minecraft.server.level.ServerLevel;
- import net.minecraft.server.level.ServerPlayer;
+ import net.minecraft.server.level.ThreadedLevelLightEngine;
 @@ -0,0 +0,0 @@ public class ChunkSerializer {
                  object2 = protochunkticklist1;
              }
  
--            object = new LevelChunk(worldserver.getLevel(), chunkcoordintpair, biomestorage, chunkconverter, (TickList) object1, (TickList) object2, j, achunksection, (chunk) -> {
--                postLoadChunk(nbttagcompound1, chunk);
+-            object = new LevelChunk(world.getLevel(), pos, biomestorage, chunkconverter, (TickList) object1, (TickList) object2, k, achunksection, (chunk) -> {
+-                ChunkSerializer.postLoadChunk(world, nbttagcompound1, chunk);
 -                // CraftBukkit start - load chunk persistent data from nbt
 -                net.minecraft.nbt.Tag persistentBase = nbttagcompound1.get("ChunkBukkitValues");
 -                if (persistentBase instanceof CompoundTag) {
@@ -40,11 +40,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -                }
 -                // CraftBukkit end
 -            });
-+            object = new LevelChunk(worldserver.getLevel(), chunkcoordintpair, biomestorage, chunkconverter, (TickList) object1, (TickList) object2, j, achunksection, // Paper start - fix massive nbt memory leak due to lambda. move lambda into a container method to not leak scope. Only clone needed NBT keys.
++            object = new LevelChunk(world.getLevel(), pos, biomestorage, chunkconverter, (TickList) object1, (TickList) object2, k, achunksection, // Paper start - fix massive nbt memory leak due to lambda. move lambda into a container method to not leak scope. Only clone needed NBT keys.
 +                createLoadEntitiesConsumer(new SafeNBTCopy(nbttagcompound1, "TileEntities", "Entities", "ChunkBukkitValues")) // Paper - move CB Chunk PDC into here
 +            );// Paper end
          } else {
-             ProtoChunk protochunk = new ProtoChunk(chunkcoordintpair, chunkconverter, achunksection, protochunkticklist, protochunkticklist1, worldserver); // Paper - Anti-Xray - Add parameter
+             ProtoChunk protochunk = new ProtoChunk(pos, chunkconverter, achunksection, protochunkticklist, protochunkticklist1, world, world); // Paper - add level
  
 @@ -0,0 +0,0 @@ public class ChunkSerializer {
              return new InProgressChunkHolder(protochunk1, tasksToExecuteOnMain); // Paper - Async chunk loading
@@ -84,7 +84,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +    private static java.util.function.Consumer<LevelChunk> createLoadEntitiesConsumer(CompoundTag nbt) {
 +        return (chunk) -> {
-+            postLoadChunk(nbt, chunk);
++            postLoadChunk(chunk.level, nbt, chunk);
 +            // CraftBukkit start - load chunk persistent data from nbt
 +            Tag persistentBase = nbt.get("ChunkBukkitValues");
 +            if (persistentBase instanceof CompoundTag) {
