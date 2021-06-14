@@ -1,6 +1,5 @@
 plugins {
     `java-library`
-    checkstyle
 }
 
 java {
@@ -17,7 +16,7 @@ dependencies {
     implementation(project(":Paper-API"))
     api("com.mojang:brigadier:1.0.18")
 
-    compileOnly("it.unimi.dsi:fastutil")
+    compileOnly("it.unimi.dsi:fastutil:8.2.2")
     compileOnly("org.jetbrains:annotations:18.0.0")
 
     testImplementation("junit:junit:4.13.1")
