@@ -129,6 +129,7 @@ import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.craftbukkit.util.CraftRayTraceResult;
 import org.bukkit.entity.AbstractArrow;
 import org.bukkit.entity.AbstractHorse;
+import org.bukkit.entity.AbstractSkeleton;
 import org.bukkit.entity.AbstractVillager;
 import org.bukkit.entity.Ambient;
 import org.bukkit.entity.AreaEffectCloud;
@@ -1590,12 +1591,12 @@ public class CraftWorld implements World {
                 } else {
                     entity = EntityTypes.HORSE.a(world);
                 }
-            } else if (Skeleton.class.isAssignableFrom(clazz)) {
+            } else if (AbstractSkeleton.class.isAssignableFrom(clazz)) {
                 if (Stray.class.isAssignableFrom(clazz)) {
                     entity = EntityTypes.STRAY.a(world);
                 } else if (WitherSkeleton.class.isAssignableFrom(clazz)) {
                     entity = EntityTypes.WITHER_SKELETON.a(world);
-                } else {
+                } else if (Skeleton.class.isAssignableFrom(clazz)) {
                     entity = EntityTypes.SKELETON.a(world);
                 }
             } else if (Slime.class.isAssignableFrom(clazz)) {

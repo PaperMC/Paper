@@ -98,6 +98,7 @@ import net.minecraft.world.entity.monster.EntityPillager;
 import net.minecraft.world.entity.monster.EntityRavager;
 import net.minecraft.world.entity.monster.EntityShulker;
 import net.minecraft.world.entity.monster.EntitySilverfish;
+import net.minecraft.world.entity.monster.EntitySkeleton;
 import net.minecraft.world.entity.monster.EntitySkeletonAbstract;
 import net.minecraft.world.entity.monster.EntitySkeletonStray;
 import net.minecraft.world.entity.monster.EntitySkeletonWither;
@@ -272,7 +273,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
                     else if (entity instanceof EntitySkeletonAbstract) {
                         if (entity instanceof EntitySkeletonStray) { return new CraftStray(server, (EntitySkeletonStray) entity); }
                         else if (entity instanceof EntitySkeletonWither) { return new CraftWitherSkeleton(server, (EntitySkeletonWither) entity); }
-                        else { return new CraftSkeleton(server, (EntitySkeletonAbstract) entity); }
+                        else if (entity instanceof EntitySkeleton){ return new CraftSkeleton(server, (EntitySkeleton) entity); }
                     }
                     else if (entity instanceof EntityBlaze) { return new CraftBlaze(server, (EntityBlaze) entity); }
                     else if (entity instanceof EntityWitch) { return new CraftWitch(server, (EntityWitch) entity); }
