@@ -470,6 +470,13 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
     public boolean isSleeping();
 
     /**
+     * Gets if the entity is climbing.
+     *
+     * @return if the entity is climbing
+     */
+    public boolean isClimbing();
+
+    /**
      * Sets whether an entity will have AI.
      *
      * The entity will be completely unable to move if it has no AI.
