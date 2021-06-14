@@ -6,10 +6,10 @@ Subject: [PATCH] Use distance map to optimise entity tracker
 Use the distance map to find candidate players for tracking.
 
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index e5ad635a480d32e7a10ee92c65cfc18a98beafad..74f393ffa2ae2d0e25b3f0b674cef7a987e985d3 100644
+index 11fd6d24ed0612e4df1a0493907178fb9c455d1c..d7023cb0974f6c28a0fb8a0a6e5a6600fe30d3e3 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -1652,6 +1652,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1718,6 +1718,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          }
      }
  
@@ -18,21 +18,21 @@ index e5ad635a480d32e7a10ee92c65cfc18a98beafad..74f393ffa2ae2d0e25b3f0b674cef7a9
          return initialDistance;
      }
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index 6c7af93cead523830d32b007cc69b313e59abef1..41147be189f764c2346cf015890a148f9730bc0f 100644
+index f9fcf99ec7151b4f00ef2c40b0cbc2fd3a8e002c..f7032e1d64afa6707756bb5a2af9d43a808c9736 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
-@@ -61,6 +61,7 @@ import net.minecraft.network.protocol.game.ClientboundSetEntityLinkPacket;
+@@ -58,6 +58,7 @@ import net.minecraft.network.protocol.game.ClientboundSetEntityLinkPacket;
  import net.minecraft.network.protocol.game.ClientboundSetPassengersPacket;
  import net.minecraft.network.protocol.game.DebugPackets;
  import net.minecraft.server.MCUtil;
 +import net.minecraft.server.MinecraftServer;
  import net.minecraft.server.level.progress.ChunkProgressListener;
+ import net.minecraft.server.network.ServerPlayerConnection;
  import net.minecraft.util.CsvOutput;
- import net.minecraft.util.Mth;
-@@ -193,21 +194,55 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
- 
-     // Paper start - distance maps
-     private final com.destroystokyo.paper.util.misc.PooledLinkedHashSets<ServerPlayer> pooledLinkedPlayerHashSets = new com.destroystokyo.paper.util.misc.PooledLinkedHashSets<>();
+@@ -222,11 +223,33 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+     public final com.destroystokyo.paper.util.misc.PlayerAreaMap playerViewDistanceTickMap;
+     public final com.destroystokyo.paper.util.misc.PlayerAreaMap playerViewDistanceNoTickMap;
+     // Paper end - no-tick view distance
 +    // Paper start - use distance map to optimise tracker
 +    public static boolean isLegacyTrackingEntity(Entity entity) {
 +        return entity.isLegacyTrackingEntity;
@@ -60,6 +60,10 @@ index 6c7af93cead523830d32b007cc69b313e59abef1..41147be189f764c2346cf015890a148f
 +            trackMap.add(player, chunkX, chunkZ, Math.min(trackRange, this.getEffectiveViewDistance()));
 +        }
 +        // Paper end - use distance map to optimise entity tracker
+         // Paper start - no-tick view distance
+         int effectiveTickViewDistance = this.getEffectiveViewDistance();
+         int effectiveNoTickViewDistance = Math.max(this.getEffectiveNoTickViewDistance(), effectiveTickViewDistance);
+@@ -243,7 +266,11 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
      }
  
      void removePlayerFromDistanceMaps(ServerPlayer player) {
@@ -69,9 +73,10 @@ index 6c7af93cead523830d32b007cc69b313e59abef1..41147be189f764c2346cf015890a148f
 +            this.playerEntityTrackerTrackMaps[i].remove(player);
 +        }
 +        // Paper end - use distance map to optimise tracker
-     }
- 
-     void updateMaps(ServerPlayer player) {
+         // Paper start - no-tick view distance
+         this.playerViewDistanceBroadcastMap.remove(player);
+         this.playerViewDistanceTickMap.remove(player);
+@@ -255,6 +282,14 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          int chunkX = MCUtil.getChunkCoordinate(player.getX());
          int chunkZ = MCUtil.getChunkCoordinate(player.getZ());
          // Note: players need to be explicitly added to distance maps before they can be updated
@@ -83,12 +88,12 @@ index 6c7af93cead523830d32b007cc69b313e59abef1..41147be189f764c2346cf015890a148f
 +            trackMap.update(player, chunkX, chunkZ, Math.min(trackRange, this.getEffectiveViewDistance()));
 +        }
 +        // Paper end - use distance map to optimise entity tracker
-     }
-     // Paper end
- 
-@@ -244,6 +279,45 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
-         this.poiManager = new PoiManager(new File(this.storageFolder, "poi"), dataFixer, flag, this.level); // Paper
-         this.setViewDistance(i);
+         // Paper start - no-tick view distance
+         int effectiveTickViewDistance = this.getEffectiveViewDistance();
+         int effectiveNoTickViewDistance = Math.max(this.getEffectiveNoTickViewDistance(), effectiveTickViewDistance);
+@@ -306,6 +341,45 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+         this.poiManager = new PoiManager(new File(this.storageFolder, "poi"), dataFixer, dsync, world);
+         this.setViewDistance(viewDistance);
          this.playerMobDistanceMap = this.level.paperConfig.perPlayerMobSpawns ? new com.destroystokyo.paper.util.PlayerMobDistanceMap() : null; // Paper
 +        // Paper start - use distance map to optimise entity tracker
 +        this.playerEntityTrackerTrackMaps = new com.destroystokyo.paper.util.misc.PlayerAreaMap[TRACKING_RANGE_TYPES.length];
@@ -129,10 +134,10 @@ index 6c7af93cead523830d32b007cc69b313e59abef1..41147be189f764c2346cf015890a148f
 +            this.playerEntityTrackerTrackMaps[ordinal] = new com.destroystokyo.paper.util.misc.PlayerAreaMap(this.pooledLinkedPlayerHashSets);
 +        }
 +        // Paper end - use distance map to optimise entity tracker
-     }
- 
-     public void updatePlayerMobTypeMap(Entity entity) {
-@@ -1490,17 +1564,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+         // Paper start - no-tick view distance
+         this.setNoTickViewDistance(this.level.paperConfig.noTickViewDistance);
+         this.playerViewDistanceTickMap = new com.destroystokyo.paper.util.misc.PlayerAreaMap(this.pooledLinkedPlayerHashSets,
+@@ -1424,17 +1498,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
      }
  
      public void move(ServerPlayer player) {
@@ -149,18 +154,18 @@ index 6c7af93cead523830d32b007cc69b313e59abef1..41147be189f764c2346cf015890a148f
 -        }
 +        // Paper - delay this logic for the entity tracker tick, no need to duplicate it
  
-         int i = Mth.floor(player.getX()) >> 4;
-         int j = Mth.floor(player.getZ()) >> 4;
-@@ -1616,7 +1680,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+         int i = SectionPos.blockToSectionCoord(player.getBlockX());
+         int j = SectionPos.blockToSectionCoord(player.getBlockZ());
+@@ -1589,7 +1653,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
  
-                 entity.tracker = playerchunkmap_entitytracker; // Paper - Fast access to tracker
-                 this.entityMap.put(entity.getId(), playerchunkmap_entitytracker);
--                playerchunkmap_entitytracker.updatePlayers(this.level.players());
-+                playerchunkmap_entitytracker.updatePlayers(entity.getPlayersInTrackRange()); // Paper - don't search all players
-                 if (entity instanceof ServerPlayer) {
-                     ServerPlayer entityplayer = (ServerPlayer) entity;
+                     entity.tracker = playerchunkmap_entitytracker; // Paper - Fast access to tracker
+                     this.entityMap.put(entity.getId(), playerchunkmap_entitytracker);
+-                    playerchunkmap_entitytracker.updatePlayers(this.level.players());
++                    playerchunkmap_entitytracker.updatePlayers(entity.getPlayersInTrackRange()); // Paper - don't search all players
+                     if (entity instanceof ServerPlayer) {
+                         ServerPlayer entityplayer = (ServerPlayer) entity;
  
-@@ -1659,7 +1723,37 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1633,7 +1697,37 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          entity.tracker = null; // Paper - We're no longer tracked
      }
  
@@ -198,7 +203,7 @@ index 6c7af93cead523830d32b007cc69b313e59abef1..41147be189f764c2346cf015890a148f
          List<ServerPlayer> list = Lists.newArrayList();
          List<ServerPlayer> list1 = this.level.players();
  
-@@ -1728,23 +1822,31 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1742,23 +1836,31 @@ Sections go from 0..16. Now whenever a section is not empty, it can potentially
          DebugPackets.sendPoiPacketsForChunk(this.level, chunk.getPos());
          List<Entity> list = Lists.newArrayList();
          List<Entity> list1 = Lists.newArrayList();
@@ -222,7 +227,7 @@ index 6c7af93cead523830d32b007cc69b313e59abef1..41147be189f764c2346cf015890a148f
 +            // keep the vanilla logic here - this is REQUIRED or else passengers and their vehicles disappear!
 +            // (and god knows what the leash thing is)
  
--            if (entity != player && entity.xChunk == chunk.getPos().x && entity.zChunk == chunk.getPos().z) {
+-            if (entity != player && entity.chunkPosition().equals(chunk.getPos())) {
 -                playerchunkmap_entitytracker.updatePlayer(player);
 -                if (entity instanceof Mob && ((Mob) entity).getLeashHolder() != null) {
 -                    list.add(entity);
@@ -242,16 +247,7 @@ index 6c7af93cead523830d32b007cc69b313e59abef1..41147be189f764c2346cf015890a148f
  
          Iterator iterator;
          Entity entity1;
-@@ -1782,7 +1884,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
- 
-     public class TrackedEntity {
- 
--        private final ServerEntity serverEntity;
-+        final ServerEntity serverEntity; // Paper - private -> package private
-         private final Entity entity;
-         private final int range;
-         private SectionPos lastSectionPos;
-@@ -1799,6 +1901,42 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1837,6 +1939,42 @@ Sections go from 0..16. Now whenever a section is not empty, it can potentially
              this.lastSectionPos = SectionPos.of(entity);
          }
  
@@ -283,9 +279,9 @@ index 6c7af93cead523830d32b007cc69b313e59abef1..41147be189f764c2346cf015890a148f
 +            // stuff could have been removed, so we need to check the trackedPlayers set
 +            // for players that were removed
 +
-+            for (ServerPlayer player : this.seenBy.toArray(new ServerPlayer[0])) { // avoid CME
-+                if (newTrackerCandidates == null || !newTrackerCandidates.contains(player)) {
-+                    this.updatePlayer(player);
++            for (ServerPlayerConnection conn : this.seenBy.toArray(new ServerPlayerConnection[0])) { // avoid CME
++                if (newTrackerCandidates == null || !newTrackerCandidates.contains(conn)) {
++                    this.updatePlayer(conn.getPlayer());
 +                }
 +            }
 +        }
@@ -294,7 +290,7 @@ index 6c7af93cead523830d32b007cc69b313e59abef1..41147be189f764c2346cf015890a148f
          public boolean equals(Object object) {
              return object instanceof ChunkMap.TrackedEntity ? ((ChunkMap.TrackedEntity) object).entity.getId() == this.entity.getId() : false;
          }
-@@ -1899,7 +2037,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1922,7 +2060,7 @@ Sections go from 0..16. Now whenever a section is not empty, it can potentially
                  int j = entity.getType().clientTrackingRange() * 16;
                  j = org.spigotmc.TrackingRange.getEntityTrackingRange(entity, j); // Paper
  
@@ -304,10 +300,10 @@ index 6c7af93cead523830d32b007cc69b313e59abef1..41147be189f764c2346cf015890a148f
                  }
              }
 diff --git a/src/main/java/net/minecraft/server/level/ServerEntity.java b/src/main/java/net/minecraft/server/level/ServerEntity.java
-index 1609ab94c86e964421f996d4d46aef30f8b8e696..d797873db52ba265ac4478f9f3c6344badd4739e 100644
+index 28afe2f238ded241acf77c3272a44068646b9133..6b492b72b177e3c58580561585609b176876acf1 100644
 --- a/src/main/java/net/minecraft/server/level/ServerEntity.java
 +++ b/src/main/java/net/minecraft/server/level/ServerEntity.java
-@@ -100,6 +100,7 @@ public class ServerEntity {
+@@ -87,6 +87,7 @@ public class ServerEntity {
          this.wasOnGround = entity.isOnGround();
      }
  
@@ -316,18 +312,18 @@ index 1609ab94c86e964421f996d4d46aef30f8b8e696..d797873db52ba265ac4478f9f3c6344b
          List<Entity> list = this.entity.getPassengers();
  
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index 2b48c4a2b512c42bed2c767db90a28898c74286a..d9bb00752ac81b2171d3ad25fd84904467a18e3b 100644
+index 9897a0ac66dd788b0b22a88b20ca86a386e397e4..dec5690bd90830bace704b553dbcd1d2633ab668 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
-@@ -46,6 +46,7 @@ import net.minecraft.network.syncher.EntityDataSerializers;
+@@ -50,6 +50,7 @@ import net.minecraft.network.syncher.EntityDataSerializers;
  import net.minecraft.network.syncher.SynchedEntityData;
  import net.minecraft.resources.ResourceKey;
  import net.minecraft.resources.ResourceLocation;
 +import net.minecraft.server.MCUtil;
  import net.minecraft.server.MinecraftServer;
- import net.minecraft.server.level.ChunkMap;
  import net.minecraft.server.level.ServerLevel;
-@@ -294,6 +295,21 @@ public abstract class Entity implements Nameable, CommandSource, net.minecraft.s
+ import net.minecraft.server.level.ServerPlayer;
+@@ -322,6 +323,21 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, n
      }
      // CraftBukkit end
  
@@ -348,20 +344,20 @@ index 2b48c4a2b512c42bed2c767db90a28898c74286a..d9bb00752ac81b2171d3ad25fd849044
 +
      public Entity(EntityType<?> type, Level world) {
          this.id = Entity.ENTITY_COUNTER.incrementAndGet();
-         this.passengers = Lists.newArrayList();
+         this.passengers = ImmutableList.of();
 diff --git a/src/main/java/org/spigotmc/TrackingRange.java b/src/main/java/org/spigotmc/TrackingRange.java
-index b03fa9024c7f0238e1379f6ae4486db5300a70e9..7b6011be849ecffdd791d439f70ae5dffc96f264 100644
+index 24b1dfcf91d36947c87e9e5c2524317f8775ba95..e5bcbfe175a697e04886d04543e1278b7e83a184 100644
 --- a/src/main/java/org/spigotmc/TrackingRange.java
 +++ b/src/main/java/org/spigotmc/TrackingRange.java
-@@ -20,6 +20,7 @@ public class TrackingRange
-      */
-     public static int getEntityTrackingRange(Entity entity, int defaultRange)
-     {
+@@ -24,6 +24,7 @@ public class TrackingRange
+         {
+             return defaultRange;
+         }
 +        if (entity instanceof net.minecraft.world.entity.boss.enderdragon.EnderDragon) return defaultRange; // Paper - enderdragon is exempt
          SpigotWorldConfig config = entity.level.spigotConfig;
          if ( entity instanceof ServerPlayer )
          {
-@@ -43,8 +44,48 @@ public class TrackingRange
+@@ -47,8 +48,48 @@ public class TrackingRange
              return config.miscTrackingRange;
          } else
          {
