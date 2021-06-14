@@ -19,14 +19,13 @@ Aside from making the obvious class/function renames and obfhelpers I didn't nee
 Just added Bukkit's event system and took a few liberties with dead code and comment misspellings.
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index 36ecdfce84141ac731b827e469ac842f5c666259..02bb85364560784adea47c877c13291c3d016b86 100644
+index caac3c9936c764e411799cb6a702b590f49d9955..a88ef43adcf4ba36964f02e3fd363d3e018147cd 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-@@ -673,4 +673,14 @@ public class PaperWorldConfig {
-     private void zombiesTargetTurtleEggs() {
+@@ -46,6 +46,16 @@ public class PaperWorldConfig {
          zombiesTargetTurtleEggs = getBoolean("zombies-target-turtle-eggs", zombiesTargetTurtleEggs);
      }
-+
+ 
 +    public boolean useEigencraftRedstone = false;
 +    private void useEigencraftRedstone() {
 +        useEigencraftRedstone = this.getBoolean("use-faster-eigencraft-redstone", false);
@@ -36,10 +35,13 @@ index 36ecdfce84141ac731b827e469ac842f5c666259..02bb85364560784adea47c877c13291c
 +            log("Using vanilla redstone algorithm.");
 +        }
 +    }
- }
++
+     public short keepLoadedRange;
+     private void keepLoadedRange() {
+         keepLoadedRange = (short) (getInt("keep-spawn-loaded-range", Math.min(spigotConfig.viewDistance, 10)) * 16);
 diff --git a/src/main/java/com/destroystokyo/paper/util/RedstoneWireTurbo.java b/src/main/java/com/destroystokyo/paper/util/RedstoneWireTurbo.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..19604f4d2d0cdf65cb9f164258c4435a5a3450bc
+index 0000000000000000000000000000000000000000..3728979e290ab031c9fe9eeb19a0f98d2ce566db
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/util/RedstoneWireTurbo.java
 @@ -0,0 +1,913 @@
@@ -863,14 +865,14 @@ index 0000000000000000000000000000000000000000..19604f4d2d0cdf65cb9f164258c4435a
 +        j = getMaxCurrentStrength(upd, j);
 +        int l = 0;
 +
-+        wire.setCanProvidePower(false);
++        wire.shouldSignal = false;
 +        // Unfortunately, World.isBlockIndirectlyGettingPowered is complicated,
 +        // and I'm not ready to try to replicate even more functionality from
 +        // elsewhere in Minecraft into this accelerator.  So sadly, we must
 +        // suffer the performance hit of this very expensive call.  If there
 +        // is consistency to what this call returns, we may be able to cache it.
-+        final int k = worldIn.isBlockIndirectlyGettingPowered(upd.self);
-+        wire.setCanProvidePower(true);
++        final int k = worldIn.getBestNeighborSignal(upd.self);
++        wire.shouldSignal = true;
 +
 +        // The variable 'k' holds the maximum redstone power value of any adjacent blocks.
 +        // If 'k' has the highest level of all neighbors, then the power level of this
@@ -956,28 +958,8 @@ index 0000000000000000000000000000000000000000..19604f4d2d0cdf65cb9f164258c4435a
 +        return i > strength ? i : strength;
 +    }
 +}
-diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
-index 9b50b8030174338c04b60d441b980131e1d593e4..ebb92f88e0402681c47834bcf45e6b236748289a 100644
---- a/src/main/java/net/minecraft/world/level/Level.java
-+++ b/src/main/java/net/minecraft/world/level/Level.java
-@@ -659,6 +659,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
- 
-     }
- 
-+    public void neighborChanged(BlockPos pos, Block blockIn, BlockPos fromPos) { neighborChanged(pos, blockIn, fromPos); } // Paper - OBFHELPER
-     public void neighborChanged(BlockPos sourcePos, Block sourceBlock, BlockPos neighborPos) {
-         if (!this.isClientSide) {
-             BlockState iblockdata = this.getBlockState(sourcePos);
-@@ -1287,6 +1288,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
-         return this.getSignal(pos.below(), Direction.DOWN) > 0 ? true : (this.getSignal(pos.above(), Direction.UP) > 0 ? true : (this.getSignal(pos.north(), Direction.NORTH) > 0 ? true : (this.getSignal(pos.south(), Direction.SOUTH) > 0 ? true : (this.getSignal(pos.west(), Direction.WEST) > 0 ? true : this.getSignal(pos.east(), Direction.EAST) > 0))));
-     }
- 
-+    public int isBlockIndirectlyGettingPowered(BlockPos pos) { return this.getBestNeighborSignal(pos); } // Paper - OBFHELPER
-     public int getBestNeighborSignal(BlockPos pos) {
-         int i = 0;
-         Direction[] aenumdirection = Level.DIRECTIONS;
 diff --git a/src/main/java/net/minecraft/world/level/block/RedStoneWireBlock.java b/src/main/java/net/minecraft/world/level/block/RedStoneWireBlock.java
-index 7318536fe89cddda305007a9ab115970bf18f65d..e5558b73c6159e4c1901d286535a7875924434e9 100644
+index 2f7a34853fb52c840264ae9f01b3c598f1f92e96..881417b16c377572718fb3ed7c3db832ca7bf865 100644
 --- a/src/main/java/net/minecraft/world/level/block/RedStoneWireBlock.java
 +++ b/src/main/java/net/minecraft/world/level/block/RedStoneWireBlock.java
 @@ -1,5 +1,7 @@
@@ -988,16 +970,16 @@ index 7318536fe89cddda305007a9ab115970bf18f65d..e5558b73c6159e4c1901d286535a7875
  import com.google.common.collect.ImmutableMap;
  import com.google.common.collect.Maps;
  import com.google.common.collect.Sets;
-@@ -49,7 +51,7 @@ public class RedStoneWireBlock extends Block {
-     private final Map<BlockState, VoxelShape> SHAPES_CACHE = Maps.newHashMap();
-     private static final Vector3f[] COLORS = new Vector3f[16];
+@@ -69,7 +71,7 @@ public class RedStoneWireBlock extends Block {
+     });
+     private static final float PARTICLE_DENSITY = 0.2F;
      private final BlockState crossState;
 -    private boolean shouldSignal = true;
-+    private boolean shouldSignal = true; public final boolean canProvidePower() { return this.shouldSignal; } public final void setCanProvidePower(boolean value) { this.shouldSignal = value; } // Paper - OBFHELPER
++    public boolean shouldSignal = true; // Paper private -> public
  
      public RedStoneWireBlock(BlockBehaviour.Properties settings) {
          super(settings);
-@@ -236,6 +238,121 @@ public class RedStoneWireBlock extends Block {
+@@ -256,6 +258,121 @@ public class RedStoneWireBlock extends Block {
          return floor.isFaceSturdy(world, pos, Direction.UP) || floor.is(Blocks.HOPPER);
      }
  
@@ -1031,9 +1013,9 @@ index 7318536fe89cddda305007a9ab115970bf18f65d..e5558b73c6159e4c1901d286535a7875
 +        int i = state.getValue(POWER);
 +        int j = 0;
 +        j = this.getPower(j, worldIn.getBlockState(pos2));
-+        this.setCanProvidePower(false);
-+        int k = worldIn.isBlockIndirectlyGettingPowered(pos1);
-+        this.setCanProvidePower(true);
++        this.shouldSignal = false;
++        int k = worldIn.getBestNeighborSignal(pos1);
++        this.shouldSignal = true;
 +
 +        if (!worldIn.paperConfig.useEigencraftRedstone) {
 +            // This code is totally redundant to if statements just below the loop.
@@ -1119,16 +1101,15 @@ index 7318536fe89cddda305007a9ab115970bf18f65d..e5558b73c6159e4c1901d286535a7875
      private void updatePowerStrength(Level world, BlockPos pos, BlockState state) {
          int i = this.calculateTargetStrength(world, pos);
  
-@@ -305,6 +422,8 @@ public class RedStoneWireBlock extends Block {
+@@ -325,6 +442,7 @@ public class RedStoneWireBlock extends Block {
          return Math.max(i, j - 1);
      }
  
-+    private int getPower(int min, BlockState iblockdata) { return Math.max(min, getPower(iblockdata)); } // Paper - Optimize redstone
-+    private int getPower(BlockState iblockdata) { return this.getWireSignal(iblockdata); } // Paper - OBFHELPER
++    private int getPower(int min, BlockState iblockdata) { return Math.max(min, getWireSignal(iblockdata)); } // Paper - Optimize redstone
      private int getWireSignal(BlockState state) {
          return state.is((Block) this) ? (Integer) state.getValue(RedStoneWireBlock.POWER) : 0;
      }
-@@ -327,7 +446,7 @@ public class RedStoneWireBlock extends Block {
+@@ -347,7 +465,7 @@ public class RedStoneWireBlock extends Block {
      @Override
      public void onPlace(BlockState state, Level world, BlockPos pos, BlockState oldState, boolean notify) {
          if (!oldState.is(state.getBlock()) && !world.isClientSide) {
@@ -1137,7 +1118,7 @@ index 7318536fe89cddda305007a9ab115970bf18f65d..e5558b73c6159e4c1901d286535a7875
              Iterator iterator = Direction.Plane.VERTICAL.iterator();
  
              while (iterator.hasNext()) {
-@@ -354,7 +473,7 @@ public class RedStoneWireBlock extends Block {
+@@ -374,7 +492,7 @@ public class RedStoneWireBlock extends Block {
                      world.updateNeighborsAt(pos.relative(enumdirection), this);
                  }
  
@@ -1146,7 +1127,7 @@ index 7318536fe89cddda305007a9ab115970bf18f65d..e5558b73c6159e4c1901d286535a7875
                  this.updateNeighborsOfNeighboringWires(world, pos);
              }
          }
-@@ -389,7 +508,7 @@ public class RedStoneWireBlock extends Block {
+@@ -409,7 +527,7 @@ public class RedStoneWireBlock extends Block {
      public void neighborChanged(BlockState state, Level world, BlockPos pos, Block block, BlockPos fromPos, boolean notify) {
          if (!world.isClientSide) {
              if (state.canSurvive(world, pos)) {

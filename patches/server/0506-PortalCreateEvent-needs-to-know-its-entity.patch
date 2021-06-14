@@ -5,10 +5,10 @@ Subject: [PATCH] PortalCreateEvent needs to know its entity
 
 
 diff --git a/src/main/java/net/minecraft/world/item/ItemStack.java b/src/main/java/net/minecraft/world/item/ItemStack.java
-index 04b717326524f400da3562655c25db59e72814ec..a9256fc4a0bc3cd277cb372a9c090028e03482f5 100644
+index c1667fa43194a17eeeb2ac9c5d57daf5cb131958..a994dd9833ff66eef311b637c59f16a57ddcfe5f 100644
 --- a/src/main/java/net/minecraft/world/item/ItemStack.java
 +++ b/src/main/java/net/minecraft/world/item/ItemStack.java
-@@ -366,7 +366,7 @@ public final class ItemStack {
+@@ -407,7 +407,7 @@ public final class ItemStack {
                          net.minecraft.world.level.block.state.BlockState block = world.getBlockState(newblockposition);
  
                          if (!(block.getBlock() instanceof BaseEntityBlock)) { // Containers get placed automatically
@@ -18,10 +18,10 @@ index 04b717326524f400da3562655c25db59e72814ec..a9256fc4a0bc3cd277cb372a9c090028
  
                          world.notifyAndUpdatePhysics(newblockposition, null, oldBlock, block, world.getBlockState(newblockposition), updateFlag, 512); // send null chunk as chunk.k() returns false by this point
 diff --git a/src/main/java/net/minecraft/world/level/block/BaseFireBlock.java b/src/main/java/net/minecraft/world/level/block/BaseFireBlock.java
-index cd005f7dbfcaf3cebae3a92da36e0d40c93dbf79..ad37261e716b15d62fc2083d137cdac818308cdd 100644
+index a36d31caa5bfc82a5fd9b16dc42334955fe7511d..177d1da44c83da5f99ae91891dec41dc210bd31d 100644
 --- a/src/main/java/net/minecraft/world/level/block/BaseFireBlock.java
 +++ b/src/main/java/net/minecraft/world/level/block/BaseFireBlock.java
-@@ -7,6 +7,7 @@ import net.minecraft.world.damagesource.DamageSource;
+@@ -11,6 +11,7 @@ import net.minecraft.world.damagesource.DamageSource;
  import net.minecraft.world.entity.Entity;
  import net.minecraft.world.entity.player.Player;
  import net.minecraft.world.item.context.BlockPlaceContext;
@@ -29,7 +29,7 @@ index cd005f7dbfcaf3cebae3a92da36e0d40c93dbf79..ad37261e716b15d62fc2083d137cdac8
  import net.minecraft.world.level.BlockGetter;
  import net.minecraft.world.level.Level;
  import net.minecraft.world.level.LevelAccessor;
-@@ -66,20 +67,23 @@ public abstract class BaseFireBlock extends Block {
+@@ -141,20 +142,23 @@ public abstract class BaseFireBlock extends Block {
          super.entityInside(state, world, pos, entity);
      }
  
@@ -41,7 +41,7 @@ index cd005f7dbfcaf3cebae3a92da36e0d40c93dbf79..ad37261e716b15d62fc2083d137cdac8
 +    public void onPlace(BlockState iblockdata, Level world, BlockPos blockposition, BlockState iblockdata1, boolean flag, UseOnContext itemActionContext) {
 +        // Paper end
 +        if (!iblockdata1.is(iblockdata.getBlock())) {
-             if (inPortalDimension(world)) {
+             if (BaseFireBlock.inPortalDimension(world)) {
 -                Optional<PortalShape> optional = PortalShape.findEmptyPortalShape((LevelAccessor) world, pos, Direction.Axis.X);
 +                Optional<PortalShape> optional = PortalShape.findEmptyPortalShape((LevelAccessor) world, blockposition, Direction.Axis.X);
  
@@ -53,41 +53,41 @@ index cd005f7dbfcaf3cebae3a92da36e0d40c93dbf79..ad37261e716b15d62fc2083d137cdac8
              }
  
 -            if (!state.canSurvive(world, pos)) {
--                fireExtinguished(world, pos); // CraftBukkit - fuel block broke
+-                this.fireExtinguished(world, pos); // CraftBukkit - fuel block broke
 +            if (!iblockdata.canSurvive(world, blockposition)) {
 +                fireExtinguished(world, blockposition); // CraftBukkit - fuel block broke
              }
  
          }
 diff --git a/src/main/java/net/minecraft/world/level/block/FireBlock.java b/src/main/java/net/minecraft/world/level/block/FireBlock.java
-index ac63c5bef5b35b158e57835d765bbdd15fc60664..e690e7c366fc087d3b28d61323dcc78bb7154aed 100644
+index c86bf175853197dceaa91a2287ef51de87b9d5f9..48d9174f88beb759966bfca4c5861aa25cdb2942 100644
 --- a/src/main/java/net/minecraft/world/level/block/FireBlock.java
 +++ b/src/main/java/net/minecraft/world/level/block/FireBlock.java
-@@ -15,6 +15,7 @@ import net.minecraft.core.Vec3i;
- import net.minecraft.server.MCUtil;
+@@ -13,6 +13,7 @@ import net.minecraft.core.Direction;
+ import net.minecraft.core.Vec3i;
  import net.minecraft.server.level.ServerLevel;
  import net.minecraft.world.item.context.BlockPlaceContext;
 +import net.minecraft.world.item.context.UseOnContext;
  import net.minecraft.world.level.BlockGetter;
  import net.minecraft.world.level.GameRules;
  import net.minecraft.world.level.Level;
-@@ -363,9 +364,11 @@ public class FireBlock extends BaseFireBlock {
+@@ -358,9 +359,11 @@ public class FireBlock extends BaseFireBlock {
      }
  
      @Override
 -    public void onPlace(BlockState state, Level world, BlockPos pos, BlockState oldState, boolean notify) {
 -        super.onPlace(state, world, pos, oldState, notify);
--        world.getBlockTicks().a(pos, this, getFireTickDelay(world.random));
+-        world.getBlockTicks().scheduleTick(pos, this, FireBlock.getFireTickDelay(world.random));
 +    // Paper start - ItemActionContext param
 +    public void onPlace(BlockState iblockdata, Level world, BlockPos blockposition, BlockState iblockdata1, boolean flag, UseOnContext itemActionContext) {
 +        super.onPlace(iblockdata, world, blockposition, iblockdata1, flag, itemActionContext);
 +        // Paper end
-+        world.getBlockTicks().a(blockposition, this, getFireTickDelay(world.random));
++        world.getBlockTicks().scheduleTick(blockposition, this, getFireTickDelay(world.random));
      }
  
      private static int getFireTickDelay(Random random) {
 diff --git a/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java b/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java
-index df2836b071158729728411f5b228cc38dddd4d4e..f2fefdad26057c722085e60ba837fe2c117f55f7 100644
+index 6d4ef15842c6bd230543de19dd1053a4fe6ad270..597bb3b9b638c59c6ddc21095e4fe4503ef36cb1 100644
 --- a/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java
 +++ b/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java
 @@ -32,6 +32,7 @@ import net.minecraft.world.item.DyeColor;
@@ -98,7 +98,7 @@ index df2836b071158729728411f5b228cc38dddd4d4e..f2fefdad26057c722085e60ba837fe2c
  import net.minecraft.world.level.BlockGetter;
  import net.minecraft.world.level.EmptyBlockGetter;
  import net.minecraft.world.level.Level;
-@@ -119,6 +120,12 @@ public abstract class BlockBehaviour {
+@@ -128,6 +129,12 @@ public abstract class BlockBehaviour {
          DebugPackets.sendNeighborsUpdatePacket(world, pos);
      }
  
@@ -112,7 +112,7 @@ index df2836b071158729728411f5b228cc38dddd4d4e..f2fefdad26057c722085e60ba837fe2c
      public void onPlace(BlockState state, Level world, BlockPos pos, BlockState oldState, boolean notify) {
          org.spigotmc.AsyncCatcher.catchOp("block onPlace"); // Spigot
 diff --git a/src/main/java/net/minecraft/world/level/portal/PortalShape.java b/src/main/java/net/minecraft/world/level/portal/PortalShape.java
-index 7a99adbe39ca2566d42ed67dc9d6f609005f3d6f..500744b6383390266efed9e35a000511210cb5b9 100644
+index b68fa6cb68bb8fa078d4572bad338f43f20e8dc7..c07b5d1f1ef8b5e6026c7555d476880c8802d6c5 100644
 --- a/src/main/java/net/minecraft/world/level/portal/PortalShape.java
 +++ b/src/main/java/net/minecraft/world/level/portal/PortalShape.java
 @@ -11,6 +11,7 @@ import net.minecraft.tags.BlockTags;
@@ -123,7 +123,7 @@ index 7a99adbe39ca2566d42ed67dc9d6f609005f3d6f..500744b6383390266efed9e35a000511
  import net.minecraft.world.level.LevelAccessor;
  import net.minecraft.world.level.block.Blocks;
  import net.minecraft.world.level.block.NetherPortalBlock;
-@@ -181,7 +182,10 @@ public class PortalShape {
+@@ -185,7 +186,10 @@ public class PortalShape {
      }
  
      // CraftBukkit start - return boolean
@@ -132,16 +132,15 @@ index 7a99adbe39ca2566d42ed67dc9d6f609005f3d6f..500744b6383390266efed9e35a000511
 +    @Deprecated public boolean createPortal() { return this.createPortal(null); }
 +    public boolean createPortal(UseOnContext itemActionContext) {
 +        // Paper end
-         org.bukkit.World bworld = this.level.getLevel().getWorld();
+         org.bukkit.World bworld = this.level.getMinecraftWorld().getWorld();
  
          // Copy below for loop
-@@ -190,8 +194,7 @@ public class PortalShape {
-         BlockPos.betweenClosed(this.bottomLeft, this.bottomLeft.relative(Direction.UP, this.height - 1).relative(this.rightDir, this.width - 1)).forEach((blockposition) -> {
-             blocks.setBlock(blockposition, iblockdata, 18);
+@@ -195,7 +199,7 @@ public class PortalShape {
+             this.blocks.setBlock(blockposition, iblockdata, 18);
          });
--
--        PortalCreateEvent event = new PortalCreateEvent((java.util.List<org.bukkit.block.BlockState>) (java.util.List) blocks.getList(), bworld, null, PortalCreateEvent.CreateReason.FIRE);
+ 
+-        PortalCreateEvent event = new PortalCreateEvent((java.util.List<org.bukkit.block.BlockState>) (java.util.List) this.blocks.getList(), bworld, null, PortalCreateEvent.CreateReason.FIRE);
 +        PortalCreateEvent event = new PortalCreateEvent((java.util.List<org.bukkit.block.BlockState>) (java.util.List) blocks.getList(), bworld, itemActionContext == null || itemActionContext.getPlayer() == null ? null : itemActionContext.getPlayer().getBukkitEntity(), PortalCreateEvent.CreateReason.FIRE); // Paper - pass entity param
-         this.level.getLevel().getServer().server.getPluginManager().callEvent(event);
+         this.level.getMinecraftWorld().getServer().server.getPluginManager().callEvent(event);
  
          if (event.isCancelled()) {
