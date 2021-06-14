@@ -117,7 +117,7 @@ index a05acf709735b40ca86f978508c63a86065fd405..71dd26ca6626631b94d53818cd06b93f
  
      double getLevelY();
 diff --git a/src/main/java/net/minecraft/world/level/block/entity/HopperBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/HopperBlockEntity.java
-index 0ec16d554c2b51a64614c73783505c7b06ff02c7..86c0a477883102e4aebdab7ac28bf9f2ab2f7c48 100644
+index 0ec16d554c2b51a64614c73783505c7b06ff02c7..3b1442bf4c83650369e925d76f07dc67c6cbbc83 100644
 --- a/src/main/java/net/minecraft/world/level/block/entity/HopperBlockEntity.java
 +++ b/src/main/java/net/minecraft/world/level/block/entity/HopperBlockEntity.java
 @@ -3,7 +3,6 @@ package net.minecraft.world.level.block.entity;
@@ -145,11 +145,11 @@ index 0ec16d554c2b51a64614c73783505c7b06ff02c7..86c0a477883102e4aebdab7ac28bf9f2
 +    private static boolean skipPushModeEventFire = false;
 +    public static boolean skipHopperEvents = false;
 +
-+    private static boolean hopperPush(Level level, BlockPos pos, Container iinventory, Direction enumdirection, HopperBlockEntity hopper) {
++    private static boolean hopperPush(Level level, BlockPos pos, Container destination, Direction enumdirection, HopperBlockEntity hopper) {
 +        skipPushModeEventFire = skipHopperEvents;
 +        boolean foundItem = false;
-+        for (int i = 0; i < iinventory.getContainerSize(); ++i) {
-+            ItemStack item = iinventory.getItem(i);
++        for (int i = 0; i < hopper.getContainerSize(); ++i) {
++            ItemStack item = hopper.getItem(i);
 +            if (!item.isEmpty()) {
 +                foundItem = true;
 +                ItemStack origItemStack = item;
@@ -162,13 +162,13 @@ index 0ec16d554c2b51a64614c73783505c7b06ff02c7..86c0a477883102e4aebdab7ac28bf9f2
 +                // We only need to fire the event once to give protection plugins a chance to cancel this event
 +                // Because nothing uses getItem, every event call should end up the same result.
 +                if (!skipPushModeEventFire) {
-+                    itemstack = callPushMoveEvent(iinventory, itemstack, hopper);
++                    itemstack = callPushMoveEvent(destination, itemstack, hopper);
 +                    if (itemstack == null) { // cancelled
 +                        origItemStack.setCount(origCount);
 +                        return false;
 +                    }
 +                }
-+                final ItemStack itemstack2 = addItem(hopper, iinventory, itemstack, enumdirection);
++                final ItemStack itemstack2 = addItem(hopper, destination, itemstack, enumdirection);
 +                final int remaining = itemstack2.getCount();
 +                if (remaining != moved) {
 +                    origItemStack = origItemStack.cloneItemStack(true);
@@ -177,7 +177,7 @@ index 0ec16d554c2b51a64614c73783505c7b06ff02c7..86c0a477883102e4aebdab7ac28bf9f2
 +                        origItemStack.setCount(origCount - moved + remaining);
 +                    }
 +                    hopper.setItem(i, origItemStack);
-+                    iinventory.setChanged();
++                    destination.setChanged();
 +                    return true;
 +                }
 +                origItemStack.setCount(origCount);
@@ -300,7 +300,7 @@ index 0ec16d554c2b51a64614c73783505c7b06ff02c7..86c0a477883102e4aebdab7ac28bf9f2
              if (HopperBlockEntity.isFullContainer(iinventory1, enumdirection)) {
                  return false;
              } else {
-+                return hopperPush(world, blockposition, iinventory, enumdirection, hopper); /* // Paper - disable rest
++                return hopperPush(world, blockposition, iinventory1, enumdirection, hopper); /* // Paper - disable rest
                  for (int i = 0; i < iinventory.getContainerSize(); ++i) {
                      if (!iinventory.getItem(i).isEmpty()) {
                          ItemStack itemstack = iinventory.getItem(i).copy();
