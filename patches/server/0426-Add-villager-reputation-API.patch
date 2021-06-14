@@ -6,14 +6,12 @@ Subject: [PATCH] Add villager reputation API
 
 diff --git a/src/main/java/com/destroystokyo/paper/entity/villager/ReputationConstructor.java b/src/main/java/com/destroystokyo/paper/entity/villager/ReputationConstructor.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..c6072615e95bf51c83b2f728fc3288a7043a89af
+index 0000000000000000000000000000000000000000..0f10c333d88f2e1c56a6c7f22d421084adfd3789
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/entity/villager/ReputationConstructor.java
-@@ -0,0 +1,11 @@
+@@ -0,0 +1,9 @@
 +package com.destroystokyo.paper.entity.villager;
 +// Must have own package due to package-level constructor.
-+
-+import Reputation;
 +
 +public final class ReputationConstructor {
 +    // Abuse the package-level constructor.
@@ -22,33 +20,28 @@ index 0000000000000000000000000000000000000000..c6072615e95bf51c83b2f728fc3288a7
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/world/entity/ai/gossip/GossipContainer.java b/src/main/java/net/minecraft/world/entity/ai/gossip/GossipContainer.java
-index c4ece3ac4863067b12c10772debd1b1454bec5b4..0204f05d989d45c0848f810d1953adf0992ce3c2 100644
+index 07ecb01d02f64e85d478995062a33b58c211ed7e..e316f83a7adc7bba06a6a3fdab55cc9c004cb835 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/gossip/GossipContainer.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/gossip/GossipContainer.java
-@@ -27,7 +27,7 @@ import net.minecraft.core.SerializableUUID;
+@@ -29,7 +29,7 @@ import net.minecraft.util.VisibleForDebug;
  
  public class GossipContainer {
- 
+     public static final int DISCARD_THRESHOLD = 2;
 -    private final Map<UUID, GossipContainer.EntityGossips> gossips = Maps.newHashMap();
 +    private final Map<UUID, GossipContainer.EntityGossips> gossips = Maps.newHashMap(); public Map<UUID, GossipContainer.EntityGossips> getReputations() { return this.gossips; } // Paper - add getter for reputations
  
-     public GossipContainer() {}
- 
-@@ -142,11 +142,11 @@ public class GossipContainer {
-         return k > type.max ? Math.max(type.max, left) : k;
+     @VisibleForDebug
+     public Map<UUID, Object2IntMap<GossipType>> getGossipEntries() {
+@@ -177,7 +177,7 @@ public class GossipContainer {
+         return i > type.max ? Math.max(type.max, left) : i;
      }
  
 -    static class EntityGossips {
 +    public static class EntityGossips { // Paper - make public
+         final Object2IntMap<GossipType> entries = new Object2IntOpenHashMap<>();
  
-         private final Object2IntMap<GossipType> entries;
- 
--        private EntityGossips() {
-+        public EntityGossips() { // Paper - make public - update CraftVillager setReputation on change
-             this.entries = new Object2IntOpenHashMap();
-         }
- 
-@@ -200,6 +200,28 @@ public class GossipContainer {
+         public int weightedValue(Predicate<GossipType> gossipTypeFilter) {
+@@ -228,6 +228,28 @@ public class GossipContainer {
          public void remove(GossipType gossipType) {
              this.entries.removeInt(gossipType);
          }
@@ -78,10 +71,10 @@ index c4ece3ac4863067b12c10772debd1b1454bec5b4..0204f05d989d45c0848f810d1953adf0
  
      static class GossipEntry {
 diff --git a/src/main/java/net/minecraft/world/entity/npc/Villager.java b/src/main/java/net/minecraft/world/entity/npc/Villager.java
-index a83a7d37f3d769535161fda46fca6f71dcc4d515..e9912551e6a19d6ad3b20fad1b716577b9d28f99 100644
+index e99cdbb1d050288b5f1177737b242c331a989471..8508a3864fc3f8919f823d96f27061a6b3706713 100644
 --- a/src/main/java/net/minecraft/world/entity/npc/Villager.java
 +++ b/src/main/java/net/minecraft/world/entity/npc/Villager.java
-@@ -1037,6 +1037,7 @@ public class Villager extends AbstractVillager implements ReputationEventHandler
+@@ -1065,6 +1065,7 @@ public class Villager extends AbstractVillager implements ReputationEventHandler
          this.numberOfRestocksToday = 0;
      }
  
@@ -90,7 +83,7 @@ index a83a7d37f3d769535161fda46fca6f71dcc4d515..e9912551e6a19d6ad3b20fad1b716577
          return this.gossips;
      }
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftVillager.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftVillager.java
-index d0b933cfd02b237bfe85011831dab6e8e966496e..e3d4214ef6360b4a9949a73ba3d665ad08733b43 100644
+index 115f107ac100524ef0fcf8de0fc528d164c845f7..b15db2bf0a0bbe39b8067559fbf2b6bdadf56ca4 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftVillager.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftVillager.java
 @@ -16,6 +16,13 @@ import org.bukkit.entity.Villager;

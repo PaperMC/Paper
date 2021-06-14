@@ -35,18 +35,18 @@ index 78271b400c79578d043b20a5389a37b1bef9a70d..5f3b0d95cc7e6a0434d78ea7305a7068
 +
  }
 diff --git a/src/main/java/net/minecraft/world/level/Explosion.java b/src/main/java/net/minecraft/world/level/Explosion.java
-index 667a6d645034c67639c01b8221591877bcb87b35..0f0a5fa2be5a7c69291b593a04cad83e069ba5b1 100644
+index cdf214fca3b0055efa56702470d9d2f890a8aead..a12af10e28f2d023ba6f916b5e7a53539416713f 100644
 --- a/src/main/java/net/minecraft/world/level/Explosion.java
 +++ b/src/main/java/net/minecraft/world/level/Explosion.java
-@@ -151,6 +151,7 @@ public class Explosion {
+@@ -174,6 +174,7 @@ public class Explosion {
                          for (float f1 = 0.3F; f > 0.0F; f -= 0.22500001F) {
                              BlockPos blockposition = new BlockPos(d4, d5, d6);
                              BlockState iblockdata = this.level.getBlockState(blockposition);
 +                            if (!iblockdata.isDestroyable()) continue; // Paper
                              FluidState fluid = iblockdata.getFluidState(); // Paper
-                             Optional<Float> optional = this.damageCalculator.a(this, this.level, blockposition, iblockdata, fluid);
  
-@@ -304,7 +305,7 @@ public class Explosion {
+                             if (!this.level.isInWorldBounds(blockposition)) {
+@@ -332,7 +333,7 @@ public class Explosion {
                  BlockState iblockdata = this.level.getBlockState(blockposition);
                  Block block = iblockdata.getBlock();
  
@@ -56,10 +56,10 @@ index 667a6d645034c67639c01b8221591877bcb87b35..0f0a5fa2be5a7c69291b593a04cad83e
  
                      this.level.getProfiler().push("explosion_blocks");
 diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
-index 67ab681a9c9157a420de5fd872bde1fc0de24561..9b50b8030174338c04b60d441b980131e1d593e4 100644
+index 03271675b4997588bd8f6774856aef25cdd4fa05..581e7975c4bfcc902e262003843fe54212bc5b61 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
 +++ b/src/main/java/net/minecraft/world/level/Level.java
-@@ -422,6 +422,10 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -419,6 +419,10 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
      public boolean setBlock(BlockPos pos, BlockState state, int flags, int maxUpdateDepth) {
          // CraftBukkit start - tree generation
          if (this.captureTreeGeneration) {
@@ -67,14 +67,14 @@ index 67ab681a9c9157a420de5fd872bde1fc0de24561..9b50b8030174338c04b60d441b980131
 +            BlockState type = getBlockState(pos);
 +            if (!type.isDestroyable()) return false;
 +            // Paper end
-             CraftBlockState blockstate = capturedBlockStates.get(pos);
+             CraftBlockState blockstate = this.capturedBlockStates.get(pos);
              if (blockstate == null) {
                  blockstate = CapturedBlockState.getTreeBlockState(this, pos, flags);
 diff --git a/src/main/java/net/minecraft/world/level/block/Block.java b/src/main/java/net/minecraft/world/level/block/Block.java
-index fca5d175cbef24fb0ee2d0bbedc8d1c0af3eb528..5b84ee4091e354c4b6500f58a31931f2a6827ffc 100644
+index 27016f964d2f6458298a9052d031a44b3d9f5f4b..878cdfc49253e7916d038495f79fec7cce75aa50 100644
 --- a/src/main/java/net/minecraft/world/level/block/Block.java
 +++ b/src/main/java/net/minecraft/world/level/block/Block.java
-@@ -62,6 +62,19 @@ public class Block extends BlockBehaviour implements ItemLike {
+@@ -91,6 +91,19 @@ public class Block extends BlockBehaviour implements ItemLike {
      protected final StateDefinition<Block, BlockState> stateDefinition;
      private BlockState defaultBlockState;
      // Paper start
@@ -95,10 +95,10 @@ index fca5d175cbef24fb0ee2d0bbedc8d1c0af3eb528..5b84ee4091e354c4b6500f58a31931f2
      public co.aikar.timings.Timing getTiming() {
          if (timing == null) {
 diff --git a/src/main/java/net/minecraft/world/level/block/piston/PistonBaseBlock.java b/src/main/java/net/minecraft/world/level/block/piston/PistonBaseBlock.java
-index dc9584a30c18d964afd9cc118c81c24a80beba63..40a18302dd682e5ade4ec77ac7f316b6c0f8c112 100644
+index c345bd7542f3ffa09719864887e1516f1182e7e3..44cc09006eac6315d167a2628857f9942eb1fc13 100644
 --- a/src/main/java/net/minecraft/world/level/block/piston/PistonBaseBlock.java
 +++ b/src/main/java/net/minecraft/world/level/block/piston/PistonBaseBlock.java
-@@ -193,6 +193,12 @@ public class PistonBaseBlock extends DirectionalBlock {
+@@ -200,6 +200,12 @@ public class PistonBaseBlock extends DirectionalBlock {
      @Override
      public boolean triggerEvent(BlockState state, Level world, BlockPos pos, int type, int data) {
          Direction enumdirection = (Direction) state.getValue(PistonBaseBlock.FACING);
@@ -111,16 +111,16 @@ index dc9584a30c18d964afd9cc118c81c24a80beba63..40a18302dd682e5ade4ec77ac7f316b6
  
          if (!world.isClientSide) {
              boolean flag = this.getNeighborSignal(world, pos, enumdirection);
-@@ -224,7 +230,7 @@ public class PistonBaseBlock extends DirectionalBlock {
+@@ -232,7 +238,7 @@ public class PistonBaseBlock extends DirectionalBlock {
              BlockState iblockdata1 = (BlockState) ((BlockState) Blocks.MOVING_PISTON.defaultBlockState().setValue(MovingPistonBlock.FACING, enumdirection)).setValue(MovingPistonBlock.TYPE, this.isSticky ? PistonType.STICKY : PistonType.DEFAULT);
  
              world.setBlock(pos, iblockdata1, 20);
--            world.setBlockEntity(pos, MovingPistonBlock.newMovingBlockEntity((BlockState) this.defaultBlockState().setValue(PistonBaseBlock.FACING, Direction.from3DDataValue(data & 7)), enumdirection, false, true));
-+            world.setBlockEntity(pos, MovingPistonBlock.newMovingBlockEntity((BlockState) this.defaultBlockState().setValue(PistonBaseBlock.FACING, Direction.from3DDataValue(data & 7)), enumdirection, false, true)); // Paper - diff on change, j is facing direction - copy this above
+-            world.setBlockEntity(MovingPistonBlock.newMovingBlockEntity(pos, iblockdata1, (BlockState) this.defaultBlockState().setValue(PistonBaseBlock.FACING, Direction.from3DDataValue(data & 7)), enumdirection, false, true));
++            world.setBlockEntity(MovingPistonBlock.newMovingBlockEntity(pos, iblockdata1, (BlockState) this.defaultBlockState().setValue(PistonBaseBlock.FACING, Direction.from3DDataValue(data & 7)), enumdirection, false, true)); // Paper - diff on change
              world.blockUpdated(pos, iblockdata1.getBlock());
              iblockdata1.updateNeighbourShapes(world, pos, 2);
              if (this.isSticky) {
-@@ -253,7 +259,14 @@ public class PistonBaseBlock extends DirectionalBlock {
+@@ -261,7 +267,14 @@ public class PistonBaseBlock extends DirectionalBlock {
                      }
                  }
              } else {
@@ -137,19 +137,19 @@ index dc9584a30c18d964afd9cc118c81c24a80beba63..40a18302dd682e5ade4ec77ac7f316b6
  
              world.playSound((Player) null, pos, SoundEvents.PISTON_CONTRACT, SoundSource.BLOCKS, 0.5F, world.random.nextFloat() * 0.15F + 0.6F);
 diff --git a/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java b/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java
-index 57eedaeedaa24bd274fb55c6e4521f1305382645..df2836b071158729728411f5b228cc38dddd4d4e 100644
+index d99ca942f5885b4d9af054547832c05ddb5634eb..6d4ef15842c6bd230543de19dd1053a4fe6ad270 100644
 --- a/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java
 +++ b/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java
-@@ -189,7 +189,7 @@ public abstract class BlockBehaviour {
+@@ -206,7 +206,7 @@ public abstract class BlockBehaviour {
  
      @Deprecated
      public boolean canBeReplaced(BlockState state, BlockPlaceContext context) {
--        return this.material.isReplaceable() && (context.getItemInHand().isEmpty() || context.getItemInHand().getItem() != this.asItem());
-+        return this.material.isReplaceable() && (context.getItemInHand().isEmpty() || context.getItemInHand().getItem() != this.asItem()) && (state.isDestroyable() || (context.getPlayer() != null && context.getPlayer().abilities.instabuild)); // Paper
+-        return this.material.isReplaceable() && (context.getItemInHand().isEmpty() || !context.getItemInHand().is(this.asItem()));
++        return this.material.isReplaceable() && (context.getItemInHand().isEmpty() || !context.getItemInHand().is(this.asItem())) && (state.isDestroyable() || (context.getPlayer() != null && context.getPlayer().getAbilities().instabuild)); // Paper
      }
  
      @Deprecated
-@@ -393,7 +393,11 @@ public abstract class BlockBehaviour {
+@@ -656,7 +656,11 @@ public abstract class BlockBehaviour {
          public Block getBlock() {
              return (Block) this.owner;
          }
@@ -162,7 +162,7 @@ index 57eedaeedaa24bd274fb55c6e4521f1305382645..df2836b071158729728411f5b228cc38
          public Material getMaterial() {
              return this.material;
          }
-@@ -483,7 +487,7 @@ public abstract class BlockBehaviour {
+@@ -754,7 +758,7 @@ public abstract class BlockBehaviour {
          }
  
          public PushReaction getPistonPushReaction() {

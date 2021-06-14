@@ -5,18 +5,10 @@ Subject: [PATCH] Reduce allocation of Vec3D by entity tracker
 
 
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index 67f748d5955453ba4873b0c9bb741b5bfe52d655..738f1183ce663db7c67d2f0289823390a7f06a0e 100644
+index 18335e2c5c9e50a8ed31a3d2b585835bcc28bbe6..d8f99f7f5ca0e1dbbb9b760af3a4b4f9c52ef6c7 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
-@@ -95,7 +95,6 @@ import net.minecraft.world.level.levelgen.structure.StructureStart;
- import net.minecraft.world.level.levelgen.structure.templatesystem.StructureManager;
- import net.minecraft.world.level.storage.DimensionDataStorage;
- import net.minecraft.world.level.storage.LevelStorageSource;
--import net.minecraft.world.phys.Vec3;
- import it.unimi.dsi.fastutil.objects.ObjectRBTreeSet; // Paper
- import org.apache.commons.lang3.mutable.MutableBoolean;
- import org.apache.logging.log4j.LogManager;
-@@ -2233,9 +2232,14 @@ Sections go from 0..16. Now whenever a section is not empty, it can potentially
+@@ -2102,9 +2102,14 @@ Sections go from 0..16. Now whenever a section is not empty, it can potentially
          public void updatePlayer(ServerPlayer player) {
              org.spigotmc.AsyncCatcher.catchOp("player tracker update"); // Spigot
              if (player != this.entity) {
@@ -31,16 +23,16 @@ index 67f748d5955453ba4873b0c9bb741b5bfe52d655..738f1183ce663db7c67d2f0289823390
 -                boolean flag = vec3d.x >= (double) (-i) && vec3d.x <= (double) i && vec3d.z >= (double) (-i) && vec3d.z <= (double) i && this.entity.broadcastToPlayer(player);
 +                boolean flag = vec3d_dx >= (double) (-i) && vec3d_dx <= (double) i && vec3d_dz >= (double) (-i) && vec3d_dz <= (double) i && this.entity.broadcastToPlayer(player); // Paper - remove allocation of Vec3D here
  
-                 if (flag) {
-                     boolean flag1 = this.entity.forcedLoading;
+                 // CraftBukkit start - respect vanish API
+                 if (this.entity instanceof ServerPlayer) {
 diff --git a/src/main/java/net/minecraft/server/level/ServerEntity.java b/src/main/java/net/minecraft/server/level/ServerEntity.java
-index d797873db52ba265ac4478f9f3c6344badd4739e..75e2274578c2c28de3d786372df0b4102337a2cc 100644
+index 6b492b72b177e3c58580561585609b176876acf1..8ea4209400489116823eced292d8cd9654a1c809 100644
 --- a/src/main/java/net/minecraft/server/level/ServerEntity.java
 +++ b/src/main/java/net/minecraft/server/level/ServerEntity.java
-@@ -154,8 +154,12 @@ public class ServerEntity {
+@@ -145,8 +145,12 @@ public class ServerEntity {
                  ++this.teleportDelay;
-                 i = Mth.floor(this.entity.yRot * 256.0F / 360.0F);
-                 j = Mth.floor(this.entity.xRot * 256.0F / 360.0F);
+                 i = Mth.floor(this.entity.getYRot() * 256.0F / 360.0F);
+                 j = Mth.floor(this.entity.getXRot() * 256.0F / 360.0F);
 -                Vec3 vec3d = this.entity.position().subtract(ClientboundMoveEntityPacket.packetToEntity(this.xp, this.yp, this.zp));
 -                boolean flag1 = vec3d.lengthSqr() >= 7.62939453125E-6D;
 +                // Paper start - reduce allocation of Vec3D here
@@ -52,7 +44,7 @@ index d797873db52ba265ac4478f9f3c6344badd4739e..75e2274578c2c28de3d786372df0b410
                  Packet<?> packet1 = null;
                  boolean flag2 = flag1 || this.tickCount % 60 == 0;
                  boolean flag3 = Math.abs(i - this.yRotp) >= 1 || Math.abs(j - this.xRotp) >= 1;
-@@ -172,9 +176,11 @@ public class ServerEntity {
+@@ -163,9 +167,11 @@ public class ServerEntity {
                  // CraftBukkit end
  
                  if (this.tickCount > 0 || this.entity instanceof AbstractArrow) {
