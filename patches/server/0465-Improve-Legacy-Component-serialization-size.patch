@@ -7,7 +7,7 @@ Don't constantly send format: false for all formatting options when parent alrea
 has it false
 
 diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftChatMessage.java b/src/main/java/org/bukkit/craftbukkit/util/CraftChatMessage.java
-index b27af66795d902a2e95d692fa0ff18eccbef8a75..b89660244ffad484e3fbf69ccb9cdc1bc178d2ad 100644
+index 0de5a46423ae0403dcbfca630dfd7c5ac1e1761d..26d43c229caf9f8504af7071c3a61ec6da7e27ec 100644
 --- a/src/main/java/org/bukkit/craftbukkit/util/CraftChatMessage.java
 +++ b/src/main/java/org/bukkit/craftbukkit/util/CraftChatMessage.java
 @@ -46,6 +46,7 @@ public final class CraftChatMessage {
@@ -15,11 +15,11 @@ index b27af66795d902a2e95d692fa0ff18eccbef8a75..b89660244ffad484e3fbf69ccb9cdc1b
          private static final Pattern INCREMENTAL_PATTERN_KEEP_NEWLINES = Pattern.compile("(" + String.valueOf(org.bukkit.ChatColor.COLOR_CHAR) + "[0-9a-fk-orx])|((?:(?:https?):\\/\\/)?(?:[-\\w_\\.]{2,}\\.[a-z]{2,4}.*?(?=[\\.\\?!,;:]?(?:[" + String.valueOf(org.bukkit.ChatColor.COLOR_CHAR) + " ]|$))))", Pattern.CASE_INSENSITIVE);
          // ChatColor.b does not explicitly reset, its more of empty
 +        private static final Style EMPTY = Style.EMPTY.withItalic(false); // Paper - OBFHELPER
-         private static final Style RESET = Style.EMPTY.withBold(false).withItalic(false).setUnderline(false).setStrikethrough(false).setRandom(false);
+         private static final Style RESET = Style.EMPTY.withBold(false).withItalic(false).withUnderlined(false).withStrikethrough(false).withObfuscated(false);
  
          private final List<Component> list = new ArrayList<Component>();
 @@ -67,6 +68,7 @@ public final class CraftChatMessage {
-             Matcher matcher = (keepNewlines ? INCREMENTAL_PATTERN_KEEP_NEWLINES : INCREMENTAL_PATTERN).matcher(message);
+             Matcher matcher = (keepNewlines ? StringMessage.INCREMENTAL_PATTERN_KEEP_NEWLINES : StringMessage.INCREMENTAL_PATTERN).matcher(message);
              String match = null;
              boolean needsAdd = false;
 +            boolean hasReset = false; // Paper
@@ -30,7 +30,7 @@ index b27af66795d902a2e95d692fa0ff18eccbef8a75..b89660244ffad484e3fbf69ccb9cdc1b
                              throw new AssertionError("Unexpected message format");
                          }
                      } else { // Color resets formatting
--                        modifier = RESET.withColor(format);
+-                        this.modifier = StringMessage.RESET.withColor(format);
 +                        // Paper start - improve legacy formatting
 +                        Style previous = modifier;
 +                        modifier = (!hasReset ? RESET : EMPTY).withColor(format);
@@ -42,13 +42,13 @@ index b27af66795d902a2e95d692fa0ff18eccbef8a75..b89660244ffad484e3fbf69ccb9cdc1b
 +                            modifier = modifier.withItalic(false);
 +                        }
 +                        if (previous.isObfuscated()) {
-+                            modifier = modifier.setRandom(false);
++                            modifier = modifier.withObfuscated(false);
 +                        }
 +                        if (previous.isStrikethrough()) {
-+                            modifier = modifier.setStrikethrough(false);
++                            modifier = modifier.withStrikethrough(false);
 +                        }
 +                        if (previous.isUnderlined()) {
-+                            modifier = modifier.setUnderline(false);
++                            modifier = modifier.withUnderlined(false);
 +                        }
 +                        // Paper end
                      }
