@@ -5,10 +5,10 @@ Subject: [PATCH] Fix some rails connecting improperly
 
 
 diff --git a/src/main/java/net/minecraft/world/level/block/BaseRailBlock.java b/src/main/java/net/minecraft/world/level/block/BaseRailBlock.java
-index 1a44c8b41928a83a22b53d1b6f45ce39b4caf2b2..7cef6d1fc2045c62d4e96a0fd0a311d089cb1406 100644
+index 41c23abf78c2ca95c26633860adb9360139b3ceb..1242eb55996bca8a63bd7b95d01d0299fb36d105 100644
 --- a/src/main/java/net/minecraft/world/level/block/BaseRailBlock.java
 +++ b/src/main/java/net/minecraft/world/level/block/BaseRailBlock.java
-@@ -62,6 +62,7 @@ public abstract class BaseRailBlock extends Block {
+@@ -65,6 +65,7 @@ public abstract class BaseRailBlock extends Block implements SimpleWaterloggedBl
          state = this.updateDir(world, pos, state, true);
          if (this.isStraight) {
              state.neighborChanged(world, pos, this, pos, notify);
@@ -17,7 +17,7 @@ index 1a44c8b41928a83a22b53d1b6f45ce39b4caf2b2..7cef6d1fc2045c62d4e96a0fd0a311d0
  
          return state;
 diff --git a/src/main/java/net/minecraft/world/level/block/DetectorRailBlock.java b/src/main/java/net/minecraft/world/level/block/DetectorRailBlock.java
-index 0ab1e15d8575c3e90a10b80b94030e15a01faac9..1854809e045300e84a713dc7c3a8264f53ec6c0f 100644
+index 2335e7af6bc16a0d65c7818c316f3194c680c69d..63c7f2cf530ac9562960ae5a3cbc6e511a009377 100644
 --- a/src/main/java/net/minecraft/world/level/block/DetectorRailBlock.java
 +++ b/src/main/java/net/minecraft/world/level/block/DetectorRailBlock.java
 @@ -70,6 +70,7 @@ public class DetectorRailBlock extends BaseRailBlock {
@@ -27,15 +27,15 @@ index 0ab1e15d8575c3e90a10b80b94030e15a01faac9..1854809e045300e84a713dc7c3a8264f
 +            if (state.getBlock() != this) { return; } // Paper - not our block, don't do anything
              boolean flag = (Boolean) state.getValue(DetectorRailBlock.POWERED);
              boolean flag1 = false;
-             List<AbstractMinecart> list = this.getInteractingMinecartOfType(world, pos, AbstractMinecart.class, (Predicate) null);
+             List<AbstractMinecart> list = this.getInteractingMinecartOfType(world, pos, AbstractMinecart.class, (entity) -> {
 diff --git a/src/main/java/net/minecraft/world/level/block/RailState.java b/src/main/java/net/minecraft/world/level/block/RailState.java
-index 0d824ab98dcdd6ea9dac025c37970fb4ec464131..4c17bec369fb19f47760e30b391b2128cee6b276 100644
+index a205e04bce8706302e4a077646749d05dee98251..0f24187dc3f1340d142f88cbac64c4f5c333e5b8 100644
 --- a/src/main/java/net/minecraft/world/level/block/RailState.java
 +++ b/src/main/java/net/minecraft/world/level/block/RailState.java
-@@ -12,13 +12,19 @@ import net.minecraft.world.level.block.state.properties.RailShape;
+@@ -10,13 +10,19 @@ import net.minecraft.world.level.block.state.BlockState;
+ import net.minecraft.world.level.block.state.properties.RailShape;
  
  public class RailState {
- 
 -    private final Level level;
 -    private final BlockPos pos;
 +    private final Level level; public final Level getWorld() { return this.level; } // Paper - OBFHELPER
@@ -55,7 +55,7 @@ index 0d824ab98dcdd6ea9dac025c37970fb4ec464131..4c17bec369fb19f47760e30b391b2128
      public RailState(Level world, BlockPos pos, BlockState state) {
          this.level = world;
          this.pos = pos;
-@@ -153,6 +159,11 @@ public class RailState {
+@@ -143,6 +149,11 @@ public class RailState {
      }
  
      private void connectTo(RailState placementHelper) {
@@ -65,10 +65,10 @@ index 0d824ab98dcdd6ea9dac025c37970fb4ec464131..4c17bec369fb19f47760e30b391b2128
 +        }
 +        // Paper end - prevent desync
          this.connections.add(placementHelper.pos);
-         BlockPos blockposition = this.pos.north();
-         BlockPos blockposition1 = this.pos.south();
-@@ -347,11 +358,16 @@ public class RailState {
-         this.state = (BlockState) this.state.setValue(this.block.getShapeProperty(), blockpropertytrackposition1);
+         BlockPos blockPos = this.pos.north();
+         BlockPos blockPos2 = this.pos.south();
+@@ -333,10 +344,15 @@ public class RailState {
+         this.state = this.state.setValue(this.block.getShapeProperty(), railShape2);
          if (forceUpdate || this.level.getBlockState(this.pos) != this.state) {
              this.level.setBlock(this.pos, this.state, 3);
 +            // Paper start - prevent desync
@@ -77,15 +77,14 @@ index 0d824ab98dcdd6ea9dac025c37970fb4ec464131..4c17bec369fb19f47760e30b391b2128
 +            }
 +            // Paper end - prevent desync
  
-             for (int i = 0; i < this.connections.size(); ++i) {
-                 RailState minecarttracklogic = this.getRail((BlockPos) this.connections.get(i));
- 
--                if (minecarttracklogic != null) {
-+                if (minecarttracklogic != null && minecarttracklogic.isValid()) { // Paper - prevent desync
-                     minecarttracklogic.removeSoftConnections();
-                     if (minecarttracklogic.canConnectTo(this)) {
-                         minecarttracklogic.connectTo(this);
-@@ -364,6 +380,6 @@ public class RailState {
+             for(int i = 0; i < this.connections.size(); ++i) {
+                 RailState railState = this.getRail(this.connections.get(i));
+-                if (railState != null) {
++                if (railState != null && railState.isValid()) { // Paper - prevent desync
+                     railState.removeSoftConnections();
+                     if (railState.canConnectTo(this)) {
+                         railState.connectTo(this);
+@@ -349,6 +365,6 @@ public class RailState {
      }
  
      public BlockState getState() {

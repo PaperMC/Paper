@@ -25,44 +25,52 @@ index b67ba8f75e4a3358d7c2462918b85b0bf9b5a922..fdbd8b89bb8bf3b61f60b812b90483c9
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 19544b794b5a46c129016172798ff7294fcfed33..735c3c983e96e4e6f36de0975909fc48cb042081 100644
+index 1feda8b44364c748497174944b26abc4f058f354..1889de77a5e3d9371005b6bd451e2c0e57e96a93 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -1347,9 +1347,15 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
-         //if (autosavePeriod > 0 && this.ticks % autosavePeriod == 0) { // CraftBukkit // Paper - move down
-             //MinecraftServer.LOGGER.debug("Autosave started"); // Paper
-             serverAutoSave = (autosavePeriod > 0 && this.tickCount % autosavePeriod == 0); // Paper
-+            // Paper start
-+            int playerSaveInterval = com.destroystokyo.paper.PaperConfig.playerAutoSaveRate;
-+            if (playerSaveInterval < 0) {
-+                playerSaveInterval = autosavePeriod;
-+            }
-+            // Paper end
-             this.profiler.push("save");
--            if (autosavePeriod > 0 && this.tickCount % autosavePeriod == 0) { // Paper
+@@ -955,7 +955,6 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+ 
+         if (this.playerList != null) {
+             MinecraftServer.LOGGER.info("Saving players");
 -            this.playerList.saveAll();
-+            if (playerSaveInterval > 0) { // Paper
+             this.playerList.removeAll(this.isRestarting); // Paper
+             try { Thread.sleep(100); } catch (InterruptedException ex) {} // CraftBukkit - SPIGOT-625 - give server at least a chance to send packets
+         }
+@@ -1415,9 +1414,15 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         // if (this.autosavePeriod > 0 && this.tickCount % this.autosavePeriod == 0) { // CraftBukkit // Paper - move down
+         //     MinecraftServer.LOGGER.debug("Autosave started"); // Paper
+         serverAutoSave = (autosavePeriod > 0 && this.tickCount % autosavePeriod == 0); // Paper
++        // Paper start
++        int playerSaveInterval = com.destroystokyo.paper.PaperConfig.playerAutoSaveRate;
++        if (playerSaveInterval < 0) {
++            playerSaveInterval = autosavePeriod;
++        }
++        // Paper end
+             this.profiler.push("save");
+-        if (this.autosavePeriod > 0 && this.tickCount % this.autosavePeriod == 0) { // Paper - moved from above
+-            this.playerList.saveAll();
++        if (playerSaveInterval > 0) { // Paper
 +            this.playerList.savePlayers(playerSaveInterval); // Paper
-             }// Paper
-             // Paper start
-             for (ServerLevel world : getAllLevels()) {
+             // this.saveAllChunks(true, false, false); // Paper - saved incrementally below
+         } // Paper start
+         for (ServerLevel level : this.getAllLevels()) {
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-index c5717f45a0110492aad41f21cc06fb8cbeb1f791..bd4d4ace35e966e819aa461d3962fe06ff402be7 100644
+index cd34b5aa61c78d8138500a93f0a9714bedd7ed86..b49fa995973f860a95d937c98e2821435262ce25 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-@@ -173,6 +173,7 @@ import org.bukkit.inventory.MainHand;
- public class ServerPlayer extends Player implements ContainerListener {
+@@ -169,6 +169,7 @@ public class ServerPlayer extends Player {
+     public final int getViewDistance() { return this.getLevel().getChunkSource().chunkMap.viewDistance - 1; } // Paper - placeholder
  
      private static final Logger LOGGER = LogManager.getLogger();
 +    public long lastSave = MinecraftServer.currentTick; // Paper
+     private static final int NEUTRAL_MOB_DEATH_NOTIFICATION_RADII_XZ = 32;
+     private static final int NEUTRAL_MOB_DEATH_NOTIFICATION_RADII_Y = 10;
      public ServerGamePacketListenerImpl connection;
-     public Connection networkManager; // Paper
-     public final MinecraftServer server;
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
-index 882cd25c9610f0b995c27291aa62846922ab531f..b76735531ef96f9d4c870a5107feea01524a7670 100644
+index 9c594c0f142ca10b7c1df50faf45ccb3f7468ba9..8c62367888af566dd9be4bb5cd301c26e0248e46 100644
 --- a/src/main/java/net/minecraft/server/players/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/players/PlayerList.java
-@@ -559,6 +559,7 @@ public abstract class PlayerList {
+@@ -561,6 +561,7 @@ public abstract class PlayerList {
      protected void save(ServerPlayer player) {
          if (!player.getBukkitEntity().isPersistent()) return; // CraftBukkit
          if (!player.didPlayerJoinEvent) return; // Paper - If we never fired PJE, we disconnected during login. Data has not changed, and additionally, our saved vehicle is not loaded! If we save now, we will lose our vehicle (CraftBukkit bug)
@@ -70,20 +78,21 @@ index 882cd25c9610f0b995c27291aa62846922ab531f..b76735531ef96f9d4c870a5107feea01
          this.playerIo.save(player);
          ServerStatsCounter serverstatisticmanager = (ServerStatsCounter) player.getStats(); // CraftBukkit
  
-@@ -1218,10 +1219,21 @@ public abstract class PlayerList {
+@@ -1198,10 +1199,21 @@ public abstract class PlayerList {
      }
  
      public void saveAll() {
+-        net.minecraft.server.MCUtil.ensureMain("Save Players" , () -> { // Paper - Ensure main
 +        // Paper start - incremental player saving
 +        savePlayers(null);
 +    }
 +    public void savePlayers(Integer interval) {
-         MCUtil.ensureMain("Save Players" , () -> { // Paper - Ensure main
++        MCUtil.ensureMain("Save Players" , () -> { // Paper - Ensure main
          MinecraftTimings.savePlayers.startTiming(); // Paper
 +        int numSaved = 0;
 +        long now = MinecraftServer.currentTick;
          for (int i = 0; i < this.players.size(); ++i) {
--            this.save((ServerPlayer) this.players.get(i));
+-            this.save(this.players.get(i));
 +            ServerPlayer entityplayer = this.players.get(i);
 +            if (interval == null || now - entityplayer.lastSave >= interval) {
 +                this.save(entityplayer);
