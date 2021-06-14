@@ -8,20 +8,12 @@ diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -0,0 +0,0 @@ import io.netty.buffer.ByteBuf;
- import io.netty.buffer.ByteBufOutputStream;
- import io.netty.buffer.Unpooled;
- import io.papermc.paper.adventure.PaperAdventure; // Paper
-+import io.papermc.paper.event.entity.EntityMoveEvent;
- import it.unimi.dsi.fastutil.longs.LongIterator;
- import java.awt.image.BufferedImage;
- import java.io.BufferedWriter;
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          while (iterator.hasNext()) {
              ServerLevel worldserver = (ServerLevel) iterator.next();
              worldserver.hasPhysicsEvent =  org.bukkit.event.block.BlockPhysicsEvent.getHandlerList().getRegisteredListeners().length > 0; // Paper
-+            worldserver.hasEntityMoveEvent =  EntityMoveEvent.getHandlerList().getRegisteredListeners().length > 0; // Paper
-             HopperBlockEntity.skipHopperEvents = worldserver.paperConfig.disableHopperMoveEvents || org.bukkit.event.inventory.InventoryMoveItemEvent.getHandlerList().getRegisteredListeners().length == 0; // Paper
++            worldserver.hasEntityMoveEvent =  io.papermc.paper.event.entity.EntityMoveEvent.getHandlerList().getRegisteredListeners().length > 0; // Paper
+             net.minecraft.world.level.block.entity.HopperBlockEntity.skipHopperEvents = worldserver.paperConfig.disableHopperMoveEvents || org.bukkit.event.inventory.InventoryMoveItemEvent.getHandlerList().getRegisteredListeners().length == 0; // Paper
  
              this.profiler.push(() -> {
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
@@ -33,31 +25,23 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public final UUID uuid;
      public boolean hasPhysicsEvent = true; // Paper
 +    public boolean hasEntityMoveEvent = false; // Paper
-     private static Throwable getAddToWorldStackTrace(Entity entity) {
+     public static Throwable getAddToWorldStackTrace(Entity entity) {
          return new Throwable(entity + " Added to world at " + new java.util.Date());
      }
 diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-@@ -0,0 +0,0 @@ import com.mojang.datafixers.util.Pair;
- import com.mojang.serialization.DataResult;
- import com.mojang.serialization.Dynamic;
- import com.mojang.serialization.DynamicOps;
-+import io.papermc.paper.event.entity.EntityMoveEvent;
- import java.util.Collection;
- import java.util.ConcurrentModificationException;
- import java.util.Iterator;
 @@ -0,0 +0,0 @@ public abstract class LivingEntity extends Entity {
  
          this.pushEntities();
          this.level.getProfiler().pop();
 +        // Paper start
-+        if (((ServerLevel) level).hasEntityMoveEvent) {
-+            if (xo != getX() || yo != getY() || zo != getZ() || yRotO != yRot || xRotO != xRot) {
-+                Location from = new Location(level.getWorld(), xo, yo, zo, yRotO, xRotO);
-+                Location to = new Location (level.getWorld(), getX(), getY(), getZ(), yRot, xRot);
-+                EntityMoveEvent event = new EntityMoveEvent(getBukkitLivingEntity(), from, to.clone());
++        if (((ServerLevel) this.level).hasEntityMoveEvent) {
++            if (this.xo != getX() || this.yo != this.getY() || this.zo != this.getZ() || this.yRotO != this.getYRot() || this.xRotO != this.getXRot()) {
++                Location from = new Location(this.level.getWorld(), this.xo, this.yo, this.zo, this.yRotO, this.xRotO);
++                Location to = new Location (this.level.getWorld(), this.getX(), this.getY(), this.getZ(), this.getYRot(), this.getXRot());
++                io.papermc.paper.event.entity.EntityMoveEvent event = new io.papermc.paper.event.entity.EntityMoveEvent(this.getBukkitLivingEntity(), from, to.clone());
 +                if (!event.callEvent()) {
 +                    absMoveTo(from.getX(), from.getY(), from.getZ(), from.getYaw(), from.getPitch());
 +                } else if (!to.equals(event.getTo())) {
