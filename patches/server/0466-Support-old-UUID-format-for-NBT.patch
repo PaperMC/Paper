@@ -8,10 +8,10 @@ We have stored UUID in plenty of places that did not get DFU'd
 So just look for old format and load it if it exists.
 
 diff --git a/src/main/java/net/minecraft/nbt/CompoundTag.java b/src/main/java/net/minecraft/nbt/CompoundTag.java
-index c856ca720a9329a94bb07eaa3060c034f95718b3..0b739b5f040697049893d311c99456dbc5470e93 100644
+index 1aa3af8c7714b2c850fb4264c863db8e639e6284..2a805d6bbeede50898d36258976ff25ee0aea165 100644
 --- a/src/main/java/net/minecraft/nbt/CompoundTag.java
 +++ b/src/main/java/net/minecraft/nbt/CompoundTag.java
-@@ -142,6 +142,12 @@ public class CompoundTag implements Tag {
+@@ -121,6 +121,12 @@ public class CompoundTag implements Tag {
  
      public void setUUID(String prefix, UUID uuid) { putUUID(prefix, uuid); } // Paper - OBFHELPER
      public void putUUID(String key, UUID value) {
@@ -24,9 +24,9 @@ index c856ca720a9329a94bb07eaa3060c034f95718b3..0b739b5f040697049893d311c99456db
          this.tags.put(key, NbtUtils.createUUID(value));
      }
  
-@@ -151,11 +157,21 @@ public class CompoundTag implements Tag {
+@@ -129,10 +135,20 @@ public class CompoundTag implements Tag {
+      * You must use {@link #hasUUID(String)} before or else it <b>will</b> throw an NPE.
       */
-     public UUID getUUID(String prefix) { return getUUID(prefix); } // Paper - OBFHELPER
      public UUID getUUID(String key) {
 +        // Paper start - support old format
 +        if (!contains(key, 11) && this.contains(key + "Most", 99) && this.contains(key + "Least", 99)) {
@@ -36,29 +36,45 @@ index c856ca720a9329a94bb07eaa3060c034f95718b3..0b739b5f040697049893d311c99456db
          return NbtUtils.loadUUID(this.get(key));
      }
  
-     public final boolean hasUUID(String s) { return this.hasUUID(s); } // Paper - OBFHELPER
      public boolean hasUUID(String key) {
 +        // Paper start - support old format
 +        if (this.contains(key + "Most", 99) && this.contains(key + "Least", 99)) {
 +            return true;
 +        }
 +        // Paper end
-         Tag nbtbase = this.get(key);
- 
-         return nbtbase != null && nbtbase.getType() == IntArrayTag.TYPE && ((IntArrayTag) nbtbase).getAsIntArray().length == 4;
+         Tag tag = this.get(key);
+         return tag != null && tag.getType() == IntArrayTag.TYPE && ((IntArrayTag)tag).getAsIntArray().length == 4;
+     }
 diff --git a/src/main/java/net/minecraft/nbt/NbtUtils.java b/src/main/java/net/minecraft/nbt/NbtUtils.java
-index bf0da04ec9db3ec8313bddb06c278c13073819d1..f57c5e441045a81072a2edfed0f199d90e6d7fde 100644
+index 57c9575a9714acb95d9dced672955a96d71dfd1e..dc136cd4d5d4ba1e0e53a7187b3a2e836e185c19 100644
 --- a/src/main/java/net/minecraft/nbt/NbtUtils.java
 +++ b/src/main/java/net/minecraft/nbt/NbtUtils.java
-@@ -40,6 +40,11 @@ public final class NbtUtils {
-             s = tag.getString("Name");
+@@ -40,14 +40,14 @@ import org.apache.logging.log4j.LogManager;
+ import org.apache.logging.log4j.Logger;
+ 
+ public final class NbtUtils {
+-    private static final Comparator<ListTag> YXZ_LISTTAG_INT_COMPARATOR = Comparator.comparingInt((listTag) -> {
++    private static final Comparator<ListTag> YXZ_LISTTAG_INT_COMPARATOR = Comparator.<ListTag>comparingInt((listTag) -> { // Paper - decompile fix
+         return listTag.getInt(1);
+     }).thenComparingInt((listTag) -> {
+         return listTag.getInt(0);
+     }).thenComparingInt((listTag) -> {
+         return listTag.getInt(2);
+     });
+-    private static final Comparator<ListTag> YXZ_LISTTAG_DOUBLE_COMPARATOR = Comparator.comparingDouble((listTag) -> {
++    private static final Comparator<ListTag> YXZ_LISTTAG_DOUBLE_COMPARATOR = Comparator.<ListTag>comparingDouble((listTag) -> { // Paper - decompile fix
+         return listTag.getDouble(1);
+     }).thenComparingDouble((listTag) -> {
+         return listTag.getDouble(0);
+@@ -76,6 +76,11 @@ public final class NbtUtils {
+             string = compound.getString("Name");
          }
  
 +        // Paper start - support string UUID's
-+        if (tag.contains("Id", 8)) {
-+            uuid = UUID.fromString(tag.getString("Id"));
++        if (compound.contains("Id", 8)) {
++            uUID = UUID.fromString(compound.getString("Id"));
 +        }
 +        // Paper end
-         if (tag.hasUUID("Id")) {
-             uuid = tag.getUUID("Id");
+         if (compound.hasUUID("Id")) {
+             uUID = compound.getUUID("Id");
          }
