@@ -1,6 +1,6 @@
 package org.bukkit.entity;
 
 /**
- * Represents a Stray - variant of {@link Skeleton}.
+ * Represents a Stray - variant of {@link AbstractSkeleton}.
  */
-public interface Stray extends Skeleton { }
+public interface Stray extends AbstractSkeleton { }
