@@ -25,8 +25,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
 @@ -0,0 +0,0 @@ public class CompoundTag implements Tag {
+      * You must use {@link #hasUUID(String)} before or else it <b>will</b> throw an NPE.
       */
-     public UUID getUUID(String prefix) { return getUUID(prefix); } // Paper - OBFHELPER
      public UUID getUUID(String key) {
 +        // Paper start - support old format
 +        if (!contains(key, 11) && this.contains(key + "Most", 99) && this.contains(key + "Least", 99)) {
@@ -36,29 +36,45 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          return NbtUtils.loadUUID(this.get(key));
      }
  
-     public final boolean hasUUID(String s) { return this.hasUUID(s); } // Paper - OBFHELPER
      public boolean hasUUID(String key) {
 +        // Paper start - support old format
 +        if (this.contains(key + "Most", 99) && this.contains(key + "Least", 99)) {
 +            return true;
 +        }
 +        // Paper end
-         Tag nbtbase = this.get(key);
- 
-         return nbtbase != null && nbtbase.getType() == IntArrayTag.TYPE && ((IntArrayTag) nbtbase).getAsIntArray().length == 4;
+         Tag tag = this.get(key);
+         return tag != null && tag.getType() == IntArrayTag.TYPE && ((IntArrayTag)tag).getAsIntArray().length == 4;
+     }
 diff --git a/src/main/java/net/minecraft/nbt/NbtUtils.java b/src/main/java/net/minecraft/nbt/NbtUtils.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/nbt/NbtUtils.java
 +++ b/src/main/java/net/minecraft/nbt/NbtUtils.java
+@@ -0,0 +0,0 @@ import org.apache.logging.log4j.LogManager;
+ import org.apache.logging.log4j.Logger;
+ 
+ public final class NbtUtils {
+-    private static final Comparator<ListTag> YXZ_LISTTAG_INT_COMPARATOR = Comparator.comparingInt((listTag) -> {
++    private static final Comparator<ListTag> YXZ_LISTTAG_INT_COMPARATOR = Comparator.<ListTag>comparingInt((listTag) -> { // Paper - decompile fix
+         return listTag.getInt(1);
+     }).thenComparingInt((listTag) -> {
+         return listTag.getInt(0);
+     }).thenComparingInt((listTag) -> {
+         return listTag.getInt(2);
+     });
+-    private static final Comparator<ListTag> YXZ_LISTTAG_DOUBLE_COMPARATOR = Comparator.comparingDouble((listTag) -> {
++    private static final Comparator<ListTag> YXZ_LISTTAG_DOUBLE_COMPARATOR = Comparator.<ListTag>comparingDouble((listTag) -> { // Paper - decompile fix
+         return listTag.getDouble(1);
+     }).thenComparingDouble((listTag) -> {
+         return listTag.getDouble(0);
 @@ -0,0 +0,0 @@ public final class NbtUtils {
-             s = tag.getString("Name");
+             string = compound.getString("Name");
          }
  
 +        // Paper start - support string UUID's
-+        if (tag.contains("Id", 8)) {
-+            uuid = UUID.fromString(tag.getString("Id"));
++        if (compound.contains("Id", 8)) {
++            uUID = UUID.fromString(compound.getString("Id"));
 +        }
 +        // Paper end
-         if (tag.hasUUID("Id")) {
-             uuid = tag.getUUID("Id");
+         if (compound.hasUUID("Id")) {
+             uUID = compound.getUUID("Id");
          }

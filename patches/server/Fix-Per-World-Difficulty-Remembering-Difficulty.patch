@@ -15,19 +15,18 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          }
      }
  
--    public void setDifficulty(Difficulty enumdifficulty, boolean forceUpdate) {
+-    public void setDifficulty(Difficulty difficulty, boolean forceUpdate) {
 -        if (forceUpdate || !this.worldData.isDifficultyLocked()) {
--            this.worldData.setDifficulty(this.worldData.isHardcore() ? Difficulty.HARD : enumdifficulty);
+-            this.worldData.setDifficulty(this.worldData.isHardcore() ? Difficulty.HARD : difficulty);
 -            this.updateMobSpawningFlags();
 -            this.getPlayerList().getPlayers().forEach(this::sendDifficultyUpdate);
-+    // Paper start - fix per world difficulty
-+    public void setWorldDifficulty(ServerLevel world, Difficulty enumdifficulty, boolean forcefullySet) { this.a(world, enumdifficulty, forcefullySet); }
-+    public void a(ServerLevel world, Difficulty enumdifficulty, boolean flag) {
-+        PrimaryLevelData worldData = world.worldDataServer;
-+        if (flag || !worldData.isDifficultyLocked()) {
-+            worldData.setDifficulty(worldData.isHardcore() ? Difficulty.HARD : enumdifficulty);
-+            world.setSpawnSettings(worldData.getDifficulty() != Difficulty.PEACEFUL && ((DedicatedServer) this).settings.getProperties().spawnMonsters, this.isSpawningAnimals());
-+            //this.getPlayerList().getPlayers().forEach(this::b); // Commented: WorldDataServer#setDifficulty handles updating players' difficulties
++    // Paper start - remember per level difficulty
++    public void setDifficulty(ServerLevel level, Difficulty difficulty, boolean forceUpdate) {
++        PrimaryLevelData worldData = level.serverLevelData;
++        if (forceUpdate || !worldData.isDifficultyLocked()) {
++            worldData.setDifficulty(worldData.isHardcore() ? Difficulty.HARD : difficulty);
++            level.setSpawnSettings(worldData.getDifficulty() != Difficulty.PEACEFUL && ((DedicatedServer) this).settings.getProperties().spawnMonsters, this.isSpawningAnimals());
++            // this.getPlayerList().getPlayers().forEach(this::sendDifficultyUpdate);
 +            // Paper end
          }
      }
@@ -36,26 +35,18 @@ diff --git a/src/main/java/net/minecraft/server/commands/DifficultyCommand.java 
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/commands/DifficultyCommand.java
 +++ b/src/main/java/net/minecraft/server/commands/DifficultyCommand.java
-@@ -0,0 +0,0 @@ import com.mojang.brigadier.exceptions.DynamicCommandExceptionType;
- import net.minecraft.commands.CommandSourceStack;
- import net.minecraft.network.chat.TranslatableComponent;
- import net.minecraft.server.MinecraftServer;
-+import net.minecraft.server.level.ServerLevel;
- import net.minecraft.world.Difficulty;
- 
- public class DifficultyCommand {
 @@ -0,0 +0,0 @@ public class DifficultyCommand {
-     public static int setDifficulty(CommandSourceStack source, Difficulty difficulty) throws CommandSyntaxException {
-         MinecraftServer minecraftserver = source.getServer();
  
--        if (minecraftserver.getWorldData().getDifficulty() == difficulty) {
-+        ServerLevel world = source.getLevel(); // Paper
-+        if (world.worldDataServer.getDifficulty() == difficulty) { // Paper
-             throw DifficultyCommand.ERROR_ALREADY_DIFFICULT.create(difficulty.getKey());
+     public static int setDifficulty(CommandSourceStack source, Difficulty difficulty) throws CommandSyntaxException {
+         MinecraftServer minecraftServer = source.getServer();
+-        if (minecraftServer.getWorldData().getDifficulty() == difficulty) {
++        net.minecraft.server.level.ServerLevel level = source.getLevel(); // Paper
++        if (level.serverLevelData.getDifficulty() == difficulty) { // Paper
+             throw ERROR_ALREADY_DIFFICULT.create(difficulty.getKey());
          } else {
--            minecraftserver.setDifficulty(difficulty, true);
-+            minecraftserver.a(world, difficulty, true); // Paper
-             source.sendSuccess(new TranslatableComponent("commands.difficulty.success", new Object[]{difficulty.getDisplayName()}), true);
+-            minecraftServer.setDifficulty(difficulty, true);
++            minecraftServer.setDifficulty(level, difficulty, true); // Paper - use world
+             source.sendSuccess(new TranslatableComponent("commands.difficulty.success", difficulty.getDisplayName()), true);
              return 0;
          }
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
@@ -75,7 +66,7 @@ diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListener
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-@@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl implements ServerGamePacketListener {
+@@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
      public void handleChangeDifficulty(ServerboundChangeDifficultyPacket packet) {
          PacketUtils.ensureRunningOnSameThread(packet, this, this.player.getLevel());
          if (this.player.hasPermissions(2) || this.isSingleplayerOwner()) {

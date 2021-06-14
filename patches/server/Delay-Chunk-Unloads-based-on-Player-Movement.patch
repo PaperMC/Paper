@@ -21,10 +21,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 @@ -0,0 +0,0 @@ public class PaperWorldConfig {
-     private void viewDistance() {
          this.noTickViewDistance = this.getInt("viewdistances.no-tick-view-distance", -1);
      }
-+
+ 
 +    public long delayChunkUnloadsBy;
 +    private void delayChunkUnloadsBy() {
 +        delayChunkUnloadsBy = PaperConfig.getSeconds(getString("delay-chunk-unloads-by", "10s"));
@@ -33,7 +32,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            delayChunkUnloadsBy *= 20;
 +        }
 +    }
- }
++
+     public boolean altItemDespawnRateEnabled;
+     public Map<Material, Integer> altItemDespawnRateMap;
+     private void altItemDespawnRate() {
 diff --git a/src/main/java/net/minecraft/server/level/DistanceManager.java b/src/main/java/net/minecraft/server/level/DistanceManager.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/level/DistanceManager.java
@@ -56,7 +58,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                if (!hasPlayer && playerChunk != null && playerChunk.isFullChunkReady()) {
 +                    Ticket<Long> delayUnload = new Ticket<Long>(TicketType.DELAY_UNLOAD, 33, i);
 +                    delayUnload.delayUnloadBy = delayChunkUnloadsBy;
-+                    delayUnload.setCurrentTick(this.ticketTickCounter);
++                    delayUnload.setCreatedTick(this.ticketTickCounter);
 +                    arraysetsorted.remove(delayUnload);
 +                    // refresh ticket
 +                    arraysetsorted.add(delayUnload);
@@ -71,9 +73,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/level/Ticket.java
 +++ b/src/main/java/net/minecraft/server/level/Ticket.java
 @@ -0,0 +0,0 @@ public final class Ticket<T> implements Comparable<Ticket<?>> {
+     private final int ticketLevel;
      public final T key; public final T getObjectReason() { return this.key; } // Paper - OBFHELPER
      private long createdTick; public final long getCreationTick() { return this.createdTick; } // Paper - OBFHELPER
-     public int priority = 0; // Paper
 +    public long delayUnloadBy; // Paper
  
      protected Ticket(TicketType<T> type, int level, T argument) {
@@ -83,25 +85,25 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        this.delayUnloadBy = type.timeout; // Paper
      }
  
-     public int compareTo(Ticket<?> ticket) {
+     @Override
 @@ -0,0 +0,0 @@ public final class Ticket<T> implements Comparable<Ticket<?>> {
      }
  
      protected boolean timedOut(long currentTick) {
--        long j = this.type.timeout();
-+        long j = delayUnloadBy; // Paper
- 
-         return j != 0L && currentTick - this.createdTick > j;
+-        long l = this.type.timeout();
++        long l = delayUnloadBy; // Paper
+         return l != 0L && currentTick - this.createdTick > l;
      }
+ }
 diff --git a/src/main/java/net/minecraft/server/level/TicketType.java b/src/main/java/net/minecraft/server/level/TicketType.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/level/TicketType.java
 +++ b/src/main/java/net/minecraft/server/level/TicketType.java
 @@ -0,0 +0,0 @@ public class TicketType<T> {
-     public static final TicketType<Long> ASYNC_LOAD = create("async_load", Long::compareTo); // Paper
-     public static final TicketType<ChunkPos> PRIORITY = create("priority", Comparator.comparingLong(ChunkPos::toLong), 300); // Paper
-     public static final TicketType<ChunkPos> URGENT = create("urgent", Comparator.comparingLong(ChunkPos::toLong), 300); // Paper
+     public static final TicketType<ChunkPos> UNKNOWN = TicketType.create("unknown", Comparator.comparingLong(ChunkPos::toLong), 1);
+     public static final TicketType<Unit> PLUGIN = TicketType.create("plugin", (a, b) -> 0); // CraftBukkit
+     public static final TicketType<org.bukkit.plugin.Plugin> PLUGIN_TICKET = TicketType.create("plugin_ticket", (plugin1, plugin2) -> plugin1.getClass().getName().compareTo(plugin2.getClass().getName())); // CraftBukkit
 +    public static final TicketType<Long> DELAY_UNLOAD = create("delay_unload", Long::compareTo, 300); // Paper
  
-     public static <T> TicketType<T> create(String name, Comparator<T> comparator) {
-         return new TicketType<>(name, comparator, 0L);
+     public static <T> TicketType<T> create(String name, Comparator<T> argumentComparator) {
+         return new TicketType<>(name, argumentComparator, 0L);

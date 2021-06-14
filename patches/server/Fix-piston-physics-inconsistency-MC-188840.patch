@@ -63,14 +63,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                // Paper end - fix a variety of piston desync dupes
                  blockposition3 = blockposition3.relative(enumdirection1);
                  map.remove(blockposition3);
-                 world.setBlock(blockposition3, (BlockState) Blocks.MOVING_PISTON.defaultBlockState().setValue(PistonBaseBlock.FACING, dir), 68);
--                world.setBlockEntity(blockposition3, MovingPistonBlock.newMovingBlockEntity((BlockState) list1.get(k), dir, retract, false));
+                 BlockState iblockdata2 = (BlockState) Blocks.MOVING_PISTON.defaultBlockState().setValue(PistonBaseBlock.FACING, dir);
+ 
+                 world.setBlock(blockposition3, iblockdata2, 68);
+-                world.setBlockEntity(MovingPistonBlock.newMovingBlockEntity(blockposition3, iblockdata2, (BlockState) list1.get(k), dir, retract, false));
 +                // Paper start - fix a variety of piston desync dupes
 +                if (!allowDesync) {
 +                    iblockdata1 = world.getBlockState(oldPos);
 +                    map.replace(oldPos, iblockdata1);
 +                }
-+                world.setBlockEntity(blockposition3, MovingPistonBlock.newMovingBlockEntity(allowDesync ? list1.get(k) : iblockdata1, dir, retract, false));
++                world.setBlockEntity(MovingPistonBlock.newMovingBlockEntity(blockposition3, iblockdata2, allowDesync ? list1.get(k) : iblockdata1, dir, retract, false));
 +                if (!allowDesync) {
 +                    world.setBlock(oldPos, Blocks.AIR.defaultBlockState(), 2 | 4 | 16 | 1024); // set air to prevent later physics updates from seeing this block
 +                }
@@ -82,12 +84,12 @@ diff --git a/src/main/java/net/minecraft/world/level/block/piston/PistonMovingBl
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/block/piston/PistonMovingBlockEntity.java
 +++ b/src/main/java/net/minecraft/world/level/block/piston/PistonMovingBlockEntity.java
-@@ -0,0 +0,0 @@ public class PistonMovingBlockEntity extends BlockEntity implements TickableBloc
-                     BlockState iblockdata = Block.updateFromNeighbourShapes(this.movedState, (LevelAccessor) this.level, this.worldPosition);
- 
-                     if (iblockdata.isAir()) {
--                        this.level.setBlock(this.worldPosition, this.movedState, 84);
-+                    this.level.setBlock(this.worldPosition, this.movedState, com.destroystokyo.paper.PaperConfig.allowPistonDuplication ? 84 : (84 | 2)); // Paper - force notify (flag 2), it's possible the set type by the piston block (which doesn't notify) set this block to air
-                         Block.updateOrDestroy(this.movedState, iblockdata, this.level, this.worldPosition, 3);
+@@ -0,0 +0,0 @@ public class PistonMovingBlockEntity extends BlockEntity {
+                 if (blockEntity.movedState != null && world.getBlockState(pos).is(Blocks.MOVING_PISTON)) {
+                     BlockState blockState = Block.updateFromNeighbourShapes(blockEntity.movedState, world, pos);
+                     if (blockState.isAir()) {
+-                        world.setBlock(pos, blockEntity.movedState, 84);
++                        world.setBlock(pos, blockEntity.movedState, com.destroystokyo.paper.PaperConfig.allowPistonDuplication ? 84 : (84 | 2)); // Paper - force notify (flag 2), it's possible the set type by the piston block (which doesn't notify) set this block to air
+                         Block.updateOrDestroy(blockEntity.movedState, blockState, world, pos, 3);
                      } else {
-                         if (iblockdata.hasProperty(BlockStateProperties.WATERLOGGED) && (Boolean) iblockdata.getValue(BlockStateProperties.WATERLOGGED)) {
+                         if (blockState.hasProperty(BlockStateProperties.WATERLOGGED) && blockState.getValue(BlockStateProperties.WATERLOGGED)) {

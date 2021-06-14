@@ -15,11 +15,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          private static final Pattern INCREMENTAL_PATTERN_KEEP_NEWLINES = Pattern.compile("(" + String.valueOf(org.bukkit.ChatColor.COLOR_CHAR) + "[0-9a-fk-orx])|((?:(?:https?):\\/\\/)?(?:[-\\w_\\.]{2,}\\.[a-z]{2,4}.*?(?=[\\.\\?!,;:]?(?:[" + String.valueOf(org.bukkit.ChatColor.COLOR_CHAR) + " ]|$))))", Pattern.CASE_INSENSITIVE);
          // ChatColor.b does not explicitly reset, its more of empty
 +        private static final Style EMPTY = Style.EMPTY.withItalic(false); // Paper - OBFHELPER
-         private static final Style RESET = Style.EMPTY.withBold(false).withItalic(false).setUnderline(false).setStrikethrough(false).setRandom(false);
+         private static final Style RESET = Style.EMPTY.withBold(false).withItalic(false).withUnderlined(false).withStrikethrough(false).withObfuscated(false);
  
          private final List<Component> list = new ArrayList<Component>();
 @@ -0,0 +0,0 @@ public final class CraftChatMessage {
-             Matcher matcher = (keepNewlines ? INCREMENTAL_PATTERN_KEEP_NEWLINES : INCREMENTAL_PATTERN).matcher(message);
+             Matcher matcher = (keepNewlines ? StringMessage.INCREMENTAL_PATTERN_KEEP_NEWLINES : StringMessage.INCREMENTAL_PATTERN).matcher(message);
              String match = null;
              boolean needsAdd = false;
 +            boolean hasReset = false; // Paper
@@ -30,7 +30,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                              throw new AssertionError("Unexpected message format");
                          }
                      } else { // Color resets formatting
--                        modifier = RESET.withColor(format);
+-                        this.modifier = StringMessage.RESET.withColor(format);
 +                        // Paper start - improve legacy formatting
 +                        Style previous = modifier;
 +                        modifier = (!hasReset ? RESET : EMPTY).withColor(format);
@@ -42,13 +42,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                            modifier = modifier.withItalic(false);
 +                        }
 +                        if (previous.isObfuscated()) {
-+                            modifier = modifier.setRandom(false);
++                            modifier = modifier.withObfuscated(false);
 +                        }
 +                        if (previous.isStrikethrough()) {
-+                            modifier = modifier.setStrikethrough(false);
++                            modifier = modifier.withStrikethrough(false);
 +                        }
 +                        if (previous.isUnderlined()) {
-+                            modifier = modifier.setUnderline(false);
++                            modifier = modifier.withUnderlined(false);
 +                        }
 +                        // Paper end
                      }
