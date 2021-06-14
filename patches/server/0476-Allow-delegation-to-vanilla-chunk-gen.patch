@@ -5,7 +5,7 @@ Subject: [PATCH] Allow delegation to vanilla chunk gen
 
 
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 6bc5ba51c90723c7138b1b5d2381cb215f1e5271..df2c41d18377d8519d5537186d529ecc1901f58a 100644
+index 6bc5ba51c90723c7138b1b5d2381cb215f1e5271..beb8b7d06ef47c80ede95c884598fedcc7126d67 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -2033,6 +2033,32 @@ public final class CraftServer implements Server {
@@ -19,17 +19,17 @@ index 6bc5ba51c90723c7138b1b5d2381cb215f1e5271..df2c41d18377d8519d5537186d529ecc
 +        CraftChunkData data = (CraftChunkData) createChunkData(world);
 +        // do bunch of vanilla shit
 +        net.minecraft.server.level.ServerLevel nmsWorld = ((CraftWorld) world).getHandle();
-+        net.minecraft.world.level.chunk.ProtoChunk protoChunk = new net.minecraft.world.level.chunk.ProtoChunk(new net.minecraft.world.level.ChunkPos(x, z), net.minecraft.world.level.chunk.UpgradeData.getEmptyConverter(), nmsWorld);
++        net.minecraft.world.level.chunk.ProtoChunk protoChunk = new net.minecraft.world.level.chunk.ProtoChunk(new net.minecraft.world.level.ChunkPos(x, z), null, nmsWorld);
 +        List<net.minecraft.world.level.chunk.ChunkAccess> list = new ArrayList<>();
 +        list.add(protoChunk);
-+        net.minecraft.server.level.WorldGenRegion genRegion = new net.minecraft.server.level.WorldGenRegion(nmsWorld, list);
++        net.minecraft.server.level.WorldGenRegion genRegion = new net.minecraft.server.level.WorldGenRegion(nmsWorld, list, net.minecraft.world.level.chunk.ChunkStatus.EMPTY, -1);
 +        // call vanilla generator, one feature after another. Order here is important!
 +        net.minecraft.world.level.chunk.ChunkGenerator chunkGenerator = nmsWorld.getChunkSource().generator;
 +        if (chunkGenerator instanceof org.bukkit.craftbukkit.generator.CustomChunkGenerator) {
 +            chunkGenerator = ((org.bukkit.craftbukkit.generator.CustomChunkGenerator) chunkGenerator).delegate;
 +        }
 +        chunkGenerator.createBiomes(nmsWorld.registryAccess().registryOrThrow(Registry.BIOME_REGISTRY), protoChunk);
-+        chunkGenerator.fillFromNoise(genRegion, nmsWorld.structureFeatureManager(), protoChunk);
++        chunkGenerator.fillFromNoise((runnable) -> {}, nmsWorld.structureFeatureManager(), protoChunk);
 +        chunkGenerator.buildSurfaceAndBedrock(genRegion, protoChunk);
 +        // copy over generated sections
 +        data.setRawChunkData(protoChunk.getSections());
