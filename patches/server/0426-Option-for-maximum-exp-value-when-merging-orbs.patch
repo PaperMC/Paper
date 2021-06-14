@@ -5,25 +5,27 @@ Subject: [PATCH] Option for maximum exp value when merging orbs
 
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index 90ca51dfdbb3045dd528450225cba96f5834166e..6c692e58cde22003ecbf6dc5695799147c39905a 100644
+index 16cf7d116e3ffd44ffc4f060b4014b52389cff77..3bc6329d3ea48966cb99e792f9b35e2d2d71a34b 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-@@ -342,4 +342,10 @@ public class PaperWorldConfig {
-         disableCreeperLingeringEffect = getBoolean("disable-creeper-lingering-effect", false);
+@@ -359,6 +359,12 @@ public class PaperWorldConfig {
          log("Creeper lingering effect: " + disableCreeperLingeringEffect);
      }
-+
+ 
 +    public int expMergeMaxValue;
 +    private void expMergeMaxValue() {
 +        expMergeMaxValue = getInt("experience-merge-max-value", -1);
 +        log("Experience Merge Max Value: " + expMergeMaxValue);
 +    }
- }
++
+     public double squidMaxSpawnHeight;
+     private void squidMaxSpawnHeight() {
+         squidMaxSpawnHeight = getDouble("squid-spawn-height.maximum", 0.0D);
 diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-index 3f082b7fd50752728917a7da28cba4cb396a9fdf..7d6834796259e364196280ffa468b5bf999ec7b9 100644
+index 7d43439a13bd109399691ddec60ee99c818db198..36b2faebca20ef152e4fc88ecfa660ecbbb11384 100644
 --- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 +++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-@@ -587,16 +587,32 @@ public class CraftEventFactory {
+@@ -610,16 +610,30 @@ public class CraftEventFactory {
              net.minecraft.world.entity.ExperienceOrb xp = (net.minecraft.world.entity.ExperienceOrb) entity;
              double radius = world.spigotConfig.expMerge;
              if (radius > 0) {
@@ -36,25 +38,21 @@ index 3f082b7fd50752728917a7da28cba4cb396a9fdf..7d6834796259e364196280ffa468b5bf
                  for (Entity e : entities) {
                      if (e instanceof net.minecraft.world.entity.ExperienceOrb) {
                          net.minecraft.world.entity.ExperienceOrb loopItem = (net.minecraft.world.entity.ExperienceOrb) e;
--                        if (!loopItem.removed) {
--                            xp.value += loopItem.value;
--                            loopItem.remove();
+-                        if (!loopItem.isRemoved()) {
 +                        // Paper start
-+                        if (!loopItem.removed && !(maxValue > 0 && loopItem.value >= maxValue)) {
++                        if (!loopItem.isRemoved() && !(maxValue > 0 && loopItem.value >= maxValue)) {
 +                            long newTotal = (long)xp.value + (long)loopItem.value;
 +                            if ((int) newTotal < 0) continue; // Overflow
 +                            if (maxValue > 0 && newTotal > (long)maxValue) {
 +                                loopItem.value = (int) (newTotal - maxValue);
 +                                xp.value = maxValue;
 +                            } else {
-+                                xp.value += loopItem.value;
-+                                loopItem.remove();
-+                            }
-+                            // Paper end
+                             xp.value += loopItem.value;
+                             loopItem.discard();
++                            } // Paper end
                          }
                      }
                  }
-+
 +                } // Paper end - End iteration skip check - All tweaking ends here
              }
          // Spigot end
