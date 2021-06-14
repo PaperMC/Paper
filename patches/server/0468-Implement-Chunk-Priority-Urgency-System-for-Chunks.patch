@@ -69,17 +69,16 @@ index 18ae2e2b339d357fbe0f6f2b18bc14c0dfe4c222..782301661f739192798ca6ef501b184b
      }
  
 diff --git a/src/main/java/net/minecraft/server/level/ChunkHolder.java b/src/main/java/net/minecraft/server/level/ChunkHolder.java
-index 1f67c9c5f7161ea687983e7ae0ec7d259da9acd3..ebf2bb7daf950cc16fcbb5bfd214799caae6d3d2 100644
+index 1f67c9c5f7161ea687983e7ae0ec7d259da9acd3..14a5d1bd863d08ea218737f6a63534088ddf4e5c 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkHolder.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkHolder.java
-@@ -1,6 +1,7 @@
+@@ -1,5 +1,6 @@
  package net.minecraft.server.level;
  
++import com.destroystokyo.paper.io.PrioritizedTaskQueue;
  import com.mojang.datafixers.util.Either;
-+import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap; // Paper
  import it.unimi.dsi.fastutil.shorts.ShortArraySet;
  import it.unimi.dsi.fastutil.shorts.ShortSet;
- import java.util.BitSet;
 @@ -60,7 +61,7 @@ public class ChunkHolder {
      private final DebugBuffer<ChunkHolder.ChunkSaveDebug> chunkToSaveHistory;
      public int oldTicketLevel;
@@ -89,18 +88,15 @@ index 1f67c9c5f7161ea687983e7ae0ec7d259da9acd3..ebf2bb7daf950cc16fcbb5bfd214799c
      public final ChunkPos pos; // Paper - package->public
      private boolean hasChangedSections;
      private final ShortSet[] changedBlocksPerSection;
-@@ -75,8 +76,10 @@ public class ChunkHolder {
+@@ -75,6 +76,7 @@ public class ChunkHolder {
  
      boolean isUpdateQueued = false; // Paper
      private final ChunkMap chunkMap; // Paper
 +    public ServerLevel getWorld() { return chunkMap.level; } // Paper
      // Paper start - no-tick view distance
      public final LevelChunk getSendingChunk() {
-+
          // it's important that we use getChunkAtIfLoadedImmediately to mirror the chunk sending logic used
-         // in Chunk's neighbour callback
-         LevelChunk ret = this.chunkMap.level.getChunkSource().getChunkAtIfLoadedImmediately(this.pos.x, this.pos.z);
-@@ -113,7 +116,120 @@ public class ChunkHolder {
+@@ -113,7 +115,120 @@ public class ChunkHolder {
      // Paper end - optimise isOutsideOfRange
      long lastAutoSaveTime; // Paper - incremental autosave
      long inactiveTimeStart; // Paper - incremental autosave
@@ -108,7 +104,7 @@ index 1f67c9c5f7161ea687983e7ae0ec7d259da9acd3..ebf2bb7daf950cc16fcbb5bfd214799c
 +    volatile int neighborPriority = -1;
 +    volatile int priorityBoost = 0;
 +    public final java.util.concurrent.ConcurrentHashMap<ChunkHolder, ChunkStatus> neighbors = new java.util.concurrent.ConcurrentHashMap<>();
-+    public final Long2ObjectOpenHashMap<Integer> neighborPriorities = new Long2ObjectOpenHashMap<>();
++    public final it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<Integer> neighborPriorities = new it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<>();
 +
 +    private int getDemandedPriority() {
 +        int priority = neighborPriority; // if we have a neighbor priority, use it
@@ -143,7 +139,7 @@ index 1f67c9c5f7161ea687983e7ae0ec7d259da9acd3..ebf2bb7daf950cc16fcbb5bfd214799c
 +                return currentWantedStatus;
 +            }
 +        });
- 
++
 +    }
 +
 +    public void onNeighborDone(ChunkHolder neighbor, ChunkStatus chunkstatus, ChunkAccess chunk) {
@@ -175,7 +171,7 @@ index 1f67c9c5f7161ea687983e7ae0ec7d259da9acd3..ebf2bb7daf950cc16fcbb5bfd214799c
 +        }
 +        checkPriority();
 +    }
-+
+ 
 +    private void recalcNeighborPriority() {
 +        neighborPriority = -1;
 +        if (!neighborPriorities.isEmpty()) {
@@ -221,7 +217,7 @@ index 1f67c9c5f7161ea687983e7ae0ec7d259da9acd3..ebf2bb7daf950cc16fcbb5bfd214799c
      public ChunkHolder(ChunkPos pos, int level, LevelHeightAccessor world, LevelLightEngine lightingProvider, ChunkHolder.LevelChangeListener levelUpdateListener, ChunkHolder.PlayerProvider playersWatchingChunkProvider) {
          this.futures = new AtomicReferenceArray(ChunkHolder.CHUNK_STATUSES.size());
          this.fullChunkFuture = ChunkHolder.UNLOADED_LEVEL_CHUNK_FUTURE;
-@@ -164,7 +280,18 @@ public class ChunkHolder {
+@@ -164,7 +279,18 @@ public class ChunkHolder {
          return null;
      }
      // CraftBukkit end
@@ -241,15 +237,7 @@ index 1f67c9c5f7161ea687983e7ae0ec7d259da9acd3..ebf2bb7daf950cc16fcbb5bfd214799c
      public CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> getFutureIfPresentUnchecked(ChunkStatus leastStatus) {
          CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> completablefuture = (CompletableFuture) this.futures.get(leastStatus.getIndex());
  
-@@ -450,6 +577,7 @@ public class ChunkHolder {
-         return this.queueLevel;
-     }
- 
-+    private void setPriority(int i) { setQueueLevel(i); } // Paper - OBFHELPER
-     private void setQueueLevel(int level) {
-         this.queueLevel = level;
-     }
-@@ -483,12 +611,12 @@ public class ChunkHolder {
+@@ -483,12 +609,12 @@ public class ChunkHolder {
          ChunkStatus chunkstatus1 = ChunkHolder.getStatus(this.ticketLevel);
          boolean flag = this.oldTicketLevel <= ChunkMap.MAX_CHUNK_DISTANCE;
          boolean flag1 = this.ticketLevel <= ChunkMap.MAX_CHUNK_DISTANCE; // Paper - diff on change: (flag1 = new ticket level is in loadable range)
@@ -261,12 +249,12 @@ index 1f67c9c5f7161ea687983e7ae0ec7d259da9acd3..ebf2bb7daf950cc16fcbb5bfd214799c
          // ChunkUnloadEvent: Called before the chunk is unloaded: isChunkLoaded is still true and chunk can still be modified by plugins.
 -        if (playerchunk_state.isOrAfter(ChunkHolder.FullChunkStatus.BORDER) && !playerchunk_state1.isOrAfter(ChunkHolder.FullChunkStatus.BORDER)) {
 -            this.getFutureIfPresentUnchecked(ChunkStatus.FULL).thenAccept((either) -> {
-+        if (playerchunk_state.isOrAfter( FullChunkStatus.BORDER) && !playerchunk_state1.isOrAfter( FullChunkStatus.BORDER)) {
++        if (playerchunk_state.isOrAfter(FullChunkStatus.BORDER) && !playerchunk_state1.isOrAfter(FullChunkStatus.BORDER)) {
 +            this.getStatusFutureUncheckedMain(ChunkStatus.FULL).thenAccept((either) -> { // Paper - ensure main
                  LevelChunk chunk = (LevelChunk)either.left().orElse(null);
                  if (chunk != null) {
                      chunkStorage.callbackExecutor.execute(() -> {
-@@ -512,7 +640,7 @@ public class ChunkHolder {
+@@ -512,7 +638,7 @@ public class ChunkHolder {
          CompletableFuture completablefuture;
  
          if (flag) {
@@ -275,18 +263,18 @@ index 1f67c9c5f7161ea687983e7ae0ec7d259da9acd3..ebf2bb7daf950cc16fcbb5bfd214799c
                  public String toString() {
                      return "Unloaded ticket level " + ChunkHolder.this.pos;
                  }
-@@ -532,8 +660,8 @@ public class ChunkHolder {
+@@ -532,8 +658,8 @@ public class ChunkHolder {
              }
          }
  
 -        boolean flag2 = playerchunk_state.isOrAfter(ChunkHolder.FullChunkStatus.BORDER);
 -        boolean flag3 = playerchunk_state1.isOrAfter(ChunkHolder.FullChunkStatus.BORDER);
-+        boolean flag2 = playerchunk_state.isOrAfter( FullChunkStatus.BORDER);
-+        boolean flag3 = playerchunk_state1.isOrAfter( FullChunkStatus.BORDER);
++        boolean flag2 = playerchunk_state.isOrAfter(FullChunkStatus.BORDER);
++        boolean flag3 = playerchunk_state1.isOrAfter(FullChunkStatus.BORDER);
  
          boolean prevHasBeenLoaded = this.wasAccessibleSinceLastSave; // Paper
          this.wasAccessibleSinceLastSave |= flag3;
-@@ -551,9 +679,9 @@ public class ChunkHolder {
+@@ -551,15 +677,16 @@ public class ChunkHolder {
          if (!flag2 && flag3) {
              int expectCreateCount = ++this.fullChunkCreateCount; // Paper
              this.fullChunkFuture = chunkStorage.prepareAccessibleChunk(this);
@@ -294,11 +282,18 @@ index 1f67c9c5f7161ea687983e7ae0ec7d259da9acd3..ebf2bb7daf950cc16fcbb5bfd214799c
 +            this.scheduleFullChunkPromotion(chunkStorage, this.fullChunkFuture, executor, FullChunkStatus.BORDER);
              // Paper start - cache ticking ready status
 -            this.fullChunkFuture.thenAccept(either -> {
-+            net.minecraft.server.MCUtil.ensureMain(this.fullChunkFuture).thenAccept(either -> { //Paper ensureMain
++            ensureMain(this.fullChunkFuture).thenAccept(either -> { //Paper ensureMain
                  final Optional<LevelChunk> left = either.left();
                  if (left.isPresent() && ChunkHolder.this.fullChunkCreateCount == expectCreateCount) {
                      // note: Here is a very good place to add callbacks to logic waiting on this.
-@@ -570,18 +698,18 @@ public class ChunkHolder {
+                     LevelChunk fullChunk = either.left().get();
+                     ChunkHolder.this.isFullChunkReady = true;
+                     fullChunk.playerChunk = ChunkHolder.this;
++                    this.chunkMap.distanceManager.clearPriorityTickets(pos);
+                 }
+             });
+             this.updateChunkToSave(this.fullChunkFuture, "full");
+@@ -570,24 +697,25 @@ public class ChunkHolder {
              this.fullChunkFuture = ChunkHolder.UNLOADED_LEVEL_CHUNK_FUTURE;
              ++this.fullChunkCreateCount; // Paper - cache ticking ready status
              this.isFullChunkReady = false; // Paper - cache ticking ready status
@@ -311,54 +306,67 @@ index 1f67c9c5f7161ea687983e7ae0ec7d259da9acd3..ebf2bb7daf950cc16fcbb5bfd214799c
  
 -        boolean flag4 = playerchunk_state.isOrAfter(ChunkHolder.FullChunkStatus.TICKING);
 -        boolean flag5 = playerchunk_state1.isOrAfter(ChunkHolder.FullChunkStatus.TICKING);
-+        boolean flag4 = playerchunk_state.isOrAfter( FullChunkStatus.TICKING);
-+        boolean flag5 = playerchunk_state1.isOrAfter( FullChunkStatus.TICKING);
++        boolean flag4 = playerchunk_state.isOrAfter(FullChunkStatus.TICKING);
++        boolean flag5 = playerchunk_state1.isOrAfter(FullChunkStatus.TICKING);
  
          if (!flag4 && flag5) {
              this.tickingChunkFuture = chunkStorage.prepareTickingChunk(this);
 -            this.scheduleFullChunkPromotion(chunkStorage, this.tickingChunkFuture, executor, ChunkHolder.FullChunkStatus.TICKING);
 +            this.scheduleFullChunkPromotion(chunkStorage, this.tickingChunkFuture, executor, FullChunkStatus.TICKING);
              // Paper start - cache ticking ready status
-             this.tickingChunkFuture.thenAccept(either -> {
+-            this.tickingChunkFuture.thenAccept(either -> {
++            ensureMain(this.tickingChunkFuture).thenAccept(either -> {
                  either.ifLeft(chunk -> {
+                     // note: Here is a very good place to add callbacks to logic waiting on this.
+-                    ChunkHolder.this.isTickingReady = true;
+-
++                    LevelChunk fullChunk = either.left().get();
++                    ChunkHolder.this.isFullChunkReady = true;
++                    fullChunk.playerChunk = ChunkHolder.this;
+                     // Paper start - rewrite ticklistserver
+                     ChunkHolder.this.chunkMap.level.onChunkSetTicking(ChunkHolder.this.pos.x, ChunkHolder.this.pos.z);
+                     // Paper end - rewrite ticklistserver
 @@ -602,8 +730,8 @@ public class ChunkHolder {
              this.tickingChunkFuture = ChunkHolder.UNLOADED_LEVEL_CHUNK_FUTURE;
          }
  
 -        boolean flag6 = playerchunk_state.isOrAfter(ChunkHolder.FullChunkStatus.ENTITY_TICKING);
 -        boolean flag7 = playerchunk_state1.isOrAfter(ChunkHolder.FullChunkStatus.ENTITY_TICKING);
-+        boolean flag6 = playerchunk_state.isOrAfter( FullChunkStatus.ENTITY_TICKING);
-+        boolean flag7 = playerchunk_state1.isOrAfter( FullChunkStatus.ENTITY_TICKING);
++        boolean flag6 = playerchunk_state.isOrAfter(FullChunkStatus.ENTITY_TICKING);
++        boolean flag7 = playerchunk_state1.isOrAfter(FullChunkStatus.ENTITY_TICKING);
  
          if (!flag6 && flag7) {
              if (this.entityTickingChunkFuture != ChunkHolder.UNLOADED_LEVEL_CHUNK_FUTURE) {
-@@ -611,7 +739,7 @@ public class ChunkHolder {
+@@ -611,9 +739,9 @@ public class ChunkHolder {
              }
  
              this.entityTickingChunkFuture = chunkStorage.prepareEntityTickingChunk(this.pos);
 -            this.scheduleFullChunkPromotion(chunkStorage, this.entityTickingChunkFuture, executor, ChunkHolder.FullChunkStatus.ENTITY_TICKING);
 +            this.scheduleFullChunkPromotion(chunkStorage, this.entityTickingChunkFuture, executor, FullChunkStatus.ENTITY_TICKING);
              // Paper start - cache ticking ready status
-             this.entityTickingChunkFuture.thenAccept(either -> {
+-            this.entityTickingChunkFuture.thenAccept(either -> {
++            ensureMain(this.entityTickingChunkFuture).thenAccept(either -> {
                  either.ifLeft(chunk -> {
+                     ChunkHolder.this.isEntityTickingReady = true;
+                 });
 @@ -632,11 +760,29 @@ public class ChunkHolder {
          }
  
          this.onLevelChange.onLevelChange(this.pos, this::getQueueLevel, this.ticketLevel, this::setQueueLevel);
 +        // Paper start - raise IO/load priority if priority changes, use our preferred priority
-+        priorityBoost = this.chunkMap.getDistanceManager().getChunkPriority( pos );
++        priorityBoost = this.chunkMap.getDistanceManager().getChunkPriority(pos);
 +        int priority = getDemandedPriority();
 +        if (getQueueLevel() > priority) {
-+            int ioPriority = com.destroystokyo.paper.io.PrioritizedTaskQueue.NORMAL_PRIORITY;
++            int ioPriority = PrioritizedTaskQueue.NORMAL_PRIORITY;
 +            if (priority <= 10) {
-+                ioPriority = com.destroystokyo.paper.io.PrioritizedTaskQueue.HIGHEST_PRIORITY;
++                ioPriority = PrioritizedTaskQueue.HIGHEST_PRIORITY;
 +            } else if (priority <= 20) {
-+                ioPriority = com.destroystokyo.paper.io.PrioritizedTaskQueue.HIGH_PRIORITY;
++                ioPriority = PrioritizedTaskQueue.HIGH_PRIORITY;
 +            }
 +            chunkMap.level.asyncChunkTaskManager.raisePriority(pos.x, pos.z, ioPriority);
 +        }
 +        if (getQueueLevel() != priority) {
-+            this.onLevelChange.onLevelChange(this.pos, this::getQueueLevel, priority, this::setPriority); // use preferred priority
++            this.onLevelChange.onLevelChange(this.pos, this::getQueueLevel, priority, this::setQueueLevel); // use preferred priority
 +            int neighborsPriority = getNeighborsPriority();
 +            this.neighbors.forEach((neighbor, neighborDesired) -> neighbor.setNeighborPriority(this, neighborsPriority));
 +        }
@@ -368,7 +376,7 @@ index 1f67c9c5f7161ea687983e7ae0ec7d259da9acd3..ebf2bb7daf950cc16fcbb5bfd214799c
          // ChunkLoadEvent: Called after the chunk is loaded: isChunkLoaded returns true and chunk is ready to be modified by plugins.
 -        if (!playerchunk_state.isOrAfter(ChunkHolder.FullChunkStatus.BORDER) && playerchunk_state1.isOrAfter(ChunkHolder.FullChunkStatus.BORDER)) {
 -            this.getFutureIfPresentUnchecked(ChunkStatus.FULL).thenAccept((either) -> {
-+        if (!playerchunk_state.isOrAfter( FullChunkStatus.BORDER) && playerchunk_state1.isOrAfter( FullChunkStatus.BORDER)) {
++        if (!playerchunk_state.isOrAfter(FullChunkStatus.BORDER) && playerchunk_state1.isOrAfter(FullChunkStatus.BORDER)) {
 +            this.getStatusFutureUncheckedMain(ChunkStatus.FULL).thenAccept((either) -> { // Paper - ensure main
                  LevelChunk chunk = (LevelChunk)either.left().orElse(null);
                  if (chunk != null) {
@@ -382,18 +390,10 @@ index 1f67c9c5f7161ea687983e7ae0ec7d259da9acd3..ebf2bb7daf950cc16fcbb5bfd214799c
      }
  
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index 5a5e9188f55405c8a2646891c348d544d33eb940..4129ac6dfb3b46b7659fa372985c58b9ab2c2da3 100644
+index 5a5e9188f55405c8a2646891c348d544d33eb940..b86ff17cdfa613a03bd75eeaab194de03a597b29 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
-@@ -13,6 +13,7 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
- import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
- import it.unimi.dsi.fastutil.longs.Long2ByteMap;
- import it.unimi.dsi.fastutil.longs.Long2ByteOpenHashMap;
-+import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap; // Paper
- import it.unimi.dsi.fastutil.longs.Long2ObjectLinkedOpenHashMap;
- import it.unimi.dsi.fastutil.longs.Long2ObjectMap.Entry;
- import it.unimi.dsi.fastutil.longs.LongIterator;
-@@ -145,6 +146,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -145,6 +145,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
      public final ServerLevel level;
      private final ThreadedLevelLightEngine lightEngine;
      private final BlockableEventLoop<Runnable> mainThreadExecutor;
@@ -401,7 +401,7 @@ index 5a5e9188f55405c8a2646891c348d544d33eb940..4129ac6dfb3b46b7659fa372985c58b9
      public final ChunkGenerator generator;
      private final Supplier<DimensionDataStorage> overworldDataStorage; public final Supplier<DimensionDataStorage> getWorldPersistentDataSupplier() { return this.overworldDataStorage; } // Paper - OBFHELPER
      private final PoiManager poiManager;
-@@ -183,6 +185,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -183,6 +184,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
  
          @Override
          public void execute(Runnable runnable) {
@@ -409,7 +409,7 @@ index 5a5e9188f55405c8a2646891c348d544d33eb940..4129ac6dfb3b46b7659fa372985c58b9
              if (this.queue == null) {
                  this.queue = new java.util.ArrayDeque<>();
              }
-@@ -191,6 +194,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -191,6 +193,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
  
          @Override
          public void run() {
@@ -417,7 +417,7 @@ index 5a5e9188f55405c8a2646891c348d544d33eb940..4129ac6dfb3b46b7659fa372985c58b9
              if (this.queue == null) {
                  return;
              }
-@@ -347,6 +351,15 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -347,6 +350,15 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          this.level = world;
          this.generator = chunkGenerator;
          this.mainThreadExecutor = mainThreadExecutor;
@@ -433,7 +433,7 @@ index 5a5e9188f55405c8a2646891c348d544d33eb940..4129ac6dfb3b46b7659fa372985c58b9
          ProcessorMailbox<Runnable> threadedmailbox = ProcessorMailbox.create(executor, "worldgen");
  
          Objects.requireNonNull(mainThreadExecutor);
-@@ -442,6 +455,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -442,6 +454,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          this.playerViewDistanceTickMap = new com.destroystokyo.paper.util.misc.PlayerAreaMap(this.pooledLinkedPlayerHashSets,
              (ServerPlayer player, int rangeX, int rangeZ, int currPosX, int currPosZ, int prevPosX, int prevPosZ,
               com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<ServerPlayer> newState) -> {
@@ -441,7 +441,7 @@ index 5a5e9188f55405c8a2646891c348d544d33eb940..4129ac6dfb3b46b7659fa372985c58b9
                  if (newState.size() != 1) {
                      return;
                  }
-@@ -460,7 +474,11 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -460,7 +473,11 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
                  }
                  ChunkPos chunkPos = new ChunkPos(rangeX, rangeZ);
                  ChunkMap.this.level.getChunkSource().removeTicketAtLevel(TicketType.PLAYER, chunkPos, 31, chunkPos); // entity ticking level, TODO check on update
@@ -454,7 +454,7 @@ index 5a5e9188f55405c8a2646891c348d544d33eb940..4129ac6dfb3b46b7659fa372985c58b9
          this.playerViewDistanceNoTickMap = new com.destroystokyo.paper.util.misc.PlayerAreaMap(this.pooledLinkedPlayerHashSets);
          this.playerViewDistanceBroadcastMap = new com.destroystokyo.paper.util.misc.PlayerAreaMap(this.pooledLinkedPlayerHashSets,
              (ServerPlayer player, int rangeX, int rangeZ, int currPosX, int currPosZ, int prevPosX, int prevPosZ,
-@@ -477,8 +495,116 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -477,8 +494,116 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
              });
          // Paper end - no-tick view distance
      }
@@ -482,7 +482,7 @@ index 5a5e9188f55405c8a2646891c348d544d33eb940..4129ac6dfb3b46b7659fa372985c58b9
 +        return playerchunk == null || toDrop.contains(playerchunk.pos.toLong());
 +    }
 +
-+    private void updateChunkPriorityMap(Long2IntOpenHashMap map, long chunk, int level) {
++    private void updateChunkPriorityMap(it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap map, long chunk, int level) {
 +        int prev = map.getOrDefault(chunk, -1);
 +        if (level > prev) {
 +            map.put(chunk, level);
@@ -495,7 +495,7 @@ index 5a5e9188f55405c8a2646891c348d544d33eb940..4129ac6dfb3b46b7659fa372985c58b9
 +            return;
 +        }
 +        player.lastHighPriorityChecked = currentTick;
-+        Long2IntOpenHashMap priorities = new Long2IntOpenHashMap();
++        it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap priorities = new it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap();
 +
 +        int viewDistance = getEffectiveNoTickViewDistance();
 +        net.minecraft.core.BlockPos.MutableBlockPos pos = new net.minecraft.core.BlockPos.MutableBlockPos();
@@ -571,7 +571,7 @@ index 5a5e9188f55405c8a2646891c348d544d33eb940..4129ac6dfb3b46b7659fa372985c58b9
      public void updatePlayerMobTypeMap(Entity entity) {
          if (!this.level.paperConfig.perPlayerMobSpawns) {
              return;
-@@ -636,6 +762,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -636,6 +761,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          List<CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>>> list = Lists.newArrayList();
          int j = centerChunk.x;
          int k = centerChunk.z;
@@ -579,7 +579,7 @@ index 5a5e9188f55405c8a2646891c348d544d33eb940..4129ac6dfb3b46b7659fa372985c58b9
  
          for (int l = -margin; l <= margin; ++l) {
              for (int i1 = -margin; i1 <= margin; ++i1) {
-@@ -654,6 +781,14 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -654,6 +780,14 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
  
                  ChunkStatus chunkstatus = (ChunkStatus) distanceToStatus.apply(j1);
                  CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> completablefuture = playerchunk.getOrScheduleFuture(chunkstatus, this);
@@ -594,7 +594,7 @@ index 5a5e9188f55405c8a2646891c348d544d33eb940..4129ac6dfb3b46b7659fa372985c58b9
  
                  list.add(completablefuture);
              }
-@@ -1100,14 +1235,22 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1100,14 +1234,22 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          };
  
          CompletableFuture<CompoundTag> chunkSaveFuture = this.level.asyncChunkTaskManager.getChunkSaveFuture(pos.x, pos.z);
@@ -622,7 +622,7 @@ index 5a5e9188f55405c8a2646891c348d544d33eb940..4129ac6dfb3b46b7659fa372985c58b9
          return ret;
          // Paper end
      }
-@@ -1238,7 +1381,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1238,7 +1380,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
              long i = playerchunk.getPos().toLong();
  
              Objects.requireNonNull(playerchunk);
@@ -632,18 +632,9 @@ index 5a5e9188f55405c8a2646891c348d544d33eb940..4129ac6dfb3b46b7659fa372985c58b9
      }
  
 diff --git a/src/main/java/net/minecraft/server/level/DistanceManager.java b/src/main/java/net/minecraft/server/level/DistanceManager.java
-index d94241bcca4f2fd5e464a860bd356af504dc68b7..544c285eddcc8bdc5f065067d3e8bb78843afa2b 100644
+index d94241bcca4f2fd5e464a860bd356af504dc68b7..5c3f024e02e6203dfe44f8ab8e1f41e2aca9bba9 100644
 --- a/src/main/java/net/minecraft/server/level/DistanceManager.java
 +++ b/src/main/java/net/minecraft/server/level/DistanceManager.java
-@@ -60,7 +60,7 @@ public abstract class DistanceManager {
-     final ChunkTaskPriorityQueueSorter ticketThrottler;
-     final ProcessorHandle<ChunkTaskPriorityQueueSorter.Message<Runnable>> ticketThrottlerInput;
-     final ProcessorHandle<ChunkTaskPriorityQueueSorter.Release> ticketThrottlerReleaser;
--    final LongSet ticketsToRelease = new LongOpenHashSet();
-+    final LongSet ticketsToRelease = new LongOpenHashSet(); public final LongSet getOnPlayerTicketAddQueue() { return ticketsToRelease; } // Paper - OBFHELPER
-     final Executor mainThreadExecutor;
-     private long ticketTickCounter;
- 
 @@ -98,6 +98,7 @@ public abstract class DistanceManager {
      }
  
@@ -763,7 +754,7 @@ index d94241bcca4f2fd5e464a860bd356af504dc68b7..544c285eddcc8bdc5f065067d3e8bb78
 +
 +        if (needsTicket) {
 +            Ticket<?> ticket = new Ticket<>(TicketType.PLAYER, 33, coords);
-+            getOnPlayerTicketAddQueue().add(pair);
++            ticketsToRelease.add(pair);
 +            addTicket(pair, ticket);
 +        }
 +        if ((chunk != null && chunk.isFullChunkReady())) {
@@ -841,30 +832,13 @@ index d94241bcca4f2fd5e464a860bd356af504dc68b7..544c285eddcc8bdc5f065067d3e8bb78
      public <T> boolean addTicketAtLevel(TicketType<T> ticketType, ChunkPos chunkcoordintpair, int level, T identifier) {
          return this.addTicket(chunkcoordintpair.toLong(), new Ticket<>(ticketType, level, identifier));
          // CraftBukkit end
-@@ -431,6 +569,7 @@ public abstract class DistanceManager {
-             this.chunks.defaultReturnValue((byte) (i + 2));
-         }
- 
-+        protected final int getChunkLevel(long i) { return getLevel(i); } // Paper - OBFHELPER
-         @Override
-         protected int getLevel(long id) {
-             return this.chunks.get(id);
-@@ -500,7 +639,7 @@ public abstract class DistanceManager {
- 
-     private class PlayerTicketTracker extends DistanceManager.FixedPlayerDistanceChunkTracker {
- 
--        private int viewDistance = 0;
-+        private int viewDistance = 0; private int getViewDistance() { return viewDistance; } private void setViewDistance(int value) { this.viewDistance = value; } // Paper - OBFHELPER
-         private final Long2IntMap queueLevels = Long2IntMaps.synchronize(new Long2IntOpenHashMap());
-         private final LongSet toUpdate = new LongOpenHashSet();
- 
-@@ -516,41 +655,68 @@ public abstract class DistanceManager {
+@@ -516,41 +654,68 @@ public abstract class DistanceManager {
  
          public void updateViewDistance(int watchDistance) {
              ObjectIterator objectiterator = this.chunks.long2ByteEntrySet().iterator();
 +            // Paper start - set the view distance before scheduling chunk loads/unloads
-+            int lastViewDistance = getViewDistance();
-+            setViewDistance(watchDistance);
++            int lastViewDistance = viewDistance;
++            viewDistance = watchDistance;
 +            // Paper end
  
              while (objectiterator.hasNext()) {
@@ -935,13 +909,13 @@ index d94241bcca4f2fd5e464a860bd356af504dc68b7..544c285eddcc8bdc5f065067d3e8bb78
                          });
                      }, pos, true));
                  }
-@@ -558,6 +724,101 @@ public abstract class DistanceManager {
+@@ -558,6 +723,101 @@ public abstract class DistanceManager {
  
          }
  
 +        // Paper start - smart scheduling of player tickets
 +        private boolean isChunkInRange(long i) {
-+            return this.haveTicketFor(this.getChunkLevel(i));
++            return this.haveTicketFor(this.getLevel(i));
 +        }
 +        public void scheduleChunkLoad(long i, long startTick, int initialDistance, java.util.function.Consumer<Integer> task) {
 +            long elapsed = net.minecraft.server.MinecraftServer.currentTick - startTick;
