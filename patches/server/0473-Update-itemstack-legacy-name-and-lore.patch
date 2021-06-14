@@ -5,19 +5,11 @@ Subject: [PATCH] Update itemstack legacy name and lore
 
 
 diff --git a/src/main/java/net/minecraft/world/item/ItemStack.java b/src/main/java/net/minecraft/world/item/ItemStack.java
-index 458cdfbeac9d757c9721acd4557a548affa0ede1..04b717326524f400da3562655c25db59e72814ec 100644
+index 10f55ba189d12c46e0ef38b0b96a29894b4fba93..c1667fa43194a17eeeb2ac9c5d57daf5cb131958 100644
 --- a/src/main/java/net/minecraft/world/item/ItemStack.java
 +++ b/src/main/java/net/minecraft/world/item/ItemStack.java
-@@ -49,6 +49,7 @@ import net.minecraft.core.Registry;
- import net.minecraft.nbt.CompoundTag;
- import net.minecraft.nbt.ListTag;
- import net.minecraft.nbt.NbtOps;
-+import net.minecraft.nbt.StringTag;
- import net.minecraft.nbt.Tag;
- import net.minecraft.network.chat.Component;
- import net.minecraft.network.chat.ComponentUtils;
-@@ -135,6 +136,44 @@ public final class ItemStack {
-             list.sort((Comparator<? super Tag>) enchantSorter); // Paper
+@@ -170,6 +170,44 @@ public final class ItemStack {
+             list.sort((Comparator<? super net.minecraft.nbt.Tag>) enchantSorter); // Paper
          } catch (Exception ignored) {}
      }
 +
@@ -42,7 +34,7 @@ index 458cdfbeac9d757c9721acd4557a548affa0ede1..04b717326524f400da3562655c25db59
 +                        try {
 +                            list.set(index, convert(json));
 +                        } catch (JsonParseException e) {
-+                            list.set(index, StringTag.create(org.bukkit.craftbukkit.util.CraftChatMessage.toJSON(new TextComponent(""))));
++                            list.set(index, net.minecraft.nbt.StringTag.create(org.bukkit.craftbukkit.util.CraftChatMessage.toJSON(new TextComponent(""))));
 +                        }
 +                    }
 +                }
@@ -50,26 +42,26 @@ index 458cdfbeac9d757c9721acd4557a548affa0ede1..04b717326524f400da3562655c25db59
 +        }
 +    }
 +
-+    private StringTag convert(String json) {
++    private net.minecraft.nbt.StringTag convert(String json) {
 +        Component component = Component.Serializer.jsonToComponent(json);
 +        if (component instanceof TextComponent && component.getContents().contains("\u00A7") && component.getSiblings().isEmpty()) {
 +            // Only convert if the root component is a single comp with legacy in it, don't convert already normal components
 +            component = org.bukkit.craftbukkit.util.CraftChatMessage.fromString(component.getContents())[0];
 +        }
-+        return StringTag.create(org.bukkit.craftbukkit.util.CraftChatMessage.toJSON(component));
++        return net.minecraft.nbt.StringTag.create(org.bukkit.craftbukkit.util.CraftChatMessage.toJSON(component));
 +    }
      // Paper end
  
      public ItemStack(ItemLike item) {
-@@ -180,6 +219,7 @@ public final class ItemStack {
-             // CraftBukkit start - make defensive copy as this data may be coming from the save thread
+@@ -216,6 +254,7 @@ public final class ItemStack {
              this.tag = (CompoundTag) nbttagcompound.getCompound("tag").copy();
-             processEnchantOrder(this.tag); // Paper
-+            processText(); // Paper
-             this.getItem().verifyTagAfterLoad(this.tag);
              // CraftBukkit end
+             this.processEnchantOrder(this.tag); // Paper
++            this.processText(); // Paper
+             this.getItem().verifyTagAfterLoad(this.tag);
          }
-@@ -663,6 +703,7 @@ public final class ItemStack {
+ 
+@@ -728,6 +767,7 @@ public final class ItemStack {
          }
      }
  

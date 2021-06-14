@@ -4,33 +4,11 @@ Date: Wed, 29 Apr 2020 02:10:32 +0200
 Subject: [PATCH] Allow delegation to vanilla chunk gen
 
 
-diff --git a/src/main/java/net/minecraft/world/level/chunk/UpgradeData.java b/src/main/java/net/minecraft/world/level/chunk/UpgradeData.java
-index aaa8d78b131c4095b36c6db6078f57f927c15374..54e560348836498f16dde017c6e7e3fcc263eeea 100644
---- a/src/main/java/net/minecraft/world/level/chunk/UpgradeData.java
-+++ b/src/main/java/net/minecraft/world/level/chunk/UpgradeData.java
-@@ -36,7 +36,7 @@ import org.apache.logging.log4j.Logger;
- public class UpgradeData {
- 
-     private static final Logger LOGGER = LogManager.getLogger();
--    public static final UpgradeData EMPTY = new UpgradeData();
-+    public static final UpgradeData EMPTY = new UpgradeData(); public static UpgradeData getEmptyConverter() { return EMPTY; } // Paper - obfhelper
-     private static final Direction8[] DIRECTIONS = Direction8.values();
-     private final EnumSet<Direction8> sides;
-     private final int[][] index;
-@@ -322,7 +322,7 @@ public class UpgradeData {
-                         if ((Integer) iblockdata.getValue(BlockStateProperties.DISTANCE) >= j) {
-                             world.setBlock(blockposition, (BlockState) iblockdata.setValue(BlockStateProperties.DISTANCE, j), 18);
-                             if (i != 7) {
--                                Direction[] aenumdirection = null.f;
-+                                Direction[] aenumdirection = DIRECTIONS; // Paper - decomp fix
-                                 int k = aenumdirection.length;
- 
-                                 for (int l = 0; l < k; ++l) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 2ec41cb87cec97780f1fa8abfbb756fca4dba1bf..e301aee53b19fc3f93a36d0ed03a649741123bfa 100644
+index 6bc5ba51c90723c7138b1b5d2381cb215f1e5271..df2c41d18377d8519d5537186d529ecc1901f58a 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -2032,6 +2032,32 @@ public final class CraftServer implements Server {
+@@ -2033,6 +2033,32 @@ public final class CraftServer implements Server {
          return new CraftChunkData(world);
      }
  
@@ -64,20 +42,20 @@ index 2ec41cb87cec97780f1fa8abfbb756fca4dba1bf..e301aee53b19fc3f93a36d0ed03a6497
      public BossBar createBossBar(String title, BarColor color, BarStyle style, BarFlag... flags) {
          return new CraftBossBar(title, color, style, flags);
 diff --git a/src/main/java/org/bukkit/craftbukkit/generator/CraftChunkData.java b/src/main/java/org/bukkit/craftbukkit/generator/CraftChunkData.java
-index 8d72cd6a44cf462cfe3adac9bf99a16883a587df..fd2cb2a584fea360fcf8180338708f35c4e3dc1f 100644
+index 7f8d9e82c1fadc0621f6e94adbc31f7774f9568f..2f0849dd05605e693dcc12c3d0842e8dfa53a869 100644
 --- a/src/main/java/org/bukkit/craftbukkit/generator/CraftChunkData.java
 +++ b/src/main/java/org/bukkit/craftbukkit/generator/CraftChunkData.java
-@@ -19,7 +19,7 @@ import org.bukkit.material.MaterialData;
-  */
+@@ -20,7 +20,7 @@ import org.bukkit.material.MaterialData;
  public final class CraftChunkData implements ChunkGenerator.ChunkData {
+     private final int minHeight;
      private final int maxHeight;
 -    private final LevelChunkSection[] sections;
 +    private LevelChunkSection[] sections; // Paper - remove final
      private Set<BlockPos> tiles;
-     private World world; // Paper - Anti-Xray - Add world
  
-@@ -168,6 +168,12 @@ public final class CraftChunkData implements ChunkGenerator.ChunkData {
-         return sections;
+     public CraftChunkData(World world) {
+@@ -171,6 +171,12 @@ public final class CraftChunkData implements ChunkGenerator.ChunkData {
+         return this.sections;
      }
  
 +    // Paper start
@@ -87,13 +65,13 @@ index 8d72cd6a44cf462cfe3adac9bf99a16883a587df..fd2cb2a584fea360fcf8180338708f35
 +    // Paper end
 +
      Set<BlockPos> getTiles() {
-         return tiles;
+         return this.tiles;
      }
 diff --git a/src/main/java/org/bukkit/craftbukkit/generator/CustomChunkGenerator.java b/src/main/java/org/bukkit/craftbukkit/generator/CustomChunkGenerator.java
-index eba3a6a2467116d93945ab2d5dc0a6f41d76f547..e25dc1c87752fcf73181cb02ddaf84b258ac4e9d 100644
+index e9502acf47b94e529f3ce273add9b7e0f4fe6d72..a4c3e307e861e6c220425d35fe228dcb9dc7ef31 100644
 --- a/src/main/java/org/bukkit/craftbukkit/generator/CustomChunkGenerator.java
 +++ b/src/main/java/org/bukkit/craftbukkit/generator/CustomChunkGenerator.java
-@@ -32,7 +32,7 @@ import org.bukkit.generator.ChunkGenerator.ChunkData;
+@@ -34,7 +34,7 @@ import org.bukkit.generator.ChunkGenerator.ChunkData;
  
  public class CustomChunkGenerator extends InternalChunkGenerator {
  

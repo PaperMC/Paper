@@ -9,7 +9,7 @@ to race conditions.
 Plus, .canUse we want to be safe for async anyways.
 
 diff --git a/src/main/java/com/mojang/brigadier/tree/CommandNode.java b/src/main/java/com/mojang/brigadier/tree/CommandNode.java
-index 5c35cef42af4053332c02b4960c227fe95d4c197..757ed7a0887f4bdb187ca7c757db5c188362f1a0 100644
+index aa3a1795850a419f624f14bd7c4daab0020779d0..39708be1b445791b053023dec16ad7d4efcc9048 100644
 --- a/src/main/java/com/mojang/brigadier/tree/CommandNode.java
 +++ b/src/main/java/com/mojang/brigadier/tree/CommandNode.java
 @@ -74,10 +74,10 @@ public abstract class CommandNode<S> implements Comparable<CommandNode<S>> {
@@ -18,7 +18,7 @@ index 5c35cef42af4053332c02b4960c227fe95d4c197..757ed7a0887f4bdb187ca7c757db5c18
              try {
 -                ((CommandSourceStack) source).currentCommand = this;
 +                ((CommandSourceStack) source).currentCommand.set(this); // Paper
-                 return requirement.test(source);
+                 return this.requirement.test(source);
              } finally {
 -                ((CommandSourceStack) source).currentCommand = null;
 +                ((CommandSourceStack) source).currentCommand.set(null); // Paper
@@ -26,7 +26,7 @@ index 5c35cef42af4053332c02b4960c227fe95d4c197..757ed7a0887f4bdb187ca7c757db5c18
          }
          // CraftBukkit end
 diff --git a/src/main/java/net/minecraft/commands/CommandSourceStack.java b/src/main/java/net/minecraft/commands/CommandSourceStack.java
-index e1f4ffaa36bfffb7741c74b7a094e26a03a9a1e6..2c024f8f8b949dc8cebd29a10415eeac6d50902e 100644
+index 42d97bc67c8f4e5b65a81159179c43dc6edc804c..6a330170ec1ea9d06593a1bbd1bdb8d98c0904fb 100644
 --- a/src/main/java/net/minecraft/commands/CommandSourceStack.java
 +++ b/src/main/java/net/minecraft/commands/CommandSourceStack.java
 @@ -54,7 +54,7 @@ public class CommandSourceStack implements SharedSuggestionProvider, com.destroy
@@ -38,7 +38,7 @@ index e1f4ffaa36bfffb7741c74b7a094e26a03a9a1e6..2c024f8f8b949dc8cebd29a10415eeac
  
      public CommandSourceStack(CommandSource output, Vec3 pos, Vec2 rot, ServerLevel world, int level, String simpleName, Component name, MinecraftServer server, @Nullable Entity entity) {
          this(output, pos, rot, world, level, simpleName, name, server, entity, false, (commandcontext, flag, j) -> {
-@@ -171,9 +171,11 @@ public class CommandSourceStack implements SharedSuggestionProvider, com.destroy
+@@ -175,9 +175,11 @@ public class CommandSourceStack implements SharedSuggestionProvider, com.destroy
      @Override
      public boolean hasPermission(int level) {
          // CraftBukkit start
@@ -46,7 +46,7 @@ index e1f4ffaa36bfffb7741c74b7a094e26a03a9a1e6..2c024f8f8b949dc8cebd29a10415eeac
 +        // Paper start - fix concurrency issue
 +        CommandNode currentCommand = this.currentCommand.get();
          if (currentCommand != null) {
-             return hasPermission(level, org.bukkit.craftbukkit.command.VanillaCommandWrapper.getPermission(currentCommand));
+             return this.hasPermission(level, org.bukkit.craftbukkit.command.VanillaCommandWrapper.getPermission(currentCommand));
 +            // Paper end
          }
          // CraftBukkit end
