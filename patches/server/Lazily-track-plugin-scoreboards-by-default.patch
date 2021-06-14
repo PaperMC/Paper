@@ -49,11 +49,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            registeredGlobally = true;
 +        }
 +        // Paper end
-         net.minecraft.world.scores.Objective objective = board.registerObjective(name, craftCriteria.criteria, io.papermc.paper.adventure.PaperAdventure.asVanilla(displayName), CraftScoreboardTranslations.fromBukkitRender(renderType));
+         net.minecraft.world.scores.Objective objective = board.addObjective(name, craftCriteria.criteria, io.papermc.paper.adventure.PaperAdventure.asVanilla(displayName), CraftScoreboardTranslations.fromBukkitRender(renderType));
          return new CraftObjective(this, objective);
      }
 @@ -0,0 +0,0 @@ public final class CraftScoreboard implements org.bukkit.scoreboard.Scoreboard {
-         Validate.isTrue(board.getObjective(name) == null, "An objective of name '" + name + "' already exists");
+         net.minecraft.world.scores.Objective objective = this.board.addObjective(name, craftCriteria.criteria, CraftChatMessage.fromStringOrNull(displayName), CraftScoreboardTranslations.fromBukkitRender(renderType));
  
          CraftCriteria craftCriteria = CraftCriteria.getFromBukkit(criteria);
 +        // Paper start
@@ -72,19 +72,20 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public final class CraftScoreboardManager implements ScoreboardManager {
  
      public CraftScoreboardManager(MinecraftServer minecraftserver, net.minecraft.world.scores.Scoreboard scoreboardServer) {
-         mainScoreboard = new CraftScoreboard(scoreboardServer);
+         this.mainScoreboard = new CraftScoreboard(scoreboardServer);
 +        mainScoreboard.registeredGlobally = true; // Paper
-         server = minecraftserver;
-         scoreboards.add(mainScoreboard);
+         this.server = minecraftserver;
+         this.scoreboards.add(mainScoreboard);
      }
 @@ -0,0 +0,0 @@ public final class CraftScoreboardManager implements ScoreboardManager {
      public CraftScoreboard getNewScoreboard() {
          org.spigotmc.AsyncCatcher.catchOp("scoreboard creation"); // Spigot
-         CraftScoreboard scoreboard = new CraftScoreboard(new ServerScoreboard(server));
+         CraftScoreboard scoreboard = new CraftScoreboard(new ServerScoreboard(this.server));
+-        this.scoreboards.add(scoreboard);
 +        // Paper start
 +        if (com.destroystokyo.paper.PaperConfig.trackPluginScoreboards) {
 +            scoreboard.registeredGlobally = true;
-         scoreboards.add(scoreboard);
++            scoreboards.add(scoreboard);
 +        }
 +        // Paper end
          return scoreboard;
@@ -99,4 +100,4 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
      // CraftBukkit method
      public CraftScoreboard getPlayerBoard(CraftPlayer player) {
-         CraftScoreboard board = playerBoards.get(player);
+         CraftScoreboard board = this.playerBoards.get(player);
