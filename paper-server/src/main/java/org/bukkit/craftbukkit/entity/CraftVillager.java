@@ -107,6 +107,11 @@ public class CraftVillager extends CraftAbstractVillager implements Villager {
         getHandle().entityWakeup();
     }
 
+    @Override
+    public void shakeHead() {
+        getHandle().fT(); // PAIL rename shakeHead
+    }
+
     public static Profession nmsToBukkitProfession(VillagerProfession nms) {
         return Profession.valueOf(IRegistry.VILLAGER_PROFESSION.getKey(nms).getKey().toUpperCase(Locale.ROOT));
     }
