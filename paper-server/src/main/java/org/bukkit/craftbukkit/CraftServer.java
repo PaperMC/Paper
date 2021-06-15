@@ -824,7 +824,6 @@ public final class CraftServer implements Server {
 
         pluginManager.clearPlugins();
         commandMap.clearCommands();
-        resetRecipes();
         reloadData();
         overrideAllCommandBlockCommands = commandsConfiguration.getStringList("command-block-overrides").contains("*");
         ignoreVanillaPermissions = commandsConfiguration.getBoolean("ignore-vanilla-permissions");
