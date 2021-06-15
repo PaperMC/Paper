@@ -1,5 +1,6 @@
 plugins {
     `java-library`
+    `maven-publish`
 }
 
 java {
@@ -22,4 +23,10 @@ dependencies {
     testImplementation("junit:junit:4.13.1")
     testImplementation("org.hamcrest:hamcrest-library:1.3")
     testImplementation("org.ow2.asm:asm-tree:7.3.1")
+}
+
+configure<PublishingExtension> {
+    publications.create<MavenPublication>("maven") {
+        from(components["java"])
+    }
 }
