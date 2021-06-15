@@ -7,7 +7,7 @@ CraftBukkit has a bug in their implementation and is incorrectly handling forget
 Also adds more target reasons for why it forgot target.
 
 diff --git a/src/main/java/net/minecraft/world/entity/ai/behavior/StopAttackingIfTargetInvalid.java b/src/main/java/net/minecraft/world/entity/ai/behavior/StopAttackingIfTargetInvalid.java
-index 6ee0098de2b55a437f914869643adbd1ddbe7faf..00e0babb051b4fd2b9bc4a4129204c08f8ce5af0 100644
+index 6ee0098de2b55a437f914869643adbd1ddbe7faf..4b2e0379d9bbeb12c104e52817bb2005ed627a78 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/behavior/StopAttackingIfTargetInvalid.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/behavior/StopAttackingIfTargetInvalid.java
 @@ -50,15 +50,15 @@ public class StopAttackingIfTargetInvalid<E extends Mob> extends Behavior<E> {
@@ -31,18 +31,18 @@ index 6ee0098de2b55a437f914869643adbd1ddbe7faf..00e0babb051b4fd2b9bc4a4129204c08
          }
      }
  
-@@ -82,19 +82,21 @@ public class StopAttackingIfTargetInvalid<E extends Mob> extends Behavior<E> {
+@@ -82,17 +82,20 @@ public class StopAttackingIfTargetInvalid<E extends Mob> extends Behavior<E> {
          return optional.isPresent() && !((LivingEntity) optional.get()).isAlive();
      }
  
 -    protected void clearAttackTarget(E entity) {
-+    protected void clearAttackTarget(E e0, EntityTargetEvent.TargetReason reason) {
++    protected void clearAttackTarget(E entity, EntityTargetEvent.TargetReason reason) {
          // CraftBukkit start
 -        LivingEntity old = entity.getBrain().getMemory(MemoryModuleType.ATTACK_TARGET).orElse(null);
 -        EntityTargetEvent event = CraftEventFactory.callEntityTargetLivingEvent(entity, null, (old != null && !old.isAlive()) ? EntityTargetEvent.TargetReason.TARGET_DIED : EntityTargetEvent.TargetReason.FORGOT_TARGET);
 +        // Paper start - fix this event
 +        //EntityLiving old = e0.getBehaviorController().getMemory(MemoryModuleType.ATTACK_TARGET).orElse(null);
-+        EntityTargetEvent event = CraftEventFactory.callEntityTargetLivingEvent(e0, null, reason);
++        EntityTargetEvent event = CraftEventFactory.callEntityTargetLivingEvent(entity, null, reason);
          if (event.isCancelled()) {
              return;
          }
@@ -56,8 +56,5 @@ index 6ee0098de2b55a437f914869643adbd1ddbe7faf..00e0babb051b4fd2b9bc4a4129204c08
 +        }*/
 +        // Paper end
          // CraftBukkit end
--        this.onTargetErased.accept(entity);
--        entity.getBrain().eraseMemory(MemoryModuleType.ATTACK_TARGET);
-+        this.onTargetErased.accept(e0);
-     }
- }
+         this.onTargetErased.accept(entity);
+         entity.getBrain().eraseMemory(MemoryModuleType.ATTACK_TARGET);
