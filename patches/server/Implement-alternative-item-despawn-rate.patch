@@ -8,41 +8,26 @@ diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/m
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-@@ -0,0 +0,0 @@
- package com.destroystokyo.paper;
- 
-+import java.util.EnumMap;
-+import java.util.HashMap;
- import java.util.List;
-+import java.util.Map;
- 
- import org.bukkit.Bukkit;
-+import org.bukkit.Material;
-+import org.bukkit.configuration.ConfigurationSection;
- import org.bukkit.configuration.file.YamlConfiguration;
- import org.spigotmc.SpigotWorldConfig;
- 
 @@ -0,0 +0,0 @@ public class PaperWorldConfig {
-     private void viewDistance() {
          this.noTickViewDistance = this.getInt("viewdistances.no-tick-view-distance", -1);
      }
-+
+ 
 +    public boolean altItemDespawnRateEnabled;
-+    public Map<Material, Integer> altItemDespawnRateMap;
++    public java.util.Map<org.bukkit.Material, Integer> altItemDespawnRateMap;
 +    private void altItemDespawnRate() {
 +        String path = "alt-item-despawn-rate";
 +
 +        altItemDespawnRateEnabled = getBoolean(path + ".enabled", false);
 +
-+        Map<Material, Integer> altItemDespawnRateMapDefault = new EnumMap<>(Material.class);
-+        altItemDespawnRateMapDefault.put(Material.COBBLESTONE, 300);
-+        for (Material key : altItemDespawnRateMapDefault.keySet()) {
++        java.util.Map<org.bukkit.Material, Integer> altItemDespawnRateMapDefault = new java.util.EnumMap<>(org.bukkit.Material.class);
++        altItemDespawnRateMapDefault.put(org.bukkit.Material.COBBLESTONE, 300);
++        for (org.bukkit.Material key : altItemDespawnRateMapDefault.keySet()) {
 +            config.addDefault("world-settings.default." + path + ".items." + key, altItemDespawnRateMapDefault.get(key));
 +        }
 +
-+        Map<String, Integer> rawMap = new HashMap<>();
++        java.util.Map<String, Integer> rawMap = new java.util.HashMap<>();
 +        try {
-+            ConfigurationSection mapSection = config.getConfigurationSection("world-settings." + worldName + "." + path + ".items");
++            org.bukkit.configuration.ConfigurationSection mapSection = config.getConfigurationSection("world-settings." + worldName + "." + path + ".items");
 +            if (mapSection == null) {
 +                mapSection = config.getConfigurationSection("world-settings.default." + path + ".items");
 +            }
@@ -56,26 +41,28 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            altItemDespawnRateEnabled = false;
 +        }
 +
-+        altItemDespawnRateMap = new EnumMap<>(Material.class);
++        altItemDespawnRateMap = new java.util.EnumMap<>(org.bukkit.Material.class);
 +        if (!altItemDespawnRateEnabled) {
 +            return;
 +        }
 +
 +        for(String key : rawMap.keySet()) {
 +            try {
-+                altItemDespawnRateMap.put(Material.valueOf(key), rawMap.get(key));
++                altItemDespawnRateMap.put(org.bukkit.Material.valueOf(key), rawMap.get(key));
 +            } catch (Exception e) {
 +                logError("Could not add item " + key + " to altItemDespawnRateMap: " + e.getMessage());
 +            }
 +        }
 +        if(altItemDespawnRateEnabled) {
-+            for(Material key : altItemDespawnRateMap.keySet()) {
++            for(org.bukkit.Material key : altItemDespawnRateMap.keySet()) {
 +                log("Alternative item despawn rate of " + key + ": " + altItemDespawnRateMap.get(key));
 +            }
 +        }
 +    }
- }
- 
++
+     public boolean antiXray;
+     public EngineMode engineMode;
+     public int maxChunkSectionIndex;
 diff --git a/src/main/java/net/minecraft/world/entity/item/ItemEntity.java b/src/main/java/net/minecraft/world/entity/item/ItemEntity.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/item/ItemEntity.java
