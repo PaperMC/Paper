@@ -23,7 +23,7 @@ index f27fadc15cb7f5c782e45885ec6a5a69963beade..2ff4d4921e2076abf415bd3c8f5173ec
          }));
  
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index 51691d3dedf113d58f340b74d448c5e5375b5bed..b2f0102c2a15eb4324367f52e03e534bff883f9b 100644
+index edb9952ddd014c92b9604a9a187fdcd46de8a04f..3e3097f23f775eec4107f5c2f3f2266f4250ba15 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 @@ -448,6 +448,11 @@ public class PaperWorldConfig {
@@ -53,7 +53,7 @@ index bb0a07a280c7d4885165e9d6488e7741aaa7b47c..9c88426ab1275ee5fb6e28be8b213533
              worldData.addProperty("keep-spawn-loaded-range", world.paperConfig.keepLoadedRange);
              worldData.addProperty("visible-chunk-count", visibleChunks.size());
 diff --git a/src/main/java/net/minecraft/server/level/ChunkHolder.java b/src/main/java/net/minecraft/server/level/ChunkHolder.java
-index 3653ec6f93d627092e63cede51f4db2e12b10613..995d7977233f0d7683c00a75c3833f9a1eba7f92 100644
+index 2aa86f35b8960273ad91b21e260bcf91cf861e08..8fff5580a88fd1643845967eb7bdab2630777e91 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkHolder.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkHolder.java
 @@ -75,6 +75,17 @@ public class ChunkHolder {
@@ -95,7 +95,7 @@ index 3653ec6f93d627092e63cede51f4db2e12b10613..995d7977233f0d7683c00a75c3833f9a
 @@ -313,9 +324,48 @@ public class ChunkHolder {
      }
  
-     public void broadcast(Packet<?> packet, boolean onlyOnWatchDistanceEdge) { // Paper - private -> public
+     public void broadcast(Packet<?> packet, boolean onlyOnWatchDistanceEdge) {
 -        this.playerProvider.getPlayers(this.pos, onlyOnWatchDistanceEdge).forEach((entityplayer) -> {
 -            entityplayer.connection.send(packet);
 -        });
@@ -145,7 +145,7 @@ index 3653ec6f93d627092e63cede51f4db2e12b10613..995d7977233f0d7683c00a75c3833f9a
  
      public CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> getOrScheduleFuture(ChunkStatus targetStatus, ChunkMap chunkStorage) {
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index 56dece64f19009583c94569c5713c2ad0c91ae17..b0cf6e186d7030b1aa9296671683bd33e2d15579 100644
+index 3a16316a8ecd658b2fbd473fa6ff14abe18e00de..91930daa3c965dcc1cb50ae260c159be55f351ed 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
 @@ -122,7 +122,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
@@ -289,13 +289,11 @@ index 56dece64f19009583c94569c5713c2ad0c91ae17..b0cf6e186d7030b1aa9296671683bd33
          });
          return completablefuture1;
      }
-@@ -962,28 +1044,35 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
-         }
+@@ -963,27 +1045,34 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
      }
  
--    protected void setViewDistance(int watchDistance) {
+     public void setViewDistance(int watchDistance) {
 -        int j = Mth.clamp(watchDistance + 1, 3, 33);
-+    public void setViewDistance(int watchDistance) { // Paper - public
 +        int j = Mth.clamp(watchDistance + 1, 3, 33); // Paper - diff on change, these make the lower view distance limit 2 and the upper 32
  
          if (j != this.viewDistance) {
@@ -348,6 +346,15 @@ index 56dece64f19009583c94569c5713c2ad0c91ae17..b0cf6e186d7030b1aa9296671683bd33
  
                      if (chunk != null) {
                          this.playerLoadedChunk(player, packets, chunk);
+@@ -1091,7 +1180,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+     // Paper end
+ 
+     @Nullable
+-    public CompoundTag readChunk(ChunkPos pos) throws IOException { // Paper - private -> public
++    public CompoundTag readChunk(ChunkPos pos) throws IOException {
+         CompoundTag nbttagcompound = this.read(pos);
+         // Paper start - Cache chunk status on disk
+         if (nbttagcompound == null) {
 @@ -1202,13 +1291,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
              this.removePlayerFromDistanceMaps(player); // Paper - distance maps
          }
@@ -438,12 +445,11 @@ index 56dece64f19009583c94569c5713c2ad0c91ae17..b0cf6e186d7030b1aa9296671683bd33
 +        // Paper end - per player view distance
      }
  
-     protected void addEntity(Entity entity) {
-@@ -1442,7 +1562,48 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+     public void addEntity(Entity entity) {
+@@ -1442,6 +1562,47 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
  
      }
  
--    private void playerLoadedChunk(ServerPlayer player, Packet<?>[] packets, LevelChunk chunk) {
 +    // Paper start
 +    private static int getLightMask(final LevelChunk chunk) {
 +        final net.minecraft.world.level.chunk.LevelChunkSection[] chunkSections = chunk.getSections();
@@ -485,10 +491,9 @@ index 56dece64f19009583c94569c5713c2ad0c91ae17..b0cf6e186d7030b1aa9296671683bd33
 +    }
 +    // Paper end
 +
-+    public void playerLoadedChunk(ServerPlayer player, Packet<?>[] packets, LevelChunk chunk) { // Paper - private -> public
+     public void playerLoadedChunk(ServerPlayer player, Packet<?>[] packets, LevelChunk chunk) {
          if (packets[0] == null) {
              packets[0] = new ClientboundLevelChunkPacket(chunk, chunk.level.chunkPacketBlockController.shouldModify(player, chunk)); // Paper - Ani-Xray - Bypass
-             packets[1] = new ClientboundLightUpdatePacket(chunk.getPos(), this.lightEngine, (BitSet) null, (BitSet) null, true);
 diff --git a/src/main/java/net/minecraft/server/level/DistanceManager.java b/src/main/java/net/minecraft/server/level/DistanceManager.java
 index 45c7ebe67019cdbe88b6617a95d5c40d3a68286c..38eebda226e007c8910e04f502ce218cdfe1d456 100644
 --- a/src/main/java/net/minecraft/server/level/DistanceManager.java
@@ -514,7 +519,7 @@ index 45c7ebe67019cdbe88b6617a95d5c40d3a68286c..38eebda226e007c8910e04f502ce218c
                  if (withinViewDistance) {
                      DistanceManager.this.ticketThrottlerInput.tell(ChunkTaskPriorityQueueSorter.message(() -> {
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-index 018632aa8b122f8c013579075615d88d712f4250..92a77fa90828cc4bc3d9217d2df37ffeec6ee58e 100644
+index 54cc0391f77d90a206e9fb2422ea31d5b9ee22af..648e7b258eef32213c512781faffa840eedebec6 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
 @@ -241,6 +241,7 @@ public class ServerPlayer extends Player {
@@ -557,7 +562,7 @@ index bcc946d2747443c34ee8ac2485a5ab41773c93af..2730923bd0bf3b0f928765b9e09e2299
  
          while (iterator.hasNext()) {
 diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
-index 687e3652d0f36a358a2348df845801ad82d8460c..4eee8156d193f59b7e28499f492f81247c4b1591 100644
+index 5c30d06ac80bb9e82d5eecf58b692040c3a55a99..c71ca549c15d4f88053b8046feecab4ea6a724a4 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
 +++ b/src/main/java/net/minecraft/world/level/Level.java
 @@ -527,8 +527,13 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
@@ -576,7 +581,7 @@ index 687e3652d0f36a358a2348df845801ad82d8460c..4eee8156d193f59b7e28499f492f8124
  
              if ((i & 1) != 0) {
 diff --git a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
-index d4e11b552988f0ef28059f9aa2ca1f1897653171..f6b591f045ae992180806fd6aba309c0d04e722b 100644
+index 164df6e9a91d9fbdbf6e4b835ea1946d81f3be55..a088cb005525fda2c9d5521ab3bac43cfa38a393 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
 @@ -33,7 +33,10 @@ import net.minecraft.core.Registry;

@@ -8,7 +8,7 @@ This patch also adds a chunk status cache on region files (note that
 its only purpose is to cache the status on DISK)
 
 diff --git a/src/main/java/net/minecraft/server/level/ChunkHolder.java b/src/main/java/net/minecraft/server/level/ChunkHolder.java
-index fa6d91886d433c0b7d77c1d059a23ee194ae14a4..56e292e6550b19d0cae9ebad369da730ca1cabd8 100644
+index 1e52b8e97dcee512e7d2fbe157152df9e0779bf1..2aa86f35b8960273ad91b21e260bcf91cf861e08 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkHolder.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkHolder.java
 @@ -111,6 +111,19 @@ public class ChunkHolder {
@@ -32,7 +32,7 @@ index fa6d91886d433c0b7d77c1d059a23ee194ae14a4..56e292e6550b19d0cae9ebad369da730
  
      public CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> getFutureIfPresentUnchecked(ChunkStatus leastStatus) {
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index 25826b41812f2d9ac29806ad7a9242e5674376fc..dd7de2c3db10d9d606d47c52eba40e71034fc11a 100644
+index 5585c72b3c79a8c5bcc9d84c6cf4c7d61b6a42e9..da58b2ee334a347eea375dafd37347635a4ab62f 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
 @@ -84,6 +84,7 @@ import net.minecraft.world.level.chunk.ProtoChunk;
@@ -108,24 +108,9 @@ index 25826b41812f2d9ac29806ad7a9242e5674376fc..dd7de2c3db10d9d606d47c52eba40e71
          // Spigot start
          return this.isOutsideOfRange(chunkPos, false);
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-index 77bb2fb280293da4a38f9acc6503e84997ecb399..c47d1772044913475a60292162ef4be594bed4c6 100644
+index d76568b06ff5035e59b664e371fe4a216517327a..6f8b4d9974c8fb549d69e9b46ab05958c9ce0ba7 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-@@ -52,10 +52,10 @@ public class ServerChunkCache extends ChunkSource {
-     private static final List<ChunkStatus> CHUNK_STATUSES = ChunkStatus.getStatusList(); public static final List<ChunkStatus> getPossibleChunkStatuses() { return ServerChunkCache.CHUNK_STATUSES; } // Paper - OBFHELPER
-     private final DistanceManager distanceManager;
-     public final ChunkGenerator generator;
--    final ServerLevel level;
--    public final Thread mainThread; // Paper - package-private -> public
--    final ThreadedLevelLightEngine lightEngine;
--    public final ServerChunkCache.MainThreadExecutor mainThreadProcessor; // Paper - private -> public
-+    private final ServerLevel level;
-+    public final Thread mainThread; // Paper - private -> public
-+    private final ThreadedLevelLightEngine lightEngine;
-+    public final ServerChunkCache.MainThreadExecutor mainThreadProcessor; // Paper private -> public
-     public final ChunkMap chunkMap;
-     private final DimensionDataStorage dataStorage;
-     private long lastInhabitedUpdate;
 @@ -324,6 +324,7 @@ public class ServerChunkCache extends ChunkSource {
      }
      // Paper end
@@ -134,15 +119,6 @@ index 77bb2fb280293da4a38f9acc6503e84997ecb399..c47d1772044913475a60292162ef4be5
      public ChunkAccess getChunkAtImmediately(int x, int z) {
          ChunkHolder holder = this.chunkMap.getVisibleChunkIfPresent(ChunkPos.asLong(x, z));
          if (holder == null) {
-@@ -922,7 +923,7 @@ public class ServerChunkCache extends ChunkSource {
-         return this.lastSpawnState;
-     }
- 
--    private final class MainThreadExecutor extends BlockableEventLoop<Runnable> {
-+    public final class MainThreadExecutor extends BlockableEventLoop<Runnable> { // Paper - package -> public
- 
-         MainThreadExecutor(Level world) {
-             super("Chunk source main thread executor for " + world.dimension().location());
 diff --git a/src/main/java/net/minecraft/world/level/chunk/ChunkStatus.java b/src/main/java/net/minecraft/world/level/chunk/ChunkStatus.java
 index 6e0cf8ee76143301c939fc4af5eeb091abdcbc5c..066f03ee7b4feda9ec2b0984ee7cf63fa0b9e4fc 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/ChunkStatus.java
@@ -255,10 +231,10 @@ index 357da4846344d1182ab7149c4d352d5019384715..832392cc2adc94e1fcb1055d91eb4655
              this.padToFullSector();
          } finally {
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
-index 211ab6cffe78c61fcff12ef7ffba904c4cae57b2..1bee455235ece8aa299a2baeede027d251e6ff57 100644
+index ebb1a050beab9530942c4498335f084c89faef06..4ab881f0488af3577deda2f90a31a3f9243306dc 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
-@@ -143,6 +143,7 @@ public class RegionFileStorage implements AutoCloseable { // Paper - no final
+@@ -143,6 +143,7 @@ public class RegionFileStorage implements AutoCloseable {
  
              try {
                  NbtIo.write(nbt, (DataOutput) dataoutputstream);
@@ -266,7 +242,7 @@ index 211ab6cffe78c61fcff12ef7ffba904c4cae57b2..1bee455235ece8aa299a2baeede027d2
              } catch (Throwable throwable) {
                  if (dataoutputstream != null) {
                      try {
-@@ -205,3 +206,4 @@ public class RegionFileStorage implements AutoCloseable { // Paper - no final
+@@ -205,3 +206,4 @@ public class RegionFileStorage implements AutoCloseable {
  
      }
  }
