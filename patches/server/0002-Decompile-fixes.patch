@@ -4,6 +4,43 @@ Date: Fri, 11 Jun 2021 05:25:03 -0500
 Subject: [PATCH] Decompile fixes
 
 
+diff --git a/src/main/java/net/minecraft/core/BlockPos.java b/src/main/java/net/minecraft/core/BlockPos.java
+index 1bd6ef643b17b059eb525035496b816a098279c4..891fc7f4cbea8eccd580f371715478265339c0cc 100644
+--- a/src/main/java/net/minecraft/core/BlockPos.java
++++ b/src/main/java/net/minecraft/core/BlockPos.java
+@@ -270,9 +270,11 @@ public class BlockPos extends Vec3i {
+ 
+     public static Iterable<BlockPos> withinManhattan(BlockPos center, int rangeX, int rangeY, int rangeZ) {
+         int i = rangeX + rangeY + rangeZ;
+-        int j = center.getX();
+-        int k = center.getY();
+-        int l = center.getZ();
++        // Paper start - rename variables to fix conflict with anonymous class (decompile fix)
++        int centerX = center.getX();
++        int centerY = center.getY();
++        int centerZ = center.getZ();
++        // Paper end
+         return () -> {
+             return new AbstractIterator<BlockPos>() {
+                 private final BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
+@@ -287,7 +289,7 @@ public class BlockPos extends Vec3i {
+                 protected BlockPos computeNext() {
+                     if (this.zMirror) {
+                         this.zMirror = false;
+-                        this.cursor.setZ(l - (this.cursor.getZ() - l));
++                        this.cursor.setZ(centerZ - (this.cursor.getZ() - centerZ)); // Paper - decompile fix
+                         return this.cursor;
+                     } else {
+                         BlockPos blockPos;
+@@ -313,7 +315,7 @@ public class BlockPos extends Vec3i {
+                             int k = this.currentDepth - Math.abs(i) - Math.abs(j);
+                             if (k <= rangeZ) {
+                                 this.zMirror = k != 0;
+-                                blockPos = this.cursor.set(j + i, k + j, l + k);
++                                blockPos = this.cursor.set(centerX + i, centerY + j, centerZ + k); // Paper - decompile fix
+                             }
+                         }
+ 
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
 index 0000a0057ec4ee2db72e4ea1bf421f95d9d9fdc6..729e55535d833f8f6ff65bf226aac5ecdec44990 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
@@ -63,7 +100,7 @@ index c88dc823ca0c2f83bc10886208d498ea77523d68..dcfd0b107ac7bd1633f3b681cd5f5e26
  
                      while (iterator.hasNext()) {
 diff --git a/src/main/java/net/minecraft/world/item/crafting/RecipeManager.java b/src/main/java/net/minecraft/world/item/crafting/RecipeManager.java
-index b4a5709b03e400d00504f33a9b34019d2b7bf115..2d79d4014770081fcd58a929e5fe0a26ac1b8023 100644
+index efb37470d4927def456c382420775a815594aa58..9bc0ccf6acccd5505bac7b8a6bfb7597a43570cf 100644
 --- a/src/main/java/net/minecraft/world/item/crafting/RecipeManager.java
 +++ b/src/main/java/net/minecraft/world/item/crafting/RecipeManager.java
 @@ -172,7 +172,7 @@ public class RecipeManager extends SimpleJsonResourceReloadListener {
