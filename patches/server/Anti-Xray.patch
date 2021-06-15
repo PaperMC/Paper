@@ -2,13 +2,7 @@ From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: stonar96 <minecraft.stonar96@gmail.com>
 Date: Mon, 20 Aug 2018 03:03:58 +0200
 Subject: [PATCH] Anti-Xray
-MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 8bit
 
-stonar96 — Today at 15:49
-I'm just here to watch you suffer :smile:
-You can skip it if you want and I can do it later.
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
@@ -1205,10 +1199,22 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      default LevelChunkSection getOrCreateSection(int yIndex) {
          LevelChunkSection[] levelChunkSections = this.getSections();
          if (levelChunkSections[yIndex] == LevelChunk.EMPTY_SECTION) {
-+            // Paper - diff on change in ProtoChunk
-             levelChunkSections[yIndex] = new LevelChunkSection(this.getSectionYFromSectionIndex(yIndex));
+-            levelChunkSections[yIndex] = new LevelChunkSection(this.getSectionYFromSectionIndex(yIndex));
++            levelChunkSections[yIndex] = new LevelChunkSection(this.getSectionYFromSectionIndex(yIndex), this, getServerLevel(), true);
          }
  
+         return levelChunkSections[yIndex];
+     }
+ 
++    // Paper start
++    default net.minecraft.server.level.ServerLevel getServerLevel() {
++        return null;
++    }
++    // Paper end
++
+     Collection<Entry<Heightmap.Types, Heightmap>> getHeightmaps();
+ 
+     default void setHeightmap(Heightmap.Types type, long[] heightmap) {
 diff --git a/src/main/java/net/minecraft/world/level/chunk/EmptyLevelChunk.java b/src/main/java/net/minecraft/world/level/chunk/EmptyLevelChunk.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/EmptyLevelChunk.java
@@ -1235,6 +1241,18 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              this.sections[j] = chunksection;
          }
  
+@@ -0,0 +0,0 @@ public class LevelChunk implements ChunkAccess {
+             return "Level ticker for " + s + "@" + this.getPos();
+         }
+     }
++
++    // Paper start
++    @Override
++    public net.minecraft.server.level.ServerLevel getServerLevel() {
++        return level;
++    }
++    // Paper end
+ }
 diff --git a/src/main/java/net/minecraft/world/level/chunk/LevelChunkSection.java b/src/main/java/net/minecraft/world/level/chunk/LevelChunkSection.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/LevelChunkSection.java
@@ -1414,21 +1432,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      // Paper start - add level
      @Deprecated public ProtoChunk(ChunkPos pos, UpgradeData upgradeData, LevelHeightAccessor world) { this(pos, upgradeData, world, null); }
 @@ -0,0 +0,0 @@ public class ProtoChunk implements ChunkAccess {
-     public int getHeight() {
-         return this.levelHeightAccessor.getHeight();
+         this.postProcessing = new ShortList[world.getSectionsCount()];
      }
-+
+ 
++    // Paper start
 +    @Override
-+    public net.minecraft.world.level.chunk.LevelChunkSection getOrCreateSection(final int yIndex) {
-+        LevelChunkSection[] levelChunkSections = this.getSections();
-+        if (levelChunkSections[yIndex] == LevelChunk.EMPTY_SECTION) {
-+            // Paper - diff on change in ProtoChunk
-+            levelChunkSections[yIndex] = new LevelChunkSection(this.getSectionYFromSectionIndex(yIndex), this, this.level, true); // Paper - Anti-Xray - Add parameters
-+        }
-+
-+        return levelChunkSections[yIndex];
++    public net.minecraft.server.level.ServerLevel getServerLevel() {
++        return level;
 +    }
- }
++    // Paper end
++
+     // Paper start - If loaded util
+     @Override
+     public FluidState getFluidIfLoaded(BlockPos blockposition) {
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
