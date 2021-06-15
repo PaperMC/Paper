@@ -6,32 +6,33 @@ Subject: [PATCH] Fix PlayerBucketEmptyEvent result itemstack
 Fixes SPIGOT-2560: https://hub.spigotmc.org/jira/projects/SPIGOT/issues/SPIGOT-2560
 
 diff --git a/src/main/java/net/minecraft/world/item/BucketItem.java b/src/main/java/net/minecraft/world/item/BucketItem.java
-index d0e847e58483695d2af1c1410826bb25231cd6f6..08c00a084b2972420eae020e13480489b29aec64 100644
+index 7c3e94c6bf8337ef660473d8ed451606d56082a5..4fdb99240e6ebda946fd2e0a847654d92b7c56a1 100644
 --- a/src/main/java/net/minecraft/world/item/BucketItem.java
 +++ b/src/main/java/net/minecraft/world/item/BucketItem.java
-@@ -116,6 +116,13 @@ public class BucketItem extends Item {
+@@ -41,6 +41,8 @@ import org.bukkit.event.player.PlayerBucketFillEvent;
+ 
+ public class BucketItem extends Item implements DispensibleContainerItem {
+ 
++    private static ItemStack itemLeftInHandAfterPlayerBucketEmptyEvent = null; // Paper
++
+     public final Fluid content;
+ 
+     public BucketItem(Fluid fluid, Item.Properties settings) {
+@@ -121,6 +123,13 @@ public class BucketItem extends Item implements DispensibleContainerItem {
      }
  
-     protected ItemStack getEmptySuccessItem(ItemStack stack, Player player) {
-+        // Paper
+     public static ItemStack getEmptySuccessItem(ItemStack stack, Player player) {
++        // Paper start
 +        if (itemLeftInHandAfterPlayerBucketEmptyEvent != null) {
 +            ItemStack itemInHand = itemLeftInHandAfterPlayerBucketEmptyEvent;
 +            itemLeftInHandAfterPlayerBucketEmptyEvent = null;
 +            return itemInHand;
 +        }
-+        // Paper
-         return !player.abilities.instabuild ? new ItemStack(Items.BUCKET) : stack;
++        // Paper end
+         return !player.getAbilities().instabuild ? new ItemStack(Items.BUCKET) : stack;
      }
  
-@@ -126,6 +133,7 @@ public class BucketItem extends Item {
-         return a(player, world, pos, movingobjectpositionblock, null, null, null, null);
-     }
- 
-+    private ItemStack itemLeftInHandAfterPlayerBucketEmptyEvent = null; // Paper
-     public boolean a(Player entityhuman, Level world, BlockPos blockposition, @Nullable BlockHitResult movingobjectpositionblock, Direction enumdirection, BlockPos clicked, ItemStack itemstack, InteractionHand enumhand) {
-         // Paper end
-         // CraftBukkit end
-@@ -146,6 +154,9 @@ public class BucketItem extends Item {
+@@ -153,6 +162,9 @@ public class BucketItem extends Item implements DispensibleContainerItem {
                      ((ServerPlayer) entityhuman).getBukkitEntity().updateInventory(); // SPIGOT-4541
                      return false;
                  }

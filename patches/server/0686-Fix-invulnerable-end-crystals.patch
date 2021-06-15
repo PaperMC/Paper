@@ -6,10 +6,10 @@ Subject: [PATCH] Fix invulnerable end crystals
 MC-108513
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index 74f2413773fbe30597314e02a5284172e0fc40b2..dc5ebbb44238cb5928f385d2962c9057388575f8 100644
+index 75a02252f398b3d16f8588693e71f779d7fa062a..f2981aa82c26d7bdac08f45818813025b240b77e 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-@@ -826,4 +826,9 @@ public class PaperWorldConfig {
+@@ -714,5 +714,10 @@ public class PaperWorldConfig {
      private void fixItemsMergingThroughWalls() {
          fixItemsMergingThroughWalls = getBoolean("fix-items-merging-through-walls", fixItemsMergingThroughWalls);
      }
@@ -19,11 +19,12 @@ index 74f2413773fbe30597314e02a5284172e0fc40b2..dc5ebbb44238cb5928f385d2962c9057
 +        fixInvulnerableEndCrystalExploit = getBoolean("unsupported-settings.fix-invulnerable-end-crystal-exploit", fixInvulnerableEndCrystalExploit);
 +    }
  }
+ 
 diff --git a/src/main/java/net/minecraft/world/entity/boss/enderdragon/EndCrystal.java b/src/main/java/net/minecraft/world/entity/boss/enderdragon/EndCrystal.java
-index 6292d04464950ac52fcd6d69345db5125d3127eb..8583209750e4bb70e86d7243a47c525f1726ee42 100644
+index 2c4c1fc2a2afe88864b72d86708a3ddb6a1f50a0..5b9ba62ce37aabb268d76c23f5cb41a4a5c61a2f 100644
 --- a/src/main/java/net/minecraft/world/entity/boss/enderdragon/EndCrystal.java
 +++ b/src/main/java/net/minecraft/world/entity/boss/enderdragon/EndCrystal.java
-@@ -29,6 +29,7 @@ public class EndCrystal extends Entity {
+@@ -31,6 +31,7 @@ public class EndCrystal extends Entity {
      private static final EntityDataAccessor<Optional<BlockPos>> DATA_BEAM_TARGET = SynchedEntityData.defineId(EndCrystal.class, EntityDataSerializers.OPTIONAL_BLOCK_POS);
      private static final EntityDataAccessor<Boolean> DATA_SHOW_BOTTOM = SynchedEntityData.defineId(EndCrystal.class, EntityDataSerializers.BOOLEAN);
      public int time;
@@ -31,7 +32,7 @@ index 6292d04464950ac52fcd6d69345db5125d3127eb..8583209750e4bb70e86d7243a47c525f
  
      public EndCrystal(EntityType<? extends EndCrystal> type, Level world) {
          super(type, world);
-@@ -65,6 +66,17 @@ public class EndCrystal extends Entity {
+@@ -67,8 +68,20 @@ public class EndCrystal extends Entity {
                  }
                  // CraftBukkit end
              }
@@ -48,58 +49,27 @@ index 6292d04464950ac52fcd6d69345db5125d3127eb..8583209750e4bb70e86d7243a47c525f
 +            // Paper end
          }
  
-     }
-@@ -76,6 +88,7 @@ public class EndCrystal extends Entity {
-         }
- 
-         tag.putBoolean("ShowBottom", this.showsBottom());
 +        if (this.generatedByDragonFight) tag.putBoolean("Paper.GeneratedByDragonFight", this.generatedByDragonFight); // Paper - Fix invulnerable end crystals
      }
  
      @Override
-@@ -87,6 +100,7 @@ public class EndCrystal extends Entity {
-         if (tag.contains("ShowBottom", 1)) {
-             this.setShowBottom(tag.getBoolean("ShowBottom"));
+@@ -89,6 +102,7 @@ public class EndCrystal extends Entity {
+         if (nbt.contains("ShowBottom", 1)) {
+             this.setShowBottom(nbt.getBoolean("ShowBottom"));
          }
 +        if (tag.contains("Paper.GeneratedByDragonFight", 1)) this.generatedByDragonFight = tag.getBoolean("Paper.GeneratedByDragonFight"); // Paper - Fix invulnerable end crystals
  
      }
  
 diff --git a/src/main/java/net/minecraft/world/level/levelgen/feature/SpikeFeature.java b/src/main/java/net/minecraft/world/level/levelgen/feature/SpikeFeature.java
-index b99576b524a65cc1a0de88c49324d929503d655f..d51d2fb6d24bfee63b04f32f2cb157fec9d8ee6c 100644
+index 1e53d4bef86349eaa1356444a80ae92d4311ccce..c03bf5bdb67b00c75f9fcfead882c4d944282244 100644
 --- a/src/main/java/net/minecraft/world/level/levelgen/feature/SpikeFeature.java
 +++ b/src/main/java/net/minecraft/world/level/levelgen/feature/SpikeFeature.java
-@@ -42,11 +42,11 @@ public class SpikeFeature extends Feature<SpikeConfiguration> {
-         return (List) SpikeFeature.SPIKE_CACHE.getUnchecked(i);
-     }
- 
--    public boolean place(WorldGenLevel world, ChunkGenerator chunkGenerator, Random random, BlockPos pos, SpikeConfiguration config) {
--        List<SpikeFeature.EndSpike> list = config.getSpikes();
-+    public boolean generate(WorldGenLevel generatoraccessseed, ChunkGenerator chunkgenerator, Random random, BlockPos blockposition, SpikeConfiguration worldgenfeatureendspikeconfiguration) { // Paper - decompile fix
-+        List<SpikeFeature.EndSpike> list = worldgenfeatureendspikeconfiguration.getSpikes();
- 
-         if (list.isEmpty()) {
--            list = getSpikesForLevel(world);
-+            list = getSpikesForLevel(generatoraccessseed);
-         }
- 
-         Iterator iterator = list.iterator();
-@@ -54,8 +54,8 @@ public class SpikeFeature extends Feature<SpikeConfiguration> {
-         while (iterator.hasNext()) {
-             SpikeFeature.EndSpike worldgenender_spike = (SpikeFeature.EndSpike) iterator.next();
- 
--            if (worldgenender_spike.isCenterWithinChunk(pos)) {
--                this.placeSpike(world, random, config, worldgenender_spike);
-+            if (worldgenender_spike.isCenterWithinChunk(blockposition)) {
-+                this.placeSpike(generatoraccessseed, random, worldgenfeatureendspikeconfiguration, worldgenender_spike);
-             }
-         }
- 
-@@ -106,6 +106,7 @@ public class SpikeFeature extends Feature<SpikeConfiguration> {
-         entityendercrystal.setBeamTarget(config.getCrystalBeamTarget());
-         entityendercrystal.setInvulnerable(config.isCrystalInvulnerable());
-         entityendercrystal.moveTo((double) spike.getCenterX() + 0.5D, (double) (spike.getHeight() + 1), (double) spike.getCenterZ() + 0.5D, random.nextFloat() * 360.0F, 0.0F);
-+        entityendercrystal.generatedByDragonFight = true;
-         world.addFreshEntity(entityendercrystal);
+@@ -99,6 +99,7 @@ public class SpikeFeature extends Feature<SpikeConfiguration> {
+         endCrystal.setBeamTarget(config.getCrystalBeamTarget());
+         endCrystal.setInvulnerable(config.isCrystalInvulnerable());
+         endCrystal.moveTo((double)spike.getCenterX() + 0.5D, (double)(spike.getHeight() + 1), (double)spike.getCenterZ() + 0.5D, random.nextFloat() * 360.0F, 0.0F);
++        endCrystal.generatedByDragonFight = true; // Paper
+         world.addFreshEntity(endCrystal);
          this.setBlock(world, new BlockPos(spike.getCenterX(), spike.getHeight(), spike.getCenterZ()), Blocks.BEDROCK.defaultBlockState());
      }
