@@ -1,0 +1,23 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: mezz <tehgeek@gmail.com>
+Date: Wed, 9 Aug 2017 17:51:22 -0500
+Subject: [PATCH] Fix MC-117075: TE Unload Lag Spike
+
+
+diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
+index ecb6378a285dff4b34170410387ebb7a8510a6dc..81713c97f35263f4ab8d14f8b707aac3d6afea11 100644
+--- a/src/main/java/net/minecraft/world/level/Level.java
++++ b/src/main/java/net/minecraft/world/level/Level.java
+@@ -726,7 +726,11 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+         gameprofilerfiller.push("blockEntities");
+         timings.tileEntityTick.startTiming(); // Spigot
+         if (!this.tileEntityListUnload.isEmpty()) {
+-            this.tickableBlockEntities.removeAll(this.tileEntityListUnload);
++            // Paper start - Use alternate implementation with faster contains
++            java.util.Set<BlockEntity> toRemove = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
++            toRemove.addAll(tileEntityListUnload);
++            this.tickableBlockEntities.removeAll(toRemove);
++            // Paper end
+             //this.tileEntityList.removeAll(this.tileEntityListUnload); // Paper - remove unused list
+             this.tileEntityListUnload.clear();
+         }
