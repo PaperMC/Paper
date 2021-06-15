@@ -4,9 +4,6 @@ plugins {
     id("io.papermc.paperweight.core") version "1.0.0-SNAPSHOT"
 }
 
-val mcVersion = providers.gradleProperty("mcVersion")
-val packageVersion = providers.gradleProperty("packageVersion")
-
 subprojects {
     apply(plugin = "java")
 
@@ -39,7 +36,7 @@ subprojects {
 
 repositories {
     mavenCentral()
-    maven("https://wav.jfrog.io/artifactory/repo/") { // TODO replace with "https://papermc.io/repo/repository/maven-public/" once paperclip is deplyoed there
+    maven("https://papermc.io/repo/repository/maven-public/") {
         content {
             onlyForConfigurations("paperclip")
         }
@@ -59,13 +56,13 @@ repositories {
 dependencies {
     paramMappings("org.quiltmc:yarn:1.17+build.2:mergedv2")
     remapper("org.quiltmc:tiny-remapper:0.4.1")
-    decompiler("net.minecraftforge:forgeflower:1.5.498.12@jar")
-    paperclip("io.papermc:paperclip:2.0.0-SNAPSHOT@jar")
+    decompiler("net.minecraftforge:forgeflower:1.5.498.12")
+    paperclip("io.papermc:paperclip:2.0.0@jar")
 }
 
 paperweight {
-    minecraftVersion.set(mcVersion)
-    versionPackage.set(packageVersion)
+    minecraftVersion.set(providers.gradleProperty("mcVersion"))
+    versionPackage.set(providers.gradleProperty("packageVersion"))
     serverProject.set(project(":Paper-Server"))
 
     paper {
