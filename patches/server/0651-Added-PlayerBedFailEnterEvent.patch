@@ -1,0 +1,36 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Thu, 24 Dec 2020 12:27:41 -0800
+Subject: [PATCH] Added PlayerBedFailEnterEvent
+
+
+diff --git a/src/main/java/net/minecraft/world/level/block/BedBlock.java b/src/main/java/net/minecraft/world/level/block/BedBlock.java
+index dd3a4a8527b9adc5daba7540661fb88f9fbf33b2..163a7861f987c3832aac51cc6df950c768546731 100644
+--- a/src/main/java/net/minecraft/world/level/block/BedBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/BedBlock.java
+@@ -111,14 +111,23 @@ public class BedBlock extends HorizontalDirectionalBlock implements EntityBlock
+                 BlockPos finalblockposition = pos;
+                 // CraftBukkit end
+                 player.startSleepInBed(pos).ifLeft((entityhuman_enumbedresult) -> {
++                    // Paper start - PlayerBedFailEnterEvent
++                    if (entityhuman_enumbedresult != null) {
++                        io.papermc.paper.event.player.PlayerBedFailEnterEvent event = new io.papermc.paper.event.player.PlayerBedFailEnterEvent((org.bukkit.entity.Player) player.getBukkitEntity(), io.papermc.paper.event.player.PlayerBedFailEnterEvent.FailReason.VALUES[entityhuman_enumbedresult.ordinal()], org.bukkit.craftbukkit.block.CraftBlock.at(world, finalblockposition), entityhuman_enumbedresult == Player.BedSleepingProblem.NOT_POSSIBLE_HERE, io.papermc.paper.adventure.PaperAdventure.asAdventure(entityhuman_enumbedresult.getMessage()));
++                        if (!event.callEvent()) {
++                            return;
++                        }
++                        // Paper end
+                     // CraftBukkit start - handling bed explosion from below here
+-                    if (entityhuman_enumbedresult == Player.BedSleepingProblem.NOT_POSSIBLE_HERE) {
++                    if (event.getWillExplode()) { // Paper
+                         this.explodeBed(finaliblockdata, world, finalblockposition);
+                     } else
+                     // CraftBukkit end
+                     if (entityhuman_enumbedresult != null) {
+-                        player.displayClientMessage(entityhuman_enumbedresult.getMessage(), true);
++                        final net.kyori.adventure.text.Component message = event.getMessage(); // Paper
++                        if(message != null) player.displayClientMessage(io.papermc.paper.adventure.PaperAdventure.asVanilla(message), true); // Paper
+                     }
++                    } // Paper
+ 
+                 });
+                 return InteractionResult.SUCCESS;
