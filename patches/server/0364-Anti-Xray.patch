@@ -2,13 +2,7 @@ From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: stonar96 <minecraft.stonar96@gmail.com>
 Date: Mon, 20 Aug 2018 03:03:58 +0200
 Subject: [PATCH] Anti-Xray
-MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 8bit
 
-stonar96 — Today at 15:49
-I'm just here to watch you suffer :smile:
-You can skip it if you want and I can do it later.
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 index e29566cad2647da4d9288e912188b57f00e8dd0c..edb9952ddd014c92b9604a9a187fdcd46de8a04f 100644
@@ -1198,17 +1192,29 @@ index aa198e9f2755734eac591bd3f94679518e9d7270..5c30d06ac80bb9e82d5eecf58b692040
              if (iblockdata1 == null) {
                  // CraftBukkit start - remove blockstate if failed (or the same)
 diff --git a/src/main/java/net/minecraft/world/level/chunk/ChunkAccess.java b/src/main/java/net/minecraft/world/level/chunk/ChunkAccess.java
-index c0075d226331f32e470dae5bf1ce8d79e8b263dc..91f5106cfe7914389b52a1ed001117b13e4f9768 100644
+index c0075d226331f32e470dae5bf1ce8d79e8b263dc..a857953f3488e79fd601ac63881bc4d87708afa7 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/ChunkAccess.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/ChunkAccess.java
-@@ -75,6 +75,7 @@ public interface ChunkAccess extends BlockGetter, FeatureAccess {
+@@ -75,12 +75,18 @@ public interface ChunkAccess extends BlockGetter, FeatureAccess {
      default LevelChunkSection getOrCreateSection(int yIndex) {
          LevelChunkSection[] levelChunkSections = this.getSections();
          if (levelChunkSections[yIndex] == LevelChunk.EMPTY_SECTION) {
-+            // Paper - diff on change in ProtoChunk
-             levelChunkSections[yIndex] = new LevelChunkSection(this.getSectionYFromSectionIndex(yIndex));
+-            levelChunkSections[yIndex] = new LevelChunkSection(this.getSectionYFromSectionIndex(yIndex));
++            levelChunkSections[yIndex] = new LevelChunkSection(this.getSectionYFromSectionIndex(yIndex), this, getServerLevel(), true);
          }
  
+         return levelChunkSections[yIndex];
+     }
+ 
++    // Paper start
++    default net.minecraft.server.level.ServerLevel getServerLevel() {
++        return null;
++    }
++    // Paper end
++
+     Collection<Entry<Heightmap.Types, Heightmap>> getHeightmaps();
+ 
+     default void setHeightmap(Heightmap.Types type, long[] heightmap) {
 diff --git a/src/main/java/net/minecraft/world/level/chunk/EmptyLevelChunk.java b/src/main/java/net/minecraft/world/level/chunk/EmptyLevelChunk.java
 index 69c2454533e6f21c70792b555ec02c6bc6d169b3..2607c7ba5cf1aca5f3e5c22be2e4e8b3007427d4 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/EmptyLevelChunk.java
@@ -1223,7 +1229,7 @@ index 69c2454533e6f21c70792b555ec02c6bc6d169b3..2607c7ba5cf1aca5f3e5c22be2e4e8b3
  
          @Override
 diff --git a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
-index 521f199e495f3bec232cc9ca36e51e0392afe737..d4e11b552988f0ef28059f9aa2ca1f1897653171 100644
+index 521f199e495f3bec232cc9ca36e51e0392afe737..164df6e9a91d9fbdbf6e4b835ea1946d81f3be55 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
 @@ -456,7 +456,7 @@ public class LevelChunk implements ChunkAccess {
@@ -1235,6 +1241,18 @@ index 521f199e495f3bec232cc9ca36e51e0392afe737..d4e11b552988f0ef28059f9aa2ca1f18
              this.sections[j] = chunksection;
          }
  
+@@ -1307,4 +1307,11 @@ public class LevelChunk implements ChunkAccess {
+             return "Level ticker for " + s + "@" + this.getPos();
+         }
+     }
++
++    // Paper start
++    @Override
++    public net.minecraft.server.level.ServerLevel getServerLevel() {
++        return level;
++    }
++    // Paper end
+ }
 diff --git a/src/main/java/net/minecraft/world/level/chunk/LevelChunkSection.java b/src/main/java/net/minecraft/world/level/chunk/LevelChunkSection.java
 index 5fd66020a937b641e2a060cf38df731a43f3bf55..b10beabccf5a29098a796e5615eb4632fae95f99 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/LevelChunkSection.java
@@ -1401,7 +1419,7 @@ index 5ea60bbb56450502f1ceb41959239ab579458ac2..efe4d45b431890e4821f977b8f9fafda
              if (this.palette == this.globalPalette) {
                  Palette<T> palette = new HashMapPalette<>(this.registry, i, this.dummyPaletteResize, this.reader, this.writer);
 diff --git a/src/main/java/net/minecraft/world/level/chunk/ProtoChunk.java b/src/main/java/net/minecraft/world/level/chunk/ProtoChunk.java
-index 245998e2cea32cf15ee2659639c647f449704ec0..cd41b9ee682248a9abde1bf046e54c7e6e485470 100644
+index 245998e2cea32cf15ee2659639c647f449704ec0..d455eafe3810b6d8f3c6cbbfc0df85d3e6c90567 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/ProtoChunk.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/ProtoChunk.java
 @@ -63,7 +63,7 @@ public class ProtoChunk implements ChunkAccess {
@@ -1413,22 +1431,20 @@ index 245998e2cea32cf15ee2659639c647f449704ec0..cd41b9ee682248a9abde1bf046e54c7e
  
      // Paper start - add level
      @Deprecated public ProtoChunk(ChunkPos pos, UpgradeData upgradeData, LevelHeightAccessor world) { this(pos, upgradeData, world, null); }
-@@ -506,4 +506,15 @@ public class ProtoChunk implements ChunkAccess {
-     public int getHeight() {
-         return this.levelHeightAccessor.getHeight();
+@@ -98,6 +98,13 @@ public class ProtoChunk implements ChunkAccess {
+         this.postProcessing = new ShortList[world.getSectionsCount()];
      }
-+
+ 
++    // Paper start
 +    @Override
-+    public net.minecraft.world.level.chunk.LevelChunkSection getOrCreateSection(final int yIndex) {
-+        LevelChunkSection[] levelChunkSections = this.getSections();
-+        if (levelChunkSections[yIndex] == LevelChunk.EMPTY_SECTION) {
-+            // Paper - diff on change in ProtoChunk
-+            levelChunkSections[yIndex] = new LevelChunkSection(this.getSectionYFromSectionIndex(yIndex), this, this.level, true); // Paper - Anti-Xray - Add parameters
-+        }
-+
-+        return levelChunkSections[yIndex];
++    public net.minecraft.server.level.ServerLevel getServerLevel() {
++        return level;
 +    }
- }
++    // Paper end
++
+     // Paper start - If loaded util
+     @Override
+     public FluidState getFluidIfLoaded(BlockPos blockposition) {
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
 index 7c04aef3eac54981ca1e34cb87d97104c3c9685b..097d38f12ef324dbb529a833383e2da949377f9c 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
