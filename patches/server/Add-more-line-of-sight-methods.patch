@@ -9,13 +9,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
 @@ -0,0 +0,0 @@ public abstract class LivingEntity extends Entity {
-         Vec3 vec3d = new Vec3(this.getX(), this.getEyeY(), this.getZ());
-         Vec3 vec3d1 = new Vec3(entity.getX(), entity.getEyeY(), entity.getZ());
+             Vec3 vec3d = new Vec3(this.getX(), this.getEyeY(), this.getZ());
+             Vec3 vec3d1 = new Vec3(entity.getX(), entity.getEyeY(), entity.getZ());
  
-+        // Paper - diff on change - used in CraftLivingEntity#hasLineOfSight(Location) and CraftWorld#lineOfSightExists
-         return this.level.clip(new ClipContext(vec3d, vec3d1, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, this)).getType() == HitResult.Type.MISS;
++            // Paper - diff on change - used in CraftLivingEntity#hasLineOfSight(Location) and CraftWorld#lineOfSightExists
+             return vec3d1.distanceTo(vec3d) > 128.0D ? false : this.level.clip(new ClipContext(vec3d, vec3d1, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, this)).getType() == HitResult.Type.MISS;
+         }
      }
- 
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
@@ -32,6 +32,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        if (from.getWorld() != to.getWorld()) return false;
 +        Vec3 vec3d = new Vec3(from.getX(), from.getY(), from.getZ());
 +        Vec3 vec3d1 = new Vec3(to.getX(), to.getY(), to.getZ());
++        if (vec3d1.distanceTo(vec3d) > 128.0D) return false;
 +
 +        return this.getHandle().clip(new ClipContext(vec3d, vec3d1, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, null)).getType() == HitResult.Type.MISS;
 +    }
@@ -42,8 +43,18 @@ diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java 
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
+@@ -0,0 +0,0 @@ import net.minecraft.world.entity.projectile.ThrownEgg;
+ import net.minecraft.world.entity.projectile.ThrownEnderpearl;
+ import net.minecraft.world.entity.projectile.ThrownExperienceBottle;
+ import net.minecraft.world.entity.projectile.ThrownTrident;
++import net.minecraft.world.level.ClipContext;
++import net.minecraft.world.phys.HitResult;
++import net.minecraft.world.phys.Vec3;
+ import org.apache.commons.lang.Validate;
+ import org.bukkit.FluidCollisionMode;
+ import org.bukkit.Location;
 @@ -0,0 +0,0 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
-         return getHandle().canSee(((CraftEntity) other).getHandle());
+         return this.getHandle().hasLineOfSight(((CraftEntity) other).getHandle());
      }
  
 +    // Paper start
@@ -52,6 +63,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        if (this.getHandle().level != ((CraftWorld) loc.getWorld()).getHandle()) return false;
 +        Vec3 vec3d = new Vec3(this.getHandle().getX(), this.getHandle().getEyeY(), this.getHandle().getZ());
 +        Vec3 vec3d1 = new Vec3(loc.getX(), loc.getY(), loc.getZ());
++        if (vec3d1.distanceTo(vec3d) > 128.0D) return false;
 +
 +        return this.getHandle().level.clip(new ClipContext(vec3d, vec3d1, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, this.getHandle())).getType() == HitResult.Type.MISS;
 +    }
@@ -59,4 +71,4 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
      @Override
      public boolean getRemoveWhenFarAway() {
-         return getHandle() instanceof Mob && !((Mob) getHandle()).persistenceRequired;
+         return this.getHandle() instanceof Mob && !((Mob) this.getHandle()).persistenceRequired;
