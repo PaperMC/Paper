@@ -1,20 +1,44 @@
 --- a/net/minecraft/server/players/SleepStatus.java
 +++ b/net/minecraft/server/players/SleepStatus.java
-@@ -18,7 +18,7 @@
+@@ -18,9 +18,12 @@
      }
  
      public boolean a(int i, List<EntityPlayer> list) {
 -        int j = (int) list.stream().filter(EntityHuman::isDeeplySleeping).count();
-+        int j = (int) list.stream().filter((eh) -> { return eh.isDeeplySleeping() || eh.fauxSleeping; }).count(); // CraftBukkit
++        // CraftBukkit start
++        int j = (int) list.stream().filter((eh) -> { return eh.isDeeplySleeping() || eh.fauxSleeping; }).count();
++        boolean anyDeepSleep = list.stream().anyMatch(EntityHuman::isDeeplySleeping);
  
-         return j >= this.b(i);
+-        return j >= this.b(i);
++        return anyDeepSleep && j >= this.b(i);
++        // CraftBukkit end
      }
-@@ -46,7 +46,7 @@
+ 
+     public int b(int i) {
+@@ -42,18 +45,24 @@
+         this.activePlayers = 0;
+         this.sleepingPlayers = 0;
+         Iterator iterator = list.iterator();
++        boolean anySleep = false; // CraftBukkit
+ 
          while (iterator.hasNext()) {
              EntityPlayer entityplayer = (EntityPlayer) iterator.next();
  
--            if (!entityplayer.isSpectator()) {
-+            if (!entityplayer.isSpectator() && !entityplayer.fauxSleeping) { // CraftBukkit
+             if (!entityplayer.isSpectator()) {
                  ++this.activePlayers;
-                 if (entityplayer.isSleeping()) {
+-                if (entityplayer.isSleeping()) {
++                if (entityplayer.isSleeping() || entityplayer.fauxSleeping) { // CraftBukkit
                      ++this.sleepingPlayers;
+                 }
++                // CraftBukkit start
++                if (entityplayer.isSleeping()) {
++                    anySleep = true;
++                }
++                // CraftBukkit end
+             }
+         }
+ 
+-        return (j > 0 || this.sleepingPlayers > 0) && (i != this.activePlayers || j != this.sleepingPlayers);
++        return anySleep && (j > 0 || this.sleepingPlayers > 0) && (i != this.activePlayers || j != this.sleepingPlayers); // CraftBukkit
+     }
+ }
