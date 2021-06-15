@@ -274,12 +274,11 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
 
     @Override
     public BlockState getBlockState() {
-        Material stateMaterial = material; // Only actually used for jigsaws
+        Material stateMaterial = (material != Material.SHIELD) ? material : shieldToBannerHack(blockEntityTag); // Only actually used for jigsaws
         if (blockEntityTag != null) {
             switch (material) {
                 case SHIELD:
                     blockEntityTag.setString("id", "banner");
-                    stateMaterial = shieldToBannerHack(blockEntityTag);
                     break;
                 case SHULKER_BOX:
                 case WHITE_SHULKER_BOX:
