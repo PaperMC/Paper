@@ -1,0 +1,82 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: MiniDigger <admin@minidigger.me>
+Date: Wed, 29 Apr 2020 02:10:32 +0200
+Subject: [PATCH] Allow delegation to vanilla chunk gen
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index 6bc5ba51c90723c7138b1b5d2381cb215f1e5271..beb8b7d06ef47c80ede95c884598fedcc7126d67 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -2033,6 +2033,32 @@ public final class CraftServer implements Server {
+         return new CraftChunkData(world);
+     }
+ 
++    // Paper start
++    @Override
++    public ChunkGenerator.ChunkData createVanillaChunkData(World world, int x, int z) {
++        // get empty object
++        CraftChunkData data = (CraftChunkData) createChunkData(world);
++        // do bunch of vanilla shit
++        net.minecraft.server.level.ServerLevel nmsWorld = ((CraftWorld) world).getHandle();
++        net.minecraft.world.level.chunk.ProtoChunk protoChunk = new net.minecraft.world.level.chunk.ProtoChunk(new net.minecraft.world.level.ChunkPos(x, z), null, nmsWorld);
++        List<net.minecraft.world.level.chunk.ChunkAccess> list = new ArrayList<>();
++        list.add(protoChunk);
++        net.minecraft.server.level.WorldGenRegion genRegion = new net.minecraft.server.level.WorldGenRegion(nmsWorld, list, net.minecraft.world.level.chunk.ChunkStatus.EMPTY, -1);
++        // call vanilla generator, one feature after another. Order here is important!
++        net.minecraft.world.level.chunk.ChunkGenerator chunkGenerator = nmsWorld.getChunkSource().generator;
++        if (chunkGenerator instanceof org.bukkit.craftbukkit.generator.CustomChunkGenerator) {
++            chunkGenerator = ((org.bukkit.craftbukkit.generator.CustomChunkGenerator) chunkGenerator).delegate;
++        }
++        chunkGenerator.createBiomes(nmsWorld.registryAccess().registryOrThrow(Registry.BIOME_REGISTRY), protoChunk);
++        chunkGenerator.fillFromNoise((runnable) -> {}, nmsWorld.structureFeatureManager(), protoChunk);
++        chunkGenerator.buildSurfaceAndBedrock(genRegion, protoChunk);
++        // copy over generated sections
++        data.setRawChunkData(protoChunk.getSections());
++        // hooray!
++        return data;
++    }
++    // Paper end
++
+     @Override
+     public BossBar createBossBar(String title, BarColor color, BarStyle style, BarFlag... flags) {
+         return new CraftBossBar(title, color, style, flags);
+diff --git a/src/main/java/org/bukkit/craftbukkit/generator/CraftChunkData.java b/src/main/java/org/bukkit/craftbukkit/generator/CraftChunkData.java
+index 3d905c98704da64cefd009b2c796b24e729396a5..6e8018241664d2cc2a6a8d52d87946740ac8bb97 100644
+--- a/src/main/java/org/bukkit/craftbukkit/generator/CraftChunkData.java
++++ b/src/main/java/org/bukkit/craftbukkit/generator/CraftChunkData.java
+@@ -20,7 +20,7 @@ import org.bukkit.material.MaterialData;
+ public final class CraftChunkData implements ChunkGenerator.ChunkData {
+     private final int minHeight;
+     private final int maxHeight;
+-    private final LevelChunkSection[] sections;
++    private LevelChunkSection[] sections; // Paper - remove final
+     private Set<BlockPos> tiles;
+ 
+     public CraftChunkData(World world) {
+@@ -171,6 +171,12 @@ public final class CraftChunkData implements ChunkGenerator.ChunkData {
+         return this.sections;
+     }
+ 
++    // Paper start
++    public void setRawChunkData(LevelChunkSection[] sections) {
++        this.sections = sections;
++    }
++    // Paper end
++
+     Set<BlockPos> getTiles() {
+         return this.tiles;
+     }
+diff --git a/src/main/java/org/bukkit/craftbukkit/generator/CustomChunkGenerator.java b/src/main/java/org/bukkit/craftbukkit/generator/CustomChunkGenerator.java
+index e9502acf47b94e529f3ce273add9b7e0f4fe6d72..a4c3e307e861e6c220425d35fe228dcb9dc7ef31 100644
+--- a/src/main/java/org/bukkit/craftbukkit/generator/CustomChunkGenerator.java
++++ b/src/main/java/org/bukkit/craftbukkit/generator/CustomChunkGenerator.java
+@@ -34,7 +34,7 @@ import org.bukkit.generator.ChunkGenerator.ChunkData;
+ 
+ public class CustomChunkGenerator extends InternalChunkGenerator {
+ 
+-    private final net.minecraft.world.level.chunk.ChunkGenerator delegate;
++    public final net.minecraft.world.level.chunk.ChunkGenerator delegate; // Paper - public
+     private final ChunkGenerator generator;
+     private final ServerLevel world;
+     private final Random random = new Random();
