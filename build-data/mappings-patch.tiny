@@ -12,10 +12,6 @@ c	net/minecraft/world/level/World	net/minecraft/world/level/Level
 c	net/minecraft/server/network/PlayerConnection	net/minecraft/server/network/ServerGamePacketListenerImpl
 	m	()Lorg/bukkit/craftbukkit/entity/CraftPlayer;	getPlayer	getCraftPlayer
 
-# CraftBukkit adds the player field, clashes with a Mojang field
-#c	net/minecraft/world/inventory/ContainerWorkbench	net/minecraft/world/inventory/CraftingMenu
-#	f	Lnet/minecraft/world/entity/player/PlayerInventory;	player	playerInventory
-
 # CraftBukkit adds the getType() method, clashes with a Mojang method
 c	net/minecraft/world/entity/EntityAreaEffectCloud	net/minecraft/world/entity/AreaEffectCloud
 	m	()Ljava/lang/String;	getType	getPotionType
@@ -24,56 +20,10 @@ c	net/minecraft/world/entity/EntityAreaEffectCloud	net/minecraft/world/entity/Ar
 c	net/minecraft/world/entity/projectile/EntityTippedArrow	net/minecraft/world/entity/projectile/Arrow
 	m	()Ljava/lang/String;	getType	getPotionType
 
-# CraftBukkit adds the getLevel() method, clashes with original method
-#c	net/minecraft/world/level/block/entity/TileEntityBeacon	net/minecraft/world/level/block/entity/BeaconBlockEntity
-#	m	()I	getLevel	getLevelCb
-
-# CraftBukkit adds the getLootTable() method, clashes with original method
-#c	net/minecraft/world/entity/EntityInsentient	net/minecraft/world/entity/Mob
-#	m	()Lnet/minecraft/resources/MinecraftKey;	getLootTable	getLootTableCb
-
-# CraftBukkit adds the canCollideWith() method, clashes with original method
-#c	net/minecraft/world/entity/Entity	net/minecraft/world/entity/Entity
-#	m	(Lnet/minecraft/world/entity/Entity;)Z	canCollideWith	canCollideWithCb
-
 # CraftBukkit adds a new `a` method which allows passing the Entity parameter
 # It uses `a` to match the original method (with just 1 param), so this patch makes them match
 c	net/minecraft/server/level/WorldServer	net/minecraft/server/level/ServerLevel
 	m	(Lnet/minecraft/server/level/WorldServer;Lnet/minecraft/world/entity/Entity;)V	a	makeObsidianPlatform
-
-# CraftBukkit adds `getMinecraftWorld()` to `GeneratorAccess`, which matches `WorldAccess.getMinecraftWorld()`
-# But that method in `WorldAccess` is called `getLevel()` in Mojang mappings
-#c	net/minecraft/world/level/GeneratorAccess	net/minecraft/world/level/LevelAccessor
-#	m	()Lnet/minecraft/server/level/WorldServer;	getMinecraftWorld	getLevel
-
-# SpecialSource2 automatically maps methods to the name of synthetic methods that point to it in an attempt to
-# normalize method names with what is expected by the super class. This is _extremely_ stupid and flawed however
-# because synthetic methods by definition have different descriptors than the base method, which means method
-# signature clashes become possible, which is what happens here.
-#
-# LootEntryAbstract$Serializer has a synthetic method pointing to the base serialize() method with the following descriptor:
-#
-#    (JsonObject,Object,JsonSerializationContext)V  <-- ProGuard names this method `a`
-#
-# and this synthetic method points to another method with the specialized descriptor:
-#
-#    (JsonObject,LootEntryAbstract,JsonSerializationContext)V  <-- ProGuard names this method `b`
-#
-# SpecialSource2 automatically maps the second method name to the name of the first method, in this case `a`.
-#
-# LootEntryAbstract$Serializer also has another method with the same descriptor as serialize(), which Spigot calls
-# serializeCustom(). Of course ProGuard strips the names and since this method is the first time it's seen this
-# descriptor, it renamed that method also to `a`.
-#
-# This is allowed because the synthetic method for serialize() has a different descriptor, using Object as the second
-# parameter. This breaks when SpecialSource2 does it's "magic" of course. This patch manually fixes this case by adding
-# both correct mappings
-#c	net/minecraft/world/level/storage/loot/entries/LootEntryAbstract$Serializer	net/minecraft/world/level/storage/loot/entries/LootPoolEntryContainer$Serializer
-#	m	(Lcom/google/gson/JsonObject;Lnet/minecraft/world/level/storage/loot/entries/LootEntryAbstract;Lcom/google/gson/JsonSerializationContext;)V	a	serialize
-#		p	0		json
-#		p	1		entry
-#		p	2		context
-#	m	(Lcom/google/gson/JsonObject;Lnet/minecraft/world/level/storage/loot/entries/LootEntryAbstract;Lcom/google/gson/JsonSerializationContext;)V	serializeType	serializeCustom
 
 # missed mapping?
 c	net/minecraft/world/level/block/MultifaceBlock	net/minecraft/world/level/block/MultifaceBlock
@@ -87,3 +37,9 @@ c	net/minecraft/server/players/UserCache	net/minecraft/server/players/GameProfil
 # change dimension in ServerPlayer
 c	net/minecraft/server/level/EntityPlayer	net/minecraft/server/level/ServerPlayer
 	m	(Lnet/minecraft/server/level/WorldServer;Lorg/bukkit/event/player/PlayerTeleportEvent$TeleportCause;)Lnet/minecraft/world/entity/Entity;	b	changeDimension
+
+# We add the getLevel method back to Hopper since mojang removed it - we need the method for hooper optimization
+# We add the method with this name to match the mojmap method of the same name in BlockEntity
+# Since we add the method we need to add the mapping for it so reobf works as expected
+c	net/minecraft/world/level/block/entity/IHopper	net/minecraft/world/level/block/entity/Hopper
+	m	()Lnet/minecraft/world/level/World;	getWorld	getLevel
