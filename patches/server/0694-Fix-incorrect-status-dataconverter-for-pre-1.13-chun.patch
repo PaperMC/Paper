@@ -37,16 +37,23 @@ incorrectly.
 SPOTTEDLEAF!!!!!!!!!!!
 
 diff --git a/src/main/java/net/minecraft/util/datafix/fixes/ChunkToProtochunkFix.java b/src/main/java/net/minecraft/util/datafix/fixes/ChunkToProtochunkFix.java
-index 16f6aa39385e2d278d4883a32c11ddd119d0d85d..3d262dcf6db0e395d2fa457f7197f24013037ac1 100644
+index 081bcae48ae34d8354635ea57952f09f14f7fa7a..a4305f58f793e1577de5e13132381ce81304cae4 100644
 --- a/src/main/java/net/minecraft/util/datafix/fixes/ChunkToProtochunkFix.java
 +++ b/src/main/java/net/minecraft/util/datafix/fixes/ChunkToProtochunkFix.java
-@@ -43,13 +43,21 @@ public class ChunkToProtochunkFix extends DataFix {
-                     return dynamic.asStreamOpt().result();
+@@ -36,17 +36,26 @@ public class ChunkToProtochunkFix extends DataFix {
+         OpticFinder<?> opticFinder2 = DSL.fieldFinder("TileTicks", type5);
+         return TypeRewriteRule.seq(this.fixTypeEverywhereTyped("ChunkToProtoChunkFix", type, this.getOutputSchema().getType(References.CHUNK), (typed) -> {
+             return typed.updateTyped(opticFinder, type4, (typedx) -> {
+-                Optional<? extends Stream<? extends Dynamic<?>>> optional = typedx.getOptionalTyped(opticFinder2).flatMap((typed) -> {
+-                    return typed.write().result();
++                Optional<? extends Stream<? extends Dynamic<?>>> optional = typedx.getOptionalTyped(opticFinder2).flatMap((it) -> { // Paper - remap fix
++                    return it.write().result(); // Paper - remap fix
+                 }).flatMap((dynamicx) -> {
+                     return dynamicx.asStreamOpt().result();
                  });
-                 Dynamic<?> dynamic = (Dynamic) typed1.get(DSL.remainderFinder());
--                boolean flag = dynamic.get("TerrainPopulated").asBoolean(false) && (!dynamic.get("LightPopulated").asNumber().result().isPresent() || dynamic.get("LightPopulated").asBoolean(false));
--
--                dynamic = dynamic.set("Status", dynamic.createString(flag ? "mobs_spawned" : "empty"));
+                 Dynamic<?> dynamic = typedx.get(DSL.remainderFinder());
+-                boolean bl = dynamic.get("TerrainPopulated").asBoolean(false) && (!dynamic.get("LightPopulated").asNumber().result().isPresent() || dynamic.get("LightPopulated").asBoolean(false));
+-                dynamic = dynamic.set("Status", dynamic.createString(bl ? "mobs_spawned" : "empty"));
 +                // Paper start - fix incorrect status conversion
 +                // Vanilla is setting chunks to incorrect status here, they should be using at minimum carved.
 +                // for populated chunks, it should be at minimum decorated
@@ -57,37 +64,11 @@ index 16f6aa39385e2d278d4883a32c11ddd119d0d85d..3d262dcf6db0e395d2fa457f7197f240
 +                final String newStatus = !terrainPopulated ? "carved" : (lightPopulated ? "mobs_spawned" : "decorated");
 +
 +                dynamic = dynamic.set("Status", dynamic.createString(newStatus));
-                 dynamic = dynamic.set("hasLegacyStructureData", dynamic.createBoolean(true));
--                Dynamic dynamic1;
 +                // Paper end - fix incorrect status conversion
-+                Dynamic<?> dynamic1; // Paper - decompile fix
- 
--                if (flag) {
+                 dynamic = dynamic.set("hasLegacyStructureData", dynamic.createBoolean(true));
+                 Dynamic<?> dynamic3;
+-                if (bl) {
 +                if (true) { // Paper - fix incorrect status conversion
-                     Optional<ByteBuffer> optional1 = dynamic.get("Biomes").asByteBufferOpt().result();
- 
-                     if (optional1.isPresent()) {
-@@ -70,7 +78,7 @@ public class ChunkToProtochunkFix extends DataFix {
-                     }).collect(Collectors.toList());
- 
-                     if (optional.isPresent()) {
--                        ((Stream) optional.get()).forEach((dynamic2) -> {
-+                        optional.get().forEach((dynamic2) -> { // Paper - decompile fix
-                             int j = dynamic2.get("x").asInt(0);
-                             int k = dynamic2.get("y").asInt(0);
-                             int l = dynamic2.get("z").asInt(0);
-@@ -78,11 +86,11 @@ public class ChunkToProtochunkFix extends DataFix {
- 
-                             ((ShortList) list.get(k >> 4)).add(short0);
-                         });
-+                        Dynamic<?> finalDynamic = dynamic; // Paper - decompile fix
-                         dynamic = dynamic.set("ToBeTicked", dynamic.createList(list.stream().map((shortlist) -> {
--                            Stream stream = shortlist.stream();
-+                            Stream<Short> stream = shortlist.stream(); // Paper - decompile fix
- 
--                            dynamic.getClass();
--                            return dynamic.createList(stream.map(dynamic::createShort));
-+                            return finalDynamic.createList(stream.map(finalDynamic::createShort));
-                         })));
-                     }
- 
+                     Optional<ByteBuffer> optional2 = dynamic.get("Biomes").asByteBufferOpt().result();
+                     if (optional2.isPresent()) {
+                         ByteBuffer byteBuffer = optional2.get();
