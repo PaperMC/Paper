@@ -1,0 +1,31 @@
+--- a/net/minecraft/world/level/gameevent/vibrations/VibrationListener.java
++++ b/net/minecraft/world/level/gameevent/vibrations/VibrationListener.java
+@@ -18,6 +18,13 @@
+ import net.minecraft.world.phys.MovingObjectPosition;
+ import net.minecraft.world.phys.Vec3D;
+ 
++// CraftBukkit start
++import net.minecraft.core.IRegistry;
++import org.bukkit.craftbukkit.block.CraftBlock;
++import org.bukkit.craftbukkit.util.CraftNamespacedKey;
++import org.bukkit.event.block.BlockReceiveGameEvent;
++// CraftBukkit end
++
+ public class VibrationListener implements GameEventListener {
+ 
+     protected final PositionSource listenerSource;
+@@ -67,7 +74,13 @@
+             } else {
+                 BlockPosition blockposition1 = (BlockPosition) optional.get();
+ 
+-                if (!this.config.a(world, this, blockposition, gameevent, entity)) {
++                // CraftBukkit start
++                boolean defaultCancel = !this.config.a(world, this, blockposition, gameevent, entity);
++                BlockReceiveGameEvent event = new BlockReceiveGameEvent(org.bukkit.GameEvent.getByKey(CraftNamespacedKey.fromMinecraft(IRegistry.GAME_EVENT.getKey(gameevent))), CraftBlock.at(world, blockposition), (entity == null) ? null : entity.getBukkitEntity());
++                event.setCancelled(defaultCancel);
++                world.getCraftServer().getPluginManager().callEvent(event);
++                if (event.isCancelled()) {
++                    // CraftBukkit end
+                     return false;
+                 } else if (this.a(world, blockposition, blockposition1)) {
+                     return false;
