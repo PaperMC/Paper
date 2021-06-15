@@ -11,7 +11,7 @@ I'm just here to watch you suffer :smile:
 You can skip it if you want and I can do it later.
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index e29566cad2647da4d9288e912188b57f00e8dd0c..51691d3dedf113d58f340b74d448c5e5375b5bed 100644
+index e29566cad2647da4d9288e912188b57f00e8dd0c..edb9952ddd014c92b9604a9a187fdcd46de8a04f 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 @@ -1,7 +1,9 @@
@@ -24,7 +24,7 @@ index e29566cad2647da4d9288e912188b57f00e8dd0c..51691d3dedf113d58f340b74d448c5e5
  import org.bukkit.Bukkit;
  import org.bukkit.configuration.file.YamlConfiguration;
  import org.spigotmc.SpigotWorldConfig;
-@@ -445,5 +447,39 @@ public class PaperWorldConfig {
+@@ -445,5 +447,41 @@ public class PaperWorldConfig {
      private void lightQueueSize() {
          lightQueueSize = getInt("light-queue-size", lightQueueSize);
      }
@@ -46,7 +46,9 @@ index e29566cad2647da4d9288e912188b57f00e8dd0c..51691d3dedf113d58f340b74d448c5e5
 +        updateRadius = getInt("anti-xray.update-radius", 2);
 +        lavaObscures = getBoolean("anti-xray.lava-obscures", false);
 +        usePermission = getBoolean("anti-xray.use-permission", false);
-+        hiddenBlocks = getList("anti-xray.hidden-blocks", Arrays.asList("gold_ore", "iron_ore", "coal_ore", "lapis_ore", "mossy_cobblestone", "obsidian", "chest", "diamond_ore", "redstone_ore", "clay", "emerald_ore", "ender_chest"));
++        hiddenBlocks = getList("anti-xray.hidden-blocks", Arrays.asList("copper_ore", "deepslate_copper_ore", "gold_ore", "deepslate_gold_ore", "iron_ore", "deepslate_iron_ore",
++            "coal_ore", "deepslate_coal_ore", "lapis_ore", "deepslate_lapis_ore", "mossy_cobblestone", "obsidian", "chest", "diamond_ore", "deepslate_diamond_ore",
++            "redstone_ore", "deepslate_redstone_ore", "clay", "emerald_ore", "deepslate_emerald_ore", "ender_chest"));
 +        replacementBlocks = getList("anti-xray.replacement-blocks", Arrays.asList("stone", "oak_planks"));
 +        if (PaperConfig.version < 19) {
 +            hiddenBlocks.remove("lit_redstone_ore");
@@ -66,7 +68,7 @@ index e29566cad2647da4d9288e912188b57f00e8dd0c..51691d3dedf113d58f340b74d448c5e5
  
 diff --git a/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockController.java b/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockController.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..fe1a91a3a281dd91e5989bf2282240b03684b500
+index 0000000000000000000000000000000000000000..95d16cd708817534e5f2748f5da9c98c835392be
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockController.java
 @@ -0,0 +1,45 @@
@@ -117,7 +119,7 @@ index 0000000000000000000000000000000000000000..fe1a91a3a281dd91e5989bf2282240b0
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockControllerAntiXray.java b/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockControllerAntiXray.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..e1bc1093a03b931ff2c3870ea1601cd420f71192
+index 0000000000000000000000000000000000000000..db95bde2a0bb17d13d0588dd0bbb81b7c5506345
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockControllerAntiXray.java
 @@ -0,0 +1,649 @@
@@ -1157,7 +1159,7 @@ index f4a056185990181e486f452960159a5287947382..a695e5a0c2e8846333ccb9aea499b565
  
      public void destroyAndAck(BlockPos pos, ServerboundPlayerActionPacket.Action action, String reason) {
 diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
-index aa198e9f2755734eac591bd3f94679518e9d7270..687e3652d0f36a358a2348df845801ad82d8460c 100644
+index aa198e9f2755734eac591bd3f94679518e9d7270..5c30d06ac80bb9e82d5eecf58b692040c3a55a99 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
 +++ b/src/main/java/net/minecraft/world/level/Level.java
 @@ -164,6 +164,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
@@ -1168,7 +1170,7 @@ index aa198e9f2755734eac591bd3f94679518e9d7270..687e3652d0f36a358a2348df845801ad
  
      public final co.aikar.timings.WorldTimingsHandler timings; // Paper
      public static BlockPos lastPhysicsProblem; // Spigot
-@@ -185,9 +186,12 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -185,7 +186,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
          return this.typeKey;
      }
  
@@ -1176,12 +1178,17 @@ index aa198e9f2755734eac591bd3f94679518e9d7270..687e3652d0f36a358a2348df845801ad
 +    protected Level(WritableLevelData worlddatamutable, ResourceKey<Level> resourcekey, final DimensionType dimensionmanager, Supplier<ProfilerFiller> supplier, boolean flag, boolean flag1, long i, org.bukkit.generator.ChunkGenerator gen, org.bukkit.World.Environment env, java.util.concurrent.Executor executor) { // Paper
          this.spigotConfig = new org.spigotmc.SpigotWorldConfig(((net.minecraft.world.level.storage.PrimaryLevelData) worlddatamutable).getLevelName()); // Spigot
          this.paperConfig = new com.destroystokyo.paper.PaperWorldConfig(((net.minecraft.world.level.storage.PrimaryLevelData) worlddatamutable).getLevelName(), this.spigotConfig); // Paper
+         this.generator = gen;
+@@ -258,6 +259,9 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+         this.keepSpawnInMemory = this.paperConfig.keepSpawnInMemory; // Paper
+         this.entityLimiter = new org.spigotmc.TickLimiter(spigotConfig.entityMaxTickTime);
+         this.tileLimiter = new org.spigotmc.TickLimiter(spigotConfig.tileMaxTickTime);
 +        this.chunkPacketBlockController = this.paperConfig.antiXray ?
 +            new com.destroystokyo.paper.antixray.ChunkPacketBlockControllerAntiXray(this, executor)
 +            : com.destroystokyo.paper.antixray.ChunkPacketBlockController.NO_OPERATION_INSTANCE; // Paper - Anti-Xray
-         this.generator = gen;
-         this.world = new CraftWorld((ServerLevel) this, gen, env);
-         this.ticksPerAnimalSpawns = this.getCraftServer().getTicksPerAnimalSpawns(); // CraftBukkit
+     }
+ 
+     // Paper start
 @@ -448,6 +452,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
              // CraftBukkit end
  
