@@ -10,23 +10,11 @@ and will result in all kinds of dupes.
 Move the tick logic into the post tick, where portaling was
 designed to happen in the first place.
 
-diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
-+++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-@@ -0,0 +0,0 @@ public class ServerPlayer extends Player implements ContainerListener {
-         return b(destination, TeleportCause.UNKNOWN);
-     }
- 
-+    @Nullable public final Entity changeDimension(ServerLevel worldserver, PlayerTeleportEvent.TeleportCause cause) { return this.b(worldserver, cause); } // Paper - OBFHELPER
-     @Nullable
-     public Entity b(ServerLevel worldserver, PlayerTeleportEvent.TeleportCause cause) {
-         // CraftBukkit end
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
-@@ -0,0 +0,0 @@ public abstract class Entity implements Nameable, CommandSource, net.minecraft.s
+@@ -0,0 +0,0 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, n
      }
      // Paper end - optimise entity tracking
  
@@ -63,8 +51,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
      public Entity(EntityType<?> type, Level world) {
          this.id = Entity.ENTITY_COUNTER.incrementAndGet();
-         this.passengers = Lists.newArrayList();
-@@ -0,0 +0,0 @@ public abstract class Entity implements Nameable, CommandSource, net.minecraft.s
+         this.passengers = ImmutableList.of();
+@@ -0,0 +0,0 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, n
              }
  
              this.processPortalCooldown();
@@ -76,14 +64,6 @@ diff --git a/src/main/java/net/minecraft/world/level/block/EndPortalBlock.java b
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/block/EndPortalBlock.java
 +++ b/src/main/java/net/minecraft/world/level/block/EndPortalBlock.java
-@@ -0,0 +0,0 @@ package net.minecraft.world.level.block;
- import net.minecraft.core.BlockPos;
- import net.minecraft.resources.ResourceKey;
- import net.minecraft.server.level.ServerLevel;
--import net.minecraft.server.level.ServerPlayer;
- import net.minecraft.world.entity.Entity;
- import net.minecraft.world.level.BlockGetter;
- import net.minecraft.world.level.Level;
 @@ -0,0 +0,0 @@ public class EndPortalBlock extends BaseEntityBlock {
                  // return; // CraftBukkit - always fire event in case plugins wish to change it
              }
@@ -93,7 +73,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -            world.getCraftServer().getPluginManager().callEvent(event);
 -
 -            if (entity instanceof ServerPlayer) {
--                ((ServerPlayer) entity).b(worldserver, PlayerTeleportEvent.TeleportCause.END_PORTAL);
+-                ((ServerPlayer) entity).changeDimension(worldserver, PlayerTeleportEvent.TeleportCause.END_PORTAL);
 -                return;
 -            }
 -            // CraftBukkit end
