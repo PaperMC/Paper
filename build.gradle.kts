@@ -1,7 +1,7 @@
 plugins {
     java
     id("com.github.johnrengelman.shadow") version "7.0.0" apply false
-    id("io.papermc.paperweight.core") version "1.0.1"
+    id("io.papermc.paperweight.core") version "1.0.2"
 }
 
 subprojects {
@@ -62,7 +62,6 @@ dependencies {
 
 paperweight {
     minecraftVersion.set(providers.gradleProperty("mcVersion"))
-    versionPackage.set(providers.gradleProperty("packageVersion"))
     serverProject.set(project(":Paper-Server"))
 
     paper {
