@@ -2357,7 +2357,7 @@ index df32a8b1df60064c49702dca26d7310b7d27e94b..92faf96e12b443351ea146d4d1deccb0
                  completablefuture = (CompletableFuture) this.futures.get(i);
                  if (completablefuture == null) {
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index 52bcfcc7443b57b0e57024c0c4e78c5a7260410d..63c7662cc27cf17a4221238b7ed4ed7ef5caec25 100644
+index 52bcfcc7443b57b0e57024c0c4e78c5a7260410d..e6090343eda328ab612a9345978cf8da353e9566 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
 @@ -115,7 +115,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
@@ -2471,18 +2471,11 @@ index 52bcfcc7443b57b0e57024c0c4e78c5a7260410d..63c7662cc27cf17a4221238b7ed4ed7e
      private void scheduleUnload(long pos, ChunkHolder holder) {
          CompletableFuture<ChunkAccess> completablefuture = holder.getChunkToSave();
          Consumer<ChunkAccess> consumer = (ichunkaccess) -> { // CraftBukkit - decompile error
-@@ -520,13 +567,24 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -520,7 +567,16 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
                          ((LevelChunk) ichunkaccess).setLoaded(false);
                      }
  
 -                    this.save(ichunkaccess);
-+                    //this.save(ichunkaccess);// Paper - delay
-                     if (this.entitiesInLevel.remove(pos) && ichunkaccess instanceof LevelChunk) {
-                         LevelChunk chunk = (LevelChunk) ichunkaccess;
- 
-                         this.level.unload(chunk);
-                     }
- 
 +                    // Paper start - async chunk saving
 +                    try {
 +                        this.asyncSave(ichunkaccess);
@@ -2493,11 +2486,10 @@ index 52bcfcc7443b57b0e57024c0c4e78c5a7260410d..63c7662cc27cf17a4221238b7ed4ed7e
 +                        this.save(ichunkaccess);
 +                    }
 +                    // Paper end - async chunk saving
-+
-                     this.lightEngine.updateChunkStatus(ichunkaccess.getPos());
-                     this.lightEngine.tryScheduleUpdate();
-                     this.progressListener.onStatusChange(ichunkaccess.getPos(), (ChunkStatus) null);
-@@ -581,19 +639,23 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+                     if (this.entitiesInLevel.remove(pos) && ichunkaccess instanceof LevelChunk) {
+                         LevelChunk chunk = (LevelChunk) ichunkaccess;
+ 
+@@ -581,19 +637,23 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
      }
  
      private CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> scheduleChunkLoad(ChunkPos pos) {
@@ -2514,23 +2506,23 @@ index 52bcfcc7443b57b0e57024c0c4e78c5a7260410d..63c7662cc27cf17a4221238b7ed4ed7e
 +                if (ioThrowable != null) {
 +                    com.destroystokyo.paper.util.SneakyThrow.sneaky(ioThrowable);
 +                }
- 
--                if (nbttagcompound != null) {try (Timing ignored2 = this.level.timings.chunkLoadLevelTimer.startTimingIfSync()) { // Paper start - timings
--                    boolean flag = nbttagcompound.contains("Level", 10) && nbttagcompound.getCompound("Level").contains("Status", 8);
++
 +                this.getVillagePlace().loadInData(pos, chunkHolder.poiData);
 +                chunkHolder.tasks.forEach(Runnable::run);
 +                // Paper end
  
+-                if (nbttagcompound != null) {try (Timing ignored2 = this.level.timings.chunkLoadLevelTimer.startTimingIfSync()) { // Paper start - timings
+-                    boolean flag = nbttagcompound.contains("Level", 10) && nbttagcompound.getCompound("Level").contains("Status", 8);
++                if (chunkHolder.protoChunk != null) {try (Timing ignored2 = this.level.timings.chunkLoadLevelTimer.startTimingIfSync()) { // Paper start - timings // Paper - chunk is created async
+ 
 -                    if (flag) {
 -                        ProtoChunk protochunk = ChunkSerializer.read(this.level, this.structureManager, this.poiManager, pos, nbttagcompound);
-+                if (chunkHolder.protoChunk != null) {try (Timing ignored2 = this.level.timings.chunkLoadLevelTimer.startTimingIfSync()) { // Paper start - timings // Paper - chunk is created async
-+
 +                    if (true) {
 +                        ProtoChunk protochunk = chunkHolder.protoChunk;
  
                          this.markPosition(pos, protochunk.getStatus().getChunkType());
                          return Either.left(protochunk);
-@@ -616,7 +678,32 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -616,7 +676,32 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
  
              this.markPositionReplaceable(pos);
              return Either.left(new ProtoChunk(pos, UpgradeData.EMPTY, this.level));
@@ -2564,7 +2556,7 @@ index 52bcfcc7443b57b0e57024c0c4e78c5a7260410d..63c7662cc27cf17a4221238b7ed4ed7e
      }
  
      private void markPositionReplaceable(ChunkPos chunkcoordintpair) {
-@@ -798,6 +885,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -798,6 +883,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
      }
  
      public boolean save(ChunkAccess chunk) {
@@ -2572,7 +2564,7 @@ index 52bcfcc7443b57b0e57024c0c4e78c5a7260410d..63c7662cc27cf17a4221238b7ed4ed7e
          this.poiManager.flush(chunk.getPos());
          if (!chunk.isUnsaved()) {
              return false;
-@@ -809,7 +897,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -809,7 +895,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
                  ChunkStatus chunkstatus = chunk.getStatus();
  
                  if (chunkstatus.getChunkType() != ChunkStatus.ChunkType.LEVELCHUNK) {
@@ -2581,7 +2573,7 @@ index 52bcfcc7443b57b0e57024c0c4e78c5a7260410d..63c7662cc27cf17a4221238b7ed4ed7e
                          return false;
                      }
  
-@@ -819,9 +907,16 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -819,9 +905,16 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
                  }
  
                  this.level.getProfiler().incrementCounter("chunkSave");
@@ -2590,9 +2582,9 @@ index 52bcfcc7443b57b0e57024c0c4e78c5a7260410d..63c7662cc27cf17a4221238b7ed4ed7e
 +                try (co.aikar.timings.Timing ignored1 = this.level.timings.chunkSaveDataSerialization.startTiming()) { // Paper
 +                    nbttagcompound = ChunkSerializer.write(this.level, chunk);
 +                } // Paper
-+
  
 -                this.write(chunkcoordintpair, nbttagcompound);
++
 +                // Paper start - async chunk io
 +                com.destroystokyo.paper.io.PaperFileIOThread.Holder.INSTANCE.scheduleSave(this.level, chunkcoordintpair.x, chunkcoordintpair.z,
 +                    null, nbttagcompound, com.destroystokyo.paper.io.PrioritizedTaskQueue.NORMAL_PRIORITY);
@@ -2600,7 +2592,7 @@ index 52bcfcc7443b57b0e57024c0c4e78c5a7260410d..63c7662cc27cf17a4221238b7ed4ed7e
                  this.markPosition(chunkcoordintpair, chunkstatus.getChunkType());
                  return true;
              } catch (Exception exception) {
-@@ -830,6 +925,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -830,6 +923,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
                  return false;
              }
          }
@@ -2608,7 +2600,7 @@ index 52bcfcc7443b57b0e57024c0c4e78c5a7260410d..63c7662cc27cf17a4221238b7ed4ed7e
      }
  
      private boolean isExistingChunkFull(ChunkPos chunkcoordintpair) {
-@@ -957,6 +1053,35 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -957,6 +1051,35 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          }
      }
  
@@ -2644,7 +2636,7 @@ index 52bcfcc7443b57b0e57024c0c4e78c5a7260410d..63c7662cc27cf17a4221238b7ed4ed7e
      @Nullable
      private CompoundTag readChunk(ChunkPos pos) throws IOException {
          CompoundTag nbttagcompound = this.read(pos);
-@@ -1311,6 +1436,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1311,6 +1434,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
  
      }
  
