@@ -1,0 +1,41 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: lukas81298 <lukas81298@gommehd.net>
+Date: Mon, 25 Jan 2021 14:37:57 +0100
+Subject: [PATCH] added option to disable pathfinding updates on block changes
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 2e5321e41ece132f61718816d8f16015cee9aadd..9b507c67d12b9117671d31b9b1581764b93233ba 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -721,5 +721,10 @@ public class PaperWorldConfig {
+     private void enderDragonsDeathAlwaysPlacesDragonEgg() {
+         enderDragonsDeathAlwaysPlacesDragonEgg = getBoolean("ender-dragons-death-always-places-dragon-egg", enderDragonsDeathAlwaysPlacesDragonEgg);
+     }
++
++    public boolean updatePathfindingOnBlockUpdate = true;
++    private void setUpdatePathfindingOnBlockUpdate() {
++        updatePathfindingOnBlockUpdate = getBoolean("update-pathfinding-on-block-update", this.updatePathfindingOnBlockUpdate);
++    }
+ }
+ 
+diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
+index e5e2beb8be3976a3f6dfa55e3398d80d84a7fd44..9a8b3647c161be8d8b87df8fff3b2d204dab6a8b 100644
+--- a/src/main/java/net/minecraft/server/level/ServerLevel.java
++++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
+@@ -1366,6 +1366,7 @@ public class ServerLevel extends net.minecraft.world.level.Level implements Worl
+     @Override
+     public void sendBlockUpdated(BlockPos pos, BlockState oldState, BlockState newState, int flags) {
+         this.getChunkSource().blockChanged(pos);
++        if(this.paperConfig.updatePathfindingOnBlockUpdate) { // Paper - option to disable pathfinding updates
+         VoxelShape voxelshape = oldState.getCollisionShape(this, pos);
+         VoxelShape voxelshape1 = newState.getCollisionShape(this, pos);
+ 
+@@ -1393,6 +1394,7 @@ public class ServerLevel extends net.minecraft.world.level.Level implements Worl
+             }
+ 
+         }
++        } // Paper
+     }
+ 
+     @Override
