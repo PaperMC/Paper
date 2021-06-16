@@ -129,7 +129,11 @@ public enum InventoryType {
     /**
      * Stonecutter inventory with 1 CRAFTING slot, and 1 RESULT slot.
      */
-    STONECUTTER(2, "Stonecutter")
+    STONECUTTER(2, "Stonecutter"),
+    /**
+     * Pseudo composter inventory with 0 or 1 slots of undefined type.
+     */
+    COMPOSTER(1, "Composter")
     ;
 
     private final int size;
