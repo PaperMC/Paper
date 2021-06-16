@@ -260,7 +260,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
 +    public static ChunkStatus getChunkStatus(ChunkHolder chunk) {
-+        List<ChunkStatus> statuses = ServerChunkCache.getPossibleChunkStatuses();
++        List<ChunkStatus> statuses = net.minecraft.server.level.ServerChunkCache.CHUNK_STATUSES;
 +        for (int i = statuses.size() - 1; i >= 0; --i) {
 +            ChunkStatus curr = statuses.get(i);
 +            CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> future = chunk.getFutureIfPresentUnchecked(curr);
@@ -394,8 +394,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +                        ticketData.addProperty("ticket-type", ticket.getType().toString());
 +                        ticketData.addProperty("ticket-level", ticket.getTicketLevel());
-+                        ticketData.addProperty("object-reason", String.valueOf(ticket.getObjectReason()));
-+                        ticketData.addProperty("add-tick", ticket.getCreationTick());
++                        ticketData.addProperty("object-reason", String.valueOf(ticket.key));
++                        ticketData.addProperty("add-tick", ticket.createdTick);
 +
 +                        ticketsData.add(ticketData);
 +                    }
@@ -428,44 +428,3 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public static int getTicketLevelFor(net.minecraft.world.level.chunk.ChunkStatus status) {
          return net.minecraft.server.level.ChunkMap.MAX_VIEW_DISTANCE + net.minecraft.world.level.chunk.ChunkStatus.getDistance(status);
      }
-diff --git a/src/main/java/net/minecraft/server/level/ChunkHolder.java b/src/main/java/net/minecraft/server/level/ChunkHolder.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/level/ChunkHolder.java
-+++ b/src/main/java/net/minecraft/server/level/ChunkHolder.java
-@@ -0,0 +0,0 @@ public class ChunkHolder {
-     public int oldTicketLevel;
-     private int ticketLevel;
-     private int queueLevel;
--    final ChunkPos pos;
-+    public final ChunkPos pos; // Paper - package->public
-     private boolean hasChangedSections;
-     private final ShortSet[] changedBlocksPerSection;
-     private final BitSet blockChangedLightSectionFilter;
-diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-+++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-@@ -0,0 +0,0 @@ import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap; // Paper
- 
- public class ServerChunkCache extends ChunkSource {
- 
--    private static final List<ChunkStatus> CHUNK_STATUSES = ChunkStatus.getStatusList();
-+    private static final List<ChunkStatus> CHUNK_STATUSES = ChunkStatus.getStatusList(); public static final List<ChunkStatus> getPossibleChunkStatuses() { return ServerChunkCache.CHUNK_STATUSES; } // Paper - OBFHELPER
-     private final DistanceManager distanceManager;
-     public final ChunkGenerator generator;
-     final ServerLevel level;
-diff --git a/src/main/java/net/minecraft/server/level/Ticket.java b/src/main/java/net/minecraft/server/level/Ticket.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/level/Ticket.java
-+++ b/src/main/java/net/minecraft/server/level/Ticket.java
-@@ -0,0 +0,0 @@ import java.util.Objects;
- public final class Ticket<T> implements Comparable<Ticket<?>> {
-     private final TicketType<T> type;
-     private final int ticketLevel;
--    public final T key;
--    private long createdTick;
-+    public final T key; public final T getObjectReason() { return this.key; } // Paper - OBFHELPER
-+    private long createdTick; public final long getCreationTick() { return this.createdTick; } // Paper - OBFHELPER
- 
-     protected Ticket(TicketType<T> type, int level, T argument) {
-         this.type = type;
