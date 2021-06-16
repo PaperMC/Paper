@@ -25,8 +25,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  }
              }
 +            // Paper start - Set origin location when the entity is being added to the world
-+            if (entity.origin == null) {
-+                entity.origin = entity.getBukkitEntity().getLocation();
++            if (entity.getOriginVector() == null) {
++                entity.setOrigin(entity.getBukkitEntity().getLocation());
 +            }
 +            // Paper end
          }
@@ -40,7 +40,27 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public org.bukkit.projectiles.ProjectileSource projectileSource; // For projectiles only
      public boolean forceExplosionKnockback; // SPIGOT-949
      public boolean persistentInvisibility = false;
-+    public org.bukkit.Location origin; // Paper
++    // Paper start
++    @javax.annotation.Nullable
++    private org.bukkit.util.Vector origin;
++    @javax.annotation.Nullable
++    private UUID originWorld;
++
++    public void setOrigin(@javax.annotation.Nonnull Location location) {
++        this.origin = location.toVector();
++        this.originWorld = location.getWorld().getUID();
++    }
++
++    @javax.annotation.Nullable
++    public org.bukkit.util.Vector getOriginVector() {
++        return this.origin != null ? this.origin.clone() : null;
++    }
++
++    @javax.annotation.Nullable
++    public UUID getOriginWorld() {
++        return this.originWorld;
++    }
++    // Paper
      // Spigot start
      public final org.spigotmc.ActivationRange.ActivationType activationType = org.spigotmc.ActivationRange.initializeEntityActivationType(this);
      public final boolean defaultActivationState;
@@ -50,7 +70,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              // CraftBukkit end
 +            // Paper start - Save the entity's origin location
 +            if (this.origin != null) {
-+                nbt.setUUID("Paper.OriginWorld", origin.getWorld().getUID());
++                nbt.setUUID("Paper.OriginWorld", originWorld);
 +                nbt.put("Paper.Origin", this.newDoubleList(origin.getX(), origin.getY(), origin.getZ()));
 +            }
 +            // Paper end
@@ -64,11 +84,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            // Paper start - Restore the entity's origin location
 +            ListTag originTag = nbt.getList("Paper.Origin", 6);
 +            if (!originTag.isEmpty()) {
-+                org.bukkit.World originWorld = level.getWorld();
++                UUID originWorld = level.getWorld().getUID();
 +                if (nbt.contains("Paper.OriginWorld")) {
-+                    originWorld = Bukkit.getWorld(nbt.getUUID("Paper.OriginWorld"));
++                    originWorld = nbt.getUUID("Paper.OriginWorld");
 +                }
-+                origin = new org.bukkit.Location(originWorld, originTag.getDoubleAt(0), originTag.getDoubleAt(1), originTag.getDoubleAt(2));
++                this.originWorld = originWorld;
++                origin = new org.bukkit.util.Vector(originTag.getDoubleAt(0), originTag.getDoubleAt(1), originTag.getDoubleAt(2));
 +            }
 +            // Paper end
 +
@@ -88,7 +109,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            int srcX = nbt.getInt("SourceLoc_x");
 +            int srcY = nbt.getInt("SourceLoc_y");
 +            int srcZ = nbt.getInt("SourceLoc_z");
-+            origin = new org.bukkit.Location(level.getWorld(), srcX, srcY, srcZ);
++            this.setOrigin(new org.bukkit.Location(level.getWorld(), srcX, srcY, srcZ));
 +        }
 +        // Paper end
      }
@@ -107,7 +128,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            int srcX = nbt.getInt("SourceLoc_x");
 +            int srcY = nbt.getInt("SourceLoc_y");
 +            int srcZ = nbt.getInt("SourceLoc_z");
-+            origin = new org.bukkit.Location(level.getWorld(), srcX, srcY, srcZ);
++            this.setOrigin(new org.bukkit.Location(level.getWorld(), srcX, srcY, srcZ));
 +        }
 +        // Paper end
      }
@@ -125,8 +146,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    // Paper start
 +    @Override
 +    public Location getOrigin() {
-+        Location origin = getHandle().origin;
-+        return origin == null ? null : origin.clone();
++        Vector originVector = this.getHandle().getOriginVector();
++        if (originVector == null) {
++            return null;
++        }
++        World world = this.getWorld();
++        if (this.getHandle().getOriginWorld() != null) {
++            world = org.bukkit.Bukkit.getWorld(this.getHandle().getOriginWorld());
++        }
++
++        //noinspection ConstantConditions
++        return originVector.toLocation(world);
 +    }
 +    // Paper end
  }
