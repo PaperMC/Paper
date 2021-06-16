@@ -2476,13 +2476,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                      }
  
 -                    this.save(ichunkaccess);
-+                    //this.save(ichunkaccess);// Paper - delay
-                     if (this.entitiesInLevel.remove(pos) && ichunkaccess instanceof LevelChunk) {
-                         LevelChunk chunk = (LevelChunk) ichunkaccess;
- 
-                         this.level.unload(chunk);
-                     }
- 
 +                    // Paper start - async chunk saving
 +                    try {
 +                        this.asyncSave(ichunkaccess);
@@ -2493,10 +2486,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                        this.save(ichunkaccess);
 +                    }
 +                    // Paper end - async chunk saving
-+
-                     this.lightEngine.updateChunkStatus(ichunkaccess.getPos());
-                     this.lightEngine.tryScheduleUpdate();
-                     this.progressListener.onStatusChange(ichunkaccess.getPos(), (ChunkStatus) null);
+                     if (this.entitiesInLevel.remove(pos) && ichunkaccess instanceof LevelChunk) {
+                         LevelChunk chunk = (LevelChunk) ichunkaccess;
+ 
 @@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
      }
  
@@ -2514,17 +2506,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                if (ioThrowable != null) {
 +                    com.destroystokyo.paper.util.SneakyThrow.sneaky(ioThrowable);
 +                }
- 
--                if (nbttagcompound != null) {try (Timing ignored2 = this.level.timings.chunkLoadLevelTimer.startTimingIfSync()) { // Paper start - timings
--                    boolean flag = nbttagcompound.contains("Level", 10) && nbttagcompound.getCompound("Level").contains("Status", 8);
++
 +                this.getVillagePlace().loadInData(pos, chunkHolder.poiData);
 +                chunkHolder.tasks.forEach(Runnable::run);
 +                // Paper end
  
+-                if (nbttagcompound != null) {try (Timing ignored2 = this.level.timings.chunkLoadLevelTimer.startTimingIfSync()) { // Paper start - timings
+-                    boolean flag = nbttagcompound.contains("Level", 10) && nbttagcompound.getCompound("Level").contains("Status", 8);
++                if (chunkHolder.protoChunk != null) {try (Timing ignored2 = this.level.timings.chunkLoadLevelTimer.startTimingIfSync()) { // Paper start - timings // Paper - chunk is created async
+ 
 -                    if (flag) {
 -                        ProtoChunk protochunk = ChunkSerializer.read(this.level, this.structureManager, this.poiManager, pos, nbttagcompound);
-+                if (chunkHolder.protoChunk != null) {try (Timing ignored2 = this.level.timings.chunkLoadLevelTimer.startTimingIfSync()) { // Paper start - timings // Paper - chunk is created async
-+
 +                    if (true) {
 +                        ProtoChunk protochunk = chunkHolder.protoChunk;
  
@@ -2590,9 +2582,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                try (co.aikar.timings.Timing ignored1 = this.level.timings.chunkSaveDataSerialization.startTiming()) { // Paper
 +                    nbttagcompound = ChunkSerializer.write(this.level, chunk);
 +                } // Paper
-+
  
 -                this.write(chunkcoordintpair, nbttagcompound);
++
 +                // Paper start - async chunk io
 +                com.destroystokyo.paper.io.PaperFileIOThread.Holder.INSTANCE.scheduleSave(this.level, chunkcoordintpair.x, chunkcoordintpair.z,
 +                    null, nbttagcompound, com.destroystokyo.paper.io.PrioritizedTaskQueue.NORMAL_PRIORITY);
