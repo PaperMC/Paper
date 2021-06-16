@@ -2832,7 +2832,7 @@ index bd937505244cc9305611815a9274f91395d3a8f8..b15d5c2a8d4d2184a55a16ff2071fd82
          } finally {
              chunkMap.callbackExecutor.run();
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index a86757a96fea11de150fb48ac123c3493e5420b7..f1d08ad4f29eb2b94dc24962bac177397df1110c 100644
+index e299bf10c0bdd14398d590939d90cc723ecd4ce5..479bea88e497adfe8cfacd53b5de825bba8e4722 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
 @@ -210,6 +210,79 @@ public class ServerLevel extends net.minecraft.world.level.Level implements Worl
@@ -3049,7 +3049,7 @@ index 3af31dc2c82c11ee78d497c5777615c17cb13c7a..3b8c04f6ffd7e6c197465aa1caf633ba
          this.type = t;
          this.triggerTick = time;
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
-index 22d5c4cc3aea19cbf53ea320765ecceb4daf7428..2621739b8dd11860084ea574c243cb8ba167ac40 100644
+index 22d5c4cc3aea19cbf53ea320765ecceb4daf7428..21b3da831cd959e3fd85d437e1ba3c7a6c72502f 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
 @@ -69,7 +69,30 @@ public class ChunkSerializer {
@@ -3133,18 +3133,18 @@ index 22d5c4cc3aea19cbf53ea320765ecceb4daf7428..2621739b8dd11860084ea574c243cb8b
          } else {
              ProtoChunk protochunk1 = (ProtoChunk) object;
  
-@@ -274,11 +311,83 @@ public class ChunkSerializer {
+@@ -274,11 +311,82 @@ public class ChunkSerializer {
                  protochunk1.setCarvingMask(worldgenstage_features, BitSet.valueOf(nbttagcompound5.getByteArray(s1)));
              }
  
 -            return protochunk1;
 +            return new InProgressChunkHolder(protochunk1, tasksToExecuteOnMain); // Paper - Async chunk loading
-         }
-     }
- 
++        }
++    }
++
 +    // Paper start - async chunk save for unload
 +    public static final class AsyncSaveData {
-+        public final DataLayer[] blockLight; // null or size of 17 (for indices -1 through 15)
++        public final DataLayer[] blockLight;
 +        public final DataLayer[] skyLight;
 +
 +        public final ListTag blockTickList; // non-null if we had to go to the server's tick list
@@ -3169,10 +3169,10 @@ index 22d5c4cc3aea19cbf53ea320765ecceb4daf7428..2621739b8dd11860084ea574c243cb8b
 +
 +        ThreadedLevelLightEngine lightenginethreaded = world.getChunkSource().getLightEngine();
 +
-+        DataLayer[] blockLight = new DataLayer[17 - (-1)];
-+        DataLayer[] skyLight = new DataLayer[17 - (-1)];
++        DataLayer[] blockLight = new DataLayer[lightenginethreaded.getMaxLightSection() - lightenginethreaded.getMinLightSection()];
++        DataLayer[] skyLight = new DataLayer[lightenginethreaded.getMaxLightSection() - lightenginethreaded.getMinLightSection()];
 +
-+        for (int i = -1; i < 17; ++i) {
++        for (int i = lightenginethreaded.getMinLightSection(); i < lightenginethreaded.getMaxLightSection(); ++i) {
 +            DataLayer blockArray = lightenginethreaded.getLayerListener(LightLayer.BLOCK).getDataLayerData(SectionPos.of(chunkPos, i));
 +            DataLayer skyArray = lightenginethreaded.getLayerListener(LightLayer.SKY).getDataLayerData(SectionPos.of(chunkPos, i));
 +
@@ -3184,9 +3184,8 @@ index 22d5c4cc3aea19cbf53ea320765ecceb4daf7428..2621739b8dd11860084ea574c243cb8b
 +                skyArray = skyArray.copy();
 +            }
 +
-+            // apply offset of 1 for -1 starting index
-+            blockLight[i + 1] = blockArray;
-+            skyLight[i + 1] = skyArray;
++            blockLight[i - lightenginethreaded.getMinLightSection()] = blockArray;
++            skyLight[i - lightenginethreaded.getMinLightSection()] = skyArray;
 +        }
 +
 +        TickList<Block> blockTickList = chunk.getBlockTicks();
@@ -3196,7 +3195,7 @@ index 22d5c4cc3aea19cbf53ea320765ecceb4daf7428..2621739b8dd11860084ea574c243cb8b
 +            blockTickListSerialized = null;
 +        } else {
 +            blockTickListSerialized = world.getBlockTicks().save(chunkPos);
-+        }
+         }
 +
 +        TickList<Fluid> fluidTickList = chunk.getLiquidTicks();
 +
@@ -3208,8 +3207,8 @@ index 22d5c4cc3aea19cbf53ea320765ecceb4daf7428..2621739b8dd11860084ea574c243cb8b
 +        }
 +
 +        return new AsyncSaveData(blockLight, skyLight, blockTickListSerialized, fluidTickListSerialized, world.getGameTime());
-+    }
-+
+     }
+ 
      public static CompoundTag write(ServerLevel world, ChunkAccess chunk) {
 +        return saveChunk(world, chunk, null);
 +    }
@@ -3218,7 +3217,7 @@ index 22d5c4cc3aea19cbf53ea320765ecceb4daf7428..2621739b8dd11860084ea574c243cb8b
          ChunkPos chunkcoordintpair = chunk.getPos();
          CompoundTag nbttagcompound = new CompoundTag();
          CompoundTag nbttagcompound1 = new CompoundTag();
-@@ -287,7 +396,7 @@ public class ChunkSerializer {
+@@ -287,7 +395,7 @@ public class ChunkSerializer {
          nbttagcompound.put("Level", nbttagcompound1);
          nbttagcompound1.putInt("xPos", chunkcoordintpair.x);
          nbttagcompound1.putInt("zPos", chunkcoordintpair.z);
@@ -3227,7 +3226,7 @@ index 22d5c4cc3aea19cbf53ea320765ecceb4daf7428..2621739b8dd11860084ea574c243cb8b
          nbttagcompound1.putLong("InhabitedTime", chunk.getInhabitedTime());
          nbttagcompound1.putString("Status", chunk.getStatus().getName());
          UpgradeData chunkconverter = chunk.getUpgradeData();
-@@ -306,9 +415,17 @@ public class ChunkSerializer {
+@@ -306,9 +414,17 @@ public class ChunkSerializer {
              LevelChunkSection chunksection = (LevelChunkSection) Arrays.stream(achunksection).filter((chunksection1) -> {
                  return chunksection1 != null && SectionPos.blockToSectionCoord(chunksection1.bottomBlockY()) == finalI; // CraftBukkit - decompile errors
              }).findFirst().orElse(LevelChunk.EMPTY_SECTION);
@@ -3241,14 +3240,14 @@ index 22d5c4cc3aea19cbf53ea320765ecceb4daf7428..2621739b8dd11860084ea574c243cb8b
 +                nibblearray = lightenginethreaded.getLayerListener(LightLayer.BLOCK).getDataLayerData(SectionPos.of(chunkcoordintpair, i)); /// Paper - diff on method change (see getAsyncSaveData)
 +                nibblearray1 = lightenginethreaded.getLayerListener(LightLayer.SKY).getDataLayerData(SectionPos.of(chunkcoordintpair, i)); // Paper - diff on method change (see getAsyncSaveData)
 +            } else {
-+                nibblearray = asyncsavedata.blockLight[i + 1]; // +1 to offset the -1 starting index
-+                nibblearray1 = asyncsavedata.skyLight[i + 1]; // +1 to offset the -1 starting index
++                nibblearray = asyncsavedata.blockLight[i - lightenginethreaded.getMinLightSection()];
++                nibblearray1 = asyncsavedata.skyLight[i - lightenginethreaded.getMinLightSection()];
 +            }
 +            // Paper end
              if (chunksection != LevelChunk.EMPTY_SECTION || nibblearray != null || nibblearray1 != null) {
                  CompoundTag nbttagcompound2 = new CompoundTag();
  
-@@ -384,6 +501,10 @@ public class ChunkSerializer {
+@@ -384,6 +500,10 @@ public class ChunkSerializer {
              nbttagcompound1.put("ToBeTicked", ((ProtoTickList) ticklist).save());
          } else if (ticklist instanceof ChunkTickList) {
              nbttagcompound1.put("TileTicks", ((ChunkTickList) ticklist).save());
@@ -3259,7 +3258,7 @@ index 22d5c4cc3aea19cbf53ea320765ecceb4daf7428..2621739b8dd11860084ea574c243cb8b
          } else {
              nbttagcompound1.put("TileTicks", world.getBlockTicks().save(chunkcoordintpair));
          }
-@@ -394,6 +515,10 @@ public class ChunkSerializer {
+@@ -394,6 +514,10 @@ public class ChunkSerializer {
              nbttagcompound1.put("LiquidsToBeTicked", ((ProtoTickList) ticklist1).save());
          } else if (ticklist1 instanceof ChunkTickList) {
              nbttagcompound1.put("LiquidTicks", ((ChunkTickList) ticklist1).save());
@@ -3659,7 +3658,7 @@ index ad9a4d4a9363741cc47f142c24fa6f4858dd947f..a19de8405de8ee29afc112556e4684b0
      // Spigot start
      @Override
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
-index e57fef24ee5159142ec4f05a9e76a34c6e153386..d0774636b151e8dbd778f2e2f2e3de154ff18494 100644
+index 16e8cfb21f090e0c17e55c1b45ff56bed01839eb..7f1d9932e0e4e09c3727544d053ad61a365290af 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
 @@ -13,6 +13,7 @@ import net.minecraft.nbt.CompoundTag;
