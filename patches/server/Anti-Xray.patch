@@ -25,7 +25,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    public boolean antiXray;
 +    public EngineMode engineMode;
-+    public int maxChunkSectionIndex;
++    public int maxBlockHeight;
 +    public int updateRadius;
 +    public boolean lavaObscures;
 +    public boolean usePermission;
@@ -35,8 +35,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        antiXray = getBoolean("anti-xray.enabled", false);
 +        engineMode = EngineMode.getById(getInt("anti-xray.engine-mode", EngineMode.HIDE.getId()));
 +        engineMode = engineMode == null ? EngineMode.HIDE : engineMode;
-+        maxChunkSectionIndex = getInt("anti-xray.max-chunk-section-index", 3);
-+        maxChunkSectionIndex = maxChunkSectionIndex > 15 ? 15 : maxChunkSectionIndex;
++        maxBlockHeight = getInt("anti-xray.max-block-height", 64);
 +        updateRadius = getInt("anti-xray.update-radius", 2);
 +        lavaObscures = getBoolean("anti-xray.lava-obscures", false);
 +        usePermission = getBoolean("anti-xray.use-permission", false);
@@ -53,7 +52,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            set("anti-xray.hidden-blocks", hiddenBlocks);
 +            set("anti-xray.replacement-blocks", replacementBlocks);
 +        }
-+        log("Anti-Xray: " + (antiXray ? "enabled" : "disabled") + " / Engine Mode: " + engineMode.getDescription() + " / Up to " + ((maxChunkSectionIndex + 1) * 16) + " blocks / Update Radius: " + updateRadius);
++        log("Anti-Xray: " + (antiXray ? "enabled" : "disabled") + " / Engine Mode: " + engineMode.getDescription() + " / Up to " + ((maxBlockHeight >> 4) << 4) + " blocks / Update Radius: " + updateRadius);
 +        if (antiXray && usePermission) {
 +            Bukkit.getLogger().warning("You have enabled permission-based Anti-Xray checking - depending on your permission plugin, this may cause performance issues");
 +        }
@@ -95,12 +94,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return false;
 +    }
 +
-+    public ChunkPacketInfo<BlockState> getChunkPacketInfo(ClientboundLevelChunkPacket packetPlayOutMapChunk, LevelChunk chunk) {
++    public ChunkPacketInfo<BlockState> getChunkPacketInfo(ClientboundLevelChunkPacket chunkPacket, LevelChunk chunk) {
 +        return null;
 +    }
 +
-+    public void modifyBlocks(ClientboundLevelChunkPacket packetPlayOutMapChunk, ChunkPacketInfo<BlockState> chunkPacketInfo) {
-+        packetPlayOutMapChunk.setReady(true);
++    public void modifyBlocks(ClientboundLevelChunkPacket chunkPacket, ChunkPacketInfo<BlockState> chunkPacketInfo) {
++        chunkPacket.setReady(true);
 +    }
 +
 +    public void onBlockChange(Level world, BlockPos blockPosition, BlockState newBlockData, BlockState oldBlockData, int flag) {
@@ -155,6 +154,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    private final Executor executor;
 +    private final EngineMode engineMode;
++    private final int worldSectionHeight;
 +    private final int maxChunkSectionIndex;
 +    private final int updateRadius;
 +    private final boolean usePermission;
@@ -175,7 +175,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    public ChunkPacketBlockControllerAntiXray(Level world, Executor executor) {
 +        PaperWorldConfig paperWorldConfig = world.paperConfig;
 +        engineMode = paperWorldConfig.engineMode;
-+        maxChunkSectionIndex = paperWorldConfig.maxChunkSectionIndex;
++
++        int minSection = world.getMinSection();
++        worldSectionHeight = world.getSectionsCount();
++        maxChunkSectionIndex = (paperWorldConfig.maxBlockHeight >> 4) - minSection;
 +        updateRadius = paperWorldConfig.updateRadius;
 +        usePermission = paperWorldConfig.usePermission;
 +
@@ -208,11 +211,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            }
 +
 +            // The doc of the LinkedHashSet(Collection<? extends E> c) constructor doesn't specify that the insertion order is the predictable iteration order of the specified Collection, although it is in the implementation
-+            Set<BlockState> predefinedBlockDataSet = new LinkedHashSet<BlockState>();
++            Set<BlockState> predefinedBlockDataSet = new LinkedHashSet<>(predefinedBlockDataList);
 +            // Therefore addAll(Collection<? extends E> c) is used, which guarantees this order in the doc
-+            predefinedBlockDataSet.addAll(predefinedBlockDataList);
-+            predefinedBlockData = predefinedBlockDataSet.size() == 0 ? new BlockState[] {Blocks.DIAMOND_ORE.defaultBlockState()} : predefinedBlockDataSet.toArray(new BlockState[0]);
-+            predefinedBlockDataFull = predefinedBlockDataSet.size() == 0 ? new BlockState[] {Blocks.DIAMOND_ORE.defaultBlockState()} : predefinedBlockDataList.toArray(new BlockState[0]);
++            predefinedBlockData = predefinedBlockDataSet.isEmpty() ? new BlockState[] {Blocks.DIAMOND_ORE.defaultBlockState()} : predefinedBlockDataSet.toArray(new BlockState[0]);
++            predefinedBlockDataFull = predefinedBlockDataSet.isEmpty() ? new BlockState[] {Blocks.DIAMOND_ORE.defaultBlockState()} : predefinedBlockDataList.toArray(new BlockState[0]);
 +            predefinedBlockDataStone = null;
 +            predefinedBlockDataNetherrack = null;
 +            predefinedBlockDataEndStone = null;
@@ -266,19 +268,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    public BlockState[] getPredefinedBlockData(Level world, ChunkAccess chunk, LevelChunkSection chunkSection, boolean initializeBlocks) {
 +        // Return the block data which should be added to the data palettes so that they can be used for the obfuscation
 +        if (chunkSection.bottomBlockY() >> 4 <= maxChunkSectionIndex) {
-+            switch (engineMode) {
-+                case HIDE:
-+                    switch (world.getWorld().getEnvironment()) {
-+                        case NETHER:
-+                            return predefinedBlockDataNetherrack;
-+                        case THE_END:
-+                            return predefinedBlockDataEndStone;
-+                        default:
-+                            return predefinedBlockDataStone;
-+                    }
-+                default:
-+                    return predefinedBlockData;
++            if (engineMode == EngineMode.HIDE) {
++                return switch (world.getWorld().getEnvironment()) {
++                    case NETHER -> predefinedBlockDataNetherrack;
++                    case THE_END -> predefinedBlockDataEndStone;
++                    default -> predefinedBlockDataStone;
++                };
 +            }
++            return predefinedBlockData;
 +        }
 +
 +        return null;
@@ -290,24 +287,23 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +
 +    @Override
-+    public ChunkPacketInfoAntiXray getChunkPacketInfo(ClientboundLevelChunkPacket packetPlayOutMapChunk, LevelChunk chunk) {
++    public ChunkPacketInfoAntiXray getChunkPacketInfo(ClientboundLevelChunkPacket chunkPacket, LevelChunk chunk) {
 +        // Return a new instance to collect data and objects in the right state while creating the chunk packet for thread safe access later
 +        // Note: As of 1.14 this has to be moved later due to the chunk system.
-+        ChunkPacketInfoAntiXray chunkPacketInfoAntiXray = new ChunkPacketInfoAntiXray(packetPlayOutMapChunk, chunk, this);
-+        return chunkPacketInfoAntiXray;
++        return new ChunkPacketInfoAntiXray(chunkPacket, chunk, this);
 +    }
 +
 +    @Override
-+    public void modifyBlocks(ClientboundLevelChunkPacket packetPlayOutMapChunk, ChunkPacketInfo<BlockState> chunkPacketInfo) {
++    public void modifyBlocks(ClientboundLevelChunkPacket chunkPacket, ChunkPacketInfo<BlockState> chunkPacketInfo) {
 +        if (chunkPacketInfo == null) {
-+            packetPlayOutMapChunk.setReady(true);
++            chunkPacket.setReady(true);
 +            return;
 +        }
 +
 +        if (!Bukkit.isPrimaryThread()) {
 +            // plugins?
 +            MinecraftServer.getServer().scheduleOnMain(() -> {
-+                this.modifyBlocks(packetPlayOutMapChunk, chunkPacketInfo);
++                this.modifyBlocks(chunkPacket, chunkPacketInfo);
 +            });
 +            return;
 +        }
@@ -315,7 +311,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        LevelChunk chunk = chunkPacketInfo.getChunk();
 +        int x = chunk.getPos().x;
 +        int z = chunk.getPos().z;
-+        ServerLevel world = (ServerLevel)chunk.level;
++        ServerLevel world = chunk.level;
 +        ((ChunkPacketInfoAntiXray) chunkPacketInfo).setNearbyChunks(
 +            (LevelChunk) world.getChunkIfLoadedImmediately(x - 1, z),
 +            (LevelChunk) world.getChunkIfLoadedImmediately(x + 1, z),
@@ -337,11 +333,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    public void obfuscate(ChunkPacketInfoAntiXray chunkPacketInfoAntiXray) {
 +        int[] predefinedBlockDataBits = this.predefinedBlockDataBits.get();
-+        boolean[] solid = this.solid.get();
-+        boolean[] obfuscate = this.obfuscate.get();
-+        boolean[][] current = this.current.get();
-+        boolean[][] next = this.next.get();
-+        boolean[][] nextNext = this.nextNext.get();
++        boolean[] solid = ChunkPacketBlockControllerAntiXray.solid.get();
++        boolean[] obfuscate = ChunkPacketBlockControllerAntiXray.obfuscate.get();
++        boolean[][] current = ChunkPacketBlockControllerAntiXray.current.get();
++        boolean[][] next = ChunkPacketBlockControllerAntiXray.next.get();
++        boolean[][] nextNext = ChunkPacketBlockControllerAntiXray.nextNext.get();
 +        // dataBitsReader, dataBitsWriter and nearbyChunkSections could also be reused (with ThreadLocal if necessary) but it's not worth it
 +        DataBitsReader dataBitsReader = new DataBitsReader();
 +        DataBitsWriter dataBitsWriter = new DataBitsWriter();
@@ -431,7 +427,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                    // If so, obfuscate the upper layer of the current chunk section by reading blocks of the first layer from the chunk section above if it exists
 +                    LevelChunkSection aboveChunkSection;
 +
-+                    if (chunkSectionIndex != 15 && (aboveChunkSection = chunkPacketInfoAntiXray.getChunk().getSections()[chunkSectionIndex + 1]) != LevelChunk.EMPTY_CHUNK_SECTION) {
++                    if (chunkSectionIndex != worldSectionHeight && (aboveChunkSection = chunkPacketInfoAntiXray.getChunk().getSections()[chunkSectionIndex + 1]) != LevelChunk.EMPTY_CHUNK_SECTION) {
 +                        boolean[][] temp = current;
 +                        current = next;
 +                        next = nextNext;
@@ -467,7 +463,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            }
 +        }
 +
-+        chunkPacketInfoAntiXray.getPacketPlayOutMapChunk().setReady(true);
++        chunkPacketInfoAntiXray.getChunkPacket().setReady(true);
 +    }
 +
 +    private void obfuscateLayer(int y, DataBitsReader dataBitsReader, DataBitsWriter dataBitsWriter, boolean[] solid, boolean[] obfuscate, int[] predefinedBlockDataBits, boolean[][] current, boolean[][] next, boolean[][] nextNext, LevelChunkSection[] nearbyChunkSections, IntSupplier random) {
@@ -780,21 +776,27 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +public class ChunkPacketInfo<T> {
 +
-+    private final ClientboundLevelChunkPacket packetPlayOutMapChunk;
++    private final ClientboundLevelChunkPacket chunkPacket;
 +    private final LevelChunk chunk;
 +    private byte[] data;
-+    private final int[] bitsPerObject = new int[16];
-+    private final Object[] dataPalettes = new Object[16];
-+    private final int[] dataBitsIndexes = new int[16];
-+    private final Object[][] predefinedObjects = new Object[16][];
++    private final int[] bitsPerObject;
++    private final Object[] dataPalettes;
++    private final int[] dataBitsIndexes;
++    private final Object[][] predefinedObjects;
 +
-+    public ChunkPacketInfo(ClientboundLevelChunkPacket packetPlayOutMapChunk, LevelChunk chunk) {
-+        this.packetPlayOutMapChunk = packetPlayOutMapChunk;
++    public ChunkPacketInfo(ClientboundLevelChunkPacket chunkPacket, LevelChunk chunk) {
++        this.chunkPacket = chunkPacket;
 +        this.chunk = chunk;
++
++        int sections = chunk.getSectionsCount();
++        this.bitsPerObject = new int[sections];
++        this.dataPalettes = new Object[sections];
++        this.dataBitsIndexes = new int[sections];
++        this.predefinedObjects = new Object[sections][];
 +    }
 +
-+    public ClientboundLevelChunkPacket getPacketPlayOutMapChunk() {
-+        return packetPlayOutMapChunk;
++    public ClientboundLevelChunkPacket getChunkPacket() {
++        return chunkPacket;
 +    }
 +
 +    public LevelChunk getChunk() {
@@ -1298,7 +1300,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        // Paper end
          buf.writeShort(this.nonEmptyBlockCount);
 -        this.states.write(buf);
-+        this.states.write(buf, chunkPacketInfo, this.bottomBlockY >> 4); // Paper - Anti-Xray - Add chunk packet info
++        this.states.write(buf, chunkPacketInfo, this.bottomBlockY); // Paper - Anti-Xray - Add chunk packet info
      }
  
      public int getSerializedSize() {
@@ -1384,7 +1386,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    @Deprecated public void write(FriendlyByteBuf buf) {
 +        write(buf, null, 0);
 +    }
-+    public void write(FriendlyByteBuf buf, com.destroystokyo.paper.antixray.ChunkPacketInfo<T> chunkPacketInfo, int chunkSectionIndex) {
++    public void write(FriendlyByteBuf buf, com.destroystokyo.paper.antixray.ChunkPacketInfo<T> chunkPacketInfo, int bottomBlockY) {
 +        // Paper end
          try {
              this.acquire();
@@ -1392,10 +1394,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              this.palette.write(buf);
 +            // Paper start - Anti-Xray - Add chunk packet info
 +            if (chunkPacketInfo != null) {
-+                chunkPacketInfo.setBitsPerObject(chunkSectionIndex, this.bits);
-+                chunkPacketInfo.setDataPalette(chunkSectionIndex, this.palette);
-+                chunkPacketInfo.setDataBitsIndex(chunkSectionIndex, buf.writerIndex() + FriendlyByteBuf.getVarIntSize(this.storage.getDataBits().length));
-+                chunkPacketInfo.setPredefinedObjects(chunkSectionIndex, this.predefinedObjects);
++                // Bottom block to 0 based chunk section index
++                int section = (bottomBlockY >> 4) - chunkPacketInfo.getChunk().getMinSection();
++                chunkPacketInfo.setBitsPerObject(section, this.bits);
++                chunkPacketInfo.setDataPalette(section, this.palette);
++                chunkPacketInfo.setDataBitsIndex(section, buf.writerIndex() + FriendlyByteBuf.getVarIntSize(this.storage.getDataBits().length));
++                chunkPacketInfo.setPredefinedObjects(section, this.predefinedObjects);
 +            }
 +            // Paper end
              buf.writeLongArray(this.storage.getRaw());
