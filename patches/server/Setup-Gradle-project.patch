@@ -28,6 +28,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import shadow.org.apache.logging.log4j.core.config.plugins.processor.PluginProcessor.PLUGIN_CACHE_FILE
 +import java.text.SimpleDateFormat
 +import java.util.Date
++import java.util.Locale
 +
 +plugins {
 +    java
@@ -64,38 +65,39 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +}
 +
 +tasks.jar {
++    archiveClassifier.set("dev")
++
 +    manifest {
 +        val git = Git(rootProject.layout.projectDirectory.path)
-+        val gitHashCmd = git("rev-parse", "HEAD")
-+        val gitHash = gitHashCmd.getText().substring(0, 7)
-+        attributes(mapOf(
++        val gitHash = git("rev-parse", "HEAD").getText().substring(0, 7)
++        attributes(
 +            "Main-Class" to "org.bukkit.craftbukkit.Main",
 +            "Implementation-Title" to "CraftBukkit",
 +            "Implementation-Version" to "git-Paper-\"$gitHash\"",
 +            "Implementation-Vendor" to SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'").format(Date()), // Paper
 +            "Specification-Title" to "Bukkit",
 +            "Specification-Version" to project.version,
-+            "Specification-Vendor" to "Bukkit Team"
-+        ))
-+        for (tld in listOf("net", "com", "org")) {
-+            attributes(mapOf(
-+                "Sealed" to "true"
-+            ), "$tld/bukkit")
++            "Specification-Vendor" to "Bukkit Team",
++        )
++        for (tld in setOf("net", "com", "org")) {
++            attributes("$tld/bukkit", "Sealed" to true)
 +        }
 +    }
 +}
 +
-+configure<PublishingExtension> {
++publishing {
 +    publications.create<MavenPublication>("maven") {
-+        // todo: confirm this is correct
-+        from(components["java"])
++        artifactId = rootProject.name.toLowerCase(Locale.ENGLISH)
 +        artifact(tasks.reobfJar) {
-+            classifier = "reobf"
++            classifier = null
 +        }
++        artifact(tasks.shadowJar)
 +    }
 +}
 +
 +tasks.shadowJar {
++    archiveClassifier.set("mojang-mapped")
++
 +    listOf(
 +        "jline", "it.unimi", "org.apache.commons.codec", "org.apache.commons.io",
 +        "org.apache.commons.lang3", "org.objectweb.asm"

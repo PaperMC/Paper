@@ -1,3 +1,5 @@
+import java.util.Locale
+
 plugins {
     `java-library`
     `maven-publish`
@@ -27,6 +29,7 @@ dependencies {
 
 configure<PublishingExtension> {
     publications.create<MavenPublication>("maven") {
+        artifactId = project.name.toLowerCase(Locale.ENGLISH)
         from(components["java"])
     }
 }
