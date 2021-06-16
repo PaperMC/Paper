@@ -5,10 +5,10 @@ Subject: [PATCH] Entity#fromMobSpawner()
 
 
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index 2b804995d608eaa7e317287cf8d944c2e96a65fb..1603a0ff6a0c82e18ef5446c129a1c05488abf86 100644
+index 23342cd50e4722dd80c0d32057b6473f68963652..01b3dca8b90d38c5fbe23e72769f54bd87144772 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
-@@ -301,6 +301,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, n
+@@ -321,6 +321,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, n
      public final org.spigotmc.ActivationRange.ActivationType activationType = org.spigotmc.ActivationRange.initializeEntityActivationType(this);
      public final boolean defaultActivationState;
      public long activatedTick = Integer.MIN_VALUE;
@@ -16,8 +16,8 @@ index 2b804995d608eaa7e317287cf8d944c2e96a65fb..1603a0ff6a0c82e18ef5446c129a1c05
      protected int numCollisions = 0; // Paper
      public void inactiveTick() { }
      // Spigot end
-@@ -1840,6 +1841,10 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, n
-                 nbt.setUUID("Paper.OriginWorld", origin.getWorld().getUID());
+@@ -1860,6 +1861,10 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, n
+                 nbt.setUUID("Paper.OriginWorld", originWorld);
                  nbt.put("Paper.Origin", this.newDoubleList(origin.getX(), origin.getY(), origin.getZ()));
              }
 +            // Save entity's from mob spawner status
@@ -27,9 +27,9 @@ index 2b804995d608eaa7e317287cf8d944c2e96a65fb..1603a0ff6a0c82e18ef5446c129a1c05
              // Paper end
              return nbt;
          } catch (Throwable throwable) {
-@@ -1976,6 +1981,8 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, n
-                 }
-                 origin = new org.bukkit.Location(originWorld, originTag.getDoubleAt(0), originTag.getDoubleAt(1), originTag.getDoubleAt(2));
+@@ -1997,6 +2002,8 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, n
+                 this.originWorld = originWorld;
+                 origin = new org.bukkit.util.Vector(originTag.getDoubleAt(0), originTag.getDoubleAt(1), originTag.getDoubleAt(2));
              }
 +
 +            spawnedViaMobSpawner = nbt.getBoolean("Paper.FromMobSpawner"); // Restore entity's from mob spawner status
@@ -49,12 +49,12 @@ index 037dafb59e54047d1d54474c44897d35b8f46c98..e310c1eb1108780bcff4d7ba9d49cefa
                          if (org.bukkit.craftbukkit.event.CraftEventFactory.callSpawnerSpawnEvent(entity, pos).isCancelled()) {
                              Entity vehicle = entity.getVehicle();
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
-index 808169e6d78b9e3647763239bbd05fcfba6449a6..a2a7b6a62ea1292fce37581863bee931d1497223 100644
+index 52f9c17558ed19e7ff3e913287bcd4f6014630fe..e132d38199766e3e787169501d8bb05964506e0f 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
-@@ -1135,5 +1135,10 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
-         Location origin = getHandle().origin;
-         return origin == null ? null : origin.clone();
+@@ -1144,5 +1144,10 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
+         //noinspection ConstantConditions
+         return originVector.toLocation(world);
      }
 +
 +    @Override
