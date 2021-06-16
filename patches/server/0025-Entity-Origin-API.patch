@@ -17,7 +17,7 @@ index 88bac72edf19c578902f49d20353989ed4d96f8f..e79faeb26d079de0108268fd2607cf9e
          if (index >= 0 && index < this.list.size()) {
              Tag tag = this.list.get(index);
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index 2db7c62d25791bc7856d007e9197f8c8041f8dfa..461b376987d3bc7c786fe6d29c5a07a5129c3355 100644
+index 94c5631820590d31cfd4e8a4fb2395dd6b395841..a1d5519f2133349a805296132bbe84272818091b 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
 @@ -1110,6 +1110,11 @@ public class ServerLevel extends net.minecraft.world.level.Level implements Worl
@@ -25,50 +25,71 @@ index 2db7c62d25791bc7856d007e9197f8c8041f8dfa..461b376987d3bc7c786fe6d29c5a07a5
                  }
              }
 +            // Paper start - Set origin location when the entity is being added to the world
-+            if (entity.origin == null) {
-+                entity.origin = entity.getBukkitEntity().getLocation();
++            if (entity.getOriginVector() == null) {
++                entity.setOrigin(entity.getBukkitEntity().getLocation());
 +            }
 +            // Paper end
          }
  
      }
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index a5e3f27a471bf2396db640685edfc93f77fe2c0c..864724d962d536c1a4402a8da1e0b378e9d7efd5 100644
+index 4a86e7e9e81a31d7a785279c294c000c559a76d6..e61f3decd7fa30c67acb4b2e4cb9c9c3ce2c9d7a 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
-@@ -280,6 +280,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, n
+@@ -280,6 +280,27 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, n
      public org.bukkit.projectiles.ProjectileSource projectileSource; // For projectiles only
      public boolean forceExplosionKnockback; // SPIGOT-949
      public boolean persistentInvisibility = false;
-+    public org.bukkit.Location origin; // Paper
++    // Paper start
++    @javax.annotation.Nullable
++    private org.bukkit.util.Vector origin;
++    @javax.annotation.Nullable
++    private UUID originWorld;
++
++    public void setOrigin(@javax.annotation.Nonnull Location location) {
++        this.origin = location.toVector();
++        this.originWorld = location.getWorld().getUID();
++    }
++
++    @javax.annotation.Nullable
++    public org.bukkit.util.Vector getOriginVector() {
++        return this.origin != null ? this.origin.clone() : null;
++    }
++
++    @javax.annotation.Nullable
++    public UUID getOriginWorld() {
++        return this.originWorld;
++    }
++    // Paper
      // Spigot start
      public final org.spigotmc.ActivationRange.ActivationType activationType = org.spigotmc.ActivationRange.initializeEntityActivationType(this);
      public final boolean defaultActivationState;
-@@ -1813,6 +1814,12 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, n
+@@ -1813,6 +1834,12 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, n
                  this.bukkitEntity.storeBukkitValues(nbt);
              }
              // CraftBukkit end
 +            // Paper start - Save the entity's origin location
 +            if (this.origin != null) {
-+                nbt.setUUID("Paper.OriginWorld", origin.getWorld().getUID());
++                nbt.setUUID("Paper.OriginWorld", originWorld);
 +                nbt.put("Paper.Origin", this.newDoubleList(origin.getX(), origin.getY(), origin.getZ()));
 +            }
 +            // Paper end
              return nbt;
          } catch (Throwable throwable) {
              CrashReport crashreport = CrashReport.forThrowable(throwable, "Saving entity NBT");
-@@ -1939,6 +1946,17 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, n
+@@ -1939,6 +1966,18 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, n
              }
              // CraftBukkit end
  
 +            // Paper start - Restore the entity's origin location
 +            ListTag originTag = nbt.getList("Paper.Origin", 6);
 +            if (!originTag.isEmpty()) {
-+                org.bukkit.World originWorld = level.getWorld();
++                UUID originWorld = level.getWorld().getUID();
 +                if (nbt.contains("Paper.OriginWorld")) {
-+                    originWorld = Bukkit.getWorld(nbt.getUUID("Paper.OriginWorld"));
++                    originWorld = nbt.getUUID("Paper.OriginWorld");
 +                }
-+                origin = new org.bukkit.Location(originWorld, originTag.getDoubleAt(0), originTag.getDoubleAt(1), originTag.getDoubleAt(2));
++                this.originWorld = originWorld;
++                origin = new org.bukkit.util.Vector(originTag.getDoubleAt(0), originTag.getDoubleAt(1), originTag.getDoubleAt(2));
 +            }
 +            // Paper end
 +
@@ -76,7 +97,7 @@ index a5e3f27a471bf2396db640685edfc93f77fe2c0c..864724d962d536c1a4402a8da1e0b378
              CrashReport crashreport = CrashReport.forThrowable(throwable, "Loading entity NBT");
              CrashReportCategory crashreportsystemdetails = crashreport.addCategory("Entity being loaded");
 diff --git a/src/main/java/net/minecraft/world/entity/item/FallingBlockEntity.java b/src/main/java/net/minecraft/world/entity/item/FallingBlockEntity.java
-index 11ed0127e2ea268f16c6b4b380d132a71ec9b3dc..eb838fcad0593573f536d5e043cbd3f4bbe25d74 100644
+index 11ed0127e2ea268f16c6b4b380d132a71ec9b3dc..6c262832ba5259ec92d336114c203c254a39924c 100644
 --- a/src/main/java/net/minecraft/world/entity/item/FallingBlockEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/item/FallingBlockEntity.java
 @@ -329,6 +329,14 @@ public class FallingBlockEntity extends Entity {
@@ -88,14 +109,14 @@ index 11ed0127e2ea268f16c6b4b380d132a71ec9b3dc..eb838fcad0593573f536d5e043cbd3f4
 +            int srcX = nbt.getInt("SourceLoc_x");
 +            int srcY = nbt.getInt("SourceLoc_y");
 +            int srcZ = nbt.getInt("SourceLoc_z");
-+            origin = new org.bukkit.Location(level.getWorld(), srcX, srcY, srcZ);
++            this.setOrigin(new org.bukkit.Location(level.getWorld(), srcX, srcY, srcZ));
 +        }
 +        // Paper end
      }
  
      public Level getLevel() {
 diff --git a/src/main/java/net/minecraft/world/entity/item/PrimedTnt.java b/src/main/java/net/minecraft/world/entity/item/PrimedTnt.java
-index 394164f50256ad9a167e15531a9202875abb6cb6..abc62c560816d945642d830a020deb28ff2efa37 100644
+index 394164f50256ad9a167e15531a9202875abb6cb6..8ad1b3cb16533d62deda643ce0cdda308743f78e 100644
 --- a/src/main/java/net/minecraft/world/entity/item/PrimedTnt.java
 +++ b/src/main/java/net/minecraft/world/entity/item/PrimedTnt.java
 @@ -120,6 +120,14 @@ public class PrimedTnt extends Entity {
@@ -107,17 +128,17 @@ index 394164f50256ad9a167e15531a9202875abb6cb6..abc62c560816d945642d830a020deb28
 +            int srcX = nbt.getInt("SourceLoc_x");
 +            int srcY = nbt.getInt("SourceLoc_y");
 +            int srcZ = nbt.getInt("SourceLoc_z");
-+            origin = new org.bukkit.Location(level.getWorld(), srcX, srcY, srcZ);
++            this.setOrigin(new org.bukkit.Location(level.getWorld(), srcX, srcY, srcZ));
 +        }
 +        // Paper end
      }
  
      @Nullable
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
-index 6722d97d498fb2951b7dd8af3b68dd771ce8f5c1..417357f6a187747a5e27fa60a57cee3fb91f3d2e 100644
+index 6722d97d498fb2951b7dd8af3b68dd771ce8f5c1..af1a792a456c2efdc959497c02c1e060ed545724 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
-@@ -1098,4 +1098,12 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
+@@ -1098,4 +1098,21 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
          return this.spigot;
      }
      // Spigot end
@@ -125,8 +146,17 @@ index 6722d97d498fb2951b7dd8af3b68dd771ce8f5c1..417357f6a187747a5e27fa60a57cee3f
 +    // Paper start
 +    @Override
 +    public Location getOrigin() {
-+        Location origin = getHandle().origin;
-+        return origin == null ? null : origin.clone();
++        Vector originVector = this.getHandle().getOriginVector();
++        if (originVector == null) {
++            return null;
++        }
++        World world = this.getWorld();
++        if (this.getHandle().getOriginWorld() != null) {
++            world = org.bukkit.Bukkit.getWorld(this.getHandle().getOriginWorld());
++        }
++
++        //noinspection ConstantConditions
++        return originVector.toLocation(world);
 +    }
 +    // Paper end
  }
