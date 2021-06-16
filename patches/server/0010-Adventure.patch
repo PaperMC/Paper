@@ -2038,7 +2038,7 @@ index d4ea706d5456e709b95e34be8220a0d39be2c8f4..2db149bf57c561d7f8f49341fbefafb5
          player.initMenu(container);
      }
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index 969d5071dbf3356b80da38526351d488ab936c08..e1e9319a67441bccf24b6a844036f3432c1cb86d 100644
+index 969d5071dbf3356b80da38526351d488ab936c08..2cb5427c441e50db23bb59da31654c4f2f218b85 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 @@ -244,14 +244,39 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
@@ -2220,7 +2220,7 @@ index 969d5071dbf3356b80da38526351d488ab936c08..e1e9319a67441bccf24b6a844036f343
      @Override
      public int getPing() {
          return this.getHandle().latency;
-@@ -1727,6 +1798,138 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -1727,6 +1798,156 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          getInventory().setItemInMainHand(hand);
      }
  
@@ -2331,6 +2331,24 @@ index 969d5071dbf3356b80da38526351d488ab936c08..e1e9319a67441bccf24b6a844036f343
 +            this.getHandle().connection.send(new ClientboundSoundPacket(event.get(), io.papermc.paper.adventure.PaperAdventure.asVanilla(sound.source()), x, y, z, sound.volume(), sound.pitch()));
 +        } else {
 +            this.getHandle().connection.send(new ClientboundCustomSoundPacket(name, io.papermc.paper.adventure.PaperAdventure.asVanilla(sound.source()), new Vec3(x, y, z), sound.volume(), sound.pitch()));
++        }
++    }
++
++    @Override
++    public void playSound(final net.kyori.adventure.sound.Sound sound, final net.kyori.adventure.sound.Sound.Emitter emitter) {
++        final Entity entity;
++        if (emitter == net.kyori.adventure.sound.Sound.Emitter.self()) {
++            entity = this.getHandle();
++        } else if (emitter instanceof org.bukkit.entity.Entity) {
++            entity = ((CraftEntity) emitter).getHandle();
++        } else {
++            throw new IllegalArgumentException("Sound emitter must be an Entity or self(), but was: " + emitter);
++        }
++
++        final ResourceLocation name = io.papermc.paper.adventure.PaperAdventure.asVanilla(sound.name());
++        final java.util.Optional<net.minecraft.sounds.SoundEvent> event = net.minecraft.core.Registry.SOUND_EVENT.getOptional(name);
++        if (event.isPresent()) {
++            this.getHandle().connection.send(new net.minecraft.network.protocol.game.ClientboundSoundEntityPacket(event.get(), io.papermc.paper.adventure.PaperAdventure.asVanilla(sound.source()), entity, sound.volume(), sound.pitch()));
 +        }
 +    }
 +
