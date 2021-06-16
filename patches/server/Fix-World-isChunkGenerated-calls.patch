@@ -175,17 +175,17 @@ diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.ja
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
-@@ -0,0 +0,0 @@ import java.nio.file.StandardOpenOption;
- import javax.annotation.Nullable;
- import net.minecraft.Util;
+@@ -0,0 +0,0 @@ import net.minecraft.Util;
+ import net.minecraft.nbt.CompoundTag;
+ import net.minecraft.nbt.NbtIo;
  import net.minecraft.world.level.ChunkPos;
 +import net.minecraft.world.level.chunk.ChunkStatus;
  import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
  
 @@ -0,0 +0,0 @@ public class RegionFile implements AutoCloseable {
-     protected final RegionBitmap usedSectors;
      public final java.util.concurrent.locks.ReentrantLock fileLock = new java.util.concurrent.locks.ReentrantLock(true); // Paper
+     public final File regionFile; // Paper
  
 +    // Paper start - Cache chunk status
 +    private final ChunkStatus[] statuses = new ChunkStatus[32 * 32];
@@ -239,14 +239,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              try {
                  NbtIo.write(nbt, (DataOutput) dataoutputstream);
 +                regionfile.setStatus(pos.x, pos.z, ChunkSerializer.getStatus(nbt)); // Paper - cache status on disk
+                 regionfile.setOversized(pos.x, pos.z, false); // Paper - We don't do this anymore, mojang stores differently, but clear old meta flag if it exists to get rid of our own meta file once last oversized is gone
              } catch (Throwable throwable) {
                  if (dataoutputstream != null) {
-                     try {
-@@ -0,0 +0,0 @@ public class RegionFileStorage implements AutoCloseable {
- 
-     }
- }
-+
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
