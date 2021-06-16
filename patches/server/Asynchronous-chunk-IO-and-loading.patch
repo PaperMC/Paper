@@ -3139,12 +3139,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
 -            return protochunk1;
 +            return new InProgressChunkHolder(protochunk1, tasksToExecuteOnMain); // Paper - Async chunk loading
-         }
-     }
- 
++        }
++    }
++
 +    // Paper start - async chunk save for unload
 +    public static final class AsyncSaveData {
-+        public final DataLayer[] blockLight; // null or size of 17 (for indices -1 through 15)
++        public final DataLayer[] blockLight;
 +        public final DataLayer[] skyLight;
 +
 +        public final ListTag blockTickList; // non-null if we had to go to the server's tick list
@@ -3169,10 +3169,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +        ThreadedLevelLightEngine lightenginethreaded = world.getChunkSource().getLightEngine();
 +
-+        DataLayer[] blockLight = new DataLayer[17 - (-1)];
-+        DataLayer[] skyLight = new DataLayer[17 - (-1)];
++        DataLayer[] blockLight = new DataLayer[lightenginethreaded.getMaxLightSection() - lightenginethreaded.getMinLightSection()];
++        DataLayer[] skyLight = new DataLayer[lightenginethreaded.getMaxLightSection() - lightenginethreaded.getMinLightSection()];
 +
-+        for (int i = -1; i < 17; ++i) {
++        for (int i = lightenginethreaded.getMinLightSection(); i < lightenginethreaded.getMaxLightSection(); ++i) {
 +            DataLayer blockArray = lightenginethreaded.getLayerListener(LightLayer.BLOCK).getDataLayerData(SectionPos.of(chunkPos, i));
 +            DataLayer skyArray = lightenginethreaded.getLayerListener(LightLayer.SKY).getDataLayerData(SectionPos.of(chunkPos, i));
 +
@@ -3184,9 +3184,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                skyArray = skyArray.copy();
 +            }
 +
-+            // apply offset of 1 for -1 starting index
-+            blockLight[i + 1] = blockArray;
-+            skyLight[i + 1] = skyArray;
++            blockLight[i - lightenginethreaded.getMinLightSection()] = blockArray;
++            skyLight[i - lightenginethreaded.getMinLightSection()] = skyArray;
 +        }
 +
 +        TickList<Block> blockTickList = chunk.getBlockTicks();
@@ -3196,7 +3195,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            blockTickListSerialized = null;
 +        } else {
 +            blockTickListSerialized = world.getBlockTicks().save(chunkPos);
-+        }
+         }
 +
 +        TickList<Fluid> fluidTickList = chunk.getLiquidTicks();
 +
@@ -3208,8 +3207,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +
 +        return new AsyncSaveData(blockLight, skyLight, blockTickListSerialized, fluidTickListSerialized, world.getGameTime());
-+    }
-+
+     }
+ 
      public static CompoundTag write(ServerLevel world, ChunkAccess chunk) {
 +        return saveChunk(world, chunk, null);
 +    }
@@ -3241,8 +3240,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                nibblearray = lightenginethreaded.getLayerListener(LightLayer.BLOCK).getDataLayerData(SectionPos.of(chunkcoordintpair, i)); /// Paper - diff on method change (see getAsyncSaveData)
 +                nibblearray1 = lightenginethreaded.getLayerListener(LightLayer.SKY).getDataLayerData(SectionPos.of(chunkcoordintpair, i)); // Paper - diff on method change (see getAsyncSaveData)
 +            } else {
-+                nibblearray = asyncsavedata.blockLight[i + 1]; // +1 to offset the -1 starting index
-+                nibblearray1 = asyncsavedata.skyLight[i + 1]; // +1 to offset the -1 starting index
++                nibblearray = asyncsavedata.blockLight[i - lightenginethreaded.getMinLightSection()];
++                nibblearray1 = asyncsavedata.skyLight[i - lightenginethreaded.getMinLightSection()];
 +            }
 +            // Paper end
              if (chunksection != LevelChunk.EMPTY_SECTION || nibblearray != null || nibblearray1 != null) {
