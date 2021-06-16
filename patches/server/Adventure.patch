@@ -2335,6 +2335,24 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +
 +    @Override
++    public void playSound(final net.kyori.adventure.sound.Sound sound, final net.kyori.adventure.sound.Sound.Emitter emitter) {
++        final Entity entity;
++        if (emitter == net.kyori.adventure.sound.Sound.Emitter.self()) {
++            entity = this.getHandle();
++        } else if (emitter instanceof org.bukkit.entity.Entity) {
++            entity = ((CraftEntity) emitter).getHandle();
++        } else {
++            throw new IllegalArgumentException("Sound emitter must be an Entity or self(), but was: " + emitter);
++        }
++
++        final ResourceLocation name = io.papermc.paper.adventure.PaperAdventure.asVanilla(sound.name());
++        final java.util.Optional<net.minecraft.sounds.SoundEvent> event = net.minecraft.core.Registry.SOUND_EVENT.getOptional(name);
++        if (event.isPresent()) {
++            this.getHandle().connection.send(new net.minecraft.network.protocol.game.ClientboundSoundEntityPacket(event.get(), io.papermc.paper.adventure.PaperAdventure.asVanilla(sound.source()), entity, sound.volume(), sound.pitch()));
++        }
++    }
++
++    @Override
 +    public void stopSound(final net.kyori.adventure.sound.SoundStop stop) {
 +        this.getHandle().connection.send(new ClientboundStopSoundPacket(
 +            io.papermc.paper.adventure.PaperAdventure.asVanillaNullable(stop.sound()),
