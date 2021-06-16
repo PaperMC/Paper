@@ -68,7 +68,7 @@ index 18ae2e2b339d357fbe0f6f2b18bc14c0dfe4c222..3b7ba9c755c82a6f086d5542d32b3567
      }
  
 diff --git a/src/main/java/net/minecraft/server/MCUtil.java b/src/main/java/net/minecraft/server/MCUtil.java
-index 87c9a5c1b43f6010898d72136b5eb9973299b723..d517ae863e9cba4505d4c698c2edbd1457e877e9 100644
+index 4d82abf234f67af124dff3f726a6a2e39313a780..e2e01012b4a40bb2a63d780c50d7567b173d5e41 100644
 --- a/src/main/java/net/minecraft/server/MCUtil.java
 +++ b/src/main/java/net/minecraft/server/MCUtil.java
 @@ -671,6 +671,7 @@ public final class MCUtil {
@@ -80,7 +80,7 @@ index 87c9a5c1b43f6010898d72136b5eb9973299b723..d517ae863e9cba4505d4c698c2edbd14
                  chunkData.addProperty("queued-for-unload", chunkMap.toDrop.contains(playerChunk.pos.longKey));
                  chunkData.addProperty("status", status == null ? "unloaded" : status.toString());
 diff --git a/src/main/java/net/minecraft/server/level/ChunkHolder.java b/src/main/java/net/minecraft/server/level/ChunkHolder.java
-index c2401b2ff0547335ddbbeb05c07b74552c246fc9..377993f325400a9bc77f5fbc77d9ec50f5d76638 100644
+index 948a817a1d6f4435655931357aa094b889771e82..7dbf99df56562238ba02493e7c39995afa4cb923 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkHolder.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkHolder.java
 @@ -60,7 +60,7 @@ public class ChunkHolder {
@@ -89,7 +89,7 @@ index c2401b2ff0547335ddbbeb05c07b74552c246fc9..377993f325400a9bc77f5fbc77d9ec50
      private int ticketLevel;
 -    private int queueLevel;
 +    public volatile int queueLevel; // Paper - private->public, make volatile since this is concurrently accessed
-     public final ChunkPos pos; // Paper - package->public
+     public final ChunkPos pos;
      private boolean hasChangedSections;
      private final ShortSet[] changedBlocksPerSection;
 @@ -75,6 +75,7 @@ public class ChunkHolder {
@@ -312,7 +312,7 @@ index c2401b2ff0547335ddbbeb05c07b74552c246fc9..377993f325400a9bc77f5fbc77d9ec50
                  if (chunk != null) {
                      chunkStorage.callbackExecutor.execute(() -> {
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index 07a5f69ab2527b038dc4c404dd621a262cad3931..eced6724126f5c967df95c9c1febef9833b9de26 100644
+index 39c7ffe656b6e1217d1e7bcf45f68501ed7e015d..c5340b254c0d4ae2fbffe7253da12b89224d8608 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
 @@ -148,6 +148,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
@@ -941,7 +941,7 @@ index d94241bcca4f2fd5e464a860bd356af504dc68b7..e82dcc43ae03c31e9e3ec31dbcfecfde
      }
  }
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-index e46ccbca0cfa63dd5143080375193a95a9249d60..80cda453dc9dd8267eff8a6445d5cd63a13a64c3 100644
+index 135d162a926bd258d2aa001b7d0ef880fd3f2fb9..52f1e2c06cccfead14032cd83ed2dadd668d923c 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 @@ -446,6 +446,26 @@ public class ServerChunkCache extends ChunkSource {
@@ -1027,7 +1027,7 @@ index e46ccbca0cfa63dd5143080375193a95a9249d60..80cda453dc9dd8267eff8a6445d5cd63
          boolean flag1 = this.chunkMap.promoteChunkMap();
  
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-index d59e707f28a5f04545208ad33d122fc433b85933..1dd21dc364eef75667d56db33c5df8e006453a08 100644
+index fa2eb25cdf7d8b0a80b46bc98dcdde7b67e50813..8f12232bfdf82c140fe83f88ef93b96092d586a8 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
 @@ -183,6 +183,14 @@ public class ServerPlayer extends Player {
@@ -1076,12 +1076,12 @@ index d59e707f28a5f04545208ad33d122fc433b85933..1dd21dc364eef75667d56db33c5df8e0
              for (int i = 0; i < this.getInventory().getContainerSize(); ++i) {
                  ItemStack itemstack = this.getInventory().getItem(i);
 diff --git a/src/main/java/net/minecraft/server/level/Ticket.java b/src/main/java/net/minecraft/server/level/Ticket.java
-index a7aa7a9038d4812a9d1e4e72c4dbbbe10df15820..df06e9b3e082fc94213dc1769d6cb1a1f756f62d 100644
+index f1128f0d4a9a0241ac6c9bc18dd13b431c616bb1..2b2b7851d5f68bcdb41d58bcc64740ba58bf1ef4 100644
 --- a/src/main/java/net/minecraft/server/level/Ticket.java
 +++ b/src/main/java/net/minecraft/server/level/Ticket.java
 @@ -8,6 +8,7 @@ public final class Ticket<T> implements Comparable<Ticket<?>> {
-     public final T key; public final T getObjectReason() { return this.key; } // Paper - OBFHELPER
-     private long createdTick; public final long getCreationTick() { return this.createdTick; } // Paper - OBFHELPER
+     public final T key;
+     public long createdTick;
      public long delayUnloadBy; // Paper
 +    public int priority; // Paper - Chunk priority
  
@@ -1144,7 +1144,7 @@ index 66735bbc2528c5812c9df14ef7cd91cb69d903b2..8ebbbecaebea8435232a2ccd9ad1062e
              entityplayer1.setPos(entityplayer1.getX(), entityplayer1.getY() + 1.0D, entityplayer1.getZ());
          }
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index b410001403e4a984e1ea7f5fdb3adc866631e80f..3eaf72f49d8e520c6f3d2fea2818864018b41732 100644
+index 6c4c82fb439a07f62668b625b6ba5d552949964d..6ddef28e869ae8f3b3cbc4bacc44abc364d036d8 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
 @@ -223,7 +223,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, n

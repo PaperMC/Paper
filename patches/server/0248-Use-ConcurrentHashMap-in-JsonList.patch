@@ -38,7 +38,7 @@ index 7c5a75fb34640bb4e7ef839412dbb30b0d0fc8e8..b62aa9f934c33b4d22b985b5e56937ba
  
              chatmessage = new TranslatableComponent("multiplayer.disconnect.banned_ip.reason", new Object[]{ipbanentry.getReason()});
 diff --git a/src/main/java/net/minecraft/server/players/StoredUserList.java b/src/main/java/net/minecraft/server/players/StoredUserList.java
-index 00e3662e25618459447d4ce5f56f7e046bfe47e2..4b85943a704e0a5ca6b95f9cfcbfd1f9505c3b68 100644
+index 00e3662e25618459447d4ce5f56f7e046bfe47e2..0851dca56ae680387d56b3fdc894746c248604f5 100644
 --- a/src/main/java/net/minecraft/server/players/StoredUserList.java
 +++ b/src/main/java/net/minecraft/server/players/StoredUserList.java
 @@ -12,6 +12,8 @@ import java.io.BufferedReader;
@@ -83,14 +83,14 @@ index 00e3662e25618459447d4ce5f56f7e046bfe47e2..4b85943a704e0a5ca6b95f9cfcbfd1f9
 +        // Paper start
 +        // this.g();
 +        // return (V) this.d.get(this.a(k0)); // CraftBukkit - fix decompile error
-+        return (V) this.getBackingMap().computeIfPresent(this.getMappingKey(key), (k, v) -> {
++        return (V) this.getBackingMap().computeIfPresent(this.getKeyForUser(key), (k, v) -> {
 +            return v.hasExpired() ? null : v;
 +        });
 +        // Paper end
      }
  
      public void remove(K key) {
-@@ -83,9 +105,11 @@ public abstract class StoredUserList<K, V extends StoredUserEntry<K>> {
+@@ -83,7 +105,8 @@ public abstract class StoredUserList<K, V extends StoredUserEntry<K>> {
      // CraftBukkit end
  
      public boolean isEmpty() {
@@ -99,15 +99,10 @@ index 00e3662e25618459447d4ce5f56f7e046bfe47e2..4b85943a704e0a5ca6b95f9cfcbfd1f9
 +        return this.getBackingMap().isEmpty(); // Paper - readability is the goal. As an aside, isEmpty() uses only sumCount() and a comparison. size() uses sumCount(), casts, and boolean logic
      }
  
-+    protected final String getMappingKey(K k0) { return getKeyForUser(k0); } // Paper - OBFHELPER
      protected String getKeyForUser(K profile) {
-         return profile.toString();
-     }
-@@ -94,15 +118,16 @@ public abstract class StoredUserList<K, V extends StoredUserEntry<K>> {
-         return this.map.containsKey(this.getKeyForUser(k0));
+@@ -95,14 +118,14 @@ public abstract class StoredUserList<K, V extends StoredUserEntry<K>> {
      }
  
-+    private void removeStaleEntries() { removeExpired(); } // Paper - OBFHELPER
      private void removeExpired() {
 -        List<K> list = Lists.newArrayList();
 -        Iterator iterator = this.map.values().iterator();
@@ -123,7 +118,7 @@ index 00e3662e25618459447d4ce5f56f7e046bfe47e2..4b85943a704e0a5ca6b95f9cfcbfd1f9
              }
          }
  
-@@ -111,9 +136,11 @@ public abstract class StoredUserList<K, V extends StoredUserEntry<K>> {
+@@ -111,9 +134,11 @@ public abstract class StoredUserList<K, V extends StoredUserEntry<K>> {
          while (iterator.hasNext()) {
              K k0 = (K) iterator.next(); // CraftBukkit - decompile error
  
@@ -137,11 +132,11 @@ index 00e3662e25618459447d4ce5f56f7e046bfe47e2..4b85943a704e0a5ca6b95f9cfcbfd1f9
      }
  
      protected abstract StoredUserEntry<K> createEntry(JsonObject json);
-@@ -123,6 +150,7 @@ public abstract class StoredUserList<K, V extends StoredUserEntry<K>> {
+@@ -123,6 +148,7 @@ public abstract class StoredUserList<K, V extends StoredUserEntry<K>> {
      }
  
      public void save() throws IOException {
-+        this.removeStaleEntries(); // Paper - remove expired values before saving
++        this.removeExpired(); // Paper - remove expired values before saving
          JsonArray jsonarray = new JsonArray();
          Stream<JsonObject> stream = this.map.values().stream().map((jsonlistentry) -> { // CraftBukkit - decompile error
              JsonObject jsonobject = new JsonObject();

@@ -479,7 +479,7 @@ index 0000000000000000000000000000000000000000..eeedc30a45d9637d68f04f185b3dd90d
 +}
 diff --git a/src/main/java/io/papermc/paper/adventure/PaperAdventure.java b/src/main/java/io/papermc/paper/adventure/PaperAdventure.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..f72511a71c01718be48ee6b714e902d0f41e14ae
+index 0000000000000000000000000000000000000000..d24c569f00786b2bde953429aad57025abee72d6
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/adventure/PaperAdventure.java
 @@ -0,0 +1,342 @@
@@ -637,7 +637,7 @@ index 0000000000000000000000000000000000000000..f72511a71c01718be48ee6b714e902d0
 +
 +    public static net.minecraft.network.chat.Component asVanilla(final Component component) {
 +        if (true) return new AdventureComponent(component);
-+        return net.minecraft.network.chat.Component.Serializer.fromJsonTree(GSON.serializer().toJsonTree(component));
++        return net.minecraft.network.chat.Component.Serializer.fromJson(GSON.serializer().toJsonTree(component));
 +    }
 +
 +    public static List<net.minecraft.network.chat.Component> asVanilla(final List<Component> adventures) {
@@ -664,7 +664,7 @@ index 0000000000000000000000000000000000000000..f72511a71c01718be48ee6b714e902d0
 +        if (component instanceof AdventureComponent) {
 +            return asJsonString(((AdventureComponent) component).wrapped, locale);
 +        }
-+        return net.minecraft.network.chat.Component.Serializer.componentToJson(component);
++        return net.minecraft.network.chat.Component.Serializer.toJson(component);
 +    }
 +
 +    // thank you for being worse than wet socks, Bukkit
@@ -759,7 +759,7 @@ index 0000000000000000000000000000000000000000..f72511a71c01718be48ee6b714e902d0
 +        tag.putString("author", asJsonString(book.author(), locale));
 +        final ListTag pages = new ListTag();
 +        for (final Component page : book.pages()) {
-+            pages.add(StringTag.create(asJsonString(page, locale)));
++            pages.add(StringTag.valueOf(asJsonString(page, locale)));
 +        }
 +        tag.put("pages", pages);
 +        return item;
@@ -877,7 +877,7 @@ index 0000000000000000000000000000000000000000..7493efba31403cbe7f26e493f165f1b8
 +}
 diff --git a/src/main/java/io/papermc/paper/adventure/WrapperAwareSerializer.java b/src/main/java/io/papermc/paper/adventure/WrapperAwareSerializer.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..2e93ac0eb74a89c020f3356f77320cf6459727fd
+index 0000000000000000000000000000000000000000..6b202f4b3ddbe1f5dde188136f39414dc68ae4e4
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/adventure/WrapperAwareSerializer.java
 @@ -0,0 +1,19 @@
@@ -897,7 +897,7 @@ index 0000000000000000000000000000000000000000..2e93ac0eb74a89c020f3356f77320cf6
 +
 +    @Override
 +    public net.minecraft.network.chat.Component serialize(final Component component) {
-+        return net.minecraft.network.chat.Component.Serializer.fromJsonTree(PaperAdventure.GSON.serializer().toJsonTree(component));
++        return net.minecraft.network.chat.Component.Serializer.fromJson(PaperAdventure.GSON.serializer().toJsonTree(component));
 +    }
 +}
 diff --git a/src/main/java/net/kyori/adventure/bossbar/HackyBossBarPlatformBridge.java b/src/main/java/net/kyori/adventure/bossbar/HackyBossBarPlatformBridge.java
@@ -943,25 +943,17 @@ index 0000000000000000000000000000000000000000..2dc92d8d2764d3e9b621d5c7d5e30c30
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/ChatFormatting.java b/src/main/java/net/minecraft/ChatFormatting.java
-index b82b218be1bd849fa280ea1fe0336e279bebfc18..77e35e18754bd2380e1d5f93c62e1d47d21a0a18 100644
+index b82b218be1bd849fa280ea1fe0336e279bebfc18..2fb444653118816f1250841cb4c6c486e67c642b 100644
 --- a/src/main/java/net/minecraft/ChatFormatting.java
 +++ b/src/main/java/net/minecraft/ChatFormatting.java
-@@ -86,6 +86,7 @@ public enum ChatFormatting {
-         return !this.isFormat && this != RESET;
-     }
- 
-+    @Nullable public Integer getHexValue() { return this.getColor(); } // Paper - OBFHELPER
-     @Nullable
-     public Integer getColor() {
-         return this.color;
-@@ -110,6 +111,18 @@ public enum ChatFormatting {
+@@ -110,6 +110,18 @@ public enum ChatFormatting {
          return name == null ? null : FORMATTING_BY_NAME.get(cleanName(name));
      }
  
 +    // Paper start
 +    @Nullable public static ChatFormatting getByHexValue(int i) {
 +        for (ChatFormatting value : values()) {
-+            if (value.getHexValue() != null && value.getHexValue() == i) {
++            if (value.getColor() != null && value.getColor() == i) {
 +                return value;
 +            }
 +        }
@@ -973,18 +965,6 @@ index b82b218be1bd849fa280ea1fe0336e279bebfc18..77e35e18754bd2380e1d5f93c62e1d47
      @Nullable
      public static ChatFormatting getById(int colorIndex) {
          if (colorIndex < 0) {
-diff --git a/src/main/java/net/minecraft/nbt/StringTag.java b/src/main/java/net/minecraft/nbt/StringTag.java
-index ad1c1fbb15cbd744afe54e1c3b533e51021a89eb..b15cfb9374402d4b42d163bf8e3ec838f19004bc 100644
---- a/src/main/java/net/minecraft/nbt/StringTag.java
-+++ b/src/main/java/net/minecraft/nbt/StringTag.java
-@@ -43,6 +43,7 @@ public class StringTag implements Tag {
-         this.data = value;
-     }
- 
-+    public static StringTag create(final String value) { return valueOf(value); } // Paper - OBFHELPER
-     public static StringTag valueOf(String value) {
-         return value.isEmpty() ? EMPTY : new StringTag(value);
-     }
 diff --git a/src/main/java/net/minecraft/network/FriendlyByteBuf.java b/src/main/java/net/minecraft/network/FriendlyByteBuf.java
 index 3b8207046d38d3d14719ff6761a22e60a93628b7..c15860c77c7c24b1946c22f140f1b5c12b052ade 100644
 --- a/src/main/java/net/minecraft/network/FriendlyByteBuf.java
@@ -1043,7 +1023,7 @@ index 83e99af925c87433b59f9bed30dfbf4e490c1b84..b8a0c0411fd2caab21672de7f3e72164
                  try {
                      int i = friendlyByteBuf.writerIndex();
 diff --git a/src/main/java/net/minecraft/network/chat/Component.java b/src/main/java/net/minecraft/network/chat/Component.java
-index d9aac575213f3bda9c44ea2b3b6d1969ff82f09d..02d19fa4abdee0c8331734932a83e64694356030 100644
+index d9aac575213f3bda9c44ea2b3b6d1969ff82f09d..5ba1636bbb938373e43c1f3ac561368fc9cffd43 100644
 --- a/src/main/java/net/minecraft/network/chat/Component.java
 +++ b/src/main/java/net/minecraft/network/chat/Component.java
 @@ -1,6 +1,7 @@
@@ -1070,22 +1050,6 @@ index d9aac575213f3bda9c44ea2b3b6d1969ff82f09d..02d19fa4abdee0c8331734932a83e646
              JsonObject jsonobject = new JsonObject();
  
              if (!ichatbasecomponent.getStyle().isEmpty()) {
-@@ -416,6 +419,7 @@ public interface Component extends Message, FormattedText, Iterable<Component> {
-             });
-         }
- 
-+        public static String componentToJson(final Component component) { return toJson(component); } // Paper - OBFHELPER
-         public static String toJson(Component text) {
-             return Component.Serializer.GSON.toJson(text);
-         }
-@@ -429,6 +433,7 @@ public interface Component extends Message, FormattedText, Iterable<Component> {
-             return (MutableComponent) GsonHelper.fromJson(Component.Serializer.GSON, json, MutableComponent.class, false);
-         }
- 
-+        public static @Nullable Component fromJsonTree(final JsonElement json) { return fromJson(json); } // Paper - OBFHELPER
-         @Nullable
-         public static MutableComponent fromJson(JsonElement json) {
-             return (MutableComponent) Component.Serializer.GSON.fromJson(json, MutableComponent.class);
 diff --git a/src/main/java/net/minecraft/network/protocol/game/ClientboundChatPacket.java b/src/main/java/net/minecraft/network/protocol/game/ClientboundChatPacket.java
 index d63a712126973fd1bea547d30c7d116c622669ee..1f5050e6c1d932aa196ab9524f7f1f9bd1b45fce 100644
 --- a/src/main/java/net/minecraft/network/protocol/game/ClientboundChatPacket.java
@@ -1212,7 +1176,7 @@ index 762a9392ffac3042356709dddd15bb3516048bed..3544e2dc2522e9d6305d727d56e73490
          buf.writeComponent(this.footer);
      }
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-index 99292d239dfdd2c0aaeece2b526db011b17aa121..a8fae13b18c1619f898e818b749c02c647f164c5 100644
+index 2b0d989119c9f69a68a6c1c69fb09dbbedd16716..172536147305f283bd14d356ff4f39531e8f3ad9 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
 @@ -145,6 +145,7 @@ import net.minecraft.world.scores.Score;
@@ -1410,7 +1374,7 @@ index 78ef2e0d9a32d38c7193859f8ee726c70c9b289e..3e89612f4bf74179b3461166b17b42af
              }
              // CraftBukkit end
 diff --git a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
-index 89d3a7ab019e735c5057568aa2971018f1a05324..11c0da9b36aecc1a7d3acb2dccdae962426dd2e7 100644
+index 3d1f20a5caf8b4665ea0208af755911c34081323..0df683b7503d4c34fc8af33b82a4440383702043 100644
 --- a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
 @@ -36,6 +36,7 @@ import net.minecraft.world.entity.player.Player;
@@ -1601,18 +1565,6 @@ index d289e8321a62f7c8d1e5b83f038e7331a26fc24e..658aff27155b32a0323f55152c7315fd
  
      public BossEvent(UUID uuid, Component name, BossEvent.BossBarColor color, BossEvent.BossBarOverlay style) {
          this.id = uuid;
-diff --git a/src/main/java/net/minecraft/world/item/ItemStack.java b/src/main/java/net/minecraft/world/item/ItemStack.java
-index d5b8931243e2f9cac9b0f92ab8df043a831bbe70..ac05b201167d8e17f39d3df732adf676dc24b409 100644
---- a/src/main/java/net/minecraft/world/item/ItemStack.java
-+++ b/src/main/java/net/minecraft/world/item/ItemStack.java
-@@ -1152,6 +1152,7 @@ public final class ItemStack {
-     }
-     // CraftBukkit end
- 
-+    public Component displayName() { return this.getDisplayName(); } // Paper - OBFHELPER
-     public Component getDisplayName() {
-         MutableComponent ichatmutablecomponent = (new TextComponent("")).append(this.getHoverName());
- 
 diff --git a/src/main/java/net/minecraft/world/item/enchantment/Enchantment.java b/src/main/java/net/minecraft/world/item/enchantment/Enchantment.java
 index 5a662dd8a05be01cbb232c3dee65d660c9b19a98..07a83fc6f9a83889a0a3b8c714be68302e700a0f 100644
 --- a/src/main/java/net/minecraft/world/item/enchantment/Enchantment.java
@@ -2558,7 +2510,7 @@ index 6a64fbb8b4937f39d5fdc2e2cbec26c83c74c486..7d6b5fdb00a5c1614849735634262a36
      public String getTitle() {
          return CraftChatMessage.fromComponent(this.container.getTitle());
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java
-index 27bbec5f779e7193818e546dbf02a761ff950719..921d838afc5b7ae47a9ee81b7ae4450543a32d98 100644
+index 27bbec5f779e7193818e546dbf02a761ff950719..8f05c6832fc968666f0e6e0a19f6dd74d92d0c28 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java
 @@ -337,4 +337,17 @@ public final class CraftItemFactory implements ItemFactory {
@@ -2575,7 +2527,7 @@ index 27bbec5f779e7193818e546dbf02a761ff950719..921d838afc5b7ae47a9ee81b7ae44505
 +
 +    @Override
 +    public net.kyori.adventure.text.@org.jetbrains.annotations.NotNull Component displayName(@org.jetbrains.annotations.NotNull ItemStack itemStack) {
-+        return io.papermc.paper.adventure.PaperAdventure.asAdventure(CraftItemStack.asNMSCopy(itemStack).displayName());
++        return io.papermc.paper.adventure.PaperAdventure.asAdventure(CraftItemStack.asNMSCopy(itemStack).getDisplayName());
 +    }
 +    // Paper end
  }
@@ -3076,7 +3028,7 @@ index 589cb3bebb4bb193477cc5064c66830eec3e9138..68aa66c340b7a686a353e2a15084d811
  
      @Override
 diff --git a/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftTeam.java b/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftTeam.java
-index 81f16dc1ed6e102af298600db75cab21a09bc00f..c2dc4d65170eba2d914cf2efdcc231254fec7c02 100644
+index 81f16dc1ed6e102af298600db75cab21a09bc00f..f86776aa42bd5520f8aaeaa46bb93ec4d5b4e27d 100644
 --- a/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftTeam.java
 +++ b/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftTeam.java
 @@ -28,6 +28,55 @@ final class CraftTeam extends CraftScoreboardComponent implements Team {
@@ -3120,8 +3072,8 @@ index 81f16dc1ed6e102af298600db75cab21a09bc00f..c2dc4d65170eba2d914cf2efdcc23125
 +    @Override
 +    public net.kyori.adventure.text.format.TextColor color() throws IllegalStateException {
 +        CraftScoreboard scoreboard = checkState();
-+        if (team.getColor().getHexValue() == null) throw new IllegalStateException("Team colors must have hex values");
-+        net.kyori.adventure.text.format.TextColor color = net.kyori.adventure.text.format.TextColor.color(team.getColor().getHexValue());
++        if (team.getColor().getColor() == null) throw new IllegalStateException("Team colors must have hex values");
++        net.kyori.adventure.text.format.TextColor color = net.kyori.adventure.text.format.TextColor.color(team.getColor().getColor());
 +        if (!(color instanceof net.kyori.adventure.text.format.NamedTextColor)) throw new IllegalStateException("Team doesn't have a NamedTextColor");
 +        return (net.kyori.adventure.text.format.NamedTextColor) color;
 +    }
