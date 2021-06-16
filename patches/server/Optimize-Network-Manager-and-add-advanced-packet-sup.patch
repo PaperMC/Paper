@@ -296,3 +296,28 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      default boolean packetTooLarge(net.minecraft.network.Connection manager) {
          return false;
      }
+diff --git a/src/main/java/net/minecraft/server/network/ServerConnectionListener.java b/src/main/java/net/minecraft/server/network/ServerConnectionListener.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/network/ServerConnectionListener.java
++++ b/src/main/java/net/minecraft/server/network/ServerConnectionListener.java
+@@ -0,0 +0,0 @@ public class ServerConnectionListener {
+     final List<Connection> connections = Collections.synchronizedList(Lists.newArrayList());
+     // Paper start - prevent blocking on adding a new network manager while the server is ticking
+     private final java.util.Queue<Connection> pending = new java.util.concurrent.ConcurrentLinkedQueue<>();
++    private static final boolean disableFlushConsolidation = Boolean.getBoolean("Paper.disableFlushConsolidate"); // Paper
+     private final void addPending() {
+         Connection manager = null;
+         while ((manager = pending.poll()) != null) {
+             connections.add(manager);
++            manager.isPending = false;
+         }
+     }
+     // Paper end
+@@ -0,0 +0,0 @@ public class ServerConnectionListener {
+                         ;
+                     }
+ 
++                    if (!disableFlushConsolidation) channel.pipeline().addFirst(new io.netty.handler.flush.FlushConsolidationHandler()); // Paper
+                     channel.pipeline().addLast("timeout", new ReadTimeoutHandler(30)).addLast("legacy_query", new LegacyQueryHandler(ServerConnectionListener.this)).addLast("splitter", new Varint21FrameDecoder()).addLast("decoder", new PacketDecoder(PacketFlow.SERVERBOUND)).addLast("prepender", new Varint21LengthFieldPrepender()).addLast("encoder", new PacketEncoder(PacketFlow.CLIENTBOUND));
+                     int j = ServerConnectionListener.this.server.getRateLimitPacketsPerSecond();
+                     Object object = j > 0 ? new RateKickingConnection(j) : new Connection(PacketFlow.SERVERBOUND);
