@@ -17,18 +17,17 @@ index 67fb370cad6924895a6b27052dbd5c1767e3f0c9..3e05459f27c4c5697ae65da504d67a6a
  /.project
 diff --git a/build.gradle.kts b/build.gradle.kts
 new file mode 100644
-index 0000000000000000000000000000000000000000..80fab4621582aed02cc029900999ceff72e027ef
+index 0000000000000000000000000000000000000000..792fea417637493814071850e780e9923d75a637
 --- /dev/null
 +++ b/build.gradle.kts
-@@ -0,0 +1,131 @@
+@@ -0,0 +1,132 @@
 +import com.github.jengelman.gradle.plugins.shadow.transformers.Log4j2PluginsCacheFileTransformer
 +import com.github.jengelman.gradle.plugins.shadow.transformers.Transformer
 +import io.papermc.paperweight.util.Git
 +import io.papermc.paperweight.util.path
-+import org.gradle.api.file.FileTreeElement
 +import shadow.org.apache.logging.log4j.core.config.plugins.processor.PluginProcessor.PLUGIN_CACHE_FILE
-+import java.util.Date
 +import java.text.SimpleDateFormat
++import java.util.Date
 +
 +plugins {
 +    java
@@ -114,20 +113,24 @@ index 0000000000000000000000000000000000000000..80fab4621582aed02cc029900999ceff
 +    exclude("org/bukkit/craftbukkit/inventory/ItemStack*Test.class")
 +}
 +
-+fun TaskContainer.registerRunTask(name: String, block: JavaExec.() -> Unit): TaskProvider<JavaExec> =
-+    register<JavaExec>(name) {
-+        group = "Paper"
-+        workingDir = rootProject.layout.projectDirectory.dir(
-+            providers.gradleProperty("runWorkDir").forUseAtConfigurationTime().orElse("run")
-+        ).get().asFile
-+        doFirst {
-+            workingDir.mkdirs()
-+        }
-+        standardInput = System.`in`
-+        args("--nogui")
-+        systemProperty("net.kyori.adventure.text.warnWhenLegacyFormattingDetected", true)
-+        block(this)
++fun TaskContainer.registerRunTask(
++    name: String, block: JavaExec.() -> Unit
++): TaskProvider<JavaExec> = register<JavaExec>(name) {
++    group = "paper"
++    standardInput = System.`in`
++    workingDir = rootProject.layout.projectDirectory.dir(
++        providers.gradleProperty("runWorkDir").forUseAtConfigurationTime().orElse("run")
++    ).get().asFile
++    args("--nogui")
++    systemProperty("net.kyori.adventure.text.warnWhenLegacyFormattingDetected", true)
++    if (project.hasProperty("disableWatchdog")) {
++        systemProperty("disable.watchdog", true)
 +    }
++    doFirst {
++        workingDir.mkdirs()
++    }
++    block(this)
++}
 +
 +tasks.registerRunTask("runShadow") {
 +    description = "Spin up a test server from the shadowJar archiveFile"
@@ -141,10 +144,8 @@ index 0000000000000000000000000000000000000000..80fab4621582aed02cc029900999ceff
 +
 +tasks.registerRunTask("runDev") {
 +    description = "Spin up a non-shaded non-remapped test server"
-+    classpath = project.convention.getPlugin(JavaPluginConvention::class.java)
-+        .sourceSets.getByName("main").runtimeClasspath
-+    main = "org.bukkit.craftbukkit.Main"
-+    systemProperty("disable.watchdog", true)
++    classpath = java.sourceSets.main.get().runtimeClasspath
++    mainClass.set("org.bukkit.craftbukkit.Main")
 +}
 +
 +class ModifiedLog4j2PluginsCacheFileTransformer : Transformer by Log4j2PluginsCacheFileTransformer() {
