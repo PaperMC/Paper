@@ -2,18 +2,20 @@ From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Thu, 8 Oct 2020 00:00:25 -0400
 Subject: [PATCH] Fix "Not a string" Map Conversion spam
-1.17 Update: See if this is still needed, might be fixed upstream
+
 The maps did convert successfully, but had noisy logs due to Spigot
 implementing this logic incorrectly.
 
 This stops the spam by converting the old format to new before
 requesting the world.
 
+Track spigot issue to see when fixed: https://hub.spigotmc.org/jira/browse/SPIGOT-6181
+
 diff --git a/src/main/java/net/minecraft/world/level/saveddata/maps/MapItemSavedData.java b/src/main/java/net/minecraft/world/level/saveddata/maps/MapItemSavedData.java
-index 7582c7cd4235d212a0cf66a4c59ce0cedaa360ad..e7b178127228dea5a17ba0fbd6bae148d70e8eb5 100644
+index 15c6f9d1c43fbedac70526a84a010be83b4cae86..e90cb274ae07a259b90ec2badf35980ba684c5b1 100644
 --- a/src/main/java/net/minecraft/world/level/saveddata/maps/MapItemSavedData.java
 +++ b/src/main/java/net/minecraft/world/level/saveddata/maps/MapItemSavedData.java
-@@ -12,6 +12,8 @@ import net.minecraft.core.BlockPos;
+@@ -14,6 +14,8 @@ import net.minecraft.core.BlockPos;
  import net.minecraft.nbt.CompoundTag;
  import net.minecraft.nbt.ListTag;
  import net.minecraft.nbt.NbtOps;
@@ -22,20 +24,20 @@ index 7582c7cd4235d212a0cf66a4c59ce0cedaa360ad..e7b178127228dea5a17ba0fbd6bae148
  import net.minecraft.nbt.Tag;
  import net.minecraft.network.chat.Component;
  import net.minecraft.network.protocol.Packet;
-@@ -94,7 +96,26 @@ public class MapItemSavedData extends SavedData {
+@@ -104,7 +106,26 @@ public class MapItemSavedData extends SavedData {
+     }
  
-     @Override
-     public void load(CompoundTag tag) {
--        DataResult<ResourceKey<Level>> dataresult = DimensionType.parseLegacy(new Dynamic(NbtOps.INSTANCE, tag.get("dimension"))); // CraftBukkit - decompile error
+     public static MapItemSavedData load(CompoundTag nbt) {
+-        DataResult dataresult = DimensionType.parseLegacy(new Dynamic(NbtOps.INSTANCE, nbt.get("dimension")));
 +        // Paper start - fix "Not a string" spam
-+        Tag dimension = tag.get("dimension");
++        Tag dimension = nbt.get("dimension");
 +        if (dimension instanceof NumericTag && ((NumericTag) dimension).getAsInt() >= CraftWorld.CUSTOM_DIMENSION_OFFSET) {
-+            long least = tag.getLong("UUIDLeast");
-+            long most = tag.getLong("UUIDMost");
++            long least = nbt.getLong("UUIDLeast");
++            long most = nbt.getLong("UUIDMost");
 +
 +            if (least != 0L && most != 0L) {
-+                this.uniqueId = new UUID(most, least);
-+                CraftWorld world = (CraftWorld) server.getWorld(this.uniqueId);
++                UUID uuid = new UUID(most, least);
++                CraftWorld world = (CraftWorld) Bukkit.getWorld(uuid);
 +                if (world != null) {
 +                    dimension = StringTag.create("minecraft:" + world.getName().toLowerCase(java.util.Locale.ENGLISH));
 +                } else {
@@ -49,4 +51,4 @@ index 7582c7cd4235d212a0cf66a4c59ce0cedaa360ad..e7b178127228dea5a17ba0fbd6bae148
 +        // Paper end - fix "Not a string" spam
          Logger logger = MapItemSavedData.LOGGER;
  
-         logger.getClass();
+         Objects.requireNonNull(logger);
