@@ -3,10 +3,6 @@ From: Aikar <aikar@aikar.co>
 Date: Fri, 29 May 2020 23:32:14 -0400
 Subject: [PATCH] Improve Chunk Status Transition Speed
 
-
-1.17 Update note: Depends on not yet applied patch: Implement Chunk Priority / Urgency System for Chunks
-
-
 When a chunk is loaded from disk that has already been generated,
 the server has to promote the chunk through the system to reach
 it's current desired status level.
@@ -40,10 +36,10 @@ scenario / path:
 Previously would have hopped to SERVER around 12+ times there extra.
 
 diff --git a/src/main/java/net/minecraft/server/level/ChunkHolder.java b/src/main/java/net/minecraft/server/level/ChunkHolder.java
-index ce320672d7602c94dd75ad857435dca6ac3bab56..8260636da673ef095728c208db2d6237bab2db19 100644
+index 377993f325400a9bc77f5fbc77d9ec50f5d76638..c28f693bf7da42570d95ab97ccb0ec2bf06f53ee 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkHolder.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkHolder.java
-@@ -83,6 +83,13 @@ public class ChunkHolder {
+@@ -240,6 +240,13 @@ public class ChunkHolder {
          this.playersInChunkTickRange = this.chunkMap.playerChunkTickRangeMap.getObjectsInRange(key);
      }
      // Paper end - optimise isOutsideOfRange
@@ -51,17 +47,17 @@ index ce320672d7602c94dd75ad857435dca6ac3bab56..8260636da673ef095728c208db2d6237
 +    public boolean canAdvanceStatus() {
 +        ChunkStatus status = getChunkHolderStatus();
 +        ChunkAccess chunk = getAvailableChunkNow();
-+        return chunk != null && (status == null || chunk.getStatus().isAtLeastStatus(getNextStatus(status)));
++        return chunk != null && (status == null || chunk.getStatus().isOrAfter(getNextStatus(status)));
 +    }
 +    // Paper end
  
-     // Paper start - no-tick view distance
-     public final LevelChunk getSendingChunk() {
+     public ChunkHolder(ChunkPos pos, int level, LevelHeightAccessor world, LevelLightEngine lightingProvider, ChunkHolder.LevelChangeListener levelUpdateListener, ChunkHolder.PlayerProvider playersWatchingChunkProvider) {
+         this.futures = new AtomicReferenceArray(ChunkHolder.CHUNK_STATUSES.size());
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index 7a1f6d1807757a43a7aa471db651404c06720820..acc566d14926dcf9e88f3e0837884e4c823d777c 100644
+index c544529908dd5af63a829f54985eefc236e290db..4c8e5e3e69c629485b7118dfcc1eb04ac3c5f6c9 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
-@@ -792,7 +792,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -838,7 +838,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
              return either.mapLeft((list) -> {
                  return (LevelChunk) list.get(list.size() / 2);
              });
@@ -70,28 +66,10 @@ index 7a1f6d1807757a43a7aa471db651404c06720820..acc566d14926dcf9e88f3e0837884e4c
      }
  
      @Nullable
-@@ -1142,7 +1142,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
-                     ChunkAccess ichunkaccess = (ChunkAccess) optional.get();
- 
-                     if (ichunkaccess.getStatus().isOrAfter(requiredStatus)) {
--                        CompletableFuture completablefuture1;
-+                        CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> completablefuture1; // Paper
- 
-                         if (requiredStatus == ChunkStatus.LIGHT) {
-                             completablefuture1 = this.scheduleChunkGeneration(holder, requiredStatus);
-@@ -1158,7 +1158,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
-                         return this.scheduleChunkGeneration(holder, requiredStatus);
-                     }
-                 }
--            }, this.mainThreadExecutor);
-+            }, this.mainInvokingExecutor).thenComposeAsync(CompletableFuture::completedFuture, this.mainInvokingExecutor); // Paper - optimize chunk status progression without jumping through thread pool - ensure main
-         }
-     }
- 
-@@ -1279,6 +1279,12 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
-                 return CompletableFuture.completedFuture(Either.right(playerchunk_failure));
-             });
-         }, (runnable) -> {
+@@ -1222,6 +1222,12 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+             return "chunkGenerate " + requiredStatus.getName();
+         });
+         Executor executor = (runnable) -> {
 +            // Paper start - optimize chunk status progression without jumping through thread pool
 +            if (holder.canAdvanceStatus()) {
 +                this.mainInvokingExecutor.execute(runnable);
@@ -99,5 +77,5 @@ index 7a1f6d1807757a43a7aa471db651404c06720820..acc566d14926dcf9e88f3e0837884e4c
 +            }
 +            // Paper end
              this.worldgenMailbox.tell(ChunkTaskPriorityQueueSorter.message(holder, runnable));
-         });
-     }
+         };
+ 
