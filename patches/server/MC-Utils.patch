@@ -760,7 +760,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +
 +    public static BlockState getBlockDataFromRaw(final long raw) {
-+        return GLOBAL_PALETTE.getObject((int)(raw >>> 32));
++        return GLOBAL_PALETTE.valueFor((int)(raw >>> 32));
 +    }
 +
 +    public static int getIndexFromRaw(final long raw) {
@@ -772,7 +772,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +
 +    public static long getRawFromValues(final int index, final int location, final BlockState data) {
-+        return (long)index | ((long)location << 16) | (((long)GLOBAL_PALETTE.getOrCreateIdFor(data)) << 32);
++        return (long)index | ((long)location << 16) | (((long)GLOBAL_PALETTE.idFor(data)) << 32);
 +    }
 +
 +    public static long setIndexRawValues(final long value, final int index) {
@@ -2275,22 +2275,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/core/BlockPos.java
 +++ b/src/main/java/net/minecraft/core/BlockPos.java
 @@ -0,0 +0,0 @@ public class BlockPos extends Vec3i {
-             return super.rotate(rotation).immutable();
-         }
- 
-+        @Deprecated public final BlockPos.MutableBlockPos setValues(int i, int j, int k) { return set(i, j, k);} // Paper - OBFHELPER
-         public BlockPos.MutableBlockPos set(int x, int y, int z) {
-             this.setX(x);
-             this.setY(y);
-@@ -0,0 +0,0 @@ public class BlockPos extends Vec3i {
-             return this;
-         }
- 
-+        @Deprecated public final BlockPos.MutableBlockPos setValues(double d0, double d1, double d2) { return set(d0, d1, d2);} // Paper - OBFHELPER
-         public BlockPos.MutableBlockPos set(double x, double y, double z) {
-             return this.set(Mth.floor(x), Mth.floor(y), Mth.floor(z));
-         }
-@@ -0,0 +0,0 @@ public class BlockPos extends Vec3i {
              }
          }
  
@@ -2320,11 +2304,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      protected CompoundTag(Map<String, Tag> entries) {
          this.tags = entries;
 @@ -0,0 +0,0 @@ public class CompoundTag implements Tag {
-         this.tags.put(key, LongTag.valueOf(value));
-     }
- 
-+    @Deprecated public void setUUID(String prefix, UUID uuid) { putUUID(prefix, uuid); } // Paper - OBFHELPER
-     public void putUUID(String key, UUID value) {
          this.tags.put(key, NbtUtils.createUUID(value));
      }
  
@@ -2335,18 +2314,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public UUID getUUID(String key) {
          return NbtUtils.loadUUID(this.get(key));
      }
-diff --git a/src/main/java/net/minecraft/network/FriendlyByteBuf.java b/src/main/java/net/minecraft/network/FriendlyByteBuf.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/network/FriendlyByteBuf.java
-+++ b/src/main/java/net/minecraft/network/FriendlyByteBuf.java
-@@ -0,0 +0,0 @@ public class FriendlyByteBuf extends ByteBuf {
-         this.source = parent;
-     }
- 
-+    @Deprecated public static int countBytes(int i) { return FriendlyByteBuf.getVarIntSize(i); } // Paper - OBFHELPER
-     public static int getVarIntSize(int value) {
-         for (int j = 1; j < 5; ++j) {
-             if ((value & -1 << j * 7) == 0) {
 diff --git a/src/main/java/net/minecraft/network/PacketEncoder.java b/src/main/java/net/minecraft/network/PacketEncoder.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/network/PacketEncoder.java
@@ -2915,23 +2882,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          if (!ChunkHolder.getFullChunkStatus(this.oldTicketLevel).isOrAfter(ChunkHolder.FullChunkStatus.BORDER)) return null; // note: using oldTicketLevel for isLoaded checks
          return this.getFullChunkUnchecked();
      }
- 
-+    @Deprecated public final LevelChunk getFullChunkIfCached() { return this.getFullChunkUnchecked(); } // Paper - OBFHELPER
-     public LevelChunk getFullChunkUnchecked() {
-         CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> statusFuture = this.getFutureIfPresentUnchecked(ChunkStatus.FULL);
-         Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure> either = (Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>) statusFuture.getNow(null);
 @@ -0,0 +0,0 @@ public class ChunkHolder {
          return ChunkHolder.getStatus(this.ticketLevel).isOrAfter(leastStatus) ? this.getFutureIfPresentUnchecked(leastStatus) : ChunkHolder.UNLOADED_CHUNK_FUTURE;
      }
  
 -    public CompletableFuture<Either<LevelChunk, ChunkHolder.ChunkLoadingFailure>> getTickingChunkFuture() {
-+    @Deprecated public final CompletableFuture<Either<LevelChunk, ChunkHolder.ChunkLoadingFailure>> getTickingFuture() { return this.getTickingChunkFuture(); } // Paper - OBFHELPER
 +    public final CompletableFuture<Either<LevelChunk, ChunkHolder.ChunkLoadingFailure>> getTickingChunkFuture() { // Paper - final for inline
          return this.tickingChunkFuture;
      }
  
 -    public CompletableFuture<Either<LevelChunk, ChunkHolder.ChunkLoadingFailure>> getEntityTickingChunkFuture() {
-+    @Deprecated public final CompletableFuture<Either<LevelChunk, ChunkHolder.ChunkLoadingFailure>> getEntityTickingFuture() { return this.getEntityTickingChunkFuture(); } // Paper - OBFHELPER
 +    public final CompletableFuture<Either<LevelChunk, ChunkHolder.ChunkLoadingFailure>> getEntityTickingChunkFuture() { // Paper - final for inline
          return this.entityTickingChunkFuture;
      }
@@ -3214,7 +3174,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            });
 +            return;
 +        }
-+        this.getChunkFutureAsynchronously(x, z, 31, ChunkHolder::getEntityTickingFuture, onLoad);
++        this.getChunkFutureAsynchronously(x, z, 31, ChunkHolder::getEntityTickingChunkFuture, onLoad);
 +    }
 +
 +    public void getTickingChunkAsync(int x, int z, java.util.function.Consumer<LevelChunk> onLoad) {
@@ -3224,7 +3184,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            });
 +            return;
 +        }
-+        this.getChunkFutureAsynchronously(x, z, 32, ChunkHolder::getTickingFuture, onLoad);
++        this.getChunkFutureAsynchronously(x, z, 32, ChunkHolder::getTickingChunkFuture, onLoad);
 +    }
 +
 +    public void getFullChunkAsync(int x, int z, java.util.function.Consumer<LevelChunk> onLoad) {
@@ -3306,7 +3266,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            return null;
 +        }
 +
-+        return playerChunk.getFullChunkIfCached();
++        return playerChunk.getFullChunkUnchecked();
 +    }
 +
 +    @Nullable
@@ -3514,19 +3474,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      protected Monster(EntityType<? extends Monster> type, Level world) {
          super(type, world);
          this.xpReward = 5;
-diff --git a/src/main/java/net/minecraft/world/entity/player/Inventory.java b/src/main/java/net/minecraft/world/entity/player/Inventory.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/world/entity/player/Inventory.java
-+++ b/src/main/java/net/minecraft/world/entity/player/Inventory.java
-@@ -0,0 +0,0 @@ public class Inventory implements Container, Nameable {
-     public final NonNullList<ItemStack> items;
-     public final NonNullList<ItemStack> armor;
-     public final NonNullList<ItemStack> offhand;
--    private final List<NonNullList<ItemStack>> compartments;
-+    private final List<NonNullList<ItemStack>> compartments; @Deprecated public final List<NonNullList<ItemStack>> getComponents() { return compartments; } // Paper - OBFHELPER
-     public int selected;
-     public final Player player;
-     private int timesChanged;
 diff --git a/src/main/java/net/minecraft/world/item/ItemStack.java b/src/main/java/net/minecraft/world/item/ItemStack.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/item/ItemStack.java
@@ -3557,14 +3504,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          this.tag = tag;
          if (this.getItem().canBeDepleted()) {
 @@ -0,0 +0,0 @@ public final class ItemStack {
-         return this.tag != null && this.tag.contains("Enchantments", 9) ? !this.tag.getList("Enchantments", 10).isEmpty() : false;
-     }
- 
-+    @Deprecated public void getOrCreateTagAndSet(String s, net.minecraft.nbt.Tag nbtbase) { addTagElement(s, nbtbase);} // Paper - OBFHELPER
-     public void addTagElement(String key, net.minecraft.nbt.Tag tag) {
-         this.getOrCreateTag().put(key, tag);
-     }
-@@ -0,0 +0,0 @@ public final class ItemStack {
      // CraftBukkit start
      @Deprecated
      public void setItem(Item item) {
@@ -3572,18 +3511,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          this.item = item;
      }
      // CraftBukkit end
-diff --git a/src/main/java/net/minecraft/world/item/alchemy/PotionUtils.java b/src/main/java/net/minecraft/world/item/alchemy/PotionUtils.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/world/item/alchemy/PotionUtils.java
-+++ b/src/main/java/net/minecraft/world/item/alchemy/PotionUtils.java
-@@ -0,0 +0,0 @@ public class PotionUtils {
-         return compound == null ? Potions.EMPTY : Potion.byName(compound.getString("Potion"));
-     }
- 
-+    @Deprecated public static ItemStack addPotionToItemStack(ItemStack itemstack, Potion potionregistry) { return setPotion(itemstack, potionregistry); } // Paper - OBFHELPER
-     public static ItemStack setPotion(ItemStack stack, Potion potion) {
-         ResourceLocation resourceLocation = Registry.POTION.getKey(potion);
-         if (potion == Potions.EMPTY) {
 diff --git a/src/main/java/net/minecraft/world/level/BlockGetter.java b/src/main/java/net/minecraft/world/level/BlockGetter.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/BlockGetter.java
@@ -3776,18 +3703,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
 @@ -0,0 +0,0 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
- 
-     public void onBlockStateChange(BlockPos pos, BlockState oldBlock, BlockState newBlock) {}
- 
--    @Override
--    public boolean removeBlock(BlockPos pos, boolean move) {
-+    @Deprecated public boolean setAir(BlockPos blockposition) { return this.removeBlock(blockposition, false); } // Paper - OBFHELPER
-+    @Deprecated public boolean setAir(BlockPos blockposition, boolean moved) { return this.removeBlock(blockposition, moved); } // Paper - OBFHELPER
-+    @Override public boolean removeBlock(BlockPos pos, boolean move) { // Paper - OBFHELPER
-         FluidState fluid = this.getFluidState(pos);
- 
-         return this.setBlock(pos, fluid.createLegacyBlock(), 3 | (move ? 64 : 0));
-@@ -0,0 +0,0 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
          if (this.isOutsideBuildHeight(pos)) {
              return Blocks.VOID_AIR.defaultBlockState();
          } else {
@@ -3862,15 +3777,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  import net.minecraft.server.level.ServerLevel;
  import net.minecraft.util.profiling.ProfilerFiller;
  import net.minecraft.world.entity.Entity;
-@@ -0,0 +0,0 @@ public class LevelChunk implements ChunkAccess {
-         }
-     };
-     @Nullable
--    public static final LevelChunkSection EMPTY_SECTION = null;
-+    public static final LevelChunkSection EMPTY_SECTION = null; @Deprecated public static final LevelChunkSection EMPTY_CHUNK_SECTION = EMPTY_SECTION; // Paper - OBFHELPER
-     private final LevelChunkSection[] sections;
-     private ChunkBiomeContainer biomes;
-     private final Map<BlockPos, CompoundTag> pendingBlockEntities;
 @@ -0,0 +0,0 @@ public class LevelChunk implements ChunkAccess {
      private Supplier<ChunkHolder.FullChunkStatus> fullStatus;
      @Nullable
@@ -4099,65 +4005,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              this.setUnsaved(true);
          }
  
-diff --git a/src/main/java/net/minecraft/world/level/chunk/Palette.java b/src/main/java/net/minecraft/world/level/chunk/Palette.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/world/level/chunk/Palette.java
-+++ b/src/main/java/net/minecraft/world/level/chunk/Palette.java
-@@ -0,0 +0,0 @@ import net.minecraft.nbt.ListTag;
- import net.minecraft.network.FriendlyByteBuf;
- 
- public interface Palette<T> {
-+    @Deprecated default int getOrCreateIdFor(T object) { return this.idFor(object); } // Paper - OBFHELPER
-     int idFor(T object);
- 
-     boolean maybeHas(Predicate<T> predicate);
- 
-+    @Deprecated @Nullable default T getObject(int dataBits) { return this.valueFor(dataBits); } // Paper - OBFHELPER
-     @Nullable
-     T valueFor(int index);
- 
-diff --git a/src/main/java/net/minecraft/world/level/chunk/PalettedContainer.java b/src/main/java/net/minecraft/world/level/chunk/PalettedContainer.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/world/level/chunk/PalettedContainer.java
-+++ b/src/main/java/net/minecraft/world/level/chunk/PalettedContainer.java
-@@ -0,0 +0,0 @@ public class PalettedContainer<T> implements PaletteResize<T> {
-     private static final int SIZE = 4096;
-     public static final int GLOBAL_PALETTE_BITS = 9;
-     public static final int MIN_PALETTE_SIZE = 4;
--    private final Palette<T> globalPalette;
-+    private final Palette<T> globalPalette; @Deprecated private final Palette<T> getDataPaletteGlobal() { return this.globalPalette; } // Paper - OBFHELPER
-     private final PaletteResize<T> dummyPaletteResize = (newSize, added) -> {
-         return 0;
-     };
-@@ -0,0 +0,0 @@ public class PalettedContainer<T> implements PaletteResize<T> {
-     private final Function<CompoundTag, T> reader;
-     private final Function<T, CompoundTag> writer;
-     private final T defaultValue;
--    protected BitStorage storage;
--    private Palette<T> palette;
--    private int bits;
-+    protected BitStorage storage; @Deprecated public final BitStorage getDataBits() { return this.storage; } // Paper - OBFHELPER
-+    private Palette<T> palette; @Deprecated private Palette<T> getDataPalette() { return this.palette; } // Paper - OBFHELPER
-+    private int bits; @Deprecated private int getBitsPerObject() { return this.bits; } // Paper - OBFHELPER
-     private final Semaphore lock = new Semaphore(1);
-     @Nullable
-     private final DebugBuffer<Pair<Thread, StackTraceElement[]>> traces = null;
-@@ -0,0 +0,0 @@ public class PalettedContainer<T> implements PaletteResize<T> {
-         return y << 8 | z << 4 | x;
-     }
- 
-+    @Deprecated private void initialize(int bitsPerObject) { this.setBits(bitsPerObject); } // Paper - OBFHELPER
-     private void setBits(int size) {
-         if (size != this.bits) {
-             this.bits = size;
-@@ -0,0 +0,0 @@ public class PalettedContainer<T> implements PaletteResize<T> {
- 
-     }
- 
-+    @Deprecated public void writeDataPaletteBlock(FriendlyByteBuf packetDataSerializer) { this.write(packetDataSerializer); } // Paper - OBFHELPER
-     public void write(FriendlyByteBuf buf) {
-         try {
-             this.acquire();
 diff --git a/src/main/java/net/minecraft/world/level/chunk/ProtoChunk.java b/src/main/java/net/minecraft/world/level/chunk/ProtoChunk.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/ProtoChunk.java
@@ -4181,43 +4028,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      @Override
      public BlockState getBlockState(BlockPos pos) {
          int i = pos.getY();
-diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/IOWorker.java b/src/main/java/net/minecraft/world/level/chunk/storage/IOWorker.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/world/level/chunk/storage/IOWorker.java
-+++ b/src/main/java/net/minecraft/world/level/chunk/storage/IOWorker.java
-@@ -0,0 +0,0 @@ public class IOWorker implements AutoCloseable {
-     private static final Logger LOGGER = LogManager.getLogger();
-     private final AtomicBoolean shutdownRequested = new AtomicBoolean();
-     private final ProcessorMailbox<StrictQueue.IntRunnable> mailbox;
--    private final RegionFileStorage storage;
-+    private final RegionFileStorage storage;@Deprecated public RegionFileStorage getRegionFileCache() { return storage; } // Paper - OBFHELPER
-     private final Map<ChunkPos, IOWorker.PendingStore> pendingWrites = Maps.newLinkedHashMap();
- 
-     protected IOWorker(File directory, boolean dsync, String name) {
-diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
-+++ b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
-@@ -0,0 +0,0 @@ public class RegionFile implements AutoCloseable {
-         return this.externalFileDir.resolve(s);
-     }
- 
-+    @Deprecated @Nullable public synchronized DataInputStream getReadStream(ChunkPos chunkCoordIntPair) throws IOException { return getChunkDataInputStream(chunkCoordIntPair);} // Paper - OBFHELPER
-     @Nullable
-     public synchronized DataInputStream getChunkDataInputStream(ChunkPos pos) throws IOException {
-         int i = this.getOffset(pos);
-diff --git a/src/main/java/net/minecraft/world/phys/shapes/Shapes.java b/src/main/java/net/minecraft/world/phys/shapes/Shapes.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/world/phys/shapes/Shapes.java
-+++ b/src/main/java/net/minecraft/world/phys/shapes/Shapes.java
-@@ -0,0 +0,0 @@ public final class Shapes {
-         return EMPTY;
-     }
- 
-+    @Deprecated public static final VoxelShape fullCube() {return block();} // Paper - OBFHELPER
-     public static VoxelShape block() {
-         return BLOCK;
-     }
 diff --git a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
