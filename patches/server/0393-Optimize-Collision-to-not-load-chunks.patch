@@ -52,27 +52,10 @@ index b980c26ab5cac02e03525177a9dc4fb0b6a2f9f6..2a784a8342e708e0813c7076a2ca8e42
  
      Stream<VoxelShape> getEntityCollisions(@Nullable Entity entity, AABB box, Predicate<Entity> predicate);
 diff --git a/src/main/java/net/minecraft/world/level/CollisionSpliterator.java b/src/main/java/net/minecraft/world/level/CollisionSpliterator.java
-index e6190bfb893de12e87e1da49001ebd963b3d6318..90039d01ef481ba206f2e952c99a755e94201ea3 100644
+index e6190bfb893de12e87e1da49001ebd963b3d6318..7f8a914085e3d89668e8f41fd099e3b77867f03e 100644
 --- a/src/main/java/net/minecraft/world/level/CollisionSpliterator.java
 +++ b/src/main/java/net/minecraft/world/level/CollisionSpliterator.java
-@@ -21,13 +21,13 @@ import net.minecraft.world.phys.shapes.VoxelShape;
- 
- public class CollisionSpliterator extends AbstractSpliterator<VoxelShape> {
-     @Nullable
--    private final Entity source;
-+    private final Entity source; final Entity getEntity() { return this.source; } // Paper - OBFHELPER
-     private final AABB box;
-     private final CollisionContext context;
-     private final Cursor3D cursor;
--    private final BlockPos.MutableBlockPos pos;
-+    private final BlockPos.MutableBlockPos pos; final BlockPos.MutableBlockPos getMutablePos() { return this.pos; } // Paper - OBFHELPER
-     private final VoxelShape entityShape;
--    private final CollisionGetter collisionGetter;
-+    private final CollisionGetter collisionGetter; final CollisionGetter getCollisionAccess() { return this.collisionGetter; } // Paper - OBFHELPER
-     private boolean needsBorderCheck;
-     private final BiPredicate<BlockState, BlockPos> predicate;
- 
-@@ -64,21 +64,37 @@ public class CollisionSpliterator extends AbstractSpliterator<VoxelShape> {
+@@ -64,21 +64,35 @@ public class CollisionSpliterator extends AbstractSpliterator<VoxelShape> {
      boolean collisionCheck(Consumer<? super VoxelShape> action) {
          while(true) {
              if (this.cursor.advance()) {
@@ -90,20 +73,18 @@ index e6190bfb893de12e87e1da49001ebd963b3d6318..90039d01ef481ba206f2e952c99a755e
 -                BlockGetter blockGetter = this.getChunk(i, k);
 -                if (blockGetter == null) {
 +                // Paper start - ensure we don't load chunks
-+                Entity entity = this.getEntity();
-+                BlockPos.MutableBlockPos blockposition_mutableblockposition = this.getMutablePos();
-+                boolean far = entity != null && net.minecraft.server.MCUtil.distanceSq(entity.getX(), y, entity.getZ(), x, y, z) > 14;
-+                blockposition_mutableblockposition.setValues(x, y, z);
++                boolean far = this.source != null && net.minecraft.server.MCUtil.distanceSq(this.source.getX(), y, this.source.getZ(), x, y, z) > 14;
++                this.pos.setValues(x, y, z);
 +
-+                boolean isRegionLimited = this.getCollisionAccess() instanceof net.minecraft.server.level.WorldGenRegion;
-+                BlockState blockState = isRegionLimited ? Blocks.VOID_AIR.defaultBlockState() : ((!far && entity instanceof net.minecraft.server.level.ServerPlayer) || (entity != null && entity.collisionLoadChunks)
-+                    ? this.getCollisionAccess().getBlockState(blockposition_mutableblockposition)
-+                    : this.getCollisionAccess().getTypeIfLoaded(blockposition_mutableblockposition)
++                boolean isRegionLimited = this.collisionGetter instanceof net.minecraft.server.level.WorldGenRegion;
++                BlockState blockState = isRegionLimited ? Blocks.VOID_AIR.defaultBlockState() : ((!far && this.source instanceof net.minecraft.server.level.ServerPlayer) || (this.source != null && this.source.collisionLoadChunks)
++                    ? this.collisionGetter.getBlockState(this.pos)
++                    : this.collisionGetter.getTypeIfLoaded(this.pos)
 +                );
 +
 +                if (blockState == null) {
-+                    if (!(entity instanceof net.minecraft.server.level.ServerPlayer) || entity.level.paperConfig.preventMovingIntoUnloadedChunks) {
-+                        VoxelShape voxelshape3 = Shapes.create(far ? entity.getBoundingBox() : new AABB(new BlockPos(x, y, z)));
++                    if (!(this.source instanceof net.minecraft.server.level.ServerPlayer) || this.source.level.paperConfig.preventMovingIntoUnloadedChunks) {
++                        VoxelShape voxelshape3 = Shapes.create(far ? this.source.getBoundingBox() : new AABB(new BlockPos(x, y, z)));
 +                        action.accept(voxelshape3);
 +                        return true;
 +                    }

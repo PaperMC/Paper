@@ -5,7 +5,7 @@ Subject: [PATCH] Player affects spawning API
 
 
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index 6d7f2db63d586b96939cfc3643ebae3a952a4836..a5e3f27a471bf2396db640685edfc93f77fe2c0c 100644
+index c22eb7451aaf142f6c722715dbfda5ee332e068b..a65646832867e62c758eae3ee1359bdd0d810835 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
 @@ -1498,6 +1498,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, n
@@ -33,7 +33,7 @@ index 195989667c7d844399a72787819f62a3fd0d9c78..d17b75ad13bbc8a38cdc2f2d77ee5d88
      public static Predicate<Entity> withinDistance(double x, double y, double z, double max) {
          double d4 = max * max;
 diff --git a/src/main/java/net/minecraft/world/entity/Mob.java b/src/main/java/net/minecraft/world/entity/Mob.java
-index 697f73cabfe89e716c9fceeb8362237d27ca3d02..b13774873f795b149c15fddb8053d9419f1841ca 100644
+index 2b34b4680afd2d0c22fbae798fe1efd5df33a14f..18ea26c8e17da03f35c3fd0788a385cc492ff544 100644
 --- a/src/main/java/net/minecraft/world/entity/Mob.java
 +++ b/src/main/java/net/minecraft/world/entity/Mob.java
 @@ -766,7 +766,7 @@ public abstract class Mob extends LivingEntity {
@@ -59,7 +59,7 @@ index 7d741c2aebbc1c6cf1ff59cca6480325db6ca29c..2459ae800a5f6b234a4f4bb1cd3738e4
              return false;
          }
 diff --git a/src/main/java/net/minecraft/world/entity/player/Player.java b/src/main/java/net/minecraft/world/entity/player/Player.java
-index 24530af0382be01e26516d8fa29f61c912ebb9aa..a76f1cab566a3c8c8d1b0204b5c2c8492312c9f0 100644
+index bf51e880b0bb81e36c7ef435e057157adfeaede7..4588d0ac68c56942af6ab59f26c68dc65996c6a1 100644
 --- a/src/main/java/net/minecraft/world/entity/player/Player.java
 +++ b/src/main/java/net/minecraft/world/entity/player/Player.java
 @@ -176,6 +176,9 @@ public abstract class Player extends LivingEntity {
@@ -86,22 +86,21 @@ index 03bdbb832ff6a86f2dac9c008de45f3bb53aa688..a003e1c0d99a4d4c88269ea5bad250ba
  
      public void clientTick(Level world, BlockPos pos) {
 diff --git a/src/main/java/net/minecraft/world/level/EntityGetter.java b/src/main/java/net/minecraft/world/level/EntityGetter.java
-index 389985e022b82c675fb21f363422471bd15b84b0..0b6e5ee9872a73823219bff7f642375fdc4ec243 100644
+index 389985e022b82c675fb21f363422471bd15b84b0..1a921a7e4ff5a1947559c30116ddb5e0596961e7 100644
 --- a/src/main/java/net/minecraft/world/level/EntityGetter.java
 +++ b/src/main/java/net/minecraft/world/level/EntityGetter.java
-@@ -71,8 +71,9 @@ public interface EntityGetter {
+@@ -71,8 +71,8 @@ public interface EntityGetter {
          }
      }
  
 -    @Nullable
 -    default Player getNearestPlayer(double x, double y, double z, double maxDistance, @Nullable Predicate<Entity> targetPredicate) {
-+    default Player findNearbyPlayer(Entity entity, double d0, @Nullable Predicate<Entity> predicate) { return this.findNearbyPlayer(entity.getX(), entity.getY(), entity.getZ(), d0, predicate); } // Paper
-+    @Nullable default Player findNearbyPlayer(double d0, double d1, double d2, double d3, @Nullable Predicate<Entity> predicate) { return getNearestPlayer(d0, d1, d2, d3, predicate); } // Paper - OBFHELPER
++    default Player findNearbyPlayer(Entity entity, double d0, @Nullable Predicate<Entity> predicate) { return this.getNearestPlayer(entity.getX(), entity.getY(), entity.getZ(), d0, predicate); } // Paper
 +    @Nullable default Player getNearestPlayer(double x, double y, double z, double maxDistance, @Nullable Predicate<Entity> targetPredicate) { // Paper
          double d = -1.0D;
          Player player = null;
  
-@@ -100,6 +101,27 @@ public interface EntityGetter {
+@@ -100,6 +100,27 @@ public interface EntityGetter {
          return this.getNearestPlayer(x, y, z, maxDistance, predicate);
      }
  
@@ -130,7 +129,7 @@ index 389985e022b82c675fb21f363422471bd15b84b0..0b6e5ee9872a73823219bff7f642375f
          for(Player player : this.players()) {
              if (EntitySelector.NO_SPECTATORS.test(player) && EntitySelector.LIVING_ENTITY_STILL_ALIVE.test(player)) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index f1f35eeff46f6573b79f1190265a908e5f8855eb..ed5001c84d5be5c6220c97ae93e7277a32e64de6 100644
+index bc901793055db9481ec32e668386ba33696bc0a5..f14488b00add3b8209554e670ca2ea2f49e04a95 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 @@ -1778,8 +1778,20 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
