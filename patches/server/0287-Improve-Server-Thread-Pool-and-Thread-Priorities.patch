@@ -1,0 +1,100 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Tue, 23 Oct 2018 23:14:38 -0400
+Subject: [PATCH] Improve Server Thread Pool and Thread Priorities
+
+Use a simple executor since Fork join is a much more complex pool
+type and we are not using its capabilities.
+
+Set thread priorities so main thread has above normal priority over
+server threads
+
+Allow usage of a single thread executor by not using ForkJoin so single core CPU's.
+
+diff --git a/src/main/java/net/minecraft/Util.java b/src/main/java/net/minecraft/Util.java
+index 65e0ca442980f273d2fe5f131e174cd92f80da20..81f4f26a6b83079d36acd1fd86dede0eb1116c01 100644
+--- a/src/main/java/net/minecraft/Util.java
++++ b/src/main/java/net/minecraft/Util.java
+@@ -56,7 +56,7 @@ import java.util.stream.Stream;
+ import javax.annotation.Nullable;
+ import net.minecraft.resources.ResourceLocation;
+ import net.minecraft.server.Bootstrap;
+-import net.minecraft.util.Mth;
++import net.minecraft.server.ServerWorkerThread;
+ import net.minecraft.util.datafix.DataFixers;
+ import net.minecraft.world.level.block.state.properties.Property;
+ import org.apache.commons.io.IOUtils;
+@@ -65,8 +65,8 @@ import org.apache.logging.log4j.Logger;
+ 
+ public class Util {
+     private static final AtomicInteger WORKER_COUNT = new AtomicInteger(1);
+-    private static final ExecutorService BOOTSTRAP_EXECUTOR = makeExecutor("Bootstrap");
+-    private static final ExecutorService BACKGROUND_EXECUTOR = makeExecutor("Main");
++    private static final ExecutorService BOOTSTRAP_EXECUTOR = makeExecutor("Bootstrap", -2); // Paper - add -2 priority
++    private static final ExecutorService BACKGROUND_EXECUTOR = makeExecutor("Main", -1); // Paper - add -1 priority
+     private static final ExecutorService IO_POOL = makeIoExecutor();
+     public static LongSupplier timeSource = System::nanoTime;
+     public static final UUID NIL_UUID = new UUID(0L, 0L);
+@@ -101,14 +101,18 @@ public class Util {
+         return Instant.now().toEpochMilli();
+     }
+ 
+-    private static ExecutorService makeExecutor(String name) {
+-        int i = Mth.clamp(Runtime.getRuntime().availableProcessors() - 1, 1, 7);
++    private static ExecutorService makeExecutor(String s, int priorityModifier) { // Paper - add priority
++        // Paper start - use simpler thread pool that allows 1 thread
++        int i = Math.min(8, Math.max(Runtime.getRuntime().availableProcessors() - 2, 1));
++        i = Integer.getInteger("Paper.WorkerThreadCount", i);
+         ExecutorService executorService;
++
+         if (i <= 0) {
+             executorService = MoreExecutors.newDirectExecutorService();
+         } else {
+-            executorService = new ForkJoinPool(i, (forkJoinPool) -> {
+-                ForkJoinWorkerThread forkJoinWorkerThread = new ForkJoinWorkerThread(forkJoinPool) {
++            executorService = new java.util.concurrent.ThreadPoolExecutor(i, i,0L, TimeUnit.MILLISECONDS, new java.util.concurrent.LinkedBlockingQueue<Runnable>(), target -> new ServerWorkerThread(target, s, priorityModifier));
++        }
++        /*
+                     @Override
+                     protected void onTermination(Throwable throwable) {
+                         if (throwable != null) {
+@@ -124,6 +128,7 @@ public class Util {
+                 return forkJoinWorkerThread;
+             }, Util::onThreadException, true);
+         }
++        }*/ // Paper end
+ 
+         return executorService;
+     }
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 627887227e266155c025592b50defede4271d978..b008f3360ded33b185d28ed8555839eb21bf16d9 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -318,6 +318,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         S s0 = serverFactory.apply(thread); // CraftBukkit - decompile error
+ 
+         atomicreference.set(s0);
++        thread.setPriority(Thread.NORM_PRIORITY+2); // Paper - boost priority
+         thread.start();
+         return s0;
+     }
+diff --git a/src/main/java/net/minecraft/server/ServerWorkerThread.java b/src/main/java/net/minecraft/server/ServerWorkerThread.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..480129f430da33157342becb9d3b010f9f7c5edd
+--- /dev/null
++++ b/src/main/java/net/minecraft/server/ServerWorkerThread.java
+@@ -0,0 +1,14 @@
++package net.minecraft.server;
++
++import java.util.concurrent.atomic.AtomicInteger;
++import net.minecraft.Util;
++
++public class ServerWorkerThread extends Thread {
++    private static final AtomicInteger threadId = new AtomicInteger(1);
++    public ServerWorkerThread(Runnable target, String poolName, int prioritityModifier) {
++        super(target, "Worker-" + poolName + "-" + threadId.getAndIncrement());
++        setPriority(Thread.NORM_PRIORITY+prioritityModifier); // Deprioritize over main
++        this.setDaemon(true);
++        this.setUncaughtExceptionHandler(Util::onThreadException);
++    }
++}
