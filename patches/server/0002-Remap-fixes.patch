@@ -1,11 +1,11 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Kyle Wood <kyle@denwav.dev>
 Date: Fri, 11 Jun 2021 05:25:03 -0500
-Subject: [PATCH] Decompile fixes
+Subject: [PATCH] Remap fixes
 
 
 diff --git a/src/main/java/net/minecraft/core/BlockPos.java b/src/main/java/net/minecraft/core/BlockPos.java
-index 1bd6ef643b17b059eb525035496b816a098279c4..891fc7f4cbea8eccd580f371715478265339c0cc 100644
+index 1bd6ef643b17b059eb525035496b816a098279c4..754e65f322ded875ae7614066bab30a8da2aa4a9 100644
 --- a/src/main/java/net/minecraft/core/BlockPos.java
 +++ b/src/main/java/net/minecraft/core/BlockPos.java
 @@ -270,9 +270,11 @@ public class BlockPos extends Vec3i {
@@ -15,7 +15,7 @@ index 1bd6ef643b17b059eb525035496b816a098279c4..891fc7f4cbea8eccd580f37171547826
 -        int j = center.getX();
 -        int k = center.getY();
 -        int l = center.getZ();
-+        // Paper start - rename variables to fix conflict with anonymous class (decompile fix)
++        // Paper start - rename variables to fix conflict with anonymous class (remap fix)
 +        int centerX = center.getX();
 +        int centerY = center.getY();
 +        int centerZ = center.getZ();
@@ -28,7 +28,7 @@ index 1bd6ef643b17b059eb525035496b816a098279c4..891fc7f4cbea8eccd580f37171547826
                      if (this.zMirror) {
                          this.zMirror = false;
 -                        this.cursor.setZ(l - (this.cursor.getZ() - l));
-+                        this.cursor.setZ(centerZ - (this.cursor.getZ() - centerZ)); // Paper - decompile fix
++                        this.cursor.setZ(centerZ - (this.cursor.getZ() - centerZ)); // Paper - remap fix
                          return this.cursor;
                      } else {
                          BlockPos blockPos;
@@ -37,25 +37,12 @@ index 1bd6ef643b17b059eb525035496b816a098279c4..891fc7f4cbea8eccd580f37171547826
                              if (k <= rangeZ) {
                                  this.zMirror = k != 0;
 -                                blockPos = this.cursor.set(j + i, k + j, l + k);
-+                                blockPos = this.cursor.set(centerX + i, centerY + j, centerZ + k); // Paper - decompile fix
++                                blockPos = this.cursor.set(centerX + i, centerY + j, centerZ + k); // Paper - remap fix
                              }
                          }
  
-diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 0000a0057ec4ee2db72e4ea1bf421f95d9d9fdc6..729e55535d833f8f6ff65bf226aac5ecdec44990 100644
---- a/src/main/java/net/minecraft/server/MinecraftServer.java
-+++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -1139,7 +1139,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
-         }
-     }
- 
--    protected void doRunTask(TickTask ticktask) {
-+    public void doRunTask(TickTask ticktask) { // Paper - decomp fix
-         this.getProfiler().incrementCounter("runTask");
-         super.doRunTask(ticktask);
-     }
 diff --git a/src/main/java/net/minecraft/server/commands/SummonCommand.java b/src/main/java/net/minecraft/server/commands/SummonCommand.java
-index 71c22f72b6e7507e85ecb6be3166b809b7409ab2..fb9fca76a42479363c9c9764fdae6adb4b5e703f 100644
+index 71c22f72b6e7507e85ecb6be3166b809b7409ab2..0821cd15071ac10c88f0bcfd869c27cadbe778ba 100644
 --- a/src/main/java/net/minecraft/server/commands/SummonCommand.java
 +++ b/src/main/java/net/minecraft/server/commands/SummonCommand.java
 @@ -54,9 +54,9 @@ public class SummonCommand {
@@ -65,14 +52,14 @@ index 71c22f72b6e7507e85ecb6be3166b809b7409ab2..fb9fca76a42479363c9c9764fdae6adb
 -            Entity entity1 = EntityType.loadEntityRecursive(nbttagcompound1, worldserver, (entity1) -> {
 -                entity1.moveTo(pos.x, pos.y, pos.z, entity1.getYRot(), entity1.getXRot());
 -                return entity1;
-+            Entity entity1 = EntityType.loadEntityRecursive(nbttagcompound1, worldserver, (loadedEntity) -> { // Paper - decomp fix
-+                loadedEntity.moveTo(pos.x, pos.y, pos.z, loadedEntity.getYRot(), loadedEntity.getXRot()); // Paper - decomp fix
-+                return loadedEntity; // Paper - decomp fix
++            Entity entity1 = EntityType.loadEntityRecursive(nbttagcompound1, worldserver, (loadedEntity) -> { // Paper - remap fix
++                loadedEntity.moveTo(pos.x, pos.y, pos.z, loadedEntity.getYRot(), loadedEntity.getXRot()); // Paper - remap fix
++                return loadedEntity; // Paper - remap fix
              });
  
              if (entity1 == null) {
 diff --git a/src/main/java/net/minecraft/world/entity/ai/behavior/BehaviorUtils.java b/src/main/java/net/minecraft/world/entity/ai/behavior/BehaviorUtils.java
-index 88a8c2bc4aa30f478122a05fd119486a0107db82..5f00e3f4c86196db47bf1007973445d40866afdd 100644
+index 88a8c2bc4aa30f478122a05fd119486a0107db82..ef17f21574ce37b9ce6f72b9585034db473502c7 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/behavior/BehaviorUtils.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/behavior/BehaviorUtils.java
 @@ -169,8 +169,8 @@ public class BehaviorUtils {
@@ -81,13 +68,13 @@ index 88a8c2bc4aa30f478122a05fd119486a0107db82..5f00e3f4c86196db47bf1007973445d4
              return ((ServerLevel) entity.level).getEntity(uuid);
 -        }).map((entity) -> {
 -            return entity instanceof LivingEntity ? (LivingEntity) entity : null;
-+        }).map((entity2) -> { // Paper - decomp fix
-+            return entity2 instanceof LivingEntity ? (LivingEntity) entity2 : null; // Paper - decomp fix
++        }).map((entity2) -> { // Paper - remap fix
++            return entity2 instanceof LivingEntity ? (LivingEntity) entity2 : null; // Paper - remap fix
          });
      }
  
 diff --git a/src/main/java/net/minecraft/world/entity/monster/Phantom.java b/src/main/java/net/minecraft/world/entity/monster/Phantom.java
-index c88dc823ca0c2f83bc10886208d498ea77523d68..dcfd0b107ac7bd1633f3b681cd5f5e26ce87bd63 100644
+index 6552c7c30d02a99420b5c8c14595c62f2f896ed2..5df9ad398ba173bb0ff4770673f8eb5967325c5a 100644
 --- a/src/main/java/net/minecraft/world/entity/monster/Phantom.java
 +++ b/src/main/java/net/minecraft/world/entity/monster/Phantom.java
 @@ -522,7 +522,7 @@ public class Phantom extends FlyingMob implements Enemy {
@@ -95,12 +82,12 @@ index c88dc823ca0c2f83bc10886208d498ea77523d68..dcfd0b107ac7bd1633f3b681cd5f5e26
  
                  if (!list.isEmpty()) {
 -                    list.sort(Comparator.comparing(Entity::getY).reversed());
-+                    list.sort(Comparator.<Player, Double>comparing(Entity::getY).reversed()); // Paper - decomp fix
++                    list.sort(Comparator.<Player, Double>comparing(Entity::getY).reversed()); // Paper - remap fix
                      Iterator iterator = list.iterator();
  
                      while (iterator.hasNext()) {
 diff --git a/src/main/java/net/minecraft/world/item/crafting/RecipeManager.java b/src/main/java/net/minecraft/world/item/crafting/RecipeManager.java
-index efb37470d4927def456c382420775a815594aa58..9bc0ccf6acccd5505bac7b8a6bfb7597a43570cf 100644
+index efb37470d4927def456c382420775a815594aa58..38dd114fbfa07a18987cd774ae05060d723247e4 100644
 --- a/src/main/java/net/minecraft/world/item/crafting/RecipeManager.java
 +++ b/src/main/java/net/minecraft/world/item/crafting/RecipeManager.java
 @@ -172,7 +172,7 @@ public class RecipeManager extends SimpleJsonResourceReloadListener {
@@ -108,12 +95,12 @@ index efb37470d4927def456c382420775a815594aa58..9bc0ccf6acccd5505bac7b8a6bfb7597
  
          recipes.forEach((irecipe) -> {
 -            Map<ResourceLocation, Recipe<?>> map1 = (Map) map.computeIfAbsent(irecipe.getType(), (recipes) -> {
-+            Map<ResourceLocation, Recipe<?>> map1 = (Map) map.computeIfAbsent(irecipe.getType(), (recipes_) -> { // Paper - decomp fix
++            Map<ResourceLocation, Recipe<?>> map1 = (Map) map.computeIfAbsent(irecipe.getType(), (recipes_) -> { // Paper - remap fix
                  return new Object2ObjectLinkedOpenHashMap<>(); // CraftBukkit
              });
              Recipe<?> irecipe1 = (Recipe) map1.put(irecipe.getId(), irecipe);
 diff --git a/src/test/java/org/bukkit/DyeColorsTest.java b/src/test/java/org/bukkit/DyeColorsTest.java
-index ad52c3fc6210939a39ef77a382c640a24ee44838..5d811797ce8e14195a23fc71c8a3afbdca7691eb 100644
+index ad52c3fc6210939a39ef77a382c640a24ee44838..6b7dd01778f0a5d3a96d2d04af4b525d17efbfba 100644
 --- a/src/test/java/org/bukkit/DyeColorsTest.java
 +++ b/src/test/java/org/bukkit/DyeColorsTest.java
 @@ -4,7 +4,6 @@ import static org.hamcrest.Matchers.*;
@@ -129,7 +116,7 @@ index ad52c3fc6210939a39ef77a382c640a24ee44838..5d811797ce8e14195a23fc71c8a3afbd
      public void checkColor() {
          Color color = this.dye.getColor();
 -        float[] nmsColorArray = DyeColor.byId(this.dye.getWoolData()).getTextureDiffuseColors();
-+        float[] nmsColorArray = net.minecraft.world.item.DyeColor.byId(this.dye.getWoolData()).getTextureDiffuseColors();
++        float[] nmsColorArray = net.minecraft.world.item.DyeColor.byId(this.dye.getWoolData()).getTextureDiffuseColors(); // Paper - remap fix
          Color nmsColor = Color.fromRGB((int) (nmsColorArray[0] * 255), (int) (nmsColorArray[1] * 255), (int) (nmsColorArray[2] * 255));
          assertThat(color, is(nmsColor));
      }
@@ -138,12 +125,12 @@ index ad52c3fc6210939a39ef77a382c640a24ee44838..5d811797ce8e14195a23fc71c8a3afbd
      public void checkFireworkColor() {
          Color color = this.dye.getFireworkColor();
 -        int nmsColor = DyeColor.byId(this.dye.getWoolData()).getFireworkColor();
-+        int nmsColor = net.minecraft.world.item.DyeColor.byId(this.dye.getWoolData()).getFireworkColor();
++        int nmsColor = net.minecraft.world.item.DyeColor.byId(this.dye.getWoolData()).getFireworkColor(); // Paper - remap fix
          assertThat(color, is(Color.fromRGB(nmsColor)));
      }
  }
 diff --git a/src/test/java/org/bukkit/PerMaterialTest.java b/src/test/java/org/bukkit/PerMaterialTest.java
-index 90baf6e3329d64495da9edd580d5fbc80df8c165..185fa8bf7308bb2980a0feecf0d7696a59e507ac 100644
+index 90baf6e3329d64495da9edd580d5fbc80df8c165..e2fb8a0183885b4ad81d5284297be7a35946aa9c 100644
 --- a/src/test/java/org/bukkit/PerMaterialTest.java
 +++ b/src/test/java/org/bukkit/PerMaterialTest.java
 @@ -221,7 +221,7 @@ public class PerMaterialTest extends AbstractTestingBase {
@@ -151,12 +138,12 @@ index 90baf6e3329d64495da9edd580d5fbc80df8c165..185fa8bf7308bb2980a0feecf0d7696a
              assertThat(this.material.isInteractable(),
                      is(!CraftMagicNumbers.getBlock(material).getClass()
 -                            .getMethod("interact", BlockState.class, net.minecraft.world.level.Level.class, BlockPos.class, Player.class, InteractionHand.class, BlockHitResult.class)
-+                            .getMethod("use", BlockState.class, net.minecraft.world.level.Level.class, BlockPos.class, Player.class, InteractionHand.class, BlockHitResult.class)
++                            .getMethod("use", BlockState.class, net.minecraft.world.level.Level.class, BlockPos.class, Player.class, InteractionHand.class, BlockHitResult.class) // Paper - remap fix
                              .getDeclaringClass().equals(BlockBehaviour.class)));
          } else {
              assertFalse(this.material.isInteractable());
 diff --git a/src/test/java/org/bukkit/entity/EntityTypesTest.java b/src/test/java/org/bukkit/entity/EntityTypesTest.java
-index 8c4ad718e113f24a30fd11b345d34d6ca1ef73b0..085b0c17fb54fd8229838fee666120d9e59d942b 100644
+index 8c4ad718e113f24a30fd11b345d34d6ca1ef73b0..1e84f541683ddb619c2a8dfcd2a141fba2bd851d 100644
 --- a/src/test/java/org/bukkit/entity/EntityTypesTest.java
 +++ b/src/test/java/org/bukkit/entity/EntityTypesTest.java
 @@ -5,7 +5,6 @@ import java.util.Set;
@@ -173,13 +160,13 @@ index 8c4ad718e113f24a30fd11b345d34d6ca1ef73b0..085b0c17fb54fd8229838fee666120d9
  
 -        for (EntityType<?> nms : Registry.ENTITY_TYPE) {
 -            ResourceLocation key = EntityType.getKey(nms);
-+        for (net.minecraft.world.entity.EntityType<?> nms : Registry.ENTITY_TYPE) {
-+            ResourceLocation key = net.minecraft.world.entity.EntityType.getKey(nms);
++        for (net.minecraft.world.entity.EntityType<?> nms : Registry.ENTITY_TYPE) { // Paper - remap fix
++            ResourceLocation key = net.minecraft.world.entity.EntityType.getKey(nms); // Paper - remap fix
  
              org.bukkit.entity.EntityType bukkit = org.bukkit.entity.EntityType.fromName(key.getPath());
              Assert.assertNotNull("Missing nms->bukkit " + key, bukkit);
 diff --git a/src/test/java/org/bukkit/entity/PandaGeneTest.java b/src/test/java/org/bukkit/entity/PandaGeneTest.java
-index 76e2ad676ae68846bdff3c3ef711751445fb0f3c..bee1bd015f161a00df1311b6ef272739fcff6834 100644
+index 76e2ad676ae68846bdff3c3ef711751445fb0f3c..feee17192bca55a9cf1b2fc5b9609b888db77763 100644
 --- a/src/test/java/org/bukkit/entity/PandaGeneTest.java
 +++ b/src/test/java/org/bukkit/entity/PandaGeneTest.java
 @@ -1,6 +1,5 @@
@@ -194,7 +181,7 @@ index 76e2ad676ae68846bdff3c3ef711751445fb0f3c..bee1bd015f161a00df1311b6ef272739
      public void testBukkit() {
          for (Panda.Gene gene : Panda.Gene.values()) {
 -            Panda.Gene nms = CraftPanda.toNms(gene);
-+            net.minecraft.world.entity.animal.Panda.Gene nms = CraftPanda.toNms(gene);
++            net.minecraft.world.entity.animal.Panda.Gene nms = CraftPanda.toNms(gene); // Paper - remap fix
  
              Assert.assertNotNull("NMS gene null for " + gene, nms);
              Assert.assertEquals("Recessive status did not match " + gene, gene.isRecessive(), nms.isRecessive());
@@ -203,7 +190,7 @@ index 76e2ad676ae68846bdff3c3ef711751445fb0f3c..bee1bd015f161a00df1311b6ef272739
      @Test
      public void testNMS() {
 -        for (Panda.Gene gene : Panda.Gene.values()) {
-+        for (net.minecraft.world.entity.animal.Panda.Gene gene : net.minecraft.world.entity.animal.Panda.Gene.values()) {
++        for (net.minecraft.world.entity.animal.Panda.Gene gene : net.minecraft.world.entity.animal.Panda.Gene.values()) { // Paper - remap fix
              org.bukkit.entity.Panda.Gene bukkit = CraftPanda.fromNms(gene);
  
              Assert.assertNotNull("Bukkit gene null for " + gene, bukkit);
