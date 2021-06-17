@@ -312,7 +312,7 @@ index 88c7ae09e29a32309bf2a63ac0593b42d3fe6a42..914678af675be57fecc92189c709da97
                  if (chunk != null) {
                      chunkStorage.callbackExecutor.execute(() -> {
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index 07ecd8fd4d0806309c2ac3a465f1ddae3b164e60..f0ad0eef003067f3b582d6eda2b89964fdd556ea 100644
+index 3464593f1c1af6c6b36549496bc85f2e51655ccf..b92eaa44434e2ee368b90d43f322cb8601d159bb 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
 @@ -149,6 +149,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
@@ -321,7 +321,7 @@ index 07ecd8fd4d0806309c2ac3a465f1ddae3b164e60..f0ad0eef003067f3b582d6eda2b89964
      private final BlockableEventLoop<Runnable> mainThreadExecutor;
 +    final java.util.concurrent.Executor mainInvokingExecutor; // Paper
      public final ChunkGenerator generator;
-     private final Supplier<DimensionDataStorage> overworldDataStorage; public final Supplier<DimensionDataStorage> getWorldPersistentDataSupplier() { return this.overworldDataStorage; } // Paper - OBFHELPER
+     public final Supplier<DimensionDataStorage> overworldDataStorage;
      private final PoiManager poiManager;
 @@ -187,6 +188,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
  
@@ -1027,7 +1027,7 @@ index 334f1ad2a5ce236b58a82b1ef2e143eaa3909f12..c0bbb1acd7d83a70c9f2c34f7d19cea0
          boolean flag1 = this.chunkMap.promoteChunkMap();
  
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-index fa2eb25cdf7d8b0a80b46bc98dcdde7b67e50813..8f12232bfdf82c140fe83f88ef93b96092d586a8 100644
+index 384f38b3c7dd030f107991137912866ae045f811..29df08d378363d57508dc654a129c60bc38ad21b 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
 @@ -183,6 +183,14 @@ public class ServerPlayer extends Player {
@@ -1101,10 +1101,10 @@ index 8770fe0db46b01e8b608637df4f1a669a3f4cdde..3c1698ba0d3bc412ab957777d9b5211d
      private final String name;
      private final Comparator<T> comparator;
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index fecb2a6b8674ca110d6af539396873e9dcdc0edb..6476d2a478b85116061a13f7ef2a5fec2ade4a04 100644
+index fb010fb253f490a79e9172d7a3d017ad51dac958..3e91275b318904ffa31183987fcbc7b28692781a 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-@@ -1566,6 +1566,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+@@ -1565,6 +1565,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
  
          this.awaitingTeleportTime = this.tickCount;
          this.player.absMoveTo(d0, d1, d2, f, f1);
@@ -1113,7 +1113,7 @@ index fecb2a6b8674ca110d6af539396873e9dcdc0edb..6476d2a478b85116061a13f7ef2a5fec
      }
  
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
-index 66735bbc2528c5812c9df14ef7cd91cb69d903b2..8ebbbecaebea8435232a2ccd9ad1062eb1dbbd6c 100644
+index 247d4959c67d41d2f4995c2e19f4c652e97694f5..f452cddd312793465dedb29c4e52d1c4dd1b4360 100644
 --- a/src/main/java/net/minecraft/server/players/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/players/PlayerList.java
 @@ -283,8 +283,8 @@ public abstract class PlayerList {
@@ -1144,7 +1144,7 @@ index 66735bbc2528c5812c9df14ef7cd91cb69d903b2..8ebbbecaebea8435232a2ccd9ad1062e
              entityplayer1.setPos(entityplayer1.getX(), entityplayer1.getY() + 1.0D, entityplayer1.getZ());
          }
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index 6c4c82fb439a07f62668b625b6ba5d552949964d..6ddef28e869ae8f3b3cbc4bacc44abc364d036d8 100644
+index 2a0f72b98d025f1f140d9118937d41e7b172be60..0fd3d689b80484339f437525130bc34de2e71e54 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
 @@ -223,7 +223,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, n
@@ -1174,7 +1174,7 @@ index f72471ac82907a0d5112598b3289689495285944..6e1f8323d028790d1f55d51edb3214d0
              net.minecraft.world.level.chunk.LevelChunk chunk = (net.minecraft.world.level.chunk.LevelChunk) either.left().orElse(null);
              if (chunk != null) addTicket(x, z); // Paper
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index 4dae19fec0c4914d7b9cc3d41fb8ce36b08fbc81..160254615dac48af2af474c303b57dd293fb224b 100644
+index a98394d9bab490c1bdb5817cb30806cab85de730..535fb8f029dc09862e42e239a0fc7326e31508ef 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 @@ -889,6 +889,16 @@ public class CraftPlayer extends CraftHumanEntity implements Player {

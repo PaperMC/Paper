@@ -5,17 +5,10 @@ Subject: [PATCH] Fix SpawnChangeEvent not firing for all use-cases
 
 
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index 1ffb6c12a2eadc0fee0081f980594ac8b5bc4277..ba34e6a8b210cd1549ad2a49d90d3891ee40511c 100644
+index 070bc5f072163b35868ef234e5f34c3eede4c934..9790d6f7f451233e5abcaad24befb8b638ad8df3 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
-@@ -1660,12 +1660,14 @@ public class ServerLevel extends net.minecraft.world.level.Level implements Worl
-     }
-     // Paper end
- 
-+    public final void setSpawn(BlockPos blockposition, float f) { this.setDefaultSpawnPos(blockposition, f); } // Paper - OBFHELPER
-     public void setDefaultSpawnPos(BlockPos pos, float angle) {
-         // Paper - configurable spawn radius
-         BlockPos prevSpawn = this.getSharedSpawnPos();
+@@ -1666,6 +1666,7 @@ public class ServerLevel extends net.minecraft.world.level.Level implements Worl
          //ChunkCoordIntPair chunkcoordintpair = new ChunkCoordIntPair(new BlockPosition(this.worldData.a(), 0, this.worldData.c()));
  
          this.levelData.setSpawn(pos, angle);
@@ -24,7 +17,7 @@ index 1ffb6c12a2eadc0fee0081f980594ac8b5bc4277..ba34e6a8b210cd1549ad2a49d90d3891
              // if this keepSpawnInMemory is false a plugin has already removed our tickets, do not re-add
              this.removeTicketsForSpawn(this.paperConfig.keepLoadedRange, prevSpawn);
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index 6c5b6a5f1b9ee3fb5a6bae4d57c70cfcaba75624..d1c7d5a0918bf4d11c453fe31b3dfda9e146474c 100644
+index 6c5b6a5f1b9ee3fb5a6bae4d57c70cfcaba75624..8c8627f70f29834e19093b6298127008e75b7d74 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 @@ -386,11 +386,13 @@ public class CraftWorld implements World {
@@ -32,7 +25,7 @@ index 6c5b6a5f1b9ee3fb5a6bae4d57c70cfcaba75624..d1c7d5a0918bf4d11c453fe31b3dfda9
          try {
              Location previousLocation = this.getSpawnLocation();
 -            world.levelData.setSpawn(new BlockPos(x, y, z), angle);
-+            world.setSpawn(new BlockPos(x, y, z), angle); // Paper - use WorldServer#setSpawn
++            world.setDefaultSpawnPos(new BlockPos(x, y, z), angle); // Paper - use WorldServer#setSpawn
  
 +            // Paper start - move to nms.World
              // Notify anyone who's listening.

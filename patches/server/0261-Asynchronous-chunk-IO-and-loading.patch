@@ -1436,7 +1436,7 @@ index 0000000000000000000000000000000000000000..ee906b594b306906c170180a29a8b619
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/io/chunk/ChunkLoadTask.java b/src/main/java/com/destroystokyo/paper/io/chunk/ChunkLoadTask.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..7c4b19f565a77b63ab9d3b56557af126d0438eac
+index 0000000000000000000000000000000000000000..0eaa4f3cd476c64feab358879eee3d67f46092f4
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/io/chunk/ChunkLoadTask.java
 @@ -0,0 +1,138 @@
@@ -1534,7 +1534,7 @@ index 0000000000000000000000000000000000000000..7c4b19f565a77b63ab9d3b56557af126
 +
 +            try {
 +                chunkData.chunkData = chunkManager.getChunkData(this.world.getTypeKey(),
-+                    chunkManager.getWorldPersistentDataSupplier(), chunkData.chunkData, chunkPos, this.world); // clone data for safety, file IO thread does not clone
++                    chunkManager.overworldDataStorage, chunkData.chunkData, chunkPos, this.world); // clone data for safety, file IO thread does not clone
 +            } catch (final Throwable ex) {
 +                PaperFileIOThread.LOGGER.error("Could not apply datafixers for chunk task: " + this.toString(), ex);
 +                this.complete(ChunkLoadTask.createEmptyHolder());
@@ -2299,7 +2299,7 @@ index fb0b3c5770f66cc3590f5ac4e690a33cb6179be3..7ce854edba32ffcafaa5268d4bb2822a
                  DedicatedServer dedicatedserver1 = new DedicatedServer(optionset, datapackconfiguration1, thread, iregistrycustom_dimension, convertable_conversionsession, resourcepackrepository, datapackresources, null, dedicatedserversettings, DataFixers.getDataFixer(), minecraftsessionservice, gameprofilerepository, usercache, LoggerChunkProgressListener::new);
  
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 880fc4e346549a5d7ed627244bdfd284705ad2fc..24fc2eb3ee067a4164db166aa3e07ecbb426bbba 100644
+index 537efec03939b0f5640dfd974bb0bd68e93b4325..627887227e266155c025592b50defede4271d978 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -976,7 +976,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
@@ -2312,7 +2312,7 @@ index 880fc4e346549a5d7ed627244bdfd284705ad2fc..24fc2eb3ee067a4164db166aa3e07ecb
  
      public String getLocalIp() {
 diff --git a/src/main/java/net/minecraft/server/level/ChunkHolder.java b/src/main/java/net/minecraft/server/level/ChunkHolder.java
-index df32a8b1df60064c49702dca26d7310b7d27e94b..92faf96e12b443351ea146d4d1deccb0f7e020e5 100644
+index 9a8fc112dd19964c848127a8dd2f100f5db63075..165e72873da877f7a29d58e4da489f68979725ad 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkHolder.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkHolder.java
 @@ -154,6 +154,18 @@ public class ChunkHolder {
@@ -2357,18 +2357,9 @@ index df32a8b1df60064c49702dca26d7310b7d27e94b..92faf96e12b443351ea146d4d1deccb0
                  completablefuture = (CompletableFuture) this.futures.get(i);
                  if (completablefuture == null) {
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index 52bcfcc7443b57b0e57024c0c4e78c5a7260410d..e6090343eda328ab612a9345978cf8da353e9566 100644
+index b794922eeccc845632f2442a3ed923f1d826a9e1..2c2f0497e34c58c358b04e72c9d27ef1eead4a42 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
-@@ -115,7 +115,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
-     private final ThreadedLevelLightEngine lightEngine;
-     private final BlockableEventLoop<Runnable> mainThreadExecutor;
-     public final ChunkGenerator generator;
--    private final Supplier<DimensionDataStorage> overworldDataStorage;
-+    private final Supplier<DimensionDataStorage> overworldDataStorage; public final Supplier<DimensionDataStorage> getWorldPersistentDataSupplier() { return this.overworldDataStorage; } // Paper - OBFHELPER
-     private final PoiManager poiManager;
-     public final LongSet toDrop;
-     private boolean modified;
 @@ -406,6 +406,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
      public void close() throws IOException {
          try {
@@ -2645,7 +2636,7 @@ index 52bcfcc7443b57b0e57024c0c4e78c5a7260410d..e6090343eda328ab612a9345978cf8da
          return this.poiManager;
      }
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-index bd937505244cc9305611815a9274f91395d3a8f8..b15d5c2a8d4d2184a55a16ff2071fd82cb2e0457 100644
+index 853056ad5c5eeff03e7d6fe0dfd6f837a03ad882..672f78d1560ccd45d1a0ca04d6daf8188105c3e9 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 @@ -323,10 +323,128 @@ public class ServerChunkCache extends ChunkSource {
@@ -2824,7 +2815,7 @@ index bd937505244cc9305611815a9274f91395d3a8f8..b15d5c2a8d4d2184a55a16ff2071fd82
          } finally {
              chunkMap.callbackExecutor.run();
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index e299bf10c0bdd14398d590939d90cc723ecd4ce5..479bea88e497adfe8cfacd53b5de825bba8e4722 100644
+index 774f37e02feb83be3b92620aa4a0227a0c4acc93..434f3a56e373e584801d66c13ba2c045a383beea 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
 @@ -210,6 +210,79 @@ public class ServerLevel extends net.minecraft.world.level.Level implements Worl
@@ -2929,7 +2920,7 @@ index 0d536d72ac918fbd403397ff369d10143ee9c204..be677d437d17b74c6188ce1bd5fc6fdc
      private final String name;
      private final Comparator<T> comparator;
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index 1c76d6a616d6967402fb55feffafffa0aa2fd468..2917632c5e974dbfb7d78c497ebd49e742b8ef3c 100644
+index eb52ca159e895608a6a662821f14910970759dd2..05d5d976c18149491124263b056224a384eee06d 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 @@ -712,6 +712,13 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser

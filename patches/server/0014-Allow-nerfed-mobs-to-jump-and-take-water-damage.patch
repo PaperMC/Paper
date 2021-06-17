@@ -19,7 +19,7 @@ index 78948c42b13194005bdbbbc69c2b7ae0732a78c5..b41e7922dd96c3358eb849ab39982a75
 +    }
  }
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index e48fe017704b495712b565feff54e1b4ed2d595d..e6abf635281c895505f3201d7329d51f36e24eef 100644
+index 0b63d81ecbcb56bf3dc25661cc2b219cd8c25592..c22eb7451aaf142f6c722715dbfda5ee332e068b 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
 @@ -1264,6 +1264,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, n
@@ -31,7 +31,7 @@ index e48fe017704b495712b565feff54e1b4ed2d595d..e6abf635281c895505f3201d7329d51f
          return this.isInWater() || this.isInRain() || this.isInBubbleColumn();
      }
 diff --git a/src/main/java/net/minecraft/world/entity/Mob.java b/src/main/java/net/minecraft/world/entity/Mob.java
-index e91932d25e7b5d4a95e485bfa8b70632e0641b0a..9f368f32aa93fe5f94b19a884f44ded3bf69a225 100644
+index e91932d25e7b5d4a95e485bfa8b70632e0641b0a..1456dd2ef7ff28701555f4ac4b7645794ccee640 100644
 --- a/src/main/java/net/minecraft/world/entity/Mob.java
 +++ b/src/main/java/net/minecraft/world/entity/Mob.java
 @@ -103,6 +103,7 @@ public abstract class Mob extends LivingEntity {
@@ -49,7 +49,7 @@ index e91932d25e7b5d4a95e485bfa8b70632e0641b0a..9f368f32aa93fe5f94b19a884f44ded3
 -        if (!this.aware) return; // CraftBukkit
 +        if (!this.aware) { // Paper start - Allow nerfed mobs to jump, float and take water damage
 +            if (goalFloat != null) {
-+                if (goalFloat.validConditions()) goalFloat.update();
++                if (goalFloat.validConditions()) goalFloat.tick();
 +                this.getJumpControl().tick();
 +            }
 +            if ((this instanceof net.minecraft.world.entity.monster.Blaze || this instanceof net.minecraft.world.entity.monster.EnderMan) && isInWaterRainOrBubble()) {
@@ -62,10 +62,10 @@ index e91932d25e7b5d4a95e485bfa8b70632e0641b0a..9f368f32aa93fe5f94b19a884f44ded3
          this.sensing.tick();
          this.level.getProfiler().pop();
 diff --git a/src/main/java/net/minecraft/world/entity/ai/goal/FloatGoal.java b/src/main/java/net/minecraft/world/entity/ai/goal/FloatGoal.java
-index 54085b104547f2fe7c08ff8aa4839b1230877bca..5a2e3cc833b3fa7d6fcea1474e25c469a53b3bae 100644
+index 54085b104547f2fe7c08ff8aa4839b1230877bca..1e6c92a3e9a28315814b250b56ecfb3e85f151b4 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/goal/FloatGoal.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/goal/FloatGoal.java
-@@ -9,15 +9,18 @@ public class FloatGoal extends Goal {
+@@ -9,10 +9,12 @@ public class FloatGoal extends Goal {
  
      public FloatGoal(Mob mob) {
          this.mob = mob;
@@ -78,9 +78,3 @@ index 54085b104547f2fe7c08ff8aa4839b1230877bca..5a2e3cc833b3fa7d6fcea1474e25c469
      @Override
      public boolean canUse() {
          return this.mob.isInWater() && this.mob.getFluidHeight(FluidTags.WATER) > this.mob.getFluidJumpThreshold() || this.mob.isInLava();
-     }
- 
-+    public void update() { this.tick(); } // Paper - OBFHELPER
-     @Override
-     public void tick() {
-         if (this.mob.getRandom().nextFloat() < 0.8F) {

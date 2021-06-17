@@ -5,20 +5,8 @@ Subject: [PATCH] Use distance map to optimise entity tracker
 
 Use the distance map to find candidate players for tracking.
 
-diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 11fd6d24ed0612e4df1a0493907178fb9c455d1c..d7023cb0974f6c28a0fb8a0a6e5a6600fe30d3e3 100644
---- a/src/main/java/net/minecraft/server/MinecraftServer.java
-+++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -1718,6 +1718,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
-         }
-     }
- 
-+    public final int applyTrackingRangeScale(int value) { return this.getScaledTrackingDistance(value); } // Paper - OBFHELPER
-     public int getScaledTrackingDistance(int initialDistance) {
-         return initialDistance;
-     }
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index 187a4542dbdad2708a6ada8a84591788d5d1a125..57467cf2425bc9278e45c7ea5194a29155c69b92 100644
+index c643919e17081c85717b0b00c227b914d7abcc0a..9ce330be998f3392288d8eb0386a48237ff3a880 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
 @@ -63,6 +63,7 @@ import net.minecraft.network.protocol.game.ClientboundSetEntityLinkPacket;
@@ -44,7 +32,7 @@ index 187a4542dbdad2708a6ada8a84591788d5d1a125..57467cf2425bc9278e45c7ea5194a291
 +    final int[] entityTrackerTrackRanges;
 +
 +    private int convertSpigotRangeToVanilla(final int vanilla) {
-+        return MinecraftServer.getServer().applyTrackingRangeScale(vanilla);
++        return MinecraftServer.getServer().getScaledTrackingDistance(vanilla);
 +    }
 +    // Paper end - use distance map to optimise tracker
  
@@ -300,7 +288,7 @@ index 187a4542dbdad2708a6ada8a84591788d5d1a125..57467cf2425bc9278e45c7ea5194a291
                  }
              }
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index 5bdb1ce8875c276e5f7997db83b097b910c0a136..2cf6c22de0416fad843a901d2ffb97a55937290f 100644
+index 677124d720105e9bda9d05a1fcc46ce10f44539d..fe4b09f82d36e5d7e109c86e8f4c003e92ba4e9d 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
 @@ -50,6 +50,7 @@ import net.minecraft.network.syncher.EntityDataSerializers;

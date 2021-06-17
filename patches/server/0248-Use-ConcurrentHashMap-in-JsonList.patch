@@ -38,7 +38,7 @@ index 7c5a75fb34640bb4e7ef839412dbb30b0d0fc8e8..b62aa9f934c33b4d22b985b5e56937ba
  
              chatmessage = new TranslatableComponent("multiplayer.disconnect.banned_ip.reason", new Object[]{ipbanentry.getReason()});
 diff --git a/src/main/java/net/minecraft/server/players/StoredUserList.java b/src/main/java/net/minecraft/server/players/StoredUserList.java
-index 00e3662e25618459447d4ce5f56f7e046bfe47e2..0851dca56ae680387d56b3fdc894746c248604f5 100644
+index 00e3662e25618459447d4ce5f56f7e046bfe47e2..2567e51f7de898ea0a2411a176af70bdc4551260 100644
 --- a/src/main/java/net/minecraft/server/players/StoredUserList.java
 +++ b/src/main/java/net/minecraft/server/players/StoredUserList.java
 @@ -12,6 +12,8 @@ import java.io.BufferedReader;
@@ -56,7 +56,7 @@ index 00e3662e25618459447d4ce5f56f7e046bfe47e2..0851dca56ae680387d56b3fdc894746c
      private final File file;
 -    private final Map<String, V> map = Maps.newHashMap();
 +    // Paper - replace HashMap is ConcurrentHashMap
-+    private final Map<String, V> map = Maps.newConcurrentMap(); private final Map<String, V> getBackingMap() { return this.map; } // Paper - OBFHELPER
++    private final Map<String, V> map = Maps.newConcurrentMap();
 +    private boolean e = true;
 +    private static final ParameterizedType f = new ParameterizedType() {
 +        public Type[] getActualTypeArguments() {
@@ -83,7 +83,7 @@ index 00e3662e25618459447d4ce5f56f7e046bfe47e2..0851dca56ae680387d56b3fdc894746c
 +        // Paper start
 +        // this.g();
 +        // return (V) this.d.get(this.a(k0)); // CraftBukkit - fix decompile error
-+        return (V) this.getBackingMap().computeIfPresent(this.getKeyForUser(key), (k, v) -> {
++        return (V) this.map.computeIfPresent(this.getKeyForUser(key), (k, v) -> {
 +            return v.hasExpired() ? null : v;
 +        });
 +        // Paper end
@@ -96,7 +96,7 @@ index 00e3662e25618459447d4ce5f56f7e046bfe47e2..0851dca56ae680387d56b3fdc894746c
      public boolean isEmpty() {
 -        return this.map.size() < 1;
 +        // return this.d.size() < 1; // Paper
-+        return this.getBackingMap().isEmpty(); // Paper - readability is the goal. As an aside, isEmpty() uses only sumCount() and a comparison. size() uses sumCount(), casts, and boolean logic
++        return this.map.isEmpty(); // Paper - readability is the goal. As an aside, isEmpty() uses only sumCount() and a comparison. size() uses sumCount(), casts, and boolean logic
      }
  
      protected String getKeyForUser(K profile) {
@@ -127,7 +127,7 @@ index 00e3662e25618459447d4ce5f56f7e046bfe47e2..0851dca56ae680387d56b3fdc894746c
 +            this.d.remove(this.a(k0));
 +        }*/
  
-+        this.getBackingMap().values().removeIf(StoredUserEntry::hasExpired);
++        this.map.values().removeIf(StoredUserEntry::hasExpired);
 +        // Paper end
      }
  

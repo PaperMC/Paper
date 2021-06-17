@@ -5,7 +5,7 @@ Subject: [PATCH] Load Chunks for Login Asynchronously
 
 
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-index 63f20e7adf80a1b81438262087e33c3a1e63ca7f..f0d574307b24d19d3006e5c53b650c75436bde38 100644
+index 05e520165a86eb52e1fd4130b6f2ccc4c838934a..04260e1e8cf17d2af06504fae949958b91c86bef 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
 @@ -172,6 +172,7 @@ public class ServerPlayer extends Player {
@@ -37,7 +37,7 @@ index be677d437d17b74c6188ce1bd5fc6fdc228fd92f..78fbb4c3e52e900956ae0811aaf934c8
      public static final TicketType<ChunkPos> UNKNOWN = TicketType.create("unknown", Comparator.comparingLong(ChunkPos::toLong), 1);
      public static final TicketType<Unit> PLUGIN = TicketType.create("plugin", (a, b) -> 0); // CraftBukkit
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index 2e7b909750ee512dce40b8574dfb62ed68fbbfb6..0d8a8b3d7a13e2384f8614bdc190768c03bb98c2 100644
+index fae06882217adf20c6f81db2793ee3930cba30c0..c57b5cf7d61eab5a45e3fa69e8804fd0ef4a54ad 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 @@ -221,6 +221,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
@@ -96,7 +96,7 @@ index 477117affabfe07d52d3b40404613492b0bcdc56..3a7cc4f8ee62c8ff726ecf3e669c9f9b
              try {
                  ServerPlayer entityplayer1 = this.server.getPlayerList().processLogin(this.gameProfile, s); // CraftBukkit - add player reference
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
-index 3a13c151066c8784fdc844e1d6310f77ff32e7f1..c4242a1602bbb02541c330bc02016f15c8644358 100644
+index 3a13c151066c8784fdc844e1d6310f77ff32e7f1..846b0dcee92f71d1c887ea88744c36f6a870c5e2 100644
 --- a/src/main/java/net/minecraft/server/players/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/players/PlayerList.java
 @@ -38,6 +38,7 @@ import net.minecraft.network.protocol.Packet;
@@ -107,13 +107,7 @@ index 3a13c151066c8784fdc844e1d6310f77ff32e7f1..c4242a1602bbb02541c330bc02016f15
  import net.minecraft.network.protocol.game.ClientboundEntityEventPacket;
  import net.minecraft.network.protocol.game.ClientboundGameEventPacket;
  import net.minecraft.network.protocol.game.ClientboundInitializeBorderPacket;
-@@ -127,11 +128,12 @@ public abstract class PlayerList {
-     private static final SimpleDateFormat BAN_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd 'at' HH:mm:ss z");
-     private final MinecraftServer server;
-     public final List<ServerPlayer> players = new java.util.concurrent.CopyOnWriteArrayList(); // CraftBukkit - ArrayList -> CopyOnWriteArrayList: Iterator safety
--    private final Map<UUID, ServerPlayer> playersByUUID = Maps.newHashMap();
-+    private final Map<UUID, ServerPlayer> playersByUUID = Maps.newHashMap();Map<UUID, ServerPlayer> getUUIDMap() { return playersByUUID; } // Paper - OBFHELPER
-     private final UserBanList bans;
+@@ -132,6 +133,7 @@ public abstract class PlayerList {
      private final IpBanList ipBans;
      private final ServerOpList ops;
      private final UserWhiteList whitelist;
@@ -173,7 +167,7 @@ index 3a13c151066c8784fdc844e1d6310f77ff32e7f1..c4242a1602bbb02541c330bc02016f15
 +    }
 +
 +    public ServerPlayer getActivePlayer(UUID uuid) {
-+        ServerPlayer player = this.getUUIDMap().get(uuid);
++        ServerPlayer player = this.playersByUUID.get(uuid);
 +        return player != null ? player : pendingPlayers.get(uuid);
 +    }
 +
@@ -250,7 +244,7 @@ index 3a13c151066c8784fdc844e1d6310f77ff32e7f1..c4242a1602bbb02541c330bc02016f15
          Iterator iterator = list.iterator();
  
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index 7120400af3e6a36f9b097fe9dfaff655209b03ce..d9ed724d07309f23c91f20c9af888cce5127e323 100644
+index fa63a52cba5355612ce417f4bb8077a89ce59398..32323729f913d27170fca0e69346e8d2943089af 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
 @@ -1511,7 +1511,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, n
