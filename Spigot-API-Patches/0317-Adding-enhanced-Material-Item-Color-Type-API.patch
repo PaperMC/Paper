@@ -6,29 +6,28 @@ Subject: [PATCH] Adding enhanced Material/Item Color(Type)-API
 
 diff --git a/src/main/java/io/papermc/paper/item/ColorType.java b/src/main/java/io/papermc/paper/item/ColorType.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..752bd3011bdd0aee86c95a84074298aad9fd62c1
+index 0000000000000000000000000000000000000000..0bbf12b5c0c2d977e719a0bbdb738f7cfd5b874b
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/item/ColorType.java
-@@ -0,0 +1,269 @@
+@@ -0,0 +1,537 @@
 +package io.papermc.paper.item;
 +
++import com.google.common.collect.ImmutableSet;
 +import net.kyori.adventure.text.format.TextColor;
-+import net.md_5.bungee.api.ChatColor;
-+import org.bukkit.Color;
-+import org.bukkit.DyeColor;
-+import org.bukkit.Material;
++import net.kyori.adventure.util.HSVLike;
++import net.kyori.adventure.util.RGBLike;
++import org.bukkit.*;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.common.value.qual.IntRange;
 +import org.jetbrains.annotations.NotNull;
 +import org.jetbrains.annotations.Nullable;
 +
-+import java.util.Arrays;
-+import java.util.Collections;
-+import java.util.Objects;
-+import java.util.Set;
++import java.util.*;
 +
 +/**
 + * Represents different kind of possible Colors, which colorable {@link Material}s also/and {@link DyeableMaterial}s can have
 + */
-+public enum ColorType {
++public enum ColorType implements RGBLike {
 +
 +    WHITE,
 +    ORANGE,
@@ -47,36 +46,312 @@ index 0000000000000000000000000000000000000000..752bd3011bdd0aee86c95a84074298aa
 +    RED,
 +    BLACK;
 +
++    private final DyeColor dyeColor;
++    private final Color particleColor;
++    private final TextColor textColor;
++
++    private final Material woolMaterial;
++    private final Material terracottaMaterial;
++    private final Material concreteMaterial;
++    private final Material concretePowderMaterial;
++    private final Material carpetMaterial;
++    private final Material stainedGlassMaterial;
++    private final Material stainedGlassPaneMaterial;
++    private final Material shulkerBoxMaterial;
++    private final Material glazedTerracottaMaterial;
++    private final Material bedMaterial;
++    private final Material bannerMaterial;
++    private final Material bannerWallMaterial;
++    private final Material dyeMaterial;
++
++    private final ImmutableSet<Material> allMaterials;
++
++    // <editor-fold desc="ColorType { init }" defaultstate="collapsed">
++    ColorType() {
++         this.dyeColor = DyeColor.valueOf(name());
++         this.particleColor = switch (this) {
++             case WHITE -> Color.WHITE;
++             case ORANGE -> Color.ORANGE;
++             case MAGENTA -> Color.FUCHSIA;
++             case LIGHT_BLUE -> Color.AQUA;
++             case YELLOW -> Color.YELLOW;
++             case LIME -> Color.LIME;
++             case PINK -> Color.fromRGB(255, 20, 147);
++             case GRAY -> Color.GRAY;
++             case LIGHT_GRAY -> Color.SILVER;
++             case CYAN -> Color.TEAL;
++             case PURPLE -> Color.PURPLE;
++             case BLUE -> Color.BLUE;
++             case BROWN -> Color.MAROON;
++             case GREEN -> Color.GREEN;
++             case RED -> Color.RED;
++             case BLACK -> Color.BLACK;
++         };
++         this.textColor = TextColor.color(particleColor.getRed(), particleColor.getGreen(), particleColor.getBlue());
++
++         // From here: every single material-type
++         this.woolMaterial = switch (this) {
++             case WHITE -> Material.WHITE_WOOL;
++             case ORANGE -> Material.ORANGE_WOOL;
++             case MAGENTA -> Material.MAGENTA_WOOL;
++             case LIGHT_BLUE -> Material.LIGHT_BLUE_WOOL;
++             case YELLOW -> Material.YELLOW_WOOL;
++             case LIME -> Material.LIME_WOOL;
++             case PINK -> Material.PINK_WOOL;
++             case GRAY -> Material.GRAY_WOOL;
++             case LIGHT_GRAY -> Material.LIGHT_GRAY_WOOL;
++             case CYAN -> Material.CYAN_WOOL;
++             case PURPLE -> Material.PURPLE_WOOL;
++             case BLUE -> Material.BLUE_WOOL;
++             case BROWN -> Material.BROWN_WOOL;
++             case GREEN -> Material.GREEN_WOOL;
++             case RED -> Material.RED_WOOL;
++             case BLACK -> Material.BLACK_WOOL;
++         };
++         this.terracottaMaterial = switch (this) {
++             case WHITE -> Material.WHITE_TERRACOTTA;
++             case ORANGE -> Material.ORANGE_TERRACOTTA;
++             case MAGENTA -> Material.MAGENTA_TERRACOTTA;
++             case LIGHT_BLUE -> Material.LIGHT_BLUE_TERRACOTTA;
++             case YELLOW -> Material.YELLOW_TERRACOTTA;
++             case LIME -> Material.LIME_TERRACOTTA;
++             case PINK -> Material.PINK_TERRACOTTA;
++             case GRAY -> Material.GRAY_TERRACOTTA;
++             case LIGHT_GRAY -> Material.LIGHT_GRAY_TERRACOTTA;
++             case CYAN -> Material.CYAN_TERRACOTTA;
++             case PURPLE -> Material.PURPLE_TERRACOTTA;
++             case BLUE -> Material.BLUE_TERRACOTTA;
++             case BROWN -> Material.BROWN_TERRACOTTA;
++             case GREEN -> Material.GREEN_TERRACOTTA;
++             case RED -> Material.RED_TERRACOTTA;
++             case BLACK -> Material.BLACK_TERRACOTTA;
++         };
++         this.concreteMaterial = switch (this) {
++             case WHITE -> Material.WHITE_CONCRETE;
++             case ORANGE -> Material.ORANGE_CONCRETE;
++             case MAGENTA -> Material.MAGENTA_CONCRETE;
++             case LIGHT_BLUE -> Material.LIGHT_BLUE_CONCRETE;
++             case YELLOW -> Material.YELLOW_CONCRETE;
++             case LIME -> Material.LIME_CONCRETE;
++             case PINK -> Material.PINK_CONCRETE;
++             case GRAY -> Material.GRAY_CONCRETE;
++             case LIGHT_GRAY -> Material.LIGHT_GRAY_CONCRETE;
++             case CYAN -> Material.CYAN_CONCRETE;
++             case PURPLE -> Material.PURPLE_CONCRETE;
++             case BLUE -> Material.BROWN_CONCRETE;
++             case BROWN -> Material.BROWN_CONCRETE;
++             case GREEN -> Material.GREEN_CONCRETE;
++             case RED -> Material.RED_CONCRETE;
++             case BLACK -> Material.BLACK_CONCRETE;
++         };
++         this.concretePowderMaterial = switch (this) {
++             case WHITE -> Material.WHITE_CONCRETE_POWDER;
++             case ORANGE -> Material.ORANGE_CONCRETE_POWDER;
++             case MAGENTA -> Material.MAGENTA_CONCRETE_POWDER;
++             case LIGHT_BLUE -> Material.LIGHT_BLUE_CONCRETE_POWDER;
++             case YELLOW -> Material.YELLOW_CONCRETE_POWDER;
++             case LIME -> Material.LIME_CONCRETE_POWDER;
++             case PINK -> Material.PINK_CONCRETE_POWDER;
++             case GRAY -> Material.GRAY_CONCRETE_POWDER;
++             case LIGHT_GRAY -> Material.LIGHT_GRAY_CONCRETE_POWDER;
++             case CYAN -> Material.CYAN_CONCRETE_POWDER;
++             case PURPLE -> Material.PURPLE_CONCRETE_POWDER;
++             case BLUE -> Material.BLUE_CONCRETE_POWDER;
++             case BROWN -> Material.BROWN_CONCRETE_POWDER;
++             case GREEN -> Material.GREEN_CONCRETE_POWDER;
++             case RED -> Material.RED_CONCRETE_POWDER;
++             case BLACK -> Material.BLACK_CONCRETE_POWDER;
++         };
++         this.carpetMaterial = switch (this) {
++             case WHITE -> Material.WHITE_CARPET;
++             case ORANGE -> Material.ORANGE_CARPET;
++             case MAGENTA -> Material.MAGENTA_CARPET;
++             case LIGHT_BLUE -> Material.LIGHT_BLUE_CARPET;
++             case YELLOW -> Material.YELLOW_CARPET;
++             case LIME -> Material.LIME_CARPET;
++             case PINK -> Material.PINK_CARPET;
++             case GRAY -> Material.GRAY_CARPET;
++             case LIGHT_GRAY -> Material.LIGHT_GRAY_CARPET;
++             case CYAN -> Material.CYAN_CARPET;
++             case PURPLE -> Material.PURPLE_CARPET;
++             case BLUE -> Material.BLUE_CARPET;
++             case BROWN -> Material.BROWN_CARPET;
++             case GREEN -> Material.GREEN_CARPET;
++             case RED -> Material.RED_CARPET;
++             case BLACK -> Material.BLACK_CARPET;
++         };
++         this.stainedGlassMaterial = switch (this) {
++             case WHITE -> Material.WHITE_STAINED_GLASS;
++             case ORANGE -> Material.ORANGE_STAINED_GLASS;
++             case MAGENTA -> Material.MAGENTA_STAINED_GLASS;
++             case LIGHT_BLUE -> Material.LIGHT_BLUE_STAINED_GLASS;
++             case YELLOW -> Material.YELLOW_STAINED_GLASS;
++             case LIME -> Material.LIME_STAINED_GLASS;
++             case PINK -> Material.PINK_STAINED_GLASS;
++             case GRAY -> Material.GRAY_STAINED_GLASS;
++             case LIGHT_GRAY -> Material.LIGHT_GRAY_STAINED_GLASS;
++             case CYAN -> Material.CYAN_STAINED_GLASS;
++             case PURPLE -> Material.PURPLE_STAINED_GLASS;
++             case BLUE -> Material.BLUE_STAINED_GLASS;
++             case BROWN -> Material.BROWN_STAINED_GLASS;
++             case GREEN -> Material.GREEN_STAINED_GLASS;
++             case RED -> Material.RED_STAINED_GLASS;
++             case BLACK -> Material.BLACK_STAINED_GLASS;
++         };
++         this.stainedGlassPaneMaterial = switch (this) {
++             case WHITE -> Material.WHITE_STAINED_GLASS_PANE;
++             case ORANGE -> Material.ORANGE_STAINED_GLASS_PANE;
++             case MAGENTA -> Material.MAGENTA_STAINED_GLASS_PANE;
++             case LIGHT_BLUE -> Material.LIGHT_BLUE_STAINED_GLASS_PANE;
++             case YELLOW -> Material.YELLOW_STAINED_GLASS_PANE;
++             case LIME -> Material.LIME_STAINED_GLASS_PANE;
++             case PINK -> Material.PINK_STAINED_GLASS_PANE;
++             case GRAY -> Material.GRAY_STAINED_GLASS_PANE;
++             case LIGHT_GRAY -> Material.LIGHT_GRAY_STAINED_GLASS_PANE;
++             case CYAN -> Material.CYAN_STAINED_GLASS_PANE;
++             case PURPLE -> Material.PURPLE_STAINED_GLASS_PANE;
++             case BLUE -> Material.BLUE_STAINED_GLASS_PANE;
++             case BROWN -> Material.BROWN_STAINED_GLASS_PANE;
++             case GREEN -> Material.GREEN_STAINED_GLASS_PANE;
++             case RED -> Material.RED_STAINED_GLASS_PANE;
++             case BLACK -> Material.BLACK_STAINED_GLASS_PANE;
++         };
++         this.shulkerBoxMaterial = switch (this) {
++             case WHITE -> Material.WHITE_SHULKER_BOX;
++             case ORANGE -> Material.ORANGE_SHULKER_BOX;
++             case MAGENTA -> Material.MAGENTA_SHULKER_BOX;
++             case LIGHT_BLUE -> Material.LIGHT_BLUE_SHULKER_BOX;
++             case YELLOW -> Material.YELLOW_SHULKER_BOX;
++             case LIME -> Material.LIME_SHULKER_BOX;
++             case PINK -> Material.PINK_SHULKER_BOX;
++             case GRAY -> Material.GRAY_SHULKER_BOX;
++             case LIGHT_GRAY -> Material.LIGHT_GRAY_SHULKER_BOX;
++             case CYAN -> Material.CYAN_SHULKER_BOX;
++             case PURPLE -> Material.PURPLE_SHULKER_BOX;
++             case BLUE -> Material.BLUE_SHULKER_BOX;
++             case BROWN -> Material.BROWN_SHULKER_BOX;
++             case GREEN -> Material.GREEN_SHULKER_BOX;
++             case RED -> Material.RED_SHULKER_BOX;
++             case BLACK -> Material.BLACK_SHULKER_BOX;
++         };
++         this.glazedTerracottaMaterial = switch (this) {
++             case WHITE -> Material.WHITE_GLAZED_TERRACOTTA;
++             case ORANGE -> Material.ORANGE_GLAZED_TERRACOTTA;
++             case MAGENTA -> Material.MAGENTA_GLAZED_TERRACOTTA;
++             case LIGHT_BLUE -> Material.LIGHT_BLUE_GLAZED_TERRACOTTA;
++             case YELLOW -> Material.YELLOW_GLAZED_TERRACOTTA;
++             case LIME -> Material.LIME_GLAZED_TERRACOTTA;
++             case PINK -> Material.PINK_GLAZED_TERRACOTTA;
++             case GRAY -> Material.GRAY_GLAZED_TERRACOTTA;
++             case LIGHT_GRAY -> Material.LIGHT_GRAY_GLAZED_TERRACOTTA;
++             case CYAN -> Material.CYAN_GLAZED_TERRACOTTA;
++             case PURPLE -> Material.PURPLE_GLAZED_TERRACOTTA;
++             case BLUE -> Material.BLUE_GLAZED_TERRACOTTA;
++             case BROWN -> Material.BROWN_GLAZED_TERRACOTTA;
++             case GREEN -> Material.GREEN_GLAZED_TERRACOTTA;
++             case RED -> Material.RED_GLAZED_TERRACOTTA;
++             case BLACK -> Material.BLACK_GLAZED_TERRACOTTA;
++         };
++         this.bedMaterial = switch (this) {
++             case WHITE -> Material.WHITE_BED;
++             case ORANGE -> Material.ORANGE_BED;
++             case MAGENTA -> Material.MAGENTA_BED;
++             case LIGHT_BLUE -> Material.LIGHT_BLUE_BED;
++             case YELLOW -> Material.YELLOW_BED;
++             case LIME -> Material.LIME_BED;
++             case PINK -> Material.PINK_BED;
++             case GRAY -> Material.GRAY_BED;
++             case LIGHT_GRAY -> Material.LIGHT_GRAY_BED;
++             case CYAN -> Material.CYAN_BED;
++             case PURPLE -> Material.PURPLE_BED;
++             case BLUE -> Material.BLUE_BED;
++             case BROWN -> Material.BROWN_BED;
++             case GREEN -> Material.GREEN_BED;
++             case RED -> Material.RED_BED;
++             case BLACK -> Material.BLACK_BED;
++         };
++         this.bannerMaterial = switch (this) {
++             case WHITE -> Material.WHITE_BANNER;
++             case ORANGE -> Material.ORANGE_BANNER;
++             case MAGENTA -> Material.MAGENTA_BANNER;
++             case LIGHT_BLUE -> Material.LIGHT_BLUE_BANNER;
++             case YELLOW -> Material.YELLOW_BANNER;
++             case LIME -> Material.LIME_BANNER;
++             case PINK -> Material.PINK_BANNER;
++             case GRAY -> Material.GRAY_BANNER;
++             case LIGHT_GRAY -> Material.LIGHT_GRAY_BANNER;
++             case CYAN -> Material.CYAN_BANNER;
++             case PURPLE -> Material.PURPLE_BANNER;
++             case BLUE -> Material.BLUE_BANNER;
++             case BROWN -> Material.BROWN_BANNER;
++             case GREEN -> Material.GREEN_BANNER;
++             case RED -> Material.RED_BANNER;
++             case BLACK -> Material.BLACK_BANNER;
++         };
++         this.bannerWallMaterial = switch (this) {
++             case WHITE -> Material.WHITE_WALL_BANNER;
++             case ORANGE -> Material.ORANGE_WALL_BANNER;
++             case MAGENTA -> Material.MAGENTA_WALL_BANNER;
++             case LIGHT_BLUE -> Material.LIGHT_BLUE_WALL_BANNER;
++             case YELLOW -> Material.YELLOW_WALL_BANNER;
++             case LIME -> Material.LIME_WALL_BANNER;
++             case PINK -> Material.PINK_WALL_BANNER;
++             case GRAY -> Material.GRAY_WALL_BANNER;
++             case LIGHT_GRAY -> Material.LIGHT_GRAY_WALL_BANNER;
++             case CYAN -> Material.CYAN_WALL_BANNER;
++             case PURPLE -> Material.PURPLE_WALL_BANNER;
++             case BLUE -> Material.BLUE_WALL_BANNER;
++             case BROWN -> Material.BROWN_WALL_BANNER;
++             case GREEN -> Material.GREEN_WALL_BANNER;
++             case RED -> Material.RED_WALL_BANNER;
++             case BLACK -> Material.BLACK_WALL_BANNER;
++         };
++         this.dyeMaterial = switch (this) {
++             case WHITE -> Material.WHITE_DYE;
++             case ORANGE -> Material.ORANGE_DYE;
++             case MAGENTA -> Material.MAGENTA_DYE;
++             case LIGHT_BLUE -> Material.LIGHT_BLUE_DYE;
++             case YELLOW -> Material.YELLOW_DYE;
++             case LIME -> Material.LIME_DYE;
++             case PINK -> Material.PINK_DYE;
++             case GRAY -> Material.GRAY_DYE;
++             case LIGHT_GRAY -> Material.LIGHT_GRAY_DYE;
++             case CYAN -> Material.CYAN_DYE;
++             case PURPLE -> Material.PURPLE_DYE;
++             case BLUE -> Material.BLUE_DYE;
++             case BROWN -> Material.BROWN_DYE;
++             case GREEN -> Material.GREEN_DYE;
++             case RED -> Material.RED_DYE;
++             case BLACK -> Material.BLACK_DYE;
++         };
++
++         this.allMaterials = ImmutableSet.of(
++             woolMaterial,
++             terracottaMaterial,
++             concreteMaterial,
++             concretePowderMaterial,
++             carpetMaterial,
++             stainedGlassMaterial,
++             stainedGlassPaneMaterial,
++             shulkerBoxMaterial,
++             glazedTerracottaMaterial,
++             bedMaterial,
++             bannerMaterial,
++             bannerWallMaterial,
++             dyeMaterial
++         );
++    }
++    // </editor-fold>
++
 +    /**
 +     * Gets all supported colored {@link Material}s, which can be used
-+     * @return all possible colored {@link Material}s
 +     */
 +    @NotNull
-+    public static Set<Material> getAllVariants() {
-+        Set<Material> result = new java.util.HashSet<>(Collections.emptySet());
-+
-+        for (ColorType colorType : values()) {
-+            result.addAll(
-+                Arrays.asList(
-+                    colorType.getWool(),
-+                    colorType.getTerracotta(),
-+                    colorType.getConcrete(),
-+                    colorType.getConcretePowder(),
-+                    colorType.getCarpet(),
-+                    colorType.getStainedGlass(),
-+                    colorType.getStainedGlassPane(),
-+                    colorType.getShulkerBox(),
-+                    colorType.getGlazedTerracotta(),
-+                    colorType.getBed(),
-+                    colorType.getBanner(),
-+                    colorType.getBannerWall(),
-+                    colorType.getDye()
-+                )
-+            );
-+        }
-+
-+        return result;
-+    }
++    public static final ImmutableSet<Material> allVariants = ImmutableSet.copyOf(
++        Arrays.stream(ColorType.values()).flatMap( colorType ->
++            colorType.getAllMaterials().stream()
++        ).toList()
++    );
 +
 +    /**
 +     * Gets the {@link ColorType} of an {@link Material}
@@ -85,7 +360,7 @@ index 0000000000000000000000000000000000000000..752bd3011bdd0aee86c95a84074298aa
 +     */
 +    @Nullable
 +    public static ColorType getColorType(@NotNull Material material) {
-+        Set<Material> allVariants = getAllVariants();
++        Set<Material> allVariants = ColorType.allVariants;
 +        if (allVariants.stream().anyMatch(it -> it == material)) {
 +            for (Material loopMaterial : allVariants) {
 +                if (loopMaterial == material) {
@@ -102,7 +377,7 @@ index 0000000000000000000000000000000000000000..752bd3011bdd0aee86c95a84074298aa
 +     */
 +    @NotNull
 +    public DyeColor getDyeColor() {
-+        return DyeColor.valueOf(name());
++        return this.dyeColor;
 +    }
 +
 +    /**
@@ -111,25 +386,7 @@ index 0000000000000000000000000000000000000000..752bd3011bdd0aee86c95a84074298aa
 +     */
 +    @NotNull
 +    public Color getParticleColor() {
-+        return switch (this) {
-+
-+            case WHITE -> Color.WHITE;
-+            case ORANGE -> Color.ORANGE;
-+            case MAGENTA -> Color.FUCHSIA;
-+            case LIGHT_BLUE -> Color.AQUA;
-+            case YELLOW -> Color.YELLOW;
-+            case LIME -> Color.LIME;
-+            case PINK -> Color.fromRGB(255, 20, 147);
-+            case GRAY -> Color.GRAY;
-+            case LIGHT_GRAY -> Color.SILVER;
-+            case CYAN -> Color.TEAL;
-+            case PURPLE -> Color.PURPLE;
-+            case BLUE -> Color.BLUE;
-+            case BROWN -> Color.MAROON;
-+            case GREEN -> Color.GREEN;
-+            case RED -> Color.RED;
-+            case BLACK -> Color.BLACK;
-+        };
++        return this.particleColor;
 +    }
 +
 +    /**
@@ -138,22 +395,7 @@ index 0000000000000000000000000000000000000000..752bd3011bdd0aee86c95a84074298aa
 +     */
 +    @NotNull
 +    public TextColor getTextColor() {
-+        Color convertColor = getParticleColor();
-+        return TextColor.color(
-+            convertColor.getRed(),
-+            convertColor.getGreen(),
-+            convertColor.getBlue()
-+        );
-+    }
-+
-+    /**
-+     * Gets this {@link ColorType} color as an {@link ChatColor},
-+     * but please keep in mind, please use Adventure-Chat components!
-+     * @return the {@link ChatColor} of this {@link ColorType}
-+     */
-+    @NotNull
-+    public ChatColor getChatColor() {
-+        return ChatColor.of(new java.awt.Color(getParticleColor().asRGB()));
++        return this.textColor;
 +    }
 +
 +    /**
@@ -162,7 +404,7 @@ index 0000000000000000000000000000000000000000..752bd3011bdd0aee86c95a84074298aa
 +     */
 +    @NotNull
 +    public Material getWool() {
-+        return Objects.requireNonNull(Material.matchMaterial(this.name() + "_WOOL"));
++        return this.woolMaterial;
 +    }
 +
 +    /**
@@ -171,7 +413,7 @@ index 0000000000000000000000000000000000000000..752bd3011bdd0aee86c95a84074298aa
 +     */
 +    @NotNull
 +    public Material getTerracotta() {
-+        return Objects.requireNonNull(Material.matchMaterial(this.name() + "_TERRACOTTA"));
++        return this.terracottaMaterial;
 +    }
 +
 +    /**
@@ -180,7 +422,7 @@ index 0000000000000000000000000000000000000000..752bd3011bdd0aee86c95a84074298aa
 +     */
 +    @NotNull
 +    public Material getConcrete() {
-+        return Objects.requireNonNull(Material.matchMaterial(this.name() + "_CONCRETE"));
++        return this.concreteMaterial;
 +    }
 +
 +    /**
@@ -189,7 +431,7 @@ index 0000000000000000000000000000000000000000..752bd3011bdd0aee86c95a84074298aa
 +     */
 +    @NotNull
 +    public Material getConcretePowder() {
-+        return Objects.requireNonNull(Material.matchMaterial(this.name() + "_CONCRETE_POWDER"));
++        return this.concretePowderMaterial;
 +    }
 +
 +    /**
@@ -198,7 +440,7 @@ index 0000000000000000000000000000000000000000..752bd3011bdd0aee86c95a84074298aa
 +     */
 +    @NotNull
 +    public Material getCarpet() {
-+        return Objects.requireNonNull(Material.matchMaterial(this.name() + "_CARPET"));
++        return this.carpetMaterial;
 +    }
 +
 +    /**
@@ -207,7 +449,7 @@ index 0000000000000000000000000000000000000000..752bd3011bdd0aee86c95a84074298aa
 +     */
 +    @NotNull
 +    public Material getStainedGlass() {
-+        return Objects.requireNonNull(Material.matchMaterial(this.name() + "_STAINED_GLASS"));
++        return this.stainedGlassMaterial;
 +    }
 +
 +    /**
@@ -216,7 +458,7 @@ index 0000000000000000000000000000000000000000..752bd3011bdd0aee86c95a84074298aa
 +     */
 +    @NotNull
 +    public Material getStainedGlassPane() {
-+        return Objects.requireNonNull(Material.matchMaterial(this.name() + "_STAINED_GLASS_PANE"));
++        return this.stainedGlassPaneMaterial;
 +    }
 +
 +    /**
@@ -225,7 +467,7 @@ index 0000000000000000000000000000000000000000..752bd3011bdd0aee86c95a84074298aa
 +     */
 +    @NotNull
 +    public Material getShulkerBox() {
-+        return Objects.requireNonNull(Material.matchMaterial(this.name() + "_SHULKER_BOX"));
++        return this.shulkerBoxMaterial;
 +    }
 +
 +    /**
@@ -234,7 +476,7 @@ index 0000000000000000000000000000000000000000..752bd3011bdd0aee86c95a84074298aa
 +     */
 +    @NotNull
 +    public Material getGlazedTerracotta() {
-+        return Objects.requireNonNull(Material.matchMaterial(this.name() + "_GLAZED_TERRACOTTA"));
++        return this.glazedTerracottaMaterial;
 +    }
 +
 +    /**
@@ -243,7 +485,7 @@ index 0000000000000000000000000000000000000000..752bd3011bdd0aee86c95a84074298aa
 +     */
 +    @NotNull
 +    public Material getBed() {
-+        return Objects.requireNonNull(Material.matchMaterial(this.name() + "_BED"));
++        return this.bedMaterial;
 +    }
 +
 +    /**
@@ -252,7 +494,7 @@ index 0000000000000000000000000000000000000000..752bd3011bdd0aee86c95a84074298aa
 +     */
 +    @NotNull
 +    public Material getBanner() {
-+        return Objects.requireNonNull(Material.matchMaterial(this.name() + "_BANNER"));
++        return this.bannerMaterial;
 +    }
 +
 +    /**
@@ -261,7 +503,7 @@ index 0000000000000000000000000000000000000000..752bd3011bdd0aee86c95a84074298aa
 +     */
 +    @NotNull
 +    public Material getBannerWall() {
-+        return Objects.requireNonNull(Material.matchMaterial(this.name() + "_BANNER_WALL"));
++        return this.bannerWallMaterial;
 +    }
 +
 +    /**
@@ -270,18 +512,44 @@ index 0000000000000000000000000000000000000000..752bd3011bdd0aee86c95a84074298aa
 +     */
 +    @NotNull
 +    public Material getDye() {
-+        return Objects.requireNonNull(Material.matchMaterial(this.name() + "_DYE"));
++        return this.dyeMaterial;
++    }
++
++    /**
++     * Gets all supported colored {@link Material}s, which can be used of this color
++     * @return all possible colored {@link Material}s of this color
++     */
++    @NotNull
++    public ImmutableSet<Material> getAllMaterials() {
++        return allMaterials;
++    }
++
++    // RGBLike stuff
++
++    @Override
++    public @IntRange(from = 0L, to = 255L) int red() {
++        return getParticleColor().getRed();
 +    }
 +
 +    @Override
-+    public String toString() {
-+        return "" + getChatColor();
++    public @IntRange(from = 0L, to = 255L) int green() {
++        return getParticleColor().getGreen();
++    }
++
++    @Override
++    public @IntRange(from = 0L, to = 255L) int blue() {
++        return getParticleColor().getBlue();
++    }
++
++    @Override
++    public @NonNull HSVLike asHSV() {
++        return RGBLike.super.asHSV();
 +    }
 +
 +}
 diff --git a/src/main/java/io/papermc/paper/item/DyeableMaterial.java b/src/main/java/io/papermc/paper/item/DyeableMaterial.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..318882b11aaa4bf58146682d88d3c81aa171b407
+index 0000000000000000000000000000000000000000..717f80c5550a38b99a154b9b3a01c7b43a6d4d79
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/item/DyeableMaterial.java
 @@ -0,0 +1,73 @@
@@ -329,7 +597,7 @@ index 0000000000000000000000000000000000000000..318882b11aaa4bf58146682d88d3c81a
 +     */
 +    @NotNull
 +    public Material withColor(@NotNull ColorType colorType) {
-+        return colorToMaterialProcess.apply(colorType);
++        return this.colorToMaterialProcess.apply(colorType);
 +    }
 +
 +    /**
@@ -359,7 +627,7 @@ index 0000000000000000000000000000000000000000..318882b11aaa4bf58146682d88d3c81a
 +
 +}
 diff --git a/src/main/java/org/bukkit/Material.java b/src/main/java/org/bukkit/Material.java
-index e2b3470e3c9a97671723f5a67f722fb86fb07fbf..5cdd3b551bd89e161aa95e35df2f0c69d0db9955 100644
+index e2b3470e3c9a97671723f5a67f722fb86fb07fbf..7a89e252e82866e3d0eedd9238bd0732d676de43 100644
 --- a/src/main/java/org/bukkit/Material.java
 +++ b/src/main/java/org/bukkit/Material.java
 @@ -5,6 +5,8 @@ import java.lang.reflect.Constructor;
@@ -371,7 +639,7 @@ index e2b3470e3c9a97671723f5a67f722fb86fb07fbf..5cdd3b551bd89e161aa95e35df2f0c69
  import org.apache.commons.lang.Validate;
  import org.bukkit.block.data.Ageable;
  import org.bukkit.block.data.AnaloguePowerable;
-@@ -8731,4 +8733,58 @@ public enum Material implements Keyed {
+@@ -8731,4 +8733,40 @@ public enum Material implements Keyed {
              // </editor-fold>
          }
      }
@@ -384,25 +652,6 @@ index e2b3470e3c9a97671723f5a67f722fb86fb07fbf..5cdd3b551bd89e161aa95e35df2f0c69
 +    @Nullable
 +    public ColorType getColorType() {
 +        return ColorType.getColorType(this);
-+    }
-+
-+    /**
-+     * Gets the {@link ColorType} of this {@link Material}
-+     * @return the {@link ColorType} of this {@link Material}, or <i>other</i> if it has no supported {@link ColorType} color
-+     */
-+    @NotNull
-+    public ColorType getColorTypeOrOther(@NotNull ColorType other) {
-+        ColorType currentType = getColorType();
-+        return currentType != null ? currentType : other;
-+    }
-+
-+    /**
-+     * Gets the {@link ColorType} of this {@link Material}
-+     * @return the {@link ColorType} of this {@link Material}, or {@link ColorType#WHITE} if it has no supported {@link ColorType} color
-+     */
-+    @NotNull
-+    public ColorType getColorTypeOrWhite() {
-+        return getColorTypeOrOther(ColorType.WHITE);
 +    }
 +
 +    /**
@@ -422,16 +671,17 @@ index e2b3470e3c9a97671723f5a67f722fb86fb07fbf..5cdd3b551bd89e161aa95e35df2f0c69
 +     */
 +    @NotNull
 +    public Material changeColor(@NotNull ColorType newColor) throws IllegalArgumentException {
-+            DyeableMaterial material = getDyeableMaterial();
++            DyeableMaterial material = this.getDyeableMaterial();
 +            if (material != null) {
 +                return material.withColor(newColor);
-+            } else
-+                throw new IllegalArgumentException("The material " + this.name() + " does not have color-support!");
++            } else {
++                throw new IllegalArgumentException("The material " + this.name() + " is not coloured!");
++            }
 +    }
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/inventory/ItemStack.java b/src/main/java/org/bukkit/inventory/ItemStack.java
-index a7909406e9d54c1ab4789b984ed6b1da50837fce..fdb5a8ba30db16cd8899b0d49f9590be7bf25e43 100644
+index a7909406e9d54c1ab4789b984ed6b1da50837fce..d67d17a7aeee24f42fb4937e1de48970be2de6ff 100644
 --- a/src/main/java/org/bukkit/inventory/ItemStack.java
 +++ b/src/main/java/org/bukkit/inventory/ItemStack.java
 @@ -5,6 +5,8 @@ import java.util.LinkedHashMap;
@@ -443,7 +693,7 @@ index a7909406e9d54c1ab4789b984ed6b1da50837fce..fdb5a8ba30db16cd8899b0d49f9590be
  import org.apache.commons.lang.Validate;
  import org.bukkit.Bukkit;
  import org.bukkit.Material;
-@@ -920,5 +922,43 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, net.kyor
+@@ -920,5 +922,25 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, net.kyor
      public boolean canRepair(@NotNull ItemStack toBeRepaired) {
          return Bukkit.getUnsafe().isValidRepairItemStack(toBeRepaired, this);
      }
@@ -458,31 +708,13 @@ index a7909406e9d54c1ab4789b984ed6b1da50837fce..fdb5a8ba30db16cd8899b0d49f9590be
 +    }
 +
 +    /**
-+     * Gets the {@link ColorType} of this {@link ItemStack}s-{@link Material}
-+     * @return the color of this {@link ItemStack}s-Material, or <i>other</i> if it has no supported color
-+     */
-+    @NotNull
-+    public ColorType getColorTypeOrOther(@NotNull ColorType other) {
-+        ColorType output = getColorType();
-+        return output != null ? output : other;
-+    }
-+
-+    /**
-+     * Gets the {@link ColorType} of this {@link ItemStack}s-{@link Material}
-+     * @return the color of this {@link ItemStack}s-{@link Material}, or {@link ColorType#WHITE} if it has no supported color
-+     */
-+    @NotNull
-+    public ColorType getColorTypeOrWhite() {
-+        return getColorTypeOrOther(ColorType.WHITE);
-+    }
-+
-+    /**
 +     * Changes the Material-{@link ColorType} of this {@link ItemStack} using the {@link Material#getDyeableMaterial()}
++     * Uses the {@link #setType(Material)} function
 +     * @param newColor the new color, which the {@link Material} will become
 +     * @throws IllegalArgumentException if the {@link ItemStack} {@link Material} has no {@link DyeableMaterial}-group
 +     */
-+    public void changeColor(@NotNull ColorType newColor) throws IllegalArgumentException {
-+        type = type.changeColor(newColor);
++    public void changeTypeColor(@NotNull ColorType newColor) throws IllegalArgumentException {
++        this.setType(this.type.changeColor(newColor));
 +    }
 +
      // Paper end
