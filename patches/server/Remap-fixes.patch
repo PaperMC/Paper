@@ -1,7 +1,7 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Kyle Wood <kyle@denwav.dev>
 Date: Fri, 11 Jun 2021 05:25:03 -0500
-Subject: [PATCH] Decompile fixes
+Subject: [PATCH] Remap fixes
 
 
 diff --git a/src/main/java/net/minecraft/core/BlockPos.java b/src/main/java/net/minecraft/core/BlockPos.java
@@ -15,7 +15,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -        int j = center.getX();
 -        int k = center.getY();
 -        int l = center.getZ();
-+        // Paper start - rename variables to fix conflict with anonymous class (decompile fix)
++        // Paper start - rename variables to fix conflict with anonymous class (remap fix)
 +        int centerX = center.getX();
 +        int centerY = center.getY();
 +        int centerZ = center.getZ();
@@ -28,7 +28,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                      if (this.zMirror) {
                          this.zMirror = false;
 -                        this.cursor.setZ(l - (this.cursor.getZ() - l));
-+                        this.cursor.setZ(centerZ - (this.cursor.getZ() - centerZ)); // Paper - decompile fix
++                        this.cursor.setZ(centerZ - (this.cursor.getZ() - centerZ)); // Paper - remap fix
                          return this.cursor;
                      } else {
                          BlockPos blockPos;
@@ -37,23 +37,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                              if (k <= rangeZ) {
                                  this.zMirror = k != 0;
 -                                blockPos = this.cursor.set(j + i, k + j, l + k);
-+                                blockPos = this.cursor.set(centerX + i, centerY + j, centerZ + k); // Paper - decompile fix
++                                blockPos = this.cursor.set(centerX + i, centerY + j, centerZ + k); // Paper - remap fix
                              }
                          }
  
-diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/MinecraftServer.java
-+++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -0,0 +0,0 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
-         }
-     }
- 
--    protected void doRunTask(TickTask ticktask) {
-+    public void doRunTask(TickTask ticktask) { // Paper - decomp fix
-         this.getProfiler().incrementCounter("runTask");
-         super.doRunTask(ticktask);
-     }
 diff --git a/src/main/java/net/minecraft/server/commands/SummonCommand.java b/src/main/java/net/minecraft/server/commands/SummonCommand.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/commands/SummonCommand.java
@@ -65,9 +52,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -            Entity entity1 = EntityType.loadEntityRecursive(nbttagcompound1, worldserver, (entity1) -> {
 -                entity1.moveTo(pos.x, pos.y, pos.z, entity1.getYRot(), entity1.getXRot());
 -                return entity1;
-+            Entity entity1 = EntityType.loadEntityRecursive(nbttagcompound1, worldserver, (loadedEntity) -> { // Paper - decomp fix
-+                loadedEntity.moveTo(pos.x, pos.y, pos.z, loadedEntity.getYRot(), loadedEntity.getXRot()); // Paper - decomp fix
-+                return loadedEntity; // Paper - decomp fix
++            Entity entity1 = EntityType.loadEntityRecursive(nbttagcompound1, worldserver, (loadedEntity) -> { // Paper - remap fix
++                loadedEntity.moveTo(pos.x, pos.y, pos.z, loadedEntity.getYRot(), loadedEntity.getXRot()); // Paper - remap fix
++                return loadedEntity; // Paper - remap fix
              });
  
              if (entity1 == null) {
@@ -81,8 +68,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              return ((ServerLevel) entity.level).getEntity(uuid);
 -        }).map((entity) -> {
 -            return entity instanceof LivingEntity ? (LivingEntity) entity : null;
-+        }).map((entity2) -> { // Paper - decomp fix
-+            return entity2 instanceof LivingEntity ? (LivingEntity) entity2 : null; // Paper - decomp fix
++        }).map((entity2) -> { // Paper - remap fix
++            return entity2 instanceof LivingEntity ? (LivingEntity) entity2 : null; // Paper - remap fix
          });
      }
  
@@ -95,7 +82,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
                  if (!list.isEmpty()) {
 -                    list.sort(Comparator.comparing(Entity::getY).reversed());
-+                    list.sort(Comparator.<Player, Double>comparing(Entity::getY).reversed()); // Paper - decomp fix
++                    list.sort(Comparator.<Player, Double>comparing(Entity::getY).reversed()); // Paper - remap fix
                      Iterator iterator = list.iterator();
  
                      while (iterator.hasNext()) {
@@ -108,7 +95,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
          recipes.forEach((irecipe) -> {
 -            Map<ResourceLocation, Recipe<?>> map1 = (Map) map.computeIfAbsent(irecipe.getType(), (recipes) -> {
-+            Map<ResourceLocation, Recipe<?>> map1 = (Map) map.computeIfAbsent(irecipe.getType(), (recipes_) -> { // Paper - decomp fix
++            Map<ResourceLocation, Recipe<?>> map1 = (Map) map.computeIfAbsent(irecipe.getType(), (recipes_) -> { // Paper - remap fix
                  return new Object2ObjectLinkedOpenHashMap<>(); // CraftBukkit
              });
              Recipe<?> irecipe1 = (Recipe) map1.put(irecipe.getId(), irecipe);
@@ -129,7 +116,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public void checkColor() {
          Color color = this.dye.getColor();
 -        float[] nmsColorArray = DyeColor.byId(this.dye.getWoolData()).getTextureDiffuseColors();
-+        float[] nmsColorArray = net.minecraft.world.item.DyeColor.byId(this.dye.getWoolData()).getTextureDiffuseColors();
++        float[] nmsColorArray = net.minecraft.world.item.DyeColor.byId(this.dye.getWoolData()).getTextureDiffuseColors(); // Paper - remap fix
          Color nmsColor = Color.fromRGB((int) (nmsColorArray[0] * 255), (int) (nmsColorArray[1] * 255), (int) (nmsColorArray[2] * 255));
          assertThat(color, is(nmsColor));
      }
@@ -138,7 +125,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public void checkFireworkColor() {
          Color color = this.dye.getFireworkColor();
 -        int nmsColor = DyeColor.byId(this.dye.getWoolData()).getFireworkColor();
-+        int nmsColor = net.minecraft.world.item.DyeColor.byId(this.dye.getWoolData()).getFireworkColor();
++        int nmsColor = net.minecraft.world.item.DyeColor.byId(this.dye.getWoolData()).getFireworkColor(); // Paper - remap fix
          assertThat(color, is(Color.fromRGB(nmsColor)));
      }
  }
@@ -151,7 +138,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              assertThat(this.material.isInteractable(),
                      is(!CraftMagicNumbers.getBlock(material).getClass()
 -                            .getMethod("interact", BlockState.class, net.minecraft.world.level.Level.class, BlockPos.class, Player.class, InteractionHand.class, BlockHitResult.class)
-+                            .getMethod("use", BlockState.class, net.minecraft.world.level.Level.class, BlockPos.class, Player.class, InteractionHand.class, BlockHitResult.class)
++                            .getMethod("use", BlockState.class, net.minecraft.world.level.Level.class, BlockPos.class, Player.class, InteractionHand.class, BlockHitResult.class) // Paper - remap fix
                              .getDeclaringClass().equals(BlockBehaviour.class)));
          } else {
              assertFalse(this.material.isInteractable());
@@ -173,8 +160,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
 -        for (EntityType<?> nms : Registry.ENTITY_TYPE) {
 -            ResourceLocation key = EntityType.getKey(nms);
-+        for (net.minecraft.world.entity.EntityType<?> nms : Registry.ENTITY_TYPE) {
-+            ResourceLocation key = net.minecraft.world.entity.EntityType.getKey(nms);
++        for (net.minecraft.world.entity.EntityType<?> nms : Registry.ENTITY_TYPE) { // Paper - remap fix
++            ResourceLocation key = net.minecraft.world.entity.EntityType.getKey(nms); // Paper - remap fix
  
              org.bukkit.entity.EntityType bukkit = org.bukkit.entity.EntityType.fromName(key.getPath());
              Assert.assertNotNull("Missing nms->bukkit " + key, bukkit);
@@ -194,7 +181,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public void testBukkit() {
          for (Panda.Gene gene : Panda.Gene.values()) {
 -            Panda.Gene nms = CraftPanda.toNms(gene);
-+            net.minecraft.world.entity.animal.Panda.Gene nms = CraftPanda.toNms(gene);
++            net.minecraft.world.entity.animal.Panda.Gene nms = CraftPanda.toNms(gene); // Paper - remap fix
  
              Assert.assertNotNull("NMS gene null for " + gene, nms);
              Assert.assertEquals("Recessive status did not match " + gene, gene.isRecessive(), nms.isRecessive());
@@ -203,7 +190,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      @Test
      public void testNMS() {
 -        for (Panda.Gene gene : Panda.Gene.values()) {
-+        for (net.minecraft.world.entity.animal.Panda.Gene gene : net.minecraft.world.entity.animal.Panda.Gene.values()) {
++        for (net.minecraft.world.entity.animal.Panda.Gene gene : net.minecraft.world.entity.animal.Panda.Gene.values()) { // Paper - remap fix
              org.bukkit.entity.Panda.Gene bukkit = CraftPanda.fromNms(gene);
  
              Assert.assertNotNull("Bukkit gene null for " + gene, bukkit);
