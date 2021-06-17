@@ -510,7 +510,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    public PaperCustomGoal(Goal<T> handle) {
 +        this.handle = handle;
 +
-+        this.setTypes(MobGoalHelper.paperToVanilla(handle.getTypes()));
++        this.setFlags(MobGoalHelper.paperToVanilla(handle.getTypes()));
 +        if (this.getGoalTypes().size() == 0) {
 +            this.getGoalTypes().addUnchecked(Flag.UNKNOWN_BEHAVIOR);
 +        }
@@ -810,12 +810,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    @Override
 +    public boolean shouldActivate() {
-+        return handle.shouldActivate2();
++        return handle.canUse();
 +    }
 +
 +    @Override
 +    public boolean shouldStayActive() {
-+        return handle.shouldStayActive2();
++        return handle.canContinueToUse();
 +    }
 +
 +    @Override
@@ -864,7 +864,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      private final EnumSet<Goal.Flag> flags = EnumSet.noneOf(Goal.Flag.class); // Paper unused, but dummy to prevent plugins from crashing as hard. Theyll need to support paper in a special case if this is super important, but really doesn't seem like it would be.
      private final com.destroystokyo.paper.util.set.OptimizedSmallEnumSet<net.minecraft.world.entity.ai.goal.Goal.Flag> goalTypes = new com.destroystokyo.paper.util.set.OptimizedSmallEnumSet<>(Goal.Flag.class); // Paper - remove streams from pathfindergoalselector
  
--    public abstract boolean canUse();
 +    // Paper start make sure goaltypes is never empty
 +    public Goal() {
 +        if (this.goalTypes.size() == 0) {
@@ -873,23 +872,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +    // Paper end
 +
-+    public boolean canUse() { return this.shouldActivate(); } @Deprecated public boolean shouldActivate() { return false;} @Deprecated public boolean shouldActivate2() { return canUse(); } // Paper - OBFHELPER, for both directions...
+     public abstract boolean canUse();
  
--    public boolean canContinueToUse() {
-+    public boolean canContinueToUse() { return this.shouldStayActive(); } @Deprecated public boolean shouldStayActive2() { return canContinueToUse(); } @Deprecated public boolean shouldStayActive() { // Paper - OBFHELPER, for both directions...
-         return this.canUse();
-     }
- 
+     public boolean canContinueToUse() {
 @@ -0,0 +0,0 @@ public abstract class Goal {
-     public void tick() {
-     }
- 
--    public void setFlags(EnumSet<Goal.Flag> controls) {
-+    @Deprecated public void setFlags(EnumSet<Goal.Flag> controls) { this.setTypes(controls); } public void setTypes(EnumSet<Goal.Flag> enumset) { // Paper - OBFHELPER
          // Paper start - remove streams from pathfindergoalselector
          this.goalTypes.clear();
--        this.goalTypes.addAllUnchecked(controls);
-+        this.goalTypes.addAllUnchecked(enumset);
+         this.goalTypes.addAllUnchecked(controls);
 +        // make sure its never empty
 +        if (this.goalTypes.size() == 0) {
 +            this.goalTypes.addUnchecked(Flag.UNKNOWN_BEHAVIOR);
