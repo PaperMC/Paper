@@ -14,7 +14,7 @@ Adds flying monsters to control ghast and phantoms
 Adds villagers as separate config
 
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index 9f53a439fe196f2347dd4eb5b05c1fe80beb593f..256ae7b9e587402648133498e35fa18f8c0be455 100644
+index 4c675656ea210fee7778a6d93268157bce010878..43326e1cfe9666202f8ede4b653643496dceaff7 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
 @@ -2,7 +2,6 @@ package net.minecraft.server.level;
@@ -62,7 +62,7 @@ index 9f53a439fe196f2347dd4eb5b05c1fe80beb593f..256ae7b9e587402648133498e35fa18f
 +        timer = isActive ? entity.getType().tickTimer.startTiming() : entity.getType().inactiveTickTimer.startTiming(); // Paper
          try {
          // Paper end - timings
-         entity.isInLava();
+         entity.setOldPosAndRot();
 @@ -912,9 +909,13 @@ public class ServerLevel extends net.minecraft.world.level.Level implements Worl
              return Registry.ENTITY_TYPE.getKey(entity.getType()).toString();
          });
@@ -124,7 +124,7 @@ index 9f53a439fe196f2347dd4eb5b05c1fe80beb593f..256ae7b9e587402648133498e35fa18f
          } else {
              passenger.stopRiding();
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index 413d86b15c245a17246e23611cd65739e8fd18dd..4185041c576349adc14d20926d0f7ddd00145c53 100644
+index 4780d9307af7ad7ca6e7e056f73708ba496ee9db..0e01982d93a29998d0f4ed3409bb871ea162f3f6 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
 @@ -326,6 +326,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, n
@@ -158,7 +158,7 @@ index 413d86b15c245a17246e23611cd65739e8fd18dd..4185041c576349adc14d20926d0f7ddd
              movement = this.maybeBackOffFromEdge(movement, movementType);
              Vec3 vec3d1 = this.collide(movement);
 diff --git a/src/main/java/net/minecraft/world/entity/Mob.java b/src/main/java/net/minecraft/world/entity/Mob.java
-index 9c208d24d6f84e8818c0a7b88cdcb7c2fd703f91..623fd2220007eec7a8e799a647e7c657aae5ee6d 100644
+index 0fdfa0350ae8cd76bed3fec390da403a4668cc28..e5ad2b5eb3ac4e068239c0e490ea47ed7cfc8106 100644
 --- a/src/main/java/net/minecraft/world/entity/Mob.java
 +++ b/src/main/java/net/minecraft/world/entity/Mob.java
 @@ -198,6 +198,19 @@ public abstract class Mob extends LivingEntity {
@@ -317,7 +317,7 @@ index 555cf6d39108d40998adbbaf6b09dd9973f5f2e3..426fa33c9e5ddf2de5435859ee4a5f35
          super.customServerAiStep();
      }
 diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
-index e8b935aa953d19f5617440dbdb8a763a440a0c82..a689ae14c01206940d1fc4ce8cea3410b601d71d 100644
+index 6acff46faa03842567d5fe81609bec6ea7922c21..dea7d392d12ce088fd0708e73a5938d77b10069c 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
 +++ b/src/main/java/net/minecraft/world/level/Level.java
 @@ -154,6 +154,12 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
