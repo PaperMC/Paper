@@ -114,7 +114,7 @@ public class CraftBossBar implements BossBar {
     @Override
     public void setColor(BarColor color) {
         handle.color = convertColor(color);
-        handle.sendUpdate(PacketPlayOutBoss::createUpdatePropertiesPacket);
+        handle.sendUpdate(PacketPlayOutBoss::createUpdateStylePacket);
     }
 
     @Override
@@ -125,7 +125,7 @@ public class CraftBossBar implements BossBar {
     @Override
     public void setStyle(BarStyle style) {
         handle.overlay = convertStyle(style);
-        handle.sendUpdate(PacketPlayOutBoss::createUpdatePropertiesPacket);
+        handle.sendUpdate(PacketPlayOutBoss::createUpdateStylePacket);
     }
 
     @Override
