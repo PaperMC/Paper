@@ -9,7 +9,7 @@ defaults are only included for certain entites, this allows setting
 limits for any entity type.
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index acd61a9033fdfb91e29a5fa6a10b8983ed94baa5..20ce2c304ba57e2399e966da7dee9a02e57d9fa5 100644
+index acd61a9033fdfb91e29a5fa6a10b8983ed94baa5..c94579d5db6802ef27c6c64cde1cdfdff5040ed2 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 @@ -1,9 +1,12 @@
@@ -36,7 +36,7 @@ index acd61a9033fdfb91e29a5fa6a10b8983ed94baa5..20ce2c304ba57e2399e966da7dee9a02
 +        getInt("entity-per-chunk-save-limit.ender_pearl", -1);
 +        getInt("entity-per-chunk-save-limit.arrow", -1);
 +        EntityType.getEntityNameList().forEach(name -> {
-+            final EntityType<?> type = EntityType.getByName(name.getPath()).orElseThrow(() -> new IllegalStateException("Unknown Entity Type: " + name.toString()));
++            final EntityType<?> type = EntityType.byString(name.getPath()).orElseThrow(() -> new IllegalStateException("Unknown Entity Type: " + name.toString()));
 +            final String path = ".entity-per-chunk-save-limit." + name.getPath();
 +            final int value = config.getInt("world-settings." + worldName + path, config.getInt("world-settings.default" + path, -1)); // get without setting defaults
 +            if (value != -1) entityPerChunkSaveLimits.put(type, value);
@@ -47,10 +47,10 @@ index acd61a9033fdfb91e29a5fa6a10b8983ed94baa5..20ce2c304ba57e2399e966da7dee9a02
      private void keepLoadedRange() {
          keepLoadedRange = (short) (getInt("keep-spawn-loaded-range", Math.min(spigotConfig.viewDistance, 10)) * 16);
 diff --git a/src/main/java/net/minecraft/world/entity/EntityType.java b/src/main/java/net/minecraft/world/entity/EntityType.java
-index b48548d284e55c9010b99823325fcc14aa5ab051..56d9102b1a0e9d45cb1696fe5ec771972512a130 100644
+index b50bf044a3cb05b811fd06796a351e6b15b352ad..ac99265aacd4a28490705e3079ed04023fb1c54a 100644
 --- a/src/main/java/net/minecraft/world/entity/EntityType.java
 +++ b/src/main/java/net/minecraft/world/entity/EntityType.java
-@@ -561,9 +561,20 @@ public class EntityType<T extends Entity> implements EntityTypeTest<Entity, T> {
+@@ -560,9 +560,20 @@ public class EntityType<T extends Entity> implements EntityTypeTest<Entity, T> {
          final Spliterator<? extends net.minecraft.nbt.Tag> spliterator = entityNbtList.spliterator();
  
          return StreamSupport.stream(new Spliterator<Entity>() {
