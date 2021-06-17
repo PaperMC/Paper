@@ -19,7 +19,7 @@ index 9b98eddb8238e36b17989d6f685ddc950151a7f8..b8a816a2f58c1ab51271f027f500d08b
      }
  
 diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
-index 76182fd83d6dcd2359dd8d8a75e7e15304dc5d0f..fc7896e22b31f6ca0bb4b249d327f3f3ef52caf6 100644
+index 76182fd83d6dcd2359dd8d8a75e7e15304dc5d0f..9f69dfcb5d9cbbcd01dd2e5e02437967da7a4a17 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
 +++ b/src/main/java/net/minecraft/world/level/Level.java
 @@ -309,11 +309,27 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
@@ -34,7 +34,7 @@ index 76182fd83d6dcd2359dd8d8a75e7e15304dc5d0f..fc7896e22b31f6ca0bb4b249d327f3f3
      }
 +
 +    public final boolean isLoadedAndInBounds(BlockPos blockposition) { // Paper - final for inline
-+        return getWorldBorder().isInBounds(blockposition) && getChunkIfLoadedImmediately(blockposition.getX() >> 4, blockposition.getZ() >> 4) != null;
++        return getWorldBorder().isWithinBounds(blockposition) && getChunkIfLoadedImmediately(blockposition.getX() >> 4, blockposition.getZ() >> 4) != null;
 +    }
 +
 +    public LevelChunk getChunkIfLoaded(int x, int z) { // Overridden in WorldServer for ABI compat which has final
@@ -46,20 +46,8 @@ index 76182fd83d6dcd2359dd8d8a75e7e15304dc5d0f..fc7896e22b31f6ca0bb4b249d327f3f3
 +
 +    //  reduces need to do isLoaded before getType
 +    public final BlockState getTypeIfLoadedAndInBounds(BlockPos blockposition) {
-+        return getWorldBorder().isInBounds(blockposition) ? getTypeIfLoaded(blockposition) : null;
++        return getWorldBorder().isWithinBounds(blockposition) ? getTypeIfLoaded(blockposition) : null;
 +    }
      // Paper end
  
      @Override
-diff --git a/src/main/java/net/minecraft/world/level/border/WorldBorder.java b/src/main/java/net/minecraft/world/level/border/WorldBorder.java
-index a0c4bc4eb42a3d2de6f66510d88f92c06b535353..5c1a2e88f4f5e78a481b8845b77be9c38aa8497f 100644
---- a/src/main/java/net/minecraft/world/level/border/WorldBorder.java
-+++ b/src/main/java/net/minecraft/world/level/border/WorldBorder.java
-@@ -32,6 +32,7 @@ public class WorldBorder {
- 
-     public WorldBorder() {}
- 
-+    @Deprecated public final boolean isInBounds(BlockPos blockposition) { return this.isWithinBounds(blockposition); } // Paper - OBFHELPER
-     public boolean isWithinBounds(BlockPos pos) {
-         return (double) (pos.getX() + 1) > this.getMinX() && (double) pos.getX() < this.getMaxX() && (double) (pos.getZ() + 1) > this.getMinZ() && (double) pos.getZ() < this.getMaxZ();
-     }

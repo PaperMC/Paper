@@ -8,17 +8,17 @@ This patch also adds a chunk status cache on region files (note that
 its only purpose is to cache the status on DISK)
 
 diff --git a/src/main/java/net/minecraft/server/level/ChunkHolder.java b/src/main/java/net/minecraft/server/level/ChunkHolder.java
-index ddaf9d682772d5dbbe6ee4891f9995a8ee365329..a3692debdf8c0df1f785794bff29235b95750809 100644
+index 0dbd72761bd605473d1643ac1ad16a373060ddae..a066ac00ad3274a7c70edbb9cc442dc9be78a3bb 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkHolder.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkHolder.java
-@@ -111,6 +111,19 @@ public class ChunkHolder {
+@@ -110,6 +110,19 @@ public class ChunkHolder {
          Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure> either = (Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>) statusFuture.getNow(null);
          return (either == null) ? null : (LevelChunk) either.left().orElse(null);
      }
 +
 +    public ChunkAccess getAvailableChunkNow() {
 +        // TODO can we just getStatusFuture(EMPTY)?
-+        for (ChunkStatus curr = ChunkStatus.FULL, next = curr.getPreviousStatus(); curr != next; curr = next, next = next.getPreviousStatus()) {
++        for (ChunkStatus curr = ChunkStatus.FULL, next = curr.getParent(); curr != next; curr = next, next = next.getParent()) {
 +            CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> future = this.getFutureIfPresentUnchecked(curr);
 +            Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure> either = future.getNow(null);
 +            if (either == null || !either.left().isPresent()) {
@@ -108,7 +108,7 @@ index 36bc19cbb5242207ff019f62f59205e1a6336728..f271d7b32fef73401778682a1d4832bf
          // Spigot start
          return this.isOutsideOfRange(chunkPos, false);
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-index 672f78d1560ccd45d1a0ca04d6daf8188105c3e9..734b204d53a4b9e9b1112efe3a50b53cf1aa9f47 100644
+index 1176dd8ebd59c5bda1b74c532ca21ae335078805..ddaa4dfa4611e8d659e9d0211873b6f503e3d230 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 @@ -324,6 +324,7 @@ public class ServerChunkCache extends ChunkSource {
@@ -120,18 +120,10 @@ index 672f78d1560ccd45d1a0ca04d6daf8188105c3e9..734b204d53a4b9e9b1112efe3a50b53c
          ChunkHolder holder = this.chunkMap.getVisibleChunkIfPresent(ChunkPos.asLong(x, z));
          if (holder == null) {
 diff --git a/src/main/java/net/minecraft/world/level/chunk/ChunkStatus.java b/src/main/java/net/minecraft/world/level/chunk/ChunkStatus.java
-index 6e0cf8ee76143301c939fc4af5eeb091abdcbc5c..11739e01ea7188a45a3824ade8342124780ce936 100644
+index 6e0cf8ee76143301c939fc4af5eeb091abdcbc5c..1c7b18db0053bca6e7750225a79f7d95843edabe 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/ChunkStatus.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/ChunkStatus.java
-@@ -204,6 +204,7 @@ public class ChunkStatus {
-         return this.name;
-     }
- 
-+    @Deprecated public ChunkStatus getPreviousStatus() { return this.getParent(); } // Paper - OBFHELPER
-     public ChunkStatus getParent() {
-         return this.parent;
-     }
-@@ -224,6 +225,17 @@ public class ChunkStatus {
+@@ -224,6 +224,17 @@ public class ChunkStatus {
          return this.chunkType;
      }
  
@@ -172,7 +164,7 @@ index 21b3da831cd959e3fd85d437e1ba3c7a6c72502f..1c975b686c1e335d46e63ab12e0a97dd
          if (nbt != null) {
              ChunkStatus chunkstatus = ChunkStatus.byName(nbt.getCompound("Level").getString("Status"));
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
-index 2f1d53037ac00bf2570def599641263fdc3859a1..933acb9bd1c6dd2baedee4bddea83a9de7f1e3d1 100644
+index 46226dd2d16a9f4017661712fe2bfc0c46f63cb2..c22391a0d4b7db49bd3994b0887939a7d8019391 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
 @@ -27,6 +27,7 @@ import net.minecraft.Util;
@@ -214,7 +206,7 @@ index 2f1d53037ac00bf2570def599641263fdc3859a1..933acb9bd1c6dd2baedee4bddea83a9d
      public RegionFile(File file, File directory, boolean dsync) throws IOException {
          this(file.toPath(), directory.toPath(), RegionFileVersion.VERSION_DEFLATE, dsync);
      }
-@@ -402,6 +427,7 @@ public class RegionFile implements AutoCloseable {
+@@ -401,6 +426,7 @@ public class RegionFile implements AutoCloseable {
          return this.getOffset(pos) != 0;
      }
  
@@ -222,7 +214,7 @@ index 2f1d53037ac00bf2570def599641263fdc3859a1..933acb9bd1c6dd2baedee4bddea83a9d
      private static int getOffsetIndex(ChunkPos pos) {
          return pos.getRegionLocalX() + pos.getRegionLocalZ() * 32;
      }
-@@ -412,6 +438,7 @@ public class RegionFile implements AutoCloseable {
+@@ -411,6 +437,7 @@ public class RegionFile implements AutoCloseable {
          synchronized (this) {
          try {
          // Paper end
@@ -231,7 +223,7 @@ index 2f1d53037ac00bf2570def599641263fdc3859a1..933acb9bd1c6dd2baedee4bddea83a9d
              this.padToFullSector();
          } finally {
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
-index f53268f2d7d2d1909d64d06bb6a61086386830e1..e1b9051f8537db6f023cfdeaca4fb89305ece363 100644
+index 24092d3d3d234b6f1f2b90e22d90f297532358cc..43510774d489bfdd30f10d521e424fa1363b8919 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
 @@ -219,6 +219,7 @@ public class RegionFileStorage implements AutoCloseable {

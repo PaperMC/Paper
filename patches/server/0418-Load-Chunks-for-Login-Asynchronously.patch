@@ -5,7 +5,7 @@ Subject: [PATCH] Load Chunks for Login Asynchronously
 
 
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-index 05e520165a86eb52e1fd4130b6f2ccc4c838934a..04260e1e8cf17d2af06504fae949958b91c86bef 100644
+index 7886ba1c08f3bc7cb889a430419d4ddb14bda787..b05598c2234cef011aef496829dfe54a69d58900 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
 @@ -172,6 +172,7 @@ public class ServerPlayer extends Player {
@@ -74,7 +74,7 @@ index fae06882217adf20c6f81db2793ee3930cba30c0..c57b5cf7d61eab5a45e3fa69e8804fd0
          this.server.getProfiler().push("keepAlive");
          // Paper Start - give clients a longer time to respond to pings as per pre 1.12.2 timings
 diff --git a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
-index 477117affabfe07d52d3b40404613492b0bcdc56..3a7cc4f8ee62c8ff726ecf3e669c9f9ba5651487 100644
+index 12f945e91827470a9a61951e45c062deee8cf281..195f5d1519c3fc2fdd03ecd0d49d7fba74037692 100644
 --- a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
 @@ -88,7 +88,7 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener
@@ -96,7 +96,7 @@ index 477117affabfe07d52d3b40404613492b0bcdc56..3a7cc4f8ee62c8ff726ecf3e669c9f9b
              try {
                  ServerPlayer entityplayer1 = this.server.getPlayerList().processLogin(this.gameProfile, s); // CraftBukkit - add player reference
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
-index 3a13c151066c8784fdc844e1d6310f77ff32e7f1..846b0dcee92f71d1c887ea88744c36f6a870c5e2 100644
+index 3a13c151066c8784fdc844e1d6310f77ff32e7f1..529fc8732b67a3349672224723725e38925f8f09 100644
 --- a/src/main/java/net/minecraft/server/players/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/players/PlayerList.java
 @@ -38,6 +38,7 @@ import net.minecraft.network.protocol.Packet;
@@ -152,7 +152,7 @@ index 3a13c151066c8784fdc844e1d6310f77ff32e7f1..846b0dcee92f71d1c887ea88744c36f6
 +        worldserver1.getChunkSource().getChunkAtAsynchronously(chunkX, chunkZ, true, true).thenApply(chunk -> {
 +            net.minecraft.server.level.ChunkHolder updatingChunk = playerChunkMap.getUpdatingChunkIfPresent(pos.toLong());
 +            if (updatingChunk != null) {
-+                return updatingChunk.getEntityTickingFuture();
++                return updatingChunk.getEntityTickingChunkFuture();
 +            } else {
 +                return java.util.concurrent.CompletableFuture.completedFuture(chunk);
 +            }
@@ -244,7 +244,7 @@ index 3a13c151066c8784fdc844e1d6310f77ff32e7f1..846b0dcee92f71d1c887ea88744c36f6
          Iterator iterator = list.iterator();
  
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index fa63a52cba5355612ce417f4bb8077a89ce59398..32323729f913d27170fca0e69346e8d2943089af 100644
+index 1a3d6368b84aa24b6d0361dd30bc06b79f1d5133..4d2209baf88a3f097e0df1645f88d4afd718c414 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
 @@ -1511,7 +1511,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, n

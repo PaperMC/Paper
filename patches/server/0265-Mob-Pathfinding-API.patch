@@ -7,7 +7,7 @@ Implements Pathfinding API for mobs
 
 diff --git a/src/main/java/com/destroystokyo/paper/entity/PaperPathfinder.java b/src/main/java/com/destroystokyo/paper/entity/PaperPathfinder.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..92d1bb8b9cdb9eb0c04574c0b6ba5acdca9fb377
+index 0000000000000000000000000000000000000000..8c9f0c6c38627beded373ca29f1989ae3ba6f873
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/entity/PaperPathfinder.java
 @@ -0,0 +1,139 @@
@@ -40,18 +40,18 @@ index 0000000000000000000000000000000000000000..92d1bb8b9cdb9eb0c04574c0b6ba5acd
 +
 +    @Override
 +    public void stopPathfinding() {
-+        entity.getNavigation().stopPathfinding();
++        entity.getNavigation().stop();
 +    }
 +
 +    @Override
 +    public boolean hasPath() {
-+        return entity.getNavigation().getPathEntity() != null;
++        return entity.getNavigation().getPath() != null;
 +    }
 +
 +    @Nullable
 +    @Override
 +    public PathResult getCurrentPath() {
-+        Path path = entity.getNavigation().getPathEntity();
++        Path path = entity.getNavigation().getPath();
 +        return path != null ? new PaperPathResult(path) : null;
 +    }
 +
@@ -59,7 +59,7 @@ index 0000000000000000000000000000000000000000..92d1bb8b9cdb9eb0c04574c0b6ba5acd
 +    @Override
 +    public PathResult findPath(Location loc) {
 +        Validate.notNull(loc, "Location can not be null");
-+        Path path = entity.getNavigation().calculateDestination(loc.getX(), loc.getY(), loc.getZ());
++        Path path = entity.getNavigation().createPath(loc.getX(), loc.getY(), loc.getZ(), 0);
 +        return path != null ? new PaperPathResult(path) : null;
 +    }
 +
@@ -67,7 +67,7 @@ index 0000000000000000000000000000000000000000..92d1bb8b9cdb9eb0c04574c0b6ba5acd
 +    @Override
 +    public PathResult findPath(LivingEntity target) {
 +        Validate.notNull(target, "Target can not be null");
-+        Path path = entity.getNavigation().calculateDestination(((CraftLivingEntity) target).getHandle());
++        Path path = entity.getNavigation().createPath(((CraftLivingEntity) target).getHandle(), 0);
 +        return path != null ? new PaperPathResult(path) : null;
 +    }
 +
@@ -75,37 +75,37 @@ index 0000000000000000000000000000000000000000..92d1bb8b9cdb9eb0c04574c0b6ba5acd
 +    public boolean moveTo(@Nonnull PathResult path, double speed) {
 +        Validate.notNull(path, "PathResult can not be null");
 +        Path pathEntity = ((PaperPathResult) path).path;
-+        return entity.getNavigation().setDestination(pathEntity, speed);
++        return entity.getNavigation().moveTo(pathEntity, speed);
 +    }
 +
 +    @Override
 +    public boolean canOpenDoors() {
-+        return entity.getNavigation().getPathfinder().getPathfinder().shouldOpenDoors();
++        return entity.getNavigation().pathFinder.nodeEvaluator.canOpenDoors();
 +    }
 +
 +    @Override
 +    public void setCanOpenDoors(boolean canOpenDoors) {
-+        entity.getNavigation().getPathfinder().getPathfinder().setShouldOpenDoors(canOpenDoors);
++        entity.getNavigation().pathFinder.nodeEvaluator.setCanOpenDoors(canOpenDoors);
 +    }
 +
 +    @Override
 +    public boolean canPassDoors() {
-+        return entity.getNavigation().getPathfinder().getPathfinder().shouldPassDoors();
++        return entity.getNavigation().pathFinder.nodeEvaluator.canPassDoors();
 +    }
 +
 +    @Override
 +    public void setCanPassDoors(boolean canPassDoors) {
-+        entity.getNavigation().getPathfinder().getPathfinder().setShouldPassDoors(canPassDoors);
++        entity.getNavigation().pathFinder.nodeEvaluator.setCanPassDoors(canPassDoors);
 +    }
 +
 +    @Override
 +    public boolean canFloat() {
-+        return entity.getNavigation().getPathfinder().getPathfinder().shouldFloat();
++        return entity.getNavigation().pathFinder.nodeEvaluator.canFloat();
 +    }
 +
 +    @Override
 +    public void setCanFloat(boolean canFloat) {
-+        entity.getNavigation().getPathfinder().getPathfinder().setShouldFloat(canFloat);
++        entity.getNavigation().pathFinder.nodeEvaluator.setCanFloat(canFloat);
 +    }
 +
 +    public class PaperPathResult implements com.destroystokyo.paper.entity.PaperPathfinder.PathResult {
@@ -118,14 +118,14 @@ index 0000000000000000000000000000000000000000..92d1bb8b9cdb9eb0c04574c0b6ba5acd
 +        @Nullable
 +        @Override
 +        public Location getFinalPoint() {
-+            Node point = path.getFinalPoint();
++            Node point = path.getEndNode();
 +            return point != null ? toLoc(point) : null;
 +        }
 +
 +        @Override
 +        public List<Location> getPoints() {
 +            List<Location> points = new ArrayList<>();
-+            for (Node point : path.getPoints()) {
++            for (Node point : path.nodes) {
 +                points.add(toLoc(point));
 +            }
 +            return points;
@@ -133,7 +133,7 @@ index 0000000000000000000000000000000000000000..92d1bb8b9cdb9eb0c04574c0b6ba5acd
 +
 +        @Override
 +        public int getNextPointIndex() {
-+            return path.getNextIndex();
++            return path.getNextNodeIndex();
 +        }
 +
 +        @Nullable
@@ -142,135 +142,26 @@ index 0000000000000000000000000000000000000000..92d1bb8b9cdb9eb0c04574c0b6ba5acd
 +            if (!path.hasNext()) {
 +                return null;
 +            }
-+            return toLoc(path.getPoints().get(path.getNextIndex()));
++            return toLoc(path.nodes.get(path.getNextNodeIndex()));
 +        }
 +    }
 +
 +    private Location toLoc(Node point) {
-+        return new Location(entity.level.getWorld(), point.getX(), point.getY(), point.getZ());
++        return new Location(entity.level.getWorld(), point.x, point.y, point.z);
 +    }
 +}
-diff --git a/src/main/java/net/minecraft/world/entity/ai/navigation/PathNavigation.java b/src/main/java/net/minecraft/world/entity/ai/navigation/PathNavigation.java
-index 83243e1d35829a384f8680b18e96d82e630310ed..289494db53d368d56f1abd34abad8ce57e4694b1 100644
---- a/src/main/java/net/minecraft/world/entity/ai/navigation/PathNavigation.java
-+++ b/src/main/java/net/minecraft/world/entity/ai/navigation/PathNavigation.java
-@@ -93,7 +93,7 @@ public abstract class PathNavigation {
-     }
- 
-     @Nullable
--    public final Path createPath(double x, double y, double z, int distance) {
-+    @Deprecated public final Path calculateDestination(double d0, double d1, double d2) { return createPath(d0, d1, d2, 0); } public final Path createPath(double x, double y, double z, int distance) { // Paper - OBFHELPER
-         return this.createPath(new BlockPos(x, y, z), distance);
-     }
- 
-@@ -123,7 +123,7 @@ public abstract class PathNavigation {
-     }
- 
-     @Nullable
--    public Path createPath(Entity entity, int distance) {
-+    public final Path calculateDestination(Entity entity) { return createPath(entity, 0); }  public Path createPath(Entity entity, int distance) {
-         return this.createPath(ImmutableSet.of(entity.blockPosition()), entity, 16, true, distance); // Paper
-     }
- 
-@@ -195,6 +195,7 @@ public abstract class PathNavigation {
-         return path != null && this.moveTo(path, speed);
-     }
- 
-+    @Deprecated public boolean setDestination(@Nullable Path pathentity, double speed) { return moveTo(pathentity, speed); } // Paper - OBFHELPER
-     public boolean moveTo(@Nullable Path path, double speed) {
-         if (path == null) {
-             this.path = null;
-@@ -221,7 +222,7 @@ public abstract class PathNavigation {
-         }
-     }
- 
--    @Nullable
-+    @Deprecated @Nullable public Path getPathEntity() { return getPath(); } @Nullable // Paper - OBFHELPER
-     public Path getPath() {
-         return this.path;
-     }
-@@ -335,6 +336,7 @@ public abstract class PathNavigation {
-         return !this.isDone();
-     }
- 
-+    @Deprecated public void stopPathfinding() { stop(); } // Paper - OBFHELPER
-     public void stop() {
-         this.path = null;
-     }
-diff --git a/src/main/java/net/minecraft/world/level/pathfinder/Node.java b/src/main/java/net/minecraft/world/level/pathfinder/Node.java
-index d7a86444d0e76154319c409317fc5ac9c54403a8..9f8ecc9eb5d5f8b45d03f333ca43295f3d3ce3d3 100644
---- a/src/main/java/net/minecraft/world/level/pathfinder/Node.java
-+++ b/src/main/java/net/minecraft/world/level/pathfinder/Node.java
-@@ -6,9 +6,9 @@ import net.minecraft.util.Mth;
- import net.minecraft.world.phys.Vec3;
- 
- public class Node {
--    public final int x;
--    public final int y;
--    public final int z;
-+    public final int x; @Deprecated public final int getX() { return x; } // Paper - OBFHELPER
-+    public final int y; @Deprecated public final int getY() { return y; } // Paper - OBFHELPER
-+    public final int z; @Deprecated public final int getZ() { return z; } // Paper - OBFHELPER
-     private final int hash;
-     public int heapIdx = -1;
-     public float g;
-diff --git a/src/main/java/net/minecraft/world/level/pathfinder/NodeEvaluator.java b/src/main/java/net/minecraft/world/level/pathfinder/NodeEvaluator.java
-index 72ca8adb9fa65588c6b1e19be2dc27a36c0146a6..a2126606fa727e24a524f74289d498ef2cb881c7 100644
---- a/src/main/java/net/minecraft/world/level/pathfinder/NodeEvaluator.java
-+++ b/src/main/java/net/minecraft/world/level/pathfinder/NodeEvaluator.java
-@@ -15,9 +15,9 @@ public abstract class NodeEvaluator {
-     protected int entityWidth;
-     protected int entityHeight;
-     protected int entityDepth;
--    protected boolean canPassDoors;
--    protected boolean canOpenDoors;
--    protected boolean canFloat;
-+    protected boolean canPassDoors; @Deprecated public boolean shouldPassDoors() { return canPassDoors; } @Deprecated public void setShouldPassDoors(boolean b) { canPassDoors = b; } // Paper - obfhelper
-+    protected boolean canOpenDoors; @Deprecated public boolean shouldOpenDoors() { return canOpenDoors; } @Deprecated public void setShouldOpenDoors(boolean b) { canOpenDoors = b; } // Paper - obfhelper
-+    protected boolean canFloat; @Deprecated public boolean shouldFloat() { return canFloat; } @Deprecated public void setShouldFloat(boolean b) { canFloat = b; } // Paper - obfhelper
- 
-     public void prepare(PathNavigationRegion cachedWorld, Mob entity) {
-         this.level = cachedWorld;
 diff --git a/src/main/java/net/minecraft/world/level/pathfinder/Path.java b/src/main/java/net/minecraft/world/level/pathfinder/Path.java
-index 6928c415e328dd7cff2e9ec553bc4faa1ff8facf..c704c126ad1844110dcd8013b1cf0916857dd7ed 100644
+index 31d4431a60e742e2ca3b1a2abcce33954f599488..f4b6c2bf74884c0b53956788dcfcca784cfafca2 100644
 --- a/src/main/java/net/minecraft/world/level/pathfinder/Path.java
 +++ b/src/main/java/net/minecraft/world/level/pathfinder/Path.java
-@@ -12,14 +12,15 @@ import net.minecraft.world.entity.Entity;
- import net.minecraft.world.phys.Vec3;
- 
- public class Path {
--    private final List<Node> nodes;
-+    private final List<Node> nodes; @Deprecated public List<Node> getPoints() { return nodes; } // Paper - OBFHELPER
-     private Node[] openSet = new Node[0];
-     private Node[] closedSet = new Node[0];
-     private Set<Target> targetNodes;
--    private int nextNodeIndex;
-+    private int nextNodeIndex; @Deprecated public int getNextIndex() { return this.nextNodeIndex; } // Paper - OBFHELPER
+@@ -20,6 +20,7 @@ public class Path {
      private final BlockPos target;
      private final float distToTarget;
      private final boolean reached;
-+    public boolean hasNext() { return getNextIndex() < getPoints().size(); } // Paper
++    public boolean hasNext() { return getNextNodeIndex() < this.nodes.size(); } // Paper
  
      public Path(List<Node> nodes, BlockPos target, boolean reachesTarget) {
          this.nodes = nodes;
-@@ -41,7 +42,7 @@ public class Path {
-     }
- 
-     @Nullable
--    public Node getEndNode() {
-+    @Deprecated public Node getFinalPoint() { return getEndNode(); } @Nullable public Node getEndNode() { // Paper - OBFHELPER
-         return !this.nodes.isEmpty() ? this.nodes.get(this.nodes.size() - 1) : null;
-     }
- 
-@@ -88,7 +89,7 @@ public class Path {
-         return this.getEntityPosAtNode(entity, this.nextNodeIndex);
-     }
- 
--    public BlockPos getNextNodePos() {
-+    @Deprecated public BlockPos getNext() { return getNextNodePos(); } public BlockPos getNextNodePos() { // Paper - OBFHELPER
-         return this.nodes.get(this.nextNodeIndex).asBlockPos();
-     }
- 
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftMob.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftMob.java
 index 71872fdfafca82cf745eecee4bf984726d49f5a4..9c9fa83615cd06539ce5e4e3d4feaa69f65b7931 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftMob.java

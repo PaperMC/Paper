@@ -724,7 +724,7 @@ index 0000000000000000000000000000000000000000..0133ea6feb1ab88f021f66855669f583
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/util/maplist/IBlockDataList.java b/src/main/java/com/destroystokyo/paper/util/maplist/IBlockDataList.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..abe7f2f13ab713bf1cb0343059377ab7e1b48b6e
+index 0000000000000000000000000000000000000000..4a21ec2397f57c7c2ac3659f7de96cda9182fea0
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/util/maplist/IBlockDataList.java
 @@ -0,0 +1,128 @@
@@ -760,7 +760,7 @@ index 0000000000000000000000000000000000000000..abe7f2f13ab713bf1cb0343059377ab7
 +    }
 +
 +    public static BlockState getBlockDataFromRaw(final long raw) {
-+        return GLOBAL_PALETTE.getObject((int)(raw >>> 32));
++        return GLOBAL_PALETTE.valueFor((int)(raw >>> 32));
 +    }
 +
 +    public static int getIndexFromRaw(final long raw) {
@@ -772,7 +772,7 @@ index 0000000000000000000000000000000000000000..abe7f2f13ab713bf1cb0343059377ab7
 +    }
 +
 +    public static long getRawFromValues(final int index, final int location, final BlockState data) {
-+        return (long)index | ((long)location << 16) | (((long)GLOBAL_PALETTE.getOrCreateIdFor(data)) << 32);
++        return (long)index | ((long)location << 16) | (((long)GLOBAL_PALETTE.idFor(data)) << 32);
 +    }
 +
 +    public static long setIndexRawValues(final long value, final int index) {
@@ -2271,26 +2271,10 @@ index 771e4b72589d7117a154ab6917bd4a56d55f19db..65e0ca442980f273d2fe5f131e174cd9
  
      public static long getEpochMillis() {
 diff --git a/src/main/java/net/minecraft/core/BlockPos.java b/src/main/java/net/minecraft/core/BlockPos.java
-index 59240bb0ce088a14f8ccb62de8b69bc7bf313975..cfc2a5145e47de86a5a738d86abf333ff3db7796 100644
+index 59240bb0ce088a14f8ccb62de8b69bc7bf313975..ed52d042f41942ae512148fbba310093358ead68 100644
 --- a/src/main/java/net/minecraft/core/BlockPos.java
 +++ b/src/main/java/net/minecraft/core/BlockPos.java
-@@ -461,6 +461,7 @@ public class BlockPos extends Vec3i {
-             return super.rotate(rotation).immutable();
-         }
- 
-+        @Deprecated public final BlockPos.MutableBlockPos setValues(int i, int j, int k) { return set(i, j, k);} // Paper - OBFHELPER
-         public BlockPos.MutableBlockPos set(int x, int y, int z) {
-             this.setX(x);
-             this.setY(y);
-@@ -468,6 +469,7 @@ public class BlockPos extends Vec3i {
-             return this;
-         }
- 
-+        @Deprecated public final BlockPos.MutableBlockPos setValues(double d0, double d1, double d2) { return set(d0, d1, d2);} // Paper - OBFHELPER
-         public BlockPos.MutableBlockPos set(double x, double y, double z) {
-             return this.set(Mth.floor(x), Mth.floor(y), Mth.floor(z));
-         }
-@@ -525,6 +527,7 @@ public class BlockPos extends Vec3i {
+@@ -525,6 +525,7 @@ public class BlockPos extends Vec3i {
              }
          }
  
@@ -2298,7 +2282,7 @@ index 59240bb0ce088a14f8ccb62de8b69bc7bf313975..cfc2a5145e47de86a5a738d86abf333f
          @Override
          public BlockPos.MutableBlockPos setX(int i) {
              super.setX(i);
-@@ -542,6 +545,7 @@ public class BlockPos extends Vec3i {
+@@ -542,6 +543,7 @@ public class BlockPos extends Vec3i {
              super.setZ(i);
              return this;
          }
@@ -2307,7 +2291,7 @@ index 59240bb0ce088a14f8ccb62de8b69bc7bf313975..cfc2a5145e47de86a5a738d86abf333f
          @Override
          public BlockPos immutable() {
 diff --git a/src/main/java/net/minecraft/nbt/CompoundTag.java b/src/main/java/net/minecraft/nbt/CompoundTag.java
-index 3d374000cd61d4a29dae21035c5ee9a93a1ff0f9..a16fa7c0effdd192e873eb1afdee79103bb8308e 100644
+index 3d374000cd61d4a29dae21035c5ee9a93a1ff0f9..e59475b7bb3e000afece0033c5d3f112d643c4f2 100644
 --- a/src/main/java/net/minecraft/nbt/CompoundTag.java
 +++ b/src/main/java/net/minecraft/nbt/CompoundTag.java
 @@ -60,7 +60,7 @@ public class CompoundTag implements Tag {
@@ -2319,12 +2303,7 @@ index 3d374000cd61d4a29dae21035c5ee9a93a1ff0f9..a16fa7c0effdd192e873eb1afdee7910
  
      protected CompoundTag(Map<String, Tag> entries) {
          this.tags = entries;
-@@ -119,10 +119,15 @@ public class CompoundTag implements Tag {
-         this.tags.put(key, LongTag.valueOf(value));
-     }
- 
-+    @Deprecated public void setUUID(String prefix, UUID uuid) { putUUID(prefix, uuid); } // Paper - OBFHELPER
-     public void putUUID(String key, UUID value) {
+@@ -123,6 +123,10 @@ public class CompoundTag implements Tag {
          this.tags.put(key, NbtUtils.createUUID(value));
      }
  
@@ -2335,18 +2314,6 @@ index 3d374000cd61d4a29dae21035c5ee9a93a1ff0f9..a16fa7c0effdd192e873eb1afdee7910
      public UUID getUUID(String key) {
          return NbtUtils.loadUUID(this.get(key));
      }
-diff --git a/src/main/java/net/minecraft/network/FriendlyByteBuf.java b/src/main/java/net/minecraft/network/FriendlyByteBuf.java
-index 0ae24c8080391410756f101a1e40c2eef887c739..3b8207046d38d3d14719ff6761a22e60a93628b7 100644
---- a/src/main/java/net/minecraft/network/FriendlyByteBuf.java
-+++ b/src/main/java/net/minecraft/network/FriendlyByteBuf.java
-@@ -68,6 +68,7 @@ public class FriendlyByteBuf extends ByteBuf {
-         this.source = parent;
-     }
- 
-+    @Deprecated public static int countBytes(int i) { return FriendlyByteBuf.getVarIntSize(i); } // Paper - OBFHELPER
-     public static int getVarIntSize(int value) {
-         for (int j = 1; j < 5; ++j) {
-             if ((value & -1 << j * 7) == 0) {
 diff --git a/src/main/java/net/minecraft/network/PacketEncoder.java b/src/main/java/net/minecraft/network/PacketEncoder.java
 index f189a72bd101a99d9350072a06953665fc5d6fee..83e99af925c87433b59f9bed30dfbf4e490c1b84 100644
 --- a/src/main/java/net/minecraft/network/PacketEncoder.java
@@ -2877,7 +2844,7 @@ index 75801343b14a5555e974168170af95f8513926f5..1b76d1b929b85b130639e7937a118342
              MinecraftServer.LOGGER.info("Saving usercache.json");
              this.getProfileCache().save();
 diff --git a/src/main/java/net/minecraft/server/level/ChunkHolder.java b/src/main/java/net/minecraft/server/level/ChunkHolder.java
-index 6fa6fb852cd5af2009008ac6158251ba5e8cf6fb..9a8fc112dd19964c848127a8dd2f100f5db63075 100644
+index 6fa6fb852cd5af2009008ac6158251ba5e8cf6fb..24f72050229031898fd9da585ad2ceec835f83f9 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkHolder.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkHolder.java
 @@ -52,9 +52,9 @@ public class ChunkHolder {
@@ -2902,7 +2869,7 @@ index 6fa6fb852cd5af2009008ac6158251ba5e8cf6fb..9a8fc112dd19964c848127a8dd2f100f
      public ChunkHolder(ChunkPos pos, int level, LevelHeightAccessor world, LevelLightEngine lightingProvider, ChunkHolder.LevelChangeListener levelUpdateListener, ChunkHolder.PlayerProvider playersWatchingChunkProvider) {
          this.futures = new AtomicReferenceArray(ChunkHolder.CHUNK_STATUSES.size());
          this.fullChunkFuture = ChunkHolder.UNLOADED_LEVEL_CHUNK_FUTURE;
-@@ -93,14 +95,16 @@ public class ChunkHolder {
+@@ -93,10 +95,11 @@ public class ChunkHolder {
          this.queueLevel = this.oldTicketLevel;
          this.setTicketLevel(level);
          this.changedBlocksPerSection = new ShortSet[world.getSectionsCount()];
@@ -2915,23 +2882,16 @@ index 6fa6fb852cd5af2009008ac6158251ba5e8cf6fb..9a8fc112dd19964c848127a8dd2f100f
          if (!ChunkHolder.getFullChunkStatus(this.oldTicketLevel).isOrAfter(ChunkHolder.FullChunkStatus.BORDER)) return null; // note: using oldTicketLevel for isLoaded checks
          return this.getFullChunkUnchecked();
      }
- 
-+    @Deprecated public final LevelChunk getFullChunkIfCached() { return this.getFullChunkUnchecked(); } // Paper - OBFHELPER
-     public LevelChunk getFullChunkUnchecked() {
-         CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> statusFuture = this.getFutureIfPresentUnchecked(ChunkStatus.FULL);
-         Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure> either = (Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>) statusFuture.getNow(null);
-@@ -118,20 +122,22 @@ public class ChunkHolder {
+@@ -118,20 +121,20 @@ public class ChunkHolder {
          return ChunkHolder.getStatus(this.ticketLevel).isOrAfter(leastStatus) ? this.getFutureIfPresentUnchecked(leastStatus) : ChunkHolder.UNLOADED_CHUNK_FUTURE;
      }
  
 -    public CompletableFuture<Either<LevelChunk, ChunkHolder.ChunkLoadingFailure>> getTickingChunkFuture() {
-+    @Deprecated public final CompletableFuture<Either<LevelChunk, ChunkHolder.ChunkLoadingFailure>> getTickingFuture() { return this.getTickingChunkFuture(); } // Paper - OBFHELPER
 +    public final CompletableFuture<Either<LevelChunk, ChunkHolder.ChunkLoadingFailure>> getTickingChunkFuture() { // Paper - final for inline
          return this.tickingChunkFuture;
      }
  
 -    public CompletableFuture<Either<LevelChunk, ChunkHolder.ChunkLoadingFailure>> getEntityTickingChunkFuture() {
-+    @Deprecated public final CompletableFuture<Either<LevelChunk, ChunkHolder.ChunkLoadingFailure>> getEntityTickingFuture() { return this.getEntityTickingChunkFuture(); } // Paper - OBFHELPER
 +    public final CompletableFuture<Either<LevelChunk, ChunkHolder.ChunkLoadingFailure>> getEntityTickingChunkFuture() { // Paper - final for inline
          return this.entityTickingChunkFuture;
      }
@@ -2947,7 +2907,7 @@ index 6fa6fb852cd5af2009008ac6158251ba5e8cf6fb..9a8fc112dd19964c848127a8dd2f100f
          CompletableFuture<Either<LevelChunk, ChunkHolder.ChunkLoadingFailure>> completablefuture = this.getTickingChunkFuture();
          Either<LevelChunk, ChunkHolder.ChunkLoadingFailure> either = (Either) completablefuture.getNow(null); // CraftBukkit - decompile error
  
-@@ -170,7 +176,7 @@ public class ChunkHolder {
+@@ -170,7 +173,7 @@ public class ChunkHolder {
          return null;
      }
  
@@ -2956,7 +2916,7 @@ index 6fa6fb852cd5af2009008ac6158251ba5e8cf6fb..9a8fc112dd19964c848127a8dd2f100f
          return this.chunkToSave;
      }
  
-@@ -328,11 +334,11 @@ public class ChunkHolder {
+@@ -328,11 +331,11 @@ public class ChunkHolder {
          return ChunkHolder.getFullChunkStatus(this.ticketLevel);
      }
  
@@ -2970,7 +2930,7 @@ index 6fa6fb852cd5af2009008ac6158251ba5e8cf6fb..9a8fc112dd19964c848127a8dd2f100f
          return this.ticketLevel;
      }
  
-@@ -421,14 +427,27 @@ public class ChunkHolder {
+@@ -421,14 +424,27 @@ public class ChunkHolder {
  
          this.wasAccessibleSinceLastSave |= flag3;
          if (!flag2 && flag3) {
@@ -2998,7 +2958,7 @@ index 6fa6fb852cd5af2009008ac6158251ba5e8cf6fb..9a8fc112dd19964c848127a8dd2f100f
              this.updateChunkToSave(((CompletableFuture<Either<LevelChunk, ChunkHolder.ChunkLoadingFailure>>) completablefuture).thenApply((either1) -> { // CraftBukkit - decompile error
                  Objects.requireNonNull(chunkStorage);
                  return either1.ifLeft(chunkStorage::packTicks);
-@@ -441,11 +460,19 @@ public class ChunkHolder {
+@@ -441,11 +457,19 @@ public class ChunkHolder {
          if (!flag4 && flag5) {
              this.tickingChunkFuture = chunkStorage.prepareTickingChunk(this);
              this.scheduleFullChunkPromotion(chunkStorage, this.tickingChunkFuture, executor, ChunkHolder.FullChunkStatus.TICKING);
@@ -3019,7 +2979,7 @@ index 6fa6fb852cd5af2009008ac6158251ba5e8cf6fb..9a8fc112dd19964c848127a8dd2f100f
              this.tickingChunkFuture = ChunkHolder.UNLOADED_LEVEL_CHUNK_FUTURE;
          }
  
-@@ -459,11 +486,18 @@ public class ChunkHolder {
+@@ -459,11 +483,18 @@ public class ChunkHolder {
  
              this.entityTickingChunkFuture = chunkStorage.prepareEntityTickingChunk(this.pos);
              this.scheduleFullChunkPromotion(chunkStorage, this.entityTickingChunkFuture, executor, ChunkHolder.FullChunkStatus.ENTITY_TICKING);
@@ -3119,7 +3079,7 @@ index a45d5c1156e84ab6e56c95e392fd52ea9ecebcb0..33d17e69fac035c421345e1a8c6eb214
  
      @Override
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-index cfe9930490489d506c91d174b5aad199314ffd17..db2bcc20d50f1833347f6edde67c366501d29c0f 100644
+index cfe9930490489d506c91d174b5aad199314ffd17..508adf5df266365992f9ee64f6592465e879deaa 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 @@ -45,6 +45,7 @@ import net.minecraft.world.level.levelgen.structure.templatesystem.StructureMana
@@ -3214,7 +3174,7 @@ index cfe9930490489d506c91d174b5aad199314ffd17..db2bcc20d50f1833347f6edde67c3665
 +            });
 +            return;
 +        }
-+        this.getChunkFutureAsynchronously(x, z, 31, ChunkHolder::getEntityTickingFuture, onLoad);
++        this.getChunkFutureAsynchronously(x, z, 31, ChunkHolder::getEntityTickingChunkFuture, onLoad);
 +    }
 +
 +    public void getTickingChunkAsync(int x, int z, java.util.function.Consumer<LevelChunk> onLoad) {
@@ -3224,7 +3184,7 @@ index cfe9930490489d506c91d174b5aad199314ffd17..db2bcc20d50f1833347f6edde67c3665
 +            });
 +            return;
 +        }
-+        this.getChunkFutureAsynchronously(x, z, 32, ChunkHolder::getTickingFuture, onLoad);
++        this.getChunkFutureAsynchronously(x, z, 32, ChunkHolder::getTickingChunkFuture, onLoad);
 +    }
 +
 +    public void getFullChunkAsync(int x, int z, java.util.function.Consumer<LevelChunk> onLoad) {
@@ -3306,7 +3266,7 @@ index cfe9930490489d506c91d174b5aad199314ffd17..db2bcc20d50f1833347f6edde67c3665
 +            return null;
 +        }
 +
-+        return playerChunk.getFullChunkIfCached();
++        return playerChunk.getFullChunkUnchecked();
 +    }
 +
 +    @Nullable
@@ -3514,21 +3474,8 @@ index d31c62b612a5a8016ffbfbb9dc85d9a941c08cf4..fc34cfa8bfb3b82a8e1b28d261f0e901
      protected Monster(EntityType<? extends Monster> type, Level world) {
          super(type, world);
          this.xpReward = 5;
-diff --git a/src/main/java/net/minecraft/world/entity/player/Inventory.java b/src/main/java/net/minecraft/world/entity/player/Inventory.java
-index 6d0b9f8834e86a465cae3fa2af830b797c65a4fb..911cecb3c1d0cd682dcff37636e1fefd979456ae 100644
---- a/src/main/java/net/minecraft/world/entity/player/Inventory.java
-+++ b/src/main/java/net/minecraft/world/entity/player/Inventory.java
-@@ -44,7 +44,7 @@ public class Inventory implements Container, Nameable {
-     public final NonNullList<ItemStack> items;
-     public final NonNullList<ItemStack> armor;
-     public final NonNullList<ItemStack> offhand;
--    private final List<NonNullList<ItemStack>> compartments;
-+    private final List<NonNullList<ItemStack>> compartments; @Deprecated public final List<NonNullList<ItemStack>> getComponents() { return compartments; } // Paper - OBFHELPER
-     public int selected;
-     public final Player player;
-     private int timesChanged;
 diff --git a/src/main/java/net/minecraft/world/item/ItemStack.java b/src/main/java/net/minecraft/world/item/ItemStack.java
-index 48902f822ccb6e231201f888a2a92923a946e8cf..680c4eb99b650c8ec7fe50022ba36070feb0a0e5 100644
+index 48902f822ccb6e231201f888a2a92923a946e8cf..280519717d32385a74d6e942a6f42fc12ad8c57e 100644
 --- a/src/main/java/net/minecraft/world/item/ItemStack.java
 +++ b/src/main/java/net/minecraft/world/item/ItemStack.java
 @@ -725,6 +725,24 @@ public final class ItemStack {
@@ -3556,15 +3503,7 @@ index 48902f822ccb6e231201f888a2a92923a946e8cf..680c4eb99b650c8ec7fe50022ba36070
      public void setTag(@Nullable CompoundTag tag) {
          this.tag = tag;
          if (this.getItem().canBeDepleted()) {
-@@ -1043,6 +1061,7 @@ public final class ItemStack {
-         return this.tag != null && this.tag.contains("Enchantments", 9) ? !this.tag.getList("Enchantments", 10).isEmpty() : false;
-     }
- 
-+    @Deprecated public void getOrCreateTagAndSet(String s, net.minecraft.nbt.Tag nbtbase) { addTagElement(s, nbtbase);} // Paper - OBFHELPER
-     public void addTagElement(String key, net.minecraft.nbt.Tag tag) {
-         this.getOrCreateTag().put(key, tag);
-     }
-@@ -1128,6 +1147,7 @@ public final class ItemStack {
+@@ -1128,6 +1146,7 @@ public final class ItemStack {
      // CraftBukkit start
      @Deprecated
      public void setItem(Item item) {
@@ -3572,18 +3511,6 @@ index 48902f822ccb6e231201f888a2a92923a946e8cf..680c4eb99b650c8ec7fe50022ba36070
          this.item = item;
      }
      // CraftBukkit end
-diff --git a/src/main/java/net/minecraft/world/item/alchemy/PotionUtils.java b/src/main/java/net/minecraft/world/item/alchemy/PotionUtils.java
-index 3d9fffa3f07264743b9323557a0b2ac360e01fb9..eca0f3b95b3af4dade992889a5e310a467c2e9fc 100644
---- a/src/main/java/net/minecraft/world/item/alchemy/PotionUtils.java
-+++ b/src/main/java/net/minecraft/world/item/alchemy/PotionUtils.java
-@@ -126,6 +126,7 @@ public class PotionUtils {
-         return compound == null ? Potions.EMPTY : Potion.byName(compound.getString("Potion"));
-     }
- 
-+    @Deprecated public static ItemStack addPotionToItemStack(ItemStack itemstack, Potion potionregistry) { return setPotion(itemstack, potionregistry); } // Paper - OBFHELPER
-     public static ItemStack setPotion(ItemStack stack, Potion potion) {
-         ResourceLocation resourceLocation = Registry.POTION.getKey(potion);
-         if (potion == Potions.EMPTY) {
 diff --git a/src/main/java/net/minecraft/world/level/BlockGetter.java b/src/main/java/net/minecraft/world/level/BlockGetter.java
 index 083122a2e051b23b2cb9bdb8eb70af01af9df400..e85e4a2dfceb0aa40e73b43a5e122a5906cac585 100644
 --- a/src/main/java/net/minecraft/world/level/BlockGetter.java
@@ -3686,7 +3613,7 @@ index 3c707d6674b2594b09503b959a31c1f4ad3981e6..c7d499bfc22152e0a49f50a2a8133f31
      public BlockState getBlockState(BlockPos pos) {
          return Blocks.AIR.defaultBlockState();
 diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
-index 90854842fda0f91ac68c70efbcf8ad9e3297ceb4..20fafb95e98ac2e656999ea2208db166d841db9f 100644
+index 90854842fda0f91ac68c70efbcf8ad9e3297ceb4..e9dc71fb74698b2f11220e4eb379f21610899d97 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
 +++ b/src/main/java/net/minecraft/world/level/Level.java
 @@ -84,6 +84,7 @@ import org.bukkit.craftbukkit.CraftServer;
@@ -3775,19 +3702,7 @@ index 90854842fda0f91ac68c70efbcf8ad9e3297ceb4..20fafb95e98ac2e656999ea2208db166
          return this.setBlock(pos, state, flags, 512);
      }
  
-@@ -433,8 +468,9 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
- 
-     public void onBlockStateChange(BlockPos pos, BlockState oldBlock, BlockState newBlock) {}
- 
--    @Override
--    public boolean removeBlock(BlockPos pos, boolean move) {
-+    @Deprecated public boolean setAir(BlockPos blockposition) { return this.removeBlock(blockposition, false); } // Paper - OBFHELPER
-+    @Deprecated public boolean setAir(BlockPos blockposition, boolean moved) { return this.removeBlock(blockposition, moved); } // Paper - OBFHELPER
-+    @Override public boolean removeBlock(BlockPos pos, boolean move) { // Paper - OBFHELPER
-         FluidState fluid = this.getFluidState(pos);
- 
-         return this.setBlock(pos, fluid.createLegacyBlock(), 3 | (move ? 64 : 0));
-@@ -588,7 +624,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -588,7 +623,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
          if (this.isOutsideBuildHeight(pos)) {
              return Blocks.VOID_AIR.defaultBlockState();
          } else {
@@ -3851,7 +3766,7 @@ index 00118cc80ebc31e5fac95c31c07634f0e2904263..138b6792bc6ee26e0b9aaaef7bf58fb2
      @Override
      public BlockEntity getBlockEntity(BlockPos pos) {
 diff --git a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
-index 62417156dd3e7e68e657f322c089fb6f30a11c0e..34d108a3177b31d0094d6d81c180081cc728bcd4 100644
+index 62417156dd3e7e68e657f322c089fb6f30a11c0e..0d0f721fe80c52d92d91843ae9970c5fd55ca143 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
 @@ -33,6 +33,7 @@ import net.minecraft.core.SectionPos;
@@ -3862,15 +3777,6 @@ index 62417156dd3e7e68e657f322c089fb6f30a11c0e..34d108a3177b31d0094d6d81c180081c
  import net.minecraft.server.level.ServerLevel;
  import net.minecraft.util.profiling.ProfilerFiller;
  import net.minecraft.world.entity.Entity;
-@@ -86,7 +87,7 @@ public class LevelChunk implements ChunkAccess {
-         }
-     };
-     @Nullable
--    public static final LevelChunkSection EMPTY_SECTION = null;
-+    public static final LevelChunkSection EMPTY_SECTION = null; @Deprecated public static final LevelChunkSection EMPTY_CHUNK_SECTION = EMPTY_SECTION; // Paper - OBFHELPER
-     private final LevelChunkSection[] sections;
-     private ChunkBiomeContainer biomes;
-     private final Map<BlockPos, CompoundTag> pendingBlockEntities;
 @@ -107,7 +108,7 @@ public class LevelChunk implements ChunkAccess {
      private Supplier<ChunkHolder.FullChunkStatus> fullStatus;
      @Nullable
@@ -4099,65 +4005,6 @@ index 62417156dd3e7e68e657f322c089fb6f30a11c0e..34d108a3177b31d0094d6d81c180081c
              this.setUnsaved(true);
          }
  
-diff --git a/src/main/java/net/minecraft/world/level/chunk/Palette.java b/src/main/java/net/minecraft/world/level/chunk/Palette.java
-index 967cc874eacdb8f589e548b0ee3d60efff72392e..b5c67a9733ef2f738d00174bb4f4251a6c2f24ea 100644
---- a/src/main/java/net/minecraft/world/level/chunk/Palette.java
-+++ b/src/main/java/net/minecraft/world/level/chunk/Palette.java
-@@ -6,10 +6,12 @@ import net.minecraft.nbt.ListTag;
- import net.minecraft.network.FriendlyByteBuf;
- 
- public interface Palette<T> {
-+    @Deprecated default int getOrCreateIdFor(T object) { return this.idFor(object); } // Paper - OBFHELPER
-     int idFor(T object);
- 
-     boolean maybeHas(Predicate<T> predicate);
- 
-+    @Deprecated @Nullable default T getObject(int dataBits) { return this.valueFor(dataBits); } // Paper - OBFHELPER
-     @Nullable
-     T valueFor(int index);
- 
-diff --git a/src/main/java/net/minecraft/world/level/chunk/PalettedContainer.java b/src/main/java/net/minecraft/world/level/chunk/PalettedContainer.java
-index 527238373b944a1e4a6e3a408534c72dd4c84035..c874515f1f460bd66baa47c9b8984ef875e735fb 100644
---- a/src/main/java/net/minecraft/world/level/chunk/PalettedContainer.java
-+++ b/src/main/java/net/minecraft/world/level/chunk/PalettedContainer.java
-@@ -20,7 +20,7 @@ public class PalettedContainer<T> implements PaletteResize<T> {
-     private static final int SIZE = 4096;
-     public static final int GLOBAL_PALETTE_BITS = 9;
-     public static final int MIN_PALETTE_SIZE = 4;
--    private final Palette<T> globalPalette;
-+    private final Palette<T> globalPalette; @Deprecated private final Palette<T> getDataPaletteGlobal() { return this.globalPalette; } // Paper - OBFHELPER
-     private final PaletteResize<T> dummyPaletteResize = (newSize, added) -> {
-         return 0;
-     };
-@@ -28,9 +28,9 @@ public class PalettedContainer<T> implements PaletteResize<T> {
-     private final Function<CompoundTag, T> reader;
-     private final Function<T, CompoundTag> writer;
-     private final T defaultValue;
--    protected BitStorage storage;
--    private Palette<T> palette;
--    private int bits;
-+    protected BitStorage storage; @Deprecated public final BitStorage getDataBits() { return this.storage; } // Paper - OBFHELPER
-+    private Palette<T> palette; @Deprecated private Palette<T> getDataPalette() { return this.palette; } // Paper - OBFHELPER
-+    private int bits; @Deprecated private int getBitsPerObject() { return this.bits; } // Paper - OBFHELPER
-     private final Semaphore lock = new Semaphore(1);
-     @Nullable
-     private final DebugBuffer<Pair<Thread, StackTraceElement[]>> traces = null;
-@@ -61,6 +61,7 @@ public class PalettedContainer<T> implements PaletteResize<T> {
-         return y << 8 | z << 4 | x;
-     }
- 
-+    @Deprecated private void initialize(int bitsPerObject) { this.setBits(bitsPerObject); } // Paper - OBFHELPER
-     private void setBits(int size) {
-         if (size != this.bits) {
-             this.bits = size;
-@@ -159,6 +160,7 @@ public class PalettedContainer<T> implements PaletteResize<T> {
- 
-     }
- 
-+    @Deprecated public void writeDataPaletteBlock(FriendlyByteBuf packetDataSerializer) { this.write(packetDataSerializer); } // Paper - OBFHELPER
-     public void write(FriendlyByteBuf buf) {
-         try {
-             this.acquire();
 diff --git a/src/main/java/net/minecraft/world/level/chunk/ProtoChunk.java b/src/main/java/net/minecraft/world/level/chunk/ProtoChunk.java
 index c0b68bd470d245121e14b75e2c97f6616b83c92a..39fe8f64528ad08594aaaa88e5c989c82e4e29d3 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/ProtoChunk.java
@@ -4181,43 +4028,6 @@ index c0b68bd470d245121e14b75e2c97f6616b83c92a..39fe8f64528ad08594aaaa88e5c989c8
      @Override
      public BlockState getBlockState(BlockPos pos) {
          int i = pos.getY();
-diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/IOWorker.java b/src/main/java/net/minecraft/world/level/chunk/storage/IOWorker.java
-index ed4539f25dbd5b1c5c48b70a8d1e9f63fff5d964..79c8315e145befac4cab7d42d006e8f42105b6d9 100644
---- a/src/main/java/net/minecraft/world/level/chunk/storage/IOWorker.java
-+++ b/src/main/java/net/minecraft/world/level/chunk/storage/IOWorker.java
-@@ -26,7 +26,7 @@ public class IOWorker implements AutoCloseable {
-     private static final Logger LOGGER = LogManager.getLogger();
-     private final AtomicBoolean shutdownRequested = new AtomicBoolean();
-     private final ProcessorMailbox<StrictQueue.IntRunnable> mailbox;
--    private final RegionFileStorage storage;
-+    private final RegionFileStorage storage;@Deprecated public RegionFileStorage getRegionFileCache() { return storage; } // Paper - OBFHELPER
-     private final Map<ChunkPos, IOWorker.PendingStore> pendingWrites = Maps.newLinkedHashMap();
- 
-     protected IOWorker(File directory, boolean dsync, String name) {
-diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
-index 1441888430687b9de2a67f21ed426f16d5b30538..289c82bc490201eff896534261e6a2edef2ea8dc 100644
---- a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
-+++ b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
-@@ -121,6 +121,7 @@ public class RegionFile implements AutoCloseable {
-         return this.externalFileDir.resolve(s);
-     }
- 
-+    @Deprecated @Nullable public synchronized DataInputStream getReadStream(ChunkPos chunkCoordIntPair) throws IOException { return getChunkDataInputStream(chunkCoordIntPair);} // Paper - OBFHELPER
-     @Nullable
-     public synchronized DataInputStream getChunkDataInputStream(ChunkPos pos) throws IOException {
-         int i = this.getOffset(pos);
-diff --git a/src/main/java/net/minecraft/world/phys/shapes/Shapes.java b/src/main/java/net/minecraft/world/phys/shapes/Shapes.java
-index 5af90e0f7222356cb0e905a9b6e0c4eac5617a41..eaf5b5794061d034cc5e1f80f5acd7f5b6688a30 100644
---- a/src/main/java/net/minecraft/world/phys/shapes/Shapes.java
-+++ b/src/main/java/net/minecraft/world/phys/shapes/Shapes.java
-@@ -34,6 +34,7 @@ public final class Shapes {
-         return EMPTY;
-     }
- 
-+    @Deprecated public static final VoxelShape fullCube() {return block();} // Paper - OBFHELPER
-     public static VoxelShape block() {
-         return BLOCK;
-     }
 diff --git a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
 index 836ee63b7ea73165257acbcdf5c7336a2a2e36f3..2b4a922b84eeb2b1b64e43a2ca8bf16dcf58218e 100644
 --- a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java

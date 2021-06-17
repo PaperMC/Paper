@@ -767,7 +767,7 @@ index b3a6aeba2363d283f03982cf749f25cfa11a5052..449f1b2f5dca350dc0912e14c8c2bf3e
                      PacketUtils.LOGGER.debug("Ignoring packet due to disconnection: {}", packet);
                  }
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 1b76d1b929b85b130639e7937a118342b568e795..46bd0b6f8b13c64993ed1deeb8cfa7c105ee3cd9 100644
+index 1b76d1b929b85b130639e7937a118342b568e795..bf26abaf0d3567026da3e95712583b403ef2dff6 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -183,7 +183,7 @@ import org.bukkit.craftbukkit.Main;
@@ -779,17 +779,6 @@ index 1b76d1b929b85b130639e7937a118342b568e795..46bd0b6f8b13c64993ed1deeb8cfa7c1
  import org.spigotmc.SlackActivityAccountant; // Spigot
  
  public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTask> implements SnooperPopulator, CommandSource, AutoCloseable {
-@@ -259,8 +259,8 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
-     private long lastServerStatus;
-     public final Thread serverThread;
-     private long nextTickTime;
--    private long delayedTasksMaxNextTickTime;
--    private boolean mayHaveDelayedTasks;
-+    private long delayedTasksMaxNextTickTime; @Deprecated final long getTickOversleepMaxTime() { return this.delayedTasksMaxNextTickTime; } // Paper - OBFHELPER
-+    private boolean mayHaveDelayedTasks; @Deprecated final boolean hasExecutedTask() { return this.mayHaveDelayedTasks; } // Paper - OBFHELPER
-     private boolean hasWorldScreenshot;
-     private final PackRepository packRepository;
-     private final ServerScoreboard scoreboard;
 @@ -887,6 +887,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          }
          // CraftBukkit end
@@ -809,7 +798,7 @@ index 1b76d1b929b85b130639e7937a118342b568e795..46bd0b6f8b13c64993ed1deeb8cfa7c1
 +    // Paper start
 +    boolean isOversleep = false;
 +    private boolean canOversleep() {
-+        return this.hasExecutedTask() && Util.getMillis() < this.getTickOversleepMaxTime();
++        return this.mayHaveDelayedTasks && Util.getMillis() < this.delayedTasksMaxNextTickTime;
 +    }
 +
 +    private boolean canSleepForTickNoOversleep() {
@@ -1141,7 +1130,7 @@ index 33d17e69fac035c421345e1a8c6eb214a54efc46..3b1565309165e10b147d08b8245ea0bc
  
      public void broadcast(Entity entity, Packet<?> packet) {
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-index db2bcc20d50f1833347f6edde67c366501d29c0f..e3abeb839c36b5238ec115329ce05b58e3383a55 100644
+index 508adf5df266365992f9ee64f6592465e879deaa..eeb43a243bfab978e17fd4f2f052029eefdbb090 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 @@ -349,13 +349,15 @@ public class ServerChunkCache extends ChunkSource {
@@ -1627,7 +1616,7 @@ index 9f68aa235949520b445b368782ccde6b0e26859d..67bc396d880771a135b1b95ffad79952
          if (!this.level.isClientSide && this.isSensitiveToWater() && this.isInWaterRainOrBubble()) {
              this.hurt(DamageSource.DROWN, 1.0F);
 diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
-index 20fafb95e98ac2e656999ea2208db166d841db9f..e967d612ffb2e4d2834e2057e9953f82c7a3d50b 100644
+index e9dc71fb74698b2f11220e4eb379f21610899d97..b73b40e8f55a6f9e671878b81ef513b9416c9c8c 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
 +++ b/src/main/java/net/minecraft/world/level/Level.java
 @@ -82,7 +82,6 @@ import org.bukkit.Bukkit;
@@ -1656,7 +1645,7 @@ index 20fafb95e98ac2e656999ea2208db166d841db9f..e967d612ffb2e4d2834e2057e9953f82
          this.entityLimiter = new org.spigotmc.TickLimiter(spigotConfig.entityMaxTickTime);
          this.tileLimiter = new org.spigotmc.TickLimiter(spigotConfig.tileMaxTickTime);
      }
-@@ -721,15 +720,14 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -720,15 +719,14 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
  
          timings.tileEntityTick.stopTiming(); // Spigot
          this.tickingBlockEntities = false;
@@ -1765,7 +1754,7 @@ index 92b042080f06fb95958ff5e824830a84f2d1f2a6..7b333e2d6884b272abefbc820bcce802
      private static final CraftPersistentDataTypeRegistry DATA_TYPE_REGISTRY = new CraftPersistentDataTypeRegistry();
      public CraftPersistentDataContainer persistentDataContainer;
 diff --git a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
-index 34d108a3177b31d0094d6d81c180081cc728bcd4..f8873d76b675e062619d849ffe78376668c8289f 100644
+index 0d0f721fe80c52d92d91843ae9970c5fd55ca143..3e2bc640a06667f0d4f3c2367ac794514a1be35c 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
 @@ -725,6 +725,7 @@ public class LevelChunk implements ChunkAccess {
