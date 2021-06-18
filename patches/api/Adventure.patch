@@ -53,76 +53,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +    // Paper end
  }
-diff --git a/src/main/java/io/papermc/paper/chat/ChatComposer.java b/src/main/java/io/papermc/paper/chat/ChatComposer.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
---- /dev/null
-+++ b/src/main/java/io/papermc/paper/chat/ChatComposer.java
-@@ -0,0 +0,0 @@
-+package io.papermc.paper.chat;
-+
-+import net.kyori.adventure.text.Component;
-+import org.bukkit.entity.Player;
-+import org.jetbrains.annotations.NotNull;
-+
-+/**
-+ * A chat composer is responsible for composing chat messages sent by {@link Player}s to the server.
-+ *
-+ * @deprecated for removal with 1.17, in favor of {@link ChatRenderer}
-+ */
-+@Deprecated
-+@FunctionalInterface
-+public interface ChatComposer {
-+    ChatComposer DEFAULT = (player, displayName, message) -> Component.translatable("chat.type.text", displayName, message);
-+
-+    /**
-+     * Composes a chat message.
-+     *
-+     * @param source the message source
-+     * @param displayName the display name of the {@link Player} sending the message
-+     * @param message the chat message
-+     * @return a composed chat message
-+     * @deprecated for removal with 1.17
-+     */
-+    @Deprecated
-+    @NotNull
-+    Component composeChat(final @NotNull Player source, final @NotNull Component displayName, final @NotNull Component message);
-+}
-diff --git a/src/main/java/io/papermc/paper/chat/ChatFormatter.java b/src/main/java/io/papermc/paper/chat/ChatFormatter.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
---- /dev/null
-+++ b/src/main/java/io/papermc/paper/chat/ChatFormatter.java
-@@ -0,0 +0,0 @@
-+package io.papermc.paper.chat;
-+
-+import net.kyori.adventure.text.Component;
-+import org.bukkit.entity.Player;
-+import org.jetbrains.annotations.NotNull;
-+
-+/**
-+ * A chat formatter is responsible for the formatting of chat messages sent by {@link Player}s to the server.
-+ *
-+ * @deprecated for removal with 1.17, in favour of {@link ChatRenderer}
-+ */
-+@Deprecated
-+@FunctionalInterface
-+public interface ChatFormatter {
-+    @Deprecated
-+    ChatFormatter DEFAULT = (displayName, message) -> Component.translatable("chat.type.text", displayName, message);
-+
-+    /**
-+     * Formats a chat message.
-+     *
-+     * @param displayName the display name of the {@link Player} sending the message
-+     * @param message the chat message
-+     * @return a formatted chat message
-+     * @deprecated for removal with 1.17
-+     */
-+    @Deprecated
-+    @NotNull
-+    Component chat(final @NotNull Component displayName, final @NotNull Component message);
-+}
 diff --git a/src/main/java/io/papermc/paper/chat/ChatRenderer.java b/src/main/java/io/papermc/paper/chat/ChatRenderer.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
@@ -212,20 +142,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@
 +package io.papermc.paper.event.player;
 +
-+import io.papermc.paper.chat.ChatComposer;
-+import io.papermc.paper.chat.ChatFormatter;
-+import java.util.HashSet;
 +import java.util.Set;
 +import io.papermc.paper.chat.ChatRenderer;
 +import net.kyori.adventure.audience.Audience;
-+import net.kyori.adventure.audience.ForwardingAudience;
 +import net.kyori.adventure.text.Component;
-+import org.bukkit.Bukkit;
 +import org.bukkit.entity.Player;
 +import org.bukkit.event.Cancellable;
 +import org.bukkit.event.player.PlayerEvent;
-+import org.checkerframework.checker.nullness.qual.NonNull;
-+import org.checkerframework.checker.nullness.qual.Nullable;
 +import org.jetbrains.annotations.NotNull;
 +
 +import static java.util.Objects.requireNonNull;
@@ -235,90 +158,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 + */
 +public abstract class AbstractChatEvent extends PlayerEvent implements Cancellable {
 +    private final Set<Audience> viewers;
-+    @Deprecated private final Set<Player> recipients;
-+    private boolean cancelled = false;
-+    private ChatRenderer renderer;
-+    @Deprecated private @Nullable ChatComposer composer;
-+    @Deprecated private @Nullable ChatFormatter formatter;
 +    private final Component originalMessage;
++    private ChatRenderer renderer;
 +    private Component message;
++    private boolean cancelled = false;
 +
 +    AbstractChatEvent(final boolean async, final @NotNull Player player, final @NotNull Set<Audience> viewers, final @NotNull ChatRenderer renderer, final @NotNull Component message, final @NotNull Component originalMessage) {
 +        super(player, async);
 +        this.viewers = viewers;
-+        this.recipients = new HashSet<>(Bukkit.getOnlinePlayers());
 +        this.renderer = renderer;
 +        this.message = message;
 +        this.originalMessage = originalMessage;
-+    }
-+
-+    /**
-+     * @deprecated for removal with 1.17
-+     */
-+    @Deprecated
-+    AbstractChatEvent(final boolean async, final @NotNull Player player, final @NotNull Set<Audience> viewers, final @NotNull ChatRenderer renderer, final @NotNull Component message) {
-+        super(player, async);
-+        this.viewers = viewers;
-+        this.recipients = new HashSet<>(Bukkit.getOnlinePlayers());
-+        this.renderer = renderer;
-+        this.message = message;
-+        this.originalMessage = message;
-+    }
-+
-+    /**
-+     * @deprecated for removal with 1.17
-+     */
-+    @Deprecated
-+    AbstractChatEvent(final boolean async, final @NotNull Player player, final @NotNull Set<Player> recipients, final @NotNull Set<Audience> viewers, final @NotNull ChatRenderer renderer, final @NotNull Component message, final @NotNull Component originalMessage) {
-+        super(player, async);
-+        this.recipients = recipients;
-+        this.viewers = viewers;
-+        this.renderer = renderer;
-+        this.message = message;
-+        this.originalMessage = originalMessage;
-+    }
-+
-+    /**
-+     * @deprecated for removal with 1.17
-+     */
-+    @Deprecated
-+    AbstractChatEvent(final boolean async, final @NotNull Player player, final @NotNull Set<Player> recipients, final @NotNull Set<Audience> viewers, final @NotNull ChatRenderer renderer, final @NotNull Component message) {
-+        super(player, async);
-+        this.recipients = recipients;
-+        this.viewers = viewers;
-+        this.renderer = renderer;
-+        this.message = message;
-+        this.originalMessage = message;
-+    }
-+
-+    /**
-+     * @deprecated for removal with 1.17
-+     */
-+    @Deprecated
-+    AbstractChatEvent(final boolean async, final @NotNull Player player, final @NotNull Set<Player> recipients, final @NotNull ChatComposer composer, final @NotNull Component message) {
-+        super(player, async);
-+        this.recipients = recipients;
-+        final Set<Audience> audiences = new HashSet<>(recipients);
-+        audiences.add(Bukkit.getConsoleSender());
-+        this.viewers = audiences;
-+        this.composer = composer;
-+        this.message = message;
-+        this.originalMessage = message;
-+    }
-+
-+    /**
-+     * @deprecated for removal with 1.17
-+     */
-+    @Deprecated
-+    AbstractChatEvent(final boolean async, final @NotNull Player player, final @NotNull Set<Player> recipients, final @NotNull ChatFormatter formatter, final @NotNull Component message) {
-+        super(player, async);
-+        this.recipients = recipients;
-+        final Set<Audience> audiences = new HashSet<>(recipients);
-+        audiences.add(Bukkit.getConsoleSender());
-+        this.viewers = audiences;
-+        this.formatter = formatter;
-+        this.message = message;
-+        this.originalMessage = message;
 +    }
 +
 +    /**
@@ -340,26 +190,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +
 +    /**
-+     * Gets a set of recipients that this chat message will be displayed to.
-+     *
-+     * <p>The set returned is not guaranteed to be mutable and may auto-populate
-+     * on access. Any listener accessing the returned set should be aware that
-+     * it may reduce performance for a lazy set implementation.</p>
-+     *
-+     * <p>Listeners should be aware that modifying the list may throw {@link
-+     * UnsupportedOperationException} if the event caller provides an
-+     * unmodifiable set.</p>
-+     *
-+     * @return a set of players who will receive the chat message
-+     * @deprecated for removal with 1.17, in favor of {@link #viewers()}
-+     */
-+    @Deprecated
-+    @NotNull
-+    public final Set<Player> recipients() {
-+        return this.recipients;
-+    }
-+
-+    /**
 +     * Sets the chat renderer.
 +     *
 +     * @param renderer the chat renderer
@@ -367,8 +197,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     */
 +    public final void renderer(final @NotNull ChatRenderer renderer) {
 +        this.renderer = requireNonNull(renderer, "renderer");
-+        this.formatter = null;
-+        this.composer = null;
 +    }
 +
 +    /**
@@ -378,83 +206,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     */
 +    @NotNull
 +    public final ChatRenderer renderer() {
-+        if(this.renderer == null) {
-+            if(this.composer != null) {
-+                this.renderer = ChatRenderer.viewerUnaware((source, displayName, message) -> this.composer.composeChat(source, source.displayName(), message));
-+            } else {
-+                requireNonNull(this.formatter, "renderer, composer, and formatter");
-+                this.renderer = ChatRenderer.viewerUnaware((source, displayName, message) -> this.formatter.chat(source.displayName(), message));
-+            }
-+        }
 +        return this.renderer;
-+    }
-+
-+    /**
-+     * Gets the chat composer.
-+     *
-+     * @return the chat composer
-+     * @deprecated for removal with 1.17, in favour of {@link #renderer()}
-+     */
-+    @Deprecated
-+    @NotNull
-+    public final ChatComposer composer() {
-+        if(this.composer == null) {
-+            if(this.renderer != null) {
-+                this.composer = (source, displayName, message) -> this.renderer.render(source, displayName, message, this.legacyForwardingAudience());
-+            } else {
-+                requireNonNull(this.formatter, "renderer, composer, and formatter");
-+                this.composer = (source, displayName, message) -> this.formatter.chat(displayName, message);
-+            }
-+        }
-+        return this.composer;
-+    }
-+
-+    /**
-+     * Sets the chat composer.
-+     *
-+     * @param composer the chat composer
-+     * @throws NullPointerException if {@code composer} is {@code null}
-+     * @deprecated for removal with 1.17, in favour of {@link #renderer(ChatRenderer)}
-+     */
-+    @Deprecated
-+    public final void composer(final @NotNull ChatComposer composer) {
-+        this.composer = requireNonNull(composer, "composer");
-+        this.formatter = null;
-+        this.renderer = null;
-+    }
-+
-+    /**
-+     * Gets the chat formatter.
-+     *
-+     * @return the chat formatter
-+     * @deprecated for removal with 1.17, in favour of {@link #renderer()}
-+     */
-+    @Deprecated
-+    @NotNull
-+    public final ChatFormatter formatter() {
-+        if(this.formatter == null) {
-+            if(this.renderer != null) {
-+                this.formatter = (displayName, message) -> this.renderer.render(this.player, displayName, message, this.legacyForwardingAudience());
-+            } else {
-+                requireNonNull(this.composer, "renderer, composer, and formatter");
-+                this.formatter = (displayName, message) -> this.composer.composeChat(this.player, displayName, message);
-+            }
-+        }
-+        return this.formatter;
-+    }
-+
-+    /**
-+     * Sets the chat formatter.
-+     *
-+     * @param formatter the chat formatter
-+     * @throws NullPointerException if {@code formatter} is {@code null}
-+     * @deprecated for removal with 1.17, in favour of {@link #renderer(ChatRenderer)}
-+     */
-+    @Deprecated
-+    public final void formatter(final @NotNull ChatFormatter formatter) {
-+        this.formatter = requireNonNull(formatter, "formatter");
-+        this.composer = null;
-+        this.renderer = null;
 +    }
 +
 +    /**
@@ -499,15 +251,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    public final void setCancelled(final boolean cancelled) {
 +        this.cancelled = cancelled;
 +    }
-+
-+    private @NotNull Audience legacyForwardingAudience() {
-+        return new ForwardingAudience() {
-+            @Override
-+            public @NonNull Iterable<? extends Audience> audiences() {
-+                return AbstractChatEvent.this.viewers;
-+            }
-+        };
-+    }
 +}
 diff --git a/src/main/java/io/papermc/paper/event/player/AsyncChatEvent.java b/src/main/java/io/papermc/paper/event/player/AsyncChatEvent.java
 new file mode 100644
@@ -517,8 +260,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@
 +package io.papermc.paper.event.player;
 +
-+import io.papermc.paper.chat.ChatComposer;
-+import io.papermc.paper.chat.ChatFormatter;
 +import java.util.Set;
 +import io.papermc.paper.chat.ChatRenderer;
 +import net.kyori.adventure.audience.Audience;
@@ -535,46 +276,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    public AsyncChatEvent(final boolean async, final @NotNull Player player, final @NotNull Set<Audience> viewers, final @NotNull ChatRenderer renderer, final @NotNull Component message, final @NotNull Component originalMessage) {
 +        super(async, player, viewers, renderer, message, originalMessage);
-+    }
-+
-+    /**
-+     * @deprecated for removal with 1.17, use {@link #AsyncChatEvent(boolean, Player, Set, ChatRenderer, Component, Component)}
-+     */
-+    @Deprecated
-+    public AsyncChatEvent(final boolean async, final @NotNull Player player, final @NotNull Set<Audience> viewers, final @NotNull ChatRenderer renderer, final @NotNull Component message) {
-+        super(async, player, viewers, renderer, message);
-+    }
-+
-+    /**
-+     * @deprecated for removal with 1.17, use {@link #AsyncChatEvent(boolean, Player, Set, ChatRenderer, Component, Component)}
-+     */
-+    @Deprecated
-+    public AsyncChatEvent(final boolean async, final @NotNull Player player, final @NotNull Set<Player> recipients, final @NotNull Set<Audience> viewers, final @NotNull ChatRenderer renderer, final @NotNull Component message, final @NotNull Component originalMessage) {
-+        super(async, player, recipients, viewers, renderer, message, originalMessage);
-+    }
-+
-+    /**
-+     * @deprecated for removal with 1.17, use {@link #AsyncChatEvent(boolean, Player, Set, ChatRenderer, Component, Component)}
-+     */
-+    @Deprecated
-+    public AsyncChatEvent(final boolean async, final @NotNull Player player, final @NotNull Set<Player> recipients, final @NotNull Set<Audience> viewers, final @NotNull ChatRenderer renderer, final @NotNull Component message) {
-+        super(async, player, recipients, viewers, renderer, message);
-+    }
-+
-+    /**
-+     * @deprecated for removal with 1.17, use {@link #AsyncChatEvent(boolean, Player, Set, ChatRenderer, Component, Component)}
-+     */
-+    @Deprecated
-+    public AsyncChatEvent(final boolean async, final @NotNull Player player, final @NotNull Set<Player> recipients, final @NotNull ChatComposer composer, final @NotNull Component message) {
-+        super(async, player, recipients, composer, message);
-+    }
-+
-+    /**
-+     * @deprecated for removal with 1.17, use {@link #AsyncChatEvent(boolean, Player, Set, ChatRenderer, Component, Component)}
-+     */
-+    @Deprecated
-+    public AsyncChatEvent(final boolean async, final @NotNull Player player, final @NotNull Set<Player> recipients, final @NotNull ChatFormatter formatter, final @NotNull Component message) {
-+        super(async, player, recipients, formatter, message);
 +    }
 +
 +    @NotNull
@@ -596,8 +297,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@
 +package io.papermc.paper.event.player;
 +
-+import io.papermc.paper.chat.ChatComposer;
-+import io.papermc.paper.chat.ChatFormatter;
 +import java.util.Set;
 +import io.papermc.paper.chat.ChatRenderer;
 +import net.kyori.adventure.audience.Audience;
@@ -619,38 +318,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    public ChatEvent(final @NotNull Player player, final @NotNull Set<Audience> viewers, final @NotNull ChatRenderer renderer, final @NotNull Component message, final @NotNull Component originalMessage) {
 +        super(false, player, viewers, renderer, message, originalMessage);
-+    }
-+
-+    /**
-+     * @deprecated for removal with 1.17, use {@link #ChatEvent(Player, Set, ChatRenderer, Component, Component)}
-+     */
-+    @Deprecated
-+    public ChatEvent(final @NotNull Player player, final @NotNull Set<Audience> viewers, final @NotNull ChatRenderer renderer, final @NotNull Component message) {
-+        super(false, player, viewers, renderer, message);
-+    }
-+
-+    /**
-+     * @deprecated for removal with 1.17, use {@link #ChatEvent(Player, Set, ChatRenderer, Component, Component)}
-+     */
-+    @Deprecated
-+    public ChatEvent(final @NotNull Player player, final @NotNull Set<Player> recipients, final @NotNull Set<Audience> viewers, final @NotNull ChatRenderer renderer, final @NotNull Component message, final @NotNull Component originalMessage) {
-+        super(false, player, recipients, viewers, renderer, message, originalMessage);
-+    }
-+
-+    /**
-+     * @deprecated for removal with 1.17, use {@link #ChatEvent(Player, Set, ChatRenderer, Component, Component)}
-+     */
-+    @Deprecated
-+    public ChatEvent(final @NotNull Player player, final @NotNull Set<Player> recipients, final @NotNull ChatComposer composer, final @NotNull Component message) {
-+        super(false, player, recipients, composer, message);
-+    }
-+
-+    /**
-+     * @deprecated for removal with 1.17, use {@link #ChatEvent(Player, Set, ChatRenderer, Component, Component)}
-+     */
-+    @Deprecated
-+    public ChatEvent(final @NotNull Player player, final @NotNull Set<Player> recipients, final @NotNull ChatFormatter formatter, final @NotNull Component message) {
-+        super(false, player, recipients, formatter, message);
 +    }
 +
 +    @NotNull
