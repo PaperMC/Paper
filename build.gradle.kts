@@ -6,6 +6,7 @@ plugins {
 
 subprojects {
     apply(plugin = "java")
+    apply(plugin = "maven-publish")
 
     java {
         toolchain {
@@ -16,6 +17,16 @@ subprojects {
     tasks.withType<JavaCompile>().configureEach {
         options.encoding = "UTF-8"
         options.release.set(16)
+    }
+
+    configure<PublishingExtension> {
+        repositories {
+            maven {
+                name = "paperSnapshots"
+                url = uri("https://papermc.io/repo/repository/maven-snapshots/")
+                credentials(PasswordCredentials::class)
+            }
+        }
     }
 
     if (name == "Paper-MojangAPI") {
@@ -72,5 +83,11 @@ paperweight {
 
         additionalSpigotMemberMappings.set(file("build-data/additional-spigot-member-mappings.csrg"))
         craftBukkitPatchPatchesDir.set(file("build-data/craftbukkit-patch-patches"))
+    }
+}
+
+tasks.register("printMinecraftVersion") {
+    doLast {
+        println(providers.gradleProperty("mcVersion").forUseAtConfigurationTime().get().trim())
     }
 }
