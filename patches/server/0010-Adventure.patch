@@ -110,16 +110,17 @@ index 0000000000000000000000000000000000000000..e597a90def72c5903382d7169fb7a2fb
 +}
 diff --git a/src/main/java/io/papermc/paper/adventure/ChatProcessor.java b/src/main/java/io/papermc/paper/adventure/ChatProcessor.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..a29b6aaafd529e56a83dd96c32211f21e4aad348
+index 0000000000000000000000000000000000000000..4e9e0a39b876c900fdee1343d04a7046f5b3f80e
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/adventure/ChatProcessor.java
-@@ -0,0 +1,214 @@
+@@ -0,0 +1,224 @@
 +package io.papermc.paper.adventure;
 +
 +import io.papermc.paper.chat.ChatRenderer;
 +import io.papermc.paper.event.player.AbstractChatEvent;
 +import io.papermc.paper.event.player.AsyncChatEvent;
 +import io.papermc.paper.event.player.ChatEvent;
++import java.util.HashSet;
 +import java.util.Set;
 +import java.util.concurrent.ExecutionException;
 +import java.util.function.Consumer;
@@ -178,7 +179,7 @@ index 0000000000000000000000000000000000000000..a29b6aaafd529e56a83dd96c32211f21
 +            event -> {
 +                this.processModern(
 +                    legacyRenderer(event.getFormat()),
-+                    event.getRecipients(),
++                    this.viewersFromLegacy(event.getRecipients()),
 +                    PaperAdventure.LEGACY_SECTION_UXRC.deserialize(event.getMessage()),
 +                    event.isCancelled()
 +                );
@@ -187,7 +188,7 @@ index 0000000000000000000000000000000000000000..a29b6aaafd529e56a83dd96c32211f21
 +            event -> {
 +                this.processModern(
 +                    legacyRenderer(event.getFormat()),
-+                    event.getRecipients(),
++                    this.viewersFromLegacy(event.getRecipients()),
 +                    PaperAdventure.LEGACY_SECTION_UXRC.deserialize(event.getMessage()),
 +                    event.isCancelled()
 +                );
@@ -196,12 +197,21 @@ index 0000000000000000000000000000000000000000..a29b6aaafd529e56a83dd96c32211f21
 +            () -> {
 +                this.processModern(
 +                    ChatRenderer.defaultRenderer(),
-+                    new LazyPlayerSet(this.server),
++                    new LazyChatAudienceSet(this.server),
 +                    Component.text(this.message).replaceText(URL_REPLACEMENT_CONFIG),
 +                    false
 +                );
 +            }
 +        );
++    }
++
++    private Set<Audience> viewersFromLegacy(final Set<Player> recipients) {
++        if (recipients instanceof LazyPlayerSet lazyPlayerSet && lazyPlayerSet.isLazy()) {
++            return new LazyChatAudienceSet(this.server);
++        }
++        final HashSet<Audience> viewers = new HashSet<>(recipients);
++        viewers.add(this.server.console);
++        return viewers;
 +    }
 +
 +    @SuppressWarnings("deprecation")
@@ -235,8 +245,8 @@ index 0000000000000000000000000000000000000000..a29b6aaafd529e56a83dd96c32211f21
 +        }
 +    }
 +
-+    private void processModern(final ChatRenderer renderer, final Set<Player> recipients, final Component message, final boolean cancelled) {
-+        final AsyncChatEvent ae = this.createAsync(renderer, recipients, new LazyChatAudienceSet(), message);
++    private void processModern(final ChatRenderer renderer, final Set<Audience> viewers, final Component message, final boolean cancelled) {
++        final AsyncChatEvent ae = this.createAsync(renderer, viewers, message);
 +        ae.setCancelled(cancelled); // propagate cancelled state
 +        post(ae);
 +        final boolean listenersOnSyncEvent = anyListeners(ChatEvent.getHandlerList());
@@ -251,7 +261,7 @@ index 0000000000000000000000000000000000000000..a29b6aaafd529e56a83dd96c32211f21
 +        this.queueIfAsyncOrRunImmediately(new Waitable<Void>() {
 +            @Override
 +            protected Void evaluate() {
-+                final ChatEvent se = ChatProcessor.this.createSync(ae.renderer(), ae.recipients(), ae.viewers(), ae.message());
++                final ChatEvent se = ChatProcessor.this.createSync(ae.renderer(), ae.viewers(), ae.message());
 +                se.setCancelled(ae.isCancelled()); // propagate cancelled state
 +                post(se);
 +                ChatProcessor.this.complete(se);
@@ -271,26 +281,26 @@ index 0000000000000000000000000000000000000000..a29b6aaafd529e56a83dd96c32211f21
 +        final ChatRenderer renderer = event.renderer();
 +
 +        final Set<Audience> viewers = event.viewers();
-+        final Set<Player> recipients = event.recipients();
-+        if (viewers instanceof LazyChatAudienceSet && recipients instanceof LazyPlayerSet &&
-+            (!((LazyChatAudienceSet) viewers).isLazy() || ((LazyPlayerSet) recipients).isLazy())) {
-+            for (final Audience viewer : viewers) {
-+                viewer.sendMessage(player, renderer.render(player, displayName, message, viewer), MessageType.CHAT);
++
++        if (viewers instanceof LazyChatAudienceSet lazyAudienceSet && lazyAudienceSet.isLazy()) {
++            this.server.console.sendMessage(player, renderer.render(player, displayName, message, this.server.console), MessageType.CHAT);
++            for (final ServerPlayer viewer : this.server.getPlayerList().getPlayers()) {
++                final Player bukkit = viewer.getBukkitEntity();
++                bukkit.sendMessage(player, renderer.render(player, displayName, message, bukkit), MessageType.CHAT);
 +            }
 +        } else {
-+            this.server.console.sendMessage(player, renderer.render(player, displayName, message, this.server.console), MessageType.CHAT);
-+            for (final Player recipient : recipients) {
-+                recipient.sendMessage(player, renderer.render(player, displayName, message, recipient), MessageType.CHAT);
++            for (final Audience viewer : viewers) {
++                viewer.sendMessage(player, renderer.render(player, displayName, message, viewer), MessageType.CHAT);
 +            }
 +        }
 +    }
 +
-+    private AsyncChatEvent createAsync(final ChatRenderer renderer, final Set<Player> recipients, final Set<Audience> viewers, final Component message) {
-+        return new AsyncChatEvent(this.async, this.player.getBukkitEntity(), recipients, viewers, renderer, message, this.originalMessage);
++    private AsyncChatEvent createAsync(final ChatRenderer renderer, final Set<Audience> viewers, final Component message) {
++        return new AsyncChatEvent(this.async, this.player.getBukkitEntity(), viewers, renderer, message, this.originalMessage);
 +    }
 +
-+    private ChatEvent createSync(final ChatRenderer renderer, final Set<Player> recipients, final Set<Audience> viewers, final Component message) {
-+        return new ChatEvent(this.player.getBukkitEntity(), recipients, viewers, renderer, message, this.originalMessage);
++    private ChatEvent createSync(final ChatRenderer renderer, final Set<Audience> viewers, final Component message) {
++        return new ChatEvent(this.player.getBukkitEntity(), viewers, renderer, message, this.originalMessage);
 +    }
 +
 +    private static String legacyDisplayName(final CraftPlayer player) {
@@ -358,12 +368,14 @@ index 0000000000000000000000000000000000000000..bfaf5d3c5aae8a587c2b11d90089c588
 +}
 diff --git a/src/main/java/io/papermc/paper/adventure/LazyChatAudienceSet.java b/src/main/java/io/papermc/paper/adventure/LazyChatAudienceSet.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..10f08e2b73610ab06928d1f63348920fef8e91fa
+index 0000000000000000000000000000000000000000..2fd6c3e65354071af71c7d8ebb97b559b6e105ce
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/adventure/LazyChatAudienceSet.java
-@@ -0,0 +1,21 @@
+@@ -0,0 +1,26 @@
 +package io.papermc.paper.adventure;
 +
++import java.util.HashSet;
++import java.util.Set;
 +import net.kyori.adventure.audience.Audience;
 +import net.minecraft.server.MinecraftServer;
 +import org.bukkit.Bukkit;
@@ -371,13 +383,16 @@ index 0000000000000000000000000000000000000000..10f08e2b73610ab06928d1f63348920f
 +import org.bukkit.craftbukkit.util.LazyPlayerSet;
 +import org.bukkit.entity.Player;
 +
-+import java.util.HashSet;
-+import java.util.Set;
-+
 +final class LazyChatAudienceSet extends LazyHashSet<Audience> {
++    private final MinecraftServer server;
++
++    public LazyChatAudienceSet(final MinecraftServer server) {
++        this.server = server;
++    }
++
 +    @Override
 +    protected Set<Audience> makeReference() {
-+        final Set<Player> playerSet = LazyPlayerSet.makePlayerSet(MinecraftServer.getServer());
++        final Set<Player> playerSet = LazyPlayerSet.makePlayerSet(this.server);
 +        final HashSet<Audience> audiences = new HashSet<>(playerSet);
 +        audiences.add(Bukkit.getConsoleSender());
 +        return audiences;
@@ -1374,7 +1389,7 @@ index 8a77e28c9b12a110c721943aca545270ef8bbaef..8b082713c1bd41ff9d26ce45c949514a
              }
              // CraftBukkit end
 diff --git a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
-index 3d1f20a5caf8b4665ea0208af755911c34081323..0df683b7503d4c34fc8af33b82a4440383702043 100644
+index e61752f3d00c6e2324745b92c880ee494f366765..75118458840caadfa82aa0fa2efd8a753b585ef2 100644
 --- a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
 @@ -36,6 +36,7 @@ import net.minecraft.world.entity.player.Player;
