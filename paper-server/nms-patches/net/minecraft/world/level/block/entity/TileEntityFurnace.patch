@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/block/entity/TileEntityFurnace.java
 +++ b/net/minecraft/world/level/block/entity/TileEntityFurnace.java
-@@ -43,6 +43,17 @@
+@@ -43,6 +43,18 @@
  import net.minecraft.world.level.block.state.IBlockData;
  import net.minecraft.world.phys.Vec3D;
  
@@ -10,6 +10,7 @@
 +import org.bukkit.craftbukkit.inventory.CraftItemStack;
 +import org.bukkit.entity.HumanEntity;
 +import org.bukkit.entity.Player;
++import org.bukkit.event.block.BlockExpEvent;
 +import org.bukkit.event.inventory.FurnaceBurnEvent;
 +import org.bukkit.event.inventory.FurnaceExtractEvent;
 +import org.bukkit.event.inventory.FurnaceSmeltEvent;
@@ -18,7 +19,7 @@
  public abstract class TileEntityFurnace extends TileEntityContainer implements IWorldInventory, RecipeHolder, AutoRecipeOutput {
  
      protected static final int SLOT_INPUT = 0;
-@@ -182,6 +193,36 @@
+@@ -182,6 +194,36 @@
          return map;
      }
  
@@ -55,7 +56,7 @@
      private static boolean b(Item item) {
          return TagsItem.NON_FLAMMABLE_WOOD.isTagged(item);
      }
-@@ -266,13 +307,24 @@
+@@ -266,13 +308,24 @@
                  tileentityfurnace.cookingProgress = MathHelper.clamp(tileentityfurnace.cookingProgress - 2, 0, tileentityfurnace.cookingTotalTime);
              }
          } else {
@@ -83,7 +84,7 @@
                      flag1 = true;
                      if (!itemstack.isEmpty()) {
                          Item item = itemstack.getItem();
-@@ -292,7 +344,7 @@
+@@ -292,7 +345,7 @@
                  if (tileentityfurnace.cookingProgress == tileentityfurnace.cookingTotalTime) {
                      tileentityfurnace.cookingProgress = 0;
                      tileentityfurnace.cookingTotalTime = getRecipeCookingTime(world, tileentityfurnace.recipeType, tileentityfurnace);
@@ -92,7 +93,7 @@
                          tileentityfurnace.setRecipeUsed(irecipe);
                      }
  
-@@ -331,17 +383,44 @@
+@@ -331,17 +384,44 @@
          }
      }
  
@@ -138,7 +139,7 @@
  
              if (itemstack.a(Blocks.WET_SPONGE.getItem()) && !((ItemStack) nonnulllist.get(1)).isEmpty() && ((ItemStack) nonnulllist.get(1)).a(Items.BUCKET)) {
                  nonnulllist.set(1, new ItemStack(Items.WATER_BUCKET));
-@@ -365,7 +444,7 @@
+@@ -365,7 +445,7 @@
      }
  
      private static int getRecipeCookingTime(World world, Recipes<? extends RecipeCooking> recipes, IInventory iinventory) {
@@ -147,7 +148,7 @@
      }
  
      public static boolean isFuel(ItemStack itemstack) {
-@@ -484,14 +563,20 @@
+@@ -484,14 +564,20 @@
      @Override
      public void awardUsedRecipes(EntityHuman entityhuman) {}
  
@@ -170,7 +171,7 @@
          List<IRecipe<?>> list = Lists.newArrayList();
          ObjectIterator objectiterator = this.recipesUsed.object2IntEntrySet().iterator();
  
-@@ -500,14 +585,14 @@
+@@ -500,14 +586,14 @@
  
              worldserver.getCraftingManager().getRecipe((MinecraftKey) entry.getKey()).ifPresent((irecipe) -> {
                  list.add(irecipe);
@@ -187,16 +188,19 @@
          int j = MathHelper.d((float) i * f);
          float f1 = MathHelper.h((float) i * f);
  
-@@ -515,6 +600,14 @@
+@@ -515,6 +601,17 @@
              ++j;
          }
  
-+        // CraftBukkit start - fire FurnaceExtractEvent
++        // CraftBukkit start - fire FurnaceExtractEvent / BlockExpEvent
++        BlockExpEvent event;
 +        if (amount != 0) {
-+            FurnaceExtractEvent event = new FurnaceExtractEvent((Player) entityhuman.getBukkitEntity(), CraftBlock.at(worldserver, blockposition), org.bukkit.craftbukkit.util.CraftMagicNumbers.getMaterial(itemstack.getItem()), amount, j);
-+            worldserver.getCraftServer().getPluginManager().callEvent(event);
-+            j = event.getExpToDrop();
++            event = new FurnaceExtractEvent((Player) entityhuman.getBukkitEntity(), CraftBlock.at(worldserver, blockposition), org.bukkit.craftbukkit.util.CraftMagicNumbers.getMaterial(itemstack.getItem()), amount, j);
++        } else {
++            event = new BlockExpEvent(CraftBlock.at(worldserver, blockposition), j);
 +        }
++        worldserver.getCraftServer().getPluginManager().callEvent(event);
++        j = event.getExpToDrop();
 +        // CraftBukkit end
 +
          EntityExperienceOrb.a(worldserver, vec3d, j);
