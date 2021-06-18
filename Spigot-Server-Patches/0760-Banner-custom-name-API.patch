@@ -17,10 +17,23 @@ index 45958ffedca64e08e347ae65033700c0d798beb5..d636ea733296ac2fab1e4d1ce53ee6fe
          this.a = ichatbasecomponent;
      }
 diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftBanner.java b/src/main/java/org/bukkit/craftbukkit/block/CraftBanner.java
-index 870ae6e7a913945804d6d2919cb1710af3316449..d9a6408dd50bcbdd7d08c7f1176d290c494603f9 100644
+index 870ae6e7a913945804d6d2919cb1710af3316449..968edfa94da754792b6a2e72abce80c0520fa570 100644
 --- a/src/main/java/org/bukkit/craftbukkit/block/CraftBanner.java
 +++ b/src/main/java/org/bukkit/craftbukkit/block/CraftBanner.java
-@@ -19,6 +19,7 @@ public class CraftBanner extends CraftBlockEntityState<TileEntityBanner> impleme
+@@ -8,17 +8,20 @@ import net.minecraft.nbt.NBTTagList;
+ import net.minecraft.world.item.EnumColor;
+ import net.minecraft.world.level.block.BlockBannerAbstract;
+ import net.minecraft.world.level.block.entity.TileEntityBanner;
++import net.minecraft.world.level.block.entity.TileEntityBeacon;
+ import org.bukkit.DyeColor;
+ import org.bukkit.Material;
+ import org.bukkit.block.Banner;
+ import org.bukkit.block.Block;
+ import org.bukkit.block.banner.Pattern;
+ import org.bukkit.block.banner.PatternType;
++import org.bukkit.craftbukkit.util.CraftChatMessage;
+ 
+ public class CraftBanner extends CraftBlockEntityState<TileEntityBanner> implements Banner {
  
      private DyeColor base;
      private List<Pattern> patterns;
@@ -28,7 +41,7 @@ index 870ae6e7a913945804d6d2919cb1710af3316449..d9a6408dd50bcbdd7d08c7f1176d290c
  
      public CraftBanner(final Block block) {
          super(block, TileEntityBanner.class);
-@@ -34,6 +35,7 @@ public class CraftBanner extends CraftBlockEntityState<TileEntityBanner> impleme
+@@ -34,6 +37,7 @@ public class CraftBanner extends CraftBlockEntityState<TileEntityBanner> impleme
  
          base = DyeColor.getByWoolData((byte) ((BlockBannerAbstract) this.data.getBlock()).getColor().getColorIndex());
          patterns = new ArrayList<Pattern>();
@@ -36,7 +49,7 @@ index 870ae6e7a913945804d6d2919cb1710af3316449..d9a6408dd50bcbdd7d08c7f1176d290c
  
          if (banner.patterns != null) {
              for (int i = 0; i < banner.patterns.size(); i++) {
-@@ -88,12 +90,27 @@ public class CraftBanner extends CraftBlockEntityState<TileEntityBanner> impleme
+@@ -88,12 +92,32 @@ public class CraftBanner extends CraftBlockEntityState<TileEntityBanner> impleme
      public int numberOfPatterns() {
          return patterns.size();
      }
@@ -46,12 +59,17 @@ index 870ae6e7a913945804d6d2919cb1710af3316449..d9a6408dd50bcbdd7d08c7f1176d290c
 +        return this.customName;
 +    }
 +    @Override
-+    public boolean hasCustomName() {
-+        return this.customName != null;
-+    }
-+    @Override
 +    public void customName(net.kyori.adventure.text.Component name) {
 +        this.customName = name;
++    }
++    @Override
++    public String getCustomName() {
++        TileEntityBanner banner = this.getSnapshot();
++        return banner.getCustomName() != null ? CraftChatMessage.fromComponent(banner.getCustomName()) : null;
++    }
++    @Override
++    public void setCustomName(String name) {
++        this.getSnapshot().setCustomName(CraftChatMessage.fromStringOrNull(name));
 +    }
 +    // Paper end
  
@@ -60,7 +78,7 @@ index 870ae6e7a913945804d6d2919cb1710af3316449..d9a6408dd50bcbdd7d08c7f1176d290c
          super.applyTo(banner);
  
          banner.color = EnumColor.fromColorIndex(base.getWoolData());
-+        banner.setCustomName(this.hasCustomName() ? io.papermc.paper.adventure.PaperAdventure.asVanilla(this.customName()) : null); // Paper - Banner custom name API
++        banner.setCustomName(this.customName() != null ? io.papermc.paper.adventure.PaperAdventure.asVanilla(this.customName()) : null); // Paper - Banner custom name API
  
          NBTTagList newPatterns = new NBTTagList();
  
