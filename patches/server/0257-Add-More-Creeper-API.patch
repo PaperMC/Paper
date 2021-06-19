@@ -1,0 +1,51 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: BillyGalbreath <Blake.Galbreath@GMail.com>
+Date: Fri, 24 Aug 2018 11:50:26 -0500
+Subject: [PATCH] Add More Creeper API
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Creeper.java b/src/main/java/net/minecraft/world/entity/monster/Creeper.java
+index 3bbf6c9bfbb79fd4242cf66d7ace1d8f87404636..e8c36e8541f041a0d72a86f49ced2a3ce1549be0 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Creeper.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Creeper.java
+@@ -309,7 +309,18 @@ public class Creeper extends Monster implements PowerableMob {
+     }
+ 
+     public void ignite() {
+-        this.entityData.set(Creeper.DATA_IS_IGNITED, true);
++        // Paper start
++        setIgnited(true);
++    }
++
++    public void setIgnited(boolean ignited) {
++        if (isIgnited() != ignited) {
++            com.destroystokyo.paper.event.entity.CreeperIgniteEvent event = new com.destroystokyo.paper.event.entity.CreeperIgniteEvent((org.bukkit.entity.Creeper) getBukkitEntity(), ignited);
++            if (event.callEvent()) {
++                this.entityData.set(Creeper.DATA_IS_IGNITED, event.isIgnited());
++            }
++        }
++        // Paper end
+     }
+ 
+     public boolean canDropMobsSkull() {
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftCreeper.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftCreeper.java
+index 9b0079eac44b7b4e2ff45be92244ae1b81c46241..0cb5bb2d571a4b618515bc6d80935be90cbd26a8 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftCreeper.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftCreeper.java
+@@ -100,4 +100,16 @@ public class CraftCreeper extends CraftMonster implements Creeper {
+     public EntityType getType() {
+         return EntityType.CREEPER;
+     }
++
++    // Paper start
++    @Override
++    public void setIgnited(boolean ignited) {
++        getHandle().setIgnited(ignited);
++    }
++
++    @Override
++    public boolean isIgnited() {
++        return getHandle().isIgnited();
++    }
++    // Paper end
+ }

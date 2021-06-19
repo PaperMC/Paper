@@ -1,0 +1,62 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sun, 27 Sep 2015 01:18:02 -0400
+Subject: [PATCH] handle NaN health/absorb values and repair bad data
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+index 89db2afd198366ab94c9c074890aa668d3771a79..83eaa3c6581c1a3f588278124fed4c811e81e53c 100644
+--- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
++++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+@@ -764,7 +764,13 @@ public abstract class LivingEntity extends Entity {
+ 
+     @Override
+     public void readAdditionalSaveData(CompoundTag nbt) {
+-        this.setAbsorptionAmount(nbt.getFloat("AbsorptionAmount"));
++        // Paper start - jvm keeps optimizing the setter
++        float absorptionAmount = nbt.getFloat("AbsorptionAmount");
++        if (Float.isNaN(absorptionAmount)) {
++            absorptionAmount = 0;
++        }
++        this.setAbsorptionAmount(absorptionAmount);
++        // Paper end
+         if (nbt.contains("Attributes", 9) && this.level != null && !this.level.isClientSide) {
+             this.getAttributes().load(nbt.getList("Attributes", 10));
+         }
+@@ -1251,6 +1257,10 @@ public abstract class LivingEntity extends Entity {
+     }
+ 
+     public void setHealth(float health) {
++        // Paper start
++        if (Float.isNaN(health)) { health = getMaxHealth(); if (this.valid) {
++            System.err.println("[NAN-HEALTH] " + getScoreboardName() + " had NaN health set");
++        } } // Paper end
+         // CraftBukkit start - Handle scaled health
+         if (this instanceof ServerPlayer) {
+             org.bukkit.craftbukkit.entity.CraftPlayer player = ((ServerPlayer) this).getBukkitEntity();
+@@ -3395,7 +3405,7 @@ public abstract class LivingEntity extends Entity {
+     }
+ 
+     public void setAbsorptionAmount(float amount) {
+-        if (amount < 0.0F) {
++        if (amount < 0.0F || Float.isNaN(amount)) { // Paper
+             amount = 0.0F;
+         }
+ 
+@@ -4000,3 +4010,4 @@ public abstract class LivingEntity extends Entity {
+         this.setDeltaMovement((double) ((float) packet.getXd() / 8000.0F), (double) ((float) packet.getYd() / 8000.0F), (double) ((float) packet.getZd() / 8000.0F));
+     }
+ }
++
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index 03b2fd38b31de911ef107006a3d10c5534989247..2dab55e7d807ae8414fbb1f4446df2f38783cfb4 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -1702,6 +1702,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+     }
+ 
+     public void setRealHealth(double health) {
++        if (Double.isNaN(health)) {return;} // Paper
+         this.health = health;
+     }
+ 

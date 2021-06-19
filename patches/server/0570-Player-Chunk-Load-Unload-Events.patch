@@ -1,0 +1,32 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: ysl3000 <yannicklamprecht@live.de>
+Date: Mon, 5 Oct 2020 21:25:16 +0200
+Subject: [PATCH] Player Chunk Load/Unload Events
+
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+index 9a729aecfa8c901159c74c42544ba31b69bab199..b057d99f6777b1e051235f228aaa6d10457b76d0 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+@@ -2089,11 +2089,21 @@ public class ServerPlayer extends Player {
+     public void trackChunk(ChunkPos chunkcoordintpair, Packet<?> packet, Packet<?> packet1) {
+         this.connection.send(packet1);
+         this.connection.send(packet);
++        // Paper start
++        if(io.papermc.paper.event.packet.PlayerChunkLoadEvent.getHandlerList().getRegisteredListeners().length > 0){
++            new io.papermc.paper.event.packet.PlayerChunkLoadEvent(this.getBukkitEntity().getWorld().getChunkAt(chunkcoordintpair.longKey), this.getBukkitEntity()).callEvent();
++        }
++        // Paper end
+     }
+ 
+     public void untrackChunk(ChunkPos chunkPos) {
+         if (this.isAlive()) {
+             this.connection.send(new ClientboundForgetLevelChunkPacket(chunkPos.x, chunkPos.z));
++            // Paper start
++            if(io.papermc.paper.event.packet.PlayerChunkUnloadEvent.getHandlerList().getRegisteredListeners().length > 0){
++                new io.papermc.paper.event.packet.PlayerChunkUnloadEvent(this.getBukkitEntity().getWorld().getChunkAt(chunkPos.longKey), this.getBukkitEntity()).callEvent();
++            }
++            // Paper end
+         }
+ 
+     }

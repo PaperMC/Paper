@@ -1,0 +1,54 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Wyatt Childers <wchilders@nearce.com>
+Date: Sat, 4 Jul 2020 23:07:43 -0400
+Subject: [PATCH] Optimize the advancement data player iteration to be O(N)
+ rather than O(N^2)
+
+
+diff --git a/src/main/java/net/minecraft/server/PlayerAdvancements.java b/src/main/java/net/minecraft/server/PlayerAdvancements.java
+index 3d82f984648605d58fae3c57f145d0da8a2ae225..ce02a467c1c3434f2cdb112ceb9794196069a820 100644
+--- a/src/main/java/net/minecraft/server/PlayerAdvancements.java
++++ b/src/main/java/net/minecraft/server/PlayerAdvancements.java
+@@ -437,6 +437,16 @@ public class PlayerAdvancements {
+     }
+ 
+     private void ensureVisibility(Advancement advancement) {
++        // Paper start
++        e(advancement, IterationEntryPoint.ROOT);
++    }
++    private enum IterationEntryPoint {
++        ROOT,
++        ITERATOR,
++        PARENT_OF_ITERATOR
++    }
++    private void e(Advancement advancement, IterationEntryPoint entryPoint) {
++        // Paper end
+         boolean flag = this.shouldBeVisible(advancement);
+         boolean flag1 = this.visible.contains(advancement);
+ 
+@@ -452,15 +462,23 @@ public class PlayerAdvancements {
+         }
+ 
+         if (flag != flag1 && advancement.getParent() != null) {
+-            this.ensureVisibility(advancement.getParent());
++            // Paper start - If we're not coming from an iterator consider this to be a root entry, otherwise
++            // market that we're entering from the parent of an iterator.
++            this.e(advancement.getParent(), entryPoint == IterationEntryPoint.ITERATOR ? IterationEntryPoint.PARENT_OF_ITERATOR : IterationEntryPoint.ROOT);
+         }
+ 
++        // If this is true, we've went through a child iteration, entered the parent, processed the parent
++        // and are about to reprocess the children. Stop processing here to prevent O(N^2) processing.
++        if (entryPoint == IterationEntryPoint.PARENT_OF_ITERATOR) {
++            return;
++        } // Paper end
++
+         Iterator iterator = advancement.getChildren().iterator();
+ 
+         while (iterator.hasNext()) {
+             Advancement advancement1 = (Advancement) iterator.next();
+ 
+-            this.ensureVisibility(advancement1);
++            this.e(advancement1, IterationEntryPoint.ITERATOR); // Paper - Mark this call as being from iteration
+         }
+ 
+     }

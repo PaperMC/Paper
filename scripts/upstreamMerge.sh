@@ -16,7 +16,7 @@ function update {
     $gitcmd fetch && $gitcmd clean -fd && $gitcmd reset --hard origin/master
     refRemote=$(git rev-parse HEAD)
     cd ../
-    $gitcmd add $1 -f
+    $gitcmd add --force $1
     refHEAD=$(getRef HEAD "$workdir/$1")
     echo "$1 $refHEAD - $refRemote"
     if [ "$refHEAD" != "$refRemote" ]; then
@@ -30,11 +30,12 @@ update Spigot
 
 if [[ "$2" = "all" || "$2" = "a" ]] ; then
 	update BuildData
-	update Paperclip
 fi
 if [ "$updated" == "1" ]; then
     echo "Rebuilding patches without filtering to improve apply ability"
     cd "$basedir"
-    scripts/rebuildPatches.sh "$basedir" nofilter 1>/dev/null|| exit 1
+    ./gradlew cleanCache || exit 1 # todo: Figure out why this is necessary
+    ./gradlew applyPatches -Dpaperweight.debug=true || exit 1
+    ./gradlew rebuildPatches || exit 1
 fi
 )

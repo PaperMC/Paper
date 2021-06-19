@@ -34,18 +34,19 @@ Brokkonaut <hannos17@gmx.de>
 vemacs <d@nkmem.es>
 stonar96 <minecraft.stonar96@gmail.com>
 Hugo Manrique <hugmanrique@gmail.com>
-Andrew Steinborn <git@steinborn.me>
 willies952002 <admin@domnian.com>
 MicleBrick <miclebrick@outlook.com>
 Trigary <trigary0@gmail.com>
 rickyboy320 <rickw320@hotmail.com>
 DoNotSpamPls <7570108+DoNotSpamPls@users.noreply.github.com>
 JRoy <joshroy126@gmail.com>
-Robert Norman <spottedleaf@spottedleaf.dev>, <Spottedleaf@users.noreply.github.com>
 ysl3000 <yannicklamprecht@live.de>
 KennyTV <jahnke.nassim@gmail.com>
 Machine_Maker <machine@machinemaker.me>
 Ivan Pekov <ivan@mrivanplays.com>
 Camotoy <20743703+Camotoy@users.noreply.github.com>
 Bjarne Koll <lynxplay101@gmail.com>
+MeFisto94 <MeFisto94@users.noreply.github.com>
+Owen1212055 <23108066+Owen1212055@users.noreply.github.com>
+LemonCaramel <admin@caramel.moe>
 ```

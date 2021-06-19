@@ -1,0 +1,65 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Tue, 20 Dec 2016 15:26:27 -0500
+Subject: [PATCH] Configurable Cartographer Treasure Maps
+
+Allow configuring for cartographers to return the same map location
+
+Also allow turning off treasure maps all together as they can eat up Map ID's
+which are limited in quantity.
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index e83216be5a00d5b927d8c2fc364551bd3077c974..2dc58b9f769ea43b737804456aafab47ecc143b8 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -314,4 +314,14 @@ public class PaperWorldConfig {
+             Bukkit.getLogger().warning("Spawn Egg and Armor Stand NBT filtering disabled, this is a potential security risk");
+         }
+     }
++
++    public boolean enableTreasureMaps = true;
++    public boolean treasureMapsAlreadyDiscovered = false;
++    private void treasureMapsAlreadyDiscovered() {
++        enableTreasureMaps = getBoolean("enable-treasure-maps", true);
++        treasureMapsAlreadyDiscovered = getBoolean("treasure-maps-return-already-discovered", false);
++        if (treasureMapsAlreadyDiscovered) {
++            log("Treasure Maps will return already discovered locations");
++        }
++    }
+ }
+diff --git a/src/main/java/net/minecraft/world/entity/npc/VillagerTrades.java b/src/main/java/net/minecraft/world/entity/npc/VillagerTrades.java
+index ae2fba922b5a8c9b4096ea8255ff20db58fcd88f..314617cb0d2df92cc394f7a80011f5b6d075419b 100644
+--- a/src/main/java/net/minecraft/world/entity/npc/VillagerTrades.java
++++ b/src/main/java/net/minecraft/world/entity/npc/VillagerTrades.java
+@@ -383,7 +383,8 @@ public class VillagerTrades {
+                 return null;
+             } else {
+                 ServerLevel serverLevel = (ServerLevel)entity.level;
+-                BlockPos blockPos = serverLevel.findNearestMapFeature(this.destination, entity.blockPosition(), 100, true);
++                if (!serverLevel.paperConfig.enableTreasureMaps) return null; // Paper
++                BlockPos blockPos = serverLevel.findNearestMapFeature(this.destination, entity.blockPosition(), 100, !serverLevel.paperConfig.treasureMapsAlreadyDiscovered); // Paper
+                 if (blockPos != null) {
+                     ItemStack itemStack = MapItem.create(serverLevel, blockPos.getX(), blockPos.getZ(), (byte)2, true, true);
+                     MapItem.renderBiomePreviewMap(serverLevel, itemStack);
+diff --git a/src/main/java/net/minecraft/world/level/storage/loot/functions/ExplorationMapFunction.java b/src/main/java/net/minecraft/world/level/storage/loot/functions/ExplorationMapFunction.java
+index ce5375dc1974042fd4e81a93a6087d7d286074af..d9452518368c6da097ee142d9b38b52188dc4a5b 100644
+--- a/src/main/java/net/minecraft/world/level/storage/loot/functions/ExplorationMapFunction.java
++++ b/src/main/java/net/minecraft/world/level/storage/loot/functions/ExplorationMapFunction.java
+@@ -65,7 +65,16 @@ public class ExplorationMapFunction extends LootItemConditionalFunction {
+             Vec3 vec3 = context.getParamOrNull(LootContextParams.ORIGIN);
+             if (vec3 != null) {
+                 ServerLevel serverLevel = context.getLevel();
+-                BlockPos blockPos = serverLevel.findNearestMapFeature(this.destination, new BlockPos(vec3), this.searchRadius, this.skipKnownStructures);
++                // Paper start
++                if (!serverLevel.paperConfig.enableTreasureMaps) {
++                    /*
++                     * NOTE: I fear users will just get a plain map as their "treasure"
++                     * This is preferable to disrespecting the config.
++                     */
++                    return stack;
++                }
++                // Paper end
++                BlockPos blockPos = serverLevel.findNearestMapFeature(this.destination, new BlockPos(vec3), this.searchRadius, !serverLevel.paperConfig.treasureMapsAlreadyDiscovered && this.skipKnownStructures); // Paper
+                 if (blockPos != null) {
+                     ItemStack itemStack = MapItem.create(serverLevel, blockPos.getX(), blockPos.getZ(), this.zoom, true, true);
+                     MapItem.renderBiomePreviewMap(serverLevel, itemStack);
