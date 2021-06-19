@@ -2815,7 +2815,7 @@ index 03c90069e8fca2291e66f5d99175f029530a4434..1176dd8ebd59c5bda1b74c532ca21ae3
          } finally {
              chunkMap.callbackExecutor.run();
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index 774f37e02feb83be3b92620aa4a0227a0c4acc93..434f3a56e373e584801d66c13ba2c045a383beea 100644
+index 1ddf92d4a70243217181efd477e01e34d55a1291..b60f035394c9c0949e4cc68d895918510e3c67cf 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
 @@ -210,6 +210,79 @@ public class ServerLevel extends net.minecraft.world.level.Level implements Worl
@@ -3032,7 +3032,7 @@ index 3af31dc2c82c11ee78d497c5777615c17cb13c7a..3b8c04f6ffd7e6c197465aa1caf633ba
          this.type = t;
          this.triggerTick = time;
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
-index 22d5c4cc3aea19cbf53ea320765ecceb4daf7428..21b3da831cd959e3fd85d437e1ba3c7a6c72502f 100644
+index 22d5c4cc3aea19cbf53ea320765ecceb4daf7428..d126c038ae56312acc2e8be2726065d4eddb08c8 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
 @@ -69,7 +69,30 @@ public class ChunkSerializer {
@@ -3116,7 +3116,7 @@ index 22d5c4cc3aea19cbf53ea320765ecceb4daf7428..21b3da831cd959e3fd85d437e1ba3c7a
          } else {
              ProtoChunk protochunk1 = (ProtoChunk) object;
  
-@@ -274,11 +311,82 @@ public class ChunkSerializer {
+@@ -274,11 +311,92 @@ public class ChunkSerializer {
                  protochunk1.setCarvingMask(worldgenstage_features, BitSet.valueOf(nbttagcompound5.getByteArray(s1)));
              }
  
@@ -3132,15 +3132,17 @@ index 22d5c4cc3aea19cbf53ea320765ecceb4daf7428..21b3da831cd959e3fd85d437e1ba3c7a
 +
 +        public final ListTag blockTickList; // non-null if we had to go to the server's tick list
 +        public final ListTag fluidTickList; // non-null if we had to go to the server's tick list
++        public final ListTag blockEntities;
 +
 +        public final long worldTime;
 +
-+        public AsyncSaveData(DataLayer[] blockLight, DataLayer[] skyLight, ListTag blockTickList, ListTag fluidTickList,
-+                             long worldTime) {
++        public AsyncSaveData(DataLayer[] blockLight, DataLayer[] skyLight,
++                             ListTag blockTickList, ListTag fluidTickList, ListTag blockEntities, long worldTime) {
 +            this.blockLight = blockLight;
 +            this.skyLight = skyLight;
 +            this.blockTickList = blockTickList;
 +            this.fluidTickList = fluidTickList;
++            this.blockEntities = blockEntities;
 +            this.worldTime = worldTime;
 +        }
 +    }
@@ -3178,7 +3180,7 @@ index 22d5c4cc3aea19cbf53ea320765ecceb4daf7428..21b3da831cd959e3fd85d437e1ba3c7a
 +            blockTickListSerialized = null;
 +        } else {
 +            blockTickListSerialized = world.getBlockTicks().save(chunkPos);
-         }
++        }
 +
 +        TickList<Fluid> fluidTickList = chunk.getLiquidTicks();
 +
@@ -3189,7 +3191,15 @@ index 22d5c4cc3aea19cbf53ea320765ecceb4daf7428..21b3da831cd959e3fd85d437e1ba3c7a
 +            fluidTickListSerialized = world.getLiquidTicks().save(chunkPos);
 +        }
 +
-+        return new AsyncSaveData(blockLight, skyLight, blockTickListSerialized, fluidTickListSerialized, world.getGameTime());
++        ListTag blockEntitiesSerialized = new ListTag();
++        for (final BlockPos blockPos : chunk.getBlockEntitiesPos()) {
++            final CompoundTag blockEntityNbt = chunk.getBlockEntityNbtForSaving(blockPos);
++            if (blockEntityNbt != null) {
++                blockEntitiesSerialized.add(blockEntityNbt);
++            }
+         }
++
++        return new AsyncSaveData(blockLight, skyLight, blockTickListSerialized, fluidTickListSerialized, blockEntitiesSerialized, world.getGameTime());
      }
  
      public static CompoundTag write(ServerLevel world, ChunkAccess chunk) {
@@ -3200,7 +3210,7 @@ index 22d5c4cc3aea19cbf53ea320765ecceb4daf7428..21b3da831cd959e3fd85d437e1ba3c7a
          ChunkPos chunkcoordintpair = chunk.getPos();
          CompoundTag nbttagcompound = new CompoundTag();
          CompoundTag nbttagcompound1 = new CompoundTag();
-@@ -287,7 +395,7 @@ public class ChunkSerializer {
+@@ -287,7 +405,7 @@ public class ChunkSerializer {
          nbttagcompound.put("Level", nbttagcompound1);
          nbttagcompound1.putInt("xPos", chunkcoordintpair.x);
          nbttagcompound1.putInt("zPos", chunkcoordintpair.z);
@@ -3209,7 +3219,7 @@ index 22d5c4cc3aea19cbf53ea320765ecceb4daf7428..21b3da831cd959e3fd85d437e1ba3c7a
          nbttagcompound1.putLong("InhabitedTime", chunk.getInhabitedTime());
          nbttagcompound1.putString("Status", chunk.getStatus().getName());
          UpgradeData chunkconverter = chunk.getUpgradeData();
-@@ -306,9 +414,17 @@ public class ChunkSerializer {
+@@ -306,9 +424,17 @@ public class ChunkSerializer {
              LevelChunkSection chunksection = (LevelChunkSection) Arrays.stream(achunksection).filter((chunksection1) -> {
                  return chunksection1 != null && SectionPos.blockToSectionCoord(chunksection1.bottomBlockY()) == finalI; // CraftBukkit - decompile errors
              }).findFirst().orElse(LevelChunk.EMPTY_SECTION);
@@ -3230,7 +3240,27 @@ index 22d5c4cc3aea19cbf53ea320765ecceb4daf7428..21b3da831cd959e3fd85d437e1ba3c7a
              if (chunksection != LevelChunk.EMPTY_SECTION || nibblearray != null || nibblearray1 != null) {
                  CompoundTag nbttagcompound2 = new CompoundTag();
  
-@@ -384,6 +500,10 @@ public class ChunkSerializer {
+@@ -340,8 +466,17 @@ public class ChunkSerializer {
+             nbttagcompound1.putIntArray("Biomes", biomestorage.writeBiomes());
+         }
+ 
+-        ListTag nbttaglist1 = new ListTag();
+-        Iterator iterator = chunk.getBlockEntitiesPos().iterator();
++        // Paper start
++        ListTag nbttaglist1;
++        Iterator<BlockPos> iterator;
++        if (asyncsavedata != null) {
++            nbttaglist1 = asyncsavedata.blockEntities;
++            iterator = java.util.Collections.emptyIterator();
++        } else {
++            nbttaglist1 = new ListTag();
++            iterator = chunk.getBlockEntitiesPos().iterator();
++        }
++        // Paper end
+ 
+         CompoundTag nbttagcompound3;
+ 
+@@ -384,6 +519,10 @@ public class ChunkSerializer {
              nbttagcompound1.put("ToBeTicked", ((ProtoTickList) ticklist).save());
          } else if (ticklist instanceof ChunkTickList) {
              nbttagcompound1.put("TileTicks", ((ChunkTickList) ticklist).save());
@@ -3241,7 +3271,7 @@ index 22d5c4cc3aea19cbf53ea320765ecceb4daf7428..21b3da831cd959e3fd85d437e1ba3c7a
          } else {
              nbttagcompound1.put("TileTicks", world.getBlockTicks().save(chunkcoordintpair));
          }
-@@ -394,6 +514,10 @@ public class ChunkSerializer {
+@@ -394,6 +533,10 @@ public class ChunkSerializer {
              nbttagcompound1.put("LiquidsToBeTicked", ((ProtoTickList) ticklist1).save());
          } else if (ticklist1 instanceof ChunkTickList) {
              nbttagcompound1.put("LiquidTicks", ((ChunkTickList) ticklist1).save());
