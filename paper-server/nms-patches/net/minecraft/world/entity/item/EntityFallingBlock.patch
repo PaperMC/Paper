@@ -18,19 +18,20 @@
                      this.level.a(blockposition, false);
                  } else if (!this.level.isClientSide) {
                      this.die();
-@@ -165,6 +167,11 @@
+@@ -165,6 +167,12 @@
                                      this.blockState = (IBlockData) this.blockState.set(BlockProperties.WATERLOGGED, true);
                                  }
  
 +                                // CraftBukkit start
 +                                if (CraftEventFactory.callEntityChangeBlockEvent(this, blockposition, this.blockState).isCancelled()) {
++                                    this.die(); // SPIGOT-6586 called before the event in previous versions
 +                                    return;
 +                                }
 +                                // CraftBukkit end
                                  if (this.level.setTypeAndData(blockposition, this.blockState, 3)) {
                                      ((WorldServer) this.level).getChunkProvider().chunkMap.broadcast(this, new PacketPlayOutBlockChange(blockposition, this.level.getType(blockposition)));
                                      this.die();
-@@ -238,7 +245,7 @@
+@@ -238,7 +246,7 @@
              if (i < 0) {
                  return false;
              } else {
@@ -39,7 +40,7 @@
                  DamageSource damagesource1;
  
                  if (this.blockState.getBlock() instanceof Fallable) {
-@@ -254,7 +261,9 @@
+@@ -254,7 +262,9 @@
                  float f2 = (float) Math.min(MathHelper.d((float) i * this.fallDamagePerDistance), this.fallDamageMax);
  
                  this.level.getEntities(this, this.getBoundingBox(), predicate).forEach((entity) -> {
