@@ -3132,15 +3132,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +        public final ListTag blockTickList; // non-null if we had to go to the server's tick list
 +        public final ListTag fluidTickList; // non-null if we had to go to the server's tick list
++        public final ListTag blockEntities;
 +
 +        public final long worldTime;
 +
-+        public AsyncSaveData(DataLayer[] blockLight, DataLayer[] skyLight, ListTag blockTickList, ListTag fluidTickList,
-+                             long worldTime) {
++        public AsyncSaveData(DataLayer[] blockLight, DataLayer[] skyLight,
++                             ListTag blockTickList, ListTag fluidTickList, ListTag blockEntities, long worldTime) {
 +            this.blockLight = blockLight;
 +            this.skyLight = skyLight;
 +            this.blockTickList = blockTickList;
 +            this.fluidTickList = fluidTickList;
++            this.blockEntities = blockEntities;
 +            this.worldTime = worldTime;
 +        }
 +    }
@@ -3178,7 +3180,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            blockTickListSerialized = null;
 +        } else {
 +            blockTickListSerialized = world.getBlockTicks().save(chunkPos);
-         }
++        }
 +
 +        TickList<Fluid> fluidTickList = chunk.getLiquidTicks();
 +
@@ -3189,7 +3191,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            fluidTickListSerialized = world.getLiquidTicks().save(chunkPos);
 +        }
 +
-+        return new AsyncSaveData(blockLight, skyLight, blockTickListSerialized, fluidTickListSerialized, world.getGameTime());
++        ListTag blockEntitiesSerialized = new ListTag();
++        for (final BlockPos blockPos : chunk.getBlockEntitiesPos()) {
++            final CompoundTag blockEntityNbt = chunk.getBlockEntityNbtForSaving(blockPos);
++            if (blockEntityNbt != null) {
++                blockEntitiesSerialized.add(blockEntityNbt);
++            }
+         }
++
++        return new AsyncSaveData(blockLight, skyLight, blockTickListSerialized, fluidTickListSerialized, blockEntitiesSerialized, world.getGameTime());
      }
  
      public static CompoundTag write(ServerLevel world, ChunkAccess chunk) {
@@ -3229,6 +3239,26 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            // Paper end
              if (chunksection != LevelChunk.EMPTY_SECTION || nibblearray != null || nibblearray1 != null) {
                  CompoundTag nbttagcompound2 = new CompoundTag();
+ 
+@@ -0,0 +0,0 @@ public class ChunkSerializer {
+             nbttagcompound1.putIntArray("Biomes", biomestorage.writeBiomes());
+         }
+ 
+-        ListTag nbttaglist1 = new ListTag();
+-        Iterator iterator = chunk.getBlockEntitiesPos().iterator();
++        // Paper start
++        ListTag nbttaglist1;
++        Iterator<BlockPos> iterator;
++        if (asyncsavedata != null) {
++            nbttaglist1 = asyncsavedata.blockEntities;
++            iterator = java.util.Collections.emptyIterator();
++        } else {
++            nbttaglist1 = new ListTag();
++            iterator = chunk.getBlockEntitiesPos().iterator();
++        }
++        // Paper end
+ 
+         CompoundTag nbttagcompound3;
  
 @@ -0,0 +0,0 @@ public class ChunkSerializer {
              nbttagcompound1.put("ToBeTicked", ((ProtoTickList) ticklist).save());
