@@ -1,0 +1,61 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: William Blake Galbreath <Blake.Galbreath@GMail.com>
+Date: Sat, 25 Apr 2020 15:13:41 -0500
+Subject: [PATCH] Add phantom creative and insomniac controls
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -0,0 +0,0 @@ public class PaperWorldConfig {
+         lightQueueSize = getInt("light-queue-size", lightQueueSize);
+     }
+ 
++    public boolean phantomIgnoreCreative = true;
++    public boolean phantomOnlyAttackInsomniacs = true;
++    private void phantomSettings() {
++        phantomIgnoreCreative = getBoolean("phantoms-do-not-spawn-on-creative-players", phantomIgnoreCreative);
++        phantomOnlyAttackInsomniacs = getBoolean("phantoms-only-attack-insomniacs", phantomOnlyAttackInsomniacs);
++    }
++
+     public int noTickViewDistance;
+     private void viewDistance() {
+         this.noTickViewDistance = this.getInt("viewdistances.no-tick-view-distance", -1);
+diff --git a/src/main/java/net/minecraft/world/entity/EntitySelector.java b/src/main/java/net/minecraft/world/entity/EntitySelector.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/entity/EntitySelector.java
++++ b/src/main/java/net/minecraft/world/entity/EntitySelector.java
+@@ -0,0 +0,0 @@ public final class EntitySelector {
+     public static final Predicate<Entity> NO_SPECTATORS = (entity) -> {
+         return !entity.isSpectator();
+     };
++    public static Predicate<Player> isInsomniac = (player) -> net.minecraft.util.Mth.clamp(((net.minecraft.server.level.ServerPlayer) player).getStats().getValue(net.minecraft.stats.Stats.CUSTOM.get(net.minecraft.stats.Stats.TIME_SINCE_REST)), 1, Integer.MAX_VALUE) >= 72000; // Paper
+ 
+     private EntitySelector() {}
+     // Paper start
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Phantom.java b/src/main/java/net/minecraft/world/entity/monster/Phantom.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Phantom.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Phantom.java
+@@ -0,0 +0,0 @@ public class Phantom extends FlyingMob implements Enemy {
+                         Player entityhuman = (Player) iterator.next();
+ 
+                         if (Phantom.this.canAttack((LivingEntity) entityhuman, TargetingConditions.DEFAULT)) {
++                            if (!level.paperConfig.phantomOnlyAttackInsomniacs || EntitySelector.isInsomniac.test(entityhuman)) // Paper
+                             Phantom.this.setGoalTarget(entityhuman, org.bukkit.event.entity.EntityTargetEvent.TargetReason.CLOSEST_PLAYER, true); // CraftBukkit - reason
+                             return true;
+                         }
+diff --git a/src/main/java/net/minecraft/world/level/levelgen/PhantomSpawner.java b/src/main/java/net/minecraft/world/level/levelgen/PhantomSpawner.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/level/levelgen/PhantomSpawner.java
++++ b/src/main/java/net/minecraft/world/level/levelgen/PhantomSpawner.java
+@@ -0,0 +0,0 @@ public class PhantomSpawner implements CustomSpawner {
+                     while (iterator.hasNext()) {
+                         Player entityhuman = (Player) iterator.next();
+ 
+-                        if (!entityhuman.isSpectator()) {
++                        if (!entityhuman.isSpectator() && (!world.paperConfig.phantomIgnoreCreative || !entityhuman.isCreative())) { // Paper
+                             BlockPos blockposition = entityhuman.blockPosition();
+ 
+                             if (!world.dimensionType().hasSkyLight() || blockposition.getY() >= world.getSeaLevel() && world.canSeeSky(blockposition)) {

@@ -13,7 +13,7 @@ jobs:
         runs-on: ubuntu-latest
         strategy:
             matrix:
-                java: [16, 8]
+                java: [16]
             fail-fast: true
         steps:
             - uses: actions/checkout@v2
@@ -22,18 +22,19 @@ jobs:
               with:
                   java-version: ${{ matrix.java }}
                   distribution: 'adopt'
-            - name: Cache maven
+            - name: Cache gradle
               uses: actions/cache@v2
               with:
                   path: |
-                      ~/.m2/repository/
-                      work/Minecraft
-                  key: ${{ runner.os }}-paper-2-${{ hashFiles('**/pom.xml') }}
+                    ~/.gradle/caches
+                    ~/.gradle/jdks
+                    ~/.gradle/native
+                    ~/.gradle/wrapper
+                  key: ${{ runner.os }}-paper-2-${{ hashFiles('**/*.gradle*', 'gradle/**', 'gradle.properties') }}
                   restore-keys: ${{ runner.os }}-paper-2
             - name: Patch and build
               run: |
                   git config --global user.email "no-reply@github.com"
                   git config --global user.name "Github Actions"
-                  ./paper build
-            - name: Build javadocs
-              run: mvn -pl Paper-API,Paper-MojangAPI -am javadoc:javadoc
+                  ./gradlew applyPatches --stacktrace
+                  ./gradlew build --stacktrace

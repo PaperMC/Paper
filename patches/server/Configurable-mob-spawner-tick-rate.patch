@@ -1,0 +1,62 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Sudzzy <originmc@outlook.com>
+Date: Wed, 2 Mar 2016 15:03:53 -0600
+Subject: [PATCH] Configurable mob spawner tick rate
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -0,0 +0,0 @@ public class PaperWorldConfig {
+     private void disableIceAndSnow(){
+         disableIceAndSnow = getBoolean("disable-ice-and-snow", false);
+     }
++
++    public int mobSpawnerTickRate;
++    private void mobSpawnerTickRate() {
++        mobSpawnerTickRate = getInt("mob-spawner-tick-rate", 1);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/world/level/BaseSpawner.java b/src/main/java/net/minecraft/world/level/BaseSpawner.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/level/BaseSpawner.java
++++ b/src/main/java/net/minecraft/world/level/BaseSpawner.java
+@@ -0,0 +0,0 @@ public abstract class BaseSpawner {
+     public int requiredPlayerRange;
+     public int spawnRange;
+     private final Random random;
++    private int tickDelay = 0; // Paper
+ 
+     public BaseSpawner() {
+         this.spawnPotentials = BaseSpawner.EMPTY_POTENTIALS;
+@@ -0,0 +0,0 @@ public abstract class BaseSpawner {
+     }
+ 
+     public void serverTick(ServerLevel world, BlockPos pos) {
++        // Paper start - Configurable mob spawner tick rate
++        if (spawnDelay > 0 && --tickDelay > 0) return;
++        tickDelay = world.paperConfig.mobSpawnerTickRate;
++        // Paper end
+         if (this.isNearPlayer(world, pos)) {
+-            if (this.spawnDelay == -1) {
++            if (this.spawnDelay < -tickDelay) {
+                 this.delay(world, pos);
+             }
+ 
+             if (this.spawnDelay > 0) {
+-                --this.spawnDelay;
++                this.spawnDelay -= tickDelay; // Paper
+             } else {
+                 boolean flag = false;
+ 
+@@ -0,0 +0,0 @@ public abstract class BaseSpawner {
+                                 ((Mob) entity).finalizeSpawn(world, world.getCurrentDifficultyAt(entity.blockPosition()), MobSpawnType.SPAWNER, (SpawnGroupData) null, (CompoundTag) null);
+                             }
+                             // Spigot Start
+-                            if ( entityinsentient.level.spigotConfig.nerfSpawnerMobs )
+-                            {
++                            if (entityinsentient.level.spigotConfig.nerfSpawnerMobs) {
+                                 entityinsentient.aware = false;
+                             }
+                             // Spigot End
