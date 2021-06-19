@@ -555,10 +555,6 @@ public final class CraftServer implements Server {
         return broadcast(message, BROADCAST_CHANNEL_USERS);
     }
 
-    public Player getPlayer(final EntityPlayer entity) {
-        return entity.getBukkitEntity();
-    }
-
     @Override
     @Deprecated
     public List<Player> matchPlayer(String partialName) {
