@@ -1,0 +1,604 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Zach Brown <zach.brown@destroystokyo.com>
+Date: Mon, 29 Feb 2016 20:24:35 -0600
+Subject: [PATCH] Add exception reporting event
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/event/server/ServerExceptionEvent.java b/src/main/java/com/destroystokyo/paper/event/server/ServerExceptionEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..2f573299a9a817a98372817a1de8bf641aaca956
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/event/server/ServerExceptionEvent.java
+@@ -0,0 +1,43 @@
++package com.destroystokyo.paper.event.server;
++
++import com.google.common.base.Preconditions;
++import org.apache.commons.lang.Validate;
++import org.bukkit.Bukkit;
++import org.bukkit.event.Event;
++import org.bukkit.event.HandlerList;
++import com.destroystokyo.paper.exception.ServerException;
++import org.jetbrains.annotations.NotNull;
++
++/**
++ * Called whenever an exception is thrown in a recoverable section of the server.
++ */
++public class ServerExceptionEvent extends Event {
++    private static final HandlerList handlers = new HandlerList();
++    @NotNull private ServerException exception;
++
++    public ServerExceptionEvent(@NotNull ServerException exception) {
++        super(!Bukkit.isPrimaryThread());
++        this.exception = Preconditions.checkNotNull(exception, "exception");
++    }
++
++    /**
++     * Gets the wrapped exception that was thrown.
++     *
++     * @return Exception thrown
++     */
++    @NotNull
++    public ServerException getException() {
++        return exception;
++    }
++
++    @NotNull
++    @Override
++    public HandlerList getHandlers() {
++        return handlers;
++    }
++
++    @NotNull
++    public static HandlerList getHandlerList() {
++        return handlers;
++    }
++}
+diff --git a/src/main/java/com/destroystokyo/paper/exception/ServerCommandException.java b/src/main/java/com/destroystokyo/paper/exception/ServerCommandException.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..6fb39af0479a818f7f1465bcdfe505ab4ff7da1a
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/exception/ServerCommandException.java
+@@ -0,0 +1,64 @@
++package com.destroystokyo.paper.exception;
++
++import org.bukkit.command.Command;
++import org.bukkit.command.CommandSender;
++
++import static com.google.common.base.Preconditions.checkNotNull;
++
++/**
++ * Thrown when a command throws an exception
++ */
++public class ServerCommandException extends ServerException {
++
++    private final Command command;
++    private final CommandSender commandSender;
++    private final String[] arguments;
++
++    public ServerCommandException(String message, Throwable cause, Command command, CommandSender commandSender, String[] arguments) {
++        super(message, cause);
++        this.commandSender = checkNotNull(commandSender, "commandSender");
++        this.arguments = checkNotNull(arguments, "arguments");
++        this.command = checkNotNull(command, "command");
++    }
++
++    public ServerCommandException(Throwable cause, Command command, CommandSender commandSender, String[] arguments) {
++        super(cause);
++        this.commandSender = checkNotNull(commandSender, "commandSender");
++        this.arguments = checkNotNull(arguments, "arguments");
++        this.command = checkNotNull(command, "command");
++    }
++
++    protected ServerCommandException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace, Command command, CommandSender commandSender, String[] arguments) {
++        super(message, cause, enableSuppression, writableStackTrace);
++        this.commandSender = checkNotNull(commandSender, "commandSender");
++        this.arguments = checkNotNull(arguments, "arguments");
++        this.command = checkNotNull(command, "command");
++    }
++
++    /**
++     * Gets the command which threw the exception
++     *
++     * @return exception throwing command
++     */
++    public Command getCommand() {
++        return command;
++    }
++
++    /**
++     * Gets the command sender which executed the command request
++     *
++     * @return command sender of exception thrown command request
++     */
++    public CommandSender getCommandSender() {
++        return commandSender;
++    }
++
++    /**
++     * Gets the arguments which threw the exception for the command
++     *
++     * @return arguments of exception thrown command request
++     */
++    public String[] getArguments() {
++        return arguments;
++    }
++}
+diff --git a/src/main/java/com/destroystokyo/paper/exception/ServerEventException.java b/src/main/java/com/destroystokyo/paper/exception/ServerEventException.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..410b24139535cd5d8439ad581c43c61b5757fbf6
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/exception/ServerEventException.java
+@@ -0,0 +1,52 @@
++package com.destroystokyo.paper.exception;
++
++import org.bukkit.event.Event;
++import org.bukkit.event.Listener;
++import org.bukkit.plugin.Plugin;
++
++import static com.google.common.base.Preconditions.*;
++
++/**
++ * Exception thrown when a server event listener throws an exception
++ */
++public class ServerEventException extends ServerPluginException {
++
++    private final Listener listener;
++    private final Event event;
++
++    public ServerEventException(String message, Throwable cause, Plugin responsiblePlugin, Listener listener, Event event) {
++        super(message, cause, responsiblePlugin);
++        this.listener = checkNotNull(listener, "listener");
++        this.event = checkNotNull(event, "event");
++    }
++
++    public ServerEventException(Throwable cause, Plugin responsiblePlugin, Listener listener, Event event) {
++        super(cause, responsiblePlugin);
++        this.listener = checkNotNull(listener, "listener");
++        this.event = checkNotNull(event, "event");
++    }
++
++    protected ServerEventException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace, Plugin responsiblePlugin, Listener listener, Event event) {
++        super(message, cause, enableSuppression, writableStackTrace, responsiblePlugin);
++        this.listener = checkNotNull(listener, "listener");
++        this.event = checkNotNull(event, "event");
++    }
++
++    /**
++     * Gets the listener which threw the exception
++     *
++     * @return event listener
++     */
++    public Listener getListener() {
++        return listener;
++    }
++
++    /**
++     * Gets the event which caused the exception
++     *
++     * @return event
++     */
++    public Event getEvent() {
++        return event;
++    }
++}
+diff --git a/src/main/java/com/destroystokyo/paper/exception/ServerException.java b/src/main/java/com/destroystokyo/paper/exception/ServerException.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..c06ea3942447d4824b83ff839cb449fb818dede1
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/exception/ServerException.java
+@@ -0,0 +1,23 @@
++package com.destroystokyo.paper.exception;
++
++/**
++ * Wrapper exception for all exceptions that are thrown by the server.
++ */
++public class ServerException extends Exception {
++
++    public ServerException(String message) {
++        super(message);
++    }
++
++    public ServerException(String message, Throwable cause) {
++        super(message, cause);
++    }
++
++    public ServerException(Throwable cause) {
++        super(cause);
++    }
++
++    protected ServerException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
++        super(message, cause, enableSuppression, writableStackTrace);
++    }
++}
+diff --git a/src/main/java/com/destroystokyo/paper/exception/ServerInternalException.java b/src/main/java/com/destroystokyo/paper/exception/ServerInternalException.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..e762ed0dbad51625e65fef2e1898679108459a36
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/exception/ServerInternalException.java
+@@ -0,0 +1,35 @@
++package com.destroystokyo.paper.exception;
++
++import org.bukkit.Bukkit;
++import com.destroystokyo.paper.event.server.ServerExceptionEvent;
++
++/**
++ * Thrown when the internal server throws a recoverable exception.
++ */
++public class ServerInternalException extends ServerException {
++
++    public ServerInternalException(String message) {
++        super(message);
++    }
++
++    public ServerInternalException(String message, Throwable cause) {
++        super(message, cause);
++    }
++
++    public ServerInternalException(Throwable cause) {
++        super(cause);
++    }
++
++    protected ServerInternalException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
++        super(message, cause, enableSuppression, writableStackTrace);
++    }
++
++    public static void reportInternalException(Throwable cause) {
++        try {
++            Bukkit.getPluginManager().callEvent(new ServerExceptionEvent(new ServerInternalException(cause)));
++            ;
++        } catch (Throwable t) {
++            t.printStackTrace(); // Don't want to rethrow!
++        }
++    }
++}
+diff --git a/src/main/java/com/destroystokyo/paper/exception/ServerPluginEnableDisableException.java b/src/main/java/com/destroystokyo/paper/exception/ServerPluginEnableDisableException.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..f016ba3b1b62e554a9bacbb9635f2dbe441b3c4e
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/exception/ServerPluginEnableDisableException.java
+@@ -0,0 +1,20 @@
++package com.destroystokyo.paper.exception;
++
++import org.bukkit.plugin.Plugin;
++
++/**
++ * Thrown whenever there is an exception with any enabling or disabling of plugins.
++ */
++public class ServerPluginEnableDisableException extends ServerPluginException {
++    public ServerPluginEnableDisableException(String message, Throwable cause, Plugin responsiblePlugin) {
++        super(message, cause, responsiblePlugin);
++    }
++
++    public ServerPluginEnableDisableException(Throwable cause, Plugin responsiblePlugin) {
++        super(cause, responsiblePlugin);
++    }
++
++    protected ServerPluginEnableDisableException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace, Plugin responsiblePlugin) {
++        super(message, cause, enableSuppression, writableStackTrace, responsiblePlugin);
++    }
++}
+\ No newline at end of file
+diff --git a/src/main/java/com/destroystokyo/paper/exception/ServerPluginException.java b/src/main/java/com/destroystokyo/paper/exception/ServerPluginException.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..6defac287d0214fdf99418d979144050cc1e53bc
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/exception/ServerPluginException.java
+@@ -0,0 +1,38 @@
++package com.destroystokyo.paper.exception;
++
++import com.google.common.base.Preconditions;
++import org.apache.commons.lang.Validate;
++import org.bukkit.plugin.Plugin;
++
++import static com.google.common.base.Preconditions.*;
++
++/**
++ * Wrapper exception for all cases to which a plugin can be immediately blamed for
++ */
++public class ServerPluginException extends ServerException {
++    public ServerPluginException(String message, Throwable cause, Plugin responsiblePlugin) {
++        super(message, cause);
++        this.responsiblePlugin = checkNotNull(responsiblePlugin, "responsiblePlugin");
++    }
++
++    public ServerPluginException(Throwable cause, Plugin responsiblePlugin) {
++        super(cause);
++        this.responsiblePlugin = checkNotNull(responsiblePlugin, "responsiblePlugin");
++    }
++
++    protected ServerPluginException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace, Plugin responsiblePlugin) {
++        super(message, cause, enableSuppression, writableStackTrace);
++        this.responsiblePlugin = checkNotNull(responsiblePlugin, "responsiblePlugin");
++    }
++
++    private final Plugin responsiblePlugin;
++
++    /**
++     * Gets the plugin which is directly responsible for the exception being thrown
++     *
++     * @return plugin which is responsible for the exception throw
++     */
++    public Plugin getResponsiblePlugin() {
++        return responsiblePlugin;
++    }
++}
+diff --git a/src/main/java/com/destroystokyo/paper/exception/ServerPluginMessageException.java b/src/main/java/com/destroystokyo/paper/exception/ServerPluginMessageException.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..89e132525cfae0ce979e37b3e2793df781e47227
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/exception/ServerPluginMessageException.java
+@@ -0,0 +1,64 @@
++package com.destroystokyo.paper.exception;
++
++import org.bukkit.entity.Player;
++import org.bukkit.plugin.Plugin;
++
++import static com.google.common.base.Preconditions.*;
++
++/**
++ * Thrown when an incoming plugin message channel throws an exception
++ */
++public class ServerPluginMessageException extends ServerPluginException {
++
++    private final Player player;
++    private final String channel;
++    private final byte[] data;
++
++    public ServerPluginMessageException(String message, Throwable cause, Plugin responsiblePlugin, Player player, String channel, byte[] data) {
++        super(message, cause, responsiblePlugin);
++        this.player = checkNotNull(player, "player");
++        this.channel = checkNotNull(channel, "channel");
++        this.data = checkNotNull(data, "data");
++    }
++
++    public ServerPluginMessageException(Throwable cause, Plugin responsiblePlugin, Player player, String channel, byte[] data) {
++        super(cause, responsiblePlugin);
++        this.player = checkNotNull(player, "player");
++        this.channel = checkNotNull(channel, "channel");
++        this.data = checkNotNull(data, "data");
++    }
++
++    protected ServerPluginMessageException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace, Plugin responsiblePlugin, Player player, String channel, byte[] data) {
++        super(message, cause, enableSuppression, writableStackTrace, responsiblePlugin);
++        this.player = checkNotNull(player, "player");
++        this.channel = checkNotNull(channel, "channel");
++        this.data = checkNotNull(data, "data");
++    }
++
++    /**
++     * Gets the channel to which the error occurred from recieving data from
++     *
++     * @return exception channel
++     */
++    public String getChannel() {
++        return channel;
++    }
++
++    /**
++     * Gets the data to which the error occurred from
++     *
++     * @return exception data
++     */
++    public byte[] getData() {
++        return data;
++    }
++
++    /**
++     * Gets the player which the plugin message causing the exception originated from
++     *
++     * @return exception player
++     */
++    public Player getPlayer() {
++        return player;
++    }
++}
+diff --git a/src/main/java/com/destroystokyo/paper/exception/ServerSchedulerException.java b/src/main/java/com/destroystokyo/paper/exception/ServerSchedulerException.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..2d0b2d4a9b3e5bdeec0e4ea7ab69858d86aa3715
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/exception/ServerSchedulerException.java
+@@ -0,0 +1,37 @@
++package com.destroystokyo.paper.exception;
++
++import org.bukkit.scheduler.BukkitTask;
++
++import static com.google.common.base.Preconditions.checkNotNull;
++
++/**
++ * Thrown when a plugin's scheduler fails with an exception
++ */
++public class ServerSchedulerException extends ServerPluginException {
++
++    private final BukkitTask task;
++
++    public ServerSchedulerException(String message, Throwable cause, BukkitTask task) {
++        super(message, cause, task.getOwner());
++        this.task = checkNotNull(task, "task");
++    }
++
++    public ServerSchedulerException(Throwable cause, BukkitTask task) {
++        super(cause, task.getOwner());
++        this.task = checkNotNull(task, "task");
++    }
++
++    protected ServerSchedulerException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace, BukkitTask task) {
++        super(message, cause, enableSuppression, writableStackTrace, task.getOwner());
++        this.task = checkNotNull(task, "task");
++    }
++
++    /**
++     * Gets the task which threw the exception
++     *
++     * @return exception throwing task
++     */
++    public BukkitTask getTask() {
++        return task;
++    }
++}
+diff --git a/src/main/java/com/destroystokyo/paper/exception/ServerTabCompleteException.java b/src/main/java/com/destroystokyo/paper/exception/ServerTabCompleteException.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..5582999fe94c7a3dac655044ccc6d078cd9521a1
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/exception/ServerTabCompleteException.java
+@@ -0,0 +1,22 @@
++package com.destroystokyo.paper.exception;
++
++import org.bukkit.command.Command;
++import org.bukkit.command.CommandSender;
++
++/**
++ * Called when a tab-complete request throws an exception
++ */
++public class ServerTabCompleteException extends ServerCommandException {
++
++    public ServerTabCompleteException(String message, Throwable cause, Command command, CommandSender commandSender, String[] arguments) {
++        super(message, cause, command, commandSender, arguments);
++    }
++
++    public ServerTabCompleteException(Throwable cause, Command command, CommandSender commandSender, String[] arguments) {
++        super(cause, command, commandSender, arguments);
++    }
++
++    protected ServerTabCompleteException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace, Command command, CommandSender commandSender, String[] arguments) {
++        super(message, cause, enableSuppression, writableStackTrace, command, commandSender, arguments);
++    }
++}
+diff --git a/src/main/java/org/bukkit/command/SimpleCommandMap.java b/src/main/java/org/bukkit/command/SimpleCommandMap.java
+index f020cb04eba27a2e70fc7cf799ebbfb434b9d974..adfc7aae2c0f49bbcdd358e83b04a0cf078a7d52 100644
+--- a/src/main/java/org/bukkit/command/SimpleCommandMap.java
++++ b/src/main/java/org/bukkit/command/SimpleCommandMap.java
+@@ -8,6 +8,10 @@ import java.util.HashMap;
+ import java.util.Iterator;
+ import java.util.List;
+ import java.util.Map;
++
++import com.destroystokyo.paper.event.server.ServerExceptionEvent;
++import com.destroystokyo.paper.exception.ServerCommandException;
++import com.destroystokyo.paper.exception.ServerTabCompleteException;
+ import org.apache.commons.lang.Validate;
+ import org.bukkit.Location;
+ import org.bukkit.Server;
+@@ -155,11 +159,14 @@ public class SimpleCommandMap implements CommandMap {
+             target.execute(sender, sentCommandLabel, Arrays.copyOfRange(args, 1, args.length));
+             } // target.timings.stopTiming(); // Spigot // Paper
+         } catch (CommandException ex) {
++            server.getPluginManager().callEvent(new ServerExceptionEvent(new ServerCommandException(ex, target, sender, args))); // Paper
+             //target.timings.stopTiming(); // Spigot // Paper
+             throw ex;
+         } catch (Throwable ex) {
+             //target.timings.stopTiming(); // Spigot // Paper
+-            throw new CommandException("Unhandled exception executing '" + commandLine + "' in " + target, ex);
++            String msg = "Unhandled exception executing '" + commandLine + "' in " + target;
++            server.getPluginManager().callEvent(new ServerExceptionEvent(new ServerCommandException(ex, target, sender, args))); // Paper
++            throw new CommandException(msg, ex);
+         }
+ 
+         // return true as command was handled
+@@ -238,7 +245,9 @@ public class SimpleCommandMap implements CommandMap {
+         } catch (CommandException ex) {
+             throw ex;
+         } catch (Throwable ex) {
+-            throw new CommandException("Unhandled exception executing tab-completer for '" + cmdLine + "' in " + target, ex);
++            String msg = "Unhandled exception executing tab-completer for '" + cmdLine + "' in " + target;
++            server.getPluginManager().callEvent(new ServerExceptionEvent(new ServerTabCompleteException(msg, ex, target, sender, args))); // Paper
++            throw new CommandException(msg, ex);
+         }
+     }
+ 
+diff --git a/src/main/java/org/bukkit/plugin/SimplePluginManager.java b/src/main/java/org/bukkit/plugin/SimplePluginManager.java
+index 7548e40af8043c1b5716f2d7d0122833466854c4..c2c49ee9b5531bc4761d2da54cd707c57fc647bf 100644
+--- a/src/main/java/org/bukkit/plugin/SimplePluginManager.java
++++ b/src/main/java/org/bukkit/plugin/SimplePluginManager.java
+@@ -23,6 +23,10 @@ import java.util.WeakHashMap;
+ import java.util.logging.Level;
+ import java.util.regex.Matcher;
+ import java.util.regex.Pattern;
++
++import com.destroystokyo.paper.event.server.ServerExceptionEvent;
++import com.destroystokyo.paper.exception.ServerEventException;
++import com.destroystokyo.paper.exception.ServerPluginEnableDisableException;
+ import org.apache.commons.lang.Validate;
+ import org.bukkit.Server;
+ import org.bukkit.World;
+@@ -478,7 +482,8 @@ public final class SimplePluginManager implements PluginManager {
+             try {
+                 plugin.getPluginLoader().enablePlugin(plugin);
+             } catch (Throwable ex) {
+-                server.getLogger().log(Level.SEVERE, "Error occurred (in the plugin loader) while enabling " + plugin.getDescription().getFullName() + " (Is it up to date?)", ex);
++                handlePluginException("Error occurred (in the plugin loader) while enabling "
++                        + plugin.getDescription().getFullName() + " (Is it up to date?)", ex, plugin);
+             }
+ 
+             HandlerList.bakeAll();
+@@ -499,32 +504,37 @@ public final class SimplePluginManager implements PluginManager {
+             try {
+                 plugin.getPluginLoader().disablePlugin(plugin);
+             } catch (Throwable ex) {
+-                server.getLogger().log(Level.SEVERE, "Error occurred (in the plugin loader) while disabling " + plugin.getDescription().getFullName() + " (Is it up to date?)", ex);
++                handlePluginException("Error occurred (in the plugin loader) while disabling "
++                        + plugin.getDescription().getFullName() + " (Is it up to date?)", ex, plugin); // Paper
+             }
+ 
+             try {
+                 server.getScheduler().cancelTasks(plugin);
+             } catch (Throwable ex) {
+-                server.getLogger().log(Level.SEVERE, "Error occurred (in the plugin loader) while cancelling tasks for " + plugin.getDescription().getFullName() + " (Is it up to date?)", ex);
++                handlePluginException("Error occurred (in the plugin loader) while cancelling tasks for "
++                        + plugin.getDescription().getFullName() + " (Is it up to date?)", ex, plugin); // Paper
+             }
+ 
+             try {
+                 server.getServicesManager().unregisterAll(plugin);
+             } catch (Throwable ex) {
+-                server.getLogger().log(Level.SEVERE, "Error occurred (in the plugin loader) while unregistering services for " + plugin.getDescription().getFullName() + " (Is it up to date?)", ex);
++                handlePluginException("Error occurred (in the plugin loader) while unregistering services for "
++                        + plugin.getDescription().getFullName() + " (Is it up to date?)", ex, plugin); // Paper
+             }
+ 
+             try {
+                 HandlerList.unregisterAll(plugin);
+             } catch (Throwable ex) {
+-                server.getLogger().log(Level.SEVERE, "Error occurred (in the plugin loader) while unregistering events for " + plugin.getDescription().getFullName() + " (Is it up to date?)", ex);
++                handlePluginException("Error occurred (in the plugin loader) while unregistering events for "
++                        + plugin.getDescription().getFullName() + " (Is it up to date?)", ex, plugin); // Paper
+             }
+ 
+             try {
+                 server.getMessenger().unregisterIncomingPluginChannel(plugin);
+                 server.getMessenger().unregisterOutgoingPluginChannel(plugin);
+             } catch (Throwable ex) {
+-                server.getLogger().log(Level.SEVERE, "Error occurred (in the plugin loader) while unregistering plugin channels for " + plugin.getDescription().getFullName() + " (Is it up to date?)", ex);
++                handlePluginException("Error occurred (in the plugin loader) while unregistering plugin channels for "
++                        + plugin.getDescription().getFullName() + " (Is it up to date?)", ex, plugin); // Paper
+             }
+ 
+             try {
+@@ -537,6 +547,13 @@ public final class SimplePluginManager implements PluginManager {
+         }
+     }
+ 
++    // Paper start
++    private void handlePluginException(String msg, Throwable ex, Plugin plugin) {
++        server.getLogger().log(Level.SEVERE, msg, ex);
++        callEvent(new ServerExceptionEvent(new ServerPluginEnableDisableException(msg, ex, plugin)));
++    }
++    // Paper end
++
+     @Override
+     public void clearPlugins() {
+         synchronized (this) {
+@@ -600,7 +617,13 @@ public final class SimplePluginManager implements PluginManager {
+                             ));
+                 }
+             } catch (Throwable ex) {
+-                server.getLogger().log(Level.SEVERE, "Could not pass event " + event.getEventName() + " to " + registration.getPlugin().getDescription().getFullName(), ex);
++                // Paper start - error reporting
++                String msg = "Could not pass event " + event.getEventName() + " to " + registration.getPlugin().getDescription().getFullName();
++                server.getLogger().log(Level.SEVERE, msg, ex);
++                if (!(event instanceof ServerExceptionEvent)) { // We don't want to cause an endless event loop
++                    callEvent(new ServerExceptionEvent(new ServerEventException(msg, ex, registration.getPlugin(), registration.getListener(), event)));
++                }
++                // Paper end
+             }
+         }
+     }

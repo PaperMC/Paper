@@ -1,0 +1,1044 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Tue, 17 Jul 2018 01:27:15 -0400
+Subject: [PATCH] Add Material Tags
+
+This adds a bunch of useful and missing Tags to be able to identify items that
+are related to each other by a trait.
+
+Co-authored-by: Jake Potrebic <jake.m.potrebic@gmail.com>
+
+diff --git a/src/main/java/com/destroystokyo/paper/MaterialSetTag.java b/src/main/java/com/destroystokyo/paper/MaterialSetTag.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..a02a02aa0c87e0f0ed9e509e4dcab01565b3d92a
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/MaterialSetTag.java
+@@ -0,0 +1,97 @@
++/*
++ * Copyright (c) 2018 Daniel Ennis (Aikar) MIT License
++ */
++
++package com.destroystokyo.paper;
++
++import com.google.common.collect.Lists;
++import io.papermc.paper.tag.BaseTag;
++import org.bukkit.Material;
++import org.bukkit.NamespacedKey;
++import org.bukkit.block.Block;
++import org.bukkit.block.BlockState;
++import org.bukkit.block.data.BlockData;
++import org.bukkit.inventory.ItemStack;
++
++import java.util.Collection;
++import java.util.Set;
++import java.util.function.Predicate;
++import java.util.stream.Collectors;
++import java.util.stream.Stream;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++public class MaterialSetTag extends BaseTag<Material, MaterialSetTag> {
++
++    /**
++     * @deprecated Use NamespacedKey version of constructor
++     */
++    @Deprecated
++    public MaterialSetTag(@NotNull Predicate<Material> filter) {
++        this(null, Stream.of(Material.values()).filter(filter).collect(Collectors.toList()));
++    }
++
++    /**
++     * @deprecated Use NamespacedKey version of constructor
++     */
++    @Deprecated
++    public MaterialSetTag(@NotNull Collection<Material> materials) {
++        this(null, materials);
++    }
++
++    /**
++     * @deprecated Use NamespacedKey version of constructor
++     */
++    @Deprecated
++    public MaterialSetTag(@NotNull Material... materials) {
++        this(null, materials);
++    }
++
++    public MaterialSetTag(@Nullable NamespacedKey key, @NotNull Predicate<Material> filter) {
++        this(key, Stream.of(Material.values()).filter(filter).collect(Collectors.toList()));
++    }
++
++    public MaterialSetTag(@Nullable NamespacedKey key, @NotNull Material... materials) {
++        this(key, Lists.newArrayList(materials));
++    }
++
++    public MaterialSetTag(@Nullable NamespacedKey key, @NotNull Collection<Material> materials) {
++        this(key != null ? key : NamespacedKey.randomKey(), materials, ((Predicate<Material>) Material::isLegacy).negate());
++    }
++
++    public MaterialSetTag(@Nullable NamespacedKey key, @NotNull Collection<Material> materials, @NotNull Predicate<Material>...globalPredicates) {
++        super(Material.class, key != null ? key : NamespacedKey.randomKey(), materials, globalPredicates);
++    }
++
++    @NotNull
++    @Override
++    protected Set<Material> getAllPossibleValues() {
++        return Stream.of(Material.values()).collect(Collectors.toSet());
++    }
++
++    @Override
++    @NotNull
++    protected String getName(@NotNull Material value) {
++        return value.name();
++    }
++
++    public boolean isTagged(@NotNull BlockData block) {
++        return isTagged(block.getMaterial());
++    }
++
++    public boolean isTagged(@NotNull BlockState block) {
++        return isTagged(block.getType());
++    }
++
++    public boolean isTagged(@NotNull Block block) {
++        return isTagged(block.getType());
++    }
++
++    public boolean isTagged(@NotNull ItemStack item) {
++        return isTagged(item.getType());
++    }
++
++    public boolean isTagged(@NotNull Material material) {
++        return this.tagged.contains(material);
++    }
++}
+diff --git a/src/main/java/com/destroystokyo/paper/MaterialTags.java b/src/main/java/com/destroystokyo/paper/MaterialTags.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..e8e6b2156b72bc5c115ac522a36efeeff8acd557
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/MaterialTags.java
+@@ -0,0 +1,558 @@
++/*
++ * Copyright (c) 2018 Daniel Ennis (Aikar) MIT License
++ *
++ *  Permission is hereby granted, free of charge, to any person obtaining
++ *  a copy of this software and associated documentation files (the
++ *  "Software"), to deal in the Software without restriction, including
++ *  without limitation the rights to use, copy, modify, merge, publish,
++ *  distribute, sublicense, and/or sell copies of the Software, and to
++ *  permit persons to whom the Software is furnished to do so, subject to
++ *  the following conditions:
++ *
++ *  The above copyright notice and this permission notice shall be
++ *  included in all copies or substantial portions of the Software.
++ *
++ *  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
++ *  EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
++ *  MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
++ *  NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
++ *  LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
++ *  OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
++ *  WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
++ */
++
++package com.destroystokyo.paper;
++
++import org.bukkit.Material;
++import org.bukkit.NamespacedKey;
++import org.bukkit.Tag;
++
++/**
++ * Represents a collection tags to identify materials that share common properties.
++ * Will map to minecraft for missing tags, as well as custom ones that may be useful.
++ */
++@SuppressWarnings({"NonFinalUtilityClass", "unused", "WeakerAccess"})
++public class MaterialTags {
++
++    private static NamespacedKey keyFor(String key) {
++        //noinspection deprecation
++        return new NamespacedKey("paper", key + "_settag");
++    }
++    public static final MaterialSetTag ARROWS = new MaterialSetTag(keyFor("arrows"))
++        .endsWith("ARROW")
++        .ensureSize("ARROWS", 3);
++
++    /**
++     * Covers all colors of beds.
++     */
++    public static final MaterialSetTag BEDS = new MaterialSetTag(keyFor("beds"))
++        .endsWith("_BED")
++        .ensureSize("BEDS", 16);
++
++    /**
++     * Covers all bucket items.
++     */
++    public static final MaterialSetTag BUCKETS = new MaterialSetTag(keyFor("buckets"))
++        .endsWith("BUCKET")
++        .ensureSize("BUCKETS", 10);
++
++    /**
++     * Covers coal and charcoal.
++     */
++    public static final MaterialSetTag COALS = new MaterialSetTag(keyFor("coals"))
++        .add(Material.COAL, Material.CHARCOAL);
++
++    /**
++     * Covers both cobblestone wall variants.
++     */
++    public static final MaterialSetTag COBBLESTONE_WALLS = new MaterialSetTag(keyFor("cobblestone_walls"))
++        .endsWith("COBBLESTONE_WALL")
++        .ensureSize("COBBLESTONE_WALLS", 2);
++
++    /**
++     * Covers both cobblestone and mossy Cobblestone.
++     */
++    public static final MaterialSetTag COBBLESTONES = new MaterialSetTag(keyFor("cobblestones"))
++        .add(Material.COBBLESTONE, Material.MOSSY_COBBLESTONE);
++
++    /**
++     * Covers all colors of concrete.
++     */
++    public static final MaterialSetTag CONCRETES = new MaterialSetTag(keyFor("concretes"))
++        .endsWith("_CONCRETE")
++        .ensureSize("CONCRETES", 16);
++
++    /**
++     * Covers all colors of concrete powder.
++     */
++    public static final MaterialSetTag CONCRETE_POWDER = new MaterialSetTag(keyFor("concrete_powder"))
++        .endsWith("_CONCRETE_POWDER")
++        .ensureSize("CONCRETE_POWDER", 16);
++
++    /**
++     * Covers the two types of cooked fish.
++     */
++    public static final MaterialSetTag COOKED_FISH = new MaterialSetTag(keyFor("cooked_fish"))
++        .add(Material.COOKED_COD, Material.COOKED_SALMON);
++
++    /**
++     * Covers all variants of doors.
++     */
++    public static final MaterialSetTag DOORS = new MaterialSetTag(keyFor("doors"))
++        .endsWith("_DOOR")
++        .ensureSize("DOORS", 9);
++
++    /**
++     * Covers all dyes.
++     */
++    public static final MaterialSetTag DYES = new MaterialSetTag(keyFor("dyes"))
++        .endsWith("_DYE")
++        .ensureSize("DYES", 16);
++
++    /**
++     * Covers all variants of gates.
++     */
++    public static final MaterialSetTag FENCE_GATES = new MaterialSetTag(keyFor("fence_gates"))
++        .endsWith("_GATE")
++        .ensureSize("FENCE_GATES", 8);
++
++    /**
++     * Covers all variants of fences.
++     */
++    public static final MaterialSetTag FENCES = new MaterialSetTag(keyFor("fences"))
++        .endsWith("_FENCE")
++        .ensureSize("FENCES", 9);
++
++    /**
++     * Covers all variants of fish buckets.
++     */
++    public static final MaterialSetTag FISH_BUCKETS = new MaterialSetTag(keyFor("fish_buckets"))
++        .add(Material.COD_BUCKET, Material.PUFFERFISH_BUCKET, Material.SALMON_BUCKET, Material.TROPICAL_FISH_BUCKET);
++
++    /**
++     * Covers the non-colored glass and 16 stained glass (not panes).
++     */
++    public static final MaterialSetTag GLASS = new MaterialSetTag(keyFor("glass"))
++        .endsWith("_GLASS")
++        .add(Material.GLASS)
++        .ensureSize("GLASS", 18);
++
++    /**
++     * Covers the non-colored glass panes and stained glass panes (panes only).
++     */
++    public static final MaterialSetTag GLASS_PANES = new MaterialSetTag(keyFor("glass_panes"))
++        .endsWith("GLASS_PANE")
++        .ensureSize("GLASS_PANES", 17);
++
++    /**
++     * Covers all glazed terracotta blocks.
++     */
++    public static final MaterialSetTag GLAZED_TERRACOTTA = new MaterialSetTag(keyFor("glazed_terracotta"))
++        .endsWith("GLAZED_TERRACOTTA")
++        .ensureSize("GLAZED_TERRACOTTA", 16);
++
++    /**
++     * Covers the colors of stained terracotta.
++     */
++    public static final MaterialSetTag STAINED_TERRACOTTA = new MaterialSetTag(keyFor("stained_terracotta"))
++        .endsWith("TERRACOTTA")
++        .not(Material.TERRACOTTA)
++        .notEndsWith("GLAZED_TERRACOTTA")
++        .ensureSize("STAINED_TERRACOTTA", 16);
++
++    /**
++     * Covers terracotta along with the stained variants.
++     */
++    public static final MaterialSetTag TERRACOTTA = new MaterialSetTag(keyFor("terracotta"))
++        .endsWith("TERRACOTTA")
++        .ensureSize("TERRACOTTA", 33);
++
++    /**
++     * Covers both golden apples.
++     */
++    public static final MaterialSetTag GOLDEN_APPLES = new MaterialSetTag(keyFor("golden_apples"))
++        .endsWith("GOLDEN_APPLE")
++        .ensureSize("GOLDEN_APPLES", 2);
++
++    /**
++     * Covers the variants of horse armor.
++     */
++    public static final MaterialSetTag HORSE_ARMORS = new MaterialSetTag(keyFor("horse_armors"))
++        .endsWith("_HORSE_ARMOR")
++        .ensureSize("HORSE_ARMORS", 4);
++
++    /**
++     * Covers the variants of infested blocks.
++     */
++    public static final MaterialSetTag INFESTED_BLOCKS = new MaterialSetTag(keyFor("infested_blocks"))
++        .startsWith("INFESTED_")
++        .ensureSize("INFESTED_BLOCKS", 7);
++
++    /**
++     * Covers the variants of mushroom blocks.
++     */
++    public static final MaterialSetTag MUSHROOM_BLOCKS = new MaterialSetTag(keyFor("mushroom_blocks"))
++        .endsWith("MUSHROOM_BLOCK")
++        .add(Material.MUSHROOM_STEM)
++        .ensureSize("MUSHROOM_BLOCKS", 3);
++
++    /**
++     * Covers all mushrooms.
++     */
++    public static final MaterialSetTag MUSHROOMS = new MaterialSetTag(keyFor("mushrooms"))
++        .add(Material.BROWN_MUSHROOM, Material.RED_MUSHROOM);
++
++    /**
++     * Covers all music disc items.
++     */
++    public static final MaterialSetTag MUSIC_DISCS = new MaterialSetTag(keyFor("music_discs"))
++        .startsWith("MUSIC_DISC_");
++
++    /**
++     * Covers all ores.
++     */
++    public static final MaterialSetTag ORES = new MaterialSetTag(keyFor("ores"))
++        .add(Material.ANCIENT_DEBRIS)
++        .endsWith("_ORE")
++        .ensureSize("ORES", 19);
++
++    /**
++     * Covers all piston typed items and blocks including the piston head and moving piston.
++     */
++    public static final MaterialSetTag PISTONS = new MaterialSetTag(keyFor("pistons"))
++        .contains("PISTON")
++        .ensureSize("PISTONS", 4);
++
++    /**
++     * Covers all potato items.
++     */
++    public static final MaterialSetTag POTATOES = new MaterialSetTag(keyFor("potatoes"))
++        .endsWith("POTATO")
++        .ensureSize("POTATOES", 3);
++
++    /**
++     * Covers all wooden pressure plates and the weighted pressure plates and the stone pressure plate.
++     */
++    public static final MaterialSetTag PRESSURE_PLATES = new MaterialSetTag(keyFor("pressure_plates"))
++        .endsWith("_PRESSURE_PLATE")
++        .ensureSize("PRESSURE_PLATES", 12);
++
++    /**
++     * Covers the variants of prismarine blocks.
++     */
++    public static final MaterialSetTag PRISMARINE = new MaterialSetTag(keyFor("prismarine"))
++        .add(Material.PRISMARINE, Material.PRISMARINE_BRICKS, Material.DARK_PRISMARINE);
++
++    /**
++     * Covers the variants of prismarine slabs.
++     */
++    public static final MaterialSetTag PRISMARINE_SLABS = new MaterialSetTag(keyFor("prismarine_slabs"))
++        .add(Material.PRISMARINE_SLAB, Material.PRISMARINE_BRICK_SLAB, Material.DARK_PRISMARINE_SLAB);
++
++    /**
++     * Covers the variants of prismarine stairs.
++     */
++    public static final MaterialSetTag PRISMARINE_STAIRS = new MaterialSetTag(keyFor("prismarine_stairs"))
++        .add(Material.PRISMARINE_STAIRS, Material.PRISMARINE_BRICK_STAIRS, Material.DARK_PRISMARINE_STAIRS);
++
++    /**
++     * Covers the variants of pumpkins.
++     */
++    public static final MaterialSetTag PUMPKINS = new MaterialSetTag(keyFor("pumpkins"))
++        .add(Material.CARVED_PUMPKIN, Material.JACK_O_LANTERN, Material.PUMPKIN);
++
++    /**
++     * Covers the variants of quartz blocks.
++     */
++    public static final MaterialSetTag QUARTZ_BLOCKS = new MaterialSetTag(keyFor("quartz_blocks"))
++        .add(Material.QUARTZ_BLOCK, Material.QUARTZ_PILLAR, Material.CHISELED_QUARTZ_BLOCK, Material.SMOOTH_QUARTZ);
++
++    /**
++     * Covers all uncooked fish items.
++     */
++    public static final MaterialSetTag RAW_FISH = new MaterialSetTag(keyFor("raw_fish"))
++        .add(Material.COD, Material.PUFFERFISH, Material.SALMON, Material.TROPICAL_FISH);
++
++    /**
++     * Covers the variants of red sandstone blocks.
++     */
++    public static final MaterialSetTag RED_SANDSTONES = new MaterialSetTag(keyFor("red_sandstones"))
++        .endsWith("RED_SANDSTONE")
++        .ensureSize("RED_SANDSTONES", 4);
++
++    /**
++     * Covers the variants of sandstone blocks.
++     */
++    public static final MaterialSetTag SANDSTONES = new MaterialSetTag(keyFor("sandstones"))
++        .add(Material.SANDSTONE, Material.CHISELED_SANDSTONE, Material.CUT_SANDSTONE, Material.SMOOTH_SANDSTONE);
++
++    /**
++     * Covers sponge and wet sponge.
++     */
++    public static final MaterialSetTag SPONGES = new MaterialSetTag(keyFor("sponges"))
++        .endsWith("SPONGE")
++        .ensureSize("SPONGES", 2);
++
++    /**
++     * Covers the non-colored and colored shulker boxes.
++     */
++    public static final MaterialSetTag SHULKER_BOXES = new MaterialSetTag(keyFor("shulker_boxes"))
++        .endsWith("SHULKER_BOX")
++        .ensureSize("SHULKER_BOXES", 17);
++
++    /**
++     * Covers zombie, creeper, skeleton, dragon, and player heads.
++     */
++    public static final MaterialSetTag SKULLS = new MaterialSetTag(keyFor("skulls"))
++        .endsWith("_HEAD")
++        .endsWith("_SKULL")
++        .not(Material.PISTON_HEAD)
++        .ensureSize("SKULLS", 12);
++
++    /**
++     * Covers all spawn egg items.
++     */
++    public static final MaterialSetTag SPAWN_EGGS = new MaterialSetTag(keyFor("spawn_eggs"))
++        .endsWith("_SPAWN_EGG")
++        .ensureSize("SPAWN_EGGS", 67);
++
++    /**
++     * Covers all colors of stained glass.
++     */
++    public static final MaterialSetTag STAINED_GLASS = new MaterialSetTag(keyFor("stained_glass"))
++        .endsWith("_STAINED_GLASS")
++        .ensureSize("STAINED_GLASS", 16);
++
++    /**
++     * Covers all colors of stained glass panes.
++     */
++    public static final MaterialSetTag STAINED_GLASS_PANES = new MaterialSetTag(keyFor("stained_glass_panes"))
++        .endsWith("STAINED_GLASS_PANE")
++        .ensureSize("STAINED_GLASS_PANES", 16);
++
++    /**
++     * Covers all variants of trapdoors.
++     */
++    public static final MaterialSetTag TRAPDOORS = new MaterialSetTag(keyFor("trapdoors"))
++        .endsWith("_TRAPDOOR")
++        .ensureSize("TRAPDOORS", 9);
++
++    /**
++     * Covers all wood variants of doors.
++     */
++    public static final MaterialSetTag WOODEN_DOORS = new MaterialSetTag(keyFor("wooden_doors"))
++        .endsWith("_DOOR")
++        .not(Material.IRON_DOOR)
++        .ensureSize("WOODEN_DOORS", 8);
++
++    /**
++     * Covers all wood variants of fences.
++     */
++    public static final MaterialSetTag WOODEN_FENCES = new MaterialSetTag(keyFor("wooden_fences"))
++        .endsWith("_FENCE")
++        .not(Material.NETHER_BRICK_FENCE)
++        .ensureSize("WOODEN_FENCES", 8);
++
++    /**
++     * Covers all wood variants of trapdoors.
++     */
++    public static final MaterialSetTag WOODEN_TRAPDOORS = new MaterialSetTag(keyFor("wooden_trapdoors"))
++        .endsWith("_TRAPDOOR")
++        .not(Material.IRON_TRAPDOOR)
++        .ensureSize("WOODEN_TRAPDOORS", 8);
++
++    /**
++     * Covers the wood variants of gates.
++     */
++    public static final MaterialSetTag WOODEN_GATES = new MaterialSetTag(keyFor("wooden_gates"))
++        .endsWith("_GATE")
++        .ensureSize("WOODEN_GATES", 8);
++
++    /**
++     * Covers the variants of purpur.
++     */
++    public static final MaterialSetTag PURPUR = new MaterialSetTag(keyFor("purpur"))
++        .startsWith("PURPUR_")
++        .ensureSize("PURPUR", 4);
++
++    /**
++     * Covers the variants of signs.
++     */
++    public static final MaterialSetTag SIGNS = new MaterialSetTag(keyFor("signs"))
++        .endsWith("_SIGN")
++        .ensureSize("SIGNS", 16);
++
++    /**
++     * Covers the variants of a regular torch.
++     */
++    public static final MaterialSetTag TORCH = new MaterialSetTag(keyFor("torch"))
++        .add(Material.TORCH, Material.WALL_TORCH)
++        .ensureSize("TORCH", 2);
++
++    /**
++     * Covers the variants of a redstone torch.
++     */
++    public static final MaterialSetTag REDSTONE_TORCH = new MaterialSetTag(keyFor("restone_torch"))
++        .add(Material.REDSTONE_TORCH, Material.REDSTONE_WALL_TORCH)
++        .ensureSize("REDSTONE_TORCH", 2);
++
++    /**
++     * Covers the variants of a soul torch.
++     */
++    public static final MaterialSetTag SOUL_TORCH = new MaterialSetTag(keyFor("soul_torch"))
++        .add(Material.SOUL_TORCH, Material.SOUL_WALL_TORCH)
++        .ensureSize("SOUL_TORCH", 2);
++
++    /**
++     * Covers the variants of torches.
++     */
++    public static final MaterialSetTag TORCHES = new MaterialSetTag(keyFor("torches"))
++        .add(TORCH, REDSTONE_TORCH, SOUL_TORCH)
++        .ensureSize("TORCHES", 6);
++
++    /**
++     * Covers the variants of lanterns.
++     */
++    public static final MaterialSetTag LANTERNS = new MaterialSetTag(keyFor("lanterns"))
++        .add(Material.LANTERN, Material.SOUL_LANTERN)
++        .ensureSize("LANTERNS", 2);
++
++    /**
++     * Covers the variants of rails.
++     */
++    public static final MaterialSetTag RAILS = new MaterialSetTag(keyFor("rails"))
++        .endsWith("RAIL")
++        .ensureSize("RAILS", 4);
++
++    /**
++     * Covers the variants of swords.
++     */
++    public static final MaterialSetTag SWORDS = new MaterialSetTag(keyFor("swords"))
++        .endsWith("_SWORD")
++        .ensureSize("SWORDS", 6);
++
++    /**
++     * Covers the variants of shovels.
++     */
++    public static final MaterialSetTag SHOVELS = new MaterialSetTag(keyFor("shovels"))
++        .endsWith("_SHOVEL")
++        .ensureSize("SHOVELS", 6);
++
++    /**
++     * Covers the variants of pickaxes.
++     */
++    public static final MaterialSetTag PICKAXES = new MaterialSetTag(keyFor("pickaxes"))
++        .endsWith("_PICKAXE")
++        .ensureSize("PICKAXES", 6);
++
++    /**
++     * Covers the variants of axes.
++     */
++    public static final MaterialSetTag AXES = new MaterialSetTag(keyFor("axes"))
++        .endsWith("_AXE")
++        .ensureSize("AXES", 6);
++
++    /**
++     * Covers the variants of hoes.
++     */
++    public static final MaterialSetTag HOES = new MaterialSetTag(keyFor("hoes"))
++        .endsWith("_HOE")
++        .ensureSize("HOES", 6);
++
++    /**
++     * Covers the variants of helmets.
++     */
++    public static final MaterialSetTag HELMETS = new MaterialSetTag(keyFor("helmets"))
++        .endsWith("_HELMET")
++        .ensureSize("HELMETS", 7);
++
++    /**
++     * Covers the variants of items that can be equipped in the helmet slot.
++     */
++    public static final MaterialSetTag HEAD_EQUIPPABLE = new MaterialSetTag(keyFor("head_equippable"))
++        .endsWith("_HELMET")
++        .add(SKULLS)
++        .add(Material.CARVED_PUMPKIN)
++        .ensureSize("HEAD_EQUIPPABLE", 20);
++
++    /**
++     * Covers the variants of chestplate.
++     */
++    public static final MaterialSetTag CHESTPLATES = new MaterialSetTag(keyFor("chestplates"))
++        .endsWith("_CHESTPLATE")
++        .ensureSize("CHESTPLATES", 6);
++
++    /**
++     * Covers the variants of items that can be equipped in the chest slot.
++     */
++    public static final MaterialSetTag CHEST_EQUIPPABLE = new MaterialSetTag(keyFor("chest_equippable"))
++        .endsWith("_CHESTPLATE")
++        .add(Material.ELYTRA)
++        .ensureSize("CHEST_EQUIPPABLE", 7);
++
++    /**
++     * Covers the variants of leggings.
++     */
++    public static final MaterialSetTag LEGGINGS = new MaterialSetTag(keyFor("leggings"))
++        .endsWith("_LEGGINGS")
++        .ensureSize("LEGGINGS", 6);
++
++    /**
++     * Covers the variants of boots.
++     */
++    public static final MaterialSetTag BOOTS = new MaterialSetTag(keyFor("boots"))
++        .endsWith("_BOOTS")
++        .ensureSize("BOOTS", 6);
++
++    /**
++     * Covers the variants of bows.
++     */
++    public static final MaterialSetTag BOWS = new MaterialSetTag(keyFor("bows"))
++        .add(Material.BOW)
++        .add(Material.CROSSBOW)
++        .ensureSize("BOWS", 2);
++
++    /**
++     * Covers the variants of player-throwable projectiles (not requiring a bow or any other "assistance").
++     */
++    public static final MaterialSetTag THROWABLE_PROJECTILES = new MaterialSetTag(keyFor("throwable_projectiles"))
++        .add(Material.EGG, Material.SNOWBALL, Material.SPLASH_POTION, Material.TRIDENT, Material.ENDER_PEARL, Material.EXPERIENCE_BOTTLE, Material.FIREWORK_ROCKET);
++
++    /**
++     * Covers materials that can be colored, such as wool, shulker boxes, stained glass etc.
++     */
++    @SuppressWarnings("unchecked")
++    public static final MaterialSetTag COLORABLE = new MaterialSetTag(keyFor("colorable"))
++        .add(Tag.WOOL, Tag.CARPETS).add(SHULKER_BOXES, STAINED_GLASS, STAINED_GLASS_PANES, CONCRETES, BEDS);
++        //.ensureSize("COLORABLE", 81); unit test don't have the vanilla item tags, so counts don't line up for real
++
++    /**
++     * Covers the variants of coral.
++     */
++    public static final MaterialSetTag CORAL = new MaterialSetTag(keyFor("coral"))
++        .endsWith("_CORAL")
++        .ensureSize("CORAL", 10);
++
++    /**
++     * Covers the variants of coral fans.
++     */
++    public static final MaterialSetTag CORAL_FANS = new MaterialSetTag(keyFor("coral_fans"))
++        .endsWith("_CORAL_FAN")
++        .endsWith("_CORAL_WALL_FAN")
++        .ensureSize("CORAL_FANS", 20);
++
++    /**
++     * Covers the variants of coral blocks.
++     */
++    public static final MaterialSetTag CORAL_BLOCKS = new MaterialSetTag(keyFor("coral_blocks"))
++        .endsWith("_CORAL_BLOCK")
++        .ensureSize("CORAL_BLOCKS", 10);
++
++    /**
++     * Covers all items that can be enchanted from the enchantment table or anvil.
++     */
++    public static final MaterialSetTag ENCHANTABLE = new MaterialSetTag(keyFor("enchantable"))
++            .add(PICKAXES, SWORDS, SHOVELS, AXES, HOES, HELMETS, CHEST_EQUIPPABLE, LEGGINGS, BOOTS, BOWS)
++            .add(Material.TRIDENT, Material.SHIELD, Material.FISHING_ROD, Material.SHEARS, Material.FLINT_AND_STEEL, Material.CARROT_ON_A_STICK, Material.WARPED_FUNGUS_ON_A_STICK)
++            .ensureSize("ENCHANTABLE", 65);
++}
+diff --git a/src/main/java/io/papermc/paper/tag/BaseTag.java b/src/main/java/io/papermc/paper/tag/BaseTag.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..4b8552e4e4c07b197fa9431fa911535b0222561e
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/tag/BaseTag.java
+@@ -0,0 +1,160 @@
++package io.papermc.paper.tag;
++
++import com.google.common.collect.Lists;
++import org.bukkit.Keyed;
++import org.bukkit.NamespacedKey;
++import org.bukkit.Tag;
++import org.jetbrains.annotations.NotNull;
++
++import java.util.Collection;
++import java.util.EnumSet;
++import java.util.HashSet;
++import java.util.List;
++import java.util.Set;
++import java.util.function.Predicate;
++import java.util.stream.Collectors;
++
++public abstract class BaseTag<T extends Keyed, C extends BaseTag<T, C>> implements Tag<T> {
++
++    protected final NamespacedKey key;
++    protected final Set<T> tagged;
++    private final List<Predicate<T>> globalPredicates;
++
++    public BaseTag(@NotNull Class<T> clazz, @NotNull NamespacedKey key, @NotNull Predicate<T> filter) {
++        this(clazz, key);
++        add(filter);
++    }
++
++    public BaseTag(@NotNull Class<T> clazz, @NotNull NamespacedKey key, @NotNull T...values) {
++        this(clazz, key, Lists.newArrayList(values));
++    }
++
++    public BaseTag(@NotNull Class<T> clazz, @NotNull NamespacedKey key, @NotNull Collection<T> values) {
++        this(clazz, key, values, o -> true);
++    }
++
++    public BaseTag(@NotNull Class<T> clazz, @NotNull NamespacedKey key, @NotNull Collection<T> values, @NotNull Predicate<T>... globalPredicates) {
++        this.key = key != null ? key : NamespacedKey.randomKey();
++        this.tagged = clazz.isEnum() ? createEnumSet(clazz) : new HashSet<>();
++        this.tagged.addAll(values);
++        this.globalPredicates = Lists.newArrayList(globalPredicates);
++    }
++
++    private <E> Set<E> createEnumSet(Class<E> enumClass) {
++        assert enumClass.isEnum();
++        return (Set<E>) EnumSet.noneOf((Class<Enum>) enumClass);
++    }
++
++    @NotNull
++    @Override
++    public NamespacedKey getKey() {
++        return key;
++    }
++
++    @NotNull
++    @Override
++    public Set<T> getValues() {
++        return tagged;
++    }
++
++    @Override
++    public boolean isTagged(@NotNull T item) {
++        return tagged.contains(item);
++    }
++
++    @NotNull
++    public C add(@NotNull Tag<T>...tags) {
++        for (Tag<T> tag : tags) {
++            add(tag.getValues());
++        }
++        return (C) this;
++    }
++
++    @NotNull
++    public C add(@NotNull T...values) {
++        this.tagged.addAll(Lists.newArrayList(values));
++        return (C) this;
++    }
++
++    @NotNull
++    public C add(@NotNull Collection<T> collection) {
++        this.tagged.addAll(collection);
++        return (C) this;
++    }
++
++    @NotNull
++    public C add(@NotNull Predicate<T> filter) {
++        return add(getAllPossibleValues().stream().filter(globalPredicates.stream().reduce(Predicate::or).orElse(t -> true)).filter(filter).collect(Collectors.toSet()));
++    }
++
++    @NotNull
++    public C contains(@NotNull String with) {
++        return add(value -> getName(value).contains(with));
++    }
++
++    @NotNull
++    public C endsWith(@NotNull String with) {
++        return add(value -> getName(value).endsWith(with));
++    }
++
++    @NotNull
++    public C startsWith(@NotNull String with) {
++        return add(value -> getName(value).startsWith(with));
++    }
++
++    @NotNull
++    public C not(@NotNull Tag<T>...tags) {
++        for (Tag<T> tag : tags) {
++            not(tag.getValues());
++        }
++        return (C) this;
++    }
++
++    @NotNull
++    public C not(@NotNull T...values) {
++        this.tagged.removeAll(Lists.newArrayList(values));
++        return (C) this;
++    }
++
++    @NotNull
++    public C not(@NotNull Collection<T> values) {
++        this.tagged.removeAll(values);
++        return (C) this;
++    }
++
++    @NotNull
++    public C not(@NotNull Predicate<T> filter) {
++        not(getAllPossibleValues().stream().filter(globalPredicates.stream().reduce(Predicate::or).orElse(t -> true)).filter(filter).collect(Collectors.toSet()));
++        return (C) this;
++    }
++
++    @NotNull
++    public C notContains(@NotNull String with) {
++        return not(value -> getName(value).contains(with));
++    }
++
++    @NotNull
++    public C notEndsWith(@NotNull String with) {
++        return not(value -> getName(value).endsWith(with));
++    }
++
++    @NotNull
++    public C notStartsWith(@NotNull String with) {
++        return not(value -> getName(value).startsWith(with));
++    }
++
++    @NotNull
++    public C ensureSize(@NotNull String label, int size) {
++        long actual = this.tagged.stream().filter(globalPredicates.stream().reduce(Predicate::or).orElse(t -> true)).count();
++        if (size != actual) {
++            throw new IllegalStateException(key.toString() + ": " + label + " - Expected " + size + " values, got " + actual);
++        }
++        return (C) this;
++    }
++
++    @NotNull
++    protected abstract Set<T> getAllPossibleValues();
++
++    @NotNull
++    protected abstract String getName(@NotNull T value);
++}
+diff --git a/src/main/java/io/papermc/paper/tag/EntitySetTag.java b/src/main/java/io/papermc/paper/tag/EntitySetTag.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..c89c4619aaf388197834d98eb95af2f1e93db871
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/tag/EntitySetTag.java
+@@ -0,0 +1,42 @@
++package io.papermc.paper.tag;
++
++import org.bukkit.NamespacedKey;
++import org.bukkit.entity.EntityType;
++import org.jetbrains.annotations.NotNull;
++
++import java.util.Collection;
++import java.util.Set;
++import java.util.function.Predicate;
++import java.util.stream.Collectors;
++import java.util.stream.Stream;
++
++public class EntitySetTag extends BaseTag<EntityType, EntitySetTag> {
++
++    public EntitySetTag(@NotNull NamespacedKey key, @NotNull Predicate<EntityType> filter) {
++        super(EntityType.class, key, filter);
++    }
++
++    public EntitySetTag(@NotNull NamespacedKey key, @NotNull EntityType... values) {
++        super(EntityType.class, key, values);
++    }
++
++    public EntitySetTag(@NotNull NamespacedKey key, @NotNull Collection<EntityType> values) {
++        super(EntityType.class, key, values);
++    }
++
++    public EntitySetTag(@NotNull NamespacedKey key, @NotNull Collection<EntityType> values, @NotNull Predicate<EntityType>... globalPredicates) {
++        super(EntityType.class, key, values, globalPredicates);
++    }
++
++    @NotNull
++    @Override
++    protected Set<EntityType> getAllPossibleValues() {
++        return Stream.of(EntityType.values()).collect(Collectors.toSet());
++    }
++
++    @NotNull
++    @Override
++    protected String getName(@NotNull EntityType value) {
++        return value.name();
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/tag/EntityTags.java b/src/main/java/io/papermc/paper/tag/EntityTags.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..9266c9d77e2eef7cd717dc729834a190f1fc7c1d
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/tag/EntityTags.java
+@@ -0,0 +1,50 @@
++package io.papermc.paper.tag;
++
++import org.bukkit.NamespacedKey;
++
++import static org.bukkit.entity.EntityType.*;
++
++public class EntityTags {
++
++    private static NamespacedKey keyFor(String key) {
++        //noinspection deprecation
++        return new NamespacedKey("paper", key + "_settag");
++    }
++
++    /**
++     * Covers undead mobs
++     * @see <a href="https://minecraft.gamepedia.com/Mob#Undead_mobs">https://minecraft.gamepedia.com/Mob#Undead_mobs</a>
++     */
++    public static final EntitySetTag UNDEADS = new EntitySetTag(keyFor("undeads"))
++        .add(DROWNED, HUSK, PHANTOM, SKELETON, SKELETON_HORSE, STRAY, WITHER, WITHER_SKELETON, ZOGLIN, ZOMBIE, ZOMBIE_HORSE, ZOMBIE_VILLAGER, ZOMBIFIED_PIGLIN)
++        .ensureSize("UNDEADS", 13);
++
++    /**
++     * Covers all horses
++     */
++    public static final EntitySetTag HORSES = new EntitySetTag(keyFor("horses"))
++        .contains("HORSE")
++        .ensureSize("HORSES", 3);
++
++    /**
++     * Covers all minecarts
++     */
++    public static final EntitySetTag MINECARTS = new EntitySetTag(keyFor("minecarts"))
++        .contains("MINECART")
++        .ensureSize("MINECARTS", 7);
++
++    /**
++     * Covers mobs that split into smaller mobs
++     */
++    public static final EntitySetTag SPLITTING_MOBS = new EntitySetTag(keyFor("splitting_mobs"))
++        .add(SLIME, MAGMA_CUBE)
++        .ensureSize("SLIMES", 2);
++
++    /**
++     * Covers all water based mobs
++     * @see <a href="https://minecraft.gamepedia.com/Mob#Water-based_mobs">https://minecraft.gamepedia.com/Mob#Water-based_mobs</a>
++     */
++    public static final EntitySetTag WATER_BASED = new EntitySetTag(keyFor("water_based"))
++        .add(DOLPHIN, SQUID, GUARDIAN, ELDER_GUARDIAN, TURTLE, COD, SALMON, PUFFERFISH, TROPICAL_FISH)
++        .ensureSize("WATER_BASED", 9);
++}
+diff --git a/src/main/java/org/bukkit/Tag.java b/src/main/java/org/bukkit/Tag.java
+index 53b66c28f0fed97664d0886683731e94ca59bdd2..88ea8b6c5c2c4d2116f646341de62590718bc28c 100644
+--- a/src/main/java/org/bukkit/Tag.java
++++ b/src/main/java/org/bukkit/Tag.java
+@@ -10,6 +10,10 @@ import org.jetbrains.annotations.NotNull;
+  * Note that whilst all tags defined within this interface must be present in
+  * implementations, their existence is not guaranteed across future versions.
+  *
++ * <p>Custom tags defined by Paper are not present (as constants) in this class.
++ * To access them please refer to {@link com.destroystokyo.paper.MaterialTags}
++ * and {@link io.papermc.paper.tag.EntityTags}.</p>
++ *
+  * @param <T> the type of things grouped by this tag
+  */
+ public interface Tag<T extends Keyed> extends Keyed {
+diff --git a/src/test/java/com/destroystokyo/paper/MaterialTagsTest.java b/src/test/java/com/destroystokyo/paper/MaterialTagsTest.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..328c51471dc12e81c1a1b643455337b3fef4d14a
+--- /dev/null
++++ b/src/test/java/com/destroystokyo/paper/MaterialTagsTest.java
+@@ -0,0 +1,25 @@
++/*
++ * Copyright (c) 2018 Daniel Ennis (Aikar) MIT License
++ */
++
++package com.destroystokyo.paper;
++
++import org.bukkit.Bukkit;
++import org.bukkit.TestServer;
++import org.junit.Test;
++
++import java.util.logging.Level;
++
++public class MaterialTagsTest {
++    @Test
++    public void testInitialize() {
++        try {
++            TestServer.getInstance();
++            MaterialTags.SHULKER_BOXES.getValues();
++            assert true;
++        } catch (Throwable e) {
++            Bukkit.getLogger().log(Level.SEVERE, e.getMessage(), e);
++            assert false;
++        }
++    }
++}
+diff --git a/src/test/java/io/papermc/paper/EntityTagsTest.java b/src/test/java/io/papermc/paper/EntityTagsTest.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..06bb9d1180361d3d00c699796bbacbce5bef2177
+--- /dev/null
++++ b/src/test/java/io/papermc/paper/EntityTagsTest.java
+@@ -0,0 +1,24 @@
++package io.papermc.paper;
++
++import com.destroystokyo.paper.MaterialTags;
++import io.papermc.paper.tag.EntityTags;
++import org.bukkit.Bukkit;
++import org.bukkit.TestServer;
++import org.junit.Test;
++
++import java.util.logging.Level;
++
++public class EntityTagsTest {
++
++    @Test
++    public void testInitialize() {
++        try {
++            TestServer.getInstance();
++            EntityTags.HORSES.getValues();
++            assert true;
++        } catch (Throwable e) {
++            Bukkit.getLogger().log(Level.SEVERE, e.getMessage(), e);
++            assert false;
++        }
++    }
++}
+diff --git a/src/test/java/org/bukkit/TestServer.java b/src/test/java/org/bukkit/TestServer.java
+index 61993528e6975c38d82213e9b5caf996fe777328..5f9d348241210689eaf41a39ace5948e7a237b12 100644
+--- a/src/test/java/org/bukkit/TestServer.java
++++ b/src/test/java/org/bukkit/TestServer.java
+@@ -29,6 +29,16 @@ public final class TestServer implements InvocationHandler {
+                         }
+                     }
+                 );
++            // Paper start
++            methodMap.put(
++                Server.class.getMethod("getTag", String.class, NamespacedKey.class, Class.class),
++                new MethodHandler() {
++                    public Object handle(TestServer server, Object[] args) {
++                        return new com.destroystokyo.paper.MaterialSetTag();
++                    }
++                }
++            );
++            // Paper end
+             methodMap.put(
+                     Server.class.getMethod("getPluginManager"),
+                     new MethodHandler() {

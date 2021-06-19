@@ -1,0 +1,134 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Shane Freeder <theboyetronic@gmail.com>
+Date: Thu, 15 Nov 2018 13:38:37 +0000
+Subject: [PATCH] force entity dismount during teleportation
+
+Entities must be dismounted before teleportation in order to avoid
+multiple issues in the server with regards to teleportation, shamefully,
+too many plugins rely on the events firing, which means that not firing
+these events caues more issues than it solves;
+
+In order to counteract this, Entity dismount/exit vehicle events have
+been modified to supress cancellation (and has a method to allow plugins
+to check if this has been set), noting that cancellation will be silently
+surpressed given that plugins are not expecting this event to not be cancellable.
+
+This is a far from ideal scenario, however: given the current state of this
+event and other alternatives causing issues elsewhere, I believe that
+this is going to be the best soultion all around.
+
+Improvements/suggestions welcome!
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+index 085bdf17a0e844ff813bf1107b686b33943659ba..e9dc0288ea1bb7645622ac6d9fc7567b86734ca6 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+@@ -1299,11 +1299,13 @@ public class ServerPlayer extends Player {
+         }
+     }
+ 
+-    @Override
+-    public void stopRiding() {
++    // Paper start
++    @Override public void stopRiding() { stopRiding(false); }
++    @Override public void stopRiding(boolean suppressCancellation) {
++        // paper end
+         Entity entity = this.getVehicle();
+ 
+-        super.stopRiding();
++        super.stopRiding(suppressCancellation); // Paper
+         Entity entity1 = this.getVehicle();
+ 
+         if (entity1 != entity && this.connection != null) {
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index 6ec242804b8a52216cf4148eed7d33109021c4de..2f9e6781e501a76994edc208a7981030d8fb4ea2 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -2234,12 +2234,15 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, n
+ 
+     }
+ 
+-    public void removeVehicle() {
++    // Paper start
++    public void removeVehicle() { stopRiding(false); }
++    public void stopRiding(boolean suppressCancellation) {
++    // Paper end
+         if (this.vehicle != null) {
+             Entity entity = this.vehicle;
+ 
+             this.vehicle = null;
+-            if (!entity.removePassenger(this)) this.vehicle = entity; // CraftBukkit
++            if (!entity.removePassenger(this, suppressCancellation)) this.vehicle = entity; // CraftBukkit // Paper
+         }
+ 
+     }
+@@ -2302,7 +2305,10 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, n
+         return true; // CraftBukkit
+     }
+ 
+-    protected boolean removePassenger(Entity entity) { // CraftBukkit
++    // Paper start
++    protected boolean removePassenger(Entity entity) { return removePassenger(entity, false);}
++    protected boolean removePassenger(Entity entity, boolean suppressCancellation) { // CraftBukkit
++        // Paper end
+         if (entity.getVehicle() == this) {
+             throw new IllegalStateException("Use x.stopRiding(y), not y.removePassenger(x)");
+         } else {
+@@ -2312,7 +2318,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, n
+             if (this.getBukkitEntity() instanceof Vehicle && entity.getBukkitEntity() instanceof LivingEntity) {
+                 VehicleExitEvent event = new VehicleExitEvent(
+                         (Vehicle) this.getBukkitEntity(),
+-                        (LivingEntity) entity.getBukkitEntity()
++                        (LivingEntity) entity.getBukkitEntity(), !suppressCancellation // Paper
+                 );
+                 // Suppress during worldgen
+                 if (this.valid) {
+@@ -2326,7 +2332,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, n
+             }
+             // CraftBukkit end
+             // Spigot start
+-            org.spigotmc.event.entity.EntityDismountEvent event = new org.spigotmc.event.entity.EntityDismountEvent(entity.getBukkitEntity(), this.getBukkitEntity());
++            org.spigotmc.event.entity.EntityDismountEvent event = new org.spigotmc.event.entity.EntityDismountEvent(entity.getBukkitEntity(), this.getBukkitEntity(), !suppressCancellation); // Paper
+             // Suppress during worldgen
+             if (this.valid) {
+                 Bukkit.getPluginManager().callEvent(event);
+diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+index 5e781d0af08ba7faba84ee774e87f1c0d484ae9f..4e366fd032cf0ac37a7a851994625b905029cd4a 100644
+--- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
++++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+@@ -3329,11 +3329,13 @@ public abstract class LivingEntity extends Entity {
+         return ((Byte) this.entityData.get(LivingEntity.DATA_LIVING_ENTITY_FLAGS) & 4) != 0;
+     }
+ 
+-    @Override
+-    public void stopRiding() {
++    // Paper start
++    @Override public void stopRiding() { stopRiding(false); }
++    @Override public void stopRiding(boolean suppressCancellation) {
++        // Paper end
+         Entity entity = this.getVehicle();
+ 
+-        super.stopRiding();
++        super.stopRiding(suppressCancellation); // Paper - suppress
+         if (entity != null && entity != this.getVehicle() && !this.level.isClientSide) {
+             this.dismountVehicle(entity);
+         }
+diff --git a/src/main/java/net/minecraft/world/entity/player/Player.java b/src/main/java/net/minecraft/world/entity/player/Player.java
+index 1a7bd2462bab95fa6986cef705e5e5b82da30063..857346b755454956268cc594bb03dc060f2a4aac 100644
+--- a/src/main/java/net/minecraft/world/entity/player/Player.java
++++ b/src/main/java/net/minecraft/world/entity/player/Player.java
+@@ -1096,9 +1096,11 @@ public abstract class Player extends LivingEntity {
+         return -0.35D;
+     }
+ 
+-    @Override
+-    public void removeVehicle() {
+-        super.removeVehicle();
++    // Paper start
++    @Override public void removeVehicle() { stopRiding(false); }
++    @Override public void stopRiding(boolean suppressCancellation) {
++        // Paper end
++        super.stopRiding(suppressCancellation); // Paper - suppress
+         this.boardingCooldown = 0;
+     }
+ 

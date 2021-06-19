@@ -1,0 +1,44 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sat, 15 Jun 2013 19:51:17 -0400
+Subject: [PATCH] Improve EntityShootBowEvent
+
+Adds missing call to Illagers and also adds Arrow ItemStack to skeltons
+
+diff --git a/src/main/java/net/minecraft/world/entity/monster/AbstractSkeleton.java b/src/main/java/net/minecraft/world/entity/monster/AbstractSkeleton.java
+index d7bca8fa71e325ba1967537d4102ccb207c4d717..3d8f3e22223e4effeaf52cb18c14c60276d4689c 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/AbstractSkeleton.java
++++ b/src/main/java/net/minecraft/world/entity/monster/AbstractSkeleton.java
+@@ -196,7 +196,7 @@ public abstract class AbstractSkeleton extends Monster implements RangedAttackMo
+ 
+         entityarrow.shoot(d0, d1 + d3 * 0.20000000298023224D, d2, 1.6F, (float) (14 - this.level.getDifficulty().getId() * 4));
+         // CraftBukkit start
+-        org.bukkit.event.entity.EntityShootBowEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityShootBowEvent(this, this.getMainHandItem(), null, entityarrow, net.minecraft.world.InteractionHand.MAIN_HAND, 0.8F, true);
++        org.bukkit.event.entity.EntityShootBowEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityShootBowEvent(this, this.getMainHandItem(), entityarrow.getPickupItem(), entityarrow, net.minecraft.world.InteractionHand.MAIN_HAND, 0.8F, true); // Paper
+         if (event.isCancelled()) {
+             event.getProjectile().remove();
+             return;
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Illusioner.java b/src/main/java/net/minecraft/world/entity/monster/Illusioner.java
+index ff38ad2ac16ff49a290976e392175e96fa986925..c9fa01b910de7ecb494d3000afebea9a2bd1276a 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Illusioner.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Illusioner.java
+@@ -196,8 +196,18 @@ public class Illusioner extends SpellcasterIllager implements RangedAttackMob {
+         double d3 = Math.sqrt(d0 * d0 + d2 * d2);
+ 
+         entityarrow.shoot(d0, d1 + d3 * 0.20000000298023224D, d2, 1.6F, (float) (14 - this.level.getDifficulty().getId() * 4));
++        // Paper start
++        org.bukkit.event.entity.EntityShootBowEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityShootBowEvent(this, this.getMainHandItem(), entityarrow.getPickupItem(), entityarrow, target.getUsedItemHand(), 0.8F, true);
++        if (event.isCancelled()) {
++            event.getProjectile().remove();
++            return;
++        }
++
++        if (event.getProjectile() == entityarrow.getBukkitEntity()) {
++            this.level.addFreshEntity(entityarrow);
++        }
+         this.playSound(SoundEvents.SKELETON_SHOOT, 1.0F, 1.0F / (this.getRandom().nextFloat() * 0.4F + 0.8F));
+-        this.level.addFreshEntity(entityarrow);
++        // Paper end
+     }
+ 
+     @Override

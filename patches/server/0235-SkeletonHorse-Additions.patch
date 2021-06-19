@@ -1,0 +1,97 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: BillyGalbreath <Blake.Galbreath@GMail.com>
+Date: Fri, 27 Jul 2018 22:36:31 -0500
+Subject: [PATCH] SkeletonHorse Additions
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/animal/horse/SkeletonTrapGoal.java b/src/main/java/net/minecraft/world/entity/animal/horse/SkeletonTrapGoal.java
+index 67afaab789041f49407233ca8a856a3b0131fcf6..1b874f8a72f5b1ac64dd66621b039295f5dc1f18 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/horse/SkeletonTrapGoal.java
++++ b/src/main/java/net/minecraft/world/entity/animal/horse/SkeletonTrapGoal.java
+@@ -18,6 +18,7 @@ import net.minecraft.world.level.Level;
+ public class SkeletonTrapGoal extends Goal {
+ 
+     private final SkeletonHorse horse;
++    private java.util.List<org.bukkit.entity.HumanEntity> eligiblePlayers; // Paper
+ 
+     public SkeletonTrapGoal(SkeletonHorse skeletonHorse) {
+         this.horse = skeletonHorse;
+@@ -25,12 +26,13 @@ public class SkeletonTrapGoal extends Goal {
+ 
+     @Override
+     public boolean canUse() {
+-        return this.horse.level.hasNearbyAlivePlayer(this.horse.getX(), this.horse.getY(), this.horse.getZ(), 10.0D);
++        return !(eligiblePlayers = this.horse.level.findNearbyBukkitPlayers(this.horse.getX(), this.horse.getY(), this.horse.getZ(), 10.0D, false)).isEmpty(); // Paper
+     }
+ 
+     @Override
+     public void tick() {
+         ServerLevel worldserver = (ServerLevel) this.horse.level;
++        if (!new com.destroystokyo.paper.event.entity.SkeletonHorseTrapEvent((org.bukkit.entity.SkeletonHorse) this.horse.getBukkitEntity(), eligiblePlayers).callEvent()) return; // Paper
+         DifficultyInstance difficultydamagescaler = worldserver.getCurrentDifficultyAt(this.horse.blockPosition());
+ 
+         this.horse.setTrap(false);
+diff --git a/src/main/java/net/minecraft/world/level/EntityGetter.java b/src/main/java/net/minecraft/world/level/EntityGetter.java
+index 849616d9ad140285f7aa4d2ffafd6371f3904bd5..325e244c46ec208a2e7e18d71ccbbfcc25fc1bce 100644
+--- a/src/main/java/net/minecraft/world/level/EntityGetter.java
++++ b/src/main/java/net/minecraft/world/level/EntityGetter.java
+@@ -89,6 +89,28 @@ public interface EntityGetter {
+         return player;
+     }
+ 
++    // Paper start
++    default List<org.bukkit.entity.HumanEntity> findNearbyBukkitPlayers(double x, double y, double z, double radius, boolean notSpectator) {
++        return findNearbyBukkitPlayers(x, y, z, radius, notSpectator ? EntitySelector.NO_SPECTATORS : net.minecraft.world.entity.EntitySelector.NO_CREATIVE_OR_SPECTATOR);
++    }
++
++    default List<org.bukkit.entity.HumanEntity> findNearbyBukkitPlayers(double x, double y, double z, double radius, @Nullable Predicate<Entity> predicate) {
++        com.google.common.collect.ImmutableList.Builder<org.bukkit.entity.HumanEntity> builder = com.google.common.collect.ImmutableList.builder();
++
++        for (Player human : this.players()) {
++            if (predicate == null || predicate.test(human)) {
++                double distanceSquared = human.distanceToSqr(x, y, z);
++
++                if (radius < 0.0D || distanceSquared < radius * radius) {
++                    builder.add(human.getBukkitEntity());
++                }
++            }
++        }
++
++        return builder.build();
++    }
++    // Paper end
++
+     @Nullable
+     default Player getNearestPlayer(Entity entity, double maxDistance) {
+         return this.getNearestPlayer(entity.getX(), entity.getY(), entity.getZ(), maxDistance, false);
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftSkeletonHorse.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftSkeletonHorse.java
+index b52ca4a612e30542ef4029cb1340f616bc4c36e6..90a61d1472afea12637814256f91dbd2f5acb42e 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftSkeletonHorse.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftSkeletonHorse.java
+@@ -25,4 +25,26 @@ public class CraftSkeletonHorse extends CraftAbstractHorse implements SkeletonHo
+     public Variant getVariant() {
+         return Variant.SKELETON_HORSE;
+     }
++
++    // Paper start
++    @Override
++    public net.minecraft.world.entity.animal.horse.SkeletonHorse getHandle() {
++        return (net.minecraft.world.entity.animal.horse.SkeletonHorse) super.getHandle();
++    }
++
++    @Override
++    public int getTrapTime() {
++        return getHandle().trapTime;
++    }
++
++    @Override
++    public boolean isTrap() {
++        return getHandle().isTrap();
++    }
++
++    @Override
++    public void setTrap(boolean trap) {
++        getHandle().setTrap(trap);
++    }
++    // Paper end
+ }

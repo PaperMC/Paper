@@ -1,0 +1,25 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sat, 11 Apr 2020 21:38:59 -0400
+Subject: [PATCH] Disable Sync Events firing Async errors during shutdown
+
+This is how it use to behave on Paper, and this is totally destroying
+the ability to try to shut the server down gracefully during the
+shutdown process as events firing on the watchdog thread are throwing
+errors.
+
+This isn't an issue on Spigot
+
+diff --git a/src/main/java/org/bukkit/plugin/SimplePluginManager.java b/src/main/java/org/bukkit/plugin/SimplePluginManager.java
+index b83637f872be5fc73500b10c917d71802976b340..49e5d49eb09bb966e47d6a03ac08a527c963b43d 100644
+--- a/src/main/java/org/bukkit/plugin/SimplePluginManager.java
++++ b/src/main/java/org/bukkit/plugin/SimplePluginManager.java
+@@ -591,7 +591,7 @@ public final class SimplePluginManager implements PluginManager {
+         // Paper - replace callEvent by merging to below method
+         if (event.isAsynchronous() && server.isPrimaryThread()) {
+             throw new IllegalStateException(event.getEventName() + " may only be triggered asynchronously.");
+-        } else if (!event.isAsynchronous() && !server.isPrimaryThread()) {
++        } else if (!event.isAsynchronous() && !server.isPrimaryThread() && !server.isStopping() ) {
+             throw new IllegalStateException(event.getEventName() + " may only be triggered synchronously.");
+         }
+ 

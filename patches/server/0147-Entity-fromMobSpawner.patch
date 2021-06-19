@@ -1,0 +1,65 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: BillyGalbreath <Blake.Galbreath@GMail.com>
+Date: Sun, 18 Jun 2017 18:17:05 -0500
+Subject: [PATCH] Entity#fromMobSpawner()
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index 267ecf9c5a6c9e696cb2a5c8be13bbc4ab14cd41..a6c26bd5a23799659db03fc2db55009391936f2a 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -321,6 +321,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, n
+     public final org.spigotmc.ActivationRange.ActivationType activationType = org.spigotmc.ActivationRange.initializeEntityActivationType(this);
+     public final boolean defaultActivationState;
+     public long activatedTick = Integer.MIN_VALUE;
++    public boolean spawnedViaMobSpawner; // Paper - Yes this name is similar to above, upstream took the better one
+     protected int numCollisions = 0; // Paper
+     public void inactiveTick() { }
+     // Spigot end
+@@ -1859,6 +1860,10 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, n
+                 nbt.putUUID("Paper.OriginWorld", originWorld);
+                 nbt.put("Paper.Origin", this.newDoubleList(origin.getX(), origin.getY(), origin.getZ()));
+             }
++            // Save entity's from mob spawner status
++            if (spawnedViaMobSpawner) {
++                nbt.putBoolean("Paper.FromMobSpawner", true);
++            }
+             // Paper end
+             return nbt;
+         } catch (Throwable throwable) {
+@@ -1996,6 +2001,8 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, n
+                 this.originWorld = originWorld;
+                 origin = new org.bukkit.util.Vector(originTag.getDouble(0), originTag.getDouble(1), originTag.getDouble(2));
+             }
++
++            spawnedViaMobSpawner = nbt.getBoolean("Paper.FromMobSpawner"); // Restore entity's from mob spawner status
+             // Paper end
+ 
+         } catch (Throwable throwable) {
+diff --git a/src/main/java/net/minecraft/world/level/BaseSpawner.java b/src/main/java/net/minecraft/world/level/BaseSpawner.java
+index 037dafb59e54047d1d54474c44897d35b8f46c98..e310c1eb1108780bcff4d7ba9d49cefa2926287c 100644
+--- a/src/main/java/net/minecraft/world/level/BaseSpawner.java
++++ b/src/main/java/net/minecraft/world/level/BaseSpawner.java
+@@ -166,6 +166,7 @@ public abstract class BaseSpawner {
+                             }
+                             // Spigot End
+                         }
++                        entity.spawnedViaMobSpawner = true; // Paper
+                         // Spigot Start
+                         if (org.bukkit.craftbukkit.event.CraftEventFactory.callSpawnerSpawnEvent(entity, pos).isCancelled()) {
+                             Entity vehicle = entity.getVehicle();
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
+index 52f9c17558ed19e7ff3e913287bcd4f6014630fe..e132d38199766e3e787169501d8bb05964506e0f 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
+@@ -1144,5 +1144,10 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
+         //noinspection ConstantConditions
+         return originVector.toLocation(world);
+     }
++
++    @Override
++    public boolean fromMobSpawner() {
++        return getHandle().spawnedViaMobSpawner;
++    }
+     // Paper end
+ }
