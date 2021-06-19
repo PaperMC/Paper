@@ -34,9 +34,9 @@ How To (Plugin Developers)
  * Artifact Information:
 ```xml
 <dependency>
-    <groupId>com.destroystokyo.paper</groupId>
+    <groupId>io.papermc.paper</groupId>
     <artifactId>paper-api</artifactId>
-    <version>1.16.5-R0.1-SNAPSHOT</version>
+    <version>1.17-R0.1-SNAPSHOT</version>
     <scope>provided</scope>
 </dependency>
  ```
@@ -54,15 +54,17 @@ repositories {
  * Artifact:
 ```groovy
 dependencies {
-    compileOnly 'com.destroystokyo.paper:paper-api:1.16.5-R0.1-SNAPSHOT'
+    compileOnly 'io.papermc.paper:paper-api:1.17-R0.1-SNAPSHOT'
 }
 ```
 
 How To (Compiling Jar From Source)
 ------
-To compile Paper, you need JDK 8, maven, and an internet connection.
+To compile Paper, you need JDK 16 and an internet connection.
 
-Clone this repo, run `./paper jar` from *bash*, get files.
+Clone this repo, run `./gradlew applyPatches`, then `./gradlew reobfJar` from your terminal. You can find the compiled jar in the `Paper-Server/build/libs` directory.
+
+To get a full list of tasks, run `./gradlew tasks`.
 
 How To (Pull Request)
 ------
