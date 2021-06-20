@@ -1,6 +1,7 @@
 package org.bukkit.inventory;
 
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.Mob;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -249,7 +250,7 @@ public interface EntityEquipment {
      * <li>A drop chance of 1.0F will always drop
      * </ul>
      *
-     * @return chance of the currently held item being dropped (1 for players)
+     * @return chance of the currently held item being dropped (1 for non-{@link Mob})
      */
     float getItemInMainHandDropChance();
 
@@ -263,7 +264,7 @@ public interface EntityEquipment {
      * </ul>
      *
      * @param chance the chance of the main hand item being dropped
-     * @throws UnsupportedOperationException when called on players
+     * @throws UnsupportedOperationException when called on non-{@link Mob}
      */
     void setItemInMainHandDropChance(float chance);
 
@@ -276,7 +277,7 @@ public interface EntityEquipment {
      * <li>A drop chance of 1.0F will always drop
      * </ul>
      *
-     * @return chance of the off hand item being dropped (1 for players)
+     * @return chance of the off hand item being dropped (1 for non-{@link Mob})
      */
     float getItemInOffHandDropChance();
 
@@ -290,7 +291,7 @@ public interface EntityEquipment {
      * </ul>
      *
      * @param chance the chance of off hand item being dropped
-     * @throws UnsupportedOperationException when called on players
+     * @throws UnsupportedOperationException when called on non-{@link Mob}
      */
     void setItemInOffHandDropChance(float chance);
 
@@ -302,7 +303,7 @@ public interface EntityEquipment {
      * <li>A drop chance of 1.0F will always drop
      * </ul>
      *
-     * @return the chance of the helmet being dropped (1 for players)
+     * @return the chance of the helmet being dropped (1 for non-{@link Mob})
      */
     float getHelmetDropChance();
 
@@ -315,7 +316,7 @@ public interface EntityEquipment {
      * </ul>
      *
      * @param chance of the helmet being dropped
-     * @throws UnsupportedOperationException when called on players
+     * @throws UnsupportedOperationException when called on non-{@link Mob}
      */
     void setHelmetDropChance(float chance);
 
@@ -328,7 +329,7 @@ public interface EntityEquipment {
      * <li>A drop chance of 1.0F will always drop
      * </ul>
      *
-     * @return the chance of the chest plate being dropped (1 for players)
+     * @return the chance of the chest plate being dropped (1 for non-{@link Mob})
      */
     float getChestplateDropChance();
 
@@ -342,7 +343,7 @@ public interface EntityEquipment {
      * </ul>
      *
      * @param chance of the chest plate being dropped
-     * @throws UnsupportedOperationException when called on players
+     * @throws UnsupportedOperationException when called on non-{@link Mob}
      */
     void setChestplateDropChance(float chance);
 
@@ -355,7 +356,7 @@ public interface EntityEquipment {
      * <li>A drop chance of 1.0F will always drop
      * </ul>
      *
-     * @return the chance of the leggings being dropped (1 for players)
+     * @return the chance of the leggings being dropped (1 for non-{@link Mob})
      */
     float getLeggingsDropChance();
 
@@ -369,7 +370,7 @@ public interface EntityEquipment {
      * </ul>
      *
      * @param chance chance of the leggings being dropped
-     * @throws UnsupportedOperationException when called on players
+     * @throws UnsupportedOperationException when called on non-{@link Mob}
      */
     void setLeggingsDropChance(float chance);
 
@@ -381,7 +382,7 @@ public interface EntityEquipment {
      * <li>A drop chance of 1.0F will always drop
      * </ul>
      *
-     * @return the chance of the boots being dropped (1 for players)
+     * @return the chance of the boots being dropped (1 for non-{@link Mob})
      */
     float getBootsDropChance();
 
@@ -394,7 +395,7 @@ public interface EntityEquipment {
      * </ul>
      *
      * @param chance of the boots being dropped
-     * @throws UnsupportedOperationException when called on players
+     * @throws UnsupportedOperationException when called on non-{@link Mob}
      */
     void setBootsDropChance(float chance);
 
