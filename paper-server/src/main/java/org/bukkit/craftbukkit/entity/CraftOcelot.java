@@ -17,6 +17,16 @@ public class CraftOcelot extends CraftAnimals implements Ocelot {
     }
 
     @Override
+    public boolean isTrusting() {
+        return getHandle().isTrusting();
+    }
+
+    @Override
+    public void setTrusting(boolean trust) {
+        getHandle().setTrusting(trust);
+    }
+
+    @Override
     public Type getCatType() {
         return Type.WILD_OCELOT;
     }
