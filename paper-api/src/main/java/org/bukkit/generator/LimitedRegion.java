@@ -4,6 +4,12 @@ import java.util.List;
 import org.bukkit.Location;
 import org.bukkit.RegionAccessor;
 import org.bukkit.block.BlockState;
+// Paper start
+import org.bukkit.World;
+import org.bukkit.block.BlockState;
+import org.bukkit.block.data.BlockData;
+import org.bukkit.util.Vector;
+// Paper end
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -53,4 +59,137 @@ public interface LimitedRegion extends RegionAccessor {
      */
     @NotNull
     List<BlockState> getTileEntities();
+
+
+    // Paper start
+    /**
+     * Sets the block at a vector location to the provided {@link BlockData}.
+     *
+     * @param vector {@link Vector} representing the position of the block to set.
+     * @param data   {@link BlockData} to set the block at the provided coordinates to.
+     */
+    default void setBlockData(@NotNull Vector vector, @NotNull BlockData data) {
+        setBlockData(vector.getBlockX(), vector.getBlockY(), vector.getBlockZ(), data);
+    }
+
+    /**
+     * Sets the {@link BlockState} at a location.
+     *
+     * @param x X coordinate.
+     * @param y Y coordinate.
+     * @param z Z coordinate.
+     * @param state The block state.
+     */
+    void setBlockState(int x, int y, int z, @NotNull BlockState state);
+
+    /**
+     * Sets the {@link BlockState} at a location.
+     *
+     * @param location Location to set block state.
+     * @param state The block state.
+     */
+    default void setBlockState(@NotNull Vector location, @NotNull BlockState state) {
+        setBlockState(location.getBlockX(), location.getBlockY(), location.getBlockZ(), state);
+    }
+
+    /**
+     * Gets the {@link BlockState} at a location.
+     *
+     * @param location Location to get block state from.
+     * @return The block state.
+     */
+    @NotNull
+    default BlockState getBlockState(@NotNull Vector location) {
+        return getBlockState(location.getBlockX(), location.getBlockY(), location.getBlockZ());
+    }
+
+    /**
+     * Schedules a block update at (x, y, z).
+     *
+     * @param x X coordinate
+     * @param y Y coordinate
+     * @param z Z coordinate
+     */
+    void scheduleBlockUpdate(int x, int y, int z);
+
+    /**
+     * Schedules a block update at a vector location.
+     *
+     * @param location {@link Vector} representing the position of the block to update.
+     */
+    default void scheduleBlockUpdate(@NotNull Vector location) {
+        scheduleBlockUpdate(location.getBlockX(), location.getBlockY(), location.getBlockZ());
+    }
+
+    /**
+     * Schedules a fluid update at (x, y, z).
+     *
+     * @param x X coordinate
+     * @param y Y coordinate
+     * @param z Z coordinate
+     */
+    void scheduleFluidUpdate(int x, int y, int z);
+
+    /**
+     * Schedules a fluid update at a vector location.
+     *
+     * @param location {@link Vector} representing the position of the block to update.
+     */
+    default void scheduleFluidUpdate(@NotNull Vector location) {
+        scheduleFluidUpdate(location.getBlockX(), location.getBlockY(), location.getBlockZ());
+    }
+
+    /**
+     * Gets the {@link World} object this region represents.
+     * <p>
+     * Do <b>not</b> attempt to read from/write to this world! Doing so during generation <b>will cause a deadlock!</b>
+     *
+     * @return The {@link World} object that this region represents.
+     */
+    @NotNull
+    World getWorld();
+
+    /**
+     * Gets the {@link BlockData} of the block at the provided coordinates.
+     *
+     * @param vector {@link Vector} representing the position of the block to get.
+     * @return {@link BlockData} at the coordinates
+     */
+    @NotNull
+    default BlockData getBlockData(@NotNull Vector vector) {
+        return getBlockData(vector.getBlockX(), vector.getBlockY(), vector.getBlockZ());
+    }
+
+    /**
+     * Gets the X-coordinate of the chunk in the center of the region.
+     *
+     * @return The center chunk's X coordinate.
+     */
+    int getCenterChunkX();
+
+    /**
+     * Gets the X-coordinate of the block in the center of the region.
+     *
+     * @return The center chunk's X coordinate.
+     */
+    default int getCenterBlockX() {
+        return getCenterChunkX() << 4;
+    }
+
+    /**
+     * Gets the Z-coordinate of the chunk in the center of the region.
+     *
+     * @return The center chunk's Z coordinate.
+     */
+    int getCenterChunkZ();
+
+    /**
+     * Gets the Z-coordinate of the block in the center of the region.
+     *
+     * @return The center chunk's Z coordinate.
+     */
+    default int getCenterBlockZ() {
+        return getCenterChunkZ() << 4;
+    }
+    // Paper end
 }
