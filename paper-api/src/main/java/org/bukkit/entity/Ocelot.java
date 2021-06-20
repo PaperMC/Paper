@@ -10,6 +10,20 @@ import org.jetbrains.annotations.Nullable;
 public interface Ocelot extends Animals {
 
     /**
+     * Checks if this ocelot trusts players.
+     *
+     * @return true if it trusts players
+     */
+    public boolean isTrusting();
+
+    /**
+     * Sets if this ocelot trusts players.
+     *
+     * @param trust true if it trusts players
+     */
+    public void setTrusting(boolean trust);
+
+    /**
      * Gets the current type of this cat.
      *
      * @return Type of the cat.
