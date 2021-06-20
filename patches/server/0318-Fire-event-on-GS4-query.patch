@@ -26,90 +26,49 @@ index 51cb2644aa516a59e19fecb308d519dbc7e5fb11..e548aa0ca4e1e94ab628614b44fc1156
          this.dataOutputStream.write(value);
      }
 diff --git a/src/main/java/net/minecraft/server/rcon/thread/QueryThreadGs4.java b/src/main/java/net/minecraft/server/rcon/thread/QueryThreadGs4.java
-index 02bb0b2df37ead741adfef38d7479ba6f691dc2d..4632e8f0d27057bf3c47057124b347237ab58111 100644
+index 02bb0b2df37ead741adfef38d7479ba6f691dc2d..25ae440839f1d286550a77d0a4c61e1dc02b369d 100644
 --- a/src/main/java/net/minecraft/server/rcon/thread/QueryThreadGs4.java
 +++ b/src/main/java/net/minecraft/server/rcon/thread/QueryThreadGs4.java
-@@ -94,33 +94,52 @@ public class QueryThreadGs4 extends GenericThread {
-         if (3 <= i && -2 == bs[0] && -3 == bs[1]) {
-             LOGGER.debug("Packet '{}' [{}]", PktUtils.toHexString(bs[2]), socketAddress);
-             switch(bs[2]) {
--            case 0:
--                if (!this.validChallenge(packet)) {
--                    LOGGER.debug("Invalid challenge [{}]", (Object)socketAddress);
--                    return false;
--                } else if (15 == i) {
--                    this.sendTo(this.buildRuleResponse(packet), packet);
--                    LOGGER.debug("Rules [{}]", (Object)socketAddress);
--                } else {
--                    NetworkDataOutputStream networkDataOutputStream = new NetworkDataOutputStream(1460);
--                    networkDataOutputStream.write(0);
--                    networkDataOutputStream.writeBytes(this.getIdentBytes(packet.getSocketAddress()));
+@@ -105,13 +105,32 @@ public class QueryThreadGs4 extends GenericThread {
+                     NetworkDataOutputStream networkDataOutputStream = new NetworkDataOutputStream(1460);
+                     networkDataOutputStream.write(0);
+                     networkDataOutputStream.writeBytes(this.getIdentBytes(packet.getSocketAddress()));
 -                    networkDataOutputStream.writeString(this.serverName);
--                    networkDataOutputStream.writeString("SMP");
++
++                    com.destroystokyo.paper.event.server.GS4QueryEvent.QueryType queryType =
++                        com.destroystokyo.paper.event.server.GS4QueryEvent.QueryType.BASIC;
++                    com.destroystokyo.paper.event.server.GS4QueryEvent.QueryResponse queryResponse = com.destroystokyo.paper.event.server.GS4QueryEvent.QueryResponse.builder()
++                        .motd(this.serverName)
++                        .map(this.worldName)
++                        .currentPlayers(this.serverInterface.getPlayerCount())
++                        .maxPlayers(this.maxPlayers)
++                        .port(this.serverPort)
++                        .hostname(this.hostIp)
++                        .gameVersion(this.serverInterface.getServerVersion())
++                        .serverVersion(org.bukkit.Bukkit.getServer().getName() + " on " + org.bukkit.Bukkit.getServer().getBukkitVersion())
++                        .build();
++                    com.destroystokyo.paper.event.server.GS4QueryEvent queryEvent =
++                        new com.destroystokyo.paper.event.server.GS4QueryEvent(queryType, packet.getAddress(), queryResponse);
++                    queryEvent.callEvent();
++                    queryResponse = queryEvent.getResponse();
++
++                    networkDataOutputStream.writeString(queryResponse.getMotd());
+                     networkDataOutputStream.writeString("SMP");
 -                    networkDataOutputStream.writeString(this.worldName);
 -                    networkDataOutputStream.writeString(Integer.toString(this.serverInterface.getPlayerCount()));
 -                    networkDataOutputStream.writeString(Integer.toString(this.maxPlayers));
 -                    networkDataOutputStream.writeShort((short)this.serverPort);
 -                    networkDataOutputStream.writeString(this.hostIp);
--                    this.sendTo(networkDataOutputStream.toByteArray(), packet);
--                    LOGGER.debug("Status [{}]", (Object)socketAddress);
--                }
--            default:
--                return true;
--            case 9:
--                this.sendChallenge(packet);
--                LOGGER.debug("Challenge [{}]", (Object)socketAddress);
--                return true;
-+                case 0:
-+                    if (!this.validChallenge(packet)) {
-+                        LOGGER.debug("Invalid challenge [{}]", (Object)socketAddress);
-+                        return false;
-+                    } else if (15 == i) {
-+                        this.sendTo(this.buildRuleResponse(packet), packet);
-+                        LOGGER.debug("Rules [{}]", (Object)socketAddress);
-+                    } else {
-+                        NetworkDataOutputStream networkDataOutputStream = new NetworkDataOutputStream(1460);
-+                        networkDataOutputStream.write(0);
-+                        networkDataOutputStream.writeBytes(this.getIdentBytes(packet.getSocketAddress()));
-+
-+                        com.destroystokyo.paper.event.server.GS4QueryEvent.QueryType queryType =
-+                            com.destroystokyo.paper.event.server.GS4QueryEvent.QueryType.BASIC;
-+                        com.destroystokyo.paper.event.server.GS4QueryEvent.QueryResponse queryResponse = com.destroystokyo.paper.event.server.GS4QueryEvent.QueryResponse.builder()
-+                            .motd(this.serverName)
-+                            .map(this.worldName)
-+                            .currentPlayers(this.serverInterface.getPlayerCount())
-+                            .maxPlayers(this.maxPlayers)
-+                            .port(this.serverPort)
-+                            .hostname(this.hostIp)
-+                            .gameVersion(this.serverInterface.getServerVersion())
-+                            .serverVersion(org.bukkit.Bukkit.getServer().getName() + " on " + org.bukkit.Bukkit.getServer().getBukkitVersion())
-+                            .build();
-+                        com.destroystokyo.paper.event.server.GS4QueryEvent queryEvent =
-+                            new com.destroystokyo.paper.event.server.GS4QueryEvent(queryType, packet.getAddress(), queryResponse);
-+                        queryEvent.callEvent();
-+                        queryResponse = queryEvent.getResponse();
-+
-+                        networkDataOutputStream.writeString(queryResponse.getMotd());
-+                        networkDataOutputStream.writeString("SMP");
-+                        networkDataOutputStream.writeString(queryResponse.getMap());
-+                        networkDataOutputStream.writeString(Integer.toString(queryResponse.getCurrentPlayers()));
-+                        networkDataOutputStream.writeString(Integer.toString(queryResponse.getMaxPlayers()));
-+                        networkDataOutputStream.writeShort((short) queryResponse.getPort());
-+                        networkDataOutputStream.writeString(queryResponse.getHostname());
-+                        // Paper end
-+                        this.sendTo(networkDataOutputStream.toByteArray(), packet);
-+                        LOGGER.debug("Status [{}]", (Object)socketAddress);
-+                    }
-+                default:
-+                    return true;
-+                case 9:
-+                    this.sendChallenge(packet);
-+                    LOGGER.debug("Challenge [{}]", (Object)socketAddress);
-+                    return true;
-             }
-         } else {
-             LOGGER.debug("Invalid packet [{}]", (Object)socketAddress);
-@@ -146,37 +165,79 @@ public class QueryThreadGs4 extends GenericThread {
++                    networkDataOutputStream.writeString(queryResponse.getMap());
++                    networkDataOutputStream.writeString(Integer.toString(queryResponse.getCurrentPlayers()));
++                    networkDataOutputStream.writeString(Integer.toString(queryResponse.getMaxPlayers()));
++                    networkDataOutputStream.writeShort((short) queryResponse.getPort());
++                    networkDataOutputStream.writeString(queryResponse.getHostname());
++                    // Paper end
+                     this.sendTo(networkDataOutputStream.toByteArray(), packet);
+                     LOGGER.debug("Status [{}]", (Object)socketAddress);
+                 }
+@@ -146,31 +165,75 @@ public class QueryThreadGs4 extends GenericThread {
              this.rulesResponse.writeString("splitnum");
              this.rulesResponse.write(128);
              this.rulesResponse.write(0);
@@ -184,26 +143,13 @@ index 02bb0b2df37ead741adfef38d7479ba6f691dc2d..4632e8f0d27057bf3c47057124b34723
 +            this.rulesResponse.writeString(Integer.toString(queryResponse.getPort()));
              this.rulesResponse.writeString("hostip");
 -            this.rulesResponse.writeString(this.hostIp);
--            this.rulesResponse.write(0);
--            this.rulesResponse.write(1);
 +            this.rulesResponse.writeString(queryResponse.getHostname());
-+            // The "meaningless data" start, copied from above
-+            this.rulesResponse.writeInt(0);
-+            this.rulesResponse.writeInt(1);
+             this.rulesResponse.write(0);
+             this.rulesResponse.write(1);
              this.rulesResponse.writeString("player_");
--            this.rulesResponse.write(0);
+             this.rulesResponse.write(0);
 -            String[] strings = this.serverInterface.getPlayerNames();
--
--            for(String string : strings) {
--                this.rulesResponse.writeString(string);
--            }
--
--            this.rulesResponse.write(0);
-+            this.rulesResponse.writeInt(0);
-+            // "Meaningless data" end
-+            queryResponse.getPlayers().forEach(this.rulesResponse::writeStringUnchecked);
-+            this.rulesResponse.writeInt(0);
-+            // Paper end
-             return this.rulesResponse.toByteArray();
-         }
-     }
++            String[] strings = queryResponse.getPlayers().toArray(String[]::new);
+ 
+             for(String string : strings) {
+                 this.rulesResponse.writeString(string);
