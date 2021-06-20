@@ -154,7 +154,7 @@ public class CustomChunkGenerator extends InternalChunkGenerator {
                 IBlockData block = craftData.getTypeId(tx, ty, tz);
 
                 if (block.isTileEntity()) {
-                    TileEntity tile = ((ITileEntity) block).createTile(new BlockPosition((x << 4) + tx, ty, (z << 4) + tz), block);
+                    TileEntity tile = ((ITileEntity) block.getBlock()).createTile(new BlockPosition((x << 4) + tx, ty, (z << 4) + tz), block);
                     ichunkaccess.setTileEntity(tile);
                 }
             }
