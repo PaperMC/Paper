@@ -1,0 +1,164 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Professor Bloodstone <git@bloodstone.dev>
+Date: Sun, 20 Jun 2021 01:48:31 +0200
+Subject: [PATCH] Add Git information to version command/on startup
+
+
+diff --git a/src/main/java/io/papermc/paper/util/JarManifests.java b/src/main/java/io/papermc/paper/util/JarManifests.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..cb3d68b28f66a8559018bd19bc106d136f2fc2f4
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/util/JarManifests.java
+@@ -0,0 +1,92 @@
++/*
++Copyright (c) 2012-2017, jcabi.com
++All rights reserved.
++
++Redistribution and use in source and binary forms, with or without
++modification, are permitted provided that the following conditions
++are met: 1) Redistributions of source code must retain the above
++copyright notice, this list of conditions and the following
++disclaimer. 2) Redistributions in binary form must reproduce the above
++copyright notice, this list of conditions and the following
++disclaimer in the documentation and/or other materials provided
++with the distribution. 3) Neither the name of the jcabi.com nor
++the names of its contributors may be used to endorse or promote
++products derived from this software without specific prior written
++permission.
++
++THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT
++NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
++FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL
++THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
++INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
++(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
++SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
++HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
++STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
++ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
++OF THE POSSIBILITY OF SUCH DAMAGE.
++*/
++package io.papermc.paper.util;
++
++import java.io.IOException;
++import java.io.InputStream;
++import java.net.URL;
++import java.util.*;
++import java.util.jar.Manifest;
++
++/**
++ * Modified version of jcabi-manifests
++ *
++ */
++public final class JarManifests {
++
++    public static final JarManifests JAR_MANIFESTS = new JarManifests();
++    public static final Map<String, String> MANIFEST_MAP;
++
++    static {
++        try {
++            MANIFEST_MAP = Collections.unmodifiableMap(JAR_MANIFESTS.getManifestMap());
++        } catch (final IOException ex) {
++            throw new RuntimeException(ex);
++        }
++    }
++
++    private JarManifests() {}
++
++    // Based on:
++    // https://github.com/jcabi/jcabi-manifests/blob/c4e1dd22bb6099769b8d279ebe3737e5b638b278/src/main/java/com/jcabi/manifests/ClasspathMfs.java#L49-L58
++
++    /**
++     * Get collection containing all META-INF/MANIFEST.MF streams
++     *
++     * @throws IOException if unable to get resources from classloader
++     */
++    public Collection<InputStream> getManifestStreams() throws IOException {
++        final Enumeration<URL> resources = getClass().getClassLoader().getResources("META-INF/MANIFEST.MF");
++        final Collection<InputStream> streams = new ArrayList<>(1);
++        while (resources.hasMoreElements()) {
++            streams.add(resources.nextElement().openStream());
++        }
++        return streams;
++    }
++
++    // Based on:
++    // https://github.com/jcabi/jcabi-manifests/blob/c4e1dd22bb6099769b8d279ebe3737e5b638b278/src/main/java/com/jcabi/manifests/Manifests.java#L209-L225
++    // https://github.com/jcabi/jcabi-manifests/blob/c4e1dd22bb6099769b8d279ebe3737e5b638b278/src/main/java/com/jcabi/manifests/Manifests.java#L381-L388
++
++    /**
++     * Get map containing entries from all manifests
++     *
++     * @throws IOException if unable to get manifest streams
++     */
++    public Map<String, String> getManifestMap() throws IOException {
++        final HashMap<String, String> attribs = new HashMap<>();
++        for (final InputStream stream : getManifestStreams()) {
++            for (final Map.Entry<Object, Object> attr: new Manifest(stream).getMainAttributes().entrySet()) {
++                attribs.put(attr.getKey().toString(), attr.getValue().toString());
++            }
++        }
++        return attribs;
++    }
++}
+diff --git a/src/main/java/org/bukkit/Bukkit.java b/src/main/java/org/bukkit/Bukkit.java
+index e8414592b3afeb1e5db2b817b8fb7c13e073b9aa..b4120d8506dec81ec38cd40cbb04ec5983ec1ecc 100644
+--- a/src/main/java/org/bukkit/Bukkit.java
++++ b/src/main/java/org/bukkit/Bukkit.java
+@@ -50,6 +50,7 @@ import org.bukkit.util.CachedServerIcon;
+ import org.jetbrains.annotations.Contract;
+ import org.jetbrains.annotations.NotNull;
+ import org.jetbrains.annotations.Nullable;
++import io.papermc.paper.util.JarManifests; // Paper
+ 
+ /**
+  * Represents the Bukkit core, for version and Server singleton handling
+@@ -85,7 +86,12 @@ public final class Bukkit {
+         }
+ 
+         Bukkit.server = server;
+-        server.getLogger().info("This server is running " + getName() + " version " + getVersion() + " (Implementing API version " + getBukkitVersion() + ")");
++        // Paper start - add git information
++        Map<String, String> attributes = JarManifests.MANIFEST_MAP;
++        @NotNull String gitBranch = attributes.get("Git-Branch");
++        @NotNull String gitCommit = attributes.get("Git-Commit");
++        server.getLogger().info("This server is running " + getName() + " version " + getVersion() + " (Implementing API version " + getBukkitVersion() + ") (Git: " + gitBranch + " / " + gitCommit + ")");
++        // Paper end
+     }
+ 
+     /**
+diff --git a/src/main/java/org/bukkit/command/defaults/VersionCommand.java b/src/main/java/org/bukkit/command/defaults/VersionCommand.java
+index 4c2ddc722a9dc4011906ad9530b13fa9be1d3ff9..95cd644bf86d650ede40927e722876732f0293cd 100644
+--- a/src/main/java/org/bukkit/command/defaults/VersionCommand.java
++++ b/src/main/java/org/bukkit/command/defaults/VersionCommand.java
+@@ -10,13 +10,16 @@ import com.google.gson.JsonSyntaxException;
+ import java.io.BufferedReader;
+ import java.io.IOException;
+ import java.net.URL;
++import java.net.URLClassLoader;
+ import java.net.URLEncoder;
+ import java.util.ArrayList;
+ import java.util.Arrays;
+ import java.util.HashSet;
+ import java.util.List;
++import java.util.Map;
+ import java.util.Set;
+ import java.util.concurrent.locks.ReentrantLock;
++import io.papermc.paper.util.JarManifests; // Paper
+ import net.kyori.adventure.text.Component; // Paper
+ import org.apache.commons.lang.Validate;
+ import org.bukkit.Bukkit;
+@@ -240,8 +243,11 @@ public class VersionCommand extends BukkitCommand {
+     // Paper start
+     private void setVersionMessage(final @NotNull Component msg) {
+         lastCheck = System.currentTimeMillis();
++        Map<String, String> attributes = JarManifests.MANIFEST_MAP;
++        @NotNull String gitBranch = attributes.get("Git-Branch");
++        @NotNull String gitCommit = attributes.get("Git-Commit");
+         final Component message = net.kyori.adventure.text.TextComponent.ofChildren(
+-            Component.text("This server is running " + Bukkit.getName() + " version " + Bukkit.getVersion() + " (Implementing API version " + Bukkit.getBukkitVersion() + ")", net.kyori.adventure.text.format.NamedTextColor.WHITE),
++            Component.text("This server is running " + Bukkit.getName() + " version " + Bukkit.getVersion() + " (Implementing API version " + Bukkit.getBukkitVersion() + ") (Git: " + gitBranch + " / " + gitCommit + ")", net.kyori.adventure.text.format.NamedTextColor.WHITE),
+             Component.newline(),
+             msg
+         );
