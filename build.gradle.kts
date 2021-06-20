@@ -1,7 +1,7 @@
 plugins {
     java
     id("com.github.johnrengelman.shadow") version "7.0.0" apply false
-    id("io.papermc.paperweight.core") version "1.1.2"
+    id("io.papermc.paperweight.core") version "1.1.3"
 }
 
 subprojects {
@@ -68,7 +68,7 @@ dependencies {
     paramMappings("org.quiltmc:yarn:1.17+build.2:mergedv2")
     remapper("org.quiltmc:tiny-remapper:0.4.1")
     decompiler("net.minecraftforge:forgeflower:1.5.498.12")
-    paperclip("io.papermc:paperclip:2.0.0@jar")
+    paperclip("io.papermc:paperclip:2.0.1")
 }
 
 paperweight {
