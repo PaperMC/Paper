@@ -1,7 +1,7 @@
 plugins {
     java
     id("com.github.johnrengelman.shadow") version "7.0.0" apply false
-    id("io.papermc.paperweight.core") version "1.1.4"
+    id("io.papermc.paperweight.core") version "1.1.5"
 }
 
 subprojects {
@@ -76,18 +76,19 @@ paperweight {
     serverProject.set(project(":Paper-Server"))
 
     paper {
-        spigotApiPatchDir.set(file("patches/api"))
-        spigotServerPatchDir.set(file("patches/server"))
+        spigotApiPatchDir.set(layout.projectDirectory.dir("patches/api"))
+        spigotServerPatchDir.set(layout.projectDirectory.dir("patches/server"))
 
-        mappingsPatch.set(file("build-data/mappings-patch.tiny"))
+        mappingsPatch.set(layout.projectDirectory.file("build-data/mappings-patch.tiny"))
+        reobfMappingsPatch.set(layout.projectDirectory.file("build-data/reobf-mappings-patch.tiny"))
 
-        additionalSpigotMemberMappings.set(file("build-data/additional-spigot-member-mappings.csrg"))
-        craftBukkitPatchPatchesDir.set(file("build-data/craftbukkit-patch-patches"))
+        additionalSpigotMemberMappings.set(layout.projectDirectory.file("build-data/additional-spigot-member-mappings.csrg"))
+        craftBukkitPatchPatchesDir.set(layout.projectDirectory.dir("build-data/craftbukkit-patch-patches"))
     }
 }
 
 tasks.register("printMinecraftVersion") {
     doLast {
-        println(providers.gradleProperty("mcVersion").forUseAtConfigurationTime().get().trim())
+        println(providers.gradleProperty("mcVersion").get().trim())
     }
 }
