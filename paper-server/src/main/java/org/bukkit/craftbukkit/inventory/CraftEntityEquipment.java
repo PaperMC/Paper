@@ -247,6 +247,8 @@ public class CraftEntityEquipment implements EntityEquipment {
     }
 
     private void setDropChance(EnumItemSlot slot, float chance) {
+        Preconditions.checkArgument(entity.getHandle() instanceof EntityInsentient, "Cannot set drop chance for non-Mob entity");
+
         if (slot == EnumItemSlot.MAINHAND || slot == EnumItemSlot.OFFHAND) {
             ((EntityInsentient) entity.getHandle()).handDropChances[slot.b()] = chance;
         } else {
@@ -255,6 +257,10 @@ public class CraftEntityEquipment implements EntityEquipment {
     }
 
     private float getDropChance(EnumItemSlot slot) {
+        if (!(entity.getHandle() instanceof EntityInsentient)) {
+            return 1;
+        }
+
         if (slot == EnumItemSlot.MAINHAND || slot == EnumItemSlot.OFFHAND) {
             return ((EntityInsentient) entity.getHandle()).handDropChances[slot.b()];
         } else {
