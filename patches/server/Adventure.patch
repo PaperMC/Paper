@@ -1306,7 +1306,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -        String leaveMessage = ChatFormatting.YELLOW + this.player.getScoreboardName() + " left the game.";
 +        net.kyori.adventure.text.Component leaveMessage = net.kyori.adventure.text.Component.translatable("multiplayer.player.left", net.kyori.adventure.text.format.NamedTextColor.YELLOW, this.player.getBukkitEntity().displayName()); // Paper - Adventure
  
--        PlayerKickEvent event = new PlayerKickEvent(this.cserver.getPlayer(this.player), s, leaveMessage);
+-        PlayerKickEvent event = new PlayerKickEvent(this.player.getBukkitEntity(), s, leaveMessage);
 +        PlayerKickEvent event = new PlayerKickEvent(this.player.getBukkitEntity(), reason, leaveMessage); // Paper - Adventure
  
          if (this.cserver.getServer().isRunning()) {
@@ -1356,7 +1356,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
 -            // CraftBukkit start
 +            // CraftBukkit start // Paper start - Adventure
-             Player player = this.cserver.getPlayer(this.player);
+             Player player = this.player.getBukkitEntity();
              int x = packetplayinupdatesign.getPos().getX();
              int y = packetplayinupdatesign.getPos().getY();
              int z = packetplayinupdatesign.getPos().getZ();
@@ -1374,7 +1374,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                    lines.add(net.kyori.adventure.text.Component.text(list.get(i).getRaw()));
                  }
              }
-             SignChangeEvent event = new SignChangeEvent((org.bukkit.craftbukkit.block.CraftBlock) player.getWorld().getBlockAt(x, y, z), this.cserver.getPlayer(this.player), lines);
+             SignChangeEvent event = new SignChangeEvent((org.bukkit.craftbukkit.block.CraftBlock) player.getWorld().getBlockAt(x, y, z), this.player.getBukkitEntity(), lines);
              this.cserver.getPluginManager().callEvent(event);
  
              if (!event.isCancelled()) {
@@ -1467,11 +1467,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          playerconnection.teleport(player.getX(), player.getY(), player.getZ(), player.getYRot(), player.getXRot());
          this.players.add(player);
 @@ -0,0 +0,0 @@ public abstract class PlayerList {
-         // this.sendAll(new PacketPlayOutPlayerInfo(PacketPlayOutPlayerInfo.EnumPlayerInfoAction.ADD_PLAYER, new EntityPlayer[]{entityplayer})); // CraftBukkit - replaced with loop below
+         // Ensure that player inventory is populated with its viewer
+         player.containerMenu.transferTo(player.containerMenu, bukkitPlayer);
  
-         // CraftBukkit start
--        PlayerJoinEvent playerJoinEvent = new PlayerJoinEvent(this.cserver.getPlayer(player), joinMessage);
-+        PlayerJoinEvent playerJoinEvent = new org.bukkit.event.player.PlayerJoinEvent(this.cserver.getPlayer(player), PaperAdventure.asAdventure(chatmessage)); // Paper - Adventure
+-        PlayerJoinEvent playerJoinEvent = new PlayerJoinEvent(bukkitPlayer, joinMessage);
++        PlayerJoinEvent playerJoinEvent = new PlayerJoinEvent(bukkitPlayer, PaperAdventure.asAdventure(chatmessage)); // Paper - Adventure
          this.cserver.getPluginManager().callEvent(playerJoinEvent);
  
          if (!player.connection.connection.isConnected()) {
@@ -1504,8 +1504,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              entityplayer.closeContainer();
          }
  
--        PlayerQuitEvent playerQuitEvent = new PlayerQuitEvent(this.cserver.getPlayer(entityplayer), "\u00A7e" + entityplayer.getScoreboardName() + " left the game");
-+        PlayerQuitEvent playerQuitEvent = new PlayerQuitEvent(this.cserver.getPlayer(entityplayer), net.kyori.adventure.text.Component.translatable("multiplayer.player.left", net.kyori.adventure.text.format.NamedTextColor.YELLOW, com.destroystokyo.paper.PaperConfig.useDisplayNameInQuit ? entityplayer.getBukkitEntity().displayName() : net.kyori.adventure.text.Component.text(entityplayer.getScoreboardName())));
+-        PlayerQuitEvent playerQuitEvent = new PlayerQuitEvent(entityplayer.getBukkitEntity(), "\u00A7e" + entityplayer.getScoreboardName() + " left the game");
++        PlayerQuitEvent playerQuitEvent = new PlayerQuitEvent(entityplayer.getBukkitEntity(), net.kyori.adventure.text.Component.translatable("multiplayer.player.left", net.kyori.adventure.text.format.NamedTextColor.YELLOW, com.destroystokyo.paper.PaperConfig.useDisplayNameInQuit ? entityplayer.getBukkitEntity().displayName() : net.kyori.adventure.text.Component.text(entityplayer.getScoreboardName())));
          this.cserver.getPluginManager().callEvent(playerQuitEvent);
          entityplayer.getBukkitEntity().disconnect(playerQuitEvent.getQuitMessage());
  
@@ -1522,8 +1522,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              }
  
              // return chatmessage;
--            if (!gameprofilebanentry.hasExpired()) event.disallow(PlayerLoginEvent.Result.KICK_BANNED, CraftChatMessage.fromComponent(chatmessage)); // Spigot
-+            if (!gameprofilebanentry.hasExpired()) event.disallow(PlayerLoginEvent.Result.KICK_BANNED, PaperAdventure.asAdventure(chatmessage)); // Spigot // Paper - Adventure
+-            event.disallow(PlayerLoginEvent.Result.KICK_BANNED, CraftChatMessage.fromComponent(chatmessage));
++            event.disallow(PlayerLoginEvent.Result.KICK_BANNED, PaperAdventure.asAdventure(chatmessage)); // Paper - Adventure
          } else if (!this.isWhiteListed(gameprofile)) {
              chatmessage = new TranslatableComponent("multiplayer.disconnect.not_whitelisted");
 -            event.disallow(PlayerLoginEvent.Result.KICK_WHITELIST, org.spigotmc.SpigotConfig.whitelistMessage); // Spigot
@@ -1615,7 +1615,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        // Paper end
      }
  
-     public Player getPlayer(final ServerPlayer entity) {
+     @Override
 @@ -0,0 +0,0 @@ public final class CraftServer implements Server {
          return this.configuration.getInt("settings.spawn-radius", -1);
      }
