@@ -22,7 +22,7 @@ Run the Paperclip jar directly from your server. Just like old times
 
 How To (Plugin Developers)
 ------
- * See our API patches [here](Spigot-API-Patches)
+ * See our API patches [here](patches)
  * See upcoming, pending, and recently added API [here](https://github.com/PaperMC/Paper/projects/6)
  * Paper API javadocs here: [papermc.io/javadocs](https://papermc.io/javadocs/)
  * Maven Repo (for paper-api):
