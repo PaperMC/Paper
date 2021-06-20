@@ -1,8 +1,6 @@
 Paper ![GitHub Workflow Status (branch)](https://img.shields.io/github/workflow/status/PaperMC/Paper/Build%20Paper/master) ![Read the Docs (version)](https://img.shields.io/readthedocs/paper/latest) ![version](https://img.shields.io/badge/version-1.17-blue)
-
-[![Discord](https://img.shields.io/badge/Discord-7289DA?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/papermc)
-
 ===========
+[![Discord](https://img.shields.io/badge/Discord-7289DA?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/papermc)
 
 High performance Spigot fork that aims to fix gameplay and mechanics inconsistencies.
 
