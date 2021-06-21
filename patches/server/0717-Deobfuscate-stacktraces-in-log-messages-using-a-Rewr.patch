@@ -1,0 +1,384 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jason Penilla <11360596+jpenilla@users.noreply.github.com>
+Date: Sun, 20 Jun 2021 18:19:09 -0700
+Subject: [PATCH] Deobfuscate stacktraces in log messages using a
+ RewriteAppender and a custom RewritePolicy
+
+
+diff --git a/build.gradle.kts b/build.gradle.kts
+index 04938bb10c35d2e424043adb7ed8fec2e42bb816..f427c6f5adf20f9e1b1fa4ab56041506d8240c92 100644
+--- a/build.gradle.kts
++++ b/build.gradle.kts
+@@ -1,8 +1,12 @@
+ import com.github.jengelman.gradle.plugins.shadow.transformers.Log4j2PluginsCacheFileTransformer
+ import com.github.jengelman.gradle.plugins.shadow.transformers.Transformer
++import io.papermc.paperweight.tasks.BaseTask
+ import io.papermc.paperweight.util.Git
++import io.papermc.paperweight.util.defaultOutput
++import io.papermc.paperweight.util.openZip
+ import io.papermc.paperweight.util.path
+ import shadow.org.apache.logging.log4j.core.config.plugins.processor.PluginProcessor.PLUGIN_CACHE_FILE
++import java.nio.file.Files
+ import java.text.SimpleDateFormat
+ import java.util.Date
+ import java.util.Locale
+@@ -15,6 +19,14 @@ plugins {
+ 
+ repositories {
+     maven("https://libraries.minecraft.net/")
++    // Paper start
++    maven("https://maven.quiltmc.org/repository/release/") {
++        mavenContent {
++            releasesOnly()
++            includeModule("org.quiltmc", "tiny-mappings-parser")
++        }
++    }
++    // Paper end
+ }
+ 
+ dependencies {
+@@ -52,6 +64,8 @@ dependencies {
+ 
+     implementation("com.github.oshi:oshi-core:5.7.5") // Paper - fix startup delay and warning
+ 
++    implementation("org.quiltmc:tiny-mappings-parser:0.3.0") // Paper - needed to read mappings for stacktrace deobfuscation
++
+     testImplementation("io.github.classgraph:classgraph:4.8.47") // Paper - mob goal test
+     testImplementation("junit:junit:4.13.1")
+     testImplementation("org.hamcrest:hamcrest-library:1.3")
+@@ -115,6 +129,44 @@ tasks.shadowJar {
+     transform(ModifiedLog4j2PluginsCacheFileTransformer::class.java)
+ }
+ 
++// Paper start - include reobf mappings in jar for stacktrace deobfuscation
++abstract class IncludeMappings : BaseTask() {
++    @get:InputFile
++    abstract val inputJar: RegularFileProperty
++
++    @get:InputFile
++    abstract val mappings: RegularFileProperty
++
++    @get:OutputFile
++    abstract val outputJar: RegularFileProperty
++
++    override fun init() {
++        outputJar.convention(defaultOutput())
++    }
++
++    @TaskAction
++    private fun addMappings() {
++        outputJar.get().asFile.parentFile.mkdirs()
++        inputJar.get().asFile.copyTo(outputJar.get().asFile, overwrite = true)
++        outputJar.get().path.openZip().use { fs ->
++            val dir = fs.getPath("META-INF/mappings/")
++            Files.createDirectories(dir)
++            val target = dir.resolve("reobf.tiny")
++            Files.copy(mappings.path, target)
++        }
++    }
++}
++
++val includeMappings = tasks.register<IncludeMappings>("includeMappings") {
++    inputJar.set(tasks.shadowJar.flatMap { it.archiveFile })
++    mappings.set(tasks.reobfJar.flatMap { it.mappingsFile })
++}
++
++tasks.reobfJar {
++    inputJar.set(includeMappings.flatMap { it.outputJar })
++}
++// Paper end - include reobf mappings in jar for stacktrace deobfuscation
++
+ tasks.test {
+     exclude("org/bukkit/craftbukkit/inventory/ItemStack*Test.class")
+ }
+diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+index 7acf077bc131af718c7548cc29deef558c04e463..73652e403eaa419fb5b4b54bd506f246c0aa4e99 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+@@ -487,6 +487,11 @@ public class PaperConfig {
+         enableBrigadierConsoleCompletions = getBoolean("settings.console.enable-brigadier-completions", enableBrigadierConsoleCompletions);
+     }
+ 
++    public static boolean deobfuscateStacktraces = true;
++    private static void loggerSettings() {
++        deobfuscateStacktraces = getBoolean("settings.loggers.deobfuscate-stacktraces", deobfuscateStacktraces);
++    }
++
+     public static int itemValidationDisplayNameLength = 8192;
+     public static int itemValidationLocNameLength = 8192;
+     public static int itemValidationLoreLineLength = 8192;
+diff --git a/src/main/java/io/papermc/paper/logging/StacktraceDeobfuscatingRewritePolicy.java b/src/main/java/io/papermc/paper/logging/StacktraceDeobfuscatingRewritePolicy.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..5293a59d17eeb711694965816857e66481ff0277
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/logging/StacktraceDeobfuscatingRewritePolicy.java
+@@ -0,0 +1,242 @@
++package io.papermc.paper.logging;
++
++import com.destroystokyo.paper.PaperConfig;
++import com.google.common.base.Charsets;
++import com.google.common.collect.ImmutableMap;
++import com.mojang.datafixers.util.Pair;
++import it.unimi.dsi.fastutil.ints.IntArrayList;
++import it.unimi.dsi.fastutil.ints.IntList;
++import java.io.BufferedReader;
++import java.io.IOException;
++import java.io.InputStream;
++import java.io.InputStreamReader;
++import java.util.Collections;
++import java.util.HashMap;
++import java.util.LinkedHashMap;
++import java.util.Map;
++import net.fabricmc.mapping.tree.ClassDef;
++import net.fabricmc.mapping.tree.MethodDef;
++import net.fabricmc.mapping.tree.TinyMappingFactory;
++import net.fabricmc.mapping.tree.TinyTree;
++import org.apache.logging.log4j.core.Core;
++import org.apache.logging.log4j.core.LogEvent;
++import org.apache.logging.log4j.core.appender.rewrite.RewritePolicy;
++import org.apache.logging.log4j.core.config.plugins.Plugin;
++import org.apache.logging.log4j.core.config.plugins.PluginFactory;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++import org.objectweb.asm.ClassReader;
++import org.objectweb.asm.ClassVisitor;
++import org.objectweb.asm.Label;
++import org.objectweb.asm.MethodVisitor;
++import org.objectweb.asm.Opcodes;
++
++@Plugin(
++    name = "StacktraceDeobfuscatingRewritePolicy",
++    category = Core.CATEGORY_NAME,
++    elementType = "rewritePolicy",
++    printObject = true
++)
++public final class StacktraceDeobfuscatingRewritePolicy implements RewritePolicy {
++    private static final String MOJANG_PLUS_YARN_NAMESPACE = "mojang+yarn";
++    private static final String SPIGOT_NAMESPACE = "spigot";
++
++    private final @Nullable Map<String, ClassMapping> mappings;
++    private final Map<Class<?>, Map<Pair<String, String>, IntList>> lineMapCache = Collections.synchronizedMap(new LinkedHashMap<>(64, 0.75f, true) {
++        @Override
++        protected boolean removeEldestEntry(final Map.Entry<Class<?>, Map<Pair<String, String>, IntList>> eldest) {
++            return this.size() > 63;
++        }
++    });
++
++    StacktraceDeobfuscatingRewritePolicy() {
++        this.mappings = loadMappingsIfPresent();
++    }
++
++    private static @Nullable Map<String, ClassMapping> loadMappingsIfPresent() {
++        try (final InputStream mappingsInputStream = StacktraceDeobfuscatingRewritePolicy.class.getClassLoader().getResourceAsStream("mappings/reobf.tiny")) {
++            if (mappingsInputStream == null) {
++                return null;
++            }
++            final TinyTree tree = TinyMappingFactory.loadWithDetection(new BufferedReader(new InputStreamReader(mappingsInputStream, Charsets.UTF_8)));
++            final var builder = ImmutableMap.<String, ClassMapping>builder();
++
++            for (final ClassDef classDef : tree.getClasses()) {
++                final String obfClassName = classDef.getName(SPIGOT_NAMESPACE).replace('/', '.');
++                final var methodMappings = ImmutableMap.<Pair<String, String>, MethodMapping>builder();
++
++                for (final MethodDef methodDef : classDef.getMethods()) {
++                    final MethodMapping method = new MethodMapping(
++                        methodDef.getName(SPIGOT_NAMESPACE),
++                        methodDef.getName(MOJANG_PLUS_YARN_NAMESPACE),
++                        methodDef.getDescriptor(SPIGOT_NAMESPACE)
++                    );
++                    methodMappings.put(
++                        new Pair<>(method.obfName(), method.descriptor()),
++                        method
++                    );
++                }
++
++                final ClassMapping map = new ClassMapping(
++                    obfClassName,
++                    classDef.getName(MOJANG_PLUS_YARN_NAMESPACE).replace('/', '.'),
++                    methodMappings.build()
++                );
++                builder.put(map.obfName(), map);
++            }
++
++            return builder.build();
++        } catch (final IOException ex) {
++            System.err.println("Failed to load mappings for stacktrace deobfuscation.");
++            ex.printStackTrace();
++            return null;
++        }
++    }
++
++    @Override
++    public @NotNull LogEvent rewrite(final @NotNull LogEvent rewrite) {
++        if (!PaperConfig.deobfuscateStacktraces) {
++            return rewrite;
++        }
++
++        final Throwable thrown = rewrite.getThrown();
++        if (thrown != null) {
++            this.deobfuscateThrowable(thrown);
++        }
++        return rewrite;
++    }
++
++    public void deobfuscateThrowable(final Throwable throwable) {
++        throwable.setStackTrace(this.deobfuscateStacktrace(throwable.getStackTrace()));
++        final Throwable cause = throwable.getCause();
++        if (cause != null) {
++            this.deobfuscateThrowable(cause);
++        }
++        for (final Throwable suppressed : throwable.getSuppressed()) {
++            this.deobfuscateThrowable(suppressed);
++        }
++    }
++
++    public StackTraceElement[] deobfuscateStacktrace(final StackTraceElement[] traceElements) {
++        if (this.mappings == null || traceElements.length == 0) {
++            return traceElements;
++        }
++        final StackTraceElement[] result = new StackTraceElement[traceElements.length];
++        for (int i = 0; i < traceElements.length; i++) {
++            final StackTraceElement element = traceElements[i];
++
++            final String className = element.getClassName();
++            final String methodName = element.getMethodName();
++
++            final ClassMapping classMapping = this.mappings.get(className);
++            if (classMapping == null) {
++                result[i] = element;
++                continue;
++            }
++
++            final Pair<String, String> nameDescriptorPair;
++            try {
++                final Class<?> clazz = Class.forName(className);
++                nameDescriptorPair = this.determineMethodForLine(clazz, element.getLineNumber());
++            } catch (final ReflectiveOperationException ex) {
++                throw new RuntimeException(ex);
++            }
++
++            final MethodMapping methodMapping = classMapping.methodMappings().get(nameDescriptorPair);
++
++            result[i] = new StackTraceElement(
++                element.getClassLoaderName(),
++                element.getModuleName(),
++                element.getModuleVersion(),
++                classMapping.mojangName(),
++                methodMapping != null ? methodMapping.mojangName() : methodName,
++                this.mappedFileName(classMapping.mojangName()),
++                element.getLineNumber()
++            );
++        }
++        return result;
++    }
++
++    private static @NotNull Map<Pair<String, String>, IntList> buildLineMap(final @NotNull Class<?> key) {
++        final Map<Pair<String, String>, IntList> lineMap = new HashMap<>();
++        final class LineCollectingMethodVisitor extends MethodVisitor {
++            private final IntList lines = new IntArrayList();
++            private final String name;
++            private final String descriptor;
++
++            LineCollectingMethodVisitor(String name, String descriptor) {
++                super(Opcodes.ASM9);
++                this.name = name;
++                this.descriptor = descriptor;
++            }
++
++            @Override
++            public void visitLineNumber(int line, Label start) {
++                super.visitLineNumber(line, start);
++                this.lines.add(line);
++            }
++
++            @Override
++            public void visitEnd() {
++                super.visitEnd();
++                lineMap.put(new Pair<>(this.name, this.descriptor), this.lines);
++            }
++        }
++        final ClassVisitor classVisitor = new ClassVisitor(Opcodes.ASM9) {
++            @Override
++            public MethodVisitor visitMethod(int access, String name, String descriptor, String signature, String[] exceptions) {
++                return new LineCollectingMethodVisitor(name, descriptor);
++            }
++        };
++        try {
++            final ClassReader reader = new ClassReader(key.getName());
++            reader.accept(classVisitor, 0);
++        } catch (final IOException ex) {
++            throw new RuntimeException(ex);
++        }
++        return lineMap;
++    }
++
++    private @Nullable Pair<String, String> determineMethodForLine(final @NotNull Class<?> clazz, final int lineNumber) {
++        final Map<Pair<String, String>, IntList> lineMap = this.lineMapCache.computeIfAbsent(clazz, StacktraceDeobfuscatingRewritePolicy::buildLineMap);
++        for (final var entry : lineMap.entrySet()) {
++            final Pair<String, String> pair = entry.getKey();
++            final IntList lines = entry.getValue();
++            for (int i = 0, linesSize = lines.size(); i < linesSize; i++) {
++                final int num = lines.getInt(i);
++                if (num == lineNumber) {
++                    return pair;
++                }
++            }
++        }
++        return null;
++    }
++
++    private @NotNull String mappedFileName(final @NotNull String fullClassName) {
++        final int dot = fullClassName.lastIndexOf('.');
++        final String className = dot == -1
++            ? fullClassName
++            : fullClassName.substring(dot + 1);
++        final String rootClassName = className.split("\\$")[0];
++        return rootClassName + ".java";
++    }
++
++    @PluginFactory
++    public static @NotNull StacktraceDeobfuscatingRewritePolicy createPolicy() {
++        return new StacktraceDeobfuscatingRewritePolicy();
++    }
++
++    private record ClassMapping(
++        String obfName,
++        String mojangName,
++        Map<Pair<String, String>, MethodMapping> methodMappings
++    ) {
++    }
++
++    private record MethodMapping(
++        String obfName,
++        String mojangName,
++        String descriptor
++    ) {
++    }
++}
+diff --git a/src/main/resources/log4j2.xml b/src/main/resources/log4j2.xml
+index 67da1aa7a21622fb231d19dede3775a282a4a12e..f91d0df569b2f1d430ea5eee5f53779902a4f32c 100644
+--- a/src/main/resources/log4j2.xml
++++ b/src/main/resources/log4j2.xml
+@@ -29,15 +29,19 @@
+             </Policies>
+             <DefaultRolloverStrategy max="1000"/>
+         </RollingRandomAccessFile>
++        <Rewrite name="rewrite">
++            <StacktraceDeobfuscatingRewritePolicy />
++            <AppenderRef ref="File"/>
++            <AppenderRef ref="TerminalConsole" level="info"/>
++            <AppenderRef ref="ServerGuiConsole" level="info"/>
++        </Rewrite>
+     </Appenders>
+     <Loggers>
+         <Root level="info">
+             <filters>
+                 <MarkerFilter marker="NETWORK_PACKETS" onMatch="DENY" onMismatch="NEUTRAL" />
+             </filters>
+-            <AppenderRef ref="File"/>
+-            <AppenderRef ref="TerminalConsole" level="info"/>
+-            <AppenderRef ref="ServerGuiConsole" level="info"/>
++            <AppenderRef ref="rewrite"/>
+         </Root>
+     </Loggers>
+ </Configuration>
