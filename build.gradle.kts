@@ -14,9 +14,15 @@ subprojects {
         }
     }
 
-    tasks.withType<JavaCompile>().configureEach {
-        options.encoding = "UTF-8"
+    tasks.withType<JavaCompile> {
+        options.encoding = Charsets.UTF_8.name()
         options.release.set(16)
+    }
+    tasks.withType<Javadoc> {
+        options.encoding = Charsets.UTF_8.name()
+    }
+    tasks.withType<ProcessResources> {
+        filteringCharset = Charsets.UTF_8.name()
     }
 
     configure<PublishingExtension> {
