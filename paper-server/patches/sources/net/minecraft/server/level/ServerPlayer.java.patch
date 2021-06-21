@@ -114,7 +114,7 @@
      @Nullable
      private Vec3 startingToFallPosition;
      @Nullable
-@@ -258,7 +293,36 @@
+@@ -258,6 +293,35 @@
      private final CommandSource commandSource;
      private int containerCounter;
      public boolean wonGame;
@@ -125,7 +125,7 @@
 +    public boolean queueHealthUpdatePacket;
 +    public net.minecraft.network.protocol.game.ClientboundSetHealthPacket queuedHealthUpdatePacket;
 +    // Paper end - cancellable death event
- 
++
 +    // CraftBukkit start
 +    public CraftPlayer.TransferCookieConnection transferCookieConnection;
 +    public String displayName;
@@ -147,10 +147,9 @@
 +    public com.destroystokyo.paper.event.entity.PlayerNaturallySpawnCreaturesEvent playerNaturallySpawnedEvent; // Paper - PlayerNaturallySpawnCreaturesEvent
 +    public @Nullable String clientBrandName = null; // Paper - Brand support
 +    public org.bukkit.event.player.PlayerQuitEvent.QuitReason quitReason = null; // Paper - Add API for quit reason; there are a lot of changes to do if we change all methods leading to the event
-+
+ 
      public ServerPlayer(MinecraftServer server, ServerLevel world, GameProfile profile, ClientInformation clientOptions) {
          super(world, world.getSharedSpawnPos(), world.getSharedSpawnAngle(), profile);
-         this.chatVisibility = ChatVisiblity.FULL;
 @@ -266,7 +330,7 @@
          this.canChatColor = true;
          this.lastActionTime = Util.getMillis();
@@ -914,7 +913,7 @@
                  this.connection.resetPosition();
                  worldserver.addDuringTeleport(this);
                  gameprofilerfiller.pop();
-@@ -1215,10 +1605,33 @@
+@@ -1215,12 +1605,35 @@
                  this.lastSentExp = -1;
                  this.lastSentHealth = -1.0F;
                  this.lastSentFood = -1;
@@ -930,24 +929,26 @@
 +                // Paper end - Reset shield blocking on dimension change
                  return this;
              }
-+        }
-+    }
-+
+         }
+     }
+ 
 +    // CraftBukkit start
-+    @Override
+     @Override
 +    public CraftPortalEvent callPortalEvent(Entity entity, Location exit, TeleportCause cause, int searchRadius, int creationRadius) {
 +        Location enter = this.getBukkitEntity().getLocation();
 +        PlayerPortalEvent event = new PlayerPortalEvent(this.getBukkitEntity(), enter, exit, cause, searchRadius, true, creationRadius);
 +        Bukkit.getServer().getPluginManager().callEvent(event);
 +        if (event.isCancelled() || event.getTo() == null || event.getTo().getWorld() == null) {
 +            return null;
-         }
++        }
 +        return new CraftPortalEvent(event);
-     }
++    }
 +    // CraftBukkit end
- 
-     @Override
++
++    @Override
      public void forceSetRotation(float yaw, float pitch) {
+         this.connection.send(new ClientboundPlayerRotationPacket(yaw, pitch));
+     }
 @@ -1228,13 +1641,21 @@
      public void triggerDimensionChangeTriggers(ServerLevel origin) {
          ResourceKey<Level> resourcekey = origin.dimension();
@@ -1574,11 +1575,23 @@
 +            if (flag1) {
                  if (!itemstack1.isEmpty()) {
 -                    this.awardStat(Stats.ITEM_DROPPED.get(itemstack1.getItem()), stack.getCount());
-+                    this.awardStat(Stats.ITEM_DROPPED.get(itemstack1.getItem()), itemstack.getCount());
++                    this.awardStat(Stats.ITEM_DROPPED.get(itemstack1.getItem()), itemstack1.getCount()); // Paper - Fix PlayerDropItemEvent using wrong item
                  }
  
                  this.awardStat(Stats.DROP);
-@@ -2166,6 +2791,16 @@
+@@ -2115,6 +2740,11 @@
+             return null;
+         } else {
+             double d0 = this.getEyeY() - 0.30000001192092896D;
++            // Paper start
++            ItemStack tmp = stack.copy();
++            stack.setCount(0);
++            stack = tmp;
++            // Paper end
+             ItemEntity entityitem = new ItemEntity(this.level(), this.getX(), d0, this.getZ(), stack);
+ 
+             entityitem.setPickUpDelay(40);
+@@ -2166,6 +2796,16 @@
      }
  
      public void loadGameTypes(@Nullable CompoundTag nbt) {
@@ -1595,7 +1608,7 @@
          this.gameMode.setGameModeForPlayer(this.calculateGameModeForNewPlayer(ServerPlayer.readPlayerMode(nbt, "playerGameType")), ServerPlayer.readPlayerMode(nbt, "previousPlayerGameType"));
      }
  
-@@ -2275,9 +2910,15 @@
+@@ -2275,9 +2915,15 @@
  
      @Override
      public void stopRiding() {
@@ -1612,7 +1625,7 @@
          if (entity instanceof LivingEntity entityliving) {
              Iterator iterator = entityliving.getActiveEffects().iterator();
  
-@@ -2375,10 +3016,12 @@
+@@ -2375,10 +3021,12 @@
          return TicketType.ENDER_PEARL.timeout();
      }
  
@@ -1628,7 +1641,7 @@
          }
  
          private static float calculateLookAtYaw(Vec3 respawnPos, BlockPos currentPos) {
-@@ -2387,4 +3030,147 @@
+@@ -2387,4 +3035,147 @@
              return (float) Mth.wrapDegrees(Mth.atan2(vec3d1.z, vec3d1.x) * 57.2957763671875D - 90.0D);
          }
      }
