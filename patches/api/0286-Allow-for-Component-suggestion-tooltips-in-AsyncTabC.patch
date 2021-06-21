@@ -6,7 +6,7 @@ Subject: [PATCH] Allow for Component suggestion tooltips in
 
 
 diff --git a/src/main/java/com/destroystokyo/paper/event/server/AsyncTabCompleteEvent.java b/src/main/java/com/destroystokyo/paper/event/server/AsyncTabCompleteEvent.java
-index 619ed37169c126a8c75d02699a04728bac49d10d..4cd97cb102e1ec53b3fe1a451b65b4b640fde099 100644
+index 619ed37169c126a8c75d02699a04728bac49d10d..36a7e1b3e71e2ad8305a5a927bf13c6658c23fb0 100644
 --- a/src/main/java/com/destroystokyo/paper/event/server/AsyncTabCompleteEvent.java
 +++ b/src/main/java/com/destroystokyo/paper/event/server/AsyncTabCompleteEvent.java
 @@ -24,6 +24,11 @@
@@ -114,7 +114,7 @@ index 619ed37169c126a8c75d02699a04728bac49d10d..4cd97cb102e1ec53b3fe1a451b65b4b6
      }
  
      /**
-@@ -174,4 +228,102 @@ public class AsyncTabCompleteEvent extends Event implements Cancellable {
+@@ -174,4 +228,169 @@ public class AsyncTabCompleteEvent extends Event implements Cancellable {
      public static HandlerList getHandlerList() {
          return handlers;
      }
@@ -174,7 +174,50 @@ index 619ed37169c126a8c75d02699a04728bac49d10d..4cd97cb102e1ec53b3fe1a451b65b4b6
 +        }
 +    }
 +
-+    static final class CompletionImpl implements Completion {
++    /**
++     * A rich tab completion, consisting of an integer suggestion, and a nullable {@link Component} tooltip.
++     *
++     * <p>Unlike regular {@link Completion}s, integer suggestions are shown first and sorted numerically
++     * instead of alphanumerically</p>
++     */
++    public interface IntCompletion extends Completion {
++        /**
++         * Get the integer suggestion value of this {@link IntCompletion}.
++         *
++         * @return integer suggestion value
++         */
++        int value();
++
++        @Override
++        default @NotNull Stream<? extends ExaminableProperty> examinableProperties() {
++            return Stream.of(ExaminableProperty.of("value", this.value()), ExaminableProperty.of("suggestion", this.suggestion()), ExaminableProperty.of("tooltip", this.tooltip()));
++        }
++
++        /**
++         * Create a new {@link IntCompletion} from an int suggestion.
++         *
++         * @param value integer suggestion value
++         * @return new int completion instance
++         */
++        static @NotNull IntCompletion intCompletion(final int value) {
++            return new IntCompletionImpl(value, null);
++        }
++
++        /**
++         * Create a new {@link IntCompletion} from an int suggestion and a tooltip {@link Component}.
++         *
++         * <p>If the provided component is null, the suggestion will not have a tooltip.</p>
++         *
++         * @param value   integer suggestion
++         * @param tooltip tooltip component, or null
++         * @return new completion instance
++         */
++        static @NotNull IntCompletion intCompletion(final int value, final @Nullable Component tooltip) {
++            return new IntCompletionImpl(value, tooltip);
++        }
++    }
++
++    static class CompletionImpl implements Completion {
 +        private final String suggestion;
 +        private final Component tooltip;
 +
@@ -214,6 +257,30 @@ index 619ed37169c126a8c75d02699a04728bac49d10d..4cd97cb102e1ec53b3fe1a451b65b4b6
 +        @Override
 +        public @NotNull String toString() {
 +            return StringExaminer.simpleEscaping().examine(this);
++        }
++    }
++
++    static final class IntCompletionImpl extends CompletionImpl implements IntCompletion {
++        private final int value;
++
++        IntCompletionImpl(final int value, final @Nullable Component tooltip) {
++            super(String.valueOf(value), tooltip);
++            this.value = value;
++        }
++
++        @Override
++        public int value() {
++            return this.value;
++        }
++
++        @Override
++        public boolean equals(final @Nullable Object o) {
++            return super.equals(o) && ((IntCompletionImpl) o).value == this.value;
++        }
++
++        @Override
++        public int hashCode() {
++            return java.util.Objects.hash(this.value, super.suggestion, super.tooltip);
 +        }
 +    }
  }
