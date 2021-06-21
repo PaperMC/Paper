@@ -21,6 +21,9 @@ subprojects {
     tasks.withType<Javadoc> {
         options.encoding = Charsets.UTF_8.name()
     }
+    tasks.withType<ProcessResources> {
+        filteringCharset = Charsets.UTF_8.name()
+    }
 
     configure<PublishingExtension> {
         repositories {
