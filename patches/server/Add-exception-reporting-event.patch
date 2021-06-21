@@ -123,13 +123,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  import com.mojang.serialization.Codec;
  import java.io.IOException;
 @@ -0,0 +0,0 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
-             tickConsumer.accept(entity);
-         } catch (Throwable throwable) {
              // Paper start - Prevent tile entity and entity crashes
--            System.err.println("Entity threw exception at " + entity.level.getWorld().getName() + ":" + entity.getX() + "," + entity.getY() + "," + entity.getZ());
-+            String msg = "Entity threw exception at " + entity.level.getWorld().getName() + ":" + entity.getX() + "," + entity.getY() + "," + entity.getZ();
-+            System.err.println(msg);
-             throwable.printStackTrace();
+             final String msg = String.format("Entity threw exception at %s:%s,%s,%s", entity.level.getWorld().getName(), entity.getX(), entity.getY(), entity.getZ());
+             MinecraftServer.LOGGER.error(msg, throwable);
 +            getCraftServer().getPluginManager().callEvent(new ServerExceptionEvent(new ServerInternalException(msg, throwable)));
              entity.discard();
              // Paper end
@@ -187,13 +183,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          }
      }
 @@ -0,0 +0,0 @@ public class LevelChunk implements ChunkAccess {
-                         gameprofilerfiller.pop();
-                     } catch (Throwable throwable) {
                          // Paper start - Prevent tile entity and entity crashes
--                        System.err.println("TileEntity threw exception at " + LevelChunk.this.getLevel().getWorld().getName() + ":" + this.getPos().getX() + "," + this.getPos().getY() + "," + this.getPos().getZ());
-+                        String msg = "TileEntity threw exception at " + LevelChunk.this.getLevel().getWorld().getName() + ":" + this.getPos().getX() + "," + this.getPos().getY() + "," + this.getPos().getZ();
-+                        System.err.println(msg);
-                         throwable.printStackTrace();
+                         final String msg = String.format("BlockEntity threw exception at %s:%s,%s,%s", LevelChunk.this.getLevel().getWorld().getName(), this.getPos().getX(), this.getPos().getY(), this.getPos().getZ());
+                         net.minecraft.server.MinecraftServer.LOGGER.error(msg, throwable);
 +                        net.minecraft.world.level.chunk.LevelChunk.this.level.getCraftServer().getPluginManager().callEvent(new com.destroystokyo.paper.event.server.ServerExceptionEvent(new ServerInternalException(msg, throwable)));
                          LevelChunk.this.removeBlockEntity(this.getPos());
                          // Paper end
