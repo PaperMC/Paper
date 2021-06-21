@@ -1,0 +1,38 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Riley Park <riley.park@meino.net>
+Date: Mon, 21 Jun 2021 09:51:29 -0700
+Subject: [PATCH] Allow use of TYPE_USE annotations
+
+
+diff --git a/src/test/java/org/bukkit/AnnotationTest.java b/src/test/java/org/bukkit/AnnotationTest.java
+index 0c7377247ad9251c9e498039511e7220370aba2d..2ef6b56642f792d1a648e76e904e61bf7a662f8c 100644
+--- a/src/test/java/org/bukkit/AnnotationTest.java
++++ b/src/test/java/org/bukkit/AnnotationTest.java
+@@ -66,15 +66,26 @@ public class AnnotationTest {
+                     continue;
+                 }
+ 
+-                if (mustBeAnnotated(Type.getReturnType(method.desc)) && !isWellAnnotated(method.invisibleAnnotations)) {
++                if (mustBeAnnotated(Type.getReturnType(method.desc)) && !isWellAnnotated(method.invisibleAnnotations) && !isWellAnnotated(method.visibleTypeAnnotations) && !isWellAnnotated(method.invisibleTypeAnnotations)) { // Paper - also check (in)visible type annotations
+                     warn(errors, clazz, method, "return value");
+                 }
+ 
+                 Type[] paramTypes = Type.getArgumentTypes(method.desc);
+                 List<ParameterNode> parameters = method.parameters;
+ 
++                dancing: // Paper
+                 for (int i = 0; i < paramTypes.length; i++) {
+                     if (mustBeAnnotated(paramTypes[i]) && !isWellAnnotated(method.invisibleParameterAnnotations == null ? null : method.invisibleParameterAnnotations[i])) {
++                        // Paper start - wheeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
++                        if (method.invisibleTypeAnnotations != null) {
++                            for (final org.objectweb.asm.tree.TypeAnnotationNode invisibleTypeAnnotation : method.invisibleTypeAnnotations) {
++                                final org.objectweb.asm.TypeReference ref = new org.objectweb.asm.TypeReference(invisibleTypeAnnotation.typeRef);
++                                if (ref.getSort() == org.objectweb.asm.TypeReference.METHOD_FORMAL_PARAMETER && ref.getTypeParameterIndex() == i && java.util.Arrays.binarySearch(ACCEPTED_ANNOTATIONS, invisibleTypeAnnotation.desc) >= 0) {
++                                    continue dancing;
++                                }
++                            }
++                        }
++                        // Paper end
+                         ParameterNode paramNode = parameters == null ? null : parameters.get(i);
+                         String paramName = paramNode == null ? null : paramNode.name;
+ 
