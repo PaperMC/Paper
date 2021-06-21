@@ -130,7 +130,7 @@ public class WatchdogThread extends Thread
         }
         log.log( Level.SEVERE, "\tStack:" );
         //
-        for ( StackTraceElement stack : thread.getStackTrace() )
+        for ( StackTraceElement stack : io.papermc.paper.util.StacktraceDeobfuscator.INSTANCE.deobfuscateStacktrace(thread.getStackTrace()) ) // Paper
         {
             log.log( Level.SEVERE, "\t\t" + stack );
         }

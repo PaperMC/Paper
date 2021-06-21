@@ -61,6 +61,7 @@ dependencies {
     mockitoAgent("org.mockito:mockito-core:5.14.1") { isTransitive = false } // Paper - configure mockito agent that is needed in newer java versions
     testImplementation("org.ow2.asm:asm-tree:9.7.1")
     testImplementation("org.junit-pioneer:junit-pioneer:2.2.0") // Paper - CartesianTest
+    implementation("net.neoforged:srgutils:1.0.9") // Paper - mappings handling
 }
 
 paperweight {
