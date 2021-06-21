@@ -56,11 +56,13 @@ public class NotePlayEvent extends BlockEvent implements Cancellable {
 
     /**
      * Overrides the {@link Instrument} to be used.
+     * <p>
+     * Only works when the note block isn't under a player head.
+     * For this specific case the 'note_block_sound' property of the
+     * player head state takes the priority.
      *
      * @param instrument the Instrument. Has no effect if null.
-     * @deprecated no effect on newer Minecraft versions
      */
-    @Deprecated(since = "1.13")
     public void setInstrument(@NotNull Instrument instrument) {
         if (instrument != null) {
             this.instrument = instrument;
@@ -71,9 +73,7 @@ public class NotePlayEvent extends BlockEvent implements Cancellable {
      * Overrides the {@link Note} to be played.
      *
      * @param note the Note. Has no effect if null.
-     * @deprecated no effect on newer Minecraft versions
      */
-    @Deprecated(since = "1.13")
     public void setNote(@NotNull Note note) {
         if (note != null) {
             this.note = note;
