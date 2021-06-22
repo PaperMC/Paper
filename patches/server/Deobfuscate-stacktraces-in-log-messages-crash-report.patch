@@ -1,8 +1,8 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Jason Penilla <11360596+jpenilla@users.noreply.github.com>
 Date: Sun, 20 Jun 2021 18:19:09 -0700
-Subject: [PATCH] Deobfuscate stacktraces in log messages using a
- RewriteAppender and a custom RewritePolicy
+Subject: [PATCH] Deobfuscate stacktraces in log messages, crash reports, and
+ etc.
 
 
 diff --git a/build.gradle.kts b/build.gradle.kts
@@ -115,6 +115,43 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@
 +package io.papermc.paper.logging;
 +
++import io.papermc.paper.util.StacktraceDeobfuscator;
++import org.apache.logging.log4j.core.Core;
++import org.apache.logging.log4j.core.LogEvent;
++import org.apache.logging.log4j.core.appender.rewrite.RewritePolicy;
++import org.apache.logging.log4j.core.config.plugins.Plugin;
++import org.apache.logging.log4j.core.config.plugins.PluginFactory;
++import org.jetbrains.annotations.NotNull;
++
++@Plugin(
++    name = "StacktraceDeobfuscatingRewritePolicy",
++    category = Core.CATEGORY_NAME,
++    elementType = "rewritePolicy",
++    printObject = true
++)
++public final class StacktraceDeobfuscatingRewritePolicy implements RewritePolicy {
++    @Override
++    public @NotNull LogEvent rewrite(final @NotNull LogEvent rewrite) {
++        final Throwable thrown = rewrite.getThrown();
++        if (thrown != null) {
++            StacktraceDeobfuscator.INSTANCE.deobfuscateThrowable(thrown);
++        }
++        return rewrite;
++    }
++
++    @PluginFactory
++    public static @NotNull StacktraceDeobfuscatingRewritePolicy createPolicy() {
++        return new StacktraceDeobfuscatingRewritePolicy();
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/util/StacktraceDeobfuscator.java b/src/main/java/io/papermc/paper/util/StacktraceDeobfuscator.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/util/StacktraceDeobfuscator.java
+@@ -0,0 +0,0 @@
++package io.papermc.paper.util;
++
 +import com.destroystokyo.paper.PaperConfig;
 +import com.google.common.base.Charsets;
 +import com.google.common.collect.ImmutableMap;
@@ -133,11 +170,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import net.fabricmc.mapping.tree.MethodDef;
 +import net.fabricmc.mapping.tree.TinyMappingFactory;
 +import net.fabricmc.mapping.tree.TinyTree;
-+import org.apache.logging.log4j.core.Core;
-+import org.apache.logging.log4j.core.LogEvent;
-+import org.apache.logging.log4j.core.appender.rewrite.RewritePolicy;
-+import org.apache.logging.log4j.core.config.plugins.Plugin;
-+import org.apache.logging.log4j.core.config.plugins.PluginFactory;
 +import org.jetbrains.annotations.NotNull;
 +import org.jetbrains.annotations.Nullable;
 +import org.objectweb.asm.ClassReader;
@@ -146,13 +178,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import org.objectweb.asm.MethodVisitor;
 +import org.objectweb.asm.Opcodes;
 +
-+@Plugin(
-+    name = "StacktraceDeobfuscatingRewritePolicy",
-+    category = Core.CATEGORY_NAME,
-+    elementType = "rewritePolicy",
-+    printObject = true
-+)
-+public final class StacktraceDeobfuscatingRewritePolicy implements RewritePolicy {
++public enum StacktraceDeobfuscator {
++    INSTANCE;
++
 +    private static final String MOJANG_PLUS_YARN_NAMESPACE = "mojang+yarn";
 +    private static final String SPIGOT_NAMESPACE = "spigot";
 +
@@ -164,12 +192,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +    });
 +
-+    StacktraceDeobfuscatingRewritePolicy() {
++    StacktraceDeobfuscator() {
 +        this.mappings = loadMappingsIfPresent();
 +    }
 +
 +    private static @Nullable Map<String, ClassMapping> loadMappingsIfPresent() {
-+        try (final InputStream mappingsInputStream = StacktraceDeobfuscatingRewritePolicy.class.getClassLoader().getResourceAsStream("mappings/reobf.tiny")) {
++        try (final InputStream mappingsInputStream = StacktraceDeobfuscator.class.getClassLoader().getResourceAsStream("META-INF/mappings/reobf.tiny")) {
 +            if (mappingsInputStream == null) {
 +                return null;
 +            }
@@ -208,20 +236,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +    }
 +
-+    @Override
-+    public @NotNull LogEvent rewrite(final @NotNull LogEvent rewrite) {
-+        if (!PaperConfig.deobfuscateStacktraces) {
-+            return rewrite;
-+        }
-+
-+        final Throwable thrown = rewrite.getThrown();
-+        if (thrown != null) {
-+            this.deobfuscateThrowable(thrown);
-+        }
-+        return rewrite;
-+    }
-+
 +    public void deobfuscateThrowable(final Throwable throwable) {
++        if (!PaperConfig.deobfuscateStacktraces) {
++            return;
++        }
++
 +        throwable.setStackTrace(this.deobfuscateStacktrace(throwable.getStackTrace()));
 +        final Throwable cause = throwable.getCause();
 +        if (cause != null) {
@@ -233,6 +252,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +
 +    public StackTraceElement[] deobfuscateStacktrace(final StackTraceElement[] traceElements) {
++        if (!PaperConfig.deobfuscateStacktraces) {
++            return traceElements;
++        }
++
 +        if (this.mappings == null || traceElements.length == 0) {
 +            return traceElements;
 +        }
@@ -313,7 +336,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +
 +    private @Nullable Pair<String, String> determineMethodForLine(final @NotNull Class<?> clazz, final int lineNumber) {
-+        final Map<Pair<String, String>, IntList> lineMap = this.lineMapCache.computeIfAbsent(clazz, StacktraceDeobfuscatingRewritePolicy::buildLineMap);
++        final Map<Pair<String, String>, IntList> lineMap = this.lineMapCache.computeIfAbsent(clazz, StacktraceDeobfuscator::buildLineMap);
 +        for (final var entry : lineMap.entrySet()) {
 +            final Pair<String, String> pair = entry.getKey();
 +            final IntList lines = entry.getValue();
@@ -336,11 +359,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return rootClassName + ".java";
 +    }
 +
-+    @PluginFactory
-+    public static @NotNull StacktraceDeobfuscatingRewritePolicy createPolicy() {
-+        return new StacktraceDeobfuscatingRewritePolicy();
-+    }
-+
 +    private record ClassMapping(
 +        String obfName,
 +        String mojangName,
@@ -355,6 +373,74 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    ) {
 +    }
 +}
+diff --git a/src/main/java/io/papermc/paper/util/TraceUtil.java b/src/main/java/io/papermc/paper/util/TraceUtil.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/io/papermc/paper/util/TraceUtil.java
++++ b/src/main/java/io/papermc/paper/util/TraceUtil.java
+@@ -0,0 +0,0 @@ public final class TraceUtil {
+ 
+     public static void dumpTraceForThread(Thread thread, String reason) {
+         Bukkit.getLogger().warning(thread.getName() + ": " + reason);
+-        StackTraceElement[] trace = thread.getStackTrace();
++        StackTraceElement[] trace = StacktraceDeobfuscator.INSTANCE.deobfuscateStacktrace(thread.getStackTrace());
+         for (StackTraceElement traceElement : trace) {
+             Bukkit.getLogger().warning("\tat " + traceElement);
+         }
+     }
+ 
+     public static void dumpTraceForThread(String reason) {
+-        new Throwable(reason).printStackTrace();
++        final Throwable throwable = new Throwable(reason);
++        StacktraceDeobfuscator.INSTANCE.deobfuscateThrowable(throwable);
++        throwable.printStackTrace();
+     }
+ }
+diff --git a/src/main/java/net/minecraft/CrashReport.java b/src/main/java/net/minecraft/CrashReport.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/CrashReport.java
++++ b/src/main/java/net/minecraft/CrashReport.java
+@@ -0,0 +0,0 @@ public class CrashReport {
+     private final SystemReport systemReport = new SystemReport();
+ 
+     public CrashReport(String message, Throwable cause) {
++        io.papermc.paper.util.StacktraceDeobfuscator.INSTANCE.deobfuscateThrowable(cause); // Paper
+         this.title = message;
+         this.exception = cause;
+         this.systemReport.setDetail("CraftBukkit Information", new org.bukkit.craftbukkit.CraftCrashReport()); // CraftBukkit
+diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
++++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
+@@ -0,0 +0,0 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+         com.destroystokyo.paper.PaperConfig.registerCommands();
+         com.destroystokyo.paper.VersionHistoryManager.INSTANCE.getClass(); // load version history now
+         io.papermc.paper.brigadier.PaperBrigadierProviderImpl.INSTANCE.getClass(); // init PaperBrigadierProvider
++        io.papermc.paper.util.StacktraceDeobfuscator.INSTANCE.getClass(); // load mappings for stacktrace deobf
+         // Paper end
+ 
+         this.setPvpAllowed(dedicatedserverproperties.pvp);
+diff --git a/src/main/java/org/spigotmc/WatchdogThread.java b/src/main/java/org/spigotmc/WatchdogThread.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/spigotmc/WatchdogThread.java
++++ b/src/main/java/org/spigotmc/WatchdogThread.java
+@@ -0,0 +0,0 @@ public class WatchdogThread extends Thread
+                     log.log( Level.SEVERE, "During the run of the server, a plugin set an excessive velocity on an entity" );
+                     log.log( Level.SEVERE, "This may be the cause of the issue, or it may be entirely unrelated" );
+                     log.log( Level.SEVERE, org.bukkit.craftbukkit.CraftServer.excessiveVelEx.getMessage());
+-                    for ( StackTraceElement stack : org.bukkit.craftbukkit.CraftServer.excessiveVelEx.getStackTrace() )
++                    for ( StackTraceElement stack : io.papermc.paper.util.StacktraceDeobfuscator.INSTANCE.deobfuscateStacktrace(org.bukkit.craftbukkit.CraftServer.excessiveVelEx.getStackTrace()) ) // Paper
+                     {
+                         log.log( Level.SEVERE, "\t\t" + stack );
+                     }
+@@ -0,0 +0,0 @@ public class WatchdogThread extends Thread
+         }
+         log.log( Level.SEVERE, "\tStack:" );
+         //
+-        for ( StackTraceElement stack : thread.getStackTrace() )
++        for ( StackTraceElement stack : io.papermc.paper.util.StacktraceDeobfuscator.INSTANCE.deobfuscateStacktrace(thread.getStackTrace()) ) // Paper
+         {
+             log.log( Level.SEVERE, "\t\t" + stack );
+         }
 diff --git a/src/main/resources/log4j2.xml b/src/main/resources/log4j2.xml
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/resources/log4j2.xml
