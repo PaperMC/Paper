@@ -4,7 +4,7 @@ import com.google.common.base.Preconditions;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.Salmon;
 
-public class CraftSalmon extends CraftFish implements Salmon {
+public class CraftSalmon extends io.papermc.paper.entity.PaperSchoolableFish implements Salmon { // Paper - Schooling Fish API
 
     public CraftSalmon(CraftServer server, net.minecraft.world.entity.animal.Salmon entity) {
         super(server, entity);

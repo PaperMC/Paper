@@ -28,4 +28,17 @@ public class CraftGhast extends CraftFlying implements Ghast, CraftEnemy {
     public void setCharging(boolean flag) {
         this.getHandle().setCharging(flag);
     }
+
+    // Paper start
+    @Override
+    public int getExplosionPower() {
+        return this.getHandle().getExplosionPower();
+    }
+
+    @Override
+    public void setExplosionPower(int explosionPower) {
+        com.google.common.base.Preconditions.checkArgument(explosionPower >= 0 && explosionPower <= 127, "The explosion power has to be between 0 and 127");
+        this.getHandle().setExplosionPower(explosionPower);
+    }
+    // Paper end
 }

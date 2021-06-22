@@ -67,4 +67,17 @@ public class CraftTNTPrimed extends CraftEntity implements TNTPrimed {
             this.getHandle().owner = null;
         }
     }
+
+    // Paper start
+    @Override
+    public void setBlockData(org.bukkit.block.data.BlockData data) {
+        com.google.common.base.Preconditions.checkArgument(data != null, "The visual block data of this tnt cannot be null. To reset it just set to the TNT default block data");
+        this.getHandle().setBlockState(((org.bukkit.craftbukkit.block.data.CraftBlockData) data).getState());
+    }
+
+    @Override
+    public org.bukkit.block.data.BlockData getBlockData() {
+        return org.bukkit.craftbukkit.block.data.CraftBlockData.fromData(this.getHandle().getBlockState());
+    }
+    // Paper end
 }

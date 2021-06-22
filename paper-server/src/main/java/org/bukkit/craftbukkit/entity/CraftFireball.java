@@ -84,6 +84,18 @@ public class CraftFireball extends AbstractProjectile implements Fireball {
         return new Vector(delta.x, delta.y, delta.z);
     }
 
+    // Paper start - Expose power on fireball projectiles
+    @Override
+    public void setPower(final Vector power) {
+        this.setAcceleration(power);
+    }
+
+    @Override
+    public Vector getPower() {
+        return this.getAcceleration();
+    }
+    // Paper end - Expose power on fireball projectiles
+
     @Override
     public AbstractHurtingProjectile getHandle() {
         return (AbstractHurtingProjectile) this.entity;

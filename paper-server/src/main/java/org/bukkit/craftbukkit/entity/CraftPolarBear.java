@@ -17,4 +17,16 @@ public class CraftPolarBear extends CraftAnimals implements PolarBear {
     public String toString() {
         return "CraftPolarBear";
     }
+
+    // Paper start
+    @Override
+    public boolean isStanding() {
+        return this.getHandle().isStanding();
+    }
+
+    @Override
+    public void setStanding(boolean standing) {
+        this.getHandle().setStanding(standing);
+    }
+    // Paper end
 }

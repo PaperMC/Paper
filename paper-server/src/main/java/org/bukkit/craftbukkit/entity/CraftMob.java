@@ -146,4 +146,16 @@ public abstract class CraftMob extends CraftLivingEntity implements Mob {
         return getHandle().getMaxHeadXRot();
     }
     // Paper end
+
+    // Paper start
+    @Override
+    public boolean isAggressive() {
+        return this.getHandle().isAggressive();
+    }
+
+    @Override
+    public void setAggressive(boolean aggressive) {
+        this.getHandle().setAggressive(aggressive);
+    }
+    // Paper end
 }

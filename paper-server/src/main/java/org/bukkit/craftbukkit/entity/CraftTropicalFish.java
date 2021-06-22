@@ -7,7 +7,7 @@ import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.TropicalFish;
 import org.bukkit.entity.TropicalFish.Pattern;
 
-public class CraftTropicalFish extends CraftFish implements TropicalFish {
+public class CraftTropicalFish extends io.papermc.paper.entity.PaperSchoolableFish implements TropicalFish { // Paper - Schooling Fish API
 
     public CraftTropicalFish(CraftServer server, net.minecraft.world.entity.animal.TropicalFish entity) {
         super(server, entity);

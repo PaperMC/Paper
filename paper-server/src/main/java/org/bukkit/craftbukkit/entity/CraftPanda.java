@@ -41,6 +41,38 @@ public class CraftPanda extends CraftAnimals implements Panda {
         this.getHandle().setHiddenGene(CraftPanda.toNms(gene));
     }
 
+    // Paper start - Panda API
+    @Override
+    public void setSneezeTicks(int ticks) {
+        this.getHandle().setSneezeCounter(ticks);
+    }
+
+    @Override
+    public int getSneezeTicks() {
+        return this.getHandle().getSneezeCounter();
+    }
+
+    @Override
+    public void setEatingTicks(int ticks) {
+        this.getHandle().setEatCounter(ticks);
+    }
+
+    @Override
+    public int getEatingTicks() {
+        return this.getHandle().getEatCounter();
+    }
+
+    @Override
+    public void setUnhappyTicks(int ticks) {
+        this.getHandle().setUnhappyCounter(ticks);
+    }
+
+    @Override
+    public Gene getCombinedGene() {
+        return CraftPanda.fromNms(this.getHandle().getVariant());
+    }
+    // Paper end - Panda API
+
     @Override
     public boolean isRolling() {
         return this.getHandle().isRolling();

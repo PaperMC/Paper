@@ -128,6 +128,13 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
         }
     }
 
+    // Paper start - entity heal API
+    @Override
+    public void heal(final double amount, final org.bukkit.event.entity.EntityRegainHealthEvent.RegainReason reason) {
+        this.getHandle().heal((float) amount, reason);
+    }
+    // Paper end - entity heal API
+
     @Override
     public double getAbsorptionAmount() {
         return this.getHandle().getAbsorptionAmount();
@@ -939,14 +946,29 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
 
     @Override
     public boolean isInvisible() {
-        return this.getHandle().isInvisible();
+        return super.isInvisible(); // Paper - move invisibility up to Entity - diff on change
     }
 
     @Override
     public void setInvisible(boolean invisible) {
-        this.getHandle().persistentInvisibility = invisible;
-        this.getHandle().setSharedFlag(5, invisible);
+        super.setInvisible(invisible); // Paper - move invisibility up to Entity
     }
+    // Paper start
+    @Override
+    public float getSidewaysMovement() {
+        return this.getHandle().xxa;
+    }
+
+    @Override
+    public float getForwardsMovement() {
+        return this.getHandle().zza;
+    }
+
+    @Override
+    public float getUpwardsMovement() {
+        return this.getHandle().yya;
+    }
+    // Paper end
 
     // Paper start
     @Override

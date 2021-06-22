@@ -29,6 +29,26 @@ public class CraftVex extends CraftMonster implements Vex {
     public void setSummoner(org.bukkit.entity.Mob summoner) {
         getHandle().setOwner(summoner == null ? null : ((CraftMob) summoner).getHandle());
     }
+
+    @Override
+    public boolean hasLimitedLifetime() {
+        return this.getHandle().hasLimitedLife;
+    }
+
+    @Override
+    public void setLimitedLifetime(boolean hasLimitedLifetime) {
+        this.getHandle().hasLimitedLife = hasLimitedLifetime;
+    }
+
+    @Override
+    public int getLimitedLifetimeTicks() {
+        return this.getHandle().limitedLifeTicks;
+    }
+
+    @Override
+    public void setLimitedLifetimeTicks(int ticks) {
+        this.getHandle().limitedLifeTicks = ticks;
+    }
     // Paper end
 
     @Override

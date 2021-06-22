@@ -114,4 +114,36 @@ public abstract class CraftAbstractHorse extends CraftAnimals implements Abstrac
     public AbstractHorseInventory getInventory() {
         return new CraftSaddledInventory(getHandle().inventory);
     }
+
+    // Paper start - Horse API
+    @Override
+    public boolean isEatingGrass() {
+        return this.getHandle().isEating();
+    }
+
+    @Override
+    public void setEatingGrass(boolean eating) {
+        this.getHandle().setEating(eating);
+    }
+
+    @Override
+    public boolean isRearing() {
+        return this.getHandle().isStanding();
+    }
+
+    @Override
+    public void setRearing(boolean rearing) {
+        this.getHandle().setForceStanding(rearing);
+    }
+
+    @Override
+    public boolean isEating() {
+        return this.getHandle().isMouthOpen();
+    }
+
+    @Override
+    public void setEating(boolean eating) {
+       this.getHandle().setMouthOpen(eating);
+    }
+    // Paper end - Horse API
 }

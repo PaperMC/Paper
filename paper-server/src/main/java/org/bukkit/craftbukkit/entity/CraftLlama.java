@@ -58,4 +58,36 @@ public class CraftLlama extends CraftChestedHorse implements Llama, com.destroys
     public String toString() {
         return "CraftLlama";
     }
+
+    // Paper start
+    @Override
+    public boolean inCaravan() {
+        return this.getHandle().inCaravan();
+    }
+
+    @Override
+    public void joinCaravan(@org.jetbrains.annotations.NotNull Llama llama) {
+        this.getHandle().joinCaravan(((CraftLlama) llama).getHandle());
+    }
+
+    @Override
+    public void leaveCaravan() {
+        this.getHandle().leaveCaravan();
+    }
+
+    @Override
+    public boolean hasCaravanTail() {
+        return this.getHandle().hasCaravanTail();
+    }
+
+    @Override
+    public Llama getCaravanHead() {
+        return this.getHandle().getCaravanHead() == null ? null : (Llama) this.getHandle().getCaravanHead().getBukkitEntity();
+    }
+
+    @Override
+    public Llama getCaravanTail() {
+        return this.getHandle().caravanTail == null ? null : (Llama) this.getHandle().caravanTail.getBukkitEntity();
+    }
+    // Paper end
 }

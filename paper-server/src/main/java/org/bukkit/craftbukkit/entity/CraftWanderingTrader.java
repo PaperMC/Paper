@@ -49,5 +49,25 @@ public class CraftWanderingTrader extends CraftAbstractVillager implements Wande
     public boolean canDrinkMilk() {
         return getHandle().canDrinkMilk;
     }
+
+    @Override
+    public org.bukkit.Location getWanderingTowards() {
+        net.minecraft.core.BlockPos pos = this.getHandle().getWanderTarget();
+        if (pos == null) {
+            return null;
+        }
+
+        return io.papermc.paper.util.MCUtil.toLocation(this.getHandle().level(), pos);
+    }
+
+    @Override
+    public void setWanderingTowards(org.bukkit.Location location) {
+        net.minecraft.core.BlockPos pos = null;
+        if (location != null) {
+            pos = io.papermc.paper.util.MCUtil.toBlockPosition(location);
+        }
+
+        this.getHandle().setWanderTarget(pos);
+    }
     // Paper end
 }

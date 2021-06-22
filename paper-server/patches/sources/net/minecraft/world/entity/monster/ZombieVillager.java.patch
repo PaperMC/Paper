@@ -81,20 +81,31 @@
      }
  
      @Override
-@@ -197,8 +210,10 @@
+@@ -194,12 +207,20 @@
+     }
+ 
+     public void startConverting(@Nullable UUID uuid, int delay) {
++    // Paper start - missing entity behaviour api - converting without entity event
++        this.startConverting(uuid, delay, true);
++    }
++
++    public void startConverting(@Nullable UUID uuid, int delay, boolean broadcastEntityEvent) {
++    // Paper end - missing entity behaviour api - converting without entity event
          this.conversionStarter = uuid;
          this.villagerConversionTime = delay;
          this.getEntityData().set(ZombieVillager.DATA_CONVERTING_ID, true);
 -        this.removeEffect(MobEffects.WEAKNESS);
 -        this.addEffect(new MobEffectInstance(MobEffects.DAMAGE_BOOST, delay, Math.min(this.level().getDifficulty().getId() - 1, 0)));
+-        this.level().broadcastEntityEvent(this, (byte) 16);
 +        // CraftBukkit start
 +        this.removeEffect(MobEffects.WEAKNESS, org.bukkit.event.entity.EntityPotionEffectEvent.Cause.CONVERSION);
 +        this.addEffect(new MobEffectInstance(MobEffects.DAMAGE_BOOST, delay, Math.min(this.level().getDifficulty().getId() - 1, 0)), org.bukkit.event.entity.EntityPotionEffectEvent.Cause.CONVERSION);
 +        // CraftBukkit end
-         this.level().broadcastEntityEvent(this, (byte) 16);
++        if (broadcastEntityEvent) this.level().broadcastEntityEvent(this, (byte) 16); // Paper - missing entity behaviour api - converting without entity event
      }
  
-@@ -215,10 +230,11 @@
+     @Override
+@@ -215,10 +236,11 @@
      }
  
      private void finishConversion(ServerLevel world) {
@@ -107,7 +118,7 @@
  
              while (iterator.hasNext()) {
                  EquipmentSlot enumitemslot = (EquipmentSlot) iterator.next();
-@@ -248,12 +264,16 @@
+@@ -248,12 +270,16 @@
                  }
              }
  

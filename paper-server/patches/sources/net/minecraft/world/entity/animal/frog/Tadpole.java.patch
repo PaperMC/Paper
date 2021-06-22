@@ -1,6 +1,14 @@
 --- a/net/minecraft/world/entity/animal/frog/Tadpole.java
 +++ b/net/minecraft/world/entity/animal/frog/Tadpole.java
-@@ -74,7 +74,7 @@
+@@ -50,6 +50,7 @@
+     public int age;
+     protected static final ImmutableList<SensorType<? extends Sensor<? super Tadpole>>> SENSOR_TYPES = ImmutableList.of(SensorType.NEAREST_LIVING_ENTITIES, SensorType.NEAREST_PLAYERS, SensorType.HURT_BY, SensorType.FROG_TEMPTATIONS);
+     protected static final ImmutableList<MemoryModuleType<?>> MEMORY_TYPES = ImmutableList.of(MemoryModuleType.LOOK_TARGET, MemoryModuleType.NEAREST_VISIBLE_LIVING_ENTITIES, MemoryModuleType.WALK_TARGET, MemoryModuleType.CANT_REACH_WALK_TARGET_SINCE, MemoryModuleType.PATH, MemoryModuleType.NEAREST_VISIBLE_ADULT, MemoryModuleType.TEMPTATION_COOLDOWN_TICKS, MemoryModuleType.IS_TEMPTED, MemoryModuleType.TEMPTING_PLAYER, MemoryModuleType.BREED_TARGET, MemoryModuleType.IS_PANICKING);
++    public boolean ageLocked; // Paper
+ 
+     public Tadpole(EntityType<? extends AbstractFish> type, Level world) {
+         super(type, world);
+@@ -74,7 +75,7 @@
  
      @Override
      public Brain<Tadpole> getBrain() {
@@ -9,7 +17,55 @@
      }
  
      @Override
-@@ -225,12 +225,17 @@
+@@ -102,7 +103,7 @@
+     @Override
+     public void aiStep() {
+         super.aiStep();
+-        if (!this.level().isClientSide) {
++        if (!this.level().isClientSide && !this.ageLocked) { // Paper
+             this.setAge(this.age + 1);
+         }
+ 
+@@ -112,12 +113,14 @@
+     public void addAdditionalSaveData(CompoundTag nbt) {
+         super.addAdditionalSaveData(nbt);
+         nbt.putInt("Age", this.age);
++        nbt.putBoolean("AgeLocked", this.ageLocked); // Paper
+     }
+ 
+     @Override
+     public void readAdditionalSaveData(CompoundTag nbt) {
+         super.readAdditionalSaveData(nbt);
+         this.setAge(nbt.getInt("Age"));
++        this.ageLocked = nbt.getBoolean("AgeLocked"); // Paper
+     }
+ 
+     @Nullable
+@@ -169,6 +172,7 @@
+         Bucketable.saveDefaultDataToBucketTag(this, stack);
+         CustomData.update(DataComponents.BUCKET_ENTITY_DATA, stack, (nbttagcompound) -> {
+             nbttagcompound.putInt("Age", this.getAge());
++            nbttagcompound.putBoolean("AgeLocked", this.ageLocked); // Paper
+         });
+     }
+ 
+@@ -179,6 +183,7 @@
+             this.setAge(nbt.getInt("Age"));
+         }
+ 
++        this.ageLocked = nbt.getBoolean("AgeLocked"); // Paper
+     }
+ 
+     @Override
+@@ -210,6 +215,7 @@
+     }
+ 
+     private void ageUp(int seconds) {
++        if (this.ageLocked) return; // Paper
+         this.setAge(this.age + seconds * 20);
+     }
+ 
+@@ -225,12 +231,17 @@
          Level world = this.level();
  
          if (world instanceof ServerLevel worldserver) {

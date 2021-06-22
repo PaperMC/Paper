@@ -28,4 +28,15 @@ public class CraftEndermite extends CraftMonster implements Endermite {
     public void setPlayerSpawned(boolean playerSpawned) {
         // Nop
     }
+    // Paper start
+    @Override
+    public void setLifetimeTicks(int ticks) {
+        this.getHandle().life = ticks;
+    }
+
+    @Override
+    public int getLifetimeTicks() {
+        return this.getHandle().life;
+    }
+    // Paper end
 }

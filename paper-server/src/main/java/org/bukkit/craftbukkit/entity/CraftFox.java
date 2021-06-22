@@ -113,4 +113,41 @@ public class CraftFox extends CraftAnimals implements Fox {
     public boolean isFaceplanted() {
         return this.getHandle().isFaceplanted();
     }
+
+    // Paper start - Add more fox behavior API
+    @Override
+    public void setInterested(boolean interested) {
+        this.getHandle().setIsInterested(interested);
+    }
+
+    @Override
+    public boolean isInterested() {
+        return this.getHandle().isInterested();
+    }
+
+    @Override
+    public void setLeaping(boolean leaping) {
+        this.getHandle().setIsPouncing(leaping);
+    }
+
+    @Override
+    public boolean isLeaping() {
+        return this.getHandle().isPouncing();
+    }
+
+    @Override
+    public void setDefending(boolean defending) {
+        this.getHandle().setDefending(defending);
+    }
+
+    @Override
+    public boolean isDefending() {
+        return this.getHandle().isDefending();
+    }
+
+    @Override
+    public void setFaceplanted(boolean faceplanted) {
+        this.getHandle().setFaceplanted(faceplanted);
+    }
+    // Paper end - Add more fox behavior API
 }
