@@ -1,0 +1,37 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Shane Freeder <theboyetronic@gmail.com>
+Date: Tue, 22 Jun 2021 19:32:19 +0100
+Subject: [PATCH] Fix kick event being fired off main thread
+
+
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index 0c295854f31422cf3ad699d229805c5881a65eed..c4fcab527c35eee94f88c7e499b9d2959d704808 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -108,6 +108,7 @@ import net.minecraft.network.protocol.game.ServerboundTeleportToEntityPacket;
+ import net.minecraft.network.protocol.game.ServerboundUseItemOnPacket;
+ import net.minecraft.network.protocol.game.ServerboundUseItemPacket;
+ import net.minecraft.resources.ResourceLocation;
++import net.minecraft.server.MCUtil;
+ import net.minecraft.server.MinecraftServer;
+ import net.minecraft.server.level.ServerLevel;
+ import net.minecraft.server.level.ServerPlayer;
+@@ -440,11 +441,16 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+         }
+         net.kyori.adventure.text.Component leaveMessage = net.kyori.adventure.text.Component.translatable("multiplayer.player.left", net.kyori.adventure.text.format.NamedTextColor.YELLOW, this.player.getBukkitEntity().displayName()); // Paper - Adventure
+ 
+-        PlayerKickEvent event = new PlayerKickEvent(this.player.getBukkitEntity(), reason, leaveMessage, cause); // Paper - Adventure & kick event reason
++        // Paper start - ensire kick event is fired on main
++        final PlayerKickEvent event = MCUtil.ensureMain(() -> {
++        PlayerKickEvent playerKickEvent = new PlayerKickEvent(this.player.getBukkitEntity(), reason, leaveMessage, cause); // Paper - Adventure & kick event reason
+ 
+         if (this.cserver.getServer().isRunning()) {
+-            this.cserver.getPluginManager().callEvent(event);
++            this.cserver.getPluginManager().callEvent(playerKickEvent);
+         }
++        return playerKickEvent;
++        });
++        // Paper end
+ 
+         if (event.isCancelled()) {
+             // Do not kick the player
