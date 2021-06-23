@@ -6,9 +6,9 @@ can follow to make the approval process go more smoothly.
 
 ## Notice
 This guide was written for an old build system which is no longer in use and
-has been replaced by [paperweight](https://github.com/PaperMC/paperweight).
+has been replaced by [Paperweight](https://github.com/PaperMC/paperweight).
 This file will be updated shortly, but, in the meantime, simply
-run `./gradlew tasks` for a list of all tasks in paperweight.
+run `./gradlew tasks` for a list of all tasks in Paperweight.
 
 **Table of contents:**
 <!-- Please don't remove the following comments.
