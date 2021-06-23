@@ -15,24 +15,26 @@ import org.bukkit.inventory.meta.FireworkMeta;
 public class CraftFirework extends CraftProjectile implements Firework {
 
     private final Random random = new Random();
-    private final CraftItemStack item;
+    //private CraftItemStack item; // Paper - Remove usage, not accurate representation of current item.
 
     public CraftFirework(CraftServer server, FireworkRocketEntity entity) {
         super(server, entity);
 
-        ItemStack item = this.getHandle().getEntityData().get(FireworkRocketEntity.DATA_ID_FIREWORKS_ITEM);
-
-        if (item.isEmpty()) {
-            item = new ItemStack(Items.FIREWORK_ROCKET);
-            this.getHandle().getEntityData().set(FireworkRocketEntity.DATA_ID_FIREWORKS_ITEM, item);
-        }
-
-        this.item = CraftItemStack.asCraftMirror(item);
-
-        // Ensure the item is a firework...
-        if (this.item.getType() != Material.FIREWORK_ROCKET) {
-            this.item.setType(Material.FIREWORK_ROCKET);
-        }
+        // Paper start - Expose firework item directly
+//        ItemStack item = this.getHandle().getEntityData().get(FireworkRocketEntity.DATA_ID_FIREWORKS_ITEM);
+//
+//        if (item.isEmpty()) {
+//            item = new ItemStack(Items.FIREWORK_ROCKET);
+//            this.getHandle().getEntityData().set(FireworkRocketEntity.DATA_ID_FIREWORKS_ITEM, item);
+//        }
+//
+//        this.item = CraftItemStack.asCraftMirror(item);
+//
+//        // Ensure the item is a firework...
+//        if (this.item.getType() != Material.FIREWORK_ROCKET) {
+//            this.item.setType(Material.FIREWORK_ROCKET);
+//        }
+        // Paper end - Expose firework item directly
     }
 
     @Override
@@ -47,12 +49,12 @@ public class CraftFirework extends CraftProjectile implements Firework {
 
     @Override
     public FireworkMeta getFireworkMeta() {
-        return (FireworkMeta) this.item.getItemMeta();
+        return (FireworkMeta) CraftItemStack.getItemMeta(this.getHandle().getEntityData().get(FireworkRocketEntity.DATA_ID_FIREWORKS_ITEM), org.bukkit.inventory.ItemType.FIREWORK_ROCKET); // Paper - Expose firework item directly
     }
 
     @Override
     public void setFireworkMeta(FireworkMeta meta) {
-        this.item.setItemMeta(meta);
+        applyFireworkEffect(meta); // Paper - Expose firework item directly
 
         // Copied from EntityFireworks constructor, update firework lifetime/power
         this.getHandle().lifetime = 10 * (1 + meta.getPower()) + this.random.nextInt(6) + this.random.nextInt(7);
@@ -136,4 +138,46 @@ public class CraftFirework extends CraftProjectile implements Firework {
         return getHandle().spawningEntity;
     }
     // Paper end
+    // Paper start - Expose firework item directly + manually setting flight
+    @Override
+    public org.bukkit.inventory.ItemStack getItem() {
+        return CraftItemStack.asBukkitCopy(this.getHandle().getItem());
+    }
+
+    @Override
+    public void setItem(org.bukkit.inventory.ItemStack itemStack) {
+        FireworkMeta meta = getFireworkMeta();
+        ItemStack nmsItem = itemStack == null ? FireworkRocketEntity.getDefaultItem() : CraftItemStack.asNMSCopy(itemStack);
+        this.getHandle().getEntityData().set(FireworkRocketEntity.DATA_ID_FIREWORKS_ITEM, nmsItem);
+
+        applyFireworkEffect(meta);
+    }
+
+    @Override
+    public int getTicksFlown() {
+        return this.getHandle().life;
+    }
+
+    @Override
+    public void setTicksFlown(int ticks) {
+        this.getHandle().life = ticks;
+    }
+
+    @Override
+    public int getTicksToDetonate() {
+        return this.getHandle().lifetime;
+    }
+
+    @Override
+    public void setTicksToDetonate(int ticks) {
+        this.getHandle().lifetime = ticks;
+    }
+
+    void applyFireworkEffect(FireworkMeta meta) {
+        ItemStack item = this.getHandle().getItem();
+        CraftItemStack.applyMetaToItem(item, meta);
+
+        this.getHandle().getEntityData().set(FireworkRocketEntity.DATA_ID_FIREWORKS_ITEM, item);
+    }
+    // Paper end - Expose firework item directly + manually setting flight
 }

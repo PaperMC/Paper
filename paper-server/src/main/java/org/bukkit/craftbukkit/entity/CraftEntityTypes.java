@@ -440,7 +440,7 @@ public final class CraftEntityTypes {
             BlockPos pos = BlockPos.containing(spawnData.x(), spawnData.y(), spawnData.z());
             return new FallingBlockEntity(spawnData.minecraftWorld(), spawnData.x(), spawnData.y(), spawnData.z(), spawnData.world().getBlockState(pos)); // Paper - create falling block entities correctly
         }));
-        register(new EntityTypeData<>(EntityType.FIREWORK_ROCKET, Firework.class, CraftFirework::new, spawnData -> new FireworkRocketEntity(spawnData.minecraftWorld(), spawnData.x(), spawnData.y(), spawnData.z(), net.minecraft.world.item.ItemStack.EMPTY)));
+        register(new EntityTypeData<>(EntityType.FIREWORK_ROCKET, Firework.class, CraftFirework::new, spawnData -> new FireworkRocketEntity(spawnData.minecraftWorld(), spawnData.x(), spawnData.y(), spawnData.z(), FireworkRocketEntity.getDefaultItem()))); // Paper - pass correct default to rocket for data storage
         register(new EntityTypeData<>(EntityType.EVOKER_FANGS, EvokerFangs.class, CraftEvokerFangs::new, spawnData -> new net.minecraft.world.entity.projectile.EvokerFangs(spawnData.minecraftWorld(), spawnData.x(), spawnData.y(), spawnData.z(), (float) Math.toRadians(spawnData.yaw()), 0, null)));
         register(new EntityTypeData<>(EntityType.COMMAND_BLOCK_MINECART, CommandMinecart.class, CraftMinecartCommand::new, createMinecart(net.minecraft.world.entity.EntityType.COMMAND_BLOCK_MINECART)));
         register(new EntityTypeData<>(EntityType.MINECART, RideableMinecart.class, CraftMinecartRideable::new, createMinecart(net.minecraft.world.entity.EntityType.MINECART)));

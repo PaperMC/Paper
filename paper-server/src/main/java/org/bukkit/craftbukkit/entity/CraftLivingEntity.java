@@ -579,8 +579,15 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public <T extends Projectile> T launchProjectile(Class<? extends T> projectile, Vector velocity) {
+        // Paper start - launchProjectile consumer
+        return this.launchProjectile(projectile, velocity, null);
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public <T extends Projectile> T launchProjectile(Class<? extends T> projectile, Vector velocity, java.util.function.Consumer<? super T> function) {
+        // Paper end - launchProjectile consumer
         Preconditions.checkState(!this.getHandle().generation, "Cannot launch projectile during world generation");
 
         net.minecraft.world.level.Level world = ((CraftWorld) this.getWorld()).getHandle();
@@ -606,7 +613,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
             } else {
                 launch = new net.minecraft.world.entity.projectile.Arrow(world, this.getHandle(), new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.ARROW), null);
             }
-            ((net.minecraft.world.entity.projectile.AbstractArrow) launch).shootFromRotation(this.getHandle(), this.getHandle().getXRot(), this.getHandle().getYRot(), 0.0F, 3.0F, 1.0F); // ItemBow
+            ((net.minecraft.world.entity.projectile.AbstractArrow) launch).shootFromRotation(this.getHandle(), this.getHandle().getXRot(), this.getHandle().getYRot(), 0.0F, Trident.class.isAssignableFrom(projectile) ? net.minecraft.world.item.TridentItem.PROJECTILE_SHOOT_POWER : 3.0F, 1.0F); // ItemBow // Paper - see TridentItem
         } else if (ThrownPotion.class.isAssignableFrom(projectile)) {
             if (LingeringPotion.class.isAssignableFrom(projectile)) {
                 launch = new net.minecraft.world.entity.projectile.ThrownPotion(world, this.getHandle(), new net.minecraft.world.item.ItemStack(Items.LINGERING_POTION));
@@ -663,8 +670,26 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
         } else if (Firework.class.isAssignableFrom(projectile)) {
             Location location = this.getEyeLocation();
 
-            launch = new FireworkRocketEntity(world, net.minecraft.world.item.ItemStack.EMPTY, this.getHandle());
-            launch.moveTo(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
+            // Paper start - see CrossbowItem
+            launch = new FireworkRocketEntity(world, FireworkRocketEntity.getDefaultItem(), this.getHandle(), location.getX(), location.getY() - 0.15F, location.getZ(), true); // Paper - pass correct default to rocket for data storage & see CrossbowItem for regular launch without elytra boost
+
+            // Lifted from net.minecraft.world.item.ProjectileWeaponItem.shoot
+            float f2 = /* net.minecraft.world.item.enchantment.EnchantmentHelper.processProjectileSpread((ServerLevel) world, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.CROSSBOW), this.getHandle(), 0.0F); */ 0; // Just shortcut this to 0, no need to do any calculations on a non existing stack
+            int projectileSize = 1;
+            int i = 0;
+
+            float f3 = projectileSize == 1 ? 0.0F : 2.0F * f2 / (float) (projectileSize - 1);
+            float f4 = (float) ((projectileSize - 1) % 2) * f3 / 2.0F;
+            float f5 = 1.0F;
+            float yaw = f4 + f5 * (float) ((i + 1) / 2) * f3;
+
+            // Lifted from net.minecraft.world.item.CrossbowItem.shootProjectile
+            Vec3 vec3 = this.getHandle().getUpVector(1.0F);
+            org.joml.Quaternionf quaternionf = new org.joml.Quaternionf().setAngleAxis((double)(yaw * (float) (Math.PI / 180.0)), vec3.x, vec3.y, vec3.z);
+            Vec3 vec32 = this.getHandle().getViewVector(1.0F);
+            org.joml.Vector3f vector3f = vec32.toVector3f().rotate(quaternionf);
+            ((FireworkRocketEntity) launch).shoot((double)vector3f.x(), (double)vector3f.y(), (double)vector3f.z(), net.minecraft.world.item.CrossbowItem.FIREWORK_POWER, 1.0F);
+            // Paper end
         }
 
         Preconditions.checkArgument(launch != null, "Projectile (%s) not supported", projectile.getName());
@@ -672,6 +697,11 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
         if (velocity != null) {
             ((T) launch.getBukkitEntity()).setVelocity(velocity);
         }
+        // Paper start - launchProjectile consumer
+        if (function != null) {
+            function.accept((T) launch.getBukkitEntity());
+        }
+        // Paper end - launchProjectile consumer
 
         world.addFreshEntity(launch);
         return (T) launch.getBukkitEntity();

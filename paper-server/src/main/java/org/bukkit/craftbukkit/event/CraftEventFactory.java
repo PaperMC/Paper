@@ -841,19 +841,19 @@ public class CraftEventFactory {
     /**
      * PotionSplashEvent
      */
-    public static PotionSplashEvent callPotionSplashEvent(net.minecraft.world.entity.projectile.ThrownPotion potion, HitResult position, Map<LivingEntity, Double> affectedEntities) {
+    public static PotionSplashEvent callPotionSplashEvent(net.minecraft.world.entity.projectile.ThrownPotion potion, @Nullable HitResult position, Map<LivingEntity, Double> affectedEntities) { // Paper - nullable hitResult
         ThrownPotion thrownPotion = (ThrownPotion) potion.getBukkitEntity();
 
         Block hitBlock = null;
         BlockFace hitFace = null;
-        if (position.getType() == HitResult.Type.BLOCK) {
+        if (position != null && position.getType() == HitResult.Type.BLOCK) { // Paper - nullable hitResult
             BlockHitResult positionBlock = (BlockHitResult) position;
             hitBlock = CraftBlock.at(potion.level(), positionBlock.getBlockPos());
             hitFace = CraftBlock.notchToBlockFace(positionBlock.getDirection());
         }
 
         org.bukkit.entity.Entity hitEntity = null;
-        if (position.getType() == HitResult.Type.ENTITY) {
+        if (position != null && position.getType() == HitResult.Type.ENTITY) { // Paper - nullable hitResult
             hitEntity = ((EntityHitResult) position).getEntity().getBukkitEntity();
         }
 
@@ -862,20 +862,20 @@ public class CraftEventFactory {
         return event;
     }
 
-    public static LingeringPotionSplashEvent callLingeringPotionSplashEvent(net.minecraft.world.entity.projectile.ThrownPotion potion, HitResult position, net.minecraft.world.entity.AreaEffectCloud cloud) {
+    public static LingeringPotionSplashEvent callLingeringPotionSplashEvent(net.minecraft.world.entity.projectile.ThrownPotion potion, @Nullable HitResult position, net.minecraft.world.entity.AreaEffectCloud cloud) { // Paper - nullable hitResult
         ThrownPotion thrownPotion = (ThrownPotion) potion.getBukkitEntity();
         AreaEffectCloud effectCloud = (AreaEffectCloud) cloud.getBukkitEntity();
 
         Block hitBlock = null;
         BlockFace hitFace = null;
-        if (position.getType() == HitResult.Type.BLOCK) {
+        if (position != null && position.getType() == HitResult.Type.BLOCK) { // Paper
             BlockHitResult positionBlock = (BlockHitResult) position;
             hitBlock = CraftBlock.at(potion.level(), positionBlock.getBlockPos());
             hitFace = CraftBlock.notchToBlockFace(positionBlock.getDirection());
         }
 
         org.bukkit.entity.Entity hitEntity = null;
-        if (position.getType() == HitResult.Type.ENTITY) {
+        if (position != null && position.getType() == HitResult.Type.ENTITY) { // Paper
             hitEntity = ((EntityHitResult) position).getEntity().getBukkitEntity();
         }
 

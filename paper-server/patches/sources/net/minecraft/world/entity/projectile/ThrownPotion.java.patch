@@ -55,7 +55,18 @@
          super(EntityType.POTION, owner, world, stack);
      }
  
-@@ -99,64 +109,86 @@
+@@ -93,70 +103,96 @@
+     @Override
+     protected void onHit(HitResult hitResult) {
+         super.onHit(hitResult);
++        // Paper start - More projectile API
++        this.splash(hitResult);
++    }
++    public void splash(@Nullable HitResult hitResult) {
++        // Paper end - More projectile API
+         Level world = this.level();
+-
+         if (world instanceof ServerLevel worldserver) {
              ItemStack itemstack = this.getItem();
              PotionContents potioncontents = (PotionContents) itemstack.getOrDefault(DataComponents.POTION_CONTENTS, PotionContents.EMPTY);
  
@@ -70,7 +81,7 @@
 +                    showParticles = this.makeAreaOfEffectCloud(potioncontents, hitResult); // CraftBukkit - Pass MovingObjectPosition // Paper
                  } else {
 -                    this.applySplash(worldserver, potioncontents.getAllEffects(), hitResult.getType() == HitResult.Type.ENTITY ? ((EntityHitResult) hitResult).getEntity() : null);
-+                    showParticles = this.applySplash(worldserver, potioncontents.getAllEffects(), hitResult.getType() == HitResult.Type.ENTITY ? ((EntityHitResult) hitResult).getEntity() : null, hitResult); // CraftBukkit - Pass MovingObjectPosition // Paper
++                    showParticles = this.applySplash(worldserver, potioncontents.getAllEffects(), hitResult != null && hitResult.getType() == HitResult.Type.ENTITY ? ((EntityHitResult) hitResult).getEntity() : null, hitResult); // CraftBukkit - Pass MovingObjectPosition // Paper - More projectile API
                  }
              }
  
@@ -146,7 +157,7 @@
      }
  
 -    private void applySplash(ServerLevel world, Iterable<MobEffectInstance> effects, @Nullable Entity entity) {
-+    private boolean applySplash(ServerLevel worldserver, Iterable<MobEffectInstance> iterable, @Nullable Entity entity, HitResult position) { // CraftBukkit - Pass MovingObjectPosition // Paper - Fix potions splash events
++    private boolean applySplash(ServerLevel worldserver, Iterable<MobEffectInstance> iterable, @Nullable Entity entity, @Nullable HitResult position) { // CraftBukkit - Pass MovingObjectPosition // Paper - Fix potions splash events & More projectile API
          AABB axisalignedbb = this.getBoundingBox().inflate(4.0D, 2.0D, 4.0D);
 -        List<LivingEntity> list = world.getEntitiesOfClass(LivingEntity.class, axisalignedbb);
 +        List<net.minecraft.world.entity.LivingEntity> list = worldserver.getEntitiesOfClass(net.minecraft.world.entity.LivingEntity.class, axisalignedbb);
@@ -162,7 +173,7 @@
  
                  if (entityliving.isAffectedByPotions()) {
                      double d0 = this.distanceToSqr((Entity) entityliving);
-@@ -164,43 +196,71 @@
+@@ -164,43 +200,71 @@
                      if (d0 < 16.0D) {
                          double d1;
  
@@ -242,7 +253,7 @@
      }
  
 -    private void makeAreaOfEffectCloud(PotionContents potion) {
-+    private boolean makeAreaOfEffectCloud(PotionContents potioncontents, HitResult position) { // CraftBukkit - Pass MovingObjectPosition
++    private boolean makeAreaOfEffectCloud(PotionContents potioncontents, @Nullable HitResult position) { // CraftBukkit - Pass MovingObjectPosition // Paper - More projectile API
          AreaEffectCloud entityareaeffectcloud = new AreaEffectCloud(this.level(), this.getX(), this.getY(), this.getZ());
          Entity entity = this.getOwner();
  
@@ -251,7 +262,7 @@
              entityareaeffectcloud.setOwner(entityliving);
          }
  
-@@ -208,8 +268,17 @@
+@@ -208,8 +272,17 @@
          entityareaeffectcloud.setRadiusOnUse(-0.5F);
          entityareaeffectcloud.setWaitTime(10);
          entityareaeffectcloud.setRadiusPerTick(-entityareaeffectcloud.getRadius() / (float) entityareaeffectcloud.getDuration());
@@ -271,7 +282,7 @@
      }
  
      public boolean isLingering() {
-@@ -220,19 +289,31 @@
+@@ -220,19 +293,31 @@
          BlockState iblockdata = this.level().getBlockState(pos);
  
          if (iblockdata.is(BlockTags.FIRE)) {

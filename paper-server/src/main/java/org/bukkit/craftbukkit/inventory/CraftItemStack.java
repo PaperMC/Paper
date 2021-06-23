@@ -341,12 +341,23 @@ public final class CraftItemStack extends ItemStack {
     public ItemMeta getItemMeta() {
         return CraftItemStack.getItemMeta(this.handle);
     }
+    // Paper start
+    public static void applyMetaToItem(net.minecraft.world.item.ItemStack itemStack, ItemMeta itemMeta) {
+        final CraftMetaItem.Applicator tag = new CraftMetaItem.Applicator();
+        ((CraftMetaItem) itemMeta).applyToItem(tag);
+        itemStack.applyComponents(tag.build());
+    }
 
     public static ItemMeta getItemMeta(net.minecraft.world.item.ItemStack item) {
+        return getItemMeta(item, null);
+    }
+    public static ItemMeta getItemMeta(net.minecraft.world.item.ItemStack item, org.bukkit.inventory.ItemType metaForType) {
+        // Paper end
         if (!CraftItemStack.hasItemMeta(item)) {
             return CraftItemFactory.instance().getItemMeta(CraftItemStack.getType(item));
         }
 
+        if (metaForType != null) { return ((CraftItemType<?>) metaForType).getItemMeta(item); } // Paper
         return ((CraftItemType<?>) CraftItemType.minecraftToBukkitNew(item.getItem())).getItemMeta(item);
     }
 

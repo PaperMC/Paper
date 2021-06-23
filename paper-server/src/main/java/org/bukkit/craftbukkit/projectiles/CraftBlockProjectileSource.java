@@ -56,7 +56,15 @@ public class CraftBlockProjectileSource implements BlockProjectileSource {
 
     @Override
     public <T extends Projectile> T launchProjectile(Class<? extends T> projectile, Vector velocity) {
+        // Paper start - launchProjectile consumer
+        return this.launchProjectile(projectile, velocity, null);
+    }
+
+    @Override
+    public <T extends Projectile> T launchProjectile(Class<? extends T> projectile, Vector velocity, java.util.function.Consumer<? super T> function) {
+        // Paper end - launchProjectile consumer
         Preconditions.checkArgument(this.getBlock().getType() == Material.DISPENSER, "Block is no longer dispenser");
+
         // Copied from BlockDispenser.dispense()
         BlockSource sourceblock = new BlockSource((ServerLevel) this.dispenserBlock.getLevel(), this.dispenserBlock.getBlockPos(), this.dispenserBlock.getBlockState(), this.dispenserBlock);
         // Copied from DispenseBehaviorProjectile
@@ -68,7 +76,7 @@ public class CraftBlockProjectileSource implements BlockProjectileSource {
             item = Items.SNOWBALL;
         } else if (Egg.class.isAssignableFrom(projectile)) {
             item = Items.EGG;
-        } else if (EnderPearl.class.isAssignableFrom(projectile)) {
+        } else if (false && EnderPearl.class.isAssignableFrom(projectile)) { // Paper - more projectile API - disallow enderpearl, it is not a projectile item
             item = Items.ENDER_PEARL;
         } else if (ThrownExpBottle.class.isAssignableFrom(projectile)) {
             item = Items.EXPERIENCE_BOTTLE;
@@ -83,20 +91,20 @@ public class CraftBlockProjectileSource implements BlockProjectileSource {
                 item = Items.TIPPED_ARROW;
             } else if (SpectralArrow.class.isAssignableFrom(projectile)) {
                 item = Items.SPECTRAL_ARROW;
-            } else {
+            } else if (org.bukkit.entity.Arrow.class.isAssignableFrom(projectile)) { // Paper - more projectile API - disallow trident
                 item = Items.ARROW;
             }
         } else if (Fireball.class.isAssignableFrom(projectile)) {
-            if (AbstractWindCharge.class.isAssignableFrom(projectile)) {
+            if (org.bukkit.entity.WindCharge.class.isAssignableFrom(projectile)) { // Paper - more projectile API - only allow wind charge not breeze wind charge
                 item = Items.WIND_CHARGE;
-            } else {
+            } else if (org.bukkit.entity.SmallFireball.class.isAssignableFrom(projectile)) { // Paper - more projectile API - only allow firing fire charges.
                 item = Items.FIRE_CHARGE;
             }
         } else if (Firework.class.isAssignableFrom(projectile)) {
             item = Items.FIREWORK_ROCKET;
         }
 
-        Preconditions.checkArgument(item instanceof ProjectileItem, "Projectile not supported");
+        Preconditions.checkArgument(item instanceof ProjectileItem, "Projectile '%s' not supported", projectile.getSimpleName()); // Paper - more projectile API - include simple name in exception
 
         ItemStack itemstack = new ItemStack(item);
         ProjectileItem projectileItem = (ProjectileItem) item;
@@ -105,7 +113,7 @@ public class CraftBlockProjectileSource implements BlockProjectileSource {
         Position iposition = dispenseConfig.positionFunction().getDispensePosition(sourceblock, enumdirection);
         net.minecraft.world.entity.projectile.Projectile launch = projectileItem.asProjectile(world, iposition, itemstack, enumdirection);
 
-        if (Fireball.class.isAssignableFrom(projectile)) {
+        if (false && Fireball.class.isAssignableFrom(projectile)) { // Paper - more project API - dispensers cannot launch anything but fire charges.
             AbstractHurtingProjectile customFireball = null;
             if (WitherSkull.class.isAssignableFrom(projectile)) {
                 launch = customFireball = EntityType.WITHER_SKULL.create(world, EntitySpawnReason.TRIGGERED);
@@ -130,7 +138,7 @@ public class CraftBlockProjectileSource implements BlockProjectileSource {
             }
         }
 
-        if (launch instanceof net.minecraft.world.entity.projectile.AbstractArrow arrow) {
+        if (false && launch instanceof net.minecraft.world.entity.projectile.AbstractArrow arrow) { // Paper - more projectile API - this is set by the respective ArrowItem when constructing the projectile
             arrow.pickup = net.minecraft.world.entity.projectile.AbstractArrow.Pickup.ALLOWED;
         }
         launch.projectileSource = this;
@@ -139,6 +147,11 @@ public class CraftBlockProjectileSource implements BlockProjectileSource {
         if (velocity != null) {
             ((T) launch.getBukkitEntity()).setVelocity(velocity);
         }
+        // Paper start
+        if (function != null) {
+            function.accept((T) launch.getBukkitEntity());
+        }
+        // Paper end
 
         world.addFreshEntity(launch);
         return (T) launch.getBukkitEntity();

@@ -196,4 +196,42 @@ public class CraftFishHook extends CraftProjectile implements FishHook {
     public HookState getState() {
         return HookState.values()[this.getHandle().currentState.ordinal()];
     }
+    // Paper start - More FishHook API
+    @Override
+    public int getWaitTime() {
+        return this.getHandle().timeUntilLured;
+    }
+
+    @Override
+    public void setWaitTime(int ticks) {
+        this.getHandle().timeUntilLured = ticks;
+    }
+
+    @Override
+    public int getTimeUntilBite() {
+        return this.getHandle().timeUntilHooked;
+    }
+
+    @Override
+    public void setTimeUntilBite(final int ticks) {
+        com.google.common.base.Preconditions.checkArgument(ticks >= 1, "Cannot set time until bite to less than 1 (%s<1)", ticks);
+        final FishingHook hook = this.getHandle();
+
+        // Reset the fish angle hook only when this call "enters" the fish into the lure stage.
+        final boolean alreadyInLuringPhase = hook.timeUntilHooked > 0 && hook.timeUntilLured <= 0;
+        if (!alreadyInLuringPhase) {
+            hook.fishAngle = net.minecraft.util.Mth.nextFloat(hook.random, hook.minLureAngle, hook.maxLureAngle);
+            hook.timeUntilLured = 0;
+        }
+
+        hook.timeUntilHooked = ticks;
+    }
+
+    @Override
+    public void resetFishingState() {
+        final FishingHook hook = this.getHandle();
+        hook.resetTimeUntilLured();
+        hook.timeUntilHooked = 0; // Reset time until hooked, will be repopulated once lured time is ticked down.
+    }
+    // Paper end
 }

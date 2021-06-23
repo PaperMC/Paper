@@ -125,7 +125,7 @@ public class CraftAreaEffectCloud extends CraftEntity implements AreaEffectCloud
 
     @Override
     public Color getColor() {
-        return Color.fromRGB(this.getHandle().potionContents.getColor());
+        return Color.fromRGB(this.getHandle().potionContents.getColor() & 0x00FFFFFF); // Paper - skip alpha channel
     }
 
     @Override
@@ -143,7 +143,7 @@ public class CraftAreaEffectCloud extends CraftEntity implements AreaEffectCloud
             this.removeCustomEffect(effect.getType());
         }
         this.getHandle().addEffect(CraftPotionUtil.fromBukkit(effect));
-        this.getHandle().updateColor();
+        // this.getHandle().updateColor(); // Paper - already done above
         return true;
     }
 
@@ -151,7 +151,7 @@ public class CraftAreaEffectCloud extends CraftEntity implements AreaEffectCloud
     public void clearCustomEffects() {
         PotionContents old = this.getHandle().potionContents;
         this.getHandle().setPotionContents(new PotionContents(old.potion(), old.customColor(), List.of(), old.customName()));
-        this.getHandle().updateColor();
+        // this.getHandle().updateColor(); // Paper - already done above
     }
 
     @Override

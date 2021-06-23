@@ -34,20 +34,7 @@ public class CraftFireball extends AbstractProjectile implements Fireball {
         this.getHandle().bukkitYield = yield;
     }
 
-    @Override
-    public ProjectileSource getShooter() {
-        return this.getHandle().projectileSource;
-    }
-
-    @Override
-    public void setShooter(ProjectileSource shooter) {
-        if (shooter instanceof CraftLivingEntity) {
-            this.getHandle().setOwner(((CraftLivingEntity) shooter).getHandle());
-        } else {
-            this.getHandle().setOwner(null);
-        }
-        this.getHandle().projectileSource = shooter;
-    }
+    // Paper - moved to AbstractProjectile
 
     @Override
     public Vector getDirection() {

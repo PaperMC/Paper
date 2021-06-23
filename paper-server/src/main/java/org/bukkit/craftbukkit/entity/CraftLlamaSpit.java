@@ -20,13 +20,5 @@ public class CraftLlamaSpit extends AbstractProjectile implements LlamaSpit {
         return "CraftLlamaSpit";
     }
 
-    @Override
-    public ProjectileSource getShooter() {
-        return (this.getHandle().getOwner() != null) ? (ProjectileSource) this.getHandle().getOwner().getBukkitEntity() : null;
-    }
-
-    @Override
-    public void setShooter(ProjectileSource source) {
-        this.getHandle().setOwner((source != null) ? ((CraftLivingEntity) source).getHandle() : null);
-    }
+    // Paper - moved to AbstractProjectile
 }

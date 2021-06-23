@@ -22,11 +22,10 @@
  public class FishingHook extends Projectile {
  
      private static final Logger LOGGER = LogUtils.getLogger();
-@@ -67,6 +73,18 @@
-     public FishingHook.FishHookState currentState;
+@@ -68,6 +74,18 @@
      private final int luck;
      private final int lureSpeed;
-+
+ 
 +    // CraftBukkit start - Extra variables to enable modification of fishing wait time, values are minecraft defaults
 +    public int minWaitTime = 100;
 +    public int maxWaitTime = 600;
@@ -38,9 +37,10 @@
 +    public boolean rainInfluenced = true;
 +    public boolean skyInfluenced = true;
 +    // CraftBukkit end
- 
++
      private FishingHook(EntityType<? extends FishingHook> type, Level world, int luckBonus, int waitTimeReductionTicks) {
          super(type, world);
+         this.syncronizedRandom = RandomSource.create();
 @@ -75,13 +93,17 @@
          this.currentState = FishingHook.FishHookState.FLYING;
          this.luck = Math.max(0, luckBonus);
@@ -145,7 +145,7 @@
                      this.playSound(SoundEvents.FISHING_BOBBER_SPLASH, 0.25F, 1.0F + (this.random.nextFloat() - this.random.nextFloat()) * 0.4F);
                      double d3 = this.getY() + 0.5D;
  
-@@ -379,12 +412,16 @@
+@@ -379,16 +412,25 @@
                  }
  
                  if (this.timeUntilLured <= 0) {
@@ -160,13 +160,22 @@
 -                this.timeUntilLured = Mth.nextInt(this.random, 100, 600);
 -                this.timeUntilLured -= this.lureSpeed;
 +                // CraftBukkit start - logic to modify fishing wait time
-+                this.timeUntilLured = Mth.nextInt(this.random, this.minWaitTime, this.maxWaitTime);
-+                this.timeUntilLured -= (this.applyLure) ? (this.lureSpeed >= this.maxWaitTime ? this.timeUntilLured - 1 : this.lureSpeed ) : 0; // Paper - Fix Lure infinite loop
++                this.resetTimeUntilLured(); // Paper - more projectile api - extract time until lured reset logic
 +                // CraftBukkit end
              }
          }
  
-@@ -446,12 +483,20 @@
+     }
++    // Paper start - more projectile api - extract time until lured reset logic
++    public void resetTimeUntilLured() {
++        this.timeUntilLured = Mth.nextInt(this.random, this.minWaitTime, this.maxWaitTime);
++        this.timeUntilLured -= (this.applyLure) ? (this.lureSpeed >= this.maxWaitTime ? this.timeUntilLured - 1 : this.lureSpeed ) : 0; // Paper - Fix Lure infinite loop
++    }
++    // Paper end - more projectile api - extract time until lured reset logic
+ 
+     public boolean calculateOpenWater(BlockPos pos) {
+         FishingHook.OpenWaterType entityfishinghook_waterposition = FishingHook.OpenWaterType.INVALID;
+@@ -446,12 +488,20 @@
      public void readAdditionalSaveData(CompoundTag nbt) {}
  
      public int retrieve(ItemStack usedItem) {
@@ -188,7 +197,7 @@
                  this.pullEntity(this.hookedIn);
                  CriteriaTriggers.FISHING_ROD_HOOKED.trigger((ServerPlayer) entityhuman, usedItem, this, Collections.emptyList());
                  this.level().broadcastEntityEvent(this, (byte) 31);
-@@ -466,15 +511,38 @@
+@@ -466,15 +516,38 @@
  
                  while (iterator.hasNext()) {
                      ItemStack itemstack1 = (ItemStack) iterator.next();
@@ -231,7 +240,7 @@
                      if (itemstack1.is(ItemTags.FISHES)) {
                          entityhuman.awardStat(Stats.FISH_CAUGHT, 1);
                      }
-@@ -484,10 +552,27 @@
+@@ -484,10 +557,27 @@
              }
  
              if (this.onGround()) {
@@ -260,7 +269,7 @@
              return i;
          } else {
              return 0;
-@@ -496,7 +581,7 @@
+@@ -496,7 +586,7 @@
  
      @Override
      public void handleEntityEvent(byte status) {
@@ -269,7 +278,7 @@
              this.pullEntity(this.hookedIn);
          }
  
-@@ -520,8 +605,15 @@
+@@ -520,8 +610,15 @@
  
      @Override
      public void remove(Entity.RemovalReason reason) {
@@ -286,7 +295,7 @@
      }
  
      @Override
-@@ -536,7 +628,7 @@
+@@ -536,7 +633,7 @@
      }
  
      private void updateOwnerInfo(@Nullable FishingHook fishingBobber) {
@@ -295,7 +304,7 @@
  
          if (entityhuman != null) {
              entityhuman.fishing = fishingBobber;
-@@ -545,10 +637,10 @@
+@@ -545,10 +642,10 @@
      }
  
      @Nullable
@@ -308,7 +317,7 @@
      }
  
      @Nullable
-@@ -575,7 +667,7 @@
+@@ -575,7 +672,7 @@
              int i = packet.getData();
  
              FishingHook.LOGGER.error("Failed to recreate fishing hook on client. {} (id: {}) is not a valid owner.", this.level().getEntity(i), i);
