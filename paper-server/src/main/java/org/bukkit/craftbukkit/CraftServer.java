@@ -609,7 +609,7 @@ public final class CraftServer implements Server {
 
     @Override
     public boolean getGenerateStructures() {
-        return this.getProperties().worldGenSettings.shouldGenerateMapFeatures();
+        return this.getProperties().a(this.getServer().getCustomRegistry()).shouldGenerateMapFeatures();
     }
 
     @Override
