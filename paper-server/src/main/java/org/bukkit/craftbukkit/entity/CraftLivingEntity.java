@@ -384,6 +384,39 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     public boolean isInvulnerable() {
         return this.getHandle().isInvulnerableTo((ServerLevel) this.getHandle().level(), this.getHandle().damageSources().generic());
     }
+    // Paper start - Bee Stinger API
+    @Override
+    public int getBeeStingerCooldown() {
+        return getHandle().removeStingerTime;
+    }
+
+    @Override
+    public void setBeeStingerCooldown(int ticks) {
+        getHandle().removeStingerTime = ticks;
+    }
+
+    @Override
+    public int getBeeStingersInBody() {
+        return getHandle().getStingerCount();
+    }
+
+    @Override
+    public void setBeeStingersInBody(int count) {
+        Preconditions.checkArgument(count >= 0, "New bee stinger amount must be >= 0");
+        getHandle().setStingerCount(count);
+    }
+
+    @Override
+    public void setNextBeeStingerRemoval(final int ticks) {
+        Preconditions.checkArgument(ticks >= 0, "New amount of ticks before next bee stinger removal must be >= 0");
+        this.getHandle().removeStingerTime = ticks;
+    }
+
+    @Override
+    public int getNextBeeStingerRemoval() {
+        return this.getHandle().removeStingerTime;
+    }
+    // Paper end - Bee Stinger API
 
     @Override
     public void damage(double amount) {
