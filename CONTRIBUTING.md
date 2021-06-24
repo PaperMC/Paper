@@ -66,6 +66,7 @@ If you need one, you can find them on [AdoptOpenJDK](https://adoptopenjdk.net/).
 - `maven` (often package `maven`; can be found on
 [Apache's site](https://maven.apache.org/download.cgi) too);
 - `curl` (package `curl` everywhere).
+- `gradle` (often package `gradle`)
 
 If you're on Windows, check
 [the section on WSL](#patching-and-building-is-really-slow-what-can-i-do).
@@ -99,12 +100,10 @@ of how to use git is required. A basic tutorial can be found here:
 Assuming you have already forked the repository:
 
 1. Clone your fork to your local machine;
-1. Type `./paper patch` in a terminal to apply the changes from upstream;
+1. Type `./gradlew applyPatches` in a terminal to apply the changes from upstream;
 1. cd into `Paper-Server` for server changes, and `Paper-API` for API changes.  
-You can also run `./paper server` or `./paper api` for these same directories
+You can also run `./gradlew applyServerPatches` or `./gradlew applyApiPatches` for these same directories
 respectively.
-1. You can also run `./paper setup`, which allows you to type `paper <command>`
-from anywhere in the Paper structure in most cases.
 
 `Paper-Server` and `Paper-API` aren't git repositories in the traditional sense:
 
@@ -125,8 +124,10 @@ Adding patches to Paper is very simple:
 1. Modify `Paper-Server` and/or `Paper-API` with the appropriate changes;
 1. Type `git add .` inside these directories to add your changes;
 1. Run `git commit` with the desired patch message;
-1. Run `./paper rebuild` in the main directory to convert your commit into a new
+1. Run `./gradlew rebuildPatches` in the main directory to convert your commit into a new
 patch;
+1. You can also run `./gradlew rebuildServerPatches` or `./gradlew rebuildApiPatches` for these same directories
+respectively.
 1. PR the generated patch file(s) back to this repository.
 
 Your commit will be converted into a patch that you can then PR into Paper.
@@ -194,7 +195,7 @@ later;
    - **Make sure to add `--amend`** or else a new patch will be created.
    - You can also modify the commit message and author here.
 1. Type `git rebase --continue` to finish rebasing;
-1. Type `./paper rebuild` in the root directory;
+1. Type `./gradlew rebuildPatches` in the root directory;
    - This will modify the appropriate patches based on your commits.
 1. PR your modified patch file(s) back to this repository.
 
@@ -218,7 +219,7 @@ move it under the line of the patch you wish to modify;
   message.
    1. `s`/`squash`: Merge your changes into the patch and use your commit message
   and subject.
-1. Type `./paper rebuild` in the root directory;
+1. Type `./gradlew rebuildPatches` in the root directory;
    - This will modify the appropriate patches based on your commits.
 1. PR your modified patch file(s) back to this repository.
 
@@ -235,7 +236,7 @@ move it under the line of the patch you wish to modify;
 1. Rebase with autosquash: `git rebase --autosquash -i upstream/upstream`.
 This will automatically move your fixup commit to the right place, and you just
 need to "save" the changes.
-1. Type `./paper rebuild` in the root directory;
+1. Type `./gradlew rebuildPatches` in the root directory;
    - This will modify the appropriate patches based on your commits.
 1. PR your modified patch file(s) back to this repository.
 
@@ -251,7 +252,7 @@ These steps assume the `origin` remote is your fork of this repository and `upst
 1. If your PR creates new patches instead of modifying exist ones, in both the `Paper-Server` and `Paper-API` directories, ensure your newly-created patch is the last commit by either:
     * Renaming the patch file with a large 4 digit number in front (e.g. 9999-Patch-to-add-some-new-stuff.patch)
     * Run `git rebase --interactive upstream/upstream` and move the commits to the end.
-1. Rebuild patches: `./paper rebuild`.
+1. Rebuild patches: `./gradlew rebuildPatches`.
 1. Force push changes: `git push --force`.
 
 ## PR Policy
