@@ -5,7 +5,7 @@ Subject: [PATCH] Add Entity Visibility API
 
 
 diff --git a/src/main/java/net/minecraft/server/level/PlayerChunkMap.java b/src/main/java/net/minecraft/server/level/PlayerChunkMap.java
-index 6835401bd7863bbd655502547a9fd4ae0f298da1..800e62220574753a0d89e9ef037991e3f85fa6ea 100644
+index 6835401bd7863bbd655502547a9fd4ae0f298da1..67c6b4de0fe07af7d6357155e117e3437357ca11 100644
 --- a/src/main/java/net/minecraft/server/level/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/PlayerChunkMap.java
 @@ -2377,7 +2377,7 @@ Sections go from 0..16. Now whenever a section is not empty, it can potentially
@@ -17,25 +17,22 @@ index 6835401bd7863bbd655502547a9fd4ae0f298da1..800e62220574753a0d89e9ef037991e3
              com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<EntityPlayer> oldTrackerCandidates = this.lastTrackerCandidates;
              this.lastTrackerCandidates = newTrackerCandidates;
  
-@@ -2485,7 +2485,15 @@ Sections go from 0..16. Now whenever a section is not empty, it can potentially
-                         Player player = ((EntityPlayer) this.tracker).getBukkitEntity();
-                         if (!entityplayer.getBukkitEntity().canSee(player)) {
-                             flag1 = false;
--                        }
-+                        } // Paper start - Entity Visibility API
-+                    } else if (flag1) {
-+                        org.bukkit.craftbukkit.entity.CraftEntity ce = this.tracker.getBukkitEntity();
-+                        boolean override = ce.visibilityOverrides.contains(entityplayer.getBukkitEntity());
-+                        if (ce.shownByDefault) {
-+                            flag1 = !override;
-+                        } else {
-+                            flag1 = override;
-+                        } // Paper end
-                     }
+@@ -2468,6 +2468,13 @@ Sections go from 0..16. Now whenever a section is not empty, it can potentially
+                 int i = Math.min(this.b(), (PlayerChunkMap.this.viewDistance - 1) * 16);
+                 boolean flag = vec3d_dx >= (double) (-i) && vec3d_dx <= (double) i && vec3d_dz >= (double) (-i) && vec3d_dz <= (double) i && this.tracker.a(entityplayer); // Paper - remove allocation of Vec3D here
  
-                     entityplayer.removeQueue.remove(Integer.valueOf(this.tracker.getId()));
++                // Paper start - Entity Visibility API
++                if (!(this.tracker instanceof EntityPlayer) && flag) {
++                    org.bukkit.craftbukkit.entity.CraftEntity ce = this.tracker.getBukkitEntity();
++                    flag = entityplayer.getBukkitEntity().canSee(ce);
++                }
++                // Paper end
++
+                 if (flag) {
+                     boolean flag1 = this.tracker.attachedToPlayer;
+ 
 diff --git a/src/main/java/net/minecraft/server/level/WorldServer.java b/src/main/java/net/minecraft/server/level/WorldServer.java
-index f68a252378a94c8fcab622d2d89d738aceab45a4..89802563e831e62fc1ffea32758ebfcca6737fe1 100644
+index f68a252378a94c8fcab622d2d89d738aceab45a4..cc43206f0acbf81542088e3fa6ff2b1a9e6b4bc9 100644
 --- a/src/main/java/net/minecraft/server/level/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/level/WorldServer.java
 @@ -1648,7 +1648,7 @@ public class WorldServer extends World implements GeneratorAccessSeed {
@@ -47,6 +44,59 @@ index f68a252378a94c8fcab622d2d89d738aceab45a4..89802563e831e62fc1ffea32758ebfcc
                      continue;
                  }
                  // CraftBukkit end
+@@ -1668,7 +1668,7 @@ public class WorldServer extends World implements GeneratorAccessSeed {
+ 
+     @Override
+     public void playSound(@Nullable EntityHuman entityhuman, Entity entity, SoundEffect soundeffect, SoundCategory soundcategory, float f, float f1) {
+-        this.server.getPlayerList().sendPacketNearby(entityhuman, entity.locX(), entity.locY(), entity.locZ(), f > 1.0F ? (double) (16.0F * f) : 16.0D, this.getDimensionKey(), new PacketPlayOutEntitySound(soundeffect, soundcategory, entity, f, f1));
++        this.server.getPlayerList().sendPacketNearby(entityhuman, entity, entity.locX(), entity.locY(), entity.locZ(), f > 1.0F ? (double) (16.0F * f) : 16.0D, this.getDimensionKey(), new PacketPlayOutEntitySound(soundeffect, soundcategory, entity, f, f1)); // Paper - add entity argument - Entity Visibility API
+     }
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
+index 90776231b1faffb11e4394f555f336ca248e3004..a3dba19aa816728e7afe75d56051df6d7a41d01c 100644
+--- a/src/main/java/net/minecraft/server/players/PlayerList.java
++++ b/src/main/java/net/minecraft/server/players/PlayerList.java
+@@ -1055,7 +1055,7 @@ public abstract class PlayerList {
+     public void sendAll(Packet packet, EntityHuman entityhuman) {
+         for (int i = 0; i < this.players.size(); ++i) {
+             EntityPlayer entityplayer =  this.players.get(i);
+-            if (entityhuman != null && entityhuman instanceof EntityPlayer && !entityplayer.getBukkitEntity().canSee(((EntityPlayer) entityhuman).getBukkitEntity())) {
++            if (entityhuman != null && !entityplayer.getBukkitEntity().canSee(entityhuman.getBukkitEntity())) { // Paper - Entity Visibility API
+                 continue;
+             }
+             ((EntityPlayer) this.players.get(i)).playerConnection.sendPacket(packet);
+@@ -1211,6 +1211,12 @@ public abstract class PlayerList {
+     }
+ 
+     public void sendPacketNearby(@Nullable EntityHuman entityhuman, double d0, double d1, double d2, double d3, ResourceKey<World> resourcekey, Packet<?> packet) {
++        // Paper start - Entity Visibility API
++        sendPacketNearby(entityhuman, null, d0, d1, d2, d3, resourcekey, packet);
++    }
++
++    public void sendPacketNearby(@Nullable EntityHuman entityhuman, @Nullable Entity source, double d0, double d1, double d2, double d3, ResourceKey<World> resourcekey, Packet<?> packet) {
++        // Paper end
+         WorldServer world = null;
+         if (entityhuman != null && entityhuman.world instanceof WorldServer) {
+             world = (WorldServer) entityhuman.world;
+@@ -1244,7 +1250,16 @@ public abstract class PlayerList {
+             //} // Paper
+             // CraftBukkit end
+ 
+-            if (entityplayer != entityhuman && entityplayer.world.getDimensionKey() == resourcekey && (!(entityhuman instanceof EntityPlayer) || entityplayer.getBukkitEntity().canSee(((EntityPlayer) entityhuman).getBukkitEntity()))) { // Paper
++            if (entityplayer != entityhuman && entityplayer.world.getDimensionKey() == resourcekey) { // Paper
++                // Paper start - Entity Visibility API
++                if (entityhuman != null && !entityplayer.getBukkitEntity().canSee(entityhuman.getBukkitEntity())) {
++                    continue;
++                }
++                if (source != null && !entityplayer.getBukkitEntity().canSee(source.getBukkitEntity())) {
++                    continue;
++                }
++                // Paper end
++
+                 double d4 = d0 - entityplayer.locX();
+                 double d5 = d1 - entityplayer.locY();
+                 double d6 = d2 - entityplayer.locZ();
 diff --git a/src/main/java/net/minecraft/world/level/World.java b/src/main/java/net/minecraft/world/level/World.java
 index f7f593a9e58b537109fa6ca1c783f6614f4bfad5..c7f2ca0379e257926c24914e0a9498eddacff6b2 100644
 --- a/src/main/java/net/minecraft/world/level/World.java
