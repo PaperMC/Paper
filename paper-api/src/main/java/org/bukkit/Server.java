@@ -209,6 +209,26 @@ public interface Server extends PluginMessageRecipient {
     public void setWhitelist(boolean value);
 
     /**
+     * Gets whether the server whitelist is enforced.
+     *
+     * If the whitelist is enforced, non-whitelisted players will be
+     * disconnected when the server whitelist is reloaded.
+     *
+     * @return whether the server whitelist is enforced
+     */
+    public boolean isWhitelistEnforced();
+
+    /**
+     * Sets if the server whitelist is enforced.
+     *
+     * If the whitelist is enforced, non-whitelisted players will be
+     * disconnected when the server whitelist is reloaded.
+     *
+     * @param value true for enforced, false for not
+     */
+    public void setWhitelistEnforced(boolean value);
+
+    /**
      * Gets a list of whitelisted players.
      *
      * @return a set containing all whitelisted players

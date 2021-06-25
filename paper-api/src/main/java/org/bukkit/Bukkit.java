@@ -254,6 +254,30 @@ public final class Bukkit {
     }
 
     /**
+     * Gets whether the server whitelist is enforced.
+     *
+     * If the whitelist is enforced, non-whitelisted players will be
+     * disconnected when the server whitelist is reloaded.
+     *
+     * @return whether the server whitelist is enforced
+     */
+    public static boolean isWhitelistEnforced() {
+        return server.isWhitelistEnforced();
+    }
+
+    /**
+     * Sets if the server whitelist is enforced.
+     *
+     * If the whitelist is enforced, non-whitelisted players will be
+     * disconnected when the server whitelist is reloaded.
+     *
+     * @param value true for enforced, false for not
+     */
+    public static void setWhitelistEnforced(boolean value) {
+        server.setWhitelistEnforced(value);
+    }
+
+    /**
      * Gets a list of whitelisted players.
      *
      * @return a set containing all whitelisted players
