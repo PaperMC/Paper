@@ -1519,6 +1519,16 @@ public final class CraftServer implements Server {
     }
 
     @Override
+    public boolean isWhitelistEnforced() {
+        return console.aN();
+    }
+
+    @Override
+    public void setWhitelistEnforced(boolean value) {
+        console.h(value);
+    }
+
+    @Override
     public Set<OfflinePlayer> getWhitelistedPlayers() {
         Set<OfflinePlayer> result = new LinkedHashSet<OfflinePlayer>();
 
