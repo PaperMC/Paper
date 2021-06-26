@@ -30,10 +30,10 @@ easy to add threading, so I did.
 
 diff --git a/src/main/java/io/papermc/paper/world/ThreadedWorldUpgrader.java b/src/main/java/io/papermc/paper/world/ThreadedWorldUpgrader.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..452934a7a037c8b1c5f9906c7af75ed8c449ebc0
+index 0000000000000000000000000000000000000000..389faf099ff64bb2845222600552c8fc2c83485f
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/world/ThreadedWorldUpgrader.java
-@@ -0,0 +1,200 @@
+@@ -0,0 +1,202 @@
 +package io.papermc.paper.world;
 +
 +import com.mojang.datafixers.DataFixer;
@@ -67,15 +67,17 @@ index 0000000000000000000000000000000000000000..452934a7a037c8b1c5f9906c7af75ed8
 +    private final ResourceKey<LevelStem> dimensionType;
 +    private final ResourceKey<DimensionType> worldKey;
 +    private final String worldName;
++    private final File worldDir;
 +    private final ExecutorService threadPool;
 +    private final DataFixer dataFixer;
 +    private final boolean removeCaches;
 +
-+    public ThreadedWorldUpgrader(final ResourceKey<LevelStem> dimensionType, final ResourceKey<DimensionType> worldKey, final String worldName, final int threads,
++    public ThreadedWorldUpgrader(final ResourceKey<LevelStem> dimensionType, final ResourceKey<DimensionType> worldKey, final String worldName, final File worldDir, final int threads,
 +                                 final DataFixer dataFixer, final boolean removeCaches) {
 +        this.dimensionType = dimensionType;
 +        this.worldKey = worldKey;
 +        this.worldName = worldName;
++        this.worldDir = worldDir;
 +        this.threadPool = Executors.newFixedThreadPool(Math.max(1, threads), new ThreadFactory() {
 +            private final AtomicInteger threadCounter = new AtomicInteger();
 +
@@ -96,7 +98,7 @@ index 0000000000000000000000000000000000000000..452934a7a037c8b1c5f9906c7af75ed8
 +    }
 +
 +    public void convert() {
-+        final File worldFolder = LevelStorageSource.getFolder(new File(this.worldName), this.dimensionType);
++        final File worldFolder = LevelStorageSource.getFolder(this.worldDir, this.dimensionType);
 +        final DimensionDataStorage worldPersistentData = new DimensionDataStorage(new File(worldFolder, "data"), this.dataFixer);
 +
 +        final File regionFolder = new File(worldFolder, "region");
@@ -235,7 +237,7 @@ index 0000000000000000000000000000000000000000..452934a7a037c8b1c5f9906c7af75ed8
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/Main.java b/src/main/java/net/minecraft/server/Main.java
-index cf0a74b8a1c31d4bc493eb09a69ee2bd94cb6485..6fa1a7da70896d0ff34d38698769195a98c06195 100644
+index cf0a74b8a1c31d4bc493eb09a69ee2bd94cb6485..cfd43069ee2b6f79afb12e10d223f6bf75100034 100644
 --- a/src/main/java/net/minecraft/server/Main.java
 +++ b/src/main/java/net/minecraft/server/Main.java
 @@ -15,6 +15,7 @@ import java.nio.file.Paths;
@@ -251,10 +253,10 @@ index cf0a74b8a1c31d4bc493eb09a69ee2bd94cb6485..6fa1a7da70896d0ff34d38698769195a
      // Paper end
  
 +    // Paper start - fix and optimise world upgrading
-+    public static void convertWorldButItWorks(ResourceKey<LevelStem> dimensionType, ResourceKey<DimensionType> worldKey, String worldName,
++    public static void convertWorldButItWorks(ResourceKey<LevelStem> dimensionType, ResourceKey<DimensionType> worldKey, net.minecraft.world.level.storage.LevelStorageSource.LevelStorageAccess worldSession,
 +                                              DataFixer dataFixer, boolean removeCaches) {
 +        int threads = Runtime.getRuntime().availableProcessors() * 3 / 8;
-+        final ThreadedWorldUpgrader worldUpgrader = new ThreadedWorldUpgrader(dimensionType, worldKey, worldName, threads, dataFixer, removeCaches);
++        final ThreadedWorldUpgrader worldUpgrader = new ThreadedWorldUpgrader(dimensionType, worldKey, worldSession.getLevelId(), worldSession.levelPath.toFile(), threads, dataFixer, removeCaches);
 +        worldUpgrader.convert();
 +    }
 +    // Paper end - fix and optimise world upgrading
@@ -263,7 +265,7 @@ index cf0a74b8a1c31d4bc493eb09a69ee2bd94cb6485..6fa1a7da70896d0ff34d38698769195a
          Main.LOGGER.info("Forcing world upgrade! {}", session.getLevelId()); // CraftBukkit
          WorldUpgrader worldupgrader = new WorldUpgrader(session, dataFixer, worlds, eraseCache);
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 4ad480092a87b7bede679cf5e86000702ab8ee6a..2b7b63ea08c8e4f43c9678671fb8d08628b48b36 100644
+index a741d644be29b4ec4b5afa0625c6a784ae0cdbbc..d8c2263a7fa89719dc653ba12635488fc36420a7 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -563,13 +563,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
@@ -288,7 +290,7 @@ index 4ad480092a87b7bede679cf5e86000702ab8ee6a..2b7b63ea08c8e4f43c9678671fb8d086
 +            // Paper start - fix and optimise world upgrading
 +            if (options.has("forceUpgrade")) {
 +                net.minecraft.server.Main.convertWorldButItWorks(
-+                        dimensionKey, Level.getDimensionKey(dimensionmanager), worldSession.getLevelId(), DataFixers.getDataFixer(), options.has("eraseCache")
++                        dimensionKey, Level.getDimensionKey(dimensionmanager), worldSession, DataFixers.getDataFixer(), options.has("eraseCache")
 +                );
 +            }
 +            // Paper end - fix and optimise world upgrading
@@ -297,7 +299,7 @@ index 4ad480092a87b7bede679cf5e86000702ab8ee6a..2b7b63ea08c8e4f43c9678671fb8d086
  
              if (dimensionKey == LevelStem.OVERWORLD) {
 diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
-index 6a7882be8d195f5bee39313235771fc711b4d560..870ff060e34de4ec49ad5496e79c2bd543297c41 100644
+index 998fe86cf04c7cf99d9e32317e7e12a120eeab39..1c171599dbde44389013dc08ca8263742d58d721 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
 +++ b/src/main/java/net/minecraft/world/level/Level.java
 @@ -174,6 +174,15 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
@@ -350,7 +352,7 @@ index 43510774d489bfdd30f10d521e424fa1363b8919..6496108953effae82391b5c1ea6fdec8
          return this.regionCache.getAndMoveToFirst(ChunkPos.asLong(chunkcoordintpair.getRegionX(), chunkcoordintpair.getRegionZ()));
      }
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 915941adc290b62855e0a6431a34da321315f301..3948fd10d8bd0994d97dfd5f26fb0dc5f0b5ac8e 100644
+index 79e0b079c61860e348d476c1689bf0397e9f8c64..b020d44f95ab8aafb270ca6e36abe86d6589fc9b 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -1138,14 +1138,7 @@ public final class CraftServer implements Server {
@@ -376,7 +378,7 @@ index 915941adc290b62855e0a6431a34da321315f301..3948fd10d8bd0994d97dfd5f26fb0dc5
 +        // Paper start - fix and optimise world upgrading
 +        if (console.options.has("forceUpgrade")) {
 +            net.minecraft.server.Main.convertWorldButItWorks(
-+                actualDimension, net.minecraft.world.level.Level.getDimensionKey(dimensionmanager), worldSession.getLevelId(), DataFixers.getDataFixer(), console.options.has("eraseCache")
++                actualDimension, net.minecraft.world.level.Level.getDimensionKey(dimensionmanager), worldSession, DataFixers.getDataFixer(), console.options.has("eraseCache")
 +            );
 +        }
 +        // Paper end - fix and optimise world upgrading
