@@ -67,15 +67,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    private final ResourceKey<LevelStem> dimensionType;
 +    private final ResourceKey<DimensionType> worldKey;
 +    private final String worldName;
++    private final File worldDir;
 +    private final ExecutorService threadPool;
 +    private final DataFixer dataFixer;
 +    private final boolean removeCaches;
 +
-+    public ThreadedWorldUpgrader(final ResourceKey<LevelStem> dimensionType, final ResourceKey<DimensionType> worldKey, final String worldName, final int threads,
++    public ThreadedWorldUpgrader(final ResourceKey<LevelStem> dimensionType, final ResourceKey<DimensionType> worldKey, final String worldName, final File worldDir, final int threads,
 +                                 final DataFixer dataFixer, final boolean removeCaches) {
 +        this.dimensionType = dimensionType;
 +        this.worldKey = worldKey;
 +        this.worldName = worldName;
++        this.worldDir = worldDir;
 +        this.threadPool = Executors.newFixedThreadPool(Math.max(1, threads), new ThreadFactory() {
 +            private final AtomicInteger threadCounter = new AtomicInteger();
 +
@@ -96,7 +98,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +
 +    public void convert() {
-+        final File worldFolder = LevelStorageSource.getFolder(new File(this.worldName), this.dimensionType);
++        final File worldFolder = LevelStorageSource.getFolder(this.worldDir, this.dimensionType);
 +        final DimensionDataStorage worldPersistentData = new DimensionDataStorage(new File(worldFolder, "data"), this.dataFixer);
 +
 +        final File regionFolder = new File(worldFolder, "region");
@@ -251,10 +253,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      // Paper end
  
 +    // Paper start - fix and optimise world upgrading
-+    public static void convertWorldButItWorks(ResourceKey<LevelStem> dimensionType, ResourceKey<DimensionType> worldKey, String worldName,
++    public static void convertWorldButItWorks(ResourceKey<LevelStem> dimensionType, ResourceKey<DimensionType> worldKey, net.minecraft.world.level.storage.LevelStorageSource.LevelStorageAccess worldSession,
 +                                              DataFixer dataFixer, boolean removeCaches) {
 +        int threads = Runtime.getRuntime().availableProcessors() * 3 / 8;
-+        final ThreadedWorldUpgrader worldUpgrader = new ThreadedWorldUpgrader(dimensionType, worldKey, worldName, threads, dataFixer, removeCaches);
++        final ThreadedWorldUpgrader worldUpgrader = new ThreadedWorldUpgrader(dimensionType, worldKey, worldSession.getLevelId(), worldSession.levelPath.toFile(), threads, dataFixer, removeCaches);
 +        worldUpgrader.convert();
 +    }
 +    // Paper end - fix and optimise world upgrading
@@ -288,7 +290,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            // Paper start - fix and optimise world upgrading
 +            if (options.has("forceUpgrade")) {
 +                net.minecraft.server.Main.convertWorldButItWorks(
-+                        dimensionKey, Level.getDimensionKey(dimensionmanager), worldSession.getLevelId(), DataFixers.getDataFixer(), options.has("eraseCache")
++                        dimensionKey, Level.getDimensionKey(dimensionmanager), worldSession, DataFixers.getDataFixer(), options.has("eraseCache")
 +                );
 +            }
 +            // Paper end - fix and optimise world upgrading
@@ -376,7 +378,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        // Paper start - fix and optimise world upgrading
 +        if (console.options.has("forceUpgrade")) {
 +            net.minecraft.server.Main.convertWorldButItWorks(
-+                actualDimension, net.minecraft.world.level.Level.getDimensionKey(dimensionmanager), worldSession.getLevelId(), DataFixers.getDataFixer(), console.options.has("eraseCache")
++                actualDimension, net.minecraft.world.level.Level.getDimensionKey(dimensionmanager), worldSession, DataFixers.getDataFixer(), console.options.has("eraseCache")
 +            );
 +        }
 +        // Paper end - fix and optimise world upgrading
