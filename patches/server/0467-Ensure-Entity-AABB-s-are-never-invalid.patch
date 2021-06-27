@@ -5,7 +5,7 @@ Subject: [PATCH] Ensure Entity AABB's are never invalid
 
 
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index 912723108af2ffe660f0c2e528e4e028f7f74bcb..b208f561ab8bb0ea9ad06fb2a30becef4583c2e6 100644
+index 912723108af2ffe660f0c2e528e4e028f7f74bcb..7606f6fd9a79b1becd7af5b203ababbc6c6e4b7e 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
 @@ -560,7 +560,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, n
@@ -17,19 +17,20 @@ index 912723108af2ffe660f0c2e528e4e028f7f74bcb..b208f561ab8bb0ea9ad06fb2a30becef
      }
  
      protected AABB makeBoundingBox() {
-@@ -3740,6 +3740,12 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, n
-     }
+@@ -3750,6 +3750,13 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, n
+                 this.blockPosition = new BlockPos(i, j, k);
+             }
+
++            // Paper start - never allow AABB to become desynced from position
++            // hanging has its own special logic
++            if (!(this instanceof net.minecraft.world.entity.decoration.HangingEntity)) {
++                this.setBoundingBox(this.makeBoundingBox());
++            }
++            // Paper end
++
+             this.levelCallback.onMove();
+             GameEventListenerRegistrar gameeventlistenerregistrar = this.getGameEventListenerRegistrar();
  
-     public final void setPosRaw(double x, double y, double z) {
-+        // Paper start - never allow AABB to become desynced from position
-+        // hanging has its own special logic
-+        if (!(this instanceof net.minecraft.world.entity.decoration.HangingEntity) && (this.position.x != x || this.position.y != y || this.position.z != z)) {
-+            this.setBoundingBox(this.dimensions.makeBoundingBox(x, y, z));
-+        }
-+        // Paper end
-         if (this.position.x != x || this.position.y != y || this.position.z != z) {
-             this.position = new Vec3(x, y, z);
-             int i = Mth.floor(x);
 diff --git a/src/main/java/net/minecraft/world/entity/monster/Shulker.java b/src/main/java/net/minecraft/world/entity/monster/Shulker.java
 index ca0d1c059a6ad94590bcbff34b37b9c13ef19474..c61f127342f404fbf766c64254fd191ff01f1507 100644
 --- a/src/main/java/net/minecraft/world/entity/monster/Shulker.java
