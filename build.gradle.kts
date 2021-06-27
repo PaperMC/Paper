@@ -1,7 +1,7 @@
 plugins {
     java
     id("com.github.johnrengelman.shadow") version "7.0.0" apply false
-    id("io.papermc.paperweight.core") version "1.1.6"
+    id("io.papermc.paperweight.core") version "1.1.7"
 }
 
 subprojects {
@@ -90,6 +90,17 @@ paperweight {
 
         additionalSpigotMemberMappings.set(layout.projectDirectory.file("build-data/additional-spigot-member-mappings.csrg"))
         craftBukkitPatchPatchesDir.set(layout.projectDirectory.dir("build-data/craftbukkit-patch-patches"))
+
+        reobfPackagesToFix.addAll(
+            "co.aikar.timings",
+            "com.destroystokyo.paper",
+            "com.mojang",
+            "io.papermc.paper",
+            "net.kyori.adventure.bossbar",
+            "net.minecraft",
+            "org.bukkit.craftbukkit",
+            "org.spigotmc"
+        )
     }
 }
 
