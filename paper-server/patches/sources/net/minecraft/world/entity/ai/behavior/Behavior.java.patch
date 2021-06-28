@@ -1,0 +1,40 @@
+--- a/net/minecraft/world/entity/ai/behavior/Behavior.java
++++ b/net/minecraft/world/entity/ai/behavior/Behavior.java
+@@ -14,6 +14,9 @@
+     private long endTimestamp;
+     private final int minDuration;
+     private final int maxDuration;
++    // Paper start - configurable behavior tick rate and timings
++    private final String configKey;
++    // Paper end - configurable behavior tick rate and timings
+ 
+     public Behavior(Map<MemoryModuleType<?>, MemoryStatus> requiredMemoryState) {
+         this(requiredMemoryState, 60);
+@@ -27,6 +30,14 @@
+         this.minDuration = minRunTime;
+         this.maxDuration = maxRunTime;
+         this.entryCondition = requiredMemoryState;
++        // Paper start - configurable behavior tick rate and timings
++        String key = io.papermc.paper.util.MappingEnvironment.reobf() ? io.papermc.paper.util.ObfHelper.INSTANCE.deobfClassName(this.getClass().getName()) : this.getClass().getName();
++        int lastSeparator = key.lastIndexOf('.');
++        if (lastSeparator != -1) {
++            key = key.substring(lastSeparator + 1);
++        }
++        this.configKey = key.toLowerCase(java.util.Locale.ROOT);
++        // Paper end - configurable behavior tick rate and timings
+     }
+ 
+     @Override
+@@ -36,6 +47,12 @@
+ 
+     @Override
+     public final boolean tryStart(ServerLevel world, E entity, long time) {
++        // Paper start - configurable behavior tick rate and timings
++        int tickRate = java.util.Objects.requireNonNullElse(world.paperConfig().tickRates.behavior.get(entity.getType(), this.configKey), -1);
++        if (tickRate > -1 && time < this.endTimestamp + tickRate) {
++            return false;
++        }
++        // Paper end - configurable behavior tick rate and timings
+         if (this.hasRequiredMemories(entity) && this.checkExtraStartConditions(world, entity)) {
+             this.status = Behavior.Status.RUNNING;
+             int i = this.minDuration + world.getRandom().nextInt(this.maxDuration + 1 - this.minDuration);
