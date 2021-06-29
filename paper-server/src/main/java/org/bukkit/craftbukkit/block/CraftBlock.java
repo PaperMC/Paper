@@ -558,7 +558,7 @@ public class CraftBlock implements Block {
             }
         }
 
-        return result == InteractionResult.SUCCESS && (event == null || !event.isCancelled());
+        return result == InteractionResult.CONSUME && (event == null || !event.isCancelled()); // Paper - CONSUME is returned on success server-side (see BoneMealItem.applyBoneMeal and InteractionResult.sidedSuccess(boolean))
     }
 
     @Override
