@@ -31,6 +31,25 @@ index 6835401bd7863bbd655502547a9fd4ae0f298da1..67c6b4de0fe07af7d6357155e117e343
                  if (flag) {
                      boolean flag1 = this.tracker.attachedToPlayer;
  
+diff --git a/src/main/java/net/minecraft/server/level/RegionLimitedWorldAccess.java b/src/main/java/net/minecraft/server/level/RegionLimitedWorldAccess.java
+index 04006caeeb42b523d986efc313828557854718d7..4aebfe4dcc7bebebf565a8c268fdeb530e59e020 100644
+--- a/src/main/java/net/minecraft/server/level/RegionLimitedWorldAccess.java
++++ b/src/main/java/net/minecraft/server/level/RegionLimitedWorldAccess.java
+@@ -385,6 +385,14 @@ public class RegionLimitedWorldAccess implements GeneratorAccessSeed {
+     @Override
+     public void playSound(@Nullable EntityHuman entityhuman, BlockPosition blockposition, SoundEffect soundeffect, SoundCategory soundcategory, float f, float f1) {}
+ 
++    // Paper start - add entity param - Entity Visibility API
++    @Override
++    public void playSound(@Nullable EntityHuman entityhuman, Entity source, BlockPosition blockposition, SoundEffect soundeffect, SoundCategory soundcategory, float f, float f1) {}
++
++    @Override
++    public void playSound(@Nullable EntityHuman entityhuman, Entity source, double d0, double d1, double d2, SoundEffect soundeffect, SoundCategory soundcategory, float f, float f1) {}
++    // Paper end
++
+     @Override
+     public void addParticle(ParticleParam particleparam, double d0, double d1, double d2, double d3, double d4, double d5) {}
+ 
 diff --git a/src/main/java/net/minecraft/server/level/WorldServer.java b/src/main/java/net/minecraft/server/level/WorldServer.java
 index f68a252378a94c8fcab622d2d89d738aceab45a4..6b29abac9b71a0addf3e60831d9b61581f668e23 100644
 --- a/src/main/java/net/minecraft/server/level/WorldServer.java
@@ -264,7 +283,7 @@ index c0e0750adef0ae6aff7635c84f6585f06c5fc38d..32b9740a0961163126745cf9497c7130
  
      }
 diff --git a/src/main/java/net/minecraft/world/entity/monster/EntityZombie.java b/src/main/java/net/minecraft/world/entity/monster/EntityZombie.java
-index 634416c354184bc6a2348c27c55e9868009ccd28..44adaeb87051d82aec9f7a9c55832780024c024e 100644
+index 634416c354184bc6a2348c27c55e9868009ccd28..758727b05ec41b719828530c3123d95eb51c4792 100644
 --- a/src/main/java/net/minecraft/world/entity/monster/EntityZombie.java
 +++ b/src/main/java/net/minecraft/world/entity/monster/EntityZombie.java
 @@ -612,12 +612,12 @@ public class EntityZombie extends EntityMonster {
@@ -272,13 +291,13 @@ index 634416c354184bc6a2348c27c55e9868009ccd28..44adaeb87051d82aec9f7a9c55832780
          @Override
          public void a(GeneratorAccess generatoraccess, BlockPosition blockposition) {
 -            generatoraccess.playSound((EntityHuman) null, blockposition, SoundEffects.ENTITY_ZOMBIE_DESTROY_EGG, SoundCategory.HOSTILE, 0.5F, 0.9F + EntityZombie.this.random.nextFloat() * 0.2F);
-+            generatoraccess.playSound((EntityHuman) null, entity, blockposition, SoundEffects.ENTITY_ZOMBIE_DESTROY_EGG, SoundCategory.HOSTILE, 0.5F, 0.9F + EntityZombie.this.random.nextFloat() * 0.2F);
++            generatoraccess.playSound((EntityHuman) null, entity, blockposition, SoundEffects.ENTITY_ZOMBIE_DESTROY_EGG, SoundCategory.HOSTILE, 0.5F, 0.9F + EntityZombie.this.random.nextFloat() * 0.2F); // Paper - add entity param - Entity Visibility API
          }
  
          @Override
          public void a(World world, BlockPosition blockposition) {
 -            world.playSound((EntityHuman) null, blockposition, SoundEffects.ENTITY_TURTLE_EGG_BREAK, SoundCategory.BLOCKS, 0.7F, 0.9F + world.random.nextFloat() * 0.2F);
-+            world.playSound((EntityHuman) null, entity, blockposition, SoundEffects.ENTITY_TURTLE_EGG_BREAK, SoundCategory.BLOCKS, 0.7F, 0.9F + world.random.nextFloat() * 0.2F);
++            world.playSound((EntityHuman) null, entity, blockposition, SoundEffects.ENTITY_TURTLE_EGG_BREAK, SoundCategory.BLOCKS, 0.7F, 0.9F + world.random.nextFloat() * 0.2F); // Paper - add entity param - Entity Visibility API
          }
  
          @Override
@@ -369,24 +388,16 @@ index 24076f3de298173e293507f2024105532f833455..770c7f9a8350e59864f99dfea87317b5
          }
  
 diff --git a/src/main/java/net/minecraft/world/level/GeneratorAccess.java b/src/main/java/net/minecraft/world/level/GeneratorAccess.java
-index 96efd974f1eb9c1e7c70e576e51ed69e15aacb99..b57928614dffcd317c94afead8c83ec0ecc649da 100644
+index 96efd974f1eb9c1e7c70e576e51ed69e15aacb99..b05ea9369164f9a45a88b9bcb5f59a47388633b0 100644
 --- a/src/main/java/net/minecraft/world/level/GeneratorAccess.java
 +++ b/src/main/java/net/minecraft/world/level/GeneratorAccess.java
-@@ -8,6 +8,7 @@ import net.minecraft.sounds.SoundCategory;
- import net.minecraft.sounds.SoundEffect;
- import net.minecraft.world.DifficultyDamageScaler;
- import net.minecraft.world.EnumDifficulty;
-+import net.minecraft.world.entity.Entity;
- import net.minecraft.world.entity.player.EntityHuman;
- import net.minecraft.world.level.block.Block;
- import net.minecraft.world.level.chunk.IChunkProvider;
-@@ -46,6 +47,10 @@ public interface GeneratorAccess extends ICombinedAccess, IWorldTime {
+@@ -46,6 +46,10 @@ public interface GeneratorAccess extends ICombinedAccess, IWorldTime {
  
      void playSound(@Nullable EntityHuman entityhuman, BlockPosition blockposition, SoundEffect soundeffect, SoundCategory soundcategory, float f, float f1);
  
-+    void playSound(@Nullable EntityHuman entityhuman, Entity source, BlockPosition blockposition, SoundEffect soundeffect, SoundCategory soundcategory, float f, float f1); // Paper - add entity param - Entity Visibility API
++    void playSound(@Nullable EntityHuman entityhuman, net.minecraft.world.entity.Entity source, BlockPosition blockposition, SoundEffect soundeffect, SoundCategory soundcategory, float f, float f1); // Paper - add entity param - Entity Visibility API
 +
-+    void playSound(@Nullable EntityHuman entityhuman, Entity source, double d0, double d1, double d2, SoundEffect soundeffect, SoundCategory soundcategory, float f, float f1); // Paper - add entity param - Entity Visibility API
++    void playSound(@Nullable EntityHuman entityhuman, net.minecraft.world.entity.Entity source, double d0, double d1, double d2, SoundEffect soundeffect, SoundCategory soundcategory, float f, float f1); // Paper - add entity param - Entity Visibility API
 +
      void addParticle(ParticleParam particleparam, double d0, double d1, double d2, double d3, double d4, double d5);
  
@@ -520,3 +531,26 @@ index cfe6898dc373fe55a08acf5c90e200061aa7d0fc..daa12538d90e9c843ee7e1be04302dd5
 +    // Paper end
 +
  }
+diff --git a/src/main/java/org/bukkit/craftbukkit/util/DummyGeneratorAccess.java b/src/main/java/org/bukkit/craftbukkit/util/DummyGeneratorAccess.java
+index b2b14eada44231a619622a2baef27abdb798aa47..fecf1aa4cff0979daef7bb6e293755f8abc69de0 100644
+--- a/src/main/java/org/bukkit/craftbukkit/util/DummyGeneratorAccess.java
++++ b/src/main/java/org/bukkit/craftbukkit/util/DummyGeneratorAccess.java
+@@ -74,6 +74,18 @@ public class DummyGeneratorAccess implements GeneratorAccess {
+         throw new UnsupportedOperationException("Not supported yet.");
+     }
+ 
++    // Paper start - add entity param - Entity Visibility API
++    @Override
++    public void playSound(@org.jetbrains.annotations.Nullable EntityHuman entityhuman, Entity source, BlockPosition blockposition, SoundEffect soundeffect, SoundCategory soundcategory, float f, float f1) {
++        throw new UnsupportedOperationException("Not supported yet.");
++    }
++
++    @Override
++    public void playSound(@org.jetbrains.annotations.Nullable EntityHuman entityhuman, Entity source, double d0, double d1, double d2, SoundEffect soundeffect, SoundCategory soundcategory, float f, float f1) {
++        throw new UnsupportedOperationException("Not supported yet.");
++    }
++    // Paper end
++
+     @Override
+     public void addParticle(ParticleParam particleparam, double d0, double d1, double d2, double d3, double d4, double d5) {
+         throw new UnsupportedOperationException("Not supported yet.");
