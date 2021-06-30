@@ -5,16 +5,20 @@ Subject: [PATCH] Don't complete skull lookups on main thread (MC-227435)
 
 
 diff --git a/src/main/java/net/minecraft/world/level/block/entity/SkullBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/SkullBlockEntity.java
-index 172413fc0f303d5e15bc2bc55c09ce4faf5298a0..705d5ebb3d7b40745b318617ea39a7ea785b9504 100644
+index 172413fc0f303d5e15bc2bc55c09ce4faf5298a0..96863338e1642105f71e681ec2b32c882b3ea342 100644
 --- a/src/main/java/net/minecraft/world/level/block/entity/SkullBlockEntity.java
 +++ b/src/main/java/net/minecraft/world/level/block/entity/SkullBlockEntity.java
-@@ -145,15 +145,24 @@ public class SkullBlockEntity extends BlockEntity {
+@@ -145,15 +145,28 @@ public class SkullBlockEntity extends BlockEntity {
  
      public static void updateGameprofile(@Nullable GameProfile owner, Consumer<GameProfile> callback) {
          if (owner != null && !StringUtil.isNullOrEmpty(owner.getName()) && (!owner.isComplete() || !owner.getProperties().containsKey("textures")) && SkullBlockEntity.profileCache != null && SkullBlockEntity.sessionService != null) {
 -            SkullBlockEntity.profileCache.getAsync(owner.getName(), (gameprofile1) -> {
 +            // Paper start
 +            SkullBlockEntity.profileCache.getAsync(owner.getName(), (gameprofile) -> {
++                if (gameprofile == null) {
++                    net.minecraft.server.MinecraftServer.getServer().scheduleOnMain(() -> callback.accept(owner));
++                    return;
++                }
 +                Runnable runnable = () -> {
 +                GameProfile gameprofile1 = gameprofile;
                  Property property = (Property) Iterables.getFirst(gameprofile1.getProperties().get("textures"), (Object) null);
