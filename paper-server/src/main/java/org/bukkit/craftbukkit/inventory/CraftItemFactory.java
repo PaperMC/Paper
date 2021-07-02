@@ -264,6 +264,7 @@ public final class CraftItemFactory implements ItemFactory {
         case PUFFERFISH_BUCKET:
         case SALMON_BUCKET:
         case ITEM_FRAME:
+        case GLOW_ITEM_FRAME:
         case PAINTING:
             return meta instanceof CraftMetaEntityTag ? meta : new CraftMetaEntityTag(meta);
         case COMPASS:

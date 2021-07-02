@@ -533,6 +533,7 @@ public final class CraftItemStack extends ItemStack {
             case PUFFERFISH_BUCKET:
             case SALMON_BUCKET:
             case ITEM_FRAME:
+            case GLOW_ITEM_FRAME:
             case PAINTING:
                 return new CraftMetaEntityTag(item.getTag());
             case COMPASS:

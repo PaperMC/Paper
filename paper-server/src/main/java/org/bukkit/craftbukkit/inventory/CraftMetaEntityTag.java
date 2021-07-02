@@ -69,6 +69,7 @@ public class CraftMetaEntityTag extends CraftMetaItem {
             case PUFFERFISH_BUCKET:
             case SALMON_BUCKET:
             case ITEM_FRAME:
+            case GLOW_ITEM_FRAME:
             case PAINTING:
                 return true;
             default:
