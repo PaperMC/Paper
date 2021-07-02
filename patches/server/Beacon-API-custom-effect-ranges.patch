@@ -36,6 +36,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public BeaconBlockEntity(BlockPos pos, BlockState state) {
          super(BlockEntityType.BEACON, pos, state);
 @@ -0,0 +0,0 @@ public class BeaconBlockEntity extends BlockEntity implements MenuProvider {
+             }
+ 
+             if (blockEntity.levels > 0 && !blockEntity.beamSections.isEmpty()) {
+-                BeaconBlockEntity.applyEffects(world, pos, blockEntity.levels, blockEntity.primaryPower, blockEntity.secondaryPower);
++                BeaconBlockEntity.applyEffects(world, pos, blockEntity.levels, blockEntity.primaryPower, blockEntity.secondaryPower, blockEntity); // Paper
+                 BeaconBlockEntity.playSound(world, pos, SoundEvents.BEACON_AMBIENT);
+             }
+         }
+@@ -0,0 +0,0 @@ public class BeaconBlockEntity extends BlockEntity implements MenuProvider {
      }
  
      public static List getHumansInRange(Level world, BlockPos blockposition, int i) {
@@ -50,6 +59,25 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
              AABB axisalignedbb = (new AABB(blockposition)).inflate(d0).expandTowards(0.0D, (double) world.getHeight(), 0.0D);
              List<Player> list = world.getEntitiesOfClass(Player.class, axisalignedbb);
+@@ -0,0 +0,0 @@ public class BeaconBlockEntity extends BlockEntity implements MenuProvider {
+     }
+ 
+     private static void applyEffects(Level world, BlockPos pos, int beaconLevel, @Nullable MobEffect primaryEffect, @Nullable MobEffect secondaryEffect) {
++        // Paper start
++        BeaconBlockEntity.applyEffects(world, pos, beaconLevel, primaryEffect, secondaryEffect, null);
++    }
++    private static void applyEffects(Level world, BlockPos pos, int beaconLevel, @Nullable MobEffect primaryEffect, @Nullable MobEffect secondaryEffect, @Nullable BeaconBlockEntity blockEntity) {
++        // Paper end
+         if (!world.isClientSide && primaryEffect != null) {
+             double d0 = (double) (beaconLevel * 10 + 10);
+             byte b0 = BeaconBlockEntity.getAmplification(beaconLevel, primaryEffect, secondaryEffect);
+ 
+             int j = BeaconBlockEntity.getLevel(beaconLevel);
+-            List list = BeaconBlockEntity.getHumansInRange(world, pos, beaconLevel);
++            List list = BeaconBlockEntity.getHumansInRange(world, pos, beaconLevel, blockEntity); // Paper
+ 
+             BeaconBlockEntity.applyEffect(list, primaryEffect, j, b0, true, pos); // Paper - BeaconEffectEvent
+ 
 @@ -0,0 +0,0 @@ public class BeaconBlockEntity extends BlockEntity implements MenuProvider {
          }
  
@@ -70,6 +98,15 @@ diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftBeacon.java b/src/m
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/block/CraftBeacon.java
 +++ b/src/main/java/org/bukkit/craftbukkit/block/CraftBeacon.java
+@@ -0,0 +0,0 @@ public class CraftBeacon extends CraftBlockEntityState<BeaconBlockEntity> implem
+         if (tileEntity instanceof BeaconBlockEntity) {
+             BeaconBlockEntity beacon = (BeaconBlockEntity) tileEntity;
+ 
+-            Collection<Player> nms = BeaconBlockEntity.getHumansInRange(beacon.getLevel(), beacon.getBlockPos(), beacon.levels);
++            Collection<Player> nms = BeaconBlockEntity.getHumansInRange(beacon.getLevel(), beacon.getBlockPos(), beacon.levels, beacon); // Paper
+             Collection<LivingEntity> bukkit = new ArrayList<LivingEntity>(nms.size());
+ 
+             for (Player human : nms) {
 @@ -0,0 +0,0 @@ public class CraftBeacon extends CraftBlockEntityState<BeaconBlockEntity> implem
      public void setLock(String key) {
          this.getSnapshot().lockKey = (key == null) ? LockCode.NO_LOCK : new LockCode(key);
