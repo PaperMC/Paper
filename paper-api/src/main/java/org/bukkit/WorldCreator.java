@@ -23,7 +23,7 @@ public class WorldCreator {
     private boolean generateStructures = true;
     private String generatorSettings = "";
     private boolean hardcore = false;
-    private boolean keepSpawnInMemory = true;
+    private net.kyori.adventure.util.TriState keepSpawnLoaded = net.kyori.adventure.util.TriState.NOT_SET; // Paper
 
     /**
      * Creates an empty WorldCreationOptions for the given world name
@@ -123,7 +123,7 @@ public class WorldCreator {
         type = world.getWorldType();
         generateStructures = world.canGenerateStructures();
         hardcore = world.isHardcore();
-        keepSpawnInMemory = world.getKeepSpawnInMemory();
+        this.keepSpawnLoaded = net.kyori.adventure.util.TriState.byBoolean(world.getKeepSpawnInMemory()); // Paper
 
         return this;
     }
@@ -146,7 +146,7 @@ public class WorldCreator {
         generateStructures = creator.generateStructures();
         generatorSettings = creator.generatorSettings();
         hardcore = creator.hardcore();
-        keepSpawnInMemory = creator.keepSpawnInMemory();
+        keepSpawnLoaded = creator.keepSpawnLoaded(); // Paper
 
         return this;
     }
@@ -470,21 +470,23 @@ public class WorldCreator {
      *
      * @param keepSpawnInMemory Whether the spawn chunks will be kept loaded
      * @return This object, for chaining
+     * @deprecated use {@link #keepSpawnLoaded(net.kyori.adventure.util.TriState)}
      */
     @NotNull
+    @Deprecated(forRemoval = true) // Paper
     public WorldCreator keepSpawnInMemory(boolean keepSpawnInMemory) {
-        this.keepSpawnInMemory = keepSpawnInMemory;
-
-        return this;
+        return this.keepSpawnLoaded(net.kyori.adventure.util.TriState.byBoolean(keepSpawnInMemory)); // Paper
     }
 
     /**
      * Gets whether or not the spawn chunks will be kept loaded.
      *
      * @return True if the spawn chunks will be kept loaded
+     * @deprecated use {@link #keepSpawnLoaded()}
      */
+    @Deprecated(forRemoval = true) // Paper
     public boolean keepSpawnInMemory() {
-        return keepSpawnInMemory;
+        return this.keepSpawnLoaded() == net.kyori.adventure.util.TriState.TRUE; // Paper
     }
 
     /**
@@ -594,4 +596,31 @@ public class WorldCreator {
 
         return result;
     }
+
+    // Paper start - keep spawn loaded tristate
+    /**
+     * Returns the current intent to keep the world loaded, @see {@link WorldCreator#keepSpawnLoaded(net.kyori.adventure.util.TriState)}
+     *
+     * @return the current tristate value
+     */
+    @NotNull
+    public net.kyori.adventure.util.TriState keepSpawnLoaded() {
+        return keepSpawnLoaded;
+    }
+
+    /**
+     * Controls if a world should be kept loaded or not, default (NOT_SET) will use the servers standard
+     * configuration, otherwise, will act as an override towards this setting
+     *
+     * @param keepSpawnLoaded the new value
+     * @return This object, for chaining
+     */
+    @NotNull
+    public WorldCreator keepSpawnLoaded(@NotNull net.kyori.adventure.util.TriState keepSpawnLoaded) {
+        Preconditions.checkArgument(keepSpawnLoaded != null, "keepSpawnLoaded");
+        this.keepSpawnLoaded = keepSpawnLoaded;
+        return this;
+    }
+
+    // Paper end - keep spawn loaded tristate
 }
