@@ -29,7 +29,7 @@
  public abstract class World implements GeneratorAccess, AutoCloseable {
  
      protected static final Logger LOGGER = LogManager.getLogger();
-@@ -103,7 +125,49 @@
+@@ -103,7 +125,50 @@
      private final BiomeManager biomeManager;
      private final ResourceKey<World> dimension;
  
@@ -41,6 +41,7 @@
 +    public boolean keepSpawnInMemory = true;
 +    public org.bukkit.generator.ChunkGenerator generator;
 +
++    public boolean preventPoiUpdated = false; // CraftBukkit - SPIGOT-5710
 +    public boolean captureBlockStates = false;
 +    public boolean captureTreeGeneration = false;
 +    public Map<BlockPosition, CapturedBlockState> capturedBlockStates = new java.util.LinkedHashMap<>();
@@ -80,7 +81,7 @@
          this.profiler = supplier;
          this.levelData = worlddatamutable;
          this.dimensionType = dimensionmanager;
-@@ -113,12 +177,12 @@
+@@ -113,12 +178,12 @@
              this.worldBorder = new WorldBorder() {
                  @Override
                  public double getCenterX() {
@@ -95,7 +96,7 @@
                  }
              };
          } else {
-@@ -128,6 +192,35 @@
+@@ -128,6 +193,35 @@
          this.thread = Thread.currentThread();
          this.biomeManager = new BiomeManager(this, i, dimensionmanager.getGenLayerZoomer());
          this.isDebug = flag1;
@@ -131,7 +132,7 @@
      }
  
      @Override
-@@ -185,6 +278,17 @@
+@@ -185,6 +279,17 @@
  
      @Override
      public boolean a(BlockPosition blockposition, IBlockData iblockdata, int i, int j) {
@@ -149,7 +150,7 @@
          if (this.isOutsideWorld(blockposition)) {
              return false;
          } else if (!this.isClientSide && this.isDebugWorld()) {
-@@ -192,9 +296,24 @@
+@@ -192,9 +297,24 @@
          } else {
              Chunk chunk = this.getChunkAtWorldCoords(blockposition);
              Block block = iblockdata.getBlock();
@@ -175,7 +176,7 @@
                  return false;
              } else {
                  IBlockData iblockdata2 = this.getType(blockposition);
-@@ -205,6 +324,7 @@
+@@ -205,6 +325,7 @@
                      this.getMethodProfiler().exit();
                  }
  
@@ -183,7 +184,7 @@
                  if (iblockdata2 == iblockdata) {
                      if (iblockdata1 != iblockdata2) {
                          this.b(blockposition, iblockdata1, iblockdata2);
-@@ -231,12 +351,65 @@
+@@ -231,12 +352,69 @@
  
                      this.a(blockposition, iblockdata1, iblockdata2);
                  }
@@ -241,7 +242,11 @@
 +                iblockdata.b(this, blockposition, k, j - 1);
 +            }
 +
-+            this.a(blockposition, iblockdata1, iblockdata2);
++            // CraftBukkit start - SPIGOT-5710
++            if (!preventPoiUpdated) {
++                this.a(blockposition, iblockdata1, iblockdata2);
++            }
++            // CraftBukkit end
 +        }
 +    }
 +    // CraftBukkit end
@@ -249,7 +254,7 @@
      public void a(BlockPosition blockposition, IBlockData iblockdata, IBlockData iblockdata1) {}
  
      @Override
-@@ -326,6 +499,17 @@
+@@ -326,6 +504,17 @@
              IBlockData iblockdata = this.getType(blockposition);
  
              try {
@@ -267,7 +272,7 @@
                  iblockdata.doPhysics(this, blockposition, block, blockposition1, false);
              } catch (Throwable throwable) {
                  CrashReport crashreport = CrashReport.a(throwable, "Exception while updating neighbours");
-@@ -368,6 +552,14 @@
+@@ -368,6 +557,14 @@
  
      @Override
      public IBlockData getType(BlockPosition blockposition) {
@@ -282,7 +287,7 @@
          if (this.isOutsideWorld(blockposition)) {
              return Blocks.VOID_AIR.getBlockData();
          } else {
-@@ -484,7 +676,17 @@
+@@ -484,7 +681,17 @@
  
      @Nullable
      @Override
@@ -300,7 +305,7 @@
          return this.isOutsideWorld(blockposition) ? null : (!this.isClientSide && Thread.currentThread() != this.thread ? null : this.getChunkAtWorldCoords(blockposition).a(blockposition, Chunk.EnumTileEntityState.IMMEDIATE));
      }
  
-@@ -492,6 +694,12 @@
+@@ -492,6 +699,12 @@
          BlockPosition blockposition = tileentity.getPosition();
  
          if (!this.isOutsideWorld(blockposition)) {
@@ -313,7 +318,7 @@
              this.getChunkAtWorldCoords(blockposition).b(tileentity);
          }
      }
-@@ -595,7 +803,7 @@
+@@ -595,7 +808,7 @@
  
                  for (int j = 0; j < i; ++j) {
                      EntityComplexPart entitycomplexpart = aentitycomplexpart[j];
@@ -322,7 +327,7 @@
  
                      if (t0 != null && predicate.test(t0)) {
                          list.add(t0);
-@@ -921,6 +1129,14 @@
+@@ -921,6 +1134,14 @@
      public abstract LevelEntityGetter<Entity> getEntities();
  
      protected void a(@Nullable Entity entity, GameEvent gameevent, BlockPosition blockposition, int i) {
