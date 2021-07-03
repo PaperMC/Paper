@@ -25,10 +25,10 @@ public class BlockMetadataStore extends MetadataStoreBase<Block> implements Meta
 
     /**
      * Generates a unique metadata key for a {@link Block} object based on its coordinates in the world.
-     * @see MetadataStoreBase#disambiguate(Object, String)
      * @param block the block
      * @param metadataKey The name identifying the metadata value
      * @return a unique metadata key
+     * @see MetadataStoreBase#disambiguate(Object, String)
      */
     @Override
     protected String disambiguate(Block block, String metadataKey) {
