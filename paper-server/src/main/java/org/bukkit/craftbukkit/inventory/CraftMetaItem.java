@@ -152,6 +152,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
                     .put(CraftMetaCharge.class, "FIREWORK_EFFECT")
                     .put(CraftMetaKnowledgeBook.class, "KNOWLEDGE_BOOK")
                     .put(CraftMetaTropicalFishBucket.class, "TROPICAL_FISH_BUCKET")
+                    .put(CraftMetaAxolotlBucket.class, "AXOLOTL_BUCKET")
                     .put(CraftMetaCrossbow.class, "CROSSBOW")
                     .put(CraftMetaSuspiciousStew.class, "SUSPICIOUS_STEW")
                     .put(CraftMetaEntityTag.class, "ENTITY_TAG")
@@ -1402,6 +1403,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
                         CraftMetaBlockState.BLOCK_ENTITY_TAG.NBT,
                         CraftMetaKnowledgeBook.BOOK_RECIPES.NBT,
                         CraftMetaTropicalFishBucket.VARIANT.NBT,
+                        CraftMetaAxolotlBucket.VARIANT.NBT,
                         CraftMetaCrossbow.CHARGED.NBT,
                         CraftMetaCrossbow.CHARGED_PROJECTILES.NBT,
                         CraftMetaSuspiciousStew.EFFECTS.NBT,

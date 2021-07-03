@@ -30,8 +30,10 @@ import org.bukkit.craftbukkit.inventory.ItemStackTest.CraftWrapper;
 import org.bukkit.craftbukkit.inventory.ItemStackTest.StackProvider;
 import org.bukkit.craftbukkit.inventory.ItemStackTest.StackWrapper;
 import org.bukkit.enchantments.Enchantment;
+import org.bukkit.entity.Axolotl;
 import org.bukkit.entity.TropicalFish;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.AxolotlBucketMeta;
 import org.bukkit.inventory.meta.BannerMeta;
 import org.bukkit.inventory.meta.BlockDataMeta;
 import org.bukkit.inventory.meta.BlockStateMeta;
@@ -299,6 +301,14 @@ public class ItemMetaTest extends AbstractTestingBase {
                     meta.setPattern(TropicalFish.Pattern.DASHER);
                     cleanStack.setItemMeta(meta);
                     return cleanStack;
+                }
+            },
+            new StackProvider(Material.AXOLOTL_BUCKET) {
+                @Override ItemStack operate(ItemStack cleanStack) {
+                     final AxolotlBucketMeta meta = (AxolotlBucketMeta) cleanStack.getItemMeta();
+                     meta.setVariant(Axolotl.Variant.BLUE);
+                     cleanStack.setItemMeta(meta);
+                     return cleanStack;
                 }
             },
             new StackProvider(Material.CROSSBOW) {
