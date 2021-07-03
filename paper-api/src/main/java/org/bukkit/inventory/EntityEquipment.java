@@ -87,11 +87,11 @@ public interface EntityEquipment {
     /**
      * Gets a copy of the item the entity is currently holding
      *
-     * @deprecated entities can duel wield now use the methods for the
-     *      specific hand instead
+     * @return the currently held item
      * @see #getItemInMainHand()
      * @see #getItemInOffHand()
-     * @return the currently held item
+     * @deprecated entities can duel wield now use the methods for the
+     *      specific hand instead
      */
     @Deprecated
     @NotNull
@@ -100,11 +100,11 @@ public interface EntityEquipment {
     /**
      * Sets the item the entity is holding
      *
-     * @deprecated entities can duel wield now use the methods for the
-     *      specific hand instead
+     * @param stack The item to put into the entities hand
      * @see #setItemInMainHand(ItemStack)
      * @see #setItemInOffHand(ItemStack)
-     * @param stack The item to put into the entities hand
+     * @deprecated entities can duel wield now use the methods for the
+     *      specific hand instead
      */
     @Deprecated
     void setItemInHand(@Nullable ItemStack stack);
@@ -222,21 +222,21 @@ public interface EntityEquipment {
     void clear();
 
     /**
-     * @deprecated entities can duel wield now use the methods for the specific
-     * hand instead
+     * @return drop chance
      * @see #getItemInMainHandDropChance()
      * @see #getItemInOffHandDropChance()
-     * @return drop chance
+     * @deprecated entities can duel wield now use the methods for the specific
+     * hand instead
      */
     @Deprecated
     float getItemInHandDropChance();
 
     /**
-     * @deprecated entities can duel wield now use the methods for the specific
-     * hand instead
+     * @param chance drop chance
      * @see #setItemInMainHandDropChance(float)
      * @see #setItemInOffHandDropChance(float)
-     * @param chance drop chance
+     * @deprecated entities can duel wield now use the methods for the specific
+     * hand instead
      */
     @Deprecated
     void setItemInHandDropChance(float chance);

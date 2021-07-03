@@ -141,9 +141,9 @@ public class Potion {
      * Returns a collection of {@link PotionEffect}s that this {@link Potion}
      * would confer upon a {@link LivingEntity}.
      *
+     * @return The effects that this potion applies
      * @see PotionBrewer#getEffectsFromDamage(int)
      * @see Potion#toDamageValue()
-     * @return The effects that this potion applies
      */
     @NotNull
     public Collection<PotionEffect> getEffects() {

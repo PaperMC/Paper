@@ -15,12 +15,12 @@ public interface MapMeta extends ItemMeta {
      * Checks for existence of a map ID number.
      *
      * @return true if this has a map ID number.
+     * @see #hasMapView()
      * @deprecated These methods are poor API: They rely on the caller to pass
      * in an only an integer property, and have poorly defined implementation
      * behavior if that integer is not a valid map (the current implementation
      * for example will generate a new map with a different ID). The xxxMapView
      * family of methods should be used instead.
-     * @see #hasMapView()
      */
     @Deprecated
     boolean hasMapId();
@@ -33,12 +33,12 @@ public interface MapMeta extends ItemMeta {
      * calling this method.
      *
      * @return the map ID that is set
+     * @see #getMapView()
      * @deprecated These methods are poor API: They rely on the caller to pass
      * in an only an integer property, and have poorly defined implementation
      * behavior if that integer is not a valid map (the current implementation
      * for example will generate a new map with a different ID). The xxxMapView
      * family of methods should be used instead.
-     * @see #getMapView()
      */
     @Deprecated
     int getMapId();
@@ -47,12 +47,12 @@ public interface MapMeta extends ItemMeta {
      * Sets the map ID. This is used to determine what map is displayed.
      *
      * @param id the map id to set
+     * @see #setMapView(org.bukkit.map.MapView)
      * @deprecated These methods are poor API: They rely on the caller to pass
      * in an only an integer property, and have poorly defined implementation
      * behavior if that integer is not a valid map (the current implementation
      * for example will generate a new map with a different ID). The xxxMapView
      * family of methods should be used instead.
-     * @see #setMapView(org.bukkit.map.MapView)
      */
     @Deprecated
     void setMapId(int id);

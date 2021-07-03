@@ -184,10 +184,10 @@ public abstract class PotionEffectType {
      * Creates a PotionEffect from this PotionEffectType, applying duration
      * modifiers and checks.
      *
-     * @see PotionBrewer#createEffect(PotionEffectType, int, int)
      * @param duration time in ticks
      * @param amplifier the effect's amplifier
      * @return a resulting potion effect
+     * @see PotionBrewer#createEffect(PotionEffectType, int, int)
      */
     @NotNull
     public PotionEffect createEffect(int duration, int amplifier) {

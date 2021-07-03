@@ -238,12 +238,12 @@ public class WorldCreator {
      * is as follows:
      * <code>{"structures": {"structures": {"village": {"salt": 8015723, "spacing": 32, "separation": 8}}}, "layers": [{"block": "stone", "height": 1}, {"block": "grass", "height": 1}], "biome":"plains"}</code>
      *
-     * @see <a href="https://minecraft.gamepedia.com/Custom_dimension">Custom
-     * dimension</a> (scroll to "When the generator ID type is
-     * <code>minecraft:flat</code>)"
      * @param generatorSettings The settings that should be used by the
      * generator
      * @return This object, for chaining
+     * @see <a href="https://minecraft.gamepedia.com/Custom_dimension">Custom
+     * dimension</a> (scroll to "When the generator ID type is
+     * <code>minecraft:flat</code>)"
      */
     @NotNull
     public WorldCreator generatorSettings(@NotNull String generatorSettings) {

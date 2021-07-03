@@ -22,8 +22,8 @@ public interface Sign extends TileState, Colorable {
      * For example, getLine(0) will return the first line of text.
      *
      * @param index Line number to get the text from, starting at 0
-     * @throws IndexOutOfBoundsException Thrown when the line does not exist
      * @return Text on the given line
+     * @throws IndexOutOfBoundsException Thrown when the line does not exist
      */
     @NotNull
     public String getLine(int index) throws IndexOutOfBoundsException;

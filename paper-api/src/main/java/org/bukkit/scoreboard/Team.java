@@ -165,9 +165,9 @@ public interface Team {
      * Gets the Set of players on the team
      *
      * @return players on the team
-     * @throws IllegalStateException if this team has been unregistered\
-     * @deprecated Teams can contain entries that aren't players
+     * @throws IllegalStateException if this team has been unregistered
      * @see #getEntries()
+     * @deprecated Teams can contain entries that aren't players
      */
     @Deprecated
     @NotNull
@@ -207,8 +207,8 @@ public interface Team {
      * @param player the player to add
      * @throws IllegalArgumentException if player is null
      * @throws IllegalStateException if this team has been unregistered
-     * @deprecated Teams can contain entries that aren't players
      * @see #addEntry(String)
+     * @deprecated Teams can contain entries that aren't players
      */
     @Deprecated
     void addPlayer(@NotNull OfflinePlayer player) throws IllegalStateException, IllegalArgumentException;
@@ -231,8 +231,8 @@ public interface Team {
      * @return if the player was on this team
      * @throws IllegalArgumentException if player is null
      * @throws IllegalStateException if this team has been unregistered
-     * @deprecated Teams can contain entries that aren't players
      * @see #removeEntry(String)
+     * @deprecated Teams can contain entries that aren't players
      */
     @Deprecated
     boolean removePlayer(@NotNull OfflinePlayer player) throws IllegalStateException, IllegalArgumentException;
@@ -261,8 +261,8 @@ public interface Team {
      * @return true if the player is a member of this team
      * @throws IllegalArgumentException if player is null
      * @throws IllegalStateException if this team has been unregistered
-     * @deprecated Teams can contain entries that aren't players
      * @see #hasEntry(String)
+     * @deprecated Teams can contain entries that aren't players
      */
     @Deprecated
     boolean hasPlayer(@NotNull OfflinePlayer player) throws IllegalArgumentException, IllegalStateException;

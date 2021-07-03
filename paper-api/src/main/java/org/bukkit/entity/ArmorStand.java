@@ -13,8 +13,8 @@ public interface ArmorStand extends LivingEntity {
      * Returns the item the armor stand is currently holding.
      *
      * @return the held item
-     * @deprecated prefer {@link EntityEquipment#getItemInHand()}
      * @see #getEquipment()
+     * @deprecated prefer {@link EntityEquipment#getItemInHand()}
      */
     @NotNull
     @Deprecated
@@ -24,9 +24,9 @@ public interface ArmorStand extends LivingEntity {
      * Sets the item the armor stand is currently holding.
      *
      * @param item the item to hold
+     * @see #getEquipment()
      * @deprecated prefer
      * {@link EntityEquipment#setItemInHand(org.bukkit.inventory.ItemStack)}
-     * @see #getEquipment()
      */
     @Deprecated
     void setItemInHand(@Nullable ItemStack item);
@@ -35,8 +35,8 @@ public interface ArmorStand extends LivingEntity {
      * Returns the item currently being worn by the armor stand on its feet.
      *
      * @return the worn item
-     * @deprecated prefer {@link EntityEquipment#getBoots()}
      * @see #getEquipment()
+     * @deprecated prefer {@link EntityEquipment#getBoots()}
      */
     @NotNull
     @Deprecated
@@ -46,9 +46,9 @@ public interface ArmorStand extends LivingEntity {
      * Sets the item currently being worn by the armor stand on its feet.
      *
      * @param item the item to wear
+     * @see #getEquipment()
      * @deprecated prefer
      * {@link EntityEquipment#setBoots(org.bukkit.inventory.ItemStack)}
-     * @see #getEquipment()
      */
     @Deprecated
     void setBoots(@Nullable ItemStack item);
@@ -57,8 +57,8 @@ public interface ArmorStand extends LivingEntity {
      * Returns the item currently being worn by the armor stand on its legs.
      *
      * @return the worn item
-     * @deprecated prefer {@link EntityEquipment#getLeggings()}
      * @see #getEquipment()
+     * @deprecated prefer {@link EntityEquipment#getLeggings()}
      */
     @NotNull
     @Deprecated
@@ -68,9 +68,9 @@ public interface ArmorStand extends LivingEntity {
      * Sets the item currently being worn by the armor stand on its legs.
      *
      * @param item the item to wear
+     * @see #getEquipment()
      * @deprecated prefer
      * {@link EntityEquipment#setLeggings(org.bukkit.inventory.ItemStack)}
-     * @see #getEquipment()
      */
     @Deprecated
     void setLeggings(@Nullable ItemStack item);
@@ -79,8 +79,8 @@ public interface ArmorStand extends LivingEntity {
      * Returns the item currently being worn by the armor stand on its chest.
      *
      * @return the worn item
-     * @deprecated prefer {@link EntityEquipment#getChestplate()}
      * @see #getEquipment()
+     * @deprecated prefer {@link EntityEquipment#getChestplate()}
      */
     @NotNull
     @Deprecated
@@ -90,9 +90,9 @@ public interface ArmorStand extends LivingEntity {
      * Sets the item currently being worn by the armor stand on its chest.
      *
      * @param item the item to wear
+     * @see #getEquipment()
      * @deprecated prefer
      * {@link EntityEquipment#setChestplate(org.bukkit.inventory.ItemStack)}
-     * @see #getEquipment()
      */
     @Deprecated
     void setChestplate(@Nullable ItemStack item);
@@ -101,8 +101,8 @@ public interface ArmorStand extends LivingEntity {
      * Returns the item currently being worn by the armor stand on its head.
      *
      * @return the worn item
-     * @deprecated prefer {@link EntityEquipment#getHelmet()}
      * @see #getEquipment()
+     * @deprecated prefer {@link EntityEquipment#getHelmet()}
      */
     @NotNull
     @Deprecated
@@ -112,9 +112,9 @@ public interface ArmorStand extends LivingEntity {
      * Sets the item currently being worn by the armor stand on its head.
      *
      * @param item the item to wear
+     * @see #getEquipment()
      * @deprecated prefer
      * {@link EntityEquipment#setHelmet(org.bukkit.inventory.ItemStack)}
-     * @see #getEquipment()
      */
     @Deprecated
     void setHelmet(@Nullable ItemStack item);

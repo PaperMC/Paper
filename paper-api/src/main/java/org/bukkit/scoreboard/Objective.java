@@ -116,8 +116,8 @@ public interface Objective {
      * @return Score tracking the Objective and player specified
      * @throws IllegalArgumentException if player is null
      * @throws IllegalStateException if this objective has been unregistered
-     * @deprecated Scoreboards can contain entries that aren't players
      * @see #getScore(String)
+     * @deprecated Scoreboards can contain entries that aren't players
      */
     @Deprecated
     @NotNull

@@ -15,8 +15,8 @@ public interface Score {
      * Gets the OfflinePlayer being tracked by this Score
      *
      * @return this Score's tracked player
-     * @deprecated Scoreboards can contain entries that aren't players
      * @see #getEntry()
+     * @deprecated Scoreboards can contain entries that aren't players
      */
     @Deprecated
     @NotNull

@@ -22,11 +22,11 @@ public interface BukkitScheduler {
     public int scheduleSyncDelayedTask(@NotNull Plugin plugin, @NotNull Runnable task, long delay);
 
     /**
-     * @deprecated Use {@link BukkitRunnable#runTaskLater(Plugin, long)}
      * @param plugin Plugin that owns the task
      * @param task Task to be executed
      * @param delay Delay in server ticks before executing task
      * @return Task id number (-1 if scheduling failed)
+     * @deprecated Use {@link BukkitRunnable#runTaskLater(Plugin, long)}
      */
     @Deprecated
     public int scheduleSyncDelayedTask(@NotNull Plugin plugin, @NotNull BukkitRunnable task, long delay);
@@ -43,10 +43,10 @@ public interface BukkitScheduler {
     public int scheduleSyncDelayedTask(@NotNull Plugin plugin, @NotNull Runnable task);
 
     /**
-     * @deprecated Use {@link BukkitRunnable#runTask(Plugin)}
      * @param plugin Plugin that owns the task
      * @param task Task to be executed
      * @return Task id number (-1 if scheduling failed)
+     * @deprecated Use {@link BukkitRunnable#runTask(Plugin)}
      */
     @Deprecated
     public int scheduleSyncDelayedTask(@NotNull Plugin plugin, @NotNull BukkitRunnable task);
@@ -65,12 +65,12 @@ public interface BukkitScheduler {
     public int scheduleSyncRepeatingTask(@NotNull Plugin plugin, @NotNull Runnable task, long delay, long period);
 
     /**
-     * @deprecated Use {@link BukkitRunnable#runTaskTimer(Plugin, long, long)}
      * @param plugin Plugin that owns the task
      * @param task Task to be executed
      * @param delay Delay in server ticks before executing first repeat
      * @param period Period in server ticks of the task
      * @return Task id number (-1 if scheduling failed)
+     * @deprecated Use {@link BukkitRunnable#runTaskTimer(Plugin, long, long)}
      */
     @Deprecated
     public int scheduleSyncRepeatingTask(@NotNull Plugin plugin, @NotNull BukkitRunnable task, long delay, long period);
@@ -230,13 +230,12 @@ public interface BukkitScheduler {
     public void runTask(@NotNull Plugin plugin, @NotNull Consumer<BukkitTask> task) throws IllegalArgumentException;
 
     /**
-     * @deprecated Use {@link BukkitRunnable#runTask(Plugin)}
-     *
      * @param plugin the reference to the plugin scheduling task
      * @param task the task to be run
      * @return a BukkitTask that contains the id number
      * @throws IllegalArgumentException if plugin is null
      * @throws IllegalArgumentException if task is null
+     * @deprecated Use {@link BukkitRunnable#runTask(Plugin)}
      */
     @Deprecated
     @NotNull
@@ -271,12 +270,12 @@ public interface BukkitScheduler {
     public void runTaskAsynchronously(@NotNull Plugin plugin, @NotNull Consumer<BukkitTask> task) throws IllegalArgumentException;
 
     /**
-     * @deprecated Use {@link BukkitRunnable#runTaskAsynchronously(Plugin)}
      * @param plugin the reference to the plugin scheduling task
      * @param task the task to be run
      * @return a BukkitTask that contains the id number
      * @throws IllegalArgumentException if plugin is null
      * @throws IllegalArgumentException if task is null
+     * @deprecated Use {@link BukkitRunnable#runTaskAsynchronously(Plugin)}
      */
     @Deprecated
     @NotNull
@@ -309,13 +308,13 @@ public interface BukkitScheduler {
     public void runTaskLater(@NotNull Plugin plugin, @NotNull Consumer<BukkitTask> task, long delay) throws IllegalArgumentException;
 
     /**
-     * @deprecated Use {@link BukkitRunnable#runTaskLater(Plugin, long)}
      * @param plugin the reference to the plugin scheduling task
      * @param task the task to be run
      * @param delay the ticks to wait before running the task
      * @return a BukkitTask that contains the id number
      * @throws IllegalArgumentException if plugin is null
      * @throws IllegalArgumentException if task is null
+     * @deprecated Use {@link BukkitRunnable#runTaskLater(Plugin, long)}
      */
     @Deprecated
     @NotNull
@@ -354,13 +353,13 @@ public interface BukkitScheduler {
     public void runTaskLaterAsynchronously(@NotNull Plugin plugin, @NotNull Consumer<BukkitTask> task, long delay) throws IllegalArgumentException;
 
     /**
-     * @deprecated Use {@link BukkitRunnable#runTaskLaterAsynchronously(Plugin, long)}
      * @param plugin the reference to the plugin scheduling task
      * @param task the task to be run
      * @param delay the ticks to wait before running the task
      * @return a BukkitTask that contains the id number
      * @throws IllegalArgumentException if plugin is null
      * @throws IllegalArgumentException if task is null
+     * @deprecated Use {@link BukkitRunnable#runTaskLaterAsynchronously(Plugin, long)}
      */
     @Deprecated
     @NotNull
@@ -395,7 +394,6 @@ public interface BukkitScheduler {
     public void runTaskTimer(@NotNull Plugin plugin, @NotNull Consumer<BukkitTask> task, long delay, long period) throws IllegalArgumentException;
 
     /**
-     * @deprecated Use {@link BukkitRunnable#runTaskTimer(Plugin, long, long)}
      * @param plugin the reference to the plugin scheduling task
      * @param task the task to be run
      * @param delay the ticks to wait before running the task
@@ -403,6 +401,7 @@ public interface BukkitScheduler {
      * @return a BukkitTask that contains the id number
      * @throws IllegalArgumentException if plugin is null
      * @throws IllegalArgumentException if task is null
+     * @deprecated Use {@link BukkitRunnable#runTaskTimer(Plugin, long, long)}
      */
     @Deprecated
     @NotNull
@@ -445,7 +444,6 @@ public interface BukkitScheduler {
     public void runTaskTimerAsynchronously(@NotNull Plugin plugin, @NotNull Consumer<BukkitTask> task, long delay, long period) throws IllegalArgumentException;
 
     /**
-     * @deprecated Use {@link BukkitRunnable#runTaskTimerAsynchronously(Plugin, long, long)}
      * @param plugin the reference to the plugin scheduling task
      * @param task the task to be run
      * @param delay the ticks to wait before running the task for the first
@@ -454,6 +452,7 @@ public interface BukkitScheduler {
      * @return a BukkitTask that contains the id number
      * @throws IllegalArgumentException if plugin is null
      * @throws IllegalArgumentException if task is null
+     * @deprecated Use {@link BukkitRunnable#runTaskTimerAsynchronously(Plugin, long, long)}
      */
     @Deprecated
     @NotNull

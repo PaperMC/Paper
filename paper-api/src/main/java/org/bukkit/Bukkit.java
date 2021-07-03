@@ -883,11 +883,11 @@ public final class Bukkit {
      * This will return an object even if the player does not exist. To this
      * method, all players will exist.
      *
-     * @deprecated Persistent storage of users should be by UUID as names are no longer
-     *             unique past a single session.
      * @param name the name the player to retrieve
      * @return an offline player
      * @see #getOfflinePlayer(java.util.UUID)
+     * @deprecated Persistent storage of users should be by UUID as names are no longer
+     *             unique past a single session.
      */
     @Deprecated
     @NotNull
@@ -1278,11 +1278,11 @@ public final class Bukkit {
      * guaranteed to throw an implementation-defined {@link Exception}.
      *
      * @param file the file to load the from
+     * @return a cached server-icon that can be used for a {@link
+     *     ServerListPingEvent#setServerIcon(CachedServerIcon)}
      * @throws IllegalArgumentException if image is null
      * @throws Exception if the image does not meet current server server-icon
      *     specifications
-     * @return a cached server-icon that can be used for a {@link
-     *     ServerListPingEvent#setServerIcon(CachedServerIcon)}
      */
     @NotNull
     public static CachedServerIcon loadServerIcon(@NotNull File file) throws IllegalArgumentException, Exception {
@@ -1296,11 +1296,11 @@ public final class Bukkit {
      * guaranteed to throw an implementation-defined {@link Exception}.
      *
      * @param image the image to use
+     * @return a cached server-icon that can be used for a {@link
+     *     ServerListPingEvent#setServerIcon(CachedServerIcon)}
      * @throws IllegalArgumentException if image is null
      * @throws Exception if the image does not meet current server
      *     server-icon specifications
-     * @return a cached server-icon that can be used for a {@link
-     *     ServerListPingEvent#setServerIcon(CachedServerIcon)}
      */
     @NotNull
     public static CachedServerIcon loadServerIcon(@NotNull BufferedImage image) throws IllegalArgumentException, Exception {
@@ -1599,8 +1599,8 @@ public final class Bukkit {
     }
 
     /**
-     * @see UnsafeValues
      * @return the unsafe values instance
+     * @see UnsafeValues
      */
     @Deprecated
     @NotNull

@@ -165,8 +165,8 @@ public class InventoryClickEvent extends InventoryInteractEvent {
     /**
      * Gets the inventory corresponding to the clicked slot.
      *
-     * @see InventoryView#getInventory(int)
      * @return inventory, or null if clicked outside
+     * @see InventoryView#getInventory(int)
      */
     @Nullable
     public Inventory getClickedInventory() {

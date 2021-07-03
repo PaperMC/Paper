@@ -32,7 +32,7 @@ public final class HelpTopicComparator implements Comparator<HelpTopic> {
     }
 
     public static final class TopicNameComparator implements Comparator<String> {
-        private TopicNameComparator(){}
+        private TopicNameComparator() {}
 
         @Override
         public int compare(@NotNull String lhs, @NotNull String rhs) {

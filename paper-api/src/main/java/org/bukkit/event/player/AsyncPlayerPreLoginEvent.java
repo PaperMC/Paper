@@ -47,9 +47,9 @@ public class AsyncPlayerPreLoginEvent extends Event {
      * Gets the current result of the login, as an enum
      *
      * @return Current Result of the login
+     * @see #getLoginResult()
      * @deprecated This method uses a deprecated enum from {@link
      *     PlayerPreLoginEvent}
-     * @see #getLoginResult()
      */
     @Deprecated
     @NotNull
@@ -70,9 +70,9 @@ public class AsyncPlayerPreLoginEvent extends Event {
      * Sets the new result of the login, as an enum
      *
      * @param result New result to set
+     * @see #setLoginResult(Result)
      * @deprecated This method uses a deprecated enum from {@link
      *     PlayerPreLoginEvent}
-     * @see #setLoginResult(Result)
      */
     @Deprecated
     public void setResult(@NotNull final PlayerPreLoginEvent.Result result) {
@@ -123,9 +123,9 @@ public class AsyncPlayerPreLoginEvent extends Event {
      *
      * @param result New result for disallowing the player
      * @param message Kick message to display to the user
+     * @see #disallow(Result, String)
      * @deprecated This method uses a deprecated enum from {@link
      *     PlayerPreLoginEvent}
-     * @see #disallow(Result, String)
      */
     @Deprecated
     public void disallow(@NotNull final PlayerPreLoginEvent.Result result, @NotNull final String message) {

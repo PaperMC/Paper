@@ -19,9 +19,8 @@ public class PlayerLocaleChangeEvent extends PlayerEvent {
     }
 
     /**
-     * @see Player#getLocale()
-     *
      * @return the player's new locale
+     * @see Player#getLocale()
      */
     @NotNull
     public String getLocale() {

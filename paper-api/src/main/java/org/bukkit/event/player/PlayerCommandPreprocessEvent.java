@@ -122,9 +122,9 @@ public class PlayerCommandPreprocessEvent extends PlayerEvent implements Cancell
      * UnsupportedOperationException} if the event caller provides an
      * unmodifiable set.
      *
+     * @return All Players who will see this chat message
      * @deprecated This method is provided for backward compatibility with no
      *     guarantee to the effect of viewing or modifying the set.
-     * @return All Players who will see this chat message
      */
     @NotNull
     @Deprecated

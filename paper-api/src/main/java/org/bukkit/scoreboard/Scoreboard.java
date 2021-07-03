@@ -116,8 +116,8 @@ public interface Scoreboard {
      * @param player the player whose scores are being retrieved
      * @return immutable set of all scores tracked for the player
      * @throws IllegalArgumentException if player is null
-     * @deprecated Scoreboards can contain entries that aren't players
      * @see #getScores(String)
+     * @deprecated Scoreboards can contain entries that aren't players
      */
     @Deprecated
     @NotNull
@@ -138,8 +138,8 @@ public interface Scoreboard {
      *
      * @param player the player to drop all current scores for
      * @throws IllegalArgumentException if player is null
-     * @deprecated Scoreboards can contain entries that aren't players
      * @see #resetScores(String)
+     * @deprecated Scoreboards can contain entries that aren't players
      */
     @Deprecated
     void resetScores(@NotNull OfflinePlayer player) throws IllegalArgumentException;
@@ -158,8 +158,8 @@ public interface Scoreboard {
      * @param player the player to search for
      * @return the player's Team or null if the player is not on a team
      * @throws IllegalArgumentException if player is null
-     * @deprecated Scoreboards can contain entries that aren't players
      * @see #getEntryTeam(String)
+     * @deprecated Scoreboards can contain entries that aren't players
      */
     @Deprecated
     @Nullable
@@ -208,8 +208,8 @@ public interface Scoreboard {
      * Gets all players tracked by this Scoreboard
      *
      * @return immutable set of all tracked players
-     * @deprecated Scoreboards can contain entries that aren't players
      * @see #getEntries()
+     * @deprecated Scoreboards can contain entries that aren't players
      */
     @Deprecated
     @NotNull

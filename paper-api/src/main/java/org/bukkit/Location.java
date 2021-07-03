@@ -339,10 +339,10 @@ public class Location implements Cloneable, ConfigurationSerializable {
     /**
      * Adds the location by another.
      *
-     * @see Vector
      * @param vec The other location
      * @return the same location
      * @throws IllegalArgumentException for differing worlds
+     * @see Vector
      */
     @NotNull
     public Location add(@NotNull Location vec) {
@@ -359,9 +359,9 @@ public class Location implements Cloneable, ConfigurationSerializable {
     /**
      * Adds the location by a vector.
      *
-     * @see Vector
      * @param vec Vector to use
      * @return the same location
+     * @see Vector
      */
     @NotNull
     public Location add(@NotNull Vector vec) {
@@ -374,11 +374,11 @@ public class Location implements Cloneable, ConfigurationSerializable {
     /**
      * Adds the location by another. Not world-aware.
      *
-     * @see Vector
      * @param x X coordinate
      * @param y Y coordinate
      * @param z Z coordinate
      * @return the same location
+     * @see Vector
      */
     @NotNull
     public Location add(double x, double y, double z) {
@@ -391,10 +391,10 @@ public class Location implements Cloneable, ConfigurationSerializable {
     /**
      * Subtracts the location by another.
      *
-     * @see Vector
      * @param vec The other location
      * @return the same location
      * @throws IllegalArgumentException for differing worlds
+     * @see Vector
      */
     @NotNull
     public Location subtract(@NotNull Location vec) {
@@ -411,9 +411,9 @@ public class Location implements Cloneable, ConfigurationSerializable {
     /**
      * Subtracts the location by a vector.
      *
-     * @see Vector
      * @param vec The vector to use
      * @return the same location
+     * @see Vector
      */
     @NotNull
     public Location subtract(@NotNull Vector vec) {
@@ -427,11 +427,11 @@ public class Location implements Cloneable, ConfigurationSerializable {
      * Subtracts the location by another. Not world-aware and
      * orientation independent.
      *
-     * @see Vector
      * @param x X coordinate
      * @param y Y coordinate
      * @param z Z coordinate
      * @return the same location
+     * @see Vector
      */
     @NotNull
     public Location subtract(double x, double y, double z) {
