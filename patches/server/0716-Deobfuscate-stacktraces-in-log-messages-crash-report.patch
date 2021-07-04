@@ -6,7 +6,7 @@ Subject: [PATCH] Deobfuscate stacktraces in log messages, crash reports, and
 
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index 45b08a01495dc42c36f26a6b8e833c9ae81079e8..7f2634a90b63f39a61340ee23e2b42f712d48e48 100644
+index 1053799ea1f654e1885c46d34a145b9d9fd34a21..13d392b6f2715f1b905d8b93a7cd8df3ce62f8e9 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
 @@ -1,8 +1,12 @@
@@ -407,6 +407,18 @@ index 09f56e49383d3f5413ad4c28f3a7664e4d9570bd..afb4fd59bfc8cf71d3a7fdc1cdf1b4c5
          this.title = message;
          this.exception = cause;
          this.systemReport.setDetail("CraftBukkit Information", new org.bukkit.craftbukkit.CraftCrashReport()); // CraftBukkit
+diff --git a/src/main/java/net/minecraft/CrashReportCategory.java b/src/main/java/net/minecraft/CrashReportCategory.java
+index 3941e14d1c3e6e688e28904948039c8b2200de5f..a4fda4a3bae9ce600e778b44cd3ef432a8b65667 100644
+--- a/src/main/java/net/minecraft/CrashReportCategory.java
++++ b/src/main/java/net/minecraft/CrashReportCategory.java
+@@ -104,6 +104,7 @@ public class CrashReportCategory {
+         } else {
+             this.stackTrace = new StackTraceElement[stackTraceElements.length - 3 - ignoredCallCount];
+             System.arraycopy(stackTraceElements, 3 + ignoredCallCount, this.stackTrace, 0, this.stackTrace.length);
++            this.stackTrace = io.papermc.paper.util.StacktraceDeobfuscator.INSTANCE.deobfuscateStacktrace(this.stackTrace); // Paper
+             return this.stackTrace.length;
+         }
+     }
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 index eeefbb86cb88bd1b132bb6e22b4a4572cfb5e22c..6a1fd7a983724d9e16e8aef06052108ba7ed46f1 100644
 --- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
