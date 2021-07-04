@@ -545,7 +545,7 @@ index 0000000000000000000000000000000000000000..11de56afaf059b00fa5bec293516bcdc
 +    }
 +} 
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index dde0d2be31e686b4d5324affd03743345d8af2ed..7e62a86e4ab376c47340d96620f6b1df19fa95ca 100644
+index 13dbeae83158d174032e3de1c447bd32555a6dfa..f921bc3a0e2b448ae0f9cccc608fc9d735d7936a 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
 @@ -145,6 +145,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
@@ -582,8 +582,8 @@ index dde0d2be31e686b4d5324affd03743345d8af2ed..7e62a86e4ab376c47340d96620f6b1df
 +        }
 +    }
 +
-+    public int getMobCountNear(ServerPlayer entityPlayer, net.minecraft.world.entity.MobCategory enumCreatureType) {
-+        return entityPlayer.mobCounts[enumCreatureType.ordinal()];
++    public int getMobCountNear(ServerPlayer entityPlayer, net.minecraft.world.entity.MobCategory mobCategory) {
++        return entityPlayer.mobCounts[mobCategory.ordinal()];
 +    }
 +    // Paper end
 +
@@ -591,7 +591,7 @@ index dde0d2be31e686b4d5324affd03743345d8af2ed..7e62a86e4ab376c47340d96620f6b1df
          double d0 = (double) SectionPos.sectionToBlockCoord(pos.x, 8);
          double d1 = (double) SectionPos.sectionToBlockCoord(pos.z, 8);
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-index 734b204d53a4b9e9b1112efe3a50b53cf1aa9f47..26f99965e63d36ce4b8cd0482ae21b0c37994caa 100644
+index ddaa4dfa4611e8d659e9d0211873b6f503e3d230..1ed75e33d566e58314f733d02ff89d5f174a606a 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 @@ -754,7 +754,22 @@ public class ServerChunkCache extends ChunkSource {
@@ -619,36 +619,22 @@ index 734b204d53a4b9e9b1112efe3a50b53cf1aa9f47..26f99965e63d36ce4b8cd0482ae21b0c
  
              this.lastSpawnState = spawnercreature_d;
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-index 6ecf85579acb186f076f258368051a4ae09c3354..14f88e575f46d81175eaa04b3e7294990e749a14 100644
+index cbc8a0c6ad214cfea8ac1476c1eda074f3128aaf..4ea2203d1acbaa60839acb9cdf48fbcc73e4eff0 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-@@ -90,12 +90,7 @@ import net.minecraft.world.damagesource.DamageSource;
- import net.minecraft.world.damagesource.EntityDamageSource;
- import net.minecraft.world.effect.MobEffectInstance;
- import net.minecraft.world.effect.MobEffects;
--import net.minecraft.world.entity.Entity;
--import net.minecraft.world.entity.EntitySelector;
--import net.minecraft.world.entity.HumanoidArm;
--import net.minecraft.world.entity.LivingEntity;
--import net.minecraft.world.entity.Mob;
--import net.minecraft.world.entity.NeutralMob;
-+import net.minecraft.world.entity.*;
- import net.minecraft.world.entity.animal.horse.AbstractHorse;
- import net.minecraft.world.entity.item.ItemEntity;
- import net.minecraft.world.entity.monster.Monster;
-@@ -223,6 +218,11 @@ public class ServerPlayer extends Player {
+@@ -223,6 +223,11 @@ public class ServerPlayer extends Player {
      public boolean queueHealthUpdatePacket = false;
      public net.minecraft.network.protocol.game.ClientboundSetHealthPacket queuedHealthUpdatePacket;
      // Paper end
 +    // Paper start - mob spawning rework
-+    public static final int ENUMCREATURETYPE_TOTAL_ENUMS = MobCategory.values().length;
-+    public final int[] mobCounts = new int[ENUMCREATURETYPE_TOTAL_ENUMS]; // Paper
++    public static final int MOBCATEGORY_TOTAL_ENUMS = net.minecraft.world.entity.MobCategory.values().length;
++    public final int[] mobCounts = new int[MOBCATEGORY_TOTAL_ENUMS]; // Paper
 +    public final com.destroystokyo.paper.util.PooledHashSets.PooledObjectLinkedOpenHashSet<ServerPlayer> cachedSingleMobDistanceMap;
 +    // Paper end
  
      // CraftBukkit start
      public String displayName;
-@@ -317,6 +317,7 @@ public class ServerPlayer extends Player {
+@@ -317,6 +322,7 @@ public class ServerPlayer extends Player {
          this.adventure$displayName = net.kyori.adventure.text.Component.text(this.getScoreboardName()); // Paper
          this.bukkitPickUpLoot = true;
          this.maxHealthCache = this.getMaxHealth();
@@ -657,7 +643,7 @@ index 6ecf85579acb186f076f258368051a4ae09c3354..14f88e575f46d81175eaa04b3e729499
  
      // Yes, this doesn't match Vanilla, but it's the best we can do for now.
 diff --git a/src/main/java/net/minecraft/world/level/NaturalSpawner.java b/src/main/java/net/minecraft/world/level/NaturalSpawner.java
-index 19d0ed5ff8569b0280117750f9ce05095afd9f70..55b937f802ee7066cb13b9a497932038b2905ff0 100644
+index 0211b572dc46b3c4fc098f0ef31843a401cd3613..31fbcf6a35b902ce80c0a5a23dabb8ec3d8cbdfc 100644
 --- a/src/main/java/net/minecraft/world/level/NaturalSpawner.java
 +++ b/src/main/java/net/minecraft/world/level/NaturalSpawner.java
 @@ -17,6 +17,7 @@ import net.minecraft.core.Registry;
@@ -697,7 +683,7 @@ index 19d0ed5ff8569b0280117750f9ce05095afd9f70..55b937f802ee7066cb13b9a497932038
                  continue;
              }
  
--            if ((spawnAnimals || !enumcreaturetype.isFriendly()) && (spawnMonsters || enumcreaturetype.isFriendly()) && (rareSpawn || !enumcreaturetype.isPersistent()) && info.a(enumcreaturetype, limit)) {
+-            if ((spawnAnimals || !enumcreaturetype.isFriendly()) && (spawnMonsters || enumcreaturetype.isFriendly()) && (rareSpawn || !enumcreaturetype.isPersistent()) && info.canSpawnForCategory(enumcreaturetype, limit)) {
 +            // Paper start - only allow spawns upto the limit per chunk and update count afterwards
 +            int currEntityCount = info.mobCategoryCounts.getInt(enumcreaturetype);
 +            int k1 = limit * info.getSpawnableChunkCount() / NaturalSpawner.MAGIC_NUMBER;
@@ -713,7 +699,7 @@ index 19d0ed5ff8569b0280117750f9ce05095afd9f70..55b937f802ee7066cb13b9a497932038
 +            // Paper end
 +
 +            // Paper start - per player mob spawning
-+            if ((spawnAnimals || !enumcreaturetype.isFriendly()) && (spawnMonsters || enumcreaturetype.isFriendly()) && (spawnAnimals || !enumcreaturetype.isPersistent())  && info.a(enumcreaturetype, limit) && difference > 0) {
++            if ((spawnAnimals || !enumcreaturetype.isFriendly()) && (spawnMonsters || enumcreaturetype.isFriendly()) && (rareSpawn || !enumcreaturetype.isPersistent()) && info.canSpawnForCategory(enumcreaturetype, limit) && difference > 0) {
                  // CraftBukkit end
                  Objects.requireNonNull(info);
                  NaturalSpawner.SpawnPredicate spawnercreature_c = info::canSpawn;
