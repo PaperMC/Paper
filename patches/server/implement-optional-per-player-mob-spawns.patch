@@ -582,8 +582,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +    }
 +
-+    public int getMobCountNear(ServerPlayer entityPlayer, net.minecraft.world.entity.MobCategory enumCreatureType) {
-+        return entityPlayer.mobCounts[enumCreatureType.ordinal()];
++    public int getMobCountNear(ServerPlayer entityPlayer, net.minecraft.world.entity.MobCategory mobCategory) {
++        return entityPlayer.mobCounts[mobCategory.ordinal()];
 +    }
 +    // Paper end
 +
@@ -622,27 +622,13 @@ diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/ma
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-@@ -0,0 +0,0 @@ import net.minecraft.world.damagesource.DamageSource;
- import net.minecraft.world.damagesource.EntityDamageSource;
- import net.minecraft.world.effect.MobEffectInstance;
- import net.minecraft.world.effect.MobEffects;
--import net.minecraft.world.entity.Entity;
--import net.minecraft.world.entity.EntitySelector;
--import net.minecraft.world.entity.HumanoidArm;
--import net.minecraft.world.entity.LivingEntity;
--import net.minecraft.world.entity.Mob;
--import net.minecraft.world.entity.NeutralMob;
-+import net.minecraft.world.entity.*;
- import net.minecraft.world.entity.animal.horse.AbstractHorse;
- import net.minecraft.world.entity.item.ItemEntity;
- import net.minecraft.world.entity.monster.Monster;
 @@ -0,0 +0,0 @@ public class ServerPlayer extends Player {
      public boolean queueHealthUpdatePacket = false;
      public net.minecraft.network.protocol.game.ClientboundSetHealthPacket queuedHealthUpdatePacket;
      // Paper end
 +    // Paper start - mob spawning rework
-+    public static final int ENUMCREATURETYPE_TOTAL_ENUMS = MobCategory.values().length;
-+    public final int[] mobCounts = new int[ENUMCREATURETYPE_TOTAL_ENUMS]; // Paper
++    public static final int MOBCATEGORY_TOTAL_ENUMS = net.minecraft.world.entity.MobCategory.values().length;
++    public final int[] mobCounts = new int[MOBCATEGORY_TOTAL_ENUMS]; // Paper
 +    public final com.destroystokyo.paper.util.PooledHashSets.PooledObjectLinkedOpenHashSet<ServerPlayer> cachedSingleMobDistanceMap;
 +    // Paper end
  
@@ -697,7 +683,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  continue;
              }
  
--            if ((spawnAnimals || !enumcreaturetype.isFriendly()) && (spawnMonsters || enumcreaturetype.isFriendly()) && (rareSpawn || !enumcreaturetype.isPersistent()) && info.a(enumcreaturetype, limit)) {
+-            if ((spawnAnimals || !enumcreaturetype.isFriendly()) && (spawnMonsters || enumcreaturetype.isFriendly()) && (rareSpawn || !enumcreaturetype.isPersistent()) && info.canSpawnForCategory(enumcreaturetype, limit)) {
 +            // Paper start - only allow spawns upto the limit per chunk and update count afterwards
 +            int currEntityCount = info.mobCategoryCounts.getInt(enumcreaturetype);
 +            int k1 = limit * info.getSpawnableChunkCount() / NaturalSpawner.MAGIC_NUMBER;
@@ -713,7 +699,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            // Paper end
 +
 +            // Paper start - per player mob spawning
-+            if ((spawnAnimals || !enumcreaturetype.isFriendly()) && (spawnMonsters || enumcreaturetype.isFriendly()) && (spawnAnimals || !enumcreaturetype.isPersistent())  && info.a(enumcreaturetype, limit) && difference > 0) {
++            if ((spawnAnimals || !enumcreaturetype.isFriendly()) && (spawnMonsters || enumcreaturetype.isFriendly()) && (rareSpawn || !enumcreaturetype.isPersistent()) && info.canSpawnForCategory(enumcreaturetype, limit) && difference > 0) {
                  // CraftBukkit end
                  Objects.requireNonNull(info);
                  NaturalSpawner.SpawnPredicate spawnercreature_c = info::canSpawn;
