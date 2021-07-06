@@ -7,14 +7,12 @@ Establishes base extension of profile systems for future edits too
 
 diff --git a/src/main/java/com/destroystokyo/paper/profile/CraftPlayerProfile.java b/src/main/java/com/destroystokyo/paper/profile/CraftPlayerProfile.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..07b840730c524714de3aaa694f5cc8a9780c50c9
+index 0000000000000000000000000000000000000000..04683d2bf2c281c917be5ad6783ff73ff10d348c
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/profile/CraftPlayerProfile.java
-@@ -0,0 +1,305 @@
+@@ -0,0 +1,302 @@
 +package com.destroystokyo.paper.profile;
 +
-+import com.destroystokyo.paper.profile.PlayerProfile;
-+import com.destroystokyo.paper.profile.ProfileProperty;
 +import com.destroystokyo.paper.PaperConfig;
 +import com.google.common.base.Charsets;
 +import com.mojang.authlib.GameProfile;
@@ -24,7 +22,6 @@ index 0000000000000000000000000000000000000000..07b840730c524714de3aaa694f5cc8a9
 +import net.minecraft.server.players.GameProfileCache;
 +import org.apache.commons.lang3.Validate;
 +import org.bukkit.craftbukkit.entity.CraftPlayer;
-+import org.spigotmc.SpigotConfig;
 +
 +import javax.annotation.Nonnull;
 +import javax.annotation.Nullable;
@@ -165,17 +162,17 @@ index 0000000000000000000000000000000000000000..07b840730c524714de3aaa694f5cc8a9
 +        String name = profile.getName();
 +        GameProfileCache userCache = server.getProfileCache();
 +        if (profile.getId() == null) {
-+            final Optional<GameProfile> profile;
++            final GameProfile profile;
 +            if (onlineMode) {
-+                profile = lookupUUID ? userCache.getProfile(name) : userCache.getProfileIfCached(name);
++                profile = lookupUUID ? userCache.getProfile(name).orElse(null) : userCache.getProfileIfCached(name);
 +            } else {
 +                // Make an OfflinePlayer using an offline mode UUID since the name has no profile
-+                profile = Optional.of(new GameProfile(UUID.nameUUIDFromBytes(("OfflinePlayer:" + name).getBytes(Charsets.UTF_8)), name));
++                profile = new GameProfile(UUID.nameUUIDFromBytes(("OfflinePlayer:" + name).getBytes(Charsets.UTF_8)), name);
 +            }
-+            if (profile.isPresent()) {
++            if (profile != null) {
 +                // if old has it, assume its newer, so overwrite, else use cached if it was set and ours wasn't
-+                copyProfileProperties(this.profile, profile.get());
-+                this.profile = profile.get();
++                copyProfileProperties(this.profile, profile);
++                this.profile = profile;
 +            }
 +        }
 +
@@ -476,7 +473,7 @@ index c8385460701395cb5c65fba41335469ffb2d9b9a..fb0b3c5770f66cc3590f5ac4e690a33c
              GameProfileRepository gameprofilerepository = yggdrasilauthenticationservice.createProfileRepository();
              GameProfileCache usercache = new GameProfileCache(gameprofilerepository, new File(file, MinecraftServer.USERID_CACHE_FILE.getName()));
 diff --git a/src/main/java/net/minecraft/server/players/GameProfileCache.java b/src/main/java/net/minecraft/server/players/GameProfileCache.java
-index ed0e1016db6bfa8209f041a5ce2c22baf111b509..90bf93e002a93d7aab6b259c1ac8e6714e64c89b 100644
+index ed0e1016db6bfa8209f041a5ce2c22baf111b509..2539cad276c7c06fbcd8b6294695f75344908ef0 100644
 --- a/src/main/java/net/minecraft/server/players/GameProfileCache.java
 +++ b/src/main/java/net/minecraft/server/players/GameProfileCache.java
 @@ -135,6 +135,13 @@ public class GameProfileCache {
@@ -484,9 +481,9 @@ index ed0e1016db6bfa8209f041a5ce2c22baf111b509..90bf93e002a93d7aab6b259c1ac8e671
      }
  
 +    // Paper start
-+    @Nullable public Optional<GameProfile> getProfileIfCached(String name) {
++    @Nullable public GameProfile getProfileIfCached(String name) {
 +        GameProfileCache.GameProfileInfo entry = this.profilesByName.get(name.toLowerCase(Locale.ROOT));
-+        return entry == null ? Optional.empty() : Optional.of(entry.getProfile());
++        return entry == null ? null : entry.getProfile();
 +    }
 +    // Paper end
 +
