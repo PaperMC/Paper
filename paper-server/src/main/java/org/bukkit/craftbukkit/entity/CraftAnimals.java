@@ -53,7 +53,7 @@ public class CraftAnimals extends CraftAgeable implements Animals {
 
     @Override
     public boolean isBreedItem(ItemStack itemStack) {
-        return getHandle().n(CraftItemStack.asNMSCopy(itemStack));
+        return getHandle().isBreedItem(CraftItemStack.asNMSCopy(itemStack));
     }
 
     @Override

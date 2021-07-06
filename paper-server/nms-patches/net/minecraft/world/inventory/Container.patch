@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/inventory/Container.java
 +++ b/net/minecraft/world/inventory/Container.java
-@@ -29,6 +29,20 @@
+@@ -30,6 +30,20 @@
  import net.minecraft.world.level.block.Block;
  import net.minecraft.world.level.block.entity.TileEntity;
  
@@ -21,16 +21,7 @@
  public abstract class Container {
  
      public static final int SLOT_CLICKED_OUTSIDE = -999;
-@@ -43,7 +57,7 @@
-     public NonNullList<Slot> slots = NonNullList.a();
-     private final List<ContainerProperty> dataSlots = Lists.newArrayList();
-     private ItemStack carried;
--    private final NonNullList<ItemStack> remoteSlots;
-+    public NonNullList<ItemStack> remoteSlots;
-     private final IntList remoteDataSlots;
-     private ItemStack remoteCarried;
-     @Nullable
-@@ -57,6 +71,27 @@
+@@ -59,6 +73,27 @@
      private ContainerSynchronizer synchronizer;
      private boolean suppressRemoteUpdates;
  
@@ -58,7 +49,7 @@
      protected Container(@Nullable Containers<?> containers, int i) {
          this.carried = ItemStack.EMPTY;
          this.remoteSlots = NonNullList.a();
-@@ -154,6 +189,15 @@
+@@ -156,6 +191,15 @@
  
      }
  
@@ -74,16 +65,16 @@
      public void b(ICrafting icrafting) {
          this.containerListeners.remove(icrafting);
      }
-@@ -338,7 +382,7 @@
+@@ -370,7 +414,7 @@
                  }
              } else if (this.quickcraftStatus == 2) {
                  if (!this.quickcraftSlots.isEmpty()) {
 -                    if (this.quickcraftSlots.size() == 1) {
 +                    if (false && this.quickcraftSlots.size() == 1) { // CraftBukkit - treat everything as a drag since we are unable to easily call InventoryClickEvent instead
                          k = ((Slot) this.quickcraftSlots.iterator().next()).index;
-                         this.e();
+                         this.f();
                          this.b(k, this.quickcraftType, InventoryClickType.PICKUP, entityhuman);
-@@ -349,6 +393,7 @@
+@@ -381,6 +425,7 @@
                      l = this.getCarried().getCount();
                      Iterator iterator = this.quickcraftSlots.iterator();
  
@@ -91,16 +82,18 @@
                      while (iterator.hasNext()) {
                          Slot slot1 = (Slot) iterator.next();
                          ItemStack itemstack2 = this.getCarried();
-@@ -365,12 +410,48 @@
+@@ -397,12 +442,48 @@
                              }
  
                              l -= itemstack3.getCount() - j1;
 -                            slot1.set(itemstack3);
 +                            // slot1.set(itemstack3);
 +                            draggedSlots.put(slot1.index, itemstack3); // CraftBukkit - Put in map instead of setting
-+                        }
-+                    }
-+
+                         }
+                     }
+ 
+-                    itemstack1.setCount(l);
+-                    this.setCarried(itemstack1);
 +                    // CraftBukkit start - InventoryDragEvent
 +                    InventoryView view = getBukkitView();
 +                    org.bukkit.inventory.ItemStack newcursor = CraftItemStack.asCraftMirror(itemstack1);
@@ -129,21 +122,19 @@
 +                        if (this.getCarried() != null) {
 +                            this.setCarried(CraftItemStack.asNMSCopy(event.getCursor()));
 +                            needsUpdate = true;
-                         }
++                        }
 +                    } else {
 +                        this.setCarried(oldCursor);
-                     }
- 
--                    itemstack1.setCount(l);
--                    this.setCarried(itemstack1);
++                    }
++
 +                    if (needsUpdate && entityhuman instanceof EntityPlayer) {
 +                        this.updateInventory();
 +                    }
 +                    // CraftBukkit end
                  }
  
-                 this.e();
-@@ -388,8 +469,11 @@
+                 this.f();
+@@ -420,8 +501,11 @@
                  if (i == -999) {
                      if (!this.getCarried().isEmpty()) {
                          if (clickaction == ClickAction.PRIMARY) {
@@ -156,36 +147,39 @@
                          } else {
                              entityhuman.drop(this.getCarried().cloneAndSubtract(1), true);
                          }
-@@ -452,6 +536,15 @@
+@@ -484,6 +568,15 @@
                      }
  
                      slot.d();
 +                    // CraftBukkit start - Make sure the client has the right slot contents
 +                    if (entityhuman instanceof EntityPlayer && slot.getMaxStackSize() != 64) {
-+                        ((EntityPlayer) entityhuman).connection.sendPacket(new PacketPlayOutSetSlot(this.containerId, slot.index, slot.getItem()));
++                        ((EntityPlayer) entityhuman).connection.sendPacket(new PacketPlayOutSetSlot(this.containerId, this.incrementStateId(), slot.index, slot.getItem()));
 +                        // Updating a crafting inventory makes the client reset the result slot, have to send it again
 +                        if (this.getBukkitView().getType() == InventoryType.WORKBENCH || this.getBukkitView().getType() == InventoryType.CRAFTING) {
-+                            ((EntityPlayer) entityhuman).connection.sendPacket(new PacketPlayOutSetSlot(this.containerId, 0, this.getSlot(0).getItem()));
++                            ((EntityPlayer) entityhuman).connection.sendPacket(new PacketPlayOutSetSlot(this.containerId, this.incrementStateId(), 0, this.getSlot(0).getItem()));
 +                        }
 +                    }
 +                    // CraftBukkit end
                  }
              } else {
                  Slot slot2;
-@@ -556,8 +649,11 @@
+@@ -591,13 +684,14 @@
+             ItemStack itemstack = this.getCarried();
  
-     public void b(EntityHuman entityhuman) {
-         if (!this.getCarried().isEmpty()) {
--            entityhuman.drop(this.getCarried(), false);
-+            // CraftBukkit start - SPIGOT-4556
-+            ItemStack carried = this.getCarried();
-             this.setCarried(ItemStack.EMPTY);
-+            entityhuman.drop(carried, false);
-+            // CraftBukkit end
+             if (!itemstack.isEmpty()) {
++                this.setCarried(ItemStack.EMPTY); // CraftBukkit - SPIGOT-4556 - from below
+                 if (entityhuman.isAlive() && !((EntityPlayer) entityhuman).q()) {
+                     entityhuman.getInventory().f(itemstack);
+                 } else {
+                     entityhuman.drop(itemstack, false);
+                 }
+ 
+-                this.setCarried(ItemStack.EMPTY);
++                // this.setCarried(ItemStack.EMPTY); // CraftBukkit - moved up
+             }
          }
  
-     }
-@@ -767,6 +863,11 @@
+@@ -811,6 +905,11 @@
      }
  
      public ItemStack getCarried() {

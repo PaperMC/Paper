@@ -580,7 +580,8 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
 
     @Override
     public boolean dropItem(boolean dropAll) {
-        return getHandle().dropItem(dropAll);
+        if (!(getHandle() instanceof EntityPlayer)) return false;
+        return ((EntityPlayer) getHandle()).dropItem(dropAll);
     }
 
     @Override

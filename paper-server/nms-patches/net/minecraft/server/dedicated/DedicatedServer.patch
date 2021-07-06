@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/dedicated/DedicatedServer.java
 +++ b/net/minecraft/server/dedicated/DedicatedServer.java
-@@ -64,6 +64,15 @@
+@@ -65,6 +65,15 @@
  import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
  
@@ -16,7 +16,7 @@
  public class DedicatedServer extends MinecraftServer implements IMinecraftServer {
  
      static final Logger LOGGER = LogManager.getLogger();
-@@ -82,8 +91,10 @@
+@@ -83,8 +92,10 @@
      @Nullable
      private final IChatBaseComponent resourcePackPrompt;
  
@@ -29,7 +29,7 @@
          this.settings = dedicatedserversettings;
          this.rconConsoleSource = new RemoteControlCommandListener(this);
          this.textFilterClient = TextFilter.a(dedicatedserversettings.getProperties().textFilteringConfig);
-@@ -94,13 +105,44 @@
+@@ -95,13 +106,44 @@
      public boolean init() throws IOException {
          Thread thread = new Thread("Server console handler") {
              public void run() {
@@ -77,7 +77,7 @@
                      }
                  } catch (IOException ioexception) {
                      DedicatedServer.LOGGER.error("Exception handling console input", ioexception);
-@@ -109,6 +151,27 @@
+@@ -110,6 +152,27 @@
              }
          };
  
@@ -105,16 +105,16 @@
          thread.setDaemon(true);
          thread.setUncaughtExceptionHandler(new DefaultUncaughtExceptionHandler(DedicatedServer.LOGGER));
          thread.start();
-@@ -134,7 +197,7 @@
+@@ -135,7 +198,7 @@
          this.setMotd(dedicatedserverproperties.motd);
          super.setIdleTimeout((Integer) dedicatedserverproperties.playerIdleTimeout.get());
-         this.h(dedicatedserverproperties.enforceWhitelist);
+         this.setEnforceWhitelist(dedicatedserverproperties.enforceWhitelist);
 -        this.worldData.setGameType(dedicatedserverproperties.gamemode);
 +        // this.worldData.setGameType(dedicatedserverproperties.gamemode); // CraftBukkit - moved to world loading
          DedicatedServer.LOGGER.info("Default game type: {}", dedicatedserverproperties.gamemode);
          InetAddress inetaddress = null;
  
-@@ -158,6 +221,12 @@
+@@ -159,6 +222,12 @@
              return false;
          }
  
@@ -127,7 +127,7 @@
          if (!this.getOnlineMode()) {
              DedicatedServer.LOGGER.warn("**** SERVER IS RUNNING IN OFFLINE/INSECURE MODE!");
              DedicatedServer.LOGGER.warn("The server will make no attempt to authenticate usernames. Beware.");
-@@ -172,14 +241,14 @@
+@@ -173,7 +242,7 @@
          if (!NameReferencingFileConverter.e(this)) {
              return false;
          } else {
@@ -136,7 +136,8 @@
              long i = SystemUtils.getMonotonicNanos();
  
              TileEntitySkull.a(this.getUserCache());
-             TileEntitySkull.a(this.getMinecraftSessionService());
+@@ -181,7 +250,7 @@
+             TileEntitySkull.a((Executor) this);
              UserCache.a(this.getOnlineMode());
              DedicatedServer.LOGGER.info("Preparing level \"{}\"", this.getWorld());
 -            this.loadWorld();
@@ -144,7 +145,7 @@
              long j = SystemUtils.getMonotonicNanos() - i;
              String s = String.format(Locale.ROOT, "%.3fs", (double) j / 1.0E9D);
  
-@@ -196,6 +265,7 @@
+@@ -198,6 +267,7 @@
              if (dedicatedserverproperties.enableRcon) {
                  DedicatedServer.LOGGER.info("Starting remote control listener");
                  this.rconThread = RemoteControlListener.a((IMinecraftServer) this);
@@ -152,7 +153,7 @@
              }
  
              if (this.getMaxTickTime() > 0L) {
-@@ -345,6 +415,7 @@
+@@ -347,6 +417,7 @@
              this.queryThreadGs4.b();
          }
  
@@ -160,7 +161,7 @@
      }
  
      @Override
-@@ -378,7 +449,15 @@
+@@ -380,7 +451,15 @@
          while (!this.consoleInput.isEmpty()) {
              ServerCommand servercommand = (ServerCommand) this.consoleInput.remove(0);
  
@@ -177,7 +178,7 @@
          }
  
      }
-@@ -583,14 +662,45 @@
+@@ -585,14 +664,45 @@
  
      @Override
      public String getPlugins() {
@@ -225,8 +226,8 @@
          });
          return this.rconConsoleSource.getMessages();
      }
-@@ -663,4 +773,15 @@
-     public IChatBaseComponent bb() {
+@@ -665,4 +775,15 @@
+     public IChatBaseComponent ba() {
          return this.resourcePackPrompt;
      }
 +

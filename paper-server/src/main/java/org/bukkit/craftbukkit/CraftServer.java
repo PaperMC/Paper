@@ -1051,7 +1051,7 @@ public final class CraftServer implements Server {
         console.levels.put(internal.getDimensionKey(), internal);
 
         getServer().loadSpawn(internal.getChunkProvider().chunkMap.progressListener, internal);
-        internal.entityManager.a(); // SPIGOT-6526: Load pending entities so they are available to the API
+        internal.entityManager.tick(); // SPIGOT-6526: Load pending entities so they are available to the API
 
         pluginManager.callEvent(new WorldLoadEvent(internal.getWorld()));
         return internal.getWorld();
@@ -1362,7 +1362,7 @@ public final class CraftServer implements Server {
 
         net.minecraft.world.level.World minecraftWorld = ((CraftWorld) world).getHandle();
         // creates a new map at world spawn with the scale of 3, with out tracking position and unlimited tracking
-        int newId = ItemWorldMap.a(minecraftWorld, minecraftWorld.getWorldData().a(), minecraftWorld.getWorldData().c(), 3, false, false, minecraftWorld.getDimensionKey());
+        int newId = ItemWorldMap.createNewSavedData(minecraftWorld, minecraftWorld.getWorldData().a(), minecraftWorld.getWorldData().c(), 3, false, false, minecraftWorld.getDimensionKey());
         return minecraftWorld.a(ItemWorldMap.a(newId)).mapView;
     }
 
@@ -1429,7 +1429,7 @@ public final class CraftServer implements Server {
         OfflinePlayer result = getPlayerExact(name);
         if (result == null) {
             // This is potentially blocking :(
-            GameProfile profile = console.getUserCache().getProfile(name);
+            GameProfile profile = console.getUserCache().getProfile(name).orElse(null);
             if (profile == null) {
                 // Make an OfflinePlayer using an offline mode UUID since the name has no profile
                 result = getOfflinePlayer(new GameProfile(UUID.nameUUIDFromBytes(("OfflinePlayer:" + name).getBytes(Charsets.UTF_8)), name));
@@ -1520,12 +1520,12 @@ public final class CraftServer implements Server {
 
     @Override
     public boolean isWhitelistEnforced() {
-        return console.aN();
+        return console.isEnforceWhitelist();
     }
 
     @Override
     public void setWhitelistEnforced(boolean value) {
-        console.h(value);
+        console.setEnforceWhitelist(value);
     }
 
     @Override
