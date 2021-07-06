@@ -71,8 +71,8 @@ repositories {
 }
 
 dependencies {
-    paramMappings("org.quiltmc:yarn:1.17+build.2:mergedv2")
-    remapper("org.quiltmc:tiny-remapper:0.4.1")
+    paramMappings("org.quiltmc:yarn:1.17.1-rc1+build.2:mergedv2") //TODO
+    remapper("org.quiltmc:tiny-remapper:0.4.3")
     decompiler("net.minecraftforge:forgeflower:1.5.498.12")
     paperclip("io.papermc:paperclip:2.0.1")
 }
