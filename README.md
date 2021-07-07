@@ -1,4 +1,4 @@
-Paper ![GitHub Workflow Status (branch)](https://img.shields.io/github/workflow/status/PaperMC/Paper/Build%20Paper/master) ![Read the Docs (version)](https://img.shields.io/readthedocs/paper/latest) ![version](https://img.shields.io/badge/version-1.17-9fc) ![Sonatype Nexus (Query Options)](https://img.shields.io/nexus/maven-snapshots/io.papermc.paper/paper-api?label=repo&server=https%3A%2F%2Fpapermc.io%2Frepo)
+Paper ![GitHub Workflow Status (branch)](https://img.shields.io/github/workflow/status/PaperMC/Paper/Build%20Paper/master) ![Read the Docs (version)](https://img.shields.io/readthedocs/paper/latest) ![version](https://img.shields.io/badge/version-1.17.1-9fc) ![Sonatype Nexus (Query Options)](https://img.shields.io/nexus/maven-snapshots/io.papermc.paper/paper-api?label=repo&server=https%3A%2F%2Fpapermc.io%2Frepo)
 ===========
 [![Discord](https://img.shields.io/badge/Discord-7289DA?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/papermc)
 
@@ -37,7 +37,7 @@ How To (Plugin Developers)
 <dependency>
     <groupId>io.papermc.paper</groupId>
     <artifactId>paper-api</artifactId>
-    <version>1.17-R0.1-SNAPSHOT</version>
+    <version>1.17.1-R0.1-SNAPSHOT</version>
     <scope>provided</scope>
 </dependency>
  ```
@@ -55,7 +55,7 @@ repositories {
  * Artifact:
 ```groovy
 dependencies {
-    compileOnly 'io.papermc.paper:paper-api:1.17-R0.1-SNAPSHOT'
+    compileOnly 'io.papermc.paper:paper-api:1.17.1-R0.1-SNAPSHOT'
 }
 ```
 
