@@ -41,7 +41,7 @@ rickyboy320 <rickw320@hotmail.com>
 DoNotSpamPls <7570108+DoNotSpamPls@users.noreply.github.com>
 JRoy <joshroy126@gmail.com>
 ysl3000 <yannicklamprecht@live.de>
-KennyTV <jahnke.nassim@gmail.com>
+kennytv <jahnke.nassim@gmail.com>
 Machine_Maker <machine@machinemaker.me>
 Ivan Pekov <ivan@mrivanplays.com>
 Camotoy <20743703+Camotoy@users.noreply.github.com>
