@@ -1189,16 +1189,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  Optional<LevelChunk> optional = ((Either) playerchunk.getTickingChunkFuture().getNow(ChunkHolder.UNLOADED_LEVEL_CHUNK)).left();
  
 @@ -0,0 +0,0 @@ public class ServerChunkCache extends ChunkSource {
-                     this.level.getProfiler().push("broadcast");
-                     LevelChunk chunk = (LevelChunk) optional.get();
- 
-+                    this.level.timings.broadcastChunkUpdates.startTiming(); // Paper - timings
-                     playerchunk.broadcastChanges(chunk);
-+                    this.level.timings.broadcastChunkUpdates.stopTiming(); // Paper - timings
-                     this.level.getProfiler().pop();
-                     ChunkPos chunkcoordintpair = chunk.getPos();
- 
-@@ -0,0 +0,0 @@ public class ServerChunkCache extends ChunkSource {
                              NaturalSpawner.spawnForChunk(this.level, chunk, spawnercreature_d, this.spawnFriendlies, this.spawnEnemies, flag2);
                          }
  
@@ -1218,6 +1208,21 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                } // Paper - timings
              }
  
+             this.level.getProfiler().popPush("broadcast");
+@@ -0,0 +0,0 @@ public class ServerChunkCache extends ChunkSource {
+                 Optional<LevelChunk> optional = ((Either) playerchunk.getTickingChunkFuture().getNow(ChunkHolder.UNLOADED_LEVEL_CHUNK)).left(); // CraftBukkit - decompile error
+ 
+                 Objects.requireNonNull(playerchunk);
+-                optional.ifPresent(playerchunk::broadcastChanges);
++
++                // Paper start - timings
++                optional.ifPresent(chunk -> {
++                    this.level.timings.broadcastChunkUpdates.startTiming(); // Paper - timings
++                    playerchunk.broadcastChanges(chunk);
++                    this.level.timings.broadcastChunkUpdates.stopTiming(); // Paper - timings
++                });
++                // Paper end
+             });
              this.level.getProfiler().pop();
              this.level.getProfiler().pop();
          }
@@ -1268,10 +1273,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public class ServerLevel extends net.minecraft.world.level.Level implements Worl
          this.updateSkyBrightness();
          this.tickTime();
-         gameprofilerfiller.popPush("chunkSource");
-+        this.timings.chunkProviderTick.startTiming(); // Paper - timings
-         this.getChunkSource().tick(shouldKeepTicking);
-+        this.timings.chunkProviderTick.stopTiming(); // Paper - timings
          gameprofilerfiller.popPush("tickPending");
 -        timings.doTickPending.startTiming(); // Spigot
 +        timings.scheduledBlocks.startTiming(); // Paper
@@ -1286,6 +1287,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        this.timings.raids.startTiming(); // Paper - timings
          this.raids.tick();
 +        this.timings.raids.stopTiming(); // Paper - timings
+         gameprofilerfiller.popPush("chunkSource");
++        this.timings.chunkProviderTick.startTiming(); // Paper - timings
+         this.getChunkSource().tick(shouldKeepTicking);
++        this.timings.chunkProviderTick.stopTiming(); // Paper - timings
          gameprofilerfiller.popPush("blockEvents");
          timings.doSounds.startTiming(); // Spigot
          this.runBlockEvents();

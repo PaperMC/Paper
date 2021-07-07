@@ -16,7 +16,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    public static int maxBookPageSize = 2560;
 +    public static double maxBookTotalSizeMultiplier = 0.98D;
 +    private static void maxBookSize() {
-+        maxBookPageSize = getInt("settings.book-size.page-max", maxBookPageSize);
++        maxBookPageSize = Math.min(8192, getInt("settings.book-size.page-max", maxBookPageSize));
 +        maxBookTotalSizeMultiplier = getDouble("settings.book-size.total-multiplier", maxBookTotalSizeMultiplier);
 +    }
 +
@@ -32,20 +32,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      @Override
      public void handleEditBook(ServerboundEditBookPacket packet) {
 +        // Paper start
-+        ItemStack testStack = packet.getBook();
-+        if (!this.cserver.isPrimaryThread() && !testStack.isEmpty() && testStack.getTag() != null) {
-+            ListTag pageList = testStack.getTag().getList("pages", 8);
-+            if (pageList.size() > 100) {
-+                ServerGamePacketListenerImpl.LOGGER.warn(this.player.getScoreboardName() + " tried to send a book with too many pages");
-+                server.scheduleOnMain(() -> this.disconnect("Book too large!"));
-+                return;
-+            }
++        if (!this.cserver.isPrimaryThread()) {
++            List<String> pageList = packet.getPages();
 +            long byteTotal = 0;
 +            int maxBookPageSize = com.destroystokyo.paper.PaperConfig.maxBookPageSize;
 +            double multiplier = Math.max(0.3D, Math.min(1D, com.destroystokyo.paper.PaperConfig.maxBookTotalSizeMultiplier));
 +            long byteAllowed = maxBookPageSize;
-+            for (int i = 0; i < pageList.size(); ++i) {
-+                String testString = pageList.getString(i);
++            for (String testString : pageList) {
 +                int byteLength = testString.getBytes(java.nio.charset.StandardCharsets.UTF_8).length;
 +                if (byteLength > 256 * 4) {
 +                    ServerGamePacketListenerImpl.LOGGER.warn(this.player.getScoreboardName() + " tried to send a book with with a page too large!");

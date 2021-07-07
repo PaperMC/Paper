@@ -351,25 +351,22 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
              for(int i = 0; i < chunk.getSectionsCount(); ++i) {
 @@ -0,0 +0,0 @@ public class ThreadedLevelLightEngine extends LevelLightEngine implements AutoCl
-                 });
-             }
  
--            this.chunkMap.releaseLightTicket(chunkPos);
-+            // this.chunkMap.releaseLightTicket(chunkPos); // Paper - move into post task below
          }, () -> {
              return "lightChunk " + chunkPos + " " + excludeBlocks;
 -        }));
 -        return CompletableFuture.supplyAsync(() -> {
 +            // Paper start  - merge the 2 together
 +        }), () -> {
-+            this.chunkMap.releaseLightTicket(chunkPos); // Paper - release light tickets as post task to ensure they stay loaded until fully done
++            this.chunkMap.releaseLightTicket(chunkPos); // Paper - moved from below, we want to call this even when returning early
 +            if (skippedPre[0]) return; // Paper - future's already complete
              chunk.setLightCorrect(true);
              super.retainData(chunkPos, false);
+-            this.chunkMap.releaseLightTicket(chunkPos);
 -            return chunk;
 -        }, (runnable) -> {
 -            this.addTask(chunkPos.x, chunkPos.z, ThreadedLevelLightEngine.TaskType.POST_UPDATE, runnable);
-+            // Paper start
++            //this.chunkMap.releaseLightTicket(chunkPos); // Paper - moved up
 +            future.complete(chunk);
          });
 +        return future;
