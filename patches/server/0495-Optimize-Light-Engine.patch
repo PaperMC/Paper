@@ -139,7 +139,7 @@ index ac9cb37dd91ac449f8943b1279f247846a35025a..ce1b73363f8a1a012aa7b3cbcc54164d
              }
          } finally {
 diff --git a/src/main/java/net/minecraft/server/level/ThreadedLevelLightEngine.java b/src/main/java/net/minecraft/server/level/ThreadedLevelLightEngine.java
-index 2c4aa4b66d83b6e7a104479860b7982629c63c3b..831357e5b6d99e387d9e6cfdb14c00269055b40d 100644
+index 2c4aa4b66d83b6e7a104479860b7982629c63c3b..84f86e51fca587887c4b2277205a188a92696110 100644
 --- a/src/main/java/net/minecraft/server/level/ThreadedLevelLightEngine.java
 +++ b/src/main/java/net/minecraft/server/level/ThreadedLevelLightEngine.java
 @@ -1,6 +1,7 @@
@@ -350,7 +350,7 @@ index 2c4aa4b66d83b6e7a104479860b7982629c63c3b..831357e5b6d99e387d9e6cfdb14c0026
              LevelChunkSection[] levelChunkSections = chunk.getSections();
  
              for(int i = 0; i < chunk.getSectionsCount(); ++i) {
-@@ -163,51 +306,46 @@ public class ThreadedLevelLightEngine extends LevelLightEngine implements AutoCl
+@@ -163,51 +306,45 @@ public class ThreadedLevelLightEngine extends LevelLightEngine implements AutoCl
  
          }, () -> {
              return "lightChunk " + chunkPos + " " + excludeBlocks;
@@ -358,15 +358,15 @@ index 2c4aa4b66d83b6e7a104479860b7982629c63c3b..831357e5b6d99e387d9e6cfdb14c0026
 -        return CompletableFuture.supplyAsync(() -> {
 +            // Paper start  - merge the 2 together
 +        }), () -> {
-+            this.chunkMap.releaseLightTicket(chunkPos); // Paper - release light tickets as post task to ensure they stay loaded until fully done
++            this.chunkMap.releaseLightTicket(chunkPos); // Paper - moved from below, we want to call this even when returning early
 +            if (skippedPre[0]) return; // Paper - future's already complete
              chunk.setLightCorrect(true);
              super.retainData(chunkPos, false);
-             this.chunkMap.releaseLightTicket(chunkPos);
+-            this.chunkMap.releaseLightTicket(chunkPos);
 -            return chunk;
 -        }, (runnable) -> {
 -            this.addTask(chunkPos.x, chunkPos.z, ThreadedLevelLightEngine.TaskType.POST_UPDATE, runnable);
-+            // Paper start
++            //this.chunkMap.releaseLightTicket(chunkPos); // Paper - moved up
 +            future.complete(chunk);
          });
 +        return future;
