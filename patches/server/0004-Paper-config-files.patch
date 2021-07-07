@@ -600,10 +600,10 @@ index 1707449cbbfa5eab585657cdde811b34a92e1d17..c8385460701395cb5c65fba41335469f
          Main.LOGGER.info("Forcing world upgrade! {}", session.getLevelId()); // CraftBukkit
          WorldUpgrader worldupgrader = new WorldUpgrader(session, dataFixer, worlds, eraseCache);
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-index 7bad75bd86fcb484e253fca8077d017d3161158b..fe83f13d71f84591f5506e1c6b9dfbf9fba680bd 100644
+index cd65a5bb6da734a39b0bb6e9a0571455d19ceac4..fac993d58bd6e3bb19fd69881092a863c8952c65 100644
 --- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-@@ -193,6 +193,15 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+@@ -194,6 +194,15 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
          org.spigotmc.SpigotConfig.init((java.io.File) options.valueOf("spigot-settings"));
          org.spigotmc.SpigotConfig.registerCommands();
          // Spigot end
@@ -620,29 +620,21 @@ index 7bad75bd86fcb484e253fca8077d017d3161158b..fe83f13d71f84591f5506e1c6b9dfbf9
          this.setPvpAllowed(dedicatedserverproperties.pvp);
          this.setFlightAllowed(dedicatedserverproperties.allowFlight);
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-index 16ca2a041139dd06922459df33e6eb058dbda3d2..cfe9930490489d506c91d174b5aad199314ffd17 100644
+index 1ff471fb8a4f69f02debe9c40b13cc1e8b8045d7..9591f50922343283597bad6d9ac17c175d8ae230 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-@@ -23,6 +23,7 @@ import net.minecraft.core.BlockPos;
- import net.minecraft.core.SectionPos;
- import net.minecraft.network.protocol.Packet;
- import net.minecraft.server.level.progress.ChunkProgressListener;
-+import net.minecraft.util.Mth;
- import net.minecraft.util.VisibleForDebug;
- import net.minecraft.util.profiling.ProfilerFiller;
- import net.minecraft.util.thread.BlockableEventLoop;
-@@ -334,6 +335,12 @@ public class ServerChunkCache extends ChunkSource {
+@@ -334,6 +334,12 @@ public class ServerChunkCache extends ChunkSource {
          }
      }
  
 +    // Paper start - helper
 +    public boolean isPositionTicking(Entity entity) {
-+        return this.isPositionTicking(ChunkPos.asLong(Mth.floor(entity.getX()) >> 4, Mth.floor(entity.getZ()) >> 4));
++        return this.isPositionTicking(ChunkPos.asLong(net.minecraft.util.Mth.floor(entity.getX()) >> 4, net.minecraft.util.Mth.floor(entity.getZ()) >> 4));
 +    }
 +    // Paper end
 +
-     public boolean isPositionTicking(long i) {
-         return this.checkChunkFuture(i, (Function<ChunkHolder, CompletableFuture<Either<LevelChunk, ChunkHolder.ChunkLoadingFailure>>>) ChunkHolder::getTickingChunkFuture); // CraftBukkit - decompile error
+     public boolean isPositionTicking(long pos) {
+         return this.checkChunkFuture(pos, (Function<ChunkHolder, CompletableFuture<Either<LevelChunk, ChunkHolder.ChunkLoadingFailure>>>) ChunkHolder::getTickingChunkFuture); // CraftBukkit - decompile error
      }
 diff --git a/src/main/java/net/minecraft/world/entity/EntityType.java b/src/main/java/net/minecraft/world/entity/EntityType.java
 index 067216078c7b50390957d1fcfbfbaaeb81cfba21..7f3d83d3d071f6b441ad119b1c93be035e911e70 100644
@@ -668,10 +660,10 @@ index 067216078c7b50390957d1fcfbfbaaeb81cfba21..7f3d83d3d071f6b441ad119b1c93be03
 +    // Paper end
  }
 diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
-index b2083d26e3b239d0f26da77955db6a34b622a1bb..90854842fda0f91ac68c70efbcf8ad9e3297ceb4 100644
+index 7f81dd05ec8945a851b6501854dc894cad240a66..d6b2e7d643f907ddd81d394d9b613e9ce93a786e 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
 +++ b/src/main/java/net/minecraft/world/level/Level.java
-@@ -146,6 +146,8 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -147,6 +147,8 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
      public boolean populating;
      public final org.spigotmc.SpigotWorldConfig spigotConfig; // Spigot
  
@@ -680,7 +672,7 @@ index b2083d26e3b239d0f26da77955db6a34b622a1bb..90854842fda0f91ac68c70efbcf8ad9e
      public final SpigotTimings.WorldTimingsHandler timings; // Spigot
      public static BlockPos lastPhysicsProblem; // Spigot
      private org.spigotmc.TickLimiter entityLimiter;
-@@ -166,6 +168,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -167,6 +169,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
  
      protected Level(WritableLevelData worlddatamutable, ResourceKey<Level> resourcekey, final DimensionType dimensionmanager, Supplier<ProfilerFiller> supplier, boolean flag, boolean flag1, long i, org.bukkit.generator.ChunkGenerator gen, org.bukkit.World.Environment env) {
          this.spigotConfig = new org.spigotmc.SpigotWorldConfig(((net.minecraft.world.level.storage.PrimaryLevelData) worlddatamutable).getLevelName()); // Spigot
@@ -689,7 +681,7 @@ index b2083d26e3b239d0f26da77955db6a34b622a1bb..90854842fda0f91ac68c70efbcf8ad9e
          this.world = new CraftWorld((ServerLevel) this, gen, env);
          this.ticksPerAnimalSpawns = this.getCraftServer().getTicksPerAnimalSpawns(); // CraftBukkit
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index cb68f677221c0accb22c2c204f24bb4127a2b542..2bd19cf2ed4144b4f4403afc98fdb8e95f7c95cc 100644
+index 1364a4a95e265c042880c99ea6b59dd2725b18ac..57a44f1d466caeccebe0e2498e3833cb953ffd5a 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -805,6 +805,7 @@ public final class CraftServer implements Server {

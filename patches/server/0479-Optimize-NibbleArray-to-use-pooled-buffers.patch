@@ -84,10 +84,10 @@ index 24d5a44cb81ec5f10bfcce002a193f4566de88fc..d8be2ad889f46491e50404916fb4ae0d
          }
  
 diff --git a/src/main/java/net/minecraft/world/level/chunk/DataLayer.java b/src/main/java/net/minecraft/world/level/chunk/DataLayer.java
-index 88a2a5c3d588c15989f7cf6df9d2afc3d2ed8ae9..25570730f376665ca6477263d3b3f94d725ecd21 100644
+index 689a3bc80e753ecb3194ae81c0c48d2eef61f700..c561d69b4b903cd3625468b239cb1ace3e317700 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/DataLayer.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/DataLayer.java
-@@ -12,11 +12,65 @@ public class DataLayer {
+@@ -13,11 +13,65 @@ public class DataLayer {
      private static final int NIBBLE_SIZE = 4;
      @Nullable
      protected byte[] data;
@@ -151,19 +151,19 @@ index 88a2a5c3d588c15989f7cf6df9d2afc3d2ed8ae9..25570730f376665ca6477263d3b3f94d
 +        registerCleaner();
 +        // Paper end
          if (bytes.length != 2048) {
-             throw (IllegalArgumentException) Util.pauseInIde((Throwable) (new IllegalArgumentException("ChunkNibbleArrays should be 2048 bytes not: " + bytes.length)));
+             throw (IllegalArgumentException) Util.pauseInIde((Throwable) (new IllegalArgumentException("DataLayer should be 2048 bytes not: " + bytes.length)));
          }
-@@ -50,7 +104,8 @@ public class DataLayer {
+@@ -52,7 +106,8 @@ public class DataLayer {
  
-     public void set(int index, int value) { // PAIL: private -> public
+     private void set(int index, int value) {
          if (this.data == null) {
 -            this.data = new byte[2048];
 +            this.data = BYTE_2048.acquire(); // Paper
 +            registerCleaner();// Paper
          }
  
-         int k = this.getPosition(index);
-@@ -72,13 +127,33 @@ public class DataLayer {
+         int k = DataLayer.getByteIndex(index);
+@@ -74,13 +129,33 @@ public class DataLayer {
      public byte[] getData() {
          if (this.data == null) {
              this.data = new byte[2048];
@@ -199,7 +199,7 @@ index 88a2a5c3d588c15989f7cf6df9d2afc3d2ed8ae9..25570730f376665ca6477263d3b3f94d
  
      public String toString() {
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
-index b875bf80181255117cdd2fdfc1d861220ac13a3a..e9043403c0bd3edc11f8a4f55f3a512a630ec08b 100644
+index e850b8db05f4d66aec8eb74a5a48357b90ca77a5..f4cecd000ba4c4595c8db45524ec9d899193abe6 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
 @@ -490,11 +490,11 @@ public class ChunkSerializer {
@@ -231,28 +231,6 @@ index f357a3473682c2d37a20fb862522c67b9979402a..52682471adc13dffc0383fc4abacbd33
          this.clearCache();
      }
  
-diff --git a/src/main/java/net/minecraft/world/level/lighting/FlatDataLayer.java b/src/main/java/net/minecraft/world/level/lighting/FlatDataLayer.java
-index 0a65818e68605a3fa944c2de808ebc069f3f8007..cdc7d890841818f615aa09b6068cf98c3936e9a7 100644
---- a/src/main/java/net/minecraft/world/level/lighting/FlatDataLayer.java
-+++ b/src/main/java/net/minecraft/world/level/lighting/FlatDataLayer.java
-@@ -11,7 +11,7 @@ public class FlatDataLayer extends DataLayer {
- 
-     public FlatDataLayer(DataLayer chunkNibbleArray, int offset) {
-         super(128);
--        System.arraycopy(chunkNibbleArray.getData(), offset * 128, this.data, 0, 128);
-+        System.arraycopy(chunkNibbleArray.getIfSet(), offset * 128, this.data, 0, 128); // Paper
-     }
- 
-     @Override
-@@ -21,7 +21,7 @@ public class FlatDataLayer extends DataLayer {
- 
-     @Override
-     public byte[] getData() {
--        byte[] bs = new byte[2048];
-+        byte[] bs = BYTE_2048.acquire(); // Paper
- 
-         for(int i = 0; i < 16; ++i) {
-             System.arraycopy(this.data, 0, bs, i * 128, 128);
 diff --git a/src/main/java/net/minecraft/world/level/lighting/LayerLightSectionStorage.java b/src/main/java/net/minecraft/world/level/lighting/LayerLightSectionStorage.java
 index cc9eb8273d5157fb649d84a3ec589b0b923b5bc9..fd1cdb6e2023713f947b9497c605cf6f4bae8994 100644
 --- a/src/main/java/net/minecraft/world/level/lighting/LayerLightSectionStorage.java
@@ -282,22 +260,36 @@ index cc9eb8273d5157fb649d84a3ec589b0b923b5bc9..fd1cdb6e2023713f947b9497c605cf6f
  
      }
 diff --git a/src/main/java/net/minecraft/world/level/lighting/SkyLightSectionStorage.java b/src/main/java/net/minecraft/world/level/lighting/SkyLightSectionStorage.java
-index f6df52403a1068a0779e4ff8c2ce5dc06176e061..7dc194b4f04b2d59dcb100b0a3b2ca0132f832cf 100644
+index 24030bcb3303d0419c7859ded7613608c5f82308..ec3837a64e8ac6892028611d57a111a7fd5c58f7 100644
 --- a/src/main/java/net/minecraft/world/level/lighting/SkyLightSectionStorage.java
 +++ b/src/main/java/net/minecraft/world/level/lighting/SkyLightSectionStorage.java
-@@ -161,9 +161,9 @@ public class SkyLightSectionStorage extends LayerLightSectionStorage<SkyLightSec
-                     l = SectionPos.offset(l, Direction.UP);
-                 }
+@@ -163,14 +163,14 @@ public class SkyLightSectionStorage extends LayerLightSectionStorage<SkyLightSec
  
--                return new DataLayer((new FlatDataLayer(dataLayer2, 0)).getData());
-+                return new DataLayer().markPoolSafe(new FlatDataLayer(dataLayer2, 0).getData()); // Paper - mark pool use as safe (no auto cleaner)
+                 return repeatFirstLayer(dataLayer2);
              } else {
 -                return new DataLayer();
 +                return new DataLayer().markPoolSafe(); // Paper - mark pool use as safe (no auto cleaner)
              }
          }
      }
-@@ -182,7 +182,7 @@ public class SkyLightSectionStorage extends LayerLightSectionStorage<SkyLightSec
+ 
+     private static DataLayer repeatFirstLayer(DataLayer source) {
+         if (source.isEmpty()) {
+-            return new DataLayer();
++            return new DataLayer().markPoolSafe(); // Paper - mark pool use as safe (no auto cleaner)
+         } else {
+             byte[] bs = source.getData();
+             byte[] cs = new byte[2048];
+@@ -179,7 +179,7 @@ public class SkyLightSectionStorage extends LayerLightSectionStorage<SkyLightSec
+                 System.arraycopy(bs, 0, cs, i * 128, 128);
+             }
+ 
+-            return new DataLayer(cs);
++            return new DataLayer(cs).markPoolSafe(cs); // Paper - mark pool use as safe (no auto cleaner)
+         }
+     }
+ 
+@@ -197,7 +197,7 @@ public class SkyLightSectionStorage extends LayerLightSectionStorage<SkyLightSec
                                  this.updatingSectionData.copyDataLayer(l);
                              }
  
@@ -307,7 +299,7 @@ index f6df52403a1068a0779e4ff8c2ce5dc06176e061..7dc194b4f04b2d59dcb100b0a3b2ca01
                              int k = SectionPos.sectionToBlockCoord(SectionPos.y(l));
                              int m = SectionPos.sectionToBlockCoord(SectionPos.z(l));
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftChunk.java b/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
-index 4dd7cea1eec5ec55a3700ce9786da8a513e72a28..91145e3dff181ab3a8da3fc30378e672fa58e713 100644
+index 1c49512c4b9c1b187e555312fe937f2a37c9e112..08a5fabb1d13db26014bb5751aa271c0a0bdcb7a 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
 @@ -286,14 +286,14 @@ public class CraftChunk implements Chunk {

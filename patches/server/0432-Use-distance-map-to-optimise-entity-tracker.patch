@@ -6,7 +6,7 @@ Subject: [PATCH] Use distance map to optimise entity tracker
 Use the distance map to find candidate players for tracking.
 
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index c643919e17081c85717b0b00c227b914d7abcc0a..9ce330be998f3392288d8eb0386a48237ff3a880 100644
+index e7c78106aa34d948a77cf72d5716e17d10beae72..073aa637fcaf14a5ae8b203604d75b74829cbc4e 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
 @@ -63,6 +63,7 @@ import net.minecraft.network.protocol.game.ClientboundSetEntityLinkPacket;
@@ -79,8 +79,8 @@ index c643919e17081c85717b0b00c227b914d7abcc0a..9ce330be998f3392288d8eb0386a4823
          // Paper start - no-tick view distance
          int effectiveTickViewDistance = this.getEffectiveViewDistance();
          int effectiveNoTickViewDistance = Math.max(this.getEffectiveNoTickViewDistance(), effectiveTickViewDistance);
-@@ -310,6 +345,45 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
-         this.poiManager = new PoiManager(new File(this.storageFolder, "poi"), dataFixer, dsync, world);
+@@ -312,6 +347,45 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+         this.poiManager = new PoiManager(new File(file, "poi"), dataFixer, dsync, world);
          this.setViewDistance(viewDistance);
          this.playerMobDistanceMap = this.level.paperConfig.perPlayerMobSpawns ? new com.destroystokyo.paper.util.PlayerMobDistanceMap() : null; // Paper
 +        // Paper start - use distance map to optimise entity tracker
@@ -125,7 +125,7 @@ index c643919e17081c85717b0b00c227b914d7abcc0a..9ce330be998f3392288d8eb0386a4823
          // Paper start - no-tick view distance
          this.setNoTickViewDistance(this.level.paperConfig.noTickViewDistance);
          this.playerViewDistanceTickMap = new com.destroystokyo.paper.util.misc.PlayerAreaMap(this.pooledLinkedPlayerHashSets,
-@@ -1464,17 +1538,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1465,17 +1539,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
      }
  
      public void move(ServerPlayer player) {
@@ -144,7 +144,7 @@ index c643919e17081c85717b0b00c227b914d7abcc0a..9ce330be998f3392288d8eb0386a4823
  
          int i = SectionPos.blockToSectionCoord(player.getBlockX());
          int j = SectionPos.blockToSectionCoord(player.getBlockZ());
-@@ -1629,7 +1693,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1630,7 +1694,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
  
                      entity.tracker = playerchunkmap_entitytracker; // Paper - Fast access to tracker
                      this.entityMap.put(entity.getId(), playerchunkmap_entitytracker);
@@ -153,7 +153,7 @@ index c643919e17081c85717b0b00c227b914d7abcc0a..9ce330be998f3392288d8eb0386a4823
                      if (entity instanceof ServerPlayer) {
                          ServerPlayer entityplayer = (ServerPlayer) entity;
  
-@@ -1673,7 +1737,37 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1674,7 +1738,37 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          entity.tracker = null; // Paper - We're no longer tracked
      }
  
@@ -191,7 +191,7 @@ index c643919e17081c85717b0b00c227b914d7abcc0a..9ce330be998f3392288d8eb0386a4823
          List<ServerPlayer> list = Lists.newArrayList();
          List<ServerPlayer> list1 = this.level.players();
  
-@@ -1782,23 +1876,31 @@ Sections go from 0..16. Now whenever a section is not empty, it can potentially
+@@ -1783,23 +1877,31 @@ Sections go from 0..16. Now whenever a section is not empty, it can potentially
          DebugPackets.sendPoiPacketsForChunk(this.level, chunk.getPos());
          List<Entity> list = Lists.newArrayList();
          List<Entity> list1 = Lists.newArrayList();
@@ -235,7 +235,7 @@ index c643919e17081c85717b0b00c227b914d7abcc0a..9ce330be998f3392288d8eb0386a4823
  
          Iterator iterator;
          Entity entity1;
-@@ -1877,6 +1979,42 @@ Sections go from 0..16. Now whenever a section is not empty, it can potentially
+@@ -1882,6 +1984,42 @@ Sections go from 0..16. Now whenever a section is not empty, it can potentially
              this.lastSectionPos = SectionPos.of(entity);
          }
  
@@ -278,7 +278,7 @@ index c643919e17081c85717b0b00c227b914d7abcc0a..9ce330be998f3392288d8eb0386a4823
          public boolean equals(Object object) {
              return object instanceof ChunkMap.TrackedEntity ? ((ChunkMap.TrackedEntity) object).entity.getId() == this.entity.getId() : false;
          }
-@@ -1962,7 +2100,7 @@ Sections go from 0..16. Now whenever a section is not empty, it can potentially
+@@ -1967,7 +2105,7 @@ Sections go from 0..16. Now whenever a section is not empty, it can potentially
                  int j = entity.getType().clientTrackingRange() * 16;
                  j = org.spigotmc.TrackingRange.getEntityTrackingRange(entity, j); // Paper
  
@@ -288,7 +288,7 @@ index c643919e17081c85717b0b00c227b914d7abcc0a..9ce330be998f3392288d8eb0386a4823
                  }
              }
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index 677124d720105e9bda9d05a1fcc46ce10f44539d..fe4b09f82d36e5d7e109c86e8f4c003e92ba4e9d 100644
+index 5e261f5d591f7f34073d65aad20feced0e94586f..581f1ba9a24f5c5267dea29c892c6dfe03468f0c 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
 @@ -50,6 +50,7 @@ import net.minecraft.network.syncher.EntityDataSerializers;

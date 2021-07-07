@@ -37,7 +37,7 @@ index 4114c0fa58e41383b5469cbc6abb44416a7af247..e649e6a8b354be45eed808ee02082ca7
          if (this.queueLevel != priority) {
              this.onLevelChange.onLevelChange(this.pos, () -> this.queueLevel, priority, p -> this.queueLevel = p); // use preferred priority
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index 6ed95a0cff3e9c874f14bc90283f750e15765c67..5d57461d33f442e2ff0363348555357ba90f2f58 100644
+index 017ed8e1db45d49de67b17b5979721cfd57fb9c7..42fd259f4492e539112b5bcb310aaaadab58a443 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
 @@ -97,6 +97,7 @@ import net.minecraft.world.level.levelgen.structure.templatesystem.StructureMana
@@ -56,7 +56,7 @@ index 6ed95a0cff3e9c874f14bc90283f750e15765c67..5d57461d33f442e2ff0363348555357b
      public ChunkMap(ServerLevel world, LevelStorageSource.LevelStorageAccess session, DataFixer dataFixer, StructureManager structureManager, Executor executor, BlockableEventLoop<Runnable> mainThreadExecutor, LightChunkGetter chunkProvider, ChunkGenerator chunkGenerator, ChunkProgressListener worldGenerationProgressListener, ChunkStatusUpdateListener chunkStatusChangeListener, Supplier<DimensionDataStorage> persistentStateManagerFactory, int viewDistance, boolean dsync) {
          super(new File(session.getDimensionPath(world.dimension()), "region"), dataFixer, dsync);
          //this.visibleChunks = this.updatingChunks.clone(); // Paper - no more cloning
-@@ -370,7 +372,15 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -372,7 +374,15 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
  
          this.progressListener = worldGenerationProgressListener;
          this.chunkStatusListener = chunkStatusChangeListener;
@@ -73,7 +73,7 @@ index 6ed95a0cff3e9c874f14bc90283f750e15765c67..5d57461d33f442e2ff0363348555357b
  
          this.queueSorter = new ChunkTaskPriorityQueueSorter(ImmutableList.of(threadedmailbox, mailbox, threadedmailbox1), executor, Integer.MAX_VALUE);
          this.worldgenMailbox = this.queueSorter.getProcessor(threadedmailbox, false);
-@@ -879,6 +889,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -881,6 +891,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
      @Override
      public void close() throws IOException {
          try {
@@ -126,10 +126,10 @@ index d3d6651eb51c852ed1d1eeb5689569d5308b246d..c2d36600a0081c78425868154bdcf7f4
                          m = Long.MAX_VALUE;
                      }
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-index 0b22fd8ac75146bc7b647cfbefc73ce890ccb033..f27160640c7c63075d41e52a74227c1168cce6b2 100644
+index ac9cb37dd91ac449f8943b1279f247846a35025a..ce1b73363f8a1a012aa7b3cbcc54164d87abc195 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-@@ -1061,7 +1061,7 @@ public class ServerChunkCache extends ChunkSource {
+@@ -1068,7 +1068,7 @@ public class ServerChunkCache extends ChunkSource {
              if (ServerChunkCache.this.runDistanceManagerUpdates()) {
                  return true;
              } else {
@@ -139,7 +139,7 @@ index 0b22fd8ac75146bc7b647cfbefc73ce890ccb033..f27160640c7c63075d41e52a74227c11
              }
          } finally {
 diff --git a/src/main/java/net/minecraft/server/level/ThreadedLevelLightEngine.java b/src/main/java/net/minecraft/server/level/ThreadedLevelLightEngine.java
-index de228b677810ce49c4e953ca0b4e590413b20e45..f05e9dbb5f9b9fa23cf51f72f744c445c54234cd 100644
+index 2c4aa4b66d83b6e7a104479860b7982629c63c3b..84f86e51fca587887c4b2277205a188a92696110 100644
 --- a/src/main/java/net/minecraft/server/level/ThreadedLevelLightEngine.java
 +++ b/src/main/java/net/minecraft/server/level/ThreadedLevelLightEngine.java
 @@ -1,6 +1,7 @@
@@ -350,26 +350,23 @@ index de228b677810ce49c4e953ca0b4e590413b20e45..f05e9dbb5f9b9fa23cf51f72f744c445
              LevelChunkSection[] levelChunkSections = chunk.getSections();
  
              for(int i = 0; i < chunk.getSectionsCount(); ++i) {
-@@ -161,53 +304,48 @@ public class ThreadedLevelLightEngine extends LevelLightEngine implements AutoCl
-                 });
-             }
+@@ -163,51 +306,45 @@ public class ThreadedLevelLightEngine extends LevelLightEngine implements AutoCl
  
--            this.chunkMap.releaseLightTicket(chunkPos);
-+            // this.chunkMap.releaseLightTicket(chunkPos); // Paper - move into post task below
          }, () -> {
              return "lightChunk " + chunkPos + " " + excludeBlocks;
 -        }));
 -        return CompletableFuture.supplyAsync(() -> {
 +            // Paper start  - merge the 2 together
 +        }), () -> {
-+            this.chunkMap.releaseLightTicket(chunkPos); // Paper - release light tickets as post task to ensure they stay loaded until fully done
++            this.chunkMap.releaseLightTicket(chunkPos); // Paper - moved from below, we want to call this even when returning early
 +            if (skippedPre[0]) return; // Paper - future's already complete
              chunk.setLightCorrect(true);
              super.retainData(chunkPos, false);
+-            this.chunkMap.releaseLightTicket(chunkPos);
 -            return chunk;
 -        }, (runnable) -> {
 -            this.addTask(chunkPos.x, chunkPos.z, ThreadedLevelLightEngine.TaskType.POST_UPDATE, runnable);
-+            // Paper start
++            //this.chunkMap.releaseLightTicket(chunkPos); // Paper - moved up
 +            future.complete(chunk);
          });
 +        return future;
@@ -429,10 +426,10 @@ index de228b677810ce49c4e953ca0b4e590413b20e45..f05e9dbb5f9b9fa23cf51f72f744c445
  
      public void setTaskPerBatch(int taskBatchSize) {
 diff --git a/src/main/java/net/minecraft/world/level/chunk/DataLayer.java b/src/main/java/net/minecraft/world/level/chunk/DataLayer.java
-index 25570730f376665ca6477263d3b3f94d725ecd21..0570adf7e3caf97be77c5400fb76c3ec31a0d679 100644
+index c561d69b4b903cd3625468b239cb1ace3e317700..c4acc7e0035d37167cf5a56f8d90ba17f85cbbe3 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/DataLayer.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/DataLayer.java
-@@ -13,6 +13,13 @@ public class DataLayer {
+@@ -14,6 +14,13 @@ public class DataLayer {
      @Nullable
      protected byte[] data;
      // Paper start
@@ -1217,7 +1214,7 @@ index d122475c1a9d340046c478087d3ff5bf1ff8932c..a3189dd7b537deb4a30a32c8e9891b07
                      if (direction == Direction.DOWN) {
                          continue;
 diff --git a/src/main/java/net/minecraft/world/level/lighting/SkyLightSectionStorage.java b/src/main/java/net/minecraft/world/level/lighting/SkyLightSectionStorage.java
-index 7dc194b4f04b2d59dcb100b0a3b2ca0132f832cf..c30fb3ad6716599c50acb918b40909e5dc052841 100644
+index ec3837a64e8ac6892028611d57a111a7fd5c58f7..006a4b02df0f7d9229b1f3791d4f3b9243919c18 100644
 --- a/src/main/java/net/minecraft/world/level/lighting/SkyLightSectionStorage.java
 +++ b/src/main/java/net/minecraft/world/level/lighting/SkyLightSectionStorage.java
 @@ -30,7 +30,12 @@ public class SkyLightSectionStorage extends LayerLightSectionStorage<SkyLightSec
@@ -1252,7 +1249,7 @@ index 7dc194b4f04b2d59dcb100b0a3b2ca0132f832cf..c30fb3ad6716599c50acb918b40909e5
                      l = SectionPos.offset(l, Direction.UP);
                  }
  
-@@ -174,6 +179,9 @@ public class SkyLightSectionStorage extends LayerLightSectionStorage<SkyLightSec
+@@ -189,6 +194,9 @@ public class SkyLightSectionStorage extends LayerLightSectionStorage<SkyLightSec
          if (doSkylight) {
              if (!this.sectionsToAddSourcesTo.isEmpty()) {
                  for(long l : this.sectionsToAddSourcesTo) {
@@ -1262,7 +1259,7 @@ index 7dc194b4f04b2d59dcb100b0a3b2ca0132f832cf..c30fb3ad6716599c50acb918b40909e5
                      int i = this.getLevel(l);
                      if (i != 2 && !this.sectionsToRemoveSourcesFrom.contains(l) && this.sectionsWithSources.add(l)) {
                          if (i == 1) {
-@@ -182,13 +190,15 @@ public class SkyLightSectionStorage extends LayerLightSectionStorage<SkyLightSec
+@@ -197,13 +205,15 @@ public class SkyLightSectionStorage extends LayerLightSectionStorage<SkyLightSec
                                  this.updatingSectionData.copyDataLayer(l);
                              }
  
@@ -1283,7 +1280,7 @@ index 7dc194b4f04b2d59dcb100b0a3b2ca0132f832cf..c30fb3ad6716599c50acb918b40909e5
                                  if ((this.sectionsToRemoveSourcesFrom.contains(n) || !this.sectionsWithSources.contains(n) && !this.sectionsToAddSourcesTo.contains(n)) && this.storingLightForSection(n)) {
                                      for(int o = 0; o < 16; ++o) {
                                          for(int p = 0; p < 16; ++p) {
-@@ -220,15 +230,15 @@ public class SkyLightSectionStorage extends LayerLightSectionStorage<SkyLightSec
+@@ -235,15 +245,15 @@ public class SkyLightSectionStorage extends LayerLightSectionStorage<SkyLightSec
  
                              for(int y = 0; y < 16; ++y) {
                                  for(int z = 0; z < 16; ++z) {
@@ -1302,7 +1299,7 @@ index 7dc194b4f04b2d59dcb100b0a3b2ca0132f832cf..c30fb3ad6716599c50acb918b40909e5
                                      lightProvider.checkEdge(Long.MAX_VALUE, ae, 0, true);
                                  }
                              }
-@@ -240,10 +250,13 @@ public class SkyLightSectionStorage extends LayerLightSectionStorage<SkyLightSec
+@@ -255,10 +265,13 @@ public class SkyLightSectionStorage extends LayerLightSectionStorage<SkyLightSec
              this.sectionsToAddSourcesTo.clear();
              if (!this.sectionsToRemoveSourcesFrom.isEmpty()) {
                  for(long af : this.sectionsToRemoveSourcesFrom) {

@@ -6,7 +6,7 @@ Subject: [PATCH] Book Size Limits
 Puts some limits on the size of books.
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-index 11d628869a9a6eda8bf21a4f213ff23ad753b18e..8bf4d2b8c38c02d6a5b2fea37113689a252f1571 100644
+index 11d628869a9a6eda8bf21a4f213ff23ad753b18e..4c97fa63d912548324e93f366c86666d52738bfb 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
 @@ -347,6 +347,13 @@ public class PaperConfig {
@@ -16,7 +16,7 @@ index 11d628869a9a6eda8bf21a4f213ff23ad753b18e..8bf4d2b8c38c02d6a5b2fea37113689a
 +    public static int maxBookPageSize = 2560;
 +    public static double maxBookTotalSizeMultiplier = 0.98D;
 +    private static void maxBookSize() {
-+        maxBookPageSize = getInt("settings.book-size.page-max", maxBookPageSize);
++        maxBookPageSize = Math.min(8192, getInt("settings.book-size.page-max", maxBookPageSize));
 +        maxBookTotalSizeMultiplier = getDouble("settings.book-size.total-multiplier", maxBookTotalSizeMultiplier);
 +    }
 +
@@ -24,28 +24,21 @@ index 11d628869a9a6eda8bf21a4f213ff23ad753b18e..8bf4d2b8c38c02d6a5b2fea37113689a
      private static void asyncChunks() {
          ConfigurationSection section;
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index 59154fbdba07e812ca99fbd2d3b70d24ae9dbfd5..f0eda343820087497d20ed75d925ea6044f70816 100644
+index 12f722ad55abff59d133f91da804f7cfa09dbdb6..9e85045638d3496c80a215d2b589033ed5169981 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-@@ -1002,6 +1002,52 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+@@ -1001,6 +1001,45 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
  
      @Override
      public void handleEditBook(ServerboundEditBookPacket packet) {
 +        // Paper start
-+        ItemStack testStack = packet.getBook();
-+        if (!this.cserver.isPrimaryThread() && !testStack.isEmpty() && testStack.getTag() != null) {
-+            ListTag pageList = testStack.getTag().getList("pages", 8);
-+            if (pageList.size() > 100) {
-+                ServerGamePacketListenerImpl.LOGGER.warn(this.player.getScoreboardName() + " tried to send a book with too many pages");
-+                server.scheduleOnMain(() -> this.disconnect("Book too large!"));
-+                return;
-+            }
++        if (!this.cserver.isPrimaryThread()) {
++            List<String> pageList = packet.getPages();
 +            long byteTotal = 0;
 +            int maxBookPageSize = com.destroystokyo.paper.PaperConfig.maxBookPageSize;
 +            double multiplier = Math.max(0.3D, Math.min(1D, com.destroystokyo.paper.PaperConfig.maxBookTotalSizeMultiplier));
 +            long byteAllowed = maxBookPageSize;
-+            for (int i = 0; i < pageList.size(); ++i) {
-+                String testString = pageList.getString(i);
++            for (String testString : pageList) {
 +                int byteLength = testString.getBytes(java.nio.charset.StandardCharsets.UTF_8).length;
 +                if (byteLength > 256 * 4) {
 +                    ServerGamePacketListenerImpl.LOGGER.warn(this.player.getScoreboardName() + " tried to send a book with with a page too large!");

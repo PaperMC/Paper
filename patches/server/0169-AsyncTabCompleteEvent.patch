@@ -14,10 +14,10 @@ completion, such as offline players.
 Also adds isCommand and getLocation to the sync TabCompleteEvent
 
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index b91362681a3293e1acd044edad34e1e86e36d0f3..e12f0af47108b09e490f2a1e51a98accfcc6bd28 100644
+index cf42d59254f2786bfe8785249ad270d35996417a..8c2242d7e443bee26741608c65d314d8902f5765 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-@@ -703,10 +703,10 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+@@ -702,10 +702,10 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
  
      @Override
      public void handleCustomCommandSuggestions(ServerboundCommandSuggestionPacket packet) {
@@ -30,7 +30,7 @@ index b91362681a3293e1acd044edad34e1e86e36d0f3..e12f0af47108b09e490f2a1e51a98acc
              return;
          }
          // CraftBukkit end
-@@ -716,12 +716,35 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+@@ -715,12 +715,35 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
              stringreader.skip();
          }
  
@@ -46,14 +46,14 @@ index b91362681a3293e1acd044edad34e1e86e36d0f3..e12f0af47108b09e490f2a1e51a98acc
 +        // If the event isn't handled, we can assume that we have no completions, and so we'll ask the server
 +        if (!event.isHandled()) {
 +            if (!event.isCancelled()) {
++
++                this.server.scheduleOnMain(() -> { // Paper - This needs to be on main
++                    ParseResults<CommandSourceStack> parseresults = this.server.getCommands().getDispatcher().parse(stringreader, this.player.createCommandSourceStack());
  
 -        this.server.getCommands().getDispatcher().getCompletionSuggestions(parseresults).thenAccept((suggestions) -> {
 -            if (suggestions.isEmpty()) return; // CraftBukkit - don't send through empty suggestions - prevents [<args>] from showing for plugins with nothing more to offer
 -            this.connection.send(new ClientboundCommandSuggestionsPacket(packet.getId(), suggestions));
 -        });
-+                this.server.scheduleOnMain(() -> { // Paper - This needs to be on main
-+                    ParseResults<CommandSourceStack> parseresults = this.server.getCommands().getDispatcher().parse(stringreader, this.player.createCommandSourceStack());
-+
 +                    this.server.getCommands().getDispatcher().getCompletionSuggestions(parseresults).thenAccept((suggestions) -> {
 +                        if (suggestions.isEmpty()) return; // CraftBukkit - don't send through empty suggestions - prevents [<args>] from showing for plugins with nothing more to offer
 +                        this.connection.send(new ClientboundCommandSuggestionsPacket(packet.getId(), suggestions));
@@ -72,7 +72,7 @@ index b91362681a3293e1acd044edad34e1e86e36d0f3..e12f0af47108b09e490f2a1e51a98acc
  
      @Override
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index d221bad83f1bf2d9f23e457427c15b440e945f42..7a1c83403f4f6a0eae54c067e1866de7971e0ef2 100644
+index c9de4bda38ae28067b03ceef2e2a6972a6920370..40b0489faa4da7888addfd2a028bbf1e7578e6be 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -1856,7 +1856,7 @@ public final class CraftServer implements Server {

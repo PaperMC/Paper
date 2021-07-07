@@ -12,10 +12,10 @@ the user never changed the default setting for Spigot's save on stop only.
 1.17: TODO does this need the synchronized blocks anymore?
 
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 45bcdf2e644999910784432d8f369e775ce6506d..3e2955013ce75034170b5eeae60482e1c174769d 100644
+index 4d5f3509d7be914658014d07c72ec12762a76da3..feab424cbfcb4c8f7ce38cdeeb42dce3fe1ce7aa 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -964,7 +964,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -972,7 +972,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          } catch (java.lang.InterruptedException ignored) {} // Paper
          if (org.spigotmc.SpigotConfig.saveUserCacheOnStopOnly) {
              MinecraftServer.LOGGER.info("Saving usercache.json");
@@ -25,10 +25,10 @@ index 45bcdf2e644999910784432d8f369e775ce6506d..3e2955013ce75034170b5eeae60482e1
          // Spigot end
  
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-index 566390d02b2af4a0f2c867b7ff8116a8301e8497..e2095308a8ec8471b04acce929d314fd828bc3de 100644
+index bd94277862e0f5546b4df81fbd535d2e4c7ef5b1..7d834c1b1588851188372eebd9efad9313c610f7 100644
 --- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-@@ -256,7 +256,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+@@ -257,7 +257,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
          }
  
          if (this.convertOldUsers()) {
@@ -38,10 +38,10 @@ index 566390d02b2af4a0f2c867b7ff8116a8301e8497..e2095308a8ec8471b04acce929d314fd
  
          if (!OldUsersConverter.serverReadyAfterUserconversion(this)) {
 diff --git a/src/main/java/net/minecraft/server/players/GameProfileCache.java b/src/main/java/net/minecraft/server/players/GameProfileCache.java
-index 1dd9b362384543e17b537dd209665d956214916d..c70b4727fe0ae9ff7b9db08a9711272994159b96 100644
+index 769f2a595f8ca6030c17d5472ee1773063ebe52c..548627b5a12e79ac31136b2695e45f9452115348 100644
 --- a/src/main/java/net/minecraft/server/players/GameProfileCache.java
 +++ b/src/main/java/net/minecraft/server/players/GameProfileCache.java
-@@ -117,7 +117,7 @@ public class GameProfileCache {
+@@ -118,7 +118,7 @@ public class GameProfileCache {
          return GameProfileCache.usesAuthentication;
      }
  
@@ -50,7 +50,7 @@ index 1dd9b362384543e17b537dd209665d956214916d..c70b4727fe0ae9ff7b9db08a97112729
          Calendar calendar = Calendar.getInstance();
  
          calendar.setTime(new Date());
-@@ -126,7 +126,7 @@ public class GameProfileCache {
+@@ -127,14 +127,14 @@ public class GameProfileCache {
          GameProfileCache.GameProfileInfo usercache_usercacheentry = new GameProfileCache.GameProfileInfo(profile, date);
  
          this.safeAdd(usercache_usercacheentry);
@@ -59,12 +59,11 @@ index 1dd9b362384543e17b537dd209665d956214916d..c70b4727fe0ae9ff7b9db08a97112729
      }
  
      private long getNextOperation() {
-@@ -134,7 +134,7 @@ public class GameProfileCache {
+         return this.operationCount.incrementAndGet();
      }
  
-     @Nullable
--    public GameProfile get(String name) {
-+    public synchronized GameProfile get(String name) { // Paper - synchronize
+-    public Optional<GameProfile> get(String name) {
++    public synchronized Optional<GameProfile> get(String name) { // Paper - synchronize
          String s1 = name.toLowerCase(Locale.ROOT);
          GameProfileCache.GameProfileInfo usercache_usercacheentry = (GameProfileCache.GameProfileInfo) this.profilesByName.get(s1);
          boolean flag = false;
@@ -76,8 +75,8 @@ index 1dd9b362384543e17b537dd209665d956214916d..c70b4727fe0ae9ff7b9db08a97112729
 +            this.save(true); // Paper
          }
  
-         return gameprofile;
-@@ -273,7 +273,7 @@ public class GameProfileCache {
+         return optional;
+@@ -270,7 +270,7 @@ public class GameProfileCache {
          return arraylist;
      }
  
@@ -86,7 +85,7 @@ index 1dd9b362384543e17b537dd209665d956214916d..c70b4727fe0ae9ff7b9db08a97112729
          JsonArray jsonarray = new JsonArray();
          DateFormat dateformat = GameProfileCache.createDateFormat();
  
-@@ -281,6 +281,7 @@ public class GameProfileCache {
+@@ -278,6 +278,7 @@ public class GameProfileCache {
              jsonarray.add(GameProfileCache.writeGameProfile(usercache_usercacheentry, dateformat));
          });
          String s = this.gson.toJson(jsonarray);
@@ -94,10 +93,11 @@ index 1dd9b362384543e17b537dd209665d956214916d..c70b4727fe0ae9ff7b9db08a97112729
  
          try {
              BufferedWriter bufferedwriter = Files.newWriter(this.file, StandardCharsets.UTF_8);
-@@ -305,6 +306,14 @@ public class GameProfileCache {
+@@ -302,7 +303,14 @@ public class GameProfileCache {
          } catch (IOException ioexception) {
              ;
          }
+-
 +        // Paper start
 +        };
 +        if (asyncSave) {
@@ -106,6 +106,6 @@ index 1dd9b362384543e17b537dd209665d956214916d..c70b4727fe0ae9ff7b9db08a97112729
 +            save.run();
 +        }
 +        // Paper end
- 
      }
  
+     private Stream<GameProfileCache.GameProfileInfo> getTopMRUProfiles(int limit) {
