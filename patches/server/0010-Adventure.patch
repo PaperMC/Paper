@@ -110,10 +110,10 @@ index 0000000000000000000000000000000000000000..e597a90def72c5903382d7169fb7a2fb
 +}
 diff --git a/src/main/java/io/papermc/paper/adventure/ChatProcessor.java b/src/main/java/io/papermc/paper/adventure/ChatProcessor.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..4e9e0a39b876c900fdee1343d04a7046f5b3f80e
+index 0000000000000000000000000000000000000000..cebc17d2ddf71ed3f8096602aee8c0de5d7cc993
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/adventure/ChatProcessor.java
-@@ -0,0 +1,224 @@
+@@ -0,0 +1,228 @@
 +package io.papermc.paper.adventure;
 +
 +import io.papermc.paper.chat.ChatRenderer;
@@ -158,6 +158,7 @@ index 0000000000000000000000000000000000000000..4e9e0a39b876c900fdee1343d04a7046
 +        })
 +        .build();
 +    // copied from adventure-text-serializer-legacy -->
++    private static final String DEFAULT_LEGACY_FORMAT = "<%1$s> %2$s"; // copied from PlayerChatEvent/AsyncPlayerChatEvent
 +    final MinecraftServer server;
 +    final ServerPlayer player;
 +    final String message;
@@ -178,7 +179,7 @@ index 0000000000000000000000000000000000000000..4e9e0a39b876c900fdee1343d04a7046
 +            // continuing from AsyncPlayerChatEvent (without PlayerChatEvent)
 +            event -> {
 +                this.processModern(
-+                    legacyRenderer(event.getFormat()),
++                    rendererForLegacyEvent(event.getFormat()),
 +                    this.viewersFromLegacy(event.getRecipients()),
 +                    PaperAdventure.LEGACY_SECTION_UXRC.deserialize(event.getMessage()),
 +                    event.isCancelled()
@@ -187,7 +188,7 @@ index 0000000000000000000000000000000000000000..4e9e0a39b876c900fdee1343d04a7046
 +            // continuing from AsyncPlayerChatEvent and PlayerChatEvent
 +            event -> {
 +                this.processModern(
-+                    legacyRenderer(event.getFormat()),
++                    rendererForLegacyEvent(event.getFormat()),
 +                    this.viewersFromLegacy(event.getRecipients()),
 +                    PaperAdventure.LEGACY_SECTION_UXRC.deserialize(event.getMessage()),
 +                    event.isCancelled()
@@ -311,7 +312,10 @@ index 0000000000000000000000000000000000000000..4e9e0a39b876c900fdee1343d04a7046
 +        return player.displayName();
 +    }
 +
-+    private static ChatRenderer legacyRenderer(final String format) {
++    private static ChatRenderer rendererForLegacyEvent(final String format) {
++        if (DEFAULT_LEGACY_FORMAT.equals(format)) {
++            return ChatRenderer.defaultRenderer();
++        }
 +        return (player, displayName, message, recipient) -> PaperAdventure.LEGACY_SECTION_UXRC.deserialize(String.format(format, legacyDisplayName((CraftPlayer) player), PaperAdventure.LEGACY_SECTION_UXRC.serialize(message))).replaceText(URL_REPLACEMENT_CONFIG);
 +    }
 +
@@ -1671,7 +1675,7 @@ index 7a0e7961df1e62b311ea2ecc76d7343a8646723b..6859fafa42527d45366018f737c19e6c
                  }
                  collection = icons;
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 878af195b64b7c25cb7ef130846d30aea2474897..d6cb58d5c5f6d2f4aa769f4338ba63b2d55dc971 100644
+index bf26a5175e672b51561a6c5a32a32068541ae656..d096bd229ee581bd8fe40a4e02705d1801dcb2d5 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -564,8 +564,10 @@ public final class CraftServer implements Server {
