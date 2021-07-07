@@ -60,7 +60,7 @@ repositories {
     }
     maven("https://maven.fabricmc.net/") {
         content {
-            onlyForConfigurations("paramMappings", "remapper")
+            onlyForConfigurations("paramMappings")
         }
     }
     maven("https://maven.quiltmc.org/repository/release/") {
