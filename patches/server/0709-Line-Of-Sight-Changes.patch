@@ -1,23 +1,25 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: TwoLeggedCat <80929284+TwoLeggedCat@users.noreply.github.com>
 Date: Sat, 29 May 2021 14:33:25 -0500
-Subject: [PATCH] Add more line of sight methods
+Subject: [PATCH] Line Of Sight Changes
 
 
 diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-index 9f57ebcf4f1fafe38ebdf9b78f186e244853101d..0c38298ce04b28bb41b3c10b44b026a9b54c612b 100644
+index 9f57ebcf4f1fafe38ebdf9b78f186e244853101d..02a944ee1ab3a0d8c8ed84d3ec4d9bc6fcdfb9bb 100644
 --- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-@@ -3430,6 +3430,7 @@ public abstract class LivingEntity extends Entity {
+@@ -3430,7 +3430,8 @@ public abstract class LivingEntity extends Entity {
              Vec3 vec3d = new Vec3(this.getX(), this.getEyeY(), this.getZ());
              Vec3 vec3d1 = new Vec3(entity.getX(), entity.getEyeY(), entity.getZ());
  
+-            return vec3d1.distanceTo(vec3d) > 128.0D ? false : this.level.clip(new ClipContext(vec3d, vec3d1, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, this)).getType() == HitResult.Type.MISS;
 +            // Paper - diff on change - used in CraftLivingEntity#hasLineOfSight(Location) and CraftWorld#lineOfSightExists
-             return vec3d1.distanceTo(vec3d) > 128.0D ? false : this.level.clip(new ClipContext(vec3d, vec3d1, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, this)).getType() == HitResult.Type.MISS;
++            return vec3d1.distanceToSqr(vec3d) > 128D * 128D ? false : this.level.clip(new ClipContext(vec3d, vec3d1, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, this)).getType() == HitResult.Type.MISS; // Paper - use distanceToSqr
          }
      }
+ 
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index 2247d1c7c7dd1c225c511b44d6aeb5c3e75bdb2a..1cc8a85ae69c98987ab516418808b688c266711c 100644
+index 2247d1c7c7dd1c225c511b44d6aeb5c3e75bdb2a..50ab10f1a131ac35a2edff71dbe0b199d588bcc0 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 @@ -330,6 +330,18 @@ public class CraftWorld implements World {
@@ -32,7 +34,7 @@ index 2247d1c7c7dd1c225c511b44d6aeb5c3e75bdb2a..1cc8a85ae69c98987ab516418808b688
 +        if (from.getWorld() != to.getWorld()) return false;
 +        Vec3 vec3d = new Vec3(from.getX(), from.getY(), from.getZ());
 +        Vec3 vec3d1 = new Vec3(to.getX(), to.getY(), to.getZ());
-+        if (vec3d1.distanceTo(vec3d) > 128.0D) return false;
++        if (vec3d1.distanceToSqr(vec3d) > 128D * 128D) return false; //Return early if the distance is greater than 128 blocks
 +
 +        return this.getHandle().clip(new ClipContext(vec3d, vec3d1, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, null)).getType() == HitResult.Type.MISS;
 +    }
@@ -40,7 +42,7 @@ index 2247d1c7c7dd1c225c511b44d6aeb5c3e75bdb2a..1cc8a85ae69c98987ab516418808b688
  
      private static final Random rand = new Random();
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
-index 526beeac806d65c53c117be7702ce6cc3c6ec1c1..53b61b609361c305fb8d1f1a8700e81ce139fde4 100644
+index 526beeac806d65c53c117be7702ce6cc3c6ec1c1..eed0abb13b4f27a55db577f1005193c81744d247 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
 @@ -29,6 +29,9 @@ import net.minecraft.world.entity.projectile.ThrownEgg;
@@ -63,7 +65,7 @@ index 526beeac806d65c53c117be7702ce6cc3c6ec1c1..53b61b609361c305fb8d1f1a8700e81c
 +        if (this.getHandle().level != ((CraftWorld) loc.getWorld()).getHandle()) return false;
 +        Vec3 vec3d = new Vec3(this.getHandle().getX(), this.getHandle().getEyeY(), this.getHandle().getZ());
 +        Vec3 vec3d1 = new Vec3(loc.getX(), loc.getY(), loc.getZ());
-+        if (vec3d1.distanceTo(vec3d) > 128.0D) return false;
++        if (vec3d1.distanceToSqr(vec3d) > 128D * 128D) return false; //Return early if the distance is greater than 128 blocks
 +
 +        return this.getHandle().level.clip(new ClipContext(vec3d, vec3d1, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, this.getHandle())).getType() == HitResult.Type.MISS;
 +    }
