@@ -58,11 +58,6 @@ repositories {
             onlyForConfigurations("paperclip")
         }
     }
-    maven("https://maven.fabricmc.net/") {
-        content {
-            onlyForConfigurations("paramMappings")
-        }
-    }
     maven("https://maven.quiltmc.org/repository/release/") {
         content {
             onlyForConfigurations("paramMappings", "remapper")
@@ -76,7 +71,7 @@ repositories {
 }
 
 dependencies {
-    paramMappings("net.fabricmc:yarn:1.17.1+build.1:mergedv2") // TODO - Use Quilt's yarn and remove Fabric repo
+    paramMappings("org.quiltmc:yarn:1.17.1+build.1:mergedv2")
     remapper("org.quiltmc:tiny-remapper:0.4.1")
     decompiler("net.minecraftforge:forgeflower:1.5.498.12")
     paperclip("io.papermc:paperclip:2.0.1")
