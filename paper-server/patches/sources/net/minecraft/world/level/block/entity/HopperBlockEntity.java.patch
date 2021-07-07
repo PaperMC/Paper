@@ -156,11 +156,10 @@
  
 -    private static boolean tryTakeInItemFromSlot(Hopper hopper, Container inventory, int slot, Direction side) {
 -        ItemStack itemstack = inventory.getItem(slot);
--
--        if (!itemstack.isEmpty() && HopperBlockEntity.canTakeItemFromContainer(hopper, inventory, itemstack, slot, side)) {
 +    private static boolean tryTakeInItemFromSlot(Hopper ihopper, Container iinventory, int i, Direction enumdirection, Level world) { // Spigot
 +        ItemStack itemstack = iinventory.getItem(i);
-+
+ 
+-        if (!itemstack.isEmpty() && HopperBlockEntity.canTakeItemFromContainer(hopper, inventory, itemstack, slot, side)) {
 +        if (!itemstack.isEmpty() && HopperBlockEntity.canTakeItemFromContainer(ihopper, iinventory, itemstack, i, enumdirection)) {
              int j = itemstack.getCount();
 -            ItemStack itemstack1 = HopperBlockEntity.addItem(inventory, hopper, inventory.removeItem(slot, 1), (Direction) null);
@@ -233,19 +232,28 @@
          } else {
              itemEntity.setItem(itemstack1);
          }
-@@ -383,6 +494,11 @@
+@@ -383,11 +494,18 @@
              boolean flag1 = to.isEmpty();
  
              if (itemstack1.isEmpty()) {
 +                // Spigot start - SPIGOT-6693, InventorySubcontainer#setItem
++                ItemStack leftover = ItemStack.EMPTY; // Paper - Make hoppers respect inventory max stack size
 +                if (!stack.isEmpty() && stack.getCount() > to.getMaxStackSize()) {
++                    leftover = stack; // Paper - Make hoppers respect inventory max stack size
 +                    stack = stack.split(to.getMaxStackSize());
 +                }
 +                // Spigot end
                  to.setItem(slot, stack);
-                 stack = ItemStack.EMPTY;
+-                stack = ItemStack.EMPTY;
++                stack = leftover; // Paper - Make hoppers respect inventory max stack size
                  flag = true;
-@@ -410,7 +526,7 @@
+             } else if (HopperBlockEntity.canMergeItems(itemstack1, stack)) {
+-                int j = stack.getMaxStackSize() - itemstack1.getCount();
++                int j = Math.min(stack.getMaxStackSize(), to.getMaxStackSize()) - itemstack1.getCount(); // Paper - Make hoppers respect inventory max stack size
+                 int k = Math.min(stack.getCount(), j);
+ 
+                 stack.shrink(k);
+@@ -410,7 +528,7 @@
                              }
                          }
  
@@ -254,23 +262,21 @@
                      }
                  }
  
-@@ -419,16 +535,40 @@
-         }
- 
+@@ -421,14 +539,38 @@
          return stack;
-+    }
-+
+     }
+ 
 +    // CraftBukkit start
-+    @Nullable
+     @Nullable
 +    private static Container runHopperInventorySearchEvent(Container inventory, CraftBlock hopper, CraftBlock searchLocation, HopperInventorySearchEvent.ContainerType containerType) {
 +        HopperInventorySearchEvent event = new HopperInventorySearchEvent((inventory != null) ? new CraftInventory(inventory) : null, containerType, hopper, searchLocation);
 +        Bukkit.getServer().getPluginManager().callEvent(event);
 +        CraftInventory craftInventory = (CraftInventory) event.getInventory();
 +        return (craftInventory != null) ? craftInventory.getInventory() : null;
-     }
++    }
 +    // CraftBukkit end
- 
-     @Nullable
++
++    @Nullable
      private static Container getAttachedContainer(Level world, BlockPos pos, HopperBlockEntity blockEntity) {
 -        return HopperBlockEntity.getContainerAt(world, pos.relative(blockEntity.facing));
 +        // CraftBukkit start
@@ -297,7 +303,7 @@
      }
  
      public static List<ItemEntity> getItemsAtAndAbove(Level world, Hopper hopper) {
-@@ -455,6 +595,7 @@
+@@ -455,6 +597,7 @@
  
      @Nullable
      private static Container getBlockContainer(Level world, BlockPos pos, BlockState state) {
@@ -305,7 +311,7 @@
          Block block = state.getBlock();
  
          if (block instanceof WorldlyContainerHolder) {
-@@ -543,7 +684,7 @@
+@@ -543,7 +686,7 @@
      }
  
      @Override
