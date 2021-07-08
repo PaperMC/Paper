@@ -1,0 +1,70 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sun, 6 Dec 2020 18:06:56 -0800
+Subject: [PATCH] add spawner api for mob awareness override
+
+
+diff --git a/src/main/java/net/minecraft/world/level/BaseSpawner.java b/src/main/java/net/minecraft/world/level/BaseSpawner.java
+index d88a23984dcea9c2119bdc245013af8b25448da3..0ccec35d3e1e48364e5db9b8869fc9736009d61c 100644
+--- a/src/main/java/net/minecraft/world/level/BaseSpawner.java
++++ b/src/main/java/net/minecraft/world/level/BaseSpawner.java
+@@ -48,6 +48,8 @@ public abstract class BaseSpawner {
+     public int requiredPlayerRange = 16;
+     public int spawnRange = 4;
+     private int tickDelay = 0; // Paper
++    public net.kyori.adventure.util.TriState awarenessOverride = net.kyori.adventure.util.TriState.NOT_SET; // Paper
++    private static final String PAPER_MOB_AWARENESS_OVERRIDE_NBT_KEY = "Paper.MobAwarenessOverride"; // Paper
+ 
+     public BaseSpawner() {}
+ 
+@@ -183,7 +185,7 @@ public abstract class BaseSpawner {
+                                 ((Mob) entity).finalizeSpawn(world, world.getCurrentDifficultyAt(entity.blockPosition()), MobSpawnType.SPAWNER, (SpawnGroupData) null, (CompoundTag) null);
+                             }
+                             // Spigot Start
+-                            if ( entityinsentient.level().spigotConfig.nerfSpawnerMobs )
++                            if ( !this.awarenessOverride.toBooleanOrElse(!entityinsentient.level().spigotConfig.nerfSpawnerMobs) ) // Paper - per-spawner mob awareness override
+                             {
+                                 entityinsentient.aware = false;
+                             }
+@@ -286,6 +288,11 @@ public abstract class BaseSpawner {
+         if (nbt.contains("SpawnRange", 99)) {
+             this.spawnRange = nbt.getShort("SpawnRange");
+         }
++        // Paper start - api for nerfing spawners
++        if (nbt.contains(PAPER_MOB_AWARENESS_OVERRIDE_NBT_KEY, net.minecraft.nbt.Tag.TAG_STRING)) {
++            this.awarenessOverride = net.kyori.adventure.util.TriState.valueOf(nbt.getString(PAPER_MOB_AWARENESS_OVERRIDE_NBT_KEY));
++        }
++        // Paper end
+ 
+         this.displayEntity = null;
+     }
+@@ -304,6 +311,9 @@ public abstract class BaseSpawner {
+ 
+         nbt.putShort("MinSpawnDelay", (short) Math.min(Short.MAX_VALUE, this.minSpawnDelay));
+         nbt.putShort("MaxSpawnDelay", (short) Math.min(Short.MAX_VALUE, this.maxSpawnDelay));
++        if (this.awarenessOverride != net.kyori.adventure.util.TriState.NOT_SET) {
++            nbt.putString(PAPER_MOB_AWARENESS_OVERRIDE_NBT_KEY, this.awarenessOverride.name());
++        }
+         // Paper nbt
+         nbt.putShort("SpawnCount", (short) this.spawnCount);
+         nbt.putShort("MaxNearbyEntities", (short) this.maxNearbyEntities);
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftCreatureSpawner.java b/src/main/java/org/bukkit/craftbukkit/block/CraftCreatureSpawner.java
+index 0d39223d1eaa3fe7065eb9dc9f945ca965d3b43e..2066375f5a7449fabe1971aaafaf93da7d9bcd83 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/CraftCreatureSpawner.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/CraftCreatureSpawner.java
+@@ -250,4 +250,15 @@ public class CraftCreatureSpawner extends CraftBlockEntityState<SpawnerBlockEnti
+         this.getSnapshot().getSpawner().setNextSpawnData(this.isPlaced() ? this.world.getHandle() : null, this.getPosition(), new net.minecraft.world.level.SpawnData(entity, java.util.Optional.empty()));
+     }
+     // Paper end
++    // Paper start - per-spawner mob awareness override
++    @Override
++    public net.kyori.adventure.util.TriState getAwarenessOverride() {
++        return this.getSnapshot().getSpawner().awarenessOverride;
++    }
++
++    @Override
++    public void setAwarenessOverride(final net.kyori.adventure.util.TriState awarenessOverride) {
++        this.getSnapshot().getSpawner().awarenessOverride = awarenessOverride;
++    }
++    // Paper end - per-spawner mob awareness override
+ }
