@@ -458,6 +458,11 @@ public class Commodore {
                             super.visitMethodInsn(opcode, owner, name, "()Lcom/destroystokyo/paper/profile/PlayerProfile;", itf);
                             return;
                         }
+                        if (owner.equals("org/bukkit/advancement/Advancement") && name.equals("getDisplay") && desc.endsWith(")Lorg/bukkit/advancement/AdvancementDisplay;")) {
+                            super.visitTypeInsn(Opcodes.CHECKCAST, runtimeCbPkgPrefix() + "advancement/CraftAdvancement");
+                            super.visitMethodInsn(Opcodes.INVOKEVIRTUAL, runtimeCbPkgPrefix() + "advancement/CraftAdvancement", "getDisplay0", desc, false);
+                            return;
+                        }
                         // Paper end
 
                         if (modern) {
