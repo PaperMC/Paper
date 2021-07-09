@@ -1,0 +1,129 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Wed, 6 Jan 2021 23:38:05 -0800
+Subject: [PATCH] CommandFunction API
+
+== AT ==
+public net.minecraft.server.ServerFunctionManager library
+public net.minecraft.commands.CommandFunction$CommandEntry parse
+
+diff --git a/src/main/java/io/papermc/paper/datapack/PaperCommandFunction.java b/src/main/java/io/papermc/paper/datapack/PaperCommandFunction.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..6fe49aa51eacc36cedc4a7ab06edb59577fd7ce2
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/datapack/PaperCommandFunction.java
+@@ -0,0 +1,83 @@
++package io.papermc.paper.datapack;
++
++import com.mojang.brigadier.ParseResults;
++import io.papermc.paper.adventure.PaperAdventure;
++import java.util.ArrayList;
++import java.util.List;
++import net.kyori.adventure.key.Key;
++import net.minecraft.commands.CommandFunction;
++import net.minecraft.commands.CommandSourceStack;
++import net.minecraft.commands.FunctionInstantiationException;
++import net.minecraft.server.MinecraftServer;
++import net.minecraft.server.commands.FunctionCommand;
++import org.bukkit.command.CommandSender;
++import org.bukkit.craftbukkit.command.VanillaCommandWrapper;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.checker.nullness.qual.Nullable;
++import org.checkerframework.framework.qual.DefaultQualifier;
++
++@DefaultQualifier(NonNull.class)
++public class PaperCommandFunction implements io.papermc.paper.datapack.CommandFunction {
++
++    private final CommandFunction handle;
++    private @Nullable Key functionKey;
++    private @Nullable List<String> commands;
++    private @Nullable List<ParseResults<CommandSourceStack>> parseResults;
++
++    public PaperCommandFunction(CommandFunction handle) {
++        this.handle = handle;
++    }
++
++    // @Override // TODO expose once brig is in the API
++    public List<ParseResults<CommandSourceStack>> getParseResults() {
++        if (this.parseResults == null) {
++            this.parseResults = new ArrayList<>();
++            for (CommandFunction.Entry entry : this.handle.getEntries()) {
++                if (entry instanceof CommandFunction.CommandEntry commandEntry) {
++                    this.parseResults.add(commandEntry.parse);
++                }
++            }
++        }
++        return this.parseResults;
++    }
++
++    @Override
++    public int executeAsServer() {
++        return execute(MinecraftServer.getServer().createCommandSourceStack());
++    }
++
++    @Override
++    public int executeAs(CommandSender sender) {
++        return execute(VanillaCommandWrapper.getListener(sender));
++    }
++
++    private int execute(CommandSourceStack source) {
++        try {
++            final FunctionCommand.FunctionResult functionResult = FunctionCommand.runFunction(source, this.handle, null);
++            return functionResult.value();
++        } catch (FunctionInstantiationException e) {
++            throw new RuntimeException(e);
++        }
++    }
++
++    @Override
++    public List<String> getCommands() {
++        if (this.commands == null) {
++            this.commands = new ArrayList<>();
++            for (CommandFunction.Entry entry : handle.getEntries()) {
++                if (entry instanceof CommandFunction.CommandEntry commandEntry) { // should always be true
++                    commands.add(commandEntry.toString());
++                }
++            }
++        }
++        return this.commands;
++    }
++
++    @Override
++    public Key key() {
++        if (this.functionKey == null) {
++            this.functionKey = PaperAdventure.asAdventure(handle.getId());
++        }
++        return this.functionKey;
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/datapack/PaperDatapackManager.java b/src/main/java/io/papermc/paper/datapack/PaperDatapackManager.java
+index cf4374493c11057451a62a655514415cf6b298e0..a997cccda094e8c06c6e5dd617ffcf62ad851873 100644
+--- a/src/main/java/io/papermc/paper/datapack/PaperDatapackManager.java
++++ b/src/main/java/io/papermc/paper/datapack/PaperDatapackManager.java
+@@ -22,4 +22,14 @@ public class PaperDatapackManager implements DatapackManager {
+     public Collection<Datapack> getEnabledPacks() {
+         return repository.getSelectedPacks().stream().map(loader -> new PaperDatapack(loader, true)).collect(Collectors.toList());
+     }
++
++    @Override
++    public Collection<CommandFunction> getCommandFunctions() {
++        return net.minecraft.server.MinecraftServer.getServer().getFunctions().library.getFunctions().values().stream().map(net.minecraft.commands.CommandFunction::getPaperCommandFunction).collect(Collectors.toSet());
++    }
++
++    @Override
++    public CommandFunction getCommandFunction(net.kyori.adventure.key.Key functionKey) {
++        return net.minecraft.server.MinecraftServer.getServer().getFunctions().get(io.papermc.paper.adventure.PaperAdventure.asVanilla(functionKey)).map(net.minecraft.commands.CommandFunction::getPaperCommandFunction).orElse(null);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/commands/CommandFunction.java b/src/main/java/net/minecraft/commands/CommandFunction.java
+index 3fe2c28644050f04206b73b687b7e95be87cb7f7..e41ae04b3047fd2651812b516fd790e810cd162c 100644
+--- a/src/main/java/net/minecraft/commands/CommandFunction.java
++++ b/src/main/java/net/minecraft/commands/CommandFunction.java
+@@ -40,6 +40,7 @@ public class CommandFunction {
+         }
+         return timing;
+     }
++    private final io.papermc.paper.datapack.PaperCommandFunction paperCommandFunction = new io.papermc.paper.datapack.PaperCommandFunction(this); public final io.papermc.paper.datapack.PaperCommandFunction getPaperCommandFunction() { return paperCommandFunction; }
+     // Paper end
+ 
+     public CommandFunction(ResourceLocation id, CommandFunction.Entry[] elements) {
