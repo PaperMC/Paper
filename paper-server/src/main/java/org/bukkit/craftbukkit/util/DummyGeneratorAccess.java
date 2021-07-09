@@ -34,6 +34,7 @@ import net.minecraft.world.level.levelgen.HeightMap;
 import net.minecraft.world.level.lighting.LightEngine;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.FluidType;
+import net.minecraft.world.level.material.FluidTypes;
 import net.minecraft.world.level.storage.WorldData;
 import net.minecraft.world.phys.AxisAlignedBB;
 
@@ -186,7 +187,7 @@ public class DummyGeneratorAccess implements GeneratorAccess {
 
     @Override
     public Fluid getFluid(BlockPosition blockposition) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        return FluidTypes.EMPTY.h(); // SPIGOT-6634
     }
 
     @Override
