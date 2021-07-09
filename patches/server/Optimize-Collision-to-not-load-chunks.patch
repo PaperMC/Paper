@@ -76,11 +76,18 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                boolean far = this.source != null && net.minecraft.server.MCUtil.distanceSq(this.source.getX(), y, this.source.getZ(), x, y, z) > 14;
 +                this.pos.set(x, y, z);
 +
-+                boolean isRegionLimited = this.collisionGetter instanceof net.minecraft.server.level.WorldGenRegion;
-+                BlockState blockState = isRegionLimited ? Blocks.VOID_AIR.defaultBlockState() : ((!far && this.source instanceof net.minecraft.server.level.ServerPlayer) || (this.source != null && this.source.collisionLoadChunks)
-+                    ? this.collisionGetter.getBlockState(this.pos)
-+                    : this.collisionGetter.getTypeIfLoaded(this.pos)
-+                );
++                BlockState blockState;
++                if (this.collisionGetter instanceof net.minecraft.server.level.WorldGenRegion) {
++                   BlockGetter blockGetter = this.getChunk(x, z);
++                   if (blockGetter == null) {
++                       continue;
++                   }
++                   blockState = blockGetter.getBlockState(this.pos);
++                } else if ((!far && this.source instanceof net.minecraft.server.level.ServerPlayer) || (this.source != null && this.source.collisionLoadChunks)) {
++                    blockState = this.collisionGetter.getBlockState(this.pos);
++                } else {
++                    blockState = this.collisionGetter.getTypeIfLoaded(this.pos);
++                }
 +
 +                if (blockState == null) {
 +                    if (!(this.source instanceof net.minecraft.server.level.ServerPlayer) || this.source.level.paperConfig.preventMovingIntoUnloadedChunks) {
