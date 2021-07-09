@@ -61,7 +61,7 @@ public class BukkitCommandWrapper implements com.mojang.brigadier.Command<Comman
         CommandSender sender = context.getSource().getBukkitSender();
 
         try {
-            return this.server.dispatchCommand(sender, context.getInput()) ? 1 : 0;
+            return this.server.dispatchCommand(sender, context.getRange().get(context.getInput())) ? 1 : 0; // Paper - Fix commands from signs not firing command events; actually use the StringRange from context
         } catch (CommandException ex) {
             sender.sendMessage(org.bukkit.ChatColor.RED + "An internal error occurred while attempting to perform this command");
             this.server.getLogger().log(Level.SEVERE, null, ex);
