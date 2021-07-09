@@ -52,10 +52,10 @@ index b980c26ab5cac02e03525177a9dc4fb0b6a2f9f6..2a784a8342e708e0813c7076a2ca8e42
  
      Stream<VoxelShape> getEntityCollisions(@Nullable Entity entity, AABB box, Predicate<Entity> predicate);
 diff --git a/src/main/java/net/minecraft/world/level/CollisionSpliterator.java b/src/main/java/net/minecraft/world/level/CollisionSpliterator.java
-index e6190bfb893de12e87e1da49001ebd963b3d6318..6f4acf1c7c98a6069b79db483b8c79a8f4b46d54 100644
+index e6190bfb893de12e87e1da49001ebd963b3d6318..e4122469b839103f5c0fce38822d408a903dc0a5 100644
 --- a/src/main/java/net/minecraft/world/level/CollisionSpliterator.java
 +++ b/src/main/java/net/minecraft/world/level/CollisionSpliterator.java
-@@ -64,21 +64,35 @@ public class CollisionSpliterator extends AbstractSpliterator<VoxelShape> {
+@@ -64,21 +64,42 @@ public class CollisionSpliterator extends AbstractSpliterator<VoxelShape> {
      boolean collisionCheck(Consumer<? super VoxelShape> action) {
          while(true) {
              if (this.cursor.advance()) {
@@ -76,11 +76,18 @@ index e6190bfb893de12e87e1da49001ebd963b3d6318..6f4acf1c7c98a6069b79db483b8c79a8
 +                boolean far = this.source != null && net.minecraft.server.MCUtil.distanceSq(this.source.getX(), y, this.source.getZ(), x, y, z) > 14;
 +                this.pos.set(x, y, z);
 +
-+                boolean isRegionLimited = this.collisionGetter instanceof net.minecraft.server.level.WorldGenRegion;
-+                BlockState blockState = isRegionLimited ? Blocks.VOID_AIR.defaultBlockState() : ((!far && this.source instanceof net.minecraft.server.level.ServerPlayer) || (this.source != null && this.source.collisionLoadChunks)
-+                    ? this.collisionGetter.getBlockState(this.pos)
-+                    : this.collisionGetter.getTypeIfLoaded(this.pos)
-+                );
++                BlockState blockState;
++                if (this.collisionGetter instanceof net.minecraft.server.level.WorldGenRegion) {
++                   BlockGetter blockGetter = this.getChunk(x, z);
++                   if (blockGetter == null) {
++                       continue;
++                   }
++                   blockState = blockGetter.getBlockState(this.pos);
++                } else if ((!far && this.source instanceof net.minecraft.server.level.ServerPlayer) || (this.source != null && this.source.collisionLoadChunks)) {
++                    blockState = this.collisionGetter.getBlockState(this.pos);
++                } else {
++                    blockState = this.collisionGetter.getTypeIfLoaded(this.pos);
++                }
 +
 +                if (blockState == null) {
 +                    if (!(this.source instanceof net.minecraft.server.level.ServerPlayer) || this.source.level.paperConfig.preventMovingIntoUnloadedChunks) {
