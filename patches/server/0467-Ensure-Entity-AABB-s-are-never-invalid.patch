@@ -5,53 +5,42 @@ Subject: [PATCH] Ensure Entity AABB's are never invalid
 
 
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index 581f1ba9a24f5c5267dea29c892c6dfe03468f0c..e3ad8f9d995b93ab670904726b8f2cdd31b80ee4 100644
+index 581f1ba9a24f5c5267dea29c892c6dfe03468f0c..8278d38d6d61bff836c49ae5651f2be195389d1b 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
-@@ -560,7 +560,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, n
+@@ -559,8 +559,8 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, n
+     }
  
      public void setPos(double x, double y, double z) {
-         this.setPosRaw(x, y, z);
+-        this.setPosRaw(x, y, z);
 -        this.setBoundingBox(this.makeBoundingBox());
++        this.setPosRaw(x, y, z, true); // Paper - force bounding box update
 +        // this.setBoundingBox(this.makeBoundingBox()); // Paper - move into setPositionRaw
      }
  
      protected AABB makeBoundingBox() {
-@@ -3740,7 +3740,9 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, n
+@@ -3740,6 +3740,11 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, n
      }
-
+ 
      public final void setPosRaw(double x, double y, double z) {
--        if (this.position.x != x || this.position.y != y || this.position.z != z) {
-+        // Paper start - never allow AABB to become desynced from position
-+        final boolean changedPosition = this.position.x != x || this.position.y != y || this.position.z != z;
-+        if (changedPosition) { // Paper - update internal position references if position changed.
++        // Paper start
++        this.setPosRaw(x, y, z, false);
++    }
++    public final void setPosRaw(double x, double y, double z, boolean forceBoundingBoxUpdate) {
++        // Paper end
+         if (this.position.x != x || this.position.y != y || this.position.z != z) {
              this.position = new Vec3(x, y, z);
              int i = Mth.floor(x);
-             int j = Mth.floor(y);
-@@ -3749,7 +3751,18 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, n
-             if (i != this.blockPosition.getX() || j != this.blockPosition.getY() || k != this.blockPosition.getZ()) {
-                 this.blockPosition = new BlockPos(i, j, k);
-             }
-+        }
-+
-+        // Paper - only recreate bounding box if position changed to reuse the existing instance as long as possible.
-+        // Shulkers always require an updated bounding box, even if their position did not change
-+        // as they change their bounding box while peeking.
-+        // Hanging entities have their own logic and never require a bounding box update.
-+        if ((changedPosition || this instanceof net.minecraft.world.entity.Shulker)
-+            && !(this instanceof net.minecraft.world.entity.decoration.HangingEntity) {
-+            this.setBoundingBox(this.makeBoundingBox());
-+        }
-
-+        if (changedPosition) {
-             this.levelCallback.onMove();
-             GameEventListenerRegistrar gameeventlistenerregistrar = this.getGameEventListenerRegistrar();
- 
-@@ -3757,6 +3770,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, n
-                 gameeventlistenerregistrar.onListenerMove(this.level);
+@@ -3758,6 +3763,12 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, n
              }
          }
+ 
++        // Paper start - never allow AABB to become desynced from position
++        // hanging has its own special logic
++        if (!(this instanceof net.minecraft.world.entity.decoration.HangingEntity) && (forceBoundingBoxUpdate || this.position.x != x || this.position.y != y || this.position.z != z)) {
++            this.setBoundingBox(this.makeBoundingBox());
++        }
 +        // Paper end
-
      }
-
+ 
+     public void checkDespawn() {}
