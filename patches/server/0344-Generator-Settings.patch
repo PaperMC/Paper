@@ -33,23 +33,22 @@ index 6f5e1f7c23b19257c89b7c5a992ad76623bf4006..a2eecfaf54921423f803d759c06789e5
          };
          CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> ret = new CompletableFuture<>();
 diff --git a/src/main/java/net/minecraft/world/level/chunk/ChunkAccess.java b/src/main/java/net/minecraft/world/level/chunk/ChunkAccess.java
-index 974ab04b08bbd3c27a394b37c1af112be5f28f43..c0075d226331f32e470dae5bf1ce8d79e8b263dc 100644
+index 974ab04b08bbd3c27a394b37c1af112be5f28f43..149ac5ec368b53a9a5e9208bd49a3c9453625d9c 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/ChunkAccess.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/ChunkAccess.java
-@@ -29,6 +29,18 @@ public interface ChunkAccess extends BlockGetter, FeatureAccess {
+@@ -29,6 +29,17 @@ public interface ChunkAccess extends BlockGetter, FeatureAccess {
          return GameEventDispatcher.NOOP;
      }
  
 +    // Paper start
 +    default boolean generateFlatBedrock() {
-+        if (this instanceof ProtoChunk) {
-+            return ((ProtoChunk)this).level.paperConfig.generateFlatBedrock;
-+        } else if (this instanceof LevelChunk) {
-+            return ((LevelChunk)this).level.paperConfig.generateFlatBedrock;
-+        } else {
-+            return false;
++        if (this.getLevel() != null) {
++            return this.getLevel().paperConfig.generateFlatBedrock;
 +        }
++        return false;
 +    }
++
++    net.minecraft.world.level.Level getLevel();
 +    // Paper end
 +
      BlockState getType(final int x, final int y, final int z); // Paper
@@ -69,18 +68,31 @@ index 452b513e8b89d865a396066adaf4feb1140e1c62..8245c5834ec69beb8e3b95fb39006010
      }
  
 diff --git a/src/main/java/net/minecraft/world/level/chunk/ProtoChunk.java b/src/main/java/net/minecraft/world/level/chunk/ProtoChunk.java
-index 873fea54aecca411b6dee1ed3566f93c4fb9670f..64cb0658021866c3875d145cc4266896e57c081e 100644
+index 873fea54aecca411b6dee1ed3566f93c4fb9670f..7dc3d806a680150c6a2fffa1436fd63bbdc31eb3 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/ProtoChunk.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/ProtoChunk.java
-@@ -63,16 +63,24 @@ public class ProtoChunk implements ChunkAccess {
+@@ -63,16 +63,45 @@ public class ProtoChunk implements ChunkAccess {
      private long inhabitedTime;
      private final Map<GenerationStep.Carving, BitSet> carvingMasks = new Object2ObjectArrayMap<>();
      private volatile boolean isLightCorrect;
-+    final net.minecraft.world.level.Level level; // Paper - Add level
++    // Paper start - Add level
++    final net.minecraft.world.level.Level level;
++    @Override
++    public net.minecraft.world.level.Level getLevel() {
++        return this.level;
++    }
++    // Paper end
++    private static boolean PRINTED_OUTDATED_CTOR_MSG = false; // Paper - Add level
  
--    public ProtoChunk(ChunkPos pos, UpgradeData upgradeData, LevelHeightAccessor world) {
-+    // Paper start - add level
-+    @Deprecated public ProtoChunk(ChunkPos pos, UpgradeData upgradeData, LevelHeightAccessor world) { this(pos, upgradeData, world, null); }
++    @Deprecated // Paper start - add level
+     public ProtoChunk(ChunkPos pos, UpgradeData upgradeData, LevelHeightAccessor world) {
++        // Paper start
++        this(pos, upgradeData, world, null);
++        if (!PRINTED_OUTDATED_CTOR_MSG) {
++            new IllegalArgumentException("Must use ProtoChunk constructor with the ServerLevel parameter").printStackTrace();
++            PRINTED_OUTDATED_CTOR_MSG = true;
++        }
++    }
 +    public ProtoChunk(ChunkPos pos, UpgradeData upgradeData, LevelHeightAccessor world, net.minecraft.server.level.ServerLevel level) {
 +        // Paper end
          this(pos, upgradeData, (LevelChunkSection[])null, new ProtoTickList<>((block) -> {
@@ -91,9 +103,15 @@ index 873fea54aecca411b6dee1ed3566f93c4fb9670f..64cb0658021866c3875d145cc4266896
 +        }, pos, world), world, level); // Paper - add level
      }
  
--    public ProtoChunk(ChunkPos pos, UpgradeData upgradeData, @Nullable LevelChunkSection[] levelChunkSections, ProtoTickList<Block> blockTickScheduler, ProtoTickList<Fluid> fluidTickScheduler, LevelHeightAccessor world) {
-+    // Paper start - add level
-+    @Deprecated public ProtoChunk(ChunkPos pos, UpgradeData upgradeData, @Nullable LevelChunkSection[] levelChunkSections, ProtoTickList<Block> blockTickScheduler, ProtoTickList<Fluid> fluidTickScheduler, LevelHeightAccessor world) { this(pos, upgradeData, levelChunkSections, blockTickScheduler, fluidTickScheduler, world, null); }
++    @Deprecated // Paper start - add level
+     public ProtoChunk(ChunkPos pos, UpgradeData upgradeData, @Nullable LevelChunkSection[] levelChunkSections, ProtoTickList<Block> blockTickScheduler, ProtoTickList<Fluid> fluidTickScheduler, LevelHeightAccessor world) {
++        // Paper start
++        this(pos, upgradeData, levelChunkSections, blockTickScheduler, fluidTickScheduler, world, null);
++        if (!PRINTED_OUTDATED_CTOR_MSG) {
++            new IllegalArgumentException("Must use ProtoChunk constructor with the ServerLevel parameter").printStackTrace();
++            PRINTED_OUTDATED_CTOR_MSG = true;
++        }
++    }
 +    public ProtoChunk(ChunkPos pos, UpgradeData upgradeData, @Nullable LevelChunkSection[] levelChunkSections, ProtoTickList<Block> blockTickScheduler, ProtoTickList<Fluid> fluidTickScheduler, LevelHeightAccessor world, net.minecraft.server.level.ServerLevel level) {
 +        this.level = level;
 +        // Paper end
