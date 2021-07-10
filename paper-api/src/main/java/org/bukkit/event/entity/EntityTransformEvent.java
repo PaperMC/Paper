@@ -85,6 +85,10 @@ public class EntityTransformEvent extends EntityEvent implements Cancellable {
          */
         CURED,
         /**
+         * When an entity is shaking in Powder Snow and a new entity spawns.
+         */
+        FROZEN,
+        /**
          * When a villager gets infected and a zombie villager spawns.
          */
         INFECTION,

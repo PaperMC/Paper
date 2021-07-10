@@ -178,6 +178,10 @@ public class CreatureSpawnEvent extends EntitySpawnEvent {
          */
         PIGLIN_ZOMBIFIED,
         /**
+         * When an entity is shaking in Powder Snow and a new entity spawns.
+         */
+        FROZEN,
+        /**
          * When a creature is spawned by the "/summon" command
          */
         COMMAND,
