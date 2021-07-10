@@ -1,12 +1,9 @@
 package org.bukkit.craftbukkit.entity;
 
 import net.minecraft.core.EnumDirection;
-import net.minecraft.server.level.PlayerChunkMap;
-import net.minecraft.server.level.WorldServer;
 import net.minecraft.world.entity.decoration.EntityHanging;
 import org.bukkit.block.BlockFace;
 import org.bukkit.craftbukkit.CraftServer;
-import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Hanging;
@@ -73,20 +70,5 @@ public class CraftHanging extends CraftEntity implements Hanging {
     @Override
     public EntityType getType() {
         return EntityType.UNKNOWN;
-    }
-
-    protected void update() {
-        if (!getHandle().isAlive()) {
-            return;
-        }
-
-        WorldServer world = ((CraftWorld) getWorld()).getHandle();
-        PlayerChunkMap.EntityTracker entityTracker = world.getChunkProvider().chunkMap.entityMap.get(getEntityId());
-
-        if (entityTracker == null) {
-            return;
-        }
-
-        entityTracker.broadcast(getHandle().getPacket());
     }
 }

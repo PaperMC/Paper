@@ -57,6 +57,7 @@ public class CraftFireball extends AbstractProjectile implements Fireball {
     public void setDirection(Vector direction) {
         Validate.notNull(direction, "Direction can not be null");
         getHandle().setDirection(direction.getX(), direction.getY(), direction.getZ());
+        update(); // SPIGOT-6579
     }
 
     @Override

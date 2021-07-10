@@ -12,6 +12,8 @@ import net.minecraft.nbt.NBTBase;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.network.chat.IChatBaseComponent;
 import net.minecraft.server.level.EntityPlayer;
+import net.minecraft.server.level.PlayerChunkMap;
+import net.minecraft.server.level.WorldServer;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityAreaEffectCloud;
@@ -1033,6 +1035,22 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         getHandle().save(nbttagcompound);
 
         return nbttagcompound;
+    }
+
+    // re-sends the spawn entity packet to updated values which cannot be updated otherwise
+    protected void update() {
+        if (!getHandle().isAlive()) {
+            return;
+        }
+
+        WorldServer world = ((CraftWorld) getWorld()).getHandle();
+        PlayerChunkMap.EntityTracker entityTracker = world.getChunkProvider().chunkMap.entityMap.get(getEntityId());
+
+        if (entityTracker == null) {
+            return;
+        }
+
+        entityTracker.broadcast(getHandle().getPacket());
     }
 
     private static PermissibleBase getPermissibleBase() {
