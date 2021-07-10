@@ -1,0 +1,232 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sun, 16 May 2021 13:40:35 -0700
+Subject: [PATCH] More PortalCreateEvent reasons
+
+
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/TheEndGatewayBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/TheEndGatewayBlockEntity.java
+index 1ec80f9c901dff1c9f29befa5a8e3c3f6f37aaf7..1e150135e0942955e70abea7eb2d538669facf56 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/TheEndGatewayBlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/TheEndGatewayBlockEntity.java
+@@ -186,11 +186,11 @@ public class TheEndGatewayBlockEntity extends TheEndPortalBlockEntity {
+                 blockposition1 = TheEndGatewayBlockEntity.findOrCreateValidTeleportPos(worldserver, pos);
+                 blockposition1 = blockposition1.above(10);
+                 TheEndGatewayBlockEntity.LOGGER.debug("Creating portal at {}", blockposition1);
+-                TheEndGatewayBlockEntity.spawnGatewayPortal(worldserver, blockposition1, EndGatewayConfiguration.knownExit(pos, false));
++                TheEndGatewayBlockEntity.spawnGatewayPortal(worldserver, blockposition1, EndGatewayConfiguration.knownExit(pos, false), entity); // Paper
+                 blockEntity.exitPortal = blockposition1;
+             }
+ 
+-            if (blockEntity.exitPortal != null) {
++            if (blockEntity.exitPortal != null && blockEntity.getLevel().getBlockEntity(blockEntity.exitPortal) instanceof TheEndGatewayBlockEntity) { // Paper - confirm gateway was created
+                 blockposition1 = blockEntity.exactTeleport ? blockEntity.exitPortal : TheEndGatewayBlockEntity.findExitPosition(world, blockEntity.exitPortal);
+                 Entity entity1;
+ 
+@@ -358,8 +358,12 @@ public class TheEndGatewayBlockEntity extends TheEndPortalBlockEntity {
+         return blockposition2;
+     }
+ 
+-    private static void spawnGatewayPortal(ServerLevel world, BlockPos pos, EndGatewayConfiguration config) {
+-        Feature.END_GATEWAY.place(config, world, world.getChunkSource().getGenerator(), RandomSource.create(), pos);
++    // Paper start
++    private static void spawnGatewayPortal(ServerLevel world, BlockPos pos, EndGatewayConfiguration config, @Nullable Entity entity) {
++        if (world.ensureCanWrite(pos)) {
++            ((net.minecraft.world.level.levelgen.feature.EndGatewayFeature)Feature.END_GATEWAY).place(new net.minecraft.world.level.levelgen.feature.FeaturePlaceContext<>(java.util.Optional.empty(), world, world.getChunkSource().getGenerator(), RandomSource.create(), pos, config), org.bukkit.event.world.PortalCreateEvent.CreateReason.END_GATEWAY_PAIR, entity);
++        }
++        // Paper end
+     }
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/level/dimension/end/EndDragonFight.java b/src/main/java/net/minecraft/world/level/dimension/end/EndDragonFight.java
+index 630971d7a87c12798672af9635535eaf80a3ec9c..785f4a271a20c0204098e205ebdee4c275a29890 100644
+--- a/src/main/java/net/minecraft/world/level/dimension/end/EndDragonFight.java
++++ b/src/main/java/net/minecraft/world/level/dimension/end/EndDragonFight.java
+@@ -406,8 +406,8 @@ public class EndDragonFight {
+         if (dragon.getUUID().equals(this.dragonUUID)) {
+             this.dragonEvent.setProgress(0.0F);
+             this.dragonEvent.setVisible(false);
+-            this.spawnExitPortal(true);
+-            this.spawnNewGateway();
++            this.spawnExitPortal(true, dragon); // Paper
++            this.spawnNewGateway(dragon); // Paper
+             // Paper start - DragonEggFormEvent
+             BlockPos eggPosition = this.level.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING, EndPodiumFeature.getLocation(this.origin));
+             org.bukkit.craftbukkit.block.CraftBlockState eggState = org.bukkit.craftbukkit.block.CraftBlockStates.getBlockState(this.level, eggPosition);
+@@ -442,7 +442,7 @@ public class EndDragonFight {
+     // Paper start
+     public boolean spawnNewGatewayIfPossible() {
+         if (!this.gateways.isEmpty()) {
+-            this.spawnNewGateway();
++            this.spawnNewGateway(null); // Paper
+             return true;
+         }
+         return false;
+@@ -457,26 +457,39 @@ public class EndDragonFight {
+     }
+     // Paper end
+ 
+-    private void spawnNewGateway() {
++    private void spawnNewGateway(@Nullable EnderDragon entityEnderDragon) { // Paper
+         if (!this.gateways.isEmpty()) {
+             int i = (Integer) this.gateways.remove(this.gateways.size() - 1);
+             int j = Mth.floor(96.0D * Math.cos(2.0D * (-3.141592653589793D + 0.15707963267948966D * (double) i)));
+             int k = Mth.floor(96.0D * Math.sin(2.0D * (-3.141592653589793D + 0.15707963267948966D * (double) i)));
+ 
+-            this.spawnNewGateway(new BlockPos(j, 75, k));
++            this.spawnNewGateway(new BlockPos(j, 75, k), entityEnderDragon);
+         }
+     }
+ 
+-    public void spawnNewGateway(BlockPos pos) {
++    public void spawnNewGateway(BlockPos pos, @Nullable EnderDragon entityEnderDragon) { // Paper
+         this.level.levelEvent(3000, pos, 0);
+         this.level.registryAccess().registry(Registries.CONFIGURED_FEATURE).flatMap((iregistry) -> {
+             return iregistry.getHolder(EndFeatures.END_GATEWAY_DELAYED);
+         }).ifPresent((holder_c) -> {
+-            ((ConfiguredFeature) holder_c.value()).place(this.level, this.level.getChunkSource().getGenerator(), RandomSource.create(), pos);
++            // Paper start
++            if (holder_c.value().feature() instanceof net.minecraft.world.level.levelgen.feature.EndGatewayFeature endGatewayFeature && holder_c.value().config() instanceof net.minecraft.world.level.levelgen.feature.configurations.EndGatewayConfiguration endGatewayConfiguration) {
++                if (this.level.ensureCanWrite(pos)) {
++                    endGatewayFeature.place(new net.minecraft.world.level.levelgen.feature.FeaturePlaceContext<>(java.util.Optional.empty(), this.level, this.level.getChunkSource().getGenerator(), RandomSource.create(), pos, endGatewayConfiguration), org.bukkit.event.world.PortalCreateEvent.CreateReason.END_GATEWAY_DRAGON_DEFEAT, entityEnderDragon); // Paper
++                }
++            } else {
++            // Paper end
++                holder_c.value().place(this.level, this.level.getChunkSource().getGenerator(), RandomSource.create(), pos);
++            } // Paper
+         });
+     }
+ 
+     public void spawnExitPortal(boolean previouslyKilled) {
++        // Paper start
++        this.spawnExitPortal(previouslyKilled, null);
++    }
++    public void spawnExitPortal(boolean previouslyKilled, @Nullable Entity entity) {
++        // Paper end
+         EndPodiumFeature worldgenendtrophy = new EndPodiumFeature(previouslyKilled);
+ 
+         if (this.portalLocation == null) {
+@@ -490,7 +503,7 @@ public class EndDragonFight {
+             this.portalLocation = this.portalLocation.atY(this.level.getMinBuildHeight() + 1);
+         }
+         // Paper end
+-        worldgenendtrophy.place(FeatureConfiguration.NONE, this.level, this.level.getChunkSource().getGenerator(), RandomSource.create(), this.portalLocation);
++        worldgenendtrophy.place(FeatureConfiguration.NONE, this.level, this.level.getChunkSource().getGenerator(), RandomSource.create(), this.portalLocation, entity); // Paper - add entity context
+     }
+ 
+     @Nullable
+@@ -536,7 +549,7 @@ public class EndDragonFight {
+             this.respawnStage = null;
+             this.respawnTime = 0;
+             this.resetSpikeCrystals();
+-            this.spawnExitPortal(true);
++            this.spawnExitPortal(true, enderCrystal); // Paper
+         } else {
+             this.updateCrystalCount();
+             Entity entity = this.level.getEntity(this.dragonUUID);
+diff --git a/src/main/java/net/minecraft/world/level/levelgen/feature/EndGatewayFeature.java b/src/main/java/net/minecraft/world/level/levelgen/feature/EndGatewayFeature.java
+index 97113765397fe4085f3590c0b085886163ca387e..1b84fed544af36d6e42304a02f3bfd21bc859760 100644
+--- a/src/main/java/net/minecraft/world/level/levelgen/feature/EndGatewayFeature.java
++++ b/src/main/java/net/minecraft/world/level/levelgen/feature/EndGatewayFeature.java
+@@ -15,8 +15,13 @@ public class EndGatewayFeature extends Feature<EndGatewayConfiguration> {
+ 
+     @Override
+     public boolean place(FeaturePlaceContext<EndGatewayConfiguration> context) {
++        // Paper start
++        return this.place(context, org.bukkit.event.world.PortalCreateEvent.CreateReason.UNKNOWN, null);
++    }
++    public boolean place(FeaturePlaceContext<EndGatewayConfiguration> context, org.bukkit.event.world.PortalCreateEvent.CreateReason createReason, @javax.annotation.Nullable net.minecraft.world.entity.Entity entity) {
++        // Paper end
+         BlockPos blockPos = context.origin();
+-        WorldGenLevel worldGenLevel = context.level();
++        org.bukkit.craftbukkit.util.BlockStateListPopulator worldGenLevel = new org.bukkit.craftbukkit.util.BlockStateListPopulator(context.level()); // Paper
+         EndGatewayConfiguration endGatewayConfiguration = context.config();
+ 
+         for(BlockPos blockPos2 : BlockPos.betweenClosed(blockPos.offset(-1, -2, -1), blockPos.offset(1, 2, 1))) {
+@@ -27,7 +32,7 @@ public class EndGatewayFeature extends Feature<EndGatewayConfiguration> {
+             if (bl && bl2 && bl3) {
+                 BlockPos blockPos3 = blockPos2.immutable();
+                 this.setBlock(worldGenLevel, blockPos3, Blocks.END_GATEWAY.defaultBlockState());
+-                endGatewayConfiguration.getExit().ifPresent((pos) -> {
++                endGatewayConfiguration.getExit().ifPresent((pos) -> { // Paper - moved to below after tile entity has been created
+                     BlockEntity blockEntity = worldGenLevel.getBlockEntity(blockPos3);
+                     if (blockEntity instanceof TheEndGatewayBlockEntity theEndGatewayBlockEntity) {
+                         theEndGatewayBlockEntity.setExitPosition(pos, endGatewayConfiguration.isExitExact());
+@@ -46,6 +51,13 @@ public class EndGatewayFeature extends Feature<EndGatewayConfiguration> {
+             }
+         }
+ 
++        // Paper start
++        worldGenLevel.refreshTiles(); // Update TheEndGatewayBlockEntity
++        if (new org.bukkit.event.world.PortalCreateEvent(!org.bukkit.Bukkit.isPrimaryThread(), (java.util.List<org.bukkit.block.BlockState>) (java.util.List) worldGenLevel.getList(), worldGenLevel.getWorld().getMinecraftWorld().getWorld(), entity != null ? entity.getBukkitEntity() : null, createReason).callEvent()) {
++            worldGenLevel.updateList();
+         return true;
++        }
++        return false;
++        // Paper end
+     }
+ }
+diff --git a/src/main/java/net/minecraft/world/level/levelgen/feature/EndPodiumFeature.java b/src/main/java/net/minecraft/world/level/levelgen/feature/EndPodiumFeature.java
+index d622776fd31fa380b71838a835b150d3011ff453..357bf6b33a03b4d7fc55f12f612cca76c54499e2 100644
+--- a/src/main/java/net/minecraft/world/level/levelgen/feature/EndPodiumFeature.java
++++ b/src/main/java/net/minecraft/world/level/levelgen/feature/EndPodiumFeature.java
+@@ -27,7 +27,7 @@ public class EndPodiumFeature extends Feature<NoneFeatureConfiguration> {
+     @Override
+     public boolean place(FeaturePlaceContext<NoneFeatureConfiguration> context) {
+         BlockPos blockPos = context.origin();
+-        WorldGenLevel worldGenLevel = context.level();
++        org.bukkit.craftbukkit.util.BlockStateListPopulator worldGenLevel = new org.bukkit.craftbukkit.util.BlockStateListPopulator(context.level()); // Paper
+ 
+         for(BlockPos blockPos2 : BlockPos.betweenClosed(new BlockPos(blockPos.getX() - 4, blockPos.getY() - 1, blockPos.getZ() - 4), new BlockPos(blockPos.getX() + 4, blockPos.getY() + 32, blockPos.getZ() + 4))) {
+             boolean bl = blockPos2.closerThan(blockPos, 2.5D);
+@@ -60,6 +60,13 @@ public class EndPodiumFeature extends Feature<NoneFeatureConfiguration> {
+             this.setBlock(worldGenLevel, blockPos3.relative(direction), Blocks.WALL_TORCH.defaultBlockState().setValue(WallTorchBlock.FACING, direction));
+         }
+ 
++        // Paper start
++        worldGenLevel.refreshTiles();
++        if (new org.bukkit.event.world.PortalCreateEvent(!org.bukkit.Bukkit.isPrimaryThread(), (java.util.List<org.bukkit.block.BlockState>) (java.util.List) worldGenLevel.getList(), worldGenLevel.getWorld().getMinecraftWorld().getWorld(), context.entitySource == null ? null : context.entitySource.getBukkitEntity(), this.active ? org.bukkit.event.world.PortalCreateEvent.CreateReason.ACTIVE_END_PORTAL : org.bukkit.event.world.PortalCreateEvent.CreateReason.END_PORTAL).callEvent()) {
++            worldGenLevel.updateList();
+         return true;
++        }
++        return false;
++        // Paper end
+     }
+ }
+diff --git a/src/main/java/net/minecraft/world/level/levelgen/feature/Feature.java b/src/main/java/net/minecraft/world/level/levelgen/feature/Feature.java
+index 212d1ae4b14c7d6a299fdde939174fd535bfe415..8a250b7bcb209f224135c45ddc418d723531f648 100644
+--- a/src/main/java/net/minecraft/world/level/levelgen/feature/Feature.java
++++ b/src/main/java/net/minecraft/world/level/levelgen/feature/Feature.java
+@@ -152,7 +152,12 @@ public abstract class Feature<FC extends FeatureConfiguration> {
+     public abstract boolean place(FeaturePlaceContext<FC> context);
+ 
+     public boolean place(FC config, WorldGenLevel world, ChunkGenerator chunkGenerator, RandomSource random, BlockPos pos) {
+-        return world.ensureCanWrite(pos) ? this.place(new FeaturePlaceContext<>(Optional.empty(), world, chunkGenerator, random, pos, config)) : false;
++        // Paper start - add entity context
++        return this.place(config, world, chunkGenerator, random, pos, null);
++    }
++    public boolean place(FC config, WorldGenLevel world, ChunkGenerator chunkGenerator, RandomSource random, BlockPos pos, @org.jetbrains.annotations.Nullable net.minecraft.world.entity.Entity entitySource) {
++        return world.ensureCanWrite(pos) ? this.place(new FeaturePlaceContext<>(Optional.empty(), world, chunkGenerator, random, pos, config, entitySource)) : false;
++        // Paper end - add entity context
+     }
+ 
+     protected static boolean isStone(BlockState state) {
+diff --git a/src/main/java/net/minecraft/world/level/levelgen/feature/FeaturePlaceContext.java b/src/main/java/net/minecraft/world/level/levelgen/feature/FeaturePlaceContext.java
+index e335bc9bb650aaf8d3b42b03796926a502d93ce8..57e4d8f19e036083113e1b9889458d1dd8953302 100644
+--- a/src/main/java/net/minecraft/world/level/levelgen/feature/FeaturePlaceContext.java
++++ b/src/main/java/net/minecraft/world/level/levelgen/feature/FeaturePlaceContext.java
+@@ -14,8 +14,15 @@ public class FeaturePlaceContext<FC extends FeatureConfiguration> {
+     private final RandomSource random;
+     private final BlockPos origin;
+     private final FC config;
++    public final @org.jetbrains.annotations.Nullable net.minecraft.world.entity.Entity entitySource; // Paper - add entity context
+ 
+     public FeaturePlaceContext(Optional<ConfiguredFeature<?, ?>> feature, WorldGenLevel world, ChunkGenerator generator, RandomSource random, BlockPos origin, FC config) {
++        // Paper start - add entity context
++        this(feature, world, generator, random, origin, config, null);
++    }
++    public FeaturePlaceContext(Optional<ConfiguredFeature<?, ?>> feature, WorldGenLevel world, ChunkGenerator generator, RandomSource random, BlockPos origin, FC config, @org.jetbrains.annotations.Nullable net.minecraft.world.entity.Entity entitySource) {
++        this.entitySource = entitySource;
++        // Paper end - add entity context
+         this.topFeature = feature;
+         this.level = world;
+         this.chunkGenerator = generator;
