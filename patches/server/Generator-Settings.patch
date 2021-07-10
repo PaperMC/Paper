@@ -42,14 +42,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
 +    // Paper start
 +    default boolean generateFlatBedrock() {
-+        if (this instanceof ProtoChunk) {
-+            return ((ProtoChunk)this).level.paperConfig.generateFlatBedrock;
-+        } else if (this instanceof LevelChunk) {
-+            return ((LevelChunk)this).level.paperConfig.generateFlatBedrock;
-+        } else {
-+            return false;
++        if (this.getLevel() != null) {
++            return this.getLevel().paperConfig.generateFlatBedrock;
 +        }
++        return false;
 +    }
++
++    net.minecraft.world.level.Level getLevel();
 +    // Paper end
 +
      BlockState getType(final int x, final int y, final int z); // Paper
@@ -76,11 +75,24 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      private long inhabitedTime;
      private final Map<GenerationStep.Carving, BitSet> carvingMasks = new Object2ObjectArrayMap<>();
      private volatile boolean isLightCorrect;
-+    final net.minecraft.world.level.Level level; // Paper - Add level
++    // Paper start - Add level
++    final net.minecraft.world.level.Level level;
++    @Override
++    public net.minecraft.world.level.Level getLevel() {
++        return this.level;
++    }
++    // Paper end
++    private static boolean PRINTED_OUTDATED_CTOR_MSG = false; // Paper - Add level
  
--    public ProtoChunk(ChunkPos pos, UpgradeData upgradeData, LevelHeightAccessor world) {
-+    // Paper start - add level
-+    @Deprecated public ProtoChunk(ChunkPos pos, UpgradeData upgradeData, LevelHeightAccessor world) { this(pos, upgradeData, world, null); }
++    @Deprecated // Paper start - add level
+     public ProtoChunk(ChunkPos pos, UpgradeData upgradeData, LevelHeightAccessor world) {
++        // Paper start
++        this(pos, upgradeData, world, null);
++        if (!PRINTED_OUTDATED_CTOR_MSG) {
++            new IllegalArgumentException("Must use ProtoChunk constructor with the ServerLevel parameter").printStackTrace();
++            PRINTED_OUTDATED_CTOR_MSG = true;
++        }
++    }
 +    public ProtoChunk(ChunkPos pos, UpgradeData upgradeData, LevelHeightAccessor world, net.minecraft.server.level.ServerLevel level) {
 +        // Paper end
          this(pos, upgradeData, (LevelChunkSection[])null, new ProtoTickList<>((block) -> {
@@ -91,9 +103,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }, pos, world), world, level); // Paper - add level
      }
  
--    public ProtoChunk(ChunkPos pos, UpgradeData upgradeData, @Nullable LevelChunkSection[] levelChunkSections, ProtoTickList<Block> blockTickScheduler, ProtoTickList<Fluid> fluidTickScheduler, LevelHeightAccessor world) {
-+    // Paper start - add level
-+    @Deprecated public ProtoChunk(ChunkPos pos, UpgradeData upgradeData, @Nullable LevelChunkSection[] levelChunkSections, ProtoTickList<Block> blockTickScheduler, ProtoTickList<Fluid> fluidTickScheduler, LevelHeightAccessor world) { this(pos, upgradeData, levelChunkSections, blockTickScheduler, fluidTickScheduler, world, null); }
++    @Deprecated // Paper start - add level
+     public ProtoChunk(ChunkPos pos, UpgradeData upgradeData, @Nullable LevelChunkSection[] levelChunkSections, ProtoTickList<Block> blockTickScheduler, ProtoTickList<Fluid> fluidTickScheduler, LevelHeightAccessor world) {
++        // Paper start
++        this(pos, upgradeData, levelChunkSections, blockTickScheduler, fluidTickScheduler, world, null);
++        if (!PRINTED_OUTDATED_CTOR_MSG) {
++            new IllegalArgumentException("Must use ProtoChunk constructor with the ServerLevel parameter").printStackTrace();
++            PRINTED_OUTDATED_CTOR_MSG = true;
++        }
++    }
 +    public ProtoChunk(ChunkPos pos, UpgradeData upgradeData, @Nullable LevelChunkSection[] levelChunkSections, ProtoTickList<Block> blockTickScheduler, ProtoTickList<Fluid> fluidTickScheduler, LevelHeightAccessor world, net.minecraft.server.level.ServerLevel level) {
 +        this.level = level;
 +        // Paper end
