@@ -23,10 +23,18 @@ index 22c2c121bbcc7b0e15d73d20c9cc83d5fb085e5f..edb66e8c4507597ec8c35883460f88de
  
      @Override
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index 04e87f895dc3822cd1fe486c6ff0f6cd4415024b..45a8dc649983f1eec3d8eb065cb34d517c55300b 100644
+index 65a55bdc3651900f2df0173c267d03335ce56a8a..47758fe59169d019d10f77b40843a44786b43b9b 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-@@ -142,6 +142,10 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -126,6 +126,7 @@ import org.bukkit.metadata.MetadataValue;
+ import org.bukkit.plugin.Plugin;
+ import org.bukkit.plugin.messaging.StandardMessenger;
+ import org.bukkit.scoreboard.Scoreboard;
++import org.jetbrains.annotations.NotNull;
+ 
+ import net.md_5.bungee.api.chat.BaseComponent; // Spigot
+ 
+@@ -142,6 +143,10 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
      private double health = 20;
      private boolean scaledHealth = false;
      private double healthScale = 20;
@@ -37,16 +45,29 @@ index 04e87f895dc3822cd1fe486c6ff0f6cd4415024b..45a8dc649983f1eec3d8eb065cb34d51
  
      public CraftPlayer(CraftServer server, ServerPlayer entity) {
          super(server, entity);
-@@ -1896,6 +1900,32 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -1896,6 +1901,45 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
      public boolean getAffectsSpawning() {
          return this.getHandle().affectsSpawning;
      }
 +
 +    @Override
-+    public void setResourcePack(String url, String hash) {
++    public void setResourcePack(@NotNull String url, @NotNull String hash) {
++        this.setResourcePack(url, hash, false, null);
++    }
++
++    @Override
++    public void setResourcePack(@NotNull String url, @NotNull String hash, boolean required) {
++        this.setResourcePack(url, hash, required, null);
++    }
++
++    @Override
++    public void setResourcePack(@NotNull String url, @NotNull String hash, boolean required, net.kyori.adventure.text.Component resourcePackPrompt) {
 +        Validate.notNull(url, "Resource pack URL cannot be null");
 +        Validate.notNull(hash, "Hash cannot be null");
-+        this.getHandle().sendTexturePack(url, hash, false, new net.minecraft.network.chat.TextComponent(""));
++        net.minecraft.network.chat.Component promptComponent = resourcePackPrompt != null ?
++                            io.papermc.paper.adventure.PaperAdventure.asVanilla(resourcePackPrompt) :
++                           new net.minecraft.network.chat.TextComponent("");
++        this.getHandle().sendTexturePack(url, hash, required, promptComponent);
 +    }
 +
 +    @Override
