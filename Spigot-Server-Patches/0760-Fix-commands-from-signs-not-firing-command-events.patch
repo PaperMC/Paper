@@ -1,0 +1,158 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Fri, 9 Jul 2021 13:50:48 -0700
+Subject: [PATCH] Fix commands from signs not firing command events
+
+This patch changes sign command logic so that `run_command` click events:
+  - are logged to the console
+  - fire PlayerCommandPreprocessEvent
+  - work with double-slash commands like `//wand`
+  - sends failure messages to the player who clicked the sign
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 32ac923d41d89ae170924532245bde9975bcfbd3..dc4bd421ea36779342a35e82830a05fa68b96f7b 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -845,4 +845,9 @@ public class PaperWorldConfig {
+     private void fixInvulnerableEndCrystalExploit() {
+         fixInvulnerableEndCrystalExploit = getBoolean("unsupported-settings.fix-invulnerable-end-crystal-exploit", fixInvulnerableEndCrystalExploit);
+     }
++
++    public boolean showSignClickCommandFailureMessagesToPlayer = false;
++    private void showSignClickCommandFailureMessagesToPlayer() {
++        showSignClickCommandFailureMessagesToPlayer = getBoolean("show-sign-click-command-failure-msgs-to-player", showSignClickCommandFailureMessagesToPlayer);
++    }
+ }
+diff --git a/src/main/java/io/papermc/paper/commands/DelegatingCommandSource.java b/src/main/java/io/papermc/paper/commands/DelegatingCommandSource.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..5c3f17163609ee81f820e4f496017d507578daf3
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/commands/DelegatingCommandSource.java
+@@ -0,0 +1,42 @@
++package io.papermc.paper.commands;
++
++import net.minecraft.commands.CommandListenerWrapper;
++import net.minecraft.commands.ICommandListener;
++import net.minecraft.network.chat.IChatBaseComponent;
++import org.bukkit.command.CommandSender;
++
++import java.util.UUID;
++
++public class DelegatingCommandSource implements ICommandListener {
++
++    private final ICommandListener delegate;
++
++    public DelegatingCommandSource(ICommandListener delegate) {
++        this.delegate = delegate;
++    }
++
++    @Override
++    public void sendMessage(IChatBaseComponent message, UUID sender) {
++        delegate.sendMessage(message, sender);
++    }
++
++    @Override
++    public boolean shouldSendSuccess() {
++        return delegate.shouldSendSuccess();
++    }
++
++    @Override
++    public boolean shouldSendFailure() {
++        return delegate.shouldSendFailure();
++    }
++
++    @Override
++    public boolean shouldBroadcastCommands() {
++        return delegate.shouldBroadcastCommands();
++    }
++
++    @Override
++    public CommandSender getBukkitSender(CommandListenerWrapper wrapper) {
++        return delegate.getBukkitSender(wrapper);
++    }
++}
+diff --git a/src/main/java/net/minecraft/commands/CommandDispatcher.java b/src/main/java/net/minecraft/commands/CommandDispatcher.java
+index 7e30ec9a08d919d2ae9218ee0a11f77719129f07..4270a9bbc272706b5a88807d465a32e73d18b90f 100644
+--- a/src/main/java/net/minecraft/commands/CommandDispatcher.java
++++ b/src/main/java/net/minecraft/commands/CommandDispatcher.java
+@@ -245,6 +245,7 @@ public class CommandDispatcher {
+         return this.a(sender, newCommand, newCommand, false);
+     }
+ 
++    public int performCommand(CommandListenerWrapper commandlistenerwrapper, String s) { return this.a(commandlistenerwrapper, s); } // Paper - OBFHELPER
+     public int a(CommandListenerWrapper commandlistenerwrapper, String s) {
+         return this.a(commandlistenerwrapper, s, s, true);
+     }
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/TileEntitySign.java b/src/main/java/net/minecraft/world/level/block/entity/TileEntitySign.java
+index 7f78f388584899b13ff983f0dc37c679bfb1507e..1fc3e59551e26b25ba367b45df6024107450a444 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/TileEntitySign.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/TileEntitySign.java
+@@ -32,6 +32,7 @@ public class TileEntitySign extends TileEntity implements ICommandListener { //
+     private EnumColor color;
+     public java.util.UUID signEditor; // Paper
+     private static final boolean CONVERT_LEGACY_SIGNS = Boolean.getBoolean("convertLegacySigns"); // Paper
++    private static final org.apache.logging.log4j.Logger LOGGER = org.apache.logging.log4j.LogManager.getLogger(); // Paper
+ 
+     public TileEntitySign() {
+         super(TileEntityTypes.SIGN);
+@@ -155,7 +156,18 @@ public class TileEntitySign extends TileEntity implements ICommandListener { //
+                 ChatClickable chatclickable = chatmodifier.getClickEvent();
+ 
+                 if (chatclickable.a() == ChatClickable.EnumClickAction.RUN_COMMAND) {
+-                    entityhuman.getMinecraftServer().getCommandDispatcher().a(this.a((EntityPlayer) entityhuman), chatclickable.b());
++                    // Paper start
++                    EntityPlayer player = (EntityPlayer) entityhuman;
++                    String command = chatclickable.b().startsWith("/") ? chatclickable.b() : "/" + chatclickable.b();
++                    if (org.spigotmc.SpigotConfig.logCommands)  {
++                        LOGGER.info("{} issued server command: {}", entityhuman.getName(), command);
++                    }
++                    io.papermc.paper.event.player.PlayerSignCommandPreprocessEvent event = new io.papermc.paper.event.player.PlayerSignCommandPreprocessEvent(player.getBukkitEntity(), command, new org.bukkit.craftbukkit.util.LazyPlayerSet(player.server), (org.bukkit.block.Sign) net.minecraft.server.MCUtil.toBukkitBlock(this.world, this.position).getState());
++                    if (!event.callEvent()) {
++                        return false;
++                    }
++                    player.server.getCommandDispatcher().performCommand(this.createCommandSourceStack(((org.bukkit.craftbukkit.entity.CraftPlayer) event.getPlayer()).getHandle()), event.getMessage());
++                    // Paper end
+                 }
+             }
+         }
+@@ -188,12 +200,26 @@ public class TileEntitySign extends TileEntity implements ICommandListener { //
+     }
+     // CraftBukkit end
+ 
++    public CommandListenerWrapper createCommandSourceStack(@Nullable EntityPlayer entityplayer) { return this.a(entityplayer); } // Paper - OBFHELPER
+     public CommandListenerWrapper a(@Nullable EntityPlayer entityplayer) {
+         String s = entityplayer == null ? "Sign" : entityplayer.getDisplayName().getString();
+         Object object = entityplayer == null ? new ChatComponentText("Sign") : entityplayer.getScoreboardDisplayName();
+ 
++        // Paper start - send messages back to the player
++        ICommandListener commandSource = this.world.paperConfig.showSignClickCommandFailureMessagesToPlayer ? new io.papermc.paper.commands.DelegatingCommandSource(this) {
++            @Override
++            public void sendMessage(net.minecraft.network.chat.IChatBaseComponent message, java.util.UUID sender) {
++                entityplayer.sendMessage(message, sender);
++            }
++
++            @Override
++            public boolean shouldSendFailure() {
++                return true;
++            }
++        } : this;
++        // Paper end
+         // CraftBukkit - this
+-        return new CommandListenerWrapper(this, Vec3D.a((BaseBlockPosition) this.position), Vec2F.a, (WorldServer) this.world, 2, s, (IChatBaseComponent) object, this.world.getMinecraftServer(), entityplayer);
++        return new CommandListenerWrapper(commandSource, Vec3D.a((BaseBlockPosition) this.position), Vec2F.a, (WorldServer) this.world, 2, s, (IChatBaseComponent) object, this.world.getMinecraftServer(), entityplayer); // Paper
+     }
+ 
+     public EnumColor getColor() {
+diff --git a/src/main/java/org/bukkit/craftbukkit/command/BukkitCommandWrapper.java b/src/main/java/org/bukkit/craftbukkit/command/BukkitCommandWrapper.java
+index 8ddd246ad69a2e53749d38c369af701c161de54e..fd16506aeb92df86dd88eb3bb8091e5ab055760e 100644
+--- a/src/main/java/org/bukkit/craftbukkit/command/BukkitCommandWrapper.java
++++ b/src/main/java/org/bukkit/craftbukkit/command/BukkitCommandWrapper.java
+@@ -50,7 +50,7 @@ public class BukkitCommandWrapper implements com.mojang.brigadier.Command<Comman
+ 
+     @Override
+     public int run(CommandContext<CommandListenerWrapper> context) throws CommandSyntaxException {
+-        return server.dispatchCommand(context.getSource().getBukkitSender(), context.getInput()) ? 1 : 0;
++        return server.dispatchCommand(context.getSource().getBukkitSender(), context.getRange().get(context.getInput())) ? 1 : 0; // Paper - actually use the StringRange from context
+     }
+ 
+     @Override
