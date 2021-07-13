@@ -73,6 +73,14 @@ public class LightningStrikeEvent extends WeatherEvent implements Cancellable {
          */
         COMMAND,
         /**
+         * Triggered by a Plugin.
+         */
+        CUSTOM,
+        /**
+         * Triggered by a Spawner.
+         */
+        SPAWNER,
+        /**
          * Triggered by an enchanted trident.
          */
         TRIDENT,
