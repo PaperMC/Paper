@@ -258,6 +258,7 @@ import org.bukkit.entity.minecart.PoweredMinecart;
 import org.bukkit.entity.minecart.SpawnerMinecart;
 import org.bukkit.entity.minecart.StorageMinecart;
 import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
+import org.bukkit.event.weather.LightningStrikeEvent;
 import org.bukkit.event.world.SpawnChangeEvent;
 import org.bukkit.event.world.TimeSkipEvent;
 import org.bukkit.generator.BlockPopulator;
@@ -674,7 +675,7 @@ public class CraftWorld implements World {
     public LightningStrike strikeLightning(Location loc) {
         EntityLightning lightning = EntityTypes.LIGHTNING_BOLT.a(world);
         lightning.teleportAndSync(loc.getX(), loc.getY(), loc.getZ());
-        world.strikeLightning(lightning);
+        world.strikeLightning(lightning, LightningStrikeEvent.Cause.CUSTOM);
         return (LightningStrike) lightning.getBukkitEntity();
     }
 
@@ -683,7 +684,7 @@ public class CraftWorld implements World {
         EntityLightning lightning = EntityTypes.LIGHTNING_BOLT.a(world);
         lightning.teleportAndSync(loc.getX(), loc.getY(), loc.getZ());
         lightning.setEffect(true);
-        world.strikeLightning(lightning);
+        world.strikeLightning(lightning, LightningStrikeEvent.Cause.CUSTOM);
         return (LightningStrike) lightning.getBukkitEntity();
     }
 

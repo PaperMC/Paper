@@ -594,7 +594,22 @@ public class CraftEventFactory {
         } else if (entity.getBukkitEntity() instanceof org.bukkit.entity.Vehicle) {
             event = CraftEventFactory.callVehicleCreateEvent(entity);
         } else if (entity.getBukkitEntity() instanceof org.bukkit.entity.LightningStrike) {
-            LightningStrikeEvent.Cause cause = (spawnReason == SpawnReason.COMMAND ? LightningStrikeEvent.Cause.COMMAND : LightningStrikeEvent.Cause.UNKNOWN);
+            LightningStrikeEvent.Cause cause = LightningStrikeEvent.Cause.UNKNOWN;
+            switch (spawnReason) {
+                case COMMAND:
+                    cause = LightningStrikeEvent.Cause.COMMAND;
+                    break;
+                case CUSTOM:
+                    cause = LightningStrikeEvent.Cause.CUSTOM;
+                    break;
+                case SPAWNER:
+                    cause = LightningStrikeEvent.Cause.SPAWNER;
+                    break;
+            }
+            // This event is called in nms-patches for common causes like Weather, Trap or Trident (SpawnReason.DEFAULT) then can ignore this cases for avoid two calls to this event
+            if (cause == LightningStrikeEvent.Cause.UNKNOWN && spawnReason == SpawnReason.DEFAULT) {
+                return true;
+            }
             event = CraftEventFactory.callLightningStrikeEvent((LightningStrike) entity.getBukkitEntity(), cause);
         } else if (!(entity instanceof EntityPlayer)) {
             event = CraftEventFactory.callEntitySpawnEvent(entity);
