@@ -74,7 +74,7 @@ public class CraftChest extends CraftLootable<TileEntityChest> implements Chest 
         if (getTileEntity().openersCounter.opened) {
             IBlockData block = getTileEntity().getBlock();
             getTileEntity().getWorld().playBlockAction(getPosition(), block.getBlock(), 1, 0);
-            TileEntityChest.playOpenSound(getTileEntity().getWorld(), getPosition(), block, SoundEffects.CHEST_OPEN);
+            TileEntityChest.playOpenSound(getTileEntity().getWorld(), getPosition(), block, SoundEffects.CHEST_CLOSE);
         }
         getTileEntity().openersCounter.opened = false;
     }
