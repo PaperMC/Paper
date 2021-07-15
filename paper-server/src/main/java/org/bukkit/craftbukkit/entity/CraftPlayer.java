@@ -775,7 +775,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
             Optional<Vec3D> spawnLoc = EntityHuman.getBed(world, bed, getHandle().getSpawnAngle(), getHandle().isSpawnForced(), true);
             if (spawnLoc.isPresent()) {
                 Vec3D vec = spawnLoc.get();
-                return new Location(world.getWorld(), vec.x, vec.y, vec.z);
+                return new Location(world.getWorld(), vec.x, vec.y, vec.z, getHandle().getSpawnAngle(), 0);
             }
         }
         return null;
