@@ -62,4 +62,40 @@ public class CraftCampfire extends CraftBlockEntityState<CampfireBlockEntity> im
     public CraftCampfire copy(Location location) {
         return new CraftCampfire(this, location);
     }
+
+    // Paper start
+    @Override
+    public void stopCooking() {
+        for (int i = 0; i < getSnapshot().stopCooking.length; ++i)
+            this.stopCooking(i);
+    }
+
+    @Override
+    public void startCooking() {
+        for (int i = 0; i < getSnapshot().stopCooking.length; ++i)
+            this.startCooking(i);
+    }
+
+    @Override
+    public boolean stopCooking(int index) {
+        org.apache.commons.lang.Validate.isTrue(-1 < index && index < 4, "Slot index must be between 0 (incl) to 3 (incl)");
+        boolean previous = this.isCookingDisabled(index);
+        getSnapshot().stopCooking[index] = true;
+        return previous;
+    }
+
+    @Override
+    public boolean startCooking(int index) {
+        org.apache.commons.lang.Validate.isTrue(-1 < index && index < 4, "Slot index must be between 0 (incl) to 3 (incl)");
+        boolean previous = this.isCookingDisabled(index);
+        getSnapshot().stopCooking[index] = false;
+        return previous;
+    }
+
+    @Override
+    public boolean isCookingDisabled(int index) {
+        org.apache.commons.lang.Validate.isTrue(-1 < index && index < 4, "Slot index must be between 0 (incl) to 3 (incl)");
+        return getSnapshot().stopCooking[index];
+    }
+    // Paper end
 }
