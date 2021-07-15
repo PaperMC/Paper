@@ -69,4 +69,40 @@ public interface Campfire extends TileState {
      * @param cookTimeTotal Cook time total
      */
     void setCookTimeTotal(int index, int cookTimeTotal);
+
+    // Paper start
+    /**
+     * Disable cooking in all slots.
+     */
+    void stopCooking();
+
+    /**
+     * Re-enable cooking in all slots.
+     */
+    void startCooking();
+
+    /**
+     * Disable cooking in the specified slot index.
+     *
+     * @param index item slot index
+     * @return whether the slot had cooking enabled before this call
+     */
+    boolean stopCooking(int index);
+
+    /**
+     * Re-enable cooking in the specified slot index.
+     *
+     * @param index item slot index
+     * @return whether the slot couldn't cook before this call
+     */
+    boolean startCooking(int index);
+
+    /**
+     * State of slot index.
+     *
+     * @param index item slot index
+     * @return {@code true} if the specified slot index cannot cook
+     */
+    boolean isCookingDisabled(int index);
+    // Paper end
 }
