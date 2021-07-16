@@ -111,7 +111,7 @@ index 26e18a08a7f0bd704ff3055ce3a7814191450c85..08e53efb563360f212425c1b090266ed
  }
  
 diff --git a/src/main/java/net/minecraft/world/entity/ai/behavior/Behavior.java b/src/main/java/net/minecraft/world/entity/ai/behavior/Behavior.java
-index b1212e162ba938b3abe0df747a633ba9cbbe57c8..f689fad6f4b728f676fb1feaf742c0305dbf4dae 100644
+index b1212e162ba938b3abe0df747a633ba9cbbe57c8..fe2aa0165be6b9d9a82a799b7096a570a70c4cf2 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/behavior/Behavior.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/behavior/Behavior.java
 @@ -14,6 +14,10 @@ public abstract class Behavior<E extends LivingEntity> {
@@ -146,7 +146,7 @@ index b1212e162ba938b3abe0df747a633ba9cbbe57c8..f689fad6f4b728f676fb1feaf742c030
  
      public final boolean tryStart(ServerLevel world, E entity, long time) {
 +        // Paper start - behavior tick rate
-+        int tickRate = world.paperConfig.getBehaviorTickRate(configKey, entity.getType().id, -1);
++        int tickRate = world.paperConfig.getBehaviorTickRate(this.configKey, entity.getType().id, -1);
 +        if (tickRate > -1 && time < this.endTimestamp + tickRate) {
 +            return false;
 +        }
@@ -155,9 +155,9 @@ index b1212e162ba938b3abe0df747a633ba9cbbe57c8..f689fad6f4b728f676fb1feaf742c030
              this.status = Behavior.Status.RUNNING;
              int i = this.minDuration + world.getRandom().nextInt(this.maxDuration + 1 - this.minDuration);
              this.endTimestamp = time + (long)i;
-+            timing.startTiming(); // Paper - behavior timings
++            this.timing.startTiming(); // Paper - behavior timings
              this.start(world, entity, time);
-+            timing.stopTiming(); // Paper - behavior timings
++            this.timing.stopTiming(); // Paper - behavior timings
              return true;
          } else {
              return false;
@@ -165,18 +165,18 @@ index b1212e162ba938b3abe0df747a633ba9cbbe57c8..f689fad6f4b728f676fb1feaf742c030
      }
  
      public final void tickOrStop(ServerLevel world, E entity, long time) {
-+        timing.startTiming(); // Paper - behavior timings
++        this.timing.startTiming(); // Paper - behavior timings
          if (!this.timedOut(time) && this.canStillUse(world, entity, time)) {
              this.tick(world, entity, time);
          } else {
              this.doStop(world, entity, time);
          }
-+        timing.stopTiming(); // Paper - behavior timings
++        this.timing.stopTiming(); // Paper - behavior timings
  
      }
  
 diff --git a/src/main/java/net/minecraft/world/entity/ai/sensing/Sensor.java b/src/main/java/net/minecraft/world/entity/ai/sensing/Sensor.java
-index 650a3f256b60998efd07b4acfd2f6168da2ff00a..24c47d13347961477c030c65f64e4cfe1c76a34a 100644
+index 650a3f256b60998efd07b4acfd2f6168da2ff00a..cb817f524e6c224f8923c66b2c00153748c8c8c8 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/sensing/Sensor.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/sensing/Sensor.java
 @@ -17,8 +17,21 @@ public abstract class Sensor<E extends LivingEntity> {
@@ -207,11 +207,11 @@ index 650a3f256b60998efd07b4acfd2f6168da2ff00a..24c47d13347961477c030c65f64e4cfe
          if (--this.timeToTick <= 0L) {
 -            this.timeToTick = (long)this.scanRate;
 +            // Paper start - configurable sensor tick rate and timings
-+            this.timeToTick = world.paperConfig.getSensorTickRate(configKey, entity.getType().id, this.scanRate);
-+            timing.startTiming();
++            this.timeToTick = world.paperConfig.getSensorTickRate(this.configKey, entity.getType().id, this.scanRate);
++            this.timing.startTiming();
 +            // Paper end
              this.doTick(world, entity);
-+            timing.stopTiming(); // Paper - sensor timings
++            this.timing.stopTiming(); // Paper - sensor timings
          }
  
      }
