@@ -61,7 +61,7 @@ index 4c97fa63d912548324e93f366c86666d52738bfb..bfdf4b302860d56dec485af77c69d18d
          ConfigurationSection section;
 diff --git a/src/main/java/com/destroystokyo/paper/server/ticklist/PaperTickList.java b/src/main/java/com/destroystokyo/paper/server/ticklist/PaperTickList.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..da13ff17609b7bc8076d9297edf8decf01a2ed88
+index 0000000000000000000000000000000000000000..5fdaefc128956581be4bb9b34199fd6410563991
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/server/ticklist/PaperTickList.java
 @@ -0,0 +1,628 @@
@@ -168,7 +168,7 @@ index 0000000000000000000000000000000000000000..da13ff17609b7bc8076d9297edf8decf
 +
 +    private void queueEntryForTick(final TickNextTickData<T> entry, final ServerChunkCache chunkProvider) {
 +        if (entry.tickState == STATE_SCHEDULED) {
-+            if (chunkProvider.isTickingReadyMainThread(entry.pos)) {
++            if (chunkProvider.isPositionTickingWithEntitiesLoaded(entry.pos)) {
 +                this.toTickThisTick.add(entry);
 +                entry.tickState = STATE_PENDING_TICK;
 +            } else {
@@ -368,7 +368,7 @@ index 0000000000000000000000000000000000000000..da13ff17609b7bc8076d9297edf8decf
 +                continue;
 +            }
 +            try {
-+                if (chunkProvider.isTickingReadyMainThread(toTick.pos)) {
++                if (chunkProvider.isPositionTickingWithEntitiesLoaded(toTick.pos)) {
 +                    toTick.tickState = STATE_TICKING;
 +                    this.tickFunction.accept(toTick);
 +                    if (toTick.tickState == STATE_TICKING) {
@@ -924,17 +924,18 @@ index 1dd1b9afaee38fdc994ad0a069bd63b02eedf55c..8104b9be5a8e8d57f6f50475788aec6a
              });
              // Paper end
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-index 550338a7170437415342df7bc1b0a5c445480300..a0d96ca2e63157e5995774c5a7a5f535e700bbfa 100644
+index 550338a7170437415342df7bc1b0a5c445480300..57aa6d18d181c50071bcfcc933cde9fa828be792 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-@@ -219,6 +219,12 @@ public class ServerChunkCache extends ChunkSource {
+@@ -219,6 +219,13 @@ public class ServerChunkCache extends ChunkSource {
          }, this.mainThreadProcessor);
      }
      // Paper end
 +    // Paper start - rewrite ticklistserver
-+    public final boolean isTickingReadyMainThread(BlockPos pos) {
-+        ChunkHolder chunk = this.chunkMap.getUpdatingChunkIfPresent(net.minecraft.server.MCUtil.getCoordinateKey(pos));
-+        return chunk != null && chunk.isTickingReady();
++    public final boolean isPositionTickingWithEntitiesLoaded(BlockPos pos) {
++        long position = net.minecraft.server.MCUtil.getCoordinateKey(pos);
++        ChunkHolder chunkHolder = this.chunkMap.getUpdatingChunkIfPresent(position);
++        return chunkHolder != null && chunkHolder.isTickingReady() && this.level.entityManager.areEntitiesLoaded(position);
 +    }
 +    // Paper end - rewrite ticklistserver
  
