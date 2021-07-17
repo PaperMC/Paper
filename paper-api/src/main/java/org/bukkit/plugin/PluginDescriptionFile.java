@@ -1258,7 +1258,7 @@ public final class PluginDescriptionFile {
         if (object instanceof Map) {
             return (Map<?, ?>) object;
         }
-        throw new InvalidDescriptionException(object + " is not properly structured.");
+        throw new InvalidDescriptionException("Plugin description file is empty or not properly structured. Is " + object + "but should be a map.");
     }
 
     /**
