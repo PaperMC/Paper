@@ -35,17 +35,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  this.level.destroyBlockProgress(this.player.getId(), this.destroyPos, -1);
                  this.lastSentState = -1;
 @@ -0,0 +0,0 @@ public class ServerPlayerGameMode {
-         double d1 = this.player.getY() - ((double) pos.getY() + 0.5D) + 1.5D;
-         double d2 = this.player.getZ() - ((double) pos.getZ() + 0.5D);
          double d3 = d0 * d0 + d1 * d1 + d2 * d2;
-+        // Paper start
-+        this.handleBlockBreakAction(pos, action, direction, worldHeight, d3);
-+    }
-+    public void handleBlockBreakAction(BlockPos pos, ServerboundPlayerActionPacket.Action action, Direction direction, int worldHeight, double d3) {
-+        // Paper end
  
          if (d3 > 36.0D) {
++            if (d3 < 80 * 80) // Paper - Don't notify if unreasonably far away
              this.player.connection.send(new ClientboundBlockBreakAckPacket(pos, this.level.getBlockState(pos), action, false, "too far"));
+         } else if (pos.getY() >= worldHeight) {
+             this.player.connection.send(new ClientboundBlockBreakAckPacket(pos, this.level.getBlockState(pos), action, false, "too high"));
 @@ -0,0 +0,0 @@ public class ServerPlayerGameMode {
                  this.player.connection.send(new ClientboundBlockBreakAckPacket(pos, this.level.getBlockState(pos), action, true, "stopped destroying"));
              } else if (action == ServerboundPlayerActionPacket.Action.ABORT_DESTROY_BLOCK) {
@@ -70,22 +66,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              case START_DESTROY_BLOCK:
              case ABORT_DESTROY_BLOCK:
              case STOP_DESTROY_BLOCK:
--                this.player.gameMode.handleBlockBreakAction(blockposition, packetplayinblockdig_enumplayerdigtype, packet.getDirection(), this.player.level.getMaxBuildHeight());
 +                // Paper start - Don't allow digging in unloaded chunks
-+                // Copied from ServerPlayerGameMode#handleBlockBreakAction
-+                double d0 = this.player.getX() - ((double) blockposition.getX() + 0.5D);
-+                double d1 = this.player.getY() - ((double) blockposition.getY() + 0.5D) + 1.5D;
-+                double d2 = this.player.getZ() - ((double) blockposition.getZ() + 0.5D);
-+                double blockDistanceSquared = d0 * d0 + d1 * d1 + d2 * d2;
-+                if (blockDistanceSquared > 40 * 40) {
-+                    LOGGER.warn("{} tried to break a block {} square blocks away from their position", this.player.getScoreboardName(), blockDistanceSquared);
-+                    this.disconnect("Invalid block break distance");
-+                    return;
-+                }
 +                if (this.player.level.getChunkIfLoadedImmediately(blockposition.getX() >> 4, blockposition.getZ() >> 4) == null) {
 +                    return;
 +                }
-+                this.player.gameMode.handleBlockBreakAction(blockposition, packetplayinblockdig_enumplayerdigtype, packet.getDirection(), this.player.level.getMaxBuildHeight(), blockDistanceSquared);
+                 this.player.gameMode.handleBlockBreakAction(blockposition, packetplayinblockdig_enumplayerdigtype, packet.getDirection(), this.player.level.getMaxBuildHeight());
 +                // Paper end - Don't allow digging in unloaded chunks
                  return;
              default:
