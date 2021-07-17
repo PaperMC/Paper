@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/block/entity/TileEntityFurnace.java
 +++ b/net/minecraft/world/level/block/entity/TileEntityFurnace.java
-@@ -43,6 +43,18 @@
+@@ -43,6 +43,20 @@
  import net.minecraft.world.level.block.state.IBlockData;
  import net.minecraft.world.phys.Vec3D;
  
@@ -14,12 +14,14 @@
 +import org.bukkit.event.inventory.FurnaceBurnEvent;
 +import org.bukkit.event.inventory.FurnaceExtractEvent;
 +import org.bukkit.event.inventory.FurnaceSmeltEvent;
++import org.bukkit.event.inventory.FurnaceStartSmeltEvent;
++import org.bukkit.inventory.CookingRecipe;
 +// CraftBukkit end
 +
  public abstract class TileEntityFurnace extends TileEntityContainer implements IWorldInventory, RecipeHolder, AutoRecipeOutput {
  
      protected static final int SLOT_INPUT = 0;
-@@ -182,6 +194,36 @@
+@@ -182,6 +196,36 @@
          return map;
      }
  
@@ -56,7 +58,7 @@
      private static boolean b(Item item) {
          return TagsItem.NON_FLAMMABLE_WOOD.isTagged(item);
      }
-@@ -266,13 +308,24 @@
+@@ -266,13 +310,24 @@
                  tileentityfurnace.cookingProgress = MathHelper.clamp(tileentityfurnace.cookingProgress - 2, 0, tileentityfurnace.cookingTotalTime);
              }
          } else {
@@ -84,7 +86,23 @@
                      flag1 = true;
                      if (!itemstack.isEmpty()) {
                          Item item = itemstack.getItem();
-@@ -292,7 +345,7 @@
+@@ -288,11 +343,23 @@
+             }
+ 
+             if (tileentityfurnace.isBurning() && canBurn(irecipe, tileentityfurnace.items, i)) {
++                // CraftBukkit start
++                if (irecipe != null && tileentityfurnace.cookingProgress == 0) {
++                    CraftItemStack source = CraftItemStack.asCraftMirror(tileentityfurnace.items.get(0));
++                    CookingRecipe<?> recipe = (CookingRecipe<?>) irecipe.toBukkitRecipe();
++
++                    FurnaceStartSmeltEvent event = new FurnaceStartSmeltEvent(CraftBlock.at(world, blockposition), source, recipe);
++                    world.getCraftServer().getPluginManager().callEvent(event);
++
++                    tileentityfurnace.cookingTotalTime = event.getTotalCookTime();
++                }
++                // CraftBukkit end
++
+                 ++tileentityfurnace.cookingProgress;
                  if (tileentityfurnace.cookingProgress == tileentityfurnace.cookingTotalTime) {
                      tileentityfurnace.cookingProgress = 0;
                      tileentityfurnace.cookingTotalTime = getRecipeCookingTime(world, tileentityfurnace.recipeType, tileentityfurnace);
@@ -93,7 +111,7 @@
                          tileentityfurnace.setRecipeUsed(irecipe);
                      }
  
-@@ -331,17 +384,44 @@
+@@ -331,17 +398,44 @@
          }
      }
  
@@ -139,7 +157,7 @@
  
              if (itemstack.a(Blocks.WET_SPONGE.getItem()) && !((ItemStack) nonnulllist.get(1)).isEmpty() && ((ItemStack) nonnulllist.get(1)).a(Items.BUCKET)) {
                  nonnulllist.set(1, new ItemStack(Items.WATER_BUCKET));
-@@ -365,7 +445,7 @@
+@@ -365,7 +459,7 @@
      }
  
      private static int getRecipeCookingTime(World world, Recipes<? extends RecipeCooking> recipes, IInventory iinventory) {
@@ -148,7 +166,7 @@
      }
  
      public static boolean isFuel(ItemStack itemstack) {
-@@ -484,14 +564,20 @@
+@@ -484,14 +578,20 @@
      @Override
      public void awardUsedRecipes(EntityHuman entityhuman) {}
  
@@ -171,7 +189,7 @@
          List<IRecipe<?>> list = Lists.newArrayList();
          ObjectIterator objectiterator = this.recipesUsed.object2IntEntrySet().iterator();
  
-@@ -500,14 +586,14 @@
+@@ -500,14 +600,14 @@
  
              worldserver.getCraftingManager().getRecipe((MinecraftKey) entry.getKey()).ifPresent((irecipe) -> {
                  list.add(irecipe);
@@ -188,7 +206,7 @@
          int j = MathHelper.d((float) i * f);
          float f1 = MathHelper.h((float) i * f);
  
-@@ -515,6 +601,17 @@
+@@ -515,6 +615,17 @@
              ++j;
          }
  
