@@ -27,6 +27,7 @@ class CraftTask implements BukkitTask, Runnable {
     private final Consumer<BukkitTask> cTask;
     private final Plugin plugin;
     private final int id;
+    private final long createdAt = System.nanoTime();
 
     CraftTask() {
         this(null, null, CraftTask.NO_REPEATING, CraftTask.NO_REPEATING);
@@ -77,6 +78,10 @@ class CraftTask implements BukkitTask, Runnable {
         } else {
             cTask.accept(this);
         }
+    }
+
+    long getCreatedAt() {
+        return createdAt;
     }
 
     long getPeriod() {
