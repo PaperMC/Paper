@@ -1,10 +1,12 @@
 package org.bukkit.event.entity;
 
 import org.bukkit.DyeColor;
+import org.bukkit.entity.Player;
 import org.bukkit.entity.Sheep;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Called when a sheep's wool is dyed
@@ -13,11 +15,18 @@ public class SheepDyeWoolEvent extends EntityEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
     private boolean cancel;
     private DyeColor color;
+    private final Player player;
 
+    @Deprecated
     public SheepDyeWoolEvent(@NotNull final Sheep sheep, @NotNull final DyeColor color) {
+        this(sheep, color, null);
+    }
+
+    public SheepDyeWoolEvent(@NotNull final Sheep sheep, @NotNull final DyeColor color, @Nullable Player player) {
         super(sheep);
         this.cancel = false;
         this.color = color;
+        this.player = player;
     }
 
     @Override
@@ -34,6 +43,16 @@ public class SheepDyeWoolEvent extends EntityEvent implements Cancellable {
     @Override
     public Sheep getEntity() {
         return (Sheep) entity;
+    }
+
+    /**
+     * Returns the player dyeing the sheep, if available.
+     *
+     * @return player or null
+     */
+    @Nullable
+    public Player getPlayer() {
+        return player;
     }
 
     /**
