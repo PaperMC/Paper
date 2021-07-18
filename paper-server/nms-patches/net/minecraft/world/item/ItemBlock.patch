@@ -18,16 +18,16 @@
                  return EnumInteractionResult.FAIL;
              } else {
                  IBlockData iblockdata = this.c(blockactioncontext1);
-+                // CraftBukkit start - special case for handling block placement with water lilies
++                // CraftBukkit start - special case for handling block placement with water lilies and snow buckets
 +                org.bukkit.block.BlockState blockstate = null;
-+                if (this instanceof ItemWaterLily) {
++                if (this instanceof ItemWaterLily || this instanceof SolidBucketItem) {
 +                    blockstate = org.bukkit.craftbukkit.block.CraftBlockState.getBlockState(blockactioncontext1.getWorld(), blockactioncontext1.getClickPosition());
 +                }
 +                // CraftBukkit end
  
                  if (iblockdata == null) {
                      return EnumInteractionResult.FAIL;
-@@ -85,6 +98,15 @@
+@@ -85,6 +98,19 @@
                          iblockdata1 = this.a(blockposition, world, itemstack, iblockdata1);
                          this.a(blockposition, world, entityhuman, itemstack, iblockdata1);
                          iblockdata1.getBlock().postPlace(world, blockposition, iblockdata1, entityhuman, itemstack);
@@ -36,6 +36,10 @@
 +                            org.bukkit.event.block.BlockPlaceEvent placeEvent = org.bukkit.craftbukkit.event.CraftEventFactory.callBlockPlaceEvent((WorldServer) world, entityhuman, blockactioncontext1.getHand(), blockstate, blockposition.getX(), blockposition.getY(), blockposition.getZ());
 +                            if (placeEvent != null && (placeEvent.isCancelled() || !placeEvent.canBuild())) {
 +                                blockstate.update(true, false);
++
++                                if (this instanceof SolidBucketItem) {
++                                    ((EntityPlayer) entityhuman).getBukkitEntity().updateInventory(); // SPIGOT-4541
++                                }
 +                                return EnumInteractionResult.FAIL;
 +                            }
 +                        }
@@ -43,7 +47,7 @@
                          if (entityhuman instanceof EntityPlayer) {
                              CriterionTriggers.PLACED_BLOCK.a((EntityPlayer) entityhuman, blockposition, itemstack);
                          }
-@@ -92,9 +114,9 @@
+@@ -92,9 +118,9 @@
  
                      SoundEffectType soundeffecttype = iblockdata1.getStepSound();
  
@@ -55,7 +59,7 @@
                          itemstack.subtract(1);
                      }
  
-@@ -130,6 +152,21 @@
+@@ -130,6 +156,21 @@
  
          if (nbttagcompound != null) {
              NBTTagCompound nbttagcompound1 = nbttagcompound.getCompound("BlockStateTag");
@@ -77,7 +81,7 @@
              BlockStateList<Block, IBlockData> blockstatelist = iblockdata.getBlock().getStates();
              Iterator iterator = nbttagcompound1.getKeys().iterator();
  
-@@ -144,11 +181,6 @@
+@@ -144,11 +185,6 @@
                  }
              }
          }
@@ -89,7 +93,7 @@
          return iblockdata1;
      }
  
-@@ -161,8 +193,15 @@
+@@ -161,8 +197,15 @@
      protected boolean b(BlockActionContext blockactioncontext, IBlockData iblockdata) {
          EntityHuman entityhuman = blockactioncontext.getEntity();
          VoxelShapeCollision voxelshapecollision = entityhuman == null ? VoxelShapeCollision.a() : VoxelShapeCollision.a((Entity) entityhuman);
@@ -106,7 +110,7 @@
      }
  
      protected boolean isCheckCollisions() {
-@@ -247,7 +286,7 @@
+@@ -247,7 +290,7 @@
  
              if (nbttagcompound != null) {
                  NBTTagList nbttaglist = nbttagcompound.getCompound("BlockEntityTag").getList("Items", 10);
