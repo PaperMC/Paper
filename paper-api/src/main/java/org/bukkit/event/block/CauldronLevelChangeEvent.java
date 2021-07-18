@@ -157,7 +157,7 @@ public class CauldronLevelChangeEvent extends BlockEvent implements Cancellable 
          */
         EVAPORATE,
         /**
-         * Filling due to natural fluid sources, eg rain.
+         * Filling due to natural fluid sources, eg rain or dripstone.
          */
         NATURAL_FILL,
         /**
