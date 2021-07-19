@@ -19,7 +19,6 @@ import net.minecraft.world.level.GeneratorAccess;
 import net.minecraft.world.level.RayTrace;
 import net.minecraft.world.level.biome.BiomeBase;
 import net.minecraft.world.level.block.BlockRedstoneWire;
-import net.minecraft.world.level.block.BlockTileEntity;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.TileEntity;
 import net.minecraft.world.level.block.state.IBlockData;
@@ -72,10 +71,6 @@ public class CraftBlock implements Block {
 
     public static CraftBlock at(GeneratorAccess world, BlockPosition position) {
         return new CraftBlock(world, position);
-    }
-
-    private net.minecraft.world.level.block.Block getNMSBlock() {
-        return getNMS().getBlock();
     }
 
     public net.minecraft.world.level.block.state.IBlockData getNMS() {
@@ -189,7 +184,7 @@ public class CraftBlock implements Block {
 
     public boolean setTypeAndData(final IBlockData blockData, final boolean applyPhysics) {
         // SPIGOT-611: need to do this to prevent glitchiness. Easier to handle this here (like /setblock) than to fix weirdness in tile entity cleanup
-        if (!blockData.isAir() && blockData.getBlock() instanceof BlockTileEntity && blockData.getBlock() != getNMSBlock()) {
+        if (getNMS().isTileEntity()) { // SPIGOT-3725 always remove old tile entity
             // SPIGOT-4612: faster - just clear tile
             if (world instanceof net.minecraft.world.level.World) {
                 ((net.minecraft.world.level.World) world).removeTileEntity(position);
