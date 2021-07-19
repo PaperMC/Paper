@@ -5,13 +5,14 @@ Subject: [PATCH] make configured features seed configurable
 
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index 3d7c8f007dc6b3454f23ee0d62b62d0931eb99ea..cc848b1fc8894d299ec1499a172bd328a5d9491f 100644
+index 3d7c8f007dc6b3454f23ee0d62b62d0931eb99ea..f2a9fe46cab707b79a0c14e60b73fae08722706a 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-@@ -5,12 +5,14 @@ import java.util.HashMap;
+@@ -5,12 +5,15 @@ import java.util.HashMap;
  import java.util.List;
  import java.util.Map;
  import java.util.stream.Collectors;
++import it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap;
 +import net.minecraft.resources.ResourceLocation;
  import net.minecraft.world.Difficulty;
  import net.minecraft.world.entity.EntityType;
@@ -23,13 +24,14 @@ index 3d7c8f007dc6b3454f23ee0d62b62d0931eb99ea..cc848b1fc8894d299ec1499a172bd328
  import org.bukkit.configuration.file.YamlConfiguration;
  import org.spigotmc.SpigotWorldConfig;
  
-@@ -825,5 +827,19 @@ public class PaperWorldConfig {
+@@ -825,5 +828,20 @@ public class PaperWorldConfig {
      private void fixInvulnerableEndCrystalExploit() {
          fixInvulnerableEndCrystalExploit = getBoolean("unsupported-settings.fix-invulnerable-end-crystal-exploit", fixInvulnerableEndCrystalExploit);
      }
 +
-+    public Map<ResourceLocation, Long> configuredFeatureSeedReplacements = new HashMap<>();
++    public Object2LongOpenHashMap<ResourceLocation> configuredFeatureSeedReplacements = new Object2LongOpenHashMap<>();
 +    private void setupConfiguredFeatureSeedReplacer() {
++        configuredFeatureSeedReplacements.defaultReturnValue(-1);
 +        String path = "configured-feature.seed-replacements";
 +        getLong(path + ".minecraft:disk_clay", -1);
 +        ConfigurationSection values = config.getConfigurationSection("world-settings." + worldName + "." + path);
@@ -44,7 +46,7 @@ index 3d7c8f007dc6b3454f23ee0d62b62d0931eb99ea..cc848b1fc8894d299ec1499a172bd328
  }
  
 diff --git a/src/main/java/net/minecraft/world/level/biome/Biome.java b/src/main/java/net/minecraft/world/level/biome/Biome.java
-index a7a7e6cd87270e64a92448f03f8b0b0c7e375ec7..6418db3ebcf42c8dbe9c400e4fe005c0cdf45aed 100644
+index a7a7e6cd87270e64a92448f03f8b0b0c7e375ec7..a8e82019c288c7e44487279a0514db203de839cb 100644
 --- a/src/main/java/net/minecraft/world/level/biome/Biome.java
 +++ b/src/main/java/net/minecraft/world/level/biome/Biome.java
 @@ -225,8 +225,10 @@ public final class Biome {
@@ -65,11 +67,11 @@ index a7a7e6cd87270e64a92448f03f8b0b0c7e375ec7..6418db3ebcf42c8dbe9c400e4fe005c0
 +                    // Paper start - set the populationSeed back to the one defined by the region and if applicable, replace
 +                    populationSeed = populationCopy;
 +                    ResourceLocation location = registry.getKey(configuredFeature);
-+                    Long replacementSeed = region.getMinecraftWorld().paperConfig.configuredFeatureSeedReplacements.getOrDefault(location, null);
++                    Long replacementSeed = region.getMinecraftWorld().paperConfig.configuredFeatureSeedReplacements.getLong(location);
 +                    ChunkPos pos = region.getCenter();
 +                    int x = pos.getMinBlockX();
 +                    int z = pos.getMinBlockZ();
-+                    if (replacementSeed != null && replacementSeed != -1) {
++                    if (replacementSeed != -1) {
 +                        populationSeed = random.setDecorationSeed(replacementSeed, x, z);
 +                    } // Paper end
                      random.setFeatureSeed(populationSeed, k, j);
