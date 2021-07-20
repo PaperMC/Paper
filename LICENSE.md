@@ -17,7 +17,6 @@ should submit a pull request to this project to add their name.
 ```text
 Zach Brown <1254957+zachbr@users.noreply.github.com>
 Daniel Ennis <aikar@aikar.co>
-Kyle Wood <kyle@denwav.dev>
 Riley Park <rileysebastianpark@gmail.com>
 Black Hole <black-hole@live.com>
 Mark Vainomaa <mikroskeem@mikroskeem.eu>
