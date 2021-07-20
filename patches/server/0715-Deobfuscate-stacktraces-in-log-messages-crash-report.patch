@@ -157,60 +157,49 @@ index 0000000000000000000000000000000000000000..d019802a36dbaca4bf299a55d28381e4
 +        return new StacktraceDeobfuscatingRewritePolicy();
 +    }
 +}
-diff --git a/src/main/java/io/papermc/paper/util/StacktraceDeobfuscator.java b/src/main/java/io/papermc/paper/util/StacktraceDeobfuscator.java
+diff --git a/src/main/java/io/papermc/paper/util/ObfHelper.java b/src/main/java/io/papermc/paper/util/ObfHelper.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..b43edcb54a50cf53b4e8b365555385d026a7061f
+index 0000000000000000000000000000000000000000..271e0a2ec549836a32565bb9100d432cd68d6046
 --- /dev/null
-+++ b/src/main/java/io/papermc/paper/util/StacktraceDeobfuscator.java
-@@ -0,0 +1,227 @@
++++ b/src/main/java/io/papermc/paper/util/ObfHelper.java
+@@ -0,0 +1,87 @@
 +package io.papermc.paper.util;
 +
-+import com.destroystokyo.paper.PaperConfig;
 +import com.google.common.base.Charsets;
 +import com.google.common.collect.ImmutableMap;
 +import com.mojang.datafixers.util.Pair;
-+import it.unimi.dsi.fastutil.ints.IntArrayList;
-+import it.unimi.dsi.fastutil.ints.IntList;
 +import java.io.BufferedReader;
 +import java.io.IOException;
 +import java.io.InputStream;
 +import java.io.InputStreamReader;
-+import java.util.Collections;
-+import java.util.HashMap;
-+import java.util.LinkedHashMap;
 +import java.util.Map;
 +import net.fabricmc.mapping.tree.ClassDef;
 +import net.fabricmc.mapping.tree.MethodDef;
 +import net.fabricmc.mapping.tree.TinyMappingFactory;
 +import net.fabricmc.mapping.tree.TinyTree;
-+import org.jetbrains.annotations.NotNull;
-+import org.jetbrains.annotations.Nullable;
-+import org.objectweb.asm.ClassReader;
-+import org.objectweb.asm.ClassVisitor;
-+import org.objectweb.asm.Label;
-+import org.objectweb.asm.MethodVisitor;
-+import org.objectweb.asm.Opcodes;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.checker.nullness.qual.Nullable;
++import org.checkerframework.framework.qual.DefaultQualifier;
 +
-+public enum StacktraceDeobfuscator {
++@DefaultQualifier(NonNull.class)
++public enum ObfHelper {
 +    INSTANCE;
 +
-+    private static final String MOJANG_PLUS_YARN_NAMESPACE = "mojang+yarn";
-+    private static final String SPIGOT_NAMESPACE = "spigot";
++    public static final String MOJANG_PLUS_YARN_NAMESPACE = "mojang+yarn";
++    public static final String SPIGOT_NAMESPACE = "spigot";
 +
 +    private final @Nullable Map<String, ClassMapping> mappings;
-+    private final Map<Class<?>, Map<Pair<String, String>, IntList>> lineMapCache = Collections.synchronizedMap(new LinkedHashMap<>(64, 0.75f, true) {
-+        @Override
-+        protected boolean removeEldestEntry(final Map.Entry<Class<?>, Map<Pair<String, String>, IntList>> eldest) {
-+            return this.size() > 63;
-+        }
-+    });
 +
-+    StacktraceDeobfuscator() {
++    ObfHelper() {
 +        this.mappings = loadMappingsIfPresent();
 +    }
 +
++    public @Nullable Map<String, ClassMapping> mappings() {
++        return this.mappings;
++    }
++
 +    private static @Nullable Map<String, ClassMapping> loadMappingsIfPresent() {
-+        try (final InputStream mappingsInputStream = StacktraceDeobfuscator.class.getClassLoader().getResourceAsStream("META-INF/mappings/reobf.tiny")) {
++        try (final @Nullable InputStream mappingsInputStream = StacktraceDeobfuscator.class.getClassLoader().getResourceAsStream("META-INF/mappings/reobf.tiny")) {
 +            if (mappingsInputStream == null) {
 +                return null;
 +            }
@@ -249,6 +238,55 @@ index 0000000000000000000000000000000000000000..b43edcb54a50cf53b4e8b365555385d0
 +        }
 +    }
 +
++    public record ClassMapping(
++        String obfName,
++        String mojangName,
++        Map<Pair<String, String>, MethodMapping> methodMappings
++    ) {}
++
++    public record MethodMapping(
++        String obfName,
++        String mojangName,
++        String descriptor
++    ) {}
++}
+diff --git a/src/main/java/io/papermc/paper/util/StacktraceDeobfuscator.java b/src/main/java/io/papermc/paper/util/StacktraceDeobfuscator.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..6ef365dfd3caa0a726983fc57125f4d9a86959fc
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/util/StacktraceDeobfuscator.java
+@@ -0,0 +1,156 @@
++package io.papermc.paper.util;
++
++import com.destroystokyo.paper.PaperConfig;
++import com.mojang.datafixers.util.Pair;
++import it.unimi.dsi.fastutil.ints.IntArrayList;
++import it.unimi.dsi.fastutil.ints.IntList;
++import java.io.IOException;
++import java.util.Collections;
++import java.util.HashMap;
++import java.util.LinkedHashMap;
++import java.util.Map;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.checker.nullness.qual.Nullable;
++import org.checkerframework.framework.qual.DefaultQualifier;
++import org.objectweb.asm.ClassReader;
++import org.objectweb.asm.ClassVisitor;
++import org.objectweb.asm.Label;
++import org.objectweb.asm.MethodVisitor;
++import org.objectweb.asm.Opcodes;
++
++@DefaultQualifier(NonNull.class)
++public enum StacktraceDeobfuscator {
++    INSTANCE;
++
++    private final Map<Class<?>, Map<Pair<String, String>, IntList>> lineMapCache = Collections.synchronizedMap(new LinkedHashMap<>(128, 0.75f, true) {
++        @Override
++        protected boolean removeEldestEntry(final Map.Entry<Class<?>, Map<Pair<String, String>, IntList>> eldest) {
++            return this.size() > 127;
++        }
++    });
++
 +    public void deobfuscateThrowable(final Throwable throwable) {
 +        if (!PaperConfig.deobfuscateStacktraces) {
 +            return;
@@ -269,7 +307,8 @@ index 0000000000000000000000000000000000000000..b43edcb54a50cf53b4e8b365555385d0
 +            return traceElements;
 +        }
 +
-+        if (this.mappings == null || traceElements.length == 0) {
++        final @Nullable Map<String, ObfHelper.ClassMapping> mappings = ObfHelper.INSTANCE.mappings();
++        if (mappings == null || traceElements.length == 0) {
 +            return traceElements;
 +        }
 +        final StackTraceElement[] result = new StackTraceElement[traceElements.length];
@@ -279,21 +318,22 @@ index 0000000000000000000000000000000000000000..b43edcb54a50cf53b4e8b365555385d0
 +            final String className = element.getClassName();
 +            final String methodName = element.getMethodName();
 +
-+            final ClassMapping classMapping = this.mappings.get(className);
++            final ObfHelper.ClassMapping classMapping = mappings.get(className);
 +            if (classMapping == null) {
 +                result[i] = element;
 +                continue;
 +            }
 +
-+            final Pair<String, String> nameDescriptorPair;
++            final Class<?> clazz;
 +            try {
-+                final Class<?> clazz = Class.forName(className);
-+                nameDescriptorPair = this.determineMethodForLine(clazz, element.getLineNumber());
-+            } catch (final ReflectiveOperationException ex) {
++                clazz = Class.forName(className);
++            } catch (final ClassNotFoundException ex) {
 +                throw new RuntimeException(ex);
 +            }
-+
-+            final MethodMapping methodMapping = classMapping.methodMappings().get(nameDescriptorPair);
++            final @Nullable Pair<String, String> nameDescriptorPair = this.determineMethodForLine(clazz, element.getLineNumber());
++            final ObfHelper.@Nullable MethodMapping methodMapping = nameDescriptorPair == null
++                ? null
++                : classMapping.methodMappings().get(nameDescriptorPair);
 +
 +            result[i] = new StackTraceElement(
 +                element.getClassLoaderName(),
@@ -301,14 +341,38 @@ index 0000000000000000000000000000000000000000..b43edcb54a50cf53b4e8b365555385d0
 +                element.getModuleVersion(),
 +                classMapping.mojangName(),
 +                methodMapping != null ? methodMapping.mojangName() : methodName,
-+                this.mappedFileName(classMapping.mojangName()),
++                sourceFileName(classMapping.mojangName()),
 +                element.getLineNumber()
 +            );
 +        }
 +        return result;
 +    }
 +
-+    private static @NotNull Map<Pair<String, String>, IntList> buildLineMap(final @NotNull Class<?> key) {
++    private @Nullable Pair<String, String> determineMethodForLine(final Class<?> clazz, final int lineNumber) {
++        final Map<Pair<String, String>, IntList> lineMap = this.lineMapCache.computeIfAbsent(clazz, StacktraceDeobfuscator::buildLineMap);
++        for (final var entry : lineMap.entrySet()) {
++            final Pair<String, String> pair = entry.getKey();
++            final IntList lines = entry.getValue();
++            for (int i = 0, linesSize = lines.size(); i < linesSize; i++) {
++                final int num = lines.getInt(i);
++                if (num == lineNumber) {
++                    return pair;
++                }
++            }
++        }
++        return null;
++    }
++
++    private static String sourceFileName(final String fullClassName) {
++        final int dot = fullClassName.lastIndexOf('.');
++        final String className = dot == -1
++            ? fullClassName
++            : fullClassName.substring(dot + 1);
++        final String rootClassName = className.split("\\$")[0];
++        return rootClassName + ".java";
++    }
++
++    private static Map<Pair<String, String>, IntList> buildLineMap(final Class<?> key) {
 +        final Map<Pair<String, String>, IntList> lineMap = new HashMap<>();
 +        final class LineCollectingMethodVisitor extends MethodVisitor {
 +            private final IntList lines = new IntArrayList();
@@ -346,48 +410,6 @@ index 0000000000000000000000000000000000000000..b43edcb54a50cf53b4e8b365555385d0
 +            throw new RuntimeException(ex);
 +        }
 +        return lineMap;
-+    }
-+
-+    private @Nullable Pair<String, String> determineMethodForLine(final @NotNull Class<?> clazz, final int lineNumber) {
-+        final Map<Pair<String, String>, IntList> lineMap = this.lineMapCache.computeIfAbsent(clazz, StacktraceDeobfuscator::buildLineMap);
-+        for (final var entry : lineMap.entrySet()) {
-+            final Pair<String, String> pair = entry.getKey();
-+            final IntList lines = entry.getValue();
-+            for (int i = 0, linesSize = lines.size(); i < linesSize; i++) {
-+                final int num = lines.getInt(i);
-+                if (num == lineNumber) {
-+                    return pair;
-+                }
-+            }
-+        }
-+        return null;
-+    }
-+
-+    private @NotNull String mappedFileName(final @NotNull String fullClassName) {
-+        final int dot = fullClassName.lastIndexOf('.');
-+        final String className = dot == -1
-+            ? fullClassName
-+            : fullClassName.substring(dot + 1);
-+        final String rootClassName = className.split("\\$")[0];
-+        return rootClassName + ".java";
-+    }
-+
-+    public record ClassMapping(
-+        String obfName,
-+        String mojangName,
-+        Map<Pair<String, String>, MethodMapping> methodMappings
-+    ) {
-+    }
-+
-+    public record MethodMapping(
-+        String obfName,
-+        String mojangName,
-+        String descriptor
-+    ) {
-+    }
-+
-+    public @Nullable Map<String, ClassMapping> mappings() {
-+        return mappings;
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/util/TraceUtil.java b/src/main/java/io/papermc/paper/util/TraceUtil.java
@@ -437,14 +459,14 @@ index 3941e14d1c3e6e688e28904948039c8b2200de5f..a4fda4a3bae9ce600e778b44cd3ef432
          }
      }
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-index db0110120f88bc06954fa8c44b2a45f0c8229574..6d7eef79de7a899ccdbc3194d925bb4caa0a4b03 100644
+index db0110120f88bc06954fa8c44b2a45f0c8229574..7b6c547e71230fbb3733f99a4597b3f5b51547b8 100644
 --- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 @@ -221,6 +221,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
          com.destroystokyo.paper.PaperConfig.registerCommands();
          com.destroystokyo.paper.VersionHistoryManager.INSTANCE.getClass(); // load version history now
          io.papermc.paper.brigadier.PaperBrigadierProviderImpl.INSTANCE.getClass(); // init PaperBrigadierProvider
-+        io.papermc.paper.util.StacktraceDeobfuscator.INSTANCE.getClass(); // load mappings for stacktrace deobf
++        io.papermc.paper.util.ObfHelper.INSTANCE.getClass(); // load mappings for stacktrace deobf and etc.
          // Paper end
  
          this.setPvpAllowed(dedicatedserverproperties.pvp);
