@@ -10,7 +10,23 @@
  
  public class Fox extends Animal implements VariantHolder<Fox.Variant> {
  
-@@ -503,7 +506,8 @@
+@@ -489,21 +492,22 @@
+             entityitem.setPickUpDelay(40);
+             entityitem.setThrower(this);
+             this.playSound(SoundEvents.FOX_SPIT, 1.0F, 1.0F);
+-            this.level().addFreshEntity(entityitem);
++            this.spawnAtLocation((net.minecraft.server.level.ServerLevel) this.level(), entityitem); // Paper - Call EntityDropItemEvent
+         }
+     }
+ 
+     private void dropItemStack(ItemStack stack) {
+         ItemEntity entityitem = new ItemEntity(this.level(), this.getX(), this.getY(), this.getZ(), stack);
+ 
+-        this.level().addFreshEntity(entityitem);
++        this.spawnAtLocation((net.minecraft.server.level.ServerLevel) this.level(), entityitem); // Paper - Call EntityDropItemEvent
+     }
+ 
+     @Override
      protected void pickUpItem(ServerLevel world, ItemEntity itemEntity) {
          ItemStack itemstack = itemEntity.getItem();
  
@@ -36,18 +52,17 @@
 +    // Paper start - handle the bitten item separately like vanilla
      @Override
 -    protected void dropAllDeathLoot(ServerLevel world, DamageSource damageSource) {
--        ItemStack itemstack = this.getItemBySlot(EquipmentSlot.MAINHAND);
 +    protected boolean shouldSkipLoot(EquipmentSlot slot) {
 +        return slot == EquipmentSlot.MAINHAND;
 +    }
 +    // Paper end
- 
--        if (!itemstack.isEmpty()) {
++
 +    @Override
 +    // Paper start - Cancellable death event
 +    protected org.bukkit.event.entity.EntityDeathEvent dropAllDeathLoot(ServerLevel world, DamageSource damageSource) {
-+        ItemStack itemstack = this.getItemBySlot(EquipmentSlot.MAINHAND);
-+
+         ItemStack itemstack = this.getItemBySlot(EquipmentSlot.MAINHAND);
+ 
+-        if (!itemstack.isEmpty()) {
 +        boolean releaseMouth = false;
 +        if (!itemstack.isEmpty() && world.getGameRules().getBoolean(GameRules.RULE_DOMOBLOOT)) { // Fix MC-153010
              this.spawnAtLocation(world, itemstack);
