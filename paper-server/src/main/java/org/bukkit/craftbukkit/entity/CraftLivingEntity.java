@@ -491,13 +491,13 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
 
     @Override
     public boolean getRemoveWhenFarAway() {
-        return getHandle() instanceof EntityInsentient && !((EntityInsentient) getHandle()).persistenceRequired;
+        return getHandle() instanceof EntityInsentient && !((EntityInsentient) getHandle()).isPersistent();
     }
 
     @Override
     public void setRemoveWhenFarAway(boolean remove) {
         if (getHandle() instanceof EntityInsentient) {
-            ((EntityInsentient) getHandle()).persistenceRequired = !remove;
+            ((EntityInsentient) getHandle()).setPersistenceRequired(!remove);
         }
     }
 
