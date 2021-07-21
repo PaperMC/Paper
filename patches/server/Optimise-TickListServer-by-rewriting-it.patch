@@ -918,7 +918,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                      ChunkHolder.this.isTickingReady = true;
 +
 +                    // Paper start - rewrite ticklistserver
-+                    ChunkHolder.this.chunkMap.level.onChunkSetTicking(ChunkHolder.this.pos.x, ChunkHolder.this.pos.z);
++                    if (ChunkHolder.this.chunkMap.level.entityManager.areEntitiesLoaded(this.pos.longKey)) {
++                        ChunkHolder.this.chunkMap.level.onChunkSetTicking(ChunkHolder.this.pos.x, ChunkHolder.this.pos.z);
++                    }
 +                    // Paper end - rewrite ticklistserver
                  });
              });
@@ -932,10 +934,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
      // Paper end
 +    // Paper start - rewrite ticklistserver
++    public final boolean isPositionTickingReady(long pos) {
++        final ChunkHolder chunkHolder = this.chunkMap.getUpdatingChunkIfPresent(pos);
++        return chunkHolder != null && chunkHolder.isTickingReady();
++    }
++
 +    public final boolean isPositionTickingWithEntitiesLoaded(BlockPos pos) {
-+        long position = net.minecraft.server.MCUtil.getCoordinateKey(pos);
-+        ChunkHolder chunkHolder = this.chunkMap.getUpdatingChunkIfPresent(position);
-+        return chunkHolder != null && chunkHolder.isTickingReady() /* && this.level.entityManager.areEntitiesLoaded(position) */; // TODO Needs to wait for entities, but has to be manually marked as ready
++        final long position = net.minecraft.server.MCUtil.getCoordinateKey(pos);
++        final ChunkHolder chunkHolder = this.chunkMap.getUpdatingChunkIfPresent(position);
++        return chunkHolder != null && chunkHolder.isTickingReady() && this.level.entityManager.areEntitiesLoaded(position);
 +    }
 +    // Paper end - rewrite ticklistserver
  
@@ -950,7 +957,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      // Paper end
  
 +    // Paper start - rewrite ticklistserver
-+    void onChunkSetTicking(int chunkX, int chunkZ) {
++    public void onChunkSetTicking(int chunkX, int chunkZ) {
 +        if (com.destroystokyo.paper.PaperConfig.useOptimizedTickList) {
 +            ((com.destroystokyo.paper.server.ticklist.PaperTickList) this.blockTicks).onChunkSetTicking(chunkX, chunkZ);
 +            ((com.destroystokyo.paper.server.ticklist.PaperTickList) this.liquidTicks).onChunkSetTicking(chunkX, chunkZ);
@@ -1111,3 +1118,20 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
      @Override
+diff --git a/src/main/java/net/minecraft/world/level/entity/PersistentEntitySectionManager.java b/src/main/java/net/minecraft/world/level/entity/PersistentEntitySectionManager.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/level/entity/PersistentEntitySectionManager.java
++++ b/src/main/java/net/minecraft/world/level/entity/PersistentEntitySectionManager.java
+@@ -0,0 +0,0 @@ public class PersistentEntitySectionManager<T extends EntityAccess> implements A
+                 this.addEntity(entity, true);
+             });
+             this.chunkLoadStatuses.put(chunkEntities.getPos().toLong(), PersistentEntitySectionManager.ChunkLoadStatus.LOADED);
++            // Paper start - rewrite ServerTickList
++            final net.minecraft.server.level.ServerLevel level = ((net.minecraft.world.level.chunk.storage.EntityStorage) this.permanentStorage).level;
++            if (level.chunkSource.isPositionTickingReady(chunkEntities.getPos().longKey)) {
++                level.onChunkSetTicking(chunkEntities.getPos().x, chunkEntities.getPos().z);
++            }
++            // Paper end
+         }
+ 
+     }
