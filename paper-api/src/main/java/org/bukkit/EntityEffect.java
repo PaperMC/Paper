@@ -114,7 +114,7 @@ public enum EntityEffect {
      */
     ENTITY_POOF(20, LivingEntity.class),
     /**
-     * Guardian sets laser target.
+     * Guardian plays the attack sound effect.
      */
     GUARDIAN_TARGET(21, Guardian.class),
     // 22-28 player internal flags
