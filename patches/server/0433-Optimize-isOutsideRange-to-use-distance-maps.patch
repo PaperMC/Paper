@@ -6,7 +6,7 @@ Subject: [PATCH] Optimize isOutsideRange to use distance maps
 Use a distance map to find the players in range quickly
 
 diff --git a/src/main/java/net/minecraft/server/level/ChunkHolder.java b/src/main/java/net/minecraft/server/level/ChunkHolder.java
-index 8104b9be5a8e8d57f6f50475788aec6a762a0f7e..e6883cad6c604673535deacc19463aeeb060199a 100644
+index bf641519ce1592737feac6eaf1d155d8fd126ec7..4569788773c8a9dc072d5ae5239c17c4f50e9ab0 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkHolder.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkHolder.java
 @@ -100,6 +100,18 @@ public class ChunkHolder {
@@ -291,10 +291,10 @@ index b49d380ef088aed3204ec71abc437c348ef004fa..577b391dcba1db712c1e2c83296e1c87
  
      public String getDebugStatus() {
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-index e9ea16a953cff7c980cd0c1e5c2a4dcdada55f00..58b4d6a2c07a283d9077b23aaef2aeef9153dd4b 100644
+index 3e7469032d38b9432bb36d37214524ca2df11098..b85a85fbb12802c355e8f458077b4b124380813b 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-@@ -730,6 +730,37 @@ public class ServerChunkCache extends ChunkSource {
+@@ -735,6 +735,37 @@ public class ServerChunkCache extends ChunkSource {
          boolean flag1 = this.level.getGameRules().getBoolean(GameRules.RULE_DOMOBSPAWNING) && !this.level.players().isEmpty(); // CraftBukkit
  
          if (!flag) {
@@ -332,7 +332,7 @@ index e9ea16a953cff7c980cd0c1e5c2a4dcdada55f00..58b4d6a2c07a283d9077b23aaef2aeef
              this.level.getProfiler().push("pollingChunks");
              int k = this.level.getGameRules().getInt(GameRules.RULE_RANDOMTICKING);
              boolean flag2 = level.ticksPerAnimalSpawns != 0L && worlddata.getGameTime() % level.ticksPerAnimalSpawns == 0L; // CraftBukkit
-@@ -759,15 +790,7 @@ public class ServerChunkCache extends ChunkSource {
+@@ -764,15 +795,7 @@ public class ServerChunkCache extends ChunkSource {
              this.level.getProfiler().pop();
              //List<PlayerChunk> list = Lists.newArrayList(this.playerChunkMap.f()); // Paper
              //Collections.shuffle(list); // Paper
@@ -349,7 +349,7 @@ index e9ea16a953cff7c980cd0c1e5c2a4dcdada55f00..58b4d6a2c07a283d9077b23aaef2aeef
              this.level.timings.chunkTicks.startTiming(); // Paper
              final int[] chunksTicked = {0}; this.chunkMap.forEachVisibleChunk((playerchunk) -> { // Paper - safe iterator incase chunk loads, also no wrapping
                  Optional<LevelChunk> optional = ((Either) playerchunk.getTickingChunkFuture().getNow(ChunkHolder.UNLOADED_LEVEL_CHUNK)).left();
-@@ -776,9 +799,9 @@ public class ServerChunkCache extends ChunkSource {
+@@ -781,9 +804,9 @@ public class ServerChunkCache extends ChunkSource {
                      LevelChunk chunk = (LevelChunk) optional.get();
                      ChunkPos chunkcoordintpair = chunk.getPos();
  
