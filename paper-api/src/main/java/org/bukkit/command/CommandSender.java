@@ -20,7 +20,7 @@ public interface CommandSender extends Permissible {
      *
      * @param messages An array of messages to be displayed
      */
-    public void sendMessage(@NotNull String[] messages);
+    public void sendMessage(@NotNull String... messages);
 
     /**
      * Sends this sender a message
@@ -36,7 +36,7 @@ public interface CommandSender extends Permissible {
      * @param messages An array of messages to be displayed
      * @param sender The sender of this message
      */
-    public void sendMessage(@Nullable UUID sender, @NotNull String[] messages);
+    public void sendMessage(@Nullable UUID sender, @NotNull String... messages);
 
     /**
      * Returns the server instance that this command is running on
