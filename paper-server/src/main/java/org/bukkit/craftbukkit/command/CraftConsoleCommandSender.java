@@ -35,7 +35,7 @@ public class CraftConsoleCommandSender extends ServerCommandSender implements Co
     }
 
     @Override
-    public void sendMessage(String[] messages) {
+    public void sendMessage(String... messages) {
         for (String message : messages) {
             sendMessage(message);
         }

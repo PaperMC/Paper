@@ -43,7 +43,7 @@ public class ProxiedNativeCommandSender implements ProxiedCommandSender {
     }
 
     @Override
-    public void sendMessage(String[] messages) {
+    public void sendMessage(String... messages) {
         getCaller().sendMessage(messages);
     }
 
@@ -53,7 +53,7 @@ public class ProxiedNativeCommandSender implements ProxiedCommandSender {
     }
 
     @Override
-    public void sendMessage(UUID sender, String[] messages) {
+    public void sendMessage(UUID sender, String... messages) {
         getCaller().sendMessage(sender, messages);
     }
 

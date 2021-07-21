@@ -19,7 +19,7 @@ public class CraftRemoteConsoleCommandSender extends ServerCommandSender impleme
     }
 
     @Override
-    public void sendMessage(String[] messages) {
+    public void sendMessage(String... messages) {
         for (String message : messages) {
             sendMessage(message);
         }

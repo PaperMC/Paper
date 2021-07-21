@@ -35,7 +35,7 @@ public class CraftBlockCommandSender extends ServerCommandSender implements Bloc
     }
 
     @Override
-    public void sendMessage(String[] messages) {
+    public void sendMessage(String... messages) {
         for (String message : messages) {
             sendMessage(message);
         }

@@ -87,7 +87,7 @@ public abstract class ServerCommandSender implements CommandSender {
     }
 
     @Override
-    public void sendMessage(UUID uuid, String[] messages) {
+    public void sendMessage(UUID uuid, String... messages) {
         this.sendMessage(messages); // ServerCommandSenders have no use for senders
     }
 }
