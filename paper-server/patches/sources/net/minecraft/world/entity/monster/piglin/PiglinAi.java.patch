@@ -83,7 +83,17 @@
  
              if (!flag) {
                  PiglinAi.putInInventory(piglin, itemstack);
-@@ -272,7 +284,7 @@
+@@ -261,7 +273,9 @@
+ 
+     private static void holdInOffhand(ServerLevel world, Piglin piglin, ItemStack stack) {
+         if (PiglinAi.isHoldingItemInOffHand(piglin)) {
++            piglin.forceDrops = true; // Paper - Add missing forceDrop toggles
+             piglin.spawnAtLocation(world, piglin.getItemInHand(InteractionHand.OFF_HAND));
++            piglin.forceDrops = false; // Paper - Add missing forceDrop toggles
+         }
+ 
+         piglin.holdInOffHand(stack);
+@@ -272,7 +286,7 @@
          ItemStack itemstack1 = itemstack.split(1);
  
          if (itemstack.isEmpty()) {
@@ -92,7 +102,7 @@
          } else {
              stack.setItem(itemstack);
          }
-@@ -287,9 +299,14 @@
+@@ -287,9 +301,14 @@
          boolean flag1;
  
          if (piglin.isAdult()) {
@@ -109,7 +119,7 @@
              } else if (!flag1) {
                  boolean flag2 = !piglin.equipItemIfPossible(world, itemstack).isEmpty();
  
-@@ -302,7 +319,7 @@
+@@ -302,7 +321,7 @@
              if (!flag1) {
                  ItemStack itemstack1 = piglin.getMainHandItem();
  
@@ -118,7 +128,17 @@
                      PiglinAi.putInInventory(piglin, itemstack1);
                  } else {
                      PiglinAi.throwItems(piglin, Collections.singletonList(itemstack1));
-@@ -379,14 +396,20 @@
+@@ -316,7 +335,9 @@
+ 
+     protected static void cancelAdmiring(ServerLevel world, Piglin piglin) {
+         if (PiglinAi.isAdmiringItem(piglin) && !piglin.getOffhandItem().isEmpty()) {
++            piglin.forceDrops = true; // Paper - Add missing forceDrop toggles
+             piglin.spawnAtLocation(world, piglin.getOffhandItem());
++            piglin.forceDrops = false; // Paper - Add missing forceDrop toggles
+             piglin.setItemInHand(InteractionHand.OFF_HAND, ItemStack.EMPTY);
+         }
+ 
+@@ -379,7 +400,7 @@
              return false;
          } else if (PiglinAi.isAdmiringDisabled(piglin) && piglin.getBrain().hasMemoryValue(MemoryModuleType.ATTACK_TARGET)) {
              return false;
@@ -127,20 +147,20 @@
              return PiglinAi.isNotHoldingLovedItemInOffHand(piglin);
          } else {
              boolean flag = piglin.canAddToInventory(stack);
- 
-             return stack.is(Items.GOLD_NUGGET) ? flag : (PiglinAi.isFood(stack) ? !PiglinAi.hasEatenRecently(piglin) && flag : (!PiglinAi.isLovedItem(stack) ? piglin.canReplaceCurrentItem(stack) : PiglinAi.isNotHoldingLovedItemInOffHand(piglin) && flag));
+@@ -388,6 +409,12 @@
          }
-+    }
-+
+     }
+ 
 +    // CraftBukkit start - Added method to allow checking for custom payment items
 +    protected static boolean isLovedItem(ItemStack itemstack, Piglin piglin) {
 +        return PiglinAi.isLovedItem(itemstack) || (piglin.interestItems.contains(itemstack.getItem()) || piglin.allowedBarterItems.contains(itemstack.getItem()));
-     }
++    }
 +    // CraftBukkit end
- 
++
      protected static boolean isLovedItem(ItemStack stack) {
          return stack.is(ItemTags.PIGLIN_LOVED);
-@@ -481,7 +504,7 @@
+     }
+@@ -481,7 +508,7 @@
      }
  
      protected static boolean canAdmire(Piglin piglin, ItemStack nearbyItems) {
@@ -149,21 +169,20 @@
      }
  
      protected static void wasHurtBy(ServerLevel world, Piglin piglin, LivingEntity attacker) {
-@@ -733,7 +756,13 @@
- 
-     private static boolean isAdmiringItem(Piglin entity) {
+@@ -735,6 +762,12 @@
          return entity.getBrain().hasMemoryValue(MemoryModuleType.ADMIRING_ITEM);
-+    }
-+
+     }
+ 
 +    // CraftBukkit start - Changes to allow custom payment for bartering
 +    private static boolean isBarterCurrency(ItemStack itemstack, Piglin piglin) {
 +        return PiglinAi.isBarterCurrency(itemstack) || piglin.allowedBarterItems.contains(itemstack.getItem());
-     }
++    }
 +    // CraftBukkit end
- 
++
      private static boolean isBarterCurrency(ItemStack stack) {
          return stack.is(PiglinAi.BARTERING_ITEM);
-@@ -772,7 +801,7 @@
+     }
+@@ -772,7 +805,7 @@
      }
  
      private static boolean isNotHoldingLovedItemInOffHand(Piglin piglin) {
