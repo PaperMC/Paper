@@ -761,6 +761,61 @@ public final class Bukkit {
     }
 
     /**
+     * Get the {@link Recipe} for the list of ItemStacks provided.
+     *
+     * <p>The list is formatted as a crafting matrix where the index follow
+     * the pattern below:</p>
+     *
+     * <pre>
+     * [ 0 1 2 ]
+     * [ 3 4 5 ]
+     * [ 6 7 8 ]
+     * </pre>
+     *
+     * <p>NOTE: This method will not modify the provided ItemStack array, for that, use
+     * {@link #craftItem(ItemStack[], World, Player)}.</p>
+     *
+     * @param craftingMatrix list of items to be crafted from.
+     *                       Must not contain more than 9 items.
+     * @param world The world the crafting takes place in.
+     * @return the {@link Recipe} resulting from the given crafting matrix.
+     */
+    @Nullable
+    public static Recipe getCraftingRecipe(@NotNull ItemStack[] craftingMatrix, @NotNull World world) {
+        return server.getCraftingRecipe(craftingMatrix, world);
+    }
+
+    /**
+     * Get the crafted item using the list of {@link ItemStack} provided.
+     *
+     * <p>The list is formatted as a crafting matrix where the index follow
+     * the pattern below:</p>
+     *
+     * <pre>
+     * [ 0 1 2 ]
+     * [ 3 4 5 ]
+     * [ 6 7 8 ]
+     * </pre>
+     *
+     * <p>The {@link World} and {@link Player} arguments are required to fulfill the Bukkit Crafting
+     * events.</p>
+     *
+     * <p>Calls {@link org.bukkit.event.inventory.PrepareItemCraftEvent} to imitate the {@link Player}
+     * initiating the crafting event.</p>
+     *
+     * @param craftingMatrix list of items to be crafted from.
+     *                       Must not contain more than 9 items.
+     * @param world The world the crafting takes place in.
+     * @param player The player to imitate the crafting event on.
+     * @return the {@link ItemStack} resulting from the given crafting matrix, if no recipe is found
+     * an ItemStack of {@link Material#AIR} is returned.
+     */
+    @NotNull
+    public static ItemStack craftItem(@NotNull ItemStack[] craftingMatrix, @NotNull World world, @NotNull Player player) {
+        return server.craftItem(craftingMatrix, world, player);
+    }
+
+    /**
      * Get an iterator through the list of crafting recipes.
      *
      * @return an iterator
