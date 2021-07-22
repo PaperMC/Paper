@@ -57,7 +57,7 @@ public class CraftMinecartCommand extends CraftMinecart implements CommandMineca
     }
 
     @Override
-    public void sendMessage(String[] messages) {
+    public void sendMessage(String... messages) {
     }
 
     @Override

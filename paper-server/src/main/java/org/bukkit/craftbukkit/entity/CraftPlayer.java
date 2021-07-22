@@ -222,7 +222,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     @Override
-    public void sendMessage(String[] messages) {
+    public void sendMessage(String... messages) {
         for (String message : messages) {
             sendMessage(message);
         }
@@ -236,7 +236,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     @Override
-    public void sendMessage(UUID sender, String[] messages) {
+    public void sendMessage(UUID sender, String... messages) {
         for (String message : messages) {
             sendMessage(sender, message);
         }
