@@ -37,7 +37,7 @@ function main {
     cd "${basedir}"
     ./gradlew cleanCache || exit 1 # todo: Figure out why this is necessary
     ./gradlew applyPatches -Dpaperweight.debug=true || exit 1
-    ./gradlew rebuildPatches || exit 1
+    ./gradlew rebuildPatches --filter-patches=false || exit 1
   fi
 }
 
