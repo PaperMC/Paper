@@ -38,6 +38,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.Random;
 import java.util.Set;
@@ -82,10 +83,17 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.ai.village.VillageSiege;
 import net.minecraft.world.entity.npc.MobSpawnerCat;
 import net.minecraft.world.entity.npc.MobSpawnerTrader;
+import net.minecraft.world.entity.player.EntityHuman;
+import net.minecraft.world.inventory.Container;
+import net.minecraft.world.inventory.ContainerWorkbench;
+import net.minecraft.world.inventory.InventoryCraftResult;
+import net.minecraft.world.inventory.InventoryCrafting;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemWorldMap;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.IRecipe;
+import net.minecraft.world.item.crafting.RecipeCrafting;
+import net.minecraft.world.item.crafting.RecipeRepair;
+import net.minecraft.world.item.crafting.Recipes;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.EnumGamemode;
 import net.minecraft.world.level.GameRules;
@@ -145,6 +153,7 @@ import org.bukkit.craftbukkit.command.BukkitCommandWrapper;
 import org.bukkit.craftbukkit.command.CraftCommandMap;
 import org.bukkit.craftbukkit.command.VanillaCommandWrapper;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
+import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.craftbukkit.generator.CraftChunkData;
 import org.bukkit.craftbukkit.help.SimpleHelpMap;
 import org.bukkit.craftbukkit.inventory.CraftBlastingRecipe;
@@ -195,6 +204,7 @@ import org.bukkit.inventory.ComplexRecipe;
 import org.bukkit.inventory.FurnaceRecipe;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
+import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.Merchant;
 import org.bukkit.inventory.Recipe;
@@ -1217,6 +1227,74 @@ public final class CraftServer implements Server {
         Preconditions.checkArgument(recipeKey != null, "recipeKey == null");
 
         return getServer().getCraftingManager().getRecipe(CraftNamespacedKey.toMinecraft(recipeKey)).map(IRecipe::toBukkitRecipe).orElse(null);
+    }
+
+    @Override
+    public Recipe getCraftingRecipe(ItemStack[] craftingMatrix, World world) {
+        // Create a players Crafting Inventory
+        Container container = new Container(null, -1) {
+            @Override
+            public InventoryView getBukkitView() {
+                return null;
+            }
+
+            @Override
+            public boolean canUse(EntityHuman entityhuman) {
+                return false;
+            }
+        };
+        InventoryCrafting inventoryCrafting = new InventoryCrafting(container, 3, 3);
+
+        return getNMSRecipe(craftingMatrix, inventoryCrafting, (CraftWorld) world).map(IRecipe::toBukkitRecipe).orElse(null);
+    }
+
+    @Override
+    public ItemStack craftItem(ItemStack[] craftingMatrix, World world, Player player) {
+        Preconditions.checkArgument(world != null, "world must not be null");
+        Preconditions.checkArgument(player != null, "player must not be null");
+
+        CraftWorld craftWorld = (CraftWorld) world;
+        CraftPlayer craftPlayer = (CraftPlayer) player;
+
+        // Create a players Crafting Inventory and get the recipe
+        ContainerWorkbench container = new ContainerWorkbench(-1, craftPlayer.getHandle().getInventory());
+        InventoryCrafting inventoryCrafting = container.craftSlots;
+        InventoryCraftResult craftResult = container.resultSlots;
+
+        Optional<RecipeCrafting> recipe = getNMSRecipe(craftingMatrix, inventoryCrafting, craftWorld);
+
+        // Generate the resulting ItemStack from the Crafting Matrix
+        net.minecraft.world.item.ItemStack itemstack = net.minecraft.world.item.ItemStack.EMPTY;
+
+        if (recipe.isPresent()) {
+            RecipeCrafting recipeCrafting = recipe.get();
+            if (craftResult.setRecipeUsed(craftWorld.getHandle(), craftPlayer.getHandle(), recipeCrafting)) {
+                itemstack = recipeCrafting.a(inventoryCrafting);
+            }
+        }
+
+        // Call Bukkit event to check for matrix/result changes.
+        net.minecraft.world.item.ItemStack result = CraftEventFactory.callPreCraftEvent(inventoryCrafting, craftResult, itemstack, container.getBukkitView(), recipe.orElse(null) instanceof RecipeRepair);
+
+        // Set the resulting matrix items
+        for (int i = 0; i < craftingMatrix.length; i++) {
+            Item remaining = inventoryCrafting.getContents().get(i).getItem().getCraftingRemainingItem();
+            craftingMatrix[i] = (remaining != null) ? CraftItemStack.asBukkitCopy(remaining.createItemStack()) : null;
+        }
+
+        return CraftItemStack.asBukkitCopy(result);
+    }
+
+    private Optional<RecipeCrafting> getNMSRecipe(ItemStack[] craftingMatrix, InventoryCrafting inventoryCrafting, CraftWorld world) {
+        Preconditions.checkArgument(craftingMatrix != null, "craftingMatrix must not be null");
+        Preconditions.checkArgument(craftingMatrix.length == 9, "craftingMatrix must be an array of length 9");
+        Preconditions.checkArgument(world != null, "world must not be null");
+
+        for (int i = 0; i < craftingMatrix.length; i++) {
+            inventoryCrafting.setItem(i, CraftItemStack.asNMSCopy(craftingMatrix[i]));
+        }
+
+        return getServer().getCraftingManager().craft(Recipes.CRAFTING, inventoryCrafting, world.getHandle());
     }
 
     @Override
