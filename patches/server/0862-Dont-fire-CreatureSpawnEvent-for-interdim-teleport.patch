@@ -1,0 +1,53 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Wed, 21 Jul 2021 17:09:56 -0700
+Subject: [PATCH] Dont fire CreatureSpawnEvent for interdim teleport
+
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
+index a2abb8aa1a257ccd2b5dbddc037fffc6eb600758..5c035822a468ae5a776d43153ef93e6e109a6af9 100644
+--- a/src/main/java/net/minecraft/server/level/ServerLevel.java
++++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
+@@ -1336,7 +1336,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
+     }
+ 
+     public void addDuringTeleport(Entity entity, CreatureSpawnEvent.SpawnReason reason) {
+-        this.addEntity(entity, reason);
++        this.addEntity0(entity, reason, true);
+         // CraftBukkit end
+     }
+ 
+@@ -1370,6 +1370,12 @@ public class ServerLevel extends Level implements WorldGenLevel {
+ 
+     // CraftBukkit start
+     private boolean addEntity(Entity entity, CreatureSpawnEvent.SpawnReason spawnReason) {
++        // Paper start
++        return this.addEntity0(entity, spawnReason, false);
++    }
++
++    private boolean addEntity0(Entity entity, CreatureSpawnEvent.SpawnReason spawnReason, boolean isInterDimensionalTeleport) {
++        // Paper end
+         org.spigotmc.AsyncCatcher.catchOp("entity add"); // Spigot
+         // Paper start
+         if (entity.valid) {
+@@ -1386,7 +1392,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
+             return true;
+         }
+         // Paper end
+-        if (entity.spawnReason == null) entity.spawnReason = spawnReason; // Paper
++        if (entity.spawnReason == null && !isInterDimensionalTeleport) entity.spawnReason = spawnReason; // Paper
+         if (entity.isRemoved()) {
+             // Paper start
+             if (DEBUG_ENTITIES) {
+@@ -1404,9 +1410,11 @@ public class ServerLevel extends Level implements WorldGenLevel {
+             }
+             // Paper end
+ 
++            if (!isInterDimensionalTeleport) { // Paper - skip event for inter-dimensional teleports
+             if (!CraftEventFactory.doEntityAddEventCalling(this, entity, spawnReason)) {
+                 return false;
+             }
++            } // Paper
+             // CraftBukkit end
+ 
+             return this.entityManager.addNewEntity(entity);
