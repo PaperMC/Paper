@@ -1,0 +1,69 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Mex Smits <mexsmits@live.nl>
+Date: Thu, 22 Jul 2021 15:17:17 +0200
+Subject: [PATCH] Allow plugins to inject jars into the PluginClassLoader
+
+
+diff --git a/src/main/java/org/bukkit/plugin/PluginManager.java b/src/main/java/org/bukkit/plugin/PluginManager.java
+index 86cc5025ad98f7a752c51713b7cd6a39d5136ecc..237f67515e2d299a6ea6363a29efeb2055e8350f 100644
+--- a/src/main/java/org/bukkit/plugin/PluginManager.java
++++ b/src/main/java/org/bukkit/plugin/PluginManager.java
+@@ -315,4 +315,15 @@ public interface PluginManager {
+      * @return True if event timings are to be used
+      */
+     public boolean useTimings();
++
++    // Paper start
++    /**
++     * Adds the specified {@code path} to the plugin classpath.
++     *
++     * @param plugin the plugin
++     * @param path the path to the JAR you want to inject into the classpath
++     * @throws UnsupportedOperationException if the operation is not applicable to this plugin
++     */
++    void addToClasspath(Plugin plugin, java.nio.file.Path path);
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/plugin/SimplePluginManager.java b/src/main/java/org/bukkit/plugin/SimplePluginManager.java
+index 0e25119564dfa9cb12f3c5dc5f653d7f2c147a9d..ce00349b3001bd105f0bd08d9a1d0fa06f536e23 100644
+--- a/src/main/java/org/bukkit/plugin/SimplePluginManager.java
++++ b/src/main/java/org/bukkit/plugin/SimplePluginManager.java
+@@ -921,6 +921,20 @@ public final class SimplePluginManager implements PluginManager {
+         defaultPerms.get(true).clear();
+         defaultPerms.get(false).clear();
+     }
++
++    @Override
++    public void addToClasspath(Plugin plugin, java.nio.file.Path path) {
++        Preconditions.checkNotNull(plugin, "instance");
++        Preconditions.checkNotNull(path, "path");
++
++        ClassLoader pluginClassloader = plugin.getClass().getClassLoader();
++
++        if (pluginClassloader instanceof org.bukkit.plugin.java.PluginClassLoader) {
++            ((org.bukkit.plugin.java.PluginClassLoader) pluginClassloader).addPath(path);
++        } else {
++            throw new UnsupportedOperationException("Plugin is not loaded by the PluginClassLoader.");
++        }
++    }
+     // Paper end
+ 
+ }
+diff --git a/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java b/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
+index 81292899918c4dc880661ee628384cb840a6244f..ebb20a2d36796af0f6a3c7638f4018a2757b17f5 100644
+--- a/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
++++ b/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
+@@ -241,5 +241,13 @@ public final class PluginClassLoader extends URLClassLoader { // Spigot
+                    ", url=" + file +
+                    '}';
+     }
++
++    public void addPath(java.nio.file.Path path) {
++        try {
++            addURL(path.toUri().toURL());
++        } catch (MalformedURLException e) {
++            throw new AssertionError(e);
++        }
++    }
+     // Paper end
+ }
