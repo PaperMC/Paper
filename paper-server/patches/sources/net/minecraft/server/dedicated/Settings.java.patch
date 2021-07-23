@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/dedicated/Settings.java
 +++ b/net/minecraft/server/dedicated/Settings.java
-@@ -20,20 +20,40 @@
+@@ -20,20 +20,41 @@
  import java.util.function.Supplier;
  import java.util.function.UnaryOperator;
  import javax.annotation.Nullable;
@@ -14,6 +14,7 @@
  
      private static final Logger LOGGER = LogUtils.getLogger();
      public final Properties properties;
++    private static final boolean skipComments = Boolean.getBoolean("Paper.skipServerPropertiesComments"); // Paper - allow skipping server.properties comments
 +    // CraftBukkit start
 +    private OptionSet options = null;
  
@@ -43,20 +44,62 @@
              Properties properties;
              Properties properties1;
  
-@@ -97,6 +117,12 @@
+@@ -97,8 +118,53 @@
  
      public void store(Path path) {
          try {
+-            BufferedWriter bufferedwriter = Files.newBufferedWriter(path, StandardCharsets.UTF_8);
 +            // CraftBukkit start - Don't attempt writing to file if it's read only
 +            if (path.toFile().exists() && !path.toFile().canWrite()) {
 +                Settings.LOGGER.warn("Can not write to file {}, skipping.", path); // Paper - log message file is read-only
 +                return;
 +            }
 +            // CraftBukkit end
-             BufferedWriter bufferedwriter = Files.newBufferedWriter(path, StandardCharsets.UTF_8);
++            // Paper start - allow skipping server.properties comments
++            java.io.OutputStream outputstream = Files.newOutputStream(path);
++            java.io.BufferedOutputStream bufferedOutputStream =  !skipComments ? new java.io.BufferedOutputStream(outputstream) : new java.io.BufferedOutputStream(outputstream) {
++                private boolean isRightAfterNewline = true; // If last written char was newline
++                private boolean isComment = false; // Are we writing comment currently?
++
++                @Override
++                public void write(@org.jetbrains.annotations.NotNull byte[] b) throws IOException {
++                    this.write(b, 0, b.length);
++                }
++
++                @Override
++                public void write(@org.jetbrains.annotations.NotNull byte[] bbuf, int off, int len) throws IOException {
++                    int latest_offset = off; // The latest offset, updated when comment ends
++                    for (int index = off; index < off + len; ++index ) {
++                        byte c = bbuf[index];
++                        boolean isNewline = (c == '\n' || c == '\r');
++                        if (isNewline && this.isComment) {
++                            // Comment has ended
++                            this.isComment = false;
++                            latest_offset = index+1;
++                        }
++                        if (c == '#' && this.isRightAfterNewline) {
++                            this.isComment = true;
++                            if (index != latest_offset) {
++                                // We got some non-comment data earlier
++                                super.write(bbuf, latest_offset, index-latest_offset);
++                            }
++                        }
++                        this.isRightAfterNewline = isNewline; // Store for next iteration
  
++                    }
++                    if (latest_offset < off+len && !this.isComment) {
++                        // We have some unwritten data, that isn't part of a comment
++                        super.write(bbuf, latest_offset, (off + len) - latest_offset);
++                    }
++                }
++            };
++            BufferedWriter bufferedwriter = new BufferedWriter(new java.io.OutputStreamWriter(bufferedOutputStream, java.nio.charset.StandardCharsets.UTF_8.newEncoder()));
++            // Paper end - allow skipping server.properties comments
++
              try {
-@@ -125,7 +151,7 @@
+                 this.properties.store(bufferedwriter, "Minecraft server properties");
+             } catch (Throwable throwable) {
+@@ -125,7 +191,7 @@
      private static <V extends Number> Function<String, V> wrapNumberDeserializer(Function<String, V> parser) {
          return (s) -> {
              try {
@@ -65,7 +108,7 @@
              } catch (NumberFormatException numberformatexception) {
                  return null;
              }
-@@ -144,7 +170,7 @@
+@@ -144,7 +210,7 @@
  
      @Nullable
      public String getStringRaw(String key) {
@@ -74,7 +117,7 @@
      }
  
      @Nullable
-@@ -160,10 +186,20 @@
+@@ -160,10 +226,20 @@
      }
  
      protected <V> V get(String key, Function<String, V> parser, Function<V, String> stringifier, V fallback) {
@@ -98,7 +141,7 @@
          return v1;
      }
  
-@@ -172,7 +208,7 @@
+@@ -172,7 +248,7 @@
          V v1 = MoreObjects.firstNonNull(s1 != null ? parser.apply(s1) : null, fallback);
  
          this.properties.put(key, stringifier.apply(v1));
@@ -107,7 +150,7 @@
      }
  
      protected <V> V get(String key, Function<String, V> parser, UnaryOperator<V> parsedTransformer, Function<V, String> stringifier, V fallback) {
-@@ -236,7 +272,7 @@
+@@ -236,7 +312,7 @@
          return properties;
      }
  
@@ -116,7 +159,7 @@
  
      public class MutableValue<V> implements Supplier<V> {
  
-@@ -244,7 +280,7 @@
+@@ -244,7 +320,7 @@
          private final V value;
          private final Function<V, String> serializer;
  
@@ -125,7 +168,7 @@
              this.key = s;
              this.value = object;
              this.serializer = function;
-@@ -258,7 +294,7 @@
+@@ -258,7 +334,7 @@
              Properties properties = Settings.this.cloneProperties();
  
              properties.put(this.key, this.serializer.apply(value));
