@@ -145,7 +145,7 @@ index 2720f4a51ffc8c9748932be55cebd5072cd4ffb2..1dd1b9afaee38fdc994ad0a069bd63b0
  
      public CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> getOrScheduleFuture(ChunkStatus targetStatus, ChunkMap chunkStorage) {
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index 5e7fe43d1b27bed51f8a7c0fcddb8604d40f6954..404dcacd14e9fa81c54287216ce7b53dc5bb5c03 100644
+index 5e7fe43d1b27bed51f8a7c0fcddb8604d40f6954..295155bf507438bcdf1feaa82c3f34e3eaba99b5 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
 @@ -127,7 +127,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
@@ -447,54 +447,6 @@ index 5e7fe43d1b27bed51f8a7c0fcddb8604d40f6954..404dcacd14e9fa81c54287216ce7b53d
      }
  
      public void addEntity(Entity entity) {
-@@ -1484,6 +1604,47 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
- 
-     }
- 
-+    // Paper start
-+    private static int getLightMask(final LevelChunk chunk) {
-+        final net.minecraft.world.level.chunk.LevelChunkSection[] chunkSections = chunk.getSections();
-+        int mask = 0;
-+
-+        for (int i = 0; i < chunkSections.length; ++i) {
-+            /*
-+
-+
-+Lightmasks have 18 bits, from the -1 (void) section until the 17th (air) section.
-+Sections go from 0..16. Now whenever a section is not empty, it can potentially change lighting for the section itself, the section below and the section above, hence the bitmask 111b, which is 7d.
-+
-+             */
-+            mask |= (net.minecraft.world.level.chunk.LevelChunkSection.isEmpty(chunkSections[i]) ? 0 : 7) << i;
-+        }
-+
-+        return mask;
-+    }
-+
-+    private static int getCeilingLightMask(final LevelChunk chunk) {
-+        int mask = getLightMask(chunk);
-+
-+        /*
-+         It is similar to get highest bit, it would turn an 001010 into an 001111 so basically the highest bit and all below.
-+         We then invert this, so we'd have 110000 and compare that to the "main" chunk.
-+         This is because the bug only appears when the current chunks lightmaps are higher than those of the neighbors, thus we can omit sending neighbors which are lower than the current chunks lights.
-+
-+         so TLDR is that getCeilingLightMask returns a light mask with all bits set below the highest affected section. We could also count the number of leading zeros and invert them, somehow.
-+         @TODO: Implement Leafs suggestion
-+         either use Integer#numberOfLeadingZeros or document what this bithack is supposed to be doing then
-+         */
-+        mask |= mask >> 1;
-+        mask |= mask >> 2;
-+        mask |= mask >> 4;
-+        mask |= mask >> 8;
-+        mask |= mask >> 16;
-+
-+        return mask;
-+    }
-+    // Paper end
-+
-     public void playerLoadedChunk(ServerPlayer player, Packet<?>[] packets, LevelChunk chunk) {
-         if (packets[0] == null) {
-             packets[0] = new ClientboundLevelChunkPacket(chunk, chunk.level.chunkPacketBlockController.shouldModify(player, chunk)); // Paper - Ani-Xray - Bypass
 diff --git a/src/main/java/net/minecraft/server/level/DistanceManager.java b/src/main/java/net/minecraft/server/level/DistanceManager.java
 index 45c7ebe67019cdbe88b6617a95d5c40d3a68286c..38eebda226e007c8910e04f502ce218cdfe1d456 100644
 --- a/src/main/java/net/minecraft/server/level/DistanceManager.java

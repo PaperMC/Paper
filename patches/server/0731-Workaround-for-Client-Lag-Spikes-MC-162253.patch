@@ -1,0 +1,214 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: MeFisto94 <MeFisto94@users.noreply.github.com>
+Date: Thu, 22 Jul 2021 15:20:17 +0100
+Subject: [PATCH] Workaround for Client Lag Spikes (MC-162253)
+
+When crossing certain chunk boundaries, the client needlessly
+calculates light maps for chunk neighbours. In some specific map
+configurations, these calculations cause a 500ms+ freeze on the Client.
+
+This patch basically serves as a workaround by sending light maps
+to the client, so that it doesn't attempt to calculate them.
+This mitigates the frametime impact to a minimum (but it's still there).
+
+Co-authored-by: basedAF <86579232+basedAF@users.noreply.github.com>
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+index f101302892a7f95ffa0e6d63cb69d8a3ddbd67a7..45bee75d2c5f111cc8f6013e0d90c89b6e579454 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+@@ -511,4 +511,9 @@ public class PaperConfig {
+         itemValidationBookAuthorLength = getInt("settings.item-validation.book.author", itemValidationBookAuthorLength);
+         itemValidationBookPageLength = getInt("settings.item-validation.book.page", itemValidationBookPageLength);
+     }
++
++    public static boolean workaroundMC162253 = true;
++    private static void workaroundMC162253() {
++        workaroundMC162253 = getBoolean("settings.workaround-MC-162253", workaroundMC162253);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
+index c122fbc2861753123b9f359455f5abc2560131a2..b973ed7cd7f723e290e1675d41054781eb13406c 100644
+--- a/src/main/java/net/minecraft/server/level/ChunkMap.java
++++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
+@@ -505,7 +505,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+                     player.needsChunkCenterUpdate = false;
+                     player.connection.send(new ClientboundSetChunkCacheCenterPacket(currPosX, currPosZ));
+                 }
+-                ChunkMap.this.updateChunkTracking(player, new ChunkPos(rangeX, rangeZ), new Packet[2], false, true); // unloaded, loaded
++                ChunkMap.this.updateChunkTracking(player, new ChunkPos(rangeX, rangeZ), new Packet[10], false, true); // unloaded, loaded
+             },
+             (ServerPlayer player, int rangeX, int rangeZ, int currPosX, int currPosZ, int prevPosX, int prevPosZ,
+              com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<ServerPlayer> newState) -> {
+@@ -2132,10 +2132,124 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+ 
+     }
+ 
++    // Paper start - Utility for Fix MC-162253
++    // Retrieve the light mask for the given chunk, that states which sections could be lit, and thus may need sending
++    private static BitSet lightMask(final LevelChunk chunk) {
++        // this is designed roughly like ChunkHolder#sectionLightChanged:
++        // it masks sections that _could_ be lit (i.e. are non-empty or surrounded by non-empty sections).
++        // If a section is lit, the section below or above could also be lit, so we need to send them as well.
++
++        var nbSections = net.minecraft.world.level.lighting.LevelLightEngine.getLightSectionCount(chunk);
++        var minSection = net.minecraft.world.level.lighting.LevelLightEngine.getMinLightSection(chunk);
++        var maxSection = net.minecraft.world.level.lighting.LevelLightEngine.getMaxLightSection(chunk);
++        net.minecraft.world.level.chunk.LevelChunkSection[] sections = chunk.getSections();
++
++        // Note: on 1.17, the light sections are -1 compared to the sections, so the section 0 is the light section -1
++        // This part may be a bit sketchy and prone to future changes, but there doesn't seem to be a proper way to
++        // to this translation.
++
++        BitSet mask = new BitSet(nbSections);
++        for (int i = chunk.getMinSection(); i < Math.min(sections.length, chunk.getMaxSection()); i++) {
++            if (i - 1 < minSection || i - 1 > maxSection) {
++                continue;
++            }
++
++            if (!net.minecraft.world.level.chunk.LevelChunkSection.isEmpty(sections[i])) {
++                mask.set(i);
++            }
++        }
++        return mask;
++    }
++
++    // returns a mask of all sections that are equal or lower than the highest lit section.
++    private static BitSet ceilingLightMask(final LevelChunk chunk) {
++        var lm = lightMask(chunk); // get the light mask (i.e. the sections that can be lit)
++
++        // Find the highest bit and set all bits below.
++        for (var i = lm.length() - 1; i > 0; i--) {
++            if (lm.get(i)) { // highest bit found
++                lm.set(0, i - 1, true); // set all smaller bits.
++                break;
++            }
++        }
++
++        return lm;
++    }
++    // Paper end
++
+     public void playerLoadedChunk(ServerPlayer player, Packet<?>[] packets, LevelChunk chunk) {
+         if (packets[0] == null) {
++            // Paper start - Fix MC-162253
++            if (com.destroystokyo.paper.PaperConfig.workaroundMC162253) {
++                if (packets.length != 10) { // in case Plugins call playerLoadedChunk, resize
++                    packets = new Packet[10];
++                }
++            }
++            // Paper end
+             packets[0] = new ClientboundLevelChunkPacket(chunk, chunk.level.chunkPacketBlockController.shouldModify(player, chunk)); // Paper - Ani-Xray - Bypass
+             packets[1] = new ClientboundLightUpdatePacket(chunk.getPos(), this.lightEngine, (BitSet) null, (BitSet) null, true);
++
++            // Paper start - Fix MC-162253
++            if (com.destroystokyo.paper.PaperConfig.workaroundMC162253) {
++                final BitSet chunkLightMask = lightMask(chunk);
++                int i = 1;
++
++                // Check the neighbor chunks
++                for (int x = -1; x <= 1; x++) {
++                    for (int z = -1; z <= 1; z++) {
++                        if (x == 0 && z == 0) {
++                            continue;
++                        }
++
++                        ++i;
++
++                        if (!chunk.isNeighbourLoaded(x, z)) {
++                            continue;
++                        }
++
++                        // if the current chunk has sections above the neighbor, we need to send the neighbor's sections
++                        // that are higher. "~ ceilingLightMask" equals to all sections that are higher than the current
++                        // chunk, but only send them if the current chunk even has light data on those levels (i.e. & chunkLightMask)
++                        final LevelChunk neighbor = chunk.getRelativeNeighbourIfLoaded(x, z);
++                        final BitSet lightMask = (BitSet)chunkLightMask.clone();
++                        lightMask.andNot(ceilingLightMask(neighbor));
++                        if (lightMask.isEmpty()) {
++                            continue;
++                        }
++
++                        packets[i] = new ClientboundLightUpdatePacket(new ChunkPos(chunk.getPos().x + x, chunk.getPos().z + z), lightEngine, lightMask, null, true);
++                    }
++                }
++
++                final int viewDistance = playerViewDistanceBroadcastMap.getLastViewDistance(player);
++                final long lastPosition = playerViewDistanceBroadcastMap.getLastCoordinate(player);
++
++                int j = 1;
++                // Send packets for neighbor chunks, if present
++                for (int x = -1; x <= 1; x++) {
++                    for (int z = -1; z <= 1; z++) {
++                        if (x == 0 && z == 0) {
++                            continue;
++                        }
++
++                        ++j;
++
++                        Packet<?> packet = packets[j];
++                        if (packet == null) {
++                            continue;
++                        }
++
++                        final int distX = Math.abs(MCUtil.getCoordinateX(lastPosition) - (chunk.getPos().x + x));
++                        final int distZ = Math.abs(MCUtil.getCoordinateZ(lastPosition) - (chunk.getPos().z + z));
++
++                        if (Math.max(distX, distZ) > viewDistance) {
++                            continue;
++                        }
++                        player.connection.send(packet);
++                    }
++                }
++            }
++            // Paper end - Fix MC-162253
+         }
+ 
+         player.trackChunk(chunk.getPos(), packets[0], packets[1]);
+diff --git a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
+index a84b75a53a0324fab9aeb9b80bf74eb0a84ecd2e..70c791ad19b3a087eef869784761f181fbff377c 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
++++ b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
+@@ -269,7 +269,7 @@ public class LevelChunk implements ChunkAccess {
+ 
+                     // broadcast
+                     Object[] backingSet = inRange.getBackingSet();
+-                    Packet[] chunkPackets = new Packet[2];
++                    Packet[] chunkPackets = new Packet[10];
+                     for (int index = 0, len = backingSet.length; index < len; ++index) {
+                         Object temp = backingSet[index];
+                         if (!(temp instanceof net.minecraft.server.level.ServerPlayer)) {
+diff --git a/src/main/java/net/minecraft/world/level/lighting/LevelLightEngine.java b/src/main/java/net/minecraft/world/level/lighting/LevelLightEngine.java
+index 72554cfe68e2891e595e54275db0d1f339a511ff..c8bfe3ab15f415468ce9120764b79df99f71567b 100644
+--- a/src/main/java/net/minecraft/world/level/lighting/LevelLightEngine.java
++++ b/src/main/java/net/minecraft/world/level/lighting/LevelLightEngine.java
+@@ -140,15 +140,26 @@ public class LevelLightEngine implements LightEventListener {
+         return Math.max(j, i);
+     }
+ 
++    // Paper start - make methods static so they can be called on arbitrary levelHeightAccessors
++    public static int getLightSectionCount(LevelHeightAccessor levelHeightAccessor) {
++        return levelHeightAccessor.getSectionsCount() + 2;
++    }
+     public int getLightSectionCount() {
+-        return this.levelHeightAccessor.getSectionsCount() + 2;
++        return getLightSectionCount(this.levelHeightAccessor);
+     }
+ 
++    public static int getMinLightSection(LevelHeightAccessor levelHeightAccessor) {
++        return levelHeightAccessor.getMinSection() - 1;
++    }
+     public int getMinLightSection() {
+-        return this.levelHeightAccessor.getMinSection() - 1;
++        return getMinLightSection(this.levelHeightAccessor);
+     }
+ 
++    public static int getMaxLightSection(LevelHeightAccessor levelHeightAccessor) {
++        return getMinLightSection(levelHeightAccessor) + getLightSectionCount(levelHeightAccessor);
++    }
+     public int getMaxLightSection() {
+-        return this.getMinLightSection() + this.getLightSectionCount();
++        return getMaxLightSection(this.levelHeightAccessor);
+     }
++    // Paper end
+ }
