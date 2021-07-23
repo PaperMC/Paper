@@ -62,7 +62,7 @@ public class CraftMetaBundle extends CraftMetaItem implements BundleMeta {
         if (items != null) {
             for (Object stack : items) {
                 if (stack instanceof ItemStack) {
-                    this.items.add((ItemStack) stack);
+                    addItem((ItemStack) stack);
                 }
             }
         }
