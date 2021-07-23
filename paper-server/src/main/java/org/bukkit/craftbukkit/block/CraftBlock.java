@@ -183,8 +183,9 @@ public class CraftBlock implements Block {
     }
 
     public boolean setTypeAndData(final IBlockData blockData, final boolean applyPhysics) {
+        IBlockData old = getNMS();
         // SPIGOT-611: need to do this to prevent glitchiness. Easier to handle this here (like /setblock) than to fix weirdness in tile entity cleanup
-        if (getNMS().isTileEntity()) { // SPIGOT-3725 always remove old tile entity
+        if (old.isTileEntity() && blockData.getBlock() != old.getBlock()) { // SPIGOT-3725 remove old tile entity if block changes
             // SPIGOT-4612: faster - just clear tile
             if (world instanceof net.minecraft.world.level.World) {
                 ((net.minecraft.world.level.World) world).removeTileEntity(position);
@@ -196,7 +197,6 @@ public class CraftBlock implements Block {
         if (applyPhysics) {
             return world.setTypeAndData(position, blockData, 3);
         } else {
-            IBlockData old = world.getType(position);
             boolean success = world.setTypeAndData(position, blockData, 2 | 16 | 1024); // NOTIFY | NO_OBSERVER | NO_PLACE (custom)
             if (success) {
                 world.getMinecraftWorld().notify(
