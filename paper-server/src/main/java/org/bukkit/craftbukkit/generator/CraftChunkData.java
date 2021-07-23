@@ -22,6 +22,7 @@ public final class CraftChunkData implements ChunkGenerator.ChunkData {
     private final int maxHeight;
     private final ChunkSection[] sections;
     private Set<BlockPosition> tiles;
+    private final Set<BlockPosition> lights = new HashSet<>();
 
     public CraftChunkData(World world) {
         this(world.getMinHeight(), world.getMaxHeight());
@@ -149,6 +150,13 @@ public final class CraftChunkData implements ChunkGenerator.ChunkData {
         ChunkSection section = getChunkSection(y, true);
         section.setType(x, y & 0xf, z, type);
 
+        // SPIGOT-1753: Capture light blocks, for light updates
+        if (type.f() > 0) { // PAIL rename getLightEmission
+            lights.add(new BlockPosition(x, y, z));
+        } else {
+            lights.remove(new BlockPosition(x, y, z));
+        }
+
         if (type.isTileEntity()) {
             if (tiles == null) {
                 tiles = new HashSet<>();
@@ -173,5 +181,9 @@ public final class CraftChunkData implements ChunkGenerator.ChunkData {
 
     Set<BlockPosition> getTiles() {
         return tiles;
+    }
+
+    Set<BlockPosition> getLights() {
+        return lights;
     }
 }

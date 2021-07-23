@@ -159,6 +159,11 @@ public class CustomChunkGenerator extends InternalChunkGenerator {
                 }
             }
         }
+
+        // Apply captured light blocks
+        for (BlockPosition lightPosition : craftData.getLights()) {
+            ((ProtoChunk) ichunkaccess).j(new BlockPosition((x << 4) + lightPosition.getX(), lightPosition.getY(), (z << 4) + lightPosition.getZ())); // PAIL rename addLightBlock
+        }
     }
 
     @Override
