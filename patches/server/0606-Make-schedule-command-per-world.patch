@@ -5,33 +5,24 @@ Subject: [PATCH] Make schedule command per-world
 
 
 diff --git a/src/main/java/net/minecraft/server/commands/ScheduleCommand.java b/src/main/java/net/minecraft/server/commands/ScheduleCommand.java
-index 018923e519544561747240618bce5df60475cdc6..7f5d249502e9b2fb9e5811cfeb43122b47f7b111 100644
+index 3f2a4e2399759cdd5aebe0b87c9d72f50cf6a72d..fb1f94acb3e848fa2a21a258145f3b4cb42fe562 100644
 --- a/src/main/java/net/minecraft/server/commands/ScheduleCommand.java
 +++ b/src/main/java/net/minecraft/server/commands/ScheduleCommand.java
-@@ -29,7 +29,7 @@ public class ScheduleCommand {
-         return new TranslatableComponent("commands.schedule.cleared.failure", eventName);
+@@ -32,7 +32,7 @@ public class ScheduleCommand {
+         return new TranslatableComponent("commands.schedule.cleared.failure", new Object[]{object});
      });
-     private static final SuggestionProvider<CommandSourceStack> SUGGEST_SCHEDULE = (context, builder) -> {
--        return SharedSuggestionProvider.suggest(context.getSource().getServer().getWorldData().overworldData().getScheduledEvents().getEventsIds(), builder);
-+        return SharedSuggestionProvider.suggest(context.getSource().getLevel().serverLevelData.overworldData().getScheduledEvents().getEventsIds(), builder); // Paper
+     private static final SuggestionProvider<CommandSourceStack> SUGGEST_SCHEDULE = (commandcontext, suggestionsbuilder) -> {
+-        return SharedSuggestionProvider.suggest((Iterable) ((CommandSourceStack) commandcontext.getSource()).getServer().getWorldData().overworldData().getScheduledEvents().getEventsIds(), suggestionsbuilder);
++        return SharedSuggestionProvider.suggest((Iterable) ((net.minecraft.commands.CommandSourceStack) commandcontext.getSource()).getLevel().serverLevelData.getScheduledEvents().getEventsIds(), suggestionsbuilder); // Paper
      };
  
-     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
-@@ -52,7 +52,7 @@ public class ScheduleCommand {
-         } else {
-             long l = source.getLevel().getGameTime() + (long)time;
-             ResourceLocation resourceLocation = function.getFirst();
--            TimerQueue<MinecraftServer> timerQueue = source.getServer().getWorldData().overworldData().getScheduledEvents();
-+            TimerQueue<MinecraftServer> timerQueue = source.getLevel().serverLevelData.getScheduledEvents(); // Paper
-             function.getSecond().ifLeft((functionx) -> {
-                 String string = resourceLocation.toString();
-                 if (replace) {
-@@ -75,7 +75,7 @@ public class ScheduleCommand {
+     public ScheduleCommand() {}
+@@ -83,7 +83,7 @@ public class ScheduleCommand {
      }
  
      private static int remove(CommandSourceStack source, String eventName) throws CommandSyntaxException {
 -        int i = source.getServer().getWorldData().overworldData().getScheduledEvents().remove(eventName);
 +        int i = source.getLevel().serverLevelData.getScheduledEvents().remove(eventName); // Paper
+ 
          if (i == 0) {
-             throw ERROR_CANT_REMOVE.create(eventName);
-         } else {
+             throw ScheduleCommand.ERROR_CANT_REMOVE.create(eventName);
