@@ -4,15 +4,41 @@ Date: Mon, 27 May 2019 03:40:05 -0500
 Subject: [PATCH] Implement Paper VersionChecker
 
 
+diff --git a/.gitignore b/.gitignore
+index 3e05459f27c4c5697ae65da504d67a6a2f617b57..804e3002d910f9a8a1011aad95308430b2be975d 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -40,3 +40,4 @@ dependency-reduced-pom.xml
+ 
+ /src/main/resources/achievement
+ /src/main/resources/lang
++/src/main/resources/branch-info.properties
+diff --git a/build.gradle.kts b/build.gradle.kts
+index 31343d49cf38063976e0f8c93264a4f3897f06fb..ea0c0ce76c16c96b97769516032b150c28a6061f 100644
+--- a/build.gradle.kts
++++ b/build.gradle.kts
+@@ -62,6 +62,11 @@ tasks.jar {
+             attributes("$tld/bukkit", "Sealed" to true)
+         }
+     }
++    val git = Git(rootProject.layout.projectDirectory.path)
++    val branchInfo = git("rev-parse", "--abbrev-ref", "HEAD").getText().trim()
++    File("Paper-Server/src/main/resources/branch-info.properties").bufferedWriter().use { out ->
++    out.write("branch=$branchInfo")
++  }
+ }
+ 
+ publishing {
 diff --git a/src/main/java/com/destroystokyo/paper/PaperVersionFetcher.java b/src/main/java/com/destroystokyo/paper/PaperVersionFetcher.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..1a1b50e475b9ede544b2f6d0d36632b24b68898c
+index 0000000000000000000000000000000000000000..1fee67f00220058176bb8e49eb9cc0ef6c0c0868
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/PaperVersionFetcher.java
-@@ -0,0 +1,122 @@
+@@ -0,0 +1,123 @@
 +package com.destroystokyo.paper;
 +
 +import com.destroystokyo.paper.util.VersionFetcher;
++import io.papermc.paper.util.BranchReader;
 +import com.google.common.base.Charsets;
 +import com.google.common.io.Resources;
 +import com.google.gson.*;
@@ -28,7 +54,7 @@ index 0000000000000000000000000000000000000000..1a1b50e475b9ede544b2f6d0d36632b2
 +
 +public class PaperVersionFetcher implements VersionFetcher {
 +    private static final java.util.regex.Pattern VER_PATTERN = java.util.regex.Pattern.compile("^([0-9\\.]*)\\-.*R"); // R is an anchor, will always give '-R' at end
-+    private static final String GITHUB_BRANCH_NAME = "master";
++    private static final String GITHUB_BRANCH_NAME = BranchReader.getBranch();
 +    private static @Nullable String mcVer;
 +
 +    @Override
@@ -131,6 +157,37 @@ index 0000000000000000000000000000000000000000..1a1b50e475b9ede544b2f6d0d36632b2
 +            return -1;
 +        }
 +    }
++}
+diff --git a/src/main/java/io/papermc/paper/util/BranchReader.java b/src/main/java/io/papermc/paper/util/BranchReader.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..3d6a9e0adb9f4fcc33cd6f81f5e4809d2dd3f3af
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/util/BranchReader.java
+@@ -0,0 +1,25 @@
++package io.papermc.paper.util;
++
++import java.io.IOException;
++import java.io.InputStream;
++import java.util.Properties;
++import java.util.logging.Level;
++import java.util.logging.Logger;
++import org.bukkit.Bukkit;
++
++public final class BranchReader {
++	public static String getBranch() {
++		String branch = "null";
++		InputStream branchStream = Bukkit.class.getClassLoader().getResourceAsStream("branch-info.properties");
++		Properties properties = new Properties();
++		if (branchStream != null) {
++			try {
++				properties.load(branchStream);
++				branch = properties.getProperty("branch");
++			} catch (IOException ex) {
++				Logger.getLogger(BranchReader.class.getName()).log(Level.SEVERE, "Could not get branch info from branch-info.properties!", ex);
++			}
++		}
++		return branch;
++	}
 +}
 diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
 index fa64a0ea5b6dd9c6031fe54c9030bdb1999ef109..2b54c6980166cb7378e3db42d3a68005ebf451a1 100644
