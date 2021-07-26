@@ -1393,6 +1393,10 @@ public class CraftEventFactory {
                 case CROUCH_ONE_CM:
                 case TIME_SINCE_DEATH:
                 case SNEAK_TIME:
+                case TOTAL_WORLD_TIME:
+                case TIME_SINCE_REST:
+                case AVIATE_ONE_CM:
+                case STRIDER_ONE_CM:
                     // Do not process event for these - too spammy
                     return null;
                 default:
