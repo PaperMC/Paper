@@ -338,15 +338,17 @@
                          flag1 = true;
                      } else {
                          flag1 = false;
-@@ -1168,6 +1259,7 @@
+@@ -1168,7 +1259,9 @@
                      f += itemstack.getItem().getAttackDamageBonus(target, f, damagesource);
                      boolean flag2 = flag && this.fallDistance > 0.0F && !this.onGround() && !this.onClimbable() && !this.isInWater() && !this.hasEffect(MobEffects.BLINDNESS) && !this.isPassenger() && target instanceof LivingEntity && !this.isSprinting();
  
 +                    flag2 = flag2 && !this.level().paperConfig().entities.behavior.disablePlayerCrits; // Paper - Toggleable player crits
                      if (flag2) {
++                        damagesource = damagesource.critical(true); // Paper start - critical damage API
                          f *= 1.5F;
                      }
-@@ -1202,13 +1294,17 @@
+ 
+@@ -1202,13 +1295,17 @@
                              if (target instanceof LivingEntity) {
                                  LivingEntity entityliving1 = (LivingEntity) target;
  
@@ -366,14 +368,14 @@
                          }
  
                          LivingEntity entityliving2;
-@@ -1223,8 +1319,13 @@
+@@ -1223,8 +1320,13 @@
                                  if (entityliving2 != this && entityliving2 != target && !this.isAlliedTo((Entity) entityliving2) && (!(entityliving2 instanceof ArmorStand) || !((ArmorStand) entityliving2).isMarker()) && this.distanceToSqr((Entity) entityliving2) < 9.0D) {
                                      float f7 = this.getEnchantedDamage(entityliving2, f6, damagesource) * f2;
  
 -                                    entityliving2.knockback(0.4000000059604645D, (double) Mth.sin(this.getYRot() * 0.017453292F), (double) (-Mth.cos(this.getYRot() * 0.017453292F)));
 -                                    entityliving2.hurt(damagesource, f7);
 +                                    // CraftBukkit start - Only apply knockback if the damage hits
-+                                    if (!entityliving2.hurtServer((ServerLevel) this.level(), this.damageSources().playerAttack(this).sweep(), f7)) {
++                                    if (!entityliving2.hurtServer((ServerLevel) this.level(), this.damageSources().playerAttack(this).sweep().critical(flag2), f7)) { // Paper - add critical damage API
 +                                        continue;
 +                                    }
 +                                    // CraftBukkit end
@@ -382,7 +384,7 @@
                                      Level world = this.level();
  
                                      if (world instanceof ServerLevel) {
-@@ -1235,26 +1336,43 @@
+@@ -1235,26 +1337,43 @@
                                  }
                              }
  
@@ -430,7 +432,7 @@
                              }
                          }
  
-@@ -1308,9 +1426,14 @@
+@@ -1308,9 +1427,14 @@
                              }
                          }
  
@@ -447,7 +449,7 @@
                      }
                  }
  
-@@ -1351,7 +1474,14 @@
+@@ -1351,7 +1475,14 @@
  
      @Override
      public void remove(Entity.RemovalReason reason) {
@@ -463,7 +465,7 @@
          this.inventoryMenu.removed(this);
          if (this.containerMenu != null && this.hasContainerOpen()) {
              this.doCloseContainer();
-@@ -1391,7 +1521,13 @@
+@@ -1391,7 +1522,13 @@
      }
  
      public Either<Player.BedSleepingProblem, Unit> startSleepInBed(BlockPos pos) {
@@ -478,7 +480,7 @@
          this.sleepCounter = 0;
          return Either.right(Unit.INSTANCE);
      }
-@@ -1545,12 +1681,24 @@
+@@ -1545,12 +1682,24 @@
      }
  
      public void startFallFlying() {
@@ -504,7 +506,7 @@
      }
  
      @Override
-@@ -1664,11 +1812,30 @@
+@@ -1664,11 +1813,30 @@
      public int getXpNeededForNextLevel() {
          return this.experienceLevel >= 30 ? 112 + (this.experienceLevel - 30) * 9 : (this.experienceLevel >= 15 ? 37 + (this.experienceLevel - 15) * 5 : 7 + this.experienceLevel * 2);
      }
@@ -536,7 +538,7 @@
              }
  
          }
-@@ -1748,13 +1915,20 @@
+@@ -1748,13 +1916,20 @@
  
      @Override
      public void setItemSlot(EquipmentSlot slot, ItemStack stack) {
@@ -564,7 +566,7 @@
          }
  
      }
-@@ -1798,26 +1972,55 @@
+@@ -1798,26 +1973,55 @@
  
      public void removeEntitiesOnShoulder() {
          if (this.timeEntitySatOnShoulder + 20L < this.level().getGameTime()) {
@@ -627,7 +629,7 @@
      }
  
      @Override
-@@ -2003,20 +2206,31 @@
+@@ -2003,20 +2207,31 @@
      @Override
      public ImmutableList<Pose> getDismountPoses() {
          return ImmutableList.of(Pose.STANDING, Pose.CROUCHING, Pose.SWIMMING);
