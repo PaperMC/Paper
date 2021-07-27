@@ -236,7 +236,7 @@ public class CraftChunk implements Chunk {
         boolean[] sectionEmpty = new boolean[cs.length];
 
         for (int i = 0; i < cs.length; i++) {
-            if (cs[i] == null) { // Section is empty?
+            if (ChunkSection.a(cs[i])) { // Section is empty? // PAIL rename isEmpty
                 sectionBlockIDs[i] = emptyBlockIDs;
                 sectionSkyLights[i] = emptyLight;
                 sectionEmitLights[i] = emptyLight;
