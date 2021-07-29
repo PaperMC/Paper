@@ -1,7 +1,7 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sun, 24 Mar 2019 18:39:01 -0400
-Subject: [PATCH] Flip some Spigot API null annotations
+Subject: [PATCH] Fix Spigot annotation mistakes
 
 while some of these may of been true, they are extreme cases and cause
 a ton of noise to plugin developers.
@@ -31,7 +31,7 @@ index 6aabf764231d29b0d9c83c0c40e1088c34d6f168..228a7874bc8c280c43971a89ba9cbb14
          return server.getTag(registry, tag, clazz);
      }
 diff --git a/src/main/java/org/bukkit/Location.java b/src/main/java/org/bukkit/Location.java
-index 88b3e0323dbc4f0fce31b147c7aaa08d65745852..1835d39f6259732e56d51fa746faf1e4c65eaf07 100644
+index 88b3e0323dbc4f0fce31b147c7aaa08d65745852..23ca89dde7f6ac9082d4b97fce2959425f3680cb 100644
 --- a/src/main/java/org/bukkit/Location.java
 +++ b/src/main/java/org/bukkit/Location.java
 @@ -46,7 +46,7 @@ public class Location implements Cloneable, ConfigurationSerializable {
@@ -48,7 +48,7 @@ index 88b3e0323dbc4f0fce31b147c7aaa08d65745852..1835d39f6259732e56d51fa746faf1e4
       * @param pitch The absolute rotation on the y-plane, in degrees
       */
 -    public Location(@Nullable final World world, final double x, final double y, final double z, final float yaw, final float pitch) {
-+    public Location(@UndefinedNullability final World world, final double x, final double y, final double z, final float yaw, final float pitch) {
++    public Location(@UndefinedNullability final World world, final double x, final double y, final double z, final float yaw, final float pitch) { // Paper
          if (world != null) {
              this.world = new WeakReference<>(world);
          }
@@ -57,12 +57,12 @@ index 88b3e0323dbc4f0fce31b147c7aaa08d65745852..1835d39f6259732e56d51fa746faf1e4
       * @see #isWorldLoaded()
       */
 -    @Nullable
-+    @UndefinedNullability
++    @UndefinedNullability // Paper
      public World getWorld() {
          if (this.world == null) {
              return null;
 diff --git a/src/main/java/org/bukkit/Server.java b/src/main/java/org/bukkit/Server.java
-index f5f41fb37fd8dbdcffe47eefa939aecdad8210c0..a09513f74b3fb9790958f40a7ebef952f9e304f2 100644
+index f5f41fb37fd8dbdcffe47eefa939aecdad8210c0..878b1b196e9b0ba7f8688f6741dcce1f6bfe6cb3 100644
 --- a/src/main/java/org/bukkit/Server.java
 +++ b/src/main/java/org/bukkit/Server.java
 @@ -1242,7 +1242,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
@@ -79,10 +79,32 @@ index f5f41fb37fd8dbdcffe47eefa939aecdad8210c0..a09513f74b3fb9790958f40a7ebef952
       * @return the tag or null
       */
 -    @Nullable
-+    @UndefinedNullability
++    @UndefinedNullability // Paper
      <T extends Keyed> Tag<T> getTag(@NotNull String registry, @NotNull NamespacedKey tag, @NotNull Class<T> clazz);
  
      /**
+diff --git a/src/main/java/org/bukkit/entity/LingeringPotion.java b/src/main/java/org/bukkit/entity/LingeringPotion.java
+index f124b35ec76e6cb6a1a0dc464005087043c3efd0..94a2fef0dc9e13c754cd31d5eabc1bde2dbbe6a5 100644
+--- a/src/main/java/org/bukkit/entity/LingeringPotion.java
++++ b/src/main/java/org/bukkit/entity/LingeringPotion.java
+@@ -5,4 +5,5 @@ package org.bukkit.entity;
+  *
+  * @deprecated lingering status depends on only on the potion item.
+  */
++@Deprecated // Paper
+ public interface LingeringPotion extends ThrownPotion { }
+diff --git a/src/main/java/org/bukkit/event/enchantment/PrepareItemEnchantEvent.java b/src/main/java/org/bukkit/event/enchantment/PrepareItemEnchantEvent.java
+index 2ff1b1308571d8f8056d3359e8a8ba4a589c3726..e669ad8ecd182c6899c7820414e6ee1f7312d699 100644
+--- a/src/main/java/org/bukkit/event/enchantment/PrepareItemEnchantEvent.java
++++ b/src/main/java/org/bukkit/event/enchantment/PrepareItemEnchantEvent.java
+@@ -68,6 +68,7 @@ public class PrepareItemEnchantEvent extends InventoryEvent implements Cancellab
+      * @return experience level costs offered
+      * @deprecated Use {@link #getOffers()} instead of this method
+      */
++    @Deprecated // Paper
+     @NotNull
+     public int[] getExpLevelCostsOffered() {
+         int[] levelOffers = new int[offers.length];
 diff --git a/src/main/java/org/bukkit/inventory/ItemFactory.java b/src/main/java/org/bukkit/inventory/ItemFactory.java
 index 71e5ee496a947fbd8e3ec579833b157c76b51833..d773e8594f91017bddd7ea8aada3a1ff2781d05b 100644
 --- a/src/main/java/org/bukkit/inventory/ItemFactory.java
@@ -105,7 +127,7 @@ index 71e5ee496a947fbd8e3ec579833b157c76b51833..d773e8594f91017bddd7ea8aada3a1ff
  
      /**
 diff --git a/src/main/java/org/bukkit/inventory/ItemStack.java b/src/main/java/org/bukkit/inventory/ItemStack.java
-index 686e2a0b9fe061816b41435ef2337870dbdca8e5..290c3f0fd6e8c3407d421b697e0ee01584f4cebd 100644
+index 686e2a0b9fe061816b41435ef2337870dbdca8e5..aacf8ea85909299355d16cad0386072ec542a70e 100644
 --- a/src/main/java/org/bukkit/inventory/ItemStack.java
 +++ b/src/main/java/org/bukkit/inventory/ItemStack.java
 @@ -8,6 +8,7 @@ import java.util.Set; // Paper
@@ -116,7 +138,15 @@ index 686e2a0b9fe061816b41435ef2337870dbdca8e5..290c3f0fd6e8c3407d421b697e0ee015
  import org.bukkit.Utility;
  import org.bukkit.configuration.serialization.ConfigurationSerializable;
  import org.bukkit.enchantments.Enchantment;
-@@ -546,7 +547,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, net.kyor
+@@ -68,6 +69,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, net.kyor
+      * @param damage durability / damage
+      * @deprecated see {@link #setDurability(short)}
+      */
++    @Deprecated // Paper
+     public ItemStack(@NotNull final Material type, final int amount, final short damage) {
+         this(type, amount, damage, null);
+     }
+@@ -546,7 +548,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, net.kyor
       *
       * @return a copy of the current ItemStack's ItemData
       */
@@ -125,3 +155,15 @@ index 686e2a0b9fe061816b41435ef2337870dbdca8e5..290c3f0fd6e8c3407d421b697e0ee015
      public ItemMeta getItemMeta() {
          return this.meta == null ? Bukkit.getItemFactory().getItemMeta(this.type) : this.meta.clone();
      }
+diff --git a/src/main/java/org/bukkit/material/Step.java b/src/main/java/org/bukkit/material/Step.java
+index 9f502e7ee05d0512e190a1722cc112ece068c4e2..10c0465cf58d680bfa9a0f9233f94e8b6d5a9b93 100644
+--- a/src/main/java/org/bukkit/material/Step.java
++++ b/src/main/java/org/bukkit/material/Step.java
+@@ -78,6 +78,7 @@ public class Step extends TexturedMaterial {
+      *
+      * @deprecated Magic value
+      */
++    @Deprecated // Paper
+     @Override
+     protected int getTextureIndex() {
+         return getData() & 0x7;
