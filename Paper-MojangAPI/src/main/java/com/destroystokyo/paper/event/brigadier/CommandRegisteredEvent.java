@@ -21,6 +21,7 @@ import org.jetbrains.annotations.NotNull;
  *
  * @deprecated Draft API - Subject to change until confirmed solves desired use cases
  */
+@Deprecated
 public class CommandRegisteredEvent <S extends BukkitBrigadierCommandSource> extends ServerEvent implements Cancellable {
 
     private static final HandlerList handlers = new HandlerList();

@@ -27,6 +27,7 @@ import org.jetbrains.annotations.NotNull;
  * If your logic is not safe to run asynchronously, only react to the synchronous version.
  * @deprecated Draft API - Subject to change until confirmed solves desired use cases
  */
+@Deprecated
 public class AsyncPlayerSendCommandsEvent <S extends BukkitBrigadierCommandSource> extends PlayerEvent {
 
     private static final HandlerList handlers = new HandlerList();
