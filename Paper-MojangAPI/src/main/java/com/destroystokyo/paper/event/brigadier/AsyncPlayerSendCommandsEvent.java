@@ -3,6 +3,7 @@ package com.destroystokyo.paper.event.brigadier;
 import com.destroystokyo.paper.brigadier.BukkitBrigadierCommandSource;
 import com.mojang.brigadier.tree.RootCommandNode;
 import org.bukkit.Bukkit;
+import org.bukkit.Warning;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.player.PlayerEvent;
@@ -28,6 +29,7 @@ import org.jetbrains.annotations.NotNull;
  * @deprecated Draft API - Subject to change until confirmed solves desired use cases
  */
 @Deprecated
+@Warning(false)
 public class AsyncPlayerSendCommandsEvent <S extends BukkitBrigadierCommandSource> extends PlayerEvent {
 
     private static final HandlerList handlers = new HandlerList();

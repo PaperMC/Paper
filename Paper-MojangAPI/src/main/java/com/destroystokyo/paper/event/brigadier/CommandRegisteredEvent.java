@@ -5,6 +5,7 @@ import com.destroystokyo.paper.brigadier.BukkitBrigadierCommandSource;
 import com.mojang.brigadier.tree.ArgumentCommandNode;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import com.mojang.brigadier.tree.RootCommandNode;
+import org.bukkit.Warning;
 import org.bukkit.command.Command;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
@@ -22,6 +23,7 @@ import org.jetbrains.annotations.NotNull;
  * @deprecated Draft API - Subject to change until confirmed solves desired use cases
  */
 @Deprecated
+@Warning(false)
 public class CommandRegisteredEvent <S extends BukkitBrigadierCommandSource> extends ServerEvent implements Cancellable {
 
     private static final HandlerList handlers = new HandlerList();
