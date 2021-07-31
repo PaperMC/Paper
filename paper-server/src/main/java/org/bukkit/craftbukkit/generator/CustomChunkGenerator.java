@@ -10,6 +10,8 @@ import net.minecraft.core.IRegistry;
 import net.minecraft.core.IRegistryCustom;
 import net.minecraft.server.level.RegionLimitedWorldAccess;
 import net.minecraft.server.level.WorldServer;
+import net.minecraft.util.random.WeightedRandomList;
+import net.minecraft.world.entity.EnumCreatureType;
 import net.minecraft.world.level.BlockColumn;
 import net.minecraft.world.level.GeneratorAccess;
 import net.minecraft.world.level.GeneratorAccessSeed;
@@ -18,6 +20,7 @@ import net.minecraft.world.level.LevelHeightAccessor;
 import net.minecraft.world.level.StructureManager;
 import net.minecraft.world.level.biome.BiomeBase;
 import net.minecraft.world.level.biome.BiomeManager;
+import net.minecraft.world.level.biome.BiomeSettingsMobs;
 import net.minecraft.world.level.biome.WorldChunkManager;
 import net.minecraft.world.level.block.ITileEntity;
 import net.minecraft.world.level.block.entity.TileEntity;
@@ -192,6 +195,11 @@ public class CustomChunkGenerator extends InternalChunkGenerator {
     @Override
     public int getBaseHeight(int i, int j, HeightMap.Type heightmap_type, LevelHeightAccessor levelheightaccessor) {
        return delegate.getBaseHeight(i, j, heightmap_type, levelheightaccessor);
+    }
+
+    @Override
+    public WeightedRandomList<BiomeSettingsMobs.c> getMobsFor(BiomeBase biomebase, StructureManager structuremanager, EnumCreatureType enumcreaturetype, BlockPosition blockposition) {
+        return delegate.getMobsFor(biomebase, structuremanager, enumcreaturetype, blockposition);
     }
 
     @Override
