@@ -25,7 +25,7 @@ index 4291492dc5cf0c845af30f62e2dcb15826842d12..160da347ed52739e930044fe456a4dd3
                                  }
                              }
 diff --git a/src/main/java/net/minecraft/world/entity/player/Player.java b/src/main/java/net/minecraft/world/entity/player/Player.java
-index 484b1bf43b897c5ffe47baa340957e3293c7bf92..c825ad2d04b964561355cb0564f9f5507848217f 100644
+index 484b1bf43b897c5ffe47baa340957e3293c7bf92..928595ff46287e92759bbf0ef3d64d4a39ab135d 100644
 --- a/src/main/java/net/minecraft/world/entity/player/Player.java
 +++ b/src/main/java/net/minecraft/world/entity/player/Player.java
 @@ -88,6 +88,7 @@ import net.minecraft.world.item.ElytraItem;
@@ -44,19 +44,34 @@ index 484b1bf43b897c5ffe47baa340957e3293c7bf92..c825ad2d04b964561355cb0564f9f550
  import net.minecraft.world.phys.AABB;
  import net.minecraft.world.phys.Vec3;
  import net.minecraft.world.scores.PlayerTeam;
-@@ -732,6 +734,12 @@ public abstract class Player extends LivingEntity {
+@@ -732,6 +734,14 @@ public abstract class Player extends LivingEntity {
                  return null;
              }
              // CraftBukkit end
 +            // Paper start - remove player from map on drop
 +            if (stack.getItem() == Items.FILLED_MAP) {
 +                MapItemSavedData worldmap = MapItem.getSavedData(stack, this.level);
-+                worldmap.tickCarriedBy(this, stack);
++                if (worldmap != null) {
++                    worldmap.tickCarriedBy(this, stack);
++                }
 +            }
 +            // Paper end
  
              return entityitem;
          }
+diff --git a/src/main/java/net/minecraft/world/item/MapItem.java b/src/main/java/net/minecraft/world/item/MapItem.java
+index 2ac84599cd9c71c1a32d70e447b014dc6711cda7..7d7acad622a3c04163308434b8a3cfd877039ad1 100644
+--- a/src/main/java/net/minecraft/world/item/MapItem.java
++++ b/src/main/java/net/minecraft/world/item/MapItem.java
+@@ -58,7 +58,7 @@ public class MapItem extends ComplexItem {
+ 
+     @Nullable
+     public static MapItemSavedData getSavedData(@Nullable Integer id, Level world) {
+-        return id == null ? null : world.getMapData(MapItem.makeKey(id));
++        return id == null || id < 0 ? null : world.getMapData(MapItem.makeKey(id)); // Paper - map ids under 0 are invalid
+     }
+ 
+     @Nullable
 diff --git a/src/main/java/net/minecraft/world/level/saveddata/maps/MapItemSavedData.java b/src/main/java/net/minecraft/world/level/saveddata/maps/MapItemSavedData.java
 index 6859fafa42527d45366018f737c19e6c3777d152..15c6f9d1c43fbedac70526a84a010be83b4cae86 100644
 --- a/src/main/java/net/minecraft/world/level/saveddata/maps/MapItemSavedData.java
