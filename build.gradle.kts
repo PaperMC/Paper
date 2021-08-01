@@ -4,15 +4,19 @@ plugins {
     id("io.papermc.paperweight.core") version "1.1.9"
 }
 
-subprojects {
+allprojects {
     apply(plugin = "java")
-    apply(plugin = "maven-publish")
 
     java {
         toolchain {
             languageVersion.set(JavaLanguageVersion.of(16))
         }
     }
+}
+
+subprojects {
+    apply(plugin = "java")
+    apply(plugin = "maven-publish")
 
     tasks.withType<JavaCompile> {
         options.encoding = Charsets.UTF_8.name()
