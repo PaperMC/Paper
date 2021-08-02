@@ -6,7 +6,7 @@ Subject: [PATCH] Optimize isOutsideRange to use distance maps
 Use a distance map to find the players in range quickly
 
 diff --git a/src/main/java/net/minecraft/server/level/ChunkHolder.java b/src/main/java/net/minecraft/server/level/ChunkHolder.java
-index bf641519ce1592737feac6eaf1d155d8fd126ec7..4569788773c8a9dc072d5ae5239c17c4f50e9ab0 100644
+index bbb94e8a5e3585701849e025b534a69a6e67949f..7223c6daf6f0eb959a5cab701096324a34b9c88a 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkHolder.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkHolder.java
 @@ -100,6 +100,18 @@ public class ChunkHolder {
@@ -291,7 +291,7 @@ index b49d380ef088aed3204ec71abc437c348ef004fa..577b391dcba1db712c1e2c83296e1c87
  
      public String getDebugStatus() {
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-index 3e7469032d38b9432bb36d37214524ca2df11098..b85a85fbb12802c355e8f458077b4b124380813b 100644
+index a50ad7a3268ea87be36f9718b1030d5ff56628b2..7d8db5bc79fbff0832b87f4004f919d28bf44eca 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 @@ -735,6 +735,37 @@ public class ServerChunkCache extends ChunkSource {
@@ -332,10 +332,10 @@ index 3e7469032d38b9432bb36d37214524ca2df11098..b85a85fbb12802c355e8f458077b4b12
              this.level.getProfiler().push("pollingChunks");
              int k = this.level.getGameRules().getInt(GameRules.RULE_RANDOMTICKING);
              boolean flag2 = level.ticksPerAnimalSpawns != 0L && worlddata.getGameTime() % level.ticksPerAnimalSpawns == 0L; // CraftBukkit
-@@ -764,15 +795,7 @@ public class ServerChunkCache extends ChunkSource {
-             this.level.getProfiler().pop();
-             //List<PlayerChunk> list = Lists.newArrayList(this.playerChunkMap.f()); // Paper
-             //Collections.shuffle(list); // Paper
+@@ -765,15 +796,7 @@ public class ServerChunkCache extends ChunkSource {
+             List<ChunkHolder> list = Lists.newArrayList(this.chunkMap.visibleChunkMap.values()); // Paper
+ 
+             Collections.shuffle(list);
 -            //Paper start - call player naturally spawn event
 -            int chunkRange = level.spigotConfig.mobSpawnRange;
 -            chunkRange = (chunkRange > level.spigotConfig.viewDistance) ? (byte) level.spigotConfig.viewDistance : chunkRange;
@@ -345,11 +345,11 @@ index 3e7469032d38b9432bb36d37214524ca2df11098..b85a85fbb12802c355e8f458077b4b12
 -                entityPlayer.playerNaturallySpawnedEvent.callEvent();
 -            };
 -            // Paper end
-+            // Paper - moved up
++            // Paper - moved natural spawn event up
              this.level.timings.chunkTicks.startTiming(); // Paper
-             final int[] chunksTicked = {0}; this.chunkMap.forEachVisibleChunk((playerchunk) -> { // Paper - safe iterator incase chunk loads, also no wrapping
-                 Optional<LevelChunk> optional = ((Either) playerchunk.getTickingChunkFuture().getNow(ChunkHolder.UNLOADED_LEVEL_CHUNK)).left();
-@@ -781,9 +804,9 @@ public class ServerChunkCache extends ChunkSource {
+             final int[] chunksTicked = {0}; // Paper
+             list.forEach((playerchunk) -> {
+@@ -783,9 +806,9 @@ public class ServerChunkCache extends ChunkSource {
                      LevelChunk chunk = (LevelChunk) optional.get();
                      ChunkPos chunkcoordintpair = chunk.getPos();
  
