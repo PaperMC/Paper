@@ -1,0 +1,60 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Doc <nachito94@msn.com>
+Date: Mon, 2 Aug 2021 11:24:39 -0400
+Subject: [PATCH] Add configurable height for slime spawn
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index c334f29c69c1e6e3fe55cd6695e7df400cf36058..d8b917a0f81476b23a03052ae086fbe92996d886 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -345,6 +345,16 @@ public class PaperWorldConfig {
+         allChunksAreSlimeChunks = getBoolean("all-chunks-are-slime-chunks", false);
+     }
+ 
++    public double slimeMaxSpawnHeightInSwamp;
++    public double slimeMinSpawnHeightInSwamp;
++    public double slimeMaxSpawnHeightInSlimeChunks;
++    private void slimeSpawnHeight() {
++        slimeMaxSpawnHeightInSwamp = getDouble("slime-spawn-height.swamp-biome.maximum", 0.0D);
++        slimeMinSpawnHeightInSwamp = getDouble("slime-spawn-height.swamp-biome.minimum", 0.0D);
++        slimeMaxSpawnHeightInSlimeChunks = getDouble("slime-spawn-height.slime-chunk.maximum", 0.0D);
++    }
++
++
+     public int portalSearchRadius;
+     public int portalCreateRadius;
+     public boolean portalSearchVanillaDimensionScaling;
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Slime.java b/src/main/java/net/minecraft/world/entity/monster/Slime.java
+index e1a593b464c35f68b22e84a09f99ee72af73da32..ae3c267429dac53c955b248bfc4dc5e4120cb527 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Slime.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Slime.java
+@@ -326,9 +326,13 @@ public class Slime extends Mob implements Enemy {
+ 
+     public static boolean checkSlimeSpawnRules(EntityType<Slime> type, LevelAccessor world, MobSpawnType spawnReason, BlockPos pos, Random random) {
+         if (world.getDifficulty() != Difficulty.PEACEFUL) {
+-            if (Objects.equals(world.getBiomeName(pos), Optional.of(Biomes.SWAMP)) && pos.getY() > 50 && pos.getY() < 70 && random.nextFloat() < 0.5F && random.nextFloat() < world.getMoonBrightness() && world.getMaxLocalRawBrightness(pos) <= random.nextInt(8)) {
++            // Paper start - Replace rules for Height in Swamp Biome
++            final double maxHeightSwamp = world.getMinecraftWorld().paperConfig.slimeMaxSpawnHeightInSwamp > 0 ? world.getMinecraftWorld().paperConfig.slimeMaxSpawnHeightInSwamp : 70;
++            final double minHeightSwamp = world.getMinecraftWorld().paperConfig.slimeMinSpawnHeightInSwamp > 0 ? world.getMinecraftWorld().paperConfig.slimeMinSpawnHeightInSwamp : 50;
++            if (Objects.equals(world.getBiomeName(pos), Optional.of(Biomes.SWAMP)) && pos.getY() > minHeightSwamp && pos.getY() < maxHeightSwamp && random.nextFloat() < 0.5F && random.nextFloat() < world.getMoonBrightness() && world.getMaxLocalRawBrightness(pos) <= random.nextInt(8)) {
+                 return checkMobSpawnRules(type, world, spawnReason, pos, random);
+             }
++            // Paper end
+ 
+             if (!(world instanceof WorldGenLevel)) {
+                 return false;
+@@ -337,9 +341,12 @@ public class Slime extends Mob implements Enemy {
+             ChunkPos chunkcoordintpair = new ChunkPos(pos);
+             boolean flag = world.getMinecraftWorld().paperConfig.allChunksAreSlimeChunks || WorldgenRandom.seedSlimeChunk(chunkcoordintpair.x, chunkcoordintpair.z, ((WorldGenLevel) world).getSeed(), world.getMinecraftWorld().spigotConfig.slimeSeed).nextInt(10) == 0; // Spigot // Paper
+ 
+-            if (random.nextInt(10) == 0 && flag && pos.getY() < 40) {
++            // Paper start - Replace rules for Height in Slime Chunks
++            final double maxHeightSlimeChunk = world.getMinecraftWorld().paperConfig.slimeMaxSpawnHeightInSlimeChunks > 0 ? world.getMinecraftWorld().paperConfig.slimeMaxSpawnHeightInSlimeChunks : 40;
++            if (random.nextInt(10) == 0 && flag && pos.getY() < maxHeightSlimeChunk) {
+                 return checkMobSpawnRules(type, world, spawnReason, pos, random);
+             }
++            // Paper end
+         }
+ 
+         return false;
