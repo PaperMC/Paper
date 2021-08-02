@@ -1,0 +1,88 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: underscore11code <minecrafter11mrt@gmail.com>
+Date: Fri, 23 Jul 2021 23:01:42 -0700
+Subject: [PATCH] Add System.out.println catcher
+
+
+diff --git a/src/main/java/io/papermc/paper/logging/SysoutCatcher.java b/src/main/java/io/papermc/paper/logging/SysoutCatcher.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..e61b58f607dc83f5bb73b6cde50f3e8303849385
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/logging/SysoutCatcher.java
+@@ -0,0 +1,56 @@
++package io.papermc.paper.logging;
++
++import org.bukkit.Bukkit;
++import org.bukkit.plugin.java.JavaPlugin;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++import java.io.OutputStream;
++import java.io.PrintStream;
++import java.util.logging.Level;
++
++public final class SysoutCatcher {
++    private static final boolean SUPPRESS_NAGS = Boolean.getBoolean("io.papermc.paper.suppress.sout.nags");
++
++    public SysoutCatcher() {
++        System.setOut(new WrappedOutStream(System.out, Level.INFO, "[STDOUT] "));
++        System.setErr(new WrappedOutStream(System.err, Level.SEVERE, "[STDERR] "));
++    }
++
++    private static final class WrappedOutStream extends PrintStream {
++        private static final StackWalker STACK_WALKER = StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE);
++        private final Level level;
++        private final String prefix;
++
++        public WrappedOutStream(@NotNull final OutputStream out, final Level level, final String prefix) {
++            super(out);
++            this.level = level;
++            this.prefix = prefix;
++        }
++
++        @Override
++        public void println(@Nullable final String line) {
++            final Class<?> clazz = STACK_WALKER.getCallerClass();
++            try {
++                final JavaPlugin plugin = JavaPlugin.getProvidingPlugin(clazz);
++
++                // Instead of just printing the message, send it to the plugin's logger
++                plugin.getLogger().log(this.level, this.prefix + line);
++
++                if (SysoutCatcher.SUPPRESS_NAGS) {
++                    return;
++                }
++                Bukkit.getLogger().warning(
++                    String.format("Nag author(s): '%s' of '%s' about their usage of System.out/err.print. "
++                            + "Please use your plugin's logger instead (JavaPlugin#getLogger).",
++                        plugin.getDescription().getAuthors(),
++                        plugin.getName())
++                );
++            } catch (final IllegalArgumentException e) {
++                // If anything happens, the calling class doesn't exist, there is no JavaPlugin that "owns" the calling class, etc
++                // Just print out normally, with some added information
++                Bukkit.getLogger().log(this.level, String.format("[%s] %s %s", this.prefix, clazz.getName(), line));
++            }
++        }
++    }
++}
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index 9954e45c32a4b6d80fe912ed9d55cd4fc8c4e98b..6d7f16fede01c19f638e1dcdae8b07b79cd86dc0 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -18,6 +18,7 @@ import com.mojang.serialization.Lifecycle;
+ import io.netty.buffer.ByteBuf;
+ import io.netty.buffer.ByteBufOutputStream;
+ import io.netty.buffer.Unpooled;
++import io.papermc.paper.logging.SysoutCatcher;
+ import it.unimi.dsi.fastutil.objects.Object2ObjectLinkedOpenHashMap;
+ import java.awt.image.BufferedImage;
+ import java.io.File;
+@@ -277,6 +278,7 @@ public final class CraftServer implements Server {
+     public int reloadCount;
+     private final io.papermc.paper.datapack.PaperDatapackManager datapackManager; // Paper
+     public static Exception excessiveVelEx; // Paper - Velocity warnings
++    private final SysoutCatcher sysoutCatcher = new SysoutCatcher(); // Paper
+ 
+     static {
+         ConfigurationSerialization.registerClass(CraftOfflinePlayer.class);
