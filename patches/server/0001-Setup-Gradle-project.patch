@@ -1,5 +1,5 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
-From: Kyle Wood <demonwav@gmail.com>
+From: Kyle Wood <kyle@denwav.dev>
 Date: Thu, 10 Dec 2020 20:54:19 -0800
 Subject: [PATCH] Setup Gradle project
 
@@ -20,17 +20,15 @@ index 67fb370cad6924895a6b27052dbd5c1767e3f0c9..3e05459f27c4c5697ae65da504d67a6a
  /.project
 diff --git a/build.gradle.kts b/build.gradle.kts
 new file mode 100644
-index 0000000000000000000000000000000000000000..9b738b8561f75a2531d64abb36f4cd9d9561cbfc
+index 0000000000000000000000000000000000000000..8d27de2c9da08ca32ff18fc4b8b02ea583edfc1c
 --- /dev/null
 +++ b/build.gradle.kts
-@@ -0,0 +1,135 @@
+@@ -0,0 +1,144 @@
 +import com.github.jengelman.gradle.plugins.shadow.transformers.Log4j2PluginsCacheFileTransformer
 +import com.github.jengelman.gradle.plugins.shadow.transformers.Transformer
 +import io.papermc.paperweight.util.Git
 +import io.papermc.paperweight.util.path
 +import shadow.org.apache.logging.log4j.core.config.plugins.processor.PluginProcessor.PLUGIN_CACHE_FILE
-+import java.text.SimpleDateFormat
-+import java.util.Date
 +import java.util.Locale
 +
 +plugins {
@@ -70,13 +68,14 @@ index 0000000000000000000000000000000000000000..9b738b8561f75a2531d64abb36f4cd9d
 +
 +    manifest {
 +        val git = Git(rootProject.layout.projectDirectory.path)
-+        val gitHash = git("rev-parse", "HEAD").getText().substring(0, 7)
++        val gitHash = git("rev-parse", "--short=7", "HEAD").getText().trim()
 +        val implementationVersion = System.getenv("BUILD_NUMBER") ?: "\"$gitHash\""
++        val date = git("show", "-s", "--format=%ci", gitHash).getText().trim() // Paper
 +        attributes(
 +            "Main-Class" to "org.bukkit.craftbukkit.Main",
 +            "Implementation-Title" to "CraftBukkit",
 +            "Implementation-Version" to "git-Paper-$implementationVersion",
-+            "Implementation-Vendor" to SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'").format(Date()), // Paper
++            "Implementation-Vendor" to date, // Paper
 +            "Specification-Title" to "Bukkit",
 +            "Specification-Version" to project.version,
 +            "Specification-Vendor" to "Bukkit Team",
@@ -127,6 +126,13 @@ index 0000000000000000000000000000000000000000..9b738b8561f75a2531d64abb36f4cd9d
 +    workingDir = rootProject.layout.projectDirectory.dir(
 +        providers.gradleProperty("runWorkDir").forUseAtConfigurationTime().orElse("run")
 +    ).get().asFile
++
++    if (rootProject.childProjects["test-plugin"] != null) {
++        val testPluginJar = rootProject.project(":test-plugin").tasks.jar.flatMap { it.archiveFile }
++        inputs.file(testPluginJar)
++        args("-add-plugin=${testPluginJar.get().asFile.absolutePath}")
++    }
++
 +    args("--nogui")
 +    systemProperty("net.kyori.adventure.text.warnWhenLegacyFormattingDetected", true)
 +    if (project.hasProperty("disableWatchdog")) {
@@ -135,6 +141,9 @@ index 0000000000000000000000000000000000000000..9b738b8561f75a2531d64abb36f4cd9d
 +    doFirst {
 +        workingDir.mkdirs()
 +    }
++    javaLauncher.set(project.javaToolchains.launcherFor {
++        languageVersion.set(JavaLanguageVersion.of(project.tasks.compileJava.get().options.release.get()))
++    })
 +    block(this)
 +}
 +
@@ -161,7 +170,7 @@ index 0000000000000000000000000000000000000000..9b738b8561f75a2531d64abb36f4cd9d
 +}
 diff --git a/pom.xml b/pom.xml
 deleted file mode 100644
-index 2f0e513c9e5d78a22e7d1e1a5aa64bb8f0f360d2..0000000000000000000000000000000000000000
+index 9dafd60b6dcabf203ee6d60c0ea82d2845b9eec7..0000000000000000000000000000000000000000
 --- a/pom.xml
 +++ /dev/null
 @@ -1,472 +0,0 @@
@@ -171,7 +180,7 @@ index 2f0e513c9e5d78a22e7d1e1a5aa64bb8f0f360d2..00000000000000000000000000000000
 -    <groupId>org.spigotmc</groupId>
 -    <artifactId>spigot</artifactId>
 -    <packaging>jar</packaging>
--    <version>1.17-R0.1-SNAPSHOT</version>
+-    <version>1.17.1-R0.1-SNAPSHOT</version>
 -    <name>Spigot</name>
 -    <url>https://www.spigotmc.org/</url>
 -
@@ -516,7 +525,7 @@ index 2f0e513c9e5d78a22e7d1e1a5aa64bb8f0f360d2..00000000000000000000000000000000
 -                    <dependency>
 -                        <groupId>org.eclipse.jdt</groupId>
 -                        <artifactId>ecj</artifactId>
--                        <version>3.24.0</version>
+-                        <version>3.26.0</version>
 -                    </dependency>
 -                </dependencies>
 -            </plugin>
@@ -552,7 +561,7 @@ index 2f0e513c9e5d78a22e7d1e1a5aa64bb8f0f360d2..00000000000000000000000000000000
 -                    <plugin>
 -                        <groupId>org.apache.maven.plugins</groupId>
 -                        <artifactId>maven-checkstyle-plugin</artifactId>
--                        <version>3.1.1</version>
+-                        <version>3.1.2</version>
 -                        <executions>
 -                            <execution>
 -                                <phase>process-classes</phase>
@@ -569,7 +578,7 @@ index 2f0e513c9e5d78a22e7d1e1a5aa64bb8f0f360d2..00000000000000000000000000000000
 -                            <dependency>
 -                                <groupId>com.puppycrawl.tools</groupId>
 -                                <artifactId>checkstyle</artifactId>
--                                <version>8.39</version>
+-                                <version>8.44</version>
 -                            </dependency>
 -                        </dependencies>
 -                    </plugin>

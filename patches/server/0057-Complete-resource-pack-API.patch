@@ -5,10 +5,10 @@ Subject: [PATCH] Complete resource pack API
 
 
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index b5f72467b924d2bb7871b5af547ee794b8080803..cbd7e9b6b3d0cd5cb87ed8b2657daee9368424a0 100644
+index 22c2c121bbcc7b0e15d73d20c9cc83d5fb085e5f..edb66e8c4507597ec8c35883460f88de8b263e54 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-@@ -1641,8 +1641,11 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+@@ -1628,8 +1628,11 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
              ServerGamePacketListenerImpl.LOGGER.info("Disconnecting {} due to resource pack rejection", this.player.getName());
              this.disconnect(new TranslatableComponent("multiplayer.requiredTexturePrompt.disconnect"));
          }
@@ -23,10 +23,18 @@ index b5f72467b924d2bb7871b5af547ee794b8080803..cbd7e9b6b3d0cd5cb87ed8b2657daee9
  
      @Override
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index 161fcf68dc85fc6d7b0034f137b1a5aee26cbb69..03b2fd38b31de911ef107006a3d10c5534989247 100644
+index 3a45ad211e5e35a87270b35725693d13f1fdd720..6ee60169ecb5c04b27a4037b44d4d927bd39b5c2 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-@@ -142,6 +142,10 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -126,6 +126,7 @@ import org.bukkit.metadata.MetadataValue;
+ import org.bukkit.plugin.Plugin;
+ import org.bukkit.plugin.messaging.StandardMessenger;
+ import org.bukkit.scoreboard.Scoreboard;
++import org.jetbrains.annotations.NotNull;
+ 
+ import net.md_5.bungee.api.chat.BaseComponent; // Spigot
+ 
+@@ -142,6 +143,10 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
      private double health = 20;
      private boolean scaledHealth = false;
      private double healthScale = 20;
@@ -37,16 +45,29 @@ index 161fcf68dc85fc6d7b0034f137b1a5aee26cbb69..03b2fd38b31de911ef107006a3d10c55
  
      public CraftPlayer(CraftServer server, ServerPlayer entity) {
          super(server, entity);
-@@ -1896,6 +1900,32 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -1896,6 +1901,45 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
      public boolean getAffectsSpawning() {
          return this.getHandle().affectsSpawning;
      }
 +
 +    @Override
-+    public void setResourcePack(String url, String hash) {
++    public void setResourcePack(@NotNull String url, @NotNull String hash) {
++        this.setResourcePack(url, hash, false, null);
++    }
++
++    @Override
++    public void setResourcePack(@NotNull String url, @NotNull String hash, boolean required) {
++        this.setResourcePack(url, hash, required, null);
++    }
++
++    @Override
++    public void setResourcePack(@NotNull String url, @NotNull String hash, boolean required, net.kyori.adventure.text.Component resourcePackPrompt) {
 +        Validate.notNull(url, "Resource pack URL cannot be null");
 +        Validate.notNull(hash, "Hash cannot be null");
-+        this.getHandle().sendTexturePack(url, hash, false, new net.minecraft.network.chat.TextComponent(""));
++        net.minecraft.network.chat.Component promptComponent = resourcePackPrompt != null ?
++                            io.papermc.paper.adventure.PaperAdventure.asVanilla(resourcePackPrompt) :
++                           new net.minecraft.network.chat.TextComponent("");
++        this.getHandle().sendTexturePack(url, hash, required, promptComponent);
 +    }
 +
 +    @Override

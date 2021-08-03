@@ -7,14 +7,12 @@ Establishes base extension of profile systems for future edits too
 
 diff --git a/src/main/java/com/destroystokyo/paper/profile/CraftPlayerProfile.java b/src/main/java/com/destroystokyo/paper/profile/CraftPlayerProfile.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..ef6aab69daa7ab952408b573bff6c6996cbc349a
+index 0000000000000000000000000000000000000000..84551164b76bc8f064a3a0c030c3a1b47f567b6f
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/profile/CraftPlayerProfile.java
-@@ -0,0 +1,303 @@
+@@ -0,0 +1,302 @@
 +package com.destroystokyo.paper.profile;
 +
-+import com.destroystokyo.paper.profile.PlayerProfile;
-+import com.destroystokyo.paper.profile.ProfileProperty;
 +import com.destroystokyo.paper.PaperConfig;
 +import com.google.common.base.Charsets;
 +import com.mojang.authlib.GameProfile;
@@ -24,7 +22,6 @@ index 0000000000000000000000000000000000000000..ef6aab69daa7ab952408b573bff6c699
 +import net.minecraft.server.players.GameProfileCache;
 +import org.apache.commons.lang3.Validate;
 +import org.bukkit.craftbukkit.entity.CraftPlayer;
-+import org.spigotmc.SpigotConfig;
 +
 +import javax.annotation.Nonnull;
 +import javax.annotation.Nullable;
@@ -32,6 +29,7 @@ index 0000000000000000000000000000000000000000..ef6aab69daa7ab952408b573bff6c699
 +import java.util.Collection;
 +import java.util.Iterator;
 +import java.util.Objects;
++import java.util.Optional;
 +import java.util.Set;
 +import java.util.UUID;
 +
@@ -166,7 +164,7 @@ index 0000000000000000000000000000000000000000..ef6aab69daa7ab952408b573bff6c699
 +        if (profile.getId() == null) {
 +            final GameProfile profile;
 +            if (onlineMode) {
-+                profile = lookupUUID ? userCache.get(name) : userCache.getProfileIfCached(name);
++                profile = lookupUUID ? userCache.get(name).orElse(null) : userCache.getProfileIfCached(name);
 +            } else {
 +                // Make an OfflinePlayer using an offline mode UUID since the name has no profile
 +                profile = new GameProfile(UUID.nameUUIDFromBytes(("OfflinePlayer:" + name).getBytes(Charsets.UTF_8)), name);
@@ -179,8 +177,9 @@ index 0000000000000000000000000000000000000000..ef6aab69daa7ab952408b573bff6c699
 +        }
 +
 +        if ((profile.getName() == null || !hasTextures()) && profile.getId() != null) {
-+            GameProfile profile = userCache.get(this.profile.getId());
-+            if (profile != null) {
++            Optional<GameProfile> optProfile = userCache.get(this.profile.getId());
++            if (optProfile.isPresent()) {
++                GameProfile profile = optProfile.get();
 +                if (this.profile.getName() == null) {
 +                    // if old has it, assume its newer, so overwrite, else use cached if it was set and ours wasn't
 +                    copyProfileProperties(this.profile, profile);
@@ -474,11 +473,11 @@ index c8385460701395cb5c65fba41335469ffb2d9b9a..fb0b3c5770f66cc3590f5ac4e690a33c
              GameProfileRepository gameprofilerepository = yggdrasilauthenticationservice.createProfileRepository();
              GameProfileCache usercache = new GameProfileCache(gameprofilerepository, new File(file, MinecraftServer.USERID_CACHE_FILE.getName()));
 diff --git a/src/main/java/net/minecraft/server/players/GameProfileCache.java b/src/main/java/net/minecraft/server/players/GameProfileCache.java
-index 3eb4bee81a8543cc06b9d5898f5f6c0e9dbbf554..9a428e166561b4bc028732ec563d3b2e99f81a8e 100644
+index 6e1b7d5b20e9f6ed1b650eb9d6ac9f8c4867b4b7..61405c2b53e03a4b83e2c70c6e4d3739ca9676cb 100644
 --- a/src/main/java/net/minecraft/server/players/GameProfileCache.java
 +++ b/src/main/java/net/minecraft/server/players/GameProfileCache.java
-@@ -190,6 +190,13 @@ public class GameProfileCache {
-         }
+@@ -135,6 +135,13 @@ public class GameProfileCache {
+         return this.operationCount.incrementAndGet();
      }
  
 +    // Paper start
@@ -488,14 +487,14 @@ index 3eb4bee81a8543cc06b9d5898f5f6c0e9dbbf554..9a428e166561b4bc028732ec563d3b2e
 +    }
 +    // Paper end
 +
-     @Nullable
-     public GameProfile get(UUID uuid) {
-         GameProfileCache.GameProfileInfo usercache_usercacheentry = (GameProfileCache.GameProfileInfo) this.profilesByUUID.get(uuid);
+     public synchronized Optional<GameProfile> get(String name) { // Paper - synchronize
+         String s1 = name.toLowerCase(Locale.ROOT);
+         GameProfileCache.GameProfileInfo usercache_usercacheentry = (GameProfileCache.GameProfileInfo) this.profilesByName.get(s1);
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 66e4851eb8565fe1c3f49b48d62ca5d004746a36..6a03863baa2347a084abe2699e30245a8873c2fc 100644
+index 01c10ee7f4a1568a35101dd73c0049e24bfb3e00..472c466c8257bcd696184ac71019acd491eca714 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -226,6 +226,9 @@ import org.yaml.snakeyaml.error.MarkedYAMLException;
+@@ -235,6 +235,9 @@ import org.yaml.snakeyaml.error.MarkedYAMLException;
  
  import net.md_5.bungee.api.chat.BaseComponent; // Spigot
  
@@ -505,7 +504,7 @@ index 66e4851eb8565fe1c3f49b48d62ca5d004746a36..6a03863baa2347a084abe2699e30245a
  public final class CraftServer implements Server {
      private final String serverName = "Paper"; // Paper
      private final String serverVersion;
-@@ -2311,5 +2314,24 @@ public final class CraftServer implements Server {
+@@ -2398,5 +2401,24 @@ public final class CraftServer implements Server {
      public boolean suggestPlayerNamesWhenNullTabCompletions() {
          return com.destroystokyo.paper.PaperConfig.suggestPlayersWhenNullTabCompletions;
      }

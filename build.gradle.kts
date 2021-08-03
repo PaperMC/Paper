@@ -1,18 +1,22 @@
 plugins {
     java
     id("com.github.johnrengelman.shadow") version "7.0.0" apply false
-    id("io.papermc.paperweight.core") version "1.1.6"
+    id("io.papermc.paperweight.core") version "1.1.9"
 }
 
-subprojects {
+allprojects {
     apply(plugin = "java")
-    apply(plugin = "maven-publish")
 
     java {
         toolchain {
             languageVersion.set(JavaLanguageVersion.of(16))
         }
     }
+}
+
+subprojects {
+    apply(plugin = "java")
+    apply(plugin = "maven-publish")
 
     tasks.withType<JavaCompile> {
         options.encoding = Charsets.UTF_8.name()
@@ -71,7 +75,7 @@ repositories {
 }
 
 dependencies {
-    paramMappings("org.quiltmc:yarn:1.17+build.2:mergedv2")
+    paramMappings("org.quiltmc:yarn:1.17.1+build.1:mergedv2")
     remapper("org.quiltmc:tiny-remapper:0.4.1")
     decompiler("net.minecraftforge:forgeflower:1.5.498.12")
     paperclip("io.papermc:paperclip:2.0.1")
@@ -90,6 +94,17 @@ paperweight {
 
         additionalSpigotMemberMappings.set(layout.projectDirectory.file("build-data/additional-spigot-member-mappings.csrg"))
         craftBukkitPatchPatchesDir.set(layout.projectDirectory.dir("build-data/craftbukkit-patch-patches"))
+
+        reobfPackagesToFix.addAll(
+            "co.aikar.timings",
+            "com.destroystokyo.paper",
+            "com.mojang",
+            "io.papermc.paper",
+            "net.kyori.adventure.bossbar",
+            "net.minecraft",
+            "org.bukkit.craftbukkit",
+            "org.spigotmc"
+        )
     }
 }
 

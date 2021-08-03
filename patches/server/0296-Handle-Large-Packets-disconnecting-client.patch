@@ -7,7 +7,7 @@ If a players inventory is too big to send in a single packet,
 split the inventory set into multiple packets instead.
 
 diff --git a/src/main/java/net/minecraft/network/Connection.java b/src/main/java/net/minecraft/network/Connection.java
-index 0c5c62be83223e20f216df84413b8c2438db81ff..8bbf13a7aea1142b3154a1c76837a98aa5ed431d 100644
+index 636ac646bec67dbd933f00614693af03481b6173..3b943894750022aa84de8af97db3eebf71db1afa 100644
 --- a/src/main/java/net/minecraft/network/Connection.java
 +++ b/src/main/java/net/minecraft/network/Connection.java
 @@ -120,6 +120,15 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
@@ -27,7 +27,7 @@ index 0c5c62be83223e20f216df84413b8c2438db81ff..8bbf13a7aea1142b3154a1c76837a98a
              Connection.LOGGER.debug("Skipping packet due to errors", throwable.getCause());
          } else {
 diff --git a/src/main/java/net/minecraft/network/PacketEncoder.java b/src/main/java/net/minecraft/network/PacketEncoder.java
-index b8a0c0411fd2caab21672de7f3e721645b61a8ba..c0df136c408d7f001395291d8c80da5b4b54d462 100644
+index 092d8ecf8d6a7045d2fc379bc0f9ec4ee294d056..b039a32b805fc02033fa862a1c40c4a51639e69a 100644
 --- a/src/main/java/net/minecraft/network/PacketEncoder.java
 +++ b/src/main/java/net/minecraft/network/PacketEncoder.java
 @@ -54,7 +54,31 @@ public class PacketEncoder extends MessageToByteEncoder<Packet<?>> {
@@ -80,26 +80,26 @@ index 10c1f2d8a92f848c3f2be9d1d06fd254978e6dcc..74bfe0d3942259c45702b099efdc4e10
          return false;
      }
 diff --git a/src/main/java/net/minecraft/network/protocol/game/ClientboundContainerSetContentPacket.java b/src/main/java/net/minecraft/network/protocol/game/ClientboundContainerSetContentPacket.java
-index a27d46e90ad04c624d41f6cbededcd3121dfeee8..d5ca796408f975f4f002a5b385574d3516915507 100644
+index 0e076173033278587df2b5dfbd01cc9005651eb5..a8a1ecfa349d4cb8daa1d426920988c64b392b14 100644
 --- a/src/main/java/net/minecraft/network/protocol/game/ClientboundContainerSetContentPacket.java
 +++ b/src/main/java/net/minecraft/network/protocol/game/ClientboundContainerSetContentPacket.java
-@@ -10,6 +10,16 @@ public class ClientboundContainerSetContentPacket implements Packet<ClientGamePa
-     private final int containerId;
-     private final List<ItemStack> items;
+@@ -31,6 +31,16 @@ public class ClientboundContainerSetContentPacket implements Packet<ClientGamePa
+         this.carriedItem = buf.readItem();
+     }
  
 +    //Paper start
 +    @Override
 +    public boolean packetTooLarge(net.minecraft.network.Connection manager) {
 +        for (int i = 0 ; i < this.items.size() ; i++) {
-+            manager.send(new ClientboundContainerSetSlotPacket(this.containerId, i, this.items.get(i)));
++            manager.send(new ClientboundContainerSetSlotPacket(this.containerId, this.stateId, i, this.items.get(i)));
 +        }
 +        return true;
 +    }
 +    // Paper end
 +
-     public ClientboundContainerSetContentPacket(int syncId, NonNullList<ItemStack> contents) {
-         this.containerId = syncId;
-         this.items = NonNullList.withSize(contents.size(), ItemStack.EMPTY);
+     @Override
+     public void write(FriendlyByteBuf buf) {
+         buf.writeByte(this.containerId);
 diff --git a/src/main/java/net/minecraft/network/protocol/game/ClientboundLevelChunkPacket.java b/src/main/java/net/minecraft/network/protocol/game/ClientboundLevelChunkPacket.java
 index 1451a98d69b185dd15a2d1d7681bcecb6a4f99c1..96626835fee3c0fdb452acacdc9f737ad90c08de 100644
 --- a/src/main/java/net/minecraft/network/protocol/game/ClientboundLevelChunkPacket.java

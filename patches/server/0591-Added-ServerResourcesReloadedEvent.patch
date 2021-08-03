@@ -1,0 +1,54 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Wed, 2 Dec 2020 20:04:01 -0800
+Subject: [PATCH] Added ServerResourcesReloadedEvent
+
+
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index abc6ed89ffaa9c70a25265d1fee271ec841bc586..e6da0975b46ef7dbce4dd4025d5f27f990a310bf 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -2018,7 +2018,13 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         return this.functionManager;
+     }
+ 
++    // Paper start - add cause
++    @Deprecated
+     public CompletableFuture<Void> reloadResources(Collection<String> datapacks) {
++        return this.reloadResources(datapacks, io.papermc.paper.event.server.ServerResourcesReloadedEvent.Cause.PLUGIN);
++    }
++    public CompletableFuture<Void> reloadResources(Collection<String> datapacks, io.papermc.paper.event.server.ServerResourcesReloadedEvent.Cause cause) {
++        // Paper end
+         CompletableFuture<Void> completablefuture = CompletableFuture.supplyAsync(() -> {
+             Stream<String> stream = datapacks.stream(); // CraftBukkit - decompile error
+             PackRepository resourcepackrepository = this.packRepository;
+@@ -2034,6 +2040,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+             this.packRepository.setSelected(datapacks);
+             this.worldData.setDataPackConfig(MinecraftServer.getSelectedPacks(this.packRepository));
+             datapackresources.updateGlobals();
++            new io.papermc.paper.event.server.ServerResourcesReloadedEvent(cause).callEvent(); // Paper
+             if (Thread.currentThread() != this.serverThread) return; // Paper
+             //this.getPlayerList().savePlayers(); // Paper - we don't need to do this
+             this.getPlayerList().reloadResources();
+diff --git a/src/main/java/net/minecraft/server/commands/ReloadCommand.java b/src/main/java/net/minecraft/server/commands/ReloadCommand.java
+index 3b46b4bf2597354a2c39e8fac2a250ef71034197..23f79f0bef308e6e7dee0bdc0e8b09aa3655cbc7 100644
+--- a/src/main/java/net/minecraft/server/commands/ReloadCommand.java
++++ b/src/main/java/net/minecraft/server/commands/ReloadCommand.java
+@@ -20,7 +20,7 @@ public class ReloadCommand {
+     public ReloadCommand() {}
+ 
+     public static void reloadPacks(Collection<String> dataPacks, CommandSourceStack source) {
+-        source.getServer().reloadResources(dataPacks).exceptionally((throwable) -> {
++        source.getServer().reloadResources(dataPacks, io.papermc.paper.event.server.ServerResourcesReloadedEvent.Cause.COMMAND).exceptionally((throwable) -> {
+             ReloadCommand.LOGGER.warn("Failed to execute reload", throwable);
+             source.sendFailure(new TranslatableComponent("commands.reload.failure"));
+             return null;
+@@ -50,7 +50,7 @@ public class ReloadCommand {
+         WorldData savedata = minecraftserver.getWorldData();
+         Collection<String> collection = resourcepackrepository.getSelectedIds();
+         Collection<String> collection1 = ReloadCommand.discoverNewPacks(resourcepackrepository, savedata, collection);
+-        minecraftserver.reloadResources(collection1);
++        minecraftserver.reloadResources(collection1, io.papermc.paper.event.server.ServerResourcesReloadedEvent.Cause.PLUGIN); // Paper
+     }
+     // CraftBukkit end
+ 

@@ -45,10 +45,10 @@ index d75f78d2e3fb1376e8f6a8668c98a04a693c99e1..79f6089b934124c3309c6bee2e48b36b
          }
  
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-index 5de75fb683fb98c8d3948f84e3b65f92665222cd..181ab56448796a617f30f1b9e0fec8917b5d8e07 100644
+index 91a03f4ed215c882d2ae930402220e4cbbf1ea00..8e2bccc3a9ddb17a4978596056189eb776976338 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-@@ -1785,8 +1785,15 @@ public class ServerPlayer extends Player {
+@@ -1786,8 +1786,15 @@ public class ServerPlayer extends Player {
      }
  
      public boolean setGameMode(GameType gameMode) {
@@ -66,7 +66,7 @@ index 5de75fb683fb98c8d3948f84e3b65f92665222cd..181ab56448796a617f30f1b9e0fec891
          } else {
              this.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.CHANGE_GAME_MODE, (float) gameMode.getId()));
              if (gameMode == GameType.SPECTATOR) {
-@@ -1798,7 +1805,7 @@ public class ServerPlayer extends Player {
+@@ -1799,7 +1806,7 @@ public class ServerPlayer extends Player {
  
              this.onUpdateAbilities();
              this.updateEffectVisibility();
@@ -75,7 +75,7 @@ index 5de75fb683fb98c8d3948f84e3b65f92665222cd..181ab56448796a617f30f1b9e0fec891
          }
      }
  
-@@ -2180,6 +2187,14 @@ public class ServerPlayer extends Player {
+@@ -2181,6 +2188,14 @@ public class ServerPlayer extends Player {
      }
  
      public void loadGameTypes(@Nullable CompoundTag nbt) {
@@ -91,7 +91,7 @@ index 5de75fb683fb98c8d3948f84e3b65f92665222cd..181ab56448796a617f30f1b9e0fec891
      }
  
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java b/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
-index b096384cdc7596166e010e06272534b8001693c9..4b756c0a4b607faa03b00ab81761335be63c39eb 100644
+index 5ef649dec31ba6d6b74a7bd757727ffd2a79d71e..1c83fbc96a074c85a3e349e936ff1f3198596709 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
 @@ -74,18 +74,24 @@ public class ServerPlayerGameMode {
@@ -102,14 +102,15 @@ index b096384cdc7596166e010e06272534b8001693c9..4b756c0a4b607faa03b00ab81761335b
 +        PlayerGameModeChangeEvent event = this.changeGameModeForPlayer(gameMode, org.bukkit.event.player.PlayerGameModeChangeEvent.Cause.UNKNOWN, null);
 +        return event == null ? false : event.isCancelled();
 +    }
-+    public PlayerGameModeChangeEvent changeGameModeForPlayer(GameType gameMode, org.bukkit.event.player.PlayerGameModeChangeEvent.Cause cause, net.kyori.adventure.text.Component component) {
++    public PlayerGameModeChangeEvent changeGameModeForPlayer(GameType gameMode, org.bukkit.event.player.PlayerGameModeChangeEvent.Cause cause, net.kyori.adventure.text.Component cancelMessage) {
 +        // Paper end
          if (gameMode == this.gameModeForPlayer) {
 -            return false;
 +            return null; // Paper
          } else {
              // CraftBukkit start
-             PlayerGameModeChangeEvent event = new PlayerGameModeChangeEvent(this.player.getBukkitEntity(), GameMode.getByValue(gameMode.getId()));
+-            PlayerGameModeChangeEvent event = new PlayerGameModeChangeEvent(this.player.getBukkitEntity(), GameMode.getByValue(gameMode.getId()));
++            PlayerGameModeChangeEvent event = new PlayerGameModeChangeEvent(this.player.getBukkitEntity(), GameMode.getByValue(gameMode.getId()), cause, cancelMessage); // Paper
              this.level.getCraftServer().getPluginManager().callEvent(event);
              if (event.isCancelled()) {
 -                return false;
@@ -123,10 +124,10 @@ index b096384cdc7596166e010e06272534b8001693c9..4b756c0a4b607faa03b00ab81761335b
      }
  
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index d63bc35d37b2d6628ff2fdd97fca7978c2dded0e..084b17d6496799fd49a9f81bb6bcbff512fd8f78 100644
+index a0a2839f4c746f1a76b700241da0a32c2736a558..fa77ff7be0f9d499461de0f42da302fca2a43c9f 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-@@ -2469,7 +2469,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+@@ -2449,7 +2449,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
  
                      this.player = this.server.getPlayerList().respawn(this.player, false);
                      if (this.server.isHardcore()) {
@@ -136,10 +137,10 @@ index d63bc35d37b2d6628ff2fdd97fca7978c2dded0e..084b17d6496799fd49a9f81bb6bcbff5
                      }
                  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index 4f61acf44b40bf15ae6465d7999e2bc2da837c82..f50772b5c07d5aa7dcd0ed015507c3f6440328c8 100644
+index 418aa0d31fae7c5fa9c0826ef99ac00729c2de71..26ffc901c3a57cb0d85982083d2b0eb6e0f26b69 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-@@ -1249,7 +1249,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -1250,7 +1250,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
              throw new IllegalArgumentException("Mode cannot be null");
          }
  

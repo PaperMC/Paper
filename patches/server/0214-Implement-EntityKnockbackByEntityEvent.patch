@@ -6,7 +6,7 @@ Subject: [PATCH] Implement EntityKnockbackByEntityEvent
 This event is called when an entity receives knockback by another entity.
 
 diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-index 08c29388621bf460e1704f6edba59d08a12e75d0..7bb2ce6b378547d593f8487626b5a4d4b3361397 100644
+index 0a954a83e29f2ffc622675f671416bdadc1d3f6a..91a0699ba30fa1e9c8172e07f034ea1fabee9d11 100644
 --- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
 @@ -1437,7 +1437,7 @@ public abstract class LivingEntity extends Entity {
@@ -27,7 +27,7 @@ index 08c29388621bf460e1704f6edba59d08a12e75d0..7bb2ce6b378547d593f8487626b5a4d4
      }
  
      private boolean checkTotemDeathProtection(DamageSource source) {
-@@ -1733,6 +1733,11 @@ public abstract class LivingEntity extends Entity {
+@@ -1737,6 +1737,11 @@ public abstract class LivingEntity extends Entity {
      }
  
      public void knockback(double strength, double x, double z) {
@@ -39,7 +39,7 @@ index 08c29388621bf460e1704f6edba59d08a12e75d0..7bb2ce6b378547d593f8487626b5a4d4
          strength *= 1.0D - this.getAttributeValue(Attributes.KNOCKBACK_RESISTANCE);
          if (strength > 0.0D) {
              this.hasImpulse = true;
-@@ -1740,6 +1745,15 @@ public abstract class LivingEntity extends Entity {
+@@ -1744,6 +1749,15 @@ public abstract class LivingEntity extends Entity {
              Vec3 vec3d1 = (new Vec3(x, 0.0D, z)).normalize().scale(strength);
  
              this.setDeltaMovement(vec3d.x / 2.0D - vec3d1.x, this.onGround ? Math.min(0.4D, vec3d.y / 2.0D + strength) : vec3d.y, vec3d.z / 2.0D - vec3d1.z);
@@ -56,10 +56,10 @@ index 08c29388621bf460e1704f6edba59d08a12e75d0..7bb2ce6b378547d593f8487626b5a4d4
      }
  
 diff --git a/src/main/java/net/minecraft/world/entity/Mob.java b/src/main/java/net/minecraft/world/entity/Mob.java
-index 85633cd1718783cffe03f750da1c17270eeb4cdd..5595150b0da580fce4d5d23993d77314e225ad58 100644
+index 4f3613e8232df3b4d9e10970b9faf9fbdd3b34a2..6e5682fed08a41c7e573e6611fca93bf85019b9f 100644
 --- a/src/main/java/net/minecraft/world/entity/Mob.java
 +++ b/src/main/java/net/minecraft/world/entity/Mob.java
-@@ -1532,7 +1532,7 @@ public abstract class Mob extends LivingEntity {
+@@ -1537,7 +1537,7 @@ public abstract class Mob extends LivingEntity {
  
          if (flag) {
              if (f1 > 0.0F && target instanceof LivingEntity) {
@@ -68,11 +68,24 @@ index 85633cd1718783cffe03f750da1c17270eeb4cdd..5595150b0da580fce4d5d23993d77314
                  this.setDeltaMovement(this.getDeltaMovement().multiply(0.6D, 1.0D, 0.6D));
              }
  
+diff --git a/src/main/java/net/minecraft/world/entity/ai/behavior/RamTarget.java b/src/main/java/net/minecraft/world/entity/ai/behavior/RamTarget.java
+index f6fd39823f04f8071c616d40a838b01e7159c5a1..e1cdf3ce38404d3f40be59e4cd3ad2b997d63310 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/behavior/RamTarget.java
++++ b/src/main/java/net/minecraft/world/entity/ai/behavior/RamTarget.java
+@@ -75,7 +75,7 @@ public class RamTarget<E extends PathfinderMob> extends Behavior<E> {
+             float f = 0.25F * (float)(i - j);
+             float g = Mth.clamp(pathfinderMob.getSpeed() * 1.65F, 0.2F, 3.0F) + f;
+             float h = livingEntity.isDamageSourceBlocked(DamageSource.mobAttack(pathfinderMob)) ? 0.5F : 1.0F;
+-            livingEntity.knockback((double)(h * g) * this.getKnockbackForce.applyAsDouble(pathfinderMob), this.ramDirection.x(), this.ramDirection.z());
++            livingEntity.knockback((double)(h * g) * this.getKnockbackForce.applyAsDouble(pathfinderMob), this.ramDirection.x(), this.ramDirection.z(), pathfinderMob); // Paper
+             this.finishRam(serverLevel, pathfinderMob);
+             serverLevel.playSound((Player)null, pathfinderMob, this.getImpactSound.apply(pathfinderMob), SoundSource.HOSTILE, 1.0F, 1.0F);
+         } else {
 diff --git a/src/main/java/net/minecraft/world/entity/player/Player.java b/src/main/java/net/minecraft/world/entity/player/Player.java
-index 543a1c9bc5aa97262424758c69cb28127fa0ee75..022bff6ac8ed5f2da438929c5ac455505bb16da7 100644
+index 157abba796981cf2d1b0b17ccd376de10c782a30..72b7c6654c68daa2591d55ff62d4a6ba7ae25618 100644
 --- a/src/main/java/net/minecraft/world/entity/player/Player.java
 +++ b/src/main/java/net/minecraft/world/entity/player/Player.java
-@@ -1234,7 +1234,7 @@ public abstract class Player extends LivingEntity {
+@@ -1232,7 +1232,7 @@ public abstract class Player extends LivingEntity {
                      if (flag5) {
                          if (i > 0) {
                              if (target instanceof LivingEntity) {
@@ -81,7 +94,7 @@ index 543a1c9bc5aa97262424758c69cb28127fa0ee75..022bff6ac8ed5f2da438929c5ac45550
                              } else {
                                  target.push((double) (-Mth.sin(this.getYRot() * 0.017453292F) * (float) i * 0.5F), 0.1D, (double) (Mth.cos(this.getYRot() * 0.017453292F) * (float) i * 0.5F));
                              }
-@@ -1258,7 +1258,7 @@ public abstract class Player extends LivingEntity {
+@@ -1256,7 +1256,7 @@ public abstract class Player extends LivingEntity {
                                  if (entityliving != this && entityliving != target && !this.isAlliedTo(entityliving) && (!(entityliving instanceof ArmorStand) || !((ArmorStand) entityliving).isMarker()) && this.distanceToSqr((Entity) entityliving) < 9.0D) {
                                      // CraftBukkit start - Only apply knockback if the damage hits
                                      if (entityliving.hurt(DamageSource.playerAttack(this).sweep(), f4)) {
