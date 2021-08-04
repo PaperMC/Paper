@@ -9,7 +9,7 @@ to race conditions.
 Plus, .canUse we want to be safe for async anyways.
 
 diff --git a/src/main/java/com/mojang/brigadier/tree/CommandNode.java b/src/main/java/com/mojang/brigadier/tree/CommandNode.java
-index aa3a1795850a419f624f14bd7c4daab0020779d0..39708be1b445791b053023dec16ad7d4efcc9048 100644
+index aa3a1795850a419f624f14bd7c4daab0020779d0..e91d7dd7517c556d12541098878de9be6b0663ba 100644
 --- a/src/main/java/com/mojang/brigadier/tree/CommandNode.java
 +++ b/src/main/java/com/mojang/brigadier/tree/CommandNode.java
 @@ -74,10 +74,10 @@ public abstract class CommandNode<S> implements Comparable<CommandNode<S>> {
@@ -17,34 +17,45 @@ index aa3a1795850a419f624f14bd7c4daab0020779d0..39708be1b445791b053023dec16ad7d4
          if (source instanceof CommandSourceStack) {
              try {
 -                ((CommandSourceStack) source).currentCommand = this;
-+                ((CommandSourceStack) source).currentCommand.set(this); // Paper
++                ((CommandSourceStack) source).currentCommand.put(Thread.currentThread(), this); // Paper
                  return this.requirement.test(source);
              } finally {
 -                ((CommandSourceStack) source).currentCommand = null;
-+                ((CommandSourceStack) source).currentCommand.set(null); // Paper
++                ((CommandSourceStack) source).currentCommand.remove(Thread.currentThread()); // Paper
              }
          }
          // CraftBukkit end
 diff --git a/src/main/java/net/minecraft/commands/CommandSourceStack.java b/src/main/java/net/minecraft/commands/CommandSourceStack.java
-index a59d14e61fcbca7861a5593d0717b81262ccbdc5..134bb2a4826419110c10a483834747b942576e58 100644
+index a59d14e61fcbca7861a5593d0717b81262ccbdc5..71e29d29ed5c2d61832e2f124967bb223708406f 100644
 --- a/src/main/java/net/minecraft/commands/CommandSourceStack.java
 +++ b/src/main/java/net/minecraft/commands/CommandSourceStack.java
-@@ -54,7 +54,7 @@ public class CommandSourceStack implements SharedSuggestionProvider, com.destroy
+@@ -9,8 +9,10 @@ import com.mojang.brigadier.suggestion.Suggestions;
+ import com.mojang.brigadier.suggestion.SuggestionsBuilder;
+ import java.util.Collection;
+ import java.util.Iterator;
++import java.util.Map;
+ import java.util.Set;
+ import java.util.concurrent.CompletableFuture;
++import java.util.concurrent.ConcurrentHashMap;
+ import java.util.function.BinaryOperator;
+ import java.util.stream.Stream;
+ import javax.annotation.Nullable;
+@@ -54,7 +56,7 @@ public class CommandSourceStack implements SharedSuggestionProvider, com.destroy
      private final ResultConsumer<CommandSourceStack> consumer;
      private final EntityAnchorArgument.Anchor anchor;
      private final Vec2 rotation;
 -    public volatile CommandNode currentCommand; // CraftBukkit
-+    public ThreadLocal<CommandNode> currentCommand = new ThreadLocal<>(); // CraftBukkit // Paper
++    public Map<Thread, CommandNode> currentCommand = new ConcurrentHashMap<>(); // CraftBukkit // Paper
  
      public CommandSourceStack(CommandSource output, Vec3 pos, Vec2 rot, ServerLevel world, int level, String name, Component displayName, MinecraftServer server, @Nullable Entity entity) {
          this(output, pos, rot, world, level, name, displayName, server, entity, false, (commandcontext, flag, j) -> {
-@@ -175,9 +175,11 @@ public class CommandSourceStack implements SharedSuggestionProvider, com.destroy
+@@ -175,9 +177,11 @@ public class CommandSourceStack implements SharedSuggestionProvider, com.destroy
      @Override
      public boolean hasPermission(int level) {
          // CraftBukkit start
 -        CommandNode currentCommand = this.currentCommand;
 +        // Paper start - fix concurrency issue
-+        CommandNode currentCommand = this.currentCommand.get();
++        CommandNode currentCommand = this.currentCommand.get(Thread.currentThread());
          if (currentCommand != null) {
              return this.hasPermission(level, org.bukkit.craftbukkit.command.VanillaCommandWrapper.getPermission(currentCommand));
 +            // Paper end
