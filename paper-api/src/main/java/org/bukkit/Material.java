@@ -2694,10 +2694,7 @@ public enum Material implements Keyed {
      * BlockData: {@link Levelled}
      */
     WATER_CAULDRON(32008, Levelled.class),
-    /**
-     * BlockData: {@link Levelled}
-     */
-    LAVA_CAULDRON(4514, Levelled.class),
+    LAVA_CAULDRON(4514),
     /**
      * BlockData: {@link Levelled}
      */
