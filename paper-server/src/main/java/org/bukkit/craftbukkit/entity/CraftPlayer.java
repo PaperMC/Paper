@@ -572,11 +572,16 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     @Override
     public void sendSignChange(Location loc, String[] lines) {
-       sendSignChange(loc, lines, DyeColor.BLACK);
+        sendSignChange(loc, lines, DyeColor.BLACK);
     }
 
     @Override
     public void sendSignChange(Location loc, String[] lines, DyeColor dyeColor) {
+        sendSignChange(loc, lines, dyeColor, false);
+    }
+
+    @Override
+    public void sendSignChange(Location loc, String[] lines, DyeColor dyeColor, boolean hasGlowingText) {
         if (getHandle().connection == null) {
             return;
         }
@@ -594,6 +599,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         IChatBaseComponent[] components = CraftSign.sanitizeLines(lines);
         TileEntitySign sign = new TileEntitySign(new BlockPosition(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ()), Blocks.OAK_SIGN.getBlockData());
         sign.setColor(EnumColor.fromColorIndex(dyeColor.getWoolData()));
+        sign.setHasGlowingText(hasGlowingText);
         for (int i = 0; i < components.length; i++) {
             sign.a(i, components[i]);
         }
