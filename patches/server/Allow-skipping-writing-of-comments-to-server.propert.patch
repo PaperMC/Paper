@@ -15,14 +15,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  package net.minecraft.server.dedicated;
  
  import com.google.common.base.MoreObjects;
-+import java.io.BufferedWriter; // Paper
++
++import java.io.BufferedOutputStream; // Paper
  import java.io.IOException;
  import java.io.InputStream;
  import java.io.OutputStream;
-+import java.io.OutputStreamWriter; // Paper
- import java.nio.file.Files;
- import java.nio.file.Path;
- import java.util.Objects;
 @@ -0,0 +0,0 @@ import org.apache.logging.log4j.Logger;
  
  import joptsimple.OptionSet; // CraftBukkit
@@ -42,27 +39,20 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              // CraftBukkit end
              OutputStream outputstream = Files.newOutputStream(path);
 +            // Paper start - disable writing comments to properties file
-+            OutputStreamWriter outputStreamWriter = new OutputStreamWriter(outputstream);
-+            BufferedWriter bufferedwriter = !skipComments ? new BufferedWriter(outputStreamWriter) : new BufferedWriter(outputStreamWriter) {
++            BufferedOutputStream bufferedOutputStream =  !skipComments ? new BufferedOutputStream(outputstream) : new BufferedOutputStream(outputstream) {
 +                private boolean isRightAfterNewline = true; // If last written char was newline
 +                private boolean isComment = false; // Are we writing comment currently?
 +
 +                @Override
-+                public void write(@NotNull String str) throws IOException {
-+                    char[] ch = str.toCharArray();
-+                    this.write(ch);
++                public void write(@NotNull byte[] b) throws IOException {
++                    this.write(b, 0, b.length);
 +                }
 +
 +                @Override
-+                public void write(@NotNull char[] cbuf) throws IOException {
-+                    this.write(cbuf, 0, cbuf.length);
-+                }
-+
-+                @Override
-+                public void write(@NotNull char[] cbuf, int off, int len) throws IOException {
++                public void write(@NotNull byte[] bbuf, int off, int len) throws IOException {
 +                    int latest_offset = off; // The latest offset, updated when comment ends
 +                    for (int index = off; index < off + len; ++index ) {
-+                        char c = cbuf[index];
++                        byte c = bbuf[index];
 +                        boolean isNewline = (c == '\n' || c == '\r');
 +                        if (isNewline && isComment) {
 +                            // Comment has ended
@@ -73,7 +63,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                            isComment = true;
 +                            if (index != latest_offset) {
 +                                // We got some non-comment data earlier
-+                                super.write(cbuf, latest_offset, index-latest_offset);
++                                super.write(bbuf, latest_offset, index-latest_offset);
 +                            }
 +                        }
 +                        isRightAfterNewline = isNewline; // Store for next iteration
@@ -81,7 +71,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                    }
 +                    if (latest_offset < off+len && !isComment) {
 +                        // We have some unwritten data, that isn't part of a comment
-+                        super.write(cbuf, latest_offset, (off + len) - latest_offset);
++                        super.write(bbuf, latest_offset, (off + len) - latest_offset);
 +                    }
 +                }
 +            };
@@ -89,7 +79,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
              try {
 -                this.properties.store(outputstream, "Minecraft server properties");
-+                this.properties.store(bufferedwriter, "Minecraft server properties"); // Paper - use bufferedwriter
++                this.properties.store(bufferedOutputStream, "Minecraft server properties"); // Paper - use bufferedOutputStream
              } catch (Throwable throwable) {
                  if (outputstream != null) {
                      try {
