@@ -4,8 +4,24 @@ Date: Wed, 4 Aug 2021 20:12:02 +0200
 Subject: [PATCH] Limit hopper transfer to max. stack size of container.
 
 
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index c334f29c69c1e6e3fe55cd6695e7df400cf36058..51b74746b94bb3966ba753aecf260b64adbdab23 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -853,6 +853,11 @@ public class PaperWorldConfig {
+         allowPlayerCrammingDamage = getBoolean("allow-player-cramming-damage", allowPlayerCrammingDamage);
+     }
+ 
++    public boolean limitHopperTransferToMaxStackSizeOfContainer = true;
++    private void limitHopperTransferToMaxStackSizeOfContainer() {
++        limitHopperTransferToMaxStackSizeOfContainer = getBoolean("limit-hopper-transfer-to-max-stack-size-of-container", limitHopperTransferToMaxStackSizeOfContainer);
++    }
++
+     private Table<String, String, Integer> sensorTickRates;
+     private Table<String, String, Integer> behaviorTickRates;
+     private void tickRates() {
 diff --git a/src/main/java/net/minecraft/world/level/block/entity/HopperBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/HopperBlockEntity.java
-index 3b1442bf4c83650369e925d76f07dc67c6cbbc83..8ea921d4592835559da23171b30e8c857ba0e418 100644
+index 3b1442bf4c83650369e925d76f07dc67c6cbbc83..2eddc69fbee0835a36ad81c7cb2e247edacc3174 100644
 --- a/src/main/java/net/minecraft/world/level/block/entity/HopperBlockEntity.java
 +++ b/src/main/java/net/minecraft/world/level/block/entity/HopperBlockEntity.java
 @@ -589,9 +589,18 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
@@ -14,7 +30,7 @@ index 3b1442bf4c83650369e925d76f07dc67c6cbbc83..8ea921d4592835559da23171b30e8c85
                  IGNORE_TILE_UPDATES = true; // Paper
 -                to.setItem(slot, stack);
 +                // Paper start
-+                if (!stack.isEmpty() && stack.getCount() > to.getMaxStackSize()) {
++                if (!stack.isEmpty() && stack.getCount() > to.getMaxStackSize() && from instanceof HopperBlockEntity fromHopper && fromHopper.level.paperConfig.limitHopperTransferToMaxStackSizeOfContainer) {
 +                    ItemStack itemstack2 = stack.copy();
 +                    itemstack2.setCount(to.getMaxStackSize());
 +                    to.setItem(slot, itemstack2);
