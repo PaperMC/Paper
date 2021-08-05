@@ -5,50 +5,54 @@ Subject: [PATCH] Implemented OP level API
 
 
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedPlayerList.java b/src/main/java/net/minecraft/server/dedicated/DedicatedPlayerList.java
-index 918f5221e94cbc867349c69c83563e225d2fef1d..afc9c3f0550053126640f570ca4a31b5e3584459 100644
+index 918f5221e94cbc867349c69c83563e225d2fef1d..734e5305d2a059738df20ea9a72dad6ca6c5b810 100644
 --- a/src/main/java/net/minecraft/server/dedicated/DedicatedPlayerList.java
 +++ b/src/main/java/net/minecraft/server/dedicated/DedicatedPlayerList.java
 @@ -52,6 +52,17 @@ public class DedicatedPlayerList extends PlayerList {
          this.saveOps();
      }
  
-+    //Paper start - OP level API
++    // Paper start - OP level API
 +    public int getOperatorLevel(GameProfile profile)    {
-+        return super.getOperatorLevel(profile);
++        return this.getServer().getProfilePermissions(profile);
 +    }
 +
 +    public void setOperatorLevel(GameProfile profile, int value)    {
-+        super.setOperatorLevel(profile, value);
++        super.op(profile, value);
 +        this.saveOps();
 +    }
-+    //Paper end
++    // Paper end
 +
      @Override
      public void reloadWhiteList() {
          this.loadWhiteList();
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
-index 48045993c8ad4b014cf4a67f7c4db42e014d1c81..7a6d9a037bcc47f19768e6a716a1aa918d82aeb1 100644
+index 48045993c8ad4b014cf4a67f7c4db42e014d1c81..03934348739d31cd41bf74992e59f344adf86669 100644
 --- a/src/main/java/net/minecraft/server/players/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/players/PlayerList.java
-@@ -1144,6 +1144,18 @@ public abstract class PlayerList {
- 
+@@ -1124,15 +1124,20 @@ public abstract class PlayerList {
+         return this.ipBans;
      }
  
-+    //Paper start - OP level API
-+    public int getOperatorLevel(GameProfile profile)   {
-+        return this.getServer().getProfilePermissions(profile);
++    // Paper start - OP level API
+     public void op(GameProfile profile) {
+-        this.ops.add(new ServerOpListEntry(profile, this.server.getOperatorUserPermissionLevel(), this.ops.canBypassPlayerLimit(profile)));
++        this.op(profile, this.server.getOperatorUserPermissionLevel());
 +    }
 +
-+    public void setOperatorLevel(GameProfile profile, int permissionLevel)  {
-+        ServerOpListEntry entry = this.ops.get(profile);
-+        entry = new ServerOpListEntry(profile, permissionLevel, entry == null ? this.ops.canBypassPlayerLimit(profile) : entry.getBypassesPlayerLimit());
-+        this.ops.add(entry);
-+    }
-+    //Paper end
-+
-     private void sendPlayerPermissionLevel(ServerPlayer player, int permissionLevel) {
-         // Paper start - add recalculatePermissions parameter
-         this.sendPlayerOperatorStatus(player, permissionLevel, true);
++    public void op(GameProfile profile, int permissionLevel)    {
++        this.ops.add(new ServerOpListEntry(profile, permissionLevel, this.ops.canBypassPlayerLimit(profile)));
+         ServerPlayer entityplayer = this.getPlayer(profile.getId());
+ 
+         if (entityplayer != null) {
+             this.sendPlayerPermissionLevel(entityplayer);
+         }
+-
+     }
++    // Paper end
+ 
+     public void deop(GameProfile profile) {
+         this.ops.remove(profile);
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftOfflinePlayer.java b/src/main/java/org/bukkit/craftbukkit/CraftOfflinePlayer.java
 index b20bfe5ab165bf86985e5ff2f93f415d9710e0e4..896fb655c7c0d24d6f6a85d319862eef4fde7317 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftOfflinePlayer.java
