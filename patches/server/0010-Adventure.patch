@@ -2142,7 +2142,7 @@ index 042691349dd5659e8db526199641cbcfa21c6005..841dbf4a86b19d7c8ea41930ecb1f88c
          player.initMenu(container);
      }
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index 7274657daecdaaf961f5bbd69e05fc5b7f0c2fda..62e773ed5ec894bcd213ba046070cb1de87a77e9 100644
+index 1a6cca634d6b40a6d5f30eda98be3aa72c2569ad..32f555a846d34e086e75c027a92a48eaf556df94 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 @@ -244,14 +244,39 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
@@ -2255,17 +2255,13 @@ index 7274657daecdaaf961f5bbd69e05fc5b7f0c2fda..62e773ed5ec894bcd213ba046070cb1d
      @Override
      public void setCompassTarget(Location loc) {
          if (this.getHandle().connection == null) return;
-@@ -571,6 +607,36 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -571,6 +607,33 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          this.getHandle().connection.send(packet);
      }
  
 +    // Paper start
 +    @Override
-+    public void sendSignChange(Location loc, List<net.kyori.adventure.text.Component> lines) {
-+        this.sendSignChange(loc, lines, org.bukkit.DyeColor.BLACK);
-+    }
-+    @Override
-+    public void sendSignChange(Location loc, List<net.kyori.adventure.text.Component> lines, DyeColor dyeColor) {
++    public void sendSignChange(Location loc, @Nullable List<net.kyori.adventure.text.Component> lines, DyeColor dyeColor, boolean hasGlowingText) {
 +        if (getHandle().connection == null) {
 +            return;
 +        }
@@ -2278,12 +2274,13 @@ index 7274657daecdaaf961f5bbd69e05fc5b7f0c2fda..62e773ed5ec894bcd213ba046070cb1d
 +            throw new IllegalArgumentException("Must have at least 4 lines");
 +        }
 +        Component[] components = CraftSign.sanitizeLines(lines);
-+        this.sendSignChange0(components, loc, dyeColor);
++        this.sendSignChange0(components, loc, dyeColor, hasGlowingText);
 +    }
 +
-+    private void sendSignChange0(Component[] components, Location loc, DyeColor dyeColor) {
++    private void sendSignChange0(Component[] components, Location loc, DyeColor dyeColor, boolean hasGlowingText) {
 +        SignBlockEntity sign = new SignBlockEntity(new BlockPos(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ()), Blocks.OAK_SIGN.defaultBlockState());
 +        sign.setColor(net.minecraft.world.item.DyeColor.byId(dyeColor.getWoolData()));
++        sign.setHasGlowingText(hasGlowingText);
 +        System.arraycopy(components, 0, sign.messages, 0, sign.messages.length);
 +
 +        getHandle().connection.send(sign.getUpdatePacket());
@@ -2291,27 +2288,26 @@ index 7274657daecdaaf961f5bbd69e05fc5b7f0c2fda..62e773ed5ec894bcd213ba046070cb1d
 +    // Paper end
      @Override
      public void sendSignChange(Location loc, String[] lines) {
-        this.sendSignChange(loc, lines, DyeColor.BLACK);
-@@ -593,13 +659,12 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+         this.sendSignChange(loc, lines, DyeColor.BLACK);
+@@ -598,14 +661,15 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          }
  
          Component[] components = CraftSign.sanitizeLines(lines);
 -        SignBlockEntity sign = new SignBlockEntity(new BlockPos(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ()), Blocks.OAK_SIGN.defaultBlockState());
--        sign.setColor(net.minecraft.world.item.DyeColor.byId(dyeColor.getWoolData()));
--        for (int i = 0; i < components.length; i++) {
--            sign.setMessage(i, components[i]);
--        }
 +        /*SignBlockEntity sign = new SignBlockEntity(new BlockPos(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ()), Blocks.OAK_SIGN.defaultBlockState());
-+        sign.setColor(EnumColor.fromColorIndex(dyeColor.getWoolData()));
-+        System.arraycopy(components, 0, sign.lines, 0, sign.lines.length);
+         sign.setColor(net.minecraft.world.item.DyeColor.byId(dyeColor.getWoolData()));
+         sign.setHasGlowingText(hasGlowingText);
+         for (int i = 0; i < components.length; i++) {
+             sign.setMessage(i, components[i]);
+         }
  
 -        this.getHandle().connection.send(sign.getUpdatePacket());
 +        this.getHandle().connection.send(sign.getUpdatePacket());*/ // Paper
-+        this.sendSignChange0(components, loc, dyeColor); // Paper
++        this.sendSignChange0(components, loc, dyeColor, hasGlowingText); // Paper
      }
  
      @Override
-@@ -1699,6 +1764,12 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -1705,6 +1769,12 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          return (this.getHandle().clientViewDistance == null) ? Bukkit.getViewDistance() : this.getHandle().clientViewDistance;
      }
  
@@ -2324,7 +2320,7 @@ index 7274657daecdaaf961f5bbd69e05fc5b7f0c2fda..62e773ed5ec894bcd213ba046070cb1d
      @Override
      public int getPing() {
          return this.getHandle().latency;
-@@ -1727,6 +1798,160 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -1733,6 +1803,160 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          getInventory().setItemInMainHand(hand);
      }
  
