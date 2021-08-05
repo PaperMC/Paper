@@ -1355,6 +1355,14 @@ diff --git a/src/main/java/org/bukkit/entity/Player.java b/src/main/java/org/buk
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/entity/Player.java
 +++ b/src/main/java/org/bukkit/entity/Player.java
+@@ -0,0 +0,0 @@
+ package org.bukkit.entity;
+ 
+ import java.net.InetSocketAddress;
++import java.util.List; // Paper
+ import java.util.UUID;
+ import org.bukkit.DyeColor;
+ import org.bukkit.Effect;
 @@ -0,0 +0,0 @@ import org.jetbrains.annotations.Nullable;
  /**
   * Represents a player, connected or not
@@ -1530,14 +1538,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public boolean sendChunkChange(@NotNull Location loc, int sx, int sy, int sz, @NotNull byte[] data);
  
 +    // Paper start
-     /**
-      * Send a sign change. This fakes a sign change packet for a user at
-      * a certain location. This will not actually change the world in any way.
-@@ -0,0 +0,0 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
-      * @throws IllegalArgumentException if location is null
-      * @throws IllegalArgumentException if lines is non-null and has a length less than 4
-      */
-+    void sendSignChange(@NotNull Location loc, @Nullable java.util.List<net.kyori.adventure.text.Component> lines) throws IllegalArgumentException;
 +    /**
 +     * Send a sign change. This fakes a sign change packet for a user at
 +     * a certain location. This will not actually change the world in any way.
@@ -1550,13 +1550,72 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     *
 +     * @param loc the location of the sign
 +     * @param lines the new text on the sign or null to clear it
-+     * @param  dyeColor the color of the sign
++     * @throws IllegalArgumentException if location is null
++     * @throws IllegalArgumentException if lines is non-null and has a length less than 4
++     */
++    default void sendSignChange(@NotNull Location loc, @Nullable java.util.List<net.kyori.adventure.text.Component> lines) throws IllegalArgumentException {
++        this.sendSignChange(loc, lines, DyeColor.BLACK);
++    }
++
+     /**
+      * Send a sign change. This fakes a sign change packet for a user at
+      * a certain location. This will not actually change the world in any way.
+@@ -0,0 +0,0 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+      *
+      * @param loc the location of the sign
+      * @param lines the new text on the sign or null to clear it
++     * @param dyeColor the color of the sign
+      * @throws IllegalArgumentException if location is null
++     * @throws IllegalArgumentException if dyeColor is null
+      * @throws IllegalArgumentException if lines is non-null and has a length less than 4
+      */
++    default void sendSignChange(@NotNull Location loc, @Nullable java.util.List<net.kyori.adventure.text.Component> lines, @NotNull DyeColor dyeColor) throws IllegalArgumentException {
++        this.sendSignChange(loc, lines, dyeColor, false);
++    }
++
++    /**
++     * Send a sign change. This fakes a sign change packet for a user at
++     * a certain location. This will not actually change the world in any way.
++     * This method will use a sign at the location's block or a faked sign
++     * sent via
++     * {@link #sendBlockChange(org.bukkit.Location, org.bukkit.Material, byte)}.
++     * <p>
++     * If the client does not have a sign at the given location it will
++     * display an error message to the user.
++     *
++     * @param loc the location of the sign
++     * @param lines the new text on the sign or null to clear it
++     * @param hasGlowingText whether the text of the sign should glow as if dyed with a glowing ink sac
 +     * @throws IllegalArgumentException if location is null
 +     * @throws IllegalArgumentException if dyeColor is null
 +     * @throws IllegalArgumentException if lines is non-null and has a length less than 4
 +     */
-+    void sendSignChange(@NotNull Location loc, @Nullable java.util.List<net.kyori.adventure.text.Component> lines, @NotNull DyeColor dyeColor) throws IllegalArgumentException;
++    default void sendSignChange(@NotNull Location loc, @Nullable java.util.List<net.kyori.adventure.text.Component> lines, boolean hasGlowingText) throws IllegalArgumentException {
++        this.sendSignChange(loc, lines, DyeColor.BLACK, hasGlowingText);
++    }
++
++    /**
++     * Send a sign change. This fakes a sign change packet for a user at
++     * a certain location. This will not actually change the world in any way.
++     * This method will use a sign at the location's block or a faked sign
++     * sent via
++     * {@link #sendBlockChange(org.bukkit.Location, org.bukkit.Material, byte)}.
++     * <p>
++     * If the client does not have a sign at the given location it will
++     * display an error message to the user.
++     *
++     * @param loc the location of the sign
++     * @param lines the new text on the sign or null to clear it
++     * @param dyeColor the color of the sign
++     * @param hasGlowingText whether the text of the sign should glow as if dyed with a glowing ink sac
++     * @throws IllegalArgumentException if location is null
++     * @throws IllegalArgumentException if dyeColor is null
++     * @throws IllegalArgumentException if lines is non-null and has a length less than 4
++     */
++    void sendSignChange(@NotNull Location loc, @Nullable java.util.List<net.kyori.adventure.text.Component> lines, @NotNull DyeColor dyeColor, boolean hasGlowingText)
++        throws IllegalArgumentException;
 +    // Paper end
++
 +    /**
 +     * Send a sign change. This fakes a sign change packet for a user at
 +     * a certain location. This will not actually change the world in any way.
@@ -1576,7 +1635,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    @Deprecated // Paper
      public void sendSignChange(@NotNull Location loc, @Nullable String[] lines) throws IllegalArgumentException;
  
- 
+     /**
 @@ -0,0 +0,0 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
       * @throws IllegalArgumentException if location is null
       * @throws IllegalArgumentException if dyeColor is null
@@ -1585,6 +1644,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
       */
 +    @Deprecated // Paper
      public void sendSignChange(@NotNull Location loc, @Nullable String[] lines, @NotNull DyeColor dyeColor) throws IllegalArgumentException;
+ 
+     /**
+@@ -0,0 +0,0 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+      * @throws IllegalArgumentException if location is null
+      * @throws IllegalArgumentException if dyeColor is null
+      * @throws IllegalArgumentException if lines is non-null and has a length less than 4
++     * @deprecated Deprecated in favour of {@link #sendSignChange(Location, List, DyeColor, boolean)}
+      */
++    @Deprecated // Paper
+     public void sendSignChange(@NotNull Location loc, @Nullable String[] lines, @NotNull DyeColor dyeColor, boolean hasGlowingText) throws IllegalArgumentException;
  
      /**
 @@ -0,0 +0,0 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
