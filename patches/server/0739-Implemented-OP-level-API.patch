@@ -5,7 +5,7 @@ Subject: [PATCH] Implemented OP level API
 
 
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedPlayerList.java b/src/main/java/net/minecraft/server/dedicated/DedicatedPlayerList.java
-index 918f5221e94cbc867349c69c83563e225d2fef1d..734e5305d2a059738df20ea9a72dad6ca6c5b810 100644
+index 918f5221e94cbc867349c69c83563e225d2fef1d..790357efd87f9c77597bcb97e79e7b61580aca82 100644
 --- a/src/main/java/net/minecraft/server/dedicated/DedicatedPlayerList.java
 +++ b/src/main/java/net/minecraft/server/dedicated/DedicatedPlayerList.java
 @@ -52,6 +52,17 @@ public class DedicatedPlayerList extends PlayerList {
@@ -13,11 +13,11 @@ index 918f5221e94cbc867349c69c83563e225d2fef1d..734e5305d2a059738df20ea9a72dad6c
      }
  
 +    // Paper start - OP level API
-+    public int getOperatorLevel(GameProfile profile)    {
++    public int getOperatorLevel(GameProfile profile)  {
 +        return this.getServer().getProfilePermissions(profile);
 +    }
 +
-+    public void setOperatorLevel(GameProfile profile, int value)    {
++    public void setOperatorLevel(GameProfile profile, int value)  {
 +        super.op(profile, value);
 +        this.saveOps();
 +    }
@@ -27,20 +27,21 @@ index 918f5221e94cbc867349c69c83563e225d2fef1d..734e5305d2a059738df20ea9a72dad6c
      public void reloadWhiteList() {
          this.loadWhiteList();
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
-index 48045993c8ad4b014cf4a67f7c4db42e014d1c81..03934348739d31cd41bf74992e59f344adf86669 100644
+index 48045993c8ad4b014cf4a67f7c4db42e014d1c81..d9a572efe0298647755fb6e3a0e49be10dc745e0 100644
 --- a/src/main/java/net/minecraft/server/players/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/players/PlayerList.java
 @@ -1124,15 +1124,20 @@ public abstract class PlayerList {
          return this.ipBans;
      }
  
-+    // Paper start - OP level API
-     public void op(GameProfile profile) {
+-    public void op(GameProfile profile) {
 -        this.ops.add(new ServerOpListEntry(profile, this.server.getOperatorUserPermissionLevel(), this.ops.canBypassPlayerLimit(profile)));
++    // Paper start - OP level API
++    public void op(GameProfile profile)  {
 +        this.op(profile, this.server.getOperatorUserPermissionLevel());
 +    }
 +
-+    public void op(GameProfile profile, int permissionLevel)    {
++    public void op(GameProfile profile, int permissionLevel)  {
 +        this.ops.add(new ServerOpListEntry(profile, permissionLevel, this.ops.canBypassPlayerLimit(profile)));
          ServerPlayer entityplayer = this.getPlayer(profile.getId());
  
@@ -54,7 +55,7 @@ index 48045993c8ad4b014cf4a67f7c4db42e014d1c81..03934348739d31cd41bf74992e59f344
      public void deop(GameProfile profile) {
          this.ops.remove(profile);
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftOfflinePlayer.java b/src/main/java/org/bukkit/craftbukkit/CraftOfflinePlayer.java
-index b20bfe5ab165bf86985e5ff2f93f415d9710e0e4..896fb655c7c0d24d6f6a85d319862eef4fde7317 100644
+index b20bfe5ab165bf86985e5ff2f93f415d9710e0e4..8147e7ffd278dd02419492666042309ff20ae2cd 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftOfflinePlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftOfflinePlayer.java
 @@ -96,6 +96,18 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
@@ -63,12 +64,12 @@ index b20bfe5ab165bf86985e5ff2f93f415d9710e0e4..896fb655c7c0d24d6f6a85d319862eef
  
 +    //Paper start - OP level API
 +    @Override
-+    public int getOpLevel() {
++    public int getOpLevel()  {
 +        return this.server.getHandle().getOperatorLevel(profile);
 +    }
 +
 +    @Override
-+    public void setOpLevel(int value) {
++    public void setOpLevel(int value)  {
 +        this.server.getHandle().setOperatorLevel(profile, value);
 +    }
 +    //Paper end
@@ -77,7 +78,7 @@ index b20bfe5ab165bf86985e5ff2f93f415d9710e0e4..896fb655c7c0d24d6f6a85d319862eef
      public boolean isBanned() {
          if (this.getName() == null) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/command/CraftBlockCommandSender.java b/src/main/java/org/bukkit/craftbukkit/command/CraftBlockCommandSender.java
-index 83efca7144b4ce9cf7bd6bbbbf9c4426d2472315..657e7ca37dcc286210784d4f819e4e7203fafe84 100644
+index 83efca7144b4ce9cf7bd6bbbbf9c4426d2472315..1f9fbaa9b67ffd8554b8732f6677e6e711fc4079 100644
 --- a/src/main/java/org/bukkit/craftbukkit/command/CraftBlockCommandSender.java
 +++ b/src/main/java/org/bukkit/craftbukkit/command/CraftBlockCommandSender.java
 @@ -56,6 +56,18 @@ public class CraftBlockCommandSender extends ServerCommandSender implements Bloc
@@ -86,12 +87,12 @@ index 83efca7144b4ce9cf7bd6bbbbf9c4426d2472315..657e7ca37dcc286210784d4f819e4e72
  
 +    //Paper start - OP level API
 +    @Override
-+    public int getOpLevel() {
++    public int getOpLevel()  {
 +        return 2;
 +    }
 +
 +    @Override
-+    public void setOpLevel(int value) {
++    public void setOpLevel(int value)  {
 +        throw new UnsupportedOperationException("Cannot change operator level of a block");
 +    }
 +    //Paper end
@@ -121,7 +122,7 @@ index 9383e2fd8469d3203e0fe91dfbb05eb8192bc082..740993519fab9c5837f6a11d78a57171
      public boolean beginConversation(Conversation conversation) {
          return this.conversationTracker.beginConversation(conversation);
 diff --git a/src/main/java/org/bukkit/craftbukkit/command/CraftRemoteConsoleCommandSender.java b/src/main/java/org/bukkit/craftbukkit/command/CraftRemoteConsoleCommandSender.java
-index a3194c8a425d1d808c76ebef9997478f4d399fe0..9e581483b9fadb3d24a20ebabb70d5d4d843383a 100644
+index a3194c8a425d1d808c76ebef9997478f4d399fe0..5e9c7a3bf9d54471aaf76361f32c13d2d6e0694a 100644
 --- a/src/main/java/org/bukkit/craftbukkit/command/CraftRemoteConsoleCommandSender.java
 +++ b/src/main/java/org/bukkit/craftbukkit/command/CraftRemoteConsoleCommandSender.java
 @@ -40,6 +40,18 @@ public class CraftRemoteConsoleCommandSender extends ServerCommandSender impleme
@@ -130,12 +131,12 @@ index a3194c8a425d1d808c76ebef9997478f4d399fe0..9e581483b9fadb3d24a20ebabb70d5d4
  
 +    //Paper start - OP level API
 +    @Override
-+    public int getOpLevel() {
++    public int getOpLevel()  {
 +        return 4;
 +    }
 +
 +    @Override
-+    public void setOpLevel(int value) {
++    public void setOpLevel(int value)  {
 +        throw new UnsupportedOperationException("Cannot change operator level of remote controller.");
 +    }
 +    //Paper end
@@ -144,7 +145,7 @@ index a3194c8a425d1d808c76ebef9997478f4d399fe0..9e581483b9fadb3d24a20ebabb70d5d4
      @Override
      public boolean hasPermission(String name) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/command/ProxiedNativeCommandSender.java b/src/main/java/org/bukkit/craftbukkit/command/ProxiedNativeCommandSender.java
-index 53d6950ad270ba901de5226b9daecb683248ad05..50cbe53bad542d3a969a4e4b5e8a5c4d0208397a 100644
+index 53d6950ad270ba901de5226b9daecb683248ad05..f806b2e51e63a51072e2f916cb31190278f160ee 100644
 --- a/src/main/java/org/bukkit/craftbukkit/command/ProxiedNativeCommandSender.java
 +++ b/src/main/java/org/bukkit/craftbukkit/command/ProxiedNativeCommandSender.java
 @@ -132,6 +132,18 @@ public class ProxiedNativeCommandSender implements ProxiedCommandSender {
@@ -153,12 +154,12 @@ index 53d6950ad270ba901de5226b9daecb683248ad05..50cbe53bad542d3a969a4e4b5e8a5c4d
  
 +    //Paper start - OP level API
 +    @Override
-+    public int getOpLevel() {
++    public int getOpLevel()  {
 +        return this.caller.getOpLevel();
 +    }
 +
 +    @Override
-+    public void setOpLevel(int value) {
++    public void setOpLevel(int value)  {
 +        this.caller.setOpLevel(value);
 +    }
 +    //Paper end
@@ -167,7 +168,7 @@ index 53d6950ad270ba901de5226b9daecb683248ad05..50cbe53bad542d3a969a4e4b5e8a5c4d
      @Override
      public org.bukkit.command.CommandSender.Spigot spigot()
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
-index 85ca30aef0703db6859e66c62781ecfd334426e7..0761a26f877e7ae43410e170b39d537cefb9a2ab 100644
+index 85ca30aef0703db6859e66c62781ecfd334426e7..21029884c3158bced5707576508a89b5c23f127a 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
 @@ -998,6 +998,18 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
@@ -176,12 +177,12 @@ index 85ca30aef0703db6859e66c62781ecfd334426e7..0761a26f877e7ae43410e170b39d537c
  
 +    //Paper start - OP level API
 +    @Override
-+    public int getOpLevel() {
++    public int getOpLevel()  {
 +        return CraftEntity.getPermissibleBase().getOpLevel();
 +    }
 +
 +    @Override
-+    public void setOpLevel(int value) {
++    public void setOpLevel(int value)  {
 +        CraftEntity.getPermissibleBase().setOpLevel(value);
 +    }
 +    //Paper end
@@ -196,12 +197,12 @@ index 85ca30aef0703db6859e66c62781ecfd334426e7..0761a26f877e7ae43410e170b39d537c
 +
 +                //Paper start - OP level API
 +                @Override
-+                public int getOpLevel() {
++                public int getOpLevel()  {
 +                    return 0;
 +                }
 +
 +                @Override
-+                public void setOpLevel(int value) {
++                public void setOpLevel(int value)  {
 +
 +                }
 +                //Paper end
@@ -209,7 +210,7 @@ index 85ca30aef0703db6859e66c62781ecfd334426e7..0761a26f877e7ae43410e170b39d537c
          }
          return CraftEntity.perm;
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftMinecartCommand.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftMinecartCommand.java
-index 446fdca49a5a6999626a7ee3a1d5c168b15a09dd..de840350ac9af1d6e760f6f3197134f74ed64913 100644
+index 446fdca49a5a6999626a7ee3a1d5c168b15a09dd..45667da757e01232e96bcbf0e105de75bf58440d 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftMinecartCommand.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftMinecartCommand.java
 @@ -75,6 +75,18 @@ public class CraftMinecartCommand extends CraftMinecart implements CommandMineca
@@ -218,12 +219,12 @@ index 446fdca49a5a6999626a7ee3a1d5c168b15a09dd..de840350ac9af1d6e760f6f3197134f7
  
 +    //Paper start - OP level API
 +    @Override
-+    public int getOpLevel() {
++    public int getOpLevel()  {
 +        return 2;
 +    }
 +
 +    @Override
-+    public void setOpLevel(int value) {
++    public void setOpLevel(int value)  {
 +        throw new UnsupportedOperationException("Cannot change operator level of a block");
 +    }
 +    //Paper end
@@ -232,7 +233,7 @@ index 446fdca49a5a6999626a7ee3a1d5c168b15a09dd..de840350ac9af1d6e760f6f3197134f7
      public boolean isPermissionSet(String name) {
          return this.perm.isPermissionSet(name);
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index 9e8918d03b8213e5f6689fc93030138fd704aca9..9ed99298d3a204924a0c85fea6d8116b89963df4 100644
+index 9e8918d03b8213e5f6689fc93030138fd704aca9..4d3f9e65184dfe93f524bc969b669e98c051c3fc 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 @@ -182,6 +182,18 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
@@ -241,12 +242,12 @@ index 9e8918d03b8213e5f6689fc93030138fd704aca9..9ed99298d3a204924a0c85fea6d8116b
  
 +    //Paper start - OP level API
 +    @Override
-+    public int getOpLevel() {
++    public int getOpLevel()  {
 +        return server.getHandle().getOperatorLevel(this.getProfile());
 +    }
 +
 +    @Override
-+    public void setOpLevel(int value) {
++    public void setOpLevel(int value)  {
 +        server.getHandle().setOperatorLevel(this.getProfile(), value);
 +    }
 +    //Paper end
