@@ -1,0 +1,131 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: MartijnMuijsers <martijnmuijsers@live.nl>
+Date: Sat, 7 Aug 2021 12:10:17 +0200
+Subject: [PATCH] Add entity tracking view distance
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index c334f29c69c1e6e3fe55cd6695e7df400cf36058..e0706d41c3d7cc6d3d5508f28c97a2df4f39ac81 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -706,8 +706,10 @@ public class PaperWorldConfig {
+     }
+ 
+     public int noTickViewDistance;
++    public int entityTrackingViewDistance;
+     private void viewDistance() {
+         this.noTickViewDistance = this.getInt("viewdistances.no-tick-view-distance", -1);
++        this.entityTrackingViewDistance = this.getInt("viewdistances.entity-tracking-view-distance", -1);
+     }
+ 
+     public long delayChunkUnloadsBy;
+diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
+index 42fd259f4492e539112b5bcb310aaaadab58a443..1f1f259763ff816d1ec696807e7576a0e3056f73 100644
+--- a/src/main/java/net/minecraft/server/level/ChunkMap.java
++++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
+@@ -218,12 +218,19 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+     private final com.destroystokyo.paper.util.misc.PooledLinkedHashSets<ServerPlayer> pooledLinkedPlayerHashSets = new com.destroystokyo.paper.util.misc.PooledLinkedHashSets<>();
+     // Paper start - no-tick view distance
+     int noTickViewDistance;
++    int entityTrackingViewDistance; // Paper - entity tracking view distance
+     public final int getRawNoTickViewDistance() {
+         return this.noTickViewDistance;
+     }
+     public final int getEffectiveNoTickViewDistance() {
+         return this.noTickViewDistance == -1 ? this.getEffectiveViewDistance() : this.noTickViewDistance;
+     }
++    // Paper start - entity tracking view distance
++    public final int getRawEntityTrackingViewDistance() { return this.entityTrackingViewDistance; }
++    public final int getEffectiveEntityTrackingViewDistance() {
++        return this.entityTrackingViewDistance == -1 ? this.getEffectiveNoTickViewDistance() : this.entityTrackingViewDistance;
++    }
++    // Paper end - entity tracking view distance
+     public final int getLoadViewDistance() {
+         return Math.max(this.getEffectiveViewDistance(), this.getEffectiveNoTickViewDistance());
+     }
+@@ -267,7 +274,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+             com.destroystokyo.paper.util.misc.PlayerAreaMap trackMap = this.playerEntityTrackerTrackMaps[i];
+             int trackRange = this.entityTrackerTrackRanges[i];
+ 
+-            trackMap.add(player, chunkX, chunkZ, Math.min(trackRange, this.getEffectiveViewDistance()));
++            trackMap.add(player, chunkX, chunkZ, Math.min(trackRange, this.getEffectiveEntityTrackingViewDistance())); // Paper - entity tracking view distance
+         }
+         // Paper end - use distance map to optimise entity tracker
+         // Paper start - optimise PlayerChunkMap#isOutsideRange
+@@ -317,7 +324,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+             com.destroystokyo.paper.util.misc.PlayerAreaMap trackMap = this.playerEntityTrackerTrackMaps[i];
+             int trackRange = this.entityTrackerTrackRanges[i];
+ 
+-            trackMap.update(player, chunkX, chunkZ, Math.min(trackRange, this.getEffectiveViewDistance()));
++            trackMap.update(player, chunkX, chunkZ, Math.min(trackRange, this.getEffectiveEntityTrackingViewDistance())); // Paper - entity tracking view distance
+         }
+         // Paper end - use distance map to optimise entity tracker
+         // Paper start - optimise PlayerChunkMap#isOutsideRange
+@@ -467,6 +474,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+         // Paper end - optimise PlayerChunkMap#isOutsideRange
+         // Paper start - no-tick view distance
+         this.setNoTickViewDistance(this.level.paperConfig.noTickViewDistance);
++        this.setEntityTrackingViewDistance(this.level.paperConfig.entityTrackingViewDistance); // Paper - entity tracking view distance
+         this.playerViewDistanceTickMap = new com.destroystokyo.paper.util.misc.PlayerAreaMap(this.pooledLinkedPlayerHashSets,
+             (ServerPlayer player, int rangeX, int rangeZ, int currPosX, int currPosZ, int prevPosX, int prevPosZ,
+              com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<ServerPlayer> newState) -> {
+@@ -1598,6 +1606,21 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+ 
+     }
+ 
++    // Paper start - entity tracking view distance
++    public final void setEntityTrackingViewDistance(int viewDistance) {
++        viewDistance = viewDistance == -1 ? -1 : Mth.clamp(viewDistance, 2, 32);
++
++        this.entityTrackingViewDistance = viewDistance;
++
++        if (this.level != null && this.level.players != null) { // this can be called from constructor, where these aren't set
++            for (ServerPlayer player : this.level.players) {
++                this.updateMaps(player);
++            }
++        }
++
++    }
++    // Paper end - entity tracking view distance
++
+     protected void updateChunkTracking(ServerPlayer player, ChunkPos pos, Packet<?>[] packets, boolean withinMaxWatchDistance, boolean withinViewDistance) {
+         if (player.level == this.level) {
+             if (withinViewDistance && !withinMaxWatchDistance) {
+@@ -2381,7 +2404,7 @@ Sections go from 0..16. Now whenever a section is not empty, it can potentially
+                 double vec3d_dy = player.getY() - this.entity.getY();
+                 double vec3d_dz = player.getZ() - this.entity.getZ();
+                 // Paper end - remove allocation of Vec3D here
+-                int i = Math.min(this.getEffectiveRange(), (ChunkMap.this.viewDistance - 1) * 16);
++                int i = Math.min(this.getEffectiveRange(), (ChunkMap.this.getEffectiveEntityTrackingViewDistance() - 1) * 16); // Paper - entity tracking view distance
+                 boolean flag = vec3d_dx >= (double) (-i) && vec3d_dx <= (double) i && vec3d_dz >= (double) (-i) && vec3d_dz <= (double) i && this.entity.broadcastToPlayer(player); // Paper - remove allocation of Vec3D here
+ 
+                 // CraftBukkit start - respect vanish API
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+index 7dc26321e20e26821096e79356a358879306cd78..e2ee552a60af0989f86adeb0ec2911d7edd96404 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+@@ -2719,6 +2719,24 @@ public class CraftWorld implements World {
+     }
+     // Paper end - per player view distance
+ 
++    // Paper start - entity tracking view distance
++    @Override
++    public int getEntityTrackingViewDistance() {
++        return getHandle().getChunkSource().chunkMap.getEffectiveEntityTrackingViewDistance();
++    }
++
++    @Override
++    public void setEntityTrackingViewDistance(int viewDistance) {
++        if ((viewDistance < 2 || viewDistance > 32) && viewDistance != -1) {
++            throw new IllegalArgumentException("View distance " + viewDistance + " is out of range of [2, 32]");
++        }
++        net.minecraft.server.level.ChunkMap chunkMap = getHandle().getChunkSource().chunkMap;
++        if (viewDistance != chunkMap.getRawEntityTrackingViewDistance()) {
++            chunkMap.setEntityTrackingViewDistance(viewDistance);
++        }
++    }
++    // Paper end - entity tracking view distance
++
+     // Spigot start
+     private final org.bukkit.World.Spigot spigot = new org.bukkit.World.Spigot()
+     {
