@@ -1,0 +1,59 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sat, 29 May 2021 17:05:59 -0700
+Subject: [PATCH] Ignore NBT limits when not loaded from a block place
+
+
+diff --git a/src/main/java/net/minecraft/world/item/BlockItem.java b/src/main/java/net/minecraft/world/item/BlockItem.java
+index 62d6c5b7590ff4faef5d8c7a8be03155b7338480..0a52718f9263d3d22086953e9ab711b3e8e0981f 100644
+--- a/src/main/java/net/minecraft/world/item/BlockItem.java
++++ b/src/main/java/net/minecraft/world/item/BlockItem.java
+@@ -249,7 +249,10 @@ public class BlockItem extends Item {
+ 
+                     nbttagcompound1.merge(nbttagcompound);
+                     if (!nbttagcompound1.equals(nbttagcompound2)) {
++                        boolean prevForceLoadState = tileentity.forceLoad; // Paper
++                        tileentity.forceLoad = false; // Paper
+                         tileentity.load(nbttagcompound1);
++                        tileentity.forceLoad = prevForceLoadState; // Paper
+                         tileentity.setChanged();
+                         return true;
+                     }
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/BannerBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/BannerBlockEntity.java
+index c6ce5dc5dafc15f1f12b0ea4c9d55325f6a76529..c5346a7ed0e0edac0b5a639168e00fa9848ebb1f 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/BannerBlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/BannerBlockEntity.java
+@@ -103,7 +103,7 @@ public class BannerBlockEntity extends BlockEntity implements Nameable {
+ 
+         this.itemPatterns = nbt.getList("Patterns", 10);
+         // CraftBukkit start
+-        while (this.itemPatterns.size() > 20) {
++        while (this.itemPatterns.size() > 20 && !this.forceLoad) { // Paper
+             this.itemPatterns.remove(20);
+         }
+         // CraftBukkit end
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/BlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/BlockEntity.java
+index b96d57b0bcf21508f8e03e96b7553eb486fdf212..845b4e79296af5e03876d2c189705a344f24f59b 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/BlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/BlockEntity.java
+@@ -41,6 +41,7 @@ public abstract class BlockEntity {
+     protected final BlockPos worldPosition;
+     protected boolean remove;
+     private BlockState blockState;
++    public boolean forceLoad = true; // Paper
+ 
+     public BlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
+         this.type = type;
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/SignBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/SignBlockEntity.java
+index def4fdd2c7e4f925fa128692a744e5d10ae0203a..477bdd65b67cc300a12dc29f7cae26793b815516 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/SignBlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/SignBlockEntity.java
+@@ -91,7 +91,7 @@ public class SignBlockEntity extends BlockEntity implements CommandSource { // C
+         for (int i = 0; i < 4; ++i) {
+             String s = nbt.getString(SignBlockEntity.RAW_TEXT_FIELD_NAMES[i]);
+             // CraftBukkit start
+-            if (s != null && s.length() > 2048) {
++            if (s != null && s.length() > 2048 && !this.forceLoad) { // Paper
+                 s = "\"\"";
+             }
+ 
