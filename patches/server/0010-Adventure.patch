@@ -2698,7 +2698,7 @@ index b7cb3c94d88b2753fd1fc17c2842607576fd7874..f40d6a0048ad5b3f6e31d83894ee89f5
          @Override
          public CraftMerchant getCraftMerchant() {
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBook.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBook.java
-index ca359cb1ac5f48d4f75d33946fcddedb270407c2..a33dd184ea51df7e59ed08e5e2b0ea4ed9dadff5 100644
+index ca359cb1ac5f48d4f75d33946fcddedb270407c2..0f753f4868141ecc383877ea3a666a383f2e3339 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBook.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBook.java
 @@ -1,8 +1,9 @@
@@ -2724,7 +2724,7 @@ index ca359cb1ac5f48d4f75d33946fcddedb270407c2..a33dd184ea51df7e59ed08e5e2b0ea4e
  import java.util.AbstractList;
  import net.md_5.bungee.api.chat.BaseComponent;
  import net.md_5.bungee.chat.ComponentSerializer;
-@@ -269,6 +272,141 @@ public class CraftMetaBook extends CraftMetaItem implements BookMeta {
+@@ -269,6 +272,145 @@ public class CraftMetaBook extends CraftMetaItem implements BookMeta {
          this.generation = (generation == null) ? null : generation.ordinal();
      }
  
@@ -2816,7 +2816,7 @@ index ca359cb1ac5f48d4f75d33946fcddedb270407c2..a33dd184ea51df7e59ed08e5e2b0ea4e
 +        this.pages = pages.subList(0, Math.min(MAX_PAGES, pages.size())).stream().map(io.papermc.paper.adventure.PaperAdventure.LEGACY_SECTION_UXRC::serialize).collect(java.util.stream.Collectors.toList());
 +    }
 +
-+    static final class CraftMetaBookBuilder implements BookMetaBuilder {
++    static class CraftMetaBookBuilder implements BookMetaBuilder {
 +        private net.kyori.adventure.text.Component title = null;
 +        private net.kyori.adventure.text.Component author = null;
 +        private final List<net.kyori.adventure.text.Component> pages = new java.util.ArrayList<>();
@@ -2853,6 +2853,10 @@ index ca359cb1ac5f48d4f75d33946fcddedb270407c2..a33dd184ea51df7e59ed08e5e2b0ea4e
 +
 +        @Override
 +        public BookMeta build() {
++            return this.build(title, author, pages);
++        }
++
++        protected BookMeta build(net.kyori.adventure.text.Component title, net.kyori.adventure.text.Component author, java.util.List<net.kyori.adventure.text.Component> pages) {
 +            return new CraftMetaBook(title, author, pages);
 +        }
 +    }
@@ -2866,7 +2870,7 @@ index ca359cb1ac5f48d4f75d33946fcddedb270407c2..a33dd184ea51df7e59ed08e5e2b0ea4e
      @Override
      public String getPage(final int page) {
          Validate.isTrue(this.isValidPage(page), "Invalid page number");
-@@ -413,7 +551,7 @@ public class CraftMetaBook extends CraftMetaItem implements BookMeta {
+@@ -413,7 +555,7 @@ public class CraftMetaBook extends CraftMetaItem implements BookMeta {
      }
  
      @Override
@@ -2876,7 +2880,7 @@ index ca359cb1ac5f48d4f75d33946fcddedb270407c2..a33dd184ea51df7e59ed08e5e2b0ea4e
  
          if (this.hasTitle()) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBookSigned.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBookSigned.java
-index 00445fc7373c70f4cecc4114f9bcfb4b6f27c0e8..0cf60eb9b6ba1a79c9b603c4349debd478101f9a 100644
+index 00445fc7373c70f4cecc4114f9bcfb4b6f27c0e8..b132c151e4fb6c64b633a0712100c3ae5adb81a9 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBookSigned.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBookSigned.java
 @@ -1,6 +1,6 @@
@@ -2887,7 +2891,7 @@ index 00445fc7373c70f4cecc4114f9bcfb4b6f27c0e8..0cf60eb9b6ba1a79c9b603c4349debd4
  import java.util.Map;
  import net.minecraft.nbt.CompoundTag;
  import org.bukkit.Material;
-@@ -84,7 +84,7 @@ class CraftMetaBookSigned extends CraftMetaBook implements BookMeta {
+@@ -84,8 +84,29 @@ class CraftMetaBookSigned extends CraftMetaBook implements BookMeta {
      }
  
      @Override
@@ -2896,6 +2900,28 @@ index 00445fc7373c70f4cecc4114f9bcfb4b6f27c0e8..0cf60eb9b6ba1a79c9b603c4349debd4
          super.serialize(builder);
          return builder;
      }
++
++    // Paper start - adventure
++    private CraftMetaBookSigned(net.kyori.adventure.text.Component title, net.kyori.adventure.text.Component author, java.util.List<net.kyori.adventure.text.Component> pages) {
++        super((org.bukkit.craftbukkit.inventory.CraftMetaItem) org.bukkit.Bukkit.getItemFactory().getItemMeta(Material.WRITABLE_BOOK));
++        this.title = title == null ? null : io.papermc.paper.adventure.PaperAdventure.LEGACY_SECTION_UXRC.serialize(title);
++        this.author = author == null ? null : io.papermc.paper.adventure.PaperAdventure.LEGACY_SECTION_UXRC.serialize(author);
++        this.pages = io.papermc.paper.adventure.PaperAdventure.asJson(pages.subList(0, Math.min(MAX_PAGES, pages.size())));
++    }
++
++    static final class CraftMetaBookSignedBuilder extends CraftMetaBookBuilder {
++        @Override
++        protected BookMeta build(net.kyori.adventure.text.Component title, net.kyori.adventure.text.Component author, java.util.List<net.kyori.adventure.text.Component> pages) {
++            return new CraftMetaBookSigned(title, author, pages);
++        }
++    }
++
++    @Override
++    public BookMetaBuilder toBuilder() {
++        return new CraftMetaBookSignedBuilder();
++    }
++    // Paper end
+ }
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
 index a096c9f7fb459200f8d1f2c797a29bc1222c86af..86163b56d10689aa512953c8df869aa45ebac735 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
