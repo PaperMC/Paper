@@ -1,0 +1,96 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Phoenix616 <mail@moep.tv>
+Date: Fri, 23 Jul 2021 19:34:50 +0100
+Subject: [PATCH] Backport Spigot-891 PR
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
+index 0be39dac4b9dd69d7d73d86d64cf1e33e4086e81..3bfb0e2f18d86776d79576e657e0fecefb562ae8 100644
+--- a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
++++ b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
+@@ -15,6 +15,7 @@ import java.util.concurrent.Future;
+ import java.util.concurrent.atomic.AtomicInteger;
+ import java.util.concurrent.atomic.AtomicReference;
+ import java.util.function.Consumer;
++import java.util.function.IntUnaryOperator; // Paper - Backport Spigot-#891
+ import java.util.logging.Level;
+ import com.destroystokyo.paper.ServerSchedulerReportingWrapper;
+ import com.destroystokyo.paper.event.server.ServerExceptionEvent;
+@@ -48,10 +49,26 @@ import org.bukkit.scheduler.BukkitWorker;
+ public class CraftScheduler implements BukkitScheduler {
+ 
+     static Plugin MINECRAFT = new MinecraftInternalPlugin();
++    // Paper start - Backport Spigot-#891
++    /**
++     * The start ID for the counter.
++     */
++    private static final int START_ID = 1;
++    /**
++     * Increment the {@link #ids} field and reset it to the {@link #START_ID} if it reaches {@link Integer#MAX_VALUE}
++     */
++    private static final IntUnaryOperator INCREMENT_IDS = previous -> {
++        // We reached the end, go back to the start!
++        if (previous == Integer.MAX_VALUE) {
++            return START_ID;
++        }
++        return previous + 1;
++    };
++    // Paper end
+     /**
+      * Counter for IDs. Order doesn't matter, only uniqueness.
+      */
+-    private final AtomicInteger ids = new AtomicInteger(1);
++    private final AtomicInteger ids = new AtomicInteger(START_ID); // Paper - Backport Spigot-#891
+     /**
+      * Current head of linked-list. This reference is always stale, {@link CraftTask#next} is the live reference.
+      */
+@@ -70,7 +87,7 @@ public class CraftScheduler implements BukkitScheduler {
+                     int value = Long.compare(o1.getNextRun(), o2.getNextRun());
+ 
+                     // If the tasks should run on the same tick they should be run FIFO
+-                    return value != 0 ? value : Integer.compare(o1.getTaskId(), o2.getTaskId());
++                    return value != 0 ? value : Long.compare(o1.getCreatedAt(), o2.getCreatedAt()); // Paper - Backport Spigot-#891
+                 }
+             });
+     /**
+@@ -539,7 +556,14 @@ public class CraftScheduler implements BukkitScheduler {
+     }
+ 
+     private int nextId() {
+-        return ids.incrementAndGet();
++        // Paper start - Backport Spigot-#891
++        Validate.isTrue(runners.size() < Integer.MAX_VALUE, "There are already " + Integer.MAX_VALUE + " tasks scheduled! Cannot schedule more.");
++        int id;
++        do {
++            id = ids.updateAndGet(INCREMENT_IDS);
++        } while (runners.containsKey(id)); // Avoid generating duplicate IDs
++        return id;
++        // Paper end
+     }
+ 
+     void parsePending() { // Paper
+diff --git a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftTask.java b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftTask.java
+index 3c96807e97657502849093e4371e9fef3584a346..8b4c34282f14f17d4efbddfdc63c49110ba068fe 100644
+--- a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftTask.java
++++ b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftTask.java
+@@ -34,6 +34,7 @@ public class CraftTask implements BukkitTask, Runnable { // Spigot
+     public Timing timings; // Paper
+     private final Plugin plugin;
+     private final int id;
++    private final long createdAt = System.nanoTime(); // Paper - Backport Spigot-#891
+ 
+     CraftTask() {
+         this(null, null, CraftTask.NO_REPEATING, CraftTask.NO_REPEATING);
+@@ -104,6 +105,12 @@ public class CraftTask implements BukkitTask, Runnable { // Spigot
+         } // Paper
+     }
+ 
++    // Paper start - Backport Spigot-#891
++    long getCreatedAt() {
++        return createdAt;
++    }
++    // paper end
++
+     long getPeriod() {
+         return period;
+     }
