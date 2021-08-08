@@ -1,0 +1,82 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: TwoLeggedCat <80929284+TwoLeggedCat@users.noreply.github.com>
+Date: Sat, 7 Aug 2021 21:03:12 -0500
+Subject: [PATCH] Add /paper dumplisteners command
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperCommand.java b/src/main/java/com/destroystokyo/paper/PaperCommand.java
+index ba8395435482fc4d6e02fc86794cdb0d35d4399c..fe3238bb82e6c16c2b6cef9ad60eb9f0087f60e8 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperCommand.java
++++ b/src/main/java/com/destroystokyo/paper/PaperCommand.java
+@@ -10,6 +10,9 @@ import com.google.common.collect.Maps;
+ import com.google.gson.JsonObject;
+ import com.google.gson.internal.Streams;
+ import com.google.gson.stream.JsonWriter;
++import net.kyori.adventure.text.Component;
++import net.kyori.adventure.text.format.NamedTextColor;
++import net.kyori.adventure.text.format.TextColor;
+ import net.minecraft.resources.ResourceLocation;
+ import net.minecraft.server.MCUtil;
+ import net.minecraft.server.MinecraftServer;
+@@ -36,12 +39,15 @@ import org.bukkit.craftbukkit.CraftWorld;
+ import org.bukkit.craftbukkit.entity.CraftPlayer;
+ import org.bukkit.craftbukkit.inventory.CraftItemStack;
+ import org.bukkit.entity.Player;
++import org.bukkit.event.HandlerList;
+ import org.bukkit.inventory.ItemStack;
++import org.bukkit.plugin.RegisteredListener;
+ 
+ import java.io.File;
+ import java.io.FileOutputStream;
+ import java.io.PrintStream;
+ import java.io.StringWriter;
++import java.lang.reflect.InvocationTargetException;
+ import java.time.LocalDateTime;
+ import java.time.format.DateTimeFormatter;
+ import java.util.ArrayDeque;
+@@ -59,7 +65,7 @@ import java.util.stream.Collectors;
+ 
+ public class PaperCommand extends Command {
+     private static final String BASE_PERM = "bukkit.command.paper.";
+-    private static final ImmutableSet<String> SUBCOMMANDS = ImmutableSet.<String>builder().add("heap", "entity", "reload", "version", "debug", "chunkinfo", "fixlight", "syncloadinfo", "dumpitem").build();
++    private static final ImmutableSet<String> SUBCOMMANDS = ImmutableSet.<String>builder().add("heap", "entity", "reload", "version", "debug", "chunkinfo", "fixlight", "syncloadinfo", "dumpitem", "dumplisteners").build();
+ 
+     public PaperCommand(String name) {
+         super(name);
+@@ -183,6 +189,9 @@ public class PaperCommand extends Command {
+             case "syncloadinfo":
+                 this.doSyncLoadInfo(sender, args);
+                 break;
++            case "dumplisteners":
++                this.dumpListeners(sender, args);
++                break;
+             case "ver":
+                 if (!testPermission(sender, "version")) break; // "ver" needs a special check because it's an alias. All other commands are checked up before the switch statement (because they are present in the SUBCOMMANDS set)
+             case "version":
+@@ -241,6 +250,26 @@ public class PaperCommand extends Command {
+         }
+     }
+ 
++    private void dumpListeners(CommandSender sender, String[] args) {
++        if (args.length < 2) {
++            sender.sendMessage(Component.text("Usage: /paper dumplisteners [className]").color(NamedTextColor.RED));
++            return;
++        }
++        Component message = Component.text("Listeners for " + args[1] + ": ");
++        try {
++            HandlerList handlers = (HandlerList) Class.forName(args[1]).getMethod("getHandlerList").invoke(null);
++            for (RegisteredListener listener : handlers.getRegisteredListeners()) {
++                message = message.append(
++                    Component.text(listener.getPlugin().getName())
++                        .color(NamedTextColor.GREEN))
++                    .append(Component.text(", "));
++            }
++            sender.sendMessage(message);
++        } catch (ReflectiveOperationException e) {
++            sender.sendMessage(Component.text("Error: " + e).color(NamedTextColor.RED));
++        }
++    }
++
+     private void doChunkInfo(CommandSender sender, String[] args) {
+         List<org.bukkit.World> worlds;
+         if (args.length < 2 || args[1].equals("*")) {
