@@ -1,14 +1,37 @@
 --- a/net/minecraft/world/level/block/CakeBlock.java
 +++ b/net/minecraft/world/level/block/CakeBlock.java
-@@ -98,7 +98,18 @@
+@@ -66,6 +66,12 @@
+             if (block instanceof CandleBlock) {
+                 CandleBlock candleblock = (CandleBlock) block;
+ 
++                // Paper start - call change block event
++                if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(player, pos, CandleCakeBlock.byCandle(candleblock))) {
++                    player.containerMenu.sendAllDataToRemote(); // update inv because candle could decrease
++                    return InteractionResult.TRY_WITH_EMPTY_HAND;
++                }
++                // Paper end - call change block event
+                 stack.consume(1, player);
+                 world.playSound((Player) null, pos, SoundEvents.CAKE_ADD_CANDLE, SoundSource.BLOCKS, 1.0F, 1.0F);
+                 world.setBlockAndUpdate(pos, CandleCakeBlock.byCandle(candleblock));
+@@ -97,10 +103,29 @@
+         if (!player.canEat(false)) {
              return InteractionResult.PASS;
          } else {
++            // Paper start - call change block event
++            int i = state.getValue(CakeBlock.BITES);
++            final BlockState newState = i < MAX_BITES ? state.setValue(CakeBlock.BITES, i + 1) : world.getFluidState(pos).createLegacyBlock();
++            if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(player, pos, newState)) {
++                ((net.minecraft.server.level.ServerPlayer) player).getBukkitEntity().sendHealthUpdate();
++                return InteractionResult.PASS; // return a non-consume result to cake blocks don't drop their candles
++            }
++            // Paper end - call change block event
              player.awardStat(Stats.EAT_CAKE_SLICE);
 -            player.getFoodData().eat(2, 0.1F);
+-            int i = (Integer) state.getValue(CakeBlock.BITES);
 +            // CraftBukkit start
 +            // entityhuman.getFoodData().eat(2, 0.1F);
 +            int oldFoodLevel = player.getFoodData().foodLevel;
-+
+ 
 +            org.bukkit.event.entity.FoodLevelChangeEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callFoodLevelChangeEvent(player, 2 + oldFoodLevel);
 +
 +            if (!event.isCancelled()) {
@@ -17,6 +40,8 @@
 +
 +            ((net.minecraft.server.level.ServerPlayer) player).getBukkitEntity().sendHealthUpdate();
 +            // CraftBukkit end
-             int i = (Integer) state.getValue(CakeBlock.BITES);
- 
++            // Paper - move up
++
              world.gameEvent((Entity) player, (Holder) GameEvent.EAT, pos);
+             if (i < 6) {
+                 world.setBlock(pos, (BlockState) state.setValue(CakeBlock.BITES, i + 1), 3);

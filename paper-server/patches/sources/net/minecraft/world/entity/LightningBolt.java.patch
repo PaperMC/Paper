@@ -11,6 +11,15 @@
  
  public class LightningBolt extends Entity {
  
+@@ -94,7 +98,7 @@
+                 }
+ 
+                 this.powerLightningRod();
+-                LightningBolt.clearCopperOnLightningStrike(this.level(), this.getStrikePosition());
++                LightningBolt.clearCopperOnLightningStrike(this.level(), this.getStrikePosition(), this); // Paper - Call EntityChangeBlockEvent
+                 this.gameEvent(GameEvent.LIGHTNING_STRIKE);
+             }
+         }
 @@ -120,7 +124,7 @@
                      }
                  }
@@ -59,13 +68,66 @@
                          }
                      }
  
-@@ -247,8 +259,9 @@
+@@ -190,7 +202,7 @@
+ 
+     }
+ 
+-    private static void clearCopperOnLightningStrike(Level world, BlockPos pos) {
++    private static void clearCopperOnLightningStrike(Level world, BlockPos pos, Entity lightning) { // Paper - Call EntityChangeBlockEvent
+         BlockState iblockdata = world.getBlockState(pos);
+         BlockPos blockposition1;
+         BlockState iblockdata1;
+@@ -204,24 +216,29 @@
+         }
+ 
+         if (iblockdata1.getBlock() instanceof WeatheringCopper) {
+-            world.setBlockAndUpdate(blockposition1, WeatheringCopper.getFirst(world.getBlockState(blockposition1)));
++            // Paper start - Call EntityChangeBlockEvent
++            BlockState newBlock = WeatheringCopper.getFirst(world.getBlockState(blockposition1));
++            if (CraftEventFactory.callEntityChangeBlockEvent(lightning, blockposition1, newBlock)) {
++                world.setBlockAndUpdate(blockposition1, newBlock);
++            }
++            // Paper end - Call EntityChangeBlockEvent
+             BlockPos.MutableBlockPos blockposition_mutableblockposition = pos.mutable();
+             int i = world.random.nextInt(3) + 3;
+ 
+             for (int j = 0; j < i; ++j) {
+                 int k = world.random.nextInt(8) + 1;
+ 
+-                LightningBolt.randomWalkCleaningCopper(world, blockposition1, blockposition_mutableblockposition, k);
++                LightningBolt.randomWalkCleaningCopper(world, blockposition1, blockposition_mutableblockposition, k, lightning); // Paper - transmit LightningBolt instance to call EntityChangeBlockEvent
+             }
+ 
+         }
+     }
+ 
+-    private static void randomWalkCleaningCopper(Level world, BlockPos pos, BlockPos.MutableBlockPos mutablePos, int count) {
++    private static void randomWalkCleaningCopper(Level world, BlockPos pos, BlockPos.MutableBlockPos mutablePos, int count, Entity lightning) { // Paper - transmit LightningBolt instance to call EntityChangeBlockEvent
+         mutablePos.set(pos);
+ 
+         for (int j = 0; j < count; ++j) {
+-            Optional<BlockPos> optional = LightningBolt.randomStepCleaningCopper(world, mutablePos);
++            Optional<BlockPos> optional = LightningBolt.randomStepCleaningCopper(world, mutablePos, lightning); // Paper - transmit LightningBolt instance to call EntityChangeBlockEvent
+ 
+             if (optional.isEmpty()) {
+                 break;
+@@ -232,7 +249,7 @@
+ 
+     }
+ 
+-    private static Optional<BlockPos> randomStepCleaningCopper(Level world, BlockPos pos) {
++    private static Optional<BlockPos> randomStepCleaningCopper(Level world, BlockPos pos, Entity lightning) { // Paper - transmit LightningBolt instance to call EntityChangeBlockEvent
+         Iterator iterator = BlockPos.randomInCube(world.random, 10, pos, 1).iterator();
+ 
+         BlockPos blockposition1;
+@@ -247,8 +264,10 @@
              iblockdata = world.getBlockState(blockposition1);
          } while (!(iblockdata.getBlock() instanceof WeatheringCopper));
  
 +        BlockPos blockposition1Final = blockposition1; // CraftBukkit - decompile error
          WeatheringCopper.getPrevious(iblockdata).ifPresent((iblockdata1) -> {
 -            world.setBlockAndUpdate(blockposition1, iblockdata1);
++            if (CraftEventFactory.callEntityChangeBlockEvent(lightning, blockposition1Final, iblockdata1)) // Paper - call EntityChangeBlockEvent
 +            world.setBlockAndUpdate(blockposition1Final, iblockdata1); // CraftBukkit - decompile error
          });
          world.levelEvent(3002, blockposition1, -1);

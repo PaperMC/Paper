@@ -156,12 +156,18 @@
  
                                  if (i < 5) {
                                      int j = world.random.nextInt(100) == 0 ? 2 : 1;
-@@ -211,27 +255,29 @@
+@@ -211,27 +255,35 @@
                                          --j;
                                      }
  
 -                                    world.setBlockAndUpdate(pos, (BlockState) state.setValue(BeehiveBlock.HONEY_LEVEL, i + j));
-+                                    world.setBlockAndUpdate(blockposition, (BlockState) iblockdata.setValue(BeehiveBlock.HONEY_LEVEL, i + j));
++                                    // Paper start - Fire EntityChangeBlockEvent in more places
++                                    BlockState newBlockState = iblockdata.setValue(BeehiveBlock.HONEY_LEVEL, i + j);
++
++                                    if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(entitybee, blockposition, newBlockState)) {
++                                        world.setBlockAndUpdate(blockposition, newBlockState);
++                                    }
++                                    // Paper end - Fire EntityChangeBlockEvent in more places
                                  }
                              }
                          }
@@ -195,7 +201,7 @@
                  } else {
                      return false;
                  }
-@@ -256,6 +302,10 @@
+@@ -256,6 +308,10 @@
                  if (BeehiveBlockEntity.releaseOccupant(world, pos, state, tileentitybeehive_hivebee.toOccupant(), (List) null, tileentitybeehive_releasestatus, flowerPos)) {
                      flag = true;
                      iterator.remove();
@@ -206,7 +212,7 @@
                  }
              }
          }
-@@ -282,7 +332,7 @@
+@@ -282,7 +338,7 @@
      @Override
      protected void loadAdditional(CompoundTag nbt, HolderLookup.Provider registries) {
          super.loadAdditional(nbt, registries);
@@ -215,7 +221,7 @@
          if (nbt.contains("bees")) {
              BeehiveBlockEntity.Occupant.LIST_CODEC.parse(NbtOps.INSTANCE, nbt.get("bees")).resultOrPartial((s) -> {
                  BeehiveBlockEntity.LOGGER.error("Failed to parse bees: '{}'", s);
-@@ -291,7 +341,12 @@
+@@ -291,7 +347,12 @@
              });
          }
  
@@ -229,7 +235,7 @@
      }
  
      @Override
-@@ -301,13 +356,14 @@
+@@ -301,13 +362,14 @@
          if (this.hasSavedFlowerPos()) {
              nbt.put("flower_pos", NbtUtils.writeBlockPos(this.savedFlowerPos));
          }
@@ -245,7 +251,7 @@
          List<BeehiveBlockEntity.Occupant> list = (List) components.getOrDefault(DataComponents.BEES, List.of());
  
          list.forEach(this::storeBee);
-@@ -348,7 +404,7 @@
+@@ -348,7 +410,7 @@
              CompoundTag nbttagcompound = new CompoundTag();
  
              entity.save(nbttagcompound);
@@ -254,7 +260,7 @@
  
              Objects.requireNonNull(nbttagcompound);
              list.forEach(nbttagcompound::remove);
-@@ -367,7 +423,7 @@
+@@ -367,7 +429,7 @@
          @Nullable
          public Entity createEntity(Level world, BlockPos pos) {
              CompoundTag nbttagcompound = this.entityData.copyTag();
@@ -263,7 +269,7 @@
  
              Objects.requireNonNull(nbttagcompound);
              list.forEach(nbttagcompound::remove);
-@@ -391,6 +447,7 @@
+@@ -391,6 +453,7 @@
          }
  
          private static void setBeeReleaseData(int ticksInHive, Bee beeEntity) {
@@ -271,7 +277,7 @@
              int j = beeEntity.getAge();
  
              if (j < 0) {
-@@ -400,6 +457,7 @@
+@@ -400,6 +463,7 @@
              }
  
              beeEntity.setInLoveTime(Math.max(0, beeEntity.getInLoveTime() - ticksInHive));

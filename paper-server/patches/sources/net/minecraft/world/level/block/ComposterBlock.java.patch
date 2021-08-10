@@ -11,23 +11,40 @@
  
  public class ComposterBlock extends Block implements WorldlyContainerHolder {
  
-@@ -269,7 +273,14 @@
+@@ -241,6 +245,11 @@
+         if (i < 8 && ComposterBlock.COMPOSTABLES.containsKey(stack.getItem())) {
+             if (i < 7 && !world.isClientSide) {
+                 BlockState iblockdata1 = ComposterBlock.addItem(player, state, world, pos, stack);
++                // Paper start - handle cancelled events
++                if (iblockdata1 == null) {
++                    return InteractionResult.PASS;
++                }
++                // Paper end
+ 
+                 world.levelEvent(1500, pos, state != iblockdata1 ? 1 : 0);
+                 player.awardStat(Stats.ITEM_USED.get(stack.getItem()));
+@@ -269,7 +278,19 @@
          int i = (Integer) state.getValue(ComposterBlock.LEVEL);
  
          if (i < 7 && ComposterBlock.COMPOSTABLES.containsKey(stack.getItem())) {
 -            BlockState iblockdata1 = ComposterBlock.addItem(user, state, world, pos, stack);
 +            // CraftBukkit start
 +            double rand = world.getRandom().nextDouble();
-+            BlockState iblockdata1 = ComposterBlock.addItem(user, state, DummyGeneratorAccess.INSTANCE, pos, stack, rand);
-+            if (state == iblockdata1 || !org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(user, pos, iblockdata1)) {
++            BlockState iblockdata1 = null; // Paper
++            if (false && (state == iblockdata1 || !org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(user, pos, iblockdata1))) { // Paper - move event call into addItem
 +                return state;
 +            }
 +            iblockdata1 = ComposterBlock.addItem(user, state, world, pos, stack, rand);
++            // Paper start - handle cancelled events
++            if (iblockdata1 == null) {
++                return state;
++            }
++            // Paper end
 +            // CraftBukkit end
  
              stack.shrink(1);
              return iblockdata1;
-@@ -279,6 +290,14 @@
+@@ -279,6 +300,14 @@
      }
  
      public static BlockState extractProduce(Entity user, BlockState state, Level world, BlockPos pos) {
@@ -42,9 +59,11 @@
          if (!world.isClientSide) {
              Vec3 vec3d = Vec3.atLowerCornerWithOffset(pos, 0.5D, 1.01D, 0.5D).offsetRandom(world.random, 0.7F);
              ItemEntity entityitem = new ItemEntity(world, vec3d.x(), vec3d.y(), vec3d.z(), new ItemStack(Items.BONE_MEAL));
-@@ -302,19 +321,25 @@
+@@ -301,20 +330,33 @@
+         return iblockdata1;
      }
  
++    @Nullable // Paper
      static BlockState addItem(@Nullable Entity user, BlockState state, LevelAccessor world, BlockPos pos, ItemStack stack) {
 -        int i = (Integer) state.getValue(ComposterBlock.LEVEL);
 -        float f = ComposterBlock.COMPOSTABLES.getFloat(stack.getItem());
@@ -54,6 +73,7 @@
  
 -        if ((i != 0 || f <= 0.0F) && world.getRandom().nextDouble() >= (double) f) {
 -            return state;
++    @Nullable // Paper - make it nullable
 +    static BlockState addItem(@Nullable Entity entity, BlockState iblockdata, LevelAccessor generatoraccess, BlockPos blockposition, ItemStack itemstack, double rand) {
 +        // CraftBukkit end
 +        int i = (Integer) iblockdata.getValue(ComposterBlock.LEVEL);
@@ -65,6 +85,11 @@
              int j = i + 1;
 -            BlockState iblockdata1 = (BlockState) state.setValue(ComposterBlock.LEVEL, j);
 +            BlockState iblockdata1 = (BlockState) iblockdata.setValue(ComposterBlock.LEVEL, j);
++            // Paper start - move the EntityChangeBlockEvent here to avoid conflict later for the compost events
++            if (entity != null && !org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(entity, blockposition, iblockdata1)) {
++                return null;
++            }
++            // Paper end
  
 -            world.setBlock(pos, iblockdata1, 3);
 -            world.gameEvent((Holder) GameEvent.BLOCK_CHANGE, pos, GameEvent.Context.of(user, iblockdata1));
@@ -76,7 +101,7 @@
              }
  
              return iblockdata1;
-@@ -354,7 +379,8 @@
+@@ -354,7 +396,8 @@
      public WorldlyContainer getContainer(BlockState state, LevelAccessor world, BlockPos pos) {
          int i = (Integer) state.getValue(ComposterBlock.LEVEL);
  
@@ -86,7 +111,7 @@
      }
  
      public static class OutputContainer extends SimpleContainer implements WorldlyContainer {
-@@ -369,6 +395,7 @@
+@@ -369,6 +412,7 @@
              this.state = state;
              this.level = world;
              this.pos = pos;
@@ -94,7 +119,7 @@
          }
  
          @Override
-@@ -393,8 +420,15 @@
+@@ -393,8 +437,15 @@
  
          @Override
          public void setChanged() {
@@ -110,7 +135,7 @@
          }
      }
  
-@@ -407,6 +441,7 @@
+@@ -407,6 +458,7 @@
  
          public InputContainer(BlockState state, LevelAccessor world, BlockPos pos) {
              super(1);
@@ -118,7 +143,7 @@
              this.state = state;
              this.level = world;
              this.pos = pos;
-@@ -449,8 +484,9 @@
+@@ -449,8 +501,9 @@
  
      public static class EmptyContainer extends SimpleContainer implements WorldlyContainer {
  

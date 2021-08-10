@@ -120,7 +120,7 @@ public class DummyGeneratorAccess implements WorldGenLevel {
 
     @Override
     public void gameEvent(Holder<GameEvent> event, Vec3 emitterPos, GameEvent.Context emitter) {
-        // Used by BlockComposter
+        // Used by ComposterBlock
     }
 
     @Override
