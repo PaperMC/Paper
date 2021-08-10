@@ -1,0 +1,174 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: VADemon <vad@syping.de>
+Date: Tue, 10 Aug 2021 05:50:23 +0100
+Subject: [PATCH] Add HalloweenChecker to optimize mob spawns
+
+Affected mobs: Zombies, Bats and SkeletonAbstract
+By default Minecraft checks on every spawn attempt whether it's "halloween time", it's probably not. This patch keeps track of the next upcoming date to schedule the toggle at the right time, using logarithmic back-off.
+Both Halloween-Season checks are reduced to boolean comparisons.
+
+diff --git a/src/main/java/io/papermc/paper/util/HalloweenChecker.java b/src/main/java/io/papermc/paper/util/HalloweenChecker.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..fa062d8333a85c4ee0da37d03e321d5f15e84d6f
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/util/HalloweenChecker.java
+@@ -0,0 +1,91 @@
++package io.papermc.paper.util;
++
++import java.time.LocalDate;
++import java.time.LocalDateTime;
++import java.time.temporal.ChronoUnit;
++import net.minecraft.server.MinecraftServer;
++
++public class HalloweenChecker {
++    private static boolean isHalloweenSeason = false;
++    private static int nextCheckTick = 0;
++    private static LocalDate nextThreshold = LocalDate.now();
++
++    /**
++     * Check if we are currently in Halloween season.
++     * @return If we are currently in Halloween season
++     */
++    public static boolean isHalloweenSeason() {
++        if (MinecraftServer.currentTick > nextCheckTick) {
++            LocalDateTime timeNow = LocalDateTime.now();
++
++            if (!timeNow.isBefore(nextThreshold.atTime(0,0,0))) {
++                StatusTuple result = computeNextThreshold(timeNow.toLocalDate());
++                nextThreshold = result.nextThreshold;
++                result.currentStatus.setSeason();
++            }
++            // I wrote logic assuming LocalDate would compute using 00:00:00 for time
++            int time = (int) timeNow.until(nextThreshold.atTime(0,0,0), ChronoUnit.SECONDS);
++
++            // add half of the duration, in ticks
++            nextCheckTick += time * (MinecraftServer.TPS/2);
++        }
++        return isHalloweenSeason;
++    }
++
++    private enum SeasonDate {
++        SEASON_START(10, 20, true),
++        SEASON_END(11, 4, false);
++
++        private final int month;
++        private final int day;
++        private final boolean isSeason;
++
++        private int getMonth() {
++            return month;
++        }
++
++        private int getDay() {
++            return day;
++        }
++
++        private SeasonDate(int month, int day, boolean isSeason) {
++            this.month = month;
++            this.day = day;
++            this.isSeason = isSeason;
++        }
++
++        private void setSeason() {
++            HalloweenChecker.isHalloweenSeason = this.isSeason;
++        }
++    }
++
++    private static class StatusTuple {
++        private SeasonDate currentStatus;
++        private LocalDate nextThreshold;
++    
++        private StatusTuple(SeasonDate currentStatus, LocalDate nextThreshold) {
++            this.currentStatus = currentStatus;
++            this.nextThreshold = nextThreshold;
++        }
++    }
++
++    private static StatusTuple computeNextThreshold(LocalDate currentDate) {
++        SeasonDate lastN = SeasonDate.SEASON_END;
++
++        for (SeasonDate date : SeasonDate.values()) {
++            LocalDate nextDate = LocalDate.of(currentDate.getYear(), date.getMonth(), date.getDay());
++            
++            // the first init date is always .now() - the value gets set, or updated
++            if (nextThreshold.isBefore(nextDate)) return new StatusTuple(lastN, nextDate);
++            // if fell through, keep checking later dates
++            lastN = date;
++        }
++
++        // We're past the Halloween season
++        return new StatusTuple(
++            SeasonDate.SEASON_END,
++            LocalDate.of(currentDate.getYear()+1,
++                    SeasonDate.SEASON_START.getMonth(), SeasonDate.SEASON_START.getDay())
++        );
++    }
++}
+\ No newline at end of file
+diff --git a/src/main/java/net/minecraft/world/entity/ambient/Bat.java b/src/main/java/net/minecraft/world/entity/ambient/Bat.java
+index 153194d937d210e2e4fd8864e4a3c000f85d7e2e..105fc0408f6f6d5b17ee502e76547571dd22c9d3 100644
+--- a/src/main/java/net/minecraft/world/entity/ambient/Bat.java
++++ b/src/main/java/net/minecraft/world/entity/ambient/Bat.java
+@@ -241,7 +241,7 @@ public class Bat extends AmbientCreature {
+         if (pos.getY() >= world.getSeaLevel()) {
+             return false;
+         } else {
+-            int i = world.getMaxLocalRawBrightness(pos);
++            //int i = world.getMaxLocalRawBrightness(pos); // Paper - Moved down
+             byte b0 = 4;
+ 
+             if (Bat.isHalloween()) {
+@@ -249,17 +249,14 @@ public class Bat extends AmbientCreature {
+             } else if (random.nextBoolean()) {
+                 return false;
+             }
++            int i = world.getMaxLocalRawBrightness(pos); // Paper
+ 
+             return i > random.nextInt(b0) ? false : checkMobSpawnRules(type, world, spawnReason, pos, random);
+         }
+     }
+ 
+     private static boolean isHalloween() {
+-        LocalDate localdate = LocalDate.now();
+-        int i = localdate.get(ChronoField.DAY_OF_MONTH);
+-        int j = localdate.get(ChronoField.MONTH_OF_YEAR);
+-
+-        return j == 10 && i >= 20 || j == 11 && i <= 3;
++        return io.papermc.paper.util.HalloweenChecker.isHalloweenSeason(); // Paper
+     }
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/entity/monster/AbstractSkeleton.java b/src/main/java/net/minecraft/world/entity/monster/AbstractSkeleton.java
+index cd75f895b6818fbb7ed4b0ef3df873f264bb2d1b..bcffdc73886f5dadc6deea6ecf4595802101c04f 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/AbstractSkeleton.java
++++ b/src/main/java/net/minecraft/world/entity/monster/AbstractSkeleton.java
+@@ -156,11 +156,7 @@ public abstract class AbstractSkeleton extends Monster implements RangedAttackMo
+         this.reassessWeaponGoal();
+         this.setCanPickUpLoot(this.level.paperConfig.skeletonsAlwaysCanPickUpLoot || this.random.nextFloat() < 0.55F * difficulty.getSpecialMultiplier()); // Paper
+         if (this.getItemBySlot(EquipmentSlot.HEAD).isEmpty()) {
+-            LocalDate localdate = LocalDate.now();
+-            int i = localdate.get(ChronoField.DAY_OF_MONTH);
+-            int j = localdate.get(ChronoField.MONTH_OF_YEAR);
+-
+-            if (j == 10 && i == 31 && this.random.nextFloat() < 0.25F) {
++            if (io.papermc.paper.util.HalloweenChecker.isHalloweenSeason() && this.random.nextFloat() < 0.25F) { // Paper
+                 this.setItemSlot(EquipmentSlot.HEAD, new ItemStack(this.random.nextFloat() < 0.1F ? Blocks.JACK_O_LANTERN : Blocks.CARVED_PUMPKIN));
+                 this.armorDropChances[EquipmentSlot.HEAD.getIndex()] = 0.0F;
+             }
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Zombie.java b/src/main/java/net/minecraft/world/entity/monster/Zombie.java
+index 6408e158745c20ab449c44a28420bc9b28e1efac..76a549ce21616ad09af7e2d0af179cd63ef24fed 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Zombie.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Zombie.java
+@@ -539,11 +539,7 @@ public class Zombie extends Monster {
+         }
+ 
+         if (this.getItemBySlot(EquipmentSlot.HEAD).isEmpty()) {
+-            LocalDate localdate = LocalDate.now();
+-            int i = localdate.get(ChronoField.DAY_OF_MONTH);
+-            int j = localdate.get(ChronoField.MONTH_OF_YEAR);
+-
+-            if (j == 10 && i == 31 && this.random.nextFloat() < 0.25F) {
++            if (io.papermc.paper.util.HalloweenChecker.isHalloweenSeason() && this.random.nextFloat() < 0.25F) { // Paper
+                 this.setItemSlot(EquipmentSlot.HEAD, new ItemStack(this.random.nextFloat() < 0.1F ? Blocks.JACK_O_LANTERN : Blocks.CARVED_PUMPKIN));
+                 this.armorDropChances[EquipmentSlot.HEAD.getIndex()] = 0.0F;
+             }
