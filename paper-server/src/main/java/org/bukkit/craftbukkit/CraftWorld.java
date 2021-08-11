@@ -1877,6 +1877,51 @@ public class CraftWorld implements World {
     }
 
     @Override
+    public int getLogicalHeight() {
+        return world.getDimensionManager().getLogicalHeight();
+    }
+
+    @Override
+    public boolean isNatural() {
+        return world.getDimensionManager().isNatural();
+    }
+
+    @Override
+    public boolean isBedWorks() {
+        return world.getDimensionManager().isBedWorks();
+    }
+
+    @Override
+    public boolean hasSkyLight() {
+        return world.getDimensionManager().hasSkyLight();
+    }
+
+    @Override
+    public boolean hasCeiling() {
+        return world.getDimensionManager().hasCeiling();
+    }
+
+    @Override
+    public boolean isPiglinSafe() {
+        return world.getDimensionManager().isPiglinSafe();
+    }
+
+    @Override
+    public boolean isRespawnAnchorWorks() {
+        return world.getDimensionManager().isRespawnAnchorWorks();
+    }
+
+    @Override
+    public boolean hasRaids() {
+        return world.getDimensionManager().hasRaids();
+    }
+
+    @Override
+    public boolean isUltraWarm() {
+        return world.getDimensionManager().isNether();
+    }
+
+    @Override
     public int getSeaLevel() {
         return world.getSeaLevel();
     }
