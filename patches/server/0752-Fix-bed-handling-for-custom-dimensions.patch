@@ -1,14 +1,14 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Doc <nachito94@msn.com>
 Date: Fri, 6 Aug 2021 11:23:13 -0400
-Subject: [PATCH] Handle bed explosion correctly
+Subject: [PATCH] Fix bed handling for custom dimensions
 
 
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-index 82eaf3bd7332b173197d81eaebdf58c6f43d6a23..bf3bcdcd1a7851c7dfe83ce6acda5b8d5f7ef152 100644
+index 065589d43d411d1bde9f91594bfe7cdc6ff210a0..4668bcdaa08bbb0b01010408834e707d2ed058ab 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-@@ -1253,7 +1253,7 @@ public class ServerPlayer extends Player {
+@@ -1231,7 +1231,7 @@ public class ServerPlayer extends Player {
      // CraftBukkit start - moved bed result checks from below into separate method
      private Either<Player.BedSleepingProblem, Unit> getBedResult(BlockPos blockposition, Direction enumdirection) {
          if (!this.isSleeping() && this.isAlive()) {
@@ -18,7 +18,7 @@ index 82eaf3bd7332b173197d81eaebdf58c6f43d6a23..bf3bcdcd1a7851c7dfe83ce6acda5b8d
              } else if (!this.bedInRange(blockposition, enumdirection)) {
                  return Either.left(Player.BedSleepingProblem.TOO_FAR_AWAY);
 diff --git a/src/main/java/net/minecraft/world/level/block/BedBlock.java b/src/main/java/net/minecraft/world/level/block/BedBlock.java
-index 163a7861f987c3832aac51cc6df950c768546731..4139567dc1514a27394a0b35d697668468aebc13 100644
+index 163a7861f987c3832aac51cc6df950c768546731..110415afe81ed239599ba85e2dcdc5992cead1f5 100644
 --- a/src/main/java/net/minecraft/world/level/block/BedBlock.java
 +++ b/src/main/java/net/minecraft/world/level/block/BedBlock.java
 @@ -113,7 +113,8 @@ public class BedBlock extends HorizontalDirectionalBlock implements EntityBlock
@@ -26,8 +26,8 @@ index 163a7861f987c3832aac51cc6df950c768546731..4139567dc1514a27394a0b35d6976684
                      // Paper start - PlayerBedFailEnterEvent
                      if (entityhuman_enumbedresult != null) {
 -                        io.papermc.paper.event.player.PlayerBedFailEnterEvent event = new io.papermc.paper.event.player.PlayerBedFailEnterEvent((org.bukkit.entity.Player) player.getBukkitEntity(), io.papermc.paper.event.player.PlayerBedFailEnterEvent.FailReason.VALUES[entityhuman_enumbedresult.ordinal()], org.bukkit.craftbukkit.block.CraftBlock.at(world, finalblockposition), entityhuman_enumbedresult == Player.BedSleepingProblem.NOT_POSSIBLE_HERE, io.papermc.paper.adventure.PaperAdventure.asAdventure(entityhuman_enumbedresult.getMessage()));
-+                        boolean bedWillExplode = entityhuman_enumbedresult == Player.BedSleepingProblem.NOT_POSSIBLE_HERE && !world.dimensionType().bedWorks(); // Paper Handle explode flag
-+                        io.papermc.paper.event.player.PlayerBedFailEnterEvent event = new io.papermc.paper.event.player.PlayerBedFailEnterEvent((org.bukkit.entity.Player) player.getBukkitEntity(), io.papermc.paper.event.player.PlayerBedFailEnterEvent.FailReason.VALUES[entityhuman_enumbedresult.ordinal()], org.bukkit.craftbukkit.block.CraftBlock.at(world, finalblockposition), bedWillExplode, io.papermc.paper.adventure.PaperAdventure.asAdventure(entityhuman_enumbedresult.getMessage()));
++                        boolean bedWillExplode = !world.dimensionType().bedWorks(); // Paper - Handle explode flag
++                        io.papermc.paper.event.player.PlayerBedFailEnterEvent event = new io.papermc.paper.event.player.PlayerBedFailEnterEvent((org.bukkit.entity.Player) player.getBukkitEntity(), io.papermc.paper.event.player.PlayerBedFailEnterEvent.FailReason.VALUES[entityhuman_enumbedresult.ordinal()], org.bukkit.craftbukkit.block.CraftBlock.at(world, finalblockposition), bedWillExplode, io.papermc.paper.adventure.PaperAdventure.asAdventure(entityhuman_enumbedresult.getMessage())); // Paper
                          if (!event.callEvent()) {
                              return;
                          }
