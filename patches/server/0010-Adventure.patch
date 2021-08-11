@@ -498,10 +498,10 @@ index 0000000000000000000000000000000000000000..eeedc30a45d9637d68f04f185b3dd90d
 +}
 diff --git a/src/main/java/io/papermc/paper/adventure/PaperAdventure.java b/src/main/java/io/papermc/paper/adventure/PaperAdventure.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..f63b80a1120b2bf5f77f1c1edb928309a1272f79
+index 0000000000000000000000000000000000000000..7454a71ac6fa5745a353fbbe6becbdc20487fd3c
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/adventure/PaperAdventure.java
-@@ -0,0 +1,370 @@
+@@ -0,0 +1,384 @@
 +package io.papermc.paper.adventure;
 +
 +import com.mojang.brigadier.exceptions.CommandSyntaxException;
@@ -521,6 +521,7 @@ index 0000000000000000000000000000000000000000..f63b80a1120b2bf5f77f1c1edb928309
 +import net.kyori.adventure.text.TranslatableComponent;
 +import net.kyori.adventure.text.flattener.ComponentFlattener;
 +import net.kyori.adventure.text.format.TextColor;
++import net.kyori.adventure.text.format.TextDecoration;
 +import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
 +import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 +import net.kyori.adventure.text.serializer.plain.PlainComponentSerializer;
@@ -870,6 +871,19 @@ index 0000000000000000000000000000000000000000..f63b80a1120b2bf5f77f1c1edb928309
 +
 +    public static @Nullable ChatFormatting asVanilla(TextColor color) {
 +        return ChatFormatting.getByHexValue(color.value());
++    }
++
++    // Decorations
++
++    public static @Nullable TextDecoration asAdventureDecoration(ChatFormatting minecraftDecoration) {
++        if (!minecraftDecoration.isFormat()) {
++            throw new IllegalArgumentException("Not a valid decoration");
++        }
++        return (minecraftDecoration == ChatFormatting.UNDERLINE) ? TextDecoration.UNDERLINED : TextDecoration.NAMES.value(minecraftDecoration.name());
++    }
++
++    public static @Nullable ChatFormatting asVanilla(TextDecoration decoration) {
++        return (decoration == TextDecoration.UNDERLINED) ? ChatFormatting.UNDERLINE : ChatFormatting.getByName(TextDecoration.NAMES.key(decoration));
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/adventure/VanillaBossBarListener.java b/src/main/java/io/papermc/paper/adventure/VanillaBossBarListener.java
@@ -3176,10 +3190,10 @@ index 589cb3bebb4bb193477cc5064c66830eec3e9138..68aa66c340b7a686a353e2a15084d811
  
      @Override
 diff --git a/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftTeam.java b/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftTeam.java
-index 81f16dc1ed6e102af298600db75cab21a09bc00f..f86776aa42bd5520f8aaeaa46bb93ec4d5b4e27d 100644
+index 81f16dc1ed6e102af298600db75cab21a09bc00f..fa6e059b163d1b4dd13bfe17d2da768815e131c6 100644
 --- a/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftTeam.java
 +++ b/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftTeam.java
-@@ -28,6 +28,55 @@ final class CraftTeam extends CraftScoreboardComponent implements Team {
+@@ -28,6 +28,67 @@ final class CraftTeam extends CraftScoreboardComponent implements Team {
  
          return this.team.getName();
      }
@@ -3220,16 +3234,28 @@ index 81f16dc1ed6e102af298600db75cab21a09bc00f..f86776aa42bd5520f8aaeaa46bb93ec4
 +    @Override
 +    public net.kyori.adventure.text.format.TextColor color() throws IllegalStateException {
 +        CraftScoreboard scoreboard = checkState();
-+        if (team.getColor().getColor() == null) throw new IllegalStateException("Team colors must have hex values");
++        if (team.getColor().getColor() == null) return null;
 +        net.kyori.adventure.text.format.TextColor color = net.kyori.adventure.text.format.TextColor.color(team.getColor().getColor());
 +        if (!(color instanceof net.kyori.adventure.text.format.NamedTextColor)) throw new IllegalStateException("Team doesn't have a NamedTextColor");
 +        return (net.kyori.adventure.text.format.NamedTextColor) color;
 +    }
 +    @Override
 +    public void color(net.kyori.adventure.text.format.NamedTextColor color) {
-+        if (color == null) color = net.kyori.adventure.text.format.NamedTextColor.WHITE;
 +        CraftScoreboard scoreboard = checkState();
++        if (color == null) { team.setColor(net.minecraft.ChatFormatting.RESET); return; }
 +        team.setColor(io.papermc.paper.adventure.PaperAdventure.asVanilla(color));
++    }
++    @Override
++    public net.kyori.adventure.text.format.TextDecoration decoration() throws IllegalStateException {
++        CraftScoreboard scoreboard = checkState();
++        if (!team.getColor().isFormat()) return null;
++        return io.papermc.paper.adventure.PaperAdventure.asAdventureDecoration(team.getColor());
++    }
++    @Override
++    public void decoration(net.kyori.adventure.text.format.TextDecoration decoration) throws IllegalStateException {
++        CraftScoreboard scoreboard = checkState();
++        if (decoration == null) { team.setColor(net.minecraft.ChatFormatting.RESET); return; }
++        team.setColor(io.papermc.paper.adventure.PaperAdventure.asVanilla(decoration));
 +    }
 +    // Paper end
  

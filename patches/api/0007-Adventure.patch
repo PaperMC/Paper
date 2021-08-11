@@ -3650,10 +3650,10 @@ index d283f6947d775a3bc3a9b2f75db9ab733d819a06..93089ce61d2e1888df13b7c9629a79cd
  
      /**
 diff --git a/src/main/java/org/bukkit/scoreboard/Team.java b/src/main/java/org/bukkit/scoreboard/Team.java
-index 0db7fe1b9fe5621ceed3f4f046691e359f5949dd..30fce0df75494eb9b7409f08ea3d6ff894f7c79f 100644
+index 0db7fe1b9fe5621ceed3f4f046691e359f5949dd..784dab065e26133b36083f37e5e71bded7f8cb11 100644
 --- a/src/main/java/org/bukkit/scoreboard/Team.java
 +++ b/src/main/java/org/bukkit/scoreboard/Team.java
-@@ -22,14 +22,95 @@ public interface Team {
+@@ -22,14 +22,120 @@ public interface Team {
       */
      @NotNull
      String getName() throws IllegalStateException;
@@ -3720,21 +3720,46 @@ index 0db7fe1b9fe5621ceed3f4f046691e359f5949dd..30fce0df75494eb9b7409f08ea3d6ff8
 +     * This only sets the team outline, other occurrences of colors such as in
 +     * names are handled by prefixes / suffixes.
 +     *
-+     * @return team color, defaults to {@link ChatColor#RESET}
++     * @return team color, defaults to null if no color or using a {@link net.kyori.adventure.text.format.TextDecoration}
 +     * @throws IllegalStateException if this team has been unregistered
 +     */
-+    @NotNull net.kyori.adventure.text.format.TextColor color() throws IllegalStateException;
++    @Nullable net.kyori.adventure.text.format.TextColor color() throws IllegalStateException;
 +
 +    /**
 +     * Sets the color of the team.
 +     * <br>
 +     * This only sets the team outline, other occurrences of colors such as in
 +     * names are handled by prefixes / suffixes.
++     * This will override {@link #decoration(net.kyori.adventure.text.format.TextDecoration)} as both cannot be applied at the same time.
 +     *
-+     * @param color new color, must be non-null. Use {@link ChatColor#RESET} for
++     * @param color new color, must be non-null. Use null for
 +     * no color
++     * @throws IllegalStateException if this team has been unregistered
 +     */
-+    void color(@Nullable net.kyori.adventure.text.format.NamedTextColor color);
++    void color(@Nullable net.kyori.adventure.text.format.NamedTextColor color) throws IllegalStateException;
++
++    /**
++     * Gets the decoration of the team.
++     * <br>
++     * This only sets the team outline, other occurrences of decorations such as in
++     * names are handled by prefixes / suffixes.
++     *
++     * @return team decoration, defaults to null if no decoration or using a {@link net.kyori.adventure.text.format.TextColor}
++     * @throws IllegalStateException if this team has been unregistered
++     */
++    @Nullable net.kyori.adventure.text.format.TextDecoration decoration() throws IllegalStateException;
++
++    /**
++     * Sets the decoration of the team.
++     * <br>
++     * This only sets the team outline, other occurrences of decorations such as in
++     * names are handled by prefixes / suffixes.
++     * This will override {@link #color(net.kyori.adventure.text.format.NamedTextColor)} as both cannot be applied at the same time.
++     *
++     * @param decoration new decoration. Use null for no decoration
++     * @throws IllegalStateException if this team has been unregistered
++     */
++    void decoration(@Nullable net.kyori.adventure.text.format.TextDecoration decoration) throws IllegalStateException;
 +    // Paper end
  
      /**
@@ -3749,7 +3774,7 @@ index 0db7fe1b9fe5621ceed3f4f046691e359f5949dd..30fce0df75494eb9b7409f08ea3d6ff8
      String getDisplayName() throws IllegalStateException;
  
      /**
-@@ -39,7 +120,9 @@ public interface Team {
+@@ -39,7 +145,9 @@ public interface Team {
       * @throws IllegalArgumentException if displayName is longer than 128
       *     characters.
       * @throws IllegalStateException if this team has been unregistered
@@ -3759,7 +3784,7 @@ index 0db7fe1b9fe5621ceed3f4f046691e359f5949dd..30fce0df75494eb9b7409f08ea3d6ff8
      void setDisplayName(@NotNull String displayName) throws IllegalStateException, IllegalArgumentException;
  
      /**
-@@ -47,8 +130,10 @@ public interface Team {
+@@ -47,8 +155,10 @@ public interface Team {
       *
       * @return Team prefix
       * @throws IllegalStateException if this team has been unregistered
@@ -3770,7 +3795,7 @@ index 0db7fe1b9fe5621ceed3f4f046691e359f5949dd..30fce0df75494eb9b7409f08ea3d6ff8
      String getPrefix() throws IllegalStateException;
  
      /**
-@@ -59,7 +144,9 @@ public interface Team {
+@@ -59,7 +169,9 @@ public interface Team {
       * @throws IllegalArgumentException if prefix is longer than 64
       *     characters
       * @throws IllegalStateException if this team has been unregistered
@@ -3780,7 +3805,7 @@ index 0db7fe1b9fe5621ceed3f4f046691e359f5949dd..30fce0df75494eb9b7409f08ea3d6ff8
      void setPrefix(@NotNull String prefix) throws IllegalStateException, IllegalArgumentException;
  
      /**
-@@ -67,8 +154,10 @@ public interface Team {
+@@ -67,8 +179,10 @@ public interface Team {
       *
       * @return the team's current suffix
       * @throws IllegalStateException if this team has been unregistered
@@ -3791,7 +3816,7 @@ index 0db7fe1b9fe5621ceed3f4f046691e359f5949dd..30fce0df75494eb9b7409f08ea3d6ff8
      String getSuffix() throws IllegalStateException;
  
      /**
-@@ -79,7 +168,9 @@ public interface Team {
+@@ -79,7 +193,9 @@ public interface Team {
       * @throws IllegalArgumentException if suffix is longer than 64
       *     characters
       * @throws IllegalStateException if this team has been unregistered
@@ -3801,27 +3826,30 @@ index 0db7fe1b9fe5621ceed3f4f046691e359f5949dd..30fce0df75494eb9b7409f08ea3d6ff8
      void setSuffix(@NotNull String suffix) throws IllegalStateException, IllegalArgumentException;
  
      /**
-@@ -90,8 +181,10 @@ public interface Team {
+@@ -90,8 +206,10 @@ public interface Team {
       *
       * @return team color, defaults to {@link ChatColor#RESET}
       * @throws IllegalStateException if this team has been unregistered
-+     * @deprecated in favour of {@link #color()}
++     * @deprecated in favour of {@link #color()} in conjunction with {@link #decoration()}
       */
      @NotNull
 +    @Deprecated // Paper
      ChatColor getColor() throws IllegalStateException;
  
      /**
-@@ -102,7 +195,9 @@ public interface Team {
+@@ -102,8 +220,11 @@ public interface Team {
       *
       * @param color new color, must be non-null. Use {@link ChatColor#RESET} for
       * no color
-+     * @deprecated in favour of {@link #color(net.kyori.adventure.text.format.NamedTextColor)}
++     * @throws IllegalStateException if this team has been unregistered
++     * @deprecated in favour of {@link #color(net.kyori.adventure.text.format.NamedTextColor)} or {@link #decoration(net.kyori.adventure.text.format.TextDecoration)}
       */
+-    void setColor(@NotNull ChatColor color);
 +    @Deprecated // Paper
-     void setColor(@NotNull ChatColor color);
++    void setColor(@NotNull ChatColor color) throws IllegalStateException; // Paper - add IllegalStateException to throws
  
      /**
+      * Gets the team friendly fire state
 diff --git a/src/test/java/org/bukkit/AnnotationTest.java b/src/test/java/org/bukkit/AnnotationTest.java
 index 8d14d81c078d29781591e0ce96ea80338565e42b..f82f085ab9069abce10c2339446ef0d0bec8888c 100644
 --- a/src/test/java/org/bukkit/AnnotationTest.java
