@@ -1524,6 +1524,88 @@ public interface World extends PluginMessageRecipient, Metadatable {
     public int getMaxHeight();
 
     /**
+     * Gets the maximum height to which chorus fruits and nether portals can
+     * bring players within this dimension.
+     *
+     * This excludes portals that were already built above the limit as they
+     * still connect normally. May not be greater than {@link #getMaxHeight()}.
+     *
+     * @return maximum logical height for chorus fruits and nether portals
+     */
+    public int getLogicalHeight();
+
+    /**
+     * Gets if this world is natural.
+     *
+     * When false, compasses spin randomly, and using a bed to set the respawn
+     * point or sleep, is disabled. When true, nether portals can spawn
+     * zombified piglins.
+     *
+     * @return true if world is natural
+     */
+    public boolean isNatural();
+
+    /**
+     * Gets if beds work in this world.
+     *
+     * A non-working bed will blow up when trying to sleep. {@link #isNatural()}
+     * defines if a bed can be used to set spawn point.
+     *
+     * @return true if beds work in this world
+     */
+    public boolean isBedWorks();
+
+    /**
+     * Gets if this world has skylight access.
+     *
+     * @return true if this world has skylight access
+     */
+    public boolean hasSkyLight();
+
+    /**
+     * Gets if this world has a ceiling.
+     *
+     * @return true if this world has a bedrock ceiling
+     */
+    public boolean hasCeiling();
+
+    /**
+     * Gets if this world allow to piglins to survive without shaking and
+     * transforming to zombified piglins.
+     *
+     * @return true if piglins will not transform to zombified piglins
+     */
+    public boolean isPiglinSafe();
+
+    /**
+     * Gets if this world allows players to charge and use respawn anchors.
+     *
+     * @return true if players can charge and use respawn anchors
+     */
+    public boolean isRespawnAnchorWorks();
+
+    /**
+     * Gets if players with the bad omen effect in this world will trigger a
+     * raid.
+     *
+     * @return true if raids will be triggered
+     */
+    public boolean hasRaids();
+
+    /**
+     * Gets if various water/lava mechanics will be triggered in this world, eg:
+     * <br>
+     * <ul>
+     * <li>Water is evaporated</li>
+     * <li>Sponges dry</li>
+     * <li>Lava spreads faster and further</li>
+     * </ul>
+     *
+     * @return true if this world has the above mechanics
+     */
+    public boolean isUltraWarm();
+
+    /**
      * Gets the sea level for this world.
      * <p>
      * This is often half of {@link #getMaxHeight()}
