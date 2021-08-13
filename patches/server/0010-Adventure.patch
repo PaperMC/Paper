@@ -1223,7 +1223,7 @@ index 762a9392ffac3042356709dddd15bb3516048bed..3544e2dc2522e9d6305d727d56e73490
          buf.writeComponent(this.footer);
      }
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-index 83c8fd73ef575aff6880582a958a61a9c466edba..a65377c410a921136db697a7016a2ffdcc8dd5a1 100644
+index b3ce71df7ed67583925b21b59d8f1ccf9ed5beda..5358faada2d6cf806a468190ec568ffa322aa121 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
 @@ -146,6 +146,7 @@ import net.minecraft.world.scores.Score;
@@ -1250,11 +1250,10 @@ index 83c8fd73ef575aff6880582a958a61a9c466edba..a65377c410a921136db697a7016a2ffd
          this.bukkitPickUpLoot = true;
          this.maxHealthCache = this.getMaxHealth();
      }
-@@ -732,23 +735,17 @@ public class ServerPlayer extends Player {
+@@ -734,22 +737,17 @@ public class ServerPlayer extends Player {
  
-         Component defaultMessage = this.getCombatTracker().getDeathMessage();
- 
--        String deathmessage = defaultMessage.getString();
+         String deathmessage = defaultMessage.getString();
+         this.keepLevel = keepInventory; // SPIGOT-2222: pre-set keepLevel
 -        org.bukkit.event.entity.PlayerDeathEvent event = CraftEventFactory.callPlayerDeathEvent(this, loot, deathmessage, keepInventory);
 +        org.bukkit.event.entity.PlayerDeathEvent event = CraftEventFactory.callPlayerDeathEvent(this, loot, PaperAdventure.asAdventure(defaultMessage), defaultMessage.getString(), keepInventory); // Paper - Adventure
  
@@ -1278,7 +1277,7 @@ index 83c8fd73ef575aff6880582a958a61a9c466edba..a65377c410a921136db697a7016a2ffd
  
              this.connection.send((Packet) (new ClientboundPlayerCombatKillPacket(this.getCombatTracker(), ichatbasecomponent)), (future) -> {
                  if (!future.isSuccess()) {
-@@ -1702,6 +1699,7 @@ public class ServerPlayer extends Player {
+@@ -1703,6 +1701,7 @@ public class ServerPlayer extends Player {
      }
  
      public String locale = "en_us"; // CraftBukkit - add, lowercase
@@ -1286,7 +1285,7 @@ index 83c8fd73ef575aff6880582a958a61a9c466edba..a65377c410a921136db697a7016a2ffd
      public void updateOptions(ServerboundClientInformationPacket packet) {
          // CraftBukkit start
          if (getMainArm() != packet.getMainHand()) {
-@@ -1713,6 +1711,10 @@ public class ServerPlayer extends Player {
+@@ -1714,6 +1713,10 @@ public class ServerPlayer extends Player {
              this.server.server.getPluginManager().callEvent(event);
          }
          this.locale = packet.language;
@@ -2482,7 +2481,7 @@ index 1a6cca634d6b40a6d5f30eda98be3aa72c2569ad..32f555a846d34e086e75c027a92a48ea
      private final Player.Spigot spigot = new Player.Spigot()
      {
 diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-index eef4726c754eee963b3c3cb4f812ffeab24181c4..7103eed119a1a802476d08daca2ec36543d9bd6b 100644
+index ded90f10b0034e7982c426b40d2e399dc95e24d4..0f7aa47de024cf8e7c33efd688bd34447ec2a702 100644
 --- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 +++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 @@ -802,9 +802,9 @@ public class CraftEventFactory {
@@ -2495,9 +2494,9 @@ index eef4726c754eee963b3c3cb4f812ffeab24181c4..7103eed119a1a802476d08daca2ec365
 -        PlayerDeathEvent event = new PlayerDeathEvent(entity, drops, victim.getExpReward(), 0, deathMessage);
 +        PlayerDeathEvent event = new PlayerDeathEvent(entity, drops, victim.getExpReward(), 0, deathMessage, stringDeathMessage); // Paper - Adventure
          event.setKeepInventory(keepInventory);
+         event.setKeepLevel(victim.keepLevel); // SPIGOT-2222: pre-set keepLevel
          org.bukkit.World world = entity.getWorld();
-         Bukkit.getServer().getPluginManager().callEvent(event);
-@@ -828,7 +828,7 @@ public class CraftEventFactory {
+@@ -829,7 +829,7 @@ public class CraftEventFactory {
       * Server methods
       */
      public static ServerListPingEvent callServerListPingEvent(Server craftServer, InetAddress address, String motd, int numPlayers, int maxPlayers) {
