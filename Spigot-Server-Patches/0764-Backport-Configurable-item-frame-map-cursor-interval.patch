@@ -1,0 +1,35 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Warrior <50800980+Warriorrrr@users.noreply.github.com>
+Date: Sat, 14 Aug 2021 01:01:47 +0200
+Subject: [PATCH] Backport Configurable item frame map cursor interval
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index dc4bd421ea36779342a35e82830a05fa68b96f7b..5ffb90bb7bc0dd33725d88ed65b83027dfca8e74 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -836,6 +836,11 @@ public class PaperWorldConfig {
+         mapItemFrameCursorLimit = getInt("map-item-frame-cursor-limit", mapItemFrameCursorLimit);
+     }
+ 
++    public int mapItemFrameCursorUpdateInterval = 10;
++    private void mapItemFrameCursorUpdateInterval() {
++        mapItemFrameCursorUpdateInterval = getInt("map-item-frame-cursor-update-interval", mapItemFrameCursorUpdateInterval);
++    }
++
+     public boolean fixItemsMergingThroughWalls;
+     private void fixItemsMergingThroughWalls() {
+         fixItemsMergingThroughWalls = getBoolean("fix-items-merging-through-walls", fixItemsMergingThroughWalls);
+diff --git a/src/main/java/net/minecraft/server/level/EntityTrackerEntry.java b/src/main/java/net/minecraft/server/level/EntityTrackerEntry.java
+index 1df8fb8cb3fcf8201e1c5fa8ca13f7a9c632c379..d0d58dd33d3a1ae772f36eb8e0bc0953412f1d98 100644
+--- a/src/main/java/net/minecraft/server/level/EntityTrackerEntry.java
++++ b/src/main/java/net/minecraft/server/level/EntityTrackerEntry.java
+@@ -114,7 +114,7 @@ public class EntityTrackerEntry {
+             EntityItemFrame entityitemframe = (EntityItemFrame) this.tracker;
+             ItemStack itemstack = entityitemframe.getItem();
+ 
+-            if (this.tickCounter % 10 == 0 && itemstack.getItem() instanceof ItemWorldMap) { // CraftBukkit - Moved this.tickCounter % 10 logic here so item frames do not enter the other blocks
++            if (this.tracker.world.paperConfig.mapItemFrameCursorUpdateInterval >= 0 && this.tickCounter % this.tracker.world.paperConfig.mapItemFrameCursorUpdateInterval == 0 && itemstack.getItem() instanceof ItemWorldMap) { // CraftBukkit - Moved this.tickCounter % 10 logic here so item frames do not enter the other blocks // Paper - Make item frame map cursor update interval configurable
+                 WorldMap worldmap = ItemWorldMap.getSavedMap(itemstack, this.b);
+                 Iterator iterator = this.trackedPlayers.iterator(); // CraftBukkit
+ 
