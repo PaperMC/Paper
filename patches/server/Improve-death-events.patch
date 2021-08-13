@@ -34,8 +34,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      // CraftBukkit start
      public String displayName;
 @@ -0,0 +0,0 @@ public class ServerPlayer extends Player {
-         Component defaultMessage = this.getCombatTracker().getDeathMessage();
- 
+         String deathmessage = defaultMessage.getString();
+         this.keepLevel = keepInventory; // SPIGOT-2222: pre-set keepLevel
          org.bukkit.event.entity.PlayerDeathEvent event = CraftEventFactory.callPlayerDeathEvent(this, loot, PaperAdventure.asAdventure(defaultMessage), defaultMessage.getString(), keepInventory); // Paper - Adventure
 +        // Paper start - cancellable death event
 +        if (event.isCancelled()) {
@@ -110,7 +110,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              }
 @@ -0,0 +0,0 @@ public abstract class LivingEntity extends Entity {
              if (!this.level.isClientSide && this.hasCustomName()) {
-                 LivingEntity.LOGGER.info("Named entity {} died: {}", this, this.getCombatTracker().getDeathMessage().getString());
+                 if (org.spigotmc.SpigotConfig.logNamedDeaths) LivingEntity.LOGGER.info("Named entity {} died: {}", this, this.getCombatTracker().getDeathMessage().getString()); // Spigot
              }
 +             */ // Paper - move down to make death event cancellable - this is the runKillTrigger below
  
@@ -136,7 +136,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                    }
 +
 +                    if (!this.level.isClientSide && this.hasCustomName()) {
-+                        LivingEntity.LOGGER.info("Named entity {} died: {}", this, this.getCombatTracker().getDeathMessage().getString());
++                        if (org.spigotmc.SpigotConfig.logNamedDeaths) LivingEntity.LOGGER.info("Named entity {} died: {}", this, this.getCombatTracker().getDeathMessage().getString()); // Spigot
 +                    }
 +
 +                    this.getCombatTracker().recheckStatus();
@@ -318,9 +318,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
          for (org.bukkit.inventory.ItemStack stack : event.getDrops()) {
 @@ -0,0 +0,0 @@ public class CraftEventFactory {
-         CraftPlayer entity = victim.getBukkitEntity();
          PlayerDeathEvent event = new PlayerDeathEvent(entity, drops, victim.getExpReward(), 0, deathMessage, stringDeathMessage); // Paper - Adventure
          event.setKeepInventory(keepInventory);
+         event.setKeepLevel(victim.keepLevel); // SPIGOT-2222: pre-set keepLevel
 +        populateFields(victim, event); // Paper - make cancellable
          org.bukkit.World world = entity.getWorld();
          Bukkit.getServer().getPluginManager().callEvent(event);
