@@ -81,6 +81,10 @@ public class CraftBlock implements Block {
         return position;
     }
 
+    public GeneratorAccess getHandle() {
+        return world;
+    }
+
     @Override
     public World getWorld() {
         return world.getMinecraftWorld().getWorld();
@@ -198,7 +202,7 @@ public class CraftBlock implements Block {
             return world.setTypeAndData(position, blockData, 3);
         } else {
             boolean success = world.setTypeAndData(position, blockData, 2 | 16 | 1024); // NOTIFY | NO_OBSERVER | NO_PLACE (custom)
-            if (success) {
+            if (success && world instanceof net.minecraft.world.level.World) {
                 world.getMinecraftWorld().notify(
                         position,
                         old,

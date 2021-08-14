@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.entity;
 
+import com.google.common.base.Preconditions;
 import net.minecraft.world.entity.EntityInsentient;
 import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
@@ -16,6 +17,8 @@ public abstract class CraftMob extends CraftLivingEntity implements Mob {
 
     @Override
     public void setTarget(LivingEntity target) {
+        Preconditions.checkState(!getHandle().generation, "Cannot set target during world generation");
+
         EntityInsentient entity = getHandle();
         if (target == null) {
             entity.setGoalTarget(null, null, false);

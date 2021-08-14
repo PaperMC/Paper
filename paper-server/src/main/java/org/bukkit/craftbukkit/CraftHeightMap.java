@@ -2,7 +2,7 @@ package org.bukkit.craftbukkit;
 
 import org.bukkit.HeightMap;
 
-final class CraftHeightMap {
+public final class CraftHeightMap {
 
     private CraftHeightMap() {
     }

@@ -506,6 +506,8 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
         // Let the server handle cross world teleports
         if (!location.getWorld().equals(getWorld())) {
+            // Prevent teleportation to an other world during world generation
+            Preconditions.checkState(!entity.generation, "Cannot teleport entity to an other world during world generation");
             entity.teleportTo(((CraftWorld) location.getWorld()).getHandle(), new BlockPosition(location.getX(), location.getY(), location.getZ()));
             return true;
         }
@@ -530,6 +532,8 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     @Override
     public List<org.bukkit.entity.Entity> getNearbyEntities(double x, double y, double z) {
+        Preconditions.checkState(!entity.generation, "Cannot get nearby entities during world generation");
+
         List<Entity> notchEntityList = entity.level.getEntities(entity, entity.getBoundingBox().grow(x, y, z), Predicates.alwaysTrue());
         List<org.bukkit.entity.Entity> bukkitEntityList = new java.util.ArrayList<org.bukkit.entity.Entity>(notchEntityList.size());
 
@@ -730,6 +734,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     @Override
     public void playEffect(EntityEffect type) {
         Preconditions.checkArgument(type != null, "type");
+        Preconditions.checkState(!entity.generation, "Cannot play effect during world generation");
 
         if (type.getApplicable().isInstance(this)) {
             this.getHandle().level.broadcastEntityEffect(getHandle(), type.getData());

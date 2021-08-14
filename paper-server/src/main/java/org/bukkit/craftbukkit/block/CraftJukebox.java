@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.block;
 
+import com.google.common.base.Preconditions;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.BlockJukeBox;
 import net.minecraft.world.level.block.Blocks;
@@ -31,9 +32,9 @@ public class CraftJukebox extends CraftBlockEntityState<TileEntityJukeBox> imple
             CraftWorld world = (CraftWorld) this.getWorld();
             Material record = this.getPlaying();
             if (record == Material.AIR) {
-                world.getHandle().setTypeAndData(this.getPosition(), Blocks.JUKEBOX.getBlockData().set(BlockJukeBox.HAS_RECORD, false), 3);
+                getWorldHandle().setTypeAndData(this.getPosition(), Blocks.JUKEBOX.getBlockData().set(BlockJukeBox.HAS_RECORD, false), 3);
             } else {
-                world.getHandle().setTypeAndData(this.getPosition(), Blocks.JUKEBOX.getBlockData().set(BlockJukeBox.HAS_RECORD, true), 3);
+                getWorldHandle().setTypeAndData(this.getPosition(), Blocks.JUKEBOX.getBlockData().set(BlockJukeBox.HAS_RECORD, true), 3);
             }
             world.playEffect(this.getLocation(), Effect.RECORD_PLAY, record);
         }
@@ -84,6 +85,8 @@ public class CraftJukebox extends CraftBlockEntityState<TileEntityJukeBox> imple
 
     @Override
     public boolean eject() {
+        Preconditions.checkState(getWorldHandle() instanceof net.minecraft.world.level.World, "Can't eject during world generation");
+
         requirePlaced();
         TileEntity tileEntity = this.getTileEntityFromWorld();
         if (!(tileEntity instanceof TileEntityJukeBox)) return false;

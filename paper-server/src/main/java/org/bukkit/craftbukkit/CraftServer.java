@@ -100,9 +100,11 @@ import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.MobSpawner;
 import net.minecraft.world.level.WorldSettings;
 import net.minecraft.world.level.biome.BiomeManager;
+import net.minecraft.world.level.biome.WorldChunkManager;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.dimension.DimensionManager;
 import net.minecraft.world.level.dimension.WorldDimension;
+import net.minecraft.world.level.levelgen.ChunkGeneratorAbstract;
 import net.minecraft.world.level.levelgen.GeneratorSettings;
 import net.minecraft.world.level.levelgen.MobSpawnerPatrol;
 import net.minecraft.world.level.levelgen.MobSpawnerPhantom;
@@ -154,7 +156,9 @@ import org.bukkit.craftbukkit.command.CraftCommandMap;
 import org.bukkit.craftbukkit.command.VanillaCommandWrapper;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.craftbukkit.event.CraftEventFactory;
-import org.bukkit.craftbukkit.generator.CraftChunkData;
+import org.bukkit.craftbukkit.generator.CraftWorldInfo;
+import org.bukkit.craftbukkit.generator.CustomWorldChunkManager;
+import org.bukkit.craftbukkit.generator.OldCraftChunkData;
 import org.bukkit.craftbukkit.help.SimpleHelpMap;
 import org.bukkit.craftbukkit.inventory.CraftBlastingRecipe;
 import org.bukkit.craftbukkit.inventory.CraftCampfireRecipe;
@@ -196,7 +200,9 @@ import org.bukkit.event.server.ServerLoadEvent;
 import org.bukkit.event.server.TabCompleteEvent;
 import org.bukkit.event.world.WorldLoadEvent;
 import org.bukkit.event.world.WorldUnloadEvent;
+import org.bukkit.generator.BiomeProvider;
 import org.bukkit.generator.ChunkGenerator;
+import org.bukkit.generator.WorldInfo;
 import org.bukkit.help.HelpMap;
 import org.bukkit.inventory.BlastingRecipe;
 import org.bukkit.inventory.CampfireRecipe;
@@ -956,6 +962,7 @@ public final class CraftServer implements Server {
 
         String name = creator.name();
         ChunkGenerator generator = creator.generator();
+        BiomeProvider biomeProvider = creator.biomeProvider();
         File folder = new File(getWorldContainer(), name);
         World world = getWorld(name);
 
@@ -969,6 +976,10 @@ public final class CraftServer implements Server {
 
         if (generator == null) {
             generator = getGenerator(name);
+        }
+
+        if (biomeProvider == null) {
+            biomeProvider = getBiomeProvider(name);
         }
 
         ResourceKey<WorldDimension> actualDimension;
@@ -1038,6 +1049,18 @@ public final class CraftServer implements Server {
             chunkgenerator = worlddimension.c();
         }
 
+        WorldInfo worldInfo = new CraftWorldInfo(worlddata, worldSession, creator.environment(), dimensionmanager);
+        if (biomeProvider == null && generator != null) {
+            biomeProvider = generator.getDefaultBiomeProvider(worldInfo);
+        }
+
+        if (biomeProvider != null) {
+            WorldChunkManager worldChunkManager = new CustomWorldChunkManager(worldInfo, biomeProvider, console.registryHolder.b(IRegistry.BIOME_REGISTRY));
+            if (chunkgenerator instanceof ChunkGeneratorAbstract) {
+                chunkgenerator = new ChunkGeneratorAbstract(worldChunkManager, chunkgenerator.strongholdSeed, ((ChunkGeneratorAbstract) chunkgenerator).settings);
+            }
+        }
+
         ResourceKey<net.minecraft.world.level.World> worldKey;
         String levelName = this.getServer().getDedicatedServerProperties().levelName;
         if (name.equals(levelName + "_nether")) {
@@ -1049,7 +1072,7 @@ public final class CraftServer implements Server {
         }
 
         WorldServer internal = (WorldServer) new WorldServer(console, console.executor, worldSession, worlddata, worldKey, dimensionmanager, getServer().progressListenerFactory.create(11),
-                chunkgenerator, worlddata.getGeneratorSettings().isDebugWorld(), j, creator.environment() == Environment.NORMAL ? list : ImmutableList.of(), true, creator.environment(), generator);
+                chunkgenerator, worlddata.getGeneratorSettings().isDebugWorld(), j, creator.environment() == Environment.NORMAL ? list : ImmutableList.of(), true, creator.environment(), generator, biomeProvider);
 
         if (!(worlds.containsKey(name.toLowerCase(java.util.Locale.ENGLISH)))) {
             return null;
@@ -1415,6 +1438,42 @@ public final class CraftServer implements Server {
                             }
                         } catch (Throwable t) {
                             plugin.getLogger().log(Level.SEVERE, "Could not set generator for default world '" + world + "': Plugin '" + plugin.getDescription().getFullName(), t);
+                        }
+                    }
+                }
+            }
+        }
+
+        return result;
+    }
+
+    public BiomeProvider getBiomeProvider(String world) {
+        ConfigurationSection section = configuration.getConfigurationSection("worlds");
+        BiomeProvider result = null;
+
+        if (section != null) {
+            section = section.getConfigurationSection(world);
+
+            if (section != null) {
+                String name = section.getString("biome-provider");
+
+                if ((name != null) && (!name.equals(""))) {
+                    String[] split = name.split(":", 2);
+                    String id = (split.length > 1) ? split[1] : null;
+                    Plugin plugin = pluginManager.getPlugin(split[0]);
+
+                    if (plugin == null) {
+                        getLogger().severe("Could not set biome provider for default world '" + world + "': Plugin '" + split[0] + "' does not exist");
+                    } else if (!plugin.isEnabled()) {
+                        getLogger().severe("Could not set biome provider for default world '" + world + "': Plugin '" + plugin.getDescription().getFullName() + "' is not enabled yet (is it load:STARTUP?)");
+                    } else {
+                        try {
+                            result = plugin.getDefaultBiomeProvider(world, id);
+                            if (result == null) {
+                                getLogger().severe("Could not set biome provider for default world '" + world + "': Plugin '" + plugin.getDescription().getFullName() + "' lacks a default world biome provider");
+                            }
+                        } catch (Throwable t) {
+                            plugin.getLogger().log(Level.SEVERE, "Could not set biome provider for default world '" + world + "': Plugin '" + plugin.getDescription().getFullName(), t);
                         }
                     }
                 }
@@ -1919,7 +1978,7 @@ public final class CraftServer implements Server {
     @Override
     public ChunkGenerator.ChunkData createChunkData(World world) {
         Validate.notNull(world, "World cannot be null");
-        return new CraftChunkData(world);
+        return new OldCraftChunkData(world);
     }
 
     @Override

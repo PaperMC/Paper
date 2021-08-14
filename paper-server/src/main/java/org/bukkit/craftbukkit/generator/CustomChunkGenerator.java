@@ -7,15 +7,11 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import net.minecraft.core.BlockPosition;
 import net.minecraft.core.IRegistry;
-import net.minecraft.core.IRegistryCustom;
 import net.minecraft.server.level.RegionLimitedWorldAccess;
 import net.minecraft.server.level.WorldServer;
 import net.minecraft.util.random.WeightedRandomList;
 import net.minecraft.world.entity.EnumCreatureType;
 import net.minecraft.world.level.BlockColumn;
-import net.minecraft.world.level.GeneratorAccess;
-import net.minecraft.world.level.GeneratorAccessSeed;
-import net.minecraft.world.level.IBlockAccess;
 import net.minecraft.world.level.LevelHeightAccessor;
 import net.minecraft.world.level.StructureManager;
 import net.minecraft.world.level.biome.BiomeBase;
@@ -30,9 +26,10 @@ import net.minecraft.world.level.chunk.ChunkSection;
 import net.minecraft.world.level.chunk.IChunkAccess;
 import net.minecraft.world.level.chunk.ProtoChunk;
 import net.minecraft.world.level.levelgen.HeightMap;
+import net.minecraft.world.level.levelgen.SeededRandom;
 import net.minecraft.world.level.levelgen.WorldGenStage;
-import net.minecraft.world.level.levelgen.structure.templatesystem.DefinedStructureManager;
 import org.bukkit.block.Biome;
+import org.bukkit.craftbukkit.CraftHeightMap;
 import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.generator.ChunkGenerator;
 import org.bukkit.generator.ChunkGenerator.BiomeGrid;
@@ -44,7 +41,10 @@ public class CustomChunkGenerator extends InternalChunkGenerator {
     private final ChunkGenerator generator;
     private final WorldServer world;
     private final Random random = new Random();
+    private boolean newApi;
+    private boolean implementBaseHeight = true;
 
+    @Deprecated
     private class CustomBiomeGrid implements BiomeGrid {
 
         private final BiomeStorage biome; // SPIGOT-5529: stored in 4x4 grid
@@ -91,18 +91,8 @@ public class CustomChunkGenerator extends InternalChunkGenerator {
     }
 
     @Override
-    public void createBiomes(IRegistry<BiomeBase> iregistry, IChunkAccess ichunkaccess) {
-        // Don't allow the server to override any custom biomes that have been set
-    }
-
-    @Override
     public WorldChunkManager getWorldChunkManager() {
         return delegate.getWorldChunkManager();
-    }
-
-    @Override
-    public void storeStructures(GeneratorAccessSeed generatoraccessseed, StructureManager structuremanager, IChunkAccess ichunkaccess) {
-        delegate.storeStructures(generatoraccessseed, structuremanager, ichunkaccess);
     }
 
     @Override
@@ -112,25 +102,56 @@ public class CustomChunkGenerator extends InternalChunkGenerator {
 
     @Override
     public void buildBase(RegionLimitedWorldAccess regionlimitedworldaccess, IChunkAccess ichunkaccess) {
-        // Call the bukkit ChunkGenerator before structure generation so correct biome information is available.
+        if (generator.shouldGenerateSurface()) {
+            delegate.buildSurface(regionlimitedworldaccess, ichunkaccess);
+        }
+
+        CraftChunkData chunkData = new CraftChunkData(this.world.getWorld(), ichunkaccess);
+        SeededRandom random = new SeededRandom();
         int x = ichunkaccess.getPos().x;
         int z = ichunkaccess.getPos().z;
-        random.setSeed((long) x * 341873128712L + (long) z * 132897987541L);
+        random.a(x, z); // PAIL rename surfaceSeeded
+        generator.generateSurface(this.world.getWorld(), random, x, z, chunkData);
+
+        if (generator.shouldGenerateBedrock()) {
+            random = new SeededRandom();
+            random.a(x, z); // PAIL rename surfaceSeeded
+            delegate.buildBedrock(ichunkaccess, random);
+        }
+
+        random = new SeededRandom();
+        random.a(x, z); // PAIL rename surfaceSeeded
+        generator.generateBedrock(this.world.getWorld(), random, x, z, chunkData);
+        chunkData.breakLink();
+
+        // return if new api is used
+        if (newApi) {
+            return;
+        }
+
+        // old ChunkGenerator logic, for backwards compatibility
+        // Call the bukkit ChunkGenerator before structure generation so correct biome information is available.
+        this.random.setSeed((long) x * 341873128712L + (long) z * 132897987541L);
 
         // Get default biome data for chunk
         CustomBiomeGrid biomegrid = new CustomBiomeGrid(new BiomeStorage(world.t().d(IRegistry.BIOME_REGISTRY), regionlimitedworldaccess, ichunkaccess.getPos(), this.getWorldChunkManager()));
 
         ChunkData data;
-        if (generator.isParallelCapable()) {
-            data = generator.generateChunkData(this.world.getWorld(), random, x, z, biomegrid);
-        } else {
-            synchronized (this) {
-                data = generator.generateChunkData(this.world.getWorld(), random, x, z, biomegrid);
+        try {
+            if (generator.isParallelCapable()) {
+                data = generator.generateChunkData(this.world.getWorld(), this.random, x, z, biomegrid);
+            } else {
+                synchronized (this) {
+                    data = generator.generateChunkData(this.world.getWorld(), this.random, x, z, biomegrid);
+                }
             }
+        } catch (UnsupportedOperationException exception) {
+            newApi = true;
+            return;
         }
 
-        Preconditions.checkArgument(data instanceof CraftChunkData, "Plugins must use createChunkData(World) rather than implementing ChunkData: %s", data);
-        CraftChunkData craftData = (CraftChunkData) data;
+        Preconditions.checkArgument(data instanceof OldCraftChunkData, "Plugins must use createChunkData(World) rather than implementing ChunkData: %s", data);
+        OldCraftChunkData craftData = (OldCraftChunkData) data;
         ChunkSection[] sections = craftData.getRawChunkData();
 
         ChunkSection[] csect = ichunkaccess.getSections();
@@ -170,31 +191,61 @@ public class CustomChunkGenerator extends InternalChunkGenerator {
     }
 
     @Override
-    public void createStructures(IRegistryCustom iregistrycustom, StructureManager structuremanager, IChunkAccess ichunkaccess, DefinedStructureManager definedstructuremanager, long i) {
-        if (generator.shouldGenerateStructures()) {
-            // Still need a way of getting the biome of this chunk to pass to createStructures
-            // Using default biomes for now.
-            delegate.createStructures(iregistrycustom, structuremanager, ichunkaccess, definedstructuremanager, i);
+    public void doCarving(long seed, BiomeManager biomemanager, IChunkAccess ichunkaccess, WorldGenStage.Features worldgenstage_features) {
+        if (generator.shouldGenerateCaves()) {
+            super.doCarving(seed, biomemanager, ichunkaccess, worldgenstage_features);
         }
 
-    }
+        if (worldgenstage_features == WorldGenStage.Features.LIQUID) { // stage check ensures that the method is only called once
+            CraftChunkData chunkData = new CraftChunkData(this.world.getWorld(), ichunkaccess);
+            SeededRandom random = new SeededRandom();
+            int x = ichunkaccess.getPos().x;
+            int z = ichunkaccess.getPos().z;
+            random.c(seed, 0, 0); // PAIL rename carvingSeeded
 
-    @Override
-    public void doCarving(long i, BiomeManager biomemanager, IChunkAccess ichunkaccess, WorldGenStage.Features worldgenstage_features) {
-        if (generator.shouldGenerateCaves()) {
-            delegate.doCarving(i, biomemanager, ichunkaccess, worldgenstage_features);
+            generator.generateCaves(this.world.getWorld(), random, x, z, chunkData);
+            chunkData.breakLink();
         }
     }
 
     @Override
     public CompletableFuture<IChunkAccess> buildNoise(Executor executor, StructureManager structuremanager, IChunkAccess ichunkaccess) {
-        // Disable vanilla generation
-        return CompletableFuture.completedFuture(ichunkaccess);
+        CompletableFuture<IChunkAccess> future = null;
+        if (generator.shouldGenerateNoise()) {
+            future = delegate.buildNoise(executor, structuremanager, ichunkaccess);
+        }
+
+        java.util.function.Function<IChunkAccess, IChunkAccess> function = (ichunkaccess1) -> {
+            CraftChunkData chunkData = new CraftChunkData(this.world.getWorld(), ichunkaccess1);
+            SeededRandom random = new SeededRandom();
+            int x = ichunkaccess1.getPos().x;
+            int z = ichunkaccess1.getPos().z;
+            random.setSeed((long) x * 341873128712L + (long) z * 132897987541L);
+
+            generator.generateNoise(this.world.getWorld(), random, x, z, chunkData);
+            chunkData.breakLink();
+            return ichunkaccess1;
+        };
+
+        return future == null ? CompletableFuture.supplyAsync(() -> function.apply(ichunkaccess), net.minecraft.SystemUtils.f()) : future.thenApply(function);
     }
 
     @Override
     public int getBaseHeight(int i, int j, HeightMap.Type heightmap_type, LevelHeightAccessor levelheightaccessor) {
-       return delegate.getBaseHeight(i, j, heightmap_type, levelheightaccessor);
+        if (implementBaseHeight) {
+            try {
+                SeededRandom random = new SeededRandom();
+                int xChunk = i >> 4;
+                int zChunk = j >> 4;
+                random.setSeed((long) xChunk * 341873128712L + (long) zChunk * 132897987541L);
+
+                return generator.getBaseHeight(this.world.getWorld(), random, i, j, CraftHeightMap.fromNMS(heightmap_type));
+            } catch (UnsupportedOperationException exception) {
+                implementBaseHeight = false;
+            }
+        }
+
+        return delegate.getBaseHeight(i, j, heightmap_type, levelheightaccessor);
     }
 
     @Override
@@ -204,9 +255,7 @@ public class CustomChunkGenerator extends InternalChunkGenerator {
 
     @Override
     public void addDecorations(RegionLimitedWorldAccess regionlimitedworldaccess, StructureManager structuremanager) {
-        if (generator.shouldGenerateDecorations()) {
-            delegate.addDecorations(regionlimitedworldaccess, structuremanager);
-        }
+        super.addDecorations(regionlimitedworldaccess, structuremanager, generator.shouldGenerateDecorations());
     }
 
     @Override

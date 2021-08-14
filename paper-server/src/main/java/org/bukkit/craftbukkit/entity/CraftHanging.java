@@ -42,7 +42,7 @@ public class CraftHanging extends CraftEntity implements Hanging {
                 getHandle().setDirection(EnumDirection.EAST);
                 break;
         }
-        if (!force && !hanging.survives()) {
+        if (!force && !getHandle().generation && !hanging.survives()) {
             // Revert since it doesn't fit
             hanging.setDirection(dir);
             return false;

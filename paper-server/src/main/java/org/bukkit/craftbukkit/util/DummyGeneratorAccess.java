@@ -3,9 +3,11 @@ package org.bukkit.craftbukkit.util;
 import java.util.List;
 import java.util.Random;
 import java.util.function.Predicate;
+import java.util.stream.Stream;
 import net.minecraft.core.BlockPosition;
 import net.minecraft.core.EnumDirection;
 import net.minecraft.core.IRegistryCustom;
+import net.minecraft.core.SectionPosition;
 import net.minecraft.core.particles.ParticleParam;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.WorldServer;
@@ -14,7 +16,7 @@ import net.minecraft.sounds.SoundEffect;
 import net.minecraft.world.DifficultyDamageScaler;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.EntityHuman;
-import net.minecraft.world.level.GeneratorAccess;
+import net.minecraft.world.level.GeneratorAccessSeed;
 import net.minecraft.world.level.TickList;
 import net.minecraft.world.level.TickListEmpty;
 import net.minecraft.world.level.biome.BiomeBase;
@@ -31,6 +33,8 @@ import net.minecraft.world.level.dimension.DimensionManager;
 import net.minecraft.world.level.entity.EntityTypeTest;
 import net.minecraft.world.level.gameevent.GameEvent;
 import net.minecraft.world.level.levelgen.HeightMap;
+import net.minecraft.world.level.levelgen.feature.StructureGenerator;
+import net.minecraft.world.level.levelgen.structure.StructureStart;
 import net.minecraft.world.level.lighting.LightEngine;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.FluidType;
@@ -38,9 +42,9 @@ import net.minecraft.world.level.material.FluidTypes;
 import net.minecraft.world.level.storage.WorldData;
 import net.minecraft.world.phys.AxisAlignedBB;
 
-public class DummyGeneratorAccess implements GeneratorAccess {
+public class DummyGeneratorAccess implements GeneratorAccessSeed {
 
-    public static final GeneratorAccess INSTANCE = new DummyGeneratorAccess();
+    public static final GeneratorAccessSeed INSTANCE = new DummyGeneratorAccess();
 
     protected DummyGeneratorAccess() {
     }
@@ -97,6 +101,11 @@ public class DummyGeneratorAccess implements GeneratorAccess {
 
     @Override
     public void a(Entity entity, GameEvent gameevent, BlockPosition blockposition) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public WorldServer getLevel() {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
@@ -218,5 +227,15 @@ public class DummyGeneratorAccess implements GeneratorAccess {
     @Override
     public boolean a(BlockPosition blockposition, boolean flag, Entity entity, int i) {
         return false; // SPIGOT-6515
+    }
+
+    @Override
+    public long getSeed() {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public Stream<? extends StructureStart<?>> a(SectionPosition sectionPosition, StructureGenerator<?> structureGenerator) {
+        throw new UnsupportedOperationException("Not supported yet.");
     }
 }

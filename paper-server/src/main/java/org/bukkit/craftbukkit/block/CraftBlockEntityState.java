@@ -22,8 +22,7 @@ public class CraftBlockEntityState<T extends TileEntity> extends CraftBlockState
         this.tileEntityClass = tileEntityClass;
 
         // get tile entity from block:
-        CraftWorld world = (CraftWorld) this.getWorld();
-        this.tileEntity = tileEntityClass.cast(world.getHandle().getTileEntity(this.getPosition()));
+        this.tileEntity = tileEntityClass.cast(getWorldHandle().getTileEntity(this.getPosition()));
         Preconditions.checkState(this.tileEntity != null, "Tile is null, asynchronous access? %s", block);
 
         // copy tile entity data:
@@ -74,7 +73,7 @@ public class CraftBlockEntityState<T extends TileEntity> extends CraftBlockState
     protected TileEntity getTileEntityFromWorld() {
         requirePlaced();
 
-        return ((CraftWorld) this.getWorld()).getHandle().getTileEntity(this.getPosition());
+        return getWorldHandle().getTileEntity(this.getPosition());
     }
 
     // gets the NBT data of the TileEntity represented by this block state

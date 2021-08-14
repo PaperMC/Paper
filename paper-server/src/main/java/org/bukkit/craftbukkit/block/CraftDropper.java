@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.block;
 
+import com.google.common.base.Preconditions;
 import net.minecraft.world.level.block.BlockDropper;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.TileEntityDropper;
@@ -36,6 +37,8 @@ public class CraftDropper extends CraftLootable<TileEntityDropper> implements Dr
 
     @Override
     public void drop() {
+        Preconditions.checkState(getWorldHandle() instanceof net.minecraft.world.level.World, "Can't drop during world generation");
+
         Block block = getBlock();
 
         if (block.getType() == Material.DROPPER) {

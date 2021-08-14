@@ -65,6 +65,8 @@ public class CraftBeehive extends CraftBlockEntityState<TileEntityBeehive> imple
 
     @Override
     public List<Bee> releaseEntities() {
+        Preconditions.checkState(getWorldHandle() instanceof net.minecraft.world.level.World, "Can't release entities during world generation");
+
         List<Bee> bees = new ArrayList<>();
 
         if (isPlaced()) {

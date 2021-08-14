@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit.block;
 
 import com.google.common.base.Preconditions;
+import java.lang.ref.WeakReference;
 import java.util.List;
 import net.minecraft.core.BlockPosition;
 import net.minecraft.world.level.GeneratorAccess;
@@ -25,12 +26,20 @@ public class CraftBlockState implements BlockState {
     private final BlockPosition position;
     protected IBlockData data;
     protected int flag;
+    private WeakReference<GeneratorAccess> weakWorld;
 
     public CraftBlockState(final Block block) {
         this.world = (CraftWorld) block.getWorld();
         this.position = ((CraftBlock) block).getPosition();
         this.data = ((CraftBlock) block).getNMS();
         this.flag = 3;
+
+        GeneratorAccess generatorAccess = ((CraftBlock) block).getHandle();
+        if (generatorAccess instanceof net.minecraft.world.level.World) {
+            this.weakWorld = null;
+        } else {
+            this.weakWorld = new WeakReference<>(generatorAccess);
+        }
     }
 
     public CraftBlockState(final Block block, int flag) {
@@ -42,6 +51,7 @@ public class CraftBlockState implements BlockState {
         world = null;
         data = CraftMagicNumbers.getBlock(material).getBlockData();
         position = BlockPosition.ZERO;
+        this.weakWorld = null;
     }
 
     public static CraftBlockState getBlockState(GeneratorAccess world, net.minecraft.core.BlockPosition pos) {
@@ -50,6 +60,20 @@ public class CraftBlockState implements BlockState {
 
     public static CraftBlockState getBlockState(GeneratorAccess world, net.minecraft.core.BlockPosition pos, int flag) {
         return new CraftBlockState(CraftBlock.at(world, pos), flag);
+    }
+
+    public GeneratorAccess getWorldHandle() {
+        if (weakWorld == null) {
+            return world.getHandle();
+        }
+
+        GeneratorAccess access = weakWorld.get();
+        if (access == null) {
+            weakWorld = null;
+            return world.getHandle();
+        }
+
+        return access;
     }
 
     @Override
@@ -154,7 +178,7 @@ public class CraftBlockState implements BlockState {
     @Override
     public CraftBlock getBlock() {
         requirePlaced();
-        return CraftBlock.at(world.getHandle(), position);
+        return CraftBlock.at(getWorldHandle(), position);
     }
 
     @Override
@@ -172,6 +196,7 @@ public class CraftBlockState implements BlockState {
         if (!isPlaced()) {
             return true;
         }
+        GeneratorAccess access = getWorldHandle();
         CraftBlock block = getBlock();
 
         if (block.getType() != getType()) {
@@ -182,12 +207,14 @@ public class CraftBlockState implements BlockState {
 
         IBlockData newBlock = this.data;
         block.setTypeAndData(newBlock, applyPhysics);
-        world.getHandle().notify(
-                position,
-                block.getNMS(),
-                newBlock,
-                3
-        );
+        if (access instanceof net.minecraft.world.level.World) {
+            world.getHandle().notify(
+                    position,
+                    block.getNMS(),
+                    newBlock,
+                    3
+            );
+        }
 
         // Update levers etc
         if (false && applyPhysics && getData() instanceof Attachable) { // Call does not map to new API

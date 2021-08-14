@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.block;
 
+import com.google.common.base.Preconditions;
 import java.util.ArrayList;
 import java.util.Collection;
 import net.minecraft.world.ChestLock;
@@ -27,6 +28,8 @@ public class CraftBeacon extends CraftBlockEntityState<TileEntityBeacon> impleme
 
     @Override
     public Collection<LivingEntity> getEntitiesInRange() {
+        Preconditions.checkState(getWorldHandle() instanceof net.minecraft.world.level.World, "Can't get entities during world generation");
+
         TileEntity tileEntity = this.getTileEntityFromWorld();
         if (tileEntity instanceof TileEntityBeacon) {
             TileEntityBeacon beacon = (TileEntityBeacon) tileEntity;

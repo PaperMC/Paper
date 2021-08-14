@@ -32,7 +32,7 @@ public class CraftPainting extends CraftHanging implements Painting {
         Paintings oldArt = painting.motive;
         painting.motive = CraftArt.BukkitToNotch(art);
         painting.setDirection(painting.getDirection());
-        if (!force && !painting.survives()) {
+        if (!force && !getHandle().generation && !painting.survives()) {
             // Revert painting since it doesn't fit
             painting.motive = oldArt;
             painting.setDirection(painting.getDirection());

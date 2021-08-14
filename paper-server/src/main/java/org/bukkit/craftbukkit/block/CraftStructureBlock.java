@@ -180,9 +180,19 @@ public class CraftStructureBlock extends CraftBlockEntityState<TileEntityStructu
     @Override
     protected void applyTo(TileEntityStructure tileEntity) {
         super.applyTo(tileEntity);
+        net.minecraft.world.level.GeneratorAccess access = getWorldHandle();
 
         // Ensure block type is correct
-        tileEntity.setUsageMode(tileEntity.getUsageMode());
+        if (access instanceof net.minecraft.world.level.World) {
+            tileEntity.setUsageMode(tileEntity.getUsageMode());
+        } else {
+            // Custom handle during world generation
+            // From TileEntityStructure#setUsageMode(BlockPropertyStructureMode)
+            net.minecraft.world.level.block.state.IBlockData data = access.getType(this.getPosition());
+            if (data.a(net.minecraft.world.level.block.Blocks.STRUCTURE_BLOCK)) {
+                access.setTypeAndData(this.getPosition(), data.set(net.minecraft.world.level.block.BlockStructure.MODE, tileEntity.getUsageMode()), 2);
+            }
+        }
     }
 
     private static boolean isBetween(int num, int min, int max) {

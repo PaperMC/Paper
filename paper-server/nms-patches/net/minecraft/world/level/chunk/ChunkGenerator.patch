@@ -1,6 +1,70 @@
 --- a/net/minecraft/world/level/chunk/ChunkGenerator.java
 +++ b/net/minecraft/world/level/chunk/ChunkGenerator.java
-@@ -269,7 +269,16 @@
+@@ -63,7 +63,7 @@
+     protected final WorldChunkManager biomeSource;
+     protected final WorldChunkManager runtimeBiomeSource;
+     private final StructureSettings settings;
+-    private final long strongholdSeed;
++    public final long strongholdSeed; // PAIL private -> public
+     private final List<ChunkCoordIntPair> strongholdPositions;
+     private final BaseStoneSource defaultBaseStoneSource;
+ 
+@@ -217,7 +217,7 @@
+         }
+     }
+ 
+-    public void addDecorations(RegionLimitedWorldAccess regionlimitedworldaccess, StructureManager structuremanager) {
++    public void addVanillaDecorations(RegionLimitedWorldAccess regionlimitedworldaccess, StructureManager structuremanager) { // CraftBukkit
+         ChunkCoordIntPair chunkcoordintpair = regionlimitedworldaccess.a();
+         int i = chunkcoordintpair.d();
+         int j = chunkcoordintpair.e();
+@@ -236,8 +236,45 @@
+         }
+     }
+ 
++    public void addDecorations(RegionLimitedWorldAccess regionlimitedworldaccess, StructureManager structuremanager) {
++        // CraftBukkit start
++        addDecorations(regionlimitedworldaccess, structuremanager, true);
++    }
++
++    public void addDecorations(RegionLimitedWorldAccess regionlimitedworldaccess, StructureManager structuremanager, boolean vanilla) {
++        if (vanilla) {
++            addVanillaDecorations(regionlimitedworldaccess, structuremanager);
++        }
++
++        org.bukkit.World world = regionlimitedworldaccess.getMinecraftWorld().getWorld();
++        // only call when a populator is present (prevents unnecessary entity conversion)
++        if (world.getPopulators().size() != 0) {
++            org.bukkit.craftbukkit.generator.CraftLimitedRegion limitedRegion = new org.bukkit.craftbukkit.generator.CraftLimitedRegion(regionlimitedworldaccess);
++            int x = regionlimitedworldaccess.a().x;
++            int z = regionlimitedworldaccess.a().z;
++            for (org.bukkit.generator.BlockPopulator populator : world.getPopulators()) {
++                SeededRandom seededrandom = new SeededRandom();
++                seededrandom.a(regionlimitedworldaccess.getSeed(), x, z);
++                populator.populate(world, seededrandom, x, z, limitedRegion);
++            }
++            limitedRegion.saveEntities();
++            limitedRegion.breakLink();
++        }
++        // CraftBukkit end
++    }
++
+     public abstract void buildBase(RegionLimitedWorldAccess regionlimitedworldaccess, IChunkAccess ichunkaccess);
+ 
++    // CraftBukkit start - spilt surface and bedrock generation code
++    public SeededRandom buildSurface(RegionLimitedWorldAccess regionlimitedworldaccess, IChunkAccess iChunkAccess) {
++        throw new UnsupportedOperationException("Methode not overridden");
++    }
++
++    public void buildBedrock(IChunkAccess iChunkAccess, Random random) {
++        throw new UnsupportedOperationException("Methode not overridden");
++    }
++    // CraftBukkit end
++
+     public void addMobs(RegionLimitedWorldAccess regionlimitedworldaccess) {}
+ 
+     public StructureSettings getSettings() {
+@@ -269,7 +306,16 @@
          while (iterator.hasNext()) {
              Supplier<StructureFeature<?, ?>> supplier = (Supplier) iterator.next();
  
@@ -18,7 +82,7 @@
          }
  
      }
-@@ -364,9 +373,11 @@
+@@ -364,9 +410,11 @@
      }
  
      static {

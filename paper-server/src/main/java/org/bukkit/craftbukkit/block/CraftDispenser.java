@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.block;
 
+import com.google.common.base.Preconditions;
 import net.minecraft.world.level.block.BlockDispenser;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.TileEntityDispenser;
@@ -49,6 +50,8 @@ public class CraftDispenser extends CraftLootable<TileEntityDispenser> implement
 
     @Override
     public boolean dispense() {
+        Preconditions.checkState(getWorldHandle() instanceof net.minecraft.world.level.World, "Can't dispense during world generation");
+
         Block block = getBlock();
 
         if (block.getType() == Material.DISPENSER) {

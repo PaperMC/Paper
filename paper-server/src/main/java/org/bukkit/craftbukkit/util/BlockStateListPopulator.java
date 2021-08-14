@@ -4,22 +4,25 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Predicate;
 import net.minecraft.core.BlockPosition;
-import net.minecraft.world.level.World;
+import net.minecraft.world.level.GeneratorAccess;
 import net.minecraft.world.level.block.state.IBlockData;
+import net.minecraft.world.level.dimension.DimensionManager;
 import net.minecraft.world.level.material.Fluid;
 import org.bukkit.block.BlockState;
+import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.craftbukkit.block.CraftBlockState;
 
 public class BlockStateListPopulator extends DummyGeneratorAccess {
-    private final World world;
+    private final GeneratorAccess world;
     private final LinkedHashMap<BlockPosition, CraftBlockState> list;
 
-    public BlockStateListPopulator(World world) {
+    public BlockStateListPopulator(GeneratorAccess world) {
         this(world, new LinkedHashMap<>());
     }
 
-    public BlockStateListPopulator(World world, LinkedHashMap<BlockPosition, CraftBlockState> list) {
+    public BlockStateListPopulator(GeneratorAccess world, LinkedHashMap<BlockPosition, CraftBlockState> list) {
         this.world = world;
         this.list = list;
     }
@@ -38,7 +41,8 @@ public class BlockStateListPopulator extends DummyGeneratorAccess {
 
     @Override
     public boolean setTypeAndData(BlockPosition position, IBlockData data, int flag) {
-        CraftBlockState state = CraftBlockState.getBlockState(world, position, flag);
+        CraftBlockState state = (CraftBlockState) CraftBlock.at(world, position).getState();
+        state.setFlag(flag);
         state.setData(data);
         // remove first to keep insertion order
         list.remove(position);
@@ -60,7 +64,28 @@ public class BlockStateListPopulator extends DummyGeneratorAccess {
         return new ArrayList<>(list.values());
     }
 
-    public World getWorld() {
+    public GeneratorAccess getWorld() {
         return world;
+    }
+
+    // For tree generation
+    @Override
+    public int getMinBuildHeight() {
+        return getWorld().getMinBuildHeight();
+    }
+
+    @Override
+    public int getHeight() {
+        return getWorld().getHeight();
+    }
+
+    @Override
+    public boolean a(BlockPosition blockposition, Predicate<IBlockData> predicate) {
+        return predicate.test(getType(blockposition));
+    }
+
+    @Override
+    public DimensionManager getDimensionManager() {
+        return world.getDimensionManager();
     }
 }

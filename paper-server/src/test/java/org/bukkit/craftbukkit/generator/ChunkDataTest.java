@@ -11,12 +11,12 @@ public class ChunkDataTest extends AbstractTestingBase {
     private static final BlockData RED_WOOL = Material.RED_WOOL.createBlockData();
     private static final BlockData AIR = Material.AIR.createBlockData();
 
-    private boolean testSetBlock(CraftChunkData data, int x, int y, int z, BlockData type, BlockData expected) {
+    private boolean testSetBlock(OldCraftChunkData data, int x, int y, int z, BlockData type, BlockData expected) {
         data.setBlock(x, y, z, type);
         return expected.equals(data.getBlockData(x, y, z)) && expected.getMaterial().equals(data.getType(x, y, z));
     }
 
-    private void testSetRegion(CraftChunkData data, int minx, int miny, int minz, int maxx, int maxy, int maxz, BlockData type) {
+    private void testSetRegion(OldCraftChunkData data, int minx, int miny, int minz, int maxx, int maxy, int maxz, BlockData type) {
         data.setRegion(minx, miny, minz, maxx, maxy, maxz, type);
         for (int y = 0; y < data.getMaxHeight(); y++) {
             for (int z = 0; z < 16; z++) {
@@ -34,21 +34,21 @@ public class ChunkDataTest extends AbstractTestingBase {
 
     @Test
     public void testMinHeight() {
-        CraftChunkData data = new CraftChunkData(-128, 128);
+        OldCraftChunkData data = new OldCraftChunkData(-128, 128);
         assertTrue("Could not set block below min height", testSetBlock(data, 0, -256, 0, RED_WOOL, AIR));
         assertTrue("Could set block above min height", testSetBlock(data, 0, -64, 0, RED_WOOL, RED_WOOL));
     }
 
     @Test
     public void testMaxHeight() {
-        CraftChunkData data = new CraftChunkData(0, 128);
+        OldCraftChunkData data = new OldCraftChunkData(0, 128);
         assertTrue("Could not set block above max height", testSetBlock(data, 0, 128, 0, RED_WOOL, AIR));
         assertTrue("Could set block below max height", testSetBlock(data, 0, 127, 0, RED_WOOL, RED_WOOL));
     }
 
     @Test
     public void testBoundsCheckingSingle() {
-        CraftChunkData data = new CraftChunkData(0, 256);
+        OldCraftChunkData data = new OldCraftChunkData(0, 256);
         assertTrue("Can set block inside chunk bounds", testSetBlock(data, 0, 0, 0, RED_WOOL, RED_WOOL));
         assertTrue("Can set block inside chunk bounds", testSetBlock(data, 15, 255, 15, RED_WOOL, RED_WOOL));
         assertTrue("Can no set block outside chunk bounds", testSetBlock(data, -1, 0, 0, RED_WOOL, AIR));
@@ -61,7 +61,7 @@ public class ChunkDataTest extends AbstractTestingBase {
 
     @Test
     public void testSetRegion() {
-        CraftChunkData data = new CraftChunkData(0, 256);
+        OldCraftChunkData data = new OldCraftChunkData(0, 256);
         testSetRegion(data, -100, 0, -100, 0, 256, 0, RED_WOOL); // exclusively outside
         testSetRegion(data, 16, 256, 16, 0, 0, 0, RED_WOOL); // minimum >= maximum
         testSetRegion(data, 0, 0, 0, 0, 0, 0, RED_WOOL); // minimum == maximum

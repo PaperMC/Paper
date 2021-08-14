@@ -43,7 +43,9 @@ public class CraftBarrel extends CraftLootable<TileEntityBarrel> implements Barr
 
             if (!open) {
                 getTileEntity().setOpenFlag(blockData, true);
-                getTileEntity().playOpenSound(blockData, SoundEffects.BARREL_OPEN);
+                if (getWorldHandle() instanceof net.minecraft.world.level.World) {
+                    getTileEntity().playOpenSound(blockData, SoundEffects.BARREL_OPEN);
+                }
             }
         }
         getTileEntity().openersCounter.opened = true;
@@ -55,7 +57,9 @@ public class CraftBarrel extends CraftLootable<TileEntityBarrel> implements Barr
         if (getTileEntity().openersCounter.opened) {
             IBlockData blockData = getTileEntity().getBlock();
             getTileEntity().setOpenFlag(blockData, false);
-            getTileEntity().playOpenSound(blockData, SoundEffects.BARREL_CLOSE);
+            if (getWorldHandle() instanceof net.minecraft.world.level.World) {
+                getTileEntity().playOpenSound(blockData, SoundEffects.BARREL_CLOSE);
+            }
         }
         getTileEntity().openersCounter.opened = false;
     }
