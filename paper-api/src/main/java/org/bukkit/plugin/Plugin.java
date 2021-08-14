@@ -6,6 +6,7 @@ import java.util.logging.Logger;
 import org.bukkit.Server;
 import org.bukkit.command.TabExecutor;
 import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.generator.BiomeProvider;
 import org.bukkit.generator.ChunkGenerator;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -155,6 +156,18 @@ public interface Plugin extends TabExecutor {
      */
     @Nullable
     public ChunkGenerator getDefaultWorldGenerator(@NotNull String worldName, @Nullable String id);
+
+    /**
+     * Gets a {@link BiomeProvider} for use in a default world, as specified
+     * in the server configuration
+     *
+     * @param worldName Name of the world that this will be applied to
+     * @param id Unique ID, if any, that was specified to indicate which
+     *     biome provider was requested
+     * @return BiomeProvider for use in the default world generation
+     */
+    @Nullable
+    public BiomeProvider getDefaultBiomeProvider(@NotNull String worldName, @Nullable String id);
 
     /**
      * Returns the plugin logger associated with this server's logger. The

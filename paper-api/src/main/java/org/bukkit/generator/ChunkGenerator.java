@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import org.bukkit.Bukkit;
+import org.bukkit.HeightMap;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -19,20 +20,195 @@ import org.jetbrains.annotations.Nullable;
  * chunk. For example, the nether chunk generator should shape netherrack and
  * soulsand.
  *
- * By default only one thread will call
- * {@link #generateChunkData(org.bukkit.World, java.util.Random, int, int, org.bukkit.generator.ChunkGenerator.BiomeGrid)}
- * at a time, although this may not necessarily be the main server thread.
+ * A chunk is generated in multiple steps, those steps are always in the same
+ * order. Between those steps however an unlimited time may pass. This means, a
+ * chunk may generated until the surface step and continue with the bedrock step
+ * after one or multiple server restarts or even after multiple Minecraft
+ * versions.
  *
- * If your generator is capable of fully asynchronous generation, then
- * {@link #isParallelCapable()} should be overridden accordingly to allow
- * multiple concurrent callers.
+ * The order of generation is as follows
+ * <ol>
+ * <li>{@link #generateNoise(WorldInfo, Random, int, int, ChunkData)}</li>
+ * <li>{@link #generateSurface(WorldInfo, Random, int, int, ChunkData)}</li>
+ * <li>{@link #generateBedrock(WorldInfo, Random, int, int, ChunkData)}</li>
+ * <li>{@link #generateCaves(WorldInfo, Random, int, int, ChunkData)}</li>
+ * </ol>
+ *
+ * Every method listed above as well as
+ * {@link #getBaseHeight(WorldInfo, Random, int, int, HeightMap)}
+ * <b>must</b> be completely thread safe and able to handle multiple concurrent
+ * callers.
  *
  * Some aspects of world generation can be delegated to the Vanilla generator.
- * The methods {@link ChunkGenerator#shouldGenerateCaves()}, {@link ChunkGenerator#shouldGenerateDecorations()},
- * {@link ChunkGenerator#shouldGenerateMobs()} and {@link ChunkGenerator#shouldGenerateStructures()} can be
- * overridden to enable this.
+ * The following methods can be overridden to enable this:
+ * <ul>
+ * <li>{@link ChunkGenerator#shouldGenerateNoise()}</li>
+ * <li>{@link ChunkGenerator#shouldGenerateSurface()}</li>
+ * <li>{@link ChunkGenerator#shouldGenerateBedrock()}</li>
+ * <li>{@link ChunkGenerator#shouldGenerateCaves()}</li>
+ * <li>{@link ChunkGenerator#shouldGenerateDecorations()}</li>
+ * <li>{@link ChunkGenerator#shouldGenerateMobs()}</li>
+ * <li>{@link ChunkGenerator#shouldGenerateStructures()}</li>
+ * </ul>
  */
 public abstract class ChunkGenerator {
+
+    /**
+     * Shapes the Chunk noise for the given coordinates.
+     * <p>
+     * Notes:
+     * <p>
+     * This method should <b>never</b> attempt to get the Chunk at the passed
+     * coordinates, as doing so may cause an infinite loop.
+     * <p>
+     * This method should <b>never</b> modify the {@link ChunkData} at a later
+     * point of time.
+     * <p>
+     * The Y-coordinate range should <b>never</b> be hardcoded, to get the
+     * Y-coordinate range use the methods {@link ChunkData#getMinHeight()} and
+     * {@link ChunkData#getMaxHeight()}.
+     * <p>
+     * If {@link #shouldGenerateNoise()} is set to true, the given
+     * {@link ChunkData} contains already the Vanilla noise generation.
+     *
+     * @param worldInfo The world info of the world this chunk will be used for
+     * @param random The random generator to use
+     * @param x The X-coordinate of the chunk
+     * @param z The Z-coordinate of the chunk
+     * @param chunkData To modify
+     */
+    public void generateNoise(@NotNull WorldInfo worldInfo, @NotNull Random random, int x, int z, @NotNull ChunkData chunkData) {
+    }
+
+    /**
+     * Shapes the Chunk surface for the given coordinates.
+     * <p>
+     * Notes:
+     * <p>
+     * This method should <b>never</b> attempt to get the Chunk at the passed
+     * coordinates, as doing so may cause an infinite loop.
+     * <p>
+     * This method should <b>never</b> modify the {@link ChunkData} at a later
+     * point of time.
+     * <p>
+     * The Y-coordinate range should <b>never</b> be hardcoded, to get the
+     * Y-coordinate range use the methods {@link ChunkData#getMinHeight()} and
+     * {@link ChunkData#getMaxHeight()}.
+     * <p>
+     * If {@link #shouldGenerateSurface()} is set to true, the given
+     * {@link ChunkData} contains already the Vanilla surface generation.
+     *
+     * @param worldInfo The world info of the world this chunk will be used for
+     * @param random The random generator to use
+     * @param x The X-coordinate of the chunk
+     * @param z The Z-coordinate of the chunk
+     * @param chunkData To modify
+     */
+    public void generateSurface(@NotNull WorldInfo worldInfo, @NotNull Random random, int x, int z, @NotNull ChunkData chunkData) {
+    }
+
+    /**
+     * Shapes the Chunk bedrock layer for the given coordinates.
+     * <p>
+     * Notes:
+     * <p>
+     * This method should <b>never</b> attempt to get the Chunk at the passed
+     * coordinates, as doing so may cause an infinite loop.
+     * <p>
+     * This method should <b>never</b> modify the {@link ChunkData} at a later
+     * point of time.
+     * <p>
+     * The Y-coordinate range should <b>never</b> be hardcoded, to get the
+     * Y-coordinate range use the methods {@link ChunkData#getMinHeight()} and
+     * {@link ChunkData#getMaxHeight()}.
+     * <p>
+     * If {@link #shouldGenerateBedrock()} is set to true, the given
+     * {@link ChunkData} contains already the Vanilla bedrock generation.
+     *
+     * @param worldInfo The world info of the world this chunk will be used for
+     * @param random The random generator to use
+     * @param x The X-coordinate of the chunk
+     * @param z The Z-coordinate of the chunk
+     * @param chunkData To modify
+     */
+    public void generateBedrock(@NotNull WorldInfo worldInfo, @NotNull Random random, int x, int z, @NotNull ChunkData chunkData) {
+    }
+
+    /**
+     * Shapes the Chunk caves for the given coordinates.
+     * <p>
+     * Notes:
+     * <p>
+     * This method should <b>never</b> attempt to get the Chunk at the passed
+     * coordinates, as doing so may cause an infinite loop.
+     * <p>
+     * This method should <b>never</b> modify the {@link ChunkData} at a later
+     * point of time.
+     * <p>
+     * The Y-coordinate range should <b>never</b> be hardcoded, to get the
+     * Y-coordinate range use the methods {@link ChunkData#getMinHeight()} and
+     * {@link ChunkData#getMaxHeight()}.
+     * <p>
+     * If {@link #shouldGenerateCaves()} is set to true, the given
+     * {@link ChunkData} contains already the Vanilla cave generation.
+     *
+     * @param worldInfo The world info of the world this chunk will be used for
+     * @param random The random generator to use
+     * @param x The X-coordinate of the chunk
+     * @param z The Z-coordinate of the chunk
+     * @param chunkData To modify
+     */
+    public void generateCaves(@NotNull WorldInfo worldInfo, @NotNull Random random, int x, int z, @NotNull ChunkData chunkData) {
+    }
+
+    /**
+     * Gets called when no {@link BiomeProvider} is set in
+     * {@link org.bukkit.WorldCreator} or via the server configuration files. It
+     * is therefore possible that one plugin can provide the Biomes and another
+     * one the generation.
+     * <p>
+     * Notes:
+     * <p>
+     * If <code>null</code> is returned, than Vanilla biomes are used.
+     * <p>
+     * This method only gets called once when the world is loaded. Returning
+     * another {@link BiomeProvider} later one is not respected.
+     *
+     * @param worldInfo The world info of the world the biome provider will be
+     * used for
+     * @return BiomeProvider to use to fill the biomes of a chunk
+     */
+    @Nullable
+    public BiomeProvider getDefaultBiomeProvider(@NotNull WorldInfo worldInfo) {
+        return null;
+    }
+
+    /**
+     * This method is similar to
+     * {@link World#getHighestBlockAt(int, int, HeightMap)}. With the difference
+     * being, that the highest y coordinate should be the block before any
+     * surface, bedrock, caves or decoration is applied. Or in other words the
+     * highest block when only the noise is present at the chunk.
+     * <p>
+     * Notes:
+     * <p>
+     * When this method is not overridden, the Vanilla base height is used.
+     * <p>
+     * This method should <b>never</b> attempt to get the Chunk at the passed
+     * coordinates, or use the method
+     * {@link World#getHighestBlockAt(int, int, HeightMap)}, as doing so may
+     * cause an infinite loop.
+     *
+     * @param worldInfo The world info of the world this chunk will be used for
+     * @param random The random generator to use
+     * @param x The X-coordinate from world origin
+     * @param z The Z-coordinate from world origin
+     * @param heightMap From the highest block should be get
+     * @return The y coordinate of the highest block at the given location
+     */
+    public int getBaseHeight(@NotNull WorldInfo worldInfo, @NotNull Random random, int x, int z, @NotNull HeightMap heightMap) {
+        throw new UnsupportedOperationException("Not implemented");
+    }
 
     /**
      * Interface to biome section for chunk to be generated: initialized with
@@ -40,7 +216,9 @@ public abstract class ChunkGenerator {
      * <p>
      * Custom generator is free to access and tailor values during
      * generateBlockSections() or generateExtBlockSections().
+     * @deprecated Biomes are now set with {@link BiomeProvider}
      */
+    @Deprecated
     public interface BiomeGrid {
 
         /**
@@ -111,8 +289,10 @@ public abstract class ChunkGenerator {
      *     generator
      * @return ChunkData containing the types for each block created by this
      *     generator
+     * @deprecated The generation is now split up
      */
     @NotNull
+    @Deprecated
     public ChunkData generateChunkData(@NotNull World world, @NotNull Random random, int x, int z, @NotNull BiomeGrid biome) {
         throw new UnsupportedOperationException("Custom generator " + getClass().getName() + " is missing required method generateChunkData");
     }
@@ -121,8 +301,10 @@ public abstract class ChunkGenerator {
      * Create a ChunkData for a world.
      * @param world the world the ChunkData is for
      * @return a new ChunkData for world
+     * @deprecated {@link ChunkData} are now directly provided
      */
     @NotNull
+    @Deprecated
     protected final ChunkData createChunkData(@NotNull World world) {
         return Bukkit.getServer().createChunkData(world);
     }
@@ -182,14 +364,56 @@ public abstract class ChunkGenerator {
      * See {@link ChunkGenerator} for more information.
      *
      * @return parallel capable status
+     * @deprecated the chunk generation code should be thread safe
      */
+    @Deprecated
     public boolean isParallelCapable() {
         return false;
     }
 
     /**
-     * Gets if the server should generate Vanilla caves after this
-     * ChunkGenerator.
+     * Gets if the server should generate Vanilla noise.
+     * <p>
+     * The Vanilla noise is generated <b>before</b>
+     * {@link #generateNoise(WorldInfo, Random, int, int, ChunkData)} is called.
+     *
+     * @return true if the server should generate Vanilla noise
+     */
+    public boolean shouldGenerateNoise() {
+        return false;
+    }
+
+    /**
+     * Gets if the server should generate Vanilla surface.
+     * <p>
+     * The Vanilla surface is generated <b>before</b>
+     * {@link #generateSurface(WorldInfo, Random, int, int, ChunkData)} is
+     * called.
+     *
+     * @return true if the server should generate Vanilla surface
+     */
+    public boolean shouldGenerateSurface() {
+        return false;
+    }
+
+    /**
+     * Gets if the server should generate Vanilla bedrock.
+     * <p>
+     * The Vanilla bedrock is generated <b>before</b>
+     * {@link #generateBedrock(WorldInfo, Random, int, int, ChunkData)} is
+     * called.
+     *
+     * @return true if the server should generate Vanilla bedrock
+     */
+    public boolean shouldGenerateBedrock() {
+        return false;
+    }
+
+    /**
+     * Gets if the server should generate Vanilla caves.
+     * <p>
+     * The Vanilla caves are generated <b>before</b>
+     * {@link #generateCaves(WorldInfo, Random, int, int, ChunkData)} is called.
      *
      * @return true if the server should generate Vanilla caves
      */
@@ -200,6 +424,9 @@ public abstract class ChunkGenerator {
     /**
      * Gets if the server should generate Vanilla decorations after this
      * ChunkGenerator.
+     * <p>
+     * The Vanilla decoration are generated <b>before</b> any
+     * {@link BlockPopulator} are called.
      *
      * @return true if the server should generate Vanilla decorations
      */
@@ -232,8 +459,11 @@ public abstract class ChunkGenerator {
      */
     public static interface ChunkData {
         /**
-         * Get the minimum height for the chunk.
-         *
+         * Get the minimum height for this ChunkData.
+         * <p>
+         * It is not guaranteed that this method will return the same value as
+         * {@link World#getMinHeight()}.
+         * <p>
          * Setting blocks below this height will do nothing.
          *
          * @return the minimum height
@@ -241,13 +471,28 @@ public abstract class ChunkGenerator {
         public int getMinHeight();
 
         /**
-         * Get the maximum height for the chunk.
-         *
+         * Get the maximum height for this ChunkData.
+         * <p>
+         * It is not guaranteed that this method will return the same value as
+         * {@link World#getMaxHeight()}.
+         * <p>
          * Setting blocks at or above this height will do nothing.
          *
          * @return the maximum height
          */
         public int getMaxHeight();
+
+        /**
+         * Get the biome at x, y, z within chunk being generated
+         *
+         * @param x the x location in the chunk from 0-15 inclusive
+         * @param y the y location in the chunk from minimum (inclusive) -
+         * maxHeight (exclusive)
+         * @param z the z location in the chunk from 0-15 inclusive
+         * @return Biome value
+         */
+        @NotNull
+        public Biome getBiome(int x, int y, int z);
 
         /**
          * Set the block at x,y,z in the chunk data to material.

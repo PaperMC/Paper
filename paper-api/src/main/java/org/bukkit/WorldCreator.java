@@ -2,6 +2,7 @@ package org.bukkit;
 
 import java.util.Random;
 import org.bukkit.command.CommandSender;
+import org.bukkit.generator.BiomeProvider;
 import org.bukkit.generator.ChunkGenerator;
 import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
@@ -15,6 +16,7 @@ public class WorldCreator {
     private long seed;
     private World.Environment environment = World.Environment.NORMAL;
     private ChunkGenerator generator = null;
+    private BiomeProvider biomeProvider = null;
     private WorldType type = WorldType.NORMAL;
     private boolean generateStructures = true;
     private String generatorSettings = "";
@@ -49,6 +51,7 @@ public class WorldCreator {
         seed = world.getSeed();
         environment = world.getEnvironment();
         generator = world.getGenerator();
+        biomeProvider = world.getBiomeProvider();
         type = world.getWorldType();
         generateStructures = world.canGenerateStructures();
         hardcore = world.isHardcore();
@@ -71,6 +74,7 @@ public class WorldCreator {
         seed = creator.seed();
         environment = creator.environment();
         generator = creator.generator();
+        biomeProvider = creator.biomeProvider();
         type = creator.type();
         generateStructures = creator.generateStructures();
         generatorSettings = creator.generatorSettings();
@@ -229,6 +233,84 @@ public class WorldCreator {
     }
 
     /**
+     * Gets the biome provider that will be used to create or load the world.
+     * <p>
+     * This may be null, in which case the biome provider from the {@link ChunkGenerator}
+     * will be used. If no {@link ChunkGenerator} is specific the "natural" biome provider
+     * for this environment will be used.
+     *
+     * @return Biome provider
+     */
+    @Nullable
+    public BiomeProvider biomeProvider() {
+        return biomeProvider;
+    }
+
+    /**
+     * Sets the biome provider that will be used to create or load the world.
+     * <p>
+     * This may be null, in which case the biome provider from the
+     * {@link ChunkGenerator} will be used. If no {@link ChunkGenerator} is
+     * specific the "natural" biome provider for this environment will be used.
+     *
+     * @param biomeProvider Biome provider
+     * @return This object, for chaining
+     */
+    @NotNull
+    public WorldCreator biomeProvider(@Nullable BiomeProvider biomeProvider) {
+        this.biomeProvider = biomeProvider;
+
+        return this;
+    }
+
+    /**
+     * Sets the biome provider that will be used to create or load the world.
+     * <p>
+     * This may be null, in which case the biome provider from the
+     * {@link ChunkGenerator} will be used. If no {@link ChunkGenerator} is
+     * specific the "natural" biome provider for this environment will be used.
+     * <p>
+     * If the biome provider cannot be found for the given name and no
+     * {@link ChunkGenerator} is specific, the natural environment biome
+     * provider will be used instead and a warning will be printed to the
+     * specified output
+     *
+     * @param biomeProvider Name of the biome provider to use, in "plugin:id"
+     * notation
+     * @return This object, for chaining
+     */
+    @NotNull
+    public WorldCreator biomeProvider(@Nullable String biomeProvider) {
+        this.biomeProvider = getBiomeProviderForName(name, biomeProvider, Bukkit.getConsoleSender());
+
+        return this;
+    }
+
+    /**
+     * Sets the biome provider that will be used to create or load the world.
+     * <p>
+     * This may be null, in which case the biome provider from the
+     * {@link ChunkGenerator} will be used. If no {@link ChunkGenerator} is
+     * specific the "natural" biome provider for this environment will be used.
+     * <p>
+     * If the biome provider cannot be found for the given name and no
+     * {@link ChunkGenerator} is specific, the natural environment biome
+     * provider will be used instead and a warning will be printed to the
+     * specified output
+     *
+     * @param biomeProvider Name of the biome provider to use, in "plugin:id"
+     * notation
+     * @param output {@link CommandSender} that will receive any error messages
+     * @return This object, for chaining
+     */
+    @NotNull
+    public WorldCreator biomeProvider(@Nullable String biomeProvider, @Nullable CommandSender output) {
+        this.biomeProvider = getBiomeProviderForName(name, biomeProvider, output);
+
+        return this;
+    }
+
+    /**
      * Sets the generator settings of the world that will be created or loaded.
      * <p>
      * Currently only {@link WorldType#FLAT} uses these settings, and expects
@@ -375,6 +457,51 @@ public class WorldCreator {
                 output.sendMessage("Could not set generator for world '" + world + "': Plugin '" + plugin.getDescription().getFullName() + "' is not enabled");
             } else {
                 result = plugin.getDefaultWorldGenerator(world, id);
+            }
+        }
+
+        return result;
+    }
+
+    /**
+     * Attempts to get the {@link BiomeProvider} with the given name.
+     * <p>
+     * If the biome provider is not found, null will be returned and a message
+     * will be printed to the specified {@link CommandSender} explaining why.
+     * <p>
+     * The name must be in the "plugin:id" notation, or optionally just
+     * "plugin", where "plugin" is the safe-name of a plugin and "id" is an
+     * optional unique identifier for the biome provider you wish to request
+     * from the plugin.
+     *
+     * @param world Name of the world this will be used for
+     * @param name Name of the biome provider to retrieve
+     * @param output Where to output if errors are present
+     * @return Resulting biome provider, or null
+     */
+    @Nullable
+    public static BiomeProvider getBiomeProviderForName(@NotNull String world, @Nullable String name, @Nullable CommandSender output) {
+        BiomeProvider result = null;
+
+        if (world == null) {
+            throw new IllegalArgumentException("World name must be specified");
+        }
+
+        if (output == null) {
+            output = Bukkit.getConsoleSender();
+        }
+
+        if (name != null) {
+            String[] split = name.split(":", 2);
+            String id = (split.length > 1) ? split[1] : null;
+            Plugin plugin = Bukkit.getPluginManager().getPlugin(split[0]);
+
+            if (plugin == null) {
+                output.sendMessage("Could not set biome provider for world '" + world + "': Plugin '" + split[0] + "' does not exist");
+            } else if (!plugin.isEnabled()) {
+                output.sendMessage("Could not set set biome provider for world '" + world + "': Plugin '" + plugin.getDescription().getFullName() + "' is not enabled");
+            } else {
+                result = plugin.getDefaultBiomeProvider(world, id);
             }
         }
 

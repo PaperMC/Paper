@@ -5,7 +5,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.function.Predicate;
 import org.bukkit.block.Biome;
 import org.bukkit.block.Block;
@@ -14,14 +13,15 @@ import org.bukkit.boss.DragonBattle;
 import org.bukkit.entity.AbstractArrow;
 import org.bukkit.entity.Arrow;
 import org.bukkit.entity.Entity;
-import org.bukkit.entity.EntityType;
 import org.bukkit.entity.FallingBlock;
 import org.bukkit.entity.Item;
 import org.bukkit.entity.LightningStrike;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
+import org.bukkit.generator.BiomeProvider;
 import org.bukkit.generator.BlockPopulator;
 import org.bukkit.generator.ChunkGenerator;
+import org.bukkit.generator.WorldInfo;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.material.MaterialData;
 import org.bukkit.metadata.Metadatable;
@@ -38,7 +38,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Represents a world, which may contain entities, chunks and blocks
  */
-public interface World extends PluginMessageRecipient, Metadatable {
+public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient, Metadatable {
 
     /**
      * Gets the {@link Block} at the given coordinates
@@ -553,16 +553,6 @@ public interface World extends PluginMessageRecipient, Metadatable {
     public boolean generateTree(@NotNull Location loc, @NotNull TreeType type, @NotNull BlockChangeDelegate delegate);
 
     /**
-     * Creates a entity at the given {@link Location}
-     *
-     * @param loc The location to spawn the entity
-     * @param type The entity to spawn
-     * @return Resulting Entity of this method
-     */
-    @NotNull
-    public Entity spawnEntity(@NotNull Location loc, @NotNull EntityType type);
-
-    /**
      * Strikes lightning at the given {@link Location}
      *
      * @param loc The location to strike lightning
@@ -880,22 +870,6 @@ public interface World extends PluginMessageRecipient, Metadatable {
     public RayTraceResult rayTrace(@NotNull Location start, @NotNull Vector direction, double maxDistance, @NotNull FluidCollisionMode fluidCollisionMode, boolean ignorePassableBlocks, double raySize, @Nullable Predicate<Entity> filter);
 
     /**
-     * Gets the unique name of this world
-     *
-     * @return Name of this world
-     */
-    @NotNull
-    public String getName();
-
-    /**
-     * Gets the Unique ID of this world
-     *
-     * @return Unique ID of this world.
-     */
-    @NotNull
-    public UUID getUID();
-
-    /**
      * Gets the default spawn {@link Location} of this world
      *
      * @return The spawn location of this world
@@ -1180,21 +1154,6 @@ public interface World extends PluginMessageRecipient, Metadatable {
     public boolean createExplosion(@NotNull Location loc, float power, boolean setFire, boolean breakBlocks, @Nullable Entity source);
 
     /**
-     * Gets the {@link Environment} type of this world
-     *
-     * @return This worlds Environment type
-     */
-    @NotNull
-    public Environment getEnvironment();
-
-    /**
-     * Gets the Seed for this world.
-     *
-     * @return This worlds Seed
-     */
-    public long getSeed();
-
-    /**
      * Gets the current PVP setting for this world.
      *
      * @return True if PVP is enabled
@@ -1217,6 +1176,14 @@ public interface World extends PluginMessageRecipient, Metadatable {
     public ChunkGenerator getGenerator();
 
     /**
+     * Gets the biome provider for this world
+     *
+     * @return BiomeProvider associated with this world
+     */
+    @Nullable
+    public BiomeProvider getBiomeProvider();
+
+    /**
      * Saves world to disk
      */
     public void save();
@@ -1228,38 +1195,6 @@ public interface World extends PluginMessageRecipient, Metadatable {
      */
     @NotNull
     public List<BlockPopulator> getPopulators();
-
-    /**
-     * Spawn an entity of a specific class at the given {@link Location}
-     *
-     * @param location the {@link Location} to spawn the entity at
-     * @param clazz the class of the {@link Entity} to spawn
-     * @param <T> the class of the {@link Entity} to spawn
-     * @return an instance of the spawned {@link Entity}
-     * @throws IllegalArgumentException if either parameter is null or the
-     *     {@link Entity} requested cannot be spawned
-     */
-    @NotNull
-    public <T extends Entity> T spawn(@NotNull Location location, @NotNull Class<T> clazz) throws IllegalArgumentException;
-
-    /**
-     * Spawn an entity of a specific class at the given {@link Location}, with
-     * the supplied function run before the entity is added to the world.
-     * <br>
-     * Note that when the function is run, the entity will not be actually in
-     * the world. Any operation involving such as teleporting the entity is undefined
-     * until after this function returns.
-     *
-     * @param location the {@link Location} to spawn the entity at
-     * @param clazz the class of the {@link Entity} to spawn
-     * @param function the function to be run before the entity is spawned.
-     * @param <T> the class of the {@link Entity} to spawn
-     * @return an instance of the spawned {@link Entity}
-     * @throws IllegalArgumentException if either parameter is null or the
-     *     {@link Entity} requested cannot be spawned
-     */
-    @NotNull
-    public <T extends Entity> T spawn(@NotNull Location location, @NotNull Class<T> clazz, @Nullable Consumer<T> function) throws IllegalArgumentException;
 
     /**
      * Spawn a {@link FallingBlock} entity at the given {@link Location} of
@@ -1414,17 +1349,6 @@ public interface World extends PluginMessageRecipient, Metadatable {
     Biome getBiome(int x, int z);
 
     /**
-     * Gets the biome for the given block coordinates.
-     *
-     * @param x X coordinate of the block
-     * @param y Y coordinate of the block
-     * @param z Z coordinate of the block
-     * @return Biome of the requested block
-     */
-    @NotNull
-    Biome getBiome(int x, int y, int z);
-
-    /**
      * Sets the biome for the given block coordinates
      *
      * @param x X coordinate of the block
@@ -1434,16 +1358,6 @@ public interface World extends PluginMessageRecipient, Metadatable {
      */
     @Deprecated
     void setBiome(int x, int z, @NotNull Biome bio);
-
-    /**
-     * Sets the biome for the given block coordinates
-     *
-     * @param x X coordinate of the block
-     * @param y Y coordinate of the block
-     * @param z Z coordinate of the block
-     * @param bio new Biome type for this block
-     */
-    void setBiome(int x, int y, int z, @NotNull Biome bio);
 
     /**
      * Gets the temperature for the given block coordinates.
@@ -1504,24 +1418,6 @@ public interface World extends PluginMessageRecipient, Metadatable {
      * @return Humidity of the requested block
      */
     public double getHumidity(int x, int y, int z);
-
-    /**
-     * Gets the minimum height of this world.
-     * <p>
-     * If the min height is 0, there are only blocks from y=0.
-     *
-     * @return Minimum height of the world
-     */
-    public int getMinHeight();
-
-    /**
-     * Gets the maximum height of this world.
-     * <p>
-     * If the max height is 100, there are only blocks from y=0 to y=99.
-     *
-     * @return Maximum height of the world
-     */
-    public int getMaxHeight();
 
     /**
      * Gets the maximum height to which chorus fruits and nether portals can

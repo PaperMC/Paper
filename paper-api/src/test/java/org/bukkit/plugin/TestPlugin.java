@@ -7,6 +7,7 @@ import org.bukkit.Server;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.generator.BiomeProvider;
 import org.bukkit.generator.ChunkGenerator;
 
 public class TestPlugin extends PluginBase {
@@ -109,6 +110,11 @@ public class TestPlugin extends PluginBase {
 
     @Override
     public ChunkGenerator getDefaultWorldGenerator(String worldName, String id) {
+        throw new UnsupportedOperationException("Not supported.");
+    }
+
+    @Override
+    public BiomeProvider getDefaultBiomeProvider(String worldName, String id) {
         throw new UnsupportedOperationException("Not supported.");
     }
 
