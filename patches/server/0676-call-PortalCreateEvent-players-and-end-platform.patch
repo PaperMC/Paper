@@ -1,0 +1,33 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Wed, 12 May 2021 03:21:22 -0700
+Subject: [PATCH] call PortalCreateEvent players and end platform
+
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+index 54066aa8f14bc19935070593b344368a7d6faa70..b74fc226bf299e274dcf7a0e5002fea1d9886c24 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+@@ -1147,15 +1147,21 @@ public class ServerPlayer extends Player {
+     private void createEndPlatform(ServerLevel world, BlockPos centerPos) {
+         BlockPos.MutableBlockPos blockposition_mutableblockposition = centerPos.mutable();
+ 
++        org.bukkit.craftbukkit.util.BlockStateListPopulator blockList = new org.bukkit.craftbukkit.util.BlockStateListPopulator(world); // Paper
+         for (int i = -2; i <= 2; ++i) {
+             for (int j = -2; j <= 2; ++j) {
+                 for (int k = -1; k < 3; ++k) {
+                     BlockState iblockdata = k == -1 ? Blocks.OBSIDIAN.defaultBlockState() : Blocks.AIR.defaultBlockState();
+ 
+-                    world.setBlockAndUpdate(blockposition_mutableblockposition.set(centerPos).move(j, k, i), iblockdata);
++                    blockList.setBlock(blockposition_mutableblockposition.set(centerPos).move(j, k, i), iblockdata, 3); // Paper
+                 }
+             }
+         }
++        // Paper start
++        if (new org.bukkit.event.world.PortalCreateEvent((List< org.bukkit.block.BlockState>) (List) blockList.getList(), world.getWorld(), this.getBukkitEntity(), org.bukkit.event.world.PortalCreateEvent.CreateReason.END_PLATFORM).callEvent()) {
++            blockList.updateList();
++        }
++        // Paper end
+ 
+     }
+ 
