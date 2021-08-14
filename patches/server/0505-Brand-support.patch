@@ -1,0 +1,91 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: DigitalRegent <misterwener@gmail.com>
+Date: Sat, 11 Apr 2020 13:10:58 +0200
+Subject: [PATCH] Brand support
+
+
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index e307f8695643360289b998a8d2ad244d966f1180..b7454592b9cee09f41631db6664cb18e2f890479 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -4,6 +4,7 @@ import com.google.common.collect.Lists;
+ import com.google.common.primitives.Floats;
+ import com.mojang.brigadier.ParseResults;
+ import com.mojang.brigadier.StringReader;
++import io.netty.buffer.Unpooled;
+ import io.netty.util.concurrent.Future;
+ import io.netty.util.concurrent.GenericFutureListener;
+ import it.unimi.dsi.fastutil.ints.Int2ObjectMap.Entry;
+@@ -38,6 +39,7 @@ import net.minecraft.nbt.ListTag;
+ import net.minecraft.nbt.StringTag;
+ import net.minecraft.nbt.Tag;
+ import net.minecraft.network.Connection;
++import net.minecraft.network.FriendlyByteBuf;
+ import net.minecraft.network.chat.ChatType;
+ import net.minecraft.network.chat.Component;
+ import net.minecraft.network.chat.MutableComponent;
+@@ -258,6 +260,8 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+     private static final int MAX_SIGN_LINE_LENGTH = Integer.getInteger("Paper.maxSignLength", 80);
+     private static final long KEEPALIVE_LIMIT = Long.getLong("paper.playerconnection.keepalive", 30) * 1000; // Paper - provide property to set keepalive limit
+ 
++    private String clientBrandName = null; // Paper - Brand name
++
+     public ServerGamePacketListenerImpl(MinecraftServer server, Connection connection, ServerPlayer player) {
+         this.server = server;
+         this.connection = connection;
+@@ -2980,6 +2984,8 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+     private static final ResourceLocation CUSTOM_REGISTER = new ResourceLocation("register");
+     private static final ResourceLocation CUSTOM_UNREGISTER = new ResourceLocation("unregister");
+ 
++    private static final ResourceLocation MINECRAFT_BRAND = new ResourceLocation("brand"); // Paper - Brand support
++
+     @Override
+     public void handleCustomPayload(ServerboundCustomPayloadPacket packet) {
+         PacketUtils.ensureRunningOnSameThread(packet, this, this.player.getLevel());
+@@ -3007,6 +3013,15 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+             try {
+                 byte[] data = new byte[packet.data.readableBytes()];
+                 packet.data.readBytes(data);
++                // Paper start - Brand support
++                if (packet.identifier.equals(MINECRAFT_BRAND)) {
++                    try {
++                        this.clientBrandName = new FriendlyByteBuf(Unpooled.copiedBuffer(data)).readUtf(256);
++                    } catch (StringIndexOutOfBoundsException ex) {
++                        this.clientBrandName = "illegal";
++                    }
++                }
++                // Paper end
+                 this.cserver.getMessenger().dispatchIncomingMessage(this.player.getBukkitEntity(), packet.identifier.toString(), data);
+             } catch (Exception ex) {
+                 ServerGamePacketListenerImpl.LOGGER.error("Couldn\'t dispatch custom payload", ex);
+@@ -3016,6 +3031,12 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+ 
+     }
+ 
++    // Paper start - brand support
++    public String getClientBrandName() {
++        return clientBrandName;
++    }
++    // Paper end
++
+     public final boolean isDisconnected() {
+         return (!this.player.joining && !this.connection.isConnected()) || this.processedDisconnect; // Paper
+     }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index a3951039eeb1f5d3529213ca02d11c97d499be38..e87a08d93abd507785ac5c79f97c02236aa6f43d 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -2431,6 +2431,13 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+         // Paper end
+     };
+ 
++    // Paper start - brand support
++    @Override
++    public String getClientBrandName() {
++        return getHandle().connection != null ? getHandle().connection.getClientBrandName() : null;
++    }
++    // Paper end
++
+     public Player.Spigot spigot()
+     {
+         return this.spigot;

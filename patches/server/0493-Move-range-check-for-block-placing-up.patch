@@ -1,0 +1,37 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Wed, 15 Jul 2020 19:34:11 -0700
+Subject: [PATCH] Move range check for block placing up
+
+
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index ae3465cd5be426f3bddc3552b6aad6cad8c8ee25..e307f8695643360289b998a8d2ad244d966f1180 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -1672,17 +1672,21 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+         BlockPos blockposition = movingobjectpositionblock.getBlockPos();
+         Direction enumdirection = movingobjectpositionblock.getDirection();
+ 
++        // Paper start - move check up
++        Location eyeLoc = this.getCraftPlayer().getEyeLocation();
++        double reachDistance = NumberConversions.square(eyeLoc.getX() - blockposition.getX()) + NumberConversions.square(eyeLoc.getY() - blockposition.getY()) + NumberConversions.square(eyeLoc.getZ() - blockposition.getZ());
++        if (reachDistance > (this.getCraftPlayer().getGameMode() == org.bukkit.GameMode.CREATIVE ? CREATIVE_PLACE_DISTANCE_SQUARED : SURVIVAL_PLACE_DISTANCE_SQUARED)) {
++            return;
++        }
++        // Paper end - move check up
++
+         this.player.resetLastActionTime();
+         int i = this.player.level.getMaxBuildHeight();
+ 
+         if (blockposition.getY() < i) {
+             if (this.awaitingPositionFromClient == null && this.player.distanceToSqr((double) blockposition.getX() + 0.5D, (double) blockposition.getY() + 0.5D, (double) blockposition.getZ() + 0.5D) < 64.0D && worldserver.mayInteract((net.minecraft.world.entity.player.Player) this.player, blockposition)) {
+                 // CraftBukkit start - Check if we can actually do something over this large a distance
+-                Location eyeLoc = this.getCraftPlayer().getEyeLocation();
+-                double reachDistance = NumberConversions.square(eyeLoc.getX() - blockposition.getX()) + NumberConversions.square(eyeLoc.getY() - blockposition.getY()) + NumberConversions.square(eyeLoc.getZ() - blockposition.getZ());
+-                if (reachDistance > (this.getCraftPlayer().getGameMode() == org.bukkit.GameMode.CREATIVE ? ServerGamePacketListenerImpl.CREATIVE_PLACE_DISTANCE_SQUARED : ServerGamePacketListenerImpl.SURVIVAL_PLACE_DISTANCE_SQUARED)) {
+-                    return;
+-                }
++                // Paper - move check up
+                 this.player.stopUsingItem(); // SPIGOT-4706
+                 // CraftBukkit end
+                 InteractionResult enuminteractionresult = this.player.gameMode.useItemOn(this.player, worldserver, itemstack, enumhand, movingobjectpositionblock);
