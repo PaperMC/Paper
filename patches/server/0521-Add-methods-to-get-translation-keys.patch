@@ -1,0 +1,124 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Tue, 11 Aug 2020 19:16:09 +0200
+Subject: [PATCH] Add methods to get translation keys
+
+Co-authored-by: MeFisto94 <MeFisto94@users.noreply.github.com>
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java b/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java
+index d33c56ac47884ebcce98494377af26cc77f8d5f6..a1cac393ece249e5f18fbc0db6a7ad9f14dfb3a1 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java
+@@ -772,5 +772,15 @@ public class CraftBlock implements Block {
+     public com.destroystokyo.paper.block.BlockSoundGroup getSoundGroup() {
+         return new com.destroystokyo.paper.block.CraftBlockSoundGroup(getNMS().getBlock().defaultBlockState().getSoundType());
+     }
++
++    @Override
++    public String getTranslationKey() {
++        return this.translationKey();
++    }
++
++    @Override
++    public String translationKey() {
++        return org.bukkit.Bukkit.getUnsafe().getTranslationKey(this);
++    }
+     // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/enchantments/CraftEnchantment.java b/src/main/java/org/bukkit/craftbukkit/enchantments/CraftEnchantment.java
+index eb99e0c2462a2d1ab4508a5c3f1580b6e31d7465..c536eceef3365a7b726cd970df345ba1d055207d 100644
+--- a/src/main/java/org/bukkit/craftbukkit/enchantments/CraftEnchantment.java
++++ b/src/main/java/org/bukkit/craftbukkit/enchantments/CraftEnchantment.java
+@@ -192,6 +192,11 @@ public class CraftEnchantment extends Enchantment {
+     public net.kyori.adventure.text.Component displayName(int level) {
+         return io.papermc.paper.adventure.PaperAdventure.asAdventure(getHandle().getFullname(level));
+     }
++
++    @Override
++    public String translationKey() {
++        return this.target.getDescriptionId();
++    }
+     // Paper end
+ 
+     public net.minecraft.world.item.enchantment.Enchantment getHandle() {
+diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
+index 6b79b1ea43b713105f37de517019c033477f9835..fedbe226c549b103b957beb9feea34350e6220be 100644
+--- a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
++++ b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
+@@ -418,6 +418,30 @@ public final class CraftMagicNumbers implements UnsafeValues {
+             throw new RuntimeException();
+         }
+     }
++
++    @Override
++    public String getTranslationKey(Material mat) {
++        if (mat.isBlock()) {
++            return getBlock(mat).getDescriptionId();
++        }
++        return getItem(mat).getDescriptionId();
++    }
++
++    @Override
++    public String getTranslationKey(org.bukkit.block.Block block) {
++        return ((org.bukkit.craftbukkit.block.CraftBlock)block).getNMS().getBlock().getDescriptionId();
++    }
++
++    @Override
++    public String getTranslationKey(org.bukkit.entity.EntityType type) {
++        return net.minecraft.world.entity.EntityType.byString(type.getName()).map(net.minecraft.world.entity.EntityType::getDescriptionId).orElse(null);
++    }
++
++    @Override
++    public String getTranslationKey(org.bukkit.inventory.ItemStack itemStack) {
++        net.minecraft.world.item.ItemStack nmsItemStack = CraftItemStack.asNMSCopy(itemStack);
++        return nmsItemStack.getItem().getDescriptionId(nmsItemStack);
++    }
+     // Paper end
+ 
+     /**
+diff --git a/src/test/java/io/papermc/paper/world/TranslationKeyTest.java b/src/test/java/io/papermc/paper/world/TranslationKeyTest.java
+index 6cd015dc5a2e012ac827c2b2d9aa5542b0591afb..b2e73df86683b88c83349b6d13456f5b051ac5d5 100644
+--- a/src/test/java/io/papermc/paper/world/TranslationKeyTest.java
++++ b/src/test/java/io/papermc/paper/world/TranslationKeyTest.java
+@@ -7,7 +7,7 @@ import org.bukkit.Difficulty;
+ import org.junit.Assert;
+ import org.junit.Test;
+ 
+-public class TranslationKeyTest {
++public class TranslationKeyTest extends org.bukkit.support.AbstractTestingBase {
+ 
+     @Test
+     public void testChatVisibilityKeys() {
+@@ -16,4 +16,32 @@ public class TranslationKeyTest {
+             Assert.assertEquals(chatVisibility + "'s translation key doesn't match", ChatVisiblity.valueOf(chatVisibility.name()).getKey(), chatVisibility.translationKey());
+         }
+     }
++
++    @Test
++    public void testDifficultyKeys() {
++        for (Difficulty bukkitDifficulty : Difficulty.values()) {
++            Assert.assertEquals(bukkitDifficulty + "'s translation key doesn't match", ((TranslatableComponent) net.minecraft.world.Difficulty.byId(bukkitDifficulty.ordinal()).getDisplayName()).getKey(), bukkitDifficulty.translationKey());
++        }
++    }
++
++    @Test
++    public void testGameruleKeys() {
++        for (org.bukkit.GameRule<?> rule : org.bukkit.GameRule.values()) {
++            Assert.assertEquals(rule.getName() + "'s translation doesn't match", org.bukkit.craftbukkit.CraftWorld.getGameRulesNMS().get(rule.getName()).getDescriptionId(), rule.translationKey());
++        }
++    }
++
++    @Test
++    public void testAttributeKeys() {
++        for (org.bukkit.attribute.Attribute attribute : org.bukkit.attribute.Attribute.values()) {
++            Assert.assertEquals("translation key mismatch for " + attribute, org.bukkit.craftbukkit.attribute.CraftAttributeMap.toMinecraft(attribute).getDescriptionId(), attribute.translationKey());
++        }
++    }
++
++    @Test
++    public void testFireworkEffectType() {
++        for (org.bukkit.FireworkEffect.Type type : org.bukkit.FireworkEffect.Type.values()) {
++            Assert.assertEquals("translation key mismatch for " + type, net.minecraft.world.item.FireworkRocketItem.Shape.byId(org.bukkit.craftbukkit.inventory.CraftMetaFirework.getNBT(type)).getName(), org.bukkit.FireworkEffect.Type.NAMES.key(type));
++        }
++    }
+ }

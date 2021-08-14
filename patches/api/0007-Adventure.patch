@@ -7,31 +7,48 @@ Co-authored-by: zml <zml@stellardrift.ca>
 Co-authored-by: Jake Potrebic <jake.m.potrebic@gmail.com>
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index 17fd7162ab32785252bf2579daae8d47aec21684..479d4e3b91e902e9b30d351aa65c8b079555d7e0 100644
+index 17fd7162ab32785252bf2579daae8d47aec21684..f3018c133440e2f6d1bcdf1adb060dfc6db1a866 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
-@@ -10,6 +10,8 @@ java {
+@@ -10,6 +10,19 @@ java {
      withJavadocJar()
  }
  
 +val adventureVersion = "4.8.1"
++val apiAndDocs by configurations.creating {
++    attributes {
++        attribute(Category.CATEGORY_ATTRIBUTE, objects.named(Category.DOCUMENTATION))
++        attribute(Bundling.BUNDLING_ATTRIBUTE, objects.named(Bundling.EXTERNAL))
++        attribute(DocsType.DOCS_TYPE_ATTRIBUTE, objects.named(DocsType.SOURCES))
++        attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage.JAVA_RUNTIME))
++    }
++}
++configurations.api {
++    extendsFrom(apiAndDocs)
++}
 +
  dependencies {
      // api dependencies are listed transitively to API consumers
      api("commons-lang:commons-lang:2.6")
-@@ -19,6 +21,11 @@ dependencies {
+@@ -19,6 +32,11 @@ dependencies {
      api("org.yaml:snakeyaml:1.28")
      api("com.googlecode.json-simple:json-simple:1.1.1") // Paper
      api("it.unimi.dsi:fastutil:8.2.2")
-+    api(platform("net.kyori:adventure-bom:$adventureVersion"))
-+    api("net.kyori:adventure-api")
-+    api("net.kyori:adventure-text-serializer-gson")
-+    api("net.kyori:adventure-text-serializer-legacy")
-+    api("net.kyori:adventure-text-serializer-plain")
++    apiAndDocs(platform("net.kyori:adventure-bom:$adventureVersion"))
++    apiAndDocs("net.kyori:adventure-api")
++    apiAndDocs("net.kyori:adventure-text-serializer-gson")
++    apiAndDocs("net.kyori:adventure-text-serializer-legacy")
++    apiAndDocs("net.kyori:adventure-text-serializer-plain")
  
      compileOnly("org.apache.maven:maven-resolver-provider:3.8.1")
      compileOnly("org.apache.maven.resolver:maven-resolver-connector-basic:1.7.0")
-@@ -66,5 +73,11 @@ tasks.withType<Javadoc>().configureEach {
+@@ -61,10 +79,17 @@ tasks.jar {
+ }
+ 
+ tasks.withType<Javadoc>().configureEach {
++    (options as CoreJavadocOptions).addStringOption("sourcepath", apiAndDocs.resolvedConfiguration.files.joinToString(separator = File.pathSeparator, transform = File::getPath))
+     (options as StandardJavadocDocletOptions).links(
+         "https://guava.dev/releases/21.0/api/docs/",
          "https://javadoc.io/doc/org.yaml/snakeyaml/1.28/",
          "https://javadoc.io/doc/org.jetbrains/annotations/21.0.1/", // Paper - we don't want Java 5 annotations
          "https://javadoc.io/doc/net.md-5/bungeecord-chat/1.16-R0.4/",
