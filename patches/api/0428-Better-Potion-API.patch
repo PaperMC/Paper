@@ -1,0 +1,343 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Mon, 16 Aug 2021 16:59:30 -0700
+Subject: [PATCH] Better Potion API
+
+
+diff --git a/src/main/java/io/papermc/paper/potion/Potion.java b/src/main/java/io/papermc/paper/potion/Potion.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..465a52352136b875ced5d330174edf871681d320
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/potion/Potion.java
+@@ -0,0 +1,130 @@
++package io.papermc.paper.potion;
++
++import io.papermc.paper.registry.Reference;
++import java.util.List;
++import org.bukkit.Color;
++import org.bukkit.Keyed;
++import org.bukkit.NamespacedKey;
++import org.bukkit.Registry;
++import org.bukkit.potion.PotionEffect;
++import org.jetbrains.annotations.ApiStatus;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Unmodifiable;
++
++@ApiStatus.NonExtendable
++public abstract class Potion implements Keyed {
++
++    public static final Reference<Potion> EMPTY = get("empty");
++    public static final Reference<Potion> WATER = get("water");
++    public static final Reference<Potion> MUNDANE = get("mundane");
++    public static final Reference<Potion> THICK = get("thick");
++    public static final Reference<Potion> AWKWARD = get("awkward");
++    public static final Reference<Potion> NIGHT_VISION = get("night_vision");
++    public static final Reference<Potion> LONG_NIGHT_VISION = get("long_night_vision");
++    public static final Reference<Potion> INVISIBILITY = get("invisibility");
++    public static final Reference<Potion> LONG_INVISIBILITY = get("long_invisibility");
++    public static final Reference<Potion> LEAPING = get("leaping");
++    public static final Reference<Potion> LONG_LEAPING = get("long_leaping");
++    public static final Reference<Potion> STRONG_LEAPING = get("strong_leaping");
++    public static final Reference<Potion> FIRE_RESISTANCE = get("fire_resistance");
++    public static final Reference<Potion> LONG_FIRE_RESISTANCE = get("long_fire_resistance");
++    public static final Reference<Potion> SWIFTNESS = get("swiftness");
++    public static final Reference<Potion> LONG_SWIFTNESS = get("long_swiftness");
++    public static final Reference<Potion> STRONG_SWIFTNESS = get("strong_swiftness");
++    public static final Reference<Potion> SLOWNESS = get("slowness");
++    public static final Reference<Potion> LONG_SLOWNESS = get("long_slowness");
++    public static final Reference<Potion> STRONG_SLOWNESS = get("strong_slowness");
++    public static final Reference<Potion> TURTLE_MASTER = get("turtle_master");
++    public static final Reference<Potion> LONG_TURTLE_MASTER = get("long_turtle_master");
++    public static final Reference<Potion> STRONG_TURTLE_MASTER = get("strong_turtle_master");
++    public static final Reference<Potion> WATER_BREATHING = get("water_breathing");
++    public static final Reference<Potion> LONG_WATER_BREATHING = get("long_water_breathing");
++    public static final Reference<Potion> HEALING = get("healing");
++    public static final Reference<Potion> STRONG_HEALING = get("strong_healing");
++    public static final Reference<Potion> HARMING = get("harming");
++    public static final Reference<Potion> STRONG_HARMING = get("strong_harming");
++    public static final Reference<Potion> POISON = get("poison");
++    public static final Reference<Potion> LONG_POISON = get("long_poison");
++    public static final Reference<Potion> STRONG_POISON = get("strong_poison");
++    public static final Reference<Potion> REGENERATION = get("regeneration");
++    public static final Reference<Potion> LONG_REGENERATION = get("long_regeneration");
++    public static final Reference<Potion> STRONG_REGENERATION = get("strong_regeneration");
++    public static final Reference<Potion> STRENGTH = get("strength");
++    public static final Reference<Potion> LONG_STRENGTH = get("long_strength");
++    public static final Reference<Potion> STRONG_STRENGTH = get("strong_strength");
++    public static final Reference<Potion> WEAKNESS = get("weakness");
++    public static final Reference<Potion> LONG_WEAKNESS = get("long_weakness");
++    public static final Reference<Potion> LUCK = get("luck");
++    public static final Reference<Potion> SLOW_FALLING = get("slow_falling");
++    public static final Reference<Potion> LONG_SLOW_FALLING = get("long_slow_falling");
++
++    private final NamespacedKey key;
++
++    protected Potion(final @NotNull NamespacedKey key) {
++        this.key = key;
++    }
++
++    @Override
++    public @NotNull NamespacedKey getKey() {
++        return this.key;
++    }
++
++    /**
++     * Gets an unmodifiable view of the list of effects this potion provides.
++     *
++     * @return an unmodifiable view of the list of effects
++     */
++    public abstract @NotNull @Unmodifiable List<PotionEffect> getEffects();
++
++    /**
++     * Checks if this potion has instantaneous effects.
++     *
++     * @return true if instantaneous effects are included
++     */
++    public abstract boolean hasInstantEffects();
++
++    /**
++     * Gets the color of this potion.
++     *
++     * @return the color
++     */
++    public abstract @NotNull Color getColor();
++
++    /**
++     * Checks if the potion has an upgraded variant.
++     * This refers to whether or not the potion can be Tier 2,
++     * such as Potion of Fire Resistance II.
++     *
++     * @return true if the potion can be upgraded
++     */
++    public abstract boolean isUpgradeable();
++
++    /**
++     * Checks if the potion has an extended variant.
++     * This refers to the extended duration potions.
++     *
++     * @return true if the potion can be extended
++     */
++    public abstract boolean isExtendable();
++
++    /**
++     * Checks if this potion is the upgraded variant.
++     * This refers to whether or not the potion is Tier 2,
++     * such as Potion of Fire Resistance II
++     *
++     * @return true if the potion is upgraded
++     */
++    public abstract boolean isUpgraded();
++
++    /**
++     * Checks if the potion is the extended variant.
++     * This refers to the extended duration potions.
++     *
++     * @return true if this potion is extended
++     */
++    public abstract boolean isExtended();
++
++    private static Reference<Potion> get(@NotNull String name) {
++        return Reference.create(Registry.POTION, NamespacedKey.minecraft(name));
++    }
++}
+diff --git a/src/main/java/org/bukkit/Registry.java b/src/main/java/org/bukkit/Registry.java
+index 1d96ed754be09b52a518967c870eba05bb3e99ee..7da89f7d7d21696560c6710759359d9e1a375c7e 100644
+--- a/src/main/java/org/bukkit/Registry.java
++++ b/src/main/java/org/bukkit/Registry.java
+@@ -256,6 +256,13 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
+             return Arrays.stream(org.bukkit.potion.PotionEffectType.values()).iterator();
+         }
+     };
++
++    /**
++     * Potion types.
++     *
++     * @see io.papermc.paper.potion.Potion
++     */
++    Registry<io.papermc.paper.potion.Potion> POTION = Bukkit.getRegistry(io.papermc.paper.potion.Potion.class);
+     // Paper end
+ 
+     /**
+diff --git a/src/main/java/org/bukkit/entity/AreaEffectCloud.java b/src/main/java/org/bukkit/entity/AreaEffectCloud.java
+index f3180f6a4910984fc324f4a69eac59e036e32f2b..fabf5819a79d8eec73cbd2da6ed29d2346d1ffb3 100644
+--- a/src/main/java/org/bukkit/entity/AreaEffectCloud.java
++++ b/src/main/java/org/bukkit/entity/AreaEffectCloud.java
+@@ -149,17 +149,37 @@ public interface AreaEffectCloud extends Entity {
+      * Sets the underlying potion data
+      *
+      * @param data PotionData to set the base potion state to
++     * @deprecated use {@link #setBasePotion(io.papermc.paper.potion.Potion)}
+      */
++    @Deprecated // Paper
+     void setBasePotionData(@NotNull PotionData data);
+ 
+     /**
+      * Returns the potion data about the base potion
+      *
+      * @return a PotionData object
++     * @deprecated use {@link #getBasePotion()}
+      */
+     @NotNull
++    @Deprecated // Paper
+     PotionData getBasePotionData();
+ 
++    // Paper start - improved Potion API
++    /**
++     * Sets the underlying potion.
++     *
++     * @param potion the Potion to set the base potion to
++     */
++    void setBasePotion(@NotNull io.papermc.paper.potion.Potion potion);
++
++    /**
++     * Returns the base potion.
++     *
++     * @return a Potion object
++     */
++    @NotNull io.papermc.paper.potion.Potion getBasePotion();
++    // Paper end - improved Potion API
++
+     /**
+      * Checks for the presence of custom potion effects.
+      *
+diff --git a/src/main/java/org/bukkit/entity/Arrow.java b/src/main/java/org/bukkit/entity/Arrow.java
+index be9a35790fc664721ac94f3708613eb77631a0c5..2e46c5de33e6dd41867836608f0727dbf441341c 100644
+--- a/src/main/java/org/bukkit/entity/Arrow.java
++++ b/src/main/java/org/bukkit/entity/Arrow.java
+@@ -14,17 +14,37 @@ public interface Arrow extends AbstractArrow {
+      * Sets the underlying potion data
+      *
+      * @param data PotionData to set the base potion state to
++     * @deprecated use {@link #setBasePotion(io.papermc.paper.potion.Potion)}
+      */
++    @Deprecated // Paper
+     void setBasePotionData(@NotNull PotionData data);
+ 
+     /**
+      * Returns the potion data about the base potion
+      *
+      * @return a PotionData object
++     * @deprecated use {@link #getBasePotion()}
+      */
++    @Deprecated // Paper
+     @NotNull
+     PotionData getBasePotionData();
+ 
++    // Paper start - improved Potion API
++    /**
++     * Sets the underlying potion.
++     *
++     * @param potion the Potion to set the base potion to
++     */
++    void setBasePotion(@NotNull io.papermc.paper.potion.Potion potion);
++
++    /**
++     * Returns the base potion.
++     *
++     * @return a Potion object
++     */
++    @NotNull io.papermc.paper.potion.Potion getBasePotion();
++    // Paper end - improved Potion API
++
+     /**
+      * Gets the color of this arrow.
+      *
+diff --git a/src/main/java/org/bukkit/inventory/meta/PotionMeta.java b/src/main/java/org/bukkit/inventory/meta/PotionMeta.java
+index 8e2f474a44a9b6355c4582d4f51c1fd83a51584a..04d7c418e694bf800716b878a289688d69978124 100644
+--- a/src/main/java/org/bukkit/inventory/meta/PotionMeta.java
++++ b/src/main/java/org/bukkit/inventory/meta/PotionMeta.java
+@@ -17,16 +17,35 @@ public interface PotionMeta extends ItemMeta {
+      * Sets the underlying potion data
+      *
+      * @param data PotionData to set the base potion state to
++     * @deprecated use {@link #setBasePotion(io.papermc.paper.potion.Potion)}
+      */
++    @Deprecated // Paper
+     void setBasePotionData(@NotNull PotionData data);
+ 
+     /**
+      * Returns the potion data about the base potion
+      *
+      * @return a PotionData object
++     * @deprecated use {@link #getBasePotion()}
+      */
+     @NotNull
++    @Deprecated // Paper
+     PotionData getBasePotionData();
++    // Paper start - improved Potion API
++    /**
++     * Sets the underlying potion.
++     *
++     * @param potion the Potion to set the base potion to
++     */
++    void setBasePotion(@NotNull io.papermc.paper.potion.Potion potion);
++
++    /**
++     * Returns the base potion.
++     *
++     * @return a Potion object
++     */
++    @NotNull io.papermc.paper.potion.Potion getBasePotion();
++    // Paper end - improved Potion API
+ 
+     /**
+      * Checks for the presence of custom potion effects.
+diff --git a/src/main/java/org/bukkit/potion/PotionBrewer.java b/src/main/java/org/bukkit/potion/PotionBrewer.java
+index 1598f34d306fb34ff7ffe7886b0d6e4abe734b6b..ef8b86e1d1fd962880d0cb0252c0e4ba325a877d 100644
+--- a/src/main/java/org/bukkit/potion/PotionBrewer.java
++++ b/src/main/java/org/bukkit/potion/PotionBrewer.java
+@@ -40,8 +40,10 @@ public interface PotionBrewer {
+      * @param upgraded Whether the potion is upgraded
+      * @param extended Whether the potion is extended
+      * @return The list of effects
++     * @deprecated use {@link io.papermc.paper.potion.Potion} and {@link io.papermc.paper.potion.Potion#getEffects()}
+      */
+     @NotNull
++    @Deprecated // Paper
+     public Collection<PotionEffect> getEffects(@NotNull PotionType type, boolean upgraded, boolean extended);
+ 
+     // Paper start
+diff --git a/src/main/java/org/bukkit/potion/PotionData.java b/src/main/java/org/bukkit/potion/PotionData.java
+index ef5fe586a71f0c6d258a5891444b99da08fbdf27..e6f95adbd4423129c4e5f831ae1e6cf29d3c2190 100644
+--- a/src/main/java/org/bukkit/potion/PotionData.java
++++ b/src/main/java/org/bukkit/potion/PotionData.java
+@@ -3,6 +3,10 @@ package org.bukkit.potion;
+ import com.google.common.base.Preconditions;
+ import org.jetbrains.annotations.NotNull;
+ 
++/**
++ * @deprecated use {@link io.papermc.paper.potion.Potion}
++ */
++@Deprecated // Paper
+ public final class PotionData {
+ 
+     private final PotionType type;
+@@ -84,4 +88,14 @@ public final class PotionData {
+         PotionData other = (PotionData) obj;
+         return (this.upgraded == other.upgraded) && (this.extended == other.extended) && (this.type == other.type);
+     }
++    // Paper start
++    @Override
++    public String toString() {
++        return "PotionData{" +
++            "type=" + type +
++            ", extended=" + extended +
++            ", upgraded=" + upgraded +
++            '}';
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/potion/PotionType.java b/src/main/java/org/bukkit/potion/PotionType.java
+index af7dea669cd394db2498e8d9dc88bbd8eac4b83b..7bbe44b1392feb36b2e5829ecb331a6b2ee167b9 100644
+--- a/src/main/java/org/bukkit/potion/PotionType.java
++++ b/src/main/java/org/bukkit/potion/PotionType.java
+@@ -5,7 +5,9 @@ import org.jetbrains.annotations.Nullable;
+ /**
+  * This enum reflects and matches each potion state that can be obtained from
+  * the Creative mode inventory
++ * @deprecated use {@link io.papermc.paper.potion.Potion}
+  */
++@Deprecated // Paper
+ public enum PotionType {
+     UNCRAFTABLE(null, false, false),
+     WATER(null, false, false),
