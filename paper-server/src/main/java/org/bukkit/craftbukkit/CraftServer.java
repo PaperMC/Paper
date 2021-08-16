@@ -2334,6 +2334,11 @@ public final class CraftServer implements Server {
 
     @Override
     public int getSpawnLimit(SpawnCategory spawnCategory) {
+        // Paper start - Add mobcaps commands
+        return this.getSpawnLimitUnsafe(spawnCategory);
+    }
+    public int getSpawnLimitUnsafe(final SpawnCategory spawnCategory) {
+        // Paper end - Add mobcaps commands
         return this.spawnCategoryLimit.getOrDefault(spawnCategory, -1);
     }
 

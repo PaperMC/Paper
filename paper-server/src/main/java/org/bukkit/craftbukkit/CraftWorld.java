@@ -1713,9 +1713,14 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         Preconditions.checkArgument(spawnCategory != null, "SpawnCategory cannot be null");
         Preconditions.checkArgument(CraftSpawnCategory.isValidForLimits(spawnCategory), "SpawnCategory.%s are not supported", spawnCategory);
 
+        // Paper start - Add mobcaps commands
+        return this.getSpawnLimitUnsafe(spawnCategory);
+    }
+    public final int getSpawnLimitUnsafe(final SpawnCategory spawnCategory) {
         int limit = this.spawnCategoryLimit.getOrDefault(spawnCategory, -1);
         if (limit < 0) {
-            limit = this.server.getSpawnLimit(spawnCategory);
+            limit = this.server.getSpawnLimitUnsafe(spawnCategory);
+            // Paper end - Add mobcaps commands
         }
         return limit;
     }
