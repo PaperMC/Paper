@@ -5,7 +5,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Represents an item that has durability and can take damage.
  */
-public interface Damageable {
+public interface Damageable extends ItemMeta {
 
     /**
      * Checks to see if this item has damage
@@ -29,5 +29,6 @@ public interface Damageable {
     void setDamage(int damage);
 
     @NotNull
+    @Override
     Damageable clone();
 }
