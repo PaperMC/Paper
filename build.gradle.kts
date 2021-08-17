@@ -1,11 +1,13 @@
 plugins {
     java
+    `maven-publish`
     id("com.github.johnrengelman.shadow") version "7.0.0" apply false
-    id("io.papermc.paperweight.core") version "1.1.9"
+    id("io.papermc.paperweight.core") version "1.1.10"
 }
 
 allprojects {
     apply(plugin = "java")
+    apply(plugin = "maven-publish")
 
     java {
         toolchain {
@@ -15,9 +17,6 @@ allprojects {
 }
 
 subprojects {
-    apply(plugin = "java")
-    apply(plugin = "maven-publish")
-
     tasks.withType<JavaCompile> {
         options.encoding = Charsets.UTF_8.name()
         options.release.set(16)
@@ -27,16 +26,6 @@ subprojects {
     }
     tasks.withType<ProcessResources> {
         filteringCharset = Charsets.UTF_8.name()
-    }
-
-    configure<PublishingExtension> {
-        repositories {
-            maven {
-                name = "paperSnapshots"
-                url = uri("https://papermc.io/repo/repository/maven-snapshots/")
-                credentials(PasswordCredentials::class)
-            }
-        }
     }
 
     if (name == "Paper-MojangAPI") {
@@ -62,21 +51,11 @@ repositories {
             onlyForConfigurations("paperclip")
         }
     }
-    maven("https://maven.quiltmc.org/repository/release/") {
-        content {
-            onlyForConfigurations("paramMappings", "remapper")
-        }
-    }
-    maven("https://files.minecraftforge.net/maven/") {
-        content {
-            onlyForConfigurations("decompiler")
-        }
-    }
 }
 
 dependencies {
     paramMappings("org.quiltmc:yarn:1.17.1+build.1:mergedv2")
-    remapper("org.quiltmc:tiny-remapper:0.4.1")
+    remapper("org.quiltmc:tiny-remapper:0.4.3:fat")
     decompiler("net.minecraftforge:forgeflower:1.5.498.12")
     paperclip("io.papermc:paperclip:2.0.1")
 }
@@ -88,6 +67,10 @@ paperweight {
     paper {
         spigotApiPatchDir.set(layout.projectDirectory.dir("patches/api"))
         spigotServerPatchDir.set(layout.projectDirectory.dir("patches/server"))
+
+        paramMappingsRepo.set("https://maven.quiltmc.org/repository/release/")
+        remapRepo.set("https://maven.quiltmc.org/repository/release/")
+        decompileRepo.set("https://files.minecraftforge.net/maven/")
 
         mappingsPatch.set(layout.projectDirectory.file("build-data/mappings-patch.tiny"))
         reobfMappingsPatch.set(layout.projectDirectory.file("build-data/reobf-mappings-patch.tiny"))
@@ -105,6 +88,42 @@ paperweight {
             "org.bukkit.craftbukkit",
             "org.spigotmc"
         )
+    }
+}
+
+tasks.generateDevelopmentBundle {
+    apiCoordinates.set("io.papermc.paper:paper-api")
+    mojangApiCoordinates.set("io.papermc.paper:paper-mojangapi")
+    libraryRepositories.set(
+        listOf(
+            "https://libraries.minecraft.net/",
+            "https://maven.quiltmc.org/repository/release/",
+            "https://repo.aikar.co/content/groups/aikar",
+            "https://ci.emc.gs/nexus/content/groups/aikar/",
+            "https://papermc.io/repo/repository/maven-public/"
+        )
+    )
+}
+
+publishing {
+    if (project.hasProperty("publishDevBundle")) {
+        publications.create<MavenPublication>("devBundle") {
+            artifact(tasks.generateDevelopmentBundle) {
+                artifactId = "dev-bundle"
+            }
+        }
+    }
+}
+
+allprojects {
+    publishing {
+        repositories {
+            maven {
+                name = "paperSnapshots"
+                url = uri("https://papermc.io/repo/repository/maven-snapshots/")
+                credentials(PasswordCredentials::class)
+            }
+        }
     }
 }
 
