@@ -23,25 +23,15 @@ and an action can be defined: DROP or KICK
 
 If interval or rate are less-than 0, the limit is ignored
 
-diff --git a/src/main/java/io/papermc/paper/config/TuinityConfig.java b/src/main/java/io/papermc/paper/config/TuinityConfig.java
-index 36d7d47c3c914d8b28d02bb15ed50708cb473af3..fb091ead11d876b1e60815b6cfda0f7630424116 100644
---- a/src/main/java/io/papermc/paper/config/TuinityConfig.java
-+++ b/src/main/java/io/papermc/paper/config/TuinityConfig.java
-@@ -1,6 +1,10 @@
- package io.papermc.paper.config;
- 
- import com.destroystokyo.paper.util.SneakyThrow;
-+import io.papermc.paper.util.ObfHelper;
-+import java.util.HashMap;
-+import java.util.Map;
-+import net.minecraft.server.MinecraftServer;
- import org.bukkit.Bukkit;
- import org.bukkit.configuration.ConfigurationSection;
- import org.bukkit.configuration.file.YamlConfiguration;
-@@ -129,6 +133,104 @@ public final class TuinityConfig {
-         playerFrustumPrioritisation = TuinityConfig.getBoolean("player-chunks.enable-frustum-priority", false);
+diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+index 2009bc0193d54985326f23f5617646a59ab05f2d..96aa63792e1ca12ddb1d3e102cef4a9fc4db3b6e 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+@@ -539,4 +539,102 @@ public class PaperConfig {
+         playerTargetChunkSendRate = getDouble("player-chunks.target-chunk-send-rate", -35.0);
+         playerFrustumPrioritisation = getBoolean("player-chunks.enable-frustum-priority", false);
      }
- 
++
 +    public static final class PacketLimit {
 +        public final double packetLimitInterval;
 +        public final double maxPacketRate;
@@ -64,29 +54,29 @@ index 36d7d47c3c914d8b28d02bb15ed50708cb473af3..fb091ead11d876b1e60815b6cfda0f76
 +
 +    private static void packetLimiter() {
 +        packetSpecificLimits.clear();
-+        kickMessage = org.bukkit.ChatColor.translateAlternateColorCodes('&', TuinityConfig.getString("packet-limiter.kick-message", "&cSent too many packets"));
++        kickMessage = org.bukkit.ChatColor.translateAlternateColorCodes('&', getString("packet-limiter.kick-message", "&cSent too many packets"));
 +        allPacketsLimit = new PacketLimit(
-+                TuinityConfig.getDouble("packet-limiter.limits.all.interval", 7.0),
-+                TuinityConfig.getDouble("packet-limiter.limits.all.max-packet-rate", 500.0),
-+                PacketLimit.ViolateAction.KICK
++            getDouble("packet-limiter.limits.all.interval", 7.0),
++            getDouble("packet-limiter.limits.all.max-packet-rate", 500.0),
++            PacketLimit.ViolateAction.KICK
 +        );
 +        if (allPacketsLimit.maxPacketRate <= 0.0 || allPacketsLimit.packetLimitInterval <= 0.0) {
 +            allPacketsLimit = null;
 +        }
-+        final ConfigurationSection section = TuinityConfig.config.getConfigurationSection("packet-limiter.limits");
++        final ConfigurationSection section = config.getConfigurationSection("packet-limiter.limits");
 +
 +        // add default packets
 +
 +        // auto recipe limiting
-+        TuinityConfig.getDouble("packet-limiter.limits." +
++        getDouble("packet-limiter.limits." +
 +            "PacketPlayInAutoRecipe" + ".interval", 4.0);
-+        TuinityConfig.getDouble("packet-limiter.limits." +
++        getDouble("packet-limiter.limits." +
 +            "PacketPlayInAutoRecipe" + ".max-packet-rate", 5.0);
-+        TuinityConfig.getString("packet-limiter.limits." +
++        getString("packet-limiter.limits." +
 +            "PacketPlayInAutoRecipe" + ".action", PacketLimit.ViolateAction.DROP.name());
 +
 +        final Map<String, String> mojangToSpigot = new HashMap<>();
-+        final Map<String, ObfHelper.ClassMapping> maps = ObfHelper.INSTANCE.mappings();
++        final Map<String, io.papermc.paper.util.ObfHelper.ClassMapping> maps = io.papermc.paper.util.ObfHelper.INSTANCE.mappings();
 +        if (maps != null) {
 +            maps.forEach((spigotName, classMapping) ->
 +                mojangToSpigot.put(classMapping.mojangName(), classMapping.obfName()));
@@ -139,12 +129,9 @@ index 36d7d47c3c914d8b28d02bb15ed50708cb473af3..fb091ead11d876b1e60815b6cfda0f76
 +            }
 +        }
 +    }
-+
-     public static final class WorldConfig {
- 
-         public final String worldName;
+ }
 diff --git a/src/main/java/net/minecraft/network/Connection.java b/src/main/java/net/minecraft/network/Connection.java
-index 3321bb7582a3e0227fbc1d41982529c23548269b..dce84915c4c7a49e73141f57598f9d77c801a9ef 100644
+index 3321bb7582a3e0227fbc1d41982529c23548269b..73457ae24ba6f605dd831a870499f1a990570e53 100644
 --- a/src/main/java/net/minecraft/network/Connection.java
 +++ b/src/main/java/net/minecraft/network/Connection.java
 @@ -148,6 +148,22 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
@@ -153,15 +140,15 @@ index 3321bb7582a3e0227fbc1d41982529c23548269b..dce84915c4c7a49e73141f57598f9d77
      // Paper end - allow controlled flushing
 +    // Paper start - packet limiter
 +    protected final Object PACKET_LIMIT_LOCK = new Object();
-+    protected final io.papermc.paper.util.IntervalledCounter allPacketCounts = io.papermc.paper.config.TuinityConfig.allPacketsLimit != null ? new io.papermc.paper.util.IntervalledCounter(
-+            (long)(io.papermc.paper.config.TuinityConfig.allPacketsLimit.packetLimitInterval * 1.0e9)
++    protected final io.papermc.paper.util.IntervalledCounter allPacketCounts = com.destroystokyo.paper.PaperConfig.allPacketsLimit != null ? new io.papermc.paper.util.IntervalledCounter(
++            (long)(com.destroystokyo.paper.PaperConfig.allPacketsLimit.packetLimitInterval * 1.0e9)
 +    ) : null;
 +    protected final java.util.Map<Class<? extends net.minecraft.network.protocol.Packet<?>>, io.papermc.paper.util.IntervalledCounter> packetSpecificLimits = new java.util.HashMap<>();
 +
 +    private boolean stopReadingPackets;
 +    private void killForPacketSpam() {
-+        this.sendPacket(new ClientboundDisconnectPacket(org.bukkit.craftbukkit.util.CraftChatMessage.fromString(io.papermc.paper.config.TuinityConfig.kickMessage, true)[0]), (future) -> {
-+            this.disconnect(org.bukkit.craftbukkit.util.CraftChatMessage.fromString(io.papermc.paper.config.TuinityConfig.kickMessage, true)[0]);
++        this.sendPacket(new ClientboundDisconnectPacket(org.bukkit.craftbukkit.util.CraftChatMessage.fromString(com.destroystokyo.paper.PaperConfig.kickMessage, true)[0]), (future) -> {
++            this.disconnect(org.bukkit.craftbukkit.util.CraftChatMessage.fromString(com.destroystokyo.paper.PaperConfig.kickMessage, true)[0]);
 +        });
 +        this.setReadOnly();
 +        this.stopReadingPackets = true;
@@ -179,20 +166,20 @@ index 3321bb7582a3e0227fbc1d41982529c23548269b..dce84915c4c7a49e73141f57598f9d77
 +                return;
 +            }
 +            if (this.allPacketCounts != null ||
-+                    io.papermc.paper.config.TuinityConfig.packetSpecificLimits.containsKey(packet.getClass())) {
++                    com.destroystokyo.paper.PaperConfig.packetSpecificLimits.containsKey(packet.getClass())) {
 +                long time = System.nanoTime();
 +                synchronized (PACKET_LIMIT_LOCK) {
 +                    if (this.allPacketCounts != null) {
 +                        this.allPacketCounts.updateAndAdd(1, time);
-+                        if (this.allPacketCounts.getRate() >= io.papermc.paper.config.TuinityConfig.allPacketsLimit.maxPacketRate) {
++                        if (this.allPacketCounts.getRate() >= com.destroystokyo.paper.PaperConfig.allPacketsLimit.maxPacketRate) {
 +                            this.killForPacketSpam();
 +                            return;
 +                        }
 +                    }
 +
 +                    for (Class<?> check = packet.getClass(); check != Object.class; check = check.getSuperclass()) {
-+                        io.papermc.paper.config.TuinityConfig.PacketLimit packetSpecificLimit =
-+                                io.papermc.paper.config.TuinityConfig.packetSpecificLimits.get(check);
++                        com.destroystokyo.paper.PaperConfig.PacketLimit packetSpecificLimit =
++                            com.destroystokyo.paper.PaperConfig.packetSpecificLimits.get(check);
 +                        if (packetSpecificLimit == null) {
 +                            continue;
 +                        }

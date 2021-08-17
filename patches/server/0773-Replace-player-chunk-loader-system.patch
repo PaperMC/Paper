@@ -49,7 +49,7 @@ values help the responsitivity to player movement and
 higher values help loading when the server is at a low TPS.
 
 diff --git a/src/main/java/co/aikar/timings/TimingsExport.java b/src/main/java/co/aikar/timings/TimingsExport.java
-index 8a3cc4647137427a31dcc9f40038f43962c7f6eb..b3066b500402d4f9513c6397ca3699b9becfd72e 100644
+index cfe293881f68c8db337c3a48948362bb7b3e3522..7d44abcb4fff9717a1af55879deb7eb9c2d9e7e9 100644
 --- a/src/main/java/co/aikar/timings/TimingsExport.java
 +++ b/src/main/java/co/aikar/timings/TimingsExport.java
 @@ -153,7 +153,7 @@ public class TimingsExport extends Thread {
@@ -61,17 +61,45 @@ index 8a3cc4647137427a31dcc9f40038f43962c7f6eb..b3066b500402d4f9513c6397ca3699b9
              ));
          }));
  
+diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+index 95d8cf449bf0439fddaf319246fef51e1570b68e..2009bc0193d54985326f23f5617646a59ab05f2d 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+@@ -520,4 +520,23 @@ public class PaperConfig {
+         itemValidationBookAuthorLength = getInt("settings.item-validation.book.author", itemValidationBookAuthorLength);
+         itemValidationBookPageLength = getInt("settings.item-validation.book.page", itemValidationBookPageLength);
+     }
++
++    public static int playerMinChunkLoadRadius;
++    public static double playerMaxConcurrentChunkSends;
++    public static double playerMaxConcurrentChunkLoads;
++    public static boolean playerAutoConfigureSendViewDistance;
++    public static boolean enableMC162253Workaround;
++    public static double playerTargetChunkSendRate;
++    public static boolean playerFrustumPrioritisation;
++
++    private static void newPlayerChunkManagement() {
++        playerMinChunkLoadRadius = getInt("player-chunks.min-load-radius", 2);
++        playerMaxConcurrentChunkSends = getDouble("player-chunks.max-concurrent-sends", 5.0);
++        playerMaxConcurrentChunkLoads = getDouble("player-chunks.max-concurrent-loads", -6.0);
++        playerAutoConfigureSendViewDistance = getBoolean("player-chunks.autoconfig-send-distance", true);
++        // this costs server bandwidth. latest phosphor or starlight on the client fixes mc162253 anyways.
++        enableMC162253Workaround = getBoolean("player-chunks.enable-mc162253-workaround", true);
++        playerTargetChunkSendRate = getDouble("player-chunks.target-chunk-send-rate", -35.0);
++        playerFrustumPrioritisation = getBoolean("player-chunks.enable-frustum-priority", false);
++    }
+ }
 diff --git a/src/main/java/io/papermc/paper/chunk/PlayerChunkLoader.java b/src/main/java/io/papermc/paper/chunk/PlayerChunkLoader.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..ef4cffabfb2b1359509037cc61ac260e7d96555e
+index 0000000000000000000000000000000000000000..52929110c39d74fb1a7b059a26c253fc2478dab0
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/chunk/PlayerChunkLoader.java
 @@ -0,0 +1,965 @@
 +package io.papermc.paper.chunk;
 +
++import com.destroystokyo.paper.PaperConfig;
 +import com.destroystokyo.paper.util.misc.PlayerAreaMap;
 +import com.destroystokyo.paper.util.misc.PooledLinkedHashSets;
-+import io.papermc.paper.config.TuinityConfig;
 +import io.papermc.paper.util.CoordinateUtils;
 +import io.papermc.paper.util.TickThread;
 +import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
@@ -363,17 +391,17 @@ index 0000000000000000000000000000000000000000..ef4cffabfb2b1359509037cc61ac260e
 +    }
 +
 +    protected int getMaxConcurrentChunkSends() {
-+        double config = TuinityConfig.playerMaxConcurrentChunkSends;
++        double config = PaperConfig.playerMaxConcurrentChunkSends;
 +        return Math.max(1, config <= 0 ? (int)Math.ceil(-config * this.chunkMap.level.players().size()) : (int)config);
 +    }
 +
 +    protected int getMaxChunkLoads() {
-+        double config = TuinityConfig.playerMaxConcurrentChunkLoads;
++        double config = PaperConfig.playerMaxConcurrentChunkLoads;
 +        return Math.max(1, (config <= 0 ? (int)Math.ceil(-config * MinecraftServer.getServer().getPlayerCount()) : (int)config) * 9);
 +    }
 +
 +    protected double getTargetSendRatePerPlayer() {
-+        double config = TuinityConfig.playerTargetChunkSendRate;
++        double config = PaperConfig.playerTargetChunkSendRate;
 +        return config <= 0 ? -config : config / MinecraftServer.getServer().getPlayerCount();
 +    }
 +
@@ -756,7 +784,7 @@ index 0000000000000000000000000000000000000000..ef4cffabfb2b1359509037cc61ac260e
 +            final int tickViewDistance = this.tickViewDistance == -1 ? this.loader.getTickDistance() : this.tickViewDistance;
 +            final int loadViewDistance = Math.max(tickViewDistance + 1, this.loadViewDistance == -1 ? this.loader.getLoadDistance() : this.loadViewDistance);
 +            final int clientViewDistance = this.getClientViewDistance();
-+            final int sendViewDistance = Math.min(loadViewDistance, this.sendViewDistance == -1 ? (!TuinityConfig.playerAutoConfigureSendViewDistance || clientViewDistance == -1 ? this.loader.getSendDistance() : clientViewDistance + 1) : this.sendViewDistance);
++            final int sendViewDistance = Math.min(loadViewDistance, this.sendViewDistance == -1 ? (!PaperConfig.playerAutoConfigureSendViewDistance || clientViewDistance == -1 ? this.loader.getSendDistance() : clientViewDistance + 1) : this.sendViewDistance);
 +            return sendViewDistance;
 +        }
 +
@@ -867,14 +895,14 @@ index 0000000000000000000000000000000000000000..ef4cffabfb2b1359509037cc61ac260e
 +            final int loadViewDistance = Math.max(tickViewDistance + 1, this.loadViewDistance == -1 ? this.loader.getLoadDistance() : this.loadViewDistance);
 +            // send view cannot be greater-than load view
 +            final int clientViewDistance = this.getClientViewDistance();
-+            final int sendViewDistance = Math.min(loadViewDistance, this.sendViewDistance == -1 ? (!TuinityConfig.playerAutoConfigureSendViewDistance || clientViewDistance == -1 ? this.loader.getSendDistance() : clientViewDistance + 1) : this.sendViewDistance);
++            final int sendViewDistance = Math.min(loadViewDistance, this.sendViewDistance == -1 ? (!PaperConfig.playerAutoConfigureSendViewDistance || clientViewDistance == -1 ? this.loader.getSendDistance() : clientViewDistance + 1) : this.sendViewDistance);
 +
 +            final double posX = this.player.getX();
 +            final double posZ = this.player.getZ();
 +            final float yaw = MCUtil.normalizeYaw(this.player.yRot + 90.0f); // mc yaw 0 is along the positive z axis, but obviously this is really dumb - offset so we are at positive x-axis
 +
 +            // in general, we really only want to prioritise chunks in front if we know we're moving pretty fast into them.
-+            final boolean useLookPriority = TuinityConfig.playerFrustumPrioritisation && (this.player.getDeltaMovement().horizontalDistanceSqr() > LOOK_PRIORITY_SPEED_THRESHOLD ||
++            final boolean useLookPriority = PaperConfig.playerFrustumPrioritisation && (this.player.getDeltaMovement().horizontalDistanceSqr() > LOOK_PRIORITY_SPEED_THRESHOLD ||
 +                    this.player.getAbilities().flying);
 +
 +            // make sure we're in the send queue
@@ -988,10 +1016,10 @@ index 0000000000000000000000000000000000000000..ef4cffabfb2b1359509037cc61ac260e
 +
 +                    final double priority;
 +
-+                    if (squareDistance <= TuinityConfig.playerMinChunkLoadRadius) {
++                    if (squareDistance <= PaperConfig.playerMinChunkLoadRadius) {
 +                        // priority should be negative, and we also want to order it from center outwards
 +                        // so we want (0,0) to be the smallest, and (minLoadedRadius,minLoadedRadius) to be the greatest
-+                        priority = -((2 * TuinityConfig.playerMinChunkLoadRadius + 1) - (dx + dz));
++                        priority = -((2 * PaperConfig.playerMinChunkLoadRadius + 1) - (dx + dz));
 +                    } else {
 +                        if (prioritised) {
 +                            // we don't prioritise these chunks above others because we also want to make sure some chunks
@@ -1032,36 +1060,6 @@ index 0000000000000000000000000000000000000000..ef4cffabfb2b1359509037cc61ac260e
 +        }
 +    }
 +}
-diff --git a/src/main/java/io/papermc/paper/config/TuinityConfig.java b/src/main/java/io/papermc/paper/config/TuinityConfig.java
-index e34c55544dfc5c8ad465b887b26c4e679ec94ad5..36d7d47c3c914d8b28d02bb15ed50708cb473af3 100644
---- a/src/main/java/io/papermc/paper/config/TuinityConfig.java
-+++ b/src/main/java/io/papermc/paper/config/TuinityConfig.java
-@@ -110,6 +110,25 @@ public final class TuinityConfig {
-         return TuinityConfig.config.getString(path, dfl);
-     }
- 
-+    public static int playerMinChunkLoadRadius;
-+    public static double playerMaxConcurrentChunkSends;
-+    public static double playerMaxConcurrentChunkLoads;
-+    public static boolean playerAutoConfigureSendViewDistance;
-+    public static boolean enableMC162253Workaround;
-+    public static double playerTargetChunkSendRate;
-+    public static boolean playerFrustumPrioritisation;
-+
-+    private static void newPlayerChunkManagement() {
-+        playerMinChunkLoadRadius = TuinityConfig.getInt("player-chunks.min-load-radius", 2);
-+        playerMaxConcurrentChunkSends = TuinityConfig.getDouble("player-chunks.max-concurrent-sends", 5.0);
-+        playerMaxConcurrentChunkLoads = TuinityConfig.getDouble("player-chunks.max-concurrent-loads", -6.0);
-+        playerAutoConfigureSendViewDistance = TuinityConfig.getBoolean("player-chunks.autoconfig-send-distance", true);
-+        // this costs server bandwidth. latest phosphor or starlight on the client fixes mc162253 anyways.
-+        enableMC162253Workaround = TuinityConfig.getBoolean("player-chunks.enable-mc162253-workaround", true);
-+        playerTargetChunkSendRate = TuinityConfig.getDouble("player-chunks.target-chunk-send-rate", -35.0);
-+        playerFrustumPrioritisation = TuinityConfig.getBoolean("player-chunks.enable-frustum-priority", false);
-+    }
-+
-     public static final class WorldConfig {
- 
-         public final String worldName;
 diff --git a/src/main/java/net/minecraft/network/Connection.java b/src/main/java/net/minecraft/network/Connection.java
 index 103657ad936f1a75ffbb92ca5eafb816e977e363..23757f466da571aec35a373112dcbba0d1f46dcb 100644
 --- a/src/main/java/net/minecraft/network/Connection.java
@@ -1575,10 +1573,10 @@ index 7ccfe737fdf7f07b731ea0ff82e897564350705c..fe709bee0e657ff9bfc6deb6d4bd8ce4
                          double deltaZ = soundPos.getZ() - player.getZ();
                          double distanceSquared = deltaX * deltaX + deltaZ * deltaZ;
 diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
-index c0496922f12c9b5147c4dd21bc9efdc268e796e1..55576780ea1a1de2cc3de14a8aab082b94df8103 100644
+index b8846ae73cdda4214afff6d644cc9dd16ccee51e..db00f4d00840496976fa01def415be7a3ea78f19 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
 +++ b/src/main/java/net/minecraft/world/level/Level.java
-@@ -590,7 +590,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -587,7 +587,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
                  this.sendBlockUpdated(blockposition, iblockdata1, iblockdata, i);
                  // Paper start - per player view distance - allow block updates for non-ticking chunks in player view distance
                  // if copied from above
@@ -1659,10 +1657,10 @@ index f0c43f9f636a5dd1f0dfbae604dfa1f4ff9ebd4e..9e75ee7f43722f05dd5df4ef00f7d3e2
              /*
               * If it's a new world, the first few chunks are generated inside
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index 74f48b8eb7e2280a868df7bb4f1938c118de77df..e473ff71068ee7fd5e8db5807d58e86dbfa78d3d 100644
+index 94b68bd6793b176e9bd8029371dc1c04ac725866..57334459cb0cca590d38562da922e659427b6c3a 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-@@ -2700,14 +2700,14 @@ public class CraftWorld implements World {
+@@ -2693,14 +2693,14 @@ public class CraftWorld implements World {
              throw new IllegalArgumentException("View distance " + viewDistance + " is out of range of [2, 32]");
          }
          net.minecraft.server.level.ChunkMap chunkMap = getHandle().getChunkSource().chunkMap;
@@ -1679,7 +1677,7 @@ index 74f48b8eb7e2280a868df7bb4f1938c118de77df..e473ff71068ee7fd5e8db5807d58e86d
      }
  
      @Override
-@@ -2716,11 +2716,22 @@ public class CraftWorld implements World {
+@@ -2709,11 +2709,22 @@ public class CraftWorld implements World {
              throw new IllegalArgumentException("View distance " + viewDistance + " is out of range of [2, 32]");
          }
          net.minecraft.server.level.ChunkMap chunkMap = getHandle().getChunkSource().chunkMap;
