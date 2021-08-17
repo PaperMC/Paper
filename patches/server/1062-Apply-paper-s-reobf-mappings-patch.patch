@@ -1,0 +1,51 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jason Penilla <11360596+jpenilla@users.noreply.github.com>
+Date: Wed, 30 Jun 2021 02:33:18 -0700
+Subject: [PATCH] Apply paper's reobf mappings patch
+
+Workaround until paperweight implements reobf mappings patch support for forks
+
+diff --git a/build.gradle.kts b/build.gradle.kts
+index cda0fbcb2e13080ad20d121623f8d9b731fbcbb5..2c8873eddf6e351fdfee0315d74803eefdecfa17 100644
+--- a/build.gradle.kts
++++ b/build.gradle.kts
+@@ -1,10 +1,16 @@
+ import com.github.jengelman.gradle.plugins.shadow.transformers.Log4j2PluginsCacheFileTransformer
+ import com.github.jengelman.gradle.plugins.shadow.transformers.Transformer
+ import io.papermc.paperweight.tasks.BaseTask
++import io.papermc.paperweight.tasks.GenerateReobfMappings
++import io.papermc.paperweight.tasks.PatchMappings
++import io.papermc.paperweight.util.constants.*
+ import io.papermc.paperweight.util.Git
++import io.papermc.paperweight.util.cache
+ import io.papermc.paperweight.util.defaultOutput
+ import io.papermc.paperweight.util.openZip
+ import io.papermc.paperweight.util.path
++import io.papermc.paperweight.util.registering
++import io.papermc.paperweight.util.set
+ import shadow.org.apache.logging.log4j.core.config.plugins.processor.PluginProcessor.PLUGIN_CACHE_FILE
+ import java.nio.file.Files
+ import java.util.Locale
+@@ -105,6 +111,22 @@ publishing {
+     }
+ }
+ 
++val generateReobfMappings = rootProject.tasks.named<GenerateReobfMappings>("generateReobfMappings")
++
++val patchReobfMappings by tasks.registering<PatchMappings> {
++    inputMappings.set(generateReobfMappings.flatMap { it.reobfMappings })
++    patch.set(rootProject.layout.cache.resolve("paperweight/upstreams/paper/build-data/reobf-mappings-patch.tiny"))
++
++    fromNamespace.set(DEOBF_NAMESPACE)
++    toNamespace.set(SPIGOT_NAMESPACE)
++
++    outputMappings.set(layout.cache.resolve("paperweight/mappings/reobf-patched.tiny"))
++}
++
++tasks.reobfJar {
++    mappingsFile.set(patchReobfMappings.flatMap { it.outputMappings })
++}
++
+ val generatePom = tasks.named<GenerateMavenPom>("generatePomFileForMavenPublication")
+ 
+ tasks.shadowJar {

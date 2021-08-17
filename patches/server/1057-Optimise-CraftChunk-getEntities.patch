@@ -1,0 +1,78 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Sun, 20 Jun 2021 00:33:29 -0700
+Subject: [PATCH] Optimise CraftChunk#getEntities
+
+Why the fuck was it iterating over every single entity
+in the world
+
+diff --git a/src/main/java/io/papermc/paper/world/ChunkEntitySlices.java b/src/main/java/io/papermc/paper/world/ChunkEntitySlices.java
+index e060b54e871a68668b6b0e071725843c5b2b992e..ad711b6c0628a9cd93ff0d5484769807e5e5b9c0 100644
+--- a/src/main/java/io/papermc/paper/world/ChunkEntitySlices.java
++++ b/src/main/java/io/papermc/paper/world/ChunkEntitySlices.java
+@@ -48,6 +48,25 @@ public final class ChunkEntitySlices {
+         this.status = status;
+     }
+ 
++    // Paper start - optimise CraftChunk#getEntities
++    public org.bukkit.entity.Entity[] getChunkEntities() {
++        List<org.bukkit.entity.Entity> ret = new java.util.ArrayList<>();
++        final Entity[] entities = this.entities.getRawData();
++        for (int i = 0, size = Math.min(entities.length, this.entities.size()); i < size; ++i) {
++            final Entity entity = entities[i];
++            if (entity == null) {
++                continue;
++            }
++            final org.bukkit.entity.Entity bukkit = entity.getBukkitEntity();
++            if (bukkit != null && bukkit.isValid()) {
++                ret.add(bukkit);
++            }
++        }
++
++        return ret.toArray(new org.bukkit.entity.Entity[0]);
++    }
++    // Paper end - optimise CraftChunk#getEntities
++
+     public boolean isEmpty() {
+         return this.entities.size() == 0;
+     }
+diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
+index 792efcd458c944bfb739c5de902f25c369199c28..6f7dcb67cc1082ac0b946d26aea318e1d98763af 100644
+--- a/src/main/java/net/minecraft/world/level/Level.java
++++ b/src/main/java/net/minecraft/world/level/Level.java
+@@ -208,6 +208,16 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+     // Paper start
+     protected final io.papermc.paper.world.EntitySliceManager entitySliceManager;
+ 
++    // Paper start - optimise CraftChunk#getEntities
++    public org.bukkit.entity.Entity[] getChunkEntities(int chunkX, int chunkZ) {
++        io.papermc.paper.world.ChunkEntitySlices slices = this.entitySliceManager.getChunk(chunkX, chunkZ);
++        if (slices == null) {
++            return new org.bukkit.entity.Entity[0];
++        }
++        return slices.getChunkEntities();
++    }
++    // Paper end - optimise CraftChunk#getEntities
++
+     @Override
+     public List<Entity> getHardCollidingEntities(Entity except, AABB box, Predicate<? super Entity> predicate) {
+         List<Entity> ret = new java.util.ArrayList<>();
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftChunk.java b/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
+index 0a76032b48af4327580b99730e534f628924fe35..c9c668aa5b2ddf21ffcce8b395e3d88b4b8cf822 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
+@@ -110,13 +110,7 @@ public class CraftChunk implements Chunk {
+             this.getWorld().getChunkAt(x, z); // Transient load for this tick
+         }
+ 
+-        // Paper start - improve CraftChunk#getEntities
+-        return this.worldServer.entityManager.sectionStorage.getExistingSectionsInChunk(ChunkPos.asLong(this.x, this.z))
+-            .flatMap(net.minecraft.world.level.entity.EntitySection::getEntities)
+-            .map(net.minecraft.world.entity.Entity::getBukkitEntity)
+-            .filter(entity -> entity != null && entity.isValid())
+-            .toArray(Entity[]::new);
+-        // Paper end
++        return ((CraftWorld)this.getWorld()).getHandle().getChunkEntities(this.x, this.z); // Paper - optimise this better than paper :)
+     }
+ 
+     @Override

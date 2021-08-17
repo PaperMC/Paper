@@ -1,0 +1,43 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <spottedleaf@spottedleaf.dev>
+Date: Wed, 8 Apr 2020 03:16:48 -0700
+Subject: [PATCH] Change writes to use NORMAL priority rather than LOW
+
+Should limit build up of I/O tasks, or at least properly
+indicate to server owners that I/O is falling behind
+
+diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
+index 29765ae1a2e44ab32bc0d655095f973db1e93216..b98babb321c733ca37b572597fa6add8a20b97ef 100644
+--- a/src/main/java/net/minecraft/server/level/ChunkMap.java
++++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
+@@ -1111,7 +1111,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+         }
+ 
+         com.destroystokyo.paper.io.PaperFileIOThread.Holder.INSTANCE.scheduleSave(this.level, chunkPos.x, chunkPos.z,
+-            poiData, null, com.destroystokyo.paper.io.PrioritizedTaskQueue.LOW_PRIORITY);
++            poiData, null, com.destroystokyo.paper.io.PrioritizedTaskQueue.NORMAL_PRIORITY); // Paper - use normal priority
+ 
+         if (!chunk.isUnsaved()) {
+             return;
+@@ -1132,7 +1132,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+             asyncSaveData = ChunkSerializer.getAsyncSaveData(this.level, chunk);
+         }
+ 
+-        this.level.asyncChunkTaskManager.scheduleChunkSave(chunkPos.x, chunkPos.z, com.destroystokyo.paper.io.PrioritizedTaskQueue.LOW_PRIORITY,
++        this.level.asyncChunkTaskManager.scheduleChunkSave(chunkPos.x, chunkPos.z, com.destroystokyo.paper.io.PrioritizedTaskQueue.NORMAL_PRIORITY, // Paper - use normal priority
+             asyncSaveData, chunk);
+ 
+         chunk.setUnsaved(false);
+diff --git a/src/main/java/net/minecraft/world/entity/ai/village/poi/PoiManager.java b/src/main/java/net/minecraft/world/entity/ai/village/poi/PoiManager.java
+index ee2b9b2761ea6a681a2a830c7581c7bca8582814..3ba30a2e6f1e3eb82b2b6e8968fd2babbf220ded 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/village/poi/PoiManager.java
++++ b/src/main/java/net/minecraft/world/entity/ai/village/poi/PoiManager.java
+@@ -202,7 +202,7 @@ public class PoiManager extends SectionStorage<PoiSection> {
+                 data = this.getData(chunkcoordintpair);
+             }
+             com.destroystokyo.paper.io.PaperFileIOThread.Holder.INSTANCE.scheduleSave(this.world,
+-                chunkcoordintpair.x, chunkcoordintpair.z, data, null, com.destroystokyo.paper.io.PrioritizedTaskQueue.LOW_PRIORITY);
++                chunkcoordintpair.x, chunkcoordintpair.z, data, null, com.destroystokyo.paper.io.PrioritizedTaskQueue.NORMAL_PRIORITY); // Paper - use normal priority
+         }
+         // Paper end
+         this.distanceTracker.runAllUpdates();
