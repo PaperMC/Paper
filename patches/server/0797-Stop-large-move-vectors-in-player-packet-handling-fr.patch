@@ -1,0 +1,64 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Thu, 8 Apr 2021 06:51:07 -0700
+Subject: [PATCH] Stop large move vectors in player packet handling from
+ killing the server
+
+Looks like we need to check three vectors, not two. fun.
+
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index 39bf3ab2e0f89f383e46cb9f0c25ad2d786376f9..559572d3ff37e016ed07d428cf5d73a00ef48d70 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -536,6 +536,12 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+                 double d10 = Math.max(d6 * d6 + d7 * d7 + d8 * d8, (currDeltaX * currDeltaX + currDeltaY * currDeltaY + currDeltaZ * currDeltaZ) - 1);
+                 // Paper end - fix large move vectors killing the server
+ 
++                // Paper start - fix large move vectors killing the server
++                double otherFieldX = d3 - this.vehicleLastGoodX;
++                double otherFieldY = d4 - this.vehicleLastGoodY - 1.0E-6D;
++                double otherFieldZ = d5 - this.vehicleLastGoodZ;
++                d10 = Math.max(d10, (otherFieldX * otherFieldX + otherFieldY * otherFieldY + otherFieldZ * otherFieldZ) - 1);
++                // Paper end - fix large move vectors killing the server
+ 
+                 // CraftBukkit start - handle custom speeds and skipped ticks
+                 this.allowedPlayerTicks += (System.currentTimeMillis() / 50) - this.lastTick;
+@@ -578,9 +584,9 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+ 
+                 AABB oldBox = entity.getBoundingBox(); // Paper - copy from player movement packet
+ 
+-                d6 = d3 - this.vehicleLastGoodX;
+-                d7 = d4 - this.vehicleLastGoodY - 1.0E-6D;
+-                d8 = d5 - this.vehicleLastGoodZ;
++                d6 = d3 - this.vehicleLastGoodX; // Paper - diff on change, used for checking large move vectors above
++                d7 = d4 - this.vehicleLastGoodY - 1.0E-6D; // Paper - diff on change, used for checking large move vectors above
++                d8 = d5 - this.vehicleLastGoodZ; // Paper - diff on change, used for checking large move vectors above
+                 entity.move(MoverType.PLAYER, new Vec3(d6, d7, d8));
+                 boolean didCollide = toX != entity.getX() || toY != entity.getY() || toZ != entity.getZ(); // Paper - needed here as the difference in Y can be reset - also note: this is only a guess at whether collisions took place, floating point errors can make this true when it shouldn't be...
+                 double d11 = d7;
+@@ -1299,6 +1305,12 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+                         double currDeltaZ = toZ - prevZ;
+                         double d11 = Math.max(d7 * d7 + d8 * d8 + d9 * d9, (currDeltaX * currDeltaX + currDeltaY * currDeltaY + currDeltaZ * currDeltaZ) - 1);
+                         // Paper end - fix large move vectors killing the server
++                        // Paper start - fix large move vectors killing the server
++                        double otherFieldX = d0 - this.lastGoodX;
++                        double otherFieldY = d1 - this.lastGoodY;
++                        double otherFieldZ = d2 - this.lastGoodZ;
++                        d11 = Math.max(d11, (otherFieldX * otherFieldX + otherFieldY * otherFieldY + otherFieldZ * otherFieldZ) - 1);
++                        // Paper end - fix large move vectors killing the server
+ 
+                         if (this.player.isSleeping()) {
+                             if (d11 > 1.0D) {
+@@ -1350,9 +1362,9 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+ 
+                             AABB axisalignedbb = this.player.getBoundingBox(); // Paper - diff on change, should be old AABB
+ 
+-                            d7 = d0 - this.lastGoodX;
+-                            d8 = d1 - this.lastGoodY;
+-                            d9 = d2 - this.lastGoodZ;
++                            d7 = d0 - this.lastGoodX; // Paper - diff on change, used for checking large move vectors above
++                            d8 = d1 - this.lastGoodY; // Paper - diff on change, used for checking large move vectors above
++                            d9 = d2 - this.lastGoodZ; // Paper - diff on change, used for checking large move vectors above
+                             boolean flag = d8 > 0.0D;
+ 
+                             if (this.player.isOnGround() && !packet.isOnGround() && flag) {

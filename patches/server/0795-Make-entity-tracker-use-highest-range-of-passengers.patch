@@ -1,0 +1,65 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Sun, 7 Mar 2021 14:14:47 -0800
+Subject: [PATCH] Make entity tracker use highest range of passengers
+
+This should prevent people from having to up their animal range
+just so players riding horses or whatever can be seen at the
+configured player range.
+
+diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
+index da6553abafaa03e9324566d9632e4fee33d20b9b..7e86c4e9f92fece10e4ec23106386ae09d5a646a 100644
+--- a/src/main/java/net/minecraft/server/level/ChunkMap.java
++++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
+@@ -222,7 +222,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+     // inlined EnumMap, TrackingRange.TrackingRangeType
+     static final org.spigotmc.TrackingRange.TrackingRangeType[] TRACKING_RANGE_TYPES = org.spigotmc.TrackingRange.TrackingRangeType.values();
+     public final com.destroystokyo.paper.util.misc.PlayerAreaMap[] playerEntityTrackerTrackMaps;
+-    final int[] entityTrackerTrackRanges;
++    final int[] entityTrackerTrackRanges; public int getEntityTrackerRange(final int ordinal) { return this.entityTrackerTrackRanges[ordinal]; } // Paper - public read
+ 
+     private int convertSpigotRangeToVanilla(final int vanilla) {
+         return MinecraftServer.getServer().getScaledTrackingDistance(vanilla);
+@@ -2353,7 +2353,7 @@ Sections go from 0..16. Now whenever a section is not empty, it can potentially
+                 int j = entity.getType().clientTrackingRange() * 16;
+                 j = org.spigotmc.TrackingRange.getEntityTrackingRange(entity, j); // Paper
+ 
+-                if (j < i) { // Paper - we need the lowest range thanks to the fact that our tracker doesn't account for passenger logic
++                if (j > i) { // Paper - we need the lowest range thanks to the fact that our tracker doesn't account for passenger logic // Paper - not anymore!
+                     i = j;
+                 }
+             }
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index b5e8932ada613b82478f97dfe44b16db9e792d1e..ee2407230ae769ea6cedfaa8a4a631378e6c729f 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -356,8 +356,27 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, n
+     }
+ 
+     public final com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<ServerPlayer> getPlayersInTrackRange() {
+-        return ((ServerLevel)this.level).getChunkSource().chunkMap.playerEntityTrackerTrackMaps[this.trackingRangeType.ordinal()]
+-            .getObjectsInRange(MCUtil.getCoordinateKey(this));
++        // Paper start - determine highest range of passengers
++        if (this.passengers.isEmpty()) {
++            return ((ServerLevel)this.level).getChunkSource().chunkMap.playerEntityTrackerTrackMaps[this.trackingRangeType.ordinal()]
++                .getObjectsInRange(MCUtil.getCoordinateKey(this));
++        }
++        Iterable<Entity> passengers = this.getIndirectPassengers();
++        net.minecraft.server.level.ChunkMap chunkMap = ((ServerLevel)this.level).getChunkSource().chunkMap;
++        org.spigotmc.TrackingRange.TrackingRangeType type = this.trackingRangeType;
++        int range = chunkMap.getEntityTrackerRange(type.ordinal());
++
++        for (Entity passenger : passengers) {
++            org.spigotmc.TrackingRange.TrackingRangeType passengerType = passenger.trackingRangeType;
++            int passengerRange = chunkMap.getEntityTrackerRange(passengerType.ordinal());
++            if (passengerRange > range) {
++                type = passengerType;
++                range = passengerRange;
++            }
++        }
++
++        return chunkMap.playerEntityTrackerTrackMaps[type.ordinal()].getObjectsInRange(MCUtil.getCoordinateKey(this));
++        // Paper end - determine highest range of passengers
+     }
+     // Paper end - optimise entity tracking
+ 

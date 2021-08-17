@@ -1,0 +1,40 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Tue, 16 Feb 2021 00:16:56 -0800
+Subject: [PATCH] Send full pos packets for hard colliding entities
+
+Prevent collision problems due to desync (i.e boats)
+
+Configurable under
+`send-full-pos-for-hard-colliding-entities`
+
+diff --git a/src/main/java/io/papermc/paper/config/TuinityConfig.java b/src/main/java/io/papermc/paper/config/TuinityConfig.java
+index 0dc56ad7a9f3fce45f44d18831e1bea6b1cfa3a1..d536a4bf8a6947fa669701a8c8b3f9309b04dede 100644
+--- a/src/main/java/io/papermc/paper/config/TuinityConfig.java
++++ b/src/main/java/io/papermc/paper/config/TuinityConfig.java
+@@ -237,6 +237,12 @@ public final class TuinityConfig {
+         lagCompensateBlockBreaking = TuinityConfig.getBoolean("lag-compensate-block-breaking", true);
+     }
+ 
++    public static boolean sendFullPosForHardCollidingEntities;
++
++    private static void sendFullPosForHardCollidingEntities() {
++        sendFullPosForHardCollidingEntities = TuinityConfig.getBoolean("send-full-pos-for-hard-colliding-entities", true);
++    }
++
+     public static final class WorldConfig {
+ 
+         public final String worldName;
+diff --git a/src/main/java/net/minecraft/server/level/ServerEntity.java b/src/main/java/net/minecraft/server/level/ServerEntity.java
+index e5cae2fb67541785072324e5434820ee4b169556..f8ac88ffb303bf312db74a6918c62f709e890c7a 100644
+--- a/src/main/java/net/minecraft/server/level/ServerEntity.java
++++ b/src/main/java/net/minecraft/server/level/ServerEntity.java
+@@ -173,7 +173,7 @@ public class ServerEntity {
+                     // Paper end - remove allocation of Vec3D here
+                     boolean flag4 = k < -32768L || k > 32767L || l < -32768L || l > 32767L || i1 < -32768L || i1 > 32767L;
+ 
+-                    if (!flag4 && this.teleportDelay <= 400 && !this.wasRiding && this.wasOnGround == this.entity.isOnGround()) {
++                    if (!flag4 && this.teleportDelay <= 400 && !this.wasRiding && this.wasOnGround == this.entity.isOnGround() && !(io.papermc.paper.config.TuinityConfig.sendFullPosForHardCollidingEntities && this.entity.hardCollides())) { // Paper - send full pos for hard colliding entities to prevent collision problems due to desync
+                         if ((!flag2 || !flag3) && !(this.entity instanceof AbstractArrow)) {
+                             if (flag2) {
+                                 packet1 = new ClientboundMoveEntityPacket.Pos(this.entity.getId(), (short) ((int) k), (short) ((int) l), (short) ((int) i1), this.entity.isOnGround());
