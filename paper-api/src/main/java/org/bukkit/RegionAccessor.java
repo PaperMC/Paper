@@ -194,6 +194,32 @@ public interface RegionAccessor {
     Entity spawnEntity(@NotNull Location location, @NotNull EntityType type);
 
     /**
+     * Creates a new entity at the given {@link Location}.
+     *
+     * @param loc the location at which the entity will be spawned.
+     * @param type the entity type that determines the entity to spawn.
+     * @param randomizeData whether or not the entity's data should be randomised
+     *                      before spawning. By default entities are randomised
+     *                      before spawning in regards to their equipment, age,
+     *                      attributes, etc.
+     *                      An example of this randomization would be the color of
+     *                      a sheep, random enchantments on the equipment of mobs
+     *                      or even a zombie becoming a chicken jockey.
+     *                      If set to false, the entity will not be randomised
+     *                      before spawning, meaning all their data will remain
+     *                      in their default state and not further modifications
+     *                      to the entity will be made.
+     *                      Notably only entities that extend the
+     *                      {@link org.bukkit.entity.Mob} interface provide
+     *                      randomisation logic for their spawn.
+     *                      This parameter is hence useless for any other type
+     *                      of entity.
+     * @return the spawned entity instance.
+     */
+    @NotNull
+    public Entity spawnEntity(@NotNull Location loc, @NotNull EntityType type, boolean randomizeData);
+
+    /**
      * Get a list of all entities in this RegionAccessor
      *
      * @return A List of all Entities currently residing in this world accessor
@@ -263,4 +289,42 @@ public interface RegionAccessor {
      */
     @NotNull
     <T extends Entity> T spawn(@NotNull Location location, @NotNull Class<T> clazz, @Nullable Consumer<T> function) throws IllegalArgumentException;
+
+    /**
+     * Creates a new entity at the given {@link Location} with the supplied
+     * function run before the entity is added to the world.
+     * <br>
+     * Note that when the function is run, the entity will not be actually in
+     * the world. Any operation involving such as teleporting the entity is undefined
+     * until after this function returns.
+     * The passed function however is run after the potential entity's spawn
+     * randomization and hence already allows access to the values of the mob,
+     * whether or not those were randomized, such as attributes or the entity
+     * equipment.
+     *
+     * @param location      the location at which the entity will be spawned.
+     * @param clazz         the class of the {@link Entity} that is to be spawned.
+     * @param <T>           the generic type of the entity that is being created.
+     * @param randomizeData whether or not the entity's data should be randomised
+     *                      before spawning. By default entities are randomised
+     *                      before spawning in regards to their equipment, age,
+     *                      attributes, etc.
+     *                      An example of this randomization would be the color of
+     *                      a sheep, random enchantments on the equipment of mobs
+     *                      or even a zombie becoming a chicken jockey.
+     *                      If set to false, the entity will not be randomised
+     *                      before spawning, meaning all their data will remain
+     *                      in their default state and not further modifications
+     *                      to the entity will be made.
+     *                      Notably only entities that extend the
+     *                      {@link org.bukkit.entity.Mob} interface provide
+     *                      randomisation logic for their spawn.
+     *                      This parameter is hence useless for any other type
+     *                      of entity.
+     * @param function      the function to be run before the entity is spawned.
+     * @return the spawned entity instance.
+     * @throws IllegalArgumentException if either the world or clazz parameter are null.
+     */
+    @NotNull
+    public <T extends Entity> T spawn(@NotNull Location location, @NotNull Class<T> clazz, boolean randomizeData, @Nullable Consumer<T> function) throws IllegalArgumentException;
 }
