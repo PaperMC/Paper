@@ -381,6 +381,11 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
     }
 
     @Override
+    public Entity spawnEntity(Location loc, EntityType type, boolean randomizeData) {
+        return spawn(loc, type.getEntityClass(), null, CreatureSpawnEvent.SpawnReason.CUSTOM, randomizeData);
+    }
+
+    @Override
     public List<Entity> getEntities() {
         List<Entity> list = new ArrayList<Entity>();
 
@@ -472,22 +477,31 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
         return spawn(location, clazz, function, CreatureSpawnEvent.SpawnReason.CUSTOM);
     }
 
+    @Override
+    public <T extends Entity> T spawn(Location location, Class<T> clazz, boolean randomizeData, Consumer<T> function) throws IllegalArgumentException {
+        return spawn(location, clazz, function, CreatureSpawnEvent.SpawnReason.CUSTOM, randomizeData);
+    }
+
     public <T extends Entity> T spawn(Location location, Class<T> clazz, Consumer<T> function, CreatureSpawnEvent.SpawnReason reason) throws IllegalArgumentException {
+        return spawn(location, clazz, function, reason, true);
+    }
+
+    public <T extends Entity> T spawn(Location location, Class<T> clazz, Consumer<T> function, CreatureSpawnEvent.SpawnReason reason, boolean randomizeData) throws IllegalArgumentException {
         net.minecraft.world.entity.Entity entity = createEntity(location, clazz);
 
-        return addEntity(entity, reason, function);
+        return addEntity(entity, reason, function, randomizeData);
     }
 
     @SuppressWarnings("unchecked")
     public <T extends Entity> T addEntity(net.minecraft.world.entity.Entity entity, CreatureSpawnEvent.SpawnReason reason) throws IllegalArgumentException {
-        return addEntity(entity, reason, null);
+        return addEntity(entity, reason, null, true);
     }
 
     @SuppressWarnings("unchecked")
-    public <T extends Entity> T addEntity(net.minecraft.world.entity.Entity entity, CreatureSpawnEvent.SpawnReason reason, Consumer<T> function) throws IllegalArgumentException {
+    public <T extends Entity> T addEntity(net.minecraft.world.entity.Entity entity, CreatureSpawnEvent.SpawnReason reason, Consumer<T> function, boolean randomizeData) throws IllegalArgumentException {
         Preconditions.checkArgument(entity != null, "Cannot spawn null entity");
 
-        if (entity instanceof EntityInsentient) {
+        if (randomizeData && entity instanceof EntityInsentient) {
             ((EntityInsentient) entity).prepare(getHandle(), getHandle().getDamageScaler(entity.getChunkCoordinates()), EnumMobSpawn.COMMAND, (GroupDataEntity) null, null);
         }
 
