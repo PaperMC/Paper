@@ -5,7 +5,7 @@ Subject: [PATCH] Use AsyncAppender to keep logging IO off main thread
 
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index 34a0d6b54a15c8aa0c706541316c5d448e3d94b9..76a8db5ff623b0a3b83a0861f642da67ad2be3aa 100644
+index 49acf558413ddfe6569ff83054ae654c9205d61a..af212392d7758aef9d9974b74000f9804132d929 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
 @@ -38,6 +38,7 @@ dependencies {
@@ -16,6 +16,46 @@ index 34a0d6b54a15c8aa0c706541316c5d448e3d94b9..76a8db5ff623b0a3b83a0861f642da67
  
      runtimeOnly("org.apache.maven:maven-resolver-provider:3.8.1")
      runtimeOnly("org.apache.maven.resolver:maven-resolver-connector-basic:1.7.0")
+diff --git a/src/main/java/net/minecraft/server/Main.java b/src/main/java/net/minecraft/server/Main.java
+index fb0b3c5770f66cc3590f5ac4e690a33cb6179be3..1537e1b54564295acf0c0466156b4a1f63919922 100644
+--- a/src/main/java/net/minecraft/server/Main.java
++++ b/src/main/java/net/minecraft/server/Main.java
+@@ -112,6 +112,8 @@ public class Main {
+ 
+             if (optionset.has("initSettings")) { // CraftBukkit
+                 Main.LOGGER.info("Initialized '{}' and '{}'", path.toAbsolutePath(), path1.toAbsolutePath());
++                LogManager.shutdown(); // Paper - workaround until Log4J is updated.
++                Process.exit(0); // Paper - workaround until Log4J is updated.
+                 return;
+             }
+ 
+@@ -126,6 +128,8 @@ public class Main {
+             // Spigot End
+             if (!eula.hasAgreedToEULA() && !eulaAgreed) { // Spigot
+                 Main.LOGGER.info("You need to agree to the EULA in order to run the server. Go to eula.txt for more info.");
++                LogManager.shutdown(); // Paper - workaround until Log4J is updated.
++                Process.exit(0); // Paper - workaround until Log4J is updated.
+                 return;
+             }
+ 
+@@ -144,6 +148,8 @@ public class Main {
+ 
+             if (worldinfo != null && worldinfo.isIncompatibleWorldHeight()) {
+                 Main.LOGGER.info("Loading of worlds with extended height is disabled.");
++                LogManager.shutdown(); // Paper - workaround until Log4J is updated.
++                Process.exit(0); // Paper - workaround until Log4J is updated.
+                 return;
+             }
+ 
+@@ -182,6 +188,8 @@ public class Main {
+             } catch (Exception exception) {
+                 Main.LOGGER.warn("Failed to load datapacks, can't proceed with server load. You can either fix your datapacks or reset to vanilla with --safeMode", exception);
+                 resourcepackrepository.close();
++                LogManager.shutdown(); // Paper - workaround until Log4J is updated.
++                Process.exit(0); // Paper - workaround until Log4J is updated.
+                 return;
+             }
+ 
 diff --git a/src/main/resources/log4j2.xml b/src/main/resources/log4j2.xml
 index 476f4a5cbe664ddd05474cb88553018bd334a5b8..3dc317e466e1b93dff030794dd7f29ca1b266778 100644
 --- a/src/main/resources/log4j2.xml
