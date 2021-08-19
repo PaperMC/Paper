@@ -1,0 +1,738 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Thu, 20 May 2021 01:10:54 -0700
+Subject: [PATCH] Better Stats API
+
+
+diff --git a/src/main/java/io/papermc/paper/PaperRegistry.java b/src/main/java/io/papermc/paper/PaperRegistry.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..5da7a661b51f38e51007f79e658dcf861522bf87
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/PaperRegistry.java
+@@ -0,0 +1,52 @@
++package io.papermc.paper;
++
++import io.papermc.paper.statistics.CustomStatistic;
++import io.papermc.paper.statistics.StatisticType;
++import org.bukkit.Keyed;
++import org.bukkit.NamespacedKey;
++import org.bukkit.Registry;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++import java.util.Iterator;
++
++public interface PaperRegistry<T extends Keyed> extends Registry<T> {
++
++    /**
++     * Custom statistics
++     *
++     * @see CustomStatistic
++     */
++    Registry<CustomStatistic> CUSTOM_STATISTICS = new PaperRegistry<>() {
++        @Nullable
++        @Override
++        public CustomStatistic get(@NotNull NamespacedKey key) {
++            return CustomStatistic.getByKey(key);
++        }
++
++        @NotNull
++        @Override
++        public Iterator<CustomStatistic> iterator() {
++            return CustomStatistic.values().iterator();
++        }
++    };
++
++    /**
++     * Statistic types
++     *
++     * @see StatisticType
++     */
++    Registry<StatisticType<?>> STATISTIC_TYPES = new PaperRegistry<>() {
++        @Nullable
++        @Override
++        public StatisticType<?> get(@NotNull NamespacedKey key) {
++            return StatisticType.getStatisticType(key);
++        }
++
++        @NotNull
++        @Override
++        public Iterator<StatisticType<?>> iterator() {
++            return StatisticType.values().iterator();
++        }
++    };
++}
+diff --git a/src/main/java/io/papermc/paper/event/player/PlayerRequestStatisticsEvent.java b/src/main/java/io/papermc/paper/event/player/PlayerRequestStatisticsEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..eb128b54aad871aabc3d36361c5742d21f6d636a
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/event/player/PlayerRequestStatisticsEvent.java
+@@ -0,0 +1,59 @@
++package io.papermc.paper.event.player;
++
++import io.papermc.paper.statistics.Statistic;
++import it.unimi.dsi.fastutil.objects.Object2IntMap;
++import org.bukkit.NamespacedKey;
++import org.bukkit.entity.Player;
++import org.bukkit.event.Cancellable;
++import org.bukkit.event.HandlerList;
++import org.bukkit.event.player.PlayerEvent;
++import org.jetbrains.annotations.NotNull;
++
++import java.util.Map;
++
++/**
++ * Called when the player requests their statistics.
++ */
++public class PlayerRequestStatisticsEvent extends PlayerEvent implements Cancellable {
++
++    private static final HandlerList HANDLER_LIST = new HandlerList();
++
++    private Object2IntMap<Statistic<?>> statisticMap;
++    private boolean cancelled;
++
++    public PlayerRequestStatisticsEvent(@NotNull Player who, @NotNull Object2IntMap<Statistic<?>> statisticMap) {
++        super(who);
++        this.statisticMap = statisticMap;
++    }
++
++    /**
++     * Gets the statistic map to be sent to the player.
++     *
++     * @return the statistic map
++     */
++    @NotNull
++    public Object2IntMap<Statistic<?>> getStatisticMap() {
++        return statisticMap;
++    }
++
++    @Override
++    public boolean isCancelled() {
++        return this.cancelled;
++    }
++
++    @Override
++    public void setCancelled(boolean cancel) {
++        this.cancelled = cancel;
++    }
++
++    @NotNull
++    @Override
++    public HandlerList getHandlers() {
++        return HANDLER_LIST;
++    }
++
++    @NotNull
++    public static HandlerList getHandlerList() {
++        return HANDLER_LIST;
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/statistics/CustomStatistic.java b/src/main/java/io/papermc/paper/statistics/CustomStatistic.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..e834c138256c713b31fa594fb2989a3cbaf4f302
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/statistics/CustomStatistic.java
+@@ -0,0 +1,151 @@
++package io.papermc.paper.statistics;
++
++import net.kyori.adventure.translation.Translatable;
++import org.bukkit.Keyed;
++import org.bukkit.NamespacedKey;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++import java.util.Collection;
++import java.util.HashMap;
++import java.util.Map;
++
++/**
++ * This is essentially just a wrapper for {@link NamespacedKey} because
++ * that can't implement {@link Keyed} which is needed for all stat types.
++ */
++public final class CustomStatistic implements Keyed, Translatable {
++
++    private static final Map<NamespacedKey, CustomStatistic> CUSTOM_STATISTIC_MAP = new HashMap<>();
++
++    public static final CustomStatistic LEAVE_GAME = create("leave_game");
++    public static final CustomStatistic PLAY_TIME = create("play_time");
++    public static final CustomStatistic TOTAL_WORLD_TIME = create("total_world_time");
++    public static final CustomStatistic TIME_SINCE_DEATH = create("time_since_death");
++    public static final CustomStatistic TIME_SINCE_REST = create("time_since_rest");
++    public static final CustomStatistic SNEAK_TIME = create("sneak_time");
++    public static final CustomStatistic WALK_ONE_CM = create("walk_one_cm");
++    public static final CustomStatistic CROUCH_ONE_CM = create("crouch_one_cm");
++    public static final CustomStatistic SPRINT_ONE_CM = create("sprint_one_cm");
++    public static final CustomStatistic WALK_ON_WATER_ONE_CM = create("walk_on_water_one_cm");
++    public static final CustomStatistic FALL_ONE_CM = create("fall_one_cm");
++    public static final CustomStatistic CLIMB_ONE_CM = create("climb_one_cm");
++    public static final CustomStatistic FLY_ONE_CM = create("fly_one_cm");
++    public static final CustomStatistic WALK_UNDER_WATER_ONE_CM = create("walk_under_water_one_cm");
++    public static final CustomStatistic MINECART_ONE_CM = create("minecart_one_cm");
++    public static final CustomStatistic BOAT_ONE_CM = create("boat_one_cm");
++    public static final CustomStatistic PIG_ONE_CM = create("pig_one_cm");
++    public static final CustomStatistic HORSE_ONE_CM = create("horse_one_cm");
++    public static final CustomStatistic AVIATE_ONE_CM = create("aviate_one_cm");
++    public static final CustomStatistic SWIM_ONE_CM = create("swim_one_cm");
++    public static final CustomStatistic STRIDER_ONE_CM = create("strider_one_cm");
++    public static final CustomStatistic JUMP = create("jump");
++    public static final CustomStatistic DROP = create("drop");
++    public static final CustomStatistic DAMAGE_DEALT = create("damage_dealt");
++    public static final CustomStatistic DAMAGE_DEALT_ABSORBED = create("damage_dealt_absorbed");
++    public static final CustomStatistic DAMAGE_DEALT_RESISTED = create("damage_dealt_resisted");
++    public static final CustomStatistic DAMAGE_TAKEN = create("damage_taken");
++    public static final CustomStatistic DAMAGE_BLOCKED_BY_SHIELD = create("damage_blocked_by_shield");
++    public static final CustomStatistic DAMAGE_ABSORBED = create("damage_absorbed");
++    public static final CustomStatistic DAMAGE_RESISTED = create("damage_resisted");
++    public static final CustomStatistic DEATHS = create("deaths");
++    public static final CustomStatistic MOB_KILLS = create("mob_kills");
++    public static final CustomStatistic ANIMALS_BRED = create("animals_bred");
++    public static final CustomStatistic PLAYER_KILLS = create("player_kills");
++    public static final CustomStatistic FISH_CAUGHT = create("fish_caught");
++    public static final CustomStatistic TALKED_TO_VILLAGER = create("talked_to_villager");
++    public static final CustomStatistic TRADED_WITH_VILLAGER = create("traded_with_villager");
++    public static final CustomStatistic EAT_CAKE_SLICE = create("eat_cake_slice");
++    public static final CustomStatistic FILL_CAULDRON = create("fill_cauldron");
++    public static final CustomStatistic USE_CAULDRON = create("use_cauldron");
++    public static final CustomStatistic CLEAN_ARMOR = create("clean_armor");
++    public static final CustomStatistic CLEAN_BANNER = create("clean_banner");
++    public static final CustomStatistic CLEAN_SHULKER_BOX = create("clean_shulker_box");
++    public static final CustomStatistic INTERACT_WITH_BREWINGSTAND = create("interact_with_brewingstand");
++    public static final CustomStatistic INTERACT_WITH_BEACON = create("interact_with_beacon");
++    public static final CustomStatistic INSPECT_DROPPER = create("inspect_dropper");
++    public static final CustomStatistic INSPECT_HOPPER = create("inspect_hopper");
++    public static final CustomStatistic INSPECT_DISPENSER = create("inspect_dispenser");
++    public static final CustomStatistic PLAY_NOTEBLOCK = create("play_noteblock");
++    public static final CustomStatistic TUNE_NOTEBLOCK = create("tune_noteblock");
++    public static final CustomStatistic POT_FLOWER = create("pot_flower");
++    public static final CustomStatistic TRIGGER_TRAPPED_CHEST = create("trigger_trapped_chest");
++    public static final CustomStatistic OPEN_ENDERCHEST = create("open_enderchest");
++    public static final CustomStatistic ENCHANT_ITEM = create("enchant_item");
++    public static final CustomStatistic PLAY_RECORD = create("play_record");
++    public static final CustomStatistic INTERACT_WITH_FURNACE = create("interact_with_furnace");
++    public static final CustomStatistic INTERACT_WITH_CRAFTING_TABLE = create("interact_with_crafting_table");
++    public static final CustomStatistic OPEN_CHEST = create("open_chest");
++    public static final CustomStatistic SLEEP_IN_BED = create("sleep_in_bed");
++    public static final CustomStatistic OPEN_SHULKER_BOX = create("open_shulker_box");
++    public static final CustomStatistic OPEN_BARREL = create("open_barrel");
++    public static final CustomStatistic INTERACT_WITH_BLAST_FURNACE = create("interact_with_blast_furnace");
++    public static final CustomStatistic INTERACT_WITH_SMOKER = create("interact_with_smoker");
++    public static final CustomStatistic INTERACT_WITH_LECTERN = create("interact_with_lectern");
++    public static final CustomStatistic INTERACT_WITH_CAMPFIRE = create("interact_with_campfire");
++    public static final CustomStatistic INTERACT_WITH_CARTOGRAPHY_TABLE = create("interact_with_cartography_table");
++    public static final CustomStatistic INTERACT_WITH_LOOM = create("interact_with_loom");
++    public static final CustomStatistic INTERACT_WITH_STONECUTTER = create("interact_with_stonecutter");
++    public static final CustomStatistic BELL_RING = create("bell_ring");
++    public static final CustomStatistic RAID_TRIGGER = create("raid_trigger");
++    public static final CustomStatistic RAID_WIN = create("raid_win");
++    public static final CustomStatistic INTERACT_WITH_ANVIL = create("interact_with_anvil");
++    public static final CustomStatistic INTERACT_WITH_GRINDSTONE = create("interact_with_grindstone");
++    public static final CustomStatistic TARGET_HIT = create("target_hit");
++    public static final CustomStatistic INTERACT_WITH_SMITHING_TABLE = create("interact_with_smithing_table");
++
++    private static CustomStatistic create(String key) {
++        return StatisticType.CUSTOM_STATS.registerCustomStatistic(new CustomStatistic(key));
++    }
++
++    /**
++     * Get a custom stat type from a key
++     *
++     * @param key the stats key
++     * @return the stat or null if none found
++     */
++    public static @Nullable CustomStatistic getByKey(@NotNull NamespacedKey key) {
++        return CUSTOM_STATISTIC_MAP.get(key);
++    }
++
++    /**
++     * Gets an immutable collection of all custom stat types.
++     *
++     * @return a collection of all custom stat types
++     */
++    public static @NotNull Collection<CustomStatistic> values() {
++        return CUSTOM_STATISTIC_MAP.values();
++    }
++
++    private final NamespacedKey key;
++
++    private CustomStatistic(String key) {
++        this.key = NamespacedKey.minecraft(key);
++        CUSTOM_STATISTIC_MAP.put(this.key, this);
++    }
++
++    @Override
++    public @NotNull NamespacedKey getKey() {
++        return key;
++    }
++
++    @Override
++    public @NotNull String translationKey() {
++        return "stat." + this.getKey().toString().replace(':', '.');
++    }
++
++    /**
++     * Gets the actual statistic for this custom stat.
++     *
++     * @return the actual statistic
++     */
++    public @NotNull Statistic<CustomStatistic> getStatistic() {
++        return io.papermc.paper.statistics.StatisticType.CUSTOM_STATS.of(this);
++    }
++
++    @Override
++    public @NotNull String toString() {
++        return this.getKey().toString();
++    }
++
++}
+diff --git a/src/main/java/io/papermc/paper/statistics/Statistic.java b/src/main/java/io/papermc/paper/statistics/Statistic.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..dd779afef9b9238c1e239f76b6b09c06100e1ee8
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/statistics/Statistic.java
+@@ -0,0 +1,43 @@
++package io.papermc.paper.statistics;
++
++import org.bukkit.Keyed;
++import org.jetbrains.annotations.NotNull;
++
++/**
++ * Represents an individual statistic
++ *
++ * @param <S> stat (one of {@link org.bukkit.entity.EntityType}, {@link org.bukkit.Material} or {@link CustomStatistic}.
++ */
++@SuppressWarnings("ClassCanBeRecord")
++public final class Statistic<S extends Keyed> {
++
++    private final S stat;
++    private final StatisticType<S> type;
++
++    Statistic(@NotNull S stat, @NotNull StatisticType<S> type) {
++        this.stat = stat;
++        this.type = type;
++    }
++
++    /**
++     * Gets the statistic.
++     *
++     * @return the stat
++     */
++    public @NotNull S getStat() {
++        return stat;
++    }
++
++    public @NotNull StatisticType<S> getType() {
++        return type;
++    }
++
++    @Override
++    public String toString() {
++        return buildName(this.type, this.stat);
++    }
++
++    public static <S extends Keyed> @NotNull String buildName(@NotNull StatisticType<S> statType, @NotNull S stat) {
++        return statType.getKey().toString().replace(':', '.')  + ':' + stat.getKey().toString().replace(':', '.');
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/statistics/StatisticType.java b/src/main/java/io/papermc/paper/statistics/StatisticType.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..a186846a8ec23cfd485e69d7c18156f070d44c4c
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/statistics/StatisticType.java
+@@ -0,0 +1,126 @@
++package io.papermc.paper.statistics;
++
++import com.google.common.base.Preconditions;
++import io.papermc.paper.PaperRegistry;
++import net.kyori.adventure.translation.Translatable;
++import org.bukkit.Keyed;
++import org.bukkit.Material;
++import org.bukkit.NamespacedKey;
++import org.bukkit.Registry;
++import org.bukkit.entity.EntityType;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++import java.util.Collection;
++import java.util.Collections;
++import java.util.HashMap;
++import java.util.IdentityHashMap;
++import java.util.Map;
++import java.util.Objects;
++import java.util.function.Predicate;
++
++public final class StatisticType<S extends Keyed> implements Keyed, Translatable {
++
++    private static final Map<NamespacedKey, StatisticType<?>> STATISTIC_TYPE_MAP = new HashMap<>();
++
++    public static @Nullable StatisticType<?> getStatisticType(@NotNull NamespacedKey key) {
++        return STATISTIC_TYPE_MAP.get(key);
++    }
++
++    public static @NotNull Collection<StatisticType<?>> values() {
++        return Collections.unmodifiableCollection(STATISTIC_TYPE_MAP.values());
++    }
++
++    public static final StatisticType<Material> BLOCK_MINED = forMaterial("mined", Material::isBlock);
++    public static final StatisticType<Material> ITEM_CRAFTED = forMaterial("crafted", Material::isItem);
++    public static final StatisticType<Material> ITEM_USED = forMaterial("used", Material::isItem);
++    public static final StatisticType<Material> ITEM_BROKEN = forMaterial("broken", Material::isItem);
++    public static final StatisticType<Material> ITEM_PICKED_UP = forMaterial("picked_up", Material::isItem);
++    public static final StatisticType<Material> ITEM_DROPPED = forMaterial("dropped", Material::isItem);
++    public static final StatisticType<EntityType> ENTITY_KILLED = forEntityType("killed", entityType -> entityType != EntityType.UNKNOWN);
++    public static final StatisticType<EntityType> ENTITY_KILLED_BY = forEntityType("killed_by", entityType -> entityType != EntityType.UNKNOWN);
++    public static final StatisticType<CustomStatistic> CUSTOM_STATS = new StatisticType<>("custom", 75, PaperRegistry.CUSTOM_STATISTICS);
++
++    private static StatisticType<Material> forMaterial(String key, Predicate<Material> typeCheck) {
++        return new StatisticType<>(key, Registry.MATERIAL, Material.values().length, typeCheck);
++    }
++
++    private static StatisticType<EntityType> forEntityType(String key, Predicate<EntityType> typeCheck) {
++        return new StatisticType<>(key, Registry.ENTITY_TYPE, EntityType.values().length - 1, typeCheck);
++    }
++
++    private final NamespacedKey key;
++    private final Registry<S> registry;
++    private final Map<S, Statistic<S>> statisticMap;
++    private final Predicate<S> typeCheck;
++
++    private StatisticType(String key, int expectedSize, Registry<S> registry) {
++        this(key, registry, expectedSize, s -> true);
++    }
++
++    private StatisticType(String key, Registry<S> registry, int expectedSize, Predicate<S> typeCheck) {
++        this.key = NamespacedKey.minecraft(key);
++        this.registry = registry;
++        this.statisticMap = new IdentityHashMap<>(expectedSize);
++        this.typeCheck = typeCheck;
++        STATISTIC_TYPE_MAP.put(this.key, this);
++    }
++
++    /**
++     * Creates or gets the statistic from this type for the specified key.
++     *
++     * @param key what you want the stat of
++     * @return the statistic for that thing
++     * @throws IllegalArgumentException if the thing is not valid for this {@link StatisticType}
++     */
++    public @NotNull Statistic<S> of(@NotNull S key) {
++        if (!typeCheck.test(key)) {
++            throw new IllegalArgumentException(key + " is not valid for " + this.getKey());
++        }
++        if (this == StatisticType.CUSTOM_STATS) {
++            return Objects.requireNonNull(this.statisticMap.get(key), "This should never be null as all custom stats should be present in this map upon initialization");
++        }
++        return this.statisticMap.computeIfAbsent(key, newValue -> new Statistic<>(key, this));
++    }
++
++    @NotNull S registerCustomStatistic(@NotNull S stat) {
++        if (this != StatisticType.CUSTOM_STATS) {
++            throw new IllegalArgumentException("Must be the CUSTOM_STATS stat type");
++        }
++        this.statisticMap.put(stat, new Statistic<>(stat, this));
++        return stat;
++    }
++
++    /**
++     * Gets the registry associated with this stat type.
++     *
++     * @return the registry
++     */
++    public @NotNull Registry<S> getRegistry() {
++        return registry;
++    }
++
++    @Override
++    public @NotNull NamespacedKey getKey() {
++        return key;
++    }
++
++    /**
++     * {@inheritDoc}
++     * <p>
++     * {@link StatisticType#CUSTOM_STATS} does <b>NOT</b> have a
++     * translation key.
++     * @throws IllegalArgumentException if used with {@link StatisticType#CUSTOM_STATS}
++     * @see CustomStatistic#translationKey()
++     */
++    @Override
++    public @NotNull String translationKey() {
++        Preconditions.checkArgument(this != StatisticType.CUSTOM_STATS, "CUSTOM_STATS does not have a translation key");
++        return "stat_type." + this.getKey().toString().replace(':', '.');
++    }
++
++    @Override
++    public String toString() {
++        return this.key.toString();
++    }
++}
+diff --git a/src/main/java/org/bukkit/OfflinePlayer.java b/src/main/java/org/bukkit/OfflinePlayer.java
+index 3afd5f5c0208a4ee93b5dbfc2aab2b9d2e8a7544..745e2f971fee597910bf7b8c15c4ff77d1325fe4 100644
+--- a/src/main/java/org/bukkit/OfflinePlayer.java
++++ b/src/main/java/org/bukkit/OfflinePlayer.java
+@@ -190,6 +190,73 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
+      * @return last seen time
+      */
+     public long getLastSeen();
++
++    /**
++     * Increments the given stat for this player.
++     * <p>
++     * This is equivalent to the following code: {@code incrementStatistic(Statistic, 1)}
++     *
++     * @param statistic the stat to increment
++     * @throws IllegalArgumentException if the stat is invalid
++     */
++    public void incrementStatistic(@NotNull io.papermc.paper.statistics.Statistic<?> statistic);
++
++    /**
++     * Decrements the given stat for this player.
++     * <p>
++     * This is equivalent to the following code: {@code decrementStatistic(Statistic, 1)}
++     *
++     * @param statistic the stat to decrement
++     * @throws IllegalArgumentException if the stat is invalid OR decreasing the stat value would put the stat below 0
++     */
++    public void decrementStatistic(@NotNull io.papermc.paper.statistics.Statistic<?> statistic);
++
++    /**
++     * Increments the given stat for this player.
++     *
++     * @param statistic the stat to increment
++     * @param amount the amount to increment by
++     * @throws IllegalArgumentException if the stat is invalid or the amount is nonpositive
++     */
++    public void incrementStatistic(@NotNull io.papermc.paper.statistics.Statistic<?> statistic, int amount);
++
++    /**
++     * Decrements the given stat for this player.
++     *
++     * @param statistic the stat to decrement
++     * @param amount the value to decrement by
++     * @throws IllegalArgumentException if the stat is invalid, the amount is nonpositive, or the stat
++     * would have a negative value after decrementing it
++     */
++    public void decrementStatistic(@NotNull io.papermc.paper.statistics.Statistic<?> statistic, int amount);
++
++    /**
++     * Sets the given stat for this player.
++     *
++     * @param statistic the stat to set
++     * @param newAmount the value to set the stat to
++     * @throws IllegalArgumentException if the stat is invalid or the amount is negative
++     */
++    public void setStatistic(@NotNull io.papermc.paper.statistics.Statistic<?> statistic, int newAmount);
++
++    /**
++     * Gets the given stat for this player.
++     *
++     * @param statistic the stat to get
++     * @return the amount for the stat
++     * @throws IllegalArgumentException if the stat is invalid
++     */
++    public int getStatistic(@NotNull io.papermc.paper.statistics.Statistic<?> statistic);
++
++    /**
++     * Get the formatted value for this stat. This is how the stat might
++     * appear in the client's statistic window
++     *
++     * @param statistic the stat to get the formatted value for
++     * @return the formatted value
++     * @throws IllegalArgumentException if the stat is invalid
++     */
++    public @NotNull String getFormattedValue(@NotNull io.papermc.paper.statistics.Statistic<?> statistic);
+     // Paper end
+ 
+     /**
+@@ -202,7 +269,9 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
+      * @throws IllegalArgumentException if statistic is null
+      * @throws IllegalArgumentException if the statistic requires an
+      *     additional parameter
++     * @deprecated use {@link #incrementStatistic(io.papermc.paper.statistics.Statistic)}
+      */
++    @Deprecated // Paper
+     public void incrementStatistic(@NotNull Statistic statistic) throws IllegalArgumentException;
+ 
+     /**
+@@ -215,7 +284,9 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
+      * @throws IllegalArgumentException if statistic is null
+      * @throws IllegalArgumentException if the statistic requires an
+      *     additional parameter
++     * @deprecated use {@link #decrementStatistic(io.papermc.paper.statistics.Statistic)}
+      */
++    @Deprecated // Paper
+     public void decrementStatistic(@NotNull Statistic statistic) throws IllegalArgumentException;
+ 
+     /**
+@@ -227,7 +298,9 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
+      * @throws IllegalArgumentException if amount is negative
+      * @throws IllegalArgumentException if the statistic requires an
+      *     additional parameter
++     * @deprecated use {@link #incrementStatistic(io.papermc.paper.statistics.Statistic, int)}
+      */
++    @Deprecated // Paper
+     public void incrementStatistic(@NotNull Statistic statistic, int amount) throws IllegalArgumentException;
+ 
+     /**
+@@ -239,7 +312,9 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
+      * @throws IllegalArgumentException if amount is negative
+      * @throws IllegalArgumentException if the statistic requires an
+      *     additional parameter
++     * @deprecated use {@link #decrementStatistic(io.papermc.paper.statistics.Statistic, int)}
+      */
++    @Deprecated // Paper
+     public void decrementStatistic(@NotNull Statistic statistic, int amount) throws IllegalArgumentException;
+ 
+     /**
+@@ -251,7 +326,9 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
+      * @throws IllegalArgumentException if newValue is negative
+      * @throws IllegalArgumentException if the statistic requires an
+      *     additional parameter
++     * @deprecated use {@link #setStatistic(io.papermc.paper.statistics.Statistic, int)}
+      */
++    @Deprecated // Paper
+     public void setStatistic(@NotNull Statistic statistic, int newValue) throws IllegalArgumentException;
+ 
+     /**
+@@ -262,7 +339,9 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
+      * @throws IllegalArgumentException if statistic is null
+      * @throws IllegalArgumentException if the statistic requires an
+      *     additional parameter
++     * @deprecated use {@link #getStatistic(io.papermc.paper.statistics.Statistic)}
+      */
++    @Deprecated // Paper
+     public int getStatistic(@NotNull Statistic statistic) throws IllegalArgumentException;
+ 
+     /**
+@@ -277,7 +356,9 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
+      * @throws IllegalArgumentException if material is null
+      * @throws IllegalArgumentException if the given parameter is not valid
+      *     for the statistic
++     * @deprecated use {@link #incrementStatistic(io.papermc.paper.statistics.Statistic)}
+      */
++    @Deprecated // Paper
+     public void incrementStatistic(@NotNull Statistic statistic, @NotNull Material material) throws IllegalArgumentException;
+ 
+     /**
+@@ -292,7 +373,9 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
+      * @throws IllegalArgumentException if material is null
+      * @throws IllegalArgumentException if the given parameter is not valid
+      *     for the statistic
++     * @deprecated use {@link #decrementStatistic(io.papermc.paper.statistics.Statistic)}
+      */
++    @Deprecated // Paper
+     public void decrementStatistic(@NotNull Statistic statistic, @NotNull Material material) throws IllegalArgumentException;
+ 
+     /**
+@@ -305,7 +388,9 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
+      * @throws IllegalArgumentException if material is null
+      * @throws IllegalArgumentException if the given parameter is not valid
+      *     for the statistic
++     * @deprecated use {@link #getStatistic(io.papermc.paper.statistics.Statistic)}
+      */
++    @Deprecated // Paper
+     public int getStatistic(@NotNull Statistic statistic, @NotNull Material material) throws IllegalArgumentException;
+ 
+     /**
+@@ -319,7 +404,9 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
+      * @throws IllegalArgumentException if amount is negative
+      * @throws IllegalArgumentException if the given parameter is not valid
+      *     for the statistic
++     * @deprecated use {@link #incrementStatistic(io.papermc.paper.statistics.Statistic, int)}
+      */
++    @Deprecated // Paper
+     public void incrementStatistic(@NotNull Statistic statistic, @NotNull Material material, int amount) throws IllegalArgumentException;
+ 
+     /**
+@@ -333,7 +420,9 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
+      * @throws IllegalArgumentException if amount is negative
+      * @throws IllegalArgumentException if the given parameter is not valid
+      *     for the statistic
++     * @deprecated use {@link #decrementStatistic(io.papermc.paper.statistics.Statistic, int)}
+      */
++    @Deprecated // Paper
+     public void decrementStatistic(@NotNull Statistic statistic, @NotNull Material material, int amount) throws IllegalArgumentException;
+ 
+     /**
+@@ -347,7 +436,9 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
+      * @throws IllegalArgumentException if newValue is negative
+      * @throws IllegalArgumentException if the given parameter is not valid
+      *     for the statistic
++     * @deprecated use {@link #setStatistic(io.papermc.paper.statistics.Statistic, int)}
+      */
++    @Deprecated // Paper
+     public void setStatistic(@NotNull Statistic statistic, @NotNull Material material, int newValue) throws IllegalArgumentException;
+ 
+     /**
+@@ -362,7 +453,9 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
+      * @throws IllegalArgumentException if entityType is null
+      * @throws IllegalArgumentException if the given parameter is not valid
+      *     for the statistic
++     * @deprecated use {@link #incrementStatistic(io.papermc.paper.statistics.Statistic)}
+      */
++    @Deprecated // Paper
+     public void incrementStatistic(@NotNull Statistic statistic, @NotNull EntityType entityType) throws IllegalArgumentException;
+ 
+     /**
+@@ -377,7 +470,9 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
+      * @throws IllegalArgumentException if entityType is null
+      * @throws IllegalArgumentException if the given parameter is not valid
+      *     for the statistic
++     * @deprecated use {@link #decrementStatistic(io.papermc.paper.statistics.Statistic)}
+      */
++    @Deprecated // Paper
+     public void decrementStatistic(@NotNull Statistic statistic, @NotNull EntityType entityType) throws IllegalArgumentException;
+ 
+     /**
+@@ -390,7 +485,9 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
+      * @throws IllegalArgumentException if entityType is null
+      * @throws IllegalArgumentException if the given parameter is not valid
+      *     for the statistic
++     * @deprecated use {@link #getStatistic(io.papermc.paper.statistics.Statistic)}
+      */
++    @Deprecated // Paper
+     public int getStatistic(@NotNull Statistic statistic, @NotNull EntityType entityType) throws IllegalArgumentException;
+ 
+     /**
+@@ -404,7 +501,9 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
+      * @throws IllegalArgumentException if amount is negative
+      * @throws IllegalArgumentException if the given parameter is not valid
+      *     for the statistic
++     * @deprecated use {@link #incrementStatistic(io.papermc.paper.statistics.Statistic, int)}
+      */
++    @Deprecated // Paper
+     public void incrementStatistic(@NotNull Statistic statistic, @NotNull EntityType entityType, int amount) throws IllegalArgumentException;
+ 
+     /**
+@@ -418,7 +517,9 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
+      * @throws IllegalArgumentException if amount is negative
+      * @throws IllegalArgumentException if the given parameter is not valid
+      *     for the statistic
++     * @deprecated use {@link #decrementStatistic(io.papermc.paper.statistics.Statistic, int)}
+      */
++    @Deprecated // Paper
+     public void decrementStatistic(@NotNull Statistic statistic, @NotNull EntityType entityType, int amount);
+ 
+     /**
+@@ -432,6 +533,8 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
+      * @throws IllegalArgumentException if newValue is negative
+      * @throws IllegalArgumentException if the given parameter is not valid
+      *     for the statistic
++     * @deprecated use {@link #setStatistic(io.papermc.paper.statistics.Statistic, int)}
+      */
++    @Deprecated // Paper
+     public void setStatistic(@NotNull Statistic statistic, @NotNull EntityType entityType, int newValue);
+ }
+diff --git a/src/main/java/org/bukkit/Statistic.java b/src/main/java/org/bukkit/Statistic.java
+index 4ce888688d04eb0c4b2261a6474df870e7d2bb00..867b5b548fa56acb471cf200d79216e983e1d6a7 100644
+--- a/src/main/java/org/bukkit/Statistic.java
++++ b/src/main/java/org/bukkit/Statistic.java
+@@ -5,7 +5,9 @@ import org.jetbrains.annotations.NotNull;
+ 
+ /**
+  * Represents a countable statistic, which is tracked by the server.
++ * @deprecated use {@link io.papermc.paper.statistics.StatisticType} and {@link io.papermc.paper.statistics.Statistic}
+  */
++@Deprecated // Paper
+ public enum Statistic implements Keyed {
+     DAMAGE_DEALT,
+     DAMAGE_TAKEN,
