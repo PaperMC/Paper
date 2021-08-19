@@ -5,6 +5,7 @@ import io.papermc.generator.types.GeneratedTagKeyType;
 import io.papermc.generator.types.SourceGenerator;
 import io.papermc.generator.types.goal.MobGoalGenerator;
 import io.papermc.paper.registry.RegistryKey;
+import io.papermc.paper.statistic.CustomStatistic;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
@@ -36,6 +37,8 @@ public interface Generators {
         simpleKey("DamageTypeKeys", DamageType.class, Registries.DAMAGE_TYPE, RegistryKey.DAMAGE_TYPE, true),
         simpleKey("WolfVariantKeys", Wolf.Variant.class, Registries.WOLF_VARIANT, RegistryKey.WOLF_VARIANT, true),
         simpleKey("ItemTypeKeys", ItemType.class, Registries.ITEM, RegistryKey.ITEM, false),
+        simpleKey("CustomStatisticKeys", CustomStatistic.class, Registries.CUSTOM_STAT, RegistryKey.CUSTOM_STAT, false),
+        // simpleKey("StatisticTypeKeys", new TypeToken<StatisticType<?>>() {}, Registries.STAT_TYPE, RegistryKey.STAT_TYPE, false), // TODO support generics
 
         simpleTagKey("EnchantmentTagKeys", Enchantment.class, Registries.ENCHANTMENT, RegistryKey.ENCHANTMENT),
         simpleTagKey("ItemTypeTagKeys", ItemType.class, Registries.ITEM, RegistryKey.ITEM),
