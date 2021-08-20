@@ -1843,8 +1843,39 @@ index 02d8cfeaea105d42a437b08c3ba59c50eda5a452..6ba6e88174644cfea81445f1e8483e81
 +    }
      // Paper end
  }
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+index 6dbe186ed897a5c829ef56f70185c1f8749476cc..8ded509267326d6298ed361af9359955927f3114 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+@@ -272,6 +272,7 @@ public class CraftWorld implements World {
+     private int waterAnimalSpawn = -1;
+     private int waterAmbientSpawn = -1;
+     private int ambientSpawn = -1;
++    private net.kyori.adventure.pointer.Pointers adventure$pointers;
+ 
+     private static final Random rand = new Random();
+ 
+@@ -2433,4 +2434,18 @@ public class CraftWorld implements World {
+         return this.spigot;
+     }
+     // Spigot end
++
++    // Paper start - implement pointers
++    @Override
++    public net.kyori.adventure.pointer.@org.jetbrains.annotations.NotNull Pointers pointers() {
++        if (this.adventure$pointers == null) {
++            this.adventure$pointers = net.kyori.adventure.pointer.Pointers.builder()
++                .withDynamic(net.kyori.adventure.identity.Identity.NAME, this::getName)
++                .withDynamic(net.kyori.adventure.identity.Identity.UUID, this::getUID)
++                .build();
++        }
++
++        return this.adventure$pointers;
++    }
++    // Paper end
+ }
 diff --git a/src/main/java/org/bukkit/craftbukkit/Main.java b/src/main/java/org/bukkit/craftbukkit/Main.java
-index 5944e75b9501a3f9f25be5efe11351dd337158c5..e4cd36cf6626ad702ee654587b2f8c5442e4fe2b 100644
+index 11d1bc56439ff867224ef1c2058aee67ba0ee332..52f78b8a3d4588f9aba10c8aea4d36cb02f1f54f 100644
 --- a/src/main/java/org/bukkit/craftbukkit/Main.java
 +++ b/src/main/java/org/bukkit/craftbukkit/Main.java
 @@ -19,6 +19,12 @@ public class Main {
@@ -2065,6 +2096,39 @@ index f3cb4102ab223f379f60dac317df7da1fab812a8..b41452c3ed833f0e6c3b03a56fe5773e
 +    }
 +    // Paper end
  }
+diff --git a/src/main/java/org/bukkit/craftbukkit/command/ServerCommandSender.java b/src/main/java/org/bukkit/craftbukkit/command/ServerCommandSender.java
+index 8107ed0d248ff2a1cf8e556b7610a68f6c197691..e3dffa7ee5b00dc71e5603838b2e5543b21bf725 100644
+--- a/src/main/java/org/bukkit/craftbukkit/command/ServerCommandSender.java
++++ b/src/main/java/org/bukkit/craftbukkit/command/ServerCommandSender.java
+@@ -14,6 +14,7 @@ import org.bukkit.plugin.Plugin;
+ public abstract class ServerCommandSender implements CommandSender {
+     private static PermissibleBase blockPermInst;
+     private final PermissibleBase perm;
++    private net.kyori.adventure.pointer.Pointers adventure$pointers; // Paper - implement pointers
+ 
+     public ServerCommandSender() {
+         if (this instanceof CraftBlockCommandSender) {
+@@ -100,6 +101,20 @@ public abstract class ServerCommandSender implements CommandSender {
+         this.sendMessage(messages); // ServerCommandSenders have no use for senders
+     }
+ 
++    // Paper start - implement pointers
++    @Override
++    public net.kyori.adventure.pointer.@org.jetbrains.annotations.NotNull Pointers pointers() {
++        if (this.adventure$pointers == null) {
++            this.adventure$pointers = net.kyori.adventure.pointer.Pointers.builder()
++                .withDynamic(net.kyori.adventure.identity.Identity.NAME, this::getName)
++                .withStatic(net.kyori.adventure.permission.PermissionChecker.POINTER, this::checkPermission)
++                .build();
++        }
++
++        return this.adventure$pointers;
++    }
++    // Paper end
++
+     // Spigot start
+     private final org.bukkit.command.CommandSender.Spigot spigot = new org.bukkit.command.CommandSender.Spigot()
+     {
 diff --git a/src/main/java/org/bukkit/craftbukkit/enchantments/CraftEnchantment.java b/src/main/java/org/bukkit/craftbukkit/enchantments/CraftEnchantment.java
 index cf69a45f038c2b8336010f5fe277313fd0513b5b..eb99e0c2462a2d1ab4508a5c3f1580b6e31d7465 100644
 --- a/src/main/java/org/bukkit/craftbukkit/enchantments/CraftEnchantment.java
@@ -2083,10 +2147,18 @@ index cf69a45f038c2b8336010f5fe277313fd0513b5b..eb99e0c2462a2d1ab4508a5c3f1580b6
      public net.minecraft.world.item.enchantment.Enchantment getHandle() {
          return this.target;
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
-index 3aecaf187b0360eb0e5dc9a8948c834cf3401ad8..8d7d256fa33635807d187d493e71b6b4e17fa2e8 100644
+index 3aecaf187b0360eb0e5dc9a8948c834cf3401ad8..0cdc2d66092fd17fe20db551db125ca87c943216 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
-@@ -810,6 +810,19 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
+@@ -189,6 +189,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
+     protected Entity entity;
+     private EntityDamageEvent lastDamageEvent;
+     private final CraftPersistentDataContainer persistentDataContainer = new CraftPersistentDataContainer(CraftEntity.DATA_TYPE_REGISTRY);
++    private net.kyori.adventure.pointer.Pointers adventure$pointers; // Paper - implement pointers
+ 
+     public CraftEntity(final CraftServer server, final Entity entity) {
+         this.server = server;
+@@ -810,6 +811,32 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
          return this.getHandle().getVehicle().getBukkitEntity();
      }
  
@@ -2100,6 +2172,19 @@ index 3aecaf187b0360eb0e5dc9a8948c834cf3401ad8..8d7d256fa33635807d187d493e71b6b4
 +    @Override
 +    public void customName(final net.kyori.adventure.text.Component customName) {
 +        this.getHandle().setCustomName(customName != null ? io.papermc.paper.adventure.PaperAdventure.asVanilla(customName) : null);
++    }
++
++    @Override
++    public net.kyori.adventure.pointer.@org.jetbrains.annotations.NotNull Pointers pointers() {
++        if (this.adventure$pointers == null) {
++            this.adventure$pointers = net.kyori.adventure.pointer.Pointers.builder()
++                .withDynamic(net.kyori.adventure.identity.Identity.NAME, this::getName)
++                .withDynamic(net.kyori.adventure.identity.Identity.UUID, this::getUniqueId)
++                .withStatic(net.kyori.adventure.permission.PermissionChecker.POINTER, this::checkPermission)
++                .build();
++        }
++
++        return this.adventure$pointers;
 +    }
 +    // Paper end
 +
@@ -2141,10 +2226,26 @@ index 042691349dd5659e8db526199641cbcfa21c6005..841dbf4a86b19d7c8ea41930ecb1f88c
          player.initMenu(container);
      }
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index 1a6cca634d6b40a6d5f30eda98be3aa72c2569ad..32f555a846d34e086e75c027a92a48eaf556df94 100644
+index 1a6cca634d6b40a6d5f30eda98be3aa72c2569ad..aff4700608211f5f071953fffb4d8a03ccc3cb67 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-@@ -244,14 +244,39 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -127,6 +127,7 @@ import org.bukkit.plugin.messaging.StandardMessenger;
+ import org.bukkit.scoreboard.Scoreboard;
+ 
+ import net.md_5.bungee.api.chat.BaseComponent; // Spigot
++import org.jetbrains.annotations.NotNull;
+ 
+ @DelegateDeserialization(CraftOfflinePlayer.class)
+ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -141,6 +142,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+     private double health = 20;
+     private boolean scaledHealth = false;
+     private double healthScale = 20;
++    private net.kyori.adventure.pointer.Pointers adventure$pointers; // Paper - implement pointers
+ 
+     public CraftPlayer(CraftServer server, ServerPlayer entity) {
+         super(server, entity);
+@@ -244,14 +246,39 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
  
      @Override
      public String getDisplayName() {
@@ -2184,7 +2285,7 @@ index 1a6cca634d6b40a6d5f30eda98be3aa72c2569ad..32f555a846d34e086e75c027a92a48ea
      @Override
      public String getPlayerListName() {
          return this.getHandle().listName == null ? getName() : CraftChatMessage.fromComponent(this.getHandle().listName);
-@@ -270,42 +295,42 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -270,42 +297,42 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          }
      }
  
@@ -2236,7 +2337,7 @@ index 1a6cca634d6b40a6d5f30eda98be3aa72c2569ad..32f555a846d34e086e75c027a92a48ea
          this.getHandle().connection.send(packet);
      }
  
-@@ -337,6 +362,17 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -337,6 +364,17 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          this.getHandle().connection.disconnect(message == null ? "" : message);
      }
  
@@ -2254,7 +2355,7 @@ index 1a6cca634d6b40a6d5f30eda98be3aa72c2569ad..32f555a846d34e086e75c027a92a48ea
      @Override
      public void setCompassTarget(Location loc) {
          if (this.getHandle().connection == null) return;
-@@ -571,6 +607,33 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -571,6 +609,33 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          this.getHandle().connection.send(packet);
      }
  
@@ -2288,7 +2389,7 @@ index 1a6cca634d6b40a6d5f30eda98be3aa72c2569ad..32f555a846d34e086e75c027a92a48ea
      @Override
      public void sendSignChange(Location loc, String[] lines) {
          this.sendSignChange(loc, lines, DyeColor.BLACK);
-@@ -598,14 +661,15 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -598,14 +663,15 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          }
  
          Component[] components = CraftSign.sanitizeLines(lines);
@@ -2306,7 +2407,7 @@ index 1a6cca634d6b40a6d5f30eda98be3aa72c2569ad..32f555a846d34e086e75c027a92a48ea
      }
  
      @Override
-@@ -1705,6 +1769,12 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -1705,6 +1771,12 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          return (this.getHandle().clientViewDistance == null) ? Bukkit.getViewDistance() : this.getHandle().clientViewDistance;
      }
  
@@ -2319,7 +2420,7 @@ index 1a6cca634d6b40a6d5f30eda98be3aa72c2569ad..32f555a846d34e086e75c027a92a48ea
      @Override
      public int getPing() {
          return this.getHandle().latency;
-@@ -1733,6 +1803,160 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -1733,6 +1805,174 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          getInventory().setItemInMainHand(hand);
      }
  
@@ -2474,6 +2575,20 @@ index 1a6cca634d6b40a6d5f30eda98be3aa72c2569ad..32f555a846d34e086e75c027a92a48ea
 +        connection.send(new net.minecraft.network.protocol.game.ClientboundContainerSetSlotPacket(0, stateId, slot, item));
 +        connection.send(new net.minecraft.network.protocol.game.ClientboundOpenBookPacket(net.minecraft.world.InteractionHand.MAIN_HAND));
 +        connection.send(new net.minecraft.network.protocol.game.ClientboundContainerSetSlotPacket(0, stateId, slot, inventory.getSelected()));
++    }
++
++    @Override
++    public net.kyori.adventure.pointer.@NotNull Pointers pointers() {
++        if (this.adventure$pointers == null) {
++            this.adventure$pointers = net.kyori.adventure.pointer.Pointers.builder()
++                .withDynamic(net.kyori.adventure.identity.Identity.DISPLAY_NAME, this::displayName)
++                .withDynamic(net.kyori.adventure.identity.Identity.NAME, this::getName)
++                .withDynamic(net.kyori.adventure.identity.Identity.UUID, this::getUniqueId)
++                .withStatic(net.kyori.adventure.permission.PermissionChecker.POINTER, this::checkPermission)
++                .build();
++        }
++
++        return this.adventure$pointers;
 +    }
 +    // Paper end
 +
