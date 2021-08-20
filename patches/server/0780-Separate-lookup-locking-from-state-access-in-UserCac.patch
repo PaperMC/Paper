@@ -6,7 +6,7 @@ Subject: [PATCH] Separate lookup locking from state access in UserCache
 Prevent lookups from stalling simple state access/write calls
 
 diff --git a/src/main/java/net/minecraft/server/players/GameProfileCache.java b/src/main/java/net/minecraft/server/players/GameProfileCache.java
-index 61405c2b53e03a4b83e2c70c6e4d3739ca9676cb..f848e7d16dd486c5412158eb1be61f30d2d83273 100644
+index 61405c2b53e03a4b83e2c70c6e4d3739ca9676cb..66dfa8c844963091b63e1f2f85d0da6dd2cd083c 100644
 --- a/src/main/java/net/minecraft/server/players/GameProfileCache.java
 +++ b/src/main/java/net/minecraft/server/players/GameProfileCache.java
 @@ -62,6 +62,11 @@ public class GameProfileCache {
@@ -57,13 +57,11 @@ index 61405c2b53e03a4b83e2c70c6e4d3739ca9676cb..f848e7d16dd486c5412158eb1be61f30
          GameProfileCache.GameProfileInfo usercache_usercacheentry = (GameProfileCache.GameProfileInfo) this.profilesByName.get(s1);
          boolean flag = false;
  
-@@ -157,10 +165,14 @@ public class GameProfileCache {
-         Optional optional;
- 
+@@ -159,8 +167,12 @@ public class GameProfileCache {
          if (usercache_usercacheentry != null) {
-+            stateLocked = false; this.stateLock.unlock(); // Paper - allow better concurrency
              usercache_usercacheentry.setLastAccess(this.getNextOperation());
              optional = Optional.of(usercache_usercacheentry.getProfile());
++            stateLocked = false; this.stateLock.unlock(); // Paper - allow better concurrency
          } else {
 +            stateLocked = false; this.stateLock.unlock(); // Paper - allow better concurrency
 +            try { this.lookupLock.lock(); // Paper - allow better concurrency
@@ -80,7 +78,23 @@ index 61405c2b53e03a4b83e2c70c6e4d3739ca9676cb..f848e7d16dd486c5412158eb1be61f30
      }
  
      public void getAsync(String username, Consumer<Optional<GameProfile>> consumer) {
-@@ -322,7 +335,9 @@ public class GameProfileCache {
+@@ -198,6 +211,7 @@ public class GameProfileCache {
+     }
+ 
+     public Optional<GameProfile> get(UUID uuid) {
++        try { this.stateLock.lock(); // Paper - allow better concurrency
+         GameProfileCache.GameProfileInfo usercache_usercacheentry = (GameProfileCache.GameProfileInfo) this.profilesByUUID.get(uuid);
+ 
+         if (usercache_usercacheentry == null) {
+@@ -206,6 +220,7 @@ public class GameProfileCache {
+             usercache_usercacheentry.setLastAccess(this.getNextOperation());
+             return Optional.of(usercache_usercacheentry.getProfile());
+         }
++        } finally { this.stateLock.unlock(); } // Paper - allow better concurrency
+     }
+ 
+     public void setExecutor(Executor executor) {
+@@ -322,7 +337,9 @@ public class GameProfileCache {
      }
  
      private Stream<GameProfileCache.GameProfileInfo> getTopMRUProfiles(int limit) {
