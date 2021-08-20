@@ -12,10 +12,10 @@ This patch brings back entity slices for lookup only.
 
 diff --git a/src/main/java/io/papermc/paper/world/ChunkEntitySlices.java b/src/main/java/io/papermc/paper/world/ChunkEntitySlices.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..4da4b04db6cb14f18b727055ca3caacab49939e0
+index 0000000000000000000000000000000000000000..47b5f75d9f27cf3ab947fd1f69cbd609fb9f2749
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/world/ChunkEntitySlices.java
-@@ -0,0 +1,481 @@
+@@ -0,0 +1,500 @@
 +package io.papermc.paper.world;
 +
 +import com.destroystokyo.paper.util.maplist.EntityList;
@@ -65,6 +65,25 @@ index 0000000000000000000000000000000000000000..4da4b04db6cb14f18b727055ca3caaca
 +
 +        this.status = status;
 +    }
++
++    // Paper start - optimise CraftChunk#getEntities
++    public org.bukkit.entity.Entity[] getChunkEntities() {
++        List<org.bukkit.entity.Entity> ret = new java.util.ArrayList<>();
++        final Entity[] entities = this.entities.getRawData();
++        for (int i = 0, size = Math.min(entities.length, this.entities.size()); i < size; ++i) {
++            final Entity entity = entities[i];
++            if (entity == null) {
++                continue;
++            }
++            final org.bukkit.entity.Entity bukkit = entity.getBukkitEntity();
++            if (bukkit != null && bukkit.isValid()) {
++                ret.add(bukkit);
++            }
++        }
++
++        return ret.toArray(new org.bukkit.entity.Entity[0]);
++    }
++    // Paper end - optimise CraftChunk#getEntities
 +
 +    public boolean isEmpty() {
 +        return this.entities.size() == 0;
@@ -1052,15 +1071,25 @@ index 325e244c46ec208a2e7e18d71ccbbfcc25fc1bce..94130509e3a7980c378cc95c46821cf0
      }
  
 diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
-index 474078b68f1bf22037495f42bae59b790fd8cb46..b92f6cc9039d290bb7fb793fed98c6b77294596a 100644
+index 474078b68f1bf22037495f42bae59b790fd8cb46..4b1ae8ce0eb74db15b1d57e741542fbec361dc16 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
 +++ b/src/main/java/net/minecraft/world/level/Level.java
-@@ -203,6 +203,40 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -203,6 +203,50 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
          return this.typeKey;
      }
  
 +    // Paper start
 +    protected final io.papermc.paper.world.EntitySliceManager entitySliceManager;
++
++    // Paper start - optimise CraftChunk#getEntities
++    public org.bukkit.entity.Entity[] getChunkEntities(int chunkX, int chunkZ) {
++        io.papermc.paper.world.ChunkEntitySlices slices = this.entitySliceManager.getChunk(chunkX, chunkZ);
++        if (slices == null) {
++            return new org.bukkit.entity.Entity[0];
++        }
++        return slices.getChunkEntities();
++    }
++    // Paper end - optimise CraftChunk#getEntities
 +
 +    @Override
 +    public List<Entity> getHardCollidingEntities(Entity except, AABB box, Predicate<? super Entity> predicate) {
@@ -1096,7 +1125,7 @@ index 474078b68f1bf22037495f42bae59b790fd8cb46..b92f6cc9039d290bb7fb793fed98c6b7
      protected Level(WritableLevelData worlddatamutable, ResourceKey<Level> resourcekey, final DimensionType dimensionmanager, Supplier<ProfilerFiller> supplier, boolean flag, boolean flag1, long i, org.bukkit.generator.ChunkGenerator gen, org.bukkit.World.Environment env, java.util.concurrent.Executor executor) { // Paper - Anti-Xray - Pass executor
          this.spigotConfig = new org.spigotmc.SpigotWorldConfig(((net.minecraft.world.level.storage.PrimaryLevelData) worlddatamutable).getLevelName()); // Spigot
          this.paperConfig = new com.destroystokyo.paper.PaperWorldConfig(((net.minecraft.world.level.storage.PrimaryLevelData) worlddatamutable).getLevelName(), this.spigotConfig); // Paper
-@@ -279,6 +313,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -279,6 +323,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
          this.chunkPacketBlockController = this.paperConfig.antiXray ?
              new com.destroystokyo.paper.antixray.ChunkPacketBlockControllerAntiXray(this, executor)
              : com.destroystokyo.paper.antixray.ChunkPacketBlockController.NO_OPERATION_INSTANCE; // Paper - Anti-Xray
@@ -1104,7 +1133,7 @@ index 474078b68f1bf22037495f42bae59b790fd8cb46..b92f6cc9039d290bb7fb793fed98c6b7
      }
  
      // Paper start
-@@ -996,26 +1031,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -996,26 +1041,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
      public List<Entity> getEntities(@Nullable Entity except, AABB box, Predicate<? super Entity> predicate) {
          this.getProfiler().incrementCounter("getEntities");
          List<Entity> list = Lists.newArrayList();
@@ -1132,7 +1161,7 @@ index 474078b68f1bf22037495f42bae59b790fd8cb46..b92f6cc9039d290bb7fb793fed98c6b7
          return list;
      }
  
-@@ -1024,26 +1040,22 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -1024,26 +1050,22 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
          this.getProfiler().incrementCounter("getEntities");
          List<T> list = Lists.newArrayList();
  
@@ -1222,6 +1251,25 @@ index 85ec854350f10b90d4d5899467e4781c626cb4fc..da644390c0ccb8455b0d742aec0c6753
  
              Visibility visibility = PersistentEntitySectionManager.getEffectiveStatus(this.entity, this.currentSection.getStatus());
              if (visibility.isTicking()) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftChunk.java b/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
+index 0a76032b48af4327580b99730e534f628924fe35..b5332b2d5149a349fcc42d234d851054d2764f30 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
+@@ -110,13 +110,7 @@ public class CraftChunk implements Chunk {
+             this.getWorld().getChunkAt(x, z); // Transient load for this tick
+         }
+ 
+-        // Paper start - improve CraftChunk#getEntities
+-        return this.worldServer.entityManager.sectionStorage.getExistingSectionsInChunk(ChunkPos.asLong(this.x, this.z))
+-            .flatMap(net.minecraft.world.level.entity.EntitySection::getEntities)
+-            .map(net.minecraft.world.entity.Entity::getBukkitEntity)
+-            .filter(entity -> entity != null && entity.isValid())
+-            .toArray(Entity[]::new);
+-        // Paper end
++        return ((CraftWorld)this.getWorld()).getHandle().getChunkEntities(this.x, this.z); // Paper - optimise this better than paper :)
+     }
+ 
+     @Override
 diff --git a/src/main/java/org/bukkit/craftbukkit/util/DummyGeneratorAccess.java b/src/main/java/org/bukkit/craftbukkit/util/DummyGeneratorAccess.java
 index 08634e060b35d653c5677b7c1012cfda266bf002..9e8f7454955e1db0ec13fd82e40dd9e399d40ab9 100644
 --- a/src/main/java/org/bukkit/craftbukkit/util/DummyGeneratorAccess.java
