@@ -1844,14 +1844,14 @@ index 02d8cfeaea105d42a437b08c3ba59c50eda5a452..6ba6e88174644cfea81445f1e8483e81
      // Paper end
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index 6dbe186ed897a5c829ef56f70185c1f8749476cc..8ded509267326d6298ed361af9359955927f3114 100644
+index 6dbe186ed897a5c829ef56f70185c1f8749476cc..5db8e54cfcef415ab046264a50941dc80e55fccf 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 @@ -272,6 +272,7 @@ public class CraftWorld implements World {
      private int waterAnimalSpawn = -1;
      private int waterAmbientSpawn = -1;
      private int ambientSpawn = -1;
-+    private net.kyori.adventure.pointer.Pointers adventure$pointers;
++    private net.kyori.adventure.pointer.Pointers adventure$pointers; // Paper - implement pointers
  
      private static final Random rand = new Random();
  
@@ -2226,18 +2226,10 @@ index 042691349dd5659e8db526199641cbcfa21c6005..841dbf4a86b19d7c8ea41930ecb1f88c
          player.initMenu(container);
      }
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index 1a6cca634d6b40a6d5f30eda98be3aa72c2569ad..aff4700608211f5f071953fffb4d8a03ccc3cb67 100644
+index 1a6cca634d6b40a6d5f30eda98be3aa72c2569ad..6e25d7ebb54017a3ecbb850741b5b57d3d7f675d 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-@@ -127,6 +127,7 @@ import org.bukkit.plugin.messaging.StandardMessenger;
- import org.bukkit.scoreboard.Scoreboard;
- 
- import net.md_5.bungee.api.chat.BaseComponent; // Spigot
-+import org.jetbrains.annotations.NotNull;
- 
- @DelegateDeserialization(CraftOfflinePlayer.class)
- public class CraftPlayer extends CraftHumanEntity implements Player {
-@@ -141,6 +142,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -141,6 +141,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
      private double health = 20;
      private boolean scaledHealth = false;
      private double healthScale = 20;
@@ -2245,7 +2237,7 @@ index 1a6cca634d6b40a6d5f30eda98be3aa72c2569ad..aff4700608211f5f071953fffb4d8a03
  
      public CraftPlayer(CraftServer server, ServerPlayer entity) {
          super(server, entity);
-@@ -244,14 +246,39 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -244,14 +245,39 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
  
      @Override
      public String getDisplayName() {
@@ -2285,7 +2277,7 @@ index 1a6cca634d6b40a6d5f30eda98be3aa72c2569ad..aff4700608211f5f071953fffb4d8a03
      @Override
      public String getPlayerListName() {
          return this.getHandle().listName == null ? getName() : CraftChatMessage.fromComponent(this.getHandle().listName);
-@@ -270,42 +297,42 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -270,42 +296,42 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          }
      }
  
@@ -2337,7 +2329,7 @@ index 1a6cca634d6b40a6d5f30eda98be3aa72c2569ad..aff4700608211f5f071953fffb4d8a03
          this.getHandle().connection.send(packet);
      }
  
-@@ -337,6 +364,17 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -337,6 +363,17 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          this.getHandle().connection.disconnect(message == null ? "" : message);
      }
  
@@ -2355,7 +2347,7 @@ index 1a6cca634d6b40a6d5f30eda98be3aa72c2569ad..aff4700608211f5f071953fffb4d8a03
      @Override
      public void setCompassTarget(Location loc) {
          if (this.getHandle().connection == null) return;
-@@ -571,6 +609,33 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -571,6 +608,33 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          this.getHandle().connection.send(packet);
      }
  
@@ -2389,7 +2381,7 @@ index 1a6cca634d6b40a6d5f30eda98be3aa72c2569ad..aff4700608211f5f071953fffb4d8a03
      @Override
      public void sendSignChange(Location loc, String[] lines) {
          this.sendSignChange(loc, lines, DyeColor.BLACK);
-@@ -598,14 +663,15 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -598,14 +662,15 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          }
  
          Component[] components = CraftSign.sanitizeLines(lines);
@@ -2407,7 +2399,7 @@ index 1a6cca634d6b40a6d5f30eda98be3aa72c2569ad..aff4700608211f5f071953fffb4d8a03
      }
  
      @Override
-@@ -1705,6 +1771,12 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -1705,6 +1770,12 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          return (this.getHandle().clientViewDistance == null) ? Bukkit.getViewDistance() : this.getHandle().clientViewDistance;
      }
  
@@ -2420,7 +2412,7 @@ index 1a6cca634d6b40a6d5f30eda98be3aa72c2569ad..aff4700608211f5f071953fffb4d8a03
      @Override
      public int getPing() {
          return this.getHandle().latency;
-@@ -1733,6 +1805,174 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -1733,6 +1804,174 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          getInventory().setItemInMainHand(hand);
      }
  
@@ -2578,7 +2570,7 @@ index 1a6cca634d6b40a6d5f30eda98be3aa72c2569ad..aff4700608211f5f071953fffb4d8a03
 +    }
 +
 +    @Override
-+    public net.kyori.adventure.pointer.@NotNull Pointers pointers() {
++    public net.kyori.adventure.pointer.@org.jetbrains.annotations.NotNull Pointers pointers() {
 +        if (this.adventure$pointers == null) {
 +            this.adventure$pointers = net.kyori.adventure.pointer.Pointers.builder()
 +                .withDynamic(net.kyori.adventure.identity.Identity.DISPLAY_NAME, this::displayName)
