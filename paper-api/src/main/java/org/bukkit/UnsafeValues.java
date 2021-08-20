@@ -197,5 +197,22 @@ public interface UnsafeValues {
      * @return true if valid repair, false if not
      */
     public boolean isValidRepairItemStack(@org.jetbrains.annotations.NotNull ItemStack itemToBeRepaired, @org.jetbrains.annotations.NotNull ItemStack repairMaterial);
+
+    /**
+     * Checks if the entity represented by the namespaced key has default attributes.
+     *
+     * @param entityKey the entity's key
+     * @return true if it has default attributes
+     */
+    boolean hasDefaultEntityAttributes(@org.jetbrains.annotations.NotNull NamespacedKey entityKey);
+
+    /**
+     * Gets the default attributes for the entity represented by the namespaced key.
+     *
+     * @param entityKey the entity's key
+     * @return an unmodifiable instance of Attributable for reading default attributes.
+     * @throws IllegalArgumentException if the entity does not exist of have default attributes (use {@link #hasDefaultEntityAttributes(NamespacedKey)} first)
+     */
+    @org.jetbrains.annotations.NotNull org.bukkit.attribute.Attributable getDefaultEntityAttributes(@org.jetbrains.annotations.NotNull NamespacedKey entityKey);
     // Paper end
 }
