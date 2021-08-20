@@ -1,0 +1,343 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: thamid-gamer <60953955+thamid-gamer@users.noreply.github.com>
+Date: Fri, 20 Aug 2021 06:56:32 -0400
+Subject: [PATCH] Add CommandChatEvent
+
+
+diff --git a/src/main/java/io/papermc/paper/chat/CommandChatRenderer.java b/src/main/java/io/papermc/paper/chat/CommandChatRenderer.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..fbcd6c7a6f4562e72c4d42fdaa83f251b2780f6c
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/chat/CommandChatRenderer.java
+@@ -0,0 +1,112 @@
++package io.papermc.paper.chat;
++
++import net.kyori.adventure.audience.Audience;
++import net.kyori.adventure.text.Component;
++import org.bukkit.command.CommandSender;
++import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
++import org.jetbrains.annotations.NotNull;
++
++/**
++ * A command chat renderer is responsible for rendering command chat messages sent by {@link CommandSender}s to the server.
++ */
++public interface CommandChatRenderer {
++    /**
++     * Renders a command chat message. This will be called once for each receiving {@link Audience}.
++     *
++     * @param source the message source
++     * @param arguments the arguments used to render the message
++     * @param viewer the receiving {@link Audience}
++     * @return a rendered command chat message
++     */
++    @NotNull
++    Component render(@NotNull CommandSender source, @NotNull Component[] arguments, @NotNull Audience viewer);
++
++    /**
++     * Create a new instance of the emote {@link CommandChatRenderer} as used in the me command.
++     *
++     * @return a new {@link CommandChatRenderer}
++     */
++    @NotNull
++    static CommandChatRenderer emoteRenderer() {
++        return viewerUnaware((source, arguments) -> Component.translatable("chat.type.emote", arguments));
++    }
++
++    /**
++     * Create a new instance of the announcement {@link CommandChatRenderer} as used in the say command.
++     *
++     * @return a new {@link CommandChatRenderer}
++     */
++    @NotNull
++    static CommandChatRenderer announcementRenderer() {
++        return viewerUnaware((source, arguments) -> Component.translatable("chat.type.announcement", arguments));
++    }
++
++    /**
++     * Create a new instance of a {@link CommandChatRenderer} used for when a team member receives a message.
++     *
++     * @return a new {@link CommandChatRenderer}
++     */
++    @NotNull
++    static CommandChatRenderer teamMessageReceivedRenderer() {
++        return viewerUnaware((source, arguments) -> Component.translatable("chat.type.team.text", arguments));
++    }
++
++    /**
++     * Create a new instance of the a {@link CommandChatRenderer} used for when a team member is notified that they have sent a message.
++     *
++     * @return a new {@link CommandChatRenderer}
++     */
++    @NotNull
++    static CommandChatRenderer teamMessageSentRenderer() {
++        return viewerUnaware((source, arguments) -> Component.translatable("chat.type.team.sent", arguments));
++    }
++
++    /**
++     * Create a new instance of the a {@link CommandChatRenderer} used for when admins are notified of a command.
++     *
++     * @return a new {@link CommandChatRenderer}
++     */
++    @NotNull
++    static CommandChatRenderer adminRenderer() {
++        return viewerUnaware((source, arguments) -> Component.translatable("chat.type.admin", arguments));
++    }
++
++    /**
++     * Creates a new viewer-unaware {@link CommandChatRenderer}, which will render the command chat message a single time,
++     * displaying the same rendered message to every viewing {@link Audience}.
++     *
++     * @param renderer the viewer unaware renderer
++     * @return a new {@link CommandChatRenderer}
++     */
++    @NotNull
++    static CommandChatRenderer viewerUnaware(final @NotNull ViewerUnaware renderer) {
++        return new CommandChatRenderer() {
++            private @MonotonicNonNull Component message;
++
++            @Override
++            public @NotNull Component render(final @NotNull CommandSender source, final @NotNull Component[] arguments, final @NotNull Audience viewer) {
++                if (this.message == null) {
++                    this.message = renderer.render(source, arguments);
++                }
++                return this.message;
++            }
++        };
++    }
++
++    /**
++     * Similar to {@link CommandChatRenderer}, but without knowledge of the message viewer.
++     *
++     * @see CommandChatRenderer#viewerUnaware(ViewerUnaware)
++     */
++    interface ViewerUnaware {
++        /**
++         * Renders a command chat message.
++         *
++         * @param source the message source
++         * @param arguments the arguments used to render the message
++         * @return a rendered command chat message
++         */
++        @NotNull
++        Component render(@NotNull CommandSender source, @NotNull Component... arguments);
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/event/command/CommandChatEvent.java b/src/main/java/io/papermc/paper/event/command/CommandChatEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0d03482def57bee2fe1741849336fb0eb9b71da0
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/event/command/CommandChatEvent.java
+@@ -0,0 +1,213 @@
++package io.papermc.paper.event.command;
++
++import com.google.common.base.Preconditions;
++import io.papermc.paper.chat.CommandChatRenderer;
++import net.kyori.adventure.audience.Audience;
++import net.kyori.adventure.audience.MessageType;
++import net.kyori.adventure.text.Component;
++import org.bukkit.command.CommandSender;
++import org.bukkit.event.Cancellable;
++import org.bukkit.event.Event;
++import org.bukkit.event.HandlerList;
++import org.jetbrains.annotations.NotNull;
++
++import java.util.Set;
++
++import static java.util.Objects.requireNonNull;
++
++/**
++ * An event fired when a command sends a chat-like message.
++ */
++public final class CommandChatEvent extends Event implements Cancellable {
++    private static final HandlerList HANDLERS = new HandlerList();
++
++    private final CommandSender sender;
++    private final Set<Audience> viewers;
++    private final Component[] arguments;
++    private final Component[] originalArguments;
++    private final MessageType messageType;
++    private final Type type;
++    private CommandChatRenderer renderer;
++    private boolean cancelled = false;
++
++    public CommandChatEvent(final @NotNull CommandSender sender, final @NotNull Set<Audience> viewers, final @NotNull CommandChatRenderer renderer, final @NotNull Component[] arguments, final @NotNull Component[] originalArguments, final @NotNull MessageType messageType, final @NotNull Type type) {
++        this.sender = sender;
++        this.viewers = viewers;
++        this.renderer = renderer;
++        this.arguments = arguments;
++        this.originalArguments = originalArguments;
++        this.messageType = messageType;
++        this.type = type;
++    }
++
++    /**
++     * Gets the CommandSender
++     * <p>
++     *
++     * @return Sender of the command
++     */
++    @NotNull
++    public CommandSender getSender() {
++        return sender;
++    }
++
++    /**
++     * Gets a set of {@link Audience audiences} that this chat message will be displayed to.
++     *
++     * <p>The set returned is not guaranteed to be mutable and may auto-populate
++     * on access. Any listener accessing the returned set should be aware that
++     * it may reduce performance for a lazy set implementation.</p>
++     *
++     * <p>Listeners should be aware that modifying the list may throw {@link
++     * UnsupportedOperationException} if the event caller provides an
++     * unmodifiable set.</p>
++     *
++     * @return a set of {@link Audience audiences} who will receive the chat message
++     */
++    @NotNull
++    public Set<Audience> viewers() {
++        return this.viewers;
++    }
++
++    /**
++     * Sets the command chat renderer.
++     *
++     * @param renderer the chat renderer
++     * @throws NullPointerException if {@code renderer} is {@code null}
++     */
++    public void renderer(final @NotNull CommandChatRenderer renderer) {
++        this.renderer = requireNonNull(renderer, "renderer");
++    }
++
++    /**
++     * Gets the command chat renderer.
++     *
++     * @return the chat renderer
++     */
++    @NotNull
++    public CommandChatRenderer renderer() {
++        return this.renderer;
++    }
++
++    /**
++     * Gets the number of supplied arguments for the message.
++     *
++     * @return the number of supplied arguments for the message
++     */
++    public int getArgumentCount() {
++        return this.originalArguments.length;
++    }
++
++    /**
++     * Gets one of the supplied arguments.
++     * The meaning of the arguments is dictated by the {@link Type}.
++     * The return value will reflect changes made using {@link #argument(int, Component)}.
++     *
++     * @param index the index of the requested argument (<b>must</b> be between 0 inclusive and the result of {@link #getArgumentCount()} exclusive)
++     * @return the supplied argument
++     */
++    @NotNull
++    public Component argument(int index) {
++        Preconditions.checkArgument(0 <= index && index < this.getArgumentCount(), "Argument index out of range, expected 0 < " + index + " < " + this.getArgumentCount() + "!");
++
++        return this.arguments[index];
++    }
++
++    /**
++     * Sets one of the supplied arguments.
++     * The meaning of the arguments is dictated by the {@link Type}.
++     *
++     * @param index the index of the requested argument (<b>must</b> be between 0 inclusive and the result of {@link #getArgumentCount()} exclusive)
++     * @param argument the supplied argument
++     * @throws NullPointerException if {@code message} is {@code null}
++     */
++    public void argument(int index, @NotNull Component argument) {
++        Preconditions.checkArgument(0 <= index && index < this.getArgumentCount(), "Argument index out of range, expected 0 < " + index + " < " + this.getArgumentCount() + "!");
++
++        this.arguments[index] = requireNonNull(argument);
++    }
++
++    /**
++     * Gets one of the original and unmodified supplied arguments.
++     * The meaning of the arguments is dictated by the {@link Type}.
++     * The return value will <b>not</b> reflect changes made using {@link #argument(int, Component)}.
++     *
++     * @param index the index of the requested argument (<b>must</b> be between 0 inclusive and the result of {@link #getArgumentCount()} exclusive)
++     * @return the original supplied argument
++     */
++    @NotNull
++    public Component originalArgument(int index) {
++        Preconditions.checkArgument(0 <= index && index < this.getArgumentCount(), "Argument index out of range, expected 0 < " + index + " < " + this.getArgumentCount() + "!");
++
++        return this.originalArguments[index];
++    }
++
++    /**
++     * Gets the message type of the message.
++     * The message type depends on the sender of the message.
++     *
++     * @return the message type
++     */
++    @NotNull
++    public MessageType messageType() {
++        return this.messageType;
++    }
++
++    /**
++     * Gets the type of command that called this event
++     *
++     * @return the type of command
++     */
++    @NotNull
++    public Type getType() {
++        return this.type;
++    }
++
++    @Override
++    public boolean isCancelled() {
++        return this.cancelled;
++    }
++
++    @Override
++    public void setCancelled(boolean cancelled) {
++        this.cancelled = cancelled;
++    }
++
++    @Override
++    public @NotNull HandlerList getHandlers() {
++        return HANDLERS;
++    }
++
++    @NotNull
++    public static HandlerList getHandlerList() {
++        return HANDLERS;
++    }
++
++    public enum Type {
++        /**
++         * Used when the vanilla say command is called.
++         * The first argument is the sender display name and the second argument is the message.
++         */
++        SAY_COMMAND,
++        /**
++         * Used when the vanilla emote command is called.
++         * The first argument is the sender display name and the second argument is the message.
++         */
++        EMOTE_COMMAND,
++        /**
++         * Used when a member of a team receives a team message.
++         * The first argument is the team display name, the second argument is the sender display name and the third argument is the message.
++         */
++        TEAM_MEMBER_RECEIVED,
++        /**
++         * Used when a member of a team is notified that they sent a team message.
++         * The first argument is the team display name, the second argument is the sender display name and the third argument is the message.
++         */
++        TEAM_MEMBER_SENT,
++        /**
++         * Used when an administrator is sent a message. This includes ops and the console.
++         * The first argument is the sender display name and the second argument is the message.
++         */
++        ADMIN_NOTIFICATION
++    }
++}

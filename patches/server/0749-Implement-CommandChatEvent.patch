@@ -1,0 +1,280 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: thamid-gamer <60953955+thamid-gamer@users.noreply.github.com>
+Date: Fri, 20 Aug 2021 06:56:56 -0400
+Subject: [PATCH] Implement CommandChatEvent
+
+
+diff --git a/src/main/java/io/papermc/paper/adventure/LazyChatAudienceSet.java b/src/main/java/io/papermc/paper/adventure/LazyChatAudienceSet.java
+index 2fd6c3e65354071af71c7d8ebb97b559b6e105ce..b581a7ad99f839fb23d9f9949440db5f9e58f239 100644
+--- a/src/main/java/io/papermc/paper/adventure/LazyChatAudienceSet.java
++++ b/src/main/java/io/papermc/paper/adventure/LazyChatAudienceSet.java
+@@ -9,7 +9,7 @@ import org.bukkit.craftbukkit.util.LazyHashSet;
+ import org.bukkit.craftbukkit.util.LazyPlayerSet;
+ import org.bukkit.entity.Player;
+ 
+-final class LazyChatAudienceSet extends LazyHashSet<Audience> {
++public final class LazyChatAudienceSet extends LazyHashSet<Audience> {
+     private final MinecraftServer server;
+ 
+     public LazyChatAudienceSet(final MinecraftServer server) {
+diff --git a/src/main/java/net/minecraft/commands/CommandSourceStack.java b/src/main/java/net/minecraft/commands/CommandSourceStack.java
+index 134bb2a4826419110c10a483834747b942576e58..25a664217cda4954168b31a0708f9cc6a8003b3f 100644
+--- a/src/main/java/net/minecraft/commands/CommandSourceStack.java
++++ b/src/main/java/net/minecraft/commands/CommandSourceStack.java
+@@ -248,20 +248,58 @@ public class CommandSourceStack implements SharedSuggestionProvider, com.destroy
+     private void broadcastToAdmins(Component message) {
+         MutableComponent ichatmutablecomponent = (new TranslatableComponent("chat.type.admin", new Object[]{this.getDisplayName(), message})).withStyle(new ChatFormatting[]{ChatFormatting.GRAY, ChatFormatting.ITALIC});
+ 
++        // Paper start
++        net.kyori.adventure.identity.Identity identity = net.kyori.adventure.identity.Identity.nil();
++        net.kyori.adventure.text.Component displayName = null, adventureMessage = null;
++        net.kyori.adventure.text.Component[] originalArguments = null;
++        // Paper end
+         if (this.server.getGameRules().getBoolean(GameRules.RULE_SENDCOMMANDFEEDBACK)) {
++            // Paper start
++            displayName = io.papermc.paper.adventure.PaperAdventure.asAdventure(this.getDisplayName());
++            adventureMessage = io.papermc.paper.adventure.PaperAdventure.asAdventure(message);
++            originalArguments = new net.kyori.adventure.text.Component[]{ displayName, adventureMessage };
++            net.kyori.adventure.text.Component[] arguments = new net.kyori.adventure.text.Component[]{ displayName, adventureMessage };
++            // Paper end
+             Iterator iterator = this.server.getPlayerList().getPlayers().iterator();
+ 
++            java.util.Set<net.kyori.adventure.audience.Audience> viewers = new java.util.HashSet<>(this.server.getPlayerCount()); // Paper
+             while (iterator.hasNext()) {
+                 ServerPlayer entityplayer = (ServerPlayer) iterator.next();
+ 
+                 if (entityplayer != this.source && entityplayer.getBukkitEntity().hasPermission("minecraft.admin.command_feedback")) { // CraftBukkit
+-                    entityplayer.sendMessage(ichatmutablecomponent, Util.NIL_UUID);
++                    viewers.add(entityplayer.getBukkitEntity());
++                    // entityplayer.sendMessage(ichatmutablecomponent, Util.NIL_UUID); // Paper - send to audiences
++                }
++            }
++            // Paper start
++            io.papermc.paper.event.command.CommandChatEvent event = new io.papermc.paper.event.command.CommandChatEvent(this.getBukkitSender(), viewers, io.papermc.paper.chat.CommandChatRenderer.adminRenderer(), arguments, originalArguments, net.kyori.adventure.audience.MessageType.SYSTEM, io.papermc.paper.event.command.CommandChatEvent.Type.ADMIN_NOTIFICATION);
++            if (event.callEvent()) {
++                for (net.kyori.adventure.audience.Audience viewer : event.viewers()) {
++                    viewer.sendMessage(identity, event.renderer().render(this.getBukkitSender(), new net.kyori.adventure.text.Component[]{ event.argument(0), event.argument(1) }, viewer), event.messageType());
+                 }
+             }
++            // Paper end
+         }
+ 
+         if (this.source != this.server && this.server.getGameRules().getBoolean(GameRules.RULE_LOGADMINCOMMANDS) && !org.spigotmc.SpigotConfig.silentCommandBlocks) { // Spigot
+-            this.server.sendMessage(ichatmutablecomponent, Util.NIL_UUID);
++            // Paper start
++            if (originalArguments == null) {
++                displayName = io.papermc.paper.adventure.PaperAdventure.asAdventure(this.getDisplayName());
++                adventureMessage = io.papermc.paper.adventure.PaperAdventure.asAdventure(message);
++                originalArguments = new net.kyori.adventure.text.Component[]{ displayName, adventureMessage };
++            }
++            net.kyori.adventure.text.Component[] arguments = new net.kyori.adventure.text.Component[]{ displayName, adventureMessage };
++
++            java.util.Set<net.kyori.adventure.audience.Audience> viewers = new java.util.HashSet<>(1);
++            viewers.add(this.server.console);
++            io.papermc.paper.event.command.CommandChatEvent event = new io.papermc.paper.event.command.CommandChatEvent(this.getBukkitSender(), viewers, io.papermc.paper.chat.CommandChatRenderer.adminRenderer(), arguments, originalArguments, net.kyori.adventure.audience.MessageType.SYSTEM, io.papermc.paper.event.command.CommandChatEvent.Type.ADMIN_NOTIFICATION);
++            if (event.callEvent()) {
++                for (net.kyori.adventure.audience.Audience viewer : event.viewers()) {
++                    viewer.sendMessage(net.kyori.adventure.identity.Identity.nil(), event.renderer().render(this.getBukkitSender(), new net.kyori.adventure.text.Component[]{ event.argument(0), event.argument(1) }, viewer), event.messageType());
++                }
++            }
++            // Paper end
++            // this.server.sendMessage(ichatmutablecomponent, Util.NIL_UUID); // Paper - send to audiences
+         }
+ 
+     }
+diff --git a/src/main/java/net/minecraft/server/commands/EmoteCommands.java b/src/main/java/net/minecraft/server/commands/EmoteCommands.java
+index 5658e6653f782895d264f9f5e7dc92f9e2f364b5..5cdbe8a21910a7b54a00976b16857730fa7cd010 100644
+--- a/src/main/java/net/minecraft/server/commands/EmoteCommands.java
++++ b/src/main/java/net/minecraft/server/commands/EmoteCommands.java
+@@ -19,29 +19,94 @@ public class EmoteCommands {
+             String string = StringArgumentType.getString(context, "action");
+             Entity entity = context.getSource().getEntity();
+             MinecraftServer minecraftServer = context.getSource().getServer();
++            // Paper start
++            io.papermc.paper.adventure.LazyChatAudienceSet viewers = new io.papermc.paper.adventure.LazyChatAudienceSet(context.getSource().getServer());
++            net.kyori.adventure.text.Component displayName = io.papermc.paper.adventure.PaperAdventure.asAdventure(context.getSource().getDisplayName());
++            // Paper end
+             if (entity != null) {
++                net.kyori.adventure.identity.Identity identity = net.kyori.adventure.identity.Identity.identity(entity.getUUID()); // Paper
+                 if (entity instanceof ServerPlayer) {
+                     ServerPlayer serverPlayer = (ServerPlayer)entity;
+                     serverPlayer.getTextFilter().processStreamMessage(string).thenAcceptAsync((message) -> {
+-                        String string = message.getFiltered();
+-                        Component component = string.isEmpty() ? null : createMessage(context, string);
++                        // String string = message.getFiltered(); // Paper - move down and edit to filter after event
++                        // Component component = string.isEmpty() ? null : createMessage(context, string); // Paper - move down and edit to filter after event
+                         Component component2 = createMessage(context, message.getRaw());
+-                        minecraftServer.getPlayerList().broadcastMessage(component2, (player) -> {
+-                            return serverPlayer.shouldFilterMessageTo(player) ? component : component2;
+-                        }, ChatType.CHAT, entity.getUUID());
++                        // Paper start
++                        net.kyori.adventure.text.Component originalMessage = net.kyori.adventure.text.Component.text(message.getRaw());
++                        io.papermc.paper.event.command.CommandChatEvent event = new io.papermc.paper.event.command.CommandChatEvent(context.getSource().getBukkitSender(), viewers, io.papermc.paper.chat.CommandChatRenderer.emoteRenderer(), new net.kyori.adventure.text.Component[]{ displayName, originalMessage }, new net.kyori.adventure.text.Component[]{ displayName, originalMessage }, net.kyori.adventure.audience.MessageType.CHAT, io.papermc.paper.event.command.CommandChatEvent.Type.EMOTE_COMMAND);
++                        if (event.callEvent()) {
++                            // like ChatProcessor#complete(AbstractChatEvent)
++                            if (viewers.isLazy()) {
++                                context.getSource().getServer().console.sendMessage(identity, event.renderer().render(context.getSource().getBukkitSender(), new net.kyori.adventure.text.Component[]{ event.argument(0), event.argument(1) }, context.getSource().getServer().console), event.messageType());
++                                for (ServerPlayer player : context.getSource().getServer().getPlayerList().getPlayers()) {
++                                    sendFilterableToPlayer(context, serverPlayer, event, identity, player.getBukkitEntity());
++                                }
++                            } else {
++                                for (net.kyori.adventure.audience.Audience viewer : event.viewers()) {
++                                    if (viewer instanceof org.bukkit.entity.Player bukkit) {
++                                        sendFilterableToPlayer(context, serverPlayer, event, identity, bukkit);
++                                    } else {
++                                        viewer.sendMessage(identity, event.renderer().render(context.getSource().getBukkitSender(), new net.kyori.adventure.text.Component[]{ event.argument(0), event.argument(1) }, viewer), event.messageType());
++                                    }
++                                }
++                            }
++                        }
++                        // Paper end
++                        // minecraftServer.getPlayerList().broadcastMessage(component2, (player) -> { // Paper - send to audiences
++                        //     return serverPlayer.shouldFilterMessageTo(player) ? component : component2; // Paper - send to audiences
++                        // }, ChatType.CHAT, entity.getUUID()); // Paper - send to audiences
+                     }, minecraftServer);
+                     return 1;
+                 }
+ 
+-                minecraftServer.getPlayerList().broadcastMessage(createMessage(context, string), ChatType.CHAT, entity.getUUID());
++                nonPlayerSenderSend(context.getSource(), string, identity, viewers, displayName, net.kyori.adventure.audience.MessageType.CHAT); // Paper
++                // minecraftServer.getPlayerList().broadcastMessage(createMessage(context, string), ChatType.CHAT, entity.getUUID()); // Paper - send to audiences
+             } else {
+-                minecraftServer.getPlayerList().broadcastMessage(createMessage(context, string), ChatType.SYSTEM, Util.NIL_UUID);
++                nonPlayerSenderSend(context.getSource(), string, net.kyori.adventure.identity.Identity.nil(), viewers, displayName, net.kyori.adventure.audience.MessageType.SYSTEM); // Paper
++                // minecraftServer.getPlayerList().broadcastMessage(createMessage(context, string), ChatType.SYSTEM, Util.NIL_UUID); // Paper - send to audiences
+             }
+ 
+             return 1;
+         })));
+     }
+ 
++    // Paper start
++    private static void sendFilterableToPlayer(CommandContext<CommandSourceStack> context, ServerPlayer sender, io.papermc.paper.event.command.CommandChatEvent event, net.kyori.adventure.identity.Identity identity, org.bukkit.entity.Player bukkit) {
++        if (event.argument(1) instanceof net.kyori.adventure.text.TextComponent textComponent) {
++            sender.getTextFilter().processStreamMessage(textComponent.content()).thenAcceptAsync((newMessage) -> {
++                ServerPlayer player = context.getSource().getServer().getPlayerList().getPlayer(bukkit.getUniqueId());
++                if (player != null) {
++                    if (!newMessage.getFiltered().isEmpty() && sender.shouldFilterMessageTo(player)) {
++                        player.getBukkitEntity().sendMessage(identity, event.renderer().render(context.getSource().getBukkitSender(), new net.kyori.adventure.text.Component[]{ event.argument(0), io.papermc.paper.adventure.PaperAdventure.asAdventure(createMessage(context, newMessage.getFiltered())) }, player.getBukkitEntity()), event.messageType());
++                    } else {
++                        player.getBukkitEntity().sendMessage(identity, event.renderer().render(context.getSource().getBukkitSender(), new net.kyori.adventure.text.Component[]{ event.argument(0), io.papermc.paper.adventure.PaperAdventure.asAdventure(createMessage(context, newMessage.getRaw())) }, player.getBukkitEntity()), event.messageType());
++                    }
++                }
++            });
++        } else {
++            bukkit.sendMessage(identity, event.renderer().render(context.getSource().getBukkitSender(), new net.kyori.adventure.text.Component[]{ event.argument(0), event.argument(1) }, bukkit), event.messageType());
++        }
++    }
++
++    private static void nonPlayerSenderSend(CommandSourceStack source, String message, net.kyori.adventure.identity.Identity identity, io.papermc.paper.adventure.LazyChatAudienceSet viewers, net.kyori.adventure.text.Component displayName, net.kyori.adventure.audience.MessageType messageType) {
++        net.kyori.adventure.text.Component originalMessage = net.kyori.adventure.text.Component.text(message);
++        io.papermc.paper.event.command.CommandChatEvent event = new io.papermc.paper.event.command.CommandChatEvent(source.getBukkitSender(), viewers, io.papermc.paper.chat.CommandChatRenderer.emoteRenderer(), new net.kyori.adventure.text.Component[]{ displayName, originalMessage }, new net.kyori.adventure.text.Component[]{ displayName, originalMessage }, messageType, io.papermc.paper.event.command.CommandChatEvent.Type.EMOTE_COMMAND);
++        if (event.callEvent()) {
++            // from ChatProcessor#complete(AbstractChatEvent)
++            if (viewers.isLazy()) {
++                source.getServer().console.sendMessage(identity, event.renderer().render(source.getBukkitSender(), new net.kyori.adventure.text.Component[]{ event.argument(0), event.argument(1) }, source.getServer().console), event.messageType());
++                for (net.minecraft.server.level.ServerPlayer player : source.getServer().getPlayerList().getPlayers()) {
++                    player.getBukkitEntity().sendMessage(identity, event.renderer().render(source.getBukkitSender(), new net.kyori.adventure.text.Component[]{ event.argument(0), event.argument(1) }, player.getBukkitEntity()), event.messageType());
++                }
++            } else {
++                for (net.kyori.adventure.audience.Audience viewer : event.viewers()) {
++                    viewer.sendMessage(identity, event.renderer().render(source.getBukkitSender(), new net.kyori.adventure.text.Component[]{ event.argument(0), event.argument(1) }, viewer), event.messageType());
++                }
++            }
++        }
++    }
++    // Paper end
++
+     private static Component createMessage(CommandContext<CommandSourceStack> context, String arg) {
+         return new TranslatableComponent("chat.type.emote", context.getSource().getDisplayName(), arg);
+     }
+diff --git a/src/main/java/net/minecraft/server/commands/SayCommand.java b/src/main/java/net/minecraft/server/commands/SayCommand.java
+index ee13bdd4355e5f80408310316ee244b0d392b00e..be8a25a2d47b9121ec32dbb8183be3c53d25d198 100644
+--- a/src/main/java/net/minecraft/server/commands/SayCommand.java
++++ b/src/main/java/net/minecraft/server/commands/SayCommand.java
+@@ -19,12 +19,36 @@ public class SayCommand {
+             Component component2 = new TranslatableComponent("chat.type.announcement", context.getSource().getDisplayName(), component);
+             Entity entity = context.getSource().getEntity();
+             if (entity != null) {
+-                context.getSource().getServer().getPlayerList().broadcastMessage(component2, ChatType.CHAT, entity.getUUID());
++                sendToViewers(context.getSource(), component, net.kyori.adventure.identity.Identity.identity(entity.getUUID()), net.kyori.adventure.audience.MessageType.CHAT); // Paper
++                // context.getSource().getServer().getPlayerList().broadcastMessage(component2, ChatType.CHAT, entity.getUUID()); // Paper - send to audiences
+             } else {
+-                context.getSource().getServer().getPlayerList().broadcastMessage(component2, ChatType.SYSTEM, Util.NIL_UUID);
++                sendToViewers(context.getSource(), component, net.kyori.adventure.identity.Identity.nil(), net.kyori.adventure.audience.MessageType.SYSTEM); // Paper
++                // context.getSource().getServer().getPlayerList().broadcastMessage(component2, ChatType.SYSTEM, Util.NIL_UUID); // Paper - send to audiences
+             }
+ 
+             return 1;
+         })));
+     }
++
++    // Paper start
++    private static void sendToViewers(CommandSourceStack source, Component component, net.kyori.adventure.identity.Identity identity, net.kyori.adventure.audience.MessageType messageType) {
++        io.papermc.paper.adventure.LazyChatAudienceSet viewers = new io.papermc.paper.adventure.LazyChatAudienceSet(source.getServer());
++        net.kyori.adventure.text.Component displayName = io.papermc.paper.adventure.PaperAdventure.asAdventure(source.getDisplayName());
++        net.kyori.adventure.text.Component originalMessage = io.papermc.paper.adventure.PaperAdventure.asAdventure(component);
++        io.papermc.paper.event.command.CommandChatEvent event = new io.papermc.paper.event.command.CommandChatEvent(source.getBukkitSender(), viewers, io.papermc.paper.chat.CommandChatRenderer.announcementRenderer(), new net.kyori.adventure.text.Component[]{ displayName, originalMessage }, new net.kyori.adventure.text.Component[]{ displayName, originalMessage }, messageType, io.papermc.paper.event.command.CommandChatEvent.Type.SAY_COMMAND);
++        if (event.callEvent()) {
++            // from ChatProcessor#complete(AbstractChatEvent)
++            if (viewers.isLazy()) {
++                source.getServer().console.sendMessage(identity, event.renderer().render(source.getBukkitSender(), new net.kyori.adventure.text.Component[]{ event.argument(0), event.argument(1) }, source.getServer().console), event.messageType());
++                for (net.minecraft.server.level.ServerPlayer player : source.getServer().getPlayerList().getPlayers()) {
++                    player.getBukkitEntity().sendMessage(identity, event.renderer().render(source.getBukkitSender(), new net.kyori.adventure.text.Component[]{ event.argument(0), event.argument(1) }, player.getBukkitEntity()), event.messageType());
++                }
++            } else {
++                for (net.kyori.adventure.audience.Audience viewer : event.viewers()) {
++                    viewer.sendMessage(identity, event.renderer().render(source.getBukkitSender(), new net.kyori.adventure.text.Component[]{ event.argument(0), event.argument(1) }, viewer), event.messageType());
++                }
++            }
++        }
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/net/minecraft/server/commands/TeamMsgCommand.java b/src/main/java/net/minecraft/server/commands/TeamMsgCommand.java
+index 7c95642a71c423c77448d691bbcc23a62726ded4..71281111e9f531599e3b0a8cd2f962157aaee6d8 100644
+--- a/src/main/java/net/minecraft/server/commands/TeamMsgCommand.java
++++ b/src/main/java/net/minecraft/server/commands/TeamMsgCommand.java
+@@ -37,13 +37,40 @@ public class TeamMsgCommand {
+             Component component = playerTeam.getFormattedDisplayName().withStyle(SUGGEST_STYLE);
+             List<ServerPlayer> list = source.getServer().getPlayerList().getPlayers();
+ 
++            ServerPlayer sender = null; // Paper
++            java.util.Set<net.kyori.adventure.audience.Audience> viewers = new java.util.HashSet<>(playerTeam.getPlayers().size()); // Paper
+             for(ServerPlayer serverPlayer : list) {
+                 if (serverPlayer == entity) {
+-                    serverPlayer.sendMessage(new TranslatableComponent("chat.type.team.sent", component, source.getDisplayName(), message), entity.getUUID());
++                    sender = serverPlayer; // Paper
++                    // serverPlayer.sendMessage(new TranslatableComponent("chat.type.team.sent", component, source.getDisplayName(), message), entity.getUUID()); // Paper - send to audiences
+                 } else if (serverPlayer.getTeam() == playerTeam) {
+-                    serverPlayer.sendMessage(new TranslatableComponent("chat.type.team.text", component, source.getDisplayName(), message), entity.getUUID());
++                    viewers.add(serverPlayer.getBukkitEntity()); // Paper
++                    // serverPlayer.sendMessage(new TranslatableComponent("chat.type.team.text", component, source.getDisplayName(), message), entity.getUUID()); // Paper - send to audiences
+                 }
+             }
++            // Paper start
++            net.kyori.adventure.text.Component teamDisplayName = io.papermc.paper.adventure.PaperAdventure.asAdventure(component);
++            net.kyori.adventure.text.Component displayName = io.papermc.paper.adventure.PaperAdventure.asAdventure(source.getDisplayName());
++            net.kyori.adventure.text.Component originalOutgoingMessage = io.papermc.paper.adventure.PaperAdventure.asAdventure(message);
++            net.kyori.adventure.text.Component[] originalArguments = new net.kyori.adventure.text.Component[]{ teamDisplayName, displayName, originalOutgoingMessage };
++            net.kyori.adventure.identity.Identity identity = net.kyori.adventure.identity.Identity.identity(entity.getUUID());
++            io.papermc.paper.event.command.CommandChatEvent receivedEvent = new io.papermc.paper.event.command.CommandChatEvent(source.getBukkitSender(), viewers, io.papermc.paper.chat.CommandChatRenderer.teamMessageReceivedRenderer(), new net.kyori.adventure.text.Component[]{ teamDisplayName, displayName, originalOutgoingMessage }, originalArguments, net.kyori.adventure.audience.MessageType.SYSTEM, io.papermc.paper.event.command.CommandChatEvent.Type.TEAM_MEMBER_RECEIVED);
++            if (receivedEvent.callEvent()) {
++                for (net.kyori.adventure.audience.Audience viewer : receivedEvent.viewers()) {
++                    viewer.sendMessage(identity, receivedEvent.renderer().render(source.getBukkitSender(), new net.kyori.adventure.text.Component[]{ receivedEvent.argument(0), receivedEvent.argument(1), receivedEvent.argument(2) }, viewer), receivedEvent.messageType());
++                }
++                if (sender != null) {
++                    java.util.Set<net.kyori.adventure.audience.Audience> senderViewer = new java.util.HashSet<>(1);
++                    senderViewer.add(sender.getBukkitEntity());
++                    io.papermc.paper.event.command.CommandChatEvent sentEvent = new io.papermc.paper.event.command.CommandChatEvent(source.getBukkitSender(), senderViewer, io.papermc.paper.chat.CommandChatRenderer.teamMessageSentRenderer(), new net.kyori.adventure.text.Component[]{ receivedEvent.argument(0), receivedEvent.argument(1), receivedEvent.argument(2) }, originalArguments, net.kyori.adventure.audience.MessageType.SYSTEM, io.papermc.paper.event.command.CommandChatEvent.Type.TEAM_MEMBER_SENT);
++                    if (sentEvent.callEvent()) {
++                        for (net.kyori.adventure.audience.Audience viewer : sentEvent.viewers()) {
++                            viewer.sendMessage(identity, sentEvent.renderer().render(source.getBukkitSender(), new net.kyori.adventure.text.Component[]{ sentEvent.argument(0), sentEvent.argument(1), sentEvent.argument(2) }, viewer), sentEvent.messageType());
++                        }
++                    }
++                }
++            }
++            // Paper end
+ 
+             return list.size();
+         }
