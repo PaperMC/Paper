@@ -28,6 +28,17 @@ public interface EnderSignal extends Entity {
      */
     public void setTargetLocation(@NotNull Location location);
 
+    // Paper start
+    /**
+     * Set the {@link Location} this EnderSignal is moving towards.
+     *
+     * @param location the new target location
+     * @param update true to reset the {@link #getDropItem()}
+     *               to a random value and {@link #getDespawnTimer()} to 0
+     */
+    public void setTargetLocation(@NotNull Location location, boolean update);
+    // Paper end
+
     /**
      * Gets if the EnderSignal should drop an item on death.<br>
      * If {@code true}, it will drop an item. If {@code false}, it will shatter.
