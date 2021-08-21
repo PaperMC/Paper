@@ -5,18 +5,18 @@ Subject: [PATCH] Allow delegation to vanilla chunk gen
 
 
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 5285a5b16b0b706d9e1728a23628ff12e6b3b55d..df20ac811d673c205695d563f84382d1bf1e82e1 100644
+index 65fcf1300022b66c87b00637775dbed02b2c734e..50f85ab4f3ba97728f873cb2facb92a60e5ea765 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -2115,6 +2115,32 @@ public final class CraftServer implements Server {
-         return new CraftChunkData(world);
+@@ -2174,6 +2174,32 @@ public final class CraftServer implements Server {
+         return new OldCraftChunkData(world);
      }
  
 +    // Paper start
 +    @Override
 +    public ChunkGenerator.ChunkData createVanillaChunkData(World world, int x, int z) {
 +        // get empty object
-+        CraftChunkData data = (CraftChunkData) createChunkData(world);
++        OldCraftChunkData data = (OldCraftChunkData) createChunkData(world);
 +        // do bunch of vanilla shit
 +        net.minecraft.server.level.ServerLevel nmsWorld = ((CraftWorld) world).getHandle();
 +        net.minecraft.world.level.chunk.ProtoChunk protoChunk = new net.minecraft.world.level.chunk.ProtoChunk(new net.minecraft.world.level.ChunkPos(x, z), null, nmsWorld, nmsWorld);
@@ -41,20 +41,27 @@ index 5285a5b16b0b706d9e1728a23628ff12e6b3b55d..df20ac811d673c205695d563f84382d1
      @Override
      public BossBar createBossBar(String title, BarColor color, BarStyle style, BarFlag... flags) {
          return new CraftBossBar(title, color, style, flags);
-diff --git a/src/main/java/org/bukkit/craftbukkit/generator/CraftChunkData.java b/src/main/java/org/bukkit/craftbukkit/generator/CraftChunkData.java
-index 45e5dfeef92e9756b0fa63d8fc66a4cf96ae7d9a..4dc68ff7d2c9775e370e3854e5a8a7eee4e261aa 100644
---- a/src/main/java/org/bukkit/craftbukkit/generator/CraftChunkData.java
-+++ b/src/main/java/org/bukkit/craftbukkit/generator/CraftChunkData.java
-@@ -181,6 +181,12 @@ public final class CraftChunkData implements ChunkGenerator.ChunkData {
-         return this.sections;
+diff --git a/src/main/java/org/bukkit/craftbukkit/generator/OldCraftChunkData.java b/src/main/java/org/bukkit/craftbukkit/generator/OldCraftChunkData.java
+index a48c659c02c6c33a8efdac6daf9c9a0708f05071..932bd3334b5852c8f209678b1444fc0e43a637f0 100644
+--- a/src/main/java/org/bukkit/craftbukkit/generator/OldCraftChunkData.java
++++ b/src/main/java/org/bukkit/craftbukkit/generator/OldCraftChunkData.java
+@@ -22,7 +22,7 @@ import org.bukkit.material.MaterialData;
+ public final class OldCraftChunkData implements ChunkGenerator.ChunkData {
+     private final int minHeight;
+     private final int maxHeight;
+-    private final LevelChunkSection[] sections;
++    private LevelChunkSection[] sections;
+     private Set<BlockPos> tiles;
+     private final Set<BlockPos> lights = new HashSet<>();
+     private World world; // Paper - Anti-Xray - Add parameters
+@@ -195,4 +195,10 @@ public final class OldCraftChunkData implements ChunkGenerator.ChunkData {
+     Set<BlockPos> getLights() {
+         return this.lights;
      }
- 
++
 +    // Paper start
 +    public void setRawChunkData(LevelChunkSection[] sections) {
 +        this.sections = sections;
 +    }
 +    // Paper end
-+
-     Set<BlockPos> getTiles() {
-         return this.tiles;
-     }
+ }
