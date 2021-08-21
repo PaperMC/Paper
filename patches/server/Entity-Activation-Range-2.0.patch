@@ -131,6 +131,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public final org.spigotmc.ActivationRange.ActivationType activationType = org.spigotmc.ActivationRange.initializeEntityActivationType(this);
      public final boolean defaultActivationState;
      public long activatedTick = Integer.MIN_VALUE;
++    public long activatedImmunityTick = Integer.MIN_VALUE; // Paper
 +    public boolean isTemporarilyActive = false; // Paper
      public boolean spawnedViaMobSpawner; // Paper - Yes this name is similar to above, upstream took the better one
      protected int numCollisions = 0; // Paper
@@ -139,7 +140,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          } else {
              this.wasOnFire = this.isOnFire();
              if (movementType == MoverType.PISTON) {
-+                this.activatedTick = MinecraftServer.currentTick + 20; // Paper
++                this.activatedTick = Math.max(this.activatedTick, MinecraftServer.currentTick + 20); // Paper
++                this.activatedImmunityTick = Math.max(this.activatedImmunityTick, MinecraftServer.currentTick + 20);   // Paper
                  movement = this.limitPistonMovement(movement);
                  if (movement.equals(Vec3.ZERO)) {
                      return;
@@ -333,6 +335,21 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public boolean populating;
      public final org.spigotmc.SpigotWorldConfig spigotConfig; // Spigot
  
+diff --git a/src/main/java/net/minecraft/world/level/block/piston/PistonMovingBlockEntity.java b/src/main/java/net/minecraft/world/level/block/piston/PistonMovingBlockEntity.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/level/block/piston/PistonMovingBlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/piston/PistonMovingBlockEntity.java
+@@ -0,0 +0,0 @@ public class PistonMovingBlockEntity extends BlockEntity {
+                                 }
+ 
+                                 entity.setDeltaMovement(e, g, h);
++                                // Paper - EAR items stuck in in slime pushed by a piston
++                                entity.activatedTick = Math.max(entity.activatedTick, net.minecraft.server.MinecraftServer.currentTick + 10); 
++                                entity.activatedImmunityTick = Math.max(entity.activatedImmunityTick, net.minecraft.server.MinecraftServer.currentTick + 10); 
++                                // Paper end
+                                 break;
+                             }
+                         }
 diff --git a/src/main/java/org/spigotmc/ActivationRange.java b/src/main/java/org/spigotmc/ActivationRange.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/spigotmc/ActivationRange.java
@@ -525,6 +542,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        if (entity.remainingFireTicks > 0) {
 +            return 2;
 +        }
++        if (entity.activatedImmunityTick >= MinecraftServer.currentTick) {
++            return 1;
++        }
 +        long inactiveFor = MinecraftServer.currentTick - entity.activatedTick;
 +        // Paper end
          // quick checks.
@@ -562,7 +582,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              {
 -                return true;
 +                return 20; // Paper
-+            }
+             }
+-            if ( entity instanceof Villager && ( (Villager) entity ).canBreed() )
 +            // Paper start
 +            if (entity instanceof Bee) {
 +                Bee bee = (Bee)entity;
@@ -590,8 +611,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                        return config.villagersWorkImmunityFor;
 +                    }
 +                }
-             }
--            if ( entity instanceof Villager && ( (Villager) entity ).canBreed() )
++            }
 +            if ( entity instanceof Llama && ( (Llama) entity ).inCaravan() )
              {
 -                return true;
