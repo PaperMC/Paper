@@ -124,7 +124,7 @@
  
                  if (entity != null) {
 +                    // CraftBukkit start
-+                    if (entity instanceof Bee) {
+                     if (entity instanceof Bee) {
 +                        float f = entity.getBbWidth();
 +                        double d0 = flag ? 0.0D : 0.55D + (double) (f / 2.0F);
 +                        double d1 = (double) blockposition.getX() + 0.5D + d0 * (double) enumdirection.getStepX();
@@ -135,7 +135,7 @@
 +                    }
 +                    if (!world.addFreshEntity(entity, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.BEEHIVE)) return false; // CraftBukkit - SpawnReason, moved from below
 +                    // CraftBukkit end
-                     if (entity instanceof Bee) {
++                    if (entity instanceof Bee) {
                          Bee entitybee = (Bee) entity;
  
 -                        if (flowerPos != null && !entitybee.hasSavedFlowerPos() && world.random.nextFloat() < 0.9F) {
@@ -207,7 +207,7 @@
                      iterator.remove();
 +                    // CraftBukkit start
 +                } else {
-+                    tileentitybeehive_hivebee.ticksInHive = tileentitybeehive_hivebee.occupant.minTicksInHive / 2; // Not strictly Vanilla behaviour in cases where bees cannot spawn but still reasonable
++                    tileentitybeehive_hivebee.exitTickCounter = tileentitybeehive_hivebee.occupant.minTicksInHive / 2; // Not strictly Vanilla behaviour in cases where bees cannot spawn but still reasonable // Paper - Fix bees aging inside hives; use exitTickCounter to keep actual bee life
 +                    // CraftBukkit end
                  }
              }
@@ -277,7 +277,7 @@
              int j = beeEntity.getAge();
  
              if (j < 0) {
-@@ -400,6 +463,7 @@
+@@ -400,21 +463,25 @@
              }
  
              beeEntity.setInLoveTime(Math.max(0, beeEntity.getInLoveTime() - ticksInHive));
@@ -285,3 +285,22 @@
          }
      }
  
+     private static class BeeData {
+ 
+         private final BeehiveBlockEntity.Occupant occupant;
++        private int exitTickCounter; // Paper - Fix bees aging inside hives; separate counter for checking if bee should exit to reduce exit attempts
+         private int ticksInHive;
+ 
+         BeeData(BeehiveBlockEntity.Occupant data) {
+             this.occupant = data;
+             this.ticksInHive = data.ticksInHive();
++            this.exitTickCounter = this.ticksInHive; // Paper - Fix bees aging inside hives
+         }
+ 
+         public boolean tick() {
+-            return this.ticksInHive++ > this.occupant.minTicksInHive;
++            this.ticksInHive++; // Paper - Fix bees aging inside hives
++            return this.exitTickCounter++ > this.occupant.minTicksInHive; // Paper - Fix bees aging inside hives
+         }
+ 
+         public BeehiveBlockEntity.Occupant toOccupant() {
