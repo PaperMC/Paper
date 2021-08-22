@@ -80,6 +80,7 @@ import org.bukkit.block.BlockState;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.boss.DragonBattle;
 import org.bukkit.craftbukkit.block.CraftBlock;
+import org.bukkit.craftbukkit.block.CraftBlockState;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.craftbukkit.boss.CraftDragonBattle;
 import org.bukkit.craftbukkit.entity.CraftEntity;
@@ -536,11 +537,18 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     @Override
     public boolean generateTree(Location loc, TreeType type, BlockChangeDelegate delegate) {
         world.captureTreeGeneration = true;
+        world.captureBlockStates = true;
         boolean grownTree = generateTree(loc, type);
+        world.captureBlockStates = false;
         world.captureTreeGeneration = false;
         if (grownTree) { // Copy block data to delegate
             for (BlockState blockstate : world.capturedBlockStates.values()) {
-                blockstate.update(true);
+                BlockPosition position = ((CraftBlockState) blockstate).getPosition();
+                net.minecraft.world.level.block.state.IBlockData oldBlock = world.getType(position);
+                int flag = ((CraftBlockState) blockstate).getFlag();
+                delegate.setBlockData(blockstate.getX(), blockstate.getY(), blockstate.getZ(), blockstate.getBlockData());
+                net.minecraft.world.level.block.state.IBlockData newBlock = world.getType(position);
+                world.notifyAndUpdatePhysics(position, null, oldBlock, newBlock, newBlock, flag, 512);
             }
             world.capturedBlockStates.clear();
             return true;
