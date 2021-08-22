@@ -1190,6 +1190,18 @@ public final class CraftServer implements Server {
         ReloadCommand.reload(this.console);
     }
 
+    // Paper start - API for updating recipes on clients
+    @Override
+    public void updateResources() {
+        this.playerList.reloadResources();
+    }
+
+    @Override
+    public void updateRecipes() {
+        this.playerList.reloadRecipes();
+    }
+    // Paper end - API for updating recipes on clients
+
     private void loadIcon() {
         this.icon = new CraftIconCache(null);
         try {
@@ -1569,6 +1581,13 @@ public final class CraftServer implements Server {
 
     @Override
     public boolean addRecipe(Recipe recipe) {
+        // Paper start - API for updating recipes on clients
+        return this.addRecipe(recipe, false);
+    }
+
+    @Override
+    public boolean addRecipe(Recipe recipe, boolean resendRecipes) {
+        // Paper end - API for updating recipes on clients
         CraftRecipe toAdd;
         if (recipe instanceof CraftRecipe) {
             toAdd = (CraftRecipe) recipe;
@@ -1600,6 +1619,11 @@ public final class CraftServer implements Server {
             }
         }
         toAdd.addToCraftingManager();
+        // Paper start - API for updating recipes on clients
+        if (true || resendRecipes) { // Always needs to be resent now... TODO
+            this.playerList.reloadRecipes();
+        }
+        // Paper end - API for updating recipes on clients
         return true;
     }
 
@@ -1780,9 +1804,23 @@ public final class CraftServer implements Server {
 
     @Override
     public boolean removeRecipe(NamespacedKey recipeKey) {
+        // Paper start - API for updating recipes on clients
+        return this.removeRecipe(recipeKey, false);
+    }
+
+    @Override
+    public boolean removeRecipe(NamespacedKey recipeKey, boolean resendRecipes) {
+        // Paper end - API for updating recipes on clients
         Preconditions.checkArgument(recipeKey != null, "recipeKey == null");
 
-        return this.getServer().getRecipeManager().removeRecipe(CraftRecipe.toMinecraft(recipeKey));
+        // Paper start - resend recipes on successful removal
+        final ResourceKey<net.minecraft.world.item.crafting.Recipe<?>> minecraftKey = CraftRecipe.toMinecraft(recipeKey);
+        final boolean removed = this.getServer().getRecipeManager().removeRecipe(minecraftKey);
+        if (removed/* && resendRecipes*/) { // TODO Always need to resend them rn - deprecate this method?
+            this.playerList.reloadRecipes();
+        }
+        return removed;
+        // Paper end - resend recipes on successful removal
     }
 
     @Override
