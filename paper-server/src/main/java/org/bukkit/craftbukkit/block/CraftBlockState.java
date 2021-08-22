@@ -34,12 +34,7 @@ public class CraftBlockState implements BlockState {
         this.data = ((CraftBlock) block).getNMS();
         this.flag = 3;
 
-        GeneratorAccess generatorAccess = ((CraftBlock) block).getHandle();
-        if (generatorAccess instanceof net.minecraft.world.level.World) {
-            this.weakWorld = null;
-        } else {
-            this.weakWorld = new WeakReference<>(generatorAccess);
-        }
+        setWorldHandle(((CraftBlock) block).getHandle());
     }
 
     public CraftBlockState(final Block block, int flag) {
@@ -60,6 +55,14 @@ public class CraftBlockState implements BlockState {
 
     public static CraftBlockState getBlockState(GeneratorAccess world, net.minecraft.core.BlockPosition pos, int flag) {
         return new CraftBlockState(CraftBlock.at(world, pos), flag);
+    }
+
+    public void setWorldHandle(GeneratorAccess generatorAccess) {
+        if (generatorAccess instanceof net.minecraft.world.level.World) {
+            this.weakWorld = null;
+        } else {
+            this.weakWorld = new WeakReference<>(generatorAccess);
+        }
     }
 
     public GeneratorAccess getWorldHandle() {
