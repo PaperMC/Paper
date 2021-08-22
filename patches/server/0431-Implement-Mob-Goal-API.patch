@@ -5,7 +5,7 @@ Subject: [PATCH] Implement Mob Goal API
 
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index 2c0b95f3ed2c4f8ba84885ff922fc29a8fb9fe99..10b1689ef6b724df07074e7069f2620fede3cacc 100644
+index caea57d19dfd6f44536329d8a283c75c87a49d9d..31a6e07981f20fc0cedbca24cf65807e50ab8142 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
 @@ -48,6 +48,7 @@ dependencies {
@@ -551,19 +551,17 @@ index 0000000000000000000000000000000000000000..ddf1a34ef6aba584d30a5419a5109ad6
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/entity/ai/PaperMobGoals.java b/src/main/java/com/destroystokyo/paper/entity/ai/PaperMobGoals.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..2f9e87d37a8ca794b12098232836295aadd80aff
+index 0000000000000000000000000000000000000000..52c86ed3abd411daf406aaab1dba409889d6c3e2
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/entity/ai/PaperMobGoals.java
-@@ -0,0 +1,221 @@
+@@ -0,0 +1,213 @@
 +package com.destroystokyo.paper.entity.ai;
 +
 +import java.util.Collection;
 +import java.util.EnumSet;
-+import java.util.HashMap;
 +import java.util.HashSet;
 +import java.util.LinkedList;
 +import java.util.List;
-+import java.util.Map;
 +import java.util.Set;
 +import net.minecraft.world.entity.ai.goal.GoalSelector;
 +import net.minecraft.world.entity.ai.goal.WrappedGoal;
@@ -571,8 +569,6 @@ index 0000000000000000000000000000000000000000..2f9e87d37a8ca794b12098232836295a
 +import org.bukkit.entity.Mob;
 +
 +public class PaperMobGoals implements MobGoals {
-+
-+    private final Map<net.minecraft.world.entity.ai.goal.Goal, PaperVanillaGoal<?>> instanceCache = new HashMap<>();
 +
 +    @Override
 +    public <T extends Mob> void addGoal(T mob, int priority, Goal<T> goal) {
@@ -678,8 +674,7 @@ index 0000000000000000000000000000000000000000..2f9e87d37a8ca794b12098232836295a
 +                //noinspection unchecked
 +                goals.add(((PaperCustomGoal<T>) item.getGoal()).getHandle());
 +            } else {
-+                //noinspection unchecked
-+                goals.add((Goal<T>) instanceCache.computeIfAbsent(item.getGoal(), PaperVanillaGoal::new));
++                goals.add(item.getGoal().asPaperVanillaGoal());
 +            }
 +        }
 +        return goals;
@@ -702,8 +697,7 @@ index 0000000000000000000000000000000000000000..2f9e87d37a8ca794b12098232836295a
 +                    //noinspection unchecked
 +                    goals.add(((PaperCustomGoal<T>) item.getGoal()).getHandle());
 +                } else {
-+                    //noinspection unchecked
-+                    goals.add((Goal<T>) instanceCache.computeIfAbsent(item.getGoal(), PaperVanillaGoal::new));
++                    goals.add(item.getGoal().asPaperVanillaGoal());
 +                }
 +            }
 +        }
@@ -730,8 +724,7 @@ index 0000000000000000000000000000000000000000..2f9e87d37a8ca794b12098232836295a
 +                    //noinspection unchecked
 +                    goals.add(((PaperCustomGoal<T>) item.getGoal()).getHandle());
 +                } else {
-+                    //noinspection unchecked
-+                    goals.add((Goal<T>) instanceCache.computeIfAbsent(item.getGoal(), PaperVanillaGoal::new));
++                    goals.add(item.getGoal().asPaperVanillaGoal());
 +                }
 +            });
 +        return goals;
@@ -752,8 +745,7 @@ index 0000000000000000000000000000000000000000..2f9e87d37a8ca794b12098232836295a
 +                        //noinspection unchecked
 +                        goals.add(((PaperCustomGoal<T>) item.getGoal()).getHandle());
 +                    } else {
-+                        //noinspection unchecked
-+                        goals.add((Goal<T>) instanceCache.computeIfAbsent(item.getGoal(), PaperVanillaGoal::new));
++                        goals.add(item.getGoal().asPaperVanillaGoal());
 +                    }
 +                });
 +        }
@@ -857,7 +849,7 @@ index 9df0006c1a283f77c4d01d9fce9062fc1c9bbb1f..b3329c6fcd6758a781a51f5ba8f5052a
 +    }
  }
 diff --git a/src/main/java/net/minecraft/world/entity/ai/goal/Goal.java b/src/main/java/net/minecraft/world/entity/ai/goal/Goal.java
-index 8c2ec30a35e86f2b30863045b586a67e485c624b..9cb5ccf4815b56169b63b34da88e73944f5d4f80 100644
+index 8c2ec30a35e86f2b30863045b586a67e485c624b..848cac4426346b6d2ed575f33bf01c0e122acaa2 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/goal/Goal.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/goal/Goal.java
 @@ -6,6 +6,14 @@ public abstract class Goal {
@@ -886,9 +878,21 @@ index 8c2ec30a35e86f2b30863045b586a67e485c624b..9cb5ccf4815b56169b63b34da88e7394
          // Paper end - remove streams from pathfindergoalselector
      }
  
-@@ -44,6 +56,7 @@ public abstract class Goal {
+@@ -43,7 +55,19 @@ public abstract class Goal {
+         // Paper end - remove streams from pathfindergoalselector
      }
  
++    // Paper start - mob goal api
++    private com.destroystokyo.paper.entity.ai.PaperVanillaGoal<?> vanillaGoal = null;
++    public <T extends org.bukkit.entity.Mob> com.destroystokyo.paper.entity.ai.Goal<T> asPaperVanillaGoal() {
++        if(this.vanillaGoal == null) {
++            this.vanillaGoal = new com.destroystokyo.paper.entity.ai.PaperVanillaGoal<>(this);
++        }
++        //noinspection unchecked
++        return (com.destroystokyo.paper.entity.ai.Goal<T>) this.vanillaGoal;
++    }
++    // Paper end - mob goal api
++
      public static enum Flag {
 +        UNKNOWN_BEHAVIOR, // Paper - add UNKNOWN_BEHAVIOR
          MOVE,
