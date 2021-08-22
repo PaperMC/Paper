@@ -1,0 +1,41 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sat, 21 Aug 2021 21:15:38 -0700
+Subject: [PATCH] Improve EntityTransformEvent cancellation handling
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/animal/Pig.java b/src/main/java/net/minecraft/world/entity/animal/Pig.java
+index fc29107ee256af2b5f2e481f17ade6cfcaa101ae..b5de4963ea04b9243ba20ca58c217c316403c307 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/Pig.java
++++ b/src/main/java/net/minecraft/world/entity/animal/Pig.java
+@@ -255,6 +255,7 @@ public class Pig extends Animal implements ItemSteerable, Saddleable {
+                 entitypigzombie.setPersistenceRequired();
+                 // CraftBukkit start
+                 if (CraftEventFactory.callPigZapEvent(this, lightning, entitypigzombie).isCancelled()) {
++                    super.thunderHit(world, lightning); // Paper - fallback on old behavior
+                     return;
+                 }
+                 // CraftBukkit - added a reason for spawning this creature
+diff --git a/src/main/java/net/minecraft/world/entity/npc/Villager.java b/src/main/java/net/minecraft/world/entity/npc/Villager.java
+index 60e4b98cac3545cfb647fccd44c1378a1e8452ba..922b508e7a058780db4d48c733fc13f6a9e5a4ec 100644
+--- a/src/main/java/net/minecraft/world/entity/npc/Villager.java
++++ b/src/main/java/net/minecraft/world/entity/npc/Villager.java
+@@ -861,7 +861,6 @@ public class Villager extends AbstractVillager implements ReputationEventHandler
+                     super.thunderHit(world, lightning);
+                     return;
+                 }
+-                if (org.spigotmc.SpigotConfig.logVillagerDeaths) Villager.LOGGER.info("Villager {} was struck by lightning {}.", this, lightning); // Move down
+                 // Paper end
+ 
+                 entitywitch.moveTo(this.getX(), this.getY(), this.getZ(), this.getYRot(), this.getXRot());
+@@ -875,8 +874,10 @@ public class Villager extends AbstractVillager implements ReputationEventHandler
+                 entitywitch.setPersistenceRequired();
+                 // CraftBukkit start
+                 if (CraftEventFactory.callEntityTransformEvent(this, entitywitch, EntityTransformEvent.TransformReason.LIGHTNING).isCancelled()) {
++                    super.thunderHit(world, lightning); // Paper - didn't cancel the lighting, just the transformation
+                     return;
+                 }
++                if (org.spigotmc.SpigotConfig.logVillagerDeaths) Villager.LOGGER.info("Villager {} was struck by lightning {}.", this, lightning); // Paper - move even further down because if transformation is cancelled, the entity won't die
+                 world.addFreshEntityWithPassengers(entitywitch, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.LIGHTNING);
+                 // CraftBukkit end
+                 this.releaseAllPois();
