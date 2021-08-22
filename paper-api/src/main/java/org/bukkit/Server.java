@@ -853,6 +853,22 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      */
     public void reloadData();
 
+    // Paper start - update reloadable data
+    /**
+     * Updates all advancement, tag, and recipe data to all connected clients.
+     * Useful for updating clients to new advancements/recipes/tags.
+     * @see #updateRecipes()
+     */
+    void updateResources();
+
+    /**
+     * Updates recipe data and the recipe book to each player. Useful for
+     * updating clients to new recipes.
+     * @see #updateResources()
+     */
+    void updateRecipes();
+    // Paper end - update reloadable data
+
     /**
      * Returns the primary logger associated with this server instance.
      *
@@ -894,14 +910,33 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
     public boolean dispatchCommand(@NotNull CommandSender sender, @NotNull String commandLine) throws CommandException;
 
     /**
-     * Adds a recipe to the crafting manager.
+     * Adds a recipe to the crafting manager. Recipes added with
+     * this method won't be sent to the client automatically. Use
+     * {@link #updateRecipes()} or {@link #updateResources()} to
+     * update clients to new recipes added.
+     * <p>
+     * Player's still have to discover recipes via {@link Player#discoverRecipe(NamespacedKey)}
+     * before seeing them in their recipe book.
      *
      * @param recipe the recipe to add
      * @return true if the recipe was added, false if it wasn't for some
      *     reason
+     * @see #addRecipe(Recipe, boolean)
      */
     @Contract("null -> false")
     public boolean addRecipe(@Nullable Recipe recipe);
+
+    // Paper start - method to send recipes immediately
+    /**
+     * Adds a recipe to the crafting manager.
+     *
+     * @param recipe the recipe to add
+     * @param resendRecipes true to update the client with the full set of recipes
+     * @return true if the recipe was added, false if it wasn't for some reason
+     */
+    @Contract("null, _ -> false")
+    boolean addRecipe(@Nullable Recipe recipe, boolean resendRecipes);
+    // Paper end - method to send recipes immediately
 
     /**
      * Get a list of all recipes for a given item. The stack size is ignored
@@ -1070,6 +1105,22 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @return True if recipe was removed
      */
     public boolean removeRecipe(@NotNull NamespacedKey key);
+
+    // Paper start - method to resend recipes
+    /**
+     * Remove a recipe from the server.
+     * <p>
+     * <b>Note that removing a recipe may cause permanent loss of data
+     * associated with that recipe (eg whether it has been discovered by
+     * players).</b>
+     *
+     * @param key NamespacedKey of recipe to remove.
+     * @param resendRecipes true to update all clients on the new recipe list.
+     *                      Will only update if a recipe was actually removed
+     * @return True if recipe was removed
+     */
+    boolean removeRecipe(@NotNull NamespacedKey key, boolean resendRecipes);
+    // Paper end - method to resend recipes
 
     /**
      * Gets a list of command aliases defined in the server properties.

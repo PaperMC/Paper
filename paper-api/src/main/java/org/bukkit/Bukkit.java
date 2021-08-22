@@ -1004,6 +1004,26 @@ public final class Bukkit {
         server.reloadData();
     }
 
+    // Paper start - update reloadable data
+    /**
+     * Updates all advancement, tag, and recipe data for all connected clients.
+     * Useful for updating clients to new advancements/recipes/tags.
+     * @see #updateRecipes()
+     */
+    public static void updateResources() {
+        server.updateResources();
+    }
+
+    /**
+     * Updates recipe data and the recipe book for all connected clients. Useful for
+     * updating clients to new recipes.
+     * @see #updateResources()
+     */
+    public static void updateRecipes() {
+        server.updateRecipes();
+    }
+    // Paper end - update reloadable data
+
     /**
      * Returns the primary logger associated with this server instance.
      *
@@ -1063,6 +1083,20 @@ public final class Bukkit {
     public static boolean addRecipe(@Nullable Recipe recipe) {
         return server.addRecipe(recipe);
     }
+
+    // Paper start - method to send recipes immediately
+    /**
+     * Adds a recipe to the crafting manager.
+     *
+     * @param recipe the recipe to add
+     * @param resendRecipes true to update the client with the full set of recipes
+     * @return true if the recipe was added, false if it wasn't for some reason
+     */
+    @Contract("null, _ -> false")
+    public static boolean addRecipe(@Nullable Recipe recipe, boolean resendRecipes) {
+        return server.addRecipe(recipe, resendRecipes);
+    }
+    // Paper end - method to send recipes immediately
 
     /**
      * Get a list of all recipes for a given item. The stack size is ignored
@@ -1254,6 +1288,24 @@ public final class Bukkit {
     public static boolean removeRecipe(@NotNull NamespacedKey key) {
         return server.removeRecipe(key);
     }
+
+    // Paper start - method to resend recipes
+    /**
+     * Remove a recipe from the server.
+     * <p>
+     * <b>Note that removing a recipe may cause permanent loss of data
+     * associated with that recipe (eg whether it has been discovered by
+     * players).</b>
+     *
+     * @param key NamespacedKey of recipe to remove.
+     * @param resendRecipes true to update all clients on the new recipe list.
+     *                      Will only update if a recipe was actually removed
+     * @return True if recipe was removed
+     */
+    public static boolean removeRecipe(@NotNull NamespacedKey key, boolean resendRecipes) {
+        return server.removeRecipe(key, resendRecipes);
+    }
+    // Paper end - method to resend recipes
 
     /**
      * Gets a list of command aliases defined in the server properties.
