@@ -97,7 +97,7 @@
 +        // be more strict too, add a block (dumb plugins in move events?)
 +        int minBlockX = Mth.floor(axisalignedbb.minX - 1.0E-7D) - 3;
 +        int maxBlockX = Mth.floor(axisalignedbb.maxX + 1.0E-7D) + 3;
- 
++
 +        int minBlockZ = Mth.floor(axisalignedbb.minZ - 1.0E-7D) - 3;
 +        int maxBlockZ = Mth.floor(axisalignedbb.maxZ + 1.0E-7D) + 3;
 +
@@ -227,7 +227,7 @@
 +        boolean flag2 = minecraftserver.forceSynchronousWrites();
 +        DataFixer datafixer = minecraftserver.getFixerUpper();
 +        EntityPersistentStorage<Entity> entitypersistentstorage = new EntityStorage(new SimpleRegionStorage(new RegionStorageInfo(convertable_conversionsession.getLevelId(), resourcekey, "entities"), convertable_conversionsession.getDimensionPath(resourcekey).resolve("entities"), datafixer, flag2, DataFixTypes.ENTITY_CHUNK), this, minecraftserver);
-+
+ 
          this.entityManager = new PersistentEntitySectionManager<>(Entity.class, new ServerLevel.EntityCallbacks(), entitypersistentstorage);
 -        StructureTemplateManager structuretemplatemanager = server.getStructureManager();
 -        int j = server.getPlayerList().getViewDistance();
@@ -1039,7 +1039,7 @@
          return this.entityManager.getEntityGetter();
      }
  
-@@ -1802,6 +2203,17 @@
+@@ -1802,6 +2203,27 @@
          return this.serverLevelData.getGameRules();
      }
  
@@ -1053,11 +1053,21 @@
 +        return range <= 0 ? 64.0 * 64.0 : range * range; // 64 is taken from default in ServerLevel#levelEvent
 +    }
 +    // Paper end - respect global sound events gamerule
++    // Paper start - notify observers even if grow failed
++    public void checkCapturedTreeStateForObserverNotify(final BlockPos pos, final org.bukkit.craftbukkit.block.CraftBlockState craftBlockState) {
++        // notify observers if the block state is the same and the Y level equals the original y level (for mega trees)
++        // blocks at the same Y level with the same state can be assumed to be saplings which trigger observers regardless of if the
++        // tree grew or not
++        if (craftBlockState.getPosition().getY() == pos.getY() && this.getBlockState(craftBlockState.getPosition()) == craftBlockState.getHandle()) {
++            this.notifyAndUpdatePhysics(craftBlockState.getPosition(), null, craftBlockState.getHandle(), craftBlockState.getHandle(), craftBlockState.getHandle(), craftBlockState.getFlag(), 512);
++        }
++    }
++    // Paper end - notify observers even if grow failed
 +
      @Override
      public CrashReportCategory fillReportDetails(CrashReport report) {
          CrashReportCategory crashreportsystemdetails = super.fillReportDetails(report);
-@@ -1828,6 +2240,7 @@
+@@ -1828,6 +2250,7 @@
          }
  
          public void onTickingStart(Entity entity) {
@@ -1065,7 +1075,7 @@
              ServerLevel.this.entityTickList.add(entity);
          }
  
-@@ -1836,14 +2249,15 @@
+@@ -1836,14 +2259,15 @@
          }
  
          public void onTrackingStart(Entity entity) {
@@ -1083,7 +1093,7 @@
                      String s = "onTrackingStart called during navigation iteration";
  
                      Util.logAndPauseIfInIde("onTrackingStart called during navigation iteration", new IllegalStateException("onTrackingStart called during navigation iteration"));
-@@ -1864,9 +2278,58 @@
+@@ -1864,9 +2288,58 @@
              }
  
              entity.updateDynamicGameEventListener(DynamicGameEventListener::add);
@@ -1142,7 +1152,7 @@
              ServerLevel.this.getChunkSource().removeEntity(entity);
              if (entity instanceof ServerPlayer entityplayer) {
                  ServerLevel.this.players.remove(entityplayer);
-@@ -1874,7 +2337,7 @@
+@@ -1874,7 +2347,7 @@
              }
  
              if (entity instanceof Mob entityinsentient) {
@@ -1151,7 +1161,7 @@
                      String s = "onTrackingStart called during navigation iteration";
  
                      Util.logAndPauseIfInIde("onTrackingStart called during navigation iteration", new IllegalStateException("onTrackingStart called during navigation iteration"));
-@@ -1895,10 +2358,27 @@
+@@ -1895,10 +2368,27 @@
              }
  
              entity.updateDynamicGameEventListener(DynamicGameEventListener::remove);

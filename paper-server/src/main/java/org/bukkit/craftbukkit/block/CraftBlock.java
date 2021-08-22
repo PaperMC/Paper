@@ -572,6 +572,7 @@ public class CraftBlock implements Block {
             if (!event.isCancelled()) {
                 for (BlockState blockstate : blocks) {
                     blockstate.update(true);
+                    world.checkCapturedTreeStateForObserverNotify(this.position, (org.bukkit.craftbukkit.block.CraftBlockState) blockstate); // Paper - notify observers even if grow failed
                 }
             }
         }

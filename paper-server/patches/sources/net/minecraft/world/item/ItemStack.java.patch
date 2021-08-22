@@ -152,7 +152,7 @@
              });
          }
      }
-@@ -370,32 +418,195 @@
+@@ -370,32 +418,196 @@
      }
  
      public InteractionResult useOn(UseOnContext context) {
@@ -214,6 +214,7 @@
 +                    for (CraftBlockState blockstate : blocks) {
 +                        // SPIGOT-7572 - Move fix for SPIGOT-7248 to CapturedBlockState, to allow bees in bee nest
 +                        CapturedBlockState.setBlockState(blockstate);
++                        world.checkCapturedTreeStateForObserverNotify(blockposition, blockstate); // Paper - notify observers even if grow failed
 +                    }
 +                    entityhuman.awardStat(Stats.ITEM_USED.get(item)); // SPIGOT-7236 - award stat
 +                }
@@ -353,7 +354,7 @@
          ItemStack itemstack = this.copy();
          boolean flag = this.getUseDuration(user) <= 0;
          InteractionResult enuminteractionresult = this.getItem().use(world, user, hand);
-@@ -490,27 +701,66 @@
+@@ -490,8 +702,37 @@
          return this.isDamageableItem() && this.getDamageValue() >= this.getMaxDamage() - 1;
      }
  
@@ -371,7 +372,7 @@
 +        if (player instanceof final ServerPlayer serverPlayer) { // Paper - Add EntityDamageItemEvent
 +            PlayerItemDamageEvent event = new PlayerItemDamageEvent(serverPlayer.getBukkitEntity(), CraftItemStack.asCraftMirror(this), j, originalDamage); // Paper - Add EntityDamageItemEvent
 +            event.getPlayer().getServer().getPluginManager().callEvent(event);
- 
++
 +            if (j != event.getDamage() || event.isCancelled()) {
 +                event.getPlayer().updateInventory();
 +            }
@@ -390,10 +391,10 @@
 +            // Paper end - Add EntityDamageItemEvent
 +        }
 +        // CraftBukkit end
-+
+ 
          if (j != 0) {
              this.applyDamage(this.getDamageValue() + j, player, breakCallback);
-         }
+@@ -499,18 +740,28 @@
  
      }
  
@@ -427,7 +428,7 @@
  
              this.shrink(1);
              breakCallback.accept(item);
-@@ -518,7 +768,7 @@
+@@ -518,7 +769,7 @@
  
      }
  
@@ -436,7 +437,7 @@
          if (player instanceof ServerPlayer entityplayer) {
              int j = this.processDurabilityChange(amount, entityplayer.serverLevel(), entityplayer);
  
-@@ -535,6 +785,11 @@
+@@ -535,6 +786,11 @@
      }
  
      public void hurtAndBreak(int amount, LivingEntity entity, EquipmentSlot slot) {
@@ -448,7 +449,7 @@
          Level world = entity.level();
  
          if (world instanceof ServerLevel worldserver) {
-@@ -546,9 +801,9 @@
+@@ -546,9 +802,9 @@
                  entityplayer = null;
              }
  
@@ -461,7 +462,7 @@
          }
  
      }
-@@ -580,11 +835,11 @@
+@@ -580,11 +836,11 @@
          return this.getItem().getBarColor(this);
      }
  
@@ -475,7 +476,7 @@
          return this.getItem().overrideOtherStackedOnMe(this, stack, slot, clickType, player, cursorStackReference);
      }
  
-@@ -592,8 +847,8 @@
+@@ -592,8 +848,8 @@
          Item item = this.getItem();
  
          if (item.hurtEnemy(this, target, user)) {
@@ -486,7 +487,7 @@
  
                  entityhuman.awardStat(Stats.ITEM_USED.get(item));
              }
-@@ -608,7 +863,7 @@
+@@ -608,7 +864,7 @@
          this.getItem().postHurtEnemy(this, target, user);
      }
  
@@ -495,7 +496,7 @@
          Item item = this.getItem();
  
          if (item.mineBlock(this, world, state, pos, miner)) {
-@@ -617,11 +872,11 @@
+@@ -617,11 +873,11 @@
  
      }
  
@@ -509,7 +510,7 @@
          return this.getItem().interactLivingEntity(this, user, entity, hand);
      }
  
-@@ -736,7 +991,7 @@
+@@ -736,7 +992,7 @@
  
      }
  
@@ -518,7 +519,7 @@
          player.awardStat(Stats.ITEM_CRAFTED.get(this.getItem()), amount);
          this.getItem().onCraftedBy(this, world, player);
      }
-@@ -770,6 +1025,12 @@
+@@ -770,6 +1026,12 @@
          return this.getItem().useOnRelease(this);
      }
  
@@ -531,7 +532,7 @@
      @Nullable
      public <T> T set(DataComponentType<? super T> type, @Nullable T value) {
          return this.components.set(type, value);
-@@ -806,6 +1067,25 @@
+@@ -806,6 +1068,25 @@
          }
      }
  
@@ -557,7 +558,7 @@
      public void applyComponents(DataComponentPatch changes) {
          this.components.applyPatch(changes);
          this.getItem().verifyComponentsAfterLoad(this);
-@@ -858,7 +1138,7 @@
+@@ -858,7 +1139,7 @@
      }
  
      private <T extends TooltipProvider> void addToTooltip(DataComponentType<T> componentType, Item.TooltipContext context, Consumer<Component> textConsumer, TooltipFlag type) {
@@ -566,7 +567,7 @@
  
          if (t0 != null) {
              t0.addToTooltip(context, textConsumer, type);
-@@ -866,7 +1146,7 @@
+@@ -866,7 +1147,7 @@
  
      }
  
@@ -575,7 +576,7 @@
          boolean flag = this.getItem().shouldPrintOpWarning(this, player);
  
          if (!type.isCreative() && this.has(DataComponents.HIDE_TOOLTIP)) {
-@@ -941,7 +1221,7 @@
+@@ -941,7 +1222,7 @@
          }
      }
  
@@ -584,7 +585,7 @@
          ItemAttributeModifiers itemattributemodifiers = (ItemAttributeModifiers) this.getOrDefault(DataComponents.ATTRIBUTE_MODIFIERS, ItemAttributeModifiers.EMPTY);
  
          if (itemattributemodifiers.showInTooltip()) {
-@@ -966,7 +1246,7 @@
+@@ -966,7 +1247,7 @@
          }
      }
  
@@ -593,7 +594,7 @@
          double d0 = modifier.amount();
          boolean flag = false;
  
-@@ -1091,6 +1371,14 @@
+@@ -1091,6 +1372,14 @@
          EnchantmentHelper.forEachModifier(this, slot, attributeModifierConsumer);
      }
  
@@ -608,7 +609,7 @@
      public Component getDisplayName() {
          MutableComponent ichatmutablecomponent = Component.empty().append(this.getHoverName());
  
-@@ -1153,7 +1441,7 @@
+@@ -1153,7 +1442,7 @@
      }
  
      public void consume(int amount, @Nullable LivingEntity entity) {
