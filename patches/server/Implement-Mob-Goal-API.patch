@@ -559,11 +559,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +import java.util.Collection;
 +import java.util.EnumSet;
-+import java.util.HashMap;
 +import java.util.HashSet;
 +import java.util.LinkedList;
 +import java.util.List;
-+import java.util.Map;
 +import java.util.Set;
 +import net.minecraft.world.entity.ai.goal.GoalSelector;
 +import net.minecraft.world.entity.ai.goal.WrappedGoal;
@@ -571,8 +569,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import org.bukkit.entity.Mob;
 +
 +public class PaperMobGoals implements MobGoals {
-+
-+    private final Map<net.minecraft.world.entity.ai.goal.Goal, PaperVanillaGoal<?>> instanceCache = new HashMap<>();
 +
 +    @Override
 +    public <T extends Mob> void addGoal(T mob, int priority, Goal<T> goal) {
@@ -678,8 +674,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                //noinspection unchecked
 +                goals.add(((PaperCustomGoal<T>) item.getGoal()).getHandle());
 +            } else {
-+                //noinspection unchecked
-+                goals.add((Goal<T>) instanceCache.computeIfAbsent(item.getGoal(), PaperVanillaGoal::new));
++                goals.add(item.getGoal().asPaperVanillaGoal());
 +            }
 +        }
 +        return goals;
@@ -702,8 +697,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                    //noinspection unchecked
 +                    goals.add(((PaperCustomGoal<T>) item.getGoal()).getHandle());
 +                } else {
-+                    //noinspection unchecked
-+                    goals.add((Goal<T>) instanceCache.computeIfAbsent(item.getGoal(), PaperVanillaGoal::new));
++                    goals.add(item.getGoal().asPaperVanillaGoal());
 +                }
 +            }
 +        }
@@ -730,8 +724,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                    //noinspection unchecked
 +                    goals.add(((PaperCustomGoal<T>) item.getGoal()).getHandle());
 +                } else {
-+                    //noinspection unchecked
-+                    goals.add((Goal<T>) instanceCache.computeIfAbsent(item.getGoal(), PaperVanillaGoal::new));
++                    goals.add(item.getGoal().asPaperVanillaGoal());
 +                }
 +            });
 +        return goals;
@@ -752,8 +745,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                        //noinspection unchecked
 +                        goals.add(((PaperCustomGoal<T>) item.getGoal()).getHandle());
 +                    } else {
-+                        //noinspection unchecked
-+                        goals.add((Goal<T>) instanceCache.computeIfAbsent(item.getGoal(), PaperVanillaGoal::new));
++                        goals.add(item.getGoal().asPaperVanillaGoal());
 +                    }
 +                });
 +        }
@@ -887,8 +879,20 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
 @@ -0,0 +0,0 @@ public abstract class Goal {
+         // Paper end - remove streams from pathfindergoalselector
      }
  
++    // Paper start - mob goal api
++    private com.destroystokyo.paper.entity.ai.PaperVanillaGoal<?> vanillaGoal = null;
++    public <T extends org.bukkit.entity.Mob> com.destroystokyo.paper.entity.ai.Goal<T> asPaperVanillaGoal() {
++        if(this.vanillaGoal == null) {
++            this.vanillaGoal = new com.destroystokyo.paper.entity.ai.PaperVanillaGoal<>(this);
++        }
++        //noinspection unchecked
++        return (com.destroystokyo.paper.entity.ai.Goal<T>) this.vanillaGoal;
++    }
++    // Paper end - mob goal api
++
      public static enum Flag {
 +        UNKNOWN_BEHAVIOR, // Paper - add UNKNOWN_BEHAVIOR
          MOVE,
