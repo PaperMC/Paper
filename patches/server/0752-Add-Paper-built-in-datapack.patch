@@ -1,0 +1,161 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jason Penilla <11360596+jpenilla@users.noreply.github.com>
+Date: Sun, 22 Aug 2021 16:31:13 -0700
+Subject: [PATCH] Add Paper built-in datapack
+
+Adds
+ - EntityTypeTags for each MobCategory
+
+diff --git a/src/main/java/io/papermc/paper/datapack/PaperBuiltInDatapack.java b/src/main/java/io/papermc/paper/datapack/PaperBuiltInDatapack.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..7c43717a671559142b1966fb8af782b5e8d4ec4a
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/datapack/PaperBuiltInDatapack.java
+@@ -0,0 +1,48 @@
++package io.papermc.paper.datapack;
++
++import com.mojang.bridge.game.PackType;
++import java.io.IOException;
++import java.nio.file.Files;
++import java.nio.file.Path;
++import java.util.Collections;
++import java.util.List;
++import net.minecraft.SharedConstants;
++import net.minecraft.data.DataGenerator;
++import net.minecraft.server.packs.PackResources;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.framework.qual.DefaultQualifier;
++
++@DefaultQualifier(NonNull.class)
++public final class PaperBuiltInDatapack {
++    private PaperBuiltInDatapack() {
++        throw new IllegalStateException("Cannot instantiate PaperBuiltInDatapack!");
++    }
++
++    public static void installOrUpdateDatapack(final Path datapackFolder) throws IOException {
++        Files.createDirectories(datapackFolder);
++
++        Files.writeString(
++            packMeta(datapackFolder),
++            "{\n" +
++                "    \"pack\": {\n" +
++                "        \"description\": \"Paper built-in datapack\",\n" +
++                "        \"pack_format\": " + SharedConstants.getCurrentVersion().getPackVersion(PackType.DATA) + "\n" +
++                "    }\n" +
++                "}\n"
++        );
++
++        runGenerators(datapackFolder);
++    }
++
++    private static void runGenerators(Path datapackFolder) throws IOException {
++        final DataGenerator generator = new DataGenerator(datapackFolder, Collections.emptyList());
++
++        generator.addProvider(new PaperEntityTypeTagsProvider(generator));
++
++        generator.run(false, List.of(packMeta(datapackFolder)));
++    }
++
++    private static Path packMeta(final Path datapackFolder) {
++        return datapackFolder.resolve(PackResources.PACK_META);
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/datapack/PaperEntityTypeTagsProvider.java b/src/main/java/io/papermc/paper/datapack/PaperEntityTypeTagsProvider.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..42b3a8f5b6383c35050cd1be7dc6c326f6c67126
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/datapack/PaperEntityTypeTagsProvider.java
+@@ -0,0 +1,40 @@
++package io.papermc.paper.datapack;
++
++import com.google.common.collect.ImmutableMap;
++import java.util.Map;
++import net.minecraft.core.Registry;
++import net.minecraft.data.DataGenerator;
++import net.minecraft.data.tags.EntityTypeTagsProvider;
++import net.minecraft.tags.StaticTagHelper;
++import net.minecraft.tags.Tag;
++import net.minecraft.world.entity.EntityType;
++import net.minecraft.world.entity.MobCategory;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.framework.qual.DefaultQualifier;
++
++@DefaultQualifier(NonNull.class)
++public final class PaperEntityTypeTagsProvider extends EntityTypeTagsProvider {
++    private static final StaticTagHelper<EntityType<?>> HELPER = new StaticTagHelper<>(Registry.ENTITY_TYPE_REGISTRY, "tags/entity_types"); // args copied from superclass
++
++    public static final Map<MobCategory, Tag.Named<EntityType<?>>> CATEGORY_TAGS;
++
++    static {
++        final ImmutableMap.Builder<MobCategory, Tag.Named<EntityType<?>>> categoryTagsBuilder = ImmutableMap.builder();
++        for (final MobCategory category : MobCategory.values()) {
++            categoryTagsBuilder.put(category, HELPER.bind("paper:category/" + category.getName()));
++        }
++        CATEGORY_TAGS = categoryTagsBuilder.build();
++    }
++
++    PaperEntityTypeTagsProvider(final DataGenerator root) {
++        super(root);
++    }
++
++    @Override
++    protected void addTags() {
++        CATEGORY_TAGS.forEach((category, tag) ->
++            Registry.ENTITY_TYPE.stream()
++                .filter(type -> type.getCategory() == category)
++                .forEach(type -> this.tag(tag).add(type)));
++    }
++}
+diff --git a/src/main/java/net/minecraft/data/DataGenerator.java b/src/main/java/net/minecraft/data/DataGenerator.java
+index da591572c2f2186b9c0f54622016292fd2d5dba8..3550069edcc76c681e76b0af2db326d05c4a7ff6 100644
+--- a/src/main/java/net/minecraft/data/DataGenerator.java
++++ b/src/main/java/net/minecraft/data/DataGenerator.java
+@@ -31,21 +31,27 @@ public class DataGenerator {
+     }
+ 
+     public void run() throws IOException {
++        // Paper start - Add params
++        this.run(true, List.of());
++    }
++    public void run(final boolean logging, final List<Path> keep) throws IOException {
++        // Paper end
+         HashCache hashCache = new HashCache(this.outputFolder, "cache");
++        keep.forEach(hashCache::keep); // Paper
+         hashCache.keep(this.getOutputFolder().resolve("version.json"));
+         Stopwatch stopwatch = Stopwatch.createStarted();
+         Stopwatch stopwatch2 = Stopwatch.createUnstarted();
+ 
+         for(DataProvider dataProvider : this.providers) {
+-            LOGGER.info("Starting provider: {}", (Object)dataProvider.getName());
++            if (logging) LOGGER.info("Starting provider: {}", (Object)dataProvider.getName()); // Paper
+             stopwatch2.start();
+             dataProvider.run(hashCache);
+             stopwatch2.stop();
+-            LOGGER.info("{} finished after {} ms", dataProvider.getName(), stopwatch2.elapsed(TimeUnit.MILLISECONDS));
++            if (logging) LOGGER.info("{} finished after {} ms", dataProvider.getName(), stopwatch2.elapsed(TimeUnit.MILLISECONDS)); // Paper
+             stopwatch2.reset();
+         }
+ 
+-        LOGGER.info("All providers took: {} ms", (long)stopwatch.elapsed(TimeUnit.MILLISECONDS));
++        if (logging) LOGGER.info("All providers took: {} ms", (long)stopwatch.elapsed(TimeUnit.MILLISECONDS)); // Paper
+         hashCache.purgeStaleAndWrite();
+     }
+ 
+diff --git a/src/main/java/net/minecraft/server/Main.java b/src/main/java/net/minecraft/server/Main.java
+index cfd43069ee2b6f79afb12e10d223f6bf75100034..9cc2f23d8cdda3ef655c739e981956b0cde8979f 100644
+--- a/src/main/java/net/minecraft/server/Main.java
++++ b/src/main/java/net/minecraft/server/Main.java
+@@ -183,6 +183,13 @@ public class Main {
+                 throw new RuntimeException("Could not initialize Bukkit datapack", ex);
+             }
+             // CraftBukkit end
++            // Paper start
++            try {
++                io.papermc.paper.datapack.PaperBuiltInDatapack.installOrUpdateDatapack(bukkitDataPackFolder.toPath().resolveSibling("Paper"));
++            } catch (java.io.IOException ex) {
++                throw new RuntimeException("Could not initialize Paper datapack", ex);
++            }
++            // Paper end
+             DataPackConfig datapackconfiguration1 = MinecraftServer.configurePackRepository(resourcepackrepository, datapackconfiguration == null ? DataPackConfig.DEFAULT : datapackconfiguration, flag);
+             CompletableFuture completablefuture = ServerResources.loadResources(resourcepackrepository.openAllSelected(), iregistrycustom_dimension, Commands.CommandSelection.DEDICATED, dedicatedserversettings.getProperties().functionPermissionLevel, Util.backgroundExecutor(), Runnable::run);
+ 
