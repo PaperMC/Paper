@@ -1,0 +1,32 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Rektroth <53879295+Rektroth@users.noreply.github.com>
+Date: Mon, 23 Aug 2021 00:27:12 -0400
+Subject: [PATCH] Fix endermen/shulkers tp'ing above logical height
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+index 6175360eb2b19c8197cc5b82a09030211afd838b..58fd38ae9e460d5cc1fbc72d3a17d69f53fa35c0 100644
+--- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
++++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+@@ -3898,7 +3898,7 @@ public abstract class LivingEntity extends Entity {
+ 
+                 // first set position, to check if the place to teleport is valid
+                 this.setPos(d0, d6, d2);
+-                if (world.noCollision(this) && !world.containsAnyLiquid(this.getBoundingBox())) {
++                if (world.noCollision(this) && !world.containsAnyLiquid(this.getBoundingBox()) && d6 < world.dimensionType().logicalHeight()) { // Paper - check if the place to teleport is above the dimension's logical height
+                     flag1 = true;
+                 }
+                 // now revert and call event if the teleport place is valid
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Shulker.java b/src/main/java/net/minecraft/world/entity/monster/Shulker.java
+index ca0d1c059a6ad94590bcbff34b37b9c13ef19474..a4f4ab86b938f96143e74422c5f0e80cb9469eea 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Shulker.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Shulker.java
+@@ -404,7 +404,7 @@ public class Shulker extends AbstractGolem implements Enemy {
+             for (int i = 0; i < 5; ++i) {
+                 BlockPos blockposition1 = blockposition.offset(Mth.randomBetweenInclusive(this.random, -8, 8), Mth.randomBetweenInclusive(this.random, -8, 8), Mth.randomBetweenInclusive(this.random, -8, 8));
+ 
+-                if (blockposition1.getY() > this.level.getMinBuildHeight() && this.level.isEmptyBlock(blockposition1) && this.level.getWorldBorder().isWithinBounds(blockposition1) && this.level.noCollision(this, (new AABB(blockposition1)).deflate(1.0E-6D))) {
++                if (blockposition1.getY() > this.level.getMinBuildHeight() && this.level.isEmptyBlock(blockposition1) && this.level.getWorldBorder().isWithinBounds(blockposition1) && this.level.noCollision(this, (new AABB(blockposition1)).deflate(1.0E-6D)) && blockposition1.getY() < this.level.dimensionType().logicalHeight()) { // Paper - check if the place to teleport is above the dimension's logical height
+                     Direction enumdirection = this.findAttachableSurface(blockposition1);
+ 
+                     if (enumdirection != null) {
