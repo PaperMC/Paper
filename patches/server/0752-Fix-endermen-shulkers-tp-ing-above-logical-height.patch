@@ -1,11 +1,25 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Rektroth <53879295+Rektroth@users.noreply.github.com>
-Date: Mon, 23 Aug 2021 00:27:12 -0400
+Date: Mon, 23 Aug 2021 18:43:36 -0400
 Subject: [PATCH] Fix endermen/shulkers tp'ing above logical height
 
 
+diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+index 2e0191e5cfe8e29fb0a6c4fc6a2a570d4b8ae449..cc8dc598bd2e564070f09bdaa9298568af6c9233 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+@@ -524,4 +524,9 @@ public class PaperConfig {
+         itemValidationBookAuthorLength = getInt("settings.item-validation.book.author", itemValidationBookAuthorLength);
+         itemValidationBookPageLength = getInt("settings.item-validation.book.page", itemValidationBookPageLength);
+     }
++
++    public static boolean mobsCanTeleportAboveDimensionHeight = false;
++    private static void mobsCanTeleportAboveDimensionHeight() {
++        mobsCanTeleportAboveDimensionHeight = getBoolean("settings.mobs-can-teleport-above-dimension-height", mobsCanTeleportAboveDimensionHeight);
++    }
+ }
 diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-index 6175360eb2b19c8197cc5b82a09030211afd838b..58fd38ae9e460d5cc1fbc72d3a17d69f53fa35c0 100644
+index 6175360eb2b19c8197cc5b82a09030211afd838b..f8df617f932fa75d5fdf2935c9d09f0af781e32d 100644
 --- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
 @@ -3898,7 +3898,7 @@ public abstract class LivingEntity extends Entity {
@@ -13,12 +27,12 @@ index 6175360eb2b19c8197cc5b82a09030211afd838b..58fd38ae9e460d5cc1fbc72d3a17d69f
                  // first set position, to check if the place to teleport is valid
                  this.setPos(d0, d6, d2);
 -                if (world.noCollision(this) && !world.containsAnyLiquid(this.getBoundingBox())) {
-+                if (world.noCollision(this) && !world.containsAnyLiquid(this.getBoundingBox()) && d6 < world.dimensionType().logicalHeight()) { // Paper - check if the place to teleport is above the dimension's logical height
++                if (world.noCollision(this) && !world.containsAnyLiquid(this.getBoundingBox()) && (d6 < world.dimensionType().logicalHeight() || com.destroystokyo.paper.PaperConfig.mobsCanTeleportAboveDimensionHeight)) { // Paper - check if the place to teleport is above the dimension's logical height
                      flag1 = true;
                  }
                  // now revert and call event if the teleport place is valid
 diff --git a/src/main/java/net/minecraft/world/entity/monster/Shulker.java b/src/main/java/net/minecraft/world/entity/monster/Shulker.java
-index ca0d1c059a6ad94590bcbff34b37b9c13ef19474..a4f4ab86b938f96143e74422c5f0e80cb9469eea 100644
+index ca0d1c059a6ad94590bcbff34b37b9c13ef19474..08ca6335acf56b5f9bc14c7de550d48d1d58fb0c 100644
 --- a/src/main/java/net/minecraft/world/entity/monster/Shulker.java
 +++ b/src/main/java/net/minecraft/world/entity/monster/Shulker.java
 @@ -404,7 +404,7 @@ public class Shulker extends AbstractGolem implements Enemy {
@@ -26,7 +40,7 @@ index ca0d1c059a6ad94590bcbff34b37b9c13ef19474..a4f4ab86b938f96143e74422c5f0e80c
                  BlockPos blockposition1 = blockposition.offset(Mth.randomBetweenInclusive(this.random, -8, 8), Mth.randomBetweenInclusive(this.random, -8, 8), Mth.randomBetweenInclusive(this.random, -8, 8));
  
 -                if (blockposition1.getY() > this.level.getMinBuildHeight() && this.level.isEmptyBlock(blockposition1) && this.level.getWorldBorder().isWithinBounds(blockposition1) && this.level.noCollision(this, (new AABB(blockposition1)).deflate(1.0E-6D))) {
-+                if (blockposition1.getY() > this.level.getMinBuildHeight() && this.level.isEmptyBlock(blockposition1) && this.level.getWorldBorder().isWithinBounds(blockposition1) && this.level.noCollision(this, (new AABB(blockposition1)).deflate(1.0E-6D)) && blockposition1.getY() < this.level.dimensionType().logicalHeight()) { // Paper - check if the place to teleport is above the dimension's logical height
++                if (blockposition1.getY() > this.level.getMinBuildHeight() && this.level.isEmptyBlock(blockposition1) && this.level.getWorldBorder().isWithinBounds(blockposition1) && this.level.noCollision(this, (new AABB(blockposition1)).deflate(1.0E-6D)) && (blockposition1.getY() < this.level.dimensionType().logicalHeight() || com.destroystokyo.paper.PaperConfig.mobsCanTeleportAboveDimensionHeight)) { // Paper - check if the place to teleport is above the dimension's logical height
                      Direction enumdirection = this.findAttachableSurface(blockposition1);
  
                      if (enumdirection != null) {
