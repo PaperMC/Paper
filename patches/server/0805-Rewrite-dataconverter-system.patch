@@ -68,19 +68,17 @@ index 0000000000000000000000000000000000000000..1863c606be715683d53863a0c9293525
 +}
 diff --git a/src/main/java/ca/spottedleaf/dataconverter/converters/datatypes/DataHook.java b/src/main/java/ca/spottedleaf/dataconverter/converters/datatypes/DataHook.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..ef054cf466358a5cccf4d6044914d63394605d1a
+index 0000000000000000000000000000000000000000..0b92c5c66ad3a5198873f98287a5ced71c231d09
 --- /dev/null
 +++ b/src/main/java/ca/spottedleaf/dataconverter/converters/datatypes/DataHook.java
-@@ -0,0 +1,11 @@
+@@ -0,0 +1,9 @@
 +package ca.spottedleaf.dataconverter.converters.datatypes;
 +
-+import ca.spottedleaf.dataconverter.types.MapType;
++public interface DataHook<T, R> {
 +
-+public interface DataHook<K> {
++    public R preHook(final T data, final long fromVersion, final long toVersion);
 +
-+    public MapType<K> preHook(final MapType<K> data, final long fromVersion, final long toVersion);
-+
-+    public MapType<K> postHook(final MapType<K> data, final long fromVersion, final long toVersion);
++    public R postHook(final T data, final long fromVersion, final long toVersion);
 +
 +}
 diff --git a/src/main/java/ca/spottedleaf/dataconverter/converters/datatypes/DataType.java b/src/main/java/ca/spottedleaf/dataconverter/converters/datatypes/DataType.java
@@ -188,10 +186,10 @@ index 0000000000000000000000000000000000000000..64f442922a9ca26a723653acb7a5398f
 +}
 diff --git a/src/main/java/ca/spottedleaf/dataconverter/minecraft/MCVersionRegistry.java b/src/main/java/ca/spottedleaf/dataconverter/minecraft/MCVersionRegistry.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..1026027daf0073063ccb1befce12e166fcfb4225
+index 0000000000000000000000000000000000000000..321b69f2353202b08de6c364d13340a80c0e077d
 --- /dev/null
 +++ b/src/main/java/ca/spottedleaf/dataconverter/minecraft/MCVersionRegistry.java
-@@ -0,0 +1,304 @@
+@@ -0,0 +1,332 @@
 +package ca.spottedleaf.dataconverter.minecraft;
 +
 +import ca.spottedleaf.dataconverter.converters.DataConverter;
@@ -200,6 +198,7 @@ index 0000000000000000000000000000000000000000..1026027daf0073063ccb1befce12e166
 +import it.unimi.dsi.fastutil.ints.IntLinkedOpenHashSet;
 +import it.unimi.dsi.fastutil.ints.IntRBTreeSet;
 +import it.unimi.dsi.fastutil.longs.LongArrayList;
++import it.unimi.dsi.fastutil.longs.LongLinkedOpenHashSet;
 +import org.apache.logging.log4j.LogManager;
 +import org.apache.logging.log4j.Logger;
 +import java.lang.reflect.Field;
@@ -216,7 +215,8 @@ index 0000000000000000000000000000000000000000..1026027daf0073063ccb1befce12e166
 +    protected static final LongArrayList DATA_VERSION_LIST;
 +
 +    protected static final IntArrayList DATACONVERTER_VERSIONS_LIST;
-+    protected static final IntLinkedOpenHashSet DATACONVERTER_VERSIONS = new IntLinkedOpenHashSet();
++    protected static final IntLinkedOpenHashSet DATACONVERTER_VERSIONS_MAJOR = new IntLinkedOpenHashSet();
++    protected static final LongLinkedOpenHashSet DATACONVERTER_VERSIONS = new LongLinkedOpenHashSet();
 +    protected static final Int2ObjectLinkedOpenHashMap<IntArrayList> SUBVERSIONS = new Int2ObjectLinkedOpenHashMap<>();
 +    protected static final LongArrayList BREAKPOINTS = new LongArrayList();
 +    static {
@@ -368,9 +368,11 @@ index 0000000000000000000000000000000000000000..1026027daf0073063ccb1befce12e166
 +        };
 +        Arrays.sort(converterVersions);
 +
-+        DATACONVERTER_VERSIONS.addAll(DATACONVERTER_VERSIONS_LIST = new IntArrayList(converterVersions));
++        DATACONVERTER_VERSIONS_MAJOR.addAll(DATACONVERTER_VERSIONS_LIST = new IntArrayList(converterVersions));
 +
 +        // add sub versions
++        registerSubVersion(MCVersions.V16W38A + 1, 1);
++
 +        registerSubVersion(MCVersions.V17W47A, 1);
 +        registerSubVersion(MCVersions.V17W47A, 2);
 +        registerSubVersion(MCVersions.V17W47A, 3);
@@ -380,10 +382,15 @@ index 0000000000000000000000000000000000000000..1026027daf0073063ccb1befce12e166
 +        registerSubVersion(MCVersions.V17W47A, 7);
 +
 +        // register breakpoints here
++        // for all major releases after 1.16, add them here. this reduces the work required to determine if a breakpoint
++        // is needed for new converters
 +
 +        // Too much changed in this version.
 +        registerBreakpoint(MCVersions.V17W47A);
 +        registerBreakpoint(MCVersions.V17W47A, Integer.MAX_VALUE);
++
++        // final release of major version
++        registerBreakpoint(MCVersions.V1_17_1, Integer.MAX_VALUE);
 +
 +
 +    }
@@ -406,7 +413,7 @@ index 0000000000000000000000000000000000000000..1026027daf0073063ccb1befce12e166
 +            VERSION_NAMES.put(value, name.substring(1).replace("_PRE", "-PRE").replace("_RC", "-RC").replace('_', '.').toLowerCase(Locale.ROOT));
 +        }
 +
-+        for (final int version : DATACONVERTER_VERSIONS) {
++        for (final int version : DATACONVERTER_VERSIONS_MAJOR) {
 +            if (VERSION_NAMES.containsKey(version)) {
 +                continue;
 +            }
@@ -448,6 +455,19 @@ index 0000000000000000000000000000000000000000..1026027daf0073063ccb1befce12e166
 +        }
 +
 +        DATA_VERSION_LIST.sort(Comparator.naturalOrder());
++
++        for (final int version : DATACONVERTER_VERSIONS_MAJOR) {
++            DATACONVERTER_VERSIONS.add(DataConverter.encodeVersions(version, 0));
++
++            final IntArrayList subVersions = SUBVERSIONS.get(version);
++            if (subVersions == null) {
++                continue;
++            }
++
++            for (final int step : subVersions) {
++                DATACONVERTER_VERSIONS.add(DataConverter.encodeVersions(version, step));
++            }
++        }
 +    }
 +
 +    private static void registerSubVersion(final int version, final int step) {
@@ -469,7 +489,7 @@ index 0000000000000000000000000000000000000000..1026027daf0073063ccb1befce12e166
 +
 +    // returns only versions that have dataconverters
 +    public static boolean hasDataConverters(final int version) {
-+        return DATACONVERTER_VERSIONS.contains(version);
++        return DATACONVERTER_VERSIONS_MAJOR.contains(version);
 +    }
 +
 +    public String getVersionName(final int version) {
@@ -494,6 +514,12 @@ index 0000000000000000000000000000000000000000..1026027daf0073063ccb1befce12e166
 +
 +    public static LongArrayList getBreakpoints() {
 +        return BREAKPOINTS;
++    }
++
++    public static void checkVersion(final long version) {
++        if (!DATACONVERTER_VERSIONS.contains(version)) {
++            throw new IllegalStateException("Version " + DataConverter.encodedToString(version) + " is not registered to have dataconverters, yet has a dataconverter");
++        }
 +    }
 +}
 diff --git a/src/main/java/ca/spottedleaf/dataconverter/minecraft/MCVersions.java b/src/main/java/ca/spottedleaf/dataconverter/minecraft/MCVersions.java
@@ -870,16 +896,15 @@ index 0000000000000000000000000000000000000000..6b954f25089aa8bb66359280d4aca596
 +}
 diff --git a/src/main/java/ca/spottedleaf/dataconverter/minecraft/converters/advancements/ConverterAbstractAdvancementsRename.java b/src/main/java/ca/spottedleaf/dataconverter/minecraft/converters/advancements/ConverterAbstractAdvancementsRename.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..a30b6648bbd384dc21a3dd90e0896542c227daab
+index 0000000000000000000000000000000000000000..c92e198b1cc20655e404f67b2af4ca493aad2f6d
 --- /dev/null
 +++ b/src/main/java/ca/spottedleaf/dataconverter/minecraft/converters/advancements/ConverterAbstractAdvancementsRename.java
-@@ -0,0 +1,35 @@
+@@ -0,0 +1,34 @@
 +package ca.spottedleaf.dataconverter.minecraft.converters.advancements;
 +
 +import ca.spottedleaf.dataconverter.converters.DataConverter;
 +import ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry;
 +import ca.spottedleaf.dataconverter.types.MapType;
-+
 +import java.util.ArrayList;
 +import java.util.function.Function;
 +
@@ -911,17 +936,16 @@ index 0000000000000000000000000000000000000000..a30b6648bbd384dc21a3dd90e0896542
 +}
 diff --git a/src/main/java/ca/spottedleaf/dataconverter/minecraft/converters/blockname/ConverterAbstractBlockRename.java b/src/main/java/ca/spottedleaf/dataconverter/minecraft/converters/blockname/ConverterAbstractBlockRename.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..53fd133647aecb0390d78300f59f616a83445433
+index 0000000000000000000000000000000000000000..ba9daaab1abd53a3fbdebd78e05ba363251188c6
 --- /dev/null
 +++ b/src/main/java/ca/spottedleaf/dataconverter/minecraft/converters/blockname/ConverterAbstractBlockRename.java
-@@ -0,0 +1,74 @@
+@@ -0,0 +1,73 @@
 +package ca.spottedleaf.dataconverter.minecraft.converters.blockname;
 +
 +import ca.spottedleaf.dataconverter.converters.DataConverter;
 +import ca.spottedleaf.dataconverter.minecraft.converters.helpers.ConverterAbstractStringValueTypeRename;
 +import ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry;
 +import ca.spottedleaf.dataconverter.types.MapType;
-+
 +import java.util.function.Function;
 +
 +public final class ConverterAbstractBlockRename {
@@ -2013,17 +2037,16 @@ index 0000000000000000000000000000000000000000..64226434a38dc5e4a9103c61aa8f9c20
 +}
 diff --git a/src/main/java/ca/spottedleaf/dataconverter/minecraft/converters/entity/ConverterAbstractEntityRename.java b/src/main/java/ca/spottedleaf/dataconverter/minecraft/converters/entity/ConverterAbstractEntityRename.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..62b0761003b40cf84923d89ad77bc366a9fca98a
+index 0000000000000000000000000000000000000000..06c075e643415d98b73734b749d9043091ebf9e5
 --- /dev/null
 +++ b/src/main/java/ca/spottedleaf/dataconverter/minecraft/converters/entity/ConverterAbstractEntityRename.java
-@@ -0,0 +1,39 @@
+@@ -0,0 +1,38 @@
 +package ca.spottedleaf.dataconverter.minecraft.converters.entity;
 +
 +import ca.spottedleaf.dataconverter.converters.DataConverter;
 +import ca.spottedleaf.dataconverter.minecraft.converters.helpers.ConverterAbstractStringValueTypeRename;
 +import ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry;
 +import ca.spottedleaf.dataconverter.types.MapType;
-+
 +import java.util.function.Function;
 +
 +public final class ConverterAbstractEntityRename {
@@ -2056,17 +2079,393 @@ index 0000000000000000000000000000000000000000..62b0761003b40cf84923d89ad77bc366
 +    }
 +
 +}
+diff --git a/src/main/java/ca/spottedleaf/dataconverter/minecraft/converters/entity/ConverterFlattenEntity.java b/src/main/java/ca/spottedleaf/dataconverter/minecraft/converters/entity/ConverterFlattenEntity.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..afad2d92f78d4727ff4440ad2778f018d5a2a609
+--- /dev/null
++++ b/src/main/java/ca/spottedleaf/dataconverter/minecraft/converters/entity/ConverterFlattenEntity.java
+@@ -0,0 +1,371 @@
++package ca.spottedleaf.dataconverter.minecraft.converters.entity;
++
++import ca.spottedleaf.dataconverter.converters.DataConverter;
++import ca.spottedleaf.dataconverter.minecraft.MCVersions;
++import ca.spottedleaf.dataconverter.minecraft.converters.helpers.HelperBlockFlatteningV1450;
++import ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry;
++import ca.spottedleaf.dataconverter.types.MapType;
++import ca.spottedleaf.dataconverter.types.ObjectType;
++
++import java.util.HashMap;
++import java.util.Map;
++
++public final class ConverterFlattenEntity extends DataConverter<MapType<String>, MapType<String>> {
++
++    private static final Map<String, Integer> BLOCK_NAME_TO_ID = new HashMap<>();
++    static {
++        BLOCK_NAME_TO_ID.put("minecraft:air", 0);
++        BLOCK_NAME_TO_ID.put("minecraft:stone", 1);
++        BLOCK_NAME_TO_ID.put("minecraft:grass", 2);
++        BLOCK_NAME_TO_ID.put("minecraft:dirt", 3);
++        BLOCK_NAME_TO_ID.put("minecraft:cobblestone", 4);
++        BLOCK_NAME_TO_ID.put("minecraft:planks", 5);
++        BLOCK_NAME_TO_ID.put("minecraft:sapling", 6);
++        BLOCK_NAME_TO_ID.put("minecraft:bedrock", 7);
++        BLOCK_NAME_TO_ID.put("minecraft:flowing_water", 8);
++        BLOCK_NAME_TO_ID.put("minecraft:water", 9);
++        BLOCK_NAME_TO_ID.put("minecraft:flowing_lava", 10);
++        BLOCK_NAME_TO_ID.put("minecraft:lava", 11);
++        BLOCK_NAME_TO_ID.put("minecraft:sand", 12);
++        BLOCK_NAME_TO_ID.put("minecraft:gravel", 13);
++        BLOCK_NAME_TO_ID.put("minecraft:gold_ore", 14);
++        BLOCK_NAME_TO_ID.put("minecraft:iron_ore", 15);
++        BLOCK_NAME_TO_ID.put("minecraft:coal_ore", 16);
++        BLOCK_NAME_TO_ID.put("minecraft:log", 17);
++        BLOCK_NAME_TO_ID.put("minecraft:leaves", 18);
++        BLOCK_NAME_TO_ID.put("minecraft:sponge", 19);
++        BLOCK_NAME_TO_ID.put("minecraft:glass", 20);
++        BLOCK_NAME_TO_ID.put("minecraft:lapis_ore", 21);
++        BLOCK_NAME_TO_ID.put("minecraft:lapis_block", 22);
++        BLOCK_NAME_TO_ID.put("minecraft:dispenser", 23);
++        BLOCK_NAME_TO_ID.put("minecraft:sandstone", 24);
++        BLOCK_NAME_TO_ID.put("minecraft:noteblock", 25);
++        BLOCK_NAME_TO_ID.put("minecraft:bed", 26);
++        BLOCK_NAME_TO_ID.put("minecraft:golden_rail", 27);
++        BLOCK_NAME_TO_ID.put("minecraft:detector_rail", 28);
++        BLOCK_NAME_TO_ID.put("minecraft:sticky_piston", 29);
++        BLOCK_NAME_TO_ID.put("minecraft:web", 30);
++        BLOCK_NAME_TO_ID.put("minecraft:tallgrass", 31);
++        BLOCK_NAME_TO_ID.put("minecraft:deadbush", 32);
++        BLOCK_NAME_TO_ID.put("minecraft:piston", 33);
++        BLOCK_NAME_TO_ID.put("minecraft:piston_head", 34);
++        BLOCK_NAME_TO_ID.put("minecraft:wool", 35);
++        BLOCK_NAME_TO_ID.put("minecraft:piston_extension", 36);
++        BLOCK_NAME_TO_ID.put("minecraft:yellow_flower", 37);
++        BLOCK_NAME_TO_ID.put("minecraft:red_flower", 38);
++        BLOCK_NAME_TO_ID.put("minecraft:brown_mushroom", 39);
++        BLOCK_NAME_TO_ID.put("minecraft:red_mushroom", 40);
++        BLOCK_NAME_TO_ID.put("minecraft:gold_block", 41);
++        BLOCK_NAME_TO_ID.put("minecraft:iron_block", 42);
++        BLOCK_NAME_TO_ID.put("minecraft:double_stone_slab", 43);
++        BLOCK_NAME_TO_ID.put("minecraft:stone_slab", 44);
++        BLOCK_NAME_TO_ID.put("minecraft:brick_block", 45);
++        BLOCK_NAME_TO_ID.put("minecraft:tnt", 46);
++        BLOCK_NAME_TO_ID.put("minecraft:bookshelf", 47);
++        BLOCK_NAME_TO_ID.put("minecraft:mossy_cobblestone", 48);
++        BLOCK_NAME_TO_ID.put("minecraft:obsidian", 49);
++        BLOCK_NAME_TO_ID.put("minecraft:torch", 50);
++        BLOCK_NAME_TO_ID.put("minecraft:fire", 51);
++        BLOCK_NAME_TO_ID.put("minecraft:mob_spawner", 52);
++        BLOCK_NAME_TO_ID.put("minecraft:oak_stairs", 53);
++        BLOCK_NAME_TO_ID.put("minecraft:chest", 54);
++        BLOCK_NAME_TO_ID.put("minecraft:redstone_wire", 55);
++        BLOCK_NAME_TO_ID.put("minecraft:diamond_ore", 56);
++        BLOCK_NAME_TO_ID.put("minecraft:diamond_block", 57);
++        BLOCK_NAME_TO_ID.put("minecraft:crafting_table", 58);
++        BLOCK_NAME_TO_ID.put("minecraft:wheat", 59);
++        BLOCK_NAME_TO_ID.put("minecraft:farmland", 60);
++        BLOCK_NAME_TO_ID.put("minecraft:furnace", 61);
++        BLOCK_NAME_TO_ID.put("minecraft:lit_furnace", 62);
++        BLOCK_NAME_TO_ID.put("minecraft:standing_sign", 63);
++        BLOCK_NAME_TO_ID.put("minecraft:wooden_door", 64);
++        BLOCK_NAME_TO_ID.put("minecraft:ladder", 65);
++        BLOCK_NAME_TO_ID.put("minecraft:rail", 66);
++        BLOCK_NAME_TO_ID.put("minecraft:stone_stairs", 67);
++        BLOCK_NAME_TO_ID.put("minecraft:wall_sign", 68);
++        BLOCK_NAME_TO_ID.put("minecraft:lever", 69);
++        BLOCK_NAME_TO_ID.put("minecraft:stone_pressure_plate", 70);
++        BLOCK_NAME_TO_ID.put("minecraft:iron_door", 71);
++        BLOCK_NAME_TO_ID.put("minecraft:wooden_pressure_plate", 72);
++        BLOCK_NAME_TO_ID.put("minecraft:redstone_ore", 73);
++        BLOCK_NAME_TO_ID.put("minecraft:lit_redstone_ore", 74);
++        BLOCK_NAME_TO_ID.put("minecraft:unlit_redstone_torch", 75);
++        BLOCK_NAME_TO_ID.put("minecraft:redstone_torch", 76);
++        BLOCK_NAME_TO_ID.put("minecraft:stone_button", 77);
++        BLOCK_NAME_TO_ID.put("minecraft:snow_layer", 78);
++        BLOCK_NAME_TO_ID.put("minecraft:ice", 79);
++        BLOCK_NAME_TO_ID.put("minecraft:snow", 80);
++        BLOCK_NAME_TO_ID.put("minecraft:cactus", 81);
++        BLOCK_NAME_TO_ID.put("minecraft:clay", 82);
++        BLOCK_NAME_TO_ID.put("minecraft:reeds", 83);
++        BLOCK_NAME_TO_ID.put("minecraft:jukebox", 84);
++        BLOCK_NAME_TO_ID.put("minecraft:fence", 85);
++        BLOCK_NAME_TO_ID.put("minecraft:pumpkin", 86);
++        BLOCK_NAME_TO_ID.put("minecraft:netherrack", 87);
++        BLOCK_NAME_TO_ID.put("minecraft:soul_sand", 88);
++        BLOCK_NAME_TO_ID.put("minecraft:glowstone", 89);
++        BLOCK_NAME_TO_ID.put("minecraft:portal", 90);
++        BLOCK_NAME_TO_ID.put("minecraft:lit_pumpkin", 91);
++        BLOCK_NAME_TO_ID.put("minecraft:cake", 92);
++        BLOCK_NAME_TO_ID.put("minecraft:unpowered_repeater", 93);
++        BLOCK_NAME_TO_ID.put("minecraft:powered_repeater", 94);
++        BLOCK_NAME_TO_ID.put("minecraft:stained_glass", 95);
++        BLOCK_NAME_TO_ID.put("minecraft:trapdoor", 96);
++        BLOCK_NAME_TO_ID.put("minecraft:monster_egg", 97);
++        BLOCK_NAME_TO_ID.put("minecraft:stonebrick", 98);
++        BLOCK_NAME_TO_ID.put("minecraft:brown_mushroom_block", 99);
++        BLOCK_NAME_TO_ID.put("minecraft:red_mushroom_block", 100);
++        BLOCK_NAME_TO_ID.put("minecraft:iron_bars", 101);
++        BLOCK_NAME_TO_ID.put("minecraft:glass_pane", 102);
++        BLOCK_NAME_TO_ID.put("minecraft:melon_block", 103);
++        BLOCK_NAME_TO_ID.put("minecraft:pumpkin_stem", 104);
++        BLOCK_NAME_TO_ID.put("minecraft:melon_stem", 105);
++        BLOCK_NAME_TO_ID.put("minecraft:vine", 106);
++        BLOCK_NAME_TO_ID.put("minecraft:fence_gate", 107);
++        BLOCK_NAME_TO_ID.put("minecraft:brick_stairs", 108);
++        BLOCK_NAME_TO_ID.put("minecraft:stone_brick_stairs", 109);
++        BLOCK_NAME_TO_ID.put("minecraft:mycelium", 110);
++        BLOCK_NAME_TO_ID.put("minecraft:waterlily", 111);
++        BLOCK_NAME_TO_ID.put("minecraft:nether_brick", 112);
++        BLOCK_NAME_TO_ID.put("minecraft:nether_brick_fence", 113);
++        BLOCK_NAME_TO_ID.put("minecraft:nether_brick_stairs", 114);
++        BLOCK_NAME_TO_ID.put("minecraft:nether_wart", 115);
++        BLOCK_NAME_TO_ID.put("minecraft:enchanting_table", 116);
++        BLOCK_NAME_TO_ID.put("minecraft:brewing_stand", 117);
++        BLOCK_NAME_TO_ID.put("minecraft:cauldron", 118);
++        BLOCK_NAME_TO_ID.put("minecraft:end_portal", 119);
++        BLOCK_NAME_TO_ID.put("minecraft:end_portal_frame", 120);
++        BLOCK_NAME_TO_ID.put("minecraft:end_stone", 121);
++        BLOCK_NAME_TO_ID.put("minecraft:dragon_egg", 122);
++        BLOCK_NAME_TO_ID.put("minecraft:redstone_lamp", 123);
++        BLOCK_NAME_TO_ID.put("minecraft:lit_redstone_lamp", 124);
++        BLOCK_NAME_TO_ID.put("minecraft:double_wooden_slab", 125);
++        BLOCK_NAME_TO_ID.put("minecraft:wooden_slab", 126);
++        BLOCK_NAME_TO_ID.put("minecraft:cocoa", 127);
++        BLOCK_NAME_TO_ID.put("minecraft:sandstone_stairs", 128);
++        BLOCK_NAME_TO_ID.put("minecraft:emerald_ore", 129);
++        BLOCK_NAME_TO_ID.put("minecraft:ender_chest", 130);
++        BLOCK_NAME_TO_ID.put("minecraft:tripwire_hook", 131);
++        BLOCK_NAME_TO_ID.put("minecraft:tripwire", 132);
++        BLOCK_NAME_TO_ID.put("minecraft:emerald_block", 133);
++        BLOCK_NAME_TO_ID.put("minecraft:spruce_stairs", 134);
++        BLOCK_NAME_TO_ID.put("minecraft:birch_stairs", 135);
++        BLOCK_NAME_TO_ID.put("minecraft:jungle_stairs", 136);
++        BLOCK_NAME_TO_ID.put("minecraft:command_block", 137);
++        BLOCK_NAME_TO_ID.put("minecraft:beacon", 138);
++        BLOCK_NAME_TO_ID.put("minecraft:cobblestone_wall", 139);
++        BLOCK_NAME_TO_ID.put("minecraft:flower_pot", 140);
++        BLOCK_NAME_TO_ID.put("minecraft:carrots", 141);
++        BLOCK_NAME_TO_ID.put("minecraft:potatoes", 142);
++        BLOCK_NAME_TO_ID.put("minecraft:wooden_button", 143);
++        BLOCK_NAME_TO_ID.put("minecraft:skull", 144);
++        BLOCK_NAME_TO_ID.put("minecraft:anvil", 145);
++        BLOCK_NAME_TO_ID.put("minecraft:trapped_chest", 146);
++        BLOCK_NAME_TO_ID.put("minecraft:light_weighted_pressure_plate", 147);
++        BLOCK_NAME_TO_ID.put("minecraft:heavy_weighted_pressure_plate", 148);
++        BLOCK_NAME_TO_ID.put("minecraft:unpowered_comparator", 149);
++        BLOCK_NAME_TO_ID.put("minecraft:powered_comparator", 150);
++        BLOCK_NAME_TO_ID.put("minecraft:daylight_detector", 151);
++        BLOCK_NAME_TO_ID.put("minecraft:redstone_block", 152);
++        BLOCK_NAME_TO_ID.put("minecraft:quartz_ore", 153);
++        BLOCK_NAME_TO_ID.put("minecraft:hopper", 154);
++        BLOCK_NAME_TO_ID.put("minecraft:quartz_block", 155);
++        BLOCK_NAME_TO_ID.put("minecraft:quartz_stairs", 156);
++        BLOCK_NAME_TO_ID.put("minecraft:activator_rail", 157);
++        BLOCK_NAME_TO_ID.put("minecraft:dropper", 158);
++        BLOCK_NAME_TO_ID.put("minecraft:stained_hardened_clay", 159);
++        BLOCK_NAME_TO_ID.put("minecraft:stained_glass_pane", 160);
++        BLOCK_NAME_TO_ID.put("minecraft:leaves2", 161);
++        BLOCK_NAME_TO_ID.put("minecraft:log2", 162);
++        BLOCK_NAME_TO_ID.put("minecraft:acacia_stairs", 163);
++        BLOCK_NAME_TO_ID.put("minecraft:dark_oak_stairs", 164);
++        BLOCK_NAME_TO_ID.put("minecraft:slime", 165);
++        BLOCK_NAME_TO_ID.put("minecraft:barrier", 166);
++        BLOCK_NAME_TO_ID.put("minecraft:iron_trapdoor", 167);
++        BLOCK_NAME_TO_ID.put("minecraft:prismarine", 168);
++        BLOCK_NAME_TO_ID.put("minecraft:sea_lantern", 169);
++        BLOCK_NAME_TO_ID.put("minecraft:hay_block", 170);
++        BLOCK_NAME_TO_ID.put("minecraft:carpet", 171);
++        BLOCK_NAME_TO_ID.put("minecraft:hardened_clay", 172);
++        BLOCK_NAME_TO_ID.put("minecraft:coal_block", 173);
++        BLOCK_NAME_TO_ID.put("minecraft:packed_ice", 174);
++        BLOCK_NAME_TO_ID.put("minecraft:double_plant", 175);
++        BLOCK_NAME_TO_ID.put("minecraft:standing_banner", 176);
++        BLOCK_NAME_TO_ID.put("minecraft:wall_banner", 177);
++        BLOCK_NAME_TO_ID.put("minecraft:daylight_detector_inverted", 178);
++        BLOCK_NAME_TO_ID.put("minecraft:red_sandstone", 179);
++        BLOCK_NAME_TO_ID.put("minecraft:red_sandstone_stairs", 180);
++        BLOCK_NAME_TO_ID.put("minecraft:double_stone_slab2", 181);
++        BLOCK_NAME_TO_ID.put("minecraft:stone_slab2", 182);
++        BLOCK_NAME_TO_ID.put("minecraft:spruce_fence_gate", 183);
++        BLOCK_NAME_TO_ID.put("minecraft:birch_fence_gate", 184);
++        BLOCK_NAME_TO_ID.put("minecraft:jungle_fence_gate", 185);
++        BLOCK_NAME_TO_ID.put("minecraft:dark_oak_fence_gate", 186);
++        BLOCK_NAME_TO_ID.put("minecraft:acacia_fence_gate", 187);
++        BLOCK_NAME_TO_ID.put("minecraft:spruce_fence", 188);
++        BLOCK_NAME_TO_ID.put("minecraft:birch_fence", 189);
++        BLOCK_NAME_TO_ID.put("minecraft:jungle_fence", 190);
++        BLOCK_NAME_TO_ID.put("minecraft:dark_oak_fence", 191);
++        BLOCK_NAME_TO_ID.put("minecraft:acacia_fence", 192);
++        BLOCK_NAME_TO_ID.put("minecraft:spruce_door", 193);
++        BLOCK_NAME_TO_ID.put("minecraft:birch_door", 194);
++        BLOCK_NAME_TO_ID.put("minecraft:jungle_door", 195);
++        BLOCK_NAME_TO_ID.put("minecraft:acacia_door", 196);
++        BLOCK_NAME_TO_ID.put("minecraft:dark_oak_door", 197);
++        BLOCK_NAME_TO_ID.put("minecraft:end_rod", 198);
++        BLOCK_NAME_TO_ID.put("minecraft:chorus_plant", 199);
++        BLOCK_NAME_TO_ID.put("minecraft:chorus_flower", 200);
++        BLOCK_NAME_TO_ID.put("minecraft:purpur_block", 201);
++        BLOCK_NAME_TO_ID.put("minecraft:purpur_pillar", 202);
++        BLOCK_NAME_TO_ID.put("minecraft:purpur_stairs", 203);
++        BLOCK_NAME_TO_ID.put("minecraft:purpur_double_slab", 204);
++        BLOCK_NAME_TO_ID.put("minecraft:purpur_slab", 205);
++        BLOCK_NAME_TO_ID.put("minecraft:end_bricks", 206);
++        BLOCK_NAME_TO_ID.put("minecraft:beetroots", 207);
++        BLOCK_NAME_TO_ID.put("minecraft:grass_path", 208);
++        BLOCK_NAME_TO_ID.put("minecraft:end_gateway", 209);
++        BLOCK_NAME_TO_ID.put("minecraft:repeating_command_block", 210);
++        BLOCK_NAME_TO_ID.put("minecraft:chain_command_block", 211);
++        BLOCK_NAME_TO_ID.put("minecraft:frosted_ice", 212);
++        BLOCK_NAME_TO_ID.put("minecraft:magma", 213);
++        BLOCK_NAME_TO_ID.put("minecraft:nether_wart_block", 214);
++        BLOCK_NAME_TO_ID.put("minecraft:red_nether_brick", 215);
++        BLOCK_NAME_TO_ID.put("minecraft:bone_block", 216);
++        BLOCK_NAME_TO_ID.put("minecraft:structure_void", 217);
++        BLOCK_NAME_TO_ID.put("minecraft:observer", 218);
++        BLOCK_NAME_TO_ID.put("minecraft:white_shulker_box", 219);
++        BLOCK_NAME_TO_ID.put("minecraft:orange_shulker_box", 220);
++        BLOCK_NAME_TO_ID.put("minecraft:magenta_shulker_box", 221);
++        BLOCK_NAME_TO_ID.put("minecraft:light_blue_shulker_box", 222);
++        BLOCK_NAME_TO_ID.put("minecraft:yellow_shulker_box", 223);
++        BLOCK_NAME_TO_ID.put("minecraft:lime_shulker_box", 224);
++        BLOCK_NAME_TO_ID.put("minecraft:pink_shulker_box", 225);
++        BLOCK_NAME_TO_ID.put("minecraft:gray_shulker_box", 226);
++        BLOCK_NAME_TO_ID.put("minecraft:silver_shulker_box", 227);
++        BLOCK_NAME_TO_ID.put("minecraft:cyan_shulker_box", 228);
++        BLOCK_NAME_TO_ID.put("minecraft:purple_shulker_box", 229);
++        BLOCK_NAME_TO_ID.put("minecraft:blue_shulker_box", 230);
++        BLOCK_NAME_TO_ID.put("minecraft:brown_shulker_box", 231);
++        BLOCK_NAME_TO_ID.put("minecraft:green_shulker_box", 232);
++        BLOCK_NAME_TO_ID.put("minecraft:red_shulker_box", 233);
++        BLOCK_NAME_TO_ID.put("minecraft:black_shulker_box", 234);
++        BLOCK_NAME_TO_ID.put("minecraft:white_glazed_terracotta", 235);
++        BLOCK_NAME_TO_ID.put("minecraft:orange_glazed_terracotta", 236);
++        BLOCK_NAME_TO_ID.put("minecraft:magenta_glazed_terracotta", 237);
++        BLOCK_NAME_TO_ID.put("minecraft:light_blue_glazed_terracotta", 238);
++        BLOCK_NAME_TO_ID.put("minecraft:yellow_glazed_terracotta", 239);
++        BLOCK_NAME_TO_ID.put("minecraft:lime_glazed_terracotta", 240);
++        BLOCK_NAME_TO_ID.put("minecraft:pink_glazed_terracotta", 241);
++        BLOCK_NAME_TO_ID.put("minecraft:gray_glazed_terracotta", 242);
++        BLOCK_NAME_TO_ID.put("minecraft:silver_glazed_terracotta", 243);
++        BLOCK_NAME_TO_ID.put("minecraft:cyan_glazed_terracotta", 244);
++        BLOCK_NAME_TO_ID.put("minecraft:purple_glazed_terracotta", 245);
++        BLOCK_NAME_TO_ID.put("minecraft:blue_glazed_terracotta", 246);
++        BLOCK_NAME_TO_ID.put("minecraft:brown_glazed_terracotta", 247);
++        BLOCK_NAME_TO_ID.put("minecraft:green_glazed_terracotta", 248);
++        BLOCK_NAME_TO_ID.put("minecraft:red_glazed_terracotta", 249);
++        BLOCK_NAME_TO_ID.put("minecraft:black_glazed_terracotta", 250);
++        BLOCK_NAME_TO_ID.put("minecraft:concrete", 251);
++        BLOCK_NAME_TO_ID.put("minecraft:concrete_powder", 252);
++        BLOCK_NAME_TO_ID.put("minecraft:structure_block", 255);
++    }
++
++    protected static final int VERSION = MCVersions.V17W47A;
++
++    protected final String[] paths;
++
++    public ConverterFlattenEntity(final String... paths) {
++        super(VERSION, 3);
++        this.paths = paths;
++    }
++
++    private static void register(final String id, final String... paths) {
++        MCTypeRegistry.ENTITY.addConverterForId(id, new ConverterFlattenEntity(paths));
++    }
++
++    public static void register() {
++        MCTypeRegistry.ENTITY.addConverterForId("minecraft:falling_block", new DataConverter<>(VERSION, 3) {
++            @Override
++            public MapType<String> convert(final MapType<String> data, final long sourceVersion, final long toVersion) {
++                final int blockId;
++                if (data.hasKey("Block")) {
++                    final Number id = data.getNumber("Block");
++                    if (id != null) {
++                        blockId = id.intValue();
++                    } else {
++                        blockId = getBlockId(data.getString("Block"));
++                    }
++                } else {
++                    final Number tileId = data.getNumber("TileID");
++                    if (tileId != null) {
++                        blockId = tileId.intValue();
++                    } else {
++                        blockId = data.getByte("Tile") & 255;
++                    }
++                }
++
++                final int blockData = data.getInt("Data") & 15;
++
++                data.remove("Block"); // from type update
++                data.remove("Data");
++                data.remove("TileID");
++                data.remove("Tile");
++
++                // key is from type update
++                data.setMap("BlockState", HelperBlockFlatteningV1450.getNBTForId((blockId << 4) | blockData).copy()); // copy to avoid problems with later state datafixers
++
++                return null;
++            }
++        });
++        register("minecraft:enderman", "carried", "carriedData", "carriedBlockState");
++        register("minecraft:arrow", "inTile", "inData", "inBlockState");
++        register("minecraft:spectral_arrow", "inTile", "inData", "inBlockState");
++        register("minecraft:egg", "inTile");
++        register("minecraft:ender_pearl", "inTile");
++        register("minecraft:fireball", "inTile");
++        register("minecraft:potion", "inTile");
++        register("minecraft:small_fireball", "inTile");
++        register("minecraft:snowball", "inTile");
++        register("minecraft:wither_skull", "inTile");
++        register("minecraft:xp_bottle", "inTile");
++        register("minecraft:commandblock_minecart", "DisplayTile", "DisplayData", "DisplayState");
++        register("minecraft:minecart", "DisplayTile", "DisplayData", "DisplayState");
++        register("minecraft:chest_minecart", "DisplayTile", "DisplayData", "DisplayState");
++        register("minecraft:furnace_minecart", "DisplayTile", "DisplayData", "DisplayState");
++        register("minecraft:tnt_minecart", "DisplayTile", "DisplayData", "DisplayState");
++        register("minecraft:hopper_minecart", "DisplayTile", "DisplayData", "DisplayState");
++        register("minecraft:spawner_minecart", "DisplayTile", "DisplayData", "DisplayState");
++    }
++
++    public static int getBlockId(final String block) {
++        final Integer ret = BLOCK_NAME_TO_ID.get(block);
++        return ret == null ? 0 : ret.intValue();
++    }
++
++    @Override
++    public MapType<String> convert(final MapType<String> data, final long sourceVersion, final long toVersion) {
++        if (this.paths.length == 1) {
++            data.remove(this.paths[0]);
++            return null;
++        }
++        final String idPath = this.paths[0];
++        final String dataPath = this.paths[1];
++        final String outputStatePath = this.paths[2];
++
++        final int blockId;
++        if (data.hasKey(idPath, ObjectType.NUMBER)) {
++            blockId = data.getInt(idPath);
++        } else {
++            blockId = getBlockId(data.getString(idPath));
++        }
++
++        final int blockData = data.getInt(dataPath) & 15;
++
++        data.remove(idPath); // from type update
++        data.remove(dataPath);
++
++        data.setMap(outputStatePath, HelperBlockFlatteningV1450.getNBTForId((blockId << 4) | blockData).copy()); // copy to avoid problems with later state datafixers
++
++        return null;
++    }
++}
 diff --git a/src/main/java/ca/spottedleaf/dataconverter/minecraft/converters/helpers/ConverterAbstractStringValueTypeRename.java b/src/main/java/ca/spottedleaf/dataconverter/minecraft/converters/helpers/ConverterAbstractStringValueTypeRename.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..89e887158ffc302f2b1b687493dbe2ebe2e449a9
+index 0000000000000000000000000000000000000000..bc79670f47aaa413ea3e96ef6a32e14099ad8a58
 --- /dev/null
 +++ b/src/main/java/ca/spottedleaf/dataconverter/minecraft/converters/helpers/ConverterAbstractStringValueTypeRename.java
-@@ -0,0 +1,25 @@
+@@ -0,0 +1,24 @@
 +package ca.spottedleaf.dataconverter.minecraft.converters.helpers;
 +
 +import ca.spottedleaf.dataconverter.converters.DataConverter;
 +import ca.spottedleaf.dataconverter.minecraft.datatypes.MCValueType;
-+
 +import java.util.function.Function;
 +
 +public final class ConverterAbstractStringValueTypeRename {
@@ -2089,10 +2488,10 @@ index 0000000000000000000000000000000000000000..89e887158ffc302f2b1b687493dbe2eb
 +}
 diff --git a/src/main/java/ca/spottedleaf/dataconverter/minecraft/converters/helpers/HelperBlockFlatteningV1450.java b/src/main/java/ca/spottedleaf/dataconverter/minecraft/converters/helpers/HelperBlockFlatteningV1450.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..a0b67038b026264882c04146ef79cb057eccd864
+index 0000000000000000000000000000000000000000..02ee521dc0f61f3f01d443c46c1066d1ecbeea7f
 --- /dev/null
 +++ b/src/main/java/ca/spottedleaf/dataconverter/minecraft/converters/helpers/HelperBlockFlatteningV1450.java
-@@ -0,0 +1,1827 @@
+@@ -0,0 +1,1830 @@
 +package ca.spottedleaf.dataconverter.minecraft.converters.helpers;
 +
 +import ca.spottedleaf.dataconverter.types.MapType;
@@ -2142,9 +2541,12 @@ index 0000000000000000000000000000000000000000..a0b67038b026264882c04146ef79cb05
 +        try {
 +            final MapType<String> ret = new NBTMapType(TagParser.parseTag(blockstate.replace('\'', '"')));
 +
-+            final MapType<String> identity = IDENTITY_ENSURE.putIfAbsent(ret, ret);
++            synchronized (IDENTITY_ENSURE) {
++                final MapType<String> identity = IDENTITY_ENSURE.putIfAbsent(ret, ret);
 +
-+            return identity == null ? ret : identity;
++                return identity == null ? ret : identity;
++            }
++
 +        } catch (final Exception ex) {
 +            throw new RuntimeException("Exception parsing " + blockstate, ex);
 +        }
@@ -4603,10 +5005,10 @@ index 0000000000000000000000000000000000000000..94569f0ccff0d3a09eafd4ba73572d9d
 +}
 diff --git a/src/main/java/ca/spottedleaf/dataconverter/minecraft/converters/itemstack/ConverterFlattenItemStack.java b/src/main/java/ca/spottedleaf/dataconverter/minecraft/converters/itemstack/ConverterFlattenItemStack.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..6767354bb1ac4f4a996b8b4a17e03014b27e98ca
+index 0000000000000000000000000000000000000000..48a1fdd4e8a9ba334ff264820b20e5f4224b3ce6
 --- /dev/null
 +++ b/src/main/java/ca/spottedleaf/dataconverter/minecraft/converters/itemstack/ConverterFlattenItemStack.java
-@@ -0,0 +1,459 @@
+@@ -0,0 +1,461 @@
 +package ca.spottedleaf.dataconverter.minecraft.converters.itemstack;
 +
 +import ca.spottedleaf.dataconverter.converters.DataConverter;
@@ -5053,7 +5455,9 @@ index 0000000000000000000000000000000000000000..6767354bb1ac4f4a996b8b4a17e03014
 +            } else {
 +                LOGGER.warn("Item '" + id + "' requires flattening but found no mapping for it! (ConverterFlattenItemStack)");
 +            }
-+        } else if (damage != 0 && ITEMS_WITH_DAMAGE.contains(id)) {
++        }
++
++        if (damage != 0 && ITEMS_WITH_DAMAGE.contains(id)) {
 +            // migrate damage
 +            MapType<String> tag = data.getMap("tag");
 +            if (tag == null) {
@@ -5068,16 +5472,15 @@ index 0000000000000000000000000000000000000000..6767354bb1ac4f4a996b8b4a17e03014
 +}
 diff --git a/src/main/java/ca/spottedleaf/dataconverter/minecraft/converters/itemstack/ConverterFlattenSpawnEgg.java b/src/main/java/ca/spottedleaf/dataconverter/minecraft/converters/itemstack/ConverterFlattenSpawnEgg.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..a3b56a45f79fcddcd68c4a628e20f1229a17a645
+index 0000000000000000000000000000000000000000..d88b12e6b9e381ba614dc04599a44e472a37ca03
 --- /dev/null
 +++ b/src/main/java/ca/spottedleaf/dataconverter/minecraft/converters/itemstack/ConverterFlattenSpawnEgg.java
-@@ -0,0 +1,84 @@
+@@ -0,0 +1,83 @@
 +package ca.spottedleaf.dataconverter.minecraft.converters.itemstack;
 +
 +import ca.spottedleaf.dataconverter.converters.DataConverter;
 +import ca.spottedleaf.dataconverter.minecraft.MCVersions;
 +import ca.spottedleaf.dataconverter.types.MapType;
-+
 +import java.util.HashMap;
 +import java.util.Map;
 +
@@ -5158,16 +5561,15 @@ index 0000000000000000000000000000000000000000..a3b56a45f79fcddcd68c4a628e20f122
 +}
 diff --git a/src/main/java/ca/spottedleaf/dataconverter/minecraft/converters/options/ConverterAbstractOptionsRename.java b/src/main/java/ca/spottedleaf/dataconverter/minecraft/converters/options/ConverterAbstractOptionsRename.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..36a24666ea471ea3b6f7a3386cd541544fb3faca
+index 0000000000000000000000000000000000000000..8bfcaac8caa858d3696ed7a430f2b246857b3ac4
 --- /dev/null
 +++ b/src/main/java/ca/spottedleaf/dataconverter/minecraft/converters/options/ConverterAbstractOptionsRename.java
-@@ -0,0 +1,34 @@
+@@ -0,0 +1,33 @@
 +package ca.spottedleaf.dataconverter.minecraft.converters.options;
 +
 +import ca.spottedleaf.dataconverter.converters.DataConverter;
 +import ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry;
 +import ca.spottedleaf.dataconverter.types.MapType;
-+
 +import java.util.ArrayList;
 +import java.util.function.Function;
 +
@@ -5198,10 +5600,10 @@ index 0000000000000000000000000000000000000000..36a24666ea471ea3b6f7a3386cd54154
 +}
 diff --git a/src/main/java/ca/spottedleaf/dataconverter/minecraft/converters/poi/ConverterAbstractPOIRename.java b/src/main/java/ca/spottedleaf/dataconverter/minecraft/converters/poi/ConverterAbstractPOIRename.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..18df676b66200a9400158cd7ef75b9ed2edf382a
+index 0000000000000000000000000000000000000000..57e210bf2bb189b15a32899011c4800b19668a5e
 --- /dev/null
 +++ b/src/main/java/ca/spottedleaf/dataconverter/minecraft/converters/poi/ConverterAbstractPOIRename.java
-@@ -0,0 +1,54 @@
+@@ -0,0 +1,53 @@
 +package ca.spottedleaf.dataconverter.minecraft.converters.poi;
 +
 +import ca.spottedleaf.dataconverter.converters.DataConverter;
@@ -5209,7 +5611,6 @@ index 0000000000000000000000000000000000000000..18df676b66200a9400158cd7ef75b9ed
 +import ca.spottedleaf.dataconverter.types.ListType;
 +import ca.spottedleaf.dataconverter.types.MapType;
 +import ca.spottedleaf.dataconverter.types.ObjectType;
-+
 +import java.util.function.Function;
 +
 +public final class ConverterAbstractPOIRename {
@@ -5282,16 +5683,15 @@ index 0000000000000000000000000000000000000000..8f35cbbd78a629712f9ae3cd5d180269
 +}
 diff --git a/src/main/java/ca/spottedleaf/dataconverter/minecraft/converters/stats/ConverterAbstractStatsRename.java b/src/main/java/ca/spottedleaf/dataconverter/minecraft/converters/stats/ConverterAbstractStatsRename.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..415e7ab80e9432d7f77d020249a850a47789c79e
+index 0000000000000000000000000000000000000000..2317d6dd7e609095187168a1fb9a684ce540ec0e
 --- /dev/null
 +++ b/src/main/java/ca/spottedleaf/dataconverter/minecraft/converters/stats/ConverterAbstractStatsRename.java
-@@ -0,0 +1,76 @@
+@@ -0,0 +1,75 @@
 +package ca.spottedleaf.dataconverter.minecraft.converters.stats;
 +
 +import ca.spottedleaf.dataconverter.converters.DataConverter;
 +import ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry;
 +import ca.spottedleaf.dataconverter.types.MapType;
-+
 +import java.util.ArrayList;
 +import java.util.function.Function;
 +
@@ -5462,394 +5862,18 @@ index 0000000000000000000000000000000000000000..99d2c2c84820295be1f8bb0b43784e58
 +        return null;
 +    }
 +}
-diff --git a/src/main/java/ca/spottedleaf/dataconverter/minecraft/converters/tileentity/ConverterFlattenTileEntity.java b/src/main/java/ca/spottedleaf/dataconverter/minecraft/converters/tileentity/ConverterFlattenTileEntity.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..19ba9f881a82ace675d0c97d652c88063c1c8402
---- /dev/null
-+++ b/src/main/java/ca/spottedleaf/dataconverter/minecraft/converters/tileentity/ConverterFlattenTileEntity.java
-@@ -0,0 +1,371 @@
-+package ca.spottedleaf.dataconverter.minecraft.converters.tileentity;
-+
-+import ca.spottedleaf.dataconverter.converters.DataConverter;
-+import ca.spottedleaf.dataconverter.minecraft.MCVersions;
-+import ca.spottedleaf.dataconverter.minecraft.converters.helpers.HelperBlockFlatteningV1450;
-+import ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry;
-+import ca.spottedleaf.dataconverter.types.MapType;
-+import ca.spottedleaf.dataconverter.types.ObjectType;
-+
-+import java.util.HashMap;
-+import java.util.Map;
-+
-+public final class ConverterFlattenTileEntity extends DataConverter<MapType<String>, MapType<String>> {
-+
-+    private static final Map<String, Integer> BLOCK_NAME_TO_ID = new HashMap<>();
-+    static {
-+        BLOCK_NAME_TO_ID.put("minecraft:air", 0);
-+        BLOCK_NAME_TO_ID.put("minecraft:stone", 1);
-+        BLOCK_NAME_TO_ID.put("minecraft:grass", 2);
-+        BLOCK_NAME_TO_ID.put("minecraft:dirt", 3);
-+        BLOCK_NAME_TO_ID.put("minecraft:cobblestone", 4);
-+        BLOCK_NAME_TO_ID.put("minecraft:planks", 5);
-+        BLOCK_NAME_TO_ID.put("minecraft:sapling", 6);
-+        BLOCK_NAME_TO_ID.put("minecraft:bedrock", 7);
-+        BLOCK_NAME_TO_ID.put("minecraft:flowing_water", 8);
-+        BLOCK_NAME_TO_ID.put("minecraft:water", 9);
-+        BLOCK_NAME_TO_ID.put("minecraft:flowing_lava", 10);
-+        BLOCK_NAME_TO_ID.put("minecraft:lava", 11);
-+        BLOCK_NAME_TO_ID.put("minecraft:sand", 12);
-+        BLOCK_NAME_TO_ID.put("minecraft:gravel", 13);
-+        BLOCK_NAME_TO_ID.put("minecraft:gold_ore", 14);
-+        BLOCK_NAME_TO_ID.put("minecraft:iron_ore", 15);
-+        BLOCK_NAME_TO_ID.put("minecraft:coal_ore", 16);
-+        BLOCK_NAME_TO_ID.put("minecraft:log", 17);
-+        BLOCK_NAME_TO_ID.put("minecraft:leaves", 18);
-+        BLOCK_NAME_TO_ID.put("minecraft:sponge", 19);
-+        BLOCK_NAME_TO_ID.put("minecraft:glass", 20);
-+        BLOCK_NAME_TO_ID.put("minecraft:lapis_ore", 21);
-+        BLOCK_NAME_TO_ID.put("minecraft:lapis_block", 22);
-+        BLOCK_NAME_TO_ID.put("minecraft:dispenser", 23);
-+        BLOCK_NAME_TO_ID.put("minecraft:sandstone", 24);
-+        BLOCK_NAME_TO_ID.put("minecraft:noteblock", 25);
-+        BLOCK_NAME_TO_ID.put("minecraft:bed", 26);
-+        BLOCK_NAME_TO_ID.put("minecraft:golden_rail", 27);
-+        BLOCK_NAME_TO_ID.put("minecraft:detector_rail", 28);
-+        BLOCK_NAME_TO_ID.put("minecraft:sticky_piston", 29);
-+        BLOCK_NAME_TO_ID.put("minecraft:web", 30);
-+        BLOCK_NAME_TO_ID.put("minecraft:tallgrass", 31);
-+        BLOCK_NAME_TO_ID.put("minecraft:deadbush", 32);
-+        BLOCK_NAME_TO_ID.put("minecraft:piston", 33);
-+        BLOCK_NAME_TO_ID.put("minecraft:piston_head", 34);
-+        BLOCK_NAME_TO_ID.put("minecraft:wool", 35);
-+        BLOCK_NAME_TO_ID.put("minecraft:piston_extension", 36);
-+        BLOCK_NAME_TO_ID.put("minecraft:yellow_flower", 37);
-+        BLOCK_NAME_TO_ID.put("minecraft:red_flower", 38);
-+        BLOCK_NAME_TO_ID.put("minecraft:brown_mushroom", 39);
-+        BLOCK_NAME_TO_ID.put("minecraft:red_mushroom", 40);
-+        BLOCK_NAME_TO_ID.put("minecraft:gold_block", 41);
-+        BLOCK_NAME_TO_ID.put("minecraft:iron_block", 42);
-+        BLOCK_NAME_TO_ID.put("minecraft:double_stone_slab", 43);
-+        BLOCK_NAME_TO_ID.put("minecraft:stone_slab", 44);
-+        BLOCK_NAME_TO_ID.put("minecraft:brick_block", 45);
-+        BLOCK_NAME_TO_ID.put("minecraft:tnt", 46);
-+        BLOCK_NAME_TO_ID.put("minecraft:bookshelf", 47);
-+        BLOCK_NAME_TO_ID.put("minecraft:mossy_cobblestone", 48);
-+        BLOCK_NAME_TO_ID.put("minecraft:obsidian", 49);
-+        BLOCK_NAME_TO_ID.put("minecraft:torch", 50);
-+        BLOCK_NAME_TO_ID.put("minecraft:fire", 51);
-+        BLOCK_NAME_TO_ID.put("minecraft:mob_spawner", 52);
-+        BLOCK_NAME_TO_ID.put("minecraft:oak_stairs", 53);
-+        BLOCK_NAME_TO_ID.put("minecraft:chest", 54);
-+        BLOCK_NAME_TO_ID.put("minecraft:redstone_wire", 55);
-+        BLOCK_NAME_TO_ID.put("minecraft:diamond_ore", 56);
-+        BLOCK_NAME_TO_ID.put("minecraft:diamond_block", 57);
-+        BLOCK_NAME_TO_ID.put("minecraft:crafting_table", 58);
-+        BLOCK_NAME_TO_ID.put("minecraft:wheat", 59);
-+        BLOCK_NAME_TO_ID.put("minecraft:farmland", 60);
-+        BLOCK_NAME_TO_ID.put("minecraft:furnace", 61);
-+        BLOCK_NAME_TO_ID.put("minecraft:lit_furnace", 62);
-+        BLOCK_NAME_TO_ID.put("minecraft:standing_sign", 63);
-+        BLOCK_NAME_TO_ID.put("minecraft:wooden_door", 64);
-+        BLOCK_NAME_TO_ID.put("minecraft:ladder", 65);
-+        BLOCK_NAME_TO_ID.put("minecraft:rail", 66);
-+        BLOCK_NAME_TO_ID.put("minecraft:stone_stairs", 67);
-+        BLOCK_NAME_TO_ID.put("minecraft:wall_sign", 68);
-+        BLOCK_NAME_TO_ID.put("minecraft:lever", 69);
-+        BLOCK_NAME_TO_ID.put("minecraft:stone_pressure_plate", 70);
-+        BLOCK_NAME_TO_ID.put("minecraft:iron_door", 71);
-+        BLOCK_NAME_TO_ID.put("minecraft:wooden_pressure_plate", 72);
-+        BLOCK_NAME_TO_ID.put("minecraft:redstone_ore", 73);
-+        BLOCK_NAME_TO_ID.put("minecraft:lit_redstone_ore", 74);
-+        BLOCK_NAME_TO_ID.put("minecraft:unlit_redstone_torch", 75);
-+        BLOCK_NAME_TO_ID.put("minecraft:redstone_torch", 76);
-+        BLOCK_NAME_TO_ID.put("minecraft:stone_button", 77);
-+        BLOCK_NAME_TO_ID.put("minecraft:snow_layer", 78);
-+        BLOCK_NAME_TO_ID.put("minecraft:ice", 79);
-+        BLOCK_NAME_TO_ID.put("minecraft:snow", 80);
-+        BLOCK_NAME_TO_ID.put("minecraft:cactus", 81);
-+        BLOCK_NAME_TO_ID.put("minecraft:clay", 82);
-+        BLOCK_NAME_TO_ID.put("minecraft:reeds", 83);
-+        BLOCK_NAME_TO_ID.put("minecraft:jukebox", 84);
-+        BLOCK_NAME_TO_ID.put("minecraft:fence", 85);
-+        BLOCK_NAME_TO_ID.put("minecraft:pumpkin", 86);
-+        BLOCK_NAME_TO_ID.put("minecraft:netherrack", 87);
-+        BLOCK_NAME_TO_ID.put("minecraft:soul_sand", 88);
-+        BLOCK_NAME_TO_ID.put("minecraft:glowstone", 89);
-+        BLOCK_NAME_TO_ID.put("minecraft:portal", 90);
-+        BLOCK_NAME_TO_ID.put("minecraft:lit_pumpkin", 91);
-+        BLOCK_NAME_TO_ID.put("minecraft:cake", 92);
-+        BLOCK_NAME_TO_ID.put("minecraft:unpowered_repeater", 93);
-+        BLOCK_NAME_TO_ID.put("minecraft:powered_repeater", 94);
-+        BLOCK_NAME_TO_ID.put("minecraft:stained_glass", 95);
-+        BLOCK_NAME_TO_ID.put("minecraft:trapdoor", 96);
-+        BLOCK_NAME_TO_ID.put("minecraft:monster_egg", 97);
-+        BLOCK_NAME_TO_ID.put("minecraft:stonebrick", 98);
-+        BLOCK_NAME_TO_ID.put("minecraft:brown_mushroom_block", 99);
-+        BLOCK_NAME_TO_ID.put("minecraft:red_mushroom_block", 100);
-+        BLOCK_NAME_TO_ID.put("minecraft:iron_bars", 101);
-+        BLOCK_NAME_TO_ID.put("minecraft:glass_pane", 102);
-+        BLOCK_NAME_TO_ID.put("minecraft:melon_block", 103);
-+        BLOCK_NAME_TO_ID.put("minecraft:pumpkin_stem", 104);
-+        BLOCK_NAME_TO_ID.put("minecraft:melon_stem", 105);
-+        BLOCK_NAME_TO_ID.put("minecraft:vine", 106);
-+        BLOCK_NAME_TO_ID.put("minecraft:fence_gate", 107);
-+        BLOCK_NAME_TO_ID.put("minecraft:brick_stairs", 108);
-+        BLOCK_NAME_TO_ID.put("minecraft:stone_brick_stairs", 109);
-+        BLOCK_NAME_TO_ID.put("minecraft:mycelium", 110);
-+        BLOCK_NAME_TO_ID.put("minecraft:waterlily", 111);
-+        BLOCK_NAME_TO_ID.put("minecraft:nether_brick", 112);
-+        BLOCK_NAME_TO_ID.put("minecraft:nether_brick_fence", 113);
-+        BLOCK_NAME_TO_ID.put("minecraft:nether_brick_stairs", 114);
-+        BLOCK_NAME_TO_ID.put("minecraft:nether_wart", 115);
-+        BLOCK_NAME_TO_ID.put("minecraft:enchanting_table", 116);
-+        BLOCK_NAME_TO_ID.put("minecraft:brewing_stand", 117);
-+        BLOCK_NAME_TO_ID.put("minecraft:cauldron", 118);
-+        BLOCK_NAME_TO_ID.put("minecraft:end_portal", 119);
-+        BLOCK_NAME_TO_ID.put("minecraft:end_portal_frame", 120);
-+        BLOCK_NAME_TO_ID.put("minecraft:end_stone", 121);
-+        BLOCK_NAME_TO_ID.put("minecraft:dragon_egg", 122);
-+        BLOCK_NAME_TO_ID.put("minecraft:redstone_lamp", 123);
-+        BLOCK_NAME_TO_ID.put("minecraft:lit_redstone_lamp", 124);
-+        BLOCK_NAME_TO_ID.put("minecraft:double_wooden_slab", 125);
-+        BLOCK_NAME_TO_ID.put("minecraft:wooden_slab", 126);
-+        BLOCK_NAME_TO_ID.put("minecraft:cocoa", 127);
-+        BLOCK_NAME_TO_ID.put("minecraft:sandstone_stairs", 128);
-+        BLOCK_NAME_TO_ID.put("minecraft:emerald_ore", 129);
-+        BLOCK_NAME_TO_ID.put("minecraft:ender_chest", 130);
-+        BLOCK_NAME_TO_ID.put("minecraft:tripwire_hook", 131);
-+        BLOCK_NAME_TO_ID.put("minecraft:tripwire", 132);
-+        BLOCK_NAME_TO_ID.put("minecraft:emerald_block", 133);
-+        BLOCK_NAME_TO_ID.put("minecraft:spruce_stairs", 134);
-+        BLOCK_NAME_TO_ID.put("minecraft:birch_stairs", 135);
-+        BLOCK_NAME_TO_ID.put("minecraft:jungle_stairs", 136);
-+        BLOCK_NAME_TO_ID.put("minecraft:command_block", 137);
-+        BLOCK_NAME_TO_ID.put("minecraft:beacon", 138);
-+        BLOCK_NAME_TO_ID.put("minecraft:cobblestone_wall", 139);
-+        BLOCK_NAME_TO_ID.put("minecraft:flower_pot", 140);
-+        BLOCK_NAME_TO_ID.put("minecraft:carrots", 141);
-+        BLOCK_NAME_TO_ID.put("minecraft:potatoes", 142);
-+        BLOCK_NAME_TO_ID.put("minecraft:wooden_button", 143);
-+        BLOCK_NAME_TO_ID.put("minecraft:skull", 144);
-+        BLOCK_NAME_TO_ID.put("minecraft:anvil", 145);
-+        BLOCK_NAME_TO_ID.put("minecraft:trapped_chest", 146);
-+        BLOCK_NAME_TO_ID.put("minecraft:light_weighted_pressure_plate", 147);
-+        BLOCK_NAME_TO_ID.put("minecraft:heavy_weighted_pressure_plate", 148);
-+        BLOCK_NAME_TO_ID.put("minecraft:unpowered_comparator", 149);
-+        BLOCK_NAME_TO_ID.put("minecraft:powered_comparator", 150);
-+        BLOCK_NAME_TO_ID.put("minecraft:daylight_detector", 151);
-+        BLOCK_NAME_TO_ID.put("minecraft:redstone_block", 152);
-+        BLOCK_NAME_TO_ID.put("minecraft:quartz_ore", 153);
-+        BLOCK_NAME_TO_ID.put("minecraft:hopper", 154);
-+        BLOCK_NAME_TO_ID.put("minecraft:quartz_block", 155);
-+        BLOCK_NAME_TO_ID.put("minecraft:quartz_stairs", 156);
-+        BLOCK_NAME_TO_ID.put("minecraft:activator_rail", 157);
-+        BLOCK_NAME_TO_ID.put("minecraft:dropper", 158);
-+        BLOCK_NAME_TO_ID.put("minecraft:stained_hardened_clay", 159);
-+        BLOCK_NAME_TO_ID.put("minecraft:stained_glass_pane", 160);
-+        BLOCK_NAME_TO_ID.put("minecraft:leaves2", 161);
-+        BLOCK_NAME_TO_ID.put("minecraft:log2", 162);
-+        BLOCK_NAME_TO_ID.put("minecraft:acacia_stairs", 163);
-+        BLOCK_NAME_TO_ID.put("minecraft:dark_oak_stairs", 164);
-+        BLOCK_NAME_TO_ID.put("minecraft:slime", 165);
-+        BLOCK_NAME_TO_ID.put("minecraft:barrier", 166);
-+        BLOCK_NAME_TO_ID.put("minecraft:iron_trapdoor", 167);
-+        BLOCK_NAME_TO_ID.put("minecraft:prismarine", 168);
-+        BLOCK_NAME_TO_ID.put("minecraft:sea_lantern", 169);
-+        BLOCK_NAME_TO_ID.put("minecraft:hay_block", 170);
-+        BLOCK_NAME_TO_ID.put("minecraft:carpet", 171);
-+        BLOCK_NAME_TO_ID.put("minecraft:hardened_clay", 172);
-+        BLOCK_NAME_TO_ID.put("minecraft:coal_block", 173);
-+        BLOCK_NAME_TO_ID.put("minecraft:packed_ice", 174);
-+        BLOCK_NAME_TO_ID.put("minecraft:double_plant", 175);
-+        BLOCK_NAME_TO_ID.put("minecraft:standing_banner", 176);
-+        BLOCK_NAME_TO_ID.put("minecraft:wall_banner", 177);
-+        BLOCK_NAME_TO_ID.put("minecraft:daylight_detector_inverted", 178);
-+        BLOCK_NAME_TO_ID.put("minecraft:red_sandstone", 179);
-+        BLOCK_NAME_TO_ID.put("minecraft:red_sandstone_stairs", 180);
-+        BLOCK_NAME_TO_ID.put("minecraft:double_stone_slab2", 181);
-+        BLOCK_NAME_TO_ID.put("minecraft:stone_slab2", 182);
-+        BLOCK_NAME_TO_ID.put("minecraft:spruce_fence_gate", 183);
-+        BLOCK_NAME_TO_ID.put("minecraft:birch_fence_gate", 184);
-+        BLOCK_NAME_TO_ID.put("minecraft:jungle_fence_gate", 185);
-+        BLOCK_NAME_TO_ID.put("minecraft:dark_oak_fence_gate", 186);
-+        BLOCK_NAME_TO_ID.put("minecraft:acacia_fence_gate", 187);
-+        BLOCK_NAME_TO_ID.put("minecraft:spruce_fence", 188);
-+        BLOCK_NAME_TO_ID.put("minecraft:birch_fence", 189);
-+        BLOCK_NAME_TO_ID.put("minecraft:jungle_fence", 190);
-+        BLOCK_NAME_TO_ID.put("minecraft:dark_oak_fence", 191);
-+        BLOCK_NAME_TO_ID.put("minecraft:acacia_fence", 192);
-+        BLOCK_NAME_TO_ID.put("minecraft:spruce_door", 193);
-+        BLOCK_NAME_TO_ID.put("minecraft:birch_door", 194);
-+        BLOCK_NAME_TO_ID.put("minecraft:jungle_door", 195);
-+        BLOCK_NAME_TO_ID.put("minecraft:acacia_door", 196);
-+        BLOCK_NAME_TO_ID.put("minecraft:dark_oak_door", 197);
-+        BLOCK_NAME_TO_ID.put("minecraft:end_rod", 198);
-+        BLOCK_NAME_TO_ID.put("minecraft:chorus_plant", 199);
-+        BLOCK_NAME_TO_ID.put("minecraft:chorus_flower", 200);
-+        BLOCK_NAME_TO_ID.put("minecraft:purpur_block", 201);
-+        BLOCK_NAME_TO_ID.put("minecraft:purpur_pillar", 202);
-+        BLOCK_NAME_TO_ID.put("minecraft:purpur_stairs", 203);
-+        BLOCK_NAME_TO_ID.put("minecraft:purpur_double_slab", 204);
-+        BLOCK_NAME_TO_ID.put("minecraft:purpur_slab", 205);
-+        BLOCK_NAME_TO_ID.put("minecraft:end_bricks", 206);
-+        BLOCK_NAME_TO_ID.put("minecraft:beetroots", 207);
-+        BLOCK_NAME_TO_ID.put("minecraft:grass_path", 208);
-+        BLOCK_NAME_TO_ID.put("minecraft:end_gateway", 209);
-+        BLOCK_NAME_TO_ID.put("minecraft:repeating_command_block", 210);
-+        BLOCK_NAME_TO_ID.put("minecraft:chain_command_block", 211);
-+        BLOCK_NAME_TO_ID.put("minecraft:frosted_ice", 212);
-+        BLOCK_NAME_TO_ID.put("minecraft:magma", 213);
-+        BLOCK_NAME_TO_ID.put("minecraft:nether_wart_block", 214);
-+        BLOCK_NAME_TO_ID.put("minecraft:red_nether_brick", 215);
-+        BLOCK_NAME_TO_ID.put("minecraft:bone_block", 216);
-+        BLOCK_NAME_TO_ID.put("minecraft:structure_void", 217);
-+        BLOCK_NAME_TO_ID.put("minecraft:observer", 218);
-+        BLOCK_NAME_TO_ID.put("minecraft:white_shulker_box", 219);
-+        BLOCK_NAME_TO_ID.put("minecraft:orange_shulker_box", 220);
-+        BLOCK_NAME_TO_ID.put("minecraft:magenta_shulker_box", 221);
-+        BLOCK_NAME_TO_ID.put("minecraft:light_blue_shulker_box", 222);
-+        BLOCK_NAME_TO_ID.put("minecraft:yellow_shulker_box", 223);
-+        BLOCK_NAME_TO_ID.put("minecraft:lime_shulker_box", 224);
-+        BLOCK_NAME_TO_ID.put("minecraft:pink_shulker_box", 225);
-+        BLOCK_NAME_TO_ID.put("minecraft:gray_shulker_box", 226);
-+        BLOCK_NAME_TO_ID.put("minecraft:silver_shulker_box", 227);
-+        BLOCK_NAME_TO_ID.put("minecraft:cyan_shulker_box", 228);
-+        BLOCK_NAME_TO_ID.put("minecraft:purple_shulker_box", 229);
-+        BLOCK_NAME_TO_ID.put("minecraft:blue_shulker_box", 230);
-+        BLOCK_NAME_TO_ID.put("minecraft:brown_shulker_box", 231);
-+        BLOCK_NAME_TO_ID.put("minecraft:green_shulker_box", 232);
-+        BLOCK_NAME_TO_ID.put("minecraft:red_shulker_box", 233);
-+        BLOCK_NAME_TO_ID.put("minecraft:black_shulker_box", 234);
-+        BLOCK_NAME_TO_ID.put("minecraft:white_glazed_terracotta", 235);
-+        BLOCK_NAME_TO_ID.put("minecraft:orange_glazed_terracotta", 236);
-+        BLOCK_NAME_TO_ID.put("minecraft:magenta_glazed_terracotta", 237);
-+        BLOCK_NAME_TO_ID.put("minecraft:light_blue_glazed_terracotta", 238);
-+        BLOCK_NAME_TO_ID.put("minecraft:yellow_glazed_terracotta", 239);
-+        BLOCK_NAME_TO_ID.put("minecraft:lime_glazed_terracotta", 240);
-+        BLOCK_NAME_TO_ID.put("minecraft:pink_glazed_terracotta", 241);
-+        BLOCK_NAME_TO_ID.put("minecraft:gray_glazed_terracotta", 242);
-+        BLOCK_NAME_TO_ID.put("minecraft:silver_glazed_terracotta", 243);
-+        BLOCK_NAME_TO_ID.put("minecraft:cyan_glazed_terracotta", 244);
-+        BLOCK_NAME_TO_ID.put("minecraft:purple_glazed_terracotta", 245);
-+        BLOCK_NAME_TO_ID.put("minecraft:blue_glazed_terracotta", 246);
-+        BLOCK_NAME_TO_ID.put("minecraft:brown_glazed_terracotta", 247);
-+        BLOCK_NAME_TO_ID.put("minecraft:green_glazed_terracotta", 248);
-+        BLOCK_NAME_TO_ID.put("minecraft:red_glazed_terracotta", 249);
-+        BLOCK_NAME_TO_ID.put("minecraft:black_glazed_terracotta", 250);
-+        BLOCK_NAME_TO_ID.put("minecraft:concrete", 251);
-+        BLOCK_NAME_TO_ID.put("minecraft:concrete_powder", 252);
-+        BLOCK_NAME_TO_ID.put("minecraft:structure_block", 255);
-+    }
-+
-+    protected static final int VERSION = MCVersions.V17W47A;
-+
-+    protected final String[] paths;
-+
-+    public ConverterFlattenTileEntity(final String... paths) {
-+        super(VERSION, 3);
-+        this.paths = paths;
-+    }
-+
-+    private static void register(final String id, final String... paths) {
-+        MCTypeRegistry.TILE_ENTITY.addConverterForId(id, new ConverterFlattenTileEntity(paths));
-+    }
-+
-+    public static void register() {
-+        MCTypeRegistry.TILE_ENTITY.addConverterForId("minecraft:falling_block", new DataConverter<>(VERSION, 3) {
-+            @Override
-+            public MapType<String> convert(final MapType<String> data, final long sourceVersion, final long toVersion) {
-+                final int blockId;
-+                if (data.hasKey("Block")) {
-+                    final Number id = data.getNumber("Block");
-+                    if (id != null) {
-+                        blockId = id.intValue();
-+                    } else {
-+                        blockId = getBlockId(data.getString("Block"));
-+                    }
-+                } else {
-+                    final Number tileId = data.getNumber("TileID");
-+                    if (tileId != null) {
-+                        blockId = tileId.intValue();
-+                    } else {
-+                        blockId = data.getByte("Tile") & 255;
-+                    }
-+                }
-+
-+                final int blockData = data.getInt("Data") & 15;
-+
-+                data.remove("Block"); // from type update
-+                data.remove("Data");
-+                data.remove("TileID");
-+                data.remove("Tile");
-+
-+                // key is from type update
-+                data.setMap("BlockState", HelperBlockFlatteningV1450.getNBTForId((blockId << 4) | blockData).copy()); // copy to avoid problems with later state datafixers
-+
-+                return null;
-+            }
-+        });
-+        register("minecraft:enderman", "carried", "carriedData", "carriedBlockState");
-+        register("minecraft:arrow", "inTile", "inData", "inBlockState");
-+        register("minecraft:spectral_arrow", "inTile", "inData", "inBlockState");
-+        register("minecraft:egg", "inTile");
-+        register("minecraft:ender_pearl", "inTile");
-+        register("minecraft:fireball", "inTile");
-+        register("minecraft:potion", "inTile");
-+        register("minecraft:small_fireball", "inTile");
-+        register("minecraft:snowball", "inTile");
-+        register("minecraft:wither_skull", "inTile");
-+        register("minecraft:xp_bottle", "inTile");
-+        register("minecraft:commandblock_minecart", "DisplayTile", "DisplayData", "DisplayState");
-+        register("minecraft:minecart", "DisplayTile", "DisplayData", "DisplayState");
-+        register("minecraft:chest_minecart", "DisplayTile", "DisplayData", "DisplayState");
-+        register("minecraft:furnace_minecart", "DisplayTile", "DisplayData", "DisplayState");
-+        register("minecraft:tnt_minecart", "DisplayTile", "DisplayData", "DisplayState");
-+        register("minecraft:hopper_minecart", "DisplayTile", "DisplayData", "DisplayState");
-+        register("minecraft:spawner_minecart", "DisplayTile", "DisplayData", "DisplayState");
-+    }
-+
-+    public static int getBlockId(final String block) {
-+        final Integer ret = BLOCK_NAME_TO_ID.get(block);
-+        return ret == null ? 0 : ret.intValue();
-+    }
-+
-+    @Override
-+    public MapType<String> convert(final MapType<String> data, final long sourceVersion, final long toVersion) {
-+        if (this.paths.length == 1) {
-+            data.remove(this.paths[0]);
-+            return null;
-+        }
-+        final String idPath = this.paths[0];
-+        final String dataPath = this.paths[1];
-+        final String outputStatePath = this.paths[2];
-+
-+        final int blockId;
-+        if (data.hasKey(idPath, ObjectType.NUMBER)) {
-+            blockId = data.getInt(idPath);
-+        } else {
-+            blockId = getBlockId(data.getString(idPath));
-+        }
-+
-+        final int blockData = data.getInt(dataPath) & 15;
-+
-+        data.remove(idPath); // from type update
-+        data.remove(dataPath);
-+
-+        data.setMap(outputStatePath, HelperBlockFlatteningV1450.getNBTForId((blockId << 4) | blockData).copy()); // copy to avoid problems with later state datafixers
-+
-+        return null;
-+    }
-+}
 diff --git a/src/main/java/ca/spottedleaf/dataconverter/minecraft/datatypes/IDDataType.java b/src/main/java/ca/spottedleaf/dataconverter/minecraft/datatypes/IDDataType.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..60e3c59afab7596ea34224ab30da25ab6e89c63f
+index 0000000000000000000000000000000000000000..885467de6a5928faafab867dda79b035868ce222
 --- /dev/null
 +++ b/src/main/java/ca/spottedleaf/dataconverter/minecraft/datatypes/IDDataType.java
-@@ -0,0 +1,162 @@
+@@ -0,0 +1,163 @@
 +package ca.spottedleaf.dataconverter.minecraft.datatypes;
 +
 +import ca.spottedleaf.dataconverter.converters.DataConverter;
 +import ca.spottedleaf.dataconverter.converters.datatypes.DataHook;
 +import ca.spottedleaf.dataconverter.converters.datatypes.DataWalker;
++import ca.spottedleaf.dataconverter.minecraft.MCVersionRegistry;
 +import ca.spottedleaf.dataconverter.types.MapType;
 +import ca.spottedleaf.dataconverter.util.Long2ObjectArraySortedMap;
 +
@@ -5929,7 +5953,7 @@ index 0000000000000000000000000000000000000000..60e3c59afab7596ea34224ab30da25ab
 +                break;
 +            }
 +
-+            final List<DataHook<String>> hooks = this.structureHooks.getFloor(converterVersion);
++            final List<DataHook<MapType<String>, MapType<String>>> hooks = this.structureHooks.getFloor(converterVersion);
 +
 +            if (hooks != null) {
 +                for (int k = 0, klen = hooks.size(); k < klen; ++k) {
@@ -5955,7 +5979,7 @@ index 0000000000000000000000000000000000000000..60e3c59afab7596ea34224ab30da25ab
 +            }
 +        }
 +
-+        final List<DataHook<String>> hooks = this.structureHooks.getFloor(toVersion);
++        final List<DataHook<MapType<String>, MapType<String>>> hooks = this.structureHooks.getFloor(toVersion);
 +
 +        // run pre hooks
 +
@@ -6009,19 +6033,19 @@ index 0000000000000000000000000000000000000000..60e3c59afab7596ea34224ab30da25ab
 +}
 diff --git a/src/main/java/ca/spottedleaf/dataconverter/minecraft/datatypes/MCDataType.java b/src/main/java/ca/spottedleaf/dataconverter/minecraft/datatypes/MCDataType.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..1c56ce02b76405b00ce737badd60d4cd3bfa9d11
+index 0000000000000000000000000000000000000000..e997192e13286ff910885a8e5074a283c1269ea4
 --- /dev/null
 +++ b/src/main/java/ca/spottedleaf/dataconverter/minecraft/datatypes/MCDataType.java
-@@ -0,0 +1,125 @@
+@@ -0,0 +1,126 @@
 +package ca.spottedleaf.dataconverter.minecraft.datatypes;
 +
 +import ca.spottedleaf.dataconverter.converters.DataConverter;
 +import ca.spottedleaf.dataconverter.converters.datatypes.DataHook;
 +import ca.spottedleaf.dataconverter.converters.datatypes.DataType;
 +import ca.spottedleaf.dataconverter.converters.datatypes.DataWalker;
++import ca.spottedleaf.dataconverter.minecraft.MCVersionRegistry;
 +import ca.spottedleaf.dataconverter.types.MapType;
 +import ca.spottedleaf.dataconverter.util.Long2ObjectArraySortedMap;
-+
 +import java.util.ArrayList;
 +import java.util.List;
 +
@@ -6031,13 +6055,14 @@ index 0000000000000000000000000000000000000000..1c56ce02b76405b00ce737badd60d4cd
 +
 +    protected final ArrayList<DataConverter<MapType<String>, MapType<String>>> structureConverters = new ArrayList<>();
 +    protected final Long2ObjectArraySortedMap<List<DataWalker<String>>> structureWalkers = new Long2ObjectArraySortedMap<>();
-+    protected final Long2ObjectArraySortedMap<List<DataHook<String>>> structureHooks = new Long2ObjectArraySortedMap<>();
++    protected final Long2ObjectArraySortedMap<List<DataHook<MapType<String>, MapType<String>>>> structureHooks = new Long2ObjectArraySortedMap<>();
 +
 +    public MCDataType(final String name) {
 +        this.name = name;
 +    }
 +
 +    public void addStructureConverter(final DataConverter<MapType<String>, MapType<String>> converter) {
++        MCVersionRegistry.checkVersion(converter.getEncodedVersion());
 +        this.structureConverters.add(converter);
 +        this.structureConverters.sort(DataConverter.LOWEST_VERSION_COMPARATOR);
 +    }
@@ -6052,11 +6077,11 @@ index 0000000000000000000000000000000000000000..1c56ce02b76405b00ce737badd60d4cd
 +        }).add(walker);
 +    }
 +
-+    public void addStructureHook(final int minVersion, final DataHook<String> hook) {
++    public void addStructureHook(final int minVersion, final DataHook<MapType<String>, MapType<String>> hook) {
 +        this.addStructureHook(minVersion, 0, hook);
 +    }
 +
-+    public void addStructureHook(final int minVersion, final int versionStep, final DataHook<String> hook) {
++    public void addStructureHook(final int minVersion, final int versionStep, final DataHook<MapType<String>, MapType<String>> hook) {
 +        this.structureHooks.computeIfAbsent(DataConverter.encodeVersions(minVersion, versionStep), (final long keyInMap) -> {
 +            return new ArrayList<>();
 +        }).add(hook);
@@ -6079,7 +6104,7 @@ index 0000000000000000000000000000000000000000..1c56ce02b76405b00ce737badd60d4cd
 +                break;
 +            }
 +
-+            final List<DataHook<String>> hooks = this.structureHooks.getFloor(converterVersion);
++            final List<DataHook<MapType<String>, MapType<String>>> hooks = this.structureHooks.getFloor(converterVersion);
 +
 +            if (hooks != null) {
 +                for (int k = 0, klen = hooks.size(); k < klen; ++k) {
@@ -6105,7 +6130,7 @@ index 0000000000000000000000000000000000000000..1c56ce02b76405b00ce737badd60d4cd
 +            }
 +        }
 +
-+        final List<DataHook<String>> hooks = this.structureHooks.getFloor(toVersion);
++        final List<DataHook<MapType<String>, MapType<String>>> hooks = this.structureHooks.getFloor(toVersion);
 +
 +        if (hooks != null) {
 +            for (int k = 0, klen = hooks.size(); k < klen; ++k) {
@@ -6462,28 +6487,43 @@ index 0000000000000000000000000000000000000000..2f5a9e04e3797673f49a035eebfedd1b
 +}
 diff --git a/src/main/java/ca/spottedleaf/dataconverter/minecraft/datatypes/MCValueType.java b/src/main/java/ca/spottedleaf/dataconverter/minecraft/datatypes/MCValueType.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..c74981675118762dfe317f5f58b6fd751f59e5f2
+index 0000000000000000000000000000000000000000..c7ace3088f8059a3bae12ec21604b2b7417a7b90
 --- /dev/null
 +++ b/src/main/java/ca/spottedleaf/dataconverter/minecraft/datatypes/MCValueType.java
-@@ -0,0 +1,48 @@
+@@ -0,0 +1,83 @@
 +package ca.spottedleaf.dataconverter.minecraft.datatypes;
 +
 +import ca.spottedleaf.dataconverter.converters.DataConverter;
++import ca.spottedleaf.dataconverter.converters.datatypes.DataHook;
 +import ca.spottedleaf.dataconverter.converters.datatypes.DataType;
-+
++import ca.spottedleaf.dataconverter.minecraft.MCVersionRegistry;
++import ca.spottedleaf.dataconverter.util.Long2ObjectArraySortedMap;
 +import java.util.ArrayList;
 +import java.util.List;
 +
 +public class MCValueType extends DataType<Object, Object> {
 +
-+    protected final ArrayList<DataConverter<Object, Object>> converters = new ArrayList<>();
 +    public final String name;
++
++    protected final ArrayList<DataConverter<Object, Object>> converters = new ArrayList<>();
++    protected final Long2ObjectArraySortedMap<List<DataHook<Object, Object>>> structureHooks = new Long2ObjectArraySortedMap<>();
 +
 +    public MCValueType(final String name) {
 +        this.name = name;
 +    }
 +
++    public void addStructureHook(final int minVersion, final DataHook<Object, Object> hook) {
++        this.addStructureHook(minVersion, 0, hook);
++    }
++
++    public void addStructureHook(final int minVersion, final int versionStep, final DataHook<Object, Object> hook) {
++        this.structureHooks.computeIfAbsent(DataConverter.encodeVersions(minVersion, versionStep), (final long keyInMap) -> {
++            return new ArrayList<>();
++        }).add(hook);
++    }
++
 +    public void addConverter(final DataConverter<Object, Object> converter) {
++        MCVersionRegistry.checkVersion(converter.getEncodedVersion());
 +        this.converters.add(converter);
 +        this.converters.sort(DataConverter.LOWEST_VERSION_COMPARATOR);
 +    }
@@ -6505,13 +6545,100 @@ index 0000000000000000000000000000000000000000..c74981675118762dfe317f5f58b6fd75
 +                break;
 +            }
 +
++            final List<DataHook<Object, Object>> hooks = this.structureHooks.getFloor(converterVersion);
++
++            if (hooks != null) {
++                for (int k = 0, klen = hooks.size(); k < klen; ++k) {
++                    final Object replace = hooks.get(k).preHook(ret == null ? data : ret, fromVersion, toVersion);
++                    if (replace != null) {
++                        ret = replace;
++                    }
++                }
++            }
++
 +            final Object converted = converter.convert(ret == null ? data : ret, fromVersion, toVersion);
 +            if (converted != null) {
 +                ret = converted;
 +            }
++
++            if (hooks != null) {
++                for (int k = 0, klen = hooks.size(); k < klen; ++k) {
++                    final Object replace = hooks.get(k).postHook(ret == null ? data : ret, fromVersion, toVersion);
++                    if (replace != null) {
++                        ret = replace;
++                    }
++                }
++            }
 +        }
 +
 +        return ret;
++    }
++}
+diff --git a/src/main/java/ca/spottedleaf/dataconverter/minecraft/hooks/DataHookEnforceNamespacedID.java b/src/main/java/ca/spottedleaf/dataconverter/minecraft/hooks/DataHookEnforceNamespacedID.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..26a03007a4386ff037a1ae50045d0c44dd438235
+--- /dev/null
++++ b/src/main/java/ca/spottedleaf/dataconverter/minecraft/hooks/DataHookEnforceNamespacedID.java
+@@ -0,0 +1,35 @@
++package ca.spottedleaf.dataconverter.minecraft.hooks;
++
++import ca.spottedleaf.dataconverter.converters.datatypes.DataHook;
++import ca.spottedleaf.dataconverter.types.MapType;
++import ca.spottedleaf.dataconverter.util.NamespaceUtil;
++
++public class DataHookEnforceNamespacedID implements DataHook<MapType<String>, MapType<String>> {
++
++    private final String path;
++
++    public DataHookEnforceNamespacedID() {
++        this("id");
++    }
++
++    public DataHookEnforceNamespacedID(final String path) {
++        this.path = path;
++    }
++
++    @Override
++    public MapType<String> preHook(final MapType<String> data, final long fromVersion, final long toVersion) {
++        final String id = data.getString(this.path);
++        if (id != null) {
++            final String replace = NamespaceUtil.correctNamespaceOrNull(id);
++            if (replace != null) {
++                data.setString(this.path, replace);
++            }
++        }
++        return null;
++    }
++
++    @Override
++    public MapType<String> postHook(final MapType<String> data, final long fromVersion, final long toVersion) {
++        return null;
++    }
++}
+diff --git a/src/main/java/ca/spottedleaf/dataconverter/minecraft/hooks/DataHookValueTypeEnforceNamespaced.java b/src/main/java/ca/spottedleaf/dataconverter/minecraft/hooks/DataHookValueTypeEnforceNamespaced.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..7f88487e7db589070512fafef1eb243ae29a379a
+--- /dev/null
++++ b/src/main/java/ca/spottedleaf/dataconverter/minecraft/hooks/DataHookValueTypeEnforceNamespaced.java
+@@ -0,0 +1,20 @@
++package ca.spottedleaf.dataconverter.minecraft.hooks;
++
++import ca.spottedleaf.dataconverter.converters.datatypes.DataHook;
++import ca.spottedleaf.dataconverter.util.NamespaceUtil;
++
++public class DataHookValueTypeEnforceNamespaced implements DataHook<Object, Object> {
++
++    @Override
++    public Object preHook(final Object data, final long fromVersion, final long toVersion) {
++        if (data instanceof String) {
++            return NamespaceUtil.correctNamespaceOrNull((String)data);
++        }
++        return null;
++    }
++
++    @Override
++    public Object postHook(final Object data, final long fromVersion, final long toVersion) {
++        return null;
 +    }
 +}
 diff --git a/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V100.java b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V100.java
@@ -6681,10 +6808,10 @@ index 0000000000000000000000000000000000000000..7e8f42eb57c12c885a1c17eafab1c9d9
 +}
 diff --git a/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V101.java b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V101.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..6f2291562931b074babee711c6f8b5009bcfdc5b
+index 0000000000000000000000000000000000000000..f91caab4432c87238d6ac2453068bb2ef05f7c35
 --- /dev/null
 +++ b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V101.java
-@@ -0,0 +1,72 @@
+@@ -0,0 +1,73 @@
 +package ca.spottedleaf.dataconverter.minecraft.versions;
 +
 +import ca.spottedleaf.dataconverter.converters.DataConverter;
@@ -6701,54 +6828,55 @@ index 0000000000000000000000000000000000000000..6f2291562931b074babee711c6f8b500
 +
 +    protected static final int VERSION = MCVersions.V15W32A + 1;
 +
-+    public static void register() {
-+        MCTypeRegistry.TILE_ENTITY.addConverterForId("Sign", new DataConverter<MapType<String>, MapType<String>>(VERSION) {
-+            protected void updateLine(final MapType<String> data, final String path) {
-+                final String textString = data.getString(path);
-+                if (textString == null || textString.isEmpty() || "null".equals(textString)) {
-+                    data.setString(path, Component.Serializer.toJson(TextComponent.EMPTY));
-+                    return;
++    protected static void updateLine(final MapType<String> data, final String path) {
++        final String textString = data.getString(path);
++        if (textString == null || textString.isEmpty() || "null".equals(textString)) {
++            data.setString(path, Component.Serializer.toJson(TextComponent.EMPTY));
++            return;
++        }
++
++        Component component = null;
++
++        if (textString.charAt(0) == '"' && textString.charAt(textString.length() - 1) == '"'
++                || textString.charAt(0) == '{' && textString.charAt(textString.length() - 1) == '}') {
++            try {
++                component = GsonHelper.fromJson(BlockEntitySignTextStrictJsonFix.GSON, textString, Component.class, true);
++                if (component == null) {
++                    component = TextComponent.EMPTY;
 +                }
++            } catch (final JsonParseException ignored) {}
 +
-+                Component component = null;
-+
-+                if (textString.charAt(0) == '"' && textString.charAt(textString.length() - 1) == '"'
-+                        || textString.charAt(0) == '{' && textString.charAt(textString.length() - 1) == '}') {
-+                    try {
-+                        component = GsonHelper.fromJson(BlockEntitySignTextStrictJsonFix.GSON, textString, Component.class, true);
-+                        if (component == null) {
-+                            component = TextComponent.EMPTY;
-+                        }
-+                    } catch (final JsonParseException ignored) {}
-+
-+                    if (component == null) {
-+                        try {
-+                            component = Component.Serializer.fromJson(textString);
-+                        } catch (final JsonParseException ignored) {}
-+                    }
-+
-+                    if (component == null) {
-+                        try {
-+                            component = Component.Serializer.fromJsonLenient(textString);
-+                        } catch (final JsonParseException ignored) {}
-+                    }
-+
-+                    if (component == null) {
-+                        component = new TextComponent(textString);
-+                    }
-+                } else {
-+                    component = new TextComponent(textString);
-+                }
-+
-+                data.setString(path, Component.Serializer.toJson(component));
++            if (component == null) {
++                try {
++                    component = Component.Serializer.fromJson(textString);
++                } catch (final JsonParseException ignored) {}
 +            }
++
++            if (component == null) {
++                try {
++                    component = Component.Serializer.fromJsonLenient(textString);
++                } catch (final JsonParseException ignored) {}
++            }
++
++            if (component == null) {
++                component = new TextComponent(textString);
++            }
++        } else {
++            component = new TextComponent(textString);
++        }
++
++        data.setString(path, Component.Serializer.toJson(component));
++    }
++
++    public static void register() {
++        MCTypeRegistry.TILE_ENTITY.addConverterForId("Sign", new DataConverter<>(VERSION) {
 +
 +            @Override
 +            public MapType<String> convert(final MapType<String> data, final long sourceVersion, final long toVersion) {
-+                this.updateLine(data, "Text1");
-+                this.updateLine(data, "Text2");
-+                this.updateLine(data, "Text3");
-+                this.updateLine(data, "Text4");
++                updateLine(data, "Text1");
++                updateLine(data, "Text2");
++                updateLine(data, "Text3");
++                updateLine(data, "Text4");
 +                return null;
 +            }
 +        });
@@ -6759,10 +6887,10 @@ index 0000000000000000000000000000000000000000..6f2291562931b074babee711c6f8b500
 +}
 diff --git a/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V102.java b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V102.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..901ab9e9a4307c02a75784b2b12f4da833b0bd38
+index 0000000000000000000000000000000000000000..660134f3fdc8db11033b310dbf52aed328bf4d99
 --- /dev/null
 +++ b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V102.java
-@@ -0,0 +1,84 @@
+@@ -0,0 +1,87 @@
 +package ca.spottedleaf.dataconverter.minecraft.versions;
 +
 +import ca.spottedleaf.dataconverter.converters.DataConverter;
@@ -6794,6 +6922,9 @@ index 0000000000000000000000000000000000000000..901ab9e9a4307c02a75784b2b12f4da8
 +                }
 +                final int id = ((Number)data).intValue();
 +                final String remap = HelperItemNameV102.getNameFromId(id);
++                if (remap == null) {
++                    LOGGER.warn("Unknown legacy integer id (V102) " + id);
++                }
 +                return remap == null ? HelperItemNameV102.getNameFromId(0) : remap;
 +            }
 +        });
@@ -6832,7 +6963,7 @@ index 0000000000000000000000000000000000000000..901ab9e9a4307c02a75784b2b12f4da8
 +                }
 +
 +                if (!tag.hasKey("Potion", ObjectType.STRING)) {
-+                    String converted = HelperItemNameV102.getPotionNameFromId(damage);
++                    final String converted = HelperItemNameV102.getPotionNameFromId(damage);
 +                    tag.setString("Potion", converted == null ? "minecraft:water" : converted);
 +                    if ((damage & 16384) == 16384) {
 +                        data.setString("id", "minecraft:splash_potion");
@@ -7148,10 +7279,10 @@ index 0000000000000000000000000000000000000000..2300f4db851510cfa3b8dd704b555e12
 +}
 diff --git a/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V109.java b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V109.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..70e5d7ef6d8bc7ebdd7f8aac6926c0c8386e5826
+index 0000000000000000000000000000000000000000..5e0e52fa2d8988ca973f8a97b2374a8c3d4ef80c
 --- /dev/null
 +++ b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V109.java
-@@ -0,0 +1,48 @@
+@@ -0,0 +1,83 @@
 +package ca.spottedleaf.dataconverter.minecraft.versions;
 +
 +import ca.spottedleaf.dataconverter.converters.DataConverter;
@@ -7165,13 +7296,48 @@ index 0000000000000000000000000000000000000000..70e5d7ef6d8bc7ebdd7f8aac6926c0c8
 +
 +    protected static final int VERSION = MCVersions.V15W32C + 5;
 +
++    // DFU declares this exact field but leaves it unused. Not sure why, legacy conversion system checked if the ID matched.
++    // I'm going to leave it here unused as well, just in case it's needed in the future.
++    protected static final Set<String> ENTITIES = Sets.newHashSet(
++            "ArmorStand",
++            "Bat",
++            "Blaze",
++            "CaveSpider",
++            "Chicken",
++            "Cow",
++            "Creeper",
++            "EnderDragon",
++            "Enderman",
++            "Endermite",
++            "EntityHorse",
++            "Ghast",
++            "Giant",
++            "Guardian",
++            "LavaSlime",
++            "MushroomCow",
++            "Ozelot",
++            "Pig",
++            "PigZombie",
++            "Rabbit",
++            "Sheep",
++            "Shulker",
++            "Silverfish",
++            "Skeleton",
++            "Slime",
++            "SnowMan",
++            "Spider",
++            "Squid",
++            "Villager",
++            "VillagerGolem",
++            "Witch",
++            "WitherBoss",
++            "Wolf",
++            "Zombie"
++    );
++
 +    public static void register() {
 +        // Converts health to be in float, and cleans up whatever the hell was going on with HealF and Health...
 +        MCTypeRegistry.ENTITY.addStructureConverter(new DataConverter<>(VERSION) {
-+            // Vanilla declares this exact field but leaves it unused. Not sure why, legacy conversion system checked if the ID matched.
-+            // I'm going to leave it here unused as well, just in case it's needed in the future.
-+            private final Set<String> ENTITIES = Sets.newHashSet(new String[]{"ArmorStand", "Bat", "Blaze", "CaveSpider", "Chicken", "Cow", "Creeper", "EnderDragon", "Enderman", "Endermite", "EntityHorse", "Ghast", "Giant", "Guardian", "LavaSlime", "MushroomCow", "Ozelot", "Pig", "PigZombie", "Rabbit", "Sheep", "Shulker", "Silverfish", "Skeleton", "Slime", "SnowMan", "Spider", "Squid", "Villager", "VillagerGolem", "Witch", "WitherBoss", "Wolf", "Zombie"});
-+
 +            @Override
 +            public MapType<String> convert(final MapType<String> data, final long sourceVersion, final long toVersion) {
 +                final Number healF = data.getNumber("HealF");
@@ -7202,7 +7368,7 @@ index 0000000000000000000000000000000000000000..70e5d7ef6d8bc7ebdd7f8aac6926c0c8
 +}
 diff --git a/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V110.java b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V110.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..7b8e302ffc33f8ba0d62ce90d38ae48cff385ff3
+index 0000000000000000000000000000000000000000..9771810a1f1cbf760fd9a8a5fd575f6052f40ea9
 --- /dev/null
 +++ b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V110.java
 @@ -0,0 +1,39 @@
@@ -7225,7 +7391,7 @@ index 0000000000000000000000000000000000000000..7b8e302ffc33f8ba0d62ce90d38ae48c
 +        MCTypeRegistry.ENTITY.addConverterForId("EntityHorse", new DataConverter<>(VERSION) {
 +            @Override
 +            public MapType<String> convert(final MapType<String> data, final long sourceVersion, final long toVersion) {
-+                if (data.getByte("Saddle") == 0 || data.hasKey("SaddleItem", ObjectType.MAP)) {
++                if (!data.getBoolean("Saddle") || data.hasKey("SaddleItem", ObjectType.MAP)) {
 +                    return null;
 +                }
 +
@@ -7320,15 +7486,16 @@ index 0000000000000000000000000000000000000000..5bae7effda7761a3f2a0a2ce550d867c
 +}
 diff --git a/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V1125.java b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V1125.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..dfda6f0a701918fca183db9f8be92a75c60d9716
+index 0000000000000000000000000000000000000000..a6d3c28e8c97b53f388c03ccad3449390937d3b2
 --- /dev/null
 +++ b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V1125.java
-@@ -0,0 +1,98 @@
+@@ -0,0 +1,102 @@
 +package ca.spottedleaf.dataconverter.minecraft.versions;
 +
 +import ca.spottedleaf.dataconverter.converters.DataConverter;
 +import ca.spottedleaf.dataconverter.minecraft.MCVersions;
 +import ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry;
++import ca.spottedleaf.dataconverter.minecraft.hooks.DataHookValueTypeEnforceNamespaced;
 +import ca.spottedleaf.dataconverter.minecraft.walkers.generic.WalkerUtils;
 +import ca.spottedleaf.dataconverter.types.ObjectType;
 +import ca.spottedleaf.dataconverter.types.ListType;
@@ -7417,6 +7584,9 @@ index 0000000000000000000000000000000000000000..dfda6f0a701918fca183db9f8be92a75
 +
 +            return null;
 +        });
++
++        // Enforce namespacing for ids
++        MCTypeRegistry.BIOME.addStructureHook(VERSION, new DataHookValueTypeEnforceNamespaced());
 +    }
 +
 +    private V1125() {}
@@ -7424,7 +7594,7 @@ index 0000000000000000000000000000000000000000..dfda6f0a701918fca183db9f8be92a75
 +}
 diff --git a/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V113.java b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V113.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..3a200fd4b31e27f23579b29ff93e82853a8cc30b
+index 0000000000000000000000000000000000000000..8b93bba2b084e20d346461f53d2f7662c3d6238b
 --- /dev/null
 +++ b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V113.java
 @@ -0,0 +1,41 @@
@@ -7441,26 +7611,26 @@ index 0000000000000000000000000000000000000000..3a200fd4b31e27f23579b29ff93e8285
 +
 +    protected static final int VERSION = MCVersions.V15W33C + 1;
 +
++    protected static void checkList(final MapType<String> data, final String id, final int requiredLength) {
++        final ListType list = data.getList(id, ObjectType.FLOAT);
++        if (list != null && list.size() == requiredLength) {
++            for (int i = 0; i < requiredLength; ++i) {
++                if (list.getFloat(i) != 0.0F) {
++                    return;
++                }
++            }
++        }
++
++        data.remove(id);
++    }
++
 +    public static void register() {
 +        // Removes "HandDropChances" and "ArmorDropChances" if they're empty.
 +        MCTypeRegistry.ENTITY.addStructureConverter(new DataConverter<>(VERSION) {
-+            private void checkList(final MapType<String> data, final String id, final int requiredLength) {
-+                final ListType list = data.getList(id, ObjectType.FLOAT);
-+                if (list != null && list.size() == requiredLength) {
-+                    for (int i = 0; i < requiredLength; ++i) {
-+                        if (list.getFloat(i) != 0.0F) {
-+                            return;
-+                        }
-+                    }
-+                }
-+
-+                data.remove(id);
-+            }
-+
 +            @Override
 +            public MapType<String> convert(final MapType<String> data, final long sourceVersion, final long toVersion) {
-+                this.checkList(data, "HandDropChances", 2);
-+                this.checkList(data, "ArmorDropChances", 4);
++                checkList(data, "HandDropChances", 2);
++                checkList(data, "ArmorDropChances", 4);
 +                return null;
 +            }
 +        });
@@ -7721,34 +7891,26 @@ index 0000000000000000000000000000000000000000..764a56fda5ee909ac47a0c1b3b581c8c
 +}
 diff --git a/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V143.java b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V143.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..f76b5dbb09a1a5547363d54b57e934e962d2bed3
+index 0000000000000000000000000000000000000000..451e837349e10f1e76ac7d9f5d49cbe0ff630f4d
 --- /dev/null
 +++ b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V143.java
-@@ -0,0 +1,26 @@
+@@ -0,0 +1,18 @@
 +package ca.spottedleaf.dataconverter.minecraft.versions;
 +
-+import ca.spottedleaf.dataconverter.converters.DataConverter;
 +import ca.spottedleaf.dataconverter.minecraft.MCVersions;
-+import ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry;
-+import ca.spottedleaf.dataconverter.types.MapType;
++import ca.spottedleaf.dataconverter.minecraft.converters.entity.ConverterAbstractEntityRename;
 +
 +public final class V143 {
 +
 +    protected static final int VERSION = MCVersions.V15W44B;
 +
 +    public static void register() {
-+        MCTypeRegistry.ENTITY.addConverterForId("TippedArrow", new DataConverter<>(VERSION) {
-+            @Override
-+            public MapType<String> convert(final MapType<String> data, final long sourceVersion, final long toVersion) {
-+                data.setString("id", "Arrow");
-+                return null;
-+            }
++        ConverterAbstractEntityRename.register(VERSION, (final String input) -> {
++            return "TippedArrow".equals(input) ? "Arrow" : null;
 +        });
 +    }
 +
-+    private V143() {
-+
-+    }
++    private V143() {}
 +
 +}
 diff --git a/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V1446.java b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V1446.java
@@ -7826,10 +7988,10 @@ index 0000000000000000000000000000000000000000..711222cd33ee557b7f3d1f6ae73ad45d
 +}
 diff --git a/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V1451.java b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V1451.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..a5525eb9ecd957d405bedb18c2119e471d689993
+index 0000000000000000000000000000000000000000..a20d258814b0d2d0fa01d45be43a66987de19598
 --- /dev/null
 +++ b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V1451.java
-@@ -0,0 +1,510 @@
+@@ -0,0 +1,512 @@
 +package ca.spottedleaf.dataconverter.minecraft.versions;
 +
 +import ca.spottedleaf.dataconverter.converters.DataConverter;
@@ -7841,7 +8003,7 @@ index 0000000000000000000000000000000000000000..a5525eb9ecd957d405bedb18c2119e47
 +import ca.spottedleaf.dataconverter.minecraft.converters.itemstack.ConverterFlattenItemStack;
 +import ca.spottedleaf.dataconverter.minecraft.converters.itemstack.ConverterFlattenSpawnEgg;
 +import ca.spottedleaf.dataconverter.minecraft.converters.stats.ConverterFlattenStats;
-+import ca.spottedleaf.dataconverter.minecraft.converters.tileentity.ConverterFlattenTileEntity;
++import ca.spottedleaf.dataconverter.minecraft.converters.entity.ConverterFlattenEntity;
 +import ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry;
 +import ca.spottedleaf.dataconverter.minecraft.walkers.generic.DataWalkerTypePaths;
 +import ca.spottedleaf.dataconverter.minecraft.walkers.itemstack.DataWalkerItemLists;
@@ -7856,7 +8018,6 @@ index 0000000000000000000000000000000000000000..a5525eb9ecd957d405bedb18c2119e47
 +import net.minecraft.resources.ResourceLocation;
 +import net.minecraft.util.datafix.fixes.BlockStateData;
 +import net.minecraft.util.datafix.fixes.EntityBlockStateFix;
-+import net.minecraft.util.datafix.schemas.NamespacedSchema;
 +import org.apache.commons.lang3.math.NumberUtils;
 +import java.util.Iterator;
 +import java.util.List;
@@ -7921,7 +8082,7 @@ index 0000000000000000000000000000000000000000..a5525eb9ecd957d405bedb18c2119e47
 +        MCTypeRegistry.TILE_ENTITY.addWalker(VERSION, 2, "minecraft:piston", new DataWalkerTypePaths<>(MCTypeRegistry.BLOCK_STATE, "blockState"));
 +
 +        // V3
-+        ConverterFlattenTileEntity.register();
++        ConverterFlattenEntity.register();
 +        MCTypeRegistry.ITEM_STACK.addConverterForId("minecraft:filled_map", new DataConverter<>(VERSION, 3) {
 +            @Override
 +            public MapType<String> convert(final MapType<String> data, final long sourceVersion, final long toVersion) {
@@ -7954,7 +8115,10 @@ index 0000000000000000000000000000000000000000..a5525eb9ecd957d405bedb18c2119e47
 +        MCTypeRegistry.ENTITY.addWalker(VERSION, 3, "minecraft:hopper_minecart", new DataWalkerItemLists("Items"));
 +        MCTypeRegistry.ENTITY.addWalker(VERSION, 3, "minecraft:minecart", new DataWalkerTypePaths<>(MCTypeRegistry.BLOCK_STATE, "DisplayState"));
 +        MCTypeRegistry.ENTITY.addWalker(VERSION, 3, "minecraft:spawner_minecart", new DataWalkerTypePaths<>(MCTypeRegistry.BLOCK_STATE, "DisplayState"));
-+        MCTypeRegistry.ENTITY.addWalker(VERSION, 3, "minecraft:spawner_minecart", MCTypeRegistry.UNTAGGED_SPAWNER::convert);
++        MCTypeRegistry.ENTITY.addWalker(VERSION, 3, "minecraft:spawner_minecart", (final MapType<String> data, final long fromVersion, final long toVersion) -> {
++            MCTypeRegistry.UNTAGGED_SPAWNER.convert(data, fromVersion, toVersion);
++            return null;
++        });
 +        MCTypeRegistry.ENTITY.addWalker(VERSION, 3, "minecraft:tnt_minecart", new DataWalkerTypePaths<>(MCTypeRegistry.BLOCK_STATE, "DisplayState"));
 +
 +        // V4
@@ -7964,7 +8128,7 @@ index 0000000000000000000000000000000000000000..a5525eb9ecd957d405bedb18c2119e47
 +                if (data instanceof Number) {
 +                    return HelperBlockFlatteningV1450.getNameForId(((Number)data).intValue());
 +                } else if (data instanceof String) {
-+                    return HelperBlockFlatteningV1450.getNewBlockName(NamespacedSchema.ensureNamespaced((String)data));
++                    return HelperBlockFlatteningV1450.getNewBlockName((String)data); // structure hook ensured data is namespaced
 +                }
 +                return null;
 +            }
@@ -8104,10 +8268,10 @@ index 0000000000000000000000000000000000000000..a5525eb9ecd957d405bedb18c2119e47
 +                }
 +
 +                final MapType<String> recordItem = Types.NBT.createEmptyMap();
++                data.setMap("RecordItem", recordItem);
++
 +                recordItem.setString("id", newItemId);
 +                recordItem.setByte("Count", (byte)1);
-+
-+                data.setMap("RecordItem", recordItem);
 +
 +                return null;
 +            }
@@ -8247,7 +8411,7 @@ index 0000000000000000000000000000000000000000..a5525eb9ecd957d405bedb18c2119e47
 +
 +        // V7
 +        MCTypeRegistry.STRUCTURE_FEATURE.addStructureConverter(new DataConverter<>(VERSION, 7) {
-+            private void convertToBlockState(final MapType<String> data, final String path) {
++            private static void convertToBlockState(final MapType<String> data, final String path) {
 +                final Number number = data.getNumber(path);
 +                if (number == null) {
 +                    return;
@@ -8270,14 +8434,14 @@ index 0000000000000000000000000000000000000000..a5525eb9ecd957d405bedb18c2119e47
 +
 +                    switch (id) {
 +                        case "ViF":
-+                            this.convertToBlockState(child, "CA");
-+                            this.convertToBlockState(child, "CB");
++                            convertToBlockState(child, "CA");
++                            convertToBlockState(child, "CB");
 +                            break;
 +                        case "ViDF":
-+                            this.convertToBlockState(child, "CA");
-+                            this.convertToBlockState(child, "CB");
-+                            this.convertToBlockState(child, "CC");
-+                            this.convertToBlockState(child, "CD");
++                            convertToBlockState(child, "CA");
++                            convertToBlockState(child, "CB");
++                            convertToBlockState(child, "CC");
++                            convertToBlockState(child, "CD");
 +                            break;
 +                    }
 +                }
@@ -8288,7 +8452,7 @@ index 0000000000000000000000000000000000000000..a5525eb9ecd957d405bedb18c2119e47
 +
 +        // convert villagers to trade with pumpkins and not the carved pumpkin
 +        MCTypeRegistry.ENTITY.addConverterForId("minecraft:villager", new DataConverter<>(VERSION, 7) {
-+            private void convertPumpkin(final MapType<String> data, final String path) {
++            private static void convertPumpkin(final MapType<String> data, final String path) {
 +                final MapType<String> item = data.getMap(path);
 +                if (item == null) {
 +                    return;
@@ -8310,9 +8474,9 @@ index 0000000000000000000000000000000000000000..a5525eb9ecd957d405bedb18c2119e47
 +                        for (int i = 0, len = recipes.size(); i < len; ++i) {
 +                            final MapType<String> recipe = recipes.getMap(i);
 +
-+                            this.convertPumpkin(recipe, "buy");
-+                            this.convertPumpkin(recipe, "buyB");
-+                            this.convertPumpkin(recipe, "sell");
++                            convertPumpkin(recipe, "buy");
++                            convertPumpkin(recipe, "buyB");
++                            convertPumpkin(recipe, "sell");
 +                        }
 +                    }
 +                }
@@ -8342,7 +8506,7 @@ index 0000000000000000000000000000000000000000..a5525eb9ecd957d405bedb18c2119e47
 +}
 diff --git a/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V1456.java b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V1456.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..059ff11a4f41fb01638f400035809833c65cb771
+index 0000000000000000000000000000000000000000..8ca5b9d7292ba9c81f7f0fdfb6ca8fd17f796990
 --- /dev/null
 +++ b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V1456.java
 @@ -0,0 +1,38 @@
@@ -8357,25 +8521,25 @@ index 0000000000000000000000000000000000000000..059ff11a4f41fb01638f400035809833
 +
 +    protected static final int VERSION = MCVersions.V17W49B + 1;
 +
++    protected static byte direction2dTo3d(final byte old) {
++        switch (old) {
++            case 0:
++                return 3;
++            case 1:
++                return 4;
++            case 2:
++            default:
++                return 2;
++            case 3:
++                return 5;
++        }
++    }
++
 +    public static void register() {
 +        MCTypeRegistry.ENTITY.addConverterForId("minecraft:item_frame", new DataConverter<>(VERSION) {
-+            private byte direction2dTo3d(final byte old) {
-+                switch(old) {
-+                    case 0:
-+                        return 3;
-+                    case 1:
-+                        return 4;
-+                    case 2:
-+                    default:
-+                        return 2;
-+                    case 3:
-+                        return 5;
-+                }
-+            }
-+
 +            @Override
 +            public MapType<String> convert(final MapType<String> data, final long sourceVersion, final long toVersion) {
-+                data.setByte("Facing", this.direction2dTo3d(data.getByte("Facing")));
++                data.setByte("Facing", direction2dTo3d(data.getByte("Facing")));
 +                return null;
 +            }
 +        });
@@ -8386,10 +8550,10 @@ index 0000000000000000000000000000000000000000..059ff11a4f41fb01638f400035809833
 +}
 diff --git a/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V1458.java b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V1458.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..5c3957f47b926dd874cddc35a1d45ce491a6ef52
+index 0000000000000000000000000000000000000000..bcc8b8103b175654070228471bfa07309b5636f7
 --- /dev/null
 +++ b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V1458.java
-@@ -0,0 +1,91 @@
+@@ -0,0 +1,90 @@
 +package ca.spottedleaf.dataconverter.minecraft.versions;
 +
 +import ca.spottedleaf.dataconverter.converters.DataConverter;
@@ -8405,10 +8569,7 @@ index 0000000000000000000000000000000000000000..5c3957f47b926dd874cddc35a1d45ce4
 +    protected static final int VERSION = MCVersions.V17W50A + 1;
 +
 +    public static MapType<String> updateCustomName(final MapType<String> data) {
-+        final String customName = data.getString("CustomName");
-+        if (customName == null) {
-+            return null;
-+        }
++        final String customName = data.getString("CustomName", "");
 +
 +        if (customName.isEmpty()) {
 +            data.remove("CustomName");
@@ -8420,6 +8581,14 @@ index 0000000000000000000000000000000000000000..5c3957f47b926dd874cddc35a1d45ce4
 +    }
 +
 +    public static void register() {
++        // From CB
++        MCTypeRegistry.PLAYER.addStructureConverter(new DataConverter<>(VERSION) {
++            @Override
++            public MapType<String> convert(final MapType<String> data, final long sourceVersion, final long toVersion) {
++                return updateCustomName(data);
++            }
++        });
++
 +        MCTypeRegistry.ENTITY.addStructureConverter(new DataConverter<>(VERSION) {
 +            @Override
 +            public MapType<String> convert(final MapType<String> data, final long sourceVersion, final long toVersion) {
@@ -8427,12 +8596,6 @@ index 0000000000000000000000000000000000000000..5c3957f47b926dd874cddc35a1d45ce4
 +                    return null;
 +                }
 +
-+                return updateCustomName(data);
-+            }
-+        });
-+        MCTypeRegistry.PLAYER.addStructureConverter(new DataConverter<>(VERSION) {
-+            @Override
-+            public MapType<String> convert(final MapType<String> data, final long sourceVersion, final long toVersion) {
 +                return updateCustomName(data);
 +            }
 +        });
@@ -8542,7 +8705,7 @@ index 0000000000000000000000000000000000000000..f68b561b2bb750d5f632f17e538337fa
 +}
 diff --git a/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V1466.java b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V1466.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..b6678e15cd8f2b10c7933dff01cb0b5a69064fc2
+index 0000000000000000000000000000000000000000..c4fa8e36fb68a610106cee8bae1af243e51fae2e
 --- /dev/null
 +++ b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V1466.java
 @@ -0,0 +1,143 @@
@@ -8561,7 +8724,7 @@ index 0000000000000000000000000000000000000000..b6678e15cd8f2b10c7933dff01cb0b5a
 +
 +    protected static final int VERSION = MCVersions.V18W06A;
 +
-+    private static short packOffsetCoordinates(final int x, final int y, final int z) {
++    protected static short packOffsetCoordinates(final int x, final int y, final int z) {
 +        return (short)((x & 15) | ((y & 15) << 4) | ((z & 15) << 8));
 +    }
 +
@@ -8761,10 +8924,10 @@ index 0000000000000000000000000000000000000000..669509286b18a173826938bae347c1ae
 +}
 diff --git a/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V1474.java b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V1474.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..4883d416a96d30d68871e65644fe5053c5b7d8b8
+index 0000000000000000000000000000000000000000..4cf1085b4392c9b348ebe65590cdbf287a908a38
 --- /dev/null
 +++ b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V1474.java
-@@ -0,0 +1,35 @@
+@@ -0,0 +1,36 @@
 +package ca.spottedleaf.dataconverter.minecraft.versions;
 +
 +import ca.spottedleaf.dataconverter.converters.DataConverter;
@@ -8788,6 +8951,7 @@ index 0000000000000000000000000000000000000000..4883d416a96d30d68871e65644fe5053
 +                return null;
 +            }
 +        });
++        // data hooks ensure the inputs are namespaced
 +        ConverterAbstractBlockRename.register(VERSION, (final String old) -> {
 +            return "minecraft:purple_shulker_box".equals(old) ? "minecraft:shulker_box" : null;
 +        });
@@ -8877,7 +9041,7 @@ index 0000000000000000000000000000000000000000..e5373d4e6ca027749f634e9a508bd81b
 +}
 diff --git a/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V1483.java b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V1483.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..9437c6855427d96042a234d2724093a16e1b4030
+index 0000000000000000000000000000000000000000..e6fb5d6870514a509f7f1aa5343ed7e762af8a72
 --- /dev/null
 +++ b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V1483.java
 @@ -0,0 +1,31 @@
@@ -8906,7 +9070,7 @@ index 0000000000000000000000000000000000000000..9437c6855427d96042a234d2724093a1
 +                "minecraft:puffer_fish_spawn_egg", "minecraft:pufferfish_spawn_egg"
 +        )::get);
 +
-+        registerMob("minecraft:pufferfish");
++        MCTypeRegistry.ENTITY.copyWalkers(VERSION, "minecraft:puffer_fish", "minecraft:pufferfish");
 +    }
 +
 +    private V1483() {}
@@ -8993,7 +9157,7 @@ index 0000000000000000000000000000000000000000..f5b9c166304930e095bfc00e8f6b93ed
 +}
 diff --git a/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V1486.java b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V1486.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..0500c1e3aba4d1458762021c9e4596330bf2b13d
+index 0000000000000000000000000000000000000000..cf7b0a77b30312a32d5fdb10be3fb45d10ba7870
 --- /dev/null
 +++ b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V1486.java
 @@ -0,0 +1,39 @@
@@ -9026,8 +9190,8 @@ index 0000000000000000000000000000000000000000..0500c1e3aba4d1458762021c9e459633
 +
 +
 +    public static void register() {
-+        registerMob("minecraft:cod");
-+        registerMob("minecraft:salmon");
++        MCTypeRegistry.ENTITY.copyWalkers(VERSION, "minecraft:cod_mob", "minecraft:cod");
++        MCTypeRegistry.ENTITY.copyWalkers(VERSION, "minecraft:salmon_mob", "minecraft:salmon");
 +
 +        ConverterAbstractEntityRename.register(VERSION, RENAMED_ENTITY_IDS::get);
 +        ConverterAbstractItemRename.register(VERSION, RENAMED_ITEM_IDS::get);
@@ -9069,10 +9233,10 @@ index 0000000000000000000000000000000000000000..dba4a64f61b27f1eb820e0e0a3fddb81
 +}
 diff --git a/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V1488.java b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V1488.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..bd847cea21dfbaaef1809c2ca3f939a97fd3bae8
+index 0000000000000000000000000000000000000000..cf3579524a9ba96f2065d98bca928bf920da081c
 --- /dev/null
 +++ b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V1488.java
-@@ -0,0 +1,112 @@
+@@ -0,0 +1,88 @@
 +package ca.spottedleaf.dataconverter.minecraft.versions;
 +
 +import ca.spottedleaf.dataconverter.converters.DataConverter;
@@ -9084,12 +9248,14 @@ index 0000000000000000000000000000000000000000..bd847cea21dfbaaef1809c2ca3f939a9
 +import ca.spottedleaf.dataconverter.types.MapType;
 +import ca.spottedleaf.dataconverter.types.ObjectType;
 +import com.google.common.collect.ImmutableMap;
-+import net.minecraft.network.chat.Component;
-+import net.minecraft.network.chat.TextComponent;
 +
 +public final class V1488 {
 +
 +    protected static final int VERSION = MCVersions.V18W19B + 3;
++
++    protected static boolean isIglooPiece(final MapType<String> piece) {
++        return "Iglu".equals(piece.getString("id"));
++    }
 +
 +    public static void register() {
 +        ConverterAbstractBlockRename.register(VERSION, ImmutableMap.of(
@@ -9106,36 +9272,14 @@ index 0000000000000000000000000000000000000000..bd847cea21dfbaaef1809c2ca3f939a9
 +        MCTypeRegistry.TILE_ENTITY.addConverterForId("minecraft:command_block", new DataConverter<>(VERSION) {
 +            @Override
 +            public MapType<String> convert(final MapType<String> data, final long sourceVersion, final long toVersion) {
-+                final String customName = data.getString("CustomName");
-+                if (customName == null) {
-+                    return null;
-+                }
-+
-+                if (customName.isEmpty()) {
-+                    data.remove("CustomName");
-+                } else {
-+                    data.setString("CustomName", Component.Serializer.toJson(new TextComponent(customName)));
-+                }
-+
-+                return null;
++                return V1458.updateCustomName(data);
 +            }
 +        });
 +
 +        MCTypeRegistry.ENTITY.addConverterForId("minecraft:commandblock_minecart", new DataConverter<>(VERSION) {
 +            @Override
 +            public MapType<String> convert(final MapType<String> data, final long sourceVersion, final long toVersion) {
-+                final String customName = data.getString("CustomName");
-+                if (customName == null) {
-+                    return null;
-+                }
-+
-+                if (customName.isEmpty()) {
-+                    data.remove("CustomName");
-+                } else {
-+                    data.setString("CustomName", Component.Serializer.toJson(new TextComponent(customName)));
-+                }
-+
-+                return null;
++                return V1458.updateCustomName(data);
 +            }
 +        });
 +
@@ -9178,10 +9322,6 @@ index 0000000000000000000000000000000000000000..bd847cea21dfbaaef1809c2ca3f939a9
 +        });
 +    }
 +
-+    private static boolean isIglooPiece(final MapType<String> piece) {
-+        return "Iglu".equals(piece.getString("id"));
-+    }
-+
 +    private V1488() {}
 +
 +}
@@ -9218,7 +9358,7 @@ index 0000000000000000000000000000000000000000..cb3afa0634cb47cbd5b324a66d140375
 +}
 diff --git a/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V1492.java b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V1492.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..4fe91970eb69d2cb8f80487d6995e4ab0027bdd4
+index 0000000000000000000000000000000000000000..b8732c2035ee0659173a8299cc2b0a5f86ace7b0
 --- /dev/null
 +++ b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V1492.java
 @@ -0,0 +1,152 @@
@@ -9360,7 +9500,7 @@ index 0000000000000000000000000000000000000000..4fe91970eb69d2cb8f80487d6995e4ab
 +                for (int i = 0, len = children.size(); i < len; ++i) {
 +                    final MapType<String> child = children.getMap(i);
 +
-+                    if (!renames.getFirst().equals(child.getString("id"))) {
++                    if (renames.getFirst().equals(child.getString("id"))) {
 +                        final String template = child.getString("Template", "");
 +                        child.setString("Template", renames.getSecond().getOrDefault(template, template));
 +                    }
@@ -10263,10 +10403,10 @@ index 0000000000000000000000000000000000000000..d67a44b7154825efd3e3fd50e0e708ef
 +}
 diff --git a/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V1510.java b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V1510.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..9d480d35f0136d449f9cde1f595acd5fb6182fe9
+index 0000000000000000000000000000000000000000..7dbc6ac66a29d3b5e4df5d0105c8fc03a6aea0e0
 --- /dev/null
 +++ b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V1510.java
-@@ -0,0 +1,138 @@
+@@ -0,0 +1,103 @@
 +package ca.spottedleaf.dataconverter.minecraft.versions;
 +
 +import ca.spottedleaf.dataconverter.converters.DataConverter;
@@ -10275,11 +10415,11 @@ index 0000000000000000000000000000000000000000..9d480d35f0136d449f9cde1f595acd5f
 +import ca.spottedleaf.dataconverter.minecraft.converters.entity.ConverterAbstractEntityRename;
 +import ca.spottedleaf.dataconverter.minecraft.converters.itemname.ConverterAbstractItemRename;
 +import ca.spottedleaf.dataconverter.minecraft.converters.recipe.ConverterAbstractRecipeRename;
++import ca.spottedleaf.dataconverter.minecraft.converters.stats.ConverterAbstractStatsRename;
 +import ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry;
 +import ca.spottedleaf.dataconverter.types.MapType;
 +import com.google.common.collect.ImmutableMap;
 +
-+import java.util.ArrayList;
 +import java.util.Map;
 +
 +public final class V1510 {
@@ -10350,45 +10490,10 @@ index 0000000000000000000000000000000000000000..9d480d35f0136d449f9cde1f595acd5f
 +            return RENAMED_ENTITY_IDS.get(input);
 +        });
 +
-+        MCTypeRegistry.STATS.addStructureConverter(new DataConverter<>(VERSION) {
-+            @Override
-+            public MapType<String> convert(final MapType<String> data, final long sourceVersion, final long toVersion) {
-+                final MapType<String> stats = data.getMap("stats");
-+                if (stats == null) {
-+                    return null;
-+                }
-+
-+                final MapType<String> custom = stats.getMap("minecraft:custom");
-+
-+                if (custom == null) {
-+                    return null;
-+                }
-+
-+                for (final String key : new ArrayList<>(custom.keys())) {
-+                    final String convert;
-+                    switch (key) {
-+                        case "minecraft:swim_one_cm":
-+                            convert = "minecraft:walk_on_water_one_cm";
-+                            break;
-+                        case "minecraft:dive_one_cm":
-+                            convert = "minecraft:walk_under_water_one_cm";
-+                            break;
-+                        default:
-+                            convert = null;
-+                            break;
-+                    }
-+
-+                    if (convert == null) {
-+                        continue;
-+                    }
-+
-+                    custom.setGeneric(convert, custom.getGeneric(key));
-+                    custom.remove(key);
-+                }
-+
-+                return null;
-+            }
-+        });
++        ConverterAbstractStatsRename.register(VERSION, ImmutableMap.of(
++                "minecraft:swim_one_cm", "minecraft:walk_on_water_one_cm",
++                "minecraft:dive_one_cm", "minecraft:walk_under_water_one_cm"
++        )::get);
 +
 +
 +        MCTypeRegistry.ENTITY.copyWalkers(VERSION, "minecraft:commandblock_minecart", "minecraft:command_block_minecart");
@@ -10866,10 +10971,10 @@ index 0000000000000000000000000000000000000000..87d156b6b6066b4c312608d82e5d7d6b
 +}
 diff --git a/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V1904.java b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V1904.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..a8ac14b43f4f1cd65f1ecaf8223f2245d5540f51
+index 0000000000000000000000000000000000000000..09955e0c2245d8d42ce6ae664ae81e97db8a85f2
 --- /dev/null
 +++ b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V1904.java
-@@ -0,0 +1,42 @@
+@@ -0,0 +1,44 @@
 +package ca.spottedleaf.dataconverter.minecraft.versions;
 +
 +import ca.spottedleaf.dataconverter.converters.DataConverter;
@@ -10902,11 +11007,13 @@ index 0000000000000000000000000000000000000000..a8ac14b43f4f1cd65f1ecaf8223f2245
 +                    }
 +                } else if (catType > 0 && catType < 4) {
 +                    data.setString("id", "minecraft:cat");
++                    data.setString("OwnerUUID", data.getString("OwnerUUID", ""));
 +                }
 +
 +                return null;
 +            }
 +        });
++
 +        registerMob("minecraft:cat");
 +    }
 +
@@ -11068,7 +11175,7 @@ index 0000000000000000000000000000000000000000..71538d858a681c91f7193003e0808cdb
 +}
 diff --git a/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V1918.java b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V1918.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..247182c053abd2de4382acfeddb52af5c32abb45
+index 0000000000000000000000000000000000000000..28fc06da723792e9abc4999376c0941f9a835aff
 --- /dev/null
 +++ b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V1918.java
 @@ -0,0 +1,65 @@
@@ -11118,7 +11225,7 @@ index 0000000000000000000000000000000000000000..247182c053abd2de4382acfeddb52af5
 +            public MapType<String> convert(final MapType<String> data, final long sourceVersion, final long toVersion) {
 +                final int profession = data.getInt("Profession");
 +                final int career = data.getInt("Career");
-+                final Number careerLevel = data.getNumber("CareerLevel");
++                final int careerLevel = data.getInt("CareerLevel", 1);
 +                data.remove("Profession");
 +                data.remove("Career");
 +                data.remove("CareerLevel");
@@ -11127,7 +11234,7 @@ index 0000000000000000000000000000000000000000..247182c053abd2de4382acfeddb52af5
 +                data.setMap("VillagerData", villagerData);
 +                villagerData.setString("type", "minecraft:plains");
 +                villagerData.setString("profession", getProfessionString(profession, career));
-+                villagerData.setInt("level", careerLevel == null ? 1 : careerLevel.intValue());
++                villagerData.setInt("level", careerLevel);
 +
 +                return null;
 +            }
@@ -11139,10 +11246,10 @@ index 0000000000000000000000000000000000000000..247182c053abd2de4382acfeddb52af5
 +}
 diff --git a/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V1920.java b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V1920.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..313f13968693d7acede8c6606973939d496d1baf
+index 0000000000000000000000000000000000000000..264264b4f8b9f3b365a5c3e971f817b42359556d
 --- /dev/null
 +++ b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V1920.java
-@@ -0,0 +1,70 @@
+@@ -0,0 +1,75 @@
 +package ca.spottedleaf.dataconverter.minecraft.versions;
 +
 +import ca.spottedleaf.dataconverter.converters.DataConverter;
@@ -11150,6 +11257,7 @@ index 0000000000000000000000000000000000000000..313f13968693d7acede8c6606973939d
 +import ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry;
 +import ca.spottedleaf.dataconverter.minecraft.walkers.itemstack.DataWalkerItemLists;
 +import ca.spottedleaf.dataconverter.types.MapType;
++import ca.spottedleaf.dataconverter.util.NamespaceUtil;
 +
 +public final class V1920 {
 +
@@ -11185,6 +11293,10 @@ index 0000000000000000000000000000000000000000..313f13968693d7acede8c6606973939d
 +                final MapType<String> references = structures.getMap("References");
 +                if (references != null) {
 +                    final MapType<String> newVillage = references.getMap("New_Village");
++                    // I believe Mojang had a typo here, removing Village from references only made sense
++                    // if the new village didn't exist. DFU removes it whether or not it exists, but still relocates
++                    // New_Village to Village first. It doesn't make sense to me to relocate it just to remove it, so it
++                    // must be a typo.
 +                    if (newVillage == null) {
 +                        references.remove("Village");
 +                    } else {
@@ -11202,7 +11314,7 @@ index 0000000000000000000000000000000000000000..313f13968693d7acede8c6606973939d
 +            public MapType<String> convert(final MapType<String> data, final long sourceVersion, final long toVersion) {
 +                final String id = data.getString("id");
 +
-+                if ("minecraft:new_village".equals(id)) {
++                if ("minecraft:new_village".equals(NamespaceUtil.correctNamespace(id))) {
 +                    data.setString("id", "minecraft:village");
 +                }
 +
@@ -11411,7 +11523,7 @@ index 0000000000000000000000000000000000000000..4e7b22874f17f531b583146db3aa4e57
 +}
 diff --git a/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V1946.java b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V1946.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..42bfb1877154327b0f266a17daafcc1756882ff7
+index 0000000000000000000000000000000000000000..00e4bd45b04feee990d9d3414c34c0966e65e4ea
 --- /dev/null
 +++ b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V1946.java
 @@ -0,0 +1,42 @@
@@ -11438,7 +11550,7 @@ index 0000000000000000000000000000000000000000..42bfb1877154327b0f266a17daafcc17
 +
 +                for (int y = 0; y < 16; ++y) {
 +                    final String key = Integer.toString(y);
-+                    final MapType<String> records = data.getMap(key);
++                    final Object records = data.getGeneric(key);
 +
 +                    if (records == null) {
 +                        continue;
@@ -11447,8 +11559,8 @@ index 0000000000000000000000000000000000000000..42bfb1877154327b0f266a17daafcc17
 +                    data.remove(key);
 +
 +                    final MapType<String> section = Types.NBT.createEmptyMap();
-+                    section.setMap("Records", records);
-+                    sections.setMap(key, section);
++                    section.setGeneric("Records", records);
++                    sections.setMap(key, section); // integer keys convert to string in DFU (at least for NBT ops)
 +                }
 +
 +                return null;
@@ -11936,10 +12048,10 @@ index 0000000000000000000000000000000000000000..e06a98a01086c9d6eb9fc80a151f0403
 +}
 diff --git a/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V2501.java b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V2501.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..e54ef886dad69e36358cf146d7ed2f28c2182e66
+index 0000000000000000000000000000000000000000..c8901f95e1076ae8be220c03efd83ce9bd18d2a8
 --- /dev/null
 +++ b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V2501.java
-@@ -0,0 +1,66 @@
+@@ -0,0 +1,65 @@
 +package ca.spottedleaf.dataconverter.minecraft.versions;
 +
 +import ca.spottedleaf.dataconverter.converters.DataConverter;
@@ -11978,7 +12090,6 @@ index 0000000000000000000000000000000000000000..e54ef886dad69e36358cf146d7ed2f28
 +
 +                final MapType<String> newRecipes = Types.NBT.createEmptyMap();
 +                data.setMap("RecipesUsed", newRecipes);
-+
 +
 +                for (int i = 0; i < recipesUsedSize; ++i) {
 +                    final String recipeKey = data.getString("RecipeLocation" + i);
@@ -12228,7 +12339,7 @@ index 0000000000000000000000000000000000000000..1fa93dec8a81719a19c0f7db58977893
 +}
 diff --git a/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V2511.java b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V2511.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..9fc7f133e03f8d1c6204e3e91d8ccf30e9cbcad7
+index 0000000000000000000000000000000000000000..183ab7ed77e30bf87e71e5f682a59fc3a64a7672
 --- /dev/null
 +++ b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V2511.java
 @@ -0,0 +1,97 @@
@@ -12257,7 +12368,7 @@ index 0000000000000000000000000000000000000000..9fc7f133e03f8d1c6204e3e91d8ccf30
 +    }
 +
 +    private static void setUUID(final MapType<String> data, final long most, final long least) {
-+        if (most != 0 && least != 0) {
++        if (most != 0L && least != 0L) {
 +            data.setInts("OwnerUUID", createUUIDArray(most, least));
 +        }
 +    }
@@ -14810,10 +14921,10 @@ index 0000000000000000000000000000000000000000..6ab2bf99d72983fc2742a1f6f2f7fa67
 +}
 diff --git a/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V502.java b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V502.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..d2ecd656d6fb12763ec0cf972de813018da33271
+index 0000000000000000000000000000000000000000..08fa912f9afac69dca8869d6d443226ea033c9db
 --- /dev/null
 +++ b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V502.java
-@@ -0,0 +1,43 @@
+@@ -0,0 +1,47 @@
 +package ca.spottedleaf.dataconverter.minecraft.versions;
 +
 +import ca.spottedleaf.dataconverter.converters.DataConverter;
@@ -14835,11 +14946,15 @@ index 0000000000000000000000000000000000000000..d2ecd656d6fb12763ec0cf972de81301
 +        MCTypeRegistry.ENTITY.addConverterForId("Zombie", new DataConverter<>(VERSION) {
 +            @Override
 +            public MapType<String> convert(final MapType<String> data, final long sourceVersion, final long toVersion) {
-+                if (!data.getBoolean("IsVillager") || data.getNumber("ZombieType") != null) {
++                if (!data.getBoolean("IsVillager")) {
 +                    return null;
 +                }
 +
 +                data.remove("IsVillager");
++
++                if (data.hasKey("ZombieType")) {
++                    return null;
++                }
 +
 +                int type = data.getInt("VillagerProfession", -1);
 +                // Vanilla doesn't remove the profession tag, so we don't!
@@ -14889,10 +15004,10 @@ index 0000000000000000000000000000000000000000..30769f902c7d694bce41ab319d0b9a87
 +}
 diff --git a/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V700.java b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V700.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..1a6da0a9a886ea5192c4cc206ff0106c0640097c
+index 0000000000000000000000000000000000000000..f46b1a0c4bc96d638853cc61e5703798dbf6b886
 --- /dev/null
 +++ b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V700.java
-@@ -0,0 +1,35 @@
+@@ -0,0 +1,33 @@
 +package ca.spottedleaf.dataconverter.minecraft.versions;
 +
 +import ca.spottedleaf.dataconverter.converters.DataConverter;
@@ -14924,9 +15039,7 @@ index 0000000000000000000000000000000000000000..1a6da0a9a886ea5192c4cc206ff0106c
 +        registerMob("ElderGuardian");
 +    }
 +
-+    private V700() {
-+
-+    }
++    private V700() {}
 +}
 diff --git a/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V701.java b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V701.java
 new file mode 100644
@@ -15110,15 +15223,16 @@ index 0000000000000000000000000000000000000000..88d9c0fcd88ccfd6d6b46ae050914079
 +}
 diff --git a/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V704.java b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V704.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..1d1df6d50f9e6acd8f416cb86e74e6974f4d3913
+index 0000000000000000000000000000000000000000..5f9cc332c7969f613a912ae66606cbc7352e5ed7
 --- /dev/null
 +++ b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V704.java
-@@ -0,0 +1,328 @@
+@@ -0,0 +1,335 @@
 +package ca.spottedleaf.dataconverter.minecraft.versions;
 +
 +import ca.spottedleaf.dataconverter.converters.DataConverter;
 +import ca.spottedleaf.dataconverter.minecraft.MCVersions;
 +import ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry;
++import ca.spottedleaf.dataconverter.minecraft.hooks.DataHookEnforceNamespacedID;
 +import ca.spottedleaf.dataconverter.minecraft.walkers.itemstack.DataWalkerItemLists;
 +import ca.spottedleaf.dataconverter.minecraft.walkers.item_name.DataWalkerItemNames;
 +import ca.spottedleaf.dataconverter.minecraft.walkers.itemstack.DataWalkerItems;
@@ -15342,7 +15456,10 @@ index 0000000000000000000000000000000000000000..1d1df6d50f9e6acd8f416cb86e74e697
 +        MCTypeRegistry.TILE_ENTITY.addWalker(VERSION, "minecraft:jukebox", new DataWalkerItems("RecordItem"));
 +        registerInventory("minecraft:dispenser");
 +        registerInventory("minecraft:dropper");
-+        MCTypeRegistry.TILE_ENTITY.addWalker(VERSION, "minecraft:mob_spawner", MCTypeRegistry.UNTAGGED_SPAWNER::convert);
++        MCTypeRegistry.TILE_ENTITY.addWalker(VERSION, "minecraft:mob_spawner", (final MapType<String> data, final long fromVersion, final long toVersion) -> {
++            MCTypeRegistry.UNTAGGED_SPAWNER.convert(data, fromVersion, toVersion);
++            return null;
++        });
 +        registerInventory("minecraft:brewing_stand");
 +        registerInventory("minecraft:hopper");
 +        MCTypeRegistry.TILE_ENTITY.addWalker(VERSION, "minecraft:flower_pot", new DataWalkerItemNames("Item"));
@@ -15438,21 +15555,26 @@ index 0000000000000000000000000000000000000000..1d1df6d50f9e6acd8f416cb86e74e697
 +
 +            return null;
 +        });
++
++        // Enforce namespace for ids
++        MCTypeRegistry.TILE_ENTITY.addStructureHook(VERSION, new DataHookEnforceNamespacedID());
 +    }
 +
 +    private V704() {}
 +}
 diff --git a/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V705.java b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V705.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..5718a167e5b3cf8023cc2c831990b908bda17db6
+index 0000000000000000000000000000000000000000..95e3dd0b76bc9e9ef7388617bdb2dd340b8dfc0d
 --- /dev/null
 +++ b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V705.java
-@@ -0,0 +1,222 @@
+@@ -0,0 +1,231 @@
 +package ca.spottedleaf.dataconverter.minecraft.versions;
 +
 +import ca.spottedleaf.dataconverter.minecraft.MCVersions;
 +import ca.spottedleaf.dataconverter.minecraft.converters.entity.ConverterAbstractEntityRename;
 +import ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry;
++import ca.spottedleaf.dataconverter.minecraft.hooks.DataHookEnforceNamespacedID;
++import ca.spottedleaf.dataconverter.minecraft.hooks.DataHookValueTypeEnforceNamespaced;
 +import ca.spottedleaf.dataconverter.minecraft.walkers.block_name.DataWalkerBlockNames;
 +import ca.spottedleaf.dataconverter.minecraft.walkers.itemstack.DataWalkerItemLists;
 +import ca.spottedleaf.dataconverter.minecraft.walkers.itemstack.DataWalkerItems;
@@ -15619,7 +15741,10 @@ index 0000000000000000000000000000000000000000..5718a167e5b3cf8023cc2c831990b908
 +        registerThrowableProjectile("minecraft:snowball");
 +        registerMob("minecraft:snowman");
 +        MCTypeRegistry.ENTITY.addWalker(VERSION, "minecraft:spawner_minecart", new DataWalkerBlockNames("DisplayTile"));
-+        MCTypeRegistry.ENTITY.addWalker(VERSION, "minecraft:spawner_minecart", MCTypeRegistry.UNTAGGED_SPAWNER::convert);
++        MCTypeRegistry.ENTITY.addWalker(VERSION, "minecraft:spawner_minecart", (final MapType<String> data, final long fromVersion, final long toVersion) -> {
++            MCTypeRegistry.UNTAGGED_SPAWNER.convert(data, fromVersion, toVersion);
++            return null;
++        });
 +        MCTypeRegistry.ENTITY.addWalker(VERSION, "minecraft:spectral_arrow", new DataWalkerBlockNames("inTile"));
 +        registerMob("minecraft:spider");
 +        registerMob("minecraft:squid");
@@ -15665,6 +15790,10 @@ index 0000000000000000000000000000000000000000..5718a167e5b3cf8023cc2c831990b908
 +        registerMob("minecraft:vindication_illager");
 +        // Don't need to re-register itemstack walker, the V704 will correctly choose the right id for armorstand based on
 +        // the source version
++
++        // Enforce namespace for ids
++        MCTypeRegistry.ENTITY.addStructureHook(VERSION, new DataHookEnforceNamespacedID());
++        MCTypeRegistry.ENTITY_NAME.addStructureHook(VERSION, new DataHookValueTypeEnforceNamespaced());
 +    }
 +
 +    private V705() {}
@@ -15784,7 +15913,7 @@ index 0000000000000000000000000000000000000000..a2717b9d936872ec07141b0f3ae2a6ee
 +}
 diff --git a/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V808.java b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V808.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..8abdf7476f98b15efc588352eb0897474f229ef2
+index 0000000000000000000000000000000000000000..b058e5e9b34a9dd134ef93e7a397b5f1e4e11fbd
 --- /dev/null
 +++ b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V808.java
 @@ -0,0 +1,30 @@
@@ -15802,7 +15931,7 @@ index 0000000000000000000000000000000000000000..8abdf7476f98b15efc588352eb089747
 +    protected static final int VERSION = MCVersions.V16W38A + 1;
 +
 +    public static void register() {
-+        MCTypeRegistry.ENTITY.addConverterForId("minecraft:shulker", new DataConverter<>(VERSION) {
++        MCTypeRegistry.ENTITY.addConverterForId("minecraft:shulker", new DataConverter<>(VERSION, 1) {
 +            @Override
 +            public MapType<String> convert(final MapType<String> data, final long sourceVersion, final long toVersion) {
 +                if (!data.hasKey("Color", ObjectType.NUMBER)) {
@@ -15890,17 +16019,16 @@ index 0000000000000000000000000000000000000000..b6de7c32acd0adf78812edbbd1841176
 +}
 diff --git a/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V816.java b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V816.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..13d6435aaca10f04baebc43db7af5f2ecd019bad
+index 0000000000000000000000000000000000000000..4b427c128bd75d2dc8b36f0c377454385c029467
 --- /dev/null
 +++ b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V816.java
-@@ -0,0 +1,29 @@
+@@ -0,0 +1,28 @@
 +package ca.spottedleaf.dataconverter.minecraft.versions;
 +
 +import ca.spottedleaf.dataconverter.converters.DataConverter;
 +import ca.spottedleaf.dataconverter.minecraft.MCVersions;
 +import ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry;
 +import ca.spottedleaf.dataconverter.types.MapType;
-+
 +import java.util.Locale;
 +
 +public final class V816 {
@@ -15950,15 +16078,17 @@ index 0000000000000000000000000000000000000000..9e2ef3cea4fd382a75a4d787fe2e2ff5
 +}
 diff --git a/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V99.java b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V99.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..121430367b26dd89aad87a0f293ab3fcb129f377
+index 0000000000000000000000000000000000000000..44aff7897f03e0f758e69111b729df6b53ee2ff8
 --- /dev/null
 +++ b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V99.java
-@@ -0,0 +1,314 @@
+@@ -0,0 +1,348 @@
 +package ca.spottedleaf.dataconverter.minecraft.versions;
 +
 +import ca.spottedleaf.dataconverter.minecraft.MCVersions;
 +import ca.spottedleaf.dataconverter.minecraft.converters.helpers.HelperItemNameV102;
 +import ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry;
++import ca.spottedleaf.dataconverter.minecraft.hooks.DataHookEnforceNamespacedID;
++import ca.spottedleaf.dataconverter.minecraft.hooks.DataHookValueTypeEnforceNamespaced;
 +import ca.spottedleaf.dataconverter.minecraft.walkers.block_name.DataWalkerBlockNames;
 +import ca.spottedleaf.dataconverter.minecraft.walkers.itemstack.DataWalkerItemLists;
 +import ca.spottedleaf.dataconverter.minecraft.walkers.item_name.DataWalkerItemNames;
@@ -16020,29 +16150,39 @@ index 0000000000000000000000000000000000000000..121430367b26dd89aad87a0f293ab3fc
 +        ITEM_ID_TO_TILE_ENTITY_ID.put("minecraft:shield", "Banner");
 +    }
 +
++    private static void registerMob(final String id) {
++        MCTypeRegistry.ENTITY.addWalker(VERSION, id, new DataWalkerItemLists("Equipment"));
++    }
++
++    private static void registerProjectile(final String id) {
++        MCTypeRegistry.ENTITY.addWalker(VERSION, id, new DataWalkerBlockNames("inTile"));
++    }
++
++    private static void registerInventory(final String id) {
++        MCTypeRegistry.TILE_ENTITY.addWalker(VERSION, id, new DataWalkerItemLists("Items"));
++    }
++
 +    public static void register() {
++        // entities
 +        MCTypeRegistry.ENTITY.addStructureWalker(VERSION, (final MapType<String> data, final long fromVersion, final long toVersion) -> {
 +            WalkerUtils.convert(MCTypeRegistry.ENTITY, data, "Riding", fromVersion, toVersion);
 +
 +            return null;
 +        });
-+        // Thrown Projectile -> new DataWalkerBlockNames("inTile")
-+        // Mob -> new DataWalkerItemLists("Equipment")
-+        // Minecart -> new DataWalkerBlockNames("DisplayTile")
 +        MCTypeRegistry.ENTITY.addWalker(VERSION, "Item", new DataWalkerItems("Item"));
-+        MCTypeRegistry.ENTITY.addWalker(VERSION, "ThrownEgg", new DataWalkerBlockNames("inTile"));
++        registerProjectile("ThrownEgg");
 +        MCTypeRegistry.ENTITY.addWalker(VERSION, "Arrow", new DataWalkerBlockNames("inTile"));
 +        MCTypeRegistry.ENTITY.addWalker(VERSION, "TippedArrow", new DataWalkerBlockNames("inTile"));
 +        MCTypeRegistry.ENTITY.addWalker(VERSION, "SpectralArrow", new DataWalkerBlockNames("inTile"));
-+        MCTypeRegistry.ENTITY.addWalker(VERSION, "Snowball", new DataWalkerBlockNames("inTile"));
-+        MCTypeRegistry.ENTITY.addWalker(VERSION, "Fireball", new DataWalkerBlockNames("inTile"));
-+        MCTypeRegistry.ENTITY.addWalker(VERSION, "SmallFireball", new DataWalkerBlockNames("inTile"));
-+        MCTypeRegistry.ENTITY.addWalker(VERSION, "ThrownEnderpearl", new DataWalkerBlockNames("inTile"));
++        registerProjectile("Snowball");
++        registerProjectile("Fireball");
++        registerProjectile("SmallFireball");
++        registerProjectile("ThrownEnderpearl");
 +        MCTypeRegistry.ENTITY.addWalker(VERSION, "ThrownPotion", new DataWalkerBlockNames("inTile"));
 +        MCTypeRegistry.ENTITY.addWalker(VERSION, "ThrownPotion", new DataWalkerItems("Potion"));
-+        MCTypeRegistry.ENTITY.addWalker(VERSION, "ThrownExpBottle", new DataWalkerBlockNames("inTile"));
++        registerProjectile("ThrownExpBottle");
 +        MCTypeRegistry.ENTITY.addWalker(VERSION, "ItemFrame", new DataWalkerItems("Item"));
-+        MCTypeRegistry.ENTITY.addWalker(VERSION, "WitherSkull", new DataWalkerBlockNames("inTile"));
++        registerProjectile("WitherSkull");
 +        MCTypeRegistry.ENTITY.addWalker(VERSION, "FallingSand", new DataWalkerBlockNames("Block"));
 +        MCTypeRegistry.ENTITY.addWalker(VERSION, "FallingSand", new DataWalkerTileEntities("TileEntityData"));
 +        MCTypeRegistry.ENTITY.addWalker(VERSION, "FireworksRocketEntity", new DataWalkerItems("FireworksItem"));
@@ -16052,51 +16192,57 @@ index 0000000000000000000000000000000000000000..121430367b26dd89aad87a0f293ab3fc
 +        // Vanilla does not make the generic minecart convert spawners, but we do.
 +        MCTypeRegistry.ENTITY.addWalker(VERSION, "Minecart", new DataWalkerBlockNames("DisplayTile")); // for all minecart types
 +        MCTypeRegistry.ENTITY.addWalker(VERSION, "Minecart", new DataWalkerItemLists("Items")); // for chest types
-+        MCTypeRegistry.ENTITY.addWalker(VERSION, "Minecart", MCTypeRegistry.UNTAGGED_SPAWNER::convert); // for spawner type
++        MCTypeRegistry.ENTITY.addWalker(VERSION, "Minecart", (final MapType<String> data, final long fromVersion, final long toVersion) -> {
++            MCTypeRegistry.UNTAGGED_SPAWNER.convert(data, fromVersion, toVersion);
++            return null;
++        }); // for spawner type
 +        MCTypeRegistry.ENTITY.addWalker(VERSION, "MinecartRideable", new DataWalkerBlockNames("DisplayTile"));
 +        MCTypeRegistry.ENTITY.addWalker(VERSION, "MinecartChest", new DataWalkerBlockNames("DisplayTile"));
 +        MCTypeRegistry.ENTITY.addWalker(VERSION, "MinecartChest", new DataWalkerItemLists("Items"));
 +        MCTypeRegistry.ENTITY.addWalker(VERSION, "MinecartFurnace", new DataWalkerBlockNames("DisplayTile"));
 +        MCTypeRegistry.ENTITY.addWalker(VERSION, "MinecartTNT", new DataWalkerBlockNames("DisplayTile"));
 +        MCTypeRegistry.ENTITY.addWalker(VERSION, "MinecartSpawner", new DataWalkerBlockNames("DisplayTile"));
-+        MCTypeRegistry.ENTITY.addWalker(VERSION, "MinecartSpawner", MCTypeRegistry.UNTAGGED_SPAWNER::convert);
++        MCTypeRegistry.ENTITY.addWalker(VERSION, "MinecartSpawner", (final MapType<String> data, final long fromVersion, final long toVersion) -> {
++            MCTypeRegistry.UNTAGGED_SPAWNER.convert(data, fromVersion, toVersion);
++            return null;
++        });
 +        MCTypeRegistry.ENTITY.addWalker(VERSION, "MinecartHopper", new DataWalkerBlockNames("DisplayTile"));
 +        MCTypeRegistry.ENTITY.addWalker(VERSION, "MinecartHopper", new DataWalkerItemLists("Items"));
 +        MCTypeRegistry.ENTITY.addWalker(VERSION, "MinecartCommandBlock", new DataWalkerBlockNames("DisplayTile"));
-+        MCTypeRegistry.ENTITY.addWalker(VERSION, "ArmorStand", new DataWalkerItemLists("Equipment"));
-+        MCTypeRegistry.ENTITY.addWalker(VERSION, "Creeper", new DataWalkerItemLists("Equipment"));
-+        MCTypeRegistry.ENTITY.addWalker(VERSION, "Skeleton", new DataWalkerItemLists("Equipment"));
-+        MCTypeRegistry.ENTITY.addWalker(VERSION, "Spider", new DataWalkerItemLists("Equipment"));
-+        MCTypeRegistry.ENTITY.addWalker(VERSION, "Giant", new DataWalkerItemLists("Equipment"));
-+        MCTypeRegistry.ENTITY.addWalker(VERSION, "Zombie", new DataWalkerItemLists("Equipment"));
-+        MCTypeRegistry.ENTITY.addWalker(VERSION, "Slime", new DataWalkerItemLists("Equipment"));
-+        MCTypeRegistry.ENTITY.addWalker(VERSION, "Ghast", new DataWalkerItemLists("Equipment"));
-+        MCTypeRegistry.ENTITY.addWalker(VERSION, "PigZombie", new DataWalkerItemLists("Equipment"));
++        registerMob("ArmorStand");
++        registerMob("Creeper");
++        registerMob("Skeleton");
++        registerMob("Spider");
++        registerMob("Giant");
++        registerMob("Zombie");
++        registerMob("Slime");
++        registerMob("Ghast");
++        registerMob("PigZombie");
 +        MCTypeRegistry.ENTITY.addWalker(VERSION, "Enderman", new DataWalkerBlockNames("carried"));
 +        MCTypeRegistry.ENTITY.addWalker(VERSION, "Enderman", new DataWalkerItemLists("Equipment"));
-+        MCTypeRegistry.ENTITY.addWalker(VERSION, "CaveSpider", new DataWalkerItemLists("Equipment"));
-+        MCTypeRegistry.ENTITY.addWalker(VERSION, "Silverfish", new DataWalkerItemLists("Equipment"));
-+        MCTypeRegistry.ENTITY.addWalker(VERSION, "Blaze", new DataWalkerItemLists("Equipment"));
-+        MCTypeRegistry.ENTITY.addWalker(VERSION, "LavaSlime", new DataWalkerItemLists("Equipment"));
-+        MCTypeRegistry.ENTITY.addWalker(VERSION, "EnderDragon", new DataWalkerItemLists("Equipment"));
-+        MCTypeRegistry.ENTITY.addWalker(VERSION, "WitherBoss", new DataWalkerItemLists("Equipment"));
-+        MCTypeRegistry.ENTITY.addWalker(VERSION, "Bat", new DataWalkerItemLists("Equipment"));
-+        MCTypeRegistry.ENTITY.addWalker(VERSION, "Witch", new DataWalkerItemLists("Equipment"));
-+        MCTypeRegistry.ENTITY.addWalker(VERSION, "Endermite", new DataWalkerItemLists("Equipment"));
-+        MCTypeRegistry.ENTITY.addWalker(VERSION, "Guardian", new DataWalkerItemLists("Equipment"));
-+        MCTypeRegistry.ENTITY.addWalker(VERSION, "Pig", new DataWalkerItemLists("Equipment"));
-+        MCTypeRegistry.ENTITY.addWalker(VERSION, "Sheep", new DataWalkerItemLists("Equipment"));
-+        MCTypeRegistry.ENTITY.addWalker(VERSION, "Cow", new DataWalkerItemLists("Equipment"));
-+        MCTypeRegistry.ENTITY.addWalker(VERSION, "Chicken", new DataWalkerItemLists("Equipment"));
-+        MCTypeRegistry.ENTITY.addWalker(VERSION, "Squid", new DataWalkerItemLists("Equipment"));
-+        MCTypeRegistry.ENTITY.addWalker(VERSION, "Wolf", new DataWalkerItemLists("Equipment"));
-+        MCTypeRegistry.ENTITY.addWalker(VERSION, "MushroomCow", new DataWalkerItemLists("Equipment"));
-+        MCTypeRegistry.ENTITY.addWalker(VERSION, "SnowMan", new DataWalkerItemLists("Equipment"));
-+        MCTypeRegistry.ENTITY.addWalker(VERSION, "Ozelot", new DataWalkerItemLists("Equipment"));
-+        MCTypeRegistry.ENTITY.addWalker(VERSION, "VillagerGolem", new DataWalkerItemLists("Equipment"));
++        registerMob("CaveSpider");
++        registerMob("Silverfish");
++        registerMob("Blaze");
++        registerMob("LavaSlime");
++        registerMob("EnderDragon");
++        registerMob("WitherBoss");
++        registerMob("Bat");
++        registerMob("Witch");
++        registerMob("Endermite");
++        registerMob("Guardian");
++        registerMob("Pig");
++        registerMob("Sheep");
++        registerMob("Cow");
++        registerMob("Chicken");
++        registerMob("Squid");
++        registerMob("Wolf");
++        registerMob("MushroomCow");
++        registerMob("SnowMan");
++        registerMob("Ozelot");
++        registerMob("VillagerGolem");
 +        MCTypeRegistry.ENTITY.addWalker(VERSION, "EntityHorse", new DataWalkerItemLists("Items", "Equipment"));
 +        MCTypeRegistry.ENTITY.addWalker(VERSION, "EntityHorse", new DataWalkerItems("ArmorItem", "SaddleItem"));
-+        MCTypeRegistry.ENTITY.addWalker(VERSION, "Rabbit", new DataWalkerItemLists("Equipment"));
++        registerMob("Rabbit");
 +        MCTypeRegistry.ENTITY.addWalker(VERSION, "Villager", new DataWalkerItemLists("Inventory", "Equipment"));
 +        MCTypeRegistry.ENTITY.addWalker(VERSION, "Villager", (final MapType<String> data, final long fromVersion, final long toVersion) -> {
 +            final MapType<String> offers = data.getMap("Offers");
@@ -16115,18 +16261,26 @@ index 0000000000000000000000000000000000000000..121430367b26dd89aad87a0f293ab3fc
 +
 +            return null;
 +        });
-+        MCTypeRegistry.ENTITY.addWalker(VERSION, "Shulker", new DataWalkerItemLists("Equipment"));
++        registerMob("Shulker");
++
++        // tile entities
 +
 +        // Inventory -> new DataWalkerItemLists("Items")
-+        MCTypeRegistry.TILE_ENTITY.addWalker(VERSION, "Furnace", new DataWalkerItemLists("Items"));
-+        MCTypeRegistry.TILE_ENTITY.addWalker(VERSION, "Chest", new DataWalkerItemLists("Items"));
++        registerInventory("Furnace");
++        registerInventory("Chest");
 +        MCTypeRegistry.TILE_ENTITY.addWalker(VERSION, "RecordPlayer", new DataWalkerItems("RecordItem"));
-+        MCTypeRegistry.TILE_ENTITY.addWalker(VERSION, "Trap", new DataWalkerItemLists("Items"));
-+        MCTypeRegistry.TILE_ENTITY.addWalker(VERSION, "Dropper", new DataWalkerItemLists("Items"));
-+        MCTypeRegistry.TILE_ENTITY.addWalker(VERSION, "MobSpawner", MCTypeRegistry.UNTAGGED_SPAWNER::convert);
-+        MCTypeRegistry.TILE_ENTITY.addWalker(VERSION, "Cauldron", new DataWalkerItemLists("Items"));
-+        MCTypeRegistry.TILE_ENTITY.addWalker(VERSION, "Hopper", new DataWalkerItemLists("Items"));
-+        MCTypeRegistry.TILE_ENTITY.addWalker(VERSION, "FlowerPot", new DataWalkerItemNames("Item")); // Note: Vanilla does not properly handle this case, it will not convert int ids!
++        registerInventory("Trap");
++        registerInventory("Dropper");
++        MCTypeRegistry.TILE_ENTITY.addWalker(VERSION, "MobSpawner", (final MapType<String> data, final long fromVersion, final long toVersion) -> {
++            MCTypeRegistry.UNTAGGED_SPAWNER.convert(data, fromVersion, toVersion);
++            return null;
++        });
++        registerInventory("Cauldron");
++        registerInventory("Hopper");
++        // Note: Vanilla does not properly handle this case, it will not convert int ids!
++        MCTypeRegistry.TILE_ENTITY.addWalker(VERSION, "FlowerPot", new DataWalkerItemNames("Item"));
++
++        // rest
 +
 +        MCTypeRegistry.ITEM_STACK.addStructureWalker(VERSION, (final MapType<String> data, final long fromVersion, final long toVersion) -> {
 +            WalkerUtils.convert(MCTypeRegistry.ITEM_NAME, data, "id", fromVersion, toVersion);
@@ -16252,6 +16406,14 @@ index 0000000000000000000000000000000000000000..121430367b26dd89aad87a0f293ab3fc
 +
 +            return null;
 +        });
++
++
++        // Enforce namespacing for ids
++        MCTypeRegistry.BLOCK_NAME.addStructureHook(VERSION, new DataHookValueTypeEnforceNamespaced());
++        MCTypeRegistry.ITEM_NAME.addStructureHook(VERSION, new DataHookValueTypeEnforceNamespaced());
++        MCTypeRegistry.ITEM_STACK.addStructureHook(VERSION, new DataHookEnforceNamespacedID());
++
++        // Entity is absent; the String form is not yet namespaced, unlike the above.
 +    }
 +
 +    protected static String getStringId(final Object id) {
@@ -16371,10 +16533,10 @@ index 0000000000000000000000000000000000000000..e66b4e0f7cdb032b545ace7ba852ad79
 +}
 diff --git a/src/main/java/ca/spottedleaf/dataconverter/minecraft/walkers/generic/WalkerUtils.java b/src/main/java/ca/spottedleaf/dataconverter/minecraft/walkers/generic/WalkerUtils.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..8ff0edce55feedf79c545f3dbc2045de9caaaf7a
+index 0000000000000000000000000000000000000000..8f231d4f0999a52d9c19b4669daa94c7881933d0
 --- /dev/null
 +++ b/src/main/java/ca/spottedleaf/dataconverter/minecraft/walkers/generic/WalkerUtils.java
-@@ -0,0 +1,131 @@
+@@ -0,0 +1,130 @@
 +package ca.spottedleaf.dataconverter.minecraft.walkers.generic;
 +
 +import ca.spottedleaf.dataconverter.minecraft.datatypes.MCDataType;
@@ -16382,7 +16544,6 @@ index 0000000000000000000000000000000000000000..8ff0edce55feedf79c545f3dbc2045de
 +import ca.spottedleaf.dataconverter.types.ObjectType;
 +import ca.spottedleaf.dataconverter.types.ListType;
 +import ca.spottedleaf.dataconverter.types.MapType;
-+
 +import java.util.ArrayList;
 +
 +public final class WalkerUtils {
@@ -19373,6 +19534,36 @@ index 0000000000000000000000000000000000000000..6f634c8825589a23f46ad7b54354475c
 +            return insert < 0 ? null : this.val[insert];
 +        }
 +        return this.val[index];
++    }
++}
+diff --git a/src/main/java/ca/spottedleaf/dataconverter/util/NamespaceUtil.java b/src/main/java/ca/spottedleaf/dataconverter/util/NamespaceUtil.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..967ad1186cbc81a76a4958ea99d4eff37c15b48f
+--- /dev/null
++++ b/src/main/java/ca/spottedleaf/dataconverter/util/NamespaceUtil.java
+@@ -0,0 +1,24 @@
++package ca.spottedleaf.dataconverter.util;
++
++import net.minecraft.resources.ResourceLocation;
++
++public final class NamespaceUtil {
++
++    private NamespaceUtil() {}
++
++    public static String correctNamespace(final String value) {
++        if (value == null) {
++            return null;
++        }
++        final ResourceLocation resourceLocation = ResourceLocation.tryParse(value);
++        return resourceLocation != null ? resourceLocation.toString() : value;
++    }
++
++    public static String correctNamespaceOrNull(final String value) {
++        if (value == null) {
++            return null;
++        }
++        final String correct = correctNamespace(value);
++        return correct.equals(value) ? null : correct;
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkStorage.java b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkStorage.java
