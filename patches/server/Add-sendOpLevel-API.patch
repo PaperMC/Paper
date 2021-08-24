@@ -12,35 +12,21 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
      private void sendPlayerPermissionLevel(ServerPlayer player, int permissionLevel) {
--        if (player.connection != null) {
 +        // Paper start - add recalculatePermissions parameter
-+        this.sendPlayerOperatorStatus(player, permissionLevel, true);
++        this.sendPlayerPermissionLevel(player, permissionLevel, true);
 +    }
-+    public void sendPlayerOperatorStatus(ServerPlayer entityplayer, int i, boolean recalculatePermissions) {
++    public void sendPlayerPermissionLevel(ServerPlayer player, int permissionLevel, boolean recalculatePermissions) {
 +        // Paper end
-+        if (entityplayer.connection != null) {
+         if (player.connection != null) {
              byte b0;
  
--            if (permissionLevel <= 0) {
-+            if (i <= 0) {
-                 b0 = 24;
--            } else if (permissionLevel >= 4) {
-+            } else if (i >= 4) {
-                 b0 = 28;
-             } else {
--                b0 = (byte) (24 + permissionLevel);
-+                b0 = (byte) (24 + i);
-             }
- 
--            player.connection.send(new ClientboundEntityEventPacket(player, b0));
-+            entityplayer.connection.send(new ClientboundEntityEventPacket(entityplayer, b0));
+@@ -0,0 +0,0 @@ public abstract class PlayerList {
+             player.connection.send(new ClientboundEntityEventPacket(player, b0));
          }
  
--        player.getBukkitEntity().recalculatePermissions(); // CraftBukkit
--        this.server.getCommands().sendCommands(player);
 +        if (recalculatePermissions) { // Paper
-+        entityplayer.getBukkitEntity().recalculatePermissions(); // CraftBukkit
-+        this.server.getCommands().sendCommands(entityplayer);
+         player.getBukkitEntity().recalculatePermissions(); // CraftBukkit
+         this.server.getCommands().sendCommands(player);
 +        } // Paper
      }
  
@@ -58,7 +44,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    public void sendOpLevel(byte level) {
 +        Preconditions.checkArgument(level >= 0 && level <= 4, "Level must be within [0, 4]");
 +
-+        this.getHandle().getServer().getPlayerList().sendPlayerOperatorStatus(this.getHandle(), level, false);
++        this.getHandle().getServer().getPlayerList().sendPlayerPermissionLevel(this.getHandle(), level, false);
 +    }
      // Paper end
  
