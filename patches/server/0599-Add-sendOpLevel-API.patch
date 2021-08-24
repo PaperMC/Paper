@@ -5,48 +5,34 @@ Subject: [PATCH] Add sendOpLevel API
 
 
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
-index 6c167952102548c5f766eaa8e022e213cc20bd74..9a7b635e2a962f4e1ae689ec7a3bc471d9d940cc 100644
+index 6c167952102548c5f766eaa8e022e213cc20bd74..6c85c186124f33a6a8a596610b17f205bb31f8dd 100644
 --- a/src/main/java/net/minecraft/server/players/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/players/PlayerList.java
-@@ -1121,22 +1121,29 @@ public abstract class PlayerList {
+@@ -1121,6 +1121,11 @@ public abstract class PlayerList {
      }
  
      private void sendPlayerPermissionLevel(ServerPlayer player, int permissionLevel) {
--        if (player.connection != null) {
 +        // Paper start - add recalculatePermissions parameter
-+        this.sendPlayerOperatorStatus(player, permissionLevel, true);
++        this.sendPlayerPermissionLevel(player, permissionLevel, true);
 +    }
-+    public void sendPlayerOperatorStatus(ServerPlayer entityplayer, int i, boolean recalculatePermissions) {
++    public void sendPlayerPermissionLevel(ServerPlayer player, int permissionLevel, boolean recalculatePermissions) {
 +        // Paper end
-+        if (entityplayer.connection != null) {
+         if (player.connection != null) {
              byte b0;
  
--            if (permissionLevel <= 0) {
-+            if (i <= 0) {
-                 b0 = 24;
--            } else if (permissionLevel >= 4) {
-+            } else if (i >= 4) {
-                 b0 = 28;
-             } else {
--                b0 = (byte) (24 + permissionLevel);
-+                b0 = (byte) (24 + i);
-             }
- 
--            player.connection.send(new ClientboundEntityEventPacket(player, b0));
-+            entityplayer.connection.send(new ClientboundEntityEventPacket(entityplayer, b0));
+@@ -1135,8 +1140,10 @@ public abstract class PlayerList {
+             player.connection.send(new ClientboundEntityEventPacket(player, b0));
          }
  
--        player.getBukkitEntity().recalculatePermissions(); // CraftBukkit
--        this.server.getCommands().sendCommands(player);
 +        if (recalculatePermissions) { // Paper
-+        entityplayer.getBukkitEntity().recalculatePermissions(); // CraftBukkit
-+        this.server.getCommands().sendCommands(entityplayer);
+         player.getBukkitEntity().recalculatePermissions(); // CraftBukkit
+         this.server.getCommands().sendCommands(player);
 +        } // Paper
      }
  
      // Paper start
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index ca479c2de83b94e30f62cfaf573e108452908930..30e042a37692053d8333191487ec48eeb8c6b502 100644
+index ca479c2de83b94e30f62cfaf573e108452908930..db6c515b1d47d9432145c519fc9863bc7a0cc1b0 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 @@ -553,6 +553,13 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
@@ -58,7 +44,7 @@ index ca479c2de83b94e30f62cfaf573e108452908930..30e042a37692053d8333191487ec48ee
 +    public void sendOpLevel(byte level) {
 +        Preconditions.checkArgument(level >= 0 && level <= 4, "Level must be within [0, 4]");
 +
-+        this.getHandle().getServer().getPlayerList().sendPlayerOperatorStatus(this.getHandle(), level, false);
++        this.getHandle().getServer().getPlayerList().sendPlayerPermissionLevel(this.getHandle(), level, false);
 +    }
      // Paper end
  
