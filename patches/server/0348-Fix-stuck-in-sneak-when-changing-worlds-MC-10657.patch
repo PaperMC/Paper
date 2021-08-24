@@ -1,0 +1,32 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: William Blake Galbreath <blake.galbreath@gmail.com>
+Date: Wed, 9 Oct 2019 21:51:43 -0500
+Subject: [PATCH] Fix stuck in sneak when changing worlds (MC-10657)
+
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+index 8537d010fa698c05c227f71b83b1e743f8578d84..8eac8e0898ffe621024daf3a1250e9c932cf0fcf 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+@@ -1099,6 +1099,8 @@ public class ServerPlayer extends Player {
+                 this.lastSentHealth = -1.0F;
+                 this.lastSentFood = -1;
+ 
++                setShiftKeyDown(false); // Paper - fix MC-10657
++
+                 // CraftBukkit start
+                 PlayerChangedWorldEvent changeEvent = new PlayerChangedWorldEvent(this.getBukkitEntity(), worldserver1.getWorld());
+                 this.level.getCraftServer().getPluginManager().callEvent(changeEvent);
+diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
+index 5ef3c9539e21547e69671d74057ea77d5f36962e..7409fdd783d69345d021a1a8db8e6c1ecde834e1 100644
+--- a/src/main/java/net/minecraft/server/players/PlayerList.java
++++ b/src/main/java/net/minecraft/server/players/PlayerList.java
+@@ -830,6 +830,8 @@ public abstract class PlayerList {
+             entityplayer.connection.send(new ClientboundUpdateMobEffectPacket(entityplayer.getId(), mobEffect));
+         }
+ 
++        entityplayer.setShiftKeyDown(false); // Paper - fix MC-10657
++
+         // Fire advancement trigger
+         entityplayer.triggerDimensionChangeTriggers(((CraftWorld) fromWorld).getHandle());
+ 
