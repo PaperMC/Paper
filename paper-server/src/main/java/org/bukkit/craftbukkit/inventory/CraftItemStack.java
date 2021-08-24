@@ -9,6 +9,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.enchantment.EnchantmentManager;
 import org.apache.commons.lang.Validate;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
 import org.bukkit.craftbukkit.enchantments.CraftEnchantment;
 import org.bukkit.craftbukkit.util.CraftLegacy;
@@ -190,7 +191,7 @@ public final class CraftItemStack extends ItemStack {
         for (int i = 0; i < size; i++) {
             NBTTagCompound tag = (NBTTagCompound) list.get(i);
             String id = tag.getString(ENCHANTMENTS_ID.NBT);
-            if (id.equals(ench.getKey().toString())) {
+            if (ench.getKey().equals(NamespacedKey.fromString(id))) {
                 tag.setShort(ENCHANTMENTS_LVL.NBT, (short) level);
                 return;
             }
@@ -242,7 +243,7 @@ public final class CraftItemStack extends ItemStack {
         for (int i = 0; i < size; i++) {
             NBTTagCompound enchantment = (NBTTagCompound) list.get(i);
             String id = enchantment.getString(ENCHANTMENTS_ID.NBT);
-            if (id.equals(ench.getKey().toString())) {
+            if (ench.getKey().equals(NamespacedKey.fromString(id))) {
                 index = i;
                 level = 0xffff & enchantment.getShort(ENCHANTMENTS_LVL.NBT);
                 break;
