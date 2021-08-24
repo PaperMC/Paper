@@ -1,0 +1,67 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Mon, 23 Aug 2021 21:03:15 -0700
+Subject: [PATCH] Allow custom commands in functions
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+index f421e6a2e43e0a673dbb8a9a2b4331387e523e02..25fb9072d11c16d3963b62b0cd4976a1a08d03b4 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+@@ -654,4 +654,9 @@ public class PaperConfig {
+     private static void sendFullPosForHardCollidingEntities() {
+         sendFullPosForHardCollidingEntities = getBoolean("settings.send-full-pos-for-hard-colliding-entities", true);
+     }
++
++    public static boolean loadStartupPluginCommands = false;
++    private static void loadStartupPluginCommands() {
++        loadStartupPluginCommands = getBoolean("settings.load-startup-plugin-commands", loadStartupPluginCommands);
++    }
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index 6f75f2c6b56ed2d860cbd98ddb40b38a85d32f82..15525cac81768fd6984356783c54565d39bf87d1 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -451,12 +451,22 @@ public final class CraftServer implements Server {
+                 this.enablePlugin(plugin);
+             }
+         }
++        // Paper start - sync commands for startup plugins
++        if (com.destroystokyo.paper.PaperConfig.loadStartupPluginCommands && type == PluginLoadOrder.STARTUP) {
++            this.setVanillaCommands(true);
++            this.commandMap.setFallbackCommands();
++            this.setVanillaCommands(false);
++            this.syncCommands();
++        }
++        // Paper end
+ 
+         if (type == PluginLoadOrder.POSTWORLD) {
+             // Spigot start - Allow vanilla commands to be forced to be the main command
++            if (!com.destroystokyo.paper.PaperConfig.loadStartupPluginCommands) { // Paper - already run if condition is true
+             this.setVanillaCommands(true);
+             this.commandMap.setFallbackCommands();
+             this.setVanillaCommands(false);
++            } // Paper
+             // Spigot end
+             this.commandMap.registerServerAliases();
+             DefaultPermissions.registerCorePermissions();
+@@ -492,6 +502,7 @@ public final class CraftServer implements Server {
+     public void syncCommands() {
+         // Clear existing commands
+         Commands dispatcher = console.resources.commands = new Commands();
++        console.resources.getFunctionLibrary().dispatcher = dispatcher.getDispatcher(); // Paper
+ 
+         // Register all commands, vanilla ones will be using the old dispatcher references
+         for (Map.Entry<String, Command> entry : this.commandMap.getKnownCommands().entrySet()) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/command/BukkitCommandWrapper.java b/src/main/java/org/bukkit/craftbukkit/command/BukkitCommandWrapper.java
+index a246a0bd9e57fb0703ba756e8aa1109f1674c0e8..a9589519d8e72d38d784cfa83f3a5ee8b66df2dc 100644
+--- a/src/main/java/org/bukkit/craftbukkit/command/BukkitCommandWrapper.java
++++ b/src/main/java/org/bukkit/craftbukkit/command/BukkitCommandWrapper.java
+@@ -45,6 +45,7 @@ public class BukkitCommandWrapper implements com.mojang.brigadier.Command<Comman
+ 
+     @Override
+     public boolean test(CommandSourceStack wrapper) {
++        if (wrapper.source == net.minecraft.commands.CommandSource.NULL) return true; // Paper - skip perm check if source is null (currently only for parsing CommandFunctions)
+         return this.command.testPermissionSilent(wrapper.getBukkitSender());
+     }
+ 
