@@ -1109,10 +1109,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
 @@ -0,0 +0,0 @@ public class ServerLevel extends Level implements WorldGenLevel {
      // Add env and gen to constructor, WorldData -> WorldDataServer
-     public ServerLevel(MinecraftServer minecraftserver, Executor executor, LevelStorageSource.LevelStorageAccess convertable_conversionsession, ServerLevelData iworlddataserver, ResourceKey<Level> resourcekey, DimensionType dimensionmanager, ChunkProgressListener worldloadlistener, ChunkGenerator chunkgenerator, boolean flag, long i, List<CustomSpawner> list, boolean flag1, org.bukkit.World.Environment env, org.bukkit.generator.ChunkGenerator gen) {
+     public ServerLevel(MinecraftServer minecraftserver, Executor executor, LevelStorageSource.LevelStorageAccess convertable_conversionsession, ServerLevelData iworlddataserver, ResourceKey<Level> resourcekey, DimensionType dimensionmanager, ChunkProgressListener worldloadlistener, ChunkGenerator chunkgenerator, boolean flag, long i, List<CustomSpawner> list, boolean flag1, org.bukkit.World.Environment env, org.bukkit.generator.ChunkGenerator gen, org.bukkit.generator.BiomeProvider biomeProvider) {
          // Objects.requireNonNull(minecraftserver); // CraftBukkit - decompile error
--        super(iworlddataserver, resourcekey, dimensionmanager, minecraftserver::getProfiler, false, flag, i, gen, env);
-+        super(iworlddataserver, resourcekey, dimensionmanager, minecraftserver::getProfiler, false, flag, i, gen, env, executor); // Paper - Anti-Xray - Pass executor
+-        super(iworlddataserver, resourcekey, dimensionmanager, minecraftserver::getProfiler, false, flag, i, gen, biomeProvider, env);
++        super(iworlddataserver, resourcekey, dimensionmanager, minecraftserver::getProfiler, false, flag, i, gen, biomeProvider, env, executor); // Paper - Anti-Xray - Pass executor
          this.pvpMode = minecraftserver.isPvpAllowed();
          this.convertable = convertable_conversionsession;
          this.uuid = WorldUUID.getUUID(convertable_conversionsession.levelPath.toFile());
@@ -1154,8 +1154,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          return this.typeKey;
      }
  
--    protected Level(WritableLevelData worlddatamutable, ResourceKey<Level> resourcekey, final DimensionType dimensionmanager, Supplier<ProfilerFiller> supplier, boolean flag, boolean flag1, long i, org.bukkit.generator.ChunkGenerator gen, org.bukkit.World.Environment env) {
-+    protected Level(WritableLevelData worlddatamutable, ResourceKey<Level> resourcekey, final DimensionType dimensionmanager, Supplier<ProfilerFiller> supplier, boolean flag, boolean flag1, long i, org.bukkit.generator.ChunkGenerator gen, org.bukkit.World.Environment env, java.util.concurrent.Executor executor) { // Paper - Anti-Xray - Pass executor
+-    protected Level(WritableLevelData worlddatamutable, ResourceKey<Level> resourcekey, final DimensionType dimensionmanager, Supplier<ProfilerFiller> supplier, boolean flag, boolean flag1, long i, org.bukkit.generator.ChunkGenerator gen, org.bukkit.generator.BiomeProvider biomeProvider, org.bukkit.World.Environment env) {
++    protected Level(WritableLevelData worlddatamutable, ResourceKey<Level> resourcekey, final DimensionType dimensionmanager, Supplier<ProfilerFiller> supplier, boolean flag, boolean flag1, long i, org.bukkit.generator.ChunkGenerator gen, org.bukkit.generator.BiomeProvider biomeProvider, org.bukkit.World.Environment env, java.util.concurrent.Executor executor) { // Paper - Anti-Xray - Pass executor
          this.spigotConfig = new org.spigotmc.SpigotWorldConfig(((net.minecraft.world.level.storage.PrimaryLevelData) worlddatamutable).getLevelName()); // Spigot
          this.paperConfig = new com.destroystokyo.paper.PaperWorldConfig(((net.minecraft.world.level.storage.PrimaryLevelData) worlddatamutable).getLevelName(), this.spigotConfig); // Paper
          this.generator = gen;
@@ -1426,28 +1426,28 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  blockids.read(data.getList("Palette", CraftMagicNumbers.NBT.TAG_COMPOUND), data.getLongArray("BlockStates"));
  
                  sectionBlockIDs[i] = blockids;
-diff --git a/src/main/java/org/bukkit/craftbukkit/generator/CraftChunkData.java b/src/main/java/org/bukkit/craftbukkit/generator/CraftChunkData.java
+diff --git a/src/main/java/org/bukkit/craftbukkit/generator/OldCraftChunkData.java b/src/main/java/org/bukkit/craftbukkit/generator/OldCraftChunkData.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/org/bukkit/craftbukkit/generator/CraftChunkData.java
-+++ b/src/main/java/org/bukkit/craftbukkit/generator/CraftChunkData.java
-@@ -0,0 +0,0 @@ public final class CraftChunkData implements ChunkGenerator.ChunkData {
-     private LevelChunkSection[] sections;
+--- a/src/main/java/org/bukkit/craftbukkit/generator/OldCraftChunkData.java
++++ b/src/main/java/org/bukkit/craftbukkit/generator/OldCraftChunkData.java
+@@ -0,0 +0,0 @@ public final class OldCraftChunkData implements ChunkGenerator.ChunkData {
+     private final LevelChunkSection[] sections;
      private Set<BlockPos> tiles;
      private final Set<BlockPos> lights = new HashSet<>();
 +    private World world; // Paper - Anti-Xray - Add parameters
  
-     public CraftChunkData(World world) {
+     public OldCraftChunkData(World world) {
          this(world.getMinHeight(), world.getMaxHeight());
 +        this.world = world; // Paper - Anti-Xray - Add parameters
      }
  
-     /* pp for tests */ CraftChunkData(int minHeight, int maxHeight) {
-@@ -0,0 +0,0 @@ public final class CraftChunkData implements ChunkGenerator.ChunkData {
+     /* pp for tests */ OldCraftChunkData(int minHeight, int maxHeight) {
+@@ -0,0 +0,0 @@ public final class OldCraftChunkData implements ChunkGenerator.ChunkData {
          int offset = (y - this.minHeight) >> 4;
          LevelChunkSection section = this.sections[offset];
          if (create && section == null) {
 -            this.sections[offset] = section = new LevelChunkSection(offset + (this.minHeight >> 4));
-+            this.sections[offset] = section = new LevelChunkSection(offset + (this.minHeight >> 4), null, this.world instanceof org.bukkit.craftbukkit.CraftWorld ? ((org.bukkit.craftbukkit.CraftWorld) this.world).getHandle() : null, true); // Paper - Anti-Xray - Add parameters
++            this.sections[offset] = section = new LevelChunkSection(offset + (this.minHeight >> 4), null, world instanceof org.bukkit.craftbukkit.CraftWorld ? ((org.bukkit.craftbukkit.CraftWorld) this.world).getHandle() : null, true); // Paper - Anti-Xray - Add parameters
          }
          return section;
      }
