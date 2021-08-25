@@ -1,15 +1,15 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: dfsek <dfsek@protonmail.com>
 Date: Sat, 19 Jun 2021 20:15:59 -0700
-Subject: [PATCH] Add Feature Generation API
+Subject: [PATCH] Add more LimitedRegion API
 
 
 diff --git a/src/main/java/io/papermc/paper/world/generation/CraftProtoWorld.java b/src/main/java/io/papermc/paper/world/generation/CraftProtoWorld.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..69b17fe56f28f8978abc3f363a9e805d7c7b007a
+index 0000000000000000000000000000000000000000..ccb6b20b5f56c3bacdc6bd384931986cf804f06a
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/world/generation/CraftProtoWorld.java
-@@ -0,0 +1,115 @@
+@@ -0,0 +1,116 @@
 +package io.papermc.paper.world.generation;
 +
 +import net.minecraft.core.BlockPos;
@@ -35,6 +35,7 @@ index 0000000000000000000000000000000000000000..69b17fe56f28f8978abc3f363a9e805d
 +import java.util.Objects;
 +import java.util.function.Consumer;
 +
++@Deprecated
 +public class CraftProtoWorld implements ProtoWorld {
 +    private WorldGenRegion region;
 +
@@ -125,6 +126,85 @@ index 0000000000000000000000000000000000000000..69b17fe56f28f8978abc3f363a9e805d
 +    }
 +}
 +
+diff --git a/src/main/java/org/bukkit/craftbukkit/generator/CraftLimitedRegion.java b/src/main/java/org/bukkit/craftbukkit/generator/CraftLimitedRegion.java
+index 8f968ed09b960c2e4aca2fa6aba20aae00456ea8..0d23d2be7829b62391dc1313b0f20762002c1d34 100644
+--- a/src/main/java/org/bukkit/craftbukkit/generator/CraftLimitedRegion.java
++++ b/src/main/java/org/bukkit/craftbukkit/generator/CraftLimitedRegion.java
+@@ -6,6 +6,7 @@ import java.util.ArrayList;
+ import java.util.Collection;
+ import java.util.List;
+ import java.util.Random;
++import net.minecraft.core.BlockPos; // Paper
+ import net.minecraft.nbt.CompoundTag;
+ import net.minecraft.server.level.WorldGenRegion;
+ import net.minecraft.world.entity.EntityType;
+@@ -134,7 +135,10 @@ public class CraftLimitedRegion extends CraftRegionAccessor implements LimitedRe
+     @Override
+     public BlockState getBlockState(int x, int y, int z) {
+         Preconditions.checkArgument(this.isInRegion(x, y, z), "Coordinates %s, %s, %s are not in the region", x, y, z);
+-        return super.getBlockState(x, y, z);
++        // Paper start
++        net.minecraft.world.level.block.entity.BlockEntity entity = getHandle().getBlockEntity(new BlockPos(x, y, z));
++        return org.bukkit.craftbukkit.inventory.CraftMetaBlockState.createBlockState(entity.getBlockState().getBukkitMaterial(), entity.save(new CompoundTag()));
++        // Paper end
+     }
+ 
+     @Override
+@@ -152,7 +156,7 @@ public class CraftLimitedRegion extends CraftRegionAccessor implements LimitedRe
+     @Override
+     public void setBlockData(int x, int y, int z, BlockData blockData) {
+         Preconditions.checkArgument(this.isInRegion(x, y, z), "Coordinates %s, %s, %s are not in the region", x, y, z);
+-        super.setBlockData(x, y, z, blockData);
++        getHandle().setBlock(new BlockPos(x, y, z), ((org.bukkit.craftbukkit.block.data.CraftBlockData) blockData).getState(), 3); // Paper
+     }
+ 
+     @Override
+@@ -182,4 +186,45 @@ public class CraftLimitedRegion extends CraftRegionAccessor implements LimitedRe
+     public void addEntityToWorld(net.minecraft.world.entity.Entity entity, CreatureSpawnEvent.SpawnReason reason) {
+         this.entities.add(entity);
+     }
++
++    // Paper start
++    @Override
++    public void setBlockState(int x, int y, int z, BlockState state) {
++        BlockPos pos = new BlockPos(x, y, z);
++        if (!state.getBlockData().matches(getHandle().getBlockState(pos).createCraftBlockData())) {
++            throw new IllegalArgumentException("BlockData does not match! Expected " + state.getBlockData().getAsString(false) + ", got " + getHandle().getBlockState(pos).createCraftBlockData().getAsString(false));
++        }
++        getHandle().getBlockEntity(pos).load(((org.bukkit.craftbukkit.block.CraftBlockEntityState<?>) state).getSnapshotNBT());
++    }
++
++    @Override
++    public void scheduleBlockUpdate(int x, int y, int z) {
++        BlockPos position = new BlockPos(x, y, z);
++        getHandle().getBlockTicks().scheduleTick(position, getHandle().getBlockIfLoaded(position), 0);
++    }
++
++    @Override
++    public void scheduleFluidUpdate(int x, int y, int z) {
++        BlockPos position = new BlockPos(x, y, z);
++        getHandle().getLiquidTicks().scheduleTick(position, getHandle().getFluidState(position).getType(), 0);
++    }
++
++    @Override
++    public World getWorld() {
++        // reading/writing the returned Minecraft world causes a deadlock.
++        // By implementing this, and covering it in warnings, we're assuming people won't be stupid, and
++        // if they are stupid, they'll figure it out pretty fast.
++        return getHandle().getMinecraftWorld().getWorld();
++    }
++
++    @Override
++    public int getCenterChunkX() {
++        return centerChunkX;
++    }
++
++    @Override
++    public int getCenterChunkZ() {
++        return centerChunkZ;
++    }
++    // Paper end
+ }
 diff --git a/src/main/java/org/bukkit/craftbukkit/generator/CustomChunkGenerator.java b/src/main/java/org/bukkit/craftbukkit/generator/CustomChunkGenerator.java
 index 98461949badc8a708c1e7e2f225a93e8d1ca5822..4fa8cce0818a8e461330fc29021e6ff65cb67125 100644
 --- a/src/main/java/org/bukkit/craftbukkit/generator/CustomChunkGenerator.java

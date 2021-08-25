@@ -1,15 +1,15 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: dfsek <dfsek@protonmail.com>
 Date: Sat, 19 Jun 2021 20:15:29 -0700
-Subject: [PATCH] Add Feature Stage API
+Subject: [PATCH] Add more LimitedRegion API
 
 
 diff --git a/src/main/java/io/papermc/paper/world/generation/ProtoWorld.java b/src/main/java/io/papermc/paper/world/generation/ProtoWorld.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..f3b465d3883547d53e55183c2a4e22c63525a787
+index 0000000000000000000000000000000000000000..edf8d0ae398f123ab25cb7954df07f6020454dd4
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/world/generation/ProtoWorld.java
-@@ -0,0 +1,313 @@
+@@ -0,0 +1,319 @@
 +package io.papermc.paper.world.generation;
 +
 +import org.bukkit.World;
@@ -18,12 +18,14 @@ index 0000000000000000000000000000000000000000..f3b465d3883547d53e55183c2a4e22c6
 +import org.bukkit.entity.Entity;
 +import org.bukkit.entity.EntityType;
 +import org.bukkit.event.entity.CreatureSpawnEvent;
++import org.bukkit.generator.LimitedRegion;
++import org.bukkit.generator.WorldInfo;
 +import org.bukkit.util.Vector;
 +import org.jetbrains.annotations.NotNull;
 +import org.jetbrains.annotations.Nullable;
 +
++import java.util.Random;
 +import java.util.function.Consumer;
-+
 +
 +/**
 + * Represents a small grid of chunks in a {@link World}
@@ -36,7 +38,11 @@ index 0000000000000000000000000000000000000000..f3b465d3883547d53e55183c2a4e22c6
 + * <p>
 + * ProtoWorlds should not be stored! After they are used during
 + * chunk generation they should be disposed of.
++ *
++ * @see org.bukkit.generator.BlockPopulator#populate(WorldInfo, Random, int, int, LimitedRegion)
++ * @deprecated see {@link org.bukkit.RegionAccessor} and {@link org.bukkit.generator.LimitedRegion}
 + */
++@Deprecated(forRemoval = true)
 +public interface ProtoWorld {
 +    /**
 +     * Sets the block at (x, y, z) to the provided {@link BlockData}.
@@ -324,10 +330,10 @@ index 0000000000000000000000000000000000000000..f3b465d3883547d53e55183c2a4e22c6
 +    @NotNull <T extends Entity> T spawn(@NotNull Vector location, @NotNull Class<T> clazz, @Nullable Consumer<T> function, @NotNull CreatureSpawnEvent.SpawnReason reason) throws IllegalArgumentException;
 +}
 diff --git a/src/main/java/org/bukkit/generator/ChunkGenerator.java b/src/main/java/org/bukkit/generator/ChunkGenerator.java
-index 0667315e2bd10254aef59c2a6bcceee9d927b6d5..5cf3f8875753b0293ea56b65a64f0075b03257c3 100644
+index 0667315e2bd10254aef59c2a6bcceee9d927b6d5..e96d8877f73de12a56a2b36e32381a0b48bce297 100644
 --- a/src/main/java/org/bukkit/generator/ChunkGenerator.java
 +++ b/src/main/java/org/bukkit/generator/ChunkGenerator.java
-@@ -343,6 +343,19 @@ public abstract class ChunkGenerator {
+@@ -343,6 +343,20 @@ public abstract class ChunkGenerator {
          return new ArrayList<BlockPopulator>();
      }
  
@@ -337,8 +343,9 @@ index 0667315e2bd10254aef59c2a6bcceee9d927b6d5..5cf3f8875753b0293ea56b65a64f0075
 +     * Generate decorations in a chunk, with quick access to its neighbors.
 +     *
 +     * @param world ProtoWorld to generate decorations with.
++     * @deprecated use and override {@link BlockPopulator#populate(WorldInfo, Random, int, int, LimitedRegion)}
 +     */
-+    @SuppressWarnings("unused")
++    @Deprecated(forRemoval = true)
 +    public void generateDecorations(@NotNull io.papermc.paper.world.generation.ProtoWorld world) {
 +        // Do nothing by default to maintain compatibility with existing generators.
 +    }
@@ -347,3 +354,157 @@ index 0667315e2bd10254aef59c2a6bcceee9d927b6d5..5cf3f8875753b0293ea56b65a64f0075
      /**
       * Gets a fixed spawn location to use for a given world.
       * <p>
+diff --git a/src/main/java/org/bukkit/generator/LimitedRegion.java b/src/main/java/org/bukkit/generator/LimitedRegion.java
+index 0428f210866587997d3e73dbb6ae4770f3c44ed5..3bd9f092d9ae38c2d91abdc522d6a8d94b4b8212 100644
+--- a/src/main/java/org/bukkit/generator/LimitedRegion.java
++++ b/src/main/java/org/bukkit/generator/LimitedRegion.java
+@@ -2,6 +2,12 @@ package org.bukkit.generator;
+ 
+ import org.bukkit.Location;
+ import org.bukkit.RegionAccessor;
++// Paper start
++import org.bukkit.World;
++import org.bukkit.block.BlockState;
++import org.bukkit.block.data.BlockData;
++import org.bukkit.util.Vector;
++// Paper end
+ import org.jetbrains.annotations.NotNull;
+ 
+ /**
+@@ -42,4 +48,136 @@ public interface LimitedRegion extends RegionAccessor {
+      * @return true if the coordinates are in the region, otherwise false.
+      */
+     boolean isInRegion(int x, int y, int z);
++
++    // Paper start
++    /**
++     * Sets the block at a vector location to the provided {@link BlockData}.
++     *
++     * @param vector {@link Vector} representing the position of the block to set.
++     * @param data   {@link BlockData} to set the block at the provided coordinates to.
++     */
++    default void setBlockData(@NotNull Vector vector, @NotNull BlockData data) {
++        setBlockData(vector.getBlockX(), vector.getBlockY(), vector.getBlockZ(), data);
++    }
++
++    /**
++     * Sets the {@link BlockState} at a location.
++     *
++     * @param x X coordinate.
++     * @param y Y coordinate.
++     * @param z Z coordinate.
++     * @param state The block state.
++     */
++    void setBlockState(int x, int y, int z, @NotNull BlockState state);
++
++    /**
++     * Sets the {@link BlockState} at a location.
++     *
++     * @param location Location to set block state.
++     * @param state The block state.
++     */
++    default void setBlockState(@NotNull Vector location, @NotNull BlockState state) {
++        setBlockState(location.getBlockX(), location.getBlockY(), location.getBlockZ(), state);
++    }
++
++    /**
++     * Gets the {@link BlockState} at a location.
++     *
++     * @param location Location to get block state from.
++     * @return The block state.
++     */
++    @NotNull
++    default BlockState getBlockState(@NotNull Vector location) {
++        return getBlockState(location.getBlockX(), location.getBlockY(), location.getBlockZ());
++    }
++
++    /**
++     * Schedules a block update at (x, y, z).
++     *
++     * @param x X coordinate
++     * @param y Y coordinate
++     * @param z Z coordinate
++     */
++    void scheduleBlockUpdate(int x, int y, int z);
++
++    /**
++     * Schedules a block update at a vector location.
++     *
++     * @param location {@link Vector} representing the position of the block to update.
++     */
++    default void scheduleBlockUpdate(@NotNull Vector location) {
++        scheduleBlockUpdate(location.getBlockX(), location.getBlockY(), location.getBlockZ());
++    }
++
++    /**
++     * Schedules a fluid update at (x, y, z).
++     *
++     * @param x X coordinate
++     * @param y Y coordinate
++     * @param z Z coordinate
++     */
++    void scheduleFluidUpdate(int x, int y, int z);
++
++    /**
++     * Schedules a fluid update at a vector location.
++     *
++     * @param location {@link Vector} representing the position of the block to update.
++     */
++    default void scheduleFluidUpdate(@NotNull Vector location) {
++        scheduleFluidUpdate(location.getBlockX(), location.getBlockY(), location.getBlockZ());
++    }
++
++    /**
++     * Gets the {@link World} object this region represents.
++     * <p>
++     * Do <b>not</b> attempt to read from/write to this world! Doing so during generation <b>will cause a deadlock!</b>
++     *
++     * @return The {@link World} object that this region represents.
++     */
++    @NotNull
++    World getWorld();
++
++    /**
++     * Gets the {@link BlockData} of the block at the provided coordinates.
++     *
++     * @param vector {@link Vector} representing the position of the block to get.
++     * @return {@link BlockData} at the coordinates
++     */
++    @NotNull
++    default BlockData getBlockData(@NotNull Vector vector) {
++        return getBlockData(vector.getBlockX(), vector.getBlockY(), vector.getBlockZ());
++    }
++
++    /**
++     * Gets the X-coordinate of the chunk in the center of the region.
++     *
++     * @return The center chunk's X coordinate.
++     */
++    int getCenterChunkX();
++
++    /**
++     * Gets the X-coordinate of the block in the center of the region.
++     *
++     * @return The center chunk's X coordinate.
++     */
++    default int getCenterBlockX() {
++        return getCenterChunkX() << 4;
++    }
++
++    /**
++     * Gets the Z-coordinate of the chunk in the center of the region.
++     *
++     * @return The center chunk's Z coordinate.
++     */
++    int getCenterChunkZ();
++
++    /**
++     * Gets the Z-coordinate of the block in the center of the region.
++     *
++     * @return The center chunk's Z coordinate.
++     */
++    default int getCenterBlockZ() {
++        return getCenterChunkZ() << 4;
++    }
++    // Paper end
+ }
