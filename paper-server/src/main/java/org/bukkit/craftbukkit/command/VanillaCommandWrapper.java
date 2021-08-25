@@ -91,7 +91,21 @@ public final class VanillaCommandWrapper extends BukkitCommand {
     }
 
     public static String getPermission(CommandNode<CommandSourceStack> vanillaCommand) {
-        return "minecraft.command." + ((vanillaCommand.getRedirect() == null) ? vanillaCommand.getName() : vanillaCommand.getRedirect().getName());
+        // Paper start - Vanilla command permission fixes
+        while (vanillaCommand.getRedirect() != null) {
+            vanillaCommand = vanillaCommand.getRedirect();
+        }
+        final String commandName = vanillaCommand.getName();
+        return "minecraft.command." + stripDefaultNamespace(commandName);
+    }
+
+    private static String stripDefaultNamespace(final String maybeNamespaced) {
+        final String prefix = "minecraft:";
+        if (maybeNamespaced.startsWith(prefix)) {
+            return maybeNamespaced.substring(prefix.length());
+        }
+        return maybeNamespaced;
+        // Paper end - Vanilla command permission fixes
     }
 
     private String toDispatcher(String[] args, String name) {
