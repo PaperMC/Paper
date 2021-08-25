@@ -6,7 +6,7 @@ Subject: [PATCH] Use distance map to optimise entity tracker
 Use the distance map to find candidate players for tracking.
 
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index e7c78106aa34d948a77cf72d5716e17d10beae72..073aa637fcaf14a5ae8b203604d75b74829cbc4e 100644
+index 2b4c35d9bd186fd7c3650a7ad791cd67fb64e635..514d859ab0fbd25e2217c27dfbbdba1f688848c1 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
 @@ -63,6 +63,7 @@ import net.minecraft.network.protocol.game.ClientboundSetEntityLinkPacket;
@@ -17,7 +17,7 @@ index e7c78106aa34d948a77cf72d5716e17d10beae72..073aa637fcaf14a5ae8b203604d75b74
  import net.minecraft.server.level.progress.ChunkProgressListener;
  import net.minecraft.server.network.ServerPlayerConnection;
  import net.minecraft.util.CsvOutput;
-@@ -226,11 +227,33 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -214,11 +215,33 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
      public final com.destroystokyo.paper.util.misc.PlayerAreaMap playerViewDistanceTickMap;
      public final com.destroystokyo.paper.util.misc.PlayerAreaMap playerViewDistanceNoTickMap;
      // Paper end - no-tick view distance
@@ -51,7 +51,7 @@ index e7c78106aa34d948a77cf72d5716e17d10beae72..073aa637fcaf14a5ae8b203604d75b74
          // Paper start - no-tick view distance
          int effectiveTickViewDistance = this.getEffectiveViewDistance();
          int effectiveNoTickViewDistance = Math.max(this.getEffectiveNoTickViewDistance(), effectiveTickViewDistance);
-@@ -247,7 +270,11 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -235,7 +258,11 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
      }
  
      void removePlayerFromDistanceMaps(ServerPlayer player) {
@@ -64,7 +64,7 @@ index e7c78106aa34d948a77cf72d5716e17d10beae72..073aa637fcaf14a5ae8b203604d75b74
          // Paper start - no-tick view distance
          this.playerViewDistanceBroadcastMap.remove(player);
          this.playerViewDistanceTickMap.remove(player);
-@@ -259,6 +286,14 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -247,6 +274,14 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          int chunkX = MCUtil.getChunkCoordinate(player.getX());
          int chunkZ = MCUtil.getChunkCoordinate(player.getZ());
          // Note: players need to be explicitly added to distance maps before they can be updated
@@ -79,7 +79,7 @@ index e7c78106aa34d948a77cf72d5716e17d10beae72..073aa637fcaf14a5ae8b203604d75b74
          // Paper start - no-tick view distance
          int effectiveTickViewDistance = this.getEffectiveViewDistance();
          int effectiveNoTickViewDistance = Math.max(this.getEffectiveNoTickViewDistance(), effectiveTickViewDistance);
-@@ -312,6 +347,45 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -300,6 +335,45 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          this.poiManager = new PoiManager(new File(file, "poi"), dataFixer, dsync, world);
          this.setViewDistance(viewDistance);
          this.playerMobDistanceMap = this.level.paperConfig.perPlayerMobSpawns ? new com.destroystokyo.paper.util.PlayerMobDistanceMap() : null; // Paper
@@ -125,7 +125,7 @@ index e7c78106aa34d948a77cf72d5716e17d10beae72..073aa637fcaf14a5ae8b203604d75b74
          // Paper start - no-tick view distance
          this.setNoTickViewDistance(this.level.paperConfig.noTickViewDistance);
          this.playerViewDistanceTickMap = new com.destroystokyo.paper.util.misc.PlayerAreaMap(this.pooledLinkedPlayerHashSets,
-@@ -1465,17 +1539,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1453,17 +1527,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
      }
  
      public void move(ServerPlayer player) {
@@ -144,7 +144,7 @@ index e7c78106aa34d948a77cf72d5716e17d10beae72..073aa637fcaf14a5ae8b203604d75b74
  
          int i = SectionPos.blockToSectionCoord(player.getBlockX());
          int j = SectionPos.blockToSectionCoord(player.getBlockZ());
-@@ -1630,7 +1694,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1618,7 +1682,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
  
                      entity.tracker = playerchunkmap_entitytracker; // Paper - Fast access to tracker
                      this.entityMap.put(entity.getId(), playerchunkmap_entitytracker);
@@ -153,7 +153,7 @@ index e7c78106aa34d948a77cf72d5716e17d10beae72..073aa637fcaf14a5ae8b203604d75b74
                      if (entity instanceof ServerPlayer) {
                          ServerPlayer entityplayer = (ServerPlayer) entity;
  
-@@ -1674,7 +1738,37 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1662,7 +1726,37 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          entity.tracker = null; // Paper - We're no longer tracked
      }
  
@@ -191,7 +191,7 @@ index e7c78106aa34d948a77cf72d5716e17d10beae72..073aa637fcaf14a5ae8b203604d75b74
          List<ServerPlayer> list = Lists.newArrayList();
          List<ServerPlayer> list1 = this.level.players();
  
-@@ -1783,23 +1877,31 @@ Sections go from 0..16. Now whenever a section is not empty, it can potentially
+@@ -1771,23 +1865,31 @@ Sections go from 0..16. Now whenever a section is not empty, it can potentially
          DebugPackets.sendPoiPacketsForChunk(this.level, chunk.getPos());
          List<Entity> list = Lists.newArrayList();
          List<Entity> list1 = Lists.newArrayList();
@@ -235,7 +235,7 @@ index e7c78106aa34d948a77cf72d5716e17d10beae72..073aa637fcaf14a5ae8b203604d75b74
  
          Iterator iterator;
          Entity entity1;
-@@ -1882,6 +1984,42 @@ Sections go from 0..16. Now whenever a section is not empty, it can potentially
+@@ -1870,6 +1972,42 @@ Sections go from 0..16. Now whenever a section is not empty, it can potentially
              this.lastSectionPos = SectionPos.of(entity);
          }
  
@@ -278,7 +278,7 @@ index e7c78106aa34d948a77cf72d5716e17d10beae72..073aa637fcaf14a5ae8b203604d75b74
          public boolean equals(Object object) {
              return object instanceof ChunkMap.TrackedEntity ? ((ChunkMap.TrackedEntity) object).entity.getId() == this.entity.getId() : false;
          }
-@@ -1967,7 +2105,7 @@ Sections go from 0..16. Now whenever a section is not empty, it can potentially
+@@ -1955,7 +2093,7 @@ Sections go from 0..16. Now whenever a section is not empty, it can potentially
                  int j = entity.getType().clientTrackingRange() * 16;
                  j = org.spigotmc.TrackingRange.getEntityTrackingRange(entity, j); // Paper
  
