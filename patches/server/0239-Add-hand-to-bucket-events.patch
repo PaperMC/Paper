@@ -5,7 +5,7 @@ Subject: [PATCH] Add hand to bucket events
 
 
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index 19f8e74f292e83f7438683efddbaa4930f1a7c48..4e0e5d3e0b91d4b7be4eaa6fe252287d90bc010e 100644
+index c4bb49f8007169f62deeef19ccce2b907d961374..68e0d76aed7e993c35ac2e73dda6ed251a817d39 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
 @@ -1374,15 +1374,17 @@ public class ServerLevel extends Level implements WorldGenLevel {
@@ -62,19 +62,19 @@ index 454e07a47d35b8dc8e5f1fb38da74669b4f7cdc7..15787afad42f9299638a1c9e57d26678
              if (event.isCancelled()) {
                  return InteractionResult.PASS;
 diff --git a/src/main/java/net/minecraft/world/item/BucketItem.java b/src/main/java/net/minecraft/world/item/BucketItem.java
-index 24272b384b96bb98a8231fe8583f404ad0c96de5..7c3e94c6bf8337ef660473d8ed451606d56082a5 100644
+index 5870023250ed2dba16b2fa5c6a8be6f36cebc640..650b59b69eb12112bc71e5ff164767e3118e1c2a 100644
 --- a/src/main/java/net/minecraft/world/item/BucketItem.java
 +++ b/src/main/java/net/minecraft/world/item/BucketItem.java
-@@ -71,7 +71,7 @@ public class BucketItem extends Item implements DispensibleContainerItem {
-                         BucketPickup ifluidsource = (BucketPickup) iblockdata.getBlock();
+@@ -72,7 +72,7 @@ public class BucketItem extends Item implements DispensibleContainerItem {
                          // CraftBukkit start
                          ItemStack dummyFluid = ifluidsource.pickupBlock(DummyGeneratorAccess.INSTANCE, blockposition, iblockdata);
+                         if (dummyFluid.isEmpty()) return InteractionResultHolder.fail(itemstack); // Don't fire event if the bucket won't be filled.
 -                        PlayerBucketFillEvent event = CraftEventFactory.callPlayerBucketFillEvent((ServerLevel) world, user, blockposition, blockposition, movingobjectpositionblock.getDirection(), itemstack, dummyFluid.getItem());
 +                        PlayerBucketFillEvent event = CraftEventFactory.callPlayerBucketFillEvent((ServerLevel) world, user, blockposition, blockposition, movingobjectpositionblock.getDirection(), itemstack, dummyFluid.getItem(), hand); // Paper - add enumhand
  
                          if (event.isCancelled()) {
                              ((ServerPlayer) user).connection.send(new ClientboundBlockUpdatePacket(world, blockposition)); // SPIGOT-5163 (see PlayerInteractManager)
-@@ -102,7 +102,7 @@ public class BucketItem extends Item implements DispensibleContainerItem {
+@@ -103,7 +103,7 @@ public class BucketItem extends Item implements DispensibleContainerItem {
                      iblockdata = world.getBlockState(blockposition);
                      BlockPos blockposition2 = iblockdata.getBlock() instanceof LiquidBlockContainer && this.content == Fluids.WATER ? blockposition : blockposition1;
  
@@ -83,7 +83,7 @@ index 24272b384b96bb98a8231fe8583f404ad0c96de5..7c3e94c6bf8337ef660473d8ed451606
                          this.checkExtraContent(user, world, itemstack, blockposition2);
                          if (user instanceof ServerPlayer) {
                              CriteriaTriggers.PLACED_BLOCK.trigger((ServerPlayer) user, blockposition2, itemstack);
-@@ -129,10 +129,12 @@ public class BucketItem extends Item implements DispensibleContainerItem {
+@@ -130,10 +130,12 @@ public class BucketItem extends Item implements DispensibleContainerItem {
  
      @Override
      public boolean emptyContents(@Nullable Player player, Level world, BlockPos pos, @Nullable BlockHitResult hitResult) {
@@ -98,7 +98,7 @@ index 24272b384b96bb98a8231fe8583f404ad0c96de5..7c3e94c6bf8337ef660473d8ed451606
          // CraftBukkit end
          if (!(this.content instanceof FlowingFluid)) {
              return false;
-@@ -145,7 +147,7 @@ public class BucketItem extends Item implements DispensibleContainerItem {
+@@ -146,7 +148,7 @@ public class BucketItem extends Item implements DispensibleContainerItem {
  
              // CraftBukkit start
              if (flag1 && entityhuman != null) {
@@ -107,7 +107,7 @@ index 24272b384b96bb98a8231fe8583f404ad0c96de5..7c3e94c6bf8337ef660473d8ed451606
                  if (event.isCancelled()) {
                      ((ServerPlayer) entityhuman).connection.send(new ClientboundBlockUpdatePacket(world, blockposition)); // SPIGOT-4238: needed when looking through entity
                      ((ServerPlayer) entityhuman).getBukkitEntity().updateInventory(); // SPIGOT-4541
-@@ -154,7 +156,7 @@ public class BucketItem extends Item implements DispensibleContainerItem {
+@@ -155,7 +157,7 @@ public class BucketItem extends Item implements DispensibleContainerItem {
              }
              // CraftBukkit end
              if (!flag1) {
@@ -117,7 +117,7 @@ index 24272b384b96bb98a8231fe8583f404ad0c96de5..7c3e94c6bf8337ef660473d8ed451606
                  int i = blockposition.getX();
                  int j = blockposition.getY();
 diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
-index 1fef077a6d5efc8bdc171b5c6e2a49129f8589ce..ac46dac8be79953720fab6485caf677f2c3ad87b 100644
+index 17f596e6059334114ce3ee17fbde1ce3d14c5ca1..96c685ffbf6058b69f0c573a1255a9e8596365bf 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
 +++ b/src/main/java/net/minecraft/world/level/Level.java
 @@ -292,6 +292,17 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
@@ -139,7 +139,7 @@ index 1fef077a6d5efc8bdc171b5c6e2a49129f8589ce..ac46dac8be79953720fab6485caf677f
      public boolean isClientSide() {
          return this.isClientSide;
 diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-index ce01df5dbb4913b9620a1bab3c0a251defb99f75..0ddd9de39a0d67529a8f973f5dfaf5ff53f5eb66 100644
+index b7fbbe39bc36f5315abe658b00704836a40d34ca..732a6f247e25e245909829d9fa784fced1d3cca2 100644
 --- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 +++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 @@ -222,7 +222,7 @@ public class CraftEventFactory {

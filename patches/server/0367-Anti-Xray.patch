@@ -1104,15 +1104,15 @@ index 6ddb24ae627b9bfdfd82b19b1a746f32bb8d0532..5e7fe43d1b27bed51f8a7c0fcddb8604
          }
  
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index 60de95d72ca4e4b2e12a2b3363c59a08b75d0aae..fac80bdbf0fa68cd8e63130a6a9de3b60a44583e 100644
+index 7eec9afc5782d5d588f029cf7451c354a52f176a..afb62f6d7d0c4dc80e9ceea6c6fe420f551b40b6 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
 @@ -288,7 +288,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
      // Add env and gen to constructor, WorldData -> WorldDataServer
-     public ServerLevel(MinecraftServer minecraftserver, Executor executor, LevelStorageSource.LevelStorageAccess convertable_conversionsession, ServerLevelData iworlddataserver, ResourceKey<Level> resourcekey, DimensionType dimensionmanager, ChunkProgressListener worldloadlistener, ChunkGenerator chunkgenerator, boolean flag, long i, List<CustomSpawner> list, boolean flag1, org.bukkit.World.Environment env, org.bukkit.generator.ChunkGenerator gen) {
+     public ServerLevel(MinecraftServer minecraftserver, Executor executor, LevelStorageSource.LevelStorageAccess convertable_conversionsession, ServerLevelData iworlddataserver, ResourceKey<Level> resourcekey, DimensionType dimensionmanager, ChunkProgressListener worldloadlistener, ChunkGenerator chunkgenerator, boolean flag, long i, List<CustomSpawner> list, boolean flag1, org.bukkit.World.Environment env, org.bukkit.generator.ChunkGenerator gen, org.bukkit.generator.BiomeProvider biomeProvider) {
          // Objects.requireNonNull(minecraftserver); // CraftBukkit - decompile error
--        super(iworlddataserver, resourcekey, dimensionmanager, minecraftserver::getProfiler, false, flag, i, gen, env);
-+        super(iworlddataserver, resourcekey, dimensionmanager, minecraftserver::getProfiler, false, flag, i, gen, env, executor); // Paper - Anti-Xray - Pass executor
+-        super(iworlddataserver, resourcekey, dimensionmanager, minecraftserver::getProfiler, false, flag, i, gen, biomeProvider, env);
++        super(iworlddataserver, resourcekey, dimensionmanager, minecraftserver::getProfiler, false, flag, i, gen, biomeProvider, env, executor); // Paper - Anti-Xray - Pass executor
          this.pvpMode = minecraftserver.isPvpAllowed();
          this.convertable = convertable_conversionsession;
          this.uuid = WorldUUID.getUUID(convertable_conversionsession.levelPath.toFile());
@@ -1139,7 +1139,7 @@ index 8659df9d2e9d8b3b0cd992efc9a1f3b2d958e9c8..3f7919f4e8f5a5b79bf4e541ea5f4ce4
  
      public void destroyAndAck(BlockPos pos, ServerboundPlayerActionPacket.Action action, String reason) {
 diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
-index fb6da4bccd33b9e079f4bcf84f8ff59ad24a5fe6..2007b0b04e7037e1444b5d1964638ccd06e7a2df 100644
+index fac722d2f5bbd86cbeacc7da4bb45155257ae97f..d050d60900a6829a9409ef944d7e4fceb5248dc1 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
 +++ b/src/main/java/net/minecraft/world/level/Level.java
 @@ -165,6 +165,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
@@ -1154,8 +1154,8 @@ index fb6da4bccd33b9e079f4bcf84f8ff59ad24a5fe6..2007b0b04e7037e1444b5d1964638ccd
          return this.typeKey;
      }
  
--    protected Level(WritableLevelData worlddatamutable, ResourceKey<Level> resourcekey, final DimensionType dimensionmanager, Supplier<ProfilerFiller> supplier, boolean flag, boolean flag1, long i, org.bukkit.generator.ChunkGenerator gen, org.bukkit.World.Environment env) {
-+    protected Level(WritableLevelData worlddatamutable, ResourceKey<Level> resourcekey, final DimensionType dimensionmanager, Supplier<ProfilerFiller> supplier, boolean flag, boolean flag1, long i, org.bukkit.generator.ChunkGenerator gen, org.bukkit.World.Environment env, java.util.concurrent.Executor executor) { // Paper - Anti-Xray - Pass executor
+-    protected Level(WritableLevelData worlddatamutable, ResourceKey<Level> resourcekey, final DimensionType dimensionmanager, Supplier<ProfilerFiller> supplier, boolean flag, boolean flag1, long i, org.bukkit.generator.ChunkGenerator gen, org.bukkit.generator.BiomeProvider biomeProvider, org.bukkit.World.Environment env) {
++    protected Level(WritableLevelData worlddatamutable, ResourceKey<Level> resourcekey, final DimensionType dimensionmanager, Supplier<ProfilerFiller> supplier, boolean flag, boolean flag1, long i, org.bukkit.generator.ChunkGenerator gen, org.bukkit.generator.BiomeProvider biomeProvider, org.bukkit.World.Environment env, java.util.concurrent.Executor executor) { // Paper - Anti-Xray - Pass executor
          this.spigotConfig = new org.spigotmc.SpigotWorldConfig(((net.minecraft.world.level.storage.PrimaryLevelData) worlddatamutable).getLevelName()); // Spigot
          this.paperConfig = new com.destroystokyo.paper.PaperWorldConfig(((net.minecraft.world.level.storage.PrimaryLevelData) worlddatamutable).getLevelName(), this.spigotConfig); // Paper
          this.generator = gen;
@@ -1426,28 +1426,28 @@ index 17c2f2dca587b350dc3e48f01dc62025a12d83c0..1ba393e2b47cca45bfa8e4ff4ef2438f
                  blockids.read(data.getList("Palette", CraftMagicNumbers.NBT.TAG_COMPOUND), data.getLongArray("BlockStates"));
  
                  sectionBlockIDs[i] = blockids;
-diff --git a/src/main/java/org/bukkit/craftbukkit/generator/CraftChunkData.java b/src/main/java/org/bukkit/craftbukkit/generator/CraftChunkData.java
-index c587007de724f165c031a18ab59edd0623a045f3..45e5dfeef92e9756b0fa63d8fc66a4cf96ae7d9a 100644
---- a/src/main/java/org/bukkit/craftbukkit/generator/CraftChunkData.java
-+++ b/src/main/java/org/bukkit/craftbukkit/generator/CraftChunkData.java
-@@ -23,9 +23,11 @@ public final class CraftChunkData implements ChunkGenerator.ChunkData {
-     private LevelChunkSection[] sections;
+diff --git a/src/main/java/org/bukkit/craftbukkit/generator/OldCraftChunkData.java b/src/main/java/org/bukkit/craftbukkit/generator/OldCraftChunkData.java
+index 7bfd803d11976dba9ace79edc76bb083a2eccf38..a48c659c02c6c33a8efdac6daf9c9a0708f05071 100644
+--- a/src/main/java/org/bukkit/craftbukkit/generator/OldCraftChunkData.java
++++ b/src/main/java/org/bukkit/craftbukkit/generator/OldCraftChunkData.java
+@@ -25,9 +25,11 @@ public final class OldCraftChunkData implements ChunkGenerator.ChunkData {
+     private final LevelChunkSection[] sections;
      private Set<BlockPos> tiles;
      private final Set<BlockPos> lights = new HashSet<>();
 +    private World world; // Paper - Anti-Xray - Add parameters
  
-     public CraftChunkData(World world) {
+     public OldCraftChunkData(World world) {
          this(world.getMinHeight(), world.getMaxHeight());
 +        this.world = world; // Paper - Anti-Xray - Add parameters
      }
  
-     /* pp for tests */ CraftChunkData(int minHeight, int maxHeight) {
-@@ -170,7 +172,7 @@ public final class CraftChunkData implements ChunkGenerator.ChunkData {
+     /* pp for tests */ OldCraftChunkData(int minHeight, int maxHeight) {
+@@ -177,7 +179,7 @@ public final class OldCraftChunkData implements ChunkGenerator.ChunkData {
          int offset = (y - this.minHeight) >> 4;
          LevelChunkSection section = this.sections[offset];
          if (create && section == null) {
 -            this.sections[offset] = section = new LevelChunkSection(offset + (this.minHeight >> 4));
-+            this.sections[offset] = section = new LevelChunkSection(offset + (this.minHeight >> 4), null, this.world instanceof org.bukkit.craftbukkit.CraftWorld ? ((org.bukkit.craftbukkit.CraftWorld) this.world).getHandle() : null, true); // Paper - Anti-Xray - Add parameters
++            this.sections[offset] = section = new LevelChunkSection(offset + (this.minHeight >> 4), null, world instanceof org.bukkit.craftbukkit.CraftWorld ? ((org.bukkit.craftbukkit.CraftWorld) this.world).getHandle() : null, true); // Paper - Anti-Xray - Add parameters
          }
          return section;
      }
