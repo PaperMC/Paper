@@ -1,0 +1,137 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Thu, 26 Aug 2021 16:36:11 -0700
+Subject: [PATCH] Allow bukkit commands in /execute command
+
+
+diff --git a/src/main/java/io/papermc/paper/commands/DelegatingRootCommandNode.java b/src/main/java/io/papermc/paper/commands/DelegatingRootCommandNode.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..19227e7cbfa0d14794daf22060213bb1a6da959c
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/commands/DelegatingRootCommandNode.java
+@@ -0,0 +1,100 @@
++package io.papermc.paper.commands;
++
++import com.mojang.brigadier.AmbiguityConsumer;
++import com.mojang.brigadier.Command;
++import com.mojang.brigadier.RedirectModifier;
++import com.mojang.brigadier.StringReader;
++import com.mojang.brigadier.tree.CommandNode;
++import com.mojang.brigadier.tree.RootCommandNode;
++import net.minecraft.commands.CommandSourceStack;
++import net.minecraft.server.MinecraftServer;
++
++import java.util.Collection;
++import java.util.function.Predicate;
++import java.util.function.Supplier;
++
++public class DelegatingRootCommandNode<S> extends RootCommandNode<S> {
++
++    public static final DelegatingRootCommandNode<CommandSourceStack> INSTANCE = new DelegatingRootCommandNode<>(() -> MinecraftServer.getServer().getCommands().getDispatcher().getRoot());
++
++    private final Supplier<RootCommandNode<S>> commandNodeSupplier;
++
++    private DelegatingRootCommandNode(Supplier<RootCommandNode<S>> supplier) {
++        this.commandNodeSupplier = supplier;
++    }
++
++    @Override
++    public boolean equals(Object o) {
++        return this.commandNodeSupplier.get().equals(o);
++    }
++
++    @Override
++    public void removeCommand(String name) {
++        this.commandNodeSupplier.get().removeCommand(name);
++    }
++
++    @Override
++    public Command<S> getCommand() {
++        return this.commandNodeSupplier.get().getCommand();
++    }
++
++    @Override
++    public Collection<CommandNode<S>> getChildren() {
++        return this.commandNodeSupplier.get().getChildren();
++    }
++
++    @Override
++    public CommandNode<S> getChild(String name) {
++        return this.commandNodeSupplier.get().getChild(name);
++    }
++
++    @Override
++    public CommandNode<S> getRedirect() {
++        return this.commandNodeSupplier.get().getRedirect();
++    }
++
++    @Override
++    public RedirectModifier<S> getRedirectModifier() {
++        return this.commandNodeSupplier.get().getRedirectModifier();
++    }
++
++    @Override
++    public synchronized boolean canUse(S source) {
++        return this.commandNodeSupplier.get().canUse(source);
++    }
++
++    @Override
++    public void addChild(CommandNode<S> node) {
++        this.commandNodeSupplier.get().addChild(node);
++    }
++
++    @Override
++    public void findAmbiguities(AmbiguityConsumer<S> consumer) {
++        this.commandNodeSupplier.get().findAmbiguities(consumer);
++    }
++
++    @Override
++    public int hashCode() {
++        return this.commandNodeSupplier.get().hashCode();
++    }
++
++    @Override
++    public Predicate<S> getRequirement() {
++        return this.commandNodeSupplier.get().getRequirement();
++    }
++
++    @Override
++    public Collection<? extends CommandNode<S>> getRelevantNodes(StringReader input) {
++        return this.commandNodeSupplier.get().getRelevantNodes(input);
++    }
++
++    @Override
++    public int compareTo(CommandNode<S> o) {
++        return this.commandNodeSupplier.get().compareTo(o);
++    }
++
++    @Override
++    public boolean isFork() {
++        return this.commandNodeSupplier.get().isFork();
++    }
++}
+diff --git a/src/main/java/net/minecraft/commands/Commands.java b/src/main/java/net/minecraft/commands/Commands.java
+index b66afde6851ceaeccb84aea00cdc333dfbf3d4b0..10634041fa6c04e09a4ec38fbd7e4c338fc67b28 100644
+--- a/src/main/java/net/minecraft/commands/Commands.java
++++ b/src/main/java/net/minecraft/commands/Commands.java
+@@ -377,6 +377,7 @@ public class Commands {
+         RootCommandNode<SharedSuggestionProvider> rootcommandnode = new RootCommandNode();
+ 
+         map.put(this.dispatcher.getRoot(), rootcommandnode);
++        map.put(io.papermc.paper.commands.DelegatingRootCommandNode.INSTANCE, rootcommandnode); // Paper - replace delegating root command with new root command node
+         this.fillUsableCommands(this.dispatcher.getRoot(), rootcommandnode, player.createCommandSourceStack(), map);
+ 
+         Collection<String> bukkit = new LinkedHashSet<>();
+diff --git a/src/main/java/net/minecraft/server/commands/ExecuteCommand.java b/src/main/java/net/minecraft/server/commands/ExecuteCommand.java
+index bde3a290c9136cca3f069063c5200bfdd05584cd..2815396349119ff17458997511a03977c0c12e80 100644
+--- a/src/main/java/net/minecraft/server/commands/ExecuteCommand.java
++++ b/src/main/java/net/minecraft/server/commands/ExecuteCommand.java
+@@ -94,7 +94,7 @@ public class ExecuteCommand {
+         }));
+         dispatcher.register(Commands.literal("execute").requires((source) -> {
+             return source.hasPermission(2);
+-        }).then(Commands.literal("run").redirect(dispatcher.getRoot())).then(addConditionals(literalCommandNode, Commands.literal("if"), true)).then(addConditionals(literalCommandNode, Commands.literal("unless"), false)).then(Commands.literal("as").then(Commands.argument("targets", EntityArgument.entities()).fork(literalCommandNode, (context) -> {
++        }).then(Commands.literal("run").redirect(io.papermc.paper.commands.DelegatingRootCommandNode.INSTANCE)).then(addConditionals(literalCommandNode, Commands.literal("if"), true)).then(addConditionals(literalCommandNode, Commands.literal("unless"), false)).then(Commands.literal("as").then(Commands.argument("targets", EntityArgument.entities()).fork(literalCommandNode, (context) -> { // Paper - use delegating root node
+             List<CommandSourceStack> list = Lists.newArrayList();
+ 
+             for(Entity entity : EntityArgument.getOptionalEntities(context, "targets")) {
