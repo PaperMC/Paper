@@ -61,24 +61,22 @@ you will most likely use this for WSL), `homebrew` (macOS / Linux), and more:
 
 - `git` (package `git` everywhere);
 - `patch` (often package `patch`);
-- A Java 8 or later JDK (packages vary, use Google/DuckDuckGo/etc.).  
-If you need one, you can find them on [AdoptOpenJDK](https://adoptopenjdk.net/).
-- `maven` (often package `maven`; can be found on
-[Apache's site](https://maven.apache.org/download.cgi) too);
+- A Java 16 or later JDK (packages vary, use Google/DuckDuckGo/etc.).  
+If you need one, you can find them on [Adoptium](https://adoptium.net/).
 - `curl` (package `curl` everywhere).
 
 If you're on Windows, check
 [the section on WSL](#patching-and-building-is-really-slow-what-can-i-do).
 
-If you're compiling with Docker, you can use the
-[`adoptopenjdk`](https://hub.docker.com/_/adoptopenjdk/) images like so:
+If you're compiling with Docker, you can use Adoptium's
+[`eclipse-temurin`](https://hub.docker.com/_/eclipse-temurin/) images like so:
 
 ```console
-# docker run -it -v "$(pwd)":/data --rm adoptopenjdk:8-jdk-hotspot bash
+# docker run -it -v "$(pwd)":/data --rm eclipse-temurin:16.0.2_7-jdk bash
 Pulling image...
 
 root@abcdefg1234:/# javac -version
-javac 1.8.0_252
+javac 16.0.2
 ```
 
 ## Understanding Patches
@@ -99,12 +97,13 @@ of how to use git is required. A basic tutorial can be found here:
 Assuming you have already forked the repository:
 
 1. Clone your fork to your local machine;
-1. Type `./paper patch` in a terminal to apply the changes from upstream;
-1. cd into `Paper-Server` for server changes, and `Paper-API` for API changes.  
-You can also run `./paper server` or `./paper api` for these same directories
+2. Type `./gradlew applyPatches` in a terminal to apply the changes from upstream.
+On Windows, leave out the `./` at the beginning for all `gradlew` commands;
+3. cd into `Paper-Server` for server changes, and `Paper-API` for API changes.  
+<!--You can also run `./paper server` or `./paper api` for these same directories
 respectively.
 1. You can also run `./paper setup`, which allows you to type `paper <command>`
-from anywhere in the Paper structure in most cases.
+from anywhere in the Paper structure in most cases.-->
 
 `Paper-Server` and `Paper-API` aren't git repositories in the traditional sense:
 
@@ -125,7 +124,7 @@ Adding patches to Paper is very simple:
 1. Modify `Paper-Server` and/or `Paper-API` with the appropriate changes;
 1. Type `git add .` inside these directories to add your changes;
 1. Run `git commit` with the desired patch message;
-1. Run `./paper rebuild` in the main directory to convert your commit into a new
+1. Run `./gradlew rebuildPatches` in the main directory to convert your commit into a new
 patch;
 1. PR the generated patch file(s) back to this repository.
 
@@ -148,6 +147,7 @@ edit it using `git rebase`.
 > you must reset the Server, and reset the API if you're editing the Server.
 
 #### Using the Paper tool
+*CURRENTLY NOT OPERATIONAL*
 
 The PaperMC build tool provides a handy command to automatically do this type of
 patch modification.
@@ -177,7 +177,7 @@ instruction do exactly what the above slightly automated system above does.
 1. If you have changes you are working on, type `git stash` to store them for
 later;
    - You can type `git stash pop` to get them back at any point.
-1. Type `git rebase -i upstream/upstream`;
+1. Type `git rebase -i base`;
    - It should show something like
    [this](https://gist.github.com/zachbr/21e92993cb99f62ffd7905d7b02f3159) in
    the text editor you get.
@@ -194,7 +194,7 @@ later;
    - **Make sure to add `--amend`** or else a new patch will be created.
    - You can also modify the commit message and author here.
 1. Type `git rebase --continue` to finish rebasing;
-1. Type `./paper rebuild` in the root directory;
+1. Type `./gradlew rebuildPatches` in the root directory;
    - This will modify the appropriate patches based on your commits.
 1. PR your modified patch file(s) back to this repository.
 
@@ -211,14 +211,14 @@ messing with your HEADs.
 
 1. Make your change while at HEAD;
 1. Make a temporary commit. You don't need to make a message for this;
-1. Type `git rebase -i upstream/upstream`, move (cut) your temporary commit and
+1. Type `git rebase -i base`, move (cut) your temporary commit and
 move it under the line of the patch you wish to modify;
 1. Change the `pick` to the appropriate action:
    1. `f`/`fixup`: Merge your changes into the patch without touching the
   message.
    1. `s`/`squash`: Merge your changes into the patch and use your commit message
   and subject.
-1. Type `./paper rebuild` in the root directory;
+1. Type `./gradlew rebuildPatches` in the root directory;
    - This will modify the appropriate patches based on your commits.
 1. PR your modified patch file(s) back to this repository.
 
@@ -232,10 +232,10 @@ move it under the line of the patch you wish to modify;
   assist you too.
    - Alternatively, if you only know the name of the patch, you can do
   `git commit -a --fixup "Subject of Patch name"`.
-1. Rebase with autosquash: `git rebase --autosquash -i upstream/upstream`.
+1. Rebase with autosquash: `git rebase --autosquash -i base`.
 This will automatically move your fixup commit to the right place, and you just
 need to "save" the changes.
-1. Type `./paper rebuild` in the root directory;
+1. Type `./gradlew rebuildPatches` in the root directory;
    - This will modify the appropriate patches based on your commits.
 1. PR your modified patch file(s) back to this repository.
 
@@ -246,12 +246,12 @@ These steps assume the `origin` remote is your fork of this repository and `upst
 
 1. Pull latest changes from upstream's master: `git checkout master && git pull upstream master`.
 1. Checkout feature/fix branch and rebase on master: `git checkout patch-branch && git rebase master`.
-1. Apply updated patches: `./paper patch`.
+1. Apply updated patches: `./gradlew applyPatches`.
 1. If there are conflicts, fix them.
 1. If your PR creates new patches instead of modifying exist ones, in both the `Paper-Server` and `Paper-API` directories, ensure your newly-created patch is the last commit by either:
-    * Renaming the patch file with a large 4 digit number in front (e.g. 9999-Patch-to-add-some-new-stuff.patch)
-    * Run `git rebase --interactive upstream/upstream` and move the commits to the end.
-1. Rebuild patches: `./paper rebuild`.
+    * Renaming the patch file with a large 4-digit number in front (e.g. 9999-Patch-to-add-some-new-stuff.patch)
+    * Run `git rebase --interactive base` and move the commits to the end.
+1. Rebuild patches: `./gradlew rebuildPatches`.
 1. Force push changes: `git push --force`.
 
 ## PR Policy
@@ -352,9 +352,11 @@ index a92bf8967..d0ab87d0f 100644
 
 ## Obfuscation Helpers
 
+While rarely required, obfuscation helpers are sometimes helpful when it comes
+to methods left unmapped by Spigot, local variables, or method parameters.
 In an effort to make future updates easier on ourselves, Paper tries to use
 obfuscation helpers whenever possible. The purpose of these helpers is to make
-the code more readable and maintainable. These helpers should be be made as easy
+the code more readable and maintainable. These helpers should be made as easy
 to inline as possible by the JVM whenever possible.
 
 An obfuscation helper to access an obfuscated item may be as simple as something
@@ -449,39 +451,25 @@ patching process.
 progress will be lost if you do not;
 1. Identify the name(s) of the file(s) you want to import.
    - A complete list of all possible file names can be found at
-   `./work/Minecraft/$MCVER/spigot/net/minecraft/server`. You might find
+   `./Paper-Server/.gradle/caches/paperweight/mc-dev-sources/net/minecraft/`. You might find
    [MiniMappingViewer] very useful to find the file you need.
-1. Open the file at `./scripts/importmcdev.sh` and add the name of your file to
-the script. Skip to the 2nd last header and follow the instructions there;
-1. Re-patch the server `./paper patch`;
+1. Open the file at `./build-data/dev-imports.txt` and add the name of your file to
+the script. Follow the instructions there;
+1. Re-patch the server `./gradlew applyPatches`;
 1. Edit away!
 
 > ❗ This change is temporary! **DO NOT COMMIT CHANGES TO THIS FILE!**  
 > Once you have made your changes to the new file, and rebuilt patches, you may
-> undo your changes to `importmcdev.sh`.
+> undo your changes to `dev-imports.txt`.
 
 Any file modified in a patch file gets automatically imported, so you only need
 this temporarily to import it to create the first patch.
 
-To undo your changes to the file, type `git checkout scripts/importmcdev.sh`.
-
-### Where can I learn how to name method/field?
-
-For most cases, it is preferred if you use [yarn], as their license works with
-Paper's license. If you can't do that, [MiniMappingViewer] is always around to
-provide you with more of a general idea, *but* you cannot use the Mojang names
-for more than understanding the code.
-
-[yarn] is in general more thorough than Mojang's own mappings, as they include
-method arguments as well, whereas Mojang's do not. If you need local variables
-to understand the code, you might be more lucky with ModCoderPack.
-
-For more information on the Mojang name licensing issues, check this out:
-<https://cpw.github.io/MinecraftMappingData.html>
+To undo your changes to the file, type `git checkout build-data/dev-imports.txt`.
 
 ### My commit doesn't need a build, what do I do?
 
-Well, quite simple: You add `[CI-SKIP]` to the start of your commit subject.
+Well, quite simple: You add `[ci skip]` to the start of your commit subject.
 
 This case most often applies to changes to files like `README.md`, this very
 file (`CONTRIBUTING.md`), the `LICENSE.md` file, and so forth.
@@ -497,7 +485,7 @@ your version by running `winver` in the run window (Windows key + R)). If you're
 out of date, update your system with the
 [Windows Update Assistant](https://www.microsoft.com/en-us/software-download/windows10).
 
-To setup WSL 2, follow the information here:
+To set up WSL 2, follow the information here:
 <https://docs.microsoft.com/en-us/windows/wsl/install-win10>
 
 You will most likely want to use the Ubuntu apps. Once it's set up, install the
@@ -514,13 +502,7 @@ everything like usual.
 
 To install the API to your local maven repository, do the following:
 
-- Enter the API directory by running `./paper api`;
-- Run `mvn install`.
-   - If you are working on a patch without much care for whether the tests
-   pass, you can instead run `mvn install -DskipTests`. Do not PR changes
-   without running tests first.
-   - If a test failed, you have to identify the failing tests by scrolling up a
-   couple lines (i.e. around 50-200). You should find it fairly quickly.
+- Run `./gradlew publishToMavenLocal` in the base directory.
    - If you later need to use the Paper-API, you might want to remove the jar
    from your local maven repository.  
    If you use Windows and don't usually build using WSL, you might not need to
@@ -530,4 +512,3 @@ You can now use the API in your plugin to test it before PRing. You will also
 need to do this to build the Server with the implemented API.
 
 [MiniMappingViewer]: https://minidigger.github.io/MiniMappingViewer/
-[yarn]: https://github.com/FabricMC/yarn
