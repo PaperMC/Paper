@@ -6,10 +6,10 @@ Subject: [PATCH] Fix for large move vectors crashing server
 Check movement distance also based on current position.
 
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index 5e90c722405f9e00bfaf9e2fed523552d9755c8d..4c958e44f2e4627d848cef197167b7f8b0f5e965 100644
+index a6a14c6d3eb6d77997e1763e2dd451e0718511ea..eb723a356217d21352b82485050d316291e669ca 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-@@ -506,19 +506,24 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+@@ -506,20 +506,31 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
  
              if (entity != this.player && entity.getControllingPassenger() == this.player && entity == this.lastVehicle) {
                  ServerLevel worldserver = this.player.getLevel();
@@ -32,16 +32,37 @@ index 5e90c722405f9e00bfaf9e2fed523552d9755c8d..4c958e44f2e4627d848cef197167b7f8
                  double d8 = d5 - this.vehicleFirstGoodZ;
                  double d9 = entity.getDeltaMovement().lengthSqr();
 -                double d10 = d6 * d6 + d7 * d7 + d8 * d8;
+-
 +                // Paper start - fix large move vectors killing the server
 +                double currDeltaX = toX - fromX;
 +                double currDeltaY = toY - fromY;
 +                double currDeltaZ = toZ - fromZ;
 +                double d10 = Math.max(d6 * d6 + d7 * d7 + d8 * d8, (currDeltaX * currDeltaX + currDeltaY * currDeltaY + currDeltaZ * currDeltaZ) - 1);
 +                // Paper end - fix large move vectors killing the server
- 
++
++                // Paper start - fix large move vectors killing the server
++                double otherFieldX = d3 - this.vehicleLastGoodX;
++                double otherFieldY = d4 - this.vehicleLastGoodY - 1.0E-6D;
++                double otherFieldZ = d5 - this.vehicleLastGoodZ;
++                d10 = Math.max(d10, (otherFieldX * otherFieldX + otherFieldY * otherFieldY + otherFieldZ * otherFieldZ) - 1);
++                // Paper end - fix large move vectors killing the server
  
                  // CraftBukkit start - handle custom speeds and skipped ticks
-@@ -1232,14 +1237,19 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+                 this.allowedPlayerTicks += (System.currentTimeMillis() / 50) - this.lastTick;
+@@ -562,9 +573,9 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+ 
+                 boolean flag = worldserver.noCollision(entity, entity.getBoundingBox().deflate(0.0625D));
+ 
+-                d6 = d3 - this.vehicleLastGoodX;
+-                d7 = d4 - this.vehicleLastGoodY - 1.0E-6D;
+-                d8 = d5 - this.vehicleLastGoodZ;
++                d6 = d3 - this.vehicleLastGoodX; // Paper - diff on change, used for checking large move vectors above
++                d7 = d4 - this.vehicleLastGoodY - 1.0E-6D; // Paper - diff on change, used for checking large move vectors above
++                d8 = d5 - this.vehicleLastGoodZ; // Paper - diff on change, used for checking large move vectors above
+                 entity.move(MoverType.PLAYER, new Vec3(d6, d7, d8));
+                 double d11 = d7;
+ 
+@@ -1232,14 +1243,25 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
                          float prevPitch = this.player.getXRot();
                          // CraftBukkit end
                          double d3 = this.player.getX(); final double toX = d3; // Paper - OBFHELPER
@@ -60,6 +81,25 @@ index 5e90c722405f9e00bfaf9e2fed523552d9755c8d..4c958e44f2e4627d848cef197167b7f8
 +                        double currDeltaZ = toZ - prevZ;
 +                        double d11 = Math.max(d7 * d7 + d8 * d8 + d9 * d9, (currDeltaX * currDeltaX + currDeltaY * currDeltaY + currDeltaZ * currDeltaZ) - 1);
 +                        // Paper end - fix large move vectors killing the server
++                        // Paper start - fix large move vectors killing the server
++                        double otherFieldX = d0 - this.lastGoodX;
++                        double otherFieldY = d1 - this.lastGoodY;
++                        double otherFieldZ = d2 - this.lastGoodZ;
++                        d11 = Math.max(d11, (otherFieldX * otherFieldX + otherFieldY * otherFieldY + otherFieldZ * otherFieldZ) - 1);
++                        // Paper end - fix large move vectors killing the server
  
                          if (this.player.isSleeping()) {
                              if (d11 > 1.0D) {
+@@ -1291,9 +1313,9 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+ 
+                             AABB axisalignedbb = this.player.getBoundingBox();
+ 
+-                            d7 = d0 - this.lastGoodX;
+-                            d8 = d1 - this.lastGoodY;
+-                            d9 = d2 - this.lastGoodZ;
++                            d7 = d0 - this.lastGoodX; // Paper - diff on change, used for checking large move vectors above
++                            d8 = d1 - this.lastGoodY; // Paper - diff on change, used for checking large move vectors above
++                            d9 = d2 - this.lastGoodZ; // Paper - diff on change, used for checking large move vectors above
+                             boolean flag = d8 > 0.0D;
+ 
+                             if (this.player.isOnGround() && !packet.isOnGround() && flag) {

@@ -25,19 +25,19 @@ Massive update to light to improve performance and chunk loading/generation.
 8) Fix NPE risk that crashes server in getting nibble data
 
 diff --git a/src/main/java/net/minecraft/server/level/ChunkHolder.java b/src/main/java/net/minecraft/server/level/ChunkHolder.java
-index 52ae149d22e8b0f3c2321f383351a4244c517b5e..03f0a745283012f08919f8e786d402ca01c15f00 100644
+index 81696d822c00e506ba2128590e95341994ff93f6..c6c4894427e5e98dccc1506d9d20157e1acbbd21 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkHolder.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkHolder.java
-@@ -640,6 +640,7 @@ public class ChunkHolder {
- 
-         this.onLevelChange.onLevelChange(this.pos, this::getQueueLevel, this.ticketLevel, this::setQueueLevel);
+@@ -810,6 +810,7 @@ public class ChunkHolder {
+         }
+         // Paper end
          this.oldTicketLevel = this.ticketLevel;
 +        //chunkMap.level.getChunkSource().getLightEngine().queue.changePriority(pos.toLong(), this.queueLevel, priority); // Paper // Restore this in chunk priority later?
          // CraftBukkit start
          // ChunkLoadEvent: Called after the chunk is loaded: isChunkLoaded returns true and chunk is ready to be modified by plugins.
          if (!playerchunk_state.isOrAfter(ChunkHolder.FullChunkStatus.BORDER) && playerchunk_state1.isOrAfter(ChunkHolder.FullChunkStatus.BORDER)) {
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index cd76029f2dc3ecfa52bae127ae261a028fa8839a..c42f564ecac75f7947c580e7514795c26097761e 100644
+index d470fdcbc79c4a491e9a078930b54e8d8949d68c..1c662deee2a3184c7612cf7de5f798753fbd7381 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
 @@ -97,6 +97,7 @@ import net.minecraft.world.level.levelgen.structure.templatesystem.StructureMana
@@ -48,7 +48,7 @@ index cd76029f2dc3ecfa52bae127ae261a028fa8839a..c42f564ecac75f7947c580e7514795c2
  import it.unimi.dsi.fastutil.objects.ObjectRBTreeSet; // Paper
  import org.apache.commons.lang3.mutable.MutableBoolean;
  import org.apache.logging.log4j.LogManager;
-@@ -335,6 +336,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -324,6 +325,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
      }
      // Paper end
  
@@ -56,7 +56,7 @@ index cd76029f2dc3ecfa52bae127ae261a028fa8839a..c42f564ecac75f7947c580e7514795c2
      public ChunkMap(ServerLevel world, LevelStorageSource.LevelStorageAccess session, DataFixer dataFixer, StructureManager structureManager, Executor executor, BlockableEventLoop<Runnable> mainThreadExecutor, LightChunkGetter chunkProvider, ChunkGenerator chunkGenerator, ChunkProgressListener worldGenerationProgressListener, ChunkStatusUpdateListener chunkStatusChangeListener, Supplier<DimensionDataStorage> persistentStateManagerFactory, int viewDistance, boolean dsync) {
          super(new File(session.getDimensionPath(world.dimension()), "region"), dataFixer, dsync);
          //this.visibleChunks = this.updatingChunks.clone(); // Paper - no more cloning
-@@ -360,7 +362,15 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -358,7 +360,15 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
  
          this.progressListener = worldGenerationProgressListener;
          this.chunkStatusListener = chunkStatusChangeListener;
@@ -73,7 +73,7 @@ index cd76029f2dc3ecfa52bae127ae261a028fa8839a..c42f564ecac75f7947c580e7514795c2
  
          this.queueSorter = new ChunkTaskPriorityQueueSorter(ImmutableList.of(threadedmailbox, mailbox, threadedmailbox1), executor, Integer.MAX_VALUE);
          this.worldgenMailbox = this.queueSorter.getProcessor(threadedmailbox, false);
-@@ -742,6 +752,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -867,6 +877,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
      @Override
      public void close() throws IOException {
          try {
@@ -126,10 +126,10 @@ index d3d6651eb51c852ed1d1eeb5689569d5308b246d..c2d36600a0081c78425868154bdcf7f4
                          m = Long.MAX_VALUE;
                      }
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-index ffe700489cb2d507421abfb48939808de0adc8be..5a2b3c150ceaaae651c3ec6aeff3bb894dd5f94d 100644
+index d6f0c82b503a0fa73f6589fc4c331d27fbe27638..db6a0246e83045015fc41f27e0aec0e07d1fb568 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-@@ -1044,7 +1044,7 @@ public class ServerChunkCache extends ChunkSource {
+@@ -1074,7 +1074,7 @@ public class ServerChunkCache extends ChunkSource {
              if (ServerChunkCache.this.runDistanceManagerUpdates()) {
                  return true;
              } else {
@@ -139,7 +139,7 @@ index ffe700489cb2d507421abfb48939808de0adc8be..5a2b3c150ceaaae651c3ec6aeff3bb89
              }
          } finally {
 diff --git a/src/main/java/net/minecraft/server/level/ThreadedLevelLightEngine.java b/src/main/java/net/minecraft/server/level/ThreadedLevelLightEngine.java
-index 2c4aa4b66d83b6e7a104479860b7982629c63c3b..f0df7b2bd618c7be18c4c86f735b303dc73d98ad 100644
+index 2c4aa4b66d83b6e7a104479860b7982629c63c3b..833b6b2193cf08e123aabb344f2283730aed1bcd 100644
 --- a/src/main/java/net/minecraft/server/level/ThreadedLevelLightEngine.java
 +++ b/src/main/java/net/minecraft/server/level/ThreadedLevelLightEngine.java
 @@ -1,6 +1,7 @@
@@ -158,7 +158,7 @@ index 2c4aa4b66d83b6e7a104479860b7982629c63c3b..f0df7b2bd618c7be18c4c86f735b303d
  import net.minecraft.world.level.chunk.DataLayer;
  import net.minecraft.world.level.chunk.LevelChunkSection;
  import net.minecraft.world.level.chunk.LightChunkGetter;
-@@ -26,15 +28,149 @@ import org.apache.logging.log4j.Logger;
+@@ -26,15 +28,140 @@ import org.apache.logging.log4j.Logger;
  public class ThreadedLevelLightEngine extends LevelLightEngine implements AutoCloseable {
      private static final Logger LOGGER = LogManager.getLogger();
      private final ProcessorMailbox<Runnable> taskMailbox;
@@ -166,15 +166,6 @@ index 2c4aa4b66d83b6e7a104479860b7982629c63c3b..f0df7b2bd618c7be18c4c86f735b303d
 -    private final ChunkMap chunkMap;
 +    // Paper start
 +    private static final int MAX_PRIORITIES = ChunkMap.MAX_CHUNK_DISTANCE + 2;
-+
-+    private boolean isChunkLightStatus(long pair) {
-+        ChunkHolder playerChunk = playerChunkMap.getVisibleChunkIfPresent(pair);
-+        if (playerChunk == null) {
-+            return false;
-+        }
-+        ChunkStatus status = ChunkHolder.getStatus(playerChunk.getTicketLevel());
-+        return status != null && status.isOrAfter(ChunkStatus.LIGHT);
-+    }
 +
 +    static class ChunkLightQueue {
 +        public boolean shouldFastUpdate;
@@ -311,7 +302,7 @@ index 2c4aa4b66d83b6e7a104479860b7982629c63c3b..f0df7b2bd618c7be18c4c86f735b303d
          this.sorterMailbox = executor;
          this.taskMailbox = processor;
      }
-@@ -120,13 +256,9 @@ public class ThreadedLevelLightEngine extends LevelLightEngine implements AutoCl
+@@ -120,13 +247,9 @@ public class ThreadedLevelLightEngine extends LevelLightEngine implements AutoCl
      }
  
      private void addTask(int x, int z, IntSupplier completedLevelSupplier, ThreadedLevelLightEngine.TaskType stage, Runnable task) {
@@ -328,7 +319,7 @@ index 2c4aa4b66d83b6e7a104479860b7982629c63c3b..f0df7b2bd618c7be18c4c86f735b303d
      }
  
      @Override
-@@ -142,8 +274,19 @@ public class ThreadedLevelLightEngine extends LevelLightEngine implements AutoCl
+@@ -142,8 +265,14 @@ public class ThreadedLevelLightEngine extends LevelLightEngine implements AutoCl
  
      public CompletableFuture<ChunkAccess> lightChunk(ChunkAccess chunk, boolean excludeBlocks) {
          ChunkPos chunkPos = chunk.getPos();
@@ -341,16 +332,11 @@ index 2c4aa4b66d83b6e7a104479860b7982629c63c3b..f0df7b2bd618c7be18c4c86f735b303d
 +        IntSupplier prioritySupplier = playerChunkMap.getChunkQueueLevel(pair);
 +        boolean[] skippedPre = {false};
 +        this.queue.addChunk(pair, prioritySupplier, Util.name(() -> {
-+            if (!isChunkLightStatus(pair)) {
-+                future.complete(chunk);
-+                skippedPre[0] = true;
-+                return;
-+            }
 +            // Paper end
              LevelChunkSection[] levelChunkSections = chunk.getSections();
  
              for(int i = 0; i < chunk.getSectionsCount(); ++i) {
-@@ -163,51 +306,45 @@ public class ThreadedLevelLightEngine extends LevelLightEngine implements AutoCl
+@@ -163,51 +292,45 @@ public class ThreadedLevelLightEngine extends LevelLightEngine implements AutoCl
  
          }, () -> {
              return "lightChunk " + chunkPos + " " + excludeBlocks;

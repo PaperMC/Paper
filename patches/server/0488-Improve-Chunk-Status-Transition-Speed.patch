@@ -36,10 +36,10 @@ scenario / path:
 Previously would have hopped to SERVER around 12+ times there extra.
 
 diff --git a/src/main/java/net/minecraft/server/level/ChunkHolder.java b/src/main/java/net/minecraft/server/level/ChunkHolder.java
-index 8245e07f6ecfd9dd997c8525b52c6eadd392e6f1..52ae149d22e8b0f3c2321f383351a4244c517b5e 100644
+index a0334dde56829fd895323f4cab2ab55d5d5ecf30..81696d822c00e506ba2128590e95341994ff93f6 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkHolder.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkHolder.java
-@@ -113,6 +113,20 @@ public class ChunkHolder {
+@@ -242,6 +242,13 @@ public class ChunkHolder {
      // Paper end - optimise isOutsideOfRange
      long lastAutoSaveTime; // Paper - incremental autosave
      long inactiveTimeStart; // Paper - incremental autosave
@@ -49,22 +49,15 @@ index 8245e07f6ecfd9dd997c8525b52c6eadd392e6f1..52ae149d22e8b0f3c2321f383351a424
 +        ChunkAccess chunk = getAvailableChunkNow();
 +        return chunk != null && (status == null || chunk.getStatus().isOrAfter(getNextStatus(status)));
 +    }
-+    // Yanked from chunk priotisation patch - remove?
-+    public static ChunkStatus getNextStatus(ChunkStatus status) {
-+        if (status == ChunkStatus.FULL) {
-+            return status;
-+        }
-+        return CHUNK_STATUSES.get(status.getIndex() + 1);
-+    }
 +    // Paper end
  
      public ChunkHolder(ChunkPos pos, int level, LevelHeightAccessor world, LevelLightEngine lightingProvider, ChunkHolder.LevelChangeListener levelUpdateListener, ChunkHolder.PlayerProvider playersWatchingChunkProvider) {
          this.futures = new AtomicReferenceArray(ChunkHolder.CHUNK_STATUSES.size());
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index f518fc7a39a807bff2e141fd238ab1bfc34ce890..cd76029f2dc3ecfa52bae127ae261a028fa8839a 100644
+index 5b1b91ab4d351f47a05a73cf65539b0bc92df13b..d470fdcbc79c4a491e9a078930b54e8d8949d68c 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
-@@ -702,7 +702,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -827,7 +827,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
              return either.mapLeft((list) -> {
                  return (LevelChunk) list.get(list.size() / 2);
              });
@@ -73,7 +66,7 @@ index f518fc7a39a807bff2e141fd238ab1bfc34ce890..cd76029f2dc3ecfa52bae127ae261a02
      }
  
      @Nullable
-@@ -1133,6 +1133,12 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1277,6 +1277,12 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
              return "chunkGenerate " + requiredStatus.getName();
          });
          Executor executor = (runnable) -> {
