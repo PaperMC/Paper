@@ -2344,7 +2344,7 @@ index 24f72050229031898fd9da585ad2ceec835f83f9..2b235508ffd01de14714de1a31c2139e
          ChunkHolder.FullChunkStatus playerchunk_state1 = ChunkHolder.getFullChunkStatus(this.ticketLevel);
          // CraftBukkit start
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index db4dac607cf24d3d2cd407255c60678ae4be1a1b..6d024db8bfbd5139d4c94be3d3a48cfa1a240c62 100644
+index db4dac607cf24d3d2cd407255c60678ae4be1a1b..ed208c058f5e22111284ffa6985b223565c83f67 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
 @@ -408,6 +408,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
@@ -2418,7 +2418,7 @@ index db4dac607cf24d3d2cd407255c60678ae4be1a1b..6d024db8bfbd5139d4c94be3d3a48cfa
 +        }
 +
 +        com.destroystokyo.paper.io.PaperFileIOThread.Holder.INSTANCE.scheduleSave(this.level, chunkPos.x, chunkPos.z,
-+            poiData, null, com.destroystokyo.paper.io.PrioritizedTaskQueue.LOW_PRIORITY);
++            poiData, null, com.destroystokyo.paper.io.PrioritizedTaskQueue.NORMAL_PRIORITY);
 +
 +        if (!chunk.isUnsaved()) {
 +            return;
@@ -2439,7 +2439,7 @@ index db4dac607cf24d3d2cd407255c60678ae4be1a1b..6d024db8bfbd5139d4c94be3d3a48cfa
 +            asyncSaveData = ChunkSerializer.getAsyncSaveData(this.level, chunk);
 +        }
 +
-+        this.level.asyncChunkTaskManager.scheduleChunkSave(chunkPos.x, chunkPos.z, com.destroystokyo.paper.io.PrioritizedTaskQueue.LOW_PRIORITY,
++        this.level.asyncChunkTaskManager.scheduleChunkSave(chunkPos.x, chunkPos.z, com.destroystokyo.paper.io.PrioritizedTaskQueue.NORMAL_PRIORITY,
 +            asyncSaveData, chunk);
 +
 +        chunk.setUnsaved(false);
@@ -2623,10 +2623,10 @@ index db4dac607cf24d3d2cd407255c60678ae4be1a1b..6d024db8bfbd5139d4c94be3d3a48cfa
          return this.poiManager;
      }
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-index 918555ba0af8a779ad55c7cf73f615eb804d00d9..c0bde909755190603e9b4946fe924ba1cac53072 100644
+index a778eff06a24a665874a315704f00dc5996420c9..13313635e994f848edbe3e3fe607a21f8baa1790 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-@@ -322,10 +322,128 @@ public class ServerChunkCache extends ChunkSource {
+@@ -320,10 +320,128 @@ public class ServerChunkCache extends ChunkSource {
          return ret;
      }
      // Paper end
@@ -2755,7 +2755,7 @@ index 918555ba0af8a779ad55c7cf73f615eb804d00d9..c0bde909755190603e9b4946fe924ba1
          if (Thread.currentThread() != this.mainThread) {
              return (ChunkAccess) CompletableFuture.supplyAsync(() -> {
                  return this.getChunk(x, z, leastStatus, create);
-@@ -348,13 +466,18 @@ public class ServerChunkCache extends ChunkSource {
+@@ -346,13 +464,18 @@ public class ServerChunkCache extends ChunkSource {
              }
  
              gameprofilerfiller.incrementCounter("getChunkCacheMiss");
@@ -2775,7 +2775,7 @@ index 918555ba0af8a779ad55c7cf73f615eb804d00d9..c0bde909755190603e9b4946fe924ba1
                  this.level.timings.syncChunkLoad.stopTiming(); // Paper
              } // Paper
              ichunkaccess = (ChunkAccess) ((Either) completablefuture.join()).map((ichunkaccess1) -> {
-@@ -441,6 +564,11 @@ public class ServerChunkCache extends ChunkSource {
+@@ -439,6 +562,11 @@ public class ServerChunkCache extends ChunkSource {
      }
  
      private CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> getChunkFutureMainThread(int i, int j, ChunkStatus chunkstatus, boolean flag) {
@@ -2787,7 +2787,7 @@ index 918555ba0af8a779ad55c7cf73f615eb804d00d9..c0bde909755190603e9b4946fe924ba1
          ChunkPos chunkcoordintpair = new ChunkPos(i, j);
          long k = chunkcoordintpair.toLong();
          int l = 33 + ChunkStatus.getDistance(chunkstatus);
-@@ -838,11 +966,12 @@ public class ServerChunkCache extends ChunkSource {
+@@ -836,11 +964,12 @@ public class ServerChunkCache extends ChunkSource {
          // CraftBukkit start - process pending Chunk loadCallback() and unloadCallback() after each run task
          public boolean pollTask() {
          try {
@@ -2925,7 +2925,7 @@ index 265d147de39e306fac27913b2dc3899e82c63796..912171f8b3280a6c45311104216e04d6
          StringReader stringreader = new StringReader(packet.getCommand());
  
 diff --git a/src/main/java/net/minecraft/world/entity/ai/village/poi/PoiManager.java b/src/main/java/net/minecraft/world/entity/ai/village/poi/PoiManager.java
-index 3ca8b13744b406c3e563747f0cb69647c94103df..6c3455823f996e0421975b7f4a00f4e333e9f514 100644
+index 3ca8b13744b406c3e563747f0cb69647c94103df..7b1d2748328ffc1447bcacd1316f2c6fdbaf92b0 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/village/poi/PoiManager.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/village/poi/PoiManager.java
 @@ -37,9 +37,11 @@ public class PoiManager extends SectionStorage<PoiSection> {
@@ -2954,7 +2954,7 @@ index 3ca8b13744b406c3e563747f0cb69647c94103df..6c3455823f996e0421975b7f4a00f4e3
 +                data = this.getData(chunkcoordintpair);
 +            }
 +            com.destroystokyo.paper.io.PaperFileIOThread.Holder.INSTANCE.scheduleSave(this.world,
-+                chunkcoordintpair.x, chunkcoordintpair.z, data, null, com.destroystokyo.paper.io.PrioritizedTaskQueue.LOW_PRIORITY);
++                chunkcoordintpair.x, chunkcoordintpair.z, data, null, com.destroystokyo.paper.io.PrioritizedTaskQueue.NORMAL_PRIORITY);
 +        }
 +        // Paper end
          this.distanceTracker.runAllUpdates();
