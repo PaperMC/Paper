@@ -28,12 +28,13 @@ To generate and update the TOC: https://github.com/mzlogin/vim-markdown-toc -->
 * [Configuration files](#configuration-files)
   * [PaperConfig example](#paperconfig-example)
   * [PaperWorldConfig example](#paperworldconfig-example)
+* [Testing API changes](#testing-api-changes)
+    * [Using the Paper Test Plugin](#using-the-paper-test-plugin)
+    * [Publishing to Maven local (use in external plugins)](#publishing-to-maven-local-use-in-external-plugins)
 * [Frequently Asked Questions](#frequently-asked-questions)
   * [I can't find the NMS file I need!](#i-cant-find-the-nms-file-i-need)
-  * [Where can I learn how to name method/field?](#where-can-i-learn-how-to-name-methodfield)
   * [My commit doesn't need a build, what do I do?](#my-commit-doesnt-need-a-build-what-do-i-do)
   * [Patching and building is *really* slow, what can I do?](#patching-and-building-is-really-slow-what-can-i-do)
-  * [I wrote some API, how do I use it in Paper-Server?](#i-wrote-some-api-how-do-i-use-it-in-paper-server)
 
 <!-- vim-markdown-toc -->
 
@@ -60,10 +61,13 @@ which can be obtained in (most) package managers such as `apt` (Debian / Ubuntu;
 you will most likely use this for WSL), `homebrew` (macOS / Linux), and more:
 
 - `git` (package `git` everywhere);
-- `patch` (often package `patch`);
-- A Java 16 or later JDK (packages vary, use Google/DuckDuckGo/etc.).  
-If you need one, you can find them on [Adoptium](https://adoptium.net/).
-- `curl` (package `curl` everywhere).
+- A Java 16 or later JDK (packages vary, use Google/DuckDuckGo/etc.).
+  - [Adoptium](https://adoptium.net/) has builds for most operating systems.
+  - Paper requires JDK 16 to build, however makes use of Gradle's
+    [Toolchains](https://docs.gradle.org/current/userguide/toolchains.html)
+    feature to allow building with only JRE 8 or later installed. (Gradle will
+    automatically provision JDK 16 for compilation if it cannot find an existing
+    install).
 
 If you're on Windows, check
 [the section on WSL](#patching-and-building-is-really-slow-what-can-i-do).
@@ -86,8 +90,7 @@ split into different directories which target certain parts of the code. These
 directories are:
 
 - `Paper-API` - Modifications to `Spigot-API`/`Bukkit`;
-- `Paper-MojangAPI` - An API for
-[Mojang's Brigadier](https://github.com/Mojang/brigadier);
+- `Paper-MojangAPI` - An API for [Mojang's Brigadier](https://github.com/Mojang/brigadier);
 - `Paper-Server` - Modifications to `Spigot`/`CraftBukkit`.
 
 Because the entire structure is based on patches and git, a basic understanding
@@ -107,15 +110,8 @@ from anywhere in the Paper structure in most cases.-->
 
 `Paper-Server` and `Paper-API` aren't git repositories in the traditional sense:
 
-- Every single commit in `Paper-Server`/`Paper-API` is a patch;
-- `origin/master` points to a directory similar to `Paper-Server`/`Paper-API`
-but for Paper;
-- Typing `git status` should show that we are 10 or 11 commits ahead of master,
-meaning we have 10 or 11 patches Spigot and CraftBukkit don't.
-   - If it says something like `212 commits ahead, 207 commits behind`,
-   cd into the root directory of the cloned repository and type `git fetch` to
-   update your upstream. Setting up a remote for the upstream Paper repository
-   might be necessary.
+- `base` points to the unmodified source before Paper patches have been applied.
+- Each commit after `base` is a patch.
 
 ## Adding Patches
 
@@ -244,14 +240,15 @@ need to "save" the changes.
 Steps to rebase a PR to include the latest changes from `master`.  
 These steps assume the `origin` remote is your fork of this repository and `upstream` is the official PaperMC repository.
 
-1. Pull latest changes from upstream's master: `git checkout master && git pull upstream master`.
+1. Pull the latest changes from upstreams master: `git checkout master && git pull upstream master`.
 1. Checkout feature/fix branch and rebase on master: `git checkout patch-branch && git rebase master`.
 1. Apply updated patches: `./gradlew applyPatches`.
 1. If there are conflicts, fix them.
 1. If your PR creates new patches instead of modifying exist ones, in both the `Paper-Server` and `Paper-API` directories, ensure your newly-created patch is the last commit by either:
-    * Renaming the patch file with a large 4-digit number in front (e.g. 9999-Patch-to-add-some-new-stuff.patch)
-    * Run `git rebase --interactive base` and move the commits to the end.
+    * Renaming the patch file with a large 4-digit number in front (e.g. 9999-Patch-to-add-some-new-stuff.patch), and re-applying patches.
+    * Running `git rebase --interactive base` and moving the commits to the end.
 1. Rebuild patches: `./gradlew rebuildPatches`.
+1. Commit modified patches.
 1. Force push changes: `git push --force`.
 
 ## PR Policy
@@ -352,33 +349,18 @@ index a92bf8967..d0ab87d0f 100644
 
 ## Obfuscation Helpers
 
-While rarely required, obfuscation helpers are sometimes helpful when it comes
-to methods left unmapped by Spigot, local variables, or method parameters.
-In an effort to make future updates easier on ourselves, Paper tries to use
-obfuscation helpers whenever possible. The purpose of these helpers is to make
-the code more readable and maintainable. These helpers should be made as easy
-to inline as possible by the JVM whenever possible.
+While rarely needed, obfuscation helpers are sometimes useful when it comes
+to unmapped local variables, or poorly named method parameters. In an effort
+to make future updates easier on ourselves, Paper tries to use obfuscation
+helpers wherever it makes sense. The purpose of these helpers is to make the
+code more readable and maintainable. These helpers should be made easy to
+inline by the JVM wherever possible.
 
-An obfuscation helper to access an obfuscated item may be as simple as something
-like this:
-
+An example of an obfuscation helper for a local variable:
 ```java
-public final int getStuckArrows() { return this.bY(); } // Paper - OBFHELPER
-```
-
-Or it may be as complex as forwarding an entire method so that it can be
-overridden later:
-
-```java
-public boolean be() {
-    // Paper start - OBFHELPER
-    return this.pushedByWater();
-}
-
-public boolean pushedByWater() {
-    // Paper end
-    return true;
-}
+double d0 = entity.getX(); final double fromX = d0; // Paper - OBFHELPER
+// ...   
+this.someMethod(fromX); // Paper
 ```
 
 While they may not always be done in exactly the same way, the general goal is
@@ -431,12 +413,40 @@ private void useInhabitedTime() {
 ```
 
 Again, notice that the field is always public, but the setter is always private.
-To access this value, you'll need an instance of the `net.minecraft.World`
+To access this value, you'll need an instance of the `net.minecraft.world.level.Level`
 object:
 
 ```java
-return this.world.paperConfig.useInhabitedTime ? this.w : 0;
+return this.level.paperConfig.useInhabitedTime ? this.inhabitedTime : 0;
 ```
+
+## Testing API changes
+
+### Using the Paper Test Plugin
+
+The Paper project has a `test-plugin` module for easily testing out API changes
+and additions. To use the test plugin, enable it in `test-plugin.settings.gradle.kts`,
+which will be generated after running Gradle at least once. After this, you can edit
+the test plugin, and run a server with the plugin using `./gradlew runDev` (or any
+of the other Paper run tasks).
+
+### Publishing to Maven local (use in external plugins)
+
+To build and install the Paper APIs and Server to your local Maven repository, do the following:
+
+- Run `./gradlew publishToMavenLocal` in the base directory.
+
+If you use Gradle to build your plugin:
+- Add `mavenLocal()` as a repository. Gradle checks repositories in the order they are declared,
+  so if you also have the Paper repository added, put the local repository above Paper's.
+- Make sure to remove `mavenLocal()` when you are done testing, see the [Gradle docs](https://docs.gradle.org/current/userguide/declaring_repositories.html#sec:case-for-maven-local)
+  for more details.
+
+If you use Maven to build your plugin:
+- If you later need to use the Paper-API, you might want to remove the jar
+  from your local Maven repository.  
+  If you use Windows and don't usually build using WSL, you might not need to
+  do this.
 
 ## Frequently Asked Questions
 
@@ -452,7 +462,7 @@ progress will be lost if you do not;
 1. Identify the name(s) of the file(s) you want to import.
    - A complete list of all possible file names can be found at
    `./Paper-Server/.gradle/caches/paperweight/mc-dev-sources/net/minecraft/`. You might find
-   [MiniMappingViewer] very useful to find the file you need.
+   [MiniMappingViewer] useful if you need to translate between Mojang and Spigot mapped names.
 1. Open the file at `./build-data/dev-imports.txt` and add the name of your file to
 the script. Follow the instructions there;
 1. Re-patch the server `./gradlew applyPatches`;
@@ -497,18 +507,5 @@ everything like usual.
 > ❗ Do not use the `/mnt/` directory in WSL! Instead, mount the WSL directories
 > in Windows like described here:
 > <https://www.howtogeek.com/426749/how-to-access-your-linux-wsl-files-in-windows-10/>
-
-### I wrote some API, how do I use it in Paper-Server?
-
-To install the API to your local maven repository, do the following:
-
-- Run `./gradlew publishToMavenLocal` in the base directory.
-   - If you later need to use the Paper-API, you might want to remove the jar
-   from your local maven repository.  
-   If you use Windows and don't usually build using WSL, you might not need to
-   do this.
-
-You can now use the API in your plugin to test it before PRing. You will also
-need to do this to build the Server with the implemented API.
 
 [MiniMappingViewer]: https://minidigger.github.io/MiniMappingViewer/
