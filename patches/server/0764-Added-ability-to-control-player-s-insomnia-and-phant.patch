@@ -1,0 +1,148 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jan Villim <jan@villim.sk>
+Date: Thu, 26 Aug 2021 23:39:33 +0200
+Subject: [PATCH] Added ability to control player's insomnia and phantoms
+ spawning in paper config
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+index 2e0191e5cfe8e29fb0a6c4fc6a2a570d4b8ae449..f6e1102c2079996f6af1f3fe513e8f7a9f992b9d 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+@@ -289,6 +289,13 @@ public class PaperConfig {
+         suggestPlayersWhenNullTabCompletions = getBoolean("settings.suggest-player-names-when-null-tab-completions", suggestPlayersWhenNullTabCompletions);
+     }
+ 
++    public static boolean insomniaControlEnabled = false;
++    public static int phantomsSpawnAttemptTicks = 2000;
++    private static void insomniaControlSettings() {
++        insomniaControlEnabled = getBoolean("settings.insomnia-control.enabled", insomniaControlEnabled);
++        phantomsSpawnAttemptTicks = getInt("settings.insomnia-control.phantoms-spawn-attempt-ticks", phantomsSpawnAttemptTicks);
++    }
++
+     public static String authenticationServersDownKickMessage = ""; // empty = use translatable message
+     private static void authenticationServersDownKickMessage() {
+         authenticationServersDownKickMessage = Strings.emptyToNull(getString("messages.kick.authentication-servers-down", authenticationServersDownKickMessage));
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 261633687b5dd55559b2ddb305c3a21a8b308ada..e9fc868c24b44d2906f68659136114114db6bf32 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -710,6 +710,11 @@ public class PaperWorldConfig {
+         phantomOnlyAttackInsomniacs = getBoolean("phantoms-only-attack-insomniacs", phantomOnlyAttackInsomniacs);
+     }
+ 
++    public int playerInsomniaStartTicks = 72000;
++    private void playerInsomniaStartTicks() {
++        playerInsomniaStartTicks = getInt("player-insomnia-start-ticks", playerInsomniaStartTicks);
++    }
++
+     public int noTickViewDistance;
+     private void viewDistance() {
+         this.noTickViewDistance = this.getInt("viewdistances.no-tick-view-distance", -1);
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 25c3a96ca88494650d93efcaeecf5ae08ed0810f..10473a68f51226e64187bf55f86d72709f4c1f11 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -31,21 +31,8 @@ import java.nio.file.Files;
+ import java.nio.file.Path;
+ import java.security.KeyPair;
+ import java.text.SimpleDateFormat;
+-import java.util.Arrays;
+-import java.util.Base64;
+-import java.util.Collection;
+-import java.util.Collections;
+-import java.util.Comparator;
+-import java.util.Date;
+-import java.util.Iterator;
+-import java.util.List;
+-import java.util.Map;
++import java.util.*;
+ import java.util.Map.Entry;
+-import java.util.Objects;
+-import java.util.Optional;
+-import java.util.Random;
+-import java.util.Set;
+-import java.util.UUID;
+ import java.util.concurrent.CompletableFuture;
+ import java.util.concurrent.Executor;
+ import java.util.concurrent.atomic.AtomicReference;
+@@ -569,7 +556,13 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+             boolean flag = generatorsettings.isDebug();
+             long i = generatorsettings.seed();
+             long j = BiomeManager.obfuscateSeed(i);
+-            List<CustomSpawner> list = ImmutableList.of(new PhantomSpawner(), new PatrolSpawner(), new CatSpawner(), new VillageSiege(), new WanderingTraderSpawner(iworlddataserver));
++            // Paper start
++            List<CustomSpawner> list = new ArrayList<>(Arrays.asList(new PatrolSpawner(), new CatSpawner(), new VillageSiege(), new WanderingTraderSpawner(worlddata)));
++            if(!com.destroystokyo.paper.PaperConfig.insomniaControlEnabled || com.destroystokyo.paper.PaperConfig.phantomsSpawnAttemptTicks > 0) {
++                list.add(new PhantomSpawner());
++            }
++            list = ImmutableList.copyOf(list);
++            // Paper end
+             LevelStem worlddimension = (LevelStem) registrymaterials.get(dimensionKey);
+             DimensionType dimensionmanager;
+             ChunkGenerator chunkgenerator;
+diff --git a/src/main/java/net/minecraft/world/entity/EntitySelector.java b/src/main/java/net/minecraft/world/entity/EntitySelector.java
+index a060cca08631fb42041e3a79a9abc422fe7757af..86a7b6355d108ab17bcf629f4d4874d7b79cb39f 100644
+--- a/src/main/java/net/minecraft/world/entity/EntitySelector.java
++++ b/src/main/java/net/minecraft/world/entity/EntitySelector.java
+@@ -26,7 +26,18 @@ public final class EntitySelector {
+     public static final Predicate<Entity> NO_SPECTATORS = (entity) -> {
+         return !entity.isSpectator();
+     };
+-    public static Predicate<Player> isInsomniac = (player) -> net.minecraft.util.Mth.clamp(((net.minecraft.server.level.ServerPlayer) player).getStats().getValue(net.minecraft.stats.Stats.CUSTOM.get(net.minecraft.stats.Stats.TIME_SINCE_REST)), 1, Integer.MAX_VALUE) >= 72000; // Paper
++    // Paper start
++    public static Predicate<Player> isInsomniac = (player) -> {
++        net.minecraft.server.level.ServerPlayer serverPlayer = (net.minecraft.server.level.ServerPlayer) player;
++        int playerInsomniaTicks = serverPlayer.getLevel().paperConfig.playerInsomniaStartTicks;
++
++        if(playerInsomniaTicks <= 0) {
++            return false;
++        }
++
++        return net.minecraft.util.Mth.clamp((serverPlayer).getStats().getValue(net.minecraft.stats.Stats.CUSTOM.get(net.minecraft.stats.Stats.TIME_SINCE_REST)), 1, Integer.MAX_VALUE) >= playerInsomniaTicks;
++    };
++    // Paper end
+ 
+     private EntitySelector() {}
+     // Paper start
+diff --git a/src/main/java/net/minecraft/world/level/levelgen/PhantomSpawner.java b/src/main/java/net/minecraft/world/level/levelgen/PhantomSpawner.java
+index 79504dc3448402e73b09c4232b1fd0488872cf68..3701f7e62224290f04cf0e47bd43bec47a6a41c6 100644
+--- a/src/main/java/net/minecraft/world/level/levelgen/PhantomSpawner.java
++++ b/src/main/java/net/minecraft/world/level/levelgen/PhantomSpawner.java
+@@ -43,7 +43,7 @@ public class PhantomSpawner implements CustomSpawner {
+             if (this.nextTick > 0) {
+                 return 0;
+             } else {
+-                this.nextTick += (60 + random.nextInt(60)) * 20;
++                this.nextTick += com.destroystokyo.paper.PaperConfig.insomniaControlEnabled ? com.destroystokyo.paper.PaperConfig.phantomsSpawnAttemptTicks : (60 + random.nextInt(60)) * 20; // Paper
+                 if (world.getSkyDarken() < 5 && world.dimensionType().hasSkyLight()) {
+                     return 0;
+                 } else {
+@@ -64,7 +64,7 @@ public class PhantomSpawner implements CustomSpawner {
+                                     int j = Mth.clamp(serverstatisticmanager.getValue(Stats.CUSTOM.get(Stats.TIME_SINCE_REST)), 1, Integer.MAX_VALUE);
+                                     boolean flag2 = true;
+ 
+-                                    if (random.nextInt(j) >= 72000) {
++                                    if(random.nextInt(j) >= world.paperConfig.playerInsomniaStartTicks) { // Paper
+                                         BlockPos blockposition1 = blockposition.above(20 + random.nextInt(15)).east(-10 + random.nextInt(21)).south(-10 + random.nextInt(21));
+                                         BlockState iblockdata = world.getBlockState(blockposition1);
+                                         FluidState fluid = world.getFluidState(blockposition1);
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index 41255bc4c03a02e76fbfc3b0b34c907fb3ad05b1..6c9fa686b61dca1fa918ac68ae3ce96cb6a94f26 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -1163,7 +1163,13 @@ public final class CraftServer implements Server {
+         // Paper - move down
+ 
+         long j = BiomeManager.obfuscateSeed(creator.seed());
+-        List<CustomSpawner> list = ImmutableList.of(new PhantomSpawner(), new PatrolSpawner(), new CatSpawner(), new VillageSiege(), new WanderingTraderSpawner(worlddata));
++        // Paper start
++        List<CustomSpawner> list = new ArrayList<>(Arrays.asList(new PatrolSpawner(), new CatSpawner(), new VillageSiege(), new WanderingTraderSpawner(worlddata)));
++        if(!com.destroystokyo.paper.PaperConfig.insomniaControlEnabled || com.destroystokyo.paper.PaperConfig.phantomsSpawnAttemptTicks > 0) {
++            list.add(new PhantomSpawner());
++        }
++        list = ImmutableList.copyOf(list);
++        // Paper end
+         MappedRegistry<LevelStem> registrymaterials = worlddata.worldGenSettings().dimensions();
+         LevelStem worlddimension = (LevelStem) registrymaterials.get(actualDimension);
+         DimensionType dimensionmanager;
