@@ -1,0 +1,71 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Fri, 27 Aug 2021 08:51:27 -0700
+Subject: [PATCH] fixup! Implement Chunk Priority / Urgency System for Chunks
+
+
+diff --git a/src/main/java/net/minecraft/server/level/ChunkHolder.java b/src/main/java/net/minecraft/server/level/ChunkHolder.java
+index 660ec9359cb9fe9cdb54d7ef6139bbbccb91ba16..903d2058acd6c65af6f636cc1060be0f1dd68580 100644
+--- a/src/main/java/net/minecraft/server/level/ChunkHolder.java
++++ b/src/main/java/net/minecraft/server/level/ChunkHolder.java
+@@ -106,6 +106,7 @@ public class ChunkHolder {
+     volatile int priorityBoost = 0;
+     public final java.util.concurrent.ConcurrentHashMap<ChunkHolder, ChunkStatus> neighbors = new java.util.concurrent.ConcurrentHashMap<>();
+     public final it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<Integer> neighborPriorities = new it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<>();
++    int requestedPriority = ChunkMap.MAX_CHUNK_DISTANCE + 1; // this priority is possible pending, but is used to ensure needless updates are not queued
+ 
+     private int getDemandedPriority() {
+         int priority = neighborPriority; // if we have a neighbor priority, use it
+@@ -167,8 +168,9 @@ public class ChunkHolder {
+ 
+     private void setNeighborPriority(ChunkHolder requester, int priority) {
+         synchronized (neighborPriorities) {
+-            neighborPriorities.put(requester.pos.toLong(), Integer.valueOf(priority));
+-            recalcNeighborPriority();
++            if (!Integer.valueOf(priority).equals(neighborPriorities.put(requester.pos.toLong(), Integer.valueOf(priority)))) {
++                recalcNeighborPriority();
++            }
+         }
+         checkPriority();
+     }
+@@ -186,7 +188,7 @@ public class ChunkHolder {
+         }
+     }
+     private void checkPriority() {
+-        if (queueLevel != getDemandedPriority()) this.chunkMap.queueHolderUpdate(this);
++        if (this.requestedPriority != getDemandedPriority()) this.chunkMap.queueHolderUpdate(this);
+     }
+ 
+     public final double getDistance(ServerPlayer player) {
+@@ -813,7 +815,9 @@ public class ChunkHolder {
+         //this.onLevelChange.onLevelChange(this.pos, this::getQueueLevel, this.ticketLevel, this::setQueueLevel);
+         // Paper start - raise IO/load priority if priority changes, use our preferred priority
+         priorityBoost = chunkMap.distanceManager.getChunkPriority(pos);
++        int currRequestedPriority = this.requestedPriority;
+         int priority = getDemandedPriority();
++        int newRequestedPriority = this.requestedPriority = priority;
+         if (this.queueLevel > priority) {
+             int ioPriority = com.destroystokyo.paper.io.PrioritizedTaskQueue.NORMAL_PRIORITY;
+             if (priority <= 10) {
+@@ -823,7 +827,7 @@ public class ChunkHolder {
+             }
+             chunkMap.level.asyncChunkTaskManager.raisePriority(pos.x, pos.z, ioPriority);
+         }
+-        if (this.queueLevel != priority) {
++        if (currRequestedPriority != newRequestedPriority) {
+             this.onLevelChange.onLevelChange(this.pos, () -> this.queueLevel, priority, p -> this.queueLevel = p); // use preferred priority
+             int neighborsPriority = getNeighborsPriority();
+             this.neighbors.forEach((neighbor, neighborDesired) -> neighbor.setNeighborPriority(this, neighborsPriority));
+diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
+index 2cac6b2df5b92690ad347c0b6dc29525e0a53788..568ee16094472dc57e9e755cea4da827c0a9bbf2 100644
+--- a/src/main/java/net/minecraft/server/level/ChunkMap.java
++++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
+@@ -1270,7 +1270,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+         CompletableFuture<CompoundTag> chunkSaveFuture = this.level.asyncChunkTaskManager.getChunkSaveFuture(pos.x, pos.z);
+         // Paper start
+         ChunkHolder playerChunk = getUpdatingChunkIfPresent(pos.toLong());
+-        int chunkPriority = playerChunk != null ? playerChunk.queueLevel : 33;
++        int chunkPriority = playerChunk != null ? playerChunk.requestedPriority : 33;
+         int priority = com.destroystokyo.paper.io.PrioritizedTaskQueue.NORMAL_PRIORITY;
+ 
+         if (chunkPriority <= 10) {
