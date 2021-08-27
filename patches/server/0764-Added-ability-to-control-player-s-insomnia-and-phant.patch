@@ -46,19 +46,23 @@ index 261633687b5dd55559b2ddb305c3a21a8b308ada..e9fc868c24b44d2906f6865913611411
      private void viewDistance() {
          this.noTickViewDistance = this.getInt("viewdistances.no-tick-view-distance", -1);
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 25c3a96ca88494650d93efcaeecf5ae08ed0810f..ef9baadef863572e14ee944244c47a3ea602a66f 100644
+index 25c3a96ca88494650d93efcaeecf5ae08ed0810f..3dc2360631ec0168b0200d152f7cf6a396a0943a 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -569,7 +569,13 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -569,7 +569,17 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
              boolean flag = generatorsettings.isDebug();
              long i = generatorsettings.seed();
              long j = BiomeManager.obfuscateSeed(i);
 -            List<CustomSpawner> list = ImmutableList.of(new PhantomSpawner(), new PatrolSpawner(), new CatSpawner(), new VillageSiege(), new WanderingTraderSpawner(iworlddataserver));
 +            // Paper start
 +            List<CustomSpawner> list = Lists.newArrayList(new PatrolSpawner(), new CatSpawner(), new VillageSiege(), new WanderingTraderSpawner(worlddata));
-+            if (com.destroystokyo.paper.PaperConfig.phantomsSpawnAttemptMinSeconds > 0 && com.destroystokyo.paper.PaperConfig.phantomsSpawnAttemptMaxSeconds > 0) {
++
++            int phantomsSpawnAttemptMinSeconds = com.destroystokyo.paper.PaperConfig.phantomsSpawnAttemptMinSeconds;
++            int phantomsSpawnAttemptMaxSeconds = com.destroystokyo.paper.PaperConfig.phantomsSpawnAttemptMaxSeconds;
++            if ((phantomsSpawnAttemptMinSeconds >= 0 && phantomsSpawnAttemptMaxSeconds >= 0) && (phantomsSpawnAttemptMinSeconds != 0 || phantomsSpawnAttemptMaxSeconds != 0)) {
 +                list.add(new PhantomSpawner());
 +            }
++
 +            list = ImmutableList.copyOf(list);
 +            // Paper end
              LevelStem worlddimension = (LevelStem) registrymaterials.get(dimensionKey);
@@ -115,19 +119,23 @@ index 79504dc3448402e73b09c4232b1fd0488872cf68..3217ee2c0d6ee6b58eee274c996aee69
                                          BlockState iblockdata = world.getBlockState(blockposition1);
                                          FluidState fluid = world.getFluidState(blockposition1);
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 41255bc4c03a02e76fbfc3b0b34c907fb3ad05b1..47d1aa605f81c655fde1ff95e78e9792787b292e 100644
+index 41255bc4c03a02e76fbfc3b0b34c907fb3ad05b1..8f590b80c3ecdc494bba09292ab166ae8c40fed0 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -1163,7 +1163,13 @@ public final class CraftServer implements Server {
+@@ -1163,7 +1163,17 @@ public final class CraftServer implements Server {
          // Paper - move down
  
          long j = BiomeManager.obfuscateSeed(creator.seed());
 -        List<CustomSpawner> list = ImmutableList.of(new PhantomSpawner(), new PatrolSpawner(), new CatSpawner(), new VillageSiege(), new WanderingTraderSpawner(worlddata));
 +        // Paper start
 +        List<CustomSpawner> list = Lists.newArrayList(new PatrolSpawner(), new CatSpawner(), new VillageSiege(), new WanderingTraderSpawner(worlddata));
-+        if (com.destroystokyo.paper.PaperConfig.phantomsSpawnAttemptMinSeconds > 0 && com.destroystokyo.paper.PaperConfig.phantomsSpawnAttemptMaxSeconds > 0) {
++
++        int phantomsSpawnAttemptMinSeconds = com.destroystokyo.paper.PaperConfig.phantomsSpawnAttemptMinSeconds;
++        int phantomsSpawnAttemptMaxSeconds = com.destroystokyo.paper.PaperConfig.phantomsSpawnAttemptMaxSeconds;
++        if ((phantomsSpawnAttemptMinSeconds >= 0 && phantomsSpawnAttemptMaxSeconds >= 0) && (phantomsSpawnAttemptMinSeconds != 0 || phantomsSpawnAttemptMaxSeconds != 0)) {
 +            list.add(new PhantomSpawner());
 +        }
++
 +        list = ImmutableList.copyOf(list);
 +        // Paper end
          MappedRegistry<LevelStem> registrymaterials = worlddata.worldGenSettings().dimensions();
