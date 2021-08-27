@@ -80,7 +80,7 @@ index 2d5b8e35d52b0dfd075af81a3a936d8a21053b31..9ddedd310eb0323a5a09f51a61bfb7b3
                  chunkData.addProperty("queued-for-unload", chunkMap.toDrop.contains(playerChunk.pos.longKey));
                  chunkData.addProperty("status", status == null ? "unloaded" : status.toString());
 diff --git a/src/main/java/net/minecraft/server/level/ChunkHolder.java b/src/main/java/net/minecraft/server/level/ChunkHolder.java
-index 8245e07f6ecfd9dd997c8525b52c6eadd392e6f1..a0334dde56829fd895323f4cab2ab55d5d5ecf30 100644
+index 8245e07f6ecfd9dd997c8525b52c6eadd392e6f1..75fbcc3d9b3aca2738df0c7ce8c1a0b157ff375a 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkHolder.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkHolder.java
 @@ -60,7 +60,7 @@ public class ChunkHolder {
@@ -100,7 +100,7 @@ index 8245e07f6ecfd9dd997c8525b52c6eadd392e6f1..a0334dde56829fd895323f4cab2ab55d
      // Paper start - no-tick view distance
      public final LevelChunk getSendingChunk() {
          // it's important that we use getChunkAtIfLoadedImmediately to mirror the chunk sending logic used
-@@ -100,6 +101,134 @@ public class ChunkHolder {
+@@ -100,6 +101,136 @@ public class ChunkHolder {
      }
      // Paper end
  
@@ -109,6 +109,7 @@ index 8245e07f6ecfd9dd997c8525b52c6eadd392e6f1..a0334dde56829fd895323f4cab2ab55d
 +    volatile int priorityBoost = 0;
 +    public final java.util.concurrent.ConcurrentHashMap<ChunkHolder, ChunkStatus> neighbors = new java.util.concurrent.ConcurrentHashMap<>();
 +    public final it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<Integer> neighborPriorities = new it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<>();
++    int requestedPriority = ChunkMap.MAX_CHUNK_DISTANCE + 1; // this priority is possible pending, but is used to ensure needless updates are not queued
 +
 +    private int getDemandedPriority() {
 +        int priority = neighborPriority; // if we have a neighbor priority, use it
@@ -170,8 +171,9 @@ index 8245e07f6ecfd9dd997c8525b52c6eadd392e6f1..a0334dde56829fd895323f4cab2ab55d
 +
 +    private void setNeighborPriority(ChunkHolder requester, int priority) {
 +        synchronized (neighborPriorities) {
-+            neighborPriorities.put(requester.pos.toLong(), Integer.valueOf(priority));
-+            recalcNeighborPriority();
++            if (!Integer.valueOf(priority).equals(neighborPriorities.put(requester.pos.toLong(), Integer.valueOf(priority)))) {
++                recalcNeighborPriority();
++            }
 +        }
 +        checkPriority();
 +    }
@@ -189,7 +191,7 @@ index 8245e07f6ecfd9dd997c8525b52c6eadd392e6f1..a0334dde56829fd895323f4cab2ab55d
 +        }
 +    }
 +    private void checkPriority() {
-+        if (queueLevel != getDemandedPriority()) this.chunkMap.queueHolderUpdate(this);
++        if (this.requestedPriority != getDemandedPriority()) this.chunkMap.queueHolderUpdate(this);
 +    }
 +
 +    public final double getDistance(ServerPlayer player) {
@@ -235,7 +237,7 @@ index 8245e07f6ecfd9dd997c8525b52c6eadd392e6f1..a0334dde56829fd895323f4cab2ab55d
      // Paper start - optimise isOutsideOfRange
      // cached here to avoid a map lookup
      com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<ServerPlayer> playersInMobSpawnRange;
-@@ -470,12 +599,25 @@ public class ChunkHolder {
+@@ -470,12 +601,25 @@ public class ChunkHolder {
          });
      }
  
@@ -261,7 +263,7 @@ index 8245e07f6ecfd9dd997c8525b52c6eadd392e6f1..a0334dde56829fd895323f4cab2ab55d
          ChunkStatus chunkstatus = ChunkHolder.getStatus(this.oldTicketLevel);
          ChunkStatus chunkstatus1 = ChunkHolder.getStatus(this.ticketLevel);
          boolean flag = this.oldTicketLevel <= ChunkMap.MAX_CHUNK_DISTANCE;
-@@ -486,9 +628,22 @@ public class ChunkHolder {
+@@ -486,9 +630,22 @@ public class ChunkHolder {
          // ChunkUnloadEvent: Called before the chunk is unloaded: isChunkLoaded is still true and chunk can still be modified by plugins.
          if (playerchunk_state.isOrAfter(ChunkHolder.FullChunkStatus.BORDER) && !playerchunk_state1.isOrAfter(ChunkHolder.FullChunkStatus.BORDER)) {
              this.getFutureIfPresentUnchecked(ChunkStatus.FULL).thenAccept((either) -> {
@@ -285,7 +287,7 @@ index 8245e07f6ecfd9dd997c8525b52c6eadd392e6f1..a0334dde56829fd895323f4cab2ab55d
                          // Minecraft will apply the chunks tick lists to the world once the chunk got loaded, and then store the tick
                          // lists again inside the chunk once the chunk becomes inaccessible and set the chunk's needsSaving flag.
                          // These actions may however happen deferred, so we manually set the needsSaving flag already here.
-@@ -545,12 +700,14 @@ public class ChunkHolder {
+@@ -545,12 +702,14 @@ public class ChunkHolder {
              this.scheduleFullChunkPromotion(chunkStorage, this.fullChunkFuture, executor, ChunkHolder.FullChunkStatus.BORDER);
              // Paper start - cache ticking ready status
              this.fullChunkFuture.thenAccept(either -> {
@@ -300,7 +302,7 @@ index 8245e07f6ecfd9dd997c8525b52c6eadd392e6f1..a0334dde56829fd895323f4cab2ab55d
                  }
              });
              this.updateChunkToSave(this.fullChunkFuture, "full");
-@@ -575,6 +732,7 @@ public class ChunkHolder {
+@@ -575,6 +734,7 @@ public class ChunkHolder {
              this.scheduleFullChunkPromotion(chunkStorage, this.tickingChunkFuture, executor, ChunkHolder.FullChunkStatus.TICKING);
              // Paper start - cache ticking ready status
              this.tickingChunkFuture.thenAccept(either -> {
@@ -308,7 +310,7 @@ index 8245e07f6ecfd9dd997c8525b52c6eadd392e6f1..a0334dde56829fd895323f4cab2ab55d
                  either.ifLeft(chunk -> {
                      // note: Here is a very good place to add callbacks to logic waiting on this.
                      ChunkHolder.this.isTickingReady = true;
-@@ -607,6 +765,7 @@ public class ChunkHolder {
+@@ -607,6 +767,7 @@ public class ChunkHolder {
              this.scheduleFullChunkPromotion(chunkStorage, this.entityTickingChunkFuture, executor, ChunkHolder.FullChunkStatus.ENTITY_TICKING);
              // Paper start - cache ticking ready status
              this.entityTickingChunkFuture.thenAccept(either -> {
@@ -316,7 +318,7 @@ index 8245e07f6ecfd9dd997c8525b52c6eadd392e6f1..a0334dde56829fd895323f4cab2ab55d
                  either.ifLeft(chunk -> {
                      ChunkHolder.this.isEntityTickingReady = true;
                  });
-@@ -624,16 +783,42 @@ public class ChunkHolder {
+@@ -624,16 +785,44 @@ public class ChunkHolder {
              this.demoteFullChunk(chunkStorage, playerchunk_state1);
          }
  
@@ -324,7 +326,9 @@ index 8245e07f6ecfd9dd997c8525b52c6eadd392e6f1..a0334dde56829fd895323f4cab2ab55d
 +        //this.onLevelChange.onLevelChange(this.pos, this::getQueueLevel, this.ticketLevel, this::setQueueLevel);
 +        // Paper start - raise IO/load priority if priority changes, use our preferred priority
 +        priorityBoost = chunkMap.distanceManager.getChunkPriority(pos);
++        int currRequestedPriority = this.requestedPriority;
 +        int priority = getDemandedPriority();
++        int newRequestedPriority = this.requestedPriority = priority;
 +        if (this.queueLevel > priority) {
 +            int ioPriority = com.destroystokyo.paper.io.PrioritizedTaskQueue.NORMAL_PRIORITY;
 +            if (priority <= 10) {
@@ -334,7 +338,7 @@ index 8245e07f6ecfd9dd997c8525b52c6eadd392e6f1..a0334dde56829fd895323f4cab2ab55d
 +            }
 +            chunkMap.level.asyncChunkTaskManager.raisePriority(pos.x, pos.z, ioPriority);
 +        }
-+        if (this.queueLevel != priority) {
++        if (currRequestedPriority != newRequestedPriority) {
 +            this.onLevelChange.onLevelChange(this.pos, () -> this.queueLevel, priority, p -> this.queueLevel = p); // use preferred priority
 +            int neighborsPriority = getNeighborsPriority();
 +            this.neighbors.forEach((neighbor, neighborDesired) -> neighbor.setNeighborPriority(this, neighborsPriority));
@@ -363,7 +367,7 @@ index 8245e07f6ecfd9dd997c8525b52c6eadd392e6f1..a0334dde56829fd895323f4cab2ab55d
                  }
              }).exceptionally((throwable) -> {
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index 12f9f512dc8b9e094dab2caec7b6ddaf2a378ee9..5b1b91ab4d351f47a05a73cf65539b0bc92df13b 100644
+index 12f9f512dc8b9e094dab2caec7b6ddaf2a378ee9..11b743acfad319f536798204d525cda0813e8987 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
 @@ -149,6 +149,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
@@ -589,7 +593,7 @@ index 12f9f512dc8b9e094dab2caec7b6ddaf2a378ee9..5b1b91ab4d351f47a05a73cf65539b0b
          CompletableFuture<CompoundTag> chunkSaveFuture = this.level.asyncChunkTaskManager.getChunkSaveFuture(pos.x, pos.z);
 +        // Paper start
 +        ChunkHolder playerChunk = getUpdatingChunkIfPresent(pos.toLong());
-+        int chunkPriority = playerChunk != null ? playerChunk.queueLevel : 33;
++        int chunkPriority = playerChunk != null ? playerChunk.requestedPriority : 33;
 +        int priority = com.destroystokyo.paper.io.PrioritizedTaskQueue.NORMAL_PRIORITY;
 +
 +        if (chunkPriority <= 10) {
@@ -1103,7 +1107,7 @@ index 6d947343b6ff2f86a23ea669e371d5ecd9e903c0..d6f0c82b503a0fa73f6589fc4c331d27
          boolean flag1 = this.chunkMap.promoteChunkMap();
  
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-index cf09bd17b9d2be04f79edef6debdd815b5f7f86c..6cf83d9b1e43ade17cb67843dbdc11937eda1e08 100644
+index 009b6fe428db1a6e69403d8df32325f78e6b4461..1da049b171e26ac422fa0e56d8772577d5c768fa 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
 @@ -189,6 +189,14 @@ public class ServerPlayer extends Player {
