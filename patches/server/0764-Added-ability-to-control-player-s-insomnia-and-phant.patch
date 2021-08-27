@@ -40,40 +40,17 @@ index 261633687b5dd55559b2ddb305c3a21a8b308ada..e9fc868c24b44d2906f6865913611411
      private void viewDistance() {
          this.noTickViewDistance = this.getInt("viewdistances.no-tick-view-distance", -1);
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 25c3a96ca88494650d93efcaeecf5ae08ed0810f..10473a68f51226e64187bf55f86d72709f4c1f11 100644
+index 25c3a96ca88494650d93efcaeecf5ae08ed0810f..0e3b51205dfe29a347061231e8b7726ba9bbe4f9 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -31,21 +31,8 @@ import java.nio.file.Files;
- import java.nio.file.Path;
- import java.security.KeyPair;
- import java.text.SimpleDateFormat;
--import java.util.Arrays;
--import java.util.Base64;
--import java.util.Collection;
--import java.util.Collections;
--import java.util.Comparator;
--import java.util.Date;
--import java.util.Iterator;
--import java.util.List;
--import java.util.Map;
-+import java.util.*;
- import java.util.Map.Entry;
--import java.util.Objects;
--import java.util.Optional;
--import java.util.Random;
--import java.util.Set;
--import java.util.UUID;
- import java.util.concurrent.CompletableFuture;
- import java.util.concurrent.Executor;
- import java.util.concurrent.atomic.AtomicReference;
-@@ -569,7 +556,13 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -569,7 +569,13 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
              boolean flag = generatorsettings.isDebug();
              long i = generatorsettings.seed();
              long j = BiomeManager.obfuscateSeed(i);
 -            List<CustomSpawner> list = ImmutableList.of(new PhantomSpawner(), new PatrolSpawner(), new CatSpawner(), new VillageSiege(), new WanderingTraderSpawner(iworlddataserver));
 +            // Paper start
-+            List<CustomSpawner> list = new ArrayList<>(Arrays.asList(new PatrolSpawner(), new CatSpawner(), new VillageSiege(), new WanderingTraderSpawner(worlddata)));
-+            if(!com.destroystokyo.paper.PaperConfig.insomniaControlEnabled || com.destroystokyo.paper.PaperConfig.phantomsSpawnAttemptTicks > 0) {
++            List<CustomSpawner> list = Lists.newArrayList(new PatrolSpawner(), new CatSpawner(), new VillageSiege(), new WanderingTraderSpawner(worlddata));
++            if (!com.destroystokyo.paper.PaperConfig.insomniaControlEnabled || com.destroystokyo.paper.PaperConfig.phantomsSpawnAttemptTicks > 0) {
 +                list.add(new PhantomSpawner());
 +            }
 +            list = ImmutableList.copyOf(list);
@@ -82,7 +59,7 @@ index 25c3a96ca88494650d93efcaeecf5ae08ed0810f..10473a68f51226e64187bf55f86d7270
              DimensionType dimensionmanager;
              ChunkGenerator chunkgenerator;
 diff --git a/src/main/java/net/minecraft/world/entity/EntitySelector.java b/src/main/java/net/minecraft/world/entity/EntitySelector.java
-index a060cca08631fb42041e3a79a9abc422fe7757af..86a7b6355d108ab17bcf629f4d4874d7b79cb39f 100644
+index a060cca08631fb42041e3a79a9abc422fe7757af..154707f37793665d152213793f266f62a0be5bd3 100644
 --- a/src/main/java/net/minecraft/world/entity/EntitySelector.java
 +++ b/src/main/java/net/minecraft/world/entity/EntitySelector.java
 @@ -26,7 +26,18 @@ public final class EntitySelector {
@@ -95,7 +72,7 @@ index a060cca08631fb42041e3a79a9abc422fe7757af..86a7b6355d108ab17bcf629f4d4874d7
 +        net.minecraft.server.level.ServerPlayer serverPlayer = (net.minecraft.server.level.ServerPlayer) player;
 +        int playerInsomniaTicks = serverPlayer.getLevel().paperConfig.playerInsomniaStartTicks;
 +
-+        if(playerInsomniaTicks <= 0) {
++        if (playerInsomniaTicks <= 0) {
 +            return false;
 +        }
 +
@@ -106,7 +83,7 @@ index a060cca08631fb42041e3a79a9abc422fe7757af..86a7b6355d108ab17bcf629f4d4874d7
      private EntitySelector() {}
      // Paper start
 diff --git a/src/main/java/net/minecraft/world/level/levelgen/PhantomSpawner.java b/src/main/java/net/minecraft/world/level/levelgen/PhantomSpawner.java
-index 79504dc3448402e73b09c4232b1fd0488872cf68..3701f7e62224290f04cf0e47bd43bec47a6a41c6 100644
+index 79504dc3448402e73b09c4232b1fd0488872cf68..5eab4356803e268270116d4676d6c66a513b5376 100644
 --- a/src/main/java/net/minecraft/world/level/levelgen/PhantomSpawner.java
 +++ b/src/main/java/net/minecraft/world/level/levelgen/PhantomSpawner.java
 @@ -43,7 +43,7 @@ public class PhantomSpawner implements CustomSpawner {
@@ -123,12 +100,12 @@ index 79504dc3448402e73b09c4232b1fd0488872cf68..3701f7e62224290f04cf0e47bd43bec4
                                      boolean flag2 = true;
  
 -                                    if (random.nextInt(j) >= 72000) {
-+                                    if(random.nextInt(j) >= world.paperConfig.playerInsomniaStartTicks) { // Paper
++                                    if (random.nextInt(j) >= world.paperConfig.playerInsomniaStartTicks) { // Paper
                                          BlockPos blockposition1 = blockposition.above(20 + random.nextInt(15)).east(-10 + random.nextInt(21)).south(-10 + random.nextInt(21));
                                          BlockState iblockdata = world.getBlockState(blockposition1);
                                          FluidState fluid = world.getFluidState(blockposition1);
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 41255bc4c03a02e76fbfc3b0b34c907fb3ad05b1..6c9fa686b61dca1fa918ac68ae3ce96cb6a94f26 100644
+index 41255bc4c03a02e76fbfc3b0b34c907fb3ad05b1..383f74427c56cc92805558c822cb7447cc9acb06 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -1163,7 +1163,13 @@ public final class CraftServer implements Server {
@@ -137,8 +114,8 @@ index 41255bc4c03a02e76fbfc3b0b34c907fb3ad05b1..6c9fa686b61dca1fa918ac68ae3ce96c
          long j = BiomeManager.obfuscateSeed(creator.seed());
 -        List<CustomSpawner> list = ImmutableList.of(new PhantomSpawner(), new PatrolSpawner(), new CatSpawner(), new VillageSiege(), new WanderingTraderSpawner(worlddata));
 +        // Paper start
-+        List<CustomSpawner> list = new ArrayList<>(Arrays.asList(new PatrolSpawner(), new CatSpawner(), new VillageSiege(), new WanderingTraderSpawner(worlddata)));
-+        if(!com.destroystokyo.paper.PaperConfig.insomniaControlEnabled || com.destroystokyo.paper.PaperConfig.phantomsSpawnAttemptTicks > 0) {
++        List<CustomSpawner> list = Lists.newArrayList(new PatrolSpawner(), new CatSpawner(), new VillageSiege(), new WanderingTraderSpawner(worlddata));
++        if (!com.destroystokyo.paper.PaperConfig.insomniaControlEnabled || com.destroystokyo.paper.PaperConfig.phantomsSpawnAttemptTicks > 0) {
 +            list.add(new PhantomSpawner());
 +        }
 +        list = ImmutableList.copyOf(list);
