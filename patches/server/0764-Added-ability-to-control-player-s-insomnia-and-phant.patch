@@ -6,18 +6,24 @@ Subject: [PATCH] Added ability to control player's insomnia and phantoms
 
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-index 2e0191e5cfe8e29fb0a6c4fc6a2a570d4b8ae449..f6e1102c2079996f6af1f3fe513e8f7a9f992b9d 100644
+index 2e0191e5cfe8e29fb0a6c4fc6a2a570d4b8ae449..41c96e7755685c82c9657e8a75355969e336f96f 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-@@ -289,6 +289,13 @@ public class PaperConfig {
+@@ -289,6 +289,19 @@ public class PaperConfig {
          suggestPlayersWhenNullTabCompletions = getBoolean("settings.suggest-player-names-when-null-tab-completions", suggestPlayersWhenNullTabCompletions);
      }
  
-+    public static boolean insomniaControlEnabled = false;
-+    public static int phantomsSpawnAttemptTicks = 2000;
++    public static int phantomsSpawnAttemptMinSeconds = 60;
++    public static int phantomsSpawnAttemptMaxSeconds = 119;
 +    private static void insomniaControlSettings() {
-+        insomniaControlEnabled = getBoolean("settings.insomnia-control.enabled", insomniaControlEnabled);
-+        phantomsSpawnAttemptTicks = getInt("settings.insomnia-control.phantoms-spawn-attempt-ticks", phantomsSpawnAttemptTicks);
++        phantomsSpawnAttemptMinSeconds = getInt("settings.insomnia-control.phantoms-spawn-attempt-min-seconds", phantomsSpawnAttemptMinSeconds);
++        phantomsSpawnAttemptMaxSeconds = getInt("settings.insomnia-control.phantoms-spawn-attempt-max-seconds", phantomsSpawnAttemptMaxSeconds);
++
++        if (phantomsSpawnAttemptMinSeconds > phantomsSpawnAttemptMaxSeconds) {
++            int temp = phantomsSpawnAttemptMinSeconds;
++            phantomsSpawnAttemptMinSeconds = phantomsSpawnAttemptMaxSeconds;
++            phantomsSpawnAttemptMaxSeconds = temp;
++        }
 +    }
 +
      public static String authenticationServersDownKickMessage = ""; // empty = use translatable message
@@ -40,7 +46,7 @@ index 261633687b5dd55559b2ddb305c3a21a8b308ada..e9fc868c24b44d2906f6865913611411
      private void viewDistance() {
          this.noTickViewDistance = this.getInt("viewdistances.no-tick-view-distance", -1);
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 25c3a96ca88494650d93efcaeecf5ae08ed0810f..0e3b51205dfe29a347061231e8b7726ba9bbe4f9 100644
+index 25c3a96ca88494650d93efcaeecf5ae08ed0810f..ef9baadef863572e14ee944244c47a3ea602a66f 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -569,7 +569,13 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
@@ -50,7 +56,7 @@ index 25c3a96ca88494650d93efcaeecf5ae08ed0810f..0e3b51205dfe29a347061231e8b7726b
 -            List<CustomSpawner> list = ImmutableList.of(new PhantomSpawner(), new PatrolSpawner(), new CatSpawner(), new VillageSiege(), new WanderingTraderSpawner(iworlddataserver));
 +            // Paper start
 +            List<CustomSpawner> list = Lists.newArrayList(new PatrolSpawner(), new CatSpawner(), new VillageSiege(), new WanderingTraderSpawner(worlddata));
-+            if (!com.destroystokyo.paper.PaperConfig.insomniaControlEnabled || com.destroystokyo.paper.PaperConfig.phantomsSpawnAttemptTicks > 0) {
++            if (com.destroystokyo.paper.PaperConfig.phantomsSpawnAttemptMinSeconds > 0 && com.destroystokyo.paper.PaperConfig.phantomsSpawnAttemptMaxSeconds > 0) {
 +                list.add(new PhantomSpawner());
 +            }
 +            list = ImmutableList.copyOf(list);
@@ -83,19 +89,23 @@ index a060cca08631fb42041e3a79a9abc422fe7757af..154707f37793665d152213793f266f62
      private EntitySelector() {}
      // Paper start
 diff --git a/src/main/java/net/minecraft/world/level/levelgen/PhantomSpawner.java b/src/main/java/net/minecraft/world/level/levelgen/PhantomSpawner.java
-index 79504dc3448402e73b09c4232b1fd0488872cf68..5eab4356803e268270116d4676d6c66a513b5376 100644
+index 79504dc3448402e73b09c4232b1fd0488872cf68..3217ee2c0d6ee6b58eee274c996aee69f6ebad59 100644
 --- a/src/main/java/net/minecraft/world/level/levelgen/PhantomSpawner.java
 +++ b/src/main/java/net/minecraft/world/level/levelgen/PhantomSpawner.java
-@@ -43,7 +43,7 @@ public class PhantomSpawner implements CustomSpawner {
+@@ -43,7 +43,11 @@ public class PhantomSpawner implements CustomSpawner {
              if (this.nextTick > 0) {
                  return 0;
              } else {
 -                this.nextTick += (60 + random.nextInt(60)) * 20;
-+                this.nextTick += com.destroystokyo.paper.PaperConfig.insomniaControlEnabled ? com.destroystokyo.paper.PaperConfig.phantomsSpawnAttemptTicks : (60 + random.nextInt(60)) * 20; // Paper
++                // Paper start
++                int spawnAttemptMinSeconds = com.destroystokyo.paper.PaperConfig.phantomsSpawnAttemptMinSeconds;
++                int spawnAttemptMaxSeconds = com.destroystokyo.paper.PaperConfig.phantomsSpawnAttemptMaxSeconds;
++                this.nextTick += (spawnAttemptMinSeconds + random.nextInt(spawnAttemptMaxSeconds - spawnAttemptMinSeconds + 1)) * 20;
++                // Paper end
                  if (world.getSkyDarken() < 5 && world.dimensionType().hasSkyLight()) {
                      return 0;
                  } else {
-@@ -64,7 +64,7 @@ public class PhantomSpawner implements CustomSpawner {
+@@ -64,7 +68,7 @@ public class PhantomSpawner implements CustomSpawner {
                                      int j = Mth.clamp(serverstatisticmanager.getValue(Stats.CUSTOM.get(Stats.TIME_SINCE_REST)), 1, Integer.MAX_VALUE);
                                      boolean flag2 = true;
  
@@ -105,7 +115,7 @@ index 79504dc3448402e73b09c4232b1fd0488872cf68..5eab4356803e268270116d4676d6c66a
                                          BlockState iblockdata = world.getBlockState(blockposition1);
                                          FluidState fluid = world.getFluidState(blockposition1);
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 41255bc4c03a02e76fbfc3b0b34c907fb3ad05b1..383f74427c56cc92805558c822cb7447cc9acb06 100644
+index 41255bc4c03a02e76fbfc3b0b34c907fb3ad05b1..47d1aa605f81c655fde1ff95e78e9792787b292e 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -1163,7 +1163,13 @@ public final class CraftServer implements Server {
@@ -115,7 +125,7 @@ index 41255bc4c03a02e76fbfc3b0b34c907fb3ad05b1..383f74427c56cc92805558c822cb7447
 -        List<CustomSpawner> list = ImmutableList.of(new PhantomSpawner(), new PatrolSpawner(), new CatSpawner(), new VillageSiege(), new WanderingTraderSpawner(worlddata));
 +        // Paper start
 +        List<CustomSpawner> list = Lists.newArrayList(new PatrolSpawner(), new CatSpawner(), new VillageSiege(), new WanderingTraderSpawner(worlddata));
-+        if (!com.destroystokyo.paper.PaperConfig.insomniaControlEnabled || com.destroystokyo.paper.PaperConfig.phantomsSpawnAttemptTicks > 0) {
++        if (com.destroystokyo.paper.PaperConfig.phantomsSpawnAttemptMinSeconds > 0 && com.destroystokyo.paper.PaperConfig.phantomsSpawnAttemptMaxSeconds > 0) {
 +            list.add(new PhantomSpawner());
 +        }
 +        list = ImmutableList.copyOf(list);
