@@ -1,0 +1,109 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Thu, 26 Aug 2021 22:56:41 -0700
+Subject: [PATCH] Add PersistentDataContainer for worlds
+
+
+diff --git a/src/main/java/net/minecraft/world/level/storage/LevelStorageSource.java b/src/main/java/net/minecraft/world/level/storage/LevelStorageSource.java
+index 9a9e9e13c08d1cbcad98729065185c2c449d70a4..5871b0a067a9385a5d43ab0978ee16000ae7c71f 100644
+--- a/src/main/java/net/minecraft/world/level/storage/LevelStorageSource.java
++++ b/src/main/java/net/minecraft/world/level/storage/LevelStorageSource.java
+@@ -346,7 +346,19 @@ public class LevelStorageSource {
+         @Nullable
+         public WorldData getDataTag(DynamicOps<Tag> dynamicops, DataPackConfig dataPackSettings) {
+             this.checkLock();
+-            return (WorldData) LevelStorageSource.this.readLevelData(this.levelPath.toFile(), LevelStorageSource.getLevelData(dynamicops, dataPackSettings));
++            // Paper start
++            final WorldData worldData = LevelStorageSource.this.readLevelData(this.levelPath.toFile(), LevelStorageSource.getLevelData(dynamicops, dataPackSettings));
++            Path pdcFile = this.levelPath.resolve("pdc.dat");
++            if (worldData != null && Files.exists(pdcFile)) {
++                try {
++                    net.minecraft.nbt.CompoundTag pdc = net.minecraft.nbt.NbtIo.readCompressed(java.nio.file.Files.newInputStream(pdcFile));
++                    worldData.pdc().putAll(pdc.getCompound("PaperLevelValues"));
++                } catch (Exception exception) {
++                    LevelStorageSource.LOGGER.error("Unable to load the pdc for {}", pdcFile, exception);
++                }
++            }
++            return worldData;
++            // Paper end
+         }
+ 
+         @Nullable
+@@ -365,8 +377,23 @@ public class LevelStorageSource {
+             CompoundTag nbttagcompound2 = new CompoundTag();
+ 
+             nbttagcompound2.put("Data", nbttagcompound1);
++            // Paper start - world PDC
++            CompoundTag pdc = null;
++            Path pdcFile = this.levelPath.resolve("pdc.dat");
++            if (!saveProperties.pdc().isEmpty()) {
++                pdc = new CompoundTag();
++                pdc.put("PaperLevelValues", saveProperties.pdc().toTagCompound());
++            }
++            // Paper end
+ 
+             try {
++                // Paper start
++                if (pdc != null) {
++                    NbtIo.writeCompressed(pdc, Files.newOutputStream(pdcFile));
++                } else {
++                    Files.deleteIfExists(pdcFile);
++                }
++                // Paper end
+                 File file1 = File.createTempFile("level", ".dat", file);
+ 
+                 NbtIo.writeCompressed(nbttagcompound2, file1);
+diff --git a/src/main/java/net/minecraft/world/level/storage/PrimaryLevelData.java b/src/main/java/net/minecraft/world/level/storage/PrimaryLevelData.java
+index 30cd6dc004ef1d1518c9a10304ea2a20c0616831..655e36e1692356022a8338bff373e2710874e8ce 100644
+--- a/src/main/java/net/minecraft/world/level/storage/PrimaryLevelData.java
++++ b/src/main/java/net/minecraft/world/level/storage/PrimaryLevelData.java
+@@ -86,6 +86,14 @@ public class PrimaryLevelData implements ServerLevelData, WorldData {
+     private boolean wasModded;
+     private final TimerQueue<MinecraftServer> scheduledEvents;
+     public ServerLevel world; // CraftBukkit
++    // Paper start - persistent data container
++    private static final org.bukkit.craftbukkit.persistence.CraftPersistentDataTypeRegistry DATA_TYPE_REGISTRY = new org.bukkit.craftbukkit.persistence.CraftPersistentDataTypeRegistry();
++    private final org.bukkit.craftbukkit.persistence.CraftPersistentDataContainer persistentDataContainer = new org.bukkit.craftbukkit.persistence.CraftPersistentDataContainer(DATA_TYPE_REGISTRY);
++    @Override
++    public org.bukkit.craftbukkit.persistence.CraftPersistentDataContainer pdc() {
++        return this.persistentDataContainer;
++    }
++    // Paper end
+ 
+     private PrimaryLevelData(@Nullable DataFixer dataFixer, int dataVersion, @Nullable CompoundTag playerData, boolean modded, int spawnX, int spawnY, int spawnZ, float spawnAngle, long time, long timeOfDay, int version, int clearWeatherTime, int rainTime, boolean raining, int thunderTime, boolean thundering, boolean initialized, boolean difficultyLocked, WorldBorder.Settings worldBorder, int wanderingTraderSpawnDelay, int wanderingTraderSpawnChance, @Nullable UUID wanderingTraderId, Set<String> serverBrands, TimerQueue<MinecraftServer> scheduledEvents, @Nullable CompoundTag customBossEvents, CompoundTag dragonFight, LevelSettings levelInfo, WorldGenSettings generatorOptions, Lifecycle lifecycle) {
+         this.fixerUpper = dataFixer;
+diff --git a/src/main/java/net/minecraft/world/level/storage/WorldData.java b/src/main/java/net/minecraft/world/level/storage/WorldData.java
+index 305f0cca5063c0f94e986f4b05bb33dbbf3220e6..1545fa6ce3ad6b1642afae969caf0137059cc702 100644
+--- a/src/main/java/net/minecraft/world/level/storage/WorldData.java
++++ b/src/main/java/net/minecraft/world/level/storage/WorldData.java
+@@ -17,6 +17,12 @@ public interface WorldData {
+     int ANVIL_VERSION_ID = 19133;
+     int MCREGION_VERSION_ID = 19132;
+ 
++    // Paper start
++    default org.bukkit.craftbukkit.persistence.CraftPersistentDataContainer pdc() {
++        throw new UnsupportedOperationException("pdc not implemented here");
++    }
++    // Paper end
++
+     DataPackConfig getDataPackConfig();
+ 
+     void setDataPackConfig(DataPackConfig dataPackSettings);
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+index ac41bc23d2f7e16bbacdc9b33fcf6c0d706fa023..f4562c3208a7bfca878975bd2e1d05de365edbd3 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+@@ -204,6 +204,13 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+     }
+     // Paper end
+ 
++    // Paper start - add pdc to worlds
++    @Override
++    public org.bukkit.persistence.PersistentDataContainer getPersistentDataContainer() {
++        return this.world.serverLevelData.pdc();
++    }
++    // Paper end
++
+     private static final Random rand = new Random();
+ 
+     public CraftWorld(ServerLevel world, ChunkGenerator gen, BiomeProvider biomeProvider, Environment env) {
