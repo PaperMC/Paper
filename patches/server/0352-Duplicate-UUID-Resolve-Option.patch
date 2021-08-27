@@ -83,7 +83,7 @@ index 8190c30346c0fd2d86fb7cbcfc7ce17333e05146..9860f5a0ddff83f1393ee13a96b38c3b
      private void countAllMobsForSpawning() {
          countAllMobsForSpawning = getBoolean("count-all-mobs-for-spawning", false);
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index a2eecfaf54921423f803d759c06789e5e8a38d33..1273ef4f7f0dff15f8630c0ca3dd1fffcae6acdf 100644
+index f027ff9549c9b97f36c9339ec16f39fd4c6ce5d2..6fa6b3af43e17408c014a56ee116f533edcdbdf3 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
 @@ -1,6 +1,7 @@
@@ -165,10 +165,10 @@ index a2eecfaf54921423f803d759c06789e5e8a38d33..1273ef4f7f0dff15f8630c0ca3dd1fff
          ChunkPos chunkcoordintpair = holder.getPos();
          CompletableFuture<Either<List<ChunkAccess>, ChunkHolder.ChunkLoadingFailure>> completablefuture = this.getChunkRangeFuture(chunkcoordintpair, 1, (i) -> {
 diff --git a/src/main/java/net/minecraft/world/level/entity/PersistentEntitySectionManager.java b/src/main/java/net/minecraft/world/level/entity/PersistentEntitySectionManager.java
-index ba3509510bdada588100d481a9124e928cfe760e..a56cfcf5ac735147f3f2bd029a2b1a4e889d5b4f 100644
+index 96b070a1fd4a3948609ba47614c81cc231084f5c..d9b82aea11dda1d6b45a66f2b7ca1524b7a3c369 100644
 --- a/src/main/java/net/minecraft/world/level/entity/PersistentEntitySectionManager.java
 +++ b/src/main/java/net/minecraft/world/level/entity/PersistentEntitySectionManager.java
-@@ -61,7 +61,21 @@ public class PersistentEntitySectionManager<T extends EntityAccess> implements A
+@@ -64,7 +64,21 @@ public class PersistentEntitySectionManager<T extends EntityAccess> implements A
  
      private boolean addEntityUuid(T entity) {
          if (!this.knownUuids.add(entity.getUUID())) {
@@ -178,7 +178,7 @@ index ba3509510bdada588100d481a9124e928cfe760e..a56cfcf5ac735147f3f2bd029a2b1a4e
 +                return false;
 +            }
 +            // Paper end
-             LOGGER.warn("UUID of added entity already exists: {}", (Object)entity);
+             PersistentEntitySectionManager.LOGGER.warn("UUID of added entity already exists: {}", entity);
 +            // Paper start
 +            if (net.minecraft.world.level.Level.DEBUG_ENTITIES && ((Entity) entity).level.paperConfig.duplicateUUIDMode != com.destroystokyo.paper.PaperWorldConfig.DuplicateUUIDMode.NOTHING) {
 +                if (((Entity) entity).addedToWorldStack != null) {
@@ -190,39 +190,3 @@ index ba3509510bdada588100d481a9124e928cfe760e..a56cfcf5ac735147f3f2bd029a2b1a4e
              return false;
          } else {
              return true;
-@@ -238,7 +252,7 @@ public class PersistentEntitySectionManager<T extends EntityAccess> implements A
-     }
- 
-     private void processUnloads() {
--        this.chunksToUnload.removeIf((pos) -> {
-+        this.chunksToUnload.removeIf((java.util.function.LongPredicate) (pos) -> { // Paper - decompile fix
-             return this.chunkVisibility.get(pos) != Visibility.HIDDEN ? true : this.processChunkUnload(pos);
-         });
-     }
-@@ -272,7 +286,7 @@ public class PersistentEntitySectionManager<T extends EntityAccess> implements A
-     }
- 
-     public void autoSave() {
--        this.getAllChunksToSave().forEach((pos) -> {
-+        this.getAllChunksToSave().forEach((java.util.function.LongConsumer) (pos) -> { // Paper - decompile fix
-             boolean bl = this.chunkVisibility.get(pos) == Visibility.HIDDEN;
-             if (bl) {
-                 this.processChunkUnload(pos);
-@@ -290,7 +304,7 @@ public class PersistentEntitySectionManager<T extends EntityAccess> implements A
-         while(!longSet.isEmpty()) {
-             this.permanentStorage.flush(false);
-             this.processPendingLoads();
--            longSet.removeIf((pos) -> {
-+            longSet.removeIf((java.util.function.LongPredicate) (pos) -> { // Paper - decompile fix
-                 boolean bl = this.chunkVisibility.get(pos) == Visibility.HIDDEN;
-                 return bl ? this.processChunkUnload(pos) : this.storeChunkSections(pos, (entityAccess) -> {
-                 });
-@@ -328,7 +342,7 @@ public class PersistentEntitySectionManager<T extends EntityAccess> implements A
- 
-     public void dumpSections(Writer writer) throws IOException {
-         CsvOutput csvOutput = CsvOutput.builder().addColumn("x").addColumn("y").addColumn("z").addColumn("visibility").addColumn("load_status").addColumn("entity_count").build(writer);
--        this.sectionStorage.getAllChunksWithExistingSections().forEach((chunkPos) -> {
-+        this.sectionStorage.getAllChunksWithExistingSections().forEach((java.util.function.LongConsumer) (chunkPos) -> { // Paper - decompile fix
-             PersistentEntitySectionManager.ChunkLoadStatus chunkLoadStatus = this.chunkLoadStatuses.get(chunkPos);
-             this.sectionStorage.getExistingSectionPositionsInChunk(chunkPos).forEach((sectionPos) -> {
-                 EntitySection<T> entitySection = this.sectionStorage.getSection(sectionPos);
