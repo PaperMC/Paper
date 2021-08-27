@@ -1128,6 +1128,7 @@ public final class CraftServer implements Server {
             }
 
             handle.getChunkProvider().close(save);
+            handle.entityManager.close(save); // SPIGOT-6722: close entityManager
             handle.convertable.close();
         } catch (Exception ex) {
             getLogger().log(Level.SEVERE, null, ex);
