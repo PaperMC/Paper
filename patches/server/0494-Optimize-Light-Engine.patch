@@ -25,19 +25,19 @@ Massive update to light to improve performance and chunk loading/generation.
 8) Fix NPE risk that crashes server in getting nibble data
 
 diff --git a/src/main/java/net/minecraft/server/level/ChunkHolder.java b/src/main/java/net/minecraft/server/level/ChunkHolder.java
-index 81696d822c00e506ba2128590e95341994ff93f6..c6c4894427e5e98dccc1506d9d20157e1acbbd21 100644
+index 0c6d513b6bcbd518fe4beee7acd7b96ce801c78e..e6cc5da2fd58bcc2809baeffee01040d0370a92c 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkHolder.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkHolder.java
-@@ -810,6 +810,7 @@ public class ChunkHolder {
+@@ -806,6 +806,7 @@ public class ChunkHolder {
+                 ioPriority = com.destroystokyo.paper.io.PrioritizedTaskQueue.HIGH_PRIORITY;
+             }
+             chunkMap.level.asyncChunkTaskManager.raisePriority(pos.x, pos.z, ioPriority);
++            chunkMap.level.getChunkSource().getLightEngine().queue.changePriority(pos.toLong(), this.queueLevel, priority); // Paper // Restore this in chunk priority later?
          }
-         // Paper end
-         this.oldTicketLevel = this.ticketLevel;
-+        //chunkMap.level.getChunkSource().getLightEngine().queue.changePriority(pos.toLong(), this.queueLevel, priority); // Paper // Restore this in chunk priority later?
-         // CraftBukkit start
-         // ChunkLoadEvent: Called after the chunk is loaded: isChunkLoaded returns true and chunk is ready to be modified by plugins.
-         if (!playerchunk_state.isOrAfter(ChunkHolder.FullChunkStatus.BORDER) && playerchunk_state1.isOrAfter(ChunkHolder.FullChunkStatus.BORDER)) {
+         if (currRequestedPriority != newRequestedPriority) {
+             this.onLevelChange.onLevelChange(this.pos, () -> this.queueLevel, priority, p -> this.queueLevel = p); // use preferred priority
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index d470fdcbc79c4a491e9a078930b54e8d8949d68c..1c662deee2a3184c7612cf7de5f798753fbd7381 100644
+index 1de84204656d60e4dc91cc37661cb7c1573a22d2..97bf5120d680ab47778c65e28e2ea2954daac031 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
 @@ -97,6 +97,7 @@ import net.minecraft.world.level.levelgen.structure.templatesystem.StructureMana
