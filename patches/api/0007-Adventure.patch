@@ -7,31 +7,48 @@ Co-authored-by: zml <zml@stellardrift.ca>
 Co-authored-by: Jake Potrebic <jake.m.potrebic@gmail.com>
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index 17fd7162ab32785252bf2579daae8d47aec21684..479d4e3b91e902e9b30d351aa65c8b079555d7e0 100644
+index ccf5b30fa48e641fc8d04f185f9ffca55d4e2154..0ed6d9e6619db7559dc5b65a8da6e54e6e15d31c 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
-@@ -10,6 +10,8 @@ java {
+@@ -10,6 +10,19 @@ java {
      withJavadocJar()
  }
  
 +val adventureVersion = "4.8.1"
++val apiAndDocs by configurations.creating {
++    attributes {
++        attribute(Category.CATEGORY_ATTRIBUTE, objects.named(Category.DOCUMENTATION))
++        attribute(Bundling.BUNDLING_ATTRIBUTE, objects.named(Bundling.EXTERNAL))
++        attribute(DocsType.DOCS_TYPE_ATTRIBUTE, objects.named(DocsType.SOURCES))
++        attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage.JAVA_RUNTIME))
++    }
++}
++configurations.api {
++    extendsFrom(apiAndDocs)
++}
 +
  dependencies {
      // api dependencies are listed transitively to API consumers
      api("commons-lang:commons-lang:2.6")
-@@ -19,6 +21,11 @@ dependencies {
+@@ -19,6 +32,11 @@ dependencies {
      api("org.yaml:snakeyaml:1.28")
      api("com.googlecode.json-simple:json-simple:1.1.1") // Paper
      api("it.unimi.dsi:fastutil:8.2.2")
-+    api(platform("net.kyori:adventure-bom:$adventureVersion"))
-+    api("net.kyori:adventure-api")
-+    api("net.kyori:adventure-text-serializer-gson")
-+    api("net.kyori:adventure-text-serializer-legacy")
-+    api("net.kyori:adventure-text-serializer-plain")
++    apiAndDocs(platform("net.kyori:adventure-bom:$adventureVersion"))
++    apiAndDocs("net.kyori:adventure-api")
++    apiAndDocs("net.kyori:adventure-text-serializer-gson")
++    apiAndDocs("net.kyori:adventure-text-serializer-legacy")
++    apiAndDocs("net.kyori:adventure-text-serializer-plain")
  
      compileOnly("org.apache.maven:maven-resolver-provider:3.8.1")
      compileOnly("org.apache.maven.resolver:maven-resolver-connector-basic:1.7.0")
-@@ -66,5 +73,11 @@ tasks.withType<Javadoc>().configureEach {
+@@ -61,10 +79,17 @@ tasks.jar {
+ }
+ 
+ tasks.withType<Javadoc>().configureEach {
++    (options as CoreJavadocOptions).addStringOption("sourcepath", apiAndDocs.resolvedConfiguration.files.joinToString(separator = File.pathSeparator, transform = File::getPath))
+     (options as StandardJavadocDocletOptions).links(
+         "https://guava.dev/releases/21.0/api/docs/",
          "https://javadoc.io/doc/org.yaml/snakeyaml/1.28/",
          "https://javadoc.io/doc/org.jetbrains/annotations/21.0.1/", // Paper - we don't want Java 5 annotations
          "https://javadoc.io/doc/net.md-5/bungeecord-chat/1.16-R0.4/",
@@ -1059,19 +1076,19 @@ index efb97712cc9dc7c1e12a59f5b94e4f2ad7c6b7d8..3024468af4c073324e536c1cb26beffb
                  return warning == null || warning.value();
              }
 diff --git a/src/main/java/org/bukkit/World.java b/src/main/java/org/bukkit/World.java
-index bc4417d8ffa92a78f690bfa5705d3e42cdc11fd2..d3519fa5b99e2888a194c6382415537785fbeef0 100644
+index dd0fef9155077ce6df7bdadc9e4152008f700a3b..92e8b0b1ccebdc2646337114793ea9f3e7759d25 100644
 --- a/src/main/java/org/bukkit/World.java
 +++ b/src/main/java/org/bukkit/World.java
 @@ -38,7 +38,7 @@ import org.jetbrains.annotations.Nullable;
  /**
   * Represents a world, which may contain entities, chunks and blocks
   */
--public interface World extends PluginMessageRecipient, Metadatable {
-+public interface World extends PluginMessageRecipient, Metadatable, net.kyori.adventure.audience.ForwardingAudience { // Paper
+-public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient, Metadatable {
++public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient, Metadatable, net.kyori.adventure.audience.ForwardingAudience { // Paper
  
      /**
       * Gets the {@link Block} at the given coordinates
-@@ -640,6 +640,14 @@ public interface World extends PluginMessageRecipient, Metadatable {
+@@ -633,6 +633,14 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      @NotNull
      public List<Player> getPlayers();
  
@@ -3650,10 +3667,10 @@ index d283f6947d775a3bc3a9b2f75db9ab733d819a06..93089ce61d2e1888df13b7c9629a79cd
  
      /**
 diff --git a/src/main/java/org/bukkit/scoreboard/Team.java b/src/main/java/org/bukkit/scoreboard/Team.java
-index 0db7fe1b9fe5621ceed3f4f046691e359f5949dd..30fce0df75494eb9b7409f08ea3d6ff894f7c79f 100644
+index 0db7fe1b9fe5621ceed3f4f046691e359f5949dd..d5b39fb4fc16a342b5661e08df1506858168d20d 100644
 --- a/src/main/java/org/bukkit/scoreboard/Team.java
 +++ b/src/main/java/org/bukkit/scoreboard/Team.java
-@@ -22,14 +22,95 @@ public interface Team {
+@@ -22,14 +22,93 @@ public interface Team {
       */
      @NotNull
      String getName() throws IllegalStateException;
@@ -3689,7 +3706,6 @@ index 0db7fe1b9fe5621ceed3f4f046691e359f5949dd..30fce0df75494eb9b7409f08ea3d6ff8
 +     *
 +     * @param prefix New prefix
 +     * @throws IllegalArgumentException if prefix is null
-+     * @throws IllegalArgumentException if prefix is longer than 64
 +     *     characters
 +     * @throws IllegalStateException if this team has been unregistered
 +     */
@@ -3708,7 +3724,6 @@ index 0db7fe1b9fe5621ceed3f4f046691e359f5949dd..30fce0df75494eb9b7409f08ea3d6ff8
 +     *
 +     * @param suffix the new suffix for this team.
 +     * @throws IllegalArgumentException if suffix is null
-+     * @throws IllegalArgumentException if suffix is longer than 64
 +     *     characters
 +     * @throws IllegalStateException if this team has been unregistered
 +     */
@@ -3749,7 +3764,7 @@ index 0db7fe1b9fe5621ceed3f4f046691e359f5949dd..30fce0df75494eb9b7409f08ea3d6ff8
      String getDisplayName() throws IllegalStateException;
  
      /**
-@@ -39,7 +120,9 @@ public interface Team {
+@@ -39,7 +118,9 @@ public interface Team {
       * @throws IllegalArgumentException if displayName is longer than 128
       *     characters.
       * @throws IllegalStateException if this team has been unregistered
@@ -3759,7 +3774,7 @@ index 0db7fe1b9fe5621ceed3f4f046691e359f5949dd..30fce0df75494eb9b7409f08ea3d6ff8
      void setDisplayName(@NotNull String displayName) throws IllegalStateException, IllegalArgumentException;
  
      /**
-@@ -47,8 +130,10 @@ public interface Team {
+@@ -47,8 +128,10 @@ public interface Team {
       *
       * @return Team prefix
       * @throws IllegalStateException if this team has been unregistered
@@ -3770,7 +3785,7 @@ index 0db7fe1b9fe5621ceed3f4f046691e359f5949dd..30fce0df75494eb9b7409f08ea3d6ff8
      String getPrefix() throws IllegalStateException;
  
      /**
-@@ -59,7 +144,9 @@ public interface Team {
+@@ -59,7 +142,9 @@ public interface Team {
       * @throws IllegalArgumentException if prefix is longer than 64
       *     characters
       * @throws IllegalStateException if this team has been unregistered
@@ -3780,7 +3795,7 @@ index 0db7fe1b9fe5621ceed3f4f046691e359f5949dd..30fce0df75494eb9b7409f08ea3d6ff8
      void setPrefix(@NotNull String prefix) throws IllegalStateException, IllegalArgumentException;
  
      /**
-@@ -67,8 +154,10 @@ public interface Team {
+@@ -67,8 +152,10 @@ public interface Team {
       *
       * @return the team's current suffix
       * @throws IllegalStateException if this team has been unregistered
@@ -3791,7 +3806,7 @@ index 0db7fe1b9fe5621ceed3f4f046691e359f5949dd..30fce0df75494eb9b7409f08ea3d6ff8
      String getSuffix() throws IllegalStateException;
  
      /**
-@@ -79,7 +168,9 @@ public interface Team {
+@@ -79,7 +166,9 @@ public interface Team {
       * @throws IllegalArgumentException if suffix is longer than 64
       *     characters
       * @throws IllegalStateException if this team has been unregistered
@@ -3801,7 +3816,7 @@ index 0db7fe1b9fe5621ceed3f4f046691e359f5949dd..30fce0df75494eb9b7409f08ea3d6ff8
      void setSuffix(@NotNull String suffix) throws IllegalStateException, IllegalArgumentException;
  
      /**
-@@ -90,8 +181,10 @@ public interface Team {
+@@ -90,8 +179,10 @@ public interface Team {
       *
       * @return team color, defaults to {@link ChatColor#RESET}
       * @throws IllegalStateException if this team has been unregistered
@@ -3812,7 +3827,7 @@ index 0db7fe1b9fe5621ceed3f4f046691e359f5949dd..30fce0df75494eb9b7409f08ea3d6ff8
      ChatColor getColor() throws IllegalStateException;
  
      /**
-@@ -102,7 +195,9 @@ public interface Team {
+@@ -102,7 +193,9 @@ public interface Team {
       *
       * @param color new color, must be non-null. Use {@link ChatColor#RESET} for
       * no color

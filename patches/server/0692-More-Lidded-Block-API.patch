@@ -1,0 +1,97 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: LemonCaramel <admin@caramel.moe>
+Date: Sun, 23 May 2021 17:49:51 +0900
+Subject: [PATCH] More Lidded Block API
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftBarrel.java b/src/main/java/org/bukkit/craftbukkit/block/CraftBarrel.java
+index 2f3849135e5f335a6eef6e35cf40c8f93ac80124..ae7478b6de1b6e1812d081ec726130388e915337 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/CraftBarrel.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/CraftBarrel.java
+@@ -63,4 +63,11 @@ public class CraftBarrel extends CraftLootable<BarrelBlockEntity> implements Bar
+         }
+         getTileEntity().openersCounter.opened = false;
+     }
++
++    // Paper start - More Lidded Block API
++    @Override
++    public boolean isOpen() {
++        return getTileEntity().openersCounter.opened;
++    }
++    // Paper end - More Lidded Block API
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftChest.java b/src/main/java/org/bukkit/craftbukkit/block/CraftChest.java
+index 4d84bcdfb17a3d1bc79e5ec2b201739fa0db1bd3..bac6385f99d7475c627d69cde972f5a92ab57f4b 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/CraftChest.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/CraftChest.java
+@@ -82,4 +82,11 @@ public class CraftChest extends CraftLootable<ChestBlockEntity> implements Chest
+         }
+         getTileEntity().openersCounter.opened = false;
+     }
++
++    // Paper start - More Lidded Block API
++    @Override
++    public boolean isOpen() {
++        return getTileEntity().openersCounter.opened;
++    }
++    // Paper end - More Lidded Block API
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftEnderChest.java b/src/main/java/org/bukkit/craftbukkit/block/CraftEnderChest.java
+index 25add8bee6ea35beeb205dd828759304346e4f48..599f6747dfa140e40fef26ed4d8244bfe87b7cdf 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/CraftEnderChest.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/CraftEnderChest.java
+@@ -14,4 +14,33 @@ public class CraftEnderChest extends CraftBlockEntityState<EnderChestBlockEntity
+     public CraftEnderChest(final Material material, final EnderChestBlockEntity te) {
+         super(material, te);
+     }
++
++    // Paper start - More Lidded Block API
++    @Override
++    public void open() {
++        requirePlaced();
++        if (!getTileEntity().openersCounter.opened) {
++            net.minecraft.world.level.Level world = getTileEntity().getLevel();
++            world.blockEvent(getTileEntity().getBlockPos(), getTileEntity().getBlockState().getBlock(), 1, getTileEntity().openersCounter.getOpenerCount() + 1);
++            world.playSound(null, getPosition(), net.minecraft.sounds.SoundEvents.ENDER_CHEST_OPEN, net.minecraft.sounds.SoundSource.BLOCKS, 0.5F, world.random.nextFloat() * 0.1F + 0.9F);
++        }
++        getTileEntity().openersCounter.opened = true;
++    }
++
++    @Override
++    public void close() {
++        requirePlaced();
++        if (getTileEntity().openersCounter.opened) {
++            net.minecraft.world.level.Level world = getTileEntity().getLevel();
++            world.blockEvent(getTileEntity().getBlockPos(), getTileEntity().getBlockState().getBlock(), 1, 0);
++            world.playSound(null, getPosition(), net.minecraft.sounds.SoundEvents.ENDER_CHEST_CLOSE, net.minecraft.sounds.SoundSource.BLOCKS, 0.5F, world.random.nextFloat() * 0.1F + 0.9F);
++        }
++        getTileEntity().openersCounter.opened = false;
++    }
++
++    @Override
++    public boolean isOpen() {
++        return getTileEntity().openersCounter.opened;
++    }
++    // Paper end - More Lidded Block API
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftShulkerBox.java b/src/main/java/org/bukkit/craftbukkit/block/CraftShulkerBox.java
+index 87395e1000dda3063dcdbc01c9e874ede2ccf5d9..35b05ff905de0f102a60ed3fcf9996fab1f047a6 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/CraftShulkerBox.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/CraftShulkerBox.java
+@@ -61,8 +61,15 @@ public class CraftShulkerBox extends CraftLootable<ShulkerBoxBlockEntity> implem
+         if (getTileEntity().opened && getWorldHandle() instanceof net.minecraft.world.level.Level) {
+             Level world = getTileEntity().getLevel();
+             world.blockEvent(getPosition(), getTileEntity().getBlockState().getBlock(), 1, 0);
+-            world.playSound(null, getPosition(), SoundEvents.SHULKER_BOX_OPEN, SoundSource.BLOCKS, 0.5F, world.random.nextFloat() * 0.1F + 0.9F);
++            world.playSound(null, getPosition(), SoundEvents.SHULKER_BOX_CLOSE, SoundSource.BLOCKS, 0.5F, world.random.nextFloat() * 0.1F + 0.9F); // Paper - More Lidded Block API (Wrong sound)
+         }
+         getTileEntity().opened = false;
+     }
++
++    // Paper start - More Lidded Block API
++    @Override
++    public boolean isOpen() {
++        return getTileEntity().opened;
++    }
++    // Paper end - More Lidded Block API
+ }

@@ -42,10 +42,10 @@ sets the excessive tick delay to the specified ticks (defaults to
 60 * 20 ticks, aka 60 seconds)
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-index 9f92feb008fe83aea9f05f435a9aee2bc6908553..0c02058abebe52e98d079a4c6853570e7eba9a88 100644
+index 40818f1e90dd3aca77e164365370782828f765f4..2fcb923b8aa0e891de9f86c4c55a4af8969c04cd 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-@@ -363,6 +363,13 @@ public class PaperConfig {
+@@ -372,6 +372,13 @@ public class PaperConfig {
          maxBookTotalSizeMultiplier = getDouble("settings.book-size.total-multiplier", maxBookTotalSizeMultiplier);
      }
  
@@ -926,10 +926,10 @@ index 1dd1b9afaee38fdc994ad0a069bd63b02eedf55c..bbb94e8a5e3585701849e025b534a69a
              });
              // Paper end
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-index 5891d79abc5dc0b8ab85cc40819249f399fd1251..6f33d4f4ca86bfcad907b451a56e71de0d4585d5 100644
+index 19544c9e6393cba361c9cf00d5767a06686426bf..12bf78c993d2360c37b143b51c425fc5fdf33647 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-@@ -219,6 +219,18 @@ public class ServerChunkCache extends ChunkSource {
+@@ -217,6 +217,18 @@ public class ServerChunkCache extends ChunkSource {
          }, this.mainThreadProcessor);
      }
      // Paper end
@@ -949,7 +949,7 @@ index 5891d79abc5dc0b8ab85cc40819249f399fd1251..6f33d4f4ca86bfcad907b451a56e71de
      public ServerChunkCache(ServerLevel world, LevelStorageSource.LevelStorageAccess session, DataFixer dataFixer, StructureManager structureManager, Executor workerExecutor, ChunkGenerator chunkGenerator, int viewDistance, boolean flag, ChunkProgressListener worldGenerationProgressListener, ChunkStatusUpdateListener chunkstatusupdatelistener, Supplier<DimensionDataStorage> supplier) {
          this.level = world;
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index 00a064305dd8c671566dc32b8cd85f593ad139a3..4e654eda235d05ba96bacc6d9c14ce6428e60d07 100644
+index 54008a97cc88ac431c3517c19160903408ee9255..dba04e84015cecd4db36dc5c28f1547f9c2db2e6 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
 @@ -291,6 +291,15 @@ public class ServerLevel extends Level implements WorldGenLevel {
@@ -966,7 +966,7 @@ index 00a064305dd8c671566dc32b8cd85f593ad139a3..4e654eda235d05ba96bacc6d9c14ce64
 +    // Paper end - rewrite ticklistserver
 +
      // Add env and gen to constructor, WorldData -> WorldDataServer
-     public ServerLevel(MinecraftServer minecraftserver, Executor executor, LevelStorageSource.LevelStorageAccess convertable_conversionsession, ServerLevelData iworlddataserver, ResourceKey<Level> resourcekey, DimensionType dimensionmanager, ChunkProgressListener worldloadlistener, ChunkGenerator chunkgenerator, boolean flag, long i, List<CustomSpawner> list, boolean flag1, org.bukkit.World.Environment env, org.bukkit.generator.ChunkGenerator gen) {
+     public ServerLevel(MinecraftServer minecraftserver, Executor executor, LevelStorageSource.LevelStorageAccess convertable_conversionsession, ServerLevelData iworlddataserver, ResourceKey<Level> resourcekey, DimensionType dimensionmanager, ChunkProgressListener worldloadlistener, ChunkGenerator chunkgenerator, boolean flag, long i, List<CustomSpawner> list, boolean flag1, org.bukkit.World.Environment env, org.bukkit.generator.ChunkGenerator gen, org.bukkit.generator.BiomeProvider biomeProvider) {
          // Objects.requireNonNull(minecraftserver); // CraftBukkit - decompile error
 @@ -307,13 +316,19 @@ public class ServerLevel extends Level implements WorldGenLevel {
          DefaultedRegistry registryblocks = Registry.BLOCK;
@@ -1119,17 +1119,17 @@ index 3b8c04f6ffd7e6c197465aa1caf633ba92529472..1007bfc9c19641f42afd5526cfe7bdb6
  
      @Override
 diff --git a/src/main/java/net/minecraft/world/level/entity/PersistentEntitySectionManager.java b/src/main/java/net/minecraft/world/level/entity/PersistentEntitySectionManager.java
-index a56cfcf5ac735147f3f2bd029a2b1a4e889d5b4f..790594b970c03c340d0c4ca7b5ce315f5ffe571d 100644
+index d9b82aea11dda1d6b45a66f2b7ca1524b7a3c369..10bc96bb33c5f292adb6383fdda73f90d43b090b 100644
 --- a/src/main/java/net/minecraft/world/level/entity/PersistentEntitySectionManager.java
 +++ b/src/main/java/net/minecraft/world/level/entity/PersistentEntitySectionManager.java
-@@ -264,6 +264,12 @@ public class PersistentEntitySectionManager<T extends EntityAccess> implements A
-                 this.addEntity(entity, true);
+@@ -281,6 +281,12 @@ public class PersistentEntitySectionManager<T extends EntityAccess> implements A
+                 this.addEntity(entityaccess, true);
              });
-             this.chunkLoadStatuses.put(chunkEntities.getPos().toLong(), PersistentEntitySectionManager.ChunkLoadStatus.LOADED);
+             this.chunkLoadStatuses.put(chunkentities.getPos().toLong(), PersistentEntitySectionManager.ChunkLoadStatus.LOADED);
 +            // Paper start - rewrite ServerTickList
 +            final net.minecraft.server.level.ServerLevel level = ((net.minecraft.world.level.chunk.storage.EntityStorage) this.permanentStorage).level;
-+            if (level.chunkSource.isPositionTickingReady(chunkEntities.getPos().longKey)) {
-+                level.onChunkSetTicking(chunkEntities.getPos().x, chunkEntities.getPos().z);
++            if (level.chunkSource.isPositionTickingReady(chunkentities.getPos().longKey)) {
++                level.onChunkSetTicking(chunkentities.getPos().x, chunkentities.getPos().z);
 +            }
 +            // Paper end
          }

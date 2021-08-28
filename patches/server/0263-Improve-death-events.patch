@@ -19,7 +19,7 @@ maybe more (please check patch overrides for drops for more):
 - players, armor stands, foxes, chested donkeys/llamas
 
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-index 4b554a9556bf29334eaaf9d4f14643ee246899c9..e73046e6d322ddc0feb4979ec0038c4a56778ed9 100644
+index 740ee29affa30ffd7a7e2b612cae4a1124f9bfb4..a0ae4dc83e6ff43239a7d4bbd6f8e4197d6290d3 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
 @@ -219,6 +219,10 @@ public class ServerPlayer extends Player {
@@ -33,9 +33,9 @@ index 4b554a9556bf29334eaaf9d4f14643ee246899c9..e73046e6d322ddc0feb4979ec0038c4a
  
      // CraftBukkit start
      public String displayName;
-@@ -747,6 +751,15 @@ public class ServerPlayer extends Player {
-         Component defaultMessage = this.getCombatTracker().getDeathMessage();
- 
+@@ -749,6 +753,15 @@ public class ServerPlayer extends Player {
+         String deathmessage = defaultMessage.getString();
+         this.keepLevel = keepInventory; // SPIGOT-2222: pre-set keepLevel
          org.bukkit.event.entity.PlayerDeathEvent event = CraftEventFactory.callPlayerDeathEvent(this, loot, PaperAdventure.asAdventure(defaultMessage), defaultMessage.getString(), keepInventory); // Paper - Adventure
 +        // Paper start - cancellable death event
 +        if (event.isCancelled()) {
@@ -49,7 +49,7 @@ index 4b554a9556bf29334eaaf9d4f14643ee246899c9..e73046e6d322ddc0feb4979ec0038c4a
  
          // SPIGOT-943 - only call if they have an inventory open
          if (this.containerMenu != this.inventoryMenu) {
-@@ -894,8 +907,17 @@ public class ServerPlayer extends Player {
+@@ -896,8 +909,17 @@ public class ServerPlayer extends Player {
                          }
                      }
                  }
@@ -70,7 +70,7 @@ index 4b554a9556bf29334eaaf9d4f14643ee246899c9..e73046e6d322ddc0feb4979ec0038c4a
          }
      }
 diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-index 616d6404a966153f89ae63b559b5b66cbb832104..676d24a1c57b5d3d14c3599d09196da128b6e19e 100644
+index 4bc467f5c0fd261a01fd4ecc49015b6e7d6b6ef9..82d6d56d6e1bc6f98811a4a9b2a9d80a62c61292 100644
 --- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
 @@ -261,6 +261,7 @@ public abstract class LivingEntity extends Entity {
@@ -110,7 +110,7 @@ index 616d6404a966153f89ae63b559b5b66cbb832104..676d24a1c57b5d3d14c3599d09196da1
              }
 @@ -1613,20 +1613,46 @@ public abstract class LivingEntity extends Entity {
              if (!this.level.isClientSide && this.hasCustomName()) {
-                 LivingEntity.LOGGER.info("Named entity {} died: {}", this, this.getCombatTracker().getDeathMessage().getString());
+                 if (org.spigotmc.SpigotConfig.logNamedDeaths) LivingEntity.LOGGER.info("Named entity {} died: {}", this, this.getCombatTracker().getDeathMessage().getString()); // Spigot
              }
 +             */ // Paper - move down to make death event cancellable - this is the runKillTrigger below
  
@@ -136,7 +136,7 @@ index 616d6404a966153f89ae63b559b5b66cbb832104..676d24a1c57b5d3d14c3599d09196da1
 +                    }
 +
 +                    if (!this.level.isClientSide && this.hasCustomName()) {
-+                        LivingEntity.LOGGER.info("Named entity {} died: {}", this, this.getCombatTracker().getDeathMessage().getString());
++                        if (org.spigotmc.SpigotConfig.logNamedDeaths) LivingEntity.LOGGER.info("Named entity {} died: {}", this, this.getCombatTracker().getDeathMessage().getString()); // Spigot
 +                    }
 +
 +                    this.getCombatTracker().recheckStatus();
@@ -297,7 +297,7 @@ index 30357dd7b527c40f9aa42a5873ad21c46d3c2311..6fac6afd5ea4e35f6bb0e9b859fb9b4c
  
      public void injectScaledMaxHealth(Collection<AttributeInstance> collection, boolean force) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-index 0ddd9de39a0d67529a8f973f5dfaf5ff53f5eb66..253075002cffb67095d010a6a4c67d9efff9d5ea 100644
+index 732a6f247e25e245909829d9fa784fced1d3cca2..736e308dff475623fd44370f3ea76e51b582d1dd 100644
 --- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 +++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 @@ -802,9 +802,16 @@ public class CraftEventFactory {
@@ -317,10 +317,10 @@ index 0ddd9de39a0d67529a8f973f5dfaf5ff53f5eb66..253075002cffb67095d010a6a4c67d9e
          victim.expToDrop = event.getDroppedExp();
  
          for (org.bukkit.inventory.ItemStack stack : event.getDrops()) {
-@@ -820,8 +827,15 @@ public class CraftEventFactory {
-         CraftPlayer entity = victim.getBukkitEntity();
+@@ -821,8 +828,15 @@ public class CraftEventFactory {
          PlayerDeathEvent event = new PlayerDeathEvent(entity, drops, victim.getExpReward(), 0, deathMessage, stringDeathMessage); // Paper - Adventure
          event.setKeepInventory(keepInventory);
+         event.setKeepLevel(victim.keepLevel); // SPIGOT-2222: pre-set keepLevel
 +        populateFields(victim, event); // Paper - make cancellable
          org.bukkit.World world = entity.getWorld();
          Bukkit.getServer().getPluginManager().callEvent(event);
@@ -333,7 +333,7 @@ index 0ddd9de39a0d67529a8f973f5dfaf5ff53f5eb66..253075002cffb67095d010a6a4c67d9e
  
          victim.keepLevel = event.getKeepLevel();
          victim.newLevel = event.getNewLevel();
-@@ -838,6 +852,31 @@ public class CraftEventFactory {
+@@ -839,6 +853,31 @@ public class CraftEventFactory {
          return event;
      }
  
