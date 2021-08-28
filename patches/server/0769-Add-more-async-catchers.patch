@@ -1,0 +1,44 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Thu, 15 Jul 2021 01:41:53 -0700
+Subject: [PATCH] Add more async catchers
+
+
+diff --git a/src/main/java/net/minecraft/world/level/entity/EntityTickList.java b/src/main/java/net/minecraft/world/level/entity/EntityTickList.java
+index f01182a0ac8a14bcd5b1deb778306e7bf1bf70ed..b27c8db914cca3ff0ea8a24acddb9cb9870ce21d 100644
+--- a/src/main/java/net/minecraft/world/level/entity/EntityTickList.java
++++ b/src/main/java/net/minecraft/world/level/entity/EntityTickList.java
+@@ -30,11 +30,13 @@ public class EntityTickList {
+     }
+ 
+     public void add(Entity entity) {
++        io.papermc.paper.util.TickThread.ensureTickThread("Asynchronous entity ticklist addition"); // Paper
+         this.ensureActiveIsNotIterated();
+         this.active.put(entity.getId(), entity);
+     }
+ 
+     public void remove(Entity entity) {
++        io.papermc.paper.util.TickThread.ensureTickThread("Asynchronous entity ticklist removal"); // Paper
+         this.ensureActiveIsNotIterated();
+         this.active.remove(entity.getId());
+     }
+@@ -44,6 +46,7 @@ public class EntityTickList {
+     }
+ 
+     public void forEach(Consumer<Entity> action) {
++        io.papermc.paper.util.TickThread.ensureTickThread("Asynchronous entity ticklist iteration"); // Paper
+         if (this.iterated != null) {
+             throw new UnsupportedOperationException("Only one concurrent iteration supported");
+         } else {
+diff --git a/src/main/java/net/minecraft/world/level/entity/PersistentEntitySectionManager.java b/src/main/java/net/minecraft/world/level/entity/PersistentEntitySectionManager.java
+index b93ed663a565056adc902bb6263c9014fda6a9d2..e4e4b48250d32d9e6c034d62e13ac2277bffda8f 100644
+--- a/src/main/java/net/minecraft/world/level/entity/PersistentEntitySectionManager.java
++++ b/src/main/java/net/minecraft/world/level/entity/PersistentEntitySectionManager.java
+@@ -151,6 +151,7 @@ public class PersistentEntitySectionManager<T extends EntityAccess> implements A
+     }
+ 
+     public void updateChunkStatus(ChunkPos chunkPos, ChunkHolder.FullChunkStatus levelType) {
++        io.papermc.paper.util.TickThread.ensureTickThread("Asynchronous chunk ticking status update"); // Paper
+         Visibility visibility = Visibility.fromFullChunkStatus(levelType);
+ 
+         this.updateChunkStatus(chunkPos, visibility);
