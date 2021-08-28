@@ -133,5 +133,24 @@ public interface Item extends Entity {
      * @param willAge True if the item should age
      */
     public void setWillAge(boolean willAge);
+
+    /**
+     * Gets the health of item stack.
+     * <p>
+     * Currently the default max health is 5.
+     *
+     * @return the health
+     */
+    public int getHealth();
+
+    /**
+     * Sets the health of the item stack. If the value is non-positive
+     * the itemstack's normal "on destroy" functionality will be run.
+     * <p>
+     * Currently, the default max health is 5.
+     *
+     * @param health the health, a non-positive value will destroy the entity
+     */
+    public void setHealth(int health);
     // Paper end
 }
