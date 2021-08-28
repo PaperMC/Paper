@@ -1,5 +1,6 @@
 package org.bukkit.event.player;
 
+import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
@@ -20,8 +21,12 @@ public class PlayerBedEnterEvent extends PlayerEvent implements Cancellable {
          */
         OK,
         /**
-         * The world doesn't allow sleeping (ex. Nether or The End). Entering
-         * the bed is prevented and the bed explodes.
+         * The world doesn't allow sleeping or saving the spawn point (eg,
+         * Nether, The End or Custom Worlds). This is based on
+         * {@link World#isBedWorks()} and {@link World#isNatural()}.
+         *
+         * Entering the bed is prevented and if {@link World#isBedWorks()} is
+         * false then the bed explodes.
          */
         NOT_POSSIBLE_HERE,
         /**
