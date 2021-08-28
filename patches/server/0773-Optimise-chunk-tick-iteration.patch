@@ -6,17 +6,17 @@ Subject: [PATCH] Optimise chunk tick iteration
 Use a dedicated list of entity ticking chunks to reduce the cost
 
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-index 7108cb5d38ea33ce09dabb208a050da5fb8cb0f7..6bab1811c400e01267df2638e897ba4580b838bd 100644
+index 7108cb5d38ea33ce09dabb208a050da5fb8cb0f7..a94cdf454e891f574a9aaeb9aa1dca8e58dda120 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-@@ -1008,24 +1008,29 @@ public class ServerChunkCache extends ChunkSource {
+@@ -1008,24 +1008,40 @@ public class ServerChunkCache extends ChunkSource {
  
              this.lastSpawnState = spawnercreature_d;
              this.level.getProfiler().pop();
 -            List<ChunkHolder> list = Lists.newArrayList(this.chunkMap.visibleChunkMap.values()); // Paper
 -
 -            Collections.shuffle(list);
-+            // Paper - no, anyone who cares about mob spawning being even will enable per-player (as that ACTUALLY makes it even)
++            // Paper - moved down, enabled if per-player = false
              // Paper - moved natural spawn event up
              this.level.timings.chunkTicks.startTiming(); // Paper
 -            final int[] chunksTicked = {0}; // Paper
@@ -27,7 +27,18 @@ index 7108cb5d38ea33ce09dabb208a050da5fb8cb0f7..6bab1811c400e01267df2638e897ba45
 -                    LevelChunk chunk = (LevelChunk) optional.get();
 +            // Paper start
 +            int chunksTicked = 0;
-+            io.papermc.paper.util.maplist.IteratorSafeOrderedReferenceSet.Iterator<LevelChunk> iterator = this.entityTickingChunks.iterator();
++            java.util.Iterator<LevelChunk> iterator;
++            if (this.level.paperConfig.perPlayerMobSpawns) {
++                iterator = this.entityTickingChunks.iterator();
++            } else {
++                iterator = this.entityTickingChunks.unsafeIterator();
++                List<LevelChunk> shuffled = new java.util.ArrayList<>(this.entityTickingChunks.size());
++                while (iterator.hasNext()) {
++                    shuffled.add(iterator.next());
++                }
++                Collections.shuffle(shuffled);
++                iterator = shuffled.iterator();
++            }
 +            try { while (iterator.hasNext()) {
 +                LevelChunk chunk = iterator.next();
 +                ChunkHolder playerchunk = chunk.playerChunk;
@@ -50,20 +61,22 @@ index 7108cb5d38ea33ce09dabb208a050da5fb8cb0f7..6bab1811c400e01267df2638e897ba45
                          }
  
                          // this.level.timings.doTickTiles.startTiming(); // Spigot // Paper
-@@ -1033,7 +1038,11 @@ public class ServerChunkCache extends ChunkSource {
+@@ -1033,7 +1049,13 @@ public class ServerChunkCache extends ChunkSource {
                          // this.level.timings.doTickTiles.stopTiming(); // Spigot // Paper
                      }
                  }
 -            });
 +            } // Paper start - optimise chunk tick iteration
 +            } finally {
-+                iterator.finishedIterating();
++                if (iterator instanceof io.papermc.paper.util.maplist.IteratorSafeOrderedReferenceSet.Iterator) {
++                    ((io.papermc.paper.util.maplist.IteratorSafeOrderedReferenceSet.Iterator<LevelChunk>)iterator).finishedIterating();
++                }
 +            }
 +            // Paper end - optimise chunk tick iteration
              this.level.timings.chunkTicks.stopTiming(); // Paper
              this.level.getProfiler().push("customSpawners");
              if (flag1) {
-@@ -1042,21 +1051,7 @@ public class ServerChunkCache extends ChunkSource {
+@@ -1042,21 +1064,7 @@ public class ServerChunkCache extends ChunkSource {
                  } // Paper - timings
              }
  
