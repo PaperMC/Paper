@@ -8,38 +8,39 @@ just so players riding horses or whatever can be seen at the
 configured player range.
 
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index 3819233617804bea449890bec976ae69d7df2368..4586409dc1b5136fb7ab627d99612dd4fa9e0c50 100644
+index 3819233617804bea449890bec976ae69d7df2368..cdbcaab47e47f81904945aae51ea695c350c7825 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
-@@ -222,7 +222,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
-     // inlined EnumMap, TrackingRange.TrackingRangeType
+@@ -223,6 +223,9 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
      static final org.spigotmc.TrackingRange.TrackingRangeType[] TRACKING_RANGE_TYPES = org.spigotmc.TrackingRange.TrackingRangeType.values();
      public final com.destroystokyo.paper.util.misc.PlayerAreaMap[] playerEntityTrackerTrackMaps;
--    final int[] entityTrackerTrackRanges;
-+    final int[] entityTrackerTrackRanges; public int getEntityTrackerRange(final int ordinal) { return this.entityTrackerTrackRanges[ordinal]; } // Paper - public read
+     final int[] entityTrackerTrackRanges;
++    public final int getEntityTrackerRange(final int ordinal) {
++        return this.entityTrackerTrackRanges[ordinal];
++    }
  
      private int convertSpigotRangeToVanilla(final int vanilla) {
          return MinecraftServer.getServer().getScaledTrackingDistance(vanilla);
-@@ -2352,7 +2352,7 @@ Sections go from 0..16. Now whenever a section is not empty, it can potentially
+@@ -2352,7 +2355,7 @@ Sections go from 0..16. Now whenever a section is not empty, it can potentially
                  int j = entity.getType().clientTrackingRange() * 16;
                  j = org.spigotmc.TrackingRange.getEntityTrackingRange(entity, j); // Paper
  
 -                if (j < i) { // Paper - we need the lowest range thanks to the fact that our tracker doesn't account for passenger logic
-+                if (j > i) { // Paper - we need the lowest range thanks to the fact that our tracker doesn't account for passenger logic // Paper - not anymore!
++                if (j > i) {
                      i = j;
                  }
              }
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index dd782d3d739a9c9d338bc2f3d52b3ba4ec16d5c9..fbb1bf8eda0a57c8c43aeb45bba1ec604d9fdbf5 100644
+index dd782d3d739a9c9d338bc2f3d52b3ba4ec16d5c9..cfe6921b8da87c5dd09772988fb8e4e0da541cd9 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
-@@ -358,8 +358,27 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, n
+@@ -358,8 +358,26 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, n
      }
  
      public final com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<ServerPlayer> getPlayersInTrackRange() {
 -        return ((ServerLevel)this.level).getChunkSource().chunkMap.playerEntityTrackerTrackMaps[this.trackingRangeType.ordinal()]
 -            .getObjectsInRange(MCUtil.getCoordinateKey(this));
-+        // Paper start - determine highest range of passengers
++        // determine highest range of passengers
 +        if (this.passengers.isEmpty()) {
 +            return ((ServerLevel)this.level).getChunkSource().chunkMap.playerEntityTrackerTrackMaps[this.trackingRangeType.ordinal()]
 +                .getObjectsInRange(MCUtil.getCoordinateKey(this));
@@ -59,7 +60,6 @@ index dd782d3d739a9c9d338bc2f3d52b3ba4ec16d5c9..fbb1bf8eda0a57c8c43aeb45bba1ec60
 +        }
 +
 +        return chunkMap.playerEntityTrackerTrackMaps[type.ordinal()].getObjectsInRange(MCUtil.getCoordinateKey(this));
-+        // Paper end - determine highest range of passengers
      }
      // Paper end - optimise entity tracking
  
