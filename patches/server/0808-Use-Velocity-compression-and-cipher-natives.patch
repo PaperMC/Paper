@@ -108,55 +108,52 @@ index 50a7058b18a8ca05363b73eaefbd812ef50d53f1..7319da27dfa5029c9893ec04bfd43255
 +    // Paper end
  }
 diff --git a/src/main/java/net/minecraft/network/CompressionDecoder.java b/src/main/java/net/minecraft/network/CompressionDecoder.java
-index efd05c8c1114aab4c237ccbc2e4e935a08c076ee..05ee17f53b3a14831715cd16b12cfa917bb9f4c6 100644
+index efd05c8c1114aab4c237ccbc2e4e935a08c076ee..3569fc49e87b773dce0e59b9069797834ae32613 100644
 --- a/src/main/java/net/minecraft/network/CompressionDecoder.java
 +++ b/src/main/java/net/minecraft/network/CompressionDecoder.java
-@@ -11,14 +11,18 @@ import java.util.zip.Inflater;
- public class CompressionDecoder extends ByteToMessageDecoder {
+@@ -12,13 +12,20 @@ public class CompressionDecoder extends ByteToMessageDecoder {
      public static final int MAXIMUM_COMPRESSED_LENGTH = 2097152;
      public static final int MAXIMUM_UNCOMPRESSED_LENGTH = 8388608;
--    private final Inflater inflater;
-+    // Paper start
-+    // private final Inflater inflater;
-+    private final com.velocitypowered.natives.compression.VelocityCompressor compressor;
-+    // Paper end
+     private final Inflater inflater;
++    private final com.velocitypowered.natives.compression.VelocityCompressor compressor; // Paper
      private int threshold;
      private boolean validateDecompressed;
  
--    public CompressionDecoder(int compressionThreshold, boolean bl) {
++    // Paper start
+     public CompressionDecoder(int compressionThreshold, boolean bl) {
++        this(null, compressionThreshold, bl);
++    }
 +    public CompressionDecoder(com.velocitypowered.natives.compression.VelocityCompressor compressor, int compressionThreshold, boolean bl) {
          this.threshold = compressionThreshold;
          this.validateDecompressed = bl;
 -        this.inflater = new Inflater();
-+        this.compressor = compressor; // Paper
-+        // this.inflater = new Inflater(); // Paper
++        this.inflater = compressor == null ? new Inflater() : null;
++        this.compressor = compressor;
++        // Paper end
      }
  
      @Override
-@@ -39,17 +43,39 @@ public class CompressionDecoder extends ByteToMessageDecoder {
+@@ -39,6 +46,8 @@ public class CompressionDecoder extends ByteToMessageDecoder {
                      }
                  }
  
--                byte[] bs = new byte[friendlyByteBuf.readableBytes()];
--                friendlyByteBuf.readBytes(bs);
--                this.inflater.setInput(bs);
--                byte[] cs = new byte[i];
--                this.inflater.inflate(cs);
--                list.add(Unpooled.wrappedBuffer(cs));
--                this.inflater.reset();
 +                // Paper start
-+//                byte[] bs = new byte[friendlyByteBuf.readableBytes()];
-+//                friendlyByteBuf.readBytes(bs);
-+//                this.inflater.setInput(bs);
-+//                byte[] cs = new byte[i];
-+//                this.inflater.inflate(cs);
-+//                list.add(Unpooled.wrappedBuffer(cs));
-+//                this.inflater.reset();
++                if (this.inflater != null) {
+                 byte[] bs = new byte[friendlyByteBuf.readableBytes()];
+                 friendlyByteBuf.readBytes(bs);
+                 this.inflater.setInput(bs);
+@@ -46,10 +55,36 @@ public class CompressionDecoder extends ByteToMessageDecoder {
+                 this.inflater.inflate(cs);
+                 list.add(Unpooled.wrappedBuffer(cs));
+                 this.inflater.reset();
++                    return;
++                }
++
 +                int claimedUncompressedSize = i; // OBFHELPER
-+                ByteBuf compatibleIn = com.velocitypowered.natives.util.MoreByteBufUtils.ensureCompatible(channelHandlerContext.alloc(), compressor, byteBuf);
-+                ByteBuf uncompressed = com.velocitypowered.natives.util.MoreByteBufUtils.preferredBuffer(channelHandlerContext.alloc(), compressor, claimedUncompressedSize);
++                ByteBuf compatibleIn = com.velocitypowered.natives.util.MoreByteBufUtils.ensureCompatible(channelHandlerContext.alloc(), this.compressor, byteBuf);
++                ByteBuf uncompressed = com.velocitypowered.natives.util.MoreByteBufUtils.preferredBuffer(channelHandlerContext.alloc(), this.compressor, claimedUncompressedSize);
 +                try {
-+                    compressor.inflate(compatibleIn, uncompressed, claimedUncompressedSize);
++                    this.compressor.inflate(compatibleIn, uncompressed, claimedUncompressedSize);
 +                    list.add(uncompressed);
 +                    byteBuf.clear();
 +                } catch (Exception e) {
@@ -173,7 +170,9 @@ index efd05c8c1114aab4c237ccbc2e4e935a08c076ee..05ee17f53b3a14831715cd16b12cfa91
 +    // Paper start
 +    @Override
 +    public void handlerRemoved0(ChannelHandlerContext ctx) throws Exception {
-+        compressor.close();
++        if (this.compressor != null) {
++            this.compressor.close();
++        }
 +    }
 +    // Paper end
 +
@@ -181,26 +180,35 @@ index efd05c8c1114aab4c237ccbc2e4e935a08c076ee..05ee17f53b3a14831715cd16b12cfa91
          this.threshold = compressionThreshold;
          this.validateDecompressed = bl;
 diff --git a/src/main/java/net/minecraft/network/CompressionEncoder.java b/src/main/java/net/minecraft/network/CompressionEncoder.java
-index 524c0c674f63cfcb601416a18348f37aabb4e3ff..bdba286b2e760416bf87cee59806309d754a0d82 100644
+index 524c0c674f63cfcb601416a18348f37aabb4e3ff..89bf5066b83e8d79c77c90fce1f7858c06b01730 100644
 --- a/src/main/java/net/minecraft/network/CompressionEncoder.java
 +++ b/src/main/java/net/minecraft/network/CompressionEncoder.java
-@@ -6,39 +6,71 @@ import io.netty.handler.codec.MessageToByteEncoder;
+@@ -6,23 +6,38 @@ import io.netty.handler.codec.MessageToByteEncoder;
  import java.util.zip.Deflater;
  
  public class CompressionEncoder extends MessageToByteEncoder<ByteBuf> {
 -    private final byte[] encodeBuf = new byte[8192];
--    private final Deflater deflater;
-+    // private final byte[] encodeBuf = new byte[8192]; // Paper
-+    // private final Deflater deflater; // Paper
++    private final byte[] encodeBuf; // Paper
+     private final Deflater deflater;
 +    private final com.velocitypowered.natives.compression.VelocityCompressor compressor; // Paper
      private int threshold;
  
--    public CompressionEncoder(int compressionThreshold) {
++    // Paper start
+     public CompressionEncoder(int compressionThreshold) {
++        this(null, compressionThreshold);
++    }
 +    public CompressionEncoder(com.velocitypowered.natives.compression.VelocityCompressor compressor, int compressionThreshold) {
          this.threshold = compressionThreshold;
 -        this.deflater = new Deflater();
-+        // this.deflater = new Deflater(); // Paper
-+        this.compressor = compressor; // Paper
++        if (compressor == null) {
++            this.encodeBuf = new byte[8192];
++            this.deflater = new Deflater();
++        } else {
++            this.encodeBuf = null;
++            this.deflater = null;
++        }
++        this.compressor = compressor;
++        // Paper end
      }
  
      @Override
@@ -212,37 +220,25 @@ index 524c0c674f63cfcb601416a18348f37aabb4e3ff..bdba286b2e760416bf87cee59806309d
              friendlyByteBuf.writeVarInt(0);
              friendlyByteBuf.writeBytes(byteBuf);
          } else {
--            byte[] bs = new byte[i];
--            byteBuf.readBytes(bs);
--            friendlyByteBuf.writeVarInt(bs.length);
--            this.deflater.setInput(bs, 0, i);
--            this.deflater.finish();
--
--            while(!this.deflater.finished()) {
--                int j = this.deflater.deflate(this.encodeBuf);
--                friendlyByteBuf.writeBytes(this.encodeBuf, 0, j);
 +            // Paper start
-+//            byte[] bs = new byte[i];
-+//            byteBuf.readBytes(bs);
-+//            friendlyByteBuf.writeVarInt(bs.length);
-+//            this.deflater.setInput(bs, 0, i);
-+//            this.deflater.finish();
-+//
-+//            while(!this.deflater.finished()) {
-+//                int j = this.deflater.deflate(this.encodeBuf);
-+//                friendlyByteBuf.writeBytes(this.encodeBuf, 0, j);
-+//            }
-+//
-+//            this.deflater.reset();
++            if (this.deflater != null) {
+             byte[] bs = new byte[i];
+             byteBuf.readBytes(bs);
+             friendlyByteBuf.writeVarInt(bs.length);
+@@ -35,10 +50,48 @@ public class CompressionEncoder extends MessageToByteEncoder<ByteBuf> {
+             }
+ 
+             this.deflater.reset();
++                return;
++            }
++
 +            friendlyByteBuf.writeVarInt(i);
-+            ByteBuf compatibleIn = com.velocitypowered.natives.util.MoreByteBufUtils.ensureCompatible(channelHandlerContext.alloc(), compressor, byteBuf);
++            ByteBuf compatibleIn = com.velocitypowered.natives.util.MoreByteBufUtils.ensureCompatible(channelHandlerContext.alloc(), this.compressor, byteBuf);
 +            try {
-+                compressor.deflate(compatibleIn, byteBuf2);
++                this.compressor.deflate(compatibleIn, byteBuf2);
 +            } finally {
 +                compatibleIn.release();
-             }
--
--            this.deflater.reset();
++            }
 +            // Paper end
          }
  
@@ -250,22 +246,28 @@ index 524c0c674f63cfcb601416a18348f37aabb4e3ff..bdba286b2e760416bf87cee59806309d
  
 +    // Paper start
 +    @Override
-+    protected ByteBuf allocateBuffer(ChannelHandlerContext ctx, ByteBuf msg, boolean preferDirect) {
-+        // We allocate bytes to be compressed plus 1 byte. This covers two cases:
-+        //
-+        // - Compression
-+        //    According to https://github.com/ebiggers/libdeflate/blob/master/libdeflate.h#L103,
-+        //    if the data compresses well (and we do not have some pathological case) then the maximum
-+        //    size the compressed size will ever be is the input size minus one.
-+        // - Uncompressed
-+        //    This is fairly obvious - we will then have one more than the uncompressed size.
-+        int initialBufferSize = msg.readableBytes() + 1;
-+        return com.velocitypowered.natives.util.MoreByteBufUtils.preferredBuffer(ctx.alloc(), compressor, initialBufferSize);
++    protected ByteBuf allocateBuffer(ChannelHandlerContext ctx, ByteBuf msg, boolean preferDirect) throws Exception{
++        if (this.compressor != null) {
++            // We allocate bytes to be compressed plus 1 byte. This covers two cases:
++            //
++            // - Compression
++            //    According to https://github.com/ebiggers/libdeflate/blob/master/libdeflate.h#L103,
++            //    if the data compresses well (and we do not have some pathological case) then the maximum
++            //    size the compressed size will ever be is the input size minus one.
++            // - Uncompressed
++            //    This is fairly obvious - we will then have one more than the uncompressed size.
++            int initialBufferSize = msg.readableBytes() + 1;
++            return com.velocitypowered.natives.util.MoreByteBufUtils.preferredBuffer(ctx.alloc(), this.compressor, initialBufferSize);
++        }
++
++        return super.allocateBuffer(ctx, msg, preferDirect);
 +    }
 +
 +    @Override
 +    public void handlerRemoved(ChannelHandlerContext ctx) throws Exception {
-+        compressor.close();
++        if (this.compressor != null) {
++            this.compressor.close();
++        }
 +    }
 +    // Paper end
 +
