@@ -29,5 +29,25 @@ public enum Action {
      * <li>Triggering tripwire
      * </ul>
      */
-    PHYSICAL,
+    // Paper start
+    PHYSICAL;
+
+    /**
+     * Gets whether this action is a result of a left click.
+     *
+     * @return Whether it's a left click
+     */
+    public boolean isLeftClick() {
+        return this == LEFT_CLICK_AIR || this == LEFT_CLICK_BLOCK;
+    }
+
+    /**
+     * Gets whether this action is a result of a right click.
+     *
+     * @return Whether it's a right click
+     */
+    public boolean isRightClick() {
+        return this == RIGHT_CLICK_AIR || this == RIGHT_CLICK_BLOCK;
+    }
+    // Paper end
 }
