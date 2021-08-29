@@ -4,6 +4,78 @@ Date: Mon, 21 Jun 2021 23:56:07 -0400
 Subject: [PATCH] Missing Entity Behavior API
 
 
+diff --git a/src/main/java/net/minecraft/world/entity/animal/horse/AbstractHorse.java b/src/main/java/net/minecraft/world/entity/animal/horse/AbstractHorse.java
+index 630b6491ee186e1e3f17489311a91681e52b7ff5..bf610ede1232d18239f210d32db88466350c5aca 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/horse/AbstractHorse.java
++++ b/src/main/java/net/minecraft/world/entity/animal/horse/AbstractHorse.java
+@@ -658,6 +658,14 @@ public abstract class AbstractHorse extends Animal implements ContainerListener,
+ 
+     }
+ 
++    // Paper Start - Horse API
++    public void setMouthOpen(boolean open) {
++        this.setFlag(FLAG_OPEN_MOUTH, open);
++    }
++    public boolean isMouthOpen() {
++        return this.getFlag(FLAG_OPEN_MOUTH);
++    }
++    // Paper End - Horse API
+     private void openMouth() {
+         if (!this.level.isClientSide) {
+             this.mouthCounter = 1;
+@@ -670,6 +678,11 @@ public abstract class AbstractHorse extends Animal implements ContainerListener,
+         this.setFlag(16, eatingGrass);
+     }
+ 
++    // Paper Start - Horse API
++    public void setForceStanding(boolean standing) {
++        this.setFlag(FLAG_STANDING, standing);
++    }
++    // Paper End - Horse API
+     public void setStanding(boolean angry) {
+         if (angry) {
+             this.setEating(false);
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftAbstractHorse.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftAbstractHorse.java
+index 69c95644b2531c1fe1c4a6cf7fee12e997dd67f4..ff2bbdfd01b8fbcae6630184d5bc5954f13a8f2e 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftAbstractHorse.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftAbstractHorse.java
+@@ -105,4 +105,36 @@ public abstract class CraftAbstractHorse extends CraftAnimals implements Abstrac
+     public AbstractHorseInventory getInventory() {
+         return new CraftSaddledInventory(getHandle().inventory);
+     }
++
++    // Paper start - Horse API
++    @Override
++    public boolean isEatingGrass() {
++        return this.getHandle().isEating();
++    }
++
++    @Override
++    public void setEatingGrass(boolean eating) {
++        this.getHandle().setEating(eating);
++    }
++
++    @Override
++    public boolean isRearing() {
++        return this.getHandle().isStanding();
++    }
++
++    @Override
++    public void setRearing(boolean rearing) {
++        this.getHandle().setForceStanding(rearing);
++    }
++
++    @Override
++    public boolean isEating() {
++        return this.getHandle().isMouthOpen();
++    }
++
++    @Override
++    public void setEating(boolean eating) {
++       this.getHandle().setMouthOpen(eating);
++    }
++    // Paper end - Horse API
+ }
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftCat.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftCat.java
 index a4f909123de26d911aea7cd767d2315ed1f697c9..0eee53c068bca070a86645d0ba54fb1ad49a6a5b 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftCat.java
