@@ -16,18 +16,15 @@ will result in a maximum responsiveness for change.
 Config:
 ```
 player-chunks:
+  min-load-radius: 2
+  max-concurrent-sends: 2
   autoconfig-send-distance: true
-  min-load-radius: 3
-  max-concurrent-sends: 12.0
-  max-concurrent-loads: 5.0
+  target-player-chunk-send-rate: 60.0
+  max-global-chunk-send-rate: 300.0
+  enable-frustum-priority: false
+  global-max-chunk-load-rate: 80.0
+  player-max-concurrent-loads: 4.0
 ```
-
-autoconfig-send-distance - Whether to try to use the client's
-view distance for the send view distance in the server. In the
-case that no plugin has explicitly set the send distance and
-the client view distance is less-than the server's send distance,
-the client's view distance will be used. This will not affect
-tick view distance or no-tick view distance.
 
 min-load-radius - The radius of chunks around a player that
 are not throttled for loading. The number of chunks
@@ -39,14 +36,34 @@ can be queued to send at any given time. Low values
 are generally going to solve server-sided networking
 bottlenecks like anti-xray and chunk compression. Client
 side networking is unlikely to be helped (i.e this wont help
-people running off McDonald's wifi). Setting this
-value to negative will make the server dynamically scale it
-with players. i.e -5 will use 5 * online players for the max sends.
+people running off McDonald's wifi).
 
-max-concurrent-loads - The maxmium number of chunks
-that can be queued to be loaded at any given time. Lower
-values help the responsitivity to player movement and
-higher values help loading when the server is at a low TPS.
+autoconfig-send-distance - Whether to try to use the client's
+view distance for the send view distance in the server. In the
+case that no plugin has explicitly set the send distance and
+the client view distance is less-than the server's send distance,
+the client's view distance will be used. This will not affect
+tick view distance or no-tick view distance.
+
+target-player-chunk-send-rate - The maximum chunk send rate
+an individual player will have.
+
+max-global-chunk-send-rate - The maximum chunk send rate for
+the whole server.
+
+enable-frustum-priority - Whether chunks in front of a player
+are prioritised to load/send first. Disabled by default
+because the client can bug out due to the out of order
+chunk sending.
+
+global-max-chunk-load-rate - The maximum chunk load rate
+for the whole server.
+
+player-max-concurrent-loads and global-max-concurrent-loads
+The maximum number of concurrent loads for the server is
+determined by the number of players on the server multiplied by the
+`player-max-concurrent-loads`. It is then limited to
+whatever `global-max-concurrent-loads` is configured to.
 
 diff --git a/src/main/java/co/aikar/timings/TimingsExport.java b/src/main/java/co/aikar/timings/TimingsExport.java
 index cfe293881f68c8db337c3a48948362bb7b3e3522..7d44abcb4fff9717a1af55879deb7eb9c2d9e7e9 100644
@@ -62,45 +79,49 @@ index cfe293881f68c8db337c3a48948362bb7b3e3522..7d44abcb4fff9717a1af55879deb7eb9
          }));
  
 diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-index 2e0191e5cfe8e29fb0a6c4fc6a2a570d4b8ae449..b27da6cee06d0d7e547b3066cd95caa9f05091d6 100644
+index 2e0191e5cfe8e29fb0a6c4fc6a2a570d4b8ae449..2273c2f0c8e1e8142abef9a4b6e2b0092db776e5 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-@@ -524,4 +524,23 @@ public class PaperConfig {
+@@ -524,4 +524,26 @@ public class PaperConfig {
          itemValidationBookAuthorLength = getInt("settings.item-validation.book.author", itemValidationBookAuthorLength);
          itemValidationBookPageLength = getInt("settings.item-validation.book.page", itemValidationBookPageLength);
      }
 +
 +    public static int playerMinChunkLoadRadius;
-+    public static double playerMaxConcurrentChunkSends;
-+    public static double playerMaxConcurrentChunkLoads;
 +    public static boolean playerAutoConfigureSendViewDistance;
-+    public static boolean enableMC162253Workaround;
++    public static int playerMaxConcurrentChunkSends;
 +    public static double playerTargetChunkSendRate;
++    public static double globalMaxChunkSendRate;
 +    public static boolean playerFrustumPrioritisation;
++    public static double globalMaxChunkLoadRate;
++    public static double playerMaxConcurrentChunkLoads;
++    public static double globalMaxConcurrentChunkLoads;
 +
 +    private static void newPlayerChunkManagement() {
-+        playerMinChunkLoadRadius = getInt("player-chunks.min-load-radius", 2);
-+        playerMaxConcurrentChunkSends = getDouble("player-chunks.max-concurrent-sends", 5.0);
-+        playerMaxConcurrentChunkLoads = getDouble("player-chunks.max-concurrent-loads", -6.0);
-+        playerAutoConfigureSendViewDistance = getBoolean("player-chunks.autoconfig-send-distance", true);
-+        // this costs server bandwidth. latest phosphor or starlight on the client fixes mc162253 anyways.
-+        enableMC162253Workaround = getBoolean("player-chunks.enable-mc162253-workaround", true);
-+        playerTargetChunkSendRate = getDouble("player-chunks.target-chunk-send-rate", -35.0);
-+        playerFrustumPrioritisation = getBoolean("player-chunks.enable-frustum-priority", false);
++        playerMinChunkLoadRadius = getInt("settings.player-chunks.min-load-radius", 2);
++        playerMaxConcurrentChunkSends = getInt("settings.player-chunks.max-concurrent-sends", 2);
++        playerAutoConfigureSendViewDistance = getBoolean("settings.player-chunks.autoconfig-send-distance", true);
++        playerTargetChunkSendRate = getDouble("settings.player-chunks.target-player-chunk-send-rate", 60.0);
++        globalMaxChunkSendRate = getDouble("settings.player-chunks.max-global-chunk-send-rate", 300.0);
++        playerFrustumPrioritisation = getBoolean("settings.player-chunks.enable-frustum-priority", false);
++        globalMaxChunkLoadRate = getDouble("settings.player-chunks.global-max-chunk-load-rate", 80.0);
++        playerMaxConcurrentChunkLoads = getDouble("settings.player-chunks.player-max-concurrent-loads", 4.0);
++        globalMaxConcurrentChunkLoads = getDouble("settings.player-chunks.global-max-concurrent-loads", 200.0);
 +    }
  }
 diff --git a/src/main/java/io/papermc/paper/chunk/PlayerChunkLoader.java b/src/main/java/io/papermc/paper/chunk/PlayerChunkLoader.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..52929110c39d74fb1a7b059a26c253fc2478dab0
+index 0000000000000000000000000000000000000000..b3da5ec6701448a4b273c86aff9c64e3d75e5885
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/chunk/PlayerChunkLoader.java
-@@ -0,0 +1,965 @@
+@@ -0,0 +1,989 @@
 +package io.papermc.paper.chunk;
 +
 +import com.destroystokyo.paper.PaperConfig;
 +import com.destroystokyo.paper.util.misc.PlayerAreaMap;
 +import com.destroystokyo.paper.util.misc.PooledLinkedHashSets;
 +import io.papermc.paper.util.CoordinateUtils;
++import io.papermc.paper.util.IntervalledCounter;
 +import io.papermc.paper.util.TickThread;
 +import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 +import it.unimi.dsi.fastutil.objects.Reference2IntOpenHashMap;
@@ -391,18 +412,21 @@ index 0000000000000000000000000000000000000000..52929110c39d74fb1a7b059a26c253fc
 +    }
 +
 +    protected int getMaxConcurrentChunkSends() {
-+        double config = PaperConfig.playerMaxConcurrentChunkSends;
-+        return Math.max(1, config <= 0 ? (int)Math.ceil(-config * this.chunkMap.level.players().size()) : (int)config);
++        return PaperConfig.playerMaxConcurrentChunkSends;
 +    }
 +
 +    protected int getMaxChunkLoads() {
 +        double config = PaperConfig.playerMaxConcurrentChunkLoads;
-+        return Math.max(1, (config <= 0 ? (int)Math.ceil(-config * MinecraftServer.getServer().getPlayerCount()) : (int)config) * 9);
++        double max = PaperConfig.globalMaxConcurrentChunkLoads;
++        return (int)Math.ceil(Math.min(config * MinecraftServer.getServer().getPlayerCount(), max <= 1.0 ? Double.MAX_VALUE : max));
 +    }
 +
-+    protected double getTargetSendRatePerPlayer() {
-+        double config = PaperConfig.playerTargetChunkSendRate;
-+        return config <= 0 ? -config : config / MinecraftServer.getServer().getPlayerCount();
++    protected long getTargetSendPerPlayerAddend() {
++        return PaperConfig.playerTargetChunkSendRate <= 1.0 ? 0L : (long)Math.round(1.0e9 / PaperConfig.playerTargetChunkSendRate);
++    }
++
++    protected long getMaxSendAddend() {
++        return PaperConfig.globalMaxChunkSendRate <= 1.0 ? 0L : (long)Math.round(1.0e9 / PaperConfig.globalMaxChunkSendRate);
 +    }
 +
 +    public void onChunkPlayerTickReady(final int chunkX, final int chunkZ) {
@@ -411,8 +435,6 @@ index 0000000000000000000000000000000000000000..52929110c39d74fb1a7b059a26c253fc
 +    }
 +
 +    public void onChunkSendReady(final int chunkX, final int chunkZ) {
-+        final long chunkKey = CoordinateUtils.getChunkKey(chunkX, chunkZ);
-+
 +        final PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<ServerPlayer> playersInSendRange = this.broadcastMap.getObjectsInRange(chunkX, chunkZ);
 +
 +        if (playersInSendRange == null) {
@@ -527,8 +549,12 @@ index 0000000000000000000000000000000000000000..52929110c39d74fb1a7b059a26c253fc
 +
 +    protected static final AtomicInteger concurrentChunkSends = new AtomicInteger();
 +    protected final Reference2IntOpenHashMap<PlayerLoaderData> sendingChunkCounts = new Reference2IntOpenHashMap<>();
++    private static long nextChunkSend;
 +    private void trySendChunks() {
 +        final long time = System.nanoTime();
++        if (time < nextChunkSend) {
++            return;
++        }
 +        // drain entries from wait queue
 +        while (!this.chunkSendWaitQueue.isEmpty()) {
 +            final PlayerLoaderData data = this.chunkSendWaitQueue.first();
@@ -547,8 +573,7 @@ index 0000000000000000000000000000000000000000..52929110c39d74fb1a7b059a26c253fc
 +        }
 +
 +        final int maxSends = this.getMaxConcurrentChunkSends();
-+        final double sendRate = this.getTargetSendRatePerPlayer();
-+        final long nextDeadline = (long)((1 / sendRate) * 1.0e9) + time;
++        final long nextPlayerDeadline = this.getTargetSendPerPlayerAddend() + time;
 +        for (;;) {
 +            if (this.chunkSendQueue.isEmpty()) {
 +                break;
@@ -581,7 +606,7 @@ index 0000000000000000000000000000000000000000..52929110c39d74fb1a7b059a26c253fc
 +                throw new IllegalStateException();
 +            }
 +
-+            data.nextChunkSendTarget = nextDeadline;
++            data.nextChunkSendTarget = nextPlayerDeadline;
 +            this.chunkSendWaitQueue.add(data);
 +
 +            synchronized (this.sendingChunkCounts) {
@@ -604,16 +629,27 @@ index 0000000000000000000000000000000000000000..52929110c39d74fb1a7b059a26c253fc
 +
 +                concurrentChunkSends.getAndDecrement();
 +            });
++
++            nextChunkSend = this.getMaxSendAddend() + time;
++            if (time < nextChunkSend) {
++                break;
++            }
 +        }
 +    }
 +
 +    protected int concurrentChunkLoads;
++    // this interval prevents bursting a lot of chunk loads
++    protected static final IntervalledCounter TICKET_ADDITION_COUNTER_SHORT = new IntervalledCounter((long)(1.0e6 * 50.0)); // 50ms
++    // this interval ensures the rate is kept between ticks correctly
++    protected static final IntervalledCounter TICKET_ADDITION_COUNTER_LONG = new IntervalledCounter((long)(1.0e6 * 1000.0)); // 1000ms
 +    private void tryLoadChunks() {
 +        if (this.chunkLoadQueue.isEmpty()) {
 +            return;
 +        }
 +
 +        final int maxLoads = this.getMaxChunkLoads();
++        final long time = System.nanoTime();
++        boolean updatedCounters = false;
 +        for (;;) {
 +            final PlayerLoaderData data = this.chunkLoadQueue.pollFirst();
 +
@@ -623,6 +659,12 @@ index 0000000000000000000000000000000000000000..52929110c39d74fb1a7b059a26c253fc
 +                    break;
 +                }
 +                continue;
++            }
++
++            if (!updatedCounters) {
++                updatedCounters = true;
++                TICKET_ADDITION_COUNTER_SHORT.updateCurrentTime(time);
++                TICKET_ADDITION_COUNTER_LONG.updateCurrentTime(time);
 +            }
 +
 +            if (this.isChunkPlayerLoaded(queuedLoad.chunkX, queuedLoad.chunkZ)) {
@@ -658,7 +700,7 @@ index 0000000000000000000000000000000000000000..52929110c39d74fb1a7b059a26c253fc
 +                // priority > 0.0 implies rate limited chunks
 +
 +                final int currentChunkLoads = this.concurrentChunkLoads;
-+                if (currentChunkLoads >= maxLoads) {
++                if (currentChunkLoads >= maxLoads || (TICKET_ADDITION_COUNTER_SHORT.getRate() >= PaperConfig.globalMaxChunkLoadRate || TICKET_ADDITION_COUNTER_LONG.getRate() >= PaperConfig.globalMaxChunkLoadRate)) {
 +                    // don't poll, we didn't load it
 +                    this.chunkLoadQueue.add(data);
 +                    break;
@@ -684,8 +726,10 @@ index 0000000000000000000000000000000000000000..52929110c39d74fb1a7b059a26c253fc
 +                    }
 +
 +                    if (priority > 0.0 && this.chunkTicketTracker.add(CoordinateUtils.getChunkKey(offX, offZ))) {
-+                        // wont reach here if unloadedTargetChunk is false
++                        // won't reach here if unloadedTargetChunk is false
 +                        ++this.concurrentChunkLoads;
++                        TICKET_ADDITION_COUNTER_SHORT.addTime(time);
++                        TICKET_ADDITION_COUNTER_LONG.addTime(time);
 +                    }
 +                }
 +            }
