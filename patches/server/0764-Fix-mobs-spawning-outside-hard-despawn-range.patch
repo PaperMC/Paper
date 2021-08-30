@@ -1,0 +1,22 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Gaider10 <>
+Date: Mon, 30 Aug 2021 16:10:51 +0300
+Subject: [PATCH] Fix mobs spawning outside hard despawn range
+
+
+diff --git a/src/main/java/net/minecraft/world/level/NaturalSpawner.java b/src/main/java/net/minecraft/world/level/NaturalSpawner.java
+index 88145f04989c71a686aae1b486087ecdf55e268c..6c5229fce31ee41f6f47bfcfd233b56190e34a86 100644
+--- a/src/main/java/net/minecraft/world/level/NaturalSpawner.java
++++ b/src/main/java/net/minecraft/world/level/NaturalSpawner.java
+@@ -390,7 +390,10 @@ public final class NaturalSpawner {
+     }
+ 
+     private static boolean isValidPositionForMob(ServerLevel world, Mob entity, double squaredDistance) {
+-        return squaredDistance > (double) (entity.getType().getCategory().getDespawnDistance() * entity.getType().getCategory().getDespawnDistance()) && entity.removeWhenFarAway(squaredDistance) ? false : entity.checkSpawnRules((LevelAccessor) world, MobSpawnType.NATURAL) && entity.checkSpawnObstruction((LevelReader) world);
++        // Paper start - fix mobs spawning outside hard despawn range
++        int despawnDistance = entity.isPersistenceRequired() || entity.requiresCustomPersistence() ? entity.getType().getCategory().getDespawnDistance() * entity.getType().getCategory().getDespawnDistance() : world.paperConfig.hardDespawnDistance;
++        return squaredDistance > (double) despawnDistance && entity.removeWhenFarAway(squaredDistance) ? false : entity.checkSpawnRules((LevelAccessor) world, MobSpawnType.NATURAL) && entity.checkSpawnObstruction((LevelReader) world);
++        // Paper end - fix mobs spawning outside hard despawn range
+     }
+ 
+     private static Optional<MobSpawnSettings.SpawnerData> getRandomSpawnMobAt(ServerLevel world, StructureFeatureManager structureAccessor, ChunkGenerator chunkGenerator, MobCategory spawnGroup, Random random, BlockPos pos) {
