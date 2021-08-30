@@ -1,7 +1,9 @@
 package org.bukkit.generator;
 
+import java.util.List;
 import org.bukkit.Location;
 import org.bukkit.RegionAccessor;
+import org.bukkit.block.BlockState;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -42,4 +44,13 @@ public interface LimitedRegion extends RegionAccessor {
      * @return true if the coordinates are in the region, otherwise false.
      */
     boolean isInRegion(int x, int y, int z);
+
+    /**
+     * Gets a list of all tile entities in the limited region including the
+     * buffer zone.
+     *
+     * @return a list of tile entities.
+     */
+    @NotNull
+    List<BlockState> getTileEntities();
 }
