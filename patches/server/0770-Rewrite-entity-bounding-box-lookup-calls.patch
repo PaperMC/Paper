@@ -914,10 +914,10 @@ index 0000000000000000000000000000000000000000..3ba094e640d7fe7803e2bbdab8ff3beb
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index 8d5c81215aefe49a3fd1f1eed78ed05637dba9a1..b0b5e9e3f1f18d130bb23d3a4e11f97ea313b931 100644
+index d04a36a5ea30e294d661e6409370898c33fec6f4..33a5b0b36b4c689f456f8bb4edb8eb01bd761fa3 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
-@@ -438,7 +438,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
+@@ -437,7 +437,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
          DataFixer datafixer = minecraftserver.getFixerUpper();
          EntityPersistentStorage<Entity> entitypersistentstorage = new EntityStorage(this, new File(convertable_conversionsession.getDimensionPath(resourcekey), "entities"), datafixer, flag2, minecraftserver);
  
@@ -955,12 +955,12 @@ index 0f6b534a4c789a2f09f6c4624e5d58b99c7ed0e6..21d1e0c9c471e9e556b5bd70166a769b
          this.generatingStatus = chunkstatus;
          this.writeRadiusCutoff = i;
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index 963da61bf6903e31b5f285f4389ce532e9ca0d70..bed8308d39e4008d78465e2193f693abd7a03b16 100644
+index b7c0574aa8e3aec3bc13064b59c5f7efb075cf13..74fcc1b45a9e57280da82f7c181530d4183872a5 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
-@@ -400,6 +400,50 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, n
+@@ -417,6 +417,56 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, n
      }
-     // Paper end
+     // Paper end - make end portalling safe
  
 +    // Paper start
 +    /**
@@ -992,7 +992,13 @@ index 963da61bf6903e31b5f285f4389ce532e9ca0d70..bed8308d39e4008d78465e2193f693ab
 +        } */
 +        this.hardCollides = this instanceof Boat
 +            || this instanceof net.minecraft.world.entity.monster.Shulker
-+            || this instanceof net.minecraft.world.entity.vehicle.AbstractMinecart;
++            || this instanceof net.minecraft.world.entity.vehicle.AbstractMinecart
++            || this.shouldHardCollide();
++    }
++
++    // plugins can override
++    protected boolean shouldHardCollide() {
++        return false;
 +    }
 +
 +    public final boolean hardCollides() {
@@ -1009,7 +1015,7 @@ index 963da61bf6903e31b5f285f4389ce532e9ca0d70..bed8308d39e4008d78465e2193f693ab
      public Entity(EntityType<?> type, Level world) {
          this.id = Entity.ENTITY_COUNTER.incrementAndGet();
          this.passengers = ImmutableList.of();
-@@ -2263,11 +2307,11 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, n
+@@ -2280,11 +2330,11 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, n
          return InteractionResult.PASS;
      }
  

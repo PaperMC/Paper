@@ -80,7 +80,7 @@ index 2d5b8e35d52b0dfd075af81a3a936d8a21053b31..9ddedd310eb0323a5a09f51a61bfb7b3
                  chunkData.addProperty("queued-for-unload", chunkMap.toDrop.contains(playerChunk.pos.longKey));
                  chunkData.addProperty("status", status == null ? "unloaded" : status.toString());
 diff --git a/src/main/java/net/minecraft/server/level/ChunkHolder.java b/src/main/java/net/minecraft/server/level/ChunkHolder.java
-index 8245e07f6ecfd9dd997c8525b52c6eadd392e6f1..75fbcc3d9b3aca2738df0c7ce8c1a0b157ff375a 100644
+index fe8e6d66665dc8c38e74c0b264cf507f99f83091..527aa9c212905e99e39b2992720fb7543782ffcf 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkHolder.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkHolder.java
 @@ -60,7 +60,7 @@ public class ChunkHolder {
@@ -310,15 +310,15 @@ index 8245e07f6ecfd9dd997c8525b52c6eadd392e6f1..75fbcc3d9b3aca2738df0c7ce8c1a0b1
                  either.ifLeft(chunk -> {
                      // note: Here is a very good place to add callbacks to logic waiting on this.
                      ChunkHolder.this.isTickingReady = true;
-@@ -607,6 +767,7 @@ public class ChunkHolder {
+@@ -615,6 +775,7 @@ public class ChunkHolder {
              this.scheduleFullChunkPromotion(chunkStorage, this.entityTickingChunkFuture, executor, ChunkHolder.FullChunkStatus.ENTITY_TICKING);
              // Paper start - cache ticking ready status
              this.entityTickingChunkFuture.thenAccept(either -> {
 +                ensureTickThread("Async full chunk future completion"); // Paper
                  either.ifLeft(chunk -> {
                      ChunkHolder.this.isEntityTickingReady = true;
-                 });
-@@ -624,16 +785,44 @@ public class ChunkHolder {
+                     // Paper start - entity ticking chunk set
+@@ -641,16 +802,44 @@ public class ChunkHolder {
              this.demoteFullChunk(chunkStorage, playerchunk_state1);
          }
  
@@ -367,7 +367,7 @@ index 8245e07f6ecfd9dd997c8525b52c6eadd392e6f1..75fbcc3d9b3aca2738df0c7ce8c1a0b1
                  }
              }).exceptionally((throwable) -> {
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index 12f9f512dc8b9e094dab2caec7b6ddaf2a378ee9..11b743acfad319f536798204d525cda0813e8987 100644
+index 8c6684c5aed283453187d4be2e8ede4a1d33fc29..0c07c061507e3f99679518491e8872286d7f90ef 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
 @@ -149,6 +149,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
@@ -378,7 +378,7 @@ index 12f9f512dc8b9e094dab2caec7b6ddaf2a378ee9..11b743acfad319f536798204d525cda0
      public final ChunkGenerator generator;
      public final Supplier<DimensionDataStorage> overworldDataStorage;
      private final PoiManager poiManager;
-@@ -341,6 +342,15 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -374,6 +375,15 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          this.level = world;
          this.generator = chunkGenerator;
          this.mainThreadExecutor = mainThreadExecutor;
@@ -394,32 +394,8 @@ index 12f9f512dc8b9e094dab2caec7b6ddaf2a378ee9..11b743acfad319f536798204d525cda0
          ProcessorMailbox<Runnable> threadedmailbox = ProcessorMailbox.create(executor, "worldgen");
  
          Objects.requireNonNull(mainThreadExecutor);
-@@ -436,6 +446,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
-         this.playerViewDistanceTickMap = new com.destroystokyo.paper.util.misc.PlayerAreaMap(this.pooledLinkedPlayerHashSets,
-             (ServerPlayer player, int rangeX, int rangeZ, int currPosX, int currPosZ, int prevPosX, int prevPosZ,
-              com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<ServerPlayer> newState) -> {
-+                checkHighPriorityChunks(player);
-                 if (newState.size() != 1) {
-                     return;
-                 }
-@@ -454,7 +465,14 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
-                 }
-                 ChunkPos chunkPos = new ChunkPos(rangeX, rangeZ);
-                 ChunkMap.this.level.getChunkSource().removeTicketAtLevel(TicketType.PLAYER, chunkPos, 31, chunkPos); // entity ticking level, TODO check on update
--            });
-+                // Paper start
-+                ChunkMap.this.level.getChunkSource().clearPriorityTickets(chunkPos);
-+            },
-+            (player, prevPos, newPos) -> {
-+            player.lastHighPriorityChecked = -1; // reset and recheck
-+            checkHighPriorityChunks(player);
-+        });
-+        // Paper end
-         this.playerViewDistanceNoTickMap = new com.destroystokyo.paper.util.misc.PlayerAreaMap(this.pooledLinkedPlayerHashSets);
-         this.playerViewDistanceBroadcastMap = new com.destroystokyo.paper.util.misc.PlayerAreaMap(this.pooledLinkedPlayerHashSets,
-             (ServerPlayer player, int rangeX, int rangeZ, int currPosX, int currPosZ, int prevPosX, int prevPosZ,
-@@ -472,6 +490,116 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
-         // Paper end - no-tick view distance
+@@ -509,6 +519,116 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+         // Paper end - optimise PlayerChunkMap#isOutsideRange
      }
  
 +    // Paper start - Chunk Prioritization
@@ -535,7 +511,7 @@ index 12f9f512dc8b9e094dab2caec7b6ddaf2a378ee9..11b743acfad319f536798204d525cda0
      // Paper start
      public void updatePlayerMobTypeMap(Entity entity) {
          if (!this.level.paperConfig.perPlayerMobSpawns) {
-@@ -630,6 +758,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -667,6 +787,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          List<CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>>> list = Lists.newArrayList();
          int j = centerChunk.x;
          int k = centerChunk.z;
@@ -543,7 +519,7 @@ index 12f9f512dc8b9e094dab2caec7b6ddaf2a378ee9..11b743acfad319f536798204d525cda0
  
          for (int l = -margin; l <= margin; ++l) {
              for (int i1 = -margin; i1 <= margin; ++i1) {
-@@ -648,6 +777,14 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -685,6 +806,14 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
  
                  ChunkStatus chunkstatus = (ChunkStatus) distanceToStatus.apply(j1);
                  CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> completablefuture = playerchunk.getOrScheduleFuture(chunkstatus, this);
@@ -558,7 +534,7 @@ index 12f9f512dc8b9e094dab2caec7b6ddaf2a378ee9..11b743acfad319f536798204d525cda0
  
                  list.add(completablefuture);
              }
-@@ -1016,11 +1153,19 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1068,11 +1197,19 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          if (requiredStatus == ChunkStatus.EMPTY) {
              return this.scheduleChunkLoad(chunkcoordintpair);
          } else {
@@ -579,7 +555,7 @@ index 12f9f512dc8b9e094dab2caec7b6ddaf2a378ee9..11b743acfad319f536798204d525cda0
  
              if (optional.isPresent() && ((ChunkAccess) optional.get()).getStatus().isOrAfter(requiredStatus)) {
                  CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> completablefuture = requiredStatus.load(this.level, this.structureManager, this.lightEngine, (ichunkaccess) -> {
-@@ -1032,6 +1177,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1084,6 +1221,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
              } else {
                  return this.scheduleChunkGeneration(holder, requiredStatus);
              }
@@ -587,7 +563,7 @@ index 12f9f512dc8b9e094dab2caec7b6ddaf2a378ee9..11b743acfad319f536798204d525cda0
          }
      }
  
-@@ -1091,14 +1237,24 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1143,14 +1281,24 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          };
  
          CompletableFuture<CompoundTag> chunkSaveFuture = this.level.asyncChunkTaskManager.getChunkSaveFuture(pos.x, pos.z);
@@ -617,7 +593,7 @@ index 12f9f512dc8b9e094dab2caec7b6ddaf2a378ee9..11b743acfad319f536798204d525cda0
          return ret;
          // Paper end
      }
-@@ -1147,7 +1303,10 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1199,7 +1347,10 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
                  this.releaseLightTicket(chunkcoordintpair);
                  return CompletableFuture.completedFuture(Either.right(playerchunk_failure));
              });
@@ -629,7 +605,7 @@ index 12f9f512dc8b9e094dab2caec7b6ddaf2a378ee9..11b743acfad319f536798204d525cda0
      }
  
      protected void releaseLightTicket(ChunkPos pos) {
-@@ -1230,7 +1389,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1282,7 +1433,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
              long i = playerchunk.getPos().toLong();
  
              Objects.requireNonNull(playerchunk);
@@ -1021,10 +997,10 @@ index d94241bcca4f2fd5e464a860bd356af504dc68b7..1cc4e0a1f3d8235ef88b48e01ca8b78a
      }
  }
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-index 6d947343b6ff2f86a23ea669e371d5ecd9e903c0..d6f0c82b503a0fa73f6589fc4c331d27fbe27638 100644
+index 1c17f78e40dd49d0b3fc2b311764461c5fb8dd0d..5dff88d65692edd6a901ae5f856df32284975e82 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-@@ -449,6 +449,26 @@ public class ServerChunkCache extends ChunkSource {
+@@ -610,6 +610,26 @@ public class ServerChunkCache extends ChunkSource {
      public <T> void removeTicketAtLevel(TicketType<T> ticketType, ChunkPos chunkPos, int ticketLevel, T identifier) {
          this.distanceManager.removeTicketAtLevel(ticketType, chunkPos, ticketLevel, identifier);
      }
@@ -1051,7 +1027,7 @@ index 6d947343b6ff2f86a23ea669e371d5ecd9e903c0..d6f0c82b503a0fa73f6589fc4c331d27
      // Paper end - async chunk io
  
      @Nullable
-@@ -489,6 +509,8 @@ public class ServerChunkCache extends ChunkSource {
+@@ -650,6 +670,8 @@ public class ServerChunkCache extends ChunkSource {
              Objects.requireNonNull(completablefuture);
              if (!completablefuture.isDone()) { // Paper
                  // Paper start - async chunk io/loading
@@ -1060,7 +1036,7 @@ index 6d947343b6ff2f86a23ea669e371d5ecd9e903c0..d6f0c82b503a0fa73f6589fc4c331d27
                  this.level.asyncChunkTaskManager.raisePriority(x1, z1, com.destroystokyo.paper.io.PrioritizedTaskQueue.HIGHEST_PRIORITY);
                  com.destroystokyo.paper.io.chunk.ChunkTaskManager.pushChunkWait(this.level, x1, z1);
                  // Paper end
-@@ -497,6 +519,8 @@ public class ServerChunkCache extends ChunkSource {
+@@ -658,6 +680,8 @@ public class ServerChunkCache extends ChunkSource {
              chunkproviderserver_a.managedBlock(completablefuture::isDone);
                  com.destroystokyo.paper.io.chunk.ChunkTaskManager.popChunkWait(); // Paper - async chunk debug
                  this.level.timings.syncChunkLoad.stopTiming(); // Paper
@@ -1069,7 +1045,7 @@ index 6d947343b6ff2f86a23ea669e371d5ecd9e903c0..d6f0c82b503a0fa73f6589fc4c331d27
              } // Paper
              ichunkaccess = (ChunkAccess) ((Either) completablefuture.join()).map((ichunkaccess1) -> {
                  return ichunkaccess1;
-@@ -570,10 +594,12 @@ public class ServerChunkCache extends ChunkSource {
+@@ -731,10 +755,12 @@ public class ServerChunkCache extends ChunkSource {
          if (flag && !currentlyUnloading) {
              // CraftBukkit end
              this.distanceManager.addTicket(TicketType.UNKNOWN, chunkcoordintpair, l, chunkcoordintpair);
@@ -1082,7 +1058,7 @@ index 6d947343b6ff2f86a23ea669e371d5ecd9e903c0..d6f0c82b503a0fa73f6589fc4c331d27
                  this.runDistanceManagerUpdates();
                  playerchunk = this.getVisibleChunkIfPresent(k);
                  gameprofilerfiller.pop();
-@@ -582,8 +608,13 @@ public class ServerChunkCache extends ChunkSource {
+@@ -743,8 +769,13 @@ public class ServerChunkCache extends ChunkSource {
                  }
              }
          }
@@ -1098,7 +1074,7 @@ index 6d947343b6ff2f86a23ea669e371d5ecd9e903c0..d6f0c82b503a0fa73f6589fc4c331d27
      }
  
      private boolean chunkAbsent(@Nullable ChunkHolder holder, int maxLevel) {
-@@ -635,6 +666,7 @@ public class ServerChunkCache extends ChunkSource {
+@@ -796,6 +827,7 @@ public class ServerChunkCache extends ChunkSource {
      }
  
      public boolean runDistanceManagerUpdates() {
@@ -1224,7 +1200,7 @@ index e0c9857a922d8a3f421d7df0f056b82c4775390e..fefd3e4b7d9b2ec77dd2bc26298c3732
              entityplayer1.setPos(entityplayer1.getX(), entityplayer1.getY() + 1.0D, entityplayer1.getZ());
          }
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index 73fc8ebd2ec207db2efc545f6bb304d53880b78f..e1b6a390105232500d7146cc456bf30912934904 100644
+index 3e1f34ed8c3b4bd4f6c3624332a5f2be62e196fe..8df955a0aa6cd0c7d10619fb63abd16af4754be8 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
 @@ -223,7 +223,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, n

@@ -9,7 +9,7 @@ since the penalty of a map lookup could outweigh the benefits of
 searching less players (as it basically did in the outside range patch).
 
 diff --git a/src/main/java/net/minecraft/server/level/ChunkHolder.java b/src/main/java/net/minecraft/server/level/ChunkHolder.java
-index 206a6d4eb7bb5a8dc16e65ecf61ad0ba8b215c65..c996521d490d9dccea7d7b320118ad62ff980ae1 100644
+index 54cb9f909df7d1041cec553e1f54ff8ecff48bbe..82b6b099e3014ab539f4155639efd33ebba88a3e 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkHolder.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkHolder.java
 @@ -242,6 +242,12 @@ public class ChunkHolder {
@@ -26,7 +26,7 @@ index 206a6d4eb7bb5a8dc16e65ecf61ad0ba8b215c65..c996521d490d9dccea7d7b320118ad62
      // Paper end - optimise isOutsideOfRange
      long lastAutoSaveTime; // Paper - incremental autosave
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index ed181c1088cf0a1293a8f851bd7d50b462b56a06..2daa27db93f8def3eb0f481a538fd5d3f5d61eae 100644
+index 14cf5e3a0f5e5ff6027f08ae3b15a3b210b12586..0f2f06fdfb6a748c877ee7e66b078dcf67108a34 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
 @@ -243,6 +243,12 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
@@ -72,10 +72,10 @@ index ed181c1088cf0a1293a8f851bd7d50b462b56a06..2daa27db93f8def3eb0f481a538fd5d3
      }
      // Paper end
      // Paper start
-@@ -459,6 +474,23 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
-         this.dataRegionManager = new io.papermc.paper.chunk.SingleThreadChunkRegionManager(this.level, 2, (1.0 / 3.0), 1, 6, "Data", DataRegionData::new, DataRegionSectionData::new);
-         this.regionManagers.add(this.dataRegionManager);
-         // Paper end
+@@ -461,6 +476,23 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+                 }
+             });
+         // Paper end - optimise PlayerChunkMap#isOutsideRange
 +        // Paper start - optimise checkDespawn
 +        this.playerGeneralAreaMap = new com.destroystokyo.paper.util.misc.PlayerAreaMap(this.pooledLinkedPlayerHashSets,
 +            (ServerPlayer player, int rangeX, int rangeZ, int currPosX, int currPosZ, int prevPosX, int prevPosZ,
@@ -96,7 +96,7 @@ index ed181c1088cf0a1293a8f851bd7d50b462b56a06..2daa27db93f8def3eb0f481a538fd5d3
      }
  
      // Paper start - Chunk Prioritization
-@@ -788,7 +820,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -790,7 +822,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          } else {
              if (holder != null) {
                  holder.setTicketLevel(level);
@@ -105,7 +105,7 @@ index ed181c1088cf0a1293a8f851bd7d50b462b56a06..2daa27db93f8def3eb0f481a538fd5d3
              }
  
              if (holder != null) {
-@@ -803,6 +835,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -805,6 +837,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
                  holder = (ChunkHolder) this.pendingUnloads.remove(pos);
                  if (holder != null) {
                      holder.setTicketLevel(level);
@@ -114,13 +114,13 @@ index ed181c1088cf0a1293a8f851bd7d50b462b56a06..2daa27db93f8def3eb0f481a538fd5d3
                      holder = new ChunkHolder(new ChunkPos(pos), level, this.level, this.lightEngine, this.queueSorter, this);
                      // Paper start
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index a73377ef08ee807e093e05fe5123632f3b2e4682..4e44e05d723a5eb7091cb617564942dfdad0877c 100644
+index e87aad55864a3925c43d5782f0ac0034c9370b77..cb0c2dd3f1df1278337e4a2744d1bc83343f39a7 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
-@@ -393,6 +393,83 @@ public class ServerLevel extends Level implements WorldGenLevel {
+@@ -392,6 +392,83 @@ public class ServerLevel extends Level implements WorldGenLevel {
          }
      }
-     // Paper end
+     // Paper end - rewrite ticklistserver
 +    // Paper start - optimise checkDespawn
 +    public final List<ServerPlayer> playersAffectingSpawning = new java.util.ArrayList<>();
 +    // Paper end - optimise checkDespawn
@@ -201,7 +201,7 @@ index a73377ef08ee807e093e05fe5123632f3b2e4682..4e44e05d723a5eb7091cb617564942df
  
      // Add env and gen to constructor, WorldData -> WorldDataServer
      public ServerLevel(MinecraftServer minecraftserver, Executor executor, LevelStorageSource.LevelStorageAccess convertable_conversionsession, ServerLevelData iworlddataserver, ResourceKey<Level> resourcekey, DimensionType dimensionmanager, ChunkProgressListener worldloadlistener, ChunkGenerator chunkgenerator, boolean flag, long i, List<CustomSpawner> list, boolean flag1, org.bukkit.World.Environment env, org.bukkit.generator.ChunkGenerator gen, org.bukkit.generator.BiomeProvider biomeProvider) {
-@@ -493,6 +570,14 @@ public class ServerLevel extends Level implements WorldGenLevel {
+@@ -492,6 +569,14 @@ public class ServerLevel extends Level implements WorldGenLevel {
      }
  
      public void tick(BooleanSupplier shouldKeepTicking) {

@@ -25,10 +25,10 @@ Massive update to light to improve performance and chunk loading/generation.
 8) Fix NPE risk that crashes server in getting nibble data
 
 diff --git a/src/main/java/net/minecraft/server/level/ChunkHolder.java b/src/main/java/net/minecraft/server/level/ChunkHolder.java
-index 0c6d513b6bcbd518fe4beee7acd7b96ce801c78e..e6cc5da2fd58bcc2809baeffee01040d0370a92c 100644
+index dee2a25edfab1a2a174b522bcccf626c5eb455c0..e91552020b96d039c5516ddd8e85eadb8ab89c3c 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkHolder.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkHolder.java
-@@ -806,6 +806,7 @@ public class ChunkHolder {
+@@ -823,6 +823,7 @@ public class ChunkHolder {
                  ioPriority = com.destroystokyo.paper.io.PrioritizedTaskQueue.HIGH_PRIORITY;
              }
              chunkMap.level.asyncChunkTaskManager.raisePriority(pos.x, pos.z, ioPriority);
@@ -37,7 +37,7 @@ index 0c6d513b6bcbd518fe4beee7acd7b96ce801c78e..e6cc5da2fd58bcc2809baeffee01040d
          if (currRequestedPriority != newRequestedPriority) {
              this.onLevelChange.onLevelChange(this.pos, () -> this.queueLevel, priority, p -> this.queueLevel = p); // use preferred priority
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index 1de84204656d60e4dc91cc37661cb7c1573a22d2..97bf5120d680ab47778c65e28e2ea2954daac031 100644
+index 246a779200afabddf51ebbf10ff56e22c8a2cd03..4d18e1b2a786aecbe2a2453354db5e57ef685203 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
 @@ -97,6 +97,7 @@ import net.minecraft.world.level.levelgen.structure.templatesystem.StructureMana
@@ -48,15 +48,15 @@ index 1de84204656d60e4dc91cc37661cb7c1573a22d2..97bf5120d680ab47778c65e28e2ea295
  import it.unimi.dsi.fastutil.objects.ObjectRBTreeSet; // Paper
  import org.apache.commons.lang3.mutable.MutableBoolean;
  import org.apache.logging.log4j.LogManager;
-@@ -324,6 +325,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -357,6 +358,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
      }
-     // Paper end
+     // Tuiniy end
  
 +    private final java.util.concurrent.ExecutorService lightThread; // Paper
      public ChunkMap(ServerLevel world, LevelStorageSource.LevelStorageAccess session, DataFixer dataFixer, StructureManager structureManager, Executor executor, BlockableEventLoop<Runnable> mainThreadExecutor, LightChunkGetter chunkProvider, ChunkGenerator chunkGenerator, ChunkProgressListener worldGenerationProgressListener, ChunkStatusUpdateListener chunkStatusChangeListener, Supplier<DimensionDataStorage> persistentStateManagerFactory, int viewDistance, boolean dsync) {
          super(new File(session.getDimensionPath(world.dimension()), "region"), dataFixer, dsync);
          //this.visibleChunks = this.updatingChunks.clone(); // Paper - no more cloning
-@@ -358,7 +360,15 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -391,7 +393,15 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
  
          this.progressListener = worldGenerationProgressListener;
          this.chunkStatusListener = chunkStatusChangeListener;
@@ -73,7 +73,7 @@ index 1de84204656d60e4dc91cc37661cb7c1573a22d2..97bf5120d680ab47778c65e28e2ea295
  
          this.queueSorter = new ChunkTaskPriorityQueueSorter(ImmutableList.of(threadedmailbox, mailbox, threadedmailbox1), executor, Integer.MAX_VALUE);
          this.worldgenMailbox = this.queueSorter.getProcessor(threadedmailbox, false);
-@@ -867,6 +877,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -901,6 +911,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
      @Override
      public void close() throws IOException {
          try {
@@ -126,10 +126,10 @@ index d3d6651eb51c852ed1d1eeb5689569d5308b246d..c2d36600a0081c78425868154bdcf7f4
                          m = Long.MAX_VALUE;
                      }
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-index d6f0c82b503a0fa73f6589fc4c331d27fbe27638..db6a0246e83045015fc41f27e0aec0e07d1fb568 100644
+index 5dff88d65692edd6a901ae5f856df32284975e82..baa5df1169ab93ebd724c000dc08846a62fa7601 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-@@ -1074,7 +1074,7 @@ public class ServerChunkCache extends ChunkSource {
+@@ -1235,7 +1235,7 @@ public class ServerChunkCache extends ChunkSource {
              if (ServerChunkCache.this.runDistanceManagerUpdates()) {
                  return true;
              } else {

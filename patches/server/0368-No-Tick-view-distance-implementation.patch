@@ -53,7 +53,7 @@ index 5c1421620e02b7d4ab4171ebff41076c7ee8cd55..4bc418f45c6f16a9a1c78b6688625268
              worldData.addProperty("keep-spawn-loaded-range", world.paperConfig.keepLoadedRange);
              worldData.addProperty("visible-chunk-count", visibleChunks.size());
 diff --git a/src/main/java/net/minecraft/server/level/ChunkHolder.java b/src/main/java/net/minecraft/server/level/ChunkHolder.java
-index 2720f4a51ffc8c9748932be55cebd5072cd4ffb2..1dd1b9afaee38fdc994ad0a069bd63b02eedf55c 100644
+index 1ea32090783ac5b885b95ae2009dd61de3063ae0..8d3cdd288eacc91f7c9a624f601284e5cd2a36cc 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkHolder.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkHolder.java
 @@ -75,6 +75,17 @@ public class ChunkHolder {
@@ -145,7 +145,7 @@ index 2720f4a51ffc8c9748932be55cebd5072cd4ffb2..1dd1b9afaee38fdc994ad0a069bd63b0
  
      public CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> getOrScheduleFuture(ChunkStatus targetStatus, ChunkMap chunkStorage) {
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index e38e40fb9327e27e2344f76e0975b12d26bb8884..16d956e74711aea7b877329911be031b94dab02b 100644
+index 292fb6d71ca8bd63ad04d87d04f13b7f4f6f98fc..d2080cfe58f7e241c9612ad0e500240dcb341878 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
 @@ -127,7 +127,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
@@ -225,11 +225,11 @@ index e38e40fb9327e27e2344f76e0975b12d26bb8884..16d956e74711aea7b877329911be031b
 +        // Paper end - no-tick view distance
      }
      // Paper end
- 
-@@ -223,6 +270,45 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
-         this.overworldDataStorage = persistentStateManagerFactory;
-         this.poiManager = new PoiManager(new File(file, "poi"), dataFixer, dsync, world);
-         this.setViewDistance(viewDistance);
+     // Paper start
+@@ -257,6 +304,45 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+         this.dataRegionManager = new io.papermc.paper.chunk.SingleThreadChunkRegionManager(this.level, 2, (1.0 / 3.0), 1, 6, "Data", DataRegionData::new, DataRegionSectionData::new);
+         this.regionManagers.add(this.dataRegionManager);
+         // Paper end
 +        // Paper start - no-tick view distance
 +        this.setNoTickViewDistance(this.level.paperConfig.noTickViewDistance);
 +        this.playerViewDistanceTickMap = new com.destroystokyo.paper.util.misc.PlayerAreaMap(this.pooledLinkedPlayerHashSets,
@@ -272,7 +272,7 @@ index e38e40fb9327e27e2344f76e0975b12d26bb8884..16d956e74711aea7b877329911be031b
      }
  
      private static double euclideanDistanceSquared(ChunkPos pos, Entity entity) {
-@@ -905,14 +991,10 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -954,14 +1040,10 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          completablefuture1.thenAcceptAsync((either) -> {
              either.ifLeft((chunk) -> {
                  this.tickingGenerated.getAndIncrement();
@@ -289,7 +289,7 @@ index e38e40fb9327e27e2344f76e0975b12d26bb8884..16d956e74711aea7b877329911be031b
          });
          return completablefuture1;
      }
-@@ -1005,27 +1087,34 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1054,27 +1136,34 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
      }
  
      public void setViewDistance(int watchDistance) {
@@ -337,7 +337,7 @@ index e38e40fb9327e27e2344f76e0975b12d26bb8884..16d956e74711aea7b877329911be031b
              }
          }
  
-@@ -1037,7 +1126,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1086,7 +1175,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
                  ChunkHolder playerchunk = this.getVisibleChunkIfPresent(pos.toLong());
  
                  if (playerchunk != null) {
@@ -346,7 +346,7 @@ index e38e40fb9327e27e2344f76e0975b12d26bb8884..16d956e74711aea7b877329911be031b
  
                      if (chunk != null) {
                          this.playerLoadedChunk(player, packets, chunk);
-@@ -1133,7 +1222,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1182,7 +1271,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
      // Paper end
  
      @Nullable
@@ -355,7 +355,7 @@ index e38e40fb9327e27e2344f76e0975b12d26bb8884..16d956e74711aea7b877329911be031b
          CompoundTag nbttagcompound = this.read(pos);
          // Paper start - Cache chunk status on disk
          if (nbttagcompound == null) {
-@@ -1244,13 +1333,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1293,13 +1382,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
              this.removePlayerFromDistanceMaps(player); // Paper - distance maps
          }
  
@@ -370,7 +370,7 @@ index e38e40fb9327e27e2344f76e0975b12d26bb8884..16d956e74711aea7b877329911be031b
  
      }
  
-@@ -1258,7 +1341,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1307,7 +1390,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          SectionPos sectionposition = SectionPos.of((Entity) player);
  
          player.setLastSectionPos(sectionposition);
@@ -379,7 +379,7 @@ index e38e40fb9327e27e2344f76e0975b12d26bb8884..16d956e74711aea7b877329911be031b
          return sectionposition;
      }
  
-@@ -1313,6 +1396,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1362,6 +1445,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          int k1;
          int l1;
  
@@ -387,7 +387,7 @@ index e38e40fb9327e27e2344f76e0975b12d26bb8884..16d956e74711aea7b877329911be031b
          if (Math.abs(i1 - i) <= this.viewDistance * 2 && Math.abs(j1 - j) <= this.viewDistance * 2) {
              k1 = Math.min(i, i1) - this.viewDistance;
              l1 = Math.min(j, j1) - this.viewDistance;
-@@ -1351,6 +1435,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1400,6 +1484,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
                  }
              }
          }
@@ -395,7 +395,7 @@ index e38e40fb9327e27e2344f76e0975b12d26bb8884..16d956e74711aea7b877329911be031b
  
          this.updateMaps(player); // Paper - distance maps
  
-@@ -1358,11 +1443,46 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1407,11 +1492,46 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
  
      @Override
      public Stream<ServerPlayer> getPlayers(ChunkPos chunkPos, boolean onlyOnWatchDistanceEdge) {
@@ -447,7 +447,7 @@ index e38e40fb9327e27e2344f76e0975b12d26bb8884..16d956e74711aea7b877329911be031b
      }
  
      public void addEntity(Entity entity) {
-@@ -1483,6 +1603,47 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1532,6 +1652,47 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
  
      }
  

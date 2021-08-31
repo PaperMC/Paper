@@ -71,7 +71,7 @@ index e3b605695e3b837246f72ccb364af06ea48bda45..62c3c597732e6fb30ed5367d902ea876
              cause = cause.getCause();
          }
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 43e0c5d29981ccc6a20933afdb33e8b89d8be6fb..dad662d1b252cfb77ff6646deb88514e3b563ea3 100644
+index 2b09e2328531253431d0c0cf53d96e904be2e6b8..4265044c2a85bd2563f8266707763cf6ceecb79c 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -299,7 +299,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
@@ -83,9 +83,9 @@ index 43e0c5d29981ccc6a20933afdb33e8b89d8be6fb..dad662d1b252cfb77ff6646deb88514e
      // CraftBukkit end
      // Spigot start
      public static final int TPS = 20;
-@@ -309,6 +309,9 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
-     public final SlackActivityAccountant slackActivityAccountant = new SlackActivityAccountant();
+@@ -310,6 +310,9 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
      // Spigot end
+     public static long currentTickLong = 0L; // Paper
  
 +    public volatile Thread shutdownThread; // Paper
 +    public volatile boolean abnormalExit = false; // Paper
@@ -93,7 +93,7 @@ index 43e0c5d29981ccc6a20933afdb33e8b89d8be6fb..dad662d1b252cfb77ff6646deb88514e
      public static <S extends MinecraftServer> S spin(Function<Thread, S> serverFactory) {
          AtomicReference<S> atomicreference = new AtomicReference();
          Thread thread = new Thread(() -> {
-@@ -931,6 +934,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -932,6 +935,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
  
      // CraftBukkit start
      private boolean hasStopped = false;
@@ -101,7 +101,7 @@ index 43e0c5d29981ccc6a20933afdb33e8b89d8be6fb..dad662d1b252cfb77ff6646deb88514e
      private final Object stopLock = new Object();
      public final boolean hasStopped() {
          synchronized (this.stopLock) {
-@@ -945,6 +949,19 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -946,6 +950,19 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
              if (this.hasStopped) return;
              this.hasStopped = true;
          }
@@ -121,7 +121,7 @@ index 43e0c5d29981ccc6a20933afdb33e8b89d8be6fb..dad662d1b252cfb77ff6646deb88514e
          // CraftBukkit end
          MinecraftServer.LOGGER.info("Stopping server");
          MinecraftTimings.stopServer(); // Paper
-@@ -1010,7 +1027,18 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1011,7 +1028,18 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
              this.getProfileCache().save(false); // Paper
          }
          // Spigot end
@@ -140,7 +140,7 @@ index 43e0c5d29981ccc6a20933afdb33e8b89d8be6fb..dad662d1b252cfb77ff6646deb88514e
      }
  
      public String getLocalIp() {
-@@ -1103,6 +1131,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1104,6 +1132,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
  
      protected void runServer() {
          try {
@@ -148,7 +148,7 @@ index 43e0c5d29981ccc6a20933afdb33e8b89d8be6fb..dad662d1b252cfb77ff6646deb88514e
              if (this.initServer()) {
                  this.nextTickTime = Util.getMillis();
                  this.status.setDescription(new TextComponent(this.motd));
-@@ -1110,6 +1139,18 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1111,6 +1140,18 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
                  this.updateStatusIcon(this.status);
  
                  // Spigot start
@@ -167,7 +167,7 @@ index 43e0c5d29981ccc6a20933afdb33e8b89d8be6fb..dad662d1b252cfb77ff6646deb88514e
                  org.spigotmc.WatchdogThread.hasStarted = true; // Paper
                  Arrays.fill( recentTps, 20 );
                  long start = System.nanoTime(), curTime, tickSection = start; // Paper - Further improve server tick loop
-@@ -1166,6 +1207,12 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1168,6 +1209,12 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
                  this.onServerCrash((CrashReport) null);
              }
          } catch (Throwable throwable) {
@@ -180,7 +180,7 @@ index 43e0c5d29981ccc6a20933afdb33e8b89d8be6fb..dad662d1b252cfb77ff6646deb88514e
              MinecraftServer.LOGGER.error("Encountered an unexpected exception", throwable);
              // Spigot Start
              if ( throwable.getCause() != null )
-@@ -1201,14 +1248,14 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1203,14 +1250,14 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
              } catch (Throwable throwable1) {
                  MinecraftServer.LOGGER.error("Exception stopping the server", throwable1);
              } finally {
@@ -198,7 +198,7 @@ index 43e0c5d29981ccc6a20933afdb33e8b89d8be6fb..dad662d1b252cfb77ff6646deb88514e
              }
  
          }
-@@ -1264,6 +1311,12 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1266,6 +1313,12 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
  
      @Override
      public TickTask wrapRunnable(Runnable runnable) {
@@ -211,7 +211,7 @@ index 43e0c5d29981ccc6a20933afdb33e8b89d8be6fb..dad662d1b252cfb77ff6646deb88514e
          return new TickTask(this.tickCount, runnable);
      }
  
-@@ -1499,6 +1552,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1507,6 +1560,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
                  try {
                      crashreport = CrashReport.forThrowable(throwable, "Exception ticking world");
                  } catch (Throwable t) {
@@ -219,7 +219,7 @@ index 43e0c5d29981ccc6a20933afdb33e8b89d8be6fb..dad662d1b252cfb77ff6646deb88514e
                      throw new RuntimeException("Error generating crash report", t);
                  }
                  // Spigot End
-@@ -1976,7 +2030,8 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1984,7 +2038,8 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
              this.packRepository.setSelected(datapacks);
              this.worldData.setDataPackConfig(MinecraftServer.getSelectedPacks(this.packRepository));
              datapackresources.updateGlobals();
@@ -262,10 +262,10 @@ index b6ccc8cacb615a35a60c73f145b7bd1cf0b891ee..a335d48467d1730bfed25eb5fd9046e1
  
      @Override
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index 5e828201871086994f7037a50a0d12aecb0c0ece..b5459099b368ff6c8e62d254196350c2189e52a9 100644
+index e68e3d94ec07c67f7a5268fffc5bece0e51c7d86..080abd692de9551c5e8067fd435cf520e8fc6cd8 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
-@@ -613,6 +613,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -652,6 +652,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
              MutableBoolean mutableboolean = new MutableBoolean();
  
              do {

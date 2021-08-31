@@ -25,17 +25,20 @@ index fe79c0add4f7cb18d487c5bb9415c40c5b551ea2..8d9ddad1879e7616d980ca70de8aecac
          poiUnload = Timings.ofSafe(name + "Chunk unload - POI");
          chunkUnload = Timings.ofSafe(name + "Chunk unload - Chunk");
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index 4e7fbe5367c6cf91d54545e7829ec74e9accba8a..7dc740d392becc622e98a5a83be332adf6fcc4e8 100644
+index 4e7fbe5367c6cf91d54545e7829ec74e9accba8a..62c8a097295e48ba87d102fca17d07d1fdbe2218 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-@@ -574,5 +574,10 @@ public class PaperWorldConfig {
+@@ -574,5 +574,13 @@ public class PaperWorldConfig {
              Bukkit.getLogger().warning("You have enabled permission-based Anti-Xray checking - depending on your permission plugin, this may cause performance issues");
          }
      }
 +
 +    public boolean perPlayerMobSpawns = false;
 +    private void perPlayerMobSpawns() {
-+        perPlayerMobSpawns = getBoolean("per-player-mob-spawns", false);
++        if (PaperConfig.version < 22) {
++            set("per-player-mob-spawns", Boolean.TRUE);
++        }
++        perPlayerMobSpawns = getBoolean("per-player-mob-spawns", true);
 +    }
  }
  
@@ -545,7 +548,7 @@ index 0000000000000000000000000000000000000000..11de56afaf059b00fa5bec293516bcdc
 +    }
 +} 
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index a10f33a301e40484c7e253c6235c93c54918bf6c..5a8b919cd3a2aa3c12ae16cf970f7ce36cdeb4aa 100644
+index 48ca60925b15d7e320cf07467bd0cf9ddee2a036..46b23a1e543c55b71a7837af41df8cf89d72c22b 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
 @@ -145,6 +145,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
@@ -556,16 +559,11 @@ index a10f33a301e40484c7e253c6235c93c54918bf6c..5a8b919cd3a2aa3c12ae16cf970f7ce3
  
      // CraftBukkit start - recursion-safe executor for Chunk loadCallback() and unloadCallback()
      public final CallbackExecutor callbackExecutor = new CallbackExecutor();
-@@ -270,6 +271,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
-         this.overworldDataStorage = persistentStateManagerFactory;
-         this.poiManager = new PoiManager(new File(file, "poi"), dataFixer, dsync, world);
-         this.setViewDistance(viewDistance);
-+        this.playerMobDistanceMap = this.level.paperConfig.perPlayerMobSpawns ? new com.destroystokyo.paper.util.PlayerMobDistanceMap() : null; // Paper
-         // Paper start - no-tick view distance
-         this.setNoTickViewDistance(this.level.paperConfig.noTickViewDistance);
-         this.playerViewDistanceTickMap = new com.destroystokyo.paper.util.misc.PlayerAreaMap(this.pooledLinkedPlayerHashSets,
-@@ -311,6 +313,25 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -343,8 +344,28 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+                 ChunkMap.this.updateChunkTracking(player, new ChunkPos(rangeX, rangeZ), null, true, false); // unloaded, loaded
+             });
          // Paper end - no-tick view distance
++        this.playerMobDistanceMap = this.level.paperConfig.perPlayerMobSpawns ? new com.destroystokyo.paper.util.PlayerMobDistanceMap() : null; // Paper
      }
  
 +    // Paper start
@@ -591,10 +589,10 @@ index a10f33a301e40484c7e253c6235c93c54918bf6c..5a8b919cd3a2aa3c12ae16cf970f7ce3
          double d0 = (double) SectionPos.sectionToBlockCoord(pos.x, 8);
          double d1 = (double) SectionPos.sectionToBlockCoord(pos.z, 8);
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-index d5ec4a19869e04877869e3bb53c98a7e5943c931..8763b20019ad0d3beae3825d126c4ccab1e1252d 100644
+index ddd535ad7d2b051e0d05320e4491bad46df8ffbe..cb273030b70f1d41110b90effe3d542ab930fe39 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-@@ -751,7 +751,22 @@ public class ServerChunkCache extends ChunkSource {
+@@ -912,7 +912,22 @@ public class ServerChunkCache extends ChunkSource {
              this.level.getProfiler().push("naturalSpawnCount");
              this.level.timings.countNaturalMobs.startTiming(); // Paper - timings
              int l = this.distanceManager.getNaturalSpawnChunkCount();
@@ -619,7 +617,7 @@ index d5ec4a19869e04877869e3bb53c98a7e5943c931..8763b20019ad0d3beae3825d126c4cca
  
              this.lastSpawnState = spawnercreature_d;
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-index d234f08782b1a0c50714b8911d048699dc7741d5..d581945ff25f8a7a5e00599e9a939f2c0728b601 100644
+index 7efaf53b4df9d4e7e88020ce4ca41c9222fa8064..5b642969f61d4f62f3f40447252c622806d2a9c6 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
 @@ -224,6 +224,11 @@ public class ServerPlayer extends Player {
