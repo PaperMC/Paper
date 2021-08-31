@@ -80,7 +80,7 @@ index 4bc418f45c6f16a9a1c78b6688625268870a96ad..379ba589b0423284d63782d951c64770
                  chunkData.addProperty("queued-for-unload", chunkMap.toDrop.contains(playerChunk.pos.longKey));
                  chunkData.addProperty("status", status == null ? "unloaded" : status.toString());
 diff --git a/src/main/java/net/minecraft/server/level/ChunkHolder.java b/src/main/java/net/minecraft/server/level/ChunkHolder.java
-index fe8e6d66665dc8c38e74c0b264cf507f99f83091..4550614bf0026677ae4389d64d4c2bfd7161ba02 100644
+index fe8e6d66665dc8c38e74c0b264cf507f99f83091..e317c73b430105052cbf28502916adc3bd60846b 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkHolder.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkHolder.java
 @@ -60,7 +60,7 @@ public class ChunkHolder {
@@ -237,20 +237,13 @@ index fe8e6d66665dc8c38e74c0b264cf507f99f83091..4550614bf0026677ae4389d64d4c2bfd
      // Paper start - optimise isOutsideOfRange
      // cached here to avoid a map lookup
      com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<ServerPlayer> playersInMobSpawnRange;
-@@ -470,12 +601,25 @@ public class ChunkHolder {
+@@ -470,12 +601,18 @@ public class ChunkHolder {
          });
      }
  
 +    // Paper start
 +    private boolean loadCallbackScheduled = false;
 +    private boolean unloadCallbackScheduled = false;
-+    static void ensureTickThread(final String reason) {
-+        // TODO REMOVE
-+        if (!org.bukkit.Bukkit.isPrimaryThread()) {
-+            MinecraftServer.LOGGER.fatal("Thread " + Thread.currentThread().getName() + " failed main thread check: " + reason, new Throwable());
-+            throw new IllegalStateException(reason);
-+        }
-+    }
 +    // Paper end
 +
      private void demoteFullChunk(ChunkMap playerchunkmap, ChunkHolder.FullChunkStatus playerchunk_state) {
@@ -259,15 +252,15 @@ index fe8e6d66665dc8c38e74c0b264cf507f99f83091..4550614bf0026677ae4389d64d4c2bfd
      }
  
      protected void updateFutures(ChunkMap chunkStorage, Executor executor) {
-+        ensureTickThread("Async ticket level update"); // Paper
++        io.papermc.paper.util.TickThread.ensureTickThread("Async ticket level update"); // Paper
          ChunkStatus chunkstatus = ChunkHolder.getStatus(this.oldTicketLevel);
          ChunkStatus chunkstatus1 = ChunkHolder.getStatus(this.ticketLevel);
          boolean flag = this.oldTicketLevel <= ChunkMap.MAX_CHUNK_DISTANCE;
-@@ -486,9 +630,22 @@ public class ChunkHolder {
+@@ -486,9 +623,22 @@ public class ChunkHolder {
          // ChunkUnloadEvent: Called before the chunk is unloaded: isChunkLoaded is still true and chunk can still be modified by plugins.
          if (playerchunk_state.isOrAfter(ChunkHolder.FullChunkStatus.BORDER) && !playerchunk_state1.isOrAfter(ChunkHolder.FullChunkStatus.BORDER)) {
              this.getFutureIfPresentUnchecked(ChunkStatus.FULL).thenAccept((either) -> {
-+                ensureTickThread("Async full status chunk future completion"); // Paper
++                io.papermc.paper.util.TickThread.ensureTickThread("Async full status chunk future completion"); // Paper
                  LevelChunk chunk = (LevelChunk)either.left().orElse(null);
 -                if (chunk != null) {
 +                if (chunk != null && chunk.wasLoadCallbackInvoked() && ChunkHolder.this.ticketLevel > 33) { // Paper - only invoke unload if load was called
@@ -287,11 +280,11 @@ index fe8e6d66665dc8c38e74c0b264cf507f99f83091..4550614bf0026677ae4389d64d4c2bfd
                          // Minecraft will apply the chunks tick lists to the world once the chunk got loaded, and then store the tick
                          // lists again inside the chunk once the chunk becomes inaccessible and set the chunk's needsSaving flag.
                          // These actions may however happen deferred, so we manually set the needsSaving flag already here.
-@@ -545,12 +702,14 @@ public class ChunkHolder {
+@@ -545,12 +695,14 @@ public class ChunkHolder {
              this.scheduleFullChunkPromotion(chunkStorage, this.fullChunkFuture, executor, ChunkHolder.FullChunkStatus.BORDER);
              // Paper start - cache ticking ready status
              this.fullChunkFuture.thenAccept(either -> {
-+                ensureTickThread("Async full chunk future completion"); // Paper
++                io.papermc.paper.util.TickThread.ensureTickThread("Async full chunk future completion"); // Paper
                  final Optional<LevelChunk> left = either.left();
                  if (left.isPresent() && ChunkHolder.this.fullChunkCreateCount == expectCreateCount) {
                      // note: Here is a very good place to add callbacks to logic waiting on this.
@@ -302,23 +295,23 @@ index fe8e6d66665dc8c38e74c0b264cf507f99f83091..4550614bf0026677ae4389d64d4c2bfd
                  }
              });
              this.updateChunkToSave(this.fullChunkFuture, "full");
-@@ -575,6 +734,7 @@ public class ChunkHolder {
+@@ -575,6 +727,7 @@ public class ChunkHolder {
              this.scheduleFullChunkPromotion(chunkStorage, this.tickingChunkFuture, executor, ChunkHolder.FullChunkStatus.TICKING);
              // Paper start - cache ticking ready status
              this.tickingChunkFuture.thenAccept(either -> {
-+                ensureTickThread("Async full chunk future completion"); // Paper
++                io.papermc.paper.util.TickThread.ensureTickThread("Async full chunk future completion"); // Paper
                  either.ifLeft(chunk -> {
                      // note: Here is a very good place to add callbacks to logic waiting on this.
                      ChunkHolder.this.isTickingReady = true;
-@@ -615,6 +775,7 @@ public class ChunkHolder {
+@@ -615,6 +768,7 @@ public class ChunkHolder {
              this.scheduleFullChunkPromotion(chunkStorage, this.entityTickingChunkFuture, executor, ChunkHolder.FullChunkStatus.ENTITY_TICKING);
              // Paper start - cache ticking ready status
              this.entityTickingChunkFuture.thenAccept(either -> {
-+                ensureTickThread("Async full chunk future completion"); // Paper
++                io.papermc.paper.util.TickThread.ensureTickThread("Async full chunk future completion"); // Paper
                  either.ifLeft(chunk -> {
                      ChunkHolder.this.isEntityTickingReady = true;
                      // Paper start - entity ticking chunk set
-@@ -641,16 +802,45 @@ public class ChunkHolder {
+@@ -641,16 +795,45 @@ public class ChunkHolder {
              this.demoteFullChunk(chunkStorage, playerchunk_state1);
          }
  
@@ -350,7 +343,7 @@ index fe8e6d66665dc8c38e74c0b264cf507f99f83091..4550614bf0026677ae4389d64d4c2bfd
          // ChunkLoadEvent: Called after the chunk is loaded: isChunkLoaded returns true and chunk is ready to be modified by plugins.
          if (!playerchunk_state.isOrAfter(ChunkHolder.FullChunkStatus.BORDER) && playerchunk_state1.isOrAfter(ChunkHolder.FullChunkStatus.BORDER)) {
              this.getFutureIfPresentUnchecked(ChunkStatus.FULL).thenAccept((either) -> {
-+                ensureTickThread("Async full status chunk future completion"); // Paper
++                io.papermc.paper.util.TickThread.ensureTickThread("Async full status chunk future completion"); // Paper
                  LevelChunk chunk = (LevelChunk)either.left().orElse(null);
 -                if (chunk != null) {
 +                if (chunk != null && ChunkHolder.this.oldTicketLevel <= 33 && !chunk.wasLoadCallbackInvoked()) { // Paper - ensure ticket level is set to loaded before calling, as now this can complete with ticket level > 33

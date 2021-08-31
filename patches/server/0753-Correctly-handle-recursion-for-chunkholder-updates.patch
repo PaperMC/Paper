@@ -8,21 +8,21 @@ cause a recursive call which would handle the increase but then
 the caller would think the chunk would be unloaded.
 
 diff --git a/src/main/java/net/minecraft/server/level/ChunkHolder.java b/src/main/java/net/minecraft/server/level/ChunkHolder.java
-index 7bf3dd705460c996fb4b575957f87805edb13ba4..46ed3bf252525ba70900fb70e180ed40bf50b6af 100644
+index 823451570e02ee75bfce1c106779a0502187fcea..d4ea81824acdc1220616b24ea0f465db97f4a343 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkHolder.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkHolder.java
-@@ -626,8 +626,10 @@ public class ChunkHolder {
+@@ -619,8 +619,10 @@ public class ChunkHolder {
          playerchunkmap.onFullChunkStatusChange(this.pos, playerchunk_state);
      }
  
 +    protected long updateCount; // Paper - correctly handle recursion
      protected void updateFutures(ChunkMap chunkStorage, Executor executor) {
-         ensureTickThread("Async ticket level update"); // Paper
+         io.papermc.paper.util.TickThread.ensureTickThread("Async ticket level update"); // Paper
 +        long updateCount = ++this.updateCount; // Paper - correctly handle recursion
          ChunkStatus chunkstatus = ChunkHolder.getStatus(this.oldTicketLevel);
          ChunkStatus chunkstatus1 = ChunkHolder.getStatus(this.ticketLevel);
          boolean flag = this.oldTicketLevel <= ChunkMap.MAX_CHUNK_DISTANCE;
-@@ -669,6 +671,12 @@ public class ChunkHolder {
+@@ -662,6 +664,12 @@ public class ChunkHolder {
  
              // Run callback right away if the future was already done
              chunkStorage.callbackExecutor.run();
