@@ -9,7 +9,7 @@ defaults are only included for certain entites, this allows setting
 limits for any entity type.
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index 8047470af6f3a9842ab78c46b8e27a4fa9c961fc..d4bbb93c09d2183e5eb12d6629ed109bd2f43d76 100644
+index 8047470af6f3a9842ab78c46b8e27a4fa9c961fc..f7cf534e11aef42c3f383fa8e8a62b74f0a85a0f 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 @@ -1,9 +1,12 @@
@@ -25,7 +25,7 @@ index 8047470af6f3a9842ab78c46b8e27a4fa9c961fc..d4bbb93c09d2183e5eb12d6629ed109b
  import net.minecraft.world.entity.monster.Vindicator;
  import net.minecraft.world.entity.monster.Zombie;
  import com.destroystokyo.paper.antixray.ChunkPacketBlockControllerAntiXray.EngineMode;
-@@ -123,6 +126,22 @@ public class PaperWorldConfig {
+@@ -123,6 +126,38 @@ public class PaperWorldConfig {
          );
      }
  
@@ -37,22 +37,38 @@ index 8047470af6f3a9842ab78c46b8e27a4fa9c961fc..d4bbb93c09d2183e5eb12d6629ed109b
 +        getInt("entity-per-chunk-save-limit.arrow", -1);
 +        getInt("entity-per-chunk-save-limit.fireball", -1);
 +        getInt("entity-per-chunk-save-limit.small_fireball", -1);
-+        EntityType.getEntityNameList().forEach(name -> {
-+            final EntityType<?> type = EntityType.byString(name.getPath()).orElseThrow(() -> new IllegalStateException("Unknown Entity Type: " + name.toString()));
-+            final String path = ".entity-per-chunk-save-limit." + name.getPath();
-+            final int value = config.getInt("world-settings." + worldName + path, config.getInt("world-settings.default" + path, -1)); // get without setting defaults
-+            if (value != -1) entityPerChunkSaveLimits.put(type, value);
-+        });
++
++        addEntityPerChunkSaveLimitsFromSection(config.getConfigurationSection("world-settings.default.entity-per-chunk-save-limit"), entityPerChunkSaveLimits);
++        addEntityPerChunkSaveLimitsFromSection(config.getConfigurationSection("world-settings." + worldName + ".entity-per-chunk-save-limit"), entityPerChunkSaveLimits);
++    }
++
++    private static void addEntityPerChunkSaveLimitsFromSection(final ConfigurationSection section, final Map<EntityType<?>, Integer> limitMap) {
++        if (section == null) {
++            return;
++        }
++        for (final String key : section.getKeys(false)) {
++            final int value = section.getInt(key);
++            final EntityType<?> type = EntityType.byString(key).orElse(null);
++            if (type == null) {
++                logError("Invalid entity-per-chunk-save-limit config, '" + key+ "' is not a valid entity type. Correct this in paper.yml.");
++                continue;
++            }
++            if (value >= 0) {
++                limitMap.put(type, value);
++            } else {
++                limitMap.remove(type);
++            }
++        }
 +    }
 +
      public short keepLoadedRange;
      private void keepLoadedRange() {
          keepLoadedRange = (short) (getInt("keep-spawn-loaded-range", Math.min(spigotConfig.viewDistance, 10)) * 16);
 diff --git a/src/main/java/net/minecraft/world/entity/EntityType.java b/src/main/java/net/minecraft/world/entity/EntityType.java
-index b50bf044a3cb05b811fd06796a351e6b15b352ad..ac99265aacd4a28490705e3079ed04023fb1c54a 100644
+index 8c829066939a4069953097fd268f7c214a555779..1c446dba5de89698397041ee38a2e1a00bec8a56 100644
 --- a/src/main/java/net/minecraft/world/entity/EntityType.java
 +++ b/src/main/java/net/minecraft/world/entity/EntityType.java
-@@ -560,9 +560,20 @@ public class EntityType<T extends Entity> implements EntityTypeTest<Entity, T> {
+@@ -563,9 +563,20 @@ public class EntityType<T extends Entity> implements EntityTypeTest<Entity, T> {
          final Spliterator<? extends net.minecraft.nbt.Tag> spliterator = entityNbtList.spliterator();
  
          return StreamSupport.stream(new Spliterator<Entity>() {

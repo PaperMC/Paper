@@ -1049,7 +1049,7 @@ index fac993d58bd6e3bb19fd69881092a863c8952c65..2b062beaad39f2e86801fdd5b0cc84b2
      }
  
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index 2b62f4664f439808661d559dc99762bfbac09b16..4788946d7fb25c1b0f26e6a038924c4a62978d53 100644
+index 2b62f4664f439808661d559dc99762bfbac09b16..d5067a9a4931e0bf267dbacc925bef80df1d64cc 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
 @@ -1,7 +1,9 @@
@@ -1113,7 +1113,7 @@ index 2b62f4664f439808661d559dc99762bfbac09b16..4788946d7fb25c1b0f26e6a038924c4a
  
          for (objectiterator = this.entityMap.values().iterator(); objectiterator.hasNext(); playerchunkmap_entitytracker.serverEntity.sendChanges()) {
              playerchunkmap_entitytracker = (ChunkMap.TrackedEntity) objectiterator.next();
-@@ -1206,16 +1214,20 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1206,14 +1214,17 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
                  playerchunkmap_entitytracker.lastSectionPos = sectionposition1;
              }
          }
@@ -1130,10 +1130,7 @@ index 2b62f4664f439808661d559dc99762bfbac09b16..4788946d7fb25c1b0f26e6a038924c4a
 +            level.timings.tracker2.stopTiming(); // Paper
          }
  
-+
      }
- 
-     public void broadcast(Entity entity, Packet<?> packet) {
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 index 48c876381d75c66f24d59bd2c415dd7de293afee..e11b4be6e6990101ce77b6349ab8c70453e835a5 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
@@ -1240,7 +1237,7 @@ index 48c876381d75c66f24d59bd2c415dd7de293afee..e11b4be6e6990101ce77b6349ab8c704
  
      private void getFullChunk(long pos, Consumer<LevelChunk> chunkConsumer) {
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index f9fde3155944bb44ecb14524c585ed8eb9eac78c..0db1607dc6bbf0def58bdc14fca33dbaa48a8e40 100644
+index f9fde3155944bb44ecb14524c585ed8eb9eac78c..e8184b64a0a8807f898deffc913adfd3a54d79fc 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
 @@ -1,6 +1,8 @@
@@ -1308,16 +1305,15 @@ index f9fde3155944bb44ecb14524c585ed8eb9eac78c..0db1607dc6bbf0def58bdc14fca33dba
          if (randomTickSpeed > 0) {
              LevelChunkSection[] achunksection = chunk.getSections();
              int l = achunksection.length;
-@@ -629,7 +635,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
-                 }
+@@ -630,6 +636,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
              }
          }
--
+ 
 +        timings.chunkTicksBlocks.stopTiming(); // Paper
          gameprofilerfiller.pop();
      }
  
-@@ -755,14 +761,22 @@ public class ServerLevel extends Level implements WorldGenLevel {
+@@ -755,14 +762,22 @@ public class ServerLevel extends Level implements WorldGenLevel {
      }
  
      public void tickNonPassenger(Entity entity) {
@@ -1341,12 +1337,11 @@ index f9fde3155944bb44ecb14524c585ed8eb9eac78c..0db1607dc6bbf0def58bdc14fca33dba
          entity.setOldPosAndRot();
          ProfilerFiller gameprofilerfiller = this.getProfiler();
  
-@@ -781,7 +795,8 @@ public class ServerLevel extends Level implements WorldGenLevel {
+@@ -781,7 +796,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
  
              this.tickPassenger(entity, entity1);
          }
 -        entity.tickTimer.stopTiming(); // Spigot
-+
 +        } finally { timer.stopTiming(); } // Paper - timings
  
      }
@@ -1486,32 +1481,25 @@ index 89ed84d2e3ac8f25785a2d39b4fd37e50497e49e..96f8a886f348c1e18b4b1b97579ea44d
  
      protected void tryCheckInsideBlocks() {
 diff --git a/src/main/java/net/minecraft/world/entity/EntityType.java b/src/main/java/net/minecraft/world/entity/EntityType.java
-index 7f3d83d3d071f6b441ad119b1c93be035e911e70..8d5c61a77bea2f2f5dbff26cb479f855945f9541 100644
+index 7f3d83d3d071f6b441ad119b1c93be035e911e70..28f1a53a2b9ebe9948509dabbf1a4ae84d8e147c 100644
 --- a/src/main/java/net/minecraft/world/entity/EntityType.java
 +++ b/src/main/java/net/minecraft/world/entity/EntityType.java
-@@ -294,17 +294,29 @@ public class EntityType<T extends Entity> implements EntityTypeTest<Entity, T> {
+@@ -294,7 +294,14 @@ public class EntityType<T extends Entity> implements EntityTypeTest<Entity, T> {
          return Registry.ENTITY_TYPE.getOptional(ResourceLocation.tryParse(id));
      }
  
--    public EntityType(EntityType.EntityFactory<T> factory, MobCategory spawnGroup, boolean saveable, boolean summonable, boolean fireImmune, boolean spawnableFarFromPlayer, ImmutableSet<Block> canSpawnInside, EntityDimensions dimensions, int maxTrackDistance, int trackTickInterval) {
--        this.factory = factory;
--        this.category = spawnGroup;
--        this.canSpawnFarFromPlayer = spawnableFarFromPlayer;
--        this.serialize = saveable;
--        this.summon = summonable;
--        this.fireImmune = fireImmune;
-+    public EntityType(EntityType.EntityFactory<T> factory, MobCategory spawnGroup, boolean saveable, boolean summonable, boolean fireImmune, boolean spawnableFarFromPlayer, ImmutableSet<Block> canSpawnInside, EntityDimensions dimensions, int maxTrackDistance, int trackTickInterval) { this(factory, spawnGroup, saveable, summonable, fireImmune, spawnableFarFromPlayer, canSpawnInside, dimensions, maxTrackDistance, trackTickInterval, "custom"); } // Paper - old signature
-+
++    // Paper start - add id
 +    public final String id;
 +
-+    public EntityType(EntityType.EntityFactory<T> entitytypes_b, MobCategory enumcreaturetype, boolean flag, boolean flag1, boolean flag2, boolean flag3, ImmutableSet<Block> canSpawnInside, EntityDimensions dimensions, int maxTrackDistance, int trackTickInterval, String id) { // Paper - add id
-+        this.factory = entitytypes_b;
-+        this.category = enumcreaturetype;
-+        this.canSpawnFarFromPlayer = flag3;
-+        this.serialize = flag;
-+        this.summon = flag1;
-+        this.fireImmune = flag2;
-         this.immuneTo = canSpawnInside;
+     public EntityType(EntityType.EntityFactory<T> factory, MobCategory spawnGroup, boolean saveable, boolean summonable, boolean fireImmune, boolean spawnableFarFromPlayer, ImmutableSet<Block> canSpawnInside, EntityDimensions dimensions, int maxTrackDistance, int trackTickInterval) {
++        this(factory, spawnGroup, saveable, summonable, fireImmune, spawnableFarFromPlayer, canSpawnInside, dimensions, maxTrackDistance, trackTickInterval, "custom");
++    }
++    public EntityType(EntityType.EntityFactory<T> factory, MobCategory spawnGroup, boolean saveable, boolean summonable, boolean fireImmune, boolean spawnableFarFromPlayer, ImmutableSet<Block> canSpawnInside, EntityDimensions dimensions, int maxTrackDistance, int trackTickInterval, String id) {
++        // Paper end
+         this.factory = factory;
+         this.category = spawnGroup;
+         this.canSpawnFarFromPlayer = spawnableFarFromPlayer;
+@@ -305,6 +312,14 @@ public class EntityType<T extends Entity> implements EntityTypeTest<Entity, T> {
          this.dimensions = dimensions;
          this.clientTrackingRange = maxTrackDistance;
          this.updateInterval = trackTickInterval;
@@ -1526,7 +1514,7 @@ index 7f3d83d3d071f6b441ad119b1c93be035e911e70..8d5c61a77bea2f2f5dbff26cb479f855
      }
  
      @Nullable
-@@ -567,6 +579,12 @@ public class EntityType<T extends Entity> implements EntityTypeTest<Entity, T> {
+@@ -567,6 +582,12 @@ public class EntityType<T extends Entity> implements EntityTypeTest<Entity, T> {
          return this.updateInterval;
      }
  
@@ -1539,7 +1527,7 @@ index 7f3d83d3d071f6b441ad119b1c93be035e911e70..8d5c61a77bea2f2f5dbff26cb479f855
      public boolean trackDeltas() {
          return this != EntityType.PLAYER && this != EntityType.LLAMA_SPIT && this != EntityType.WITHER && this != EntityType.BAT && this != EntityType.ITEM_FRAME && this != EntityType.GLOW_ITEM_FRAME && this != EntityType.LEASH_KNOT && this != EntityType.PAINTING && this != EntityType.END_CRYSTAL && this != EntityType.EVOKER_FANGS;
      }
-@@ -659,7 +677,7 @@ public class EntityType<T extends Entity> implements EntityTypeTest<Entity, T> {
+@@ -659,7 +680,7 @@ public class EntityType<T extends Entity> implements EntityTypeTest<Entity, T> {
                  Util.fetchChoiceType(References.ENTITY_TREE, id);
              }
  
@@ -1674,33 +1662,26 @@ index 03b87448628f41699336245cbf0f882d3fe20f7e..64bf654a622e2b5e79c45d288c812e32
              CrashReport crashreport = CrashReport.forThrowable(throwable, "Ticking entity");
              CrashReportCategory crashreportsystemdetails = crashreport.addCategory("Entity being ticked");
 diff --git a/src/main/java/net/minecraft/world/level/ServerTickList.java b/src/main/java/net/minecraft/world/level/ServerTickList.java
-index 0be0c9a9f29f29e2622df49861d30a7edbaf0515..702203f4a4fa4fc03c35ec974a97e08ed0f3c67c 100644
+index 0be0c9a9f29f29e2622df49861d30a7edbaf0515..bcce5f1f8940e6fb8f398afd540bcbe2286ed0c2 100644
 --- a/src/main/java/net/minecraft/world/level/ServerTickList.java
 +++ b/src/main/java/net/minecraft/world/level/ServerTickList.java
-@@ -37,12 +37,17 @@ public class ServerTickList<T> implements TickList<T> {
+@@ -37,7 +37,14 @@ public class ServerTickList<T> implements TickList<T> {
      private final List<TickNextTickData<T>> alreadyTicked = Lists.newArrayList();
      private final Consumer<TickNextTickData<T>> ticker;
  
 -    public ServerTickList(ServerLevel world, Predicate<T> invalidObjPredicate, Function<T, ResourceLocation> idToName, Consumer<TickNextTickData<T>> tickConsumer) {
--        this.ignore = invalidObjPredicate;
--        this.toId = idToName;
--        this.level = world;
--        this.ticker = tickConsumer;
-+    public ServerTickList(ServerLevel worldserver, Predicate<T> predicate, Function<T, ResourceLocation> function, Consumer<TickNextTickData<T>> consumer, String timingsType) {
-+        this.ignore = predicate;
-+        this.toId = function;
-+        this.level = worldserver;
-+        this.ticker = consumer;
-+        this.timingCleanup = co.aikar.timings.WorldTimingsHandler.getTickList(worldserver, timingsType + " - Cleanup");
-+        this.timingTicking = co.aikar.timings.WorldTimingsHandler.getTickList(worldserver, timingsType + " - Ticking");
-     }
++    // Paper start - timings
 +    private final co.aikar.timings.Timing timingCleanup; // Paper
 +    private final co.aikar.timings.Timing timingTicking; // Paper
-+    // Paper end
- 
-     public void tick() {
-         int i = this.tickNextTickList.size();
-@@ -64,6 +69,7 @@ public class ServerTickList<T> implements TickList<T> {
++
++    public ServerTickList(ServerLevel world, Predicate<T> invalidObjPredicate, Function<T, ResourceLocation> idToName, Consumer<TickNextTickData<T>> tickConsumer, String timingsType) {
++        this.timingCleanup = co.aikar.timings.WorldTimingsHandler.getTickList(world, timingsType + " - Cleanup");
++        this.timingTicking = co.aikar.timings.WorldTimingsHandler.getTickList(world, timingsType + " - Ticking");
++        // Paper end
+         this.ignore = invalidObjPredicate;
+         this.toId = idToName;
+         this.level = world;
+@@ -64,6 +71,7 @@ public class ServerTickList<T> implements TickList<T> {
  
              this.level.getProfiler().push("cleaning");
  
@@ -1708,7 +1689,7 @@ index 0be0c9a9f29f29e2622df49861d30a7edbaf0515..702203f4a4fa4fc03c35ec974a97e08e
              TickNextTickData nextticklistentry;
  
              while (i > 0 && iterator.hasNext()) {
-@@ -79,7 +85,9 @@ public class ServerTickList<T> implements TickList<T> {
+@@ -79,7 +87,9 @@ public class ServerTickList<T> implements TickList<T> {
                      --i;
                  }
              }
@@ -1718,7 +1699,7 @@ index 0be0c9a9f29f29e2622df49861d30a7edbaf0515..702203f4a4fa4fc03c35ec974a97e08e
              this.level.getProfiler().popPush("ticking");
  
              while ((nextticklistentry = (TickNextTickData) this.currentlyTicking.poll()) != null) {
-@@ -99,6 +107,7 @@ public class ServerTickList<T> implements TickList<T> {
+@@ -99,6 +109,7 @@ public class ServerTickList<T> implements TickList<T> {
                  }
              }
  
@@ -1785,18 +1766,10 @@ index e9a04017df42312e4e0e7e414c9ccc95c71ddae1..4a13b18ce609fc6a86da48b0673ccf9d
          }
      }
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
-index b645a2fc839dbf922ce73b23b7d53e9a5fe1a2ee..1b478ebfe6792a157772a5812d0daa1a3ccc4776 100644
+index b645a2fc839dbf922ce73b23b7d53e9a5fe1a2ee..03190535999d30aea0428631ae576b18f5d10eb7 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
-@@ -1,5 +1,7 @@
- package net.minecraft.world.level.chunk.storage;
- 
-+
-+import co.aikar.timings.Timings;
- import com.google.common.collect.Maps;
- import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
- import it.unimi.dsi.fastutil.longs.LongSet;
-@@ -433,7 +435,6 @@ public class ChunkSerializer {
+@@ -433,7 +433,6 @@ public class ChunkSerializer {
      private static void postLoadChunk(ServerLevel world, CompoundTag nbt, LevelChunk chunk) {
          ListTag nbttaglist;
  
@@ -1804,7 +1777,7 @@ index b645a2fc839dbf922ce73b23b7d53e9a5fe1a2ee..1b478ebfe6792a157772a5812d0daa1a
          if (nbt.contains("Entities", 9)) {
              nbttaglist = nbt.getList("Entities", 10);
              if (!nbttaglist.isEmpty()) {
-@@ -441,8 +442,6 @@ public class ChunkSerializer {
+@@ -441,8 +440,6 @@ public class ChunkSerializer {
              }
          }
  
@@ -1813,15 +1786,14 @@ index b645a2fc839dbf922ce73b23b7d53e9a5fe1a2ee..1b478ebfe6792a157772a5812d0daa1a
          nbttaglist = nbt.getList("TileEntities", 10);
  
          for (int i = 0; i < nbttaglist.size(); ++i) {
-@@ -460,8 +459,6 @@ public class ChunkSerializer {
+@@ -460,7 +457,6 @@ public class ChunkSerializer {
                  }
              }
          }
 -        world.timings.syncChunkLoadTileEntitiesTimer.stopTiming(); // Spigot
--
+ 
      }
  
-     private static CompoundTag packStructureData(ServerLevel world, ChunkPos chunkcoordintpair, Map<StructureFeature<?>, StructureStart<?>> map, Map<StructureFeature<?>, LongSet> map1) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 index dee1bf692a2c13d280b54a46137e24376f5b7772..0c430583e4bdc4050e3a278ff500bea3b07c40ee 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
