@@ -913,10 +913,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public ChunkHolder(ChunkPos pos, int level, LevelHeightAccessor world, LevelLightEngine lightingProvider, ChunkHolder.LevelChangeListener levelUpdateListener, ChunkHolder.PlayerProvider playersWatchingChunkProvider) {
          this.futures = new AtomicReferenceArray(ChunkHolder.CHUNK_STATUSES.size());
 @@ -0,0 +0,0 @@ public class ChunkHolder {
-                 either.ifLeft(chunk -> {
-                     // note: Here is a very good place to add callbacks to logic waiting on this.
-                     ChunkHolder.this.isTickingReady = true;
-+
+                     // Paper start - ticking chunk set
+                     ChunkHolder.this.chunkMap.level.getChunkSource().tickingChunks.add(chunk);
+                     // Paper end - ticking chunk set
 +                    // Paper start - rewrite ticklistserver
 +                    if (ChunkHolder.this.chunkMap.level.entityManager.areEntitiesLoaded(this.pos.longKey)) {
 +                        ChunkHolder.this.chunkMap.level.onChunkSetTicking(ChunkHolder.this.pos.x, ChunkHolder.this.pos.z);
@@ -946,8 +945,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +    // Paper end - rewrite ticklistserver
  
-     public ServerChunkCache(ServerLevel world, LevelStorageSource.LevelStorageAccess session, DataFixer dataFixer, StructureManager structureManager, Executor workerExecutor, ChunkGenerator chunkGenerator, int viewDistance, boolean flag, ChunkProgressListener worldGenerationProgressListener, ChunkStatusUpdateListener chunkstatusupdatelistener, Supplier<DimensionDataStorage> supplier) {
-         this.level = world;
+     // Paper start
+     // this will try to avoid chunk neighbours for lighting
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java

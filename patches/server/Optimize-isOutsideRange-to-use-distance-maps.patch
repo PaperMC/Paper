@@ -137,9 +137,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                }
 +            });
 +        // Paper end - optimise PlayerChunkMap#isOutsideRange
-         // Paper start - no-tick view distance
-         this.setNoTickViewDistance(this.level.paperConfig.noTickViewDistance);
-         this.playerViewDistanceTickMap = new com.destroystokyo.paper.util.misc.PlayerAreaMap(this.pooledLinkedPlayerHashSets,
+     }
+ 
+     // Paper start
 @@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          } else {
              if (holder != null) {
@@ -156,11 +156,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -        int chunkRange = level.spigotConfig.mobSpawnRange;
 -        chunkRange = (chunkRange > level.spigotConfig.viewDistance) ? (byte) level.spigotConfig.viewDistance : chunkRange;
 -        chunkRange = (chunkRange > 8) ? 8 : chunkRange;
--
--        final int finalChunkRange = chunkRange; // Paper for lambda below
--        //double blockRange = (reducedRange) ? Math.pow(chunkRange << 4, 2) : 16384.0D; // Paper - use from event
--        // Spigot end
--        long i = chunkcoordintpair.toLong();
 +    // Paper start - optimise isOutsideOfRange
 +    final boolean isOutsideOfRange(ChunkPos chunkcoordintpair, boolean reducedRange) {
 +        return this.isOutsideOfRange(this.getUpdatingChunkIfPresent(chunkcoordintpair.toLong()), chunkcoordintpair, reducedRange);
@@ -174,6 +169,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +        Object[] backingSet = playersInRange.getBackingSet();
  
+-        final int finalChunkRange = chunkRange; // Paper for lambda below
+-        //double blockRange = (reducedRange) ? Math.pow(chunkRange << 4, 2) : 16384.0D; // Paper - use from event
+-        // Spigot end
+-        long i = chunkcoordintpair.toLong();
+-
 -        return !this.distanceManager.hasPlayersNearby(i) ? true : this.playerMap.getPlayers(i).noneMatch((entityplayer) -> {
 -            // Paper start - add PlayerNaturallySpawnCreaturesEvent
 -            com.destroystokyo.paper.event.entity.PlayerNaturallySpawnCreaturesEvent event;
@@ -333,7 +333,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              int k = this.level.getGameRules().getInt(GameRules.RULE_RANDOMTICKING);
              boolean flag2 = level.ticksPerAnimalSpawns != 0L && worlddata.getGameTime() % level.ticksPerAnimalSpawns == 0L; // CraftBukkit
 @@ -0,0 +0,0 @@ public class ServerChunkCache extends ChunkSource {
-             List<ChunkHolder> list = Lists.newArrayList(this.chunkMap.visibleChunkMap.values()); // Paper
+             List<ChunkHolder> list = Lists.newArrayList(this.chunkMap.getChunks());
  
              Collections.shuffle(list);
 -            //Paper start - call player naturally spawn event
@@ -347,8 +347,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -            // Paper end
 +            // Paper - moved natural spawn event up
              this.level.timings.chunkTicks.startTiming(); // Paper
-             final int[] chunksTicked = {0}; // Paper
              list.forEach((playerchunk) -> {
+                 Optional<LevelChunk> optional = ((Either) playerchunk.getTickingChunkFuture().getNow(ChunkHolder.UNLOADED_LEVEL_CHUNK)).left();
 @@ -0,0 +0,0 @@ public class ServerChunkCache extends ChunkSource {
                      LevelChunk chunk = (LevelChunk) optional.get();
                      ChunkPos chunkcoordintpair = chunk.getPos();
@@ -359,8 +359,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -                        if (flag1 && (this.spawnEnemies || this.spawnFriendlies) && this.level.getWorldBorder().isWithinBounds(chunk.getPos()) && !this.chunkMap.isOutsideOfRange(chunkcoordintpair, true)) { // Spigot
 +                        if (flag1 && (this.spawnEnemies || this.spawnFriendlies) && this.level.getWorldBorder().isWithinBounds(chunk.getPos()) && !this.chunkMap.isOutsideOfRange(playerchunk, chunkcoordintpair, true)) { // Spigot // Paper - optimise isOutsideOfRange
                              NaturalSpawner.spawnForChunk(this.level, chunk, spawnercreature_d, this.spawnFriendlies, this.spawnEnemies, flag2);
-                             if (chunksTicked[0]++ % 10 == 0) this.level.getServer().midTickLoadChunks(); // Paper
                          }
+ 
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java

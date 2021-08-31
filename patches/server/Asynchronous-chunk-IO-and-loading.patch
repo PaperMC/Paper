@@ -198,9 +198,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        section.set("thread-per-world-generation", null);
 +
 +        int threads = getInt("settings.async-chunks.threads", -1);
-+        int cpus = Runtime.getRuntime().availableProcessors();
++        int cpus = Runtime.getRuntime().availableProcessors() / 2;
 +        if (threads <= 0) {
-+            threads = (int) Math.min(Integer.getInteger("paper.maxChunkThreads", 8), Math.max(1, cpus - 1));
++            if (cpus <= 4) {
++                threads = cpus <= 2 ? 1 : 2;
++            } else {
++                threads = (int) Math.min(Integer.getInteger("paper.maxChunkThreads", 4), cpus / 2);
++            }
 +        }
 +        if (cpus == 1 && !Boolean.getBoolean("Paper.allowAsyncChunksSingleCore")) {
 +            asyncChunks = false;
@@ -2484,17 +2488,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                if (ioThrowable != null) {
 +                    com.destroystokyo.paper.util.SneakyThrow.sneaky(ioThrowable);
 +                }
-+
+ 
+-                if (nbttagcompound != null) {try (Timing ignored2 = this.level.timings.chunkLoadLevelTimer.startTimingIfSync()) { // Paper start - timings
+-                    boolean flag = nbttagcompound.contains("Level", 10) && nbttagcompound.getCompound("Level").contains("Status", 8);
 +                this.getVillagePlace().loadInData(pos, chunkHolder.poiData);
 +                chunkHolder.tasks.forEach(Runnable::run);
 +                // Paper end
  
--                if (nbttagcompound != null) {try (Timing ignored2 = this.level.timings.chunkLoadLevelTimer.startTimingIfSync()) { // Paper start - timings
--                    boolean flag = nbttagcompound.contains("Level", 10) && nbttagcompound.getCompound("Level").contains("Status", 8);
-+                if (chunkHolder.protoChunk != null) {try (Timing ignored2 = this.level.timings.chunkLoadLevelTimer.startTimingIfSync()) { // Paper start - timings // Paper - chunk is created async
- 
 -                    if (flag) {
 -                        ProtoChunk protochunk = ChunkSerializer.read(this.level, this.structureManager, this.poiManager, pos, nbttagcompound);
++                if (chunkHolder.protoChunk != null) {try (Timing ignored2 = this.level.timings.chunkLoadLevelTimer.startTimingIfSync()) { // Paper start - timings // Paper - chunk is created async
++
 +                    if (true) {
 +                        ProtoChunk protochunk = chunkHolder.protoChunk;
  
@@ -2560,9 +2564,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                try (co.aikar.timings.Timing ignored1 = this.level.timings.chunkSaveDataSerialization.startTiming()) { // Paper
 +                    nbttagcompound = ChunkSerializer.write(this.level, chunk);
 +                } // Paper
++
  
 -                this.write(chunkcoordintpair, nbttagcompound);
-+
 +                // Paper start - async chunk io
 +                com.destroystokyo.paper.io.PaperFileIOThread.Holder.INSTANCE.scheduleSave(this.level, chunkcoordintpair.x, chunkcoordintpair.z,
 +                    null, nbttagcompound, com.destroystokyo.paper.io.PrioritizedTaskQueue.NORMAL_PRIORITY);
@@ -2806,9 +2810,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
 @@ -0,0 +0,0 @@ public class ServerLevel extends Level implements WorldGenLevel {
-         return this.chunkSource.getChunk(x, z, false);
+             }
+         }
      }
- 
++
 +    // Paper start - Asynchronous IO
 +    public final com.destroystokyo.paper.io.PaperFileIOThread.ChunkDataController poiDataController = new com.destroystokyo.paper.io.PaperFileIOThread.ChunkDataController() {
 +        @Override
@@ -2880,11 +2885,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +    };
 +    public final com.destroystokyo.paper.io.chunk.ChunkTaskManager asyncChunkTaskManager;
-+    // Paper end
-+
+     // Paper end
+ 
      // Add env and gen to constructor, WorldData -> WorldDataServer
-     public ServerLevel(MinecraftServer minecraftserver, Executor executor, LevelStorageSource.LevelStorageAccess convertable_conversionsession, ServerLevelData iworlddataserver, ResourceKey<Level> resourcekey, DimensionType dimensionmanager, ChunkProgressListener worldloadlistener, ChunkGenerator chunkgenerator, boolean flag, long i, List<CustomSpawner> list, boolean flag1, org.bukkit.World.Environment env, org.bukkit.generator.ChunkGenerator gen, org.bukkit.generator.BiomeProvider biomeProvider) {
-         // Objects.requireNonNull(minecraftserver); // CraftBukkit - decompile error
 @@ -0,0 +0,0 @@ public class ServerLevel extends Level implements WorldGenLevel {
  
          this.sleepStatus = new SleepStatus();
@@ -3673,25 +3676,34 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          this.entity.setYHeadRot(yaw);
      }
  
-+    @Override// Paper start
-+    public java.util.concurrent.CompletableFuture<Boolean> teleportAsync(Location loc, @javax.annotation.Nonnull org.bukkit.event.player.PlayerTeleportEvent.TeleportCause cause) {
-+        net.minecraft.server.level.ChunkMap playerChunkMap = ((CraftWorld) loc.getWorld()).getHandle().getChunkSource().chunkMap;
-+        java.util.concurrent.CompletableFuture<Boolean> future = new java.util.concurrent.CompletableFuture<>();
++    // Paper start
++    @Override
++    public java.util.concurrent.CompletableFuture<Boolean> teleportAsync(Location location, TeleportCause cause) {
++        Preconditions.checkArgument(location != null, "location");
++        location.checkFinite();
++        Location locationClone = location.clone(); // clone so we don't need to worry about mutations after this call.
 +
-+        loc.getWorld().getChunkAtAsyncUrgently(loc).thenCompose(chunk -> {
-+            net.minecraft.world.level.ChunkPos pair = new net.minecraft.world.level.ChunkPos(chunk.getX(), chunk.getZ());
-+            ((CraftWorld) loc.getWorld()).getHandle().getChunkSource().addTicketAtLevel(TicketType.POST_TELEPORT, pair, 31, 0);
-+            net.minecraft.server.level.ChunkHolder updatingChunk = playerChunkMap.getUpdatingChunkIfPresent(pair.toLong());
-+            if (updatingChunk != null) {
-+                return updatingChunk.getEntityTickingChunkFuture();
-+            } else {
-+                return java.util.concurrent.CompletableFuture.completedFuture(com.mojang.datafixers.util.Either.left(((org.bukkit.craftbukkit.CraftChunk)chunk).getHandle()));
++        net.minecraft.server.level.ServerLevel world = ((CraftWorld)locationClone.getWorld()).getHandle();
++        java.util.concurrent.CompletableFuture<Boolean> ret = new java.util.concurrent.CompletableFuture<>();
++
++        world.loadChunksForMoveAsync(getHandle().getBoundingBoxAt(locationClone.getX(), locationClone.getY(), locationClone.getZ()), location.getX(), location.getZ(), (list) -> {
++            net.minecraft.server.level.ServerChunkCache chunkProviderServer = world.getChunkSource();
++            for (net.minecraft.world.level.chunk.ChunkAccess chunk : list) {
++                chunkProviderServer.addTicketAtLevel(net.minecraft.server.level.TicketType.POST_TELEPORT, chunk.getPos(), 33, CraftEntity.this.getEntityId());
 +            }
-+        }).thenAccept((chunk) -> future.complete(teleport(loc, cause))).exceptionally(ex -> {
-+            future.completeExceptionally(ex);
-+            return null;
++            net.minecraft.server.MinecraftServer.getServer().scheduleOnMain(() -> {
++                try {
++                    ret.complete(CraftEntity.this.teleport(locationClone, cause) ? Boolean.TRUE : Boolean.FALSE);
++                } catch (Throwable throwable) {
++                    if (throwable instanceof ThreadDeath) {
++                        throw (ThreadDeath)throwable;
++                    }
++                    ret.completeExceptionally(throwable);
++                }
++            });
 +        });
-+        return future;
++
++        return ret;
 +    }
 +    // Paper end
 +

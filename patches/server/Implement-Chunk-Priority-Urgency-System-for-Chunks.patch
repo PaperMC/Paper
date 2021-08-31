@@ -244,13 +244,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    // Paper start
 +    private boolean loadCallbackScheduled = false;
 +    private boolean unloadCallbackScheduled = false;
-+    static void ensureTickThread(final String reason) {
-+        // TODO REMOVE
-+        if (!org.bukkit.Bukkit.isPrimaryThread()) {
-+            MinecraftServer.LOGGER.fatal("Thread " + Thread.currentThread().getName() + " failed main thread check: " + reason, new Throwable());
-+            throw new IllegalStateException(reason);
-+        }
-+    }
 +    // Paper end
 +
      private void demoteFullChunk(ChunkMap playerchunkmap, ChunkHolder.FullChunkStatus playerchunk_state) {
@@ -259,7 +252,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
      protected void updateFutures(ChunkMap chunkStorage, Executor executor) {
-+        ensureTickThread("Async ticket level update"); // Paper
++        io.papermc.paper.util.TickThread.ensureTickThread("Async ticket level update"); // Paper
          ChunkStatus chunkstatus = ChunkHolder.getStatus(this.oldTicketLevel);
          ChunkStatus chunkstatus1 = ChunkHolder.getStatus(this.ticketLevel);
          boolean flag = this.oldTicketLevel <= ChunkMap.MAX_CHUNK_DISTANCE;
@@ -267,7 +260,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          // ChunkUnloadEvent: Called before the chunk is unloaded: isChunkLoaded is still true and chunk can still be modified by plugins.
          if (playerchunk_state.isOrAfter(ChunkHolder.FullChunkStatus.BORDER) && !playerchunk_state1.isOrAfter(ChunkHolder.FullChunkStatus.BORDER)) {
              this.getFutureIfPresentUnchecked(ChunkStatus.FULL).thenAccept((either) -> {
-+                ensureTickThread("Async full status chunk future completion"); // Paper
++                io.papermc.paper.util.TickThread.ensureTickThread("Async full status chunk future completion"); // Paper
                  LevelChunk chunk = (LevelChunk)either.left().orElse(null);
 -                if (chunk != null) {
 +                if (chunk != null && chunk.wasLoadCallbackInvoked() && ChunkHolder.this.ticketLevel > 33) { // Paper - only invoke unload if load was called
@@ -291,7 +284,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              this.scheduleFullChunkPromotion(chunkStorage, this.fullChunkFuture, executor, ChunkHolder.FullChunkStatus.BORDER);
              // Paper start - cache ticking ready status
              this.fullChunkFuture.thenAccept(either -> {
-+                ensureTickThread("Async full chunk future completion"); // Paper
++                io.papermc.paper.util.TickThread.ensureTickThread("Async full chunk future completion"); // Paper
                  final Optional<LevelChunk> left = either.left();
                  if (left.isPresent() && ChunkHolder.this.fullChunkCreateCount == expectCreateCount) {
                      // note: Here is a very good place to add callbacks to logic waiting on this.
@@ -306,7 +299,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              this.scheduleFullChunkPromotion(chunkStorage, this.tickingChunkFuture, executor, ChunkHolder.FullChunkStatus.TICKING);
              // Paper start - cache ticking ready status
              this.tickingChunkFuture.thenAccept(either -> {
-+                ensureTickThread("Async full chunk future completion"); // Paper
++                io.papermc.paper.util.TickThread.ensureTickThread("Async full chunk future completion"); // Paper
                  either.ifLeft(chunk -> {
                      // note: Here is a very good place to add callbacks to logic waiting on this.
                      ChunkHolder.this.isTickingReady = true;
@@ -314,10 +307,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              this.scheduleFullChunkPromotion(chunkStorage, this.entityTickingChunkFuture, executor, ChunkHolder.FullChunkStatus.ENTITY_TICKING);
              // Paper start - cache ticking ready status
              this.entityTickingChunkFuture.thenAccept(either -> {
-+                ensureTickThread("Async full chunk future completion"); // Paper
++                io.papermc.paper.util.TickThread.ensureTickThread("Async full chunk future completion"); // Paper
                  either.ifLeft(chunk -> {
                      ChunkHolder.this.isEntityTickingReady = true;
-                 });
+                     // Paper start - entity ticking chunk set
 @@ -0,0 +0,0 @@ public class ChunkHolder {
              this.demoteFullChunk(chunkStorage, playerchunk_state1);
          }
@@ -337,6 +330,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                ioPriority = com.destroystokyo.paper.io.PrioritizedTaskQueue.HIGH_PRIORITY;
 +            }
 +            chunkMap.level.asyncChunkTaskManager.raisePriority(pos.x, pos.z, ioPriority);
++            chunkMap.level.getChunkSource().getLightEngine().queue.changePriority(pos.toLong(), this.queueLevel, priority); // Paper // Restore this in chunk priority later?
 +        }
 +        if (currRequestedPriority != newRequestedPriority) {
 +            this.onLevelChange.onLevelChange(this.pos, () -> this.queueLevel, priority, p -> this.queueLevel = p); // use preferred priority
@@ -349,7 +343,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          // ChunkLoadEvent: Called after the chunk is loaded: isChunkLoaded returns true and chunk is ready to be modified by plugins.
          if (!playerchunk_state.isOrAfter(ChunkHolder.FullChunkStatus.BORDER) && playerchunk_state1.isOrAfter(ChunkHolder.FullChunkStatus.BORDER)) {
              this.getFutureIfPresentUnchecked(ChunkStatus.FULL).thenAccept((either) -> {
-+                ensureTickThread("Async full status chunk future completion"); // Paper
++                io.papermc.paper.util.TickThread.ensureTickThread("Async full status chunk future completion"); // Paper
                  LevelChunk chunk = (LevelChunk)either.left().orElse(null);
 -                if (chunk != null) {
 +                if (chunk != null && ChunkHolder.this.oldTicketLevel <= 33 && !chunk.wasLoadCallbackInvoked()) { // Paper - ensure ticket level is set to loaded before calling, as now this can complete with ticket level > 33
@@ -395,31 +389,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
          Objects.requireNonNull(mainThreadExecutor);
 @@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
-         this.playerViewDistanceTickMap = new com.destroystokyo.paper.util.misc.PlayerAreaMap(this.pooledLinkedPlayerHashSets,
-             (ServerPlayer player, int rangeX, int rangeZ, int currPosX, int currPosZ, int prevPosX, int prevPosZ,
-              com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<ServerPlayer> newState) -> {
-+                checkHighPriorityChunks(player);
-                 if (newState.size() != 1) {
-                     return;
-                 }
-@@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
-                 }
-                 ChunkPos chunkPos = new ChunkPos(rangeX, rangeZ);
-                 ChunkMap.this.level.getChunkSource().removeTicketAtLevel(TicketType.PLAYER, chunkPos, 31, chunkPos); // entity ticking level, TODO check on update
--            });
-+                // Paper start
-+                ChunkMap.this.level.getChunkSource().clearPriorityTickets(chunkPos);
-+            },
-+            (player, prevPos, newPos) -> {
-+            player.lastHighPriorityChecked = -1; // reset and recheck
-+            checkHighPriorityChunks(player);
-+        });
-+        // Paper end
-         this.playerViewDistanceNoTickMap = new com.destroystokyo.paper.util.misc.PlayerAreaMap(this.pooledLinkedPlayerHashSets);
-         this.playerViewDistanceBroadcastMap = new com.destroystokyo.paper.util.misc.PlayerAreaMap(this.pooledLinkedPlayerHashSets,
-             (ServerPlayer player, int rangeX, int rangeZ, int currPosX, int currPosZ, int prevPosX, int prevPosZ,
-@@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
-         // Paper end - no-tick view distance
+         // Paper end - optimise PlayerChunkMap#isOutsideRange
      }
  
 +    // Paper start - Chunk Prioritization
@@ -1155,6 +1125,279 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
              for (int i = 0; i < this.getInventory().getContainerSize(); ++i) {
                  ItemStack itemstack = this.getInventory().getItem(i);
+diff --git a/src/main/java/net/minecraft/server/level/ThreadedLevelLightEngine.java b/src/main/java/net/minecraft/server/level/ThreadedLevelLightEngine.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/level/ThreadedLevelLightEngine.java
++++ b/src/main/java/net/minecraft/server/level/ThreadedLevelLightEngine.java
+@@ -0,0 +0,0 @@
+ package net.minecraft.server.level;
+ 
+ import com.mojang.datafixers.util.Pair;
++import it.unimi.dsi.fastutil.longs.Long2ObjectLinkedOpenHashMap; // Paper
+ import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+ import it.unimi.dsi.fastutil.objects.ObjectList;
+ import it.unimi.dsi.fastutil.objects.ObjectListIterator;
+@@ -0,0 +0,0 @@ import net.minecraft.util.thread.ProcessorMailbox;
+ import net.minecraft.world.level.ChunkPos;
+ import net.minecraft.world.level.LightLayer;
+ import net.minecraft.world.level.chunk.ChunkAccess;
++import net.minecraft.world.level.chunk.ChunkStatus;
+ import net.minecraft.world.level.chunk.DataLayer;
+ import net.minecraft.world.level.chunk.LevelChunkSection;
+ import net.minecraft.world.level.chunk.LightChunkGetter;
+@@ -0,0 +0,0 @@ import org.apache.logging.log4j.Logger;
+ public class ThreadedLevelLightEngine extends LevelLightEngine implements AutoCloseable {
+     private static final Logger LOGGER = LogManager.getLogger();
+     private final ProcessorMailbox<Runnable> taskMailbox;
+-    private final ObjectList<Pair<ThreadedLevelLightEngine.TaskType, Runnable>> lightTasks = new ObjectArrayList<>();
+-    private final ChunkMap chunkMap;
++    // Paper start
++    private static final int MAX_PRIORITIES = ChunkMap.MAX_CHUNK_DISTANCE + 2;
++
++    static class ChunkLightQueue {
++        public boolean shouldFastUpdate;
++        java.util.ArrayDeque<Runnable> pre = new java.util.ArrayDeque<Runnable>();
++        java.util.ArrayDeque<Runnable> post = new java.util.ArrayDeque<Runnable>();
++
++        ChunkLightQueue(long chunk) {}
++    }
++
++    static class PendingLightTask {
++        long chunkId;
++        IntSupplier priority;
++        Runnable pre;
++        Runnable post;
++        boolean fastUpdate;
++
++        public PendingLightTask(long chunkId, IntSupplier priority, Runnable pre, Runnable post, boolean fastUpdate) {
++            this.chunkId = chunkId;
++            this.priority = priority;
++            this.pre = pre;
++            this.post = post;
++            this.fastUpdate = fastUpdate;
++        }
++    }
++
++
++    // Retain the chunks priority level for queued light tasks
++    class LightQueue {
++        private int size = 0;
++        private final Long2ObjectLinkedOpenHashMap<ChunkLightQueue>[] buckets = new Long2ObjectLinkedOpenHashMap[MAX_PRIORITIES];
++        private final java.util.concurrent.ConcurrentLinkedQueue<PendingLightTask> pendingTasks = new java.util.concurrent.ConcurrentLinkedQueue<>();
++        private final java.util.concurrent.ConcurrentLinkedQueue<Runnable> priorityChanges = new java.util.concurrent.ConcurrentLinkedQueue<>();
++
++        private LightQueue() {
++            for (int i = 0; i < buckets.length; i++) {
++                buckets[i] = new Long2ObjectLinkedOpenHashMap<>();
++            }
++        }
++
++        public void changePriority(long pair, int currentPriority, int priority) {
++            this.priorityChanges.add(() -> {
++                ChunkLightQueue remove = this.buckets[currentPriority].remove(pair);
++                if (remove != null) {
++                    ChunkLightQueue existing = this.buckets[Math.max(1, priority)].put(pair, remove);
++                    if (existing != null) {
++                        remove.pre.addAll(existing.pre);
++                        remove.post.addAll(existing.post);
++                    }
++                }
++            });
++        }
++
++        public final void addChunk(long chunkId, IntSupplier priority, Runnable pre, Runnable post) {
++            pendingTasks.add(new PendingLightTask(chunkId, priority, pre, post, true));
++            tryScheduleUpdate();
++        }
++
++        public final void add(long chunkId, IntSupplier priority, ThreadedLevelLightEngine.TaskType type, Runnable run) {
++            pendingTasks.add(new PendingLightTask(chunkId, priority, type == TaskType.PRE_UPDATE ? run : null, type == TaskType.POST_UPDATE ? run : null, false));
++        }
++        public final void add(PendingLightTask update) {
++            int priority = update.priority.getAsInt();
++            ChunkLightQueue lightQueue = this.buckets[priority].computeIfAbsent(update.chunkId, ChunkLightQueue::new);
++
++            if (update.pre != null) {
++                this.size++;
++                lightQueue.pre.add(update.pre);
++            }
++            if (update.post != null) {
++                this.size++;
++                lightQueue.post.add(update.post);
++            }
++            if (update.fastUpdate) {
++                lightQueue.shouldFastUpdate = true;
++            }
++        }
++
++        public final boolean isEmpty() {
++            return this.size == 0 && this.pendingTasks.isEmpty();
++        }
++
++        public final int size() {
++            return this.size;
++        }
++
++        public boolean poll(java.util.List<Runnable> pre, java.util.List<Runnable> post) {
++            PendingLightTask pending;
++            while ((pending = pendingTasks.poll()) != null) {
++                add(pending);
++            }
++            Runnable run;
++            while ((run = priorityChanges.poll()) != null) {
++                run.run();
++            }
++            boolean hasWork = false;
++            Long2ObjectLinkedOpenHashMap<ChunkLightQueue>[] buckets = this.buckets;
++            int priority = 0;
++            while (priority < MAX_PRIORITIES && !isEmpty()) {
++                Long2ObjectLinkedOpenHashMap<ChunkLightQueue> bucket = buckets[priority];
++                if (bucket.isEmpty()) {
++                    priority++;
++                    if (hasWork) {
++                        return true;
++                    } else {
++                        continue;
++                    }
++                }
++                ChunkLightQueue queue = bucket.removeFirst();
++                this.size -= queue.pre.size() + queue.post.size();
++                pre.addAll(queue.pre);
++                post.addAll(queue.post);
++                queue.pre.clear();
++                queue.post.clear();
++                hasWork = true;
++                if (queue.shouldFastUpdate) {
++                    return true;
++                }
++            }
++            return hasWork;
++        }
++    }
++
++    final LightQueue queue = new LightQueue();
++    // Paper end
++    private final ChunkMap chunkMap; private final ChunkMap playerChunkMap; // Paper
+     private final ProcessorHandle<ChunkTaskPriorityQueueSorter.Message<Runnable>> sorterMailbox;
+     private volatile int taskPerBatch = 5;
+     private final AtomicBoolean scheduled = new AtomicBoolean();
+ 
+     public ThreadedLevelLightEngine(LightChunkGetter chunkProvider, ChunkMap chunkStorage, boolean hasBlockLight, ProcessorMailbox<Runnable> processor, ProcessorHandle<ChunkTaskPriorityQueueSorter.Message<Runnable>> executor) {
+         super(chunkProvider, true, hasBlockLight);
+-        this.chunkMap = chunkStorage;
++        this.chunkMap = chunkStorage; this.playerChunkMap = chunkMap; // Paper
+         this.sorterMailbox = executor;
+         this.taskMailbox = processor;
+     }
+@@ -0,0 +0,0 @@ public class ThreadedLevelLightEngine extends LevelLightEngine implements AutoCl
+     }
+ 
+     private void addTask(int x, int z, IntSupplier completedLevelSupplier, ThreadedLevelLightEngine.TaskType stage, Runnable task) {
+-        this.sorterMailbox.tell(ChunkTaskPriorityQueueSorter.message(() -> {
+-            this.lightTasks.add(Pair.of(stage, task));
+-            if (this.lightTasks.size() >= this.taskPerBatch) {
+-                this.runUpdate();
+-            }
+-
+-        }, ChunkPos.asLong(x, z), completedLevelSupplier));
++        // Paper start - replace method
++        this.queue.add(ChunkPos.asLong(x, z), completedLevelSupplier, stage, task);
++        // Paper end
+     }
+ 
+     @Override
+@@ -0,0 +0,0 @@ public class ThreadedLevelLightEngine extends LevelLightEngine implements AutoCl
+ 
+     public CompletableFuture<ChunkAccess> lightChunk(ChunkAccess chunk, boolean excludeBlocks) {
+         ChunkPos chunkPos = chunk.getPos();
+-        chunk.setLightCorrect(false);
+-        this.addTask(chunkPos.x, chunkPos.z, ThreadedLevelLightEngine.TaskType.PRE_UPDATE, Util.name(() -> {
++        // Paper start
++        //ichunkaccess.b(false); // Don't need to disable this
++        long pair = chunkPos.toLong();
++        CompletableFuture<ChunkAccess> future = new CompletableFuture<>();
++        IntSupplier prioritySupplier = playerChunkMap.getChunkQueueLevel(pair);
++        boolean[] skippedPre = {false};
++        this.queue.addChunk(pair, prioritySupplier, Util.name(() -> {
++            // Paper end
+             LevelChunkSection[] levelChunkSections = chunk.getSections();
+ 
+             for(int i = 0; i < chunk.getSectionsCount(); ++i) {
+@@ -0,0 +0,0 @@ public class ThreadedLevelLightEngine extends LevelLightEngine implements AutoCl
+ 
+         }, () -> {
+             return "lightChunk " + chunkPos + " " + excludeBlocks;
+-        }));
+-        return CompletableFuture.supplyAsync(() -> {
++            // Paper start  - merge the 2 together
++        }), () -> {
++            this.chunkMap.releaseLightTicket(chunkPos); // Paper - moved from below, we want to call this even when returning early
++            if (skippedPre[0]) return; // Paper - future's already complete
+             chunk.setLightCorrect(true);
+             super.retainData(chunkPos, false);
+-            this.chunkMap.releaseLightTicket(chunkPos);
+-            return chunk;
+-        }, (runnable) -> {
+-            this.addTask(chunkPos.x, chunkPos.z, ThreadedLevelLightEngine.TaskType.POST_UPDATE, runnable);
++            //this.chunkMap.releaseLightTicket(chunkPos); // Paper - moved up
++            future.complete(chunk);
+         });
++        return future;
++        // Paper end
+     }
+ 
+     public void tryScheduleUpdate() {
+-        if ((!this.lightTasks.isEmpty() || super.hasLightWork()) && this.scheduled.compareAndSet(false, true)) {
++        if ((!this.queue.isEmpty() || super.hasLightWork()) && this.scheduled.compareAndSet(false, true)) { // Paper
+             this.taskMailbox.tell(() -> {
+                 this.runUpdate();
+                 this.scheduled.set(false);
++                tryScheduleUpdate(); // Paper - if we still have work to do, do it!
+             });
+         }
+ 
+     }
+ 
++    // Paper start - replace impl
++    private final java.util.List<Runnable> pre = new java.util.ArrayList<>();
++    private final java.util.List<Runnable> post = new java.util.ArrayList<>();
+     private void runUpdate() {
+-        int i = Math.min(this.lightTasks.size(), this.taskPerBatch);
+-        ObjectListIterator<Pair<ThreadedLevelLightEngine.TaskType, Runnable>> objectListIterator = this.lightTasks.iterator();
+-
+-        int j;
+-        for(j = 0; objectListIterator.hasNext() && j < i; ++j) {
+-            Pair<ThreadedLevelLightEngine.TaskType, Runnable> pair = objectListIterator.next();
+-            if (pair.getFirst() == ThreadedLevelLightEngine.TaskType.PRE_UPDATE) {
+-                pair.getSecond().run();
+-            }
++        if (queue.poll(pre, post)) {
++            pre.forEach(Runnable::run);
++            pre.clear();
++            super.runUpdates(Integer.MAX_VALUE, true, true);
++            post.forEach(Runnable::run);
++            post.clear();
++        } else {
++            // might have level updates to go still
++            super.runUpdates(Integer.MAX_VALUE, true, true);
+         }
+-
+-        objectListIterator.back(j);
+-        super.runUpdates(Integer.MAX_VALUE, true, true);
+-
+-        for(int var5 = 0; objectListIterator.hasNext() && var5 < i; ++var5) {
+-            Pair<ThreadedLevelLightEngine.TaskType, Runnable> pair2 = objectListIterator.next();
+-            if (pair2.getFirst() == ThreadedLevelLightEngine.TaskType.POST_UPDATE) {
+-                pair2.getSecond().run();
+-            }
+-
+-            objectListIterator.remove();
+-        }
+-
++        // Paper end
+     }
+ 
+     public void setTaskPerBatch(int taskBatchSize) {
 diff --git a/src/main/java/net/minecraft/server/level/Ticket.java b/src/main/java/net/minecraft/server/level/Ticket.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/level/Ticket.java
