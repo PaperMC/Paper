@@ -1,0 +1,140 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Sun, 21 Mar 2021 11:22:10 -0700
+Subject: [PATCH] Do not copy visible chunks
+
+For servers with a lot of chunk holders, copying for each
+tickDistanceManager call can take up quite a bit in
+the function. I saw approximately 1/3rd of the function
+on the copy.
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperCommand.java b/src/main/java/com/destroystokyo/paper/PaperCommand.java
+index 807bbe54f6516f794bdcb735bb7b8d6812e3ef01..2ef4b4c2ff81d0fa33d4630593266066d8e6a6f3 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperCommand.java
++++ b/src/main/java/com/destroystokyo/paper/PaperCommand.java
+@@ -277,7 +277,7 @@ public class PaperCommand extends Command {
+             int ticking = 0;
+             int entityTicking = 0;
+ 
+-            for (ChunkHolder chunk : world.getChunkSource().chunkMap.updatingChunkMap.values()) {
++            for (ChunkHolder chunk : world.getChunkSource().chunkMap.updatingChunks.getUpdatingMap().values()) { // Paper - change updating chunks map
+                 if (chunk.getFullChunkUnchecked() == null) {
+                     continue;
+                 }
+diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
+index 313a591dda5ef3962b4eab377abdce7c7ad08ec7..364caf495bb8df867885f9df8dfd0c0f1b4673a6 100644
+--- a/src/main/java/net/minecraft/server/level/ChunkMap.java
++++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
+@@ -114,6 +114,9 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+     private static final int MIN_VIEW_DISTANCE = 3;
+     public static final int MAX_VIEW_DISTANCE = 33;
+     public static final int MAX_CHUNK_DISTANCE = 33 + ChunkStatus.maxDistance();
++    // Paper start - Don't copy
++    public final com.destroystokyo.paper.util.map.QueuedChangesMapLong2Object<ChunkHolder> updatingChunks = new com.destroystokyo.paper.util.map.QueuedChangesMapLong2Object<>();
++    // Paper end - Don't copy
+     public static final int FORCED_TICKET_LEVEL = 31;
+     public final Long2ObjectLinkedOpenHashMap<ChunkHolder> updatingChunkMap = new Long2ObjectLinkedOpenHashMap();
+     public volatile Long2ObjectLinkedOpenHashMap<ChunkHolder> visibleChunkMap;
+@@ -676,12 +679,17 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+ 
+     @Nullable
+     public ChunkHolder getUpdatingChunkIfPresent(long pos) {
+-        return (ChunkHolder) this.updatingChunkMap.get(pos);
++        return this.updatingChunks.getUpdating(pos); // Paper - Don't copy
+     }
+ 
+     @Nullable
+     public ChunkHolder getVisibleChunkIfPresent(long pos) {
+-        return (ChunkHolder) this.visibleChunkMap.get(pos);
++        // Paper start - Don't copy
++        if (Thread.currentThread() == this.level.thread) {
++            return this.updatingChunks.getVisible(pos);
++        }
++        return this.updatingChunks.getVisibleAsync(pos);
++        // Paper end - Don't copy
+     }
+ 
+     protected IntSupplier getChunkQueueLevel(long pos) {
+@@ -833,7 +841,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+                     // Paper end
+                 }
+ 
+-                this.updatingChunkMap.put(pos, holder);
++                this.updatingChunks.queueUpdate(pos, holder); // Paper - Don't copy
+                 this.modified = true;
+             }
+ 
+@@ -986,7 +994,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+         while (longiterator.hasNext()) { // Spigot
+             long j = longiterator.nextLong();
+             longiterator.remove(); // Spigot
+-            ChunkHolder playerchunk = (ChunkHolder) this.updatingChunkMap.remove(j);
++            ChunkHolder playerchunk = this.updatingChunks.queueRemove(j); // Paper - Don't copy
+ 
+             if (playerchunk != null) {
+                 this.pendingUnloads.put(j, playerchunk);
+@@ -1121,7 +1129,12 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+         if (!this.modified) {
+             return false;
+         } else {
+-            this.visibleChunkMap = this.updatingChunkMap.clone();
++            // Paper start - Don't copy
++            synchronized (this.updatingChunks) {
++                this.updatingChunks.performUpdates();
++            }
++            // Paper end - Don't copy
++
+             this.modified = false;
+             return true;
+         }
+@@ -1587,7 +1600,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+     }
+ 
+     public int size() {
+-        return this.visibleChunkMap.size();
++        return this.updatingChunks.getVisibleMap().size(); // Paper - Don't copy
+     }
+ 
+     protected DistanceManager getDistanceManager() {
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+index 6dd6008e3e540d48939f7f3f0c03f7fd920d7d4a..40463344f364618dd2e7330cb0168ff69a5fa58b 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+@@ -147,7 +147,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+     @Override
+     public int getTileEntityCount() {
+         // We don't use the full world tile entity list, so we must iterate chunks
+-        Long2ObjectLinkedOpenHashMap<ChunkHolder> chunks = world.getChunkSource().chunkMap.visibleChunkMap;
++        Long2ObjectLinkedOpenHashMap<ChunkHolder> chunks = world.getChunkSource().chunkMap.updatingChunks.getVisibleMap(); // Paper - change updating chunks map
+         int size = 0;
+         for (ChunkHolder playerchunk : chunks.values()) {
+             net.minecraft.world.level.chunk.LevelChunk chunk = playerchunk.getTickingChunk();
+@@ -168,7 +168,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+     public int getChunkCount() {
+         int ret = 0;
+ 
+-        for (ChunkHolder chunkHolder : world.getChunkSource().chunkMap.visibleChunkMap.values()) {
++        for (ChunkHolder chunkHolder : world.getChunkSource().chunkMap.updatingChunks.getVisibleMap().values()) { // Paper - change updating chunks map
+             if (chunkHolder.getTickingChunk() != null) {
+                 ++ret;
+             }
+@@ -341,7 +341,18 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+ 
+     @Override
+     public Chunk[] getLoadedChunks() {
+-        Long2ObjectLinkedOpenHashMap<ChunkHolder> chunks = this.world.getChunkSource().chunkMap.visibleChunkMap;
++        // Paper start
++        if (Thread.currentThread() != world.getLevel().thread) {
++            // Paper start - change updating chunks map
++            Long2ObjectLinkedOpenHashMap<ChunkHolder> chunks;
++            synchronized (world.getChunkSource().chunkMap.updatingChunks) {
++                chunks = world.getChunkSource().chunkMap.updatingChunks.getVisibleMap().clone();
++            }
++            return chunks.values().stream().map(ChunkHolder::getFullChunk).filter(Objects::nonNull).map(net.minecraft.world.level.chunk.LevelChunk::getBukkitChunk).toArray(Chunk[]::new);
++            // Paper end - change updating chunks map
++        }
++        // Paper end
++        Long2ObjectLinkedOpenHashMap<ChunkHolder> chunks = world.getChunkSource().chunkMap.updatingChunks.getVisibleMap(); // Paper - change updating chunks map
+         return chunks.values().stream().map(ChunkHolder::getFullChunk).filter(Objects::nonNull).map(net.minecraft.world.level.chunk.LevelChunk::getBukkitChunk).toArray(Chunk[]::new);
+     }
+ 
