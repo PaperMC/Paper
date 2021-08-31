@@ -112,8 +112,19 @@
                                  });
                              } catch (Exception exception) {
                                  CrashReport crashreport = CrashReport.forThrowable(exception, "Feature placement");
-@@ -421,8 +440,8 @@
-                             seededrandom.setFeatureSeed(i, l1, l);
+@@ -418,11 +437,18 @@
+                                 return (String) optional.orElseGet(placedfeature::toString);
+                             };
+ 
+-                            seededrandom.setFeatureSeed(i, l1, l);
++                            // Paper start - Configurable feature seeds; change populationSeed used in random
++                            long featurePopulationSeed = i;
++                            final long configFeatureSeed = generatoraccessseed.getMinecraftWorld().paperConfig().featureSeeds.features.getLong(placedfeature.feature());
++                            if (configFeatureSeed != -1) {
++                                featurePopulationSeed = seededrandom.setDecorationSeed(configFeatureSeed, blockposition.getX(), blockposition.getZ()); // See seededrandom.setDecorationSeed from above
++                            }
++                            seededrandom.setFeatureSeed(featurePopulationSeed, l1, l);
++                            // Paper end - Configurable feature seeds
  
                              try {
 -                                world.setCurrentlyGenerating(supplier1);
@@ -123,7 +134,7 @@
                              } catch (Exception exception1) {
                                  CrashReport crashreport1 = CrashReport.forThrowable(exception1, "Feature placement");
  
-@@ -435,7 +454,7 @@
+@@ -435,15 +461,42 @@
                      }
                  }
  
@@ -132,10 +143,12 @@
              } catch (Exception exception2) {
                  CrashReport crashreport2 = CrashReport.forThrowable(exception2, "Biome decoration");
  
-@@ -445,6 +464,33 @@
-         }
-     }
- 
+                 crashreport2.addCategory("Generation").setDetail("CenterX", (Object) chunkcoordintpair.x).setDetail("CenterZ", (Object) chunkcoordintpair.z).setDetail("Decoration Seed", (Object) i);
+                 throw new ReportedException(crashreport2);
++            }
++        }
++    }
++
 +   // CraftBukkit start
 +    public void applyBiomeDecoration(WorldGenLevel world, ChunkAccess chunk, StructureManager structureAccessor) {
 +        this.applyBiomeDecoration(world, chunk, structureAccessor, true);
@@ -156,17 +169,16 @@
 +                WorldgenRandom seededrandom = new WorldgenRandom(new net.minecraft.world.level.levelgen.LegacyRandomSource(generatoraccessseed.getSeed()));
 +                seededrandom.setDecorationSeed(generatoraccessseed.getSeed(), x, z);
 +                populator.populate(world, new org.bukkit.craftbukkit.util.RandomSourceWrapper.RandomWrapper(seededrandom), x, z, limitedRegion);
-+            }
+             }
 +            limitedRegion.saveEntities();
 +            limitedRegion.breakLink();
-+        }
-+    }
+         }
+     }
 +    // CraftBukkit end
-+
+ 
      private static BoundingBox getWritableArea(ChunkAccess chunk) {
          ChunkPos chunkcoordintpair = chunk.getPos();
-         int i = chunkcoordintpair.getMinBlockX();
-@@ -582,6 +628,14 @@
+@@ -582,6 +635,14 @@
          StructureStart structurestart = structure.generate(weightedEntry.structure(), dimension, dynamicRegistryManager, this, this.biomeSource, noiseConfig, structureManager, seed, pos, j, chunk, predicate);
  
          if (structurestart.isValid()) {
