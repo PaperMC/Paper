@@ -1,0 +1,155 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Byteflux <byte@byteflux.net>
+Date: Wed, 2 Mar 2016 02:17:54 -0600
+Subject: [PATCH] Generator Settings
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 4c177a383b277debe8a7c02a70d029d862e6b048..0c336a794d21d5084b9ea39308379b2ffb4a4330 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -416,5 +416,10 @@ public class PaperWorldConfig {
+     private void disableRelativeProjectileVelocity() {
+         disableRelativeProjectileVelocity = getBoolean("game-mechanics.disable-relative-projectile-velocity", false);
+     }
++
++    public boolean generateFlatBedrock;
++    private void generatorSettings() {
++        generateFlatBedrock = getBoolean("generator-settings.flat-bedrock", false);
++    }
+ }
+ 
+diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
+index 6d0092c8a71d775ffbe03374199a4be28f418058..4ab3f694dda4d766d0421977d270f7b71b2db217 100644
+--- a/src/main/java/net/minecraft/server/level/ChunkMap.java
++++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
+@@ -726,7 +726,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+             }
+ 
+             this.markPositionReplaceable(pos);
+-            return Either.left(new ProtoChunk(pos, UpgradeData.EMPTY, this.level));
++            return Either.left(new ProtoChunk(pos, UpgradeData.EMPTY, this.level, this.level)); // Paper - add level
+             // Paper start - Async chunk io
+         };
+         CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> ret = new CompletableFuture<>();
+diff --git a/src/main/java/net/minecraft/world/level/chunk/ChunkAccess.java b/src/main/java/net/minecraft/world/level/chunk/ChunkAccess.java
+index 974ab04b08bbd3c27a394b37c1af112be5f28f43..149ac5ec368b53a9a5e9208bd49a3c9453625d9c 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/ChunkAccess.java
++++ b/src/main/java/net/minecraft/world/level/chunk/ChunkAccess.java
+@@ -29,6 +29,17 @@ public interface ChunkAccess extends BlockGetter, FeatureAccess {
+         return GameEventDispatcher.NOOP;
+     }
+ 
++    // Paper start
++    default boolean generateFlatBedrock() {
++        if (this.getLevel() != null) {
++            return this.getLevel().paperConfig.generateFlatBedrock;
++        }
++        return false;
++    }
++
++    net.minecraft.world.level.Level getLevel();
++    // Paper end
++
+     BlockState getType(final int x, final int y, final int z); // Paper
+     @Nullable
+     BlockState setBlockState(BlockPos pos, BlockState state, boolean moved);
+diff --git a/src/main/java/net/minecraft/world/level/chunk/ImposterProtoChunk.java b/src/main/java/net/minecraft/world/level/chunk/ImposterProtoChunk.java
+index 452b513e8b89d865a396066adaf4feb1140e1c62..8245c5834ec69beb8e3b95fb3900601009a9273f 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/ImposterProtoChunk.java
++++ b/src/main/java/net/minecraft/world/level/chunk/ImposterProtoChunk.java
+@@ -25,7 +25,7 @@ public class ImposterProtoChunk extends ProtoChunk {
+     private final LevelChunk wrapped;
+ 
+     public ImposterProtoChunk(LevelChunk wrapped) {
+-        super(wrapped.getPos(), UpgradeData.EMPTY, wrapped);
++        super(wrapped.getPos(), UpgradeData.EMPTY, wrapped, wrapped.level); // Paper - add level
+         this.wrapped = wrapped;
+     }
+ 
+diff --git a/src/main/java/net/minecraft/world/level/chunk/ProtoChunk.java b/src/main/java/net/minecraft/world/level/chunk/ProtoChunk.java
+index 873fea54aecca411b6dee1ed3566f93c4fb9670f..7dc3d806a680150c6a2fffa1436fd63bbdc31eb3 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/ProtoChunk.java
++++ b/src/main/java/net/minecraft/world/level/chunk/ProtoChunk.java
+@@ -63,16 +63,45 @@ public class ProtoChunk implements ChunkAccess {
+     private long inhabitedTime;
+     private final Map<GenerationStep.Carving, BitSet> carvingMasks = new Object2ObjectArrayMap<>();
+     private volatile boolean isLightCorrect;
++    // Paper start - Add level
++    final net.minecraft.world.level.Level level;
++    @Override
++    public net.minecraft.world.level.Level getLevel() {
++        return this.level;
++    }
++    // Paper end
++    private static boolean PRINTED_OUTDATED_CTOR_MSG = false; // Paper - Add level
+ 
++    @Deprecated // Paper start - add level
+     public ProtoChunk(ChunkPos pos, UpgradeData upgradeData, LevelHeightAccessor world) {
++        // Paper start
++        this(pos, upgradeData, world, null);
++        if (!PRINTED_OUTDATED_CTOR_MSG) {
++            new IllegalArgumentException("Must use ProtoChunk constructor with the ServerLevel parameter").printStackTrace();
++            PRINTED_OUTDATED_CTOR_MSG = true;
++        }
++    }
++    public ProtoChunk(ChunkPos pos, UpgradeData upgradeData, LevelHeightAccessor world, net.minecraft.server.level.ServerLevel level) {
++        // Paper end
+         this(pos, upgradeData, (LevelChunkSection[])null, new ProtoTickList<>((block) -> {
+             return block == null || block.defaultBlockState().isAir();
+         }, pos, world), new ProtoTickList<>((fluid) -> {
+             return fluid == null || fluid == Fluids.EMPTY;
+-        }, pos, world), world);
++        }, pos, world), world, level); // Paper - add level
+     }
+ 
++    @Deprecated // Paper start - add level
+     public ProtoChunk(ChunkPos pos, UpgradeData upgradeData, @Nullable LevelChunkSection[] levelChunkSections, ProtoTickList<Block> blockTickScheduler, ProtoTickList<Fluid> fluidTickScheduler, LevelHeightAccessor world) {
++        // Paper start
++        this(pos, upgradeData, levelChunkSections, blockTickScheduler, fluidTickScheduler, world, null);
++        if (!PRINTED_OUTDATED_CTOR_MSG) {
++            new IllegalArgumentException("Must use ProtoChunk constructor with the ServerLevel parameter").printStackTrace();
++            PRINTED_OUTDATED_CTOR_MSG = true;
++        }
++    }
++    public ProtoChunk(ChunkPos pos, UpgradeData upgradeData, @Nullable LevelChunkSection[] levelChunkSections, ProtoTickList<Block> blockTickScheduler, ProtoTickList<Fluid> fluidTickScheduler, LevelHeightAccessor world, net.minecraft.server.level.ServerLevel level) {
++        this.level = level;
++        // Paper end
+         this.chunkPos = pos;
+         this.upgradeData = upgradeData;
+         this.blockTicks = blockTickScheduler;
+diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
+index 1eaedda19b05e1ec429fa505c72c9e2743eb32b7..83fa00de1a7cb690c763cec9c8d4b3fcd44e7c74 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
++++ b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
+@@ -208,7 +208,7 @@ public class ChunkSerializer {
+                 // CraftBukkit end
+             });
+         } else {
+-            ProtoChunk protochunk = new ProtoChunk(pos, chunkconverter, achunksection, protochunkticklist, protochunkticklist1, world);
++            ProtoChunk protochunk = new ProtoChunk(pos, chunkconverter, achunksection, protochunkticklist, protochunkticklist1, world, world); // Paper - add level
+ 
+             protochunk.setBiomes(biomestorage);
+             object = protochunk;
+diff --git a/src/main/java/net/minecraft/world/level/levelgen/NoiseBasedChunkGenerator.java b/src/main/java/net/minecraft/world/level/levelgen/NoiseBasedChunkGenerator.java
+index 32363a57a4b4f6912f03732ce6a0bb005449f525..5cc63122b8e2c955b2d756000c1677d51e8d8629 100644
+--- a/src/main/java/net/minecraft/world/level/levelgen/NoiseBasedChunkGenerator.java
++++ b/src/main/java/net/minecraft/world/level/levelgen/NoiseBasedChunkGenerator.java
+@@ -323,7 +323,7 @@ public final class NoiseBasedChunkGenerator extends ChunkGenerator {
+ 
+                 if (flag1) {
+                     for (l1 = 0; l1 < 5; ++l1) {
+-                        if (l1 <= random.nextInt(5)) {
++                        if (l1 <= (chunk.generateFlatBedrock() ? 0 : random.nextInt(5))) { // Paper - Configurable flat bedrock roof
+                             chunk.setBlockState(blockposition_mutableblockposition.set(blockposition.getX(), i1 - l1, blockposition.getZ()), Blocks.BEDROCK.defaultBlockState(), false);
+                         }
+                     }
+@@ -331,7 +331,7 @@ public final class NoiseBasedChunkGenerator extends ChunkGenerator {
+ 
+                 if (flag2) {
+                     for (l1 = 4; l1 >= 0; --l1) {
+-                        if (l1 <= random.nextInt(5)) {
++                        if (l1 <= (chunk.generateFlatBedrock() ? 0 : random.nextInt(5))) { // Paper - Configurable flat bedrock floor{
+                             chunk.setBlockState(blockposition_mutableblockposition.set(blockposition.getX(), l + l1, blockposition.getZ()), Blocks.BEDROCK.defaultBlockState(), false);
+                         }
+                     }

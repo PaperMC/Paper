@@ -1,0 +1,155 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <spottedleaf@spottedleaf.dev>
+Date: Fri, 14 Feb 2020 22:16:34 -0800
+Subject: [PATCH] Lag compensate block breaking
+
+Use time instead of ticks if ticks fall behind
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+index 7f5cd91b60a4527a915772cd4c7c7024e1e8aa2c..1560ffc5d70b7185b4dd1ada7351a75cec893918 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+@@ -643,4 +643,10 @@ public class PaperConfig {
+             }
+         }
+     }
++
++    public static boolean lagCompensateBlockBreaking;
++
++    private static void lagCompensateBlockBreaking() {
++        lagCompensateBlockBreaking = getBoolean("settings.lag-compensate-block-breaking", true);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java b/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
+index 1c83fbc96a074c85a3e349e936ff1f3198596709..8975a806979ac028b916b826e0d051af5e760550 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
+@@ -56,14 +56,28 @@ public class ServerPlayerGameMode {
+     @Nullable
+     private GameType previousGameModeForPlayer;
+     private boolean isDestroyingBlock;
+-    private int destroyProgressStart;
++    private int destroyProgressStart; private long lastDigTime; // Paper - lag compensate block breaking
+     private BlockPos destroyPos;
+     private int gameTicks;
+     private boolean hasDelayedDestroy;
+     private BlockPos delayedDestroyPos;
+-    private int delayedTickStart;
++    private int delayedTickStart; private long hasDestroyedTooFastStartTime; // Paper - lag compensate block breaking
+     private int lastSentState;
+ 
++    // Paper start - lag compensate block breaking
++    private int getTimeDiggingLagCompensate() {
++        int lagCompensated = (int)((System.nanoTime() - this.lastDigTime) / (50L * 1000L * 1000L));
++        int tickDiff = this.gameTicks - this.destroyProgressStart;
++        return (com.destroystokyo.paper.PaperConfig.lagCompensateBlockBreaking && lagCompensated > (tickDiff + 1)) ? lagCompensated : tickDiff; // add one to ensure we don't lag compensate unless we need to
++    }
++
++    private int getTimeDiggingTooFastLagCompensate() {
++        int lagCompensated = (int)((System.nanoTime() - this.hasDestroyedTooFastStartTime) / (50L * 1000L * 1000L));
++        int tickDiff = this.gameTicks - this.delayedTickStart;
++        return (com.destroystokyo.paper.PaperConfig.lagCompensateBlockBreaking && lagCompensated > (tickDiff + 1)) ? lagCompensated : tickDiff; // add one to ensure we don't lag compensate unless we need to
++    }
++    // Paper end
++
+     public ServerPlayerGameMode(ServerPlayer player) {
+         this.gameModeForPlayer = GameType.DEFAULT_MODE;
+         this.destroyPos = BlockPos.ZERO;
+@@ -130,7 +144,7 @@ public class ServerPlayerGameMode {
+             if (iblockdata == null || iblockdata.isAir()) { // Paper
+                 this.hasDelayedDestroy = false;
+             } else {
+-                float f = this.incrementDestroyProgress(iblockdata, this.delayedDestroyPos, this.delayedTickStart);
++                float f = this.updateBlockBreakAnimation(iblockdata, this.delayedDestroyPos, this.getTimeDiggingTooFastLagCompensate()); // Paper - lag compensate destroying blocks
+ 
+                 if (f >= 1.0F) {
+                     this.hasDelayedDestroy = false;
+@@ -150,7 +164,7 @@ public class ServerPlayerGameMode {
+                 this.lastSentState = -1;
+                 this.isDestroyingBlock = false;
+             } else {
+-                this.incrementDestroyProgress(iblockdata, this.destroyPos, this.destroyProgressStart);
++                this.updateBlockBreakAnimation(iblockdata, this.destroyPos, this.getTimeDiggingLagCompensate()); // Paper - lag compensate destroying
+             }
+         }
+ 
+@@ -158,6 +172,12 @@ public class ServerPlayerGameMode {
+ 
+     private float incrementDestroyProgress(BlockState state, BlockPos pos, int i) {
+         int j = this.gameTicks - i;
++        // Paper start - change i (startTime) to totalTime
++        return this.updateBlockBreakAnimation(state, pos, j);
++    }
++    private float updateBlockBreakAnimation(BlockState state, BlockPos pos, int totalTime) {
++        int j = totalTime;
++        // Paper end
+         float f = state.getDestroyProgress(this.player, this.player.level, pos) * (float) (j + 1);
+         int k = (int) (f * 10.0F);
+ 
+@@ -226,7 +246,7 @@ public class ServerPlayerGameMode {
+                     return;
+                 }
+ 
+-                this.destroyProgressStart = this.gameTicks;
++                this.destroyProgressStart = this.gameTicks; this.lastDigTime = System.nanoTime(); // Paper - lag compensate block breaking
+                 float f = 1.0F;
+ 
+                 iblockdata = this.level.getBlockState(pos);
+@@ -279,12 +299,12 @@ public class ServerPlayerGameMode {
+                     int j = (int) (f * 10.0F);
+ 
+                     this.level.destroyBlockProgress(this.player.getId(), pos, j);
+-                    this.player.connection.send(new ClientboundBlockBreakAckPacket(pos, this.level.getBlockState(pos), action, true, "actual start of destroying"));
++                    if (!com.destroystokyo.paper.PaperConfig.lagCompensateBlockBreaking) this.player.connection.send(new ClientboundBlockBreakAckPacket(pos, this.level.getBlockState(pos), action, true, "actual start of destroying"));
+                     this.lastSentState = j;
+                 }
+             } else if (action == ServerboundPlayerActionPacket.Action.STOP_DESTROY_BLOCK) {
+                 if (pos.equals(this.destroyPos)) {
+-                    int k = this.gameTicks - this.destroyProgressStart;
++                    int k = this.getTimeDiggingLagCompensate(); // Paper - lag compensate block breaking
+ 
+                     iblockdata = this.level.getBlockState(pos);
+                     if (!iblockdata.isAir()) {
+@@ -301,12 +321,18 @@ public class ServerPlayerGameMode {
+                             this.isDestroyingBlock = false;
+                             this.hasDelayedDestroy = true;
+                             this.delayedDestroyPos = pos;
+-                            this.delayedTickStart = this.destroyProgressStart;
++                            this.delayedTickStart = this.destroyProgressStart; this.hasDestroyedTooFastStartTime = this.lastDigTime; // Paper - lag compensate block breaking
+                         }
+                     }
+                 }
+ 
++                // Paper start - this can cause clients on a lagging server to think they're not currently destroying a block
++                if (com.destroystokyo.paper.PaperConfig.lagCompensateBlockBreaking) {
++                    this.player.connection.send(new ClientboundBlockUpdatePacket(this.level, pos));
++                } else {
+                 this.player.connection.send(new ClientboundBlockBreakAckPacket(pos, this.level.getBlockState(pos), action, true, "stopped destroying"));
++                }
++                // Paper end - this can cause clients on a lagging server to think they're not currently destroying a block
+             } else if (action == ServerboundPlayerActionPacket.Action.ABORT_DESTROY_BLOCK) {
+                 this.isDestroyingBlock = false;
+                 if (!Objects.equals(this.destroyPos, pos) && !BlockPos.ZERO.equals(this.destroyPos)) {
+@@ -318,7 +344,7 @@ public class ServerPlayerGameMode {
+                 }
+ 
+                 this.level.destroyBlockProgress(this.player.getId(), pos, -1);
+-                this.player.connection.send(new ClientboundBlockBreakAckPacket(pos, this.level.getBlockState(pos), action, true, "aborted destroying"));
++                if (!com.destroystokyo.paper.PaperConfig.lagCompensateBlockBreaking) this.player.connection.send(new ClientboundBlockBreakAckPacket(pos, this.level.getBlockState(pos), action, true, "aborted destroying")); // Paper - this can cause clients on a lagging server to think they stopped destroying a block they're currently destroying
+             }
+ 
+         }
+@@ -328,7 +354,13 @@ public class ServerPlayerGameMode {
+ 
+     public void destroyAndAck(BlockPos pos, ServerboundPlayerActionPacket.Action action, String reason) {
+         if (this.destroyBlock(pos)) {
++            // Paper start - this can cause clients on a lagging server to think they're not currently destroying a block
++            if (com.destroystokyo.paper.PaperConfig.lagCompensateBlockBreaking) {
++                this.player.connection.send(new ClientboundBlockUpdatePacket(this.level, pos));
++            } else {
+             this.player.connection.send(new ClientboundBlockBreakAckPacket(pos, this.level.getBlockState(pos), action, true, reason));
++            }
++            // Paper end - this can cause clients on a lagging server to think they're not currently destroying a block
+         } else {
+             this.player.connection.send(new ClientboundBlockUpdatePacket(this.level, pos)); // CraftBukkit - SPIGOT-5196
+         }

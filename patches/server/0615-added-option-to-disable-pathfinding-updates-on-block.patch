@@ -1,0 +1,41 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: lukas81298 <lukas81298@gommehd.net>
+Date: Mon, 25 Jan 2021 14:37:57 +0100
+Subject: [PATCH] added option to disable pathfinding updates on block changes
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index eec6acd8443d7b7d158c1afcf8866443fdeacb95..30fbf72c80e282e06b4928bda0c5f59a01239a1f 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -762,5 +762,10 @@ public class PaperWorldConfig {
+     private void enderDragonsDeathAlwaysPlacesDragonEgg() {
+         enderDragonsDeathAlwaysPlacesDragonEgg = getBoolean("ender-dragons-death-always-places-dragon-egg", enderDragonsDeathAlwaysPlacesDragonEgg);
+     }
++
++    public boolean updatePathfindingOnBlockUpdate = true;
++    private void setUpdatePathfindingOnBlockUpdate() {
++        updatePathfindingOnBlockUpdate = getBoolean("update-pathfinding-on-block-update", this.updatePathfindingOnBlockUpdate);
++    }
+ }
+ 
+diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
+index d5c7180376562cd576d832d44ab11c9cc323ba12..044aa3df0c26b7a64eefcacf0b6b5c2d9224938c 100644
+--- a/src/main/java/net/minecraft/server/level/ServerLevel.java
++++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
+@@ -1386,6 +1386,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
+     @Override
+     public void sendBlockUpdated(BlockPos pos, BlockState oldState, BlockState newState, int flags) {
+         this.getChunkSource().blockChanged(pos);
++        if(this.paperConfig.updatePathfindingOnBlockUpdate) { // Paper - option to disable pathfinding updates
+         VoxelShape voxelshape = oldState.getCollisionShape(this, pos);
+         VoxelShape voxelshape1 = newState.getCollisionShape(this, pos);
+ 
+@@ -1413,6 +1414,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
+             }
+ 
+         }
++        } // Paper
+     }
+ 
+     @Override

@@ -856,251 +856,15 @@ index 0000000000000000000000000000000000000000..4a21ec2397f57c7c2ac3659f7de96cda
 +        return this.map.values().iterator();
 +    }
 +}
-diff --git a/src/main/java/com/destroystokyo/paper/util/math/IntegerUtil.java b/src/main/java/com/destroystokyo/paper/util/math/IntegerUtil.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..c3b936f54b3fff418c265639ef223292ccc89356
---- /dev/null
-+++ b/src/main/java/com/destroystokyo/paper/util/math/IntegerUtil.java
-@@ -0,0 +1,230 @@
-+package com.destroystokyo.paper.util.math;
-+
-+/**
-+ * @author Spottedleaf <Spottedleaf@users.noreply.github.com>
-+ */
-+public final class IntegerUtil {
-+
-+    public static final int HIGH_BIT_U32 = Integer.MIN_VALUE;
-+    public static final long HIGH_BIT_U64 = Long.MIN_VALUE;
-+
-+    public static int ceilLog2(final int value) {
-+        return Integer.SIZE - Integer.numberOfLeadingZeros(value - 1); // see doc of numberOfLeadingZeros
-+    }
-+
-+    public static long ceilLog2(final long value) {
-+        return Long.SIZE - Long.numberOfLeadingZeros(value - 1); // see doc of numberOfLeadingZeros
-+    }
-+
-+    public static int floorLog2(final int value) {
-+        // xor is optimized subtract for 2^n -1
-+        // note that (2^n -1) - k = (2^n -1) ^ k for k <= (2^n - 1)
-+        return (Integer.SIZE - 1) ^ Integer.numberOfLeadingZeros(value); // see doc of numberOfLeadingZeros
-+    }
-+
-+    public static int floorLog2(final long value) {
-+        // xor is optimized subtract for 2^n -1
-+        // note that (2^n -1) - k = (2^n -1) ^ k for k <= (2^n - 1)
-+        return (Long.SIZE - 1) ^ Long.numberOfLeadingZeros(value); // see doc of numberOfLeadingZeros
-+    }
-+
-+    public static int roundCeilLog2(final int value) {
-+        // optimized variant of 1 << (32 - leading(val - 1))
-+        // given
-+        // 1 << n = HIGH_BIT_32 >>> (31 - n) for n [0, 32)
-+        // 1 << (32 - leading(val - 1)) = HIGH_BIT_32 >>> (31 - (32 - leading(val - 1)))
-+        // HIGH_BIT_32 >>> (31 - (32 - leading(val - 1)))
-+        // HIGH_BIT_32 >>> (31 - 32 + leading(val - 1))
-+        // HIGH_BIT_32 >>> (-1 + leading(val - 1))
-+        return HIGH_BIT_U32 >>> (Integer.numberOfLeadingZeros(value - 1) - 1);
-+    }
-+
-+    public static long roundCeilLog2(final long value) {
-+        // see logic documented above
-+        return HIGH_BIT_U64 >>> (Long.numberOfLeadingZeros(value - 1) - 1);
-+    }
-+
-+    public static int roundFloorLog2(final int value) {
-+        // optimized variant of 1 << (31 - leading(val))
-+        // given
-+        // 1 << n = HIGH_BIT_32 >>> (31 - n) for n [0, 32)
-+        // 1 << (31 - leading(val)) = HIGH_BIT_32 >> (31 - (31 - leading(val)))
-+        // HIGH_BIT_32 >> (31 - (31 - leading(val)))
-+        // HIGH_BIT_32 >> (31 - 31 + leading(val))
-+        return HIGH_BIT_U32 >>> Integer.numberOfLeadingZeros(value);
-+    }
-+
-+    public static long roundFloorLog2(final long value) {
-+        // see logic documented above
-+        return HIGH_BIT_U64 >>> Long.numberOfLeadingZeros(value);
-+    }
-+
-+    public static boolean isPowerOfTwo(final int n) {
-+        // 2^n has one bit
-+        // note: this rets true for 0 still
-+        return IntegerUtil.getTrailingBit(n) == n;
-+    }
-+
-+    public static boolean isPowerOfTwo(final long n) {
-+        // 2^n has one bit
-+        // note: this rets true for 0 still
-+        return IntegerUtil.getTrailingBit(n) == n;
-+    }
-+
-+
-+    public static int getTrailingBit(final int n) {
-+        return -n & n;
-+    }
-+
-+    public static long getTrailingBit(final long n) {
-+        return -n & n;
-+    }
-+
-+    public static int trailingZeros(final int n) {
-+        return Integer.numberOfTrailingZeros(n);
-+    }
-+
-+    public static long trailingZeros(final long n) {
-+        return Long.numberOfTrailingZeros(n);
-+    }
-+
-+    // from hacker's delight (signed division magic value)
-+    public static int getDivisorMultiple(final long numbers) {
-+        return (int)(numbers >>> 32);
-+    }
-+
-+    // from hacker's delight (signed division magic value)
-+    public static int getDivisorShift(final long numbers) {
-+        return (int)numbers;
-+    }
-+
-+    // copied from hacker's delight (signed division magic value)
-+    // http://www.hackersdelight.org/hdcodetxt/magic.c.txt
-+    public static long getDivisorNumbers(final int d) {
-+        final int ad = IntegerUtil.branchlessAbs(d);
-+
-+        if (ad < 2) {
-+            throw new IllegalArgumentException("|number| must be in [2, 2^31 -1], not: " + d);
-+        }
-+
-+        final int two31 = 0x80000000;
-+        final long mask = 0xFFFFFFFFL; // mask for enforcing unsigned behaviour
-+
-+        int p = 31;
-+
-+        // all these variables are UNSIGNED!
-+        int t = two31 + (d >>> 31);
-+        int anc = t - 1 - t%ad;
-+        int q1 = (int)((two31 & mask)/(anc & mask));
-+        int r1 = two31 - q1*anc;
-+        int q2 = (int)((two31 & mask)/(ad & mask));
-+        int r2 = two31 - q2*ad;
-+        int delta;
-+
-+        do {
-+            p = p + 1;
-+            q1 = 2*q1;                        // Update q1 = 2**p/|nc|.
-+            r1 = 2*r1;                        // Update r1 = rem(2**p, |nc|).
-+            if ((r1 & mask) >= (anc & mask)) {// (Must be an unsigned comparison here)
-+                q1 = q1 + 1;
-+                r1 = r1 - anc;
-+            }
-+            q2 = 2*q2;                       // Update q2 = 2**p/|d|.
-+            r2 = 2*r2;                       // Update r2 = rem(2**p, |d|).
-+            if ((r2 & mask) >= (ad & mask)) {// (Must be an unsigned comparison here)
-+                q2 = q2 + 1;
-+                r2 = r2 - ad;
-+            }
-+            delta = ad - r2;
-+        } while ((q1 & mask) < (delta & mask) || (q1 == delta && r1 == 0));
-+
-+        int magicNum = q2 + 1;
-+        if (d < 0) {
-+            magicNum = -magicNum;
-+        }
-+        int shift = p - 32;
-+        return ((long)magicNum << 32) | shift;
-+    }
-+
-+    public static int branchlessAbs(final int val) {
-+        // -n = -1 ^ n + 1
-+        final int mask = val >> (Integer.SIZE - 1); // -1 if < 0, 0 if >= 0
-+        return (mask ^ val) - mask; // if val < 0, then (0 ^ val) - 0 else (-1 ^ val) + 1
-+    }
-+
-+    public static long branchlessAbs(final long val) {
-+        // -n = -1 ^ n + 1
-+        final long mask = val >> (Long.SIZE - 1); // -1 if < 0, 0 if >= 0
-+        return (mask ^ val) - mask; // if val < 0, then (0 ^ val) - 0 else (-1 ^ val) + 1
-+    }
-+
-+    //https://github.com/skeeto/hash-prospector for hash functions
-+
-+    //score = ~590.47984224483832
-+    public static int hash0(int x) {
-+        x *= 0x36935555;
-+        x ^= x >>> 16;
-+        return x;
-+    }
-+
-+    //score = ~310.01596637036749
-+    public static int hash1(int x) {
-+        x ^= x >>> 15;
-+        x *= 0x356aaaad;
-+        x ^= x >>> 17;
-+        return x;
-+    }
-+
-+    public static int hash2(int x) {
-+        x ^= x >>> 16;
-+        x *= 0x7feb352d;
-+        x ^= x >>> 15;
-+        x *= 0x846ca68b;
-+        x ^= x >>> 16;
-+        return x;
-+    }
-+
-+    public static int hash3(int x) {
-+        x ^= x >>> 17;
-+        x *= 0xed5ad4bb;
-+        x ^= x >>> 11;
-+        x *= 0xac4c1b51;
-+        x ^= x >>> 15;
-+        x *= 0x31848bab;
-+        x ^= x >>> 14;
-+        return x;
-+    }
-+
-+    //score = ~365.79959673201887
-+    public static long hash1(long x) {
-+        x ^= x >>> 27;
-+        x *= 0xb24924b71d2d354bL;
-+        x ^= x >>> 28;
-+        return x;
-+    }
-+
-+    //h2 hash
-+    public static long hash2(long x) {
-+        x ^= x >>> 32;
-+        x *= 0xd6e8feb86659fd93L;
-+        x ^= x >>> 32;
-+        x *= 0xd6e8feb86659fd93L;
-+        x ^= x >>> 32;
-+        return x;
-+    }
-+
-+    public static long hash3(long x) {
-+        x ^= x >>> 45;
-+        x *= 0xc161abe5704b6c79L;
-+        x ^= x >>> 41;
-+        x *= 0xe3e5389aedbc90f7L;
-+        x ^= x >>> 56;
-+        x *= 0x1f9aba75a52db073L;
-+        x ^= x >>> 53;
-+        return x;
-+    }
-+
-+    private IntegerUtil() {
-+        throw new RuntimeException();
-+    }
-+}
 diff --git a/src/main/java/com/destroystokyo/paper/util/misc/AreaMap.java b/src/main/java/com/destroystokyo/paper/util/misc/AreaMap.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..c601f04b9c6dff76606763ea6f4a9a89b7e83203
+index 0000000000000000000000000000000000000000..c89f6986eda5a132a948732ea1b6923370685317
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/util/misc/AreaMap.java
 @@ -0,0 +1,453 @@
 +package com.destroystokyo.paper.util.misc;
 +
-+import com.destroystokyo.paper.util.math.IntegerUtil;
++import io.papermc.paper.util.IntegerUtil;
 +import it.unimi.dsi.fastutil.longs.Long2ObjectLinkedOpenHashMap;
 +import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 +import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
@@ -1553,13 +1317,13 @@ index 0000000000000000000000000000000000000000..c601f04b9c6dff76606763ea6f4a9a89
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/util/misc/DistanceTrackingAreaMap.java b/src/main/java/com/destroystokyo/paper/util/misc/DistanceTrackingAreaMap.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..9b8cb361767fbcf5f592db32a12186f0bd6373bd
+index 0000000000000000000000000000000000000000..eacec5074ab1237986635c6cb19a4d34a89d4d3f
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/util/misc/DistanceTrackingAreaMap.java
 @@ -0,0 +1,175 @@
 +package com.destroystokyo.paper.util.misc;
 +
-+import com.destroystokyo.paper.util.math.IntegerUtil;
++import io.papermc.paper.util.IntegerUtil;
 +import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap;
 +import net.minecraft.server.MCUtil;
 +import net.minecraft.world.level.ChunkPos;
@@ -2257,6 +2021,2394 @@ index 0000000000000000000000000000000000000000..9df0006c1a283f77c4d01d9fce9062fc
 +        return (other.backingSet & this.backingSet) != 0;
 +    }
 +}
+diff --git a/src/main/java/io/papermc/paper/chunk/SingleThreadChunkRegionManager.java b/src/main/java/io/papermc/paper/chunk/SingleThreadChunkRegionManager.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0b71cf7a462d25c3e4f910e09a37270ce9bc7776
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/chunk/SingleThreadChunkRegionManager.java
+@@ -0,0 +1,477 @@
++package io.papermc.paper.chunk;
++
++import io.papermc.paper.util.maplist.IteratorSafeOrderedReferenceSet;
++import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
++import it.unimi.dsi.fastutil.objects.ReferenceLinkedOpenHashSet;
++import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
++import net.minecraft.server.MCUtil;
++import net.minecraft.server.level.ServerLevel;
++import net.minecraft.world.level.ChunkPos;
++import java.util.ArrayList;
++import java.util.Arrays;
++import java.util.Iterator;
++import java.util.List;
++import java.util.function.Supplier;
++
++public final class SingleThreadChunkRegionManager {
++
++    protected final int regionSectionMergeRadius;
++    protected final int regionSectionChunkSize;
++    public final int regionChunkShift; // log2(REGION_CHUNK_SIZE)
++
++    public final ServerLevel world;
++    public final String name;
++
++    protected final Long2ObjectOpenHashMap<RegionSection> regionsBySection = new Long2ObjectOpenHashMap<>();
++    protected final ReferenceLinkedOpenHashSet<Region> needsRecalculation = new ReferenceLinkedOpenHashSet<>();
++    protected final int minSectionRecalcCount;
++    protected final double maxDeadRegionPercent;
++    protected final Supplier<RegionData> regionDataSupplier;
++    protected final Supplier<RegionSectionData> regionSectionDataSupplier;
++
++    public SingleThreadChunkRegionManager(final ServerLevel world, final int minSectionRecalcCount,
++                                          final double maxDeadRegionPercent, final int sectionMergeRadius,
++                                          final int regionSectionChunkShift,
++                                          final String name, final Supplier<RegionData> regionDataSupplier,
++                                          final Supplier<RegionSectionData> regionSectionDataSupplier) {
++        this.regionSectionMergeRadius = sectionMergeRadius;
++        this.regionSectionChunkSize = 1 << regionSectionChunkShift;
++        this.regionChunkShift = regionSectionChunkShift;
++        this.world = world;
++        this.name = name;
++        this.minSectionRecalcCount = Math.max(2, minSectionRecalcCount);
++        this.maxDeadRegionPercent = maxDeadRegionPercent;
++        this.regionDataSupplier = regionDataSupplier;
++        this.regionSectionDataSupplier = regionSectionDataSupplier;
++    }
++
++    // tested via https://gist.github.com/Spottedleaf/aa7ade3451c37b4cac061fc77074db2f
++
++    /*
++    protected void check() {
++        ReferenceOpenHashSet<Region<T>> checked = new ReferenceOpenHashSet<>();
++
++        for (RegionSection<T> section : this.regionsBySection.values()) {
++            if (!checked.add(section.region)) {
++                section.region.check();
++            }
++        }
++        for (Region<T> region : this.needsRecalculation) {
++            region.check();
++        }
++    }
++    */
++
++    protected void addToRecalcQueue(final Region region) {
++        this.needsRecalculation.add(region);
++    }
++
++    protected void removeFromRecalcQueue(final Region region) {
++        this.needsRecalculation.remove(region);
++    }
++
++    public RegionSection getRegionSection(final int chunkX, final int chunkZ) {
++        return this.regionsBySection.get(MCUtil.getCoordinateKey(chunkX >> this.regionChunkShift, chunkZ >> this.regionChunkShift));
++    }
++
++    public Region getRegion(final int chunkX, final int chunkZ) {
++        final RegionSection section = this.regionsBySection.get(MCUtil.getCoordinateKey(chunkX >> regionChunkShift, chunkZ >> regionChunkShift));
++        return section != null ? section.region : null;
++    }
++
++    private final List<Region> toMerge = new ArrayList<>();
++
++    protected RegionSection getOrCreateAndMergeSection(final int sectionX, final int sectionZ, final RegionSection force) {
++        final long sectionKey = MCUtil.getCoordinateKey(sectionX, sectionZ);
++
++        if (force == null) {
++            RegionSection region = this.regionsBySection.get(sectionKey);
++            if (region != null) {
++                return region;
++            }
++        }
++
++        int mergeCandidateSectionSize = -1;
++        Region mergeIntoCandidate = null;
++
++        // find optimal candidate to merge into
++
++        final int minX = sectionX - this.regionSectionMergeRadius;
++        final int maxX = sectionX + this.regionSectionMergeRadius;
++        final int minZ = sectionZ - this.regionSectionMergeRadius;
++        final int maxZ = sectionZ + this.regionSectionMergeRadius;
++        for (int currX = minX; currX <= maxX; ++currX) {
++            for (int currZ = minZ; currZ <= maxZ; ++currZ) {
++                final RegionSection section = this.regionsBySection.get(MCUtil.getCoordinateKey(currX, currZ));
++                if (section == null) {
++                    continue;
++                }
++                final Region region = section.region;
++                if (region.dead) {
++                    throw new IllegalStateException("Dead region should not be in live region manager state: " + region);
++                }
++                final int sections = region.sections.size();
++
++                if (sections > mergeCandidateSectionSize) {
++                    mergeCandidateSectionSize = sections;
++                    mergeIntoCandidate = region;
++                }
++                this.toMerge.add(region);
++            }
++        }
++
++        // merge
++        if (mergeIntoCandidate != null) {
++            for (int i = 0; i < this.toMerge.size(); ++i) {
++                final Region region = this.toMerge.get(i);
++                if (region.dead || mergeIntoCandidate == region) {
++                    continue;
++                }
++                region.mergeInto(mergeIntoCandidate);
++            }
++            this.toMerge.clear();
++        } else {
++            mergeIntoCandidate = new Region(this);
++        }
++
++        final RegionSection section;
++        if (force == null) {
++            this.regionsBySection.put(sectionKey, section = new RegionSection(sectionKey, this));
++        } else {
++            final RegionSection existing = this.regionsBySection.putIfAbsent(sectionKey, force);
++            if (existing != null) {
++                throw new IllegalStateException("Attempting to override section '" + existing.toStringWithRegion() +
++                        ", with " + force.toStringWithRegion());
++            }
++
++            section = force;
++        }
++
++        mergeIntoCandidate.addRegionSection(section);
++        //mergeIntoCandidate.check();
++        //this.check();
++
++        return section;
++    }
++
++    public void addChunk(final int chunkX, final int chunkZ) {
++        this.getOrCreateAndMergeSection(chunkX >> this.regionChunkShift, chunkZ >> this.regionChunkShift, null).addChunk(chunkX, chunkZ);
++    }
++
++    public void removeChunk(final int chunkX, final int chunkZ) {
++        final RegionSection section = this.regionsBySection.get(
++                MCUtil.getCoordinateKey(chunkX >> this.regionChunkShift, chunkZ >> this.regionChunkShift)
++        );
++        if (section != null) {
++            section.removeChunk(chunkX, chunkZ);
++        } else {
++            throw new IllegalStateException("Cannot remove chunk at (" + chunkX + "," + chunkZ + ") from region state, section does not exist");
++        }
++    }
++
++    public void recalculateRegions() {
++        for (int i = 0, len = this.needsRecalculation.size(); i < len; ++i) {
++            final Region region = this.needsRecalculation.removeFirst();
++
++            this.recalculateRegion(region);
++            //this.check();
++        }
++    }
++
++    protected void recalculateRegion(final Region region) {
++        region.markedForRecalc = false;
++        //region.check();
++        // clear unused regions
++        for (final Iterator<RegionSection> iterator = region.deadSections.iterator(); iterator.hasNext();) {
++            final RegionSection deadSection = iterator.next();
++
++            if (deadSection.hasChunks()) {
++                throw new IllegalStateException("Dead section '" + deadSection.toStringWithRegion() + "' is marked dead but has chunks!");
++            }
++            if (!region.removeRegionSection(deadSection)) {
++                throw new IllegalStateException("Region " + region + " has inconsistent state, it should contain section " + deadSection);
++            }
++            if (!this.regionsBySection.remove(deadSection.regionCoordinate, deadSection)) {
++                throw new IllegalStateException("Cannot remove dead section '" +
++                        deadSection.toStringWithRegion() + "' from section state! State at section coordinate: " +
++                        this.regionsBySection.get(deadSection.regionCoordinate));
++            }
++        }
++        region.deadSections.clear();
++
++        // implicitly cover cases where size == 0
++        if (region.sections.size() < this.minSectionRecalcCount) {
++            //region.check();
++            return;
++        }
++
++        // run a test to see if we actually need to recalculate
++        // TODO
++
++        // destroy and rebuild the region
++        region.dead = true;
++
++        // destroy region state
++        for (final Iterator<RegionSection> iterator = region.sections.unsafeIterator(IteratorSafeOrderedReferenceSet.ITERATOR_FLAG_SEE_ADDITIONS); iterator.hasNext();) {
++            final RegionSection aliveSection = iterator.next();
++            if (!aliveSection.hasChunks()) {
++                throw new IllegalStateException("Alive section '" + aliveSection.toStringWithRegion() + "' has no chunks!");
++            }
++            if (!this.regionsBySection.remove(aliveSection.regionCoordinate, aliveSection)) {
++                throw new IllegalStateException("Cannot remove alive section '" +
++                        aliveSection.toStringWithRegion() + "' from section state! State at section coordinate: " +
++                        this.regionsBySection.get(aliveSection.regionCoordinate));
++            }
++        }
++
++        // rebuild regions
++        for (final Iterator<RegionSection> iterator = region.sections.unsafeIterator(IteratorSafeOrderedReferenceSet.ITERATOR_FLAG_SEE_ADDITIONS); iterator.hasNext();) {
++            final RegionSection aliveSection = iterator.next();
++            this.getOrCreateAndMergeSection(aliveSection.getSectionX(), aliveSection.getSectionZ(), aliveSection);
++        }
++    }
++
++    public static final class Region {
++        protected final IteratorSafeOrderedReferenceSet<RegionSection> sections = new IteratorSafeOrderedReferenceSet<>();
++        protected final ReferenceOpenHashSet<RegionSection> deadSections = new ReferenceOpenHashSet<>(16, 0.7f);
++        protected boolean dead;
++        protected boolean markedForRecalc;
++
++        public final SingleThreadChunkRegionManager regionManager;
++        public final RegionData regionData;
++
++        protected Region(final SingleThreadChunkRegionManager regionManager) {
++            this.regionManager = regionManager;
++            this.regionData = regionManager.regionDataSupplier.get();
++        }
++
++        public IteratorSafeOrderedReferenceSet.Iterator<RegionSection> getSections() {
++            return this.sections.iterator(IteratorSafeOrderedReferenceSet.ITERATOR_FLAG_SEE_ADDITIONS);
++        }
++
++        protected final double getDeadSectionPercent() {
++            return (double)this.deadSections.size() / (double)this.sections.size();
++        }
++
++        /*
++        protected void check() {
++            if (this.dead) {
++                throw new IllegalStateException("Dead region!");
++            }
++            for (final Iterator<RegionSection<T>> iterator = this.sections.unsafeIterator(IteratorSafeOrderedReferenceSet.ITERATOR_FLAG_SEE_ADDITIONS); iterator.hasNext();) {
++                final RegionSection<T> section = iterator.next();
++                if (section.region != this) {
++                    throw new IllegalStateException("Region section must point to us!");
++                }
++                if (this.regionManager.regionsBySection.get(section.regionCoordinate) != section) {
++                    throw new IllegalStateException("Region section must match the regionmanager state!");
++                }
++            }
++        }
++        */
++
++        // note: it is not true that the region at this point is not in any region. use the region field on the section
++        // to see if it is currently in another region.
++        protected final boolean addRegionSection(final RegionSection section) {
++            if (!this.sections.add(section)) {
++                return false;
++            }
++
++            section.sectionData.addToRegion(section, section.region, this);
++
++            section.region = this;
++            return true;
++        }
++
++        protected final boolean removeRegionSection(final RegionSection section) {
++            if (!this.sections.remove(section)) {
++                return false;
++            }
++
++            section.sectionData.removeFromRegion(section, this);
++
++            return true;
++        }
++
++        protected void mergeInto(final Region mergeTarget) {
++            if (this == mergeTarget) {
++                throw new IllegalStateException("Cannot merge a region onto itself");
++            }
++            if (this.dead) {
++                throw new IllegalStateException("Source region is dead! Source " + this + ", target " + mergeTarget);
++            } else if (mergeTarget.dead) {
++                throw new IllegalStateException("Target region is dead! Source " + this + ", target " + mergeTarget);
++            }
++            this.dead = true;
++            if (this.markedForRecalc) {
++                this.regionManager.removeFromRecalcQueue(this);
++            }
++
++            for (final Iterator<RegionSection> iterator = this.sections.unsafeIterator(IteratorSafeOrderedReferenceSet.ITERATOR_FLAG_SEE_ADDITIONS); iterator.hasNext();) {
++                final RegionSection section = iterator.next();
++
++                if (!mergeTarget.addRegionSection(section)) {
++                    throw new IllegalStateException("Target cannot contain source's sections! Source " + this + ", target " + mergeTarget);
++                }
++            }
++
++            for (final RegionSection deadSection : this.deadSections) {
++                if (!this.sections.contains(deadSection)) {
++                    throw new IllegalStateException("Source region does not even contain its own dead sections! Missing " + deadSection + " from region " + this);
++                }
++                mergeTarget.deadSections.add(deadSection);
++            }
++            //mergeTarget.check();
++        }
++
++        protected void markSectionAlive(final RegionSection section) {
++            this.deadSections.remove(section);
++            if (this.markedForRecalc && (this.sections.size() < this.regionManager.minSectionRecalcCount || this.getDeadSectionPercent() < this.regionManager.maxDeadRegionPercent)) {
++                this.regionManager.removeFromRecalcQueue(this);
++                this.markedForRecalc = false;
++            }
++        }
++
++        protected void markSectionDead(final RegionSection section) {
++            this.deadSections.add(section);
++            if (!this.markedForRecalc && (this.sections.size() >= this.regionManager.minSectionRecalcCount || this.sections.size() == this.deadSections.size()) && this.getDeadSectionPercent() >= this.regionManager.maxDeadRegionPercent) {
++                this.regionManager.addToRecalcQueue(this);
++                this.markedForRecalc = true;
++            }
++        }
++
++        @Override
++        public String toString() {
++            final StringBuilder ret = new StringBuilder(128);
++
++            ret.append("Region{");
++            ret.append("dead=").append(this.dead).append(',');
++            ret.append("markedForRecalc=").append(this.markedForRecalc).append(',');
++
++            ret.append("sectionCount=").append(this.sections.size()).append(',');
++            ret.append("sections=[");
++            for (final Iterator<RegionSection> iterator = this.sections.unsafeIterator(IteratorSafeOrderedReferenceSet.ITERATOR_FLAG_SEE_ADDITIONS); iterator.hasNext();) {
++                final RegionSection section = iterator.next();
++                ret.append(section);
++                if (iterator.hasNext()) {
++                    ret.append(',');
++                }
++            }
++            ret.append(']');
++
++            ret.append('}');
++            return ret.toString();
++        }
++    }
++
++    public static final class RegionSection {
++        protected final long regionCoordinate;
++        protected final long[] chunksBitset;
++        protected int chunkCount;
++        protected Region region;
++
++        public final SingleThreadChunkRegionManager regionManager;
++        public final RegionSectionData sectionData;
++
++        protected RegionSection(final long regionCoordinate, final SingleThreadChunkRegionManager regionManager) {
++            this.regionCoordinate = regionCoordinate;
++            this.regionManager = regionManager;
++            this.chunksBitset = new long[Math.max(1, regionManager.regionSectionChunkSize * regionManager.regionSectionChunkSize / Long.SIZE)];
++            this.sectionData = regionManager.regionSectionDataSupplier.get();
++        }
++
++        public int getSectionX() {
++            return MCUtil.getCoordinateX(this.regionCoordinate);
++        }
++
++        public int getSectionZ() {
++            return MCUtil.getCoordinateZ(this.regionCoordinate);
++        }
++
++        public Region getRegion() {
++            return this.region;
++        }
++
++        private int getChunkIndex(final int chunkX, final int chunkZ) {
++            return (chunkX & (this.regionManager.regionSectionChunkSize - 1)) | ((chunkZ & (this.regionManager.regionSectionChunkSize - 1)) << this.regionManager.regionChunkShift);
++        }
++
++        protected boolean hasChunks() {
++            return this.chunkCount != 0;
++        }
++
++        protected void addChunk(final int chunkX, final int chunkZ) {
++            final int index = this.getChunkIndex(chunkX, chunkZ);
++            final long bitset = this.chunksBitset[index >>> 6]; // index / Long.SIZE
++            final long after = this.chunksBitset[index >>> 6] = bitset | (1L << (index & (Long.SIZE - 1)));
++            if (after == bitset) {
++                throw new IllegalStateException("Cannot add a chunk to a section which already has the chunk! RegionSection: " + this + ", global chunk: " + new ChunkPos(chunkX, chunkZ).toString());
++            }
++            if (++this.chunkCount != 1) {
++                return;
++            }
++            this.region.markSectionAlive(this);
++        }
++
++        protected void removeChunk(final int chunkX, final int chunkZ) {
++            final int index = this.getChunkIndex(chunkX, chunkZ);
++            final long before = this.chunksBitset[index >>> 6]; // index / Long.SIZE
++            final long bitset = this.chunksBitset[index >>> 6] = before & ~(1L << (index & (Long.SIZE - 1)));
++            if (before == bitset) {
++                throw new IllegalStateException("Cannot remove a chunk from a section which does not have that chunk! RegionSection: " + this + ", global chunk: " + new ChunkPos(chunkX, chunkZ).toString());
++            }
++            if (--this.chunkCount != 0) {
++                return;
++            }
++            this.region.markSectionDead(this);
++        }
++
++        @Override
++        public String toString() {
++            return "RegionSection{" +
++                    "regionCoordinate=" + new ChunkPos(this.regionCoordinate).toString() + "," +
++                    "chunkCount=" + this.chunkCount + "," +
++                    "chunksBitset=" + toString(this.chunksBitset) + "," +
++                    "hash=" + this.hashCode() +
++                    "}";
++        }
++
++        public String toStringWithRegion() {
++            return "RegionSection{" +
++                    "regionCoordinate=" + new ChunkPos(this.regionCoordinate).toString() + "," +
++                    "chunkCount=" + this.chunkCount + "," +
++                    "chunksBitset=" + toString(this.chunksBitset) + "," +
++                    "hash=" + this.hashCode() + "," +
++                    "region=" + this.region +
++                    "}";
++        }
++
++        private static String toString(final long[] array) {
++            final StringBuilder ret = new StringBuilder();
++            for (final long value : array) {
++                // zero pad the hex string
++                final char[] zeros = new char[Long.SIZE / 4];
++                Arrays.fill(zeros, '0');
++                final String string = Long.toHexString(value);
++                System.arraycopy(string.toCharArray(), 0, zeros, zeros.length - string.length(), string.length());
++
++                ret.append(zeros);
++            }
++
++            return ret.toString();
++        }
++    }
++
++    public static interface RegionData {
++
++    }
++
++    public static interface RegionSectionData {
++
++        public void removeFromRegion(final RegionSection section, final Region from);
++
++        // removal from the old region is handled via removeFromRegion
++        public void addToRegion(final RegionSection section, final Region oldRegion, final Region newRegion);
++
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/util/CachedLists.java b/src/main/java/io/papermc/paper/util/CachedLists.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..be668387f65a633c6ac497fca632a4767a1bf3a2
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/util/CachedLists.java
+@@ -0,0 +1,8 @@
++package io.papermc.paper.util;
++
++public final class CachedLists {
++
++    public static void reset() {
++
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/util/CoordinateUtils.java b/src/main/java/io/papermc/paper/util/CoordinateUtils.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..413e4b6da027876dbbe8eb78f2568a440f431547
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/util/CoordinateUtils.java
+@@ -0,0 +1,128 @@
++package io.papermc.paper.util;
++
++import net.minecraft.core.BlockPos;
++import net.minecraft.core.SectionPos;
++import net.minecraft.util.Mth;
++import net.minecraft.world.entity.Entity;
++import net.minecraft.world.level.ChunkPos;
++
++public final class CoordinateUtils {
++
++    // dx, dz are relative to the target chunk
++    // dx, dz in [-radius, radius]
++    public static int getNeighbourMappedIndex(final int dx, final int dz, final int radius) {
++        return (dx + radius) + (2 * radius + 1)*(dz + radius);
++    }
++
++    // the chunk keys are compatible with vanilla
++
++    public static long getChunkKey(final BlockPos pos) {
++        return ((long)(pos.getZ() >> 4) << 32) | ((pos.getX() >> 4) & 0xFFFFFFFFL);
++    }
++
++    public static long getChunkKey(final Entity entity) {
++        return ((Mth.lfloor(entity.getZ()) >> 4) << 32) | ((Mth.lfloor(entity.getX()) >> 4) & 0xFFFFFFFFL);
++    }
++
++    public static long getChunkKey(final ChunkPos pos) {
++        return ((long)pos.z << 32) | (pos.x & 0xFFFFFFFFL);
++    }
++
++    public static long getChunkKey(final SectionPos pos) {
++        return ((long)pos.getZ() << 32) | (pos.getX() & 0xFFFFFFFFL);
++    }
++
++    public static long getChunkKey(final int x, final int z) {
++        return ((long)z << 32) | (x & 0xFFFFFFFFL);
++    }
++
++    public static int getChunkX(final long chunkKey) {
++        return (int)chunkKey;
++    }
++
++    public static int getChunkZ(final long chunkKey) {
++        return (int)(chunkKey >>> 32);
++    }
++
++    public static int getChunkCoordinate(final double blockCoordinate) {
++        return Mth.floor(blockCoordinate) >> 4;
++    }
++
++    // the section keys are compatible with vanilla's
++
++    static final int SECTION_X_BITS = 22;
++    static final long SECTION_X_MASK = (1L << SECTION_X_BITS) - 1;
++    static final int SECTION_Y_BITS = 20;
++    static final long SECTION_Y_MASK = (1L << SECTION_Y_BITS) - 1;
++    static final int SECTION_Z_BITS = 22;
++    static final long SECTION_Z_MASK = (1L << SECTION_Z_BITS) - 1;
++    // format is y,z,x (in order of LSB to MSB)
++    static final int SECTION_Y_SHIFT = 0;
++    static final int SECTION_Z_SHIFT = SECTION_Y_SHIFT + SECTION_Y_BITS;
++    static final int SECTION_X_SHIFT = SECTION_Z_SHIFT + SECTION_X_BITS;
++    static final int SECTION_TO_BLOCK_SHIFT = 4;
++
++    public static long getChunkSectionKey(final int x, final int y, final int z) {
++        return ((x & SECTION_X_MASK) << SECTION_X_SHIFT)
++                | ((y & SECTION_Y_MASK) << SECTION_Y_SHIFT)
++                | ((z & SECTION_Z_MASK) << SECTION_Z_SHIFT);
++    }
++
++    public static long getChunkSectionKey(final SectionPos pos) {
++        return ((pos.getX() & SECTION_X_MASK) << SECTION_X_SHIFT)
++                | ((pos.getY() & SECTION_Y_MASK) << SECTION_Y_SHIFT)
++                | ((pos.getZ() & SECTION_Z_MASK) << SECTION_Z_SHIFT);
++    }
++
++    public static long getChunkSectionKey(final ChunkPos pos, final int y) {
++        return ((pos.x & SECTION_X_MASK) << SECTION_X_SHIFT)
++                | ((y & SECTION_Y_MASK) << SECTION_Y_SHIFT)
++                | ((pos.z & SECTION_Z_MASK) << SECTION_Z_SHIFT);
++    }
++
++    public static long getChunkSectionKey(final BlockPos pos) {
++        return (((long)pos.getX() << (SECTION_X_SHIFT - SECTION_TO_BLOCK_SHIFT)) & (SECTION_X_MASK << SECTION_X_SHIFT)) |
++                ((pos.getY() >> SECTION_TO_BLOCK_SHIFT) & (SECTION_Y_MASK << SECTION_Y_SHIFT)) |
++                (((long)pos.getZ() << (SECTION_Z_SHIFT - SECTION_TO_BLOCK_SHIFT)) & (SECTION_Z_MASK << SECTION_Z_SHIFT));
++    }
++
++    public static long getChunkSectionKey(final Entity entity) {
++        return ((Mth.lfloor(entity.getX()) << (SECTION_X_SHIFT - SECTION_TO_BLOCK_SHIFT)) & (SECTION_X_MASK << SECTION_X_SHIFT)) |
++                ((Mth.lfloor(entity.getY()) >> SECTION_TO_BLOCK_SHIFT) & (SECTION_Y_MASK << SECTION_Y_SHIFT)) |
++                ((Mth.lfloor(entity.getZ()) << (SECTION_Z_SHIFT - SECTION_TO_BLOCK_SHIFT)) & (SECTION_Z_MASK << SECTION_Z_SHIFT));
++    }
++
++    public static int getChunkSectionX(final long key) {
++        return (int)(key << (Long.SIZE - (SECTION_X_SHIFT + SECTION_X_BITS)) >> (Long.SIZE - SECTION_X_BITS));
++    }
++
++    public static int getChunkSectionY(final long key) {
++        return (int)(key << (Long.SIZE - (SECTION_Y_SHIFT + SECTION_Y_BITS)) >> (Long.SIZE - SECTION_Y_BITS));
++    }
++
++    public static int getChunkSectionZ(final long key) {
++        return (int)(key << (Long.SIZE - (SECTION_Z_SHIFT + SECTION_Z_BITS)) >> (Long.SIZE - SECTION_Z_BITS));
++    }
++
++    // the block coordinates are not necessarily compatible with vanilla's
++
++    public static int getBlockCoordinate(final double blockCoordinate) {
++        return Mth.floor(blockCoordinate);
++    }
++
++    public static long getBlockKey(final int x, final int y, final int z) {
++        return ((long)x & 0x7FFFFFF) | (((long)z & 0x7FFFFFF) << 27) | ((long)y << 54);
++    }
++
++    public static long getBlockKey(final BlockPos pos) {
++        return ((long)pos.getX() & 0x7FFFFFF) | (((long)pos.getZ() & 0x7FFFFFF) << 27) | ((long)pos.getY() << 54);
++    }
++
++    public static long getBlockKey(final Entity entity) {
++        return ((long)entity.getX() & 0x7FFFFFF) | (((long)entity.getZ() & 0x7FFFFFF) << 27) | ((long)entity.getY() << 54);
++    }
++
++    private CoordinateUtils() {
++        throw new RuntimeException();
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/util/IntegerUtil.java b/src/main/java/io/papermc/paper/util/IntegerUtil.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..a1bc1d1d0c86217ef18883d281195bc6b27e52ac
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/util/IntegerUtil.java
+@@ -0,0 +1,226 @@
++package io.papermc.paper.util;
++
++public final class IntegerUtil {
++
++    public static final int HIGH_BIT_U32 = Integer.MIN_VALUE;
++    public static final long HIGH_BIT_U64 = Long.MIN_VALUE;
++
++    public static int ceilLog2(final int value) {
++        return Integer.SIZE - Integer.numberOfLeadingZeros(value - 1); // see doc of numberOfLeadingZeros
++    }
++
++    public static long ceilLog2(final long value) {
++        return Long.SIZE - Long.numberOfLeadingZeros(value - 1); // see doc of numberOfLeadingZeros
++    }
++
++    public static int floorLog2(final int value) {
++        // xor is optimized subtract for 2^n -1
++        // note that (2^n -1) - k = (2^n -1) ^ k for k <= (2^n - 1)
++        return (Integer.SIZE - 1) ^ Integer.numberOfLeadingZeros(value); // see doc of numberOfLeadingZeros
++    }
++
++    public static int floorLog2(final long value) {
++        // xor is optimized subtract for 2^n -1
++        // note that (2^n -1) - k = (2^n -1) ^ k for k <= (2^n - 1)
++        return (Long.SIZE - 1) ^ Long.numberOfLeadingZeros(value); // see doc of numberOfLeadingZeros
++    }
++
++    public static int roundCeilLog2(final int value) {
++        // optimized variant of 1 << (32 - leading(val - 1))
++        // given
++        // 1 << n = HIGH_BIT_32 >>> (31 - n) for n [0, 32)
++        // 1 << (32 - leading(val - 1)) = HIGH_BIT_32 >>> (31 - (32 - leading(val - 1)))
++        // HIGH_BIT_32 >>> (31 - (32 - leading(val - 1)))
++        // HIGH_BIT_32 >>> (31 - 32 + leading(val - 1))
++        // HIGH_BIT_32 >>> (-1 + leading(val - 1))
++        return HIGH_BIT_U32 >>> (Integer.numberOfLeadingZeros(value - 1) - 1);
++    }
++
++    public static long roundCeilLog2(final long value) {
++        // see logic documented above
++        return HIGH_BIT_U64 >>> (Long.numberOfLeadingZeros(value - 1) - 1);
++    }
++
++    public static int roundFloorLog2(final int value) {
++        // optimized variant of 1 << (31 - leading(val))
++        // given
++        // 1 << n = HIGH_BIT_32 >>> (31 - n) for n [0, 32)
++        // 1 << (31 - leading(val)) = HIGH_BIT_32 >> (31 - (31 - leading(val)))
++        // HIGH_BIT_32 >> (31 - (31 - leading(val)))
++        // HIGH_BIT_32 >> (31 - 31 + leading(val))
++        return HIGH_BIT_U32 >>> Integer.numberOfLeadingZeros(value);
++    }
++
++    public static long roundFloorLog2(final long value) {
++        // see logic documented above
++        return HIGH_BIT_U64 >>> Long.numberOfLeadingZeros(value);
++    }
++
++    public static boolean isPowerOfTwo(final int n) {
++        // 2^n has one bit
++        // note: this rets true for 0 still
++        return IntegerUtil.getTrailingBit(n) == n;
++    }
++
++    public static boolean isPowerOfTwo(final long n) {
++        // 2^n has one bit
++        // note: this rets true for 0 still
++        return IntegerUtil.getTrailingBit(n) == n;
++    }
++
++    public static int getTrailingBit(final int n) {
++        return -n & n;
++    }
++
++    public static long getTrailingBit(final long n) {
++        return -n & n;
++    }
++
++    public static int trailingZeros(final int n) {
++        return Integer.numberOfTrailingZeros(n);
++    }
++
++    public static int trailingZeros(final long n) {
++        return Long.numberOfTrailingZeros(n);
++    }
++
++    // from hacker's delight (signed division magic value)
++    public static int getDivisorMultiple(final long numbers) {
++        return (int)(numbers >>> 32);
++    }
++
++    // from hacker's delight (signed division magic value)
++    public static int getDivisorShift(final long numbers) {
++        return (int)numbers;
++    }
++
++    // copied from hacker's delight (signed division magic value)
++    // http://www.hackersdelight.org/hdcodetxt/magic.c.txt
++    public static long getDivisorNumbers(final int d) {
++        final int ad = IntegerUtil.branchlessAbs(d);
++
++        if (ad < 2) {
++            throw new IllegalArgumentException("|number| must be in [2, 2^31 -1], not: " + d);
++        }
++
++        final int two31 = 0x80000000;
++        final long mask = 0xFFFFFFFFL; // mask for enforcing unsigned behaviour
++
++        int p = 31;
++
++        // all these variables are UNSIGNED!
++        int t = two31 + (d >>> 31);
++        int anc = t - 1 - t%ad;
++        int q1 = (int)((two31 & mask)/(anc & mask));
++        int r1 = two31 - q1*anc;
++        int q2 = (int)((two31 & mask)/(ad & mask));
++        int r2 = two31 - q2*ad;
++        int delta;
++
++        do {
++            p = p + 1;
++            q1 = 2*q1;                        // Update q1 = 2**p/|nc|.
++            r1 = 2*r1;                        // Update r1 = rem(2**p, |nc|).
++            if ((r1 & mask) >= (anc & mask)) {// (Must be an unsigned comparison here)
++                q1 = q1 + 1;
++                r1 = r1 - anc;
++            }
++            q2 = 2*q2;                       // Update q2 = 2**p/|d|.
++            r2 = 2*r2;                       // Update r2 = rem(2**p, |d|).
++            if ((r2 & mask) >= (ad & mask)) {// (Must be an unsigned comparison here)
++                q2 = q2 + 1;
++                r2 = r2 - ad;
++            }
++            delta = ad - r2;
++        } while ((q1 & mask) < (delta & mask) || (q1 == delta && r1 == 0));
++
++        int magicNum = q2 + 1;
++        if (d < 0) {
++            magicNum = -magicNum;
++        }
++        int shift = p - 32;
++        return ((long)magicNum << 32) | shift;
++    }
++
++    public static int branchlessAbs(final int val) {
++        // -n = -1 ^ n + 1
++        final int mask = val >> (Integer.SIZE - 1); // -1 if < 0, 0 if >= 0
++        return (mask ^ val) - mask; // if val < 0, then (0 ^ val) - 0 else (-1 ^ val) + 1
++    }
++
++    public static long branchlessAbs(final long val) {
++        // -n = -1 ^ n + 1
++        final long mask = val >> (Long.SIZE - 1); // -1 if < 0, 0 if >= 0
++        return (mask ^ val) - mask; // if val < 0, then (0 ^ val) - 0 else (-1 ^ val) + 1
++    }
++
++    //https://github.com/skeeto/hash-prospector for hash functions
++
++    //score = ~590.47984224483832
++    public static int hash0(int x) {
++        x *= 0x36935555;
++        x ^= x >>> 16;
++        return x;
++    }
++
++    //score = ~310.01596637036749
++    public static int hash1(int x) {
++        x ^= x >>> 15;
++        x *= 0x356aaaad;
++        x ^= x >>> 17;
++        return x;
++    }
++
++    public static int hash2(int x) {
++        x ^= x >>> 16;
++        x *= 0x7feb352d;
++        x ^= x >>> 15;
++        x *= 0x846ca68b;
++        x ^= x >>> 16;
++        return x;
++    }
++
++    public static int hash3(int x) {
++        x ^= x >>> 17;
++        x *= 0xed5ad4bb;
++        x ^= x >>> 11;
++        x *= 0xac4c1b51;
++        x ^= x >>> 15;
++        x *= 0x31848bab;
++        x ^= x >>> 14;
++        return x;
++    }
++
++    //score = ~365.79959673201887
++    public static long hash1(long x) {
++        x ^= x >>> 27;
++        x *= 0xb24924b71d2d354bL;
++        x ^= x >>> 28;
++        return x;
++    }
++
++    //h2 hash
++    public static long hash2(long x) {
++        x ^= x >>> 32;
++        x *= 0xd6e8feb86659fd93L;
++        x ^= x >>> 32;
++        x *= 0xd6e8feb86659fd93L;
++        x ^= x >>> 32;
++        return x;
++    }
++
++    public static long hash3(long x) {
++        x ^= x >>> 45;
++        x *= 0xc161abe5704b6c79L;
++        x ^= x >>> 41;
++        x *= 0xe3e5389aedbc90f7L;
++        x ^= x >>> 56;
++        x *= 0x1f9aba75a52db073L;
++        x ^= x >>> 53;
++        return x;
++    }
++
++    private IntegerUtil() {
++        throw new RuntimeException();
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/util/IntervalledCounter.java b/src/main/java/io/papermc/paper/util/IntervalledCounter.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..059e8c61108cb78a80895cae36f2f8ac644e704c
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/util/IntervalledCounter.java
+@@ -0,0 +1,100 @@
++package io.papermc.paper.util;
++
++public final class IntervalledCounter {
++
++    protected long[] times;
++    protected final long interval;
++    protected long minTime;
++    protected int sum;
++    protected int head; // inclusive
++    protected int tail; // exclusive
++
++    public IntervalledCounter(final long interval) {
++        this.times = new long[8];
++        this.interval = interval;
++    }
++
++    public void updateCurrentTime() {
++        this.updateCurrentTime(System.nanoTime());
++    }
++
++    public void updateCurrentTime(final long currentTime) {
++        int sum = this.sum;
++        int head = this.head;
++        final int tail = this.tail;
++        final long minTime = currentTime - this.interval;
++
++        final int arrayLen = this.times.length;
++
++        // guard against overflow by using subtraction
++        while (head != tail && this.times[head] - minTime < 0) {
++            head = (head + 1) % arrayLen;
++            --sum;
++        }
++
++        this.sum = sum;
++        this.head = head;
++        this.minTime = minTime;
++    }
++
++    public void addTime(final long currTime) {
++        // guard against overflow by using subtraction
++        if (currTime - this.minTime < 0) {
++            return;
++        }
++        int nextTail = (this.tail + 1) % this.times.length;
++        if (nextTail == this.head) {
++            this.resize();
++            nextTail = (this.tail + 1) % this.times.length;
++        }
++
++        this.times[this.tail] = currTime;
++        this.tail = nextTail;
++    }
++
++    public void updateAndAdd(final int count) {
++        final long currTime = System.nanoTime();
++        this.updateCurrentTime(currTime);
++        for (int i = 0; i < count; ++i) {
++            this.addTime(currTime);
++        }
++    }
++
++    public void updateAndAdd(final int count, final long currTime) {
++        this.updateCurrentTime(currTime);
++        for (int i = 0; i < count; ++i) {
++            this.addTime(currTime);
++        }
++    }
++
++    private void resize() {
++        final long[] oldElements = this.times;
++        final long[] newElements = new long[this.times.length * 2];
++        this.times = newElements;
++
++        final int head = this.head;
++        final int tail = this.tail;
++        final int size = tail >= head ? (tail - head) : (tail + (oldElements.length - head));
++        this.head = 0;
++        this.tail = size;
++
++        if (tail >= head) {
++            System.arraycopy(oldElements, head, newElements, 0, size);
++        } else {
++            System.arraycopy(oldElements, head, newElements, 0, oldElements.length - head);
++            System.arraycopy(oldElements, 0, newElements, oldElements.length - head, tail);
++        }
++    }
++
++    // returns in units per second
++    public double getRate() {
++        return this.size() / (this.interval * 1.0e-9);
++    }
++
++    public int size() {
++        final int head = this.head;
++        final int tail = this.tail;
++
++        return tail >= head ? (tail - head) : (tail + (this.times.length - head));
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/util/WorldUtil.java b/src/main/java/io/papermc/paper/util/WorldUtil.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..67bb91fcfb532a919954cd9d7733d09a6c3fec35
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/util/WorldUtil.java
+@@ -0,0 +1,46 @@
++package io.papermc.paper.util;
++
++import net.minecraft.world.level.LevelHeightAccessor;
++
++public final class WorldUtil {
++
++    // min, max are inclusive
++
++    public static int getMaxSection(final LevelHeightAccessor world) {
++        return world.getMaxSection() - 1; // getMaxSection() is exclusive
++    }
++
++    public static int getMinSection(final LevelHeightAccessor world) {
++        return world.getMinSection();
++    }
++
++    public static int getMaxLightSection(final LevelHeightAccessor world) {
++        return getMaxSection(world) + 1;
++    }
++
++    public static int getMinLightSection(final LevelHeightAccessor world) {
++        return getMinSection(world) - 1;
++    }
++
++
++
++    public static int getTotalSections(final LevelHeightAccessor world) {
++        return getMaxSection(world) - getMinSection(world) + 1;
++    }
++
++    public static int getTotalLightSections(final LevelHeightAccessor world) {
++        return getMaxLightSection(world) - getMinLightSection(world) + 1;
++    }
++
++    public static int getMinBlockY(final LevelHeightAccessor world) {
++        return getMinSection(world) << 4;
++    }
++
++    public static int getMaxBlockY(final LevelHeightAccessor world) {
++        return (getMaxSection(world) << 4) | 15;
++    }
++
++    private WorldUtil() {
++        throw new RuntimeException();
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/util/maplist/IteratorSafeOrderedReferenceSet.java b/src/main/java/io/papermc/paper/util/maplist/IteratorSafeOrderedReferenceSet.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0fd814f1d65c111266a2b20f86561839a4cef755
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/util/maplist/IteratorSafeOrderedReferenceSet.java
+@@ -0,0 +1,334 @@
++package io.papermc.paper.util.maplist;
++
++import it.unimi.dsi.fastutil.objects.Reference2IntLinkedOpenHashMap;
++import it.unimi.dsi.fastutil.objects.Reference2IntMap;
++import org.bukkit.Bukkit;
++import java.util.Arrays;
++import java.util.NoSuchElementException;
++
++public final class IteratorSafeOrderedReferenceSet<E> {
++
++    public static final int ITERATOR_FLAG_SEE_ADDITIONS = 1 << 0;
++
++    protected final Reference2IntLinkedOpenHashMap<E> indexMap;
++    protected int firstInvalidIndex = -1;
++
++    /* list impl */
++    protected E[] listElements;
++    protected int listSize;
++
++    protected final double maxFragFactor;
++
++    protected int iteratorCount;
++
++    private final boolean threadRestricted;
++
++    public IteratorSafeOrderedReferenceSet() {
++        this(16, 0.75f, 16, 0.2);
++    }
++
++    public IteratorSafeOrderedReferenceSet(final boolean threadRestricted) {
++        this(16, 0.75f, 16, 0.2, threadRestricted);
++    }
++
++    public IteratorSafeOrderedReferenceSet(final int setCapacity, final float setLoadFactor, final int arrayCapacity,
++                                           final double maxFragFactor) {
++        this(setCapacity, setLoadFactor, arrayCapacity, maxFragFactor, false);
++    }
++    public IteratorSafeOrderedReferenceSet(final int setCapacity, final float setLoadFactor, final int arrayCapacity,
++                                           final double maxFragFactor, final boolean threadRestricted) {
++        this.indexMap = new Reference2IntLinkedOpenHashMap<>(setCapacity, setLoadFactor);
++        this.indexMap.defaultReturnValue(-1);
++        this.maxFragFactor = maxFragFactor;
++        this.listElements = (E[])new Object[arrayCapacity];
++        this.threadRestricted = threadRestricted;
++    }
++
++    /*
++    public void check() {
++        int iterated = 0;
++        ReferenceOpenHashSet<E> check = new ReferenceOpenHashSet<>();
++        if (this.listElements != null) {
++            for (int i = 0; i < this.listSize; ++i) {
++                Object obj = this.listElements[i];
++                if (obj != null) {
++                    iterated++;
++                    if (!check.add((E)obj)) {
++                        throw new IllegalStateException("contains duplicate");
++                    }
++                    if (!this.contains((E)obj)) {
++                        throw new IllegalStateException("desync");
++                    }
++                }
++            }
++        }
++
++        if (iterated != this.size()) {
++            throw new IllegalStateException("Size is mismatched! Got " + iterated + ", expected " + this.size());
++        }
++
++        check.clear();
++        iterated = 0;
++        for (final java.util.Iterator<E> iterator = this.unsafeIterator(IteratorSafeOrderedReferenceSet.ITERATOR_FLAG_SEE_ADDITIONS); iterator.hasNext();) {
++            final E element = iterator.next();
++            iterated++;
++            if (!check.add(element)) {
++                throw new IllegalStateException("contains duplicate (iterator is wrong)");
++            }
++            if (!this.contains(element)) {
++                throw new IllegalStateException("desync (iterator is wrong)");
++            }
++        }
++
++        if (iterated != this.size()) {
++            throw new IllegalStateException("Size is mismatched! (iterator is wrong) Got " + iterated + ", expected " + this.size());
++        }
++    }
++    */
++
++    protected final boolean allowSafeIteration() {
++        return !this.threadRestricted || Bukkit.isPrimaryThread();
++    }
++
++    protected final double getFragFactor() {
++        return 1.0 - ((double)this.indexMap.size() / (double)this.listSize);
++    }
++
++    public int createRawIterator() {
++        if (this.allowSafeIteration()) {
++            ++this.iteratorCount;
++        }
++        if (this.indexMap.isEmpty()) {
++            return -1;
++        } else {
++            return this.firstInvalidIndex == 0 ? this.indexMap.getInt(this.indexMap.firstKey()) : 0;
++        }
++    }
++
++    public int advanceRawIterator(final int index) {
++        final E[] elements = this.listElements;
++        int ret = index + 1;
++        for (int len = this.listSize; ret < len; ++ret) {
++            if (elements[ret] != null) {
++                return ret;
++            }
++        }
++
++        return -1;
++    }
++
++    public void finishRawIterator() {
++        if (this.allowSafeIteration() && --this.iteratorCount == 0) {
++            if (this.getFragFactor() >= this.maxFragFactor) {
++                this.defrag();
++            }
++        }
++    }
++
++    public boolean remove(final E element) {
++        final int index = this.indexMap.removeInt(element);
++        if (index >= 0) {
++            if (this.firstInvalidIndex < 0 || index < this.firstInvalidIndex) {
++                this.firstInvalidIndex = index;
++            }
++            if (this.listElements[index] != element) {
++                throw new IllegalStateException();
++            }
++            this.listElements[index] = null;
++            if (this.allowSafeIteration() && this.iteratorCount == 0 && this.getFragFactor() >= this.maxFragFactor) {
++                this.defrag();
++            }
++            //this.check();
++            return true;
++        }
++        return false;
++    }
++
++    public boolean contains(final E element) {
++        return this.indexMap.containsKey(element);
++    }
++
++    public boolean add(final E element) {
++        final int listSize = this.listSize;
++
++        final int previous = this.indexMap.putIfAbsent(element, listSize);
++        if (previous != -1) {
++            return false;
++        }
++
++        if (listSize >= this.listElements.length) {
++            this.listElements = Arrays.copyOf(this.listElements, listSize * 2);
++        }
++        this.listElements[listSize] = element;
++        this.listSize = listSize + 1;
++
++        //this.check();
++        return true;
++    }
++
++    protected void defrag() {
++        if (this.firstInvalidIndex < 0) {
++            return; // nothing to do
++        }
++
++        if (this.indexMap.isEmpty()) {
++            Arrays.fill(this.listElements, 0, this.listSize, null);
++            this.listSize = 0;
++            this.firstInvalidIndex = -1;
++            //this.check();
++            return;
++        }
++
++        final E[] backingArray = this.listElements;
++
++        int lastValidIndex;
++        java.util.Iterator<Reference2IntMap.Entry<E>> iterator;
++
++        if (this.firstInvalidIndex == 0) {
++            iterator = this.indexMap.reference2IntEntrySet().fastIterator();
++            lastValidIndex = 0;
++        } else {
++            lastValidIndex = this.firstInvalidIndex;
++            final E key = backingArray[lastValidIndex - 1];
++            iterator = this.indexMap.reference2IntEntrySet().fastIterator(new Reference2IntMap.Entry<E>() {
++                @Override
++                public int getIntValue() {
++                    throw new UnsupportedOperationException();
++                }
++
++                @Override
++                public int setValue(int i) {
++                    throw new UnsupportedOperationException();
++                }
++
++                @Override
++                public E getKey() {
++                    return key;
++                }
++            });
++        }
++
++        while (iterator.hasNext()) {
++            final Reference2IntMap.Entry<E> entry = iterator.next();
++
++            final int newIndex = lastValidIndex++;
++            backingArray[newIndex] = entry.getKey();
++            entry.setValue(newIndex);
++        }
++
++        // cleanup end
++        Arrays.fill(backingArray, lastValidIndex, this.listSize, null);
++        this.listSize = lastValidIndex;
++        this.firstInvalidIndex = -1;
++        //this.check();
++    }
++
++    public E rawGet(final int index) {
++        return this.listElements[index];
++    }
++
++    public int size() {
++        // always returns the correct amount - listSize can be different
++        return this.indexMap.size();
++    }
++
++    public IteratorSafeOrderedReferenceSet.Iterator<E> iterator() {
++        return this.iterator(0);
++    }
++
++    public IteratorSafeOrderedReferenceSet.Iterator<E> iterator(final int flags) {
++        if (this.allowSafeIteration()) {
++            ++this.iteratorCount;
++        }
++        return new BaseIterator<>(this, true, (flags & ITERATOR_FLAG_SEE_ADDITIONS) != 0 ? Integer.MAX_VALUE : this.listSize);
++    }
++
++    public java.util.Iterator<E> unsafeIterator() {
++        return this.unsafeIterator(0);
++    }
++    public java.util.Iterator<E> unsafeIterator(final int flags) {
++        return new BaseIterator<>(this, false, (flags & ITERATOR_FLAG_SEE_ADDITIONS) != 0 ? Integer.MAX_VALUE : this.listSize);
++    }
++
++    public static interface Iterator<E> extends java.util.Iterator<E> {
++
++        public void finishedIterating();
++
++    }
++
++    protected static final class BaseIterator<E> implements IteratorSafeOrderedReferenceSet.Iterator<E> {
++
++        protected final IteratorSafeOrderedReferenceSet<E> set;
++        protected final boolean canFinish;
++        protected final int maxIndex;
++        protected int nextIndex;
++        protected E pendingValue;
++        protected boolean finished;
++        protected E lastReturned;
++
++        protected BaseIterator(final IteratorSafeOrderedReferenceSet<E> set, final boolean canFinish, final int maxIndex) {
++            this.set = set;
++            this.canFinish = canFinish;
++            this.maxIndex = maxIndex;
++        }
++
++        @Override
++        public boolean hasNext() {
++            if (this.finished) {
++                return false;
++            }
++            if (this.pendingValue != null) {
++                return true;
++            }
++
++            final E[] elements = this.set.listElements;
++            int index, len;
++            for (index = this.nextIndex, len = Math.min(this.maxIndex, this.set.listSize); index < len; ++index) {
++                final E element = elements[index];
++                if (element != null) {
++                    this.pendingValue = element;
++                    this.nextIndex = index + 1;
++                    return true;
++                }
++            }
++
++            this.nextIndex = index;
++            return false;
++        }
++
++        @Override
++        public E next() {
++            if (!this.hasNext()) {
++                throw new NoSuchElementException();
++            }
++            final E ret = this.pendingValue;
++
++            this.pendingValue = null;
++            this.lastReturned = ret;
++
++            return ret;
++        }
++
++        @Override
++        public void remove() {
++            final E lastReturned = this.lastReturned;
++            if (lastReturned == null) {
++                throw new IllegalStateException();
++            }
++            this.lastReturned = null;
++            this.set.remove(lastReturned);
++        }
++
++        @Override
++        public void finishedIterating() {
++            if (this.finished || !this.canFinish) {
++                throw new IllegalStateException();
++            }
++            this.lastReturned = null;
++            this.finished = true;
++            if (this.set.allowSafeIteration()) {
++                this.set.finishRawIterator();
++            }
++        }
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/util/misc/Delayed26WayDistancePropagator3D.java b/src/main/java/io/papermc/paper/util/misc/Delayed26WayDistancePropagator3D.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..470402573bc31106d5a63e415b958fb7f9c36aa9
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/util/misc/Delayed26WayDistancePropagator3D.java
+@@ -0,0 +1,297 @@
++package io.papermc.paper.util.misc;
++
++import io.papermc.paper.util.CoordinateUtils;
++import it.unimi.dsi.fastutil.longs.Long2ByteOpenHashMap;
++import it.unimi.dsi.fastutil.longs.LongIterator;
++import it.unimi.dsi.fastutil.longs.LongLinkedOpenHashSet;
++
++public final class Delayed26WayDistancePropagator3D {
++
++    // this map is considered "stale" unless updates are propagated.
++    protected final Delayed8WayDistancePropagator2D.LevelMap levels = new Delayed8WayDistancePropagator2D.LevelMap(8192*2, 0.6f);
++
++    // this map is never stale
++    protected final Long2ByteOpenHashMap sources = new Long2ByteOpenHashMap(4096, 0.6f);
++
++    // Generally updates to positions are made close to other updates, so we link to decrease cache misses when
++    // propagating updates
++    protected final LongLinkedOpenHashSet updatedSources = new LongLinkedOpenHashSet();
++
++    @FunctionalInterface
++    public static interface LevelChangeCallback {
++
++        /**
++         * This can be called for intermediate updates. So do not rely on newLevel being close to or
++         * the exact level that is expected after a full propagation has occured.
++         */
++        public void onLevelUpdate(final long coordinate, final byte oldLevel, final byte newLevel);
++
++    }
++
++    protected final LevelChangeCallback changeCallback;
++
++    public Delayed26WayDistancePropagator3D() {
++        this(null);
++    }
++
++    public Delayed26WayDistancePropagator3D(final LevelChangeCallback changeCallback) {
++        this.changeCallback = changeCallback;
++    }
++
++    public int getLevel(final long pos) {
++        return this.levels.get(pos);
++    }
++
++    public int getLevel(final int x, final int y, final int z) {
++        return this.levels.get(CoordinateUtils.getChunkSectionKey(x, y, z));
++    }
++
++    public void setSource(final int x, final int y, final int z, final int level) {
++        this.setSource(CoordinateUtils.getChunkSectionKey(x, y, z), level);
++    }
++
++    public void setSource(final long coordinate, final int level) {
++        if ((level & 63) != level || level == 0) {
++            throw new IllegalArgumentException("Level must be in (0, 63], not " + level);
++        }
++
++        final byte byteLevel = (byte)level;
++        final byte oldLevel = this.sources.put(coordinate, byteLevel);
++
++        if (oldLevel == byteLevel) {
++            return; // nothing to do
++        }
++
++        // queue to update later
++        this.updatedSources.add(coordinate);
++    }
++
++    public void removeSource(final int x, final int y, final int z) {
++        this.removeSource(CoordinateUtils.getChunkSectionKey(x, y, z));
++    }
++
++    public void removeSource(final long coordinate) {
++        if (this.sources.remove(coordinate) != 0) {
++            this.updatedSources.add(coordinate);
++        }
++    }
++
++    // queues used for BFS propagating levels
++    protected final Delayed8WayDistancePropagator2D.WorkQueue[] levelIncreaseWorkQueues = new Delayed8WayDistancePropagator2D.WorkQueue[64];
++    {
++        for (int i = 0; i < this.levelIncreaseWorkQueues.length; ++i) {
++            this.levelIncreaseWorkQueues[i] = new Delayed8WayDistancePropagator2D.WorkQueue();
++        }
++    }
++    protected final Delayed8WayDistancePropagator2D.WorkQueue[] levelRemoveWorkQueues = new Delayed8WayDistancePropagator2D.WorkQueue[64];
++    {
++        for (int i = 0; i < this.levelRemoveWorkQueues.length; ++i) {
++            this.levelRemoveWorkQueues[i] = new Delayed8WayDistancePropagator2D.WorkQueue();
++        }
++    }
++    protected long levelIncreaseWorkQueueBitset;
++    protected long levelRemoveWorkQueueBitset;
++
++    protected final void addToIncreaseWorkQueue(final long coordinate, final byte level) {
++        final Delayed8WayDistancePropagator2D.WorkQueue queue = this.levelIncreaseWorkQueues[level];
++        queue.queuedCoordinates.enqueue(coordinate);
++        queue.queuedLevels.enqueue(level);
++
++        this.levelIncreaseWorkQueueBitset |= (1L << level);
++    }
++
++    protected final void addToIncreaseWorkQueue(final long coordinate, final byte index, final byte level) {
++        final Delayed8WayDistancePropagator2D.WorkQueue queue = this.levelIncreaseWorkQueues[index];
++        queue.queuedCoordinates.enqueue(coordinate);
++        queue.queuedLevels.enqueue(level);
++
++        this.levelIncreaseWorkQueueBitset |= (1L << index);
++    }
++
++    protected final void addToRemoveWorkQueue(final long coordinate, final byte level) {
++        final Delayed8WayDistancePropagator2D.WorkQueue queue = this.levelRemoveWorkQueues[level];
++        queue.queuedCoordinates.enqueue(coordinate);
++        queue.queuedLevels.enqueue(level);
++
++        this.levelRemoveWorkQueueBitset |= (1L << level);
++    }
++
++    public boolean propagateUpdates() {
++        if (this.updatedSources.isEmpty()) {
++            return false;
++        }
++
++        boolean ret = false;
++
++        for (final LongIterator iterator = this.updatedSources.iterator(); iterator.hasNext();) {
++            final long coordinate = iterator.nextLong();
++
++            final byte currentLevel = this.levels.get(coordinate);
++            final byte updatedSource = this.sources.get(coordinate);
++
++            if (currentLevel == updatedSource) {
++                continue;
++            }
++            ret = true;
++
++            if (updatedSource > currentLevel) {
++                // level increase
++                this.addToIncreaseWorkQueue(coordinate, updatedSource);
++            } else {
++                // level decrease
++                this.addToRemoveWorkQueue(coordinate, currentLevel);
++                // if the current coordinate is a source, then the decrease propagation will detect that and queue
++                // the source propagation
++            }
++        }
++
++        this.updatedSources.clear();
++
++        // propagate source level increases first for performance reasons (in crowded areas hopefully the additions
++        // make the removes remove less)
++        this.propagateIncreases();
++
++        // now we propagate the decreases (which will then re-propagate clobbered sources)
++        this.propagateDecreases();
++
++        return ret;
++    }
++
++    protected void propagateIncreases() {
++        for (int queueIndex = 63 ^ Long.numberOfLeadingZeros(this.levelIncreaseWorkQueueBitset);
++             this.levelIncreaseWorkQueueBitset != 0L;
++             this.levelIncreaseWorkQueueBitset ^= (1L << queueIndex), queueIndex = 63 ^ Long.numberOfLeadingZeros(this.levelIncreaseWorkQueueBitset)) {
++
++            final Delayed8WayDistancePropagator2D.WorkQueue queue = this.levelIncreaseWorkQueues[queueIndex];
++            while (!queue.queuedLevels.isEmpty()) {
++                final long coordinate = queue.queuedCoordinates.removeFirstLong();
++                byte level = queue.queuedLevels.removeFirstByte();
++
++                final boolean neighbourCheck = level < 0;
++
++                final byte currentLevel;
++                if (neighbourCheck) {
++                    level = (byte)-level;
++                    currentLevel = this.levels.get(coordinate);
++                } else {
++                    currentLevel = this.levels.putIfGreater(coordinate, level);
++                }
++
++                if (neighbourCheck) {
++                    // used when propagating from decrease to indicate that this level needs to check its neighbours
++                    // this means the level at coordinate could be equal, but would still need neighbours checked
++
++                    if (currentLevel != level) {
++                        // something caused the level to change, which means something propagated to it (which means
++                        // us propagating here is redundant), or something removed the level (which means we
++                        // cannot propagate further)
++                        continue;
++                    }
++                } else if (currentLevel >= level) {
++                    // something higher/equal propagated
++                    continue;
++                }
++                if (this.changeCallback != null) {
++                    this.changeCallback.onLevelUpdate(coordinate, currentLevel, level);
++                }
++
++                if (level == 1) {
++                    // can't propagate 0 to neighbours
++                    continue;
++                }
++
++                // propagate to neighbours
++                final byte neighbourLevel = (byte)(level - 1);
++                final int x = CoordinateUtils.getChunkSectionX(coordinate);
++                final int y = CoordinateUtils.getChunkSectionY(coordinate);
++                final int z = CoordinateUtils.getChunkSectionZ(coordinate);
++
++                for (int dy = -1; dy <= 1; ++dy) {
++                    for (int dz = -1; dz <= 1; ++dz) {
++                        for (int dx = -1; dx <= 1; ++dx) {
++                            if ((dy | dz | dx) == 0) {
++                                // already propagated to coordinate
++                                continue;
++                            }
++
++                            // sure we can check the neighbour level in the map right now and avoid a propagation,
++                            // but then we would still have to recheck it when popping the value off of the queue!
++                            // so just avoid the double lookup
++                            final long neighbourCoordinate = CoordinateUtils.getChunkSectionKey(dx + x, dy + y, dz + z);
++                            this.addToIncreaseWorkQueue(neighbourCoordinate, neighbourLevel);
++                        }
++                    }
++                }
++            }
++        }
++    }
++
++    protected void propagateDecreases() {
++        for (int queueIndex = 63 ^ Long.numberOfLeadingZeros(this.levelRemoveWorkQueueBitset);
++             this.levelRemoveWorkQueueBitset != 0L;
++             this.levelRemoveWorkQueueBitset ^= (1L << queueIndex), queueIndex = 63 ^ Long.numberOfLeadingZeros(this.levelRemoveWorkQueueBitset)) {
++
++            final Delayed8WayDistancePropagator2D.WorkQueue queue = this.levelRemoveWorkQueues[queueIndex];
++            while (!queue.queuedLevels.isEmpty()) {
++                final long coordinate = queue.queuedCoordinates.removeFirstLong();
++                final byte level = queue.queuedLevels.removeFirstByte();
++
++                final byte currentLevel = this.levels.removeIfGreaterOrEqual(coordinate, level);
++                if (currentLevel == 0) {
++                    // something else removed
++                    continue;
++                }
++
++                if (currentLevel > level) {
++                    // something higher propagated here or we hit the propagation of another source
++                    // in the second case we need to re-propagate because we could have just clobbered another source's
++                    // propagation
++                    this.addToIncreaseWorkQueue(coordinate, currentLevel, (byte)-currentLevel); // indicate to the increase code that the level's neighbours need checking
++                    continue;
++                }
++
++                if (this.changeCallback != null) {
++                    this.changeCallback.onLevelUpdate(coordinate, currentLevel, (byte)0);
++                }
++
++                final byte source = this.sources.get(coordinate);
++                if (source != 0) {
++                    // must re-propagate source later
++                    this.addToIncreaseWorkQueue(coordinate, source);
++                }
++
++                if (level == 0) {
++                    // can't propagate -1 to neighbours
++                    // we have to check neighbours for removing 1 just in case the neighbour is 2
++                    continue;
++                }
++
++                // propagate to neighbours
++                final byte neighbourLevel = (byte)(level - 1);
++                final int x = CoordinateUtils.getChunkSectionX(coordinate);
++                final int y = CoordinateUtils.getChunkSectionY(coordinate);
++                final int z = CoordinateUtils.getChunkSectionZ(coordinate);
++
++                for (int dy = -1; dy <= 1; ++dy) {
++                    for (int dz = -1; dz <= 1; ++dz) {
++                        for (int dx = -1; dx <= 1; ++dx) {
++                            if ((dy | dz | dx) == 0) {
++                                // already propagated to coordinate
++                                continue;
++                            }
++
++                            // sure we can check the neighbour level in the map right now and avoid a propagation,
++                            // but then we would still have to recheck it when popping the value off of the queue!
++                            // so just avoid the double lookup
++                            final long neighbourCoordinate = CoordinateUtils.getChunkSectionKey(dx + x, dy + y, dz + z);
++                            this.addToRemoveWorkQueue(neighbourCoordinate, neighbourLevel);
++                        }
++                    }
++                }
++            }
++        }
++
++        // propagate sources we clobbered in the process
++        this.propagateIncreases();
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/util/misc/Delayed8WayDistancePropagator2D.java b/src/main/java/io/papermc/paper/util/misc/Delayed8WayDistancePropagator2D.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..4d3dc8fba51bf5c0dceb06744781d1df2bbf2df6
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/util/misc/Delayed8WayDistancePropagator2D.java
+@@ -0,0 +1,718 @@
++package io.papermc.paper.util.misc;
++
++import it.unimi.dsi.fastutil.HashCommon;
++import it.unimi.dsi.fastutil.bytes.ByteArrayFIFOQueue;
++import it.unimi.dsi.fastutil.longs.Long2ByteOpenHashMap;
++import it.unimi.dsi.fastutil.longs.LongArrayFIFOQueue;
++import it.unimi.dsi.fastutil.longs.LongIterator;
++import it.unimi.dsi.fastutil.longs.LongLinkedOpenHashSet;
++import net.minecraft.server.MCUtil;
++
++public final class Delayed8WayDistancePropagator2D {
++
++    // Test
++    /*
++    protected static void test(int x, int z, com.destroystokyo.paper.util.misc.DistanceTrackingAreaMap<Ticket> reference, Delayed8WayDistancePropagator2D test) {
++        int got = test.getLevel(x, z);
++
++        int expect = 0;
++        Object[] nearest = reference.getObjectsInRange(x, z) == null ? null : reference.getObjectsInRange(x, z).getBackingSet();
++        if (nearest != null) {
++            for (Object _obj : nearest) {
++                if (_obj instanceof Ticket) {
++                    Ticket ticket = (Ticket)_obj;
++                    long ticketCoord = reference.getLastCoordinate(ticket);
++                    int viewDistance = reference.getLastViewDistance(ticket);
++                    int distance = Math.max(com.destroystokyo.paper.util.math.IntegerUtil.branchlessAbs(MCUtil.getCoordinateX(ticketCoord) - x),
++                            com.destroystokyo.paper.util.math.IntegerUtil.branchlessAbs(MCUtil.getCoordinateZ(ticketCoord) - z));
++                    int level = viewDistance - distance;
++                    if (level > expect) {
++                        expect = level;
++                    }
++                }
++            }
++        }
++
++        if (expect != got) {
++            throw new IllegalStateException("Expected " + expect + " at pos (" + x + "," + z + ") but got " + got);
++        }
++    }
++
++    static class Ticket {
++
++        int x;
++        int z;
++
++        final com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<Ticket> empty
++                = new com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<>(this);
++
++    }
++
++    public static void main(final String[] args) {
++        com.destroystokyo.paper.util.misc.DistanceTrackingAreaMap<Ticket> reference = new com.destroystokyo.paper.util.misc.DistanceTrackingAreaMap<Ticket>() {
++            @Override
++            protected com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<Ticket> getEmptySetFor(Ticket object) {
++                return object.empty;
++            }
++        };
++        Delayed8WayDistancePropagator2D test = new Delayed8WayDistancePropagator2D();
++
++        final int maxDistance = 64;
++        // test origin
++        {
++            Ticket originTicket = new Ticket();
++            int originDistance = 31;
++            // test single source
++            reference.add(originTicket, 0, 0, originDistance);
++            test.setSource(0, 0, originDistance); test.propagateUpdates(); // set and propagate
++            for (int dx = -originDistance; dx <= originDistance; ++dx) {
++                for (int dz = -originDistance; dz <= originDistance; ++dz) {
++                    test(dx, dz, reference, test);
++                }
++            }
++            // test single source decrease
++            reference.update(originTicket, 0, 0, originDistance/2);
++            test.setSource(0, 0, originDistance/2); test.propagateUpdates(); // set and propagate
++            for (int dx = -originDistance; dx <= originDistance; ++dx) {
++                for (int dz = -originDistance; dz <= originDistance; ++dz) {
++                    test(dx, dz, reference, test);
++                }
++            }
++            // test source increase
++            originDistance = 2*originDistance;
++            reference.update(originTicket, 0, 0, originDistance);
++            test.setSource(0, 0, originDistance); test.propagateUpdates(); // set and propagate
++            for (int dx = -4*originDistance; dx <= 4*originDistance; ++dx) {
++                for (int dz = -4*originDistance; dz <= 4*originDistance; ++dz) {
++                    test(dx, dz, reference, test);
++                }
++            }
++
++            reference.remove(originTicket);
++            test.removeSource(0, 0); test.propagateUpdates();
++        }
++
++        // test multiple sources at origin
++        {
++            int originDistance = 31;
++            java.util.List<Ticket> list = new java.util.ArrayList<>();
++            for (int i = 0; i < 10; ++i) {
++                Ticket a = new Ticket();
++                list.add(a);
++                a.x = (i & 1) == 1 ? -i : i;
++                a.z = (i & 1) == 1 ? -i : i;
++            }
++            for (Ticket ticket : list) {
++                reference.add(ticket, ticket.x, ticket.z, originDistance);
++                test.setSource(ticket.x, ticket.z, originDistance);
++            }
++            test.propagateUpdates();
++
++            for (int dx = -8*originDistance; dx <= 8*originDistance; ++dx) {
++                for (int dz = -8*originDistance; dz <= 8*originDistance; ++dz) {
++                    test(dx, dz, reference, test);
++                }
++            }
++
++            // test ticket level decrease
++
++            for (Ticket ticket : list) {
++                reference.update(ticket, ticket.x, ticket.z, originDistance/2);
++                test.setSource(ticket.x, ticket.z, originDistance/2);
++            }
++            test.propagateUpdates();
++
++            for (int dx = -8*originDistance; dx <= 8*originDistance; ++dx) {
++                for (int dz = -8*originDistance; dz <= 8*originDistance; ++dz) {
++                    test(dx, dz, reference, test);
++                }
++            }
++
++            // test ticket level increase
++
++            for (Ticket ticket : list) {
++                reference.update(ticket, ticket.x, ticket.z, originDistance*2);
++                test.setSource(ticket.x, ticket.z, originDistance*2);
++            }
++            test.propagateUpdates();
++
++            for (int dx = -16*originDistance; dx <= 16*originDistance; ++dx) {
++                for (int dz = -16*originDistance; dz <= 16*originDistance; ++dz) {
++                    test(dx, dz, reference, test);
++                }
++            }
++
++            // test ticket remove
++            for (int i = 0, len = list.size(); i < len; ++i) {
++                if ((i & 3) != 0) {
++                    continue;
++                }
++                Ticket ticket = list.get(i);
++                reference.remove(ticket);
++                test.removeSource(ticket.x, ticket.z);
++            }
++            test.propagateUpdates();
++
++            for (int dx = -16*originDistance; dx <= 16*originDistance; ++dx) {
++                for (int dz = -16*originDistance; dz <= 16*originDistance; ++dz) {
++                    test(dx, dz, reference, test);
++                }
++            }
++        }
++
++        // now test at coordinate offsets
++        // test offset
++        {
++            Ticket originTicket = new Ticket();
++            int originDistance = 31;
++            int offX = 54432;
++            int offZ = -134567;
++            // test single source
++            reference.add(originTicket, offX, offZ, originDistance);
++            test.setSource(offX, offZ, originDistance); test.propagateUpdates(); // set and propagate
++            for (int dx = -originDistance; dx <= originDistance; ++dx) {
++                for (int dz = -originDistance; dz <= originDistance; ++dz) {
++                    test(dx + offX, dz + offZ, reference, test);
++                }
++            }
++            // test single source decrease
++            reference.update(originTicket, offX, offZ, originDistance/2);
++            test.setSource(offX, offZ, originDistance/2); test.propagateUpdates(); // set and propagate
++            for (int dx = -originDistance; dx <= originDistance; ++dx) {
++                for (int dz = -originDistance; dz <= originDistance; ++dz) {
++                    test(dx + offX, dz + offZ, reference, test);
++                }
++            }
++            // test source increase
++            originDistance = 2*originDistance;
++            reference.update(originTicket, offX, offZ, originDistance);
++            test.setSource(offX, offZ, originDistance); test.propagateUpdates(); // set and propagate
++            for (int dx = -4*originDistance; dx <= 4*originDistance; ++dx) {
++                for (int dz = -4*originDistance; dz <= 4*originDistance; ++dz) {
++                    test(dx + offX, dz + offZ, reference, test);
++                }
++            }
++
++            reference.remove(originTicket);
++            test.removeSource(offX, offZ); test.propagateUpdates();
++        }
++
++        // test multiple sources at origin
++        {
++            int originDistance = 31;
++            int offX = 54432;
++            int offZ = -134567;
++            java.util.List<Ticket> list = new java.util.ArrayList<>();
++            for (int i = 0; i < 10; ++i) {
++                Ticket a = new Ticket();
++                list.add(a);
++                a.x = offX + ((i & 1) == 1 ? -i : i);
++                a.z = offZ + ((i & 1) == 1 ? -i : i);
++            }
++            for (Ticket ticket : list) {
++                reference.add(ticket, ticket.x, ticket.z, originDistance);
++                test.setSource(ticket.x, ticket.z, originDistance);
++            }
++            test.propagateUpdates();
++
++            for (int dx = -8*originDistance; dx <= 8*originDistance; ++dx) {
++                for (int dz = -8*originDistance; dz <= 8*originDistance; ++dz) {
++                    test(dx, dz, reference, test);
++                }
++            }
++
++            // test ticket level decrease
++
++            for (Ticket ticket : list) {
++                reference.update(ticket, ticket.x, ticket.z, originDistance/2);
++                test.setSource(ticket.x, ticket.z, originDistance/2);
++            }
++            test.propagateUpdates();
++
++            for (int dx = -8*originDistance; dx <= 8*originDistance; ++dx) {
++                for (int dz = -8*originDistance; dz <= 8*originDistance; ++dz) {
++                    test(dx, dz, reference, test);
++                }
++            }
++
++            // test ticket level increase
++
++            for (Ticket ticket : list) {
++                reference.update(ticket, ticket.x, ticket.z, originDistance*2);
++                test.setSource(ticket.x, ticket.z, originDistance*2);
++            }
++            test.propagateUpdates();
++
++            for (int dx = -16*originDistance; dx <= 16*originDistance; ++dx) {
++                for (int dz = -16*originDistance; dz <= 16*originDistance; ++dz) {
++                    test(dx, dz, reference, test);
++                }
++            }
++
++            // test ticket remove
++            for (int i = 0, len = list.size(); i < len; ++i) {
++                if ((i & 3) != 0) {
++                    continue;
++                }
++                Ticket ticket = list.get(i);
++                reference.remove(ticket);
++                test.removeSource(ticket.x, ticket.z);
++            }
++            test.propagateUpdates();
++
++            for (int dx = -16*originDistance; dx <= 16*originDistance; ++dx) {
++                for (int dz = -16*originDistance; dz <= 16*originDistance; ++dz) {
++                    test(dx, dz, reference, test);
++                }
++            }
++        }
++    }
++     */
++
++    // this map is considered "stale" unless updates are propagated.
++    protected final LevelMap levels = new LevelMap(8192*2, 0.6f);
++
++    // this map is never stale
++    protected final Long2ByteOpenHashMap sources = new Long2ByteOpenHashMap(4096, 0.6f);
++
++    // Generally updates to positions are made close to other updates, so we link to decrease cache misses when
++    // propagating updates
++    protected final LongLinkedOpenHashSet updatedSources = new LongLinkedOpenHashSet();
++
++    @FunctionalInterface
++    public static interface LevelChangeCallback {
++
++        /**
++         * This can be called for intermediate updates. So do not rely on newLevel being close to or
++         * the exact level that is expected after a full propagation has occured.
++         */
++        public void onLevelUpdate(final long coordinate, final byte oldLevel, final byte newLevel);
++
++    }
++
++    protected final LevelChangeCallback changeCallback;
++
++    public Delayed8WayDistancePropagator2D() {
++        this(null);
++    }
++
++    public Delayed8WayDistancePropagator2D(final LevelChangeCallback changeCallback) {
++        this.changeCallback = changeCallback;
++    }
++
++    public int getLevel(final long pos) {
++        return this.levels.get(pos);
++    }
++
++    public int getLevel(final int x, final int z) {
++        return this.levels.get(MCUtil.getCoordinateKey(x, z));
++    }
++
++    public void setSource(final int x, final int z, final int level) {
++        this.setSource(MCUtil.getCoordinateKey(x, z), level);
++    }
++
++    public void setSource(final long coordinate, final int level) {
++        if ((level & 63) != level || level == 0) {
++            throw new IllegalArgumentException("Level must be in (0, 63], not " + level);
++        }
++
++        final byte byteLevel = (byte)level;
++        final byte oldLevel = this.sources.put(coordinate, byteLevel);
++
++        if (oldLevel == byteLevel) {
++            return; // nothing to do
++        }
++
++        // queue to update later
++        this.updatedSources.add(coordinate);
++    }
++
++    public void removeSource(final int x, final int z) {
++        this.removeSource(MCUtil.getCoordinateKey(x, z));
++    }
++
++    public void removeSource(final long coordinate) {
++        if (this.sources.remove(coordinate) != 0) {
++            this.updatedSources.add(coordinate);
++        }
++    }
++
++    // queues used for BFS propagating levels
++    protected final WorkQueue[] levelIncreaseWorkQueues = new WorkQueue[64];
++    {
++        for (int i = 0; i < this.levelIncreaseWorkQueues.length; ++i) {
++            this.levelIncreaseWorkQueues[i] = new WorkQueue();
++        }
++    }
++    protected final WorkQueue[] levelRemoveWorkQueues = new WorkQueue[64];
++    {
++        for (int i = 0; i < this.levelRemoveWorkQueues.length; ++i) {
++            this.levelRemoveWorkQueues[i] = new WorkQueue();
++        }
++    }
++    protected long levelIncreaseWorkQueueBitset;
++    protected long levelRemoveWorkQueueBitset;
++
++    protected final void addToIncreaseWorkQueue(final long coordinate, final byte level) {
++        final WorkQueue queue = this.levelIncreaseWorkQueues[level];
++        queue.queuedCoordinates.enqueue(coordinate);
++        queue.queuedLevels.enqueue(level);
++
++        this.levelIncreaseWorkQueueBitset |= (1L << level);
++    }
++
++    protected final void addToIncreaseWorkQueue(final long coordinate, final byte index, final byte level) {
++        final WorkQueue queue = this.levelIncreaseWorkQueues[index];
++        queue.queuedCoordinates.enqueue(coordinate);
++        queue.queuedLevels.enqueue(level);
++
++        this.levelIncreaseWorkQueueBitset |= (1L << index);
++    }
++
++    protected final void addToRemoveWorkQueue(final long coordinate, final byte level) {
++        final WorkQueue queue = this.levelRemoveWorkQueues[level];
++        queue.queuedCoordinates.enqueue(coordinate);
++        queue.queuedLevels.enqueue(level);
++
++        this.levelRemoveWorkQueueBitset |= (1L << level);
++    }
++
++    public boolean propagateUpdates() {
++        if (this.updatedSources.isEmpty()) {
++            return false;
++        }
++
++        boolean ret = false;
++
++        for (final LongIterator iterator = this.updatedSources.iterator(); iterator.hasNext();) {
++            final long coordinate = iterator.nextLong();
++
++            final byte currentLevel = this.levels.get(coordinate);
++            final byte updatedSource = this.sources.get(coordinate);
++
++            if (currentLevel == updatedSource) {
++                continue;
++            }
++            ret = true;
++
++            if (updatedSource > currentLevel) {
++                // level increase
++                this.addToIncreaseWorkQueue(coordinate, updatedSource);
++            } else {
++                // level decrease
++                this.addToRemoveWorkQueue(coordinate, currentLevel);
++                // if the current coordinate is a source, then the decrease propagation will detect that and queue
++                // the source propagation
++            }
++        }
++
++        this.updatedSources.clear();
++
++        // propagate source level increases first for performance reasons (in crowded areas hopefully the additions
++        // make the removes remove less)
++        this.propagateIncreases();
++
++        // now we propagate the decreases (which will then re-propagate clobbered sources)
++        this.propagateDecreases();
++
++        return ret;
++    }
++
++    protected void propagateIncreases() {
++        for (int queueIndex = 63 ^ Long.numberOfLeadingZeros(this.levelIncreaseWorkQueueBitset);
++             this.levelIncreaseWorkQueueBitset != 0L;
++             this.levelIncreaseWorkQueueBitset ^= (1L << queueIndex), queueIndex = 63 ^ Long.numberOfLeadingZeros(this.levelIncreaseWorkQueueBitset)) {
++
++            final WorkQueue queue = this.levelIncreaseWorkQueues[queueIndex];
++            while (!queue.queuedLevels.isEmpty()) {
++                final long coordinate = queue.queuedCoordinates.removeFirstLong();
++                byte level = queue.queuedLevels.removeFirstByte();
++
++                final boolean neighbourCheck = level < 0;
++
++                final byte currentLevel;
++                if (neighbourCheck) {
++                    level = (byte)-level;
++                    currentLevel = this.levels.get(coordinate);
++                } else {
++                    currentLevel = this.levels.putIfGreater(coordinate, level);
++                }
++
++                if (neighbourCheck) {
++                    // used when propagating from decrease to indicate that this level needs to check its neighbours
++                    // this means the level at coordinate could be equal, but would still need neighbours checked
++
++                    if (currentLevel != level) {
++                        // something caused the level to change, which means something propagated to it (which means
++                        // us propagating here is redundant), or something removed the level (which means we
++                        // cannot propagate further)
++                        continue;
++                    }
++                } else if (currentLevel >= level) {
++                    // something higher/equal propagated
++                    continue;
++                }
++                if (this.changeCallback != null) {
++                    this.changeCallback.onLevelUpdate(coordinate, currentLevel, level);
++                }
++
++                if (level == 1) {
++                    // can't propagate 0 to neighbours
++                    continue;
++                }
++
++                // propagate to neighbours
++                final byte neighbourLevel = (byte)(level - 1);
++                final int x = (int)coordinate;
++                final int z = (int)(coordinate >>> 32);
++
++                for (int dx = -1; dx <= 1; ++dx) {
++                    for (int dz = -1; dz <= 1; ++dz) {
++                        if ((dx | dz) == 0) {
++                            // already propagated to coordinate
++                            continue;
++                        }
++
++                        // sure we can check the neighbour level in the map right now and avoid a propagation,
++                        // but then we would still have to recheck it when popping the value off of the queue!
++                        // so just avoid the double lookup
++                        final long neighbourCoordinate = MCUtil.getCoordinateKey(x + dx, z + dz);
++                        this.addToIncreaseWorkQueue(neighbourCoordinate, neighbourLevel);
++                    }
++                }
++            }
++        }
++    }
++
++    protected void propagateDecreases() {
++        for (int queueIndex = 63 ^ Long.numberOfLeadingZeros(this.levelRemoveWorkQueueBitset);
++             this.levelRemoveWorkQueueBitset != 0L;
++             this.levelRemoveWorkQueueBitset ^= (1L << queueIndex), queueIndex = 63 ^ Long.numberOfLeadingZeros(this.levelRemoveWorkQueueBitset)) {
++
++            final WorkQueue queue = this.levelRemoveWorkQueues[queueIndex];
++            while (!queue.queuedLevels.isEmpty()) {
++                final long coordinate = queue.queuedCoordinates.removeFirstLong();
++                final byte level = queue.queuedLevels.removeFirstByte();
++
++                final byte currentLevel = this.levels.removeIfGreaterOrEqual(coordinate, level);
++                if (currentLevel == 0) {
++                    // something else removed
++                    continue;
++                }
++
++                if (currentLevel > level) {
++                    // something higher propagated here or we hit the propagation of another source
++                    // in the second case we need to re-propagate because we could have just clobbered another source's
++                    // propagation
++                    this.addToIncreaseWorkQueue(coordinate, currentLevel, (byte)-currentLevel); // indicate to the increase code that the level's neighbours need checking
++                    continue;
++                }
++
++                if (this.changeCallback != null) {
++                    this.changeCallback.onLevelUpdate(coordinate, currentLevel, (byte)0);
++                }
++
++                final byte source = this.sources.get(coordinate);
++                if (source != 0) {
++                    // must re-propagate source later
++                    this.addToIncreaseWorkQueue(coordinate, source);
++                }
++
++                if (level == 0) {
++                    // can't propagate -1 to neighbours
++                    // we have to check neighbours for removing 1 just in case the neighbour is 2
++                    continue;
++                }
++
++                // propagate to neighbours
++                final byte neighbourLevel = (byte)(level - 1);
++                final int x = (int)coordinate;
++                final int z = (int)(coordinate >>> 32);
++
++                for (int dx = -1; dx <= 1; ++dx) {
++                    for (int dz = -1; dz <= 1; ++dz) {
++                        if ((dx | dz) == 0) {
++                            // already propagated to coordinate
++                            continue;
++                        }
++
++                        // sure we can check the neighbour level in the map right now and avoid a propagation,
++                        // but then we would still have to recheck it when popping the value off of the queue!
++                        // so just avoid the double lookup
++                        final long neighbourCoordinate = MCUtil.getCoordinateKey(x + dx, z + dz);
++                        this.addToRemoveWorkQueue(neighbourCoordinate, neighbourLevel);
++                    }
++                }
++            }
++        }
++
++        // propagate sources we clobbered in the process
++        this.propagateIncreases();
++    }
++
++    protected static final class LevelMap extends Long2ByteOpenHashMap {
++        public LevelMap() {
++            super();
++        }
++
++        public LevelMap(final int expected, final float loadFactor) {
++            super(expected, loadFactor);
++        }
++
++        // copied from superclass
++        private int find(final long k) {
++            if (k == 0L) {
++                return this.containsNullKey ? this.n : -(this.n + 1);
++            } else {
++                final long[] key = this.key;
++                long curr;
++                int pos;
++                if ((curr = key[pos = (int)HashCommon.mix(k) & this.mask]) == 0L) {
++                    return -(pos + 1);
++                } else if (k == curr) {
++                    return pos;
++                } else {
++                    while((curr = key[pos = pos + 1 & this.mask]) != 0L) {
++                        if (k == curr) {
++                            return pos;
++                        }
++                    }
++
++                    return -(pos + 1);
++                }
++            }
++        }
++
++        // copied from superclass
++        private void insert(final int pos, final long k, final byte v) {
++            if (pos == this.n) {
++                this.containsNullKey = true;
++            }
++
++            this.key[pos] = k;
++            this.value[pos] = v;
++            if (this.size++ >= this.maxFill) {
++                this.rehash(HashCommon.arraySize(this.size + 1, this.f));
++            }
++        }
++
++        // copied from superclass
++        public byte putIfGreater(final long key, final byte value) {
++            final int pos = this.find(key);
++            if (pos < 0) {
++                if (this.defRetValue < value) {
++                    this.insert(-pos - 1, key, value);
++                }
++                return this.defRetValue;
++            } else {
++                final byte curr = this.value[pos];
++                if (value > curr) {
++                    this.value[pos] = value;
++                    return curr;
++                }
++                return curr;
++            }
++        }
++
++        // copied from superclass
++        private void removeEntry(final int pos) {
++            --this.size;
++            this.shiftKeys(pos);
++            if (this.n > this.minN && this.size < this.maxFill / 4 && this.n > 16) {
++                this.rehash(this.n / 2);
++            }
++        }
++
++        // copied from superclass
++        private void removeNullEntry() {
++            this.containsNullKey = false;
++            --this.size;
++            if (this.n > this.minN && this.size < this.maxFill / 4 && this.n > 16) {
++                this.rehash(this.n / 2);
++            }
++        }
++
++        // copied from superclass
++        public byte removeIfGreaterOrEqual(final long key, final byte value) {
++            if (key == 0L) {
++                if (!this.containsNullKey) {
++                    return this.defRetValue;
++                }
++                final byte current = this.value[this.n];
++                if (value >= current) {
++                    this.removeNullEntry();
++                    return current;
++                }
++                return current;
++            } else {
++                long[] keys = this.key;
++                byte[] values = this.value;
++                long curr;
++                int pos;
++                if ((curr = keys[pos = (int)HashCommon.mix(key) & this.mask]) == 0L) {
++                    return this.defRetValue;
++                } else if (key == curr) {
++                    final byte current = values[pos];
++                    if (value >= current) {
++                        this.removeEntry(pos);
++                        return current;
++                    }
++                    return current;
++                } else {
++                    while((curr = keys[pos = pos + 1 & this.mask]) != 0L) {
++                        if (key == curr) {
++                            final byte current = values[pos];
++                            if (value >= current) {
++                                this.removeEntry(pos);
++                                return current;
++                            }
++                            return current;
++                        }
++                    }
++
++                    return this.defRetValue;
++                }
++            }
++        }
++    }
++
++    protected static final class WorkQueue {
++
++        public final NoResizeLongArrayFIFODeque queuedCoordinates = new NoResizeLongArrayFIFODeque();
++        public final NoResizeByteArrayFIFODeque queuedLevels = new NoResizeByteArrayFIFODeque();
++
++    }
++
++    protected static final class NoResizeLongArrayFIFODeque extends LongArrayFIFOQueue {
++
++        /**
++         * Assumes non-empty. If empty, undefined behaviour.
++         */
++        public long removeFirstLong() {
++            // copied from superclass
++            long t = this.array[this.start];
++            if (++this.start == this.length) {
++                this.start = 0;
++            }
++
++            return t;
++        }
++    }
++
++    protected static final class NoResizeByteArrayFIFODeque extends ByteArrayFIFOQueue {
++
++        /**
++         * Assumes non-empty. If empty, undefined behaviour.
++         */
++        public byte removeFirstByte() {
++            // copied from superclass
++            byte t = this.array[this.start];
++            if (++this.start == this.length) {
++                this.start = 0;
++            }
++
++            return t;
++        }
++    }
++}
 diff --git a/src/main/java/net/minecraft/Util.java b/src/main/java/net/minecraft/Util.java
 index 771e4b72589d7117a154ab6917bd4a56d55f19db..65e0ca442980f273d2fe5f131e174cd92f80da20 100644
 --- a/src/main/java/net/minecraft/Util.java
@@ -2830,10 +4982,18 @@ index 0000000000000000000000000000000000000000..80f8d6ce6dd717d4b37b78539c65b6ac
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 6f56df5b0550735e3da122729080125c3dff5d06..dc7779b722cfa5337717b92896c168d839c14946 100644
+index 6f56df5b0550735e3da122729080125c3dff5d06..dab59e1a523ab14f28764b179931a7a54e1bf52e 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -964,6 +964,9 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -296,6 +296,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+     public final double[] recentTps = new double[ 3 ];
+     public final SlackActivityAccountant slackActivityAccountant = new SlackActivityAccountant();
+     // Spigot end
++    public static long currentTickLong = 0L; // Paper
+ 
+     public static <S extends MinecraftServer> S spin(Function<Thread, S> serverFactory) {
+         AtomicReference<S> atomicreference = new AtomicReference();
+@@ -964,6 +965,9 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
              MinecraftServer.LOGGER.error("Failed to unlock level {}", this.storageSource.getLevelId(), ioexception1);
          }
          // Spigot start
@@ -2843,8 +5003,36 @@ index 6f56df5b0550735e3da122729080125c3dff5d06..dc7779b722cfa5337717b92896c168d8
          if (org.spigotmc.SpigotConfig.saveUserCacheOnStopOnly) {
              MinecraftServer.LOGGER.info("Saving usercache.json");
              this.getProfileCache().save();
+@@ -1026,6 +1030,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+                         this.lastOverloadWarning = this.nextTickTime;
+                     }
+ 
++                    ++MinecraftServer.currentTickLong; // Paper
+                     if ( tickCount++ % MinecraftServer.SAMPLE_INTERVAL == 0 )
+                     {
+                         double currentTps = 1E3 / ( curTime - tickSection ) * MinecraftServer.SAMPLE_INTERVAL;
+@@ -1247,6 +1252,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+             this.snooper.prepare();
+         }
+ 
++        io.papermc.paper.util.CachedLists.reset(); // Paper
+         this.profiler.pop();
+         this.profiler.push("tallying");
+         long l = this.tickTimes[this.tickCount % 100] = Util.getNanos() - i;
+@@ -1310,6 +1316,11 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+             try {
+                 worldserver.timings.doTick.startTiming(); // Spigot
+                 worldserver.tick(shouldKeepTicking);
++                // Paper start
++                for (final io.papermc.paper.chunk.SingleThreadChunkRegionManager regionManager : worldserver.getChunkSource().chunkMap.regionManagers) {
++                    regionManager.recalculateRegions();
++                }
++                // Paper end
+                 worldserver.timings.doTick.stopTiming(); // Spigot
+             } catch (Throwable throwable) {
+                 // Spigot Start
 diff --git a/src/main/java/net/minecraft/server/level/ChunkHolder.java b/src/main/java/net/minecraft/server/level/ChunkHolder.java
-index 6fa6fb852cd5af2009008ac6158251ba5e8cf6fb..24f72050229031898fd9da585ad2ceec835f83f9 100644
+index 6fa6fb852cd5af2009008ac6158251ba5e8cf6fb..bbf2dee8cdd2d8239d9230b1a7fff4f07c2edaf8 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkHolder.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkHolder.java
 @@ -52,9 +52,9 @@ public class ChunkHolder {
@@ -2958,7 +5146,7 @@ index 6fa6fb852cd5af2009008ac6158251ba5e8cf6fb..24f72050229031898fd9da585ad2ceec
              this.updateChunkToSave(((CompletableFuture<Either<LevelChunk, ChunkHolder.ChunkLoadingFailure>>) completablefuture).thenApply((either1) -> { // CraftBukkit - decompile error
                  Objects.requireNonNull(chunkStorage);
                  return either1.ifLeft(chunkStorage::packTicks);
-@@ -441,11 +457,19 @@ public class ChunkHolder {
+@@ -441,12 +457,29 @@ public class ChunkHolder {
          if (!flag4 && flag5) {
              this.tickingChunkFuture = chunkStorage.prepareTickingChunk(this);
              this.scheduleFullChunkPromotion(chunkStorage, this.tickingChunkFuture, executor, ChunkHolder.FullChunkStatus.TICKING);
@@ -2967,6 +5155,9 @@ index 6fa6fb852cd5af2009008ac6158251ba5e8cf6fb..24f72050229031898fd9da585ad2ceec
 +                either.ifLeft(chunk -> {
 +                    // note: Here is a very good place to add callbacks to logic waiting on this.
 +                    ChunkHolder.this.isTickingReady = true;
++                    // Paper start - ticking chunk set
++                    ChunkHolder.this.chunkMap.level.getChunkSource().tickingChunks.add(chunk);
++                    // Paper end - ticking chunk set
 +                });
 +            });
 +            // Paper end
@@ -2977,9 +5168,16 @@ index 6fa6fb852cd5af2009008ac6158251ba5e8cf6fb..24f72050229031898fd9da585ad2ceec
 -            this.tickingChunkFuture.complete(ChunkHolder.UNLOADED_LEVEL_CHUNK);
 +            this.tickingChunkFuture.complete(ChunkHolder.UNLOADED_LEVEL_CHUNK); this.isTickingReady = false; // Paper - cache chunk ticking stage
              this.tickingChunkFuture = ChunkHolder.UNLOADED_LEVEL_CHUNK_FUTURE;
++            // Paper start - ticking chunk set
++            LevelChunk chunkIfCached = this.getFullChunkUnchecked();
++            if (chunkIfCached != null) {
++                this.chunkMap.level.getChunkSource().tickingChunks.remove(chunkIfCached);
++            }
++            // Paper end - ticking chunk set
          }
  
-@@ -459,11 +483,18 @@ public class ChunkHolder {
+         boolean flag6 = playerchunk_state.isOrAfter(ChunkHolder.FullChunkStatus.ENTITY_TICKING);
+@@ -459,12 +492,28 @@ public class ChunkHolder {
  
              this.entityTickingChunkFuture = chunkStorage.prepareEntityTickingChunk(this.pos);
              this.scheduleFullChunkPromotion(chunkStorage, this.entityTickingChunkFuture, executor, ChunkHolder.FullChunkStatus.ENTITY_TICKING);
@@ -2987,6 +5185,9 @@ index 6fa6fb852cd5af2009008ac6158251ba5e8cf6fb..24f72050229031898fd9da585ad2ceec
 +            this.entityTickingChunkFuture.thenAccept(either -> {
 +                either.ifLeft(chunk -> {
 +                    ChunkHolder.this.isEntityTickingReady = true;
++                    // Paper start - entity ticking chunk set
++                    ChunkHolder.this.chunkMap.level.getChunkSource().entityTickingChunks.add(chunk);
++                    // Paper end - entity ticking chunk set
 +                });
 +            });
 +            // Paper end
@@ -2997,10 +5198,17 @@ index 6fa6fb852cd5af2009008ac6158251ba5e8cf6fb..24f72050229031898fd9da585ad2ceec
 -            this.entityTickingChunkFuture.complete(ChunkHolder.UNLOADED_LEVEL_CHUNK);
 +            this.entityTickingChunkFuture.complete(ChunkHolder.UNLOADED_LEVEL_CHUNK); this.isEntityTickingReady = false; // Paper - cache chunk ticking stage
              this.entityTickingChunkFuture = ChunkHolder.UNLOADED_LEVEL_CHUNK_FUTURE;
++            // Paper start - entity ticking chunk set
++            LevelChunk chunkIfCached = this.getFullChunkUnchecked();
++            if (chunkIfCached != null) {
++                this.chunkMap.level.getChunkSource().entityTickingChunks.remove(chunkIfCached);
++            }
++            // Paper end - entity ticking chunk set
          }
  
+         if (!playerchunk_state1.isOrAfter(playerchunk_state)) {
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index e9d2034f0753670c2ce69cc93c7e98e89af65c87..2b62f4664f439808661d559dc99762bfbac09b16 100644
+index e9d2034f0753670c2ce69cc93c7e98e89af65c87..12a9a6fa04867d5695d46bf7973f1542798485be 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
 @@ -55,6 +55,7 @@ import net.minecraft.network.protocol.game.ClientboundSetChunkCacheCenterPacket;
@@ -3011,7 +5219,7 @@ index e9d2034f0753670c2ce69cc93c7e98e89af65c87..2b62f4664f439808661d559dc99762bf
  import net.minecraft.server.level.progress.ChunkProgressListener;
  import net.minecraft.server.network.ServerPlayerConnection;
  import net.minecraft.util.CsvOutput;
-@@ -152,6 +153,26 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -152,6 +153,56 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
      };
      // CraftBukkit end
  
@@ -3034,11 +5242,52 @@ index e9d2034f0753670c2ce69cc93c7e98e89af65c87..2b62f4664f439808661d559dc99762bf
 +        // Note: players need to be explicitly added to distance maps before they can be updated
 +    }
 +    // Paper end
++    // Paper start
++    public final List<io.papermc.paper.chunk.SingleThreadChunkRegionManager> regionManagers = new java.util.ArrayList<>();
++    public final io.papermc.paper.chunk.SingleThreadChunkRegionManager dataRegionManager;
++
++    public static final class DataRegionData implements io.papermc.paper.chunk.SingleThreadChunkRegionManager.RegionData {
++    }
++
++    public static final class DataRegionSectionData implements io.papermc.paper.chunk.SingleThreadChunkRegionManager.RegionSectionData {
++
++        @Override
++        public void removeFromRegion(final io.papermc.paper.chunk.SingleThreadChunkRegionManager.RegionSection section,
++                                     final io.papermc.paper.chunk.SingleThreadChunkRegionManager.Region from) {
++            final DataRegionSectionData sectionData = (DataRegionSectionData)section.sectionData;
++            final DataRegionData fromData = (DataRegionData)from.regionData;
++        }
++
++        @Override
++        public void addToRegion(final io.papermc.paper.chunk.SingleThreadChunkRegionManager.RegionSection section,
++                                final io.papermc.paper.chunk.SingleThreadChunkRegionManager.Region oldRegion,
++                                final io.papermc.paper.chunk.SingleThreadChunkRegionManager.Region newRegion) {
++            final DataRegionSectionData sectionData = (DataRegionSectionData)section.sectionData;
++            final DataRegionData oldRegionData = oldRegion == null ? null : (DataRegionData)oldRegion.regionData;
++            final DataRegionData newRegionData = (DataRegionData)newRegion.regionData;
++        }
++    }
++
++    public final ChunkHolder getUnloadingChunkHolder(int chunkX, int chunkZ) {
++        return this.pendingUnloads.get(io.papermc.paper.util.CoordinateUtils.getChunkKey(chunkX, chunkZ));
++    }
++    // Tuiniy end
 +
      public ChunkMap(ServerLevel world, LevelStorageSource.LevelStorageAccess session, DataFixer dataFixer, StructureManager structureManager, Executor executor, BlockableEventLoop<Runnable> mainThreadExecutor, LightChunkGetter chunkProvider, ChunkGenerator chunkGenerator, ChunkProgressListener worldGenerationProgressListener, ChunkStatusUpdateListener chunkStatusChangeListener, Supplier<DimensionDataStorage> persistentStateManagerFactory, int viewDistance, boolean dsync) {
          super(new File(session.getDimensionPath(world.dimension()), "region"), dataFixer, dsync);
          this.visibleChunkMap = this.updatingChunkMap.clone();
-@@ -273,6 +294,14 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -187,6 +238,10 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+         this.overworldDataStorage = persistentStateManagerFactory;
+         this.poiManager = new PoiManager(new File(file, "poi"), dataFixer, dsync, world);
+         this.setViewDistance(viewDistance);
++        // Paper start
++        this.dataRegionManager = new io.papermc.paper.chunk.SingleThreadChunkRegionManager(this.level, 2, (1.0 / 3.0), 1, 6, "Data", DataRegionData::new, DataRegionSectionData::new);
++        this.regionManagers.add(this.dataRegionManager);
++        // Paper end
+     }
+ 
+     private static double euclideanDistanceSquared(ChunkPos pos, Entity entity) {
+@@ -273,6 +328,14 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          }
      }
  
@@ -3053,7 +5302,47 @@ index e9d2034f0753670c2ce69cc93c7e98e89af65c87..2b62f4664f439808661d559dc99762bf
      private CompletableFuture<Either<List<ChunkAccess>, ChunkHolder.ChunkLoadingFailure>> getChunkRangeFuture(ChunkPos centerChunk, int margin, IntFunction<ChunkStatus> distanceToStatus) {
          List<CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>>> list = Lists.newArrayList();
          int j = centerChunk.x;
-@@ -962,6 +991,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -363,6 +426,11 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+                     holder.setTicketLevel(level);
+                 } else {
+                     holder = new ChunkHolder(new ChunkPos(pos), level, this.level, this.lightEngine, this.queueSorter, this);
++                    // Paper start
++                    for (int index = 0, len = this.regionManagers.size(); index < len; ++index) {
++                        this.regionManagers.get(index).addChunk(holder.pos.x, holder.pos.z);
++                    }
++                    // Paper end
+                 }
+ 
+                 this.updatingChunkMap.put(pos, holder);
+@@ -484,7 +552,13 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+             if (completablefuture1 != completablefuture) {
+                 this.scheduleUnload(pos, holder);
+             } else {
+-                if (this.pendingUnloads.remove(pos, holder) && ichunkaccess != null) {
++                // Paper start
++                boolean removed;
++                if ((removed = this.pendingUnloads.remove(pos, holder)) && ichunkaccess != null) {
++                    for (int index = 0, len = this.regionManagers.size(); index < len; ++index) {
++                        this.regionManagers.get(index).removeChunk(holder.pos.x, holder.pos.z);
++                    }
++                    // Paper end
+                     if (ichunkaccess instanceof LevelChunk) {
+                         ((LevelChunk) ichunkaccess).setLoaded(false);
+                     }
+@@ -499,7 +573,11 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+                     this.lightEngine.updateChunkStatus(ichunkaccess.getPos());
+                     this.lightEngine.tryScheduleUpdate();
+                     this.progressListener.onStatusChange(ichunkaccess.getPos(), (ChunkStatus) null);
+-                }
++                } else if (removed) { // Paper start
++                    for (int index = 0, len = this.regionManagers.size(); index < len; ++index) {
++                        this.regionManagers.get(index).removeChunk(holder.pos.x, holder.pos.z);
++                    }
++                } // Paper end
+ 
+             }
+         };
+@@ -962,6 +1040,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
              if (!flag1) {
                  this.distanceManager.addPlayer(SectionPos.of((Entity) player), player);
              }
@@ -3061,7 +5350,7 @@ index e9d2034f0753670c2ce69cc93c7e98e89af65c87..2b62f4664f439808661d559dc99762bf
          } else {
              SectionPos sectionposition = player.getLastSectionPos();
  
-@@ -969,6 +999,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -969,6 +1048,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
              if (!flag2) {
                  this.distanceManager.removePlayer(sectionposition, player);
              }
@@ -3069,7 +5358,7 @@ index e9d2034f0753670c2ce69cc93c7e98e89af65c87..2b62f4664f439808661d559dc99762bf
          }
  
          for (int k = i - this.viewDistance; k <= i + this.viewDistance; ++k) {
-@@ -1079,6 +1110,8 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1079,6 +1159,8 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
              }
          }
  
@@ -3079,18 +5368,21 @@ index e9d2034f0753670c2ce69cc93c7e98e89af65c87..2b62f4664f439808661d559dc99762bf
  
      @Override
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-index 9591f50922343283597bad6d9ac17c175d8ae230..48c876381d75c66f24d59bd2c415dd7de293afee 100644
+index 9591f50922343283597bad6d9ac17c175d8ae230..77d98bfa0ad9fc92a8e794b5a4e00c3e471c123a 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-@@ -44,6 +44,7 @@ import net.minecraft.world.level.levelgen.structure.templatesystem.StructureMana
+@@ -44,8 +44,10 @@ import net.minecraft.world.level.levelgen.structure.templatesystem.StructureMana
  import net.minecraft.world.level.storage.DimensionDataStorage;
  import net.minecraft.world.level.storage.LevelData;
  import net.minecraft.world.level.storage.LevelStorageSource;
 +import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap; // Paper
  
  public class ServerChunkCache extends ChunkSource {
++    public static final org.apache.logging.log4j.Logger LOGGER = org.apache.logging.log4j.LogManager.getLogger(); // Paper
  
-@@ -66,6 +67,156 @@ public class ServerChunkCache extends ChunkSource {
+     public static final List<ChunkStatus> CHUNK_STATUSES = ChunkStatus.getStatusList();
+     private final DistanceManager distanceManager;
+@@ -66,6 +68,316 @@ public class ServerChunkCache extends ChunkSource {
      @Nullable
      @VisibleForDebug
      private NaturalSpawner.SpawnState lastSpawnState;
@@ -3165,7 +5457,7 @@ index 9591f50922343283597bad6d9ac17c175d8ae230..48c876381d75c66f24d59bd2c415dd7d
 +        return (LevelChunk)this.getChunk(x, z, ChunkStatus.FULL, true);
 +    }
 +
-+    private long chunkFutureAwaitCounter;
++    long chunkFutureAwaitCounter; // Paper - private -> package private
 +
 +    public void getEntityTickingChunkAsync(int x, int z, java.util.function.Consumer<LevelChunk> onLoad) {
 +        if (Thread.currentThread() != this.mainThread) {
@@ -3244,10 +5536,170 @@ index 9591f50922343283597bad6d9ac17c175d8ae230..48c876381d75c66f24d59bd2c415dd7d
 +        }, this.mainThreadProcessor);
 +    }
 +    // Paper end
++
++    // Paper start
++    // this will try to avoid chunk neighbours for lighting
++    public final ChunkAccess getFullStatusChunkAt(int chunkX, int chunkZ) {
++        LevelChunk ifLoaded = this.getChunkAtIfLoadedImmediately(chunkX, chunkZ);
++        if (ifLoaded != null) {
++            return ifLoaded;
++        }
++
++        ChunkAccess empty = this.getChunk(chunkX, chunkZ, ChunkStatus.EMPTY, true);
++        if (empty != null && empty.getStatus().isOrAfter(ChunkStatus.FULL)) {
++            return empty;
++        }
++        return this.getChunk(chunkX, chunkZ, ChunkStatus.FULL, true);
++    }
++
++    public final ChunkAccess getFullStatusChunkAtIfLoaded(int chunkX, int chunkZ) {
++        LevelChunk ifLoaded = this.getChunkAtIfLoadedImmediately(chunkX, chunkZ);
++        if (ifLoaded != null) {
++            return ifLoaded;
++        }
++
++        ChunkAccess ret = this.getChunkAtImmediately(chunkX, chunkZ);
++        if (ret != null && ret.getStatus().isOrAfter(ChunkStatus.FULL)) {
++            return ret;
++        } else {
++            return null;
++        }
++    }
++
++    void getChunkAtAsynchronously(int chunkX, int chunkZ, int ticketLevel,
++                                  java.util.function.Consumer<ChunkAccess> consumer) {
++        this.getChunkAtAsynchronously(chunkX, chunkZ, ticketLevel, (ChunkHolder chunkHolder) -> {
++            if (ticketLevel <= 33) {
++                return (CompletableFuture)chunkHolder.getFullChunkFuture();
++            } else {
++                return chunkHolder.getOrScheduleFuture(ChunkHolder.getStatus(ticketLevel), ServerChunkCache.this.chunkMap);
++            }
++        }, consumer);
++    }
++
++    void getChunkAtAsynchronously(int chunkX, int chunkZ, int ticketLevel,
++                                  java.util.function.Function<ChunkHolder, CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>>> function,
++                                  java.util.function.Consumer<ChunkAccess> consumer) {
++        if (Thread.currentThread() != this.mainThread) {
++            throw new IllegalStateException();
++        }
++
++        ChunkPos chunkPos = new ChunkPos(chunkX, chunkZ);
++        Long identifier = Long.valueOf(this.chunkFutureAwaitCounter++);
++        this.addTicketAtLevel(TicketType.FUTURE_AWAIT, chunkPos, ticketLevel, identifier);
++        this.runDistanceManagerUpdates();
++
++        ChunkHolder chunk = this.chunkMap.getUpdatingChunkIfPresent(chunkPos.toLong());
++
++        if (chunk == null) {
++            throw new IllegalStateException("Expected playerchunk " + chunkPos + " in world '" + this.level.getWorld().getName() + "'");
++        }
++
++        CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> future = function.apply(chunk);
++
++        future.whenCompleteAsync((either, throwable) -> {
++            try {
++                if (throwable != null) {
++                    if (throwable instanceof ThreadDeath) {
++                        throw (ThreadDeath)throwable;
++                    }
++                    LOGGER.fatal("Failed to complete future await for chunk " + chunkPos.toString() + " in world '" + ServerChunkCache.this.level.getWorld().getName() + "'", throwable);
++                } else if (either.right().isPresent()) {
++                    LOGGER.fatal("Failed to complete future await for chunk " + chunkPos.toString() + " in world '" + ServerChunkCache.this.level.getWorld().getName() + "': " + either.right().get().toString());
++                }
++
++                try {
++                    if (consumer != null) {
++                        consumer.accept(either == null ? null : either.left().orElse(null)); // indicate failure to the callback.
++                    }
++                } catch (Throwable thr) {
++                    if (thr instanceof ThreadDeath) {
++                        throw (ThreadDeath)thr;
++                    }
++                    LOGGER.fatal("Load callback for future await failed " + chunkPos.toString() + " in world '" + ServerChunkCache.this.level.getWorld().getName() + "'", thr);
++                    return;
++                }
++            } finally {
++                // due to odd behaviour with CB unload implementation we need to have these AFTER the load callback.
++                ServerChunkCache.this.addTicketAtLevel(TicketType.UNKNOWN, chunkPos, ticketLevel, chunkPos);
++                ServerChunkCache.this.removeTicketAtLevel(TicketType.FUTURE_AWAIT, chunkPos, ticketLevel, identifier);
++            }
++        }, this.mainThreadProcessor);
++    }
++
++    void chunkLoadAccept(int chunkX, int chunkZ, ChunkAccess chunk, java.util.function.Consumer<ChunkAccess> consumer) {
++        try {
++            consumer.accept(chunk);
++        } catch (Throwable throwable) {
++            if (throwable instanceof ThreadDeath) {
++                throw (ThreadDeath)throwable;
++            }
++            LOGGER.error("Load callback for chunk " + chunkX + "," + chunkZ + " in world '" + this.level.getWorld().getName() + "' threw an exception", throwable);
++        }
++    }
++
++    public final void getChunkAtAsynchronously(int chunkX, int chunkZ, ChunkStatus status, boolean gen, boolean allowSubTicketLevel, java.util.function.Consumer<ChunkAccess> onLoad) {
++        // try to fire sync
++        int chunkStatusTicketLevel = 33 + ChunkStatus.getDistance(status);
++        ChunkHolder playerChunk = this.chunkMap.getUpdatingChunkIfPresent(io.papermc.paper.util.CoordinateUtils.getChunkKey(chunkX, chunkZ));
++        if (playerChunk != null) {
++            ChunkStatus holderStatus = playerChunk.getChunkHolderStatus();
++            ChunkAccess immediate = playerChunk.getAvailableChunkNow();
++            if (immediate != null) {
++                if (allowSubTicketLevel ? immediate.getStatus().isOrAfter(status) : (playerChunk.getTicketLevel() <= chunkStatusTicketLevel && holderStatus != null && holderStatus.isOrAfter(status))) {
++                    this.chunkLoadAccept(chunkX, chunkZ, immediate, onLoad);
++                    return;
++                } else {
++                    if (gen || (!allowSubTicketLevel && immediate.getStatus().isOrAfter(status))) {
++                        this.getChunkAtAsynchronously(chunkX, chunkZ, chunkStatusTicketLevel, onLoad);
++                        return;
++                    } else {
++                        this.chunkLoadAccept(chunkX, chunkZ, null, onLoad);
++                        return;
++                    }
++                }
++            }
++        }
++
++        // need to fire async
++
++        if (gen && !allowSubTicketLevel) {
++            this.getChunkAtAsynchronously(chunkX, chunkZ, chunkStatusTicketLevel, onLoad);
++            return;
++        }
++
++        this.getChunkAtAsynchronously(chunkX, chunkZ, net.minecraft.server.MCUtil.getTicketLevelFor(ChunkStatus.EMPTY), (ChunkAccess chunk) -> {
++            if (chunk == null) {
++                throw new IllegalStateException("Chunk cannot be null");
++            }
++
++            if (!chunk.getStatus().isOrAfter(status)) {
++                if (gen) {
++                    this.getChunkAtAsynchronously(chunkX, chunkZ, chunkStatusTicketLevel, onLoad);
++                    return;
++                } else {
++                    ServerChunkCache.this.chunkLoadAccept(chunkX, chunkZ, null, onLoad);
++                    return;
++                }
++            } else {
++                if (allowSubTicketLevel) {
++                    ServerChunkCache.this.chunkLoadAccept(chunkX, chunkZ, chunk, onLoad);
++                    return;
++                } else {
++                    this.getChunkAtAsynchronously(chunkX, chunkZ, chunkStatusTicketLevel, onLoad);
++                    return;
++                }
++            }
++        });
++    }
++
++    final io.papermc.paper.util.maplist.IteratorSafeOrderedReferenceSet<LevelChunk> tickingChunks = new io.papermc.paper.util.maplist.IteratorSafeOrderedReferenceSet<>(4096, 0.75f, 4096, 0.15, true);
++    final io.papermc.paper.util.maplist.IteratorSafeOrderedReferenceSet<LevelChunk> entityTickingChunks = new io.papermc.paper.util.maplist.IteratorSafeOrderedReferenceSet<>(4096, 0.75f, 4096, 0.15, true);
++    // Paper end
  
      public ServerChunkCache(ServerLevel world, LevelStorageSource.LevelStorageAccess session, DataFixer dataFixer, StructureManager structureManager, Executor workerExecutor, ChunkGenerator chunkGenerator, int viewDistance, boolean flag, ChunkProgressListener worldGenerationProgressListener, ChunkStatusUpdateListener chunkstatusupdatelistener, Supplier<DimensionDataStorage> supplier) {
          this.level = world;
-@@ -127,6 +278,49 @@ public class ServerChunkCache extends ChunkSource {
+@@ -127,6 +439,49 @@ public class ServerChunkCache extends ChunkSource {
          this.lastChunk[0] = chunk;
      }
  
@@ -3297,7 +5749,7 @@ index 9591f50922343283597bad6d9ac17c175d8ae230..48c876381d75c66f24d59bd2c415dd7d
      @Nullable
      @Override
      public ChunkAccess getChunk(int x, int z, ChunkStatus leastStatus, boolean create) {
-@@ -453,7 +647,7 @@ public class ServerChunkCache extends ChunkSource {
+@@ -453,7 +808,7 @@ public class ServerChunkCache extends ChunkSource {
              }
  
              this.level.getProfiler().popPush("broadcast");
@@ -3307,7 +5759,7 @@ index 9591f50922343283597bad6d9ac17c175d8ae230..48c876381d75c66f24d59bd2c415dd7d
  
                  Objects.requireNonNull(playerchunk);
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index 7cf9c202f126696fc37860d4121fb47456b0435a..f9fde3155944bb44ecb14524c585ed8eb9eac78c 100644
+index 7cf9c202f126696fc37860d4121fb47456b0435a..24b763a7d333be18e3b31b20f9405eb814741f8a 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
 @@ -9,6 +9,7 @@ import it.unimi.dsi.fastutil.longs.LongSet;
@@ -3318,8 +5770,113 @@ index 7cf9c202f126696fc37860d4121fb47456b0435a..f9fde3155944bb44ecb14524c585ed8e
  import it.unimi.dsi.fastutil.objects.ObjectIterator;
  import it.unimi.dsi.fastutil.objects.ObjectLinkedOpenHashSet;
  import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
+@@ -161,6 +162,7 @@ import org.bukkit.event.server.MapInitializeEvent;
+ import org.bukkit.event.weather.LightningStrikeEvent;
+ import org.bukkit.event.world.TimeSkipEvent;
+ // CraftBukkit end
++import it.unimi.dsi.fastutil.ints.IntArrayList; // Paper
+ 
+ public class ServerLevel extends Level implements WorldGenLevel {
+ 
+@@ -200,6 +202,96 @@ public class ServerLevel extends Level implements WorldGenLevel {
+         return this.chunkSource.getChunk(x, z, false);
+     }
+ 
++    // Paper start
++    public final boolean areChunksLoadedForMove(AABB axisalignedbb) {
++        // copied code from collision methods, so that we can guarantee that they wont load chunks (we don't override
++        // ICollisionAccess methods for VoxelShapes)
++        // be more strict too, add a block (dumb plugins in move events?)
++        int minBlockX = Mth.floor(axisalignedbb.minX - 1.0E-7D) - 3;
++        int maxBlockX = Mth.floor(axisalignedbb.maxX + 1.0E-7D) + 3;
++
++        int minBlockZ = Mth.floor(axisalignedbb.minZ - 1.0E-7D) - 3;
++        int maxBlockZ = Mth.floor(axisalignedbb.maxZ + 1.0E-7D) + 3;
++
++        int minChunkX = minBlockX >> 4;
++        int maxChunkX = maxBlockX >> 4;
++
++        int minChunkZ = minBlockZ >> 4;
++        int maxChunkZ = maxBlockZ >> 4;
++
++        ServerChunkCache chunkProvider = this.getChunkSource();
++
++        for (int cx = minChunkX; cx <= maxChunkX; ++cx) {
++            for (int cz = minChunkZ; cz <= maxChunkZ; ++cz) {
++                if (chunkProvider.getChunkAtIfLoadedImmediately(cx, cz) == null) {
++                    return false;
++                }
++            }
++        }
++
++        return true;
++    }
++
++    public final void loadChunksForMoveAsync(AABB axisalignedbb, double toX, double toZ,
++                                             java.util.function.Consumer<List<net.minecraft.world.level.chunk.ChunkAccess>> onLoad) {
++        if (Thread.currentThread() != this.thread) {
++            this.getChunkSource().mainThreadProcessor.execute(() -> {
++                this.loadChunksForMoveAsync(axisalignedbb, toX, toZ, onLoad);
++            });
++            return;
++        }
++        List<net.minecraft.world.level.chunk.ChunkAccess> ret = new java.util.ArrayList<>();
++        IntArrayList ticketLevels = new IntArrayList();
++
++        int minBlockX = Mth.floor(axisalignedbb.minX - 1.0E-7D) - 3;
++        int maxBlockX = Mth.floor(axisalignedbb.maxX + 1.0E-7D) + 3;
++
++        int minBlockZ = Mth.floor(axisalignedbb.minZ - 1.0E-7D) - 3;
++        int maxBlockZ = Mth.floor(axisalignedbb.maxZ + 1.0E-7D) + 3;
++
++        int minChunkX = minBlockX >> 4;
++        int maxChunkX = maxBlockX >> 4;
++
++        int minChunkZ = minBlockZ >> 4;
++        int maxChunkZ = maxBlockZ >> 4;
++
++        ServerChunkCache chunkProvider = this.getChunkSource();
++
++        int requiredChunks = (maxChunkX - minChunkX + 1) * (maxChunkZ - minChunkZ + 1);
++        int[] loadedChunks = new int[1];
++
++        Long holderIdentifier = Long.valueOf(chunkProvider.chunkFutureAwaitCounter++);
++
++        java.util.function.Consumer<net.minecraft.world.level.chunk.ChunkAccess> consumer = (net.minecraft.world.level.chunk.ChunkAccess chunk) -> {
++            if (chunk != null) {
++                int ticketLevel = Math.max(33, chunkProvider.chunkMap.getUpdatingChunkIfPresent(chunk.getPos().toLong()).getTicketLevel());
++                ret.add(chunk);
++                ticketLevels.add(ticketLevel);
++                chunkProvider.addTicketAtLevel(TicketType.FUTURE_AWAIT, chunk.getPos(), ticketLevel, holderIdentifier);
++            }
++            if (++loadedChunks[0] == requiredChunks) {
++                try {
++                    onLoad.accept(java.util.Collections.unmodifiableList(ret));
++                } finally {
++                    for (int i = 0, len = ret.size(); i < len; ++i) {
++                        ChunkPos chunkPos = ret.get(i).getPos();
++                        int ticketLevel = ticketLevels.getInt(i);
++
++                        chunkProvider.addTicketAtLevel(TicketType.UNKNOWN, chunkPos, ticketLevel, chunkPos);
++                        chunkProvider.removeTicketAtLevel(TicketType.FUTURE_AWAIT, chunkPos, ticketLevel, holderIdentifier);
++                    }
++                }
++            }
++        };
++
++        for (int cx = minChunkX; cx <= maxChunkX; ++cx) {
++            for (int cz = minChunkZ; cz <= maxChunkZ; ++cz) {
++                chunkProvider.getChunkAtAsynchronously(cx, cz, net.minecraft.world.level.chunk.ChunkStatus.FULL, true, false, consumer);
++            }
++        }
++    }
++    // Paper end
++
+     // Add env and gen to constructor, WorldData -> WorldDataServer
+     public ServerLevel(MinecraftServer minecraftserver, Executor executor, LevelStorageSource.LevelStorageAccess convertable_conversionsession, ServerLevelData iworlddataserver, ResourceKey<Level> resourcekey, DimensionType dimensionmanager, ChunkProgressListener worldloadlistener, ChunkGenerator chunkgenerator, boolean flag, long i, List<CustomSpawner> list, boolean flag1, org.bukkit.World.Environment env, org.bukkit.generator.ChunkGenerator gen, org.bukkit.generator.BiomeProvider biomeProvider) {
+         // Objects.requireNonNull(minecraftserver); // CraftBukkit - decompile error
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-index 725dcd9dfdf27aff70c5c56277ff29bb6eee612b..b3ce71df7ed67583925b21b59d8f1ccf9ed5beda 100644
+index 6c7c9750d67c914afaf4ecc48facac3189eba75b..89c718e5b975a83b07a114b2b2c6fe31c75cb580 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
 @@ -229,6 +229,8 @@ public class ServerPlayer extends Player {
@@ -3418,6 +5975,22 @@ index a4c5edee297af6d68d518b77f706732b5ccbe4de..7bf4bf5cb2c1b54a7e2733091f48f3a8
  
      @Override
      public void tell(R runnable) {
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index c57bde6b2042c0a68cb02f43c28cae0070f38111..a5f704edf4d8afdb088f3a4ac8e3957f8851842d 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -298,6 +298,11 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
+         return this.level.hasChunk((int) Math.floor(this.getX()) >> 4, (int) Math.floor(this.getZ()) >> 4);
+     }
+     // CraftBukkit end
++    // Paper start
++    public final AABB getBoundingBoxAt(double x, double y, double z) {
++        return this.dimensions.makeBoundingBox(x, y, z);
++    }
++    // Paper end
+ 
+     public Entity(EntityType<?> type, Level world) {
+         this.id = Entity.ENTITY_COUNTER.incrementAndGet();
 diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
 index e01a7a18d026a8b794a575dd2f5dc907c510fda4..2473816c70c05662d75f6b875b46a4e53d7b76fa 100644
 --- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
@@ -3758,6 +6331,58 @@ index 00118cc80ebc31e5fac95c31c07634f0e2904263..138b6792bc6ee26e0b9aaaef7bf58fb2
      @Nullable
      @Override
      public BlockEntity getBlockEntity(BlockPos pos) {
+diff --git a/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java b/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java
+index 505731735126e81a4cc768311dce337385e5503f..adf1c04d34383d088a3fc8c06cdc8b55552c354f 100644
+--- a/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java
++++ b/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java
+@@ -603,14 +603,14 @@ public abstract class BlockBehaviour {
+ 
+     public abstract static class BlockStateBase extends StateHolder<Block, BlockState> {
+ 
+-        private final int lightEmission;
+-        private final boolean useShapeForLightOcclusion;
++        private final int lightEmission; public final int getEmittedLight() { return this.lightEmission; } // Paper - OBFHELPER
++        private final boolean useShapeForLightOcclusion; public final boolean isTransparentOnSomeFaces() { return this.useShapeForLightOcclusion; } // Paper - OBFHELPER
+         private final boolean isAir;
+         private final Material material;
+         private final MaterialColor materialColor;
+         public final float destroySpeed;
+         private final boolean requiresCorrectToolForDrops;
+-        private final boolean canOcclude;
++        private final boolean canOcclude; public final boolean isOpaque() { return this.canOcclude; } // Paper - OBFHELPER
+         private final BlockBehaviour.StatePredicate isRedstoneConductor;
+         private final BlockBehaviour.StatePredicate isSuffocating;
+         private final BlockBehaviour.StatePredicate isViewBlocking;
+@@ -638,10 +638,18 @@ public abstract class BlockBehaviour {
+             this.emissiveRendering = blockbase_info.emissiveRendering;
+         }
+ 
++        // Paper start
++        protected boolean shapeExceedsCube = true;
++        public final boolean shapeExceedsCube() {
++            return this.shapeExceedsCube;
++        }
++        // Paper end
++
+         public void initCache() {
+             if (!this.getBlock().hasDynamicShape()) {
+                 this.cache = new BlockBehaviour.BlockStateBase.Cache(this.asState());
+             }
++            this.shapeExceedsCube = this.cache == null || this.cache.largeCollisionShape; // Paper - moved from actual method to here
+ 
+         }
+ 
+@@ -673,8 +681,8 @@ public abstract class BlockBehaviour {
+             return this.getBlock().getOcclusionShape(this.asState(), world, pos);
+         }
+ 
+-        public boolean hasLargeCollisionShape() {
+-            return this.cache == null || this.cache.largeCollisionShape;
++        public final boolean hasLargeCollisionShape() { // Paper
++            return this.shapeExceedsCube; // Paper - moved into shape cache init
+         }
+ 
+         public boolean useShapeForLightOcclusion() {
 diff --git a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
 index 0d117a6b319340a0f13a516a6c43501f752bc89a..e9a04017df42312e4e0e7e414c9ccc95c71ddae1 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
@@ -4271,6 +6896,43 @@ index 93d356ef2aa4d66126312fa7f2b49cb7d3b0c835..c5d132dcf70a55de041c0187ff8fb889
      @Override
      public WorldBorder getWorldBorder() {
          throw new UnsupportedOperationException("Not supported yet.");
+diff --git a/src/main/java/org/bukkit/craftbukkit/util/UnsafeList.java b/src/main/java/org/bukkit/craftbukkit/util/UnsafeList.java
+index d40c0d8be1b0153d62021b8bcb6e8b37fd0acb4e..e38e57b1f9ef27020de35d7ddcb36a663140f880 100644
+--- a/src/main/java/org/bukkit/craftbukkit/util/UnsafeList.java
++++ b/src/main/java/org/bukkit/craftbukkit/util/UnsafeList.java
+@@ -119,6 +119,32 @@ public class UnsafeList<E> extends AbstractList<E> implements List<E>, RandomAcc
+         return this.indexOf(o) >= 0;
+     }
+ 
++    // Paper start
++    protected transient int maxSize;
++    public void setSize(int size) {
++        if (this.maxSize < this.size) {
++            this.maxSize = this.size;
++        }
++        this.size = size;
++    }
++
++    public void completeReset() {
++        if (this.data != null) {
++            Arrays.fill(this.data, 0, Math.max(this.size, this.maxSize), null);
++        }
++        this.size = 0;
++        this.maxSize = 0;
++        if (this.iterPool != null) {
++            for (Iterator temp : this.iterPool) {
++                if (temp == null) {
++                    continue;
++                }
++                ((Itr)temp).valid = false;
++            }
++        }
++    }
++    // Paper end
++
+     @Override
+     public void clear() {
+         // Create new array to reset memory usage to initial capacity
 diff --git a/src/main/java/org/spigotmc/SpigotConfig.java b/src/main/java/org/spigotmc/SpigotConfig.java
 index acf13887957c899b986a9aabe859bf2405e464ac..58c9ab2f6db97bfbf280efc56f9c9be791604a75 100644
 --- a/src/main/java/org/spigotmc/SpigotConfig.java

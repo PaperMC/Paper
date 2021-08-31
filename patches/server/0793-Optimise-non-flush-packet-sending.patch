@@ -1,0 +1,55 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <spottedleaf@spottedleaf.dev>
+Date: Tue, 22 Sep 2020 01:49:19 -0700
+Subject: [PATCH] Optimise non-flush packet sending
+
+Places like entity tracking make heavy use of packet sending,
+and internally netty will use some very expensive thread wakeup
+calls when scheduling.
+
+Thanks to various hacks in ProtocolLib as well as other
+plugins, we cannot simply use a queue of packets to group
+send on execute. We have to call execute for each packet.
+
+Tux's suggestion here is exactly what was needed - tag
+the Runnable indicating it should not make a wakeup call.
+
+Big thanks to Tux for making this possible as I had given
+up on this optimisation before he came along.
+
+Locally this patch drops the entity tracker tick by a full 1.5x.
+
+diff --git a/src/main/java/net/minecraft/network/Connection.java b/src/main/java/net/minecraft/network/Connection.java
+index 73457ae24ba6f605dd831a870499f1a990570e53..0dae504f49a4a3c66a01eb03896833a010cd5821 100644
+--- a/src/main/java/net/minecraft/network/Connection.java
++++ b/src/main/java/net/minecraft/network/Connection.java
+@@ -49,6 +49,8 @@ import org.apache.logging.log4j.Logger;
+ import org.apache.logging.log4j.Marker;
+ import org.apache.logging.log4j.MarkerManager;
+ 
++
++import io.netty.util.concurrent.AbstractEventExecutor; // Paper
+ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+ 
+     private static final float AVERAGE_PACKETS_SMOOTHING = 0.75F;
+@@ -409,9 +411,19 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+         if (this.channel.eventLoop().inEventLoop()) {
+             this.a(packet, callback, enumprotocol, enumprotocol1, flush); // Paper - add flush parameter
+         } else {
++            // Paper start - optimise packets that are not flushed
++            // note: since the type is not dynamic here, we need to actually copy the old executor code
++            // into two branches. On conflict, just re-copy - no changes were made inside the executor code.
++            if (!flush) {
++                AbstractEventExecutor.LazyRunnable run = () -> {
++                    this.a(packet, callback, enumprotocol, enumprotocol1, flush); // Paper - add flush parameter
++                };
++                this.channel.eventLoop().execute(run);
++            } else { // Paper end - optimise packets that are not flushed
+             this.channel.eventLoop().execute(() -> {
+-                this.a(packet, callback, enumprotocol, enumprotocol1, flush); // Paper - add flush parameter
++                this.a(packet, callback, enumprotocol, enumprotocol1, flush); // Paper - add flush parameter // Paper - diff on change
+             });
++            } // Paper
+         }
+ 
+     }

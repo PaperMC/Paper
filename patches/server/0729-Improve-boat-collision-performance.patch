@@ -1,0 +1,83 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <spottedleaf@spottedleaf.dev>
+Date: Mon, 2 Aug 2021 10:10:40 +0200
+Subject: [PATCH] Improve boat collision performance
+
+
+diff --git a/src/main/java/net/minecraft/Util.java b/src/main/java/net/minecraft/Util.java
+index 81f4f26a6b83079d36acd1fd86dede0eb1116c01..59437f04911662f06596ef61b91017caa6427eec 100644
+--- a/src/main/java/net/minecraft/Util.java
++++ b/src/main/java/net/minecraft/Util.java
+@@ -75,6 +75,7 @@ public class Util {
+     }).findFirst().orElseThrow(() -> {
+         return new IllegalStateException("No jar file system provider found");
+     });
++    public static final double COLLISION_EPSILON = 1.0E-7; // Paper
+     static final Logger LOGGER = LogManager.getLogger();
+ 
+     public static <K, V> Collector<Entry<? extends K, ? extends V>, ?, Map<K, V>> toMap() {
+diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+index 2c49851c2113692d666ccdde6043c82370725010..6175360eb2b19c8197cc5b82a09030211afd838b 100644
+--- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
++++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+@@ -1321,7 +1321,7 @@ public abstract class LivingEntity extends Entity {
+                 if (!source.isProjectile()) {
+                     Entity entity = source.getDirectEntity();
+ 
+-                    if (entity instanceof LivingEntity) {
++                    if (entity instanceof LivingEntity && entity.distanceToSqr(this) <= (200.0D * 200.0D)) { // Paper
+                         this.blockUsingShield((LivingEntity) entity);
+                     }
+                 }
+@@ -1430,11 +1430,12 @@ public abstract class LivingEntity extends Entity {
+                 }
+ 
+                 if (entity1 != null) {
+-                    double d0 = entity1.getX() - this.getX();
++                    final boolean far = entity1.distanceToSqr(this) > (200.0 * 200.0); // Paper
++                    double d0 = far ? (Math.random() - Math.random()) : entity1.getX() - this.getX(); // Paper
+ 
+                     double d1;
+ 
+-                    for (d1 = entity1.getZ() - this.getZ(); d0 * d0 + d1 * d1 < 1.0E-4D; d1 = (Math.random() - Math.random()) * 0.01D) {
++                    for (d1 = far ? Math.random() - Math.random() : entity1.getZ() - this.getZ(); d0 * d0 + d1 * d1 < 1.0E-4D; d1 = (Math.random() - Math.random()) * 0.01D) { // Paper
+                         d0 = (Math.random() - Math.random()) * 0.01D;
+                     }
+ 
+@@ -2086,7 +2087,7 @@ public abstract class LivingEntity extends Entity {
+                 this.hurtCurrentlyUsedShield((float) -event.getDamage(DamageModifier.BLOCKING));
+                 Entity entity = damagesource.getDirectEntity();
+ 
+-                if (entity instanceof LivingEntity) {
++                if (entity instanceof LivingEntity && entity.distanceToSqr(this) <= (200.0D * 200.0D)) { // Paper
+                     this.blockUsingShield((LivingEntity) entity);
+                 }
+             }
+diff --git a/src/main/java/net/minecraft/world/entity/vehicle/Boat.java b/src/main/java/net/minecraft/world/entity/vehicle/Boat.java
+index aa7c022c4faade23bd9061311d4152cf845d3331..391454a58d18d7373b974e094fd62514ca0d0b6b 100644
+--- a/src/main/java/net/minecraft/world/entity/vehicle/Boat.java
++++ b/src/main/java/net/minecraft/world/entity/vehicle/Boat.java
+@@ -688,8 +688,8 @@ public class Boat extends Entity {
+         this.invFriction = 0.05F;
+         if (this.oldStatus == Boat.Status.IN_AIR && this.status != Boat.Status.IN_AIR && this.status != Boat.Status.ON_LAND) {
+             this.waterLevel = this.getY(1.0D);
+-            this.setPos(this.getX(), (double) (this.getWaterLevelAbove() - this.getBbHeight()) + 0.101D, this.getZ());
+-            this.setDeltaMovement(this.getDeltaMovement().multiply(1.0D, 0.0D, 1.0D));
++            this.move(MoverType.SELF, new Vec3(0.0, ((double) (this.getWaterLevelAbove() - this.getBbHeight()) + 0.101D) - this.getY(), 0.0)); // Paper
++            this.setDeltaMovement(this.getDeltaMovement().multiply(1.0D, 0.0D, 1.0D)); // Paper
+             this.lastYd = 0.0D;
+             this.status = Boat.Status.IN_WATER;
+         } else {
+diff --git a/src/main/java/net/minecraft/world/item/BoatItem.java b/src/main/java/net/minecraft/world/item/BoatItem.java
+index c0864c833fd313e6ba9339ecc7f9e2359954bda3..8998f6233a3135fda928469ae8bb7119e16eee1a 100644
+--- a/src/main/java/net/minecraft/world/item/BoatItem.java
++++ b/src/main/java/net/minecraft/world/item/BoatItem.java
+@@ -67,7 +67,7 @@ public class BoatItem extends Item {
+ 
+                 entityboat.setType(this.type);
+                 entityboat.setYRot(user.getYRot());
+-                if (!world.noCollision(entityboat, entityboat.getBoundingBox().inflate(-0.1D))) {
++                if (!world.noCollision(entityboat, entityboat.getBoundingBox())) { // Paper
+                     return InteractionResultHolder.fail(itemstack);
+                 } else {
+                     if (!world.isClientSide) {
