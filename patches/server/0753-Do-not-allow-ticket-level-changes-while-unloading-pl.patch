@@ -8,18 +8,18 @@ Sync loading the chunk at this stage would cause it to load
 older data, as well as screwing our region state.
 
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index 59d085d8fde6570c614a1d98282acfa4dfbf5bc9..a5b81385f5131af9a8d464a8897c109c702ba9f1 100644
+index b53baeae52153b48476c8cd884c10060cb89c976..4c68e828aef067cae0f473a20447221c4a97e38f 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
-@@ -369,6 +369,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -368,6 +368,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
      }
      // Tuiniy end
  
 +    boolean unloadingPlayerChunk = false; // Paper - do not allow ticket level changes while unloading chunks
-     private final java.util.concurrent.ExecutorService lightThread; // Paper
      public ChunkMap(ServerLevel world, LevelStorageSource.LevelStorageAccess session, DataFixer dataFixer, StructureManager structureManager, Executor executor, BlockableEventLoop<Runnable> mainThreadExecutor, LightChunkGetter chunkProvider, ChunkGenerator chunkGenerator, ChunkProgressListener worldGenerationProgressListener, ChunkStatusUpdateListener chunkStatusChangeListener, Supplier<DimensionDataStorage> persistentStateManagerFactory, int viewDistance, boolean dsync) {
          super(new File(session.getDimensionPath(world.dimension()), "region"), dataFixer, dsync);
-@@ -882,6 +883,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+         //this.visibleChunks = this.updatingChunks.clone(); // Paper - no more cloning
+@@ -872,6 +873,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
  
      @Nullable
      ChunkHolder updateChunkScheduling(long pos, int level, @Nullable ChunkHolder holder, int k) {
@@ -27,7 +27,7 @@ index 59d085d8fde6570c614a1d98282acfa4dfbf5bc9..a5b81385f5131af9a8d464a8897c109c
          if (k > ChunkMap.MAX_CHUNK_DISTANCE && level > ChunkMap.MAX_CHUNK_DISTANCE) {
              return holder;
          } else {
-@@ -1140,6 +1142,12 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1129,6 +1131,12 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
              if (completablefuture1 != completablefuture) {
                  this.scheduleUnload(pos, holder);
              } else {
@@ -40,7 +40,7 @@ index 59d085d8fde6570c614a1d98282acfa4dfbf5bc9..a5b81385f5131af9a8d464a8897c109c
                  // Paper start
                  boolean removed;
                  if ((removed = this.pendingUnloads.remove(pos, holder)) && ichunkaccess != null) {
-@@ -1176,6 +1184,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1165,6 +1173,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
                          this.regionManagers.get(index).removeChunk(holder.pos.x, holder.pos.z);
                      }
                  } // Paper end
@@ -49,7 +49,7 @@ index 59d085d8fde6570c614a1d98282acfa4dfbf5bc9..a5b81385f5131af9a8d464a8897c109c
              }
          };
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-index 2087ea4ff230750ae3836aa75cb9f3acb3f2e5e3..0b52dde3b03ae2bb82f8f439ff472eb27afaac9c 100644
+index 748d8b5f0823cbf23f1b05e7a7d0bf7e5149289d..ab2fba4d435d134a28652a7171c6e4a857796e13 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 @@ -841,6 +841,7 @@ public class ServerChunkCache extends ChunkSource {
