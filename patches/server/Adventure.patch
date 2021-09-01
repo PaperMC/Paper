@@ -527,6 +527,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import net.kyori.adventure.translation.GlobalTranslator;
 +import net.kyori.adventure.util.Codec;
 +import net.minecraft.ChatFormatting;
++import net.minecraft.locale.Language;
 +import net.minecraft.nbt.CompoundTag;
 +import net.minecraft.nbt.ListTag;
 +import net.minecraft.nbt.StringTag;
@@ -545,7 +546,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    private static final Pattern LOCALIZATION_PATTERN = Pattern.compile("%(?:(\\d+)\\$)?s");
 +    public static final ComponentFlattener FLATTENER = ComponentFlattener.basic().toBuilder()
 +        .complexMapper(TranslatableComponent.class, (translatable, consumer) -> {
-+            final @NonNull String translated = net.minecraft.locale.Language.getInstance().getOrDefault(translatable.key());
++            if (!Language.getInstance().has(translatable.key())) {
++                consumer.accept(GlobalTranslator.render(translatable, Locale.US));
++                return;
++            }
++            final @NonNull String translated = Language.getInstance().getOrDefault(translatable.key());
 +
 +            final Matcher matcher = LOCALIZATION_PATTERN.matcher(translated);
 +            final List<Component> args = translatable.args();
