@@ -100,7 +100,8 @@ tasks.generateDevelopmentBundle {
             "https://maven.quiltmc.org/repository/release/",
             "https://repo.aikar.co/content/groups/aikar",
             "https://ci.emc.gs/nexus/content/groups/aikar/",
-            "https://papermc.io/repo/repository/maven-public/"
+            "https://papermc.io/repo/repository/maven-public/",
+            "https://repo.velocitypowered.com/snapshots/"
         )
     )
 }
