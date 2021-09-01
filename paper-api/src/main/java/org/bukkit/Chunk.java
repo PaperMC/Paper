@@ -71,6 +71,7 @@ public interface Chunk extends PersistentDataHolder {
 
     /**
      * Get a list of all entities in the chunk.
+     * This will force load any entities, which are not loaded.
      *
      * @return The entities.
      */
