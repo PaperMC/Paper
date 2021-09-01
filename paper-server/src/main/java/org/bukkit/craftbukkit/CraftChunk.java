@@ -5,6 +5,7 @@ import com.google.common.base.Predicates;
 import java.lang.ref.WeakReference;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Objects;
 import java.util.function.Predicate;
 import net.minecraft.core.BlockPosition;
 import net.minecraft.core.IRegistry;
@@ -23,12 +24,12 @@ import net.minecraft.world.level.chunk.ChunkStatus;
 import net.minecraft.world.level.chunk.DataPaletteBlock;
 import net.minecraft.world.level.chunk.IChunkAccess;
 import net.minecraft.world.level.chunk.NibbleArray;
+import net.minecraft.world.level.entity.PersistentEntitySectionManager;
 import net.minecraft.world.level.levelgen.HeightMap;
 import net.minecraft.world.level.levelgen.SeededRandom;
 import net.minecraft.world.level.lighting.LightEngine;
 import org.bukkit.Chunk;
 import org.bukkit.ChunkSnapshot;
-import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
@@ -54,6 +55,13 @@ public class CraftChunk implements Chunk {
         worldServer = (WorldServer) getHandle().level;
         x = getHandle().getPos().x;
         z = getHandle().getPos().z;
+    }
+
+    public CraftChunk(WorldServer worldServer, int x, int z) {
+        this.weakChunk = new WeakReference<>(null);
+        this.worldServer = worldServer;
+        this.x = x;
+        this.z = z;
     }
 
     @Override
@@ -109,11 +117,35 @@ public class CraftChunk implements Chunk {
             getWorld().getChunkAt(x, z); // Transient load for this tick
         }
 
-        Location location = new Location(null, 0, 0, 0);
-        return getWorld().getEntities().stream().filter((entity) -> {
-            entity.getLocation(location);
-            return location.getBlockX() >> 4 == this.x && location.getBlockZ() >> 4 == this.z;
-        }).toArray(Entity[]::new);
+        PersistentEntitySectionManager<net.minecraft.world.entity.Entity> entityManager = getCraftWorld().getHandle().entityManager;
+        long pair = ChunkCoordIntPair.pair(x, z);
+
+        if (entityManager.a(pair)) { // PAIL rename isEntitiesLoaded
+            return entityManager.getEntities(new ChunkCoordIntPair(x, z)).stream()
+                    .map(net.minecraft.world.entity.Entity::getBukkitEntity)
+                    .filter(Objects::nonNull).toArray(Entity[]::new);
+        }
+
+        entityManager.b(pair); // Start entity loading
+
+        // now we wait until the entities are loaded,
+        // the converting from NBT to entity object is done on the main Thread which is why we wait
+        getCraftWorld().getHandle().getMinecraftServer().awaitTasks(() -> {
+            boolean status = entityManager.a(pair);
+            // only execute inbox if our entities are not present
+            if (status) {
+                return true;
+            }
+            // tick loading inbox, which loads the created entities to the world
+            // (if present)
+            entityManager.tick();
+            // check if our entities are loaded
+            return entityManager.a(pair);
+        });
+
+        return entityManager.getEntities(new ChunkCoordIntPair(x, z)).stream()
+                .map(net.minecraft.world.entity.Entity::getBukkitEntity)
+                .filter(Objects::nonNull).toArray(Entity[]::new);
     }
 
     @Override
