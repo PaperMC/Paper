@@ -1210,10 +1210,10 @@ index a7485746417e0dddb392c89a5a1d467c0bc83fbe..82da0f2226f71a5081e24c17a8a39be2
      }
  
 diff --git a/src/main/java/net/minecraft/world/level/entity/PersistentEntitySectionManager.java b/src/main/java/net/minecraft/world/level/entity/PersistentEntitySectionManager.java
-index e4e4b48250d32d9e6c034d62e13ac2277bffda8f..a0dd49d17e1a83edbb0bf5cfbaba3f8fb665f75a 100644
+index 0c4ffc0049679b911cc1e1bea36eb21ff6324c46..dbb78ee61a6a3a7336f0656414cd729efd013009 100644
 --- a/src/main/java/net/minecraft/world/level/entity/PersistentEntitySectionManager.java
 +++ b/src/main/java/net/minecraft/world/level/entity/PersistentEntitySectionManager.java
-@@ -45,8 +45,10 @@ public class PersistentEntitySectionManager<T extends EntityAccess> implements A
+@@ -49,8 +49,10 @@ public class PersistentEntitySectionManager<T extends EntityAccess> implements A
      private final Long2ObjectMap<PersistentEntitySectionManager.ChunkLoadStatus> chunkLoadStatuses = new Long2ObjectOpenHashMap();
      private final LongSet chunksToUnload = new LongOpenHashSet();
      private final Queue<ChunkEntities<T>> loadingInbox = Queues.newConcurrentLinkedQueue();
@@ -1225,7 +1225,7 @@ index e4e4b48250d32d9e6c034d62e13ac2277bffda8f..a0dd49d17e1a83edbb0bf5cfbaba3f8f
          this.sectionStorage = new EntitySectionStorage<>(entityClass, this.chunkVisibility);
          this.chunkVisibility.defaultReturnValue(Visibility.HIDDEN);
          this.chunkLoadStatuses.defaultReturnValue(PersistentEntitySectionManager.ChunkLoadStatus.FRESH);
-@@ -97,6 +99,7 @@ public class PersistentEntitySectionManager<T extends EntityAccess> implements A
+@@ -107,6 +109,7 @@ public class PersistentEntitySectionManager<T extends EntityAccess> implements A
              EntitySection<T> entitysection = this.sectionStorage.getOrCreateSection(i);
  
              entitysection.add(entity); // CraftBukkit - decompile error
@@ -1233,7 +1233,7 @@ index e4e4b48250d32d9e6c034d62e13ac2277bffda8f..a0dd49d17e1a83edbb0bf5cfbaba3f8f
              entity.setLevelCallback(new PersistentEntitySectionManager.Callback(entity, i, entitysection));
              if (!existing) {
                  this.callbacks.onCreated(entity);
-@@ -154,6 +157,7 @@ public class PersistentEntitySectionManager<T extends EntityAccess> implements A
+@@ -164,6 +167,7 @@ public class PersistentEntitySectionManager<T extends EntityAccess> implements A
          io.papermc.paper.util.TickThread.ensureTickThread("Asynchronous chunk ticking status update"); // Paper
          Visibility visibility = Visibility.fromFullChunkStatus(levelType);
  
@@ -1241,7 +1241,7 @@ index e4e4b48250d32d9e6c034d62e13ac2277bffda8f..a0dd49d17e1a83edbb0bf5cfbaba3f8f
          this.updateChunkStatus(chunkPos, visibility);
      }
  
-@@ -434,6 +438,7 @@ public class PersistentEntitySectionManager<T extends EntityAccess> implements A
+@@ -456,6 +460,7 @@ public class PersistentEntitySectionManager<T extends EntityAccess> implements A
              long i = SectionPos.asLong(blockposition);
  
              if (i != this.currentSectionKey) {
@@ -1249,7 +1249,7 @@ index e4e4b48250d32d9e6c034d62e13ac2277bffda8f..a0dd49d17e1a83edbb0bf5cfbaba3f8f
                  Visibility visibility = this.currentSection.getStatus();
  
                  if (!this.currentSection.remove(this.entity)) {
-@@ -482,6 +487,7 @@ public class PersistentEntitySectionManager<T extends EntityAccess> implements A
+@@ -504,6 +509,7 @@ public class PersistentEntitySectionManager<T extends EntityAccess> implements A
              if (!this.currentSection.remove(this.entity)) {
                  PersistentEntitySectionManager.LOGGER.warn("Entity {} wasn't found in section {} (destroying due to {})", this.entity, SectionPos.of(this.currentSectionKey), reason);
              }
@@ -1258,19 +1258,28 @@ index e4e4b48250d32d9e6c034d62e13ac2277bffda8f..a0dd49d17e1a83edbb0bf5cfbaba3f8f
              Visibility visibility = PersistentEntitySectionManager.getEffectiveStatus(this.entity, this.currentSection.getStatus());
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftChunk.java b/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
-index 591a66dcdb717ad041120ab27de8f2f3a1975358..b27945cc7beb36a10bb9f3503b060f6c2ad18b77 100644
+index e317a1d4b463ac1f17cb282260279e92b32087d7..2db015b975077f0bd9514a164d4857a5e05bd701 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
-@@ -110,11 +110,7 @@ public class CraftChunk implements Chunk {
-             this.getWorld().getChunkAt(x, z); // Transient load for this tick
+@@ -122,9 +122,7 @@ public class CraftChunk implements Chunk {
+         long pair = ChunkPos.asLong(x, z);
+ 
+         if (entityManager.areEntitiesLoaded(pair)) { // PAIL rename isEntitiesLoaded
+-            return entityManager.getEntities(new ChunkPos(this.x, this.z)).stream()
+-                    .map(net.minecraft.world.entity.Entity::getBukkitEntity)
+-                    .filter(Objects::nonNull).toArray(Entity[]::new);
++            return getCraftWorld().getHandle().getChunkEntities(this.x, this.z); // Paper - optimise this
          }
  
--        Location location = new Location(null, 0, 0, 0);
--        return this.getWorld().getEntities().stream().filter((entity) -> {
--            entity.getLocation(location);
--            return location.getBlockX() >> 4 == this.x && location.getBlockZ() >> 4 == this.z;
--        }).toArray(Entity[]::new);
-+        return ((CraftWorld)this.getWorld()).getHandle().getChunkEntities(this.x, this.z); // Paper - optimise this
+         entityManager.ensureChunkQueuedForLoad(pair); // Start entity loading
+@@ -144,9 +142,7 @@ public class CraftChunk implements Chunk {
+             return entityManager.areEntitiesLoaded(pair);
+         });
+ 
+-        return entityManager.getEntities(new ChunkPos(this.x, this.z)).stream()
+-                .map(net.minecraft.world.entity.Entity::getBukkitEntity)
+-                .filter(Objects::nonNull).toArray(Entity[]::new);
++        return getCraftWorld().getHandle().getChunkEntities(this.x, this.z); // Paper - optimise this
      }
  
      @Override
