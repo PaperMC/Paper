@@ -1262,15 +1262,24 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
 @@ -0,0 +0,0 @@ public class CraftChunk implements Chunk {
-             this.getWorld().getChunkAt(x, z); // Transient load for this tick
+         long pair = ChunkPos.asLong(x, z);
+ 
+         if (entityManager.areEntitiesLoaded(pair)) { // PAIL rename isEntitiesLoaded
+-            return entityManager.getEntities(new ChunkPos(this.x, this.z)).stream()
+-                    .map(net.minecraft.world.entity.Entity::getBukkitEntity)
+-                    .filter(Objects::nonNull).toArray(Entity[]::new);
++            return getCraftWorld().getHandle().getChunkEntities(this.x, this.z); // Paper - optimise this
          }
  
--        Location location = new Location(null, 0, 0, 0);
--        return this.getWorld().getEntities().stream().filter((entity) -> {
--            entity.getLocation(location);
--            return location.getBlockX() >> 4 == this.x && location.getBlockZ() >> 4 == this.z;
--        }).toArray(Entity[]::new);
-+        return ((CraftWorld)this.getWorld()).getHandle().getChunkEntities(this.x, this.z); // Paper - optimise this
+         entityManager.ensureChunkQueuedForLoad(pair); // Start entity loading
+@@ -0,0 +0,0 @@ public class CraftChunk implements Chunk {
+             return entityManager.areEntitiesLoaded(pair);
+         });
+ 
+-        return entityManager.getEntities(new ChunkPos(this.x, this.z)).stream()
+-                .map(net.minecraft.world.entity.Entity::getBukkitEntity)
+-                .filter(Objects::nonNull).toArray(Entity[]::new);
++        return getCraftWorld().getHandle().getChunkEntities(this.x, this.z); // Paper - optimise this
      }
  
      @Override
