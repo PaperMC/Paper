@@ -1,0 +1,29 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jason Penilla <11360596+jpenilla@users.noreply.github.com>
+Date: Tue, 31 Aug 2021 17:12:01 -0700
+Subject: [PATCH] Use updatingChunks for flush saving
+
+
+diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
+index d9f1601c49e7e7fc06a6f9bf0cb13aacd66f190c..59073cbae4ff8d8c38934a6d0ea11545a30a7013 100644
+--- a/src/main/java/net/minecraft/server/level/ChunkMap.java
++++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
+@@ -950,9 +950,17 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+     }
+     // Paper end
+ 
++    // Paper start
++    public Long2ObjectLinkedOpenHashMap<ChunkHolder> getVisibleChunks() {
++        synchronized (this.updatingChunks) {
++            return this.updatingChunks.getVisibleMap().clone();
++        }
++    }
++    // Paper end
++
+     protected void saveAllChunks(boolean flush) {
+         if (flush) {
+-            List<ChunkHolder> list = (List) this.visibleChunkMap.values().stream().filter(ChunkHolder::wasAccessibleSinceLastSave).peek(ChunkHolder::refreshAccessibility).collect(Collectors.toList());
++            List<ChunkHolder> list = (List) this.getVisibleChunks().values().stream().filter(ChunkHolder::wasAccessibleSinceLastSave).peek(ChunkHolder::refreshAccessibility).collect(Collectors.toList()); // Paper
+             MutableBoolean mutableboolean = new MutableBoolean();
+ 
+             do {
