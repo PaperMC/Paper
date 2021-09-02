@@ -4,38 +4,6 @@ PaperMC is happy you're willing to contribute to our projects. We are usually
 very lenient with all submitted PRs, but there are still some guidelines you
 can follow to make the approval process go more smoothly.
 
-**Table of contents:**
-<!-- Please don't remove the following comments.
-To generate and update the TOC: https://github.com/mzlogin/vim-markdown-toc -->
-<!-- vim-markdown-toc GFM -->
-
-* [Use a Personal Fork and not Organization](#use-a-personal-fork-and-not-organization)
-* [Requirements](#requirements)
-* [Understanding Patches](#understanding-patches)
-* [Adding Patches](#adding-patches)
-* [Modifying Patches](#modifying-patches)
-  * [Method 1](#method-1)
-  * [Method 2 - Fixup commits](#method-2---fixup-commits)
-    * [Manual method](#manual-method)
-    * [Automatic method](#automatic-method)
-* [PR Policy](#pr-policy)
-* [Rebasing PRs](#rebasing-prs)
-* [Formatting](#formatting)
-* [Patch Notes](#patch-notes)
-* [Obfuscation Helpers](#obfuscation-helpers)
-* [Configuration files](#configuration-files)
-  * [PaperConfig example](#paperconfig-example)
-  * [PaperWorldConfig example](#paperworldconfig-example)
-* [Testing API changes](#testing-api-changes)
-    * [Using the Paper Test Plugin](#using-the-paper-test-plugin)
-    * [Publishing to Maven local (use in external plugins)](#publishing-to-maven-local-use-in-external-plugins)
-* [Frequently Asked Questions](#frequently-asked-questions)
-  * [I can't find the NMS file I need!](#i-cant-find-the-nms-file-i-need)
-  * [My commit doesn't need a build, what do I do?](#my-commit-doesnt-need-a-build-what-do-i-do)
-  * [Patching and building is *really* slow, what can I do?](#patching-and-building-is-really-slow-what-can-i-do)
-
-<!-- vim-markdown-toc -->
-
 ## Use a Personal Fork and not Organization
 
 Paper will routinely modify your PR, whether it's a quick rebase or to take care
