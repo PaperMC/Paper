@@ -61,7 +61,7 @@
      private int lastSpawnChunkRadius;
      final EntityTickList entityTickList = new EntityTickList();
      public final PersistentEntitySectionManager<Entity> entityManager;
-@@ -214,54 +226,204 @@
+@@ -214,53 +226,203 @@
      private final boolean tickTime;
      private final RandomSequences randomSequences;
  
@@ -219,7 +219,7 @@
 +                chunkgenerator = new FlatLevelSource(cpf.settings(), worldChunkManager);
 +            }
 +        }
- 
++
 +        if (gen != null) {
 +            chunkgenerator = new org.bukkit.craftbukkit.generator.CustomChunkGenerator(this, chunkgenerator, gen);
 +        }
@@ -227,7 +227,7 @@
 +        boolean flag2 = minecraftserver.forceSynchronousWrites();
 +        DataFixer datafixer = minecraftserver.getFixerUpper();
 +        EntityPersistentStorage<Entity> entitypersistentstorage = new EntityStorage(new SimpleRegionStorage(new RegionStorageInfo(convertable_conversionsession.getLevelId(), resourcekey, "entities"), convertable_conversionsession.getDimensionPath(resourcekey).resolve("entities"), datafixer, flag2, DataFixTypes.ENTITY_CHUNK), this, minecraftserver);
-+
+ 
          this.entityManager = new PersistentEntitySectionManager<>(Entity.class, new ServerLevel.EntityCallbacks(), entitypersistentstorage);
 -        StructureTemplateManager structuretemplatemanager = server.getStructureManager();
 -        int j = server.getPlayerList().getViewDistance();
@@ -279,17 +279,16 @@
          });
 +        this.getCraftServer().addWorld(this.getWorld()); // CraftBukkit
      }
- 
++
 +    // Paper start
 +    @Override
 +    public boolean hasChunk(int chunkX, int chunkZ) {
 +        return this.getChunkSource().getChunkAtIfLoadedImmediately(chunkX, chunkZ) != null;
 +    }
 +    // Paper end
-+
+ 
      /** @deprecated */
      @Deprecated
-     @VisibleForTesting
 @@ -273,8 +435,8 @@
          this.serverLevelData.setClearWeatherTime(clearDuration);
          this.serverLevelData.setRainTime(rainDuration);
@@ -885,12 +884,9 @@
  
      public <T extends ParticleOptions> int sendParticles(T parameters, boolean force, boolean important, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double speed) {
 -        ClientboundLevelParticlesPacket packetplayoutworldparticles = new ClientboundLevelParticlesPacket(parameters, force, important, x, y, z, (float) offsetX, (float) offsetY, (float) offsetZ, (float) speed, count);
--        int j = 0;
 +        return this.sendParticlesSource(null, parameters, force, important, x, y, z, count, offsetX, offsetY, offsetZ, speed); // CraftBukkit - visibility api support
 +    }
- 
--        for (int k = 0; k < this.players.size(); ++k) {
--            ServerPlayer entityplayer = (ServerPlayer) this.players.get(k);
++
 +    // CraftBukkit start - visibility api support
 +    public <T extends ParticleOptions> int sendParticlesSource(ServerPlayer sender, T t0, boolean flag, boolean flag1, double d0, double d1, double d2, int i, double d3, double d4, double d5, double d6) {
 +        // Paper start - Particle API
@@ -900,13 +896,15 @@
 +        // Paper end - Particle API
 +        // CraftBukkit end
 +        ClientboundLevelParticlesPacket packetplayoutworldparticles = new ClientboundLevelParticlesPacket(t0, flag, flag1, d0, d1, d2, (float) d3, (float) d4, (float) d5, (float) d6, i);
-+        int j = 0;
+         int j = 0;
  
--            if (this.sendParticles(entityplayer, force, x, y, z, packetplayoutworldparticles)) {
+-        for (int k = 0; k < this.players.size(); ++k) {
+-            ServerPlayer entityplayer = (ServerPlayer) this.players.get(k);
 +        for (Player entityhuman : receivers) { // Paper - Particle API
 +            ServerPlayer entityplayer = (ServerPlayer) entityhuman; // Paper - Particle API
 +            if (sender != null && !entityplayer.getBukkitEntity().canSee(sender.getBukkitEntity())) continue; // CraftBukkit
-+
+ 
+-            if (this.sendParticles(entityplayer, force, x, y, z, packetplayoutworldparticles)) {
 +            if (this.sendParticles(entityplayer, flag, d0, d1, d2, packetplayoutworldparticles)) {
                  ++j;
              }
@@ -1047,7 +1045,7 @@
              if (entity instanceof ServerPlayer entityplayer) {
                  ServerLevel.this.players.add(entityplayer);
                  ServerLevel.this.updateSleepingPlayerList();
-@@ -1864,9 +2271,53 @@
+@@ -1864,9 +2271,58 @@
              }
  
              entity.updateDynamicGameEventListener(DynamicGameEventListener::add);
@@ -1093,6 +1091,11 @@
 +            // Spigot end
 +            // Spigot Start
 +            if (entity.getBukkitEntity() instanceof org.bukkit.inventory.InventoryHolder && (!(entity instanceof ServerPlayer) || entity.getRemovalReason() != Entity.RemovalReason.KILLED)) { // SPIGOT-6876: closeInventory clears death message
++                // Paper start - Fix merchant inventory not closing on entity removal
++                if (entity.getBukkitEntity() instanceof org.bukkit.inventory.Merchant merchant && merchant.getTrader() != null) {
++                    merchant.getTrader().closeInventory(org.bukkit.event.inventory.InventoryCloseEvent.Reason.UNLOADED);
++                }
++                // Paper end - Fix merchant inventory not closing on entity removal
 +                for (org.bukkit.entity.HumanEntity h : Lists.newArrayList(((org.bukkit.inventory.InventoryHolder) entity.getBukkitEntity()).getInventory().getViewers())) {
 +                    h.closeInventory(org.bukkit.event.inventory.InventoryCloseEvent.Reason.UNLOADED); // Paper - Inventory close reason
 +                }
@@ -1101,7 +1104,7 @@
              ServerLevel.this.getChunkSource().removeEntity(entity);
              if (entity instanceof ServerPlayer entityplayer) {
                  ServerLevel.this.players.remove(entityplayer);
-@@ -1895,6 +2346,15 @@
+@@ -1895,6 +2351,15 @@
              }
  
              entity.updateDynamicGameEventListener(DynamicGameEventListener::remove);
