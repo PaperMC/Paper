@@ -15,8 +15,6 @@ To generate and update the TOC: https://github.com/mzlogin/vim-markdown-toc -->
 * [Adding Patches](#adding-patches)
 * [Modifying Patches](#modifying-patches)
   * [Method 1](#method-1)
-    * [Using the Paper tool](#using-the-paper-tool)
-    * [Manual method: Stashing](#manual-method-stashing)
   * [Method 2 - Fixup commits](#method-2---fixup-commits)
     * [Manual method](#manual-method)
     * [Automatic method](#automatic-method)
@@ -141,34 +139,8 @@ edit it using `git rebase`.
 > ❗ While in the middle of an edit, you will not be able to compile unless you
 > *also* reset the opposing module(s) to a related commit. In the API's case,
 > you must reset the Server, and reset the API if you're editing the Server.
-
-#### Using the Paper tool
-*CURRENTLY NOT OPERATIONAL*
-
-The PaperMC build tool provides a handy command to automatically do this type of
-patch modification.
-
-1. Type `./paper edit server` or `./paper edit api` depending on which project
-you want to edit;
-   - It should show something like
-   [this](https://gist.github.com/zachbr/21e92993cb99f62ffd7905d7b02f3159) in
-   the text editor you get.
-   - If your editor does not have a "menu" at the bottom, you're using `vim`.  
-   If you don't know how to use `vim` and don't want to
-   learn, enter `:q!` and press enter. Before redoing this step, do
-   `export EDITOR=nano` for an easier editor to use.
-1. Replace `pick` with `edit` for the commit/patch you want to modify, and
-"save" the changes;
-   - Only do this for **one** commit at a time.
-1. Make the changes you want to make to the patch;
-1. Type `./paper edit continue` in the root directory to finish and rebuild
-patches;
-1. PR your modified patch file(s) back to this repository.
-
-#### Manual method: Stashing
-
-In case you need something more complex or want more control, these step-by-step
-instruction do exactly what the above slightly automated system above does.
+> Note also that either module _may_ not compile when doing so. This is not
+> ideal nor intentional, but it happens. Feel free to fix this in a PR to us!
 
 1. If you have changes you are working on, type `git stash` to store them for
 later;
