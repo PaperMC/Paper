@@ -1,0 +1,55 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Heiko Schaefer <heiko@rangun.de>
+Date: Thu, 2 Sep 2021 10:32:05 +0200
+Subject: [PATCH] Hotfix for bug #6543
+
+This patch uses the hotfix of @electonicboy https://github.com/PaperMC/Paper/issues/6543#issuecomment-911271977
+to fix bug #6543.
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftChunk.java b/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
+index 2db015b975077f0bd9514a164d4857a5e05bd701..a6b86d031612860a5d77cba64f700df442a8b19a 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
+@@ -129,18 +129,30 @@ public class CraftChunk implements Chunk {
+ 
+         // now we wait until the entities are loaded,
+         // the converting from NBT to entity object is done on the main Thread which is why we wait
+-        this.getCraftWorld().getHandle().getServer().managedBlock(() -> {
+-            boolean status = entityManager.areEntitiesLoaded(pair);
+-            // only execute inbox if our entities are not present
+-            if (status) {
+-                return true;
+-            }
+-            // tick loading inbox, which loads the created entities to the world
+-            // (if present)
+-            entityManager.tick();
+-            // check if our entities are loaded
+-            return entityManager.areEntitiesLoaded(pair);
+-        });
++		this.getCraftWorld().getHandle().getServer().managedBlock(() -> {
++
++			// Paper start - Code from https://github.com/PaperMC/Paper/issues/6543#issuecomment-911271977
++			/*-
++			boolean status = entityManager.areEntitiesLoaded(pair);
++			// only execute inbox if our entities are not present
++			if (status) {
++			    return true;
++			}
++			// tick loading inbox, which loads the created entities to the world
++			// (if present)
++			entityManager.tick(); */
++
++			while (!entityManager.areEntitiesLoaded(pair)) {
++				entityManager.tick();
++				if (entityManager.areEntitiesLoaded(pair))
++					break;
++				java.util.concurrent.locks.LockSupport.parkNanos("entityAwait", 1000L);
++			}
++			// Paper end
++
++			// check if our entities are loaded
++			return entityManager.areEntitiesLoaded(pair);
++		});
+ 
+         return getCraftWorld().getHandle().getChunkEntities(this.x, this.z); // Paper - optimise this
+     }
