@@ -525,6 +525,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 +import net.kyori.adventure.text.serializer.plain.PlainComponentSerializer;
 +import net.kyori.adventure.translation.GlobalTranslator;
++import net.kyori.adventure.translation.TranslationRegistry;
++import net.kyori.adventure.translation.Translator;
 +import net.kyori.adventure.util.Codec;
 +import net.minecraft.ChatFormatting;
 +import net.minecraft.locale.Language;
@@ -547,8 +549,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    public static final ComponentFlattener FLATTENER = ComponentFlattener.basic().toBuilder()
 +        .complexMapper(TranslatableComponent.class, (translatable, consumer) -> {
 +            if (!Language.getInstance().has(translatable.key())) {
-+                consumer.accept(GlobalTranslator.render(translatable, Locale.US));
-+                return;
++                for (final Translator source : GlobalTranslator.get().sources()) {
++                    if (source instanceof TranslationRegistry registry && registry.contains(translatable.key())) {
++                        consumer.accept(GlobalTranslator.render(translatable, Locale.US));
++                        return;
++                    }
++                }
 +            }
 +            final @NonNull String translated = Language.getInstance().getOrDefault(translatable.key());
 +
