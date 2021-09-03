@@ -5,36 +5,39 @@ Subject: [PATCH] Implement server resource pack API
 
 
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-index 7b6c547e71230fbb3733f99a4597b3f5b51547b8..78716a209c34e1fbb2db901e5729db664eaf7c4f 100644
+index 7b6c547e71230fbb3733f99a4597b3f5b51547b8..d5beba5b2bfcca4e0aa8d8d76078d104fc42b8ec 100644
 --- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-@@ -88,8 +88,12 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+@@ -88,8 +88,11 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
      private MinecraftServerGui gui;
      @Nullable
      private final TextFilterClient textFilterClient;
 +    // Paper start
      @Nullable
--    private final Component resourcePackPrompt;
-+    private Component resourcePackPrompt;
-+    @Nullable
-+    private Boolean resourcePackRequired;
+     private Component resourcePackPrompt;
++    private boolean resourcePackRequired;
 +    // Paper end
  
      // CraftBukkit start - Signature changed
      public DedicatedServer(joptsimple.OptionSet options, DataPackConfig datapackconfiguration, Thread thread, RegistryAccess.RegistryHolder iregistrycustom_dimension, LevelStorageSource.LevelStorageAccess convertable_conversionsession, PackRepository resourcepackrepository, ServerResources datapackresources, WorldData savedata, DedicatedServerSettings dedicatedserversettings, DataFixer datafixer, MinecraftSessionService minecraftsessionservice, GameProfileRepository gameprofilerepository, GameProfileCache usercache, ChunkProgressListenerFactory worldloadlistenerfactory) {
-@@ -834,7 +838,10 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+@@ -99,6 +102,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+         this.rconConsoleSource = new RconConsoleSource(this);
+         this.textFilterClient = TextFilterClient.createFromConfig(dedicatedserversettings.getProperties().textFilteringConfig);
+         this.resourcePackPrompt = DedicatedServer.parseResourcePackPrompt(dedicatedserversettings);
++        this.resourcePackRequired = dedicatedserversettings.getProperties().requireResourcePack;
+     }
+ 
+     @Override
+@@ -834,7 +838,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
  
      @Override
      public boolean isResourcePackRequired() {
 -        return this.settings.getProperties().requireResourcePack;
-+        if (this.resourcePackRequired == null) {
-+            return this.settings.getProperties().requireResourcePack;
-+        }
 +        return this.resourcePackRequired;
      }
  
      @Nullable
-@@ -864,6 +871,16 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+@@ -864,6 +868,16 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
          return this.resourcePackPrompt;
      }
  
