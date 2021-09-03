@@ -1,0 +1,35 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Bjarne Koll <lynxplay101@gmail.com>
+Date: Fri, 3 Sep 2021 13:59:33 +0200
+Subject: [PATCH] Prevent duplication on overfilled bundle additions
+
+Bundles in minecraft are, at least in version 1.17.1, limited to a
+maximum weight of 64, which in most cases correlates to the amount of
+items inside the bundle.
+If a bundle is overfilled, e.g. was spawned in with enough items to
+break the maximum weight of 64, adding more items into the bundle will
+cause the bundle to instead add an air itemstack with the inverted
+amount of the added item, resulting in a duplication of the original
+item.
+
+While mojang already cancels additions to the bundle if the bundle has 0
+weight left, they do not cancel additions if the bundle has a negative
+amount of weight left.
+
+This commit changes the bundle to now prevent additions to the bundle if
+the weight left to be filled in the bundle is zero or less, effectively
+preventing the duplication.
+
+diff --git a/src/main/java/net/minecraft/world/item/BundleItem.java b/src/main/java/net/minecraft/world/item/BundleItem.java
+index a80864d57b50363a328969a6a319c8e308ceab31..290830bf6381ea7f65cf27d1e9e8d65755fa195d 100644
+--- a/src/main/java/net/minecraft/world/item/BundleItem.java
++++ b/src/main/java/net/minecraft/world/item/BundleItem.java
+@@ -122,7 +122,7 @@ public class BundleItem extends Item {
+             int i = getContentWeight(bundle);
+             int j = getWeight(stack);
+             int k = Math.min(stack.getCount(), (64 - i) / j);
+-            if (k == 0) {
++            if (k <= 0) { // Paper - prevent item addition on overfilled bundles
+                 return 0;
+             } else {
+                 ListTag listTag = compoundTag.getList("Items", 10);
