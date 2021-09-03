@@ -498,10 +498,10 @@ index 0000000000000000000000000000000000000000..eeedc30a45d9637d68f04f185b3dd90d
 +}
 diff --git a/src/main/java/io/papermc/paper/adventure/PaperAdventure.java b/src/main/java/io/papermc/paper/adventure/PaperAdventure.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..41762b5ed19b17ee524f79726eaa4cf38479ba96
+index 0000000000000000000000000000000000000000..f763a3ea5796737304e0c1f41349622e1d7adadf
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/adventure/PaperAdventure.java
-@@ -0,0 +1,375 @@
+@@ -0,0 +1,381 @@
 +package io.papermc.paper.adventure;
 +
 +import com.mojang.brigadier.exceptions.CommandSyntaxException;
@@ -525,6 +525,8 @@ index 0000000000000000000000000000000000000000..41762b5ed19b17ee524f79726eaa4cf3
 +import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 +import net.kyori.adventure.text.serializer.plain.PlainComponentSerializer;
 +import net.kyori.adventure.translation.GlobalTranslator;
++import net.kyori.adventure.translation.TranslationRegistry;
++import net.kyori.adventure.translation.Translator;
 +import net.kyori.adventure.util.Codec;
 +import net.minecraft.ChatFormatting;
 +import net.minecraft.locale.Language;
@@ -547,8 +549,12 @@ index 0000000000000000000000000000000000000000..41762b5ed19b17ee524f79726eaa4cf3
 +    public static final ComponentFlattener FLATTENER = ComponentFlattener.basic().toBuilder()
 +        .complexMapper(TranslatableComponent.class, (translatable, consumer) -> {
 +            if (!Language.getInstance().has(translatable.key())) {
-+                consumer.accept(GlobalTranslator.render(translatable, Locale.US));
-+                return;
++                for (final Translator source : GlobalTranslator.get().sources()) {
++                    if (source instanceof TranslationRegistry registry && registry.contains(translatable.key())) {
++                        consumer.accept(GlobalTranslator.render(translatable, Locale.US));
++                        return;
++                    }
++                }
 +            }
 +            final @NonNull String translated = Language.getInstance().getOrDefault(translatable.key());
 +
