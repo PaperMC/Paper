@@ -1,0 +1,62 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <spottedleaf@spottedleaf.dev>
+Date: Sat, 19 Sep 2020 15:29:16 -0700
+Subject: [PATCH] Do not allow ticket level changes while unloading
+ playerchunks
+
+Sync loading the chunk at this stage would cause it to load
+older data, as well as screwing our region state.
+
+diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
+index dd6980326a2ec41a5eb65038ee8283a7cb8195bf..7e750f84b7f7050bd2405ab01a233aa231db62c4 100644
+--- a/src/main/java/net/minecraft/server/level/ChunkMap.java
++++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
+@@ -341,6 +341,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+     }
+     // Tuiniy end
+ 
++    boolean unloadingPlayerChunk = false; // Paper - do not allow ticket level changes while unloading chunks
+     public ChunkMap(ServerLevel world, LevelStorageSource.LevelStorageAccess session, DataFixer dataFixer, StructureManager structureManager, Executor executor, BlockableEventLoop<Runnable> mainThreadExecutor, LightChunkGetter chunkProvider, ChunkGenerator chunkGenerator, ChunkProgressListener worldGenerationProgressListener, ChunkStatusUpdateListener chunkStatusChangeListener, Supplier<DimensionDataStorage> persistentStateManagerFactory, int viewDistance, boolean dsync) {
+         super(new File(session.getDimensionPath(world.dimension()), "region"), dataFixer, dsync);
+         this.visibleChunkMap = this.updatingChunkMap.clone();
+@@ -802,6 +803,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+ 
+     @Nullable
+     ChunkHolder updateChunkScheduling(long pos, int level, @Nullable ChunkHolder holder, int k) {
++        if (this.unloadingPlayerChunk) { net.minecraft.server.MinecraftServer.LOGGER.fatal("Cannot tick distance manager while unloading playerchunks", new Throwable()); throw new IllegalStateException("Cannot tick distance manager while unloading playerchunks"); } // Paper
+         if (k > ChunkMap.MAX_CHUNK_DISTANCE && level > ChunkMap.MAX_CHUNK_DISTANCE) {
+             return holder;
+         } else {
+@@ -1058,6 +1060,12 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+             if (completablefuture1 != completablefuture) {
+                 this.scheduleUnload(pos, holder);
+             } else {
++                // Paper start - do not allow ticket level changes while unloading chunks
++                org.spigotmc.AsyncCatcher.catchOp("playerchunk unload");
++                boolean unloadingBefore = this.unloadingPlayerChunk;
++                this.unloadingPlayerChunk = true;
++                try {
++                    // Paper end - do not allow ticket level changes while unloading chunks
+                 // Paper start
+                 boolean removed;
+                 if ((removed = this.pendingUnloads.remove(pos, holder)) && ichunkaccess != null) {
+@@ -1094,6 +1102,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+                         this.regionManagers.get(index).removeChunk(holder.pos.x, holder.pos.z);
+                     }
+                 } // Paper end
++                } finally { this.unloadingPlayerChunk = unloadingBefore; } // Paper - do not allow ticket level changes while unloading chunks
+ 
+             }
+         };
+diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
+index f5ccbff7a6b51cf71e28e514d853a500f9acd43f..11907bdf8c2b26d02aac5d7696d5f41d9c7d334d 100644
+--- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
++++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
+@@ -841,6 +841,7 @@ public class ServerChunkCache extends ChunkSource {
+ 
+     public boolean runDistanceManagerUpdates() {
+         if (distanceManager.delayDistanceManagerTick) return false; // Paper - Chunk priority
++        if (this.chunkMap.unloadingPlayerChunk) { net.minecraft.server.MinecraftServer.LOGGER.fatal("Cannot tick distance manager while unloading playerchunks", new Throwable()); throw new IllegalStateException("Cannot tick distance manager while unloading playerchunks"); } // Paper
+         boolean flag = this.distanceManager.runAllUpdates(this.chunkMap);
+         boolean flag1 = this.chunkMap.promoteChunkMap();
+ 

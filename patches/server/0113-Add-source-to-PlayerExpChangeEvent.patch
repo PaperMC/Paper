@@ -1,0 +1,41 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AlphaBlend <whizkid3000@hotmail.com>
+Date: Thu, 8 Sep 2016 08:48:33 -0700
+Subject: [PATCH] Add source to PlayerExpChangeEvent
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/ExperienceOrb.java b/src/main/java/net/minecraft/world/entity/ExperienceOrb.java
+index b902bca6135c3a7be4804a441bbf8f73b4596432..41556294841b2c280ba4eff861405ccb6aee19e5 100644
+--- a/src/main/java/net/minecraft/world/entity/ExperienceOrb.java
++++ b/src/main/java/net/minecraft/world/entity/ExperienceOrb.java
+@@ -246,7 +246,7 @@ public class ExperienceOrb extends Entity {
+                 int i = this.repairPlayerItems(player, this.value);
+ 
+                 if (i > 0) {
+-                    player.giveExperiencePoints(CraftEventFactory.callPlayerExpChangeEvent(player, i).getAmount()); // CraftBukkit - this.value -> event.getAmount()
++                    player.giveExperiencePoints(CraftEventFactory.callPlayerExpChangeEvent(player, this).getAmount()); // CraftBukkit - this.value -> event.getAmount() // Paper - supply experience orb object
+                 }
+ 
+                 --this.count;
+diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+index f7dfc549dce8cd96656c80b0a2fe5a79796128a9..aaac6afc2e80149b128321b1ae62295b0dc323eb 100644
+--- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
++++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+@@ -1079,6 +1079,17 @@ public class CraftEventFactory {
+         return event;
+     }
+ 
++    // Paper start - Add orb
++    public static PlayerExpChangeEvent callPlayerExpChangeEvent(net.minecraft.world.entity.player.Player entity, net.minecraft.world.entity.ExperienceOrb entityOrb) {
++        Player player = (Player) entity.getBukkitEntity();
++        ExperienceOrb source = (ExperienceOrb) entityOrb.getBukkitEntity();
++        int expAmount = source.getExperience();
++        PlayerExpChangeEvent event = new PlayerExpChangeEvent(player, source, expAmount);
++        Bukkit.getPluginManager().callEvent(event);
++        return event;
++    }
++    // Paper end
++
+     public static boolean handleBlockGrowEvent(Level world, BlockPos pos, net.minecraft.world.level.block.state.BlockState block) {
+         return CraftEventFactory.handleBlockGrowEvent(world, pos, block, 3);
+     }
