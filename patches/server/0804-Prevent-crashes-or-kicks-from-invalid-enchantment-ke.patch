@@ -1,0 +1,24 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Noah van der Aa <ndvdaa@gmail.com>
+Date: Sat, 4 Sep 2021 23:22:19 +0200
+Subject: [PATCH] Prevent crashes or kicks from invalid enchantment keys
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
+index c88ab49f60857d5687facc8523f9edc4d652c81b..e8f70aebfe67ba109922909b0d53ec9e63cb052b 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
+@@ -450,7 +450,12 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+             String id = ((CompoundTag) ench.get(i)).getString(ENCHANTMENTS_ID.NBT);
+             int level = 0xffff & ((CompoundTag) ench.get(i)).getShort(ENCHANTMENTS_LVL.NBT);
+ 
+-            Enchantment enchant = Enchantment.getByKey(CraftNamespacedKey.fromStringOrNull(id));
++            // Paper start - prevent crashes or kicks from invalid enchantment keys
++            Enchantment enchant = null;
++            try {
++                enchant = Enchantment.getByKey(CraftNamespacedKey.fromStringOrNull(id));
++            } catch (IllegalArgumentException swallowed) {}
++            // Paper end
+             if (enchant != null) {
+                 enchantments.put(enchant, level);
+             }
