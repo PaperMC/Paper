@@ -1293,13 +1293,94 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     @Override
     public void setRotation(float yaw, float pitch) {
-        throw new UnsupportedOperationException("Cannot set rotation of players. Consider teleporting instead.");
+        // Paper start - Teleport API
+        if (this.getHandle().connection == null) return;
+        this.getHandle().forceSetRotation(yaw, pitch);
+        // Paper end - Teleportation API
     }
 
     @Override
     public boolean teleport(Location location, PlayerTeleportEvent.TeleportCause cause) {
+        // Paper start - Teleport API
+        return this.teleport(location, cause, new io.papermc.paper.entity.TeleportFlag[0]);
+    }
+
+    @Override
+    public void lookAt(@NotNull org.bukkit.entity.Entity entity, @NotNull io.papermc.paper.entity.LookAnchor playerAnchor, @NotNull io.papermc.paper.entity.LookAnchor entityAnchor) {
+        this.getHandle().lookAt(toNmsAnchor(playerAnchor), ((CraftEntity) entity).getHandle(), toNmsAnchor(entityAnchor));
+    }
+
+    @Override
+    public void lookAt(double x, double y, double z, @NotNull io.papermc.paper.entity.LookAnchor playerAnchor) {
+        this.getHandle().lookAt(toNmsAnchor(playerAnchor), new net.minecraft.world.phys.Vec3(x, y, z));
+    }
+
+    public static net.minecraft.commands.arguments.EntityAnchorArgument.Anchor toNmsAnchor(io.papermc.paper.entity.LookAnchor nmsAnchor) {
+        return switch (nmsAnchor) {
+            case EYES -> net.minecraft.commands.arguments.EntityAnchorArgument.Anchor.EYES;
+            case FEET -> net.minecraft.commands.arguments.EntityAnchorArgument.Anchor.FEET;
+        };
+    }
+
+    public static io.papermc.paper.entity.LookAnchor toApiAnchor(net.minecraft.commands.arguments.EntityAnchorArgument.Anchor playerAnchor) {
+        return switch (playerAnchor) {
+            case EYES -> io.papermc.paper.entity.LookAnchor.EYES;
+            case FEET -> io.papermc.paper.entity.LookAnchor.FEET;
+        };
+    }
+
+    public static net.minecraft.world.entity.Relative deltaRelativeToNMS(io.papermc.paper.entity.TeleportFlag.Relative apiFlag) {
+        return switch (apiFlag) {
+            case VELOCITY_X -> net.minecraft.world.entity.Relative.DELTA_X;
+            case VELOCITY_Y -> net.minecraft.world.entity.Relative.DELTA_Y;
+            case VELOCITY_Z -> net.minecraft.world.entity.Relative.DELTA_Z;
+            case VELOCITY_ROTATION -> net.minecraft.world.entity.Relative.ROTATE_DELTA;
+        };
+    }
+
+    public static @org.jetbrains.annotations.Nullable io.papermc.paper.entity.TeleportFlag.Relative deltaRelativeToAPI(net.minecraft.world.entity.Relative nmsFlag) {
+        return switch (nmsFlag) {
+            case DELTA_X -> io.papermc.paper.entity.TeleportFlag.Relative.VELOCITY_X;
+            case DELTA_Y -> io.papermc.paper.entity.TeleportFlag.Relative.VELOCITY_Y;
+            case DELTA_Z -> io.papermc.paper.entity.TeleportFlag.Relative.VELOCITY_Z;
+            case ROTATE_DELTA -> io.papermc.paper.entity.TeleportFlag.Relative.VELOCITY_ROTATION;
+            default -> null;
+        };
+    }
+
+    @Override
+    public boolean teleport(Location location, org.bukkit.event.player.PlayerTeleportEvent.TeleportCause cause, io.papermc.paper.entity.TeleportFlag... flags) {
+        Set<io.papermc.paper.entity.TeleportFlag.Relative> relativeArguments;
+        Set<io.papermc.paper.entity.TeleportFlag> allFlags;
+        if (flags.length == 0) {
+            relativeArguments = Set.of();
+            allFlags = Set.of();
+        } else {
+            relativeArguments = java.util.EnumSet.noneOf(io.papermc.paper.entity.TeleportFlag.Relative.class);
+            allFlags = new HashSet<>();
+            for (io.papermc.paper.entity.TeleportFlag flag : flags) {
+                if (flag instanceof final io.papermc.paper.entity.TeleportFlag.Relative relativeTeleportFlag) {
+                    relativeArguments.add(relativeTeleportFlag);
+                }
+                allFlags.add(flag);
+            }
+        }
+        boolean dismount = !allFlags.contains(io.papermc.paper.entity.TeleportFlag.EntityState.RETAIN_VEHICLE);
+        boolean ignorePassengers = allFlags.contains(io.papermc.paper.entity.TeleportFlag.EntityState.RETAIN_PASSENGERS);
+        // Paper end - Teleport API
         Preconditions.checkArgument(location != null, "location");
         Preconditions.checkArgument(location.getWorld() != null, "location.world");
+        // Paper start - Teleport passenger API
+        // Don't allow teleporting between worlds while keeping passengers
+        if (ignorePassengers && entity.isVehicle() && location.getWorld() != this.getWorld()) {
+            return false;
+        }
+
+        // Don't allow to teleport between worlds if remaining on vehicle
+        if (!dismount && entity.isPassenger() && location.getWorld() != this.getWorld()) {
+            return false;
+        }
+        // Paper end
         location.checkFinite();
 
         ServerPlayer entity = this.getHandle();
@@ -1312,7 +1393,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
             return false;
         }
 
-        if (entity.isVehicle()) {
+        if (entity.isVehicle() && !ignorePassengers) { // Paper - Teleport API
             return false;
         }
 
@@ -1321,7 +1402,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         // To = Players new Location if Teleport is Successful
         Location to = location;
         // Create & Call the Teleport Event.
-        PlayerTeleportEvent event = new PlayerTeleportEvent(this, from, to, cause);
+        PlayerTeleportEvent event = new PlayerTeleportEvent(this, from, to, cause, Set.copyOf(relativeArguments)); // Paper - Teleport API
         this.server.getPluginManager().callEvent(event);
 
         // Return False to inform the Plugin that the Teleport was unsuccessful/cancelled.
@@ -1330,7 +1411,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         }
 
         // If this player is riding another entity, we must dismount before teleporting.
-        entity.stopRiding();
+        if (dismount) entity.stopRiding(); // Paper - Teleport API
 
         // SPIGOT-5509: Wakeup, similar to riding
         if (this.isSleeping()) {
@@ -1346,13 +1427,21 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         ServerLevel toWorld = ((CraftWorld) to.getWorld()).getHandle();
 
         // Close any foreign inventory
-        if (this.getHandle().containerMenu != this.getHandle().inventoryMenu) {
+        if (this.getHandle().containerMenu != this.getHandle().inventoryMenu && !allFlags.contains(io.papermc.paper.entity.TeleportFlag.EntityState.RETAIN_OPEN_INVENTORY)) { // Paper
             this.getHandle().closeContainer(org.bukkit.event.inventory.InventoryCloseEvent.Reason.TELEPORT); // Paper - Inventory close reason
         }
 
         // Check if the fromWorld and toWorld are the same.
         if (fromWorld == toWorld) {
-            entity.connection.teleport(to);
+            // Paper start - Teleport API
+            final Set<net.minecraft.world.entity.Relative> nms = java.util.EnumSet.noneOf(net.minecraft.world.entity.Relative.class);
+            for (final io.papermc.paper.entity.TeleportFlag.Relative bukkit : relativeArguments) {
+                nms.add(deltaRelativeToNMS(bukkit));
+            }
+            entity.connection.internalTeleport(new net.minecraft.world.entity.PositionMoveRotation(
+                io.papermc.paper.util.MCUtil.toVec3(to), net.minecraft.world.phys.Vec3.ZERO, to.getYaw(), to.getPitch()
+            ), nms);
+            // Paper end - Teleport API
         } else {
             entity.portalProcess = null; // SPIGOT-7785: there is no need to carry this over as it contains the old world/location and we might run into trouble if there is a portal in the same spot in both worlds
             // The respawn reason should never be used if the passed location is non null.
