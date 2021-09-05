@@ -126,9 +126,31 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      *
      * @param yaw the yaw
      * @param pitch the pitch
-     * @throws UnsupportedOperationException if used for players
      */
     public void setRotation(float yaw, float pitch);
+
+    // Paper start - Teleport API
+    /**
+     * Teleports this entity to the given location.
+     *
+     * @param location New location to teleport this entity to
+     * @param teleportFlags Flags to be used in this teleportation
+     * @return <code>true</code> if the teleport was successful
+     */
+    default boolean teleport(@NotNull Location location, @NotNull io.papermc.paper.entity.TeleportFlag @NotNull... teleportFlags) {
+        return this.teleport(location, TeleportCause.PLUGIN, teleportFlags);
+    }
+
+    /**
+     * Teleports this entity to the given location.
+     *
+     * @param location New location to teleport this entity to
+     * @param cause The cause of this teleportation
+     * @param teleportFlags Flags to be used in this teleportation
+     * @return <code>true</code> if the teleport was successful
+     */
+    boolean teleport(@NotNull Location location, @NotNull TeleportCause cause, @NotNull io.papermc.paper.entity.TeleportFlag @NotNull... teleportFlags);
+    // Paper end - Teleport API
 
     /**
      * Teleports this entity to the given location. If this entity is riding a

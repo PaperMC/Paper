@@ -3561,6 +3561,45 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
     String getClientBrandName();
     // Paper end
 
+    // Paper start - Teleport API
+    /**
+     * Sets the player's rotation.
+     *
+     * @param yaw the yaw
+     * @param pitch the pitch
+     */
+    void setRotation(float yaw, float pitch);
+
+    /**
+     * Causes the player to look towards the given position.
+     *
+     * @param x x coordinate
+     * @param y y coordinate
+     * @param z z coordinate
+     * @param playerAnchor What part of the player should face the given position
+     */
+    void lookAt(double x, double y, double z, @NotNull io.papermc.paper.entity.LookAnchor playerAnchor);
+
+    /**
+     * Causes the player to look towards the given position.
+     *
+     * @param position Position to look at in the player's current world
+     * @param playerAnchor What part of the player should face the given position
+     */
+    default void lookAt(@NotNull io.papermc.paper.math.Position position, @NotNull io.papermc.paper.entity.LookAnchor playerAnchor) {
+        this.lookAt(position.x(), position.y(), position.z(), playerAnchor);
+    }
+
+    /**
+     * Causes the player to look towards the given entity.
+     *
+     * @param entity Entity to look at
+     * @param playerAnchor What part of the player should face the entity
+     * @param entityAnchor What part of the entity the player should face
+     */
+    void lookAt(@NotNull org.bukkit.entity.Entity entity, @NotNull io.papermc.paper.entity.LookAnchor playerAnchor, @NotNull io.papermc.paper.entity.LookAnchor entityAnchor);
+    // Paper end - Teleport API
+
     @NotNull
     @Override
     Spigot spigot();

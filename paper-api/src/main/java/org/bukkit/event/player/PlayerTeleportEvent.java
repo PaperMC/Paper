@@ -13,8 +13,14 @@ public class PlayerTeleportEvent extends PlayerMoveEvent {
     private static final HandlerList handlers = new HandlerList();
     private TeleportCause cause = TeleportCause.UNKNOWN;
 
+    // Paper start - Teleport API
+    private boolean dismounted = true;
+    private final java.util.Set<io.papermc.paper.entity.TeleportFlag.Relative> teleportFlagSet;
+    // Paper end
+
     public PlayerTeleportEvent(@NotNull final Player player, @NotNull final Location from, @Nullable final Location to) {
         super(player, from, to);
+        teleportFlagSet = java.util.Collections.emptySet(); // Paper - Teleport API
     }
 
     public PlayerTeleportEvent(@NotNull final Player player, @NotNull final Location from, @Nullable final Location to, @NotNull final TeleportCause cause) {
@@ -22,6 +28,15 @@ public class PlayerTeleportEvent extends PlayerMoveEvent {
 
         this.cause = cause;
     }
+
+    // Paper start - Teleport API
+    @org.jetbrains.annotations.ApiStatus.Internal
+    public PlayerTeleportEvent(@NotNull final Player player, @NotNull final Location from, @Nullable final Location to, @NotNull final TeleportCause cause, @NotNull java.util.Set<io.papermc.paper.entity.TeleportFlag.@NotNull Relative> teleportFlagSet) {
+        super(player, from, to);
+        this.teleportFlagSet = teleportFlagSet;
+        this.cause = cause;
+    }
+    // Paper end
 
     /**
      * Gets the cause of this teleportation event
@@ -87,6 +102,30 @@ public class PlayerTeleportEvent extends PlayerMoveEvent {
          */
         UNKNOWN;
     }
+
+    // Paper start - Teleport API
+    /**
+     * Gets if the player will be dismounted in this teleportation.
+     *
+     * @return dismounted or not
+     * @deprecated dismounting on tp is no longer controlled by the server
+     */
+    @Deprecated(forRemoval = true)
+    public boolean willDismountPlayer() {
+        return this.dismounted;
+    }
+
+    /**
+     * Returns the relative teleportation flags used in this teleportation.
+     * This determines which axis the player will not lose their velocity in.
+     *
+     * @return an immutable set of relative teleportation flags
+     */
+    @NotNull
+    public java.util.Set<io.papermc.paper.entity.TeleportFlag.@NotNull Relative> getRelativeTeleportationFlags() {
+        return this.teleportFlagSet;
+    }
+    // Paper end
 
     @NotNull
     @Override
