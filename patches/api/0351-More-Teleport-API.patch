@@ -1,0 +1,188 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Owen1212055 <23108066+Owen1212055@users.noreply.github.com>
+Date: Sun, 5 Sep 2021 00:36:05 -0400
+Subject: [PATCH] More Teleport API
+
+
+diff --git a/src/main/java/io/papermc/paper/entity/LookAnchor.java b/src/main/java/io/papermc/paper/entity/LookAnchor.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..d29f7b10f86d049e935d614c67c9c2e57287d77e
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/entity/LookAnchor.java
+@@ -0,0 +1,16 @@
++package io.papermc.paper.entity;
++
++import org.bukkit.entity.LivingEntity;
++
++public enum LookAnchor {
++    /**
++     * Represents the entity's feet.
++     * @see LivingEntity#getLocation()
++     */
++    FEET,
++    /**
++     * Represents the entity's eyes.
++     * @see LivingEntity#getEyeLocation()
++     */
++    EYES;
++}
+diff --git a/src/main/java/io/papermc/paper/entity/RelativeTeleportFlag.java b/src/main/java/io/papermc/paper/entity/RelativeTeleportFlag.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..59b165d89f123b43d4521f5f3970135993efcddf
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/entity/RelativeTeleportFlag.java
+@@ -0,0 +1,25 @@
++package io.papermc.paper.entity;
++
++public enum RelativeTeleportFlag {
++    /**
++     * Represents the player's X coordinate
++     */
++    X,
++    /**
++     * Represents the player's Y coordinate
++     */
++    Y,
++    /**
++     * Represents the player's Z coordinate
++     */
++    Z,
++    /**
++     * Represents the player's yaw
++     */
++    YAW,
++    /**
++     * Represents the player's pitch coordinate
++     */
++    PITCH;
++
++}
+diff --git a/src/main/java/org/bukkit/entity/Entity.java b/src/main/java/org/bukkit/entity/Entity.java
+index 51ec2e4ec4239659272bba3d6ba2ad73926ebb88..0d9dd44c3066e062c4fe389c56e9c7277a8c36ce 100644
+--- a/src/main/java/org/bukkit/entity/Entity.java
++++ b/src/main/java/org/bukkit/entity/Entity.java
+@@ -125,6 +125,64 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
+      */
+     public void setRotation(float yaw, float pitch);
+ 
++    // Paper start - Teleport API
++    /**
++     * Teleports this entity to the given location.
++     * <p>
++     * Note: You cannot ignore passengers if you are teleporting this entity to another world.
++     *
++     * @param location New location to teleport this entity to
++     * @param ignorePassengers If passengers should be ignored when teleporting
++     * @throws IllegalArgumentException If teleporting to a different world while ignoring passengers
++     * @return <code>true</code> if the teleport was successful
++     */
++    default public boolean teleport(@NotNull Location location, boolean ignorePassengers) {
++        return teleport(location, TeleportCause.PLUGIN, ignorePassengers);
++    }
++
++    /**
++     * Teleports this entity to the given location.
++     * <p>
++     * Note: You cannot ignore passengers if you are teleporting this entity to another world.
++     *
++     * @param location New location to teleport this entity to
++     * @param ignorePassengers If passengers should be ignored when teleporting
++     * @throws IllegalArgumentException If teleporting to a different world while ignoring passengers
++     * @return <code>true</code> if the teleport was successful
++     */
++    default public boolean teleport(@NotNull Location location, @NotNull TeleportCause cause, boolean ignorePassengers) {
++        return teleport(location, cause, ignorePassengers, true);
++    }
++
++    /**
++     * Teleports this entity to the given location.
++     * <p>
++     * Note: You cannot ignore passengers or stay mounted if you are teleporting this entity to another world.
++     *
++     * @param location New location to teleport this entity to
++     * @param ignorePassengers If passengers should be ignored when teleporting
++     * @param dismount If the entity should be dismounted if they are riding another entity
++     * @throws IllegalArgumentException If teleporting to a different world while ignoring passengers or dismount is false
++     * @return <code>true</code> if the teleport was successful
++     */
++    default public boolean teleport(@NotNull Location location, boolean ignorePassengers, boolean dismount) {
++        return teleport(location, TeleportCause.PLUGIN, ignorePassengers, dismount);
++    }
++
++    /**
++     * Teleports this entity to the given location.
++     * <p>
++     * Note: You cannot keep passengers or stay mounted if you are teleporting this entity to another world.
++     *
++     * @param location New location to teleport this entity to
++     * @param ignorePassengers If passengers should be ignored when teleporting
++     * @param dismount If the entity should be dismounted if they are riding another entity
++     * @throws IllegalArgumentException If teleporting to a different world while ignoring passengers or dismount is false
++     * @return <code>true</code> if the teleport was successful
++     */
++    public boolean teleport(@NotNull Location location, @NotNull TeleportCause cause, boolean ignorePassengers, boolean dismount);
++    // Paper end - Teleport API
++
+     /**
+      * Teleports this entity to the given location. If this entity is riding a
+      * vehicle, it will be dismounted prior to teleportation.
+diff --git a/src/main/java/org/bukkit/entity/Player.java b/src/main/java/org/bukkit/entity/Player.java
+index 5e4a9ce5f899624255e806152c59f60664bcf701..d4cabd04757738a7d8bbfdf5398d7f86d7357b46 100644
+--- a/src/main/java/org/bukkit/entity/Player.java
++++ b/src/main/java/org/bukkit/entity/Player.java
+@@ -2599,6 +2599,55 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+     String getClientBrandName();
+     // Paper end
+ 
++    // Paper start - Teleport API
++    /**
++     * Teleports this entity to the given location.
++     * <p>
++     * Note: You cannot ignore passengers or stay mounted if you are teleporting this entity to another world.
++     *
++     * <p>
++     * Relative teleportation flags are only used client side, and cause the player to not lose velocity in that
++     * specific coordinate. The location of the teleportation will not change.
++     *
++     * @param location New location to teleport this entity to
++     * @param ignorePassengers If passengers should be ignored when teleporting
++     * @param dismount If the entity should be dismounted if they are riding another entity
++     * @param teleportFlags Coordinates of the location that the client should handle as relative teleportation
++     * @throws IllegalArgumentException If teleporting to a different world while ignoring passengers or dismount is false
++     * @return <code>true</code> if the teleport was successful
++     */
++    public boolean teleport(@NotNull Location location, @NotNull org.bukkit.event.player.PlayerTeleportEvent.TeleportCause cause, boolean ignorePassengers, boolean dismount, @NotNull io.papermc.paper.entity.RelativeTeleportFlag... teleportFlags);
++
++    /**
++     * Causes the player to look towards the given position.
++     *
++     * @param x x coordinate
++     * @param y y coordinate
++     * @param z z coordinate
++     * @param playerAnchor What part of the player should face the given position
++     */
++    public void lookAt(double x, double y, double z, @NotNull io.papermc.paper.entity.LookAnchor playerAnchor);
++
++    /**
++     * Causes the player to look towards the given location.
++     *
++     * @param location Location to look at
++     * @param playerAnchor What part of player should face the location
++     */
++    default public void lookAt(@NotNull Location location, @NotNull io.papermc.paper.entity.LookAnchor playerAnchor) {
++        lookAt(location.getX(), location.getY(), location.getZ(), playerAnchor);
++    }
++
++    /**
++     * Causes the player to look towards the given entity.
++     *
++     * @param playerAnchor What part of the player should face the entity
++     * @param entity Entity to look at
++     * @param entityAnchor What part of the entity the player should face
++     */
++    public void lookAt(@NotNull io.papermc.paper.entity.LookAnchor playerAnchor, org.bukkit.entity.@NotNull Entity entity, @NotNull io.papermc.paper.entity.LookAnchor entityAnchor);
++    // Paper end - Teleport API
++
+     @NotNull
+     @Override
+     Spigot spigot();
