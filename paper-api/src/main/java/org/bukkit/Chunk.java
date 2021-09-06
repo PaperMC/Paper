@@ -70,6 +70,13 @@ public interface Chunk extends PersistentDataHolder {
     ChunkSnapshot getChunkSnapshot(boolean includeMaxblocky, boolean includeBiome, boolean includeBiomeTempRain);
 
     /**
+     * Checks if entities in this chunk are loaded.
+     *
+     * @return True if entities are loaded.
+     */
+    boolean isEntitiesLoaded();
+
+    /**
      * Get a list of all entities in the chunk.
      * This will force load any entities, which are not loaded.
      *
