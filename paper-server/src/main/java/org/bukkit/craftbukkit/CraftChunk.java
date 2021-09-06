@@ -112,6 +112,11 @@ public class CraftChunk implements Chunk {
     }
 
     @Override
+    public boolean isEntitiesLoaded() {
+        return getCraftWorld().getHandle().entityManager.a(ChunkCoordIntPair.pair(x, z)); // PAIL rename isEntitiesLoaded
+    }
+
+    @Override
     public Entity[] getEntities() {
         if (!isLoaded()) {
             getWorld().getChunkAt(x, z); // Transient load for this tick
