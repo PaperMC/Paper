@@ -5,12 +5,12 @@ Subject: [PATCH] Implement Mob Goal API
 
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index eea412347cef390555166a988058ae877afdfa4a..81d507895572e9c0ec3c87d3745f95067922093a 100644
+index b35e54380cb23758a813fa24d13b888f36906c23..12c2681e0abef8ea4981deec431a9269df6cea54 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
-@@ -48,6 +48,7 @@ dependencies {
-     implementation("co.aikar:cleaner:1.0-SNAPSHOT") // Paper
-     implementation("io.netty:netty-all:4.1.65.Final") // Paper
+@@ -62,6 +62,7 @@ dependencies {
+ 
+     implementation("org.quiltmc:tiny-mappings-parser:0.3.0") // Paper - needed to read mappings for stacktrace deobfuscation
  
 +    testImplementation("io.github.classgraph:classgraph:4.8.47") // Paper - mob goal test
      testImplementation("junit:junit:4.13.1")
@@ -18,16 +18,17 @@ index eea412347cef390555166a988058ae877afdfa4a..81d507895572e9c0ec3c87d3745f9506
  }
 diff --git a/src/main/java/com/destroystokyo/paper/entity/ai/MobGoalHelper.java b/src/main/java/com/destroystokyo/paper/entity/ai/MobGoalHelper.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..79006251a707dd94099db26fbb503f8699b7a8b5
+index 0000000000000000000000000000000000000000..181abe014baba9ac51064c003381281a8fa43fe4
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/entity/ai/MobGoalHelper.java
-@@ -0,0 +1,467 @@
+@@ -0,0 +1,367 @@
 +package com.destroystokyo.paper.entity.ai;
 +
 +import com.destroystokyo.paper.entity.RangedEntity;
 +import com.destroystokyo.paper.util.set.OptimizedSmallEnumSet;
 +import com.google.common.collect.BiMap;
 +import com.google.common.collect.HashBiMap;
++import io.papermc.paper.util.ObfHelper;
 +import java.lang.reflect.Constructor;
 +import java.util.EnumSet;
 +import java.util.HashMap;
@@ -157,107 +158,7 @@ index 0000000000000000000000000000000000000000..79006251a707dd94099db26fbb503f86
 +
 +    static {
 +        // TODO these kinda should be checked on each release, in case obfuscation changes
-+        deobfuscationMap.put("bee_b", "bee_attack");
-+        deobfuscationMap.put("bee_c", "bee_become_angry");
-+        deobfuscationMap.put("bee_d", "bee_enter_hive");
-+        deobfuscationMap.put("bee_e", "bee_go_to_hive");
-+        deobfuscationMap.put("bee_f", "bee_go_to_known_flower");
-+        deobfuscationMap.put("bee_g", "bee_grow_crop");
-+        deobfuscationMap.put("bee_h", "bee_hurt_by_other");
-+        deobfuscationMap.put("bee_i", "bee_locate_hive");
-+        deobfuscationMap.put("bee_k", "bee_pollinate");
-+        deobfuscationMap.put("bee_l", "bee_wander");
-+        deobfuscationMap.put("cat_a", "cat_avoid_entity");
-+        deobfuscationMap.put("cat_b", "cat_relax_on_owner");
-+        deobfuscationMap.put("dolphin_b", "dolphin_swim_to_treasure");
-+        deobfuscationMap.put("dolphin_c", "dolphin_swim_with_player");
-+        deobfuscationMap.put("dolphin_d", "dolphin_play_with_items");
-+        deobfuscationMap.put("drowned_a", "drowned_attack");
-+        deobfuscationMap.put("drowned_b", "drowned_goto_beach");
-+        deobfuscationMap.put("drowned_c", "drowned_goto_water");
-+        deobfuscationMap.put("drowned_e", "drowned_swim_up");
-+        deobfuscationMap.put("drowned_f", "drowned_trident_attack");
-+        deobfuscationMap.put("enderman_a", "enderman_freeze_when_looked_at");
-+        deobfuscationMap.put("evoker_a", "evoker_attack_spell");
-+        deobfuscationMap.put("evoker_b", "evoker_cast_spell");
-+        deobfuscationMap.put("evoker_c", "evoker_summon_spell");
-+        deobfuscationMap.put("evoker_d", "evoker_wololo_spell");
-+        deobfuscationMap.put("fish_b", "fish_swim");
-+        deobfuscationMap.put("fox_a", "fox_defend_trusted");
-+        deobfuscationMap.put("fox_b", "fox_faceplant");
-+        deobfuscationMap.put("fox_e", "fox_breed");
-+        deobfuscationMap.put("fox_f", "fox_eat_berries");
-+        deobfuscationMap.put("fox_g", "fox_float");
-+        deobfuscationMap.put("fox_h", "fox_follow_parent");
-+        deobfuscationMap.put("fox_j", "fox_look_at_player");
-+        deobfuscationMap.put("fox_l", "fox_melee_attack");
-+        deobfuscationMap.put("fox_n", "fox_panic");
-+        deobfuscationMap.put("fox_o", "fox_pounce");
-+        deobfuscationMap.put("fox_p", "fox_search_for_items");
-+        deobfuscationMap.put("fox_q", "fox_stroll_through_village");
-+        deobfuscationMap.put("fox_r", "fox_perch_and_search");
-+        deobfuscationMap.put("fox_s", "fox_seek_shelter");
-+        deobfuscationMap.put("fox_t", "fox_sleep");
-+        deobfuscationMap.put("fox_u", "fox_stalk_prey");
-+        deobfuscationMap.put("illager_abstract_b", "raider_open_door");
-+        deobfuscationMap.put("illager_illusioner_a", "illusioner_blindness_spell");
-+        deobfuscationMap.put("illager_illusioner_b", "illusioner_mirror_spell");
-+        deobfuscationMap.put("illager_wizard_b", "spellcaster_cast_spell");
-+        deobfuscationMap.put("llama_a", "llama_attack_wolf");
-+        deobfuscationMap.put("llama_c", "llama_hurt_by");
-+        deobfuscationMap.put("llama_trader_a", "llamatrader_defended_wandering_trader");
-+        deobfuscationMap.put("monster_patrolling_a", "long_distance_patrol");
-+        deobfuscationMap.put("ocelot_a", "ocelot_avoid_entity");
-+        deobfuscationMap.put("ocelot_b", "ocelot_tempt");
-+        deobfuscationMap.put("panda_b", "panda_attack");
-+        deobfuscationMap.put("panda_c", "panda_avoid");
-+        deobfuscationMap.put("panda_d", "panda_breed");
-+        deobfuscationMap.put("panda_e", "panda_hurt_by_target");
-+        deobfuscationMap.put("panda_f", "panda_lie_on_back");
-+        deobfuscationMap.put("panda_g", "panda_look_at_player");
-+        deobfuscationMap.put("panda_i", "panda_panic");
-+        deobfuscationMap.put("panda_j", "panda_roll");
-+        deobfuscationMap.put("panda_k", "panda_sit");
-+        deobfuscationMap.put("panda_l", "panda_sneeze");
-+        deobfuscationMap.put("phantom_b", "phantom_attack_player");
-+        deobfuscationMap.put("phantom_c", "phantom_attack_strategy");
-+        deobfuscationMap.put("phantom_e", "phantom_circle_around_anchor");
-+        deobfuscationMap.put("phantom_i", "phantom_sweep_attack");
-+        deobfuscationMap.put("polar_bear_a", "polarbear_attack_players");
-+        deobfuscationMap.put("polar_bear_b", "polarbear_hurt_by");
-+        deobfuscationMap.put("polar_bear_c", "polarbear_melee");
-+        deobfuscationMap.put("polar_bear_d", "polarbear_panic");
-+        deobfuscationMap.put("puffer_fish_a", "pufferfish_puff");
-+        deobfuscationMap.put("raider_a", "raider_hold_ground");
-+        deobfuscationMap.put("raider_b", "raider_obtain_banner");
-+        deobfuscationMap.put("raider_c", "raider_celebration");
-+        deobfuscationMap.put("raider_d", "raider_move_through_village");
-+        deobfuscationMap.put("ravager_a", "ravager_melee_attack");
-+        deobfuscationMap.put("shulker_a", "shulker_attack");
-+        deobfuscationMap.put("shulker_c", "shulker_defense");
-+        deobfuscationMap.put("shulker_d", "shulker_nearest");
-+        deobfuscationMap.put("shulker_e", "shulker_peek");
-+        deobfuscationMap.put("squid_a", "squid_flee");
 +        deobfuscationMap.put("abstract_skeleton_1", "abstract_skeleton_melee");
-+        deobfuscationMap.put("strider_a", "strider_go_to_lava");
-+        deobfuscationMap.put("turtle_a", "turtle_breed");
-+        deobfuscationMap.put("turtle_b", "turtle_go_home");
-+        deobfuscationMap.put("turtle_c", "turtle_goto_water");
-+        deobfuscationMap.put("turtle_d", "turtle_lay_egg");
-+        deobfuscationMap.put("turtle_f", "turtle_panic");
-+        deobfuscationMap.put("turtle_h", "turtle_random_stroll");
-+        deobfuscationMap.put("turtle_i", "turtle_tempt");
-+        deobfuscationMap.put("turtle_j", "turtle_travel");
-+        deobfuscationMap.put("vex_a", "vex_charge_attack");
-+        deobfuscationMap.put("vex_b", "vex_copy_target_of_owner");
-+        deobfuscationMap.put("vex_d", "vex_random_move");
-+        deobfuscationMap.put("villager_trader_a", "villagertrader_wander_to_position");
-+        deobfuscationMap.put("vindicator_a", "vindicator_break_door");
-+        deobfuscationMap.put("vindicator_b", "vindicator_johnny_attack");
-+        deobfuscationMap.put("vindicator_c", "vindicator_melee_attack");
-+        deobfuscationMap.put("wither_a", "wither_do_nothing");
-+        deobfuscationMap.put("wolf_a", "wolf_avoid_entity");
-+        deobfuscationMap.put("zombie_a", "zombie_attack_turtle_egg");
 +
 +        ignored.add("goal_selector_1");
 +        ignored.add("goal_selector_2");
@@ -362,9 +263,8 @@ index 0000000000000000000000000000000000000000..79006251a707dd94099db26fbb503f86
 +        bukkitMap.put(net.minecraft.world.entity.animal.goat.Goat.class, org.bukkit.entity.Goat.class);
 +    }
 +
-+    // TODO: FIX THIS
 +    public static String getUsableName(Class<?> clazz) {
-+        String name = clazz.getName();
++        String name = ObfHelper.INSTANCE.deobfClassName(clazz.getName());
 +        name = name.substring(name.lastIndexOf(".") + 1);
 +        boolean flag = false;
 +        // inner classes
@@ -899,10 +799,10 @@ index 8c2ec30a35e86f2b30863045b586a67e485c624b..848cac4426346b6d2ed575f33bf01c0e
          LOOK,
          JUMP,
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 72640c2dd945a22e8e562ee6901c9f70ae786816..f4c055e7e2d10756262386c8fb34996c4a38ee3f 100644
+index 59a12fe5d4d2504d99e26c6faaa095d5227cf446..63c20c0364b39bef033ed1df4278a64dc739995e 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -2533,5 +2533,11 @@ public final class CraftServer implements Server {
+@@ -2534,5 +2534,11 @@ public final class CraftServer implements Server {
      public boolean isStopping() {
          return net.minecraft.server.MinecraftServer.getServer().hasStopped();
      }

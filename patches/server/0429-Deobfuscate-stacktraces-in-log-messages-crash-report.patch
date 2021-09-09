@@ -6,7 +6,7 @@ Subject: [PATCH] Deobfuscate stacktraces in log messages, crash reports, and
 
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index 5ee1e44647cfd7dff08ba7ce17d4b04246b7ab57..dc17410ac88e9f069a48ce7eb94b7cbec8e61c74 100644
+index eea412347cef390555166a988058ae877afdfa4a..b35e54380cb23758a813fa24d13b888f36906c23 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
 @@ -1,8 +1,12 @@
@@ -37,16 +37,16 @@ index 5ee1e44647cfd7dff08ba7ce17d4b04246b7ab57..dc17410ac88e9f069a48ce7eb94b7cbe
  }
  
  dependencies {
-@@ -49,6 +61,8 @@ dependencies {
+@@ -48,6 +60,8 @@ dependencies {
      implementation("co.aikar:cleaner:1.0-SNAPSHOT") // Paper
      implementation("io.netty:netty-all:4.1.65.Final") // Paper
  
 +    implementation("org.quiltmc:tiny-mappings-parser:0.3.0") // Paper - needed to read mappings for stacktrace deobfuscation
 +
-     testImplementation("io.github.classgraph:classgraph:4.8.47") // Paper - mob goal test
      testImplementation("junit:junit:4.13.1")
      testImplementation("org.hamcrest:hamcrest-library:1.3")
-@@ -143,6 +157,44 @@ tasks.shadowJar {
+ }
+@@ -141,6 +155,44 @@ tasks.shadowJar {
      transform(ModifiedLog4j2PluginsCacheFileTransformer::class.java)
  }
  
@@ -92,21 +92,19 @@ index 5ee1e44647cfd7dff08ba7ce17d4b04246b7ab57..dc17410ac88e9f069a48ce7eb94b7cbe
      exclude("org/bukkit/craftbukkit/inventory/ItemStack*Test.class")
  }
 diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-index 14841f1df5fa8970b132eb5e8fc24069f687dd6a..9d31f1f1a224d1442cb7915df514c0522a4b876b 100644
+index f1034cfb63ea37c22e67b5d4a18214774f208de2..a8740f03a7feef40490e9f5be610c2c835114f08 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-@@ -504,6 +504,11 @@ public class PaperConfig {
-         enableBrigadierConsoleCompletions = getBoolean("settings.console.enable-brigadier-completions", enableBrigadierConsoleCompletions);
+@@ -433,4 +433,9 @@ public class PaperConfig {
+             log("Async Chunks: Enabled - Chunks will be loaded much faster, without lag.");
+         }
      }
- 
++
 +    public static boolean deobfuscateStacktraces = true;
 +    private static void loggerSettings() {
 +        deobfuscateStacktraces = getBoolean("settings.loggers.deobfuscate-stacktraces", deobfuscateStacktraces);
 +    }
-+
-     public static int itemValidationDisplayNameLength = 8192;
-     public static int itemValidationLocNameLength = 8192;
-     public static int itemValidationLoreLineLength = 8192;
+ }
 diff --git a/src/main/java/com/destroystokyo/paper/io/SyncLoadFinder.java b/src/main/java/com/destroystokyo/paper/io/SyncLoadFinder.java
 index 0bb4aaa546939b67a5d22865190f30478a9337c1..d3e619655382e50e9ac9323ed942502d85c9599c 100644
 --- a/src/main/java/com/destroystokyo/paper/io/SyncLoadFinder.java
@@ -159,7 +157,7 @@ index 0000000000000000000000000000000000000000..d019802a36dbaca4bf299a55d28381e4
 +}
 diff --git a/src/main/java/io/papermc/paper/util/ObfHelper.java b/src/main/java/io/papermc/paper/util/ObfHelper.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..e9082fa4e04c88fe53429af77b1c23a03aeafc2d
+index 0000000000000000000000000000000000000000..5ee513c0e2436e6afa3432f9f835d4028b37aed0
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/util/ObfHelper.java
 @@ -0,0 +1,141 @@
@@ -253,7 +251,7 @@ index 0000000000000000000000000000000000000000..e9082fa4e04c88fe53429af77b1c23a0
 +    }
 +
 +    private static @Nullable Set<ClassMapping> loadMappingsIfPresent() {
-+        try (final @Nullable InputStream mappingsInputStream = StacktraceDeobfuscator.class.getClassLoader().getResourceAsStream("META-INF/mappings/reobf.tiny")) {
++        try (final @Nullable InputStream mappingsInputStream = ObfHelper.class.getClassLoader().getResourceAsStream("META-INF/mappings/reobf.tiny")) {
 +            if (mappingsInputStream == null) {
 +                return null;
 +            }
@@ -513,13 +511,13 @@ index 3941e14d1c3e6e688e28904948039c8b2200de5f..a4fda4a3bae9ce600e778b44cd3ef432
          }
      }
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-index db0110120f88bc06954fa8c44b2a45f0c8229574..7b6c547e71230fbb3733f99a4597b3f5b51547b8 100644
+index a335d48467d1730bfed25eb5fd9046e115f23ed0..8098875a5c4146dec81f5daed0e34ddfe17a26c6 100644
 --- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-@@ -221,6 +221,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+@@ -214,6 +214,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+         }
          com.destroystokyo.paper.PaperConfig.registerCommands();
          com.destroystokyo.paper.VersionHistoryManager.INSTANCE.getClass(); // load version history now
-         io.papermc.paper.brigadier.PaperBrigadierProviderImpl.INSTANCE.getClass(); // init PaperBrigadierProvider
 +        io.papermc.paper.util.ObfHelper.INSTANCE.getClass(); // load mappings for stacktrace deobf and etc.
          // Paper end
  
@@ -547,7 +545,7 @@ index 4d271cae88c16ed2419f896c728fdff612540500..dcfbe77bdb25d9c58ffb7b75c48bdb58
              log.log( Level.SEVERE, "\t\t" + stack );
          }
 diff --git a/src/main/resources/log4j2.xml b/src/main/resources/log4j2.xml
-index 7484c52761d4d8da827cd7693cf8e14519c35a9b..2e421eaac80cf251b32e0bb504dd54a73edf4986 100644
+index d285dbec16272db6b8a71865e05924ad66087407..1a05d23ff886b015fb9396f119822c678a47ec6f 100644
 --- a/src/main/resources/log4j2.xml
 +++ b/src/main/resources/log4j2.xml
 @@ -30,10 +30,14 @@
