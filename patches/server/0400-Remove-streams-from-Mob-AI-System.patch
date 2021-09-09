@@ -10,7 +10,7 @@ Also optimise the stream.anyMatch statement to move to a bitset
 where we can replace the call with a single bitwise operation.
 
 diff --git a/src/main/java/net/minecraft/world/entity/ai/goal/Goal.java b/src/main/java/net/minecraft/world/entity/ai/goal/Goal.java
-index d92ddc8a4c0f5249b7ff4f97af1ea3db413b2983..8c2ec30a35e86f2b30863045b586a67e485c624b 100644
+index d92ddc8a4c0f5249b7ff4f97af1ea3db413b2983..fabd20265863751ad980ee4a697f3f0d47df101f 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/goal/Goal.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/goal/Goal.java
 @@ -3,7 +3,8 @@ package net.minecraft.world.entity.ai.goal;
@@ -43,14 +43,14 @@ index d92ddc8a4c0f5249b7ff4f97af1ea3db413b2983..8c2ec30a35e86f2b30863045b586a67e
 -    public EnumSet<Goal.Flag> getFlags() {
 -        return this.flags;
 +    // Paper start - remove streams from pathfindergoalselector
-+    public com.destroystokyo.paper.util.set.OptimizedSmallEnumSet<Goal.Flag> getGoalTypes() {
++    public com.destroystokyo.paper.util.set.OptimizedSmallEnumSet<Goal.Flag> getFlags() {
 +        return this.goalTypes;
 +        // Paper end - remove streams from pathfindergoalselector
      }
  
      public static enum Flag {
 diff --git a/src/main/java/net/minecraft/world/entity/ai/goal/GoalSelector.java b/src/main/java/net/minecraft/world/entity/ai/goal/GoalSelector.java
-index 69bf112655615337e0df3ea56b9e42fa5ff70430..f779f202985d34cb7e379b0f3d5690dd20f091ba 100644
+index 69bf112655615337e0df3ea56b9e42fa5ff70430..a96831d5df2b88203aec8fe2a5909708764b38ee 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/goal/GoalSelector.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/goal/GoalSelector.java
 @@ -28,10 +28,12 @@ public class GoalSelector {
@@ -105,7 +105,7 @@ index 69bf112655615337e0df3ea56b9e42fa5ff70430..f779f202985d34cb7e379b0f3d5690dd
 -                this.lockedFlags.remove(flag);
 +                continue;
 +            }
-+            if (!this.goalTypes.hasCommonElements(wrappedGoal.getGoalTypes()) && wrappedGoal.canContinueToUse()) {
++            if (!this.goalTypes.hasCommonElements(wrappedGoal.getFlags()) && wrappedGoal.canContinueToUse()) {
 +                continue;
 +            }
 +            wrappedGoal.stop();
@@ -141,7 +141,7 @@ index 69bf112655615337e0df3ea56b9e42fa5ff70430..f779f202985d34cb7e379b0f3d5690dd
 +                continue;
 +            }
 +
-+            com.destroystokyo.paper.util.set.OptimizedSmallEnumSet<net.minecraft.world.entity.ai.goal.Goal.Flag> wrappedGoalSet = wrappedGoal.getGoalTypes();
++            com.destroystokyo.paper.util.set.OptimizedSmallEnumSet<net.minecraft.world.entity.ai.goal.Goal.Flag> wrappedGoalSet = wrappedGoal.getFlags();
 +
 +            if (this.goalTypes.hasCommonElements(wrappedGoalSet)) {
 +                continue;
@@ -205,7 +205,7 @@ index 69bf112655615337e0df3ea56b9e42fa5ff70430..f779f202985d34cb7e379b0f3d5690dd
  
      public void setControlFlag(Goal.Flag control, boolean enabled) {
 diff --git a/src/main/java/net/minecraft/world/entity/ai/goal/WrappedGoal.java b/src/main/java/net/minecraft/world/entity/ai/goal/WrappedGoal.java
-index 1e915b999f4261fb27846a0e559ea22e4b09b4db..037cc5d2b41161e040fc9b264a0dd04827c29681 100644
+index 1e915b999f4261fb27846a0e559ea22e4b09b4db..eb3492962e58cad8f2927e53a0d3518d1b06bdf9 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/goal/WrappedGoal.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/goal/WrappedGoal.java
 @@ -58,9 +58,10 @@ public class WrappedGoal extends Goal {
@@ -214,10 +214,9 @@ index 1e915b999f4261fb27846a0e559ea22e4b09b4db..037cc5d2b41161e040fc9b264a0dd048
  
 -    @Override
 -    public EnumSet<Goal.Flag> getFlags() {
--        return this.goal.getFlags();
 +    // Paper start - remove streams from pathfindergoalselector
-+    public com.destroystokyo.paper.util.set.OptimizedSmallEnumSet<Goal.Flag> getGoalTypes() {
-+        return this.goal.getGoalTypes();
++    public com.destroystokyo.paper.util.set.OptimizedSmallEnumSet<Goal.Flag> getFlags() {
+         return this.goal.getFlags();
 +        // Paper end - remove streams from pathfindergoalselector
      }
  
