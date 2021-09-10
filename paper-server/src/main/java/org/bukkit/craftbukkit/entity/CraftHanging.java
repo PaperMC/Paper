@@ -29,7 +29,6 @@ public class CraftHanging extends CraftEntity implements Hanging {
         EnumDirection dir = hanging.getDirection();
         switch (face) {
             case SOUTH:
-            default:
                 getHandle().setDirection(EnumDirection.SOUTH);
                 break;
             case WEST:
@@ -41,6 +40,8 @@ public class CraftHanging extends CraftEntity implements Hanging {
             case EAST:
                 getHandle().setDirection(EnumDirection.EAST);
                 break;
+            default:
+                throw new IllegalArgumentException(String.format("%s is not a valid facing direction", face));
         }
         if (!force && !getHandle().generation && !hanging.survives()) {
             // Revert since it doesn't fit

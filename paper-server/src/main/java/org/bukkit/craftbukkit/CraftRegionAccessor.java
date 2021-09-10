@@ -488,7 +488,7 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
     }
 
     public <T extends Entity> T spawn(Location location, Class<T> clazz, Consumer<T> function, CreatureSpawnEvent.SpawnReason reason, boolean randomizeData) throws IllegalArgumentException {
-        net.minecraft.world.entity.Entity entity = createEntity(location, clazz);
+        net.minecraft.world.entity.Entity entity = createEntity(location, clazz, randomizeData);
 
         return addEntity(entity, reason, function, randomizeData);
     }
@@ -522,6 +522,11 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
 
     @SuppressWarnings("unchecked")
     public net.minecraft.world.entity.Entity createEntity(Location location, Class<? extends Entity> clazz) throws IllegalArgumentException {
+        return createEntity(location, clazz, true);
+    }
+
+    @SuppressWarnings("unchecked")
+    public net.minecraft.world.entity.Entity createEntity(Location location, Class<? extends Entity> clazz, boolean randomizeData) throws IllegalArgumentException {
         if (location == null || clazz == null) {
             throw new IllegalArgumentException("Location or entity class cannot be null");
         }
@@ -813,52 +818,55 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
                 entity.setHeadRotation(yaw); // SPIGOT-3587
             }
         } else if (Hanging.class.isAssignableFrom(clazz)) {
-            BlockFace face = BlockFace.SELF;
-
-            int width = 16; // 1 full block, also painting smallest size.
-            int height = 16; // 1 full block, also painting smallest size.
-
-            if (ItemFrame.class.isAssignableFrom(clazz)) {
-                width = 12;
-                height = 12;
-            } else if (LeashHitch.class.isAssignableFrom(clazz)) {
-                width = 9;
-                height = 9;
-            }
-
-            BlockFace[] faces = new BlockFace[]{BlockFace.EAST, BlockFace.NORTH, BlockFace.WEST, BlockFace.SOUTH, BlockFace.UP, BlockFace.DOWN};
-            final BlockPosition pos = new BlockPosition(x, y, z);
-            for (BlockFace dir : faces) {
-                IBlockData nmsBlock = getHandle().getType(pos.shift(CraftBlock.blockFaceToNotch(dir)));
-                if (nmsBlock.getMaterial().isBuildable() || BlockDiodeAbstract.isDiode(nmsBlock)) {
-                    boolean taken = false;
-                    AxisAlignedBB bb = (ItemFrame.class.isAssignableFrom(clazz))
-                            ? EntityItemFrame.calculateBoundingBox(null, pos, CraftBlock.blockFaceToNotch(dir).opposite(), width, height)
-                            : EntityHanging.calculateBoundingBox(null, pos, CraftBlock.blockFaceToNotch(dir).opposite(), width, height);
-                    List<net.minecraft.world.entity.Entity> list = (List<net.minecraft.world.entity.Entity>) getHandle().getEntities(null, bb);
-                    for (Iterator<net.minecraft.world.entity.Entity> it = list.iterator(); !taken && it.hasNext();) {
-                        net.minecraft.world.entity.Entity e = it.next();
-                        if (e instanceof EntityHanging) {
-                            taken = true; // Hanging entities do not like hanging entities which intersect them.
-                        }
-                    }
-
-                    if (!taken) {
-                        face = dir;
-                        break;
-                    }
-                }
-            }
-
             if (LeashHitch.class.isAssignableFrom(clazz)) {
+                // SPIGOT-5732: LeashHitch has no direction and is always centered at a block
                 entity = new EntityLeash(world, new BlockPosition(x, y, z));
             } else {
+                BlockFace face = BlockFace.SELF;
+                BlockFace[] faces = new BlockFace[]{BlockFace.EAST, BlockFace.NORTH, BlockFace.WEST, BlockFace.SOUTH};
+
+                int width = 16; // 1 full block, also painting smallest size.
+                int height = 16; // 1 full block, also painting smallest size.
+
+                if (ItemFrame.class.isAssignableFrom(clazz)) {
+                    width = 12;
+                    height = 12;
+                    faces = new BlockFace[]{BlockFace.EAST, BlockFace.NORTH, BlockFace.WEST, BlockFace.SOUTH, BlockFace.UP, BlockFace.DOWN};
+                }
+
+                final BlockPosition pos = new BlockPosition(x, y, z);
+                for (BlockFace dir : faces) {
+                    IBlockData nmsBlock = getHandle().getType(pos.shift(CraftBlock.blockFaceToNotch(dir)));
+                    if (nmsBlock.getMaterial().isBuildable() || BlockDiodeAbstract.isDiode(nmsBlock)) {
+                        boolean taken = false;
+                        AxisAlignedBB bb = (ItemFrame.class.isAssignableFrom(clazz))
+                                ? EntityItemFrame.calculateBoundingBox(null, pos, CraftBlock.blockFaceToNotch(dir).opposite(), width, height)
+                                : EntityHanging.calculateBoundingBox(null, pos, CraftBlock.blockFaceToNotch(dir).opposite(), width, height);
+                        List<net.minecraft.world.entity.Entity> list = (List<net.minecraft.world.entity.Entity>) getHandle().getEntities(null, bb);
+                        for (Iterator<net.minecraft.world.entity.Entity> it = list.iterator(); !taken && it.hasNext(); ) {
+                            net.minecraft.world.entity.Entity e = it.next();
+                            if (e instanceof EntityHanging) {
+                                taken = true; // Hanging entities do not like hanging entities which intersect them.
+                            }
+                        }
+
+                        if (!taken) {
+                            face = dir;
+                            break;
+                        }
+                    }
+                }
+
                 // No valid face found
-                Preconditions.checkArgument(face != BlockFace.SELF, "Cannot spawn hanging entity for %s at %s (no free face)", clazz.getName(), location);
+                if (face == BlockFace.SELF) {
+                    // SPIGOT-6387: Allow hanging entities to be placed in midair
+                    face = BlockFace.SOUTH;
+                    randomizeData = false; // Don't randomize if no valid face is found, prevents null painting
+                }
 
                 EnumDirection dir = CraftBlock.blockFaceToNotch(face).opposite();
                 if (Painting.class.isAssignableFrom(clazz)) {
-                    if (isNormalWorld()) {
+                    if (isNormalWorld() && randomizeData) {
                         entity = new EntityPainting(getHandle().getMinecraftWorld(), new BlockPosition(x, y, z), dir);
                     } else {
                         entity = new EntityPainting(EntityTypes.PAINTING, getHandle().getMinecraftWorld());
@@ -872,11 +880,6 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
                         entity = new EntityItemFrame(world, new BlockPosition(x, y, z), dir);
                     }
                 }
-            }
-
-            // survives call does not work during world generation
-            if (entity != null && isNormalWorld() && !((EntityHanging) entity).survives()) {
-                throw new IllegalArgumentException("Cannot spawn hanging entity for " + clazz.getName() + " at " + location);
             }
         } else if (TNTPrimed.class.isAssignableFrom(clazz)) {
             entity = new EntityTNTPrimed(world, x, y, z, null);
