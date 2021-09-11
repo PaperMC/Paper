@@ -123,7 +123,7 @@ public enum Effect {
     MOBSPAWNER_FLAMES(2004, Type.VISUAL),
     /**
      * The sound played by brewing stands when brewing
-      */
+     */
     BREWING_STAND_BREW(1035, Type.SOUND),
     /**
      * The sound played when a chorus flower grows
@@ -201,6 +201,112 @@ public enum Effect {
      * The sound of an enderdragon growling
      */
     ENDERDRAGON_GROWL(3001, Type.SOUND),
+    /**
+     * The sound played when phantom bites.
+     */
+    PHANTOM_BITE(1039, Type.SOUND),
+    /**
+     * The sound played when a zombie converts to a drowned.
+     */
+    ZOMBIE_CONVERTED_TO_DROWNED(1040, Type.SOUND),
+    /**
+     * The sound played when a husk converts to a zombie.
+     */
+    HUSK_CONVERTED_TO_ZOMBIE(1041, Type.SOUND),
+    /**
+     * The sound played when a grindstone is being used.
+     */
+    GRINDSTONE_USE(1042, Type.SOUND),
+    /**
+     * The sound played when a book page is being turned.
+     */
+    BOOK_PAGE_TURN(1043, Type.SOUND),
+    /**
+     * The sound played when a smithing table is being used.
+     */
+    SMITHING_TABLE_USE(1044, Type.SOUND),
+    /**
+     * The sound played when a pointed dripstone hits the surface.
+     */
+    POINTED_DRIPSTONE_LAND(1045, Type.SOUND),
+    /**
+     * The sound played when a pointed driptone drips lava into a cauldron.
+     */
+    POINTED_DRIPSTONE_DRIP_LAVA_INTO_CAULDRON(1046, Type.SOUND),
+    /**
+     * The sound played when a pointed driptone drips water into a cauldron.
+     */
+    POINTED_DRIPSTONE_DRIP_WATER_INTO_CAULDRON(1047, Type.SOUND),
+    /**
+     * The sound played when a skeleton converts to a stray.
+     */
+    SKELETON_CONVERTED_TO_STRAY(1048, Type.SOUND),
+    /**
+     * The sound played / particles shown when a composter is being attempted to
+     * fill.
+     *
+     * True for a successful attempt false for an unsuccessful attempt.
+     */
+    COMPOSTER_FILL_ATTEMPT(1500, Type.VISUAL, Boolean.class),
+    /**
+     * The sound played / particles shown when lava interacts with the world.
+     *
+     * For example by forming stone, obsidian, basalt or destroying blocks such
+     * as torches.
+     */
+    LAVA_INTERACT(1501, Type.VISUAL),
+    /**
+     * The sound played / particles shown when a redstone torch burns out.
+     */
+    REDSTONE_TORCH_BURNOUT(1502, Type.VISUAL),
+    /**
+     * The sound played / particles shown when an eye of ender is placed into an
+     * ender portal frame.
+     */
+    END_PORTAL_FRAME_FILL(1503, Type.VISUAL),
+    /**
+     * The particles shown when a dripstone drips lava or water.
+     *
+     * This effect requires a driptone at the location as well as lava or water
+     * at the root of the dripstone.
+     */
+    DRIPPING_DRIPSTONE(1504, Type.VISUAL),
+    /**
+     * The sound played / particles shown when bone meal is used to grow a
+     * plant.
+     *
+     * Data is the number of particles.
+     */
+    BONE_MEAL_USE(1505, Type.VISUAL, Integer.class),
+    /**
+     * The particles shown when an ender dragon destroys blocks.
+     */
+    ENDER_DRAGON_DESTROY_BLOCK(2008, Type.VISUAL),
+    /**
+     * The particles shown when a sponge drys in an ultra warm world (nether).
+     */
+    SPONGE_DRY(2009, Type.VISUAL),
+    /**
+     * The particles shown when a lightning hits a lightning rod or oxidised
+     * copper.
+     *
+     * Data is the axis at which the particle should be shown. If no data is
+     * provided it will show the particles at the block faces.
+     */
+    ELECTRIC_SPARK(3002, Type.VISUAL, Axis.class),
+    /**
+     * The sound played / particles shown when wax is applied to a copper block.
+     */
+    COPPER_WAX_ON(3003, Type.VISUAL),
+    /**
+     * The particles shown when wax is removed from a copper block.
+     */
+    COPPER_WAX_OFF(3004, Type.VISUAL),
+    /**
+     * The particles shown when oxidisation is scraped of an oxidised copper
+     * block.
+     */
+    OXIDISED_COPPER_SCRAPE(3005, Type.VISUAL),
     ;
 
     private final int id;
