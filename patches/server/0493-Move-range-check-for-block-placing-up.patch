@@ -5,17 +5,33 @@ Subject: [PATCH] Move range check for block placing up
 
 
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index 36a69fb0a9cd81ceb0f9cbe6549fc89bd643c77c..7f4673bb2809729e3722300173a10ec5922fcc76 100644
+index 36a69fb0a9cd81ceb0f9cbe6549fc89bd643c77c..7bf9f2b85c51424b53c08166b6ba3943f1abe0fe 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-@@ -1673,17 +1673,21 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+@@ -1661,6 +1661,14 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+     }
+     // Spigot end
+ 
++    // Paper start
++    private boolean isOutsideOfReach(double x, double y, double z) {
++        Location eyeLoc = this.getCraftPlayer().getEyeLocation();
++        double reachDistance = NumberConversions.square(eyeLoc.getX() - x) + NumberConversions.square(eyeLoc.getY() - y) + NumberConversions.square(eyeLoc.getZ() - z);
++        return reachDistance > (this.getCraftPlayer().getGameMode() == org.bukkit.GameMode.CREATIVE ? CREATIVE_PLACE_DISTANCE_SQUARED : SURVIVAL_PLACE_DISTANCE_SQUARED);
++    }
++    // Paper end
++
+     @Override
+     public void handleUseItemOn(ServerboundUseItemOnPacket packet) {
+         PacketUtils.ensureRunningOnSameThread(packet, this, this.player.getLevel());
+@@ -1673,17 +1681,22 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
          BlockPos blockposition = movingobjectpositionblock.getBlockPos();
          Direction enumdirection = movingobjectpositionblock.getDirection();
  
-+        // Paper start - move check up
-+        Location eyeLoc = this.getCraftPlayer().getEyeLocation();
-+        double reachDistance = NumberConversions.square(eyeLoc.getX() - blockposition.getX()) + NumberConversions.square(eyeLoc.getY() - blockposition.getY()) + NumberConversions.square(eyeLoc.getZ() - blockposition.getZ());
-+        if (reachDistance > (this.getCraftPlayer().getGameMode() == org.bukkit.GameMode.CREATIVE ? CREATIVE_PLACE_DISTANCE_SQUARED : SURVIVAL_PLACE_DISTANCE_SQUARED)) {
++        // Paper start - move check up and check actual location as well
++        final Vec3 clickedLocation = movingobjectpositionblock.getLocation();
++        if (isOutsideOfReach(blockposition.getX(), blockposition.getY(), blockposition.getZ())
++            || !Double.isFinite(clickedLocation.x) || !Double.isFinite(clickedLocation.y) || !Double.isFinite(clickedLocation.z)
++            || isOutsideOfReach(clickedLocation.x, clickedLocation.y, clickedLocation.z)) {
 +            return;
 +        }
 +        // Paper end - move check up
