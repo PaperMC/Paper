@@ -1,0 +1,46 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: stonar96 <minecraft.stonar96@gmail.com>
+Date: Sun, 12 Sep 2021 00:14:21 +0200
+Subject: [PATCH] Fix command suggestion leak
+
+
+diff --git a/src/main/java/com/mojang/brigadier/CommandDispatcher.java b/src/main/java/com/mojang/brigadier/CommandDispatcher.java
+index ca24830bac1a04b798229d1946863429c7849495..6493bcd237fa9f1a0a167086f59eb24887c49437 100644
+--- a/src/main/java/com/mojang/brigadier/CommandDispatcher.java
++++ b/src/main/java/com/mojang/brigadier/CommandDispatcher.java
+@@ -594,10 +594,14 @@ public class CommandDispatcher<S> {
+         int i = 0;
+         for (final CommandNode<S> node : parent.getChildren()) {
+             CompletableFuture<Suggestions> future = Suggestions.empty();
+-            try {
+-                future = node.listSuggestions(context.build(truncatedInput), new SuggestionsBuilder(truncatedInput, truncatedInputLowerCase, start));
+-            } catch (final CommandSyntaxException ignored) {
++            // Paper start - Don't suggest if the requirement isn't met
++            if (node.getRequirement() == null || node.getRequirement().test(context.getSource())) {
++                try {
++                    future = node.listSuggestions(context.build(truncatedInput), new SuggestionsBuilder(truncatedInput, truncatedInputLowerCase, start));
++                } catch (final CommandSyntaxException ignored) {
++                }
+             }
++            // Paper end
+             futures[i++] = future;
+         }
+ 
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index 86ff3ee13ac571570965966fc5b2392bb928ffb0..2ceeeec6dbe82eb9848ec1183526c1a7ef450ce3 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -796,6 +796,13 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+         }
+         // Paper end
+         // CraftBukkit end
++
++        // Paper start - Don't suggest if tab-complete is disabled
++        if (org.spigotmc.SpigotConfig.tabComplete < 0) {
++            return;
++        }
++        // Paper end
++
+         StringReader stringreader = new StringReader(packet.getCommand());
+ 
+         if (stringreader.canRead() && stringreader.peek() == '/') {
