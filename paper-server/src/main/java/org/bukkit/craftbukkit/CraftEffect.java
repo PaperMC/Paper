@@ -3,6 +3,7 @@ package org.bukkit.craftbukkit;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import org.apache.commons.lang.Validate;
+import org.bukkit.Axis;
 import org.bukkit.Color;
 import org.bukkit.Effect;
 import org.bukkit.Material;
@@ -60,6 +61,31 @@ public class CraftEffect {
         case STEP_SOUND:
             Validate.isTrue(((Material) data).isBlock(), "Material is not a block!");
             datavalue = Block.getCombinedId(CraftMagicNumbers.getBlock((Material) data).getBlockData());
+            break;
+        case COMPOSTER_FILL_ATTEMPT:
+            datavalue = ((Boolean) data) ? 1 : 0;
+            break;
+        case BONE_MEAL_USE:
+            datavalue = (Integer) data;
+            break;
+        case ELECTRIC_SPARK:
+            if (data == null) {
+                datavalue = -1;
+            } else {
+                switch ((Axis) data) {
+                case X:
+                    datavalue = 0;
+                    break;
+                case Y:
+                    datavalue = 1;
+                    break;
+                case Z:
+                    datavalue = 2;
+                    break;
+                default:
+                    throw new IllegalArgumentException("Bad electric spark axis!");
+                }
+            }
             break;
         default:
             datavalue = 0;
