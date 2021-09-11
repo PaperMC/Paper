@@ -1,0 +1,79 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: egg82 <eggys82@gmail.com>
+Date: Sat, 11 Sep 2021 22:55:14 +0200
+Subject: [PATCH] Add root/admin user detection
+
+This patch detects whether or not the server is currently executing as a privileged user and spits out a warning.
+The warning serves as a sort-of PSA for newer server admins who don't understand the risks of running as root.
+We've seen plenty of bad/malicious plugins hit markets, and there's been a few close-calls with exploits in the past.
+Hopefully this helps mitigate some potential damage to servers, even if it is just a warning.
+
+diff --git a/src/main/java/io/papermc/paper/util/ServerEnvironment.java b/src/main/java/io/papermc/paper/util/ServerEnvironment.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0f41ea267c2cde6dc897e2c6e1615e1bb42d3a60
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/util/ServerEnvironment.java
+@@ -0,0 +1,41 @@
++package io.papermc.paper.util;
++
++import org.apache.commons.lang.SystemUtils;
++
++import java.io.File;
++import java.io.IOException;
++
++public class ServerEnvironment {
++    private static final boolean runningAsRootOrAdmin;
++
++    static {
++        if (SystemUtils.IS_OS_WINDOWS) {
++            String programFiles = System.getenv("ProgramFiles");
++            if (programFiles == null) {
++                programFiles = "C:\\Program Files";
++            }
++            File programFile = new File(programFiles);
++            boolean canWrite = programFile.canWrite();
++
++            if (canWrite) {
++                // Make sure that the path can actually be written to.
++                try {
++                    File test = File.createTempFile(".paperwritecheck", null, programFile);
++                    if (!test.delete()) {
++                        test.deleteOnExit();
++                    }
++                } catch (IOException exception) {
++                    canWrite = false;
++                }
++            }
++
++            runningAsRootOrAdmin = canWrite;
++        } else {
++            runningAsRootOrAdmin = System.getProperty("user.name", "").equals("root");
++        }
++    }
++
++    public static boolean userIsRootOrAdmin() {
++        return runningAsRootOrAdmin;
++    }
++}
+diff --git a/src/main/java/org/bukkit/craftbukkit/Main.java b/src/main/java/org/bukkit/craftbukkit/Main.java
+index 22e9dd17f62103c5061435099ce96a3d70d54808..0c7247a3703f26ae3389daaa95ffbb30275c0125 100644
+--- a/src/main/java/org/bukkit/craftbukkit/Main.java
++++ b/src/main/java/org/bukkit/craftbukkit/Main.java
+@@ -261,6 +261,17 @@ public class Main {
+                     System.setProperty(TerminalConsoleAppender.JLINE_OVERRIDE_PROPERTY, "false"); // Paper
+                 }
+ 
++                // Paper start - detect running as root
++                if (io.papermc.paper.util.ServerEnvironment.userIsRootOrAdmin()) {
++                    System.err.println("****************************");
++                    System.err.println("YOU ARE RUNNING AS AN ADMINISTRATIVE OR ROOT USER. THIS IS NOT ADVISED.");
++                    System.err.println("YOU ARE OPENING YOURSELF UP TO POTENTIAL RISKS WHEN DOING THIS.");
++                    System.err.println("MALWARE, BAD PLUGINS, AND ATTACKERS WILL HAVE COMPLETE ACCESS AND CONTROL OF YOUR MACHINE.");
++                    System.err.println("****************************");
++                    System.err.println();
++                }
++                // Paper end
++
+                 if (Main.class.getPackage().getImplementationVendor() != null && System.getProperty("IReallyKnowWhatIAmDoingISwear") == null) {
+                     Date buildDate = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss Z").parse(Main.class.getPackage().getImplementationVendor()); // Paper
+ 
