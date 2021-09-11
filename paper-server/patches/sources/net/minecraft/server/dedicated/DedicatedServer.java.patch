@@ -35,7 +35,7 @@
      @Nullable
      private RconThread rconThread;
      public DedicatedServerSettings settings;
-@@ -81,36 +92,102 @@
+@@ -81,41 +92,117 @@
      private DebugSampleSubscriptionTracker debugSampleSubscriptionTracker;
      public ServerLinks serverLinks;
  
@@ -148,7 +148,22 @@
          DedicatedServer.LOGGER.info("Starting minecraft server version {}", SharedConstants.getCurrentVersion().getName());
          if (Runtime.getRuntime().maxMemory() / 1024L / 1024L < 512L) {
              DedicatedServer.LOGGER.warn("To start the server with more ram, launch it as \"java -Xmx1024M -Xms1024M -jar minecraft_server.jar\"");
-@@ -126,14 +203,50 @@
+         }
+ 
++        // Paper start - detect running as root
++        if (io.papermc.paper.util.ServerEnvironment.userIsRootOrAdmin()) {
++            DedicatedServer.LOGGER.warn("****************************");
++            DedicatedServer.LOGGER.warn("YOU ARE RUNNING THIS SERVER AS AN ADMINISTRATIVE OR ROOT USER. THIS IS NOT ADVISED.");
++            DedicatedServer.LOGGER.warn("YOU ARE OPENING YOURSELF UP TO POTENTIAL RISKS WHEN DOING THIS.");
++            DedicatedServer.LOGGER.warn("FOR MORE INFORMATION, SEE https://madelinemiller.dev/blog/root-minecraft-server/");
++            DedicatedServer.LOGGER.warn("****************************");
++        }
++        // Paper end - detect running as root
++
+         DedicatedServer.LOGGER.info("Loading properties");
+         DedicatedServerProperties dedicatedserverproperties = this.settings.getProperties();
+ 
+@@ -126,14 +213,50 @@
              this.setPreventProxyConnections(dedicatedserverproperties.preventProxyConnections);
              this.setLocalIp(dedicatedserverproperties.serverIp);
          }
@@ -200,7 +215,7 @@
          InetAddress inetaddress = null;
  
          if (!this.getLocalIp().isEmpty()) {
-@@ -143,12 +256,15 @@
+@@ -143,12 +266,15 @@
          if (this.getPort() < 0) {
              this.setPort(dedicatedserverproperties.serverPort);
          }
@@ -217,7 +232,7 @@
          } catch (IOException ioexception) {
              DedicatedServer.LOGGER.warn("**** FAILED TO BIND TO PORT!");
              DedicatedServer.LOGGER.warn("The exception was: {}", ioexception.toString());
-@@ -156,21 +272,31 @@
+@@ -156,21 +282,31 @@
              return false;
          }
  
@@ -254,7 +269,7 @@
              this.debugSampleSubscriptionTracker = new DebugSampleSubscriptionTracker(this.getPlayerList());
              this.tickTimeLogger = new RemoteSampleLogger(TpsDebugDimensions.values().length, this.debugSampleSubscriptionTracker, RemoteDebugSampleType.TICK_TIME);
              long i = Util.getNanos();
-@@ -178,13 +304,13 @@
+@@ -178,13 +314,13 @@
              SkullBlockEntity.setup(this.services, this);
              GameProfileCache.setUsesAuthentication(this.usesAuthentication());
              DedicatedServer.LOGGER.info("Preparing level \"{}\"", this.getLevelIdName());
@@ -270,7 +285,7 @@
              }
  
              if (dedicatedserverproperties.enableQuery) {
-@@ -197,7 +323,7 @@
+@@ -197,7 +333,7 @@
                  this.rconThread = RconThread.create(this);
              }
  
@@ -279,7 +294,7 @@
                  Thread thread1 = new Thread(new ServerWatchdog(this));
  
                  thread1.setUncaughtExceptionHandler(new DefaultUncaughtExceptionHandlerWithName(DedicatedServer.LOGGER));
-@@ -215,6 +341,12 @@
+@@ -215,6 +351,12 @@
          }
      }
  
@@ -292,7 +307,7 @@
      @Override
      public boolean isSpawningMonsters() {
          return this.settings.getProperties().spawnMonsters && super.isSpawningMonsters();
-@@ -227,7 +359,7 @@
+@@ -227,7 +369,7 @@
  
      @Override
      public void forceDifficulty() {
@@ -301,7 +316,7 @@
      }
  
      @Override
-@@ -286,13 +418,14 @@
+@@ -286,13 +428,14 @@
          }
  
          if (this.rconThread != null) {
@@ -318,7 +333,7 @@
      }
  
      @Override
-@@ -302,19 +435,29 @@
+@@ -302,19 +445,29 @@
      }
  
      @Override
@@ -354,7 +369,7 @@
          }
  
      }
-@@ -383,7 +526,7 @@
+@@ -383,7 +536,7 @@
  
      @Override
      public boolean isUnderSpawnProtection(ServerLevel world, BlockPos pos, Player player) {
@@ -363,7 +378,7 @@
              return false;
          } else if (this.getPlayerList().getOps().isEmpty()) {
              return false;
-@@ -453,7 +596,11 @@
+@@ -453,7 +606,11 @@
      public boolean enforceSecureProfile() {
          DedicatedServerProperties dedicatedserverproperties = this.getProperties();
  
@@ -376,7 +391,7 @@
      }
  
      @Override
-@@ -541,16 +688,52 @@
+@@ -541,16 +698,52 @@
  
      @Override
      public String getPluginNames() {
@@ -433,7 +448,7 @@
      }
  
      public void storeUsingWhiteList(boolean useWhitelist) {
-@@ -660,4 +843,15 @@
+@@ -660,4 +853,15 @@
              }
          }
      }
