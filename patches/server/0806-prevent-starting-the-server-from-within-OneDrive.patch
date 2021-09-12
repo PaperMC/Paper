@@ -1,0 +1,80 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: sulu5890 <sulu@sulu.me>
+Date: Sun, 12 Sep 2021 12:05:53 +0000
+Subject: [PATCH] prevent starting the server from within OneDrive
+
+OneDrive may, when it syncs, cause world corruption or other issues.
+With OneDrive by default syncing the desktop and documents folder,
+many users will run their server in OneDrive by mistake. This
+prevents the server from starting should it be running within
+OneDrive.
+
+Bypass with "-Dio.papermc.paper.bypassOneDriveCheck=true".
+
+diff --git a/src/main/java/io/papermc/paper/util/OneDriveChecker.java b/src/main/java/io/papermc/paper/util/OneDriveChecker.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..7187b60c2d38119207d307df10b317a72c9b7d16
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/util/OneDriveChecker.java
+@@ -0,0 +1,49 @@
++package io.papermc.paper.util;
++
++import org.apache.commons.lang.StringUtils;
++import org.apache.commons.lang.SystemUtils;
++import org.apache.logging.log4j.LogManager;
++import org.apache.logging.log4j.Logger;
++
++import java.nio.file.Path;
++
++public final class OneDriveChecker {
++    private static final boolean BYPASS = Boolean.getBoolean("io.papermc.paper.bypassOneDriveCheck");
++    private static final String[] ONE_DRIVE_ENV_VARS = new String[]{"OneDrive", "OneDriveConsumer", "OneDriveCommercial"}; // https://superuser.com/a/1397495
++    private static final Path SERVER_PATH = Path.of("").toAbsolutePath().normalize();
++
++    private OneDriveChecker() {
++        throw new RuntimeException();
++    }
++
++    public static void checkOneDrive() {
++        if (!SystemUtils.IS_OS_WINDOWS || BYPASS) return;
++        for (final String envVar : ONE_DRIVE_ENV_VARS) {
++            final String envValue = System.getenv(envVar);
++            if (StringUtils.isBlank(envValue)) continue;
++
++            final Path oneDrivePath = Path.of(envValue).toAbsolutePath().normalize();
++            if (!SERVER_PATH.startsWith(oneDrivePath)) continue;
++
++            final Logger logger = LogManager.getLogger();
++
++            logger.fatal("************************************************************");
++            logger.fatal("* WARNING - YOU ARE RUNNING THE SERVER FROM WITHIN ONEDRIVE!");
++            logger.fatal("* ONEDRIVE MAY CAUSE WORLD OR PLAYER DATA CORRUPTION");
++            logger.fatal("* STOPPING THE SERVER TO PREVENT POSSIBLE DAMAGE");
++            logger.fatal("*");
++            logger.fatal("* Please move the server outside of a OneDrive synced");
++            logger.fatal("* directory before restarting.");
++            logger.fatal("*");
++            logger.fatal("* Current path: {}", SERVER_PATH);
++            logger.fatal("* OneDrive path: {}", oneDrivePath);
++            logger.fatal("*");
++            logger.fatal("* For support or more information, visit our Discord");
++            logger.fatal("* at https://discord.gg/papermc");
++            logger.fatal("************************************************************");
++
++            LogManager.shutdown();
++            System.exit(1);
++        }
++    }
++}
+diff --git a/src/main/java/net/minecraft/server/Main.java b/src/main/java/net/minecraft/server/Main.java
+index cfd43069ee2b6f79afb12e10d223f6bf75100034..0583b256489f540c087097a8d712065f939b5d18 100644
+--- a/src/main/java/net/minecraft/server/Main.java
++++ b/src/main/java/net/minecraft/server/Main.java
+@@ -108,6 +108,7 @@ public class Main {
+             org.bukkit.configuration.file.YamlConfiguration paperConfiguration = loadConfigFile((File) optionset.valueOf("paper-settings"));
+             // Paper end
+ 
++            io.papermc.paper.util.OneDriveChecker.checkOneDrive(); // Paper
+             Path path1 = Paths.get("eula.txt");
+             Eula eula = new Eula(path1);
+ 
