@@ -12,17 +12,16 @@ Co-authored-by: Noah van der Aa <ndvdaa@gmail.com>
 
 diff --git a/src/main/java/io/papermc/paper/util/ServerEnvironment.java b/src/main/java/io/papermc/paper/util/ServerEnvironment.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..2d029bafafd912a35c7d272e9a08b87c23314f88
+index 0000000000000000000000000000000000000000..90650804fdd6ffd63e416aa20d0548fefff99c2a
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/util/ServerEnvironment.java
-@@ -0,0 +1,64 @@
+@@ -0,0 +1,62 @@
 +package io.papermc.paper.util;
 +
 +import org.apache.commons.lang.SystemUtils;
 +
-+import java.io.BufferedReader;
-+import java.io.InputStreamReader;
 +import java.io.IOException;
++import java.io.InputStream;
 +import java.io.OutputStream;
 +import java.io.PrintStream;
 +import java.util.prefs.Preferences;
@@ -64,10 +63,9 @@ index 0000000000000000000000000000000000000000..2d029bafafd912a35c7d272e9a08b87c
 +            try {
 +                Process child = Runtime.getRuntime().exec("id -u " + System.getProperty("user.name"));
 +
-+                // Get the input stream and read from it.
-+                BufferedReader reader = new BufferedReader(new InputStreamReader(child.getInputStream()));
-+                uid = reader.readLine();
-+                reader.close();
++                InputStream is = child.getInputStream();
++                uid = new String(is.readAllBytes()).trim();
++                is.close();
 +            } catch (IOException ignored) {
 +            }
 +
@@ -80,25 +78,25 @@ index 0000000000000000000000000000000000000000..2d029bafafd912a35c7d272e9a08b87c
 +        return runningAsRootOrAdmin;
 +    }
 +}
-diff --git a/src/main/java/org/bukkit/craftbukkit/Main.java b/src/main/java/org/bukkit/craftbukkit/Main.java
-index 22e9dd17f62103c5061435099ce96a3d70d54808..0c7247a3703f26ae3389daaa95ffbb30275c0125 100644
---- a/src/main/java/org/bukkit/craftbukkit/Main.java
-+++ b/src/main/java/org/bukkit/craftbukkit/Main.java
-@@ -261,6 +261,17 @@ public class Main {
-                     System.setProperty(TerminalConsoleAppender.JLINE_OVERRIDE_PROPERTY, "false"); // Paper
-                 }
+diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
+index 1bf19965d12514dee34545235bfbadc0b74ddc8b..1146ae9273906428bc96c4beff3c9f44b2a0490d 100644
+--- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
++++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
+@@ -190,6 +190,17 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+             DedicatedServer.LOGGER.warn("To start the server with more ram, launch it as \"java -Xmx1024M -Xms1024M -jar minecraft_server.jar\"");
+         }
  
-+                // Paper start - detect running as root
-+                if (io.papermc.paper.util.ServerEnvironment.userIsRootOrAdmin()) {
-+                    System.err.println("****************************");
-+                    System.err.println("YOU ARE RUNNING AS AN ADMINISTRATIVE OR ROOT USER. THIS IS NOT ADVISED.");
-+                    System.err.println("YOU ARE OPENING YOURSELF UP TO POTENTIAL RISKS WHEN DOING THIS.");
-+                    System.err.println("MALWARE, BAD PLUGINS, AND ATTACKERS WILL HAVE COMPLETE ACCESS AND CONTROL OF YOUR MACHINE.");
-+                    System.err.println("****************************");
-+                    System.err.println();
-+                }
-+                // Paper end
++        // Paper start - detect running as root
++        if (io.papermc.paper.util.ServerEnvironment.userIsRootOrAdmin()) {
++            DedicatedServer.LOGGER.error("****************************");
++            DedicatedServer.LOGGER.error("YOU ARE RUNNING AS AN ADMINISTRATIVE OR ROOT USER. THIS IS NOT ADVISED.");
++            DedicatedServer.LOGGER.error("YOU ARE OPENING YOURSELF UP TO POTENTIAL RISKS WHEN DOING THIS.");
++            DedicatedServer.LOGGER.error("MALWARE, BAD PLUGINS, AND ATTACKERS WILL HAVE COMPLETE ACCESS AND CONTROL OF YOUR MACHINE.");
++            DedicatedServer.LOGGER.error("****************************");
++            DedicatedServer.LOGGER.error("");
++        }
++        // Paper end
 +
-                 if (Main.class.getPackage().getImplementationVendor() != null && System.getProperty("IReallyKnowWhatIAmDoingISwear") == null) {
-                     Date buildDate = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss Z").parse(Main.class.getPackage().getImplementationVendor()); // Paper
+         DedicatedServer.LOGGER.info("Loading properties");
+         DedicatedServerProperties dedicatedserverproperties = this.settings.getProperties();
  
