@@ -12,60 +12,32 @@ Co-authored-by: Noah van der Aa <ndvdaa@gmail.com>
 
 diff --git a/src/main/java/io/papermc/paper/util/ServerEnvironment.java b/src/main/java/io/papermc/paper/util/ServerEnvironment.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..fb2320730210d1d48cbe524e19140dd715ba2bd0
+index 0000000000000000000000000000000000000000..5ba45a071a5b7e9f2ef9f2dea7e07d74d83ccee4
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/util/ServerEnvironment.java
-@@ -0,0 +1,57 @@
+@@ -0,0 +1,29 @@
 +package io.papermc.paper.util;
 +
++import com.sun.security.auth.module.NTSystem;
 +import org.apache.commons.lang.SystemUtils;
 +
 +import java.io.IOException;
-+import java.io.InputStream;
-+import java.io.OutputStream;
-+import java.io.PrintStream;
-+import java.util.prefs.Preferences;
++import java.util.Arrays;
 +
 +public class ServerEnvironment {
 +    private static final boolean runningAsRootOrAdmin;
 +
 +    static {
 +        if (SystemUtils.IS_OS_WINDOWS) {
-+            // https://stackoverflow.com/a/23538961
-+            Preferences prefs = Preferences.systemRoot();
-+            PrintStream err = System.err;
-+            PrintStream emptyStream = new PrintStream(new OutputStream() {
-+                @Override
-+                public void write(int b) {
-+                }
-+            });
-+
-+            System.err.flush();
-+            System.setErr(emptyStream);
-+
-+            boolean retVal;
-+            try {
-+                prefs.put("papermc.priv_test", "This is a test performed by the Paper Minecraft server software."); // SecurityException
-+                prefs.remove("papermc.priv_test");
-+                prefs.flush(); // BackingStoreException
-+                retVal = true;
-+            } catch (Exception ignored) { // Windows = SecurityException
-+                retVal = false;
-+            }
-+            runningAsRootOrAdmin = retVal;
-+
-+            System.err.flush();
-+            System.setErr(err);
++            runningAsRootOrAdmin = Arrays.asList(new NTSystem().getGroupIDs()).contains("S-1-16-12288");
 +        } else {
-+            String uid = "";
-+
-+            try (final InputStream inputStream = Runtime.getRuntime().exec("id -u " + System.getProperty("user.name")).getInputStream()) {
-+                uid = new String(inputStream.readAllBytes()).trim();
++            boolean isRunningAsRoot;
++            try (final var inputStream = Runtime.getRuntime().exec("id -u " + System.getProperty("user.name")).getInputStream()) {
++                isRunningAsRoot = new String(inputStream.readAllBytes()).trim().equals("0");
 +            } catch (IOException ignored) {
++                isRunningAsRoot = false;
 +            }
-+
-+            // On Unix systems the UID for the root user is always zero.
-+            runningAsRootOrAdmin = uid.equals("0");
++            runningAsRootOrAdmin = isRunningAsRoot;
 +        }
 +    }
 +
