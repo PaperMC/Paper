@@ -1,0 +1,273 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sun, 12 Sep 2021 17:09:29 -0700
+Subject: [PATCH] Better Scoreboard Criteria API
+
+
+diff --git a/src/main/java/io/papermc/paper/scoreboard/Criteria.java b/src/main/java/io/papermc/paper/scoreboard/Criteria.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..ed5c96c684bd025aba11b2e3895e52806ae10688
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/scoreboard/Criteria.java
+@@ -0,0 +1,49 @@
++package io.papermc.paper.scoreboard;
++
++import com.google.common.collect.ImmutableList;
++import net.kyori.adventure.text.format.NamedTextColor;
++import net.kyori.adventure.util.Index;
++import org.bukkit.scoreboard.RenderType;
++import org.jetbrains.annotations.NotNull;
++
++import java.util.Collections;
++import java.util.HashMap;
++import java.util.Map;
++import java.util.function.Function;
++import java.util.stream.Collectors;
++
++@SuppressWarnings("StaticInitializerReferencesSubClass")
++public abstract class Criteria {
++
++    protected static final Map<String, Criteria> CUSTOM_CRITERIA = new HashMap<>();
++
++    public static final Criteria DUMMY = new CriteriaWrapper("dummy");
++    public static final Criteria TRIGGER = new CriteriaWrapper("trigger");
++    public static final Criteria DEATH_COUNT = new CriteriaWrapper("deathCount");
++    public static final Criteria KILL_COUNT_PLAYERS = new CriteriaWrapper("playerKillCount");
++    public static final Criteria KILL_COUNT_ALL = new CriteriaWrapper("totalKillCount");
++    public static final Criteria HEALTH = new CriteriaWrapper("health");
++    public static final Criteria FOOD = new CriteriaWrapper("food");
++    public static final Criteria AIR = new CriteriaWrapper("air");
++    public static final Criteria ARMOR = new CriteriaWrapper("armor");
++    public static final Criteria EXPERIENCE = new CriteriaWrapper("experience");
++    public static final Criteria LEVEL = new CriteriaWrapper("level");
++    public static final Map<NamedTextColor, Criteria> TEAM_KILL = Collections.unmodifiableMap(NamedTextColor.NAMES.values().stream().collect(Collectors.toMap(Function.identity(), color -> new CriteriaWrapper("teamkill." + color))));
++    public static final Map<NamedTextColor, Criteria> KILLED_BY_TEAM = Collections.unmodifiableMap(NamedTextColor.NAMES.values().stream().collect(Collectors.toMap(Function.identity(), color -> new CriteriaWrapper("killedByTeam." + color))));
++
++    public static final Index<String, Criteria> NAMES = Index.create(Criteria::getName, ImmutableList.<Criteria>builder().add(DUMMY, TRIGGER, DEATH_COUNT, KILL_COUNT_PLAYERS, KILL_COUNT_ALL, HEALTH, FOOD, AIR, EXPERIENCE, LEVEL).addAll(TEAM_KILL.values()).addAll(KILLED_BY_TEAM.values()).build());
++
++    private final String name;
++
++    protected Criteria(@NotNull String name) {
++        this.name = name;
++    }
++
++    public @NotNull String getName() {
++        return this.name;
++    }
++
++    public abstract boolean isReadOnly();
++
++    public abstract @NotNull RenderType getDefaultRenderType();
++}
+diff --git a/src/main/java/io/papermc/paper/scoreboard/CriteriaWrapper.java b/src/main/java/io/papermc/paper/scoreboard/CriteriaWrapper.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..94ef42c6f19037742d4ec5f48a75308ca8119a8c
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/scoreboard/CriteriaWrapper.java
+@@ -0,0 +1,27 @@
++package io.papermc.paper.scoreboard;
++
++import org.bukkit.scoreboard.RenderType;
++import org.jetbrains.annotations.NotNull;
++
++import java.util.Objects;
++
++public class CriteriaWrapper extends Criteria {
++
++    CriteriaWrapper(@NotNull String name) {
++        super(name);
++    }
++
++    public @NotNull Criteria getCriteria() {
++        return Objects.requireNonNull(Criteria.NAMES.value(this.getName()), this.getName() + " is an unrecognized criteria name");
++    }
++
++    @Override
++    public boolean isReadOnly() {
++        return this.getCriteria().isReadOnly();
++    }
++
++    @Override
++    public @NotNull RenderType getDefaultRenderType() {
++        return this.getCriteria().getDefaultRenderType();
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/statistics/Statistic.java b/src/main/java/io/papermc/paper/statistics/Statistic.java
+index dd779afef9b9238c1e239f76b6b09c06100e1ee8..cddebebbc5e7a895c224ee8917f141eda22b9469 100644
+--- a/src/main/java/io/papermc/paper/statistics/Statistic.java
++++ b/src/main/java/io/papermc/paper/statistics/Statistic.java
+@@ -1,6 +1,8 @@
+ package io.papermc.paper.statistics;
+ 
++import io.papermc.paper.scoreboard.Criteria;
+ import org.bukkit.Keyed;
++import org.bukkit.scoreboard.RenderType;
+ import org.jetbrains.annotations.NotNull;
+ 
+ /**
+@@ -8,13 +10,13 @@ import org.jetbrains.annotations.NotNull;
+  *
+  * @param <S> stat (one of {@link org.bukkit.entity.EntityType}, {@link org.bukkit.Material} or {@link CustomStatistic}.
+  */
+-@SuppressWarnings("ClassCanBeRecord")
+-public final class Statistic<S extends Keyed> {
++public final class Statistic<S extends Keyed> extends Criteria {
+ 
+     private final S stat;
+     private final StatisticType<S> type;
+ 
+     Statistic(@NotNull S stat, @NotNull StatisticType<S> type) {
++        super(buildName(type, stat));
+         this.stat = stat;
+         this.type = type;
+     }
+@@ -32,6 +34,16 @@ public final class Statistic<S extends Keyed> {
+         return type;
+     }
+ 
++    @Override
++    public boolean isReadOnly() {
++        return false;
++    }
++
++    @Override
++    public @NotNull RenderType getDefaultRenderType() {
++        return RenderType.INTEGER;
++    }
++
+     @Override
+     public String toString() {
+         return buildName(this.type, this.stat);
+diff --git a/src/main/java/org/bukkit/scoreboard/Criterias.java b/src/main/java/org/bukkit/scoreboard/Criterias.java
+index 413430928f43e74f4aadde63472663997a1cdf1d..050cc2520578e42efd282a7ed0ea09e008e3bc1d 100644
+--- a/src/main/java/org/bukkit/scoreboard/Criterias.java
++++ b/src/main/java/org/bukkit/scoreboard/Criterias.java
+@@ -2,7 +2,9 @@ package org.bukkit.scoreboard;
+ 
+ /**
+  * Criteria names which trigger an objective to be modified by actions in-game
++ * @deprecated use {@link io.papermc.paper.scoreboard.Criteria}
+  */
++@Deprecated // Paper
+ public final class Criterias {
+ 
+     public static final String HEALTH = "health";
+diff --git a/src/main/java/org/bukkit/scoreboard/Objective.java b/src/main/java/org/bukkit/scoreboard/Objective.java
+index b93b1b0428d11589605c8edf5c053369e1031076..4c4db5e0e99d96bad788cc5f698b2a706e329835 100644
+--- a/src/main/java/org/bukkit/scoreboard/Objective.java
++++ b/src/main/java/org/bukkit/scoreboard/Objective.java
+@@ -68,10 +68,22 @@ public interface Objective {
+      *
+      * @return this objective's criteria
+      * @throws IllegalStateException if this objective has been unregistered
++     * @deprecated use {@link #criteria()}
+      */
+     @NotNull
++    @Deprecated // Paper
+     String getCriteria() throws IllegalStateException;
+ 
++    // Paper start
++    /**
++     * Gets the criteria this objective tracks.
++     *
++     * @return this objective's criteria
++     * @throws IllegalStateException if this objective has been unregistered
++     */
++    @NotNull io.papermc.paper.scoreboard.Criteria criteria();
++    // Paper end
++
+     /**
+      * Gets if the objective's scores can be modified directly by a plugin.
+      *
+diff --git a/src/main/java/org/bukkit/scoreboard/Scoreboard.java b/src/main/java/org/bukkit/scoreboard/Scoreboard.java
+index 9a395b138be3f6fa9a52639f0ac4070c23f7d77c..a289fce29fb09446cf818792151b2e04d3ab7636 100644
+--- a/src/main/java/org/bukkit/scoreboard/Scoreboard.java
++++ b/src/main/java/org/bukkit/scoreboard/Scoreboard.java
+@@ -44,8 +44,10 @@ public interface Scoreboard {
+      *     characters.
+      * @throws IllegalArgumentException if an objective by that name already
+      *     exists
++     * @deprecated use {@link #registerNewObjective(String, io.papermc.paper.scoreboard.Criteria, net.kyori.adventure.text.Component)}
+      */
+     @NotNull
++    @Deprecated
+     Objective registerNewObjective(@NotNull String name, @NotNull String criteria, @Nullable net.kyori.adventure.text.Component displayName) throws IllegalArgumentException;
+     /**
+      * Registers an Objective on this Scoreboard
+@@ -65,9 +67,52 @@ public interface Scoreboard {
+      * @throws IllegalArgumentException if renderType is null
+      * @throws IllegalArgumentException if an objective by that name already
+      *     exists
++     * @deprecated use {@link #registerNewObjective(String, io.papermc.paper.scoreboard.Criteria, net.kyori.adventure.text.Component, RenderType)}
+      */
+     @NotNull
++    @Deprecated
+     Objective registerNewObjective(@NotNull String name, @NotNull String criteria, @Nullable net.kyori.adventure.text.Component displayName, @NotNull RenderType renderType) throws IllegalArgumentException;
++
++    /**
++     * Registers an Objective on this Scoreboard
++     *
++     * @param name Name of the Objective
++     * @param criteria Criteria for the Objective
++     * @param displayName Name displayed to players for the Objective.
++     * @return The registered Objective
++     * @throws IllegalArgumentException if name is null
++     * @throws IllegalArgumentException if name is longer than 16
++     *     characters.
++     * @throws IllegalArgumentException if criteria is null
++     * @throws IllegalArgumentException if displayName is null
++     * @throws IllegalArgumentException if displayName is longer than 128
++     *     characters.
++     * @throws IllegalArgumentException if an objective by that name already
++     *     exists
++     */
++    @NotNull
++    Objective registerNewObjective(@NotNull String name, @NotNull io.papermc.paper.scoreboard.Criteria criteria, @Nullable net.kyori.adventure.text.Component displayName) throws IllegalArgumentException;
++    /**
++     * Registers an Objective on this Scoreboard
++     *
++     * @param name Name of the Objective
++     * @param criteria Criteria for the Objective
++     * @param displayName Name displayed to players for the Objective.
++     * @param renderType Manner of rendering the Objective
++     * @return The registered Objective
++     * @throws IllegalArgumentException if name is null
++     * @throws IllegalArgumentException if name is longer than 16
++     *     characters.
++     * @throws IllegalArgumentException if criteria is null
++     * @throws IllegalArgumentException if displayName is null
++     * @throws IllegalArgumentException if displayName is longer than 128
++     *     characters.
++     * @throws IllegalArgumentException if renderType is null
++     * @throws IllegalArgumentException if an objective by that name already
++     *     exists
++     */
++    @NotNull
++    Objective registerNewObjective(@NotNull String name, @NotNull io.papermc.paper.scoreboard.Criteria criteria, @Nullable net.kyori.adventure.text.Component displayName, @NotNull RenderType renderType) throws IllegalArgumentException;
+     // Paper end
+ 
+     /**
+@@ -132,10 +177,23 @@ public interface Scoreboard {
+      * @param criteria Criteria to search by
+      * @return an immutable set of Objectives using the specified Criteria
+      * @throws IllegalArgumentException if criteria is null
++     * @deprecated use {@link #getObjectivesByCriteria(io.papermc.paper.scoreboard.Criteria)}
+      */
+     @NotNull
++    @Deprecated // Paper
+     Set<Objective> getObjectivesByCriteria(@NotNull String criteria) throws IllegalArgumentException;
+ 
++    // Paper start
++    /**
++     * Gets all Objectives of a Criteria on the Scoreboard
++     *
++     * @param criteria Criteria to search by
++     * @return an immutable set of Objectives using the specified Criteria
++     * @throws IllegalArgumentException if criteria is null
++     */
++    @NotNull Set<Objective> getObjectivesByCriteria(@NotNull io.papermc.paper.scoreboard.Criteria criteria);
++    // Paper end
++
+     /**
+      * Gets all Objectives on this Scoreboard
+      *

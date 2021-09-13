@@ -1,0 +1,215 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sun, 12 Sep 2021 17:09:24 -0700
+Subject: [PATCH] Better Scoreboard Criteria API
+
+
+diff --git a/src/main/java/io/papermc/paper/scoreboard/PaperCriteria.java b/src/main/java/io/papermc/paper/scoreboard/PaperCriteria.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..8af0c3a8f8b1f0a166b0fb4f65dd3ec04c359ca4
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/scoreboard/PaperCriteria.java
+@@ -0,0 +1,51 @@
++package io.papermc.paper.scoreboard;
++
++import net.minecraft.world.scores.criteria.ObjectiveCriteria;
++import org.bukkit.scoreboard.RenderType;
++import org.jetbrains.annotations.NotNull;
++
++public class PaperCriteria extends Criteria {
++
++    private static boolean acceptingNew = true;
++    private final ObjectiveCriteria handle;
++
++    public PaperCriteria(ObjectiveCriteria criteria) {
++        super(criteria.getName());
++        this.handle = criteria;
++    }
++
++    public static void registerCustomCriteria(@NotNull Criteria criteria) {
++        if (CUSTOM_CRITERIA.containsKey(criteria.getName())) {
++            throw new IllegalArgumentException("Cannot set already-set criteria");
++        } else if (!acceptingNew) {
++            throw new IllegalArgumentException("No longer accepting new custom criteria (can only be done by the server implementation)");
++        }
++        CUSTOM_CRITERIA.put(criteria.getName(), criteria);
++    }
++
++    public static void stopAcceptingRegistrations() {
++        acceptingNew = false;
++    }
++
++    @Override
++    public boolean isReadOnly() {
++        return this.handle.isReadOnly();
++    }
++
++    @Override
++    public @NotNull RenderType getDefaultRenderType() {
++        return RenderType.valueOf(this.handle.getDefaultRenderType().name());
++    }
++
++    public ObjectiveCriteria getHandle() {
++        return this.handle;
++    }
++
++    public static Criteria getFromNMS(ObjectiveCriteria criteria) {
++        if (criteria instanceof net.minecraft.stats.Stat<?> stat) {
++            return io.papermc.paper.statistics.PaperStatistics.getPaperStatistic(stat);
++        } else {
++            return io.papermc.paper.scoreboard.Criteria.NAMES.value(criteria.getName());
++        }
++    }
++}
+diff --git a/src/main/java/net/minecraft/world/scores/criteria/ObjectiveCriteria.java b/src/main/java/net/minecraft/world/scores/criteria/ObjectiveCriteria.java
+index 7948dedc2b6abdb34d67c7e69bc9be8c7ee8f2bc..e066e28f1c1ea5d082575941a00f9a787f3613a9 100644
+--- a/src/main/java/net/minecraft/world/scores/criteria/ObjectiveCriteria.java
++++ b/src/main/java/net/minecraft/world/scores/criteria/ObjectiveCriteria.java
+@@ -35,6 +35,7 @@ public class ObjectiveCriteria {
+     private static ObjectiveCriteria registerCustom(String name, boolean readOnly, ObjectiveCriteria.RenderType defaultRenderType) {
+         ObjectiveCriteria objectiveCriteria = new ObjectiveCriteria(name, readOnly, defaultRenderType);
+         CUSTOM_CRITERIA.put(name, objectiveCriteria);
++        io.papermc.paper.scoreboard.PaperCriteria.registerCustomCriteria(new io.papermc.paper.scoreboard.PaperCriteria(objectiveCriteria)); // Paper
+         return objectiveCriteria;
+     }
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index 54e8f0f367645f3aa8af5b1cb69c39c0cec9381f..36e3f372be40c0f8b067466325e301b748b906a3 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -322,6 +322,10 @@ public final class CraftServer implements Server {
+         Potion.setPotionBrewer(new CraftPotionBrewer());
+         MobEffects.BLINDNESS.getClass();
+         PotionEffectType.stopAcceptingRegistrations();
++        // Paper start - better Criteria API
++        net.minecraft.world.scores.criteria.ObjectiveCriteria.LEVEL.getClass();
++        io.papermc.paper.scoreboard.PaperCriteria.stopAcceptingRegistrations();
++        // Paper end
+         // Ugly hack :(
+ 
+         if (!Main.useConsole) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftCriteria.java b/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftCriteria.java
+index 0cd63772871311fc0cb7111657cc9a9dac106167..c682d3aed14cee11b4d108bd7e3436a48bb615c6 100644
+--- a/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftCriteria.java
++++ b/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftCriteria.java
+@@ -26,6 +26,7 @@ final class CraftCriteria {
+     final ObjectiveCriteria criteria;
+     final String bukkitName;
+ 
++    @Deprecated // Paper
+     private CraftCriteria(String bukkitName) {
+         this.bukkitName = bukkitName;
+         this.criteria = DUMMY.criteria;
+@@ -40,6 +41,7 @@ final class CraftCriteria {
+         return java.util.Objects.requireNonNullElseGet(CraftCriteria.DEFAULTS.get(objective.getCriteria().getName()), () -> new CraftCriteria(objective.getCriteria())); // Paper
+     }
+ 
++    @Deprecated // Paper
+     static CraftCriteria getFromBukkit(String name) {
+         final CraftCriteria criteria = CraftCriteria.DEFAULTS.get(name);
+         if (criteria != null) {
+@@ -53,6 +55,17 @@ final class CraftCriteria {
+         // Paper end
+         return new CraftCriteria(name);
+     }
++    // Paper start
++    static CraftCriteria getFromBukkit(io.papermc.paper.scoreboard.Criteria criteria) {
++        if (criteria instanceof io.papermc.paper.scoreboard.CriteriaWrapper wrapper) {
++            return new org.bukkit.craftbukkit.scoreboard.CraftCriteria(((io.papermc.paper.scoreboard.PaperCriteria) wrapper.getCriteria()).getHandle());
++        } else if (criteria instanceof io.papermc.paper.statistics.Statistic<?> statistic) {
++            return new org.bukkit.craftbukkit.scoreboard.CraftCriteria(io.papermc.paper.statistics.PaperStatistics.getNMSStatistic(statistic));
++        } else {
++            throw new IllegalArgumentException(criteria + " isn't supported");
++        }
++    }
++    // Paper end
+ 
+     @Override
+     public boolean equals(Object that) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftObjective.java b/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftObjective.java
+index c5cf800ab8cbb5ebcf1b06ad591f08be75859b8c..a7c2d0899a81e62c1756b9faf33e84ffa6a4e62d 100644
+--- a/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftObjective.java
++++ b/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftObjective.java
+@@ -11,12 +11,12 @@ import org.bukkit.scoreboard.Score;
+ 
+ final class CraftObjective extends CraftScoreboardComponent implements Objective {
+     private final net.minecraft.world.scores.Objective objective;
+-    private final CraftCriteria criteria;
++    private final io.papermc.paper.scoreboard.Criteria criteria; // Paper
+ 
+     CraftObjective(CraftScoreboard scoreboard, net.minecraft.world.scores.Objective objective) {
+         super(scoreboard);
+         this.objective = objective;
+-        this.criteria = CraftCriteria.getFromNMS(objective);
++        this.criteria = io.papermc.paper.scoreboard.PaperCriteria.getFromNMS(objective.getCriteria()); // Paper
+     }
+ 
+     net.minecraft.world.scores.Objective getHandle() {
+@@ -65,14 +65,21 @@ final class CraftObjective extends CraftScoreboardComponent implements Objective
+     public String getCriteria() throws IllegalStateException {
+         CraftScoreboard scoreboard = this.checkState();
+ 
+-        return criteria.bukkitName;
++        return criteria.getName(); // Paper
+     }
++    // Paper start
++    @Override
++    public io.papermc.paper.scoreboard.Criteria criteria() {
++        CraftScoreboard scoreboard = this.checkState();
++        return this.criteria;
++    }
++    // Paper end
+ 
+     @Override
+     public boolean isModifiable() throws IllegalStateException {
+         CraftScoreboard scoreboard = this.checkState();
+ 
+-        return !criteria.criteria.isReadOnly();
++        return !criteria.isReadOnly(); // Paper
+     }
+ 
+     @Override
+diff --git a/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftScoreboard.java b/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftScoreboard.java
+index 152bd54ebd0b0eeee4f3f7faf0c3043d83c01cc1..f39ffa36dfe2775ed992670cab2d7ddf7192efb6 100644
+--- a/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftScoreboard.java
++++ b/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftScoreboard.java
+@@ -35,6 +35,17 @@ public final class CraftScoreboard implements org.bukkit.scoreboard.Scoreboard {
+     }
+     @Override
+     public CraftObjective registerNewObjective(String name, String criteria, net.kyori.adventure.text.Component displayName, RenderType renderType) {
++        io.papermc.paper.scoreboard.Criteria criteria1 = io.papermc.paper.scoreboard.Criteria.NAMES.value(criteria);
++        return registerNewObjective(name, criteria1 == null ? io.papermc.paper.scoreboard.Criteria.DUMMY : criteria1, displayName, renderType);
++    }
++
++    @Override
++    public CraftObjective registerNewObjective(String name, io.papermc.paper.scoreboard.Criteria criteria, net.kyori.adventure.text.Component displayName) throws IllegalArgumentException {
++        return registerNewObjective(name, criteria, displayName, criteria.getDefaultRenderType());
++    }
++
++    @Override
++    public CraftObjective registerNewObjective(String name, io.papermc.paper.scoreboard.Criteria criteria, net.kyori.adventure.text.Component displayName, org.bukkit.scoreboard.RenderType renderType) throws IllegalArgumentException {
+         if (displayName == null) {
+             displayName = net.kyori.adventure.text.Component.empty();
+         }
+@@ -95,12 +106,20 @@ public final class CraftScoreboard implements org.bukkit.scoreboard.Scoreboard {
+ 
+     @Override
+     public ImmutableSet<Objective> getObjectivesByCriteria(String criteria) throws IllegalArgumentException {
++        // Paper start
++        java.util.Optional<net.minecraft.world.scores.criteria.ObjectiveCriteria> objectiveCriteria = net.minecraft.world.scores.criteria.ObjectiveCriteria.byName(criteria);
++        return objectiveCriteria.map(value -> getObjectivesByCriteria(io.papermc.paper.scoreboard.PaperCriteria.getFromNMS(value))).orElseGet(com.google.common.collect.ImmutableSet::of);
++    }
++
++    @Override
++    public ImmutableSet<Objective> getObjectivesByCriteria(io.papermc.paper.scoreboard.Criteria criteria) throws IllegalArgumentException {
++        // Paper end
+         Validate.notNull(criteria, "Criteria cannot be null");
+ 
+         ImmutableSet.Builder<Objective> objectives = ImmutableSet.builder();
+         for (net.minecraft.world.scores.Objective netObjective : (Collection<net.minecraft.world.scores.Objective>) this.board.getObjectives()) {
+             CraftObjective objective = new CraftObjective(this, netObjective);
+-            if (objective.getCriteria().equals(criteria)) {
++            if (objective.criteria().equals(criteria)) { // Paper
+                 objectives.add(objective);
+             }
+         }
