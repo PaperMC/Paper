@@ -381,7 +381,7 @@ public class SpigotConfig
             Bukkit.getLogger().info( "Debug logging is enabled" );
         } else
         {
-            Bukkit.getLogger().info( "Debug logging is disabled" );
+            // Bukkit.getLogger().info( "Debug logging is disabled" ); // Paper - Don't log if debug logging isn't enabled.
         }
     }
 
