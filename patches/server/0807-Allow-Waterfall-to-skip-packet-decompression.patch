@@ -1,0 +1,134 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: xDark <19853368+xxDark@users.noreply.github.com>
+Date: Tue, 14 Sep 2021 20:44:34 +0300
+Subject: [PATCH] Allow Waterfall to skip packet decompression
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+index f421e6a2e43e0a673dbb8a9a2b4331387e523e02..329d62d3b54c0987724a720ce563340ef439cf0c 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+@@ -654,4 +654,10 @@ public class PaperConfig {
+     private static void sendFullPosForHardCollidingEntities() {
+         sendFullPosForHardCollidingEntities = getBoolean("settings.send-full-pos-for-hard-colliding-entities", true);
+     }
++
++    public static boolean bungeeCordPassThrough;
++
++    private static void bungeeCordPassThrough() {
++        bungeeCordPassThrough = getBoolean("settings.bungee-packet-pass-through", false);
++    }
+ }
+diff --git a/src/main/java/com/destroystokyo/paper/network/PacketPassThroughHelper.java b/src/main/java/com/destroystokyo/paper/network/PacketPassThroughHelper.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..6077a60bdf08b6fc2cedde2d83108372c6113ef7
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/network/PacketPassThroughHelper.java
+@@ -0,0 +1,20 @@
++package com.destroystokyo.paper.network;
++
++import io.netty.util.AttributeKey;
++import io.netty.util.AttributeMap;
++
++public final class PacketPassThroughHelper {
++
++    private static final AttributeKey<Boolean> KEY = AttributeKey.valueOf("packet-pass-through");
++
++    private PacketPassThroughHelper() {}
++
++    public static void setPassThrough(AttributeMap map, boolean passThrough) {
++        map.attr(KEY).set(passThrough);
++    }
++
++    public static boolean shouldPassThrough(AttributeMap map) {
++        Boolean value = map.attr(KEY).get();
++        return value != null && value;
++    }
++}
+diff --git a/src/main/java/net/minecraft/network/CompressionEncoder.java b/src/main/java/net/minecraft/network/CompressionEncoder.java
+index 89bf5066b83e8d79c77c90fce1f7858c06b01730..8b12e70de7ea50dca6d3c06e59d5dc3c686ae5c7 100644
+--- a/src/main/java/net/minecraft/network/CompressionEncoder.java
++++ b/src/main/java/net/minecraft/network/CompressionEncoder.java
+@@ -1,5 +1,7 @@
+ package net.minecraft.network;
+ 
++import com.destroystokyo.paper.PaperConfig;
++import com.destroystokyo.paper.network.PacketPassThroughHelper;
+ import io.netty.buffer.ByteBuf;
+ import io.netty.channel.ChannelHandlerContext;
+ import io.netty.handler.codec.MessageToByteEncoder;
+@@ -32,6 +34,11 @@ public class CompressionEncoder extends MessageToByteEncoder<ByteBuf> {
+     protected void encode(ChannelHandlerContext channelHandlerContext, ByteBuf byteBuf, ByteBuf byteBuf2) throws Exception { // Paper
+         int i = byteBuf.readableBytes();
+         FriendlyByteBuf friendlyByteBuf = new FriendlyByteBuf(byteBuf2);
++        // Paper start
++        if (PaperConfig.bungeeCordPassThrough) {
++            friendlyByteBuf.writeBoolean(PacketPassThroughHelper.shouldPassThrough(channelHandlerContext.channel()));
++        }
++        // Paper end
+         if (i < this.threshold) {
+             friendlyByteBuf.writeVarInt(0);
+             friendlyByteBuf.writeBytes(byteBuf);
+@@ -54,6 +61,9 @@ public class CompressionEncoder extends MessageToByteEncoder<ByteBuf> {
+             }
+ 
+             friendlyByteBuf.writeVarInt(i);
++            if (PaperConfig.bungeeCordPassThrough) {
++                friendlyByteBuf.writeBoolean(PacketPassThroughHelper.shouldPassThrough(channelHandlerContext.channel()));
++            }
+             ByteBuf compatibleIn = com.velocitypowered.natives.util.MoreByteBufUtils.ensureCompatible(channelHandlerContext.alloc(), this.compressor, byteBuf);
+             try {
+                 this.compressor.deflate(compatibleIn, byteBuf2);
+diff --git a/src/main/java/net/minecraft/network/PacketEncoder.java b/src/main/java/net/minecraft/network/PacketEncoder.java
+index b039a32b805fc02033fa862a1c40c4a51639e69a..17709880e7f47635ffa64754fbf5f5fb76d62cbd 100644
+--- a/src/main/java/net/minecraft/network/PacketEncoder.java
++++ b/src/main/java/net/minecraft/network/PacketEncoder.java
+@@ -1,5 +1,7 @@
+ package net.minecraft.network;
+ 
++import com.destroystokyo.paper.PaperConfig;
++import com.destroystokyo.paper.network.PacketPassThroughHelper;
+ import io.netty.buffer.ByteBuf;
+ import io.netty.channel.ChannelHandlerContext;
+ import io.netty.handler.codec.MessageToByteEncoder;
+@@ -61,6 +63,12 @@ public class PacketEncoder extends MessageToByteEncoder<Packet<?>> {
+                     throw new PacketTooLargeException(packet, packetLength);
+                 }
+                 // Paper end
++
++                // Paper start
++                if (PaperConfig.bungeeCordPassThrough) {
++                    PacketPassThroughHelper.setPassThrough(channelHandlerContext.channel(), packet.passThrough());
++                }
++                // Paper end
+             }
+         }
+     }
+diff --git a/src/main/java/net/minecraft/network/protocol/Packet.java b/src/main/java/net/minecraft/network/protocol/Packet.java
+index e8fcd56906d26f6dc87959e32c4c7c78cfea9658..ab78e64b8b96dd8a5fe98d91fd1bf66fb2123274 100644
+--- a/src/main/java/net/minecraft/network/protocol/Packet.java
++++ b/src/main/java/net/minecraft/network/protocol/Packet.java
+@@ -30,4 +30,7 @@ public interface Packet<T extends PacketListener> {
+     default boolean isSkippable() {
+         return false;
+     }
++
++    // Paper start
++    default boolean passThrough() { return false; }
+ }
+diff --git a/src/main/java/net/minecraft/network/protocol/game/ClientboundLevelChunkPacket.java b/src/main/java/net/minecraft/network/protocol/game/ClientboundLevelChunkPacket.java
+index 60d72e488bc77cd913328be400ca374a873b4561..b2c33d7d8ba63d7e6cc441cae8f4e64f0b13a6f4 100644
+--- a/src/main/java/net/minecraft/network/protocol/game/ClientboundLevelChunkPacket.java
++++ b/src/main/java/net/minecraft/network/protocol/game/ClientboundLevelChunkPacket.java
+@@ -202,4 +202,11 @@ public class ClientboundLevelChunkPacket implements Packet<ClientGamePacketListe
+     public int[] getBiomes() {
+         return this.biomes;
+     }
++
++    // Paper start
++    @Override
++    public boolean passThrough() {
++        return true;
++    }
++    // Paper end
+ }
