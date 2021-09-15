@@ -34,14 +34,14 @@
 +        // CraftBukkit start
 +        return this.spawn(world, stack, player, pos, spawnReason, alignPosition, invertY, spawnReason == EntitySpawnReason.DISPENSER ? org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.DISPENSE_EGG : org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.SPAWNER_EGG); // Paper - use correct spawn reason for dispenser spawn eggs
 +    }
- 
--        if (stack != null) {
--            consumer = EntityType.createDefaultStackConfig(world, stack, player);
++
 +    @Nullable
 +    public T spawn(ServerLevel worldserver, @Nullable ItemStack itemstack, @Nullable Player entityhuman, BlockPos blockposition, EntitySpawnReason entityspawnreason, boolean flag, boolean flag1, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason spawnReason) {
 +        // CraftBukkit end
 +        Consumer<T> consumer; // CraftBukkit - decompile error
-+
+ 
+-        if (stack != null) {
+-            consumer = EntityType.createDefaultStackConfig(world, stack, player);
 +        if (itemstack != null) {
 +            consumer = EntityType.createDefaultStackConfig(worldserver, itemstack, entityhuman);
          } else {
@@ -82,7 +82,7 @@
 +        // CraftBukkit start
 +        return this.spawn(world, afterConsumer, pos, reason, alignPosition, invertY, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.DEFAULT);
 +    }
- 
++
 +    @Nullable
 +    public T spawn(ServerLevel worldserver, @Nullable Consumer<T> consumer, BlockPos blockposition, EntitySpawnReason entityspawnreason, boolean flag, boolean flag1, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason spawnReason) {
 +        // CraftBukkit end
@@ -97,7 +97,7 @@
 +        }
 +        // Paper end - PreCreatureSpawnEvent
 +        T t0 = this.create(worldserver, consumer, blockposition, entityspawnreason, flag, flag1);
-+
+ 
          if (t0 != null) {
 -            world.addFreshEntityWithPassengers(t0);
 +            // CraftBukkit start
@@ -109,7 +109,23 @@
              if (t0 instanceof Mob) {
                  Mob entityinsentient = (Mob) t0;
  
-@@ -657,7 +694,7 @@
+@@ -542,6 +579,15 @@
+ 
+             if (entity.getType() == entitytypes) {
+                 if (world.isClientSide || !entity.getType().onlyOpCanSetNbt() || player != null && minecraftserver.getPlayerList().isOp(player.getGameProfile())) {
++                    // Paper start - filter out protected tags
++                    if (player == null || !player.getBukkitEntity().hasPermission("minecraft.nbt.place")) {
++                        nbt = nbt.update((compound) -> {
++                            for (net.minecraft.commands.arguments.NbtPathArgument.NbtPath tag : world.paperConfig().entities.spawning.filteredEntityTagNbtPaths) {
++                                tag.remove(compound);
++                            }
++                        });
++                    }
++                    // Paper end - filter out protected tags
+                     nbt.loadInto(entity);
+                 }
+             }
+@@ -657,7 +703,7 @@
              }
  
              return entity;
@@ -118,7 +134,7 @@
      }
  
      public static Stream<Entity> loadEntitiesRecursive(final List<? extends Tag> entityNbtList, final Level world, final EntitySpawnReason reason) {
-@@ -718,7 +755,7 @@
+@@ -718,7 +764,7 @@
  
      @Nullable
      public T tryCast(Entity obj) {
@@ -127,7 +143,7 @@
      }
  
      @Override
-@@ -791,7 +828,7 @@
+@@ -791,7 +837,7 @@
              this.canSpawnFarFromPlayer = spawnGroup == MobCategory.CREATURE || spawnGroup == MobCategory.MISC;
          }
  
