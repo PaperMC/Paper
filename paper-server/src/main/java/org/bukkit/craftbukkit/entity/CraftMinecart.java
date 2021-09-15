@@ -127,4 +127,18 @@ public abstract class CraftMinecart extends CraftVehicle implements Minecart {
     public int getDisplayBlockOffset() {
         return this.getHandle().getDisplayOffset();
     }
+
+    // Paper start - Friction API
+    @org.jetbrains.annotations.NotNull
+    @Override
+    public net.kyori.adventure.util.TriState getFrictionState() {
+        return this.getHandle().frictionState;
+    }
+
+    @Override
+    public void setFrictionState(@org.jetbrains.annotations.NotNull net.kyori.adventure.util.TriState state) {
+        java.util.Objects.requireNonNull(state, "state may not be null");
+        this.getHandle().frictionState = state;
+    }
+    // Paper end - Friction API
 }

@@ -14,7 +14,7 @@
  
  public abstract class AbstractMinecart extends VehicleEntity {
  
-@@ -76,6 +83,17 @@
+@@ -76,6 +83,18 @@
          enummap.put(RailShape.NORTH_EAST, Pair.of(baseblockposition2, baseblockposition1));
      });
  
@@ -28,11 +28,12 @@
 +    private double flyingZ = 0.95;
 +    public Double maxSpeed;
 +    // CraftBukkit end
++    public net.kyori.adventure.util.TriState frictionState = net.kyori.adventure.util.TriState.NOT_SET; // Paper - Friction API
 +
      protected AbstractMinecart(EntityType<?> type, Level world) {
          super(type, world);
          this.blocksBuilding = true;
-@@ -101,7 +119,7 @@
+@@ -101,7 +120,7 @@
  
      @Nullable
      public static <T extends AbstractMinecart> T createMinecart(Level world, double x, double y, double z, EntityType<T> type, EntitySpawnReason reason, ItemStack stack, @Nullable Player player) {
@@ -41,7 +42,7 @@
  
          if (t0 != null) {
              t0.setInitialPos(x, y, z);
-@@ -139,11 +157,19 @@
+@@ -139,11 +158,19 @@
  
      @Override
      public boolean canCollideWith(Entity other) {
@@ -63,7 +64,7 @@
          return true;
      }
  
-@@ -262,6 +288,14 @@
+@@ -262,6 +289,14 @@
  
      @Override
      public void tick() {
@@ -78,7 +79,7 @@
          if (this.getHurtTime() > 0) {
              this.setHurtTime(this.getHurtTime() - 1);
          }
-@@ -271,8 +305,20 @@
+@@ -271,8 +306,20 @@
          }
  
          this.checkBelowWorld();
@@ -100,7 +101,7 @@
          this.updateInWaterStateAndDoFluidPushing();
          if (this.isInLava()) {
              this.lavaHurt();
-@@ -385,12 +431,16 @@
+@@ -385,12 +432,16 @@
  
          this.setDeltaMovement(Mth.clamp(vec3d.x, -d0, d0), vec3d.y, Mth.clamp(vec3d.z, -d0, d0));
          if (this.onGround()) {
@@ -119,7 +120,36 @@
          }
  
      }
-@@ -520,7 +570,16 @@
+@@ -502,6 +553,16 @@
+ 
+         this.flipped = nbt.getBoolean("FlippedRotation");
+         this.firstTick = nbt.getBoolean("HasTicked");
++        // Paper start - Friction API
++        if (nbt.contains("Paper.FrictionState")) {
++            String fs = nbt.getString("Paper.FrictionState");
++            try {
++                frictionState = net.kyori.adventure.util.TriState.valueOf(fs);
++            } catch (Exception ignored) {
++                com.mojang.logging.LogUtils.getLogger().error("Unknown friction state " + fs + " for " + this);
++            }
++        }
++        // Paper end - Friction API
+     }
+ 
+     @Override
+@@ -514,13 +575,28 @@
+ 
+         nbt.putBoolean("FlippedRotation", this.flipped);
+         nbt.putBoolean("HasTicked", this.firstTick);
++
++        // Paper start - Friction API
++        if (this.frictionState != net.kyori.adventure.util.TriState.NOT_SET) {
++            nbt.putString("Paper.FrictionState", this.frictionState.toString());
++        }
++        // Paper end - Friction API
+     }
+ 
+     @Override
      public void push(Entity entity) {
          if (!this.level().isClientSide) {
              if (!entity.noPhysics && !this.noPhysics) {
@@ -136,7 +166,7 @@
                      double d0 = entity.getX() - this.getX();
                      double d1 = entity.getZ() - this.getZ();
                      double d2 = d0 * d0 + d1 * d1;
-@@ -645,4 +704,27 @@
+@@ -645,4 +721,27 @@
      public boolean isFurnace() {
          return false;
      }

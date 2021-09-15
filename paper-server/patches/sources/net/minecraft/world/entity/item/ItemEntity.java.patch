@@ -55,17 +55,18 @@
  
  public class ItemEntity extends Entity implements TraceableEntity {
  
-@@ -52,6 +60,9 @@
+@@ -52,6 +60,10 @@
      @Nullable
      public UUID target;
      public final float bobOffs;
 +    private int lastTick = MinecraftServer.currentTick - 1; // CraftBukkit
 +    public boolean canMobPickup = true; // Paper - Item#canEntityPickup
 +    private int despawnRate = -1; // Paper - Alternative item-despawn-rate
++    public net.kyori.adventure.util.TriState frictionState = net.kyori.adventure.util.TriState.NOT_SET; // Paper - Friction API
  
      public ItemEntity(EntityType<? extends ItemEntity> type, Level world) {
          super(type, world);
-@@ -61,7 +72,12 @@
+@@ -61,7 +73,12 @@
      }
  
      public ItemEntity(Level world, double x, double y, double z, ItemStack stack) {
@@ -79,7 +80,7 @@
      }
  
      public ItemEntity(Level world, double x, double y, double z, ItemStack stack, double velocityX, double velocityY, double velocityZ) {
-@@ -133,12 +149,15 @@
+@@ -133,12 +150,15 @@
      @Override
      public void tick() {
          if (this.getItem().isEmpty()) {
@@ -99,7 +100,7 @@
  
              this.xo = this.getX();
              this.yo = this.getY();
-@@ -162,7 +181,7 @@
+@@ -162,12 +182,16 @@
                  }
              }
  
@@ -108,7 +109,17 @@
                  this.move(MoverType.SELF, this.getDeltaMovement());
                  this.applyEffectsFromBlocks();
                  float f = 0.98F;
-@@ -188,9 +207,11 @@
+ 
+-                if (this.onGround()) {
++                // Paper start - Friction API
++                if (frictionState == net.kyori.adventure.util.TriState.FALSE) {
++                    f = 1F;
++                } else if (this.onGround()) {
++                    // Paper end - Friction API
+                     f = this.level().getBlockState(this.getBlockPosBelowThatAffectsMyMovement()).getBlock().getFriction() * 0.98F;
+                 }
+ 
+@@ -188,9 +212,11 @@
                  this.mergeWithNeighbours();
              }
  
@@ -120,7 +131,7 @@
  
              this.hasImpulse |= this.updateInWaterStateAndDoFluidPushing();
              if (!this.level().isClientSide) {
-@@ -201,14 +222,42 @@
+@@ -201,14 +227,42 @@
                  }
              }
  
@@ -165,7 +176,7 @@
      public BlockPos getBlockPosBelowThatAffectsMyMovement() {
          return this.getOnPos(0.999999F);
      }
-@@ -229,7 +278,10 @@
+@@ -229,7 +283,10 @@
  
      private void mergeWithNeighbours() {
          if (this.isMergable()) {
@@ -177,7 +188,7 @@
                  return entityitem != this && entityitem.isMergable();
              });
              Iterator iterator = list.iterator();
-@@ -238,6 +290,14 @@
+@@ -238,6 +295,14 @@
                  ItemEntity entityitem = (ItemEntity) iterator.next();
  
                  if (entityitem.isMergable()) {
@@ -192,7 +203,7 @@
                      this.tryToMerge(entityitem);
                      if (this.isRemoved()) {
                          break;
-@@ -251,7 +311,7 @@
+@@ -251,7 +316,7 @@
      private boolean isMergable() {
          ItemStack itemstack = this.getItem();
  
@@ -201,7 +212,7 @@
      }
  
      private void tryToMerge(ItemEntity other) {
-@@ -259,7 +319,7 @@
+@@ -259,7 +324,7 @@
          ItemStack itemstack1 = other.getItem();
  
          if (Objects.equals(this.target, other.target) && ItemEntity.areMergable(itemstack, itemstack1)) {
@@ -210,7 +221,7 @@
                  ItemEntity.merge(this, itemstack, other, itemstack1);
              } else {
                  ItemEntity.merge(other, itemstack1, this, itemstack);
-@@ -287,11 +347,16 @@
+@@ -287,11 +352,16 @@
      }
  
      private static void merge(ItemEntity targetEntity, ItemStack targetStack, ItemEntity sourceEntity, ItemStack sourceStack) {
@@ -228,7 +239,7 @@
          }
  
      }
-@@ -320,12 +385,17 @@
+@@ -320,12 +390,17 @@
          } else if (!this.getItem().canBeHurtBy(source)) {
              return false;
          } else {
@@ -247,9 +258,33 @@
              }
  
              return true;
-@@ -382,22 +452,86 @@
+@@ -339,6 +414,11 @@
+ 
+     @Override
+     public void addAdditionalSaveData(CompoundTag nbt) {
++        // Paper start - Friction API
++        if (this.frictionState != net.kyori.adventure.util.TriState.NOT_SET) {
++            nbt.putString("Paper.FrictionState", this.frictionState.toString());
++        }
++        // Paper end - Friction API
+         nbt.putShort("Health", (short) this.health);
+         nbt.putShort("Age", (short) this.age);
+         nbt.putShort("PickupDelay", (short) this.pickupDelay);
+@@ -381,23 +461,98 @@
+             this.setItem(ItemStack.EMPTY);
          }
  
++        // Paper start - Friction API
++        if (nbt.contains("Paper.FrictionState")) {
++            String fs = nbt.getString("Paper.FrictionState");
++            try {
++                frictionState = net.kyori.adventure.util.TriState.valueOf(fs);
++            } catch (Exception ignored) {
++                com.mojang.logging.LogUtils.getLogger().error("Unknown friction state " + fs + " for " + this);
++            }
++        }
++        // Paper end - Friction API
++
          if (this.getItem().isEmpty()) {
 -            this.discard();
 +            this.discard(null); // CraftBukkit - add Bukkit remove cause
@@ -264,7 +299,7 @@
              ItemStack itemstack = this.getItem();
              Item item = itemstack.getItem();
              int i = itemstack.getCount();
- 
++
 +            // CraftBukkit start - fire PlayerPickupItemEvent
 +            int canHold = player.getInventory().canHold(itemstack);
 +            int remaining = i - canHold;
@@ -280,7 +315,7 @@
 +                    if (flyAtPlayer) {
 +                        player.take(this, i);
 +                    }
-+
+ 
 +                    return;
 +                }
 +            }
@@ -337,7 +372,7 @@
                      itemstack.setCount(i);
                  }
  
-@@ -438,6 +572,7 @@
+@@ -438,6 +593,7 @@
  
      public void setItem(ItemStack stack) {
          this.getEntityData().set(ItemEntity.DATA_ITEM, stack);
@@ -345,7 +380,7 @@
      }
  
      @Override
-@@ -492,7 +627,7 @@
+@@ -492,7 +648,7 @@
  
      public void makeFakeItem() {
          this.setNeverPickUp();
