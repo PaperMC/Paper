@@ -11,7 +11,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Represents a minecart entity.
  */
-public interface Minecart extends Vehicle {
+public interface Minecart extends Vehicle, io.papermc.paper.entity.Frictional { // Paper
 
     /**
      * Sets a minecart's damage.

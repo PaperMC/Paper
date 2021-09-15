@@ -8,7 +8,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Represents a dropped item.
  */
-public interface Item extends Entity {
+public interface Item extends Entity, io.papermc.paper.entity.Frictional { // Paper
 
     /**
      * Gets the item stack associated with this item drop.

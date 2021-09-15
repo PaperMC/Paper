@@ -27,7 +27,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Represents a living entity, such as a monster or player
  */
-public interface LivingEntity extends Attributable, Damageable, ProjectileSource {
+public interface LivingEntity extends Attributable, Damageable, ProjectileSource, io.papermc.paper.entity.Frictional { // Paper
 
     /**
      * Gets the height of the living entity's eyes above its Location.
