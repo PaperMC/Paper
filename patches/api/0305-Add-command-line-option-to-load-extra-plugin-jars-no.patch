@@ -6,19 +6,59 @@ Subject: [PATCH] Add command line option to load extra plugin jars not in the
 
 ex: java -jar paperclip.jar nogui -add-plugin=/path/to/plugin.jar -add-plugin=/path/to/another/plugin_jar.jar
 
+diff --git a/src/main/java/org/bukkit/Bukkit.java b/src/main/java/org/bukkit/Bukkit.java
+index 5ec72f013c6c94a6590e78e87d2f97e57176c6a1..3a31dedebc3f89326ead64fbd0aad556d1650802 100644
+--- a/src/main/java/org/bukkit/Bukkit.java
++++ b/src/main/java/org/bukkit/Bukkit.java
+@@ -2053,6 +2053,20 @@ public final class Bukkit {
+         return server.getCurrentTick();
+     }
+ 
++    /**
++     * Returns the de facto plugins directory, generally used for storing plugin jars to be loaded,
++     * as well as their {@link org.bukkit.plugin.Plugin#getDataFolder() data folders}.
++     *
++     * <p>Plugins should use {@link org.bukkit.plugin.Plugin#getDataFolder()} rather than traversing this
++     * directory manually when determining the location in which to store their data and configuration files.</p>
++     *
++     * @return plugins directory
++     */
++    @NotNull
++    public static File getPluginsFolder() {
++        return server.getPluginsFolder();
++    }
++
+     /**
+      * Checks if the server is in the process of being shutdown.
+      *
+diff --git a/src/main/java/org/bukkit/Server.java b/src/main/java/org/bukkit/Server.java
+index 1db87711dd9b67bcba42e731c8c1a81502abf56c..c34cfba8f9ed7e9dbd0b6b8ffef9fba46abff046 100644
+--- a/src/main/java/org/bukkit/Server.java
++++ b/src/main/java/org/bukkit/Server.java
+@@ -1804,6 +1804,18 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+      */
+     int getCurrentTick();
+ 
++    /**
++     * Returns the de facto plugins directory, generally used for storing plugin jars to be loaded,
++     * as well as their {@link org.bukkit.plugin.Plugin#getDataFolder() data folders}.
++     *
++     * <p>Plugins should use {@link org.bukkit.plugin.Plugin#getDataFolder()} rather than traversing this
++     * directory manually when determining the location in which to store their data and configuration files.</p>
++     *
++     * @return plugins directory
++     */
++    @NotNull
++    File getPluginsFolder();
++
+     /**
+      * Checks if the server is in the process of being shutdown.
+      *
 diff --git a/src/main/java/org/bukkit/plugin/SimplePluginManager.java b/src/main/java/org/bukkit/plugin/SimplePluginManager.java
-index 49e5d49eb09bb966e47d6a03ac08a527c963b43d..f988705a3cd3943b2f6f952b4f8b5ec014722978 100644
+index 20b4ef7a94e00d9264b8ecc126ce5853b584ea8c..0d9d729a18b5388b06ab0a3749e55f91f838be88 100644
 --- a/src/main/java/org/bukkit/plugin/SimplePluginManager.java
 +++ b/src/main/java/org/bukkit/plugin/SimplePluginManager.java
-@@ -60,6 +60,7 @@ public final class SimplePluginManager implements PluginManager {
-     private final Map<String, Map<Permissible, Boolean>> permSubs = new HashMap<String, Map<Permissible, Boolean>>();
-     private final Map<Boolean, Map<Permissible, Boolean>> defSubs = new HashMap<Boolean, Map<Permissible, Boolean>>();
-     private boolean useTimings = false;
-+    private File pluginsDirectory; public @Nullable File pluginsDirectory() { return this.pluginsDirectory; } // Paper
- 
-     public SimplePluginManager(@NotNull Server instance, @NotNull SimpleCommandMap commandMap) {
-         server = instance;
-@@ -115,6 +116,13 @@ public final class SimplePluginManager implements PluginManager {
+@@ -115,6 +115,12 @@ public final class SimplePluginManager implements PluginManager {
      @Override
      @NotNull
      public Plugin[] loadPlugins(@NotNull File directory) {
@@ -27,12 +67,11 @@ index 49e5d49eb09bb966e47d6a03ac08a527c963b43d..f988705a3cd3943b2f6f952b4f8b5ec0
 +    }
 +    @NotNull
 +    public Plugin[] loadPlugins(final @NotNull File directory, final @NotNull List<File> extraPluginJars) {
-+        this.pluginsDirectory = directory;
 +        // Paper end
          Validate.notNull(directory, "Directory cannot be null");
          Validate.isTrue(directory.isDirectory(), "Directory must be a directory");
  
-@@ -132,7 +140,11 @@ public final class SimplePluginManager implements PluginManager {
+@@ -132,7 +138,11 @@ public final class SimplePluginManager implements PluginManager {
          Map<String, Collection<String>> softDependencies = new HashMap<String, Collection<String>>();
  
          // This is where it figures out all possible plugins
@@ -45,7 +84,7 @@ index 49e5d49eb09bb966e47d6a03ac08a527c963b43d..f988705a3cd3943b2f6f952b4f8b5ec0
              PluginLoader loader = null;
              for (Pattern filter : filters) {
                  Matcher match = filter.matcher(file.getName());
-@@ -148,14 +160,14 @@ public final class SimplePluginManager implements PluginManager {
+@@ -148,14 +158,14 @@ public final class SimplePluginManager implements PluginManager {
                  description = loader.getPluginDescription(file);
                  String name = description.getName();
                  if (name.equalsIgnoreCase("bukkit") || name.equalsIgnoreCase("minecraft") || name.equalsIgnoreCase("mojang")) {
@@ -63,7 +102,7 @@ index 49e5d49eb09bb966e47d6a03ac08a527c963b43d..f988705a3cd3943b2f6f952b4f8b5ec0
                  continue;
              }
  
-@@ -166,7 +178,7 @@ public final class SimplePluginManager implements PluginManager {
+@@ -166,7 +176,7 @@ public final class SimplePluginManager implements PluginManager {
                      description.getName(),
                      file.getPath(),
                      replacedFile.getPath(),
@@ -72,7 +111,7 @@ index 49e5d49eb09bb966e47d6a03ac08a527c963b43d..f988705a3cd3943b2f6f952b4f8b5ec0
                  ));
              }
  
-@@ -187,7 +199,7 @@ public final class SimplePluginManager implements PluginManager {
+@@ -187,7 +197,7 @@ public final class SimplePluginManager implements PluginManager {
                              file.getPath(),
                              provided,
                              pluginFile.getPath(),
@@ -81,7 +120,7 @@ index 49e5d49eb09bb966e47d6a03ac08a527c963b43d..f988705a3cd3943b2f6f952b4f8b5ec0
                      ));
                  } else {
                      String replacedPlugin = pluginsProvided.put(provided, description.getName());
-@@ -269,7 +281,7 @@ public final class SimplePluginManager implements PluginManager {
+@@ -269,7 +279,7 @@ public final class SimplePluginManager implements PluginManager {
  
                              server.getLogger().log(
                                  Level.SEVERE,
@@ -90,7 +129,7 @@ index 49e5d49eb09bb966e47d6a03ac08a527c963b43d..f988705a3cd3943b2f6f952b4f8b5ec0
                                  new UnknownDependencyException("Unknown dependency " + dependency + ". Please download and install " + dependency + " to run this plugin."));
                              break;
                          }
-@@ -308,11 +320,11 @@ public final class SimplePluginManager implements PluginManager {
+@@ -308,11 +318,11 @@ public final class SimplePluginManager implements PluginManager {
                              loadedPlugins.add(loadedPlugin.getName());
                              loadedPlugins.addAll(loadedPlugin.getDescription().getProvides());
                          } else {
@@ -104,7 +143,7 @@ index 49e5d49eb09bb966e47d6a03ac08a527c963b43d..f988705a3cd3943b2f6f952b4f8b5ec0
                      }
                  }
              }
-@@ -339,11 +351,11 @@ public final class SimplePluginManager implements PluginManager {
+@@ -339,11 +349,11 @@ public final class SimplePluginManager implements PluginManager {
                                  loadedPlugins.add(loadedPlugin.getName());
                                  loadedPlugins.addAll(loadedPlugin.getDescription().getProvides());
                              } else {
@@ -118,7 +157,7 @@ index 49e5d49eb09bb966e47d6a03ac08a527c963b43d..f988705a3cd3943b2f6f952b4f8b5ec0
                          }
                      }
                  }
-@@ -356,7 +368,7 @@ public final class SimplePluginManager implements PluginManager {
+@@ -356,7 +366,7 @@ public final class SimplePluginManager implements PluginManager {
                      while (failedPluginIterator.hasNext()) {
                          File file = failedPluginIterator.next();
                          failedPluginIterator.remove();
@@ -128,7 +167,7 @@ index 49e5d49eb09bb966e47d6a03ac08a527c963b43d..f988705a3cd3943b2f6f952b4f8b5ec0
                  }
              }
 diff --git a/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java b/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
-index 31793f46e5623729dfb4048e901f274082f57826..d3812d8cd195017841ee08ffbc53a5748fcc74ec 100644
+index 80236a0934861902db7f15571d0d9b4902e70045..d2712f45dbcf26fabe8463d99f378bf422c66970 100644
 --- a/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
 +++ b/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
 @@ -94,7 +94,7 @@ public final class JavaPluginLoader implements PluginLoader {
@@ -136,7 +175,7 @@ index 31793f46e5623729dfb4048e901f274082f57826..d3812d8cd195017841ee08ffbc53a574
          }
  
 -        final File parentFile = file.getParentFile();
-+        final File parentFile = ((SimplePluginManager) this.server.getPluginManager()).pluginsDirectory(); // Paper
++        final File parentFile = this.server.getPluginsFolder(); // Paper
          final File dataFolder = new File(parentFile, description.getName());
          @SuppressWarnings("deprecation")
          final File oldDataFolder = new File(parentFile, description.getRawName());
