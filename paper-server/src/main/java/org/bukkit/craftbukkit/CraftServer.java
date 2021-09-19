@@ -75,11 +75,13 @@ import net.minecraft.server.players.JsonListEntry;
 import net.minecraft.server.players.PlayerList;
 import net.minecraft.tags.Tags;
 import net.minecraft.tags.TagsBlock;
+import net.minecraft.tags.TagsEntity;
 import net.minecraft.tags.TagsFluid;
 import net.minecraft.tags.TagsItem;
 import net.minecraft.util.datafix.DataConverterRegistry;
 import net.minecraft.world.EnumDifficulty;
 import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.ai.village.VillageSiege;
 import net.minecraft.world.entity.npc.MobSpawnerCat;
 import net.minecraft.world.entity.npc.MobSpawnerTrader;
@@ -182,6 +184,7 @@ import org.bukkit.craftbukkit.potion.CraftPotionBrewer;
 import org.bukkit.craftbukkit.scheduler.CraftScheduler;
 import org.bukkit.craftbukkit.scoreboard.CraftScoreboardManager;
 import org.bukkit.craftbukkit.tag.CraftBlockTag;
+import org.bukkit.craftbukkit.tag.CraftEntityTag;
 import org.bukkit.craftbukkit.tag.CraftFluidTag;
 import org.bukkit.craftbukkit.tag.CraftItemTag;
 import org.bukkit.craftbukkit.util.CraftChatMessage;
@@ -2112,6 +2115,10 @@ public final class CraftServer implements Server {
                 Preconditions.checkArgument(clazz == org.bukkit.Fluid.class, "Fluid namespace must have fluid type");
 
                 return (org.bukkit.Tag<T>) new CraftFluidTag(TagsFluid.a(), key);
+            case org.bukkit.Tag.REGISTRY_ENTITY_TYPES:
+                Preconditions.checkArgument(clazz == org.bukkit.entity.EntityType.class, "Entity type namespace must have entity type");
+
+                return (org.bukkit.Tag<T>) new CraftEntityTag(TagsEntity.a(), key);
             default:
                 throw new IllegalArgumentException();
         }
@@ -2136,6 +2143,11 @@ public final class CraftServer implements Server {
 
                 Tags<FluidType> fluidTags = TagsFluid.a();
                 return fluidTags.a().keySet().stream().map(key -> (org.bukkit.Tag<T>) new CraftFluidTag(fluidTags, key)).collect(ImmutableList.toImmutableList());
+            case org.bukkit.Tag.REGISTRY_ENTITY_TYPES:
+                Preconditions.checkArgument(clazz == org.bukkit.entity.EntityType.class, "Entity type namespace must have entity type");
+
+                Tags<EntityTypes<?>> entityTags = TagsEntity.a();
+                return entityTags.a().keySet().stream().map(key -> (org.bukkit.Tag<T>) new CraftEntityTag(entityTags, key)).collect(ImmutableList.toImmutableList());
             default:
                 throw new IllegalArgumentException();
         }
