@@ -1,6 +1,7 @@
 package org.bukkit;
 
 import java.util.Set;
+import org.bukkit.entity.EntityType;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -585,6 +586,50 @@ public interface Tag<T extends Keyed> extends Keyed {
      * Vanilla fluid tag representing water and flowing water.
      */
     Tag<Fluid> FLUIDS_WATER = Bukkit.getTag(REGISTRY_FLUIDS, NamespacedKey.minecraft("water"), Fluid.class);
+    /**
+     * Key for the built in entity registry.
+     */
+    String REGISTRY_ENTITY_TYPES = "entity_types";
+    /**
+     * Vanilla tag representing skeletons.
+     */
+    Tag<EntityType> ENTITY_TYPES_SKELETONS = Bukkit.getTag(REGISTRY_ENTITY_TYPES, NamespacedKey.minecraft("skeletons"), EntityType.class);
+    /**
+     * Vanilla tag representing raiders.
+     */
+    Tag<EntityType> ENTITY_TYPES_RAIDERS = Bukkit.getTag(REGISTRY_ENTITY_TYPES, NamespacedKey.minecraft("raiders"), EntityType.class);
+    /**
+     * Vanilla tag representing entities which can live in beehives.
+     */
+    Tag<EntityType> ENTITY_TYPES_BEEHIVE_INHABITORS = Bukkit.getTag(REGISTRY_ENTITY_TYPES, NamespacedKey.minecraft("beehive_inhabitors"), EntityType.class);
+    /**
+     * Vanilla tag representing arrows.
+     */
+    Tag<EntityType> ENTITY_TYPES_ARROWS = Bukkit.getTag(REGISTRY_ENTITY_TYPES, NamespacedKey.minecraft("arrows"), EntityType.class);
+    /**
+     * Vanilla tag representing projectiles.
+     */
+    Tag<EntityType> ENTITY_TYPES_IMPACT_PROJECTILES = Bukkit.getTag(REGISTRY_ENTITY_TYPES, NamespacedKey.minecraft("impact_projectiles"), EntityType.class);
+    /**
+     * Vanilla tag representing mobs which can walk on powder snow.
+     */
+    Tag<EntityType> ENTITY_TYPES_POWDER_SNOW_WALKABLE_MOBS = Bukkit.getTag(REGISTRY_ENTITY_TYPES, NamespacedKey.minecraft("powder_snow_walkable_mobs"), EntityType.class);
+    /**
+     * Vanilla tag representing which entities axolotls are always hostile to.
+     */
+    Tag<EntityType> ENTITY_TYPES_AXOLOTL_ALWAYS_HOSTILES = Bukkit.getTag(REGISTRY_ENTITY_TYPES, NamespacedKey.minecraft("axolotl_always_hostiles"), EntityType.class);
+    /**
+     * Vanilla tag representing axolotl targets.
+     */
+    Tag<EntityType> ENTITY_TYPES_AXOLOTL_HUNT_TARGETS = Bukkit.getTag(REGISTRY_ENTITY_TYPES, NamespacedKey.minecraft("axolotl_hunt_targets"), EntityType.class);
+    /**
+     * Vanilla tag representing entities immune from freezing.
+     */
+    Tag<EntityType> ENTITY_TYPES_FREEZE_IMMUNE_ENTITY_TYPES = Bukkit.getTag(REGISTRY_ENTITY_TYPES, NamespacedKey.minecraft("freeze_immune_entity_types"), EntityType.class);
+    /**
+     * Vanilla tag representing entities extra susceptible to freezing.
+     */
+    Tag<EntityType> ENTITY_TYPES_FREEZE_HURTS_EXTRA_TYPES = Bukkit.getTag(REGISTRY_ENTITY_TYPES, NamespacedKey.minecraft("freeze_hurts_extra_types"), EntityType.class);
 
     /**
      * Returns whether or not this tag has an entry for the specified item.
