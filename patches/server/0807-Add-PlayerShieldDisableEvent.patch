@@ -5,18 +5,16 @@ Subject: [PATCH] Add PlayerShieldDisableEvent
 
 
 diff --git a/src/main/java/net/minecraft/world/entity/Mob.java b/src/main/java/net/minecraft/world/entity/Mob.java
-index 8a864238e154e2131834d013652746b7e7a78c97..3b64b657e4b961c8ef107e1fcde6f6431da44a77 100644
+index 8a864238e154e2131834d013652746b7e7a78c97..2bbff81ce2dc6223ef6203f43e8b86a9fdf158d9 100644
 --- a/src/main/java/net/minecraft/world/entity/Mob.java
 +++ b/src/main/java/net/minecraft/world/entity/Mob.java
-@@ -1588,8 +1588,15 @@ public abstract class Mob extends LivingEntity {
+@@ -1588,8 +1588,13 @@ public abstract class Mob extends LivingEntity {
              float f = 0.25F + (float) EnchantmentHelper.getBlockEfficiency(this) * 0.05F;
  
              if (this.random.nextFloat() < f) {
 +                // Paper start
 +                io.papermc.paper.event.player.PlayerShieldDisableEvent event = new io.papermc.paper.event.player.PlayerShieldDisableEvent((org.bukkit.entity.Player) player.getBukkitEntity(), getBukkitEntity());
-+                event.callEvent();
-+
-+                if (event.isCancelled()) return;
++                if (!event.callEvent()) return;
 +
                  player.getCooldowns().addCooldown(Items.SHIELD, 100);
                  this.level.broadcastEntityEvent(player, (byte) 30);
@@ -25,7 +23,7 @@ index 8a864238e154e2131834d013652746b7e7a78c97..3b64b657e4b961c8ef107e1fcde6f643
          }
  
 diff --git a/src/main/java/net/minecraft/world/entity/player/Player.java b/src/main/java/net/minecraft/world/entity/player/Player.java
-index cea92f1dc663bf0648b2bd877d86ca380a517bc9..c50129d2d8ceb7d66dcc3f6b9a588560b93be447 100644
+index cea92f1dc663bf0648b2bd877d86ca380a517bc9..2d481277ebe9ef9cece32124826b518a72e20890 100644
 --- a/src/main/java/net/minecraft/world/entity/player/Player.java
 +++ b/src/main/java/net/minecraft/world/entity/player/Player.java
 @@ -936,7 +936,7 @@ public abstract class Player extends LivingEntity {
@@ -50,15 +48,13 @@ index cea92f1dc663bf0648b2bd877d86ca380a517bc9..c50129d2d8ceb7d66dcc3f6b9a588560
          float f = 0.25F + (float) EnchantmentHelper.getBlockEfficiency(this) * 0.05F;
  
          if (sprinting) {
-@@ -1410,11 +1416,16 @@ public abstract class Player extends LivingEntity {
+@@ -1410,11 +1416,14 @@ public abstract class Player extends LivingEntity {
          }
  
          if (this.random.nextFloat() < f) {
 +            org.bukkit.entity.Entity finalAttacker = attacker != null ? attacker.getBukkitEntity() : null;
 +            io.papermc.paper.event.player.PlayerShieldDisableEvent event = new io.papermc.paper.event.player.PlayerShieldDisableEvent((org.bukkit.entity.Player) getBukkitEntity(), finalAttacker);
-+            event.callEvent();
-+
-+            if (event.isCancelled()) return;
++            if (!event.callEvent()) return;
 +
              this.getCooldowns().addCooldown(Items.SHIELD, 100);
              this.stopUsingItem();
