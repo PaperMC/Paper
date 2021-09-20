@@ -1,0 +1,187 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jakub Zacek <dawon@dawon.eu>
+Date: Mon, 20 Sep 2021 14:03:03 +0200
+Subject: [PATCH] Add Bundle Events
+
+
+diff --git a/src/main/java/io/papermc/paper/event/inventory/BundleAddItemEvent.java b/src/main/java/io/papermc/paper/event/inventory/BundleAddItemEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..95296f35866cc46ad5aa0dbe916aeb540729f083
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/event/inventory/BundleAddItemEvent.java
+@@ -0,0 +1,43 @@
++package io.papermc.paper.event.inventory;
++
++import org.bukkit.entity.Player;
++import org.bukkit.event.Cancellable;
++import org.bukkit.inventory.ItemStack;
++import org.jetbrains.annotations.NotNull;
++
++/**
++ * Called when an item is being added into a bundle
++ */
++public class BundleAddItemEvent extends BundleEvent implements Cancellable {
++
++    private boolean cancelled;
++    private final ItemStack item;
++
++    public BundleAddItemEvent(@NotNull Player player, @NotNull ItemStack bundle, @NotNull ItemStack item) {
++        super(player, bundle);
++        this.item = item;
++    }
++
++    /**
++     * Returns an {@link ItemStack} being added into a Bundle
++     * <p>
++     * NOTE: It is possible, that only part of the {@link ItemStack} will actually be added
++     * depending on fullness of the bundle
++     *
++     * @return {@link ItemStack} being added into a Bundle
++     */
++    public ItemStack getItem() {
++        return item;
++    }
++
++    @Override
++    public boolean isCancelled() {
++        return cancelled;
++    }
++
++    @Override
++    public void setCancelled(boolean cancel) {
++        this.cancelled = cancel;
++    }
++
++}
+diff --git a/src/main/java/io/papermc/paper/event/inventory/BundleEmptyEvent.java b/src/main/java/io/papermc/paper/event/inventory/BundleEmptyEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..08c194af12525c313b7cd6d17b35e3f3f599b8bc
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/event/inventory/BundleEmptyEvent.java
+@@ -0,0 +1,28 @@
++package io.papermc.paper.event.inventory;
++
++import org.bukkit.entity.Player;
++import org.bukkit.event.Cancellable;
++import org.bukkit.inventory.ItemStack;
++import org.jetbrains.annotations.NotNull;
++
++/**
++ * Called when a bundle is being emptied on the ground by a player
++ */
++public class BundleEmptyEvent extends BundleEvent implements Cancellable {
++
++    private boolean cancelled;
++
++    public BundleEmptyEvent(@NotNull Player player, @NotNull ItemStack bundle) {
++        super(player, bundle);
++    }
++
++    @Override
++    public boolean isCancelled() {
++        return cancelled;
++    }
++
++    @Override
++    public void setCancelled(boolean cancel) {
++        this.cancelled = cancel;
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/event/inventory/BundleEvent.java b/src/main/java/io/papermc/paper/event/inventory/BundleEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..46a63b5983ab38ee4fe7de5e26311ef74bb811e0
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/event/inventory/BundleEvent.java
+@@ -0,0 +1,43 @@
++package io.papermc.paper.event.inventory;
++
++import org.bukkit.entity.Player;
++import org.bukkit.event.HandlerList;
++import org.bukkit.event.player.PlayerEvent;
++import org.bukkit.inventory.ItemStack;
++import org.jetbrains.annotations.NotNull;
++
++/**
++ * Abstract event for Bundles
++ */
++public abstract class BundleEvent extends PlayerEvent {
++
++    private static final HandlerList handlers = new HandlerList();
++    private final ItemStack bundle;
++
++    public BundleEvent(@NotNull Player player, @NotNull ItemStack bundle) {
++        super(player);
++        this.bundle = bundle;
++    }
++
++    /**
++     * Returns the bundle involved in this event
++     *
++     * @return bundle involved in this event
++     */
++    @NotNull
++    public ItemStack getBundle() {
++        return bundle;
++    }
++
++    @NotNull
++    @Override
++    public HandlerList getHandlers() {
++        return handlers;
++    }
++
++    @NotNull
++    public static HandlerList getHandlerList() {
++        return handlers;
++    }
++
++}
+diff --git a/src/main/java/io/papermc/paper/event/inventory/BundleRemoveItemEvent.java b/src/main/java/io/papermc/paper/event/inventory/BundleRemoveItemEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..4e230e201bff3a48f85bab215bee023c04b1dbb5
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/event/inventory/BundleRemoveItemEvent.java
+@@ -0,0 +1,43 @@
++package io.papermc.paper.event.inventory;
++
++import org.bukkit.entity.Player;
++import org.bukkit.event.Cancellable;
++import org.bukkit.inventory.ItemStack;
++import org.jetbrains.annotations.NotNull;
++
++/**
++ * Called when an item is being removed from a bundle
++ */
++public class BundleRemoveItemEvent extends BundleEvent implements Cancellable {
++
++    private boolean cancelled;
++    private final ItemStack item;
++
++    public BundleRemoveItemEvent(@NotNull Player player, @NotNull ItemStack bundle, @NotNull ItemStack item) {
++        super(player, bundle);
++        this.item = item;
++    }
++
++    /**
++     * Returns an {@link ItemStack} being removed from a bundle
++     * <p>
++     * NOTE: It is possible, that only part of the {@link ItemStack} will actually be removed
++     * depending on "fullness" of the target slot
++     *
++     * @return {@link ItemStack} being removed from a Bundle
++     */
++    public ItemStack getItem() {
++        return item;
++    }
++
++    @Override
++    public boolean isCancelled() {
++        return cancelled;
++    }
++
++    @Override
++    public void setCancelled(boolean cancel) {
++        this.cancelled = cancel;
++    }
++
++}

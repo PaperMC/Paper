@@ -1,0 +1,76 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jakub Zacek <dawon@dawon.eu>
+Date: Mon, 20 Sep 2021 14:02:19 +0200
+Subject: [PATCH] Add Bundle Events
+
+
+diff --git a/src/main/java/net/minecraft/world/item/BundleItem.java b/src/main/java/net/minecraft/world/item/BundleItem.java
+index 4806e71604d85dcbe061ccd6f07aa05a887d180e..f00459f4eae88869c4a7f4e9e6a2372ad043ebfa 100644
+--- a/src/main/java/net/minecraft/world/item/BundleItem.java
++++ b/src/main/java/net/minecraft/world/item/BundleItem.java
+@@ -46,11 +46,23 @@ public class BundleItem extends Item {
+             ItemStack itemStack = slot.getItem();
+             if (itemStack.isEmpty()) {
+                 removeOne(stack).ifPresent((removedStack) -> {
+-                    add(stack, slot.safeInsert(removedStack));
++                    // Paper - start
++                    io.papermc.paper.event.inventory.BundleRemoveItemEvent event = new io.papermc.paper.event.inventory.BundleRemoveItemEvent((org.bukkit.entity.Player) player.getBukkitEntity(), stack.asBukkitMirror(), removedStack.asBukkitMirror());
++                    if (event.callEvent()) {
++                        add(stack, slot.safeInsert(removedStack));
++                    } else {
++                        add(stack, removedStack);
++                    }
++                    // Paper - end
+                 });
+             } else if (itemStack.getItem().canFitInsideContainerItems()) {
+                 int i = (64 - getContentWeight(stack)) / getWeight(itemStack);
+-                add(stack, slot.safeTake(itemStack.getCount(), i, player));
++                // Paper - start
++                io.papermc.paper.event.inventory.BundleAddItemEvent event = new io.papermc.paper.event.inventory.BundleAddItemEvent((org.bukkit.entity.Player) player.getBukkitEntity(), stack.asBukkitMirror(), itemStack.asBukkitMirror());
++                if (event.callEvent()) {
++                    add(stack, slot.safeTake(itemStack.getCount(), i, player));
++                }
++                // Paper - end
+             }
+ 
+             return true;
+@@ -61,9 +73,23 @@ public class BundleItem extends Item {
+     public boolean overrideOtherStackedOnMe(ItemStack stack, ItemStack otherStack, Slot slot, ClickAction clickType, Player player, SlotAccess cursorStackReference) {
+         if (clickType == ClickAction.SECONDARY && slot.allowModification(player)) {
+             if (otherStack.isEmpty()) {
+-                removeOne(stack).ifPresent(cursorStackReference::set);
++                // Paper - start
++                removeOne(stack).ifPresent(removedStack -> {
++                    io.papermc.paper.event.inventory.BundleRemoveItemEvent event = new io.papermc.paper.event.inventory.BundleRemoveItemEvent((org.bukkit.entity.Player) player.getBukkitEntity(), stack.asBukkitMirror(), removedStack.asBukkitMirror());
++                    if (event.callEvent()) {
++                        cursorStackReference.set(removedStack);
++                    } else {
++                        add(stack, removedStack);
++                    }
++                });
++                // Paper - end
+             } else {
+-                otherStack.shrink(add(stack, otherStack));
++                // Paper - start
++                io.papermc.paper.event.inventory.BundleAddItemEvent event = new io.papermc.paper.event.inventory.BundleAddItemEvent((org.bukkit.entity.Player) player.getBukkitEntity(), stack.asBukkitMirror(), otherStack.asBukkitMirror());
++                if (event.callEvent()) {
++                    otherStack.shrink(add(stack, otherStack));
++                }
++                // Paper - end
+             }
+ 
+             return true;
+@@ -75,6 +101,13 @@ public class BundleItem extends Item {
+     @Override
+     public InteractionResultHolder<ItemStack> use(Level world, Player user, InteractionHand hand) {
+         ItemStack itemStack = user.getItemInHand(hand);
++        // Paper - start
++        io.papermc.paper.event.inventory.BundleEmptyEvent event = new io.papermc.paper.event.inventory.BundleEmptyEvent((org.bukkit.entity.Player) user.getBukkitEntity(), itemStack.asBukkitMirror());
++        if (!event.callEvent()) {
++            ((org.bukkit.entity.Player)user.getBukkitEntity()).updateInventory();
++            return InteractionResultHolder.fail(itemStack);
++        }
++        // Paper - end
+         if (dropContents(itemStack, user)) {
+             user.awardStat(Stats.ITEM_USED.get(this));
+             return InteractionResultHolder.sidedSuccess(itemStack, world.isClientSide());
