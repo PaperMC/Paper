@@ -5,10 +5,10 @@ Subject: [PATCH] Add PlayerShieldDisableEvent
 
 
 diff --git a/src/main/java/net/minecraft/world/entity/Mob.java b/src/main/java/net/minecraft/world/entity/Mob.java
-index 8a864238e154e2131834d013652746b7e7a78c97..91afdf9b0bfd44e2dbfd1c36cbd35b50a6fbb407 100644
+index 8a864238e154e2131834d013652746b7e7a78c97..3b64b657e4b961c8ef107e1fcde6f6431da44a77 100644
 --- a/src/main/java/net/minecraft/world/entity/Mob.java
 +++ b/src/main/java/net/minecraft/world/entity/Mob.java
-@@ -1588,9 +1588,16 @@ public abstract class Mob extends LivingEntity {
+@@ -1588,8 +1588,15 @@ public abstract class Mob extends LivingEntity {
              float f = 0.25F + (float) EnchantmentHelper.getBlockEfficiency(this) * 0.05F;
  
              if (this.random.nextFloat() < f) {
@@ -16,17 +16,16 @@ index 8a864238e154e2131834d013652746b7e7a78c97..91afdf9b0bfd44e2dbfd1c36cbd35b50
 +                io.papermc.paper.event.player.PlayerShieldDisableEvent event = new io.papermc.paper.event.player.PlayerShieldDisableEvent((org.bukkit.entity.Player) player.getBukkitEntity(), getBukkitEntity());
 +                event.callEvent();
 +
-+                if (!event.isCancelled()) {
++                if (event.isCancelled()) return;
++
                  player.getCooldowns().addCooldown(Items.SHIELD, 100);
                  this.level.broadcastEntityEvent(player, (byte) 30);
-             }
 +                // Paper end
-+            }
+             }
          }
  
-     }
 diff --git a/src/main/java/net/minecraft/world/entity/player/Player.java b/src/main/java/net/minecraft/world/entity/player/Player.java
-index cea92f1dc663bf0648b2bd877d86ca380a517bc9..17318e595829aa200ec502cea299200c11d1d664 100644
+index cea92f1dc663bf0648b2bd877d86ca380a517bc9..c50129d2d8ceb7d66dcc3f6b9a588560b93be447 100644
 --- a/src/main/java/net/minecraft/world/entity/player/Player.java
 +++ b/src/main/java/net/minecraft/world/entity/player/Player.java
 @@ -936,7 +936,7 @@ public abstract class Player extends LivingEntity {
@@ -55,18 +54,15 @@ index cea92f1dc663bf0648b2bd877d86ca380a517bc9..17318e595829aa200ec502cea299200c
          }
  
          if (this.random.nextFloat() < f) {
--            this.getCooldowns().addCooldown(Items.SHIELD, 100);
--            this.stopUsingItem();
--            this.level.broadcastEntityEvent(this, (byte) 30);
 +            org.bukkit.entity.Entity finalAttacker = attacker != null ? attacker.getBukkitEntity() : null;
 +            io.papermc.paper.event.player.PlayerShieldDisableEvent event = new io.papermc.paper.event.player.PlayerShieldDisableEvent((org.bukkit.entity.Player) getBukkitEntity(), finalAttacker);
 +            event.callEvent();
 +
-+            if (!event.isCancelled()) {
-+                this.getCooldowns().addCooldown(Items.SHIELD, 100);
-+                this.stopUsingItem();
-+                this.level.broadcastEntityEvent(this, (byte) 30);
-+            }
++            if (event.isCancelled()) return;
++
+             this.getCooldowns().addCooldown(Items.SHIELD, 100);
+             this.stopUsingItem();
+             this.level.broadcastEntityEvent(this, (byte) 30);
          }
 -
      }
