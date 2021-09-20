@@ -1,0 +1,83 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sat, 7 Jan 2017 15:24:46 -0500
+Subject: [PATCH] Provide E/TE/Chunk count stat methods
+
+Provides counts without the ineffeciency of using .getEntities().size()
+which creates copy of the collections.
+
+diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
+index 98c205efbe7f31fb35eefedf083b366dd5dbb8f8..d6e6b5a29ddf980e179471059372dfda8e0d7b1b 100644
+--- a/src/main/java/net/minecraft/world/level/Level.java
++++ b/src/main/java/net/minecraft/world/level/Level.java
+@@ -110,7 +110,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+     public static final int TICKS_PER_DAY = 24000;
+     public static final int MAX_ENTITY_SPAWN_Y = 20000000;
+     public static final int MIN_ENTITY_SPAWN_Y = -20000000;
+-    protected final List<TickingBlockEntity> blockEntityTickers = Lists.newArrayList();
++    protected final List<TickingBlockEntity> blockEntityTickers = Lists.newArrayList(); public final int getTotalTileEntityTickers() { return this.blockEntityTickers.size(); } // Paper
+     private final List<TickingBlockEntity> pendingBlockEntityTickers = Lists.newArrayList();
+     private boolean tickingBlockEntities;
+     public final Thread thread;
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+index 62252343490fb1e96c2ec48113e2e3ce741930b6..3a3d128e2c9abbb699f151af5bf28af58653bf1a 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+@@ -131,6 +131,57 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+     private int waterAmbientSpawn = -1;
+     private int ambientSpawn = -1;
+ 
++    // Paper start - Provide fast information methods
++    @Override
++    public int getEntityCount() {
++        int ret = 0;
++        for (net.minecraft.world.entity.Entity entity : world.getEntities().getAll()) {
++            if (entity.isChunkLoaded()) {
++                ++ret;
++            }
++        }
++        return ret;
++    }
++
++    @Override
++    public int getTileEntityCount() {
++        // We don't use the full world tile entity list, so we must iterate chunks
++        Long2ObjectLinkedOpenHashMap<ChunkHolder> chunks = world.getChunkSource().chunkMap.visibleChunkMap;
++        int size = 0;
++        for (ChunkHolder playerchunk : chunks.values()) {
++            net.minecraft.world.level.chunk.LevelChunk chunk = playerchunk.getTickingChunk();
++            if (chunk == null) {
++                continue;
++            }
++            size += chunk.blockEntities.size();
++        }
++        return size;
++    }
++
++    @Override
++    public int getTickableTileEntityCount() {
++        return world.getTotalTileEntityTickers();
++    }
++
++    @Override
++    public int getChunkCount() {
++        int ret = 0;
++
++        for (ChunkHolder chunkHolder : world.getChunkSource().chunkMap.visibleChunkMap.values()) {
++            if (chunkHolder.getTickingChunk() != null) {
++                ++ret;
++            }
++        }
++
++        return ret;
++    }
++
++    @Override
++    public int getPlayerCount() {
++        return world.players().size();
++    }
++    // Paper end
++
+     private static final Random rand = new Random();
+ 
+     public CraftWorld(ServerLevel world, ChunkGenerator gen, BiomeProvider biomeProvider, Environment env) {

@@ -1,0 +1,82 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Tue, 5 Apr 2016 21:38:58 -0400
+Subject: [PATCH] Optimize DataBits
+
+Remove Debug checks as these are super hot and causing noticeable hits
+
+Before: http://i.imgur.com/nQsMzAE.png
+After: http://i.imgur.com/nJ46crB.png
+
+Optimize redundant converting of static fields into an unsigned long each call by precomputing it in ctor
+
+diff --git a/src/main/java/net/minecraft/util/BitStorage.java b/src/main/java/net/minecraft/util/BitStorage.java
+index 65bd706ca96f5c0ec4573da9fb144fb51d2de919..07e1374ac3430662edd9f585e59b785e329f0820 100644
+--- a/src/main/java/net/minecraft/util/BitStorage.java
++++ b/src/main/java/net/minecraft/util/BitStorage.java
+@@ -12,8 +12,8 @@ public class BitStorage {
+     private final long mask;
+     private final int size;
+     private final int valuesPerLong;
+-    private final int divideMul;
+-    private final int divideAdd;
++    private final int divideMul; private final long divideMulUnsigned; // Paper - referenced in b(int) with 2 Integer.toUnsignedLong calls
++    private final int divideAdd; private final long divideAddUnsigned; // Paper
+     private final int divideShift;
+ 
+     public BitStorage(int elementBits, int size) {
+@@ -27,8 +27,8 @@ public class BitStorage {
+         this.mask = (1L << elementBits) - 1L;
+         this.valuesPerLong = (char)(64 / elementBits);
+         int i = 3 * (this.valuesPerLong - 1);
+-        this.divideMul = MAGIC[i + 0];
+-        this.divideAdd = MAGIC[i + 1];
++        this.divideMul = BitStorage.MAGIC[i + 0]; this.divideMulUnsigned = Integer.toUnsignedLong(this.divideMul); // Paper
++        this.divideAdd = BitStorage.MAGIC[i + 1]; this.divideAddUnsigned = Integer.toUnsignedLong(this.divideAdd); // Paper
+         this.divideShift = MAGIC[i + 2];
+         int j = (size + this.valuesPerLong - 1) / this.valuesPerLong;
+         if (storage != null) {
+@@ -44,14 +44,14 @@ public class BitStorage {
+     }
+ 
+     private int cellIndex(int index) {
+-        long l = Integer.toUnsignedLong(this.divideMul);
+-        long m = Integer.toUnsignedLong(this.divideAdd);
+-        return (int)((long)index * l + m >> 32 >> this.divideShift);
++        //long l = Integer.toUnsignedLong(this.divideMul); // Paper
++        //long m = Integer.toUnsignedLong(this.divideAdd); // Paper
++        return (int) ((long) index * this.divideMulUnsigned + this.divideAddUnsigned >> 32 >> this.divideShift); // Paper
+     }
+ 
+-    public int getAndSet(int index, int value) {
+-        Validate.inclusiveBetween(0L, (long)(this.size - 1), (long)index);
+-        Validate.inclusiveBetween(0L, this.mask, (long)value);
++    public final int getAndSet(int index, int value) { // Paper - make final for inline
++        //Validate.inclusiveBetween(0L, (long)(this.size - 1), (long)index); // Paper
++        //Validate.inclusiveBetween(0L, this.mask, (long)value); // Paper
+         int i = this.cellIndex(index);
+         long l = this.data[i];
+         int j = (index - i * this.valuesPerLong) * this.bits;
+@@ -60,17 +60,17 @@ public class BitStorage {
+         return k;
+     }
+ 
+-    public void set(int index, int value) {
+-        Validate.inclusiveBetween(0L, (long)(this.size - 1), (long)index);
+-        Validate.inclusiveBetween(0L, this.mask, (long)value);
++    public final void set(int index, int value) { // Paper - make final for inline
++        //Validate.inclusiveBetween(0L, (long)(this.size - 1), (long)index); // Paper
++        //Validate.inclusiveBetween(0L, this.mask, (long)value); // Paper
+         int i = this.cellIndex(index);
+         long l = this.data[i];
+         int j = (index - i * this.valuesPerLong) * this.bits;
+         this.data[i] = l & ~(this.mask << j) | ((long)value & this.mask) << j;
+     }
+ 
+-    public int get(int index) {
+-        Validate.inclusiveBetween(0L, (long)(this.size - 1), (long)index);
++    public final int get(int index) { // Paper - make final for inline
++        //Validate.inclusiveBetween(0L, (long)(this.size - 1), (long)index);
+         int i = this.cellIndex(index);
+         long l = this.data[i];
+         int j = (index - i * this.valuesPerLong) * this.bits;

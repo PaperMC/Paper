@@ -1,0 +1,67 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sun, 5 Jul 2020 15:39:19 -0700
+Subject: [PATCH] added Wither API
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/boss/wither/WitherBoss.java b/src/main/java/net/minecraft/world/entity/boss/wither/WitherBoss.java
+index 2f849b21e39d04a27ef88f8c76275f10bf55db3b..40b7f71c1aa561462f7551ae6f7c36b18b41b93a 100644
+--- a/src/main/java/net/minecraft/world/entity/boss/wither/WitherBoss.java
++++ b/src/main/java/net/minecraft/world/entity/boss/wither/WitherBoss.java
+@@ -83,6 +83,11 @@ public class WitherBoss extends Monster implements PowerableMob, RangedAttackMob
+         return entityliving.getMobType() != MobType.UNDEAD && entityliving.attackable();
+     };
+     private static final TargetingConditions TARGETING_CONDITIONS = TargetingConditions.forCombat().range(20.0D).selector(WitherBoss.LIVING_ENTITY_SELECTOR);
++    // Paper start
++    private boolean canPortal = false;
++
++    public void setCanTravelThroughPortals(boolean canPortal) { this.canPortal = canPortal; }
++    // Paper end
+ 
+     public WitherBoss(EntityType<? extends WitherBoss> type, Level world) {
+         super(type, world);
+@@ -591,7 +596,7 @@ public class WitherBoss extends Monster implements PowerableMob, RangedAttackMob
+ 
+     @Override
+     public boolean canChangeDimensions() {
+-        return false;
++        return super.canChangeDimensions() && canPortal; // Paper
+     }
+ 
+     @Override
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftWither.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftWither.java
+index 640b0860fbe3412da32d03187e6f355ba8f099ea..299d5e47489cfe489ac130a33a08cdb29ba76d72 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftWither.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftWither.java
+@@ -38,4 +38,31 @@ public class CraftWither extends CraftMonster implements Wither, com.destroystok
+     public BossBar getBossBar() {
+         return this.bossBar;
+     }
++
++    // Paper start
++    @Override
++    public boolean isCharged() {
++        return getHandle().isPowered();
++    }
++
++    @Override
++    public int getInvulnerableTicks() {
++        return getHandle().getInvulnerableTicks();
++    }
++
++    @Override
++    public void setInvulnerableTicks(int ticks) {
++        getHandle().setInvulnerableTicks(ticks);
++    }
++
++    @Override
++    public boolean canTravelThroughPortals() {
++        return getHandle().canChangeDimensions();
++    }
++
++    @Override
++    public void setCanTravelThroughPortals(boolean value) {
++        getHandle().setCanTravelThroughPortals(value);
++    }
++    // Paper end
+ }

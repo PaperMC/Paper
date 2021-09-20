@@ -1,0 +1,96 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sat, 17 Jun 2017 15:18:30 -0400
+Subject: [PATCH] Shoulder Entities Release API
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/player/Player.java b/src/main/java/net/minecraft/world/entity/player/Player.java
+index eee7ac657dcf21f3f365ab43eaebf878a552fc27..b4ec8fc67ba99a632581913931e9107b329b521b 100644
+--- a/src/main/java/net/minecraft/world/entity/player/Player.java
++++ b/src/main/java/net/minecraft/world/entity/player/Player.java
+@@ -1951,20 +1951,44 @@ public abstract class Player extends LivingEntity {
+ 
+     }
+ 
++    // Paper start
++    public Entity releaseLeftShoulderEntity() {
++        Entity entity = this.spawnEntityFromShoulder0(this.getShoulderEntityLeft());
++        if (entity != null) {
++            this.setShoulderEntityLeft(new CompoundTag());
++        }
++        return entity;
++    }
++
++    public Entity releaseRightShoulderEntity() {
++        Entity entity = this.spawnEntityFromShoulder0(this.getShoulderEntityRight());
++        if (entity != null) {
++            this.setShoulderEntityRight(new CompoundTag());
++        }
++        return entity;
++    }
++    // Paper - maintain old signature
+     private boolean spawnEntityFromShoulder(CompoundTag nbttagcompound) { // CraftBukkit void->boolean
+-        if (!this.level.isClientSide && !nbttagcompound.isEmpty()) {
++        return spawnEntityFromShoulder0(nbttagcompound) != null;
++    }
++
++    // Paper - return entity
++    private Entity spawnEntityFromShoulder0(@Nullable CompoundTag nbttagcompound) {
++        if (!this.level.isClientSide && nbttagcompound != null && !nbttagcompound.isEmpty()) {
+             return EntityType.create(nbttagcompound, this.level).map((entity) -> { // CraftBukkit
+                 if (entity instanceof TamableAnimal) {
+                     ((TamableAnimal) entity).setOwnerUUID(this.uuid);
+                 }
+ 
+                 entity.setPos(this.getX(), this.getY() + 0.699999988079071D, this.getZ());
+-                return ((ServerLevel) this.level).addEntitySerialized(entity, CreatureSpawnEvent.SpawnReason.SHOULDER_ENTITY); // CraftBukkit
+-            }).orElse(true); // CraftBukkit
++                boolean addedToWorld = ((ServerLevel) this.level).addEntitySerialized(entity, CreatureSpawnEvent.SpawnReason.SHOULDER_ENTITY); // CraftBukkit
++                return addedToWorld ? entity : null;
++            }).orElse(null); // CraftBukkit // Paper - false -> null
+         }
+ 
+-        return true; // CraftBukkit
++        return null; // Paper - return null
+     }
++    // Paper end
+ 
+     @Override
+     public abstract boolean isSpectator();
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java
+index 841dbf4a86b19d7c8ea41930ecb1f88c660fa117..54947f02f29dd3dc546ee0d0f4600630242f003d 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java
+@@ -500,6 +500,32 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
+         this.getHandle().getCooldowns().addCooldown(CraftMagicNumbers.getItem(material), ticks);
+     }
+ 
++    // Paper start
++    @Override
++    public org.bukkit.entity.Entity releaseLeftShoulderEntity() {
++        if (!getHandle().getShoulderEntityLeft().isEmpty()) {
++            Entity entity = getHandle().releaseLeftShoulderEntity();
++            if (entity != null) {
++                return entity.getBukkitEntity();
++            }
++        }
++
++        return null;
++    }
++
++    @Override
++    public org.bukkit.entity.Entity releaseRightShoulderEntity() {
++        if (!getHandle().getShoulderEntityRight().isEmpty()) {
++            Entity entity = getHandle().releaseRightShoulderEntity();
++            if (entity != null) {
++                return entity.getBukkitEntity();
++            }
++        }
++
++        return null;
++    }
++    // Paper end
++
+     @Override
+     public boolean discoverRecipe(NamespacedKey recipe) {
+         return this.discoverRecipes(Arrays.asList(recipe)) != 0;

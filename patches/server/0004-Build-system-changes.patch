@@ -1,0 +1,100 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Zach Brown <zach.brown@destroystokyo.com>
+Date: Mon, 29 Feb 2016 20:40:33 -0600
+Subject: [PATCH] Build system changes
+
+
+diff --git a/build.gradle.kts b/build.gradle.kts
+index 6f084d7500d9de76604440bdcc582be1af04fc8c..d97e9ba4432fc87c84f9f128820ff741464e1e25 100644
+--- a/build.gradle.kts
++++ b/build.gradle.kts
+@@ -18,21 +18,24 @@ repositories {
+ dependencies {
+     implementation(project(":Paper-API"))
+     implementation("jline:jline:2.12.1")
+-    implementation("org.apache.logging.log4j:log4j-iostreams:2.14.1") {
+-        exclude(group = "org.apache.logging.log4j", module = "log4j-api")
+-    }
++    implementation("org.apache.logging.log4j:log4j-iostreams:2.14.1") // Paper
++    implementation("org.apache.logging.log4j:log4j-api:2.14.1") // Paper
+     implementation("org.ow2.asm:asm:9.2")
++    implementation("org.ow2.asm:asm-commons:9.2") // Paper - ASM event executor generation
+     implementation("com.googlecode.json-simple:json-simple:1.1.1") {
+         // This includes junit transitively for whatever reason
+         isTransitive = false
+     }
+     runtimeOnly("org.xerial:sqlite-jdbc:3.34.0")
+-    runtimeOnly("mysql:mysql-connector-java:5.1.49")
++    runtimeOnly("mysql:mysql-connector-java:8.0.23") // Paper
+ 
+     runtimeOnly("org.apache.maven:maven-resolver-provider:3.8.1")
+     runtimeOnly("org.apache.maven.resolver:maven-resolver-connector-basic:1.7.0")
+     runtimeOnly("org.apache.maven.resolver:maven-resolver-transport-http:1.7.0")
+ 
++    implementation("co.aikar:cleaner:1.0-SNAPSHOT") // Paper
++    implementation("io.netty:netty-all:4.1.65.Final") // Paper
++
+     testImplementation("junit:junit:4.13.1")
+     testImplementation("org.hamcrest:hamcrest-library:1.3")
+ }
+@@ -53,6 +56,7 @@ tasks.jar {
+             "Specification-Title" to "Bukkit",
+             "Specification-Version" to project.version,
+             "Specification-Vendor" to "Bukkit Team",
++            "Multi-Release" to "true", // Paper
+         )
+         for (tld in setOf("net", "com", "org")) {
+             attributes("$tld/bukkit", "Sealed" to true)
+@@ -83,7 +87,7 @@ relocation {
+         "org.jline:jline-terminal-jansi" to "jline",
+         "commons-codec:commons-codec" to "org.apache.commons.codec",
+         "commons-io:commons-io" to "org.apache.commons.io",
+-        "it.unimi.dsi:fastutil" to "it.unimi",
++        //"it.unimi.dsi:fastutil" to "it.unimi", // Paper - don't relocate fastutil
+         "org.apache.commons:commons-lang3" to "org.apache.commons.lang3",
+         "org.ow2.asm:asm" to "org.objectweb.asm"
+     ).forEach { (owner, pack) ->
+@@ -103,9 +107,17 @@ relocation {
+     }
+ }
+ 
++val generatePom = tasks.named<GenerateMavenPom>("generatePomFileForMavenPublication")
++
+ tasks.shadowJar {
+     archiveClassifier.set("mojang-mapped")
+ 
++    // Needed for Paperclip's install to maven local feature
++    from(generatePom) {
++        into("META-INF/maven/io.papermc.paper/paper")
++        rename { "pom.xml" }
++    }
++
+     for (relocation in relocation.relocations.get()) {
+         relocate(relocation.fromPackage, relocation.toPackage) {
+             for (exclude in relocation.excludes) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/Main.java b/src/main/java/org/bukkit/craftbukkit/Main.java
+index 1338f52370dafbb8820a67cc4528eb20e0b9155c..90af1b123722bac1c4c5956465a153ec1ea998ff 100644
+--- a/src/main/java/org/bukkit/craftbukkit/Main.java
++++ b/src/main/java/org/bukkit/craftbukkit/Main.java
+@@ -190,7 +190,7 @@ public class Main {
+                 }
+ 
+                 if (Main.class.getPackage().getImplementationVendor() != null && System.getProperty("IReallyKnowWhatIAmDoingISwear") == null) {
+-                    Date buildDate = new Date(Integer.parseInt(Main.class.getPackage().getImplementationVendor()) * 1000L);
++                    Date buildDate = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss Z").parse(Main.class.getPackage().getImplementationVendor()); // Paper
+ 
+                     Calendar deadline = Calendar.getInstance();
+                     deadline.add(Calendar.DAY_OF_YEAR, -28);
+diff --git a/src/main/java/org/bukkit/craftbukkit/util/Versioning.java b/src/main/java/org/bukkit/craftbukkit/util/Versioning.java
+index 93046379d0cefd5d3236fc59e698809acdc18f80..774556a62eb240da42e84db4502e2ed43495be17 100644
+--- a/src/main/java/org/bukkit/craftbukkit/util/Versioning.java
++++ b/src/main/java/org/bukkit/craftbukkit/util/Versioning.java
+@@ -11,7 +11,7 @@ public final class Versioning {
+     public static String getBukkitVersion() {
+         String result = "Unknown-Version";
+ 
+-        InputStream stream = Bukkit.class.getClassLoader().getResourceAsStream("META-INF/maven/org.spigotmc/spigot-api/pom.properties");
++        InputStream stream = Bukkit.class.getClassLoader().getResourceAsStream("META-INF/maven/io.papermc.paper/paper-api/pom.properties");
+         Properties properties = new Properties();
+ 
+         if (stream != null) {

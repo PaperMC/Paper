@@ -1,0 +1,50 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Mon, 3 Jul 2017 18:11:10 -0500
+Subject: [PATCH] ProfileWhitelistVerifyEvent
+
+
+diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
+index 31dccb0b4ab60d6cedf236fc7d51a363c8367d71..1ae11a88b2ab49c13155e2cf41252c8716f30b96 100644
+--- a/src/main/java/net/minecraft/server/players/PlayerList.java
++++ b/src/main/java/net/minecraft/server/players/PlayerList.java
+@@ -615,9 +615,9 @@ public abstract class PlayerList {
+ 
+             // return chatmessage;
+             event.disallow(PlayerLoginEvent.Result.KICK_BANNED, PaperAdventure.asAdventure(chatmessage)); // Paper - Adventure
+-        } else if (!this.isWhiteListed(gameprofile)) {
+-            chatmessage = new TranslatableComponent("multiplayer.disconnect.not_whitelisted");
+-            event.disallow(PlayerLoginEvent.Result.KICK_WHITELIST, PaperAdventure.LEGACY_SECTION_UXRC.deserialize(org.spigotmc.SpigotConfig.whitelistMessage)); // Spigot // Paper - Adventure
++        } else if (!this.isWhitelisted(gameprofile, event)) { // Paper
++            //chatmessage = new ChatMessage("multiplayer.disconnect.not_whitelisted"); // Paper
++            //event.disallow(PlayerLoginEvent.Result.KICK_WHITELIST, org.spigotmc.SpigotConfig.whitelistMessage); // Spigot // Paper - moved to isWhitelisted
+         } else if (this.getIpBans().isBanned(socketaddress) && !this.getIpBans().get(socketaddress).hasExpired()) {
+             IpBanListEntry ipbanentry = this.ipBans.get(socketaddress);
+ 
+@@ -997,9 +997,25 @@ public abstract class PlayerList {
+         this.server.getCommands().sendCommands(player);
+     }
+ 
++    // Paper start
+     public boolean isWhiteListed(GameProfile profile) {
+-        return !this.doWhiteList || this.ops.contains(profile) || this.whitelist.contains(profile);
++        return isWhitelisted(profile, null);
+     }
++    public boolean isWhitelisted(GameProfile gameprofile, org.bukkit.event.player.PlayerLoginEvent loginEvent) {
++        boolean isOp = this.ops.contains(gameprofile);
++        boolean isWhitelisted = !this.doWhiteList || isOp || this.whitelist.contains(gameprofile);
++        final com.destroystokyo.paper.event.profile.ProfileWhitelistVerifyEvent event;
++        event = new com.destroystokyo.paper.event.profile.ProfileWhitelistVerifyEvent(net.minecraft.server.MCUtil.toBukkit(gameprofile), this.doWhiteList, isWhitelisted, isOp, org.spigotmc.SpigotConfig.whitelistMessage);
++        event.callEvent();
++        if (!event.isWhitelisted()) {
++            if (loginEvent != null) {
++                loginEvent.disallow(PlayerLoginEvent.Result.KICK_WHITELIST, PaperAdventure.LEGACY_SECTION_UXRC.deserialize(event.getKickMessage() == null ? org.spigotmc.SpigotConfig.whitelistMessage : event.getKickMessage()));
++            }
++            return false;
++        }
++        return true;
++    }
++    // Paper end
+ 
+     public boolean isOp(GameProfile profile) {
+         return this.ops.contains(profile) || this.server.isSingleplayerOwner(profile) && this.server.getWorldData().getAllowCommands() || this.allowCheatsForAllPlayers;

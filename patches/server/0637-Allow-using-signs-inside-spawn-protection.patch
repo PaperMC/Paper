@@ -1,0 +1,34 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Anton Lindroth <ntoonio@gmail.com>
+Date: Wed, 15 Apr 2020 01:54:02 +0200
+Subject: [PATCH] Allow using signs inside spawn protection
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index e53b6515ca427b90f21441cf142ecde6e986058d..1da69d56f0b58708d4c85e76307b725221f9caed 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -778,5 +778,10 @@ public class PaperWorldConfig {
+         fixWitherTargetingBug = getBoolean("fix-wither-targeting-bug", false);
+         log("Withers properly target players: " + fixWitherTargetingBug);
+     }
++
++    public boolean allowUsingSignsInsideSpawnProtection = false;
++    private void allowUsingSignsInsideSpawnProtection() {
++        allowUsingSignsInsideSpawnProtection = getBoolean("allow-using-signs-inside-spawn-protection", allowUsingSignsInsideSpawnProtection);
++    }
+ }
+ 
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index 7041a4503285f7df7aed286229a2ffb7f22668a4..fc4df23af7986d3580f265d640d074c567a77c02 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -1723,7 +1723,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+         int i = this.player.level.getMaxBuildHeight();
+ 
+         if (blockposition.getY() < i) {
+-            if (this.awaitingPositionFromClient == null && this.player.distanceToSqr((double) blockposition.getX() + 0.5D, (double) blockposition.getY() + 0.5D, (double) blockposition.getZ() + 0.5D) < 64.0D && worldserver.mayInteract((net.minecraft.world.entity.player.Player) this.player, blockposition)) {
++            if (this.awaitingPositionFromClient == null && this.player.distanceToSqr((double) blockposition.getX() + 0.5D, (double) blockposition.getY() + 0.5D, (double) blockposition.getZ() + 0.5D) < 64.0D && (worldserver.mayInteract((net.minecraft.world.entity.player.Player) this.player, blockposition) || (worldserver.paperConfig.allowUsingSignsInsideSpawnProtection && worldserver.getBlockState(blockposition).getBlock() instanceof net.minecraft.world.level.block.SignBlock))) { // Paper
+                 // CraftBukkit start - Check if we can actually do something over this large a distance
+                 // Paper - move check up
+                 this.player.stopUsingItem(); // SPIGOT-4706

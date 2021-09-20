@@ -1,0 +1,106 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <spottedleaf@spottedleaf.dev>
+Date: Sat, 11 Jul 2020 05:09:28 -0700
+Subject: [PATCH] Separate lookup locking from state access in UserCache
+
+Prevent lookups from stalling simple state access/write calls
+
+diff --git a/src/main/java/net/minecraft/server/players/GameProfileCache.java b/src/main/java/net/minecraft/server/players/GameProfileCache.java
+index 61405c2b53e03a4b83e2c70c6e4d3739ca9676cb..66dfa8c844963091b63e1f2f85d0da6dd2cd083c 100644
+--- a/src/main/java/net/minecraft/server/players/GameProfileCache.java
++++ b/src/main/java/net/minecraft/server/players/GameProfileCache.java
+@@ -62,6 +62,11 @@ public class GameProfileCache {
+     @Nullable
+     private Executor executor;
+ 
++    // Paper start
++    protected final java.util.concurrent.locks.ReentrantLock stateLock = new java.util.concurrent.locks.ReentrantLock();
++    protected final java.util.concurrent.locks.ReentrantLock lookupLock = new java.util.concurrent.locks.ReentrantLock();
++    // Paper end
++
+     public GameProfileCache(GameProfileRepository profileRepository, File cacheFile) {
+         this.profileRepository = profileRepository;
+         this.file = cacheFile;
+@@ -69,6 +74,7 @@ public class GameProfileCache {
+     }
+ 
+     private void safeAdd(GameProfileCache.GameProfileInfo entry) {
++        try { this.stateLock.lock(); // Paper - allow better concurrency
+         GameProfile gameprofile = entry.getProfile();
+ 
+         entry.setLastAccess(this.getNextOperation());
+@@ -83,6 +89,7 @@ public class GameProfileCache {
+         if (uuid != null) {
+             this.profilesByUUID.put(uuid, entry);
+         }
++        } finally { this.stateLock.unlock(); } // Paper - allow better concurrency
+ 
+     }
+ 
+@@ -119,7 +126,7 @@ public class GameProfileCache {
+         return com.destroystokyo.paper.PaperConfig.isProxyOnlineMode(); // Paper
+     }
+ 
+-    public synchronized void add(GameProfile profile) { // Paper - synchronize
++    public void add(GameProfile profile) { // Paper - synchronize // Paper - allow better concurrency
+         Calendar calendar = Calendar.getInstance();
+ 
+         calendar.setTime(new Date());
+@@ -142,8 +149,9 @@ public class GameProfileCache {
+     }
+     // Paper end
+ 
+-    public synchronized Optional<GameProfile> get(String name) { // Paper - synchronize
++    public Optional<GameProfile> get(String name) { // Paper - synchronize // Paper start - allow better concurrency
+         String s1 = name.toLowerCase(Locale.ROOT);
++        boolean stateLocked = true; try { this.stateLock.lock(); // Paper - allow better concurrency
+         GameProfileCache.GameProfileInfo usercache_usercacheentry = (GameProfileCache.GameProfileInfo) this.profilesByName.get(s1);
+         boolean flag = false;
+ 
+@@ -159,8 +167,12 @@ public class GameProfileCache {
+         if (usercache_usercacheentry != null) {
+             usercache_usercacheentry.setLastAccess(this.getNextOperation());
+             optional = Optional.of(usercache_usercacheentry.getProfile());
++            stateLocked = false; this.stateLock.unlock(); // Paper - allow better concurrency
+         } else {
++            stateLocked = false; this.stateLock.unlock(); // Paper - allow better concurrency
++            try { this.lookupLock.lock(); // Paper - allow better concurrency
+             optional = GameProfileCache.lookupGameProfile(this.profileRepository, name); // Spigot - use correct case for offline players
++            } finally { this.lookupLock.unlock(); } // Paper - allow better concurrency
+             if (optional.isPresent()) {
+                 this.add((GameProfile) optional.get());
+                 flag = false;
+@@ -172,6 +184,7 @@ public class GameProfileCache {
+         }
+ 
+         return optional;
++        } finally { if (stateLocked) {  this.stateLock.unlock(); } } // Paper - allow better concurrency
+     }
+ 
+     public void getAsync(String username, Consumer<Optional<GameProfile>> consumer) {
+@@ -198,6 +211,7 @@ public class GameProfileCache {
+     }
+ 
+     public Optional<GameProfile> get(UUID uuid) {
++        try { this.stateLock.lock(); // Paper - allow better concurrency
+         GameProfileCache.GameProfileInfo usercache_usercacheentry = (GameProfileCache.GameProfileInfo) this.profilesByUUID.get(uuid);
+ 
+         if (usercache_usercacheentry == null) {
+@@ -206,6 +220,7 @@ public class GameProfileCache {
+             usercache_usercacheentry.setLastAccess(this.getNextOperation());
+             return Optional.of(usercache_usercacheentry.getProfile());
+         }
++        } finally { this.stateLock.unlock(); } // Paper - allow better concurrency
+     }
+ 
+     public void setExecutor(Executor executor) {
+@@ -322,7 +337,9 @@ public class GameProfileCache {
+     }
+ 
+     private Stream<GameProfileCache.GameProfileInfo> getTopMRUProfiles(int limit) {
++        try { this.stateLock.lock(); // Paper - allow better concurrency
+         return ImmutableList.copyOf(this.profilesByUUID.values()).stream().sorted(Comparator.comparing(GameProfileCache.GameProfileInfo::getLastAccess).reversed()).limit((long) limit);
++        } finally { this.stateLock.unlock(); } // Paper - allow better concurrency
+     }
+ 
+     private static JsonElement writeGameProfile(GameProfileCache.GameProfileInfo entry, DateFormat dateFormat) {

@@ -1,0 +1,685 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Kyle Wood <kyle@denwav.dev>
+Date: Thu, 10 Dec 2020 20:54:19 -0800
+Subject: [PATCH] Setup Gradle project
+
+The pom.xml file is deleted in this patch so the patch will fail to
+apply if there are changes made to it from upstream - thus notifying us
+that changes were made.
+
+diff --git a/.gitignore b/.gitignore
+index 67fb370cad6924895a6b27052dbd5c1767e3f0c9..bb338269c9e3bef4c274157c490d8b8f8c589937 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -1,3 +1,6 @@
++.gradle/
++build/
++
+ # Eclipse stuff
+ /.classpath
+ /.project
+@@ -37,3 +40,7 @@ dependency-reduced-pom.xml
+ 
+ /src/main/resources/achievement
+ /src/main/resources/lang
++
++# vs code
++/.vscode
++/.factorypath
+diff --git a/build.gradle.kts b/build.gradle.kts
+new file mode 100644
+index 0000000000000000000000000000000000000000..6f084d7500d9de76604440bdcc582be1af04fc8c
+--- /dev/null
++++ b/build.gradle.kts
+@@ -0,0 +1,173 @@
++import com.github.jengelman.gradle.plugins.shadow.transformers.Log4j2PluginsCacheFileTransformer
++import com.github.jengelman.gradle.plugins.shadow.transformers.Transformer
++import io.papermc.paperweight.util.Git
++import io.papermc.paperweight.util.path
++import shadow.org.apache.logging.log4j.core.config.plugins.processor.PluginProcessor.PLUGIN_CACHE_FILE
++import java.util.Locale
++
++plugins {
++    java
++    `maven-publish`
++    id("com.github.johnrengelman.shadow")
++}
++
++repositories {
++    maven("https://libraries.minecraft.net/")
++}
++
++dependencies {
++    implementation(project(":Paper-API"))
++    implementation("jline:jline:2.12.1")
++    implementation("org.apache.logging.log4j:log4j-iostreams:2.14.1") {
++        exclude(group = "org.apache.logging.log4j", module = "log4j-api")
++    }
++    implementation("org.ow2.asm:asm:9.2")
++    implementation("com.googlecode.json-simple:json-simple:1.1.1") {
++        // This includes junit transitively for whatever reason
++        isTransitive = false
++    }
++    runtimeOnly("org.xerial:sqlite-jdbc:3.34.0")
++    runtimeOnly("mysql:mysql-connector-java:5.1.49")
++
++    runtimeOnly("org.apache.maven:maven-resolver-provider:3.8.1")
++    runtimeOnly("org.apache.maven.resolver:maven-resolver-connector-basic:1.7.0")
++    runtimeOnly("org.apache.maven.resolver:maven-resolver-transport-http:1.7.0")
++
++    testImplementation("junit:junit:4.13.1")
++    testImplementation("org.hamcrest:hamcrest-library:1.3")
++}
++
++tasks.jar {
++    archiveClassifier.set("dev")
++
++    manifest {
++        val git = Git(rootProject.layout.projectDirectory.path)
++        val gitHash = git("rev-parse", "--short=7", "HEAD").getText().trim()
++        val implementationVersion = System.getenv("BUILD_NUMBER") ?: "\"$gitHash\""
++        val date = git("show", "-s", "--format=%ci", gitHash).getText().trim() // Paper
++        attributes(
++            "Main-Class" to "org.bukkit.craftbukkit.Main",
++            "Implementation-Title" to "CraftBukkit",
++            "Implementation-Version" to "git-Paper-$implementationVersion",
++            "Implementation-Vendor" to date, // Paper
++            "Specification-Title" to "Bukkit",
++            "Specification-Version" to project.version,
++            "Specification-Vendor" to "Bukkit Team",
++        )
++        for (tld in setOf("net", "com", "org")) {
++            attributes("$tld/bukkit", "Sealed" to true)
++        }
++    }
++}
++
++publishing {
++    publications.create<MavenPublication>("maven") {
++        artifactId = rootProject.name.toLowerCase(Locale.ENGLISH)
++        artifact(tasks.reobfJar) {
++            classifier = null
++        }
++        artifact(tasks.shadowJar)
++    }
++}
++
++relocation {
++    // Order matters here - e.g. craftbukkit proper must be relocated before any of the libs are relocated into the cb package
++    val packageVersion = "1_17_R1"
++    relocate("org.bukkit.craftbukkit" to "org.bukkit.craftbukkit.v$packageVersion") {
++        exclude("org.bukkit.craftbukkit.Main*")
++    }
++
++    fun cb(pack: String) = "org.bukkit.craftbukkit.libs.$pack"
++
++    sequenceOf(
++        "org.jline:jline-terminal-jansi" to "jline",
++        "commons-codec:commons-codec" to "org.apache.commons.codec",
++        "commons-io:commons-io" to "org.apache.commons.io",
++        "it.unimi.dsi:fastutil" to "it.unimi",
++        "org.apache.commons:commons-lang3" to "org.apache.commons.lang3",
++        "org.ow2.asm:asm" to "org.objectweb.asm"
++    ).forEach { (owner, pack) ->
++        relocate(owner, pack to cb(pack))
++    }
++
++    // runtimeOnly dependencies don't need an owner attached
++    // owner is used for dev bundle generation, runtimeOnly deps are not included in dev bundle
++    sequenceOf(
++        "org.apache.http",
++        "org.apache.maven",
++        "org.codehaus.plexus",
++        "org.eclipse.aether",
++        "org.eclipse.sisu"
++    ).forEach { pack ->
++        relocate(pack to cb(pack))
++    }
++}
++
++tasks.shadowJar {
++    archiveClassifier.set("mojang-mapped")
++
++    for (relocation in relocation.relocations.get()) {
++        relocate(relocation.fromPackage, relocation.toPackage) {
++            for (exclude in relocation.excludes) {
++                exclude(exclude)
++            }
++        }
++    }
++    mergeServiceFiles()
++    transform(ModifiedLog4j2PluginsCacheFileTransformer::class.java)
++}
++
++tasks.test {
++    exclude("org/bukkit/craftbukkit/inventory/ItemStack*Test.class")
++}
++
++fun TaskContainer.registerRunTask(
++    name: String, block: JavaExec.() -> Unit
++): TaskProvider<JavaExec> = register<JavaExec>(name) {
++    group = "paper"
++    standardInput = System.`in`
++    workingDir = rootProject.layout.projectDirectory.dir(
++        providers.gradleProperty("runWorkDir").forUseAtConfigurationTime().orElse("run")
++    ).get().asFile
++
++    if (rootProject.childProjects["test-plugin"] != null) {
++        val testPluginJar = rootProject.project(":test-plugin").tasks.jar.flatMap { it.archiveFile }
++        inputs.file(testPluginJar)
++        args("-add-plugin=${testPluginJar.get().asFile.absolutePath}")
++    }
++
++    args("--nogui")
++    systemProperty("net.kyori.adventure.text.warnWhenLegacyFormattingDetected", true)
++    if (project.hasProperty("disableWatchdog")) {
++        systemProperty("disable.watchdog", true)
++    }
++    doFirst {
++        workingDir.mkdirs()
++    }
++    javaLauncher.set(project.javaToolchains.launcherFor {
++        languageVersion.set(JavaLanguageVersion.of(project.tasks.compileJava.get().options.release.get()))
++    })
++    block(this)
++}
++
++tasks.registerRunTask("runShadow") {
++    description = "Spin up a test server from the shadowJar archiveFile"
++    classpath(tasks.shadowJar.flatMap { it.archiveFile })
++}
++
++tasks.registerRunTask("runReobf") {
++    description = "Spin up a test server from the reobfJar output jar"
++    classpath(tasks.reobfJar.flatMap { it.outputJar })
++}
++
++tasks.registerRunTask("runDev") {
++    description = "Spin up a non-shaded non-remapped test server"
++    classpath = java.sourceSets.main.get().runtimeClasspath
++    mainClass.set("org.bukkit.craftbukkit.Main")
++}
++
++class ModifiedLog4j2PluginsCacheFileTransformer : Transformer by Log4j2PluginsCacheFileTransformer() {
++    override fun canTransformResource(element: FileTreeElement): Boolean {
++        return PLUGIN_CACHE_FILE == element.name || element.name == "Log4j2Plugins.dat"
++    }
++}
+diff --git a/pom.xml b/pom.xml
+deleted file mode 100644
+index c936167e107ab76cfb21febb9534353f481a95d3..0000000000000000000000000000000000000000
+--- a/pom.xml
++++ /dev/null
+@@ -1,472 +0,0 @@
+-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+-    <modelVersion>4.0.0</modelVersion>
+-    <groupId>org.spigotmc</groupId>
+-    <artifactId>spigot</artifactId>
+-    <packaging>jar</packaging>
+-    <version>1.17.1-R0.1-SNAPSHOT</version>
+-    <name>Spigot</name>
+-    <url>https://www.spigotmc.org/</url>
+-
+-    <properties>
+-        <skipTests>true</skipTests>
+-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+-        <api.version>unknown</api.version>
+-        <bt.name>git</bt.name>
+-        <minecraft_version>1_17_R1</minecraft_version>
+-        <maven.compiler.source>1.8</maven.compiler.source>
+-        <maven.compiler.target>1.8</maven.compiler.target>
+-    </properties>
+-
+-    <parent>
+-        <groupId>org.spigotmc</groupId>
+-        <artifactId>spigot-parent</artifactId>
+-        <version>dev-SNAPSHOT</version>
+-        <relativePath>../pom.xml</relativePath>
+-    </parent>
+-
+-    <dependencies>
+-        <dependency>
+-            <groupId>org.spigotmc</groupId>
+-            <artifactId>spigot-api</artifactId>
+-            <version>${project.version}</version>
+-            <scope>compile</scope>
+-        </dependency>
+-        <dependency>
+-            <groupId>org.spigotmc</groupId>
+-            <artifactId>minecraft-server</artifactId>
+-            <version>${project.version}</version>
+-            <scope>compile</scope>
+-        </dependency>
+-        <dependency>
+-            <groupId>jline</groupId>
+-            <artifactId>jline</artifactId>
+-            <version>2.12.1</version>
+-            <scope>compile</scope>
+-        </dependency>
+-        <dependency>
+-            <groupId>org.apache.logging.log4j</groupId>
+-            <artifactId>log4j-iostreams</artifactId>
+-            <version>2.14.1</version>
+-            <scope>compile</scope>
+-            <exclusions>
+-                <!-- included in minecraft-server -->
+-                <exclusion>
+-                    <groupId>org.apache.logging.log4j</groupId>
+-                    <artifactId>log4j-api</artifactId>
+-                </exclusion>
+-            </exclusions>
+-        </dependency>
+-        <dependency>
+-            <groupId>org.ow2.asm</groupId>
+-            <artifactId>asm</artifactId>
+-            <version>9.2</version>
+-            <scope>compile</scope>
+-        </dependency>
+-        <!-- deprecated API depend -->
+-        <dependency>
+-            <groupId>com.googlecode.json-simple</groupId>
+-            <artifactId>json-simple</artifactId>
+-            <version>1.1.1</version>
+-            <scope>runtime</scope>
+-        </dependency>
+-        <dependency>
+-            <groupId>org.xerial</groupId>
+-            <artifactId>sqlite-jdbc</artifactId>
+-            <version>3.34.0</version>
+-            <scope>runtime</scope>
+-        </dependency>
+-        <dependency>
+-            <groupId>mysql</groupId>
+-            <artifactId>mysql-connector-java</artifactId>
+-            <version>5.1.49</version>
+-            <scope>runtime</scope>
+-        </dependency>
+-        <!-- add these back in as they are not exposed by the API -->
+-        <dependency>
+-            <groupId>org.apache.maven</groupId>
+-            <artifactId>maven-resolver-provider</artifactId>
+-            <version>3.8.1</version>
+-            <scope>runtime</scope>
+-        </dependency>
+-        <dependency>
+-            <groupId>org.apache.maven.resolver</groupId>
+-            <artifactId>maven-resolver-connector-basic</artifactId>
+-            <version>1.7.0</version>
+-            <scope>runtime</scope>
+-        </dependency>
+-        <dependency>
+-            <groupId>org.apache.maven.resolver</groupId>
+-            <artifactId>maven-resolver-transport-http</artifactId>
+-            <version>1.7.0</version>
+-            <scope>runtime</scope>
+-        </dependency>
+-        <!-- testing -->
+-        <dependency>
+-            <groupId>junit</groupId>
+-            <artifactId>junit</artifactId>
+-            <version>4.13.1</version>
+-            <scope>test</scope>
+-        </dependency>
+-        <dependency>
+-            <groupId>org.hamcrest</groupId>
+-            <artifactId>hamcrest-library</artifactId>
+-            <version>1.3</version>
+-            <scope>test</scope>
+-        </dependency>
+-    </dependencies>
+-
+-    <!-- This builds a completely 'ready to start' jar with all dependencies inside -->
+-    <build>
+-        <plugins>
+-            <plugin>
+-                <groupId>net.md-5</groupId>
+-                <artifactId>scriptus</artifactId>
+-                <version>0.4.1</version>
+-                <executions>
+-                    <execution>
+-                        <id>ex-spigot</id>
+-                        <configuration>
+-                            <format>${bt.name}-Spigot-%s</format>
+-                            <scmDirectory>../</scmDirectory>
+-                            <descriptionProperty>spigot.desc</descriptionProperty>
+-                        </configuration>
+-                        <phase>initialize</phase>
+-                        <goals>
+-                            <goal>describe</goal>
+-                        </goals>
+-                    </execution>
+-                    <execution>
+-                        <id>ex-craftbukkit</id>
+-                        <configuration>
+-                            <format>-%s</format>
+-                            <scmDirectory>../../CraftBukkit</scmDirectory>
+-                            <descriptionProperty>craftbukkit.desc</descriptionProperty>
+-                        </configuration>
+-                        <phase>initialize</phase>
+-                        <goals>
+-                            <goal>describe</goal>
+-                        </goals>
+-                    </execution>
+-                </executions>
+-            </plugin>
+-            <plugin>
+-                <groupId>org.apache.maven.plugins</groupId>
+-                <artifactId>maven-clean-plugin</artifactId>
+-                <version>3.1.0</version>
+-                <executions>
+-                    <execution>
+-                        <phase>initialize</phase>
+-                        <goals>
+-                            <goal>clean</goal>
+-                        </goals>
+-                    </execution>
+-                </executions>
+-            </plugin>
+-            <plugin>
+-                <groupId>org.apache.maven.plugins</groupId>
+-                <artifactId>maven-jar-plugin</artifactId>
+-                <version>3.2.0</version>
+-                <configuration>
+-                    <archive>
+-                        <manifest>
+-                            <addDefaultEntries>false</addDefaultEntries>
+-                        </manifest>
+-                        <manifestEntries>
+-                            <Main-Class>org.bukkit.craftbukkit.Main</Main-Class>
+-                            <Implementation-Title>CraftBukkit</Implementation-Title>
+-                            <Implementation-Version>${spigot.desc}${craftbukkit.desc}</Implementation-Version>
+-                            <Implementation-Vendor>${project.build.outputTimestamp}</Implementation-Vendor>
+-                            <Specification-Title>Bukkit</Specification-Title>
+-                            <Specification-Version>${api.version}</Specification-Version>
+-                            <Specification-Vendor>Bukkit Team</Specification-Vendor>
+-                            <Multi-Release>true</Multi-Release>
+-                        </manifestEntries>
+-                        <manifestSections>
+-                            <manifestSection>
+-                                <name>net/bukkit/</name>
+-                                <manifestEntries>
+-                                    <Sealed>true</Sealed>
+-                                </manifestEntries>
+-                            </manifestSection>
+-                            <manifestSection>
+-                                <name>com/bukkit/</name>
+-                                <manifestEntries>
+-                                    <Sealed>true</Sealed>
+-                                </manifestEntries>
+-                            </manifestSection>
+-                            <manifestSection>
+-                                <name>org/bukkit/</name>
+-                                <manifestEntries>
+-                                    <Sealed>true</Sealed>
+-                                </manifestEntries>
+-                            </manifestSection>
+-                        </manifestSections>
+-                    </archive>
+-                </configuration>
+-            </plugin>
+-            <plugin>
+-                <groupId>org.apache.maven.plugins</groupId>
+-                <artifactId>maven-shade-plugin</artifactId>
+-                <version>3.2.4</version>
+-                <dependencies>
+-                    <dependency>
+-                        <groupId>org.ow2.asm</groupId>
+-                        <artifactId>asm</artifactId>
+-                        <version>9.1</version>
+-                    </dependency>
+-                    <dependency>
+-                        <groupId>org.ow2.asm</groupId>
+-                        <artifactId>asm-commons</artifactId>
+-                        <version>9.1</version>
+-                    </dependency>
+-                </dependencies>
+-                <executions>
+-                    <execution>
+-                        <phase>package</phase>
+-                        <goals>
+-                            <goal>shade</goal>
+-                        </goals>
+-                        <configuration>
+-                            <createSourcesJar>${shadeSourcesJar}</createSourcesJar>
+-                            <filters>
+-                                <filter>
+-                                    <artifact>org.spigotmc:minecraft-server</artifact>
+-                                    <excludes>
+-                                        <exclude>com/google/common/**</exclude>
+-                                        <exclude>com/google/gson/**</exclude>
+-                                        <exclude>com/google/thirdparty/**</exclude>
+-                                    </excludes>
+-                                </filter>
+-                                <filter>
+-                                    <artifact>org.eclipse.sisu:org.eclipse.sisu.inject</artifact>
+-                                    <excludes>
+-                                        <exclude>META-INF/services/javax.annotation.processing.Processor</exclude>
+-                                    </excludes>
+-                                </filter>
+-                            </filters>
+-                            <relocations>
+-                                <!-- Cannot be relocated as it breaks translation property keys -->
+-                                <!--
+-                                <relocation>
+-                                    <pattern>joptsimple</pattern>
+-                                    <shadedPattern>org.bukkit.craftbukkit.libs.joptsimple</shadedPattern>
+-                                </relocation>
+-                                -->
+-                                <relocation>
+-                                    <pattern>jline</pattern>
+-                                    <shadedPattern>org.bukkit.craftbukkit.libs.jline</shadedPattern>
+-                                </relocation>
+-                                <relocation>
+-                                    <pattern>it.unimi</pattern>
+-                                    <shadedPattern>org.bukkit.craftbukkit.libs.it.unimi</shadedPattern>
+-                                </relocation>
+-                                <relocation>
+-                                    <pattern>org.apache.commons.codec</pattern>
+-                                    <shadedPattern>org.bukkit.craftbukkit.libs.org.apache.commons.codec</shadedPattern>
+-                                </relocation>
+-                                <relocation>
+-                                    <pattern>org.apache.commons.io</pattern>
+-                                    <shadedPattern>org.bukkit.craftbukkit.libs.org.apache.commons.io</shadedPattern>
+-                                </relocation>
+-                                <relocation>
+-                                    <pattern>org.apache.commons.lang3</pattern>
+-                                    <shadedPattern>org.bukkit.craftbukkit.libs.org.apache.commons.lang3</shadedPattern>
+-                                </relocation>
+-                                <relocation>
+-                                    <pattern>org.apache.http</pattern>
+-                                    <shadedPattern>org.bukkit.craftbukkit.libs.org.apache.http</shadedPattern>
+-                                </relocation>
+-                                <relocation>
+-                                    <pattern>org.apache.maven</pattern>
+-                                    <shadedPattern>org.bukkit.craftbukkit.libs.org.apache.maven</shadedPattern>
+-                                </relocation>
+-                                <relocation>
+-                                    <pattern>org.codehaus.plexus</pattern>
+-                                    <shadedPattern>org.bukkit.craftbukkit.libs.org.codehaus.plexus</shadedPattern>
+-                                </relocation>
+-                                <relocation>
+-                                    <pattern>org.eclipse.aether</pattern>
+-                                    <shadedPattern>org.bukkit.craftbukkit.libs.org.eclipse.aether</shadedPattern>
+-                                </relocation>
+-                                <relocation>
+-                                    <pattern>org.eclipse.sisu</pattern>
+-                                    <shadedPattern>org.bukkit.craftbukkit.libs.org.eclipse.sisu</shadedPattern>
+-                                </relocation>
+-                                <relocation>
+-                                    <pattern>org.objectweb.asm</pattern>
+-                                    <shadedPattern>org.bukkit.craftbukkit.libs.org.objectweb.asm</shadedPattern>
+-                                </relocation>
+-                                <relocation>
+-                                    <pattern>org.bukkit.craftbukkit</pattern>
+-                                    <shadedPattern>org.bukkit.craftbukkit.v${minecraft_version}</shadedPattern>
+-                                    <excludes>
+-                                        <exclude>org.bukkit.craftbukkit.Main*</exclude>
+-                                    </excludes>
+-                                </relocation>
+-                            </relocations>
+-                            <transformers>
+-                                <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+-                                    <resource>META-INF/services/java.sql.Driver</resource>
+-                                </transformer>
+-                            </transformers>
+-                        </configuration>
+-                    </execution>
+-                </executions>
+-            </plugin>
+-            <plugin>
+-                <groupId>net.md-5</groupId>
+-                <artifactId>specialsource-maven-plugin</artifactId>
+-                <version>1.2.2</version>
+-                <executions>
+-                    <execution>
+-                        <phase>package</phase>
+-                        <goals>
+-                            <goal>remap</goal>
+-                        </goals>
+-                        <id>remap-fields</id>
+-                        <configuration>
+-                            <srgIn>org.spigotmc:minecraft-server:${project.version}:csrg:maps-spigot-fields</srgIn>
+-                            <reverse>true</reverse>
+-                        </configuration>
+-                    </execution>
+-                </executions>
+-            </plugin>
+-            <plugin>
+-                <groupId>org.apache.maven.plugins</groupId>
+-                <artifactId>maven-compiler-plugin</artifactId>
+-                <version>3.8.1</version>
+-                <configuration>
+-                    <!-- we use the Eclipse compiler as it doesn't need a JDK -->
+-                    <compilerId>eclipse</compilerId>
+-                </configuration>
+-                <dependencies>
+-                    <dependency>
+-                        <groupId>org.codehaus.plexus</groupId>
+-                        <artifactId>plexus-compiler-eclipse</artifactId>
+-                        <version>2.8.8</version>
+-                    </dependency>
+-                    <dependency>
+-                        <groupId>org.eclipse.jdt</groupId>
+-                        <artifactId>ecj</artifactId>
+-                        <version>3.26.0</version>
+-                    </dependency>
+-                </dependencies>
+-            </plugin>
+-            <plugin>
+-                <groupId>org.apache.maven.plugins</groupId>
+-                <artifactId>maven-surefire-plugin</artifactId>
+-                <version>2.12.4</version>
+-                <configuration>
+-                    <workingDirectory>${basedir}/target/test-server</workingDirectory>
+-                    <excludes>
+-                        <exclude>org/bukkit/craftbukkit/inventory/ItemStack*Test.java</exclude>
+-                    </excludes>
+-                </configuration>
+-            </plugin>
+-        </plugins>
+-    </build>
+-
+-    <profiles>
+-        <profile>
+-            <id>shadeSourcesJar</id>
+-            <properties>
+-                <shadeSourcesJar>true</shadeSourcesJar>
+-                <shadeSourcesContent>true</shadeSourcesContent>
+-            </properties>
+-        </profile>
+-        <profile>
+-            <id>development</id>
+-            <properties>
+-                <skipTests>false</skipTests>
+-            </properties>
+-            <build>
+-                <plugins>
+-                    <plugin>
+-                        <groupId>org.apache.maven.plugins</groupId>
+-                        <artifactId>maven-checkstyle-plugin</artifactId>
+-                        <version>3.1.2</version>
+-                        <executions>
+-                            <execution>
+-                                <phase>process-classes</phase>
+-                                <goals>
+-                                    <goal>check</goal>
+-                                </goals>
+-                            </execution>
+-                        </executions>
+-                        <configuration>
+-                            <configLocation>checkstyle.xml</configLocation>
+-                            <includeTestSourceDirectory>true</includeTestSourceDirectory>
+-                        </configuration>
+-                        <dependencies>
+-                            <dependency>
+-                                <groupId>com.puppycrawl.tools</groupId>
+-                                <artifactId>checkstyle</artifactId>
+-                                <version>8.44</version>
+-                            </dependency>
+-                        </dependencies>
+-                    </plugin>
+-                    <plugin>
+-                        <groupId>org.codehaus.mojo</groupId>
+-                        <artifactId>animal-sniffer-maven-plugin</artifactId>
+-                        <version>1.20</version>
+-                        <executions>
+-                            <execution>
+-                                <phase>process-classes</phase>
+-                                <goals>
+-                                    <goal>check</goal>
+-                                </goals>
+-                            </execution>
+-                        </executions>
+-                        <configuration>
+-                            <signature>
+-                                <groupId>org.codehaus.mojo.signature</groupId>
+-                                <artifactId>java18</artifactId>
+-                                <version>1.0</version>
+-                            </signature>
+-                        </configuration>
+-                    </plugin>
+-                </plugins>
+-            </build>
+-        </profile>
+-        <profile>
+-            <id>remapped</id>
+-            <build>
+-                <plugins>
+-                    <plugin>
+-                        <groupId>net.md-5</groupId>
+-                        <artifactId>specialsource-maven-plugin</artifactId>
+-                        <executions>
+-                            <execution>
+-                                <phase>package</phase>
+-                                <goals>
+-                                    <goal>remap</goal>
+-                                </goals>
+-                                <id>remap-obf</id>
+-                                <configuration>
+-                                    <srgIn>org.spigotmc:minecraft-server:${project.version}:csrg:maps-spigot</srgIn>
+-                                    <reverse>true</reverse>
+-                                    <remappedArtifactAttached>true</remappedArtifactAttached>
+-                                    <remappedClassifierName>remapped-obf</remappedClassifierName>
+-                                </configuration>
+-                            </execution>
+-                            <execution>
+-                                <phase>package</phase>
+-                                <goals>
+-                                    <goal>remap</goal>
+-                                </goals>
+-                                <id>remap-mojang</id>
+-                                <configuration>
+-                                    <inputFile>${project.build.directory}/${project.artifactId}-${project.version}-remapped-obf.jar</inputFile>
+-                                    <srgIn>org.spigotmc:minecraft-server:${project.version}:txt:maps-mojang</srgIn>
+-                                    <remappedArtifactAttached>true</remappedArtifactAttached>
+-                                    <remappedClassifierName>remapped-mojang</remappedClassifierName>
+-                                </configuration>
+-                            </execution>
+-                        </executions>
+-                    </plugin>
+-                </plugins>
+-            </build>
+-        </profile>
+-    </profiles>
+-</project>

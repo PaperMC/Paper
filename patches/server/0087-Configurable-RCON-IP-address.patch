@@ -1,0 +1,44 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sat, 16 Apr 2016 00:39:33 -0400
+Subject: [PATCH] Configurable RCON IP address
+
+For servers with multiple IP's, ability to bind to a specific interface.
+
+diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServerProperties.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServerProperties.java
+index 9793b51080d0f4adba0d6bc684a6927382420a0b..12e55aabf0daf341ec74688e79c43451e820e6dc 100644
+--- a/src/main/java/net/minecraft/server/dedicated/DedicatedServerProperties.java
++++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServerProperties.java
+@@ -67,6 +67,8 @@ public class DedicatedServerProperties extends Settings<DedicatedServerPropertie
+     @Nullable
+     private WorldGenSettings worldGenSettings;
+ 
++    public final String rconIp; // Paper - Add rcon ip
++
+     // CraftBukkit start
+     public DedicatedServerProperties(Properties properties, OptionSet optionset) {
+         super(properties, optionset);
+@@ -115,6 +117,10 @@ public class DedicatedServerProperties extends Settings<DedicatedServerPropertie
+         this.textFilteringConfig = this.get("text-filtering-config", "");
+         this.playerIdleTimeout = this.getMutable("player-idle-timeout", 0);
+         this.whiteList = this.getMutable("white-list", false);
++        // Paper start - Configurable rcon ip
++        final String rconIp = this.getStringRaw("rcon.ip");
++        this.rconIp = rconIp == null ? this.serverIp : rconIp;
++        // Paper end
+     }
+ 
+     // CraftBukkit start
+diff --git a/src/main/java/net/minecraft/server/rcon/thread/RconThread.java b/src/main/java/net/minecraft/server/rcon/thread/RconThread.java
+index 5e642ab9947f054c1741e13170a36f8fe300cdbe..a93e0eb67a78abb2eabd549cd5240095a24e5545 100644
+--- a/src/main/java/net/minecraft/server/rcon/thread/RconThread.java
++++ b/src/main/java/net/minecraft/server/rcon/thread/RconThread.java
+@@ -60,7 +60,7 @@ public class RconThread extends GenericThread {
+     @Nullable
+     public static RconThread create(ServerInterface server) {
+         DedicatedServerProperties dedicatedServerProperties = server.getProperties();
+-        String string = server.getServerIp();
++        String string = dedicatedServerProperties.rconIp; // Paper - Configurable rcon ip
+         if (string.isEmpty()) {
+             string = "0.0.0.0";
+         }
