@@ -12,37 +12,32 @@ Co-authored-by: Noah van der Aa <ndvdaa@gmail.com>
 
 diff --git a/src/main/java/io/papermc/paper/util/ServerEnvironment.java b/src/main/java/io/papermc/paper/util/ServerEnvironment.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..5ba45a071a5b7e9f2ef9f2dea7e07d74d83ccee4
+index 0000000000000000000000000000000000000000..0d8e415acb1e06532d9e1c2add576806b2aafdaa
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/util/ServerEnvironment.java
-@@ -0,0 +1,29 @@
+@@ -0,0 +1,24 @@
 +package io.papermc.paper.util;
 +
 +import com.sun.security.auth.module.NTSystem;
++import com.sun.security.auth.module.UnixSystem;
 +import org.apache.commons.lang.SystemUtils;
 +
-+import java.io.IOException;
-+import java.util.Arrays;
++import java.util.Set;
 +
 +public class ServerEnvironment {
-+    private static final boolean runningAsRootOrAdmin;
++    private static final boolean RUNNING_AS_ROOT_OR_ADMIN;
++    private static final String WINDOWS_HIGH_INTEGRITY_LEVEL = "S-1-16-12288";
 +
 +    static {
 +        if (SystemUtils.IS_OS_WINDOWS) {
-+            runningAsRootOrAdmin = Arrays.asList(new NTSystem().getGroupIDs()).contains("S-1-16-12288");
++            RUNNING_AS_ROOT_OR_ADMIN = Set.of(new NTSystem().getGroupIDs()).contains(WINDOWS_HIGH_INTEGRITY_LEVEL);
 +        } else {
-+            boolean isRunningAsRoot;
-+            try (final var inputStream = Runtime.getRuntime().exec("id -u " + System.getProperty("user.name")).getInputStream()) {
-+                isRunningAsRoot = new String(inputStream.readAllBytes()).trim().equals("0");
-+            } catch (IOException ignored) {
-+                isRunningAsRoot = false;
-+            }
-+            runningAsRootOrAdmin = isRunningAsRoot;
++            RUNNING_AS_ROOT_OR_ADMIN = new UnixSystem().getUid() == 0L;
 +        }
 +    }
 +
 +    public static boolean userIsRootOrAdmin() {
-+        return runningAsRootOrAdmin;
++        return RUNNING_AS_ROOT_OR_ADMIN;
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
