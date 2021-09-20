@@ -1,0 +1,58 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Wed, 27 Feb 2019 22:18:40 -0500
+Subject: [PATCH] Limit Client Sign length more
+
+modified clients can send more data from the client
+to the server and it would get stored on the sign as sent.
+
+Mojang has a limit of 384 which is much higher than reasonable.
+
+the client can barely render around 16 characters as-is, but formatting
+codes can get it to be more than 16 actual length.
+
+Set a limit of 80 which should give an average of 16 characters 2
+sets of legacy formatting codes which should be plenty for all uses.
+
+This does not strip any existing data from the NBT as plugins
+may use this for storing data out of the rendered area.
+
+it only impacts data sent from the client.
+
+Set -DPaper.maxSignLength=XX to change limit or -1 to disable
+
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index 0103c76c183d0e866a98c26f2d1cf557ba4f67e8..d24d42ef0a00b9420700e58f555f8448f8d01747 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -254,6 +254,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+     private int aboveGroundVehicleTickCount;
+     private int receivedMovePacketCount;
+     private int knownMovePacketCount;
++    private static final int MAX_SIGN_LINE_LENGTH = Integer.getInteger("Paper.maxSignLength", 80);
+     private static final long KEEPALIVE_LIMIT = Long.getLong("paper.playerconnection.keepalive", 30) * 1000; // Paper - provide property to set keepalive limit
+ 
+     public ServerGamePacketListenerImpl(MinecraftServer server, Connection connection, ServerPlayer player) {
+@@ -2847,10 +2848,20 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+             List<net.kyori.adventure.text.Component> lines = new java.util.ArrayList<>();
+ 
+             for (int i = 0; i < list.size(); ++i) {
++                // Paper start - cap line length - modified clients can send longer data than normal
++                net.minecraft.server.network.TextFilter.FilteredText currentLine = list.get(i);
++                if (MAX_SIGN_LINE_LENGTH > 0 && currentLine.getRaw().length() > MAX_SIGN_LINE_LENGTH) {
++                    // This handles multibyte characters as 1
++                    int offset = currentLine.getRaw().codePoints().limit(MAX_SIGN_LINE_LENGTH).map(Character::charCount).sum();
++                    if (offset < currentLine.getRaw().length()) {
++                        list.set(i, currentLine = net.minecraft.server.network.TextFilter.FilteredText.passThrough(currentLine.getRaw().substring(0, offset))); // this will break any filtering, but filtering is NYI as of 1.17
++                    }
++                }
++                // Paper end
+                 if (this.player.isTextFilteringEnabled()) {
+-                    lines.add(net.kyori.adventure.text.Component.text(SharedConstants.filterText(list.get(i).getFiltered())));
++                    lines.add(net.kyori.adventure.text.Component.text(SharedConstants.filterText(currentLine.getFiltered())));
+                 } else {
+-                    lines.add(net.kyori.adventure.text.Component.text(SharedConstants.filterText(list.get(i).getRaw())));
++                    lines.add(net.kyori.adventure.text.Component.text(SharedConstants.filterText(currentLine.getRaw())));
+                 }
+             }
+             SignChangeEvent event = new SignChangeEvent((org.bukkit.craftbukkit.block.CraftBlock) player.getWorld().getBlockAt(x, y, z), this.player.getBukkitEntity(), lines);

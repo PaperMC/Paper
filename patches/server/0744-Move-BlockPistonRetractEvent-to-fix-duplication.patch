@@ -1,0 +1,49 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Madeline Miller <mnmiller1@me.com>
+Date: Sun, 22 Aug 2021 22:17:18 +1000
+Subject: [PATCH] Move BlockPistonRetractEvent to fix duplication
+
+
+diff --git a/src/main/java/net/minecraft/world/level/block/piston/PistonBaseBlock.java b/src/main/java/net/minecraft/world/level/block/piston/PistonBaseBlock.java
+index dd50a29d47a62df8cdfd69358218d1559b6794ef..3678f75822b55c3c4c77565893269af4b7f9d8c9 100644
+--- a/src/main/java/net/minecraft/world/level/block/piston/PistonBaseBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/piston/PistonBaseBlock.java
+@@ -147,14 +147,14 @@ public class PistonBaseBlock extends DirectionalBlock {
+             }
+ 
+             // CraftBukkit start
+-            //if (!this.sticky) { // Paper - Prevents empty sticky pistons from firing retract - history behind is odd
+-                org.bukkit.block.Block block = world.getWorld().getBlockAt(pos.getX(), pos.getY(), pos.getZ());
+-                BlockPistonRetractEvent event = new BlockPistonRetractEvent(block, ImmutableList.<org.bukkit.block.Block>of(), CraftBlock.notchToBlockFace(enumdirection));
+-                world.getCraftServer().getPluginManager().callEvent(event);
+-
+-                if (event.isCancelled()) {
+-                    return;
+-                }
++            //if (!this.sticky) { // Paper - Prevents empty sticky pistons from firing retract - history behind is odd - Move further down
++            //  org.bukkit.block.Block block = world.getWorld().getBlockAt(pos.getX(), pos.getY(), pos.getZ());
++            //  BlockPistonRetractEvent event = new BlockPistonRetractEvent(block, ImmutableList.<org.bukkit.block.Block>of(), CraftBlock.notchToBlockFace(enumdirection));
++            //  world.getCraftServer().getPluginManager().callEvent(event);
++
++            //  if (event.isCancelled()) {
++            //    return;
++            //  }
+             //} // Paper
+             // PAIL: checkME - what happened to setTypeAndData?
+             // CraftBukkit end
+@@ -237,6 +237,15 @@ public class PistonBaseBlock extends DirectionalBlock {
+ 
+             BlockState iblockdata1 = (BlockState) ((BlockState) Blocks.MOVING_PISTON.defaultBlockState().setValue(MovingPistonBlock.FACING, enumdirection)).setValue(MovingPistonBlock.TYPE, this.isSticky ? PistonType.STICKY : PistonType.DEFAULT);
+ 
++            // Paper - Move empty piston retract call to fix duplication
++            org.bukkit.block.Block block = world.getWorld().getBlockAt(pos.getX(), pos.getY(), pos.getZ());
++            BlockPistonRetractEvent event = new BlockPistonRetractEvent(block, ImmutableList.<org.bukkit.block.Block>of(), CraftBlock.notchToBlockFace(enumdirection));
++            world.getCraftServer().getPluginManager().callEvent(event);
++
++            if (event.isCancelled()) {
++                return false;
++            } // Paper
++
+             world.setBlock(pos, iblockdata1, 20);
+             world.setBlockEntity(MovingPistonBlock.newMovingBlockEntity(pos, iblockdata1, (BlockState) this.defaultBlockState().setValue(PistonBaseBlock.FACING, Direction.from3DDataValue(data & 7)), enumdirection, false, true)); // Paper - diff on change
+             world.blockUpdated(pos, iblockdata1.getBlock());

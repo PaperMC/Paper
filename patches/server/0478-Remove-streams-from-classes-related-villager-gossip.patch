@@ -1,0 +1,83 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: JRoy <joshroy126@gmail.com>
+Date: Wed, 1 Jul 2020 18:01:49 -0400
+Subject: [PATCH] Remove streams from classes related villager gossip
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/ai/gossip/GossipContainer.java b/src/main/java/net/minecraft/world/entity/ai/gossip/GossipContainer.java
+index 01df536b3b61281828ca2be03ac1bbb6a1096423..2d124ff784b943f5a9d164ee7cdc001465502ce4 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/gossip/GossipContainer.java
++++ b/src/main/java/net/minecraft/world/entity/ai/gossip/GossipContainer.java
+@@ -8,6 +8,7 @@ import com.mojang.serialization.Dynamic;
+ import com.mojang.serialization.DynamicOps;
+ import it.unimi.dsi.fastutil.objects.Object2IntMap;
+ import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
++import it.unimi.dsi.fastutil.objects.ObjectArrayList; // Paper
+ import it.unimi.dsi.fastutil.objects.ObjectIterator;
+ import it.unimi.dsi.fastutil.objects.Object2IntMap.Entry;
+ import java.util.Arrays;
+@@ -60,8 +61,21 @@ public class GossipContainer {
+         });
+     }
+ 
++    // Paper start - Remove streams from reputation
++    private List<GossipContainer.GossipEntry> decompress() {
++        List<GossipContainer.GossipEntry> list = new ObjectArrayList<>();
++        for (Map.Entry<UUID, GossipContainer.EntityGossips> entry : getReputations().entrySet()) {
++            for (GossipContainer.GossipEntry cur : entry.getValue().decompress(entry.getKey())) {
++                if (cur.weightedValue() != 0)
++                    list.add(cur);
++            }
++        }
++        return list;
++    }
++    // Paper end
++
+     private Collection<GossipContainer.GossipEntry> selectGossipsForTransfer(Random random, int count) {
+-        List<GossipContainer.GossipEntry> list = this.unpack().collect(Collectors.toList());
++        List<GossipContainer.GossipEntry> list = decompress(); // Paper - Remove streams from reputation
+         if (list.isEmpty()) {
+             return Collections.emptyList();
+         } else {
+@@ -154,9 +168,9 @@ public class GossipContainer {
+ 
+     }
+ 
+-    public <T> Dynamic<T> store(DynamicOps<T> dynamicOps) {
+-        return new Dynamic<>(dynamicOps, dynamicOps.createList(this.unpack().map((gossipEntry) -> {
+-            return gossipEntry.store(dynamicOps);
++    public <T> Dynamic<T> store(DynamicOps<T> dynamicops) {
++        return new Dynamic(dynamicops, dynamicops.createList(this.decompress().stream().map((reputation_b) -> {
++            return reputation_b.store(dynamicops);
+         }).map(Dynamic::getValue)));
+     }
+ 
+@@ -181,11 +195,23 @@ public class GossipContainer {
+         final Object2IntMap<GossipType> entries = new Object2IntOpenHashMap<>();
+ 
+         public int weightedValue(Predicate<GossipType> gossipTypeFilter) {
+-            return this.entries.object2IntEntrySet().stream().filter((entry) -> {
+-                return gossipTypeFilter.test(entry.getKey());
+-            }).mapToInt((entry) -> {
+-                return entry.getIntValue() * (entry.getKey()).weight;
+-            }).sum();
++            // Paper start - Remove streams from reputation
++            int weight = 0;
++            for (Object2IntMap.Entry<GossipType> entry : entries.object2IntEntrySet()) {
++                if (gossipTypeFilter.test(entry.getKey())) {
++                    weight += entry.getIntValue() * entry.getKey().weight;
++                }
++            }
++            return weight;
++        }
++
++        public List<GossipContainer.GossipEntry> decompress(UUID uuid) {
++            List<GossipContainer.GossipEntry> list = new ObjectArrayList<>();
++            for (Object2IntMap.Entry<GossipType> entry : entries.object2IntEntrySet()) {
++                list.add(new GossipContainer.GossipEntry(uuid, entry.getKey(), entry.getIntValue()));
++            }
++            return list;
++            // Paper - end
+         }
+ 
+         public Stream<GossipContainer.GossipEntry> unpack(UUID target) {

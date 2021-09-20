@@ -1,0 +1,42 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Tue, 2 Jan 2018 00:31:26 -0500
+Subject: [PATCH] Fill Profile Property Events
+
+Allows plugins to populate profile properties from local sources to avoid calls out to Mojang API
+to fill in textures for example.
+
+If Mojang API does need to be hit, event fire so you can get the results.
+
+This is useful for implementing a ProfileCache for Player Skulls
+
+diff --git a/src/main/java/com/destroystokyo/paper/profile/PaperMinecraftSessionService.java b/src/main/java/com/destroystokyo/paper/profile/PaperMinecraftSessionService.java
+index 93d73c27340645c7502acafdc0b2cfbc1a759dd8..5c7d2ee19243d0911a3a00af3ae42078a2ccba94 100644
+--- a/src/main/java/com/destroystokyo/paper/profile/PaperMinecraftSessionService.java
++++ b/src/main/java/com/destroystokyo/paper/profile/PaperMinecraftSessionService.java
+@@ -1,6 +1,8 @@
+ package com.destroystokyo.paper.profile;
+ 
+ import com.mojang.authlib.Environment;
++import com.destroystokyo.paper.event.profile.FillProfileEvent;
++import com.destroystokyo.paper.event.profile.PreFillProfileEvent;
+ import com.mojang.authlib.GameProfile;
+ import com.mojang.authlib.minecraft.MinecraftProfileTexture;
+ import com.mojang.authlib.yggdrasil.YggdrasilAuthenticationService;
+@@ -20,7 +22,15 @@ public class PaperMinecraftSessionService extends YggdrasilMinecraftSessionServi
+ 
+     @Override
+     public GameProfile fillProfileProperties(GameProfile profile, boolean requireSecure) {
+-        return super.fillProfileProperties(profile, requireSecure);
++        CraftPlayerProfile playerProfile = (CraftPlayerProfile) CraftPlayerProfile.asBukkitMirror(profile);
++        new PreFillProfileEvent(playerProfile).callEvent();
++        profile = playerProfile.getGameProfile();
++        if (profile.isComplete() && profile.getProperties().containsKey("textures")) {
++            return profile;
++        }
++        GameProfile gameProfile = super.fillProfileProperties(profile, requireSecure);
++        new FillProfileEvent(CraftPlayerProfile.asBukkitMirror(gameProfile)).callEvent();
++        return gameProfile;
+     }
+ 
+     @Override

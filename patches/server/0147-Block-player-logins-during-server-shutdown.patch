@@ -1,0 +1,23 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Zach Brown <zach.brown@destroystokyo.com>
+Date: Sun, 2 Jul 2017 21:35:56 -0500
+Subject: [PATCH] Block player logins during server shutdown
+
+
+diff --git a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
+index a60b40d8cc802456374625af216c27998f8348b3..ab3409dd3a7671b46cba210cfa326311d10a7ef4 100644
+--- a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
+@@ -69,6 +69,12 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener
+     }
+ 
+     public void tick() {
++        // Paper start - Do not allow logins while the server is shutting down
++        if (!MinecraftServer.getServer().isRunning()) {
++            this.disconnect(org.bukkit.craftbukkit.util.CraftChatMessage.fromString(org.spigotmc.SpigotConfig.restartMessage)[0]);
++            return;
++        }
++        // Paper end
+         if (this.state == ServerLoginPacketListenerImpl.State.READY_TO_ACCEPT) {
+             this.handleAcceptedLogin();
+         } else if (this.state == ServerLoginPacketListenerImpl.State.DELAY_ACCEPT) {

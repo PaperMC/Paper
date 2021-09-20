@@ -1,0 +1,32 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Owen1212055 <23108066+Owen1212055@users.noreply.github.com>
+Date: Wed, 26 May 2021 17:09:07 -0400
+Subject: [PATCH] Add BellRevealRaiderEvent
+
+
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/BellBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/BellBlockEntity.java
+index a71bf0802d04217dd11086901b7148957d32ca89..b4a5da7e2baecc856c75283cc776398042d17108 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/BellBlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/BellBlockEntity.java
+@@ -138,7 +138,7 @@ public class BellBlockEntity extends BlockEntity {
+     private static void makeRaidersGlow(Level world, BlockPos pos, List<LivingEntity> hearingEntities) {
+         hearingEntities.stream().filter((livingEntity) -> {
+             return isRaiderWithinRange(pos, livingEntity);
+-        }).forEach(BellBlockEntity::glow);
++        }).forEach(entity -> glow(entity, pos)); // Paper - pass BlockPos
+     }
+ 
+     private static void showBellParticles(Level world, BlockPos pos, List<LivingEntity> hearingEntities) {
+@@ -170,7 +170,11 @@ public class BellBlockEntity extends BlockEntity {
+         return entity.isAlive() && !entity.isRemoved() && pos.closerThan(entity.position(), 48.0D) && entity.getType().is(EntityTypeTags.RAIDERS);
+     }
+ 
+-    private static void glow(LivingEntity entity) {
++    // Paper start
++    private static void glow(LivingEntity entity) { glow(entity, null); }
++    private static void glow(LivingEntity entity, BlockPos pos) {
++        if (pos != null && !new io.papermc.paper.event.block.BellRevealRaiderEvent(entity.level.getWorld().getBlockAt(net.minecraft.server.MCUtil.toLocation(entity.level, pos)), entity.getBukkitEntity()).callEvent()) return;
++        // Paper end
+         entity.addEffect(new MobEffectInstance(MobEffects.GLOWING, 60));
+     }
+ 

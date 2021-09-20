@@ -1,0 +1,30 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Wed, 16 May 2018 20:44:58 -0400
+Subject: [PATCH] WitchThrowPotionEvent
+
+Fired when a witch throws a potion at a player
+
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Witch.java b/src/main/java/net/minecraft/world/entity/monster/Witch.java
+index 01875b3199e193365f5da86023bb83ca819241aa..29c4ce6ae511833fd591d3bf8cceac910a429853 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Witch.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Witch.java
+@@ -236,9 +236,16 @@ public class Witch extends Raider implements RangedAttackMob {
+                 potionregistry = Potions.WEAKNESS;
+             }
+ 
++            // Paper start
++            ItemStack potion = PotionUtils.setPotion(new ItemStack(Items.SPLASH_POTION), potionregistry);
++            com.destroystokyo.paper.event.entity.WitchThrowPotionEvent event = new com.destroystokyo.paper.event.entity.WitchThrowPotionEvent((org.bukkit.entity.Witch) this.getBukkitEntity(), (org.bukkit.entity.LivingEntity) target.getBukkitEntity(), org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(potion));
++            if (!event.callEvent()) {
++                return;
++            }
++            potion = org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getPotion());
+             ThrownPotion entitypotion = new ThrownPotion(this.level, this);
+-
+-            entitypotion.setItem(PotionUtils.setPotion(new ItemStack(Items.SPLASH_POTION), potionregistry));
++            entitypotion.setItem(potion);
++            // Paper end
+             entitypotion.setXRot(entitypotion.getXRot() - -20.0F);
+             entitypotion.shoot(d0, d1 + d3 * 0.2D, d2, 0.75F, 8.0F);
+             if (!this.isSilent()) {
