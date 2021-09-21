@@ -1,0 +1,201 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Cryptite <cryptite@gmail.com>
+Date: Tue, 21 Sep 2021 15:06:49 -0500
+Subject: [PATCH] Multiple Entries with Scoreboards
+
+
+diff --git a/src/main/java/net/minecraft/network/protocol/game/ClientboundSetPlayerTeamPacket.java b/src/main/java/net/minecraft/network/protocol/game/ClientboundSetPlayerTeamPacket.java
+index 4c9660176e783999301565790b8cf6f47b0d02a2..3f1b093ae766c6e219ee233a75c64f0c522cc6c2 100644
+--- a/src/main/java/net/minecraft/network/protocol/game/ClientboundSetPlayerTeamPacket.java
++++ b/src/main/java/net/minecraft/network/protocol/game/ClientboundSetPlayerTeamPacket.java
+@@ -42,6 +42,12 @@ public class ClientboundSetPlayerTeamPacket implements Packet<ClientGamePacketLi
+         return new ClientboundSetPlayerTeamPacket(team.getName(), operation == ClientboundSetPlayerTeamPacket.Action.ADD ? 3 : 4, Optional.empty(), ImmutableList.of(playerName));
+     }
+ 
++    // Paper start
++    public static ClientboundSetPlayerTeamPacket createMultiplePlayerPacket(PlayerTeam team, Collection<String> players, ClientboundSetPlayerTeamPacket.Action operation) {
++        return new ClientboundSetPlayerTeamPacket(team.getName(), operation == ClientboundSetPlayerTeamPacket.Action.ADD ? 3 : 4, Optional.empty(), players);
++    }
++    // Paper end
++
+     public ClientboundSetPlayerTeamPacket(FriendlyByteBuf buf) {
+         this.name = buf.readUtf(16);
+         this.method = buf.readByte();
+diff --git a/src/main/java/net/minecraft/server/ServerScoreboard.java b/src/main/java/net/minecraft/server/ServerScoreboard.java
+index 130a928f156961bae9ca184b3ca31004dbba1012..cba5aa8b55b2d4d3d86203ee7797be6657adf759 100644
+--- a/src/main/java/net/minecraft/server/ServerScoreboard.java
++++ b/src/main/java/net/minecraft/server/ServerScoreboard.java
+@@ -2,10 +2,8 @@ package net.minecraft.server;
+ 
+ import com.google.common.collect.Lists;
+ import com.google.common.collect.Sets;
+-import java.util.Iterator;
+-import java.util.List;
+-import java.util.Objects;
+-import java.util.Set;
++
++import java.util.*;
+ import javax.annotation.Nullable;
+ import net.minecraft.nbt.CompoundTag;
+ import net.minecraft.network.protocol.Packet;
+@@ -92,6 +90,19 @@ public class ServerScoreboard extends Scoreboard {
+         }
+     }
+ 
++    // Paper start
++    @Override
++    public boolean addPlayersToTeam(Collection<String> players, PlayerTeam team) {
++        if (super.addPlayersToTeam(players, team)) {
++            this.sendAll(ClientboundSetPlayerTeamPacket.createMultiplePlayerPacket(team, players, ClientboundSetPlayerTeamPacket.Action.ADD));
++            this.setDirty();
++            return true;
++        } else {
++            return false;
++        }
++    }
++    // Paper end
++
+     @Override
+     public void removePlayerFromTeam(String playerName, PlayerTeam team) {
+         super.removePlayerFromTeam(playerName, team);
+@@ -99,6 +110,19 @@ public class ServerScoreboard extends Scoreboard {
+         this.setDirty();
+     }
+ 
++    // Paper start
++    @Override
++    public boolean removePlayersFromTeam(Collection<String> players, PlayerTeam team) {
++        if (super.removePlayersFromTeam(players, team)) {
++            this.sendAll(ClientboundSetPlayerTeamPacket.createMultiplePlayerPacket(team, players, ClientboundSetPlayerTeamPacket.Action.REMOVE));
++            this.setDirty();
++            return true;
++        } else {
++            return false;
++        }
++    }
++    // Paper end
++
+     @Override
+     public void onObjectiveAdded(Objective objective) {
+         super.onObjectiveAdded(objective);
+diff --git a/src/main/java/net/minecraft/world/scores/Scoreboard.java b/src/main/java/net/minecraft/world/scores/Scoreboard.java
+index 3e75ea4d5a6c83ca570b29e3c1a5d51fb132379a..e12bb5f64c9f056ccf88dad744ad757fd6ce1477 100644
+--- a/src/main/java/net/minecraft/world/scores/Scoreboard.java
++++ b/src/main/java/net/minecraft/world/scores/Scoreboard.java
+@@ -12,6 +12,7 @@ import net.minecraft.ChatFormatting;
+ import net.minecraft.nbt.CompoundTag;
+ import net.minecraft.nbt.ListTag;
+ import net.minecraft.network.chat.Component;
++import net.minecraft.server.MinecraftServer;
+ import net.minecraft.world.entity.Entity;
+ import net.minecraft.world.entity.player.Player;
+ import net.minecraft.world.scores.criteria.ObjectiveCriteria;
+@@ -224,6 +225,28 @@ public class Scoreboard {
+         }
+     }
+ 
++    // Paper start
++    public boolean addPlayersToTeam(Collection<String> players, PlayerTeam team) {
++        boolean anyAdded = false;
++        for (String playerName : players) {
++            if (playerName.length() > 40) {
++                MinecraftServer.LOGGER.warn("The player name '" + playerName + "' is too long!");
++            } else {
++                if (this.getPlayersTeam(playerName) != null) {
++                    this.removePlayerFromTeam(playerName);
++                }
++
++                this.teamsByPlayer.put(playerName, team);
++                if (team.getPlayers().add(playerName)) {
++                    anyAdded = true;
++                }
++            }
++        }
++
++        return anyAdded;
++    }
++    // Paper end
++
+     public boolean removePlayerFromTeam(String playerName) {
+         PlayerTeam playerTeam = this.getPlayersTeam(playerName);
+         if (playerTeam != null) {
+@@ -243,6 +266,24 @@ public class Scoreboard {
+         }
+     }
+ 
++    // Paper start
++    public boolean removePlayersFromTeam(Collection<String> players, PlayerTeam team) {
++        boolean anyRemoved = false;
++        for (String playerName : players) {
++            if (this.getPlayersTeam(playerName) != team) {
++                MinecraftServer.LOGGER.warn("Player " + playerName + " is either on another team or not on any team. Cannot remove from team '" + team.getName() + "'.");
++            } else {
++                this.teamsByPlayer.remove(playerName);
++                if (team.getPlayers().remove(playerName)) {
++                    anyRemoved = true;
++                }
++            }
++        }
++
++        return anyRemoved;
++    }
++    // Paper end
++
+     public Collection<String> getTeamNames() {
+         return this.teamsByName.keySet();
+     }
+diff --git a/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftTeam.java b/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftTeam.java
+index 2b87a652798cb632fe76bf20e9e7f8cb8bfb3b7b..fb15b61b29de6345c3e7e93eaab9a2f7c4566fb5 100644
+--- a/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftTeam.java
++++ b/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftTeam.java
+@@ -1,6 +1,7 @@
+ package org.bukkit.craftbukkit.scoreboard;
+ 
+ import com.google.common.collect.ImmutableSet;
++import java.util.Collection;
+ import java.util.Set;
+ import net.minecraft.world.scores.PlayerTeam;
+ import net.minecraft.world.scores.Team.Visibility;
+@@ -226,6 +227,16 @@ final class CraftTeam extends CraftScoreboardComponent implements Team {
+         scoreboard.board.addPlayerToTeam(entry, team);
+     }
+ 
++    // Paper start
++    @Override
++    public void addEntries(Collection<String> entries) throws IllegalStateException, IllegalArgumentException {
++        Validate.notNull(entries, "Entries cannot be null");
++        CraftScoreboard scoreboard = checkState();
++
++        scoreboard.board.addPlayersToTeam(entries, team);
++    }
++    // Paper end
++
+     @Override
+     public boolean removePlayer(OfflinePlayer player) throws IllegalStateException, IllegalArgumentException {
+         Validate.notNull(player, "OfflinePlayer cannot be null");
+@@ -245,6 +256,25 @@ final class CraftTeam extends CraftScoreboardComponent implements Team {
+         return true;
+     }
+ 
++    // Paper start
++    @Override
++    public boolean removeEntries(Collection<String> entries) throws IllegalStateException, IllegalArgumentException {
++        Validate.notNull(entries, "Entry cannot be null");
++        CraftScoreboard scoreboard = this.checkState();
++
++        boolean anyRemoved = false;
++        Collection<String> teamPlayers = this.team.getPlayers();
++        for (String entry : entries) {
++            if (teamPlayers.remove(entry)) {
++                anyRemoved = true;
++            }
++        }
++
++        scoreboard.board.removePlayersFromTeam(entries, team);
++        return anyRemoved;
++    }
++    // Paper end
++
+     @Override
+     public boolean hasPlayer(OfflinePlayer player) throws IllegalArgumentException, IllegalStateException {
+         Validate.notNull(player, "OfflinePlayer cannot be null");
