@@ -22,23 +22,18 @@ index 4c9660176e783999301565790b8cf6f47b0d02a2..3f1b093ae766c6e219ee233a75c64f0c
          this.name = buf.readUtf(16);
          this.method = buf.readByte();
 diff --git a/src/main/java/net/minecraft/server/ServerScoreboard.java b/src/main/java/net/minecraft/server/ServerScoreboard.java
-index 130a928f156961bae9ca184b3ca31004dbba1012..cba5aa8b55b2d4d3d86203ee7797be6657adf759 100644
+index 130a928f156961bae9ca184b3ca31004dbba1012..5d42967b1d9cbceb004566c0c503df21d1bb5c51 100644
 --- a/src/main/java/net/minecraft/server/ServerScoreboard.java
 +++ b/src/main/java/net/minecraft/server/ServerScoreboard.java
-@@ -2,10 +2,8 @@ package net.minecraft.server;
- 
+@@ -3,6 +3,7 @@ package net.minecraft.server;
  import com.google.common.collect.Lists;
  import com.google.common.collect.Sets;
--import java.util.Iterator;
--import java.util.List;
--import java.util.Objects;
--import java.util.Set;
-+
-+import java.util.*;
- import javax.annotation.Nullable;
- import net.minecraft.nbt.CompoundTag;
- import net.minecraft.network.protocol.Packet;
-@@ -92,6 +90,19 @@ public class ServerScoreboard extends Scoreboard {
+ import java.util.Iterator;
++import java.util.Collection; // Paper
+ import java.util.List;
+ import java.util.Objects;
+ import java.util.Set;
+@@ -92,6 +93,19 @@ public class ServerScoreboard extends Scoreboard {
          }
      }
  
@@ -58,7 +53,7 @@ index 130a928f156961bae9ca184b3ca31004dbba1012..cba5aa8b55b2d4d3d86203ee7797be66
      @Override
      public void removePlayerFromTeam(String playerName, PlayerTeam team) {
          super.removePlayerFromTeam(playerName, team);
-@@ -99,6 +110,19 @@ public class ServerScoreboard extends Scoreboard {
+@@ -99,6 +113,19 @@ public class ServerScoreboard extends Scoreboard {
          this.setDirty();
      }
  
@@ -79,18 +74,10 @@ index 130a928f156961bae9ca184b3ca31004dbba1012..cba5aa8b55b2d4d3d86203ee7797be66
      public void onObjectiveAdded(Objective objective) {
          super.onObjectiveAdded(objective);
 diff --git a/src/main/java/net/minecraft/world/scores/Scoreboard.java b/src/main/java/net/minecraft/world/scores/Scoreboard.java
-index 3e75ea4d5a6c83ca570b29e3c1a5d51fb132379a..e12bb5f64c9f056ccf88dad744ad757fd6ce1477 100644
+index 3e75ea4d5a6c83ca570b29e3c1a5d51fb132379a..246bb45d73c3948fae081662995ada7cdb49822d 100644
 --- a/src/main/java/net/minecraft/world/scores/Scoreboard.java
 +++ b/src/main/java/net/minecraft/world/scores/Scoreboard.java
-@@ -12,6 +12,7 @@ import net.minecraft.ChatFormatting;
- import net.minecraft.nbt.CompoundTag;
- import net.minecraft.nbt.ListTag;
- import net.minecraft.network.chat.Component;
-+import net.minecraft.server.MinecraftServer;
- import net.minecraft.world.entity.Entity;
- import net.minecraft.world.entity.player.Player;
- import net.minecraft.world.scores.criteria.ObjectiveCriteria;
-@@ -224,6 +225,28 @@ public class Scoreboard {
+@@ -224,6 +224,28 @@ public class Scoreboard {
          }
      }
  
@@ -99,7 +86,7 @@ index 3e75ea4d5a6c83ca570b29e3c1a5d51fb132379a..e12bb5f64c9f056ccf88dad744ad757f
 +        boolean anyAdded = false;
 +        for (String playerName : players) {
 +            if (playerName.length() > 40) {
-+                MinecraftServer.LOGGER.warn("The player name '" + playerName + "' is too long!");
++                net.minecraft.server.MinecraftServer.LOGGER.warn("The player name '" + playerName + "' is too long!");
 +            } else {
 +                if (this.getPlayersTeam(playerName) != null) {
 +                    this.removePlayerFromTeam(playerName);
@@ -119,7 +106,7 @@ index 3e75ea4d5a6c83ca570b29e3c1a5d51fb132379a..e12bb5f64c9f056ccf88dad744ad757f
      public boolean removePlayerFromTeam(String playerName) {
          PlayerTeam playerTeam = this.getPlayersTeam(playerName);
          if (playerTeam != null) {
-@@ -243,6 +266,24 @@ public class Scoreboard {
+@@ -243,6 +265,24 @@ public class Scoreboard {
          }
      }
  
@@ -128,7 +115,7 @@ index 3e75ea4d5a6c83ca570b29e3c1a5d51fb132379a..e12bb5f64c9f056ccf88dad744ad757f
 +        boolean anyRemoved = false;
 +        for (String playerName : players) {
 +            if (this.getPlayersTeam(playerName) != team) {
-+                MinecraftServer.LOGGER.warn("Player " + playerName + " is either on another team or not on any team. Cannot remove from team '" + team.getName() + "'.");
++                net.minecraft.server.MinecraftServer.LOGGER.warn("Player " + playerName + " is either on another team or not on any team. Cannot remove from team '" + team.getName() + "'.");
 +            } else {
 +                this.teamsByPlayer.remove(playerName);
 +                if (team.getPlayers().remove(playerName)) {
@@ -145,14 +132,14 @@ index 3e75ea4d5a6c83ca570b29e3c1a5d51fb132379a..e12bb5f64c9f056ccf88dad744ad757f
          return this.teamsByName.keySet();
      }
 diff --git a/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftTeam.java b/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftTeam.java
-index 2b87a652798cb632fe76bf20e9e7f8cb8bfb3b7b..fb15b61b29de6345c3e7e93eaab9a2f7c4566fb5 100644
+index 2b87a652798cb632fe76bf20e9e7f8cb8bfb3b7b..f097e9fbdac1a572c12cc0299774455c75e373e9 100644
 --- a/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftTeam.java
 +++ b/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftTeam.java
 @@ -1,6 +1,7 @@
  package org.bukkit.craftbukkit.scoreboard;
  
  import com.google.common.collect.ImmutableSet;
-+import java.util.Collection;
++import java.util.Collection; // Paper
  import java.util.Set;
  import net.minecraft.world.scores.PlayerTeam;
  import net.minecraft.world.scores.Team.Visibility;
