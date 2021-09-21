@@ -1,0 +1,117 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Cryptite <cryptite@gmail.com>
+Date: Tue, 21 Sep 2021 18:17:33 -0500
+Subject: [PATCH] Multiple Entries with Scoreboards
+
+
+diff --git a/src/main/java/net/minecraft/network/protocol/game/ClientboundSetPlayerTeamPacket.java b/src/main/java/net/minecraft/network/protocol/game/ClientboundSetPlayerTeamPacket.java
+index 4c9660176e783999301565790b8cf6f47b0d02a2..3f1b093ae766c6e219ee233a75c64f0c522cc6c2 100644
+--- a/src/main/java/net/minecraft/network/protocol/game/ClientboundSetPlayerTeamPacket.java
++++ b/src/main/java/net/minecraft/network/protocol/game/ClientboundSetPlayerTeamPacket.java
+@@ -42,6 +42,12 @@ public class ClientboundSetPlayerTeamPacket implements Packet<ClientGamePacketLi
+         return new ClientboundSetPlayerTeamPacket(team.getName(), operation == ClientboundSetPlayerTeamPacket.Action.ADD ? 3 : 4, Optional.empty(), ImmutableList.of(playerName));
+     }
+ 
++    // Paper start
++    public static ClientboundSetPlayerTeamPacket createMultiplePlayerPacket(PlayerTeam team, Collection<String> players, ClientboundSetPlayerTeamPacket.Action operation) {
++        return new ClientboundSetPlayerTeamPacket(team.getName(), operation == ClientboundSetPlayerTeamPacket.Action.ADD ? 3 : 4, Optional.empty(), players);
++    }
++    // Paper end
++
+     public ClientboundSetPlayerTeamPacket(FriendlyByteBuf buf) {
+         this.name = buf.readUtf(16);
+         this.method = buf.readByte();
+diff --git a/src/main/java/net/minecraft/server/ServerScoreboard.java b/src/main/java/net/minecraft/server/ServerScoreboard.java
+index 130a928f156961bae9ca184b3ca31004dbba1012..ca8ee6e44f38176e6027f6cf5fb87b2138abd67e 100644
+--- a/src/main/java/net/minecraft/server/ServerScoreboard.java
++++ b/src/main/java/net/minecraft/server/ServerScoreboard.java
+@@ -92,6 +92,25 @@ public class ServerScoreboard extends Scoreboard {
+         }
+     }
+ 
++    // Paper start
++    public boolean addPlayersToTeam(java.util.Collection<String> players, PlayerTeam team) {
++        boolean anyAdded = false;
++        for (String playerName : players) {
++            if (super.addPlayerToTeam(playerName, team)) {
++                anyAdded = true;
++            }
++        }
++
++        if (anyAdded) {
++            this.sendAll(ClientboundSetPlayerTeamPacket.createMultiplePlayerPacket(team, players, ClientboundSetPlayerTeamPacket.Action.ADD));
++            this.setDirty();
++            return true;
++        } else {
++            return false;
++        }
++    }
++    // Paper end
++
+     @Override
+     public void removePlayerFromTeam(String playerName, PlayerTeam team) {
+         super.removePlayerFromTeam(playerName, team);
+@@ -99,6 +118,17 @@ public class ServerScoreboard extends Scoreboard {
+         this.setDirty();
+     }
+ 
++    // Paper start
++    public void removePlayersFromTeam(java.util.Collection<String> players, PlayerTeam team) {
++        for (String playerName : players) {
++            super.removePlayerFromTeam(playerName, team);
++        }
++
++        this.sendAll(ClientboundSetPlayerTeamPacket.createMultiplePlayerPacket(team, players, ClientboundSetPlayerTeamPacket.Action.REMOVE));
++        this.setDirty();
++    }
++    // Paper end
++
+     @Override
+     public void onObjectiveAdded(Objective objective) {
+         super.onObjectiveAdded(objective);
+diff --git a/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftTeam.java b/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftTeam.java
+index 2b87a652798cb632fe76bf20e9e7f8cb8bfb3b7b..7e4e28f0ccbbd485a69fabffcd3477183522ccc1 100644
+--- a/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftTeam.java
++++ b/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftTeam.java
+@@ -226,6 +226,15 @@ final class CraftTeam extends CraftScoreboardComponent implements Team {
+         scoreboard.board.addPlayerToTeam(entry, team);
+     }
+ 
++    // Paper start
++    public void addEntries(java.util.Collection<String> entries) throws IllegalStateException, IllegalArgumentException {
++        Validate.notNull(entries, "Entries cannot be null");
++        CraftScoreboard scoreboard = checkState();
++
++        ((net.minecraft.server.ServerScoreboard) scoreboard.board).addPlayersToTeam(entries, team);
++    }
++    // Paper end
++
+     @Override
+     public boolean removePlayer(OfflinePlayer player) throws IllegalStateException, IllegalArgumentException {
+         Validate.notNull(player, "OfflinePlayer cannot be null");
+@@ -245,6 +254,25 @@ final class CraftTeam extends CraftScoreboardComponent implements Team {
+         return true;
+     }
+ 
++    // Paper start
++    public boolean removeEntries(java.util.Collection<String> entries) throws IllegalStateException, IllegalArgumentException {
++        Validate.notNull(entries, "Entry cannot be null");
++        CraftScoreboard scoreboard = this.checkState();
++
++        boolean anyRemoved = false;
++        for (String entry : entries) {
++            if (!anyRemoved && this.team.getPlayers().contains(entry)) {
++                anyRemoved = true;
++            }
++        }
++
++        if (anyRemoved) {
++            ((net.minecraft.server.ServerScoreboard) scoreboard.board).removePlayersFromTeam(entries, team);
++        }
++        return anyRemoved;
++    }
++    // Paper end
++
+     @Override
+     public boolean hasPlayer(OfflinePlayer player) throws IllegalArgumentException, IllegalStateException {
+         Validate.notNull(player, "OfflinePlayer cannot be null");
