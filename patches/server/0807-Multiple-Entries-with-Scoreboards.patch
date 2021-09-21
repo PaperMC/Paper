@@ -22,17 +22,24 @@ index 4c9660176e783999301565790b8cf6f47b0d02a2..3f1b093ae766c6e219ee233a75c64f0c
          this.name = buf.readUtf(16);
          this.method = buf.readByte();
 diff --git a/src/main/java/net/minecraft/server/ServerScoreboard.java b/src/main/java/net/minecraft/server/ServerScoreboard.java
-index 130a928f156961bae9ca184b3ca31004dbba1012..de7b0bca59b6a72d5795c2a57c1ea910d40dc2ca 100644
+index 130a928f156961bae9ca184b3ca31004dbba1012..22899d6eabb9fd06a6a5d9cfa117f3a1461ca3c7 100644
 --- a/src/main/java/net/minecraft/server/ServerScoreboard.java
 +++ b/src/main/java/net/minecraft/server/ServerScoreboard.java
-@@ -92,6 +92,19 @@ public class ServerScoreboard extends Scoreboard {
+@@ -92,6 +92,26 @@ public class ServerScoreboard extends Scoreboard {
          }
      }
  
 +    // Paper start
 +    @Override
 +    public boolean addPlayersToTeam(java.util.Collection<String> players, PlayerTeam team) {
-+        if (super.addPlayersToTeam(players, team)) {
++        boolean anyAdded = false;
++        for (String playerName : players) {
++            if (super.addPlayerToTeam(playerName, team)) {
++                anyAdded = true;
++            }
++        }
++
++        if (anyAdded) {
 +            this.sendAll(ClientboundSetPlayerTeamPacket.createMultiplePlayerPacket(team, players, ClientboundSetPlayerTeamPacket.Action.ADD));
 +            this.setDirty();
 +            return true;
@@ -45,7 +52,7 @@ index 130a928f156961bae9ca184b3ca31004dbba1012..de7b0bca59b6a72d5795c2a57c1ea910
      @Override
      public void removePlayerFromTeam(String playerName, PlayerTeam team) {
          super.removePlayerFromTeam(playerName, team);
-@@ -99,6 +112,19 @@ public class ServerScoreboard extends Scoreboard {
+@@ -99,6 +119,19 @@ public class ServerScoreboard extends Scoreboard {
          this.setDirty();
      }
  
@@ -66,30 +73,19 @@ index 130a928f156961bae9ca184b3ca31004dbba1012..de7b0bca59b6a72d5795c2a57c1ea910
      public void onObjectiveAdded(Objective objective) {
          super.onObjectiveAdded(objective);
 diff --git a/src/main/java/net/minecraft/world/scores/Scoreboard.java b/src/main/java/net/minecraft/world/scores/Scoreboard.java
-index 3e75ea4d5a6c83ca570b29e3c1a5d51fb132379a..000f99c7c7c4dff161b7e533d91d6402ec792167 100644
+index 3e75ea4d5a6c83ca570b29e3c1a5d51fb132379a..5c0505997b3a0850e416519d120d5175329ac785 100644
 --- a/src/main/java/net/minecraft/world/scores/Scoreboard.java
 +++ b/src/main/java/net/minecraft/world/scores/Scoreboard.java
-@@ -211,6 +211,19 @@ public class Scoreboard {
+@@ -211,6 +211,8 @@ public class Scoreboard {
          this.onTeamRemoved(team);
      }
  
-+    // Paper start
-+    public boolean addPlayersToTeam(Collection<String> players, PlayerTeam team) {
-+        boolean anyAdded = false;
-+        for (String playerName : players) {
-+            if (addPlayerToTeam(playerName, team)) {
-+                anyAdded = true;
-+            }
-+        }
-+
-+        return anyAdded;
-+    }
-+    // Paper end
++    public boolean addPlayersToTeam(Collection<String> players, PlayerTeam team) { return false; } // Paper - Overridden in ServerScoreboard
 +
      public boolean addPlayerToTeam(String playerName, PlayerTeam team) {
          if (playerName.length() > 40) {
              throw new IllegalArgumentException("The player name '" + playerName + "' is too long!");
-@@ -234,6 +247,24 @@ public class Scoreboard {
+@@ -234,6 +236,24 @@ public class Scoreboard {
          }
      }
  
@@ -114,7 +110,7 @@ index 3e75ea4d5a6c83ca570b29e3c1a5d51fb132379a..000f99c7c7c4dff161b7e533d91d6402
      public void removePlayerFromTeam(String playerName, PlayerTeam team) {
          if (this.getPlayersTeam(playerName) != team) {
              throw new IllegalStateException("Player is either on another team or not on any team. Cannot remove from team '" + team.getName() + "'.");
-@@ -285,21 +316,21 @@ public class Scoreboard {
+@@ -285,21 +305,21 @@ public class Scoreboard {
  
      public static String getDisplaySlotName(int slotId) {
          switch(slotId) {
