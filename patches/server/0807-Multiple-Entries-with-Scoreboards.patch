@@ -66,82 +66,19 @@ index 130a928f156961bae9ca184b3ca31004dbba1012..de7b0bca59b6a72d5795c2a57c1ea910
      public void onObjectiveAdded(Objective objective) {
          super.onObjectiveAdded(objective);
 diff --git a/src/main/java/net/minecraft/world/scores/Scoreboard.java b/src/main/java/net/minecraft/world/scores/Scoreboard.java
-index 3e75ea4d5a6c83ca570b29e3c1a5d51fb132379a..48164cd490c8105a733752df5ab45fa05ad4470b 100644
+index 3e75ea4d5a6c83ca570b29e3c1a5d51fb132379a..000f99c7c7c4dff161b7e533d91d6402ec792167 100644
 --- a/src/main/java/net/minecraft/world/scores/Scoreboard.java
 +++ b/src/main/java/net/minecraft/world/scores/Scoreboard.java
-@@ -2,12 +2,14 @@ package net.minecraft.world.scores;
- 
- import com.google.common.collect.Lists;
- import com.google.common.collect.Maps;
-+
- import java.util.Collection;
- import java.util.Collections;
- import java.util.List;
- import java.util.Map;
- import java.util.function.Consumer;
- import javax.annotation.Nullable;
-+
- import net.minecraft.ChatFormatting;
- import net.minecraft.nbt.CompoundTag;
- import net.minecraft.nbt.ListTag;
-@@ -95,7 +97,7 @@ public class Scoreboard {
-     public Collection<Score> getPlayerScores(Objective objective) {
-         List<Score> list = Lists.newArrayList();
- 
--        for(Map<Objective, Score> map : this.playerScores.values()) {
-+        for (Map<Objective, Score> map : this.playerScores.values()) {
-             Score score = map.get(objective);
-             if (score != null) {
-                 list.add(score);
-@@ -153,9 +155,9 @@ public class Scoreboard {
-     public void removeObjective(Objective objective) {
-         this.objectivesByName.remove(objective.getName());
- 
--        for(int i = 0; i < 19; ++i) {
-+        for (int i = 0; i < 19; ++i) {
-             if (this.getDisplayObjective(i) == objective) {
--                this.setDisplayObjective(i, (Objective)null);
-+                this.setDisplayObjective(i, (Objective) null);
-             }
-         }
- 
-@@ -164,7 +166,7 @@ public class Scoreboard {
-             list.remove(objective);
-         }
- 
--        for(Map<Objective, Score> map : this.playerScores.values()) {
-+        for (Map<Objective, Score> map : this.playerScores.values()) {
-             map.remove(objective);
-         }
- 
-@@ -204,7 +206,7 @@ public class Scoreboard {
-     public void removePlayerTeam(PlayerTeam team) {
-         this.teamsByName.remove(team.getName());
- 
--        for(String string : team.getPlayers()) {
-+        for (String string : team.getPlayers()) {
-             this.teamsByPlayer.remove(string);
-         }
- 
-@@ -224,6 +226,28 @@ public class Scoreboard {
-         }
+@@ -211,6 +211,19 @@ public class Scoreboard {
+         this.onTeamRemoved(team);
      }
  
 +    // Paper start
 +    public boolean addPlayersToTeam(Collection<String> players, PlayerTeam team) {
 +        boolean anyAdded = false;
 +        for (String playerName : players) {
-+            if (playerName.length() > 40) {
-+                net.minecraft.server.MinecraftServer.LOGGER.warn("The player name '" + playerName + "' is too long!");
-+            } else {
-+                if (this.getPlayersTeam(playerName) != null) {
-+                    this.removePlayerFromTeam(playerName);
-+                }
-+
-+                this.teamsByPlayer.put(playerName, team);
-+                if (team.getPlayers().add(playerName)) {
-+                    anyAdded = true;
-+                }
++            if (addPlayerToTeam(playerName, team)) {
++                anyAdded = true;
 +            }
 +        }
 +
@@ -149,10 +86,10 @@ index 3e75ea4d5a6c83ca570b29e3c1a5d51fb132379a..48164cd490c8105a733752df5ab45fa0
 +    }
 +    // Paper end
 +
-     public boolean removePlayerFromTeam(String playerName) {
-         PlayerTeam playerTeam = this.getPlayersTeam(playerName);
-         if (playerTeam != null) {
-@@ -243,6 +267,24 @@ public class Scoreboard {
+     public boolean addPlayerToTeam(String playerName, PlayerTeam team) {
+         if (playerName.length() > 40) {
+             throw new IllegalArgumentException("The player name '" + playerName + "' is too long!");
+@@ -234,6 +247,24 @@ public class Scoreboard {
          }
      }
  
@@ -174,14 +111,13 @@ index 3e75ea4d5a6c83ca570b29e3c1a5d51fb132379a..48164cd490c8105a733752df5ab45fa0
 +    }
 +    // Paper end
 +
-     public Collection<String> getTeamNames() {
-         return this.teamsByName.keySet();
-     }
-@@ -284,22 +326,22 @@ public class Scoreboard {
-     }
+     public void removePlayerFromTeam(String playerName, PlayerTeam team) {
+         if (this.getPlayersTeam(playerName) != team) {
+             throw new IllegalStateException("Player is either on another team or not on any team. Cannot remove from team '" + team.getName() + "'.");
+@@ -285,21 +316,21 @@ public class Scoreboard {
  
      public static String getDisplaySlotName(int slotId) {
--        switch(slotId) {
+         switch(slotId) {
 -        case 0:
 -            return "list";
 -        case 1:
@@ -193,7 +129,6 @@ index 3e75ea4d5a6c83ca570b29e3c1a5d51fb132379a..48164cd490c8105a733752df5ab45fa0
 -                ChatFormatting chatFormatting = ChatFormatting.getById(slotId - 3);
 -                if (chatFormatting != null && chatFormatting != ChatFormatting.RESET) {
 -                    return "sidebar.team." + chatFormatting.getName();
-+        switch (slotId) {
 +            case 0:
 +                return "list";
 +            case 1:
@@ -214,33 +149,6 @@ index 3e75ea4d5a6c83ca570b29e3c1a5d51fb132379a..48164cd490c8105a733752df5ab45fa0
          }
      }
  
-@@ -327,7 +369,7 @@ public class Scoreboard {
-         if (displaySlotNames == null) {
-             displaySlotNames = new String[19];
- 
--            for(int i = 0; i < 19; ++i) {
-+            for (int i = 0; i < 19; ++i) {
-                 displaySlotNames[i] = getDisplaySlotName(i);
-             }
-         }
-@@ -338,7 +380,7 @@ public class Scoreboard {
-     public void entityRemoved(Entity entity) {
-         if (entity != null && !(entity instanceof Player) && !entity.isAlive()) {
-             String string = entity.getStringUUID();
--            this.resetPlayerScore(string, (Objective)null);
-+            this.resetPlayerScore(string, (Objective) null);
-             this.removePlayerFromTeam(string);
-         }
-     }
-@@ -361,7 +403,7 @@ public class Scoreboard {
-     }
- 
-     protected void loadPlayerScores(ListTag list) {
--        for(int i = 0; i < list.size(); ++i) {
-+        for (int i = 0; i < list.size(); ++i) {
-             CompoundTag compoundTag = list.getCompound(i);
-             Objective objective = this.getOrCreateObjective(compoundTag.getString("Objective"));
-             String string = compoundTag.getString("Name");
 diff --git a/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftTeam.java b/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftTeam.java
 index 2b87a652798cb632fe76bf20e9e7f8cb8bfb3b7b..942e6e6459a3a2bf7f6bd72ca9140b2d20d694ac 100644
 --- a/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftTeam.java
