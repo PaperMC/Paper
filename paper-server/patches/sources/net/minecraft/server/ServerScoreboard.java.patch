@@ -54,7 +54,29 @@
              this.setDirty();
              return true;
          } else {
-@@ -109,7 +109,7 @@
+@@ -106,13 +106,43 @@
+         }
+     }
+ 
++    // Paper start - Multiple Entries with Scoreboards
++    public boolean addPlayersToTeam(java.util.Collection<String> players, PlayerTeam team) {
++        boolean anyAdded = false;
++        for (String playerName : players) {
++            if (super.addPlayerToTeam(playerName, team)) {
++                anyAdded = true;
++            }
++        }
++
++        if (anyAdded) {
++            this.broadcastAll(ClientboundSetPlayerTeamPacket.createMultiplePlayerPacket(team, players, ClientboundSetPlayerTeamPacket.Action.ADD));
++            this.setDirty();
++            return true;
++        } else {
++            return false;
++        }
++    }
++    // Paper end - Multiple Entries with Scoreboards
++
      @Override
      public void removePlayerFromTeam(String scoreHolderName, PlayerTeam team) {
          super.removePlayerFromTeam(scoreHolderName, team);
@@ -63,7 +85,21 @@
          this.setDirty();
      }
  
-@@ -123,7 +123,7 @@
++    // Paper start - Multiple Entries with Scoreboards
++    public void removePlayersFromTeam(java.util.Collection<String> players, PlayerTeam team) {
++        for (String playerName : players) {
++            super.removePlayerFromTeam(playerName, team);
++        }
++
++        this.broadcastAll(ClientboundSetPlayerTeamPacket.createMultiplePlayerPacket(team, players, ClientboundSetPlayerTeamPacket.Action.REMOVE));
++        this.setDirty();
++    }
++    // Paper end - Multiple Entries with Scoreboards
++
+     @Override
+     public void onObjectiveAdded(Objective objective) {
+         super.onObjectiveAdded(objective);
+@@ -123,7 +153,7 @@
      public void onObjectiveChanged(Objective objective) {
          super.onObjectiveChanged(objective);
          if (this.trackedObjectives.contains(objective)) {
@@ -72,7 +108,7 @@
          }
  
          this.setDirty();
-@@ -142,21 +142,21 @@
+@@ -142,21 +172,21 @@
      @Override
      public void onTeamAdded(PlayerTeam team) {
          super.onTeamAdded(team);
@@ -97,7 +133,7 @@
          this.setDirty();
      }
  
-@@ -207,6 +207,7 @@
+@@ -207,6 +237,7 @@
  
          while (iterator.hasNext()) {
              ServerPlayer entityplayer = (ServerPlayer) iterator.next();
@@ -105,7 +141,7 @@
              Iterator iterator1 = list.iterator();
  
              while (iterator1.hasNext()) {
-@@ -243,6 +244,7 @@
+@@ -243,6 +274,7 @@
  
          while (iterator.hasNext()) {
              ServerPlayer entityplayer = (ServerPlayer) iterator.next();
@@ -113,7 +149,7 @@
              Iterator iterator1 = list.iterator();
  
              while (iterator1.hasNext()) {
-@@ -287,6 +289,16 @@
+@@ -287,6 +319,16 @@
          return this.createData().load(nbt, registries);
      }
  
