@@ -1178,7 +1178,7 @@ index ab6b0ec328e94bf65a0dafd0403e5ee3b870296c..c8d37184d8e882a4084a1bfef85faa33
  
      /**
 diff --git a/src/main/java/org/bukkit/command/CommandSender.java b/src/main/java/org/bukkit/command/CommandSender.java
-index 284be63a125624a8ae43d2c164aede810ce6bfe5..511746ef9576e4c219e9ab35da3ab0727cb7ee7c 100644
+index 284be63a125624a8ae43d2c164aede810ce6bfe5..7c9a0c85c0e23d6a569c3583e87b005938923d95 100644
 --- a/src/main/java/org/bukkit/command/CommandSender.java
 +++ b/src/main/java/org/bukkit/command/CommandSender.java
 @@ -6,12 +6,13 @@ import org.bukkit.permissions.Permissible;
@@ -1260,18 +1260,42 @@ index 284be63a125624a8ae43d2c164aede810ce6bfe5..511746ef9576e4c219e9ab35da3ab072
          public void sendMessage(@Nullable UUID sender, @NotNull net.md_5.bungee.api.chat.BaseComponent... components) {
              throw new UnsupportedOperationException("Not supported yet.");
          }
-@@ -99,4 +111,11 @@ public interface CommandSender extends Permissible {
+@@ -99,4 +111,18 @@ public interface CommandSender extends Permissible {
      @NotNull
      Spigot spigot();
      // Spigot end
 +
 +    // Paper start
++    /**
++     * Gets the name of this command sender
++     *
++     * @return Name of the sender
++     */
++    public @NotNull Component name();
++
 +    @Override
 +    default void sendMessage(final @NotNull net.kyori.adventure.identity.Identity identity, final @NotNull net.kyori.adventure.text.Component message, final @NotNull net.kyori.adventure.audience.MessageType type) {
 +        this.sendMessage(org.bukkit.Bukkit.getUnsafe().legacyComponentSerializer().serialize(message));
 +    }
 +    // Paper end
  }
+diff --git a/src/main/java/org/bukkit/command/MessageCommandSender.java b/src/main/java/org/bukkit/command/MessageCommandSender.java
+index a7ef1f51c2b96617a32e6e7b1723e8770ba8a6a8..68daa56546d00089d7d6c13ee897d828c377bbc3 100644
+--- a/src/main/java/org/bukkit/command/MessageCommandSender.java
++++ b/src/main/java/org/bukkit/command/MessageCommandSender.java
+@@ -49,6 +49,12 @@ public interface MessageCommandSender extends CommandSender {
+     default String getName() {
+         throw new NotImplementedException();
+     }
++    // Paper start
++    @Override
++    default net.kyori.adventure.text.@org.jetbrains.annotations.NotNull Component name() {
++        throw new NotImplementedException();
++    }
++    // Paper end
+ 
+     @Override
+     default boolean isOp() {
 diff --git a/src/main/java/org/bukkit/command/ProxiedCommandSender.java b/src/main/java/org/bukkit/command/ProxiedCommandSender.java
 index fcc34b640265f4dccb46b9f09466ab8e1d96043e..74599b4ee0518481c0e3a5f6ab2f5302837f1ae3 100644
 --- a/src/main/java/org/bukkit/command/ProxiedCommandSender.java
@@ -1343,7 +1367,7 @@ index 9566e4306ada5e82dede0f002aa06da12c44996b..4d5f0837bd0e02a30c943d8969fb6b13
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/entity/Entity.java b/src/main/java/org/bukkit/entity/Entity.java
-index 25a6f9313a1953def7470e411b53016f2ca14bef..d7a4cfed4f46b34f83fb2c07bdab5a71215d26bb 100644
+index 25a6f9313a1953def7470e411b53016f2ca14bef..03d8ac1b41659540d7eb3d7e218cdfaa4acb683b 100644
 --- a/src/main/java/org/bukkit/entity/Entity.java
 +++ b/src/main/java/org/bukkit/entity/Entity.java
 @@ -25,7 +25,7 @@ import org.jetbrains.annotations.Nullable;
@@ -1355,12 +1379,20 @@ index 25a6f9313a1953def7470e411b53016f2ca14bef..d7a4cfed4f46b34f83fb2c07bdab5a71
  
      /**
       * Gets the entity's current position
-@@ -648,4 +648,12 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
+@@ -648,4 +648,20 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      @Override
      Spigot spigot();
      // Spigot end
 +
 +    // Paper start
++    /**
++     * Gets the entity's display name formatted with their team prefix/suffix and
++     * the entity's default hover/click events.
++     *
++     * @return the team display name
++     */
++    @NotNull net.kyori.adventure.text.Component teamDisplayName();
++
 +    @NotNull
 +    @Override
 +    default net.kyori.adventure.text.event.HoverEvent<net.kyori.adventure.text.event.HoverEvent.ShowEntity> asHoverEvent(final @NotNull java.util.function.UnaryOperator<net.kyori.adventure.text.event.HoverEvent.ShowEntity> op) {
