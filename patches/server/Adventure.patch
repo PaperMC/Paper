@@ -1854,6 +1854,37 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
      // Paper end
  }
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+@@ -0,0 +0,0 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+     private int waterAnimalSpawn = -1;
+     private int waterAmbientSpawn = -1;
+     private int ambientSpawn = -1;
++    private net.kyori.adventure.pointer.Pointers adventure$pointers; // Paper - implement pointers
+ 
+     private static final Random rand = new Random();
+ 
+@@ -0,0 +0,0 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+         return this.spigot;
+     }
+     // Spigot end
++
++    // Paper start - implement pointers
++    @Override
++    public net.kyori.adventure.pointer.Pointers pointers() {
++        if (this.adventure$pointers == null) {
++            this.adventure$pointers = net.kyori.adventure.pointer.Pointers.builder()
++                .withDynamic(net.kyori.adventure.identity.Identity.NAME, this::getName)
++                .withDynamic(net.kyori.adventure.identity.Identity.UUID, this::getUID)
++                .build();
++        }
++
++        return this.adventure$pointers;
++    }
++    // Paper end
+ }
 diff --git a/src/main/java/org/bukkit/craftbukkit/Main.java b/src/main/java/org/bukkit/craftbukkit/Main.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/Main.java
@@ -2144,6 +2175,37 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      @Override
      public boolean isPermissionSet(String name) {
          return this.getCaller().isPermissionSet(name);
+diff --git a/src/main/java/org/bukkit/craftbukkit/command/ServerCommandSender.java b/src/main/java/org/bukkit/craftbukkit/command/ServerCommandSender.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/craftbukkit/command/ServerCommandSender.java
++++ b/src/main/java/org/bukkit/craftbukkit/command/ServerCommandSender.java
+@@ -0,0 +0,0 @@ import org.bukkit.plugin.Plugin;
+ public abstract class ServerCommandSender implements CommandSender {
+     private static PermissibleBase blockPermInst;
+     private final PermissibleBase perm;
++    private net.kyori.adventure.pointer.Pointers adventure$pointers; // Paper - implement pointers
+ 
+     public ServerCommandSender() {
+         if (this instanceof CraftBlockCommandSender) {
+@@ -0,0 +0,0 @@ public abstract class ServerCommandSender implements CommandSender {
+         return this.spigot;
+     }
+     // Spigot end
++
++    // Paper start - implement pointers
++    @Override
++    public net.kyori.adventure.pointer.Pointers pointers() {
++        if (this.adventure$pointers == null) {
++            this.adventure$pointers = net.kyori.adventure.pointer.Pointers.builder()
++                .withDynamic(net.kyori.adventure.identity.Identity.DISPLAY_NAME, this::name)
++                .withStatic(net.kyori.adventure.permission.PermissionChecker.POINTER, this::permissionValue)
++                .build();
++        }
++
++        return this.adventure$pointers;
++    }
++    // Paper end
+ }
 diff --git a/src/main/java/org/bukkit/craftbukkit/enchantments/CraftEnchantment.java b/src/main/java/org/bukkit/craftbukkit/enchantments/CraftEnchantment.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/enchantments/CraftEnchantment.java
@@ -2166,6 +2228,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
 @@ -0,0 +0,0 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
+     protected Entity entity;
+     private EntityDamageEvent lastDamageEvent;
+     private final CraftPersistentDataContainer persistentDataContainer = new CraftPersistentDataContainer(CraftEntity.DATA_TYPE_REGISTRY);
++    protected net.kyori.adventure.pointer.Pointers adventure$pointers; // Paper - implement pointers
+ 
+     public CraftEntity(final CraftServer server, final Entity entity) {
+         this.server = server;
+@@ -0,0 +0,0 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
          return this.getHandle().getVehicle().getBukkitEntity();
      }
  
@@ -2179,6 +2249,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    @Override
 +    public void customName(final net.kyori.adventure.text.Component customName) {
 +        this.getHandle().setCustomName(customName != null ? io.papermc.paper.adventure.PaperAdventure.asVanilla(customName) : null);
++    }
++
++    @Override
++    public net.kyori.adventure.pointer.Pointers pointers() {
++        if (this.adventure$pointers == null) {
++            this.adventure$pointers = net.kyori.adventure.pointer.Pointers.builder()
++                .withDynamic(net.kyori.adventure.identity.Identity.DISPLAY_NAME, this::name)
++                .withDynamic(net.kyori.adventure.identity.Identity.UUID, this::getUniqueId)
++                .withStatic(net.kyori.adventure.permission.PermissionChecker.POINTER, this::permissionValue)
++                .build();
++        }
++
++        return this.adventure$pointers;
 +    }
 +    // Paper end
 +
@@ -2508,6 +2591,26 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        connection.send(tp);
 +    }
 +
++    @Override
++    public <T> void sendTitlePart(final net.kyori.adventure.title.TitlePart<T> part, T value) {
++        java.util.Objects.requireNonNull(part, "part");
++        java.util.Objects.requireNonNull(value, "value");
++        if (part == net.kyori.adventure.title.TitlePart.TITLE) {
++            final ClientboundSetTitleTextPacket tp = new ClientboundSetTitleTextPacket((net.minecraft.network.chat.Component) null);
++            tp.adventure$text = (net.kyori.adventure.text.Component) value;
++            this.getHandle().connection.send(tp);
++        } else if (part == net.kyori.adventure.title.TitlePart.SUBTITLE) {
++            final ClientboundSetSubtitleTextPacket sp = new ClientboundSetSubtitleTextPacket((net.minecraft.network.chat.Component) null);
++            sp.adventure$text = (net.kyori.adventure.text.Component) value;
++            this.getHandle().connection.send(sp);
++        } else if (part == net.kyori.adventure.title.TitlePart.TIMES) {
++            final net.kyori.adventure.title.Title.Times times = (net.kyori.adventure.title.Title.Times) value;
++            this.getHandle().connection.send(new ClientboundSetTitlesAnimationPacket(ticks(times.fadeIn()), ticks(times.stay()), ticks(times.fadeOut())));
++        } else {
++            throw new IllegalArgumentException("Unknown TitlePart");
++        }
++    }
++
 +    private static int ticks(final java.time.Duration duration) {
 +        if (duration == null) {
 +            return -1;
@@ -2589,6 +2692,21 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        connection.send(new net.minecraft.network.protocol.game.ClientboundContainerSetSlotPacket(0, stateId, slot, item));
 +        connection.send(new net.minecraft.network.protocol.game.ClientboundOpenBookPacket(net.minecraft.world.InteractionHand.MAIN_HAND));
 +        connection.send(new net.minecraft.network.protocol.game.ClientboundContainerSetSlotPacket(0, stateId, slot, inventory.getSelected()));
++    }
++
++    @Override
++    public net.kyori.adventure.pointer.Pointers pointers() {
++        if (this.adventure$pointers == null) {
++            this.adventure$pointers = net.kyori.adventure.pointer.Pointers.builder()
++                .withDynamic(net.kyori.adventure.identity.Identity.DISPLAY_NAME, this::displayName)
++                .withDynamic(net.kyori.adventure.identity.Identity.NAME, this::getName)
++                .withDynamic(net.kyori.adventure.identity.Identity.UUID, this::getUniqueId)
++                .withStatic(net.kyori.adventure.permission.PermissionChecker.POINTER, this::permissionValue)
++                .withDynamic(net.kyori.adventure.identity.Identity.LOCALE, this::locale)
++                .build();
++        }
++
++        return this.adventure$pointers;
 +    }
 +    // Paper end
 +
