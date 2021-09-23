@@ -37,7 +37,7 @@ index 3e5e358e24bd84a05785a9391526f316475e95ff..9914a92040a63b6102eb6171f058ea1c
              CompoundTag newData = this.getTagClone();
              int newCount = this.getCount();
 diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
-index b93056b91e7ebd49e6ddb53ccb6c05c056088df9..14ace3b88000265bb5217127cd8584d86eabd89d 100644
+index b93056b91e7ebd49e6ddb53ccb6c05c056088df9..2dd62f31699c5b3ce13697eeb30376b3742a58b8 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
 +++ b/src/main/java/net/minecraft/world/level/Level.java
 @@ -175,6 +175,27 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
@@ -88,7 +88,7 @@ index b93056b91e7ebd49e6ddb53ccb6c05c056088df9..14ace3b88000265bb5217127cd8584d8
 +                if (blockAt.getType() != org.bukkit.Material.AIR && iblockdata.getMaterial() == Material.AIR) {
 +                    PendingBlockEvent blockEvent = pendingPlayerBlockEvents.remove(pos);
 +                    if (blockEvent != null) {
-+                        //Would fire a future BlockDestroyedByNeighborEvent here, but must have this block
++                        //Would fire a future BlockDestroyedByNeighborEvent here, but must have this conditional block
 +                        //because it's important to remove from pendingPlayerBlockEvents
 +                    }
 +                }
@@ -97,6 +97,23 @@ index b93056b91e7ebd49e6ddb53ccb6c05c056088df9..14ace3b88000265bb5217127cd8584d8
                  // CraftBukkit start
                  CraftWorld world = ((ServerLevel) this).getWorld();
                  if (world != null && ((ServerLevel)this).hasPhysicsEvent) { // Paper
+diff --git a/src/main/java/net/minecraft/world/level/block/DoublePlantBlock.java b/src/main/java/net/minecraft/world/level/block/DoublePlantBlock.java
+index 65a163d93a293e1e0a12a300d6335a700099cac2..b1b6072ffff0e1cc2e9e1a585ad882bc70697d92 100644
+--- a/src/main/java/net/minecraft/world/level/block/DoublePlantBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/DoublePlantBlock.java
+@@ -104,6 +104,12 @@ public class DoublePlantBlock extends BushBlock {
+             BlockPos blockposition1 = pos.below();
+             BlockState iblockdata1 = world.getBlockState(blockposition1);
+ 
++            Level.PendingBlockEvent blockEvent = world.pendingPlayerBlockEvents.remove(pos);
++            if (blockEvent != null) {
++                //Would fire a future BlockDestroyedByNeighborEvent here, but must have this conditional block
++                //because it's important to remove from pendingPlayerBlockEvents
++            }
++
+             if (iblockdata1.is(state.getBlock()) && iblockdata1.getValue(DoublePlantBlock.HALF) == DoubleBlockHalf.LOWER) {
+                 BlockState iblockdata2 = iblockdata1.hasProperty(BlockStateProperties.WATERLOGGED) && (Boolean) iblockdata1.getValue(BlockStateProperties.WATERLOGGED) ? Blocks.WATER.defaultBlockState() : Blocks.AIR.defaultBlockState();
+ 
 diff --git a/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java b/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java
 index d87f8d106834678364f8720447d671de60c2454e..66b76aa6e97b7244a2abdf4a4591edfad3c2fe6c 100644
 --- a/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java
