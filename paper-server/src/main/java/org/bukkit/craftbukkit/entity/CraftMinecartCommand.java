@@ -13,7 +13,7 @@ import org.bukkit.permissions.PermissionAttachment;
 import org.bukkit.permissions.PermissionAttachmentInfo;
 import org.bukkit.plugin.Plugin;
 
-public class CraftMinecartCommand extends CraftMinecart implements CommandMinecart {
+public class CraftMinecartCommand extends CraftMinecart implements CommandMinecart, io.papermc.paper.commands.PaperCommandBlockHolder {
     private final PermissibleBase perm = new PermissibleBase(this);
 
     public CraftMinecartCommand(CraftServer server, MinecartCommandBlock entity) {
@@ -63,6 +63,17 @@ public class CraftMinecartCommand extends CraftMinecart implements CommandMineca
     @Override
     public net.kyori.adventure.text.@org.jetbrains.annotations.NotNull Component name() {
         return io.papermc.paper.adventure.PaperAdventure.asAdventure(this.getHandle().getCommandBlock().getName());
+    }
+
+    @Override
+    public net.minecraft.world.level.BaseCommandBlock getCommandBlockHandle() {
+        return getHandle().getCommandBlock();
+    }
+
+    @Override
+    public void lastOutput(net.kyori.adventure.text.Component lastOutput) {
+        io.papermc.paper.commands.PaperCommandBlockHolder.super.lastOutput(lastOutput);
+        getCommandBlockHandle().onUpdated();
     }
     // Paper end
 
