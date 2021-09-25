@@ -33,11 +33,14 @@ function main {
       && [[ "${skip_rebuild:-}" != yes ]] \
       && [[ "${skip_rebuild:-}" != y ]]
     then
-    echo "Rebuilding patches without filtering to improve apply ability"
+    echo "Rebuilding patches"
     cd "${basedir}"
     ./gradlew cleanCache || exit 1 # todo: Figure out why this is necessary
     ./gradlew applyPatches -Dpaperweight.debug=true || exit 1
-    ./gradlew rebuildPatches --filter-patches=false || exit 1
+    # TODO: rebuild patches without filtering to improve apply ability
+    # Use separate steps for rebuild{Api,Server}Patches due to https://docs.gradle.org/current/userguide/custom_tasks.html#limitations
+    # Can't use it for now, since you can't set boolean gradle option to false through CLI: https://github.com/gradle/gradle/issues/4311
+    ./gradlew rebuildPatches || exit 1
   fi
 }
 
