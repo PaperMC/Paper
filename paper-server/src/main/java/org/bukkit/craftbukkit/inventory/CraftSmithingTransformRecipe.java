@@ -11,12 +11,17 @@ public class CraftSmithingTransformRecipe extends SmithingTransformRecipe implem
     public CraftSmithingTransformRecipe(NamespacedKey key, ItemStack result, RecipeChoice template, RecipeChoice base, RecipeChoice addition) {
         super(key, result, template, base, addition);
     }
+    // Paper start - Option to prevent data components copy
+    public CraftSmithingTransformRecipe(NamespacedKey key, ItemStack result, RecipeChoice template, RecipeChoice base, RecipeChoice addition, boolean copyDataComponents) {
+        super(key, result, template, base, addition, copyDataComponents);
+    }
+    // Paper end - Option to prevent data components copy
 
     public static CraftSmithingTransformRecipe fromBukkitRecipe(SmithingTransformRecipe recipe) {
         if (recipe instanceof CraftSmithingTransformRecipe) {
             return (CraftSmithingTransformRecipe) recipe;
         }
-        CraftSmithingTransformRecipe ret = new CraftSmithingTransformRecipe(recipe.getKey(), recipe.getResult(), recipe.getTemplate(), recipe.getBase(), recipe.getAddition());
+        CraftSmithingTransformRecipe ret = new CraftSmithingTransformRecipe(recipe.getKey(), recipe.getResult(), recipe.getTemplate(), recipe.getBase(), recipe.getAddition(), recipe.willCopyDataComponents()); // Paper - Option to prevent data components copy
         return ret;
     }
 
@@ -24,6 +29,6 @@ public class CraftSmithingTransformRecipe extends SmithingTransformRecipe implem
     public void addToCraftingManager() {
         ItemStack result = this.getResult();
 
-        MinecraftServer.getServer().getRecipeManager().addRecipe(new RecipeHolder<>(CraftRecipe.toMinecraft(this.getKey()), new net.minecraft.world.item.crafting.SmithingTransformRecipe(this.toNMSOptional(this.getTemplate(), false), this.toNMSOptional(this.getBase(), false), this.toNMSOptional(this.getAddition(), false), CraftItemStack.asNMSCopy(result))));
+        MinecraftServer.getServer().getRecipeManager().addRecipe(new RecipeHolder<>(CraftRecipe.toMinecraft(this.getKey()), new net.minecraft.world.item.crafting.SmithingTransformRecipe(this.toNMSOptional(this.getTemplate(), false), this.toNMSOptional(this.getBase(), false), this.toNMSOptional(this.getAddition(), false), CraftItemStack.asNMSCopy(result), this.willCopyDataComponents()))); // Paper - Option to prevent data components copy
     }
 }

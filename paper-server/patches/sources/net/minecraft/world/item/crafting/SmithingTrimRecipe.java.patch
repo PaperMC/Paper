@@ -14,14 +14,53 @@
  public class SmithingTrimRecipe implements SmithingRecipe {
  
      final Optional<Ingredient> template;
-@@ -97,6 +104,13 @@
+@@ -28,18 +35,28 @@
+     final Optional<Ingredient> addition;
+     @Nullable
+     private PlacementInfo placementInfo;
++    final boolean copyDataComponents; // Paper - Option to prevent data components copy
+ 
+     public SmithingTrimRecipe(Optional<Ingredient> template, Optional<Ingredient> base, Optional<Ingredient> addition) {
++        // Paper start - Option to prevent data components copy
++        this(template, base, addition, true);
++    }
++    public SmithingTrimRecipe(Optional<Ingredient> template, Optional<Ingredient> base, Optional<Ingredient> addition, boolean copyDataComponents) {
++        this.copyDataComponents = copyDataComponents;
++        // Paper end - Option to prevent data components copy
+         this.template = template;
+         this.base = base;
+         this.addition = addition;
+     }
+ 
+     public ItemStack assemble(SmithingRecipeInput input, HolderLookup.Provider registries) {
+-        return SmithingTrimRecipe.applyTrim(registries, input.base(), input.addition(), input.template());
++        return SmithingTrimRecipe.applyTrim(registries, input.base(), input.addition(), input.template(), this.copyDataComponents);
+     }
+ 
+     public static ItemStack applyTrim(HolderLookup.Provider registries, ItemStack base, ItemStack addition, ItemStack template) {
++        return applyTrim(registries, base, addition, template, true);
++    }
++    public static ItemStack applyTrim(HolderLookup.Provider registries, ItemStack base, ItemStack addition, ItemStack template, boolean copyDataComponents) {
+         Optional<Holder.Reference<TrimMaterial>> optional = TrimMaterials.getFromIngredient(registries, addition);
+         Optional<Holder.Reference<TrimPattern>> optional1 = TrimPatterns.getFromTemplate(registries, template);
+ 
+@@ -49,7 +66,7 @@
+             if (armortrim != null && armortrim.hasPatternAndMaterial((Holder) optional1.get(), (Holder) optional.get())) {
+                 return ItemStack.EMPTY;
+             } else {
+-                ItemStack itemstack3 = base.copyWithCount(1);
++                ItemStack itemstack3 = copyDataComponents ? base.copyWithCount(1) : new ItemStack(base.getItem(), 1); // Paper - Option to prevent data components copy
+ 
+                 itemstack3.set(DataComponents.TRIM, new ArmorTrim((Holder) optional.get(), (Holder) optional1.get()));
+                 return itemstack3;
+@@ -97,6 +114,13 @@
          return List.of(new SmithingRecipeDisplay(slotdisplay2, slotdisplay, slotdisplay1, new SlotDisplay.SmithingTrimDemoSlotDisplay(slotdisplay, slotdisplay1, slotdisplay2), new SlotDisplay.ItemSlotDisplay(Items.SMITHING_TABLE)));
      }
  
 +    // CraftBukkit start
 +    @Override
 +    public Recipe toBukkitRecipe(NamespacedKey id) {
-+        return new CraftSmithingTrimRecipe(id, CraftRecipe.toBukkit(this.template), CraftRecipe.toBukkit(this.base), CraftRecipe.toBukkit(this.addition));
++        return new CraftSmithingTrimRecipe(id, CraftRecipe.toBukkit(this.template), CraftRecipe.toBukkit(this.base), CraftRecipe.toBukkit(this.addition), this.copyDataComponents); // Paper - Option to prevent data components copy
 +    }
 +    // CraftBukkit end
 +

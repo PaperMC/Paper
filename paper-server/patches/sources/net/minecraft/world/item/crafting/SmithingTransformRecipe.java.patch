@@ -15,7 +15,33 @@
  public class SmithingTransformRecipe implements SmithingRecipe {
  
      final Optional<Ingredient> template;
-@@ -71,6 +79,17 @@
+@@ -22,8 +30,15 @@
+     final ItemStack result;
+     @Nullable
+     private PlacementInfo placementInfo;
++    final boolean copyDataComponents; // Paper - Option to prevent data components copy
+ 
+     public SmithingTransformRecipe(Optional<Ingredient> template, Optional<Ingredient> base, Optional<Ingredient> addition, ItemStack result) {
++        // Paper start - Option to prevent data components copy
++        this(template, base, addition, result, true);
++    }
++    public SmithingTransformRecipe(Optional<Ingredient> template, Optional<Ingredient> base, Optional<Ingredient> addition, ItemStack result, boolean copyDataComponents) {
++        this.copyDataComponents = copyDataComponents;
++        // Paper end - Option to prevent data components copy
+         this.template = template;
+         this.base = base;
+         this.addition = addition;
+@@ -33,7 +48,9 @@
+     public ItemStack assemble(SmithingRecipeInput input, HolderLookup.Provider registries) {
+         ItemStack itemstack = input.base().transmuteCopy(this.result.getItem(), this.result.getCount());
+ 
++        if (this.copyDataComponents) { // Paper - Option to prevent data components copy
+         itemstack.applyComponents(this.result.getComponentsPatch());
++        } // Paper - Option to prevent data components copy
+         return itemstack;
+     }
+ 
+@@ -71,6 +88,17 @@
          return List.of(new SmithingRecipeDisplay(Ingredient.optionalIngredientToDisplay(this.template), Ingredient.optionalIngredientToDisplay(this.base), Ingredient.optionalIngredientToDisplay(this.addition), new SlotDisplay.ItemStackSlotDisplay(this.result), new SlotDisplay.ItemSlotDisplay(Items.SMITHING_TABLE)));
      }
  
@@ -24,7 +50,7 @@
 +    public Recipe toBukkitRecipe(NamespacedKey id) {
 +        CraftItemStack result = CraftItemStack.asCraftMirror(this.result);
 +
-+        CraftSmithingTransformRecipe recipe = new CraftSmithingTransformRecipe(id, result, CraftRecipe.toBukkit(this.template), CraftRecipe.toBukkit(this.base), CraftRecipe.toBukkit(this.addition));
++        CraftSmithingTransformRecipe recipe = new CraftSmithingTransformRecipe(id, result, CraftRecipe.toBukkit(this.template), CraftRecipe.toBukkit(this.base), CraftRecipe.toBukkit(this.addition), this.copyDataComponents); // Paper - Option to prevent data components copy
 +
 +        return recipe;
 +    }
