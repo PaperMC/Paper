@@ -24,6 +24,21 @@ public class SmithingTrimRecipe extends SmithingRecipe implements ComplexRecipe 
         super(key, new ItemStack(Material.AIR), base, addition);
         this.template = template;
     }
+    // Paper start
+    /**
+     * Create a smithing recipe to produce the specified result ItemStack.
+     *
+     * @param key The unique recipe key
+     * @param template The template item.
+     * @param base The base ingredient
+     * @param addition The addition ingredient
+     * @param copyDataComponents whether to copy the data components from the input base item to the output
+     */
+    public SmithingTrimRecipe(@NotNull NamespacedKey key, @NotNull RecipeChoice template, @NotNull RecipeChoice base, @NotNull RecipeChoice addition, boolean copyDataComponents) {
+        super(key, new ItemStack(Material.AIR), base, addition, copyDataComponents);
+        this.template = template;
+    }
+    // Paper end
 
     /**
      * Get the template recipe item.
