@@ -51,7 +51,6 @@ function skip_rebuild {
 function main {
   local -r update_all="${1:-}"
   local -r skip_rebuild="${2:-}"
-  set -x
   local submodules_to_update=(
     Bukkit
     CraftBukkit
