@@ -8,7 +8,6 @@ function gitcmd {
 
 readonly basedir="$(cd "$(dirname "$0")/.." && pwd -P)"
 readonly workdir="${basedir}/work"
-readonly patchdir="${basedir}/patches"
 
 function update {
   local -r submodule="${1?Submodule is missing}"
@@ -17,6 +16,21 @@ function update {
   gitcmd fetch && gitcmd clean -fd && gitcmd reset --hard origin/master || return 1
   cd "${basedir}"
   gitcmd add --force "${submodule_dir}"
+}
+
+function submodule_has_update {
+  local -r submodule="${1?Submodule is missing}"
+  local -r submodule_dir="${workdir}/${submodule}"
+  cd "${submodule_dir}"
+  gitcmd fetch && ! gitcmd diff --quiet --exit-code origin/master
+}
+
+function any_submodule_has_update {
+  local -r submodules=( "${@}" )
+  local submodule
+  for submodule in "${submodules[@]}"; do
+    submodule_has_update "${submodule}" && return 0
+  done
 }
 
 function apply_rebuild {
@@ -37,18 +51,29 @@ function skip_rebuild {
 function main {
   local -r update_all="${1:-}"
   local -r skip_rebuild="${2:-}"
+  set -x
+  local submodules_to_update=(
+    Bukkit
+    CraftBukkit
+    Spigot
+  )
+  case "${update_all:-}" in
+    all|a|yes|y) submodules_to_update+=( BuildData )
+  esac
+  if ! any_submodule_has_update "${submodules_to_update[@]}"; then
+    echo "Didn't find updates for any submodule - skipping..."
+    return 0
+  fi
   cd "${basedir}"
   if ! skip_rebuild; then
     echo "Rebuilding patches without filtering to improve mergeability"
     apply_rebuild || return $?
   fi
   gitcmd submodule update --init
-  update Bukkit
-  update CraftBukkit
-  update Spigot
-  case "${update_all:-}" in
-    all|a|yes|y) update BuildData
-  esac
+  local submodule
+  for submodule in "${submodules_to_update[@]}"; do
+    update "${submodule}"
+  done
   if ! gitcmd diff --cached --quiet --exit-code -- "${workdir}"; then
     if ! skip_rebuild; then
       echo "Rebuilding patches without filtering to improve apply ability"
@@ -58,9 +83,9 @@ function main {
     else
       echo "Skipping rebuild..."
     fi
-  elif ! skip_rebuild; then
-    echo "No updates - reverting changes to patches"
-    gitcmd restore -- "${patchdir}"
+  else
+    echo "Something is broken - should find changes!"
+    return 1
   fi
 }
 
