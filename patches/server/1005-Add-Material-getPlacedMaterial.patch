@@ -1,0 +1,53 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Wed, 29 Sep 2021 13:23:24 -0700
+Subject: [PATCH] Add Material#getPlacedMaterial
+
+Co-authored-by: Aya <31237389+tal5@users.noreply.github.com>
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
+index 719e7103f7dfdc30f1cefd24a3fa572fa0ac8b1e..6975d0cf1fae125b46da763ddbab2f1c81459a0b 100644
+--- a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
++++ b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
+@@ -144,6 +144,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
+     // Paper start
+     private static final Map<org.bukkit.entity.EntityType, net.minecraft.world.entity.EntityType<?>> ENTITY_TYPE_ENTITY_TYPES = new HashMap<>();
+     private static final Map<net.minecraft.world.entity.EntityType<?>, org.bukkit.entity.EntityType> ENTITY_TYPES_ENTITY_TYPE = new HashMap<>();
++    private static final Map<Material, Material> PLACED_MATERIALS = new java.util.EnumMap<>(Material.class);
+ 
+     static {
+         for (org.bukkit.entity.EntityType type : org.bukkit.entity.EntityType.values()) {
+@@ -177,6 +178,15 @@ public final class CraftMagicNumbers implements UnsafeValues {
+             BuiltInRegistries.BLOCK.getOptional(key).ifPresent((block) -> {
+                 CraftMagicNumbers.MATERIAL_BLOCK.put(material, block);
+             });
++            // Paper start
++            if (material.isItem() && CraftMagicNumbers.getItem(material) instanceof net.minecraft.world.item.BlockItem blockItem) {
++                Material placed = CraftMagicNumbers.getMaterial(blockItem.getBlock());
++                if (placed == null) {
++                    throw new IllegalStateException(material + " doesn't have an placed Material");
++                }
++                PLACED_MATERIALS.put(material, placed);
++            }
++            // Paper end
+         }
+     }
+ 
+@@ -630,6 +640,17 @@ public final class CraftMagicNumbers implements UnsafeValues {
+     }
+     // Paper end
+ 
++    // Paper start - getPlacedMaterial
++    @Override
++    public Material getPlacedMaterial(Material itemMaterial, boolean onWall) {
++        Preconditions.checkArgument(itemMaterial.isItem(), "itemMaterial must be an item");
++        if (onWall && getItem(itemMaterial) instanceof net.minecraft.world.item.StandingAndWallBlockItem standingAndWallBlockItem) {
++            return getMaterial(standingAndWallBlockItem.wallBlock);
++        }
++        return PLACED_MATERIALS.get(itemMaterial);
++    }
++    // Paper end - getPlacedMaterial
++
+     /**
+      * This helper class represents the different NBT Tags.
+      * <p>
