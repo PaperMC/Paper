@@ -1,19 +1,14 @@
 package org.bukkit.craftbukkit.block;
 
 import net.minecraft.world.level.block.entity.TileEntityEnchantTable;
-import org.bukkit.Material;
-import org.bukkit.block.Block;
+import org.bukkit.World;
 import org.bukkit.block.EnchantingTable;
 import org.bukkit.craftbukkit.util.CraftChatMessage;
 
 public class CraftEnchantingTable extends CraftBlockEntityState<TileEntityEnchantTable> implements EnchantingTable {
 
-    public CraftEnchantingTable(final Block block) {
-        super(block, TileEntityEnchantTable.class);
-    }
-
-    public CraftEnchantingTable(final Material material, final TileEntityEnchantTable te) {
-        super(material, te);
+    public CraftEnchantingTable(World world, TileEntityEnchantTable tileEntity) {
+        super(world, tileEntity);
     }
 
     @Override

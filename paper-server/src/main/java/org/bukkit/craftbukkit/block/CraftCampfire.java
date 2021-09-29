@@ -1,20 +1,15 @@
 package org.bukkit.craftbukkit.block;
 
 import net.minecraft.world.level.block.entity.TileEntityCampfire;
-import org.bukkit.Material;
-import org.bukkit.block.Block;
+import org.bukkit.World;
 import org.bukkit.block.Campfire;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.inventory.ItemStack;
 
 public class CraftCampfire extends CraftBlockEntityState<TileEntityCampfire> implements Campfire {
 
-    public CraftCampfire(Block block) {
-        super(block, TileEntityCampfire.class);
-    }
-
-    public CraftCampfire(Material material, TileEntityCampfire te) {
-        super(material, te);
+    public CraftCampfire(World world, TileEntityCampfire tileEntity) {
+        super(world, tileEntity);
     }
 
     @Override

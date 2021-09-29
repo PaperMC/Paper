@@ -4,20 +4,15 @@ import net.minecraft.sounds.SoundEffects;
 import net.minecraft.world.level.block.BlockBarrel;
 import net.minecraft.world.level.block.entity.TileEntityBarrel;
 import net.minecraft.world.level.block.state.IBlockData;
-import org.bukkit.Material;
+import org.bukkit.World;
 import org.bukkit.block.Barrel;
-import org.bukkit.block.Block;
 import org.bukkit.craftbukkit.inventory.CraftInventory;
 import org.bukkit.inventory.Inventory;
 
 public class CraftBarrel extends CraftLootable<TileEntityBarrel> implements Barrel {
 
-    public CraftBarrel(Block block) {
-        super(block, TileEntityBarrel.class);
-    }
-
-    public CraftBarrel(Material material, TileEntityBarrel te) {
-        super(material, te);
+    public CraftBarrel(World world, TileEntityBarrel tileEntity) {
+        super(world, tileEntity);
     }
 
     @Override

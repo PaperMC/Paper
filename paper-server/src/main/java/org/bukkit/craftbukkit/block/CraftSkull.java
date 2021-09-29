@@ -5,10 +5,9 @@ import com.mojang.authlib.GameProfile;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.level.block.entity.TileEntitySkull;
 import org.bukkit.Bukkit;
-import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.SkullType;
-import org.bukkit.block.Block;
+import org.bukkit.World;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.Skull;
 import org.bukkit.block.data.BlockData;
@@ -21,12 +20,8 @@ public class CraftSkull extends CraftBlockEntityState<TileEntitySkull> implement
     private static final int MAX_OWNER_LENGTH = 16;
     private GameProfile profile;
 
-    public CraftSkull(final Block block) {
-        super(block, TileEntitySkull.class);
-    }
-
-    public CraftSkull(final Material material, final TileEntitySkull te) {
-        super(material, te);
+    public CraftSkull(World world, TileEntitySkull tileEntity) {
+        super(world, tileEntity);
     }
 
     @Override

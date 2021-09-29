@@ -2,18 +2,13 @@ package org.bukkit.craftbukkit.block;
 
 import com.google.common.base.Preconditions;
 import net.minecraft.world.level.block.entity.SculkSensorBlockEntity;
-import org.bukkit.Material;
-import org.bukkit.block.Block;
+import org.bukkit.World;
 import org.bukkit.block.SculkSensor;
 
 public class CraftSculkSensor extends CraftBlockEntityState<SculkSensorBlockEntity> implements SculkSensor {
 
-    public CraftSculkSensor(final Block block) {
-        super(block, SculkSensorBlockEntity.class);
-    }
-
-    public CraftSculkSensor(final Material material, final SculkSensorBlockEntity te) {
-        super(material, te);
+    public CraftSculkSensor(World world, SculkSensorBlockEntity tileEntity) {
+        super(world, tileEntity);
     }
 
     @Override

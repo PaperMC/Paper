@@ -7,8 +7,7 @@ import net.minecraft.world.level.block.EnumBlockRotation;
 import net.minecraft.world.level.block.entity.TileEntityStructure;
 import net.minecraft.world.level.block.state.properties.BlockPropertyStructureMode;
 import org.apache.commons.lang3.Validate;
-import org.bukkit.Material;
-import org.bukkit.block.Block;
+import org.bukkit.World;
 import org.bukkit.block.Structure;
 import org.bukkit.block.structure.Mirror;
 import org.bukkit.block.structure.StructureRotation;
@@ -21,12 +20,8 @@ public class CraftStructureBlock extends CraftBlockEntityState<TileEntityStructu
 
     private static final int MAX_SIZE = 48;
 
-    public CraftStructureBlock(Block block) {
-        super(block, TileEntityStructure.class);
-    }
-
-    public CraftStructureBlock(Material material, TileEntityStructure structure) {
-        super(material, structure);
+    public CraftStructureBlock(World world, TileEntityStructure tileEntity) {
+        super(world, tileEntity);
     }
 
     @Override

@@ -4,18 +4,13 @@ import java.util.Objects;
 import net.minecraft.core.BlockPosition;
 import net.minecraft.world.level.block.entity.TileEntityEndGateway;
 import org.bukkit.Location;
-import org.bukkit.Material;
-import org.bukkit.block.Block;
+import org.bukkit.World;
 import org.bukkit.block.EndGateway;
 
 public class CraftEndGateway extends CraftBlockEntityState<TileEntityEndGateway> implements EndGateway {
 
-    public CraftEndGateway(Block block) {
-        super(block, TileEntityEndGateway.class);
-    }
-
-    public CraftEndGateway(final Material material, TileEntityEndGateway te) {
-        super(material, te);
+    public CraftEndGateway(World world, TileEntityEndGateway tileEntity) {
+        super(world, tileEntity);
     }
 
     @Override

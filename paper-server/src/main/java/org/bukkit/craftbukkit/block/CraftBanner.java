@@ -9,9 +9,8 @@ import net.minecraft.world.item.EnumColor;
 import net.minecraft.world.level.block.BlockBannerAbstract;
 import net.minecraft.world.level.block.entity.TileEntityBanner;
 import org.bukkit.DyeColor;
-import org.bukkit.Material;
+import org.bukkit.World;
 import org.bukkit.block.Banner;
-import org.bukkit.block.Block;
 import org.bukkit.block.banner.Pattern;
 import org.bukkit.block.banner.PatternType;
 
@@ -20,12 +19,8 @@ public class CraftBanner extends CraftBlockEntityState<TileEntityBanner> impleme
     private DyeColor base;
     private List<Pattern> patterns;
 
-    public CraftBanner(final Block block) {
-        super(block, TileEntityBanner.class);
-    }
-
-    public CraftBanner(final Material material, final TileEntityBanner te) {
-        super(material, te);
+    public CraftBanner(World world, TileEntityBanner tileEntity) {
+        super(world, tileEntity);
     }
 
     @Override

@@ -8,7 +8,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.TileEntityChest;
 import net.minecraft.world.level.block.state.IBlockData;
 import org.bukkit.Material;
-import org.bukkit.block.Block;
+import org.bukkit.World;
 import org.bukkit.block.Chest;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.inventory.CraftInventory;
@@ -17,12 +17,8 @@ import org.bukkit.inventory.Inventory;
 
 public class CraftChest extends CraftLootable<TileEntityChest> implements Chest {
 
-    public CraftChest(final Block block) {
-        super(block, TileEntityChest.class);
-    }
-
-    public CraftChest(final Material material, final TileEntityChest te) {
-        super(material, te);
+    public CraftChest(World world, TileEntityChest tileEntity) {
+        super(world, tileEntity);
     }
 
     @Override

@@ -5,19 +5,14 @@ import net.minecraft.core.BlockPosition;
 import net.minecraft.resources.MinecraftKey;
 import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.level.block.entity.TileEntityMobSpawner;
-import org.bukkit.Material;
-import org.bukkit.block.Block;
+import org.bukkit.World;
 import org.bukkit.block.CreatureSpawner;
 import org.bukkit.entity.EntityType;
 
 public class CraftCreatureSpawner extends CraftBlockEntityState<TileEntityMobSpawner> implements CreatureSpawner {
 
-    public CraftCreatureSpawner(final Block block) {
-        super(block, TileEntityMobSpawner.class);
-    }
-
-    public CraftCreatureSpawner(final Material material, TileEntityMobSpawner te) {
-        super(material, te);
+    public CraftCreatureSpawner(World world, TileEntityMobSpawner tileEntity) {
+        super(world, tileEntity);
     }
 
     @Override
