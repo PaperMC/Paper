@@ -1,0 +1,37 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Thu, 30 Sep 2021 12:21:05 -0700
+Subject: [PATCH] Fix getInventory for blocked double chests
+
+
+diff --git a/src/main/java/net/minecraft/world/level/block/ChestBlock.java b/src/main/java/net/minecraft/world/level/block/ChestBlock.java
+index eecb8c089b5f426b1395b47f714af32c210555ef..4bed49a0d0ff9abcf79417214b4a085e087bb2e8 100644
+--- a/src/main/java/net/minecraft/world/level/block/ChestBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/ChestBlock.java
+@@ -307,7 +307,12 @@ public class ChestBlock extends AbstractChestBlock<ChestBlockEntity> implements
+     @Nullable
+     @Override
+     public MenuProvider getMenuProvider(BlockState state, Level world, BlockPos pos) {
+-        return (MenuProvider) ((Optional) this.combine(state, world, pos, false).apply(ChestBlock.MENU_PROVIDER_COMBINER)).orElse((Object) null);
++        // Paper start
++        return getMenuProvider(state, world, pos, false);
++    }
++    public @Nullable MenuProvider getMenuProvider(BlockState state, Level world, BlockPos pos, boolean ignoreBlocked) {
++        return (MenuProvider) ((Optional) this.combine(state, world, pos, ignoreBlocked).apply(ChestBlock.MENU_PROVIDER_COMBINER)).orElse((Object) null);
++        // Paper end
+     }
+ 
+     public static DoubleBlockCombiner.Combiner<ChestBlockEntity, Float2FloatFunction> opennessCombiner(final LidBlockEntity lidblockentity) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftChest.java b/src/main/java/org/bukkit/craftbukkit/block/CraftChest.java
+index bac6385f99d7475c627d69cde972f5a92ab57f4b..ffabb03482ce9d9c897ed20bd63ac0e45709a71c 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/CraftChest.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/CraftChest.java
+@@ -53,7 +53,7 @@ public class CraftChest extends CraftLootable<ChestBlockEntity> implements Chest
+         CraftWorld world = (CraftWorld) this.getWorld();
+ 
+         ChestBlock blockChest = (ChestBlock) (this.getType() == Material.CHEST ? Blocks.CHEST : Blocks.TRAPPED_CHEST);
+-        MenuProvider nms = blockChest.getMenuProvider(data, world.getHandle(), this.getPosition());
++        MenuProvider nms = blockChest.getMenuProvider(data, world.getHandle(), this.getPosition(), true); // Paper
+ 
+         if (nms instanceof ChestBlock.DoubleInventory) {
+             inventory = new CraftInventoryDoubleChest((ChestBlock.DoubleInventory) nms);
