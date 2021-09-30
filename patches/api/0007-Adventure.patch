@@ -7,31 +7,48 @@ Co-authored-by: zml <zml@stellardrift.ca>
 Co-authored-by: Jake Potrebic <jake.m.potrebic@gmail.com>
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index 17fd7162ab32785252bf2579daae8d47aec21684..479d4e3b91e902e9b30d351aa65c8b079555d7e0 100644
+index 3a395a44ff50a77895341bbbfb8c81deede41b8b..6ebea1d9fafb08ede7e37dfe1b145a676c7aaaf9 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
-@@ -10,6 +10,8 @@ java {
+@@ -10,6 +10,19 @@ java {
      withJavadocJar()
  }
  
-+val adventureVersion = "4.8.1"
++val adventureVersion = "4.9.1"
++val apiAndDocs by configurations.creating {
++    attributes {
++        attribute(Category.CATEGORY_ATTRIBUTE, objects.named(Category.DOCUMENTATION))
++        attribute(Bundling.BUNDLING_ATTRIBUTE, objects.named(Bundling.EXTERNAL))
++        attribute(DocsType.DOCS_TYPE_ATTRIBUTE, objects.named(DocsType.SOURCES))
++        attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage.JAVA_RUNTIME))
++    }
++}
++configurations.api {
++    extendsFrom(apiAndDocs)
++}
 +
  dependencies {
      // api dependencies are listed transitively to API consumers
      api("commons-lang:commons-lang:2.6")
-@@ -19,6 +21,11 @@ dependencies {
+@@ -19,6 +32,11 @@ dependencies {
      api("org.yaml:snakeyaml:1.28")
      api("com.googlecode.json-simple:json-simple:1.1.1") // Paper
      api("it.unimi.dsi:fastutil:8.2.2")
-+    api(platform("net.kyori:adventure-bom:$adventureVersion"))
-+    api("net.kyori:adventure-api")
-+    api("net.kyori:adventure-text-serializer-gson")
-+    api("net.kyori:adventure-text-serializer-legacy")
-+    api("net.kyori:adventure-text-serializer-plain")
++    apiAndDocs(platform("net.kyori:adventure-bom:$adventureVersion"))
++    apiAndDocs("net.kyori:adventure-api")
++    apiAndDocs("net.kyori:adventure-text-serializer-gson")
++    apiAndDocs("net.kyori:adventure-text-serializer-legacy")
++    apiAndDocs("net.kyori:adventure-text-serializer-plain")
  
      compileOnly("org.apache.maven:maven-resolver-provider:3.8.1")
      compileOnly("org.apache.maven.resolver:maven-resolver-connector-basic:1.7.0")
-@@ -66,5 +73,11 @@ tasks.withType<Javadoc>().configureEach {
+@@ -67,10 +85,17 @@ tasks.jar {
+ }
+ 
+ tasks.withType<Javadoc>().configureEach {
++    (options as CoreJavadocOptions).addStringOption("sourcepath", apiAndDocs.resolvedConfiguration.files.joinToString(separator = File.pathSeparator, transform = File::getPath))
+     (options as StandardJavadocDocletOptions).links(
+         "https://guava.dev/releases/21.0/api/docs/",
          "https://javadoc.io/doc/org.yaml/snakeyaml/1.28/",
          "https://javadoc.io/doc/org.jetbrains/annotations/21.0.1/", // Paper - we don't want Java 5 annotations
          "https://javadoc.io/doc/net.md-5/bungeecord-chat/1.16-R0.4/",
@@ -1059,19 +1076,19 @@ index efb97712cc9dc7c1e12a59f5b94e4f2ad7c6b7d8..3024468af4c073324e536c1cb26beffb
                  return warning == null || warning.value();
              }
 diff --git a/src/main/java/org/bukkit/World.java b/src/main/java/org/bukkit/World.java
-index bc4417d8ffa92a78f690bfa5705d3e42cdc11fd2..d3519fa5b99e2888a194c6382415537785fbeef0 100644
+index dd0fef9155077ce6df7bdadc9e4152008f700a3b..92e8b0b1ccebdc2646337114793ea9f3e7759d25 100644
 --- a/src/main/java/org/bukkit/World.java
 +++ b/src/main/java/org/bukkit/World.java
 @@ -38,7 +38,7 @@ import org.jetbrains.annotations.Nullable;
  /**
   * Represents a world, which may contain entities, chunks and blocks
   */
--public interface World extends PluginMessageRecipient, Metadatable {
-+public interface World extends PluginMessageRecipient, Metadatable, net.kyori.adventure.audience.ForwardingAudience { // Paper
+-public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient, Metadatable {
++public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient, Metadatable, net.kyori.adventure.audience.ForwardingAudience { // Paper
  
      /**
       * Gets the {@link Block} at the given coordinates
-@@ -640,6 +640,14 @@ public interface World extends PluginMessageRecipient, Metadatable {
+@@ -633,6 +633,14 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      @NotNull
      public List<Player> getPlayers();
  
@@ -1161,7 +1178,7 @@ index ab6b0ec328e94bf65a0dafd0403e5ee3b870296c..c8d37184d8e882a4084a1bfef85faa33
  
      /**
 diff --git a/src/main/java/org/bukkit/command/CommandSender.java b/src/main/java/org/bukkit/command/CommandSender.java
-index 284be63a125624a8ae43d2c164aede810ce6bfe5..511746ef9576e4c219e9ab35da3ab0727cb7ee7c 100644
+index 284be63a125624a8ae43d2c164aede810ce6bfe5..7c9a0c85c0e23d6a569c3583e87b005938923d95 100644
 --- a/src/main/java/org/bukkit/command/CommandSender.java
 +++ b/src/main/java/org/bukkit/command/CommandSender.java
 @@ -6,12 +6,13 @@ import org.bukkit.permissions.Permissible;
@@ -1243,18 +1260,42 @@ index 284be63a125624a8ae43d2c164aede810ce6bfe5..511746ef9576e4c219e9ab35da3ab072
          public void sendMessage(@Nullable UUID sender, @NotNull net.md_5.bungee.api.chat.BaseComponent... components) {
              throw new UnsupportedOperationException("Not supported yet.");
          }
-@@ -99,4 +111,11 @@ public interface CommandSender extends Permissible {
+@@ -99,4 +111,18 @@ public interface CommandSender extends Permissible {
      @NotNull
      Spigot spigot();
      // Spigot end
 +
 +    // Paper start
++    /**
++     * Gets the name of this command sender
++     *
++     * @return Name of the sender
++     */
++    public @NotNull Component name();
++
 +    @Override
 +    default void sendMessage(final @NotNull net.kyori.adventure.identity.Identity identity, final @NotNull net.kyori.adventure.text.Component message, final @NotNull net.kyori.adventure.audience.MessageType type) {
 +        this.sendMessage(org.bukkit.Bukkit.getUnsafe().legacyComponentSerializer().serialize(message));
 +    }
 +    // Paper end
  }
+diff --git a/src/main/java/org/bukkit/command/MessageCommandSender.java b/src/main/java/org/bukkit/command/MessageCommandSender.java
+index a7ef1f51c2b96617a32e6e7b1723e8770ba8a6a8..68daa56546d00089d7d6c13ee897d828c377bbc3 100644
+--- a/src/main/java/org/bukkit/command/MessageCommandSender.java
++++ b/src/main/java/org/bukkit/command/MessageCommandSender.java
+@@ -49,6 +49,12 @@ public interface MessageCommandSender extends CommandSender {
+     default String getName() {
+         throw new NotImplementedException();
+     }
++    // Paper start
++    @Override
++    default net.kyori.adventure.text.@org.jetbrains.annotations.NotNull Component name() {
++        throw new NotImplementedException();
++    }
++    // Paper end
+ 
+     @Override
+     default boolean isOp() {
 diff --git a/src/main/java/org/bukkit/command/ProxiedCommandSender.java b/src/main/java/org/bukkit/command/ProxiedCommandSender.java
 index fcc34b640265f4dccb46b9f09466ab8e1d96043e..74599b4ee0518481c0e3a5f6ab2f5302837f1ae3 100644
 --- a/src/main/java/org/bukkit/command/ProxiedCommandSender.java
@@ -1326,7 +1367,7 @@ index 9566e4306ada5e82dede0f002aa06da12c44996b..4d5f0837bd0e02a30c943d8969fb6b13
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/entity/Entity.java b/src/main/java/org/bukkit/entity/Entity.java
-index 25a6f9313a1953def7470e411b53016f2ca14bef..d7a4cfed4f46b34f83fb2c07bdab5a71215d26bb 100644
+index 25a6f9313a1953def7470e411b53016f2ca14bef..03d8ac1b41659540d7eb3d7e218cdfaa4acb683b 100644
 --- a/src/main/java/org/bukkit/entity/Entity.java
 +++ b/src/main/java/org/bukkit/entity/Entity.java
 @@ -25,7 +25,7 @@ import org.jetbrains.annotations.Nullable;
@@ -1338,12 +1379,20 @@ index 25a6f9313a1953def7470e411b53016f2ca14bef..d7a4cfed4f46b34f83fb2c07bdab5a71
  
      /**
       * Gets the entity's current position
-@@ -648,4 +648,12 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
+@@ -648,4 +648,20 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      @Override
      Spigot spigot();
      // Spigot end
 +
 +    // Paper start
++    /**
++     * Gets the entity's display name formatted with their team prefix/suffix and
++     * the entity's default hover/click events.
++     *
++     * @return the team display name
++     */
++    @NotNull net.kyori.adventure.text.Component teamDisplayName();
++
 +    @NotNull
 +    @Override
 +    default net.kyori.adventure.text.event.HoverEvent<net.kyori.adventure.text.event.HoverEvent.ShowEntity> asHoverEvent(final @NotNull java.util.function.UnaryOperator<net.kyori.adventure.text.event.HoverEvent.ShowEntity> op) {
@@ -1352,7 +1401,7 @@ index 25a6f9313a1953def7470e411b53016f2ca14bef..d7a4cfed4f46b34f83fb2c07bdab5a71
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/entity/Player.java b/src/main/java/org/bukkit/entity/Player.java
-index edf4623a831442e1f06daabc402a3f32610dd519..8ed69c4be84db742f2ff53adfd40f9eb8823e02d 100644
+index 6c910e09eda6f4f08226ccc75189171015a72b85..696bf438012fd93f38495024ca49999cec151168 100644
 --- a/src/main/java/org/bukkit/entity/Player.java
 +++ b/src/main/java/org/bukkit/entity/Player.java
 @@ -33,7 +33,28 @@ import org.jetbrains.annotations.Nullable;
@@ -1525,19 +1574,11 @@ index edf4623a831442e1f06daabc402a3f32610dd519..8ed69c4be84db742f2ff53adfd40f9eb
      /**
       * Says a message (or runs a command).
       *
-@@ -475,6 +556,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -475,6 +556,26 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      @Deprecated
      public boolean sendChunkChange(@NotNull Location loc, int sx, int sy, int sz, @NotNull byte[] data);
  
 +    // Paper start
-     /**
-      * Send a sign change. This fakes a sign change packet for a user at
-      * a certain location. This will not actually change the world in any way.
-@@ -490,6 +572,43 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
-      * @throws IllegalArgumentException if location is null
-      * @throws IllegalArgumentException if lines is non-null and has a length less than 4
-      */
-+    void sendSignChange(@NotNull Location loc, @Nullable java.util.List<net.kyori.adventure.text.Component> lines) throws IllegalArgumentException;
 +    /**
 +     * Send a sign change. This fakes a sign change packet for a user at
 +     * a certain location. This will not actually change the world in any way.
@@ -1550,13 +1591,72 @@ index edf4623a831442e1f06daabc402a3f32610dd519..8ed69c4be84db742f2ff53adfd40f9eb
 +     *
 +     * @param loc the location of the sign
 +     * @param lines the new text on the sign or null to clear it
-+     * @param  dyeColor the color of the sign
++     * @throws IllegalArgumentException if location is null
++     * @throws IllegalArgumentException if lines is non-null and has a length less than 4
++     */
++    default void sendSignChange(@NotNull Location loc, @Nullable java.util.List<net.kyori.adventure.text.Component> lines) throws IllegalArgumentException {
++        this.sendSignChange(loc, lines, DyeColor.BLACK);
++    }
++
+     /**
+      * Send a sign change. This fakes a sign change packet for a user at
+      * a certain location. This will not actually change the world in any way.
+@@ -487,9 +588,75 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+      *
+      * @param loc the location of the sign
+      * @param lines the new text on the sign or null to clear it
++     * @param dyeColor the color of the sign
+      * @throws IllegalArgumentException if location is null
++     * @throws IllegalArgumentException if dyeColor is null
+      * @throws IllegalArgumentException if lines is non-null and has a length less than 4
+      */
++    default void sendSignChange(@NotNull Location loc, @Nullable java.util.List<net.kyori.adventure.text.Component> lines, @NotNull DyeColor dyeColor) throws IllegalArgumentException {
++        this.sendSignChange(loc, lines, dyeColor, false);
++    }
++
++    /**
++     * Send a sign change. This fakes a sign change packet for a user at
++     * a certain location. This will not actually change the world in any way.
++     * This method will use a sign at the location's block or a faked sign
++     * sent via
++     * {@link #sendBlockChange(org.bukkit.Location, org.bukkit.Material, byte)}.
++     * <p>
++     * If the client does not have a sign at the given location it will
++     * display an error message to the user.
++     *
++     * @param loc the location of the sign
++     * @param lines the new text on the sign or null to clear it
++     * @param hasGlowingText whether the text of the sign should glow as if dyed with a glowing ink sac
 +     * @throws IllegalArgumentException if location is null
 +     * @throws IllegalArgumentException if dyeColor is null
 +     * @throws IllegalArgumentException if lines is non-null and has a length less than 4
 +     */
-+    void sendSignChange(@NotNull Location loc, @Nullable java.util.List<net.kyori.adventure.text.Component> lines, @NotNull DyeColor dyeColor) throws IllegalArgumentException;
++    default void sendSignChange(@NotNull Location loc, @Nullable java.util.List<net.kyori.adventure.text.Component> lines, boolean hasGlowingText) throws IllegalArgumentException {
++        this.sendSignChange(loc, lines, DyeColor.BLACK, hasGlowingText);
++    }
++
++    /**
++     * Send a sign change. This fakes a sign change packet for a user at
++     * a certain location. This will not actually change the world in any way.
++     * This method will use a sign at the location's block or a faked sign
++     * sent via
++     * {@link #sendBlockChange(org.bukkit.Location, org.bukkit.Material, byte)}.
++     * <p>
++     * If the client does not have a sign at the given location it will
++     * display an error message to the user.
++     *
++     * @param loc the location of the sign
++     * @param lines the new text on the sign or null to clear it
++     * @param dyeColor the color of the sign
++     * @param hasGlowingText whether the text of the sign should glow as if dyed with a glowing ink sac
++     * @throws IllegalArgumentException if location is null
++     * @throws IllegalArgumentException if dyeColor is null
++     * @throws IllegalArgumentException if lines is non-null and has a length less than 4
++     */
++    void sendSignChange(@NotNull Location loc, @Nullable java.util.List<net.kyori.adventure.text.Component> lines, @NotNull DyeColor dyeColor, boolean hasGlowingText)
++        throws IllegalArgumentException;
 +    // Paper end
++
 +    /**
 +     * Send a sign change. This fakes a sign change packet for a user at
 +     * a certain location. This will not actually change the world in any way.
@@ -1576,8 +1676,8 @@ index edf4623a831442e1f06daabc402a3f32610dd519..8ed69c4be84db742f2ff53adfd40f9eb
 +    @Deprecated // Paper
      public void sendSignChange(@NotNull Location loc, @Nullable String[] lines) throws IllegalArgumentException;
  
- 
-@@ -509,7 +628,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+     /**
+@@ -508,7 +675,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
       * @throws IllegalArgumentException if location is null
       * @throws IllegalArgumentException if dyeColor is null
       * @throws IllegalArgumentException if lines is non-null and has a length less than 4
@@ -1587,7 +1687,36 @@ index edf4623a831442e1f06daabc402a3f32610dd519..8ed69c4be84db742f2ff53adfd40f9eb
      public void sendSignChange(@NotNull Location loc, @Nullable String[] lines, @NotNull DyeColor dyeColor) throws IllegalArgumentException;
  
      /**
-@@ -1247,6 +1368,14 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -528,7 +697,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+      * @throws IllegalArgumentException if location is null
+      * @throws IllegalArgumentException if dyeColor is null
+      * @throws IllegalArgumentException if lines is non-null and has a length less than 4
++     * @deprecated Deprecated in favour of {@link #sendSignChange(Location, java.util.List, DyeColor, boolean)}
+      */
++    @Deprecated // Paper
+     public void sendSignChange(@NotNull Location loc, @Nullable String[] lines, @NotNull DyeColor dyeColor, boolean hasGlowingText) throws IllegalArgumentException;
+ 
+     /**
+@@ -1020,7 +1191,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+      *
+      * @param title Title text
+      * @param subtitle Subtitle text
+-     * @deprecated API behavior subject to change
++     * @deprecated Use {@link #showTitle(net.kyori.adventure.title.Title)} or {@link #sendTitlePart(net.kyori.adventure.title.TitlePart, Object)}
+      */
+     @Deprecated
+     public void sendTitle(@Nullable String title, @Nullable String subtitle);
+@@ -1039,7 +1210,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+      * @param fadeIn time in ticks for titles to fade in. Defaults to 10.
+      * @param stay time in ticks for titles to stay. Defaults to 70.
+      * @param fadeOut time in ticks for titles to fade out. Defaults to 20.
++     * @deprecated Use {@link #showTitle(net.kyori.adventure.title.Title)} or {@link #sendTitlePart(net.kyori.adventure.title.TitlePart, Object)}
+      */
++    @Deprecated // Paper - Adventure
+     public void sendTitle(@Nullable String title, @Nullable String subtitle, int fadeIn, int stay, int fadeOut);
+ 
+     /**
+@@ -1266,6 +1439,14 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
       */
      public int getClientViewDistance();
  
@@ -1602,7 +1731,7 @@ index edf4623a831442e1f06daabc402a3f32610dd519..8ed69c4be84db742f2ff53adfd40f9eb
      /**
       * Gets the player's estimated ping in milliseconds.
       *
-@@ -1272,8 +1401,10 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -1291,8 +1472,10 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
       * they wish.
       *
       * @return the player's locale
@@ -1613,7 +1742,7 @@ index edf4623a831442e1f06daabc402a3f32610dd519..8ed69c4be84db742f2ff53adfd40f9eb
      public String getLocale();
  
      /**
-@@ -1291,6 +1422,14 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -1310,6 +1493,14 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
       */
      public void openBook(@NotNull ItemStack book);
  
@@ -1628,7 +1757,7 @@ index edf4623a831442e1f06daabc402a3f32610dd519..8ed69c4be84db742f2ff53adfd40f9eb
      // Spigot start
      public class Spigot extends Entity.Spigot {
  
-@@ -1345,11 +1484,13 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -1364,11 +1555,13 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
              throw new UnsupportedOperationException("Not supported yet.");
          }
  
@@ -1642,7 +1771,7 @@ index edf4623a831442e1f06daabc402a3f32610dd519..8ed69c4be84db742f2ff53adfd40f9eb
          @Override
          public void sendMessage(@NotNull net.md_5.bungee.api.chat.BaseComponent... components) {
              throw new UnsupportedOperationException("Not supported yet.");
-@@ -1360,7 +1501,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -1379,7 +1572,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
           *
           * @param position the screen position
           * @param component the components to send
@@ -1652,7 +1781,7 @@ index edf4623a831442e1f06daabc402a3f32610dd519..8ed69c4be84db742f2ff53adfd40f9eb
          public void sendMessage(@NotNull net.md_5.bungee.api.ChatMessageType position, @NotNull net.md_5.bungee.api.chat.BaseComponent component) {
              throw new UnsupportedOperationException("Not supported yet.");
          }
-@@ -1370,7 +1513,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -1389,7 +1584,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
           *
           * @param position the screen position
           * @param components the components to send
@@ -1662,7 +1791,7 @@ index edf4623a831442e1f06daabc402a3f32610dd519..8ed69c4be84db742f2ff53adfd40f9eb
          public void sendMessage(@NotNull net.md_5.bungee.api.ChatMessageType position, @NotNull net.md_5.bungee.api.chat.BaseComponent... components) {
              throw new UnsupportedOperationException("Not supported yet.");
          }
-@@ -1381,7 +1526,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -1400,7 +1597,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
           * @param position the screen position
           * @param sender the sender of the message
           * @param component the components to send
@@ -1672,7 +1801,7 @@ index edf4623a831442e1f06daabc402a3f32610dd519..8ed69c4be84db742f2ff53adfd40f9eb
          public void sendMessage(@NotNull net.md_5.bungee.api.ChatMessageType position, @Nullable UUID sender, @NotNull net.md_5.bungee.api.chat.BaseComponent component) {
              throw new UnsupportedOperationException("Not supported yet.");
          }
-@@ -1392,7 +1539,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -1411,7 +1610,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
           * @param position the screen position
           * @param sender the sender of the message
           * @param components the components to send
@@ -3463,6 +3592,45 @@ index 4dba721aefe4fc6699b3b4bfa7ecb0b19c2a2a1a..01dec2c877df58c9dc22445e8b1f9ce2
 +    }
 +    // Paper end
  }
+diff --git a/src/main/java/org/bukkit/permissions/Permissible.java b/src/main/java/org/bukkit/permissions/Permissible.java
+index 228421154913116069c20323afb519bdde2134df..26791db3c267670d5782f1d2b67ff7d5b55b9dac 100644
+--- a/src/main/java/org/bukkit/permissions/Permissible.java
++++ b/src/main/java/org/bukkit/permissions/Permissible.java
+@@ -126,4 +126,34 @@ public interface Permissible extends ServerOperator {
+      */
+     @NotNull
+     public Set<PermissionAttachmentInfo> getEffectivePermissions();
++
++    // Paper start - add TriState permission checks
++    /**
++     * Checks if this object has a permission set and, if it is set, the value of the permission.
++     *
++     * @param permission the permission to check
++     * @return a tri-state of if the permission is set and, if it is set, it's value
++     */
++    default net.kyori.adventure.util.@NotNull TriState permissionValue(final @NotNull Permission permission) {
++        if (this.isPermissionSet(permission)) {
++            return net.kyori.adventure.util.TriState.byBoolean(this.hasPermission(permission));
++        } else {
++            return net.kyori.adventure.util.TriState.NOT_SET;
++        }
++    }
++
++    /**
++     * Checks if this object has a permission set and, if it is set, the value of the permission.
++     *
++     * @param permission the permission to check
++     * @return a tri-state of if the permission is set and, if it is set, it's value
++     */
++    default net.kyori.adventure.util.@NotNull TriState permissionValue(final @NotNull String permission) {
++        if (this.isPermissionSet(permission)) {
++            return net.kyori.adventure.util.TriState.byBoolean(this.hasPermission(permission));
++        } else {
++            return net.kyori.adventure.util.TriState.NOT_SET;
++        }
++    }
++    // Paper end
+ }
 diff --git a/src/main/java/org/bukkit/scoreboard/Objective.java b/src/main/java/org/bukkit/scoreboard/Objective.java
 index 7277f62d77cd94dc34fd8ac4fad64ebeffe056e4..6279957b9bc6d22881f092eabf3a99831d85e3ee 100644
 --- a/src/main/java/org/bukkit/scoreboard/Objective.java
@@ -3589,10 +3757,10 @@ index d283f6947d775a3bc3a9b2f75db9ab733d819a06..93089ce61d2e1888df13b7c9629a79cd
  
      /**
 diff --git a/src/main/java/org/bukkit/scoreboard/Team.java b/src/main/java/org/bukkit/scoreboard/Team.java
-index 0db7fe1b9fe5621ceed3f4f046691e359f5949dd..30fce0df75494eb9b7409f08ea3d6ff894f7c79f 100644
+index 0db7fe1b9fe5621ceed3f4f046691e359f5949dd..d5b39fb4fc16a342b5661e08df1506858168d20d 100644
 --- a/src/main/java/org/bukkit/scoreboard/Team.java
 +++ b/src/main/java/org/bukkit/scoreboard/Team.java
-@@ -22,14 +22,95 @@ public interface Team {
+@@ -22,14 +22,93 @@ public interface Team {
       */
      @NotNull
      String getName() throws IllegalStateException;
@@ -3628,7 +3796,6 @@ index 0db7fe1b9fe5621ceed3f4f046691e359f5949dd..30fce0df75494eb9b7409f08ea3d6ff8
 +     *
 +     * @param prefix New prefix
 +     * @throws IllegalArgumentException if prefix is null
-+     * @throws IllegalArgumentException if prefix is longer than 64
 +     *     characters
 +     * @throws IllegalStateException if this team has been unregistered
 +     */
@@ -3647,7 +3814,6 @@ index 0db7fe1b9fe5621ceed3f4f046691e359f5949dd..30fce0df75494eb9b7409f08ea3d6ff8
 +     *
 +     * @param suffix the new suffix for this team.
 +     * @throws IllegalArgumentException if suffix is null
-+     * @throws IllegalArgumentException if suffix is longer than 64
 +     *     characters
 +     * @throws IllegalStateException if this team has been unregistered
 +     */
@@ -3688,7 +3854,7 @@ index 0db7fe1b9fe5621ceed3f4f046691e359f5949dd..30fce0df75494eb9b7409f08ea3d6ff8
      String getDisplayName() throws IllegalStateException;
  
      /**
-@@ -39,7 +120,9 @@ public interface Team {
+@@ -39,7 +118,9 @@ public interface Team {
       * @throws IllegalArgumentException if displayName is longer than 128
       *     characters.
       * @throws IllegalStateException if this team has been unregistered
@@ -3698,7 +3864,7 @@ index 0db7fe1b9fe5621ceed3f4f046691e359f5949dd..30fce0df75494eb9b7409f08ea3d6ff8
      void setDisplayName(@NotNull String displayName) throws IllegalStateException, IllegalArgumentException;
  
      /**
-@@ -47,8 +130,10 @@ public interface Team {
+@@ -47,8 +128,10 @@ public interface Team {
       *
       * @return Team prefix
       * @throws IllegalStateException if this team has been unregistered
@@ -3709,7 +3875,7 @@ index 0db7fe1b9fe5621ceed3f4f046691e359f5949dd..30fce0df75494eb9b7409f08ea3d6ff8
      String getPrefix() throws IllegalStateException;
  
      /**
-@@ -59,7 +144,9 @@ public interface Team {
+@@ -59,7 +142,9 @@ public interface Team {
       * @throws IllegalArgumentException if prefix is longer than 64
       *     characters
       * @throws IllegalStateException if this team has been unregistered
@@ -3719,7 +3885,7 @@ index 0db7fe1b9fe5621ceed3f4f046691e359f5949dd..30fce0df75494eb9b7409f08ea3d6ff8
      void setPrefix(@NotNull String prefix) throws IllegalStateException, IllegalArgumentException;
  
      /**
-@@ -67,8 +154,10 @@ public interface Team {
+@@ -67,8 +152,10 @@ public interface Team {
       *
       * @return the team's current suffix
       * @throws IllegalStateException if this team has been unregistered
@@ -3730,7 +3896,7 @@ index 0db7fe1b9fe5621ceed3f4f046691e359f5949dd..30fce0df75494eb9b7409f08ea3d6ff8
      String getSuffix() throws IllegalStateException;
  
      /**
-@@ -79,7 +168,9 @@ public interface Team {
+@@ -79,7 +166,9 @@ public interface Team {
       * @throws IllegalArgumentException if suffix is longer than 64
       *     characters
       * @throws IllegalStateException if this team has been unregistered
@@ -3740,7 +3906,7 @@ index 0db7fe1b9fe5621ceed3f4f046691e359f5949dd..30fce0df75494eb9b7409f08ea3d6ff8
      void setSuffix(@NotNull String suffix) throws IllegalStateException, IllegalArgumentException;
  
      /**
-@@ -90,8 +181,10 @@ public interface Team {
+@@ -90,8 +179,10 @@ public interface Team {
       *
       * @return team color, defaults to {@link ChatColor#RESET}
       * @throws IllegalStateException if this team has been unregistered
@@ -3751,7 +3917,7 @@ index 0db7fe1b9fe5621ceed3f4f046691e359f5949dd..30fce0df75494eb9b7409f08ea3d6ff8
      ChatColor getColor() throws IllegalStateException;
  
      /**
-@@ -102,7 +195,9 @@ public interface Team {
+@@ -102,7 +193,9 @@ public interface Team {
       *
       * @param color new color, must be non-null. Use {@link ChatColor#RESET} for
       * no color

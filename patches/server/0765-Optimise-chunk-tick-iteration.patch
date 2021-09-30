@@ -1,0 +1,94 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <spottedleaf@spottedleaf.dev>
+Date: Thu, 7 May 2020 05:48:54 -0700
+Subject: [PATCH] Optimise chunk tick iteration
+
+Use a dedicated list of entity ticking chunks to reduce the cost
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
+index 9196be25ff874a0c81868906c5b86bfe4e2968f5..7ea86cbeb72f08d751c14006f428fe5921916061 100644
+--- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
++++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
+@@ -1006,19 +1006,35 @@ public class ServerChunkCache extends ChunkSource {
+ 
+             this.lastSpawnState = spawnercreature_d;
+             this.level.getProfiler().pop();
+-            List<ChunkHolder> list = Lists.newArrayList(this.chunkMap.getChunks());
+-
+-            Collections.shuffle(list);
++            // Paper - moved down, enabled if per-player = false
+             // Paper - moved natural spawn event up
+             this.level.timings.chunkTicks.startTiming(); // Paper
+-            list.forEach((playerchunk) -> {
+-                Optional<LevelChunk> optional = ((Either) playerchunk.getTickingChunkFuture().getNow(ChunkHolder.UNLOADED_LEVEL_CHUNK)).left();
+-
+-                if (optional.isPresent()) {
+-                    LevelChunk chunk = (LevelChunk) optional.get();
++            // Paper start
++            java.util.Iterator<LevelChunk> iterator;
++            if (this.level.paperConfig.perPlayerMobSpawns) {
++                iterator = this.entityTickingChunks.iterator();
++            } else {
++                iterator = this.entityTickingChunks.unsafeIterator();
++                List<LevelChunk> shuffled = new java.util.ArrayList<>(this.entityTickingChunks.size());
++                while (iterator.hasNext()) {
++                    shuffled.add(iterator.next());
++                }
++                Collections.shuffle(shuffled);
++                iterator = shuffled.iterator();
++            }
++            try { while (iterator.hasNext()) {
++                LevelChunk chunk = iterator.next();
++                ChunkHolder playerchunk = chunk.playerChunk;
++                if (playerchunk != null) {
++                    this.level.getProfiler().push("broadcast");
++                    this.level.timings.broadcastChunkUpdates.startTiming(); // Paper - timings
++                    playerchunk.broadcastChanges(chunk);
++                    this.level.timings.broadcastChunkUpdates.stopTiming(); // Paper - timings
++                    this.level.getProfiler().pop();
++                    // Paper end
+                     ChunkPos chunkcoordintpair = chunk.getPos();
+ 
+-                    if (this.level.isPositionEntityTicking(chunkcoordintpair) && !this.chunkMap.isOutsideOfRange(playerchunk, chunkcoordintpair, false)) { // Paper - optimise isOutsideOfRange
++                    if ((true || this.level.isPositionEntityTicking(chunkcoordintpair)) && !this.chunkMap.isOutsideOfRange(playerchunk, chunkcoordintpair, false)) { // Paper - optimise isOutsideOfRange // Paper - we only iterate entity ticking chunks
+                         chunk.setInhabitedTime(chunk.getInhabitedTime() + j);
+                         if (flag1 && (this.spawnEnemies || this.spawnFriendlies) && this.level.getWorldBorder().isWithinBounds(chunk.getPos()) && !this.chunkMap.isOutsideOfRange(playerchunk, chunkcoordintpair, true)) { // Spigot // Paper - optimise isOutsideOfRange
+                             NaturalSpawner.spawnForChunk(this.level, chunk, spawnercreature_d, this.spawnFriendlies, this.spawnEnemies, flag2);
+@@ -1029,7 +1045,13 @@ public class ServerChunkCache extends ChunkSource {
+                         // this.level.timings.doTickTiles.stopTiming(); // Spigot // Paper
+                     }
+                 }
+-            });
++            } // Paper start - optimise chunk tick iteration
++            } finally {
++                if (iterator instanceof io.papermc.paper.util.maplist.IteratorSafeOrderedReferenceSet.Iterator) {
++                    ((io.papermc.paper.util.maplist.IteratorSafeOrderedReferenceSet.Iterator<LevelChunk>)iterator).finishedIterating();
++                }
++            }
++            // Paper end - optimise chunk tick iteration
+             this.level.timings.chunkTicks.stopTiming(); // Paper
+             this.level.getProfiler().push("customSpawners");
+             if (flag1) {
+@@ -1038,21 +1060,7 @@ public class ServerChunkCache extends ChunkSource {
+                 } // Paper - timings
+             }
+ 
+-            this.level.getProfiler().popPush("broadcast");
+-            this.chunkMap.getChunks().forEach((playerchunk) -> { // Paper - no... just no...
+-                Optional<LevelChunk> optional = ((Either) playerchunk.getTickingChunkFuture().getNow(ChunkHolder.UNLOADED_LEVEL_CHUNK)).left(); // CraftBukkit - decompile error
+-
+-                Objects.requireNonNull(playerchunk);
+-
+-                // Paper start - timings
+-                optional.ifPresent(chunk -> {
+-                    this.level.timings.broadcastChunkUpdates.startTiming(); // Paper - timings
+-                    playerchunk.broadcastChanges(chunk);
+-                    this.level.timings.broadcastChunkUpdates.stopTiming(); // Paper - timings
+-                });
+-                // Paper end
+-            });
+-            this.level.getProfiler().pop();
++            // Paper - no, iterating just ONCE is expensive enough! Don't do it TWICE! Code moved up
+             this.level.getProfiler().pop();
+         }
+ 

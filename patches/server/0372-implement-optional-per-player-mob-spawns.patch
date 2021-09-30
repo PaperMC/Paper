@@ -25,17 +25,20 @@ index fe79c0add4f7cb18d487c5bb9415c40c5b551ea2..8d9ddad1879e7616d980ca70de8aecac
          poiUnload = Timings.ofSafe(name + "Chunk unload - POI");
          chunkUnload = Timings.ofSafe(name + "Chunk unload - Chunk");
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index 31f192773fe5159ed2109f0d367e6b7287ffd186..f2e4939c8144b9bc7441130302ab3e2358c42063 100644
+index c2601c8d0635e4150be622fc681c2f4adb55bc59..9dfb35654df01cf8fea6cf1842786f8466419729 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-@@ -574,5 +574,10 @@ public class PaperWorldConfig {
+@@ -579,5 +579,13 @@ public class PaperWorldConfig {
              Bukkit.getLogger().warning("You have enabled permission-based Anti-Xray checking - depending on your permission plugin, this may cause performance issues");
          }
      }
 +
 +    public boolean perPlayerMobSpawns = false;
 +    private void perPlayerMobSpawns() {
-+        perPlayerMobSpawns = getBoolean("per-player-mob-spawns", false);
++        if (PaperConfig.version < 22) {
++            set("per-player-mob-spawns", Boolean.TRUE);
++        }
++        perPlayerMobSpawns = getBoolean("per-player-mob-spawns", true);
 +    }
  }
  
@@ -545,7 +548,7 @@ index 0000000000000000000000000000000000000000..11de56afaf059b00fa5bec293516bcdc
 +    }
 +} 
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index c7d708cc5c20d46ed085f1f1db7666246614a57d..b2d88e0423d93fdb45dc8ca7d53c98069ade749e 100644
+index 48ca60925b15d7e320cf07467bd0cf9ddee2a036..46b23a1e543c55b71a7837af41df8cf89d72c22b 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
 @@ -145,6 +145,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
@@ -556,16 +559,11 @@ index c7d708cc5c20d46ed085f1f1db7666246614a57d..b2d88e0423d93fdb45dc8ca7d53c9806
  
      // CraftBukkit start - recursion-safe executor for Chunk loadCallback() and unloadCallback()
      public final CallbackExecutor callbackExecutor = new CallbackExecutor();
-@@ -270,6 +271,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
-         this.overworldDataStorage = persistentStateManagerFactory;
-         this.poiManager = new PoiManager(new File(file, "poi"), dataFixer, dsync, world);
-         this.setViewDistance(viewDistance);
-+        this.playerMobDistanceMap = this.level.paperConfig.perPlayerMobSpawns ? new com.destroystokyo.paper.util.PlayerMobDistanceMap() : null; // Paper
-         // Paper start - no-tick view distance
-         this.setNoTickViewDistance(this.level.paperConfig.noTickViewDistance);
-         this.playerViewDistanceTickMap = new com.destroystokyo.paper.util.misc.PlayerAreaMap(this.pooledLinkedPlayerHashSets,
-@@ -311,6 +313,25 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -343,8 +344,28 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+                 ChunkMap.this.updateChunkTracking(player, new ChunkPos(rangeX, rangeZ), null, true, false); // unloaded, loaded
+             });
          // Paper end - no-tick view distance
++        this.playerMobDistanceMap = this.level.paperConfig.perPlayerMobSpawns ? new com.destroystokyo.paper.util.PlayerMobDistanceMap() : null; // Paper
      }
  
 +    // Paper start
@@ -591,10 +589,10 @@ index c7d708cc5c20d46ed085f1f1db7666246614a57d..b2d88e0423d93fdb45dc8ca7d53c9806
          double d0 = (double) SectionPos.sectionToBlockCoord(pos.x, 8);
          double d1 = (double) SectionPos.sectionToBlockCoord(pos.z, 8);
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-index 3beef93cd23b3f1171e090c87c3f96747a276678..d4d69c3f89a106d691ec8d0709ca45850f91d2a6 100644
+index ddd535ad7d2b051e0d05320e4491bad46df8ffbe..cb273030b70f1d41110b90effe3d542ab930fe39 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-@@ -753,7 +753,22 @@ public class ServerChunkCache extends ChunkSource {
+@@ -912,7 +912,22 @@ public class ServerChunkCache extends ChunkSource {
              this.level.getProfiler().push("naturalSpawnCount");
              this.level.timings.countNaturalMobs.startTiming(); // Paper - timings
              int l = this.distanceManager.getNaturalSpawnChunkCount();
@@ -619,7 +617,7 @@ index 3beef93cd23b3f1171e090c87c3f96747a276678..d4d69c3f89a106d691ec8d0709ca4585
  
              this.lastSpawnState = spawnercreature_d;
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-index 74ad39234b89db61fab89ce6bac4f3f8b3eccb7c..f7e199a375a49756f9bbbc17b54d74c71923457e 100644
+index 0b11b136834f57a633f9461c7ad956b3c531f3ea..61202cc8610b9becb5e44e1897ff372bc1e5a2ac 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
 @@ -224,6 +224,11 @@ public class ServerPlayer extends Player {
@@ -699,7 +697,7 @@ index 95e5660e6cb1afb5ebdb3dbbe59a07c879bddb4b..88145f04989c71a686aae1b486087ecd
 +            // Paper end
 +
 +            // Paper start - per player mob spawning
-+            if ((spawnAnimals || !enumcreaturetype.isFriendly()) && (spawnMonsters || enumcreaturetype.isFriendly()) && (rareSpawn || !enumcreaturetype.isPersistent()) && info.canSpawnForCategory(enumcreaturetype, limit) && difference > 0) {
++            if ((spawnAnimals || !enumcreaturetype.isFriendly()) && (spawnMonsters || enumcreaturetype.isFriendly()) && (rareSpawn || !enumcreaturetype.isPersistent()) && difference > 0) {
                  // CraftBukkit end
                  Objects.requireNonNull(info);
                  NaturalSpawner.SpawnPredicate spawnercreature_c = info::canSpawn;

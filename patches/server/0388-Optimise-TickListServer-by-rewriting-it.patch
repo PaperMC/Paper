@@ -42,10 +42,10 @@ sets the excessive tick delay to the specified ticks (defaults to
 60 * 20 ticks, aka 60 seconds)
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-index 9f92feb008fe83aea9f05f435a9aee2bc6908553..0c02058abebe52e98d079a4c6853570e7eba9a88 100644
+index 34e82edf683a33f140f3b4580b3245f29a775fcd..86e16e39a9a996669989d990b76f69116bcee300 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-@@ -363,6 +363,13 @@ public class PaperConfig {
+@@ -372,6 +372,13 @@ public class PaperConfig {
          maxBookTotalSizeMultiplier = getDouble("settings.book-size.total-multiplier", maxBookTotalSizeMultiplier);
      }
  
@@ -889,7 +889,7 @@ index 0000000000000000000000000000000000000000..118988c39e58f28e8a2851792b9c014f
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/level/ChunkHolder.java b/src/main/java/net/minecraft/server/level/ChunkHolder.java
-index 1dd1b9afaee38fdc994ad0a069bd63b02eedf55c..bbb94e8a5e3585701849e025b534a69a6e67949f 100644
+index 8d3cdd288eacc91f7c9a624f601284e5cd2a36cc..a3ba56f437fe9e4dac59370463052341eb9b7524 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkHolder.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkHolder.java
 @@ -86,6 +86,19 @@ public class ChunkHolder {
@@ -912,11 +912,10 @@ index 1dd1b9afaee38fdc994ad0a069bd63b02eedf55c..bbb94e8a5e3585701849e025b534a69a
  
      public ChunkHolder(ChunkPos pos, int level, LevelHeightAccessor world, LevelLightEngine lightingProvider, ChunkHolder.LevelChangeListener levelUpdateListener, ChunkHolder.PlayerProvider playersWatchingChunkProvider) {
          this.futures = new AtomicReferenceArray(ChunkHolder.CHUNK_STATUSES.size());
-@@ -538,6 +551,12 @@ public class ChunkHolder {
-                 either.ifLeft(chunk -> {
-                     // note: Here is a very good place to add callbacks to logic waiting on this.
-                     ChunkHolder.this.isTickingReady = true;
-+
+@@ -541,6 +554,11 @@ public class ChunkHolder {
+                     // Paper start - ticking chunk set
+                     ChunkHolder.this.chunkMap.level.getChunkSource().tickingChunks.add(chunk);
+                     // Paper end - ticking chunk set
 +                    // Paper start - rewrite ticklistserver
 +                    if (ChunkHolder.this.chunkMap.level.entityManager.areEntitiesLoaded(this.pos.longKey)) {
 +                        ChunkHolder.this.chunkMap.level.onChunkSetTicking(ChunkHolder.this.pos.x, ChunkHolder.this.pos.z);
@@ -926,10 +925,10 @@ index 1dd1b9afaee38fdc994ad0a069bd63b02eedf55c..bbb94e8a5e3585701849e025b534a69a
              });
              // Paper end
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-index 550338a7170437415342df7bc1b0a5c445480300..5e4de1ffb1ed3161022fde4fd1bc8b9f2b314ec7 100644
+index 472146bea17f323397df1d3ed1aa31fc91a8741c..c7ecb8fb1cbc1433986fbd03c68b4dbe5a2835c7 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-@@ -219,6 +219,18 @@ public class ServerChunkCache extends ChunkSource {
+@@ -218,6 +218,18 @@ public class ServerChunkCache extends ChunkSource {
          }, this.mainThreadProcessor);
      }
      // Paper end
@@ -946,13 +945,13 @@ index 550338a7170437415342df7bc1b0a5c445480300..5e4de1ffb1ed3161022fde4fd1bc8b9f
 +    }
 +    // Paper end - rewrite ticklistserver
  
-     public ServerChunkCache(ServerLevel world, LevelStorageSource.LevelStorageAccess session, DataFixer dataFixer, StructureManager structureManager, Executor workerExecutor, ChunkGenerator chunkGenerator, int viewDistance, boolean flag, ChunkProgressListener worldGenerationProgressListener, ChunkStatusUpdateListener chunkstatusupdatelistener, Supplier<DimensionDataStorage> supplier) {
-         this.level = world;
+     // Paper start
+     // this will try to avoid chunk neighbours for lighting
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index 00a064305dd8c671566dc32b8cd85f593ad139a3..4e654eda235d05ba96bacc6d9c14ce6428e60d07 100644
+index 207bcd82065e4c1832e4d7814635017210bd9d4d..f3fa6b366fb749b8dfcfc2343d934da0647b861b 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
-@@ -291,6 +291,15 @@ public class ServerLevel extends Level implements WorldGenLevel {
+@@ -381,6 +381,15 @@ public class ServerLevel extends Level implements WorldGenLevel {
      }
      // Paper end
  
@@ -966,9 +965,9 @@ index 00a064305dd8c671566dc32b8cd85f593ad139a3..4e654eda235d05ba96bacc6d9c14ce64
 +    // Paper end - rewrite ticklistserver
 +
      // Add env and gen to constructor, WorldData -> WorldDataServer
-     public ServerLevel(MinecraftServer minecraftserver, Executor executor, LevelStorageSource.LevelStorageAccess convertable_conversionsession, ServerLevelData iworlddataserver, ResourceKey<Level> resourcekey, DimensionType dimensionmanager, ChunkProgressListener worldloadlistener, ChunkGenerator chunkgenerator, boolean flag, long i, List<CustomSpawner> list, boolean flag1, org.bukkit.World.Environment env, org.bukkit.generator.ChunkGenerator gen) {
+     public ServerLevel(MinecraftServer minecraftserver, Executor executor, LevelStorageSource.LevelStorageAccess convertable_conversionsession, ServerLevelData iworlddataserver, ResourceKey<Level> resourcekey, DimensionType dimensionmanager, ChunkProgressListener worldloadlistener, ChunkGenerator chunkgenerator, boolean flag, long i, List<CustomSpawner> list, boolean flag1, org.bukkit.World.Environment env, org.bukkit.generator.ChunkGenerator gen, org.bukkit.generator.BiomeProvider biomeProvider) {
          // Objects.requireNonNull(minecraftserver); // CraftBukkit - decompile error
-@@ -307,13 +316,19 @@ public class ServerLevel extends Level implements WorldGenLevel {
+@@ -397,13 +406,19 @@ public class ServerLevel extends Level implements WorldGenLevel {
          DefaultedRegistry registryblocks = Registry.BLOCK;
  
          Objects.requireNonNull(registryblocks);
@@ -989,7 +988,7 @@ index 00a064305dd8c671566dc32b8cd85f593ad139a3..4e654eda235d05ba96bacc6d9c14ce64
          this.navigatingMobs = new ObjectOpenHashSet();
          this.blockEvents = new ObjectLinkedOpenHashSet();
          this.dragonParts = new Int2ObjectOpenHashMap();
-@@ -599,7 +614,9 @@ public class ServerLevel extends Level implements WorldGenLevel {
+@@ -689,7 +704,9 @@ public class ServerLevel extends Level implements WorldGenLevel {
          if (this.tickTime) {
              long i = this.levelData.getGameTime() + 1L;
  
@@ -1038,12 +1037,12 @@ index 1a05edf041cf4aeee7c165fec564ce45adbdd5c7..febc837d324cbe2cd83aea6c1e0d298c
          }
  
 diff --git a/src/main/java/net/minecraft/world/level/ServerTickList.java b/src/main/java/net/minecraft/world/level/ServerTickList.java
-index 702203f4a4fa4fc03c35ec974a97e08ed0f3c67c..609c8ece9e9f151875bf8191cc671206ee1e5f68 100644
+index bcce5f1f8940e6fb8f398afd540bcbe2286ed0c2..048c399585d75252f5154cb7e46c394c7184e11c 100644
 --- a/src/main/java/net/minecraft/world/level/ServerTickList.java
 +++ b/src/main/java/net/minecraft/world/level/ServerTickList.java
-@@ -49,6 +49,9 @@ public class ServerTickList<T> implements TickList<T> {
-     private final co.aikar.timings.Timing timingTicking; // Paper
-     // Paper end
+@@ -51,6 +51,9 @@ public class ServerTickList<T> implements TickList<T> {
+         this.ticker = tickConsumer;
+     }
  
 +    // Paper start
 +    public void nextTick() {}
@@ -1051,7 +1050,7 @@ index 702203f4a4fa4fc03c35ec974a97e08ed0f3c67c..609c8ece9e9f151875bf8191cc671206
      public void tick() {
          int i = this.tickNextTickList.size();
  
-@@ -190,7 +193,7 @@ public class ServerTickList<T> implements TickList<T> {
+@@ -192,7 +195,7 @@ public class ServerTickList<T> implements TickList<T> {
          return ServerTickList.saveTickList(this.toId, list, this.level.getGameTime());
      }
  
@@ -1119,17 +1118,17 @@ index 3b8c04f6ffd7e6c197465aa1caf633ba92529472..1007bfc9c19641f42afd5526cfe7bdb6
  
      @Override
 diff --git a/src/main/java/net/minecraft/world/level/entity/PersistentEntitySectionManager.java b/src/main/java/net/minecraft/world/level/entity/PersistentEntitySectionManager.java
-index a56cfcf5ac735147f3f2bd029a2b1a4e889d5b4f..790594b970c03c340d0c4ca7b5ce315f5ffe571d 100644
+index 59c3f1263f6418736e207786bc50448ed5dde32a..e9d455736a2ff7a87f319615af4a090ddc943641 100644
 --- a/src/main/java/net/minecraft/world/level/entity/PersistentEntitySectionManager.java
 +++ b/src/main/java/net/minecraft/world/level/entity/PersistentEntitySectionManager.java
-@@ -264,6 +264,12 @@ public class PersistentEntitySectionManager<T extends EntityAccess> implements A
-                 this.addEntity(entity, true);
-             });
-             this.chunkLoadStatuses.put(chunkEntities.getPos().toLong(), PersistentEntitySectionManager.ChunkLoadStatus.LOADED);
+@@ -303,6 +303,12 @@ public class PersistentEntitySectionManager<T extends EntityAccess> implements A
+             List<Entity> entities = this.getEntities(chunkentities.getPos()); // PAIL rename getChunkPos
+             CraftEventFactory.callEntitiesLoadEvent(((EntityStorage) this.permanentStorage).level, chunkentities.getPos(), entities);
+             // CraftBukkit end
 +            // Paper start - rewrite ServerTickList
 +            final net.minecraft.server.level.ServerLevel level = ((net.minecraft.world.level.chunk.storage.EntityStorage) this.permanentStorage).level;
-+            if (level.chunkSource.isPositionTickingReady(chunkEntities.getPos().longKey)) {
-+                level.onChunkSetTicking(chunkEntities.getPos().x, chunkEntities.getPos().z);
++            if (level.chunkSource.isPositionTickingReady(chunkentities.getPos().longKey)) {
++                level.onChunkSetTicking(chunkentities.getPos().x, chunkentities.getPos().z);
 +            }
 +            // Paper end
          }

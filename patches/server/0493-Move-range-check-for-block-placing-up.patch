@@ -1,0 +1,53 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Wed, 15 Jul 2020 19:34:11 -0700
+Subject: [PATCH] Move range check for block placing up
+
+
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index 36a69fb0a9cd81ceb0f9cbe6549fc89bd643c77c..51303e89ec160f3715e538903ae98be993d59150 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -1661,6 +1661,14 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+     }
+     // Spigot end
+ 
++    // Paper start
++    private boolean isOutsideOfReach(double x, double y, double z) {
++        Location eyeLoc = this.getCraftPlayer().getEyeLocation();
++        double reachDistance = NumberConversions.square(eyeLoc.getX() - x) + NumberConversions.square(eyeLoc.getY() - y) + NumberConversions.square(eyeLoc.getZ() - z);
++        return reachDistance > (this.getCraftPlayer().getGameMode() == org.bukkit.GameMode.CREATIVE ? CREATIVE_PLACE_DISTANCE_SQUARED : SURVIVAL_PLACE_DISTANCE_SQUARED);
++    }
++    // Paper end
++
+     @Override
+     public void handleUseItemOn(ServerboundUseItemOnPacket packet) {
+         PacketUtils.ensureRunningOnSameThread(packet, this, this.player.getLevel());
+@@ -1673,17 +1681,22 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+         BlockPos blockposition = movingobjectpositionblock.getBlockPos();
+         Direction enumdirection = movingobjectpositionblock.getDirection();
+ 
++        // Paper start - move check up and check actual location as well
++        final Vec3 clickedLocation = movingobjectpositionblock.getLocation();
++        if (isOutsideOfReach(blockposition.getX() + 0.5D, blockposition.getY() + 0.5D, blockposition.getZ() + 0.5D)
++            || !Double.isFinite(clickedLocation.x) || !Double.isFinite(clickedLocation.y) || !Double.isFinite(clickedLocation.z)
++            || isOutsideOfReach(clickedLocation.x, clickedLocation.y, clickedLocation.z)) {
++            return;
++        }
++        // Paper end - move check up
++
+         this.player.resetLastActionTime();
+         int i = this.player.level.getMaxBuildHeight();
+ 
+         if (blockposition.getY() < i) {
+             if (this.awaitingPositionFromClient == null && this.player.distanceToSqr((double) blockposition.getX() + 0.5D, (double) blockposition.getY() + 0.5D, (double) blockposition.getZ() + 0.5D) < 64.0D && worldserver.mayInteract((net.minecraft.world.entity.player.Player) this.player, blockposition)) {
+                 // CraftBukkit start - Check if we can actually do something over this large a distance
+-                Location eyeLoc = this.getCraftPlayer().getEyeLocation();
+-                double reachDistance = NumberConversions.square(eyeLoc.getX() - blockposition.getX()) + NumberConversions.square(eyeLoc.getY() - blockposition.getY()) + NumberConversions.square(eyeLoc.getZ() - blockposition.getZ());
+-                if (reachDistance > (this.getCraftPlayer().getGameMode() == org.bukkit.GameMode.CREATIVE ? ServerGamePacketListenerImpl.CREATIVE_PLACE_DISTANCE_SQUARED : ServerGamePacketListenerImpl.SURVIVAL_PLACE_DISTANCE_SQUARED)) {
+-                    return;
+-                }
++                // Paper - move check up
+                 this.player.stopUsingItem(); // SPIGOT-4706
+                 // CraftBukkit end
+                 InteractionResult enuminteractionresult = this.player.gameMode.useItemOn(this.player, worldserver, itemstack, enumhand, movingobjectpositionblock);

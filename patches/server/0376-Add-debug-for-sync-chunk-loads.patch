@@ -7,10 +7,13 @@ This patch adds a tool to find calls to getChunkAt which would load
 chunks, however it must be enabled by setting the startup flag
 -Dpaper.debug-sync-loads=true
 
-To get a debug log for sync loads, the command is /paper syncloadinfo
+- To get a debug log for sync loads, the command is
+  /paper syncloadinfo
+- To clear clear the currently stored sync load info, use
+  /paper syncloadinfo clear
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperCommand.java b/src/main/java/com/destroystokyo/paper/PaperCommand.java
-index c6254f39f98b821f75a21c0ecea457f73247385f..42583cc3a6e2631614a4b9c303b1cfa4c9ae92c6 100644
+index 3091c100eaf5a86ba270ef0d96de1852a2a0ac9e..51e469146f0712a509071c8438ff6b69f961f945 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperCommand.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperCommand.java
 @@ -1,11 +1,17 @@
@@ -50,7 +53,19 @@ index c6254f39f98b821f75a21c0ecea457f73247385f..42583cc3a6e2631614a4b9c303b1cfa4
  
      public PaperCommand(String name) {
          super(name);
-@@ -165,6 +174,9 @@ public class PaperCommand extends Command {
+@@ -90,6 +99,11 @@ public class PaperCommand extends Command {
+                     return getListMatchingLast(sender, args, worldNames);
+                 }
+                 break;
++            case "syncloadinfo":
++                if (args.length == 2) {
++                    return getListMatchingLast(sender, args, "clear");
++                }
++                break;
+         }
+         return Collections.emptyList();
+     }
+@@ -165,6 +179,9 @@ public class PaperCommand extends Command {
              case "fixlight":
                  this.doFixLight(sender, args);
                  break;
@@ -60,7 +75,7 @@ index c6254f39f98b821f75a21c0ecea457f73247385f..42583cc3a6e2631614a4b9c303b1cfa4
              case "ver":
                  if (!testPermission(sender, "version")) break; // "ver" needs a special check because it's an alias. All other commands are checked up before the switch statement (because they are present in the SUBCOMMANDS set)
              case "version":
-@@ -182,6 +194,40 @@ public class PaperCommand extends Command {
+@@ -182,6 +199,47 @@ public class PaperCommand extends Command {
          return true;
      }
  
@@ -69,6 +84,13 @@ index c6254f39f98b821f75a21c0ecea457f73247385f..42583cc3a6e2631614a4b9c303b1cfa4
 +            sender.sendMessage(ChatColor.RED + "This command requires the server startup flag '-Dpaper.debug-sync-loads=true' to be set.");
 +            return;
 +        }
++
++        if (args.length > 1 && args[1].equals("clear")) {
++            SyncLoadFinder.clear();
++            sender.sendMessage(ChatColor.GRAY + "Sync load data cleared.");
++            return;
++        }
++
 +        File file = new File(new File(new File("."), "debug"),
 +            "sync-load-info" + DateTimeFormatter.ofPattern("yyyy-MM-dd_HH.mm.ss").format(LocalDateTime.now()) + ".txt");
 +        file.getParentFile().mkdirs();
@@ -103,10 +125,10 @@ index c6254f39f98b821f75a21c0ecea457f73247385f..42583cc3a6e2631614a4b9c303b1cfa4
          if (args.length < 2 || args[1].equals("*")) {
 diff --git a/src/main/java/com/destroystokyo/paper/io/SyncLoadFinder.java b/src/main/java/com/destroystokyo/paper/io/SyncLoadFinder.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..524f33371b9de1d4dd6972fe59ffbe1804d7c5f3
+index 0000000000000000000000000000000000000000..0bb4aaa546939b67a5d22865190f30478a9337c1
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/io/SyncLoadFinder.java
-@@ -0,0 +1,171 @@
+@@ -0,0 +1,175 @@
 +package com.destroystokyo.paper.io;
 +
 +import com.google.gson.JsonArray;
@@ -133,6 +155,10 @@ index 0000000000000000000000000000000000000000..524f33371b9de1d4dd6972fe59ffbe18
 +        public int times;
 +
 +        public final Long2IntOpenHashMap coordinateTimes = new Long2IntOpenHashMap();
++    }
++
++    public static void clear() {
++        SYNC_LOADS.clear();
 +    }
 +
 +    public static void logSyncLoad(final Level world, final int chunkX, final int chunkZ) {
@@ -279,10 +305,10 @@ index 0000000000000000000000000000000000000000..524f33371b9de1d4dd6972fe59ffbe18
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-index bb57e3b917b0e987273796ee7a348326350784f4..550338a7170437415342df7bc1b0a5c445480300 100644
+index 374678fbcdedc9845e45ecbc91723540392d3d22..472146bea17f323397df1d3ed1aa31fc91a8741c 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-@@ -482,6 +482,7 @@ public class ServerChunkCache extends ChunkSource {
+@@ -641,6 +641,7 @@ public class ServerChunkCache extends ChunkSource {
                  this.level.asyncChunkTaskManager.raisePriority(x1, z1, com.destroystokyo.paper.io.PrioritizedTaskQueue.HIGHEST_PRIORITY);
                  com.destroystokyo.paper.io.chunk.ChunkTaskManager.pushChunkWait(this.level, x1, z1);
                  // Paper end
@@ -291,10 +317,10 @@ index bb57e3b917b0e987273796ee7a348326350784f4..550338a7170437415342df7bc1b0a5c4
              chunkproviderserver_a.managedBlock(completablefuture::isDone);
                  com.destroystokyo.paper.io.chunk.ChunkTaskManager.popChunkWait(); // Paper - async chunk debug
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index fac80bdbf0fa68cd8e63130a6a9de3b60a44583e..00a064305dd8c671566dc32b8cd85f593ad139a3 100644
+index 0df81cbddf2e7f164861b95cf572f9d6d3f031ca..207bcd82065e4c1832e4d7814635017210bd9d4d 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
-@@ -276,6 +276,12 @@ public class ServerLevel extends Level implements WorldGenLevel {
+@@ -366,6 +366,12 @@ public class ServerLevel extends Level implements WorldGenLevel {
      };
      public final com.destroystokyo.paper.io.chunk.ChunkTaskManager asyncChunkTaskManager;
      // Paper end
