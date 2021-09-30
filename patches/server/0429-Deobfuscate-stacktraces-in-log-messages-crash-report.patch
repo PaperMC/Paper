@@ -6,7 +6,7 @@ Subject: [PATCH] Deobfuscate stacktraces in log messages, crash reports, and
 
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index eea412347cef390555166a988058ae877afdfa4a..b35e54380cb23758a813fa24d13b888f36906c23 100644
+index fd037da8b655b329ef016356519a69ca2621fd4f..03c9f894a2eaa065c456843eef4d3ab1a25565c3 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
 @@ -1,8 +1,12 @@
@@ -120,10 +120,10 @@ index 0bb4aaa546939b67a5d22865190f30478a9337c1..d3e619655382e50e9ac9323ed942502d
  
 diff --git a/src/main/java/io/papermc/paper/logging/StacktraceDeobfuscatingRewritePolicy.java b/src/main/java/io/papermc/paper/logging/StacktraceDeobfuscatingRewritePolicy.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..d019802a36dbaca4bf299a55d28381e43d6b976f
+index 0000000000000000000000000000000000000000..c701ef3c287f62aa0ebfbdbd6da6ed82a1c7793c
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/logging/StacktraceDeobfuscatingRewritePolicy.java
-@@ -0,0 +1,31 @@
+@@ -0,0 +1,38 @@
 +package io.papermc.paper.logging;
 +
 +import io.papermc.paper.util.StacktraceDeobfuscator;
@@ -132,7 +132,8 @@ index 0000000000000000000000000000000000000000..d019802a36dbaca4bf299a55d28381e4
 +import org.apache.logging.log4j.core.appender.rewrite.RewritePolicy;
 +import org.apache.logging.log4j.core.config.plugins.Plugin;
 +import org.apache.logging.log4j.core.config.plugins.PluginFactory;
-+import org.jetbrains.annotations.NotNull;
++import org.apache.logging.log4j.core.impl.Log4jLogEvent;
++import org.checkerframework.checker.nullness.qual.NonNull;
 +
 +@Plugin(
 +    name = "StacktraceDeobfuscatingRewritePolicy",
@@ -141,17 +142,23 @@ index 0000000000000000000000000000000000000000..d019802a36dbaca4bf299a55d28381e4
 +    printObject = true
 +)
 +public final class StacktraceDeobfuscatingRewritePolicy implements RewritePolicy {
++    private StacktraceDeobfuscatingRewritePolicy() {
++    }
++
 +    @Override
-+    public @NotNull LogEvent rewrite(final @NotNull LogEvent rewrite) {
++    public @NonNull LogEvent rewrite(final @NonNull LogEvent rewrite) {
 +        final Throwable thrown = rewrite.getThrown();
 +        if (thrown != null) {
 +            StacktraceDeobfuscator.INSTANCE.deobfuscateThrowable(thrown);
++            return new Log4jLogEvent.Builder(rewrite)
++                .setThrownProxy(null)
++                .build();
 +        }
 +        return rewrite;
 +    }
 +
 +    @PluginFactory
-+    public static @NotNull StacktraceDeobfuscatingRewritePolicy createPolicy() {
++    public static @NonNull StacktraceDeobfuscatingRewritePolicy createPolicy() {
 +        return new StacktraceDeobfuscatingRewritePolicy();
 +    }
 +}
