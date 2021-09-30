@@ -5,7 +5,7 @@ Subject: [PATCH] Multiple Entries with Scoreboards
 
 
 diff --git a/src/main/java/net/minecraft/network/protocol/game/ClientboundSetPlayerTeamPacket.java b/src/main/java/net/minecraft/network/protocol/game/ClientboundSetPlayerTeamPacket.java
-index 4c9660176e783999301565790b8cf6f47b0d02a2..3f1b093ae766c6e219ee233a75c64f0c522cc6c2 100644
+index 005a3058c51a41a39f050b1817e2079be93ad366..9c7c6751e81af9a013de4fe9e4d029b69a8534ca 100644
 --- a/src/main/java/net/minecraft/network/protocol/game/ClientboundSetPlayerTeamPacket.java
 +++ b/src/main/java/net/minecraft/network/protocol/game/ClientboundSetPlayerTeamPacket.java
 @@ -42,6 +42,12 @@ public class ClientboundSetPlayerTeamPacket implements Packet<ClientGamePacketLi
@@ -19,24 +19,18 @@ index 4c9660176e783999301565790b8cf6f47b0d02a2..3f1b093ae766c6e219ee233a75c64f0c
 +    // Paper end
 +
      public ClientboundSetPlayerTeamPacket(FriendlyByteBuf buf) {
-         this.name = buf.readUtf(16);
+         this.name = buf.readUtf();
          this.method = buf.readByte();
 diff --git a/src/main/java/net/minecraft/server/ServerScoreboard.java b/src/main/java/net/minecraft/server/ServerScoreboard.java
-index 130a928f156961bae9ca184b3ca31004dbba1012..73bd24468e608d5fa605216ae1e7712368f58c31 100644
+index 610d312b9c8f6c8d1f102e8ba2fe9fc2cc3e98c5..3a4a0727ad44322e3ba85512cd077808dab080b7 100644
 --- a/src/main/java/net/minecraft/server/ServerScoreboard.java
 +++ b/src/main/java/net/minecraft/server/ServerScoreboard.java
-@@ -92,6 +92,31 @@ public class ServerScoreboard extends Scoreboard {
+@@ -92,6 +92,25 @@ public class ServerScoreboard extends Scoreboard {
          }
      }
  
 +    // Paper start
 +    public boolean addPlayersToTeam(java.util.Collection<String> players, PlayerTeam team) {
-+        for (String playerName : players) {
-+            if (playerName.length() > 40) {
-+                throw new IllegalArgumentException("The player name '" + playerName + "' is too long!");
-+            }
-+        }
-+
 +        boolean anyAdded = false;
 +        for (String playerName : players) {
 +            if (super.addPlayerToTeam(playerName, team)) {
@@ -45,7 +39,7 @@ index 130a928f156961bae9ca184b3ca31004dbba1012..73bd24468e608d5fa605216ae1e77123
 +        }
 +
 +        if (anyAdded) {
-+            this.sendAll(ClientboundSetPlayerTeamPacket.createMultiplePlayerPacket(team, players, ClientboundSetPlayerTeamPacket.Action.ADD));
++            this.broadcastAll(ClientboundSetPlayerTeamPacket.createMultiplePlayerPacket(team, players, ClientboundSetPlayerTeamPacket.Action.ADD));
 +            this.setDirty();
 +            return true;
 +        } else {
@@ -57,7 +51,7 @@ index 130a928f156961bae9ca184b3ca31004dbba1012..73bd24468e608d5fa605216ae1e77123
      @Override
      public void removePlayerFromTeam(String playerName, PlayerTeam team) {
          super.removePlayerFromTeam(playerName, team);
-@@ -99,6 +124,17 @@ public class ServerScoreboard extends Scoreboard {
+@@ -99,6 +118,17 @@ public class ServerScoreboard extends Scoreboard {
          this.setDirty();
      }
  
@@ -67,7 +61,7 @@ index 130a928f156961bae9ca184b3ca31004dbba1012..73bd24468e608d5fa605216ae1e77123
 +            super.removePlayerFromTeam(playerName, team);
 +        }
 +
-+        this.sendAll(ClientboundSetPlayerTeamPacket.createMultiplePlayerPacket(team, players, ClientboundSetPlayerTeamPacket.Action.REMOVE));
++        this.broadcastAll(ClientboundSetPlayerTeamPacket.createMultiplePlayerPacket(team, players, ClientboundSetPlayerTeamPacket.Action.REMOVE));
 +        this.setDirty();
 +    }
 +    // Paper end
@@ -76,47 +70,54 @@ index 130a928f156961bae9ca184b3ca31004dbba1012..73bd24468e608d5fa605216ae1e77123
      public void onObjectiveAdded(Objective objective) {
          super.onObjectiveAdded(objective);
 diff --git a/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftTeam.java b/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftTeam.java
-index 2b87a652798cb632fe76bf20e9e7f8cb8bfb3b7b..666edc7f0e0cd814cbc7525eaf7ec2ed486e3dac 100644
+index 47f2e8824fff51f4271e7aa61e233d57e3ca2942..be5e4c2f3c552e0438ed1cc660e411c41fd13df7 100644
 --- a/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftTeam.java
 +++ b/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftTeam.java
-@@ -226,6 +226,16 @@ final class CraftTeam extends CraftScoreboardComponent implements Team {
+@@ -226,6 +226,21 @@ final class CraftTeam extends CraftScoreboardComponent implements Team {
          scoreboard.board.addPlayerToTeam(entry, team);
      }
  
 +    // Paper start
 +    @Override
++    public void addEntities(java.util.Collection<org.bukkit.entity.Entity> entities) throws IllegalStateException, IllegalArgumentException {
++        this.addEntries(entities.stream().map(entity -> ((org.bukkit.craftbukkit.entity.CraftEntity) entity).getHandle().getScoreboardName()).toList());
++    }
++
++    @Override
 +    public void addEntries(java.util.Collection<String> entries) throws IllegalStateException, IllegalArgumentException {
 +        Validate.notNull(entries, "Entries cannot be null");
-+        CraftScoreboard scoreboard = checkState();
++        CraftScoreboard scoreboard = this.checkState();
 +
-+        ((net.minecraft.server.ServerScoreboard) scoreboard.board).addPlayersToTeam(entries, team);
++        ((net.minecraft.server.ServerScoreboard) scoreboard.board).addPlayersToTeam(entries, this.team);
 +    }
 +    // Paper end
 +
      @Override
      public boolean removePlayer(OfflinePlayer player) throws IllegalStateException, IllegalArgumentException {
          Validate.notNull(player, "OfflinePlayer cannot be null");
-@@ -245,6 +255,26 @@ final class CraftTeam extends CraftScoreboardComponent implements Team {
+@@ -245,6 +260,28 @@ final class CraftTeam extends CraftScoreboardComponent implements Team {
          return true;
      }
  
 +    // Paper start
 +    @Override
++    public boolean removeEntities(java.util.Collection<org.bukkit.entity.Entity> entities) throws IllegalStateException, IllegalArgumentException {
++        return this.removeEntries(entities.stream().map(entity -> ((org.bukkit.craftbukkit.entity.CraftEntity) entity).getHandle().getScoreboardName()).toList());
++    }
++
++    @Override
 +    public boolean removeEntries(java.util.Collection<String> entries) throws IllegalStateException, IllegalArgumentException {
 +        Validate.notNull(entries, "Entry cannot be null");
 +        CraftScoreboard scoreboard = this.checkState();
 +
-+        boolean anyRemoved = false;
 +        for (String entry : entries) {
-+            if (!anyRemoved && this.team.getPlayers().contains(entry)) {
-+                anyRemoved = true;
++            if (this.team.getPlayers().contains(entry)) {
++                ((net.minecraft.server.ServerScoreboard) scoreboard.board).removePlayersFromTeam(entries, this.team);
++                return true;
 +            }
 +        }
 +
-+        if (anyRemoved) {
-+            ((net.minecraft.server.ServerScoreboard) scoreboard.board).removePlayersFromTeam(entries, team);
-+        }
-+        return anyRemoved;
++        return false;
 +    }
 +    // Paper end
 +
