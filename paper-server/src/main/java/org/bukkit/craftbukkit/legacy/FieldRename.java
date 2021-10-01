@@ -35,6 +35,7 @@ public class FieldRename {
         }
 
         return switch (owner) {
+            case "org/bukkit/scoreboard/DisplaySlot" -> FieldRename.convertDisplaySlot(from); // Paper - DisplaySlot
             case "org/bukkit/block/banner/PatternType" -> FieldRename.convertPatternTypeName(apiVersion, from);
             case "org/bukkit/enchantments/Enchantment" -> FieldRename.convertEnchantmentName(apiVersion, from);
             case "org/bukkit/block/Biome" -> FieldRename.convertBiomeName(apiVersion, from);
@@ -59,6 +60,16 @@ public class FieldRename {
     //    return CraftRegistry.get(registry, namespacedKey, ApiVersion.CURRENT);
     //}
     // Paper end
+
+    // Paper start - DisplaySlot
+    @DoNotReroute
+    public static String convertDisplaySlot(final String from) {
+        if (from.startsWith("SIDEBAR_") && !from.startsWith("SIDEBAR_TEAM_")) {
+            return from.replace("SIDEBAR_", "SIDEBAR_TEAM_");
+        }
+        return from;
+    }
+    // Paper end - DisplaySlot
 
     // PatternType
     private static final FieldRenameData PATTERN_TYPE_DATA = FieldRenameData.Builder.newBuilder()

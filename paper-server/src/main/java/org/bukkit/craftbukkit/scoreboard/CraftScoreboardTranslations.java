@@ -7,35 +7,22 @@ import org.bukkit.scoreboard.RenderType;
 
 public final class CraftScoreboardTranslations {
     static final int MAX_DISPLAY_SLOT = 19;
+    @Deprecated // Paper
     static final ImmutableBiMap<DisplaySlot, String> SLOTS = ImmutableBiMap.<DisplaySlot, String>builder()
             .put(DisplaySlot.BELOW_NAME, "below_name")
             .put(DisplaySlot.PLAYER_LIST, "list")
             .put(DisplaySlot.SIDEBAR, "sidebar")
-            .put(DisplaySlot.SIDEBAR_BLACK, "sidebar.team.black")
-            .put(DisplaySlot.SIDEBAR_DARK_BLUE, "sidebar.team.dark_blue")
-            .put(DisplaySlot.SIDEBAR_DARK_GREEN, "sidebar.team.dark_green")
-            .put(DisplaySlot.SIDEBAR_DARK_AQUA, "sidebar.team.dark_aqua")
-            .put(DisplaySlot.SIDEBAR_DARK_RED, "sidebar.team.dark_red")
-            .put(DisplaySlot.SIDEBAR_DARK_PURPLE, "sidebar.team.dark_purple")
-            .put(DisplaySlot.SIDEBAR_GOLD, "sidebar.team.gold")
-            .put(DisplaySlot.SIDEBAR_GRAY, "sidebar.team.gray")
-            .put(DisplaySlot.SIDEBAR_DARK_GRAY, "sidebar.team.dark_gray")
-            .put(DisplaySlot.SIDEBAR_BLUE, "sidebar.team.blue")
-            .put(DisplaySlot.SIDEBAR_GREEN, "sidebar.team.green")
-            .put(DisplaySlot.SIDEBAR_AQUA, "sidebar.team.aqua")
-            .put(DisplaySlot.SIDEBAR_RED, "sidebar.team.red")
-            .put(DisplaySlot.SIDEBAR_LIGHT_PURPLE, "sidebar.team.light_purple")
-            .put(DisplaySlot.SIDEBAR_YELLOW, "sidebar.team.yellow")
-            .put(DisplaySlot.SIDEBAR_WHITE, "sidebar.team.white")
             .buildOrThrow();
 
     private CraftScoreboardTranslations() {}
 
     public static DisplaySlot toBukkitSlot(net.minecraft.world.scores.DisplaySlot minecraft) {
+        if (true) return DisplaySlot.NAMES.value(minecraft.getSerializedName()); // Paper
         return CraftScoreboardTranslations.SLOTS.inverse().get(minecraft.getSerializedName());
     }
 
     public static net.minecraft.world.scores.DisplaySlot fromBukkitSlot(DisplaySlot slot) {
+        if (true) return net.minecraft.world.scores.DisplaySlot.CODEC.byName(slot.getId()); // Paper
         return net.minecraft.world.scores.DisplaySlot.CODEC.byName(CraftScoreboardTranslations.SLOTS.get(slot));
     }
 
