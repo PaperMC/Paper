@@ -1,0 +1,276 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Fri, 1 Oct 2021 16:13:15 -0700
+Subject: [PATCH] Expose minecraft brigadier argument types
+
+
+diff --git a/src/main/java/io/papermc/paper/brigadier/MinecraftArgumentTypes.java b/src/main/java/io/papermc/paper/brigadier/MinecraftArgumentTypes.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..299379bc58c885033f4e7413694768687684eacd
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/brigadier/MinecraftArgumentTypes.java
+@@ -0,0 +1,88 @@
++package io.papermc.paper.brigadier;
++
++import com.mojang.brigadier.arguments.ArgumentType;
++import io.papermc.paper.adventure.PaperAdventure;
++import io.papermc.paper.brigadier.arguments.PaperInheritanceArgument;
++import io.papermc.paper.brigadier.arguments.PaperMappedArgument;
++import io.papermc.paper.brigadier.types.GameProfileResult;
++import io.papermc.paper.brigadier.types.Position;
++import net.kyori.adventure.nbt.api.BinaryTagHolder;
++import net.kyori.adventure.text.Component;
++import net.kyori.adventure.text.format.TextColor;
++import net.minecraft.commands.arguments.ColorArgument;
++import net.minecraft.commands.arguments.ComponentArgument;
++import net.minecraft.commands.arguments.CompoundTagArgument;
++import net.minecraft.commands.arguments.EntitySummonArgument;
++import net.minecraft.commands.arguments.GameProfileArgument;
++import net.minecraft.commands.arguments.ItemEnchantmentArgument;
++import net.minecraft.commands.arguments.MobEffectArgument;
++import net.minecraft.commands.arguments.ResourceLocationArgument;
++import net.minecraft.commands.arguments.ScoreboardSlotArgument;
++import net.minecraft.commands.arguments.SlotArgument;
++import net.minecraft.commands.arguments.TimeArgument;
++import net.minecraft.commands.arguments.UuidArgument;
++import net.minecraft.commands.arguments.coordinates.BlockPosArgument;
++import net.minecraft.commands.arguments.coordinates.Coordinates;
++import net.minecraft.commands.arguments.coordinates.RotationArgument;
++import net.minecraft.commands.arguments.coordinates.Vec2Argument;
++import net.minecraft.commands.arguments.coordinates.Vec3Argument;
++import net.minecraft.world.effect.MobEffect;
++import org.bukkit.NamespacedKey;
++import org.bukkit.Registry;
++import org.bukkit.craftbukkit.scoreboard.CraftScoreboardTranslations;
++import org.bukkit.craftbukkit.util.CraftNamespacedKey;
++import org.bukkit.enchantments.Enchantment;
++import org.bukkit.entity.EntityType;
++import org.bukkit.potion.PotionEffectType;
++import org.bukkit.scoreboard.DisplaySlot;
++
++import java.util.UUID;
++import java.util.function.Function;
++import java.util.function.Supplier;
++
++public final class MinecraftArgumentTypes {
++
++    private MinecraftArgumentTypes() {
++    }
++
++    public static void bootStrap() {
++        inherited("game_profile", GameProfileArgument::gameProfile, GameProfileResult.class, GameProfileArgument.Result.class);
++        inherited("block_pos", BlockPosArgument::blockPos, Position.class, Coordinates.class);
++        inherited("vec3", Vec3Argument::vec3, Position.class, Coordinates.class);
++        inherited("vec2", Vec2Argument::vec2, Position.class, Coordinates.class);
++
++        mapped("color", ColorArgument::color, TextColor.class, PaperAdventure::asAdventure);
++
++        mapped("component", ComponentArgument::textComponent, Component.class, PaperAdventure::asAdventure);
++        mapped("nbt_compound_tag", CompoundTagArgument::compoundTag, BinaryTagHolder.class, PaperAdventure::asBinaryTagHolder);
++
++        inherited("rotation", RotationArgument::rotation, Position.class, Coordinates.class);
++        mapped("scoreboard_slot", ScoreboardSlotArgument::displaySlot, DisplaySlot.class, CraftScoreboardTranslations::toBukkitSlot);
++
++        simple("item_slot", SlotArgument::slot, Integer.class);
++        mapped("resource_location", ResourceLocationArgument::id, NamespacedKey.class, CraftNamespacedKey::fromMinecraft);
++        mapped("mob_effect", MobEffectArgument::effect, PotionEffectType.class, mobEffect -> PotionEffectType.getById(MobEffect.getId(mobEffect)));
++
++        mapped("item_enchantment", ItemEnchantmentArgument::enchantment, Enchantment.class, ench -> Registry.ENCHANTMENT.get(CraftNamespacedKey.fromMinecraft(net.minecraft.core.Registry.ENCHANTMENT.getKey(ench))));
++        mapped("entity_summon", EntitySummonArgument::id, EntityType.class, location -> Registry.ENTITY_TYPE.get(CraftNamespacedKey.fromMinecraft(location)));
++
++        simple("time", TimeArgument::time, Integer.class);
++        simple("uuid", UuidArgument::uuid, UUID.class);
++    }
++
++    private static <T> void simple(String id, Supplier<ArgumentType<T>> argumentTypeSupplier, Class<T> type) {
++        inherited(id, argumentTypeSupplier, type, type);
++    }
++
++    private static <P, M extends P> void inherited(String id, Supplier<ArgumentType<M>> argumentTypeSupplier, Class<P> paperType, Class<M> minecraftClass) {
++        register(new PaperInheritanceArgument<>(id, paperType, argumentTypeSupplier, minecraftClass));
++    }
++
++    private static <P, M> void mapped(String id, Supplier<ArgumentType<M>> argumentTypeSupplier, Class<P> paperType, Function<M, P> mapper) {
++        register(new PaperMappedArgument<>(id, paperType, argumentTypeSupplier, mapper));
++    }
++
++    private static void register(MinecraftArgumentType argumentType) {
++        MinecraftArgumentType.ARGUMENT_TYPE_MAP.put(argumentType.getKey(), argumentType);
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/brigadier/arguments/PaperInheritanceArgument.java b/src/main/java/io/papermc/paper/brigadier/arguments/PaperInheritanceArgument.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..dc78affb694405a399e63ee6a98ea122ef826e00
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/brigadier/arguments/PaperInheritanceArgument.java
+@@ -0,0 +1,30 @@
++package io.papermc.paper.brigadier.arguments;
++
++import com.destroystokyo.paper.brigadier.BukkitBrigadierCommandSource;
++import com.mojang.brigadier.arguments.ArgumentType;
++import com.mojang.brigadier.context.CommandContext;
++import org.jetbrains.annotations.NotNull;
++
++import java.util.function.Supplier;
++
++public class PaperInheritanceArgument<P, M extends P> extends SimpleArgument<P> {
++
++    private final Supplier<ArgumentType<M>> supplier;
++    private final Class<M> minecraftClass;
++
++    public PaperInheritanceArgument(String id, Class<P> paperType, Supplier<ArgumentType<M>> supplier, Class<M> minecraftClass) {
++        super(id, paperType);
++        this.supplier = supplier;
++        this.minecraftClass = minecraftClass;
++    }
++
++    @Override
++    public ArgumentType<P> create() {
++        return (ArgumentType<P>) this.supplier.get();
++    }
++
++    @Override
++    public P getFromContext(@NotNull CommandContext<BukkitBrigadierCommandSource> context, @NotNull String name) {
++        return context.getArgument(name, this.minecraftClass);
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/brigadier/arguments/PaperMappedArgument.java b/src/main/java/io/papermc/paper/brigadier/arguments/PaperMappedArgument.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..9d1558909481a175a0138c1ca802dcb7ca5c67f5
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/brigadier/arguments/PaperMappedArgument.java
+@@ -0,0 +1,63 @@
++package io.papermc.paper.brigadier.arguments;
++
++import com.destroystokyo.paper.brigadier.BukkitBrigadierCommandSource;
++import com.mojang.brigadier.StringReader;
++import com.mojang.brigadier.arguments.ArgumentType;
++import com.mojang.brigadier.context.CommandContext;
++import com.mojang.brigadier.exceptions.CommandSyntaxException;
++import com.mojang.brigadier.suggestion.Suggestions;
++import com.mojang.brigadier.suggestion.SuggestionsBuilder;
++import org.jetbrains.annotations.NotNull;
++
++import java.util.Collection;
++import java.util.concurrent.CompletableFuture;
++import java.util.function.Function;
++import java.util.function.Supplier;
++
++public class PaperMappedArgument<P, M> extends SimpleArgument<P> {
++
++    private final Supplier<ArgumentType<M>> supplier;
++    private final Function<M, P> mapper;
++
++    public PaperMappedArgument(String id, Class<P> paperType, Supplier<ArgumentType<M>> supplier, Function<M, P> mapper) {
++        super(id, paperType);
++        this.supplier = supplier;
++        this.mapper = mapper;
++    }
++
++    @Override
++    public ArgumentType<P> create() {
++        return new MappedArgumentType<>(supplier.get(), this.mapper);
++    }
++
++    @Override
++    public P getFromContext(@NotNull CommandContext<BukkitBrigadierCommandSource> context, @NotNull String name) {
++        return context.getArgument(name, this.getPaperType());
++    }
++
++    private static class MappedArgumentType<M, P> implements ArgumentType<P> {
++
++        private final ArgumentType<M> delegate;
++        private final Function<M, P> mapper;
++
++        private MappedArgumentType(ArgumentType<M> delegate, Function<M, P> mapper) {
++            this.delegate = delegate;
++            this.mapper = mapper;
++        }
++
++        @Override
++        public P parse(StringReader reader) throws CommandSyntaxException {
++            return this.mapper.apply(this.delegate.parse(reader));
++        }
++
++        @Override
++        public <S> CompletableFuture<Suggestions> listSuggestions(CommandContext<S> context, SuggestionsBuilder builder) {
++            return this.delegate.listSuggestions(context, builder);
++        }
++
++        @Override
++        public Collection<String> getExamples() {
++            return this.delegate.getExamples();
++        }
++    }
++}
+diff --git a/src/main/java/net/minecraft/commands/arguments/GameProfileArgument.java b/src/main/java/net/minecraft/commands/arguments/GameProfileArgument.java
+index 348f25363d26c9ef2c51572edcc67db603f4c647..f3e7a9f0b96b35fba37acd132bdf2c060e309a60 100644
+--- a/src/main/java/net/minecraft/commands/arguments/GameProfileArgument.java
++++ b/src/main/java/net/minecraft/commands/arguments/GameProfileArgument.java
+@@ -85,8 +85,14 @@ public class GameProfileArgument implements ArgumentType<GameProfileArgument.Res
+     }
+ 
+     @FunctionalInterface
+-    public interface Result {
++    public interface Result extends io.papermc.paper.brigadier.types.GameProfileResult<CommandSourceStack> { // Paper
+         Collection<GameProfile> getNames(CommandSourceStack commandSourceStack) throws CommandSyntaxException;
++        // Paper start
++        @Override
++        default Collection<com.destroystokyo.paper.profile.PlayerProfile> getProfiles(CommandSourceStack source) throws CommandSyntaxException {
++            return Collections.unmodifiableCollection(com.google.common.collect.Collections2.transform(getNames(source), profile -> new com.destroystokyo.paper.profile.CraftPlayerProfile(profile).clone()));
++        }
++        // Paper end
+     }
+ 
+     public static class SelectorResult implements GameProfileArgument.Result {
+diff --git a/src/main/java/net/minecraft/commands/arguments/coordinates/Coordinates.java b/src/main/java/net/minecraft/commands/arguments/coordinates/Coordinates.java
+index 2be1acce27600988c0795ccef629b531dacfedef..92d0840147907ff9d77b1a5b4efdd64e88e2bd10 100644
+--- a/src/main/java/net/minecraft/commands/arguments/coordinates/Coordinates.java
++++ b/src/main/java/net/minecraft/commands/arguments/coordinates/Coordinates.java
+@@ -5,7 +5,7 @@ import net.minecraft.core.BlockPos;
+ import net.minecraft.world.phys.Vec2;
+ import net.minecraft.world.phys.Vec3;
+ 
+-public interface Coordinates {
++public interface Coordinates extends io.papermc.paper.brigadier.types.Position<CommandSourceStack> { // Paper
+     Vec3 getPosition(CommandSourceStack source);
+ 
+     Vec2 getRotation(CommandSourceStack source);
+@@ -19,4 +19,25 @@ public interface Coordinates {
+     boolean isYRelative();
+ 
+     boolean isZRelative();
++    // Paper start
++    @Override
++    default org.bukkit.util.Vector getPositionVector(CommandSourceStack source) {
++        return org.bukkit.craftbukkit.util.CraftVector.toBukkit(getPosition(source));
++    }
++
++    @Override
++    default org.bukkit.Location getLocation(CommandSourceStack source) {
++        return net.minecraft.server.MCUtil.toLocation(((CommandSourceStack) source).getLevel(), getBlockPos((CommandSourceStack) source));
++    }
++
++    @Override
++    default float getXRot(CommandSourceStack source) {
++        return getRotation(source).x;
++    }
++
++    @Override
++    default float getYRot(CommandSourceStack source) {
++        return getRotation(source).y;
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/net/minecraft/server/Bootstrap.java b/src/main/java/net/minecraft/server/Bootstrap.java
+index 64576ddd8363be55755fa50d1c16d95e4e02402d..b8c7367025d08bc5c56f0a6eff0d9cf2322d0a92 100644
+--- a/src/main/java/net/minecraft/server/Bootstrap.java
++++ b/src/main/java/net/minecraft/server/Bootstrap.java
+@@ -72,6 +72,7 @@ public class Bootstrap {
+                     DispenseItemBehavior.bootStrap();
+                     CauldronInteraction.bootStrap();
+                     ArgumentTypes.bootStrap();
++                    io.papermc.paper.brigadier.MinecraftArgumentTypes.bootStrap(); // Paper
+                     StaticTags.bootStrap();
+                     Bootstrap.wrapStreams();
+                 }
