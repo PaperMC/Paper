@@ -12,6 +12,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         chunkproviderserver.getLightEngine().setTaskPerBatch(worldserver.paperConfig.lightQueueSize); // Paper - increase light queue size
+         // CraftBukkit start
+         // this.updateSpawnFlags();
+-        worldserver.setSpawnSettings(this.isSpawningMonsters(), this.isSpawningAnimals());
++        worldserver.setSpawnSettings(worldserver.serverLevelData.getDifficulty() != Difficulty.PEACEFUL && ((DedicatedServer) this).settings.getProperties().spawnMonsters, this.isSpawningAnimals()); // Paper - per level difficulty (from setDifficulty(ServerLevel, Difficulty, boolean))
+ 
+         this.forceTicks = false;
+         // CraftBukkit end
+@@ -0,0 +0,0 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          }
      }
  
@@ -31,6 +40,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          }
      }
  
+@@ -0,0 +0,0 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         while (iterator.hasNext()) {
+             ServerLevel worldserver = (ServerLevel) iterator.next();
+ 
+-            worldserver.setSpawnSettings(this.isSpawningMonsters(), this.isSpawningAnimals());
++            worldserver.setSpawnSettings(worldserver.serverLevelData.getDifficulty() != Difficulty.PEACEFUL && ((DedicatedServer) this).settings.getProperties().spawnMonsters, this.isSpawningAnimals()); // Paper - per level difficulty (from setDifficulty(ServerLevel, Difficulty, boolean))
+         }
+ 
+     }
 diff --git a/src/main/java/net/minecraft/server/commands/DifficultyCommand.java b/src/main/java/net/minecraft/server/commands/DifficultyCommand.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/commands/DifficultyCommand.java
@@ -75,3 +93,18 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          }
      }
  
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -0,0 +0,0 @@ public final class CraftServer implements Server {
+         org.spigotmc.SpigotConfig.init((File) console.options.valueOf("spigot-settings")); // Spigot
+         com.destroystokyo.paper.PaperConfig.init((File) console.options.valueOf("paper-settings")); // Paper
+         for (ServerLevel world : this.console.getAllLevels()) {
+-            world.serverLevelData.setDifficulty(config.difficulty);
+-            world.setSpawnSettings(config.spawnMonsters, config.spawnAnimals);
++            // world.serverLevelData.setDifficulty(config.difficulty); // Paper - per level difficulty
++            world.setSpawnSettings(world.serverLevelData.getDifficulty() != Difficulty.PEACEFUL && config.spawnMonsters, config.spawnAnimals); // Paper - per level difficulty (from MinecraftServer#setDifficulty(ServerLevel, Difficulty, boolean))
+             if (this.getTicksPerAnimalSpawns() < 0) {
+                 world.ticksPerAnimalSpawns = 400;
+             } else {
