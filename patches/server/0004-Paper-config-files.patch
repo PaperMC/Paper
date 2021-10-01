@@ -298,10 +298,10 @@ index 0000000000000000000000000000000000000000..bee2fa2bfbb61209381f24ed6508d3d1
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..a632a796a3e5f2b361a521d70581b83a6839fc73
+index 0000000000000000000000000000000000000000..56f6e4aa2b261506cb44bd172015dbfc397e9406
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-@@ -0,0 +1,185 @@
+@@ -0,0 +1,186 @@
 +package com.destroystokyo.paper;
 +
 +import com.google.common.base.Throwables;
@@ -315,10 +315,10 @@ index 0000000000000000000000000000000000000000..a632a796a3e5f2b361a521d70581b83a
 +import java.util.List;
 +import java.util.Map;
 +import java.util.concurrent.TimeUnit;
-+import java.util.logging.Level;
 +import java.util.regex.Pattern;
 +
 +import net.minecraft.server.MinecraftServer;
++import org.apache.logging.log4j.Logger;
 +import org.bukkit.Bukkit;
 +import org.bukkit.command.Command;
 +import org.bukkit.configuration.ConfigurationSection;
@@ -327,6 +327,7 @@ index 0000000000000000000000000000000000000000..a632a796a3e5f2b361a521d70581b83a
 +
 +public class PaperConfig {
 +
++    private static final Logger LOGGER = MinecraftServer.LOGGER;
 +    private static File CONFIG_FILE;
 +    private static final String HEADER = "This is the main configuration file for Paper.\n"
 +            + "As you can see, there's tons to configure. Some options may impact gameplay, so use\n"
@@ -354,7 +355,7 @@ index 0000000000000000000000000000000000000000..a632a796a3e5f2b361a521d70581b83a
 +            config.load(CONFIG_FILE);
 +        } catch (IOException ex) {
 +        } catch (InvalidConfigurationException ex) {
-+            Bukkit.getLogger().log(Level.SEVERE, "Could not load paper.yml, please correct your syntax errors", ex);
++            LOGGER.fatal("Could not load paper.yml, please correct your syntax errors", ex);
 +            throw Throwables.propagate(ex);
 +        }
 +        config.options().header(HEADER);
@@ -370,7 +371,7 @@ index 0000000000000000000000000000000000000000..a632a796a3e5f2b361a521d70581b83a
 +    }
 +
 +    protected static void logError(String s) {
-+        Bukkit.getLogger().severe(s);
++        LOGGER.error(s);
 +    }
 +
 +    protected static void fatal(String s) {
@@ -380,7 +381,7 @@ index 0000000000000000000000000000000000000000..a632a796a3e5f2b361a521d70581b83a
 +
 +    protected static void log(String s) {
 +        if (verbose) {
-+            Bukkit.getLogger().info(s);
++            LOGGER.info(s);
 +        }
 +    }
 +
@@ -400,7 +401,7 @@ index 0000000000000000000000000000000000000000..a632a796a3e5f2b361a521d70581b83a
 +                    } catch (InvocationTargetException ex) {
 +                        throw Throwables.propagate(ex.getCause());
 +                    } catch (Exception ex) {
-+                        Bukkit.getLogger().log(Level.SEVERE, "Error invoking " + method, ex);
++                        LOGGER.error("Error invoking " + method, ex);
 +                    }
 +                }
 +            }
@@ -409,7 +410,7 @@ index 0000000000000000000000000000000000000000..a632a796a3e5f2b361a521d70581b83a
 +        try {
 +            config.save(CONFIG_FILE);
 +        } catch (IOException ex) {
-+            Bukkit.getLogger().log(Level.SEVERE, "Could not save " + CONFIG_FILE, ex);
++            LOGGER.error("Could not save " + CONFIG_FILE, ex);
 +        }
 +    }
 +
@@ -605,13 +606,13 @@ index 1707449cbbfa5eab585657cdde811b34a92e1d17..c8385460701395cb5c65fba41335469f
          Main.LOGGER.info("Forcing world upgrade! {}", session.getLevelId()); // CraftBukkit
          WorldUpgrader worldupgrader = new WorldUpgrader(session, dataFixer, worlds, eraseCache);
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-index cd65a5bb6da734a39b0bb6e9a0571455d19ceac4..fac993d58bd6e3bb19fd69881092a863c8952c65 100644
+index cd65a5bb6da734a39b0bb6e9a0571455d19ceac4..64be9c102290158844adb6dfcd2b93555106769a 100644
 --- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-@@ -194,6 +194,15 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
-         org.spigotmc.SpigotConfig.init((java.io.File) options.valueOf("spigot-settings"));
-         org.spigotmc.SpigotConfig.registerCommands();
-         // Spigot end
+@@ -102,6 +102,14 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+ 
+     @Override
+     public boolean initServer() throws IOException {
 +        // Paper start
 +        try {
 +            com.destroystokyo.paper.PaperConfig.init((java.io.File) options.valueOf("paper-settings"));
@@ -619,6 +620,15 @@ index cd65a5bb6da734a39b0bb6e9a0571455d19ceac4..fac993d58bd6e3bb19fd69881092a863
 +            DedicatedServer.LOGGER.error("Unable to load server configuration", e);
 +            return false;
 +        }
++        // Paper end
+         Thread thread = new Thread("Server console handler") {
+             public void run() {
+                 // CraftBukkit start
+@@ -194,6 +202,9 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+         org.spigotmc.SpigotConfig.init((java.io.File) options.valueOf("spigot-settings"));
+         org.spigotmc.SpigotConfig.registerCommands();
+         // Spigot end
++        // Paper start
 +        com.destroystokyo.paper.PaperConfig.registerCommands();
 +        // Paper end
  
