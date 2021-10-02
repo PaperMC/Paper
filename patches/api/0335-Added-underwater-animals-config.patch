@@ -1,0 +1,727 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: adrian-kong <adrian.k1234567890@gmail.com>
+Date: Sat, 2 Oct 2021 23:48:21 +1000
+Subject: [PATCH] Added underwater animals config
+
+
+diff --git a/src/main/java/org/bukkit/Bukkit.java b/src/main/java/org/bukkit/Bukkit.java
+index d36e4bc3c3713407704b865574cba28662f17315..52959dae5a7d122de0ce9bc3535749e411a787a1 100644
+--- a/src/main/java/org/bukkit/Bukkit.java
++++ b/src/main/java/org/bukkit/Bukkit.java
+@@ -1436,6 +1436,16 @@ public final class Bukkit {
+         return server.getWaterAnimalSpawnLimit();
+     }
+ 
++    /**
++     * Gets user-specified limit for number of underwater animals that can spawn in
++     * a chunk.
++     *
++     * @return the water animal spawn limit
++     */
++    public static int getUnderwaterAnimalSpawnLimit() {
++        return server.getUnderwaterAnimalSpawnLimit();
++    }
++
+     /**
+      * Gets user-specified limit for number of water ambient mobs that can spawn
+      * in a chunk.
+diff --git a/src/main/java/org/bukkit/Server.java b/src/main/java/org/bukkit/Server.java
+index 83870d54a5ff1017ad7455e9c931fdee54354434..83eaa32a740b00b33946d3e557fa3aab4e51bc5a 100644
+--- a/src/main/java/org/bukkit/Server.java
++++ b/src/main/java/org/bukkit/Server.java
+@@ -1,6 +1,7 @@
+ package org.bukkit;
+ 
+ import com.google.common.collect.ImmutableList;
++
+ import java.awt.image.BufferedImage;
+ import java.io.File;
+ import java.io.Serializable;
+@@ -13,6 +14,7 @@ import java.util.Set;
+ import java.util.UUID;
+ import java.util.function.Consumer;
+ import java.util.logging.Logger;
++
+ import org.bukkit.Warning.WarningState;
+ import org.bukkit.advancement.Advancement;
+ import org.bukkit.block.data.BlockData;
+@@ -98,6 +100,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+     public String getBukkitVersion();
+ 
+     // Paper start - expose game version
++
+     /**
+      * Gets the version of game this server implements
+      *
+@@ -125,7 +128,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+      * affect the collection are fully supported. The effects following
+      * (non-exhaustive) {@link Entity#teleport(Location) teleportation},
+      * {@link Player#setHealth(double) death}, and {@link Player#kickPlayer(
+-     * String) kicking} are undefined. Any use of this collection from
++     *String) kicking} are undefined. Any use of this collection from
+      * asynchronous threads is unsafe.
+      * <p>
+      * For safe consequential iteration or mimicking the old array behavior,
+@@ -145,6 +148,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+     public int getMaxPlayers();
+ 
+     // Paper start
++
+     /**
+      * Set the maximum amount of players which can login to this server.
+      *
+@@ -172,7 +176,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+      * specified.
+      *
+      * @return the IP string that this server is bound to, otherwise empty
+-     *     string
++     * string
+      */
+     @NotNull
+     public String getIp();
+@@ -229,7 +233,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+ 
+     /**
+      * Gets whether the server whitelist is enforced.
+-     *
++     * <p>
+      * If the whitelist is enforced, non-whitelisted players will be
+      * disconnected when the server whitelist is reloaded.
+      *
+@@ -239,7 +243,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+ 
+     /**
+      * Sets if the server whitelist is enforced.
+-     *
++     * <p>
+      * If the whitelist is enforced, non-whitelisted players will be
+      * disconnected when the server whitelist is reloaded.
+      *
+@@ -274,6 +278,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+     public int broadcastMessage(@NotNull String message);
+ 
+     // Paper start
++
+     /**
+      * Sends the component to all online players.
+      *
+@@ -469,6 +474,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+     public Player getPlayer(@NotNull UUID id);
+ 
+     // Paper start
++
+     /**
+      * Gets the unique ID of the player currently known as the specified player name
+      * In Offline Mode, will return an Offline UUID
+@@ -538,7 +544,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+      * Unloads the given world.
+      *
+      * @param world the world to unload
+-     * @param save whether to save the chunks before unloading
++     * @param save  whether to save the chunks before unloading
+      * @return true if successful, false otherwise
+      */
+     public boolean unloadWorld(@NotNull World world, boolean save);
+@@ -562,6 +568,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+     public World getWorld(@NotNull UUID uid);
+ 
+     // Paper start
++
+     /**
+      * Gets the world from the given NamespacedKey
+      *
+@@ -599,13 +606,12 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+      * This method uses implementation default values for radius and
+      * findUnexplored (usually 100, true).
+      *
+-     * @param world the world the map will belong to
+-     * @param location the origin location to find the nearest structure
++     * @param world         the world the map will belong to
++     * @param location      the origin location to find the nearest structure
+      * @param structureType the type of structure to find
+      * @return a newly created item stack
+-     *
+      * @see World#locateNearestStructure(org.bukkit.Location,
+-     *      org.bukkit.StructureType, int, boolean)
++     * org.bukkit.StructureType, int, boolean)
+      */
+     @NotNull
+     public ItemStack createExplorerMap(@NotNull World world, @NotNull Location location, @NotNull StructureType structureType);
+@@ -617,16 +623,15 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+      * This method uses implementation default values for radius and
+      * findUnexplored (usually 100, true).
+      *
+-     * @param world the world the map will belong to
+-     * @param location the origin location to find the nearest structure
+-     * @param structureType the type of structure to find
+-     * @param radius radius to search, see World#locateNearestStructure for more
+-     *               information
++     * @param world          the world the map will belong to
++     * @param location       the origin location to find the nearest structure
++     * @param structureType  the type of structure to find
++     * @param radius         radius to search, see World#locateNearestStructure for more
++     *                       information
+      * @param findUnexplored whether to find unexplored structures
+      * @return the newly created item stack
+-     *
+      * @see World#locateNearestStructure(org.bukkit.Location,
+-     *      org.bukkit.StructureType, int, boolean)
++     * org.bukkit.StructureType, int, boolean)
+      */
+     @NotNull
+     public ItemStack createExplorerMap(@NotNull World world, @NotNull Location location, @NotNull StructureType structureType, int radius, boolean findUnexplored);
+@@ -667,12 +672,12 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+     /**
+      * Dispatches a command on this server, and executes it if found.
+      *
+-     * @param sender the apparent sender of the command
++     * @param sender      the apparent sender of the command
+      * @param commandLine the command + arguments. Example: <code>test abc
+-     *     123</code>
++     *                    123</code>
+      * @return returns false if no target is found
+      * @throws CommandException thrown when the executor for the given command
+-     *     fails with an unhandled exception
++     *                          fails with an unhandled exception
+      */
+     public boolean dispatchCommand(@NotNull CommandSender sender, @NotNull String commandLine) throws CommandException;
+ 
+@@ -681,7 +686,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+      *
+      * @param recipe the recipe to add
+      * @return true if the recipe was added, false if it wasn't for some
+-     *     reason
++     * reason
+      */
+     @Contract("null -> false")
+     public boolean addRecipe(@Nullable Recipe recipe);
+@@ -722,7 +727,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+      *
+      * @param craftingMatrix list of items to be crafted from.
+      *                       Must not contain more than 9 items.
+-     * @param world The world the crafting takes place in.
++     * @param world          The world the crafting takes place in.
+      * @return the {@link Recipe} resulting from the given crafting matrix.
+      */
+     @Nullable
+@@ -748,8 +753,8 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+      *
+      * @param craftingMatrix list of items to be crafted from.
+      *                       Must not contain more than 9 items.
+-     * @param world The world the crafting takes place in.
+-     * @param player The player to imitate the crafting event on.
++     * @param world          The world the crafting takes place in.
++     * @param player         The player to imitate the crafting event on.
+      * @return the {@link ItemStack} resulting from the given crafting matrix, if no recipe is found
+      * an ItemStack of {@link Material#AIR} is returned.
+      */
+@@ -838,15 +843,16 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+      * Broadcasts the specified message to every user with the given
+      * permission name.
+      *
+-     * @param message message to broadcast
++     * @param message    message to broadcast
+      * @param permission the required permission {@link Permissible
+-     *     permissibles} must have to receive the broadcast
++     *                   permissibles} must have to receive the broadcast
+      * @return number of message recipients
+      * @deprecated in favour of {@link #broadcast(net.kyori.adventure.text.Component, String)}
+      */
+     @Deprecated // Paper
+     public int broadcast(@NotNull String message, @NotNull String permission);
+     // Paper start
++
+     /**
+      * Broadcast a message to all players.
+      * <p>
+@@ -862,9 +868,9 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+      * Broadcasts the specified message to every user with the given
+      * permission name.
+      *
+-     * @param message message to broadcast
++     * @param message    message to broadcast
+      * @param permission the required permission {@link Permissible
+-     *     permissibles} must have to receive the broadcast
++     *                   permissibles} must have to receive the broadcast
+      * @return number of message recipients
+      */
+     int broadcast(@NotNull net.kyori.adventure.text.Component message, @NotNull String permission);
+@@ -884,13 +890,14 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+      * @return an offline player
+      * @see #getOfflinePlayer(java.util.UUID)
+      * @deprecated Persistent storage of users should be by UUID as names are no longer
+-     *             unique past a single session.
++     * unique past a single session.
+      */
+     @Deprecated
+     @NotNull
+     public OfflinePlayer getOfflinePlayer(@NotNull String name);
+ 
+     // Paper start
++
+     /**
+      * Gets the player by the given name, regardless if they are offline or
+      * online.
+@@ -1044,17 +1051,17 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+      * {@link Player#openEnchanting(Location, boolean)} instead.
+      *
+      * @param owner the holder of the inventory, or null to indicate no holder
+-     * @param type the type of inventory to create
++     * @param type  the type of inventory to create
+      * @return a new inventory
+      * @throws IllegalArgumentException if the {@link InventoryType} cannot be
+-     * viewed.
+-     *
++     *                                  viewed.
+      * @see InventoryType#isCreatable()
+      */
+     @NotNull
+     Inventory createInventory(@Nullable InventoryHolder owner, @NotNull InventoryType type);
+ 
+     // Paper start
++
+     /**
+      * Creates an empty inventory with the specified type and title. If the type
+      * is {@link InventoryType#CHEST}, the new inventory has a size of 27;
+@@ -1071,12 +1078,11 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+      * {@link Player#openEnchanting(Location, boolean)} instead.
+      *
+      * @param owner The holder of the inventory; can be null if there's no holder.
+-     * @param type The type of inventory to create.
++     * @param type  The type of inventory to create.
+      * @param title The title of the inventory, to be displayed when it is viewed.
+      * @return The new inventory.
+      * @throws IllegalArgumentException if the {@link InventoryType} cannot be
+-     * viewed.
+-     *
++     *                                  viewed.
+      * @see InventoryType#isCreatable()
+      */
+     @NotNull
+@@ -1099,14 +1105,13 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+      * {@link Player#openEnchanting(Location, boolean)} instead.
+      *
+      * @param owner The holder of the inventory; can be null if there's no holder.
+-     * @param type The type of inventory to create.
++     * @param type  The type of inventory to create.
+      * @param title The title of the inventory, to be displayed when it is viewed.
+      * @return The new inventory.
+      * @throws IllegalArgumentException if the {@link InventoryType} cannot be
+-     * viewed.
+-     * @deprecated in favour of {@link #createInventory(InventoryHolder, InventoryType, net.kyori.adventure.text.Component)}
+-     *
++     *                                  viewed.
+      * @see InventoryType#isCreatable()
++     * @deprecated in favour of {@link #createInventory(InventoryHolder, InventoryType, net.kyori.adventure.text.Component)}
+      */
+     @Deprecated // Paper
+     @NotNull
+@@ -1117,7 +1122,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+      * specified size.
+      *
+      * @param owner the holder of the inventory, or null to indicate no holder
+-     * @param size a multiple of 9 as the size of inventory to create
++     * @param size  a multiple of 9 as the size of inventory to create
+      * @return a new inventory
+      * @throws IllegalArgumentException if the size is not a multiple of 9
+      */
+@@ -1125,14 +1130,15 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+     Inventory createInventory(@Nullable InventoryHolder owner, int size) throws IllegalArgumentException;
+ 
+     // Paper start
++
+     /**
+      * Creates an empty inventory of type {@link InventoryType#CHEST} with the
+      * specified size and title.
+      *
+      * @param owner the holder of the inventory, or null to indicate no holder
+-     * @param size a multiple of 9 as the size of inventory to create
++     * @param size  a multiple of 9 as the size of inventory to create
+      * @param title the title of the inventory, displayed when inventory is
+-     *     viewed
++     *              viewed
+      * @return a new inventory
+      * @throws IllegalArgumentException if the size is not a multiple of 9
+      */
+@@ -1145,9 +1151,9 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+      * specified size and title.
+      *
+      * @param owner the holder of the inventory, or null to indicate no holder
+-     * @param size a multiple of 9 as the size of inventory to create
++     * @param size  a multiple of 9 as the size of inventory to create
+      * @param title the title of the inventory, displayed when inventory is
+-     *     viewed
++     *              viewed
+      * @return a new inventory
+      * @throws IllegalArgumentException if the size is not a multiple of 9
+      * @deprecated in favour of {@link #createInventory(InventoryHolder, int, net.kyori.adventure.text.Component)}
+@@ -1157,25 +1163,28 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+     Inventory createInventory(@Nullable InventoryHolder owner, int size, @NotNull String title) throws IllegalArgumentException;
+ 
+     // Paper start
++
+     /**
+      * Creates an empty merchant.
+      *
+      * @param title the title of the corresponding merchant inventory, displayed
+-     * when the merchant inventory is viewed
++     *              when the merchant inventory is viewed
+      * @return a new merchant
+      */
+     @NotNull Merchant createMerchant(@Nullable net.kyori.adventure.text.Component title);
+     // Paper start
++
+     /**
+      * Creates an empty merchant.
+      *
+      * @param title the title of the corresponding merchant inventory, displayed
+-     * when the merchant inventory is viewed
++     *              when the merchant inventory is viewed
+      * @return a new merchant
+      * @deprecated in favour of {@link #createMerchant(net.kyori.adventure.text.Component)}
+      */
+     @NotNull
+-    @Deprecated // Paper
++    @Deprecated
++    // Paper
+     Merchant createMerchant(@Nullable String title);
+ 
+     /**
+@@ -1202,6 +1211,14 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+      */
+     int getWaterAnimalSpawnLimit();
+ 
++    /**
++     * Gets user-specified limit for number of underwater animals that can spawn in
++     * a chunk.
++     *
++     * @return the water animal spawn limit
++     */
++    int getUnderwaterAnimalSpawnLimit();
++
+     /**
+      * Gets user-specified limit for number of water ambient mobs that can spawn
+      * in a chunk.
+@@ -1228,11 +1245,12 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+      * preclude</b> the same assumption.
+      *
+      * @return true if the current thread matches the expected primary thread,
+-     *     false otherwise
++     * false otherwise
+      */
+     boolean isPrimaryThread();
+ 
+     // Paper start
++
+     /**
+      * Gets the message that is displayed on the server list.
+      *
+@@ -1248,10 +1266,12 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+      * @deprecated in favour of {@link #motd()}
+      */
+     @NotNull
+-    @Deprecated // Paper
++    @Deprecated
++    // Paper
+     String getMotd();
+ 
+     // Paper start
++
+     /**
+      * Gets the default message that is displayed when the server is stopped.
+      *
+@@ -1259,6 +1279,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+      */
+     @Nullable net.kyori.adventure.text.Component shutdownMessage();
+     // Paper end
++
+     /**
+      * Gets the default message that is displayed when the server is stopped.
+      *
+@@ -1266,7 +1287,8 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+      * @deprecated in favour of {@link #shutdownMessage()}
+      */
+     @Nullable
+-    @Deprecated // Paper
++    @Deprecated
++    // Paper
+     String getShutdownMessage();
+ 
+     /**
+@@ -1300,8 +1322,8 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+      * Gets an instance of the server's default server-icon.
+      *
+      * @return the default server-icon; null values may be used by the
+-     *     implementation to indicate no defined icon, but this behavior is
+-     *     not guaranteed
++     * implementation to indicate no defined icon, but this behavior is
++     * not guaranteed
+      */
+     @Nullable
+     CachedServerIcon getServerIcon();
+@@ -1315,10 +1337,10 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+      *
+      * @param file the file to load the from
+      * @return a cached server-icon that can be used for a {@link
+-     *     ServerListPingEvent#setServerIcon(CachedServerIcon)}
++     * ServerListPingEvent#setServerIcon(CachedServerIcon)}
+      * @throws IllegalArgumentException if image is null
+-     * @throws Exception if the image does not meet current server server-icon
+-     *     specifications
++     * @throws Exception                if the image does not meet current server server-icon
++     *                                  specifications
+      */
+     @NotNull
+     CachedServerIcon loadServerIcon(@NotNull File file) throws IllegalArgumentException, Exception;
+@@ -1331,10 +1353,10 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+      *
+      * @param image the image to use
+      * @return a cached server-icon that can be used for a {@link
+-     *     ServerListPingEvent#setServerIcon(CachedServerIcon)}
++     * ServerListPingEvent#setServerIcon(CachedServerIcon)}
+      * @throws IllegalArgumentException if image is null
+-     * @throws Exception if the image does not meet current server
+-     *     server-icon specifications
++     * @throws Exception                if the image does not meet current server
++     *                                  server-icon specifications
+      */
+     @NotNull
+     CachedServerIcon loadServerIcon(@NotNull BufferedImage image) throws IllegalArgumentException, Exception;
+@@ -1358,25 +1380,24 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+ 
+     /**
+      * Create a ChunkData for use in a generator.
+-     *
++     * <p>
+      * See {@link ChunkGenerator#generateChunkData(org.bukkit.World, java.util.Random, int, int, org.bukkit.generator.ChunkGenerator.BiomeGrid)}
+      *
+      * @param world the world to create the ChunkData for
+      * @return a new ChunkData for the world
+-     *
+      */
+     @NotNull
+     public ChunkGenerator.ChunkData createChunkData(@NotNull World world);
+ 
+     // Paper start
++
+     /**
+      * Create a ChunkData for use in a generator, that is populated by the vanilla generator for that world
+      *
+      * @param world the world to create the ChunkData for
+-     * @param x the x coordinate of the chunk
+-     * @param z the z coordinate of the chunk
++     * @param x     the x coordinate of the chunk
++     * @param z     the z coordinate of the chunk
+      * @return a new ChunkData for the world
+-     *
+      */
+     @NotNull
+     ChunkGenerator.ChunkData createVanillaChunkData(@NotNull World world, int x, int z);
+@@ -1402,7 +1423,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+      * This instance is added to the persistent storage of the server and will
+      * be editable by commands and restored after restart.
+      *
+-     * @param key the key of the boss bar that is used to access the boss bar
++     * @param key   the key of the boss bar that is used to access the boss bar
+      * @param title the title of the boss bar
+      * @param color the color of the boss bar
+      * @param style the style of the boss bar
+@@ -1421,7 +1442,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+      *     {@link #createBossBar(String, BarColor, BarStyle, BarFlag...)}
+      *   </li>
+      * </ul>
+-     *
++     * <p>
+      * e.g. bossbars created using the bossbar command
+      *
+      * @return a bossbar iterator
+@@ -1438,7 +1459,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+      *     {@link #createBossBar(String, BarColor, BarStyle, BarFlag...)}
+      *   </li>
+      * </ul>
+-     *
++     * <p>
+      * e.g. bossbars created using the bossbar command
+      *
+      * @param key unique bossbar key
+@@ -1456,7 +1477,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+      *     {@link #createBossBar(String, BarColor, BarStyle, BarFlag...)}
+      *   </li>
+      * </ul>
+-     *
++     * <p>
+      * e.g. bossbars created using the bossbar command
+      *
+      * @param key unique bossbar key
+@@ -1474,6 +1495,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+     Entity getEntity(@NotNull UUID uuid);
+ 
+     // Paper start
++
+     /**
+      * Gets the current server TPS
+      *
+@@ -1499,6 +1521,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+     // Paper end
+ 
+     // Paper start
++
+     /**
+      * Gets the active {@link org.bukkit.command.CommandMap}
+      *
+@@ -1566,7 +1589,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+      * contain the material.
+      *
+      * @param material the material
+-     * @param data data string
++     * @param data     data string
+      * @return new data instance
+      * @throws IllegalArgumentException if the specified data is not valid
+      */
+@@ -1586,13 +1609,14 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+      * Server implementations are allowed to handle only the registries
+      * indicated in {@link Tag}.
+      *
+-     * @param <T> type of the tag
++     * @param <T>      type of the tag
+      * @param registry the tag registry to look at
+-     * @param tag the name of the tag
+-     * @param clazz the class of the tag entries
++     * @param tag      the name of the tag
++     * @param clazz    the class of the tag entries
+      * @return the tag or null
+      */
+-    @UndefinedNullability // Paper
++    @UndefinedNullability
++    // Paper
+     <T extends Keyed> Tag<T> getTag(@NotNull String registry, @NotNull NamespacedKey tag, @NotNull Class<T> clazz);
+ 
+     /**
+@@ -1603,13 +1627,12 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+      * <br>
+      * No guarantees are made about the mutability of the returned iterator.
+      *
+-     * @param <T> type of the tag
++     * @param <T>      type of the tag
+      * @param registry the tag registry to look at
+-     * @param clazz the class of the tag entries
++     * @param clazz    the class of the tag entries
+      * @return all defined tags
+      */
+-    @NotNull
+-    <T extends Keyed> Iterable<Tag<T>> getTags(@NotNull String registry, @NotNull Class<T> clazz);
++    @NotNull <T extends Keyed> Iterable<Tag<T>> getTags(@NotNull String registry, @NotNull Class<T> clazz);
+ 
+     /**
+      * Gets the specified {@link LootTable}.
+@@ -1633,12 +1656,12 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+      * '@' selectors, but this method should not check such permissions from the
+      * sender.
+      *
+-     * @param sender the sender to execute as, must be provided
++     * @param sender   the sender to execute as, must be provided
+      * @param selector the selection string
+      * @return a list of the selected entities. The list will not be null, but
+      * no further guarantees are made.
+      * @throws IllegalArgumentException if the selector is malformed in any way
+-     * or a parameter is null
++     *                                  or a parameter is null
+      */
+     @NotNull
+     List<Entity> selectEntities(@NotNull CommandSender sender, @NotNull String selector) throws IllegalArgumentException;
+@@ -1661,20 +1684,17 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+ 
+         // Paper start
+         @NotNull
+-        public org.bukkit.configuration.file.YamlConfiguration getBukkitConfig()
+-        {
+-            throw new UnsupportedOperationException( "Not supported yet." );
++        public org.bukkit.configuration.file.YamlConfiguration getBukkitConfig() {
++            throw new UnsupportedOperationException("Not supported yet.");
+         }
+ 
+         @NotNull
+-        public org.bukkit.configuration.file.YamlConfiguration getSpigotConfig()
+-        {
++        public org.bukkit.configuration.file.YamlConfiguration getSpigotConfig() {
+             throw new UnsupportedOperationException("Not supported yet.");
+         }
+ 
+         @NotNull
+-        public org.bukkit.configuration.file.YamlConfiguration getPaperConfig()
+-        {
++        public org.bukkit.configuration.file.YamlConfiguration getPaperConfig() {
+             throw new UnsupportedOperationException("Not supported yet.");
+         }
+         // Paper end
+@@ -1718,6 +1738,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+     boolean reloadCommandAliases(); // Paper
+ 
+     // Paper start - allow preventing player name suggestions by default
++
+     /**
+      * Checks if player names should be suggested when a command returns {@code null} as
+      * their tab completion result.
+@@ -1727,7 +1748,6 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+     boolean suggestPlayerNamesWhenNullTabCompletions();
+ 
+     /**
+-     *
+      * @return the default no permission message used on the server
+      */
+     @NotNull
+@@ -1735,6 +1755,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+ 
+     /**
+      * Creates a PlayerProfile for the specified uuid, with name as null
++     *
+      * @param uuid UUID to create profile for
+      * @return A PlayerProfile object
+      */
+@@ -1743,6 +1764,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+ 
+     /**
+      * Creates a PlayerProfile for the specified name, with UUID as null
++     *
+      * @param name Name to create profile for
+      * @return A PlayerProfile object
+      */
+@@ -1751,7 +1773,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+ 
+     /**
+      * Creates a PlayerProfile for the specified name/uuid
+-     *
++     * <p>
+      * Both UUID and Name can not be null at same time. One must be supplied.
+      *
+      * @param uuid UUID to create profile for
+diff --git a/src/main/java/org/bukkit/World.java b/src/main/java/org/bukkit/World.java
+index dc497606ebf9903c2d32276ecddda3231457346a..de7528e9ecfd9f8690f559bf2ab836fe716b3be6 100644
+--- a/src/main/java/org/bukkit/World.java
++++ b/src/main/java/org/bukkit/World.java
+@@ -2941,6 +2941,25 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
+      */
+     void setWaterAnimalSpawnLimit(int limit);
+ 
++    /**
++     * Gets the limit for number of underwater animals that can spawn in a chunk in
++     * this world
++     *
++     * @return The water animal spawn limit
++     */
++    int getUnderwaterAnimalSpawnLimit();
++
++    /**
++     * Sets the limit for number of underwater animals that can spawn in a chunk in
++     * this world
++     * <p>
++     * <b>Note:</b> If set to a negative number the world will use the
++     * server-wide spawn limit instead.
++     *
++     * @param limit the new mob limit
++     */
++    void setUnderwaterAnimalSpawnLimit(int limit);
++
+     /**
+      * Gets user-specified limit for number of water ambient mobs that can spawn
+      * in a chunk.
