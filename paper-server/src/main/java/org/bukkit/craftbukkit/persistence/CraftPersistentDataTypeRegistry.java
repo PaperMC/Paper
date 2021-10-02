@@ -121,7 +121,7 @@ public final class CraftPersistentDataTypeRegistry {
         }
     }
 
-    private final Map<Class, TagAdapter> adapters = new HashMap<>();
+    private final Map<Class, TagAdapter> adapters = new java.util.concurrent.ConcurrentHashMap<>(); // Paper - Replace HashMap with ConcurrentHashMap to avoid CME
 
     /**
      * Creates a suitable adapter instance for the primitive class type.
