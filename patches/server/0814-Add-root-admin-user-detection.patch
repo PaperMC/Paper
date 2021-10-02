@@ -12,13 +12,14 @@ Co-authored-by: Noah van der Aa <ndvdaa@gmail.com>
 
 diff --git a/src/main/java/io/papermc/paper/util/ServerEnvironment.java b/src/main/java/io/papermc/paper/util/ServerEnvironment.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..afec67a3c69dcc0cbdc4fb14d9444b4434cb82e9
+index 0000000000000000000000000000000000000000..9bc2cbf015998b98b6681a427596b151ed1806a0
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/util/ServerEnvironment.java
-@@ -0,0 +1,31 @@
+@@ -0,0 +1,36 @@
 +package io.papermc.paper.util;
 +
 +import com.sun.security.auth.module.NTSystem;
++import com.sun.security.auth.module.UnixSystem;
 +import org.apache.commons.lang.SystemUtils;
 +
 +import java.io.IOException;
@@ -33,11 +34,15 @@ index 0000000000000000000000000000000000000000..afec67a3c69dcc0cbdc4fb14d9444b44
 +        if (SystemUtils.IS_OS_WINDOWS) {
 +            RUNNING_AS_ROOT_OR_ADMIN = Set.of(new NTSystem().getGroupIDs()).contains(WINDOWS_HIGH_INTEGRITY_LEVEL);
 +        } else {
-+            boolean isRunningAsRoot;
-+            try (final InputStream inputStream = Runtime.getRuntime().exec("id -u").getInputStream()) {
-+                isRunningAsRoot = new String(inputStream.readAllBytes()).trim().equals("0");
-+            } catch (IOException ignored) {
-+                isRunningAsRoot = false;
++            boolean isRunningAsRoot = false;
++            if (new UnixSystem().getUid() == 0) {
++                // Due to an OpenJDK bug, UnixSystem#getUid incorrectly returns 0 when the user doesn't have a username.
++                // Because of this, we'll have to double-check if the user ID is actually 0 by running the id command.
++                try (final InputStream inputStream = Runtime.getRuntime().exec("id -u").getInputStream()) {
++                    isRunningAsRoot = new String(inputStream.readAllBytes()).trim().equals("0");
++                } catch (IOException ignored) {
++                    isRunningAsRoot = false;
++                }
 +            }
 +            RUNNING_AS_ROOT_OR_ADMIN = isRunningAsRoot;
 +        }
