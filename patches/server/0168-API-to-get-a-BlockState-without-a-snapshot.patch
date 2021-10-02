@@ -13,14 +13,14 @@ also Avoid NPE during CraftBlockEntityState load if could not get TE
 If Tile Entity was null, correct Sign to return empty lines instead of null
 
 diff --git a/src/main/java/net/minecraft/world/level/block/entity/BlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/BlockEntity.java
-index 77645019c88d61dde28b7598d8a29b7d0c23c209..8a079ee3ed243fd19b1dd7eed2de1dd33785faa1 100644
+index 77645019c88d61dde28b7598d8a29b7d0c23c209..560ee4eaa286197a0f8fc0a119ff5e06baca792a 100644
 --- a/src/main/java/net/minecraft/world/level/block/entity/BlockEntity.java
 +++ b/src/main/java/net/minecraft/world/level/block/entity/BlockEntity.java
 @@ -42,6 +42,7 @@ public abstract class BlockEntity implements net.minecraft.server.KeyedObject {
          this.type = type;
          this.worldPosition = pos.immutable();
          this.blockState = state;
-+        persistentDataContainer = new CraftPersistentDataContainer(DATA_TYPE_REGISTRY); // Paper - always init
++        this.persistentDataContainer = new CraftPersistentDataContainer(DATA_TYPE_REGISTRY); // Paper - always init
      }
  
      // Paper start
@@ -29,25 +29,22 @@ index 77645019c88d61dde28b7598d8a29b7d0c23c209..8a079ee3ed243fd19b1dd7eed2de1dd3
      // CraftBukkit start - read container
      public void load(CompoundTag nbt) {
 -        this.persistentDataContainer = new CraftPersistentDataContainer(BlockEntity.DATA_TYPE_REGISTRY);
-+        this.persistentDataContainer.clear();
++        this.persistentDataContainer.clear(); // Paper - clear instead of init
  
          net.minecraft.nbt.Tag persistentDataTag = nbt.get("PublicBukkitValues");
          if (persistentDataTag instanceof CompoundTag) {
-@@ -221,8 +222,13 @@ public abstract class BlockEntity implements net.minecraft.server.KeyedObject {
-     }
+@@ -222,6 +223,11 @@ public abstract class BlockEntity implements net.minecraft.server.KeyedObject {
  
      // CraftBukkit start - add method
-+    // Paper start
      public InventoryHolder getOwner() {
--        if (this.level == null) return null;
++        // Paper start
 +        return getOwner(true);
 +    }
 +    public InventoryHolder getOwner(boolean useSnapshot) {
 +        // Paper end
-+        if (level == null) return null;
+         if (this.level == null) return null;
          // Spigot start
          org.bukkit.block.Block block = this.level.getWorld().getBlockAt(this.worldPosition.getX(), this.worldPosition.getY(), this.worldPosition.getZ());
-         if (block == null) {
 @@ -230,7 +236,7 @@ public abstract class BlockEntity implements net.minecraft.server.KeyedObject {
              return null;
          }
@@ -58,76 +55,57 @@ index 77645019c88d61dde28b7598d8a29b7d0c23c209..8a079ee3ed243fd19b1dd7eed2de1dd3
          return null;
      }
 diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java b/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java
-index 4175eb5f71522c23eadcbaac6e4b0fbd31f572bc..650e119a4683ad5cb0175dd558f9299f0ebcca0d 100644
+index e6b8dd52cd503f45ca9bb868891ae4c8b29b3fcb..f1c4c3a3392c2d4d836fa10d7a38558d08084d9d 100644
 --- a/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java
 +++ b/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java
-@@ -315,7 +315,21 @@ public class CraftBlock implements Block {
+@@ -314,7 +314,20 @@ public class CraftBlock implements Block {
  
      @Override
      public BlockState getState() {
--        Material material = this.getType();
-+        // Paper start - allow disabling the use of snapshots
-+        return getState(true);
++        // Paper start
++        return this.getState(true);
 +    }
++
++    @Override
 +    public BlockState getState(boolean useSnapshot) {
 +        boolean prev = CraftBlockEntityState.DISABLE_SNAPSHOT;
 +        CraftBlockEntityState.DISABLE_SNAPSHOT = !useSnapshot;
 +        try {
-+            return getState0();
+         return CraftBlockStates.getBlockState(this);
 +        } finally {
 +            CraftBlockEntityState.DISABLE_SNAPSHOT = prev;
-+        }
-+    }
-+    public BlockState getState0() {
-+        // Paper end
-+        Material material = getType();
- 
-         switch (material) {
-             case ACACIA_SIGN:
-diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftBlockEntityState.java b/src/main/java/org/bukkit/craftbukkit/block/CraftBlockEntityState.java
-index 5203741fc3ba3b856f15d27e563b641c1e48e022..204a61767d5cacc962094b9ecc37f457987cbde7 100644
---- a/src/main/java/org/bukkit/craftbukkit/block/CraftBlockEntityState.java
-+++ b/src/main/java/org/bukkit/craftbukkit/block/CraftBlockEntityState.java
-@@ -25,20 +25,40 @@ public class CraftBlockEntityState<T extends BlockEntity> extends CraftBlockStat
-         this.tileEntity = tileEntityClass.cast(getWorldHandle().getBlockEntity(this.getPosition()));
-         Preconditions.checkState(this.tileEntity != null, "Tile is null, asynchronous access? %s", block);
- 
-+        // Paper start
-+        this.snapshotDisabled = DISABLE_SNAPSHOT;
-+        if (DISABLE_SNAPSHOT) {
-+            this.snapshot = this.tileEntity;
-+        } else {
-+            this.snapshot = this.createSnapshot(this.tileEntity);
-+        }
-         // copy tile entity data:
--        this.snapshot = this.createSnapshot(tileEntity);
--        this.load(snapshot);
-+        if(this.snapshot != null) {
-+            this.load(this.snapshot);
 +        }
 +        // Paper end
      }
  
+     @Override
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftBlockEntityState.java b/src/main/java/org/bukkit/craftbukkit/block/CraftBlockEntityState.java
+index fbd52387299c90b85afd79897139cdb879fce74a..aaddbaecc25af87c863fe51098eb322fd5702104 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/CraftBlockEntityState.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/CraftBlockEntityState.java
+@@ -10,15 +10,26 @@ public abstract class CraftBlockEntityState<T extends BlockEntity> extends Craft
+ 
+     private final T tileEntity;
+     private final T snapshot;
 +    public final boolean snapshotDisabled; // Paper
 +    public static boolean DISABLE_SNAPSHOT = false; // Paper
-+
-     public CraftBlockEntityState(Material material, T tileEntity) {
-         super(material);
  
-         this.tileEntityClass = (Class<T>) tileEntity.getClass();
+     public CraftBlockEntityState(World world, T tileEntity) {
+         super(world, tileEntity.getBlockPos(), tileEntity.getBlockState());
+ 
          this.tileEntity = tileEntity;
--
+ 
 +        // Paper start
 +        this.snapshotDisabled = DISABLE_SNAPSHOT;
 +        if (DISABLE_SNAPSHOT) {
 +            this.snapshot = this.tileEntity;
 +        } else {
-+            this.snapshot = this.createSnapshot(this.tileEntity);
++            this.snapshot = this.createSnapshot(tileEntity);
 +        }
          // copy tile entity data:
 -        this.snapshot = this.createSnapshot(tileEntity);
 -        this.load(snapshot);
-+        if(this.snapshot != null) {
++        if (this.snapshot != null) {
 +            this.load(this.snapshot);
 +        }
 +        // Paper end
