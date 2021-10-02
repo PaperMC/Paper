@@ -3,57 +3,149 @@ From: William Blake Galbreath <Blake.Galbreath@GMail.com>
 Date: Wed, 1 Jul 2020 11:57:40 -0500
 Subject: [PATCH] Update itemstack legacy name and lore
 
+== AT ==
+public net.minecraft.network.chat.Component$Serializer GSON
 
+Co-authored-by: Jake Potrebic <jake.m.potrebic@gmail.com>
+
+diff --git a/src/main/java/io/papermc/paper/adventure/PaperAdventure.java b/src/main/java/io/papermc/paper/adventure/PaperAdventure.java
+index db54a9c32578defa02fa58dc694c96684a4885ac..606e55d7e2a7d372d1565f8a09474cfb8ebd9c0b 100644
+--- a/src/main/java/io/papermc/paper/adventure/PaperAdventure.java
++++ b/src/main/java/io/papermc/paper/adventure/PaperAdventure.java
+@@ -1,5 +1,6 @@
+ package io.papermc.paper.adventure;
+ 
++import com.google.gson.JsonParseException;
+ import com.mojang.brigadier.exceptions.CommandSyntaxException;
+ import io.netty.util.AttributeKey;
+ import java.io.IOException;
+@@ -18,10 +19,12 @@ import net.kyori.adventure.sound.Sound;
+ import net.kyori.adventure.text.Component;
+ import net.kyori.adventure.text.TranslatableComponent;
+ import net.kyori.adventure.text.flattener.ComponentFlattener;
++import net.kyori.adventure.text.format.Style;
+ import net.kyori.adventure.text.format.TextColor;
+ import net.kyori.adventure.text.serializer.ComponentSerializer;
+ import net.kyori.adventure.text.serializer.ansi.ANSIComponentSerializer;
+ import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
++import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
+ import net.kyori.adventure.text.serializer.plain.PlainComponentSerializer;
+ import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
+ import net.kyori.adventure.translation.GlobalTranslator;
+@@ -38,6 +41,8 @@ import net.minecraft.nbt.ListTag;
+ import net.minecraft.nbt.StringTag;
+ import net.minecraft.nbt.TagParser;
+ import net.minecraft.network.chat.ComponentUtils;
++import net.minecraft.network.chat.MutableComponent;
++import net.minecraft.network.chat.contents.LiteralContents;
+ import net.minecraft.network.protocol.Packet;
+ import net.minecraft.network.protocol.game.ClientboundSoundEntityPacket;
+ import net.minecraft.network.protocol.game.ClientboundSoundPacket;
+@@ -51,6 +56,7 @@ import net.minecraft.world.item.WrittenBookItem;
+ import org.bukkit.command.CommandSender;
+ import org.bukkit.craftbukkit.command.VanillaCommandWrapper;
+ import org.bukkit.craftbukkit.entity.CraftEntity;
++import org.jetbrains.annotations.Contract;
+ import org.jetbrains.annotations.NotNull;
+ import org.jetbrains.annotations.Nullable;
+ 
+@@ -146,6 +152,10 @@ public final class PaperAdventure {
+ 
+     // Component
+ 
++    public static Style asAdventure(final net.minecraft.network.chat.Style style) {
++        return GsonComponentSerializer.gson().serializer().fromJson(net.minecraft.network.chat.Component.Serializer.GSON.toJsonTree(style), Style.class);
++    }
++
+     public static Component asAdventure(final net.minecraft.network.chat.Component component) {
+         return component == null ? Component.empty() : GsonComponentSerializer.gson().serializer().fromJson(net.minecraft.network.chat.Component.Serializer.toJsonTree(component), Component.class);
+     }
+@@ -167,9 +177,16 @@ public final class PaperAdventure {
+     }
+ 
+     public static List<String> asJson(final List<? extends Component> adventures) {
++        return asJson(adventures, false);
++    }
++    public static List<String> asJson(final List<? extends Component> adventures, boolean convertLegacy) {
+         final List<String> jsons = new ArrayList<>(adventures.size());
+         for (final Component component : adventures) {
++            if (convertLegacy) {
++                jsons.add(convertTopLevelLegacyChars(GsonComponentSerializer.gson().serialize(component)));
++            } else {
+             jsons.add(GsonComponentSerializer.gson().serialize(component));
++            }
+         }
+         return jsons;
+     }
+@@ -391,4 +408,31 @@ public final class PaperAdventure {
+     public static @Nullable ChatFormatting asVanilla(final TextColor color) {
+         return ChatFormatting.getByHexValue(color.value());
+     }
++
++    // Legacy
++
++    @Contract("!null -> !null")
++    public static @Nullable String convertTopLevelLegacyChars(final @Nullable String json) {
++        return convertTopLevelLegacyChars(json, true);
++    }
++    @Contract("!null,_ -> !null")
++    public static @Nullable String convertTopLevelLegacyChars(final @Nullable String json, final boolean catchJsonParseException) {
++        if (json == null) return null;
++        if (json.indexOf(ChatFormatting.PREFIX_CODE) < 0) return json;
++        try {
++            MutableComponent component = net.minecraft.network.chat.Component.Serializer.fromJson(json);
++            if (component != null && component.getContents() instanceof LiteralContents literal && literal.text().indexOf(ChatFormatting.PREFIX_CODE) > -1 && component.getSiblings().isEmpty()) {
++                // Only convert if the root component is a single comp with legacy in it, don't convert already normal components
++                final Component converted = LegacyComponentSerializer.legacySection().deserialize(literal.text())
++                    .applyFallbackStyle(asAdventure(component.getStyle()));
++                return GsonComponentSerializer.gson().serialize(converted);
++            }
++            return json;
++        } catch (JsonParseException parseException) {
++            if (catchJsonParseException) {
++                return net.minecraft.network.chat.Component.Serializer.toJson(net.minecraft.network.chat.Component.empty());
++            }
++            throw parseException;
++        }
++    }
+ }
 diff --git a/src/main/java/net/minecraft/world/item/ItemStack.java b/src/main/java/net/minecraft/world/item/ItemStack.java
-index 7d80eded30109982fd3a1b815ba5dff4b699689a..dcb01c399d2b30d907bfc51584215d9300b6d23e 100644
+index 0caf3eeb7984e842f7a0bdfed3021d0b231a0dd0..aec306d9dead142e4c3f0f8e81e950a6718e3241 100644
 --- a/src/main/java/net/minecraft/world/item/ItemStack.java
 +++ b/src/main/java/net/minecraft/world/item/ItemStack.java
-@@ -171,6 +171,44 @@ public final class ItemStack {
+@@ -171,6 +171,31 @@ public final class ItemStack {
              list.sort((java.util.Comparator<? super net.minecraft.nbt.Tag>) enchantSorter); // Paper
          } catch (Exception ignored) {}
      }
 +
 +    private void processText() {
-+        CompoundTag display = getTagElement("display");
++        CompoundTag display = getTagElement(TAG_DISPLAY);
 +        if (display != null) {
-+            if (display.contains("Name", 8)) {
-+                String json = display.getString("Name");
-+                if (json != null && json.contains("\u00A7")) {
++            if (display.contains(TAG_DISPLAY_NAME, Tag.TAG_STRING)) {
++                String json = display.getString(TAG_DISPLAY_NAME);
++                if (json.contains("\u00A7")) {
 +                    try {
-+                        display.put("Name", convert(json));
++                        display.put(TAG_DISPLAY_NAME, net.minecraft.nbt.StringTag.valueOf(io.papermc.paper.adventure.PaperAdventure.convertTopLevelLegacyChars(json, false)));
 +                    } catch (com.google.gson.JsonParseException jsonparseexception) {
-+                        display.remove("Name");
++                        display.remove(TAG_DISPLAY_NAME);
 +                    }
 +                }
 +            }
-+            if (display.contains("Lore", 9)) {
-+                ListTag list = display.getList("Lore", 8);
++            if (display.contains(TAG_LORE, Tag.TAG_LIST)) {
++                ListTag list = display.getList(TAG_LORE, Tag.TAG_STRING);
 +                for (int index = 0; index < list.size(); index++) {
 +                    String json = list.getString(index);
-+                    if (json != null && json.contains("\u00A7")) { // Only try if it has legacy in the unparsed json
-+                        try {
-+                            list.set(index, convert(json));
-+                        } catch (com.google.gson.JsonParseException e) {
-+                            list.set(index, net.minecraft.nbt.StringTag.valueOf(org.bukkit.craftbukkit.util.CraftChatMessage.toJSON(net.minecraft.network.chat.Component.literal(""))));
-+                        }
++                    if (json.contains("\u00A7")) { // Only try if it has legacy in the unparsed json
++                        list.set(index, net.minecraft.nbt.StringTag.valueOf(io.papermc.paper.adventure.PaperAdventure.convertTopLevelLegacyChars(json)));
 +                    }
 +                }
 +            }
 +        }
-+    }
-+
-+    private net.minecraft.nbt.StringTag convert(String json) {
-+        Component component = Component.Serializer.fromJson(json);
-+        if (component.getContents() instanceof net.minecraft.network.chat.contents.LiteralContents literalContents && literalContents.text().contains("\u00A7") && component.getSiblings().isEmpty()) {
-+            // Only convert if the root component is a single comp with legacy in it, don't convert already normal components
-+            component = org.bukkit.craftbukkit.util.CraftChatMessage.fromString(literalContents.text())[0];
-+        }
-+        return net.minecraft.nbt.StringTag.valueOf(org.bukkit.craftbukkit.util.CraftChatMessage.toJSON(component));
 +    }
      // Paper end
  
      public ItemStack(ItemLike item) {
-@@ -222,6 +260,7 @@ public final class ItemStack {
+@@ -222,6 +247,7 @@ public final class ItemStack {
              this.tag = nbttagcompound.getCompound("tag").copy();
              // CraftBukkit end
              this.processEnchantOrder(this.tag); // Paper
@@ -61,3 +153,112 @@ index 7d80eded30109982fd3a1b815ba5dff4b699689a..dcb01c399d2b30d907bfc51584215d93
              this.getItem().verifyTagAfterLoad(this.tag);
          }
  
+@@ -834,6 +860,7 @@ public final class ItemStack {
+     public void setTag(@Nullable CompoundTag nbt) {
+         this.tag = nbt;
+         this.processEnchantOrder(this.tag); // Paper
++        this.processText(); // Paper
+         if (this.getItem().canBeDepleted()) {
+             this.setDamageValue(this.getDamageValue());
+         }
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/SignText.java b/src/main/java/net/minecraft/world/level/block/entity/SignText.java
+index eb64cc844c3e68f00e4ea314a5b204ace2832d30..382927c93436c594f5438eab25acd6ec0467ad39 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/SignText.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/SignText.java
+@@ -18,7 +18,25 @@ import net.minecraft.world.entity.player.Player;
+ import net.minecraft.world.item.DyeColor;
+ 
+ public class SignText {
+-    private static final Codec<Component[]> LINES_CODEC = ExtraCodecs.FLAT_COMPONENT.listOf().comapFlatMap((messages) -> {
++    // Paper start - convert legacy sign chars
++    // taken from ExtraCodecs#FLAT_COMPONENT
++    public static final com.mojang.serialization.Decoder<Component> FLAT_COMPONENT_CONVERTED = Codec.STRING.flatMap((json) -> {
++        try {
++            Component component = Component.Serializer.fromJson(json);
++
++            if (json.indexOf(net.minecraft.ChatFormatting.PREFIX_CODE) > -1) {
++                if (component != null && component.getContents() instanceof net.minecraft.network.chat.contents.LiteralContents literal && literal.text().indexOf(net.minecraft.ChatFormatting.PREFIX_CODE) > -1 && component.getSiblings().isEmpty()) {
++                    net.minecraft.network.chat.MutableComponent converted = ((net.minecraft.network.chat.MutableComponent) ((io.papermc.paper.adventure.AdventureComponent) io.papermc.paper.adventure.PaperAdventure.asVanilla(net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(literal.text()))).deepConverted());
++                    component = converted.setStyle(converted.getStyle().applyTo(component.getStyle()));
++                }
++            }
++            return com.mojang.serialization.DataResult.success(component);
++        } catch (com.google.gson.JsonParseException var2) {
++            return com.mojang.serialization.DataResult.error(var2::getMessage);
++        }
++    });
++    private static final Codec<Component[]> LINES_CODEC = Codec.of(ExtraCodecs.FLAT_COMPONENT, FLAT_COMPONENT_CONVERTED).listOf().comapFlatMap((messages) -> {
++    // Paper end
+         return Util.fixedSize(messages, 4).map((list) -> {
+             return new Component[]{list.get(0), list.get(1), list.get(2), list.get(3)};
+         });
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
+index b34f364f8580ae900e25ef3f31f58f4e8fee88e0..86f28370fc413cf31cdc645129fafeaa55fab983 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
+@@ -520,7 +520,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+     }
+ 
+     CraftMetaItem(Map<String, Object> map) {
+-        this.displayName = CraftChatMessage.fromJSONOrStringOrNullToJSON(SerializableMeta.getString(map, NAME.BUKKIT, true));
++        this.displayName = io.papermc.paper.adventure.PaperAdventure.convertTopLevelLegacyChars(CraftChatMessage.fromJSONOrStringOrNullToJSON(SerializableMeta.getString(map, NAME.BUKKIT, true))); // Paper
+ 
+         this.locName = CraftChatMessage.fromJSONOrStringOrNullToJSON(SerializableMeta.getString(map, LOCNAME.BUKKIT, true));
+ 
+@@ -690,7 +690,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+     @Overridden
+     void applyToItem(CompoundTag itemTag) {
+         if (this.hasDisplayName()) {
+-            this.setDisplayTag(itemTag, NAME.NBT, StringTag.valueOf(displayName));
++            this.setDisplayTag(itemTag, NAME.NBT, StringTag.valueOf(io.papermc.paper.adventure.PaperAdventure.convertTopLevelLegacyChars(displayName))); // Paper
+         }
+         if (this.hasLocalizedName()) {
+             this.setDisplayTag(itemTag, LOCNAME.NBT, StringTag.valueOf(locName));
+@@ -868,7 +868,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+ 
+     @Override
+     public void displayName(final net.kyori.adventure.text.Component displayName) {
+-        this.displayName = displayName == null ? null : net.kyori.adventure.text.serializer.gson.GsonComponentSerializer.gson().serialize(displayName);
++        this.displayName = displayName == null ? null : io.papermc.paper.adventure.PaperAdventure.convertTopLevelLegacyChars(net.kyori.adventure.text.serializer.gson.GsonComponentSerializer.gson().serialize(displayName)); // Paper
+     }
+     // Paper end
+ 
+@@ -891,7 +891,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+     // Paper start
+     @Override
+     public void setDisplayNameComponent(net.md_5.bungee.api.chat.BaseComponent[] component) {
+-        this.displayName = net.md_5.bungee.chat.ComponentSerializer.toString(component);
++        this.displayName = io.papermc.paper.adventure.PaperAdventure.convertTopLevelLegacyChars(net.md_5.bungee.chat.ComponentSerializer.toString(component)); // Paper
+     }
+     // Paper end
+     @Override
+@@ -927,7 +927,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+ 
+     @Override
+     public void lore(final List<? extends net.kyori.adventure.text.Component> lore) {
+-        this.lore = lore != null ? io.papermc.paper.adventure.PaperAdventure.asJson(lore) : null;
++        this.lore = lore != null ? io.papermc.paper.adventure.PaperAdventure.asJson(lore, true) : null; // Paper
+     }
+     // Paper end
+ 
+@@ -1543,7 +1543,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+         for (Object object : addFrom) {
+             // Paper start - support components
+             if(object instanceof net.md_5.bungee.api.chat.BaseComponent[]) {
+-                addTo.add(net.md_5.bungee.chat.ComponentSerializer.toString((net.md_5.bungee.api.chat.BaseComponent[]) object));
++                addTo.add(io.papermc.paper.adventure.PaperAdventure.convertTopLevelLegacyChars(net.md_5.bungee.chat.ComponentSerializer.toString((net.md_5.bungee.api.chat.BaseComponent[]) object))); // Paper
+             } else
+             // Paper end
+             if (!(object instanceof String)) {
+@@ -1559,9 +1559,9 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+                 String entry = object.toString();
+ 
+                 if (possiblyJsonInput) {
+-                    addTo.add(CraftChatMessage.fromJSONOrStringToJSON(entry));
++                    addTo.add(io.papermc.paper.adventure.PaperAdventure.convertTopLevelLegacyChars(CraftChatMessage.fromJSONOrStringToJSON(entry))); // Paper
+                 } else {
+-                    addTo.add(CraftChatMessage.fromStringToJSON(entry));
++                    addTo.add(io.papermc.paper.adventure.PaperAdventure.convertTopLevelLegacyChars(CraftChatMessage.fromStringToJSON(entry))); // Paper
+                 }
+             }
+         }
