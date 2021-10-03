@@ -2,7 +2,7 @@ plugins {
     java
     `maven-publish`
     id("com.github.johnrengelman.shadow") version "7.0.0" apply false
-    id("io.papermc.paperweight.core") version "1.1.11"
+    id("io.papermc.paperweight.core") version "1.1.12"
 }
 
 allprojects {
@@ -55,7 +55,7 @@ repositories {
 
 dependencies {
     paramMappings("org.quiltmc:yarn:1.17.1+build.1:mergedv2")
-    remapper("org.quiltmc:tiny-remapper:0.4.3:fat")
+    remapper("net.fabricmc:tiny-remapper:0.6.0:fat")
     decompiler("net.minecraftforge:forgeflower:1.5.498.12")
     paperclip("io.papermc:paperclip:2.0.1")
 }
@@ -69,7 +69,7 @@ paperweight {
         spigotServerPatchDir.set(layout.projectDirectory.dir("patches/server"))
 
         paramMappingsRepo.set("https://maven.quiltmc.org/repository/release/")
-        remapRepo.set("https://maven.quiltmc.org/repository/release/")
+        remapRepo.set("https://maven.fabricmc.net/")
         decompileRepo.set("https://files.minecraftforge.net/maven/")
 
         mappingsPatch.set(layout.projectDirectory.file("build-data/mappings-patch.tiny"))
