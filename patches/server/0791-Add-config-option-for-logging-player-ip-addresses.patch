@@ -1,0 +1,95 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Noah van der Aa <ndvdaa@gmail.com>
+Date: Tue, 5 Oct 2021 20:04:21 +0200
+Subject: [PATCH] Add config option for logging player ip addresses
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+index b8029b11764c67c0fe39bd1a07950f491691c938..5de84dfb6f18f3a0afdd33bf6bf640f48efc6e6b 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+@@ -91,6 +91,11 @@ public class PaperConfig {
+         }
+     }
+ 
++    public static boolean logPlayerIpAddresses = true;
++    private static void playerIpAddresses() {
++        logPlayerIpAddresses = getBoolean("settings.log-player-ip-addresses", logPlayerIpAddresses);
++    }
++
+     public static int maxJoinsPerTick;
+     private static void maxJoinsPerTick() {
+         maxJoinsPerTick = getInt("settings.max-joins-per-tick", 3);
+diff --git a/src/main/java/net/minecraft/network/protocol/PacketUtils.java b/src/main/java/net/minecraft/network/protocol/PacketUtils.java
+index f7bb26e8b7a74a9ae5b469351b2fccc6fc80ab6a..230f5adc4df1679597f5b9aa9fcd36501efbebdd 100644
+--- a/src/main/java/net/minecraft/network/protocol/PacketUtils.java
++++ b/src/main/java/net/minecraft/network/protocol/PacketUtils.java
+@@ -51,10 +51,11 @@ public class PacketUtils {
+                         packet.handle(listener);
+                     } catch (Exception exception) {
+                         net.minecraft.network.Connection networkmanager = listener.getConnection();
++                        String playerIP = com.destroystokyo.paper.PaperConfig.logPlayerIpAddresses ? String.valueOf(networkmanager.getRemoteAddress()) : "<ip address withheld>"; // Paper
+                         if (networkmanager.getPlayer() != null) {
+-                            LOGGER.error("Error whilst processing packet {} for {}[{}]", packet, networkmanager.getPlayer().getScoreboardName(), networkmanager.getRemoteAddress(), exception);
++                            LOGGER.error("Error whilst processing packet {} for {}[{}]", packet, networkmanager.getPlayer().getScoreboardName(), playerIP, exception); // Paper
+                         } else {
+-                            LOGGER.error("Error whilst processing packet {} for connection from {}", packet, networkmanager.getRemoteAddress(), exception);
++                            LOGGER.error("Error whilst processing packet {} for connection from {}", packet, playerIP, exception); // Paper
+                         }
+                         net.minecraft.network.chat.TextComponent error = new net.minecraft.network.chat.TextComponent("Packet processing error");
+                         networkmanager.send(new net.minecraft.network.protocol.game.ClientboundDisconnectPacket(error), (future) -> {
+diff --git a/src/main/java/net/minecraft/server/network/LegacyQueryHandler.java b/src/main/java/net/minecraft/server/network/LegacyQueryHandler.java
+index 53e87ea23dacd123cc47bd8ca43d0f19e69acaf2..a03cb44f2296b7df60fa39879e54a5c56b22a3d5 100644
+--- a/src/main/java/net/minecraft/server/network/LegacyQueryHandler.java
++++ b/src/main/java/net/minecraft/server/network/LegacyQueryHandler.java
+@@ -183,7 +183,7 @@ public class LegacyQueryHandler extends ChannelInboundHandlerAdapter {
+         buf.release();
+         this.buf = null;
+ 
+-        LOGGER.debug("Ping: (1.6) from {}", ctx.channel().remoteAddress());
++        LOGGER.debug("Ping: (1.6) from {}", com.destroystokyo.paper.PaperConfig.logPlayerIpAddresses ? ctx.channel().remoteAddress() : "<ip address withheld>"); // Paper
+ 
+         InetSocketAddress virtualHost = com.destroystokyo.paper.network.PaperNetworkClient.prepareVirtualHost(host, port);
+         com.destroystokyo.paper.event.server.PaperServerListPingEvent event = com.destroystokyo.paper.network.PaperLegacyStatusClient.processRequest(
+diff --git a/src/main/java/net/minecraft/server/network/ServerConnectionListener.java b/src/main/java/net/minecraft/server/network/ServerConnectionListener.java
+index af4d9244102bd0ac204f44a8de7f3a7706e3692d..058fb3696c7ece4a7b6971886b1760b26add733b 100644
+--- a/src/main/java/net/minecraft/server/network/ServerConnectionListener.java
++++ b/src/main/java/net/minecraft/server/network/ServerConnectionListener.java
+@@ -204,7 +204,7 @@ public class ServerConnectionListener {
+                                 throw new ReportedException(CrashReport.forThrowable(exception, "Ticking memory connection"));
+                             }
+ 
+-                            ServerConnectionListener.LOGGER.warn("Failed to handle packet for {}", networkmanager.getRemoteAddress(), exception);
++                            ServerConnectionListener.LOGGER.warn("Failed to handle packet for {}", com.destroystokyo.paper.PaperConfig.logPlayerIpAddresses ? String.valueOf(networkmanager.getRemoteAddress()) : "<ip address withheld>", exception); // Paper
+                             TextComponent chatcomponenttext = new TextComponent("Internal server error");
+ 
+                             networkmanager.send(new ClientboundDisconnectPacket(chatcomponenttext), (future) -> {
+diff --git a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
+index 4cd92875d60c2f1dcce67ac99e9ba257a10f87b1..f5c1dff1d571e89f960f11400edbcbbea0620575 100644
+--- a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
+@@ -220,7 +220,10 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener
+     }
+ 
+     public String getUserName() {
+-        return this.gameProfile != null ? this.gameProfile + " (" + this.connection.getRemoteAddress() + ")" : String.valueOf(this.connection.getRemoteAddress());
++        // Paper start
++        String ip = com.destroystokyo.paper.PaperConfig.logPlayerIpAddresses ? String.valueOf(this.connection.getRemoteAddress()) : "<ip address withheld>";
++        return this.gameProfile != null ? this.gameProfile + " (" + ip + ")" : String.valueOf(ip);
++        // Paper end
+     }
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
+index 81957d99205fcee40752914180f9f4a1158a613f..03d4d4d95e0cf617726a39ebd7191cd2d10ffdb7 100644
+--- a/src/main/java/net/minecraft/server/players/PlayerList.java
++++ b/src/main/java/net/minecraft/server/players/PlayerList.java
+@@ -238,7 +238,7 @@ public abstract class PlayerList {
+         final String s1;
+ 
+         if (connection.getRemoteAddress() != null) {
+-            s1 = connection.getRemoteAddress().toString();
++            s1 = com.destroystokyo.paper.PaperConfig.logPlayerIpAddresses ? connection.getRemoteAddress().toString() : "<ip address withheld>"; // Paper
+         } else {
+             s1 = "local";
+         }
