@@ -1,0 +1,199 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Cubxity <cubxity@protonmail.com>
+Date: Sun, 3 Oct 2021 08:03:16 +0200
+Subject: [PATCH] Overridable config environment variables
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+index f421e6a2e43e0a673dbb8a9a2b4331387e523e02..23e614f5ec6c761b96ad20507693af24021b67e0 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+@@ -12,6 +12,7 @@ import java.lang.reflect.Modifier;
+ import java.nio.charset.StandardCharsets;
+ import java.util.HashMap;
+ import java.util.List;
++import java.util.Locale;
+ import java.util.Map;
+ import java.util.concurrent.TimeUnit;
+ import java.util.logging.Level;
+@@ -171,11 +172,25 @@ public class PaperConfig {
+ 
+     private static boolean getBoolean(String path, boolean def) {
+         config.addDefault(path, def);
++
++        String override = getOverride(path);
++        if (override != null) {
++            return Boolean.parseBoolean(override);
++        }
+         return config.getBoolean(path, config.getBoolean(path));
+     }
+ 
+     private static double getDouble(String path, double def) {
+         config.addDefault(path, def);
++
++        String override = getOverride(path);
++        if (override != null) {
++            try {
++                return Double.parseDouble(override);
++            } catch (NumberFormatException ignored) {
++
++            }
++        }
+         return config.getDouble(path, config.getDouble(path));
+     }
+ 
+@@ -186,6 +201,15 @@ public class PaperConfig {
+ 
+     private static int getInt(String path, int def) {
+         config.addDefault(path, def);
++
++        String override = getOverride(path);
++        if (override != null) {
++            try {
++                return Integer.parseInt(override);
++            } catch (NumberFormatException ignored) {
++
++            }
++        }
+         return config.getInt(path, config.getInt(path));
+     }
+ 
+@@ -196,9 +220,19 @@ public class PaperConfig {
+ 
+     private static String getString(String path, String def) {
+         config.addDefault(path, def);
++
++        String override = getOverride(path);
++        if (override != null) {
++            return override;
++        }
+         return config.getString(path, config.getString(path));
+     }
+ 
++    private static String getOverride(String path) {
++        String key = "PAPER_" + path.replace('.', '_').replace('-', '_').toUpperCase(Locale.ROOT);
++        return System.getenv(key);
++    }
++
+     public static String timingsServerName;
+     private static void timings() {
+         boolean timings = getBoolean("timings.enabled", true);
+diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServerProperties.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServerProperties.java
+index 0544ac93513d3a274bfb53bb6120bd598f4d603b..f384dec122bbce54c9e08afe30fb522816ed7ce1 100644
+--- a/src/main/java/net/minecraft/server/dedicated/DedicatedServerProperties.java
++++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServerProperties.java
+@@ -1,6 +1,7 @@
+ package net.minecraft.server.dedicated;
+ 
+ import java.nio.file.Path;
++import java.util.Locale; // Paper
+ import java.util.Properties;
+ import java.util.concurrent.TimeUnit;
+ import javax.annotation.Nullable;
+@@ -144,4 +145,22 @@ public class DedicatedServerProperties extends Settings<DedicatedServerPropertie
+ 
+         return this.worldGenSettings;
+     }
++
++    // Paper start
++    @org.jetbrains.annotations.Nullable
++    @Override
++    public String getStringRaw(String key) {
++        String override = getOverride(key);
++        if (override != null) {
++            return override;
++        }
++        return super.getStringRaw(key);
++    }
++
++    @org.jetbrains.annotations.Nullable
++    private String getOverride(String path) {
++        String key = "MINECRAFT_" + path.replace('.', '_').replace('-', '_').toUpperCase(Locale.ROOT);
++        return System.getenv(key);
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/org/spigotmc/SpigotConfig.java b/src/main/java/org/spigotmc/SpigotConfig.java
+index ec7938202e3890bccb809a8092362458d0f4ca75..e4478f05fa6c72edb1992ca4f0c92f2ffe786f99 100644
+--- a/src/main/java/org/spigotmc/SpigotConfig.java
++++ b/src/main/java/org/spigotmc/SpigotConfig.java
+@@ -10,6 +10,7 @@ import java.util.Arrays;
+ import java.util.HashMap;
+ import java.util.HashSet;
+ import java.util.List;
++import java.util.Locale; // Paper
+ import java.util.Map;
+ import java.util.Set;
+ import java.util.logging.Level;
+@@ -142,12 +143,30 @@ public class SpigotConfig
+     private static boolean getBoolean(String path, boolean def)
+     {
+         SpigotConfig.config.addDefault( path, def );
++        
++        // Paper start
++        String override = getOverride(path);
++        if (override != null) {
++            return Boolean.parseBoolean(override);
++        }
++        // Paper end
+         return SpigotConfig.config.getBoolean( path, SpigotConfig.config.getBoolean( path ) );
+     }
+ 
+     private static int getInt(String path, int def)
+     {
+         SpigotConfig.config.addDefault( path, def );
++        
++        // Paper start
++        String override = getOverride(path);
++        if (override != null) {
++            try {
++                return Integer.parseInt(override);
++            } catch (NumberFormatException ignored) {
++
++            }
++        }
++        // Paper end
+         return SpigotConfig.config.getInt( path, SpigotConfig.config.getInt( path ) );
+     }
+ 
+@@ -160,15 +179,40 @@ public class SpigotConfig
+     private static String getString(String path, String def)
+     {
+         SpigotConfig.config.addDefault( path, def );
++
++        // Paper start
++        String override = getOverride(path);
++        if (override != null) {
++            return override;
++        }
++        // Paper end
+         return SpigotConfig.config.getString( path, SpigotConfig.config.getString( path ) );
+     }
+ 
+     private static double getDouble(String path, double def)
+     {
+         SpigotConfig.config.addDefault( path, def );
++
++        // Paper start
++        String override = getOverride(path);
++        if (override != null) {
++            try {
++                return Double.parseDouble(override);
++            } catch (NumberFormatException ignored) {
++
++            }
++        }
++        // Paper end
+         return SpigotConfig.config.getDouble( path, SpigotConfig.config.getDouble( path ) );
+     }
+ 
++    // Paper start
++    private static String getOverride(String path) {
++        String key = "SPIGOT_" + path.replace('.', '_').replace('-', '_').toUpperCase(Locale.ROOT);
++        return System.getenv(key);
++    }
++    // Paper end
++
+     public static boolean logCommands;
+     private static void logCommands()
+     {
