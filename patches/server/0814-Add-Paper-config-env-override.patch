@@ -1,0 +1,80 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Cubxity <cubxity@protonmail.com>
+Date: Sun, 3 Oct 2021 08:03:16 +0200
+Subject: [PATCH] Add Paper config env override
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+index f421e6a2e43e0a673dbb8a9a2b4331387e523e02..34151bd47b64f1096e2be2f42d04bbd7bbe29d64 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+@@ -12,6 +12,7 @@ import java.lang.reflect.Modifier;
+ import java.nio.charset.StandardCharsets;
+ import java.util.HashMap;
+ import java.util.List;
++import java.util.Locale;
+ import java.util.Map;
+ import java.util.concurrent.TimeUnit;
+ import java.util.logging.Level;
+@@ -171,11 +172,25 @@ public class PaperConfig {
+ 
+     private static boolean getBoolean(String path, boolean def) {
+         config.addDefault(path, def);
++
++        String override = getOverride(path);
++        if (override != null) {
++            return Boolean.parseBoolean(override);
++        }
+         return config.getBoolean(path, config.getBoolean(path));
+     }
+ 
+     private static double getDouble(String path, double def) {
+         config.addDefault(path, def);
++
++        String override = getOverride(path);
++        if (override != null) {
++            try {
++                return Double.parseDouble(override);
++            } catch (NumberFormatException ignored) {
++
++            }
++        }
+         return config.getDouble(path, config.getDouble(path));
+     }
+ 
+@@ -186,6 +201,15 @@ public class PaperConfig {
+ 
+     private static int getInt(String path, int def) {
+         config.addDefault(path, def);
++
++        String override = getOverride(path);
++        if (override != null) {
++            try {
++                return Integer.parseInt(override);
++            } catch (NumberFormatException ignored) {
++
++            }
++        }
+         return config.getInt(path, config.getInt(path));
+     }
+ 
+@@ -196,9 +220,19 @@ public class PaperConfig {
+ 
+     private static String getString(String path, String def) {
+         config.addDefault(path, def);
++
++        String override = getOverride(path);
++        if (override != null) {
++            return override;
++        }
+         return config.getString(path, config.getString(path));
+     }
+ 
++    private static String getOverride(String path) {
++        String key = "PAPER_" + path.replace('.', '_').toUpperCase(Locale.ROOT);
++        return System.getenv(key);
++    }
++
+     public static String timingsServerName;
+     private static void timings() {
+         boolean timings = getBoolean("timings.enabled", true);
