@@ -1,0 +1,330 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Cubxity <cubxity@protonmail.com>
+Date: Sun, 3 Oct 2021 08:03:16 +0200
+Subject: [PATCH] Overridable YAML configuration
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+index f421e6a2e43e0a673dbb8a9a2b4331387e523e02..702477b94b28f0463fa51ee2aa999515457eaa68 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+@@ -18,6 +18,7 @@ import java.util.logging.Level;
+ import java.util.regex.Pattern;
+ 
+ import com.google.common.collect.Lists;
++import io.papermc.paper.configuration.OverridableYamlConfiguration;
+ import net.minecraft.server.MinecraftServer;
+ import org.bukkit.Bukkit;
+ import org.bukkit.ChatColor;
+@@ -55,7 +56,7 @@ public class PaperConfig {
+ 
+     public static void init(File configFile) {
+         CONFIG_FILE = configFile;
+-        config = new YamlConfiguration();
++        config = new OverridableYamlConfiguration("paper");
+         try {
+             config.load(CONFIG_FILE);
+         } catch (IOException ex) {
+diff --git a/src/main/java/io/papermc/paper/configuration/EnvironmentOverrideSource.java b/src/main/java/io/papermc/paper/configuration/EnvironmentOverrideSource.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..3cd6579bb79bdda501a5ee33c04fd5a21fa015aa
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/configuration/EnvironmentOverrideSource.java
+@@ -0,0 +1,30 @@
++package io.papermc.paper.configuration;
++
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++import java.util.Locale;
++
++/**
++ * An implementation of {@link OverrideSource}, which fetches values from system's environment.
++ * The requested path will be transformed in the following manner:
++ * - dot (.) will be replaced with an underscore (_),
++ * - dash (-) will be replaced with an underscore (_),
++ * - and it will be capitalized.
++ * <p>
++ * The group name will be prepended, followed by an underscore (_).
++ */
++public final class EnvironmentOverrideSource implements OverrideSource {
++    @NotNull
++    public static final EnvironmentOverrideSource INSTANCE = new EnvironmentOverrideSource();
++
++    private EnvironmentOverrideSource() {
++
++    }
++
++    @Override
++    public @Nullable String getOverride(@NotNull String path, @NotNull String group) {
++        String key = group + "_" + path.replace('.', '_').replace('-', '_');
++        return System.getenv(key.toUpperCase(Locale.ROOT));
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/configuration/OverridableYamlConfiguration.java b/src/main/java/io/papermc/paper/configuration/OverridableYamlConfiguration.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..b80d54a08d2cd98e40e6a3638f11bbfd914bd3d5
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/configuration/OverridableYamlConfiguration.java
+@@ -0,0 +1,148 @@
++package io.papermc.paper.configuration;
++
++import com.google.common.base.Preconditions;
++import org.apache.commons.lang.Validate;
++import org.bukkit.Bukkit;
++import org.bukkit.configuration.InvalidConfigurationException;
++import org.bukkit.configuration.file.YamlConfiguration;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++import java.io.File;
++import java.io.FileNotFoundException;
++import java.io.IOException;
++import java.util.logging.Level;
++
++/**
++ * An implementation of {@link YamlConfiguration} which allows overriding via {@link OverrideSource}.
++ *
++ * @see EnvironmentOverrideSource
++ * @see PropertyOverrideSource
++ */
++public class OverridableYamlConfiguration extends YamlConfiguration {
++    private final String group;
++    private final OverrideSource[] sources;
++
++    /**
++     * @param group   the group name of this configuration. This will be used as a prefix in sources.
++     *                The group name must only contain a-z, A-Z, and 0-9. It may contain underscore (_),
++     *                however, it must not end with underscore. Underscore and dots will be appended to
++     *                the group name in the respective sources.
++     * @param sources array of {@link OverrideSource} to fetch overridden values from.
++     */
++    public OverridableYamlConfiguration(@NotNull String group, @NotNull OverrideSource[] sources) {
++        Preconditions.checkArgument(group.matches("[a-zA-Z0-9_]*[a-zA-Z0-9]+"));
++        Preconditions.checkNotNull(sources);
++        this.group = group;
++        this.sources = sources;
++    }
++
++    /**
++     * @param group the group name of this configuration. This will be used as a prefix in sources.
++     *              The group name must only contain a-z, A-Z, and 0-9. It may contain underscore (_),
++     *              however, it must not end with underscore. Underscore and dots will be appended to
++     *              the group name in the respective sources.
++     */
++    public OverridableYamlConfiguration(@NotNull String group) {
++        this(group, OverrideSource.SOURCES);
++    }
++
++    @Override
++    public @Nullable String getString(@NotNull String path, @Nullable String def) {
++        String override = getOverride(path);
++        if (override != null) {
++            return override;
++        }
++        return super.getString(path, def);
++    }
++
++    @Override
++    public int getInt(@NotNull String path, int def) {
++        String override = getOverride(path);
++        if (override != null) {
++            try {
++                return Integer.parseInt(override);
++            } catch (NumberFormatException ignored) {
++
++            }
++        }
++        return super.getInt(path, def);
++    }
++
++    @Override
++    public boolean getBoolean(@NotNull String path, boolean def) {
++        String override = getOverride(path);
++        if (override != null) {
++            return Boolean.parseBoolean(override);
++        }
++        return super.getBoolean(path, def);
++    }
++
++    @Override
++    public double getDouble(@NotNull String path, double def) {
++        String override = getOverride(path);
++        if (override != null) {
++            try {
++                return Double.parseDouble(override);
++            } catch (NumberFormatException ignored) {
++
++            }
++        }
++        return super.getDouble(path, def);
++    }
++
++    @Override
++    public long getLong(@NotNull String path, long def) {
++        String override = getOverride(path);
++        if (override != null) {
++            try {
++                return Long.parseLong(override);
++            } catch (NumberFormatException ignored) {
++
++            }
++        }
++        return super.getLong(path, def);
++    }
++
++    private @Nullable String getOverride(@NotNull String path) {
++        for (OverrideSource source : sources) {
++            String override = source.getOverride(path, group);
++            if (override != null) {
++                return override;
++            }
++        }
++        return null;
++    }
++
++    /**
++     * Creates a new {@link OverridableYamlConfiguration}, loading from the given file.
++     * <p>
++     * Any errors loading the Configuration will be logged and then ignored.
++     * If the specified input is not a valid config, a blank config will be
++     * returned.
++     * <p>
++     * The encoding used may follow the system dependent default.
++     *
++     * @param file Input file
++     * @param group Configuration group name
++     * @return Resulting configuration
++     * @throws IllegalArgumentException Thrown if file is null
++     */
++    @NotNull
++    public static OverridableYamlConfiguration loadConfiguration(@NotNull File file, @NotNull String group) {
++        Validate.notNull(file, "File cannot be null");
++
++        OverridableYamlConfiguration config = new OverridableYamlConfiguration(group);
++
++        try {
++            config.load(file);
++        } catch (FileNotFoundException ex) {
++        } catch (IOException ex) {
++            Bukkit.getLogger().log(Level.SEVERE, "Cannot load " + file, ex);
++        } catch (InvalidConfigurationException ex) {
++            Bukkit.getLogger().log(Level.SEVERE, "Cannot load " + file, ex);
++        }
++
++        return config;
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/configuration/OverrideSource.java b/src/main/java/io/papermc/paper/configuration/OverrideSource.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..c800b052c5887e235c434530efa449b5d607f63c
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/configuration/OverrideSource.java
+@@ -0,0 +1,27 @@
++package io.papermc.paper.configuration;
++
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++public interface OverrideSource {
++    /**
++     * An array of default override sources.
++     *
++     * @see EnvironmentOverrideSource
++     * @see PropertyOverrideSource
++     */
++    @NotNull
++    OverrideSource[] SOURCES = new OverrideSource[]{EnvironmentOverrideSource.INSTANCE, PropertyOverrideSource.INSTANCE};
++
++    @Nullable String getOverride(@NotNull String path, @NotNull String group);
++
++    static @Nullable String getOverrideDefault(@NotNull String path, @NotNull String group) {
++        for (OverrideSource source : SOURCES) {
++            String override = source.getOverride(path, group);
++            if (override != null) {
++                return override;
++            }
++        }
++        return null;
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/configuration/PropertyOverrideSource.java b/src/main/java/io/papermc/paper/configuration/PropertyOverrideSource.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..26f79ce75d4119d0484470f281c764bd2916b965
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/configuration/PropertyOverrideSource.java
+@@ -0,0 +1,27 @@
++package io.papermc.paper.configuration;
++
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++import java.util.Locale;
++
++/**
++ * An implementation of {@link OverrideSource}, which fetches values from JVM properties.
++ * The requested path will be transformed to lower case characters.
++ * <p>
++ * The group name will be prepended, followed by a dot (.).
++ */
++public final class PropertyOverrideSource implements OverrideSource {
++    @NotNull
++    public static final PropertyOverrideSource INSTANCE = new PropertyOverrideSource();
++
++    private PropertyOverrideSource() {
++
++    }
++
++    @Override
++    public @Nullable String getOverride(@NotNull String path, @NotNull String group) {
++        String key = group + "." + path;
++        return System.getProperty(key.toLowerCase(Locale.ROOT));
++    }
++}
+diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServerProperties.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServerProperties.java
+index 0544ac93513d3a274bfb53bb6120bd598f4d603b..c3e46500e2708fb79aabf7061f3a1ad1406a99ee 100644
+--- a/src/main/java/net/minecraft/server/dedicated/DedicatedServerProperties.java
++++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServerProperties.java
+@@ -144,4 +144,16 @@ public class DedicatedServerProperties extends Settings<DedicatedServerPropertie
+ 
+         return this.worldGenSettings;
+     }
++
++    // Paper start
++    @org.jetbrains.annotations.Nullable
++    @Override
++    public String getStringRaw(String key) {
++        String override = io.papermc.paper.configuration.OverrideSource.getOverrideDefault(key, "minecraft");
++        if (override != null) {
++            return override;
++        }
++        return super.getStringRaw(key);
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index f925130552cb4ff2f813b1ddae9ac2f915e17bd5..61b3bfced0cc0e4de9892b4c8b2d5c6e5b66b0eb 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -320,7 +320,7 @@ public final class CraftServer implements Server {
+             this.getLogger().info("Console input is disabled due to --noconsole command argument");
+         }
+ 
+-        this.configuration = YamlConfiguration.loadConfiguration(this.getConfigFile());
++        this.configuration = io.papermc.paper.configuration.OverridableYamlConfiguration.loadConfiguration(this.getConfigFile(), "bukkit"); // Paper
+         this.configuration.options().copyDefaults(true);
+         this.configuration.setDefaults(YamlConfiguration.loadConfiguration(new InputStreamReader(getClass().getClassLoader().getResourceAsStream("configurations/bukkit.yml"), Charsets.UTF_8)));
+         ConfigurationSection legacyAlias = null;
+diff --git a/src/main/java/org/spigotmc/SpigotConfig.java b/src/main/java/org/spigotmc/SpigotConfig.java
+index ec7938202e3890bccb809a8092362458d0f4ca75..d6cf503b14c5bfc8cf08e97d7b9931723fbfce67 100644
+--- a/src/main/java/org/spigotmc/SpigotConfig.java
++++ b/src/main/java/org/spigotmc/SpigotConfig.java
+@@ -53,7 +53,7 @@ public class SpigotConfig
+     public static void init(File configFile)
+     {
+         SpigotConfig.CONFIG_FILE = configFile;
+-        SpigotConfig.config = new YamlConfiguration();
++        SpigotConfig.config = new io.papermc.paper.configuration.OverridableYamlConfiguration("spigot"); // Paper
+         try
+         {
+             SpigotConfig.config.load( CONFIG_FILE );
