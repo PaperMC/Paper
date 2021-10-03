@@ -1,0 +1,161 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sat, 2 Oct 2021 17:20:01 -0700
+Subject: [PATCH] Force explosion knockbacks when appropriate
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/boss/enderdragon/EnderDragon.java b/src/main/java/net/minecraft/world/entity/boss/enderdragon/EnderDragon.java
+index e17a3afa41fd628d2c4a3637ae19418e258a99b8..e9989ee5b77967fa072184eb4a8d79a66fe7f76d 100644
+--- a/src/main/java/net/minecraft/world/entity/boss/enderdragon/EnderDragon.java
++++ b/src/main/java/net/minecraft/world/entity/boss/enderdragon/EnderDragon.java
+@@ -572,7 +572,11 @@ public class EnderDragon extends Mob implements Enemy {
+                 if (source.getEntity() instanceof Player || source.isExplosion()) {
+                     float f1 = this.getHealth();
+ 
+-                    this.reallyHurt(source, amount);
++                    // Paper start
++                    if (!this.reallyHurt(source, amount)) {
++                        return false;
++                    }
++                    // Paper end
+                     if (this.isDeadOrDying() && !this.phaseManager.getCurrentPhase().isSitting()) {
+                         this.setHealth(1.0F);
+                         this.phaseManager.setPhase(EnderDragonPhase.DYING);
+diff --git a/src/main/java/net/minecraft/world/entity/projectile/AbstractHurtingProjectile.java b/src/main/java/net/minecraft/world/entity/projectile/AbstractHurtingProjectile.java
+index 0dc335b3003ae3cf11828cc849763e271a3b365b..a5b01c43633204b29009126e4a96acf81061688f 100644
+--- a/src/main/java/net/minecraft/world/entity/projectile/AbstractHurtingProjectile.java
++++ b/src/main/java/net/minecraft/world/entity/projectile/AbstractHurtingProjectile.java
+@@ -177,6 +177,7 @@ public abstract class AbstractHurtingProjectile extends Projectile {
+ 
+     @Override
+     public boolean hurt(DamageSource source, float amount) {
++        this.forceExplosionKnockback = true; // Paper
+         if (this.isInvulnerableTo(source)) {
+             return false;
+         } else {
+@@ -186,6 +187,7 @@ public abstract class AbstractHurtingProjectile extends Projectile {
+             if (entity != null) {
+                 // CraftBukkit start
+                 if (CraftEventFactory.handleNonLivingEntityDamageEvent(this, source, amount, false)) {
++                    this.forceExplosionKnockback = false; // Paper
+                     return false;
+                 }
+                 // CraftBukkit end
+diff --git a/src/main/java/net/minecraft/world/entity/projectile/DragonFireball.java b/src/main/java/net/minecraft/world/entity/projectile/DragonFireball.java
+index 6afe37e42d88701af38df5793a9ea9d7d2cda5c5..41b09594b20acf308fa2eb6fd3bc7e33e706d03e 100644
+--- a/src/main/java/net/minecraft/world/entity/projectile/DragonFireball.java
++++ b/src/main/java/net/minecraft/world/entity/projectile/DragonFireball.java
+@@ -69,6 +69,7 @@ public class DragonFireball extends AbstractHurtingProjectile {
+ 
+     @Override
+     public boolean hurt(DamageSource source, float amount) {
++        this.forceExplosionKnockback = true; // Paper
+         return false;
+     }
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/projectile/Projectile.java b/src/main/java/net/minecraft/world/entity/projectile/Projectile.java
+index 15744949537430d8d8ae71ea72481126c9aff7bd..79135c6c3bd449a49dc575d6bd7b1358a238abc5 100644
+--- a/src/main/java/net/minecraft/world/entity/projectile/Projectile.java
++++ b/src/main/java/net/minecraft/world/entity/projectile/Projectile.java
+@@ -278,4 +278,11 @@ public abstract class Projectile extends Entity {
+ 
+         return entity instanceof Player ? entity.mayInteract(world, pos) : entity == null || world.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING);
+     }
++    // Paper start
++    @Override
++    public boolean hurt(net.minecraft.world.damagesource.DamageSource source, float amount) {
++        this.forceExplosionKnockback = true;
++        return super.hurt(source, amount);
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/net/minecraft/world/entity/projectile/ShulkerBullet.java b/src/main/java/net/minecraft/world/entity/projectile/ShulkerBullet.java
+index a6ad012531713a651e5b36d348be435c4055190a..58aabf10d322bfe046b83720ed1b31168eb34ac2 100644
+--- a/src/main/java/net/minecraft/world/entity/projectile/ShulkerBullet.java
++++ b/src/main/java/net/minecraft/world/entity/projectile/ShulkerBullet.java
+@@ -331,8 +331,10 @@ public class ShulkerBullet extends Projectile {
+ 
+     @Override
+     public boolean hurt(DamageSource source, float amount) {
++        this.forceExplosionKnockback = true; // Paper
+         // CraftBukkit start
+         if (org.bukkit.craftbukkit.event.CraftEventFactory.handleNonLivingEntityDamageEvent(this, source, amount, false)) {
++            this.forceExplosionKnockback = false; // Paper
+             return false;
+         }
+         // CraftBukkit end
+diff --git a/src/main/java/net/minecraft/world/entity/projectile/SmallFireball.java b/src/main/java/net/minecraft/world/entity/projectile/SmallFireball.java
+index 58354671480ce3e677790eb5bebc64a20b36e43d..6906a6d206ab14c7a602fe2f4368acb15101f851 100644
+--- a/src/main/java/net/minecraft/world/entity/projectile/SmallFireball.java
++++ b/src/main/java/net/minecraft/world/entity/projectile/SmallFireball.java
+@@ -96,6 +96,7 @@ public class SmallFireball extends Fireball {
+ 
+     @Override
+     public boolean hurt(DamageSource source, float amount) {
++        this.forceExplosionKnockback = true; // Paper
+         return false;
+     }
+ }
+diff --git a/src/main/java/net/minecraft/world/entity/projectile/WitherSkull.java b/src/main/java/net/minecraft/world/entity/projectile/WitherSkull.java
+index 2867e841e73a3edfdeb83af9d96e0d0cd4116a68..477a93693405bd10a62ff457f14b11006afe0c65 100644
+--- a/src/main/java/net/minecraft/world/entity/projectile/WitherSkull.java
++++ b/src/main/java/net/minecraft/world/entity/projectile/WitherSkull.java
+@@ -116,6 +116,7 @@ public class WitherSkull extends AbstractHurtingProjectile {
+ 
+     @Override
+     public boolean hurt(DamageSource source, float amount) {
++        this.forceExplosionKnockback = true; // Paper
+         return false;
+     }
+ 
+diff --git a/src/main/java/net/minecraft/world/level/Explosion.java b/src/main/java/net/minecraft/world/level/Explosion.java
+index 6795132318a4e8b4c7a33b6f4b89a730ea66b97f..dbf859c378d380327a1d5f4b50484b8943a08d9b 100644
+--- a/src/main/java/net/minecraft/world/level/Explosion.java
++++ b/src/main/java/net/minecraft/world/level/Explosion.java
+@@ -222,6 +222,7 @@ public class Explosion {
+         List<Entity> list = this.level.getEntities(this.source, new AABB((double) i, (double) l, (double) j1, (double) j, (double) i1, (double) k1), (com.google.common.base.Predicate<Entity>) entity -> entity.isAlive() && !entity.isSpectator()); // Paper - Fix lag from explosions processing dead entities
+         Vec3 vec3d = new Vec3(this.x, this.y, this.z);
+ 
++        Map<net.minecraft.world.entity.boss.enderdragon.EnderDragon, Vec3> dragonKnockbacks = new java.util.HashMap<>();
+         for (int l1 = 0; l1 < list.size(); ++l1) {
+             Entity entity = (Entity) list.get(l1);
+ 
+@@ -246,7 +247,7 @@ public class Explosion {
+                         entity.forceExplosionKnockback = false;
+                         boolean wasDamaged = entity.hurt(this.getDamageSource(), (float) ((int) ((d13 * d13 + d13) / 2.0D * 7.0D * (double) f2 + 1.0D)));
+                         CraftEventFactory.entityDamage = null;
+-                        if (!wasDamaged && !(entity instanceof PrimedTnt || entity instanceof FallingBlockEntity) && !entity.forceExplosionKnockback) {
++                        if (!wasDamaged && !(entity instanceof PrimedTnt || entity instanceof FallingBlockEntity || entity instanceof net.minecraft.world.entity.boss.EnderDragonPart) && !entity.forceExplosionKnockback) { // Paper
+                             continue;
+                         }
+                         // CraftBukkit end
+@@ -255,6 +256,12 @@ public class Explosion {
+                         if (entity instanceof LivingEntity) {
+                             d14 = entity instanceof Player && level.paperConfig.disableExplosionKnockback ? 0 : ProtectionEnchantment.getExplosionKnockbackAfterDampener((LivingEntity) entity, d13); // Paper - Disable explosion knockback
+                         }
++                        // Paper start
++                        if (entity instanceof net.minecraft.world.entity.boss.EnderDragonPart part && wasDamaged) {
++                            dragonKnockbacks.put(part.parentMob, entity.getDeltaMovement().add(d8 * d14, d9 * d14, d10 * d14));
++                            continue;
++                        }
++                        // Paper end
+ 
+                         entity.setDeltaMovement(entity.getDeltaMovement().add(d8 * d14, d9 * d14, d10 * d14));
+                         if (entity instanceof Player) {
+@@ -268,6 +275,16 @@ public class Explosion {
+                 }
+             }
+         }
++        // Paper start - if ANY part succeeds in taking damage, apply knockback
++        for (var entry : dragonKnockbacks.entrySet()) {
++            Vec3 delta = entry.getValue();
++            net.minecraft.world.entity.boss.enderdragon.EnderDragon dragon = entry.getKey();
++            dragon.setDeltaMovement(delta);
++            for (net.minecraft.world.entity.boss.EnderDragonPart part : dragon.getSubEntities()) {
++                part.setDeltaMovement(delta);
++            }
++        }
++        // Paper end
+ 
+     }
+ 
