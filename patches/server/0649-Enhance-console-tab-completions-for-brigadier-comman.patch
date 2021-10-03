@@ -206,6 +206,27 @@ index 0000000000000000000000000000000000000000..f33e9376bd166ebdb3d9f8c7467cd923
 +        return builder.toAttributedString();
 +    }
 +}
+diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
+index 67afb97e6cb545d319202f3eca771015065089f6..0300390025c3f5461ef5f379c1710a58de164117 100644
+--- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
++++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
+@@ -184,7 +184,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+ 
+         thread.setDaemon(true);
+         thread.setUncaughtExceptionHandler(new DefaultUncaughtExceptionHandler(DedicatedServer.LOGGER));
+-        thread.start();
++        // thread.start(); // Paper - moved down
+         DedicatedServer.LOGGER.info("Starting minecraft server version {}", SharedConstants.getCurrentVersion().getName());
+         if (Runtime.getRuntime().maxMemory() / 1024L / 1024L < 512L) {
+             DedicatedServer.LOGGER.warn("To start the server with more ram, launch it as \"java -Xmx1024M -Xms1024M -jar minecraft_server.jar\"");
+@@ -218,6 +218,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+             DedicatedServer.LOGGER.error("Unable to load server configuration", e);
+             return false;
+         }
++        thread.start(); // Paper - start console thread after MinecraftServer.console & PaperConfig are initialized
+         com.destroystokyo.paper.PaperConfig.registerCommands();
+         com.destroystokyo.paper.VersionHistoryManager.INSTANCE.getClass(); // load version history now
+         io.papermc.paper.util.ObfHelper.INSTANCE.getClass(); // load mappings for stacktrace deobf and etc.
 diff --git a/src/main/java/org/bukkit/craftbukkit/command/ConsoleCommandCompleter.java b/src/main/java/org/bukkit/craftbukkit/command/ConsoleCommandCompleter.java
 index 14cd8ae69d9b25dc5edad4ff96ff4a9acb1f22cb..b3484487fa8baa4d1dd6c595586fb26a01a2153d 100644
 --- a/src/main/java/org/bukkit/craftbukkit/command/ConsoleCommandCompleter.java
