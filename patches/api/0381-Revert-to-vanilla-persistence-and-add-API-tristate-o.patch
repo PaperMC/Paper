@@ -1,0 +1,85 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sun, 3 Oct 2021 17:26:44 -0700
+Subject: [PATCH] Revert to vanilla persistence and add API tristate override
+
+
+diff --git a/src/main/java/org/bukkit/entity/LivingEntity.java b/src/main/java/org/bukkit/entity/LivingEntity.java
+index 31353bd20404a8c2acf6bf0df524dc3cae324272..c54a307bc554b461c377773ad5fce6d19f174b2a 100644
+--- a/src/main/java/org/bukkit/entity/LivingEntity.java
++++ b/src/main/java/org/bukkit/entity/LivingEntity.java
+@@ -532,7 +532,9 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
+      * By default, animals are not removed while other mobs are.
+      *
+      * @return true if the living entity is removed when away from players
++     * @deprecated use {@link Mob#getRemoveWhenFarAway()}
+      */
++    @Deprecated // Paper
+     public boolean getRemoveWhenFarAway();
+ 
+     /**
+@@ -540,7 +542,9 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
+      * or not.
+      *
+      * @param remove the removal status
++     * @deprecated use {@link Mob#setPersistenceOverride(net.kyori.adventure.util.TriState)}
+      */
++    @Deprecated // Paper
+     public void setRemoveWhenFarAway(boolean remove);
+ 
+     /**
+diff --git a/src/main/java/org/bukkit/entity/Mob.java b/src/main/java/org/bukkit/entity/Mob.java
+index 984ad873f36c3dcc73703eb6902c4eab5f1e72b6..226b0534656a54d30ac9deca385177cce0ad7028 100644
+--- a/src/main/java/org/bukkit/entity/Mob.java
++++ b/src/main/java/org/bukkit/entity/Mob.java
+@@ -108,6 +108,50 @@ public interface Mob extends LivingEntity, Lootable {
+      * @return the max head pitch rotation
+      */
+     int getMaxHeadPitch();
++
++    /**
++     * Get the PersistenceRequired value for this mob. Mobs
++     * may also have a different condition keeping them persistent.
++     * For example, enderman holding a block, or fish spawning from
++     * a bucket.
++     *
++     * @return true if the PersistenceRequired value is true
++     */
++    boolean isPersistenceRequired();
++
++    /**
++     * Gets if there is some condition other than the `PersistenceRequired` nbt tag
++     * keeping this mob persistent.
++     *
++     * @return true if requires custom persistence
++     */
++    boolean requiresCustomPeristence();
++
++    /**
++     * {@inheritDoc}
++     * <p>
++     * This combines {@link #isPersistenceRequired()}, {@link #requiresCustomPeristence()}, and {@link #getPersistenceOverride()}
++     * and returns if the mob will despawn when far enough away from a player.
++     *
++     * @return {@inheritDoc}
++     */
++    @Override
++    boolean getRemoveWhenFarAway();
++
++    /**
++     * Gets the plugin-set persistence for this mob.
++     *
++     * @return the plugin-set persistence
++     */
++    @NotNull net.kyori.adventure.util.TriState getPersistenceOverride();
++
++    /**
++     * Sets the override persistence for this mob.
++     *
++     * @param state override state, use {@link net.kyori.adventure.util.TriState#NOT_SET} to fallback on
++     *              vanilla persistence
++     */
++    void setPersistenceOverride(@NotNull net.kyori.adventure.util.TriState state);
+     // Paper end
+     /**
+      * Instructs this Mob to set the specified LivingEntity as its target.
