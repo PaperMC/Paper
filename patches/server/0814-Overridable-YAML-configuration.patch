@@ -25,48 +25,12 @@ index f421e6a2e43e0a673dbb8a9a2b4331387e523e02..702477b94b28f0463fa51ee2aa999515
          try {
              config.load(CONFIG_FILE);
          } catch (IOException ex) {
-diff --git a/src/main/java/io/papermc/paper/configuration/EnvironmentOverrideSource.java b/src/main/java/io/papermc/paper/configuration/EnvironmentOverrideSource.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..3cd6579bb79bdda501a5ee33c04fd5a21fa015aa
---- /dev/null
-+++ b/src/main/java/io/papermc/paper/configuration/EnvironmentOverrideSource.java
-@@ -0,0 +1,30 @@
-+package io.papermc.paper.configuration;
-+
-+import org.jetbrains.annotations.NotNull;
-+import org.jetbrains.annotations.Nullable;
-+
-+import java.util.Locale;
-+
-+/**
-+ * An implementation of {@link OverrideSource}, which fetches values from system's environment.
-+ * The requested path will be transformed in the following manner:
-+ * - dot (.) will be replaced with an underscore (_),
-+ * - dash (-) will be replaced with an underscore (_),
-+ * - and it will be capitalized.
-+ * <p>
-+ * The group name will be prepended, followed by an underscore (_).
-+ */
-+public final class EnvironmentOverrideSource implements OverrideSource {
-+    @NotNull
-+    public static final EnvironmentOverrideSource INSTANCE = new EnvironmentOverrideSource();
-+
-+    private EnvironmentOverrideSource() {
-+
-+    }
-+
-+    @Override
-+    public @Nullable String getOverride(@NotNull String path, @NotNull String group) {
-+        String key = group + "_" + path.replace('.', '_').replace('-', '_');
-+        return System.getenv(key.toUpperCase(Locale.ROOT));
-+    }
-+}
 diff --git a/src/main/java/io/papermc/paper/configuration/OverridableYamlConfiguration.java b/src/main/java/io/papermc/paper/configuration/OverridableYamlConfiguration.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..b80d54a08d2cd98e40e6a3638f11bbfd914bd3d5
+index 0000000000000000000000000000000000000000..c0f29d6257ccd7ca2a6cd60e00a2ea62a3bb9062
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/configuration/OverridableYamlConfiguration.java
-@@ -0,0 +1,148 @@
+@@ -0,0 +1,137 @@
 +package io.papermc.paper.configuration;
 +
 +import com.google.common.base.Preconditions;
@@ -84,9 +48,6 @@ index 0000000000000000000000000000000000000000..b80d54a08d2cd98e40e6a3638f11bbfd
 +
 +/**
 + * An implementation of {@link YamlConfiguration} which allows overriding via {@link OverrideSource}.
-+ *
-+ * @see EnvironmentOverrideSource
-+ * @see PropertyOverrideSource
 + */
 +public class OverridableYamlConfiguration extends YamlConfiguration {
 +    private final String group;
@@ -174,13 +135,7 @@ index 0000000000000000000000000000000000000000..b80d54a08d2cd98e40e6a3638f11bbfd
 +    }
 +
 +    private @Nullable String getOverride(@NotNull String path) {
-+        for (OverrideSource source : sources) {
-+            String override = source.getOverride(path, group);
-+            if (override != null) {
-+                return override;
-+            }
-+        }
-+        return null;
++        return OverrideSource.getOverride(path, group, sources);
 +    }
 +
 +    /**
@@ -205,10 +160,8 @@ index 0000000000000000000000000000000000000000..b80d54a08d2cd98e40e6a3638f11bbfd
 +
 +        try {
 +            config.load(file);
-+        } catch (FileNotFoundException ex) {
-+        } catch (IOException ex) {
-+            Bukkit.getLogger().log(Level.SEVERE, "Cannot load " + file, ex);
-+        } catch (InvalidConfigurationException ex) {
++        } catch (FileNotFoundException ignored) {
++        } catch (IOException | InvalidConfigurationException ex) {
 +            Bukkit.getLogger().log(Level.SEVERE, "Cannot load " + file, ex);
 +        }
 +
@@ -217,43 +170,10 @@ index 0000000000000000000000000000000000000000..b80d54a08d2cd98e40e6a3638f11bbfd
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/OverrideSource.java b/src/main/java/io/papermc/paper/configuration/OverrideSource.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..c800b052c5887e235c434530efa449b5d607f63c
+index 0000000000000000000000000000000000000000..ccf16c1ac7a2ec56d71ec9a02cdf3e27be83f873
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/configuration/OverrideSource.java
-@@ -0,0 +1,27 @@
-+package io.papermc.paper.configuration;
-+
-+import org.jetbrains.annotations.NotNull;
-+import org.jetbrains.annotations.Nullable;
-+
-+public interface OverrideSource {
-+    /**
-+     * An array of default override sources.
-+     *
-+     * @see EnvironmentOverrideSource
-+     * @see PropertyOverrideSource
-+     */
-+    @NotNull
-+    OverrideSource[] SOURCES = new OverrideSource[]{EnvironmentOverrideSource.INSTANCE, PropertyOverrideSource.INSTANCE};
-+
-+    @Nullable String getOverride(@NotNull String path, @NotNull String group);
-+
-+    static @Nullable String getOverrideDefault(@NotNull String path, @NotNull String group) {
-+        for (OverrideSource source : SOURCES) {
-+            String override = source.getOverride(path, group);
-+            if (override != null) {
-+                return override;
-+            }
-+        }
-+        return null;
-+    }
-+}
-diff --git a/src/main/java/io/papermc/paper/configuration/PropertyOverrideSource.java b/src/main/java/io/papermc/paper/configuration/PropertyOverrideSource.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..26f79ce75d4119d0484470f281c764bd2916b965
---- /dev/null
-+++ b/src/main/java/io/papermc/paper/configuration/PropertyOverrideSource.java
-@@ -0,0 +1,27 @@
+@@ -0,0 +1,56 @@
 +package io.papermc.paper.configuration;
 +
 +import org.jetbrains.annotations.NotNull;
@@ -261,24 +181,53 @@ index 0000000000000000000000000000000000000000..26f79ce75d4119d0484470f281c764bd
 +
 +import java.util.Locale;
 +
-+/**
-+ * An implementation of {@link OverrideSource}, which fetches values from JVM properties.
-+ * The requested path will be transformed to lower case characters.
-+ * <p>
-+ * The group name will be prepended, followed by a dot (.).
-+ */
-+public final class PropertyOverrideSource implements OverrideSource {
-+    @NotNull
-+    public static final PropertyOverrideSource INSTANCE = new PropertyOverrideSource();
++@FunctionalInterface
++public interface OverrideSource {
++    /**
++     * An implementation of {@link OverrideSource}, which fetches values from system's environment.
++     * The requested path will be transformed in the following manner:
++     * - dot (.) will be replaced with an underscore (_),
++     * - dash (-) will be replaced with an underscore (_),
++     * - and it will be capitalized.
++     * <p>
++     * The group name will be prepended, followed by an underscore (_).
++     */
++    OverrideSource ENVIRONMENT = (path, group) -> {
++        String key = group + "_" + path.replace('.', '_').replace('-', '_');
++        return System.getenv(key.toUpperCase(Locale.ROOT));
++    };
 +
-+    private PropertyOverrideSource() {
-+
-+    }
-+
-+    @Override
-+    public @Nullable String getOverride(@NotNull String path, @NotNull String group) {
++    /**
++     * An implementation of {@link OverrideSource}, which fetches values from JVM properties.
++     * The requested path will be transformed to lower case characters.
++     * <p>
++     * The group name will be prepended, followed by a dot (.).
++     */
++    OverrideSource PROPERTY = (path, group) -> {
 +        String key = group + "." + path;
 +        return System.getProperty(key.toLowerCase(Locale.ROOT));
++    };
++
++    /**
++     * An array of default override sources.
++     */
++    @NotNull
++    OverrideSource[] SOURCES = new OverrideSource[]{ENVIRONMENT, PROPERTY};
++
++    @Nullable String getOverride(@NotNull String path, @NotNull String group);
++
++    static @Nullable String getOverride(@NotNull String path, @NotNull String group, @NotNull OverrideSource[] sources) {
++        for (OverrideSource source : sources) {
++            String override = source.getOverride(path, group);
++            if (override != null) {
++                return override;
++            }
++        }
++        return null;
++    }
++
++    static @Nullable String getOverrideDefault(@NotNull String path, @NotNull String group) {
++        return getOverride(path, group, SOURCES);
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServerProperties.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServerProperties.java
