@@ -14,7 +14,7 @@ public interface ScoreboardManager {
      * This Scoreboard is saved by the server, is affected by the /scoreboard
      * command, and is the scoreboard shown by default to players.
      *
-     * @return the default sever scoreboard
+     * @return the default server scoreboard
      */
     @NotNull
     Scoreboard getMainScoreboard();
