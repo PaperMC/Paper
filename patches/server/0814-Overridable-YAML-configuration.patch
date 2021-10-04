@@ -170,7 +170,7 @@ index 0000000000000000000000000000000000000000..c0f29d6257ccd7ca2a6cd60e00a2ea62
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/OverrideSource.java b/src/main/java/io/papermc/paper/configuration/OverrideSource.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..ccf16c1ac7a2ec56d71ec9a02cdf3e27be83f873
+index 0000000000000000000000000000000000000000..7a9658abe23452b4f48d4e4b258e661a44a6ddf0
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/configuration/OverrideSource.java
 @@ -0,0 +1,56 @@
@@ -209,10 +209,10 @@ index 0000000000000000000000000000000000000000..ccf16c1ac7a2ec56d71ec9a02cdf3e27
 +    };
 +
 +    /**
-+     * An array of default override sources.
++     * An array of default override sources. This will check JVM properties first, then environment variables.
 +     */
 +    @NotNull
-+    OverrideSource[] SOURCES = new OverrideSource[]{ENVIRONMENT, PROPERTY};
++    OverrideSource[] SOURCES = new OverrideSource[]{PROPERTY, ENVIRONMENT};
 +
 +    @Nullable String getOverride(@NotNull String path, @NotNull String group);
 +
@@ -231,10 +231,10 @@ index 0000000000000000000000000000000000000000..ccf16c1ac7a2ec56d71ec9a02cdf3e27
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServerProperties.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServerProperties.java
-index 0544ac93513d3a274bfb53bb6120bd598f4d603b..c3e46500e2708fb79aabf7061f3a1ad1406a99ee 100644
+index 0544ac93513d3a274bfb53bb6120bd598f4d603b..e3c556ef1036c0a7d132017d7d9e5a134930da01 100644
 --- a/src/main/java/net/minecraft/server/dedicated/DedicatedServerProperties.java
 +++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServerProperties.java
-@@ -144,4 +144,16 @@ public class DedicatedServerProperties extends Settings<DedicatedServerPropertie
+@@ -144,4 +144,22 @@ public class DedicatedServerProperties extends Settings<DedicatedServerPropertie
  
          return this.worldGenSettings;
      }
@@ -243,11 +243,17 @@ index 0544ac93513d3a274bfb53bb6120bd598f4d603b..c3e46500e2708fb79aabf7061f3a1ad1
 +    @org.jetbrains.annotations.Nullable
 +    @Override
 +    public String getStringRaw(String key) {
-+        String override = io.papermc.paper.configuration.OverrideSource.getOverrideDefault(key, "minecraft");
++        String override = this.getOverride(key, null);
 +        if (override != null) {
 +            return override;
 +        }
-+        return super.getStringRaw(key);
++
++        override = io.papermc.paper.configuration.OverrideSource.getOverrideDefault(key, "minecraft");
++        if (override != null) {
++            return override;
++        }
++
++        return properties.getProperty(key);
 +    }
 +    // Paper end
  }
