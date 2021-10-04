@@ -5,51 +5,83 @@ Subject: [PATCH] Add configurable despawn distances for living entities
 
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index 419f3bca4c1dd18790ad9e602bdec009c2933606..4634da27cde654e682ac4525df9850ea40afbb87 100644
+index a6f0e2193f930cf4f1e38ac30e92a7f7cafb8413..6d1a880737c90da743fd772426b4050036bdb926 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-@@ -107,4 +107,20 @@ public class PaperWorldConfig {
+@@ -2,6 +2,9 @@ package com.destroystokyo.paper;
+ 
+ import java.util.List;
+ 
++import it.unimi.dsi.fastutil.objects.Reference2IntMap;
++import it.unimi.dsi.fastutil.objects.Reference2IntOpenHashMap;
++import net.minecraft.world.entity.MobCategory;
+ import org.bukkit.Bukkit;
+ import org.bukkit.configuration.file.YamlConfiguration;
+ import org.spigotmc.SpigotWorldConfig;
+@@ -40,6 +43,13 @@ public class PaperWorldConfig {
+     public void removeOldValues() {
+         boolean needsSave = false;
+ 
++        if (PaperConfig.version < 24) {
++            needsSave = true;
++
++            set("despawn-ranges.soft", null);
++            set("despawn-ranges.hard", null);
++        }
++
+         if (needsSave) {
+             saveConfig();
+         }
+@@ -122,4 +132,31 @@ public class PaperWorldConfig {
      private void nerfedMobsShouldJump() {
          nerfedMobsShouldJump = getBoolean("spawner-nerfed-mobs-should-jump", false);
      }
 +
-+    public int softDespawnDistance;
-+    public int hardDespawnDistance;
++    public final Reference2IntMap<MobCategory> softDespawnDistances = new Reference2IntOpenHashMap<>(MobCategory.values().length);
++    public final Reference2IntMap<MobCategory> hardDespawnDistances = new Reference2IntOpenHashMap<>(MobCategory.values().length);
 +    private void despawnDistances() {
-+        softDespawnDistance = getInt("despawn-ranges.soft", 32); // 32^2 = 1024, Minecraft Default
-+        hardDespawnDistance = getInt("despawn-ranges.hard", 128); // 128^2 = 16384, Minecraft Default
-+
-+        if (softDespawnDistance > hardDespawnDistance) {
-+            softDespawnDistance = hardDespawnDistance;
++        if (PaperConfig.version < 24) {
++            int softDistance = getInt("despawn-ranges.soft", 32, false); // 32^2 = 1024, Minecraft Default
++            int hardDistance = getInt("despawn-ranges.hard", 128, false); // 128^2 = 16384, Minecraft Default
++            for (MobCategory value : MobCategory.values()) {
++                if (softDistance != 32) {
++                    softDespawnDistances.put(value, softDistance);
++                }
++                if (hardDistance != 128) {
++                    hardDespawnDistances.put(value, hardDistance);
++                }
++            }
 +        }
-+
-+        log("Living Entity Despawn Ranges:  Soft: " + softDespawnDistance + " Hard: " + hardDespawnDistance);
-+
-+        softDespawnDistance = softDespawnDistance*softDespawnDistance;
-+        hardDespawnDistance = hardDespawnDistance*hardDespawnDistance;
++        for (MobCategory category : MobCategory.values()) {
++            int softDistance = getInt("despawn-ranges." + category.getName() + ".soft", softDespawnDistances.getOrDefault(category, category.getNoDespawnDistance()));
++            int hardDistance = getInt("despawn-ranges." + category.getName() + ".hard", hardDespawnDistances.getOrDefault(category, category.getDespawnDistance()));
++            if (softDistance > hardDistance) {
++                softDistance = hardDistance;
++            }
++            log("Mobs in " + category.getName() + " Despawn Ranges: Soft" + softDistance + " Hard: " + hardDistance);
++            softDespawnDistances.put(category, softDistance);
++            hardDespawnDistances.put(category, hardDistance);
++        }
 +    }
  }
 diff --git a/src/main/java/net/minecraft/world/entity/Mob.java b/src/main/java/net/minecraft/world/entity/Mob.java
-index abaa57d9a4d222753d28801c6ab86b11c71aca6b..c9a9a4c6ba930dedb227c1f1d4ca4bb520983854 100644
+index abaa57d9a4d222753d28801c6ab86b11c71aca6b..867ada6ba562d9d3db6bf97cb3fd2c5a281f915f 100644
 --- a/src/main/java/net/minecraft/world/entity/Mob.java
 +++ b/src/main/java/net/minecraft/world/entity/Mob.java
-@@ -778,16 +778,16 @@ public abstract class Mob extends LivingEntity {
-                 int i = this.getType().getCategory().getDespawnDistance();
+@@ -775,14 +775,14 @@ public abstract class Mob extends LivingEntity {
+ 
+             if (entityhuman != null) {
+                 double d0 = entityhuman.distanceToSqr((Entity) this); // CraftBukkit - decompile error
+-                int i = this.getType().getCategory().getDespawnDistance();
++                int i = this.level.paperConfig.hardDespawnDistances.getInt(this.getType().getCategory()); // Paper - custom despawn distances
                  int j = i * i;
  
--                if (d0 > (double) j) { // CraftBukkit - remove isTypeNotPersistent() check
-+                if (d0 > (double) level.paperConfig.hardDespawnDistance) { // CraftBukkit - remove isTypeNotPersistent() check // Paper - custom despawn distances
+                 if (d0 > (double) j) { // CraftBukkit - remove isTypeNotPersistent() check
                      this.discard();
                  }
  
-                 int k = this.getType().getCategory().getNoDespawnDistance();
+-                int k = this.getType().getCategory().getNoDespawnDistance();
++                int k = this.level.paperConfig.softDespawnDistances.getInt(this.getType().getCategory()); // Paper - custom despawn distances
                  int l = k * k;
  
--                if (this.noActionTime > 600 && this.random.nextInt(800) == 0 && d0 > (double) l) { // CraftBukkit - remove isTypeNotPersistent() check
-+                if (this.noActionTime > 600 && this.random.nextInt(800) == 0 && d0 > level.paperConfig.softDespawnDistance) { // CraftBukkit - remove isTypeNotPersistent() check // Paper - custom despawn distances
-                     this.discard();
--                } else if (d0 < (double) l) {
-+                } else if (d0 < level.paperConfig.softDespawnDistance) { // Paper - custom despawn distances
-                     this.noActionTime = 0;
-                 }
-             }
+                 if (this.noActionTime > 600 && this.random.nextInt(800) == 0 && d0 > (double) l) { // CraftBukkit - remove isTypeNotPersistent() check
