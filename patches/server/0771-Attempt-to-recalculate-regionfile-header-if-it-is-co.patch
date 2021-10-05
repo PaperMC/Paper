@@ -91,10 +91,18 @@ index c8298a597818227de33a4afce4698ec0666cf758..6baceb6ce9021c489be6e79d338a9704
          this.used.set(start, start + size);
      }
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
-index c22391a0d4b7db49bd3994b0887939a7d8019391..4881e6ef4393a3d4fc1bd88e2574dcb6d7028e40 100644
+index c22391a0d4b7db49bd3994b0887939a7d8019391..d71d88999e1b28db908b59e2ac8c3b736ff80eff 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
-@@ -55,6 +55,341 @@ public class RegionFile implements AutoCloseable {
+@@ -21,6 +21,7 @@ import java.nio.file.Path;
+ import java.nio.file.StandardCopyOption;
+ import java.nio.file.StandardOpenOption;
+ import java.util.zip.InflaterInputStream; // Paper
++import com.google.common.hash.Hashing; // Paper
+ 
+ import javax.annotation.Nullable;
+ import net.minecraft.Util;
+@@ -55,6 +56,353 @@ public class RegionFile implements AutoCloseable {
      public final java.util.concurrent.locks.ReentrantLock fileLock = new java.util.concurrent.locks.ReentrantLock(true); // Paper
      public final File regionFile; // Paper
  
@@ -155,8 +163,20 @@ index c22391a0d4b7db49bd3994b0887939a7d8019391..4881e6ef4393a3d4fc1bd88e2574dcb6
 +        return length.getInt(0);
 +    }
 +
++    private String md5sum() throws IOException {
++        return com.google.common.io.Files.hash(this.regionFile, Hashing.md5())
++            .toString().toUpperCase();
++    }
++
 +    private void backupRegionFile() {
-+        File backup = new File(this.regionFile.getParent(), this.regionFile.getName() + "." + new java.util.Random().nextLong() + ".backup");
++        String md5sum;
++        try {
++            md5sum = this.md5sum();
++        } catch (IOException ex) {
++            LOGGER.error("Failed to calculate md5sum of region " + this.regionFile.getAbsolutePath(), ex);
++            return;
++        }
++        File backup = new File(this.regionFile.getParent(), this.regionFile.getName() + "." + md5sum + ".backup");
 +        this.backupRegionFile(backup);
 +    }
 +
@@ -436,7 +456,7 @@ index c22391a0d4b7db49bd3994b0887939a7d8019391..4881e6ef4393a3d4fc1bd88e2574dcb6
      // Paper start - Cache chunk status
      private final ChunkStatus[] statuses = new ChunkStatus[32 * 32];
  
-@@ -82,8 +417,19 @@ public class RegionFile implements AutoCloseable {
+@@ -82,8 +430,19 @@ public class RegionFile implements AutoCloseable {
      public RegionFile(File file, File directory, boolean dsync) throws IOException {
          this(file.toPath(), directory.toPath(), RegionFileVersion.VERSION_DEFLATE, dsync);
      }
@@ -456,7 +476,7 @@ index c22391a0d4b7db49bd3994b0887939a7d8019391..4881e6ef4393a3d4fc1bd88e2574dcb6
          this.header = ByteBuffer.allocateDirect(8192);
          this.regionFile = file.toFile(); // Paper
          initOversizedState(); // Paper
-@@ -112,14 +458,16 @@ public class RegionFile implements AutoCloseable {
+@@ -112,14 +471,16 @@ public class RegionFile implements AutoCloseable {
                      RegionFile.LOGGER.warn("Region file {} has truncated header: {}", file, i);
                  }
  
@@ -477,7 +497,7 @@ index c22391a0d4b7db49bd3994b0887939a7d8019391..4881e6ef4393a3d4fc1bd88e2574dcb6
                          // Spigot start
                          if (j1 == 255) {
                              // We're maxed out, so we need to read the proper length from the section
-@@ -128,32 +476,102 @@ public class RegionFile implements AutoCloseable {
+@@ -128,32 +489,102 @@ public class RegionFile implements AutoCloseable {
                              j1 = (realLen.getInt(0) + 4) / 4096 + 1;
                          }
                          // Spigot end
@@ -585,7 +605,7 @@ index c22391a0d4b7db49bd3994b0887939a7d8019391..4881e6ef4393a3d4fc1bd88e2574dcb6
      @Nullable
      public synchronized DataInputStream getChunkDataInputStream(ChunkPos pos) throws IOException {
          int i = this.getOffset(pos);
-@@ -177,6 +595,12 @@ public class RegionFile implements AutoCloseable {
+@@ -177,6 +608,12 @@ public class RegionFile implements AutoCloseable {
              ((java.nio.Buffer) bytebuffer).flip(); // CraftBukkit - decompile error
              if (bytebuffer.remaining() < 5) {
                  RegionFile.LOGGER.error("Chunk {} header is truncated: expected {} but read {}", pos, l, bytebuffer.remaining());
@@ -598,7 +618,7 @@ index c22391a0d4b7db49bd3994b0887939a7d8019391..4881e6ef4393a3d4fc1bd88e2574dcb6
                  return null;
              } else {
                  int i1 = bytebuffer.getInt();
-@@ -184,6 +608,12 @@ public class RegionFile implements AutoCloseable {
+@@ -184,6 +621,12 @@ public class RegionFile implements AutoCloseable {
  
                  if (i1 == 0) {
                      RegionFile.LOGGER.warn("Chunk {} is allocated, but stream is missing", pos);
@@ -611,7 +631,7 @@ index c22391a0d4b7db49bd3994b0887939a7d8019391..4881e6ef4393a3d4fc1bd88e2574dcb6
                      return null;
                  } else {
                      int j1 = i1 - 1;
-@@ -191,17 +621,49 @@ public class RegionFile implements AutoCloseable {
+@@ -191,17 +634,49 @@ public class RegionFile implements AutoCloseable {
                      if (RegionFile.isExternalStreamChunk(b0)) {
                          if (j1 != 0) {
                              RegionFile.LOGGER.warn("Chunk has both internal and external streams");
@@ -663,7 +683,7 @@ index c22391a0d4b7db49bd3994b0887939a7d8019391..4881e6ef4393a3d4fc1bd88e2574dcb6
                      }
                  }
              }
-@@ -376,10 +838,15 @@ public class RegionFile implements AutoCloseable {
+@@ -376,10 +851,15 @@ public class RegionFile implements AutoCloseable {
      }
  
      private ByteBuffer createExternalStub() {
