@@ -22,10 +22,10 @@ wants it to collect even faster, they can restore that setting back to 1 instead
 Not adding it to .getType() though to keep behavior consistent with vanilla for performance reasons.
 
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 746234b93587ab3aa45e53ae4684314606453dc7..fa11223ea8a1ecb1bafcca63855dc9930ec18a34 100644
+index acae4ffc1e97ba54056b7b30679404de6ff54fca..cb08173bdfe52c8a0d5de70f0421cabaa476647a 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -363,7 +363,7 @@ public final class CraftServer implements Server {
+@@ -369,7 +369,7 @@ public final class CraftServer implements Server {
          this.ambientSpawn = this.configuration.getInt("spawn-limits.ambient");
          console.autosavePeriod = this.configuration.getInt("ticks-per.autosave");
          this.warningState = WarningState.value(this.configuration.getString("settings.deprecated-verbose"));
@@ -34,8 +34,8 @@ index 746234b93587ab3aa45e53ae4684314606453dc7..fa11223ea8a1ecb1bafcca63855dc993
          this.minimumAPI = this.configuration.getString("settings.minimum-api");
          this.loadIcon();
      }
-@@ -848,7 +848,7 @@ public final class CraftServer implements Server {
-         this.waterAmbientSpawn = this.configuration.getInt("spawn-limits.water-ambient");
+@@ -860,7 +860,7 @@ public final class CraftServer implements Server {
+         this.waterUndergroundCreatureSpawn = this.configuration.getInt("spawn-limits.water-underground-creature");
          this.ambientSpawn = this.configuration.getInt("spawn-limits.ambient");
          this.warningState = WarningState.value(this.configuration.getString("settings.deprecated-verbose"));
 -        TicketType.PLUGIN.timeout = this.configuration.getInt("chunk-gc.period-in-ticks");
@@ -44,10 +44,10 @@ index 746234b93587ab3aa45e53ae4684314606453dc7..fa11223ea8a1ecb1bafcca63855dc993
          this.printSaveWarning = false;
          console.autosavePeriod = this.configuration.getInt("ticks-per.autosave");
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index fcf7076c1df858d35d6b69995b7c4768233b8370..ea6cb4873e72cf6be81c1a6bf48e5932cc5684f1 100644
+index 01ac6e7e7b4b6c61d01684c77ecc2238afcaa8f1..20d956c9a4e3b598ffebbe481a190158566343d9 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-@@ -263,8 +263,21 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -264,8 +264,21 @@ public class CraftWorld extends CraftRegionAccessor implements World {
  
      @Override
      public Chunk getChunkAt(int x, int z) {
@@ -70,7 +70,7 @@ index fcf7076c1df858d35d6b69995b7c4768233b8370..ea6cb4873e72cf6be81c1a6bf48e5932
  
      @Override
      public Chunk getChunkAt(Block block) {
-@@ -331,7 +344,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -332,7 +345,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
      public boolean unloadChunkRequest(int x, int z) {
          org.spigotmc.AsyncCatcher.catchOp("chunk unload"); // Spigot
          if (this.isChunkLoaded(x, z)) {
@@ -79,7 +79,7 @@ index fcf7076c1df858d35d6b69995b7c4768233b8370..ea6cb4873e72cf6be81c1a6bf48e5932
          }
  
          return true;
-@@ -408,9 +421,12 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -409,9 +422,12 @@ public class CraftWorld extends CraftRegionAccessor implements World {
          org.spigotmc.AsyncCatcher.catchOp("chunk load"); // Spigot
          // Paper start - Optimize this method
          ChunkPos chunkPos = new ChunkPos(x, z);
@@ -93,7 +93,7 @@ index fcf7076c1df858d35d6b69995b7c4768233b8370..ea6cb4873e72cf6be81c1a6bf48e5932
              if (immediate == null) {
                  immediate = world.getChunkSource().chunkMap.getUnloadingChunk(x, z);
              }
-@@ -418,7 +434,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -419,7 +435,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
                  if (!(immediate instanceof ImposterProtoChunk) && !(immediate instanceof net.minecraft.world.level.chunk.LevelChunk)) {
                      return false; // not full status
                  }
@@ -102,7 +102,7 @@ index fcf7076c1df858d35d6b69995b7c4768233b8370..ea6cb4873e72cf6be81c1a6bf48e5932
                  world.getChunk(x, z); // make sure we're at ticket level 32 or lower
                  return true;
              }
-@@ -444,7 +460,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -445,7 +461,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
              // we do this so we do not re-read the chunk data on disk
          }
  
@@ -111,7 +111,7 @@ index fcf7076c1df858d35d6b69995b7c4768233b8370..ea6cb4873e72cf6be81c1a6bf48e5932
          world.getChunkSource().getChunk(x, z, ChunkStatus.FULL, true);
          return true;
          // Paper end
-@@ -1889,6 +1905,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -1914,6 +1930,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
  
          return this.world.getChunkSource().getChunkAtAsynchronously(x, z, gen, urgent).thenComposeAsync((either) -> {
              net.minecraft.world.level.chunk.LevelChunk chunk = (net.minecraft.world.level.chunk.LevelChunk) either.left().orElse(null);
