@@ -362,6 +362,26 @@ public interface Server extends PluginMessageRecipient {
     public int getTicksPerWaterAmbientSpawns();
 
     /**
+     * Gets the default ticks per water underground creature spawns value.
+     * <p>
+     * <b>Example Usage:</b>
+     * <ul>
+     * <li>A value of 1 will mean the server will attempt to spawn water underground creature
+     *     every tick.
+     * <li>A value of 400 will mean the server will attempt to spawn water underground creature
+     *     every 400th tick.
+     * <li>A value below 0 will be reset back to Minecraft's default.
+     * </ul>
+     * <p>
+     * <b>Note:</b> If set to 0, water underground creature spawning will be disabled.
+     * <p>
+     * Minecraft default: 1.
+     *
+     * @return the default ticks per water underground creature spawn value
+     */
+    public int getTicksPerWaterUndergroundCreatureSpawns();
+
+    /**
      * Gets the default ticks per ambient mob spawns value.
      * <p>
      * <b>Example Usage:</b>
@@ -1034,6 +1054,13 @@ public interface Server extends PluginMessageRecipient {
      * @return the water ambient spawn limit
      */
     int getWaterAmbientSpawnLimit();
+
+    /**
+     * Get user-specified limit for number of water creature underground that can spawn
+     * in a chunk.
+     * @return the water underground creature limit
+     */
+    int getWaterUndergroundCreatureSpawnLimit();
 
     /**
      * Gets user-specified limit for number of ambient mobs that can spawn in

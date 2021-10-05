@@ -1806,6 +1806,51 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
     public void setTicksPerWaterAmbientSpawns(int ticksPerAmbientSpawns);
 
     /**
+     * Gets the default ticks per water underground creature spawns value.
+     * <p>
+     * <b>Example Usage:</b>
+     * <ul>
+     * <li>A value of 1 will mean the server will attempt to spawn water underground creature
+     *     every tick.
+     * <li>A value of 400 will mean the server will attempt to spawn water underground creature
+     *     every 400th tick.
+     * <li>A value below 0 will be reset back to Minecraft's default.
+     * </ul>
+     * <p>
+     * <b>Note:</b> If set to 0, water underground creature spawning will be disabled.
+     * <p>
+     * Minecraft default: 1.
+     *
+     * @return the default ticks per water underground creature spawn value
+     */
+    public long getTicksPerWaterUndergroundCreatureSpawns();
+
+    /**
+     * Sets the world's ticks per water underground creature spawns value
+     * <p>
+     * This value determines how many ticks there are between attempts to
+     * spawn water underground creature.
+     * <p>
+     * <b>Example Usage:</b>
+     * <ul>
+     * <li>A value of 1 will mean the server will attempt to spawn water underground creature in
+     *     this world on every tick.
+     * <li>A value of 400 will mean the server will attempt to spawn water underground creature
+     *     in this world every 400th tick.
+     * <li>A value below 0 will be reset back to Minecraft's default.
+     * </ul>
+     * <p>
+     * <b>Note:</b>
+     * If set to 0, water underground creature spawning will be disabled for this world.
+     * <p>
+     * Minecraft default: 1.
+     *
+     * @param ticksPerWaterUndergroundCreatureSpawns the ticks per water underground creature spawns value you
+     *     want to set the world to
+     */
+    public void setTicksPerWaterUndergroundCreatureSpawns(int ticksPerWaterUndergroundCreatureSpawns);
+
+    /**
      * Gets the world's ticks per ambient mob spawns value
      * <p>
      * This value determines how many ticks there are between attempts to
@@ -1910,6 +1955,25 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param limit the new mob limit
      */
     void setWaterAnimalSpawnLimit(int limit);
+
+    /**
+     * Gets the limit for number of water underground creature that can spawn in a chunk in
+     * this world
+     *
+     * @return The water underground creature spawn limit
+     */
+    int getWaterUndergroundCreatureSpawnLimit();
+
+    /**
+     * Sets the limit for number of water underground creature that can spawn in a chunk in
+     * this world
+     * <p>
+     * <b>Note:</b> If set to a negative number the world will use the
+     * server-wide spawn limit instead.
+     *
+     * @param limit the new mob limit
+     */
+    void setWaterUndergroundCreatureSpawnLimit(int limit);
 
     /**
      * Gets user-specified limit for number of water ambient mobs that can spawn
