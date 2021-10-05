@@ -1220,6 +1220,78 @@ index ab6b0ec328e94bf65a0dafd0403e5ee3b870296c..c8d37184d8e882a4084a1bfef85faa33
      public void setLine(int index, @NotNull String line) throws IndexOutOfBoundsException;
  
      /**
+diff --git a/src/main/java/org/bukkit/command/Command.java b/src/main/java/org/bukkit/command/Command.java
+index 03bdc1622791e1206406c87065978688d602e39e..96067ea484eab10bc2be35656481185a67cbcad5 100644
+--- a/src/main/java/org/bukkit/command/Command.java
++++ b/src/main/java/org/bukkit/command/Command.java
+@@ -32,7 +32,7 @@ public abstract class Command {
+     protected String description;
+     protected String usageMessage;
+     private String permission;
+-    private String permissionMessage;
++    private net.kyori.adventure.text.Component permissionMessage; // Paper
+     public co.aikar.timings.Timing timings; // Paper
+     @NotNull public String getTimingName() {return getName();} // Paper
+ 
+@@ -186,10 +186,10 @@ public abstract class Command {
+ 
+         if (permissionMessage == null) {
+             target.sendMessage(ChatColor.RED + "I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is a mistake.");
+-        } else if (permissionMessage.length() != 0) {
+-            for (String line : permissionMessage.replace("<permission>", permission).split("\n")) {
+-                target.sendMessage(line);
+-            }
++            // Paper start - use components for permissionMessage
++        } else if (!permissionMessage.equals(net.kyori.adventure.text.Component.empty())) {
++            target.sendMessage(permissionMessage.replaceText(net.kyori.adventure.text.TextReplacementConfig.builder().matchLiteral("<permission>").replacement(permission).build()));
++            // Paper end
+         }
+ 
+         return false;
+@@ -316,10 +316,12 @@ public abstract class Command {
+      * command
+      *
+      * @return Permission check failed message
++     * @deprecated use {@link #permissionMessage()}
+      */
+     @Nullable
++    @Deprecated // Paper
+     public String getPermissionMessage() {
+-        return permissionMessage;
++        return io.papermc.paper.text.PaperComponents.legacySectionSerializer().serialize(permissionMessage); // Paper
+     }
+ 
+     /**
+@@ -380,10 +382,12 @@ public abstract class Command {
+      * @param permissionMessage new permission message, null to indicate
+      *     default message, or an empty string to indicate no message
+      * @return this command object, for chaining
++     * @deprecated use {@link #permissionMessage(net.kyori.adventure.text.Component)}
+      */
+     @NotNull
++    @Deprecated // Paper
+     public Command setPermissionMessage(@Nullable String permissionMessage) {
+-        this.permissionMessage = permissionMessage;
++        this.permissionMessage = io.papermc.paper.text.PaperComponents.legacySectionSerializer().deserializeOrNull(permissionMessage); // Paper
+         return this;
+     }
+ 
+@@ -398,6 +402,15 @@ public abstract class Command {
+         this.usageMessage = (usage == null) ? "" : usage;
+         return this;
+     }
++    // Paper start
++    public @Nullable net.kyori.adventure.text.Component permissionMessage() {
++        return this.permissionMessage;
++    }
++
++    public void permissionMessage(@Nullable net.kyori.adventure.text.Component permissionMessage) {
++        this.permissionMessage = permissionMessage;
++    }
++    // Paper end
+ 
+     public static void broadcastCommandMessage(@NotNull CommandSender source, @NotNull String message) {
+         broadcastCommandMessage(source, message, true);
 diff --git a/src/main/java/org/bukkit/command/CommandSender.java b/src/main/java/org/bukkit/command/CommandSender.java
 index 284be63a125624a8ae43d2c164aede810ce6bfe5..7c9a0c85c0e23d6a569c3583e87b005938923d95 100644
 --- a/src/main/java/org/bukkit/command/CommandSender.java
@@ -1339,6 +1411,19 @@ index a7ef1f51c2b96617a32e6e7b1723e8770ba8a6a8..68daa56546d00089d7d6c13ee897d828
  
      @Override
      default boolean isOp() {
+diff --git a/src/main/java/org/bukkit/command/PluginCommandYamlParser.java b/src/main/java/org/bukkit/command/PluginCommandYamlParser.java
+index a542c4bb3c973bbe4b976642feccde6a4d90cb7b..614cba22c0997dbb45576f800675db4053a9831c 100644
+--- a/src/main/java/org/bukkit/command/PluginCommandYamlParser.java
++++ b/src/main/java/org/bukkit/command/PluginCommandYamlParser.java
+@@ -67,7 +67,7 @@ public class PluginCommandYamlParser {
+             }
+ 
+             if (permissionMessage != null) {
+-                newCmd.setPermissionMessage(permissionMessage.toString());
++                newCmd.permissionMessage(io.papermc.paper.text.PaperComponents.legacySectionSerializer().deserialize(permissionMessage.toString())); // Paper
+             }
+ 
+             pluginCmds.add(newCmd);
 diff --git a/src/main/java/org/bukkit/command/ProxiedCommandSender.java b/src/main/java/org/bukkit/command/ProxiedCommandSender.java
 index fcc34b640265f4dccb46b9f09466ab8e1d96043e..74599b4ee0518481c0e3a5f6ab2f5302837f1ae3 100644
 --- a/src/main/java/org/bukkit/command/ProxiedCommandSender.java
