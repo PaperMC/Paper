@@ -1,0 +1,143 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Mon, 4 Oct 2021 22:20:34 -0700
+Subject: [PATCH] Saveable Scoreboards
+
+
+diff --git a/src/main/java/io/papermc/paper/scoreboard/PaperSaveableScoreboard.java b/src/main/java/io/papermc/paper/scoreboard/PaperSaveableScoreboard.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..3e4091d33edd1afcdc5ed56e01f28f6bcf9d4fcf
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/scoreboard/PaperSaveableScoreboard.java
+@@ -0,0 +1,48 @@
++package io.papermc.paper.scoreboard;
++
++import net.minecraft.SharedConstants;
++import net.minecraft.nbt.CompoundTag;
++import net.minecraft.server.ServerScoreboard;
++import net.minecraft.world.scores.ScoreboardSaveData;
++import org.bukkit.craftbukkit.scoreboard.CraftScoreboard;
++import org.jetbrains.annotations.NotNull;
++
++import java.nio.file.Files;
++import java.nio.file.Path;
++
++public class PaperSaveableScoreboard extends CraftScoreboard implements SaveableScoreboard {
++
++    private final Path file;
++    private final ScoreboardSaveData saveData;
++
++    public PaperSaveableScoreboard(ServerScoreboard serverScoreboard, Path file) {
++        super(serverScoreboard);
++        this.saveData = this.getHandle().createData();
++        if (Files.exists(file)) {
++            CompoundTag tag = null;
++            try {
++                tag = serverScoreboard.server.overworld().getDataStorage().readTagFromDisk(file.toFile(), SharedConstants.getCurrentVersion().getWorldVersion());
++            } catch (Exception e) {
++                throw new IllegalArgumentException("Could not load scoreboard from " + file, e);
++            }
++            this.saveData.load(tag.getCompound("data"));
++        }
++        this.file = file;
++    }
++
++    @Override
++    public synchronized void save() {
++        this.saveData.save(this.file.toFile());
++    }
++
++    @Override
++    public @NotNull Path getFile() {
++        return this.file;
++    }
++
++    @Override
++    public ServerScoreboard getHandle() {
++        return (ServerScoreboard) super.getHandle();
++    }
++
++}
+diff --git a/src/main/java/net/minecraft/world/level/storage/DimensionDataStorage.java b/src/main/java/net/minecraft/world/level/storage/DimensionDataStorage.java
+index e84b99ca10621cb1021d7ec17ba21df24e8c7474..46caeb6be996b481d8896444b7f698b212bd680b 100644
+--- a/src/main/java/net/minecraft/world/level/storage/DimensionDataStorage.java
++++ b/src/main/java/net/minecraft/world/level/storage/DimensionDataStorage.java
+@@ -78,6 +78,11 @@ public class DimensionDataStorage {
+ 
+     public CompoundTag readTagFromDisk(String id, int dataVersion) throws IOException {
+         File file = this.getDataFile(id);
++        // Paper start
++        return readTagFromDisk(file, dataVersion);
++    }
++    public CompoundTag readTagFromDisk(File file, int dataVersion) throws IOException {
++        // Paper end
+         FileInputStream fileInputStream = new FileInputStream(file);
+ 
+         CompoundTag var8;
+diff --git a/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftScoreboardManager.java b/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftScoreboardManager.java
+index 1a3b1eb7b70b9a668aa33ea943c13890eaa23a05..d823f333c657fd8e7cfd6900e566db6c04b0e4fc 100644
+--- a/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftScoreboardManager.java
++++ b/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftScoreboardManager.java
+@@ -25,7 +25,7 @@ import org.bukkit.scoreboard.ScoreboardManager;
+ public final class CraftScoreboardManager implements ScoreboardManager {
+     private final CraftScoreboard mainScoreboard;
+     private final MinecraftServer server;
+-    private final Collection<CraftScoreboard> scoreboards = new WeakCollection<CraftScoreboard>();
++    private final Collection<CraftScoreboard> scoreboards = java.util.Collections.synchronizedCollection(new WeakCollection<CraftScoreboard>()); // Paper
+     private final Map<CraftPlayer, CraftScoreboard> playerBoards = new HashMap<CraftPlayer, CraftScoreboard>();
+ 
+     public CraftScoreboardManager(MinecraftServer minecraftserver, net.minecraft.world.scores.Scoreboard scoreboardServer) {
+@@ -42,7 +42,7 @@ public final class CraftScoreboardManager implements ScoreboardManager {
+ 
+     @Override
+     public CraftScoreboard getNewScoreboard() {
+-        org.spigotmc.AsyncCatcher.catchOp("scoreboard creation"); // Spigot
++        // org.spigotmc.AsyncCatcher.catchOp("scoreboard creation"); // Spigot // Paper
+         CraftScoreboard scoreboard = new CraftScoreboard(new ServerScoreboard(this.server));
+         // Paper start
+         if (com.destroystokyo.paper.PaperConfig.trackPluginScoreboards) {
+@@ -54,8 +54,30 @@ public final class CraftScoreboardManager implements ScoreboardManager {
+     }
+ 
+     // Paper start
++    @Override
++    public java.util.concurrent.CompletableFuture<io.papermc.paper.scoreboard.SaveableScoreboard> getNewScoreboard(java.nio.file.Path path) {
++        var serverScoreboard = new ServerScoreboard(this.server);
++        return java.util.concurrent.CompletableFuture.supplyAsync(() -> {
++            return new io.papermc.paper.scoreboard.PaperSaveableScoreboard(serverScoreboard, path);
++        }, net.minecraft.Util.ioPool()).thenApply(board -> {
++            if (com.destroystokyo.paper.PaperConfig.trackPluginScoreboards) {
++                board.registeredGlobally = true;
++                registerScoreboardForVanilla(board);
++            } else {
++                for (Objective objective : board.getHandle().getObjectives()) {
++                    if (objective.getCriteria() != ObjectiveCriteria.DUMMY) {
++                        board.registeredGlobally = true;
++                        registerScoreboardForVanilla(board);
++                        break;
++                    }
++                }
++            }
++            return board;
++        });
++    }
++
+     public void registerScoreboardForVanilla(CraftScoreboard scoreboard) {
+-        org.spigotmc.AsyncCatcher.catchOp("scoreboard registration");
++        // org.spigotmc.AsyncCatcher.catchOp("scoreboard registration"); // Paper
+         scoreboards.add(scoreboard);
+     }
+     // Paper end
+@@ -118,10 +140,12 @@ public final class CraftScoreboardManager implements ScoreboardManager {
+         co.aikar.timings.MinecraftTimings.scoreboardScoreSearch.startTimingIfSync();
+         try {
+         // Paper end - add timings for scoreboard search
++        synchronized (this.scoreboards) { // Paper
+         for (CraftScoreboard scoreboard : this.scoreboards) {
+             Scoreboard board = scoreboard.board;
+             board.forAllObjectives(criteria, name, (score) -> consumer.accept(score));
+         }
++        } // Paper
+         } finally { // Paper start - add timings for scoreboard search
+             co.aikar.timings.MinecraftTimings.scoreboardScoreSearch.stopTimingIfSync();
+         }
