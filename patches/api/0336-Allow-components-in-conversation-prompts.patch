@@ -1,0 +1,107 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Tim Hagemann <tim@eternalwings.de>
+Date: Tue, 5 Oct 2021 20:49:08 +0200
+Subject: [PATCH] Allow components in conversation prompts
+
+
+diff --git a/src/main/java/org/bukkit/command/ConsoleCommandSender.java b/src/main/java/org/bukkit/command/ConsoleCommandSender.java
+index f309c2ed39bcc700e5b491ff549bf0608a07aab8..704ecebef291a9e8477eab5e0d2b30aeff463f63 100644
+--- a/src/main/java/org/bukkit/command/ConsoleCommandSender.java
++++ b/src/main/java/org/bukkit/command/ConsoleCommandSender.java
+@@ -3,4 +3,10 @@ package org.bukkit.command;
+ import org.bukkit.conversations.Conversable;
+ 
+ public interface ConsoleCommandSender extends CommandSender, Conversable {
++    // Paper start - Allow components in conversation prompts
++    @Override
++    default void sendMessage(@org.jetbrains.annotations.NotNull net.kyori.adventure.text.Component message) {
++        CommandSender.super.sendMessage(message);
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/conversations/Conversable.java b/src/main/java/org/bukkit/conversations/Conversable.java
+index b7d8dd30360a38dbdc7bbce40c8e6ced7261f833..14e9e75b622de0e3ee8ca92a75a923714789b09f 100644
+--- a/src/main/java/org/bukkit/conversations/Conversable.java
++++ b/src/main/java/org/bukkit/conversations/Conversable.java
+@@ -57,6 +57,8 @@ public interface Conversable {
+      */
+     public void sendRawMessage(@NotNull String message);
+ 
++    public void sendMessage(@NotNull net.kyori.adventure.text.Component component); // Paper - Allow components in conversation prompts
++
+     /**
+      * Sends this sender a message raw
+      *
+diff --git a/src/main/java/org/bukkit/conversations/Conversation.java b/src/main/java/org/bukkit/conversations/Conversation.java
+index bf2407c838bc20197802687c150d513f4e86ed2b..d909b14fd2ccf6704e0611e13f619c1331424a2d 100644
+--- a/src/main/java/org/bukkit/conversations/Conversation.java
++++ b/src/main/java/org/bukkit/conversations/Conversation.java
+@@ -287,7 +287,11 @@ public class Conversation {
+         if (currentPrompt == null) {
+             abandon(new ConversationAbandonedEvent(this));
+         } else {
+-            context.getForWhom().sendRawMessage(prefix.getPrefix(context) + currentPrompt.getPromptText(context));
++            // Paper start - Allow components in conversation prompts
++            final net.kyori.adventure.text.Component prefixComp = net.kyori.adventure.text.Component.text(prefix.getPrefix(context));
++            final net.kyori.adventure.text.Component message = currentPrompt.getPromptMessage(context);
++            context.getForWhom().sendMessage(prefixComp.append(message));
++            // Paper end
+             if (!currentPrompt.blocksForInput(context)) {
+                 currentPrompt = currentPrompt.acceptInput(context, null);
+                 outputNextPrompt();
+diff --git a/src/main/java/org/bukkit/conversations/Prompt.java b/src/main/java/org/bukkit/conversations/Prompt.java
+index fcca208c0f31b41ab67323d0e77a8e3ecf9e78dd..f0f2762e52e8f65161c6edf1b378a9a39d636a95 100644
+--- a/src/main/java/org/bukkit/conversations/Prompt.java
++++ b/src/main/java/org/bukkit/conversations/Prompt.java
+@@ -25,7 +25,16 @@ public interface Prompt extends Cloneable {
+      * @return The text to display.
+      */
+     @NotNull
+-    String getPromptText(@NotNull ConversationContext context);
++    // Paper start - Allow components in conversation prompts
++    default String getPromptText(@NotNull ConversationContext context) {
++        throw new UnsupportedOperationException("Please override either getPromptText or getPromptMessage");
++    }
++
++    @NotNull
++    default net.kyori.adventure.text.Component getPromptMessage(@NotNull ConversationContext context) {
++        return io.papermc.paper.text.PaperComponents.legacySectionSerializer().deserialize(getPromptText(context));
++    }
++    // Paper end
+ 
+     /**
+      * Checks to see if this prompt implementation should wait for user input
+diff --git a/src/main/java/org/bukkit/entity/Player.java b/src/main/java/org/bukkit/entity/Player.java
+index 3e8cd3971ac8256a40d9b85cd7514998c965512c..d44859f7d4bcf4cac31528826de3d967fa07d9cb 100644
+--- a/src/main/java/org/bukkit/entity/Player.java
++++ b/src/main/java/org/bukkit/entity/Player.java
+@@ -2295,4 +2295,11 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+     @Override
+     Spigot spigot();
+     // Spigot end
++
++    // Paper start - Allow components in conversation prompts
++    @Override
++    default void sendMessage(final @NotNull Component message) {
++        this.sendMessage(net.kyori.adventure.identity.Identity.nil(), message);
++    }
++    // Paper end
+ }
+diff --git a/src/test/java/org/bukkit/conversations/FakeConversable.java b/src/test/java/org/bukkit/conversations/FakeConversable.java
+index 567bfd7d3e45d83b5520af6ddd0140c2b84139b2..c5036858671b6d346bcb9db465f7ef3ea13dfe46 100644
+--- a/src/test/java/org/bukkit/conversations/FakeConversable.java
++++ b/src/test/java/org/bukkit/conversations/FakeConversable.java
+@@ -51,6 +51,13 @@ public class FakeConversable implements Conversable {
+         lastSentMessage = message;
+     }
+ 
++    // Paper end - Allow components in conversation prompts
++    @Override
++    public void sendMessage(@NotNull net.kyori.adventure.text.Component component) {
++        lastSentMessage = ((net.kyori.adventure.text.TextComponent)component).content();
++    }
++    // Paper end
++
+     @Override
+     public void sendRawMessage(@Nullable UUID sender, @NotNull String message) {
+         this.sendRawMessage(message);
