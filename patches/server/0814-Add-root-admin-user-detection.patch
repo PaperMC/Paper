@@ -12,10 +12,10 @@ Co-authored-by: Noah van der Aa <ndvdaa@gmail.com>
 
 diff --git a/src/main/java/io/papermc/paper/util/ServerEnvironment.java b/src/main/java/io/papermc/paper/util/ServerEnvironment.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..9bc2cbf015998b98b6681a427596b151ed1806a0
+index 0000000000000000000000000000000000000000..18ea1dddf600920999d6b254bc55cf5d0d8a1cfb
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/util/ServerEnvironment.java
-@@ -0,0 +1,36 @@
+@@ -0,0 +1,39 @@
 +package io.papermc.paper.util;
 +
 +import com.sun.security.auth.module.NTSystem;
@@ -38,9 +38,12 @@ index 0000000000000000000000000000000000000000..9bc2cbf015998b98b6681a427596b151
 +            if (new UnixSystem().getUid() == 0) {
 +                // Due to an OpenJDK bug, UnixSystem#getUid incorrectly returns 0 when the user doesn't have a username.
 +                // Because of this, we'll have to double-check if the user ID is actually 0 by running the id command.
-+                try (final InputStream inputStream = Runtime.getRuntime().exec("id -u").getInputStream()) {
++                try {
++                    Process process = new ProcessBuilder("id", "-u").start();
++                    process.waitFor();
++                    InputStream inputStream = process.getInputStream();
 +                    isRunningAsRoot = new String(inputStream.readAllBytes()).trim().equals("0");
-+                } catch (IOException ignored) {
++                } catch (InterruptedException | IOException ignored) {
 +                    isRunningAsRoot = false;
 +                }
 +            }
