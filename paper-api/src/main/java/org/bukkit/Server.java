@@ -47,6 +47,7 @@ import org.bukkit.plugin.messaging.Messenger;
 import org.bukkit.plugin.messaging.PluginMessageRecipient;
 import org.bukkit.scheduler.BukkitScheduler;
 import org.bukkit.scoreboard.ScoreboardManager;
+import org.bukkit.structure.StructureManager;
 import org.bukkit.util.CachedServerIcon;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
@@ -1425,6 +1426,14 @@ public interface Server extends PluginMessageRecipient {
      */
     @NotNull
     List<Entity> selectEntities(@NotNull CommandSender sender, @NotNull String selector) throws IllegalArgumentException;
+
+    /**
+     * Gets the structure manager for loading and saving structures.
+     *
+     * @return the structure manager
+     */
+    @NotNull
+    StructureManager getStructureManager();
 
     /**
      * @return the unsafe values instance
