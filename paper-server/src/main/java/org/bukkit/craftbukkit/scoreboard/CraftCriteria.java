@@ -54,7 +54,7 @@ public final class CraftCriteria implements Criteria {
     }
 
     static CraftCriteria getFromNMS(Objective objective) {
-        return CraftCriteria.DEFAULTS.get(objective.getCriteria().getName());
+        return java.util.Objects.requireNonNullElseGet(CraftCriteria.DEFAULTS.get(objective.getCriteria().getName()), () -> new CraftCriteria(objective.getCriteria())); // Paper
     }
 
     public static CraftCriteria getFromBukkit(String name) {
