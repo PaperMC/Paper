@@ -134,6 +134,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     private int animalSpawn = -1;
     private int waterAnimalSpawn = -1;
     private int waterAmbientSpawn = -1;
+    private int waterUndergroundCreatureSpawn = -1;
     private int ambientSpawn = -1;
 
     private static final Random rand = new Random();
@@ -1354,6 +1355,16 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     }
 
     @Override
+    public long getTicksPerWaterUndergroundCreatureSpawns() {
+        return world.ticksPerWaterUndergroundCreatureSpawns;
+    }
+
+    @Override
+    public void setTicksPerWaterUndergroundCreatureSpawns(int ticksPerWaterUndergroundCreatureSpawns) {
+        world.ticksPerWaterUndergroundCreatureSpawns = ticksPerWaterUndergroundCreatureSpawns;
+    }
+
+    @Override
     public long getTicksPerAmbientSpawns() {
         return world.ticksPerAmbientSpawns;
     }
@@ -1437,6 +1448,20 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     @Override
     public void setWaterAmbientSpawnLimit(int limit) {
         waterAmbientSpawn = limit;
+    }
+
+    @Override
+    public int getWaterUndergroundCreatureSpawnLimit() {
+        if (waterUndergroundCreatureSpawn < 0) {
+            return server.getWaterUndergroundCreatureSpawnLimit();
+        }
+
+        return waterUndergroundCreatureSpawn;
+    }
+
+    @Override
+    public void setWaterUndergroundCreatureSpawnLimit(int limit) {
+        waterUndergroundCreatureSpawn = limit;
     }
 
     @Override
