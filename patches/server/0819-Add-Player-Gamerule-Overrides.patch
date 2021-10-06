@@ -1,0 +1,92 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Owen1212055 <23108066+Owen1212055@users.noreply.github.com>
+Date: Wed, 6 Oct 2021 18:16:49 -0400
+Subject: [PATCH] Add Player Gamerule Overrides
+
+
+diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
+index ad9fb50791779a5fe7d22268b71bd10d9c9ff3f0..c9534b1acdfb2df8ca2510bdb7742c320d1eaec4 100644
+--- a/src/main/java/net/minecraft/server/players/PlayerList.java
++++ b/src/main/java/net/minecraft/server/players/PlayerList.java
+@@ -263,8 +263,13 @@ public abstract class PlayerList {
+         player.loadGameTypes(nbttagcompound);
+         ServerGamePacketListenerImpl playerconnection = new ServerGamePacketListenerImpl(this.server, connection, player);
+         GameRules gamerules = worldserver1.getGameRules();
+-        boolean flag = gamerules.getBoolean(GameRules.RULE_DO_IMMEDIATE_RESPAWN);
+-        boolean flag1 = gamerules.getBoolean(GameRules.RULE_REDUCEDDEBUGINFO);
++        // Paper start - Add gamerule player overrides
++        var instantRespawn = spawnPlayer.getImmediateRespawnOverride();
++        var reducedDebug = spawnPlayer.getReducedDebugInfoOverride();
++
++        boolean flag = instantRespawn == net.kyori.adventure.util.TriState.NOT_SET ? gamerules.getBoolean(GameRules.RULE_DO_IMMEDIATE_RESPAWN) : instantRespawn == net.kyori.adventure.util.TriState.TRUE;
++        boolean flag1 = reducedDebug == net.kyori.adventure.util.TriState.NOT_SET ? gamerules.getBoolean(GameRules.RULE_REDUCEDDEBUGINFO) : reducedDebug == net.kyori.adventure.util.TriState.TRUE;
++        // Paper end - Add gamerule player overrides
+ 
+         // Spigot - view distance
+         playerconnection.send(new ClientboundLoginPacket(player.getId(), player.gameMode.getGameModeForPlayer(), player.gameMode.getPreviousGameModeForPlayer(), BiomeManager.obfuscateSeed(worldserver1.getSeed()), worlddata.isHardcore(), this.server.levelKeys(), this.registryHolder, worldserver1.dimensionType(), worldserver1.dimension(), this.getMaxPlayers(), worldserver1.getChunkSource().chunkMap.playerChunkManager.getLoadDistance(), flag1, !flag, worldserver1.isDebug(), worldserver1.isFlat())); // Paper - no-tick view distance // Paper - replace old player chunk management
+@@ -1309,9 +1314,16 @@ public abstract class PlayerList {
+         player.getBukkitEntity().updateScaledHealth(); // CraftBukkit - Update scaled health on respawn and worldchange
+         player.connection.send(new ClientboundSetCarriedItemPacket(player.getInventory().selected));
+         // CraftBukkit start - from GameRules
+-        int i = player.level.getGameRules().getBoolean(GameRules.RULE_REDUCEDDEBUGINFO) ? 22 : 23;
++        // Paper start - Add gamerule player overrides
++        Player bukkitPlayer = player.getBukkitEntity();
++        var instantRespawn = bukkitPlayer.getImmediateRespawnOverride();
++        var reducedDebug = bukkitPlayer.getReducedDebugInfoOverride();
++        boolean instantRespawnBool = instantRespawn == net.kyori.adventure.util.TriState.NOT_SET ? player.level.getGameRules().getBoolean(GameRules.RULE_DO_IMMEDIATE_RESPAWN) : instantRespawn == net.kyori.adventure.util.TriState.TRUE;
++        boolean reducedDebugbool = reducedDebug == net.kyori.adventure.util.TriState.NOT_SET ? player.level.getGameRules().getBoolean(GameRules.RULE_REDUCEDDEBUGINFO) : reducedDebug == net.kyori.adventure.util.TriState.TRUE;
++        // Paper end - Add gamerule player overrides
++        int i = reducedDebugbool ? 22 : 23; // Paper - Add gamerule player overrides
+         player.connection.send(new ClientboundEntityEventPacket(player, (byte) i));
+-        float immediateRespawn = player.level.getGameRules().getBoolean(GameRules.RULE_DO_IMMEDIATE_RESPAWN) ? 1.0F: 0.0F;
++        float immediateRespawn = instantRespawnBool ? 1.0F: 0.0F; // Paper - Add gamerule player overrides
+         player.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.IMMEDIATE_RESPAWN, immediateRespawn));
+         // CraftBukkit end
+     }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index c64911651f3d736c83cc83996de04920b091cc57..536743527147627f184e13f220b2594442d87cd6 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -153,6 +153,10 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+     private static final boolean DISABLE_CHANNEL_LIMIT = System.getProperty("paper.disableChannelLimit") != null; // Paper - add a flag to disable the channel limit
+     private long lastSaveTime;
+     // Paper end
++    // Paper start - Add gamerule player overrides
++    public net.kyori.adventure.util.TriState immediateRespawnOverride = net.kyori.adventure.util.TriState.NOT_SET; // Paper
++    public net.kyori.adventure.util.TriState debuginfoOverride = net.kyori.adventure.util.TriState.NOT_SET; // Paper
++    // Paper end - Add gamerule player overrides
+ 
+     public CraftPlayer(CraftServer server, ServerPlayer entity) {
+         super(server, entity);
+@@ -2585,4 +2589,31 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+         return this.spigot;
+     }
+     // Spigot end
++    // Paper start - Add gamerule player overrides
++    @NotNull
++    @Override
++    public net.kyori.adventure.util.TriState getImmediateRespawnOverride() {
++        return immediateRespawnOverride;
++    }
++
++    @Override
++    public void setImmediateRespawnOverride(@NotNull net.kyori.adventure.util.TriState state) {
++        this.immediateRespawnOverride = state;
++        boolean instantRespawn = state == net.kyori.adventure.util.TriState.NOT_SET ? getHandle().level.getGameRules().getBoolean(net.minecraft.world.level.GameRules.RULE_DO_IMMEDIATE_RESPAWN) : state == net.kyori.adventure.util.TriState.TRUE;
++        getHandle().connection.send(new net.minecraft.network.protocol.game.ClientboundGameEventPacket(net.minecraft.network.protocol.game.ClientboundGameEventPacket.IMMEDIATE_RESPAWN, instantRespawn ? 1.0F : 0.0F));
++    }
++
++    @NotNull
++    @Override
++    public net.kyori.adventure.util.TriState getReducedDebugInfoOverride() {
++        return debuginfoOverride;
++    }
++
++    @Override
++    public void setReducedDebugInfoOverride(@NotNull net.kyori.adventure.util.TriState state) {
++        this.debuginfoOverride = state;
++        boolean reducedDebugbool = state == net.kyori.adventure.util.TriState.NOT_SET ? getHandle().level.getGameRules().getBoolean(net.minecraft.world.level.GameRules.RULE_REDUCEDDEBUGINFO) : state == net.kyori.adventure.util.TriState.TRUE;
++        getHandle().connection.send(new net.minecraft.network.protocol.game.ClientboundEntityEventPacket(getHandle(), (byte) (reducedDebugbool ? 22 : 23)));
++    }
++    // Paper end - Add gamerule player overrides
+ }
