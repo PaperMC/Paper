@@ -1023,4 +1023,26 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      */
     boolean isInPowderedSnow();
     // Paper end
+
+    // Paper start - Collision API
+    /**
+     * Checks for any collisions with the entity's bounding box at the provided location.
+     * This will check for any colliding entities (boats, shulkers) / worldborder / blocks.
+     * Does not load chunks that are within the bounding box at the specified location.
+     *
+     * @param location the location to check collisions in
+     * @return collides or not
+     */
+    boolean collidesAt(@NotNull Location location);
+
+    /**
+     * This checks using the given boundingbox as the entity's boundingbox if the entity would collide with anything.
+     * This will check for any colliding entities (boats, shulkers) / worldborder / blocks.
+     * Does not load chunks that are within the bounding box.
+     *
+     * @param boundingBox the box to check collisions in
+     * @return collides or not
+     */
+    boolean wouldCollideUsing(@NotNull BoundingBox boundingBox);
+    // Paper end - Collision API
 }

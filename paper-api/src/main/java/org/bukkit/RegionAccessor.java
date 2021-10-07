@@ -493,5 +493,15 @@ public interface RegionAccessor extends Keyed { // Paper
      * @return whether a line of sight exists between {@code from} and {@code to}
      */
     public boolean lineOfSightExists(@NotNull Location from, @NotNull Location to);
+
+    /**
+     * Checks if the world collides with the given boundingbox.
+     * This will check for any colliding hard entities (boats, shulkers) / worldborder / blocks.
+     * Does not load chunks that are within the bounding box.
+     *
+     * @param boundingBox the box to check collisions in
+     * @return collides or not
+     */
+    boolean hasCollisionsIn(@NotNull org.bukkit.util.BoundingBox boundingBox);
     // Paper end
 }
