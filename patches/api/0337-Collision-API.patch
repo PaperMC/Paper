@@ -1,0 +1,67 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Owen1212055 <23108066+Owen1212055@users.noreply.github.com>
+Date: Wed, 6 Oct 2021 20:10:36 -0400
+Subject: [PATCH] Collision API
+
+
+diff --git a/src/main/java/org/bukkit/RegionAccessor.java b/src/main/java/org/bukkit/RegionAccessor.java
+index 35e407ec7bd8d5cd38069fe7f2cf3d9d3bc94cbe..addae0c86e47a9ee8c34619797e1a1faf8a4d9f8 100644
+--- a/src/main/java/org/bukkit/RegionAccessor.java
++++ b/src/main/java/org/bukkit/RegionAccessor.java
+@@ -355,4 +355,18 @@ public interface RegionAccessor {
+      */
+     @NotNull
+     public <T extends Entity> T spawn(@NotNull Location location, @NotNull Class<T> clazz, boolean randomizeData, @Nullable Consumer<T> function) throws IllegalArgumentException;
++
++    // Paper Start - Collision API
++
++    /**
++     *
++     * Checks for any collisions in the given boundingbox.
++     * This will check for any colliding hard entities / worldborder / blocks.
++     * Does not load chunks that are within the bounding box.
++     *
++     * @param boundingBox the box to check collisions in
++     * @return collides or not
++     */
++    boolean collidesWith(@NotNull org.bukkit.util.BoundingBox boundingBox);
++    // Paper End - Collision API
+ }
+diff --git a/src/main/java/org/bukkit/entity/Entity.java b/src/main/java/org/bukkit/entity/Entity.java
+index b02704b0535522c5535b560105eec2885fdd3e77..a86c0db73031419637ba767436dab8c34050d5e8 100644
+--- a/src/main/java/org/bukkit/entity/Entity.java
++++ b/src/main/java/org/bukkit/entity/Entity.java
+@@ -761,4 +761,33 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
+      */
+     public boolean isTicking();
+     // Paper end
++
++    // Paper Start - Collision API
++    /**
++     *
++     * Checks for any collisions in the given boundingbox.
++     * This will check for any colliding entities / worldborder / blocks.
++     *
++     * @param location the location to check collisions in
++     * @param loadChunks should load chunks within bounding box
++     * @return collides or not
++     */
++    default boolean collidesAt(@NotNull Location location, boolean loadChunks) {
++        BoundingBox box = getBoundingBox();
++        box.expand(location.getX(), location.getY(), location.getZ());
++
++        return collidesAt(box, loadChunks);
++    }
++
++    /**
++     *
++     * Checks for any collisions in the given boundingbox.
++     * This will check for any colliding entities / worldborder / blocks.
++     *
++     * @param boundingBox the box to check collisions in
++     * @param loadChunks should load chunks within bounding box
++     * @return collides or not
++     */
++    boolean collidesAt(@NotNull BoundingBox boundingBox, boolean loadChunks);
++    // Paper End - Collision API
+ }
