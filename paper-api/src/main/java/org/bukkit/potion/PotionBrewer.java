@@ -4,9 +4,30 @@ import java.util.Collection;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Represents a brewer that can create {@link PotionEffect}s.
+ * Used to manage custom {@link io.papermc.paper.potion.PotionMix}s.
  */
 public interface PotionBrewer {
+
+    // Paper start
+    /**
+     * Adds a new potion mix recipe.
+     *
+     * @param potionMix the potion mix to add
+     */
+    void addPotionMix(@NotNull io.papermc.paper.potion.PotionMix potionMix);
+
+    /**
+     * Removes a potion mix recipe.
+     *
+     * @param key the key of the mix to remove
+     */
+    void removePotionMix(@NotNull org.bukkit.NamespacedKey key);
+
+    /**
+     * Resets potion mixes to their default, removing all custom ones.
+     */
+    void resetPotionMixes();
+    // Paper end
 
     /**
      * Creates a {@link PotionEffect} from the given {@link PotionEffectType},
@@ -16,9 +37,15 @@ public interface PotionBrewer {
      * @param duration The duration in ticks
      * @param amplifier The amplifier of the effect
      * @return The resulting potion effect
+     * @deprecated use {@link PotionEffectType#createEffect(int, int)} instead.
      */
+    @Deprecated(forRemoval = true, since = "1.20.5") // Paper
     @NotNull
-    public PotionEffect createEffect(@NotNull PotionEffectType potion, int duration, int amplifier);
+    // Paper start - make default
+    default PotionEffect createEffect(@NotNull PotionEffectType potion, int duration, int amplifier) {
+        return potion.createEffect(duration, amplifier);
+    }
+    // Paper end
 
     /**
      * Returns a collection of {@link PotionEffect} that would be applied from
@@ -28,9 +55,13 @@ public interface PotionBrewer {
      * @return The list of effects
      * @deprecated Non-Functional
      */
-    @Deprecated(since = "1.6.2")
+    @Deprecated(since = "1.6.2", forRemoval = true) // Paper
     @NotNull
-    public Collection<PotionEffect> getEffectsFromDamage(int damage);
+    // Paper start - make default
+    default Collection<PotionEffect> getEffectsFromDamage(final int damage) {
+        return new java.util.ArrayList<>();
+    }
+    // Paper end
 
     /**
      * Returns a collection of {@link PotionEffect} that would be applied from
@@ -43,6 +74,6 @@ public interface PotionBrewer {
      * @deprecated Upgraded / extended potions are now their own {@link PotionType} use {@link PotionType#getPotionEffects()} instead
      */
     @NotNull
-    @Deprecated(since = "1.20.2")
+    @Deprecated(since = "1.20.2", forRemoval = true) // Paper
     public Collection<PotionEffect> getEffects(@NotNull PotionType type, boolean upgraded, boolean extended);
 }

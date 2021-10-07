@@ -2665,6 +2665,15 @@ public final class Bukkit {
     public static io.papermc.paper.datapack.DatapackManager getDatapackManager() {
         return server.getDatapackManager();
     }
+
+    /**
+     * Gets the potion brewer.
+     *
+     * @return the potion brewer
+     */
+    public static @NotNull org.bukkit.potion.PotionBrewer getPotionBrewer() {
+        return server.getPotionBrewer();
+    }
     // Paper end
 
     @NotNull
