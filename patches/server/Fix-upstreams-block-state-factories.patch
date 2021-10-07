@@ -1,0 +1,247 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Wed, 6 Oct 2021 20:50:48 -0700
+Subject: [PATCH] Fix upstreams block state factories
+
+Sometimes, blocks are changed and then logic is called before the associated
+tile entity is removed. When this happens, the factories were relying on the
+block at the position, not the tile entity. This change prioritizes using the
+tile entity type to determine the block state factory and falls back on
+the material type of the block at that location.
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftBlockStates.java b/src/main/java/org/bukkit/craftbukkit/block/CraftBlockStates.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/CraftBlockStates.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/CraftBlockStates.java
+@@ -0,0 +0,0 @@ import net.minecraft.world.level.block.entity.BeehiveBlockEntity;
+ import net.minecraft.world.level.block.entity.BellBlockEntity;
+ import net.minecraft.world.level.block.entity.BlastFurnaceBlockEntity;
+ import net.minecraft.world.level.block.entity.BlockEntity;
++import net.minecraft.world.level.block.entity.BlockEntityType; // Paper
+ import net.minecraft.world.level.block.entity.BrewingStandBlockEntity;
+ import net.minecraft.world.level.block.entity.CampfireBlockEntity;
+ import net.minecraft.world.level.block.entity.ChestBlockEntity;
+@@ -0,0 +0,0 @@ public final class CraftBlockStates {
+             return new CraftBlockState(world, blockPosition, blockData);
+         }
+     };
++    // Paper start
++    private static final Map<BlockEntityType<?>, BlockStateFactory<?>> FACTORIES_BY_BLOCK_ENTITY_TYPE = new HashMap<>();
++    private static void register(BlockEntityType<?> type, BlockStateFactory<?> factory) {
++        FACTORIES_BY_BLOCK_ENTITY_TYPE.put(type, factory);
++    }
++    // Paper end
+ 
+     static {
+         register(
+@@ -0,0 +0,0 @@ public final class CraftBlockStates {
+                         Material.SPRUCE_WALL_SIGN,
+                         Material.WARPED_SIGN,
+                         Material.WARPED_WALL_SIGN
+-                ), CraftSign.class, CraftSign::new, SignBlockEntity::new
++                ), BlockEntityType.SIGN, CraftSign.class, CraftSign::new, SignBlockEntity::new // Paper
+         );
+ 
+         register(
+@@ -0,0 +0,0 @@ public final class CraftBlockStates {
+                         Material.WITHER_SKELETON_WALL_SKULL,
+                         Material.ZOMBIE_HEAD,
+                         Material.ZOMBIE_WALL_HEAD
+-                ), CraftSkull.class, CraftSkull::new, SkullBlockEntity::new
++                ), BlockEntityType.SKULL, CraftSkull.class, CraftSkull::new, SkullBlockEntity::new // Paper
+         );
+ 
+         register(
+@@ -0,0 +0,0 @@ public final class CraftBlockStates {
+                         Material.COMMAND_BLOCK,
+                         Material.REPEATING_COMMAND_BLOCK,
+                         Material.CHAIN_COMMAND_BLOCK
+-                ), CraftCommandBlock.class, CraftCommandBlock::new, CommandBlockEntity::new
++                ), BlockEntityType.COMMAND_BLOCK, CraftCommandBlock.class, CraftCommandBlock::new, CommandBlockEntity::new // Paper
+         );
+ 
+         register(
+@@ -0,0 +0,0 @@ public final class CraftBlockStates {
+                         Material.WHITE_WALL_BANNER,
+                         Material.YELLOW_BANNER,
+                         Material.YELLOW_WALL_BANNER
+-                ), CraftBanner.class, CraftBanner::new, BannerBlockEntity::new
++                ), BlockEntityType.BANNER, CraftBanner.class, CraftBanner::new, BannerBlockEntity::new // Paper
+         );
+ 
+         register(
+@@ -0,0 +0,0 @@ public final class CraftBlockStates {
+                         Material.GREEN_SHULKER_BOX,
+                         Material.RED_SHULKER_BOX,
+                         Material.BLACK_SHULKER_BOX
+-                ), CraftShulkerBox.class, CraftShulkerBox::new, ShulkerBoxBlockEntity::new
++                ), BlockEntityType.SHULKER_BOX, CraftShulkerBox.class, CraftShulkerBox::new, ShulkerBoxBlockEntity::new // Paper
+         );
+ 
+         register(
+@@ -0,0 +0,0 @@ public final class CraftBlockStates {
+                         Material.RED_BED,
+                         Material.WHITE_BED,
+                         Material.YELLOW_BED
+-                ), CraftBed.class, CraftBed::new, BedBlockEntity::new
++                ), BlockEntityType.BED, CraftBed.class, CraftBed::new, BedBlockEntity::new // Paper
+         );
+ 
+         register(
+                 Arrays.asList(
+                         Material.BEEHIVE,
+                         Material.BEE_NEST
+-                ), CraftBeehive.class, CraftBeehive::new, BeehiveBlockEntity::new
++                ), BlockEntityType.BEEHIVE, CraftBeehive.class, CraftBeehive::new, BeehiveBlockEntity::new // Paper
+         );
+ 
+         register(
+                 Arrays.asList(
+                         Material.CAMPFIRE,
+                         Material.SOUL_CAMPFIRE
+-                ), CraftCampfire.class, CraftCampfire::new, CampfireBlockEntity::new
+-        );
+-
+-        register(
+-                Arrays.asList(
+-                        Material.CHEST,
+-                        Material.TRAPPED_CHEST
+-                ), CraftChest.class, CraftChest::new, ChestBlockEntity::new
++                ), BlockEntityType.CAMPFIRE, CraftCampfire.class, CraftCampfire::new, CampfireBlockEntity::new // Paper
+         );
+ 
+-        register(Material.BARREL, CraftBarrel.class, CraftBarrel::new, BarrelBlockEntity::new);
+-        register(Material.BEACON, CraftBeacon.class, CraftBeacon::new, BeaconBlockEntity::new);
+-        register(Material.BELL, CraftBell.class, CraftBell::new, BellBlockEntity::new);
+-        register(Material.BLAST_FURNACE, CraftBlastFurnace.class, CraftBlastFurnace::new, BlastFurnaceBlockEntity::new);
+-        register(Material.BREWING_STAND, CraftBrewingStand.class, CraftBrewingStand::new, BrewingStandBlockEntity::new);
+-        register(Material.COMPARATOR, CraftComparator.class, CraftComparator::new, ComparatorBlockEntity::new);
+-        register(Material.CONDUIT, CraftConduit.class, CraftConduit::new, ConduitBlockEntity::new);
+-        register(Material.DAYLIGHT_DETECTOR, CraftDaylightDetector.class, CraftDaylightDetector::new, DaylightDetectorBlockEntity::new);
+-        register(Material.DISPENSER, CraftDispenser.class, CraftDispenser::new, DispenserBlockEntity::new);
+-        register(Material.DROPPER, CraftDropper.class, CraftDropper::new, DropperBlockEntity::new);
+-        register(Material.ENCHANTING_TABLE, CraftEnchantingTable.class, CraftEnchantingTable::new, EnchantmentTableBlockEntity::new);
+-        register(Material.ENDER_CHEST, CraftEnderChest.class, CraftEnderChest::new, EnderChestBlockEntity::new);
+-        register(Material.END_GATEWAY, CraftEndGateway.class, CraftEndGateway::new, TheEndGatewayBlockEntity::new);
+-        register(Material.END_PORTAL, CraftEndPortal.class, CraftEndPortal::new, TheEndPortalBlockEntity::new);
+-        register(Material.FURNACE, CraftFurnaceFurnace.class, CraftFurnaceFurnace::new, FurnaceBlockEntity::new);
+-        register(Material.HOPPER, CraftHopper.class, CraftHopper::new, HopperBlockEntity::new);
+-        register(Material.JIGSAW, CraftJigsaw.class, CraftJigsaw::new, JigsawBlockEntity::new);
+-        register(Material.JUKEBOX, CraftJukebox.class, CraftJukebox::new, JukeboxBlockEntity::new);
+-        register(Material.LECTERN, CraftLectern.class, CraftLectern::new, LecternBlockEntity::new);
+-        register(Material.MOVING_PISTON, CraftMovingPiston.class, CraftMovingPiston::new, PistonMovingBlockEntity::new);
+-        register(Material.SCULK_SENSOR, CraftSculkSensor.class, CraftSculkSensor::new, SculkSensorBlockEntity::new);
+-        register(Material.SMOKER, CraftSmoker.class, CraftSmoker::new, SmokerBlockEntity::new);
+-        register(Material.SPAWNER, CraftCreatureSpawner.class, CraftCreatureSpawner::new, SpawnerBlockEntity::new);
+-        register(Material.STRUCTURE_BLOCK, CraftStructureBlock.class, CraftStructureBlock::new, StructureBlockEntity::new);
++        // Paper start
++        register(Material.CHEST, BlockEntityType.CHEST, CraftChest.class, CraftChest::new, ChestBlockEntity::new); // Paper - split up chests due to different block entity types
++        register(Material.TRAPPED_CHEST, BlockEntityType.TRAPPED_CHEST, CraftChest.class, CraftChest::new, net.minecraft.world.level.block.entity.TrappedChestBlockEntity::new); // Paper - split up chests due to different block entity types
++        register(Material.BARREL, BlockEntityType.BARREL, CraftBarrel.class, CraftBarrel::new, BarrelBlockEntity::new);
++        register(Material.BEACON, BlockEntityType.BEACON, CraftBeacon.class, CraftBeacon::new, BeaconBlockEntity::new);
++        register(Material.BELL, BlockEntityType.BELL, CraftBell.class, CraftBell::new, BellBlockEntity::new);
++        register(Material.BLAST_FURNACE, BlockEntityType.BLAST_FURNACE, CraftBlastFurnace.class, CraftBlastFurnace::new, BlastFurnaceBlockEntity::new);
++        register(Material.BREWING_STAND, BlockEntityType.BREWING_STAND, CraftBrewingStand.class, CraftBrewingStand::new, BrewingStandBlockEntity::new);
++        register(Material.COMPARATOR, BlockEntityType.COMPARATOR, CraftComparator.class, CraftComparator::new, ComparatorBlockEntity::new);
++        register(Material.CONDUIT, BlockEntityType.CONDUIT, CraftConduit.class, CraftConduit::new, ConduitBlockEntity::new);
++        register(Material.DAYLIGHT_DETECTOR, BlockEntityType.DAYLIGHT_DETECTOR, CraftDaylightDetector.class, CraftDaylightDetector::new, DaylightDetectorBlockEntity::new);
++        register(Material.DISPENSER, BlockEntityType.DISPENSER, CraftDispenser.class, CraftDispenser::new, DispenserBlockEntity::new);
++        register(Material.DROPPER, BlockEntityType.DROPPER, CraftDropper.class, CraftDropper::new, DropperBlockEntity::new);
++        register(Material.ENCHANTING_TABLE, BlockEntityType.ENCHANTING_TABLE, CraftEnchantingTable.class, CraftEnchantingTable::new, EnchantmentTableBlockEntity::new);
++        register(Material.ENDER_CHEST, BlockEntityType.ENDER_CHEST, CraftEnderChest.class, CraftEnderChest::new, EnderChestBlockEntity::new);
++        register(Material.END_GATEWAY, BlockEntityType.END_GATEWAY, CraftEndGateway.class, CraftEndGateway::new, TheEndGatewayBlockEntity::new);
++        register(Material.END_PORTAL, BlockEntityType.END_PORTAL, CraftEndPortal.class, CraftEndPortal::new, TheEndPortalBlockEntity::new);
++        register(Material.FURNACE, BlockEntityType.FURNACE, CraftFurnaceFurnace.class, CraftFurnaceFurnace::new, FurnaceBlockEntity::new);
++        register(Material.HOPPER, BlockEntityType.HOPPER, CraftHopper.class, CraftHopper::new, HopperBlockEntity::new);
++        register(Material.JIGSAW, BlockEntityType.JIGSAW, CraftJigsaw.class, CraftJigsaw::new, JigsawBlockEntity::new);
++        register(Material.JUKEBOX, BlockEntityType.JUKEBOX, CraftJukebox.class, CraftJukebox::new, JukeboxBlockEntity::new);
++        register(Material.LECTERN, BlockEntityType.LECTERN, CraftLectern.class, CraftLectern::new, LecternBlockEntity::new);
++        register(Material.MOVING_PISTON, BlockEntityType.PISTON, CraftMovingPiston.class, CraftMovingPiston::new, PistonMovingBlockEntity::new);
++        register(Material.SCULK_SENSOR, BlockEntityType.SCULK_SENSOR, CraftSculkSensor.class, CraftSculkSensor::new, SculkSensorBlockEntity::new);
++        register(Material.SMOKER, BlockEntityType.SMOKER, CraftSmoker.class, CraftSmoker::new, SmokerBlockEntity::new);
++        register(Material.SPAWNER, BlockEntityType.MOB_SPAWNER, CraftCreatureSpawner.class, CraftCreatureSpawner::new, SpawnerBlockEntity::new);
++        register(Material.STRUCTURE_BLOCK, BlockEntityType.STRUCTURE_BLOCK, CraftStructureBlock.class, CraftStructureBlock::new, StructureBlockEntity::new);
++        // Paper end
+     }
+ 
+     private static void register(Material blockType, BlockStateFactory<?> factory) {
+@@ -0,0 +0,0 @@ public final class CraftBlockStates {
+ 
+     private static <T extends BlockEntity, B extends CraftBlockEntityState<T>> void register(
+             Material blockType,
++            net.minecraft.world.level.block.entity.BlockEntityType<?> blockEntityType, // Paper
+             Class<B> blockStateType,
+             BiFunction<World, T, B> blockStateConstructor,
+             BiFunction<BlockPos, net.minecraft.world.level.block.state.BlockState, T> tileEntityConstructor
+     ) {
+-        CraftBlockStates.register(Collections.singletonList(blockType), blockStateType, blockStateConstructor, tileEntityConstructor);
++        CraftBlockStates.register(Collections.singletonList(blockType), blockEntityType, blockStateType, blockStateConstructor, tileEntityConstructor); // Paper
+     }
+ 
+     private static <T extends BlockEntity, B extends CraftBlockEntityState<T>> void register(
+             List<Material> blockTypes,
++            net.minecraft.world.level.block.entity.BlockEntityType<?> blockEntityType, // Paper
+             Class<B> blockStateType,
+             BiFunction<World, T, B> blockStateConstructor,
+             BiFunction<BlockPos, net.minecraft.world.level.block.state.BlockState, T> tileEntityConstructor
+@@ -0,0 +0,0 @@ public final class CraftBlockStates {
+         for (Material blockType : blockTypes) {
+             CraftBlockStates.register(blockType, factory);
+         }
++        CraftBlockStates.register(blockEntityType, factory); // Paper
+     }
+ 
+     private static BlockStateFactory<?> getFactory(Material material) {
+         return CraftBlockStates.FACTORIES.getOrDefault(material, DEFAULT_FACTORY);
+     }
+ 
++    // Paper start
++    private static BlockStateFactory<?> getFactory(Material material, BlockEntityType<?> type) {
++        if (type != null) {
++            return CraftBlockStates.FACTORIES_BY_BLOCK_ENTITY_TYPE.getOrDefault(type, getFactory(material));
++        } else {
++            return getFactory(material);
++        }
++    }
++    // Paper end
++
+     public static Class<? extends CraftBlockState> getBlockStateType(Material material) {
+         Preconditions.checkNotNull(material, "material is null");
+         return CraftBlockStates.getFactory(material).blockStateType;
+     }
+ 
++    // Paper start
++    public static Class<? extends CraftBlockState> getBlockStateType(BlockEntityType<?> blockEntityType) {
++        Preconditions.checkNotNull(blockEntityType, "blockEntityType is null");
++        return CraftBlockStates.getFactory(null, blockEntityType).blockStateType;
++    }
++    // Paper end
++
+     public static BlockState getBlockState(Block block) {
+         Preconditions.checkNotNull(block, "block is null");
+         CraftBlock craftBlock = (CraftBlock) block;
+@@ -0,0 +0,0 @@ public final class CraftBlockStates {
+         if (world != null && tileEntity == null && CraftBlockStates.isTileEntityOptional(material)) {
+             factory = CraftBlockStates.DEFAULT_FACTORY;
+         } else {
+-            factory = CraftBlockStates.getFactory(material);
++            factory = CraftBlockStates.getFactory(material, tileEntity != null ? tileEntity.getType() : null); // Paper
+         }
+         return factory.createBlockState(world, blockPosition, blockData, tileEntity);
+     }
+diff --git a/src/test/java/org/bukkit/craftbukkit/block/BlockStateTest.java b/src/test/java/org/bukkit/craftbukkit/block/BlockStateTest.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/test/java/org/bukkit/craftbukkit/block/BlockStateTest.java
++++ b/src/test/java/org/bukkit/craftbukkit/block/BlockStateTest.java
+@@ -0,0 +0,0 @@ public class BlockStateTest extends AbstractTestingBase {
+             }
+         }
+     }
++
++    @Test
++    public void testBlockEntityTypes() {
++        for (var blockEntityType : Registry.BLOCK_ENTITY_TYPE) {
++            org.junit.Assert.assertNotNull(CraftBlockStates.getBlockStateType(blockEntityType));
++        }
++    }
+ }
