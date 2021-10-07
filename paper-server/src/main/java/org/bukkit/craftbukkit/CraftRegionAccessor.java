@@ -549,5 +549,12 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
 
         return this.getHandle().clip(new net.minecraft.world.level.ClipContext(start, end, net.minecraft.world.level.ClipContext.Block.COLLIDER, net.minecraft.world.level.ClipContext.Fluid.NONE, net.minecraft.world.phys.shapes.CollisionContext.empty())).getType() == net.minecraft.world.phys.HitResult.Type.MISS;
     }
+
+    @Override
+    public boolean hasCollisionsIn(@org.jetbrains.annotations.NotNull org.bukkit.util.BoundingBox boundingBox) {
+        net.minecraft.world.phys.AABB aabb = new net.minecraft.world.phys.AABB(boundingBox.getMinX(), boundingBox.getMinY(), boundingBox.getMinZ(), boundingBox.getMaxX(), boundingBox.getMaxY(), boundingBox.getMaxZ());
+
+        return !this.getHandle().noCollision(aabb);
+    }
     // Paper end
 }
