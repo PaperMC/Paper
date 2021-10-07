@@ -171,10 +171,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +    }
 +
++    private static boolean inSameRegionfile(ChunkPos first, ChunkPos second) {
++        return (first.x & ~31) == (second.x & ~31) && (first.z & ~31) == (second.z & ~31);
++    }
++
 +    // note: only call for CHUNK regionfiles
-+    void recalculateHeader() throws IOException {
++    boolean recalculateHeader() throws IOException {
 +        if (!this.canRecalcHeader) {
-+            return;
++            return false;
++        }
++        ChunkPos ourLowerLeftPosition = RegionFileStorage.getRegionFileCoordinates(this.regionFile);
++        if (ourLowerLeftPosition == null) {
++            LOGGER.fatal("Unable to get chunk location of regionfile " + this.regionFile.getAbsolutePath() + ", cannot recover header");
++            return false;
 +        }
 +        synchronized (this) {
 +            LOGGER.warn("Corrupt regionfile header detected! Attempting to re-calculate header offsets for regionfile " + this.regionFile.getAbsolutePath(), new Throwable());
@@ -200,6 +209,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                }
 +
 +                ChunkPos chunkPos = ChunkSerializer.getChunkCoordinate(compound);
++                if (!inSameRegionfile(ourLowerLeftPosition, chunkPos)) {
++                    LOGGER.error("Ignoring absolute chunk " + chunkPos + " in regionfile as it is not contained in the bounds of the regionfile '" + this.regionFile.getAbsolutePath() + "'. It should be in regionfile (" + (chunkPos.x >> 5) + "," + (chunkPos.z >> 5) + ")");
++                    continue;
++                }
 +                int location = (chunkPos.x & 31) | ((chunkPos.z & 31) << 5);
 +
 +                CompoundTag otherCompound = compounds[location];
@@ -244,63 +257,62 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            RegionFileVersion[] oversizedCompressionTypes = new RegionFileVersion[32 * 32];
 +
 +            if (regionFiles != null) {
-+                ChunkPos ourLowerLeftPosition = RegionFileStorage.getRegionFileCoordinates(this.regionFile);
++                int lowerXBound = ourLowerLeftPosition.x; // inclusive
++                int lowerZBound = ourLowerLeftPosition.z; // inclusive
++                int upperXBound = lowerXBound + 32 - 1; // inclusive
++                int upperZBound = lowerZBound + 32 - 1; // inclusive
 +
-+                if (ourLowerLeftPosition == null) {
-+                    LOGGER.fatal("Unable to get chunk location of regionfile " + this.regionFile.getAbsolutePath() + ", cannot recover oversized chunks");
-+                } else {
-+                    int lowerXBound = ourLowerLeftPosition.x; // inclusive
-+                    int lowerZBound = ourLowerLeftPosition.z; // inclusive
-+                    int upperXBound = lowerXBound + 32 - 1; // inclusive
-+                    int upperZBound = lowerZBound + 32 - 1; // inclusive
++                // read mojang oversized data
++                for (File regionFile : regionFiles) {
++                    ChunkPos oversizedCoords = getOversizedChunkPair(regionFile);
++                    if (oversizedCoords == null) {
++                        continue;
++                    }
 +
-+                    // read mojang oversized data
-+                    for (File regionFile : regionFiles) {
-+                        ChunkPos oversizedCoords = getOversizedChunkPair(regionFile);
-+                        if (oversizedCoords == null) {
-+                            continue;
-+                        }
++                    if ((oversizedCoords.x < lowerXBound || oversizedCoords.x > upperXBound) || (oversizedCoords.z < lowerZBound || oversizedCoords.z > upperZBound)) {
++                        continue; // not in our regionfile
++                    }
 +
-+                        if ((oversizedCoords.x < lowerXBound || oversizedCoords.x > upperXBound) || (oversizedCoords.z < lowerZBound || oversizedCoords.z > upperZBound)) {
-+                            continue; // not in our regionfile
-+                        }
++                    // ensure oversized data is valid & is newer than data in the regionfile
 +
-+                        // ensure oversized data is valid & is newer than data in the regionfile
++                    int location = (oversizedCoords.x & 31) | ((oversizedCoords.z & 31) << 5);
 +
-+                        int location = (oversizedCoords.x & 31) | ((oversizedCoords.z & 31) << 5);
++                    byte[] chunkData;
++                    try {
++                        chunkData = Files.readAllBytes(regionFile.toPath());
++                    } catch (Exception ex) {
++                        LOGGER.error("Failed to read oversized chunk data in file " + regionFile.getAbsolutePath() + ", data will be lost", ex);
++                        continue;
++                    }
 +
-+                        byte[] chunkData;
++                    CompoundTag compound = null;
++
++                    // We do not know the compression type, as it's stored in the regionfile. So we need to try all of them
++                    RegionFileVersion compression = null;
++                    for (RegionFileVersion compressionType : RegionFileVersion.VERSIONS.values()) {
 +                        try {
-+                            chunkData = Files.readAllBytes(regionFile.toPath());
++                            DataInputStream in = new DataInputStream(new BufferedInputStream(compressionType.wrap(new ByteArrayInputStream(chunkData)))); // typical java
++                            compound = NbtIo.read((java.io.DataInput)in);
++                            compression = compressionType;
++                            break; // reaches here iff readNBT does not throw
 +                        } catch (Exception ex) {
-+                            LOGGER.error("Failed to read oversized chunk data in file " + regionFile.getAbsolutePath() + ", data will be lost", ex);
 +                            continue;
 +                        }
++                    }
 +
-+                        CompoundTag compound = null;
++                    if (compound == null) {
++                        LOGGER.error("Failed to read oversized chunk data in file " + regionFile.getAbsolutePath() + ", it's corrupt. Its data will be lost");
++                        continue;
++                    }
 +
-+                        // We do not know the compression type, as it's stored in the regionfile. So we need to try all of them
-+                        RegionFileVersion compression = null;
-+                        for (RegionFileVersion compressionType : RegionFileVersion.VERSIONS.values()) {
-+                            try {
-+                                DataInputStream in = new DataInputStream(new BufferedInputStream(compressionType.wrap(new ByteArrayInputStream(chunkData)))); // typical java
-+                                compound = NbtIo.read((java.io.DataInput)in);
-+                                compression = compressionType;
-+                                break; // reaches here iff readNBT does not throw
-+                            } catch (Exception ex) {
-+                                continue;
-+                            }
-+                        }
++                    if (!ChunkSerializer.getChunkCoordinate(compound).equals(oversizedCoords)) {
++                        LOGGER.error("Can't use oversized chunk stored in " + regionFile.getAbsolutePath() + ", got absolute chunkpos: " + ChunkSerializer.getChunkCoordinate(compound) + ", expected " + oversizedCoords);
++                        continue;
++                    }
 +
-+                        if (compound == null) {
-+                            LOGGER.error("Failed to read oversized chunk data in file " + regionFile.getAbsolutePath() + ", it's corrupt. Its data will be lost");
-+                            continue;
-+                        }
-+
-+                        if (compounds[location] == null || ChunkSerializer.getLastWorldSaveTime(compound) > ChunkSerializer.getLastWorldSaveTime(compounds[location])) {
-+                            oversized[location] = true;
-+                            oversizedCompressionTypes[location] = compression;
-+                        }
++                    if (compounds[location] == null || ChunkSerializer.getLastWorldSaveTime(compound) > ChunkSerializer.getLastWorldSaveTime(compounds[location])) {
++                        oversized[location] = true;
++                        oversizedCompressionTypes[location] = compression;
 +                    }
 +                }
 +            }
@@ -428,6 +440,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                LOGGER.fatal("Failed to write new header to disk for regionfile " + this.regionFile.getAbsolutePath(), ex);
 +            }
 +        }
++
++        return true;
 +    }
 +
 +    final boolean canRecalcHeader; // final forces compile fail on new constructor
@@ -590,8 +604,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              if (bytebuffer.remaining() < 5) {
                  RegionFile.LOGGER.error("Chunk {} header is truncated: expected {} but read {}", pos, l, bytebuffer.remaining());
 +                // Paper start - recalculate header on regionfile corruption
-+                if (this.canRecalcHeader) {
-+                    this.recalculateHeader();
++                if (this.canRecalcHeader && this.recalculateHeader()) {
 +                    return this.getChunkDataInputStream(pos);
 +                }
 +                // Paper end - recalculate header on regionfile corruption
@@ -603,8 +616,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  if (i1 == 0) {
                      RegionFile.LOGGER.warn("Chunk {} is allocated, but stream is missing", pos);
 +                    // Paper start - recalculate header on regionfile corruption
-+                    if (this.canRecalcHeader) {
-+                        this.recalculateHeader();
++                    if (this.canRecalcHeader && this.recalculateHeader()) {
 +                        return this.getChunkDataInputStream(pos);
 +                    }
 +                    // Paper end - recalculate header on regionfile corruption
@@ -616,8 +628,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                          if (j1 != 0) {
                              RegionFile.LOGGER.warn("Chunk has both internal and external streams");
 +                            // Paper start - recalculate header on regionfile corruption
-+                            if (this.canRecalcHeader) {
-+                                this.recalculateHeader();
++                            if (this.canRecalcHeader && this.recalculateHeader()) {
 +                                return this.getChunkDataInputStream(pos);
 +                            }
 +                            // Paper end - recalculate header on regionfile corruption
@@ -626,8 +637,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -                        return this.createExternalChunkInputStream(pos, RegionFile.getExternalChunkVersion(b0));
 +                        // Paper start - recalculate header on regionfile corruption
 +                        final DataInputStream ret = this.createExternalChunkInputStream(pos, RegionFile.getExternalChunkVersion(b0));
-+                        if (ret == null && this.canRecalcHeader) {
-+                            this.recalculateHeader();
++                        if (ret == null && this.canRecalcHeader && this.recalculateHeader()) {
 +                            return this.getChunkDataInputStream(pos);
 +                        }
 +                        return ret;
@@ -635,8 +645,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                      } else if (j1 > bytebuffer.remaining()) {
                          RegionFile.LOGGER.error("Chunk {} stream is truncated: expected {} but read {}", pos, j1, bytebuffer.remaining());
 +                        // Paper start - recalculate header on regionfile corruption
-+                        if (this.canRecalcHeader) {
-+                            this.recalculateHeader();
++                        if (this.canRecalcHeader && this.recalculateHeader()) {
 +                            return this.getChunkDataInputStream(pos);
 +                        }
 +                        // Paper end - recalculate header on regionfile corruption
@@ -644,8 +653,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                      } else if (j1 < 0) {
                          RegionFile.LOGGER.error("Declared size {} of chunk {} is negative", i1, pos);
 +                        // Paper start - recalculate header on regionfile corruption
-+                        if (this.canRecalcHeader) {
-+                            this.recalculateHeader();
++                        if (this.canRecalcHeader && this.recalculateHeader()) {
 +                            return this.getChunkDataInputStream(pos);
 +                        }
 +                        // Paper end - recalculate header on regionfile corruption
@@ -654,8 +662,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -                        return this.createChunkInputStream(pos, b0, RegionFile.createStream(bytebuffer, j1));
 +                        // Paper start - recalculate header on regionfile corruption
 +                        final DataInputStream ret = this.createChunkInputStream(pos, b0, RegionFile.createStream(bytebuffer, j1));
-+                        if (ret == null && this.canRecalcHeader) {
-+                            this.recalculateHeader();
++                        if (ret == null && this.canRecalcHeader && this.recalculateHeader()) {
 +                            return this.getChunkDataInputStream(pos);
 +                        }
 +                        return ret;
@@ -735,9 +742,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                        ChunkPos chunkPos = ChunkSerializer.getChunkCoordinate(nbttagcompound);
 +                        if (!chunkPos.equals(pos)) {
 +                            MinecraftServer.LOGGER.error("Attempting to read chunk data at " + pos.toString() + " but got chunk data for " + chunkPos.toString() + " instead! Attempting regionfile recalculation for regionfile " + regionfile.regionFile.getAbsolutePath());
-+                            regionfile.recalculateHeader();
-+                            regionfile.fileLock.lock(); // otherwise we will unlock twice and only lock once.
-+                            return this.read(pos, regionfile);
++                            if (regionfile.recalculateHeader()) {
++                                regionfile.fileLock.lock(); // otherwise we will unlock twice and only lock once.
++                                return this.read(pos, regionfile);
++                            }
++                            MinecraftServer.LOGGER.fatal("Can't recalculate regionfile header, regenerating chunk " + pos.toString() + " for " + regionfile.regionFile.getAbsolutePath());
++                            return null;
 +                        }
 +                    }
 +                    // Paper end - recover from corrupt regionfile header
