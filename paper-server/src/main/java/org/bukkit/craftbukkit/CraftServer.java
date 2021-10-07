@@ -311,6 +311,7 @@ public final class CraftServer implements Server {
     private final io.papermc.paper.datapack.PaperDatapackManager datapackManager; // Paper
     public static Exception excessiveVelEx; // Paper - Velocity warnings
     private final io.papermc.paper.logging.SysoutCatcher sysoutCatcher = new io.papermc.paper.logging.SysoutCatcher(); // Paper
+    private final io.papermc.paper.potion.PaperPotionBrewer potionBrewer; // Paper - Custom Potion Mixes
 
     static {
         ConfigurationSerialization.registerClass(CraftOfflinePlayer.class);
@@ -394,6 +395,7 @@ public final class CraftServer implements Server {
         if (this.configuration.getBoolean("settings.use-map-color-cache")) {
             MapPalette.setMapColorCache(new CraftMapColorCache(this.logger));
         }
+        this.potionBrewer = new io.papermc.paper.potion.PaperPotionBrewer(console); // Paper - custom potion mixes
         datapackManager = new io.papermc.paper.datapack.PaperDatapackManager(console.getPackRepository()); // Paper
     }
 
@@ -3076,5 +3078,9 @@ public final class CraftServer implements Server {
         return datapackManager;
     }
 
+    @Override
+    public io.papermc.paper.potion.PaperPotionBrewer getPotionBrewer() {
+        return this.potionBrewer;
+    }
     // Paper end
 }

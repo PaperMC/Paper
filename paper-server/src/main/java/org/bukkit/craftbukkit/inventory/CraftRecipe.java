@@ -23,6 +23,11 @@ public interface CraftRecipe extends Recipe {
     }
 
     default Ingredient toNMS(RecipeChoice bukkit, boolean requireNotEmpty) {
+        // Paper start
+        return toIngredient(bukkit, requireNotEmpty);
+    }
+    static Ingredient toIngredient(RecipeChoice bukkit, boolean requireNotEmpty) {
+        // Paper end
         Ingredient stack;
 
         if (bukkit == null) {

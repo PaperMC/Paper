@@ -564,12 +564,10 @@
  
          if (!iworlddataserver.isInitialized()) {
              try {
-@@ -425,32 +724,10 @@
-             }
- 
+@@ -427,30 +726,8 @@
              iworlddataserver.setInitialized(true);
--        }
--
+         }
+ 
 -        this.getPlayerList().addWorldborderListener(worldserver);
 -        if (this.worldData.getCustomBossEvents() != null) {
 -            this.getCustomBossEvents().load(this.worldData.getCustomBossEvents(), this.registryAccess());
@@ -590,8 +588,8 @@
 -                worldborder.addListener(new BorderChangeListener.DelegateBorderChangeListener(worldserver1.getWorldBorder()));
 -                this.levels.put(resourcekey1, worldserver1);
 -            }
-         }
- 
+-        }
+-
 -        worldborder.applySettings(iworlddataserver.getWorldBorder());
      }
 +    // CraftBukkit end
@@ -870,7 +868,7 @@
              while (this.running) {
                  long i;
  
-@@ -744,12 +1161,31 @@
+@@ -744,11 +1161,30 @@
                      if (j > MinecraftServer.OVERLOADED_THRESHOLD_NANOS + 20L * i && this.nextTickTimeNanos - this.lastOverloadWarningNanos >= MinecraftServer.OVERLOADED_WARNING_INTERVAL_NANOS + 100L * i) {
                          long k = j / i;
  
@@ -889,7 +887,7 @@
 +                    tps1.add(currentTps, diff);
 +                    tps5.add(currentTps, diff);
 +                    tps15.add(currentTps, diff);
- 
++
 +                    // Backwards compat with bad plugins
 +                    this.recentTps[0] = tps1.getAverage();
 +                    this.recentTps[1] = tps5.getAverage();
@@ -898,10 +896,9 @@
 +                }
 +                // Paper end - further improve server tick loop
 +                // Spigot end
-+
+ 
                  boolean flag = i == 0L;
  
-                 if (this.debugCommandProfilerDelayStart) {
 @@ -757,6 +1193,8 @@
                      this.debugCommandProfiler = new MinecraftServer.TimeProfiler(Util.getNanos(), this.tickCount);
                  }
@@ -1247,7 +1244,7 @@
          }, this).thenCompose((immutablelist) -> {
              MultiPackResourceManager resourcemanager = new MultiPackResourceManager(PackType.SERVER_DATA, immutablelist);
              List<Registry.PendingTags<?>> list = TagLoader.loadTagsForExistingRegistries(resourcemanager, this.registries.compositeAccess());
-@@ -1654,6 +2189,7 @@
+@@ -1654,17 +2189,21 @@
          }).thenAcceptAsync((minecraftserver_reloadableresources) -> {
              this.resources.close();
              this.resources = minecraftserver_reloadableresources;
@@ -1255,7 +1252,12 @@
              this.packRepository.setSelected(dataPacks);
              WorldDataConfiguration worlddataconfiguration = new WorldDataConfiguration(MinecraftServer.getSelectedPacks(this.packRepository, true), this.worldData.enabledFeatures());
  
-@@ -1665,6 +2201,8 @@
+             this.worldData.setDataConfiguration(worlddataconfiguration);
+             this.resources.managers.updateStaticRegistryTags();
+             this.resources.managers.getRecipeManager().finalizeRecipeLoading(this.worldData.enabledFeatures());
++            this.potionBrewing = this.potionBrewing.reload(this.worldData.enabledFeatures()); // Paper - Custom Potion Mixes
+             this.getPlayerList().saveAll();
+             this.getPlayerList().reloadResources();
              this.functionManager.replaceLibrary(this.resources.managers.getFunctionLibrary());
              this.structureTemplateManager.onResourceManagerReload(this.resources.resourceManager);
              this.fuelValues = FuelValues.vanillaBurnTimes(this.registries.compositeAccess(), this.worldData.enabledFeatures());
@@ -1264,7 +1266,7 @@
          }, this);
  
          if (this.isSameThread()) {
-@@ -1789,14 +2327,15 @@
+@@ -1789,14 +2328,15 @@
          if (this.isEnforceWhitelist()) {
              PlayerList playerlist = source.getServer().getPlayerList();
              UserWhiteList whitelist = playerlist.getWhiteList();
@@ -1282,7 +1284,7 @@
                  }
              }
  
-@@ -1952,7 +2491,7 @@
+@@ -1952,7 +2492,7 @@
              final List<String> list = Lists.newArrayList();
              final GameRules gamerules = this.getGameRules();
  
@@ -1291,7 +1293,7 @@
                  @Override
                  public <T extends GameRules.Value<T>> void visit(GameRules.Key<T> key, GameRules.Type<T> type) {
                      list.add(String.format(Locale.ROOT, "%s=%s\n", key.getId(), gamerules.getRule(key)));
-@@ -2058,7 +2597,7 @@
+@@ -2058,7 +2598,7 @@
              try {
                  label51:
                  {
@@ -1300,22 +1302,19 @@
  
                      try {
                          arraylist = Lists.newArrayList(NativeModuleLister.listModules());
-@@ -2105,9 +2644,24 @@
-         if (bufferedwriter != null) {
-             bufferedwriter.close();
-         }
-+
-+    }
-+
+@@ -2108,6 +2648,21 @@
+ 
+     }
+ 
 +    // CraftBukkit start
 +    public boolean isDebugging() {
 +        return false;
 +    }
- 
++
 +    public static MinecraftServer getServer() {
 +        return SERVER; // Paper
-     }
- 
++    }
++
 +    @Deprecated
 +    public static RegistryAccess getDefaultRegistryAccess() {
 +        return CraftRegistry.getMinecraftRegistry();
@@ -1325,7 +1324,7 @@
      private ProfilerFiller createProfiler() {
          if (this.willStartRecordingMetrics) {
              this.metricsRecorder = ActiveMetricsRecorder.createStarted(new ServerMetricsSamplersProvider(Util.timeSource, this.isDedicatedServer()), Util.timeSource, Util.ioPool(), new MetricsPersister("server"), this.onMetricsRecordingStopped, (path) -> {
-@@ -2225,18 +2779,24 @@
+@@ -2225,18 +2780,24 @@
      }
  
      public void logChatMessage(Component message, ChatType.Bound params, @Nullable String prefix) {
@@ -1354,11 +1353,13 @@
      }
  
      public boolean logIPs() {
-@@ -2379,4 +2939,30 @@
-     public static record ServerResourcePackInfo(UUID id, String url, String hash, boolean isRequired, @Nullable Component prompt) {
- 
+@@ -2377,6 +2938,32 @@
      }
+ 
+     public static record ServerResourcePackInfo(UUID id, String url, String hash, boolean isRequired, @Nullable Component prompt) {
 +
++    }
+ 
 +    // Paper start - Add tick times API and /mspt command
 +    public static class TickTimes {
 +        private final long[] times;
@@ -1382,6 +1383,6 @@
 +            }
 +            return ((double) total / (double) times.length) * 1.0E-6D;
 +        }
-+    }
+     }
 +    // Paper end - Add tick times API and /mspt command
  }
