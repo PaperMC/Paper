@@ -20,7 +20,7 @@ import org.bukkit.persistence.PersistentDataContainer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public class CraftBlockEntityState<T extends BlockEntity> extends CraftBlockState implements TileState {
+public abstract class CraftBlockEntityState<T extends BlockEntity> extends CraftBlockState implements TileState { // Paper - revert upstream's revert of the block state changes
 
     private final T tileEntity;
     private final T snapshot;
@@ -196,14 +196,10 @@ public class CraftBlockEntityState<T extends BlockEntity> extends CraftBlockStat
     }
 
     @Override
-    public CraftBlockEntityState<T> copy() {
-        return new CraftBlockEntityState<>(this, null);
-    }
+    public abstract CraftBlockEntityState<T> copy(); // Paper - make abstract
 
     @Override
-    public CraftBlockEntityState<T> copy(Location location) {
-        return new CraftBlockEntityState<>(this, location);
-    }
+    public abstract CraftBlockEntityState<T> copy(Location location); // Paper - make abstract
 
     // Paper start
     @Override
