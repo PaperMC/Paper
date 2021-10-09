@@ -81,9 +81,8 @@ public class CraftJukebox extends CraftBlockEntityState<TileEntityJukeBox> imple
 
     @Override
     public boolean eject() {
-        Preconditions.checkState(getWorldHandle() instanceof net.minecraft.world.level.World, "Can't eject during world generation");
+        ensureNoWorldGeneration();
 
-        requirePlaced();
         TileEntity tileEntity = this.getTileEntityFromWorld();
         if (!(tileEntity instanceof TileEntityJukeBox)) return false;
 

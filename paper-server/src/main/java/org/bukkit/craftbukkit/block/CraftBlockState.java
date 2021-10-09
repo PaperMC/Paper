@@ -57,18 +57,31 @@ public class CraftBlockState implements BlockState {
         }
     }
 
+    // Returns null if weakWorld is not available and the BlockState is not placed.
+    // If this returns a World instead of only a GeneratorAccess, this implies that this BlockState is placed.
     public GeneratorAccess getWorldHandle() {
         if (weakWorld == null) {
-            return world.getHandle();
+            return this.isPlaced() ? world.getHandle() : null;
         }
 
         GeneratorAccess access = weakWorld.get();
         if (access == null) {
             weakWorld = null;
-            return world.getHandle();
+            return this.isPlaced() ? world.getHandle() : null;
         }
 
         return access;
+    }
+
+    protected final boolean isWorldGeneration() {
+        GeneratorAccess generatorAccess = this.getWorldHandle();
+        return generatorAccess != null && !(generatorAccess instanceof World);
+    }
+
+    protected final void ensureNoWorldGeneration() {
+        if (isWorldGeneration()) {
+            throw new IllegalStateException("This operation is not supported during world generation!");
+        }
     }
 
     @Override

@@ -37,10 +37,8 @@ public class CraftChest extends CraftLootable<TileEntityChest> implements Chest 
 
     @Override
     public Inventory getInventory() {
-        Preconditions.checkState(getWorldHandle() instanceof net.minecraft.world.level.World, "Can't get inventory during world generation, use getBlockInventory() instead");
-
         CraftInventory inventory = (CraftInventory) this.getBlockInventory();
-        if (!isPlaced()) {
+        if (!isPlaced() || isWorldGeneration()) {
             return inventory;
         }
 

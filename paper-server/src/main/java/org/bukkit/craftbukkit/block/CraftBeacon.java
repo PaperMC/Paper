@@ -23,7 +23,7 @@ public class CraftBeacon extends CraftBlockEntityState<TileEntityBeacon> impleme
 
     @Override
     public Collection<LivingEntity> getEntitiesInRange() {
-        Preconditions.checkState(getWorldHandle() instanceof net.minecraft.world.level.World, "Can't get entities during world generation");
+        ensureNoWorldGeneration();
 
         TileEntity tileEntity = this.getTileEntityFromWorld();
         if (tileEntity instanceof TileEntityBeacon) {
