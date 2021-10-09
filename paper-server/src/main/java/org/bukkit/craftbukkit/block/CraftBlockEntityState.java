@@ -6,7 +6,7 @@ import org.bukkit.World;
 import org.bukkit.block.TileState;
 import org.bukkit.persistence.PersistentDataContainer;
 
-public abstract class CraftBlockEntityState<T extends TileEntity> extends CraftBlockState implements TileState {
+public class CraftBlockEntityState<T extends TileEntity> extends CraftBlockState implements TileState {
 
     private final T tileEntity;
     private final T snapshot;
