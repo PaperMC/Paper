@@ -1,0 +1,142 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Frank van der Heijden <frank.boekanier@gmail.com>
+Date: Sat, 9 Oct 2021 22:17:17 +0200
+Subject: [PATCH] Add event context api
+
+
+diff --git a/src/main/java/org/bukkit/event/Event.java b/src/main/java/org/bukkit/event/Event.java
+index 8ec56cd6b8e0f5c5dd8c7c88b4671e18dcf109d0..c491564cbde0874923b771d3392422d2f7da7ff6 100644
+--- a/src/main/java/org/bukkit/event/Event.java
++++ b/src/main/java/org/bukkit/event/Event.java
+@@ -3,6 +3,8 @@ package org.bukkit.event;
+ import org.bukkit.plugin.Plugin;
+ import org.bukkit.plugin.PluginManager;
+ import org.jetbrains.annotations.NotNull;
++import java.util.HashMap;
++import java.util.Map;
+ 
+ /**
+  * Represents an event.
+@@ -15,6 +17,7 @@ import org.jetbrains.annotations.NotNull;
+ public abstract class Event {
+     private String name;
+     private final boolean async;
++    private final Map<String, Object> eventContext = new HashMap<>(); // Paper - event context
+ 
+     /**
+      * The default constructor is defined for cleaner code. This constructor
+@@ -66,6 +69,18 @@ public abstract class Event {
+         return name;
+     }
+ 
++    // Paper start - event context
++    /**
++     * Provides the context of this event.
++     *
++     * @return The event context map.
++     */
++    @NotNull
++    public Map<String, Object> getEventContext() {
++        return eventContext;
++    }
++    // Paper end - event context
++
+     @NotNull
+     public abstract HandlerList getHandlers();
+ 
+diff --git a/src/main/java/org/bukkit/event/EventHandler.java b/src/main/java/org/bukkit/event/EventHandler.java
+index cc06f480b788b19d4799ba0dcf53b3640059f023..8a8a1c135146ddaace60f3e2550f4479a4e2fedd 100644
+--- a/src/main/java/org/bukkit/event/EventHandler.java
++++ b/src/main/java/org/bukkit/event/EventHandler.java
+@@ -38,4 +38,17 @@ public @interface EventHandler {
+      * @return whether cancelled events should be ignored
+      */
+     boolean ignoreCancelled() default false;
++
++    // Paper start - event context
++    /**
++     * Define if the handler ignores the event if the specified context key(s) is/are present.
++     * <p>
++     * If ignoreContextKeys is set to an empty array, this method is always called.
++     * Otherwise, this method is called if and only if
++     * the specified context key(s) is/are NOT present in the event context.
++     *
++     * @return whether events containing the specified context key(s) should be ignored
++     */
++    String[] ignoreContextKeys() default {};
++    // Paper end - event context
+ }
+diff --git a/src/main/java/org/bukkit/plugin/RegisteredListener.java b/src/main/java/org/bukkit/plugin/RegisteredListener.java
+index 419aec56b0e3fa8bcec2ea7f340caa3456b57d00..dd8532f5b314b755f7e0d9cedfee1d8a5844243c 100644
+--- a/src/main/java/org/bukkit/plugin/RegisteredListener.java
++++ b/src/main/java/org/bukkit/plugin/RegisteredListener.java
+@@ -16,14 +16,25 @@ public class RegisteredListener {
+     private final Plugin plugin;
+     private final EventExecutor executor;
+     private final boolean ignoreCancelled;
++    // Paper start - event context
++    private static final String[] EMPTY_CONTEXT_KEYS = new String[0];
++    private final String[] ignoreContextKeys;
++    // Paper end - event context
+ 
+     public RegisteredListener(@NotNull final Listener listener, @NotNull final EventExecutor executor, @NotNull final EventPriority priority, @NotNull final Plugin plugin, final boolean ignoreCancelled) {
++        this(listener, executor, priority, plugin, ignoreCancelled, EMPTY_CONTEXT_KEYS); // Paper - event context
++    }
++
++    // Paper start - event context
++    public RegisteredListener(@NotNull final Listener listener, @NotNull final EventExecutor executor, @NotNull final EventPriority priority, @NotNull final Plugin plugin, final boolean ignoreCancelled, @NotNull final String[] ignoreContextKeys) {
+         this.listener = listener;
+         this.priority = priority;
+         this.plugin = plugin;
+         this.executor = executor;
+         this.ignoreCancelled = ignoreCancelled;
++        this.ignoreContextKeys = ignoreContextKeys;
+     }
++    // Paper end - event context
+ 
+     /**
+      * Gets the listener for this registration
+@@ -67,6 +78,13 @@ public class RegisteredListener {
+                 return;
+             }
+         }
++        // Paper start - event context
++        for (String ignoredContextKey : getIgnoredContextKeys()) {
++            if (event.getEventContext().containsKey(ignoredContextKey)) {
++                return;
++            }
++        }
++        // Paper end - event context
+         executor.execute(listener, event);
+     }
+ 
+@@ -78,4 +96,16 @@ public class RegisteredListener {
+     public boolean isIgnoringCancelled() {
+         return ignoreCancelled;
+     }
++
++    // Paper start - event context
++    /**
++     * Gets the context key(s) ignored by this handler.
++     *
++     * @return The context key(s) ignored by this handler.
++     */
++    @NotNull
++    public String[] getIgnoredContextKeys() {
++        return ignoreContextKeys;
++    }
++    // Paper end - event context
+ }
+diff --git a/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java b/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
+index 5bcc611c7dee7df72c8775e92068b2a0840dd5dc..d103eceaa1a999dc9cc8dda0ffef0461b0dacc2d 100644
+--- a/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
++++ b/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
+@@ -337,7 +337,7 @@ public final class JavaPluginLoader implements PluginLoader {
+             if (false) { // Spigot - RL handles useTimings check now
+                 eventSet.add(new TimedRegisteredListener(listener, executor, eh.priority(), plugin, eh.ignoreCancelled()));
+             } else {
+-                eventSet.add(new RegisteredListener(listener, executor, eh.priority(), plugin, eh.ignoreCancelled()));
++                eventSet.add(new RegisteredListener(listener, executor, eh.priority(), plugin, eh.ignoreCancelled(), eh.ignoreContextKeys())); // Paper - event context
+             }
+         }
+         return ret;
