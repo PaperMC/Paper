@@ -1,0 +1,42 @@
+From fa0e8a1b2a2651da5eda6187029a9bdce2bb6661 Mon Sep 17 00:00:00 2001
+From: chickeneer <emcchickeneer@gmail.com>
+Date: Mon, 27 Nov 2017 23:32:51 -0700
+Subject: [PATCH] Fix tick loop bug
+
+We were not calculating time after the sleep ,resulting in wrong
+calculations. This caused us to go 100ms, 0ms, 100ms, 0 ms repeatedly.
+
+Backport of PaperMC/Paper@ff73ad6dd
+
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index e02c6192..f342c245 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -579,19 +579,21 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
+                     // PaperSpigot start - Further improve tick loop
+                     wait = TICK_TIME - (curTime - lastTick);
+                     if (wait > 0) {
++                        // TacoSpigot start - fix the tick loop improvements
+                         if (catchupTime < 2E6) {
+                             wait += Math.abs(catchupTime);
+-                        }
+-                        if (wait < catchupTime) {
++                        } else if (wait < catchupTime) {
+                             catchupTime -= wait;
+                             wait = 0;
+-                        } else if (catchupTime > 2E6) {
++                        } else {
+                             wait -= catchupTime;
+-                            catchupTime -= catchupTime;
++                            catchupTime = 0;
+                         }
++                        // TacoSpigot end
+                     }
+                     if (wait > 0) {
+                         Thread.sleep(wait / 1000000);
++                        curTime = System.nanoTime();
+                         wait = TICK_TIME - (curTime - lastTick);
+                     }
+ 
+-- 
+2.14.3
