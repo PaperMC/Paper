@@ -1,0 +1,91 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sun, 10 Oct 2021 18:55:51 -0700
+Subject: [PATCH] Add isCritical to EntityDamageByEntityEvent
+
+
+diff --git a/src/main/java/net/minecraft/world/damagesource/DamageSource.java b/src/main/java/net/minecraft/world/damagesource/DamageSource.java
+index 80d19af2ad423bd3de0e039c5bb8f97af536aaa9..d4593daf874f37fb79c03afc64e79ea46b765c09 100644
+--- a/src/main/java/net/minecraft/world/damagesource/DamageSource.java
++++ b/src/main/java/net/minecraft/world/damagesource/DamageSource.java
+@@ -80,6 +80,11 @@ public class DamageSource {
+     public static DamageSource playerAttack(Player attacker) {
+         return new EntityDamageSource("player", attacker);
+     }
++    // Paper start
++    public static DamageSource playerAttack(Player attacker, boolean isCritical) {
++        return new EntityDamageSource("player", attacker, isCritical);
++    }
++    // Paper end
+ 
+     public static DamageSource arrow(AbstractArrow projectile, @Nullable Entity attacker) {
+         return (new IndirectEntityDamageSource("arrow", projectile, attacker)).setProjectile();
+diff --git a/src/main/java/net/minecraft/world/damagesource/EntityDamageSource.java b/src/main/java/net/minecraft/world/damagesource/EntityDamageSource.java
+index 95c48d8bd7b2119ff0fda5db44920a7fb7767b39..7410ec79e50520fa46f2c7250923a1f09ca984d2 100644
+--- a/src/main/java/net/minecraft/world/damagesource/EntityDamageSource.java
++++ b/src/main/java/net/minecraft/world/damagesource/EntityDamageSource.java
+@@ -12,6 +12,13 @@ import net.minecraft.world.phys.Vec3;
+ public class EntityDamageSource extends DamageSource {
+     protected final Entity entity;
+     private boolean isThorns;
++    // Paper start
++    public boolean isCritical;
++    public EntityDamageSource(String name, Entity source, boolean isCritical) {
++        this(name, source);
++        this.isCritical = isCritical;
++    }
++    // Paper end
+ 
+     public EntityDamageSource(String name, Entity source) {
+         super(name);
+diff --git a/src/main/java/net/minecraft/world/entity/player/Player.java b/src/main/java/net/minecraft/world/entity/player/Player.java
+index ce713e1857121ca52467ad561c4fbb30ae054d87..fa812dd40091761ec5c0db386668217542a177c4 100644
+--- a/src/main/java/net/minecraft/world/entity/player/Player.java
++++ b/src/main/java/net/minecraft/world/entity/player/Player.java
+@@ -1258,7 +1258,7 @@ public abstract class Player extends LivingEntity {
+                     }
+ 
+                     Vec3 vec3d = target.getDeltaMovement();
+-                    boolean flag5 = target.hurt(DamageSource.playerAttack(this), f);
++                    boolean flag5 = target.hurt(DamageSource.playerAttack(this, flag2), f); // Paper - track critical hits
+ 
+                     if (flag5) {
+                         if (i > 0) {
+@@ -1286,7 +1286,7 @@ public abstract class Player extends LivingEntity {
+ 
+                                 if (entityliving != this && entityliving != target && !this.isAlliedTo(entityliving) && (!(entityliving instanceof ArmorStand) || !((ArmorStand) entityliving).isMarker()) && this.distanceToSqr((Entity) entityliving) < 9.0D) {
+                                     // CraftBukkit start - Only apply knockback if the damage hits
+-                                    if (entityliving.hurt(DamageSource.playerAttack(this).sweep(), f4)) {
++                                    if (entityliving.hurt(DamageSource.playerAttack(this, flag2).sweep(), f4)) { // Paper - track critical hits
+                                     entityliving.knockback(0.4000000059604645D, (double) Mth.sin(this.getYRot() * 0.017453292F), (double) (-Mth.cos(this.getYRot() * 0.017453292F)), this); // Paper
+                                     }
+                                     // CraftBukkit end
+diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+index 2b2654ec04e8abca9db09d6257edf11099bb0d9b..918a37e6c0af1d38e9c5e43cc6eec82dea127ad8 100644
+--- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
++++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+@@ -989,7 +989,7 @@ public class CraftEventFactory {
+                 cause = DamageCause.THORNS;
+             }
+ 
+-            return CraftEventFactory.callEntityDamageEvent(damager, entity, cause, modifiers, modifierFunctions, cancelled);
++            return CraftEventFactory.callEntityDamageEvent(damager, entity, cause, modifiers, modifierFunctions, cancelled, ((EntityDamageSource) source).isCritical); // Paper
+         } else if (source == DamageSource.OUT_OF_WORLD) {
+             EntityDamageEvent event = new EntityDamageByBlockEvent(null, entity.getBukkitEntity(), DamageCause.VOID, modifiers, modifierFunctions);
+             event.setCancelled(cancelled);
+@@ -1098,9 +1098,14 @@ public class CraftEventFactory {
+     }
+ 
+     private static EntityDamageEvent callEntityDamageEvent(Entity damager, Entity damagee, DamageCause cause, Map<DamageModifier, Double> modifiers, Map<DamageModifier, Function<? super Double, Double>> modifierFunctions, boolean cancelled) {
++        // Paper start
++        return callEntityDamageEvent(damager, damagee, cause, modifiers, modifierFunctions, cancelled, false);
++    }
++    private static EntityDamageEvent callEntityDamageEvent(Entity damager, Entity damagee, DamageCause cause, Map<DamageModifier, Double> modifiers, Map<DamageModifier, Function<? super Double, Double>> modifierFunctions, boolean cancelled, boolean isCritical) {
++        // Paper end
+         EntityDamageEvent event;
+         if (damager != null) {
+-            event = new EntityDamageByEntityEvent(damager.getBukkitEntity(), damagee.getBukkitEntity(), cause, modifiers, modifierFunctions);
++            event = new EntityDamageByEntityEvent(damager.getBukkitEntity(), damagee.getBukkitEntity(), cause, modifiers, modifierFunctions, isCritical); // Paper
+         } else {
+             event = new EntityDamageEvent(damagee.getBukkitEntity(), cause, modifiers, modifierFunctions);
+         }
