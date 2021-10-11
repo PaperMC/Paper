@@ -22,7 +22,7 @@ chunk-loading:
   target-player-chunk-send-rate: 100.0
   global-max-chunk-send-rate: -1
   enable-frustum-priority: false
-  global-max-chunk-load-rate: 300.0
+  global-max-chunk-load-rate: -1.0
   player-max-concurrent-loads: 4.0
   global-max-concurrent-loads: 500.0
 ```
@@ -58,7 +58,7 @@ because the client can bug out due to the out of order
 chunk sending.
 
 global-max-chunk-load-rate - The maximum chunk load rate
-for the whole server.
+for the whole server. -1 means no limit
 
 player-max-concurrent-loads and global-max-concurrent-loads
 The maximum number of concurrent loads for the server is
@@ -80,10 +80,10 @@ index cfe293881f68c8db337c3a48948362bb7b3e3522..7d44abcb4fff9717a1af55879deb7eb9
          }));
  
 diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-index bc4081483a228aa275511d28231d615fe0f36d4e..be132f9d683767002a3e7f5641cb3cc3db74464c 100644
+index efe964caada458a34c58a0396cc7e3321c58e404..98288f83d1276a47ad3335153aee5c7ea9a5e451 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-@@ -522,4 +522,26 @@ public class PaperConfig {
+@@ -522,4 +522,29 @@ public class PaperConfig {
          itemValidationBookAuthorLength = getInt("settings.item-validation.book.author", itemValidationBookAuthorLength);
          itemValidationBookPageLength = getInt("settings.item-validation.book.page", itemValidationBookPageLength);
      }
@@ -105,14 +105,17 @@ index bc4081483a228aa275511d28231d615fe0f36d4e..be132f9d683767002a3e7f5641cb3cc3
 +        playerTargetChunkSendRate = getDouble("settings.chunk-loading.target-player-chunk-send-rate", 100.0);
 +        globalMaxChunkSendRate = getDouble("settings.chunk-loading.global-max-chunk-send-rate", -1.0);
 +        playerFrustumPrioritisation = getBoolean("settings.chunk-loading.enable-frustum-priority", false);
-+        globalMaxChunkLoadRate = getDouble("settings.chunk-loading.global-max-chunk-load-rate", 300.0);
++        globalMaxChunkLoadRate = getDouble("settings.chunk-loading.global-max-chunk-load-rate", -1.0);
++        if (version < 23 && globalMaxChunkLoadRate == 300.0) {
++            set("settings.chunk-loading.global-max-chunk-load-rate", -1.0);
++        }
 +        playerMaxConcurrentChunkLoads = getDouble("settings.chunk-loading.player-max-concurrent-loads", 4.0);
 +        globalMaxConcurrentChunkLoads = getDouble("settings.chunk-loading.global-max-concurrent-loads", 500.0);
 +    }
  }
 diff --git a/src/main/java/io/papermc/paper/chunk/PlayerChunkLoader.java b/src/main/java/io/papermc/paper/chunk/PlayerChunkLoader.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..b3da5ec6701448a4b273c86aff9c64e3d75e5885
+index 0000000000000000000000000000000000000000..4eadc15f747528b59349f095171dd5a649a46ed9
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/chunk/PlayerChunkLoader.java
 @@ -0,0 +1,989 @@
@@ -701,7 +704,7 @@ index 0000000000000000000000000000000000000000..b3da5ec6701448a4b273c86aff9c64e3
 +                // priority > 0.0 implies rate limited chunks
 +
 +                final int currentChunkLoads = this.concurrentChunkLoads;
-+                if (currentChunkLoads >= maxLoads || (TICKET_ADDITION_COUNTER_SHORT.getRate() >= PaperConfig.globalMaxChunkLoadRate || TICKET_ADDITION_COUNTER_LONG.getRate() >= PaperConfig.globalMaxChunkLoadRate)) {
++                if (currentChunkLoads >= maxLoads || (PaperConfig.globalMaxChunkLoadRate > 0 && (TICKET_ADDITION_COUNTER_SHORT.getRate() >= PaperConfig.globalMaxChunkLoadRate || TICKET_ADDITION_COUNTER_LONG.getRate() >= PaperConfig.globalMaxChunkLoadRate))) {
 +                    // don't poll, we didn't load it
 +                    this.chunkLoadQueue.add(data);
 +                    break;
