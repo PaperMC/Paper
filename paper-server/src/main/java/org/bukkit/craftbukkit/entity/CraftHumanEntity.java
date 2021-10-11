@@ -782,8 +782,15 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
     // Paper end
     @Override
     public boolean dropItem(boolean dropAll) {
-        if (!(this.getHandle() instanceof ServerPlayer)) return false;
-        return ((ServerPlayer) this.getHandle()).drop(dropAll);
+        // Paper start - Fix HumanEntity#drop not updating the client inv
+        if (!(this.getHandle() instanceof ServerPlayer player)) return false;
+        boolean success = player.drop(dropAll);
+        if (!success) return false;
+        final net.minecraft.world.entity.player.Inventory inv = player.getInventory();
+        final java.util.OptionalInt optionalSlot = player.containerMenu.findSlot(inv, inv.selected);
+        optionalSlot.ifPresent(slot -> player.containerSynchronizer.sendSlotChange(player.containerMenu, slot, inv.getSelected()));
+        return true;
+        // Paper end - Fix HumanEntity#drop not updating the client inv
     }
 
     @Override
