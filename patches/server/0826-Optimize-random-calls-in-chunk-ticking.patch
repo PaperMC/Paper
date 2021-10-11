@@ -1,0 +1,92 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Paul Sauve <paul@technove.co>
+Date: Thu, 7 Jan 2021 11:49:36 -0600
+Subject: [PATCH] Optimize random calls in chunk ticking
+
+Especially at over 30,000 chunks these random calls are fairly heavy. We
+use a different method here for checking lightning, and for checking
+ice.
+
+Lightning: Each chunk now keeps an int of how many ticks until the
+lightning should strike. This int is a random number from 0 to 100000 * 2,
+the multiplication is required to keep the probability the same.
+
+Ice and snow: We just generate a single random number 0-16 and increment
+it, while checking if it's 0 for the current chunk.
+
+Depending on configuration for things that tick in a chunk, this is a
+5-10% improvement.
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
+index 7470f3ba66c2e894b5a5b0ba392ecabf8b04aff9..7dfdd945df176b8e559b116b67954f4b3432c4e2 100644
+--- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
++++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
+@@ -983,6 +983,7 @@ public class ServerChunkCache extends ChunkSource {
+             }
+             // Paper end - optimize isOutisdeRange
+             this.level.getProfiler().push("pollingChunks");
++            this.level.resetIceAndSnowTick(); // Paper - reset ice & snow tick random
+             int k = this.level.getGameRules().getInt(GameRules.RULE_RANDOMTICKING);
+             boolean flag2 = level.ticksPerAnimalSpawns != 0L && worlddata.getGameTime() % level.ticksPerAnimalSpawns == 0L; // CraftBukkit
+ 
+diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
+index 96ccf894519fc892e35fbd13ab97fe289236caca..0cdd67c98eb529356116bb9882d7655ce22382ff 100644
+--- a/src/main/java/net/minecraft/server/level/ServerLevel.java
++++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
+@@ -831,6 +831,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
+     // Paper start - optimise random block ticking
+     private final BlockPos.MutableBlockPos chunkTickMutablePosition = new BlockPos.MutableBlockPos();
+     private final io.papermc.paper.util.math.ThreadUnsafeRandom randomTickRandom = new io.papermc.paper.util.math.ThreadUnsafeRandom();
++    private int currentIceAndSnowTick = 0; protected void resetIceAndSnowTick() { this.currentIceAndSnowTick = this.randomTickRandom.nextInt(16); }
+     // Paper end
+ 
+     public void tickChunk(LevelChunk chunk, int randomTickSpeed) {
+@@ -843,7 +844,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
+         gameprofilerfiller.push("thunder");
+         final BlockPos.MutableBlockPos blockposition = this.chunkTickMutablePosition; // Paper - use mutable to reduce allocation rate, final to force compile fail on change
+ 
+-        if (!this.paperConfig.disableThunder && flag && this.isThundering() && this.random.nextInt(100000) == 0) { // Paper - Disable thunder
++        if (!this.paperConfig.disableThunder && flag && this.isThundering() && chunk.shouldDoLightning(this.random)) { // Paper - Disable thunder // Paper replace random with shouldDoLightning
+             blockposition.set(this.findLightningTargetAround(this.getBlockRandomPos(j, 0, k, 15))); // Paper
+             if (this.isRainingAt(blockposition)) {
+                 DifficultyInstance difficultydamagescaler = this.getCurrentDifficultyAt(blockposition);
+@@ -867,7 +868,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
+         }
+ 
+         gameprofilerfiller.popPush("iceandsnow");
+-         if (!this.paperConfig.disableIceAndSnow && this.randomTickRandom.nextInt(16) == 0) { // Paper - Disable ice and snow // Paper - optimise random ticking
++         if (!this.paperConfig.disableIceAndSnow && (this.currentIceAndSnowTick++ & 15) == 0) { // Paper - Disable ice and snow // Paper - optimise random ticking
+             // Paper start - optimise chunk ticking
+             this.getRandomBlockPosition(j, 0, k, 15, blockposition);
+             int normalY = chunk.getHeight(Heightmap.Types.MOTION_BLOCKING, blockposition.getX() & 15, blockposition.getZ() & 15) + 1;
+diff --git a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
+index 86686c24b0b7de4b4bfadbc77419a8872a8e86ee..cd5eca620cdd5184caca292d96961911d49648c7 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
++++ b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
+@@ -172,6 +172,18 @@ public class LevelChunk implements ChunkAccess {
+     }
+     // Paper end - rewrite light engine
+ 
++    // Paper start - instead of using a random every time the chunk is ticked, define when lightning strikes preemptively
++    private int lightningTick;
++    // shouldDoLightning compiles down to 29 bytes, which with the default of 35 byte inlining should guarantee an inline
++    public final boolean shouldDoLightning(java.util.Random random) {
++        if (this.lightningTick-- <= 0) {
++            this.lightningTick = random.nextInt(100000) << 1;
++            return true;
++        }
++        return false;
++    }
++    // Paper end
++
+     public LevelChunk(Level world, ChunkPos pos, ChunkBiomeContainer biomes) {
+         this(world, pos, biomes, UpgradeData.EMPTY, EmptyTickList.empty(), EmptyTickList.empty(), 0L, (LevelChunkSection[]) null, (Consumer) null);
+     }
+@@ -220,6 +232,7 @@ public class LevelChunk implements ChunkAccess {
+         this.postProcessing = new ShortList[world.getSectionsCount()];
+         // CraftBukkit start
+         this.bukkitChunk = new org.bukkit.craftbukkit.CraftChunk(this);
++        this.lightningTick = this.level.random.nextInt(100000) << 1; // Paper - initialize lightning tick
+     }
+ 
+     public org.bukkit.Chunk bukkitChunk;
