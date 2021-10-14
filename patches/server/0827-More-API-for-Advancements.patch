@@ -1,0 +1,158 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: William Blake Galbreath <blake.galbreath@gmail.com>
+Date: Thu, 14 Oct 2021 13:04:27 -0500
+Subject: [PATCH] More API for Advancements
+
+
+diff --git a/src/main/java/net/minecraft/advancements/DisplayInfo.java b/src/main/java/net/minecraft/advancements/DisplayInfo.java
+index dea17bc7a6e4db470afaaad3c98940297a50e4e4..616cacf059493517caa8c03c5265fb17d65a571e 100644
+--- a/src/main/java/net/minecraft/advancements/DisplayInfo.java
++++ b/src/main/java/net/minecraft/advancements/DisplayInfo.java
+@@ -22,11 +22,12 @@ public class DisplayInfo {
+     private final ItemStack icon;
+     private final ResourceLocation background;
+     private final FrameType frame;
+-    private final boolean showToast;
+-    private final boolean announceChat;
+-    private final boolean hidden;
++    private boolean showToast; // Paper - unfinalize
++    private boolean announceChat; // Paper - unfinalize
++    private boolean hidden; // Paper - unfinalize
+     private float x;
+     private float y;
++    public final org.bukkit.advancement.AdvancementDisplay bukkit = new org.bukkit.craftbukkit.advancement.CraftAdvancementDisplay(this); // Paper
+ 
+     public DisplayInfo(ItemStack icon, Component title, Component description, @Nullable ResourceLocation background, FrameType frame, boolean showToast, boolean announceToChat, boolean hidden) {
+         this.title = title;
+@@ -85,6 +86,20 @@ public class DisplayInfo {
+         return this.hidden;
+     }
+ 
++    // Paper start
++    public final void setShouldShowToast(boolean showToast) {
++        this.showToast = showToast;
++    }
++
++    public final void setShouldAnnounceChat(boolean announceChat) {
++        this.announceChat = announceChat;
++    }
++
++    public final void setHidden(boolean hidden) {
++        this.hidden = hidden;
++    }
++    // Paper end
++
+     public static DisplayInfo fromJson(JsonObject obj) {
+         Component component = Component.Serializer.fromJson(obj.get("title"));
+         Component component2 = Component.Serializer.fromJson(obj.get("description"));
+diff --git a/src/main/java/net/minecraft/advancements/FrameType.java b/src/main/java/net/minecraft/advancements/FrameType.java
+index 2f90574158e0c742548ef2930a787821bb0ffcd3..862433e4e16f7ff63dac13a760855986fcab5127 100644
+--- a/src/main/java/net/minecraft/advancements/FrameType.java
++++ b/src/main/java/net/minecraft/advancements/FrameType.java
+@@ -5,16 +5,23 @@ import net.minecraft.network.chat.Component;
+ import net.minecraft.network.chat.TranslatableComponent;
+ 
+ public enum FrameType {
+-    TASK("task", 0, ChatFormatting.GREEN),
+-    CHALLENGE("challenge", 26, ChatFormatting.DARK_PURPLE),
+-    GOAL("goal", 52, ChatFormatting.GREEN);
++    // Paper start
++    TASK("task", 0, ChatFormatting.GREEN, org.bukkit.advancement.FrameType.TASK),
++    CHALLENGE("challenge", 26, ChatFormatting.DARK_PURPLE, org.bukkit.advancement.FrameType.CHALLENGE),
++    GOAL("goal", 52, ChatFormatting.GREEN, org.bukkit.advancement.FrameType.GOAL);
++    // Paper end
+ 
+     private final String name;
+     private final int texture;
+     private final ChatFormatting chatColor;
+     private final Component displayName;
+ 
+-    private FrameType(String id, int texV, ChatFormatting titleFormat) {
++    // Paper start
++    public final org.bukkit.advancement.FrameType bukkit;
++
++    FrameType(String id, int texV, ChatFormatting titleFormat, org.bukkit.advancement.FrameType bukkit) {
++        this.bukkit = bukkit;
++        // Paper end
+         this.name = id;
+         this.texture = texV;
+         this.chatColor = titleFormat;
+diff --git a/src/main/java/org/bukkit/craftbukkit/advancement/CraftAdvancement.java b/src/main/java/org/bukkit/craftbukkit/advancement/CraftAdvancement.java
+index 20d51358b4b47cbf43c3d172765243e96aa1966c..708d77838a446a2854bb281167cc0bec3f640fb1 100644
+--- a/src/main/java/org/bukkit/craftbukkit/advancement/CraftAdvancement.java
++++ b/src/main/java/org/bukkit/craftbukkit/advancement/CraftAdvancement.java
+@@ -27,4 +27,11 @@ public class CraftAdvancement implements org.bukkit.advancement.Advancement {
+     public Collection<String> getCriteria() {
+         return Collections.unmodifiableCollection(this.handle.getCriteria().keySet());
+     }
++
++    // Paper start
++    @Override
++    public org.bukkit.advancement.AdvancementDisplay getDisplay() {
++        return getHandle().getDisplay() == null ? null : getHandle().getDisplay().bukkit;
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/advancement/CraftAdvancementDisplay.java b/src/main/java/org/bukkit/craftbukkit/advancement/CraftAdvancementDisplay.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0eef64b736515f2e18c042cf555070cf6db06d0b
+--- /dev/null
++++ b/src/main/java/org/bukkit/craftbukkit/advancement/CraftAdvancementDisplay.java
+@@ -0,0 +1,57 @@
++package org.bukkit.craftbukkit.advancement;
++
++import net.minecraft.advancements.DisplayInfo;
++import org.bukkit.advancement.FrameType;
++import org.bukkit.craftbukkit.util.CraftChatMessage;
++
++public class CraftAdvancementDisplay implements org.bukkit.advancement.AdvancementDisplay {
++    private final DisplayInfo handle;
++
++    public CraftAdvancementDisplay(DisplayInfo handle) {
++        this.handle = handle;
++    }
++
++    public DisplayInfo getHandle() {
++        return handle;
++    }
++
++    @Override
++    public String getTitle() {
++        return CraftChatMessage.fromComponent(handle.getTitle());
++    }
++
++    @Override
++    public String getDescription() {
++        return CraftChatMessage.fromComponent(handle.getDescription());
++    }
++
++    @Override
++    public FrameType getFrameType() {
++        return handle.getFrame().bukkit;
++    }
++
++    @Override
++    public boolean shouldAnnounceChat() {
++        return handle.shouldAnnounceChat();
++    }
++
++    @Override
++    public void setShouldShowToast(boolean showToast) {
++        handle.setShouldShowToast(showToast);
++    }
++
++    @Override
++    public void setShouldAnnounceChat(boolean announceChat) {
++        handle.setShouldAnnounceChat(announceChat);
++    }
++
++    @Override
++    public boolean isHidden() {
++        return handle.isHidden();
++    }
++
++    @Override
++    public void setHidden(boolean hidden) {
++        handle.setHidden(hidden);
++    }
++}
