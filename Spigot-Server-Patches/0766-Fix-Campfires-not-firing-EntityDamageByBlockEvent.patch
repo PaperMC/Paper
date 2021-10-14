@@ -1,0 +1,33 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Thu, 14 Oct 2021 23:41:21 +0100
+Subject: [PATCH] Fix Campfires not firing EntityDamageByBlockEvent
+
+
+diff --git a/src/main/java/net/minecraft/world/level/block/BlockCampfire.java b/src/main/java/net/minecraft/world/level/block/BlockCampfire.java
+index c4772bdf359bcb4db844f0673a31621727da3cee..549be287b0465866d1d80437d05838b12a350095 100644
+--- a/src/main/java/net/minecraft/world/level/block/BlockCampfire.java
++++ b/src/main/java/net/minecraft/world/level/block/BlockCampfire.java
+@@ -90,7 +90,9 @@ public class BlockCampfire extends BlockTileEntity implements IBlockWaterlogged
+     public void a(IBlockData iblockdata, World world, BlockPosition blockposition, Entity entity) {
+         if (!new io.papermc.paper.event.entity.EntityInsideBlockEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.block.CraftBlock.at(world, blockposition)).callEvent()) { return; } // Paper
+         if (!entity.isFireProof() && (Boolean) iblockdata.get(BlockCampfire.LIT) && entity instanceof EntityLiving && !EnchantmentManager.i((EntityLiving) entity)) {
++            org.bukkit.craftbukkit.event.CraftEventFactory.blockDamage = org.bukkit.craftbukkit.block.CraftBlock.at(world, blockposition); // Paper
+             entity.damageEntity(DamageSource.FIRE, (float) this.h);
++            org.bukkit.craftbukkit.event.CraftEventFactory.blockDamage = null; // Paper
+         }
+ 
+         super.a(iblockdata, world, blockposition, entity);
+diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+index a678277416cd71e01cd6980bcfaf9a9803e7ea17..85125afa9080b4fe347964d16cc9e1bc25cf97fb 100644
+--- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
++++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+@@ -1002,6 +1002,8 @@ public class CraftEventFactory {
+                 cause = DamageCause.HOT_FLOOR;
+             } else if (source == DamageSource.MAGIC) {
+                 cause = DamageCause.MAGIC;
++            } else if (source == DamageSource.FIRE) {
++                cause = DamageCause.FIRE;
+             } else {
+                 throw new IllegalStateException(String.format("Unhandled damage of %s by %s from %s", entity, damager, source.translationIndex));
+             }
