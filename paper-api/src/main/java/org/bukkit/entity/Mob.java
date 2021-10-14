@@ -204,4 +204,20 @@ public interface Mob extends LivingEntity, Lootable {
      */
     void setAggressive(boolean aggressive);
     // Paper end - Missing Entity API
+
+    // Paper start - left-handed API
+    /**
+     * Check if Mob is left-handed
+     *
+     * @return True if left-handed
+     */
+    public boolean isLeftHanded();
+
+    /**
+      * Set if Mob is left-handed
+      *
+      * @param leftHanded True if left-handed
+      */
+    public void setLeftHanded(boolean leftHanded);
+    // Paper end - left-handed API
 }
