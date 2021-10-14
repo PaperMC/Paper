@@ -1,0 +1,71 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: William Blake Galbreath <blake.galbreath@gmail.com>
+Date: Thu, 14 Oct 2021 14:13:06 -0500
+Subject: [PATCH] Add LivingEntity#safeFallDistance API
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+index 1018f4640bab5876c5e0afb5b88f71437fb79662..dbdc9f6773af179f14e839cda56f6f9873ec48e7 100644
+--- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
++++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+@@ -255,6 +255,7 @@ public abstract class LivingEntity extends Entity {
+     // CraftBukkit start
+     public int expToDrop;
+     public int maxAirTicks = 300;
++    public float safeFallDistance = 3.0F; // Paper
+     public boolean forceDrops;
+     public ArrayList<org.bukkit.inventory.ItemStack> drops = new ArrayList<org.bukkit.inventory.ItemStack>();
+     public final org.bukkit.craftbukkit.attribute.CraftAttributeMap craftAttributes;
+@@ -350,8 +351,8 @@ public abstract class LivingEntity extends Entity {
+             this.tryAddSoulSpeed();
+         }
+ 
+-        if (!this.level.isClientSide && this.fallDistance > 3.0F && onGround) {
+-            float f = (float) Mth.ceil(this.fallDistance - 3.0F);
++        if (!this.level.isClientSide && this.fallDistance > this.safeFallDistance && onGround) { // Paper
++            float f = (float) Mth.ceil(this.fallDistance - this.safeFallDistance); // Paper
+ 
+             if (!landedState.isAir()) {
+                 double d1 = Math.min((double) (0.2F + f / 15.0F), 2.5D);
+@@ -1888,7 +1889,7 @@ public abstract class LivingEntity extends Entity {
+         MobEffectInstance mobeffect = this.getEffect(MobEffects.JUMP);
+         float f2 = mobeffect == null ? 0.0F : (float) (mobeffect.getAmplifier() + 1);
+ 
+-        return Mth.ceil((fallDistance - 3.0F - f2) * damageMultiplier);
++        return Mth.ceil((fallDistance - this.safeFallDistance - f2) * damageMultiplier); // Paper
+     }
+ 
+     protected void playBlockFallSound() {
+diff --git a/src/main/java/net/minecraft/world/entity/animal/horse/AbstractHorse.java b/src/main/java/net/minecraft/world/entity/animal/horse/AbstractHorse.java
+index 630b6491ee186e1e3f17489311a91681e52b7ff5..ec8d1258a823206c381c299534efe8467fa17bde 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/horse/AbstractHorse.java
++++ b/src/main/java/net/minecraft/world/entity/animal/horse/AbstractHorse.java
+@@ -284,7 +284,7 @@ public abstract class AbstractHorse extends Animal implements ContainerListener,
+ 
+     @Override
+     protected int calculateFallDamage(float fallDistance, float damageMultiplier) {
+-        return Mth.ceil((fallDistance * 0.5F - 3.0F) * damageMultiplier);
++        return Mth.ceil((fallDistance * 0.5F - this.safeFallDistance) * damageMultiplier); // Paper
+     }
+ 
+     protected int getInventorySize() {
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
+index fe71123dc07cb13ffad8f13e57aa9bda1cb0abf5..efa5bfd7c6c2f89e0917996959dc78e06042969d 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
+@@ -915,5 +915,15 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
+         }
+         throw new IllegalArgumentException(entityCategory + " is an unrecognized entity category");
+     }
++
++    @Override
++    public float getSafeFallDistance() {
++        return getHandle().safeFallDistance;
++    }
++
++    @Override
++    public void setSafeFallDistance(float safeFallDistance) {
++        getHandle().safeFallDistance = safeFallDistance;
++    }
+     // Paper end
+ }
