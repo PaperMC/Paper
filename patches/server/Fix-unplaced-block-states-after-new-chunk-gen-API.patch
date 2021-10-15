@@ -9,11 +9,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/org/bukkit/craftbukkit/block/CraftBeehive.java
 +++ b/src/main/java/org/bukkit/craftbukkit/block/CraftBeehive.java
 @@ -0,0 +0,0 @@ public class CraftBeehive extends CraftBlockEntityState<BeehiveBlockEntity> impl
- 
-     @Override
-     public List<Bee> releaseEntities() {
--        Preconditions.checkState(getWorldHandle() instanceof net.minecraft.world.level.Level, "Can't release entities during world generation");
- 
          List<Bee> bees = new ArrayList<>();
  
          if (isPlaced()) {
@@ -21,37 +16,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              BeehiveBlockEntity beehive = ((BeehiveBlockEntity) this.getTileEntityFromWorld());
              for (Entity bee : beehive.releaseBees(this.getHandle(), BeeReleaseStatus.BEE_RELEASED, true)) {
                  bees.add((Bee) bee.getBukkitEntity());
-diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftBlockState.java b/src/main/java/org/bukkit/craftbukkit/block/CraftBlockState.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/org/bukkit/craftbukkit/block/CraftBlockState.java
-+++ b/src/main/java/org/bukkit/craftbukkit/block/CraftBlockState.java
-@@ -0,0 +0,0 @@ public class CraftBlockState implements BlockState {
- 
-     public LevelAccessor getWorldHandle() {
-         if (this.weakWorld == null) {
-+            requirePlaced(); // Paper
-             return this.world.getHandle();
-         }
- 
-         LevelAccessor access = this.weakWorld.get();
-         if (access == null) {
-             this.weakWorld = null;
-+            requirePlaced(); // Paper
-             return this.world.getHandle();
-         }
- 
 diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftChest.java b/src/main/java/org/bukkit/craftbukkit/block/CraftChest.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/block/CraftChest.java
 +++ b/src/main/java/org/bukkit/craftbukkit/block/CraftChest.java
 @@ -0,0 +0,0 @@ public class CraftChest extends CraftLootable<ChestBlockEntity> implements Chest
- 
-     @Override
-     public Inventory getInventory() {
--        Preconditions.checkState(getWorldHandle() instanceof net.minecraft.world.level.Level, "Can't get inventory during world generation, use getBlockInventory() instead");
- 
-         CraftInventory inventory = (CraftInventory) this.getBlockInventory();
-         if (!isPlaced()) {
+         if (!isPlaced() || isWorldGeneration()) {
              return inventory;
          }
 +        Preconditions.checkState(getWorldHandle() instanceof net.minecraft.world.level.Level, "Can't get inventory during world generation, use getBlockInventory() instead"); // Paper - move after placed check
