@@ -82,7 +82,7 @@ public abstract class CraftBlockEntityState<T extends TileEntity> extends CraftB
     }
 
     protected boolean isApplicable(TileEntity tileEntity) {
-        return this.tileEntity.getClass() == tileEntity.getClass();
+        return tileEntity != null && this.tileEntity.getClass() == tileEntity.getClass();
     }
 
     @Override
