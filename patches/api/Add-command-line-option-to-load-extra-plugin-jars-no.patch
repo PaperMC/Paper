@@ -6,18 +6,58 @@ Subject: [PATCH] Add command line option to load extra plugin jars not in the
 
 ex: java -jar paperclip.jar nogui -add-plugin=/path/to/plugin.jar -add-plugin=/path/to/another/plugin_jar.jar
 
+diff --git a/src/main/java/org/bukkit/Bukkit.java b/src/main/java/org/bukkit/Bukkit.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/Bukkit.java
++++ b/src/main/java/org/bukkit/Bukkit.java
+@@ -0,0 +0,0 @@ public final class Bukkit {
+         return server.getCurrentTick();
+     }
+ 
++    /**
++     * Returns the de facto plugins directory, generally used for storing plugin jars to be loaded,
++     * as well as their {@link org.bukkit.plugin.Plugin#getDataFolder() data folders}.
++     *
++     * <p>Plugins should use {@link org.bukkit.plugin.Plugin#getDataFolder()} rather than traversing this
++     * directory manually when determining the location in which to store their data and configuration files.</p>
++     *
++     * @return plugins directory
++     */
++    @NotNull
++    public static File getPluginsFolder() {
++        return server.getPluginsFolder();
++    }
++
+     /**
+      * Checks if the server is in the process of being shutdown.
+      *
+diff --git a/src/main/java/org/bukkit/Server.java b/src/main/java/org/bukkit/Server.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/Server.java
++++ b/src/main/java/org/bukkit/Server.java
+@@ -0,0 +0,0 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+      */
+     int getCurrentTick();
+ 
++    /**
++     * Returns the de facto plugins directory, generally used for storing plugin jars to be loaded,
++     * as well as their {@link org.bukkit.plugin.Plugin#getDataFolder() data folders}.
++     *
++     * <p>Plugins should use {@link org.bukkit.plugin.Plugin#getDataFolder()} rather than traversing this
++     * directory manually when determining the location in which to store their data and configuration files.</p>
++     *
++     * @return plugins directory
++     */
++    @NotNull
++    File getPluginsFolder();
++
+     /**
+      * Checks if the server is in the process of being shutdown.
+      *
 diff --git a/src/main/java/org/bukkit/plugin/SimplePluginManager.java b/src/main/java/org/bukkit/plugin/SimplePluginManager.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/plugin/SimplePluginManager.java
 +++ b/src/main/java/org/bukkit/plugin/SimplePluginManager.java
-@@ -0,0 +0,0 @@ public final class SimplePluginManager implements PluginManager {
-     private final Map<String, Map<Permissible, Boolean>> permSubs = new HashMap<String, Map<Permissible, Boolean>>();
-     private final Map<Boolean, Map<Permissible, Boolean>> defSubs = new HashMap<Boolean, Map<Permissible, Boolean>>();
-     private boolean useTimings = false;
-+    private File pluginsDirectory; public @Nullable File pluginsDirectory() { return this.pluginsDirectory; } // Paper
- 
-     public SimplePluginManager(@NotNull Server instance, @NotNull SimpleCommandMap commandMap) {
-         server = instance;
 @@ -0,0 +0,0 @@ public final class SimplePluginManager implements PluginManager {
      @Override
      @NotNull
@@ -27,7 +67,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +    @NotNull
 +    public Plugin[] loadPlugins(final @NotNull File directory, final @NotNull List<File> extraPluginJars) {
-+        this.pluginsDirectory = directory;
 +        // Paper end
          Validate.notNull(directory, "Directory cannot be null");
          Validate.isTrue(directory.isDirectory(), "Directory must be a directory");
@@ -136,7 +175,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          }
  
 -        final File parentFile = file.getParentFile();
-+        final File parentFile = ((SimplePluginManager) this.server.getPluginManager()).pluginsDirectory(); // Paper
++        final File parentFile = this.server.getPluginsFolder(); // Paper
          final File dataFolder = new File(parentFile, description.getName());
          @SuppressWarnings("deprecation")
          final File oldDataFolder = new File(parentFile, description.getRawName());
