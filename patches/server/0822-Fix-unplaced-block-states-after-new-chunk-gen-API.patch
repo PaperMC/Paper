@@ -5,15 +5,10 @@ Subject: [PATCH] Fix unplaced block states after new chunk gen API
 
 
 diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftBeehive.java b/src/main/java/org/bukkit/craftbukkit/block/CraftBeehive.java
-index 489d259d105476092d401f788c88c17c3bed86ff..250afe0acb37e6ea2288a6079160566965b3b2bf 100644
+index e00210950cbf005b0e65aed68dfbb7c281aefd87..b4a10c1ef095faaefbedc2a1fd84aea721a4ba98 100644
 --- a/src/main/java/org/bukkit/craftbukkit/block/CraftBeehive.java
 +++ b/src/main/java/org/bukkit/craftbukkit/block/CraftBeehive.java
-@@ -60,11 +60,11 @@ public class CraftBeehive extends CraftBlockEntityState<BeehiveBlockEntity> impl
- 
-     @Override
-     public List<Bee> releaseEntities() {
--        Preconditions.checkState(getWorldHandle() instanceof net.minecraft.world.level.Level, "Can't release entities during world generation");
- 
+@@ -65,6 +65,7 @@ public class CraftBeehive extends CraftBlockEntityState<BeehiveBlockEntity> impl
          List<Bee> bees = new ArrayList<>();
  
          if (isPlaced()) {
@@ -21,37 +16,12 @@ index 489d259d105476092d401f788c88c17c3bed86ff..250afe0acb37e6ea2288a60791605669
              BeehiveBlockEntity beehive = ((BeehiveBlockEntity) this.getTileEntityFromWorld());
              for (Entity bee : beehive.releaseBees(this.getHandle(), BeeReleaseStatus.BEE_RELEASED, true)) {
                  bees.add((Bee) bee.getBukkitEntity());
-diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftBlockState.java b/src/main/java/org/bukkit/craftbukkit/block/CraftBlockState.java
-index b2b41b5c3a6cab44d49a43b6b0db2fea3271c225..b17a448a4bb78b0527031815de5adee82d7d7f01 100644
---- a/src/main/java/org/bukkit/craftbukkit/block/CraftBlockState.java
-+++ b/src/main/java/org/bukkit/craftbukkit/block/CraftBlockState.java
-@@ -58,12 +58,14 @@ public class CraftBlockState implements BlockState {
- 
-     public LevelAccessor getWorldHandle() {
-         if (this.weakWorld == null) {
-+            requirePlaced(); // Paper
-             return this.world.getHandle();
-         }
- 
-         LevelAccessor access = this.weakWorld.get();
-         if (access == null) {
-             this.weakWorld = null;
-+            requirePlaced(); // Paper
-             return this.world.getHandle();
-         }
- 
 diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftChest.java b/src/main/java/org/bukkit/craftbukkit/block/CraftChest.java
-index 2a723bd0850ee1201bb87760647bd4b3a93279fe..6bcd71928fee7c4f4e1fd11e52293f641d11b12b 100644
+index 9806697cb7566c5af1df74b7eaa8088d19ee4fdc..ad833481414d3b60bdbcf87727b494ecff84f2c3 100644
 --- a/src/main/java/org/bukkit/craftbukkit/block/CraftChest.java
 +++ b/src/main/java/org/bukkit/craftbukkit/block/CraftChest.java
-@@ -38,12 +38,12 @@ public class CraftChest extends CraftLootable<ChestBlockEntity> implements Chest
- 
-     @Override
-     public Inventory getInventory() {
--        Preconditions.checkState(getWorldHandle() instanceof net.minecraft.world.level.Level, "Can't get inventory during world generation, use getBlockInventory() instead");
- 
-         CraftInventory inventory = (CraftInventory) this.getBlockInventory();
-         if (!isPlaced()) {
+@@ -42,6 +42,7 @@ public class CraftChest extends CraftLootable<ChestBlockEntity> implements Chest
+         if (!isPlaced() || isWorldGeneration()) {
              return inventory;
          }
 +        Preconditions.checkState(getWorldHandle() instanceof net.minecraft.world.level.Level, "Can't get inventory during world generation, use getBlockInventory() instead"); // Paper - move after placed check

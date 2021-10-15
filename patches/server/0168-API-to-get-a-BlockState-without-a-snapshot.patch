@@ -13,7 +13,7 @@ also Avoid NPE during CraftBlockEntityState load if could not get TE
 If Tile Entity was null, correct Sign to return empty lines instead of null
 
 diff --git a/src/main/java/net/minecraft/world/level/block/entity/BlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/BlockEntity.java
-index 77645019c88d61dde28b7598d8a29b7d0c23c209..560ee4eaa286197a0f8fc0a119ff5e06baca792a 100644
+index 27895fbe1cd7ee6ee025ed3e320671e3e971764d..1d1764766d2b4a0b7bf4078ce428bb1474f709df 100644
 --- a/src/main/java/net/minecraft/world/level/block/entity/BlockEntity.java
 +++ b/src/main/java/net/minecraft/world/level/block/entity/BlockEntity.java
 @@ -42,6 +42,7 @@ public abstract class BlockEntity implements net.minecraft.server.KeyedObject {
@@ -33,7 +33,7 @@ index 77645019c88d61dde28b7598d8a29b7d0c23c209..560ee4eaa286197a0f8fc0a119ff5e06
  
          net.minecraft.nbt.Tag persistentDataTag = nbt.get("PublicBukkitValues");
          if (persistentDataTag instanceof CompoundTag) {
-@@ -222,6 +223,11 @@ public abstract class BlockEntity implements net.minecraft.server.KeyedObject {
+@@ -222,10 +223,15 @@ public abstract class BlockEntity implements net.minecraft.server.KeyedObject {
  
      // CraftBukkit start - add method
      public InventoryHolder getOwner() {
@@ -43,12 +43,8 @@ index 77645019c88d61dde28b7598d8a29b7d0c23c209..560ee4eaa286197a0f8fc0a119ff5e06
 +    public InventoryHolder getOwner(boolean useSnapshot) {
 +        // Paper end
          if (this.level == null) return null;
-         // Spigot start
          org.bukkit.block.Block block = this.level.getWorld().getBlockAt(this.worldPosition.getX(), this.worldPosition.getY(), this.worldPosition.getZ());
-@@ -230,7 +236,7 @@ public abstract class BlockEntity implements net.minecraft.server.KeyedObject {
-             return null;
-         }
-         // Spigot end
+         if (block.getType() == org.bukkit.Material.AIR) return null;
 -        org.bukkit.block.BlockState state = block.getState();
 +        org.bukkit.block.BlockState state = block.getState(useSnapshot); // Paper
          if (state instanceof InventoryHolder) return (InventoryHolder) state;
@@ -80,7 +76,7 @@ index e6b8dd52cd503f45ca9bb868891ae4c8b29b3fcb..f1c4c3a3392c2d4d836fa10d7a38558d
  
      @Override
 diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftBlockEntityState.java b/src/main/java/org/bukkit/craftbukkit/block/CraftBlockEntityState.java
-index fbd52387299c90b85afd79897139cdb879fce74a..aaddbaecc25af87c863fe51098eb322fd5702104 100644
+index 2fb445e6edc43eb8e3e169cca3fc3b46ced94202..059a122ef7038f7c4e269b476eb6e013b3eb4531 100644
 --- a/src/main/java/org/bukkit/craftbukkit/block/CraftBlockEntityState.java
 +++ b/src/main/java/org/bukkit/craftbukkit/block/CraftBlockEntityState.java
 @@ -10,15 +10,26 @@ public abstract class CraftBlockEntityState<T extends BlockEntity> extends Craft
