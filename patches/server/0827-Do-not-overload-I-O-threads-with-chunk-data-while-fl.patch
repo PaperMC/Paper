@@ -1,0 +1,42 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Sat, 16 Oct 2021 01:36:00 -0700
+Subject: [PATCH] Do not overload I/O threads with chunk data while flush
+ saving
+
+If the chunk count is high, then the memory used by the
+chunks adds up and could cause problems. By flushing
+every so many chunks, the server will not become
+stressed for memory. It will also not increase the total
+time to save, as flush saving performs a full flush at
+the end anyways.
+
+diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
+index 4b1797659f6bb5913b105641ecaac38954ce8bc0..65090afbb510231c05db3132ba416502d188f1c0 100644
+--- a/src/main/java/net/minecraft/server/level/ChunkMap.java
++++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
+@@ -950,6 +950,16 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+     // Paper end
+ 
+     protected void saveAllChunks(boolean flush) {
++        // Paper start - do not overload I/O threads with too much work when saving
++        int[] saved = new int[1];
++        int maxAsyncSaves = 50;
++        Runnable onChunkSave = () -> {
++            if (++saved[0] >= maxAsyncSaves) {
++                saved[0] = 0;
++                com.destroystokyo.paper.io.PaperFileIOThread.Holder.INSTANCE.flush();
++            }
++        };
++        // Paper end - do not overload I/O threads with too much work when saving
+         if (flush) {
+             List<ChunkHolder> list = (List) this.updatingChunks.getVisibleValuesCopy().stream().filter(ChunkHolder::wasAccessibleSinceLastSave).peek(ChunkHolder::refreshAccessibility).collect(Collectors.toList()); // Paper
+             MutableBoolean mutableboolean = new MutableBoolean();
+@@ -972,6 +982,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+                 }).filter((ichunkaccess) -> {
+                     return ichunkaccess instanceof ImposterProtoChunk || ichunkaccess instanceof LevelChunk;
+                 }).filter(this::save).forEach((ichunkaccess) -> {
++                    onChunkSave.run(); // Paper - do not overload I/O threads with too much work when saving
+                     mutableboolean.setTrue();
+                 });
+             } while (mutableboolean.isTrue());
