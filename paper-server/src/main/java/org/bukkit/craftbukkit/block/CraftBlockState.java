@@ -75,7 +75,7 @@ public class CraftBlockState implements BlockState {
 
     protected final boolean isWorldGeneration() {
         GeneratorAccess generatorAccess = this.getWorldHandle();
-        return generatorAccess != null && !(generatorAccess instanceof World);
+        return generatorAccess != null && !(generatorAccess instanceof net.minecraft.world.level.World);
     }
 
     protected final void ensureNoWorldGeneration() {
