@@ -1,6 +1,5 @@
 package org.bukkit.craftbukkit.block;
 
-import com.google.common.base.Preconditions;
 import net.minecraft.sounds.SoundEffects;
 import net.minecraft.world.ITileInventory;
 import net.minecraft.world.level.block.BlockChest;
@@ -46,7 +45,7 @@ public class CraftChest extends CraftLootable<TileEntityChest> implements Chest 
         CraftWorld world = (CraftWorld) this.getWorld();
 
         BlockChest blockChest = (BlockChest) (this.getType() == Material.CHEST ? Blocks.CHEST : Blocks.TRAPPED_CHEST);
-        ITileInventory nms = blockChest.getInventory(data, world.getHandle(), this.getPosition());
+        ITileInventory nms = blockChest.getInventory(data, world.getHandle(), this.getPosition(), true);
 
         if (nms instanceof BlockChest.DoubleInventory) {
             inventory = new CraftInventoryDoubleChest((BlockChest.DoubleInventory) nms);
