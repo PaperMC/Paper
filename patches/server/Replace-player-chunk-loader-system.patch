@@ -22,7 +22,7 @@ chunk-loading:
   target-player-chunk-send-rate: 100.0
   global-max-chunk-send-rate: -1
   enable-frustum-priority: false
-  global-max-chunk-load-rate: 300.0
+  global-max-chunk-load-rate: -1.0
   player-max-concurrent-loads: 4.0
   global-max-concurrent-loads: 500.0
 ```
@@ -58,7 +58,7 @@ because the client can bug out due to the out of order
 chunk sending.
 
 global-max-chunk-load-rate - The maximum chunk load rate
-for the whole server.
+for the whole server. -1 means no limit
 
 player-max-concurrent-loads and global-max-concurrent-loads
 The maximum number of concurrent loads for the server is
@@ -105,7 +105,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        playerTargetChunkSendRate = getDouble("settings.chunk-loading.target-player-chunk-send-rate", 100.0);
 +        globalMaxChunkSendRate = getDouble("settings.chunk-loading.global-max-chunk-send-rate", -1.0);
 +        playerFrustumPrioritisation = getBoolean("settings.chunk-loading.enable-frustum-priority", false);
-+        globalMaxChunkLoadRate = getDouble("settings.chunk-loading.global-max-chunk-load-rate", 300.0);
++        globalMaxChunkLoadRate = getDouble("settings.chunk-loading.global-max-chunk-load-rate", -1.0);
++        if (version < 23 && globalMaxChunkLoadRate == 300.0) {
++            set("settings.chunk-loading.global-max-chunk-load-rate", -1.0);
++        }
 +        playerMaxConcurrentChunkLoads = getDouble("settings.chunk-loading.player-max-concurrent-loads", 4.0);
 +        globalMaxConcurrentChunkLoads = getDouble("settings.chunk-loading.global-max-concurrent-loads", 500.0);
 +    }
@@ -701,7 +704,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                // priority > 0.0 implies rate limited chunks
 +
 +                final int currentChunkLoads = this.concurrentChunkLoads;
-+                if (currentChunkLoads >= maxLoads || (TICKET_ADDITION_COUNTER_SHORT.getRate() >= PaperConfig.globalMaxChunkLoadRate || TICKET_ADDITION_COUNTER_LONG.getRate() >= PaperConfig.globalMaxChunkLoadRate)) {
++                if (currentChunkLoads >= maxLoads || (PaperConfig.globalMaxChunkLoadRate > 0 && (TICKET_ADDITION_COUNTER_SHORT.getRate() >= PaperConfig.globalMaxChunkLoadRate || TICKET_ADDITION_COUNTER_LONG.getRate() >= PaperConfig.globalMaxChunkLoadRate))) {
 +                    // don't poll, we didn't load it
 +                    this.chunkLoadQueue.add(data);
 +                    break;
