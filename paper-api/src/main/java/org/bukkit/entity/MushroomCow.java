@@ -8,7 +8,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Represents a mushroom {@link Cow}
  */
-public interface MushroomCow extends Cow {
+public interface MushroomCow extends Cow, io.papermc.paper.entity.Shearable { // Paper
 
     /**
      * Checks for the presence of custom potion effects to be applied to the

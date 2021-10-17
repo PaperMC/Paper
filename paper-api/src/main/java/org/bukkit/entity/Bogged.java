@@ -6,7 +6,7 @@ import org.jetbrains.annotations.ApiStatus;
  * Represents a Bogged Skeleton.
  */
 @ApiStatus.Experimental
-public interface Bogged extends AbstractSkeleton, Shearable {
+public interface Bogged extends AbstractSkeleton, Shearable, io.papermc.paper.entity.Shearable { // Paper - Shear API
 
     /**
      * Gets whether the bogged is in its sheared state.

@@ -5,7 +5,7 @@ import com.destroystokyo.paper.entity.RangedEntity;
 /**
  * Represents a snowman entity
  */
-public interface Snowman extends Golem, RangedEntity { // Paper
+public interface Snowman extends Golem, RangedEntity, io.papermc.paper.entity.Shearable { // Paper
 
     /**
      * Gets whether this snowman is in "derp mode", meaning it is not wearing a
