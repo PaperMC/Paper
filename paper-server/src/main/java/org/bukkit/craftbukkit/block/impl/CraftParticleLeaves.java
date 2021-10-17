@@ -51,4 +51,16 @@ public final class CraftParticleLeaves extends org.bukkit.craftbukkit.block.data
     public void setWaterlogged(boolean waterlogged) {
         this.set(CraftParticleLeaves.WATERLOGGED, waterlogged);
     }
+
+    // Paper start
+    @Override
+    public int getMaximumDistance() {
+        return getMax(DISTANCE);
+    }
+
+    @Override
+    public int getMinimumDistance() {
+        return getMin(DISTANCE);
+    }
+    // Paper end
 }

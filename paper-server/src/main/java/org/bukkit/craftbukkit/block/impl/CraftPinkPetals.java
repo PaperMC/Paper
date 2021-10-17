@@ -27,6 +27,13 @@ public final class CraftPinkPetals extends org.bukkit.craftbukkit.block.data.Cra
         this.set(CraftPinkPetals.FLOWER_AMOUNT, flower_amount);
     }
 
+    // Paper start
+    @Override
+    public int getMinimumFlowerAmount() {
+        return getMin(CraftPinkPetals.FLOWER_AMOUNT);
+    }
+    // Paper end
+
     @Override
     public int getMaximumFlowerAmount() {
         return getMax(CraftPinkPetals.FLOWER_AMOUNT);

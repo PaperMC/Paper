@@ -31,4 +31,11 @@ public final class CraftLayeredCauldron extends org.bukkit.craftbukkit.block.dat
     public int getMaximumLevel() {
         return getMax(CraftLayeredCauldron.LEVEL);
     }
+
+    // Paper start
+    @Override
+    public int getMinimumLevel() {
+        return getMin(CraftLayeredCauldron.LEVEL);
+    }
+    // Paper end
 }

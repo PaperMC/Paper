@@ -31,4 +31,11 @@ public final class CraftFluids extends org.bukkit.craftbukkit.block.data.CraftBl
     public int getMaximumLevel() {
         return getMax(CraftFluids.LEVEL);
     }
+
+    // Paper start
+    @Override
+    public int getMinimumLevel() {
+        return getMin(CraftFluids.LEVEL);
+    }
+    // Paper end
 }
