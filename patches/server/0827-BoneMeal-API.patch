@@ -1,0 +1,70 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Owen1212055 <23108066+Owen1212055@users.noreply.github.com>
+Date: Sun, 17 Oct 2021 14:53:35 -0400
+Subject: [PATCH] BoneMeal API
+
+
+diff --git a/src/main/java/net/minecraft/world/item/BoneMealItem.java b/src/main/java/net/minecraft/world/item/BoneMealItem.java
+index c5026e617c3f71ba79532de135f571c27b7dd4a7..e7daa1be4212de9ec3942f8053baa6fc1d5d12cf 100644
+--- a/src/main/java/net/minecraft/world/item/BoneMealItem.java
++++ b/src/main/java/net/minecraft/world/item/BoneMealItem.java
+@@ -39,14 +39,15 @@ public class BoneMealItem extends Item {
+         return BoneMealItem.applyBonemeal(context);
+     }
+ 
+-    public static InteractionResult applyBonemeal(UseOnContext itemactioncontext) {
++    public static InteractionResult applyBonemeal(UseOnContext itemactioncontext) { return applyBonemeal(itemactioncontext, true); }
++    public static InteractionResult applyBonemeal(UseOnContext itemactioncontext, boolean showParticles) {
+         // CraftBukkit end
+         Level world = itemactioncontext.getLevel();
+         BlockPos blockposition = itemactioncontext.getClickedPos();
+         BlockPos blockposition1 = blockposition.relative(itemactioncontext.getClickedFace());
+ 
+         if (BoneMealItem.growCrop(itemactioncontext.getItemInHand(), world, blockposition)) {
+-            if (!world.isClientSide) {
++            if (showParticles && !world.isClientSide) {
+                 world.levelEvent(1505, blockposition, 0);
+             }
+ 
+@@ -56,7 +57,7 @@ public class BoneMealItem extends Item {
+             boolean flag = iblockdata.isFaceSturdy(world, blockposition, itemactioncontext.getClickedFace());
+ 
+             if (flag && BoneMealItem.growWaterPlant(itemactioncontext.getItemInHand(), world, blockposition1, itemactioncontext.getClickedFace())) {
+-                if (!world.isClientSide) {
++                if (showParticles && !world.isClientSide) {
+                     world.levelEvent(1505, blockposition1, 0);
+                 }
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+index 00d8b61c04ac91770b0ff3b846d3ff70bef2e8e7..eb823854aea5d77d0a3c024f4cf70ad76a502788 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+@@ -2160,5 +2160,28 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+ 
+         return this.adventure$pointers;
+     }
++
++    @Override
++    public boolean applyBoneMeal(@org.jetbrains.annotations.NotNull Location location, org.bukkit.block.BlockFace face, boolean showParticles, @org.jetbrains.annotations.Nullable Predicate<BlockState> predicate) {
++        BlockPos pos = new BlockPos(location.getBlockX(), location.getBlockY(), location.getBlockZ());
++        var context = new net.minecraft.world.item.context.UseOnContext(this.getHandle(), null, net.minecraft.world.InteractionHand.MAIN_HAND, net.minecraft.world.item.Items.BONE_MEAL.getDefaultInstance(), new net.minecraft.world.phys.BlockHitResult(Vec3.ZERO, CraftBlock.blockFaceToNotch(blockFace), pos, false));
++
++        world.captureTreeGeneration = true;
++        world.captureBlockStates = true;
++
++        var result = net.minecraft.world.item.BoneMealItem.applyBonemeal(context, showParticles);
++
++        world.captureTreeGeneration = false;
++        world.captureBlockStates = false;
++
++        for (BlockState blockState : world.capturedBlockStates.values()) {
++            if (predicate != null && predicate.test(blockState)) {
++                blockState.update(true);
++            }
++        }
++        world.capturedBlockStates.clear();
++
++        return result == net.minecraft.world.InteractionResult.CONSUME;
++    }
+     // Paper end
+ }
