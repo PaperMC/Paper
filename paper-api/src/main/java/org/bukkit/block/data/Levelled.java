@@ -36,4 +36,13 @@ public interface Levelled extends BlockData {
      * @return the maximum 'level' value
      */
     int getMaximumLevel();
+
+    // Paper start
+    /**
+     * Gets the minimum allowed value of the 'level' property.
+     *
+     * @return the minimum 'level' value
+     */
+    int getMinimumLevel();
+    // Paper end
 }

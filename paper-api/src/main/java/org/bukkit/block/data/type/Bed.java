@@ -35,6 +35,15 @@ public interface Bed extends Directional {
      */
     boolean isOccupied();
 
+    // Paper start
+    /**
+     * Sets the value of the 'occupied' property.
+     *
+     * @param occupied the new 'occupied' value
+     */
+    void setOccupied(boolean occupied);
+    // Paper end
+
     /**
      * Horizontal half of a bed.
      */

@@ -39,4 +39,20 @@ public interface Leaves extends Waterlogged {
      * @param distance the new 'distance' value
      */
     void setDistance(int distance);
+
+    // Paper start
+    /**
+     * Gets the maximum allowed value of the 'distance' property.
+     *
+     * @return the maximum 'distance' value
+     */
+    int getMaximumDistance();
+
+    /**
+     * Gets the minimum allowed value of the 'distance' property.
+     *
+     * @return the minimum 'distance' value
+     */
+    int getMinimumDistance();
+    // Paper end
 }

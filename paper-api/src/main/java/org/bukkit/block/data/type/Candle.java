@@ -28,4 +28,13 @@ public interface Candle extends Lightable, Waterlogged {
      * @return the maximum 'candles' value
      */
     int getMaximumCandles();
+
+    // Paper start
+    /**
+     * Gets the minimum allowed value of the 'candles' property.
+     *
+     * @return the minimum 'candles' value
+     */
+    int getMinimumCandles();
+    // Paper end
 }

@@ -21,6 +21,15 @@ public interface PinkPetals extends Directional {
      */
     void setFlowerAmount(int flower_amount);
 
+    // Paper start
+    /**
+     * Gets the minimum allowed value of the 'flower_amount' property.
+     *
+     * @return the minimum 'flower_amount' value
+     */
+    int getMinimumFlowerAmount();
+    // Paper end
+
     /**
      * Gets the maximum allowed value of the 'flower_amount' property.
      *
