@@ -1,0 +1,49 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jason Penilla <11360596+jpenilla@users.noreply.github.com>
+Date: Sat, 16 Oct 2021 17:38:35 -0700
+Subject: [PATCH] Use correct WorldDimension registry when loading default
+ end/nether
+
+
+diff --git a/src/main/java/net/minecraft/core/IRegistry.java b/src/main/java/net/minecraft/core/IRegistry.java
+index 4f04d8081912e0fe771f0db9e086c789328f246f..2262c1b30682c445a5c370e267a0fce96244fdb8 100644
+--- a/src/main/java/net/minecraft/core/IRegistry.java
++++ b/src/main/java/net/minecraft/core/IRegistry.java
+@@ -391,6 +391,7 @@ public abstract class IRegistry<T> implements Codec<T>, Keyable, Registry<T> {
+     @Override
+     public abstract int a(@Nullable T t0);
+ 
++    @Nullable public final T get(@Nullable ResourceKey<T> resourcekey) { return this.a(resourcekey); } // Paper - OBFHELPER
+     @Nullable
+     public abstract T a(@Nullable ResourceKey<T> resourcekey);
+ 
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index bf80e870e6a2a6fe1d4ae1bea355bcd7a0735d3b..0737009363635c677246642f371847c9100e49a8 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -523,7 +523,12 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+             long i = generatorsettings.getSeed();
+             long j = BiomeManager.a(i);
+             List<MobSpawner> list = ImmutableList.of(new MobSpawnerPhantom(), new MobSpawnerPatrol(), new MobSpawnerCat(), new VillageSiege(), new MobSpawnerTrader(iworlddataserver));
+-            WorldDimension worlddimension = (WorldDimension) registrymaterials.a(dimensionKey);
++            // Paper start - Use correct WorldDimension registry
++            WorldDimension worlddimension = generatorsettings.dimensions().get(dimensionKey);
++            if (worlddimension == null) {
++                worlddimension = registrymaterials.get(dimensionKey);
++            }
++            // Paper end
+             DimensionManager dimensionmanager;
+             ChunkGenerator chunkgenerator;
+ 
+diff --git a/src/main/java/net/minecraft/world/level/levelgen/GeneratorSettings.java b/src/main/java/net/minecraft/world/level/levelgen/GeneratorSettings.java
+index 5d9fd65b91ed7f3d66f36e900b12522876e0e22f..b345a08d47319a038f64c3d5a01292342b266a6e 100644
+--- a/src/main/java/net/minecraft/world/level/levelgen/GeneratorSettings.java
++++ b/src/main/java/net/minecraft/world/level/levelgen/GeneratorSettings.java
+@@ -140,6 +140,7 @@ public class GeneratorSettings {
+         return registrymaterials1;
+     }
+ 
++    public final RegistryMaterials<WorldDimension> dimensions() { return this.d(); } // Paper - OBFHELPER
+     public RegistryMaterials<WorldDimension> d() {
+         return this.f;
+     }
