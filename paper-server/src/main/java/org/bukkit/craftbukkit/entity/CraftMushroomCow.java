@@ -14,7 +14,7 @@ import org.bukkit.entity.MushroomCow;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
-public class CraftMushroomCow extends CraftCow implements MushroomCow {
+public class CraftMushroomCow extends CraftCow implements MushroomCow, io.papermc.paper.entity.PaperShearable { // Paper
     public CraftMushroomCow(CraftServer server, net.minecraft.world.entity.animal.MushroomCow entity) {
         super(server, entity);
     }
