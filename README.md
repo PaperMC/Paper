@@ -45,17 +45,19 @@ How To (Plugin Developers)
 **Or alternatively, with Gradle:**
 
  * Repository:
-```groovy
+```kotlin
 repositories {
     maven {
-        url 'https://papermc.io/repo/repository/maven-public/'
+        url = uri("https://papermc.io/repo/repository/maven-public/")
     }
 }
-```
- * Artifact:
-```groovy
+
 dependencies {
-    compileOnly 'io.papermc.paper:paper-api:1.17.1-R0.1-SNAPSHOT'
+    compileOnly("io.papermc.paper:paper-api:1.17.1-R0.1-SNAPSHOT")
+}
+
+java {
+    toolchain.languageVersion.set(JavaLanguageVersion.of(16))
 }
 ```
 
