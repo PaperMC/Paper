@@ -1,0 +1,325 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Seggan <segganew@gmail.com>
+Date: Fri, 22 Oct 2021 16:42:42 -0400
+Subject: [PATCH] Custom biome API
+
+
+diff --git a/src/main/java/io/papermc/paper/world/biome/BiomeManager.java b/src/main/java/io/papermc/paper/world/biome/BiomeManager.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..5ba41f38e4af3b67b4d5e8c3eba86acd184ef7c4
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/world/biome/BiomeManager.java
+@@ -0,0 +1,26 @@
++package io.papermc.paper.world.biome;
++
++import org.bukkit.NamespacedKey;
++import org.jetbrains.annotations.NotNull;
++
++public interface BiomeManager {
++
++    /**
++     * Registers the {@link PaperBiome}
++     *
++     * @param biome the biome to register
++     */
++    void registerBiome(@NotNull PaperBiome biome);
++
++    /**
++     * Gets the vanilla biome from the {@link NamespacedKey}. For example,
++     * {@code minecraft:badlands} will return the {@link PaperBiome} for Badlands
++     *
++     * @param key the {@link NamespacedKey} for the biome
++     * @return the <b>vanilla</b> biome for the given key
++     *
++     * @throws IllegalArgumentException if the {@link NamespacedKey} does not denote a vanilla biome
++     */
++    @NotNull
++    PaperBiome getVanillaBiome(@NotNull NamespacedKey key);
++}
+diff --git a/src/main/java/io/papermc/paper/world/biome/PaperBiome.java b/src/main/java/io/papermc/paper/world/biome/PaperBiome.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..5b90db0e1e07cb8947786e65f7a1849d6d45f8d9
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/world/biome/PaperBiome.java
+@@ -0,0 +1,226 @@
++package io.papermc.paper.world.biome;
++
++import com.google.common.collect.ImmutableSet;
++import org.bukkit.Bukkit;
++import org.bukkit.Color;
++import org.bukkit.Keyed;
++import org.bukkit.NamespacedKey;
++import org.jetbrains.annotations.ApiStatus;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++import java.util.HashMap;
++import java.util.Map;
++import java.util.Set;
++
++public abstract class PaperBiome implements Keyed {
++
++    public static final PaperBiome OCEAN = vanillaBiome("ocean");
++    public static final PaperBiome PLAINS = vanillaBiome("plains");
++    public static final PaperBiome DESERT = vanillaBiome("desert");
++    public static final PaperBiome MOUNTAINS = vanillaBiome("mountains");
++    public static final PaperBiome FOREST = vanillaBiome("forest");
++    public static final PaperBiome TAIGA = vanillaBiome("taiga");
++    public static final PaperBiome SWAMP = vanillaBiome("swamp");
++    public static final PaperBiome RIVER = vanillaBiome("river");
++    public static final PaperBiome NETHER_WASTES = vanillaBiome("nether_wastes");
++    public static final PaperBiome THE_END = vanillaBiome("the_end");
++    public static final PaperBiome FROZEN_OCEAN = vanillaBiome("frozen_ocean");
++    public static final PaperBiome FROZEN_RIVER = vanillaBiome("frozen_river");
++    public static final PaperBiome SNOWY_TUNDRA = vanillaBiome("snowy_tundra");
++    public static final PaperBiome SNOWY_MOUNTAINS = vanillaBiome("snowy_mountains");
++    public static final PaperBiome MUSHROOM_FIELDS = vanillaBiome("mushroom_fields");
++    public static final PaperBiome MUSHROOM_FIELD_SHORE = vanillaBiome("mushroom_field_shore");
++    public static final PaperBiome BEACH = vanillaBiome("beach");
++    public static final PaperBiome DESERT_HILLS = vanillaBiome("desert_hills");
++    public static final PaperBiome WOODED_HILLS = vanillaBiome("wooded_hills");
++    public static final PaperBiome TAIGA_HILLS = vanillaBiome("taiga_hills");
++    public static final PaperBiome MOUNTAIN_EDGE = vanillaBiome("mountain_edge");
++    public static final PaperBiome JUNGLE = vanillaBiome("jungle");
++    public static final PaperBiome JUNGLE_HILLS = vanillaBiome("jungle_hills");
++    public static final PaperBiome JUNGLE_EDGE = vanillaBiome("jungle_edge");
++    public static final PaperBiome DEEP_OCEAN = vanillaBiome("deep_ocean");
++    public static final PaperBiome STONE_SHORE = vanillaBiome("stone_shore");
++    public static final PaperBiome SNOWY_BEACH = vanillaBiome("snowy_beach");
++    public static final PaperBiome BIRCH_FOREST = vanillaBiome("birch_forest");
++    public static final PaperBiome BIRCH_FOREST_HILLS = vanillaBiome("birch_forest_hills");
++    public static final PaperBiome DARK_FOREST = vanillaBiome("dark_forest");
++    public static final PaperBiome SNOWY_TAIGA = vanillaBiome("snowy_taiga");
++    public static final PaperBiome SNOWY_TAIGA_HILLS = vanillaBiome("snowy_taiga_hills");
++    public static final PaperBiome GIANT_TREE_TAIGA = vanillaBiome("giant_tree_taiga");
++    public static final PaperBiome GIANT_TREE_TAIGA_HILLS = vanillaBiome("giant_tree_taiga_hills");
++    public static final PaperBiome WOODED_MOUNTAINS = vanillaBiome("wooded_mountains");
++    public static final PaperBiome SAVANNA = vanillaBiome("savanna");
++    public static final PaperBiome SAVANNA_PLATEAU = vanillaBiome("savanna_plateau");
++    public static final PaperBiome BADLANDS = vanillaBiome("badlands");
++    public static final PaperBiome WOODED_BADLANDS_PLATEAU = vanillaBiome("wooded_badlands_plateau");
++    public static final PaperBiome BADLANDS_PLATEAU = vanillaBiome("badlands_plateau");
++    public static final PaperBiome SMALL_END_ISLANDS = vanillaBiome("small_end_islands");
++    public static final PaperBiome END_MIDLANDS = vanillaBiome("end_midlands");
++    public static final PaperBiome END_HIGHLANDS = vanillaBiome("end_highlands");
++    public static final PaperBiome END_BARRENS = vanillaBiome("end_barrens");
++    public static final PaperBiome WARM_OCEAN = vanillaBiome("warm_ocean");
++    public static final PaperBiome LUKEWARM_OCEAN = vanillaBiome("lukewarm_ocean");
++    public static final PaperBiome COLD_OCEAN = vanillaBiome("cold_ocean");
++    public static final PaperBiome DEEP_WARM_OCEAN = vanillaBiome("deep_warm_ocean");
++    public static final PaperBiome DEEP_LUKEWARM_OCEAN = vanillaBiome("deep_lukewarm_ocean");
++    public static final PaperBiome DEEP_COLD_OCEAN = vanillaBiome("deep_cold_ocean");
++    public static final PaperBiome DEEP_FROZEN_OCEAN = vanillaBiome("deep_frozen_ocean");
++    public static final PaperBiome THE_VOID = vanillaBiome("the_void");
++    public static final PaperBiome SUNFLOWER_PLAINS = vanillaBiome("sunflower_plains");
++    public static final PaperBiome DESERT_LAKES = vanillaBiome("desert_lakes");
++    public static final PaperBiome GRAVELLY_MOUNTAINS = vanillaBiome("gravelly_mountains");
++    public static final PaperBiome FLOWER_FOREST = vanillaBiome("flower_forest");
++    public static final PaperBiome TAIGA_MOUNTAINS = vanillaBiome("taiga_mountains");
++    public static final PaperBiome SWAMP_HILLS = vanillaBiome("swamp_hills");
++    public static final PaperBiome ICE_SPIKES = vanillaBiome("ice_spikes");
++    public static final PaperBiome MODIFIED_JUNGLE = vanillaBiome("modified_jungle");
++    public static final PaperBiome MODIFIED_JUNGLE_EDGE = vanillaBiome("modified_jungle_edge");
++    public static final PaperBiome TALL_BIRCH_FOREST = vanillaBiome("tall_birch_forest");
++    public static final PaperBiome TALL_BIRCH_HILLS = vanillaBiome("tall_birch_hills");
++    public static final PaperBiome DARK_FOREST_HILLS = vanillaBiome("dark_forest_hills");
++    public static final PaperBiome SNOWY_TAIGA_MOUNTAINS = vanillaBiome("snowy_taiga_mountains");
++    public static final PaperBiome GIANT_SPRUCE_TAIGA = vanillaBiome("giant_spruce_taiga");
++    public static final PaperBiome GIANT_SPRUCE_TAIGA_HILLS = vanillaBiome("giant_spruce_taiga_hills");
++    public static final PaperBiome MODIFIED_GRAVELLY_MOUNTAINS = vanillaBiome("modified_gravelly_mountains");
++    public static final PaperBiome SHATTERED_SAVANNA = vanillaBiome("shattered_savanna");
++    public static final PaperBiome SHATTERED_SAVANNA_PLATEAU = vanillaBiome("shattered_savanna_plateau");
++    public static final PaperBiome ERODED_BADLANDS = vanillaBiome("eroded_badlands");
++    public static final PaperBiome MODIFIED_WOODED_BADLANDS_PLATEAU = vanillaBiome("modified_wooded_badlands_plateau");
++    public static final PaperBiome MODIFIED_BADLANDS_PLATEAU = vanillaBiome("modified_badlands_plateau");
++    public static final PaperBiome BAMBOO_JUNGLE = vanillaBiome("bamboo_jungle");
++    public static final PaperBiome BAMBOO_JUNGLE_HILLS = vanillaBiome("bamboo_jungle_hills");
++    public static final PaperBiome SOUL_SAND_VALLEY = vanillaBiome("soul_sand_valley");
++    public static final PaperBiome CRIMSON_FOREST = vanillaBiome("crimson_forest");
++    public static final PaperBiome WARPED_FOREST = vanillaBiome("warped_forest");
++    public static final PaperBiome BASALT_DELTAS = vanillaBiome("basalt_deltas");
++    public static final PaperBiome DRIPSTONE_CAVES = vanillaBiome("dripstone_caves");
++    public static final PaperBiome LUSH_CAVES = vanillaBiome("lush_caves");
++
++    private static final Map<NamespacedKey, PaperBiome> allBiomes = new HashMap<>();
++
++    private final NamespacedKey key;
++    private final boolean customBiome;
++
++    private boolean isRegistered = false;
++
++    public PaperBiome(@NotNull NamespacedKey key) {
++        this.key = key;
++        this.customBiome = true;
++    }
++
++    /**
++     * Internal constructor for vanilla biomes
++     *
++     * @deprecated for internal use only
++     */
++    @Deprecated
++    @ApiStatus.Internal
++    protected PaperBiome(@NotNull String s) {
++        this.key = NamespacedKey.minecraft(s);
++        this.customBiome = false;
++        if (!this.isRegistered()) {
++            this.isRegistered = true;
++            allBiomes.put(this.key, this);
++        }
++    }
++
++    /**
++     * Gets all biomes
++     *
++     * @return an {@link ImmutableSet} of all registered biomes
++     */
++    public static Set<PaperBiome> getAllBiomes() {
++        return ImmutableSet.copyOf(allBiomes.values());
++    }
++
++    @Nullable
++    public static PaperBiome getByKey(@NotNull NamespacedKey key) {
++        return allBiomes.get(key);
++    }
++
++    /**
++     * Helper method for shorter code
++     */
++    private static PaperBiome vanillaBiome(@NotNull String s) {
++        return Bukkit.getBiomeManager().getVanillaBiome(NamespacedKey.minecraft(s));
++    }
++
++    @Override
++    public @NotNull NamespacedKey getKey() {
++        return this.key;
++    }
++
++    /**
++     * Gets if the biome is a custom biome (i.e. not a vanilla biome)
++     *
++     * @return if the biome is a custom biome
++     */
++    public final boolean isCustomBiome() {
++        return this.customBiome;
++    }
++
++    /**
++     * Registers the biome
++     *
++     * @throws IllegalStateException if the biome is already registered
++     */
++    public void register() {
++        Bukkit.getBiomeManager().registerBiome(this);
++        this.isRegistered = true;
++        allBiomes.put(this.key, this);
++    }
++
++    public final boolean isRegistered() {
++        return this.isRegistered || allBiomes.containsKey(this.key);
++    }
++
++    /**
++     * Gets the {@link Color} of the grass at the provided coordinates
++     *
++     * @return the grass color
++     */
++    public abstract @NotNull Color getGrassColor();
++    public abstract @NotNull Color getFoliageColor();
++    public abstract @NotNull Color getWaterColor();
++    public abstract @NotNull Color getFogColor();
++    public abstract @NotNull Color getWaterFogColor();
++    public abstract @NotNull Color getSkyColor();
++
++    public float getTemperature() {
++        return 0.8F;
++    }
++
++    /**
++     * The vertical stretch of the terrain. The lower the value the flatter the terrain
++     *
++     * @return the scale of the biome
++     */
++    public float getScale() {
++        return 0.05F;
++    }
++
++    /**
++     * The depth of the biome. Positive values = land, negative = ocean
++     *
++     * @return the depth of the biome
++     */
++    public float getDepth() {
++        return 0.2F;
++    }
++
++    public boolean isFrozen() {
++        return false;
++    }
++
++    public boolean allowPrecipitation() {
++        return true;
++    }
++
++    @Override
++    public boolean equals(Object obj) {
++        if (obj == this) return true;
++        else if (!(obj instanceof PaperBiome other)) return false;
++        else return this.key.equals(other.key);
++    }
++}
+diff --git a/src/main/java/org/bukkit/Bukkit.java b/src/main/java/org/bukkit/Bukkit.java
+index c551010f84ac5d3ebc626c253a8f8282924152c4..79220bd69d0c555f74812e5010874fb8427fe466 100644
+--- a/src/main/java/org/bukkit/Bukkit.java
++++ b/src/main/java/org/bukkit/Bukkit.java
+@@ -2112,6 +2112,11 @@ public final class Bukkit {
+     public static io.papermc.paper.datapack.DatapackManager getDatapackManager() {
+         return server.getDatapackManager();
+     }
++
++    @NotNull
++    public static io.papermc.paper.world.biome.BiomeManager getBiomeManager() {
++        return server.getBiomeManager();
++    }
+     // Paper end
+ 
+     @NotNull
+diff --git a/src/main/java/org/bukkit/Server.java b/src/main/java/org/bukkit/Server.java
+index c34cfba8f9ed7e9dbd0b6b8ffef9fba46abff046..3d8dbdb08734ca4f94d79fae5151ffb6a8c408a7 100644
+--- a/src/main/java/org/bukkit/Server.java
++++ b/src/main/java/org/bukkit/Server.java
+@@ -1836,5 +1836,11 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+      */
+     @NotNull
+     io.papermc.paper.datapack.DatapackManager getDatapackManager();
++
++    /**
++     * @return the biome manager
++     */
++    @NotNull
++    io.papermc.paper.world.biome.BiomeManager getBiomeManager();
+     // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/block/Biome.java b/src/main/java/org/bukkit/block/Biome.java
+index 2d28eeeddb339c7cf17430c0cd870e52ab3adf9b..58e5471e35703f2ccfd78d084ea2ce3b9edd9e76 100644
+--- a/src/main/java/org/bukkit/block/Biome.java
++++ b/src/main/java/org/bukkit/block/Biome.java
+@@ -1,13 +1,18 @@
+ package org.bukkit.block;
+ 
+ import java.util.Locale;
++
++import io.papermc.paper.world.biome.PaperBiome;
+ import org.bukkit.Keyed;
+ import org.bukkit.NamespacedKey;
+ import org.jetbrains.annotations.NotNull;
+ 
+ /**
+  * Holds all accepted Biomes in the default server
++ *
++ * @deprecated use {@link PaperBiome} instead
+  */
++@Deprecated
+ public enum Biome implements Keyed {
+     OCEAN,
+     PLAINS,

@@ -1,0 +1,223 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Seggan <segganew@gmail.com>
+Date: Fri, 22 Oct 2021 16:42:40 -0400
+Subject: [PATCH] Custom biome API
+
+
+diff --git a/src/main/java/io/papermc/paper/world/PaperBiomeManager.java b/src/main/java/io/papermc/paper/world/PaperBiomeManager.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..adef1b857808323c0eaa800733919f2a25d472f3
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/world/PaperBiomeManager.java
+@@ -0,0 +1,89 @@
++package io.papermc.paper.world;
++
++import com.mojang.serialization.Lifecycle;
++import io.papermc.paper.world.biome.BiomeManager;
++import io.papermc.paper.world.biome.PaperBiome;
++import net.minecraft.core.Registry;
++import net.minecraft.core.WritableRegistry;
++import net.minecraft.resources.ResourceKey;
++import net.minecraft.resources.ResourceLocation;
++import net.minecraft.server.dedicated.DedicatedServer;
++import net.minecraft.world.level.biome.Biome;
++import net.minecraft.world.level.biome.BiomeGenerationSettings;
++import net.minecraft.world.level.biome.BiomeSpecialEffects;
++import org.bukkit.NamespacedKey;
++import org.bukkit.craftbukkit.CraftServer;
++import org.jetbrains.annotations.NotNull;
++
++import java.util.Optional;
++
++public class PaperBiomeManager implements BiomeManager {
++
++    private final CraftServer server;
++
++    public PaperBiomeManager(@NotNull CraftServer server) {
++        this.server = server;
++    }
++
++    @Override
++    public void registerBiome(@NotNull PaperBiome biome) {
++        if (biome.isRegistered()) {
++            throw new IllegalStateException("Biome " + biome.getKey() + " is already registered");
++        }
++
++        ResourceLocation location = new ResourceLocation(biome.getKey().getNamespace(), biome.getKey().getKey());
++        ResourceKey<Biome> key = ResourceKey.create(Registry.BIOME_REGISTRY, location);
++
++        // get our plains biome so we can copy a lot of the more complex stuff
++        Biome plains = getBiomeFromKey("plains").orElseThrow();
++
++        Biome.BiomeBuilder newBiome = new Biome.BiomeBuilder();
++        newBiome.biomeCategory(Biome.BiomeCategory.PLAINS);
++        if (biome.allowPrecipitation()) {
++            newBiome.precipitation(biome.isFrozen() ? Biome.Precipitation.SNOW : Biome.Precipitation.RAIN);
++        } else {
++            newBiome.precipitation(Biome.Precipitation.NONE);
++        }
++        newBiome.mobSpawnSettings(plains.getMobSettings());
++        newBiome.generationSettings(plains.getGenerationSettings());
++
++        newBiome.depth(biome.getDepth());
++        newBiome.scale(biome.getScale());
++        newBiome.temperature(biome.getTemperature());
++        newBiome.downfall(plains.getDownfall());
++
++        BiomeSpecialEffects.Builder builder = new BiomeSpecialEffects.Builder();
++
++        builder.grassColorModifier(BiomeSpecialEffects.GrassColorModifier.NONE);
++        builder.grassColorOverride(biome.getGrassColor().asRGB());
++        builder.foliageColorOverride(biome.getFoliageColor().asRGB());
++
++        builder.fogColor(biome.getFogColor().asRGB());
++        builder.waterFogColor(biome.getWaterFogColor().asRGB());
++        builder.waterColor(biome.getWaterColor().asRGB());
++        builder.skyColor(biome.getSkyColor().asRGB());
++
++        newBiome.specialEffects(builder.build());
++
++        server.getServer().registryHolder.ownedRegistryOrThrow(Registry.BIOME_REGISTRY)
++            .register(key, newBiome.build(), Lifecycle.stable());
++    }
++
++    private Optional<Biome> getBiomeFromKey(@NotNull String key) {
++        ResourceKey<Biome> forestKey = ResourceKey.create(Registry.BIOME_REGISTRY, new ResourceLocation("minecraft", key));
++        Registry<Biome> registry = server.getServer().registryHolder.registryOrThrow(Registry.BIOME_REGISTRY);
++        return registry.getOptional(forestKey);
++    }
++
++    @Override
++    public @NotNull PaperBiome getVanillaBiome(@NotNull NamespacedKey key) {
++        if (!key.getNamespace().equals(NamespacedKey.MINECRAFT_NAMESPACE)) {
++            throw new IllegalArgumentException("NamespacedKey " + key + " does not denote a vanilla biome");
++        }
++        return new VanillaBiome(
++            getBiomeFromKey(key.getKey()).orElseThrow(() ->
++                new IllegalArgumentException("NamespacedKey " + key + " does not denote a vanilla biome")),
++            key
++        );
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/world/VanillaBiome.java b/src/main/java/io/papermc/paper/world/VanillaBiome.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..7a9d13448f603c4e818745fc16fc37a0b36ec80c
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/world/VanillaBiome.java
+@@ -0,0 +1,76 @@
++package io.papermc.paper.world;
++
++import io.papermc.paper.world.biome.PaperBiome;
++import net.minecraft.world.level.biome.Biome;
++import org.bukkit.Color;
++import org.bukkit.NamespacedKey;
++import org.jetbrains.annotations.NotNull;
++
++/**
++ * A {@link PaperBiome} wrapper around a {@link Biome}
++ */
++public class VanillaBiome extends PaperBiome {
++
++    private final Biome biome;
++
++    public VanillaBiome(@NotNull Biome biome, @NotNull NamespacedKey key) {
++        super(key.getKey());
++        this.biome = biome;
++    }
++
++    @Override
++    public @NotNull Color getGrassColor() {
++        // default plains grass color
++        return Color.fromRGB(biome.getSpecialEffects().getGrassColorOverride().orElse(0x91BD59));
++    }
++
++    @Override
++    public @NotNull Color getFoliageColor() {
++        return Color.fromRGB(biome.getFoliageColor());
++    }
++
++    @Override
++    public @NotNull Color getWaterColor() {
++        return Color.fromRGB(biome.getWaterColor());
++    }
++
++    @Override
++    public @NotNull Color getFogColor() {
++        return Color.fromRGB(biome.getFogColor());
++    }
++
++    @Override
++    public @NotNull Color getWaterFogColor() {
++        return Color.fromRGB(biome.getWaterFogColor());
++    }
++
++    @Override
++    public @NotNull Color getSkyColor() {
++        return Color.fromRGB(biome.getSkyColor());
++    }
++
++    @Override
++    public float getTemperature() {
++        return biome.getBaseTemperature();
++    }
++
++    @Override
++    public boolean isFrozen() {
++        return biome.climateSettings.temperatureModifier == Biome.TemperatureModifier.FROZEN;
++    }
++
++    @Override
++    public boolean allowPrecipitation() {
++        return biome.getPrecipitation() != Biome.Precipitation.NONE;
++    }
++
++    @Override
++    public float getScale() {
++        return biome.getScale();
++    }
++
++    @Override
++    public float getDepth() {
++        return biome.getDepth();
++    }
++}
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index cfbde4c1220b0d6081a3e4ad2375e0d7bfb2ef40..b54d5896ff7910116171c192de696a059b77bea5 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -290,6 +290,7 @@ public final class CraftServer implements Server {
+     private final List<CraftPlayer> playerView;
+     public int reloadCount;
+     private final io.papermc.paper.datapack.PaperDatapackManager datapackManager; // Paper
++    private final io.papermc.paper.world.PaperBiomeManager biomeManager; // Paper
+     public static Exception excessiveVelEx; // Paper - Velocity warnings
+     private final SysoutCatcher sysoutCatcher = new SysoutCatcher(); // Paper
+ 
+@@ -376,6 +377,7 @@ public final class CraftServer implements Server {
+         this.minimumAPI = this.configuration.getString("settings.minimum-api");
+         this.loadIcon();
+         datapackManager = new io.papermc.paper.datapack.PaperDatapackManager(console.getPackRepository()); // Paper
++        biomeManager = new io.papermc.paper.world.PaperBiomeManager(this); // Paper
+     }
+ 
+     public boolean getCommandBlockOverride(String command) {
+@@ -1196,7 +1198,7 @@ public final class CraftServer implements Server {
+         worlddata.setModdedInfo(this.console.getServerModName(), this.console.getModdedStatus().isPresent());
+         // Paper - move down
+ 
+-        long j = BiomeManager.obfuscateSeed(creator.seed());
++        long j = net.minecraft.world.level.biome.BiomeManager.obfuscateSeed(creator.seed());
+         List<CustomSpawner> list = ImmutableList.of(new PhantomSpawner(), new PatrolSpawner(), new CatSpawner(), new VillageSiege(), new WanderingTraderSpawner(worlddata));
+         MappedRegistry<LevelStem> registrymaterials = worlddata.worldGenSettings().dimensions();
+         LevelStem worlddimension = (LevelStem) registrymaterials.get(actualDimension);
+@@ -2719,5 +2721,10 @@ public final class CraftServer implements Server {
+         return datapackManager;
+     }
+ 
++    @Override
++    public io.papermc.paper.world.biome.BiomeManager getBiomeManager() {
++        return biomeManager;
++    }
++
+     // Paper end
+ }
