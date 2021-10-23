@@ -585,7 +585,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     @Override
     public void setFreezeTicks(int ticks) {
-        Preconditions.checkArgument(0 <= ticks && ticks <= getMaxFreezeTicks(), "Ticks cannot be less than 0 or greater than getMaxFreezeTicks");
+        Preconditions.checkArgument(0 <= ticks, "Ticks cannot be less than 0");
 
         getHandle().setTicksFrozen(ticks);
     }
