@@ -169,6 +169,14 @@ public interface UnsafeValues {
 
     ItemStack deserializeItem(byte[] data);
 
+    byte[] serializeEntity(org.bukkit.entity.Entity entity);
+
+    default org.bukkit.entity.Entity deserializeEntity(byte[] data, World world) {
+        return deserializeEntity(data, world, false);
+    }
+
+    org.bukkit.entity.Entity deserializeEntity(byte[] data, World world, boolean preserveUUID);
+
     /**
      * Creates and returns the next EntityId available.
      * <p>

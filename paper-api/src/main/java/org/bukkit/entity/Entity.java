@@ -946,5 +946,32 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      */
     @Deprecated
     @NotNull Set<Player> getTrackedPlayers();
+
+    /**
+     * Spawns the entity in the world at the given {@link Location} with the default spawn reason.
+     * <p>
+     * This will not spawn the entity if the entity is already spawned or has previously been despawned.
+     * <p>
+     * Also, this method will fire the same events as a normal entity spawn.
+     *
+     * @param location The location to spawn the entity at.
+     * @return Whether the entity was successfully spawned.
+     */
+    public default boolean spawnAt(@NotNull Location location) {
+        return spawnAt(location, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.DEFAULT);
+    }
+
+    /**
+     * Spawns the entity in the world at the given {@link Location} with the reason given.
+     * <p>
+     * This will not spawn the entity if the entity is already spawned or has previously been despawned.
+     * <p>
+     * Also, this method will fire the same events as a normal entity spawn.
+     *
+     * @param location The location to spawn the entity at.
+     * @param reason   The reason for the entity being spawned.
+     * @return Whether the entity was successfully spawned.
+     */
+    public boolean spawnAt(@NotNull Location location, @NotNull org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason reason);
     // Paper end
 }
