@@ -122,6 +122,9 @@ public class HelpCommand extends BukkitCommand {
             List<String> matchedTopics = new ArrayList<String>();
             String searchString = args[0];
             for (HelpTopic topic : Bukkit.getServer().getHelpMap().getHelpTopics()) {
+                if (!topic.canSee(sender)) {
+                    continue;
+                }
                 String trimmedTopic = topic.getName().startsWith("/") ? topic.getName().substring(1) : topic.getName();
 
                 if (trimmedTopic.startsWith(searchString)) {
