@@ -1083,6 +1083,18 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     }
     // Paper end - tracked players API
 
+    // Paper start - raw entity serialization API
+    @Override
+    public boolean spawnAt(Location location, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason reason) {
+        Preconditions.checkNotNull(location, "location cannot be null");
+        Preconditions.checkNotNull(reason, "reason cannot be null");
+        this.entity.setLevel(((CraftWorld) location.getWorld()).getHandle());
+        this.entity.setPos(location.getX(), location.getY(), location.getZ());
+        this.entity.setRot(location.getYaw(), location.getPitch());
+        return !this.entity.valid && this.entity.level().addFreshEntity(this.entity, reason);
+    }
+    // Paper end - raw entity serialization API
+
     // Paper start - missing entity api
     @Override
     public boolean isInvisible() {  // Paper - moved up from LivingEntity

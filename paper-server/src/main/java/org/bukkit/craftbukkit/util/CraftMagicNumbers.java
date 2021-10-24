@@ -510,7 +510,33 @@ public final class CraftMagicNumbers implements UnsafeValues {
         return CraftItemStack.asCraftMirror(net.minecraft.world.item.ItemStack.parse(MinecraftServer.getServer().registryAccess(), compound).orElseThrow());
     }
 
-    private byte[] serializeNbtToBytes(CompoundTag compound) {
+    @Override
+    public byte[] serializeEntity(org.bukkit.entity.Entity entity) {
+        Preconditions.checkNotNull(entity, "null cannot be serialized");
+        Preconditions.checkArgument(entity instanceof org.bukkit.craftbukkit.entity.CraftEntity, "only CraftEntities can be serialized");
+
+        net.minecraft.nbt.CompoundTag compound = new net.minecraft.nbt.CompoundTag();
+        ((org.bukkit.craftbukkit.entity.CraftEntity) entity).getHandle().serializeEntity(compound);
+        return serializeNbtToBytes(compound);
+    }
+
+    @Override
+    public org.bukkit.entity.Entity deserializeEntity(byte[] data, org.bukkit.World world, boolean preserveUUID) {
+        Preconditions.checkNotNull(data, "null cannot be deserialized");
+        Preconditions.checkArgument(data.length > 0, "cannot deserialize nothing");
+
+        net.minecraft.nbt.CompoundTag compound = deserializeNbtFromBytes(data);
+        int dataVersion = compound.getInt("DataVersion");
+        compound = (net.minecraft.nbt.CompoundTag) MinecraftServer.getServer().fixerUpper.update(References.ENTITY, new Dynamic<>(NbtOps.INSTANCE, compound), dataVersion, this.getDataVersion()).getValue();
+        if (!preserveUUID) {
+            // Generate a new UUID so we don't have to worry about deserializing the same entity twice
+            compound.remove("UUID");
+        }
+        return net.minecraft.world.entity.EntityType.create(compound, ((org.bukkit.craftbukkit.CraftWorld) world).getHandle(), net.minecraft.world.entity.EntitySpawnReason.LOAD)
+            .orElseThrow(() -> new IllegalArgumentException("An ID was not found for the data. Did you downgrade?")).getBukkitEntity();
+    }
+
+    private byte[] serializeNbtToBytes(net.minecraft.nbt.CompoundTag compound) {
         compound.putInt("DataVersion", getDataVersion());
         java.io.ByteArrayOutputStream outputStream = new java.io.ByteArrayOutputStream();
         try {
