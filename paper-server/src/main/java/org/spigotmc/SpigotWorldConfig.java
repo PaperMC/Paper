@@ -382,4 +382,10 @@ public class SpigotWorldConfig
         this.entityMaxTickTime = this.getInt("max-tick-time.entity", 50);
         this.log("Tile Max Tick Time: " + this.tileMaxTickTime + "ms Entity max Tick Time: " + this.entityMaxTickTime + "ms");
     }
+
+    public int thunderChance;
+    private void thunderChance()
+    {
+        this.thunderChance = this.getInt("thunder-chance", 100000);
+    }
 }
