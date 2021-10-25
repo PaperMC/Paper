@@ -45,4 +45,11 @@ public class CraftSkeleton extends CraftAbstractSkeleton implements Skeleton {
     public SkeletonType getSkeletonType() {
        return SkeletonType.NORMAL;
     }
+
+    // Paper start
+    @Override
+    public int inPowderedSnowTime() {
+        return getHandle().inPowderSnowTime;
+    }
+    // Paper end
 }

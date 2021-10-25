@@ -1095,6 +1095,13 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     }
     // Paper end - raw entity serialization API
 
+    // Paper start - entity powdered snow API
+    @Override
+    public boolean isInPowderedSnow() {
+        return getHandle().isInPowderSnow || getHandle().wasInPowderSnow; // depending on the location in the entity "tick" either could be needed.
+    }
+    // Paper end - entity powdered snow API
+
     // Paper start - missing entity api
     @Override
     public boolean isInvisible() {  // Paper - moved up from LivingEntity
