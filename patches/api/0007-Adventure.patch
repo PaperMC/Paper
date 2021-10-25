@@ -7,7 +7,7 @@ Co-authored-by: zml <zml@stellardrift.ca>
 Co-authored-by: Jake Potrebic <jake.m.potrebic@gmail.com>
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index 3a395a44ff50a77895341bbbfb8c81deede41b8b..0a49a70a8f70e9b0af1eb5cff10884b98f86da7d 100644
+index ca45f6ce0bc9f57158f3be6f56a3a7566e5ee720..ccf1912af727b68d1f1bfa1b73b43951ddfbe0ec 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
 @@ -10,6 +10,19 @@ java {
@@ -15,7 +15,7 @@ index 3a395a44ff50a77895341bbbfb8c81deede41b8b..0a49a70a8f70e9b0af1eb5cff10884b9
  }
  
 +val adventureVersion = "4.9.2"
-+val apiAndDocs by configurations.creating {
++val apiAndDocs: Configuration by configurations.creating {
 +    attributes {
 +        attribute(Category.CATEGORY_ATTRIBUTE, objects.named(Category.DOCUMENTATION))
 +        attribute(Bundling.BUNDLING_ATTRIBUTE, objects.named(Bundling.EXTERNAL))
@@ -42,11 +42,19 @@ index 3a395a44ff50a77895341bbbfb8c81deede41b8b..0a49a70a8f70e9b0af1eb5cff10884b9
  
      compileOnly("org.apache.maven:maven-resolver-provider:3.8.1")
      compileOnly("org.apache.maven.resolver:maven-resolver-connector-basic:1.7.0")
-@@ -67,10 +85,17 @@ tasks.jar {
+@@ -68,10 +86,25 @@ tasks.jar {
  }
  
- tasks.withType<Javadoc>().configureEach {
-+    (options as CoreJavadocOptions).addStringOption("sourcepath", apiAndDocs.resolvedConfiguration.files.joinToString(separator = File.pathSeparator, transform = File::getPath))
+ tasks.withType<Javadoc> {
++    inputs.files(apiAndDocs)
++        .ignoreEmptyDirectories()
++        .withPropertyName(apiAndDocs.name + "-configuration")
++    doFirst {
++        (options as CoreJavadocOptions).addStringOption(
++            "sourcepath",
++            apiAndDocs.resolvedConfiguration.files.joinToString(separator = File.pathSeparator, transform = File::getPath)
++        )
++    }
      (options as StandardJavadocDocletOptions).links(
          "https://guava.dev/releases/21.0/api/docs/",
          "https://javadoc.io/doc/org.yaml/snakeyaml/1.28/",
