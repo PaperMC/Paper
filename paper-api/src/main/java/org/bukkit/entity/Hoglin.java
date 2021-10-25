@@ -44,13 +44,17 @@ public interface Hoglin extends Animals, Enemy {
     public int getConversionTime();
 
     /**
-     * Sets the amount of ticks until this entity will be converted to a Zoglin.
+     * Sets the conversion counter value. The counter is incremented
+     * every tick the method {@link #isConverting()} returns true. Setting
+     * this value will not start the conversion if the {@link Hoglin} is
+     * not in a valid environment ({@link org.bukkit.World#isPiglinSafe})
+     * to convert, is immune to zombification ({@link #isImmuneToZombification()})
+     * or has no AI ({@link #hasAI}).
      *
-     * When this reaches 0, the entity will be converted. A value of less than 0
-     * will stop the current conversion process without converting the current
-     * entity.
+     * When this reaches 300, the entity will be converted. To stop the
+     * conversion use {@link #setImmuneToZombification(boolean)}.
      *
-     * @param time new conversion time
+     * @param time new conversion counter
      */
     public void setConversionTime(int time);
 
