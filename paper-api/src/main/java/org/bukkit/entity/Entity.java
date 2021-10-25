@@ -973,5 +973,12 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * @return Whether the entity was successfully spawned.
      */
     public boolean spawnAt(@NotNull Location location, @NotNull org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason reason);
+
+    /**
+     * Check if entity is inside powdered snow.
+     *
+     * @return true if in powdered snow.
+     */
+    boolean isInPowderedSnow();
     // Paper end
 }
