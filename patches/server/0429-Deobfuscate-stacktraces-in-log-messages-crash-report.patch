@@ -6,7 +6,7 @@ Subject: [PATCH] Deobfuscate stacktraces in log messages, crash reports, and
 
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index a482ad74b9a5d06a982ac2a6d9b6c5dc9f664f46..7a7a6a1a1bdfecb619dd6ba6f6865eb0bb74d0d9 100644
+index a482ad74b9a5d06a982ac2a6d9b6c5dc9f664f46..974f0bbbd3d271d28ce884490dc68b68849a07c3 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
 @@ -1,7 +1,9 @@
@@ -19,31 +19,36 @@ index a482ad74b9a5d06a982ac2a6d9b6c5dc9f664f46..7a7a6a1a1bdfecb619dd6ba6f6865eb0
  import java.util.Locale
  
  plugins {
-@@ -12,6 +14,14 @@ plugins {
+@@ -12,6 +14,11 @@ plugins {
  
  repositories {
      maven("https://libraries.minecraft.net/")
 +    // Paper start
-+    maven("https://maven.quiltmc.org/repository/release/") {
-+        mavenContent {
-+            releasesOnly()
-+            includeModule("org.quiltmc", "tiny-mappings-parser")
-+        }
++    maven("https://maven.fabricmc.net/") {
++        mavenContent { includeModule("net.fabricmc", "mapping-io") }
 +    }
 +    // Paper end
  }
  
  dependencies {
-@@ -46,6 +56,8 @@ dependencies {
+@@ -46,6 +53,8 @@ dependencies {
  
      implementation("io.netty:netty-all:4.1.65.Final") // Paper
  
-+    implementation("org.quiltmc:tiny-mappings-parser:0.3.0") // Paper - needed to read mappings for stacktrace deobfuscation
++    implementation("net.fabricmc:mapping-io:0.3.0") // Paper - needed to read mappings for stacktrace deobfuscation
 +
      testImplementation("junit:junit:4.13.1")
      testImplementation("org.hamcrest:hamcrest-library:1.3")
  }
-@@ -139,6 +151,45 @@ tasks.shadowJar {
+@@ -95,6 +104,7 @@ relocation {
+ 
+     relocate("org.jline:jline-terminal-jansi", "org.jline" to cb("jline"))
+     sequenceOf(
++        "net.fabricmc:mapping-io" to "net.fabricmc.mappingio", // Paper
+         "commons-codec:commons-codec" to "org.apache.commons.codec",
+         "commons-io:commons-io" to "org.apache.commons.io",
+         //"it.unimi.dsi:fastutil" to "it.unimi", // Paper - don't relocate fastutil
+@@ -139,6 +149,45 @@ tasks.shadowJar {
      transform(ModifiedLog4j2PluginsCacheFileTransformer::class.java)
  }
  
@@ -162,26 +167,26 @@ index 0000000000000000000000000000000000000000..c701ef3c287f62aa0ebfbdbd6da6ed82
 +}
 diff --git a/src/main/java/io/papermc/paper/util/ObfHelper.java b/src/main/java/io/papermc/paper/util/ObfHelper.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..5ee513c0e2436e6afa3432f9f835d4028b37aed0
+index 0000000000000000000000000000000000000000..b8b17d046f836c8652ab094db00ab1af84971b2c
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/util/ObfHelper.java
-@@ -0,0 +1,141 @@
+@@ -0,0 +1,146 @@
 +package io.papermc.paper.util;
 +
-+import com.google.common.base.Charsets;
-+import com.google.common.collect.ImmutableMap;
-+import com.google.common.collect.ImmutableSet;
-+import com.mojang.datafixers.util.Pair;
-+import java.io.BufferedReader;
 +import java.io.IOException;
 +import java.io.InputStream;
 +import java.io.InputStreamReader;
++import java.nio.charset.StandardCharsets;
++import java.util.HashMap;
++import java.util.HashSet;
 +import java.util.Map;
 +import java.util.Set;
-+import net.fabricmc.mapping.tree.ClassDef;
-+import net.fabricmc.mapping.tree.MethodDef;
-+import net.fabricmc.mapping.tree.TinyMappingFactory;
-+import net.fabricmc.mapping.tree.TinyTree;
++import java.util.function.Function;
++import java.util.stream.Collectors;
++import net.fabricmc.mappingio.MappingReader;
++import net.fabricmc.mappingio.format.MappingFormat;
++import net.fabricmc.mappingio.tree.MappingTree;
++import net.fabricmc.mappingio.tree.MemoryMappingTree;
 +import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.checkerframework.checker.nullness.qual.Nullable;
 +import org.checkerframework.framework.qual.DefaultQualifier;
@@ -199,8 +204,8 @@ index 0000000000000000000000000000000000000000..5ee513c0e2436e6afa3432f9f835d402
 +    ObfHelper() {
 +        final @Nullable Set<ClassMapping> maps = loadMappingsIfPresent();
 +        if (maps != null) {
-+            this.mappingsByObfName = maps.stream().collect(ImmutableMap.toImmutableMap(ClassMapping::obfName, map -> map));
-+            this.mappingsByMojangName = maps.stream().collect(ImmutableMap.toImmutableMap(ClassMapping::mojangName, map -> map));
++            this.mappingsByObfName = maps.stream().collect(Collectors.toUnmodifiableMap(ClassMapping::obfName, map -> map));
++            this.mappingsByMojangName = maps.stream().collect(Collectors.toUnmodifiableMap(ClassMapping::mojangName, map -> map));
 +        } else {
 +            this.mappingsByObfName = null;
 +            this.mappingsByMojangName = null;
@@ -260,34 +265,33 @@ index 0000000000000000000000000000000000000000..5ee513c0e2436e6afa3432f9f835d402
 +            if (mappingsInputStream == null) {
 +                return null;
 +            }
-+            final TinyTree tree = TinyMappingFactory.loadWithDetection(new BufferedReader(new InputStreamReader(mappingsInputStream, Charsets.UTF_8)));
-+            final var builder = ImmutableSet.<ClassMapping>builder();
++            final MemoryMappingTree tree = new MemoryMappingTree();
++            MappingReader.read(new InputStreamReader(mappingsInputStream, StandardCharsets.UTF_8), MappingFormat.TINY_2, tree);
++            final Set<ClassMapping> classes = new HashSet<>();
 +
-+            for (final ClassDef classDef : tree.getClasses()) {
-+                final String obfClassName = classDef.getName(SPIGOT_NAMESPACE).replace('/', '.');
-+                final var methodMappings = ImmutableMap.<Pair<String, String>, MethodMapping>builder();
++            final StringPool pool = new StringPool();
++            for (final MappingTree.ClassMapping cls : tree.getClasses()) {
++                final Map<String, String> methods = new HashMap<>();
 +
-+                for (final MethodDef methodDef : classDef.getMethods()) {
-+                    final MethodMapping method = new MethodMapping(
-+                        methodDef.getName(SPIGOT_NAMESPACE),
-+                        methodDef.getName(MOJANG_PLUS_YARN_NAMESPACE),
-+                        methodDef.getDescriptor(SPIGOT_NAMESPACE)
-+                    );
-+                    methodMappings.put(
-+                        new Pair<>(method.obfName(), method.descriptor()),
-+                        method
++                for (final MappingTree.MethodMapping methodMapping : cls.getMethods()) {
++                    methods.put(
++                        pool.string(methodKey(
++                            methodMapping.getName(SPIGOT_NAMESPACE),
++                            methodMapping.getDesc(SPIGOT_NAMESPACE)
++                        )),
++                        pool.string(methodMapping.getName(MOJANG_PLUS_YARN_NAMESPACE))
 +                    );
 +                }
 +
 +                final ClassMapping map = new ClassMapping(
-+                    obfClassName,
-+                    classDef.getName(MOJANG_PLUS_YARN_NAMESPACE).replace('/', '.'),
-+                    methodMappings.build()
++                    cls.getName(SPIGOT_NAMESPACE).replace('/', '.'),
++                    cls.getName(MOJANG_PLUS_YARN_NAMESPACE).replace('/', '.'),
++                    Map.copyOf(methods)
 +                );
-+                builder.add(map);
++                classes.add(map);
 +            }
 +
-+            return builder.build();
++            return Set.copyOf(classes);
 +        } catch (final IOException ex) {
 +            System.err.println("Failed to load mappings for stacktrace deobfuscation.");
 +            ex.printStackTrace();
@@ -295,28 +299,33 @@ index 0000000000000000000000000000000000000000..5ee513c0e2436e6afa3432f9f835d402
 +        }
 +    }
 +
++    public static String methodKey(final String obfName, final String obfDescriptor) {
++        return obfName + obfDescriptor;
++    }
++
++    private static final class StringPool {
++        private final Map<String, String> pool = new HashMap<>();
++
++        public String string(final String string) {
++            return this.pool.computeIfAbsent(string, Function.identity());
++        }
++    }
++
 +    public record ClassMapping(
 +        String obfName,
 +        String mojangName,
-+        Map<Pair<String, String>, MethodMapping> methodMappings
-+    ) {}
-+
-+    public record MethodMapping(
-+        String obfName,
-+        String mojangName,
-+        String descriptor
++        Map<String, String> methodsByObf
 +    ) {}
 +}
 diff --git a/src/main/java/io/papermc/paper/util/StacktraceDeobfuscator.java b/src/main/java/io/papermc/paper/util/StacktraceDeobfuscator.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..f3099d3cfa4ea8ad56b1abdd0e7b77aaa4465244
+index 0000000000000000000000000000000000000000..5019d22fa2ab8d72fac5ffcf5dc2a3715ae63760
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/util/StacktraceDeobfuscator.java
-@@ -0,0 +1,156 @@
+@@ -0,0 +1,153 @@
 +package io.papermc.paper.util;
 +
 +import com.destroystokyo.paper.PaperConfig;
-+import com.mojang.datafixers.util.Pair;
 +import it.unimi.dsi.fastutil.ints.IntArrayList;
 +import it.unimi.dsi.fastutil.ints.IntList;
 +import java.io.IOException;
@@ -337,9 +346,9 @@ index 0000000000000000000000000000000000000000..f3099d3cfa4ea8ad56b1abdd0e7b77aa
 +public enum StacktraceDeobfuscator {
 +    INSTANCE;
 +
-+    private final Map<Class<?>, Map<Pair<String, String>, IntList>> lineMapCache = Collections.synchronizedMap(new LinkedHashMap<>(128, 0.75f, true) {
++    private final Map<Class<?>, Map<String, IntList>> lineMapCache = Collections.synchronizedMap(new LinkedHashMap<>(128, 0.75f, true) {
 +        @Override
-+        protected boolean removeEldestEntry(final Map.Entry<Class<?>, Map<Pair<String, String>, IntList>> eldest) {
++        protected boolean removeEldestEntry(final Map.Entry<Class<?>, Map<String, IntList>> eldest) {
 +            return this.size() > 127;
 +        }
 +    });
@@ -387,17 +396,15 @@ index 0000000000000000000000000000000000000000..f3099d3cfa4ea8ad56b1abdd0e7b77aa
 +            } catch (final ClassNotFoundException ex) {
 +                throw new RuntimeException(ex);
 +            }
-+            final @Nullable Pair<String, String> nameDescriptorPair = this.determineMethodForLine(clazz, element.getLineNumber());
-+            final ObfHelper.@Nullable MethodMapping methodMapping = nameDescriptorPair == null
-+                ? null
-+                : classMapping.methodMappings().get(nameDescriptorPair);
++            final @Nullable String methodKey = this.determineMethodForLine(clazz, element.getLineNumber());
++            final @Nullable String mappedMethodName = methodKey == null ? null : classMapping.methodsByObf().get(methodKey);
 +
 +            result[i] = new StackTraceElement(
 +                element.getClassLoaderName(),
 +                element.getModuleName(),
 +                element.getModuleVersion(),
 +                classMapping.mojangName(),
-+                methodMapping != null ? methodMapping.mojangName() : methodName,
++                mappedMethodName != null ? mappedMethodName : methodName,
 +                sourceFileName(classMapping.mojangName()),
 +                element.getLineNumber()
 +            );
@@ -405,15 +412,15 @@ index 0000000000000000000000000000000000000000..f3099d3cfa4ea8ad56b1abdd0e7b77aa
 +        return result;
 +    }
 +
-+    private @Nullable Pair<String, String> determineMethodForLine(final Class<?> clazz, final int lineNumber) {
-+        final Map<Pair<String, String>, IntList> lineMap = this.lineMapCache.computeIfAbsent(clazz, StacktraceDeobfuscator::buildLineMap);
++    private @Nullable String determineMethodForLine(final Class<?> clazz, final int lineNumber) {
++        final Map<String, IntList> lineMap = this.lineMapCache.computeIfAbsent(clazz, StacktraceDeobfuscator::buildLineMap);
 +        for (final var entry : lineMap.entrySet()) {
-+            final Pair<String, String> pair = entry.getKey();
++            final String methodKey = entry.getKey();
 +            final IntList lines = entry.getValue();
 +            for (int i = 0, linesSize = lines.size(); i < linesSize; i++) {
 +                final int num = lines.getInt(i);
 +                if (num == lineNumber) {
-+                    return pair;
++                    return methodKey;
 +                }
 +            }
 +        }
@@ -429,8 +436,8 @@ index 0000000000000000000000000000000000000000..f3099d3cfa4ea8ad56b1abdd0e7b77aa
 +        return rootClassName + ".java";
 +    }
 +
-+    private static Map<Pair<String, String>, IntList> buildLineMap(final Class<?> key) {
-+        final Map<Pair<String, String>, IntList> lineMap = new HashMap<>();
++    private static Map<String, IntList> buildLineMap(final Class<?> key) {
++        final Map<String, IntList> lineMap = new HashMap<>();
 +        final class LineCollectingMethodVisitor extends MethodVisitor {
 +            private final IntList lines = new IntArrayList();
 +            private final String name;
@@ -451,7 +458,7 @@ index 0000000000000000000000000000000000000000..f3099d3cfa4ea8ad56b1abdd0e7b77aa
 +            @Override
 +            public void visitEnd() {
 +                super.visitEnd();
-+                lineMap.put(new Pair<>(this.name, this.descriptor), this.lines);
++                lineMap.put(ObfHelper.methodKey(this.name, this.descriptor), this.lines);
 +            }
 +        }
 +        final ClassVisitor classVisitor = new ClassVisitor(Opcodes.ASM9) {
