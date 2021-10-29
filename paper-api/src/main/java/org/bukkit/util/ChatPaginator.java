@@ -133,17 +133,12 @@ public class ChatPaginator {
         }
 
         // Iterate over the wrapped lines, applying the last color from one line to the beginning of the next
-        if (lines.get(0).length() == 0 || lines.get(0).charAt(0) != ChatColor.COLOR_CHAR) {
-            lines.set(0, ChatColor.WHITE + lines.get(0));
-        }
         for (int i = 1; i < lines.size(); i++) {
             final String pLine = lines.get(i - 1);
             final String subLine = lines.get(i);
 
-            char color = pLine.charAt(pLine.lastIndexOf(ChatColor.COLOR_CHAR) + 1);
-            if (subLine.length() == 0 || subLine.charAt(0) != ChatColor.COLOR_CHAR) {
-                lines.set(i, ChatColor.getByChar(color) + subLine);
-            }
+            String color = ChatColor.getLastColors(pLine);
+            lines.set(i, color + subLine);
         }
 
         return lines.toArray(new String[lines.size()]);
