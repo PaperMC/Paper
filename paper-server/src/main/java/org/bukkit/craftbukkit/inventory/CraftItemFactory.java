@@ -122,6 +122,7 @@ public final class CraftItemFactory implements ItemFactory {
         case YELLOW_BANNER:
         case YELLOW_WALL_BANNER:
             return meta instanceof CraftMetaBanner ? meta : new CraftMetaBanner(meta);
+        case AXOLOTL_SPAWN_EGG:
         case BAT_SPAWN_EGG:
         case BEE_SPAWN_EGG:
         case BLAZE_SPAWN_EGG:
@@ -140,6 +141,8 @@ public final class CraftItemFactory implements ItemFactory {
         case EVOKER_SPAWN_EGG:
         case FOX_SPAWN_EGG:
         case GHAST_SPAWN_EGG:
+        case GLOW_SQUID_SPAWN_EGG:
+        case GOAT_SPAWN_EGG:
         case GUARDIAN_SPAWN_EGG:
         case HOGLIN_SPAWN_EGG:
         case HORSE_SPAWN_EGG:
@@ -152,6 +155,7 @@ public final class CraftItemFactory implements ItemFactory {
         case PANDA_SPAWN_EGG:
         case PARROT_SPAWN_EGG:
         case PHANTOM_SPAWN_EGG:
+        case PIGLIN_BRUTE_SPAWN_EGG:
         case PIGLIN_SPAWN_EGG:
         case PIG_SPAWN_EGG:
         case PILLAGER_SPAWN_EGG:
