@@ -1,10 +1,12 @@
 package org.bukkit.event.inventory;
 
+import java.util.List;
 import org.bukkit.block.Block;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.block.BlockEvent;
 import org.bukkit.inventory.BrewerInventory;
+import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -14,17 +16,22 @@ import org.jetbrains.annotations.NotNull;
 public class BrewEvent extends BlockEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
     private BrewerInventory contents;
+    private final List<ItemStack> results;
     private int fuelLevel;
     private boolean cancelled;
 
-    public BrewEvent(@NotNull Block brewer, @NotNull BrewerInventory contents, int fuelLevel) {
+    public BrewEvent(@NotNull Block brewer, @NotNull BrewerInventory contents, @NotNull List<ItemStack> results, int fuelLevel) {
         super(brewer);
         this.contents = contents;
+        this.results = results;
         this.fuelLevel = fuelLevel;
     }
 
     /**
      * Gets the contents of the Brewing Stand.
+     *
+     * <b>Note:</b> The brewer inventory still holds the items found prior to
+     * the finalization of the brewing process, e.g. the plain water bottles.
      *
      * @return the contents
      */
@@ -40,6 +47,21 @@ public class BrewEvent extends BlockEvent implements Cancellable {
      */
     public int getFuelLevel() {
         return fuelLevel;
+    }
+
+    /**
+     * Gets the resulting items in the Brewing Stand.
+     *
+     * The returned list, in case of a server-created event instance, is
+     * mutable. Any changes in the returned list will reflect in the brewing
+     * result if the event is not cancelled. If the size of the list is reduced,
+     * remaining items will be set to air.
+     *
+     * @return List of {@link ItemStack} resulting for this operation
+     */
+    @NotNull
+    public List<ItemStack> getResults() {
+        return results;
     }
 
     @Override
