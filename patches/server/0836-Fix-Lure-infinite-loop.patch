@@ -1,0 +1,22 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: HexedHero <6012891+HexedHero@users.noreply.github.com>
+Date: Sun, 31 Oct 2021 01:36:34 +0100
+Subject: [PATCH] Fix Lure infinite loop
+
+We check if the timeUntilLured is going to be set to 0 or lower from the
+lureSpeed (Lure enchantment) and if so we set timeUntilLured to 1 tick
+else we just do the normal behaviour
+
+diff --git a/src/main/java/net/minecraft/world/entity/projectile/FishingHook.java b/src/main/java/net/minecraft/world/entity/projectile/FishingHook.java
+index 5c16566f59535ce61fb3f747a745255cfaa439e8..5a84b695138a60714fc63a15166a38973e18a274 100644
+--- a/src/main/java/net/minecraft/world/entity/projectile/FishingHook.java
++++ b/src/main/java/net/minecraft/world/entity/projectile/FishingHook.java
+@@ -407,7 +407,7 @@ public class FishingHook extends Projectile {
+             } else {
+                 // CraftBukkit start - logic to modify fishing wait time
+                 this.timeUntilLured = Mth.nextInt(this.random, this.minWaitTime, this.maxWaitTime);
+-                this.timeUntilLured -= (this.applyLure) ? this.lureSpeed * 20 * 5 : 0;
++                this.timeUntilLured -= (this.applyLure) ? (this.lureSpeed * 20 * 5 >= this.maxWaitTime ? this.timeUntilLured - 1 : this.lureSpeed * 20 * 5) : 0; // Paper - Fix Lure infinite loop
+                 // CraftBukkit end
+             }
+         }
