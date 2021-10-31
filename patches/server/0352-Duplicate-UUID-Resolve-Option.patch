@@ -165,17 +165,18 @@ index 0f88ab98f8f33265dc223d55f4afae60230d9afe..20a9d213b977cf8d8ada3815931bb060
          ChunkPos chunkcoordintpair = holder.getPos();
          CompletableFuture<Either<List<ChunkAccess>, ChunkHolder.ChunkLoadingFailure>> completablefuture = this.getChunkRangeFuture(chunkcoordintpair, 1, (i) -> {
 diff --git a/src/main/java/net/minecraft/world/level/entity/PersistentEntitySectionManager.java b/src/main/java/net/minecraft/world/level/entity/PersistentEntitySectionManager.java
-index 02767e831301b9112a77e9c2eb786ddbd95edfbd..59c3f1263f6418736e207786bc50448ed5dde32a 100644
+index 02767e831301b9112a77e9c2eb786ddbd95edfbd..799a60df575b7c420b1583f0fea01407be9e30dd 100644
 --- a/src/main/java/net/minecraft/world/level/entity/PersistentEntitySectionManager.java
 +++ b/src/main/java/net/minecraft/world/level/entity/PersistentEntitySectionManager.java
-@@ -74,7 +74,21 @@ public class PersistentEntitySectionManager<T extends EntityAccess> implements A
+@@ -74,7 +74,22 @@ public class PersistentEntitySectionManager<T extends EntityAccess> implements A
  
      private boolean addEntityUuid(T entity) {
          if (!this.knownUuids.add(entity.getUUID())) {
 +            // Paper start
-+            if (((Entity) entity).isRemoved()) {
-+                stopTracking(entity); // remove the existing entity
-+                return false;
++            T conflict = this.visibleEntityStorage.getEntity(entity.getUUID());
++            if (conflict != null && ((Entity) conflict).isRemoved()) {
++                stopTracking(conflict); // remove the existing entity
++                return true;
 +            }
 +            // Paper end
              PersistentEntitySectionManager.LOGGER.warn("UUID of added entity already exists: {}", entity);
