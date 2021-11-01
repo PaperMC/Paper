@@ -6,6 +6,8 @@ import java.lang.ref.WeakReference;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Objects;
+import java.util.concurrent.locks.LockSupport;
+import java.util.function.BooleanSupplier;
 import java.util.function.Predicate;
 import net.minecraft.core.BlockPosition;
 import net.minecraft.core.IRegistry;
@@ -13,6 +15,7 @@ import net.minecraft.core.SectionPosition;
 import net.minecraft.nbt.GameProfileSerializer;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.server.level.WorldServer;
+import net.minecraft.util.thread.ThreadedMailbox;
 import net.minecraft.world.level.ChunkCoordIntPair;
 import net.minecraft.world.level.EnumSkyBlock;
 import net.minecraft.world.level.biome.WorldChunkManager;
@@ -24,6 +27,7 @@ import net.minecraft.world.level.chunk.ChunkStatus;
 import net.minecraft.world.level.chunk.DataPaletteBlock;
 import net.minecraft.world.level.chunk.IChunkAccess;
 import net.minecraft.world.level.chunk.NibbleArray;
+import net.minecraft.world.level.chunk.storage.EntityStorage;
 import net.minecraft.world.level.entity.PersistentEntitySectionManager;
 import net.minecraft.world.level.levelgen.HeightMap;
 import net.minecraft.world.level.levelgen.SeededRandom;
@@ -133,20 +137,36 @@ public class CraftChunk implements Chunk {
 
         entityManager.b(pair); // Start entity loading
 
-        // now we wait until the entities are loaded,
-        // the converting from NBT to entity object is done on the main Thread which is why we wait
-        getCraftWorld().getHandle().getMinecraftServer().awaitTasks(() -> {
-            boolean status = entityManager.a(pair);
+        // SPIGOT-6772: Use entity mailbox and re-schedule entities if they get unloaded
+        ThreadedMailbox<Runnable> mailbox = ((EntityStorage) entityManager.permanentStorage).entityDeserializerQueue;
+        BooleanSupplier supplier = () -> {
             // only execute inbox if our entities are not present
-            if (status) {
+            if (entityManager.a(pair)) {
                 return true;
             }
+
+            if (!entityManager.isPending(pair)) {
+                // Our entities got unloaded, this should normally not happen.
+                entityManager.b(pair); // Re-start entity loading
+            }
+
             // tick loading inbox, which loads the created entities to the world
             // (if present)
             entityManager.tick();
             // check if our entities are loaded
             return entityManager.a(pair);
-        });
+        };
+
+        // now we wait until the entities are loaded,
+        // the converting from NBT to entity object is done on the main Thread which is why we wait
+        while (!supplier.getAsBoolean()) {
+            if (mailbox.b() != 0) { // PAIL rename size
+                mailbox.run();
+            } else {
+                Thread.yield();
+                LockSupport.parkNanos("waiting for entity loading", 100000L);
+            }
+        }
 
         return entityManager.getEntities(new ChunkCoordIntPair(x, z)).stream()
                 .map(net.minecraft.world.entity.Entity::getBukkitEntity)
