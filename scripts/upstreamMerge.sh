@@ -18,6 +18,14 @@ function update {
   gitcmd add --force "${submodule_dir}"
 }
 
+function update_submodules() {
+  gitcmd submodule update --init
+  local submodule
+  for submodule in "${@}"; do
+    update "${submodule}"
+  done
+}
+
 function submodule_has_update {
   local -r submodule="${1?Submodule is missing}"
   local -r submodule_dir="${workdir}/${submodule}"
@@ -68,11 +76,7 @@ function main {
     echo "Rebuilding patches without filtering to improve mergeability"
     apply_rebuild || return $?
   fi
-  gitcmd submodule update --init
-  local submodule
-  for submodule in "${submodules_to_update[@]}"; do
-    update "${submodule}"
-  done
+  update_submodules "${submodules_to_update[@]}"
   if ! gitcmd diff --cached --quiet --exit-code -- "${workdir}"; then
     if ! skip_rebuild; then
       echo "Rebuilding patches without filtering to improve apply ability"
