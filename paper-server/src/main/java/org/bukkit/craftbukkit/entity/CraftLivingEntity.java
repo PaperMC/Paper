@@ -651,7 +651,11 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
         Preconditions.checkArgument(target != null, "target == null");
         Preconditions.checkState(!getHandle().generation, "Cannot attack during world generation");
 
-        getHandle().attackEntity(((CraftEntity) target).getHandle());
+        if (getHandle() instanceof EntityHuman) {
+            ((EntityHuman) getHandle()).attack(((CraftEntity) target).getHandle());
+        } else {
+            getHandle().attackEntity(((CraftEntity) target).getHandle());
+        }
     }
 
     @Override
