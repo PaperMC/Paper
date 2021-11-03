@@ -12,12 +12,13 @@ public net.minecraft.world.level.pathfinder.Path nodes
 
 diff --git a/src/main/java/com/destroystokyo/paper/entity/PaperPathfinder.java b/src/main/java/com/destroystokyo/paper/entity/PaperPathfinder.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..3dbe4cf29a7984a1976a60bdeeb3ede02316a3cb
+index 0000000000000000000000000000000000000000..7723e42bea626451689a9c4e76b3d80ff9262603
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/entity/PaperPathfinder.java
-@@ -0,0 +1,148 @@
+@@ -0,0 +1,155 @@
 +package com.destroystokyo.paper.entity;
 +
++import net.minecraft.world.entity.Entity;
 +import org.apache.commons.lang.Validate;
 +import org.bukkit.Location;
 +import org.bukkit.craftbukkit.entity.CraftLivingEntity;
@@ -61,7 +62,7 @@ index 0000000000000000000000000000000000000000..3dbe4cf29a7984a1976a60bdeeb3ede0
 +    @Override
 +    public PathResult getCurrentPath() {
 +        Path path = entity.getNavigation().getPath();
-+        return path != null && !path.isDone() ? new PaperPathResult(path) : null;
++        return path != null && !path.isDone() ? new PaperPathResult(path, this.entity) : null;
 +    }
 +
 +    @Nullable
@@ -69,7 +70,7 @@ index 0000000000000000000000000000000000000000..3dbe4cf29a7984a1976a60bdeeb3ede0
 +    public PathResult findPath(Location loc) {
 +        Validate.notNull(loc, "Location can not be null");
 +        Path path = entity.getNavigation().createPath(loc.getX(), loc.getY(), loc.getZ(), 0);
-+        return path != null ? new PaperPathResult(path) : null;
++        return path != null ? new PaperPathResult(path, this.entity) : null;
 +    }
 +
 +    @Nullable
@@ -77,7 +78,7 @@ index 0000000000000000000000000000000000000000..3dbe4cf29a7984a1976a60bdeeb3ede0
 +    public PathResult findPath(LivingEntity target) {
 +        Validate.notNull(target, "Target can not be null");
 +        Path path = entity.getNavigation().createPath(((CraftLivingEntity) target).getHandle(), 0);
-+        return path != null ? new PaperPathResult(path) : null;
++        return path != null ? new PaperPathResult(path, this.entity) : null;
 +    }
 +
 +    @Override
@@ -117,11 +118,13 @@ index 0000000000000000000000000000000000000000..3dbe4cf29a7984a1976a60bdeeb3ede0
 +        entity.getNavigation().pathFinder.nodeEvaluator.setCanFloat(canFloat);
 +    }
 +
-+    public class PaperPathResult implements com.destroystokyo.paper.entity.PaperPathfinder.PathResult {
++    public static class PaperPathResult implements com.destroystokyo.paper.entity.PaperPathfinder.PathResult {
 +
 +        private final Path path;
-+        PaperPathResult(Path path) {
++        private final Entity entity;
++        public PaperPathResult(Path path, Entity entity) {
 +            this.path = path;
++            this.entity = entity;
 +        }
 +
 +        @Nullable
@@ -158,10 +161,14 @@ index 0000000000000000000000000000000000000000..3dbe4cf29a7984a1976a60bdeeb3ede0
 +            }
 +            return toLoc(path.nodes.get(path.getNextNodeIndex()));
 +        }
-+    }
 +
-+    private Location toLoc(Node point) {
-+        return new Location(entity.level().getWorld(), point.x, point.y, point.z);
++        public Path getHandle() {
++            return this.path;
++        }
++
++        private Location toLoc(Node point) {
++            return new Location(entity.level().getWorld(), point.x, point.y, point.z);
++        }
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/world/level/pathfinder/Path.java b/src/main/java/net/minecraft/world/level/pathfinder/Path.java
