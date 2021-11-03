@@ -6,7 +6,7 @@ Subject: [PATCH] Optimize the advancement data player iteration to be O(N)
 
 
 diff --git a/src/main/java/net/minecraft/server/PlayerAdvancements.java b/src/main/java/net/minecraft/server/PlayerAdvancements.java
-index 3d82f984648605d58fae3c57f145d0da8a2ae225..ce02a467c1c3434f2cdb112ceb9794196069a820 100644
+index 3d82f984648605d58fae3c57f145d0da8a2ae225..bd858a9da2f2442be85f36bb2de0dac46d0c68d7 100644
 --- a/src/main/java/net/minecraft/server/PlayerAdvancements.java
 +++ b/src/main/java/net/minecraft/server/PlayerAdvancements.java
 @@ -437,6 +437,16 @@ public class PlayerAdvancements {
@@ -14,14 +14,14 @@ index 3d82f984648605d58fae3c57f145d0da8a2ae225..ce02a467c1c3434f2cdb112ceb979419
  
      private void ensureVisibility(Advancement advancement) {
 +        // Paper start
-+        e(advancement, IterationEntryPoint.ROOT);
++        ensureVisibility(advancement, IterationEntryPoint.ROOT);
 +    }
 +    private enum IterationEntryPoint {
 +        ROOT,
 +        ITERATOR,
 +        PARENT_OF_ITERATOR
 +    }
-+    private void e(Advancement advancement, IterationEntryPoint entryPoint) {
++    private void ensureVisibility(Advancement advancement, IterationEntryPoint entryPoint) {
 +        // Paper end
          boolean flag = this.shouldBeVisible(advancement);
          boolean flag1 = this.visible.contains(advancement);
@@ -33,7 +33,7 @@ index 3d82f984648605d58fae3c57f145d0da8a2ae225..ce02a467c1c3434f2cdb112ceb979419
 -            this.ensureVisibility(advancement.getParent());
 +            // Paper start - If we're not coming from an iterator consider this to be a root entry, otherwise
 +            // market that we're entering from the parent of an iterator.
-+            this.e(advancement.getParent(), entryPoint == IterationEntryPoint.ITERATOR ? IterationEntryPoint.PARENT_OF_ITERATOR : IterationEntryPoint.ROOT);
++            this.ensureVisibility(advancement.getParent(), entryPoint == IterationEntryPoint.ITERATOR ? IterationEntryPoint.PARENT_OF_ITERATOR : IterationEntryPoint.ROOT);
          }
  
 +        // If this is true, we've went through a child iteration, entered the parent, processed the parent
@@ -48,7 +48,7 @@ index 3d82f984648605d58fae3c57f145d0da8a2ae225..ce02a467c1c3434f2cdb112ceb979419
              Advancement advancement1 = (Advancement) iterator.next();
  
 -            this.ensureVisibility(advancement1);
-+            this.e(advancement1, IterationEntryPoint.ITERATOR); // Paper - Mark this call as being from iteration
++            this.ensureVisibility(advancement1, IterationEntryPoint.ITERATOR); // Paper - Mark this call as being from iteration
          }
  
      }
