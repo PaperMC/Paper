@@ -6,7 +6,7 @@ Subject: [PATCH] EntityPathfindEvent
 Fires when an Entity decides to start moving to a location.
 
 diff --git a/src/main/java/net/minecraft/world/entity/ai/navigation/FlyingPathNavigation.java b/src/main/java/net/minecraft/world/entity/ai/navigation/FlyingPathNavigation.java
-index 3afe97f4e330016164e741934c888f5b85824e67..48a42a8374641f4737d5eb6a460bf80a12c2cae5 100644
+index 3afe97f4e330016164e741934c888f5b85824e67..6cdb0f0f881ea57c95821914262208c4b636587e 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/navigation/FlyingPathNavigation.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/navigation/FlyingPathNavigation.java
 @@ -35,7 +35,7 @@ public class FlyingPathNavigation extends PathNavigation {
@@ -14,12 +14,12 @@ index 3afe97f4e330016164e741934c888f5b85824e67..48a42a8374641f4737d5eb6a460bf80a
      @Override
      public Path createPath(Entity entity, int distance) {
 -        return this.createPath(entity.blockPosition(), distance);
-+        return this.a(entity.blockPosition(), entity, distance); // Paper - Forward target entity
++        return this.createPath(entity.blockPosition(), entity, distance); // Paper - Forward target entity
      }
  
      @Override
 diff --git a/src/main/java/net/minecraft/world/entity/ai/navigation/GroundPathNavigation.java b/src/main/java/net/minecraft/world/entity/ai/navigation/GroundPathNavigation.java
-index d2e71f1e70a8b3360110f7e5e6c5ec278218ae27..0ac90b5fefa9720a9d0130f5438e5ef55fccf29a 100644
+index d2e71f1e70a8b3360110f7e5e6c5ec278218ae27..f351b1eb923cc72bc5bb7f891d27246af14f4e1d 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/navigation/GroundPathNavigation.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/navigation/GroundPathNavigation.java
 @@ -70,7 +70,7 @@ public class GroundPathNavigation extends PathNavigation {
@@ -27,12 +27,12 @@ index d2e71f1e70a8b3360110f7e5e6c5ec278218ae27..0ac90b5fefa9720a9d0130f5438e5ef5
      @Override
      public Path createPath(Entity entity, int distance) {
 -        return this.createPath(entity.blockPosition(), distance);
-+        return this.a(entity.blockPosition(), entity, distance); // Paper - Forward target entity
++        return this.createPath(entity.blockPosition(), entity, distance); // Paper - Forward target entity
      }
  
      private int getSurfaceY() {
 diff --git a/src/main/java/net/minecraft/world/entity/ai/navigation/PathNavigation.java b/src/main/java/net/minecraft/world/entity/ai/navigation/PathNavigation.java
-index f4f2b7a1de7eb37c3d6331bd16f916cf4bbf1a03..989a0c44d6685b5824a055d077fb0f28c1ba4b17 100644
+index f4f2b7a1de7eb37c3d6331bd16f916cf4bbf1a03..5ddc033594c26a69f8c610cf1610a06a9be8dd4d 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/navigation/PathNavigation.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/navigation/PathNavigation.java
 @@ -10,6 +10,7 @@ import net.minecraft.core.BlockPos;
@@ -43,21 +43,22 @@ index f4f2b7a1de7eb37c3d6331bd16f916cf4bbf1a03..989a0c44d6685b5824a055d077fb0f28
  import net.minecraft.util.Mth;
  import net.minecraft.world.entity.Entity;
  import net.minecraft.world.entity.Mob;
-@@ -108,7 +109,12 @@ public abstract class PathNavigation {
+@@ -108,7 +109,13 @@ public abstract class PathNavigation {
  
      @Nullable
      public Path createPath(BlockPos target, int distance) {
 -        return this.createPath(ImmutableSet.of(target), 8, false, distance);
-+        // Paper start - add target parameter
-+        return this.a(target, null, distance);
++        // Paper start - add target entity parameter
++        return this.createPath(target, null, distance);
 +    }
-+    @Nullable public Path a(BlockPos blockposition, Entity target, int distance) {
-+        return this.createPath(ImmutableSet.of(blockposition), target, 8, false, distance);
++    @Nullable
++    public Path createPath(BlockPos target, Entity entity, int distance) {
++        return this.createPath(ImmutableSet.of(target), entity, 8, false, distance);
 +        // Paper end
      }
  
      @Nullable
-@@ -118,7 +124,7 @@ public abstract class PathNavigation {
+@@ -118,7 +125,7 @@ public abstract class PathNavigation {
  
      @Nullable
      public Path createPath(Entity entity, int distance) {
@@ -66,7 +67,7 @@ index f4f2b7a1de7eb37c3d6331bd16f916cf4bbf1a03..989a0c44d6685b5824a055d077fb0f28
      }
  
      @Nullable
-@@ -128,6 +134,16 @@ public abstract class PathNavigation {
+@@ -128,6 +135,16 @@ public abstract class PathNavigation {
  
      @Nullable
      protected Path createPath(Set<BlockPos> positions, int range, boolean useHeadPos, int distance, float followRange) {
@@ -83,7 +84,7 @@ index f4f2b7a1de7eb37c3d6331bd16f916cf4bbf1a03..989a0c44d6685b5824a055d077fb0f28
          if (positions.isEmpty()) {
              return null;
          } else if (this.mob.getY() < (double)this.level.getMinBuildHeight()) {
-@@ -137,6 +153,23 @@ public abstract class PathNavigation {
+@@ -137,6 +154,23 @@ public abstract class PathNavigation {
          } else if (this.path != null && !this.path.isDone() && positions.contains(this.targetPos)) {
              return this.path;
          } else {
