@@ -1,0 +1,50 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Bjarne Koll <lynxplay101@gmail.com>
+Date: Wed, 3 Nov 2021 18:55:54 +0100
+Subject: [PATCH] Configuration option for showing sleep messages
+
+The minecraft server now announces sleep progress, e.g. players already
+sleeping or the night being skipped, to all players on the server
+through a hotbar messages.
+While this vanilla behaviour works well in vanilla itself it is not
+always appreciated, especially when hiding players.
+
+This commit introduces a new sleep configuration node in the player
+world configuration that allows server administrators to prevent the
+server from sending either one of the messages to the clients connected.
+
+Resolves: #6863
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index c2d8294ffeff017a6ec9e7725b50eaef8eb75dfd..cdad9e1447ea2ac781b2539b09938eea2875fba1 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -981,6 +981,13 @@ public class PaperWorldConfig {
+         }
+     }
+ 
++    public boolean sleepMessagesShowSkippingNight = true;
++    public boolean sleepMessagesShowPlayersSleeping = true;
++    private void sleepMessages() {
++        this.sleepMessagesShowSkippingNight = getBoolean("sleep.messages.show-skipping-night", sleepMessagesShowSkippingNight);
++        this.sleepMessagesShowPlayersSleeping = getBoolean("sleep.messages.show-players-sleeping", sleepMessagesShowPlayersSleeping);
++    }
++
+     public int getBehaviorTickRate(String typeName, String entityType, int def) {
+         return getIntOrDefault(behaviorTickRates, typeName, entityType, def);
+     }
+diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
+index d572a0883938cd117d11a2bb0ee4e0d5b5e65361..79008680d1ac84310eaec508a1a6a9c5809b059d 100644
+--- a/src/main/java/net/minecraft/server/level/ServerLevel.java
++++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
+@@ -1000,8 +1000,10 @@ public class ServerLevel extends Level implements WorldGenLevel {
+                 TranslatableComponent chatmessage;
+ 
+                 if (this.sleepStatus.areEnoughSleeping(i)) {
++                    if (!this.paperConfig.sleepMessagesShowSkippingNight) return; // Paper - allow disabled sleep messages
+                     chatmessage = new TranslatableComponent("sleep.skipping_night");
+                 } else {
++                    if (!this.paperConfig.sleepMessagesShowPlayersSleeping) return; // Paper - allow disabled sleep messages
+                     chatmessage = new TranslatableComponent("sleep.players_sleeping", new Object[]{this.sleepStatus.amountSleeping(), this.sleepStatus.sleepersNeeded(i)});
+                 }
+ 
