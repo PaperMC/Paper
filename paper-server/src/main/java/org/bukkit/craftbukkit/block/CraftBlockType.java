@@ -241,4 +241,11 @@ public class CraftBlockType<B extends BlockData> implements BlockType.Typed<B>, 
         return this.block.getDescriptionId();
     }
     // Paper end - add Translatable
+
+    // Paper start - hasCollision API
+    @Override
+    public boolean hasCollision() {
+        return this.block.hasCollision;
+    }
+    // Paper end - hasCollision API
 }
