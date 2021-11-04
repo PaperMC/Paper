@@ -4481,14 +4481,15 @@ index 5bcfbda6fd8bb8a3793ddad18f533f4f31f0bc94..8e9d685d04b93cef73b3fbebd086c970
                      } else {
 diff --git a/src/main/java/net/minecraft/server/MCUtil.java b/src/main/java/net/minecraft/server/MCUtil.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..80f8d6ce6dd717d4b37b78539c65b6ac814ec93d
+index 0000000000000000000000000000000000000000..850caa39d4875620b05c9a3cc27c65ef2c877005
 --- /dev/null
 +++ b/src/main/java/net/minecraft/server/MCUtil.java
-@@ -0,0 +1,496 @@
+@@ -0,0 +1,501 @@
 +package net.minecraft.server;
 +
 +import com.google.common.util.concurrent.ThreadFactoryBuilder;
 +import it.unimi.dsi.fastutil.objects.ObjectRBTreeSet;
++import java.lang.ref.Cleaner;
 +import net.minecraft.core.BlockPos;
 +import net.minecraft.core.Direction;
 +import net.minecraft.server.level.ServerLevel;
@@ -4561,8 +4562,12 @@ index 0000000000000000000000000000000000000000..80f8d6ce6dd717d4b37b78539c65b6ac
 +    public static Runnable registerCleaner(Object obj, Runnable run) {
 +        // Wrap callback in its own method above or the lambda will leak object
 +        Runnable cleaner = makeCleanerCallback(run);
-+        co.aikar.cleaner.Cleaner.register(obj, cleaner);
++        CleanerHolder.CLEANER.register(obj, cleaner);
 +        return cleaner;
++    }
++
++    private static final class CleanerHolder {
++        private static final Cleaner CLEANER = Cleaner.create();
 +    }
 +
 +    /**
@@ -5759,7 +5764,7 @@ index 9591f50922343283597bad6d9ac17c175d8ae230..77d98bfa0ad9fc92a8e794b5a4e00c3e
  
                  Objects.requireNonNull(playerchunk);
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index 104296eec63e01061aa330e8a3f717e6fbec7a6a..837d4b3a56b68b1546ccf0a08994cb63acaf0300 100644
+index eded0e6fd0030f1f01f7e2b16497be768518728e..8115e016109f560f2de78c69285342a42ebd119a 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
 @@ -9,6 +9,7 @@ import it.unimi.dsi.fastutil.longs.LongSet;
@@ -5941,7 +5946,7 @@ index 391bae98e542333a431fb48bf0675c0e8a1873ac..0f6b534a4c789a2f09f6c4624e5d58b9
      public BlockState getBlockState(BlockPos pos) {
          return this.getChunk(SectionPos.blockToSectionCoord(pos.getX()), SectionPos.blockToSectionCoord(pos.getZ())).getBlockState(pos);
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index 1130a8b5e3314d879319b8b60b2408b6c1aa7f5b..d6bef66d1cc0e3915ca5a9b9d5fc6e645eb5a7de 100644
+index 294060d48c624d77e64ddfa19607905cda1be675..2c8fa37694212f03f6c1f760078230b36b0fd1eb 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 @@ -218,9 +218,9 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
