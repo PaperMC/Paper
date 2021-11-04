@@ -9,7 +9,7 @@ This patch will be used to optimise out flush calls in later
 patches.
 
 diff --git a/src/main/java/net/minecraft/network/Connection.java b/src/main/java/net/minecraft/network/Connection.java
-index 9d09ec3b127e3440bef6b248578dec109407f9ff..103657ad936f1a75ffbb92ca5eafb816e977e363 100644
+index c327609fdb7641e4dc5fb58d97903fa666eac24d..0b47144cb8ad72efebf10e163f5b442995ef213e 100644
 --- a/src/main/java/net/minecraft/network/Connection.java
 +++ b/src/main/java/net/minecraft/network/Connection.java
 @@ -94,6 +94,39 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
@@ -80,22 +80,22 @@ index 9d09ec3b127e3440bef6b248578dec109407f9ff..103657ad936f1a75ffbb92ca5eafb816
          }
  
          if (this.channel.eventLoop().inEventLoop()) {
--            this.a(packet, callback, enumprotocol, enumprotocol1);
-+            this.a(packet, callback, enumprotocol, enumprotocol1, flush); // Paper - add flush parameter
+-            this.doSendPacket(packet, callback, enumprotocol, enumprotocol1);
++            this.doSendPacket(packet, callback, enumprotocol, enumprotocol1, flush); // Paper - add flush parameter
          } else {
              this.channel.eventLoop().execute(() -> {
--                this.a(packet, callback, enumprotocol, enumprotocol1);
-+                this.a(packet, callback, enumprotocol, enumprotocol1, flush); // Paper - add flush parameter
+-                this.doSendPacket(packet, callback, enumprotocol, enumprotocol1);
++                this.doSendPacket(packet, callback, enumprotocol, enumprotocol1, flush); // Paper - add flush parameter
              });
          }
  
      }
  
-     private void a(Packet<?> packet, @Nullable GenericFutureListener<? extends Future<? super Void>> genericfuturelistener, ConnectionProtocol enumprotocol, ConnectionProtocol enumprotocol1) {
+     private void doSendPacket(Packet<?> packet, @Nullable GenericFutureListener<? extends Future<? super Void>> genericfuturelistener, ConnectionProtocol enumprotocol, ConnectionProtocol enumprotocol1) {
 +        // Paper start - add flush parameter
-+        this.a(packet, genericfuturelistener, enumprotocol, enumprotocol1, true);
++        this.doSendPacket(packet, genericfuturelistener, enumprotocol, enumprotocol1, true);
 +    }
-+    private void a(Packet<?> packet, @Nullable GenericFutureListener<? extends Future<? super Void>> genericfuturelistener, ConnectionProtocol enumprotocol, ConnectionProtocol enumprotocol1, boolean flush) {
++    private void doSendPacket(Packet<?> packet, @Nullable GenericFutureListener<? extends Future<? super Void>> genericfuturelistener, ConnectionProtocol enumprotocol, ConnectionProtocol enumprotocol1, boolean flush) {
 +        // Paper end - add flush parameter
          if (enumprotocol != enumprotocol1) {
              this.setProtocol(enumprotocol);

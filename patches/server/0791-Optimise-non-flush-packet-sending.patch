@@ -20,7 +20,7 @@ up on this optimisation before he came along.
 Locally this patch drops the entity tracker tick by a full 1.5x.
 
 diff --git a/src/main/java/net/minecraft/network/Connection.java b/src/main/java/net/minecraft/network/Connection.java
-index 73457ae24ba6f605dd831a870499f1a990570e53..0dae504f49a4a3c66a01eb03896833a010cd5821 100644
+index 300cd4d2861c7f155cc6a5bb5a0c47b0b77ff240..7c66d5d51efd3ec55f5170cf828db22e26131517 100644
 --- a/src/main/java/net/minecraft/network/Connection.java
 +++ b/src/main/java/net/minecraft/network/Connection.java
 @@ -49,6 +49,8 @@ import org.apache.logging.log4j.Logger;
@@ -34,20 +34,20 @@ index 73457ae24ba6f605dd831a870499f1a990570e53..0dae504f49a4a3c66a01eb03896833a0
      private static final float AVERAGE_PACKETS_SMOOTHING = 0.75F;
 @@ -409,9 +411,19 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
          if (this.channel.eventLoop().inEventLoop()) {
-             this.a(packet, callback, enumprotocol, enumprotocol1, flush); // Paper - add flush parameter
+             this.doSendPacket(packet, callback, enumprotocol, enumprotocol1, flush); // Paper - add flush parameter
          } else {
 +            // Paper start - optimise packets that are not flushed
 +            // note: since the type is not dynamic here, we need to actually copy the old executor code
 +            // into two branches. On conflict, just re-copy - no changes were made inside the executor code.
 +            if (!flush) {
 +                AbstractEventExecutor.LazyRunnable run = () -> {
-+                    this.a(packet, callback, enumprotocol, enumprotocol1, flush); // Paper - add flush parameter
++                    this.doSendPacket(packet, callback, enumprotocol, enumprotocol1, flush); // Paper - add flush parameter
 +                };
 +                this.channel.eventLoop().execute(run);
 +            } else { // Paper end - optimise packets that are not flushed
              this.channel.eventLoop().execute(() -> {
--                this.a(packet, callback, enumprotocol, enumprotocol1, flush); // Paper - add flush parameter
-+                this.a(packet, callback, enumprotocol, enumprotocol1, flush); // Paper - add flush parameter // Paper - diff on change
+-                this.doSendPacket(packet, callback, enumprotocol, enumprotocol1, flush); // Paper - add flush parameter
++                this.doSendPacket(packet, callback, enumprotocol, enumprotocol1, flush); // Paper - add flush parameter // Paper - diff on change
              });
 +            } // Paper
          }
