@@ -245,4 +245,13 @@ public interface BlockState extends Metadatable {
      *         or 'virtual' (e.g. on an itemstack)
      */
     boolean isPlaced();
+
+    // Paper start
+    /**
+     * Checks if this block state is collidable.
+     *
+     * @return true if collidable
+     */
+    boolean isCollidable();
+    // Paper end
 }

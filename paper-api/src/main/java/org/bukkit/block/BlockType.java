@@ -3625,4 +3625,13 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
     @Override
     @NotNull String getTranslationKey();
     // Paper end - add Translatable
+
+    // Paper start - hasCollision API
+    /**
+     * Checks if this block type has collision.
+     * <p>
+     * @return false if this block never has collision, true if it <b>might</b> have collision
+     */
+    boolean hasCollision();
+    // Paper end - hasCollision API
 }
