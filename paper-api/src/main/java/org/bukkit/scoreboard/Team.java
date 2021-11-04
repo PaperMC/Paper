@@ -295,9 +295,8 @@ public interface Team extends net.kyori.adventure.audience.ForwardingAudience { 
      * @param player the player to add
      * @throws IllegalStateException if this team has been unregistered
      * @see #addEntry(String)
-     * @deprecated Teams can contain entries that aren't players
      */
-    @Deprecated(since = "1.8.6")
+    // @Deprecated(since = "1.8.6") // Paper
     void addPlayer(@NotNull OfflinePlayer player);
 
     /**
@@ -317,9 +316,8 @@ public interface Team extends net.kyori.adventure.audience.ForwardingAudience { 
      * @return if the player was on this team
      * @throws IllegalStateException if this team has been unregistered
      * @see #removeEntry(String)
-     * @deprecated Teams can contain entries that aren't players
      */
-    @Deprecated(since = "1.8.6")
+    // @Deprecated(since = "1.8.6") // Paper
     boolean removePlayer(@NotNull OfflinePlayer player);
 
     /**
@@ -345,9 +343,8 @@ public interface Team extends net.kyori.adventure.audience.ForwardingAudience { 
      * @return true if the player is a member of this team
      * @throws IllegalStateException if this team has been unregistered
      * @see #hasEntry(String)
-     * @deprecated Teams can contain entries that aren't players
      */
-    @Deprecated(since = "1.8.6")
+    // @Deprecated(since = "1.8.6") // Paper
     boolean hasPlayer(@NotNull OfflinePlayer player);
     /**
      * Checks to see if the specified entry is a member of this team.
@@ -376,6 +373,42 @@ public interface Team extends net.kyori.adventure.audience.ForwardingAudience { 
      * @throws IllegalStateException if this team has been unregistered
      */
     void setOption(@NotNull Option option, @NotNull OptionStatus status);
+
+    // Paper start - improve scoreboard entries
+    /**
+     * This puts the specified entity onto this team for the scoreboard.
+     * <p>
+     * This will remove the entity from any other team on the scoreboard.
+     *
+     * @param entity the entity to add
+     * @throws IllegalArgumentException if entity is null
+     * @throws IllegalStateException if this team has been unregistered
+     * @see #addEntry(String)
+     */
+    void addEntity(@NotNull org.bukkit.entity.Entity entity) throws IllegalStateException, IllegalArgumentException;
+
+    /**
+     * Removes the entity from this team.
+     *
+     * @param entity the entity to remove
+     * @return if the entity was on this team
+     * @throws IllegalArgumentException if entity is null
+     * @throws IllegalStateException if this team has been unregistered
+     * @see #removeEntry(String)
+     */
+    boolean removeEntity(@NotNull org.bukkit.entity.Entity entity) throws IllegalStateException, IllegalArgumentException;
+
+    /**
+     * Checks to see if the specified entity is a member of this team.
+     *
+     * @param entity the entity to search for
+     * @return true if the entity is a member of this team
+     * @throws IllegalArgumentException if entity is null
+     * @throws IllegalStateException if this team has been unregistered
+     * @see #hasEntry(String)
+     */
+    boolean hasEntity(@NotNull org.bukkit.entity.Entity entity) throws IllegalStateException, IllegalArgumentException;
+    // Paper end - improve scoreboard entries
 
     /**
      * Represents an option which may be applied to this team.
