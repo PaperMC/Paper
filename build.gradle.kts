@@ -35,8 +35,6 @@ subprojects {
     repositories {
         mavenCentral()
         maven("https://papermc.io/repo/repository/maven-public/")
-        maven("https://ci.emc.gs/nexus/content/groups/aikar/")
-        maven("https://repo.aikar.co/content/groups/aikar")
     }
 }
 
@@ -94,8 +92,6 @@ tasks.generateDevelopmentBundle {
             "https://libraries.minecraft.net/",
             "https://papermc.io/repo/repository/maven-public/",
             "https://maven.quiltmc.org/repository/release/",
-            "https://ci.emc.gs/nexus/content/groups/aikar/",
-            "https://repo.aikar.co/content/groups/aikar",
         )
     )
 }
