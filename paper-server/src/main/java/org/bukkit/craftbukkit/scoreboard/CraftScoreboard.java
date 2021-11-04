@@ -235,6 +235,26 @@ public final class CraftScoreboard implements org.bukkit.scoreboard.Scoreboard {
         this.board.setDisplayObjective(CraftScoreboardTranslations.fromBukkitSlot(slot), null);
     }
 
+    // Paper start
+    @Override
+    public ImmutableSet<Score> getScoresFor(org.bukkit.entity.Entity entity) throws IllegalArgumentException {
+        Preconditions.checkArgument(entity != null, "Entity cannot be null");
+        return this.getScores(((org.bukkit.craftbukkit.entity.CraftEntity) entity).getHandle());
+    }
+
+    @Override
+    public void resetScoresFor(org.bukkit.entity.Entity entity) throws IllegalArgumentException {
+        Preconditions.checkArgument(entity != null, "Entity cannot be null");
+        this.resetScores(((org.bukkit.craftbukkit.entity.CraftEntity) entity).getHandle());
+    }
+
+    @Override
+    public Team getEntityTeam(org.bukkit.entity.Entity entity) throws IllegalArgumentException {
+        Preconditions.checkArgument(entity != null, "Entity cannot be null");
+        return this.getEntryTeam(((org.bukkit.craftbukkit.entity.CraftEntity) entity).getHandle().getScoreboardName());
+    }
+    // Paper end
+
     // CraftBukkit method
     public Scoreboard getHandle() {
         return this.board;

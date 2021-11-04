@@ -304,6 +304,26 @@ final class CraftTeam extends CraftScoreboardComponent implements Team {
         }
     }
 
+    // Paper start
+    @Override
+    public void addEntity(org.bukkit.entity.Entity entity) throws IllegalStateException, IllegalArgumentException {
+        Preconditions.checkArgument(entity != null, "Entity cannot be null");
+        this.addEntry(((org.bukkit.craftbukkit.entity.CraftEntity) entity).getHandle().getScoreboardName());
+    }
+
+    @Override
+    public boolean removeEntity(org.bukkit.entity.Entity entity) throws IllegalStateException, IllegalArgumentException {
+        Preconditions.checkArgument(entity != null, "Entity cannot be null");
+        return this.removeEntry(((org.bukkit.craftbukkit.entity.CraftEntity) entity).getHandle().getScoreboardName());
+    }
+
+    @Override
+    public boolean hasEntity(org.bukkit.entity.Entity entity) throws IllegalStateException, IllegalArgumentException {
+        Preconditions.checkArgument(entity != null, "Entity cannot be null");
+        return this.hasEntry(((org.bukkit.craftbukkit.entity.CraftEntity) entity).getHandle().getScoreboardName());
+    }
+    // Paper end
+
     public static Visibility bukkitToNotch(NameTagVisibility visibility) {
         switch (visibility) {
             case ALWAYS:
