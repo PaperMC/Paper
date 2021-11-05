@@ -73,4 +73,14 @@ public interface Score {
      */
     @Nullable
     Scoreboard getScoreboard();
+
+    // Paper start
+    /**
+     * Resets this score, if a value has been set.
+     *
+     * @throws IllegalStateException if the associated objective has been
+     *     unregistered
+     */
+    void resetScore() throws IllegalStateException;
+    // Paper end
 }
