@@ -378,6 +378,11 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
     public void stopSound(@NotNull String sound, @Nullable SoundCategory category);
 
     /**
+     * Stop all sounds from playing.
+     */
+    public void stopAllSounds();
+
+    /**
      * Plays an effect to just this player.
      *
      * @param loc the location to play the effect at
