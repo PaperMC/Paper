@@ -56,13 +56,13 @@ paperweight {
     minecraftVersion.set(providers.gradleProperty("mcVersion"))
     serverProject.set(project(":Paper-Server"))
 
+    paramMappingsRepo.set("https://maven.quiltmc.org/repository/release/")
+    remapRepo.set("https://maven.fabricmc.net/")
+    decompileRepo.set("https://files.minecraftforge.net/maven/")
+
     paper {
         spigotApiPatchDir.set(layout.projectDirectory.dir("patches/api"))
         spigotServerPatchDir.set(layout.projectDirectory.dir("patches/server"))
-
-        paramMappingsRepo.set("https://maven.quiltmc.org/repository/release/")
-        remapRepo.set("https://maven.fabricmc.net/")
-        decompileRepo.set("https://files.minecraftforge.net/maven/")
 
         mappingsPatch.set(layout.projectDirectory.file("build-data/mappings-patch.tiny"))
         reobfMappingsPatch.set(layout.projectDirectory.file("build-data/reobf-mappings-patch.tiny"))
@@ -86,18 +86,15 @@ paperweight {
 tasks.generateDevelopmentBundle {
     apiCoordinates.set("io.papermc.paper:paper-api")
     mojangApiCoordinates.set("io.papermc.paper:paper-mojangapi")
-    libraryRepositories.set(
-        listOf(
-            "https://repo.maven.apache.org/maven2/",
-            "https://libraries.minecraft.net/",
-            "https://papermc.io/repo/repository/maven-public/",
-            "https://maven.quiltmc.org/repository/release/",
-        )
+    libraryRepositories.addAll(
+        "https://repo.maven.apache.org/maven2/",
+        "https://libraries.minecraft.net/",
+        "https://papermc.io/repo/repository/maven-public/",
     )
 }
 
 publishing {
-    if (project.hasProperty("publishDevBundle")) {
+    if (project.providers.gradleProperty("publishDevBundle").forUseAtConfigurationTime().isPresent) {
         publications.create<MavenPublication>("devBundle") {
             artifact(tasks.generateDevelopmentBundle) {
                 artifactId = "dev-bundle"
@@ -109,9 +106,8 @@ publishing {
 allprojects {
     publishing {
         repositories {
-            maven {
+            maven("https://papermc.io/repo/repository/maven-snapshots/") {
                 name = "paperSnapshots"
-                url = uri("https://papermc.io/repo/repository/maven-snapshots/")
                 credentials(PasswordCredentials::class)
             }
         }
