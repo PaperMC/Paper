@@ -16,10 +16,10 @@ of a chance that we're about to eat a dirtload of chunk load callbacks, thus
 making this issue much more of an issue
 
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftChunk.java b/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
-index 87368816fdb23f804752351de502126f2cd062c7..3eefcae565ced131ad2924290423fd0b3249ccde 100644
+index 07dfe575dea0f41a75bb9dad0ee2d541e983f6d7..f194dbf29fefab6c94fe5aa11f565349499f4706 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
-@@ -123,30 +123,6 @@ public class CraftChunk implements Chunk {
+@@ -127,46 +127,6 @@ public class CraftChunk implements Chunk {
              this.getWorld().getChunkAt(x, z); // Transient load for this tick
          }
  
@@ -32,20 +32,36 @@ index 87368816fdb23f804752351de502126f2cd062c7..3eefcae565ced131ad2924290423fd0b
 -
 -        entityManager.ensureChunkQueuedForLoad(pair); // Start entity loading
 -
--        // now we wait until the entities are loaded,
--        // the converting from NBT to entity object is done on the main Thread which is why we wait
--        this.getCraftWorld().getHandle().getServer().managedBlock(() -> {
--            boolean status = entityManager.areEntitiesLoaded(pair);
+-        // SPIGOT-6772: Use entity mailbox and re-schedule entities if they get unloaded
+-        ProcessorMailbox<Runnable> mailbox = ((EntityStorage) entityManager.permanentStorage).entityDeserializerQueue;
+-        BooleanSupplier supplier = () -> {
 -            // only execute inbox if our entities are not present
--            if (status) {
+-            if (entityManager.areEntitiesLoaded(pair)) {
 -                return true;
 -            }
+-
+-            if (!entityManager.isPending(pair)) {
+-                // Our entities got unloaded, this should normally not happen.
+-                entityManager.ensureChunkQueuedForLoad(pair); // Re-start entity loading
+-            }
+-
 -            // tick loading inbox, which loads the created entities to the world
 -            // (if present)
 -            entityManager.tick();
 -            // check if our entities are loaded
 -            return entityManager.areEntitiesLoaded(pair);
--        });
+-        };
+-
+-        // now we wait until the entities are loaded,
+-        // the converting from NBT to entity object is done on the main Thread which is why we wait
+-        while (!supplier.getAsBoolean()) {
+-            if (mailbox.size() != 0) { // PAIL rename size
+-                mailbox.run();
+-            } else {
+-                Thread.yield();
+-                LockSupport.parkNanos("waiting for entity loading", 100000L);
+-            }
+-        }
 -
          return getCraftWorld().getHandle().getChunkEntities(this.x, this.z); // Paper - optimise this
      }
