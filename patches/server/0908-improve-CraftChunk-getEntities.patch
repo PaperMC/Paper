@@ -1,0 +1,153 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Fri, 5 Nov 2021 14:18:22 -0700
+Subject: [PATCH] improve CraftChunk#getEntities
+
+
+diff --git a/src/main/java/io/papermc/paper/world/ChunkEntitySlices.java b/src/main/java/io/papermc/paper/world/ChunkEntitySlices.java
+index 47b5f75d9f27cf3ab947fd1f69cbd609fb9f2749..b92e703abdff9e9d6f7543e6a689112ab40704b1 100644
+--- a/src/main/java/io/papermc/paper/world/ChunkEntitySlices.java
++++ b/src/main/java/io/papermc/paper/world/ChunkEntitySlices.java
+@@ -58,7 +58,7 @@ public final class ChunkEntitySlices {
+                 continue;
+             }
+             final org.bukkit.entity.Entity bukkit = entity.getBukkitEntity();
+-            if (bukkit != null && bukkit.isValid()) {
++            if (bukkit != null && entity.isAlive() && entity.isChunkLoaded()) {
+                 ret.add(bukkit);
+             }
+         }
+diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/EntityStorage.java b/src/main/java/net/minecraft/world/level/chunk/storage/EntityStorage.java
+index cbdd32ef0be241b16406ed8e3889d914e3e5e5d2..6870a127bcabec1aa16f172cbaf1cf722c81e4a6 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/storage/EntityStorage.java
++++ b/src/main/java/net/minecraft/world/level/chunk/storage/EntityStorage.java
+@@ -45,7 +45,17 @@ public class EntityStorage implements EntityPersistentStorage<Entity> {
+ 
+     @Override
+     public CompletableFuture<ChunkEntities<Entity>> loadEntities(ChunkPos pos) {
++        // Paper start
++        return this.loadEntities(pos, true);
++    }
++    public CompletableFuture<ChunkEntities<Entity>> loadEntities(ChunkPos pos, boolean useDeserializerQueue) {
++        // Paper end
+         return this.emptyChunks.contains(pos.toLong()) ? CompletableFuture.completedFuture(emptyChunk(pos)) : this.worker.loadAsync(pos).thenApplyAsync((compound) -> {
++            // Paper start - cancel if not pending
++            if (!this.level.entityManager.isPending(pos.toLong())) {
++                return net.minecraft.Util.make(EntityStorage.emptyChunk(pos), e -> e.cancelled = true);
++            }
++            // Paper end
+             if (compound == null) {
+                 this.emptyChunks.add(pos.toLong());
+                 return emptyChunk(pos);
+@@ -64,7 +74,7 @@ public class EntityStorage implements EntityPersistentStorage<Entity> {
+                 List<Entity> list = EntityType.loadEntitiesRecursive(listTag, this.level).collect(ImmutableList.toImmutableList());
+                 return new ChunkEntities<>(pos, list);
+             }
+-        }, this.entityDeserializerQueue::tell);
++        }, useDeserializerQueue ? this.entityDeserializerQueue::tell : java.util.concurrent.ForkJoinPool.commonPool()); // Paper
+     }
+ 
+     private static ChunkPos readChunkPos(CompoundTag chunkNbt) {
+diff --git a/src/main/java/net/minecraft/world/level/entity/ChunkEntities.java b/src/main/java/net/minecraft/world/level/entity/ChunkEntities.java
+index 802ba09c2d2c22ef7bdd6995e4b9ef61018a7b9f..c94d2036ebcd3cd06609bcfa5140804039a883f0 100644
+--- a/src/main/java/net/minecraft/world/level/entity/ChunkEntities.java
++++ b/src/main/java/net/minecraft/world/level/entity/ChunkEntities.java
+@@ -7,6 +7,7 @@ import net.minecraft.world.level.ChunkPos;
+ public class ChunkEntities<T> {
+     private final ChunkPos pos;
+     private final List<T> entities;
++    public boolean cancelled = false; // Paper
+ 
+     public ChunkEntities(ChunkPos pos, List<T> list) {
+         this.pos = pos;
+diff --git a/src/main/java/net/minecraft/world/level/entity/PersistentEntitySectionManager.java b/src/main/java/net/minecraft/world/level/entity/PersistentEntitySectionManager.java
+index 3d5f38a1ca0206e5bcae4ed49d3df7ce0967f722..29dbe5d40719d22df13772690d9699050f2e1e82 100644
+--- a/src/main/java/net/minecraft/world/level/entity/PersistentEntitySectionManager.java
++++ b/src/main/java/net/minecraft/world/level/entity/PersistentEntitySectionManager.java
+@@ -49,6 +49,7 @@ public class PersistentEntitySectionManager<T extends EntityAccess> implements A
+     private final Long2ObjectMap<PersistentEntitySectionManager.ChunkLoadStatus> chunkLoadStatuses = new Long2ObjectOpenHashMap();
+     private final LongSet chunksToUnload = new LongOpenHashSet();
+     private final Queue<ChunkEntities<T>> loadingInbox = Queues.newConcurrentLinkedQueue();
++    private final Long2ObjectMap<ChunkEntities<T>> loadingInboxMap = Long2ObjectMaps.synchronize(new Long2ObjectOpenHashMap<>()); // Paper
+     public final io.papermc.paper.world.EntitySliceManager entitySliceManager; // Paper
+ 
+     public PersistentEntitySectionManager(Class<T> entityClass, LevelCallback<T> handler, EntityPersistentStorage<T> dataAccess, io.papermc.paper.world.EntitySliceManager entitySliceManager) { // Paper
+@@ -339,12 +340,50 @@ public class PersistentEntitySectionManager<T extends EntityAccess> implements A
+         Queue queue = this.loadingInbox;
+ 
+         Objects.requireNonNull(this.loadingInbox);
+-        completablefuture.thenAccept(queue::add).exceptionally((throwable) -> {
++        completablefuture.thenAccept(this.addConsumer()).exceptionally((throwable) -> { // Paper
+             PersistentEntitySectionManager.LOGGER.error("Failed to read chunk {}", chunkcoordintpair, throwable);
+             return null;
+         });
+     }
+ 
++    // Paper start
++    private Consumer<ChunkEntities<T>> addConsumer() {
++        return chunkEntities -> {
++            if (!chunkEntities.cancelled) {
++                this.loadingInbox.add(chunkEntities);
++                this.loadingInboxMap.put(chunkEntities.getPos().longKey, chunkEntities);
++            }
++        };
++    }
++
++    @SuppressWarnings("unchecked")
++    public void syncChunkEntitiesLoad(long chunkKey) {
++        org.spigotmc.AsyncCatcher.catchOp("Entity chunk load request");
++        final ChunkLoadStatus status = this.chunkLoadStatuses.get(chunkKey);
++        if (status == ChunkLoadStatus.LOADED) {
++            return;
++        }
++        final ChunkEntities<T> chunkEntities = switch (status) {
++            case PENDING -> this.loadingInboxMap.remove(chunkKey);
++            case FRESH -> {
++                this.chunkLoadStatuses.put(chunkKey, PersistentEntitySectionManager.ChunkLoadStatus.PENDING);
++                ChunkPos chunkPos = new ChunkPos(chunkKey);
++                yield (ChunkEntities<T>) ((EntityStorage) this.permanentStorage).loadEntities(chunkPos, false)
++                    .exceptionally(throwable -> {
++                        PersistentEntitySectionManager.LOGGER.error("Failed to read chunk {}", chunkPos, throwable);
++                        return null;
++                    }).join();
++            }
++            default -> throw new IllegalStateException(status + " is unexpected here");
++        };
++        if (chunkEntities == null) {
++            return;
++        }
++        this.loadingInbox.remove(chunkEntities);
++        this.loadEntities(chunkEntities);
++    }
++    // Paper end
++
+     private boolean processChunkUnload(long chunkPos) {
+         org.spigotmc.AsyncCatcher.catchOp("Entity chunk unload process"); // Paper
+         boolean flag = this.storeChunkSections(chunkPos, (entityaccess) -> {
+@@ -375,6 +414,14 @@ public class PersistentEntitySectionManager<T extends EntityAccess> implements A
+         ChunkEntities<T> chunkentities; // CraftBukkit - decompile error
+ 
+         while ((chunkentities = (ChunkEntities) this.loadingInbox.poll()) != null) {
++            // Paper start
++            this.loadEntities(chunkentities);
++        }
++    }
++
++    public void loadEntities(ChunkEntities<T> chunkentities) {
++        {
++            // Paper end
+             chunkentities.getEntities().forEach((entityaccess) -> {
+                 this.addEntity(entityaccess, true);
+             });
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftChunk.java b/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
+index 403aba29347c779da75337531c3723632120e7c9..3e42a63c10f4ea80d2c4e046e4fb0e26bd566333 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
+@@ -128,6 +128,7 @@ public class CraftChunk implements Chunk {
+         if (!this.isLoaded()) {
+             this.getWorld().getChunkAt(x, z); // Transient load for this tick
+         }
++        this.getCraftWorld().getHandle().entityManager.syncChunkEntitiesLoad(ChunkPos.asLong(x, z)); // Paper
+ 
+         return getCraftWorld().getHandle().getChunkEntities(this.x, this.z); // Paper - optimise this
+     }
