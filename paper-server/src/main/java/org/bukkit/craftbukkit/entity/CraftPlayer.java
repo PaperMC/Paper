@@ -514,6 +514,13 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     @Override
+    public void stopAllSounds() {
+        if (getHandle().connection == null) return;
+
+        getHandle().connection.sendPacket(new PacketPlayOutStopSound(null, null));
+    }
+
+    @Override
     public void playEffect(Location loc, Effect effect, int data) {
         if (getHandle().connection == null) return;
 
