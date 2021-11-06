@@ -128,7 +128,7 @@ class CraftMetaTropicalFishBucket extends CraftMetaItem implements TropicalFishB
         if (this.variant == null) {
             this.variant = 0;
         }
-        this.variant = CraftTropicalFish.getData(color, this.getPatternColor(), this.getPattern());
+        this.variant = CraftTropicalFish.getData(color, this.getBodyColor(), this.getPattern()); // Paper - properly set tropical fish pattern color without mutating body color
     }
 
     @Override
