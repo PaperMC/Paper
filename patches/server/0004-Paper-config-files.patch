@@ -298,10 +298,10 @@ index 0000000000000000000000000000000000000000..bee2fa2bfbb61209381f24ed6508d3d1
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..24c6f957aaf1f4064718b05d4e5f5759853c6f00
+index 0000000000000000000000000000000000000000..e4368db074da7b5e48b47d41875c1e63b9745c2a
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-@@ -0,0 +1,185 @@
+@@ -0,0 +1,188 @@
 +package com.destroystokyo.paper;
 +
 +import com.google.common.base.Throwables;
@@ -364,8 +364,8 @@ index 0000000000000000000000000000000000000000..24c6f957aaf1f4064718b05d4e5f5759
 +        commands = new HashMap<String, Command>();
 +        commands.put("paper", new PaperCommand("paper"));
 +
-+        version = getInt("config-version", 23);
-+        set("config-version", 23);
++        version = getInt("config-version", 24);
++        set("config-version", 24);
 +        readConfig(PaperConfig.class, null);
 +    }
 +
@@ -405,7 +405,10 @@ index 0000000000000000000000000000000000000000..24c6f957aaf1f4064718b05d4e5f5759
 +                }
 +            }
 +        }
++        saveConfig();
++    }
 +
++    static void saveConfig() {
 +        try {
 +            config.save(CONFIG_FILE);
 +        } catch (IOException ex) {
@@ -489,10 +492,10 @@ index 0000000000000000000000000000000000000000..24c6f957aaf1f4064718b05d4e5f5759
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..0f80a0d930bff8c19440ee33a4c8d56d17495b5f
+index 0000000000000000000000000000000000000000..6cb3a37612240d4150d7c62628f4b7440c822d48
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-@@ -0,0 +1,73 @@
+@@ -0,0 +1,88 @@
 +package com.destroystokyo.paper;
 +
 +import java.util.List;
@@ -503,6 +506,7 @@ index 0000000000000000000000000000000000000000..0f80a0d930bff8c19440ee33a4c8d56d
 +
 +import static com.destroystokyo.paper.PaperConfig.log;
 +import static com.destroystokyo.paper.PaperConfig.logError;
++import static com.destroystokyo.paper.PaperConfig.saveConfig;
 +
 +public class PaperWorldConfig {
 +
@@ -531,6 +535,14 @@ index 0000000000000000000000000000000000000000..0f80a0d930bff8c19440ee33a4c8d56d
 +        }
 +    }
 +
++    public void removeOldValues() {
++        boolean needsSave = false;
++
++        if (needsSave) {
++            saveConfig();
++        }
++    }
++
 +    private boolean getBoolean(String path, boolean def) {
 +        config.addDefault("world-settings.default." + path, def);
 +        return config.getBoolean("world-settings." + worldName + "." + path, config.getBoolean("world-settings.default." + path));
@@ -542,8 +554,14 @@ index 0000000000000000000000000000000000000000..0f80a0d930bff8c19440ee33a4c8d56d
 +    }
 +
 +    private int getInt(String path, int def) {
-+        config.addDefault("world-settings.default." + path, def);
-+        return config.getInt("world-settings." + worldName + "." + path, config.getInt("world-settings.default." + path));
++        return getInt(path, def, true);
++    }
++
++    private int getInt(String path, int def, boolean setDefault) {
++        if (setDefault) {
++            config.addDefault("world-settings.default." + path, def);
++        }
++        return config.getInt("world-settings." + worldName + "." + path, config.getInt("world-settings.default." + path, def));
 +    }
 +
 +    private long getLong(String path, long def) {
@@ -567,7 +585,7 @@ index 0000000000000000000000000000000000000000..0f80a0d930bff8c19440ee33a4c8d56d
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/Main.java b/src/main/java/net/minecraft/server/Main.java
-index 1707449cbbfa5eab585657cdde811b34a92e1d17..c8385460701395cb5c65fba41335469ffb2d9b9a 100644
+index 21c0fe42af0239cf8d857fa9fddae8a5974930e2..39ca32e006a36991b9d948c709c1b9ce03bca018 100644
 --- a/src/main/java/net/minecraft/server/Main.java
 +++ b/src/main/java/net/minecraft/server/Main.java
 @@ -101,6 +101,12 @@ public class Main {
@@ -604,6 +622,18 @@ index 1707449cbbfa5eab585657cdde811b34a92e1d17..c8385460701395cb5c65fba41335469f
      public static void forceUpgrade(LevelStorageSource.LevelStorageAccess session, DataFixer dataFixer, boolean eraseCache, BooleanSupplier booleansupplier, ImmutableSet<ResourceKey<DimensionType>> worlds) { // CraftBukkit
          Main.LOGGER.info("Forcing world upgrade! {}", session.getLevelId()); // CraftBukkit
          WorldUpgrader worldupgrader = new WorldUpgrader(session, dataFixer, worlds, eraseCache);
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 2f393503204cf219c60dbae868172a29a0d23d5f..9f3d7089d066bda13af8b4b714a0ebd0c3403e4f 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -609,6 +609,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         }
+         this.forceDifficulty();
+         for (ServerLevel worldserver : this.getAllLevels()) {
++            worldserver.paperConfig.removeOldValues(); // Paper - callback for clearing old config options, after any migrations have taken place
+             this.loadSpawn(worldserver.getChunkSource().chunkMap.progressListener, worldserver);
+             worldserver.entityManager.tick(); // SPIGOT-6526: Load pending entities so they are available to the API
+             this.server.getPluginManager().callEvent(new org.bukkit.event.world.WorldLoadEvent(worldserver.getWorld()));
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 index cd65a5bb6da734a39b0bb6e9a0571455d19ceac4..fac993d58bd6e3bb19fd69881092a863c8952c65 100644
 --- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
@@ -686,7 +716,7 @@ index 5e0f455d2efe5f5be6ef3f82b06f024c54b22829..8516eef6ba56bd81710a8ad706f0fac8
          this.world = new CraftWorld((ServerLevel) this, gen, biomeProvider, env);
          this.ticksPerAnimalSpawns = this.getCraftServer().getTicksPerAnimalSpawns(); // CraftBukkit
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index e49e3643fa01cafdc96260aa01c710c37c6f1ffe..dc52fa7a78e79e0fbe087f89d7250225bb30228f 100644
+index cfbf2190b2b61683b574b9048cb4bb40cecfbf1f..fea5e7abcb5e429a3de5dd8968773fe5043a4448 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -835,6 +835,7 @@ public final class CraftServer implements Server {

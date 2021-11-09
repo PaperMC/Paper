@@ -26,7 +26,7 @@ index 4588ae8037407b81c99135863eb0c4e97c564c24..2a33071c4b69cb7b5a7e296e8fd903e3
      // Paper end - optimise isOutsideOfRange
      long lastAutoSaveTime; // Paper - incremental autosave
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index 87172ee94f5796a23c22c58bbb591dede2b2dc3c..955c42be5c5ed5c3a1a76e868da2087ced436e49 100644
+index 6522eb4b72c50be3ff7d1b094066a1cbec88634d..10d1e1f728519ad49379895c7fd3668badcbfd5a 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
 @@ -217,6 +217,12 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
@@ -114,7 +114,7 @@ index 87172ee94f5796a23c22c58bbb591dede2b2dc3c..955c42be5c5ed5c3a1a76e868da2087c
                      holder = new ChunkHolder(new ChunkPos(pos), level, this.level, this.lightEngine, this.queueSorter, this);
                      // Paper start
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index f512d68cbeb243fbef8fad73472ea6587112f889..796ae447fcc305335fe943fc6d97e21422f406b1 100644
+index ed696ed93251e644c2b71e468e2556d24b273933..3afb8b91dceb86e88b848462a5b8dbd5c8365239 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
 @@ -392,6 +392,83 @@ public class ServerLevel extends Level implements WorldGenLevel {
@@ -217,7 +217,7 @@ index f512d68cbeb243fbef8fad73472ea6587112f889..796ae447fcc305335fe943fc6d97e214
  
          this.handlingTick = true;
 diff --git a/src/main/java/net/minecraft/world/entity/Mob.java b/src/main/java/net/minecraft/world/entity/Mob.java
-index bada11542390b7575466f0e7062470665b8266c4..8a864238e154e2131834d013652746b7e7a78c97 100644
+index 5f4556505d831ea45e576a4c4e10f99e1353684e..55d07e70a67e08bab3a7a66076c980986736e5b8 100644
 --- a/src/main/java/net/minecraft/world/entity/Mob.java
 +++ b/src/main/java/net/minecraft/world/entity/Mob.java
 @@ -789,7 +789,12 @@ public abstract class Mob extends LivingEntity {
@@ -226,7 +226,7 @@ index bada11542390b7575466f0e7062470665b8266c4..8a864238e154e2131834d013652746b7
          } else if (!this.isPersistenceRequired() && !this.requiresCustomPersistence()) {
 -            Player entityhuman = this.level.findNearbyPlayer(this, -1.0D, EntitySelector.affectsSpawning); // Paper
 +            // Paper start - optimise checkDespawn
-+            Player entityhuman = this.level.findNearbyPlayer(this, level.paperConfig.hardDespawnDistance + 1, EntitySelector.affectsSpawning); // Paper
++            Player entityhuman = this.level.findNearbyPlayer(this, level.paperConfig.hardDespawnDistances.getInt(this.getType().getCategory()) + 1, EntitySelector.affectsSpawning); // Paper
 +            if (entityhuman == null) {
 +                entityhuman = ((ServerLevel)this.level).playersAffectingSpawning.isEmpty() ? null : ((ServerLevel)this.level).playersAffectingSpawning.get(0);
 +            }
@@ -309,7 +309,7 @@ index 64d5e71a8a26116385cee195d86fce1ef1574a8c..f936e9f9a9fa655fa997d6862b5ed54c
      protected Level(WritableLevelData worlddatamutable, ResourceKey<Level> resourcekey, final DimensionType dimensionmanager, Supplier<ProfilerFiller> supplier, boolean flag, boolean flag1, long i, org.bukkit.generator.ChunkGenerator gen, org.bukkit.generator.BiomeProvider biomeProvider, org.bukkit.World.Environment env, java.util.concurrent.Executor executor) { // Paper - Anti-Xray - Pass executor
          this.spigotConfig = new org.spigotmc.SpigotWorldConfig(((net.minecraft.world.level.storage.PrimaryLevelData) worlddatamutable).getLevelName()); // Spigot
 diff --git a/src/main/java/net/minecraft/world/level/NaturalSpawner.java b/src/main/java/net/minecraft/world/level/NaturalSpawner.java
-index d69abf154f056883dcd6dc4d9d97d2b772b62368..e588ac628ac855ec13004ae4a212e01637e524fa 100644
+index 4d8251a961a9c52456db997506dd9691beaec022..55dd04816886d27a62856ac952d2fc5d15bf40e6 100644
 --- a/src/main/java/net/minecraft/world/level/NaturalSpawner.java
 +++ b/src/main/java/net/minecraft/world/level/NaturalSpawner.java
 @@ -267,7 +267,7 @@ public final class NaturalSpawner {
