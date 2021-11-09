@@ -9,21 +9,43 @@ diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/m
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -0,0 +0,0 @@ import net.minecraft.world.entity.EntityType;
+ import net.minecraft.world.entity.monster.Vindicator;
+ import net.minecraft.world.entity.monster.Zombie;
+ import com.destroystokyo.paper.antixray.ChunkPacketBlockControllerAntiXray.EngineMode;
++import net.minecraft.world.level.NaturalSpawner;
+ import org.bukkit.Bukkit;
+ import org.bukkit.configuration.file.YamlConfiguration;
+ import org.spigotmc.SpigotWorldConfig;
+@@ -0,0 +0,0 @@ public class PaperWorldConfig {
+ 
+             set("despawn-ranges.soft", null);
+             set("despawn-ranges.hard", null);
++
++            set("spawn-limits.monsters", null);
++            set("spawn-limits.animals", null);
++            set("spawn-limits.water-animals", null);
++            set("spawn-limits.water-ambient", null);
+         }
+ 
+         if (needsSave) {
 @@ -0,0 +0,0 @@ public class PaperWorldConfig {
          zombieVillagerInfectionChance = getDouble("zombie-villager-infection-chance", zombieVillagerInfectionChance);
      }
  
-+    public int spawnLimitMonsters = -1;
-+    public int spawnLimitAnimals = -1;
-+    public int spawnLimitWaterAnimals = -1;
-+    public int spawnLimitWaterAmbient = -1;
-+    public int spawnLimitAmbient = -1;
++    public Reference2IntMap<MobCategory> perWorldSpawnLimits = new Reference2IntOpenHashMap<>(NaturalSpawner.SPAWNING_CATEGORIES.length);
 +    private void perWorldSpawnLimits() {
-+        spawnLimitMonsters = getInt("spawn-limits.monsters", spawnLimitMonsters);
-+        spawnLimitAnimals = getInt("spawn-limits.animals", spawnLimitAnimals);
-+        spawnLimitWaterAnimals = getInt("spawn-limits.water-animals", spawnLimitWaterAnimals);
-+        spawnLimitWaterAmbient = getInt("spawn-limits.water-ambient", spawnLimitWaterAmbient);
-+        spawnLimitAmbient = getInt("spawn-limits.ambient", spawnLimitAmbient);
++        perWorldSpawnLimits.defaultReturnValue(-1);
++        if (PaperConfig.version < 24) {
++            // ambient category already had correct name
++            perWorldSpawnLimits.put(MobCategory.MONSTER, getInt("spawn-limits.monsters", -1, false));
++            perWorldSpawnLimits.put(MobCategory.CREATURE, getInt("spawn-limits.animals", -1, false));
++            perWorldSpawnLimits.put(MobCategory.WATER_CREATURE, getInt("spawn-limits.water-animals", -1, false));
++            perWorldSpawnLimits.put(MobCategory.WATER_AMBIENT, getInt("spawn-limits.water-ambient", -1, false));
++        }
++        for (MobCategory value : NaturalSpawner.SPAWNING_CATEGORIES) {
++            perWorldSpawnLimits.put(value, getInt("spawn-limits." + value.getName(), perWorldSpawnLimits.getInt(value)));
++        }
 +    }
 +
      public int lightQueueSize = 20;
@@ -38,11 +60,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
          this.environment = env;
 +        // Paper start - per world spawn limits
-+        this.monsterSpawn = this.world.paperConfig.spawnLimitMonsters;
-+        this.animalSpawn = this.world.paperConfig.spawnLimitAnimals;
-+        this.waterAnimalSpawn = this.world.paperConfig.spawnLimitWaterAnimals;
-+        this.waterAmbientSpawn = this.world.paperConfig.spawnLimitWaterAmbient;
-+        this.ambientSpawn = this.world.paperConfig.spawnLimitAmbient;
++        this.monsterSpawn = this.world.paperConfig.perWorldSpawnLimits.getInt(net.minecraft.world.entity.MobCategory.MONSTER);
++        this.animalSpawn = this.world.paperConfig.perWorldSpawnLimits.getInt(net.minecraft.world.entity.MobCategory.CREATURE);
++        this.waterAnimalSpawn = this.world.paperConfig.perWorldSpawnLimits.getInt(net.minecraft.world.entity.MobCategory.WATER_CREATURE);
++        this.waterAmbientSpawn = this.world.paperConfig.perWorldSpawnLimits.getInt(net.minecraft.world.entity.MobCategory.WATER_AMBIENT);
++        this.ambientSpawn = this.world.paperConfig.perWorldSpawnLimits.getInt(net.minecraft.world.entity.MobCategory.AMBIENT);
++        this.waterUndergroundCreatureSpawn = this.world.paperConfig.perWorldSpawnLimits.getInt(net.minecraft.world.entity.MobCategory.UNDERGROUND_WATER_CREATURE);
 +        // Paper end
      }
  

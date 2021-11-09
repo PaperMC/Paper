@@ -364,8 +364,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        commands = new HashMap<String, Command>();
 +        commands.put("paper", new PaperCommand("paper"));
 +
-+        version = getInt("config-version", 23);
-+        set("config-version", 23);
++        version = getInt("config-version", 24);
++        set("config-version", 24);
 +        readConfig(PaperConfig.class, null);
 +    }
 +
@@ -405,7 +405,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                }
 +            }
 +        }
++        saveConfig();
++    }
 +
++    static void saveConfig() {
 +        try {
 +            config.save(CONFIG_FILE);
 +        } catch (IOException ex) {
@@ -503,6 +506,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +import static com.destroystokyo.paper.PaperConfig.log;
 +import static com.destroystokyo.paper.PaperConfig.logError;
++import static com.destroystokyo.paper.PaperConfig.saveConfig;
 +
 +public class PaperWorldConfig {
 +
@@ -531,6 +535,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +    }
 +
++    public void removeOldValues() {
++        boolean needsSave = false;
++
++        if (needsSave) {
++            saveConfig();
++        }
++    }
++
 +    private boolean getBoolean(String path, boolean def) {
 +        config.addDefault("world-settings.default." + path, def);
 +        return config.getBoolean("world-settings." + worldName + "." + path, config.getBoolean("world-settings.default." + path));
@@ -542,8 +554,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +
 +    private int getInt(String path, int def) {
-+        config.addDefault("world-settings.default." + path, def);
-+        return config.getInt("world-settings." + worldName + "." + path, config.getInt("world-settings.default." + path));
++        return getInt(path, def, true);
++    }
++
++    private int getInt(String path, int def, boolean setDefault) {
++        if (setDefault) {
++            config.addDefault("world-settings.default." + path, def);
++        }
++        return config.getInt("world-settings." + worldName + "." + path, config.getInt("world-settings.default." + path, def));
 +    }
 +
 +    private long getLong(String path, long def) {
@@ -604,6 +622,18 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public static void forceUpgrade(LevelStorageSource.LevelStorageAccess session, DataFixer dataFixer, boolean eraseCache, BooleanSupplier booleansupplier, ImmutableSet<ResourceKey<DimensionType>> worlds) { // CraftBukkit
          Main.LOGGER.info("Forcing world upgrade! {}", session.getLevelId()); // CraftBukkit
          WorldUpgrader worldupgrader = new WorldUpgrader(session, dataFixer, worlds, eraseCache);
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -0,0 +0,0 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         }
+         this.forceDifficulty();
+         for (ServerLevel worldserver : this.getAllLevels()) {
++            worldserver.paperConfig.removeOldValues(); // Paper - callback for clearing old config options, after any migrations have taken place
+             this.loadSpawn(worldserver.getChunkSource().chunkMap.progressListener, worldserver);
+             worldserver.entityManager.tick(); // SPIGOT-6526: Load pending entities so they are available to the API
+             this.server.getPluginManager().callEvent(new org.bukkit.event.world.WorldLoadEvent(worldserver.getWorld()));
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
