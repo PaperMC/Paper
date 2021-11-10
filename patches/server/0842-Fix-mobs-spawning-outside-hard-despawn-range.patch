@@ -5,7 +5,7 @@ Subject: [PATCH] Fix mobs spawning outside hard despawn range
 
 
 diff --git a/src/main/java/net/minecraft/world/level/NaturalSpawner.java b/src/main/java/net/minecraft/world/level/NaturalSpawner.java
-index bacd75f67f783f49208a74501cc7e6e7485010a4..603df526db7246283fff24dd2799ebd94ba25b7d 100644
+index d63d89960839b506e240349043ab77c4d81ca71a..7d266ce21a3d186539418a2ebba7ffd7c42f8bb8 100644
 --- a/src/main/java/net/minecraft/world/level/NaturalSpawner.java
 +++ b/src/main/java/net/minecraft/world/level/NaturalSpawner.java
 @@ -401,7 +401,10 @@ public final class NaturalSpawner {
@@ -14,8 +14,8 @@ index bacd75f67f783f49208a74501cc7e6e7485010a4..603df526db7246283fff24dd2799ebd9
      private static boolean isValidPositionForMob(ServerLevel world, Mob entity, double squaredDistance) {
 -        return squaredDistance > (double) (entity.getType().getCategory().getDespawnDistance() * entity.getType().getCategory().getDespawnDistance()) && entity.removeWhenFarAway(squaredDistance) ? false : entity.checkSpawnRules((LevelAccessor) world, MobSpawnType.NATURAL) && entity.checkSpawnObstruction((LevelReader) world);
 +        // Paper start - fix mobs spawning outside hard despawn range
-+        int despawnDistance = entity.isPersistenceRequired() || entity.requiresCustomPersistence() ? entity.getType().getCategory().getDespawnDistance() * entity.getType().getCategory().getDespawnDistance() : world.paperConfig.hardDespawnDistance;
-+        return squaredDistance > (double) despawnDistance && entity.removeWhenFarAway(squaredDistance) ? false : entity.checkSpawnRules((LevelAccessor) world, MobSpawnType.NATURAL) && entity.checkSpawnObstruction((LevelReader) world);
++        int despawnDistance = entity.isPersistenceRequired() || entity.requiresCustomPersistence() ? entity.getType().getCategory().getDespawnDistance() : world.paperConfig.hardDespawnDistances.getInt(entity.getType().getCategory());
++        return squaredDistance > (double) (despawnDistance * despawnDistance) && entity.removeWhenFarAway(squaredDistance) ? false : entity.checkSpawnRules((LevelAccessor) world, MobSpawnType.NATURAL) && entity.checkSpawnObstruction((LevelReader) world);
 +        // Paper end - fix mobs spawning outside hard despawn range
      }
  
