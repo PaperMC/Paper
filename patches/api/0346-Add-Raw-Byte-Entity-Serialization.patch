@@ -1,0 +1,62 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Mariell Hoversholm <proximyst@proximyst.com>
+Date: Sun, 24 Oct 2021 16:19:26 -0400
+Subject: [PATCH] Add Raw Byte Entity Serialization
+
+
+diff --git a/src/main/java/org/bukkit/UnsafeValues.java b/src/main/java/org/bukkit/UnsafeValues.java
+index c8c2e5bc2ec1d8d7ea445a1203c9d5a904dfc666..014c9984018ad5e51a26228a137e1ba4eb3e80c8 100644
+--- a/src/main/java/org/bukkit/UnsafeValues.java
++++ b/src/main/java/org/bukkit/UnsafeValues.java
+@@ -102,6 +102,14 @@ public interface UnsafeValues {
+ 
+     ItemStack deserializeItem(byte[] data);
+ 
++    byte[] serializeEntity(org.bukkit.entity.Entity entity);
++
++    default org.bukkit.entity.Entity deserializeEntity(byte[] data, World world) {
++        return deserializeEntity(data, world, false);
++    }
++
++    org.bukkit.entity.Entity deserializeEntity(byte[] data, World world, boolean preserveUUID);
++
+     /**
+      * Return the translation key for the Material, so the client can translate it into the active
+      * locale when using a {@link net.kyori.adventure.text.TranslatableComponent}.
+diff --git a/src/main/java/org/bukkit/entity/Entity.java b/src/main/java/org/bukkit/entity/Entity.java
+index d515de1c316f14165ee327bc81f0be98b60db3bf..350384ba10435b1115e4386a78d8145f748b6b29 100644
+--- a/src/main/java/org/bukkit/entity/Entity.java
++++ b/src/main/java/org/bukkit/entity/Entity.java
+@@ -767,5 +767,32 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
+      * @return players in tracking range
+      */
+     @NotNull Set<Player> getTrackedPlayers();
++
++    /**
++     * Spawns the entity in the world at the given {@link Location} with the default spawn reason.
++     * <p>
++     * This will not spawn the entity if the entity is already spawned or has previously been despawned.
++     * <p>
++     * Also, this method will fire the same events as a normal entity spawn.
++     *
++     * @param location The location to spawn the entity at.
++     * @return Whether the entity was successfully spawned.
++     */
++    public default boolean spawnAt(@NotNull Location location) {
++        return spawnAt(location, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.DEFAULT);
++    }
++
++    /**
++     * Spawns the entity in the world at the given {@link Location} with the reason given.
++     * <p>
++     * This will not spawn the entity if the entity is already spawned or has previously been despawned.
++     * <p>
++     * Also, this method will fire the same events as a normal entity spawn.
++     *
++     * @param location The location to spawn the entity at.
++     * @param reason   The reason for the entity being spawned.
++     * @return Whether the entity was successfully spawned.
++     */
++    public boolean spawnAt(@NotNull Location location, @NotNull org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason reason);
+     // Paper end
+ }
