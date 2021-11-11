@@ -19,9 +19,23 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        Preconditions.checkNotNull(item, "null cannot be serialized");
 +        Preconditions.checkArgument(item.getType() != Material.AIR, "air cannot be serialized");
 +
-+        java.io.ByteArrayOutputStream outputStream = new java.io.ByteArrayOutputStream();
-+        CompoundTag compound = (item instanceof CraftItemStack ? ((CraftItemStack) item).handle : CraftItemStack.asNMSCopy(item)).save(new CompoundTag());
++        return serializeNbtToBytes((item instanceof CraftItemStack ? ((CraftItemStack) item).handle : CraftItemStack.asNMSCopy(item)).save(new CompoundTag()));
++    }
++
++    @Override
++    public ItemStack deserializeItem(byte[] data) {
++        Preconditions.checkNotNull(data, "null cannot be deserialized");
++        Preconditions.checkArgument(data.length > 0, "cannot deserialize nothing");
++
++        CompoundTag compound = deserializeNbtFromBytes(data);
++        int dataVersion = compound.getInt("DataVersion");
++        Dynamic<Tag> converted = DataFixers.getDataFixer().update(References.ITEM_STACK, new Dynamic<Tag>(NbtOps.INSTANCE, compound), dataVersion, getDataVersion());
++        return CraftItemStack.asCraftMirror(net.minecraft.world.item.ItemStack.of((CompoundTag) converted.getValue()));
++    }
++
++    private byte[] serializeNbtToBytes(CompoundTag compound) {
 +        compound.putInt("DataVersion", getDataVersion());
++        java.io.ByteArrayOutputStream outputStream = new java.io.ByteArrayOutputStream();
 +        try {
 +            net.minecraft.nbt.NbtIo.writeCompressed(
 +                compound,
@@ -30,28 +44,21 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        } catch (IOException ex) {
 +            throw new RuntimeException(ex);
 +        }
-+
 +        return outputStream.toByteArray();
 +    }
 +
-+    @Override
-+    public ItemStack deserializeItem(byte[] data) {
-+        Preconditions.checkNotNull(data, "null cannot be deserialized");
-+        Preconditions.checkArgument(data.length > 0, "cannot deserialize nothing");
-+
++    private CompoundTag deserializeNbtFromBytes(byte[] data) {
++        CompoundTag compound;
 +        try {
-+            CompoundTag compound = net.minecraft.nbt.NbtIo.readCompressed(
++            compound = net.minecraft.nbt.NbtIo.readCompressed(
 +                new java.io.ByteArrayInputStream(data)
 +            );
-+            int dataVersion = compound.getInt("DataVersion");
-+
-+            Preconditions.checkArgument(dataVersion <= getDataVersion(), "Newer version! Server downgrades are not supported!");
-+            Dynamic<Tag> converted = DataFixers.getDataFixer().update(References.ITEM_STACK, new Dynamic<Tag>(NbtOps.INSTANCE, compound), dataVersion, getDataVersion());
-+            return CraftItemStack.asCraftMirror(net.minecraft.world.item.ItemStack.of((CompoundTag) converted.getValue()));
 +        } catch (IOException ex) {
-+            com.destroystokyo.paper.util.SneakyThrow.sneaky(ex);
-+            throw new RuntimeException();
++            throw new RuntimeException(ex);
 +        }
++        int dataVersion = compound.getInt("DataVersion");
++        Preconditions.checkArgument(dataVersion <= getDataVersion(), "Newer version! Server downgrades are not supported!");
++        return compound;
 +    }
      // Paper end
  
