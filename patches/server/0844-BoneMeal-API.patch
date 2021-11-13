@@ -39,10 +39,10 @@ index c5026e617c3f71ba79532de135f571c27b7dd4a7..6b77b7448aafbbc71ef2122e858e6f72
                  }
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index 00d8b61c04ac91770b0ff3b846d3ff70bef2e8e7..eb823854aea5d77d0a3c024f4cf70ad76a502788 100644
+index 858e29ad77aee8a1b7797c2d82902abbfd662da2..a250b99296df86587fb515d958757d4a703625c0 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-@@ -2160,5 +2160,28 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -2161,5 +2161,39 @@ public class CraftWorld extends CraftRegionAccessor implements World {
  
          return this.adventure$pointers;
      }
@@ -52,20 +52,31 @@ index 00d8b61c04ac91770b0ff3b846d3ff70bef2e8e7..eb823854aea5d77d0a3c024f4cf70ad7
 +        BlockPos pos = new BlockPos(location.getBlockX(), location.getBlockY(), location.getBlockZ());
 +        var context = new net.minecraft.world.item.context.UseOnContext(this.getHandle(), null, net.minecraft.world.InteractionHand.MAIN_HAND, net.minecraft.world.item.Items.BONE_MEAL.getDefaultInstance(), new net.minecraft.world.phys.BlockHitResult(Vec3.ZERO, CraftBlock.blockFaceToNotch(face), pos, false));
 +
++        boolean wasCapturingTrees = world.captureTreeGeneration;
++        boolean wasCapturingBlockStates = world.captureBlockStates;
++
++        var capturedBlocks = world.capturedBlockStates;
++        var capturedTileEntities = world.capturedTileEntities;
++
++        world.capturedBlockStates = new java.util.LinkedHashMap<>();
++        world.capturedTileEntities = new java.util.LinkedHashMap<>();
++
 +        world.captureTreeGeneration = true;
 +        world.captureBlockStates = true;
 +
 +        var result = net.minecraft.world.item.BoneMealItem.applyBonemeal(context, showParticles);
 +
-+        world.captureTreeGeneration = false;
-+        world.captureBlockStates = false;
++        world.captureTreeGeneration = wasCapturingTrees;
++        world.captureBlockStates = wasCapturingBlockStates;
 +
 +        for (BlockState blockState : world.capturedBlockStates.values()) {
 +            if (predicate != null && predicate.test(blockState)) {
 +                blockState.update(true);
 +            }
 +        }
-+        world.capturedBlockStates.clear();
++
++        world.capturedBlockStates = capturedBlocks;
++        world.capturedTileEntities = capturedTileEntities;
 +
 +        return result == net.minecraft.world.InteractionResult.CONSUME;
 +    }
