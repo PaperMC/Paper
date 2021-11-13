@@ -69,7 +69,7 @@
      protected final NeighborUpdater neighborUpdater;
      private final List<TickingBlockEntity> pendingBlockEntityTickers = Lists.newArrayList();
      private boolean tickingBlockEntities;
-@@ -121,23 +145,81 @@
+@@ -121,23 +145,90 @@
      private final DamageSources damageSources;
      private long subTickCount;
  
@@ -120,6 +120,15 @@
 +        return this.getChunkIfLoaded(chunkX, chunkZ) != null;
 +    }
 +    // Paper end - Use getChunkIfLoadedImmediately
++    // Paper start - per world ticks per spawn
++    private int getTicksPerSpawn(SpawnCategory spawnCategory) {
++        final int perWorld = this.paperConfig().entities.spawning.ticksPerSpawn.getInt(CraftSpawnCategory.toNMS(spawnCategory));
++        if (perWorld >= 0) {
++            return perWorld;
++        }
++        return this.getCraftServer().getTicksPerSpawns(spawnCategory);
++    }
++    // Paper end
 +
 +
 +    public abstract ResourceKey<LevelStem> getTypeKey();
@@ -133,7 +142,7 @@
 +        // CraftBukkit Ticks things
 +        for (SpawnCategory spawnCategory : SpawnCategory.values()) {
 +            if (CraftSpawnCategory.isValidForLimits(spawnCategory)) {
-+                this.ticksPerSpawnCategory.put(spawnCategory, (long) this.getCraftServer().getTicksPerSpawns(spawnCategory));
++                this.ticksPerSpawnCategory.put(spawnCategory, this.getTicksPerSpawn(spawnCategory)); // Paper
 +            }
 +        }
 +
@@ -160,7 +169,7 @@
                  }
              };
          } else {
-@@ -145,13 +227,90 @@
+@@ -145,13 +236,90 @@
          }
  
          this.thread = Thread.currentThread();
@@ -256,7 +265,7 @@
      @Override
      public boolean isClientSide() {
          return this.isClientSide;
-@@ -163,6 +322,13 @@
+@@ -163,6 +331,13 @@
          return null;
      }
  
@@ -270,7 +279,7 @@
      public boolean isInWorldBounds(BlockPos pos) {
          return !this.isOutsideBuildHeight(pos) && Level.isInWorldBoundsHorizontal(pos);
      }
-@@ -172,25 +338,87 @@
+@@ -172,25 +347,87 @@
      }
  
      private static boolean isInWorldBoundsHorizontal(BlockPos pos) {
@@ -303,7 +312,7 @@
  
 +    // Paper start - if loaded
      @Nullable
-     @Override
++    @Override
 +    public final ChunkAccess getChunkIfLoadedImmediately(int x, int z) {
 +        return ((ServerLevel)this).chunkSource.getChunkAtIfLoadedImmediately(x, z);
 +    }
@@ -335,7 +344,7 @@
 +        return chunk == null ? null : chunk.getFluidState(blockposition);
 +    }
 +
-+    @Override
+     @Override
 +    public final boolean hasChunkAt(BlockPos pos) {
 +        return getChunkIfLoaded(pos.getX() >> 4, pos.getZ() >> 4) != null; // Paper - Perf: Optimize Level.hasChunkAt(BlockPosition)Z
 +    }
@@ -362,7 +371,7 @@
          ChunkAccess ichunkaccess = this.getChunkSource().getChunk(chunkX, chunkZ, leastStatus, create);
  
          if (ichunkaccess == null && create) {
-@@ -207,6 +435,18 @@
+@@ -207,6 +444,18 @@
  
      @Override
      public boolean setBlock(BlockPos pos, BlockState state, int flags, int maxUpdateDepth) {
@@ -381,7 +390,7 @@
          if (this.isOutsideBuildHeight(pos)) {
              return false;
          } else if (!this.isClientSide && this.isDebug()) {
-@@ -214,45 +454,126 @@
+@@ -214,45 +463,126 @@
          } else {
              LevelChunk chunk = this.getChunkAt(pos);
              Block block = state.getBlock();
@@ -523,7 +532,7 @@
      public void onBlockStateChange(BlockPos pos, BlockState oldBlock, BlockState newBlock) {}
  
      @Override
-@@ -270,15 +591,33 @@
+@@ -270,15 +600,33 @@
              return false;
          } else {
              FluidState fluid = this.getFluidState(pos);
@@ -560,7 +569,7 @@
              }
  
              boolean flag1 = this.setBlock(pos, fluid.createLegacyBlock(), 3, maxUpdateDepth);
-@@ -340,10 +679,18 @@
+@@ -340,10 +688,18 @@
  
      @Override
      public BlockState getBlockState(BlockPos pos) {
@@ -580,7 +589,7 @@
  
              return chunk.getBlockState(pos);
          }
-@@ -446,34 +793,53 @@
+@@ -446,34 +802,53 @@
              this.pendingBlockEntityTickers.clear();
          }
  
@@ -643,7 +652,7 @@
  
      public boolean shouldTickDeath(Entity entity) {
          return true;
-@@ -510,13 +876,32 @@
+@@ -510,13 +885,32 @@
      @Nullable
      @Override
      public BlockEntity getBlockEntity(BlockPos pos) {
@@ -677,7 +686,7 @@
              this.getChunkAt(blockposition).addAndRegisterBlockEntity(blockEntity);
          }
      }
-@@ -643,7 +1028,7 @@
+@@ -643,7 +1037,7 @@
  
                  for (int k = 0; k < j; ++k) {
                      EnderDragonPart entitycomplexpart = aentitycomplexpart[k];
@@ -686,7 +695,7 @@
  
                      if (t0 != null && predicate.test(t0)) {
                          result.add(t0);
-@@ -912,7 +1297,7 @@
+@@ -912,7 +1306,7 @@
  
      public static enum ExplosionInteraction implements StringRepresentable {
  
