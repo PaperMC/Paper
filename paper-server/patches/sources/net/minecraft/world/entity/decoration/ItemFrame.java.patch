@@ -1,6 +1,14 @@
 --- a/net/minecraft/world/entity/decoration/ItemFrame.java
 +++ b/net/minecraft/world/entity/decoration/ItemFrame.java
-@@ -91,9 +91,15 @@
+@@ -1,6 +1,7 @@
+ package net.minecraft.world.entity.decoration;
+ 
+ import javax.annotation.Nullable;
++import io.papermc.paper.event.player.PlayerItemFrameChangeEvent; // Paper - Add PlayerItemFrameChangeEvent
+ import net.minecraft.core.BlockPos;
+ import net.minecraft.core.Direction;
+ import net.minecraft.core.component.DataComponents;
+@@ -91,9 +92,15 @@
  
      @Override
      protected AABB calculateBoundingBox(BlockPos pos, Direction side) {
@@ -18,7 +26,7 @@
          double d0 = enumdirection_enumaxis == Direction.Axis.X ? 0.0625D : 0.75D;
          double d1 = enumdirection_enumaxis == Direction.Axis.Y ? 0.0625D : 0.75D;
          double d2 = enumdirection_enumaxis == Direction.Axis.Z ? 0.0625D : 0.75D;
-@@ -123,9 +129,9 @@
+@@ -123,9 +130,9 @@
      }
  
      @Override
@@ -30,7 +38,7 @@
          }
  
      }
-@@ -155,6 +161,11 @@
+@@ -155,6 +162,18 @@
              if (this.isInvulnerableToBase(source)) {
                  return false;
              } else if (this.shouldDamageDropItem(source)) {
@@ -39,10 +47,17 @@
 +                    return true;
 +                }
 +                // CraftBukkit end
++                // Paper start - Add PlayerItemFrameChangeEvent
++                if (source.getEntity() instanceof Player player) {
++                    var event = new PlayerItemFrameChangeEvent((org.bukkit.entity.Player) player.getBukkitEntity(), (org.bukkit.entity.ItemFrame) this.getBukkitEntity(), this.getItem().asBukkitCopy(), PlayerItemFrameChangeEvent.ItemFrameChangeAction.REMOVE);
++                    if (!event.callEvent()) return true; // return true here because you aren't cancelling the damage, just the change
++                    this.setItem(ItemStack.fromBukkitCopy(event.getItemStack()), false);
++                }
++                // Paper end - Add PlayerItemFrameChangeEvent
                  this.dropItem(world, source.getEntity(), false);
                  this.gameEvent(GameEvent.BLOCK_CHANGE, source.getEntity());
                  this.playSound(this.getRemoveItemSound(), 1.0F, 1.0F);
-@@ -267,17 +278,23 @@
+@@ -267,17 +286,23 @@
      }
  
      public void setItem(ItemStack value, boolean update) {
@@ -72,3 +87,32 @@
              this.level().updateNeighbourForOutputSignal(this.pos, Blocks.AIR);
          }
  
+@@ -386,7 +411,13 @@
+                     if (worldmap != null && worldmap.isTrackedCountOverLimit(256)) {
+                         return InteractionResult.FAIL;
+                     } else {
+-                        this.setItem(itemstack);
++                        // Paper start - Add PlayerItemFrameChangeEvent
++                        PlayerItemFrameChangeEvent event = new PlayerItemFrameChangeEvent((org.bukkit.entity.Player) player.getBukkitEntity(), (org.bukkit.entity.ItemFrame) this.getBukkitEntity(), itemstack.asBukkitCopy(), PlayerItemFrameChangeEvent.ItemFrameChangeAction.PLACE);
++                        if (!event.callEvent()) {
++                            return InteractionResult.FAIL;
++                        }
++                        this.setItem(ItemStack.fromBukkitCopy(event.getItemStack()));
++                        // Paper end - Add PlayerItemFrameChangeEvent
+                         this.gameEvent(GameEvent.BLOCK_CHANGE, player);
+                         itemstack.consume(1, player);
+                         return InteractionResult.SUCCESS;
+@@ -395,6 +426,13 @@
+                     return InteractionResult.PASS;
+                 }
+             } else {
++                // Paper start - Add PlayerItemFrameChangeEvent
++                PlayerItemFrameChangeEvent event = new PlayerItemFrameChangeEvent((org.bukkit.entity.Player) player.getBukkitEntity(), (org.bukkit.entity.ItemFrame) this.getBukkitEntity(), this.getItem().asBukkitCopy(), PlayerItemFrameChangeEvent.ItemFrameChangeAction.ROTATE);
++                if (!event.callEvent()) {
++                    return InteractionResult.FAIL;
++                }
++                setItem(ItemStack.fromBukkitCopy(event.getItemStack()), false, false);
++                // Paper end - Add PlayerItemFrameChangeEvent
+                 this.playSound(this.getRotateItemSound(), 1.0F, 1.0F);
+                 this.setRotation(this.getRotation() + 1);
+                 this.gameEvent(GameEvent.BLOCK_CHANGE, player);
