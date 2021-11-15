@@ -16,17 +16,14 @@ import org.jetbrains.annotations.Nullable;
  * Base Permissible for use in any Permissible object via proxy or extension
  */
 public class PermissibleBase implements Permissible {
-    private ServerOperator opable;
-    private Permissible parent = this;
+    private final ServerOperator opable;
+    private final Permissible parent;
     private final List<PermissionAttachment> attachments = new LinkedList<PermissionAttachment>();
     private final Map<String, PermissionAttachmentInfo> permissions = new HashMap<String, PermissionAttachmentInfo>();
 
     public PermissibleBase(@Nullable ServerOperator opable) {
         this.opable = opable;
-
-        if (opable instanceof Permissible) {
-            this.parent = (Permissible) opable;
-        }
+        this.parent = (opable instanceof Permissible) ? (Permissible) opable : this;
 
         recalculatePermissions();
     }
@@ -144,8 +141,7 @@ public class PermissibleBase implements Permissible {
             throw new IllegalArgumentException("Attachment cannot be null");
         }
 
-        if (attachments.contains(attachment)) {
-            attachments.remove(attachment);
+        if (attachments.remove(attachment)) {
             PermissionRemovedExecutor ex = attachment.getRemovalCallback();
 
             if (ex != null) {
@@ -253,7 +249,7 @@ public class PermissibleBase implements Permissible {
     }
 
     private static class RemoveAttachmentRunnable implements Runnable {
-        private PermissionAttachment attachment;
+        private final PermissionAttachment attachment;
 
         public RemoveAttachmentRunnable(@NotNull PermissionAttachment attachment) {
             this.attachment = attachment;
