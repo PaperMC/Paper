@@ -4,37 +4,6 @@ Date: Thu, 2 Aug 2018 08:44:35 -0500
 Subject: [PATCH] Add hand to bucket events
 
 
-diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index c4aa14e81151ada49e61f4dd25267f7eb10450a6..dd2710f2a093fcca9f80edf41866459d63bac94c 100644
---- a/src/main/java/net/minecraft/server/level/ServerLevel.java
-+++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
-@@ -1465,15 +1465,17 @@ public class ServerLevel extends Level implements WorldGenLevel {
-         this.getServer().getPlayerList().broadcastAll(new ClientboundSetDefaultSpawnPositionPacket(pos, angle));
-     }
- 
--    public BlockPos getSharedSpawnPos() {
--        BlockPos blockposition = new BlockPos(this.levelData.getXSpawn(), this.levelData.getYSpawn(), this.levelData.getZSpawn());
--
--        if (!this.getWorldBorder().isWithinBounds(blockposition)) {
--            blockposition = this.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING, new BlockPos(this.getWorldBorder().getCenterX(), 0.0D, this.getWorldBorder().getCenterZ()));
--        }
--
--        return blockposition;
--    }
-+    // Paper - moved up to Level
-+    //public BlockPosition getSpawn() {
-+    //    BlockPosition blockposition = new BlockPosition(this.worldData.a(), this.worldData.b(), this.worldData.c());
-+    //
-+    //    if (!this.getWorldBorder().a(blockposition)) {
-+    //        blockposition = this.getHighestBlockYAt(HeightMap.Type.MOTION_BLOCKING, new BlockPosition(this.getWorldBorder().getCenterX(), 0.0D, this.getWorldBorder().getCenterZ()));
-+    //    }
-+    //
-+    //    return blockposition;
-+    //}
-+    // Paper end
- 
-     public float getSharedSpawnAngle() {
-         return this.levelData.getSpawnAngle();
 diff --git a/src/main/java/net/minecraft/world/entity/animal/Cow.java b/src/main/java/net/minecraft/world/entity/animal/Cow.java
 index 0cf990f220fad6e945bda590263b78ea2e5a3b03..a43349c47292154dfc56c72c58ba9f29f6765d83 100644
 --- a/src/main/java/net/minecraft/world/entity/animal/Cow.java
@@ -116,41 +85,10 @@ index 5870023250ed2dba16b2fa5c6a8be6f36cebc640..650b59b69eb12112bc71e5ff164767e3
              } else if (world.dimensionType().ultraWarm() && this.content.is((Tag) FluidTags.WATER)) {
                  int i = blockposition.getX();
                  int j = blockposition.getY();
-diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
-index b5aa61cecf15e38105cf4bef92b6859aaa450dbd..2647b88ffffa393e744d9e003032468acc92668a 100644
---- a/src/main/java/net/minecraft/world/level/Level.java
-+++ b/src/main/java/net/minecraft/world/level/Level.java
-@@ -294,6 +294,17 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
-         return true;
-     }
-     // Paper end
-+    // Paper start - moved up from ServerLevel
-+    public BlockPos getSharedSpawnPos() {
-+        BlockPos blockposition = new BlockPos(this.levelData.getXSpawn(), this.levelData.getYSpawn(), this.levelData.getZSpawn());
-+
-+        if (!this.getWorldBorder().isWithinBounds(blockposition)) {
-+            blockposition = this.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING, new BlockPos(this.getWorldBorder().getCenterX(), 0.0D, this.getWorldBorder().getCenterZ()));
-+        }
-+
-+        return blockposition;
-+    }
-+    // Paper end
-     @Override
-     public boolean isClientSide() {
-         return this.isClientSide;
 diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-index 4faf98079a6a6af662e11050a0088578ba65a5eb..e094b1b00d5fb73da73abcadb02ffd98b91fb869 100644
+index 4faf98079a6a6af662e11050a0088578ba65a5eb..0d1c6f609a5198c21c895e8f6ace467355b0f166 100644
 --- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 +++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-@@ -227,7 +227,7 @@ public class CraftEventFactory {
-     public static Entity entityDamage; // For use in EntityDamageByEntityEvent
- 
-     // helper methods
--    private static boolean canBuild(ServerLevel world, Player player, int x, int z) {
-+    private static boolean canBuild(Level world, Player player, int x, int z) {
-         int spawnSize = Bukkit.getServer().getSpawnRadius();
- 
-         if (world.dimension() != Level.OVERWORLD) return true;
 @@ -421,6 +421,20 @@ public class CraftEventFactory {
      }
  
@@ -159,15 +97,15 @@ index 4faf98079a6a6af662e11050a0088578ba65a5eb..e094b1b00d5fb73da73abcadb02ffd98
 +        return getPlayerBucketEvent(isFilling, world, who, changed, clicked, clickedFace, itemstack, item, null);
 +    }
 +
-+    public static PlayerBucketEmptyEvent callPlayerBucketEmptyEvent(Level world, net.minecraft.world.entity.player.Player who, BlockPos changed, BlockPos clicked, Direction clickedFace, ItemStack itemstack, InteractionHand enumHand) {
++    public static PlayerBucketEmptyEvent callPlayerBucketEmptyEvent(ServerLevel world, net.minecraft.world.entity.player.Player who, BlockPos changed, BlockPos clicked, Direction clickedFace, ItemStack itemstack, InteractionHand enumHand) {
 +        return (PlayerBucketEmptyEvent) getPlayerBucketEvent(false, world, who, changed, clicked, clickedFace, itemstack, Items.BUCKET, enumHand);
 +    }
 +
-+    public static PlayerBucketFillEvent callPlayerBucketFillEvent(Level world, net.minecraft.world.entity.player.Player who, BlockPos changed, BlockPos clicked, Direction clickedFace, ItemStack itemInHand, net.minecraft.world.item.Item bucket, InteractionHand enumHand) {
++    public static PlayerBucketFillEvent callPlayerBucketFillEvent(ServerLevel world, net.minecraft.world.entity.player.Player who, BlockPos changed, BlockPos clicked, Direction clickedFace, ItemStack itemInHand, net.minecraft.world.item.Item bucket, InteractionHand enumHand) {
 +        return (PlayerBucketFillEvent) getPlayerBucketEvent(true, world, who, clicked, changed, clickedFace, itemInHand, bucket, enumHand);
 +    }
 +
-+    private static PlayerEvent getPlayerBucketEvent(boolean isFilling, Level world, net.minecraft.world.entity.player.Player who, BlockPos changed, BlockPos clicked, Direction clickedFace, ItemStack itemstack, net.minecraft.world.item.Item item, InteractionHand enumHand) {
++    private static PlayerEvent getPlayerBucketEvent(boolean isFilling, ServerLevel world, net.minecraft.world.entity.player.Player who, BlockPos changed, BlockPos clicked, Direction clickedFace, ItemStack itemstack, net.minecraft.world.item.Item item, InteractionHand enumHand) {
 +        // Paper end
          Player player = (Player) who.getBukkitEntity();
          CraftItemStack itemInHand = CraftItemStack.asNewCraftStack(item);
