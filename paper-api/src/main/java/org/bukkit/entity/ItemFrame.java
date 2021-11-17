@@ -106,7 +106,7 @@ public interface ItemFrame extends Hanging {
      * damage, interaction, pistons, or missing supporting blocks), rotate the
      * item or place/remove items.
      *
-     * @param visible whether the item frame is fixed or not
+     * @param fixed whether the item frame is fixed or not
      */
-    void setFixed(boolean visible);
+    void setFixed(boolean fixed);
 }
