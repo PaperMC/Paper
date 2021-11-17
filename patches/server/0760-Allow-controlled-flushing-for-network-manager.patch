@@ -9,7 +9,7 @@ This patch will be used to optimise out flush calls in later
 patches.
 
 diff --git a/src/main/java/net/minecraft/network/Connection.java b/src/main/java/net/minecraft/network/Connection.java
-index c327609fdb7641e4dc5fb58d97903fa666eac24d..0b47144cb8ad72efebf10e163f5b442995ef213e 100644
+index 3eff1c97dcdc6bd8a0c4b7c5bbead2bd68490a4b..032d65a489d65e9b5b5066dff80c65d2e1b28c82 100644
 --- a/src/main/java/net/minecraft/network/Connection.java
 +++ b/src/main/java/net/minecraft/network/Connection.java
 @@ -94,6 +94,39 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
@@ -91,11 +91,11 @@ index c327609fdb7641e4dc5fb58d97903fa666eac24d..0b47144cb8ad72efebf10e163f5b4429
  
      }
  
-     private void doSendPacket(Packet<?> packet, @Nullable GenericFutureListener<? extends Future<? super Void>> genericfuturelistener, ConnectionProtocol enumprotocol, ConnectionProtocol enumprotocol1) {
+     private void doSendPacket(Packet<?> packet, @Nullable GenericFutureListener<? extends Future<? super Void>> callback, ConnectionProtocol enumprotocol, ConnectionProtocol enumprotocol1) {
 +        // Paper start - add flush parameter
-+        this.doSendPacket(packet, genericfuturelistener, enumprotocol, enumprotocol1, true);
++        this.doSendPacket(packet, callback, enumprotocol, enumprotocol1, true);
 +    }
-+    private void doSendPacket(Packet<?> packet, @Nullable GenericFutureListener<? extends Future<? super Void>> genericfuturelistener, ConnectionProtocol enumprotocol, ConnectionProtocol enumprotocol1, boolean flush) {
++    private void doSendPacket(Packet<?> packet, @Nullable GenericFutureListener<? extends Future<? super Void>> callback, ConnectionProtocol enumprotocol, ConnectionProtocol enumprotocol1, boolean flush) {
 +        // Paper end - add flush parameter
          if (enumprotocol != enumprotocol1) {
              this.setProtocol(enumprotocol);
@@ -107,8 +107,8 @@ index c327609fdb7641e4dc5fb58d97903fa666eac24d..0b47144cb8ad72efebf10e163f5b4429
 -        ChannelFuture channelfuture = this.channel.writeAndFlush(packet);
 +        ChannelFuture channelfuture = flush ? this.channel.writeAndFlush(packet) : this.channel.write(packet); // Paper - add flush parameter
  
-         if (genericfuturelistener != null) {
-             channelfuture.addListener(genericfuturelistener);
+         if (callback != null) {
+             channelfuture.addListener(callback);
 @@ -354,6 +400,10 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
      }
      private boolean processQueue() {

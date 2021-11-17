@@ -80,7 +80,7 @@ index 1d469a9ea0049687d7686f88382ac14514ad3bee..14d31bc2fb19b1265ee3e72280f2aba2
                  chunkData.addProperty("queued-for-unload", chunkMap.toDrop.contains(playerChunk.pos.longKey));
                  chunkData.addProperty("status", status == null ? "unloaded" : status.toString());
 diff --git a/src/main/java/net/minecraft/server/level/ChunkHolder.java b/src/main/java/net/minecraft/server/level/ChunkHolder.java
-index 467449049359c721c27b7cd249b03acc5fb8f3cc..a88d54c2a97b8d9e3c0ba6c4595bcd25dc6f3b80 100644
+index 6923c57173ddb220e1a8af16b116ea5678a773fb..88eb25d4ffc57cfe719a5a0591c9617f78c01ec9 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkHolder.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkHolder.java
 @@ -60,7 +60,7 @@ public class ChunkHolder {
@@ -361,7 +361,7 @@ index 467449049359c721c27b7cd249b03acc5fb8f3cc..a88d54c2a97b8d9e3c0ba6c4595bcd25
                  }
              }).exceptionally((throwable) -> {
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index d70d977290b07fca61fea965a907c9f60a393ba7..324fe352fd108ef1d9f63a224b61c362adafc8d0 100644
+index d77aabe4997b816b23a1f39ac353ae5bc7b8e1e4..f0154a13dbdad970042e248b3adc776573ab5d35 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
 @@ -122,6 +122,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
@@ -991,7 +991,7 @@ index d94241bcca4f2fd5e464a860bd356af504dc68b7..1cc4e0a1f3d8235ef88b48e01ca8b78a
      }
  }
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-index e5317a994cb9b30293ad54b8fc537f703ef994dc..eb6a802ea12a19a058fb7e23b7418b8b426b4ca0 100644
+index 8cef8dca3971cbbb4eddf08ff47eca6874c1ac99..77a6a5883d7e9fba12d0a2c8f3e7f2565d4785b4 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 @@ -610,6 +610,26 @@ public class ServerChunkCache extends ChunkSource {
@@ -1040,7 +1040,7 @@ index e5317a994cb9b30293ad54b8fc537f703ef994dc..eb6a802ea12a19a058fb7e23b7418b8b
              ichunkaccess = (ChunkAccess) ((Either) completablefuture.join()).map((ichunkaccess1) -> {
                  return ichunkaccess1;
 @@ -731,10 +755,12 @@ public class ServerChunkCache extends ChunkSource {
-         if (flag && !currentlyUnloading) {
+         if (create && !currentlyUnloading) {
              // CraftBukkit end
              this.distanceManager.addTicket(TicketType.UNKNOWN, chunkcoordintpair, l, chunkcoordintpair);
 +            if (isUrgent) this.distanceManager.markUrgent(chunkcoordintpair); // Paper - Chunk priority
@@ -1052,14 +1052,13 @@ index e5317a994cb9b30293ad54b8fc537f703ef994dc..eb6a802ea12a19a058fb7e23b7418b8b
                  this.runDistanceManagerUpdates();
                  playerchunk = this.getVisibleChunkIfPresent(k);
                  gameprofilerfiller.pop();
-@@ -743,8 +769,13 @@ public class ServerChunkCache extends ChunkSource {
-                 }
+@@ -744,7 +770,13 @@ public class ServerChunkCache extends ChunkSource {
              }
          }
--
--        return this.chunkAbsent(playerchunk, l) ? ChunkHolder.UNLOADED_CHUNK_FUTURE : playerchunk.getOrScheduleFuture(chunkstatus, this.chunkMap);
+ 
+-        return this.chunkAbsent(playerchunk, l) ? ChunkHolder.UNLOADED_CHUNK_FUTURE : playerchunk.getOrScheduleFuture(leastStatus, this.chunkMap);
 +        // Paper start - Chunk priority
-+        CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> future = this.chunkAbsent(playerchunk, l) ? ChunkHolder.UNLOADED_CHUNK_FUTURE : playerchunk.getOrScheduleFuture(chunkstatus, this.chunkMap);
++        CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> future = this.chunkAbsent(playerchunk, l) ? ChunkHolder.UNLOADED_CHUNK_FUTURE : playerchunk.getOrScheduleFuture(leastStatus, this.chunkMap);
 +        if (isUrgent) {
 +            future.thenAccept(either -> this.distanceManager.clearUrgent(chunkcoordintpair));
 +        }
@@ -1068,7 +1067,7 @@ index e5317a994cb9b30293ad54b8fc537f703ef994dc..eb6a802ea12a19a058fb7e23b7418b8b
      }
  
      private boolean chunkAbsent(@Nullable ChunkHolder holder, int maxLevel) {
-@@ -796,6 +827,7 @@ public class ServerChunkCache extends ChunkSource {
+@@ -796,6 +828,7 @@ public class ServerChunkCache extends ChunkSource {
      }
  
      public boolean runDistanceManagerUpdates() {
@@ -1424,7 +1423,7 @@ index 8770fe0db46b01e8b608637df4f1a669a3f4cdde..3c1698ba0d3bc412ab957777d9b5211d
      private final String name;
      private final Comparator<T> comparator;
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index 8d86b9cacfaf71ec04dd530f3c0d75ee46c517df..14d4ef096624112c732b4c4f15763dc7c287d576 100644
+index 001167097afed95f93f54ff0e61220148849dd85..ffdba71ca4a42fee989438799d485826c9bb647a 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 @@ -1545,6 +1545,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
@@ -1467,7 +1466,7 @@ index a5fb401e04bf194224d05020fe397e231e2f715c..0e3726495ef10717627dcf4297c944da
              entityplayer1.setPos(entityplayer1.getX(), entityplayer1.getY() + 1.0D, entityplayer1.getZ());
          }
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index bed497f56b9b1fa16ef7b91744bb27d228fb5a66..3279ddbafef921e30d40874708acb4f7d32c060e 100644
+index 2806d247e92600a592615241a6d07527f6b527e8..9aa75a9e997825c27d57eae992ca58ecbb807dfb 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
 @@ -223,7 +223,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, n

@@ -22,7 +22,7 @@ it only impacts data sent from the client.
 Set -DPaper.maxSignLength=XX to change limit or -1 to disable
 
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index 0103c76c183d0e866a98c26f2d1cf557ba4f67e8..d24d42ef0a00b9420700e58f555f8448f8d01747 100644
+index 2ea1e58cf721a8ae339cbfd6192f3312061249ba..b9f9314befff581e70ae7d8d4eab9040e4e4d26d 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 @@ -254,6 +254,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
@@ -33,26 +33,19 @@ index 0103c76c183d0e866a98c26f2d1cf557ba4f67e8..d24d42ef0a00b9420700e58f555f8448
      private static final long KEEPALIVE_LIMIT = Long.getLong("paper.playerconnection.keepalive", 30) * 1000; // Paper - provide property to set keepalive limit
  
      public ServerGamePacketListenerImpl(MinecraftServer server, Connection connection, ServerPlayer player) {
-@@ -2847,10 +2848,20 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
-             List<net.kyori.adventure.text.Component> lines = new java.util.ArrayList<>();
+@@ -2848,6 +2849,15 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
  
-             for (int i = 0; i < list.size(); ++i) {
+             for (int i = 0; i < signText.size(); ++i) {
+                 TextFilter.FilteredText currentLine = signText.get(i);
 +                // Paper start - cap line length - modified clients can send longer data than normal
-+                net.minecraft.server.network.TextFilter.FilteredText currentLine = list.get(i);
 +                if (MAX_SIGN_LINE_LENGTH > 0 && currentLine.getRaw().length() > MAX_SIGN_LINE_LENGTH) {
 +                    // This handles multibyte characters as 1
 +                    int offset = currentLine.getRaw().codePoints().limit(MAX_SIGN_LINE_LENGTH).map(Character::charCount).sum();
 +                    if (offset < currentLine.getRaw().length()) {
-+                        list.set(i, currentLine = net.minecraft.server.network.TextFilter.FilteredText.passThrough(currentLine.getRaw().substring(0, offset))); // this will break any filtering, but filtering is NYI as of 1.17
++                        signText.set(i, currentLine = net.minecraft.server.network.TextFilter.FilteredText.passThrough(currentLine.getRaw().substring(0, offset))); // this will break any filtering, but filtering is NYI as of 1.17
 +                    }
 +                }
 +                // Paper end
+ 
                  if (this.player.isTextFilteringEnabled()) {
--                    lines.add(net.kyori.adventure.text.Component.text(SharedConstants.filterText(list.get(i).getFiltered())));
-+                    lines.add(net.kyori.adventure.text.Component.text(SharedConstants.filterText(currentLine.getFiltered())));
-                 } else {
--                    lines.add(net.kyori.adventure.text.Component.text(SharedConstants.filterText(list.get(i).getRaw())));
-+                    lines.add(net.kyori.adventure.text.Component.text(SharedConstants.filterText(currentLine.getRaw())));
-                 }
-             }
-             SignChangeEvent event = new SignChangeEvent((org.bukkit.craftbukkit.block.CraftBlock) player.getWorld().getBlockAt(x, y, z), this.player.getBukkitEntity(), lines);
+                     lines.add(net.kyori.adventure.text.Component.text(SharedConstants.filterText(currentLine.getFiltered())));
