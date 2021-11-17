@@ -34,25 +34,18 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      public ServerGamePacketListenerImpl(MinecraftServer server, Connection connection, ServerPlayer player) {
 @@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
-             List<net.kyori.adventure.text.Component> lines = new java.util.ArrayList<>();
  
-             for (int i = 0; i < list.size(); ++i) {
+             for (int i = 0; i < signText.size(); ++i) {
+                 TextFilter.FilteredText currentLine = signText.get(i);
 +                // Paper start - cap line length - modified clients can send longer data than normal
-+                net.minecraft.server.network.TextFilter.FilteredText currentLine = list.get(i);
 +                if (MAX_SIGN_LINE_LENGTH > 0 && currentLine.getRaw().length() > MAX_SIGN_LINE_LENGTH) {
 +                    // This handles multibyte characters as 1
 +                    int offset = currentLine.getRaw().codePoints().limit(MAX_SIGN_LINE_LENGTH).map(Character::charCount).sum();
 +                    if (offset < currentLine.getRaw().length()) {
-+                        list.set(i, currentLine = net.minecraft.server.network.TextFilter.FilteredText.passThrough(currentLine.getRaw().substring(0, offset))); // this will break any filtering, but filtering is NYI as of 1.17
++                        signText.set(i, currentLine = net.minecraft.server.network.TextFilter.FilteredText.passThrough(currentLine.getRaw().substring(0, offset))); // this will break any filtering, but filtering is NYI as of 1.17
 +                    }
 +                }
 +                // Paper end
+ 
                  if (this.player.isTextFilteringEnabled()) {
--                    lines.add(net.kyori.adventure.text.Component.text(SharedConstants.filterText(list.get(i).getFiltered())));
-+                    lines.add(net.kyori.adventure.text.Component.text(SharedConstants.filterText(currentLine.getFiltered())));
-                 } else {
--                    lines.add(net.kyori.adventure.text.Component.text(SharedConstants.filterText(list.get(i).getRaw())));
-+                    lines.add(net.kyori.adventure.text.Component.text(SharedConstants.filterText(currentLine.getRaw())));
-                 }
-             }
-             SignChangeEvent event = new SignChangeEvent((org.bukkit.craftbukkit.block.CraftBlock) player.getWorld().getBlockAt(x, y, z), this.player.getBukkitEntity(), lines);
+                     lines.add(net.kyori.adventure.text.Component.text(SharedConstants.filterText(currentLine.getFiltered())));

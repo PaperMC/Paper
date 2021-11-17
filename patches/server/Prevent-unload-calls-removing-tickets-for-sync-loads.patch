@@ -14,15 +14,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
 +    private long syncLoadCounter; // Paper - prevent plugin unloads from removing our ticket
 +
-     private CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> getChunkFutureMainThread(int i, int j, ChunkStatus chunkstatus, boolean flag) {
+     private CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> getChunkFutureMainThread(int chunkX, int chunkZ, ChunkStatus leastStatus, boolean create) {
          // Paper start - add isUrgent - old sig left in place for dirty nms plugins
-         return getChunkFutureMainThread(i, j, chunkstatus, flag, false);
+         return getChunkFutureMainThread(chunkX, chunkZ, leastStatus, create, false);
 @@ -0,0 +0,0 @@ public class ServerChunkCache extends ChunkSource {
              ChunkHolder.FullChunkStatus currentChunkState = ChunkHolder.getFullChunkStatus(playerchunk.getTicketLevel());
              currentlyUnloading = (oldChunkState.isOrAfter(ChunkHolder.FullChunkStatus.BORDER) && !currentChunkState.isOrAfter(ChunkHolder.FullChunkStatus.BORDER));
          }
 +        final Long identifier; // Paper - prevent plugin unloads from removing our ticket
-         if (flag && !currentlyUnloading) {
+         if (create && !currentlyUnloading) {
              // CraftBukkit end
              this.distanceManager.addTicket(TicketType.UNKNOWN, chunkcoordintpair, l, chunkcoordintpair);
 +            identifier = Long.valueOf(this.syncLoadCounter++); // Paper - prevent plugin unloads from removing our ticket
@@ -39,11 +39,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  }
              }
 -        }
+ 
 +        } else { identifier = null; } // Paper - prevent plugin unloads from removing our ticket
          // Paper start - Chunk priority
-         CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> future = this.chunkAbsent(playerchunk, l) ? ChunkHolder.UNLOADED_CHUNK_FUTURE : playerchunk.getOrScheduleFuture(chunkstatus, this.chunkMap);
+         CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> future = this.chunkAbsent(playerchunk, l) ? ChunkHolder.UNLOADED_CHUNK_FUTURE : playerchunk.getOrScheduleFuture(leastStatus, this.chunkMap);
 +        // Paper start - prevent plugin unloads from removing our ticket
-+        if (flag && !currentlyUnloading) {
++        if (create && !currentlyUnloading) {
 +            future.thenAcceptAsync((either) -> {
 +                ServerChunkCache.this.distanceManager.removeTicketAtLevel(TicketType.REQUIRED_LOAD, chunkcoordintpair, l, identifier);
 +            }, ServerChunkCache.this.mainThreadProcessor);

@@ -1040,7 +1040,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              ichunkaccess = (ChunkAccess) ((Either) completablefuture.join()).map((ichunkaccess1) -> {
                  return ichunkaccess1;
 @@ -0,0 +0,0 @@ public class ServerChunkCache extends ChunkSource {
-         if (flag && !currentlyUnloading) {
+         if (create && !currentlyUnloading) {
              // CraftBukkit end
              this.distanceManager.addTicket(TicketType.UNKNOWN, chunkcoordintpair, l, chunkcoordintpair);
 +            if (isUrgent) this.distanceManager.markUrgent(chunkcoordintpair); // Paper - Chunk priority
@@ -1053,13 +1053,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  playerchunk = this.getVisibleChunkIfPresent(k);
                  gameprofilerfiller.pop();
 @@ -0,0 +0,0 @@ public class ServerChunkCache extends ChunkSource {
-                 }
              }
          }
--
--        return this.chunkAbsent(playerchunk, l) ? ChunkHolder.UNLOADED_CHUNK_FUTURE : playerchunk.getOrScheduleFuture(chunkstatus, this.chunkMap);
+ 
+-        return this.chunkAbsent(playerchunk, l) ? ChunkHolder.UNLOADED_CHUNK_FUTURE : playerchunk.getOrScheduleFuture(leastStatus, this.chunkMap);
 +        // Paper start - Chunk priority
-+        CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> future = this.chunkAbsent(playerchunk, l) ? ChunkHolder.UNLOADED_CHUNK_FUTURE : playerchunk.getOrScheduleFuture(chunkstatus, this.chunkMap);
++        CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> future = this.chunkAbsent(playerchunk, l) ? ChunkHolder.UNLOADED_CHUNK_FUTURE : playerchunk.getOrScheduleFuture(leastStatus, this.chunkMap);
 +        if (isUrgent) {
 +            future.thenAccept(either -> this.distanceManager.clearUrgent(chunkcoordintpair));
 +        }
