@@ -5,7 +5,7 @@ Subject: [PATCH] Add PlayerItemFrameChangeEvent
 
 
 diff --git a/src/main/java/net/minecraft/world/entity/decoration/ItemFrame.java b/src/main/java/net/minecraft/world/entity/decoration/ItemFrame.java
-index b829efdb40051a41b3bf1cabb8bf7d7c952797b5..9946324850a6760c918ae937c944a8969c5ada5c 100644
+index b829efdb40051a41b3bf1cabb8bf7d7c952797b5..eed5ae8eea186dc3f234a9e8e1cfaa8ef5d46e2a 100644
 --- a/src/main/java/net/minecraft/world/entity/decoration/ItemFrame.java
 +++ b/src/main/java/net/minecraft/world/entity/decoration/ItemFrame.java
 @@ -1,6 +1,7 @@
@@ -16,22 +16,21 @@ index b829efdb40051a41b3bf1cabb8bf7d7c952797b5..9946324850a6760c918ae937c944a896
  import net.minecraft.core.BlockPos;
  import net.minecraft.core.Direction;
  import net.minecraft.nbt.CompoundTag;
-@@ -185,6 +186,14 @@ public class ItemFrame extends HangingEntity {
+@@ -185,6 +186,13 @@ public class ItemFrame extends HangingEntity {
                      return true;
                  }
                  // CraftBukkit end
 +                // Paper start - call PlayerItemFrameChangeEvent
 +                if (source.getEntity() instanceof Player player) {
 +                    var event = new PlayerItemFrameChangeEvent((org.bukkit.entity.Player) player.getBukkitEntity(), (org.bukkit.entity.ItemFrame) this.getBukkitEntity(), this.getItem().asBukkitCopy(), PlayerItemFrameChangeEvent.ItemFrameChangeAction.REMOVE);
-+                    boolean cancelled = !event.callEvent();
++                    if (!event.callEvent()) return false;
 +                    this.setItem(ItemStack.fromBukkitCopy(event.getItemStack()), false);
-+                    if (cancelled) return false;
 +                }
 +                // Paper end
                  this.dropItem(source.getEntity(), false);
                  this.playSound(this.getRemoveItemSound(), 1.0F, 1.0F);
              }
-@@ -427,13 +436,24 @@ public class ItemFrame extends HangingEntity {
+@@ -427,13 +435,22 @@ public class ItemFrame extends HangingEntity {
                              return InteractionResult.FAIL;
                          }
                      }
@@ -39,9 +38,8 @@ index b829efdb40051a41b3bf1cabb8bf7d7c952797b5..9946324850a6760c918ae937c944a896
 -                    this.setItem(itemstack);
 +                    // Paper start - call PlayerItemFrameChangeEvent
 +                    var event = new PlayerItemFrameChangeEvent((org.bukkit.entity.Player) player.getBukkitEntity(), (org.bukkit.entity.ItemFrame) this.getBukkitEntity(), itemstack.asBukkitCopy(), PlayerItemFrameChangeEvent.ItemFrameChangeAction.PLACE);
-+                    boolean cancelled = !event.callEvent();
++                    if (!event.callEvent()) return InteractionResult.FAIL;
 +                    this.setItem(ItemStack.fromBukkitCopy(event.getItemStack()));
-+                    if (cancelled) return InteractionResult.FAIL;
 +                    // this.setItem(itemstack);
 +                    // Paper end
                      if (!player.getAbilities().instabuild) {
@@ -51,9 +49,8 @@ index b829efdb40051a41b3bf1cabb8bf7d7c952797b5..9946324850a6760c918ae937c944a896
              } else {
 +                // Paper start - call PlayerItemFrameChangeEvent
 +                var event = new PlayerItemFrameChangeEvent((org.bukkit.entity.Player) player.getBukkitEntity(), (org.bukkit.entity.ItemFrame) this.getBukkitEntity(), this.getItem().asBukkitCopy(), PlayerItemFrameChangeEvent.ItemFrameChangeAction.ROTATE);
-+                boolean cancelled = !event.callEvent();
-+                setItem(ItemStack.fromBukkitCopy(event.getItemStack()), cancelled, false);
-+                if (cancelled) return InteractionResult.FAIL;
++                if (!event.callEvent()) return InteractionResult.FAIL;
++                setItem(ItemStack.fromBukkitCopy(event.getItemStack()), false, false);
 +                // Paper end
                  this.playSound(this.getRotateItemSound(), 1.0F, 1.0F);
                  this.setRotation(this.getRotation() + 1);
