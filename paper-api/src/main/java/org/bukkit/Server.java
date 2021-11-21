@@ -150,6 +150,13 @@ public interface Server extends PluginMessageRecipient {
     public int getViewDistance();
 
     /**
+     * Get the simulation distance from this server.
+     *
+     * @return the simulation distance from this server.
+     */
+    public int getSimulationDistance();
+
+    /**
      * Get the IP that this server is bound to, or empty string if not
      * specified.
      *

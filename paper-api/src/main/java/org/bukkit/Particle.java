@@ -41,7 +41,6 @@ public enum Particle {
     SNOW_SHOVEL,
     SLIME,
     HEART,
-    BARRIER,
     ITEM_CRACK(ItemStack.class),
     BLOCK_CRACK(BlockData.class),
     BLOCK_DUST(BlockData.class),
@@ -82,7 +81,6 @@ public enum Particle {
     LANDING_OBSIDIAN_TEAR,
     REVERSE_PORTAL,
     WHITE_ASH,
-    LIGHT,
     DUST_COLOR_TRANSITION(DustTransition.class),
     VIBRATION(Vibration.class),
     FALLING_SPORE_BLOSSOM,
@@ -99,6 +97,7 @@ public enum Particle {
     WAX_OFF,
     ELECTRIC_SPARK,
     SCRAPE,
+    BLOCK_MARKER(BlockData.class),
     // ----- Legacy Separator -----
     LEGACY_BLOCK_CRACK(MaterialData.class),
     LEGACY_BLOCK_DUST(MaterialData.class),

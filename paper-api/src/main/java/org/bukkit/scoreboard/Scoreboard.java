@@ -17,7 +17,7 @@ public interface Scoreboard {
      * @param criteria Criteria for the Objective
      * @return The registered Objective
      * @throws IllegalArgumentException if name is null
-     * @throws IllegalArgumentException if name is longer than 16
+     * @throws IllegalArgumentException if name is longer than 32767
      *     characters.
      * @throws IllegalArgumentException if criteria is null
      * @throws IllegalArgumentException if an objective by that name already
@@ -36,7 +36,7 @@ public interface Scoreboard {
      * @param displayName Name displayed to players for the Objective.
      * @return The registered Objective
      * @throws IllegalArgumentException if name is null
-     * @throws IllegalArgumentException if name is longer than 16
+     * @throws IllegalArgumentException if name is longer than 32767
      *     characters.
      * @throws IllegalArgumentException if criteria is null
      * @throws IllegalArgumentException if displayName is null
@@ -57,7 +57,7 @@ public interface Scoreboard {
      * @param renderType Manner of rendering the Objective
      * @return The registered Objective
      * @throws IllegalArgumentException if name is null
-     * @throws IllegalArgumentException if name is longer than 16
+     * @throws IllegalArgumentException if name is longer than 32767
      *     characters.
      * @throws IllegalArgumentException if criteria is null
      * @throws IllegalArgumentException if displayName is null
