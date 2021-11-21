@@ -13,21 +13,24 @@ Subject: [PATCH] Optimize Hoppers
 * Remove Streams from Item Suck In and restore restore 1.12 AABB checks which is simpler and no voxel allocations (was doing TWO Item Suck ins)
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index 8108cbc492dc14e5dd5a183105e89eb0cfb378fe..0705e04b395938fc7ef7b759813d979de3a899f4 100644
+index 8108cbc492dc14e5dd5a183105e89eb0cfb378fe..e8746656ac12d3498e78cb603c14d4c31abbc023 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-@@ -511,5 +511,14 @@ public class PaperWorldConfig {
+@@ -511,5 +511,17 @@ public class PaperWorldConfig {
      private void entitiesTargetWithFollowRange() {
          entitiesTargetWithFollowRange = getBoolean("entities-target-with-follow-range", entitiesTargetWithFollowRange);
      }
 +
 +    public boolean cooldownHopperWhenFull = true;
 +    public boolean disableHopperMoveEvents = false;
++    public boolean hoppersIgnoreOccludingBlocks = true;
 +    private void hopperOptimizations() {
 +        cooldownHopperWhenFull = getBoolean("hopper.cooldown-when-full", cooldownHopperWhenFull);
 +        log("Cooldown Hoppers when Full: " + (cooldownHopperWhenFull ? "enabled" : "disabled"));
 +        disableHopperMoveEvents = getBoolean("hopper.disable-move-event", disableHopperMoveEvents);
 +        log("Hopper Move Item Events: " + (disableHopperMoveEvents ? "disabled" : "enabled"));
++        hoppersIgnoreOccludingBlocks = getBoolean("hopper.ignore-occluding-blocks", hoppersIgnoreOccludingBlocks);
++        log("Hopper Ignore Occluding Blocks: " + (hoppersIgnoreOccludingBlocks ? "enabled" : "disabled"));
 +    }
  }
  
@@ -117,7 +120,7 @@ index a05acf709735b40ca86f978508c63a86065fd405..71dd26ca6626631b94d53818cd06b93f
  
      double getLevelY();
 diff --git a/src/main/java/net/minecraft/world/level/block/entity/HopperBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/HopperBlockEntity.java
-index 3e2832087e8c2c0e2c45f18b0da49299611e76ad..08c4a0996410a42418d4a5da3ed1f4db2f171dd2 100644
+index 3e2832087e8c2c0e2c45f18b0da49299611e76ad..89b9982e65acfcaa84e10d37e619f18b77f4ca92 100644
 --- a/src/main/java/net/minecraft/world/level/block/entity/HopperBlockEntity.java
 +++ b/src/main/java/net/minecraft/world/level/block/entity/HopperBlockEntity.java
 @@ -3,7 +3,6 @@ package net.minecraft.world.level.block.entity;
@@ -468,7 +471,7 @@ index 3e2832087e8c2c0e2c45f18b0da49299611e76ad..08c4a0996410a42418d4a5da3ed1f4db
          }
  
 -        if (object == null) {
-+        if (object == null && (!optimizeEntities || !org.bukkit.craftbukkit.util.CraftMagicNumbers.getMaterial(block).isOccluding())) { // Paper
++        if (object == null && (!optimizeEntities || !world.paperConfig.hoppersIgnoreOccludingBlocks || !org.bukkit.craftbukkit.util.CraftMagicNumbers.getMaterial(block).isOccluding())) { // Paper
              List<Entity> list = world.getEntities((Entity) null, new AABB(x - 0.5D, y - 0.5D, z - 0.5D, x + 0.5D, y + 0.5D, z + 0.5D), EntitySelector.CONTAINER_ENTITY_SELECTOR);
  
              if (!list.isEmpty()) {
