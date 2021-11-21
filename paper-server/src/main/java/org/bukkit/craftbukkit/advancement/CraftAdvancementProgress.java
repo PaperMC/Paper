@@ -33,18 +33,18 @@ public class CraftAdvancementProgress implements AdvancementProgress {
 
     @Override
     public boolean awardCriteria(String criteria) {
-        return playerData.grantCriteria(advancement.getHandle(), criteria);
+        return playerData.award(advancement.getHandle(), criteria);
     }
 
     @Override
     public boolean revokeCriteria(String criteria) {
-        return playerData.revokeCritera(advancement.getHandle(), criteria);
+        return playerData.revoke(advancement.getHandle(), criteria);
     }
 
     @Override
     public Date getDateAwarded(String criteria) {
-        CriterionProgress criterion = handle.getCriterionProgress(criteria);
-        return (criterion == null) ? null : criterion.getDate();
+        CriterionProgress criterion = handle.getCriterion(criteria);
+        return (criterion == null) ? null : criterion.getObtained();
     }
 
     @Override
@@ -54,6 +54,6 @@ public class CraftAdvancementProgress implements AdvancementProgress {
 
     @Override
     public Collection<String> getAwardedCriteria() {
-        return Collections.unmodifiableCollection(Lists.newArrayList(handle.getAwardedCriteria()));
+        return Collections.unmodifiableCollection(Lists.newArrayList(handle.getCompletedCriteria()));
     }
 }

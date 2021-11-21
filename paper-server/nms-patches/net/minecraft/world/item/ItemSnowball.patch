@@ -1,37 +1,37 @@
 --- a/net/minecraft/world/item/ItemSnowball.java
 +++ b/net/minecraft/world/item/ItemSnowball.java
 @@ -19,19 +19,32 @@
-     public InteractionResultWrapper<ItemStack> a(World world, EntityHuman entityhuman, EnumHand enumhand) {
-         ItemStack itemstack = entityhuman.b(enumhand);
+     public InteractionResultWrapper<ItemStack> use(World world, EntityHuman entityhuman, EnumHand enumhand) {
+         ItemStack itemstack = entityhuman.getItemInHand(enumhand);
  
--        world.playSound((EntityHuman) null, entityhuman.locX(), entityhuman.locY(), entityhuman.locZ(), SoundEffects.SNOWBALL_THROW, SoundCategory.NEUTRAL, 0.5F, 0.4F / (world.getRandom().nextFloat() * 0.4F + 0.8F));
+-        world.playSound((EntityHuman) null, entityhuman.getX(), entityhuman.getY(), entityhuman.getZ(), SoundEffects.SNOWBALL_THROW, SoundCategory.NEUTRAL, 0.5F, 0.4F / (world.getRandom().nextFloat() * 0.4F + 0.8F));
 +        // CraftBukkit - moved down
-+        // world.playSound((EntityHuman) null, entityhuman.locX(), entityhuman.locY(), entityhuman.locZ(), SoundEffects.SNOWBALL_THROW, SoundCategory.NEUTRAL, 0.5F, 0.4F / (world.getRandom().nextFloat() * 0.4F + 0.8F));
++        // world.playSound((EntityHuman) null, entityhuman.getX(), entityhuman.getY(), entityhuman.getZ(), SoundEffects.SNOWBALL_THROW, SoundCategory.NEUTRAL, 0.5F, 0.4F / (world.getRandom().nextFloat() * 0.4F + 0.8F));
          if (!world.isClientSide) {
              EntitySnowball entitysnowball = new EntitySnowball(world, entityhuman);
  
              entitysnowball.setItem(itemstack);
-             entitysnowball.a(entityhuman, entityhuman.getXRot(), entityhuman.getYRot(), 0.0F, 1.5F, 1.0F);
--            world.addEntity(entitysnowball);
-+            if (world.addEntity(entitysnowball)) {
+             entitysnowball.shootFromRotation(entityhuman, entityhuman.getXRot(), entityhuman.getYRot(), 0.0F, 1.5F, 1.0F);
+-            world.addFreshEntity(entitysnowball);
++            if (world.addFreshEntity(entitysnowball)) {
 +                if (!entityhuman.getAbilities().instabuild) {
-+                    itemstack.subtract(1);
++                    itemstack.shrink(1);
 +                }
 +
-+                world.playSound((EntityHuman) null, entityhuman.locX(), entityhuman.locY(), entityhuman.locZ(), SoundEffects.SNOWBALL_THROW, SoundCategory.NEUTRAL, 0.5F, 0.4F / (world.getRandom().nextFloat() * 0.4F + 0.8F));
++                world.playSound((EntityHuman) null, entityhuman.getX(), entityhuman.getY(), entityhuman.getZ(), SoundEffects.SNOWBALL_THROW, SoundCategory.NEUTRAL, 0.5F, 0.4F / (world.getRandom().nextFloat() * 0.4F + 0.8F));
 +            } else if (entityhuman instanceof net.minecraft.server.level.EntityPlayer) {
 +                ((net.minecraft.server.level.EntityPlayer) entityhuman).getBukkitEntity().updateInventory();
 +            }
          }
 +        // CraftBukkit end
  
-         entityhuman.b(StatisticList.ITEM_USED.b(this));
+         entityhuman.awardStat(StatisticList.ITEM_USED.get(this));
 +        // CraftBukkit start - moved up
 +        /*
          if (!entityhuman.getAbilities().instabuild) {
-             itemstack.subtract(1);
+             itemstack.shrink(1);
          }
 +        */
  
-         return InteractionResultWrapper.a(itemstack, world.isClientSide());
+         return InteractionResultWrapper.sidedSuccess(itemstack, world.isClientSide());
      }

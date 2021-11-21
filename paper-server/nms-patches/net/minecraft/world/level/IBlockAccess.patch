@@ -1,41 +1,41 @@
 --- a/net/minecraft/world/level/IBlockAccess.java
 +++ b/net/minecraft/world/level/IBlockAccess.java
 @@ -26,7 +26,7 @@
-     default <T extends TileEntity> Optional<T> a(BlockPosition blockposition, TileEntityTypes<T> tileentitytypes) {
-         TileEntity tileentity = this.getTileEntity(blockposition);
+     default <T extends TileEntity> Optional<T> getBlockEntity(BlockPosition blockposition, TileEntityTypes<T> tileentitytypes) {
+         TileEntity tileentity = this.getBlockEntity(blockposition);
  
--        return tileentity != null && tileentity.getTileType() == tileentitytypes ? Optional.of(tileentity) : Optional.empty();
-+        return tileentity != null && tileentity.getTileType() == tileentitytypes ? (Optional<T>) Optional.of(tileentity) : Optional.empty(); // CraftBukkit - decompile error
+-        return tileentity != null && tileentity.getType() == tileentitytypes ? Optional.of(tileentity) : Optional.empty();
++        return tileentity != null && tileentity.getType() == tileentitytypes ? (Optional<T>) Optional.of(tileentity) : Optional.empty(); // CraftBukkit - decompile error
      }
  
-     IBlockData getType(BlockPosition blockposition);
+     IBlockData getBlockState(BlockPosition blockposition);
 @@ -58,8 +58,8 @@
          });
      }
  
--    default MovingObjectPositionBlock rayTrace(RayTrace raytrace) {
--        return (MovingObjectPositionBlock) a(raytrace.b(), raytrace.a(), raytrace, (raytrace1, blockposition) -> {
+-    default MovingObjectPositionBlock clip(RayTrace raytrace) {
+-        return (MovingObjectPositionBlock) traverseBlocks(raytrace.getFrom(), raytrace.getTo(), raytrace, (raytrace1, blockposition) -> {
 +    // CraftBukkit start - moved block handling into separate method for use by Block#rayTrace
-+    default MovingObjectPositionBlock rayTraceBlock(RayTrace raytrace1, BlockPosition blockposition) {
-             IBlockData iblockdata = this.getType(blockposition);
-             Fluid fluid = this.getFluid(blockposition);
-             Vec3D vec3d = raytrace1.b();
++    default MovingObjectPositionBlock clip(RayTrace raytrace1, BlockPosition blockposition) {
+             IBlockData iblockdata = this.getBlockState(blockposition);
+             Fluid fluid = this.getFluidState(blockposition);
+             Vec3D vec3d = raytrace1.getFrom();
 @@ -72,6 +72,12 @@
-             double d1 = movingobjectpositionblock1 == null ? Double.MAX_VALUE : raytrace1.b().distanceSquared(movingobjectpositionblock1.getPos());
+             double d1 = movingobjectpositionblock1 == null ? Double.MAX_VALUE : raytrace1.getFrom().distanceToSqr(movingobjectpositionblock1.getLocation());
  
              return d0 <= d1 ? movingobjectpositionblock : movingobjectpositionblock1;
 +    }
 +    // CraftBukkit end
 +
-+    default MovingObjectPositionBlock rayTrace(RayTrace raytrace) {
-+        return (MovingObjectPositionBlock) a(raytrace.b(), raytrace.a(), raytrace, (raytrace1, blockposition) -> {
-+            return this.rayTraceBlock(raytrace1, blockposition); // CraftBukkit - moved into separate method
++    default MovingObjectPositionBlock clip(RayTrace raytrace) {
++        return (MovingObjectPositionBlock) traverseBlocks(raytrace.getFrom(), raytrace.getTo(), raytrace, (raytrace1, blockposition) -> {
++            return this.clip(raytrace1, blockposition); // CraftBukkit - moved into separate method
          }, (raytrace1) -> {
-             Vec3D vec3d = raytrace1.b().d(raytrace1.a());
+             Vec3D vec3d = raytrace1.getFrom().subtract(raytrace1.getTo());
  
 @@ -144,7 +150,7 @@
-                 double d13 = d10 * (i1 > 0 ? 1.0D - MathHelper.g(d4) : MathHelper.g(d4));
-                 double d14 = d11 * (j1 > 0 ? 1.0D - MathHelper.g(d5) : MathHelper.g(d5));
+                 double d13 = d10 * (i1 > 0 ? 1.0D - MathHelper.frac(d4) : MathHelper.frac(d4));
+                 double d14 = d11 * (j1 > 0 ? 1.0D - MathHelper.frac(d5) : MathHelper.frac(d5));
  
 -                Object object;
 +                T object; // CraftBukkit - decompile error

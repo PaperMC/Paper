@@ -23,12 +23,12 @@ public class CraftItem extends CraftEntity implements Item {
 
     @Override
     public ItemStack getItemStack() {
-        return CraftItemStack.asCraftMirror(item.getItemStack());
+        return CraftItemStack.asCraftMirror(item.getItem());
     }
 
     @Override
     public void setItemStack(ItemStack stack) {
-        item.setItemStack(CraftItemStack.asNMSCopy(stack));
+        item.setItem(CraftItemStack.asNMSCopy(stack));
     }
 
     @Override

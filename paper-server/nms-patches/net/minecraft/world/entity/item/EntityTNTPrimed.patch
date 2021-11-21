@@ -8,7 +8,7 @@
 +
  public class EntityTNTPrimed extends Entity {
  
-     private static final DataWatcherObject<Integer> DATA_FUSE_ID = DataWatcher.a(EntityTNTPrimed.class, DataWatcherRegistry.INT);
+     private static final DataWatcherObject<Integer> DATA_FUSE_ID = DataWatcher.defineId(EntityTNTPrimed.class, DataWatcherRegistry.INT);
      private static final int DEFAULT_FUSE_TIME = 80;
      @Nullable
      public EntityLiving owner;
@@ -19,18 +19,18 @@
          super(entitytypes, world);
 @@ -73,10 +77,13 @@
  
-         this.setFuseTicks(i);
+         this.setFuse(i);
          if (i <= 0) {
--            this.die();
+-            this.discard();
 +            // CraftBukkit start - Need to reverse the order of the explosion and the entity death so we have a location for the event
-+            // this.die();
++            // this.discard();
              if (!this.level.isClientSide) {
                  this.explode();
              }
-+            this.die();
++            this.discard();
 +            // CraftBukkit end
          } else {
-             this.aR();
+             this.updateInWaterStateAndDoFluidPushing();
              if (this.level.isClientSide) {
 @@ -87,9 +94,16 @@
      }
@@ -40,12 +40,12 @@
 +        // CraftBukkit start
 +        // float f = 4.0F;
  
--        this.level.explode(this, this.locX(), this.e(0.0625D), this.locZ(), 4.0F, Explosion.Effect.BREAK);
+-        this.level.explode(this, this.getX(), this.getY(0.0625D), this.getZ(), 4.0F, Explosion.Effect.BREAK);
 +        ExplosionPrimeEvent event = new ExplosionPrimeEvent((org.bukkit.entity.Explosive) this.getBukkitEntity());
 +        this.level.getCraftServer().getPluginManager().callEvent(event);
 +
 +        if (!event.isCancelled()) {
-+            this.level.createExplosion(this, this.locX(), this.e(0.0625D), this.locZ(), event.getRadius(), event.getFire(), Explosion.Effect.BREAK);
++            this.level.explode(this, this.getX(), this.getY(0.0625D), this.getZ(), event.getRadius(), event.getFire(), Explosion.Effect.BREAK);
 +        }
 +        // CraftBukkit end
      }

@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/animal/EntityRabbit.java
 +++ b/net/minecraft/world/entity/animal/EntityRabbit.java
-@@ -86,8 +86,14 @@
+@@ -88,8 +88,14 @@
          super(entitytypes, world);
          this.jumpControl = new EntityRabbit.ControllerJumpRabbit(this);
          this.moveControl = new EntityRabbit.ControllerMoveRabbit(this);
@@ -9,42 +9,33 @@
 +
 +    // CraftBukkit start - code from constructor
 +    public void initializePathFinderGoals(){
-         this.i(0.0D);
+         this.setSpeedModifier(0.0D);
      }
 +    // CraftBukkit end
  
      @Override
-     public void initPathfinder() {
-@@ -353,7 +359,7 @@
-         if (i == 99) {
-             this.getAttributeInstance(GenericAttributes.ARMOR).setValue(8.0D);
-             this.goalSelector.a(4, new EntityRabbit.PathfinderGoalKillerRabbitMeleeAttack(this));
--            this.targetSelector.a(1, (new PathfinderGoalHurtByTarget(this, new Class[0])).a());
-+            this.targetSelector.a(1, (new PathfinderGoalHurtByTarget(this, new Class[0])).a(new Class[0])); // CraftBukkit - decompile error
-             this.targetSelector.a(2, new PathfinderGoalNearestAttackableTarget<>(this, EntityHuman.class, true));
-             this.targetSelector.a(2, new PathfinderGoalNearestAttackableTarget<>(this, EntityWolf.class, true));
-             if (!this.hasCustomName()) {
+     public void registerGoals() {
 @@ -556,9 +562,23 @@
-                     int i = (Integer) iblockdata.get(BlockCarrots.AGE);
+                     int i = (Integer) iblockdata.getValue(BlockCarrots.AGE);
  
                      if (i == 0) {
 +                        // CraftBukkit start
-+                        if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(this.rabbit, blockposition, Blocks.AIR.getBlockData()).isCancelled()) {
++                        if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(this.rabbit, blockposition, Blocks.AIR.defaultBlockState()).isCancelled()) {
 +                            return;
 +                        }
 +                        // CraftBukkit end
-                         world.setTypeAndData(blockposition, Blocks.AIR.getBlockData(), 2);
-                         world.a(blockposition, true, this.rabbit);
+                         world.setBlock(blockposition, Blocks.AIR.defaultBlockState(), 2);
+                         world.destroyBlock(blockposition, true, this.rabbit);
                      } else {
 +                        // CraftBukkit start
 +                        if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(
 +                                this.rabbit,
 +                                blockposition,
-+                                iblockdata.set(BlockCarrots.AGE, i - 1)
++                                iblockdata.setValue(BlockCarrots.AGE, i - 1)
 +                        ).isCancelled()) {
 +                            return;
 +                        }
 +                        // CraftBukkit end
-                         world.setTypeAndData(blockposition, (IBlockData) iblockdata.set(BlockCarrots.AGE, i - 1), 2);
-                         world.triggerEffect(2001, blockposition, Block.getCombinedId(iblockdata));
+                         world.setBlock(blockposition, (IBlockData) iblockdata.setValue(BlockCarrots.AGE, i - 1), 2);
+                         world.levelEvent(2001, blockposition, Block.getId(iblockdata));
                      }

@@ -17,12 +17,12 @@
 @@ -53,21 +60,34 @@
                  EntityPlayer entityplayer = (EntityPlayer) entity;
  
-                 if (entityplayer.connection.a().isConnected() && entityplayer.level == this.level && !entityplayer.isSleeping()) {
+                 if (entityplayer.connection.getConnection().isConnected() && entityplayer.level == this.level && !entityplayer.isSleeping()) {
 -                    if (this.random.nextFloat() < 0.05F && this.level.getGameRules().getBoolean(GameRules.RULE_DOMOBSPAWNING)) {
--                        EntityEndermite entityendermite = (EntityEndermite) EntityTypes.ENDERMITE.a(this.level);
+-                        EntityEndermite entityendermite = (EntityEndermite) EntityTypes.ENDERMITE.create(this.level);
 -
--                        entityendermite.setPositionRotation(entity.locX(), entity.locY(), entity.locZ(), entity.getYRot(), entity.getXRot());
--                        this.level.addEntity(entityendermite);
+-                        entityendermite.moveTo(entity.getX(), entity.getY(), entity.getZ(), entity.getYRot(), entity.getXRot());
+-                        this.level.addFreshEntity(entityendermite);
 +                    // CraftBukkit start - Fire PlayerTeleportEvent
 +                    org.bukkit.craftbukkit.entity.CraftPlayer player = entityplayer.getBukkitEntity();
 +                    org.bukkit.Location location = getBukkitEntity().getLocation();
@@ -34,10 +34,10 @@
 +
 +                    if (!teleEvent.isCancelled() && !entityplayer.connection.isDisconnected()) {
 +                        if (this.random.nextFloat() < 0.05F && this.level.getGameRules().getBoolean(GameRules.RULE_DOMOBSPAWNING)) {
-+                            EntityEndermite entityendermite = (EntityEndermite) EntityTypes.ENDERMITE.a(this.level);
++                            EntityEndermite entityendermite = (EntityEndermite) EntityTypes.ENDERMITE.create(this.level);
 +
-+                            entityendermite.setPositionRotation(entity.locX(), entity.locY(), entity.locZ(), entity.getYRot(), entity.getXRot());
-+                            this.level.addEntity(entityendermite, CreatureSpawnEvent.SpawnReason.ENDER_PEARL);
++                            entityendermite.moveTo(entity.getX(), entity.getY(), entity.getZ(), entity.getYRot(), entity.getXRot());
++                            this.level.addFreshEntity(entityendermite, CreatureSpawnEvent.SpawnReason.ENDER_PEARL);
 +                        }
 +
 +                        if (entity.isPassenger()) {
@@ -45,30 +45,30 @@
 +                        }
 +
 +                        entityplayer.connection.teleport(teleEvent.getTo());
-+                        entity.fallDistance = 0.0F;
++                        entity.resetFallDistance();
 +                        CraftEventFactory.entityDamage = this;
-+                        entity.damageEntity(DamageSource.FALL, 5.0F);
++                        entity.hurt(DamageSource.FALL, 5.0F);
 +                        CraftEventFactory.entityDamage = null;
                      }
 -
 -                    if (entity.isPassenger()) {
--                        entityplayer.a(this.locX(), this.locY(), this.locZ());
+-                        entityplayer.dismountTo(this.getX(), this.getY(), this.getZ());
 -                    } else {
--                        entity.enderTeleportTo(this.locX(), this.locY(), this.locZ());
+-                        entity.teleportTo(this.getX(), this.getY(), this.getZ());
 -                    }
 -
--                    entity.fallDistance = 0.0F;
--                    entity.damageEntity(DamageSource.FALL, 5.0F);
+-                    entity.resetFallDistance();
+-                    entity.hurt(DamageSource.FALL, 5.0F);
 +                    // CraftBukkit end
                  }
              } else if (entity != null) {
-                 entity.enderTeleportTo(this.locX(), this.locY(), this.locZ());
+                 entity.teleportTo(this.getX(), this.getY(), this.getZ());
 @@ -96,7 +116,7 @@
-     public Entity b(WorldServer worldserver) {
-         Entity entity = this.getShooter();
+     public Entity changeDimension(WorldServer worldserver) {
+         Entity entity = this.getOwner();
  
--        if (entity != null && entity.level.getDimensionKey() != worldserver.getDimensionKey()) {
-+        if (entity != null && worldserver != null && entity.level.getDimensionKey() != worldserver.getDimensionKey()) { // CraftBukkit - SPIGOT-6113
-             this.setShooter((Entity) null);
+-        if (entity != null && entity.level.dimension() != worldserver.dimension()) {
++        if (entity != null && worldserver != null && entity.level.dimension() != worldserver.dimension()) { // CraftBukkit - SPIGOT-6113
+             this.setOwner((Entity) null);
          }
  

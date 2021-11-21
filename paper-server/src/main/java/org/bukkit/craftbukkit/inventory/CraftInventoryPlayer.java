@@ -29,7 +29,7 @@ public class CraftInventoryPlayer extends CraftInventory implements org.bukkit.i
 
     @Override
     public ItemStack getItemInMainHand() {
-        return CraftItemStack.asCraftMirror(getInventory().getItemInHand());
+        return CraftItemStack.asCraftMirror(getInventory().getSelected());
     }
 
     @Override
@@ -103,14 +103,14 @@ public class CraftInventoryPlayer extends CraftInventory implements org.bukkit.i
         // to reverse the order of the index from 8. That means we need 0 to correspond to 8, 1 to correspond to 7,
         // 2 to correspond to 6, and 3 to correspond to 5. We do this simply by taking the result of (index - 36) and
         // subtracting that value from 8.
-        if (index < PlayerInventory.getHotbarSize()) {
+        if (index < PlayerInventory.getSelectionSize()) {
             index += 36;
         } else if (index > 39) {
             index += 5; // Off hand
         } else if (index > 35) {
             index = 8 - (index - 36);
         }
-        player.connection.sendPacket(new PacketPlayOutSetSlot(player.inventoryMenu.containerId, player.inventoryMenu.incrementStateId(), index, CraftItemStack.asNMSCopy(item)));
+        player.connection.send(new PacketPlayOutSetSlot(player.inventoryMenu.containerId, player.inventoryMenu.incrementStateId(), index, CraftItemStack.asNMSCopy(item)));
     }
 
     @Override
@@ -175,9 +175,9 @@ public class CraftInventoryPlayer extends CraftInventory implements org.bukkit.i
 
     @Override
     public void setHeldItemSlot(int slot) {
-        Validate.isTrue(slot >= 0 && slot < PlayerInventory.getHotbarSize(), "Slot is not between 0 and 8 inclusive");
+        Validate.isTrue(slot >= 0 && slot < PlayerInventory.getSelectionSize(), "Slot is not between 0 and 8 inclusive");
         this.getInventory().selected = slot;
-        ((CraftPlayer) this.getHolder()).getHandle().connection.sendPacket(new PacketPlayOutHeldItemSlot(slot));
+        ((CraftPlayer) this.getHolder()).getHandle().connection.send(new PacketPlayOutHeldItemSlot(slot));
     }
 
     @Override

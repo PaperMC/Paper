@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/item/ItemBlock.java
 +++ b/net/minecraft/world/item/ItemBlock.java
-@@ -34,6 +34,13 @@
+@@ -33,6 +33,13 @@
  import net.minecraft.world.level.gameevent.GameEvent;
  import net.minecraft.world.phys.shapes.VoxelShapeCollision;
  
@@ -13,24 +13,24 @@
 +
  public class ItemBlock extends Item {
  
-     public static final String BLOCK_ENTITY_TAG = "BlockEntityTag";
-@@ -69,6 +76,12 @@
+     private static final String BLOCK_ENTITY_TAG = "BlockEntityTag";
+@@ -68,6 +75,12 @@
                  return EnumInteractionResult.FAIL;
              } else {
-                 IBlockData iblockdata = this.c(blockactioncontext1);
+                 IBlockData iblockdata = this.getPlacementState(blockactioncontext1);
 +                // CraftBukkit start - special case for handling block placement with water lilies and snow buckets
 +                org.bukkit.block.BlockState blockstate = null;
 +                if (this instanceof ItemWaterLily || this instanceof SolidBucketItem) {
-+                    blockstate = org.bukkit.craftbukkit.block.CraftBlockStates.getBlockState(blockactioncontext1.getWorld(), blockactioncontext1.getClickPosition());
++                    blockstate = org.bukkit.craftbukkit.block.CraftBlockStates.getBlockState(blockactioncontext1.getLevel(), blockactioncontext1.getClickedPos());
 +                }
 +                // CraftBukkit end
  
                  if (iblockdata == null) {
                      return EnumInteractionResult.FAIL;
-@@ -85,6 +98,19 @@
-                         iblockdata1 = this.a(blockposition, world, itemstack, iblockdata1);
-                         this.a(blockposition, world, entityhuman, itemstack, iblockdata1);
-                         iblockdata1.getBlock().postPlace(world, blockposition, iblockdata1, entityhuman, itemstack);
+@@ -84,6 +97,19 @@
+                         iblockdata1 = this.updateBlockStateFromTag(blockposition, world, itemstack, iblockdata1);
+                         this.updateCustomBlockEntityTag(blockposition, world, entityhuman, itemstack, iblockdata1);
+                         iblockdata1.getBlock().setPlacedBy(world, blockposition, iblockdata1, entityhuman, itemstack);
 +                        // CraftBukkit start
 +                        if (blockstate != null) {
 +                            org.bukkit.event.block.BlockPlaceEvent placeEvent = org.bukkit.craftbukkit.event.CraftEventFactory.callBlockPlaceEvent((WorldServer) world, entityhuman, blockactioncontext1.getHand(), blockstate, blockposition.getX(), blockposition.getY(), blockposition.getZ());
@@ -45,21 +45,21 @@
 +                        }
 +                        // CraftBukkit end
                          if (entityhuman instanceof EntityPlayer) {
-                             CriterionTriggers.PLACED_BLOCK.a((EntityPlayer) entityhuman, blockposition, itemstack);
+                             CriterionTriggers.PLACED_BLOCK.trigger((EntityPlayer) entityhuman, blockposition, itemstack);
                          }
-@@ -92,9 +118,9 @@
+@@ -91,9 +117,9 @@
  
-                     SoundEffectType soundeffecttype = iblockdata1.getStepSound();
+                     SoundEffectType soundeffecttype = iblockdata1.getSoundType();
  
--                    world.playSound(entityhuman, blockposition, this.a(iblockdata1), SoundCategory.BLOCKS, (soundeffecttype.getVolume() + 1.0F) / 2.0F, soundeffecttype.getPitch() * 0.8F);
-+                    // world.playSound(entityhuman, blockposition, this.a(iblockdata1), SoundCategory.BLOCKS, (soundeffecttype.getVolume() + 1.0F) / 2.0F, soundeffecttype.getPitch() * 0.8F);
-                     world.a((Entity) entityhuman, GameEvent.BLOCK_PLACE, blockposition);
+-                    world.playSound(entityhuman, blockposition, this.getPlaceSound(iblockdata1), SoundCategory.BLOCKS, (soundeffecttype.getVolume() + 1.0F) / 2.0F, soundeffecttype.getPitch() * 0.8F);
++                    // world.playSound(entityhuman, blockposition, this.getPlaceSound(iblockdata1), SoundCategory.BLOCKS, (soundeffecttype.getVolume() + 1.0F) / 2.0F, soundeffecttype.getPitch() * 0.8F);
+                     world.gameEvent(entityhuman, GameEvent.BLOCK_PLACE, blockposition);
 -                    if (entityhuman == null || !entityhuman.getAbilities().instabuild) {
 +                    if ((entityhuman == null || !entityhuman.getAbilities().instabuild) && itemstack != ItemStack.EMPTY) { // CraftBukkit
-                         itemstack.subtract(1);
+                         itemstack.shrink(1);
                      }
  
-@@ -130,6 +156,21 @@
+@@ -129,6 +155,21 @@
  
          if (nbttagcompound != null) {
              NBTTagCompound nbttagcompound1 = nbttagcompound.getCompound("BlockStateTag");
@@ -68,7 +68,7 @@
 +        }
 +
 +        if (iblockdata1 != iblockdata) {
-+            world.setTypeAndData(blockposition, iblockdata1, 2);
++            world.setBlock(blockposition, iblockdata1, 2);
 +        }
 +
 +        return iblockdata1;
@@ -78,44 +78,44 @@
 +        IBlockData iblockdata1 = iblockdata;
 +        {
 +            // CraftBukkit end
-             BlockStateList<Block, IBlockData> blockstatelist = iblockdata.getBlock().getStates();
-             Iterator iterator = nbttagcompound1.getKeys().iterator();
+             BlockStateList<Block, IBlockData> blockstatelist = iblockdata.getBlock().getStateDefinition();
+             Iterator iterator = nbttagcompound1.getAllKeys().iterator();
  
-@@ -144,11 +185,6 @@
+@@ -143,11 +184,6 @@
                  }
              }
          }
 -
 -        if (iblockdata1 != iblockdata) {
--            world.setTypeAndData(blockposition, iblockdata1, 2);
+-            world.setBlock(blockposition, iblockdata1, 2);
 -        }
 -
          return iblockdata1;
      }
  
-@@ -161,8 +197,15 @@
-     protected boolean b(BlockActionContext blockactioncontext, IBlockData iblockdata) {
-         EntityHuman entityhuman = blockactioncontext.getEntity();
-         VoxelShapeCollision voxelshapecollision = entityhuman == null ? VoxelShapeCollision.a() : VoxelShapeCollision.a((Entity) entityhuman);
+@@ -160,8 +196,15 @@
+     protected boolean canPlace(BlockActionContext blockactioncontext, IBlockData iblockdata) {
+         EntityHuman entityhuman = blockactioncontext.getPlayer();
+         VoxelShapeCollision voxelshapecollision = entityhuman == null ? VoxelShapeCollision.empty() : VoxelShapeCollision.of(entityhuman);
 +        // CraftBukkit start - store default return
-+        boolean defaultReturn = (!this.isCheckCollisions() || iblockdata.canPlace(blockactioncontext.getWorld(), blockactioncontext.getClickPosition())) && blockactioncontext.getWorld().a(iblockdata, blockactioncontext.getClickPosition(), voxelshapecollision);
-+        org.bukkit.entity.Player player = (blockactioncontext.getEntity() instanceof EntityPlayer) ? (org.bukkit.entity.Player) blockactioncontext.getEntity().getBukkitEntity() : null;
++        boolean defaultReturn = (!this.mustSurvive() || iblockdata.canSurvive(blockactioncontext.getLevel(), blockactioncontext.getClickedPos())) && blockactioncontext.getLevel().isUnobstructed(iblockdata, blockactioncontext.getClickedPos(), voxelshapecollision);
++        org.bukkit.entity.Player player = (blockactioncontext.getPlayer() instanceof EntityPlayer) ? (org.bukkit.entity.Player) blockactioncontext.getPlayer().getBukkitEntity() : null;
 +
-+        BlockCanBuildEvent event = new BlockCanBuildEvent(CraftBlock.at(blockactioncontext.getWorld(), blockactioncontext.getClickPosition()), player, CraftBlockData.fromData(iblockdata), defaultReturn);
-+        blockactioncontext.getWorld().getCraftServer().getPluginManager().callEvent(event);
++        BlockCanBuildEvent event = new BlockCanBuildEvent(CraftBlock.at(blockactioncontext.getLevel(), blockactioncontext.getClickedPos()), player, CraftBlockData.fromData(iblockdata), defaultReturn);
++        blockactioncontext.getLevel().getCraftServer().getPluginManager().callEvent(event);
  
--        return (!this.isCheckCollisions() || iblockdata.canPlace(blockactioncontext.getWorld(), blockactioncontext.getClickPosition())) && blockactioncontext.getWorld().a(iblockdata, blockactioncontext.getClickPosition(), voxelshapecollision);
+-        return (!this.mustSurvive() || iblockdata.canSurvive(blockactioncontext.getLevel(), blockactioncontext.getClickedPos())) && blockactioncontext.getLevel().isUnobstructed(iblockdata, blockactioncontext.getClickedPos(), voxelshapecollision);
 +        return event.isBuildable();
 +        // CraftBukkit end
      }
  
-     protected boolean isCheckCollisions() {
-@@ -247,7 +290,7 @@
+     protected boolean mustSurvive() {
+@@ -244,7 +287,7 @@
  
-             if (nbttagcompound != null) {
-                 NBTTagList nbttaglist = nbttagcompound.getCompound("BlockEntityTag").getList("Items", 10);
+             if (nbttagcompound != null && nbttagcompound.contains("Items", 9)) {
+                 NBTTagList nbttaglist = nbttagcompound.getList("Items", 10);
 -                Stream stream = nbttaglist.stream();
 +                Stream<net.minecraft.nbt.NBTBase> stream = nbttaglist.stream(); // CraftBukkit - decompile error
  
                  Objects.requireNonNull(NBTTagCompound.class);
-                 ItemLiquidUtil.a(entityitem, stream.map(NBTTagCompound.class::cast).map(ItemStack::a));
+                 ItemLiquidUtil.onContainerDestroyed(entityitem, stream.map(NBTTagCompound.class::cast).map(ItemStack::of));

@@ -72,7 +72,7 @@ public final class CraftLegacy {
 
         if (material.isBlock()) {
             Block block = CraftMagicNumbers.getBlock(material);
-            IBlockData blockData = block.getBlockData();
+            IBlockData blockData = block.defaultBlockState();
 
             // Try exact match first
             mappedData = dataToMaterial.get(blockData);
@@ -81,7 +81,7 @@ public final class CraftLegacy {
                 mappedData = blockToMaterial.get(block);
                 // Fallback to matching item
                 if (mappedData == null) {
-                    mappedData = itemToMaterial.get(block.getItem());
+                    mappedData = itemToMaterial.get(block.asItem());
                 }
             }
         } else {
@@ -106,11 +106,11 @@ public final class CraftLegacy {
         // Fallback to any block
         Block convertedBlock = materialToBlock.get(materialData);
         if (convertedBlock != null) {
-            return convertedBlock.getBlockData();
+            return convertedBlock.defaultBlockState();
         }
 
         // Return air
-        return Blocks.AIR.getBlockData();
+        return Blocks.AIR.defaultBlockState();
     }
 
     public static Item fromLegacyData(Material material, short data) {
@@ -129,13 +129,13 @@ public final class CraftLegacy {
             // Try exact match first
             IBlockData converted = materialToData.get(materialData);
             if (converted != null) {
-                return converted.getBlock().getItem();
+                return converted.getBlock().asItem();
             }
 
             // Fallback to any block
             Block convertedBlock = materialToBlock.get(materialData);
             if (convertedBlock != null) {
-                return convertedBlock.getItem();
+                return convertedBlock.asItem();
             }
         }
 
@@ -313,8 +313,8 @@ public final class CraftLegacy {
         SPAWN_EGGS.put((byte) EntityType.ZOMBIFIED_PIGLIN.getTypeId(), Material.ZOMBIFIED_PIGLIN_SPAWN_EGG);
         SPAWN_EGGS.put((byte) EntityType.ZOMBIE_VILLAGER.getTypeId(), Material.ZOMBIE_VILLAGER_SPAWN_EGG);
 
-        SharedConstants.a();
-        DispenserRegistry.init();
+        SharedConstants.tryDetectVersion();
+        DispenserRegistry.bootStrap();
 
         for (Material material : Material.values()) {
             if (!material.isLegacy()) {
@@ -325,8 +325,8 @@ public final class CraftLegacy {
             if (material.isBlock()) {
                 for (byte data = 0; data < 16; data++) {
                     MaterialData matData = new MaterialData(material, data);
-                    Dynamic blockTag = DataConverterFlattenData.b(material.getId() << 4 | data);
-                    blockTag = DataConverterRegistry.a().update(DataConverterTypes.BLOCK_STATE, blockTag, 100, CraftMagicNumbers.INSTANCE.getDataVersion());
+                    Dynamic blockTag = DataConverterFlattenData.getTag(material.getId() << 4 | data);
+                    blockTag = DataConverterRegistry.getDataFixer().update(DataConverterTypes.BLOCK_STATE, blockTag, 100, CraftMagicNumbers.INSTANCE.getDataVersion());
                     // TODO: better skull conversion, chests
                     if (blockTag.get("Name").asString("").contains("%%FILTER_ME%%")) {
                         continue;
@@ -337,14 +337,14 @@ public final class CraftLegacy {
                     if (block == null) {
                         continue;
                     }
-                    IBlockData blockData = block.getBlockData();
-                    BlockStateList states = block.getStates();
+                    IBlockData blockData = block.defaultBlockState();
+                    BlockStateList states = block.getStateDefinition();
 
                     Optional<NBTTagCompound> propMap = blockTag.getElement("Properties").result();
                     if (propMap.isPresent()) {
                         NBTTagCompound properties = propMap.get();
-                        for (String dataKey : properties.getKeys()) {
-                            IBlockState state = states.a(dataKey);
+                        for (String dataKey : properties.getAllKeys()) {
+                            IBlockState state = states.getProperty(dataKey);
 
                             if (state == null) {
                                 if (whitelistedStates.contains(dataKey)) {
@@ -354,12 +354,12 @@ public final class CraftLegacy {
                             }
 
                             Preconditions.checkState(!properties.getString(dataKey).isEmpty(), "Empty data string");
-                            Optional opt = state.b(properties.getString(dataKey));
+                            Optional opt = state.getValue(properties.getString(dataKey));
                             if (!opt.isPresent()) {
                                 throw new IllegalStateException("No state value " + properties.getString(dataKey) + " for " + dataKey);
                             }
 
-                            blockData = blockData.set(state, (Comparable) opt.get());
+                            blockData = blockData.setValue(state, (Comparable) opt.get());
                         }
                     }
 
@@ -392,17 +392,17 @@ public final class CraftLegacy {
                     continue;
                 }
                 // Skip non item stacks for now (18w19b)
-                if (DataConverterMaterialId.a(material.getId()) == null) {
+                if (DataConverterMaterialId.getItem(material.getId()) == null) {
                     continue;
                 }
 
                 MaterialData matData = new MaterialData(material, data);
 
                 NBTTagCompound stack = new NBTTagCompound();
-                stack.setInt("id", material.getId());
-                stack.setShort("Damage", data);
+                stack.putInt("id", material.getId());
+                stack.putShort("Damage", data);
 
-                Dynamic<NBTBase> converted = DataConverterRegistry.a().update(DataConverterTypes.ITEM_STACK, new Dynamic<NBTBase>(DynamicOpsNBT.INSTANCE, stack), -1, CraftMagicNumbers.INSTANCE.getDataVersion());
+                Dynamic<NBTBase> converted = DataConverterRegistry.getDataFixer().update(DataConverterTypes.ITEM_STACK, new Dynamic<NBTBase>(DynamicOpsNBT.INSTANCE, stack), -1, CraftMagicNumbers.INSTANCE.getDataVersion());
 
                 String newId = converted.get("id").asString("");
                 // Recover spawn eggs with invalid data

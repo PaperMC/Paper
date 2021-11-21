@@ -4,35 +4,37 @@
      private static final Logger LOGGER = LogManager.getLogger();
      public static final String ENTITY_TAG = "EntityTag";
      private static final float MAGIC_HORSE_WIDTH = 1.3964844F;
--    public static final EntityTypes<EntityAreaEffectCloud> AREA_EFFECT_CLOUD = a("area_effect_cloud", EntityTypes.Builder.a(EntityAreaEffectCloud::new, EnumCreatureType.MISC).c().a(6.0F, 0.5F).trackingRange(10).updateInterval(Integer.MAX_VALUE));
-+    public static final EntityTypes<EntityAreaEffectCloud> AREA_EFFECT_CLOUD = a("area_effect_cloud", EntityTypes.Builder.a(EntityAreaEffectCloud::new, EnumCreatureType.MISC).c().a(6.0F, 0.5F).trackingRange(10).updateInterval(10)); // CraftBukkit - SPIGOT-3729: track area effect clouds
-     public static final EntityTypes<EntityArmorStand> ARMOR_STAND = a("armor_stand", EntityTypes.Builder.a(EntityArmorStand::new, EnumCreatureType.MISC).a(0.5F, 1.975F).trackingRange(10));
-     public static final EntityTypes<EntityTippedArrow> ARROW = a("arrow", EntityTypes.Builder.a(EntityTippedArrow::new, EnumCreatureType.MISC).a(0.5F, 0.5F).trackingRange(4).updateInterval(20));
-     public static final EntityTypes<Axolotl> AXOLOTL = a("axolotl", EntityTypes.Builder.a(Axolotl::new, EnumCreatureType.UNDERGROUND_WATER_CREATURE).a(0.75F, 0.42F).trackingRange(10));
-@@ -282,7 +282,7 @@
+-    public static final EntityTypes<EntityAreaEffectCloud> AREA_EFFECT_CLOUD = register("area_effect_cloud", EntityTypes.Builder.of(EntityAreaEffectCloud::new, EnumCreatureType.MISC).fireImmune().sized(6.0F, 0.5F).clientTrackingRange(10).updateInterval(Integer.MAX_VALUE));
++    public static final EntityTypes<EntityAreaEffectCloud> AREA_EFFECT_CLOUD = register("area_effect_cloud", EntityTypes.Builder.of(EntityAreaEffectCloud::new, EnumCreatureType.MISC).fireImmune().sized(6.0F, 0.5F).clientTrackingRange(10).updateInterval(10)); // CraftBukkit - SPIGOT-3729: track area effect clouds
+     public static final EntityTypes<EntityArmorStand> ARMOR_STAND = register("armor_stand", EntityTypes.Builder.of(EntityArmorStand::new, EnumCreatureType.MISC).sized(0.5F, 1.975F).clientTrackingRange(10));
+     public static final EntityTypes<EntityTippedArrow> ARROW = register("arrow", EntityTypes.Builder.of(EntityTippedArrow::new, EnumCreatureType.MISC).sized(0.5F, 0.5F).clientTrackingRange(4).updateInterval(20));
+     public static final EntityTypes<Axolotl> AXOLOTL = register("axolotl", EntityTypes.Builder.of(Axolotl::new, EnumCreatureType.AXOLOTLS).sized(0.75F, 0.42F).clientTrackingRange(10));
+@@ -282,8 +282,8 @@
      private MinecraftKey lootTable;
      private final EntitySize dimensions;
  
--    private static <T extends Entity> EntityTypes<T> a(String s, EntityTypes.Builder<T> entitytypes_builder) {
-+    private static <T extends Entity> EntityTypes<T> a(String s, EntityTypes.Builder entitytypes_builder) { // CraftBukkit - decompile error
-         return (EntityTypes) IRegistry.a((IRegistry) IRegistry.ENTITY_TYPE, s, (Object) entitytypes_builder.a(s));
+-    private static <T extends Entity> EntityTypes<T> register(String s, EntityTypes.Builder<T> entitytypes_builder) {
+-        return (EntityTypes) IRegistry.register(IRegistry.ENTITY_TYPE, s, entitytypes_builder.build(s));
++    private static <T extends Entity> EntityTypes<T> register(String s, EntityTypes.Builder entitytypes_builder) { // CraftBukkit - decompile error
++        return (EntityTypes) IRegistry.register(IRegistry.ENTITY_TYPE, s, (EntityTypes<T>) entitytypes_builder.build(s)); // CraftBukkit - decompile error
      }
  
+     public static MinecraftKey getKey(EntityTypes<?> entitytypes) {
 @@ -314,10 +314,18 @@
  
      @Nullable
-     public T spawnCreature(WorldServer worldserver, @Nullable NBTTagCompound nbttagcompound, @Nullable IChatBaseComponent ichatbasecomponent, @Nullable EntityHuman entityhuman, BlockPosition blockposition, EnumMobSpawn enummobspawn, boolean flag, boolean flag1) {
+     public T spawn(WorldServer worldserver, @Nullable NBTTagCompound nbttagcompound, @Nullable IChatBaseComponent ichatbasecomponent, @Nullable EntityHuman entityhuman, BlockPosition blockposition, EnumMobSpawn enummobspawn, boolean flag, boolean flag1) {
 +        // CraftBukkit start
-+        return this.spawnCreature(worldserver, nbttagcompound, ichatbasecomponent, entityhuman, blockposition, enummobspawn, flag, flag1, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.SPAWNER_EGG);
++        return this.spawn(worldserver, nbttagcompound, ichatbasecomponent, entityhuman, blockposition, enummobspawn, flag, flag1, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.SPAWNER_EGG);
 +    }
 +
 +    @Nullable
-+    public T spawnCreature(WorldServer worldserver, @Nullable NBTTagCompound nbttagcompound, @Nullable IChatBaseComponent ichatbasecomponent, @Nullable EntityHuman entityhuman, BlockPosition blockposition, EnumMobSpawn enummobspawn, boolean flag, boolean flag1, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason spawnReason) {
-         T t0 = this.createCreature(worldserver, nbttagcompound, ichatbasecomponent, entityhuman, blockposition, enummobspawn, flag, flag1);
++    public T spawn(WorldServer worldserver, @Nullable NBTTagCompound nbttagcompound, @Nullable IChatBaseComponent ichatbasecomponent, @Nullable EntityHuman entityhuman, BlockPosition blockposition, EnumMobSpawn enummobspawn, boolean flag, boolean flag1, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason spawnReason) {
+         T t0 = this.create(worldserver, nbttagcompound, ichatbasecomponent, entityhuman, blockposition, enummobspawn, flag, flag1);
  
          if (t0 != null) {
--            worldserver.addAllEntities(t0);
-+            worldserver.addAllEntities(t0, spawnReason);
+-            worldserver.addFreshEntityWithPassengers(t0);
++            worldserver.addFreshEntityWithPassengers(t0, spawnReason);
 +            return !t0.isRemoved() ? t0 : null; // Don't return an entity when CreatureSpawnEvent is canceled
 +            // CraftBukkit end
          }
@@ -42,12 +44,12 @@
                  t0.setCustomName(ichatbasecomponent);
              }
  
--            a((World) worldserver, entityhuman, t0, nbttagcompound);
-+            try { a((World) worldserver, entityhuman, t0, nbttagcompound); } catch (Throwable t) { LOGGER.warn("Error loading spawn egg NBT", t); } // CraftBukkit - SPIGOT-5665
+-            updateCustomEntityTag(worldserver, entityhuman, t0, nbttagcompound);
++            try { updateCustomEntityTag(worldserver, entityhuman, t0, nbttagcompound); } catch (Throwable t) { LOGGER.warn("Error loading spawn egg NBT", t); } // CraftBukkit - SPIGOT-5665
              return t0;
          }
      }
-@@ -512,7 +520,7 @@
+@@ -510,7 +518,7 @@
              }
  
              return entity;
@@ -55,22 +57,22 @@
 +        }).orElse(null); // CraftBukkit - decompile error
      }
  
-     public static Stream<Entity> a(final List<? extends NBTBase> list, final World world) {
-@@ -569,7 +577,7 @@
+     public static Stream<Entity> loadEntitiesRecursive(final List<? extends NBTBase> list, final World world) {
+@@ -567,7 +575,7 @@
  
      @Nullable
-     public T a(Entity entity) {
--        return entity.getEntityType() == this ? entity : null;
-+        return entity.getEntityType() == this ? (T) entity : null; // CraftBukkit - decompile error
+     public T tryCast(Entity entity) {
+-        return entity.getType() == this ? entity : null;
++        return entity.getType() == this ? (T) entity : null; // CraftBukkit - decompile error
      }
  
      @Override
-@@ -596,7 +604,7 @@
+@@ -594,7 +602,7 @@
              this.canSpawnFarFromPlayer = enumcreaturetype == EnumCreatureType.CREATURE || enumcreaturetype == EnumCreatureType.MISC;
          }
  
--        public static <T extends Entity> EntityTypes.Builder<T> a(EntityTypes.b<T> entitytypes_b, EnumCreatureType enumcreaturetype) {
-+        public static <T extends Entity> EntityTypes.Builder<T> a(EntityTypes.b entitytypes_b, EnumCreatureType enumcreaturetype) { // CraftBukkit - decompile error
+-        public static <T extends Entity> EntityTypes.Builder<T> of(EntityTypes.b<T> entitytypes_b, EnumCreatureType enumcreaturetype) {
++        public static <T extends Entity> EntityTypes.Builder<T> of(EntityTypes.b entitytypes_b, EnumCreatureType enumcreaturetype) { // CraftBukkit - decompile error
              return new EntityTypes.Builder<>(entitytypes_b, enumcreaturetype);
          }
  

@@ -1,22 +1,22 @@
 --- a/net/minecraft/world/entity/animal/EntityFox.java
 +++ b/net/minecraft/world/entity/animal/EntityFox.java
-@@ -502,7 +502,8 @@
-     protected void b(EntityItem entityitem) {
-         ItemStack itemstack = entityitem.getItemStack();
+@@ -507,7 +507,8 @@
+     protected void pickUpItem(EntityItem entityitem) {
+         ItemStack itemstack = entityitem.getItem();
  
--        if (this.canPickup(itemstack)) {
-+        if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityPickupItemEvent(this, entityitem, itemstack.getCount() - 1, !this.canPickup(itemstack)).isCancelled()) { // CraftBukkit - call EntityPickupItemEvent
-+            itemstack = entityitem.getItemStack(); // CraftBukkit - update ItemStack from event
+-        if (this.canHoldItem(itemstack)) {
++        if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityPickupItemEvent(this, entityitem, itemstack.getCount() - 1, !this.canHoldItem(itemstack)).isCancelled()) { // CraftBukkit - call EntityPickupItemEvent
++            itemstack = entityitem.getItem(); // CraftBukkit - update ItemStack from event
              int i = itemstack.getCount();
  
              if (i > 1) {
-@@ -857,6 +858,16 @@
+@@ -862,6 +863,16 @@
                  if (entityplayer1 != null && entityplayer != entityplayer1) {
-                     entityfox.b(entityplayer1.getUniqueID());
+                     entityfox.addTrustedUUID(entityplayer1.getUUID());
                  }
 +                // CraftBukkit start - call EntityBreedEvent
-+                entityfox.setAgeRaw(-24000);
-+                entityfox.setPositionRotation(this.animal.locX(), this.animal.locY(), this.animal.locZ(), 0.0F, 0.0F);
++                entityfox.setAge(-24000);
++                entityfox.moveTo(this.animal.getX(), this.animal.getY(), this.animal.getZ(), 0.0F, 0.0F);
 +                int experience = this.animal.getRandom().nextInt(7) + 1;
 +                org.bukkit.event.entity.EntityBreedEvent entityBreedEvent = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityBreedEvent(entityfox, animal, partner, entityplayer, this.animal.breedItem, experience);
 +                if (entityBreedEvent.isCancelled()) {
@@ -26,47 +26,47 @@
 +                // CraftBukkit end
  
                  if (entityplayer2 != null) {
-                     entityplayer2.a(StatisticList.ANIMALS_BRED);
-@@ -867,12 +878,14 @@
-                 this.partner.setAgeRaw(6000);
+                     entityplayer2.awardStat(StatisticList.ANIMALS_BRED);
+@@ -872,12 +883,14 @@
+                 this.partner.setAge(6000);
                  this.animal.resetLove();
                  this.partner.resetLove();
--                entityfox.setAgeRaw(-24000);
--                entityfox.setPositionRotation(this.animal.locX(), this.animal.locY(), this.animal.locZ(), 0.0F, 0.0F);
--                worldserver.addAllEntities(entityfox);
-+                worldserver.addAllEntities(entityfox, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.BREEDING); // CraftBukkit - added SpawnReason
-                 this.level.broadcastEntityEffect(this.animal, (byte) 18);
+-                entityfox.setAge(-24000);
+-                entityfox.moveTo(this.animal.getX(), this.animal.getY(), this.animal.getZ(), 0.0F, 0.0F);
+-                worldserver.addFreshEntityWithPassengers(entityfox);
++                worldserver.addFreshEntityWithPassengers(entityfox, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.BREEDING); // CraftBukkit - added SpawnReason
+                 this.level.broadcastEntityEvent(this.animal, (byte) 18);
                  if (this.level.getGameRules().getBoolean(GameRules.RULE_DOMOBLOOT)) {
--                    this.level.addEntity(new EntityExperienceOrb(this.level, this.animal.locX(), this.animal.locY(), this.animal.locZ(), this.animal.getRandom().nextInt(7) + 1));
+-                    this.level.addFreshEntity(new EntityExperienceOrb(this.level, this.animal.getX(), this.animal.getY(), this.animal.getZ(), this.animal.getRandom().nextInt(7) + 1));
 +                    // CraftBukkit start - use event experience
 +                    if (experience > 0) {
-+                        this.level.addEntity(new EntityExperienceOrb(this.level, this.animal.locX(), this.animal.locY(), this.animal.locZ(), experience));
++                        this.level.addFreshEntity(new EntityExperienceOrb(this.level, this.animal.getX(), this.animal.getY(), this.animal.getZ(), experience));
 +                    }
 +                    // CraftBukkit end
                  }
  
              }
-@@ -1258,13 +1271,18 @@
+@@ -1268,13 +1281,18 @@
          }
  
-         private void a(IBlockData iblockdata) {
--            CaveVines.harvest(iblockdata, EntityFox.this.level, this.blockPos);
-+            CaveVines.harvest(iblockdata, EntityFox.this.level, this.blockPos, EntityFox.this); // CraftBukkit
+         private void pickGlowBerry(IBlockData iblockdata) {
+-            CaveVines.use(iblockdata, EntityFox.this.level, this.blockPos);
++            CaveVines.use(iblockdata, EntityFox.this.level, this.blockPos, EntityFox.this); // CraftBukkit
          }
  
-         private void b(IBlockData iblockdata) {
-             int i = (Integer) iblockdata.get(BlockSweetBerryBush.AGE);
+         private void pickSweetBerries(IBlockData iblockdata) {
+             int i = (Integer) iblockdata.getValue(BlockSweetBerryBush.AGE);
  
-             iblockdata.set(BlockSweetBerryBush.AGE, 1);
+             iblockdata.setValue(BlockSweetBerryBush.AGE, 1);
 +            // CraftBukkit start - call EntityChangeBlockEvent
-+            if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(EntityFox.this, this.blockPos, iblockdata.set(BlockSweetBerryBush.AGE, 1)).isCancelled()) {
++            if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(EntityFox.this, this.blockPos, iblockdata.setValue(BlockSweetBerryBush.AGE, 1)).isCancelled()) {
 +                return;
 +            }
 +            // CraftBukkit end
              int j = 1 + EntityFox.this.level.random.nextInt(2) + (i == 3 ? 1 : 0);
-             ItemStack itemstack = EntityFox.this.getEquipment(EnumItemSlot.MAINHAND);
+             ItemStack itemstack = EntityFox.this.getItemBySlot(EnumItemSlot.MAINHAND);
  
-@@ -1420,7 +1438,7 @@
+@@ -1431,7 +1449,7 @@
          private EntityLiving trustedLastHurt;
          private int timestamp;
  

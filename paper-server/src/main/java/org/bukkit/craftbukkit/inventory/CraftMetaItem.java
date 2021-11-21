@@ -21,6 +21,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Collection;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -44,7 +45,6 @@ import net.minecraft.nbt.NBTTagString;
 import net.minecraft.network.chat.ChatComponentText;
 import net.minecraft.world.entity.EnumItemSlot;
 import net.minecraft.world.item.ItemBlock;
-import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang.Validate;
 import org.apache.commons.lang3.EnumUtils;
 import org.bukkit.Material;
@@ -324,18 +324,18 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
     }
 
     CraftMetaItem(NBTTagCompound tag) {
-        if (tag.hasKey(DISPLAY.NBT)) {
+        if (tag.contains(DISPLAY.NBT)) {
             NBTTagCompound display = tag.getCompound(DISPLAY.NBT);
 
-            if (display.hasKey(NAME.NBT)) {
+            if (display.contains(NAME.NBT)) {
                 displayName = display.getString(NAME.NBT);
             }
 
-            if (display.hasKey(LOCNAME.NBT)) {
+            if (display.contains(LOCNAME.NBT)) {
                 locName = display.getString(LOCNAME.NBT);
             }
 
-            if (display.hasKey(LORE.NBT)) {
+            if (display.contains(LORE.NBT)) {
                 NBTTagList list = display.getList(LORE.NBT, CraftMagicNumbers.NBT.TAG_STRING);
                 lore = new ArrayList<String>(list.size());
                 for (int index = 0; index < list.size(); index++) {
@@ -345,38 +345,38 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
             }
         }
 
-        if (tag.hasKeyOfType(CUSTOM_MODEL_DATA.NBT, CraftMagicNumbers.NBT.TAG_INT)) {
+        if (tag.contains(CUSTOM_MODEL_DATA.NBT, CraftMagicNumbers.NBT.TAG_INT)) {
             customModelData = tag.getInt(CUSTOM_MODEL_DATA.NBT);
         }
-        if (tag.hasKeyOfType(BLOCK_DATA.NBT, CraftMagicNumbers.NBT.TAG_COMPOUND)) {
+        if (tag.contains(BLOCK_DATA.NBT, CraftMagicNumbers.NBT.TAG_COMPOUND)) {
             blockData = tag.getCompound(BLOCK_DATA.NBT);
         }
 
         this.enchantments = buildEnchantments(tag, ENCHANTMENTS);
         this.attributeModifiers = buildModifiers(tag, ATTRIBUTES);
 
-        if (tag.hasKey(REPAIR.NBT)) {
+        if (tag.contains(REPAIR.NBT)) {
             repairCost = tag.getInt(REPAIR.NBT);
         }
 
-        if (tag.hasKey(HIDEFLAGS.NBT)) {
+        if (tag.contains(HIDEFLAGS.NBT)) {
             hideFlag = tag.getInt(HIDEFLAGS.NBT);
         }
-        if (tag.hasKey(UNBREAKABLE.NBT)) {
+        if (tag.contains(UNBREAKABLE.NBT)) {
             unbreakable = tag.getBoolean(UNBREAKABLE.NBT);
         }
-        if (tag.hasKey(DAMAGE.NBT)) {
+        if (tag.contains(DAMAGE.NBT)) {
             damage = tag.getInt(DAMAGE.NBT);
         }
-        if (tag.hasKey(BUKKIT_CUSTOM_TAG.NBT)) {
+        if (tag.contains(BUKKIT_CUSTOM_TAG.NBT)) {
             NBTTagCompound compound = tag.getCompound(BUKKIT_CUSTOM_TAG.NBT);
-            Set<String> keys = compound.getKeys();
+            Set<String> keys = compound.getAllKeys();
             for (String key : keys) {
                 persistentDataContainer.put(key, compound.get(key));
             }
         }
 
-        Set<String> keys = tag.getKeys();
+        Set<String> keys = tag.getAllKeys();
         for (String key : keys) {
             if (!getHandledTags().contains(key)) {
                 unhandledTags.put(key, tag.get(key));
@@ -385,7 +385,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
     }
 
     static Map<Enchantment, Integer> buildEnchantments(NBTTagCompound tag, ItemMetaKey key) {
-        if (!tag.hasKey(key.NBT)) {
+        if (!tag.contains(key.NBT)) {
             return null;
         }
 
@@ -407,7 +407,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
 
     static Multimap<Attribute, AttributeModifier> buildModifiers(NBTTagCompound tag, ItemMetaKey key) {
         Multimap<Attribute, AttributeModifier> modifiers = LinkedHashMultimap.create();
-        if (!tag.hasKeyOfType(key.NBT, CraftMagicNumbers.NBT.TAG_LIST)) {
+        if (!tag.contains(key.NBT, CraftMagicNumbers.NBT.TAG_LIST)) {
             return modifiers;
         }
         NBTTagList mods = tag.getList(key.NBT, CraftMagicNumbers.NBT.TAG_COMPOUND);
@@ -419,7 +419,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
                 // entry is not an actual NBTTagCompound. getCompound returns empty NBTTagCompound in that case
                 continue;
             }
-            net.minecraft.world.entity.ai.attributes.AttributeModifier nmsModifier = net.minecraft.world.entity.ai.attributes.AttributeModifier.a(entry);
+            net.minecraft.world.entity.ai.attributes.AttributeModifier nmsModifier = net.minecraft.world.entity.ai.attributes.AttributeModifier.load(entry);
             if (nmsModifier == null) {
                 continue;
             }
@@ -436,7 +436,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
                 continue;
             }
 
-            if (entry.hasKeyOfType(ATTRIBUTES_SLOT.NBT, CraftMagicNumbers.NBT.TAG_STRING)) {
+            if (entry.contains(ATTRIBUTES_SLOT.NBT, CraftMagicNumbers.NBT.TAG_STRING)) {
                 String slotName = entry.getString(ATTRIBUTES_SLOT.NBT);
                 if (slotName == null || slotName.isEmpty()) {
                     modifiers.put(attribute, attribMod);
@@ -445,7 +445,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
 
                 EquipmentSlot slot = null;
                 try {
-                    slot = CraftEquipmentSlot.getSlot(EnumItemSlot.fromName(slotName.toLowerCase(Locale.ROOT)));
+                    slot = CraftEquipmentSlot.getSlot(EnumItemSlot.byName(slotName.toLowerCase(Locale.ROOT)));
                 } catch (IllegalArgumentException ex) {
                     // SPIGOT-4551 - Slot is invalid, should really match nothing but this is undefined behaviour anyway
                 }
@@ -515,11 +515,11 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
 
         String internal = SerializableMeta.getString(map, "internal", true);
         if (internal != null) {
-            ByteArrayInputStream buf = new ByteArrayInputStream(Base64.decodeBase64(internal));
+            ByteArrayInputStream buf = new ByteArrayInputStream(Base64.getDecoder().decode(internal));
             try {
-                internalTag = NBTCompressedStreamTools.a(buf);
+                internalTag = NBTCompressedStreamTools.readCompressed(buf);
                 deserializeInternal(internalTag, map);
-                Set<String> keys = internalTag.getKeys();
+                Set<String> keys = internalTag.getAllKeys();
                 for (String key : keys) {
                     if (!getHandledTags().contains(key)) {
                         unhandledTags.put(key, internalTag.get(key));
@@ -538,7 +538,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
 
     void deserializeInternal(NBTTagCompound tag, Object context) {
         // SPIGOT-4576: Need to migrate from internal to proper data
-        if (tag.hasKeyOfType(ATTRIBUTES.NBT, CraftMagicNumbers.NBT.TAG_LIST)) {
+        if (tag.contains(ATTRIBUTES.NBT, CraftMagicNumbers.NBT.TAG_LIST)) {
             this.attributeModifiers = buildModifiers(tag, ATTRIBUTES);
         }
     }
@@ -605,10 +605,10 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
     @Overridden
     void applyToItem(NBTTagCompound itemTag) {
         if (hasDisplayName()) {
-            setDisplayTag(itemTag, NAME.NBT, NBTTagString.a(displayName));
+            setDisplayTag(itemTag, NAME.NBT, NBTTagString.valueOf(displayName));
         }
         if (hasLocalizedName()) {
-            setDisplayTag(itemTag, LOCNAME.NBT, NBTTagString.a(locName));
+            setDisplayTag(itemTag, LOCNAME.NBT, NBTTagString.valueOf(locName));
         }
 
         if (lore != null) {
@@ -616,34 +616,34 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
         }
 
         if (hasCustomModelData()) {
-            itemTag.setInt(CUSTOM_MODEL_DATA.NBT, customModelData);
+            itemTag.putInt(CUSTOM_MODEL_DATA.NBT, customModelData);
         }
 
         if (hasBlockData()) {
-            itemTag.set(BLOCK_DATA.NBT, blockData);
+            itemTag.put(BLOCK_DATA.NBT, blockData);
         }
 
         if (hideFlag != 0) {
-            itemTag.setInt(HIDEFLAGS.NBT, hideFlag);
+            itemTag.putInt(HIDEFLAGS.NBT, hideFlag);
         }
 
         applyEnchantments(enchantments, itemTag, ENCHANTMENTS);
         applyModifiers(attributeModifiers, itemTag, ATTRIBUTES);
 
         if (hasRepairCost()) {
-            itemTag.setInt(REPAIR.NBT, repairCost);
+            itemTag.putInt(REPAIR.NBT, repairCost);
         }
 
         if (isUnbreakable()) {
-            itemTag.setBoolean(UNBREAKABLE.NBT, unbreakable);
+            itemTag.putBoolean(UNBREAKABLE.NBT, unbreakable);
         }
 
         if (hasDamage()) {
-            itemTag.setInt(DAMAGE.NBT, damage);
+            itemTag.putInt(DAMAGE.NBT, damage);
         }
 
         for (Map.Entry<String, NBTBase> e : unhandledTags.entrySet()) {
-            itemTag.set(e.getKey(), e.getValue());
+            itemTag.put(e.getKey(), e.getValue());
         }
 
         if (!persistentDataContainer.isEmpty()) {
@@ -651,9 +651,9 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
             Map<String, NBTBase> rawPublicMap = persistentDataContainer.getRaw();
 
             for (Map.Entry<String, NBTBase> nbtBaseEntry : rawPublicMap.entrySet()) {
-                bukkitCustomCompound.set(nbtBaseEntry.getKey(), nbtBaseEntry.getValue());
+                bukkitCustomCompound.put(nbtBaseEntry.getKey(), nbtBaseEntry.getValue());
             }
-            itemTag.set(BUKKIT_CUSTOM_TAG.NBT, bukkitCustomCompound);
+            itemTag.put(BUKKIT_CUSTOM_TAG.NBT, bukkitCustomCompound);
         }
     }
 
@@ -665,7 +665,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
         NBTTagList tagList = new NBTTagList();
         for (String value : list) {
             // SPIGOT-5342 - horrible hack as 0 version does not go through the Mojang updater
-            tagList.add(NBTTagString.a(version <= 0 || version >= 1803 ? value : CraftChatMessage.fromJSONComponent(value))); // SPIGOT-4935
+            tagList.add(NBTTagString.valueOf(version <= 0 || version >= 1803 ? value : CraftChatMessage.fromJSONComponent(value))); // SPIGOT-4935
         }
 
         return tagList;
@@ -681,13 +681,13 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
         for (Map.Entry<Enchantment, Integer> entry : enchantments.entrySet()) {
             NBTTagCompound subtag = new NBTTagCompound();
 
-            subtag.setString(ENCHANTMENTS_ID.NBT, entry.getKey().getKey().toString());
-            subtag.setShort(ENCHANTMENTS_LVL.NBT, entry.getValue().shortValue());
+            subtag.putString(ENCHANTMENTS_ID.NBT, entry.getKey().getKey().toString());
+            subtag.putShort(ENCHANTMENTS_LVL.NBT, entry.getValue().shortValue());
 
             list.add(subtag);
         }
 
-        tag.set(key.NBT, list);
+        tag.put(key.NBT, list);
     }
 
     static void applyModifiers(Multimap<Attribute, AttributeModifier> modifiers, NBTTagCompound tag, ItemMetaKey key) {
@@ -711,26 +711,26 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
                 continue;
             }
 
-            sub.setString(ATTRIBUTES_IDENTIFIER.NBT, name); // Attribute Name
+            sub.putString(ATTRIBUTES_IDENTIFIER.NBT, name); // Attribute Name
             if (entry.getValue().getSlot() != null) {
                 EnumItemSlot slot = CraftEquipmentSlot.getNMS(entry.getValue().getSlot());
                 if (slot != null) {
-                    sub.setString(ATTRIBUTES_SLOT.NBT, slot.getSlotName());
+                    sub.putString(ATTRIBUTES_SLOT.NBT, slot.getName());
                 }
             }
             list.add(sub);
         }
-        tag.set(key.NBT, list);
+        tag.put(key.NBT, list);
     }
 
     void setDisplayTag(NBTTagCompound tag, String key, NBTBase value) {
         final NBTTagCompound display = tag.getCompound(DISPLAY.NBT);
 
-        if (!tag.hasKey(DISPLAY.NBT)) {
-            tag.set(DISPLAY.NBT, display);
+        if (!tag.contains(DISPLAY.NBT)) {
+            tag.put(DISPLAY.NBT, display);
         }
 
-        display.set(key, value);
+        display.put(key, value);
     }
 
     @Overridden
@@ -913,7 +913,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
 
     @Override
     public BlockData getBlockData(Material material) {
-        return CraftBlockData.fromData(ItemBlock.getBlockState(CraftMagicNumbers.getBlock(material).getBlockData(), blockData));
+        return CraftBlockData.fromData(ItemBlock.getBlockState(CraftMagicNumbers.getBlock(material).defaultBlockState(), blockData));
     }
 
     @Override
@@ -1254,12 +1254,12 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
         if (!internalTags.isEmpty()) {
             NBTTagCompound internal = new NBTTagCompound();
             for (Map.Entry<String, NBTBase> e : internalTags.entrySet()) {
-                internal.set(e.getKey(), e.getValue());
+                internal.put(e.getKey(), e.getValue());
             }
             try {
                 ByteArrayOutputStream buf = new ByteArrayOutputStream();
-                NBTCompressedStreamTools.a(internal, buf);
-                builder.put("internal", Base64.encodeBase64String(buf.toByteArray()));
+                NBTCompressedStreamTools.writeCompressed(internal, buf);
+                builder.put("internal", Base64.getEncoder().encode(buf.toByteArray()));
             } catch (IOException ex) {
                 Logger.getLogger(CraftMetaItem.class.getName()).log(Level.SEVERE, null, ex);
             }

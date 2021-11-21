@@ -14,27 +14,27 @@
  
      public BehaviorCareer() {
 @@ -29,7 +35,7 @@
-         GlobalPos globalpos = (GlobalPos) entityvillager.getBehaviorController().getMemory(MemoryModuleType.POTENTIAL_JOB_SITE).get();
+         GlobalPos globalpos = (GlobalPos) entityvillager.getBrain().getMemory(MemoryModuleType.POTENTIAL_JOB_SITE).get();
  
-         entityvillager.getBehaviorController().removeMemory(MemoryModuleType.POTENTIAL_JOB_SITE);
--        entityvillager.getBehaviorController().setMemory(MemoryModuleType.JOB_SITE, (Object) globalpos);
-+        entityvillager.getBehaviorController().setMemory(MemoryModuleType.JOB_SITE, globalpos); // CraftBukkit - decompile error
-         worldserver.broadcastEntityEffect(entityvillager, (byte) 14);
+         entityvillager.getBrain().eraseMemory(MemoryModuleType.POTENTIAL_JOB_SITE);
+-        entityvillager.getBrain().setMemory(MemoryModuleType.JOB_SITE, (Object) globalpos);
++        entityvillager.getBrain().setMemory(MemoryModuleType.JOB_SITE, globalpos); // CraftBukkit - decompile error
+         worldserver.broadcastEntityEvent(entityvillager, (byte) 14);
          if (entityvillager.getVillagerData().getProfession() == VillagerProfession.NONE) {
-             MinecraftServer minecraftserver = worldserver.getMinecraftServer();
+             MinecraftServer minecraftserver = worldserver.getServer();
 @@ -41,7 +47,14 @@
-                     return villagerprofession.b() == villageplacetype;
+                     return villagerprofession.getJobPoiType() == villageplacetype;
                  }).findFirst();
              }).ifPresent((villagerprofession) -> {
--                entityvillager.setVillagerData(entityvillager.getVillagerData().withProfession(villagerprofession));
+-                entityvillager.setVillagerData(entityvillager.getVillagerData().setProfession(villagerprofession));
 +                // CraftBukkit start - Fire VillagerCareerChangeEvent where Villager gets employed
 +                VillagerCareerChangeEvent event = CraftEventFactory.callVillagerCareerChangeEvent(entityvillager, CraftVillager.nmsToBukkitProfession(villagerprofession), VillagerCareerChangeEvent.ChangeReason.EMPLOYED);
 +                if (event.isCancelled()) {
 +                    return;
 +                }
 +
-+                entityvillager.setVillagerData(entityvillager.getVillagerData().withProfession(CraftVillager.bukkitToNmsProfession(event.getProfession())));
++                entityvillager.setVillagerData(entityvillager.getVillagerData().setProfession(CraftVillager.bukkitToNmsProfession(event.getProfession())));
 +                // CraftBukkit end
-                 entityvillager.c(worldserver);
+                 entityvillager.refreshBrain(worldserver);
              });
          }

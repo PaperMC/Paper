@@ -13,14 +13,14 @@
 +
  public class BlockEnderPortal extends BlockTileEntity {
  
-     protected static final VoxelShape SHAPE = Block.a(0.0D, 6.0D, 0.0D, 16.0D, 12.0D, 16.0D);
+     protected static final VoxelShape SHAPE = Block.box(0.0D, 6.0D, 0.0D, 16.0D, 12.0D, 16.0D);
 @@ -40,13 +47,22 @@
      @Override
-     public void a(IBlockData iblockdata, World world, BlockPosition blockposition, Entity entity) {
-         if (world instanceof WorldServer && !entity.isPassenger() && !entity.isVehicle() && entity.canPortal() && VoxelShapes.c(VoxelShapes.a(entity.getBoundingBox().d((double) (-blockposition.getX()), (double) (-blockposition.getY()), (double) (-blockposition.getZ()))), iblockdata.getShape(world, blockposition), OperatorBoolean.AND)) {
--            ResourceKey<World> resourcekey = world.getDimensionKey() == World.END ? World.OVERWORLD : World.END;
+     public void entityInside(IBlockData iblockdata, World world, BlockPosition blockposition, Entity entity) {
+         if (world instanceof WorldServer && !entity.isPassenger() && !entity.isVehicle() && entity.canChangeDimensions() && VoxelShapes.joinIsNotEmpty(VoxelShapes.create(entity.getBoundingBox().move((double) (-blockposition.getX()), (double) (-blockposition.getY()), (double) (-blockposition.getZ()))), iblockdata.getShape(world, blockposition), OperatorBoolean.AND)) {
+-            ResourceKey<World> resourcekey = world.dimension() == World.END ? World.OVERWORLD : World.END;
 +            ResourceKey<World> resourcekey = world.getTypeKey() == DimensionManager.END_LOCATION ? World.OVERWORLD : World.END; // CraftBukkit - SPIGOT-6152: send back to main overworld in custom ends
-             WorldServer worldserver = ((WorldServer) world).getMinecraftServer().getWorldServer(resourcekey);
+             WorldServer worldserver = ((WorldServer) world).getServer().getLevel(resourcekey);
  
              if (worldserver == null) {
 -                return;
@@ -32,10 +32,10 @@
 +            world.getCraftServer().getPluginManager().callEvent(event);
 +
 +            if (entity instanceof EntityPlayer) {
-+                ((EntityPlayer) entity).b(worldserver, PlayerTeleportEvent.TeleportCause.END_PORTAL);
++                ((EntityPlayer) entity).changeDimension(worldserver, PlayerTeleportEvent.TeleportCause.END_PORTAL);
 +                return;
 +            }
 +            // CraftBukkit end
-             entity.b(worldserver);
+             entity.changeDimension(worldserver);
          }
  

@@ -1,6 +1,6 @@
 --- a/net/minecraft/util/worldupdate/WorldUpgrader.java
 +++ b/net/minecraft/util/worldupdate/WorldUpgrader.java
-@@ -34,11 +34,15 @@
+@@ -38,6 +38,10 @@
  import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
  
@@ -11,43 +11,33 @@
  public class WorldUpgrader {
  
      private static final Logger LOGGER = LogManager.getLogger();
-     private static final ThreadFactory THREAD_FACTORY = (new ThreadFactoryBuilder()).setDaemon(true).build();
--    private final ImmutableSet<ResourceKey<World>> levels;
-+    private final ImmutableSet<ResourceKey<DimensionManager>> levels; // CraftBukkit
-     private final boolean eraseCache;
-     private final Convertable.ConversionSession levelStorage;
-     private final Thread thread;
-@@ -49,12 +53,12 @@
+@@ -53,7 +57,7 @@
      private volatile int totalChunks;
      private volatile int converted;
      private volatile int skipped;
--    private final Object2FloatMap<ResourceKey<World>> progressMap = Object2FloatMaps.synchronize(new Object2FloatOpenCustomHashMap(SystemUtils.k()));
-+    private final Object2FloatMap<ResourceKey<DimensionManager>> progressMap = Object2FloatMaps.synchronize(new Object2FloatOpenCustomHashMap(SystemUtils.k())); // CraftBukkit
+-    private final Object2FloatMap<ResourceKey<World>> progressMap = Object2FloatMaps.synchronize(new Object2FloatOpenCustomHashMap(SystemUtils.identityStrategy()));
++    private final Object2FloatMap<ResourceKey<DimensionManager>> progressMap = Object2FloatMaps.synchronize(new Object2FloatOpenCustomHashMap(SystemUtils.identityStrategy())); // CraftBukkit
      private volatile IChatBaseComponent status = new ChatMessage("optimizeWorld.stage.counting");
      private static final Pattern REGEX = Pattern.compile("^r\\.(-?[0-9]+)\\.(-?[0-9]+)\\.mca$");
      private final WorldPersistentData overworldDataStorage;
+@@ -86,13 +90,13 @@
  
--    public WorldUpgrader(Convertable.ConversionSession convertable_conversionsession, DataFixer datafixer, ImmutableSet<ResourceKey<World>> immutableset, boolean flag) {
-+    public WorldUpgrader(Convertable.ConversionSession convertable_conversionsession, DataFixer datafixer, ImmutableSet<ResourceKey<DimensionManager>> immutableset, boolean flag) { // CraftBukkit
-         this.levels = immutableset;
-         this.eraseCache = flag;
-         this.dataFixer = datafixer;
-@@ -82,12 +86,12 @@
- 
-     private void i() {
+     private void work() {
          this.totalChunks = 0;
 -        Builder<ResourceKey<World>, ListIterator<ChunkCoordIntPair>> builder = ImmutableMap.builder();
+-        ImmutableSet<ResourceKey<World>> immutableset = this.worldGenSettings.levels();
 +        Builder<ResourceKey<DimensionManager>, ListIterator<ChunkCoordIntPair>> builder = ImmutableMap.builder(); // CraftBukkit
++        ImmutableSet<ResourceKey<DimensionManager>> immutableset = this.worldGenSettings.levels(); // CraftBukkit
  
          List list;
  
-         for (UnmodifiableIterator unmodifiableiterator = this.levels.iterator(); unmodifiableiterator.hasNext(); this.totalChunks += list.size()) {
+         for (UnmodifiableIterator unmodifiableiterator = immutableset.iterator(); unmodifiableiterator.hasNext(); this.totalChunks += list.size()) {
 -            ResourceKey<World> resourcekey = (ResourceKey) unmodifiableiterator.next();
 +            ResourceKey<DimensionManager> resourcekey = (ResourceKey) unmodifiableiterator.next(); // CraftBukkit
  
-             list = this.b(resourcekey);
+             list = this.getAllChunkPos(resourcekey);
              builder.put(resourcekey, list.listIterator());
-@@ -97,18 +101,18 @@
+@@ -102,18 +106,18 @@
              this.finished = true;
          } else {
              float f = (float) this.totalChunks;
@@ -55,57 +45,57 @@
 -            Builder<ResourceKey<World>, IChunkLoader> builder1 = ImmutableMap.builder();
 +            ImmutableMap<ResourceKey<DimensionManager>, ListIterator<ChunkCoordIntPair>> immutablemap = builder.build(); // CraftBukkit
 +            Builder<ResourceKey<DimensionManager>, IChunkLoader> builder1 = ImmutableMap.builder(); // CraftBukkit
-             UnmodifiableIterator unmodifiableiterator1 = this.levels.iterator();
+             UnmodifiableIterator unmodifiableiterator1 = immutableset.iterator();
  
              while (unmodifiableiterator1.hasNext()) {
 -                ResourceKey<World> resourcekey1 = (ResourceKey) unmodifiableiterator1.next();
--                File file = this.levelStorage.a(resourcekey1);
+-                Path path = this.levelStorage.getDimensionPath(resourcekey1);
 +                ResourceKey<DimensionManager> resourcekey1 = (ResourceKey) unmodifiableiterator1.next(); // CraftBukkit
-+                File file = this.levelStorage.a((ResourceKey) null); // CraftBukkit
++                Path path = this.levelStorage.getDimensionPath((ResourceKey) null); // CraftBukkit
  
-                 builder1.put(resourcekey1, new IChunkLoader(new File(file, "region"), this.dataFixer, true));
+                 builder1.put(resourcekey1, new IChunkLoader(path.resolve("region"), this.dataFixer, true));
              }
  
 -            ImmutableMap<ResourceKey<World>, IChunkLoader> immutablemap1 = builder1.build();
 +            ImmutableMap<ResourceKey<DimensionManager>, IChunkLoader> immutablemap1 = builder1.build(); // CraftBukkit
-             long i = SystemUtils.getMonotonicMillis();
+             long i = SystemUtils.getMillis();
  
              this.status = new ChatMessage("optimizeWorld.stage.upgrading");
-@@ -120,7 +124,7 @@
+@@ -125,7 +129,7 @@
                  float f2;
  
-                 for (UnmodifiableIterator unmodifiableiterator2 = this.levels.iterator(); unmodifiableiterator2.hasNext(); f1 += f2) {
+                 for (UnmodifiableIterator unmodifiableiterator2 = immutableset.iterator(); unmodifiableiterator2.hasNext(); f1 += f2) {
 -                    ResourceKey<World> resourcekey2 = (ResourceKey) unmodifiableiterator2.next();
 +                    ResourceKey<DimensionManager> resourcekey2 = (ResourceKey) unmodifiableiterator2.next(); // CraftBukkit
                      ListIterator<ChunkCoordIntPair> listiterator = (ListIterator) immutablemap.get(resourcekey2);
                      IChunkLoader ichunkloader = (IChunkLoader) immutablemap1.get(resourcekey2);
  
-@@ -135,7 +139,7 @@
-                                 int j = IChunkLoader.a(nbttagcompound);
-                                 NBTTagCompound nbttagcompound1 = ichunkloader.getChunkData(resourcekey2, () -> {
+@@ -141,7 +145,7 @@
+                                 ChunkGenerator chunkgenerator = ((WorldDimension) this.worldGenSettings.dimensions().get(GeneratorSettings.levelToLevelStem(resourcekey2))).generator();
+                                 NBTTagCompound nbttagcompound1 = ichunkloader.upgradeChunkTag(resourcekey2, () -> {
                                      return this.overworldDataStorage;
--                                }, nbttagcompound);
-+                                }, nbttagcompound, chunkcoordintpair, null); // CraftBukkit
-                                 NBTTagCompound nbttagcompound2 = nbttagcompound1.getCompound("Level");
-                                 ChunkCoordIntPair chunkcoordintpair1 = new ChunkCoordIntPair(nbttagcompound2.getInt("xPos"), nbttagcompound2.getInt("zPos"));
+-                                }, nbttagcompound, chunkgenerator.getTypeNameForDataFixer());
++                                }, nbttagcompound, chunkgenerator.getTypeNameForDataFixer(), chunkcoordintpair, null); // CraftBukkit
+                                 ChunkCoordIntPair chunkcoordintpair1 = new ChunkCoordIntPair(nbttagcompound1.getInt("xPos"), nbttagcompound1.getInt("zPos"));
  
-@@ -208,8 +212,8 @@
+                                 if (!chunkcoordintpair1.equals(chunkcoordintpair)) {
+@@ -213,8 +217,8 @@
          }
      }
  
--    private List<ChunkCoordIntPair> b(ResourceKey<World> resourcekey) {
--        File file = this.levelStorage.a(resourcekey);
-+    private List<ChunkCoordIntPair> b(ResourceKey<DimensionManager> resourcekey) { // CraftBukkit
-+        File file = this.levelStorage.a((ResourceKey) null); // CraftBukkit
+-    private List<ChunkCoordIntPair> getAllChunkPos(ResourceKey<World> resourcekey) {
+-        File file = this.levelStorage.getDimensionPath(resourcekey).toFile();
++    private List<ChunkCoordIntPair> getAllChunkPos(ResourceKey<DimensionManager> resourcekey) { // CraftBukkit
++        File file = this.levelStorage.getDimensionPath((ResourceKey) null).toFile(); // CraftBukkit
          File file1 = new File(file, "region");
          File[] afile = file1.listFiles((file2, s) -> {
              return s.endsWith(".mca");
-@@ -269,7 +273,7 @@
+@@ -274,7 +278,7 @@
      }
  
-     public ImmutableSet<ResourceKey<World>> c() {
--        return this.levels;
+     public ImmutableSet<ResourceKey<World>> levels() {
+-        return this.worldGenSettings.levels();
 +        throw new AssertionError("Unsupported"); // CraftBukkit
      }
  
-     public float a(ResourceKey<World> resourcekey) {
+     public float dimensionProgress(ResourceKey<World> resourcekey) {

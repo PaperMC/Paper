@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/ambient/EntityBat.java
 +++ b/net/minecraft/world/entity/ambient/EntityBat.java
-@@ -30,6 +30,8 @@
+@@ -29,6 +29,8 @@
  import net.minecraft.world.level.block.state.IBlockData;
  import net.minecraft.world.phys.Vec3D;
  
@@ -12,12 +12,12 @@
 @@ -138,16 +140,24 @@
                  }
  
-                 if (this.level.a(EntityBat.BAT_RESTING_TARGETING, (EntityLiving) this) != null) {
+                 if (this.level.getNearestPlayer(EntityBat.BAT_RESTING_TARGETING, this) != null) {
 +                    // CraftBukkit Start - Call BatToggleSleepEvent
 +                    if (CraftEventFactory.handleBatToggleSleepEvent(this, true)) {
-+                        this.setAsleep(false);
++                        this.setResting(false);
 +                        if (!flag) {
-+                            this.level.a((EntityHuman) null, 1025, blockposition, 0);
++                            this.level.levelEvent((EntityHuman) null, 1025, blockposition, 0);
 +                        }
 +                    }
 +                    // CraftBukkit End
@@ -25,28 +25,28 @@
 +            } else {
 +                // CraftBukkit Start - Call BatToggleSleepEvent
 +                if (CraftEventFactory.handleBatToggleSleepEvent(this, true)) {
-                     this.setAsleep(false);
+                     this.setResting(false);
                      if (!flag) {
-                         this.level.a((EntityHuman) null, 1025, blockposition, 0);
+                         this.level.levelEvent((EntityHuman) null, 1025, blockposition, 0);
                      }
                  }
 -            } else {
--                this.setAsleep(false);
+-                this.setResting(false);
 -                if (!flag) {
--                    this.level.a((EntityHuman) null, 1025, blockposition, 0);
+-                    this.level.levelEvent((EntityHuman) null, 1025, blockposition, 0);
 -                }
 +                // CraftBukkit End - Call BatToggleSleepEvent
              }
          } else {
-             if (this.targetPosition != null && (!this.level.isEmpty(this.targetPosition) || this.targetPosition.getY() <= this.level.getMinBuildHeight())) {
+             if (this.targetPosition != null && (!this.level.isEmptyBlock(this.targetPosition) || this.targetPosition.getY() <= this.level.getMinBuildHeight())) {
 @@ -171,7 +181,11 @@
              this.zza = 0.5F;
              this.setYRot(this.getYRot() + f1);
-             if (this.random.nextInt(100) == 0 && this.level.getType(blockposition1).isOccluding(this.level, blockposition1)) {
--                this.setAsleep(true);
+             if (this.random.nextInt(100) == 0 && this.level.getBlockState(blockposition1).isRedstoneConductor(this.level, blockposition1)) {
+-                this.setResting(true);
 +                // CraftBukkit Start - Call BatToggleSleepEvent
 +                if (CraftEventFactory.handleBatToggleSleepEvent(this, false)) {
-+                    this.setAsleep(true);
++                    this.setResting(true);
 +                }
 +                // CraftBukkit End
              }
@@ -55,13 +55,13 @@
 @@ -201,7 +215,11 @@
              return false;
          } else {
-             if (!this.level.isClientSide && this.isAsleep()) {
--                this.setAsleep(false);
+             if (!this.level.isClientSide && this.isResting()) {
+-                this.setResting(false);
 +                // CraftBukkit Start - Call BatToggleSleepEvent
 +                if (CraftEventFactory.handleBatToggleSleepEvent(this, true)) {
-+                    this.setAsleep(false);
++                    this.setResting(false);
 +                }
 +                // CraftBukkit End - Call BatToggleSleepEvent
              }
  
-             return super.damageEntity(damagesource, f);
+             return super.hurt(damagesource, f);

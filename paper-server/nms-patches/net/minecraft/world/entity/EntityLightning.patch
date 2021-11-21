@@ -1,64 +1,63 @@
 --- a/net/minecraft/world/entity/EntityLightning.java
 +++ b/net/minecraft/world/entity/EntityLightning.java
-@@ -32,6 +32,11 @@
+@@ -31,6 +31,10 @@
  import net.minecraft.world.phys.AxisAlignedBB;
  import net.minecraft.world.phys.Vec3D;
  
 +// CraftBukkit start
-+import net.minecraft.network.protocol.game.PacketPlayOutNamedSoundEffect;
 +import org.bukkit.craftbukkit.event.CraftEventFactory;
 +// CraftBukkit end
 +
  public class EntityLightning extends Entity {
  
      private static final int START_LIFE = 2;
-@@ -132,7 +137,7 @@
+@@ -131,7 +135,7 @@
              }
          }
  
 -        if (this.life >= 0) {
-+        if (this.life >= 0 && !this.visualOnly) { // CraftBukkit - add !this.isEffect
++        if (this.life >= 0 && !this.visualOnly) { // CraftBukkit - add !this.visualOnly
              if (!(this.level instanceof WorldServer)) {
-                 this.level.c(2);
+                 this.level.setSkyFlashTime(2);
              } else if (!this.visualOnly) {
-@@ -166,8 +171,12 @@
-             IBlockData iblockdata = BlockFireAbstract.a((IBlockAccess) this.level, blockposition);
+@@ -165,8 +169,12 @@
+             IBlockData iblockdata = BlockFireAbstract.getState(this.level, blockposition);
  
-             if (this.level.getType(blockposition).isAir() && iblockdata.canPlace(this.level, blockposition)) {
--                this.level.setTypeUpdate(blockposition, iblockdata);
+             if (this.level.getBlockState(blockposition).isAir() && iblockdata.canSurvive(this.level, blockposition)) {
+-                this.level.setBlockAndUpdate(blockposition, iblockdata);
 -                ++this.blocksSetOnFire;
-+                // CraftBukkit start - add "!isEffect"
++                // CraftBukkit start - add "!visualOnly"
 +                if (!visualOnly && !CraftEventFactory.callBlockIgniteEvent(level, blockposition, this).isCancelled()) {
-+                    this.level.setTypeUpdate(blockposition, iblockdata);
++                    this.level.setBlockAndUpdate(blockposition, iblockdata);
 +                    ++this.blocksSetOnFire;
 +                }
 +                // CraftBukkit end
              }
  
              for (int j = 0; j < i; ++j) {
-@@ -175,8 +184,12 @@
+@@ -174,8 +182,12 @@
  
-                 iblockdata = BlockFireAbstract.a((IBlockAccess) this.level, blockposition1);
-                 if (this.level.getType(blockposition1).isAir() && iblockdata.canPlace(this.level, blockposition1)) {
--                    this.level.setTypeUpdate(blockposition1, iblockdata);
+                 iblockdata = BlockFireAbstract.getState(this.level, blockposition1);
+                 if (this.level.getBlockState(blockposition1).isAir() && iblockdata.canSurvive(this.level, blockposition1)) {
+-                    this.level.setBlockAndUpdate(blockposition1, iblockdata);
 -                    ++this.blocksSetOnFire;
-+                    // CraftBukkit start - add "!isEffect"
++                    // CraftBukkit start - add "!visualOnly"
 +                    if (!visualOnly && !CraftEventFactory.callBlockIgniteEvent(level, blockposition1, this).isCancelled()) {
-+                        this.level.setTypeUpdate(blockposition1, iblockdata);
++                        this.level.setBlockAndUpdate(blockposition1, iblockdata);
 +                        ++this.blocksSetOnFire;
 +                    }
 +                    // CraftBukkit end
                  }
              }
  
-@@ -240,8 +253,9 @@
-             iblockdata = world.getType(blockposition1);
+@@ -239,8 +251,9 @@
+             iblockdata = world.getBlockState(blockposition1);
          } while (!(iblockdata.getBlock() instanceof WeatheringCopper));
  
 +        BlockPosition blockposition1Final = blockposition1; // CraftBukkit - decompile error
-         WeatheringCopper.b(iblockdata).ifPresent((iblockdata1) -> {
--            world.setTypeUpdate(blockposition1, iblockdata1);
-+            world.setTypeUpdate(blockposition1Final, iblockdata1); // CraftBukkit - decompile error
+         WeatheringCopper.getPrevious(iblockdata).ifPresent((iblockdata1) -> {
+-            world.setBlockAndUpdate(blockposition1, iblockdata1);
++            world.setBlockAndUpdate(blockposition1Final, iblockdata1); // CraftBukkit - decompile error
          });
-         world.triggerEffect(3002, blockposition1, -1);
+         world.levelEvent(3002, blockposition1, -1);
          return Optional.of(blockposition1);

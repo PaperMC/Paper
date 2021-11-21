@@ -14,21 +14,21 @@
 @@ -58,7 +62,8 @@
              }
  
-             if (worldserver.getType(blockposition).a((IBlockAccess) worldserver, blockposition, EntityTypes.ZOMBIFIED_PIGLIN)) {
--                Entity entity = EntityTypes.ZOMBIFIED_PIGLIN.spawnCreature(worldserver, (NBTTagCompound) null, (IChatBaseComponent) null, (EntityHuman) null, blockposition.up(), EnumMobSpawn.STRUCTURE, false, false);
+             if (worldserver.getBlockState(blockposition).isValidSpawn(worldserver, blockposition, EntityTypes.ZOMBIFIED_PIGLIN)) {
+-                Entity entity = EntityTypes.ZOMBIFIED_PIGLIN.spawn(worldserver, (NBTTagCompound) null, (IChatBaseComponent) null, (EntityHuman) null, blockposition.above(), EnumMobSpawn.STRUCTURE, false, false);
 +                // CraftBukkit - set spawn reason to NETHER_PORTAL
-+                Entity entity = EntityTypes.ZOMBIFIED_PIGLIN.spawnCreature(worldserver, (NBTTagCompound) null, (IChatBaseComponent) null, (EntityHuman) null, blockposition.up(), EnumMobSpawn.STRUCTURE, false, false, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.NETHER_PORTAL);
++                Entity entity = EntityTypes.ZOMBIFIED_PIGLIN.spawn(worldserver, (NBTTagCompound) null, (IChatBaseComponent) null, (EntityHuman) null, blockposition.above(), EnumMobSpawn.STRUCTURE, false, false, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.NETHER_PORTAL);
  
                  if (entity != null) {
-                     entity.resetPortalCooldown();
+                     entity.setPortalCooldown();
 @@ -80,6 +85,10 @@
      @Override
-     public void a(IBlockData iblockdata, World world, BlockPosition blockposition, Entity entity) {
-         if (!entity.isPassenger() && !entity.isVehicle() && entity.canPortal()) {
+     public void entityInside(IBlockData iblockdata, World world, BlockPosition blockposition, Entity entity) {
+         if (!entity.isPassenger() && !entity.isVehicle() && entity.canChangeDimensions()) {
 +            // CraftBukkit start - Entity in portal
 +            EntityPortalEnterEvent event = new EntityPortalEnterEvent(entity.getBukkitEntity(), new org.bukkit.Location(world.getWorld(), blockposition.getX(), blockposition.getY(), blockposition.getZ()));
 +            world.getCraftServer().getPluginManager().callEvent(event);
 +            // CraftBukkit end
-             entity.d(blockposition);
+             entity.handleInsidePortal(blockposition);
          }
  

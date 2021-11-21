@@ -95,7 +95,7 @@ public class CraftPotionEffectType extends PotionEffectType {
 
     @Override
     public boolean isInstant() {
-        return handle.isInstant();
+        return handle.isInstantenous();
     }
 
     @Override

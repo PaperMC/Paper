@@ -1,6 +1,6 @@
 --- a/net/minecraft/commands/CommandDispatcher.java
 +++ b/net/minecraft/commands/CommandDispatcher.java
-@@ -103,6 +103,14 @@
+@@ -106,6 +106,14 @@
  import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
  
@@ -15,32 +15,32 @@
  public class CommandDispatcher {
  
      private static final Logger LOGGER = LogManager.getLogger();
-@@ -114,6 +122,7 @@
+@@ -117,6 +125,7 @@
      private final com.mojang.brigadier.CommandDispatcher<CommandListenerWrapper> dispatcher = new com.mojang.brigadier.CommandDispatcher();
  
      public CommandDispatcher(CommandDispatcher.ServerType commanddispatcher_servertype) {
 +        this(); // CraftBukkit
-         CommandAdvancement.a(this.dispatcher);
-         CommandAttribute.a(this.dispatcher);
-         CommandExecute.a(this.dispatcher);
-@@ -195,17 +204,61 @@
+         CommandAdvancement.register(this.dispatcher);
+         CommandAttribute.register(this.dispatcher);
+         CommandExecute.register(this.dispatcher);
+@@ -202,17 +211,63 @@
          }
  
          this.dispatcher.findAmbiguities((commandnode, commandnode1, commandnode2, collection) -> {
 -            CommandDispatcher.LOGGER.warn("Ambiguity between arguments {} and {} with inputs: {}", this.dispatcher.getPath(commandnode1), this.dispatcher.getPath(commandnode2), collection);
-+            // CommandDispatcher.LOGGER.warn("Ambiguity between arguments {} and {} with inputs: {}", this.b.getPath(commandnode1), this.b.getPath(commandnode2), collection); // CraftBukkit
++            // CommandDispatcher.LOGGER.warn("Ambiguity between arguments {} and {} with inputs: {}", this.dispatcher.getPath(commandnode1), this.dispatcher.getPath(commandnode2), collection); // CraftBukkit
          });
--        this.dispatcher.setConsumer((commandcontext, flag, i) -> {
--            ((CommandListenerWrapper) commandcontext.getSource()).a(commandcontext, flag, i);
++        // CraftBukkit start
 +    }
 +
-+    // CraftBukkit start
 +    public CommandDispatcher() {
-+        this.dispatcher.setConsumer((commandcontext, flag1, i) -> {
-+            ((CommandListenerWrapper) commandcontext.getSource()).a(commandcontext, flag1, i);
++        // CraftBukkkit end
+         this.dispatcher.setConsumer((commandcontext, flag, i) -> {
+             ((CommandListenerWrapper) commandcontext.getSource()).onCommandComplete(commandcontext, flag, i);
          });
      }
  
++    // CraftBukkit start
 +    public int dispatchServerCommand(CommandListenerWrapper sender, String command) {
 +        Joiner joiner = Joiner.on(" ");
 +        if (command.startsWith("/")) {
@@ -68,19 +68,19 @@
 +        }
 +
 +        // Handle vanilla commands;
-+        if (sender.getWorld().getCraftServer().getCommandBlockOverride(args[0])) {
++        if (sender.getLevel().getCraftServer().getCommandBlockOverride(args[0])) {
 +            args[0] = "minecraft:" + args[0];
 +        }
 +
 +        String newCommand = joiner.join(args);
-+        return this.a(sender, newCommand, newCommand, false);
++        return this.performCommand(sender, newCommand, newCommand, false);
 +    }
 +
-     public int a(CommandListenerWrapper commandlistenerwrapper, String s) {
-+        return this.a(commandlistenerwrapper, s, s, true);
+     public int performCommand(CommandListenerWrapper commandlistenerwrapper, String s) {
++        return this.performCommand(commandlistenerwrapper, s, s, true);
 +    }
 +
-+    public int a(CommandListenerWrapper commandlistenerwrapper, String s, String label, boolean stripSlash) {
++    public int performCommand(CommandListenerWrapper commandlistenerwrapper, String s, String label, boolean stripSlash) {
          StringReader stringreader = new StringReader(s);
  
 -        if (stringreader.canRead() && stringreader.peek() == '/') {
@@ -89,34 +89,34 @@
              stringreader.skip();
          }
  
-@@ -229,7 +282,7 @@
+@@ -236,7 +291,7 @@
                  if (commandsyntaxexception.getInput() != null && commandsyntaxexception.getCursor() >= 0) {
                      int j = Math.min(commandsyntaxexception.getInput().length(), commandsyntaxexception.getCursor());
-                     IChatMutableComponent ichatmutablecomponent = (new ChatComponentText("")).a(EnumChatFormat.GRAY).format((chatmodifier) -> {
--                        return chatmodifier.setChatClickable(new ChatClickable(ChatClickable.EnumClickAction.SUGGEST_COMMAND, s));
-+                        return chatmodifier.setChatClickable(new ChatClickable(ChatClickable.EnumClickAction.SUGGEST_COMMAND, label)); // CraftBukkit
+                     IChatMutableComponent ichatmutablecomponent = (new ChatComponentText("")).withStyle(EnumChatFormat.GRAY).withStyle((chatmodifier) -> {
+-                        return chatmodifier.withClickEvent(new ChatClickable(ChatClickable.EnumClickAction.SUGGEST_COMMAND, s));
++                        return chatmodifier.withClickEvent(new ChatClickable(ChatClickable.EnumClickAction.SUGGEST_COMMAND, label)); // CraftBukkit
                      });
  
                      if (j > 10) {
-@@ -279,11 +332,36 @@
+@@ -286,11 +341,36 @@
      }
  
-     public void a(EntityPlayer entityplayer) {
+     public void sendCommands(EntityPlayer entityplayer) {
 -        Map<CommandNode<CommandListenerWrapper>, CommandNode<ICompletionProvider>> map = Maps.newHashMap();
 +        // CraftBukkit start
 +        // Register Vanilla commands into builtRoot as before
 +        Map<CommandNode<CommandListenerWrapper>, CommandNode<ICompletionProvider>> map = Maps.newIdentityHashMap(); // Use identity to prevent aliasing issues
 +        RootCommandNode vanillaRoot = new RootCommandNode();
 +
-+        RootCommandNode<CommandListenerWrapper> vanilla = entityplayer.server.vanillaCommandDispatcher.a().getRoot();
++        RootCommandNode<CommandListenerWrapper> vanilla = entityplayer.server.vanillaCommandDispatcher.getDispatcher().getRoot();
 +        map.put(vanilla, vanillaRoot);
-+        this.a(vanilla, vanillaRoot, entityplayer.getCommandListener(), (Map) map);
++        this.fillUsableCommands(vanilla, vanillaRoot, entityplayer.createCommandSourceStack(), (Map) map);
 +
 +        // Now build the global commands in a second pass
          RootCommandNode<ICompletionProvider> rootcommandnode = new RootCommandNode();
  
          map.put(this.dispatcher.getRoot(), rootcommandnode);
-         this.a(this.dispatcher.getRoot(), rootcommandnode, entityplayer.getCommandListener(), (Map) map);
+         this.fillUsableCommands(this.dispatcher.getRoot(), rootcommandnode, entityplayer.createCommandSourceStack(), map);
 +
 +        Collection<String> bukkit = new LinkedHashSet<>();
 +        for (CommandNode node : rootcommandnode.getChildren()) {
@@ -133,10 +133,10 @@
 +            }
 +        }
 +        // CraftBukkit end
-         entityplayer.connection.sendPacket(new PacketPlayOutCommands(rootcommandnode));
+         entityplayer.connection.send(new PacketPlayOutCommands(rootcommandnode));
      }
  
-@@ -294,7 +372,7 @@
+@@ -301,7 +381,7 @@
              CommandNode<CommandListenerWrapper> commandnode2 = (CommandNode) iterator.next();
  
              if (commandnode2.canUse(commandlistenerwrapper)) {
@@ -145,7 +145,7 @@
  
                  argumentbuilder.requires((icompletionprovider) -> {
                      return true;
-@@ -317,7 +395,7 @@
+@@ -324,7 +404,7 @@
                      argumentbuilder.redirect((CommandNode) map.get(argumentbuilder.getRedirect()));
                  }
  

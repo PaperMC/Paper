@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/npc/EntityVillager.java
 +++ b/net/minecraft/world/entity/npc/EntityVillager.java
-@@ -93,6 +93,14 @@
+@@ -89,6 +89,14 @@
  import net.minecraft.world.phys.AxisAlignedBB;
  import org.apache.logging.log4j.Logger;
  
@@ -14,35 +14,17 @@
 +
  public class EntityVillager extends EntityVillagerAbstract implements ReputationHandler, VillagerDataHolder {
  
-     private static final DataWatcherObject<VillagerData> DATA_VILLAGER_DATA = DataWatcher.a(EntityVillager.class, DataWatcherRegistry.VILLAGER_DATA);
-@@ -150,7 +158,7 @@
+     private static final DataWatcherObject<VillagerData> DATA_VILLAGER_DATA = DataWatcher.defineId(EntityVillager.class, DataWatcherRegistry.VILLAGER_DATA);
+@@ -146,7 +154,7 @@
  
      @Override
-     public BehaviorController<EntityVillager> getBehaviorController() {
--        return super.getBehaviorController();
-+        return (BehaviorController<EntityVillager>) super.getBehaviorController(); // CraftBukkit - decompile error
+     public BehaviorController<EntityVillager> getBrain() {
+-        return super.getBrain();
++        return (BehaviorController<EntityVillager>) super.getBrain(); // CraftBukkit - decompile error
      }
  
      @Override
-@@ -169,7 +177,7 @@
-     public void c(WorldServer worldserver) {
-         BehaviorController<EntityVillager> behaviorcontroller = this.getBehaviorController();
- 
--        behaviorcontroller.b(worldserver, (EntityLiving) this);
-+        behaviorcontroller.b(worldserver, this); // CraftBukkit - decompile error
-         this.brain = behaviorcontroller.h();
-         this.a(this.getBehaviorController());
-     }
-@@ -219,7 +227,7 @@
-     @Override
-     protected void mobTick() {
-         this.level.getMethodProfiler().enter("villagerBrain");
--        this.getBehaviorController().a((WorldServer) this.level, (EntityLiving) this);
-+        this.getBehaviorController().a((WorldServer) this.level, this); // CraftBukkit - decompile error
-         this.level.getMethodProfiler().exit();
-         if (this.assignProfessionWhenSpawned) {
-             this.assignProfessionWhenSpawned = false;
-@@ -233,7 +241,7 @@
+@@ -229,7 +237,7 @@
                      this.increaseProfessionLevelOnUpdate = false;
                  }
  
@@ -51,83 +33,83 @@
              }
          }
  
-@@ -444,7 +452,14 @@
+@@ -445,7 +453,14 @@
              while (iterator.hasNext()) {
                  MerchantRecipe merchantrecipe = (MerchantRecipe) iterator.next();
  
--                merchantrecipe.increaseSpecialPrice(-MathHelper.d((float) i * merchantrecipe.getPriceMultiplier()));
+-                merchantrecipe.addToSpecialPriceDiff(-MathHelper.floor((float) i * merchantrecipe.getPriceMultiplier()));
 +                // CraftBukkit start
-+                int bonus = -MathHelper.d((float) i * merchantrecipe.getPriceMultiplier());
++                int bonus = -MathHelper.floor((float) i * merchantrecipe.getPriceMultiplier());
 +                VillagerReplenishTradeEvent event = new VillagerReplenishTradeEvent((Villager) this.getBukkitEntity(), merchantrecipe.asBukkit(), bonus);
 +                Bukkit.getPluginManager().callEvent(event);
 +                if (!event.isCancelled()) {
-+                    merchantrecipe.increaseSpecialPrice(event.getBonus());
++                    merchantrecipe.addToSpecialPriceDiff(event.getBonus());
 +                }
 +                // CraftBukkit end
              }
          }
  
-@@ -473,7 +488,7 @@
+@@ -474,7 +489,7 @@
      @Override
-     public void saveData(NBTTagCompound nbttagcompound) {
-         super.saveData(nbttagcompound);
+     public void addAdditionalSaveData(NBTTagCompound nbttagcompound) {
+         super.addAdditionalSaveData(nbttagcompound);
 -        DataResult dataresult = VillagerData.CODEC.encodeStart(DynamicOpsNBT.INSTANCE, this.getVillagerData());
 +        DataResult<NBTBase> dataresult = VillagerData.CODEC.encodeStart(DynamicOpsNBT.INSTANCE, this.getVillagerData()); // CraftBukkit - decompile error
          Logger logger = EntityVillager.LOGGER;
  
          Objects.requireNonNull(logger);
-@@ -813,7 +828,12 @@
+@@ -816,7 +831,12 @@
              }
  
-             entitywitch.setPersistent();
--            worldserver.addAllEntities(entitywitch);
+             entitywitch.setPersistenceRequired();
+-            worldserver.addFreshEntityWithPassengers(entitywitch);
 +            // CraftBukkit start
 +            if (CraftEventFactory.callEntityTransformEvent(this, entitywitch, EntityTransformEvent.TransformReason.LIGHTNING).isCancelled()) {
 +                return;
 +            }
-+            worldserver.addAllEntities(entitywitch, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.LIGHTNING);
++            worldserver.addFreshEntityWithPassengers(entitywitch, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.LIGHTNING);
 +            // CraftBukkit end
-             this.ga();
-             this.die();
+             this.releaseAllPois();
+             this.discard();
          } else {
-@@ -834,6 +854,13 @@
+@@ -837,6 +857,13 @@
                  return;
              }
  
 +            // CraftBukkit start
-+            ItemStack remaining = new InventorySubcontainer(inventorysubcontainer).a(itemstack);
++            ItemStack remaining = new InventorySubcontainer(inventorysubcontainer).addItem(itemstack);
 +            if (CraftEventFactory.callEntityPickupItemEvent(this, entityitem, remaining.getCount(), false).isCancelled()) {
 +                return;
 +            }
 +            // CraftBukkit end
 +
-             this.a(entityitem);
-             this.receive(entityitem, itemstack.getCount());
-             ItemStack itemstack1 = inventorysubcontainer.a(itemstack);
-@@ -946,7 +973,7 @@
+             this.onItemPickup(entityitem);
+             this.take(entityitem, itemstack.getCount());
+             ItemStack itemstack1 = inventorysubcontainer.addItem(itemstack);
+@@ -949,7 +976,7 @@
  
                  if (entityirongolem != null) {
-                     if (entityirongolem.a((GeneratorAccess) worldserver, EnumMobSpawn.MOB_SUMMONED) && entityirongolem.a((IWorldReader) worldserver)) {
--                        worldserver.addAllEntities(entityirongolem);
-+                        worldserver.addAllEntities(entityirongolem, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.VILLAGE_DEFENSE); // CraftBukkit
+                     if (entityirongolem.checkSpawnRules(worldserver, EnumMobSpawn.MOB_SUMMONED) && entityirongolem.checkSpawnObstruction(worldserver)) {
+-                        worldserver.addFreshEntityWithPassengers(entityirongolem);
++                        worldserver.addFreshEntityWithPassengers(entityirongolem, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.VILLAGE_DEFENSE); // CraftBukkit
                          return entityirongolem;
                      }
  
-@@ -1024,7 +1051,7 @@
+@@ -1027,7 +1054,7 @@
      @Override
-     public void entitySleep(BlockPosition blockposition) {
-         super.entitySleep(blockposition);
--        this.brain.setMemory(MemoryModuleType.LAST_SLEPT, (Object) this.level.getTime());
-+        this.brain.setMemory(MemoryModuleType.LAST_SLEPT, this.level.getTime()); // CraftBukkit - decompile error
-         this.brain.removeMemory(MemoryModuleType.WALK_TARGET);
-         this.brain.removeMemory(MemoryModuleType.CANT_REACH_WALK_TARGET_SINCE);
+     public void startSleeping(BlockPosition blockposition) {
+         super.startSleeping(blockposition);
+-        this.brain.setMemory(MemoryModuleType.LAST_SLEPT, (Object) this.level.getGameTime());
++        this.brain.setMemory(MemoryModuleType.LAST_SLEPT, this.level.getGameTime()); // CraftBukkit - decompile error
+         this.brain.eraseMemory(MemoryModuleType.WALK_TARGET);
+         this.brain.eraseMemory(MemoryModuleType.CANT_REACH_WALK_TARGET_SINCE);
      }
-@@ -1032,7 +1059,7 @@
+@@ -1035,7 +1062,7 @@
      @Override
-     public void entityWakeup() {
-         super.entityWakeup();
--        this.brain.setMemory(MemoryModuleType.LAST_WOKEN, (Object) this.level.getTime());
-+        this.brain.setMemory(MemoryModuleType.LAST_WOKEN, this.level.getTime()); // CraftBukkit - decompile error
+     public void stopSleeping() {
+         super.stopSleeping();
+-        this.brain.setMemory(MemoryModuleType.LAST_WOKEN, (Object) this.level.getGameTime());
++        this.brain.setMemory(MemoryModuleType.LAST_WOKEN, this.level.getGameTime()); // CraftBukkit - decompile error
      }
  
-     private boolean b(long i) {
+     private boolean golemSpawnConditionsMet(long i) {

@@ -14,16 +14,16 @@
      public static final BlockStateInteger MOISTURE = BlockProperties.MOISTURE;
 @@ -82,26 +87,49 @@
  
-         if (!a((IWorldReader) worldserver, blockposition) && !worldserver.isRainingAt(blockposition.up())) {
+         if (!isNearWater(worldserver, blockposition) && !worldserver.isRainingAt(blockposition.above())) {
              if (i > 0) {
--                worldserver.setTypeAndData(blockposition, (IBlockData) iblockdata.set(BlockSoil.MOISTURE, i - 1), 2);
-+                org.bukkit.craftbukkit.event.CraftEventFactory.handleMoistureChangeEvent(worldserver, blockposition, (IBlockData) iblockdata.set(BlockSoil.MOISTURE, i - 1), 2); // CraftBukkit
-             } else if (!a((IBlockAccess) worldserver, blockposition)) {
-                 fade(iblockdata, worldserver, blockposition);
+-                worldserver.setBlock(blockposition, (IBlockData) iblockdata.setValue(BlockSoil.MOISTURE, i - 1), 2);
++                org.bukkit.craftbukkit.event.CraftEventFactory.handleMoistureChangeEvent(worldserver, blockposition, (IBlockData) iblockdata.setValue(BlockSoil.MOISTURE, i - 1), 2); // CraftBukkit
+             } else if (!isUnderCrops(worldserver, blockposition)) {
+                 turnToDirt(iblockdata, worldserver, blockposition);
              }
          } else if (i < 7) {
--            worldserver.setTypeAndData(blockposition, (IBlockData) iblockdata.set(BlockSoil.MOISTURE, 7), 2);
-+            org.bukkit.craftbukkit.event.CraftEventFactory.handleMoistureChangeEvent(worldserver, blockposition, (IBlockData) iblockdata.set(BlockSoil.MOISTURE, 7), 2); // CraftBukkit
+-            worldserver.setBlock(blockposition, (IBlockData) iblockdata.setValue(BlockSoil.MOISTURE, 7), 2);
++            org.bukkit.craftbukkit.event.CraftEventFactory.handleMoistureChangeEvent(worldserver, blockposition, (IBlockData) iblockdata.setValue(BlockSoil.MOISTURE, 7), 2); // CraftBukkit
          }
  
      }
@@ -31,7 +31,7 @@
      @Override
      public void fallOn(World world, IBlockData iblockdata, BlockPosition blockposition, Entity entity, float f) {
 +        super.fallOn(world, iblockdata, blockposition, entity, f); // CraftBukkit - moved here as game rules / events shouldn't affect fall damage.
-         if (!world.isClientSide && world.random.nextFloat() < f - 0.5F && entity instanceof EntityLiving && (entity instanceof EntityHuman || world.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING)) && entity.getWidth() * entity.getWidth() * entity.getHeight() > 0.512F) {
+         if (!world.isClientSide && world.random.nextFloat() < f - 0.5F && entity instanceof EntityLiving && (entity instanceof EntityHuman || world.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING)) && entity.getBbWidth() * entity.getBbWidth() * entity.getBbHeight() > 0.512F) {
 +            // CraftBukkit start - Interact soil
 +            org.bukkit.event.Cancellable cancellable;
 +            if (entity instanceof EntityHuman) {
@@ -45,23 +45,23 @@
 +                return;
 +            }
 +
-+            if (CraftEventFactory.callEntityChangeBlockEvent(entity, blockposition, Blocks.DIRT.getBlockData()).isCancelled()) {
++            if (CraftEventFactory.callEntityChangeBlockEvent(entity, blockposition, Blocks.DIRT.defaultBlockState()).isCancelled()) {
 +                return;
 +            }
 +            // CraftBukkit end
-             fade(iblockdata, world, blockposition);
+             turnToDirt(iblockdata, world, blockposition);
          }
  
 -        super.fallOn(world, iblockdata, blockposition, entity, f);
 +        // super.fallOn(world, iblockdata, blockposition, entity, f); // CraftBukkit - moved up
      }
  
-     public static void fade(IBlockData iblockdata, World world, BlockPosition blockposition) {
+     public static void turnToDirt(IBlockData iblockdata, World world, BlockPosition blockposition) {
 +        // CraftBukkit start
-+        if (CraftEventFactory.callBlockFadeEvent(world, blockposition, Blocks.DIRT.getBlockData()).isCancelled()) {
++        if (CraftEventFactory.callBlockFadeEvent(world, blockposition, Blocks.DIRT.defaultBlockState()).isCancelled()) {
 +            return;
 +        }
 +        // CraftBukkit end
-         world.setTypeUpdate(blockposition, a(iblockdata, Blocks.DIRT.getBlockData(), world, blockposition));
+         world.setBlockAndUpdate(blockposition, pushEntitiesUp(iblockdata, Blocks.DIRT.defaultBlockState(), world, blockposition));
      }
  

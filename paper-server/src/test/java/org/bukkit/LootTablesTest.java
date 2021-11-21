@@ -24,7 +24,7 @@ public class LootTablesTest extends AbstractTestingBase {
 
     @Test
     public void testNMS() {
-        for (MinecraftKey key : net.minecraft.world.level.storage.loot.LootTables.a()) {
+        for (MinecraftKey key : net.minecraft.world.level.storage.loot.LootTables.all()) {
             NamespacedKey bukkitKey = CraftNamespacedKey.fromMinecraft(key);
             LootTables lootTable = Registry.LOOT_TABLES.get(bukkitKey);
 

@@ -6,8 +6,8 @@
                      if (!world.isClientSide) {
 +                        // CraftBukkit - moved down
 +                        /*
-                         itemstack.damage(1, entityhuman, (entityhuman1) -> {
-                             entityhuman1.broadcastItemBreak(entityliving.getRaisedHand());
+                         itemstack.hurtAndBreak(1, entityhuman, (entityhuman1) -> {
+                             entityhuman1.broadcastBreakEvent(entityliving.getUsedItemHand());
                          });
 +                        */
                          if (k == 0) {
@@ -17,35 +17,35 @@
                                  entitythrowntrident.pickup = EntityArrow.PickupStatus.CREATIVE_ONLY;
                              }
  
--                            world.addEntity(entitythrowntrident);
+-                            world.addFreshEntity(entitythrowntrident);
 +                            // CraftBukkit start
-+                            if (!world.addEntity(entitythrowntrident)) {
++                            if (!world.addFreshEntity(entitythrowntrident)) {
 +                                if (entityhuman instanceof net.minecraft.server.level.EntityPlayer) {
 +                                    ((net.minecraft.server.level.EntityPlayer) entityhuman).getBukkitEntity().updateInventory();
 +                                }
 +                                return;
 +                            }
 +
-+                            itemstack.damage(1, entityhuman, (entityhuman1) -> {
-+                                entityhuman1.broadcastItemBreak(entityliving.getRaisedHand());
++                            itemstack.hurtAndBreak(1, entityhuman, (entityhuman1) -> {
++                                entityhuman1.broadcastBreakEvent(entityliving.getUsedItemHand());
 +                            });
-+                            entitythrowntrident.tridentItem = itemstack.cloneItemStack(); // SPIGOT-4511 update since damage call moved
++                            entitythrowntrident.tridentItem = itemstack.copy(); // SPIGOT-4511 update since damage call moved
 +                            // CraftBukkit end
 +
                              world.playSound((EntityHuman) null, (Entity) entitythrowntrident, SoundEffects.TRIDENT_THROW, SoundCategory.PLAYERS, 1.0F, 1.0F);
                              if (!entityhuman.getAbilities().instabuild) {
-                                 entityhuman.getInventory().g(itemstack);
+                                 entityhuman.getInventory().removeItem(itemstack);
                              }
 +                            // CraftBukkit start - SPIGOT-5458 also need in this branch :(
 +                        } else {
-+                            itemstack.damage(1, entityhuman, (entityhuman1) -> {
-+                                entityhuman1.broadcastItemBreak(entityliving.getRaisedHand());
++                            itemstack.hurtAndBreak(1, entityhuman, (entityhuman1) -> {
++                                entityhuman1.broadcastBreakEvent(entityliving.getUsedItemHand());
 +                            });
 +                            // CraftBukkkit end
                          }
                      }
  
-                     entityhuman.b(StatisticList.ITEM_USED.b(this));
+                     entityhuman.awardStat(StatisticList.ITEM_USED.get(this));
                      if (k > 0) {
 +                        // CraftBukkit start
 +                        org.bukkit.event.player.PlayerRiptideEvent event = new org.bukkit.event.player.PlayerRiptideEvent((org.bukkit.entity.Player) entityhuman.getBukkitEntity(), org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemstack));

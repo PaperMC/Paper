@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/boss/wither/EntityWither.java
 +++ b/net/minecraft/world/entity/boss/wither/EntityWither.java
-@@ -54,6 +54,17 @@
+@@ -56,6 +56,17 @@
  import net.minecraft.world.level.block.state.IBlockData;
  import net.minecraft.world.phys.Vec3D;
  
@@ -17,72 +17,72 @@
 +
  public class EntityWither extends EntityMonster implements PowerableMob, IRangedEntity {
  
-     private static final DataWatcherObject<Integer> DATA_TARGET_A = DataWatcher.a(EntityWither.class, DataWatcherRegistry.INT);
-@@ -238,16 +249,40 @@
+     private static final DataWatcherObject<Integer> DATA_TARGET_A = DataWatcher.defineId(EntityWither.class, DataWatcherRegistry.INT);
+@@ -250,16 +261,40 @@
              this.bossEvent.setProgress(1.0F - (float) i / 220.0F);
              if (i <= 0) {
                  Explosion.Effect explosion_effect = this.level.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING) ? Explosion.Effect.DESTROY : Explosion.Effect.NONE;
 +                // CraftBukkit start
-+                // this.world.createExplosion(this, this.locX(), this.getHeadY(), this.locZ(), 7.0F, false, explosion_effect);
++                // this.level.explode(this, this.getX(), this.getEyeY(), this.getZ(), 7.0F, false, explosion_effect);
 +                ExplosionPrimeEvent event = new ExplosionPrimeEvent(this.getBukkitEntity(), 7.0F, false);
 +                this.level.getCraftServer().getPluginManager().callEvent(event);
 +
 +                if (!event.isCancelled()) {
-+                    this.level.createExplosion(this, this.locX(), this.getHeadY(), this.locZ(), event.getRadius(), event.getFire(), explosion_effect);
++                    this.level.explode(this, this.getX(), this.getEyeY(), this.getZ(), event.getRadius(), event.getFire(), explosion_effect);
 +                }
 +                // CraftBukkit end
  
--                this.level.createExplosion(this, this.locX(), this.getHeadY(), this.locZ(), 7.0F, false, explosion_effect);
+-                this.level.explode(this, this.getX(), this.getEyeY(), this.getZ(), 7.0F, false, explosion_effect);
                  if (!this.isSilent()) {
--                    this.level.b(1023, this.getChunkCoordinates(), 0);
+-                    this.level.globalLevelEvent(1023, this.blockPosition(), 0);
 +                    // CraftBukkit start - Use relative location for far away sounds
-+                    // this.world.b(1023, new BlockPosition(this), 0);
++                    // this.world.globalLevelEvent(1023, new BlockPosition(this), 0);
 +                    int viewDistance = ((WorldServer) this.level).getCraftServer().getViewDistance() * 16;
 +                    for (EntityPlayer player : (List<EntityPlayer>) MinecraftServer.getServer().getPlayerList().players) {
-+                        double deltaX = this.locX() - player.locX();
-+                        double deltaZ = this.locZ() - player.locZ();
++                        double deltaX = this.getX() - player.getX();
++                        double deltaZ = this.getZ() - player.getZ();
 +                        double distanceSquared = deltaX * deltaX + deltaZ * deltaZ;
 +                        if (distanceSquared > viewDistance * viewDistance) {
 +                            double deltaLength = Math.sqrt(distanceSquared);
-+                            double relativeX = player.locX() + (deltaX / deltaLength) * viewDistance;
-+                            double relativeZ = player.locZ() + (deltaZ / deltaLength) * viewDistance;
-+                            player.connection.sendPacket(new PacketPlayOutWorldEvent(1023, new BlockPosition((int) relativeX, (int) this.locY(), (int) relativeZ), 0, true));
++                            double relativeX = player.getX() + (deltaX / deltaLength) * viewDistance;
++                            double relativeZ = player.getZ() + (deltaZ / deltaLength) * viewDistance;
++                            player.connection.send(new PacketPlayOutWorldEvent(1023, new BlockPosition((int) relativeX, (int) this.getY(), (int) relativeZ), 0, true));
 +                        } else {
-+                            player.connection.sendPacket(new PacketPlayOutWorldEvent(1023, this.getChunkCoordinates(), 0, true));
++                            player.connection.send(new PacketPlayOutWorldEvent(1023, this.blockPosition(), 0, true));
 +                        }
 +                    }
 +                    // CraftBukkit end
                  }
              }
  
-             this.setInvul(i);
+             this.setInvulnerableTicks(i);
              if (this.tickCount % 10 == 0) {
 -                this.heal(10.0F);
 +                this.heal(10.0F, EntityRegainHealthEvent.RegainReason.WITHER_SPAWN); // CraftBukkit
              }
  
          } else {
-@@ -292,6 +327,7 @@
+@@ -304,6 +339,7 @@
                          if (!list.isEmpty()) {
                              EntityLiving entityliving1 = (EntityLiving) list.get(this.random.nextInt(list.size()));
  
 +                            if (CraftEventFactory.callEntityTargetLivingEvent(this, entityliving1, EntityTargetEvent.TargetReason.CLOSEST_ENTITY).isCancelled()) continue; // CraftBukkit
-                             this.setHeadTarget(i, entityliving1.getId());
+                             this.setAlternativeTarget(i, entityliving1.getId());
                          }
                      }
-@@ -322,6 +358,11 @@
-                                 IBlockData iblockdata = this.level.getType(blockposition);
+@@ -334,6 +370,11 @@
+                                 IBlockData iblockdata = this.level.getBlockState(blockposition);
  
-                                 if (c(iblockdata)) {
+                                 if (canDestroy(iblockdata)) {
 +                                    // CraftBukkit start
-+                                    if (CraftEventFactory.callEntityChangeBlockEvent(this, blockposition, Blocks.AIR.getBlockData()).isCancelled()) {
++                                    if (CraftEventFactory.callEntityChangeBlockEvent(this, blockposition, Blocks.AIR.defaultBlockState()).isCancelled()) {
 +                                        continue;
 +                                    }
 +                                    // CraftBukkit end
-                                     flag = this.level.a(blockposition, true, this) || flag;
+                                     flag = this.level.destroyBlock(blockposition, true, this) || flag;
                                  }
                              }
-@@ -335,7 +376,7 @@
+@@ -347,7 +388,7 @@
              }
  
              if (this.tickCount % 20 == 0) {

@@ -20,7 +20,7 @@ public class SoundTest extends AbstractTestingBase {
     @Test
     public void testReverse() {
         for (MinecraftKey effect : IRegistry.SOUND_EVENT.keySet()) {
-            assertNotNull(effect + "", Sound.valueOf(effect.getKey().replace('.', '_').toUpperCase(java.util.Locale.ENGLISH)));
+            assertNotNull(effect + "", Sound.valueOf(effect.getPath().replace('.', '_').toUpperCase(java.util.Locale.ENGLISH)));
         }
     }
 

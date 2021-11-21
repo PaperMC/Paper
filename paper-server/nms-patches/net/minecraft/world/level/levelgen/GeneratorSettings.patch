@@ -13,42 +13,57 @@
  
 -    public static final Codec<GeneratorSettings> CODEC = RecordCodecBuilder.create((instance) -> {
 +    public static final Codec<GeneratorSettings> CODEC = RecordCodecBuilder.<GeneratorSettings>create((instance) -> { // CraftBukkit - decompile error
-         return instance.group(Codec.LONG.fieldOf("seed").stable().forGetter(GeneratorSettings::getSeed), Codec.BOOL.fieldOf("generate_features").orElse(true).stable().forGetter(GeneratorSettings::shouldGenerateMapFeatures), Codec.BOOL.fieldOf("bonus_chest").orElse(false).stable().forGetter(GeneratorSettings::c), RegistryMaterials.b(IRegistry.LEVEL_STEM_REGISTRY, Lifecycle.stable(), WorldDimension.CODEC).xmap(WorldDimension::a, Function.identity()).fieldOf("dimensions").forGetter(GeneratorSettings::d), Codec.STRING.optionalFieldOf("legacy_custom_options").stable().forGetter((generatorsettings) -> {
+         return instance.group(Codec.LONG.fieldOf("seed").stable().forGetter(GeneratorSettings::seed), Codec.BOOL.fieldOf("generate_features").orElse(true).stable().forGetter(GeneratorSettings::generateFeatures), Codec.BOOL.fieldOf("bonus_chest").orElse(false).stable().forGetter(GeneratorSettings::generateBonusChest), RegistryMaterials.dataPackCodec(IRegistry.LEVEL_STEM_REGISTRY, Lifecycle.stable(), WorldDimension.CODEC).xmap(WorldDimension::sortMap, Function.identity()).fieldOf("dimensions").forGetter(GeneratorSettings::dimensions), Codec.STRING.optionalFieldOf("legacy_custom_options").stable().forGetter((generatorsettings) -> {
              return generatorsettings.legacyCustomOptions;
          })).apply(instance, instance.stable(GeneratorSettings::new));
-@@ -121,7 +126,7 @@
-     public static RegistryMaterials<WorldDimension> a(RegistryMaterials<WorldDimension> registrymaterials, Supplier<DimensionManager> supplier, ChunkGenerator chunkgenerator) {
+@@ -130,7 +135,7 @@
+     public static RegistryMaterials<WorldDimension> withOverworld(RegistryMaterials<WorldDimension> registrymaterials, Supplier<DimensionManager> supplier, ChunkGenerator chunkgenerator) {
          RegistryMaterials<WorldDimension> registrymaterials1 = new RegistryMaterials<>(IRegistry.LEVEL_STEM_REGISTRY, Lifecycle.experimental());
  
--        registrymaterials1.a(WorldDimension.OVERWORLD, (Object) (new WorldDimension(supplier, chunkgenerator)), Lifecycle.stable());
-+        registrymaterials1.a(WorldDimension.OVERWORLD, (new WorldDimension(supplier, chunkgenerator)), Lifecycle.stable()); // CraftBukkit - decompile error
-         Iterator iterator = registrymaterials.d().iterator();
+-        registrymaterials1.register(WorldDimension.OVERWORLD, (Object) (new WorldDimension(supplier, chunkgenerator)), Lifecycle.stable());
++        registrymaterials1.register(WorldDimension.OVERWORLD, (new WorldDimension(supplier, chunkgenerator)), Lifecycle.stable()); // CraftBukkit - decompile error
+         Iterator iterator = registrymaterials.entrySet().iterator();
  
          while (iterator.hasNext()) {
-@@ -129,7 +134,7 @@
+@@ -138,7 +143,7 @@
              ResourceKey<WorldDimension> resourcekey = (ResourceKey) entry.getKey();
  
              if (resourcekey != WorldDimension.OVERWORLD) {
--                registrymaterials1.a(resourcekey, (Object) ((WorldDimension) entry.getValue()), registrymaterials.d((Object) ((WorldDimension) entry.getValue())));
-+                registrymaterials1.a(resourcekey, ((WorldDimension) entry.getValue()), registrymaterials.d(((WorldDimension) entry.getValue()))); // CraftBukkit - decompile error
+-                registrymaterials1.register(resourcekey, (Object) ((WorldDimension) entry.getValue()), registrymaterials.lifecycle((WorldDimension) entry.getValue()));
++                registrymaterials1.register(resourcekey, ((WorldDimension) entry.getValue()), registrymaterials.lifecycle((WorldDimension) entry.getValue())); // CraftBukkit - decompile error
              }
          }
  
-@@ -242,7 +247,7 @@
+@@ -159,17 +164,19 @@
+         }
+     }
+ 
+-    public ImmutableSet<ResourceKey<World>> levels() {
++    // CraftBukkit start
++    public ImmutableSet<ResourceKey<DimensionManager>> levels() {
+         return (ImmutableSet) this.dimensions().entrySet().stream().map(Entry::getKey).map(GeneratorSettings::levelStemToLevel).collect(ImmutableSet.toImmutableSet());
+     }
+ 
+-    public static ResourceKey<World> levelStemToLevel(ResourceKey<WorldDimension> resourcekey) {
+-        return ResourceKey.create(IRegistry.DIMENSION_REGISTRY, resourcekey.location());
++    public static ResourceKey<DimensionManager> levelStemToLevel(ResourceKey<WorldDimension> resourcekey) {
++        return ResourceKey.create(IRegistry.DIMENSION_TYPE_REGISTRY, resourcekey.location());
+     }
+ 
+-    public static ResourceKey<WorldDimension> levelToLevelStem(ResourceKey<World> resourcekey) {
++    public static ResourceKey<WorldDimension> levelToLevelStem(ResourceKey<DimensionManager> resourcekey) {
+         return ResourceKey.create(IRegistry.LEVEL_STEM_REGISTRY, resourcekey.location());
+     }
++    // CraftBukkit end
+ 
+     public boolean isDebug() {
+         return this.overworld() instanceof ChunkProviderDebug;
+@@ -246,7 +253,7 @@
          switch (b0) {
              case 0:
-                 JsonObject jsonobject = !s.isEmpty() ? ChatDeserializer.a(s) : new JsonObject();
+                 JsonObject jsonobject = !s.isEmpty() ? ChatDeserializer.parse(s) : new JsonObject();
 -                Dynamic<JsonElement> dynamic = new Dynamic(JsonOps.INSTANCE, jsonobject);
-+                Dynamic<JsonElement> dynamic = new Dynamic(RegistryReadOps.a(JsonOps.INSTANCE, IResourceManager.Empty.INSTANCE, (IRegistryCustom.Dimension) iregistrycustom), jsonobject); // CraftBukkit - SPIGOT-6237
++                Dynamic<JsonElement> dynamic = new Dynamic(RegistryReadOps.createAndLoad(JsonOps.INSTANCE, IResourceManager.Empty.INSTANCE, (IRegistryCustom.Dimension) iregistrycustom), jsonobject); // CraftBukkit - SPIGOT-6237
                  DataResult dataresult = GeneratorSettingsFlat.CODEC.parse(dynamic);
                  Logger logger = GeneratorSettings.LOGGER;
  
-@@ -278,7 +283,7 @@
-                 Entry<ResourceKey<WorldDimension>, WorldDimension> entry = (Entry) iterator.next();
-                 ResourceKey<WorldDimension> resourcekey = (ResourceKey) entry.getKey();
- 
--                registrymaterials.a(resourcekey, (Object) (new WorldDimension(((WorldDimension) entry.getValue()).a(), ((WorldDimension) entry.getValue()).c().withSeed(j))), this.dimensions.d((Object) ((WorldDimension) entry.getValue())));
-+                registrymaterials.a(resourcekey, (Object) (new WorldDimension(((WorldDimension) entry.getValue()).a(), ((WorldDimension) entry.getValue()).c().withSeed(j))), this.dimensions.d(((WorldDimension) entry.getValue()))); // CraftBukkit - decompile error
-             }
-         } else {
-             registrymaterials = this.dimensions;

@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/player/EntityHuman.java
 +++ b/net/minecraft/world/entity/player/EntityHuman.java
-@@ -113,6 +113,19 @@
+@@ -111,6 +111,19 @@
  import net.minecraft.world.scores.ScoreboardTeam;
  import net.minecraft.world.scores.ScoreboardTeamBase;
  
@@ -20,18 +20,18 @@
  public abstract class EntityHuman extends EntityLiving {
  
      public static final String UUID_PREFIX_OFFLINE_PLAYER = "OfflinePlayer:";
-@@ -126,7 +139,8 @@
+@@ -124,7 +137,8 @@
      public static final float SWIMMING_BB_HEIGHT = 0.6F;
      public static final float DEFAULT_EYE_HEIGHT = 1.62F;
-     public static final EntitySize STANDING_DIMENSIONS = EntitySize.b(0.6F, 1.8F);
--    private static final Map<EntityPose, EntitySize> POSES = ImmutableMap.builder().put(EntityPose.STANDING, EntityHuman.STANDING_DIMENSIONS).put(EntityPose.SLEEPING, EntityHuman.SLEEPING_DIMENSIONS).put(EntityPose.FALL_FLYING, EntitySize.b(0.6F, 0.6F)).put(EntityPose.SWIMMING, EntitySize.b(0.6F, 0.6F)).put(EntityPose.SPIN_ATTACK, EntitySize.b(0.6F, 0.6F)).put(EntityPose.CROUCHING, EntitySize.b(0.6F, 1.5F)).put(EntityPose.DYING, EntitySize.c(0.2F, 0.2F)).build();
+     public static final EntitySize STANDING_DIMENSIONS = EntitySize.scalable(0.6F, 1.8F);
+-    private static final Map<EntityPose, EntitySize> POSES = ImmutableMap.builder().put(EntityPose.STANDING, EntityHuman.STANDING_DIMENSIONS).put(EntityPose.SLEEPING, EntityHuman.SLEEPING_DIMENSIONS).put(EntityPose.FALL_FLYING, EntitySize.scalable(0.6F, 0.6F)).put(EntityPose.SWIMMING, EntitySize.scalable(0.6F, 0.6F)).put(EntityPose.SPIN_ATTACK, EntitySize.scalable(0.6F, 0.6F)).put(EntityPose.CROUCHING, EntitySize.scalable(0.6F, 1.5F)).put(EntityPose.DYING, EntitySize.fixed(0.2F, 0.2F)).build();
 +    // CraftBukkit - decompile error
-+    private static final Map<EntityPose, EntitySize> POSES = ImmutableMap.<EntityPose, EntitySize>builder().put(EntityPose.STANDING, EntityHuman.STANDING_DIMENSIONS).put(EntityPose.SLEEPING, EntityHuman.SLEEPING_DIMENSIONS).put(EntityPose.FALL_FLYING, EntitySize.b(0.6F, 0.6F)).put(EntityPose.SWIMMING, EntitySize.b(0.6F, 0.6F)).put(EntityPose.SPIN_ATTACK, EntitySize.b(0.6F, 0.6F)).put(EntityPose.CROUCHING, EntitySize.b(0.6F, 1.5F)).put(EntityPose.DYING, EntitySize.c(0.2F, 0.2F)).build();
++    private static final Map<EntityPose, EntitySize> POSES = ImmutableMap.<EntityPose, EntitySize>builder().put(EntityPose.STANDING, EntityHuman.STANDING_DIMENSIONS).put(EntityPose.SLEEPING, EntityHuman.SLEEPING_DIMENSIONS).put(EntityPose.FALL_FLYING, EntitySize.scalable(0.6F, 0.6F)).put(EntityPose.SWIMMING, EntitySize.scalable(0.6F, 0.6F)).put(EntityPose.SPIN_ATTACK, EntitySize.scalable(0.6F, 0.6F)).put(EntityPose.CROUCHING, EntitySize.scalable(0.6F, 1.5F)).put(EntityPose.DYING, EntitySize.fixed(0.2F, 0.2F)).build();
      private static final int FLY_ACHIEVEMENT_SPEED = 25;
-     private static final DataWatcherObject<Float> DATA_PLAYER_ABSORPTION_ID = DataWatcher.a(EntityHuman.class, DataWatcherRegistry.FLOAT);
-     private static final DataWatcherObject<Integer> DATA_SCORE_ID = DataWatcher.a(EntityHuman.class, DataWatcherRegistry.INT);
-@@ -136,10 +150,10 @@
-     protected static final DataWatcherObject<NBTTagCompound> DATA_SHOULDER_RIGHT = DataWatcher.a(EntityHuman.class, DataWatcherRegistry.COMPOUND_TAG);
+     private static final DataWatcherObject<Float> DATA_PLAYER_ABSORPTION_ID = DataWatcher.defineId(EntityHuman.class, DataWatcherRegistry.FLOAT);
+     private static final DataWatcherObject<Integer> DATA_SCORE_ID = DataWatcher.defineId(EntityHuman.class, DataWatcherRegistry.INT);
+@@ -134,10 +148,10 @@
+     protected static final DataWatcherObject<NBTTagCompound> DATA_SHOULDER_RIGHT = DataWatcher.defineId(EntityHuman.class, DataWatcherRegistry.COMPOUND_TAG);
      private long timeEntitySatOnShoulder;
      private final PlayerInventory inventory = new PlayerInventory(this);
 -    protected InventoryEnderChest enderChestInventory = new InventoryEnderChest();
@@ -43,7 +43,7 @@
      protected int jumpTriggerTime;
      public float oBob;
      public float bob;
-@@ -166,6 +180,16 @@
+@@ -164,6 +178,16 @@
      @Nullable
      public EntityFishingHook fishing;
  
@@ -60,16 +60,16 @@
      public EntityHuman(World world, BlockPosition blockposition, float f, GameProfile gameprofile) {
          super(EntityTypes.PLAYER, world);
          this.lastItemInMainHand = ItemStack.EMPTY;
-@@ -304,7 +328,7 @@
-         ItemStack itemstack = this.getEquipment(EnumItemSlot.HEAD);
+@@ -302,7 +326,7 @@
+         ItemStack itemstack = this.getItemBySlot(EnumItemSlot.HEAD);
  
-         if (itemstack.a(Items.TURTLE_HELMET) && !this.a((Tag) TagsFluid.WATER)) {
+         if (itemstack.is(Items.TURTLE_HELMET) && !this.isEyeInFluid(TagsFluid.WATER)) {
 -            this.addEffect(new MobEffect(MobEffects.WATER_BREATHING, 200, 0, false, false, true));
 +            this.addEffect(new MobEffect(MobEffects.WATER_BREATHING, 200, 0, false, false, true), org.bukkit.event.entity.EntityPotionEffectEvent.Cause.TURTLE_HELMET); // CraftBukkit
          }
  
      }
-@@ -496,7 +520,8 @@
+@@ -494,7 +518,8 @@
  
          if (this.level.getDifficulty() == EnumDifficulty.PEACEFUL && this.level.getGameRules().getBoolean(GameRules.RULE_NATURAL_REGENERATION)) {
              if (this.getHealth() < this.getMaxHealth() && this.tickCount % 20 == 0) {
@@ -78,18 +78,9 @@
 +                this.heal(1.0F, org.bukkit.event.entity.EntityRegainHealthEvent.RegainReason.REGEN);
              }
  
-             if (this.foodData.c() && this.tickCount % 10 == 0) {
-@@ -545,7 +570,7 @@
-             }
- 
-             if (!list1.isEmpty()) {
--                this.c((Entity) SystemUtils.a((List) list1, this.random));
-+                this.c((Entity) SystemUtils.a(list1, this.random)); // CraftBukkit - decompile error
-             }
-         }
- 
-@@ -684,6 +709,30 @@
-                 entityitem.setMot((double) (-f3 * f2 * 0.3F) + Math.cos((double) f5) * (double) f6, (double) (-f1 * 0.3F + 0.1F + (this.random.nextFloat() - this.random.nextFloat()) * 0.1F), (double) (f4 * f2 * 0.3F) + Math.sin((double) f5) * (double) f6);
+             if (this.foodData.needsFood() && this.tickCount % 10 == 0) {
+@@ -682,6 +707,30 @@
+                 entityitem.setDeltaMovement((double) (-f3 * f2 * 0.3F) + Math.cos((double) f5) * (double) f6, (double) (-f1 * 0.3F + 0.1F + (this.random.nextFloat() - this.random.nextFloat()) * 0.1F), (double) (f4 * f2 * 0.3F) + Math.sin((double) f5) * (double) f6);
              }
  
 +            // CraftBukkit start - fire PlayerDropItemEvent
@@ -119,47 +110,47 @@
              return entityitem;
          }
      }
-@@ -810,16 +859,17 @@
-         if (this.isInvulnerable(damagesource)) {
+@@ -808,16 +857,17 @@
+         if (this.isInvulnerableTo(damagesource)) {
              return false;
-         } else if (this.abilities.invulnerable && !damagesource.ignoresInvulnerability()) {
+         } else if (this.abilities.invulnerable && !damagesource.isBypassInvul()) {
 +            this.forceExplosionKnockback = true; // SPIGOT-5258 - Make invulnerable players get knockback from explosions
              return false;
          } else {
              this.noActionTime = 0;
-             if (this.dV()) {
+             if (this.isDeadOrDying()) {
                  return false;
              } else {
--                this.releaseShoulderEntities();
+-                this.removeEntitiesOnShoulder();
 +                // this.releaseShoulderEntities(); // CraftBukkit - moved down
-                 if (damagesource.w()) {
+                 if (damagesource.scalesWithDifficulty()) {
                      if (this.level.getDifficulty() == EnumDifficulty.PEACEFUL) {
 -                        f = 0.0F;
 +                        return false; // CraftBukkit - f = 0.0f -> return false
                      }
  
                      if (this.level.getDifficulty() == EnumDifficulty.EASY) {
-@@ -831,7 +881,13 @@
+@@ -829,7 +879,13 @@
                      }
                  }
  
--                return f == 0.0F ? false : super.damageEntity(damagesource, f);
+-                return f == 0.0F ? false : super.hurt(damagesource, f);
 +                // CraftBukkit start - Don't filter out 0 damage
-+                boolean damaged = super.damageEntity(damagesource, f);
++                boolean damaged = super.hurt(damagesource, f);
 +                if (damaged) {
-+                    this.releaseShoulderEntities();
++                    this.removeEntitiesOnShoulder();
 +                }
 +                return damaged;
 +                // CraftBukkit end
              }
          }
      }
-@@ -851,10 +907,29 @@
+@@ -849,10 +905,29 @@
      }
  
-     public boolean a(EntityHuman entityhuman) {
--        ScoreboardTeamBase scoreboardteambase = this.getScoreboardTeam();
--        ScoreboardTeamBase scoreboardteambase1 = entityhuman.getScoreboardTeam();
+     public boolean canHarmPlayer(EntityHuman entityhuman) {
+-        ScoreboardTeamBase scoreboardteambase = this.getTeam();
+-        ScoreboardTeamBase scoreboardteambase1 = entityhuman.getTeam();
 +        // CraftBukkit start - Change to check OTHER player's scoreboard team according to API
 +        // To summarize this method's logic, it's "Can parameter hurt this"
 +        org.bukkit.scoreboard.Team team;
@@ -171,47 +162,47 @@
 +            }
 +        } else {
 +            // This should never be called, but is implemented anyway
-+            org.bukkit.OfflinePlayer thisPlayer = entityhuman.level.getCraftServer().getOfflinePlayer(entityhuman.getName());
++            org.bukkit.OfflinePlayer thisPlayer = entityhuman.level.getCraftServer().getOfflinePlayer(entityhuman.getScoreboardName());
 +            team = entityhuman.level.getCraftServer().getScoreboardManager().getMainScoreboard().getPlayerTeam(thisPlayer);
 +            if (team == null || team.allowFriendlyFire()) {
 +                return true;
 +            }
 +        }
  
--        return scoreboardteambase == null ? true : (!scoreboardteambase.isAlly(scoreboardteambase1) ? true : scoreboardteambase.allowFriendlyFire());
+-        return scoreboardteambase == null ? true : (!scoreboardteambase.isAlliedTo(scoreboardteambase1) ? true : scoreboardteambase.isAllowFriendlyFire());
 +        if (this instanceof EntityPlayer) {
 +            return !team.hasPlayer(((EntityPlayer) this).getBukkitEntity());
 +        }
-+        return !team.hasPlayer(this.level.getCraftServer().getOfflinePlayer(this.getName()));
++        return !team.hasPlayer(this.level.getCraftServer().getOfflinePlayer(this.getScoreboardName()));
 +        // CraftBukkit end
      }
  
      @Override
-@@ -896,8 +971,13 @@
+@@ -894,8 +969,13 @@
          }
      }
  
 +    // CraftBukkit start
      @Override
--    protected void damageEntity0(DamageSource damagesource, float f) {
+-    protected void actuallyHurt(DamageSource damagesource, float f) {
 +    protected boolean damageEntity0(DamageSource damagesource, float f) { // void -> boolean
 +        if (true) {
 +            return super.damageEntity0(damagesource, f);
 +        }
 +        // CraftBukkit end
-         if (!this.isInvulnerable(damagesource)) {
-             f = this.applyArmorModifier(damagesource, f);
-             f = this.applyMagicModifier(damagesource, f);
-@@ -912,7 +992,7 @@
+         if (!this.isInvulnerableTo(damagesource)) {
+             f = this.getDamageAfterArmorAbsorb(damagesource, f);
+             f = this.getDamageAfterMagicAbsorb(damagesource, f);
+@@ -910,7 +990,7 @@
              }
  
              if (f != 0.0F) {
--                this.applyExhaustion(damagesource.getExhaustionCost());
-+                this.applyExhaustion(damagesource.getExhaustionCost(), EntityExhaustionEvent.ExhaustionReason.DAMAGED); // CraftBukkit - EntityExhaustionEvent
+-                this.causeFoodExhaustion(damagesource.getFoodExhaustion());
++                this.causeFoodExhaustion(damagesource.getFoodExhaustion(), EntityExhaustionEvent.ExhaustionReason.DAMAGED); // CraftBukkit - EntityExhaustionEvent
                  float f3 = this.getHealth();
  
                  this.setHealth(this.getHealth() - f);
-@@ -923,6 +1003,7 @@
+@@ -921,6 +1001,7 @@
  
              }
          }
@@ -219,47 +210,47 @@
      }
  
      @Override
-@@ -1082,7 +1163,7 @@
+@@ -1080,7 +1161,7 @@
  
                  f *= 0.2F + f2 * f2 * 0.8F;
                  f1 *= f2;
--                this.resetAttackCooldown();
+-                this.resetAttackStrengthTicker();
 +                // this.resetAttackCooldown(); // CraftBukkit - Moved to EntityLiving to reset the cooldown after the damage is dealt
                  if (f > 0.0F || f1 > 0.0F) {
                      boolean flag = f2 > 0.9F;
                      boolean flag1 = false;
-@@ -1121,8 +1202,15 @@
+@@ -1119,8 +1200,15 @@
                      if (entity instanceof EntityLiving) {
                          f3 = ((EntityLiving) entity).getHealth();
-                         if (j > 0 && !entity.isBurning()) {
+                         if (j > 0 && !entity.isOnFire()) {
 -                            flag4 = true;
--                            entity.setOnFire(1);
+-                            entity.setSecondsOnFire(1);
 +                            // CraftBukkit start - Call a combust event when somebody hits with a fire enchanted item
 +                            EntityCombustByEntityEvent combustEvent = new EntityCombustByEntityEvent(this.getBukkitEntity(), entity.getBukkitEntity(), 1);
 +                            org.bukkit.Bukkit.getPluginManager().callEvent(combustEvent);
 +
 +                            if (!combustEvent.isCancelled()) {
 +                                flag4 = true;
-+                                entity.setOnFire(combustEvent.getDuration(), false);
++                                entity.setSecondsOnFire(combustEvent.getDuration(), false);
 +                            }
 +                            // CraftBukkit end
                          }
                      }
  
-@@ -1150,8 +1238,11 @@
+@@ -1148,8 +1236,11 @@
                                  EntityLiving entityliving = (EntityLiving) iterator.next();
  
-                                 if (entityliving != this && entityliving != entity && !this.p(entityliving) && (!(entityliving instanceof EntityArmorStand) || !((EntityArmorStand) entityliving).isMarker()) && this.f((Entity) entityliving) < 9.0D) {
+                                 if (entityliving != this && entityliving != entity && !this.isAlliedTo((Entity) entityliving) && (!(entityliving instanceof EntityArmorStand) || !((EntityArmorStand) entityliving).isMarker()) && this.distanceToSqr((Entity) entityliving) < 9.0D) {
 +                                    // CraftBukkit start - Only apply knockback if the damage hits
-+                                    if (entityliving.damageEntity(DamageSource.playerAttack(this).sweep(), f4)) {
-                                     entityliving.p(0.4000000059604645D, (double) MathHelper.sin(this.getYRot() * 0.017453292F), (double) (-MathHelper.cos(this.getYRot() * 0.017453292F)));
--                                    entityliving.damageEntity(DamageSource.playerAttack(this), f4);
++                                    if (entityliving.hurt(DamageSource.playerAttack(this).sweep(), f4)) {
+                                     entityliving.knockback(0.4000000059604645D, (double) MathHelper.sin(this.getYRot() * 0.017453292F), (double) (-MathHelper.cos(this.getYRot() * 0.017453292F)));
+-                                    entityliving.hurt(DamageSource.playerAttack(this), f4);
 +                                    }
 +                                    // CraftBukkit end
                                  }
                              }
  
-@@ -1160,9 +1251,26 @@
+@@ -1158,9 +1249,26 @@
                          }
  
                          if (entity instanceof EntityPlayer && entity.hurtMarked) {
@@ -278,40 +269,40 @@
 +                            }
 +
 +                            if (!cancelled) {
-                             ((EntityPlayer) entity).connection.sendPacket(new PacketPlayOutEntityVelocity(entity));
+                             ((EntityPlayer) entity).connection.send(new PacketPlayOutEntityVelocity(entity));
                              entity.hurtMarked = false;
-                             entity.setMot(vec3d);
+                             entity.setDeltaMovement(vec3d);
 +                            }
 +                            // CraftBukkit end
                          }
  
                          if (flag2) {
-@@ -1207,7 +1315,14 @@
+@@ -1205,7 +1313,14 @@
  
-                             this.a(StatisticList.DAMAGE_DEALT, Math.round(f5 * 10.0F));
+                             this.awardStat(StatisticList.DAMAGE_DEALT, Math.round(f5 * 10.0F));
                              if (j > 0) {
--                                entity.setOnFire(j * 4);
+-                                entity.setSecondsOnFire(j * 4);
 +                                // CraftBukkit start - Call a combust event when somebody hits with a fire enchanted item
 +                                EntityCombustByEntityEvent combustEvent = new EntityCombustByEntityEvent(this.getBukkitEntity(), entity.getBukkitEntity(), j * 4);
 +                                org.bukkit.Bukkit.getPluginManager().callEvent(combustEvent);
 +
 +                                if (!combustEvent.isCancelled()) {
-+                                    entity.setOnFire(combustEvent.getDuration(), false);
++                                    entity.setSecondsOnFire(combustEvent.getDuration(), false);
 +                                }
 +                                // CraftBukkit end
                              }
  
                              if (this.level instanceof WorldServer && f5 > 2.0F) {
-@@ -1217,12 +1332,17 @@
+@@ -1215,12 +1330,17 @@
                              }
                          }
  
--                        this.applyExhaustion(0.1F);
-+                        this.applyExhaustion(0.1F, EntityExhaustionEvent.ExhaustionReason.ATTACK); // CraftBukkit - EntityExhaustionEvent
+-                        this.causeFoodExhaustion(0.1F);
++                        this.causeFoodExhaustion(0.1F, EntityExhaustionEvent.ExhaustionReason.ATTACK); // CraftBukkit - EntityExhaustionEvent
                      } else {
-                         this.level.playSound((EntityHuman) null, this.locX(), this.locY(), this.locZ(), SoundEffects.PLAYER_ATTACK_NODAMAGE, this.getSoundCategory(), 1.0F, 1.0F);
+                         this.level.playSound((EntityHuman) null, this.getX(), this.getY(), this.getZ(), SoundEffects.PLAYER_ATTACK_NODAMAGE, this.getSoundSource(), 1.0F, 1.0F);
                          if (flag4) {
-                             entity.extinguish();
+                             entity.clearFire();
                          }
 +                        // CraftBukkit start - resync on cancelled event
 +                        if (this instanceof EntityPlayer) {
@@ -321,166 +312,166 @@
                      }
                  }
  
-@@ -1295,6 +1415,12 @@
-     public void a(ItemStack itemstack, ItemStack itemstack1, ClickAction clickaction) {}
+@@ -1293,6 +1413,12 @@
+     public void updateTutorialInventoryAction(ItemStack itemstack, ItemStack itemstack1, ClickAction clickaction) {}
  
-     public Either<EntityHuman.EnumBedResult, Unit> sleep(BlockPosition blockposition) {
+     public Either<EntityHuman.EnumBedResult, Unit> startSleepInBed(BlockPosition blockposition) {
 +        // CraftBukkit start
-+        return this.sleep(blockposition, false);
++        return this.startSleepInBed(blockposition, false);
 +    }
 +
-+    public Either<EntityHuman.EnumBedResult, Unit> sleep(BlockPosition blockposition, boolean force) {
++    public Either<EntityHuman.EnumBedResult, Unit> startSleepInBed(BlockPosition blockposition, boolean force) {
 +        // CraftBukkit end
-         this.entitySleep(blockposition);
+         this.startSleeping(blockposition);
          this.sleepCounter = 0;
          return Either.right(Unit.INSTANCE);
-@@ -1379,9 +1505,9 @@
-         super.jump();
-         this.a(StatisticList.JUMP);
+@@ -1377,9 +1503,9 @@
+         super.jumpFromGround();
+         this.awardStat(StatisticList.JUMP);
          if (this.isSprinting()) {
--            this.applyExhaustion(0.2F);
-+            this.applyExhaustion(0.2F, EntityExhaustionEvent.ExhaustionReason.JUMP_SPRINT); // CraftBukkit - EntityExhaustionEvent
+-            this.causeFoodExhaustion(0.2F);
++            this.causeFoodExhaustion(0.2F, EntityExhaustionEvent.ExhaustionReason.JUMP_SPRINT); // CraftBukkit - EntityExhaustionEvent
          } else {
--            this.applyExhaustion(0.05F);
-+            this.applyExhaustion(0.05F, EntityExhaustionEvent.ExhaustionReason.JUMP); // CraftBukkit - EntityExhaustionEvent
+-            this.causeFoodExhaustion(0.05F);
++            this.causeFoodExhaustion(0.05F, EntityExhaustionEvent.ExhaustionReason.JUMP); // CraftBukkit - EntityExhaustionEvent
          }
  
      }
-@@ -1415,7 +1541,11 @@
-             this.setMot(vec3d2.x, d3 * 0.6D, vec3d2.z);
+@@ -1413,7 +1539,11 @@
+             this.setDeltaMovement(vec3d2.x, d3 * 0.6D, vec3d2.z);
              this.flyingSpeed = f;
-             this.fallDistance = 0.0F;
--            this.setFlag(7, false);
+             this.resetFallDistance();
+-            this.setSharedFlag(7, false);
 +            // CraftBukkit start
-+            if (getFlag(7) && !org.bukkit.craftbukkit.event.CraftEventFactory.callToggleGlideEvent(this, false).isCancelled()) {
-+                this.setFlag(7, false);
++            if (getSharedFlag(7) && !org.bukkit.craftbukkit.event.CraftEventFactory.callToggleGlideEvent(this, false).isCancelled()) {
++                this.setSharedFlag(7, false);
 +            }
 +            // CraftBukkit end
          } else {
-             super.g(vec3d);
+             super.travel(vec3d);
          }
-@@ -1450,19 +1580,19 @@
+@@ -1448,19 +1578,19 @@
                  i = Math.round((float) Math.sqrt(d0 * d0 + d1 * d1 + d2 * d2) * 100.0F);
                  if (i > 0) {
-                     this.a(StatisticList.SWIM_ONE_CM, i);
--                    this.applyExhaustion(0.01F * (float) i * 0.01F);
-+                    this.applyExhaustion(0.01F * (float) i * 0.01F, EntityExhaustionEvent.ExhaustionReason.SWIM); // CraftBukkit - EntityExhaustionEvent
+                     this.awardStat(StatisticList.SWIM_ONE_CM, i);
+-                    this.causeFoodExhaustion(0.01F * (float) i * 0.01F);
++                    this.causeFoodExhaustion(0.01F * (float) i * 0.01F, EntityExhaustionEvent.ExhaustionReason.SWIM); // CraftBukkit - EntityExhaustionEvent
                  }
-             } else if (this.a((Tag) TagsFluid.WATER)) {
+             } else if (this.isEyeInFluid(TagsFluid.WATER)) {
                  i = Math.round((float) Math.sqrt(d0 * d0 + d1 * d1 + d2 * d2) * 100.0F);
                  if (i > 0) {
-                     this.a(StatisticList.WALK_UNDER_WATER_ONE_CM, i);
--                    this.applyExhaustion(0.01F * (float) i * 0.01F);
-+                    this.applyExhaustion(0.01F * (float) i * 0.01F, EntityExhaustionEvent.ExhaustionReason.WALK_UNDERWATER); // CraftBukkit - EntityExhaustionEvent
+                     this.awardStat(StatisticList.WALK_UNDER_WATER_ONE_CM, i);
+-                    this.causeFoodExhaustion(0.01F * (float) i * 0.01F);
++                    this.causeFoodExhaustion(0.01F * (float) i * 0.01F, EntityExhaustionEvent.ExhaustionReason.WALK_UNDERWATER); // CraftBukkit - EntityExhaustionEvent
                  }
              } else if (this.isInWater()) {
                  i = Math.round((float) Math.sqrt(d0 * d0 + d2 * d2) * 100.0F);
                  if (i > 0) {
-                     this.a(StatisticList.WALK_ON_WATER_ONE_CM, i);
--                    this.applyExhaustion(0.01F * (float) i * 0.01F);
-+                    this.applyExhaustion(0.01F * (float) i * 0.01F, EntityExhaustionEvent.ExhaustionReason.WALK_ON_WATER); // CraftBukkit - EntityExhaustionEvent
+                     this.awardStat(StatisticList.WALK_ON_WATER_ONE_CM, i);
+-                    this.causeFoodExhaustion(0.01F * (float) i * 0.01F);
++                    this.causeFoodExhaustion(0.01F * (float) i * 0.01F, EntityExhaustionEvent.ExhaustionReason.WALK_ON_WATER); // CraftBukkit - EntityExhaustionEvent
                  }
-             } else if (this.isClimbing()) {
+             } else if (this.onClimbable()) {
                  if (d1 > 0.0D) {
-@@ -1473,13 +1603,13 @@
+@@ -1471,13 +1601,13 @@
                  if (i > 0) {
                      if (this.isSprinting()) {
-                         this.a(StatisticList.SPRINT_ONE_CM, i);
--                        this.applyExhaustion(0.1F * (float) i * 0.01F);
-+                        this.applyExhaustion(0.1F * (float) i * 0.01F, EntityExhaustionEvent.ExhaustionReason.SPRINT); // CraftBukkit - EntityExhaustionEvent
+                         this.awardStat(StatisticList.SPRINT_ONE_CM, i);
+-                        this.causeFoodExhaustion(0.1F * (float) i * 0.01F);
++                        this.causeFoodExhaustion(0.1F * (float) i * 0.01F, EntityExhaustionEvent.ExhaustionReason.SPRINT); // CraftBukkit - EntityExhaustionEvent
                      } else if (this.isCrouching()) {
-                         this.a(StatisticList.CROUCH_ONE_CM, i);
--                        this.applyExhaustion(0.0F * (float) i * 0.01F);
-+                        this.applyExhaustion(0.0F * (float) i * 0.01F, EntityExhaustionEvent.ExhaustionReason.CROUCH); // CraftBukkit - EntityExhaustionEvent
+                         this.awardStat(StatisticList.CROUCH_ONE_CM, i);
+-                        this.causeFoodExhaustion(0.0F * (float) i * 0.01F);
++                        this.causeFoodExhaustion(0.0F * (float) i * 0.01F, EntityExhaustionEvent.ExhaustionReason.CROUCH); // CraftBukkit - EntityExhaustionEvent
                      } else {
-                         this.a(StatisticList.WALK_ONE_CM, i);
--                        this.applyExhaustion(0.0F * (float) i * 0.01F);
-+                        this.applyExhaustion(0.0F * (float) i * 0.01F, EntityExhaustionEvent.ExhaustionReason.WALK); // CraftBukkit - EntityExhaustionEvent
+                         this.awardStat(StatisticList.WALK_ONE_CM, i);
+-                        this.causeFoodExhaustion(0.0F * (float) i * 0.01F);
++                        this.causeFoodExhaustion(0.0F * (float) i * 0.01F, EntityExhaustionEvent.ExhaustionReason.WALK); // CraftBukkit - EntityExhaustionEvent
                      }
                  }
-             } else if (this.isGliding()) {
-@@ -1545,12 +1675,24 @@
+             } else if (this.isFallFlying()) {
+@@ -1543,12 +1673,24 @@
      }
  
-     public void startGliding() {
--        this.setFlag(7, true);
+     public void startFallFlying() {
+-        this.setSharedFlag(7, true);
 +        // CraftBukkit start
 +        if (!org.bukkit.craftbukkit.event.CraftEventFactory.callToggleGlideEvent(this, true).isCancelled()) {
-+            this.setFlag(7, true);
++            this.setSharedFlag(7, true);
 +        } else {
 +            // SPIGOT-5542: must toggle like below
-+            this.setFlag(7, true);
-+            this.setFlag(7, false);
++            this.setSharedFlag(7, true);
++            this.setSharedFlag(7, false);
 +        }
 +        // CraftBukkit end
      }
  
-     public void stopGliding() {
+     public void stopFallFlying() {
 +        // CraftBukkit start
 +        if (!org.bukkit.craftbukkit.event.CraftEventFactory.callToggleGlideEvent(this, false).isCancelled()) {
-         this.setFlag(7, true);
-         this.setFlag(7, false);
+         this.setSharedFlag(7, true);
+         this.setSharedFlag(7, false);
 +        }
 +        // CraftBukkit end
      }
  
      @Override
-@@ -1640,10 +1782,21 @@
+@@ -1638,10 +1780,21 @@
          return this.experienceLevel >= 30 ? 112 + (this.experienceLevel - 30) * 9 : (this.experienceLevel >= 15 ? 37 + (this.experienceLevel - 15) * 5 : 7 + this.experienceLevel * 2);
      }
  
 +    // CraftBukkit start
-     public void applyExhaustion(float f) {
-+        this.applyExhaustion(f, EntityExhaustionEvent.ExhaustionReason.UNKNOWN);
+     public void causeFoodExhaustion(float f) {
++        this.causeFoodExhaustion(f, EntityExhaustionEvent.ExhaustionReason.UNKNOWN);
 +    }
 +
-+    public void applyExhaustion(float f, EntityExhaustionEvent.ExhaustionReason reason) {
++    public void causeFoodExhaustion(float f, EntityExhaustionEvent.ExhaustionReason reason) {
 +        // CraftBukkit end
          if (!this.abilities.invulnerable) {
              if (!this.level.isClientSide) {
--                this.foodData.a(f);
+-                this.foodData.addExhaustion(f);
 +                // CraftBukkit start
 +                EntityExhaustionEvent event = CraftEventFactory.callPlayerExhaustionEvent(this, reason, f);
 +                if (!event.isCancelled()) {
-+                    this.foodData.a(event.getExhaustion()); // PAIL rename addExhaustion
++                    this.foodData.addExhaustion(event.getExhaustion());
 +                }
 +                // CraftBukkit end
              }
  
          }
-@@ -1720,15 +1873,22 @@
+@@ -1718,15 +1871,22 @@
  
      @Override
-     public void setSlot(EnumItemSlot enumitemslot, ItemStack itemstack) {
+     public void setItemSlot(EnumItemSlot enumitemslot, ItemStack itemstack) {
 +        // CraftBukkit start
-+        this.setSlot(enumitemslot, itemstack, false);
++        this.setItemSlot(enumitemslot, itemstack, false);
 +    }
 +
 +    @Override
-+    public void setSlot(EnumItemSlot enumitemslot, ItemStack itemstack, boolean silent) {
++    public void setItemSlot(EnumItemSlot enumitemslot, ItemStack itemstack, boolean silent) {
 +        // CraftBukkit end
-         this.f(itemstack);
+         this.verifyEquippedItem(itemstack);
          if (enumitemslot == EnumItemSlot.MAINHAND) {
--            this.playEquipSound(itemstack);
-+            this.playEquipSound(itemstack, silent); // CraftBukkit
+-            this.equipEventAndSound(itemstack);
++            this.equipEventAndSound(itemstack, silent); // CraftBukkit
              this.inventory.items.set(this.inventory.selected, itemstack);
          } else if (enumitemslot == EnumItemSlot.OFFHAND) {
--            this.playEquipSound(itemstack);
-+            this.playEquipSound(itemstack, silent); // CraftBukkit
+-            this.equipEventAndSound(itemstack);
++            this.equipEventAndSound(itemstack, silent); // CraftBukkit
              this.inventory.offhand.set(0, itemstack);
-         } else if (enumitemslot.a() == EnumItemSlot.Function.ARMOR) {
--            this.playEquipSound(itemstack);
-+            this.playEquipSound(itemstack, silent); // CraftBukkit
-             this.inventory.armor.set(enumitemslot.b(), itemstack);
+         } else if (enumitemslot.getType() == EnumItemSlot.Function.ARMOR) {
+-            this.equipEventAndSound(itemstack);
++            this.equipEventAndSound(itemstack, silent); // CraftBukkit
+             this.inventory.armor.set(enumitemslot.getIndex(), itemstack);
          }
  
-@@ -1769,26 +1929,31 @@
+@@ -1767,26 +1927,31 @@
  
-     protected void releaseShoulderEntities() {
-         if (this.timeEntitySatOnShoulder + 20L < this.level.getTime()) {
--            this.spawnEntityFromShoulder(this.getShoulderEntityLeft());
+     protected void removeEntitiesOnShoulder() {
+         if (this.timeEntitySatOnShoulder + 20L < this.level.getGameTime()) {
+-            this.respawnEntityOnShoulder(this.getShoulderEntityLeft());
 -            this.setShoulderEntityLeft(new NBTTagCompound());
--            this.spawnEntityFromShoulder(this.getShoulderEntityRight());
+-            this.respawnEntityOnShoulder(this.getShoulderEntityRight());
 -            this.setShoulderEntityRight(new NBTTagCompound());
 +            // CraftBukkit start
 +            if (this.spawnEntityFromShoulder(this.getShoulderEntityLeft())) {
@@ -494,19 +485,19 @@
  
      }
  
--    private void spawnEntityFromShoulder(NBTTagCompound nbttagcompound) {
+-    private void respawnEntityOnShoulder(NBTTagCompound nbttagcompound) {
 +    private boolean spawnEntityFromShoulder(NBTTagCompound nbttagcompound) { // CraftBukkit void->boolean
          if (!this.level.isClientSide && !nbttagcompound.isEmpty()) {
--            EntityTypes.a(nbttagcompound, this.level).ifPresent((entity) -> {
-+            return EntityTypes.a(nbttagcompound, this.level).map((entity) -> { // CraftBukkit
+-            EntityTypes.create(nbttagcompound, this.level).ifPresent((entity) -> {
++            return EntityTypes.create(nbttagcompound, this.level).map((entity) -> { // CraftBukkit
                  if (entity instanceof EntityTameableAnimal) {
                      ((EntityTameableAnimal) entity).setOwnerUUID(this.uuid);
                  }
  
-                 entity.setPosition(this.locX(), this.locY() + 0.699999988079071D, this.locZ());
--                ((WorldServer) this.level).addEntitySerialized(entity);
+                 entity.setPos(this.getX(), this.getY() + 0.699999988079071D, this.getZ());
+-                ((WorldServer) this.level).addWithUUID(entity);
 -            });
-+                return ((WorldServer) this.level).addEntitySerialized(entity, CreatureSpawnEvent.SpawnReason.SHOULDER_ENTITY); // CraftBukkit
++                return ((WorldServer) this.level).addWithUUID(entity, CreatureSpawnEvent.SpawnReason.SHOULDER_ENTITY); // CraftBukkit
 +            }).orElse(true); // CraftBukkit
          }
  

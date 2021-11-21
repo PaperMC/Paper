@@ -1,27 +1,27 @@
 --- a/net/minecraft/world/level/chunk/Chunk.java
 +++ b/net/minecraft/world/level/chunk/Chunk.java
-@@ -92,7 +92,7 @@
-     private final Map<BlockPosition, NBTTagCompound> pendingBlockEntities;
-     private final Map<BlockPosition, Chunk.c> tickersInLevel;
+@@ -77,7 +77,7 @@
+     private final Map<BlockPosition, Chunk.d> tickersInLevel;
      public boolean loaded;
+     private boolean clientLightReady;
 -    public final World level;
 +    public final WorldServer level; // CraftBukkit - type
-     public final Map<HeightMap.Type, HeightMap> heightmaps;
-     private final ChunkConverter upgradeData;
-     public final Map<BlockPosition, TileEntity> blockEntities;
-@@ -122,7 +122,7 @@
-         this.blockEntities = Maps.newHashMap();
-         this.structureStarts = Maps.newHashMap();
-         this.structuresRefences = Maps.newHashMap();
+     @Nullable
+     private Supplier<PlayerChunk.State> fullStatus;
+     @Nullable
+@@ -94,7 +94,7 @@
+         super(chunkcoordintpair, chunkconverter, world, world.registryAccess().registryOrThrow(IRegistry.BIOME_REGISTRY), i, achunksection, blendingdata);
+         this.tickersInLevel = Maps.newHashMap();
+         this.clientLightReady = false;
 -        this.level = world;
 +        this.level = (WorldServer) world; // CraftBukkit - type
-         this.chunkPos = chunkcoordintpair;
-         this.upgradeData = chunkconverter;
          this.gameEventDispatcherSections = new Int2ObjectOpenHashMap();
-@@ -152,8 +152,22 @@
-         }
- 
-         this.postProcessing = new ShortList[world.getSectionsCount()];
+         HeightMap.Type[] aheightmap_type = HeightMap.Type.values();
+         int j = aheightmap_type.length;
+@@ -110,8 +110,22 @@
+         this.postLoad = chunk_c;
+         this.blockTicks = levelchunkticks;
+         this.fluidTicks = levelchunkticks1;
 +        // CraftBukkit start
 +        this.bukkitChunk = new org.bukkit.craftbukkit.CraftChunk(this);
      }
@@ -38,48 +38,48 @@
 +    public final org.bukkit.craftbukkit.persistence.CraftPersistentDataContainer persistentDataContainer = new org.bukkit.craftbukkit.persistence.CraftPersistentDataContainer(DATA_TYPE_REGISTRY);
 +    // CraftBukkit end
 +
-     public Chunk(WorldServer worldserver, ProtoChunk protochunk, @Nullable Consumer<Chunk> consumer) {
-         this(worldserver, protochunk.getPos(), protochunk.getBiomeIndex(), protochunk.q(), protochunk.o(), protochunk.p(), protochunk.getInhabitedTime(), protochunk.getSections(), consumer);
-         Iterator iterator = protochunk.y().values().iterator();
-@@ -184,6 +198,7 @@
+     public Chunk(WorldServer worldserver, ProtoChunk protochunk, @Nullable Chunk.c chunk_c) {
+         this(worldserver, protochunk.getPos(), protochunk.getUpgradeData(), protochunk.unpackBlockTicks(), protochunk.unpackFluidTicks(), protochunk.getInhabitedTime(), protochunk.getSections(), chunk_c, protochunk.getBlendingData());
+         Iterator iterator = protochunk.getBlockEntities().values().iterator();
+@@ -142,6 +156,7 @@
  
-         this.b(protochunk.s());
+         this.setLightCorrect(protochunk.isLightCorrect());
          this.unsaved = true;
 +        this.needsDecoration = true; // CraftBukkit
      }
  
      @Override
-@@ -285,9 +300,16 @@
+@@ -238,9 +253,16 @@
          }
      }
  
 +    // CraftBukkit start
      @Nullable
      @Override
-     public IBlockData setType(BlockPosition blockposition, IBlockData iblockdata, boolean flag) {
-+        return this.setType(blockposition, iblockdata, flag, true);
+     public IBlockData setBlockState(BlockPosition blockposition, IBlockData iblockdata, boolean flag) {
++        return this.setBlockState(blockposition, iblockdata, flag, true);
 +    }
 +
 +    @Nullable
-+    public IBlockData setType(BlockPosition blockposition, IBlockData iblockdata, boolean flag, boolean doPlace) {
++    public IBlockData setBlockState(BlockPosition blockposition, IBlockData iblockdata, boolean flag, boolean doPlace) {
 +        // CraftBukkit end
          int i = blockposition.getY();
-         int j = this.getSectionIndex(i);
-         ChunkSection chunksection = this.sections[j];
-@@ -333,7 +355,8 @@
-             if (!chunksection.getType(k, l, i1).a(block)) {
-                 return null;
-             } else {
--                if (!this.level.isClientSide) {
-+                // CraftBukkit - Don't place while processing the BlockPlaceEvent, unless it's a BlockContainer. Prevents blocks such as TNT from activating when cancelled.
-+                if (!this.level.isClientSide && doPlace && (!this.level.captureBlockStates || block instanceof net.minecraft.world.level.block.BlockTileEntity)) {
-                     iblockdata.onPlace(this.level, blockposition, iblockdata1, flag);
-                 }
+         ChunkSection chunksection = this.getSection(this.getSectionIndex(i));
+         boolean flag1 = chunksection.hasOnlyAir();
+@@ -279,7 +301,8 @@
+                 if (!chunksection.getBlockState(j, k, l).is(block)) {
+                     return null;
+                 } else {
+-                    if (!this.level.isClientSide) {
++                    // CraftBukkit - Don't place while processing the BlockPlaceEvent, unless it's a BlockContainer. Prevents blocks such as TNT from activating when cancelled.
++                    if (!this.level.isClientSide && doPlace && (!this.level.captureBlockStates || block instanceof net.minecraft.world.level.block.BlockTileEntity)) {
+                         iblockdata.onPlace(this.level, blockposition, iblockdata1, flag);
+                     }
  
-@@ -401,7 +424,12 @@
+@@ -323,7 +346,12 @@
  
      @Nullable
-     public TileEntity a(BlockPosition blockposition, Chunk.EnumTileEntityState chunk_enumtileentitystate) {
+     public TileEntity getBlockEntity(BlockPosition blockposition, Chunk.EnumTileEntityState chunk_enumtileentitystate) {
 -        TileEntity tileentity = (TileEntity) this.blockEntities.get(blockposition);
 +        // CraftBukkit start
 +        TileEntity tileentity = level.capturedTileEntities.get(blockposition);
@@ -90,22 +90,22 @@
  
          if (tileentity == null) {
              NBTTagCompound nbttagcompound = (NBTTagCompound) this.pendingBlockEntities.remove(blockposition);
-@@ -460,6 +488,13 @@
-                 tileentity1.aa_();
+@@ -394,6 +422,13 @@
+                 tileentity1.setRemoved();
              }
  
 +            // CraftBukkit start
 +        } else {
-+            System.out.println("Attempted to place a tile entity (" + tileentity + ") at " + tileentity.getPosition().getX() + "," + tileentity.getPosition().getY() + "," + tileentity.getPosition().getZ()
-+                + " (" + getType(blockposition) + ") where there was no entity tile!");
++            System.out.println("Attempted to place a tile entity (" + tileentity + ") at " + tileentity.getBlockPos().getX() + "," + tileentity.getBlockPos().getY() + "," + tileentity.getBlockPos().getZ()
++                + " (" + getBlockState(blockposition) + ") where there was no entity tile!");
 +            System.out.println("Chunk coordinates: " + (this.chunkPos.x * 16) + "," + (this.chunkPos.z * 16));
 +            new Exception().printStackTrace();
 +            // CraftBukkit end
          }
      }
  
-@@ -494,6 +529,12 @@
-         if (this.E()) {
+@@ -423,6 +458,12 @@
+         if (this.isInLevel()) {
              TileEntity tileentity = (TileEntity) this.blockEntities.remove(blockposition);
  
 +            // CraftBukkit start - SPIGOT-5561: Also remove from pending map
@@ -115,9 +115,9 @@
 +            // CraftBukkit end
 +
              if (tileentity != null) {
-                 this.c(tileentity);
-                 tileentity.aa_();
-@@ -541,6 +582,50 @@
+                 this.removeGameEventListener(tileentity);
+                 tileentity.setRemoved();
+@@ -470,6 +511,55 @@
  
      }
  
@@ -158,70 +158,31 @@
 +
 +    public void unloadCallback() {
 +        org.bukkit.Server server = this.level.getCraftServer();
-+        org.bukkit.event.world.ChunkUnloadEvent unloadEvent = new org.bukkit.event.world.ChunkUnloadEvent(this.bukkitChunk, this.isNeedsSaving());
++        org.bukkit.event.world.ChunkUnloadEvent unloadEvent = new org.bukkit.event.world.ChunkUnloadEvent(this.bukkitChunk, this.isUnsaved());
 +        server.getPluginManager().callEvent(unloadEvent);
 +        // note: saving can be prevented, but not forced if no saving is actually required
 +        this.mustNotSave = !unloadEvent.isSaveChunk();
 +    }
++
++    @Override
++    public boolean isUnsaved() {
++        return super.isUnsaved() && !this.mustNotSave;
++    }
 +    // CraftBukkit end
 +
-     public void markDirty() {
-         this.unsaved = true;
+     public boolean isEmpty() {
+         return false;
      }
-@@ -664,7 +749,7 @@
+@@ -658,7 +748,7 @@
  
-     @Override
-     public boolean isNeedsSaving() {
--        return this.unsaved;
-+        return this.unsaved && !this.mustNotSave; // CraftBukkit
-     }
- 
-     @Nullable
-@@ -795,7 +880,7 @@
- 
-     public void B() {
-         if (this.blockTicks instanceof ProtoChunkTickList) {
--            ((ProtoChunkTickList) this.blockTicks).a(this.level.getBlockTickList(), (blockposition) -> {
-+            ((ProtoChunkTickList<Block>) this.blockTicks).a(this.level.getBlockTickList(), (blockposition) -> { // CraftBukkit - decompile error
-                 return this.getType(blockposition).getBlock();
-             });
-             this.blockTicks = TickListEmpty.b();
-@@ -805,7 +890,7 @@
-         }
- 
-         if (this.liquidTicks instanceof ProtoChunkTickList) {
--            ((ProtoChunkTickList) this.liquidTicks).a(this.level.getFluidTickList(), (blockposition) -> {
-+            ((ProtoChunkTickList<FluidType>) this.liquidTicks).a(this.level.getFluidTickList(), (blockposition) -> { // CraftBukkit - decompile error
-                 return this.getFluid(blockposition).getType();
-             });
-             this.liquidTicks = TickListEmpty.b();
-@@ -819,14 +904,14 @@
-     public void a(WorldServer worldserver) {
-         RegistryBlocks registryblocks;
- 
--        if (this.blockTicks == TickListEmpty.b()) {
-+        if (this.blockTicks == TickListEmpty.<Block>b()) { // CraftBukkit - decompile error
-             registryblocks = IRegistry.BLOCK;
-             Objects.requireNonNull(registryblocks);
-             this.blockTicks = new TickListChunk<>(registryblocks::getKey, worldserver.getBlockTickList().a(this.chunkPos, true, false), worldserver.getTime());
-             this.setNeedsSaving(true);
-         }
- 
--        if (this.liquidTicks == TickListEmpty.b()) {
-+        if (this.liquidTicks == TickListEmpty.<FluidType>b()) { // CraftBukkit - decompile error
-             registryblocks = IRegistry.FLUID;
-             Objects.requireNonNull(registryblocks);
-             this.liquidTicks = new TickListChunk<>(registryblocks::getKey, worldserver.getFluidTickList().a(this.chunkPos, true, false), worldserver.getTime());
-@@ -899,7 +984,7 @@
- 
-     private <T extends TileEntity> void f(T t0) {
-         IBlockData iblockdata = t0.getBlock();
--        BlockEntityTicker<T> blockentityticker = iblockdata.a(this.level, t0.getTileType());
-+        BlockEntityTicker<T> blockentityticker = iblockdata.a(this.level, (TileEntityTypes<T>) t0.getTileType()); // CraftBukkit - decompile error
+     private <T extends TileEntity> void updateBlockEntityTicker(T t0) {
+         IBlockData iblockdata = t0.getBlockState();
+-        BlockEntityTicker<T> blockentityticker = iblockdata.getTicker(this.level, t0.getType());
++        BlockEntityTicker<T> blockentityticker = iblockdata.getTicker(this.level, (TileEntityTypes<T>) t0.getType()); // CraftBukkit - decompile error
  
          if (blockentityticker == null) {
-             this.l(t0.getPosition());
-@@ -978,7 +1063,7 @@
+             this.removeBlockEntityTicker(t0.getBlockPos());
+@@ -751,7 +841,7 @@
          private boolean loggedInvalidBlockState;
  
          a(TileEntity tileentity, BlockEntityTicker blockentityticker) {
@@ -230,12 +191,12 @@
              this.ticker = blockentityticker;
          }
  
-@@ -1001,7 +1086,7 @@
+@@ -774,7 +864,7 @@
                              this.loggedInvalidBlockState = true;
-                             Chunk.LOGGER.warn("Block entity {} @ {} state {} invalid for ticking:", new org.apache.logging.log4j.util.Supplier[]{this::d, this::c, () -> {
+                             Chunk.LOGGER.warn("Block entity {} @ {} state {} invalid for ticking:", new org.apache.logging.log4j.util.Supplier[]{this::getType, this::getPos, () -> {
                                          return iblockdata;
 -                                    }});
 +                                    }}); // CraftBukkit - squelch checkstyle
                          }
  
-                         gameprofilerfiller.exit();
+                         gameprofilerfiller.pop();

@@ -22,9 +22,9 @@ public class CraftShulkerBullet extends AbstractProjectile implements ShulkerBul
     @Override
     public void setShooter(ProjectileSource shooter) {
         if (shooter instanceof Entity) {
-            getHandle().setShooter(((CraftEntity) shooter).getHandle());
+            getHandle().setOwner(((CraftEntity) shooter).getHandle());
         } else {
-            getHandle().setShooter(null);
+            getHandle().setOwner(null);
         }
         getHandle().projectileSource = shooter;
     }

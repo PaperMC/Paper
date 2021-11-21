@@ -41,7 +41,7 @@ public abstract class CraftAbstractHorse extends CraftAnimals implements Abstrac
 
     @Override
     public int getMaxDomestication() {
-        return getHandle().getMaxDomestication();
+        return getHandle().getMaxTemper();
     }
 
     @Override
@@ -52,13 +52,13 @@ public abstract class CraftAbstractHorse extends CraftAnimals implements Abstrac
 
     @Override
     public double getJumpStrength() {
-        return getHandle().getJumpStrength();
+        return getHandle().getCustomJump();
     }
 
     @Override
     public void setJumpStrength(double strength) {
         Validate.isTrue(strength >= 0, "Jump strength cannot be less than zero");
-        getHandle().getAttributeInstance(GenericAttributes.JUMP_STRENGTH).setValue(strength);
+        getHandle().getAttribute(GenericAttributes.JUMP_STRENGTH).setBaseValue(strength);
     }
 
     @Override
@@ -81,7 +81,7 @@ public abstract class CraftAbstractHorse extends CraftAnimals implements Abstrac
     public void setOwner(AnimalTamer owner) {
         if (owner != null) {
             setTamed(true);
-            getHandle().setGoalTarget(null, null, false);
+            getHandle().setTarget(null, null, false);
             setOwnerUUID(owner.getUniqueId());
         } else {
             setTamed(false);

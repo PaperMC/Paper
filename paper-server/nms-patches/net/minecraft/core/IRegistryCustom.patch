@@ -1,0 +1,75 @@
+--- a/net/minecraft/core/IRegistryCustom.java
++++ b/net/minecraft/core/IRegistryCustom.java
+@@ -80,7 +80,7 @@
+     public <E> Optional<? extends IRegistry<E>> registry(ResourceKey<? extends IRegistry<? extends E>> resourcekey) {
+         Optional<? extends IRegistry<E>> optional = this.ownedRegistry(resourcekey);
+ 
+-        return optional.isPresent() ? optional : IRegistry.REGISTRY.getOptional(resourcekey.location());
++        return optional.isPresent() ? optional : (Optional<? extends IRegistry<E>>) IRegistry.REGISTRY.getOptional(resourcekey.location()); // CraftBukkit - decompile error
+     }
+ 
+     public <E> IRegistry<E> registryOrThrow(ResourceKey<? extends IRegistry<? extends E>> resourcekey) {
+@@ -138,7 +138,7 @@
+     }
+ 
+     private static <R extends IRegistry<?>> void copyBuiltin(IRegistryCustom.Dimension iregistrycustom_dimension, ResourceKey<R> resourcekey) {
+-        IRegistry<R> iregistry = RegistryGeneration.REGISTRY;
++        IRegistry<R> iregistry = (IRegistry<R>) RegistryGeneration.REGISTRY; // CraftBukkit - decompile error
+         IRegistry<?> iregistry1 = (IRegistry) iregistry.getOrThrow(resourcekey);
+ 
+         copy(iregistrycustom_dimension, iregistry1);
+@@ -178,8 +178,10 @@
+         });
+     }
+ 
+-    public static final class RegistryData extends Record {
++    // CraftBukkit start
++    public static final record RegistryData<E>(ResourceKey<? extends IRegistry<E>> key, Codec<E> codec, @Nullable Codec<E> networkCodec) {
+ 
++        /*
+         private final ResourceKey<? extends IRegistry<E>> key;
+         private final Codec<E> codec;
+         @Nullable
+@@ -190,11 +192,15 @@
+             this.codec = codec;
+             this.networkCodec = codec1;
+         }
++         */
++        // CraftBukkit end
+ 
+         public boolean sendToClient() {
+             return this.networkCodec != null;
+         }
+ 
++        // CraftBukkit start
++        /*
+         public final String toString() {
+             return this.toString < invokedynamic > (this);
+         }
+@@ -219,6 +225,8 @@
+         public Codec<E> networkCodec() {
+             return this.networkCodec;
+         }
++         */
++        // CraftBukkit end
+     }
+ 
+     public static final class Dimension extends IRegistryCustom {
+@@ -267,7 +275,7 @@
+         }
+ 
+         private static <E> RegistryMaterials<?> parseRegistry(ResourceKey<? extends IRegistry<?>> resourcekey, Dynamic<?> dynamic) {
+-            DataResult dataresult = RegistryLookupCodec.create(resourcekey).codec().parse(dynamic);
++            DataResult<?> dataresult = RegistryLookupCodec.create((ResourceKey) resourcekey).codec().parse(dynamic); // CraftBukkit - decompile error
+             String s = resourcekey + " registry: ";
+             Logger logger = IRegistryCustom.LOGGER;
+ 
+@@ -282,7 +290,7 @@
+         }
+ 
+         private static <E> RegistryMaterials<?> createRegistry(ResourceKey<? extends IRegistry<?>> resourcekey) {
+-            return new RegistryMaterials<>(resourcekey, Lifecycle.stable());
++            return new RegistryMaterials(resourcekey, Lifecycle.stable()); // CraftBukkit - decompile error
+         }
+ 
+         @Override

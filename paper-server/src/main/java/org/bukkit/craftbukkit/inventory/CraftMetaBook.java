@@ -81,23 +81,23 @@ public class CraftMetaBook extends CraftMetaItem implements BookMeta {
     CraftMetaBook(NBTTagCompound tag) {
         super(tag);
 
-        if (tag.hasKey(BOOK_TITLE.NBT)) {
+        if (tag.contains(BOOK_TITLE.NBT)) {
             this.title = tag.getString(BOOK_TITLE.NBT);
         }
 
-        if (tag.hasKey(BOOK_AUTHOR.NBT)) {
+        if (tag.contains(BOOK_AUTHOR.NBT)) {
             this.author = tag.getString(BOOK_AUTHOR.NBT);
         }
 
-        if (tag.hasKey(RESOLVED.NBT)) {
+        if (tag.contains(RESOLVED.NBT)) {
             this.resolved = tag.getBoolean(RESOLVED.NBT);
         }
 
-        if (tag.hasKey(GENERATION.NBT)) {
+        if (tag.contains(GENERATION.NBT)) {
             generation = tag.getInt(GENERATION.NBT);
         }
 
-        if (tag.hasKey(BOOK_PAGES.NBT)) {
+        if (tag.contains(BOOK_PAGES.NBT)) {
             NBTTagList pages = tag.getList(BOOK_PAGES.NBT, CraftMagicNumbers.NBT.TAG_STRING);
             this.pages = new ArrayList<String>(pages.size());
 
@@ -160,27 +160,27 @@ public class CraftMetaBook extends CraftMetaItem implements BookMeta {
         super.applyToItem(itemData);
 
         if (hasTitle()) {
-            itemData.setString(BOOK_TITLE.NBT, this.title);
+            itemData.putString(BOOK_TITLE.NBT, this.title);
         }
 
         if (hasAuthor()) {
-            itemData.setString(BOOK_AUTHOR.NBT, this.author);
+            itemData.putString(BOOK_AUTHOR.NBT, this.author);
         }
 
         if (pages != null) {
             NBTTagList list = new NBTTagList();
             for (String page : pages) {
-                list.add(NBTTagString.a(page));
+                list.add(NBTTagString.valueOf(page));
             }
-            itemData.set(BOOK_PAGES.NBT, list);
+            itemData.put(BOOK_PAGES.NBT, list);
         }
 
         if (resolved != null) {
-            itemData.setBoolean(RESOLVED.NBT, resolved);
+            itemData.putBoolean(RESOLVED.NBT, resolved);
         }
 
         if (generation != null) {
-            itemData.setInt(GENERATION.NBT, generation);
+            itemData.putInt(GENERATION.NBT, generation);
         }
     }
 

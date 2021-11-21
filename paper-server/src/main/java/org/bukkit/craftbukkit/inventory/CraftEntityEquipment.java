@@ -157,11 +157,11 @@ public class CraftEntityEquipment implements EntityEquipment {
     }
 
     private ItemStack getEquipment(EnumItemSlot slot) {
-        return CraftItemStack.asBukkitCopy(entity.getHandle().getEquipment(slot));
+        return CraftItemStack.asBukkitCopy(entity.getHandle().getItemBySlot(slot));
     }
 
     private void setEquipment(EnumItemSlot slot, ItemStack stack, boolean silent) {
-        entity.getHandle().setSlot(slot, CraftItemStack.asNMSCopy(stack), silent);
+        entity.getHandle().setItemSlot(slot, CraftItemStack.asNMSCopy(stack), silent);
     }
 
     @Override
@@ -250,9 +250,9 @@ public class CraftEntityEquipment implements EntityEquipment {
         Preconditions.checkArgument(entity.getHandle() instanceof EntityInsentient, "Cannot set drop chance for non-Mob entity");
 
         if (slot == EnumItemSlot.MAINHAND || slot == EnumItemSlot.OFFHAND) {
-            ((EntityInsentient) entity.getHandle()).handDropChances[slot.b()] = chance;
+            ((EntityInsentient) entity.getHandle()).handDropChances[slot.getIndex()] = chance;
         } else {
-            ((EntityInsentient) entity.getHandle()).armorDropChances[slot.b()] = chance;
+            ((EntityInsentient) entity.getHandle()).armorDropChances[slot.getIndex()] = chance;
         }
     }
 
@@ -262,9 +262,9 @@ public class CraftEntityEquipment implements EntityEquipment {
         }
 
         if (slot == EnumItemSlot.MAINHAND || slot == EnumItemSlot.OFFHAND) {
-            return ((EntityInsentient) entity.getHandle()).handDropChances[slot.b()];
+            return ((EntityInsentient) entity.getHandle()).handDropChances[slot.getIndex()];
         } else {
-            return ((EntityInsentient) entity.getHandle()).armorDropChances[slot.b()];
+            return ((EntityInsentient) entity.getHandle()).armorDropChances[slot.getIndex()];
         }
     }
 }

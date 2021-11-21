@@ -1,42 +1,42 @@
 --- a/net/minecraft/world/entity/ai/behavior/BehaviorUtil.java
 +++ b/net/minecraft/world/entity/ai/behavior/BehaviorUtil.java
-@@ -62,7 +62,7 @@
+@@ -61,7 +61,7 @@
      }
  
-     public static void a(EntityLiving entityliving, EntityLiving entityliving1) {
--        entityliving.getBehaviorController().setMemory(MemoryModuleType.LOOK_TARGET, (Object) (new BehaviorPositionEntity(entityliving1, true)));
-+        entityliving.getBehaviorController().setMemory(MemoryModuleType.LOOK_TARGET, (new BehaviorPositionEntity(entityliving1, true))); // CraftBukkit - decompile error
+     public static void lookAtEntity(EntityLiving entityliving, EntityLiving entityliving1) {
+-        entityliving.getBrain().setMemory(MemoryModuleType.LOOK_TARGET, (Object) (new BehaviorPositionEntity(entityliving1, true)));
++        entityliving.getBrain().setMemory(MemoryModuleType.LOOK_TARGET, (new BehaviorPositionEntity(entityliving1, true))); // CraftBukkit - decompile error
      }
  
-     private static void b(EntityLiving entityliving, EntityLiving entityliving1, float f) {
-@@ -75,18 +75,19 @@
-     public static void a(EntityLiving entityliving, Entity entity, float f, int i) {
+     private static void setWalkAndLookTargetMemoriesToEachOther(EntityLiving entityliving, EntityLiving entityliving1, float f) {
+@@ -74,18 +74,19 @@
+     public static void setWalkAndLookTargetMemories(EntityLiving entityliving, Entity entity, float f, int i) {
          MemoryTarget memorytarget = new MemoryTarget(new BehaviorPositionEntity(entity, false), f, i);
  
--        entityliving.getBehaviorController().setMemory(MemoryModuleType.LOOK_TARGET, (Object) (new BehaviorPositionEntity(entity, true)));
--        entityliving.getBehaviorController().setMemory(MemoryModuleType.WALK_TARGET, (Object) memorytarget);
-+        entityliving.getBehaviorController().setMemory(MemoryModuleType.LOOK_TARGET, (new BehaviorPositionEntity(entity, true))); // CraftBukkit - decompile error
-+        entityliving.getBehaviorController().setMemory(MemoryModuleType.WALK_TARGET, memorytarget); // CraftBukkit - decompile error
+-        entityliving.getBrain().setMemory(MemoryModuleType.LOOK_TARGET, (Object) (new BehaviorPositionEntity(entity, true)));
+-        entityliving.getBrain().setMemory(MemoryModuleType.WALK_TARGET, (Object) memorytarget);
++        entityliving.getBrain().setMemory(MemoryModuleType.LOOK_TARGET, (new BehaviorPositionEntity(entity, true))); // CraftBukkit - decompile error
++        entityliving.getBrain().setMemory(MemoryModuleType.WALK_TARGET, memorytarget); // CraftBukkit - decompile error
      }
  
-     public static void a(EntityLiving entityliving, BlockPosition blockposition, float f, int i) {
+     public static void setWalkAndLookTargetMemories(EntityLiving entityliving, BlockPosition blockposition, float f, int i) {
          MemoryTarget memorytarget = new MemoryTarget(new BehaviorTarget(blockposition), f, i);
  
--        entityliving.getBehaviorController().setMemory(MemoryModuleType.LOOK_TARGET, (Object) (new BehaviorTarget(blockposition)));
--        entityliving.getBehaviorController().setMemory(MemoryModuleType.WALK_TARGET, (Object) memorytarget);
-+        entityliving.getBehaviorController().setMemory(MemoryModuleType.LOOK_TARGET, (new BehaviorTarget(blockposition))); // CraftBukkit - decompile error
-+        entityliving.getBehaviorController().setMemory(MemoryModuleType.WALK_TARGET, memorytarget); // CraftBukkit - decompile error
+-        entityliving.getBrain().setMemory(MemoryModuleType.LOOK_TARGET, (Object) (new BehaviorTarget(blockposition)));
+-        entityliving.getBrain().setMemory(MemoryModuleType.WALK_TARGET, (Object) memorytarget);
++        entityliving.getBrain().setMemory(MemoryModuleType.LOOK_TARGET, (new BehaviorTarget(blockposition))); // CraftBukkit - decompile error
++        entityliving.getBrain().setMemory(MemoryModuleType.WALK_TARGET, memorytarget); // CraftBukkit - decompile error
      }
  
-     public static void a(EntityLiving entityliving, ItemStack itemstack, Vec3D vec3d) {
+     public static void throwItem(EntityLiving entityliving, ItemStack itemstack, Vec3D vec3d) {
 +        if (itemstack.isEmpty()) return; // CraftBukkit - SPIGOT-4940: no empty loot
-         double d0 = entityliving.getHeadY() - 0.30000001192092896D;
-         EntityItem entityitem = new EntityItem(entityliving.level, entityliving.locX(), d0, entityliving.locZ(), itemstack);
+         double d0 = entityliving.getEyeY() - 0.30000001192092896D;
+         EntityItem entityitem = new EntityItem(entityliving.level, entityliving.getX(), d0, entityliving.getZ(), itemstack);
          float f = 0.3F;
-@@ -95,12 +96,19 @@
-         vec3d1 = vec3d1.d().a(0.30000001192092896D);
-         entityitem.setMot(vec3d1);
-         entityitem.defaultPickupDelay();
+@@ -94,12 +95,19 @@
+         vec3d1 = vec3d1.normalize().scale(0.30000001192092896D);
+         entityitem.setDeltaMovement(vec3d1);
+         entityitem.setDefaultPickUpDelay();
 +        // CraftBukkit start
 +        org.bukkit.event.entity.EntityDropItemEvent event = new org.bukkit.event.entity.EntityDropItemEvent(entityliving.getBukkitEntity(), (org.bukkit.entity.Item) entityitem.getBukkitEntity());
 +        entityitem.level.getCraftServer().getPluginManager().callEvent(event);
@@ -44,13 +44,13 @@
 +            return;
 +        }
 +        // CraftBukkit end
-         entityliving.level.addEntity(entityitem);
+         entityliving.level.addFreshEntity(entityitem);
      }
  
-     public static SectionPosition a(WorldServer worldserver, SectionPosition sectionposition, int i) {
-         int j = worldserver.b(sectionposition);
--        Stream stream = SectionPosition.a(sectionposition, i).filter((sectionposition1) -> {
-+        Stream<SectionPosition> stream = SectionPosition.a(sectionposition, i).filter((sectionposition1) -> { // CraftBukkit - decompile error
-             return worldserver.b(sectionposition1) < j;
+     public static SectionPosition findSectionClosestToVillage(WorldServer worldserver, SectionPosition sectionposition, int i) {
+         int j = worldserver.sectionsToVillage(sectionposition);
+-        Stream stream = SectionPosition.cube(sectionposition, i).filter((sectionposition1) -> {
++        Stream<SectionPosition> stream = SectionPosition.cube(sectionposition, i).filter((sectionposition1) -> { // CraftBukkit - decompile error
+             return worldserver.sectionsToVillage(sectionposition1) < j;
          });
  

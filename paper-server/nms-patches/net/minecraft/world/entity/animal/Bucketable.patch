@@ -14,28 +14,28 @@
 +
  public interface Bucketable {
  
-     boolean isFromBucket();
+     boolean fromBucket();
 @@ -92,10 +100,22 @@
-         ItemStack itemstack = entityhuman.b(enumhand);
+         ItemStack itemstack = entityhuman.getItemInHand(enumhand);
  
          if (itemstack.getItem() == Items.WATER_BUCKET && t0.isAlive()) {
--            t0.playSound(((Bucketable) t0).t(), 1.0F, 1.0F);
+-            t0.playSound(((Bucketable) t0).getPickupSound(), 1.0F, 1.0F);
 +            // CraftBukkit start
-+            // t0.playSound(((Bucketable) t0).t(), 1.0F, 1.0F); // CraftBukkit - moved down
-             ItemStack itemstack1 = ((Bucketable) t0).getBucketItem();
++            // t0.playSound(((Bucketable) t0).getPickupSound(), 1.0F, 1.0F); // CraftBukkit - moved down
+             ItemStack itemstack1 = ((Bucketable) t0).getBucketItemStack();
  
-             ((Bucketable) t0).setBucketName(itemstack1);
+             ((Bucketable) t0).saveToBucketTag(itemstack1);
 +
 +            PlayerBucketEntityEvent playerBucketFishEvent = CraftEventFactory.callPlayerFishBucketEvent(t0, entityhuman, itemstack, itemstack1);
 +            itemstack1 = CraftItemStack.asNMSCopy(playerBucketFishEvent.getEntityBucket());
 +            if (playerBucketFishEvent.isCancelled()) {
-+                ((EntityPlayer) entityhuman).containerMenu.updateInventory(); // We need to update inventory to resync client's bucket
-+                ((EntityPlayer) entityhuman).connection.sendPacket(new PacketPlayOutSpawnEntityLiving(t0)); // We need to play out these packets as the client assumes the fish is gone
-+                ((EntityPlayer) entityhuman).connection.sendPacket(new PacketPlayOutEntityMetadata(t0.getId(), t0.getDataWatcher(), true)); // Need to send data such as the display name to client
++                ((EntityPlayer) entityhuman).containerMenu.sendAllDataToRemote(); // We need to update inventory to resync client's bucket
++                ((EntityPlayer) entityhuman).connection.send(new PacketPlayOutSpawnEntityLiving(t0)); // We need to play out these packets as the client assumes the fish is gone
++                ((EntityPlayer) entityhuman).connection.send(new PacketPlayOutEntityMetadata(t0.getId(), t0.getEntityData(), true)); // Need to send data such as the display name to client
 +                return Optional.of(EnumInteractionResult.FAIL);
 +            }
-+            t0.playSound(((Bucketable) t0).t(), 1.0F, 1.0F);
++            t0.playSound(((Bucketable) t0).getPickupSound(), 1.0F, 1.0F);
 +            // CraftBukkit end
-             ItemStack itemstack2 = ItemLiquidUtil.a(itemstack, entityhuman, itemstack1, false);
+             ItemStack itemstack2 = ItemLiquidUtil.createFilledResult(itemstack, entityhuman, itemstack1, false);
  
-             entityhuman.a(enumhand, itemstack2);
+             entityhuman.setItemInHand(enumhand, itemstack2);

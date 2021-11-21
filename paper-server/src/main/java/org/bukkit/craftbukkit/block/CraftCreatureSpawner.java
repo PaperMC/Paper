@@ -1,8 +1,7 @@
 package org.bukkit.craftbukkit.block;
 
 import com.google.common.base.Preconditions;
-import net.minecraft.core.BlockPosition;
-import net.minecraft.resources.MinecraftKey;
+import java.util.Optional;
 import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.level.block.entity.TileEntityMobSpawner;
 import org.bukkit.World;
@@ -17,8 +16,8 @@ public class CraftCreatureSpawner extends CraftBlockEntityState<TileEntityMobSpa
 
     @Override
     public EntityType getSpawnedType() {
-        MinecraftKey key = this.getSnapshot().getSpawner().getMobName(null, BlockPosition.ZERO);
-        return (key == null) ? EntityType.PIG : EntityType.fromName(key.getKey());
+        Optional<EntityTypes<?>> type = EntityTypes.by(this.getSnapshot().getSpawner().nextSpawnData.getEntityToSpawn());
+        return (type.isEmpty()) ? EntityType.PIG : EntityType.fromName(EntityTypes.getKey(type.get()).getPath());
     }
 
     @Override
@@ -27,12 +26,13 @@ public class CraftCreatureSpawner extends CraftBlockEntityState<TileEntityMobSpa
             throw new IllegalArgumentException("Can't spawn EntityType " + entityType + " from mobspawners!");
         }
 
-        this.getSnapshot().getSpawner().setMobName(EntityTypes.a(entityType.getName()).get());
+        this.getSnapshot().getSpawner().setEntityId(EntityTypes.byString(entityType.getName()).get());
     }
 
     @Override
     public String getCreatureTypeName() {
-        return this.getSnapshot().getSpawner().getMobName(null, BlockPosition.ZERO).getKey();
+        Optional<EntityTypes<?>> type = EntityTypes.by(this.getSnapshot().getSpawner().nextSpawnData.getEntityToSpawn());
+        return (type.isEmpty()) ? "" : EntityTypes.getKey(type.get()).getPath();
     }
 
     @Override

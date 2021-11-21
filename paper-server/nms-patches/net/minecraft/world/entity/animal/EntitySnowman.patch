@@ -10,43 +10,43 @@
 +
  public class EntitySnowman extends EntityGolem implements IShearable, IRangedEntity {
  
-     private static final DataWatcherObject<Byte> DATA_PUMPKIN_ID = DataWatcher.a(EntitySnowman.class, DataWatcherRegistry.BYTE);
+     private static final DataWatcherObject<Byte> DATA_PUMPKIN_ID = DataWatcher.defineId(EntitySnowman.class, DataWatcherRegistry.BYTE);
 @@ -100,7 +104,7 @@
-             int k = MathHelper.floor(this.locZ());
+             int k = MathHelper.floor(this.getZ());
  
-             if (this.level.getBiome(new BlockPosition(i, 0, k)).getAdjustedTemperature(new BlockPosition(i, j, k)) > 1.0F) {
--                this.damageEntity(DamageSource.ON_FIRE, 1.0F);
-+                this.damageEntity(CraftEventFactory.MELTING, 1.0F); // CraftBukkit - DamageSource.BURN -> CraftEventFactory.MELTING
+             if (this.level.getBiome(new BlockPosition(i, 0, k)).getTemperature(new BlockPosition(i, j, k)) > 1.0F) {
+-                this.hurt(DamageSource.ON_FIRE, 1.0F);
++                this.hurt(CraftEventFactory.MELTING, 1.0F); // CraftBukkit - DamageSource.BURN -> CraftEventFactory.MELTING
              }
  
              if (!this.level.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING)) {
 @@ -116,7 +120,7 @@
                  BlockPosition blockposition = new BlockPosition(i, j, k);
  
-                 if (this.level.getType(blockposition).isAir() && this.level.getBiome(blockposition).getAdjustedTemperature(blockposition) < 0.8F && iblockdata.canPlace(this.level, blockposition)) {
--                    this.level.setTypeUpdate(blockposition, iblockdata);
+                 if (this.level.getBlockState(blockposition).isAir() && this.level.getBiome(blockposition).getTemperature(blockposition) < 0.8F && iblockdata.canSurvive(this.level, blockposition)) {
+-                    this.level.setBlockAndUpdate(blockposition, iblockdata);
 +                    org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockFormEvent(this.level, blockposition, iblockdata, this); // CraftBukkit
                  }
              }
          }
 @@ -147,6 +151,11 @@
-         ItemStack itemstack = entityhuman.b(enumhand);
+         ItemStack itemstack = entityhuman.getItemInHand(enumhand);
  
-         if (itemstack.a(Items.SHEARS) && this.canShear()) {
+         if (itemstack.is(Items.SHEARS) && this.readyForShearing()) {
 +            // CraftBukkit start
 +            if (!CraftEventFactory.handlePlayerShearEntityEvent(entityhuman, this, itemstack, enumhand)) {
 +                return EnumInteractionResult.PASS;
 +            }
 +            // CraftBukkit end
              this.shear(SoundCategory.PLAYERS);
-             this.a(GameEvent.SHEAR, (Entity) entityhuman);
+             this.gameEvent(GameEvent.SHEAR, (Entity) entityhuman);
              if (!this.level.isClientSide) {
 @@ -166,7 +175,9 @@
          this.level.playSound((EntityHuman) null, (Entity) this, SoundEffects.SNOW_GOLEM_SHEAR, soundcategory, 1.0F, 1.0F);
          if (!this.level.isClientSide()) {
-             this.setHasPumpkin(false);
+             this.setPumpkin(false);
 +            this.forceDrops = true; // CraftBukkit
-             this.a(new ItemStack(Items.CARVED_PUMPKIN), 1.7F);
+             this.spawnAtLocation(new ItemStack(Items.CARVED_PUMPKIN), 1.7F);
 +            this.forceDrops = false; // CraftBukkit
          }
  

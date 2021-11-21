@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/animal/horse/EntityHorseAbstract.java
 +++ b/net/minecraft/world/entity/animal/horse/EntityHorseAbstract.java
-@@ -69,6 +69,8 @@
+@@ -70,6 +70,8 @@
  import net.minecraft.world.phys.AxisAlignedBB;
  import net.minecraft.world.phys.Vec3D;
  
@@ -9,7 +9,7 @@
  public abstract class EntityHorseAbstract extends EntityAnimal implements IInventoryListener, IJumpable, ISaddleable {
  
      public static final int EQUIPMENT_SLOT_OFFSET = 400;
-@@ -108,6 +110,7 @@
+@@ -109,6 +111,7 @@
      private float mouthAnimO;
      protected boolean canGallop = true;
      protected int gallopSoundCounter;
@@ -17,25 +17,25 @@
  
      protected EntityHorseAbstract(EntityTypes<? extends EntityHorseAbstract> entitytypes, World world) {
          super(entitytypes, world);
-@@ -292,7 +295,7 @@
-     public void loadChest() {
+@@ -294,7 +297,7 @@
+     public void createInventory() {
          InventorySubcontainer inventorysubcontainer = this.inventory;
  
--        this.inventory = new InventorySubcontainer(this.getChestSlots());
-+        this.inventory = new InventorySubcontainer(this.getChestSlots(), (org.bukkit.entity.AbstractHorse) this.getBukkitEntity()); // CraftBukkit
+-        this.inventory = new InventorySubcontainer(this.getInventorySize());
++        this.inventory = new InventorySubcontainer(this.getInventorySize(), (org.bukkit.entity.AbstractHorse) this.getBukkitEntity()); // CraftBukkit
          if (inventorysubcontainer != null) {
-             inventorysubcontainer.b((IInventoryListener) this);
-             int i = Math.min(inventorysubcontainer.getSize(), this.inventory.getSize());
-@@ -408,7 +411,7 @@
+             inventorysubcontainer.removeListener(this);
+             int i = Math.min(inventorysubcontainer.getContainerSize(), this.inventory.getContainerSize());
+@@ -410,7 +413,7 @@
      }
  
-     public int getMaxDomestication() {
+     public int getMaxTemper() {
 -        return 100;
 +        return this.maxDomestication; // CraftBukkit - return stored max domestication instead of 100
      }
  
      @Override
-@@ -478,7 +481,7 @@
+@@ -480,7 +483,7 @@
          }
  
          if (this.getHealth() < this.getMaxHealth() && f > 0.0F) {
@@ -44,39 +44,39 @@
              flag = true;
          }
  
-@@ -555,7 +558,7 @@
-         super.movementTick();
+@@ -557,7 +560,7 @@
+         super.aiStep();
          if (!this.level.isClientSide && this.isAlive()) {
              if (this.random.nextInt(900) == 0 && this.deathTime == 0) {
 -                this.heal(1.0F);
 +                this.heal(1.0F, RegainReason.REGEN); // CraftBukkit
              }
  
-             if (this.fV()) {
-@@ -786,6 +789,7 @@
+             if (this.canEatGrass()) {
+@@ -788,6 +791,7 @@
          if (this.getOwnerUUID() != null) {
-             nbttagcompound.a("Owner", this.getOwnerUUID());
+             nbttagcompound.putUUID("Owner", this.getOwnerUUID());
          }
-+        nbttagcompound.setInt("Bukkit.MaxDomestication", this.maxDomestication); // CraftBukkit
++        nbttagcompound.putInt("Bukkit.MaxDomestication", this.maxDomestication); // CraftBukkit
  
          if (!this.inventory.getItem(0).isEmpty()) {
-             nbttagcompound.set("SaddleItem", this.inventory.getItem(0).save(new NBTTagCompound()));
-@@ -813,6 +817,11 @@
+             nbttagcompound.put("SaddleItem", this.inventory.getItem(0).save(new NBTTagCompound()));
+@@ -815,6 +819,11 @@
          if (uuid != null) {
              this.setOwnerUUID(uuid);
          }
 +        // CraftBukkit start
-+        if (nbttagcompound.hasKey("Bukkit.MaxDomestication")) {
++        if (nbttagcompound.contains("Bukkit.MaxDomestication")) {
 +            this.maxDomestication = nbttagcompound.getInt("Bukkit.MaxDomestication");
 +        }
 +        // CraftBukkit end
  
-         if (nbttagcompound.hasKeyOfType("SaddleItem", 10)) {
-             ItemStack itemstack = ItemStack.a(nbttagcompound.getCompound("SaddleItem"));
-@@ -895,6 +904,18 @@
+         if (nbttagcompound.contains("SaddleItem", 10)) {
+             ItemStack itemstack = ItemStack.of(nbttagcompound.getCompound("SaddleItem"));
+@@ -897,6 +906,18 @@
  
      @Override
-     public void b(int i) {
+     public void handleStartJump(int i) {
 +        // CraftBukkit start
 +        float power;
 +        if (i >= 90) {
@@ -90,5 +90,5 @@
 +        }
 +        // CraftBukkit end
          this.allowStandSliding = true;
-         this.fE();
-         this.fX();
+         this.stand();
+         this.playJumpSound();

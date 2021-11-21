@@ -53,7 +53,7 @@ public class CraftIpBanList implements org.bukkit.BanList {
     @Override
     public Set<org.bukkit.BanEntry> getBanEntries() {
         ImmutableSet.Builder<org.bukkit.BanEntry> builder = ImmutableSet.builder();
-        for (String target : list.getEntries()) {
+        for (String target : list.getUserList()) {
             builder.add(new CraftIpBanEntry(target, (IpBanEntry) list.get(target), list));
         }
 

@@ -40,7 +40,7 @@ public class CraftMetaSpawnEgg extends CraftMetaItem implements SpawnEggMeta {
     CraftMetaSpawnEgg(NBTTagCompound tag) {
         super(tag);
 
-        if (tag.hasKey(ENTITY_TAG.NBT)) {
+        if (tag.contains(ENTITY_TAG.NBT)) {
             entityTag = tag.getCompound(ENTITY_TAG.NBT);
         }
     }
@@ -58,7 +58,7 @@ public class CraftMetaSpawnEgg extends CraftMetaItem implements SpawnEggMeta {
     void deserializeInternal(NBTTagCompound tag, Object context) {
         super.deserializeInternal(tag, context);
 
-        if (tag.hasKey(ENTITY_TAG.NBT)) {
+        if (tag.contains(ENTITY_TAG.NBT)) {
             entityTag = tag.getCompound(ENTITY_TAG.NBT);
 
             if (context instanceof Map) {
@@ -83,8 +83,8 @@ public class CraftMetaSpawnEgg extends CraftMetaItem implements SpawnEggMeta {
             }
 
             // See if we can read a converted ID tag
-            if (entityTag.hasKey(ENTITY_ID.NBT)) {
-                this.spawnedType = EntityType.fromName(new MinecraftKey(entityTag.getString(ENTITY_ID.NBT)).getKey());
+            if (entityTag.contains(ENTITY_ID.NBT)) {
+                this.spawnedType = EntityType.fromName(new MinecraftKey(entityTag.getString(ENTITY_ID.NBT)).getPath());
             }
         }
     }
@@ -105,7 +105,7 @@ public class CraftMetaSpawnEgg extends CraftMetaItem implements SpawnEggMeta {
         }
 
         if (entityTag != null) {
-            tag.set(ENTITY_TAG.NBT, entityTag);
+            tag.put(ENTITY_TAG.NBT, entityTag);
         }
     }
 
@@ -255,7 +255,7 @@ public class CraftMetaSpawnEgg extends CraftMetaItem implements SpawnEggMeta {
 
         clone.spawnedType = spawnedType;
         if (entityTag != null) {
-            clone.entityTag = entityTag.clone();
+            clone.entityTag = entityTag.copy();
         }
 
         return clone;

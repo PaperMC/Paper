@@ -2,13 +2,10 @@ package org.bukkit.craftbukkit.generator;
 
 import java.lang.ref.WeakReference;
 import net.minecraft.core.BlockPosition;
-import net.minecraft.core.IRegistry;
-import net.minecraft.world.level.biome.BiomeBase;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.ITileEntity;
 import net.minecraft.world.level.block.entity.TileEntity;
 import net.minecraft.world.level.block.state.IBlockData;
-import net.minecraft.world.level.chunk.BiomeStorage;
 import net.minecraft.world.level.chunk.IChunkAccess;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -64,8 +61,7 @@ public final class CraftChunkData implements ChunkGenerator.ChunkData {
 
     @Override
     public Biome getBiome(int x, int y, int z) {
-        BiomeStorage biomeStorage = getHandle().getBiomeIndex();
-        return CraftBlock.biomeBaseToBiome((IRegistry<BiomeBase>) biomeStorage.biomeRegistry, biomeStorage.getBiome(x >> 2, y >> 2, z >> 2));
+        return CraftBlock.biomeBaseToBiome(getHandle().biomeRegistry, getHandle().getNoiseBiome(x >> 2, y >> 2, z >> 2));
     }
 
     @Override
@@ -150,11 +146,11 @@ public final class CraftChunkData implements ChunkGenerator.ChunkData {
 
     public IBlockData getTypeId(int x, int y, int z) {
         if (x != (x & 0xf) || y < minHeight || y >= maxHeight || z != (z & 0xf)) {
-            return Blocks.AIR.getBlockData();
+            return Blocks.AIR.defaultBlockState();
         }
 
         IChunkAccess access = getHandle();
-        return access.getType(new BlockPosition(access.getPos().d() + x, y, access.getPos().e() + z));
+        return access.getBlockState(new BlockPosition(access.getPos().getMinBlockX() + x, y, access.getPos().getMinBlockZ() + z));
     }
 
     @Override
@@ -168,20 +164,20 @@ public final class CraftChunkData implements ChunkGenerator.ChunkData {
         }
 
         IChunkAccess access = getHandle();
-        BlockPosition blockPosition = new BlockPosition(access.getPos().d() + x, y, access.getPos().e() + z);
-        IBlockData oldBlockData = access.setType(blockPosition, type, false);
+        BlockPosition blockPosition = new BlockPosition(access.getPos().getMinBlockX() + x, y, access.getPos().getMinBlockZ() + z);
+        IBlockData oldBlockData = access.setBlockState(blockPosition, type, false);
 
-        if (type.isTileEntity()) {
-            TileEntity tileEntity = ((ITileEntity) type.getBlock()).createTile(blockPosition, type);
+        if (type.hasBlockEntity()) {
+            TileEntity tileEntity = ((ITileEntity) type.getBlock()).newBlockEntity(blockPosition, type);
 
             // createTile can return null, currently only the case with material MOVING_PISTON
             if (tileEntity == null) {
-                access.removeTileEntity(blockPosition);
+                access.removeBlockEntity(blockPosition);
             } else {
-                access.setTileEntity(tileEntity);
+                access.setBlockEntity(tileEntity);
             }
-        } else if (oldBlockData != null && oldBlockData.isTileEntity()) {
-            access.removeTileEntity(blockPosition);
+        } else if (oldBlockData != null && oldBlockData.hasBlockEntity()) {
+            access.removeBlockEntity(blockPosition);
         }
     }
 }

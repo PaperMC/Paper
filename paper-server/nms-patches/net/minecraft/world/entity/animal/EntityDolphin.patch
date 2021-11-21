@@ -1,46 +1,37 @@
 --- a/net/minecraft/world/entity/animal/EntityDolphin.java
 +++ b/net/minecraft/world/entity/animal/EntityDolphin.java
-@@ -176,7 +176,7 @@
-         this.goalSelector.a(8, new EntityDolphin.c());
-         this.goalSelector.a(8, new PathfinderGoalFollowBoat(this));
-         this.goalSelector.a(9, new PathfinderGoalAvoidTarget<>(this, EntityGuardian.class, 8.0F, 1.0D, 1.0D));
--        this.targetSelector.a(1, (new PathfinderGoalHurtByTarget(this, new Class[]{EntityGuardian.class})).a());
-+        this.targetSelector.a(1, (new PathfinderGoalHurtByTarget(this, new Class[]{EntityGuardian.class})).a(new Class[0])); // CraftBukkit - decompile error
-     }
+@@ -233,6 +233,12 @@
+             ItemStack itemstack = entityitem.getItem();
  
-     public static AttributeProvider.Builder fw() {
-@@ -243,6 +243,12 @@
-             ItemStack itemstack = entityitem.getItemStack();
- 
-             if (this.canPickup(itemstack)) {
+             if (this.canHoldItem(itemstack)) {
 +                // CraftBukkit start - call EntityPickupItemEvent
 +                if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityPickupItemEvent(this, entityitem, 0, false).isCancelled()) {
 +                    return;
 +                }
-+                itemstack = entityitem.getItemStack(); // update ItemStack from event
++                itemstack = entityitem.getItem(); // update ItemStack from event
 +                // CraftBukkit end
-                 this.a(entityitem);
-                 this.setSlot(EnumItemSlot.MAINHAND, itemstack);
-                 this.handDropChances[EnumItemSlot.MAINHAND.b()] = 2.0F;
-@@ -411,7 +417,7 @@
+                 this.onItemPickup(entityitem);
+                 this.setItemSlot(EnumItemSlot.MAINHAND, itemstack);
+                 this.handDropChances[EnumItemSlot.MAINHAND.getIndex()] = 2.0F;
+@@ -391,7 +397,7 @@
  
          @Override
-         public boolean a() {
--            return this.dolphin.gotFish() && this.dolphin.getAirTicks() >= 100;
-+            return this.dolphin.gotFish() && this.dolphin.getAirTicks() >= 100 && this.dolphin.level.getWorld().canGenerateStructures(); // MC-151364, SPIGOT-5494: hangs if generate-structures=false
+         public boolean canUse() {
+-            return this.dolphin.gotFish() && this.dolphin.getAirSupply() >= 100;
++            return this.dolphin.gotFish() && this.dolphin.getAirSupply() >= 100 && this.dolphin.level.getWorld().canGenerateStructures(); // MC-151364, SPIGOT-5494: hangs if generate-structures=false
          }
  
          @Override
-@@ -520,7 +526,7 @@
+@@ -501,7 +507,7 @@
  
          @Override
-         public void c() {
+         public void start() {
 -            this.player.addEffect(new MobEffect(MobEffects.DOLPHINS_GRACE, 100), this.dolphin);
 +            this.player.addEffect(new MobEffect(MobEffects.DOLPHINS_GRACE, 100), this.dolphin, org.bukkit.event.entity.EntityPotionEffectEvent.Cause.DOLPHIN); // CraftBukkit
          }
  
          @Override
-@@ -539,7 +545,7 @@
+@@ -520,7 +526,7 @@
              }
  
              if (this.player.isSwimming() && this.player.level.random.nextInt(6) == 0) {

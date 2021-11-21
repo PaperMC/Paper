@@ -23,7 +23,7 @@ public class CraftThrownPotion extends CraftProjectile implements ThrownPotion {
     @Override
     public Collection<PotionEffect> getEffects() {
         ImmutableList.Builder<PotionEffect> builder = ImmutableList.builder();
-        for (MobEffect effect : PotionUtil.getEffects(getHandle().getItem())) {
+        for (MobEffect effect : PotionUtil.getMobEffects(getHandle().getItemRaw())) {
             builder.add(CraftPotionUtil.toBukkit(effect));
         }
         return builder.build();
@@ -31,7 +31,7 @@ public class CraftThrownPotion extends CraftProjectile implements ThrownPotion {
 
     @Override
     public ItemStack getItem() {
-        return CraftItemStack.asBukkitCopy(getHandle().getItem());
+        return CraftItemStack.asBukkitCopy(getHandle().getItemRaw());
     }
 
     @Override

@@ -8,8 +8,8 @@ import java.util.List;
 import java.util.Random;
 import net.minecraft.core.BlockPosition;
 import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.server.level.RegionLimitedWorldAccess;
 import net.minecraft.world.entity.EntityTypes;
+import net.minecraft.world.level.ChunkCoordIntPair;
 import net.minecraft.world.level.GeneratorAccessSeed;
 import net.minecraft.world.level.biome.BiomeBase;
 import net.minecraft.world.level.chunk.ChunkStatus;
@@ -43,17 +43,17 @@ public class CraftLimitedRegion extends CraftRegionAccessor implements LimitedRe
     // save them when the population is finished.
     private final List<net.minecraft.world.entity.Entity> entities = new ArrayList<>();
 
-    public CraftLimitedRegion(RegionLimitedWorldAccess access) {
+    public CraftLimitedRegion(GeneratorAccessSeed access, ChunkCoordIntPair center) {
         this.weakAccess = new WeakReference<>(access);
-        centerChunkX = access.a().x; // PAIL rename getCenter
-        centerChunkZ = access.a().z; // PAIL rename getCenter
+        centerChunkX = center.x;
+        centerChunkZ = center.z;
 
         // load entities which are already present
         for (int x = -(buffer >> 4); x <= (buffer >> 4); x++) {
             for (int z = -(buffer >> 4); z <= (buffer >> 4); z++) {
-                ProtoChunk chunk = (ProtoChunk) access.getChunkAt(centerChunkX + x, centerChunkZ + z);
-                for (NBTTagCompound compound : chunk.z()) {  // PAIL rename getGenerationEntities
-                    EntityTypes.a(compound, access.getMinecraftWorld(), (entity) -> {  // PAIL rename fromNBTTag
+                ProtoChunk chunk = (ProtoChunk) access.getChunk(centerChunkX + x, centerChunkZ + z);
+                for (NBTTagCompound compound : chunk.getEntities()) {
+                    EntityTypes.loadEntityRecursive(compound, access.getMinecraftWorld(), (entity) -> {
                         entity.generation = true;
                         entities.add(entity);
                         return entity;
@@ -87,16 +87,16 @@ public class CraftLimitedRegion extends CraftRegionAccessor implements LimitedRe
         GeneratorAccessSeed access = getHandle();
         for (int x = -(buffer >> 4); x <= (buffer >> 4); x++) {
             for (int z = -(buffer >> 4); z <= (buffer >> 4); z++) {
-                ProtoChunk chunk = (ProtoChunk) access.getChunkAt(centerChunkX + x, centerChunkZ + z);
-                chunk.z().clear(); // PAIL rename getGenerationEntities
+                ProtoChunk chunk = (ProtoChunk) access.getChunk(centerChunkX + x, centerChunkZ + z);
+                chunk.getEntities().clear();
             }
         }
 
         for (net.minecraft.world.entity.Entity entity : entities) {
             if (entity.isAlive()) {
                 // check if entity is still in region or if it got teleported outside it
-                Preconditions.checkState(region.contains(entity.locX(), entity.locY(), entity.locZ()), "Entity %s is not in the region", entity);
-                access.addEntity(entity);
+                Preconditions.checkState(region.contains(entity.getX(), entity.getY(), entity.getZ()), "Entity %s is not in the region", entity);
+                access.addFreshEntity(entity);
             }
         }
     }
@@ -126,8 +126,8 @@ public class CraftLimitedRegion extends CraftRegionAccessor implements LimitedRe
 
         for (int x = -(buffer >> 4); x <= (buffer >> 4); x++) {
             for (int z = -(buffer >> 4); z <= (buffer >> 4); z++) {
-                ProtoChunk chunk = (ProtoChunk) getHandle().getChunkAt(centerChunkX + x, centerChunkZ + z);
-                for (BlockPosition position : chunk.c()) { // PAIL rename getTilePositions
+                ProtoChunk chunk = (ProtoChunk) getHandle().getChunk(centerChunkX + x, centerChunkZ + z);
+                for (BlockPosition position : chunk.getBlockEntitiesPos()) {
                     blockStates.add(getBlockState(position.getX(), position.getY(), position.getZ()));
                 }
             }
@@ -145,8 +145,8 @@ public class CraftLimitedRegion extends CraftRegionAccessor implements LimitedRe
     @Override
     public void setBiome(int x, int y, int z, BiomeBase biomeBase) {
         Preconditions.checkArgument(isInRegion(x, y, z), "Coordinates %s, %s, %s are not in the region", x, y, z);
-        IChunkAccess chunk = getHandle().getChunkAt(x >> 4, z >> 4, ChunkStatus.EMPTY);
-        chunk.getBiomeIndex().setBiome(x >> 2, y >> 2, z >> 2, biomeBase);
+        IChunkAccess chunk = getHandle().getChunk(x >> 4, z >> 4, ChunkStatus.EMPTY);
+        chunk.setBiome(x >> 2, y >> 2, z >> 2, biomeBase);
     }
 
     @Override

@@ -32,7 +32,7 @@ public final class CapturedBlockState extends CraftBlockState {
             Random random = generatoraccessseed.getRandom();
 
             // Begin copied block from WorldGenFeatureTreeBeehive
-            TileEntity tileentity = generatoraccessseed.getTileEntity(blockposition1);
+            TileEntity tileentity = generatoraccessseed.getBlockEntity(blockposition1);
 
             if (tileentity instanceof TileEntityBeehive) {
                 TileEntityBeehive tileentitybeehive = (TileEntityBeehive) tileentity;
@@ -41,7 +41,7 @@ public final class CapturedBlockState extends CraftBlockState {
                 for (int k = 0; k < j; ++k) {
                     EntityBee entitybee = new EntityBee(EntityTypes.BEE, generatoraccessseed.getMinecraftWorld());
 
-                    tileentitybeehive.a(entitybee, false, random.nextInt(599));
+                    tileentitybeehive.addOccupantWithPresetTicks(entitybee, false, random.nextInt(599));
                 }
             }
             // End copied block

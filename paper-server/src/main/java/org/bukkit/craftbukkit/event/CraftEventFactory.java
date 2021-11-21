@@ -240,12 +240,12 @@ public class CraftEventFactory {
     private static boolean canBuild(WorldServer world, Player player, int x, int z) {
         int spawnSize = Bukkit.getServer().getSpawnRadius();
 
-        if (world.getDimensionKey() != World.OVERWORLD) return true;
+        if (world.dimension() != World.OVERWORLD) return true;
         if (spawnSize <= 0) return true;
-        if (((CraftServer) Bukkit.getServer()).getHandle().getOPs().isEmpty()) return true;
+        if (((CraftServer) Bukkit.getServer()).getHandle().getOps().isEmpty()) return true;
         if (player.isOp()) return true;
 
-        BlockPosition chunkcoordinates = world.getSpawn();
+        BlockPosition chunkcoordinates = world.getSharedSpawnPos();
 
         int distanceFromSpawn = Math.max(Math.abs(x - chunkcoordinates.getX()), Math.abs(z - chunkcoordinates.getZ()));
         return distanceFromSpawn > spawnSize;
@@ -399,13 +399,13 @@ public class CraftEventFactory {
 
         if (!event.isCancelled()) {
             for (EntityItem item : items) {
-                item.level.addEntity(item);
+                item.level.addFreshEntity(item);
             }
         }
     }
 
     public static EntityPlaceEvent callEntityPlaceEvent(ItemActionContext itemactioncontext, Entity entity) {
-        return callEntityPlaceEvent(itemactioncontext.getWorld(), itemactioncontext.getClickPosition(), itemactioncontext.getClickedFace(), itemactioncontext.getEntity(), entity);
+        return callEntityPlaceEvent(itemactioncontext.getLevel(), itemactioncontext.getClickedPos(), itemactioncontext.getClickedFace(), itemactioncontext.getPlayer(), entity);
     }
 
     public static EntityPlaceEvent callEntityPlaceEvent(World world, BlockPosition clickPosition, EnumDirection clickedFace, EntityHuman human, Entity entity) {
@@ -584,8 +584,8 @@ public class CraftEventFactory {
             boolean isNpc = entity instanceof NPC;
 
             if (spawnReason != SpawnReason.CUSTOM) {
-                if (isAnimal && !world.getWorld().getAllowAnimals() || isMonster && !world.getWorld().getAllowMonsters() || isNpc && !world.getCraftServer().getServer().getSpawnNPCs()) {
-                    entity.die();
+                if (isAnimal && !world.getWorld().getAllowAnimals() || isMonster && !world.getWorld().getAllowMonsters() || isNpc && !world.getCraftServer().getServer().areNpcsEnabled()) {
+                    entity.discard();
                     return false;
                 }
             }
@@ -623,12 +623,12 @@ public class CraftEventFactory {
         if (event != null && (event.isCancelled() || entity.isRemoved())) {
             Entity vehicle = entity.getVehicle();
             if (vehicle != null) {
-                vehicle.die();
+                vehicle.discard();
             }
-            for (Entity passenger : entity.getAllPassengers()) {
-                passenger.die();
+            for (Entity passenger : entity.getIndirectPassengers()) {
+                passenger.discard();
             }
-            entity.die();
+            entity.discard();
             return false;
         }
 
@@ -763,7 +763,7 @@ public class CraftEventFactory {
     public static boolean handleBlockSpreadEvent(GeneratorAccess world, BlockPosition source, BlockPosition target, IBlockData block, int flag) {
         // Suppress during worldgen
         if (!(world instanceof World)) {
-            world.setTypeAndData(target, block, flag);
+            world.setBlock(target, block, flag);
             return true;
         }
 
@@ -1167,7 +1167,7 @@ public class CraftEventFactory {
 
     public static Container callInventoryOpenEvent(EntityPlayer player, Container container, boolean cancelled) {
         if (player.containerMenu != player.inventoryMenu) { // fire INVENTORY_CLOSE if one already open
-            player.connection.a(new PacketPlayInCloseWindow(player.containerMenu.containerId));
+            player.connection.handleContainerClose(new PacketPlayInCloseWindow(player.containerMenu.containerId));
         }
 
         CraftServer server = player.level.getCraftServer();
@@ -1214,7 +1214,7 @@ public class CraftEventFactory {
         BlockFace hitFace = null;
         if (position.getType() == MovingObjectPosition.EnumMovingObjectType.BLOCK) {
             MovingObjectPositionBlock positionBlock = (MovingObjectPositionBlock) position;
-            hitBlock = CraftBlock.at(entity.level, positionBlock.getBlockPosition());
+            hitBlock = CraftBlock.at(entity.level, positionBlock.getBlockPos());
             hitFace = CraftBlock.notchToBlockFace(positionBlock.getDirection());
         }
 
@@ -1297,7 +1297,7 @@ public class CraftEventFactory {
         }
 
         if (igniter instanceof IProjectile) {
-            Entity shooter = ((IProjectile) igniter).getShooter();
+            Entity shooter = ((IProjectile) igniter).getOwner();
             if (shooter != null) {
                 bukkitIgniter = shooter.getBukkitEntity();
             }
@@ -1482,7 +1482,7 @@ public class CraftEventFactory {
         BlockPhysicsEvent event = new BlockPhysicsEvent(block, block.getBlockData());
         // Suppress during worldgen
         if (world instanceof World) {
-            ((World) world).getMinecraftServer().server.getPluginManager().callEvent(event);
+            ((World) world).getServer().server.getPluginManager().callEvent(event);
         }
         return event;
     }
@@ -1575,18 +1575,18 @@ public class CraftEventFactory {
      * Raid events
      */
     public static boolean callRaidTriggerEvent(Raid raid, EntityPlayer player) {
-        RaidTriggerEvent event = new RaidTriggerEvent(new CraftRaid(raid), raid.getWorld().getWorld(), player.getBukkitEntity());
+        RaidTriggerEvent event = new RaidTriggerEvent(new CraftRaid(raid), raid.getLevel().getWorld(), player.getBukkitEntity());
         Bukkit.getPluginManager().callEvent(event);
         return !event.isCancelled();
     }
 
     public static void callRaidFinishEvent(Raid raid, List<Player> players) {
-        RaidFinishEvent event = new RaidFinishEvent(new CraftRaid(raid), raid.getWorld().getWorld(), players);
+        RaidFinishEvent event = new RaidFinishEvent(new CraftRaid(raid), raid.getLevel().getWorld(), players);
         Bukkit.getPluginManager().callEvent(event);
     }
 
     public static void callRaidStopEvent(Raid raid, RaidStopEvent.Reason reason) {
-        RaidStopEvent event = new RaidStopEvent(new CraftRaid(raid), raid.getWorld().getWorld(), reason);
+        RaidStopEvent event = new RaidStopEvent(new CraftRaid(raid), raid.getLevel().getWorld(), reason);
         Bukkit.getPluginManager().callEvent(event);
     }
 
@@ -1596,14 +1596,14 @@ public class CraftEventFactory {
         for (EntityRaider entityRaider : raiders) {
             craftRaiders.add((Raider) entityRaider.getBukkitEntity());
         }
-        RaidSpawnWaveEvent event = new RaidSpawnWaveEvent(new CraftRaid(raid), raid.getWorld().getWorld(), craftLeader, craftRaiders);
+        RaidSpawnWaveEvent event = new RaidSpawnWaveEvent(new CraftRaid(raid), raid.getLevel().getWorld(), craftLeader, craftRaiders);
         Bukkit.getPluginManager().callEvent(event);
     }
 
     public static LootGenerateEvent callLootGenerateEvent(IInventory inventory, LootTable lootTable, LootTableInfo lootInfo, List<ItemStack> loot, boolean plugin) {
-        CraftWorld world = lootInfo.getWorld().getWorld();
-        Entity entity = lootInfo.getContextParameter(LootContextParameters.THIS_ENTITY);
-        NamespacedKey key = CraftNamespacedKey.fromMinecraft(world.getHandle().getMinecraftServer().getLootTableRegistry().lootTableToKey.get(lootTable));
+        CraftWorld world = lootInfo.getLevel().getWorld();
+        Entity entity = lootInfo.getParamOrNull(LootContextParameters.THIS_ENTITY);
+        NamespacedKey key = CraftNamespacedKey.fromMinecraft(world.getHandle().getServer().getLootTables().lootTableToKey.get(lootTable));
         CraftLootTable craftLootTable = new CraftLootTable(key, lootTable);
         List<org.bukkit.inventory.ItemStack> bukkitLoot = loot.stream().map(CraftItemStack::asCraftMirror).collect(Collectors.toCollection(ArrayList::new));
 

@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/block/entity/TileEntityBeacon.java
 +++ b/net/minecraft/world/level/block/entity/TileEntityBeacon.java
-@@ -40,6 +40,11 @@
+@@ -39,6 +39,11 @@
  import net.minecraft.world.level.levelgen.HeightMap;
  import net.minecraft.world.phys.AxisAlignedBB;
  
@@ -12,7 +12,7 @@
  public class TileEntityBeacon extends TileEntity implements ITileInventory {
  
      private static final int MAX_LEVELS = 4;
-@@ -62,6 +67,15 @@
+@@ -61,6 +66,15 @@
      public IChatBaseComponent name;
      public ChestLock lockKey;
      private final IContainerProperties dataAccess;
@@ -28,8 +28,8 @@
  
      public TileEntityBeacon(BlockPosition blockposition, IBlockData iblockdata) {
          super(TileEntityTypes.BEACON, blockposition, iblockdata);
-@@ -230,39 +244,78 @@
-         super.aa_();
+@@ -229,39 +243,78 @@
+         super.setRemoved();
      }
  
 -    private static void applyEffects(World world, BlockPosition blockposition, int i, @Nullable MobEffectList mobeffectlist, @Nullable MobEffectList mobeffectlist1) {
@@ -59,8 +59,8 @@
 +        {
 +            double d0 = (double) (i * 10 + 10);
 +
-             AxisAlignedBB axisalignedbb = (new AxisAlignedBB(blockposition)).g(d0).b(0.0D, (double) world.getHeight(), 0.0D);
-             List<EntityHuman> list = world.a(EntityHuman.class, axisalignedbb);
+             AxisAlignedBB axisalignedbb = (new AxisAlignedBB(blockposition)).inflate(d0).expandTowards(0.0D, (double) world.getHeight(), 0.0D);
+             List<EntityHuman> list = world.getEntitiesOfClass(EntityHuman.class, axisalignedbb);
 +
 +            return list;
 +        }
@@ -114,20 +114,20 @@
 +    }
 +    // CraftBukkit end
 +
-     public static void a(World world, BlockPosition blockposition, SoundEffect soundeffect) {
+     public static void playSound(World world, BlockPosition blockposition, SoundEffect soundeffect) {
          world.playSound((EntityHuman) null, blockposition, soundeffect, SoundCategory.BLOCKS, 1.0F, 1.0F);
      }
-@@ -292,8 +345,11 @@
+@@ -290,8 +343,11 @@
      @Override
      public void load(NBTTagCompound nbttagcompound) {
          super.load(nbttagcompound);
--        this.primaryPower = a(nbttagcompound.getInt("Primary"));
--        this.secondaryPower = a(nbttagcompound.getInt("Secondary"));
+-        this.primaryPower = getValidEffectById(nbttagcompound.getInt("Primary"));
+-        this.secondaryPower = getValidEffectById(nbttagcompound.getInt("Secondary"));
 +        // CraftBukkit start - persist manually set non-default beacon effects (SPIGOT-3598)
-+        this.primaryPower = MobEffectList.fromId(nbttagcompound.getInt("Primary"));
-+        this.secondaryPower = MobEffectList.fromId(nbttagcompound.getInt("Secondary"));
++        this.primaryPower = MobEffectList.byId(nbttagcompound.getInt("Primary"));
++        this.secondaryPower = MobEffectList.byId(nbttagcompound.getInt("Secondary"));
 +        this.levels = nbttagcompound.getInt("Levels"); // SPIGOT-5053, use where available
 +        // CraftBukkit end
-         if (nbttagcompound.hasKeyOfType("CustomName", 8)) {
-             this.name = IChatBaseComponent.ChatSerializer.a(nbttagcompound.getString("CustomName"));
+         if (nbttagcompound.contains("CustomName", 8)) {
+             this.name = IChatBaseComponent.ChatSerializer.fromJson(nbttagcompound.getString("CustomName"));
          }

@@ -14,7 +14,7 @@ public class RecipeIterator implements Iterator<Recipe> {
     private Iterator<IRecipe<?>> current;
 
     public RecipeIterator() {
-        this.recipes = MinecraftServer.getServer().getCraftingManager().recipes.entrySet().iterator();
+        this.recipes = MinecraftServer.getServer().getRecipeManager().recipes.entrySet().iterator();
     }
 
     @Override

@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/block/LightningRodBlock.java
 +++ b/net/minecraft/world/level/block/LightningRodBlock.java
-@@ -33,6 +33,11 @@
+@@ -32,6 +32,11 @@
  import net.minecraft.world.phys.MovingObjectPositionBlock;
  import net.minecraft.world.phys.Vec3D;
  
@@ -12,12 +12,12 @@
  public class LightningRodBlock extends RodBlock implements IBlockWaterlogged {
  
      public static final BlockStateBoolean WATERLOGGED = BlockProperties.WATERLOGGED;
-@@ -79,6 +84,18 @@
+@@ -78,6 +83,18 @@
      }
  
-     public void d(IBlockData iblockdata, World world, BlockPosition blockposition) {
+     public void onLightningStrike(IBlockData iblockdata, World world, BlockPosition blockposition) {
 +        // CraftBukkit start
-+        boolean powered = iblockdata.get(LightningRodBlock.POWERED);
++        boolean powered = iblockdata.getValue(LightningRodBlock.POWERED);
 +        int old = (powered) ? 15 : 0;
 +        int current = (!powered) ? 15 : 0;
 +
@@ -28,14 +28,14 @@
 +            return;
 +        }
 +        // CraftBukkit end
-         world.setTypeAndData(blockposition, (IBlockData) iblockdata.set(LightningRodBlock.POWERED, true), 3);
-         this.e(iblockdata, world, blockposition);
-         world.getBlockTickList().a(blockposition, this, 8);
-@@ -135,7 +152,7 @@
-                 Entity entity = iprojectile.getShooter();
+         world.setBlock(blockposition, (IBlockData) iblockdata.setValue(LightningRodBlock.POWERED, true), 3);
+         this.updateNeighbours(iblockdata, world, blockposition);
+         world.scheduleTick(blockposition, (Block) this, 8);
+@@ -134,7 +151,7 @@
+                 Entity entity = iprojectile.getOwner();
  
-                 entitylightning.b(entity instanceof EntityPlayer ? (EntityPlayer) entity : null);
--                world.addEntity(entitylightning);
+                 entitylightning.setCause(entity instanceof EntityPlayer ? (EntityPlayer) entity : null);
+-                world.addFreshEntity(entitylightning);
 +                ((WorldServer) world).strikeLightning(entitylightning, org.bukkit.event.weather.LightningStrikeEvent.Cause.TRIDENT); // CraftBukkit
                  world.playSound((EntityHuman) null, blockposition, SoundEffects.TRIDENT_THUNDER, SoundCategory.WEATHER, 5.0F, 1.0F);
              }

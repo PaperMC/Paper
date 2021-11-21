@@ -18,8 +18,8 @@
      private final int width;
 +    org.bukkit.craftbukkit.util.BlockStateListPopulator blocks; // CraftBukkit - add field
  
-     public static Optional<BlockPortalShape> a(GeneratorAccess generatoraccess, BlockPosition blockposition, EnumDirection.EnumAxis enumdirection_enumaxis) {
-         return a(generatoraccess, blockposition, (blockportalshape) -> {
+     public static Optional<BlockPortalShape> findEmptyPortalShape(GeneratorAccess generatoraccess, BlockPosition blockposition, EnumDirection.EnumAxis enumdirection_enumaxis) {
+         return findPortalShape(generatoraccess, blockposition, (blockportalshape) -> {
 @@ -56,6 +62,7 @@
      }
  
@@ -30,9 +30,9 @@
          this.rightDir = enumdirection_enumaxis == EnumDirection.EnumAxis.X ? EnumDirection.WEST : EnumDirection.SOUTH;
 @@ -100,6 +107,7 @@
  
-             if (!a(iblockdata)) {
+             if (!isEmpty(iblockdata)) {
                  if (BlockPortalShape.FRAME.test(iblockdata, this.level, blockposition_mutableblockposition)) {
-+                    blocks.setTypeAndData(blockposition_mutableblockposition, iblockdata, 18); // CraftBukkit - lower left / right
++                    blocks.setBlock(blockposition_mutableblockposition, iblockdata, 18); // CraftBukkit - lower left / right
                      return i;
                  }
                  break;
@@ -40,15 +40,15 @@
              if (!BlockPortalShape.FRAME.test(iblockdata1, this.level, blockposition_mutableblockposition)) {
                  break;
              }
-+            blocks.setTypeAndData(blockposition_mutableblockposition, iblockdata1, 18); // CraftBukkit - bottom row
++            blocks.setBlock(blockposition_mutableblockposition, iblockdata1, 18); // CraftBukkit - bottom row
          }
  
          return 0;
 @@ -129,6 +138,7 @@
-             if (!BlockPortalShape.FRAME.test(this.level.getType(blockposition_mutableblockposition1), this.level, blockposition_mutableblockposition1)) {
+             if (!BlockPortalShape.FRAME.test(this.level.getBlockState(blockposition_mutableblockposition1), this.level, blockposition_mutableblockposition1)) {
                  return false;
              }
-+            blocks.setTypeAndData(blockposition_mutableblockposition1, this.level.getType(blockposition_mutableblockposition1), 18); // CraftBukkit - upper row
++            blocks.setBlock(blockposition_mutableblockposition1, this.level.getBlockState(blockposition_mutableblockposition1), 18); // CraftBukkit - upper row
          }
  
          return true;
@@ -57,8 +57,8 @@
                  }
              }
 +            // CraftBukkit start - left and right
-+            blocks.setTypeAndData(blockposition_mutableblockposition.g(this.bottomLeft).c(EnumDirection.UP, i).c(this.rightDir, -1), this.level.getType(blockposition_mutableblockposition), 18);
-+            blocks.setTypeAndData(blockposition_mutableblockposition.g(this.bottomLeft).c(EnumDirection.UP, i).c(this.rightDir, this.width), this.level.getType(blockposition_mutableblockposition), 18);
++            blocks.setBlock(blockposition_mutableblockposition.set(this.bottomLeft).move(EnumDirection.UP, i).move(this.rightDir, -1), this.level.getBlockState(blockposition_mutableblockposition), 18);
++            blocks.setBlock(blockposition_mutableblockposition.set(this.bottomLeft).move(EnumDirection.UP, i).move(this.rightDir, this.width), this.level.getBlockState(blockposition_mutableblockposition), 18);
 +            // CraftBukkit end
          }
  
@@ -67,41 +67,41 @@
          return this.bottomLeft != null && this.width >= 2 && this.width <= 21 && this.height >= 3 && this.height <= 21;
      }
  
--    public void createPortal() {
+-    public void createPortalBlocks() {
 +    // CraftBukkit start - return boolean
-+    public boolean createPortal() {
++    public boolean createPortalBlocks() {
 +        org.bukkit.World bworld = this.level.getMinecraftWorld().getWorld();
 +
 +        // Copy below for loop
-         IBlockData iblockdata = (IBlockData) Blocks.NETHER_PORTAL.getBlockData().set(BlockPortal.AXIS, this.axis);
+         IBlockData iblockdata = (IBlockData) Blocks.NETHER_PORTAL.defaultBlockState().setValue(BlockPortal.AXIS, this.axis);
  
-         BlockPosition.a(this.bottomLeft, this.bottomLeft.shift(EnumDirection.UP, this.height - 1).shift(this.rightDir, this.width - 1)).forEach((blockposition) -> {
-+            blocks.setTypeAndData(blockposition, iblockdata, 18);
+         BlockPosition.betweenClosed(this.bottomLeft, this.bottomLeft.relative(EnumDirection.UP, this.height - 1).relative(this.rightDir, this.width - 1)).forEach((blockposition) -> {
++            blocks.setBlock(blockposition, iblockdata, 18);
 +        });
 +
 +        PortalCreateEvent event = new PortalCreateEvent((java.util.List<org.bukkit.block.BlockState>) (java.util.List) blocks.getList(), bworld, null, PortalCreateEvent.CreateReason.FIRE);
-+        this.level.getMinecraftWorld().getMinecraftServer().server.getPluginManager().callEvent(event);
++        this.level.getMinecraftWorld().getServer().server.getPluginManager().callEvent(event);
 +
 +        if (event.isCancelled()) {
 +            return false;
 +        }
 +        // CraftBukkit end
-+        BlockPosition.a(this.bottomLeft, this.bottomLeft.shift(EnumDirection.UP, this.height - 1).shift(this.rightDir, this.width - 1)).forEach((blockposition) -> {
-             this.level.setTypeAndData(blockposition, iblockdata, 18);
++        BlockPosition.betweenClosed(this.bottomLeft, this.bottomLeft.relative(EnumDirection.UP, this.height - 1).relative(this.rightDir, this.width - 1)).forEach((blockposition) -> {
+             this.level.setBlock(blockposition, iblockdata, 18);
          });
 +        return true; // CraftBukkit
      }
  
-     public boolean c() {
+     public boolean isComplete() {
 @@ -213,7 +243,7 @@
          return new Vec3D(d2, d3, d4);
      }
  
--    public static ShapeDetectorShape a(WorldServer worldserver, BlockUtil.Rectangle blockutil_rectangle, EnumDirection.EnumAxis enumdirection_enumaxis, Vec3D vec3d, EntitySize entitysize, Vec3D vec3d1, float f, float f1) {
-+    public static ShapeDetectorShape a(WorldServer worldserver, BlockUtil.Rectangle blockutil_rectangle, EnumDirection.EnumAxis enumdirection_enumaxis, Vec3D vec3d, EntitySize entitysize, Vec3D vec3d1, float f, float f1, CraftPortalEvent portalEventInfo) { // CraftBukkit // PAIL rename toDetectorShape
+-    public static ShapeDetectorShape createPortalInfo(WorldServer worldserver, BlockUtil.Rectangle blockutil_rectangle, EnumDirection.EnumAxis enumdirection_enumaxis, Vec3D vec3d, EntitySize entitysize, Vec3D vec3d1, float f, float f1) {
++    public static ShapeDetectorShape createPortalInfo(WorldServer worldserver, BlockUtil.Rectangle blockutil_rectangle, EnumDirection.EnumAxis enumdirection_enumaxis, Vec3D vec3d, EntitySize entitysize, Vec3D vec3d1, float f, float f1, CraftPortalEvent portalEventInfo) { // CraftBukkit
          BlockPosition blockposition = blockutil_rectangle.minCorner;
-         IBlockData iblockdata = worldserver.getType(blockposition);
-         EnumDirection.EnumAxis enumdirection_enumaxis1 = (EnumDirection.EnumAxis) iblockdata.d(BlockProperties.HORIZONTAL_AXIS).orElse(EnumDirection.EnumAxis.X);
+         IBlockData iblockdata = worldserver.getBlockState(blockposition);
+         EnumDirection.EnumAxis enumdirection_enumaxis1 = (EnumDirection.EnumAxis) iblockdata.getOptionalValue(BlockProperties.HORIZONTAL_AXIS).orElse(EnumDirection.EnumAxis.X);
 @@ -227,6 +257,6 @@
          boolean flag = enumdirection_enumaxis1 == EnumDirection.EnumAxis.X;
          Vec3D vec3d3 = new Vec3D((double) blockposition.getX() + (flag ? d2 : d4), (double) blockposition.getY() + d3, (double) blockposition.getZ() + (flag ? d4 : d2));

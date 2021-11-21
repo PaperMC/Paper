@@ -10,9 +10,9 @@ public class PatternTypeTest extends AbstractTestingBase {
     @Test
     public void testToBukkit() {
         for (EnumBannerPatternType nms : EnumBannerPatternType.values()) {
-            PatternType bukkit = PatternType.getByIdentifier(nms.b());
+            PatternType bukkit = PatternType.getByIdentifier(nms.getHashname());
 
-            Assert.assertNotNull("No Bukkit banner for " + nms + " " + nms.b(), bukkit);
+            Assert.assertNotNull("No Bukkit banner for " + nms + " " + nms.getHashname(), bukkit);
         }
     }
 
@@ -21,7 +21,7 @@ public class PatternTypeTest extends AbstractTestingBase {
         for (PatternType bukkit : PatternType.values()) {
             EnumBannerPatternType found = null;
             for (EnumBannerPatternType nms : EnumBannerPatternType.values()) {
-                if (bukkit.getIdentifier().equals(nms.b())) {
+                if (bukkit.getIdentifier().equals(nms.getHashname())) {
                     found = nms;
                     break;
                 }

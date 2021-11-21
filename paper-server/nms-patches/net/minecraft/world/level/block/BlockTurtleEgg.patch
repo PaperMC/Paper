@@ -14,9 +14,9 @@
  
      public static final int MAX_HATCH_LEVEL = 2;
 @@ -62,6 +68,19 @@
-     private void a(World world, IBlockData iblockdata, BlockPosition blockposition, Entity entity, int i) {
-         if (this.a(world, entity)) {
-             if (!world.isClientSide && world.random.nextInt(i) == 0 && iblockdata.a(Blocks.TURTLE_EGG)) {
+     private void destroyEgg(World world, IBlockData iblockdata, BlockPosition blockposition, Entity entity, int i) {
+         if (this.canDestroyEgg(world, entity)) {
+             if (!world.isClientSide && world.random.nextInt(i) == 0 && iblockdata.is(Blocks.TURTLE_EGG)) {
 +                // CraftBukkit start - Step on eggs
 +                org.bukkit.event.Cancellable cancellable;
 +                if (entity instanceof EntityHuman) {
@@ -30,36 +30,36 @@
 +                    return;
 +                }
 +                // CraftBukkit end
-                 this.a(world, blockposition, iblockdata);
+                 this.decreaseEggs(world, blockposition, iblockdata);
              }
  
 @@ -87,9 +106,19 @@
-             int i = (Integer) iblockdata.get(BlockTurtleEgg.HATCH);
+             int i = (Integer) iblockdata.getValue(BlockTurtleEgg.HATCH);
  
              if (i < 2) {
 +                // CraftBukkit start - Call BlockGrowEvent
-+                if (!CraftEventFactory.handleBlockGrowEvent(worldserver, blockposition, iblockdata.set(BlockTurtleEgg.HATCH, i + 1), 2)) {
++                if (!CraftEventFactory.handleBlockGrowEvent(worldserver, blockposition, iblockdata.setValue(BlockTurtleEgg.HATCH, i + 1), 2)) {
 +                    return;
 +                }
 +                // CraftBukkit end
                  worldserver.playSound((EntityHuman) null, blockposition, SoundEffects.TURTLE_EGG_CRACK, SoundCategory.BLOCKS, 0.7F, 0.9F + random.nextFloat() * 0.2F);
--                worldserver.setTypeAndData(blockposition, (IBlockData) iblockdata.set(BlockTurtleEgg.HATCH, i + 1), 2);
-+                // worldserver.setTypeAndData(blockposition, (IBlockData) iblockdata.set(BlockTurtleEgg.a, i + 1), 2); // CraftBukkit - handled above
+-                worldserver.setBlock(blockposition, (IBlockData) iblockdata.setValue(BlockTurtleEgg.HATCH, i + 1), 2);
++                // worldserver.setBlock(blockposition, (IBlockData) iblockdata.setValue(BlockTurtleEgg.HATCH, i + 1), 2); // CraftBukkit - handled above
              } else {
 +                // CraftBukkit start - Call BlockFadeEvent
-+                if (CraftEventFactory.callBlockFadeEvent(worldserver, blockposition, Blocks.AIR.getBlockData()).isCancelled()) {
++                if (CraftEventFactory.callBlockFadeEvent(worldserver, blockposition, Blocks.AIR.defaultBlockState()).isCancelled()) {
 +                    return;
 +                }
 +                // CraftBukkit end
                  worldserver.playSound((EntityHuman) null, blockposition, SoundEffects.TURTLE_EGG_HATCH, SoundCategory.BLOCKS, 0.7F, 0.9F + random.nextFloat() * 0.2F);
-                 worldserver.a(blockposition, false);
+                 worldserver.removeBlock(blockposition, false);
  
 @@ -100,7 +129,7 @@
-                     entityturtle.setAgeRaw(-24000);
+                     entityturtle.setAge(-24000);
                      entityturtle.setHomePos(blockposition);
-                     entityturtle.setPositionRotation((double) blockposition.getX() + 0.3D + (double) j * 0.2D, (double) blockposition.getY(), (double) blockposition.getZ() + 0.3D, 0.0F, 0.0F);
--                    worldserver.addEntity(entityturtle);
-+                    worldserver.addEntity(entityturtle, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.EGG); // CraftBukkit
+                     entityturtle.moveTo((double) blockposition.getX() + 0.3D + (double) j * 0.2D, (double) blockposition.getY(), (double) blockposition.getZ() + 0.3D, 0.0F, 0.0F);
+-                    worldserver.addFreshEntity(entityturtle);
++                    worldserver.addFreshEntity(entityturtle, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.EGG); // CraftBukkit
                  }
              }
          }

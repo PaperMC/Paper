@@ -41,9 +41,9 @@ public class CraftFireball extends AbstractProjectile implements Fireball {
     @Override
     public void setShooter(ProjectileSource shooter) {
         if (shooter instanceof CraftLivingEntity) {
-            getHandle().setShooter(((CraftLivingEntity) shooter).getHandle());
+            getHandle().setOwner(((CraftLivingEntity) shooter).getHandle());
         } else {
-            getHandle().setShooter(null);
+            getHandle().setOwner(null);
         }
         getHandle().projectileSource = shooter;
     }

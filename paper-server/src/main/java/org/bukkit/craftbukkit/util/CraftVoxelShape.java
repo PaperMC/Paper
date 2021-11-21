@@ -18,7 +18,7 @@ public final class CraftVoxelShape implements org.bukkit.util.VoxelShape {
 
     @Override
     public Collection<BoundingBox> getBoundingBoxes() {
-        List<AxisAlignedBB> boxes = shape.toList();
+        List<AxisAlignedBB> boxes = shape.toAabbs();
         List<BoundingBox> craftBoxes = new ArrayList<>(boxes.size());
         for (AxisAlignedBB aabb : boxes) {
             craftBoxes.add(new BoundingBox(aabb.minX, aabb.minY, aabb.minZ, aabb.maxX, aabb.maxY, aabb.maxZ));

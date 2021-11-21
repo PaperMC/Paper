@@ -68,13 +68,13 @@ final class CraftObjective extends CraftScoreboardComponent implements Objective
         ScoreboardObjective objective = this.objective;
 
         for (int i = 0; i < CraftScoreboardTranslations.MAX_DISPLAY_SLOT; i++) {
-            if (board.getObjectiveForSlot(i) == objective) {
-                board.setDisplaySlot(i, null);
+            if (board.getDisplayObjective(i) == objective) {
+                board.setDisplayObjective(i, null);
             }
         }
         if (slot != null) {
             int slotNumber = CraftScoreboardTranslations.fromBukkitSlot(slot);
-            board.setDisplaySlot(slotNumber, getHandle());
+            board.setDisplayObjective(slotNumber, getHandle());
         }
     }
 
@@ -85,7 +85,7 @@ final class CraftObjective extends CraftScoreboardComponent implements Objective
         ScoreboardObjective objective = this.objective;
 
         for (int i = 0; i < CraftScoreboardTranslations.MAX_DISPLAY_SLOT; i++) {
-            if (board.getObjectiveForSlot(i) == objective) {
+            if (board.getDisplayObjective(i) == objective) {
                 return CraftScoreboardTranslations.toBukkitSlot(i);
             }
         }
@@ -118,7 +118,7 @@ final class CraftObjective extends CraftScoreboardComponent implements Objective
     @Override
     public Score getScore(String entry) throws IllegalArgumentException, IllegalStateException {
         Validate.notNull(entry, "Entry cannot be null");
-        Validate.isTrue(entry.length() <= 40, "Score '" + entry + "' is longer than the limit of 40 characters");
+        Validate.isTrue(entry.length() <= Short.MAX_VALUE, "Score '" + entry + "' is longer than the limit of 32767 characters");
         CraftScoreboard scoreboard = checkState();
 
         return new CraftScore(this, entry);
@@ -128,7 +128,7 @@ final class CraftObjective extends CraftScoreboardComponent implements Objective
     public void unregister() throws IllegalStateException {
         CraftScoreboard scoreboard = checkState();
 
-        scoreboard.board.unregisterObjective(objective);
+        scoreboard.board.removeObjective(objective);
     }
 
     @Override

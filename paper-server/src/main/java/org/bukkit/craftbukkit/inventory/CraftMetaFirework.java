@@ -75,7 +75,7 @@ class CraftMetaFirework extends CraftMetaItem implements FireworkMeta {
     CraftMetaFirework(NBTTagCompound tag) {
         super(tag);
 
-        if (!tag.hasKey(FIREWORKS.NBT)) {
+        if (!tag.contains(FIREWORKS.NBT)) {
             return;
         }
 
@@ -83,7 +83,7 @@ class CraftMetaFirework extends CraftMetaItem implements FireworkMeta {
 
         power = 0xff & fireworks.getByte(FLIGHT.NBT);
 
-        if (!fireworks.hasKey(EXPLOSIONS.NBT)) {
+        if (!fireworks.contains(EXPLOSIONS.NBT)) {
             return;
         }
 
@@ -128,17 +128,17 @@ class CraftMetaFirework extends CraftMetaItem implements FireworkMeta {
         NBTTagCompound explosion = new NBTTagCompound();
 
         if (effect.hasFlicker()) {
-            explosion.setBoolean(EXPLOSION_FLICKER.NBT, true);
+            explosion.putBoolean(EXPLOSION_FLICKER.NBT, true);
         }
 
         if (effect.hasTrail()) {
-            explosion.setBoolean(EXPLOSION_TRAIL.NBT, true);
+            explosion.putBoolean(EXPLOSION_TRAIL.NBT, true);
         }
 
         addColors(explosion, EXPLOSION_COLORS, effect.getColors());
         addColors(explosion, EXPLOSION_FADE, effect.getFadeColors());
 
-        explosion.setByte(EXPLOSION_TYPE.NBT, (byte) getNBT(effect.getType()));
+        explosion.putByte(EXPLOSION_TYPE.NBT, (byte) getNBT(effect.getType()));
 
         return explosion;
     }
@@ -221,7 +221,7 @@ class CraftMetaFirework extends CraftMetaItem implements FireworkMeta {
         }
 
         NBTTagCompound fireworks = itemTag.getCompound(FIREWORKS.NBT);
-        itemTag.set(FIREWORKS.NBT, fireworks);
+        itemTag.put(FIREWORKS.NBT, fireworks);
 
         if (hasEffects()) {
             NBTTagList effects = new NBTTagList();
@@ -230,12 +230,12 @@ class CraftMetaFirework extends CraftMetaItem implements FireworkMeta {
             }
 
             if (effects.size() > 0) {
-                fireworks.set(EXPLOSIONS.NBT, effects);
+                fireworks.put(EXPLOSIONS.NBT, effects);
             }
         }
 
         if (hasPower()) {
-            fireworks.setByte(FLIGHT.NBT, (byte) power);
+            fireworks.putByte(FLIGHT.NBT, (byte) power);
         }
     }
 
@@ -250,7 +250,7 @@ class CraftMetaFirework extends CraftMetaItem implements FireworkMeta {
             colorArray[i++] = color.asRGB();
         }
 
-        compound.setIntArray(key.NBT, colorArray);
+        compound.putIntArray(key.NBT, colorArray);
     }
 
     @Override

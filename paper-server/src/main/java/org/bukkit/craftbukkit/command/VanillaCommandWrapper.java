@@ -42,7 +42,7 @@ public final class VanillaCommandWrapper extends BukkitCommand {
         if (!testPermission(sender)) return true;
 
         CommandListenerWrapper icommandlistener = getListener(sender);
-        dispatcher.a(icommandlistener, toDispatcher(args, getName()), toDispatcher(args, commandLabel), true);
+        dispatcher.performCommand(icommandlistener, toDispatcher(args, getName()), toDispatcher(args, commandLabel), true);
         return true;
     }
 
@@ -53,10 +53,10 @@ public final class VanillaCommandWrapper extends BukkitCommand {
         Validate.notNull(alias, "Alias cannot be null");
 
         CommandListenerWrapper icommandlistener = getListener(sender);
-        ParseResults<CommandListenerWrapper> parsed = dispatcher.a().parse(toDispatcher(args, getName()), icommandlistener);
+        ParseResults<CommandListenerWrapper> parsed = dispatcher.getDispatcher().parse(toDispatcher(args, getName()), icommandlistener);
 
         List<String> results = new ArrayList<>();
-        dispatcher.a().getCompletionSuggestions(parsed).thenAccept((suggestions) -> {
+        dispatcher.getDispatcher().getCompletionSuggestions(parsed).thenAccept((suggestions) -> {
             suggestions.getList().forEach((s) -> results.add(s.getText()));
         });
 
@@ -65,19 +65,19 @@ public final class VanillaCommandWrapper extends BukkitCommand {
 
     public static CommandListenerWrapper getListener(CommandSender sender) {
         if (sender instanceof Player) {
-            return ((CraftPlayer) sender).getHandle().getCommandListener();
+            return ((CraftPlayer) sender).getHandle().createCommandSourceStack();
         }
         if (sender instanceof BlockCommandSender) {
             return ((CraftBlockCommandSender) sender).getWrapper();
         }
         if (sender instanceof CommandMinecart) {
-            return ((EntityMinecartCommandBlock) ((CraftMinecartCommand) sender).getHandle()).getCommandBlock().getWrapper();
+            return ((EntityMinecartCommandBlock) ((CraftMinecartCommand) sender).getHandle()).getCommandBlock().createCommandSourceStack();
         }
         if (sender instanceof RemoteConsoleCommandSender) {
-            return ((DedicatedServer) MinecraftServer.getServer()).rconConsoleSource.getWrapper();
+            return ((DedicatedServer) MinecraftServer.getServer()).rconConsoleSource.createCommandSourceStack();
         }
         if (sender instanceof ConsoleCommandSender) {
-            return ((CraftServer) sender.getServer()).getServer().getServerCommandListener();
+            return ((CraftServer) sender.getServer()).getServer().createCommandSourceStack();
         }
         if (sender instanceof ProxiedCommandSender) {
             return ((ProxiedNativeCommandSender) sender).getHandle();

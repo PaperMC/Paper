@@ -14,7 +14,7 @@ public class CraftArt {
     static {
         ImmutableBiMap.Builder<Paintings, Art> artworkBuilder = ImmutableBiMap.builder();
         for (MinecraftKey key : IRegistry.MOTIVE.keySet()) {
-            artworkBuilder.put(IRegistry.MOTIVE.get(key), Art.getByName(key.getKey()));
+            artworkBuilder.put(IRegistry.MOTIVE.get(key), Art.getByName(key.getPath()));
         }
 
         artwork = artworkBuilder.build();

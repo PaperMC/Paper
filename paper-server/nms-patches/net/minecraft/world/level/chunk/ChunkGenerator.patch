@@ -1,46 +1,55 @@
 --- a/net/minecraft/world/level/chunk/ChunkGenerator.java
 +++ b/net/minecraft/world/level/chunk/ChunkGenerator.java
-@@ -63,7 +63,7 @@
-     protected final WorldChunkManager biomeSource;
-     protected final WorldChunkManager runtimeBiomeSource;
-     private final StructureSettings settings;
--    private final long strongholdSeed;
-+    public final long strongholdSeed; // PAIL private -> public
-     private final List<ChunkCoordIntPair> strongholdPositions;
-     private final BaseStoneSource defaultBaseStoneSource;
- 
-@@ -217,7 +217,7 @@
+@@ -225,7 +225,7 @@
          }
      }
  
--    public void addDecorations(RegionLimitedWorldAccess regionlimitedworldaccess, StructureManager structuremanager) {
-+    public void addVanillaDecorations(RegionLimitedWorldAccess regionlimitedworldaccess, StructureManager structuremanager) { // CraftBukkit
-         ChunkCoordIntPair chunkcoordintpair = regionlimitedworldaccess.a();
-         int i = chunkcoordintpair.d();
-         int j = chunkcoordintpair.e();
-@@ -236,8 +236,45 @@
+-    public void applyBiomeDecoration(GeneratorAccessSeed generatoraccessseed, IChunkAccess ichunkaccess, StructureManager structuremanager) {
++    public void addVanillaDecorations(GeneratorAccessSeed generatoraccessseed, IChunkAccess ichunkaccess, StructureManager structuremanager) { // CraftBukkit
+         ChunkCoordIntPair chunkcoordintpair = ichunkaccess.getPos();
+ 
+         if (!SharedConstants.debugVoidTerrain(chunkcoordintpair)) {
+@@ -249,7 +249,7 @@
+ 
+                     for (int k = 0; k < j; ++k) {
+                         ChunkSection chunksection = achunksection[k];
+-                        DataPaletteBlock datapaletteblock = chunksection.getBiomes();
++                        DataPaletteBlock<BiomeBase> datapaletteblock = chunksection.getBiomes(); // CraftBukkit - decompile error
+ 
+                         Objects.requireNonNull(set);
+                         datapaletteblock.getAll(set::add);
+@@ -278,7 +278,7 @@
+                             StructureGenerator<?> structuregenerator = (StructureGenerator) iterator.next();
+ 
+                             seededrandom.setFeatureSeed(i, i1, l);
+-                            Supplier supplier = () -> {
++                            Supplier<String> supplier = () -> { // CraftBukkit - decompile error
+                                 Optional optional = iregistry1.getResourceKey(structuregenerator).map(Object::toString);
+ 
+                                 Objects.requireNonNull(structuregenerator);
+@@ -364,6 +364,33 @@
          }
      }
  
-+    public void addDecorations(RegionLimitedWorldAccess regionlimitedworldaccess, StructureManager structuremanager) {
++    public void applyBiomeDecoration(GeneratorAccessSeed generatoraccessseed, IChunkAccess ichunkaccess, StructureManager structuremanager) {
 +        // CraftBukkit start
-+        addDecorations(regionlimitedworldaccess, structuremanager, true);
++        applyBiomeDecoration(generatoraccessseed, ichunkaccess, structuremanager, true);
 +    }
 +
-+    public void addDecorations(RegionLimitedWorldAccess regionlimitedworldaccess, StructureManager structuremanager, boolean vanilla) {
++    public void applyBiomeDecoration(GeneratorAccessSeed generatoraccessseed, IChunkAccess ichunkaccess, StructureManager structuremanager, boolean vanilla) {
 +        if (vanilla) {
-+            addVanillaDecorations(regionlimitedworldaccess, structuremanager);
++            addVanillaDecorations(generatoraccessseed, ichunkaccess, structuremanager);
 +        }
 +
-+        org.bukkit.World world = regionlimitedworldaccess.getMinecraftWorld().getWorld();
++        org.bukkit.World world = generatoraccessseed.getMinecraftWorld().getWorld();
 +        // only call when a populator is present (prevents unnecessary entity conversion)
-+        if (world.getPopulators().size() != 0) {
-+            org.bukkit.craftbukkit.generator.CraftLimitedRegion limitedRegion = new org.bukkit.craftbukkit.generator.CraftLimitedRegion(regionlimitedworldaccess);
-+            int x = regionlimitedworldaccess.a().x;
-+            int z = regionlimitedworldaccess.a().z;
++        if (!world.getPopulators().isEmpty()) {
++            org.bukkit.craftbukkit.generator.CraftLimitedRegion limitedRegion = new org.bukkit.craftbukkit.generator.CraftLimitedRegion(generatoraccessseed, ichunkaccess.getPos());
++            int x = ichunkaccess.getPos().x;
++            int z = ichunkaccess.getPos().z;
 +            for (org.bukkit.generator.BlockPopulator populator : world.getPopulators()) {
-+                SeededRandom seededrandom = new SeededRandom();
-+                seededrandom.a(regionlimitedworldaccess.getSeed(), x, z);
++                SeededRandom seededrandom = new SeededRandom(new LegacyRandomSource(generatoraccessseed.getSeed()));
++                seededrandom.setDecorationSeed(generatoraccessseed.getSeed(), x, z);
 +                populator.populate(world, seededrandom, x, z, limitedRegion);
 +            }
 +            limitedRegion.saveEntities();
@@ -49,51 +58,15 @@
 +        // CraftBukkit end
 +    }
 +
-     public abstract void buildBase(RegionLimitedWorldAccess regionlimitedworldaccess, IChunkAccess ichunkaccess);
+     private static StructureBoundingBox getWritableArea(IChunkAccess ichunkaccess) {
+         ChunkCoordIntPair chunkcoordintpair = ichunkaccess.getPos();
+         int i = chunkcoordintpair.getMinBlockX();
+@@ -439,7 +466,7 @@
  
-+    // CraftBukkit start - spilt surface and bedrock generation code
-+    public SeededRandom buildSurface(RegionLimitedWorldAccess regionlimitedworldaccess, IChunkAccess iChunkAccess) {
-+        throw new UnsupportedOperationException("Methode not overridden");
-+    }
-+
-+    public void buildBedrock(IChunkAccess iChunkAccess, Random random) {
-+        throw new UnsupportedOperationException("Methode not overridden");
-+    }
-+    // CraftBukkit end
-+
-     public void addMobs(RegionLimitedWorldAccess regionlimitedworldaccess) {}
+                             Entry<StructureFeature<?, ?>, Collection<ResourceKey<BiomeBase>>> entry = (Entry) unmodifiableiterator.next();
  
-     public StructureSettings getSettings() {
-@@ -269,7 +306,16 @@
-         while (iterator.hasNext()) {
-             Supplier<StructureFeature<?, ?>> supplier = (Supplier) iterator.next();
+-                            structurestart3 = ((StructureFeature) entry.getKey()).generate(iregistrycustom, this, this.biomeSource, definedstructuremanager, i, chunkcoordintpair, j, structuresettingsfeature1, ichunkaccess, (biomebase) -> {
++                            structurestart3 = (entry.getKey()).generate(iregistrycustom, this, this.biomeSource, definedstructuremanager, i, chunkcoordintpair, j, structuresettingsfeature1, ichunkaccess, (biomebase) -> { // CraftBukkit - decompile error
+                                 Collection collection = (Collection) entry.getValue();
  
--            this.a((StructureFeature) supplier.get(), iregistrycustom, structuremanager, ichunkaccess, definedstructuremanager, i, biomebase);
-+            // CraftBukkit start
-+            StructureFeature<?, ?> structurefeature = (StructureFeature) supplier.get();
-+            if (structurefeature.LIST_CODEC == StructureGenerator.STRONGHOLD) {
-+                synchronized (structurefeature) {
-+                    this.a((StructureFeature) supplier.get(), iregistrycustom, structuremanager, ichunkaccess, definedstructuremanager, i, biomebase);
-+                }
-+            } else {
-+                this.a((StructureFeature) supplier.get(), iregistrycustom, structuremanager, ichunkaccess, definedstructuremanager, i, biomebase);
-+            }
-+            // CraftBukkit end
-         }
- 
-     }
-@@ -364,9 +410,11 @@
-     }
- 
-     static {
--        IRegistry.a(IRegistry.CHUNK_GENERATOR, "noise", (Object) ChunkGeneratorAbstract.CODEC);
--        IRegistry.a(IRegistry.CHUNK_GENERATOR, "flat", (Object) ChunkProviderFlat.CODEC);
--        IRegistry.a(IRegistry.CHUNK_GENERATOR, "debug", (Object) ChunkProviderDebug.CODEC);
-+        // CraftBukkit start - decompile errors
-+        IRegistry.a(IRegistry.CHUNK_GENERATOR, "noise", ChunkGeneratorAbstract.CODEC);
-+        IRegistry.a(IRegistry.CHUNK_GENERATOR, "flat", ChunkProviderFlat.CODEC);
-+        IRegistry.a(IRegistry.CHUNK_GENERATOR, "debug", ChunkProviderDebug.CODEC);
-+        // CraftBukkit end
-         CODEC = IRegistry.CHUNK_GENERATOR.dispatchStable(ChunkGenerator::a, Function.identity());
-     }
- }
+                                 Objects.requireNonNull(collection);

@@ -34,8 +34,8 @@
      public ContainerEnchantTable(int i, PlayerInventory playerinventory) {
          this(i, playerinventory, ContainerAccess.NULL);
 @@ -42,6 +61,13 @@
-                 super.update();
-                 ContainerEnchantTable.this.a((IInventory) this);
+                 super.setChanged();
+                 ContainerEnchantTable.this.slotsChanged(this);
              }
 +
 +            // CraftBukkit start
@@ -46,11 +46,11 @@
 +            // CraftBukkit end
          };
          this.random = new Random();
-         this.enchantmentSeed = ContainerProperty.a();
+         this.enchantmentSeed = ContainerProperty.standalone();
 @@ -89,6 +115,9 @@
-         this.a(ContainerProperty.a(this.levelClue, 0));
-         this.a(ContainerProperty.a(this.levelClue, 1));
-         this.a(ContainerProperty.a(this.levelClue, 2));
+         this.addDataSlot(ContainerProperty.shared(this.levelClue, 0));
+         this.addDataSlot(ContainerProperty.shared(this.levelClue, 1));
+         this.addDataSlot(ContainerProperty.shared(this.levelClue, 2));
 +        // CraftBukkit start
 +        player = (Player) playerinventory.player.getBukkitEntity();
 +        // CraftBukkit end
@@ -61,9 +61,9 @@
          if (iinventory == this.enchantSlots) {
              ItemStack itemstack = iinventory.getItem(0);
  
--            if (!itemstack.isEmpty() && itemstack.canEnchant()) {
+-            if (!itemstack.isEmpty() && itemstack.isEnchantable()) {
 +            if (!itemstack.isEmpty()) { // CraftBukkit - relax condition
-                 this.access.a((world, blockposition) -> {
+                 this.access.execute((world, blockposition) -> {
                      int i = 0;
  
 @@ -158,6 +187,41 @@
@@ -74,12 +74,12 @@
 +                    CraftItemStack item = CraftItemStack.asCraftMirror(itemstack);
 +                    org.bukkit.enchantments.EnchantmentOffer[] offers = new EnchantmentOffer[3];
 +                    for (j = 0; j < 3; ++j) {
-+                        org.bukkit.enchantments.Enchantment enchantment = (this.enchantClue[j] >= 0) ? org.bukkit.enchantments.Enchantment.getByKey(CraftNamespacedKey.fromMinecraft(IRegistry.ENCHANTMENT.getKey(IRegistry.ENCHANTMENT.fromId(this.enchantClue[j])))) : null;
++                        org.bukkit.enchantments.Enchantment enchantment = (this.enchantClue[j] >= 0) ? org.bukkit.enchantments.Enchantment.getByKey(CraftNamespacedKey.fromMinecraft(IRegistry.ENCHANTMENT.getKey(IRegistry.ENCHANTMENT.byId(this.enchantClue[j])))) : null;
 +                        offers[j] = (enchantment != null) ? new EnchantmentOffer(enchantment, this.levelClue[j], this.costs[j]) : null;
 +                    }
 +
 +                    PrepareItemEnchantEvent event = new PrepareItemEnchantEvent(player, this.getBukkitView(), access.getLocation().getBlock(), item, offers, i);
-+                    event.setCancelled(!itemstack.canEnchant());
++                    event.setCancelled(!itemstack.isEnchantable());
 +                    world.getCraftServer().getPluginManager().callEvent(event);
 +
 +                    if (event.isCancelled()) {
@@ -105,19 +105,19 @@
 +                    }
 +                    // CraftBukkit end
 +
-                     this.d();
+                     this.broadcastChanges();
                  });
              } else {
 @@ -184,9 +248,24 @@
                  ItemStack itemstack2 = itemstack;
-                 List<WeightedRandomEnchant> list = this.a(itemstack, i, this.costs[i]);
+                 List<WeightedRandomEnchant> list = this.getEnchantmentList(itemstack, i, this.costs[i]);
  
 -                if (!list.isEmpty()) {
--                    entityhuman.enchantDone(itemstack, j);
+-                    entityhuman.onEnchantmentPerformed(itemstack, j);
 +                // CraftBukkit start
 +                if (true || !list.isEmpty()) {
-+                    // entityhuman.enchantDone(itemstack, j); // Moved down
-                     boolean flag = itemstack.a(Items.BOOK);
++                    // entityhuman.onEnchantmentPerformed(itemstack, j); // Moved down
+                     boolean flag = itemstack.is(Items.BOOK);
 +                    Map<org.bukkit.enchantments.Enchantment, Integer> enchants = new java.util.HashMap<org.bukkit.enchantments.Enchantment, Integer>();
 +                    for (Object obj : list) {
 +                        WeightedRandomEnchant instance = (WeightedRandomEnchant) obj;
@@ -151,11 +151,11 @@
 +                                }
  
 -                        if (flag) {
--                            ItemEnchantedBook.a(itemstack2, weightedrandomenchant);
+-                            ItemEnchantedBook.addEnchantment(itemstack2, weightedrandomenchant);
 -                        } else {
--                            itemstack2.addEnchantment(weightedrandomenchant.enchantment, weightedrandomenchant.level);
+-                            itemstack2.enchant(weightedrandomenchant.enchantment, weightedrandomenchant.level);
 +                                WeightedRandomEnchant weightedrandomenchant = new WeightedRandomEnchant(nms, entry.getValue());
-+                                ItemEnchantedBook.a(itemstack2, weightedrandomenchant);
++                                ItemEnchantedBook.addEnchantment(itemstack2, weightedrandomenchant);
 +                            } else {
 +                                item.addUnsafeEnchantment(entry.getKey(), entry.getValue());
 +                            }
@@ -164,19 +164,19 @@
                          }
                      }
  
-+                    entityhuman.enchantDone(itemstack, j);
++                    entityhuman.onEnchantmentPerformed(itemstack, j);
 +                    // CraftBukkit end
 +
 +                    // CraftBukkit - TODO: let plugins change this
                      if (!entityhuman.getAbilities().instabuild) {
-                         itemstack1.subtract(j);
+                         itemstack1.shrink(j);
                          if (itemstack1.isEmpty()) {
 @@ -265,6 +357,7 @@
  
      @Override
-     public boolean canUse(EntityHuman entityhuman) {
+     public boolean stillValid(EntityHuman entityhuman) {
 +        if (!this.checkReachable) return true; // CraftBukkit
-         return a(this.access, entityhuman, Blocks.ENCHANTING_TABLE);
+         return stillValid(this.access, entityhuman, Blocks.ENCHANTING_TABLE);
      }
  
 @@ -316,4 +409,17 @@

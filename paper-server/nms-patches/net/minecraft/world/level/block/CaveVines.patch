@@ -14,15 +14,15 @@
 +
  public interface CaveVines {
  
-     VoxelShape SHAPE = Block.a(1.0D, 0.0D, 1.0D, 15.0D, 16.0D, 15.0D);
+     VoxelShape SHAPE = Block.box(1.0D, 0.0D, 1.0D, 15.0D, 16.0D, 15.0D);
      BlockStateBoolean BERRIES = BlockProperties.BERRIES;
  
--    static EnumInteractionResult harvest(IBlockData iblockdata, World world, BlockPosition blockposition) {
-+    static EnumInteractionResult harvest(IBlockData iblockdata, World world, BlockPosition blockposition, Entity entity) {
-         if ((Boolean) iblockdata.get(CaveVines.BERRIES)) {
--            Block.a(world, blockposition, new ItemStack(Items.GLOW_BERRIES, 1));
+-    static EnumInteractionResult use(IBlockData iblockdata, World world, BlockPosition blockposition) {
++    static EnumInteractionResult use(IBlockData iblockdata, World world, BlockPosition blockposition, Entity entity) {
+         if ((Boolean) iblockdata.getValue(CaveVines.BERRIES)) {
+-            Block.popResource(world, blockposition, new ItemStack(Items.GLOW_BERRIES, 1));
 +            // CraftBukkit start
-+            if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(entity, blockposition, (IBlockData) iblockdata.set(CaveVines.BERRIES, false)).isCancelled()) {
++            if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(entity, blockposition, (IBlockData) iblockdata.setValue(CaveVines.BERRIES, false)).isCancelled()) {
 +                return EnumInteractionResult.SUCCESS;
 +            }
 +
@@ -32,13 +32,13 @@
 +                    return EnumInteractionResult.SUCCESS; // We need to return a success either way, because making it PASS or FAIL will result in a bug where cancelling while harvesting w/ block in hand places block
 +                }
 +                for (org.bukkit.inventory.ItemStack itemStack : event.getItemsHarvested()) {
-+                    Block.a(world, blockposition, CraftItemStack.asNMSCopy(itemStack));
++                    Block.popResource(world, blockposition, CraftItemStack.asNMSCopy(itemStack));
 +                }
 +            } else {
-+                Block.a(world, blockposition, new ItemStack(Items.GLOW_BERRIES, 1));
++                Block.popResource(world, blockposition, new ItemStack(Items.GLOW_BERRIES, 1));
 +            }
 +            // CraftBukkit end
 +
-             float f = MathHelper.b(world.random, 0.8F, 1.2F);
+             float f = MathHelper.randomBetween(world.random, 0.8F, 1.2F);
  
              world.playSound((EntityHuman) null, blockposition, SoundEffects.CAVE_VINES_PICK_BERRIES, SoundCategory.BLOCKS, 1.0F, f);

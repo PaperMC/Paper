@@ -42,9 +42,9 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
     CraftMetaSkull(NBTTagCompound tag) {
         super(tag);
 
-        if (tag.hasKeyOfType(SKULL_OWNER.NBT, CraftMagicNumbers.NBT.TAG_COMPOUND)) {
-            this.setProfile(GameProfileSerializer.deserialize(tag.getCompound(SKULL_OWNER.NBT)));
-        } else if (tag.hasKeyOfType(SKULL_OWNER.NBT, CraftMagicNumbers.NBT.TAG_STRING) && !tag.getString(SKULL_OWNER.NBT).isEmpty()) {
+        if (tag.contains(SKULL_OWNER.NBT, CraftMagicNumbers.NBT.TAG_COMPOUND)) {
+            this.setProfile(GameProfileSerializer.readGameProfile(tag.getCompound(SKULL_OWNER.NBT)));
+        } else if (tag.contains(SKULL_OWNER.NBT, CraftMagicNumbers.NBT.TAG_STRING) && !tag.getString(SKULL_OWNER.NBT).isEmpty()) {
             this.setProfile(new GameProfile(null, tag.getString(SKULL_OWNER.NBT)));
         }
     }
@@ -60,15 +60,15 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
     void deserializeInternal(NBTTagCompound tag, Object context) {
         super.deserializeInternal(tag, context);
 
-        if (tag.hasKeyOfType(SKULL_PROFILE.NBT, CraftMagicNumbers.NBT.TAG_COMPOUND)) {
+        if (tag.contains(SKULL_PROFILE.NBT, CraftMagicNumbers.NBT.TAG_COMPOUND)) {
             NBTTagCompound skullTag = tag.getCompound(SKULL_PROFILE.NBT);
             // convert type of stored Id from String to UUID for backwards compatibility
-            if (skullTag.hasKeyOfType("Id", CraftMagicNumbers.NBT.TAG_STRING)) {
+            if (skullTag.contains("Id", CraftMagicNumbers.NBT.TAG_STRING)) {
                 UUID uuid = UUID.fromString(skullTag.getString("Id"));
-                skullTag.a("Id", uuid);
+                skullTag.putUUID("Id", uuid);
             }
 
-            this.setProfile(GameProfileSerializer.deserialize(skullTag));
+            this.setProfile(GameProfileSerializer.readGameProfile(skullTag));
         }
     }
 
@@ -81,7 +81,7 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
 
     private void setProfile(GameProfile profile) {
         this.profile = profile;
-        this.serializedProfile = (profile == null) ? null : GameProfileSerializer.serialize(new NBTTagCompound(), profile);
+        this.serializedProfile = (profile == null) ? null : GameProfileSerializer.writeGameProfile(new NBTTagCompound(), profile);
     }
 
     @Override
@@ -90,11 +90,11 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
 
         if (profile != null) {
             // SPIGOT-6558: Set initial textures
-            tag.set(SKULL_OWNER.NBT, serializedProfile);
+            tag.put(SKULL_OWNER.NBT, serializedProfile);
             // Fill in textures
-            TileEntitySkull.a(profile, (filledProfile) -> {
+            TileEntitySkull.updateGameprofile(profile, (filledProfile) -> {
                 setProfile(filledProfile);
-                tag.set(SKULL_OWNER.NBT, serializedProfile);
+                tag.put(SKULL_OWNER.NBT, serializedProfile);
             });
         }
     }

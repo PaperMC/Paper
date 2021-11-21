@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/block/BlockDoor.java
 +++ b/net/minecraft/world/level/block/BlockDoor.java
-@@ -34,6 +34,8 @@
+@@ -33,6 +33,8 @@
  import net.minecraft.world.phys.shapes.VoxelShape;
  import net.minecraft.world.phys.shapes.VoxelShapeCollision;
  
@@ -9,13 +9,13 @@
  public class BlockDoor extends Block {
  
      public static final BlockStateDirection FACING = BlockFacingHorizontal.FACING;
-@@ -192,9 +194,24 @@
+@@ -191,9 +193,24 @@
  
      @Override
-     public void doPhysics(IBlockData iblockdata, World world, BlockPosition blockposition, Block block, BlockPosition blockposition1, boolean flag) {
--        boolean flag1 = world.isBlockIndirectlyPowered(blockposition) || world.isBlockIndirectlyPowered(blockposition.shift(iblockdata.get(BlockDoor.HALF) == BlockPropertyDoubleBlockHalf.LOWER ? EnumDirection.UP : EnumDirection.DOWN));
+     public void neighborChanged(IBlockData iblockdata, World world, BlockPosition blockposition, Block block, BlockPosition blockposition1, boolean flag) {
+-        boolean flag1 = world.hasNeighborSignal(blockposition) || world.hasNeighborSignal(blockposition.relative(iblockdata.getValue(BlockDoor.HALF) == BlockPropertyDoubleBlockHalf.LOWER ? EnumDirection.UP : EnumDirection.DOWN));
 +        // CraftBukkit start
-+        BlockPosition otherHalf = blockposition.shift(iblockdata.get(BlockDoor.HALF) == BlockPropertyDoubleBlockHalf.LOWER ? EnumDirection.UP : EnumDirection.DOWN);
++        BlockPosition otherHalf = blockposition.relative(iblockdata.getValue(BlockDoor.HALF) == BlockPropertyDoubleBlockHalf.LOWER ? EnumDirection.UP : EnumDirection.DOWN);
 +
 +        org.bukkit.World bworld = world.getWorld();
 +        org.bukkit.block.Block bukkitBlock = bworld.getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ());
@@ -24,15 +24,15 @@
 +        int power = bukkitBlock.getBlockPower();
 +        int powerTop = blockTop.getBlockPower();
 +        if (powerTop > power) power = powerTop;
-+        int oldPower = (Boolean) iblockdata.get(BlockDoor.POWERED) ? 15 : 0;
++        int oldPower = (Boolean) iblockdata.getValue(BlockDoor.POWERED) ? 15 : 0;
 +
 +        if (oldPower == 0 ^ power == 0) {
 +            BlockRedstoneEvent eventRedstone = new BlockRedstoneEvent(bukkitBlock, oldPower, power);
 +            world.getCraftServer().getPluginManager().callEvent(eventRedstone);
  
--        if (!this.getBlockData().a(block) && flag1 != (Boolean) iblockdata.get(BlockDoor.POWERED)) {
+-        if (!this.defaultBlockState().is(block) && flag1 != (Boolean) iblockdata.getValue(BlockDoor.POWERED)) {
 +            boolean flag1 = eventRedstone.getNewCurrent() > 0;
 +            // CraftBukkit end
-             if (flag1 != (Boolean) iblockdata.get(BlockDoor.OPEN)) {
-                 this.a(world, blockposition, flag1);
-                 world.a(flag1 ? GameEvent.BLOCK_OPEN : GameEvent.BLOCK_CLOSE, blockposition);
+             if (flag1 != (Boolean) iblockdata.getValue(BlockDoor.OPEN)) {
+                 this.playSound(world, blockposition, flag1);
+                 world.gameEvent(flag1 ? GameEvent.BLOCK_OPEN : GameEvent.BLOCK_CLOSE, blockposition);

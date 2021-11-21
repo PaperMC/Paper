@@ -5,29 +5,29 @@
  
              if (movingobjectpositionblock.getType() == MovingObjectPosition.EnumMovingObjectType.BLOCK) {
 +                // CraftBukkit start - Boat placement
-+                org.bukkit.event.player.PlayerInteractEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerInteractEvent(entityhuman, org.bukkit.event.block.Action.RIGHT_CLICK_BLOCK, movingobjectpositionblock.getBlockPosition(), movingobjectpositionblock.getDirection(), itemstack, enumhand);
++                org.bukkit.event.player.PlayerInteractEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerInteractEvent(entityhuman, org.bukkit.event.block.Action.RIGHT_CLICK_BLOCK, movingobjectpositionblock.getBlockPos(), movingobjectpositionblock.getDirection(), itemstack, enumhand);
 +
 +                if (event.isCancelled()) {
 +                    return InteractionResultWrapper.pass(itemstack);
 +                }
 +                // CraftBukkit end
-                 EntityBoat entityboat = new EntityBoat(world, movingobjectpositionblock.getPos().x, movingobjectpositionblock.getPos().y, movingobjectpositionblock.getPos().z);
+                 EntityBoat entityboat = new EntityBoat(world, movingobjectpositionblock.getLocation().x, movingobjectpositionblock.getLocation().y, movingobjectpositionblock.getLocation().z);
  
                  entityboat.setType(this.type);
 @@ -64,7 +71,15 @@
                      return InteractionResultWrapper.fail(itemstack);
                  } else {
                      if (!world.isClientSide) {
--                        world.addEntity(entityboat);
+-                        world.addFreshEntity(entityboat);
 +                        // CraftBukkit start
-+                        if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityPlaceEvent(world, movingobjectpositionblock.getBlockPosition(), movingobjectpositionblock.getDirection(), entityhuman, entityboat).isCancelled()) {
++                        if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityPlaceEvent(world, movingobjectpositionblock.getBlockPos(), movingobjectpositionblock.getDirection(), entityhuman, entityboat).isCancelled()) {
 +                            return InteractionResultWrapper.fail(itemstack);
 +                        }
 +
-+                        if (!world.addEntity(entityboat)) {
++                        if (!world.addFreshEntity(entityboat)) {
 +                            return InteractionResultWrapper.pass(itemstack);
 +                        }
 +                        // CraftBukkit end
-                         world.a((Entity) entityhuman, GameEvent.ENTITY_PLACE, new BlockPosition(movingobjectpositionblock.getPos()));
+                         world.gameEvent(entityhuman, GameEvent.ENTITY_PLACE, new BlockPosition(movingobjectpositionblock.getLocation()));
                          if (!entityhuman.getAbilities().instabuild) {
-                             itemstack.subtract(1);
+                             itemstack.shrink(1);

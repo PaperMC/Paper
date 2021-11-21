@@ -1,47 +1,47 @@
 --- a/net/minecraft/world/level/block/BlockFireAbstract.java
 +++ b/net/minecraft/world/level/block/BlockFireAbstract.java
-@@ -125,7 +125,14 @@
-         if (!entity.isFireProof()) {
-             entity.setFireTicks(entity.getFireTicks() + 1);
-             if (entity.getFireTicks() == 0) {
--                entity.setOnFire(8);
+@@ -124,7 +124,14 @@
+         if (!entity.fireImmune()) {
+             entity.setRemainingFireTicks(entity.getRemainingFireTicks() + 1);
+             if (entity.getRemainingFireTicks() == 0) {
+-                entity.setSecondsOnFire(8);
 +                // CraftBukkit start
 +                org.bukkit.event.entity.EntityCombustEvent event = new org.bukkit.event.entity.EntityCombustByBlockEvent(org.bukkit.craftbukkit.block.CraftBlock.at(world, blockposition), entity.getBukkitEntity(), 8);
 +                world.getCraftServer().getPluginManager().callEvent(event);
 +
 +                if (!event.isCancelled()) {
-+                    entity.setOnFire(event.getDuration(), false);
++                    entity.setSecondsOnFire(event.getDuration(), false);
 +                }
 +                // CraftBukkit end
              }
  
-             entity.damageEntity(DamageSource.IN_FIRE, this.fireDamage);
-@@ -147,14 +154,14 @@
+             entity.hurt(DamageSource.IN_FIRE, this.fireDamage);
+@@ -146,14 +153,14 @@
              }
  
-             if (!iblockdata.canPlace(world, blockposition)) {
--                world.a(blockposition, false);
+             if (!iblockdata.canSurvive(world, blockposition)) {
+-                world.removeBlock(blockposition, false);
 +                fireExtinguished(world, blockposition); // CraftBukkit - fuel block broke
              }
  
          }
      }
  
-     private static boolean a(World world) {
--        return world.getDimensionKey() == World.OVERWORLD || world.getDimensionKey() == World.NETHER;
+     private static boolean inPortalDimension(World world) {
+-        return world.dimension() == World.OVERWORLD || world.dimension() == World.NETHER;
 +        return world.getTypeKey() == net.minecraft.world.level.dimension.DimensionManager.OVERWORLD_LOCATION || world.getTypeKey() == net.minecraft.world.level.dimension.DimensionManager.NETHER_LOCATION; // CraftBukkit - getTypeKey()
      }
  
      @Override
-@@ -202,4 +209,12 @@
+@@ -201,4 +208,12 @@
              }
          }
      }
 +
 +    // CraftBukkit start
-+    protected void fireExtinguished(GeneratorAccess world, BlockPosition position) {
-+        if (!org.bukkit.craftbukkit.event.CraftEventFactory.callBlockFadeEvent(world, position, Blocks.AIR.getBlockData()).isCancelled()) {
-+            world.a(position, false);
++    protected void fireExtinguished(net.minecraft.world.level.GeneratorAccess world, BlockPosition position) {
++        if (!org.bukkit.craftbukkit.event.CraftEventFactory.callBlockFadeEvent(world, position, Blocks.AIR.defaultBlockState()).isCancelled()) {
++            world.removeBlock(position, false);
 +        }
 +    }
 +    // CraftBukkit end

@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.core.IRegistry;
 import net.minecraft.world.level.biome.BiomeBase;
+import net.minecraft.world.level.biome.Climate;
 import net.minecraft.world.level.biome.WorldChunkManager;
 import org.bukkit.block.Biome;
 import org.bukkit.craftbukkit.block.CraftBlock;
@@ -38,18 +39,18 @@ public class CustomWorldChunkManager extends WorldChunkManager {
     }
 
     @Override
-    protected Codec<? extends WorldChunkManager> a() {
+    protected Codec<? extends WorldChunkManager> codec() {
         throw new UnsupportedOperationException("Cannot serialize CustomWorldChunkManager");
     }
 
     @Override
-    public WorldChunkManager a(long l) {
+    public WorldChunkManager withSeed(long l) {
         // TODO check method further
         throw new UnsupportedOperationException("Cannot copy CustomWorldChunkManager");
     }
 
     @Override
-    public BiomeBase getBiome(int x, int y, int z) {
+    public BiomeBase getNoiseBiome(int x, int y, int z, Climate.Sampler sampler) {
         Biome biome = biomeProvider.getBiome(worldInfo, x << 2, y << 2, z << 2);
         Preconditions.checkArgument(biome != Biome.CUSTOM, "Cannot set the biome to %s", biome);
 

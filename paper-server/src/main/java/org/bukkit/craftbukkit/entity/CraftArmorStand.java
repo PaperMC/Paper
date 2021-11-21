@@ -144,12 +144,12 @@ public class CraftArmorStand extends CraftLivingEntity implements ArmorStand {
 
     @Override
     public boolean hasBasePlate() {
-        return !getHandle().hasBasePlate();
+        return !getHandle().isNoBasePlate();
     }
 
     @Override
     public void setBasePlate(boolean basePlate) {
-        getHandle().setBasePlate(!basePlate);
+        getHandle().setNoBasePlate(!basePlate);
     }
 
     @Override
@@ -171,12 +171,12 @@ public class CraftArmorStand extends CraftLivingEntity implements ArmorStand {
 
     @Override
     public boolean hasArms() {
-        return getHandle().hasArms();
+        return getHandle().isShowArms();
     }
 
     @Override
     public void setArms(boolean arms) {
-        getHandle().setArms(arms);
+        getHandle().setShowArms(arms);
     }
 
     @Override
@@ -217,16 +217,16 @@ public class CraftArmorStand extends CraftLivingEntity implements ArmorStand {
 
     @Override
     public void addEquipmentLock(EquipmentSlot equipmentSlot, LockType lockType) {
-        getHandle().disabledSlots |= (1 << CraftEquipmentSlot.getNMS(equipmentSlot).getSlotFlag() + lockType.ordinal() * 8);
+        getHandle().disabledSlots |= (1 << CraftEquipmentSlot.getNMS(equipmentSlot).getFilterFlag() + lockType.ordinal() * 8);
     }
 
     @Override
     public void removeEquipmentLock(EquipmentSlot equipmentSlot, LockType lockType) {
-        getHandle().disabledSlots &= ~(1 << CraftEquipmentSlot.getNMS(equipmentSlot).getSlotFlag() + lockType.ordinal() * 8);
+        getHandle().disabledSlots &= ~(1 << CraftEquipmentSlot.getNMS(equipmentSlot).getFilterFlag() + lockType.ordinal() * 8);
     }
 
     @Override
     public boolean hasEquipmentLock(EquipmentSlot equipmentSlot, LockType lockType) {
-        return (getHandle().disabledSlots & (1 << CraftEquipmentSlot.getNMS(equipmentSlot).getSlotFlag() + lockType.ordinal() * 8)) != 0;
+        return (getHandle().disabledSlots & (1 << CraftEquipmentSlot.getNMS(equipmentSlot).getFilterFlag() + lockType.ordinal() * 8)) != 0;
     }
 }

@@ -19,20 +19,20 @@
                  if (entityinsentient.getLeashHolder() == entityhuman) {
 +                    // CraftBukkit start
 +                    if (CraftEventFactory.callPlayerLeashEntityEvent(entityinsentient, this, entityhuman).isCancelled()) {
-+                        ((EntityPlayer) entityhuman).connection.sendPacket(new PacketPlayOutAttachEntity(entityinsentient, entityinsentient.getLeashHolder()));
++                        ((EntityPlayer) entityhuman).connection.send(new PacketPlayOutAttachEntity(entityinsentient, entityinsentient.getLeashHolder()));
 +                        continue;
 +                    }
 +                    // CraftBukkit end
-                     entityinsentient.setLeashHolder(this, true);
+                     entityinsentient.setLeashedTo(this, true);
                      flag = true;
                  }
              }
  
              if (!flag) {
--                this.die();
+-                this.discard();
 -                if (entityhuman.getAbilities().instabuild) {
 +                // CraftBukkit start - Move below
-+                // this.die();
++                // this.discard();
 +                boolean die = true;
 +                // CraftBukkit end
 +                if (true || entityhuman.getAbilities().instabuild) { // CraftBukkit - Process for non-creative as well
@@ -41,19 +41,19 @@
                      while (iterator.hasNext()) {
                          entityinsentient = (EntityInsentient) iterator.next();
                          if (entityinsentient.isLeashed() && entityinsentient.getLeashHolder() == this) {
--                            entityinsentient.unleash(true, false);
+-                            entityinsentient.dropLeash(true, false);
 +                            // CraftBukkit start
 +                            if (CraftEventFactory.callPlayerUnleashEntityEvent(entityinsentient, entityhuman).isCancelled()) {
 +                                die = false;
 +                                continue;
 +                            }
-+                            entityinsentient.unleash(true, !entityhuman.getAbilities().instabuild); // false -> survival mode boolean
++                            entityinsentient.dropLeash(true, !entityhuman.getAbilities().instabuild); // false -> survival mode boolean
 +                            // CraftBukkit end
                          }
                      }
 +                    // CraftBukkit start
 +                    if (die) {
-+                        this.die();
++                        this.discard();
 +                    }
 +                    // CraftBukkit end
                  }

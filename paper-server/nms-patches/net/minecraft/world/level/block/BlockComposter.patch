@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/block/BlockComposter.java
 +++ b/net/minecraft/world/level/block/BlockComposter.java
-@@ -38,6 +38,12 @@
+@@ -37,6 +37,12 @@
  import net.minecraft.world.phys.shapes.VoxelShapeCollision;
  import net.minecraft.world.phys.shapes.VoxelShapes;
  
@@ -13,53 +13,44 @@
  public class BlockComposter extends Block implements IInventoryHolder {
  
      public static final int READY = 8;
-@@ -47,7 +53,7 @@
-     public static final Object2FloatMap<IMaterial> COMPOSTABLES = new Object2FloatOpenHashMap();
-     private static final int AABB_SIDE_THICKNESS = 2;
-     private static final VoxelShape OUTER_SHAPE = VoxelShapes.b();
--    private static final VoxelShape[] SHAPES = (VoxelShape[]) SystemUtils.a((Object) (new VoxelShape[9]), (avoxelshape) -> {
-+    private static final VoxelShape[] SHAPES = (VoxelShape[]) SystemUtils.a((new VoxelShape[9]), (avoxelshape) -> { // CraftBukkit - decompile error
-         for (int i = 0; i < 8; ++i) {
-             avoxelshape[i] = VoxelShapes.a(BlockComposter.OUTER_SHAPE, Block.a(2.0D, (double) Math.max(2, 1 + i * 2), 2.0D, 14.0D, 16.0D, 14.0D), OperatorBoolean.ONLY_FIRST);
-         }
-@@ -225,18 +231,25 @@
+@@ -224,18 +230,25 @@
  
-             return EnumInteractionResult.a(world.isClientSide);
+             return EnumInteractionResult.sidedSuccess(world.isClientSide);
          } else if (i == 8) {
--            d(iblockdata, world, blockposition);
-+            d(iblockdata, world, blockposition, (Entity) null); // CraftBukkit - no event for players
-             return EnumInteractionResult.a(world.isClientSide);
+-            extractProduce(iblockdata, world, blockposition);
++            extractProduce(iblockdata, world, blockposition, (Entity) null); // CraftBukkit - no event for players
+             return EnumInteractionResult.sidedSuccess(world.isClientSide);
          } else {
              return EnumInteractionResult.PASS;
          }
      }
  
--    public static IBlockData a(IBlockData iblockdata, WorldServer worldserver, ItemStack itemstack, BlockPosition blockposition) {
-+    public static IBlockData a(IBlockData iblockdata, WorldServer worldserver, ItemStack itemstack, BlockPosition blockposition, Entity entity) { // CraftBukkit
-         int i = (Integer) iblockdata.get(BlockComposter.LEVEL);
+-    public static IBlockData insertItem(IBlockData iblockdata, WorldServer worldserver, ItemStack itemstack, BlockPosition blockposition) {
++    public static IBlockData insertItem(IBlockData iblockdata, WorldServer worldserver, ItemStack itemstack, BlockPosition blockposition, Entity entity) { // CraftBukkit
+         int i = (Integer) iblockdata.getValue(BlockComposter.LEVEL);
  
          if (i < 7 && BlockComposter.COMPOSTABLES.containsKey(itemstack.getItem())) {
--            IBlockData iblockdata1 = a(iblockdata, (GeneratorAccess) worldserver, blockposition, itemstack);
+-            IBlockData iblockdata1 = addItem(iblockdata, worldserver, blockposition, itemstack);
 +            // CraftBukkit start
 +            double rand = worldserver.getRandom().nextDouble();
-+            IBlockData iblockdata1 = a(iblockdata, DummyGeneratorAccess.INSTANCE, blockposition, itemstack, rand);
++            IBlockData iblockdata1 = addItem(iblockdata, DummyGeneratorAccess.INSTANCE, blockposition, itemstack, rand);
 +            if (iblockdata == iblockdata1 || org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(entity, blockposition, iblockdata1).isCancelled()) {
 +                return iblockdata;
 +            }
-+            iblockdata1 = a(iblockdata, (GeneratorAccess) worldserver, blockposition, itemstack, rand);
++            iblockdata1 = addItem(iblockdata, (GeneratorAccess) worldserver, blockposition, itemstack, rand);
 +            // CraftBukkit end
  
-             itemstack.subtract(1);
+             itemstack.shrink(1);
              return iblockdata1;
-@@ -245,7 +258,15 @@
+@@ -244,7 +257,15 @@
          }
      }
  
--    public static IBlockData d(IBlockData iblockdata, World world, BlockPosition blockposition) {
+-    public static IBlockData extractProduce(IBlockData iblockdata, World world, BlockPosition blockposition) {
 +    // CraftBukkit start
-+    public static IBlockData d(IBlockData iblockdata, World world, BlockPosition blockposition, Entity entity) {
++    public static IBlockData extractProduce(IBlockData iblockdata, World world, BlockPosition blockposition, Entity entity) {
 +        if (entity != null) {
-+            IBlockData iblockdata1 = c(iblockdata, DummyGeneratorAccess.INSTANCE, blockposition);
++            IBlockData iblockdata1 = empty(iblockdata, DummyGeneratorAccess.INSTANCE, blockposition);
 +            if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(entity, blockposition, iblockdata1).isCancelled()) {
 +                return iblockdata;
 +            }
@@ -68,17 +59,17 @@
          if (!world.isClientSide) {
              float f = 0.7F;
              double d0 = (double) (world.random.nextFloat() * 0.7F) + 0.15000000596046448D;
-@@ -271,10 +292,16 @@
+@@ -270,10 +291,16 @@
      }
  
-     static IBlockData a(IBlockData iblockdata, GeneratorAccess generatoraccess, BlockPosition blockposition, ItemStack itemstack) {
+     static IBlockData addItem(IBlockData iblockdata, GeneratorAccess generatoraccess, BlockPosition blockposition, ItemStack itemstack) {
 +        // CraftBukkit start
-+        return a(iblockdata, generatoraccess, blockposition, itemstack, generatoraccess.getRandom().nextDouble());
++        return addItem(iblockdata, generatoraccess, blockposition, itemstack, generatoraccess.getRandom().nextDouble());
 +    }
 +
-+    static IBlockData a(IBlockData iblockdata, GeneratorAccess generatoraccess, BlockPosition blockposition, ItemStack itemstack, double rand) {
++    static IBlockData addItem(IBlockData iblockdata, GeneratorAccess generatoraccess, BlockPosition blockposition, ItemStack itemstack, double rand) {
 +        // CraftBukkit end
-         int i = (Integer) iblockdata.get(BlockComposter.LEVEL);
+         int i = (Integer) iblockdata.getValue(BlockComposter.LEVEL);
          float f = BlockComposter.COMPOSTABLES.getFloat(itemstack.getItem());
  
 -        if ((i != 0 || f <= 0.0F) && generatoraccess.getRandom().nextDouble() >= (double) f) {
@@ -86,9 +77,9 @@
              return iblockdata;
          } else {
              int j = i + 1;
-@@ -322,7 +349,8 @@
-     public IWorldInventory a(IBlockData iblockdata, GeneratorAccess generatoraccess, BlockPosition blockposition) {
-         int i = (Integer) iblockdata.get(BlockComposter.LEVEL);
+@@ -321,7 +348,8 @@
+     public IWorldInventory getContainer(IBlockData iblockdata, GeneratorAccess generatoraccess, BlockPosition blockposition) {
+         int i = (Integer) iblockdata.getValue(BlockComposter.LEVEL);
  
 -        return (IWorldInventory) (i == 8 ? new BlockComposter.ContainerOutput(iblockdata, generatoraccess, blockposition, new ItemStack(Items.BONE_MEAL)) : (i < 7 ? new BlockComposter.ContainerInput(iblockdata, generatoraccess, blockposition) : new BlockComposter.ContainerEmpty()));
 +        // CraftBukkit - empty generatoraccess, blockposition
@@ -96,7 +87,7 @@
      }
  
      public static class ContainerOutput extends InventorySubcontainer implements IWorldInventory {
-@@ -337,6 +365,7 @@
+@@ -336,6 +364,7 @@
              this.state = iblockdata;
              this.level = generatoraccess;
              this.pos = blockposition;
@@ -104,25 +95,25 @@
          }
  
          @Override
-@@ -361,8 +390,15 @@
+@@ -360,8 +389,15 @@
  
          @Override
-         public void update() {
--            BlockComposter.c(this.state, this.level, this.pos);
+         public void setChanged() {
+-            BlockComposter.empty(this.state, this.level, this.pos);
 -            this.changed = true;
 +            // CraftBukkit start - allow putting items back (eg cancelled InventoryMoveItemEvent)
 +            if (this.isEmpty()) {
-+                BlockComposter.c(this.state, this.level, this.pos);
++                BlockComposter.empty(this.state, this.level, this.pos);
 +                this.changed = true;
 +            } else {
-+                this.level.setTypeAndData(this.pos, this.state, 3);
++                this.level.setBlock(this.pos, this.state, 3);
 +                this.changed = false;
 +            }
 +            // CraftBukkit end
          }
      }
  
-@@ -375,6 +411,7 @@
+@@ -374,6 +410,7 @@
  
          public ContainerInput(IBlockData iblockdata, GeneratorAccess generatoraccess, BlockPosition blockposition) {
              super(1);
@@ -130,7 +121,7 @@
              this.state = iblockdata;
              this.level = generatoraccess;
              this.pos = blockposition;
-@@ -417,8 +454,9 @@
+@@ -416,8 +453,9 @@
  
      public static class ContainerEmpty extends InventorySubcontainer implements IWorldInventory {
  

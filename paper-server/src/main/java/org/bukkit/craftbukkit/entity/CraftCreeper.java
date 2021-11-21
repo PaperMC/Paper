@@ -73,7 +73,7 @@ public class CraftCreeper extends CraftMonster implements Creeper {
 
     @Override
     public void explode() {
-        getHandle().explode();
+        getHandle().explodeCreeper();
     }
 
     @Override

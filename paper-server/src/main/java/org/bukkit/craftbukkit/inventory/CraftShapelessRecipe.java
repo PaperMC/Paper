@@ -20,7 +20,7 @@ public class CraftShapelessRecipe extends ShapelessRecipe implements CraftRecipe
     }
 
     public CraftShapelessRecipe(ItemStack result, ShapelessRecipes recipe) {
-        this(CraftNamespacedKey.fromMinecraft(recipe.getKey()), result);
+        this(CraftNamespacedKey.fromMinecraft(recipe.getId()), result);
         this.recipe = recipe;
     }
 
@@ -39,11 +39,11 @@ public class CraftShapelessRecipe extends ShapelessRecipe implements CraftRecipe
     @Override
     public void addToCraftingManager() {
         List<org.bukkit.inventory.RecipeChoice> ingred = this.getChoiceList();
-        NonNullList<RecipeItemStack> data = NonNullList.a(ingred.size(), RecipeItemStack.EMPTY);
+        NonNullList<RecipeItemStack> data = NonNullList.withSize(ingred.size(), RecipeItemStack.EMPTY);
         for (int i = 0; i < ingred.size(); i++) {
             data.set(i, toNMS(ingred.get(i), true));
         }
 
-        MinecraftServer.getServer().getCraftingManager().addRecipe(new ShapelessRecipes(CraftNamespacedKey.toMinecraft(this.getKey()), this.getGroup(), CraftItemStack.asNMSCopy(this.getResult()), data));
+        MinecraftServer.getServer().getRecipeManager().addRecipe(new ShapelessRecipes(CraftNamespacedKey.toMinecraft(this.getKey()), this.getGroup(), CraftItemStack.asNMSCopy(this.getResult()), data));
     }
 }

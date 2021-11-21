@@ -44,13 +44,13 @@ public class CraftItemFrame extends CraftHanging implements ItemFrame {
         super.update();
 
         // mark dirty, so that the client gets updated with item and rotation
-        for (DataWatcher.Item<?> dataItem : getHandle().getDataWatcher().getAll()) {
-            getHandle().getDataWatcher().markDirty(dataItem.a());
+        for (DataWatcher.Item<?> dataItem : getHandle().getEntityData().getAll()) {
+            getHandle().getEntityData().markDirty(dataItem.getAccessor());
         }
 
         // update redstone
         if (!getHandle().generation) {
-            getHandle().getWorld().updateAdjacentComparators(getHandle().pos, Blocks.AIR);
+            getHandle().getLevel().updateNeighbourForOutputSignal(getHandle().pos, Blocks.AIR);
         }
     }
 

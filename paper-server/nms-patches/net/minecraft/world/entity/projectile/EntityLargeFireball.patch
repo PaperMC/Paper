@@ -26,23 +26,23 @@
          if (!this.level.isClientSide) {
              boolean flag = this.level.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING);
  
--            this.level.createExplosion((Entity) null, this.locX(), this.locY(), this.locZ(), (float) this.explosionPower, flag, flag ? Explosion.Effect.DESTROY : Explosion.Effect.NONE);
+-            this.level.explode((Entity) null, this.getX(), this.getY(), this.getZ(), (float) this.explosionPower, flag, flag ? Explosion.Effect.DESTROY : Explosion.Effect.NONE);
 +            // CraftBukkit start - fire ExplosionPrimeEvent
 +            ExplosionPrimeEvent event = new ExplosionPrimeEvent((org.bukkit.entity.Explosive) this.getBukkitEntity());
 +            this.level.getCraftServer().getPluginManager().callEvent(event);
 +
 +            if (!event.isCancelled()) {
 +                // give 'this' instead of (Entity) null so we know what causes the damage
-+                this.level.createExplosion(this, this.locX(), this.locY(), this.locZ(), event.getRadius(), event.getFire(), flag ? Explosion.Effect.DESTROY : Explosion.Effect.NONE);
++                this.level.explode(this, this.getX(), this.getY(), this.getZ(), event.getRadius(), event.getFire(), flag ? Explosion.Effect.DESTROY : Explosion.Effect.NONE);
 +            }
 +            // CraftBukkit end
-             this.die();
+             this.discard();
          }
  
 @@ -61,7 +73,8 @@
-     public void loadData(NBTTagCompound nbttagcompound) {
-         super.loadData(nbttagcompound);
-         if (nbttagcompound.hasKeyOfType("ExplosionPower", 99)) {
+     public void readAdditionalSaveData(NBTTagCompound nbttagcompound) {
+         super.readAdditionalSaveData(nbttagcompound);
+         if (nbttagcompound.contains("ExplosionPower", 99)) {
 -            this.explosionPower = nbttagcompound.getByte("ExplosionPower");
 +            // CraftBukkit - set bukkitYield when setting explosionpower
 +            bukkitYield = this.explosionPower = nbttagcompound.getByte("ExplosionPower");

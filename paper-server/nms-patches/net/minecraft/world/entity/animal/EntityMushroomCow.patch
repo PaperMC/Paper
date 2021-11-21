@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/animal/EntityMushroomCow.java
 +++ b/net/minecraft/world/entity/animal/EntityMushroomCow.java
-@@ -42,6 +42,13 @@
+@@ -44,6 +44,13 @@
  import net.minecraft.world.level.gameevent.GameEvent;
  import org.apache.commons.lang3.tuple.Pair;
  
@@ -13,52 +13,52 @@
 +
  public class EntityMushroomCow extends EntityCow implements IShearable {
  
-     private static final DataWatcherObject<String> DATA_TYPE = DataWatcher.a(EntityMushroomCow.class, DataWatcherRegistry.STRING);
-@@ -113,6 +120,11 @@
+     private static final DataWatcherObject<String> DATA_TYPE = DataWatcher.defineId(EntityMushroomCow.class, DataWatcherRegistry.STRING);
+@@ -117,6 +124,11 @@
              this.playSound(soundeffect, 1.0F, 1.0F);
-             return EnumInteractionResult.a(this.level.isClientSide);
-         } else if (itemstack.a(Items.SHEARS) && this.canShear()) {
+             return EnumInteractionResult.sidedSuccess(this.level.isClientSide);
+         } else if (itemstack.is(Items.SHEARS) && this.readyForShearing()) {
 +            // CraftBukkit start
 +            if (!CraftEventFactory.handlePlayerShearEntityEvent(entityhuman, this, itemstack, enumhand)) {
 +                return EnumInteractionResult.PASS;
 +            }
 +            // CraftBukkit end
              this.shear(SoundCategory.PLAYERS);
-             this.a(GameEvent.SHEAR, (Entity) entityhuman);
+             this.gameEvent(GameEvent.SHEAR, (Entity) entityhuman);
              if (!this.level.isClientSide) {
-@@ -160,7 +172,7 @@
+@@ -164,7 +176,7 @@
          this.level.playSound((EntityHuman) null, (Entity) this, SoundEffects.MOOSHROOM_SHEAR, soundcategory, 1.0F, 1.0F);
          if (!this.level.isClientSide()) {
-             ((WorldServer) this.level).a(Particles.EXPLOSION, this.locX(), this.e(0.5D), this.locZ(), 1, 0.0D, 0.0D, 0.0D, 0.0D);
--            this.die();
-+            // this.die(); // CraftBukkit - moved down
-             EntityCow entitycow = (EntityCow) EntityTypes.COW.a(this.level);
+             ((WorldServer) this.level).sendParticles(Particles.EXPLOSION, this.getX(), this.getY(0.5D), this.getZ(), 1, 0.0D, 0.0D, 0.0D, 0.0D);
+-            this.discard();
++            // this.discard(); // CraftBukkit - moved down
+             EntityCow entitycow = (EntityCow) EntityTypes.COW.create(this.level);
  
-             entitycow.setPositionRotation(this.locX(), this.locY(), this.locZ(), this.getYRot(), this.getXRot());
-@@ -176,10 +188,25 @@
+             entitycow.moveTo(this.getX(), this.getY(), this.getZ(), this.getYRot(), this.getXRot());
+@@ -180,10 +192,25 @@
              }
  
              entitycow.setInvulnerable(this.isInvulnerable());
--            this.level.addEntity(entitycow);
+-            this.level.addFreshEntity(entitycow);
 +            // CraftBukkit start
 +            if (CraftEventFactory.callEntityTransformEvent(this, entitycow, EntityTransformEvent.TransformReason.SHEARED).isCancelled()) {
 +                return;
 +            }
-+            this.level.addEntity(entitycow, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.SHEARED);
++            this.level.addFreshEntity(entitycow, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.SHEARED);
 +
-+            this.die(); // CraftBukkit - from above
++            this.discard(); // CraftBukkit - from above
 +            // CraftBukkit end
  
              for (int i = 0; i < 5; ++i) {
--                this.level.addEntity(new EntityItem(this.level, this.locX(), this.e(1.0D), this.locZ(), new ItemStack(this.getVariant().blockState.getBlock())));
+-                this.level.addFreshEntity(new EntityItem(this.level, this.getX(), this.getY(1.0D), this.getZ(), new ItemStack(this.getMushroomType().blockState.getBlock())));
 +                // CraftBukkit start
-+                EntityItem entityitem = new EntityItem(this.level, this.locX(), this.e(1.0D), this.locZ(), new ItemStack(this.getVariant().blockState.getBlock()));
++                EntityItem entityitem = new EntityItem(this.level, this.getX(), this.getY(1.0D), this.getZ(), new ItemStack(this.getMushroomType().blockState.getBlock()));
 +                EntityDropItemEvent event = new EntityDropItemEvent(this.getBukkitEntity(), (org.bukkit.entity.Item) entityitem.getBukkitEntity());
 +                Bukkit.getPluginManager().callEvent(event);
 +                if (event.isCancelled()) {
 +                    continue;
 +                }
-+                this.level.addEntity(entityitem);
++                this.level.addFreshEntity(entityitem);
 +                // CraftBukkit end
              }
          }

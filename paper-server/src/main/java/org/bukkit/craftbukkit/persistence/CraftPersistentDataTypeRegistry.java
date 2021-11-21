@@ -114,42 +114,42 @@ public final class CraftPersistentDataTypeRegistry {
             Primitives
          */
         if (Objects.equals(Byte.class, type)) {
-            return createAdapter(Byte.class, NBTTagByte.class, NBTTagByte::a, NBTTagByte::asByte);
+            return createAdapter(Byte.class, NBTTagByte.class, NBTTagByte::valueOf, NBTTagByte::getAsByte);
         }
         if (Objects.equals(Short.class, type)) {
-            return createAdapter(Short.class, NBTTagShort.class, NBTTagShort::a, NBTTagShort::asShort);
+            return createAdapter(Short.class, NBTTagShort.class, NBTTagShort::valueOf, NBTTagShort::getAsShort);
         }
         if (Objects.equals(Integer.class, type)) {
-            return createAdapter(Integer.class, NBTTagInt.class, NBTTagInt::a, NBTTagInt::asInt);
+            return createAdapter(Integer.class, NBTTagInt.class, NBTTagInt::valueOf, NBTTagInt::getAsInt);
         }
         if (Objects.equals(Long.class, type)) {
-            return createAdapter(Long.class, NBTTagLong.class, NBTTagLong::a, NBTTagLong::asLong);
+            return createAdapter(Long.class, NBTTagLong.class, NBTTagLong::valueOf, NBTTagLong::getAsLong);
         }
         if (Objects.equals(Float.class, type)) {
-            return createAdapter(Float.class, NBTTagFloat.class, NBTTagFloat::a, NBTTagFloat::asFloat);
+            return createAdapter(Float.class, NBTTagFloat.class, NBTTagFloat::valueOf, NBTTagFloat::getAsFloat);
         }
         if (Objects.equals(Double.class, type)) {
-            return createAdapter(Double.class, NBTTagDouble.class, NBTTagDouble::a, NBTTagDouble::asDouble);
+            return createAdapter(Double.class, NBTTagDouble.class, NBTTagDouble::valueOf, NBTTagDouble::getAsDouble);
         }
 
         /*
             String
          */
         if (Objects.equals(String.class, type)) {
-            return createAdapter(String.class, NBTTagString.class, NBTTagString::a, NBTTagString::asString);
+            return createAdapter(String.class, NBTTagString.class, NBTTagString::valueOf, NBTTagString::getAsString);
         }
 
         /*
             Primitive Arrays
          */
         if (Objects.equals(byte[].class, type)) {
-            return createAdapter(byte[].class, NBTTagByteArray.class, array -> new NBTTagByteArray(Arrays.copyOf(array, array.length)), n -> Arrays.copyOf(n.getBytes(), n.size()));
+            return createAdapter(byte[].class, NBTTagByteArray.class, array -> new NBTTagByteArray(Arrays.copyOf(array, array.length)), n -> Arrays.copyOf(n.getAsByteArray(), n.size()));
         }
         if (Objects.equals(int[].class, type)) {
-            return createAdapter(int[].class, NBTTagIntArray.class, array -> new NBTTagIntArray(Arrays.copyOf(array, array.length)), n -> Arrays.copyOf(n.getInts(), n.size()));
+            return createAdapter(int[].class, NBTTagIntArray.class, array -> new NBTTagIntArray(Arrays.copyOf(array, array.length)), n -> Arrays.copyOf(n.getAsIntArray(), n.size()));
         }
         if (Objects.equals(long[].class, type)) {
-            return createAdapter(long[].class, NBTTagLongArray.class, array -> new NBTTagLongArray(Arrays.copyOf(array, array.length)), n -> Arrays.copyOf(n.getLongs(), n.size()));
+            return createAdapter(long[].class, NBTTagLongArray.class, array -> new NBTTagLongArray(Arrays.copyOf(array, array.length)), n -> Arrays.copyOf(n.getAsLongArray(), n.size()));
         }
 
         /*
@@ -169,7 +169,7 @@ public final class CraftPersistentDataTypeRegistry {
                         for (int i = 0; i < tag.size(); i++) {
                             CraftPersistentDataContainer container = new CraftPersistentDataContainer(this);
                             NBTTagCompound compound = tag.getCompound(i);
-                            for (String key : compound.getKeys()) {
+                            for (String key : compound.getAllKeys()) {
                                 container.put(key, compound.get(key));
                             }
                             containerArray[i] = container;
@@ -185,7 +185,7 @@ public final class CraftPersistentDataTypeRegistry {
         if (Objects.equals(PersistentDataContainer.class, type)) {
             return createAdapter(CraftPersistentDataContainer.class, NBTTagCompound.class, CraftPersistentDataContainer::toTagCompound, tag -> {
                 CraftPersistentDataContainer container = new CraftPersistentDataContainer(this);
-                for (String key : tag.getKeys()) {
+                for (String key : tag.getAllKeys()) {
                     container.put(key, tag.get(key));
                 }
                 return container;

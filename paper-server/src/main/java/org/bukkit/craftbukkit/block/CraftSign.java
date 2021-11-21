@@ -64,12 +64,12 @@ public class CraftSign extends CraftBlockEntityState<TileEntitySign> implements 
 
     @Override
     public DyeColor getColor() {
-        return DyeColor.getByWoolData((byte) getSnapshot().getColor().getColorIndex());
+        return DyeColor.getByWoolData((byte) getSnapshot().getColor().getId());
     }
 
     @Override
     public void setColor(DyeColor color) {
-        getSnapshot().setColor(EnumColor.fromColorIndex(color.getWoolData()));
+        getSnapshot().setColor(EnumColor.byId(color.getWoolData()));
     }
 
     @Override
@@ -82,7 +82,7 @@ public class CraftSign extends CraftBlockEntityState<TileEntitySign> implements 
                 if (line.equals(originalLines[i])) {
                     continue; // The line contents are still the same, skip.
                 }
-                sign.a(i, CraftChatMessage.fromString(line)[0]);
+                sign.setMessage(i, CraftChatMessage.fromString(line)[0]);
             }
         }
     }

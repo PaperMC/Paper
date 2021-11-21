@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/block/BlockSponge.java
 +++ b/net/minecraft/world/level/block/BlockSponge.java
-@@ -15,6 +15,13 @@
+@@ -14,6 +14,13 @@
  import net.minecraft.world.level.material.Fluid;
  import net.minecraft.world.level.material.Material;
  
@@ -14,7 +14,7 @@
  public class BlockSponge extends Block {
  
      public static final int MAX_DEPTH = 6;
-@@ -50,6 +57,7 @@
+@@ -49,6 +56,7 @@
  
          queue.add(new Tuple<>(blockposition, 0));
          int i = 0;
@@ -22,46 +22,46 @@
  
          while (!queue.isEmpty()) {
              Tuple<BlockPosition, Integer> tuple = (Tuple) queue.poll();
-@@ -61,27 +69,31 @@
+@@ -60,27 +68,31 @@
              for (int l = 0; l < k; ++l) {
                  EnumDirection enumdirection = aenumdirection[l];
-                 BlockPosition blockposition2 = blockposition1.shift(enumdirection);
--                IBlockData iblockdata = world.getType(blockposition2);
--                Fluid fluid = world.getFluid(blockposition2);
+                 BlockPosition blockposition2 = blockposition1.relative(enumdirection);
+-                IBlockData iblockdata = world.getBlockState(blockposition2);
+-                Fluid fluid = world.getFluidState(blockposition2);
 +                // CraftBukkit start
-+                IBlockData iblockdata = blockList.getType(blockposition2);
-+                Fluid fluid = blockList.getFluid(blockposition2);
++                IBlockData iblockdata = blockList.getBlockState(blockposition2);
++                Fluid fluid = blockList.getFluidState(blockposition2);
 +                // CraftBukkit end
                  Material material = iblockdata.getMaterial();
  
-                 if (fluid.a((Tag) TagsFluid.WATER)) {
--                    if (iblockdata.getBlock() instanceof IFluidSource && !((IFluidSource) iblockdata.getBlock()).removeFluid(world, blockposition2, iblockdata).isEmpty()) {
-+                    if (iblockdata.getBlock() instanceof IFluidSource && !((IFluidSource) iblockdata.getBlock()).removeFluid(blockList, blockposition2, iblockdata).isEmpty()) { // CraftBukkit
+                 if (fluid.is((Tag) TagsFluid.WATER)) {
+-                    if (iblockdata.getBlock() instanceof IFluidSource && !((IFluidSource) iblockdata.getBlock()).pickupBlock(world, blockposition2, iblockdata).isEmpty()) {
++                    if (iblockdata.getBlock() instanceof IFluidSource && !((IFluidSource) iblockdata.getBlock()).pickupBlock(blockList, blockposition2, iblockdata).isEmpty()) { // CraftBukkit
                          ++i;
                          if (j < 6) {
                              queue.add(new Tuple<>(blockposition2, j + 1));
                          }
                      } else if (iblockdata.getBlock() instanceof BlockFluids) {
--                        world.setTypeAndData(blockposition2, Blocks.AIR.getBlockData(), 3);
-+                        blockList.setTypeAndData(blockposition2, Blocks.AIR.getBlockData(), 3); // CraftBukkit
+-                        world.setBlock(blockposition2, Blocks.AIR.defaultBlockState(), 3);
++                        blockList.setBlock(blockposition2, Blocks.AIR.defaultBlockState(), 3); // CraftBukkit
                          ++i;
                          if (j < 6) {
                              queue.add(new Tuple<>(blockposition2, j + 1));
                          }
                      } else if (material == Material.WATER_PLANT || material == Material.REPLACEABLE_WATER_PLANT) {
--                        TileEntity tileentity = iblockdata.isTileEntity() ? world.getTileEntity(blockposition2) : null;
+-                        TileEntity tileentity = iblockdata.hasBlockEntity() ? world.getBlockEntity(blockposition2) : null;
 +                        // CraftBukkit start
-+                        // TileEntity tileentity = iblockdata.isTileEntity() ? world.getTileEntity(blockposition2) : null;
++                        // TileEntity tileentity = iblockdata.hasBlockEntity() ? world.getBlockEntity(blockposition2) : null;
  
--                        a(iblockdata, (GeneratorAccess) world, blockposition2, tileentity);
--                        world.setTypeAndData(blockposition2, Blocks.AIR.getBlockData(), 3);
-+                        // a(iblockdata, (GeneratorAccess) world, blockposition2, tileentity);
-+                        blockList.setTypeAndData(blockposition2, Blocks.AIR.getBlockData(), 3);
+-                        dropResources(iblockdata, world, blockposition2, tileentity);
+-                        world.setBlock(blockposition2, Blocks.AIR.defaultBlockState(), 3);
++                        // dropResources(iblockdata, world, blockposition2, tileentity);
++                        blockList.setBlock(blockposition2, Blocks.AIR.defaultBlockState(), 3);
 +                        // CraftBukkit end
                          ++i;
                          if (j < 6) {
                              queue.add(new Tuple<>(blockposition2, j + 1));
-@@ -94,6 +106,39 @@
+@@ -93,6 +105,39 @@
                  break;
              }
          }
@@ -79,22 +79,22 @@
 +
 +            for (CraftBlockState block : blocks) {
 +                BlockPosition blockposition2 = block.getPosition();
-+                IBlockData iblockdata = world.getType(blockposition2);
-+                Fluid fluid = world.getFluid(blockposition2);
++                IBlockData iblockdata = world.getBlockState(blockposition2);
++                Fluid fluid = world.getFluidState(blockposition2);
 +                Material material = iblockdata.getMaterial();
 +
-+                if (fluid.a(TagsFluid.WATER)) {
-+                    if (iblockdata.getBlock() instanceof IFluidSource && !((IFluidSource) iblockdata.getBlock()).removeFluid(blockList, blockposition2, iblockdata).isEmpty()) {
++                if (fluid.is(TagsFluid.WATER)) {
++                    if (iblockdata.getBlock() instanceof IFluidSource && !((IFluidSource) iblockdata.getBlock()).pickupBlock(blockList, blockposition2, iblockdata).isEmpty()) {
 +                        // NOP
 +                    } else if (iblockdata.getBlock() instanceof BlockFluids) {
 +                        // NOP
 +                    } else if (material == Material.WATER_PLANT || material == Material.REPLACEABLE_WATER_PLANT) {
-+                        TileEntity tileentity = iblockdata.isTileEntity() ? world.getTileEntity(blockposition2) : null;
++                        TileEntity tileentity = iblockdata.hasBlockEntity() ? world.getBlockEntity(blockposition2) : null;
 +
-+                        a(iblockdata, world, blockposition2, tileentity);
++                        dropResources(iblockdata, world, blockposition2, tileentity);
 +                    }
 +                }
-+                world.setTypeAndData(blockposition2, block.getHandle(), block.getFlag());
++                world.setBlock(blockposition2, block.getHandle(), block.getFlag());
 +            }
 +        }
 +        // CraftBukkit end

@@ -48,21 +48,21 @@
 +
      protected Container(@Nullable Containers<?> containers, int i) {
          this.carried = ItemStack.EMPTY;
-         this.remoteSlots = NonNullList.a();
+         this.remoteSlots = NonNullList.create();
 @@ -156,6 +191,15 @@
  
      }
  
 +    // CraftBukkit start
 +    public void broadcastCarriedItem() {
-+        this.remoteCarried = this.getCarried().cloneItemStack();
++        this.remoteCarried = this.getCarried().copy();
 +        if (this.synchronizer != null) {
 +            this.synchronizer.sendCarriedChange(this, this.remoteCarried);
 +        }
 +    }
 +    // CraftBukkit end
 +
-     public void b(ICrafting icrafting) {
+     public void removeSlotListener(ICrafting icrafting) {
          this.containerListeners.remove(icrafting);
      }
 @@ -370,7 +414,7 @@
@@ -72,8 +72,8 @@
 -                    if (this.quickcraftSlots.size() == 1) {
 +                    if (false && this.quickcraftSlots.size() == 1) { // CraftBukkit - treat everything as a drag since we are unable to easily call InventoryClickEvent instead
                          k = ((Slot) this.quickcraftSlots.iterator().next()).index;
-                         this.f();
-                         this.b(k, this.quickcraftType, InventoryClickType.PICKUP, entityhuman);
+                         this.resetQuickCraft();
+                         this.doClick(k, this.quickcraftType, InventoryClickType.PICKUP, entityhuman);
 @@ -381,6 +425,7 @@
                      l = this.getCarried().getCount();
                      Iterator iterator = this.quickcraftSlots.iterator();
@@ -128,12 +128,12 @@
 +                    }
 +
 +                    if (needsUpdate && entityhuman instanceof EntityPlayer) {
-+                        this.updateInventory();
++                        this.sendAllDataToRemote();
 +                    }
 +                    // CraftBukkit end
                  }
  
-                 this.f();
+                 this.resetQuickCraft();
 @@ -420,8 +501,11 @@
                  if (i == -999) {
                      if (!this.getCarried().isEmpty()) {
@@ -145,18 +145,18 @@
 +                            entityhuman.drop(carried, true);
 +                            // CraftBukkit start
                          } else {
-                             entityhuman.drop(this.getCarried().cloneAndSubtract(1), true);
+                             entityhuman.drop(this.getCarried().split(1), true);
                          }
 @@ -484,6 +568,15 @@
                      }
  
-                     slot.d();
+                     slot.setChanged();
 +                    // CraftBukkit start - Make sure the client has the right slot contents
 +                    if (entityhuman instanceof EntityPlayer && slot.getMaxStackSize() != 64) {
-+                        ((EntityPlayer) entityhuman).connection.sendPacket(new PacketPlayOutSetSlot(this.containerId, this.incrementStateId(), slot.index, slot.getItem()));
++                        ((EntityPlayer) entityhuman).connection.send(new PacketPlayOutSetSlot(this.containerId, this.incrementStateId(), slot.index, slot.getItem()));
 +                        // Updating a crafting inventory makes the client reset the result slot, have to send it again
 +                        if (this.getBukkitView().getType() == InventoryType.WORKBENCH || this.getBukkitView().getType() == InventoryType.CRAFTING) {
-+                            ((EntityPlayer) entityhuman).connection.sendPacket(new PacketPlayOutSetSlot(this.containerId, this.incrementStateId(), 0, this.getSlot(0).getItem()));
++                            ((EntityPlayer) entityhuman).connection.send(new PacketPlayOutSetSlot(this.containerId, this.incrementStateId(), 0, this.getSlot(0).getItem()));
 +                        }
 +                    }
 +                    // CraftBukkit end
@@ -168,8 +168,8 @@
  
              if (!itemstack.isEmpty()) {
 +                this.setCarried(ItemStack.EMPTY); // CraftBukkit - SPIGOT-4556 - from below
-                 if (entityhuman.isAlive() && !((EntityPlayer) entityhuman).q()) {
-                     entityhuman.getInventory().f(itemstack);
+                 if (entityhuman.isAlive() && !((EntityPlayer) entityhuman).hasDisconnected()) {
+                     entityhuman.getInventory().placeItemBackInInventory(itemstack);
                  } else {
                      entityhuman.drop(itemstack, false);
                  }

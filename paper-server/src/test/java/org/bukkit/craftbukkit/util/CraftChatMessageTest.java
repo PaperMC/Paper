@@ -61,9 +61,9 @@ public class CraftChatMessageTest {
     }
 
     private IChatBaseComponent create(String txt, String... rest) {
-        IChatMutableComponent cmp = CraftChatMessage.fromString(txt, false)[0].mutableCopy();
+        IChatMutableComponent cmp = CraftChatMessage.fromString(txt, false)[0].copy();
         for (String s : rest) {
-            cmp.addSibling(CraftChatMessage.fromString(s, true)[0]);
+            cmp.append(CraftChatMessage.fromString(s, true)[0]);
         }
 
         return cmp;

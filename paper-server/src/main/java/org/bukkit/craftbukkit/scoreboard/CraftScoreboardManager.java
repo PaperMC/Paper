@@ -74,22 +74,22 @@ public final class CraftScoreboardManager implements ScoreboardManager {
         // Old objective tracking
         HashSet<ScoreboardObjective> removed = new HashSet<ScoreboardObjective>();
         for (int i = 0; i < 3; ++i) {
-            ScoreboardObjective scoreboardobjective = oldboard.getObjectiveForSlot(i);
+            ScoreboardObjective scoreboardobjective = oldboard.getDisplayObjective(i);
             if (scoreboardobjective != null && !removed.contains(scoreboardobjective)) {
-                entityplayer.connection.sendPacket(new PacketPlayOutScoreboardObjective(scoreboardobjective, 1));
+                entityplayer.connection.send(new PacketPlayOutScoreboardObjective(scoreboardobjective, 1));
                 removed.add(scoreboardobjective);
             }
         }
 
         // Old team tracking
-        Iterator<?> iterator = oldboard.getTeams().iterator();
+        Iterator<?> iterator = oldboard.getPlayerTeams().iterator();
         while (iterator.hasNext()) {
             ScoreboardTeam scoreboardteam = (ScoreboardTeam) iterator.next();
-            entityplayer.connection.sendPacket(PacketPlayOutScoreboardTeam.a(scoreboardteam));
+            entityplayer.connection.send(PacketPlayOutScoreboardTeam.createRemovePacket(scoreboardteam));
         }
 
         // The above is the reverse of the below method.
-        server.getPlayerList().sendScoreboard((ScoreboardServer) newboard, player.getHandle());
+        server.getPlayerList().updateEntireScoreboard((ScoreboardServer) newboard, player.getHandle());
     }
 
     // CraftBukkit method
@@ -101,7 +101,7 @@ public final class CraftScoreboardManager implements ScoreboardManager {
     public void getScoreboardScores(IScoreboardCriteria criteria, String name, Consumer<ScoreboardScore> consumer) {
         for (CraftScoreboard scoreboard : scoreboards) {
             Scoreboard board = scoreboard.board;
-            board.getObjectivesForCriteria(criteria, name, (score) -> consumer.accept(score));
+            board.forAllObjectives(criteria, name, (score) -> consumer.accept(score));
         }
     }
 }

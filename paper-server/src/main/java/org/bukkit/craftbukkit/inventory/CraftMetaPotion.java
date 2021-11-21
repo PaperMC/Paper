@@ -55,17 +55,17 @@ class CraftMetaPotion extends CraftMetaItem implements PotionMeta {
 
     CraftMetaPotion(NBTTagCompound tag) {
         super(tag);
-        if (tag.hasKey(DEFAULT_POTION.NBT)) {
+        if (tag.contains(DEFAULT_POTION.NBT)) {
             type = CraftPotionUtil.toBukkit(tag.getString(DEFAULT_POTION.NBT));
         }
-        if (tag.hasKey(POTION_COLOR.NBT)) {
+        if (tag.contains(POTION_COLOR.NBT)) {
             try {
                 color = Color.fromRGB(tag.getInt(POTION_COLOR.NBT));
             } catch (IllegalArgumentException ex) {
                 // Invalid colour
             }
         }
-        if (tag.hasKey(POTION_EFFECTS.NBT)) {
+        if (tag.contains(POTION_EFFECTS.NBT)) {
             NBTTagList list = tag.getList(POTION_EFFECTS.NBT, CraftMagicNumbers.NBT.TAG_COMPOUND);
             int length = list.size();
             customEffects = new ArrayList<PotionEffect>(length);
@@ -81,8 +81,8 @@ class CraftMetaPotion extends CraftMetaItem implements PotionMeta {
                 int amp = effect.getByte(AMPLIFIER.NBT);
                 int duration = effect.getInt(DURATION.NBT);
                 boolean ambient = effect.getBoolean(AMBIENT.NBT);
-                boolean particles = tag.hasKeyOfType(SHOW_PARTICLES.NBT, CraftMagicNumbers.NBT.TAG_BYTE) ? effect.getBoolean(SHOW_PARTICLES.NBT) : true;
-                boolean icon = tag.hasKeyOfType(SHOW_ICON.NBT, CraftMagicNumbers.NBT.TAG_BYTE) ? effect.getBoolean(SHOW_ICON.NBT) : particles;
+                boolean particles = tag.contains(SHOW_PARTICLES.NBT, CraftMagicNumbers.NBT.TAG_BYTE) ? effect.getBoolean(SHOW_PARTICLES.NBT) : true;
+                boolean icon = tag.contains(SHOW_ICON.NBT, CraftMagicNumbers.NBT.TAG_BYTE) ? effect.getBoolean(SHOW_ICON.NBT) : particles;
                 customEffects.add(new PotionEffect(type, duration, amp, ambient, particles, icon));
             }
         }
@@ -114,24 +114,24 @@ class CraftMetaPotion extends CraftMetaItem implements PotionMeta {
     void applyToItem(NBTTagCompound tag) {
         super.applyToItem(tag);
 
-        tag.setString(DEFAULT_POTION.NBT, CraftPotionUtil.fromBukkit(type));
+        tag.putString(DEFAULT_POTION.NBT, CraftPotionUtil.fromBukkit(type));
 
         if (hasColor()) {
-            tag.setInt(POTION_COLOR.NBT, color.asRGB());
+            tag.putInt(POTION_COLOR.NBT, color.asRGB());
         }
 
         if (customEffects != null) {
             NBTTagList effectList = new NBTTagList();
-            tag.set(POTION_EFFECTS.NBT, effectList);
+            tag.put(POTION_EFFECTS.NBT, effectList);
 
             for (PotionEffect effect : customEffects) {
                 NBTTagCompound effectData = new NBTTagCompound();
-                effectData.setByte(ID.NBT, (byte) effect.getType().getId());
-                effectData.setByte(AMPLIFIER.NBT, (byte) effect.getAmplifier());
-                effectData.setInt(DURATION.NBT, effect.getDuration());
-                effectData.setBoolean(AMBIENT.NBT, effect.isAmbient());
-                effectData.setBoolean(SHOW_PARTICLES.NBT, effect.hasParticles());
-                effectData.setBoolean(SHOW_ICON.NBT, effect.hasIcon());
+                effectData.putByte(ID.NBT, (byte) effect.getType().getId());
+                effectData.putByte(AMPLIFIER.NBT, (byte) effect.getAmplifier());
+                effectData.putInt(DURATION.NBT, effect.getDuration());
+                effectData.putBoolean(AMBIENT.NBT, effect.isAmbient());
+                effectData.putBoolean(SHOW_PARTICLES.NBT, effect.hasParticles());
+                effectData.putBoolean(SHOW_ICON.NBT, effect.hasIcon());
                 effectList.add(effectData);
             }
         }

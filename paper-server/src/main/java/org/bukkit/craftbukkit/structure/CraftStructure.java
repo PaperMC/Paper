@@ -55,15 +55,15 @@ public class CraftStructure implements Structure {
         }
 
         DefinedStructureInfo definedstructureinfo = new DefinedStructureInfo()
-                .a(EnumBlockMirror.valueOf(mirror.name())) // PAIL rename setMirror
-                .a(EnumBlockRotation.valueOf(structureRotation.name())) // PAIL rename setRotation
-                .a(!includeEntities) // PAIL rename setIgnoreEntities
-                .a(new DefinedStructureProcessorRotation(integrity)) // PAIL rename addStructureProcessor
-                .a(random); // PAIL rename setRandom
+                .setMirror(EnumBlockMirror.valueOf(mirror.name()))
+                .setRotation(EnumBlockRotation.valueOf(structureRotation.name()))
+                .setIgnoreEntities(!includeEntities)
+                .addProcessor(new DefinedStructureProcessorRotation(integrity))
+                .setRandom(random);
         definedstructureinfo.palette = palette;
 
         BlockPosition blockPosition = new BlockPosition(location.getBlockX(), location.getBlockY(), location.getBlockZ());
-        structure.a(((CraftRegionAccessor) regionAccessor).getHandle(), blockPosition, blockPosition, definedstructureinfo, random, 2); // PAIL rename placeInWorld
+        structure.placeInWorld(((CraftRegionAccessor) regionAccessor).getHandle(), blockPosition, blockPosition, definedstructureinfo, random, 2);
     }
 
     @Override
@@ -88,20 +88,20 @@ public class CraftStructure implements Structure {
             throw new IllegalArgumentException("Size must be at least 1x1x1 but was " + size.getBlockX() + "x" + size.getBlockY() + "x" + size.getBlockZ());
         }
 
-        structure.a(((CraftWorld) world).getHandle(), new BlockPosition(origin.getBlockX(), origin.getBlockY(), origin.getBlockZ()), new BlockPosition(size.getBlockX(), size.getBlockY(), size.getBlockZ()), includeEntities, Blocks.STRUCTURE_VOID); // PAIL rename fillFromWorld
+        structure.fillFromWorld(((CraftWorld) world).getHandle(), new BlockPosition(origin.getBlockX(), origin.getBlockY(), origin.getBlockZ()), new BlockPosition(size.getBlockX(), size.getBlockY(), size.getBlockZ()), includeEntities, Blocks.STRUCTURE_VOID);
     }
 
     @Override
     public BlockVector getSize() {
-        return new BlockVector(structure.a().getX(), structure.a().getY(), structure.a().getZ());
+        return new BlockVector(structure.getSize().getX(), structure.getSize().getY(), structure.getSize().getZ());
     }
 
     @Override
     public List<Entity> getEntities() {
         List<Entity> entities = new ArrayList<>();
         for (DefinedStructure.EntityInfo entity : structure.entityInfoList) {
-            EntityTypes.a(entity.nbt, ((CraftWorld) Bukkit.getServer().getWorlds().get(0)).getHandle()).ifPresent(dummyEntity -> {
-                dummyEntity.setPosition(entity.pos.x, entity.pos.y, entity.pos.z);
+            EntityTypes.create(entity.nbt, ((CraftWorld) Bukkit.getServer().getWorlds().get(0)).getHandle()).ifPresent(dummyEntity -> {
+                dummyEntity.setPos(entity.pos.x, entity.pos.y, entity.pos.z);
                 entities.add(dummyEntity.getBukkitEntity());
             });
         }

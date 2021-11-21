@@ -19,6 +19,6 @@ public class CraftDimensionUtil {
             return World.END;
         }
 
-        return world.getDimensionKey();
+        return world.dimension();
     }
 }

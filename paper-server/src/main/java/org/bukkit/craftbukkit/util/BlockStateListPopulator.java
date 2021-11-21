@@ -36,36 +36,36 @@ public class BlockStateListPopulator extends DummyGeneratorAccess {
     }
 
     @Override
-    public IBlockData getType(BlockPosition bp) {
+    public IBlockData getBlockState(BlockPosition bp) {
         IBlockData blockData = dataMap.get(bp);
-        return (blockData != null) ? blockData : world.getType(bp);
+        return (blockData != null) ? blockData : world.getBlockState(bp);
     }
 
     @Override
-    public Fluid getFluid(BlockPosition bp) {
+    public Fluid getFluidState(BlockPosition bp) {
         IBlockData blockData = dataMap.get(bp);
-        return (blockData != null) ? blockData.getFluid() : world.getFluid(bp);
+        return (blockData != null) ? blockData.getFluidState() : world.getFluidState(bp);
     }
 
     @Override
-    public TileEntity getTileEntity(BlockPosition blockposition) {
+    public TileEntity getBlockEntity(BlockPosition blockposition) {
         // The contains is important to check for null values
         if (entityMap.containsKey(blockposition)) {
             return entityMap.get(blockposition);
         }
 
-        return world.getTileEntity(blockposition);
+        return world.getBlockEntity(blockposition);
     }
 
     @Override
-    public boolean setTypeAndData(BlockPosition position, IBlockData data, int flag) {
-        position = position.immutableCopy();
+    public boolean setBlock(BlockPosition position, IBlockData data, int flag) {
+        position = position.immutable();
         // remove first to keep insertion order
         list.remove(position);
 
         dataMap.put(position, data);
-        if (data.isTileEntity()) {
-            entityMap.put(position, ((ITileEntity) data.getBlock()).createTile(position, data));
+        if (data.hasBlockEntity()) {
+            entityMap.put(position, ((ITileEntity) data.getBlock()).newBlockEntity(position, data));
         } else {
             entityMap.put(position, null);
         }
@@ -122,12 +122,12 @@ public class BlockStateListPopulator extends DummyGeneratorAccess {
     }
 
     @Override
-    public boolean a(BlockPosition blockposition, Predicate<IBlockData> predicate) {
-        return predicate.test(getType(blockposition));
+    public boolean isStateAtPosition(BlockPosition blockposition, Predicate<IBlockData> predicate) {
+        return predicate.test(getBlockState(blockposition));
     }
 
     @Override
-    public DimensionManager getDimensionManager() {
-        return world.getDimensionManager();
+    public DimensionManager dimensionType() {
+        return world.dimensionType();
     }
 }

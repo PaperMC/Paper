@@ -36,9 +36,9 @@
      public void eat(int i, float f) {
          this.foodLevel = Math.min(i + this.foodLevel, 20);
 @@ -26,8 +44,17 @@
-     public void a(Item item, ItemStack itemstack) {
-         if (item.isFood()) {
-             FoodInfo foodinfo = item.getFoodInfo();
+     public void eat(Item item, ItemStack itemstack) {
+         if (item.isEdible()) {
+             FoodInfo foodinfo = item.getFoodProperties();
 +            // CraftBukkit start
 +            int oldFoodLevel = foodLevel;
  
@@ -66,35 +66,35 @@
 +                    this.foodLevel = event.getFoodLevel();
 +                }
 +
-+                ((EntityPlayer) entityhuman).connection.sendPacket(new PacketPlayOutUpdateHealth(((EntityPlayer) entityhuman).getBukkitEntity().getScaledHealth(), this.foodLevel, this.saturationLevel));
++                ((EntityPlayer) entityhuman).connection.send(new PacketPlayOutUpdateHealth(((EntityPlayer) entityhuman).getBukkitEntity().getScaledHealth(), this.foodLevel, this.saturationLevel));
 +                // CraftBukkit end
              }
          }
  
 @@ -49,23 +84,25 @@
  
-         if (flag && this.saturationLevel > 0.0F && entityhuman.fu() && this.foodLevel >= 20) {
+         if (flag && this.saturationLevel > 0.0F && entityhuman.isHurt() && this.foodLevel >= 20) {
              ++this.tickTimer;
 -            if (this.tickTimer >= 10) {
 +            if (this.tickTimer >= this.saturatedRegenRate) { // CraftBukkit
                  float f = Math.min(this.saturationLevel, 6.0F);
  
 -                entityhuman.heal(f / 6.0F);
--                this.a(f);
+-                this.addExhaustion(f);
 +                entityhuman.heal(f / 6.0F, org.bukkit.event.entity.EntityRegainHealthEvent.RegainReason.SATIATED); // CraftBukkit - added RegainReason
-+                // this.a(f); CraftBukkit - EntityExhaustionEvent
-+                entityhuman.applyExhaustion(f, org.bukkit.event.entity.EntityExhaustionEvent.ExhaustionReason.REGEN); // CraftBukkit - EntityExhaustionEvent
++                // this.addExhaustion(f); CraftBukkit - EntityExhaustionEvent
++                entityhuman.causeFoodExhaustion(f, org.bukkit.event.entity.EntityExhaustionEvent.ExhaustionReason.REGEN); // CraftBukkit - EntityExhaustionEvent
                  this.tickTimer = 0;
              }
-         } else if (flag && this.foodLevel >= 18 && entityhuman.fu()) {
+         } else if (flag && this.foodLevel >= 18 && entityhuman.isHurt()) {
              ++this.tickTimer;
 -            if (this.tickTimer >= 80) {
 -                entityhuman.heal(1.0F);
--                this.a(6.0F);
+-                this.addExhaustion(6.0F);
 +            if (this.tickTimer >= this.unsaturatedRegenRate) { // CraftBukkit - add regen rate manipulation
 +                entityhuman.heal(1.0F, org.bukkit.event.entity.EntityRegainHealthEvent.RegainReason.SATIATED); // CraftBukkit - added RegainReason
 +                // this.a(6.0F); CraftBukkit - EntityExhaustionEvent
-+                entityhuman.applyExhaustion(6.0f, org.bukkit.event.entity.EntityExhaustionEvent.ExhaustionReason.REGEN); // CraftBukkit - EntityExhaustionEvent
++                entityhuman.causeFoodExhaustion(6.0f, org.bukkit.event.entity.EntityExhaustionEvent.ExhaustionReason.REGEN); // CraftBukkit - EntityExhaustionEvent
                  this.tickTimer = 0;
              }
          } else if (this.foodLevel <= 0) {
@@ -102,5 +102,5 @@
 -            if (this.tickTimer >= 80) {
 +            if (this.tickTimer >= this.starvationRate) { // CraftBukkit - add regen rate manipulation
                  if (entityhuman.getHealth() > 10.0F || enumdifficulty == EnumDifficulty.HARD || entityhuman.getHealth() > 1.0F && enumdifficulty == EnumDifficulty.NORMAL) {
-                     entityhuman.damageEntity(DamageSource.STARVE, 1.0F);
+                     entityhuman.hurt(DamageSource.STARVE, 1.0F);
                  }

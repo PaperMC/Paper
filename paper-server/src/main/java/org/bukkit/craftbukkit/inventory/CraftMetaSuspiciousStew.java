@@ -40,7 +40,7 @@ public class CraftMetaSuspiciousStew extends CraftMetaItem implements Suspicious
 
     CraftMetaSuspiciousStew(NBTTagCompound tag) {
         super(tag);
-        if (tag.hasKey(EFFECTS.NBT)) {
+        if (tag.contains(EFFECTS.NBT)) {
             NBTTagList list = tag.getList(EFFECTS.NBT, CraftMagicNumbers.NBT.TAG_COMPOUND);
             int length = list.size();
             customEffects = new ArrayList<PotionEffect>(length);
@@ -79,12 +79,12 @@ public class CraftMetaSuspiciousStew extends CraftMetaItem implements Suspicious
 
         if (customEffects != null) {
             NBTTagList effectList = new NBTTagList();
-            tag.set(EFFECTS.NBT, effectList);
+            tag.put(EFFECTS.NBT, effectList);
 
             for (PotionEffect effect : customEffects) {
                 NBTTagCompound effectData = new NBTTagCompound();
-                effectData.setByte(ID.NBT, ((byte) effect.getType().getId()));
-                effectData.setInt(DURATION.NBT, effect.getDuration());
+                effectData.putByte(ID.NBT, ((byte) effect.getType().getId()));
+                effectData.putInt(DURATION.NBT, effect.getDuration());
                 effectList.add(effectData);
             }
         }

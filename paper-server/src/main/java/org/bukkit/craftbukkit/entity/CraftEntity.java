@@ -408,16 +408,16 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     @Override
     public Location getLocation() {
-        return new Location(getWorld(), entity.locX(), entity.locY(), entity.locZ(), entity.getBukkitYaw(), entity.getXRot());
+        return new Location(getWorld(), entity.getX(), entity.getY(), entity.getZ(), entity.getBukkitYaw(), entity.getXRot());
     }
 
     @Override
     public Location getLocation(Location loc) {
         if (loc != null) {
             loc.setWorld(getWorld());
-            loc.setX(entity.locX());
-            loc.setY(entity.locY());
-            loc.setZ(entity.locZ());
+            loc.setX(entity.getX());
+            loc.setY(entity.getY());
+            loc.setZ(entity.getZ());
             loc.setYaw(entity.getBukkitYaw());
             loc.setPitch(entity.getXRot());
         }
@@ -427,25 +427,25 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     @Override
     public Vector getVelocity() {
-        return CraftVector.toBukkit(entity.getMot());
+        return CraftVector.toBukkit(entity.getDeltaMovement());
     }
 
     @Override
     public void setVelocity(Vector velocity) {
         Preconditions.checkArgument(velocity != null, "velocity");
         velocity.checkFinite();
-        entity.setMot(CraftVector.toNMS(velocity));
+        entity.setDeltaMovement(CraftVector.toNMS(velocity));
         entity.hurtMarked = true;
     }
 
     @Override
     public double getHeight() {
-        return getHandle().getHeight();
+        return getHandle().getBbHeight();
     }
 
     @Override
     public double getWidth() {
-        return getHandle().getWidth();
+        return getHandle().getBbWidth();
     }
 
     @Override
@@ -484,7 +484,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         entity.setXRot(pitch);
         entity.yRotO = yaw;
         entity.xRotO = pitch;
-        entity.setHeadRotation(yaw);
+        entity.setYHeadRot(yaw);
     }
 
     @Override
@@ -513,9 +513,9 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         }
 
         // entity.setLocation() throws no event, and so cannot be cancelled
-        entity.setLocation(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
+        entity.absMoveTo(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
         // SPIGOT-619: Force sync head rotation also
-        entity.setHeadRotation(location.getYaw());
+        entity.setYHeadRot(location.getYaw());
 
         return true;
     }
@@ -534,7 +534,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     public List<org.bukkit.entity.Entity> getNearbyEntities(double x, double y, double z) {
         Preconditions.checkState(!entity.generation, "Cannot get nearby entities during world generation");
 
-        List<Entity> notchEntityList = entity.level.getEntities(entity, entity.getBoundingBox().grow(x, y, z), Predicates.alwaysTrue());
+        List<Entity> notchEntityList = entity.level.getEntities(entity, entity.getBoundingBox().inflate(x, y, z), Predicates.alwaysTrue());
         List<org.bukkit.entity.Entity> bukkitEntityList = new java.util.ArrayList<org.bukkit.entity.Entity>(notchEntityList.size());
 
         for (Entity e : notchEntityList) {
@@ -555,7 +555,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     @Override
     public int getMaxFireTicks() {
-        return entity.getMaxFireTicks();
+        return entity.getFireImmuneTicks();
     }
 
     @Override
@@ -597,7 +597,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     @Override
     public void remove() {
-        entity.die();
+        entity.discard();
     }
 
     @Override
@@ -663,7 +663,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     public boolean addPassenger(org.bukkit.entity.Entity passenger) {
         Preconditions.checkArgument(passenger != null, "passenger == null");
 
-        return ((CraftEntity) passenger).getHandle().a(getHandle(), true);
+        return ((CraftEntity) passenger).getHandle().startRiding(getHandle(), true);
     }
 
     @Override
@@ -711,7 +711,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     @Override
     public UUID getUniqueId() {
-        return getHandle().getUniqueID();
+        return getHandle().getUUID();
     }
 
     @Override
@@ -737,7 +737,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         Preconditions.checkState(!entity.generation, "Cannot play effect during world generation");
 
         if (type.getApplicable().isInstance(this)) {
-            this.getHandle().level.broadcastEntityEffect(getHandle(), type.getData());
+            this.getHandle().level.broadcastEntityEvent(getHandle(), type.getData());
         }
     }
 
@@ -841,7 +841,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     @Override
     public boolean isCustomNameVisible() {
-        return getHandle().getCustomNameVisible();
+        return getHandle().isCustomNameVisible();
     }
 
     @Override
@@ -866,7 +866,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     @Override
     public String getName() {
-        return CraftChatMessage.fromComponent(getHandle().getDisplayName());
+        return CraftChatMessage.fromComponent(getHandle().getName());
     }
 
     @Override
@@ -951,7 +951,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     @Override
     public boolean isInvulnerable() {
-        return getHandle().isInvulnerable(DamageSource.GENERIC);
+        return getHandle().isInvulnerableTo(DamageSource.GENERIC);
     }
 
     @Override
@@ -986,28 +986,28 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     @Override
     public Set<String> getScoreboardTags() {
-        return getHandle().getScoreboardTags();
+        return getHandle().getTags();
     }
 
     @Override
     public boolean addScoreboardTag(String tag) {
-        return getHandle().addScoreboardTag(tag);
+        return getHandle().addTag(tag);
     }
 
     @Override
     public boolean removeScoreboardTag(String tag) {
-        return getHandle().removeScoreboardTag(tag);
+        return getHandle().removeTag(tag);
     }
 
     @Override
     public PistonMoveReaction getPistonMoveReaction() {
-        return PistonMoveReaction.getById(getHandle().getPushReaction().ordinal());
+        return PistonMoveReaction.getById(getHandle().getPistonPushReaction().ordinal());
     }
 
     @Override
     public BlockFace getFacing() {
         // Use this method over getDirection because it handles boats and minecarts.
-        return CraftBlock.notchToBlockFace(getHandle().getAdjustedDirection());
+        return CraftBlock.notchToBlockFace(getHandle().getMotionDirection());
     }
 
     @Override
@@ -1022,7 +1022,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     public void storeBukkitValues(NBTTagCompound c) {
         if (!this.persistentDataContainer.isEmpty()) {
-            c.set("BukkitValues", this.persistentDataContainer.toTagCompound());
+            c.put("BukkitValues", this.persistentDataContainer.toTagCompound());
         }
     }
 
@@ -1036,8 +1036,8 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     protected NBTTagCompound save() {
         NBTTagCompound nbttagcompound = new NBTTagCompound();
 
-        nbttagcompound.setString("id", getHandle().getSaveID());
-        getHandle().save(nbttagcompound);
+        nbttagcompound.putString("id", getHandle().getEncodeId());
+        getHandle().saveWithoutId(nbttagcompound);
 
         return nbttagcompound;
     }
@@ -1049,13 +1049,13 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         }
 
         WorldServer world = ((CraftWorld) getWorld()).getHandle();
-        PlayerChunkMap.EntityTracker entityTracker = world.getChunkProvider().chunkMap.entityMap.get(getEntityId());
+        PlayerChunkMap.EntityTracker entityTracker = world.getChunkSource().chunkMap.entityMap.get(getEntityId());
 
         if (entityTracker == null) {
             return;
         }
 
-        entityTracker.broadcast(getHandle().getPacket());
+        entityTracker.broadcast(getHandle().getAddEntityPacket());
     }
 
     private static PermissibleBase getPermissibleBase() {

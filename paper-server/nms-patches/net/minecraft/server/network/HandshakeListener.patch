@@ -19,21 +19,21 @@
      private final MinecraftServer server;
      private final NetworkManager connection;
 @@ -27,6 +36,40 @@
-         switch (packethandshakinginsetprotocol.b()) {
+         switch (packethandshakinginsetprotocol.getIntention()) {
              case LOGIN:
                  this.connection.setProtocol(EnumProtocol.LOGIN);
 +                // CraftBukkit start - Connection throttle
 +                try {
 +                    long currentTime = System.currentTimeMillis();
 +                    long connectionThrottle = this.server.server.getConnectionThrottle();
-+                    InetAddress address = ((java.net.InetSocketAddress) this.connection.getSocketAddress()).getAddress();
++                    InetAddress address = ((java.net.InetSocketAddress) this.connection.getRemoteAddress()).getAddress();
 +
 +                    synchronized (throttleTracker) {
 +                        if (throttleTracker.containsKey(address) && !"127.0.0.1".equals(address.getHostAddress()) && currentTime - throttleTracker.get(address) < connectionThrottle) {
 +                            throttleTracker.put(address, currentTime);
 +                            ChatMessage chatmessage = new ChatMessage("Connection throttled! Please wait before reconnecting.");
-+                            this.connection.sendPacket(new PacketLoginOutDisconnect(chatmessage));
-+                            this.connection.close(chatmessage);
++                            this.connection.send(new PacketLoginOutDisconnect(chatmessage));
++                            this.connection.disconnect(chatmessage);
 +                            return;
 +                        }
 +
@@ -56,14 +56,14 @@
 +                    org.apache.logging.log4j.LogManager.getLogger().debug("Failed to check connection throttle", t);
 +                }
 +                // CraftBukkit end
-                 if (packethandshakinginsetprotocol.c() != SharedConstants.getGameVersion().getProtocolVersion()) {
+                 if (packethandshakinginsetprotocol.getProtocolVersion() != SharedConstants.getCurrentVersion().getProtocolVersion()) {
                      ChatMessage chatmessage;
  
 @@ -40,6 +83,7 @@
-                     this.connection.close(chatmessage);
+                     this.connection.disconnect(chatmessage);
                  } else {
-                     this.connection.setPacketListener(new LoginListener(this.server, this.connection));
-+                    ((LoginListener) this.connection.j()).hostname = packethandshakinginsetprotocol.hostName + ":" + packethandshakinginsetprotocol.port; // CraftBukkit - set hostname
+                     this.connection.setListener(new LoginListener(this.server, this.connection));
++                    ((LoginListener) this.connection.getPacketListener()).hostname = packethandshakinginsetprotocol.hostName + ":" + packethandshakinginsetprotocol.port; // CraftBukkit - set hostname
                  }
                  break;
              case STATUS:

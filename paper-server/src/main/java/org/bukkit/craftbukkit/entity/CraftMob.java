@@ -21,17 +21,17 @@ public abstract class CraftMob extends CraftLivingEntity implements Mob {
 
         EntityInsentient entity = getHandle();
         if (target == null) {
-            entity.setGoalTarget(null, null, false);
+            entity.setTarget(null, null, false);
         } else if (target instanceof CraftLivingEntity) {
-            entity.setGoalTarget(((CraftLivingEntity) target).getHandle(), null, false);
+            entity.setTarget(((CraftLivingEntity) target).getHandle(), null, false);
         }
     }
 
     @Override
     public CraftLivingEntity getTarget() {
-        if (getHandle().getGoalTarget() == null) return null;
+        if (getHandle().getTarget() == null) return null;
 
-        return (CraftLivingEntity) getHandle().getGoalTarget().getBukkitEntity();
+        return (CraftLivingEntity) getHandle().getTarget().getBukkitEntity();
     }
 
     @Override

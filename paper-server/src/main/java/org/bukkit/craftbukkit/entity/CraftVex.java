@@ -33,6 +33,6 @@ public class CraftVex extends CraftMonster implements Vex {
 
     @Override
     public void setCharging(boolean charging) {
-        getHandle().setCharging(charging);
+        getHandle().setIsCharging(charging);
     }
 }

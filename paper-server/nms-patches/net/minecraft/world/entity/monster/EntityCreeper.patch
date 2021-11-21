@@ -12,11 +12,11 @@
 +
  public class EntityCreeper extends EntityMonster implements PowerableMob {
  
-     private static final DataWatcherObject<Integer> DATA_SWELL_DIR = DataWatcher.a(EntityCreeper.class, DataWatcherRegistry.INT);
+     private static final DataWatcherObject<Integer> DATA_SWELL_DIR = DataWatcher.defineId(EntityCreeper.class, DataWatcherRegistry.INT);
 @@ -219,9 +225,19 @@
      @Override
-     public void onLightningStrike(WorldServer worldserver, EntityLightning entitylightning) {
-         super.onLightningStrike(worldserver, entitylightning);
+     public void thunderHit(WorldServer worldserver, EntityLightning entitylightning) {
+         super.thunderHit(worldserver, entitylightning);
 -        this.entityData.set(EntityCreeper.DATA_IS_POWERED, true);
 +        // CraftBukkit start
 +        if (CraftEventFactory.callCreeperPowerEvent(this, entitylightning, org.bukkit.event.entity.CreeperPowerEvent.PowerCause.LIGHTNING).isCancelled()) {
@@ -32,24 +32,24 @@
 +    // CraftBukkit end
 +
      @Override
-     protected EnumInteractionResult b(EntityHuman entityhuman, EnumHand enumhand) {
-         ItemStack itemstack = entityhuman.b(enumhand);
+     protected EnumInteractionResult mobInteract(EntityHuman entityhuman, EnumHand enumhand) {
+         ItemStack itemstack = entityhuman.getItemInHand(enumhand);
 @@ -246,10 +262,18 @@
              Explosion.Effect explosion_effect = this.level.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING) ? Explosion.Effect.DESTROY : Explosion.Effect.NONE;
              float f = this.isPowered() ? 2.0F : 1.0F;
  
 -            this.dead = true;
--            this.level.explode(this, this.locX(), this.locY(), this.locZ(), (float) this.explosionRadius * f, explosion_effect);
--            this.die();
--            this.createEffectCloud();
+-            this.level.explode(this, this.getX(), this.getY(), this.getZ(), (float) this.explosionRadius * f, explosion_effect);
+-            this.discard();
+-            this.spawnLingeringCloud();
 +            // CraftBukkit start
 +            ExplosionPrimeEvent event = new ExplosionPrimeEvent(this.getBukkitEntity(), this.explosionRadius * f, false);
 +            this.level.getCraftServer().getPluginManager().callEvent(event);
 +            if (!event.isCancelled()) {
 +                this.dead = true;
-+                this.level.createExplosion(this, this.locX(), this.locY(), this.locZ(), event.getRadius(), event.getFire(), explosion_effect);
-+                this.die();
-+                this.createEffectCloud();
++                this.level.explode(this, this.getX(), this.getY(), this.getZ(), event.getRadius(), event.getFire(), explosion_effect);
++                this.discard();
++                this.spawnLingeringCloud();
 +            } else {
 +                swell = 0;
 +            }
@@ -59,9 +59,9 @@
      }
 @@ -260,6 +284,7 @@
          if (!collection.isEmpty()) {
-             EntityAreaEffectCloud entityareaeffectcloud = new EntityAreaEffectCloud(this.level, this.locX(), this.locY(), this.locZ());
+             EntityAreaEffectCloud entityareaeffectcloud = new EntityAreaEffectCloud(this.level, this.getX(), this.getY(), this.getZ());
  
-+            entityareaeffectcloud.setSource(this); // CraftBukkit
++            entityareaeffectcloud.setOwner(this); // CraftBukkit
              entityareaeffectcloud.setRadius(2.5F);
              entityareaeffectcloud.setRadiusOnUse(-0.5F);
              entityareaeffectcloud.setWaitTime(10);
@@ -69,8 +69,8 @@
                  entityareaeffectcloud.addEffect(new MobEffect(mobeffect));
              }
  
--            this.level.addEntity(entityareaeffectcloud);
-+            this.level.addEntity(entityareaeffectcloud, CreatureSpawnEvent.SpawnReason.EXPLOSION); // CraftBukkit
+-            this.level.addFreshEntity(entityareaeffectcloud);
++            this.level.addFreshEntity(entityareaeffectcloud, CreatureSpawnEvent.SpawnReason.EXPLOSION); // CraftBukkit
          }
  
      }

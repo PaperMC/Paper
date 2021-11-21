@@ -23,7 +23,7 @@
          super(entitytypes, world);
      }
 @@ -40,6 +48,7 @@
-             this.ownerUUID = entity.getUniqueID();
+             this.ownerUUID = entity.getUUID();
              this.cachedOwner = entity;
          }
 +        this.projectileSource = (entity != null && entity.getBukkitEntity() instanceof ProjectileSource) ? (ProjectileSource) entity.getBukkitEntity() : null; // CraftBukkit
@@ -31,7 +31,7 @@
      }
  
 @@ -143,6 +152,16 @@
-         this.setMot(this.getMot().add(vec3d.x, entity.isOnGround() ? 0.0D : vec3d.y, vec3d.z));
+         this.setDeltaMovement(this.getDeltaMovement().add(vec3d.x, entity.isOnGround() ? 0.0D : vec3d.y, vec3d.z));
      }
  
 +    // CraftBukkit start - call projectile hit event
@@ -39,23 +39,23 @@
 +        org.bukkit.event.entity.ProjectileHitEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callProjectileHitEvent(this, movingobjectposition);
 +        this.hitCancelled = event != null && event.isCancelled();
 +        if (movingobjectposition.getType() == MovingObjectPosition.EnumMovingObjectType.BLOCK || !this.hitCancelled) {
-+            this.a(movingobjectposition); // PAIL rename onHit
++            this.onHit(movingobjectposition);
 +        }
 +    }
 +    // CraftBukkit end
 +
-     protected void a(MovingObjectPosition movingobjectposition) {
+     protected void onHit(MovingObjectPosition movingobjectposition) {
          MovingObjectPosition.EnumMovingObjectType movingobjectposition_enummovingobjecttype = movingobjectposition.getType();
  
 @@ -161,6 +180,11 @@
-     protected void a(MovingObjectPositionEntity movingobjectpositionentity) {}
+     protected void onHitEntity(MovingObjectPositionEntity movingobjectpositionentity) {}
  
-     protected void a(MovingObjectPositionBlock movingobjectpositionblock) {
+     protected void onHitBlock(MovingObjectPositionBlock movingobjectpositionblock) {
 +        // CraftBukkit start - cancellable hit event
 +        if (hitCancelled) {
 +            return;
 +        }
 +        // CraftBukkit end
-         IBlockData iblockdata = this.level.getType(movingobjectpositionblock.getBlockPosition());
+         IBlockData iblockdata = this.level.getBlockState(movingobjectpositionblock.getBlockPos());
  
-         iblockdata.a(this.level, iblockdata, movingobjectpositionblock, this);
+         iblockdata.onProjectileHit(this.level, iblockdata, movingobjectpositionblock, this);

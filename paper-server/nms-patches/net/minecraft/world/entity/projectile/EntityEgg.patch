@@ -17,8 +17,8 @@
  
      public EntityEgg(EntityTypes<? extends EntityEgg> entitytypes, World world) {
 @@ -48,20 +57,40 @@
-     protected void a(MovingObjectPosition movingobjectposition) {
-         super.a(movingobjectposition);
+     protected void onHit(MovingObjectPosition movingobjectposition) {
+         super.onHit(movingobjectposition);
          if (!this.level.isClientSide) {
 -            if (this.random.nextInt(8) == 0) {
 +            boolean hatching = this.random.nextInt(8) == 0; // CraftBukkit
@@ -30,14 +30,14 @@
                  }
  
 -                for (int i = 0; i < b0; ++i) {
--                    EntityChicken entitychicken = (EntityChicken) EntityTypes.CHICKEN.a(this.level);
+-                    EntityChicken entitychicken = (EntityChicken) EntityTypes.CHICKEN.create(this.level);
 +                // CraftBukkit start
 +                if (!hatching) {
 +                    b0 = 0;
 +                }
 +                EntityType hatchingType = EntityType.CHICKEN;
 +
-+                Entity shooter = this.getShooter();
++                Entity shooter = this.getOwner();
 +                if (shooter instanceof EntityPlayer) {
 +                    PlayerEggThrowEvent event = new PlayerEggThrowEvent((Player) shooter.getBukkitEntity(), (org.bukkit.entity.Egg) this.getBukkitEntity(), hatching, b0, hatchingType);
 +                    this.level.getCraftServer().getPluginManager().callEvent(event);
@@ -47,12 +47,12 @@
 +                    hatchingType = event.getHatchingType();
 +                }
  
--                    entitychicken.setAgeRaw(-24000);
--                    entitychicken.setPositionRotation(this.locX(), this.locY(), this.locZ(), this.getYRot(), 0.0F);
--                    this.level.addEntity(entitychicken);
+-                    entitychicken.setAge(-24000);
+-                    entitychicken.moveTo(this.getX(), this.getY(), this.getZ(), this.getYRot(), 0.0F);
+-                    this.level.addFreshEntity(entitychicken);
 +                if (hatching) {
 +                    for (int i = 0; i < b0; ++i) {
-+                        Entity entity = level.getWorld().createEntity(new org.bukkit.Location(level.getWorld(), this.locX(), this.locY(), this.locZ(), this.getYRot(), 0.0F), hatchingType.getEntityClass());
++                        Entity entity = level.getWorld().createEntity(new org.bukkit.Location(level.getWorld(), this.getX(), this.getY(), this.getZ(), this.getYRot(), 0.0F), hatchingType.getEntityClass());
 +                        if (entity.getBukkitEntity() instanceof Ageable) {
 +                            ((Ageable) entity.getBukkitEntity()).setBaby();
 +                        }
@@ -62,4 +62,4 @@
 +                // CraftBukkit end
              }
  
-             this.level.broadcastEntityEffect(this, (byte) 3);
+             this.level.broadcastEntityEvent(this, (byte) 3);

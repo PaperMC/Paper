@@ -32,23 +32,23 @@ public class CraftShulker extends CraftGolem implements Shulker {
 
     @Override
     public DyeColor getColor() {
-        return DyeColor.getByWoolData(getHandle().getDataWatcher().get(EntityShulker.DATA_COLOR_ID));
+        return DyeColor.getByWoolData(getHandle().getEntityData().get(EntityShulker.DATA_COLOR_ID));
     }
 
     @Override
     public void setColor(DyeColor color) {
-        getHandle().getDataWatcher().set(EntityShulker.DATA_COLOR_ID, (color == null) ? 16 : color.getWoolData());
+        getHandle().getEntityData().set(EntityShulker.DATA_COLOR_ID, (color == null) ? 16 : color.getWoolData());
     }
 
     @Override
     public float getPeek() {
-        return (float) getHandle().getPeek() / 100;
+        return (float) getHandle().getRawPeekAmount() / 100;
     }
 
     @Override
     public void setPeek(float value) {
         Preconditions.checkArgument(value >= 0 && value <= 1, "value needs to be in between or equal to 0 and 1");
-        getHandle().setPeek((int) (value * 100));
+        getHandle().setRawPeekAmount((int) (value * 100));
     }
 
     @Override

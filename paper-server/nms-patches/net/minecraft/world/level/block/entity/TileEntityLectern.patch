@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/block/entity/TileEntityLectern.java
 +++ b/net/minecraft/world/level/block/entity/TileEntityLectern.java
-@@ -27,13 +27,71 @@
+@@ -26,13 +26,71 @@
  import net.minecraft.world.phys.Vec2F;
  import net.minecraft.world.phys.Vec3D;
  
@@ -72,9 +72,9 @@
 +        // CraftBukkit end
 +
          @Override
-         public int getSize() {
+         public int getContainerSize() {
              return 1;
-@@ -78,11 +136,20 @@
+@@ -77,11 +135,20 @@
          }
  
          @Override
@@ -83,8 +83,8 @@
 +        public void setItem(int i, ItemStack itemstack) {
 +            if (i == 0) {
 +                TileEntityLectern.this.setBook(itemstack);
-+                if (TileEntityLectern.this.getWorld() != null) {
-+                    BlockLectern.setHasBook(TileEntityLectern.this.getWorld(), TileEntityLectern.this.getPosition(), TileEntityLectern.this.getBlock(), TileEntityLectern.this.hasBook());
++                if (TileEntityLectern.this.getLevel() != null) {
++                    BlockLectern.resetBookState(TileEntityLectern.this.getLevel(), TileEntityLectern.this.getBlockPos(), TileEntityLectern.this.getBlockState(), TileEntityLectern.this.hasBook());
 +                }
 +            }
 +        }
@@ -97,16 +97,16 @@
          }
  
          @Override
-@@ -162,7 +229,7 @@
+@@ -161,7 +228,7 @@
          if (j != this.page) {
              this.page = j;
-             this.update();
--            BlockLectern.a(this.getWorld(), this.getPosition(), this.getBlock());
-+            if (this.level != null) BlockLectern.a(this.getWorld(), this.getPosition(), this.getBlock()); // CraftBukkit
+             this.setChanged();
+-            BlockLectern.signalPageChange(this.getLevel(), this.getBlockPos(), this.getBlockState());
++            if (this.level != null) BlockLectern.signalPageChange(this.getLevel(), this.getBlockPos(), this.getBlockState()); // CraftBukkit
          }
  
      }
-@@ -185,6 +252,32 @@
+@@ -184,6 +251,32 @@
          return itemstack;
      }
  
@@ -121,35 +121,35 @@
 +    }
 +
 +    @Override
-+    public boolean shouldSendSuccess() {
++    public boolean acceptsSuccess() {
 +        return false;
 +    }
 +
 +    @Override
-+    public boolean shouldSendFailure() {
++    public boolean acceptsFailure() {
 +        return false;
 +    }
 +
 +    @Override
-+    public boolean shouldBroadcastCommands() {
++    public boolean shouldInformAdmins() {
 +        return false;
 +    }
 +
 +    // CraftBukkit end
-     private CommandListenerWrapper a(@Nullable EntityHuman entityhuman) {
+     private CommandListenerWrapper createCommandSourceStack(@Nullable EntityHuman entityhuman) {
          String s;
          Object object;
-@@ -199,7 +292,8 @@
+@@ -198,7 +291,8 @@
  
-         Vec3D vec3d = Vec3D.a((BaseBlockPosition) this.worldPosition);
+         Vec3D vec3d = Vec3D.atCenterOf(this.worldPosition);
  
--        return new CommandListenerWrapper(ICommandListener.NULL, vec3d, Vec2F.ZERO, (WorldServer) this.level, 2, s, (IChatBaseComponent) object, this.level.getMinecraftServer(), entityhuman);
+-        return new CommandListenerWrapper(ICommandListener.NULL, vec3d, Vec2F.ZERO, (WorldServer) this.level, 2, s, (IChatBaseComponent) object, this.level.getServer(), entityhuman);
 +        // CraftBukkit - this
-+        return new CommandListenerWrapper(this, vec3d, Vec2F.ZERO, (WorldServer) this.level, 2, s, (IChatBaseComponent) object, this.level.getMinecraftServer(), entityhuman);
++        return new CommandListenerWrapper(this, vec3d, Vec2F.ZERO, (WorldServer) this.level, 2, s, (IChatBaseComponent) object, this.level.getServer(), entityhuman);
      }
  
      @Override
-@@ -238,7 +332,7 @@
+@@ -236,7 +330,7 @@
  
      @Override
      public Container createMenu(int i, PlayerInventory playerinventory, EntityHuman entityhuman) {

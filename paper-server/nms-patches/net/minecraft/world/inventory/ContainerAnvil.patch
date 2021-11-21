@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/inventory/ContainerAnvil.java
 +++ b/net/minecraft/world/inventory/ContainerAnvil.java
-@@ -19,6 +19,10 @@
+@@ -18,6 +18,10 @@
  import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
  
@@ -11,7 +11,7 @@
  public class ContainerAnvil extends ContainerAnvilAbstract {
  
      private static final Logger LOGGER = LogManager.getLogger();
-@@ -34,6 +38,10 @@
+@@ -33,6 +37,10 @@
      private static final int COST_REPAIR_SACRIFICE = 2;
      private static final int COST_INCOMPATIBLE_PENALTY = 1;
      private static final int COST_RENAME = 1;
@@ -22,7 +22,7 @@
  
      public ContainerAnvil(int i, PlayerInventory playerinventory) {
          this(i, playerinventory, ContainerAccess.NULL);
-@@ -106,7 +114,7 @@
+@@ -105,7 +113,7 @@
          byte b1 = 0;
  
          if (itemstack.isEmpty()) {
@@ -30,26 +30,26 @@
 +            org.bukkit.craftbukkit.event.CraftEventFactory.callPrepareAnvilEvent(getBukkitView(), ItemStack.EMPTY); // CraftBukkit
              this.cost.set(0);
          } else {
-             ItemStack itemstack1 = itemstack.cloneItemStack();
-@@ -124,7 +132,7 @@
-                 if (itemstack1.f() && itemstack1.getItem().a(itemstack, itemstack2)) {
-                     k = Math.min(itemstack1.getDamage(), itemstack1.i() / 4);
+             ItemStack itemstack1 = itemstack.copy();
+@@ -123,7 +131,7 @@
+                 if (itemstack1.isDamageableItem() && itemstack1.getItem().isValidRepairItem(itemstack, itemstack2)) {
+                     k = Math.min(itemstack1.getDamageValue(), itemstack1.getMaxDamage() / 4);
                      if (k <= 0) {
 -                        this.resultSlots.setItem(0, ItemStack.EMPTY);
 +                        org.bukkit.craftbukkit.event.CraftEventFactory.callPrepareAnvilEvent(getBukkitView(), ItemStack.EMPTY); // CraftBukkit
                          this.cost.set(0);
                          return;
                      }
-@@ -139,7 +147,7 @@
+@@ -138,7 +146,7 @@
                      this.repairItemCountCost = i1;
                  } else {
-                     if (!flag && (!itemstack1.a(itemstack2.getItem()) || !itemstack1.f())) {
+                     if (!flag && (!itemstack1.is(itemstack2.getItem()) || !itemstack1.isDamageableItem())) {
 -                        this.resultSlots.setItem(0, ItemStack.EMPTY);
 +                        org.bukkit.craftbukkit.event.CraftEventFactory.callPrepareAnvilEvent(getBukkitView(), ItemStack.EMPTY); // CraftBukkit
                          this.cost.set(0);
                          return;
                      }
-@@ -229,7 +237,7 @@
+@@ -228,7 +236,7 @@
                      }
  
                      if (flag2 && !flag1) {
@@ -58,7 +58,7 @@
                          this.cost.set(0);
                          return;
                      }
-@@ -253,11 +261,11 @@
+@@ -252,11 +260,11 @@
                  itemstack1 = ItemStack.EMPTY;
              }
  
@@ -73,18 +73,18 @@
                  itemstack1 = ItemStack.EMPTY;
              }
  
-@@ -276,7 +284,8 @@
-                 EnchantmentManager.a(map, itemstack1);
+@@ -275,7 +283,8 @@
+                 EnchantmentManager.setEnchantments(map, itemstack1);
              }
  
 -            this.resultSlots.setItem(0, itemstack1);
 +            org.bukkit.craftbukkit.event.CraftEventFactory.callPrepareAnvilEvent(getBukkitView(), itemstack1); // CraftBukkit
-+            updateInventory(); // CraftBukkit - SPIGOT-6686: Always send completed inventory to stay in sync with client
-             this.d();
++            sendAllDataToRemote(); // CraftBukkit - SPIGOT-6686: Always send completed inventory to stay in sync with client
+             this.broadcastChanges();
          }
      }
-@@ -303,4 +312,18 @@
-     public int m() {
+@@ -302,4 +311,18 @@
+     public int getCost() {
          return this.cost.get();
      }
 +

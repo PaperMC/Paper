@@ -60,7 +60,7 @@ public class CraftBlockData implements BlockData {
      * @return the matching Bukkit type
      */
     protected <B extends Enum<B>> B get(BlockStateEnum<?> nms, Class<B> bukkit) {
-        return toBukkit(state.get(nms), bukkit);
+        return toBukkit(state.getValue(nms), bukkit);
     }
 
     /**
@@ -76,7 +76,7 @@ public class CraftBlockData implements BlockData {
     protected <B extends Enum<B>> Set<B> getValues(BlockStateEnum<?> nms, Class<B> bukkit) {
         ImmutableSet.Builder<B> values = ImmutableSet.builder();
 
-        for (Enum<?> e : nms.getValues()) {
+        for (Enum<?> e : nms.getPossibleValues()) {
             values.add(toBukkit(e, bukkit));
         }
 
@@ -93,7 +93,7 @@ public class CraftBlockData implements BlockData {
      */
     protected <B extends Enum<B>, N extends Enum<N> & INamable> void set(BlockStateEnum<N> nms, Enum<B> bukkit) {
         this.parsedStates = null;
-        this.state = this.state.set(nms, toNMS(bukkit, nms.getType()));
+        this.state = this.state.setValue(nms, toNMS(bukkit, nms.getValueClass()));
     }
 
     @Override
@@ -106,7 +106,7 @@ public class CraftBlockData implements BlockData {
         clone.parsedStates = null;
 
         for (IBlockState parsed : craft.parsedStates.keySet()) {
-            clone.state = clone.state.set(parsed, craft.state.get(parsed));
+            clone.state = clone.state.setValue(parsed, craft.state.getValue(parsed));
         }
 
         return clone;
@@ -178,7 +178,7 @@ public class CraftBlockData implements BlockData {
      */
     protected <T extends Comparable<T>> T get(IBlockState<T> ibs) {
         // Straight integer or boolean getter
-        return this.state.get(ibs);
+        return this.state.getValue(ibs);
     }
 
     /**
@@ -192,12 +192,12 @@ public class CraftBlockData implements BlockData {
     public <T extends Comparable<T>, V extends T> void set(IBlockState<T> ibs, V v) {
         // Straight integer or boolean setter
         this.parsedStates = null;
-        this.state = this.state.set(ibs, v);
+        this.state = this.state.setValue(ibs, v);
     }
 
     @Override
     public String getAsString() {
-        return toString(state.getStateMap());
+        return toString(state.getValues());
     }
 
     @Override
@@ -235,10 +235,10 @@ public class CraftBlockData implements BlockData {
     public NBTTagCompound toStates() {
         NBTTagCompound compound = new NBTTagCompound();
 
-        for (Map.Entry<IBlockState<?>, Comparable<?>> entry : state.getStateMap().entrySet()) {
+        for (Map.Entry<IBlockState<?>, Comparable<?>> entry : state.getValues().entrySet()) {
             IBlockState iblockstate = (IBlockState) entry.getKey();
 
-            compound.setString(iblockstate.getName(), iblockstate.a(entry.getValue()));
+            compound.putString(iblockstate.getName(), iblockstate.getName(entry.getValue()));
         }
 
         return compound;
@@ -303,9 +303,9 @@ public class CraftBlockData implements BlockData {
         for (Block instance : IRegistry.BLOCK) {
             if (instance.getClass() == block) {
                 if (state == null) {
-                    state = instance.getStates().a(name);
+                    state = instance.getStateDefinition().getProperty(name);
                 } else {
-                    IBlockState<?> newState = instance.getStates().a(name);
+                    IBlockState<?> newState = instance.getStateDefinition().getProperty(name);
 
                     Preconditions.checkState(state == newState, "State mistmatch %s,%s", state, newState);
                 }
@@ -510,16 +510,16 @@ public class CraftBlockData implements BlockData {
                 }
 
                 StringReader reader = new StringReader(data);
-                ArgumentBlock arg = new ArgumentBlock(reader, false).a(false);
+                ArgumentBlock arg = new ArgumentBlock(reader, false).parse(false);
                 Preconditions.checkArgument(!reader.canRead(), "Spurious trailing data: " + data);
 
-                blockData = arg.getBlockData();
-                parsed = arg.getStateMap();
+                blockData = arg.getState();
+                parsed = arg.getProperties();
             } catch (CommandSyntaxException ex) {
                 throw new IllegalArgumentException("Could not parse data: " + data, ex);
             }
         } else {
-            blockData = block.getBlockData();
+            blockData = block.defaultBlockState();
         }
 
         CraftBlockData craft = fromData(blockData);
@@ -533,6 +533,6 @@ public class CraftBlockData implements BlockData {
 
     @Override
     public SoundGroup getSoundGroup() {
-        return CraftSoundGroup.getSoundGroup(state.getStepSound());
+        return CraftSoundGroup.getSoundGroup(state.getSoundType());
     }
 }

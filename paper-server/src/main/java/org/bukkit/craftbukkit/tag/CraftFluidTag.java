@@ -17,11 +17,11 @@ public class CraftFluidTag extends CraftTag<FluidType, Fluid> {
 
     @Override
     public boolean isTagged(Fluid fluid) {
-        return getHandle().isTagged(CraftMagicNumbers.getFluid(fluid));
+        return getHandle().contains(CraftMagicNumbers.getFluid(fluid));
     }
 
     @Override
     public Set<Fluid> getValues() {
-        return Collections.unmodifiableSet(getHandle().getTagged().stream().map(CraftMagicNumbers::getFluid).collect(Collectors.toSet()));
+        return Collections.unmodifiableSet(getHandle().getValues().stream().map(CraftMagicNumbers::getFluid).collect(Collectors.toSet()));
     }
 }

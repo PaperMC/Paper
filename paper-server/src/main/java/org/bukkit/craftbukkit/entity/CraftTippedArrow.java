@@ -41,7 +41,7 @@ public class CraftTippedArrow extends CraftArrow implements Arrow {
         int effectId = effect.getType().getId();
         MobEffect existing = null;
         for (MobEffect mobEffect : getHandle().effects) {
-            if (MobEffectList.getId(mobEffect.getMobEffect()) == effectId) {
+            if (MobEffectList.getId(mobEffect.getEffect()) == effectId) {
                 existing = mobEffect;
             }
         }
@@ -74,7 +74,7 @@ public class CraftTippedArrow extends CraftArrow implements Arrow {
     @Override
     public boolean hasCustomEffect(PotionEffectType type) {
         for (MobEffect effect : getHandle().effects) {
-            if (CraftPotionUtil.equals(effect.getMobEffect(), type)) {
+            if (CraftPotionUtil.equals(effect.getEffect(), type)) {
                 return true;
             }
         }
@@ -91,7 +91,7 @@ public class CraftTippedArrow extends CraftArrow implements Arrow {
         int effectId = effect.getId();
         MobEffect existing = null;
         for (MobEffect mobEffect : getHandle().effects) {
-            if (MobEffectList.getId(mobEffect.getMobEffect()) == effectId) {
+            if (MobEffectList.getId(mobEffect.getEffect()) == effectId) {
                 existing = mobEffect;
             }
         }
@@ -106,17 +106,17 @@ public class CraftTippedArrow extends CraftArrow implements Arrow {
     @Override
     public void setBasePotionData(PotionData data) {
         Validate.notNull(data, "PotionData cannot be null");
-        getHandle().setType(CraftPotionUtil.fromBukkit(data));
+        getHandle().setPotionType(CraftPotionUtil.fromBukkit(data));
     }
 
     @Override
     public PotionData getBasePotionData() {
-        return CraftPotionUtil.toBukkit(getHandle().getType());
+        return CraftPotionUtil.toBukkit(getHandle().getPotionType());
     }
 
     @Override
     public void setColor(Color color) {
-        getHandle().setColor(color.asRGB());
+        getHandle().setFixedColor(color.asRGB());
     }
 
     @Override

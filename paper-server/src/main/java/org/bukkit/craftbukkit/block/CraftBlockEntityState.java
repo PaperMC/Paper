@@ -12,7 +12,7 @@ public abstract class CraftBlockEntityState<T extends TileEntity> extends CraftB
     private final T snapshot;
 
     public CraftBlockEntityState(World world, T tileEntity) {
-        super(world, tileEntity.getPosition(), tileEntity.getBlock());
+        super(world, tileEntity.getBlockPos(), tileEntity.getBlockState());
 
         this.tileEntity = tileEntity;
 
@@ -30,15 +30,15 @@ public abstract class CraftBlockEntityState<T extends TileEntity> extends CraftB
             return null;
         }
 
-        NBTTagCompound nbtTagCompound = tileEntity.save(new NBTTagCompound());
-        T snapshot = (T) TileEntity.create(getPosition(), getHandle(), nbtTagCompound);
+        NBTTagCompound nbtTagCompound = tileEntity.saveWithFullMetadata();
+        T snapshot = (T) TileEntity.loadStatic(getPosition(), getHandle(), nbtTagCompound);
 
         return snapshot;
     }
 
     // copies the TileEntity-specific data, retains the position
     private void copyData(T from, T to) {
-        NBTTagCompound nbtTagCompound = from.save(new NBTTagCompound());
+        NBTTagCompound nbtTagCompound = from.saveWithFullMetadata();
         to.load(nbtTagCompound);
     }
 
@@ -56,7 +56,7 @@ public abstract class CraftBlockEntityState<T extends TileEntity> extends CraftB
     protected TileEntity getTileEntityFromWorld() {
         requirePlaced();
 
-        return getWorldHandle().getTileEntity(this.getPosition());
+        return getWorldHandle().getBlockEntity(this.getPosition());
     }
 
     // gets the NBT data of the TileEntity represented by this block state
@@ -64,7 +64,7 @@ public abstract class CraftBlockEntityState<T extends TileEntity> extends CraftB
         // update snapshot
         applyTo(snapshot);
 
-        return snapshot.save(new NBTTagCompound());
+        return snapshot.saveWithFullMetadata();
     }
 
     // copies the data of the given tile entity to this block state
@@ -94,7 +94,7 @@ public abstract class CraftBlockEntityState<T extends TileEntity> extends CraftB
 
             if (isApplicable(tile)) {
                 applyTo((T) tile);
-                tile.update();
+                tile.setChanged();
             }
         }
 

@@ -14,12 +14,12 @@ public class CraftEnderCrystal extends CraftEntity implements EnderCrystal {
 
     @Override
     public boolean isShowingBottom() {
-        return getHandle().isShowingBottom();
+        return getHandle().showsBottom();
     }
 
     @Override
     public void setShowingBottom(boolean showing) {
-        getHandle().setShowingBottom(showing);
+        getHandle().setShowBottom(showing);
     }
 
     @Override

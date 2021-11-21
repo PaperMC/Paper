@@ -15,17 +15,17 @@ public class CraftStrider extends CraftAnimals implements Strider {
 
     @Override
     public boolean isShivering() {
-        return getHandle().isShivering();
+        return getHandle().isSuffocating();
     }
 
     @Override
     public void setShivering(boolean shivering) {
-        this.getHandle().setShivering(shivering);
+        this.getHandle().setSuffocating(shivering);
     }
 
     @Override
     public boolean hasSaddle() {
-        return getHandle().hasSaddle();
+        return getHandle().isSaddled();
     }
 
     @Override

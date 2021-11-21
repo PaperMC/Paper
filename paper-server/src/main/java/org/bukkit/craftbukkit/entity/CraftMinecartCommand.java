@@ -34,7 +34,7 @@ public class CraftMinecartCommand extends CraftMinecart implements CommandMineca
     @Override
     public void setCommand(String command) {
         getHandle().getCommandBlock().setCommand(command != null ? command : "");
-        getHandle().getDataWatcher().set(EntityMinecartCommandBlock.DATA_ID_COMMAND_NAME, getHandle().getCommandBlock().getCommand());
+        getHandle().getEntityData().set(EntityMinecartCommandBlock.DATA_ID_COMMAND_NAME, getHandle().getCommandBlock().getCommand());
     }
 
     @Override

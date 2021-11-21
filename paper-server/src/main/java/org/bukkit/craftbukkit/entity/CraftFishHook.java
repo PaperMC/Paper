@@ -71,7 +71,7 @@ public class CraftFishHook extends CraftProjectile implements FishHook {
         EntityFishingHook hook = getHandle();
 
         if (this.biteChance == -1) {
-            if (hook.level.isRainingAt(new BlockPosition(MathHelper.floor(hook.locX()), MathHelper.floor(hook.locY()) + 1, MathHelper.floor(hook.locZ())))) {
+            if (hook.level.isRainingAt(new BlockPosition(MathHelper.floor(hook.getX()), MathHelper.floor(hook.getY()) + 1, MathHelper.floor(hook.getZ())))) {
                 return 1 / 300.0;
             }
             return 1 / 500.0;
@@ -87,7 +87,7 @@ public class CraftFishHook extends CraftProjectile implements FishHook {
 
     @Override
     public boolean isInOpenWater() {
-        return getHandle().isInOpenWater();
+        return getHandle().isOpenWaterFishing();
     }
 
     @Override
@@ -101,7 +101,7 @@ public class CraftFishHook extends CraftProjectile implements FishHook {
         EntityFishingHook hook = getHandle();
 
         hook.hookedIn = (entity != null) ? ((CraftEntity) entity).getHandle() : null;
-        hook.getDataWatcher().set(EntityFishingHook.DATA_HOOKED_ENTITY, hook.hookedIn != null ? hook.hookedIn.getId() + 1 : 0);
+        hook.getEntityData().set(EntityFishingHook.DATA_HOOKED_ENTITY, hook.hookedIn != null ? hook.hookedIn.getId() + 1 : 0);
     }
 
     @Override
@@ -111,7 +111,7 @@ public class CraftFishHook extends CraftProjectile implements FishHook {
             return false;
         }
 
-        hook.reel(hook.hookedIn);
+        hook.pullEntity(hook.hookedIn);
         return true;
     }
 

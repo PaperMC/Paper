@@ -52,7 +52,7 @@ public abstract class CraftRaider extends CraftMonster implements Raider {
 
     @Override
     public boolean isCanJoinRaid() {
-        return getHandle().isCanJoinRaid();
+        return getHandle().canJoinRaid();
     }
 
     @Override

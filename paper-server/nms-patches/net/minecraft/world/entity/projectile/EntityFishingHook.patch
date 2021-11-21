@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/projectile/EntityFishingHook.java
 +++ b/net/minecraft/world/entity/projectile/EntityFishingHook.java
-@@ -45,6 +45,12 @@
+@@ -44,6 +44,12 @@
  import net.minecraft.world.phys.MovingObjectPositionEntity;
  import net.minecraft.world.phys.Vec3D;
  
@@ -13,7 +13,7 @@
  public class EntityFishingHook extends IProjectile {
  
      private final Random syncronizedRandom;
-@@ -65,6 +71,12 @@
+@@ -64,6 +70,12 @@
      private final int luck;
      private final int lureSpeed;
  
@@ -26,41 +26,41 @@
      private EntityFishingHook(EntityTypes<? extends EntityFishingHook> entitytypes, World world, int i, int j) {
          super(entitytypes, world);
          this.syncronizedRandom = new Random();
-@@ -259,7 +271,7 @@
-     private void l() {
-         MovingObjectPosition movingobjectposition = ProjectileHelper.a((Entity) this, this::a);
+@@ -258,7 +270,7 @@
+     private void checkCollision() {
+         MovingObjectPosition movingobjectposition = ProjectileHelper.getHitResult(this, this::canHitEntity);
  
--        this.a(movingobjectposition);
+-        this.onHit(movingobjectposition);
 +        this.preOnHit(movingobjectposition); // CraftBukkit - projectile hit event
      }
  
      @Override
-@@ -306,6 +318,10 @@
+@@ -305,6 +317,10 @@
                  this.timeUntilLured = 0;
                  this.timeUntilHooked = 0;
-                 this.getDataWatcher().set(EntityFishingHook.DATA_BITING, false);
+                 this.getEntityData().set(EntityFishingHook.DATA_BITING, false);
 +                // CraftBukkit start
-+                PlayerFishEvent playerFishEvent = new PlayerFishEvent((Player) this.getOwner().getBukkitEntity(), null, (FishHook) this.getBukkitEntity(), PlayerFishEvent.State.FAILED_ATTEMPT);
++                PlayerFishEvent playerFishEvent = new PlayerFishEvent((Player) this.getPlayerOwner().getBukkitEntity(), null, (FishHook) this.getBukkitEntity(), PlayerFishEvent.State.FAILED_ATTEMPT);
 +                this.level.getCraftServer().getPluginManager().callEvent(playerFishEvent);
 +                // CraftBukkit end
              }
          } else {
              float f;
-@@ -339,6 +355,13 @@
-                         worldserver.a(Particles.FISHING, d0, d1, d2, 0, (double) (-f4), 0.01D, (double) f3, 1.0D);
+@@ -338,6 +354,13 @@
+                         worldserver.sendParticles(Particles.FISHING, d0, d1, d2, 0, (double) (-f4), 0.01D, (double) f3, 1.0D);
                      }
                  } else {
 +                    // CraftBukkit start
-+                    PlayerFishEvent playerFishEvent = new PlayerFishEvent((Player) this.getOwner().getBukkitEntity(), null, (FishHook) this.getBukkitEntity(), PlayerFishEvent.State.BITE);
++                    PlayerFishEvent playerFishEvent = new PlayerFishEvent((Player) this.getPlayerOwner().getBukkitEntity(), null, (FishHook) this.getBukkitEntity(), PlayerFishEvent.State.BITE);
 +                    this.level.getCraftServer().getPluginManager().callEvent(playerFishEvent);
 +                    if (playerFishEvent.isCancelled()) {
 +                        return;
 +                    }
 +                    // CraftBukkit end
                      this.playSound(SoundEffects.FISHING_BOBBER_SPLASH, 0.25F, 1.0F + (this.random.nextFloat() - this.random.nextFloat()) * 0.4F);
-                     double d3 = this.locY() + 0.5D;
+                     double d3 = this.getY() + 0.5D;
  
-@@ -375,8 +398,10 @@
+@@ -374,8 +397,10 @@
                      this.timeUntilHooked = MathHelper.nextInt(this.random, 20, 80);
                  }
              } else {
@@ -73,7 +73,7 @@
              }
          }
  
-@@ -443,6 +468,14 @@
+@@ -442,6 +467,14 @@
              int i = 0;
  
              if (this.hookedIn != null) {
@@ -85,13 +85,13 @@
 +                    return 0;
 +                }
 +                // CraftBukkit end
-                 this.reel(this.hookedIn);
-                 CriterionTriggers.FISHING_ROD_HOOKED.a((EntityPlayer) entityhuman, itemstack, this, (Collection) Collections.emptyList());
-                 this.level.broadcastEntityEffect(this, (byte) 31);
-@@ -458,6 +491,15 @@
+                 this.pullEntity(this.hookedIn);
+                 CriterionTriggers.FISHING_ROD_HOOKED.trigger((EntityPlayer) entityhuman, itemstack, this, Collections.emptyList());
+                 this.level.broadcastEntityEvent(this, (byte) 31);
+@@ -457,6 +490,15 @@
                  while (iterator.hasNext()) {
                      ItemStack itemstack1 = (ItemStack) iterator.next();
-                     EntityItem entityitem = new EntityItem(this.level, this.locX(), this.locY(), this.locZ(), itemstack1);
+                     EntityItem entityitem = new EntityItem(this.level, this.getX(), this.getY(), this.getZ(), itemstack1);
 +                    // CraftBukkit start
 +                    PlayerFishEvent playerFishEvent = new PlayerFishEvent((Player) entityhuman.getBukkitEntity(), entityitem.getBukkitEntity(), (FishHook) this.getBukkitEntity(), PlayerFishEvent.State.CAUGHT_FISH);
 +                    playerFishEvent.setExpToDrop(this.random.nextInt(6) + 1);
@@ -101,23 +101,23 @@
 +                        return 0;
 +                    }
 +                    // CraftBukkit end
-                     double d0 = entityhuman.locX() - this.locX();
-                     double d1 = entityhuman.locY() - this.locY();
-                     double d2 = entityhuman.locZ() - this.locZ();
-@@ -465,7 +507,11 @@
+                     double d0 = entityhuman.getX() - this.getX();
+                     double d1 = entityhuman.getY() - this.getY();
+                     double d2 = entityhuman.getZ() - this.getZ();
+@@ -464,7 +506,11 @@
  
-                     entityitem.setMot(d0 * 0.1D, d1 * 0.1D + Math.sqrt(Math.sqrt(d0 * d0 + d1 * d1 + d2 * d2)) * 0.08D, d2 * 0.1D);
-                     this.level.addEntity(entityitem);
--                    entityhuman.level.addEntity(new EntityExperienceOrb(entityhuman.level, entityhuman.locX(), entityhuman.locY() + 0.5D, entityhuman.locZ() + 0.5D, this.random.nextInt(6) + 1));
+                     entityitem.setDeltaMovement(d0 * 0.1D, d1 * 0.1D + Math.sqrt(Math.sqrt(d0 * d0 + d1 * d1 + d2 * d2)) * 0.08D, d2 * 0.1D);
+                     this.level.addFreshEntity(entityitem);
+-                    entityhuman.level.addFreshEntity(new EntityExperienceOrb(entityhuman.level, entityhuman.getX(), entityhuman.getY() + 0.5D, entityhuman.getZ() + 0.5D, this.random.nextInt(6) + 1));
 +                    // CraftBukkit start - this.random.nextInt(6) + 1 -> playerFishEvent.getExpToDrop()
 +                    if (playerFishEvent.getExpToDrop() > 0) {
-+                        entityhuman.level.addEntity(new EntityExperienceOrb(entityhuman.level, entityhuman.locX(), entityhuman.locY() + 0.5D, entityhuman.locZ() + 0.5D, playerFishEvent.getExpToDrop()));
++                        entityhuman.level.addFreshEntity(new EntityExperienceOrb(entityhuman.level, entityhuman.getX(), entityhuman.getY() + 0.5D, entityhuman.getZ() + 0.5D, playerFishEvent.getExpToDrop()));
 +                    }
 +                    // CraftBukkit end
-                     if (itemstack1.a((Tag) TagsItem.FISHES)) {
-                         entityhuman.a(StatisticList.FISH_CAUGHT, 1);
+                     if (itemstack1.is((Tag) TagsItem.FISHES)) {
+                         entityhuman.awardStat(StatisticList.FISH_CAUGHT, 1);
                      }
-@@ -475,8 +521,25 @@
+@@ -474,8 +520,25 @@
              }
  
              if (this.onGround) {
@@ -141,5 +141,5 @@
 +            }
 +            // CraftBukkit end
  
-             this.die();
+             this.discard();
              return i;

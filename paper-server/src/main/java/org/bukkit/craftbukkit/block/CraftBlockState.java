@@ -161,7 +161,7 @@ public class CraftBlockState implements BlockState {
         Preconditions.checkArgument(type.isBlock(), "Material must be a block!");
 
         if (this.getType() != type) {
-            this.data = CraftMagicNumbers.getBlock(type).getBlockData();
+            this.data = CraftMagicNumbers.getBlock(type).defaultBlockState();
         }
     }
 
@@ -216,7 +216,7 @@ public class CraftBlockState implements BlockState {
         IBlockData newBlock = this.data;
         block.setTypeAndData(newBlock, applyPhysics);
         if (access instanceof net.minecraft.world.level.World) {
-            world.getHandle().notify(
+            world.getHandle().sendBlockUpdated(
                     position,
                     block.getNMS(),
                     newBlock,
@@ -226,7 +226,7 @@ public class CraftBlockState implements BlockState {
 
         // Update levers etc
         if (false && applyPhysics && getData() instanceof Attachable) { // Call does not map to new API
-            world.getHandle().applyPhysics(position.shift(CraftBlock.blockFaceToNotch(((Attachable) getData()).getAttachedFace())), newBlock.getBlock());
+            world.getHandle().updateNeighborsAt(position.relative(CraftBlock.blockFaceToNotch(((Attachable) getData()).getAttachedFace())), newBlock.getBlock());
         }
 
         return true;

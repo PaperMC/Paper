@@ -3,6 +3,8 @@ package org.bukkit.craftbukkit.generator;
 import java.util.HashSet;
 import java.util.Set;
 import net.minecraft.core.BlockPosition;
+import net.minecraft.core.IRegistry;
+import net.minecraft.world.level.biome.BiomeBase;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.IBlockData;
 import net.minecraft.world.level.chunk.ChunkSection;
@@ -23,17 +25,15 @@ public final class OldCraftChunkData implements ChunkGenerator.ChunkData {
     private final int minHeight;
     private final int maxHeight;
     private final ChunkSection[] sections;
+    private final IRegistry<BiomeBase> biomes;
     private Set<BlockPosition> tiles;
     private final Set<BlockPosition> lights = new HashSet<>();
 
-    public OldCraftChunkData(World world) {
-        this(world.getMinHeight(), world.getMaxHeight());
-    }
-
-    /* pp for tests */ OldCraftChunkData(int minHeight, int maxHeight) {
+    public OldCraftChunkData(int minHeight, int maxHeight, IRegistry<BiomeBase> biomes) {
         this.minHeight = minHeight;
         this.maxHeight = maxHeight;
-        sections = new ChunkSection[(((maxHeight - 1) >> 4) + 1) - (minHeight >> 4)];
+        this.biomes = biomes;
+        this.sections = new ChunkSection[(((maxHeight - 1) >> 4) + 1) - (minHeight >> 4)];
     }
 
     @Override
@@ -127,7 +127,7 @@ public final class OldCraftChunkData implements ChunkGenerator.ChunkData {
             int offsetBase = y & 0xf;
             for (int x = xMin; x < xMax; x++) {
                 for (int z = zMin; z < zMax; z++) {
-                    section.setType(x, offsetBase, z, type);
+                    section.setBlockState(x, offsetBase, z, type);
                 }
             }
         }
@@ -135,13 +135,13 @@ public final class OldCraftChunkData implements ChunkGenerator.ChunkData {
 
     public IBlockData getTypeId(int x, int y, int z) {
         if (x != (x & 0xf) || y < minHeight || y >= maxHeight || z != (z & 0xf)) {
-            return Blocks.AIR.getBlockData();
+            return Blocks.AIR.defaultBlockState();
         }
         ChunkSection section = getChunkSection(y, false);
         if (section == null) {
-            return Blocks.AIR.getBlockData();
+            return Blocks.AIR.defaultBlockState();
         } else {
-            return section.getType(x, y & 0xf, z);
+            return section.getBlockState(x, y & 0xf, z);
         }
     }
 
@@ -155,16 +155,16 @@ public final class OldCraftChunkData implements ChunkGenerator.ChunkData {
             return;
         }
         ChunkSection section = getChunkSection(y, true);
-        section.setType(x, y & 0xf, z, type);
+        section.setBlockState(x, y & 0xf, z, type);
 
         // SPIGOT-1753: Capture light blocks, for light updates
-        if (type.f() > 0) { // PAIL rename getLightEmission
+        if (type.getLightEmission() > 0) {
             lights.add(new BlockPosition(x, y, z));
         } else {
             lights.remove(new BlockPosition(x, y, z));
         }
 
-        if (type.isTileEntity()) {
+        if (type.hasBlockEntity()) {
             if (tiles == null) {
                 tiles = new HashSet<>();
             }
@@ -177,7 +177,7 @@ public final class OldCraftChunkData implements ChunkGenerator.ChunkData {
         int offset = (y - minHeight) >> 4;
         ChunkSection section = sections[offset];
         if (create && section == null) {
-            sections[offset] = section = new ChunkSection(offset + (minHeight >> 4));
+            sections[offset] = section = new ChunkSection(offset + (minHeight >> 4), biomes);
         }
         return section;
     }

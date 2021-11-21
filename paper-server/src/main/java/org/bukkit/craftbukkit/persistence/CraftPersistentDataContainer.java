@@ -118,7 +118,7 @@ public final class CraftPersistentDataContainer implements PersistentDataContain
     public NBTTagCompound toTagCompound() {
         NBTTagCompound tag = new NBTTagCompound();
         for (Entry<String, NBTBase> entry : this.customDataTags.entrySet()) {
-            tag.set(entry.getKey(), entry.getValue());
+            tag.put(entry.getKey(), entry.getValue());
         }
         return tag;
     }
@@ -132,7 +132,7 @@ public final class CraftPersistentDataContainer implements PersistentDataContain
     }
 
     public void putAll(NBTTagCompound compound) {
-        for (String key : compound.getKeys()) {
+        for (String key : compound.getAllKeys()) {
             this.customDataTags.put(key, compound.get(key));
         }
     }

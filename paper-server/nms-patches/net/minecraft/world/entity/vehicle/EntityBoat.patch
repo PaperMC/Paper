@@ -15,7 +15,7 @@
 +
  public class EntityBoat extends Entity {
  
-     private static final DataWatcherObject<Integer> DATA_ID_HURT = DataWatcher.a(EntityBoat.class, DataWatcherRegistry.INT);
+     private static final DataWatcherObject<Integer> DATA_ID_HURT = DataWatcher.defineId(EntityBoat.class, DataWatcherRegistry.INT);
 @@ -92,6 +101,14 @@
      private float bubbleAngle;
      private float bubbleAngleO;
@@ -32,7 +32,7 @@
          super(entitytypes, world);
          this.paddlePositions = new float[2];
 @@ -161,6 +178,19 @@
-         if (this.isInvulnerable(damagesource)) {
+         if (this.isInvulnerableTo(damagesource)) {
              return false;
          } else if (!this.level.isClientSide && !this.isRemoved()) {
 +            // CraftBukkit start
@@ -48,8 +48,8 @@
 +            // f = event.getDamage(); // TODO Why don't we do this?
 +            // CraftBukkit end
 +
-             this.c(-this.p());
-             this.b(10);
+             this.setHurtDir(-this.getHurtDir());
+             this.setHurtTime(10);
              this.setDamage(this.getDamage() + f * 10.0F);
 @@ -169,6 +199,15 @@
              boolean flag = damagesource.getEntity() instanceof EntityHuman && ((EntityHuman) damagesource.getEntity()).getAbilities().instabuild;
@@ -65,14 +65,14 @@
 +                }
 +                // CraftBukkit end
                  if (!flag && this.level.getGameRules().getBoolean(GameRules.RULE_DOENTITYDROPS)) {
-                     this.a((IMaterial) this.h());
+                     this.spawnAtLocation((IMaterial) this.getDropItem());
                  }
 @@ -204,9 +243,29 @@
-     public void collide(Entity entity) {
+     public void push(Entity entity) {
          if (entity instanceof EntityBoat) {
              if (entity.getBoundingBox().minY < this.getBoundingBox().maxY) {
 +                // CraftBukkit start
-+                if (!this.isSameVehicle(entity)) {
++                if (!this.isPassengerOfSameVehicle(entity)) {
 +                    VehicleEntityCollisionEvent event = new VehicleEntityCollisionEvent((Vehicle) this.getBukkitEntity(), entity.getBukkitEntity());
 +                    this.level.getCraftServer().getPluginManager().callEvent(event);
 +
@@ -81,11 +81,11 @@
 +                    }
 +                }
 +                // CraftBukkit end
-                 super.collide(entity);
+                 super.push(entity);
              }
          } else if (entity.getBoundingBox().minY <= this.getBoundingBox().minY) {
 +            // CraftBukkit start
-+            if (!this.isSameVehicle(entity)) {
++            if (!this.isPassengerOfSameVehicle(entity)) {
 +                VehicleEntityCollisionEvent event = new VehicleEntityCollisionEvent((Vehicle) this.getBukkitEntity(), entity.getBukkitEntity());
 +                this.level.getCraftServer().getPluginManager().callEvent(event);
 +
@@ -94,11 +94,11 @@
 +                }
 +            }
 +            // CraftBukkit end
-             super.collide(entity);
+             super.push(entity);
          }
  
 @@ -257,6 +316,7 @@
-         return this.getDirection().g();
+         return this.getDirection().getClockWise();
      }
  
 +    private Location lastLocation; // CraftBukkit
@@ -106,14 +106,14 @@
      public void tick() {
          this.oldStatus = this.status;
 @@ -297,6 +357,22 @@
-             this.setMot(Vec3D.ZERO);
+             this.setDeltaMovement(Vec3D.ZERO);
          }
  
 +        // CraftBukkit start
 +        org.bukkit.Server server = this.level.getCraftServer();
 +        org.bukkit.World bworld = this.level.getWorld();
 +
-+        Location to = new Location(bworld, this.locX(), this.locY(), this.locZ(), this.getYRot(), this.getXRot());
++        Location to = new Location(bworld, this.getX(), this.getY(), this.getZ(), this.getYRot(), this.getXRot());
 +        Vehicle vehicle = (Vehicle) this.getBukkitEntity();
 +
 +        server.getPluginManager().callEvent(new org.bukkit.event.vehicle.VehicleUpdateEvent(vehicle));
@@ -125,19 +125,19 @@
 +        lastLocation = vehicle.getLocation();
 +        // CraftBukkit end
 +
-         this.r();
+         this.tickBubbleColumn();
  
          for (int i = 0; i <= 1; ++i) {
 @@ -801,6 +877,11 @@
  
-                     this.a(this.fallDistance, 1.0F, DamageSource.FALL);
+                     this.causeFallDamage(this.fallDistance, 1.0F, DamageSource.FALL);
                      if (!this.level.isClientSide && !this.isRemoved()) {
 +                    // CraftBukkit start
 +                    Vehicle vehicle = (Vehicle) this.getBukkitEntity();
 +                    VehicleDestroyEvent destroyEvent = new VehicleDestroyEvent(vehicle, null);
 +                    this.level.getCraftServer().getPluginManager().callEvent(destroyEvent);
 +                    if (!destroyEvent.isCancelled()) {
-                         this.killEntity();
+                         this.kill();
                          if (this.level.getGameRules().getBoolean(GameRules.RULE_DOENTITYDROPS)) {
                              int i;
 @@ -814,6 +895,7 @@
@@ -147,4 +147,4 @@
 +                    } // CraftBukkit end
                  }
  
-                 this.fallDistance = 0.0F;
+                 this.resetFallDistance();

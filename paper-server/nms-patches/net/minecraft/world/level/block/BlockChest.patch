@@ -1,31 +1,31 @@
 --- a/net/minecraft/world/level/block/BlockChest.java
 +++ b/net/minecraft/world/level/block/BlockChest.java
 @@ -88,24 +88,7 @@
-         public Optional<ITileInventory> a(final TileEntityChest tileentitychest, final TileEntityChest tileentitychest1) {
+         public Optional<ITileInventory> acceptDouble(final TileEntityChest tileentitychest, final TileEntityChest tileentitychest1) {
              final InventoryLargeChest inventorylargechest = new InventoryLargeChest(tileentitychest, tileentitychest1);
  
 -            return Optional.of(new ITileInventory() {
 -                @Nullable
 -                @Override
 -                public Container createMenu(int i, PlayerInventory playerinventory, EntityHuman entityhuman) {
--                    if (tileentitychest.d(entityhuman) && tileentitychest1.d(entityhuman)) {
--                        tileentitychest.e(playerinventory.player);
--                        tileentitychest1.e(playerinventory.player);
--                        return ContainerChest.b(i, playerinventory, (IInventory) inventorylargechest);
+-                    if (tileentitychest.canOpen(entityhuman) && tileentitychest1.canOpen(entityhuman)) {
+-                        tileentitychest.unpackLootTable(playerinventory.player);
+-                        tileentitychest1.unpackLootTable(playerinventory.player);
+-                        return ContainerChest.sixRows(i, playerinventory, inventorylargechest);
 -                    } else {
 -                        return null;
 -                    }
 -                }
 -
 -                @Override
--                public IChatBaseComponent getScoreboardDisplayName() {
--                    return (IChatBaseComponent) (tileentitychest.hasCustomName() ? tileentitychest.getScoreboardDisplayName() : (tileentitychest1.hasCustomName() ? tileentitychest1.getScoreboardDisplayName() : new ChatMessage("container.chestDouble")));
+-                public IChatBaseComponent getDisplayName() {
+-                    return (IChatBaseComponent) (tileentitychest.hasCustomName() ? tileentitychest.getDisplayName() : (tileentitychest1.hasCustomName() ? tileentitychest1.getDisplayName() : new ChatMessage("container.chestDouble")));
 -                }
 -            });
 +            return Optional.of(new DoubleInventory(tileentitychest, tileentitychest1, inventorylargechest)); // CraftBukkit
          }
  
-         public Optional<ITileInventory> a(TileEntityChest tileentitychest) {
+         public Optional<ITileInventory> acceptSingle(TileEntityChest tileentitychest) {
 @@ -118,6 +101,38 @@
          }
      };
@@ -46,29 +46,29 @@
 +        @Nullable
 +        @Override
 +        public Container createMenu(int i, PlayerInventory playerinventory, EntityHuman entityhuman) {
-+            if (tileentitychest.d(entityhuman) && tileentitychest1.d(entityhuman)) {
-+                tileentitychest.e(playerinventory.player);
-+                tileentitychest1.e(playerinventory.player);
-+                return ContainerChest.b(i, playerinventory, (IInventory) inventorylargechest);
++            if (tileentitychest.canOpen(entityhuman) && tileentitychest1.canOpen(entityhuman)) {
++                tileentitychest.unpackLootTable(playerinventory.player);
++                tileentitychest1.unpackLootTable(playerinventory.player);
++                return ContainerChest.sixRows(i, playerinventory, inventorylargechest);
 +            } else {
 +                return null;
 +            }
 +        }
 +
 +        @Override
-+        public IChatBaseComponent getScoreboardDisplayName() {
-+            return (IChatBaseComponent) (tileentitychest.hasCustomName() ? tileentitychest.getScoreboardDisplayName() : (tileentitychest1.hasCustomName() ? tileentitychest1.getScoreboardDisplayName() : new ChatMessage("container.chestDouble")));
++        public IChatBaseComponent getDisplayName() {
++            return (IChatBaseComponent) (tileentitychest.hasCustomName() ? tileentitychest.getDisplayName() : (tileentitychest1.hasCustomName() ? tileentitychest1.getDisplayName() : new ChatMessage("container.chestDouble")));
 +        }
 +    };
 +    // CraftBukkit end
 +
      protected BlockChest(BlockBase.Info blockbase_info, Supplier<TileEntityTypes<? extends TileEntityChest>> supplier) {
          super(blockbase_info, supplier);
-         this.k((IBlockData) ((IBlockData) ((IBlockData) ((IBlockData) this.stateDefinition.getBlockData()).set(BlockChest.FACING, EnumDirection.NORTH)).set(BlockChest.TYPE, BlockPropertyChestType.SINGLE)).set(BlockChest.WATERLOGGED, false));
+         this.registerDefaultState((IBlockData) ((IBlockData) ((IBlockData) ((IBlockData) this.stateDefinition.any()).setValue(BlockChest.FACING, EnumDirection.NORTH)).setValue(BlockChest.TYPE, BlockPropertyChestType.SINGLE)).setValue(BlockChest.WATERLOGGED, false));
 @@ -276,7 +291,7 @@
  
      @Override
-     public DoubleBlockFinder.Result<? extends TileEntityChest> a(IBlockData iblockdata, World world, BlockPosition blockposition, boolean flag) {
+     public DoubleBlockFinder.Result<? extends TileEntityChest> combine(IBlockData iblockdata, World world, BlockPosition blockposition, boolean flag) {
 -        BiPredicate bipredicate;
 +        BiPredicate<GeneratorAccess, BlockPosition> bipredicate; // CraftBukkit - decompile error
  
@@ -77,16 +77,16 @@
 @@ -292,7 +307,14 @@
      @Nullable
      @Override
-     public ITileInventory getInventory(IBlockData iblockdata, World world, BlockPosition blockposition) {
--        return (ITileInventory) ((Optional) this.a(iblockdata, world, blockposition, false).apply(BlockChest.MENU_PROVIDER_COMBINER)).orElse((Object) null);
+     public ITileInventory getMenuProvider(IBlockData iblockdata, World world, BlockPosition blockposition) {
+-        return (ITileInventory) ((Optional) this.combine(iblockdata, world, blockposition, false).apply(BlockChest.MENU_PROVIDER_COMBINER)).orElse((Object) null);
 +        // CraftBukkit start
-+        return getInventory(iblockdata, world, blockposition, false);
++        return getMenuProvider(iblockdata, world, blockposition, false);
 +    }
 +
 +    @Nullable
-+    public ITileInventory getInventory(IBlockData iblockdata, World world, BlockPosition blockposition, boolean ignoreObstructions) {
-+        return (ITileInventory) ((Optional) this.a(iblockdata, world, blockposition, ignoreObstructions).apply(BlockChest.MENU_PROVIDER_COMBINER)).orElse((Object) null);
++    public ITileInventory getMenuProvider(IBlockData iblockdata, World world, BlockPosition blockposition, boolean ignoreObstructions) {
++        return (ITileInventory) ((Optional) this.combine(iblockdata, world, blockposition, ignoreObstructions).apply(BlockChest.MENU_PROVIDER_COMBINER)).orElse((Object) null);
 +        // CraftBukkit end
      }
  
-     public static DoubleBlockFinder.Combiner<TileEntityChest, Float2FloatFunction> a(final LidBlockEntity lidblockentity) {
+     public static DoubleBlockFinder.Combiner<TileEntityChest, Float2FloatFunction> opennessCombiner(final LidBlockEntity lidblockentity) {

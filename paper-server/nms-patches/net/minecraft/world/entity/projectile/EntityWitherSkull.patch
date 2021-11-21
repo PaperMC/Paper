@@ -8,10 +8,10 @@
 +
  public class EntityWitherSkull extends EntityFireball {
  
-     private static final DataWatcherObject<Boolean> DATA_DANGEROUS = DataWatcher.a(EntityWitherSkull.class, DataWatcherRegistry.BOOLEAN);
+     private static final DataWatcherObject<Boolean> DATA_DANGEROUS = DataWatcher.defineId(EntityWitherSkull.class, DataWatcherRegistry.BOOLEAN);
 @@ -64,7 +66,7 @@
                      if (entity.isAlive()) {
-                         this.a(entityliving, entity);
+                         this.doEnchantDamageEffects(entityliving, entity);
                      } else {
 -                        entityliving.heal(5.0F);
 +                        entityliving.heal(5.0F, org.bukkit.event.entity.EntityRegainHealthEvent.RegainReason.WITHER); // CraftBukkit
@@ -22,8 +22,8 @@
                  }
  
                  if (b0 > 0) {
--                    ((EntityLiving) entity).addEffect(new MobEffect(MobEffects.WITHER, 20 * b0, 1), this.x());
-+                    ((EntityLiving) entity).addEffect(new MobEffect(MobEffects.WITHER, 20 * b0, 1), this.x(), org.bukkit.event.entity.EntityPotionEffectEvent.Cause.ATTACK); // CraftBukkit
+-                    ((EntityLiving) entity).addEffect(new MobEffect(MobEffects.WITHER, 20 * b0, 1), this.getEffectSource());
++                    ((EntityLiving) entity).addEffect(new MobEffect(MobEffects.WITHER, 20 * b0, 1), this.getEffectSource(), org.bukkit.event.entity.EntityPotionEffectEvent.Cause.ATTACK); // CraftBukkit
                  }
              }
  
@@ -31,16 +31,16 @@
          if (!this.level.isClientSide) {
              Explosion.Effect explosion_effect = this.level.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING) ? Explosion.Effect.DESTROY : Explosion.Effect.NONE;
  
--            this.level.createExplosion(this, this.locX(), this.locY(), this.locZ(), 1.0F, false, explosion_effect);
+-            this.level.explode(this, this.getX(), this.getY(), this.getZ(), 1.0F, false, explosion_effect);
 +            // CraftBukkit start
 +            // this.level.createExplosion(this, this.locX(), this.locY(), this.locZ(), 1.0F, false, explosion_effect);
 +            ExplosionPrimeEvent event = new ExplosionPrimeEvent(this.getBukkitEntity(), 1.0F, false);
 +            this.level.getCraftServer().getPluginManager().callEvent(event);
 +
 +            if (!event.isCancelled()) {
-+                this.level.createExplosion(this, this.locX(), this.locY(), this.locZ(), event.getRadius(), event.getFire(), explosion_effect);
++                this.level.explode(this, this.getX(), this.getY(), this.getZ(), event.getRadius(), event.getFire(), explosion_effect);
 +            }
 +            // CraftBukkit end
-             this.die();
+             this.discard();
          }
  

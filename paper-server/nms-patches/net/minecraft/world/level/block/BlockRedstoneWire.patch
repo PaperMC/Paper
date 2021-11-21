@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/block/BlockRedstoneWire.java
 +++ b/net/minecraft/world/level/block/BlockRedstoneWire.java
-@@ -38,6 +38,8 @@
+@@ -37,6 +37,8 @@
  import net.minecraft.world.phys.shapes.VoxelShapeCollision;
  import net.minecraft.world.phys.shapes.VoxelShapes;
  
@@ -9,22 +9,13 @@
  public class BlockRedstoneWire extends Block {
  
      public static final BlockStateEnum<BlockPropertyRedstoneSide> NORTH = BlockProperties.NORTH_REDSTONE;
-@@ -55,7 +57,7 @@
-     private static final Map<EnumDirection, VoxelShape> SHAPES_FLOOR = Maps.newEnumMap(ImmutableMap.of(EnumDirection.NORTH, Block.a(3.0D, 0.0D, 0.0D, 13.0D, 1.0D, 13.0D), EnumDirection.SOUTH, Block.a(3.0D, 0.0D, 3.0D, 13.0D, 1.0D, 16.0D), EnumDirection.EAST, Block.a(3.0D, 0.0D, 3.0D, 16.0D, 1.0D, 13.0D), EnumDirection.WEST, Block.a(0.0D, 0.0D, 3.0D, 13.0D, 1.0D, 13.0D)));
-     private static final Map<EnumDirection, VoxelShape> SHAPES_UP = Maps.newEnumMap(ImmutableMap.of(EnumDirection.NORTH, VoxelShapes.a((VoxelShape) BlockRedstoneWire.SHAPES_FLOOR.get(EnumDirection.NORTH), Block.a(3.0D, 0.0D, 0.0D, 13.0D, 16.0D, 1.0D)), EnumDirection.SOUTH, VoxelShapes.a((VoxelShape) BlockRedstoneWire.SHAPES_FLOOR.get(EnumDirection.SOUTH), Block.a(3.0D, 0.0D, 15.0D, 13.0D, 16.0D, 16.0D)), EnumDirection.EAST, VoxelShapes.a((VoxelShape) BlockRedstoneWire.SHAPES_FLOOR.get(EnumDirection.EAST), Block.a(15.0D, 0.0D, 3.0D, 16.0D, 16.0D, 13.0D)), EnumDirection.WEST, VoxelShapes.a((VoxelShape) BlockRedstoneWire.SHAPES_FLOOR.get(EnumDirection.WEST), Block.a(0.0D, 0.0D, 3.0D, 1.0D, 16.0D, 13.0D))));
-     private static final Map<IBlockData, VoxelShape> SHAPES_CACHE = Maps.newHashMap();
--    private static final Vec3D[] COLORS = (Vec3D[]) SystemUtils.a((Object) (new Vec3D[16]), (avec3d) -> {
-+    private static final Vec3D[] COLORS = (Vec3D[]) SystemUtils.a((new Vec3D[16]), (avec3d) -> { // CraftBukkit - decompile error
-         for (int i = 0; i <= 15; ++i) {
-             float f = (float) i / 15.0F;
-             float f1 = f * 0.6F + (f > 0.0F ? 0.4F : 0.3F);
-@@ -258,7 +260,16 @@
-     private void a(World world, BlockPosition blockposition, IBlockData iblockdata) {
-         int i = this.a(world, blockposition);
+@@ -257,7 +259,16 @@
+     private void updatePowerStrength(World world, BlockPosition blockposition, IBlockData iblockdata) {
+         int i = this.calculateTargetStrength(world, blockposition);
  
--        if ((Integer) iblockdata.get(BlockRedstoneWire.POWER) != i) {
+-        if ((Integer) iblockdata.getValue(BlockRedstoneWire.POWER) != i) {
 +        // CraftBukkit start
-+        int oldPower = (Integer) iblockdata.get(BlockRedstoneWire.POWER);
++        int oldPower = (Integer) iblockdata.getValue(BlockRedstoneWire.POWER);
 +        if (oldPower != i) {
 +            BlockRedstoneEvent event = new BlockRedstoneEvent(world.getWorld().getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ()), oldPower, i);
 +            world.getCraftServer().getPluginManager().callEvent(event);
@@ -33,6 +24,6 @@
 +        }
 +        if (oldPower != i) {
 +            // CraftBukkit end
-             if (world.getType(blockposition) == iblockdata) {
-                 world.setTypeAndData(blockposition, (IBlockData) iblockdata.set(BlockRedstoneWire.POWER, i), 2);
+             if (world.getBlockState(blockposition) == iblockdata) {
+                 world.setBlock(blockposition, (IBlockData) iblockdata.setValue(BlockRedstoneWire.POWER, i), 2);
              }

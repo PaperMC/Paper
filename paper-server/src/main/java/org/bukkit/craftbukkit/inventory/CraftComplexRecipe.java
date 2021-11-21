@@ -17,16 +17,16 @@ public class CraftComplexRecipe implements CraftRecipe, ComplexRecipe {
 
     @Override
     public ItemStack getResult() {
-        return CraftItemStack.asCraftMirror(recipe.getResult());
+        return CraftItemStack.asCraftMirror(recipe.getResultItem());
     }
 
     @Override
     public NamespacedKey getKey() {
-        return CraftNamespacedKey.fromMinecraft(recipe.getKey());
+        return CraftNamespacedKey.fromMinecraft(recipe.getId());
     }
 
     @Override
     public void addToCraftingManager() {
-        MinecraftServer.getServer().getCraftingManager().addRecipe(recipe);
+        MinecraftServer.getServer().getRecipeManager().addRecipe(recipe);
     }
 }

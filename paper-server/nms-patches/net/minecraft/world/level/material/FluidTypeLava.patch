@@ -3,42 +3,42 @@
 @@ -85,6 +85,13 @@
  
                      if (iblockdata.isAir()) {
-                         if (this.a((IWorldReader) world, blockposition1)) {
+                         if (this.hasFlammableNeighbours(world, blockposition1)) {
 +                            // CraftBukkit start - Prevent lava putting something on fire
-+                            if (world.getType(blockposition1).getBlock() != Blocks.FIRE) {
++                            if (world.getBlockState(blockposition1).getBlock() != Blocks.FIRE) {
 +                                if (org.bukkit.craftbukkit.event.CraftEventFactory.callBlockIgniteEvent(world, blockposition1, blockposition).isCancelled()) {
 +                                    continue;
 +                                }
 +                            }
 +                            // CraftBukkit end
-                             world.setTypeUpdate(blockposition1, BlockFireAbstract.a((IBlockAccess) world, blockposition1));
+                             world.setBlockAndUpdate(blockposition1, BlockFireAbstract.getState(world, blockposition1));
                              return;
                          }
 @@ -101,6 +108,14 @@
                      }
  
-                     if (world.isEmpty(blockposition2.up()) && this.b(world, blockposition2)) {
+                     if (world.isEmptyBlock(blockposition2.above()) && this.isFlammable(world, blockposition2)) {
 +                        // CraftBukkit start - Prevent lava putting something on fire
-+                        BlockPosition up = blockposition2.up();
-+                        if (world.getType(up).getBlock() != Blocks.FIRE) {
++                        BlockPosition up = blockposition2.above();
++                        if (world.getBlockState(up).getBlock() != Blocks.FIRE) {
 +                            if (org.bukkit.craftbukkit.event.CraftEventFactory.callBlockIgniteEvent(world, up, blockposition).isCancelled()) {
 +                                continue;
 +                            }
 +                        }
 +                        // CraftBukkit end
-                         world.setTypeUpdate(blockposition2.up(), BlockFireAbstract.a((IBlockAccess) world, blockposition2));
+                         world.setBlockAndUpdate(blockposition2.above(), BlockFireAbstract.getState(world, blockposition2));
                      }
                  }
 @@ -196,7 +211,11 @@
  
-             if (this.a((Tag) TagsFluid.LAVA) && fluid1.a((Tag) TagsFluid.WATER)) {
+             if (this.is(TagsFluid.LAVA) && fluid1.is((Tag) TagsFluid.WATER)) {
                  if (iblockdata.getBlock() instanceof BlockFluids) {
--                    generatoraccess.setTypeAndData(blockposition, Blocks.STONE.getBlockData(), 3);
+-                    generatoraccess.setBlock(blockposition, Blocks.STONE.defaultBlockState(), 3);
 +                    // CraftBukkit start
-+                    if (!org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockFormEvent(generatoraccess.getMinecraftWorld(), blockposition, Blocks.STONE.getBlockData(), 3)) {
++                    if (!org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockFormEvent(generatoraccess.getMinecraftWorld(), blockposition, Blocks.STONE.defaultBlockState(), 3)) {
 +                        return;
 +                    }
 +                    // CraftBukkit end
                  }
  
-                 this.a(generatoraccess, blockposition);
+                 this.fizz(generatoraccess, blockposition);

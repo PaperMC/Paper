@@ -1,11 +1,11 @@
 --- a/net/minecraft/world/item/ItemBow.java
 +++ b/net/minecraft/world/item/ItemBow.java
 @@ -64,6 +64,14 @@
-                         if (EnchantmentManager.getEnchantmentLevel(Enchantments.FLAMING_ARROWS, itemstack) > 0) {
-                             entityarrow.setOnFire(100);
+                         if (EnchantmentManager.getItemEnchantmentLevel(Enchantments.FLAMING_ARROWS, itemstack) > 0) {
+                             entityarrow.setSecondsOnFire(100);
                          }
 +                        // CraftBukkit start
-+                        org.bukkit.event.entity.EntityShootBowEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityShootBowEvent(entityhuman, itemstack, itemstack1, entityarrow, entityhuman.getRaisedHand(), f, !flag1);
++                        org.bukkit.event.entity.EntityShootBowEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityShootBowEvent(entityhuman, itemstack, itemstack1, entityarrow, entityhuman.getUsedItemHand(), f, !flag1);
 +                        if (event.isCancelled()) {
 +                            event.getProjectile().remove();
 +                            return;
@@ -13,16 +13,16 @@
 +                        flag1 = !event.shouldConsumeItem();
 +                        // CraftBukkit end
  
-                         itemstack.damage(1, entityhuman, (entityhuman1) -> {
-                             entityhuman1.broadcastItemBreak(entityhuman.getRaisedHand());
+                         itemstack.hurtAndBreak(1, entityhuman, (entityhuman1) -> {
+                             entityhuman1.broadcastBreakEvent(entityhuman.getUsedItemHand());
 @@ -72,7 +80,16 @@
                              entityarrow.pickup = EntityArrow.PickupStatus.CREATIVE_ONLY;
                          }
  
--                        world.addEntity(entityarrow);
+-                        world.addFreshEntity(entityarrow);
 +                        // CraftBukkit start
 +                        if (event.getProjectile() == entityarrow.getBukkitEntity()) {
-+                            if (!world.addEntity(entityarrow)) {
++                            if (!world.addFreshEntity(entityarrow)) {
 +                                if (entityhuman instanceof net.minecraft.server.level.EntityPlayer) {
 +                                    ((net.minecraft.server.level.EntityPlayer) entityhuman).getBukkitEntity().updateInventory();
 +                                }
@@ -32,4 +32,4 @@
 +                        // CraftBukkit end
                      }
  
-                     world.playSound((EntityHuman) null, entityhuman.locX(), entityhuman.locY(), entityhuman.locZ(), SoundEffects.ARROW_SHOOT, SoundCategory.PLAYERS, 1.0F, 1.0F / (world.getRandom().nextFloat() * 0.4F + 1.2F) + f * 0.5F);
+                     world.playSound((EntityHuman) null, entityhuman.getX(), entityhuman.getY(), entityhuman.getZ(), SoundEffects.ARROW_SHOOT, SoundCategory.PLAYERS, 1.0F, 1.0F / (world.getRandom().nextFloat() * 0.4F + 1.2F) + f * 0.5F);

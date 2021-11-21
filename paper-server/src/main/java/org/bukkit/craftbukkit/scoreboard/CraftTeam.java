@@ -50,7 +50,7 @@ final class CraftTeam extends CraftScoreboardComponent implements Team {
     public String getPrefix() throws IllegalStateException {
         CraftScoreboard scoreboard = checkState();
 
-        return CraftChatMessage.fromComponent(team.getPrefix());
+        return CraftChatMessage.fromComponent(team.getPlayerPrefix());
     }
 
     @Override
@@ -59,14 +59,14 @@ final class CraftTeam extends CraftScoreboardComponent implements Team {
         Validate.isTrue(ChatColor.stripColor(prefix).length() <= 64, "Prefix '" + prefix + "' is longer than the limit of 64 characters");
         CraftScoreboard scoreboard = checkState();
 
-        team.setPrefix(CraftChatMessage.fromStringOrNull(prefix));
+        team.setPlayerPrefix(CraftChatMessage.fromStringOrNull(prefix));
     }
 
     @Override
     public String getSuffix() throws IllegalStateException {
         CraftScoreboard scoreboard = checkState();
 
-        return CraftChatMessage.fromComponent(team.getSuffix());
+        return CraftChatMessage.fromComponent(team.getPlayerSuffix());
     }
 
     @Override
@@ -75,7 +75,7 @@ final class CraftTeam extends CraftScoreboardComponent implements Team {
         Validate.isTrue(ChatColor.stripColor(suffix).length() <= 64, "Suffix '" + suffix + "' is longer than the limit of 64 characters");
         CraftScoreboard scoreboard = checkState();
 
-        team.setSuffix(CraftChatMessage.fromStringOrNull(suffix));
+        team.setPlayerSuffix(CraftChatMessage.fromStringOrNull(suffix));
     }
 
     @Override
@@ -97,7 +97,7 @@ final class CraftTeam extends CraftScoreboardComponent implements Team {
     public boolean allowFriendlyFire() throws IllegalStateException {
         CraftScoreboard scoreboard = checkState();
 
-        return team.allowFriendlyFire();
+        return team.isAllowFriendlyFire();
     }
 
     @Override
@@ -118,7 +118,7 @@ final class CraftTeam extends CraftScoreboardComponent implements Team {
     public void setCanSeeFriendlyInvisibles(boolean enabled) throws IllegalStateException {
         CraftScoreboard scoreboard = checkState();
 
-        team.setCanSeeFriendlyInvisibles(enabled);
+        team.setSeeFriendlyInvisibles(enabled);
     }
 
     @Override
@@ -140,7 +140,7 @@ final class CraftTeam extends CraftScoreboardComponent implements Team {
         CraftScoreboard scoreboard = checkState();
 
         ImmutableSet.Builder<OfflinePlayer> players = ImmutableSet.builder();
-        for (String playerName : team.getPlayerNameSet()) {
+        for (String playerName : team.getPlayers()) {
             players.add(Bukkit.getOfflinePlayer(playerName));
         }
         return players.build();
@@ -151,7 +151,7 @@ final class CraftTeam extends CraftScoreboardComponent implements Team {
         CraftScoreboard scoreboard = checkState();
 
         ImmutableSet.Builder<String> entries = ImmutableSet.builder();
-        for (String playerName : team.getPlayerNameSet()) {
+        for (String playerName : team.getPlayers()) {
             entries.add(playerName);
         }
         return entries.build();
@@ -161,7 +161,7 @@ final class CraftTeam extends CraftScoreboardComponent implements Team {
     public int getSize() throws IllegalStateException {
         CraftScoreboard scoreboard = checkState();
 
-        return team.getPlayerNameSet().size();
+        return team.getPlayers().size();
     }
 
     @Override
@@ -189,7 +189,7 @@ final class CraftTeam extends CraftScoreboardComponent implements Team {
         Validate.notNull(entry, "Entry cannot be null");
         CraftScoreboard scoreboard = checkState();
 
-        if (!team.getPlayerNameSet().contains(entry)) {
+        if (!team.getPlayers().contains(entry)) {
             return false;
         }
 
@@ -209,14 +209,14 @@ final class CraftTeam extends CraftScoreboardComponent implements Team {
 
         CraftScoreboard scoreboard = checkState();
 
-        return team.getPlayerNameSet().contains(entry);
+        return team.getPlayers().contains(entry);
     }
 
     @Override
     public void unregister() throws IllegalStateException {
         CraftScoreboard scoreboard = checkState();
 
-        scoreboard.board.removeTeam(team);
+        scoreboard.board.removePlayerTeam(team);
     }
 
     @Override
@@ -286,7 +286,7 @@ final class CraftTeam extends CraftScoreboardComponent implements Team {
 
     @Override
     CraftScoreboard checkState() throws IllegalStateException {
-        if (getScoreboard().board.getTeam(team.getName()) == null) {
+        if (getScoreboard().board.getPlayerTeam(team.getName()) == null) {
             throw new IllegalStateException("Unregistered scoreboard component");
         }
 

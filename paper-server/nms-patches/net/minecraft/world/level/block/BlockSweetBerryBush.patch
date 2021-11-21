@@ -16,20 +16,20 @@
  
      private static final float HURT_SPEED_THRESHOLD = 0.003F;
 @@ -59,7 +67,7 @@
-         int i = (Integer) iblockdata.get(BlockSweetBerryBush.AGE);
+         int i = (Integer) iblockdata.getValue(BlockSweetBerryBush.AGE);
  
-         if (i < 3 && random.nextInt(5) == 0 && worldserver.getLightLevel(blockposition.up(), 0) >= 9) {
--            worldserver.setTypeAndData(blockposition, (IBlockData) iblockdata.set(BlockSweetBerryBush.AGE, i + 1), 2);
-+            CraftEventFactory.handleBlockGrowEvent(worldserver, blockposition, (IBlockData) iblockdata.set(BlockSweetBerryBush.AGE, i + 1), 2); // CraftBukkit
+         if (i < 3 && random.nextInt(5) == 0 && worldserver.getRawBrightness(blockposition.above(), 0) >= 9) {
+-            worldserver.setBlock(blockposition, (IBlockData) iblockdata.setValue(BlockSweetBerryBush.AGE, i + 1), 2);
++            CraftEventFactory.handleBlockGrowEvent(worldserver, blockposition, (IBlockData) iblockdata.setValue(BlockSweetBerryBush.AGE, i + 1), 2); // CraftBukkit
          }
  
      }
 @@ -73,7 +81,9 @@
-                 double d1 = Math.abs(entity.locZ() - entity.zOld);
+                 double d1 = Math.abs(entity.getZ() - entity.zOld);
  
                  if (d0 >= 0.003000000026077032D || d1 >= 0.003000000026077032D) {
 +                    CraftEventFactory.blockDamage = CraftBlock.at(world, blockposition); // CraftBukkit
-                     entity.damageEntity(DamageSource.SWEET_BERRY_BUSH, 1.0F);
+                     entity.hurt(DamageSource.SWEET_BERRY_BUSH, 1.0F);
 +                    CraftEventFactory.blockDamage = null; // CraftBukkit
                  }
              }
@@ -38,16 +38,16 @@
          } else if (i > 1) {
              int j = 1 + world.random.nextInt(2);
  
--            a(world, blockposition, new ItemStack(Items.SWEET_BERRIES, j + (flag ? 1 : 0)));
+-            popResource(world, blockposition, new ItemStack(Items.SWEET_BERRIES, j + (flag ? 1 : 0)));
 +            // CraftBukkit start
 +            PlayerHarvestBlockEvent event = CraftEventFactory.callPlayerHarvestBlockEvent(world, blockposition, entityhuman, Collections.singletonList(new ItemStack(Items.SWEET_BERRIES, j + (flag ? 1 : 0))));
 +            if (event.isCancelled()) {
 +                return EnumInteractionResult.SUCCESS; // We need to return a success either way, because making it PASS or FAIL will result in a bug where cancelling while harvesting w/ block in hand places block
 +            }
 +            for (org.bukkit.inventory.ItemStack itemStack : event.getItemsHarvested()) {
-+                a(world, blockposition, CraftItemStack.asNMSCopy(itemStack));
++                popResource(world, blockposition, CraftItemStack.asNMSCopy(itemStack));
 +            }
 +            // CraftBukkit end
              world.playSound((EntityHuman) null, blockposition, SoundEffects.SWEET_BERRY_BUSH_PICK_BERRIES, SoundCategory.BLOCKS, 1.0F, 0.8F + world.random.nextFloat() * 0.4F);
-             world.setTypeAndData(blockposition, (IBlockData) iblockdata.set(BlockSweetBerryBush.AGE, 1), 2);
-             return EnumInteractionResult.a(world.isClientSide);
+             world.setBlock(blockposition, (IBlockData) iblockdata.setValue(BlockSweetBerryBush.AGE, 1), 2);
+             return EnumInteractionResult.sidedSuccess(world.isClientSide);

@@ -29,13 +29,13 @@
          super(EntityTypes.ENDER_DRAGON, world);
 @@ -236,7 +249,7 @@
  
-                     Vec3D vec3d1 = idragoncontroller.g();
+                     Vec3D vec3d1 = idragoncontroller.getFlyTargetLocation();
  
 -                    if (vec3d1 != null) {
-+                    if (vec3d1 != null && idragoncontroller.getControllerPhase() != DragonControllerPhase.HOVERING) { // CraftBukkit - Don't move when hovering
-                         d0 = vec3d1.x - this.locX();
-                         d1 = vec3d1.y - this.locY();
-                         d2 = vec3d1.z - this.locZ();
++                    if (vec3d1 != null && idragoncontroller.getPhase() != DragonControllerPhase.HOVERING) { // CraftBukkit - Don't move when hovering
+                         d0 = vec3d1.x - this.getX();
+                         d1 = vec3d1.y - this.getY();
+                         d2 = vec3d1.z - this.getZ();
 @@ -378,7 +391,14 @@
              if (this.nearestCrystal.isRemoved()) {
                  this.nearestCrystal = null;
@@ -65,10 +65,10 @@
 @@ -462,7 +485,11 @@
  
                      if (!iblockdata.isAir() && iblockdata.getMaterial() != Material.FIRE) {
-                         if (this.level.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING) && !iblockdata.a((Tag) TagsBlock.DRAGON_IMMUNE)) {
--                            flag1 = this.level.a(blockposition, false) || flag1;
+                         if (this.level.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING) && !iblockdata.is((Tag) TagsBlock.DRAGON_IMMUNE)) {
+-                            flag1 = this.level.removeBlock(blockposition, false) || flag1;
 +                            // CraftBukkit start - Add blocks to list rather than destroying them
-+                            // flag1 = this.level.a(blockposition, false) || flag1;
++                            // flag1 = this.level.removeBlock(blockposition, false) || flag1;
 +                            flag1 = true;
 +                            destroyedBlocks.add(CraftBlock.at(level, blockposition));
 +                            // CraftBukkit end
@@ -95,7 +95,7 @@
 +        } else if (event.getYield() == 0F) {
 +            // Yield zero ==> no drops
 +            for (org.bukkit.block.Block block : event.blockList()) {
-+                this.level.a(new BlockPosition(block.getX(), block.getY(), block.getZ()), false);
++                this.level.removeBlock(new BlockPosition(block.getX(), block.getY(), block.getZ()), false);
 +            }
 +        } else {
 +            for (org.bukkit.block.Block block : event.blockList()) {
@@ -108,18 +108,18 @@
 +                BlockPosition blockposition = craftBlock.getPosition();
 +
 +                Block nmsBlock = craftBlock.getNMS().getBlock();
-+                if (nmsBlock.a(explosionSource)) {
-+                    TileEntity tileentity = craftBlock.getNMS().isTileEntity() ? this.level.getTileEntity(blockposition) : null;
-+                    LootTableInfo.Builder loottableinfo_builder = (new LootTableInfo.Builder((WorldServer) this.level)).a(this.level.random).set(LootContextParameters.ORIGIN, Vec3D.a(blockposition)).set(LootContextParameters.TOOL, ItemStack.EMPTY).set(LootContextParameters.EXPLOSION_RADIUS, 1.0F / event.getYield()).setOptional(LootContextParameters.BLOCK_ENTITY, tileentity);
++                if (nmsBlock.dropFromExplosion(explosionSource)) {
++                    TileEntity tileentity = craftBlock.getNMS().hasBlockEntity() ? this.level.getBlockEntity(blockposition) : null;
++                    LootTableInfo.Builder loottableinfo_builder = (new LootTableInfo.Builder((WorldServer) this.level)).withRandom(this.level.random).withParameter(LootContextParameters.ORIGIN, Vec3D.atCenterOf(blockposition)).withParameter(LootContextParameters.TOOL, ItemStack.EMPTY).withParameter(LootContextParameters.EXPLOSION_RADIUS, 1.0F / event.getYield()).withOptionalParameter(LootContextParameters.BLOCK_ENTITY, tileentity);
 +
-+                    craftBlock.getNMS().a(loottableinfo_builder).forEach((itemstack) -> {
-+                        Block.a(level, blockposition, itemstack);
++                    craftBlock.getNMS().getDrops(loottableinfo_builder).forEach((itemstack) -> {
++                        Block.popResource(level, blockposition, itemstack);
 +                    });
-+                    craftBlock.getNMS().dropNaturally((WorldServer) level, blockposition, ItemStack.EMPTY);
++                    craftBlock.getNMS().spawnAfterBreak((WorldServer) level, blockposition, ItemStack.EMPTY);
 +                }
 +                nmsBlock.wasExploded(level, blockposition, explosionSource);
 +
-+                this.level.a(blockposition, false);
++                this.level.removeBlock(blockposition, false);
 +            }
 +        }
 +        // CraftBukkit end

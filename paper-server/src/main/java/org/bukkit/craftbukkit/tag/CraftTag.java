@@ -21,7 +21,7 @@ public abstract class CraftTag<N, B extends Keyed> implements Tag<B> {
 
     protected net.minecraft.tags.Tag<N> getHandle() {
         if (handle == null) {
-            handle = registry.b(tag);
+            handle = registry.getTagOrEmpty(tag);
         }
 
         return handle;

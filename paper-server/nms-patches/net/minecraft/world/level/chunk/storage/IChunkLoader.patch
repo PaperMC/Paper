@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/chunk/storage/IChunkLoader.java
 +++ b/net/minecraft/world/level/chunk/storage/IChunkLoader.java
-@@ -15,6 +15,14 @@
+@@ -18,6 +18,14 @@
  import net.minecraft.world.level.levelgen.structure.PersistentStructureLegacy;
  import net.minecraft.world.level.storage.WorldPersistentData;
  
@@ -14,18 +14,18 @@
 +
  public class IChunkLoader implements AutoCloseable {
  
-     private final IOWorker worker;
-@@ -27,10 +35,49 @@
-         this.worker = new IOWorker(file, flag, "chunk");
+     public static final int LAST_MONOLYTH_STRUCTURE_DATA_VERSION = 1493;
+@@ -31,9 +39,48 @@
+         this.worker = new IOWorker(path, flag, "chunk");
      }
  
--    public NBTTagCompound getChunkData(ResourceKey<World> resourcekey, Supplier<WorldPersistentData> supplier, NBTTagCompound nbttagcompound) {
+-    public NBTTagCompound upgradeChunkTag(ResourceKey<World> resourcekey, Supplier<WorldPersistentData> supplier, NBTTagCompound nbttagcompound, Optional<ResourceKey<Codec<? extends ChunkGenerator>>> optional) {
 +    // CraftBukkit start
 +    private boolean check(ChunkProviderServer cps, int x, int z) throws IOException {
 +        ChunkCoordIntPair pos = new ChunkCoordIntPair(x, z);
 +        if (cps != null) {
 +            com.google.common.base.Preconditions.checkState(org.bukkit.Bukkit.isPrimaryThread(), "primary thread");
-+            if (cps.isLoaded(x, z)) {
++            if (cps.hasChunk(x, z)) {
 +                return true;
 +            }
 +        }
@@ -37,8 +37,8 @@
 +                return true;
 +            }
 +
-+            ChunkStatus status = ChunkStatus.a(level.getString("Status"));
-+            if (status != null && status.b(ChunkStatus.FEATURES)) {
++            ChunkStatus status = ChunkStatus.byName(level.getString("Status"));
++            if (status != null && status.isOrAfter(ChunkStatus.FEATURES)) {
 +                return true;
 +            }
 +        }
@@ -46,23 +46,31 @@
 +        return false;
 +    }
 +
-+    public NBTTagCompound getChunkData(ResourceKey<DimensionManager> resourcekey, Supplier<WorldPersistentData> supplier, NBTTagCompound nbttagcompound, ChunkCoordIntPair pos, @Nullable GeneratorAccess generatoraccess) throws IOException {
++    public NBTTagCompound upgradeChunkTag(ResourceKey<DimensionManager> resourcekey, Supplier<WorldPersistentData> supplier, NBTTagCompound nbttagcompound, Optional<ResourceKey<Codec<? extends ChunkGenerator>>> optional, ChunkCoordIntPair pos, @Nullable GeneratorAccess generatoraccess) throws IOException {
 +        // CraftBukkit end
-         int i = a(nbttagcompound);
-         boolean flag = true;
+         int i = getVersion(nbttagcompound);
  
 +        // CraftBukkit start
 +        if (i < 1466) {
 +            NBTTagCompound level = nbttagcompound.getCompound("Level");
 +            if (level.getBoolean("TerrainPopulated") && !level.getBoolean("LightPopulated")) {
-+                ChunkProviderServer cps = (generatoraccess == null) ? null : ((WorldServer) generatoraccess).getChunkProvider();
++                ChunkProviderServer cps = (generatoraccess == null) ? null : ((WorldServer) generatoraccess).getChunkSource();
 +                if (check(cps, pos.x - 1, pos.z) && check(cps, pos.x - 1, pos.z - 1) && check(cps, pos.x, pos.z - 1)) {
-+                    level.setBoolean("LightPopulated", true);
++                    level.putBoolean("LightPopulated", true);
 +                }
 +            }
 +        }
 +        // CraftBukkit end
 +
          if (i < 1493) {
-             nbttagcompound = GameProfileSerializer.a(this.fixerUpper, DataFixTypes.CHUNK, nbttagcompound, i, 1493);
+             nbttagcompound = GameProfileSerializer.update(this.fixerUpper, DataFixTypes.CHUNK, nbttagcompound, i, 1493);
              if (nbttagcompound.getCompound("Level").getBoolean("hasLegacyStructureData")) {
+@@ -55,7 +102,7 @@
+         return nbttagcompound;
+     }
+ 
+-    public static void injectDatafixingContext(NBTTagCompound nbttagcompound, ResourceKey<World> resourcekey, Optional<ResourceKey<Codec<? extends ChunkGenerator>>> optional) {
++    public static void injectDatafixingContext(NBTTagCompound nbttagcompound, ResourceKey<DimensionManager> resourcekey, Optional<ResourceKey<Codec<? extends ChunkGenerator>>> optional) { // CraftBukkit
+         NBTTagCompound nbttagcompound1 = new NBTTagCompound();
+ 
+         nbttagcompound1.putString("dimension", resourcekey.location().toString());

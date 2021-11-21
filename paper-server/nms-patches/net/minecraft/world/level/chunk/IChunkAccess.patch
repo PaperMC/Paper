@@ -1,0 +1,63 @@
+--- a/net/minecraft/world/level/chunk/IChunkAccess.java
++++ b/net/minecraft/world/level/chunk/IChunkAccess.java
+@@ -93,7 +93,11 @@
+         }
+ 
+         replaceMissingSections(levelheightaccessor, iregistry, this.sections);
++        // CraftBukkit start
++        this.biomeRegistry = iregistry;
+     }
++    public final IRegistry<BiomeBase> biomeRegistry;
++    // CraftBukkit end
+ 
+     private static void replaceMissingSections(LevelHeightAccessor levelheightaccessor, IRegistry<BiomeBase> iregistry, ChunkSection[] achunksection) {
+         for (int i = 0; i < achunksection.length; ++i) {
+@@ -392,6 +396,27 @@
+         }
+     }
+ 
++    // CraftBukkit start
++    public void setBiome(int i, int j, int k, BiomeBase biome) {
++        try {
++            int l = QuartPos.fromBlock(this.getMinBuildHeight());
++            int i1 = l + QuartPos.fromBlock(this.getHeight()) - 1;
++            int j1 = MathHelper.clamp(j, l, i1);
++            int k1 = this.getSectionIndex(QuartPos.toBlock(j1));
++
++            this.sections[k1].setBiome(i & 3, j1 & 3, k & 3, biome);
++        } catch (Throwable throwable) {
++            CrashReport crashreport = CrashReport.forThrowable(throwable, "Setting biome");
++            CrashReportSystemDetails crashreportsystemdetails = crashreport.addCategory("Biome being set");
++
++            crashreportsystemdetails.setDetail("Location", () -> {
++                return CrashReportSystemDetails.formatLocation(this, i, j, k);
++            });
++            throw new ReportedException(crashreport);
++        }
++    }
++    // CraftBukkit end
++
+     public void fillBiomesFromNoise(BiomeResolver biomeresolver, Climate.Sampler climate_sampler) {
+         ChunkCoordIntPair chunkcoordintpair = this.getPos();
+         int i = QuartPos.fromBlock(chunkcoordintpair.getMinBlockX());
+@@ -423,8 +448,10 @@
+         return this;
+     }
+ 
+-    public static final class a extends Record {
++    // CraftBukkit start
++    public static final record a(SerializableTickContainer<Block> blocks, SerializableTickContainer<FluidType> fluids) {
+ 
++        /*
+         private final SerializableTickContainer<Block> blocks;
+         private final SerializableTickContainer<FluidType> fluids;
+ 
+@@ -444,6 +471,8 @@
+         public final boolean equals(Object object) {
+             return this.equals<invokedynamic>(this, object);
+         }
++         */
++        // CraftBukkit end
+ 
+         public SerializableTickContainer<Block> blocks() {
+             return this.blocks;

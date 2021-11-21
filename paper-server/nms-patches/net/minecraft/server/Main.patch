@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/Main.java
 +++ b/net/minecraft/server/Main.java
-@@ -58,6 +58,12 @@
+@@ -56,6 +56,12 @@
  import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
  
@@ -13,34 +13,39 @@
  public class Main {
  
      private static final Logger LOGGER = LogManager.getLogger();
-@@ -65,8 +71,9 @@
+@@ -63,8 +69,9 @@
      public Main() {}
  
      @DontObfuscate
 -    public static void main(String[] astring) {
 +    public static void main(final OptionSet optionset) { // CraftBukkit - replaces main(String[] astring)
-         SharedConstants.a();
+         SharedConstants.tryDetectVersion();
 +        /* CraftBukkit start - Replace everything
          OptionParser optionparser = new OptionParser();
          OptionSpec<Void> optionspec = optionparser.accepts("nogui");
          OptionSpec<Void> optionspec1 = optionparser.accepts("initSettings", "Initializes 'server.properties' and 'eula.txt', then quits");
-@@ -90,20 +97,22 @@
+@@ -89,9 +96,12 @@
                  optionparser.printHelpOn(System.err);
                  return;
              }
 +            */ // CraftBukkit end
- 
++
 +        try {
-             CrashReport.h();
-             DispenserRegistry.init();
-             DispenserRegistry.c();
-             SystemUtils.l();
-             IRegistryCustom.Dimension iregistrycustom_dimension = IRegistryCustom.a();
+ 
+             CrashReport.preload();
+-            if (optionset.has(optionspec13)) {
++            if (optionset.has("jfrProfile")) { // CraftBukkit
+                 JvmProfiler.INSTANCE.start(Environment.SERVER);
+             }
+ 
+@@ -100,13 +110,13 @@
+             SystemUtils.startTimerHackThread();
+             IRegistryCustom.Dimension iregistrycustom_dimension = IRegistryCustom.builtin();
              Path path = Paths.get("server.properties");
 -            DedicatedServerSettings dedicatedserversettings = new DedicatedServerSettings(path);
 +            DedicatedServerSettings dedicatedserversettings = new DedicatedServerSettings(optionset); // CraftBukkit - CLI argument support
  
-             dedicatedserversettings.save();
+             dedicatedserversettings.forceSave();
              Path path1 = Paths.get("eula.txt");
              EULA eula = new EULA(path1);
  
@@ -49,7 +54,7 @@
                  Main.LOGGER.info("Initialized '{}' and '{}'", path.toAbsolutePath(), path1.toAbsolutePath());
                  return;
              }
-@@ -113,14 +122,15 @@
+@@ -116,14 +126,15 @@
                  return;
              }
  
@@ -62,16 +67,16 @@
 -            String s = (String) Optional.ofNullable((String) optionset.valueOf(optionspec10)).orElse(dedicatedserversettings.getProperties().levelName);
 +            // CraftBukkit start
 +            String s = (String) Optional.ofNullable((String) optionset.valueOf("world")).orElse(dedicatedserversettings.getProperties().levelName);
-             Convertable convertable = Convertable.a(file.toPath());
--            Convertable.ConversionSession convertable_conversionsession = convertable.c(s);
-+            Convertable.ConversionSession convertable_conversionsession = convertable.c(s, WorldDimension.OVERWORLD);
+             Convertable convertable = Convertable.createDefault(file.toPath());
+-            Convertable.ConversionSession convertable_conversionsession = convertable.createAccess(s);
++            Convertable.ConversionSession convertable_conversionsession = convertable.createAccess(s, WorldDimension.OVERWORLD);
+             WorldInfo worldinfo = convertable_conversionsession.getSummary();
  
-             MinecraftServer.convertWorld(convertable_conversionsession);
-             WorldInfo worldinfo = convertable_conversionsession.d();
-@@ -131,13 +141,30 @@
+             if (worldinfo != null) {
+@@ -139,13 +150,30 @@
              }
  
-             DataPackConfiguration datapackconfiguration = convertable_conversionsession.e();
+             DataPackConfiguration datapackconfiguration = convertable_conversionsession.getDataPacks();
 -            boolean flag = optionset.has(optionspec6);
 +            boolean flag = optionset.has("safeMode");
  
@@ -79,9 +84,9 @@
                  Main.LOGGER.warn("Safe mode active, only vanilla datapack will be loaded");
              }
  
-             ResourcePackRepository resourcepackrepository = new ResourcePackRepository(EnumResourcePackType.SERVER_DATA, new ResourcePackSource[]{new ResourcePackSourceVanilla(), new ResourcePackSourceFolder(convertable_conversionsession.getWorldFolder(SavedFile.DATAPACK_DIR).toFile(), PackSource.WORLD)});
+             ResourcePackRepository resourcepackrepository = new ResourcePackRepository(EnumResourcePackType.SERVER_DATA, new ResourcePackSource[]{new ResourcePackSourceVanilla(), new ResourcePackSourceFolder(convertable_conversionsession.getLevelPath(SavedFile.DATAPACK_DIR).toFile(), PackSource.WORLD)});
 +            // CraftBukkit start
-+            File bukkitDataPackFolder = new File(convertable_conversionsession.getWorldFolder(SavedFile.DATAPACK_DIR).toFile(), "bukkit");
++            File bukkitDataPackFolder = new File(convertable_conversionsession.getLevelPath(SavedFile.DATAPACK_DIR).toFile(), "bukkit");
 +            if (!bukkitDataPackFolder.exists()) {
 +                bukkitDataPackFolder.mkdirs();
 +            }
@@ -90,44 +95,44 @@
 +                com.google.common.io.Files.write("{\n"
 +                        + "    \"pack\": {\n"
 +                        + "        \"description\": \"Data pack for resources provided by Bukkit plugins\",\n"
-+                        + "        \"pack_format\": " + SharedConstants.getGameVersion().getPackVersion() + "\n"
++                        + "        \"pack_format\": " + SharedConstants.getCurrentVersion().getPackVersion() + "\n"
 +                        + "    }\n"
 +                        + "}\n", mcMeta, com.google.common.base.Charsets.UTF_8);
 +            } catch (java.io.IOException ex) {
 +                throw new RuntimeException("Could not initialize Bukkit datapack", ex);
 +            }
 +            // CraftBukkit end
-             DataPackConfiguration datapackconfiguration1 = MinecraftServer.a(resourcepackrepository, datapackconfiguration == null ? DataPackConfiguration.DEFAULT : datapackconfiguration, flag);
-             CompletableFuture completablefuture = DataPackResources.a(resourcepackrepository.f(), iregistrycustom_dimension, CommandDispatcher.ServerType.DEDICATED, dedicatedserversettings.getProperties().functionPermissionLevel, SystemUtils.f(), Runnable::run);
+             DataPackConfiguration datapackconfiguration1 = MinecraftServer.configurePackRepository(resourcepackrepository, datapackconfiguration == null ? DataPackConfiguration.DEFAULT : datapackconfiguration, flag);
+             CompletableFuture completablefuture = DataPackResources.loadResources(resourcepackrepository.openAllSelected(), iregistrycustom_dimension, CommandDispatcher.ServerType.DEDICATED, dedicatedserversettings.getProperties().functionPermissionLevel, SystemUtils.backgroundExecutor(), Runnable::run);
  
-@@ -152,6 +179,7 @@
+@@ -160,6 +188,7 @@
              }
  
-             datapackresources.j();
+             datapackresources.updateGlobals();
 +            /*
-             RegistryReadOps<NBTBase> registryreadops = RegistryReadOps.a((DynamicOps) DynamicOpsNBT.INSTANCE, datapackresources.i(), (IRegistryCustom) iregistrycustom_dimension);
+             RegistryReadOps<NBTBase> registryreadops = RegistryReadOps.createAndLoad(DynamicOpsNBT.INSTANCE, datapackresources.getResourceManager(), iregistrycustom_dimension);
  
-             dedicatedserversettings.getProperties().a((IRegistryCustom) iregistrycustom_dimension);
-@@ -181,21 +209,32 @@
+             dedicatedserversettings.getProperties().getWorldGenSettings(iregistrycustom_dimension);
+@@ -189,21 +218,32 @@
              }
  
-             convertable_conversionsession.a((IRegistryCustom) iregistrycustom_dimension, (SaveData) object);
+             convertable_conversionsession.saveDataTag(iregistrycustom_dimension, (SaveData) object);
 +            */
-             final DedicatedServer dedicatedserver = (DedicatedServer) MinecraftServer.a((thread) -> {
--                DedicatedServer dedicatedserver1 = new DedicatedServer(thread, iregistrycustom_dimension, convertable_conversionsession, resourcepackrepository, datapackresources, object, dedicatedserversettings, DataConverterRegistry.a(), minecraftsessionservice, gameprofilerepository, usercache, WorldLoadListenerLogger::new);
-+                DedicatedServer dedicatedserver1 = new DedicatedServer(optionset, datapackconfiguration1, thread, iregistrycustom_dimension, convertable_conversionsession, resourcepackrepository, datapackresources, null, dedicatedserversettings, DataConverterRegistry.a(), minecraftsessionservice, gameprofilerepository, usercache, WorldLoadListenerLogger::new);
+             final DedicatedServer dedicatedserver = (DedicatedServer) MinecraftServer.spin((thread) -> {
+-                DedicatedServer dedicatedserver1 = new DedicatedServer(thread, iregistrycustom_dimension, convertable_conversionsession, resourcepackrepository, datapackresources, object, dedicatedserversettings, DataConverterRegistry.getDataFixer(), minecraftsessionservice, gameprofilerepository, usercache, WorldLoadListenerLogger::new);
++                DedicatedServer dedicatedserver1 = new DedicatedServer(optionset, datapackconfiguration1, thread, iregistrycustom_dimension, convertable_conversionsession, resourcepackrepository, datapackresources, null, dedicatedserversettings, DataConverterRegistry.getDataFixer(), minecraftsessionservice, gameprofilerepository, usercache, WorldLoadListenerLogger::new);
  
 +                /*
-                 dedicatedserver1.d((String) optionset.valueOf(optionspec8));
+                 dedicatedserver1.setSingleplayerName((String) optionset.valueOf(optionspec8));
                  dedicatedserver1.setPort((Integer) optionset.valueOf(optionspec11));
-                 dedicatedserver1.c(optionset.has(optionspec2));
-                 dedicatedserver1.b((String) optionset.valueOf(optionspec12));
+                 dedicatedserver1.setDemo(optionset.has(optionspec2));
+                 dedicatedserver1.setId((String) optionset.valueOf(optionspec12));
 -                boolean flag1 = !optionset.has(optionspec) && !optionset.valuesOf(nonoptionargumentspec).contains("nogui");
 +                */
 +                boolean flag1 = !optionset.has("nogui") && !optionset.nonOptionArguments().contains("nogui");
  
                  if (flag1 && !GraphicsEnvironment.isHeadless()) {
-                     dedicatedserver1.bh();
+                     dedicatedserver1.showGui();
                  }
  
 +                if (optionset.has("port")) {
@@ -142,8 +147,8 @@
 +            /* CraftBukkit start
              Thread thread = new Thread("Server Shutdown Thread") {
                  public void run() {
-                     dedicatedserver.safeShutdown(true);
-@@ -204,14 +243,15 @@
+                     dedicatedserver.halt(true);
+@@ -212,6 +252,7 @@
  
              thread.setUncaughtExceptionHandler(new DefaultUncaughtExceptionHandler(Main.LOGGER));
              Runtime.getRuntime().addShutdownHook(thread);
@@ -151,13 +156,12 @@
          } catch (Exception exception1) {
              Main.LOGGER.fatal("Failed to start the minecraft server", exception1);
          }
- 
+@@ -219,7 +260,7 @@
      }
  
--    public static void convertWorld(Convertable.ConversionSession convertable_conversionsession, DataFixer datafixer, boolean flag, BooleanSupplier booleansupplier, ImmutableSet<ResourceKey<World>> immutableset) {
+     public static void forceUpgrade(Convertable.ConversionSession convertable_conversionsession, DataFixer datafixer, boolean flag, BooleanSupplier booleansupplier, GeneratorSettings generatorsettings) {
 -        Main.LOGGER.info("Forcing world upgrade!");
-+    public static void convertWorld(Convertable.ConversionSession convertable_conversionsession, DataFixer datafixer, boolean flag, BooleanSupplier booleansupplier, ImmutableSet<ResourceKey<DimensionManager>> immutableset) { // CraftBukkit
-+        Main.LOGGER.info("Forcing world upgrade! {}", convertable_conversionsession.getLevelName()); // CraftBukkit
-         WorldUpgrader worldupgrader = new WorldUpgrader(convertable_conversionsession, datafixer, immutableset, flag);
++        Main.LOGGER.info("Forcing world upgrade! {}", convertable_conversionsession.getLevelId()); // CraftBukkit
+         WorldUpgrader worldupgrader = new WorldUpgrader(convertable_conversionsession, datafixer, generatorsettings, flag);
          IChatBaseComponent ichatbasecomponent = null;
  

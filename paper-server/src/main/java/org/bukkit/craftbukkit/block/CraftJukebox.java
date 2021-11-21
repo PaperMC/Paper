@@ -28,9 +28,9 @@ public class CraftJukebox extends CraftBlockEntityState<TileEntityJukeBox> imple
             CraftWorld world = (CraftWorld) this.getWorld();
             Material record = this.getPlaying();
             if (record == Material.AIR) {
-                getWorldHandle().setTypeAndData(this.getPosition(), Blocks.JUKEBOX.getBlockData().set(BlockJukeBox.HAS_RECORD, false), 3);
+                getWorldHandle().setBlock(this.getPosition(), Blocks.JUKEBOX.defaultBlockState().setValue(BlockJukeBox.HAS_RECORD, false), 3);
             } else {
-                getWorldHandle().setTypeAndData(this.getPosition(), Blocks.JUKEBOX.getBlockData().set(BlockJukeBox.HAS_RECORD, true), 3);
+                getWorldHandle().setBlock(this.getPosition(), Blocks.JUKEBOX.defaultBlockState().setValue(BlockJukeBox.HAS_RECORD, true), 3);
             }
             world.playEffect(this.getLocation(), Effect.RECORD_PLAY, record);
         }
@@ -63,15 +63,15 @@ public class CraftJukebox extends CraftBlockEntityState<TileEntityJukeBox> imple
         ItemStack nms = CraftItemStack.asNMSCopy(record);
         this.getSnapshot().setRecord(nms);
         if (nms.isEmpty()) {
-            this.data = this.data.set(BlockJukeBox.HAS_RECORD, false);
+            this.data = this.data.setValue(BlockJukeBox.HAS_RECORD, false);
         } else {
-            this.data = this.data.set(BlockJukeBox.HAS_RECORD, true);
+            this.data = this.data.setValue(BlockJukeBox.HAS_RECORD, true);
         }
     }
 
     @Override
     public boolean isPlaying() {
-        return getHandle().get(BlockJukeBox.HAS_RECORD);
+        return getHandle().getValue(BlockJukeBox.HAS_RECORD);
     }
 
     @Override
@@ -89,7 +89,7 @@ public class CraftJukebox extends CraftBlockEntityState<TileEntityJukeBox> imple
         TileEntityJukeBox jukebox = (TileEntityJukeBox) tileEntity;
         boolean result = !jukebox.getRecord().isEmpty();
         CraftWorld world = (CraftWorld) this.getWorld();
-        ((BlockJukeBox) Blocks.JUKEBOX).dropRecord(world.getHandle(), getPosition());
+        ((BlockJukeBox) Blocks.JUKEBOX).dropRecording(world.getHandle(), getPosition());
         return result;
     }
 }

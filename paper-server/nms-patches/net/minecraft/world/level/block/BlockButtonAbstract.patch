@@ -13,11 +13,11 @@
  
      public static final BlockStateBoolean POWERED = BlockProperties.POWERED;
 @@ -97,6 +102,19 @@
-         if ((Boolean) iblockdata.get(BlockButtonAbstract.POWERED)) {
+         if ((Boolean) iblockdata.getValue(BlockButtonAbstract.POWERED)) {
              return EnumInteractionResult.CONSUME;
          } else {
 +            // CraftBukkit start
-+            boolean powered = ((Boolean) iblockdata.get(POWERED));
++            boolean powered = ((Boolean) iblockdata.getValue(POWERED));
 +            org.bukkit.block.Block block = world.getWorld().getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ());
 +            int old = (powered) ? 15 : 0;
 +            int current = (!powered) ? 15 : 0;
@@ -29,12 +29,12 @@
 +                return EnumInteractionResult.SUCCESS;
 +            }
 +            // CraftBukkit end
-             this.d(iblockdata, world, blockposition);
-             this.a(entityhuman, world, blockposition, true);
-             world.a((Entity) entityhuman, GameEvent.BLOCK_PRESS, blockposition);
+             this.press(iblockdata, world, blockposition);
+             this.playSound(entityhuman, world, blockposition, true);
+             world.gameEvent(entityhuman, GameEvent.BLOCK_PRESS, blockposition);
 @@ -148,6 +166,16 @@
              if (this.sensitive) {
-                 this.e(iblockdata, worldserver, blockposition);
+                 this.checkPressed(iblockdata, worldserver, blockposition);
              } else {
 +                // CraftBukkit start
 +                org.bukkit.block.Block block = worldserver.getWorld().getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ());
@@ -46,12 +46,12 @@
 +                    return;
 +                }
 +                // CraftBukkit end
-                 worldserver.setTypeAndData(blockposition, (IBlockData) iblockdata.set(BlockButtonAbstract.POWERED, false), 3);
-                 this.f(iblockdata, (World) worldserver, blockposition);
-                 this.a((EntityHuman) null, worldserver, blockposition, false);
+                 worldserver.setBlock(blockposition, (IBlockData) iblockdata.setValue(BlockButtonAbstract.POWERED, false), 3);
+                 this.updateNeighbours(iblockdata, worldserver, blockposition);
+                 this.playSound((EntityHuman) null, worldserver, blockposition, false);
 @@ -169,11 +197,48 @@
          boolean flag = !list.isEmpty();
-         boolean flag1 = (Boolean) iblockdata.get(BlockButtonAbstract.POWERED);
+         boolean flag1 = (Boolean) iblockdata.getValue(BlockButtonAbstract.POWERED);
  
 +        // CraftBukkit start - Call interact event when arrows turn on wooden buttons
 +        if (flag1 != flag && flag) {
@@ -91,11 +91,11 @@
 +                return;
 +            }
 +            // CraftBukkit end
-             world.setTypeAndData(blockposition, (IBlockData) iblockdata.set(BlockButtonAbstract.POWERED, flag), 3);
-             this.f(iblockdata, world, blockposition);
-             this.a((EntityHuman) null, world, blockposition, flag);
--            world.a((Entity) list.stream().findFirst().orElse((Object) null), flag ? GameEvent.BLOCK_PRESS : GameEvent.BLOCK_UNPRESS, blockposition);
-+            world.a((Entity) list.stream().findFirst().orElse(null), flag ? GameEvent.BLOCK_PRESS : GameEvent.BLOCK_UNPRESS, blockposition); // CraftBukkit - decompile error
+             world.setBlock(blockposition, (IBlockData) iblockdata.setValue(BlockButtonAbstract.POWERED, flag), 3);
+             this.updateNeighbours(iblockdata, world, blockposition);
+             this.playSound((EntityHuman) null, world, blockposition, flag);
+-            world.gameEvent((Entity) list.stream().findFirst().orElse((Object) null), flag ? GameEvent.BLOCK_PRESS : GameEvent.BLOCK_UNPRESS, blockposition);
++            world.gameEvent((Entity) list.stream().findFirst().orElse(null), flag ? GameEvent.BLOCK_PRESS : GameEvent.BLOCK_UNPRESS, blockposition); // CraftBukkit - decompile error
          }
  
          if (flag) {

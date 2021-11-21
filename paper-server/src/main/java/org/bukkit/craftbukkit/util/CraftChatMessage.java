@@ -46,7 +46,7 @@ public final class CraftChatMessage {
         // Separate pattern with no group 3, new lines are part of previous string
         private static final Pattern INCREMENTAL_PATTERN_KEEP_NEWLINES = Pattern.compile("(" + String.valueOf(org.bukkit.ChatColor.COLOR_CHAR) + "[0-9a-fk-orx])|((?:(?:https?):\\/\\/)?(?:[-\\w_\\.]{2,}\\.[a-z]{2,4}.*?(?=[\\.\\?!,;:]?(?:[" + String.valueOf(org.bukkit.ChatColor.COLOR_CHAR) + " ]|$))))", Pattern.CASE_INSENSITIVE);
         // ChatColor.b does not explicitly reset, its more of empty
-        private static final ChatModifier RESET = ChatModifier.EMPTY.setBold(false).setItalic(false).setUnderline(false).setStrikethrough(false).setRandom(false);
+        private static final ChatModifier RESET = ChatModifier.EMPTY.withBold(false).withItalic(false).withUnderlined(false).withStrikethrough(false).withObfuscated(false);
 
         private final List<IChatBaseComponent> list = new ArrayList<IChatBaseComponent>();
         private IChatMutableComponent currentChatComponent = new ChatComponentText("");
@@ -88,31 +88,31 @@ public final class CraftChatMessage {
                         hex.append(c);
 
                         if (hex.length() == 7) {
-                            modifier = RESET.setColor(ChatHexColor.a(hex.toString()));
+                            modifier = RESET.withColor(ChatHexColor.parseColor(hex.toString()));
                             hex = null;
                         }
                     } else if (format.isFormat() && format != EnumChatFormat.RESET) {
                         switch (format) {
                         case BOLD:
-                            modifier = modifier.setBold(Boolean.TRUE);
+                            modifier = modifier.withBold(Boolean.TRUE);
                             break;
                         case ITALIC:
-                            modifier = modifier.setItalic(Boolean.TRUE);
+                            modifier = modifier.withItalic(Boolean.TRUE);
                             break;
                         case STRIKETHROUGH:
-                            modifier = modifier.setStrikethrough(Boolean.TRUE);
+                            modifier = modifier.withStrikethrough(Boolean.TRUE);
                             break;
                         case UNDERLINE:
-                            modifier = modifier.setUnderline(Boolean.TRUE);
+                            modifier = modifier.withUnderlined(Boolean.TRUE);
                             break;
                         case OBFUSCATED:
-                            modifier = modifier.setRandom(Boolean.TRUE);
+                            modifier = modifier.withObfuscated(Boolean.TRUE);
                             break;
                         default:
                             throw new AssertionError("Unexpected message format");
                         }
                     } else { // Color resets formatting
-                        modifier = RESET.setColor(format);
+                        modifier = RESET.withColor(format);
                     }
                     needsAdd = true;
                     break;
@@ -123,9 +123,9 @@ public final class CraftChatMessage {
                         if (!(match.startsWith("http://") || match.startsWith("https://"))) {
                             match = "http://" + match;
                         }
-                        modifier = modifier.setChatClickable(new ChatClickable(EnumClickAction.OPEN_URL, match));
+                        modifier = modifier.withClickEvent(new ChatClickable(EnumClickAction.OPEN_URL, match));
                         appendNewComponent(matcher.end(groupId));
-                        modifier = modifier.setChatClickable((ChatClickable) null);
+                        modifier = modifier.withClickEvent((ChatClickable) null);
                     }
                     break;
                 case 3:
@@ -146,13 +146,13 @@ public final class CraftChatMessage {
         }
 
         private void appendNewComponent(int index) {
-            IChatBaseComponent addition = new ChatComponentText(message.substring(currentIndex, index)).setChatModifier(modifier);
+            IChatBaseComponent addition = new ChatComponentText(message.substring(currentIndex, index)).setStyle(modifier);
             currentIndex = index;
             if (currentChatComponent == null) {
                 currentChatComponent = new ChatComponentText("");
                 list.add(currentChatComponent);
             }
-            currentChatComponent.addSibling(addition);
+            currentChatComponent.append(addition);
         }
 
         private IChatBaseComponent[] getOutput() {
@@ -181,7 +181,7 @@ public final class CraftChatMessage {
     }
 
     public static String toJSON(IChatBaseComponent component) {
-        return IChatBaseComponent.ChatSerializer.a(component);
+        return IChatBaseComponent.ChatSerializer.toJson(component);
     }
 
     public static String toJSONOrNull(IChatBaseComponent component) {
@@ -192,7 +192,7 @@ public final class CraftChatMessage {
     public static IChatBaseComponent fromJSON(String jsonMessage) throws JsonParseException {
         // Note: This also parses plain Strings to text components.
         // Note: An empty message (empty, or only consisting of whitespace) results in null rather than a parse exception.
-        return IChatBaseComponent.ChatSerializer.a(jsonMessage);
+        return IChatBaseComponent.ChatSerializer.fromJson(jsonMessage);
     }
 
     public static IChatBaseComponent fromJSONOrNull(String jsonMessage) {
@@ -294,15 +294,15 @@ public final class CraftChatMessage {
 
         boolean hadFormat = false;
         for (IChatBaseComponent c : component) {
-            ChatModifier modi = c.getChatModifier();
+            ChatModifier modi = c.getStyle();
             ChatHexColor color = modi.getColor();
-            if (!c.getText().isEmpty() || color != null) {
+            if (!c.getContents().isEmpty() || color != null) {
                 if (color != null) {
                     if (color.format != null) {
                         out.append(color.format);
                     } else {
                         out.append(ChatColor.COLOR_CHAR).append("x");
-                        for (char magic : color.b().substring(1).toCharArray()) {
+                        for (char magic : color.serialize().substring(1).toCharArray()) {
                             out.append(ChatColor.COLOR_CHAR).append(magic);
                         }
                     }
@@ -328,11 +328,11 @@ public final class CraftChatMessage {
                 out.append(EnumChatFormat.STRIKETHROUGH);
                 hadFormat = true;
             }
-            if (modi.isRandom()) {
+            if (modi.isObfuscated()) {
                 out.append(EnumChatFormat.OBFUSCATED);
                 hadFormat = true;
             }
-            c.b((x) -> {
+            c.visitSelf((x) -> {
                 out.append(x);
                 return Optional.empty();
             });
@@ -348,11 +348,11 @@ public final class CraftChatMessage {
     private static IChatBaseComponent fixComponent(IChatBaseComponent component, Matcher matcher) {
         if (component instanceof ChatComponentText) {
             ChatComponentText text = ((ChatComponentText) component);
-            String msg = text.getText();
+            String msg = text.getContents();
             if (matcher.reset(msg).find()) {
                 matcher.reset();
 
-                ChatModifier modifier = text.getChatModifier();
+                ChatModifier modifier = text.getStyle();
                 List<IChatBaseComponent> extras = new ArrayList<IChatBaseComponent>();
                 List<IChatBaseComponent> extrasOld = new ArrayList<IChatBaseComponent>(text.getSiblings());
                 component = text = new ChatComponentText("");
@@ -366,24 +366,24 @@ public final class CraftChatMessage {
                     }
 
                     ChatComponentText prev = new ChatComponentText(msg.substring(pos, matcher.start()));
-                    prev.setChatModifier(modifier);
+                    prev.setStyle(modifier);
                     extras.add(prev);
 
                     ChatComponentText link = new ChatComponentText(matcher.group());
-                    ChatModifier linkModi = modifier.setChatClickable(new ChatClickable(EnumClickAction.OPEN_URL, match));
-                    link.setChatModifier(linkModi);
+                    ChatModifier linkModi = modifier.withClickEvent(new ChatClickable(EnumClickAction.OPEN_URL, match));
+                    link.setStyle(linkModi);
                     extras.add(link);
 
                     pos = matcher.end();
                 }
 
                 ChatComponentText prev = new ChatComponentText(msg.substring(pos));
-                prev.setChatModifier(modifier);
+                prev.setStyle(modifier);
                 extras.add(prev);
                 extras.addAll(extrasOld);
 
                 for (IChatBaseComponent c : extras) {
-                    text.addSibling(c);
+                    text.append(c);
                 }
             }
         }
@@ -391,7 +391,7 @@ public final class CraftChatMessage {
         List<IChatBaseComponent> extras = component.getSiblings();
         for (int i = 0; i < extras.size(); i++) {
             IChatBaseComponent comp = extras.get(i);
-            if (comp.getChatModifier() != null && comp.getChatModifier().getClickEvent() == null) {
+            if (comp.getStyle() != null && comp.getStyle().getClickEvent() == null) {
                 extras.set(i, fixComponent(comp, matcher));
             }
         }
@@ -402,7 +402,7 @@ public final class CraftChatMessage {
                 Object comp = subs[i];
                 if (comp instanceof IChatBaseComponent) {
                     IChatBaseComponent c = (IChatBaseComponent) comp;
-                    if (c.getChatModifier() != null && c.getChatModifier().getClickEvent() == null) {
+                    if (c.getStyle() != null && c.getStyle().getClickEvent() == null) {
                         subs[i] = fixComponent(c, matcher);
                     }
                 } else if (comp instanceof String && matcher.reset((String) comp).find()) {

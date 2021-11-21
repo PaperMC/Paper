@@ -17,11 +17,11 @@ public class CraftItemTag extends CraftTag<Item, Material> {
 
     @Override
     public boolean isTagged(Material item) {
-        return getHandle().isTagged(CraftMagicNumbers.getItem(item));
+        return getHandle().contains(CraftMagicNumbers.getItem(item));
     }
 
     @Override
     public Set<Material> getValues() {
-        return Collections.unmodifiableSet(getHandle().getTagged().stream().map((item) -> CraftMagicNumbers.getMaterial(item)).collect(Collectors.toSet()));
+        return Collections.unmodifiableSet(getHandle().getValues().stream().map((item) -> CraftMagicNumbers.getMaterial(item)).collect(Collectors.toSet()));
     }
 }

@@ -14,12 +14,12 @@ public class CraftSheep extends CraftAnimals implements Sheep {
 
     @Override
     public DyeColor getColor() {
-        return DyeColor.getByWoolData((byte) getHandle().getColor().getColorIndex());
+        return DyeColor.getByWoolData((byte) getHandle().getColor().getId());
     }
 
     @Override
     public void setColor(DyeColor color) {
-        getHandle().setColor(EnumColor.fromColorIndex(color.getWoolData()));
+        getHandle().setColor(EnumColor.byId(color.getWoolData()));
     }
 
     @Override

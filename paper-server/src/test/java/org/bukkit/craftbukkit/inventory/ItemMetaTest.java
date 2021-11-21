@@ -162,7 +162,7 @@ public class ItemMetaTest extends AbstractTestingBase {
 
         for (Block block : queue) {
             if (block != null) {
-                ItemStack stack = CraftItemStack.asNewCraftStack(Item.getItemOf(block));
+                ItemStack stack = CraftItemStack.asNewCraftStack(Item.byBlock(block));
 
                 // Command blocks aren't unit testable atm
                 if (stack.getType() == Material.COMMAND_BLOCK || stack.getType() == Material.CHAIN_COMMAND_BLOCK || stack.getType() == Material.REPEATING_COMMAND_BLOCK) {
@@ -323,7 +323,7 @@ public class ItemMetaTest extends AbstractTestingBase {
                 @Override ItemStack operate(ItemStack cleanStack) {
                     final CraftMetaArmorStand meta = (CraftMetaArmorStand) cleanStack.getItemMeta();
                     meta.entityTag = new NBTTagCompound();
-                    meta.entityTag.setBoolean("Small", true);
+                    meta.entityTag.putBoolean("Small", true);
                     cleanStack.setItemMeta(meta);
                     return cleanStack;
                 }
@@ -340,7 +340,7 @@ public class ItemMetaTest extends AbstractTestingBase {
                 @Override ItemStack operate(ItemStack cleanStack) {
                     final CraftMetaEntityTag meta = ((CraftMetaEntityTag) cleanStack.getItemMeta());
                     meta.entityTag = new NBTTagCompound();
-                    meta.entityTag.setBoolean("Invisible", true);
+                    meta.entityTag.putBoolean("Invisible", true);
                     cleanStack.setItemMeta(meta);
                     return cleanStack;
                 }

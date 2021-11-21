@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/item/ItemMinecart.java
 +++ b/net/minecraft/world/item/ItemMinecart.java
-@@ -20,6 +20,11 @@
+@@ -18,6 +18,11 @@
  import net.minecraft.world.level.block.state.properties.BlockPropertyTrackPosition;
  import net.minecraft.world.level.gameevent.GameEvent;
  
@@ -12,15 +12,15 @@
  public class ItemMinecart extends Item {
  
      private static final IDispenseBehavior DISPENSE_ITEM_BEHAVIOR = new DispenseBehaviorItem() {
-@@ -58,14 +63,43 @@
+@@ -56,14 +61,43 @@
                  }
              }
  
--            EntityMinecartAbstract entityminecartabstract = EntityMinecartAbstract.a(worldserver, d0, d1 + d3, d2, ((ItemMinecart) itemstack.getItem()).type);
+-            EntityMinecartAbstract entityminecartabstract = EntityMinecartAbstract.createMinecart(worldserver, d0, d1 + d3, d2, ((ItemMinecart) itemstack.getItem()).type);
 +            // CraftBukkit start
-+            // EntityMinecartAbstract entityminecartabstract = EntityMinecartAbstract.a(world, d0, d1 + d3, d2, ((ItemMinecart) itemstack.getItem()).b);
-+            ItemStack itemstack1 = itemstack.cloneAndSubtract(1);
-+            org.bukkit.block.Block block2 = worldserver.getWorld().getBlockAt(isourceblock.getBlockPosition().getX(), isourceblock.getBlockPosition().getY(), isourceblock.getBlockPosition().getZ());
++            // EntityMinecartAbstract entityminecartabstract = EntityMinecartAbstract.createMinecart(worldserver, d0, d1 + d3, d2, ((ItemMinecart) itemstack.getItem()).type);
++            ItemStack itemstack1 = itemstack.split(1);
++            org.bukkit.block.Block block2 = worldserver.getWorld().getBlockAt(isourceblock.getPos().getX(), isourceblock.getPos().getY(), isourceblock.getPos().getZ());
 +            CraftItemStack craftItem = CraftItemStack.asCraftMirror(itemstack1);
 +
 +            BlockDispenseEvent event = new BlockDispenseEvent(block2, craftItem.clone(), new org.bukkit.util.Vector(d0, d1 + d3, d2));
@@ -29,12 +29,12 @@
 +            }
 +
 +            if (event.isCancelled()) {
-+                itemstack.add(1);
++                itemstack.grow(1);
 +                return itemstack;
 +            }
 +
 +            if (!event.getItem().equals(craftItem)) {
-+                itemstack.add(1);
++                itemstack.grow(1);
 +                // Chain to handler for new item
 +                ItemStack eventStack = CraftItemStack.asNMSCopy(event.getItem());
 +                IDispenseBehavior idispensebehavior = (IDispenseBehavior) BlockDispenser.DISPENSER_REGISTRY.get(eventStack.getItem());
@@ -45,31 +45,31 @@
 +            }
 +
 +            itemstack1 = CraftItemStack.asNMSCopy(event.getItem());
-+            EntityMinecartAbstract entityminecartabstract = EntityMinecartAbstract.a(worldserver, event.getVelocity().getX(), event.getVelocity().getY(), event.getVelocity().getZ(), ((ItemMinecart) itemstack1.getItem()).type);
++            EntityMinecartAbstract entityminecartabstract = EntityMinecartAbstract.createMinecart(worldserver, event.getVelocity().getX(), event.getVelocity().getY(), event.getVelocity().getZ(), ((ItemMinecart) itemstack1.getItem()).type);
  
-             if (itemstack.hasName()) {
-                 entityminecartabstract.setCustomName(itemstack.getName());
+             if (itemstack.hasCustomHoverName()) {
+                 entityminecartabstract.setCustomName(itemstack.getHoverName());
              }
  
--            worldserver.addEntity(entityminecartabstract);
--            itemstack.subtract(1);
-+            if (!worldserver.addEntity(entityminecartabstract)) itemstack.add(1);
-+            // itemstack.subtract(1); // CraftBukkit - handled during event processing
+-            worldserver.addFreshEntity(entityminecartabstract);
+-            itemstack.shrink(1);
++            if (!worldserver.addFreshEntity(entityminecartabstract)) itemstack.grow(1);
++            // itemstack.shrink(1); // CraftBukkit - handled during event processing
 +            // CraftBukkit end
              return itemstack;
          }
  
-@@ -107,7 +141,12 @@
-                     entityminecartabstract.setCustomName(itemstack.getName());
+@@ -105,7 +139,12 @@
+                     entityminecartabstract.setCustomName(itemstack.getHoverName());
                  }
  
--                world.addEntity(entityminecartabstract);
+-                world.addFreshEntity(entityminecartabstract);
 +                // CraftBukkit start
 +                if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityPlaceEvent(itemactioncontext, entityminecartabstract).isCancelled()) {
 +                    return EnumInteractionResult.FAIL;
 +                }
 +                // CraftBukkit end
-+                if (!world.addEntity(entityminecartabstract)) return EnumInteractionResult.PASS; // CraftBukkit
-                 world.a((Entity) itemactioncontext.getEntity(), GameEvent.ENTITY_PLACE, blockposition);
++                if (!world.addFreshEntity(entityminecartabstract)) return EnumInteractionResult.PASS; // CraftBukkit
+                 world.gameEvent(itemactioncontext.getPlayer(), GameEvent.ENTITY_PLACE, blockposition);
              }
  

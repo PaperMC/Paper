@@ -26,7 +26,7 @@ public class CraftInventoryCrafting extends CraftInventory implements CraftingIn
 
     @Override
     public int getSize() {
-        return getResultInventory().getSize() + getMatrixInventory().getSize();
+        return getResultInventory().getContainerSize() + getMatrixInventory().getContainerSize();
     }
 
     @Override
@@ -63,21 +63,21 @@ public class CraftInventoryCrafting extends CraftInventory implements CraftingIn
 
     @Override
     public CraftItemStack getItem(int index) {
-        if (index < getResultInventory().getSize()) {
+        if (index < getResultInventory().getContainerSize()) {
             net.minecraft.world.item.ItemStack item = getResultInventory().getItem(index);
             return item.isEmpty() ? null : CraftItemStack.asCraftMirror(item);
         } else {
-            net.minecraft.world.item.ItemStack item = getMatrixInventory().getItem(index - getResultInventory().getSize());
+            net.minecraft.world.item.ItemStack item = getMatrixInventory().getItem(index - getResultInventory().getContainerSize());
             return item.isEmpty() ? null : CraftItemStack.asCraftMirror(item);
         }
     }
 
     @Override
     public void setItem(int index, ItemStack item) {
-        if (index < getResultInventory().getSize()) {
+        if (index < getResultInventory().getContainerSize()) {
             getResultInventory().setItem(index, CraftItemStack.asNMSCopy(item));
         } else {
-            getMatrixInventory().setItem((index - getResultInventory().getSize()), CraftItemStack.asNMSCopy(item));
+            getMatrixInventory().setItem((index - getResultInventory().getContainerSize()), CraftItemStack.asNMSCopy(item));
         }
     }
 
@@ -97,11 +97,11 @@ public class CraftInventoryCrafting extends CraftInventory implements CraftingIn
 
     @Override
     public void setMatrix(ItemStack[] contents) {
-        if (getMatrixInventory().getSize() > contents.length) {
-            throw new IllegalArgumentException("Invalid inventory size; expected " + getMatrixInventory().getSize() + " or less");
+        if (getMatrixInventory().getContainerSize() > contents.length) {
+            throw new IllegalArgumentException("Invalid inventory size; expected " + getMatrixInventory().getContainerSize() + " or less");
         }
 
-        for (int i = 0; i < getMatrixInventory().getSize(); i++) {
+        for (int i = 0; i < getMatrixInventory().getContainerSize(); i++) {
             if (i < contents.length) {
                 getMatrixInventory().setItem(i, CraftItemStack.asNMSCopy(contents[i]));
             } else {

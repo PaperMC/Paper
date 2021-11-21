@@ -21,7 +21,7 @@ public final class CraftRayTraceResult {
     public static RayTraceResult fromNMS(World world, MovingObjectPosition nmsHitResult) {
         if (nmsHitResult == null || nmsHitResult.getType() == EnumMovingObjectType.MISS) return null;
 
-        Vec3D nmsHitPos = nmsHitResult.getPos();
+        Vec3D nmsHitPos = nmsHitResult.getLocation();
         Vector hitPosition = new Vector(nmsHitPos.x, nmsHitPos.y, nmsHitPos.z);
         BlockFace hitBlockFace = null;
 
@@ -35,7 +35,7 @@ public final class CraftRayTraceResult {
         if (nmsHitResult.getType() == EnumMovingObjectType.BLOCK) {
             MovingObjectPositionBlock blockHitResult = (MovingObjectPositionBlock) nmsHitResult;
             hitBlockFace = CraftBlock.notchToBlockFace(blockHitResult.getDirection());
-            nmsBlockPos = blockHitResult.getBlockPosition();
+            nmsBlockPos = blockHitResult.getBlockPos();
         }
         if (nmsBlockPos != null && world != null) {
             hitBlock = world.getBlockAt(nmsBlockPos.getX(), nmsBlockPos.getY(), nmsBlockPos.getZ());

@@ -10,26 +10,26 @@
 +
  public class BlockCampfire extends BlockTileEntity implements IBlockWaterlogged {
  
-     protected static final VoxelShape SHAPE = Block.a(0.0D, 0.0D, 0.0D, 16.0D, 7.0D, 16.0D);
+     protected static final VoxelShape SHAPE = Block.box(0.0D, 0.0D, 0.0D, 16.0D, 7.0D, 16.0D);
 @@ -92,7 +96,9 @@
      @Override
-     public void a(IBlockData iblockdata, World world, BlockPosition blockposition, Entity entity) {
-         if (!entity.isFireProof() && (Boolean) iblockdata.get(BlockCampfire.LIT) && entity instanceof EntityLiving && !EnchantmentManager.i((EntityLiving) entity)) {
+     public void entityInside(IBlockData iblockdata, World world, BlockPosition blockposition, Entity entity) {
+         if (!entity.fireImmune() && (Boolean) iblockdata.getValue(BlockCampfire.LIT) && entity instanceof EntityLiving && !EnchantmentManager.hasFrostWalker((EntityLiving) entity)) {
 +            org.bukkit.craftbukkit.event.CraftEventFactory.blockDamage = CraftBlock.at(world, blockposition); // CraftBukkit
-             entity.damageEntity(DamageSource.IN_FIRE, (float) this.fireDamage);
+             entity.hurt(DamageSource.IN_FIRE, (float) this.fireDamage);
 +            org.bukkit.craftbukkit.event.CraftEventFactory.blockDamage = null; // CraftBukkit
          }
  
-         super.a(iblockdata, world, blockposition, entity);
+         super.entityInside(iblockdata, world, blockposition, entity);
 @@ -202,6 +208,11 @@
-         BlockPosition blockposition = movingobjectpositionblock.getBlockPosition();
+         BlockPosition blockposition = movingobjectpositionblock.getBlockPos();
  
-         if (!world.isClientSide && iprojectile.isBurning() && iprojectile.a(world, blockposition) && !(Boolean) iblockdata.get(BlockCampfire.LIT) && !(Boolean) iblockdata.get(BlockCampfire.WATERLOGGED)) {
+         if (!world.isClientSide && iprojectile.isOnFire() && iprojectile.mayInteract(world, blockposition) && !(Boolean) iblockdata.getValue(BlockCampfire.LIT) && !(Boolean) iblockdata.getValue(BlockCampfire.WATERLOGGED)) {
 +            // CraftBukkit start
 +            if (org.bukkit.craftbukkit.event.CraftEventFactory.callBlockIgniteEvent(world, blockposition, iprojectile).isCancelled()) {
 +                return;
 +            }
 +            // CraftBukkit end
-             world.setTypeAndData(blockposition, (IBlockData) iblockdata.set(BlockProperties.LIT, true), 11);
+             world.setBlock(blockposition, (IBlockData) iblockdata.setValue(BlockProperties.LIT, true), 11);
          }
  

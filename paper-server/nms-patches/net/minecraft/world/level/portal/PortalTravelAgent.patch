@@ -1,28 +1,30 @@
 --- a/net/minecraft/world/level/portal/PortalTravelAgent.java
 +++ b/net/minecraft/world/level/portal/PortalTravelAgent.java
-@@ -43,13 +43,19 @@
+@@ -42,15 +42,21 @@
      }
  
-     public Optional<BlockUtil.Rectangle> findPortal(BlockPosition blockposition, boolean flag) {
+     public Optional<BlockUtil.Rectangle> findPortalAround(BlockPosition blockposition, boolean flag, WorldBorder worldborder) {
 +        // CraftBukkit start
-+        return findPortal(blockposition, flag ? 16 : 128); // Search Radius
++        return findPortalAround(blockposition, worldborder, flag ? 16 : 128); // Search Radius
 +    }
 +
-+    public Optional<BlockUtil.Rectangle> findPortal(BlockPosition blockposition, int i) {
-         VillagePlace villageplace = this.level.A();
++    public Optional<BlockUtil.Rectangle> findPortalAround(BlockPosition blockposition, WorldBorder worldborder, int i) {
+         VillagePlace villageplace = this.level.getPoiManager();
 -        int i = flag ? 16 : 128;
 +        // int i = flag ? 16 : 128;
 +        // CraftBukkit end
  
-         villageplace.a(this.level, blockposition, i);
-         Optional<VillagePlaceRecord> optional = villageplace.b((villageplacetype) -> {
+         villageplace.ensureLoadedAndValid(this.level, blockposition, i);
+         Optional<VillagePlaceRecord> optional = villageplace.getInSquare((villageplacetype) -> {
              return villageplacetype == VillagePlaceType.NETHER_PORTAL;
--        }, blockposition, i, VillagePlace.Occupancy.ANY).sorted(Comparator.comparingDouble((villageplacerecord) -> {
-+        }, blockposition, i, VillagePlace.Occupancy.ANY).sorted(Comparator.comparingDouble((VillagePlaceRecord villageplacerecord) -> { // CraftBukkit - decompile error
-             return villageplacerecord.f().j(blockposition);
+         }, blockposition, i, VillagePlace.Occupancy.ANY).filter((villageplacerecord) -> {
+             return worldborder.isWithinBounds(villageplacerecord.getPos());
+-        }).sorted(Comparator.comparingDouble((villageplacerecord) -> {
++        }).sorted(Comparator.comparingDouble((VillagePlaceRecord villageplacerecord) -> { // CraftBukkit - decompile error
+             return villageplacerecord.getPos().distSqr(blockposition);
          }).thenComparingInt((villageplacerecord) -> {
-             return villageplacerecord.f().getY();
-@@ -70,6 +76,12 @@
+             return villageplacerecord.getPos().getY();
+@@ -71,6 +77,12 @@
      }
  
      public Optional<BlockUtil.Rectangle> createPortal(BlockPosition blockposition, EnumDirection.EnumAxis enumdirection_enumaxis) {
@@ -32,19 +34,19 @@
 +
 +    public Optional<BlockUtil.Rectangle> createPortal(BlockPosition blockposition, EnumDirection.EnumAxis enumdirection_enumaxis, net.minecraft.world.entity.Entity entity, int createRadius) {
 +        // CraftBukkit end
-         EnumDirection enumdirection = EnumDirection.a(EnumDirection.EnumAxisDirection.POSITIVE, enumdirection_enumaxis);
+         EnumDirection enumdirection = EnumDirection.get(EnumDirection.EnumAxisDirection.POSITIVE, enumdirection_enumaxis);
          double d0 = -1.0D;
          BlockPosition blockposition1 = null;
-@@ -78,7 +90,7 @@
+@@ -79,7 +91,7 @@
          WorldBorder worldborder = this.level.getWorldBorder();
          int i = Math.min(this.level.getMaxBuildHeight(), this.level.getMinBuildHeight() + this.level.getLogicalHeight()) - 1;
-         BlockPosition.MutableBlockPosition blockposition_mutableblockposition = blockposition.i();
--        Iterator iterator = BlockPosition.a(blockposition, 16, EnumDirection.EAST, EnumDirection.SOUTH).iterator();
-+        Iterator iterator = BlockPosition.a(blockposition, createRadius, EnumDirection.EAST, EnumDirection.SOUTH).iterator(); // CraftBukkit
+         BlockPosition.MutableBlockPosition blockposition_mutableblockposition = blockposition.mutable();
+-        Iterator iterator = BlockPosition.spiralAround(blockposition, 16, EnumDirection.EAST, EnumDirection.SOUTH).iterator();
++        Iterator iterator = BlockPosition.spiralAround(blockposition, createRadius, EnumDirection.EAST, EnumDirection.SOUTH).iterator(); // CraftBukkit
  
          int j;
          int k;
-@@ -133,6 +145,7 @@
+@@ -134,6 +146,7 @@
          int j1;
          int k1;
  
@@ -52,30 +54,30 @@
          if (d0 == -1.0D) {
              j1 = Math.max(this.level.getMinBuildHeight() - -1, 70);
              k1 = i - 9;
-@@ -153,7 +166,7 @@
-                         IBlockData iblockdata = l < 0 ? Blocks.OBSIDIAN.getBlockData() : Blocks.AIR.getBlockData();
+@@ -154,7 +167,7 @@
+                         IBlockData iblockdata = l < 0 ? Blocks.OBSIDIAN.defaultBlockState() : Blocks.AIR.defaultBlockState();
  
-                         blockposition_mutableblockposition.a((BaseBlockPosition) blockposition1, k * enumdirection.getAdjacentX() + l1 * enumdirection1.getAdjacentX(), l, k * enumdirection.getAdjacentZ() + l1 * enumdirection1.getAdjacentZ());
--                        this.level.setTypeUpdate(blockposition_mutableblockposition, iblockdata);
-+                        blockList.setTypeAndData(blockposition_mutableblockposition, iblockdata, 3); // CraftBukkit
+                         blockposition_mutableblockposition.setWithOffset(blockposition1, k * enumdirection.getStepX() + l1 * enumdirection1.getStepX(), l, k * enumdirection.getStepZ() + l1 * enumdirection1.getStepZ());
+-                        this.level.setBlockAndUpdate(blockposition_mutableblockposition, iblockdata);
++                        blockList.setBlock(blockposition_mutableblockposition, iblockdata, 3); // CraftBukkit
                      }
                  }
              }
-@@ -163,7 +176,7 @@
+@@ -164,7 +177,7 @@
              for (k1 = -1; k1 < 4; ++k1) {
                  if (j1 == -1 || j1 == 2 || k1 == -1 || k1 == 3) {
-                     blockposition_mutableblockposition.a((BaseBlockPosition) blockposition1, j1 * enumdirection.getAdjacentX(), k1, j1 * enumdirection.getAdjacentZ());
--                    this.level.setTypeAndData(blockposition_mutableblockposition, Blocks.OBSIDIAN.getBlockData(), 3);
-+                    blockList.setTypeAndData(blockposition_mutableblockposition, Blocks.OBSIDIAN.getBlockData(), 3); // CraftBukkit
+                     blockposition_mutableblockposition.setWithOffset(blockposition1, j1 * enumdirection.getStepX(), k1, j1 * enumdirection.getStepZ());
+-                    this.level.setBlock(blockposition_mutableblockposition, Blocks.OBSIDIAN.defaultBlockState(), 3);
++                    blockList.setBlock(blockposition_mutableblockposition, Blocks.OBSIDIAN.defaultBlockState(), 3); // CraftBukkit
                  }
              }
          }
-@@ -173,10 +186,20 @@
+@@ -174,10 +187,20 @@
          for (k1 = 0; k1 < 2; ++k1) {
              for (j = 0; j < 3; ++j) {
-                 blockposition_mutableblockposition.a((BaseBlockPosition) blockposition1, k1 * enumdirection.getAdjacentX(), j, k1 * enumdirection.getAdjacentZ());
--                this.level.setTypeAndData(blockposition_mutableblockposition, iblockdata1, 18);
-+                blockList.setTypeAndData(blockposition_mutableblockposition, iblockdata1, 18); // CraftBukkit
+                 blockposition_mutableblockposition.setWithOffset(blockposition1, k1 * enumdirection.getStepX(), j, k1 * enumdirection.getStepZ());
+-                this.level.setBlock(blockposition_mutableblockposition, iblockdata1, 18);
++                blockList.setBlock(blockposition_mutableblockposition, iblockdata1, 18); // CraftBukkit
              }
          }
  
@@ -89,6 +91,6 @@
 +        }
 +        blockList.updateList();
 +        // CraftBukkit end
-         return Optional.of(new BlockUtil.Rectangle(blockposition1.immutableCopy(), 2, 3));
+         return Optional.of(new BlockUtil.Rectangle(blockposition1.immutable(), 2, 3));
      }
  

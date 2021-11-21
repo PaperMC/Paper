@@ -326,7 +326,7 @@ public final class CraftBlockStates {
         CraftWorld world = (CraftWorld) block.getWorld();
         BlockPosition blockPosition = craftBlock.getPosition();
         IBlockData blockData = craftBlock.getNMS();
-        TileEntity tileEntity = craftBlock.getHandle().getTileEntity(blockPosition);
+        TileEntity tileEntity = craftBlock.getHandle().getBlockEntity(blockPosition);
         CraftBlockState blockState = getBlockState(world, blockPosition, blockData, tileEntity);
         blockState.setWorldHandle(craftBlock.getHandle()); // Inject the block's generator access
         return blockState;
@@ -338,7 +338,7 @@ public final class CraftBlockStates {
 
     public static BlockState getBlockState(BlockPosition blockPosition, Material material, @Nullable NBTTagCompound blockEntityTag) {
         Preconditions.checkNotNull(material, "material is null");
-        IBlockData blockData = CraftMagicNumbers.getBlock(material).getBlockData();
+        IBlockData blockData = CraftMagicNumbers.getBlock(material).defaultBlockState();
         return getBlockState(blockPosition, blockData, blockEntityTag);
     }
 
@@ -349,7 +349,7 @@ public final class CraftBlockStates {
     public static BlockState getBlockState(BlockPosition blockPosition, IBlockData blockData, @Nullable NBTTagCompound blockEntityTag) {
         Preconditions.checkNotNull(blockPosition, "blockPosition is null");
         Preconditions.checkNotNull(blockData, "blockData is null");
-        TileEntity tileEntity = (blockEntityTag == null) ? null : TileEntity.create(blockPosition, blockData, blockEntityTag);
+        TileEntity tileEntity = (blockEntityTag == null) ? null : TileEntity.loadStatic(blockPosition, blockData, blockEntityTag);
         return getBlockState(null, blockPosition, blockData, tileEntity);
     }
 

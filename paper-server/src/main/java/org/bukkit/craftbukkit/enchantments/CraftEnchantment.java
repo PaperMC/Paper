@@ -25,7 +25,7 @@ public class CraftEnchantment extends Enchantment {
 
     @Override
     public int getStartLevel() {
-        return target.getStartLevel();
+        return target.getMinLevel();
     }
 
     @Override
@@ -66,7 +66,7 @@ public class CraftEnchantment extends Enchantment {
 
     @Override
     public boolean isTreasure() {
-        return target.isTreasure();
+        return target.isTreasureOnly();
     }
 
     @Override
@@ -185,7 +185,7 @@ public class CraftEnchantment extends Enchantment {
             return false;
         }
         CraftEnchantment ench = (CraftEnchantment) other;
-        return !target.isCompatible(ench.target);
+        return !target.isCompatibleWith(ench.target);
     }
 
     public net.minecraft.world.item.enchantment.Enchantment getHandle() {

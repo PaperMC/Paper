@@ -17,13 +17,13 @@
      protected static final Predicate<Entity> HANGING_ENTITY = (entity) -> {
 @@ -57,26 +65,37 @@
  
-     protected void updateBoundingBox() {
+     protected void recalculateBoundingBox() {
          if (this.direction != null) {
 -            double d0 = (double) this.pos.getX() + 0.5D;
 -            double d1 = (double) this.pos.getY() + 0.5D;
 -            double d2 = (double) this.pos.getZ() + 0.5D;
 +            // CraftBukkit start code moved in to calculateBoundingBox
-+            this.a(calculateBoundingBox(this, this.pos, this.direction, this.getHangingWidth(), this.getHangingHeight()));
++            this.setBoundingBox(calculateBoundingBox(this, this.pos, this.direction, this.getWidth(), this.getHeight()));
 +            // CraftBukkit end
 +        }
 +    }
@@ -35,34 +35,34 @@
 +            double d1 = (double) blockPosition.getY() + 0.5D;
 +            double d2 = (double) blockPosition.getZ() + 0.5D;
              double d3 = 0.46875D;
--            double d4 = this.a(this.getHangingWidth());
--            double d5 = this.a(this.getHangingHeight());
-+            double d4 = a(width);
-+            double d5 = a(height);
+-            double d4 = this.offs(this.getWidth());
+-            double d5 = this.offs(this.getHeight());
++            double d4 = offs(width);
++            double d5 = offs(height);
  
--            d0 -= (double) this.direction.getAdjacentX() * 0.46875D;
--            d2 -= (double) this.direction.getAdjacentZ() * 0.46875D;
-+            d0 -= (double) direction.getAdjacentX() * 0.46875D;
-+            d2 -= (double) direction.getAdjacentZ() * 0.46875D;
+-            d0 -= (double) this.direction.getStepX() * 0.46875D;
+-            d2 -= (double) this.direction.getStepZ() * 0.46875D;
++            d0 -= (double) direction.getStepX() * 0.46875D;
++            d2 -= (double) direction.getStepZ() * 0.46875D;
              d1 += d5;
--            EnumDirection enumdirection = this.direction.h();
-+            EnumDirection enumdirection = direction.h();
+-            EnumDirection enumdirection = this.direction.getCounterClockWise();
++            EnumDirection enumdirection = direction.getCounterClockWise();
  
-             d0 += d4 * (double) enumdirection.getAdjacentX();
-             d2 += d4 * (double) enumdirection.getAdjacentZ();
--            this.setPositionRaw(d0, d1, d2);
--            double d6 = (double) this.getHangingWidth();
--            double d7 = (double) this.getHangingHeight();
--            double d8 = (double) this.getHangingWidth();
+             d0 += d4 * (double) enumdirection.getStepX();
+             d2 += d4 * (double) enumdirection.getStepZ();
+-            this.setPosRaw(d0, d1, d2);
+-            double d6 = (double) this.getWidth();
+-            double d7 = (double) this.getHeight();
+-            double d8 = (double) this.getWidth();
 +            if (entity != null) {
-+                entity.setPositionRaw(d0, d1, d2);
++                entity.setPosRaw(d0, d1, d2);
 +            }
 +            double d6 = (double) width;
 +            double d7 = (double) height;
 +            double d8 = (double) width;
  
--            if (this.direction.n() == EnumDirection.EnumAxis.Z) {
-+            if (direction.n() == EnumDirection.EnumAxis.Z) {
+-            if (this.direction.getAxis() == EnumDirection.EnumAxis.Z) {
++            if (direction.getAxis() == EnumDirection.EnumAxis.Z) {
                  d8 = 1.0D;
              } else {
                  d6 = 1.0D;
@@ -70,14 +70,14 @@
              d6 /= 32.0D;
              d7 /= 32.0D;
              d8 /= 32.0D;
--            this.a(new AxisAlignedBB(d0 - d6, d1 - d7, d2 - d8, d0 + d6, d1 + d7, d2 + d8));
+-            this.setBoundingBox(new AxisAlignedBB(d0 - d6, d1 - d7, d2 - d8, d0 + d6, d1 + d7, d2 + d8));
 +            return new AxisAlignedBB(d0 - d6, d1 - d7, d2 - d8, d0 + d6, d1 + d7, d2 + d8);
          }
      }
 +    // CraftBukkit end
  
--    private double a(int i) {
-+    private static double a(int i) { // CraftBukkit - static
+-    private double offs(int i) {
++    private static double offs(int i) { // CraftBukkit - static
          return i % 32 == 0 ? 0.5D : 0.0D;
      }
  
@@ -86,7 +86,7 @@
                  this.checkInterval = 0;
                  if (!this.isRemoved() && !this.survives()) {
 +                    // CraftBukkit start - fire break events
-+                    Material material = this.level.getType(this.getChunkCoordinates()).getMaterial();
++                    Material material = this.level.getBlockState(this.blockPosition()).getMaterial();
 +                    HangingBreakEvent.RemoveCause cause;
 +
 +                    if (!material.equals(Material.AIR)) {
@@ -103,8 +103,8 @@
 +                        return;
 +                    }
 +                    // CraftBukkit end
-                     this.die();
-                     this.a((Entity) null);
+                     this.discard();
+                     this.dropItem((Entity) null);
                  }
 @@ -163,6 +201,22 @@
              return false;
@@ -126,13 +126,13 @@
 +                }
 +                // CraftBukkit end
 +
-                 this.killEntity();
-                 this.velocityChanged();
-                 this.a(damagesource.getEntity());
+                 this.kill();
+                 this.markHurt();
+                 this.dropItem(damagesource.getEntity());
 @@ -175,6 +229,18 @@
      @Override
      public void move(EnumMoveType enummovetype, Vec3D vec3d) {
-         if (!this.level.isClientSide && !this.isRemoved() && vec3d.g() > 0.0D) {
+         if (!this.level.isClientSide && !this.isRemoved() && vec3d.lengthSqr() > 0.0D) {
 +            if (this.isRemoved()) return; // CraftBukkit
 +
 +            // CraftBukkit start - fire break events
@@ -145,15 +145,15 @@
 +            }
 +            // CraftBukkit end
 +
-             this.killEntity();
-             this.a((Entity) null);
+             this.kill();
+             this.dropItem((Entity) null);
          }
 @@ -183,7 +249,7 @@
  
      @Override
-     public void i(double d0, double d1, double d2) {
+     public void push(double d0, double d1, double d2) {
 -        if (!this.level.isClientSide && !this.isRemoved() && d0 * d0 + d1 * d1 + d2 * d2 > 0.0D) {
 +        if (false && !this.level.isClientSide && !this.isRemoved() && d0 * d0 + d1 * d1 + d2 * d2 > 0.0D) { // CraftBukkit - not needed
-             this.killEntity();
-             this.a((Entity) null);
+             this.kill();
+             this.dropItem((Entity) null);
          }

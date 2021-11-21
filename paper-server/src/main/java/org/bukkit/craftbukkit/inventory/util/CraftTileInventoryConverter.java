@@ -50,7 +50,7 @@ public abstract class CraftTileInventoryConverter implements CraftInventoryCreat
 
         @Override
         public IInventory getTileEntity() {
-            TileEntityFurnace furnace = new TileEntityFurnaceFurnace(BlockPosition.ZERO, Blocks.FURNACE.getBlockData()); // TODO: customize this if required
+            TileEntityFurnace furnace = new TileEntityFurnaceFurnace(BlockPosition.ZERO, Blocks.FURNACE.defaultBlockState()); // TODO: customize this if required
             return furnace;
         }
 
@@ -71,7 +71,7 @@ public abstract class CraftTileInventoryConverter implements CraftInventoryCreat
 
         @Override
         public IInventory getTileEntity() {
-            return new TileEntityBrewingStand(BlockPosition.ZERO, Blocks.BREWING_STAND.getBlockData());
+            return new TileEntityBrewingStand(BlockPosition.ZERO, Blocks.BREWING_STAND.defaultBlockState());
         }
 
         @Override
@@ -94,7 +94,7 @@ public abstract class CraftTileInventoryConverter implements CraftInventoryCreat
 
         @Override
         public IInventory getTileEntity() {
-            return new TileEntityDispenser(BlockPosition.ZERO, Blocks.DISPENSER.getBlockData());
+            return new TileEntityDispenser(BlockPosition.ZERO, Blocks.DISPENSER.defaultBlockState());
         }
     }
 
@@ -102,7 +102,7 @@ public abstract class CraftTileInventoryConverter implements CraftInventoryCreat
 
         @Override
         public IInventory getTileEntity() {
-            return new TileEntityDropper(BlockPosition.ZERO, Blocks.DROPPER.getBlockData());
+            return new TileEntityDropper(BlockPosition.ZERO, Blocks.DROPPER.defaultBlockState());
         }
     }
 
@@ -110,7 +110,7 @@ public abstract class CraftTileInventoryConverter implements CraftInventoryCreat
 
         @Override
         public IInventory getTileEntity() {
-            return new TileEntityHopper(BlockPosition.ZERO, Blocks.HOPPER.getBlockData());
+            return new TileEntityHopper(BlockPosition.ZERO, Blocks.HOPPER.defaultBlockState());
         }
     }
 
@@ -118,7 +118,7 @@ public abstract class CraftTileInventoryConverter implements CraftInventoryCreat
 
         @Override
         public IInventory getTileEntity() {
-            return new TileEntityBlastFurnace(BlockPosition.ZERO, Blocks.BLAST_FURNACE.getBlockData());
+            return new TileEntityBlastFurnace(BlockPosition.ZERO, Blocks.BLAST_FURNACE.defaultBlockState());
         }
     }
 
@@ -126,7 +126,7 @@ public abstract class CraftTileInventoryConverter implements CraftInventoryCreat
 
         @Override
         public IInventory getTileEntity() {
-            return new TileEntityLectern(BlockPosition.ZERO, Blocks.LECTERN.getBlockData()).bookAccess;
+            return new TileEntityLectern(BlockPosition.ZERO, Blocks.LECTERN.defaultBlockState()).bookAccess;
         }
     }
 
@@ -134,7 +134,7 @@ public abstract class CraftTileInventoryConverter implements CraftInventoryCreat
 
         @Override
         public IInventory getTileEntity() {
-            return new TileEntitySmoker(BlockPosition.ZERO, Blocks.SMOKER.getBlockData());
+            return new TileEntitySmoker(BlockPosition.ZERO, Blocks.SMOKER.defaultBlockState());
         }
     }
 }

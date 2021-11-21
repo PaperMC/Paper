@@ -56,7 +56,7 @@ public class CraftMerchantCustom extends CraftMerchant {
         }
 
         @Override
-        public EntityHuman getTrader() {
+        public EntityHuman getTradingPlayer() {
             return this.tradingPlayer;
         }
 
@@ -66,13 +66,13 @@ public class CraftMerchantCustom extends CraftMerchant {
         }
 
         @Override
-        public void a(MerchantRecipe merchantrecipe) {
+        public void notifyTrade(MerchantRecipe merchantrecipe) {
             // increase recipe's uses
             merchantrecipe.increaseUses();
         }
 
         @Override
-        public void m(ItemStack itemstack) {
+        public void notifyTradeUpdated(ItemStack itemstack) {
         }
 
         public IChatBaseComponent getScoreboardDisplayName() {
@@ -80,31 +80,31 @@ public class CraftMerchantCustom extends CraftMerchant {
         }
 
         @Override
-        public World getWorld() {
-            return this.tradingWorld;
-        }
-
-        @Override
-        public int getExperience() {
+        public int getVillagerXp() {
             return 0; // xp
         }
 
         @Override
-        public void setForcedExperience(int i) {
+        public void overrideXp(int i) {
         }
 
         @Override
-        public boolean isRegularVillager() {
+        public boolean showProgressBar() {
             return false; // is-regular-villager flag (hides some gui elements: xp bar, name suffix)
         }
 
         @Override
-        public SoundEffect getTradeSound() {
+        public SoundEffect getNotifyTradeSound() {
             return SoundEffects.VILLAGER_YES;
         }
 
         @Override
-        public void a(MerchantRecipeList merchantrecipelist) {
+        public void overrideOffers(MerchantRecipeList merchantrecipelist) {
+        }
+
+        @Override
+        public boolean isClientSide() {
+            return false;
         }
     }
 }

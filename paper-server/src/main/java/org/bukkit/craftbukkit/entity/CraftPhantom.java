@@ -18,12 +18,12 @@ public class CraftPhantom extends CraftFlying implements Phantom {
 
     @Override
     public int getSize() {
-        return getHandle().getSize();
+        return getHandle().getPhantomSize();
     }
 
     @Override
     public void setSize(int sz) {
-        getHandle().setSize(sz);
+        getHandle().setPhantomSize(sz);
     }
 
     @Override

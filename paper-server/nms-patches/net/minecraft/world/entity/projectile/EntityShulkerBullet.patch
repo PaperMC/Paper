@@ -3,7 +3,7 @@
 @@ -60,8 +60,21 @@
          this.finalTarget = entity;
          this.currentMoveDirection = EnumDirection.UP;
-         this.a(enumdirection_enumaxis);
+         this.selectNextMoveDirection(enumdirection_enumaxis);
 +        projectileSource = (org.bukkit.entity.LivingEntity) entityliving.getBukkitEntity(); // CraftBukkit
      }
  
@@ -15,25 +15,25 @@
 +    public void setTarget(Entity e) {
 +        this.finalTarget = e;
 +        this.currentMoveDirection = EnumDirection.UP;
-+        this.a(EnumDirection.EnumAxis.X);
++        this.selectNextMoveDirection(EnumDirection.EnumAxis.X);
 +    }
 +    // CraftBukkit end
 +
      @Override
-     public SoundCategory getSoundCategory() {
+     public SoundCategory getSoundSource() {
          return SoundCategory.HOSTILE;
 @@ -225,7 +238,7 @@
-             MovingObjectPosition movingobjectposition = ProjectileHelper.a((Entity) this, this::a);
+             MovingObjectPosition movingobjectposition = ProjectileHelper.getHitResult(this, this::canHitEntity);
  
              if (movingobjectposition.getType() != MovingObjectPosition.EnumMovingObjectType.MISS) {
--                this.a(movingobjectposition);
+-                this.onHit(movingobjectposition);
 +                this.preOnHit(movingobjectposition); // CraftBukkit - projectile hit event
              }
          }
  
 @@ -292,7 +305,7 @@
          if (flag) {
-             this.a(entityliving, entity);
+             this.doEnchantDamageEffects(entityliving, entity);
              if (entity instanceof EntityLiving) {
 -                ((EntityLiving) entity).addEffect(new MobEffect(MobEffects.LEVITATION, 200), (Entity) MoreObjects.firstNonNull(entity1, this));
 +                ((EntityLiving) entity).addEffect(new MobEffect(MobEffects.LEVITATION, 200), (Entity) MoreObjects.firstNonNull(entity1, this), org.bukkit.event.entity.EntityPotionEffectEvent.Cause.ATTACK); // CraftBukkit
@@ -43,7 +43,7 @@
 @@ -318,6 +331,11 @@
  
      @Override
-     public boolean damageEntity(DamageSource damagesource, float f) {
+     public boolean hurt(DamageSource damagesource, float f) {
 +        // CraftBukkit start
 +        if (org.bukkit.craftbukkit.event.CraftEventFactory.handleNonLivingEntityDamageEvent(this, damagesource, f, false)) {
 +            return false;
@@ -51,4 +51,4 @@
 +        // CraftBukkit end
          if (!this.level.isClientSide) {
              this.playSound(SoundEffects.SHULKER_BULLET_HURT, 1.0F, 1.0F);
-             ((WorldServer) this.level).a(Particles.CRIT, this.locX(), this.locY(), this.locZ(), 15, 0.2D, 0.2D, 0.2D, 0.0D);
+             ((WorldServer) this.level).sendParticles(Particles.CRIT, this.getX(), this.getY(), this.getZ(), 15, 0.2D, 0.2D, 0.2D, 0.0D);

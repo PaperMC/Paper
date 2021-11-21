@@ -1,6 +1,6 @@
 --- a/net/minecraft/core/dispenser/DispenseBehaviorShears.java
 +++ b/net/minecraft/core/dispenser/DispenseBehaviorShears.java
-@@ -25,6 +25,12 @@
+@@ -24,6 +24,12 @@
  import net.minecraft.world.level.gameevent.GameEvent;
  import net.minecraft.world.phys.AxisAlignedBB;
  
@@ -13,12 +13,12 @@
  public class DispenseBehaviorShears extends DispenseBehaviorMaybe {
  
      public DispenseBehaviorShears() {}
-@@ -32,11 +38,34 @@
+@@ -31,11 +37,34 @@
      @Override
-     protected ItemStack a(ISourceBlock isourceblock, ItemStack itemstack) {
-         WorldServer worldserver = isourceblock.getWorld();
+     protected ItemStack execute(ISourceBlock isourceblock, ItemStack itemstack) {
+         WorldServer worldserver = isourceblock.getLevel();
 +        // CraftBukkit start
-+        org.bukkit.block.Block bukkitBlock = worldserver.getWorld().getBlockAt(isourceblock.getBlockPosition().getX(), isourceblock.getBlockPosition().getY(), isourceblock.getBlockPosition().getZ());
++        org.bukkit.block.Block bukkitBlock = worldserver.getWorld().getBlockAt(isourceblock.getPos().getX(), isourceblock.getPos().getY(), isourceblock.getPos().getZ());
 +        CraftItemStack craftItem = CraftItemStack.asCraftMirror(itemstack);
 +
 +        BlockDispenseEvent event = new BlockDispenseEvent(bukkitBlock, craftItem.clone(), new org.bukkit.util.Vector(0, 0, 0));
@@ -42,31 +42,31 @@
 +        // CraftBukkit end
  
          if (!worldserver.isClientSide()) {
-             BlockPosition blockposition = isourceblock.getBlockPosition().shift((EnumDirection) isourceblock.getBlockData().get(BlockDispenser.FACING));
+             BlockPosition blockposition = isourceblock.getPos().relative((EnumDirection) isourceblock.getBlockState().getValue(BlockDispenser.FACING));
  
--            this.a(a((WorldServer) worldserver, blockposition) || b((WorldServer) worldserver, blockposition));
-+            this.a(a((WorldServer) worldserver, blockposition) || b((WorldServer) worldserver, blockposition, bukkitBlock, craftItem)); // CraftBukkit
-             if (this.a() && itemstack.isDamaged(1, worldserver.getRandom(), (EntityPlayer) null)) {
+-            this.setSuccess(tryShearBeehive((WorldServer) worldserver, blockposition) || tryShearLivingEntity((WorldServer) worldserver, blockposition));
++            this.setSuccess(tryShearBeehive((WorldServer) worldserver, blockposition) || tryShearLivingEntity((WorldServer) worldserver, blockposition, bukkitBlock, craftItem)); // CraftBukkit
+             if (this.isSuccess() && itemstack.hurt(1, worldserver.getRandom(), (EntityPlayer) null)) {
                  itemstack.setCount(0);
              }
-@@ -63,7 +92,7 @@
+@@ -62,7 +91,7 @@
          return false;
      }
  
--    private static boolean b(WorldServer worldserver, BlockPosition blockposition) {
-+    private static boolean b(WorldServer worldserver, BlockPosition blockposition, org.bukkit.block.Block bukkitBlock, CraftItemStack craftItem) { // CraftBukkit - add args
-         List<EntityLiving> list = worldserver.a(EntityLiving.class, new AxisAlignedBB(blockposition), IEntitySelector.NO_SPECTATORS);
+-    private static boolean tryShearLivingEntity(WorldServer worldserver, BlockPosition blockposition) {
++    private static boolean tryShearLivingEntity(WorldServer worldserver, BlockPosition blockposition, org.bukkit.block.Block bukkitBlock, CraftItemStack craftItem) { // CraftBukkit - add args
+         List<EntityLiving> list = worldserver.getEntitiesOfClass(EntityLiving.class, new AxisAlignedBB(blockposition), IEntitySelector.NO_SPECTATORS);
          Iterator iterator = list.iterator();
  
-@@ -74,6 +103,11 @@
+@@ -73,6 +102,11 @@
                  IShearable ishearable = (IShearable) entityliving;
  
-                 if (ishearable.canShear()) {
+                 if (ishearable.readyForShearing()) {
 +                    // CraftBukkit start
 +                    if (CraftEventFactory.callBlockShearEntityEvent(entityliving, bukkitBlock, craftItem).isCancelled()) {
 +                        continue;
 +                    }
 +                    // CraftBukkit end
                      ishearable.shear(SoundCategory.BLOCKS);
-                     worldserver.a((Entity) null, GameEvent.SHEAR, blockposition);
+                     worldserver.gameEvent((Entity) null, GameEvent.SHEAR, blockposition);
                      return true;

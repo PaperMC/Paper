@@ -67,7 +67,6 @@ public enum CraftParticle {
     SNOW_SHOVEL("item_snowball"),
     SLIME("item_slime"),
     HEART("heart"),
-    BARRIER("barrier"),
     ITEM_CRACK("item"),
     BLOCK_CRACK("block"),
     BLOCK_DUST("block"),
@@ -108,7 +107,6 @@ public enum CraftParticle {
     LANDING_OBSIDIAN_TEAR("landing_obsidian_tear"),
     REVERSE_PORTAL("reverse_portal"),
     WHITE_ASH("white_ash"),
-    LIGHT("light"),
     DUST_COLOR_TRANSITION("dust_color_transition"),
     VIBRATION("vibration"),
     FALLING_SPORE_BLOSSOM("falling_spore_blossom"),
@@ -125,6 +123,7 @@ public enum CraftParticle {
     WAX_OFF("wax_off"),
     ELECTRIC_SPARK("electric_spark"),
     SCRAPE("scrape"),
+    BLOCK_MARKER("block_marker"),
     // ----- Legacy Separator -----
     LEGACY_BLOCK_CRACK("block"),
     LEGACY_BLOCK_DUST("block"),
@@ -215,7 +214,7 @@ public enum CraftParticle {
     }
 
     public static Particle toBukkit(net.minecraft.core.particles.ParticleParam nms) {
-        return toBukkit(nms.getParticle());
+        return toBukkit(nms.getType());
     }
 
     public static Particle toBukkit(net.minecraft.core.particles.Particle nms) {

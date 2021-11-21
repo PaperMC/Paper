@@ -36,15 +36,15 @@ public class CraftShulkerBox extends CraftLootable<TileEntityShulkerBox> impleme
     public DyeColor getColor() {
         EnumColor color = ((BlockShulkerBox) CraftMagicNumbers.getBlock(this.getType())).color;
 
-        return (color == null) ? null : DyeColor.getByWoolData((byte) color.getColorIndex());
+        return (color == null) ? null : DyeColor.getByWoolData((byte) color.getId());
     }
 
     @Override
     public void open() {
         requirePlaced();
         if (!getTileEntity().opened && getWorldHandle() instanceof net.minecraft.world.level.World) {
-            net.minecraft.world.level.World world = getTileEntity().getWorld();
-            world.playBlockAction(getPosition(), getTileEntity().getBlock().getBlock(), 1, 1);
+            net.minecraft.world.level.World world = getTileEntity().getLevel();
+            world.blockEvent(getPosition(), getTileEntity().getBlockState().getBlock(), 1, 1);
             world.playSound(null, getPosition(), SoundEffects.SHULKER_BOX_OPEN, SoundCategory.BLOCKS, 0.5F, world.random.nextFloat() * 0.1F + 0.9F);
         }
         getTileEntity().opened = true;
@@ -54,8 +54,8 @@ public class CraftShulkerBox extends CraftLootable<TileEntityShulkerBox> impleme
     public void close() {
         requirePlaced();
         if (getTileEntity().opened && getWorldHandle() instanceof net.minecraft.world.level.World) {
-            net.minecraft.world.level.World world = getTileEntity().getWorld();
-            world.playBlockAction(getPosition(), getTileEntity().getBlock().getBlock(), 1, 0);
+            net.minecraft.world.level.World world = getTileEntity().getLevel();
+            world.blockEvent(getPosition(), getTileEntity().getBlockState().getBlock(), 1, 0);
             world.playSound(null, getPosition(), SoundEffects.SHULKER_BOX_OPEN, SoundCategory.BLOCKS, 0.5F, world.random.nextFloat() * 0.1F + 0.9F);
         }
         getTileEntity().opened = false;

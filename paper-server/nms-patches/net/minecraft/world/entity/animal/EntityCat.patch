@@ -1,24 +1,15 @@
 --- a/net/minecraft/world/entity/animal/EntityCat.java
 +++ b/net/minecraft/world/entity/animal/EntityCat.java
-@@ -95,7 +95,7 @@
-     public static final int TYPE_ALL_BLACK = 10;
-     private static final int NUMBER_OF_CAT_TYPES = 11;
-     private static final int NUMBER_OF_CAT_TYPES_EXCEPT_ALL_BLACK = 10;
--    public static final Map<Integer, MinecraftKey> TEXTURE_BY_TYPE = (Map) SystemUtils.a((Object) Maps.newHashMap(), (hashmap) -> {
-+    public static final Map<Integer, MinecraftKey> TEXTURE_BY_TYPE = (Map) SystemUtils.a(Maps.newHashMap(), (hashmap) -> { // CraftBukkit - decompile error
-         hashmap.put(0, new MinecraftKey("textures/entity/cat/tabby.png"));
-         hashmap.put(1, new MinecraftKey("textures/entity/cat/black.png"));
-         hashmap.put(2, new MinecraftKey("textures/entity/cat/red.png"));
-@@ -433,7 +433,7 @@
+@@ -434,7 +434,7 @@
                  }
-             } else if (this.isBreedItem(itemstack)) {
-                 this.a(entityhuman, enumhand, itemstack);
+             } else if (this.isFood(itemstack)) {
+                 this.usePlayerItem(entityhuman, enumhand, itemstack);
 -                if (this.random.nextInt(3) == 0) {
 +                if (this.random.nextInt(3) == 0 && !org.bukkit.craftbukkit.event.CraftEventFactory.callEntityTameEvent(this, entityhuman).isCancelled()) { // CraftBukkit
                      this.tame(entityhuman);
-                     this.setWillSit(true);
-                     this.level.broadcastEntityEffect(this, (byte) 7);
-@@ -490,7 +490,7 @@
+                     this.setOrderedToSit(true);
+                     this.level.broadcastEntityEvent(this, (byte) 7);
+@@ -491,7 +491,7 @@
      private static class PathfinderGoalTemptChance extends PathfinderGoalTempt {
  
          @Nullable
@@ -27,11 +18,11 @@
          private final EntityCat cat;
  
          public PathfinderGoalTemptChance(EntityCat entitycat, double d0, RecipeItemStack recipeitemstack, boolean flag) {
-@@ -629,7 +629,15 @@
+@@ -632,7 +632,15 @@
              while (iterator.hasNext()) {
                  ItemStack itemstack = (ItemStack) iterator.next();
  
--                this.cat.level.addEntity(new EntityItem(this.cat.level, (double) blockposition_mutableblockposition.getX() - (double) MathHelper.sin(this.cat.yBodyRot * 0.017453292F), (double) blockposition_mutableblockposition.getY(), (double) blockposition_mutableblockposition.getZ() + (double) MathHelper.cos(this.cat.yBodyRot * 0.017453292F), itemstack));
+-                this.cat.level.addFreshEntity(new EntityItem(this.cat.level, (double) blockposition_mutableblockposition.getX() - (double) MathHelper.sin(this.cat.yBodyRot * 0.017453292F), (double) blockposition_mutableblockposition.getY(), (double) blockposition_mutableblockposition.getZ() + (double) MathHelper.cos(this.cat.yBodyRot * 0.017453292F), itemstack));
 +                // CraftBukkit start
 +                EntityItem entityitem = new EntityItem(this.cat.level, (double) blockposition_mutableblockposition.getX() - (double) MathHelper.sin(this.cat.yBodyRot * 0.017453292F), (double) blockposition_mutableblockposition.getY(), (double) blockposition_mutableblockposition.getZ() + (double) MathHelper.cos(this.cat.yBodyRot * 0.017453292F), itemstack);
 +                org.bukkit.event.entity.EntityDropItemEvent event = new org.bukkit.event.entity.EntityDropItemEvent(this.cat.getBukkitEntity(), (org.bukkit.entity.Item) entityitem.getBukkitEntity());
@@ -39,17 +30,17 @@
 +                if (event.isCancelled()) {
 +                    continue;
 +                }
-+                this.cat.level.addEntity(entityitem);
++                this.cat.level.addFreshEntity(entityitem);
 +                // CraftBukkit end
              }
  
          }
-@@ -661,10 +669,10 @@
+@@ -664,10 +672,10 @@
          private final EntityCat cat;
  
          public a(EntityCat entitycat, Class<T> oclass, float f, double d0, double d1) {
 -            Predicate predicate = IEntitySelector.NO_CREATIVE_OR_SPECTATOR;
-+            // Predicate predicate = IEntitySelector.e; // CraftBukkit - decompile error
++            // Predicate predicate = IEntitySelector.NO_CREATIVE_OR_SPECTATOR; // CraftBukkit - decompile error
  
 -            Objects.requireNonNull(predicate);
 -            super(entitycat, oclass, f, d0, d1, predicate::test);

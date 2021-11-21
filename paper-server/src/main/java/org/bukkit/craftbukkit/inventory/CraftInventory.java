@@ -42,7 +42,7 @@ public class CraftInventory implements Inventory {
 
     @Override
     public int getSize() {
-        return getInventory().getSize();
+        return getInventory().getContainerSize();
     }
 
     @Override
@@ -452,7 +452,7 @@ public class CraftInventory implements Inventory {
     public InventoryType getType() {
         // Thanks to Droppers extending Dispensers, Blast Furnaces & Smokers extending Furnace, order is important.
         if (inventory instanceof InventoryCrafting) {
-            return inventory.getSize() >= 9 ? InventoryType.WORKBENCH : InventoryType.CRAFTING;
+            return inventory.getContainerSize() >= 9 ? InventoryType.WORKBENCH : InventoryType.CRAFTING;
         } else if (inventory instanceof PlayerInventory) {
             return InventoryType.PLAYER;
         } else if (inventory instanceof TileEntityDropper) {

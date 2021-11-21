@@ -1,16 +1,16 @@
 --- a/net/minecraft/world/level/block/BlockBed.java
 +++ b/net/minecraft/world/level/block/BlockBed.java
-@@ -88,7 +88,8 @@
+@@ -87,7 +87,8 @@
                  }
              }
  
--            if (!a(world)) {
+-            if (!canSetSpawn(world)) {
 +            // CraftBukkit - moved world and biome check into EntityHuman
-+            if (false && !a(world)) {
-                 world.a(blockposition, false);
-                 BlockPosition blockposition1 = blockposition.shift(((EnumDirection) iblockdata.get(BlockBed.FACING)).opposite());
++            if (false && !canSetSpawn(world)) {
+                 world.removeBlock(blockposition, false);
+                 BlockPosition blockposition1 = blockposition.relative(((EnumDirection) iblockdata.getValue(BlockBed.FACING)).getOpposite());
  
-@@ -105,7 +106,16 @@
+@@ -104,7 +105,16 @@
  
                  return EnumInteractionResult.SUCCESS;
              } else {
@@ -18,16 +18,16 @@
 +                IBlockData finaliblockdata = iblockdata;
 +                BlockPosition finalblockposition = blockposition;
 +                // CraftBukkit end
-                 entityhuman.sleep(blockposition).ifLeft((entityhuman_enumbedresult) -> {
+                 entityhuman.startSleepInBed(blockposition).ifLeft((entityhuman_enumbedresult) -> {
 +                    // CraftBukkit start - handling bed explosion from below here
-+                    if (!world.getDimensionManager().isBedWorks()) {
++                    if (!world.dimensionType().bedWorks()) {
 +                        this.explodeBed(finaliblockdata, world, finalblockposition);
 +                    } else
 +                    // CraftBukkit end
                      if (entityhuman_enumbedresult != null) {
-                         entityhuman.a(entityhuman_enumbedresult.a(), true);
+                         entityhuman.displayClientMessage(entityhuman_enumbedresult.getMessage(), true);
                      }
-@@ -116,8 +126,27 @@
+@@ -115,8 +125,27 @@
          }
      }
  
@@ -35,24 +35,24 @@
 +    private EnumInteractionResult explodeBed(IBlockData iblockdata, World world, BlockPosition blockposition) {
 +        {
 +            {
-+                world.a(blockposition, false);
-+                BlockPosition blockposition1 = blockposition.shift(((EnumDirection) iblockdata.get(BlockBed.FACING)).opposite());
++                world.removeBlock(blockposition, false);
++                BlockPosition blockposition1 = blockposition.relative(((EnumDirection) iblockdata.getValue(BlockBed.FACING)).getOpposite());
 +
-+                if (world.getType(blockposition1).getBlock() == this) {
-+                    world.a(blockposition1, false);
++                if (world.getBlockState(blockposition1).getBlock() == this) {
++                    world.removeBlock(blockposition1, false);
 +                }
 +
-+                world.createExplosion((Entity) null, DamageSource.a(), (ExplosionDamageCalculator) null, (double) blockposition.getX() + 0.5D, (double) blockposition.getY() + 0.5D, (double) blockposition.getZ() + 0.5D, 5.0F, true, Explosion.Effect.DESTROY);
++                world.explode((Entity) null, DamageSource.badRespawnPointExplosion(), (ExplosionDamageCalculator) null, (double) blockposition.getX() + 0.5D, (double) blockposition.getY() + 0.5D, (double) blockposition.getZ() + 0.5D, 5.0F, true, Explosion.Effect.DESTROY);
 +                return EnumInteractionResult.SUCCESS;
 +            }
 +        }
 +    }
 +    // CraftBukkit end
 +
-     public static boolean a(World world) {
--        return world.getDimensionManager().isBedWorks();
+     public static boolean canSetSpawn(World world) {
+-        return world.dimensionType().bedWorks();
 +        // CraftBukkit - moved world and biome check into EntityHuman
-+        return true || world.getDimensionManager().isBedWorks();
++        return true || world.dimensionType().bedWorks();
      }
  
-     private boolean a(World world, BlockPosition blockposition) {
+     private boolean kickVillagerOutOfBed(World world, BlockPosition blockposition) {

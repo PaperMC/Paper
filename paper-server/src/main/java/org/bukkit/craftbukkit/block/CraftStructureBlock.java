@@ -49,7 +49,7 @@ public class CraftStructureBlock extends CraftBlockEntityState<TileEntityStructu
     @Override
     public void setAuthor(LivingEntity entity) {
         Preconditions.checkArgument(entity != null, "Structure Block author entity cannot be null");
-        getSnapshot().setAuthor(((CraftLivingEntity) entity).getHandle());
+        getSnapshot().createdBy(((CraftLivingEntity) entity).getHandle());
     }
 
     @Override
@@ -105,7 +105,7 @@ public class CraftStructureBlock extends CraftBlockEntityState<TileEntityStructu
 
     @Override
     public UsageMode getUsageMode() {
-        return UsageMode.valueOf(getSnapshot().getUsageMode().name());
+        return UsageMode.valueOf(getSnapshot().getMode().name());
     }
 
     @Override
@@ -179,13 +179,13 @@ public class CraftStructureBlock extends CraftBlockEntityState<TileEntityStructu
 
         // Ensure block type is correct
         if (access instanceof net.minecraft.world.level.World) {
-            tileEntity.setUsageMode(tileEntity.getUsageMode());
+            tileEntity.setMode(tileEntity.getMode());
         } else if (access != null) {
             // Custom handle during world generation
             // From TileEntityStructure#setUsageMode(BlockPropertyStructureMode)
-            net.minecraft.world.level.block.state.IBlockData data = access.getType(this.getPosition());
-            if (data.a(net.minecraft.world.level.block.Blocks.STRUCTURE_BLOCK)) {
-                access.setTypeAndData(this.getPosition(), data.set(net.minecraft.world.level.block.BlockStructure.MODE, tileEntity.getUsageMode()), 2);
+            net.minecraft.world.level.block.state.IBlockData data = access.getBlockState(this.getPosition());
+            if (data.is(net.minecraft.world.level.block.Blocks.STRUCTURE_BLOCK)) {
+                access.setBlock(this.getPosition(), data.setValue(net.minecraft.world.level.block.BlockStructure.MODE, tileEntity.getMode()), 2);
             }
         }
     }

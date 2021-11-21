@@ -24,7 +24,7 @@ public class ArtTest extends AbstractTestingBase {
 
         for (MinecraftKey key : IRegistry.MOTIVE.keySet()) {
             Paintings enumArt = IRegistry.MOTIVE.get(key);
-            String name = key.getKey();
+            String name = key.getPath();
             int width = enumArt.getWidth() / UNIT_MULTIPLIER;
             int height = enumArt.getHeight() / UNIT_MULTIPLIER;
 

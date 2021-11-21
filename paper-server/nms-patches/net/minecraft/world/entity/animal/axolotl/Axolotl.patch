@@ -1,33 +1,24 @@
 --- a/net/minecraft/world/entity/animal/axolotl/Axolotl.java
 +++ b/net/minecraft/world/entity/animal/axolotl/Axolotl.java
-@@ -68,7 +68,8 @@
+@@ -69,7 +69,8 @@
  
      public static final int TOTAL_PLAYDEAD_TIME = 200;
      protected static final ImmutableList<? extends SensorType<? extends Sensor<? super Axolotl>>> SENSOR_TYPES = ImmutableList.of(SensorType.NEAREST_LIVING_ENTITIES, SensorType.NEAREST_ADULT, SensorType.HURT_BY, SensorType.AXOLOTL_ATTACKABLES, SensorType.AXOLOTL_TEMPTATIONS);
 -    protected static final ImmutableList<? extends MemoryModuleType<?>> MEMORY_TYPES = ImmutableList.of(MemoryModuleType.BREED_TARGET, MemoryModuleType.NEAREST_LIVING_ENTITIES, MemoryModuleType.NEAREST_VISIBLE_LIVING_ENTITIES, MemoryModuleType.NEAREST_VISIBLE_PLAYER, MemoryModuleType.NEAREST_VISIBLE_ATTACKABLE_PLAYER, MemoryModuleType.LOOK_TARGET, MemoryModuleType.WALK_TARGET, MemoryModuleType.CANT_REACH_WALK_TARGET_SINCE, MemoryModuleType.PATH, MemoryModuleType.ATTACK_TARGET, MemoryModuleType.ATTACK_COOLING_DOWN, MemoryModuleType.NEAREST_VISIBLE_ADULT, new MemoryModuleType[]{MemoryModuleType.HURT_BY_ENTITY, MemoryModuleType.PLAY_DEAD_TICKS, MemoryModuleType.NEAREST_ATTACKABLE, MemoryModuleType.TEMPTING_PLAYER, MemoryModuleType.TEMPTATION_COOLDOWN_TICKS, MemoryModuleType.IS_TEMPTED, MemoryModuleType.HAS_HUNTING_COOLDOWN});
 +    // CraftBukkit - decompile error
 +    protected static final ImmutableList<? extends MemoryModuleType<?>> MEMORY_TYPES = ImmutableList.<MemoryModuleType<?>>of(MemoryModuleType.BREED_TARGET, MemoryModuleType.NEAREST_LIVING_ENTITIES, MemoryModuleType.NEAREST_VISIBLE_LIVING_ENTITIES, MemoryModuleType.NEAREST_VISIBLE_PLAYER, MemoryModuleType.NEAREST_VISIBLE_ATTACKABLE_PLAYER, MemoryModuleType.LOOK_TARGET, MemoryModuleType.WALK_TARGET, MemoryModuleType.CANT_REACH_WALK_TARGET_SINCE, MemoryModuleType.PATH, MemoryModuleType.ATTACK_TARGET, MemoryModuleType.ATTACK_COOLING_DOWN, MemoryModuleType.NEAREST_VISIBLE_ADULT, new MemoryModuleType[]{MemoryModuleType.HURT_BY_ENTITY, MemoryModuleType.PLAY_DEAD_TICKS, MemoryModuleType.NEAREST_ATTACKABLE, MemoryModuleType.TEMPTING_PLAYER, MemoryModuleType.TEMPTATION_COOLDOWN_TICKS, MemoryModuleType.IS_TEMPTED, MemoryModuleType.HAS_HUNTING_COOLDOWN});
-     private static final DataWatcherObject<Integer> DATA_VARIANT = DataWatcher.a(Axolotl.class, DataWatcherRegistry.INT);
-     private static final DataWatcherObject<Boolean> DATA_PLAYING_DEAD = DataWatcher.a(Axolotl.class, DataWatcherRegistry.BOOLEAN);
-     private static final DataWatcherObject<Boolean> FROM_BUCKET = DataWatcher.a(Axolotl.class, DataWatcherRegistry.BOOLEAN);
-@@ -235,6 +236,7 @@
+     private static final DataWatcherObject<Integer> DATA_VARIANT = DataWatcher.defineId(Axolotl.class, DataWatcherRegistry.INT);
+     private static final DataWatcherObject<Boolean> DATA_PLAYING_DEAD = DataWatcher.defineId(Axolotl.class, DataWatcherRegistry.BOOLEAN);
+     private static final DataWatcherObject<Boolean> FROM_BUCKET = DataWatcher.defineId(Axolotl.class, DataWatcherRegistry.BOOLEAN);
+@@ -236,6 +237,7 @@
      @Override
      public void setFromBucket(boolean flag) {
          this.entityData.set(Axolotl.FROM_BUCKET, flag);
-+        this.setPersistenceRequired(this.isPersistent()); // CraftBukkit - SPIGOT-4106 update persistence
++        this.setPersistenceRequired(this.isPersistenceRequired()); // CraftBukkit - SPIGOT-4106 update persistence
      }
  
      @Nullable
-@@ -276,7 +278,7 @@
-     @Override
-     protected void mobTick() {
-         this.level.getMethodProfiler().enter("axolotlBrain");
--        this.getBehaviorController().a((WorldServer) this.level, (EntityLiving) this);
-+        this.getBehaviorController().a((WorldServer) this.level, this); // CraftBukkit - decompile error
-         this.level.getMethodProfiler().exit();
-         this.level.getMethodProfiler().enter("axolotlActivityUpdate");
-         AxolotlAi.a(this);
-@@ -418,7 +420,7 @@
+@@ -419,7 +421,7 @@
  
          if (i < 2400) {
              i = Math.min(2400, 100 + i);
@@ -36,21 +27,21 @@
          }
  
          entityhuman.removeEffect(MobEffects.DIG_SLOWDOWN);
-@@ -468,7 +470,7 @@
+@@ -469,7 +471,7 @@
  
      @Override
-     public BehaviorController<Axolotl> getBehaviorController() {
--        return super.getBehaviorController();
-+        return (BehaviorController<Axolotl>) super.getBehaviorController(); // CraftBukkit - decompile error
+     public BehaviorController<Axolotl> getBrain() {
+-        return super.getBrain();
++        return (BehaviorController<Axolotl>) super.getBrain(); // CraftBukkit - decompile error
      }
  
      @Override
-@@ -501,7 +503,7 @@
+@@ -502,7 +504,7 @@
  
      @Override
-     public boolean isTypeNotPersistent(double d0) {
--        return !this.isFromBucket() && !this.hasCustomName();
+     public boolean removeWhenFarAway(double d0) {
+-        return !this.fromBucket() && !this.hasCustomName();
 +        return true; // CraftBukkit
      }
  
-     private static class c extends SmoothSwimmingMoveControl {
+     public static boolean checkAxolotlSpawnRules(EntityTypes<? extends EntityLiving> entitytypes, WorldAccess worldaccess, EnumMobSpawn enummobspawn, BlockPosition blockposition, Random random) {

@@ -1,47 +1,38 @@
 --- a/net/minecraft/world/entity/animal/EntityParrot.java
 +++ b/net/minecraft/world/entity/animal/EntityParrot.java
-@@ -75,7 +75,7 @@
-     private static final Item POISONOUS_FOOD = Items.COOKIE;
-     private static final Set<Item> TAME_FOOD = Sets.newHashSet(new Item[]{Items.WHEAT_SEEDS, Items.MELON_SEEDS, Items.PUMPKIN_SEEDS, Items.BEETROOT_SEEDS});
-     private static final int VARIANTS = 5;
--    static final Map<EntityTypes<?>, SoundEffect> MOB_SOUND_MAP = (Map) SystemUtils.a((Object) Maps.newHashMap(), (hashmap) -> {
-+    static final Map<EntityTypes<?>, SoundEffect> MOB_SOUND_MAP = (Map) SystemUtils.a(Maps.newHashMap(), (hashmap) -> { // CraftBukkit - decompile error
-         hashmap.put(EntityTypes.BLAZE, SoundEffects.PARROT_IMITATE_BLAZE);
-         hashmap.put(EntityTypes.CAVE_SPIDER, SoundEffects.PARROT_IMITATE_SPIDER);
-         hashmap.put(EntityTypes.CREEPER, SoundEffects.PARROT_IMITATE_CREEPER);
-@@ -253,7 +253,7 @@
+@@ -258,7 +258,7 @@
              }
  
              if (!this.level.isClientSide) {
 -                if (this.random.nextInt(10) == 0) {
 +                if (this.random.nextInt(10) == 0 && !org.bukkit.craftbukkit.event.CraftEventFactory.callEntityTameEvent(this, entityhuman).isCancelled()) { // CraftBukkit
                      this.tame(entityhuman);
-                     this.level.broadcastEntityEffect(this, (byte) 7);
+                     this.level.broadcastEntityEvent(this, (byte) 7);
                  } else {
-@@ -267,7 +267,7 @@
-                 itemstack.subtract(1);
+@@ -272,7 +272,7 @@
+                 itemstack.shrink(1);
              }
  
 -            this.addEffect(new MobEffect(MobEffects.POISON, 900));
 +            this.addEffect(new MobEffect(MobEffects.POISON, 900), org.bukkit.event.entity.EntityPotionEffectEvent.Cause.FOOD); // CraftBukkit
              if (entityhuman.isCreative() || !this.isInvulnerable()) {
-                 this.damageEntity(DamageSource.playerAttack(entityhuman), Float.MAX_VALUE);
+                 this.hurt(DamageSource.playerAttack(entityhuman), Float.MAX_VALUE);
              }
-@@ -381,7 +381,7 @@
+@@ -384,7 +384,7 @@
  
      @Override
-     public boolean isCollidable() {
+     public boolean isPushable() {
 -        return true;
-+        return super.isCollidable(); // CraftBukkit - collidable API
++        return super.isPushable(); // CraftBukkit - collidable API
      }
  
      @Override
-@@ -396,7 +396,7 @@
-         if (this.isInvulnerable(damagesource)) {
+@@ -399,7 +399,7 @@
+         if (this.isInvulnerableTo(damagesource)) {
              return false;
          } else {
--            this.setWillSit(false);
-+            // this.setWillSit(false); // CraftBukkit - moved into EntityLiving.damageEntity(DamageSource, float)
-             return super.damageEntity(damagesource, f);
+-            this.setOrderedToSit(false);
++            // this.setOrderedToSit(false); // CraftBukkit - moved into EntityLiving.damageEntity(DamageSource, float)
+             return super.hurt(damagesource, f);
          }
      }

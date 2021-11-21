@@ -1,6 +1,6 @@
 --- a/net/minecraft/network/PacketDataSerializer.java
 +++ b/net/minecraft/network/PacketDataSerializer.java
-@@ -55,6 +55,8 @@
+@@ -54,6 +54,8 @@
  import net.minecraft.world.phys.MovingObjectPositionBlock;
  import net.minecraft.world.phys.Vec3D;
  
@@ -9,79 +9,79 @@
  public class PacketDataSerializer extends ByteBuf {
  
      private static final int MAX_VARINT_SIZE = 5;
-@@ -123,7 +125,7 @@
+@@ -122,7 +124,7 @@
  
-     public <T, C extends Collection<T>> C a(IntFunction<C> intfunction, Function<PacketDataSerializer, T> function) {
-         int i = this.j();
+     public <T, C extends Collection<T>> C readCollection(IntFunction<C> intfunction, Function<PacketDataSerializer, T> function) {
+         int i = this.readVarInt();
 -        C c0 = (Collection) intfunction.apply(i);
 +        C c0 = intfunction.apply(i); // CraftBukkit - decompile error
  
          for (int j = 0; j < i; ++j) {
              c0.add(function.apply(this));
-@@ -134,7 +136,7 @@
+@@ -133,7 +135,7 @@
  
-     public <T> void a(Collection<T> collection, BiConsumer<PacketDataSerializer, T> biconsumer) {
-         this.d(collection.size());
+     public <T> void writeCollection(Collection<T> collection, BiConsumer<PacketDataSerializer, T> biconsumer) {
+         this.writeVarInt(collection.size());
 -        Iterator iterator = collection.iterator();
 +        Iterator<T> iterator = collection.iterator(); // CraftBukkit - decompile error
  
          while (iterator.hasNext()) {
              T t0 = iterator.next();
-@@ -145,7 +147,7 @@
+@@ -144,7 +146,7 @@
      }
  
-     public <T> List<T> a(Function<PacketDataSerializer, T> function) {
--        return (List) this.a(Lists::newArrayListWithCapacity, function);
-+        return (List) this.a((java.util.function.IntFunction) Lists::newArrayListWithCapacity, function); // CraftBukkit - decompile error
+     public <T> List<T> readList(Function<PacketDataSerializer, T> function) {
+-        return (List) this.readCollection(Lists::newArrayListWithCapacity, function);
++        return (List) this.readCollection((java.util.function.IntFunction) Lists::newArrayListWithCapacity, function); // CraftBukkit - decompile error
      }
  
-     public IntList a() {
-@@ -161,12 +163,12 @@
+     public IntList readIntIdList() {
+@@ -160,12 +162,12 @@
  
-     public void a(IntList intlist) {
-         this.d(intlist.size());
--        intlist.forEach(this::d);
-+        intlist.forEach((java.util.function.IntConsumer) this::d); // CraftBukkit - decompile error
+     public void writeIntIdList(IntList intlist) {
+         this.writeVarInt(intlist.size());
+-        intlist.forEach(this::writeVarInt);
++        intlist.forEach((java.util.function.IntConsumer) this::writeVarInt); // CraftBukkit - decompile error
      }
  
-     public <K, V, M extends Map<K, V>> M a(IntFunction<M> intfunction, Function<PacketDataSerializer, K> function, Function<PacketDataSerializer, V> function1) {
-         int i = this.j();
+     public <K, V, M extends Map<K, V>> M readMap(IntFunction<M> intfunction, Function<PacketDataSerializer, K> function, Function<PacketDataSerializer, V> function1) {
+         int i = this.readVarInt();
 -        M m0 = (Map) intfunction.apply(i);
 +        M m0 = intfunction.apply(i); // CraftBukkit - decompile error
  
          for (int j = 0; j < i; ++j) {
              K k0 = function.apply(this);
-@@ -355,7 +357,7 @@
+@@ -354,7 +356,7 @@
      }
  
-     public <T extends Enum<T>> T a(Class<T> oclass) {
--        return ((Enum[]) oclass.getEnumConstants())[this.j()];
-+        return ((T[]) oclass.getEnumConstants())[this.j()]; // CraftBukkit - fix decompile error
+     public <T extends Enum<T>> T readEnum(Class<T> oclass) {
+-        return ((Enum[]) oclass.getEnumConstants())[this.readVarInt()];
++        return ((T[]) oclass.getEnumConstants())[this.readVarInt()]; // CraftBukkit - fix decompile error
      }
  
-     public PacketDataSerializer a(Enum<?> oenum) {
-@@ -432,7 +434,7 @@
+     public PacketDataSerializer writeEnum(Enum<?> oenum) {
+@@ -431,7 +433,7 @@
          } else {
              try {
-                 NBTCompressedStreamTools.a(nbttagcompound, (DataOutput) (new ByteBufOutputStream(this)));
+                 NBTCompressedStreamTools.write(nbttagcompound, (DataOutput) (new ByteBufOutputStream(this)));
 -            } catch (IOException ioexception) {
 +            } catch (Exception ioexception) { // CraftBukkit - IOException -> Exception
                  throw new EncoderException(ioexception);
              }
          }
-@@ -469,7 +471,7 @@
+@@ -468,7 +470,7 @@
      }
  
-     public PacketDataSerializer a(ItemStack itemstack) {
+     public PacketDataSerializer writeItem(ItemStack itemstack) {
 -        if (itemstack.isEmpty()) {
 +        if (itemstack.isEmpty() || itemstack.getItem() == null) { // CraftBukkit - NPE fix itemstack.getItem()
              this.writeBoolean(false);
          } else {
              this.writeBoolean(true);
-@@ -498,6 +500,11 @@
-             ItemStack itemstack = new ItemStack(Item.getById(i), b0);
+@@ -497,6 +499,11 @@
+             ItemStack itemstack = new ItemStack(Item.byId(i), b0);
  
-             itemstack.setTag(this.m());
+             itemstack.setTag(this.readNbt());
 +            // CraftBukkit start
 +            if (itemstack.getTag() != null) {
 +                CraftItemStack.setItemMeta(itemstack, CraftItemStack.getItemMeta(itemstack));

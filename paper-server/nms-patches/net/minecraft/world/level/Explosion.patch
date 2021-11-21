@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/Explosion.java
 +++ b/net/minecraft/world/level/Explosion.java
-@@ -43,6 +43,14 @@
+@@ -42,6 +42,14 @@
  import net.minecraft.world.phys.MovingObjectPosition;
  import net.minecraft.world.phys.Vec3D;
  
@@ -15,7 +15,7 @@
  public class Explosion {
  
      private static final ExplosionDamageCalculator EXPLOSION_DAMAGE_CALCULATOR = new ExplosionDamageCalculator();
-@@ -61,6 +69,7 @@
+@@ -60,6 +68,7 @@
      private final ExplosionDamageCalculator damageCalculator;
      private final List<BlockPosition> toBlow;
      private final Map<EntityHuman, Vec3D> hitPlayers;
@@ -23,7 +23,7 @@
  
      public Explosion(World world, @Nullable Entity entity, double d0, double d1, double d2, float f) {
          this(world, entity, d0, d1, d2, f, false, Explosion.Effect.DESTROY);
-@@ -85,7 +94,7 @@
+@@ -84,7 +93,7 @@
          this.hitPlayers = Maps.newHashMap();
          this.level = world;
          this.source = entity;
@@ -32,28 +32,27 @@
          this.x = d0;
          this.y = d1;
          this.z = d2;
-@@ -135,6 +144,11 @@
+@@ -134,6 +143,11 @@
      }
  
-     public void a() {
+     public void explode() {
 +        // CraftBukkit start
 +        if (this.radius < 0.1F) {
 +            return;
 +        }
 +        // CraftBukkit end
-         this.level.a(this.source, GameEvent.EXPLODE, new BlockPosition(this.x, this.y, this.z));
+         this.level.gameEvent(this.source, GameEvent.EXPLODE, new BlockPosition(this.x, this.y, this.z));
          Set<BlockPosition> set = Sets.newHashSet();
          boolean flag = true;
-@@ -218,7 +232,16 @@
-                         double d12 = (double) a(vec3d, entity);
+@@ -217,7 +231,15 @@
+                         double d12 = (double) getSeenPercent(vec3d, entity);
                          double d13 = (1.0D - d7) * d12;
  
--                        entity.damageEntity(this.b(), (float) ((int) ((d13 * d13 + d13) / 2.0D * 7.0D * (double) f2 + 1.0D)));
+-                        entity.hurt(this.getDamageSource(), (float) ((int) ((d13 * d13 + d13) / 2.0D * 7.0D * (double) f2 + 1.0D)));
 +                        // CraftBukkit start
-+                        // entity.damageEntity(this.b(), (float) ((int) ((d13 * d13 + d13) / 2.0D * 7.0D * (double) f2 + 1.0D)));
 +                        CraftEventFactory.entityDamage = source;
 +                        entity.forceExplosionKnockback = false;
-+                        boolean wasDamaged = entity.damageEntity(this.b(), (float) ((int) ((d13 * d13 + d13) / 2.0D * 7.0D * (double) f2 + 1.0D)));
++                        boolean wasDamaged = entity.hurt(this.getDamageSource(), (float) ((int) ((d13 * d13 + d13) / 2.0D * 7.0D * (double) f2 + 1.0D)));
 +                        CraftEventFactory.entityDamage = null;
 +                        if (!wasDamaged && !(entity instanceof EntityTNTPrimed || entity instanceof EntityFallingBlock) && !entity.forceExplosionKnockback) {
 +                            continue;
@@ -62,7 +61,7 @@
                          double d14 = d13;
  
                          if (entity instanceof EntityLiving) {
-@@ -260,6 +283,51 @@
+@@ -259,6 +281,51 @@
  
              Collections.shuffle(this.toBlow, this.level.random);
              Iterator iterator = this.toBlow.iterator();
@@ -114,34 +113,34 @@
  
              while (iterator.hasNext()) {
                  BlockPosition blockposition = (BlockPosition) iterator.next();
-@@ -274,8 +342,8 @@
-                         TileEntity tileentity = iblockdata.isTileEntity() ? this.level.getTileEntity(blockposition) : null;
-                         LootTableInfo.Builder loottableinfo_builder = (new LootTableInfo.Builder((WorldServer) this.level)).a(this.level.random).set(LootContextParameters.ORIGIN, Vec3D.a((BaseBlockPosition) blockposition)).set(LootContextParameters.TOOL, ItemStack.EMPTY).setOptional(LootContextParameters.BLOCK_ENTITY, tileentity).setOptional(LootContextParameters.THIS_ENTITY, this.source);
+@@ -273,8 +340,8 @@
+                         TileEntity tileentity = iblockdata.hasBlockEntity() ? this.level.getBlockEntity(blockposition) : null;
+                         LootTableInfo.Builder loottableinfo_builder = (new LootTableInfo.Builder((WorldServer) this.level)).withRandom(this.level.random).withParameter(LootContextParameters.ORIGIN, Vec3D.atCenterOf(blockposition)).withParameter(LootContextParameters.TOOL, ItemStack.EMPTY).withOptionalParameter(LootContextParameters.BLOCK_ENTITY, tileentity).withOptionalParameter(LootContextParameters.THIS_ENTITY, this.source);
  
 -                        if (this.blockInteraction == Explosion.Effect.DESTROY) {
--                            loottableinfo_builder.set(LootContextParameters.EXPLOSION_RADIUS, this.radius);
+-                            loottableinfo_builder.withParameter(LootContextParameters.EXPLOSION_RADIUS, this.radius);
 +                        if (this.blockInteraction == Explosion.Effect.DESTROY || yield < 1.0F) { // CraftBukkit - add yield
-+                            loottableinfo_builder.set(LootContextParameters.EXPLOSION_RADIUS, 1.0F / yield); // CraftBukkit - add yield
++                            loottableinfo_builder.withParameter(LootContextParameters.EXPLOSION_RADIUS, 1.0F / yield); // CraftBukkit - add yield
                          }
  
-                         iblockdata.a(loottableinfo_builder).forEach((itemstack) -> {
-@@ -305,7 +373,11 @@
+                         iblockdata.getDrops(loottableinfo_builder).forEach((itemstack) -> {
+@@ -304,7 +371,11 @@
                  BlockPosition blockposition2 = (BlockPosition) iterator1.next();
  
-                 if (this.random.nextInt(3) == 0 && this.level.getType(blockposition2).isAir() && this.level.getType(blockposition2.down()).i(this.level, blockposition2.down())) {
--                    this.level.setTypeUpdate(blockposition2, BlockFireAbstract.a((IBlockAccess) this.level, blockposition2));
+                 if (this.random.nextInt(3) == 0 && this.level.getBlockState(blockposition2).isAir() && this.level.getBlockState(blockposition2.below()).isSolidRender(this.level, blockposition2.below())) {
+-                    this.level.setBlockAndUpdate(blockposition2, BlockFireAbstract.getState(this.level, blockposition2));
 +                    // CraftBukkit start - Ignition by explosion
 +                    if (!org.bukkit.craftbukkit.event.CraftEventFactory.callBlockIgniteEvent(this.level, blockposition2.getX(), blockposition2.getY(), blockposition2.getZ(), this).isCancelled()) {
-+                        this.level.setTypeUpdate(blockposition2, BlockFireAbstract.a((IBlockAccess) this.level, blockposition2));
++                        this.level.setBlockAndUpdate(blockposition2, BlockFireAbstract.getState(this.level, blockposition2));
 +                    }
 +                    // CraftBukkit end
                  }
              }
          }
-@@ -313,6 +385,7 @@
+@@ -312,6 +383,7 @@
      }
  
-     private static void a(ObjectArrayList<Pair<ItemStack, BlockPosition>> objectarraylist, ItemStack itemstack, BlockPosition blockposition) {
+     private static void addBlockDrops(ObjectArrayList<Pair<ItemStack, BlockPosition>> objectarraylist, ItemStack itemstack, BlockPosition blockposition) {
 +        if (itemstack.isEmpty()) return; // CraftBukkit - SPIGOT-5425
          int i = objectarraylist.size();
  

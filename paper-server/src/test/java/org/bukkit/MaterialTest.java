@@ -38,7 +38,7 @@ public class MaterialTest extends AbstractTestingBase {
             if (item == null) continue;
 
             MinecraftKey id = IRegistry.ITEM.getKey(item);
-            String name = item.getName();
+            String name = item.getDescriptionId();
 
             Material material = materials.remove(id);
 

@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/entity/PersistentEntitySectionManager.java
 +++ b/net/minecraft/world/level/entity/PersistentEntitySectionManager.java
-@@ -32,12 +32,17 @@
+@@ -32,6 +32,11 @@
  import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
  
@@ -12,20 +12,13 @@
  public class PersistentEntitySectionManager<T extends EntityAccess> implements AutoCloseable {
  
      static final Logger LOGGER = LogManager.getLogger();
-     final Set<UUID> knownUuids = Sets.newHashSet();
-     final LevelCallback<T> callbacks;
--    private final EntityPersistentStorage<T> permanentStorage;
-+    public final EntityPersistentStorage<T> permanentStorage; // PAIL private -> public
-     private final EntityLookup<T> visibleEntityStorage = new EntityLookup<>();
-     final EntitySectionStorage<T> sectionStorage;
-     private final LevelEntityGetter<T> entityGetter;
 @@ -55,6 +60,16 @@
          this.entityGetter = new LevelEntityGetterAdapter<>(this.visibleEntityStorage, this.sectionStorage);
      }
  
 +    // CraftBukkit start - add method to get all entities in chunk
 +    public List<Entity> getEntities(ChunkCoordIntPair chunkCoordIntPair) {
-+        return sectionStorage.b(chunkCoordIntPair.pair()).flatMap(EntitySection::b).map(entity -> (Entity) entity).collect(Collectors.toList());
++        return sectionStorage.getExistingSectionsInChunk(chunkCoordIntPair.toLong()).flatMap(EntitySection::getEntities).map(entity -> (Entity) entity).collect(Collectors.toList());
 +    }
 +
 +    public boolean isPending(long pair) {
@@ -33,36 +26,18 @@
 +    }
 +    // CraftBukkit end
 +
-     void a(long i, EntitySection<T> entitysection) {
-         if (entitysection.a()) {
-             this.sectionStorage.e(i);
-@@ -82,7 +97,7 @@
-             long i = SectionPosition.c(t0.getChunkCoordinates());
-             EntitySection<T> entitysection = this.sectionStorage.c(i);
- 
--            entitysection.a((Object) t0);
-+            entitysection.a(t0); // CraftBukkit - decompile error
-             t0.a(new PersistentEntitySectionManager.a(t0, i, entitysection));
-             if (!flag) {
-                 this.callbacks.f(t0);
-@@ -186,7 +201,7 @@
-         });
-     }
- 
--    private void b(long i) {
-+    public void b(long i) { // PAIL private -> public, rename scheduleEntityLoading
-         PersistentEntitySectionManager.b persistententitysectionmanager_b = (PersistentEntitySectionManager.b) this.chunkLoadStatuses.get(i);
- 
-         if (persistententitysectionmanager_b == PersistentEntitySectionManager.b.FRESH) {
+     void removeSectionIfEmpty(long i, EntitySection<T> entitysection) {
+         if (entitysection.isEmpty()) {
+             this.sectionStorage.remove(i);
 @@ -196,6 +211,12 @@
      }
  
-     private boolean a(long i, Consumer<T> consumer) {
+     private boolean storeChunkSections(long i, Consumer<T> consumer) {
 +        // CraftBukkit start - add boolean for event call
-+        return a(i, consumer, false);
++        return storeChunkSections(i, consumer, false);
 +    }
 +
-+    private boolean a(long i, Consumer<T> consumer, boolean callEvent) {
++    private boolean storeChunkSections(long i, Consumer<T> consumer, boolean callEvent) {
 +        // CraftBukkit end
          PersistentEntitySectionManager.b persistententitysectionmanager_b = (PersistentEntitySectionManager.b) this.chunkLoadStatuses.get(i);
  
@@ -72,21 +47,21 @@
              if (list.isEmpty()) {
                  if (persistententitysectionmanager_b == PersistentEntitySectionManager.b.LOADED) {
 +                    if (callEvent) CraftEventFactory.callEntitiesUnloadEvent(((EntityStorage) permanentStorage).level, new ChunkCoordIntPair(i), ImmutableList.of()); // CraftBukkit
-                     this.permanentStorage.a(new ChunkEntities<>(new ChunkCoordIntPair(i), ImmutableList.of()));
+                     this.permanentStorage.storeEntities(new ChunkEntities<>(new ChunkCoordIntPair(i), ImmutableList.of()));
                  }
  
 @@ -215,6 +237,7 @@
-                 this.c(i);
+                 this.requestChunkLoad(i);
                  return false;
              } else {
 +                if (callEvent) CraftEventFactory.callEntitiesUnloadEvent(((EntityStorage) permanentStorage).level, new ChunkCoordIntPair(i), list.stream().map(entity -> (Entity) entity).collect(Collectors.toList())); // CraftBukkit
-                 this.permanentStorage.a(new ChunkEntities<>(new ChunkCoordIntPair(i), list));
+                 this.permanentStorage.storeEntities(new ChunkEntities<>(new ChunkCoordIntPair(i), list));
                  list.forEach(consumer);
                  return true;
 @@ -238,7 +261,7 @@
-     private boolean d(long i) {
-         boolean flag = this.a(i, (entityaccess) -> {
-             entityaccess.cD().forEach(this::g);
+     private boolean processChunkUnload(long i) {
+         boolean flag = this.storeChunkSections(i, (entityaccess) -> {
+             entityaccess.getPassengersAndSelf().forEach(this::unloadEntity);
 -        });
 +        }, true); // CraftBukkit - add boolean for event call
  
@@ -95,25 +70,25 @@
 @@ -254,19 +277,23 @@
      }
  
-     private void f() {
+     private void processUnloads() {
 -        this.chunksToUnload.removeIf((i) -> {
 +        this.chunksToUnload.removeIf((java.util.function.LongPredicate) (i) -> { // CraftBukkit - decompile error
-             return this.chunkVisibility.get(i) != Visibility.HIDDEN ? true : this.d(i);
+             return this.chunkVisibility.get(i) != Visibility.HIDDEN ? true : this.processChunkUnload(i);
          });
      }
  
-     private void g() {
+     private void processPendingLoads() {
 -        ChunkEntities chunkentities;
 +        ChunkEntities<T> chunkentities; // CraftBukkit - decompile error
  
          while ((chunkentities = (ChunkEntities) this.loadingInbox.poll()) != null) {
-             chunkentities.b().forEach((entityaccess) -> {
-                 this.a(entityaccess, true);
+             chunkentities.getEntities().forEach((entityaccess) -> {
+                 this.addEntity(entityaccess, true);
              });
-             this.chunkLoadStatuses.put(chunkentities.a().pair(), PersistentEntitySectionManager.b.LOADED);
+             this.chunkLoadStatuses.put(chunkentities.getPos().toLong(), PersistentEntitySectionManager.b.LOADED);
 +            // CraftBukkit start - call entity load event
-+            List<Entity> entities = getEntities(chunkentities.a()); // PAIL rename getChunkPos
-+            CraftEventFactory.callEntitiesLoadEvent(((EntityStorage) permanentStorage).level, chunkentities.a(), entities);
++            List<Entity> entities = getEntities(chunkentities.getPos());
++            CraftEventFactory.callEntitiesLoadEvent(((EntityStorage) permanentStorage).level, chunkentities.getPos(), entities);
 +            // CraftBukkit end
          }
  
@@ -121,47 +96,47 @@
 @@ -292,7 +319,7 @@
      }
  
-     public void b() {
--        this.h().forEach((i) -> {
-+        this.h().forEach((java.util.function.LongConsumer) (i) -> { // CraftBukkit - decompile error
+     public void autoSave() {
+-        this.getAllChunksToSave().forEach((i) -> {
++        this.getAllChunksToSave().forEach((java.util.function.LongConsumer) (i) -> { // CraftBukkit - decompile error
              boolean flag = this.chunkVisibility.get(i) == Visibility.HIDDEN;
  
              if (flag) {
 @@ -311,7 +338,7 @@
          while (!longset.isEmpty()) {
-             this.permanentStorage.a(false);
-             this.g();
+             this.permanentStorage.flush(false);
+             this.processPendingLoads();
 -            longset.removeIf((i) -> {
 +            longset.removeIf((java.util.function.LongPredicate) (i) -> { // CraftBukkit - decompile error
                  boolean flag = this.chunkVisibility.get(i) == Visibility.HIDDEN;
  
-                 return flag ? this.d(i) : this.a(i, (entityaccess) -> {
+                 return flag ? this.processChunkUnload(i) : this.storeChunkSections(i, (entityaccess) -> {
 @@ -323,7 +350,15 @@
      }
  
      public void close() throws IOException {
--        this.c();
+-        this.saveAll();
 +        // CraftBukkit start - add save boolean
 +        close(true);
 +    }
 +
 +    public void close(boolean save) throws IOException {
 +        if (save) {
-+            this.c(); // PAIL rename saveAll
++            this.saveAll();
 +        }
 +        // CraftBukkit end
          this.permanentStorage.close();
      }
  
 @@ -350,7 +385,7 @@
-     public void a(Writer writer) throws IOException {
-         CSVWriter csvwriter = CSVWriter.a().a("x").a("y").a("z").a("visibility").a("load_status").a("entity_count").a(writer);
+     public void dumpSections(Writer writer) throws IOException {
+         CSVWriter csvwriter = CSVWriter.builder().addColumn("x").addColumn("y").addColumn("z").addColumn("visibility").addColumn("load_status").addColumn("entity_count").build(writer);
  
--        this.sectionStorage.a().forEach((i) -> {
-+        this.sectionStorage.a().forEach((java.util.function.LongConsumer) (i) -> { // CraftBukkit - decompile error
+-        this.sectionStorage.getAllChunksWithExistingSections().forEach((i) -> {
++        this.sectionStorage.getAllChunksWithExistingSections().forEach((java.util.function.LongConsumer) (i) -> { // CraftBukkit - decompile error
              PersistentEntitySectionManager.b persistententitysectionmanager_b = (PersistentEntitySectionManager.b) this.chunkLoadStatuses.get(i);
  
-             this.sectionStorage.a(i).forEach((j) -> {
+             this.sectionStorage.getExistingSectionPositionsInChunk(i).forEach((j) -> {
 @@ -389,7 +424,7 @@
          private EntitySection<T> currentSection;
  
@@ -171,12 +146,3 @@
              this.currentSectionKey = i;
              this.currentSection = entitysection;
          }
-@@ -409,7 +444,7 @@
-                 PersistentEntitySectionManager.this.a(this.currentSectionKey, this.currentSection);
-                 EntitySection<T> entitysection = PersistentEntitySectionManager.this.sectionStorage.c(i);
- 
--                entitysection.a((Object) this.entity);
-+                entitysection.a(this.entity); // CraftBukkit - decompile error
-                 this.currentSection = entitysection;
-                 this.currentSectionKey = i;
-                 this.a(visibility, entitysection.c());

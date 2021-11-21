@@ -22,26 +22,26 @@ public class CraftResultInventory extends CraftInventory {
 
     @Override
     public ItemStack getItem(int slot) {
-        if (slot < getIngredientsInventory().getSize()) {
+        if (slot < getIngredientsInventory().getContainerSize()) {
             net.minecraft.world.item.ItemStack item = getIngredientsInventory().getItem(slot);
             return item.isEmpty() ? null : CraftItemStack.asCraftMirror(item);
         } else {
-            net.minecraft.world.item.ItemStack item = getResultInventory().getItem(slot - getIngredientsInventory().getSize());
+            net.minecraft.world.item.ItemStack item = getResultInventory().getItem(slot - getIngredientsInventory().getContainerSize());
             return item.isEmpty() ? null : CraftItemStack.asCraftMirror(item);
         }
     }
 
     @Override
     public void setItem(int index, ItemStack item) {
-        if (index < getIngredientsInventory().getSize()) {
+        if (index < getIngredientsInventory().getContainerSize()) {
             getIngredientsInventory().setItem(index, CraftItemStack.asNMSCopy(item));
         } else {
-            getResultInventory().setItem((index - getIngredientsInventory().getSize()), CraftItemStack.asNMSCopy(item));
+            getResultInventory().setItem((index - getIngredientsInventory().getContainerSize()), CraftItemStack.asNMSCopy(item));
         }
     }
 
     @Override
     public int getSize() {
-        return getResultInventory().getSize() + getIngredientsInventory().getSize();
+        return getResultInventory().getContainerSize() + getIngredientsInventory().getContainerSize();
     }
 }

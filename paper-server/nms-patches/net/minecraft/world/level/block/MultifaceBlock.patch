@@ -1,46 +1,37 @@
 --- a/net/minecraft/world/level/block/MultifaceBlock.java
 +++ b/net/minecraft/world/level/block/MultifaceBlock.java
-@@ -45,7 +45,7 @@
-     private static final VoxelShape NORTH_AABB = Block.a(0.0D, 0.0D, 0.0D, 16.0D, 16.0D, 1.0D);
-     private static final VoxelShape SOUTH_AABB = Block.a(0.0D, 0.0D, 15.0D, 16.0D, 16.0D, 16.0D);
-     private static final Map<EnumDirection, BlockStateBoolean> PROPERTY_BY_DIRECTION = BlockSprawling.PROPERTY_BY_DIRECTION;
--    private static final Map<EnumDirection, VoxelShape> SHAPE_BY_DIRECTION = (Map) SystemUtils.a((Object) Maps.newEnumMap(EnumDirection.class), (enummap) -> {
-+    private static final Map<EnumDirection, VoxelShape> SHAPE_BY_DIRECTION = (Map) SystemUtils.a(Maps.newEnumMap(EnumDirection.class), (enummap) -> { // CraftBukkit - decompile error
-         enummap.put(EnumDirection.NORTH, MultifaceBlock.NORTH_AABB);
-         enummap.put(EnumDirection.EAST, MultifaceBlock.EAST_AABB);
-         enummap.put(EnumDirection.SOUTH, MultifaceBlock.SOUTH_AABB);
-@@ -134,7 +134,7 @@
+@@ -133,7 +133,7 @@
  
-         return (IBlockData) Arrays.stream(blockactioncontext.f()).map((enumdirection) -> {
-             return this.c(iblockdata, (IBlockAccess) world, blockposition, enumdirection);
+         return (IBlockData) Arrays.stream(blockactioncontext.getNearestLookingDirections()).map((enumdirection) -> {
+             return this.getStateForPlacement(iblockdata, world, blockposition, enumdirection);
 -        }).filter(Objects::nonNull).findFirst().orElse((Object) null);
 +        }).filter(Objects::nonNull).findFirst().orElse(null); // CraftBukkit - decompile error
      }
  
      @Nullable
-@@ -226,7 +226,7 @@
+@@ -225,7 +225,7 @@
          if (optional.isPresent()) {
              Pair<BlockPosition, EnumDirection> pair = (Pair) optional.get();
  
--            return this.a(generatoraccess, (BlockPosition) pair.getFirst(), (EnumDirection) pair.getSecond(), flag);
-+            return this.a(generatoraccess, (BlockPosition) pair.getFirst(), (EnumDirection) pair.getSecond(), flag, blockposition); // CraftBukkit
+-            return this.spreadToFace(generatoraccess, (BlockPosition) pair.getFirst(), (EnumDirection) pair.getSecond(), flag);
++            return this.spreadToFace(generatoraccess, (BlockPosition) pair.getFirst(), (EnumDirection) pair.getSecond(), flag, blockposition); // CraftBukkit
          } else {
              return false;
          }
-@@ -271,7 +271,7 @@
+@@ -270,7 +270,7 @@
          }
      }
  
--    private boolean a(GeneratorAccess generatoraccess, BlockPosition blockposition, EnumDirection enumdirection, boolean flag) {
-+    private boolean a(GeneratorAccess generatoraccess, BlockPosition blockposition, EnumDirection enumdirection, boolean flag, BlockPosition source) { // CraftBukkit
-         IBlockData iblockdata = generatoraccess.getType(blockposition);
-         IBlockData iblockdata1 = this.c(iblockdata, (IBlockAccess) generatoraccess, blockposition, enumdirection);
+-    private boolean spreadToFace(GeneratorAccess generatoraccess, BlockPosition blockposition, EnumDirection enumdirection, boolean flag) {
++    private boolean spreadToFace(GeneratorAccess generatoraccess, BlockPosition blockposition, EnumDirection enumdirection, boolean flag, BlockPosition source) { // CraftBukkit
+         IBlockData iblockdata = generatoraccess.getBlockState(blockposition);
+         IBlockData iblockdata1 = this.getStateForPlacement(iblockdata, generatoraccess, blockposition, enumdirection);
  
-@@ -280,7 +280,7 @@
-                 generatoraccess.A(blockposition).e(blockposition);
+@@ -279,7 +279,7 @@
+                 generatoraccess.getChunk(blockposition).markPosForPostprocessing(blockposition);
              }
  
--            return generatoraccess.setTypeAndData(blockposition, iblockdata1, 2);
+-            return generatoraccess.setBlock(blockposition, iblockdata1, 2);
 +            return org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockSpreadEvent(generatoraccess, source, blockposition, iblockdata1, 2); // CraftBukkit
          } else {
              return false;

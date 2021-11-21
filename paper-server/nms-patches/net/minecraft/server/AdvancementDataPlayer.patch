@@ -1,7 +1,7 @@
 --- a/net/minecraft/server/AdvancementDataPlayer.java
 +++ b/net/minecraft/server/AdvancementDataPlayer.java
 @@ -181,7 +181,11 @@
-                         Advancement advancement = advancementdataworld.a((MinecraftKey) entry.getKey());
+                         Advancement advancement = advancementdataworld.getAdvancement((MinecraftKey) entry.getKey());
  
                          if (advancement == null) {
 -                            AdvancementDataPlayer.LOGGER.warn("Ignored advancement '{}' in progress file {} - it doesn't exist anymore?", entry.getKey(), this.file);
@@ -11,13 +11,13 @@
 +                            }
 +                            // CraftBukkit end
                          } else {
-                             this.a(advancement, (AdvancementProgress) entry.getValue());
+                             this.startProgress(advancement, (AdvancementProgress) entry.getValue());
                          }
 @@ -276,6 +280,7 @@
              this.progressChanged.add(advancement);
              flag = true;
              if (!flag1 && advancementprogress.isDone()) {
 +                this.player.level.getCraftServer().getPluginManager().callEvent(new org.bukkit.event.player.PlayerAdvancementDoneEvent(this.player.getBukkitEntity(), advancement.bukkit)); // CraftBukkit
-                 advancement.d().a(this.player);
-                 if (advancement.c() != null && advancement.c().i() && this.player.level.getGameRules().getBoolean(GameRules.RULE_ANNOUNCE_ADVANCEMENTS)) {
-                     this.playerList.sendMessage(new ChatMessage("chat.type.advancement." + advancement.c().e().a(), new Object[]{this.player.getScoreboardDisplayName(), advancement.j()}), ChatMessageType.SYSTEM, SystemUtils.NIL_UUID);
+                 advancement.getRewards().grant(this.player);
+                 if (advancement.getDisplay() != null && advancement.getDisplay().shouldAnnounceChat() && this.player.level.getGameRules().getBoolean(GameRules.RULE_ANNOUNCE_ADVANCEMENTS)) {
+                     this.playerList.broadcastMessage(new ChatMessage("chat.type.advancement." + advancement.getDisplay().getFrame().getName(), new Object[]{this.player.getDisplayName(), advancement.getChatComponent()}), ChatMessageType.SYSTEM, SystemUtils.NIL_UUID);

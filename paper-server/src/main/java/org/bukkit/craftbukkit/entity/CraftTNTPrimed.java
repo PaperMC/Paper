@@ -36,12 +36,12 @@ public class CraftTNTPrimed extends CraftEntity implements TNTPrimed {
 
     @Override
     public int getFuseTicks() {
-        return getHandle().getFuseTicks();
+        return getHandle().getFuse();
     }
 
     @Override
     public void setFuseTicks(int fuseTicks) {
-        getHandle().setFuseTicks(fuseTicks);
+        getHandle().setFuse(fuseTicks);
     }
 
     @Override
@@ -61,7 +61,7 @@ public class CraftTNTPrimed extends CraftEntity implements TNTPrimed {
 
     @Override
     public Entity getSource() {
-        EntityLiving source = getHandle().getSource();
+        EntityLiving source = getHandle().getOwner();
 
         return (source != null) ? source.getBukkitEntity() : null;
     }

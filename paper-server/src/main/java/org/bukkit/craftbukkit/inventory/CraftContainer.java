@@ -160,7 +160,7 @@ public class CraftContainer extends Container {
             case CHEST:
             case ENDER_CHEST:
             case BARREL:
-                delegate = new ContainerChest(Containers.GENERIC_9x3, windowId, bottom, top, top.getSize() / 9);
+                delegate = new ContainerChest(Containers.GENERIC_9x3, windowId, bottom, top, top.getContainerSize() / 9);
                 break;
             case DISPENSER:
             case DROPPER:
@@ -239,57 +239,57 @@ public class CraftContainer extends Container {
 
     private void setupWorkbench(IInventory top, IInventory bottom) {
         // This code copied from ContainerWorkbench
-        this.a(new Slot(top, 0, 124, 35));
+        this.addSlot(new Slot(top, 0, 124, 35));
 
         int row;
         int col;
 
         for (row = 0; row < 3; ++row) {
             for (col = 0; col < 3; ++col) {
-                this.a(new Slot(top, 1 + col + row * 3, 30 + col * 18, 17 + row * 18));
+                this.addSlot(new Slot(top, 1 + col + row * 3, 30 + col * 18, 17 + row * 18));
             }
         }
 
         for (row = 0; row < 3; ++row) {
             for (col = 0; col < 9; ++col) {
-                this.a(new Slot(bottom, col + row * 9 + 9, 8 + col * 18, 84 + row * 18));
+                this.addSlot(new Slot(bottom, col + row * 9 + 9, 8 + col * 18, 84 + row * 18));
             }
         }
 
         for (col = 0; col < 9; ++col) {
-            this.a(new Slot(bottom, col, 8 + col * 18, 142));
+            this.addSlot(new Slot(bottom, col, 8 + col * 18, 142));
         }
         // End copy from ContainerWorkbench
     }
 
     private void setupAnvil(IInventory top, IInventory bottom) {
         // This code copied from ContainerAnvilAbstract
-        this.a(new Slot(top, 0, 27, 47));
-        this.a(new Slot(top, 1, 76, 47));
-        this.a(new Slot(top, 2, 134, 47));
+        this.addSlot(new Slot(top, 0, 27, 47));
+        this.addSlot(new Slot(top, 1, 76, 47));
+        this.addSlot(new Slot(top, 2, 134, 47));
 
         int row;
         int col;
 
         for (row = 0; row < 3; ++row) {
             for (col = 0; col < 9; ++col) {
-                this.a(new Slot(bottom, col + row * 9 + 9, 8 + col * 18, 84 + row * 18));
+                this.addSlot(new Slot(bottom, col + row * 9 + 9, 8 + col * 18, 84 + row * 18));
             }
         }
 
         for (row = 0; row < 9; ++row) {
-            this.a(new Slot(bottom, row, 8 + row * 18, 142));
+            this.addSlot(new Slot(bottom, row, 8 + row * 18, 142));
         }
         // End copy from ContainerAnvilAbstract
     }
 
     @Override
-    public ItemStack shiftClick(EntityHuman entityhuman, int i) {
-        return (delegate != null) ? delegate.shiftClick(entityhuman, i) : super.shiftClick(entityhuman, i);
+    public ItemStack quickMoveStack(EntityHuman entityhuman, int i) {
+        return (delegate != null) ? delegate.quickMoveStack(entityhuman, i) : super.quickMoveStack(entityhuman, i);
     }
 
     @Override
-    public boolean canUse(EntityHuman entity) {
+    public boolean stillValid(EntityHuman entity) {
         return true;
     }
 

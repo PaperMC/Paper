@@ -29,12 +29,12 @@
 +    }
 +    // CraftBukkit end
 +
-     public static Properties loadPropertiesFile(Path path) {
+     public static Properties loadFromFile(Path path) {
          Properties properties = new Properties();
  
 @@ -58,6 +73,11 @@
  
-     public void savePropertiesFile(Path path) {
+     public void store(Path path) {
          try {
 +            // CraftBukkit start - Don't attempt writing to file if it's read only
 +            if (path.toFile().exists() && !path.toFile().canWrite()) {
@@ -45,7 +45,7 @@
  
              try {
 @@ -86,7 +106,7 @@
-     private static <V extends Number> Function<String, V> a(Function<String, V> function) {
+     private static <V extends Number> Function<String, V> wrapNumberDeserializer(Function<String, V> function) {
          return (s) -> {
              try {
 -                return (Number) function.apply(s);
@@ -56,7 +56,7 @@
 @@ -105,7 +125,7 @@
  
      @Nullable
-     private String c(String s) {
+     private String getStringRaw(String s) {
 -        return (String) this.properties.get(s);
 +        return (String) getOverride(s, this.properties.getProperty(s)); // CraftBukkit
      }
@@ -70,25 +70,7 @@
 +        return new PropertyManager.EditableProperty(s, v1, function1); // CraftBukkit - decompile error
      }
  
-     protected <V> V a(String s, Function<String, V> function, UnaryOperator<V> unaryoperator, Function<V, String> function1, V v0) {
-@@ -162,7 +182,7 @@
-     }
- 
-     protected int getInt(String s, int i) {
--        return (Integer) this.a(s, a(Integer::parseInt), (Object) i);
-+        return (Integer) this.a(s, a(Integer::parseInt), i); // CraftBukkit - decompile error
-     }
- 
-     protected PropertyManager<T>.EditableProperty<Integer> b(String s, int i) {
-@@ -174,7 +194,7 @@
-     }
- 
-     protected long getLong(String s, long i) {
--        return (Long) this.a(s, a(Long::parseLong), (Object) i);
-+        return (Long) this.a(s, a(Long::parseLong), i); // CraftBukkit - decompile error
-     }
- 
-     protected boolean getBoolean(String s, boolean flag) {
+     protected <V> V get(String s, Function<String, V> function, UnaryOperator<V> unaryoperator, Function<V, String> function1, V v0) {
 @@ -197,7 +217,7 @@
          return properties;
      }
@@ -108,7 +90,7 @@
              this.value = object;
              this.serializer = function;
 @@ -219,7 +239,7 @@
-             Properties properties = PropertyManager.this.a();
+             Properties properties = PropertyManager.this.cloneProperties();
  
              properties.put(this.key, this.serializer.apply(v0));
 -            return PropertyManager.this.reload(iregistrycustom, properties);

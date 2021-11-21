@@ -1,16 +1,16 @@
 --- a/net/minecraft/server/network/ServerConnection.java
 +++ b/net/minecraft/server/network/ServerConnection.java
 @@ -96,14 +96,24 @@
-                     int j = ServerConnection.this.server.l();
+                     int j = ServerConnection.this.server.getRateLimitPacketsPerSecond();
                      Object object = j > 0 ? new NetworkManagerServer(j) : new NetworkManager(EnumProtocolDirection.SERVERBOUND);
  
 -                    ServerConnection.this.connections.add(object);
 +                    ServerConnection.this.connections.add((NetworkManager) object); // CraftBukkit - decompile error
                      channel.pipeline().addLast("packet_handler", (ChannelHandler) object);
-                     ((NetworkManager) object).setPacketListener(new HandshakeListener(ServerConnection.this.server, (NetworkManager) object));
+                     ((NetworkManager) object).setListener(new HandshakeListener(ServerConnection.this.server, (NetworkManager) object));
                  }
--            }).group((EventLoopGroup) lazyinitvar.a()).localAddress(inetaddress, i)).bind().syncUninterruptibly());
-+            }).group((EventLoopGroup) lazyinitvar.a()).localAddress(inetaddress, i)).option(ChannelOption.AUTO_READ, false).bind().syncUninterruptibly()); // CraftBukkit
+-            }).group((EventLoopGroup) lazyinitvar.get()).localAddress(inetaddress, i)).bind().syncUninterruptibly());
++            }).group((EventLoopGroup) lazyinitvar.get()).localAddress(inetaddress, i)).option(ChannelOption.AUTO_READ, false).bind().syncUninterruptibly()); // CraftBukkit
          }
      }
  
@@ -24,6 +24,6 @@
 +    }
 +    // CraftBukkit end
 +
-     public SocketAddress a() {
+     public SocketAddress startMemoryChannel() {
          List list = this.channels;
          ChannelFuture channelfuture;

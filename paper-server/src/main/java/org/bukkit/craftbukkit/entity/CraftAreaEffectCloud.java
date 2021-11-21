@@ -133,7 +133,7 @@ public class CraftAreaEffectCloud extends CraftEntity implements AreaEffectCloud
 
     @Override
     public void setColor(Color color) {
-        getHandle().setColor(color.asRGB());
+        getHandle().setFixedColor(color.asRGB());
     }
 
     @Override
@@ -141,7 +141,7 @@ public class CraftAreaEffectCloud extends CraftEntity implements AreaEffectCloud
         int effectId = effect.getType().getId();
         MobEffect existing = null;
         for (MobEffect mobEffect : getHandle().effects) {
-            if (MobEffectList.getId(mobEffect.getMobEffect()) == effectId) {
+            if (MobEffectList.getId(mobEffect.getEffect()) == effectId) {
                 existing = mobEffect;
             }
         }
@@ -174,7 +174,7 @@ public class CraftAreaEffectCloud extends CraftEntity implements AreaEffectCloud
     @Override
     public boolean hasCustomEffect(PotionEffectType type) {
         for (MobEffect effect : getHandle().effects) {
-            if (CraftPotionUtil.equals(effect.getMobEffect(), type)) {
+            if (CraftPotionUtil.equals(effect.getEffect(), type)) {
                 return true;
             }
         }
@@ -191,7 +191,7 @@ public class CraftAreaEffectCloud extends CraftEntity implements AreaEffectCloud
         int effectId = effect.getId();
         MobEffect existing = null;
         for (MobEffect mobEffect : getHandle().effects) {
-            if (MobEffectList.getId(mobEffect.getMobEffect()) == effectId) {
+            if (MobEffectList.getId(mobEffect.getEffect()) == effectId) {
                 existing = mobEffect;
             }
         }
@@ -206,26 +206,26 @@ public class CraftAreaEffectCloud extends CraftEntity implements AreaEffectCloud
     @Override
     public void setBasePotionData(PotionData data) {
         Validate.notNull(data, "PotionData cannot be null");
-        getHandle().setType(CraftPotionUtil.fromBukkit(data));
+        getHandle().setPotionType(CraftPotionUtil.fromBukkit(data));
     }
 
     @Override
     public PotionData getBasePotionData() {
-        return CraftPotionUtil.toBukkit(getHandle().getType());
+        return CraftPotionUtil.toBukkit(getHandle().getPotionType());
     }
 
     @Override
     public ProjectileSource getSource() {
-        EntityLiving source = getHandle().getSource();
+        EntityLiving source = getHandle().getOwner();
         return (source == null) ? null : (LivingEntity) source.getBukkitEntity();
     }
 
     @Override
     public void setSource(ProjectileSource shooter) {
         if (shooter instanceof CraftLivingEntity) {
-            getHandle().setSource((EntityLiving) ((CraftLivingEntity) shooter).getHandle());
+            getHandle().setOwner((EntityLiving) ((CraftLivingEntity) shooter).getHandle());
         } else {
-            getHandle().setSource((EntityLiving) null);
+            getHandle().setOwner((EntityLiving) null);
         }
     }
 }

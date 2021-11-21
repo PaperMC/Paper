@@ -15,7 +15,7 @@
  
      private final Map<AttributeBase, AttributeModifier> attributeModifiers = Maps.newHashMap();
 @@ -44,26 +51,37 @@
-     public void tick(EntityLiving entityliving, int i) {
+     public void applyEffectTick(EntityLiving entityliving, int i) {
          if (this == MobEffects.REGENERATION) {
              if (entityliving.getHealth() < entityliving.getMaxHealth()) {
 -                entityliving.heal(1.0F);
@@ -23,14 +23,14 @@
              }
          } else if (this == MobEffects.POISON) {
              if (entityliving.getHealth() > 1.0F) {
--                entityliving.damageEntity(DamageSource.MAGIC, 1.0F);
-+                entityliving.damageEntity(CraftEventFactory.POISON, 1.0F);  // CraftBukkit - DamageSource.MAGIC -> CraftEventFactory.POISON
+-                entityliving.hurt(DamageSource.MAGIC, 1.0F);
++                entityliving.hurt(CraftEventFactory.POISON, 1.0F);  // CraftBukkit - DamageSource.MAGIC -> CraftEventFactory.POISON
              }
          } else if (this == MobEffects.WITHER) {
-             entityliving.damageEntity(DamageSource.WITHER, 1.0F);
+             entityliving.hurt(DamageSource.WITHER, 1.0F);
          } else if (this == MobEffects.HUNGER && entityliving instanceof EntityHuman) {
--            ((EntityHuman) entityliving).applyExhaustion(0.005F * (float) (i + 1));
-+            ((EntityHuman) entityliving).applyExhaustion(0.005F * (float) (i + 1), org.bukkit.event.entity.EntityExhaustionEvent.ExhaustionReason.HUNGER_EFFECT); // CraftBukkit - EntityExhaustionEvent
+-            ((EntityHuman) entityliving).causeFoodExhaustion(0.005F * (float) (i + 1));
++            ((EntityHuman) entityliving).causeFoodExhaustion(0.005F * (float) (i + 1), org.bukkit.event.entity.EntityExhaustionEvent.ExhaustionReason.HUNGER_EFFECT); // CraftBukkit - EntityExhaustionEvent
          } else if (this == MobEffects.SATURATION && entityliving instanceof EntityHuman) {
              if (!entityliving.level.isClientSide) {
 -                ((EntityHuman) entityliving).getFoodData().eat(i + 1, 1.0F);
@@ -44,12 +44,12 @@
 +                    entityhuman.getFoodData().eat(event.getFoodLevel() - oldFoodLevel, 1.0F);
 +                }
 +
-+                ((EntityPlayer) entityhuman).connection.sendPacket(new PacketPlayOutUpdateHealth(((EntityPlayer) entityhuman).getBukkitEntity().getScaledHealth(), entityhuman.getFoodData().foodLevel, entityhuman.getFoodData().saturationLevel));
++                ((EntityPlayer) entityhuman).connection.send(new PacketPlayOutUpdateHealth(((EntityPlayer) entityhuman).getBukkitEntity().getScaledHealth(), entityhuman.getFoodData().foodLevel, entityhuman.getFoodData().saturationLevel));
 +                // CraftBukkit end
              }
-         } else if ((this != MobEffects.HEAL || entityliving.dT()) && (this != MobEffects.HARM || !entityliving.dT())) {
-             if (this == MobEffects.HARM && !entityliving.dT() || this == MobEffects.HEAL && entityliving.dT()) {
-                 entityliving.damageEntity(DamageSource.MAGIC, (float) (6 << i));
+         } else if ((this != MobEffects.HEAL || entityliving.isInvertedHealAndHarm()) && (this != MobEffects.HARM || !entityliving.isInvertedHealAndHarm())) {
+             if (this == MobEffects.HARM && !entityliving.isInvertedHealAndHarm() || this == MobEffects.HEAL && entityliving.isInvertedHealAndHarm()) {
+                 entityliving.hurt(DamageSource.MAGIC, (float) (6 << i));
              }
          } else {
 -            entityliving.heal((float) Math.max(4 << i, 0));

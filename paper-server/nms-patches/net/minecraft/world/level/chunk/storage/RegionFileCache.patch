@@ -1,42 +1,56 @@
 --- a/net/minecraft/world/level/chunk/storage/RegionFileCache.java
 +++ b/net/minecraft/world/level/chunk/storage/RegionFileCache.java
-@@ -27,7 +27,7 @@
+@@ -29,7 +29,7 @@
          this.sync = flag;
      }
  
--    private RegionFile getFile(ChunkCoordIntPair chunkcoordintpair) throws IOException {
-+    private RegionFile getFile(ChunkCoordIntPair chunkcoordintpair, boolean existingOnly) throws IOException { // CraftBukkit
-         long i = ChunkCoordIntPair.pair(chunkcoordintpair.getRegionX(), chunkcoordintpair.getRegionZ());
+-    private RegionFile getRegionFile(ChunkCoordIntPair chunkcoordintpair) throws IOException {
++    private RegionFile getRegionFile(ChunkCoordIntPair chunkcoordintpair, boolean existingOnly) throws IOException { // CraftBukkit
+         long i = ChunkCoordIntPair.asLong(chunkcoordintpair.getRegionX(), chunkcoordintpair.getRegionZ());
          RegionFile regionfile = (RegionFile) this.regionCache.getAndMoveToFirst(i);
  
-@@ -45,6 +45,7 @@
-             File file = this.folder;
+@@ -44,6 +44,7 @@
+             Path path = this.folder;
              int j = chunkcoordintpair.getRegionX();
-             File file1 = new File(file, "r." + j + "." + chunkcoordintpair.getRegionZ() + ".mca");
-+            if (existingOnly && !file1.exists()) return null; // CraftBukkit
-             RegionFile regionfile1 = new RegionFile(file1, this.folder, this.sync);
+             Path path1 = path.resolve("r." + j + "." + chunkcoordintpair.getRegionZ() + ".mca");
++            if (existingOnly && !Files.exists(path1)) return null; // CraftBukkit
+             RegionFile regionfile1 = new RegionFile(path1, this.folder, this.sync);
  
              this.regionCache.putAndMoveToFirst(i, regionfile1);
-@@ -54,7 +55,12 @@
+@@ -53,7 +54,12 @@
  
      @Nullable
      public NBTTagCompound read(ChunkCoordIntPair chunkcoordintpair) throws IOException {
--        RegionFile regionfile = this.getFile(chunkcoordintpair);
+-        RegionFile regionfile = this.getRegionFile(chunkcoordintpair);
 +        // CraftBukkit start - SPIGOT-5680: There's no good reason to preemptively create files on read, save that for writing
-+        RegionFile regionfile = this.getFile(chunkcoordintpair, true);
++        RegionFile regionfile = this.getRegionFile(chunkcoordintpair, true);
 +        if (regionfile == null) {
 +            return null;
 +        }
 +        // CraftBukkit end
-         DataInputStream datainputstream = regionfile.a(chunkcoordintpair);
+         DataInputStream datainputstream = regionfile.getChunkDataInputStream(chunkcoordintpair);
  
          NBTTagCompound nbttagcompound;
-@@ -94,7 +100,7 @@
+@@ -93,7 +99,12 @@
+     }
+ 
+     public void scanChunk(ChunkCoordIntPair chunkcoordintpair, StreamTagVisitor streamtagvisitor) throws IOException {
+-        RegionFile regionfile = this.getRegionFile(chunkcoordintpair);
++        // CraftBukkit start - SPIGOT-5680: There's no good reason to preemptively create files on read, save that for writing
++        RegionFile regionfile = this.getRegionFile(chunkcoordintpair, true);
++        if (regionfile == null) {
++            return;
++        }
++        // CraftBukkit end
+         DataInputStream datainputstream = regionfile.getChunkDataInputStream(chunkcoordintpair);
+ 
+         try {
+@@ -119,7 +130,7 @@
      }
  
      protected void write(ChunkCoordIntPair chunkcoordintpair, @Nullable NBTTagCompound nbttagcompound) throws IOException {
--        RegionFile regionfile = this.getFile(chunkcoordintpair);
-+        RegionFile regionfile = this.getFile(chunkcoordintpair, false); // CraftBukkit
+-        RegionFile regionfile = this.getRegionFile(chunkcoordintpair);
++        RegionFile regionfile = this.getRegionFile(chunkcoordintpair, false); // CraftBukkit
  
          if (nbttagcompound == null) {
-             regionfile.d(chunkcoordintpair);
+             regionfile.clear(chunkcoordintpair);

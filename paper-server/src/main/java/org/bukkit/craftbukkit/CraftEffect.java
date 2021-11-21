@@ -60,7 +60,7 @@ public class CraftEffect {
             break;
         case STEP_SOUND:
             Validate.isTrue(((Material) data).isBlock(), "Material is not a block!");
-            datavalue = Block.getCombinedId(CraftMagicNumbers.getBlock((Material) data).getBlockData());
+            datavalue = Block.getId(CraftMagicNumbers.getBlock((Material) data).defaultBlockState());
             break;
         case COMPOSTER_FILL_ATTEMPT:
             datavalue = ((Boolean) data) ? 1 : 0;

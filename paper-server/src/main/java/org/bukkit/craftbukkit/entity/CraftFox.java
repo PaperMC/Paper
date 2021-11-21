@@ -50,7 +50,7 @@ public class CraftFox extends CraftAnimals implements Fox {
 
     @Override
     public void setCrouching(boolean crouching) {
-        getHandle().setCrouching(crouching);
+        getHandle().setIsCrouching(crouching);
     }
 
     @Override
@@ -70,7 +70,7 @@ public class CraftFox extends CraftAnimals implements Fox {
 
     @Override
     public AnimalTamer getFirstTrustedPlayer() {
-        UUID uuid = getHandle().getDataWatcher().get(EntityFox.DATA_TRUSTED_ID_0).orElse(null);
+        UUID uuid = getHandle().getEntityData().get(EntityFox.DATA_TRUSTED_ID_0).orElse(null);
         if (uuid == null) {
             return null;
         }
@@ -85,16 +85,16 @@ public class CraftFox extends CraftAnimals implements Fox {
 
     @Override
     public void setFirstTrustedPlayer(AnimalTamer player) {
-        if (player == null && getHandle().getDataWatcher().get(EntityFox.DATA_TRUSTED_ID_1).isPresent()) {
+        if (player == null && getHandle().getEntityData().get(EntityFox.DATA_TRUSTED_ID_1).isPresent()) {
             throw new IllegalStateException("Must remove second trusted player first");
         }
 
-        getHandle().getDataWatcher().set(EntityFox.DATA_TRUSTED_ID_0, player == null ? Optional.empty() : Optional.of(player.getUniqueId()));
+        getHandle().getEntityData().set(EntityFox.DATA_TRUSTED_ID_0, player == null ? Optional.empty() : Optional.of(player.getUniqueId()));
     }
 
     @Override
     public AnimalTamer getSecondTrustedPlayer() {
-        UUID uuid = getHandle().getDataWatcher().get(EntityFox.DATA_TRUSTED_ID_1).orElse(null);
+        UUID uuid = getHandle().getEntityData().get(EntityFox.DATA_TRUSTED_ID_1).orElse(null);
         if (uuid == null) {
             return null;
         }
@@ -109,10 +109,10 @@ public class CraftFox extends CraftAnimals implements Fox {
 
     @Override
     public void setSecondTrustedPlayer(AnimalTamer player) {
-        if (player != null && !getHandle().getDataWatcher().get(EntityFox.DATA_TRUSTED_ID_0).isPresent()) {
+        if (player != null && !getHandle().getEntityData().get(EntityFox.DATA_TRUSTED_ID_0).isPresent()) {
             throw new IllegalStateException("Must add first trusted player first");
         }
 
-        getHandle().getDataWatcher().set(EntityFox.DATA_TRUSTED_ID_1, player == null ? Optional.empty() : Optional.of(player.getUniqueId()));
+        getHandle().getEntityData().set(EntityFox.DATA_TRUSTED_ID_1, player == null ? Optional.empty() : Optional.of(player.getUniqueId()));
     }
 }

@@ -17,9 +17,9 @@ public class EntityTypesTest extends AbstractTestingBase {
         Set<EntityType> allBukkit = Arrays.stream(EntityType.values()).filter((b) -> b.getName() != null).collect(Collectors.toSet());
 
         for (EntityTypes<?> nms : IRegistry.ENTITY_TYPE) {
-            MinecraftKey key = EntityTypes.getName(nms);
+            MinecraftKey key = EntityTypes.getKey(nms);
 
-            EntityType bukkit = EntityType.fromName(key.getKey());
+            EntityType bukkit = EntityType.fromName(key.getPath());
             Assert.assertNotNull("Missing nms->bukkit " + key, bukkit);
 
             Assert.assertTrue("Duplicate entity nms->" + bukkit, allBukkit.remove(bukkit));

@@ -10,49 +10,49 @@
  
      public static final BlockStateBoolean UP = BlockSprawling.UP;
 @@ -196,20 +198,24 @@
-                         BlockPosition blockposition3 = blockposition2.shift(enumdirection1);
-                         BlockPosition blockposition4 = blockposition2.shift(enumdirection2);
+                         BlockPosition blockposition3 = blockposition2.relative(enumdirection1);
+                         BlockPosition blockposition4 = blockposition2.relative(enumdirection2);
  
 +                        // CraftBukkit start - Call BlockSpreadEvent
 +                        BlockPosition source = blockposition;
 +
-                         if (flag && a((IBlockAccess) worldserver, blockposition3, enumdirection1)) {
--                            worldserver.setTypeAndData(blockposition2, (IBlockData) this.getBlockData().set(getDirection(enumdirection1), true), 2);
-+                            CraftEventFactory.handleBlockSpreadEvent(worldserver, source, blockposition2, (IBlockData) this.getBlockData().set(getDirection(enumdirection1), true), 2);
-                         } else if (flag1 && a((IBlockAccess) worldserver, blockposition4, enumdirection2)) {
--                            worldserver.setTypeAndData(blockposition2, (IBlockData) this.getBlockData().set(getDirection(enumdirection2), true), 2);
-+                            CraftEventFactory.handleBlockSpreadEvent(worldserver, source, blockposition2, (IBlockData) this.getBlockData().set(getDirection(enumdirection2), true), 2);
+                         if (flag && isAcceptableNeighbour(worldserver, blockposition3, enumdirection1)) {
+-                            worldserver.setBlock(blockposition2, (IBlockData) this.defaultBlockState().setValue(getPropertyForFace(enumdirection1), true), 2);
++                            CraftEventFactory.handleBlockSpreadEvent(worldserver, source, blockposition2, (IBlockData) this.defaultBlockState().setValue(getPropertyForFace(enumdirection1), true), 2);
+                         } else if (flag1 && isAcceptableNeighbour(worldserver, blockposition4, enumdirection2)) {
+-                            worldserver.setBlock(blockposition2, (IBlockData) this.defaultBlockState().setValue(getPropertyForFace(enumdirection2), true), 2);
++                            CraftEventFactory.handleBlockSpreadEvent(worldserver, source, blockposition2, (IBlockData) this.defaultBlockState().setValue(getPropertyForFace(enumdirection2), true), 2);
                          } else {
-                             EnumDirection enumdirection3 = enumdirection.opposite();
+                             EnumDirection enumdirection3 = enumdirection.getOpposite();
  
-                             if (flag && worldserver.isEmpty(blockposition3) && a((IBlockAccess) worldserver, blockposition.shift(enumdirection1), enumdirection3)) {
--                                worldserver.setTypeAndData(blockposition3, (IBlockData) this.getBlockData().set(getDirection(enumdirection3), true), 2);
-+                                CraftEventFactory.handleBlockSpreadEvent(worldserver, source, blockposition3, (IBlockData) this.getBlockData().set(getDirection(enumdirection3), true), 2);
-                             } else if (flag1 && worldserver.isEmpty(blockposition4) && a((IBlockAccess) worldserver, blockposition.shift(enumdirection2), enumdirection3)) {
--                                worldserver.setTypeAndData(blockposition4, (IBlockData) this.getBlockData().set(getDirection(enumdirection3), true), 2);
-+                                CraftEventFactory.handleBlockSpreadEvent(worldserver, source, blockposition4, (IBlockData) this.getBlockData().set(getDirection(enumdirection3), true), 2);
-                             } else if ((double) random.nextFloat() < 0.05D && a((IBlockAccess) worldserver, blockposition2.up(), EnumDirection.UP)) {
--                                worldserver.setTypeAndData(blockposition2, (IBlockData) this.getBlockData().set(BlockVine.UP, true), 2);
-+                                CraftEventFactory.handleBlockSpreadEvent(worldserver, source, blockposition2, (IBlockData) this.getBlockData().set(BlockVine.UP, true), 2);
+                             if (flag && worldserver.isEmptyBlock(blockposition3) && isAcceptableNeighbour(worldserver, blockposition.relative(enumdirection1), enumdirection3)) {
+-                                worldserver.setBlock(blockposition3, (IBlockData) this.defaultBlockState().setValue(getPropertyForFace(enumdirection3), true), 2);
++                                CraftEventFactory.handleBlockSpreadEvent(worldserver, source, blockposition3, (IBlockData) this.defaultBlockState().setValue(getPropertyForFace(enumdirection3), true), 2);
+                             } else if (flag1 && worldserver.isEmptyBlock(blockposition4) && isAcceptableNeighbour(worldserver, blockposition.relative(enumdirection2), enumdirection3)) {
+-                                worldserver.setBlock(blockposition4, (IBlockData) this.defaultBlockState().setValue(getPropertyForFace(enumdirection3), true), 2);
++                                CraftEventFactory.handleBlockSpreadEvent(worldserver, source, blockposition4, (IBlockData) this.defaultBlockState().setValue(getPropertyForFace(enumdirection3), true), 2);
+                             } else if ((double) random.nextFloat() < 0.05D && isAcceptableNeighbour(worldserver, blockposition2.above(), EnumDirection.UP)) {
+-                                worldserver.setBlock(blockposition2, (IBlockData) this.defaultBlockState().setValue(BlockVine.UP, true), 2);
++                                CraftEventFactory.handleBlockSpreadEvent(worldserver, source, blockposition2, (IBlockData) this.defaultBlockState().setValue(BlockVine.UP, true), 2);
                              }
 +                            // CraftBukkit end
                          }
-                     } else if (a((IBlockAccess) worldserver, blockposition2, enumdirection)) {
-                         worldserver.setTypeAndData(blockposition, (IBlockData) iblockdata.set(getDirection(enumdirection), true), 2);
+                     } else if (isAcceptableNeighbour(worldserver, blockposition2, enumdirection)) {
+                         worldserver.setBlock(blockposition, (IBlockData) iblockdata.setValue(getPropertyForFace(enumdirection), true), 2);
 @@ -239,7 +245,7 @@
                          }
  
-                         if (this.canSpread(iblockdata2)) {
--                            worldserver.setTypeAndData(blockposition1, iblockdata2, 2);
+                         if (this.hasHorizontalConnection(iblockdata2)) {
+-                            worldserver.setBlock(blockposition1, iblockdata2, 2);
 +                            CraftEventFactory.handleBlockSpreadEvent(worldserver, blockposition, blockposition1, iblockdata2, 2); // CraftBukkit
                          }
  
                          return;
 @@ -254,7 +260,7 @@
-                         IBlockData iblockdata4 = this.a(iblockdata, iblockdata3, random);
+                         IBlockData iblockdata4 = this.copyRandomFaces(iblockdata, iblockdata3, random);
  
-                         if (iblockdata3 != iblockdata4 && this.canSpread(iblockdata4)) {
--                            worldserver.setTypeAndData(blockposition2, iblockdata4, 2);
+                         if (iblockdata3 != iblockdata4 && this.hasHorizontalConnection(iblockdata4)) {
+-                            worldserver.setBlock(blockposition2, iblockdata4, 2);
 +                            CraftEventFactory.handleBlockSpreadEvent(worldserver, blockposition, blockposition2, iblockdata4, 2); // CraftBukkit
                          }
                      }

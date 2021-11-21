@@ -62,14 +62,14 @@ public final class CraftMapView implements MapView {
     @Override
     public World getWorld() {
         ResourceKey<net.minecraft.world.level.World> dimension = worldMap.dimension;
-        WorldServer world = MinecraftServer.getServer().getWorldServer(dimension);
+        WorldServer world = MinecraftServer.getServer().getLevel(dimension);
 
         return (world == null) ? null : world.getWorld();
     }
 
     @Override
     public void setWorld(World world) {
-        worldMap.dimension = ((CraftWorld) world).getHandle().getDimensionKey();
+        worldMap.dimension = ((CraftWorld) world).getHandle().dimension();
     }
 
     @Override

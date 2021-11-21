@@ -24,14 +24,14 @@ public class CraftSpellcaster extends CraftIllager implements Spellcaster {
 
     @Override
     public Spell getSpell() {
-        return toBukkitSpell(getHandle().getSpell());
+        return toBukkitSpell(getHandle().getCurrentSpell());
     }
 
     @Override
     public void setSpell(Spell spell) {
         Preconditions.checkArgument(spell != null, "Use Spell.NONE");
 
-        getHandle().setSpell(toNMSSpell(spell));
+        getHandle().setIsCastingSpell(toNMSSpell(spell));
     }
 
     public static Spell toBukkitSpell(EntityIllagerWizard.Spell spell) {
@@ -39,6 +39,6 @@ public class CraftSpellcaster extends CraftIllager implements Spellcaster {
     }
 
     public static EntityIllagerWizard.Spell toNMSSpell(Spell spell) {
-        return EntityIllagerWizard.Spell.a(spell.ordinal());
+        return EntityIllagerWizard.Spell.byId(spell.ordinal());
     }
 }

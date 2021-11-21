@@ -60,9 +60,9 @@
 @@ -109,8 +152,19 @@
          ItemStack itemstack = (ItemStack) tileentitybrewingstand.items.get(4);
  
-         if (tileentitybrewingstand.fuel <= 0 && itemstack.a(Items.BLAZE_POWDER)) {
+         if (tileentitybrewingstand.fuel <= 0 && itemstack.is(Items.BLAZE_POWDER)) {
 -            tileentitybrewingstand.fuel = 20;
--            itemstack.subtract(1);
+-            itemstack.shrink(1);
 +            // CraftBukkit start
 +            BrewingStandFuelEvent event = new BrewingStandFuelEvent(CraftBlock.at(world, blockposition), CraftItemStack.asCraftMirror(itemstack), 20);
 +            world.getCraftServer().getPluginManager().callEvent(event);
@@ -73,10 +73,10 @@
 +
 +            tileentitybrewingstand.fuel = event.getFuelPower();
 +            if (tileentitybrewingstand.fuel > 0 && event.isConsuming()) {
-+                itemstack.subtract(1);
++                itemstack.shrink(1);
 +            }
 +            // CraftBukkit end
-             a(world, blockposition, iblockdata);
+             setChanged(world, blockposition, iblockdata);
          }
  
 @@ -118,12 +172,17 @@
@@ -95,24 +95,24 @@
 +            // CraftBukkit end
  
              if (flag2 && flag) {
--                a(world, blockposition, tileentitybrewingstand.items);
-+                a(world, blockposition, tileentitybrewingstand.items, tileentitybrewingstand); // CraftBukkit
-                 a(world, blockposition, iblockdata);
-             } else if (!flag || !itemstack1.a(tileentitybrewingstand.ingredient)) {
+-                doBrew(world, blockposition, tileentitybrewingstand.items);
++                doBrew(world, blockposition, tileentitybrewingstand.items, tileentitybrewingstand); // CraftBukkit
+                 setChanged(world, blockposition, iblockdata);
+             } else if (!flag || !itemstack1.is(tileentitybrewingstand.ingredient)) {
                  tileentitybrewingstand.brewTime = 0;
 @@ -187,11 +246,33 @@
          }
      }
  
--    private static void a(World world, BlockPosition blockposition, NonNullList<ItemStack> nonnulllist) {
+-    private static void doBrew(World world, BlockPosition blockposition, NonNullList<ItemStack> nonnulllist) {
 +    // CraftBukkit start
-+    private static void a(World world, BlockPosition blockposition, NonNullList<ItemStack> nonnulllist, TileEntityBrewingStand tileentitybrewingstand) {
++    private static void doBrew(World world, BlockPosition blockposition, NonNullList<ItemStack> nonnulllist, TileEntityBrewingStand tileentitybrewingstand) {
          ItemStack itemstack = (ItemStack) nonnulllist.get(3);
 +        InventoryHolder owner = tileentitybrewingstand.getOwner();
-+
 +        List<org.bukkit.inventory.ItemStack> brewResults = new ArrayList<>(3);
++
 +        for (int i = 0; i < 3; ++i) {
-+            brewResults.add(i, CraftItemStack.asCraftMirror(PotionBrewer.d(itemstack, (ItemStack) nonnulllist.get(i))));
++            brewResults.add(i, CraftItemStack.asCraftMirror(PotionBrewer.mix(itemstack, (ItemStack) nonnulllist.get(i))));
 +        }
 +
 +        if (owner != null) {
@@ -125,7 +125,7 @@
 +        // CraftBukkit end
  
          for (int i = 0; i < 3; ++i) {
--            nonnulllist.set(i, PotionBrewer.d(itemstack, (ItemStack) nonnulllist.get(i)));
+-            nonnulllist.set(i, PotionBrewer.mix(itemstack, (ItemStack) nonnulllist.get(i)));
 +            // CraftBukkit start - validate index in case it is cleared by plugins
 +            if (i < brewResults.size()) {
 +                nonnulllist.set(i, CraftItemStack.asNMSCopy(brewResults.get(i)));
@@ -135,4 +135,4 @@
 +            // CraftBukkit end
          }
  
-         itemstack.subtract(1);
+         itemstack.shrink(1);

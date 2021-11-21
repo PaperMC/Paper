@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/animal/EntityBee.java
 +++ b/net/minecraft/world/entity/animal/EntityBee.java
-@@ -243,7 +243,7 @@
+@@ -244,7 +244,7 @@
                  }
  
                  if (b0 > 0) {
@@ -9,48 +9,48 @@
                  }
              }
  
-@@ -642,11 +642,15 @@
-         if (this.isInvulnerable(damagesource)) {
+@@ -644,11 +644,15 @@
+         if (this.isInvulnerableTo(damagesource)) {
              return false;
          } else {
 -            if (!this.level.isClientSide) {
 +            // CraftBukkit start
-+            boolean result = super.damageEntity(damagesource, f);
++            boolean result = super.hurt(damagesource, f);
 +
 +            if (result && !this.level.isClientSide) {
-                 this.beePollinateGoal.l();
+                 this.beePollinateGoal.stopPollinating();
              }
  
--            return super.damageEntity(damagesource, f);
+-            return super.hurt(damagesource, f);
 +            return result;
 +            // CraftBukkit end
          }
      }
  
-@@ -1216,7 +1220,7 @@
+@@ -1224,7 +1228,7 @@
                              }
                          }
  
 -                        if (flag) {
-+                        if (flag && !org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(EntityBee.this, blockposition, iblockdata.set(blockstateinteger, (Integer) iblockdata.get(blockstateinteger) + 1)).isCancelled()) { // Spigot
-                             EntityBee.this.level.triggerEffect(2005, blockposition, 0);
-                             EntityBee.this.level.setTypeUpdate(blockposition, (IBlockData) iblockdata.set(blockstateinteger, (Integer) iblockdata.get(blockstateinteger) + 1));
-                             EntityBee.this.fS();
-@@ -1289,7 +1293,7 @@
++                        if (flag && !org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(EntityBee.this, blockposition, iblockdata.setValue(blockstateinteger, (Integer) iblockdata.getValue(blockstateinteger) + 1)).isCancelled()) { // Spigot
+                             EntityBee.this.level.levelEvent(2005, blockposition, 0);
+                             EntityBee.this.level.setBlockAndUpdate(blockposition, (IBlockData) iblockdata.setValue(blockstateinteger, (Integer) iblockdata.getValue(blockstateinteger) + 1));
+                             EntityBee.this.incrementNumCropsGrownSincePollination();
+@@ -1297,7 +1301,7 @@
          @Override
-         protected void a(EntityInsentient entityinsentient, EntityLiving entityliving) {
+         protected void alertOther(EntityInsentient entityinsentient, EntityLiving entityliving) {
              if (entityinsentient instanceof EntityBee && this.mob.hasLineOfSight(entityliving)) {
--                entityinsentient.setGoalTarget(entityliving);
-+                entityinsentient.setGoalTarget(entityliving, org.bukkit.event.entity.EntityTargetEvent.TargetReason.TARGET_ATTACKED_ENTITY, true); // CraftBukkit - reason
+-                entityinsentient.setTarget(entityliving);
++                entityinsentient.setTarget(entityliving, org.bukkit.event.entity.EntityTargetEvent.TargetReason.TARGET_ATTACKED_ENTITY, true); // CraftBukkit - reason
              }
  
          }
-@@ -1298,7 +1302,7 @@
+@@ -1306,7 +1310,7 @@
      private static class c extends PathfinderGoalNearestAttackableTarget<EntityHuman> {
  
          c(EntityBee entitybee) {
 -            Objects.requireNonNull(entitybee);
 +            // Objects.requireNonNull(entitybee); // CraftBukkit - decompile error
-             super(entitybee, EntityHuman.class, 10, true, false, entitybee::a_);
+             super(entitybee, EntityHuman.class, 10, true, false, entitybee::isAngryAt);
          }
  
