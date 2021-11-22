@@ -1720,4 +1720,9 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         getHandle().openItemGui(org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(book), net.minecraft.world.EnumHand.MAIN_HAND);
         getInventory().setItemInMainHand(hand);
     }
+
+    @Override
+    public boolean isAllowingServerListings() {
+        return getHandle().allowsListing();
+    }
 }
