@@ -2,7 +2,7 @@ plugins {
     java
     `maven-publish`
     id("com.github.johnrengelman.shadow") version "7.1.0" apply false
-    id("io.papermc.paperweight.core") version "1.2.0"
+    id("io.papermc.paperweight.core") version "1.3.0-LOCAL-SNAPSHOT"
 }
 
 allprojects {
@@ -46,9 +46,9 @@ repositories {
 }
 
 dependencies {
-    paramMappings("org.quiltmc:yarn:1.17.1+build.1:mergedv2")
-    remapper("net.fabricmc:tiny-remapper:0.6.0:fat")
-    decompiler("net.minecraftforge:forgeflower:1.5.498.12")
+    paramMappings("net.fabricmc:yarn:1.18-pre5+build.4:mergedv2")
+    remapper("net.fabricmc:tiny-remapper:0.7.0:fat")
+    decompiler("org.quiltmc:quiltflower:1.6.0")
     paperclip("io.papermc:paperclip:2.0.1")
 }
 
@@ -56,9 +56,9 @@ paperweight {
     minecraftVersion.set(providers.gradleProperty("mcVersion"))
     serverProject.set(project(":Paper-Server"))
 
-    paramMappingsRepo.set("https://maven.quiltmc.org/repository/release/")
+    paramMappingsRepo.set("https://maven.fabricmc.net/")
     remapRepo.set("https://maven.fabricmc.net/")
-    decompileRepo.set("https://files.minecraftforge.net/maven/")
+    decompileRepo.set("https://maven.quiltmc.org/repository/snapshot/")
 
     paper {
         spigotApiPatchDir.set(layout.projectDirectory.dir("patches/api"))
