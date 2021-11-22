@@ -21,6 +21,7 @@ import org.bukkit.conversations.Conversable;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockDropItemEvent;
 import org.bukkit.event.player.PlayerResourcePackStatusEvent;
+import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.map.MapView;
 import org.bukkit.plugin.Plugin;
@@ -458,6 +459,17 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * 1.0 is the most damaged
      */
     public void sendBlockDamage(@NotNull Location loc, float progress);
+
+    /**
+     * Send the equipment change of an entity. This fakes the equipment change
+     * of an entity for a user. This will not actually change the inventory of
+     * the specified entity in any way.
+     *
+     * @param entity The entity that the player will see the change for
+     * @param slot The slot of the spoofed equipment change
+     * @param item The ItemStack to display for the player
+     */
+    public void sendEquipmentChange(@NotNull LivingEntity entity, @NotNull EquipmentSlot slot, @NotNull ItemStack item);
 
     /**
      * Send a chunk change. This fakes a chunk change packet for a user at a
