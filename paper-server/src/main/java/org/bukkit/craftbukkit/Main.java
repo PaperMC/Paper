@@ -150,7 +150,7 @@ public class Main {
 
             float javaVersion = Float.parseFloat(System.getProperty("java.class.version"));
             if (javaVersion < 61.0) {
-                System.err.println("Unsupported Java detected (" + javaVersion + "). This version of Minecraft requires at least Java 11. Check your Java version with the command 'java -version'.");
+                System.err.println("Unsupported Java detected (" + javaVersion + "). This version of Minecraft requires at least Java 17. Check your Java version with the command 'java -version'.");
                 return;
             }
             if (javaVersion > 61.0) {
