@@ -1,0 +1,60 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: RubyCodesYT <81465414+RubyCodesYT@users.noreply.github.com>
+Date: Mon, 22 Nov 2021 16:02:54 +1300
+Subject: [PATCH] make enderpearls discard even when loaded lazily
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/projectile/ThrownEnderpearl.java b/src/main/java/net/minecraft/world/entity/projectile/ThrownEnderpearl.java
+index 1b2ada3663cc0739782ac591f2ee1f6d0fb94841..9759e7857504eea894d64e4993590dd4bc68a30b 100644
+--- a/src/main/java/net/minecraft/world/entity/projectile/ThrownEnderpearl.java
++++ b/src/main/java/net/minecraft/world/entity/projectile/ThrownEnderpearl.java
+@@ -21,10 +21,14 @@ import org.bukkit.Bukkit;
+ import org.bukkit.craftbukkit.event.CraftEventFactory;
+ import org.bukkit.event.entity.CreatureSpawnEvent;
+ import org.bukkit.event.player.PlayerTeleportEvent;
++
++import java.util.ArrayList;
+ // CraftBukkit end
+ 
+ public class ThrownEnderpearl extends ThrowableItemProjectile {
+ 
++    public static ArrayList<ThrownEnderpearl> thrownEnderpearls = new ArrayList<>(); // paper
++
+     public ThrownEnderpearl(EntityType<? extends ThrownEnderpearl> type, Level world) {
+         super(type, world);
+     }
+@@ -116,6 +120,13 @@ public class ThrownEnderpearl extends ThrowableItemProjectile {
+                 this.ownerUUID = null;
+             }
+         }
++
++        for (ThrownEnderpearl e : thrownEnderpearls) {
++            Entity entity2 = e.getOwner();
++            if (entity2 instanceof Player && !entity2.isAlive()) {
++                this.discard();
++            }
++        }
+         // Paper end
+ 
+     }
+diff --git a/src/main/java/net/minecraft/world/item/EnderpearlItem.java b/src/main/java/net/minecraft/world/item/EnderpearlItem.java
+index 749ab72edc0d2e9c6f1161415ab8d59d3d6ca976..4641f31ae55439d1ec8fb678d41762925942a888 100644
+--- a/src/main/java/net/minecraft/world/item/EnderpearlItem.java
++++ b/src/main/java/net/minecraft/world/item/EnderpearlItem.java
+@@ -18,7 +18,6 @@ public class EnderpearlItem extends Item {
+     @Override
+     public InteractionResultHolder<ItemStack> use(Level world, Player user, InteractionHand hand) {
+         ItemStack itemstack = user.getItemInHand(hand);
+-
+         // CraftBukkit start - change order
+         if (!world.isClientSide) {
+             ThrownEnderpearl entityenderpearl = new ThrownEnderpearl(world, user);
+@@ -34,6 +33,8 @@ public class EnderpearlItem extends Item {
+                     ((net.minecraft.server.level.ServerPlayer) user).getBukkitEntity().updateInventory();
+                 }
+ 
++                ThrownEnderpearl.thrownEnderpearls.add(entityenderpearl);
++
+                 world.playSound((Player) null, user.getX(), user.getY(), user.getZ(), SoundEvents.ENDER_PEARL_THROW, SoundSource.NEUTRAL, 0.5F, 0.4F / (net.minecraft.world.entity.Entity.SHARED_RANDOM.nextFloat() * 0.4F + 0.8F));
+                 user.awardStat(Stats.ITEM_USED.get(this));
+                 user.getCooldowns().addCooldown(this, 20);
