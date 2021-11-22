@@ -753,10 +753,7 @@ public enum Material implements Keyed {
      */
     POLISHED_BASALT(11659, Orientable.class),
     SMOOTH_BASALT(13617),
-    /**
-     * BlockData: {@link Lightable}
-     */
-    SOUL_TORCH(14292, Lightable.class),
+    SOUL_TORCH(14292),
     GLOWSTONE(32713),
     INFESTED_STONE(18440),
     INFESTED_COBBLESTONE(4348),
@@ -2631,10 +2628,7 @@ public enum Material implements Keyed {
      * BlockData: {@link Fire}
      */
     FIRE(16396, Fire.class),
-    /**
-     * BlockData: {@link Fire}
-     */
-    SOUL_FIRE(30163, Fire.class),
+    SOUL_FIRE(30163),
     /**
      * BlockData: {@link RedstoneWire}
      */
