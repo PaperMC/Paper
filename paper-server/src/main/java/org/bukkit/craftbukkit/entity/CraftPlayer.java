@@ -639,40 +639,6 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     @Override
-    public boolean sendChunkChange(Location loc, int sx, int sy, int sz, byte[] data) {
-        if (getHandle().connection == null) return false;
-
-        /*
-        int x = loc.getBlockX();
-        int y = loc.getBlockY();
-        int z = loc.getBlockZ();
-
-        int cx = x >> 4;
-        int cz = z >> 4;
-
-        if (sx <= 0 || sy <= 0 || sz <= 0) {
-            return false;
-        }
-
-        if ((x + sx - 1) >> 4 != cx || (z + sz - 1) >> 4 != cz || y < 0 || y + sy > 128) {
-            return false;
-        }
-
-        if (data.length != (sx * sy * sz * 5) / 2) {
-            return false;
-        }
-
-        Packet51MapChunk packet = new Packet51MapChunk(x, y, z, sx, sy, sz, data);
-
-        getHandle().playerConnection.sendPacket(packet);
-
-        return true;
-        */
-
-        throw new NotImplementedException("Chunk changes do not yet work"); // TODO: Chunk changes.
-    }
-
-    @Override
     public void sendMap(MapView map) {
         if (getHandle().connection == null) return;
 
