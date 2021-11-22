@@ -42,6 +42,32 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      compileOnly("org.apache.maven:maven-resolver-provider:3.8.1")
      compileOnly("org.apache.maven.resolver:maven-resolver-connector-basic:1.7.0")
+@@ -0,0 +0,0 @@ tasks.jar {
+ }
+ 
+ tasks.withType<Javadoc> {
++    inputs.files(apiAndDocs)
++        .ignoreEmptyDirectories()
++        .withPropertyName(apiAndDocs.name + "-configuration")
++    doFirst {
++        (options as CoreJavadocOptions).addStringOption(
++            "sourcepath",
++            apiAndDocs.resolvedConfiguration.files.joinToString(separator = File.pathSeparator, transform = File::getPath)
++        )
++    }
+     (options as StandardJavadocDocletOptions).links(
+         "https://guava.dev/releases/31.0.1-jre/api/docs/",
+         "https://javadoc.io/doc/org.yaml/snakeyaml/1.28/",
+         "https://javadoc.io/doc/org.jetbrains/annotations/21.0.1/", // Paper - we don't want Java 5 annotations
+         "https://javadoc.io/doc/net.md-5/bungeecord-chat/1.16-R0.4/",
++        // Paper start
++        "https://jd.adventure.kyori.net/api/$adventureVersion/",
++        "https://jd.adventure.kyori.net/text-serializer-gson/$adventureVersion/",
++        "https://jd.adventure.kyori.net/text-serializer-legacy/$adventureVersion/",
++        "https://jd.adventure.kyori.net/text-serializer-plain/$adventureVersion/",
++        // Paper end
+     )
+ }
 diff --git a/src/main/java/co/aikar/timings/TimingsReportListener.java b/src/main/java/co/aikar/timings/TimingsReportListener.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/co/aikar/timings/TimingsReportListener.java
@@ -1698,6 +1724,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
       */
      public void sendEquipmentChange(@NotNull LivingEntity entity, @NotNull EquipmentSlot slot, @NotNull ItemStack item);
  
++    // Paper start
 +    /**
 +     * Send a sign change. This fakes a sign change packet for a user at
 +     * a certain location. This will not actually change the world in any way.
@@ -1710,11 +1737,25 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     *
 +     * @param loc the location of the sign
 +     * @param lines the new text on the sign or null to clear it
-+     * @param dyeColor the color of the sign
 +     * @throws IllegalArgumentException if location is null
-+     * @throws IllegalArgumentException if dyeColor is null
 +     * @throws IllegalArgumentException if lines is non-null and has a length less than 4
 +     */
++    default void sendSignChange(@NotNull Location loc, @Nullable java.util.List<net.kyori.adventure.text.Component> lines) throws IllegalArgumentException {
++        this.sendSignChange(loc, lines, DyeColor.BLACK);
++    }
++
+     /**
+      * Send a sign change. This fakes a sign change packet for a user at
+      * a certain location. This will not actually change the world in any way.
+@@ -0,0 +0,0 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+      *
+      * @param loc the location of the sign
+      * @param lines the new text on the sign or null to clear it
++     * @param dyeColor the color of the sign
+      * @throws IllegalArgumentException if location is null
++     * @throws IllegalArgumentException if dyeColor is null
+      * @throws IllegalArgumentException if lines is non-null and has a length less than 4
+      */
 +    default void sendSignChange(@NotNull Location loc, @Nullable java.util.List<net.kyori.adventure.text.Component> lines, @NotNull DyeColor dyeColor) throws IllegalArgumentException {
 +        this.sendSignChange(loc, lines, dyeColor, false);
 +    }
@@ -1762,15 +1803,22 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        throws IllegalArgumentException;
 +    // Paper end
 +
-     /**
-      * Send a sign change. This fakes a sign change packet for a user at
-      * a certain location. This will not actually change the world in any way.
-@@ -0,0 +0,0 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
-      * @param lines the new text on the sign or null to clear it
-      * @throws IllegalArgumentException if location is null
-      * @throws IllegalArgumentException if lines is non-null and has a length less than 4
++    /**
++     * Send a sign change. This fakes a sign change packet for a user at
++     * a certain location. This will not actually change the world in any way.
++     * This method will use a sign at the location's block or a faked sign
++     * sent via
++     * {@link #sendBlockChange(org.bukkit.Location, org.bukkit.Material, byte)}.
++     * <p>
++     * If the client does not have a sign at the given location it will
++     * display an error message to the user.
++     *
++     * @param loc the location of the sign
++     * @param lines the new text on the sign or null to clear it
++     * @throws IllegalArgumentException if location is null
++     * @throws IllegalArgumentException if lines is non-null and has a length less than 4
 +     * @deprecated in favour of {@link #sendSignChange(org.bukkit.Location, java.util.List)}
-      */
++     */
 +    @Deprecated // Paper
      public void sendSignChange(@NotNull Location loc, @Nullable String[] lines) throws IllegalArgumentException;
  
