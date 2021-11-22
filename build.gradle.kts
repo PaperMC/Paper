@@ -58,7 +58,7 @@ paperweight {
 
     paramMappingsRepo.set("https://maven.fabricmc.net/")
     remapRepo.set("https://maven.fabricmc.net/")
-    decompileRepo.set("https://maven.quiltmc.org/repository/snapshot/")
+    decompileRepo.set("https://maven.quiltmc.org/repository/release/")
 
     paper {
         spigotApiPatchDir.set(layout.projectDirectory.dir("patches/api"))
