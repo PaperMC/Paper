@@ -20,12 +20,14 @@ import net.minecraft.world.level.block.entity.TileEntityFurnace;
 import net.minecraft.world.level.block.state.BlockBase;
 import net.minecraft.world.level.block.state.IBlockData;
 import net.minecraft.world.phys.MovingObjectPositionBlock;
+import org.bukkit.block.data.BlockData;
 import org.bukkit.craftbukkit.CraftEquipmentSlot;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.enchantments.EnchantmentTarget;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.material.MaterialData;
 import org.bukkit.support.AbstractTestingBase;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -271,6 +273,17 @@ public class PerMaterialTest extends AbstractTestingBase {
         if (material.isItem()) {
             EquipmentSlot expected = CraftEquipmentSlot.getSlot(EntityInsentient.getEquipmentSlotForItem(CraftItemStack.asNMSCopy(new ItemStack(material))));
             assertThat(material.getEquipmentSlot(), is(expected));
+        }
+    }
+
+    @Test
+    public void testBlockDataClass() {
+        if (material.isBlock()) {
+            Class<?> expectedClass = material.data;
+            if (expectedClass != MaterialData.class) {
+                BlockData blockData = Bukkit.createBlockData(material);
+                assertTrue(expectedClass + " <> " + blockData.getClass(), expectedClass.isInstance(blockData));
+            }
         }
     }
 }
