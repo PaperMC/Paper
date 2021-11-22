@@ -1307,4 +1307,11 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @param book The book to open for this player
      */
     public void openBook(@NotNull ItemStack book);
+
+    /**
+     * Gets whether the player has the "Allow Server Listings" setting enabled.
+     *
+     * @return whether the player allows server listings
+     */
+    public boolean isAllowingServerListings();
 }
