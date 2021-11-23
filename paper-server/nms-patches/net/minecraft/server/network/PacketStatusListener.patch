@@ -19,13 +19,13 @@
  public class PacketStatusListener implements PacketStatusInListener {
  
      private static final IChatBaseComponent DISCONNECT_REASON = new ChatMessage("multiplayer.status.request_handled");
-@@ -36,7 +48,95 @@
+@@ -36,7 +48,102 @@
              this.connection.disconnect(PacketStatusListener.DISCONNECT_REASON);
          } else {
              this.hasRequestedStatus = true;
 -            this.connection.send(new PacketStatusOutServerInfo(this.server.getStatus()));
 +            // CraftBukkit start
-+            // this.networkManager.sendPacket(new PacketStatusOutServerInfo(this.minecraftServer.getServerPing()));
++            // this.connection.send(new PacketStatusOutServerInfo(this.server.getStatus()));
 +            final Object[] players = server.getPlayerList().players.toArray();
 +            class ServerListPingEvent extends org.bukkit.event.server.ServerListPingEvent {
 +
@@ -97,12 +97,19 @@
 +            java.util.List<GameProfile> profiles = new java.util.ArrayList<GameProfile>(players.length);
 +            for (Object player : players) {
 +                if (player != null) {
-+                    profiles.add(((EntityPlayer) player).getGameProfile());
++                    EntityPlayer entityPlayer = ((EntityPlayer) player);
++                    if (entityPlayer.allowsListing()) {
++                        profiles.add(entityPlayer.getGameProfile());
++                    } else {
++                        profiles.add(MinecraftServer.ANONYMOUS_PLAYER_PROFILE);
++                    }
 +                }
 +            }
 +
 +            ServerPing.ServerPingPlayerSample playerSample = new ServerPing.ServerPingPlayerSample(event.getMaxPlayers(), profiles.size());
-+            playerSample.setSample(profiles.toArray(new GameProfile[profiles.size()]));
++            if (!this.server.hidesOnlinePlayers()) {
++                playerSample.setSample(profiles.toArray(new GameProfile[profiles.size()]));
++            }
 +
 +            ServerPing ping = new ServerPing();
 +            ping.setFavicon(event.icon.value);
