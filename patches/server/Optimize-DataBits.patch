@@ -10,11 +10,11 @@ After: http://i.imgur.com/nJ46crB.png
 
 Optimize redundant converting of static fields into an unsigned long each call by precomputing it in ctor
 
-diff --git a/src/main/java/net/minecraft/util/BitStorage.java b/src/main/java/net/minecraft/util/BitStorage.java
+diff --git a/src/main/java/net/minecraft/util/SimpleBitStorage.java b/src/main/java/net/minecraft/util/SimpleBitStorage.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/util/BitStorage.java
-+++ b/src/main/java/net/minecraft/util/BitStorage.java
-@@ -0,0 +0,0 @@ public class BitStorage {
+--- a/src/main/java/net/minecraft/util/SimpleBitStorage.java
++++ b/src/main/java/net/minecraft/util/SimpleBitStorage.java
+@@ -0,0 +0,0 @@ public class SimpleBitStorage implements BitStorage {
      private final long mask;
      private final int size;
      private final int valuesPerLong;
@@ -24,19 +24,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    private final int divideAdd; private final long divideAddUnsigned; // Paper
      private final int divideShift;
  
-     public BitStorage(int elementBits, int size) {
-@@ -0,0 +0,0 @@ public class BitStorage {
+     public SimpleBitStorage(int elementBits, int size, int[] is) {
+@@ -0,0 +0,0 @@ public class SimpleBitStorage implements BitStorage {
          this.mask = (1L << elementBits) - 1L;
          this.valuesPerLong = (char)(64 / elementBits);
          int i = 3 * (this.valuesPerLong - 1);
 -        this.divideMul = MAGIC[i + 0];
 -        this.divideAdd = MAGIC[i + 1];
-+        this.divideMul = BitStorage.MAGIC[i + 0]; this.divideMulUnsigned = Integer.toUnsignedLong(this.divideMul); // Paper
-+        this.divideAdd = BitStorage.MAGIC[i + 1]; this.divideAddUnsigned = Integer.toUnsignedLong(this.divideAdd); // Paper
++        this.divideMul = MAGIC[i + 0]; this.divideMulUnsigned = Integer.toUnsignedLong(this.divideMul); // Paper
++        this.divideAdd = MAGIC[i + 1]; this.divideAddUnsigned = Integer.toUnsignedLong(this.divideAdd); // Paper
          this.divideShift = MAGIC[i + 2];
          int j = (size + this.valuesPerLong - 1) / this.valuesPerLong;
-         if (storage != null) {
-@@ -0,0 +0,0 @@ public class BitStorage {
+         if (data != null) {
+@@ -0,0 +0,0 @@ public class SimpleBitStorage implements BitStorage {
      }
  
      private int cellIndex(int index) {
@@ -48,6 +48,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return (int) ((long) index * this.divideMulUnsigned + this.divideAddUnsigned >> 32 >> this.divideShift); // Paper
      }
  
+     @Override
 -    public int getAndSet(int index, int value) {
 -        Validate.inclusiveBetween(0L, (long)(this.size - 1), (long)index);
 -        Validate.inclusiveBetween(0L, this.mask, (long)value);
@@ -57,10 +58,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          int i = this.cellIndex(index);
          long l = this.data[i];
          int j = (index - i * this.valuesPerLong) * this.bits;
-@@ -0,0 +0,0 @@ public class BitStorage {
-         return k;
+@@ -0,0 +0,0 @@ public class SimpleBitStorage implements BitStorage {
      }
  
+     @Override
 -    public void set(int index, int value) {
 -        Validate.inclusiveBetween(0L, (long)(this.size - 1), (long)index);
 -        Validate.inclusiveBetween(0L, this.mask, (long)value);
@@ -70,9 +71,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          int i = this.cellIndex(index);
          long l = this.data[i];
          int j = (index - i * this.valuesPerLong) * this.bits;
-         this.data[i] = l & ~(this.mask << j) | ((long)value & this.mask) << j;
+@@ -0,0 +0,0 @@ public class SimpleBitStorage implements BitStorage {
      }
  
+     @Override
 -    public int get(int index) {
 -        Validate.inclusiveBetween(0L, (long)(this.size - 1), (long)index);
 +    public final int get(int index) { // Paper - make final for inline
