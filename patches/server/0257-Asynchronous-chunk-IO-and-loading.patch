@@ -2317,7 +2317,7 @@ index 303125c4d0f8f235703975eab5eccb9aa045ccf8..5b999da8c5ad430f9157276857165596
          ChunkHolder.FullChunkStatus playerchunk_state1 = ChunkHolder.getFullChunkStatus(this.ticketLevel);
          // CraftBukkit start
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index 0727c025e87e889861b2f3e78e28d4d17840ff54..67bc31c2313151cfb9afa8d812f74786fe6b3878 100644
+index 0727c025e87e889861b2f3e78e28d4d17840ff54..a605b0868b8214408e20419e336ad52659b12e4f 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
 @@ -492,6 +492,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
@@ -2376,8 +2376,93 @@ index 0727c025e87e889861b2f3e78e28d4d17840ff54..67bc31c2313151cfb9afa8d812f74786
              }
          }
          activityAccountant.endActivity(); // Spigot
-@@ -594,6 +601,46 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -613,7 +620,16 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+                         ((LevelChunk) ichunkaccess).setLoaded(false);
+                     }
  
+-                    this.save(ichunkaccess);
++                    // Paper start - async chunk saving
++                    try {
++                        this.asyncSave(ichunkaccess);
++                    } catch (ThreadDeath ex) {
++                        throw ex; // bye
++                    } catch (Throwable ex) {
++                        LOGGER.fatal("Failed to prepare async save, attempting synchronous save", ex);
++                        this.save(ichunkaccess);
++                    }
++                    // Paper end - async chunk saving
+                     if (this.entitiesInLevel.remove(pos) && ichunkaccess instanceof LevelChunk) {
+                         LevelChunk chunk = (LevelChunk) ichunkaccess;
+ 
+@@ -678,20 +694,21 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+     }
+ 
+     private CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> scheduleChunkLoad(ChunkPos pos) {
+-        return CompletableFuture.supplyAsync(() -> {
++        // Paper start - Async chunk io
++        final java.util.function.BiFunction<ChunkSerializer.InProgressChunkHolder, Throwable, Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> syncLoadComplete = (chunkHolder, ioThrowable) -> {
+             try (Timing ignored = this.level.timings.chunkLoad.startTimingIfSync()) { // Paper
+                 this.level.getProfiler().incrementCounter("chunkLoad");
+-                CompoundTag nbttagcompound; // Paper
+-                try (Timing ignored2 = this.level.timings.chunkIO.startTimingIfSync()) { // Paper start - timings
+-                    nbttagcompound = this.readChunk(pos);
+-                } // Paper end
+-
+-                if (nbttagcompound != null) {try (Timing ignored2 = this.level.timings.chunkLoadLevelTimer.startTimingIfSync()) { // Paper start - timings
+-                    boolean flag = nbttagcompound.contains("Status", 8);
+-
+-                    if (flag) {
+-                        ProtoChunk protochunk = ChunkSerializer.read(this.level, this.poiManager, pos, nbttagcompound);
++                // Paper start
++                if (ioThrowable != null) {
++                    com.destroystokyo.paper.util.SneakyThrow.sneaky(ioThrowable);
++                }
++                this.poiManager.loadInData(pos, chunkHolder.poiData);
++                chunkHolder.tasks.forEach(Runnable::run);
++                // Paper end
+ 
++                if (chunkHolder.protoChunk != null) {try (Timing ignored2 = this.level.timings.chunkLoadLevelTimer.startTimingIfSync()) { // Paper start - timings // Paper - chunk is created async
++                    if (true) {
++                        ProtoChunk protochunk = chunkHolder.protoChunk;
+                         this.markPosition(pos, protochunk.getStatus().getChunkType());
+                         return Either.left(protochunk);
+                     }
+@@ -713,7 +730,32 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+ 
+             this.markPositionReplaceable(pos);
+             return Either.left(new ProtoChunk(pos, UpgradeData.EMPTY, this.level, this.level.registryAccess().registryOrThrow(Registry.BIOME_REGISTRY), (BlendingData) null));
+-        }, this.mainThreadExecutor);
++            // Paper start - Async chunk io
++        };
++        CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> ret = new CompletableFuture<>();
++
++        Consumer<ChunkSerializer.InProgressChunkHolder> chunkHolderConsumer = (ChunkSerializer.InProgressChunkHolder holder) -> {
++            // Go into the chunk load queue and not server task queue so we can be popped out even faster.
++            com.destroystokyo.paper.io.chunk.ChunkTaskManager.queueChunkWaitTask(() -> {
++                try {
++                    ret.complete(syncLoadComplete.apply(holder, null));
++                } catch (Exception e) {
++                    ret.completeExceptionally(e);
++                }
++            });
++        };
++
++        CompletableFuture<CompoundTag> chunkSaveFuture = this.level.asyncChunkTaskManager.getChunkSaveFuture(pos.x, pos.z);
++        if (chunkSaveFuture != null) {
++            this.level.asyncChunkTaskManager.scheduleChunkLoad(pos.x, pos.z,
++                com.destroystokyo.paper.io.PrioritizedTaskQueue.HIGH_PRIORITY, chunkHolderConsumer, false, chunkSaveFuture);
++            this.level.asyncChunkTaskManager.raisePriority(pos.x, pos.z, com.destroystokyo.paper.io.PrioritizedTaskQueue.HIGH_PRIORITY);
++        } else {
++            this.level.asyncChunkTaskManager.scheduleChunkLoad(pos.x, pos.z,
++                com.destroystokyo.paper.io.PrioritizedTaskQueue.NORMAL_PRIORITY, chunkHolderConsumer, false);
++        }
++        return ret;
++        // Paper end
+     }
+ 
+     private void markPositionReplaceable(ChunkPos pos) {
+@@ -895,7 +937,48 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+         return this.tickingGenerated.get();
      }
  
 +    // Paper start - async chunk save for unload
@@ -2420,97 +2505,6 @@ index 0727c025e87e889861b2f3e78e28d4d17840ff54..67bc31c2313151cfb9afa8d812f74786
 +    }
 +    // Paper end
 +
-     private void scheduleUnload(long pos, ChunkHolder holder) {
-         CompletableFuture<ChunkAccess> completablefuture = holder.getChunkToSave();
-         Consumer<ChunkAccess> consumer = (ichunkaccess) -> { // CraftBukkit - decompile error
-@@ -613,7 +660,16 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
-                         ((LevelChunk) ichunkaccess).setLoaded(false);
-                     }
- 
--                    this.save(ichunkaccess);
-+                    // Paper start - async chunk saving
-+                    try {
-+                        this.asyncSave(ichunkaccess);
-+                    } catch (ThreadDeath ex) {
-+                        throw ex; // bye
-+                    } catch (Throwable ex) {
-+                        LOGGER.fatal("Failed to prepare async save, attempting synchronous save", ex);
-+                        this.save(ichunkaccess);
-+                    }
-+                    // Paper end - async chunk saving
-                     if (this.entitiesInLevel.remove(pos) && ichunkaccess instanceof LevelChunk) {
-                         LevelChunk chunk = (LevelChunk) ichunkaccess;
- 
-@@ -678,20 +734,21 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
-     }
- 
-     private CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> scheduleChunkLoad(ChunkPos pos) {
--        return CompletableFuture.supplyAsync(() -> {
-+        // Paper start - Async chunk io
-+        final java.util.function.BiFunction<ChunkSerializer.InProgressChunkHolder, Throwable, Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> syncLoadComplete = (chunkHolder, ioThrowable) -> {
-             try (Timing ignored = this.level.timings.chunkLoad.startTimingIfSync()) { // Paper
-                 this.level.getProfiler().incrementCounter("chunkLoad");
--                CompoundTag nbttagcompound; // Paper
--                try (Timing ignored2 = this.level.timings.chunkIO.startTimingIfSync()) { // Paper start - timings
--                    nbttagcompound = this.readChunk(pos);
--                } // Paper end
--
--                if (nbttagcompound != null) {try (Timing ignored2 = this.level.timings.chunkLoadLevelTimer.startTimingIfSync()) { // Paper start - timings
--                    boolean flag = nbttagcompound.contains("Status", 8);
--
--                    if (flag) {
--                        ProtoChunk protochunk = ChunkSerializer.read(this.level, this.poiManager, pos, nbttagcompound);
-+                // Paper start
-+                if (ioThrowable != null) {
-+                    com.destroystokyo.paper.util.SneakyThrow.sneaky(ioThrowable);
-+                }
-+                this.poiManager.loadInData(pos, chunkHolder.poiData);
-+                chunkHolder.tasks.forEach(Runnable::run);
-+                // Paper end
- 
-+                if (chunkHolder.protoChunk != null) {try (Timing ignored2 = this.level.timings.chunkLoadLevelTimer.startTimingIfSync()) { // Paper start - timings // Paper - chunk is created async
-+                    if (true) {
-+                        ProtoChunk protochunk = chunkHolder.protoChunk;
-                         this.markPosition(pos, protochunk.getStatus().getChunkType());
-                         return Either.left(protochunk);
-                     }
-@@ -713,7 +770,32 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
- 
-             this.markPositionReplaceable(pos);
-             return Either.left(new ProtoChunk(pos, UpgradeData.EMPTY, this.level, this.level.registryAccess().registryOrThrow(Registry.BIOME_REGISTRY), (BlendingData) null));
--        }, this.mainThreadExecutor);
-+            // Paper start - Async chunk io
-+        };
-+        CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> ret = new CompletableFuture<>();
-+
-+        Consumer<ChunkSerializer.InProgressChunkHolder> chunkHolderConsumer = (ChunkSerializer.InProgressChunkHolder holder) -> {
-+            // Go into the chunk load queue and not server task queue so we can be popped out even faster.
-+            com.destroystokyo.paper.io.chunk.ChunkTaskManager.queueChunkWaitTask(() -> {
-+                try {
-+                    ret.complete(syncLoadComplete.apply(holder, null));
-+                } catch (Exception e) {
-+                    ret.completeExceptionally(e);
-+                }
-+            });
-+        };
-+
-+        CompletableFuture<CompoundTag> chunkSaveFuture = this.level.asyncChunkTaskManager.getChunkSaveFuture(pos.x, pos.z);
-+        if (chunkSaveFuture != null) {
-+            this.level.asyncChunkTaskManager.scheduleChunkLoad(pos.x, pos.z,
-+                com.destroystokyo.paper.io.PrioritizedTaskQueue.HIGH_PRIORITY, chunkHolderConsumer, false, chunkSaveFuture);
-+            this.level.asyncChunkTaskManager.raisePriority(pos.x, pos.z, com.destroystokyo.paper.io.PrioritizedTaskQueue.HIGH_PRIORITY);
-+        } else {
-+            this.level.asyncChunkTaskManager.scheduleChunkLoad(pos.x, pos.z,
-+                com.destroystokyo.paper.io.PrioritizedTaskQueue.NORMAL_PRIORITY, chunkHolderConsumer, false);
-+        }
-+        return ret;
-+        // Paper end
-     }
- 
-     private void markPositionReplaceable(ChunkPos pos) {
-@@ -896,6 +978,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
-     }
- 
      public boolean save(ChunkAccess chunk) {
 +        try (co.aikar.timings.Timing ignored = this.level.timings.chunkSave.startTiming()) { // Paper
          this.poiManager.flush(chunk.getPos());
@@ -2944,7 +2938,7 @@ index 2a73700b0cd31e2a88c478b884de0a7f3d018259..0a1e667487e2c7849e11c0395816dc8c
          HAS_SPACE(PoiRecord::hasSpace),
          IS_OCCUPIED(PoiRecord::isOccupied),
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
-index 2fd969d1450d1251c139f3721d146fd2e191c4dd..2801737d3fd55d268690f46881c6dd7d3f8d5bf3 100644
+index 2fd969d1450d1251c139f3721d146fd2e191c4dd..ff53c9238325e025c502886cc5f4bc02b25f8fda 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
 @@ -75,7 +75,31 @@ public class ChunkSerializer {
@@ -3029,37 +3023,25 @@ index 2fd969d1450d1251c139f3721d146fd2e191c4dd..2801737d3fd55d268690f46881c6dd7d
          } else {
              ProtoChunk protochunk1 = (ProtoChunk) object;
  
-@@ -297,10 +335,89 @@ public class ChunkSerializer {
+@@ -297,10 +335,67 @@ public class ChunkSerializer {
                  protochunk1.setCarvingMask(worldgenstage_features, new CarvingMask(nbttagcompound4.getLongArray(s1), ((ChunkAccess) object).getMinBuildHeight()));
              }
  
 -            return protochunk1;
 +            return new InProgressChunkHolder(protochunk1, tasksToExecuteOnMain); // Paper - Async chunk loading
-+        }
-+    }
-+
-+    // Paper start - async chunk save for unload
-+    public static final class AsyncSaveData {
-+        public final DataLayer[] blockLight;
-+        public final DataLayer[] skyLight;
-+
-+        public final ListTag blockTickList; // non-null if we had to go to the server's tick list
-+        public final ListTag fluidTickList; // non-null if we had to go to the server's tick list
-+        public final ListTag blockEntities;
-+
-+        public final long worldTime;
-+
-+        public AsyncSaveData(DataLayer[] blockLight, DataLayer[] skyLight,
-+                             ListTag blockTickList, ListTag fluidTickList, ListTag blockEntities, long worldTime) {
-+            this.blockLight = blockLight;
-+            this.skyLight = skyLight;
-+            this.blockTickList = blockTickList;
-+            this.fluidTickList = fluidTickList;
-+            this.blockEntities = blockEntities;
-+            this.worldTime = worldTime;
          }
      }
  
++    // Paper start - async chunk save for unload
++    public record AsyncSaveData(
++        DataLayer[] blockLight,
++        DataLayer[] skyLight,
++        Tag blockTickList, // non-null if we had to go to the server's tick list
++        Tag fluidTickList, // non-null if we had to go to the server's tick list
++        ListTag blockEntities,
++        long worldTime
++    ) {}
++
 +    // must be called sync
 +    public static AsyncSaveData getAsyncSaveData(ServerLevel world, ChunkAccess chunk) {
 +        org.spigotmc.AsyncCatcher.catchOp("preparation of chunk data for async save");
@@ -3086,25 +3068,8 @@ index 2fd969d1450d1251c139f3721d146fd2e191c4dd..2801737d3fd55d268690f46881c6dd7d
 +            skyLight[i - lightenginethreaded.getMinLightSection()] = skyArray;
 +        }
 +
-+        net.minecraft.world.ticks.TickContainerAccess<Block> blockTickList = chunk.getBlockTicks();
-+
-+        //TODO check ChunkSerializer "block_ticks"
-+        ListTag blockTickListSerialized = null; // Paper - remove null
-+        // if (blockTickList instanceof ProtoTickList || blockTickList instanceof ChunkTickList) {
-+        //     blockTickListSerialized = null;
-+        // } else {
-+        //     blockTickListSerialized = world.getBlockTicks().save(chunkPos);
-+        // }
-+
-+        net.minecraft.world.ticks.TickContainerAccess<Fluid> fluidTickList = chunk.getFluidTicks();
-+
-+        //TODO
-+        ListTag fluidTickListSerialized = null; // Paper - remove null
-+        // if (fluidTickList instanceof ProtoTickList || fluidTickList instanceof ChunkTickList) {
-+        //     fluidTickListSerialized = null;
-+        // } else {
-+        //     fluidTickListSerialized = world.getFluidTicks().save(chunkPos);
-+        // }
++        final CompoundTag tickLists = new CompoundTag();
++        ChunkSerializer.saveTicks(world, tickLists, chunk.getTicksForSerialization());
 +
 +        ListTag blockEntitiesSerialized = new ListTag();
 +        for (final BlockPos blockPos : chunk.getBlockEntitiesPos()) {
@@ -3114,24 +3079,31 @@ index 2fd969d1450d1251c139f3721d146fd2e191c4dd..2801737d3fd55d268690f46881c6dd7d
 +            }
 +         }
 +
-+        return new AsyncSaveData(blockLight, skyLight, blockTickListSerialized, fluidTickListSerialized, blockEntitiesSerialized, world.getGameTime());
++        return new AsyncSaveData(
++            blockLight,
++            skyLight,
++            tickLists.get(BLOCK_TICKS_TAG),
++            tickLists.get(FLUID_TICKS_TAG),
++            blockEntitiesSerialized,
++            world.getGameTime()
++        );
 +     }
 +
      private static void logErrors(ChunkPos chunkPos, int y, String message) {
          ChunkSerializer.LOGGER.error("Recoverable errors when loading section [" + chunkPos.x + ", " + y + ", " + chunkPos.z + "]: " + message);
      }
-@@ -310,6 +427,10 @@ public class ChunkSerializer {
+@@ -310,6 +405,10 @@ public class ChunkSerializer {
      }
  
      public static CompoundTag write(ServerLevel world, ChunkAccess chunk) {
 +        return saveChunk(world, chunk, null);
 +    }
-+    public static CompoundTag saveChunk(ServerLevel world, ChunkAccess chunk, AsyncSaveData asyncsavedata) {
++    public static CompoundTag saveChunk(ServerLevel world, ChunkAccess chunk, @org.checkerframework.checker.nullness.qual.Nullable AsyncSaveData asyncsavedata) {
 +        // Paper end
          ChunkPos chunkcoordintpair = chunk.getPos();
          CompoundTag nbttagcompound = new CompoundTag();
  
-@@ -317,7 +438,7 @@ public class ChunkSerializer {
+@@ -317,7 +416,7 @@ public class ChunkSerializer {
          nbttagcompound.putInt("xPos", chunkcoordintpair.x);
          nbttagcompound.putInt("yPos", chunk.getMinSection());
          nbttagcompound.putInt("zPos", chunkcoordintpair.z);
@@ -3140,7 +3112,7 @@ index 2fd969d1450d1251c139f3721d146fd2e191c4dd..2801737d3fd55d268690f46881c6dd7d
          nbttagcompound.putLong("InhabitedTime", chunk.getInhabitedTime());
          nbttagcompound.putString("Status", chunk.getStatus().getName());
          BlendingData blendingdata = chunk.getBlendingData();
-@@ -360,8 +481,17 @@ public class ChunkSerializer {
+@@ -360,8 +459,17 @@ public class ChunkSerializer {
          for (int i = lightenginethreaded.getMinLightSection(); i < lightenginethreaded.getMaxLightSection(); ++i) {
              int j = chunk.getSectionIndexFromSectionY(i);
              boolean flag1 = j >= 0 && j < achunksection.length;
@@ -3160,7 +3132,7 @@ index 2fd969d1450d1251c139f3721d146fd2e191c4dd..2801737d3fd55d268690f46881c6dd7d
  
              if (flag1 || nibblearray != null || nibblearray1 != null) {
                  CompoundTag nbttagcompound1 = new CompoundTag();
-@@ -399,8 +529,17 @@ public class ChunkSerializer {
+@@ -399,8 +507,17 @@ public class ChunkSerializer {
              nbttagcompound.putBoolean("isLightOn", true);
          }
  
@@ -3180,14 +3152,21 @@ index 2fd969d1450d1251c139f3721d146fd2e191c4dd..2801737d3fd55d268690f46881c6dd7d
  
          CompoundTag nbttagcompound2;
  
-@@ -463,6 +602,7 @@ public class ChunkSerializer {
-     private static void saveTicks(ServerLevel world, CompoundTag nbt, ChunkAccess.TicksToSave tickSchedulers) {
-         long i = world.getLevelData().getGameTime();
+@@ -437,7 +554,14 @@ public class ChunkSerializer {
+             nbttagcompound.put("CarvingMasks", nbttagcompound2);
+         }
  
-+        //TODO original patch line 3259
-         nbt.put("block_ticks", tickSchedulers.blocks().save(i, (block) -> {
-             return Registry.BLOCK.getKey(block).toString();
-         }));
++        // Paper start
++        if (asyncsavedata != null) {
++            nbttagcompound.put(BLOCK_TICKS_TAG, asyncsavedata.blockTickList);
++            nbttagcompound.put(FLUID_TICKS_TAG, asyncsavedata.fluidTickList);
++        } else {
+         ChunkSerializer.saveTicks(world, nbttagcompound, chunk.getTicksForSerialization());
++        }
++        // Paper end
+         nbttagcompound.put("PostProcessing", ChunkSerializer.packOffsets(chunk.getPostProcessing()));
+         CompoundTag nbttagcompound3 = new CompoundTag();
+         Iterator iterator1 = chunk.getHeightmaps().iterator();
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkStorage.java b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkStorage.java
 index 0259baec1ceb911f39e733d52d232dec19577550..1fc202caf9051f12192ed479898b01b0a02eebbd 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkStorage.java
