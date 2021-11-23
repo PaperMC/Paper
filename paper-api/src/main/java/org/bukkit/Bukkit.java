@@ -913,6 +913,15 @@ public final class Bukkit {
     }
 
     /**
+     * Gets whether the Server hide online players in server status.
+     *
+     * @return true if the server hide online players, false otherwise
+     */
+    public static boolean getHideOnlinePlayers() {
+        return server.getHideOnlinePlayers();
+    }
+
+    /**
      * Gets whether the Server is in online mode or not.
      *
      * @return true if the server authenticates clients, false otherwise
