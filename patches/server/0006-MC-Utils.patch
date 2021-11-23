@@ -724,7 +724,7 @@ index 0000000000000000000000000000000000000000..0133ea6feb1ab88f021f66855669f583
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/util/maplist/IBlockDataList.java b/src/main/java/com/destroystokyo/paper/util/maplist/IBlockDataList.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..4a21ec2397f57c7c2ac3659f7de96cda9182fea0
+index 0000000000000000000000000000000000000000..277cfd9d1e8fff5d9b5e534b75c3c5162d58b0b7
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/util/maplist/IBlockDataList.java
 @@ -0,0 +1,128 @@
@@ -733,16 +733,16 @@ index 0000000000000000000000000000000000000000..4a21ec2397f57c7c2ac3659f7de96cda
 +import it.unimi.dsi.fastutil.longs.LongIterator;
 +import it.unimi.dsi.fastutil.shorts.Short2LongOpenHashMap;
 +import java.util.Arrays;
++import net.minecraft.world.level.block.Block;
 +import net.minecraft.world.level.block.state.BlockState;
 +import net.minecraft.world.level.chunk.GlobalPalette;
-+import net.minecraft.world.level.chunk.LevelChunkSection;
 +
 +/**
 + * @author Spottedleaf
 + */
 +public final class IBlockDataList {
 +
-+    static final GlobalPalette<BlockState> GLOBAL_PALETTE = (GlobalPalette) LevelChunkSection.GLOBAL_BLOCKSTATE_PALETTE;
++    static final GlobalPalette<BlockState> GLOBAL_PALETTE = new GlobalPalette<>(Block.BLOCK_STATE_REGISTRY);
 +
 +    // map of location -> (index | (location << 16) | (palette id << 32))
 +    private final Short2LongOpenHashMap map = new Short2LongOpenHashMap(2, 0.8f);
@@ -5374,21 +5374,22 @@ index 01b59a9c18d6f07889c3df2975cbf5594a167633..3f938d953daee7a5551a62df25f2e0fb
  
      @Override
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-index a551683bc73db23d82bd2ca1e2c7c83e31e3c834..a832e6af0ce937d6e48021e3b2190ebe22bc3be5 100644
+index a551683bc73db23d82bd2ca1e2c7c83e31e3c834..fc3565c1dd1c7f09bc885f1b0c9cf71477d64543 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-@@ -46,8 +46,10 @@ import net.minecraft.world.level.levelgen.structure.templatesystem.StructureMana
+@@ -46,8 +46,11 @@ import net.minecraft.world.level.levelgen.structure.templatesystem.StructureMana
  import net.minecraft.world.level.storage.DimensionDataStorage;
  import net.minecraft.world.level.storage.LevelData;
  import net.minecraft.world.level.storage.LevelStorageSource;
 +import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap; // Paper
++import java.util.function.Function; // Paper
  
  public class ServerChunkCache extends ChunkSource {
 +    public static final org.apache.logging.log4j.Logger LOGGER = org.apache.logging.log4j.LogManager.getLogger(); // Paper
  
      public static final List<ChunkStatus> CHUNK_STATUSES = ChunkStatus.getStatusList();
      private final DistanceManager distanceManager;
-@@ -67,6 +69,316 @@ public class ServerChunkCache extends ChunkSource {
+@@ -67,6 +70,316 @@ public class ServerChunkCache extends ChunkSource {
      @Nullable
      @VisibleForDebug
      private NaturalSpawner.SpawnState lastSpawnState;
@@ -5705,7 +5706,7 @@ index a551683bc73db23d82bd2ca1e2c7c83e31e3c834..a832e6af0ce937d6e48021e3b2190ebe
  
      public ServerChunkCache(ServerLevel world, LevelStorageSource.LevelStorageAccess session, DataFixer dataFixer, StructureManager structureManager, Executor workerExecutor, ChunkGenerator chunkGenerator, int viewDistance, int simulationDistance, boolean dsync, ChunkProgressListener worldGenerationProgressListener, ChunkStatusUpdateListener chunkStatusChangeListener, Supplier<DimensionDataStorage> persistentStateManagerFactory) {
          this.level = world;
-@@ -127,6 +439,49 @@ public class ServerChunkCache extends ChunkSource {
+@@ -127,6 +440,49 @@ public class ServerChunkCache extends ChunkSource {
          this.lastChunk[0] = chunk;
      }
  
@@ -5755,7 +5756,7 @@ index a551683bc73db23d82bd2ca1e2c7c83e31e3c834..a832e6af0ce937d6e48021e3b2190ebe
      @Nullable
      @Override
      public ChunkAccess getChunk(int x, int z, ChunkStatus leastStatus, boolean create) {
-@@ -441,7 +796,7 @@ public class ServerChunkCache extends ChunkSource {
+@@ -441,7 +797,7 @@ public class ServerChunkCache extends ChunkSource {
              gameprofilerfiller.popPush("spawnAndTick");
              boolean flag2 = this.level.getGameRules().getBoolean(GameRules.RULE_DOMOBSPAWNING) && !this.level.players().isEmpty(); // CraftBukkit
  
