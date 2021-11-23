@@ -3,6 +3,7 @@ package org.bukkit.event.server;
 import java.net.InetAddress;
 import java.util.Iterator;
 import org.apache.commons.lang.Validate;
+import org.bukkit.Bukkit;
 import org.bukkit.UndefinedNullability;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
@@ -12,6 +13,9 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Called when a server list ping is coming in. Displayed players can be
  * checked and removed by {@link #iterator() iterating} over this event.
+ * <br>
+ * <b>Note:</b> The players in {@link #iterator()} will not be shown in the
+ * server info if {@link Bukkit#getHideOnlinePlayers()} is true.
  */
 public class ServerListPingEvent extends ServerEvent implements Iterable<Player> {
     private static final int MAGIC_PLAYER_COUNT = Integer.MIN_VALUE;
@@ -142,6 +146,9 @@ public class ServerListPingEvent extends ServerEvent implements Iterable<Player>
      * player to not be displayed on the player list, decrease the size
      * returned by {@link #getNumPlayers()}, and will not be returned again by
      * any new iterator.
+     * <br>
+     * <b>Note:</b> The players here will not be shown in the server info if
+     * {@link Bukkit#getHideOnlinePlayers()} is true.
      *
      * @throws UnsupportedOperationException if the caller of this event does
      *     not support removing players
