@@ -15,18 +15,9 @@ diff --git a/src/main/java/net/minecraft/Util.java b/src/main/java/net/minecraft
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/Util.java
 +++ b/src/main/java/net/minecraft/Util.java
-@@ -0,0 +0,0 @@ import java.util.stream.Stream;
- import javax.annotation.Nullable;
- import net.minecraft.resources.ResourceLocation;
- import net.minecraft.server.Bootstrap;
--import net.minecraft.util.Mth;
-+import net.minecraft.server.ServerWorkerThread;
- import net.minecraft.util.datafix.DataFixers;
- import net.minecraft.world.level.block.state.properties.Property;
- import org.apache.commons.io.IOUtils;
-@@ -0,0 +0,0 @@ import org.apache.logging.log4j.Logger;
- 
- public class Util {
+@@ -0,0 +0,0 @@ public class Util {
+     private static final int DEFAULT_MAX_THREADS = 255;
+     private static final String MAX_THREADS_SYSTEM_PROPERTY = "max.bg.threads";
      private static final AtomicInteger WORKER_COUNT = new AtomicInteger(1);
 -    private static final ExecutorService BOOTSTRAP_EXECUTOR = makeExecutor("Bootstrap");
 -    private static final ExecutorService BACKGROUND_EXECUTOR = makeExecutor("Main");
@@ -40,7 +31,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
 -    private static ExecutorService makeExecutor(String name) {
--        int i = Mth.clamp(Runtime.getRuntime().availableProcessors() - 1, 1, 7);
+-        int i = Mth.clamp(Runtime.getRuntime().availableProcessors() - 1, 1, getMaxThreads());
 +    private static ExecutorService makeExecutor(String s, int priorityModifier) { // Paper - add priority
 +        // Paper start - use simpler thread pool that allows 1 thread
 +        int i = Math.min(8, Math.max(Runtime.getRuntime().availableProcessors() - 2, 1));
@@ -52,7 +43,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          } else {
 -            executorService = new ForkJoinPool(i, (forkJoinPool) -> {
 -                ForkJoinWorkerThread forkJoinWorkerThread = new ForkJoinWorkerThread(forkJoinPool) {
-+            executorService = new java.util.concurrent.ThreadPoolExecutor(i, i,0L, TimeUnit.MILLISECONDS, new java.util.concurrent.LinkedBlockingQueue<Runnable>(), target -> new ServerWorkerThread(target, s, priorityModifier));
++            executorService = new java.util.concurrent.ThreadPoolExecutor(i, i,0L, TimeUnit.MILLISECONDS, new java.util.concurrent.LinkedBlockingQueue<Runnable>(), target -> new net.minecraft.server.ServerWorkerThread(target, s, priorityModifier));
 +        }
 +        /*
                      @Override
