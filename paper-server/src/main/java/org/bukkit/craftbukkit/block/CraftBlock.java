@@ -185,8 +185,11 @@ public class CraftBlock implements Block {
         setTypeAndData(((CraftBlockData) data).getState(), applyPhysics);
     }
 
-    public boolean setTypeAndData(final IBlockData blockData, final boolean applyPhysics) {
-        IBlockData old = getNMS();
+    boolean setTypeAndData(final IBlockData blockData, final boolean applyPhysics) {
+        return setTypeAndData(world, position, getNMS(), blockData, applyPhysics);
+    }
+
+    public static boolean setTypeAndData(GeneratorAccess world, BlockPosition position, IBlockData old, IBlockData blockData, boolean applyPhysics) {
         // SPIGOT-611: need to do this to prevent glitchiness. Easier to handle this here (like /setblock) than to fix weirdness in tile entity cleanup
         if (old.hasBlockEntity() && blockData.getBlock() != old.getBlock()) { // SPIGOT-3725 remove old tile entity if block changes
             // SPIGOT-4612: faster - just clear tile

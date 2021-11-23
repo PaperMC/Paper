@@ -272,7 +272,11 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
 
     @Override
     public void setBlockData(int x, int y, int z, BlockData blockData) {
-        CraftBlock.at(getHandle(), new BlockPosition(x, y, z)).setTypeAndData(((CraftBlockData) blockData).getState(), true);
+        GeneratorAccessSeed world = getHandle();
+        BlockPosition pos = new BlockPosition(x, y, z);
+        IBlockData old = getHandle().getBlockState(pos);
+
+        CraftBlock.setTypeAndData(world, pos, old, ((CraftBlockData) blockData).getState(), true);
     }
 
     @Override
