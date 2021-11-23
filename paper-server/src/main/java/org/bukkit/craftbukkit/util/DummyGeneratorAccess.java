@@ -74,6 +74,11 @@ public class DummyGeneratorAccess implements GeneratorAccessSeed {
     }
 
     @Override
+    public void scheduleTick(BlockPosition blockposition, Block block, int i) {
+        // Used by BlockComposter
+    }
+
+    @Override
     public LevelTickAccess<FluidType> getFluidTicks() {
         return TickListEmpty.emptyLevelList();
     }
