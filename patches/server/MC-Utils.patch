@@ -4985,6 +4985,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                return null;
 +        }
 +    }
++
++    public static int getTicketLevelFor(net.minecraft.world.level.chunk.ChunkStatus status) {
++        return net.minecraft.server.level.ChunkMap.MAX_VIEW_DISTANCE + net.minecraft.world.level.chunk.ChunkStatus.getDistance(status);
++    }
 +}
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
@@ -5077,6 +5081,28 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          return this.getFullChunkUnchecked();
      }
 @@ -0,0 +0,0 @@ public class ChunkHolder {
+     }
+     // CraftBukkit end
+ 
++    // Paper start
++    public ChunkAccess getAvailableChunkNow() {
++        // TODO can we just getStatusFuture(EMPTY)?
++        for (ChunkStatus curr = ChunkStatus.FULL, next = curr.getParent(); curr != next; curr = next, next = next.getParent()) {
++            CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> future = this.getFutureIfPresentUnchecked(curr);
++            Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure> either = future.getNow(null);
++            if (either == null || !either.left().isPresent()) {
++                continue;
++            }
++            return either.left().get();
++        }
++        return null;
++    }
++    // Paper end
++
+     public CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> getFutureIfPresentUnchecked(ChunkStatus leastStatus) {
+         CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> completablefuture = (CompletableFuture) this.futures.get(leastStatus.getIndex());
+ 
+@@ -0,0 +0,0 @@ public class ChunkHolder {
          return ChunkHolder.getStatus(this.ticketLevel).isOrAfter(leastStatus) ? this.getFutureIfPresentUnchecked(leastStatus) : ChunkHolder.UNLOADED_CHUNK_FUTURE;
      }
  
@@ -5101,6 +5127,28 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          CompletableFuture<Either<LevelChunk, ChunkHolder.ChunkLoadingFailure>> completablefuture = this.getTickingChunkFuture();
          Either<LevelChunk, ChunkHolder.ChunkLoadingFailure> either = (Either) completablefuture.getNow(null); // CraftBukkit - decompile error
  
+@@ -0,0 +0,0 @@ public class ChunkHolder {
+         return null;
+     }
+ 
++    // Paper start
++    public ChunkStatus getChunkHolderStatus() {
++        for (ChunkStatus curr = ChunkStatus.FULL, next = curr.getParent(); curr != next; curr = next, next = next.getParent()) {
++            CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> future = this.getFutureIfPresentUnchecked(curr);
++            Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure> either = future.getNow(null);
++            if (either == null || !either.left().isPresent()) {
++                continue;
++            }
++            return curr;
++        }
++
++        return null;
++    }
++    // Paper end
++
+     @Nullable
+     public ChunkAccess getLastAvailable() {
+         for (int i = ChunkHolder.CHUNK_STATUSES.size() - 1; i >= 0; --i) {
 @@ -0,0 +0,0 @@ public class ChunkHolder {
          return null;
      }
@@ -5545,6 +5593,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    // Paper end
 +
 +    // Paper start
++    @Nullable
++    public ChunkAccess getChunkAtImmediately(int x, int z) {
++        ChunkHolder holder = this.chunkMap.getVisibleChunkIfPresent(ChunkPos.asLong(x, z));
++        if (holder == null) {
++            return null;
++        }
++
++        return holder.getLastAvailable();
++    }
++
 +    // this will try to avoid chunk neighbours for lighting
 +    public final ChunkAccess getFullStatusChunkAt(int chunkX, int chunkZ) {
 +        LevelChunk ifLoaded = this.getChunkAtIfLoadedImmediately(chunkX, chunkZ);
@@ -5632,6 +5690,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                ServerChunkCache.this.removeTicketAtLevel(TicketType.FUTURE_AWAIT, chunkPos, ticketLevel, identifier);
 +            }
 +        }, this.mainThreadProcessor);
++    }
++
++    public <T> void addTicketAtLevel(TicketType<T> ticketType, ChunkPos chunkPos, int ticketLevel, T identifier) {
++        this.distanceManager.addTicketAtLevel(ticketType, chunkPos, ticketLevel, identifier);
++    }
++
++    public <T> void removeTicketAtLevel(TicketType<T> ticketType, ChunkPos chunkPos, int ticketLevel, T identifier) {
++        this.distanceManager.removeTicketAtLevel(ticketType, chunkPos, ticketLevel, identifier);
 +    }
 +
 +    void chunkLoadAccept(int chunkX, int chunkZ, ChunkAccess chunk, java.util.function.Consumer<ChunkAccess> consumer) {
