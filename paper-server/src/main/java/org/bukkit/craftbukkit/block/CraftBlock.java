@@ -584,4 +584,13 @@ public class CraftBlock implements Block {
         VoxelShape shape = getNMS().getCollisionShape(world, position);
         return new CraftVoxelShape(shape);
     }
+
+    @Override
+    public boolean canPlace(BlockData data) {
+        Preconditions.checkArgument(data != null, "Provided block data is null!");
+        net.minecraft.world.level.block.state.IBlockData iblockdata = ((CraftBlockData) data).getState();
+        net.minecraft.world.level.World world = this.world.getMinecraftWorld();
+
+        return iblockdata.canSurvive(world, this.position);
+    }
 }
