@@ -12,21 +12,12 @@ server threads
 Allow usage of a single thread executor by not using ForkJoin so single core CPU's.
 
 diff --git a/src/main/java/net/minecraft/Util.java b/src/main/java/net/minecraft/Util.java
-index 65e0ca442980f273d2fe5f131e174cd92f80da20..81f4f26a6b83079d36acd1fd86dede0eb1116c01 100644
+index 3ed0bf0485266c0a2b459f5cc1940f85f74e3624..b9775bc4e601fe1be8e514222e56ae782a897395 100644
 --- a/src/main/java/net/minecraft/Util.java
 +++ b/src/main/java/net/minecraft/Util.java
-@@ -56,7 +56,7 @@ import java.util.stream.Stream;
- import javax.annotation.Nullable;
- import net.minecraft.resources.ResourceLocation;
- import net.minecraft.server.Bootstrap;
--import net.minecraft.util.Mth;
-+import net.minecraft.server.ServerWorkerThread;
- import net.minecraft.util.datafix.DataFixers;
- import net.minecraft.world.level.block.state.properties.Property;
- import org.apache.commons.io.IOUtils;
-@@ -65,8 +65,8 @@ import org.apache.logging.log4j.Logger;
- 
- public class Util {
+@@ -68,8 +68,8 @@ public class Util {
+     private static final int DEFAULT_MAX_THREADS = 255;
+     private static final String MAX_THREADS_SYSTEM_PROPERTY = "max.bg.threads";
      private static final AtomicInteger WORKER_COUNT = new AtomicInteger(1);
 -    private static final ExecutorService BOOTSTRAP_EXECUTOR = makeExecutor("Bootstrap");
 -    private static final ExecutorService BACKGROUND_EXECUTOR = makeExecutor("Main");
@@ -35,12 +26,12 @@ index 65e0ca442980f273d2fe5f131e174cd92f80da20..81f4f26a6b83079d36acd1fd86dede0e
      private static final ExecutorService IO_POOL = makeIoExecutor();
      public static LongSupplier timeSource = System::nanoTime;
      public static final UUID NIL_UUID = new UUID(0L, 0L);
-@@ -101,14 +101,18 @@ public class Util {
+@@ -105,14 +105,18 @@ public class Util {
          return Instant.now().toEpochMilli();
      }
  
 -    private static ExecutorService makeExecutor(String name) {
--        int i = Mth.clamp(Runtime.getRuntime().availableProcessors() - 1, 1, 7);
+-        int i = Mth.clamp(Runtime.getRuntime().availableProcessors() - 1, 1, getMaxThreads());
 +    private static ExecutorService makeExecutor(String s, int priorityModifier) { // Paper - add priority
 +        // Paper start - use simpler thread pool that allows 1 thread
 +        int i = Math.min(8, Math.max(Runtime.getRuntime().availableProcessors() - 2, 1));
@@ -52,13 +43,13 @@ index 65e0ca442980f273d2fe5f131e174cd92f80da20..81f4f26a6b83079d36acd1fd86dede0e
          } else {
 -            executorService = new ForkJoinPool(i, (forkJoinPool) -> {
 -                ForkJoinWorkerThread forkJoinWorkerThread = new ForkJoinWorkerThread(forkJoinPool) {
-+            executorService = new java.util.concurrent.ThreadPoolExecutor(i, i,0L, TimeUnit.MILLISECONDS, new java.util.concurrent.LinkedBlockingQueue<Runnable>(), target -> new ServerWorkerThread(target, s, priorityModifier));
++            executorService = new java.util.concurrent.ThreadPoolExecutor(i, i,0L, TimeUnit.MILLISECONDS, new java.util.concurrent.LinkedBlockingQueue<Runnable>(), target -> new net.minecraft.server.ServerWorkerThread(target, s, priorityModifier));
 +        }
 +        /*
                      @Override
                      protected void onTermination(Throwable throwable) {
                          if (throwable != null) {
-@@ -124,6 +128,7 @@ public class Util {
+@@ -128,6 +132,7 @@ public class Util {
                  return forkJoinWorkerThread;
              }, Util::onThreadException, true);
          }
@@ -67,10 +58,10 @@ index 65e0ca442980f273d2fe5f131e174cd92f80da20..81f4f26a6b83079d36acd1fd86dede0e
          return executorService;
      }
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 00920e574ee1f104781d1f776d88ec9cd45eda93..a9f40f74cbd35533c6a334020c4f3ecd7ced3a43 100644
+index a9f54a691af0cd15cbc38af8b8df3831de244aa7..19e7488055447d3bc402150c6686f96dfd592ac2 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -317,6 +317,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -319,6 +319,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          S s0 = serverFactory.apply(thread); // CraftBukkit - decompile error
  
          atomicreference.set(s0);
