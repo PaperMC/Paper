@@ -19,24 +19,24 @@ spectate the target entity.
 Co-authored-by: Spottedleaf <Spottedleaf@users.noreply.github.com>
 
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-index 4cfbb920abad262d42553270455f0cd09dbdcb1a..c4f433832dc439830fc1584d36a197066fdb3e75 100644
+index a2e2b6ea166bf64fe5b49672a6c6f86af3776638..4a8afc06f58bb608055a0fabc587bf06a7110232 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-@@ -1823,14 +1823,58 @@ public class ServerPlayer extends Player {
+@@ -1850,14 +1850,58 @@ public class ServerPlayer extends Player {
      }
  
-     public void setCamera(Entity entity) {
+     public void setCamera(@Nullable Entity entity) {
 +        // Paper start - Add PlayerStartSpectatingEntityEvent and PlayerStopSpectatingEntity Event and improve implementation
          Entity entity1 = this.getCamera();
  
 -        this.camera = (Entity) (entity == null ? this : entity);
 -        if (entity1 != this.camera) {
 -            this.connection.send(new ClientboundSetCameraPacket(this.camera));
--            this.connection.b(this.camera.getX(), this.camera.getY(), this.camera.getZ(), this.getYRot(), this.getXRot(), TeleportCause.SPECTATE); // CraftBukkit
+-            this.connection.teleport(this.camera.getX(), this.camera.getY(), this.camera.getZ(), this.getYRot(), this.getXRot(), TeleportCause.SPECTATE); // CraftBukkit
 +        if (entity == null) {
 +            entity = this;
-         }
- 
++        }
++
 +        if (entity1 == entity) return; // new spec target is the current spec target
 +
 +        if (entity == this) {
@@ -63,8 +63,8 @@ index 4cfbb920abad262d42553270455f0cd09dbdcb1a..c4f433832dc439830fc1584d36a19706
 +                MinecraftServer.LOGGER.debug("Blocking frozen player " + this + " from spectating entity " + entity);
 +                return;
 +            }
-+        }
-+
+         }
+ 
 +        this.camera = entity; // only set after validating state
 +
 +        if (entity != this) {

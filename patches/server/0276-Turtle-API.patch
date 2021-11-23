@@ -5,7 +5,7 @@ Subject: [PATCH] Turtle API
 
 
 diff --git a/src/main/java/net/minecraft/world/entity/ai/goal/MoveToBlockGoal.java b/src/main/java/net/minecraft/world/entity/ai/goal/MoveToBlockGoal.java
-index 70a51ba19fb34f652858b18f24554261787d97e2..27ea9c10b7f66c2133b0829c0b1c37143dd80b56 100644
+index dabdce6332c267c3b82698010e284b34dcc0c083..8d8cce87acc5a93afb4b8925a5a5dbf71d371fcd 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/goal/MoveToBlockGoal.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/goal/MoveToBlockGoal.java
 @@ -14,7 +14,7 @@ public abstract class MoveToBlockGoal extends Goal {
@@ -18,31 +18,23 @@ index 70a51ba19fb34f652858b18f24554261787d97e2..27ea9c10b7f66c2133b0829c0b1c3714
      private final int searchRange;
      private final int verticalSearchRange;
 diff --git a/src/main/java/net/minecraft/world/entity/animal/Turtle.java b/src/main/java/net/minecraft/world/entity/animal/Turtle.java
-index 3ba8fafcd5de584209dd30cadb8e76a46dac4bc8..00dbe5046c3b93e402218a6903ea2f087410388b 100644
+index 44679e3b44b03dc20b3763af84df655d81680c06..60e1111f3c2c43398f21c541248f38524f41f4fb 100644
 --- a/src/main/java/net/minecraft/world/entity/animal/Turtle.java
 +++ b/src/main/java/net/minecraft/world/entity/animal/Turtle.java
-@@ -11,6 +11,7 @@ import net.minecraft.nbt.CompoundTag;
- import net.minecraft.network.syncher.EntityDataAccessor;
- import net.minecraft.network.syncher.EntityDataSerializers;
- import net.minecraft.network.syncher.SynchedEntityData;
-+import net.minecraft.server.MCUtil;
- import net.minecraft.server.level.ServerLevel;
- import net.minecraft.server.level.ServerPlayer;
- import net.minecraft.sounds.SoundEvent;
-@@ -487,14 +488,17 @@ public class Turtle extends Animal {
+@@ -484,14 +484,17 @@ public class Turtle extends Animal {
  
              if (!this.turtle.isInWater() && this.isReachedTarget()) {
                  if (this.turtle.layEggCounter < 1) {
 -                    this.turtle.setLayingEgg(true);
-+                    this.turtle.setLayingEgg(new com.destroystokyo.paper.event.entity.TurtleStartDiggingEvent((org.bukkit.entity.Turtle) this.turtle.getBukkitEntity(), MCUtil.toLocation(this.turtle.level, this.getTargetPosition())).callEvent()); // Paper
-                 } else if (this.turtle.layEggCounter > 200) {
++                    this.turtle.setLayingEgg(new com.destroystokyo.paper.event.entity.TurtleStartDiggingEvent((org.bukkit.entity.Turtle) this.turtle.getBukkitEntity(), net.minecraft.server.MCUtil.toLocation(this.turtle.level, this.getTargetPosition())).callEvent()); // Paper
+                 } else if (this.turtle.layEggCounter > this.adjustedTickDelay(200)) {
                      Level world = this.turtle.level;
  
                      // CraftBukkit start
 -                    if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(this.turtle, this.blockPos.above(), (BlockState) Blocks.TURTLE_EGG.defaultBlockState().setValue(TurtleEggBlock.EGGS, this.turtle.random.nextInt(4) + 1)).isCancelled()) {
 +                    // Paper start
 +                    int eggCount = this.turtle.random.nextInt(4) + 1;
-+                    com.destroystokyo.paper.event.entity.TurtleLayEggEvent layEggEvent = new com.destroystokyo.paper.event.entity.TurtleLayEggEvent((org.bukkit.entity.Turtle) this.turtle.getBukkitEntity(), MCUtil.toLocation(this.turtle.level, this.blockPos.above()), eggCount);
++                    com.destroystokyo.paper.event.entity.TurtleLayEggEvent layEggEvent = new com.destroystokyo.paper.event.entity.TurtleLayEggEvent((org.bukkit.entity.Turtle) this.turtle.getBukkitEntity(), net.minecraft.server.MCUtil.toLocation(this.turtle.level, this.blockPos.above()), eggCount);
 +                    if (layEggEvent.callEvent() && !org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(this.turtle, this.blockPos.above(), Blocks.TURTLE_EGG.defaultBlockState().setValue(TurtleEggBlock.EGGS, layEggEvent.getEggCount())).isCancelled()) {
                      world.playSound((Player) null, blockposition, SoundEvents.TURTLE_LAY_EGG, SoundSource.BLOCKS, 0.3F, 0.9F + world.random.nextFloat() * 0.2F);
 -                    world.setBlock(this.blockPos.above(), (BlockState) Blocks.TURTLE_EGG.defaultBlockState().setValue(TurtleEggBlock.EGGS, this.turtle.random.nextInt(4) + 1), 3);
@@ -50,12 +42,12 @@ index 3ba8fafcd5de584209dd30cadb8e76a46dac4bc8..00dbe5046c3b93e402218a6903ea2f08
                      }
                      // CraftBukkit end
                      this.turtle.setHasEgg(false);
-@@ -562,7 +566,7 @@ public class Turtle extends Animal {
+@@ -559,7 +562,7 @@ public class Turtle extends Animal {
  
          @Override
          public boolean canUse() {
--            return this.turtle.isBaby() ? false : (this.turtle.hasEgg() ? true : (this.turtle.getRandom().nextInt(700) != 0 ? false : !this.turtle.getHomePos().closerThan((Position) this.turtle.position(), 64.0D)));
-+            return this.turtle.isBaby() ? false : (this.turtle.hasEgg() ? true : (this.turtle.getRandom().nextInt(700) != 0 ? false : !this.turtle.getHomePos().closerThan((Position) this.turtle.position(), 64.0D))) && new com.destroystokyo.paper.event.entity.TurtleGoHomeEvent((org.bukkit.entity.Turtle) this.turtle.getBukkitEntity()).callEvent(); // Paper
+-            return this.turtle.isBaby() ? false : (this.turtle.hasEgg() ? true : (this.turtle.getRandom().nextInt(reducedTickDelay(700)) != 0 ? false : !this.turtle.getHomePos().closerThan((Position) this.turtle.position(), 64.0D)));
++            return this.turtle.isBaby() ? false : (this.turtle.hasEgg() ? true : (this.turtle.getRandom().nextInt(reducedTickDelay(700)) != 0 ? false : !this.turtle.getHomePos().closerThan((Position) this.turtle.position(), 64.0D))) && new com.destroystokyo.paper.event.entity.TurtleGoHomeEvent((org.bukkit.entity.Turtle) this.turtle.getBukkitEntity()).callEvent(); // Paper
          }
  
          @Override
