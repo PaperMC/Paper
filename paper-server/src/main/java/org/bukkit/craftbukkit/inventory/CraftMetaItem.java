@@ -280,7 +280,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
     private static final CraftPersistentDataTypeRegistry DATA_TYPE_REGISTRY = new CraftPersistentDataTypeRegistry();
 
     private NBTTagCompound internalTag;
-    private final Map<String, NBTBase> unhandledTags = new HashMap<String, NBTBase>();
+    final Map<String, NBTBase> unhandledTags = new HashMap<String, NBTBase>(); // Visible for testing only
     private CraftPersistentDataContainer persistentDataContainer = new CraftPersistentDataContainer(DATA_TYPE_REGISTRY);
 
     private int version = CraftMagicNumbers.INSTANCE.getDataVersion(); // Internal use only
@@ -1259,7 +1259,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
             try {
                 ByteArrayOutputStream buf = new ByteArrayOutputStream();
                 NBTCompressedStreamTools.writeCompressed(internal, buf);
-                builder.put("internal", Base64.getEncoder().encode(buf.toByteArray()));
+                builder.put("internal", Base64.getEncoder().encodeToString(buf.toByteArray()));
             } catch (IOException ex) {
                 Logger.getLogger(CraftMetaItem.class.getName()).log(Level.SEVERE, null, ex);
             }
