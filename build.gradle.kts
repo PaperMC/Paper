@@ -48,7 +48,7 @@ repositories {
 dependencies {
     paramMappings("net.fabricmc:yarn:1.18-pre5+build.4:mergedv2")
     remapper("net.fabricmc:tiny-remapper:0.7.0:fat")
-    decompiler("org.quiltmc:quiltflower:1.6.0")
+    decompiler("net.minecraftforge:forgeflower:1.5.498.22")
     paperclip("io.papermc:paperclip:2.0.1")
 }
 
@@ -58,7 +58,7 @@ paperweight {
 
     paramMappingsRepo.set("https://maven.fabricmc.net/")
     remapRepo.set("https://maven.fabricmc.net/")
-    decompileRepo.set("https://maven.quiltmc.org/repository/release/")
+    decompileRepo.set("https://files.minecraftforge.net/maven/")
 
     paper {
         spigotApiPatchDir.set(layout.projectDirectory.dir("patches/api"))

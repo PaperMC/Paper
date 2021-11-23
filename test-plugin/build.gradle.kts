@@ -6,7 +6,7 @@ repositories {
 
 dependencies {
     compileOnly(project(":Paper-API"))
-    compileOnly(project(":Paper-MojangAPI"))
+    // compileOnly(project(":Paper-MojangAPI")) // todo
 }
 
 tasks.processResources {
