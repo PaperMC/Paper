@@ -1,0 +1,72 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Wed, 20 Dec 2017 17:36:49 -0500
+Subject: [PATCH] Ability to apply mending to XP API
+
+This allows plugins that give players the ability to apply the experience
+points to the Item Mending formula, which will repair an item instead
+of giving the player experience points.
+
+Both an API To standalone mend, and apply mending logic to .giveExp has been added.
+
+diff --git a/src/main/java/net/minecraft/world/item/enchantment/EnchantmentHelper.java b/src/main/java/net/minecraft/world/item/enchantment/EnchantmentHelper.java
+index 3a09ce6d0ea51436adcae4719d3f28d1868c283c..7bc5aa35b52de0027cf58a6127a9903464ccaf47 100644
+--- a/src/main/java/net/minecraft/world/item/enchantment/EnchantmentHelper.java
++++ b/src/main/java/net/minecraft/world/item/enchantment/EnchantmentHelper.java
+@@ -270,8 +270,11 @@ public class EnchantmentHelper {
+         return getItemEnchantmentLevel(Enchantments.CHANNELING, stack) > 0;
+     }
+ 
+-    @Nullable
+-    public static Entry<EquipmentSlot, ItemStack> getRandomItemWith(Enchantment enchantment, LivingEntity entity) {
++    @Deprecated public static @javax.annotation.Nonnull ItemStack getRandomEquippedItemWithEnchant(Enchantment enchantment, LivingEntity entityliving) {
++        Entry<EquipmentSlot, ItemStack> entry = getRandomItemWith(enchantment, entityliving);
++        return entry != null ? entry.getValue() : ItemStack.EMPTY;
++    } // Paper - OBFHELPER
++    @Nullable public static Entry<EquipmentSlot, ItemStack> getRandomItemWith(Enchantment enchantment, LivingEntity entity) {
+         return getRandomItemWith(enchantment, entity, (stack) -> {
+             return true;
+         });
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index 5afc4c55c9ec8ed70b36a805b553613e18747c1f..d6f9fe4ebc034263169f3333922ad90fe4fcee69 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -1223,8 +1223,37 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+         return GameMode.getByValue(this.getHandle().gameMode.getGameModeForPlayer().getId());
+     }
+ 
++    // Paper start
++    @Override
++    public int applyMending(int amount) {
++        ServerPlayer handle = getHandle();
++        // Logic copied from EntityExperienceOrb and remapped to unobfuscated methods/properties
++        net.minecraft.world.item.ItemStack itemstack = net.minecraft.world.item.enchantment.EnchantmentHelper
++            .getRandomEquippedItemWithEnchant(net.minecraft.world.item.enchantment.Enchantments.MENDING, handle);
++        if (!itemstack.isEmpty() && itemstack.getItem().canBeDepleted()) {
++            net.minecraft.world.entity.ExperienceOrb orb = net.minecraft.world.entity.EntityType.EXPERIENCE_ORB.create(handle.level);
++            orb.value = amount;
++            orb.spawnReason = org.bukkit.entity.ExperienceOrb.SpawnReason.CUSTOM;
++            orb.setPosRaw(handle.getX(), handle.getY(), handle.getZ());
++
++            int i = Math.min(orb.xpToDurability(amount), itemstack.getDamageValue());
++            org.bukkit.event.player.PlayerItemMendEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerItemMendEvent(handle, orb, itemstack, i);
++            i = event.getRepairAmount();
++            orb.discard();
++            if (!event.isCancelled()) {
++                amount -= orb.durabilityToXp(i);
++                itemstack.setDamageValue(itemstack.getDamageValue() - i);
++            }
++        }
++        return amount;
++    }
++
+     @Override
+-    public void giveExp(int exp) {
++    public void giveExp(int exp, boolean applyMending) {
++        if (applyMending) {
++            exp = this.applyMending(exp);
++        }
++        // Paper end
+         this.getHandle().giveExperiencePoints(exp);
+     }
+ 
