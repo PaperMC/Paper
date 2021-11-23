@@ -5,7 +5,7 @@ Subject: [PATCH] Slime Pathfinder Events
 
 
 diff --git a/src/main/java/net/minecraft/world/entity/monster/Slime.java b/src/main/java/net/minecraft/world/entity/monster/Slime.java
-index 239f3a17ab8cff4e6c97044e4f8e6755abac193d..82747a12d4977ed2d26d203f690ecc9bdbfadfc1 100644
+index 11aefbf65b0e63777d6ed5bfdb18c7f7df30fc0e..6ec81054bcf25d99aec567d568c361eea84ed384 100644
 --- a/src/main/java/net/minecraft/world/entity/monster/Slime.java
 +++ b/src/main/java/net/minecraft/world/entity/monster/Slime.java
 @@ -44,6 +44,12 @@ import net.minecraft.world.level.biome.Biomes;
@@ -50,7 +50,7 @@ index 239f3a17ab8cff4e6c97044e4f8e6755abac193d..82747a12d4977ed2d26d203f690ecc9b
          }
  
          @Override
-@@ -481,7 +493,15 @@ public class Slime extends Mob implements Enemy {
+@@ -486,7 +498,15 @@ public class Slime extends Mob implements Enemy {
          public boolean canUse() {
              LivingEntity entityliving = this.slime.getTarget();
  
@@ -67,7 +67,7 @@ index 239f3a17ab8cff4e6c97044e4f8e6755abac193d..82747a12d4977ed2d26d203f690ecc9b
          }
  
          @Override
-@@ -494,7 +514,15 @@ public class Slime extends Mob implements Enemy {
+@@ -499,7 +519,15 @@ public class Slime extends Mob implements Enemy {
          public boolean canContinueToUse() {
              LivingEntity entityliving = this.slime.getTarget();
  
@@ -84,8 +84,8 @@ index 239f3a17ab8cff4e6c97044e4f8e6755abac193d..82747a12d4977ed2d26d203f690ecc9b
          }
  
          @Override
-@@ -502,6 +530,13 @@ public class Slime extends Mob implements Enemy {
-             this.slime.lookAt((Entity) this.slime.getTarget(), 10.0F, 10.0F);
+@@ -517,6 +545,13 @@ public class Slime extends Mob implements Enemy {
+ 
              ((Slime.SlimeMoveControl) this.slime.getMoveControl()).setDirection(this.slime.getYRot(), this.slime.isDealsDamage());
          }
 +
@@ -98,7 +98,7 @@ index 239f3a17ab8cff4e6c97044e4f8e6755abac193d..82747a12d4977ed2d26d203f690ecc9b
      }
  
      private static class SlimeRandomDirectionGoal extends Goal {
-@@ -517,14 +552,18 @@ public class Slime extends Mob implements Enemy {
+@@ -532,7 +567,7 @@ public class Slime extends Mob implements Enemy {
  
          @Override
          public boolean canUse() {
@@ -107,19 +107,19 @@ index 239f3a17ab8cff4e6c97044e4f8e6755abac193d..82747a12d4977ed2d26d203f690ecc9b
          }
  
          @Override
-         public void tick() {
+@@ -540,6 +575,11 @@ public class Slime extends Mob implements Enemy {
              if (--this.nextRandomizeTime <= 0) {
-                 this.nextRandomizeTime = 40 + this.slime.getRandom().nextInt(60);
--                this.chosenDegrees = (float) this.slime.getRandom().nextInt(360);
+                 this.nextRandomizeTime = this.adjustedTickDelay(40 + this.slime.getRandom().nextInt(60));
+                 this.chosenDegrees = (float) this.slime.getRandom().nextInt(360);
 +                // Paper start
-+                SlimeChangeDirectionEvent event = new SlimeChangeDirectionEvent((org.bukkit.entity.Slime) this.slime.getBukkitEntity(), (float) this.slime.getRandom().nextInt(360));
++                SlimeChangeDirectionEvent event = new SlimeChangeDirectionEvent((org.bukkit.entity.Slime) this.slime.getBukkitEntity(), this.chosenDegrees);
 +                if (!this.slime.canWander || !event.callEvent()) return;
 +                this.chosenDegrees = event.getNewYaw();
 +                // Paper end
              }
  
              ((Slime.SlimeMoveControl) this.slime.getMoveControl()).setDirection(this.chosenDegrees, false);
-@@ -542,7 +581,7 @@ public class Slime extends Mob implements Enemy {
+@@ -557,7 +597,7 @@ public class Slime extends Mob implements Enemy {
  
          @Override
          public boolean canUse() {
@@ -128,7 +128,7 @@ index 239f3a17ab8cff4e6c97044e4f8e6755abac193d..82747a12d4977ed2d26d203f690ecc9b
          }
  
          @Override
-@@ -550,4 +589,15 @@ public class Slime extends Mob implements Enemy {
+@@ -565,4 +605,15 @@ public class Slime extends Mob implements Enemy {
              ((Slime.SlimeMoveControl) this.slime.getMoveControl()).setWantedMovement(1.0D);
          }
      }
