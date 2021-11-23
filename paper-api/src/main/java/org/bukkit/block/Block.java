@@ -511,4 +511,13 @@ public interface Block extends Metadatable {
      */
     @NotNull
     VoxelShape getCollisionShape();
+
+    /**
+     * Checks if this block is a valid placement location for the specified
+     * block data.
+     *
+     * @param data the block data to check
+     * @return <code>true</code> if the block data can be placed here
+     */
+    boolean canPlace(@NotNull BlockData data);
 }
