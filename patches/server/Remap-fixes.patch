@@ -67,25 +67,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          return optional.map((uuid) -> {
              return ((ServerLevel) entity.level).getEntity(uuid);
 -        }).map((entity) -> {
--            return entity instanceof LivingEntity ? (LivingEntity) entity : null;
-+        }).map((entity2) -> { // Paper - remap fix
-+            return entity2 instanceof LivingEntity ? (LivingEntity) entity2 : null; // Paper - remap fix
-         });
-     }
++        }).map((entity1) -> { // Paper - remap fix
+             LivingEntity entityliving1;
  
-diff --git a/src/main/java/net/minecraft/world/entity/monster/Phantom.java b/src/main/java/net/minecraft/world/entity/monster/Phantom.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/world/entity/monster/Phantom.java
-+++ b/src/main/java/net/minecraft/world/entity/monster/Phantom.java
-@@ -0,0 +0,0 @@ public class Phantom extends FlyingMob implements Enemy {
-                 List<Player> list = Phantom.this.level.getNearbyPlayers(this.attackTargeting, (LivingEntity) Phantom.this, Phantom.this.getBoundingBox().inflate(16.0D, 64.0D, 16.0D));
+-            if (entity instanceof LivingEntity) {
+-                LivingEntity entityliving2 = (LivingEntity) entity;
++            if (entity1 instanceof LivingEntity) { // Paper - remap fix
++                LivingEntity entityliving2 = (LivingEntity) entity1; // Paper - remap fix
  
-                 if (!list.isEmpty()) {
--                    list.sort(Comparator.comparing(Entity::getY).reversed());
-+                    list.sort(Comparator.<Player, Double>comparing(Entity::getY).reversed()); // Paper - remap fix
-                     Iterator iterator = list.iterator();
- 
-                     while (iterator.hasNext()) {
+                 entityliving1 = entityliving2;
+             } else {
 diff --git a/src/main/java/net/minecraft/world/item/crafting/RecipeManager.java b/src/main/java/net/minecraft/world/item/crafting/RecipeManager.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/item/crafting/RecipeManager.java
@@ -129,19 +120,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          assertThat(color, is(Color.fromRGB(nmsColor)));
      }
  }
-diff --git a/src/test/java/org/bukkit/PerMaterialTest.java b/src/test/java/org/bukkit/PerMaterialTest.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/test/java/org/bukkit/PerMaterialTest.java
-+++ b/src/test/java/org/bukkit/PerMaterialTest.java
-@@ -0,0 +0,0 @@ public class PerMaterialTest extends AbstractTestingBase {
-         if (this.material.isBlock()) {
-             assertThat(this.material.isInteractable(),
-                     is(!CraftMagicNumbers.getBlock(material).getClass()
--                            .getMethod("interact", BlockState.class, net.minecraft.world.level.Level.class, BlockPos.class, Player.class, InteractionHand.class, BlockHitResult.class)
-+                            .getMethod("use", BlockState.class, net.minecraft.world.level.Level.class, BlockPos.class, Player.class, InteractionHand.class, BlockHitResult.class) // Paper - remap fix
-                             .getDeclaringClass().equals(BlockBehaviour.class)));
-         } else {
-             assertFalse(this.material.isInteractable());
 diff --git a/src/test/java/org/bukkit/entity/EntityTypesTest.java b/src/test/java/org/bukkit/entity/EntityTypesTest.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/test/java/org/bukkit/entity/EntityTypesTest.java

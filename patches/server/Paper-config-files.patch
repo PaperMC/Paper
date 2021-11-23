@@ -619,9 +619,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +    // Paper end
 +
-     public static void forceUpgrade(LevelStorageSource.LevelStorageAccess session, DataFixer dataFixer, boolean eraseCache, BooleanSupplier booleansupplier, ImmutableSet<ResourceKey<DimensionType>> worlds) { // CraftBukkit
+     public static void forceUpgrade(LevelStorageSource.LevelStorageAccess session, DataFixer dataFixer, boolean eraseCache, BooleanSupplier continueCheck, WorldGenSettings generatorOptions) {
          Main.LOGGER.info("Forcing world upgrade! {}", session.getLevelId()); // CraftBukkit
-         WorldUpgrader worldupgrader = new WorldUpgrader(session, dataFixer, worlds, eraseCache);
+         WorldUpgrader worldupgrader = new WorldUpgrader(session, dataFixer, generatorOptions, eraseCache);
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
@@ -631,7 +631,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          this.forceDifficulty();
          for (ServerLevel worldserver : this.getAllLevels()) {
 +            worldserver.paperConfig.removeOldValues(); // Paper - callback for clearing old config options, after any migrations have taken place
-             this.loadSpawn(worldserver.getChunkSource().chunkMap.progressListener, worldserver);
+             this.prepareLevels(worldserver.getChunkSource().chunkMap.progressListener, worldserver);
              worldserver.entityManager.tick(); // SPIGOT-6526: Load pending entities so they are available to the API
              this.server.getPluginManager().callEvent(new org.bukkit.event.world.WorldLoadEvent(worldserver.getWorld()));
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
@@ -669,27 +669,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    // Paper end
 +
      public boolean isPositionTicking(long pos) {
-         return this.checkChunkFuture(pos, (Function<ChunkHolder, CompletableFuture<Either<LevelChunk, ChunkHolder.ChunkLoadingFailure>>>) ChunkHolder::getTickingChunkFuture); // CraftBukkit - decompile error
-     }
+         ChunkHolder playerchunk = this.getVisibleChunkIfPresent(pos);
+ 
 diff --git a/src/main/java/net/minecraft/world/entity/EntityType.java b/src/main/java/net/minecraft/world/entity/EntityType.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/EntityType.java
 +++ b/src/main/java/net/minecraft/world/entity/EntityType.java
-@@ -0,0 +0,0 @@ import com.google.common.collect.ImmutableSet;
- import java.util.List;
- import java.util.Optional;
- import java.util.Spliterator;
-+import java.util.Set; // Paper
- import java.util.UUID;
- import java.util.function.Consumer;
- import java.util.function.Function;
 @@ -0,0 +0,0 @@ public class EntityType<T extends Entity> implements EntityTypeTest<Entity, T> {
  
          T create(EntityType<T> type, Level world);
      }
 +
 +    // Paper start
-+    public static Set<ResourceLocation> getEntityNameList() {
++    public static java.util.Set<ResourceLocation> getEntityNameList() {
 +        return Registry.ENTITY_TYPE.keySet();
 +    }
 +    // Paper end

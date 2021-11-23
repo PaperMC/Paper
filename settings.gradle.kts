@@ -7,7 +7,11 @@ pluginManagement {
 
 rootProject.name = "Paper"
 
-include("Paper-API", "Paper-Server", "Paper-MojangAPI")
+include(
+    "Paper-API",
+    "Paper-Server",
+    // "Paper-MojangAPI", // todo
+)
 
 val testPlugin = file("test-plugin.settings.gradle.kts")
 if (testPlugin.exists()) {
