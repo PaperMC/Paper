@@ -306,6 +306,6 @@ public class CustomChunkGenerator extends InternalChunkGenerator {
 
     @Override
     protected Codec<? extends net.minecraft.world.level.chunk.ChunkGenerator> codec() {
-        throw new UnsupportedOperationException("Cannot serialize CustomChunkGenerator");
+        return Codec.unit(null);
     }
 }
