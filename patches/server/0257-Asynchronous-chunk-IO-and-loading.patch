@@ -2351,7 +2351,7 @@ index 303125c4d0f8f235703975eab5eccb9aa045ccf8..dbcf3e764a26c89ef10afa294e1b8057
          ChunkHolder.FullChunkStatus playerchunk_state1 = ChunkHolder.getFullChunkStatus(this.ticketLevel);
          // CraftBukkit start
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index 6af70073e1ee0290ec30392153c2c18dfeffa0e8..9aa0df8c92744e1651254f427dd8d1fc904172d5 100644
+index 6af70073e1ee0290ec30392153c2c18dfeffa0e8..96919bd2340386b6f5a6cac2f4a0bed43529d4d2 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
 @@ -492,6 +492,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
@@ -2563,13 +2563,12 @@ index 6af70073e1ee0290ec30392153c2c18dfeffa0e8..9aa0df8c92744e1651254f427dd8d1fc
  
                  this.level.getProfiler().incrementCounter("chunkSave");
 -                CompoundTag nbttagcompound = ChunkSerializer.write(this.level, chunk);
--
--                this.write(chunkcoordintpair, nbttagcompound);
 +                CompoundTag nbttagcompound;
 +                try (co.aikar.timings.Timing ignored1 = this.level.timings.chunkSaveDataSerialization.startTiming()) { // Paper
 +                    nbttagcompound = ChunkSerializer.write(this.level, chunk);
-+                } // Paper;
-+
++                } // Paper
+ 
+-                this.write(chunkcoordintpair, nbttagcompound);
 +                // Paper start - async chunk io
 +                com.destroystokyo.paper.io.PaperFileIOThread.Holder.INSTANCE.scheduleSave(this.level, chunkcoordintpair.x, chunkcoordintpair.z,
 +                    null, nbttagcompound, com.destroystokyo.paper.io.PrioritizedTaskQueue.NORMAL_PRIORITY);
@@ -2995,18 +2994,10 @@ index 2a73700b0cd31e2a88c478b884de0a7f3d018259..0a1e667487e2c7849e11c0395816dc8c
          HAS_SPACE(PoiRecord::hasSpace),
          IS_OCCUPIED(PoiRecord::isOccupied),
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
-index 2fd969d1450d1251c139f3721d146fd2e191c4dd..806e6559555a6e71ef8199d4ffc5ce86a06bb871 100644
+index 2fd969d1450d1251c139f3721d146fd2e191c4dd..004360936cc7066ceecdca92591c7502ecd47f3a 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
-@@ -62,6 +62,7 @@ import net.minecraft.world.level.lighting.LevelLightEngine;
- import net.minecraft.world.level.material.Fluid;
- import net.minecraft.world.ticks.LevelChunkTicks;
- import net.minecraft.world.ticks.ProtoChunkTicks;
-+import net.minecraft.world.ticks.TickContainerAccess;
- import org.apache.logging.log4j.LogManager;
- import org.apache.logging.log4j.Logger;
- 
-@@ -75,7 +76,31 @@ public class ChunkSerializer {
+@@ -75,7 +75,31 @@ public class ChunkSerializer {
  
      public ChunkSerializer() {}
  
@@ -3038,7 +3029,7 @@ index 2fd969d1450d1251c139f3721d146fd2e191c4dd..806e6559555a6e71ef8199d4ffc5ce86
          ChunkPos chunkcoordintpair1 = new ChunkPos(nbt.getInt("xPos"), nbt.getInt("zPos"));
  
          if (!Objects.equals(chunkPos, chunkcoordintpair1)) {
-@@ -92,7 +117,9 @@ public class ChunkSerializer {
+@@ -92,7 +116,9 @@ public class ChunkSerializer {
          LevelLightEngine lightengine = chunkproviderserver.getLightEngine();
  
          if (flag) {
@@ -3048,7 +3039,14 @@ index 2fd969d1450d1251c139f3721d146fd2e191c4dd..806e6559555a6e71ef8199d4ffc5ce86
          }
  
          Registry<Biome> iregistry = world.registryAccess().registryOrThrow(Registry.BIOME_REGISTRY);
-@@ -141,11 +168,21 @@ public class ChunkSerializer {
+@@ -136,16 +162,28 @@ public class ChunkSerializer {
+                 LevelChunkSection chunksection = new LevelChunkSection(b0, datapaletteblock, datapaletteblock1);
+ 
+                 achunksection[k] = chunksection;
++                tasksToExecuteOnMain.add(() -> { // Paper - delay this task since we're executing off-main
+                 poiStorage.checkConsistencyWithBlocks(chunkPos, chunksection);
++                }); // Paper - delay this task since we're executing off-main
+             }
  
              if (flag) {
                  if (nbttagcompound1.contains("BlockLight", 7)) {
@@ -3072,7 +3070,7 @@ index 2fd969d1450d1251c139f3721d146fd2e191c4dd..806e6559555a6e71ef8199d4ffc5ce86
                  }
              }
          }
-@@ -258,7 +295,7 @@ public class ChunkSerializer {
+@@ -258,7 +296,7 @@ public class ChunkSerializer {
          }
  
          if (chunkstatus_type == ChunkStatus.ChunkType.LEVELCHUNK) {
@@ -3081,7 +3079,7 @@ index 2fd969d1450d1251c139f3721d146fd2e191c4dd..806e6559555a6e71ef8199d4ffc5ce86
          } else {
              ProtoChunk protochunk1 = (ProtoChunk) object;
  
-@@ -297,10 +334,89 @@ public class ChunkSerializer {
+@@ -297,10 +335,89 @@ public class ChunkSerializer {
                  protochunk1.setCarvingMask(worldgenstage_features, new CarvingMask(nbttagcompound4.getLongArray(s1), ((ChunkAccess) object).getMinBuildHeight()));
              }
  
@@ -3138,7 +3136,7 @@ index 2fd969d1450d1251c139f3721d146fd2e191c4dd..806e6559555a6e71ef8199d4ffc5ce86
 +            skyLight[i - lightenginethreaded.getMinLightSection()] = skyArray;
 +        }
 +
-+        TickContainerAccess<Block> blockTickList = chunk.getBlockTicks();
++        net.minecraft.world.ticks.TickContainerAccess<Block> blockTickList = chunk.getBlockTicks();
 +
 +        //TODO check ChunkSerializer "block_ticks"
 +        ListTag blockTickListSerialized;
@@ -3148,7 +3146,7 @@ index 2fd969d1450d1251c139f3721d146fd2e191c4dd..806e6559555a6e71ef8199d4ffc5ce86
 +            blockTickListSerialized = world.getBlockTicks().save(chunkPos);
 +        }
 +
-+        TickContainerAccess<Fluid> fluidTickList = chunk.getFluidTicks();
++        net.minecraft.world.ticks.TickContainerAccess<Fluid> fluidTickList = chunk.getFluidTicks();
 +
 +        //TODO
 +        ListTag fluidTickListSerialized;
@@ -3172,7 +3170,7 @@ index 2fd969d1450d1251c139f3721d146fd2e191c4dd..806e6559555a6e71ef8199d4ffc5ce86
      private static void logErrors(ChunkPos chunkPos, int y, String message) {
          ChunkSerializer.LOGGER.error("Recoverable errors when loading section [" + chunkPos.x + ", " + y + ", " + chunkPos.z + "]: " + message);
      }
-@@ -310,6 +426,10 @@ public class ChunkSerializer {
+@@ -310,6 +427,10 @@ public class ChunkSerializer {
      }
  
      public static CompoundTag write(ServerLevel world, ChunkAccess chunk) {
@@ -3183,7 +3181,7 @@ index 2fd969d1450d1251c139f3721d146fd2e191c4dd..806e6559555a6e71ef8199d4ffc5ce86
          ChunkPos chunkcoordintpair = chunk.getPos();
          CompoundTag nbttagcompound = new CompoundTag();
  
-@@ -318,6 +438,7 @@ public class ChunkSerializer {
+@@ -318,6 +439,7 @@ public class ChunkSerializer {
          nbttagcompound.putInt("yPos", chunk.getMinSection());
          nbttagcompound.putInt("zPos", chunkcoordintpair.z);
          nbttagcompound.putLong("LastUpdate", world.getGameTime());
@@ -3191,7 +3189,7 @@ index 2fd969d1450d1251c139f3721d146fd2e191c4dd..806e6559555a6e71ef8199d4ffc5ce86
          nbttagcompound.putLong("InhabitedTime", chunk.getInhabitedTime());
          nbttagcompound.putString("Status", chunk.getStatus().getName());
          BlendingData blendingdata = chunk.getBlendingData();
-@@ -360,8 +481,17 @@ public class ChunkSerializer {
+@@ -360,8 +482,17 @@ public class ChunkSerializer {
          for (int i = lightenginethreaded.getMinLightSection(); i < lightenginethreaded.getMaxLightSection(); ++i) {
              int j = chunk.getSectionIndexFromSectionY(i);
              boolean flag1 = j >= 0 && j < achunksection.length;
@@ -3211,7 +3209,7 @@ index 2fd969d1450d1251c139f3721d146fd2e191c4dd..806e6559555a6e71ef8199d4ffc5ce86
  
              if (flag1 || nibblearray != null || nibblearray1 != null) {
                  CompoundTag nbttagcompound1 = new CompoundTag();
-@@ -399,8 +529,17 @@ public class ChunkSerializer {
+@@ -399,8 +530,17 @@ public class ChunkSerializer {
              nbttagcompound.putBoolean("isLightOn", true);
          }
  
@@ -3231,7 +3229,7 @@ index 2fd969d1450d1251c139f3721d146fd2e191c4dd..806e6559555a6e71ef8199d4ffc5ce86
  
          CompoundTag nbttagcompound2;
  
-@@ -463,6 +602,7 @@ public class ChunkSerializer {
+@@ -463,6 +603,7 @@ public class ChunkSerializer {
      private static void saveTicks(ServerLevel world, CompoundTag nbt, ChunkAccess.TicksToSave tickSchedulers) {
          long i = world.getLevelData().getGameTime();
  
@@ -3378,7 +3376,7 @@ index 7b69007609ed421ee72ddc3d6f2a7b64888babf1..6f7bcf74b0ff42841e37f36561d6c54e
 +        } // Paper end
  
      }
-
+ 
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
 index 3d07235ad34d219c7c5fccd216a3a6935ced645c..ebb1a050beab9530942c4498335f084c89faef06 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
@@ -3565,7 +3563,7 @@ index e5e138fb23d03eb63e547e74d3e14ec9d96d8107..90f7b06bd2c558be35c4577044fa033e
          Map<T, T> map = Maps.newHashMap();
 
 @@ -219,6 +238,23 @@ public class SectionStorage<R> implements AutoCloseable {
-
+ 
      @Override
      public void close() throws IOException {
 -        this.worker.close();
