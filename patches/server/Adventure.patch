@@ -1036,9 +1036,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  import it.unimi.dsi.fastutil.ints.IntArrayList;
  import it.unimi.dsi.fastutil.ints.IntList;
 +import io.papermc.paper.adventure.PaperAdventure; // Paper
- import java.io.DataInput;
  import java.io.DataOutput;
  import java.io.IOException;
+ import java.io.InputStream;
 @@ -0,0 +0,0 @@ public class FriendlyByteBuf extends ByteBuf {
      private static final int MAX_VARLONG_SIZE = 10;
      private static final int DEFAULT_NBT_QUOTA = 2097152;
@@ -1247,8 +1247,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  import net.minecraft.world.scores.criteria.ObjectiveCriteria;
 +import io.papermc.paper.adventure.PaperAdventure; // Paper
  import org.bukkit.Bukkit;
- import org.bukkit.GameMode;
  import org.bukkit.Location;
+ import org.bukkit.WeatherType;
 @@ -0,0 +0,0 @@ public class ServerPlayer extends Player {
  
      // CraftBukkit start
@@ -1290,7 +1290,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        if (deathMessage != null && deathMessage != net.kyori.adventure.text.Component.empty() && flag) { // Paper - Adventure // TODO: allow plugins to override?
 +            Component ichatbasecomponent = PaperAdventure.asVanilla(deathMessage); // Paper - Adventure
  
-             this.connection.send((Packet) (new ClientboundPlayerCombatKillPacket(this.getCombatTracker(), ichatbasecomponent)), (future) -> {
+             this.connection.send(new ClientboundPlayerCombatKillPacket(this.getCombatTracker(), ichatbasecomponent), (future) -> {
                  if (!future.isSuccess()) {
 @@ -0,0 +0,0 @@ public class ServerPlayer extends Player {
      }
@@ -1299,7 +1299,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    public java.util.Locale adventure$locale = java.util.Locale.US; // Paper
      public void updateOptions(ServerboundClientInformationPacket packet) {
          // CraftBukkit start
-         if (getMainArm() != packet.getMainHand()) {
+         if (getMainArm() != packet.mainHand()) {
 @@ -0,0 +0,0 @@ public class ServerPlayer extends Player {
              this.server.server.getPluginManager().callEvent(event);
          }
@@ -1310,7 +1310,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        // Paper end
          this.clientViewDistance = packet.viewDistance;
          // CraftBukkit end
-         this.chatVisibility = packet.getChatVisibility();
+         this.chatVisibility = packet.chatVisibility();
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
@@ -1371,11 +1371,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          */
  
          this.player.disconnect();
--        String quitMessage = this.server.getPlayerList().disconnect(this.player);
+-        String quitMessage = this.server.getPlayerList().remove(this.player);
 -        if ((quitMessage != null) && (quitMessage.length() > 0)) {
--            this.server.getPlayerList().sendMessage(CraftChatMessage.fromString(quitMessage));
+-            this.server.getPlayerList().broadcastMessage(CraftChatMessage.fromString(quitMessage));
 +        // Paper start - Adventure
-+        net.kyori.adventure.text.Component quitMessage = this.server.getPlayerList().disconnect(this.player);
++        net.kyori.adventure.text.Component quitMessage = this.server.getPlayerList().remove(this.player);
 +        if ((quitMessage != null) && !quitMessage.equals(net.kyori.adventure.text.Component.empty())) {
 +            this.server.getPlayerList().broadcastMessage(PaperAdventure.asVanilla(quitMessage), ChatType.SYSTEM, Util.NIL_UUID);
 +            // Paper end
@@ -1542,8 +1542,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      }
  
--    public String disconnect(ServerPlayer entityplayer) { // CraftBukkit - return string
-+    public net.kyori.adventure.text.Component disconnect(ServerPlayer entityplayer) { // Paper - return Component
+-    public String remove(ServerPlayer entityplayer) { // CraftBukkit - return string
++    public net.kyori.adventure.text.Component remove(ServerPlayer entityplayer) { // Paper - return Component
          ServerLevel worldserver = entityplayer.getLevel();
  
          entityplayer.awardStat(Stats.LEAVE_GAME);
@@ -1585,7 +1585,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -            event.disallow(PlayerLoginEvent.Result.KICK_BANNED, CraftChatMessage.fromComponent(chatmessage));
 +            event.disallow(PlayerLoginEvent.Result.KICK_BANNED, PaperAdventure.asAdventure(chatmessage)); // Paper - Adventure
          } else {
-             // return this.players.size() >= this.maxPlayers && !this.d(gameprofile) ? new ChatMessage("multiplayer.disconnect.server_full") : null;
+             // return this.players.size() >= this.maxPlayers && !this.canBypassPlayerLimit(gameprofile) ? new ChatMessage("multiplayer.disconnect.server_full") : null;
              if (this.players.size() >= this.maxPlayers && !this.canBypassPlayerLimit(gameprofile)) {
 -                event.disallow(PlayerLoginEvent.Result.KICK_FULL, org.spigotmc.SpigotConfig.serverFullMessage); // Spigot
 +                event.disallow(PlayerLoginEvent.Result.KICK_FULL, PaperAdventure.LEGACY_SECTION_UXRC.deserialize(org.spigotmc.SpigotConfig.serverFullMessage)); // Spigot // Paper - Adventure
@@ -1706,8 +1706,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  // CraftBukkit start
 +import io.papermc.paper.adventure.PaperAdventure; // Paper
  import java.util.UUID;
- 
  import org.bukkit.Bukkit;
+ import org.bukkit.craftbukkit.CraftServer;
 @@ -0,0 +0,0 @@ public class MapItemSavedData extends SavedData {
  
                  for (org.bukkit.map.MapCursor cursor : render.cursors) {
@@ -2542,7 +2542,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public int getPing() {
          return this.getHandle().latency;
 @@ -0,0 +0,0 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
-         getInventory().setItemInMainHand(hand);
+         return this.getHandle().allowsListing();
      }
  
 +    // Paper start
@@ -2733,7 +2733,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return this.adventure$pointers;
 +    }
 +    // Paper end
-+
      // Spigot start
      private final Player.Spigot spigot = new Player.Spigot()
      {
