@@ -18,17 +18,16 @@ index bee2fa2bfbb61209381f24ed6508d3d1c73a344a..1fa190e098079522e0fe3593fa261c1b
  
                      MutablePair<Integer, Map<ChunkPos, Integer>> info = list.computeIfAbsent(key, k -> MutablePair.of(0, Maps.newHashMap()));
                      ChunkPos chunk = e.chunkPosition();
-diff --git a/src/main/java/net/minecraft/server/KeyedObject.java b/src/main/java/net/minecraft/server/KeyedObject.java
+diff --git a/src/main/java/io/papermc/paper/util/KeyedObject.java b/src/main/java/io/papermc/paper/util/KeyedObject.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..d02bd109399d6b32cbbb5e6f9ec7e650e8299a26
+index 0000000000000000000000000000000000000000..9f0c7fd903f085e70db1785fb8bcdb5456e6ca51
 --- /dev/null
-+++ b/src/main/java/net/minecraft/server/KeyedObject.java
-@@ -0,0 +1,12 @@
-+package net.minecraft.server;
++++ b/src/main/java/io/papermc/paper/util/KeyedObject.java
+@@ -0,0 +1,11 @@
++package io.papermc.paper.util;
 +
 +import net.minecraft.resources.ResourceLocation;
 +
-+// TODO(Mariell Hoversholm): Move stupid ass class
 +public interface KeyedObject {
 +    ResourceLocation getMinecraftKey();
 +    default String getMinecraftKeyString() {
@@ -37,7 +36,7 @@ index 0000000000000000000000000000000000000000..d02bd109399d6b32cbbb5e6f9ec7e650
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index a5f704edf4d8afdb088f3a4ac8e3957f8851842d..264d216429c164798d5e645c044b95892b3b615e 100644
+index 371ecc33fec6b8c1a2c022196e90e6169ca1eb3b..05de8dd72834c689af47628155af2f9b0084273f 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
 @@ -146,7 +146,7 @@ import org.bukkit.event.player.PlayerTeleportEvent;
@@ -45,11 +44,11 @@ index a5f704edf4d8afdb088f3a4ac8e3957f8851842d..264d216429c164798d5e645c044b9589
  // CraftBukkit end
  
 -public abstract class Entity implements Nameable, EntityAccess, CommandSource {
-+public abstract class Entity implements Nameable, EntityAccess, CommandSource, net.minecraft.server.KeyedObject { // Paper
++public abstract class Entity implements Nameable, EntityAccess, CommandSource, io.papermc.paper.util.KeyedObject { // Paper
  
      // CraftBukkit start
      private static final int CURRENT_LEVEL = 2;
-@@ -1960,12 +1960,31 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
+@@ -1989,12 +1989,32 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
          return true;
      }
  
@@ -71,6 +70,7 @@ index a5f704edf4d8afdb088f3a4ac8e3957f8851842d..264d216429c164798d5e645c044b9589
 +        getMinecraftKey(); // Try to load if it doesn't exists. see: https://github.com/PaperMC/Paper/issues/1280
 +        return entityKeyString;
 +    }
++
      @Nullable
      public final String getEncodeId() {
          EntityType<?> entitytypes = this.getType();
@@ -83,20 +83,20 @@ index a5f704edf4d8afdb088f3a4ac8e3957f8851842d..264d216429c164798d5e645c044b9589
  
      protected abstract void readAdditionalSaveData(CompoundTag nbt);
 diff --git a/src/main/java/net/minecraft/world/level/block/entity/BlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/BlockEntity.java
-index 33884161de688c47c90a7b86196234acc80f9434..92b042080f06fb95958ff5e824830a84f2d1f2a6 100644
+index 31389ab9ac85ac14487d8715504ded2ee8754ab8..927133867393fc805b44e824f7b78fac372b0b25 100644
 --- a/src/main/java/net/minecraft/world/level/block/entity/BlockEntity.java
 +++ b/src/main/java/net/minecraft/world/level/block/entity/BlockEntity.java
-@@ -20,7 +20,7 @@ import org.bukkit.inventory.InventoryHolder;
+@@ -23,7 +23,7 @@ import org.bukkit.inventory.InventoryHolder;
  
  import org.spigotmc.CustomTimingsHandler; // Spigot
  
 -public abstract class BlockEntity {
-+public abstract class BlockEntity implements net.minecraft.server.KeyedObject { // Paper
++public abstract class BlockEntity implements io.papermc.paper.util.KeyedObject { // Paper
  
      public CustomTimingsHandler tickTimer = org.bukkit.craftbukkit.SpigotTimings.getTileEntityTimings(this); // Spigot
      // CraftBukkit start - data containers
-@@ -41,6 +41,26 @@ public abstract class BlockEntity {
-         this.blockState = state;
+@@ -48,6 +48,26 @@ public abstract class BlockEntity {
+         return new BlockPos(nbt.getInt("x"), nbt.getInt("y"), nbt.getInt("z"));
      }
  
 +    // Paper start
