@@ -1422,6 +1422,11 @@ public final class CraftServer implements Server {
     }
 
     @Override
+    public boolean getHideOnlinePlayers() {
+        return console.hidesOnlinePlayers();
+    }
+
+    @Override
     public boolean getOnlineMode() {
         return console.usesAuthentication();
     }
