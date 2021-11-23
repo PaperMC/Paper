@@ -2563,13 +2563,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
                  this.level.getProfiler().incrementCounter("chunkSave");
 -                CompoundTag nbttagcompound = ChunkSerializer.write(this.level, chunk);
--
--                this.write(chunkcoordintpair, nbttagcompound);
 +                CompoundTag nbttagcompound;
 +                try (co.aikar.timings.Timing ignored1 = this.level.timings.chunkSaveDataSerialization.startTiming()) { // Paper
 +                    nbttagcompound = ChunkSerializer.write(this.level, chunk);
-+                } // Paper;
-+
++                } // Paper
+ 
+-                this.write(chunkcoordintpair, nbttagcompound);
 +                // Paper start - async chunk io
 +                com.destroystokyo.paper.io.PaperFileIOThread.Holder.INSTANCE.scheduleSave(this.level, chunkcoordintpair.x, chunkcoordintpair.z,
 +                    null, nbttagcompound, com.destroystokyo.paper.io.PrioritizedTaskQueue.NORMAL_PRIORITY);
@@ -2998,14 +2997,6 @@ diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializ
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
-@@ -0,0 +0,0 @@ import net.minecraft.world.level.lighting.LevelLightEngine;
- import net.minecraft.world.level.material.Fluid;
- import net.minecraft.world.ticks.LevelChunkTicks;
- import net.minecraft.world.ticks.ProtoChunkTicks;
-+import net.minecraft.world.ticks.TickContainerAccess;
- import org.apache.logging.log4j.LogManager;
- import org.apache.logging.log4j.Logger;
- 
 @@ -0,0 +0,0 @@ public class ChunkSerializer {
  
      public ChunkSerializer() {}
@@ -3049,6 +3040,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
          Registry<Biome> iregistry = world.registryAccess().registryOrThrow(Registry.BIOME_REGISTRY);
 @@ -0,0 +0,0 @@ public class ChunkSerializer {
+                 LevelChunkSection chunksection = new LevelChunkSection(b0, datapaletteblock, datapaletteblock1);
+ 
+                 achunksection[k] = chunksection;
++                tasksToExecuteOnMain.add(() -> { // Paper - delay this task since we're executing off-main
+                 poiStorage.checkConsistencyWithBlocks(chunkPos, chunksection);
++                }); // Paper - delay this task since we're executing off-main
+             }
  
              if (flag) {
                  if (nbttagcompound1.contains("BlockLight", 7)) {
@@ -3138,7 +3136,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            skyLight[i - lightenginethreaded.getMinLightSection()] = skyArray;
 +        }
 +
-+        TickContainerAccess<Block> blockTickList = chunk.getBlockTicks();
++        net.minecraft.world.ticks.TickContainerAccess<Block> blockTickList = chunk.getBlockTicks();
 +
 +        //TODO check ChunkSerializer "block_ticks"
 +        ListTag blockTickListSerialized;
@@ -3148,7 +3146,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            blockTickListSerialized = world.getBlockTicks().save(chunkPos);
 +        }
 +
-+        TickContainerAccess<Fluid> fluidTickList = chunk.getFluidTicks();
++        net.minecraft.world.ticks.TickContainerAccess<Fluid> fluidTickList = chunk.getFluidTicks();
 +
 +        //TODO
 +        ListTag fluidTickListSerialized;
@@ -3378,7 +3376,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        } // Paper end
  
      }
-
+ 
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
@@ -3565,7 +3563,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          Map<T, T> map = Maps.newHashMap();
 
 @@ -0,0 +0,0 @@ public class SectionStorage<R> implements AutoCloseable {
-
+ 
      @Override
      public void close() throws IOException {
 -        this.worker.close();
