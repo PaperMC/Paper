@@ -1,0 +1,69 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Sudzzy <originmc@outlook.com>
+Date: Wed, 2 Mar 2016 14:48:03 -0600
+Subject: [PATCH] Disable explosion knockback
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index ef0ec6b45cee27547e06ead7ef5acd6e51380a52..dc8a1e4c5375fdd733146f671df91f59817f8377 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -202,4 +202,9 @@ public class PaperWorldConfig {
+         optimizeExplosions = getBoolean("optimize-explosions", false);
+         log("Optimize explosions: " + optimizeExplosions);
+     }
++
++    public boolean disableExplosionKnockback;
++    private void disableExplosionKnockback(){
++        disableExplosionKnockback = getBoolean("disable-explosion-knockback", false);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+index 906c23068d1f5be76a6985b7255f6f155335b673..deef28110441cd2965c6b531bc255ee2aa994ace 100644
+--- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
++++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+@@ -1375,6 +1375,7 @@ public abstract class LivingEntity extends Entity {
+                 }
+             }
+ 
++            boolean knockbackCancelled = level.paperConfig.disableExplosionKnockback && source.isExplosion() && this instanceof net.minecraft.world.entity.player.Player; // Paper - Disable explosion knockback
+             if (flag1) {
+                 if (flag) {
+                     this.level.broadcastEntityEvent(this, (byte) 29);
+@@ -1395,6 +1396,7 @@ public abstract class LivingEntity extends Entity {
+                         b0 = 2;
+                     }
+ 
++                    if (!knockbackCancelled) // Paper - Disable explosion knockback
+                     this.level.broadcastEntityEvent(this, b0);
+                 }
+ 
+@@ -1418,6 +1420,7 @@ public abstract class LivingEntity extends Entity {
+                 }
+             }
+ 
++            if (knockbackCancelled) this.level.broadcastEntityEvent(this, (byte) 2); // Paper - Disable explosion knockback
+             if (this.isDeadOrDying()) {
+                 if (!this.checkTotemDeathProtection(source)) {
+                     SoundEvent soundeffect = this.getDeathSound();
+diff --git a/src/main/java/net/minecraft/world/level/Explosion.java b/src/main/java/net/minecraft/world/level/Explosion.java
+index 688ebb68209beb4550293f72b1fa7b39852be453..32c8403d6a5f5fbd52679b12b07936147744b8a4 100644
+--- a/src/main/java/net/minecraft/world/level/Explosion.java
++++ b/src/main/java/net/minecraft/world/level/Explosion.java
+@@ -241,14 +241,14 @@ public class Explosion {
+                         double d14 = d13;
+ 
+                         if (entity instanceof LivingEntity) {
+-                            d14 = ProtectionEnchantment.getExplosionKnockbackAfterDampener((LivingEntity) entity, d13);
++                            d14 = entity instanceof Player && level.paperConfig.disableExplosionKnockback ? 0 : ProtectionEnchantment.getExplosionKnockbackAfterDampener((LivingEntity) entity, d13); // Paper - Disable explosion knockback
+                         }
+ 
+                         entity.setDeltaMovement(entity.getDeltaMovement().add(d8 * d14, d9 * d14, d10 * d14));
+                         if (entity instanceof Player) {
+                             Player entityhuman = (Player) entity;
+ 
+-                            if (!entityhuman.isSpectator() && (!entityhuman.isCreative() || !entityhuman.getAbilities().flying)) {
++                            if (!entityhuman.isSpectator() && (!entityhuman.isCreative() || !entityhuman.getAbilities().flying) && !level.paperConfig.disableExplosionKnockback) { // Paper - Disable explosion knockback
+                                 this.hitPlayers.put(entityhuman, new Vec3(d8 * d13, d9 * d13, d10 * d13));
+                             }
+                         }
