@@ -53,18 +53,18 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              }
              // CraftBukkit end
              return itemstack;
-diff --git a/src/main/java/net/minecraft/network/protocol/game/ClientboundLevelChunkPacket.java b/src/main/java/net/minecraft/network/protocol/game/ClientboundLevelChunkPacket.java
+diff --git a/src/main/java/net/minecraft/network/protocol/game/ClientboundLevelChunkPacketData.java b/src/main/java/net/minecraft/network/protocol/game/ClientboundLevelChunkPacketData.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/network/protocol/game/ClientboundLevelChunkPacket.java
-+++ b/src/main/java/net/minecraft/network/protocol/game/ClientboundLevelChunkPacket.java
-@@ -0,0 +0,0 @@ public class ClientboundLevelChunkPacket implements Packet<ClientGamePacketListe
-         for(Entry<BlockPos, BlockEntity> entry2 : chunk.getBlockEntities().entrySet()) {
-             BlockEntity blockEntity = entry2.getValue();
+--- a/src/main/java/net/minecraft/network/protocol/game/ClientboundLevelChunkPacketData.java
++++ b/src/main/java/net/minecraft/network/protocol/game/ClientboundLevelChunkPacketData.java
+@@ -0,0 +0,0 @@ public class ClientboundLevelChunkPacketData {
+         static ClientboundLevelChunkPacketData.BlockEntityInfo create(BlockEntity blockEntity) {
              CompoundTag compoundTag = blockEntity.getUpdateTag();
+             BlockPos blockPos = blockEntity.getBlockPos();
 +            if (blockEntity instanceof net.minecraft.world.level.block.entity.SkullBlockEntity) { net.minecraft.world.level.block.entity.SkullBlockEntity.sanitizeTileEntityUUID(compoundTag); } // Paper
-             this.blockEntitiesTags.add(compoundTag);
+             int i = SectionPos.sectionRelative(blockPos.getX()) << 4 | SectionPos.sectionRelative(blockPos.getZ());
+             return new ClientboundLevelChunkPacketData.BlockEntityInfo(i, blockPos.getY(), blockEntity.getType(), compoundTag.isEmpty() ? null : compoundTag);
          }
- 
 diff --git a/src/main/java/net/minecraft/world/level/block/entity/SkullBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/SkullBlockEntity.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/block/entity/SkullBlockEntity.java
@@ -78,11 +78,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
  import net.minecraft.server.players.GameProfileCache;
 @@ -0,0 +0,0 @@ public class SkullBlockEntity extends BlockEntity {
-     @Nullable
+ 
      @Override
      public ClientboundBlockEntityDataPacket getUpdatePacket() {
--        return new ClientboundBlockEntityDataPacket(this.worldPosition, 4, this.getUpdateTag());
-+        return new ClientboundBlockEntityDataPacket(this.worldPosition, 4, sanitizeTileEntityUUID(this.getUpdateTag())); // Paper
+-        return ClientboundBlockEntityDataPacket.create(this);
++        return ClientboundBlockEntityDataPacket.create(this, e -> sanitizeTileEntityUUID(e.getUpdateTag())); // Paper
      }
  
 +    // Paper start
@@ -115,4 +115,4 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
      @Override
      public CompoundTag getUpdateTag() {
-         return this.save(new CompoundTag());
+         return this.saveWithoutMetadata();
