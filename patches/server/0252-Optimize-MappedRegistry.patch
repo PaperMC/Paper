@@ -1,0 +1,39 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sun, 26 Aug 2018 20:49:50 -0400
+Subject: [PATCH] Optimize MappedRegistry
+
+Use larger initial sizes to increase bucket capacity on the BiMap
+
+BiMap.get was seen to be using a good bit of CPU time.
+
+diff --git a/src/main/java/net/minecraft/core/MappedRegistry.java b/src/main/java/net/minecraft/core/MappedRegistry.java
+index 3b9eb0d19623a8a8e60f785edfd2faadba54ce84..9fd8c67f6b389350a82b341ff0a5d55f5c5c228c 100644
+--- a/src/main/java/net/minecraft/core/MappedRegistry.java
++++ b/src/main/java/net/minecraft/core/MappedRegistry.java
+@@ -38,12 +38,10 @@ public class MappedRegistry<T> extends WritableRegistry<T> {
+ 
+     protected static final Logger LOGGER = LogManager.getLogger();
+     private final ObjectList<T> byId = new ObjectArrayList(256);
+-    private final Object2IntMap<T> toId = (Object2IntMap) Util.make(new Object2IntOpenCustomHashMap(Util.identityStrategy()), (object2intopencustomhashmap) -> {
+-        object2intopencustomhashmap.defaultReturnValue(-1);
+-    });
+-    private final BiMap<ResourceLocation, T> storage = HashBiMap.create();
+-    private final BiMap<ResourceKey<T>, T> keyStorage = HashBiMap.create();
+-    private final Map<T, Lifecycle> lifecycles = Maps.newIdentityHashMap();
++    private final it.unimi.dsi.fastutil.objects.Reference2IntOpenHashMap<T> toId = new it.unimi.dsi.fastutil.objects.Reference2IntOpenHashMap<T>(2048);// Paper - use bigger expected size to reduce collisions and direct intent for FastUtil to be identity map
++    private final BiMap<ResourceLocation, T> storage = HashBiMap.create(2048); // Paper - use bigger expected size to reduce collisions
++    private final BiMap<ResourceKey<T>, T> keyStorage = HashBiMap.create(2048); // Paper - use bigger expected size to reduce collisions
++    private final Map<T, Lifecycle> lifecycles = new java.util.IdentityHashMap<>(2048); // Paper - use bigger expected size to reduce collisions
+     private Lifecycle elementsLifecycle;
+     @Nullable
+     protected Object[] randomCache;
+@@ -51,7 +49,7 @@ public class MappedRegistry<T> extends WritableRegistry<T> {
+ 
+     public MappedRegistry(ResourceKey<? extends Registry<T>> key, Lifecycle lifecycle) {
+         super(key, lifecycle);
+-        this.elementsLifecycle = lifecycle;
++        this.toId.defaultReturnValue(-1); // Paper
+     }
+ 
+     public static <T> MapCodec<MappedRegistry.RegistryEntry<T>> withNameAndId(ResourceKey<? extends Registry<T>> key, MapCodec<T> entryCodec) {
