@@ -19,30 +19,34 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -        double blockRange = (reducedRange) ? Math.pow(chunkRange << 4, 2) : 16384.0D;
 +        final int finalChunkRange = chunkRange; // Paper for lambda below
 +        //double blockRange = (reducedRange) ? Math.pow(chunkRange << 4, 2) : 16384.0D; // Paper - use from event
++        double blockRange = 16384.0D; // Paper
          // Spigot end
          long i = chunkcoordintpair.toLong();
  
-         return !this.distanceManager.hasPlayersNearby(i) ? true : this.playerMap.getPlayers(i).noneMatch((entityplayer) -> {
-+            // Paper start - add PlayerNaturallySpawnCreaturesEvent
-+            com.destroystokyo.paper.event.entity.PlayerNaturallySpawnCreaturesEvent event;
-+            double blockRange = 16384.0D;
-+            if (reducedRange) {
-+                event = entityplayer.playerNaturallySpawnedEvent;
-+                if (event == null || event.isCancelled()) return false;
-+                blockRange = (double) ((event.getSpawnRadius() << 4) * (event.getSpawnRadius() << 4));
-+            }
-+            // Paper end
-             return !entityplayer.isSpectator() && ChunkMap.euclideanDistanceSquared(chunkcoordintpair, (Entity) entityplayer) < blockRange; // Spigot
-         });
-     }
+@@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+                 }
+ 
+                 entityplayer = (ServerPlayer) iterator.next();
++                // Paper start - add PlayerNaturallySpawnCreaturesEvent
++                com.destroystokyo.paper.event.entity.PlayerNaturallySpawnCreaturesEvent event;
++                blockRange = 16384.0D;
++                if (reducedRange) {
++                    event = entityplayer.playerNaturallySpawnedEvent;
++                    if (event == null || event.isCancelled()) return false;
++                    blockRange = (double) ((event.getSpawnRadius() << 4) * (event.getSpawnRadius() << 4));
++                }
++                // Paper end
+             } while (!this.playerIsCloseEnoughForSpawning(entityplayer, chunkcoordintpair, blockRange)); // Spigot
+ 
+             return true;
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 @@ -0,0 +0,0 @@ public class ServerChunkCache extends ChunkSource {
-             List<ChunkHolder> list = Lists.newArrayList(this.chunkMap.getChunks());
+             boolean flag2 = this.level.getGameRules().getBoolean(GameRules.RULE_DOMOBSPAWNING) && !this.level.players().isEmpty(); // CraftBukkit
  
-             Collections.shuffle(list);
+             //Collections.shuffle(list); // Paper - no... just no...
 +            // Paper start - call player naturally spawn event
 +            int chunkRange = level.spigotConfig.mobSpawnRange;
 +            chunkRange = (chunkRange > level.spigotConfig.viewDistance) ? (byte) level.spigotConfig.viewDistance : chunkRange;
@@ -52,9 +56,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                entityPlayer.playerNaturallySpawnedEvent.callEvent();
 +            };
 +            // Paper end
-             this.level.timings.chunkTicks.startTiming(); // Paper
-             list.forEach((playerchunk) -> {
-                 Optional<LevelChunk> optional = ((Either) playerchunk.getTickingChunkFuture().getNow(ChunkHolder.UNLOADED_LEVEL_CHUNK)).left();
+             Iterator iterator1 = list.iterator();
+ 
+             while (iterator1.hasNext()) {
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
