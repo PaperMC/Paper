@@ -3,8 +3,7 @@ From: Spottedleaf <Spottedleaf@users.noreply.github.com>
 Date: Sat, 13 Jul 2019 09:23:10 -0700
 Subject: [PATCH] Asynchronous chunk IO and loading
 
-# UPDATE NOTES: RegionFileStorage and SectionStorage need resolving (will conflict on apply)
-# ChunkSerializer needs the new tick lists to be saved (see added todos)
+ChunkSerializer needs the new tick lists to be saved (see added todos)
 
 This patch re-adds a file IO thread as well as shoving de-serializing
 chunk NBT data onto worker threads. This patch also will shove
@@ -1443,10 +1442,10 @@ index 0000000000000000000000000000000000000000..ee906b594b306906c170180a29a8b619
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/io/chunk/ChunkLoadTask.java b/src/main/java/com/destroystokyo/paper/io/chunk/ChunkLoadTask.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..0eaa4f3cd476c64feab358879eee3d67f46092f4
+index 0000000000000000000000000000000000000000..c5924b64604a678f7efdc0c2ce8070c9239dcf18
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/io/chunk/ChunkLoadTask.java
-@@ -0,0 +1,138 @@
+@@ -0,0 +1,137 @@
 +package com.destroystokyo.paper.io.chunk;
 +
 +import co.aikar.timings.Timing;
@@ -1540,8 +1539,8 @@ index 0000000000000000000000000000000000000000..0eaa4f3cd476c64feab358879eee3d67
 +            // apply fixes
 +
 +            try {
-+                chunkData.chunkData = chunkManager.getChunkData(this.world.getTypeKey(),
-+                    chunkManager.overworldDataStorage, chunkData.chunkData, chunkPos, this.world); // clone data for safety, file IO thread does not clone
++                chunkData.chunkData = chunkManager.upgradeChunkTag(this.world.getTypeKey(),
++                    chunkManager.overworldDataStorage, chunkData.chunkData, chunkManager.generator.getTypeNameForDataFixer(), chunkPos, this.world); // clone data for safety, file IO thread does not clone
 +            } catch (final Throwable ex) {
 +                PaperFileIOThread.LOGGER.error("Could not apply datafixers for chunk task: " + this.toString(), ex);
 +                this.complete(ChunkLoadTask.createEmptyHolder());
@@ -1552,8 +1551,7 @@ index 0000000000000000000000000000000000000000..0eaa4f3cd476c64feab358879eee3d67
 +            }
 +
 +            try {
-+                chunkHolder = ChunkSerializer.loadChunk(this.world,
-+                    chunkManager.structureManager, chunkManager.getVillagePlace(), chunkPos,
++                chunkHolder = ChunkSerializer.loadChunk(this.world, chunkManager.getPoiManager(), chunkPos,
 +                    chunkData.chunkData, true);
 +            } catch (final Throwable ex) {
 +                PaperFileIOThread.LOGGER.error("Could not de-serialize chunk data for task: " + this.toString(), ex);
@@ -2280,19 +2278,6 @@ index a5e438a834826161c52ca9db57d234d9ff80a591..b8bc1b9b8e8a33df90a963f9f9769292
      }
  
      @Override
-diff --git a/src/main/java/net/minecraft/server/MCUtil.java b/src/main/java/net/minecraft/server/MCUtil.java
-index 4f45ac04a219e619c13b31befd2c4e452057079c..eca61ff543244dbf05db0a30c21c5bbeea2b9144 100644
---- a/src/main/java/net/minecraft/server/MCUtil.java
-+++ b/src/main/java/net/minecraft/server/MCUtil.java
-@@ -509,4 +509,8 @@ public final class MCUtil {
-     public static int getTicketLevelFor(net.minecraft.world.level.chunk.ChunkStatus status) {
-         return net.minecraft.server.level.ChunkMap.MAX_VIEW_DISTANCE + net.minecraft.world.level.chunk.ChunkStatus.getDistance(status);
-     }
-+
-+    public static int getTicketLevelFor(net.minecraft.world.level.chunk.ChunkStatus status) {
-+        return net.minecraft.server.level.ChunkMap.MAX_VIEW_DISTANCE + net.minecraft.world.level.chunk.ChunkStatus.getDistance(status);
-+    }
- }
 diff --git a/src/main/java/net/minecraft/server/Main.java b/src/main/java/net/minecraft/server/Main.java
 index 4ab820c43ddc79f5a280e2d4b322a667b9ba725f..e0c1e4e38ff49429a587c59afb86e95c452d52a0 100644
 --- a/src/main/java/net/minecraft/server/Main.java
@@ -2319,29 +2304,10 @@ index 44f32023db3edaae107f48fd9b96baf5432417d9..a9f54a691af0cd15cbc38af8b8df3831
  
      public String getLocalIp() {
 diff --git a/src/main/java/net/minecraft/server/level/ChunkHolder.java b/src/main/java/net/minecraft/server/level/ChunkHolder.java
-index 303125c4d0f8f235703975eab5eccb9aa045ccf8..dbcf3e764a26c89ef10afa294e1b80575ab2113e 100644
+index 303125c4d0f8f235703975eab5eccb9aa045ccf8..5b999da8c5ad430f9157276857165596d1208f64 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkHolder.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkHolder.java
-@@ -163,6 +163,18 @@ public class ChunkHolder {
-                 return chunkstatus;
-             }
-         }
-+        return null;
-+    }
-+
-+    public ChunkStatus getChunkHolderStatus() {
-+        for (ChunkStatus curr = ChunkStatus.FULL, next = curr.getParent(); curr != next; curr = next, next = next.getParent()) {
-+            CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> future = this.getFutureIfPresentUnchecked(curr);
-+            Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure> either = future.getNow(null);
-+            if (either == null || !either.left().isPresent()) {
-+                continue;
-+            }
-+            return curr;
-+        }
- 
-         return null;
-     }
-@@ -402,7 +414,7 @@ public class ChunkHolder {
+@@ -402,7 +402,7 @@ public class ChunkHolder {
          ChunkStatus chunkstatus = ChunkHolder.getStatus(this.oldTicketLevel);
          ChunkStatus chunkstatus1 = ChunkHolder.getStatus(this.ticketLevel);
          boolean flag = this.oldTicketLevel <= ChunkMap.MAX_CHUNK_DISTANCE;
@@ -2351,7 +2317,7 @@ index 303125c4d0f8f235703975eab5eccb9aa045ccf8..dbcf3e764a26c89ef10afa294e1b8057
          ChunkHolder.FullChunkStatus playerchunk_state1 = ChunkHolder.getFullChunkStatus(this.ticketLevel);
          // CraftBukkit start
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index 6af70073e1ee0290ec30392153c2c18dfeffa0e8..96919bd2340386b6f5a6cac2f4a0bed43529d4d2 100644
+index 0727c025e87e889861b2f3e78e28d4d17840ff54..67bc31c2313151cfb9afa8d812f74786fe6b3878 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
 @@ -492,6 +492,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
@@ -2471,11 +2437,11 @@ index 6af70073e1ee0290ec30392153c2c18dfeffa0e8..96919bd2340386b6f5a6cac2f4a0bed4
 +                        LOGGER.fatal("Failed to prepare async save, attempting synchronous save", ex);
 +                        this.save(ichunkaccess);
 +                    }
-+                    // Paper end - async chunk savin
++                    // Paper end - async chunk saving
                      if (this.entitiesInLevel.remove(pos) && ichunkaccess instanceof LevelChunk) {
                          LevelChunk chunk = (LevelChunk) ichunkaccess;
  
-@@ -678,20 +734,20 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -678,20 +734,21 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
      }
  
      private CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> scheduleChunkLoad(ChunkPos pos) {
@@ -2504,10 +2470,11 @@ index 6af70073e1ee0290ec30392153c2c18dfeffa0e8..96919bd2340386b6f5a6cac2f4a0bed4
  
 +                if (chunkHolder.protoChunk != null) {try (Timing ignored2 = this.level.timings.chunkLoadLevelTimer.startTimingIfSync()) { // Paper start - timings // Paper - chunk is created async
 +                    if (true) {
++                        ProtoChunk protochunk = chunkHolder.protoChunk;
                          this.markPosition(pos, protochunk.getStatus().getChunkType());
                          return Either.left(protochunk);
                      }
-@@ -713,7 +769,32 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -713,7 +770,32 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
  
              this.markPositionReplaceable(pos);
              return Either.left(new ProtoChunk(pos, UpgradeData.EMPTY, this.level, this.level.registryAccess().registryOrThrow(Registry.BIOME_REGISTRY), (BlendingData) null));
@@ -2541,7 +2508,7 @@ index 6af70073e1ee0290ec30392153c2c18dfeffa0e8..96919bd2340386b6f5a6cac2f4a0bed4
      }
  
      private void markPositionReplaceable(ChunkPos pos) {
-@@ -896,6 +977,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -896,6 +978,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
      }
  
      public boolean save(ChunkAccess chunk) {
@@ -2549,7 +2516,7 @@ index 6af70073e1ee0290ec30392153c2c18dfeffa0e8..96919bd2340386b6f5a6cac2f4a0bed4
          this.poiManager.flush(chunk.getPos());
          if (!chunk.isUnsaved()) {
              return false;
-@@ -907,7 +989,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -907,7 +990,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
                  ChunkStatus chunkstatus = chunk.getStatus();
  
                  if (chunkstatus.getChunkType() != ChunkStatus.ChunkType.LEVELCHUNK) {
@@ -2558,7 +2525,7 @@ index 6af70073e1ee0290ec30392153c2c18dfeffa0e8..96919bd2340386b6f5a6cac2f4a0bed4
                          return false;
                      }
  
-@@ -917,9 +999,15 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -917,9 +1000,15 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
                  }
  
                  this.level.getProfiler().incrementCounter("chunkSave");
@@ -2576,7 +2543,7 @@ index 6af70073e1ee0290ec30392153c2c18dfeffa0e8..96919bd2340386b6f5a6cac2f4a0bed4
                  this.markPosition(chunkcoordintpair, chunkstatus.getChunkType());
                  return true;
              } catch (Exception exception) {
-@@ -928,6 +1016,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -928,6 +1017,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
                  return false;
              }
          }
@@ -2584,7 +2551,7 @@ index 6af70073e1ee0290ec30392153c2c18dfeffa0e8..96919bd2340386b6f5a6cac2f4a0bed4
      }
  
      private boolean isExistingChunkFull(ChunkPos pos) {
-@@ -1060,6 +1149,35 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1060,6 +1150,35 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          }
      }
  
@@ -2621,23 +2588,14 @@ index 6af70073e1ee0290ec30392153c2c18dfeffa0e8..96919bd2340386b6f5a6cac2f4a0bed4
      public CompoundTag readChunk(ChunkPos pos) throws IOException {
          CompoundTag nbttagcompound = this.read(pos);
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-index 212261651fd650cc895f817ccca37699d1cade8f..463cbbbe97bd421ac343ba80cc99731ff5fb4052 100644
+index 212261651fd650cc895f817ccca37699d1cade8f..8923c305a34a8b8cfae90661a831a6fc656bef9f 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-@@ -500,10 +500,128 @@ public class ServerChunkCache extends ChunkSource {
+@@ -500,10 +500,111 @@ public class ServerChunkCache extends ChunkSource {
          return ret;
      }
      // Paper end
 +    // Paper start - async chunk io
-+    public ChunkAccess getChunkAtImmediately(int x, int z) {
-+        ChunkHolder holder = this.chunkMap.getVisibleChunkIfPresent(ChunkPos.asLong(x, z));
-+        if (holder == null) {
-+            return null;
-+        }
-+
-+        return holder.getLastAvailable();
-+    }
-+
 +    private long asyncLoadSeqCounter;
 +
 +    public CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> getChunkAtAsynchronously(int x, int z, boolean gen, boolean isUrgent) {
@@ -2736,14 +2694,6 @@ index 212261651fd650cc895f817ccca37699d1cade8f..463cbbbe97bd421ac343ba80cc99731f
 +            return CompletableFuture.completedFuture(either);
 +        }, this.mainThreadProcessor);
 +    }
-+
-+    public <T> void addTicketAtLevel(TicketType<T> ticketType, ChunkPos chunkPos, int ticketLevel, T identifier) {
-+        this.distanceManager.addTicketAtLevel(ticketType, chunkPos, ticketLevel, identifier);
-+    }
-+
-+    public <T> void removeTicketAtLevel(TicketType<T> ticketType, ChunkPos chunkPos, int ticketLevel, T identifier) {
-+        this.distanceManager.removeTicketAtLevel(ticketType, chunkPos, ticketLevel, identifier);
-+    }
 +    // Paper end - async chunk io
  
      @Nullable
@@ -2753,7 +2703,7 @@ index 212261651fd650cc895f817ccca37699d1cade8f..463cbbbe97bd421ac343ba80cc99731f
          if (Thread.currentThread() != this.mainThread) {
              return (ChunkAccess) CompletableFuture.supplyAsync(() -> {
                  return this.getChunk(x, z, leastStatus, create);
-@@ -526,13 +644,18 @@ public class ServerChunkCache extends ChunkSource {
+@@ -526,13 +627,18 @@ public class ServerChunkCache extends ChunkSource {
              }
  
              gameprofilerfiller.incrementCounter("getChunkCacheMiss");
@@ -2773,7 +2723,7 @@ index 212261651fd650cc895f817ccca37699d1cade8f..463cbbbe97bd421ac343ba80cc99731f
                  this.level.timings.syncChunkLoad.stopTiming(); // Paper
              } // Paper
              ichunkaccess = (ChunkAccess) ((Either) completablefuture.join()).map((ichunkaccess1) -> {
-@@ -619,6 +742,11 @@ public class ServerChunkCache extends ChunkSource {
+@@ -619,6 +725,11 @@ public class ServerChunkCache extends ChunkSource {
      }
  
      private CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> getChunkFutureMainThread(int chunkX, int chunkZ, ChunkStatus leastStatus, boolean create) {
@@ -2785,7 +2735,7 @@ index 212261651fd650cc895f817ccca37699d1cade8f..463cbbbe97bd421ac343ba80cc99731f
          ChunkPos chunkcoordintpair = new ChunkPos(chunkX, chunkZ);
          long k = chunkcoordintpair.toLong();
          int l = 33 + ChunkStatus.getDistance(leastStatus);
-@@ -1028,11 +1156,12 @@ public class ServerChunkCache extends ChunkSource {
+@@ -1028,11 +1139,12 @@ public class ServerChunkCache extends ChunkSource {
          // CraftBukkit start - process pending Chunk loadCallback() and unloadCallback() after each run task
          public boolean pollTask() {
          try {
@@ -2800,7 +2750,7 @@ index 212261651fd650cc895f817ccca37699d1cade8f..463cbbbe97bd421ac343ba80cc99731f
          } finally {
              chunkMap.callbackExecutor.run();
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index 29b2ddee252759c7ad17df8fe19ea08a36eb2673..807b508daaab587514cf91106df648758d6e9798 100644
+index 29b2ddee252759c7ad17df8fe19ea08a36eb2673..93751b6df3c8eab6445262e98296eaaa2a65e1b3 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
 @@ -307,6 +307,78 @@ public class ServerLevel extends Level implements WorldGenLevel {
@@ -2812,21 +2762,21 @@ index 29b2ddee252759c7ad17df8fe19ea08a36eb2673..807b508daaab587514cf91106df64875
 +    public final com.destroystokyo.paper.io.PaperFileIOThread.ChunkDataController poiDataController = new com.destroystokyo.paper.io.PaperFileIOThread.ChunkDataController() {
 +        @Override
 +        public void writeData(int x, int z, net.minecraft.nbt.CompoundTag compound) throws java.io.IOException {
-+            ServerLevel.this.getChunkSource().chunkMap.getVillagePlace().write(new ChunkPos(x, z), compound);
++            ServerLevel.this.getChunkSource().chunkMap.getPoiManager().write(new ChunkPos(x, z), compound);
 +        }
 +
 +        @Override
 +        public net.minecraft.nbt.CompoundTag readData(int x, int z) throws java.io.IOException {
-+            return ServerLevel.this.getChunkSource().chunkMap.getVillagePlace().read(new ChunkPos(x, z));
++            return ServerLevel.this.getChunkSource().chunkMap.getPoiManager().read(new ChunkPos(x, z));
 +        }
 +
 +        @Override
 +        public <T> T computeForRegionFile(int chunkX, int chunkZ, java.util.function.Function<net.minecraft.world.level.chunk.storage.RegionFile, T> function) {
-+            synchronized (ServerLevel.this.getChunkSource().chunkMap.getVillagePlace()) {
++            synchronized (ServerLevel.this.getChunkSource().chunkMap.getPoiManager()) {
 +                net.minecraft.world.level.chunk.storage.RegionFile file;
 +
 +                try {
-+                    file = ServerLevel.this.getChunkSource().chunkMap.getVillagePlace().getFile(new ChunkPos(chunkX, chunkZ), false);
++                    file = ServerLevel.this.getChunkSource().chunkMap.getPoiManager().getRegionFile(new ChunkPos(chunkX, chunkZ), false);
 +                } catch (java.io.IOException ex) {
 +                    throw new RuntimeException(ex);
 +                }
@@ -2837,8 +2787,8 @@ index 29b2ddee252759c7ad17df8fe19ea08a36eb2673..807b508daaab587514cf91106df64875
 +
 +        @Override
 +        public <T> T computeForRegionFileIfLoaded(int chunkX, int chunkZ, java.util.function.Function<net.minecraft.world.level.chunk.storage.RegionFile, T> function) {
-+            synchronized (ServerLevel.this.getChunkSource().chunkMap.getVillagePlace()) {
-+                net.minecraft.world.level.chunk.storage.RegionFile file = ServerLevel.this.getChunkSource().chunkMap.getVillagePlace().getRegionFileIfLoaded(new ChunkPos(chunkX, chunkZ));
++            synchronized (ServerLevel.this.getChunkSource().chunkMap.getPoiManager()) {
++                net.minecraft.world.level.chunk.storage.RegionFile file = ServerLevel.this.getChunkSource().chunkMap.getPoiManager().getRegionFileIfLoaded(new ChunkPos(chunkX, chunkZ));
 +                return function.apply(file);
 +            }
 +        }
@@ -2861,7 +2811,7 @@ index 29b2ddee252759c7ad17df8fe19ea08a36eb2673..807b508daaab587514cf91106df64875
 +                net.minecraft.world.level.chunk.storage.RegionFile file;
 +
 +                try {
-+                    file = ServerLevel.this.getChunkSource().chunkMap.regionFileCache.getFile(new ChunkPos(chunkX, chunkZ), false);
++                    file = ServerLevel.this.getChunkSource().chunkMap.regionFileCache.getRegionFile(new ChunkPos(chunkX, chunkZ), false);
 +                } catch (java.io.IOException ex) {
 +                    throw new RuntimeException(ex);
 +                }
@@ -2994,7 +2944,7 @@ index 2a73700b0cd31e2a88c478b884de0a7f3d018259..0a1e667487e2c7849e11c0395816dc8c
          HAS_SPACE(PoiRecord::hasSpace),
          IS_OCCUPIED(PoiRecord::isOccupied),
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
-index 2fd969d1450d1251c139f3721d146fd2e191c4dd..004360936cc7066ceecdca92591c7502ecd47f3a 100644
+index 2fd969d1450d1251c139f3721d146fd2e191c4dd..2801737d3fd55d268690f46881c6dd7d3f8d5bf3 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
 @@ -75,7 +75,31 @@ public class ChunkSerializer {
@@ -3085,9 +3035,9 @@ index 2fd969d1450d1251c139f3721d146fd2e191c4dd..004360936cc7066ceecdca92591c7502
  
 -            return protochunk1;
 +            return new InProgressChunkHolder(protochunk1, tasksToExecuteOnMain); // Paper - Async chunk loading
-         }
-     }
- 
++        }
++    }
++
 +    // Paper start - async chunk save for unload
 +    public static final class AsyncSaveData {
 +        public final DataLayer[] blockLight;
@@ -3107,9 +3057,9 @@ index 2fd969d1450d1251c139f3721d146fd2e191c4dd..004360936cc7066ceecdca92591c7502
 +            this.fluidTickList = fluidTickList;
 +            this.blockEntities = blockEntities;
 +            this.worldTime = worldTime;
-+        }
-+    }
-+
+         }
+     }
+ 
 +    // must be called sync
 +    public static AsyncSaveData getAsyncSaveData(ServerLevel world, ChunkAccess chunk) {
 +        org.spigotmc.AsyncCatcher.catchOp("preparation of chunk data for async save");
@@ -3139,22 +3089,22 @@ index 2fd969d1450d1251c139f3721d146fd2e191c4dd..004360936cc7066ceecdca92591c7502
 +        net.minecraft.world.ticks.TickContainerAccess<Block> blockTickList = chunk.getBlockTicks();
 +
 +        //TODO check ChunkSerializer "block_ticks"
-+        ListTag blockTickListSerialized;
-+        if (blockTickList instanceof ProtoTickList || blockTickList instanceof ChunkTickList) {
-+            blockTickListSerialized = null;
-+        } else {
-+            blockTickListSerialized = world.getBlockTicks().save(chunkPos);
-+        }
++        ListTag blockTickListSerialized = null; // Paper - remove null
++        // if (blockTickList instanceof ProtoTickList || blockTickList instanceof ChunkTickList) {
++        //     blockTickListSerialized = null;
++        // } else {
++        //     blockTickListSerialized = world.getBlockTicks().save(chunkPos);
++        // }
 +
 +        net.minecraft.world.ticks.TickContainerAccess<Fluid> fluidTickList = chunk.getFluidTicks();
 +
 +        //TODO
-+        ListTag fluidTickListSerialized;
-+        if (fluidTickList instanceof ProtoTickList || fluidTickList instanceof ChunkTickList) {
-+            fluidTickListSerialized = null;
-+        } else {
-+            fluidTickListSerialized = world.getFluidTicks().save(chunkPos);
-+        }
++        ListTag fluidTickListSerialized = null; // Paper - remove null
++        // if (fluidTickList instanceof ProtoTickList || fluidTickList instanceof ChunkTickList) {
++        //     fluidTickListSerialized = null;
++        // } else {
++        //     fluidTickListSerialized = world.getFluidTicks().save(chunkPos);
++        // }
 +
 +        ListTag blockEntitiesSerialized = new ListTag();
 +        for (final BlockPos blockPos : chunk.getBlockEntitiesPos()) {
@@ -3181,15 +3131,16 @@ index 2fd969d1450d1251c139f3721d146fd2e191c4dd..004360936cc7066ceecdca92591c7502
          ChunkPos chunkcoordintpair = chunk.getPos();
          CompoundTag nbttagcompound = new CompoundTag();
  
-@@ -318,6 +439,7 @@ public class ChunkSerializer {
+@@ -317,7 +438,7 @@ public class ChunkSerializer {
+         nbttagcompound.putInt("xPos", chunkcoordintpair.x);
          nbttagcompound.putInt("yPos", chunk.getMinSection());
          nbttagcompound.putInt("zPos", chunkcoordintpair.z);
-         nbttagcompound.putLong("LastUpdate", world.getGameTime());
+-        nbttagcompound.putLong("LastUpdate", world.getGameTime());
 +        nbttagcompound.putLong("LastUpdate", asyncsavedata != null ? asyncsavedata.worldTime : world.getGameTime()); // Paper - async chunk unloading
          nbttagcompound.putLong("InhabitedTime", chunk.getInhabitedTime());
          nbttagcompound.putString("Status", chunk.getStatus().getName());
          BlendingData blendingdata = chunk.getBlendingData();
-@@ -360,8 +482,17 @@ public class ChunkSerializer {
+@@ -360,8 +481,17 @@ public class ChunkSerializer {
          for (int i = lightenginethreaded.getMinLightSection(); i < lightenginethreaded.getMaxLightSection(); ++i) {
              int j = chunk.getSectionIndexFromSectionY(i);
              boolean flag1 = j >= 0 && j < achunksection.length;
@@ -3209,7 +3160,7 @@ index 2fd969d1450d1251c139f3721d146fd2e191c4dd..004360936cc7066ceecdca92591c7502
  
              if (flag1 || nibblearray != null || nibblearray1 != null) {
                  CompoundTag nbttagcompound1 = new CompoundTag();
-@@ -399,8 +530,17 @@ public class ChunkSerializer {
+@@ -399,8 +529,17 @@ public class ChunkSerializer {
              nbttagcompound.putBoolean("isLightOn", true);
          }
  
@@ -3229,7 +3180,7 @@ index 2fd969d1450d1251c139f3721d146fd2e191c4dd..004360936cc7066ceecdca92591c7502
  
          CompoundTag nbttagcompound2;
  
-@@ -463,6 +603,7 @@ public class ChunkSerializer {
+@@ -463,6 +602,7 @@ public class ChunkSerializer {
      private static void saveTicks(ServerLevel world, CompoundTag nbt, ChunkAccess.TicksToSave tickSchedulers) {
          long i = world.getLevelData().getGameTime();
  
@@ -3238,7 +3189,7 @@ index 2fd969d1450d1251c139f3721d146fd2e191c4dd..004360936cc7066ceecdca92591c7502
              return Registry.BLOCK.getKey(block).toString();
          }));
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkStorage.java b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkStorage.java
-index 0259baec1ceb911f39e733d52d232dec19577550..9fe3ab209ebbfc40dc1bf046d474296c660e38d5 100644
+index 0259baec1ceb911f39e733d52d232dec19577550..1fc202caf9051f12192ed479898b01b0a02eebbd 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkStorage.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkStorage.java
 @@ -25,27 +25,38 @@ import net.minecraft.world.level.storage.DimensionDataStorage;
@@ -3300,7 +3251,7 @@ index 0259baec1ceb911f39e733d52d232dec19577550..9fe3ab209ebbfc40dc1bf046d474296c
              }
          }
  
-@@ -114,23 +127,27 @@ public class ChunkStorage implements AutoCloseable {
+@@ -114,26 +127,39 @@ public class ChunkStorage implements AutoCloseable {
  
      @Nullable
      public CompoundTag read(ChunkPos chunkPos) throws IOException {
@@ -3333,6 +3284,19 @@ index 0259baec1ceb911f39e733d52d232dec19577550..9fe3ab209ebbfc40dc1bf046d474296c
      }
  
      public ChunkScanAccess chunkScanner() {
+-        return this.worker;
++        // Paper start - nuke IO worker
++        return ((chunkPos, streamTagVisitor) -> {
++            try {
++                this.regionFileCache.scanChunk(chunkPos, streamTagVisitor);
++                return java.util.concurrent.CompletableFuture.completedFuture(null);
++            } catch (IOException e) {
++                throw new RuntimeException(e);
++            }
++        });
++        // Paper end
+     }
+ }
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
 index 7b69007609ed421ee72ddc3d6f2a7b64888babf1..6f7bcf74b0ff42841e37f36561d6c54e1ee8c989 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
@@ -3378,33 +3342,33 @@ index 7b69007609ed421ee72ddc3d6f2a7b64888babf1..6f7bcf74b0ff42841e37f36561d6c54e
      }
  
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
-index 3d07235ad34d219c7c5fccd216a3a6935ced645c..ebb1a050beab9530942c4498335f084c89faef06 100644
+index deb852aa0fb2ad55a94d3c7ee542a0cc8013be42..40830a2b231df9bbf676d8325e76c8252a6c1d6c 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
-@@ -28,11 +28,32 @@ public class RegionFileStorage implements AutoCloseable {
+@@ -29,11 +29,32 @@ public class RegionFileStorage implements AutoCloseable {
          this.sync = dsync;
      }
-
--    public RegionFile getFile(ChunkPos chunkcoordintpair, boolean existingOnly) throws IOException { // CraftBukkit
+ 
+-    private RegionFile getRegionFile(ChunkPos chunkcoordintpair, boolean existingOnly) throws IOException { // CraftBukkit
 +    // Paper start
 +    public synchronized RegionFile getRegionFileIfLoaded(ChunkPos chunkcoordintpair) {
 +        return this.regionCache.getAndMoveToFirst(ChunkPos.asLong(chunkcoordintpair.getRegionX(), chunkcoordintpair.getRegionZ()));
 +    }
 +
 +    public synchronized boolean chunkExists(ChunkPos pos) throws IOException {
-+        RegionFile regionfile = getFile(pos, true);
++        RegionFile regionfile = getRegionFile(pos, true);
 +
 +        return regionfile != null ? regionfile.hasChunk(pos) : false;
 +    }
 +
-+    public synchronized RegionFile getFile(ChunkPos chunkcoordintpair, boolean existingOnly) throws IOException { // CraftBukkit
-+        return this.getFile(chunkcoordintpair, existingOnly, false);
++    public synchronized RegionFile getRegionFile(ChunkPos chunkcoordintpair, boolean existingOnly) throws IOException { // CraftBukkit
++        return this.getRegionFile(chunkcoordintpair, existingOnly, false);
 +    }
-+    public synchronized RegionFile getFile(ChunkPos chunkcoordintpair, boolean existingOnly, boolean lock) throws IOException {
++    public synchronized RegionFile getRegionFile(ChunkPos chunkcoordintpair, boolean existingOnly, boolean lock) throws IOException {
 +        // Paper end
          long i = ChunkPos.asLong(chunkcoordintpair.getRegionX(), chunkcoordintpair.getRegionZ());
          RegionFile regionfile = (RegionFile) this.regionCache.getAndMoveToFirst(i);
-
+ 
          if (regionfile != null) {
 +            // Paper start
 +            if (lock) {
@@ -3415,9 +3379,9 @@ index 3d07235ad34d219c7c5fccd216a3a6935ced645c..ebb1a050beab9530942c4498335f084c
              return regionfile;
          } else {
              if (this.regionCache.size() >= com.destroystokyo.paper.PaperConfig.regionFileCacheSize) { // Paper - configurable
-@@ -50,6 +71,12 @@ public class RegionFileStorage implements AutoCloseable {
-             RegionFile regionfile1 = new RegionFile(file1, this.folder, this.sync);
-
+@@ -48,6 +69,12 @@ public class RegionFileStorage implements AutoCloseable {
+             RegionFile regionfile1 = new RegionFile(path1, this.folder, this.sync);
+ 
              this.regionCache.putAndMoveToFirst(i, regionfile1);
 +            // Paper start
 +            if (lock) {
@@ -3428,67 +3392,71 @@ index 3d07235ad34d219c7c5fccd216a3a6935ced645c..ebb1a050beab9530942c4498335f084c
              return regionfile1;
          }
      }
-@@ -57,11 +84,12 @@ public class RegionFileStorage implements AutoCloseable {
+@@ -55,11 +82,12 @@ public class RegionFileStorage implements AutoCloseable {
      @Nullable
      public CompoundTag read(ChunkPos pos) throws IOException {
          // CraftBukkit start - SPIGOT-5680: There's no good reason to preemptively create files on read, save that for writing
--        RegionFile regionfile = this.getFile(pos, true);
-+        RegionFile regionfile = this.getFile(pos, true, true); // Paper
+-        RegionFile regionfile = this.getRegionFile(pos, true);
++        RegionFile regionfile = this.getRegionFile(pos, true, true); // Paper
          if (regionfile == null) {
              return null;
          }
          // CraftBukkit end
 +        try { // Paper
          DataInputStream datainputstream = regionfile.getChunkDataInputStream(pos);
-
+ 
          CompoundTag nbttagcompound;
-@@ -98,10 +126,14 @@ public class RegionFileStorage implements AutoCloseable {
+@@ -96,6 +124,9 @@ public class RegionFileStorage implements AutoCloseable {
          }
-
+ 
          return nbttagcompound;
 +        } finally { // Paper start
 +            regionfile.fileLock.unlock();
 +        } // Paper end
      }
-
+ 
+     public void scanChunk(ChunkPos chunkcoordintpair, StreamTagVisitor streamtagvisitor) throws IOException {
+@@ -130,7 +161,8 @@ public class RegionFileStorage implements AutoCloseable {
+     }
+ 
      protected void write(ChunkPos pos, @Nullable CompoundTag nbt) throws IOException {
--        RegionFile regionfile = this.getFile(pos, false); // CraftBukkit
-+        RegionFile regionfile = this.getFile(pos, false, true); // CraftBukkit // Paper
+-        RegionFile regionfile = this.getRegionFile(pos, false); // CraftBukkit
++        RegionFile regionfile = this.getRegionFile(pos, false, true); // CraftBukkit // Paper
 +        try { // Paper
          int attempts = 0; Exception laste = null; while (attempts++ < 5) { try { // Paper
-
+ 
          if (nbt == null) {
-@@ -140,9 +172,12 @@ public class RegionFileStorage implements AutoCloseable {
-             MinecraftServer.LOGGER.error("Failed to save chunk", laste);
+@@ -169,9 +201,12 @@ public class RegionFileStorage implements AutoCloseable {
+             net.minecraft.server.MinecraftServer.LOGGER.error("Failed to save chunk", laste);
          }
          // Paper end
 +        } finally { // Paper start
 +            regionfile.fileLock.unlock();
 +        } // Paper end
      }
-
+ 
 -    public void close() throws IOException {
 +    public synchronized void close() throws IOException { // Paper -> synchronized
          ExceptionCollector<IOException> exceptionsuppressor = new ExceptionCollector<>();
          ObjectIterator objectiterator = this.regionCache.values().iterator();
-
-@@ -159,7 +194,7 @@ public class RegionFileStorage implements AutoCloseable {
+ 
+@@ -188,7 +223,7 @@ public class RegionFileStorage implements AutoCloseable {
          exceptionsuppressor.throwIfPresent();
      }
-
+ 
 -    public void flush() throws IOException {
 +    public synchronized void flush() throws IOException { // Paper - synchronize
          ObjectIterator objectiterator = this.regionCache.values().iterator();
-
+ 
          while (objectiterator.hasNext()) {
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/SectionStorage.java b/src/main/java/net/minecraft/world/level/chunk/storage/SectionStorage.java
-index e5e138fb23d03eb63e547e74d3e14ec9d96d8107..90f7b06bd2c558be35c4577044fa033e1fb5cc22 100644
+index a7d73e1fff7a5728053e877f3dbd94ef0e0a3012..8ec74454438e7a36415a5f7fa379b31d14858df3 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/SectionStorage.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/SectionStorage.java
 @@ -30,10 +30,10 @@ import net.minecraft.world.level.LevelHeightAccessor;
  import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
-
+ 
 -public class SectionStorage<R> implements AutoCloseable {
 +public class SectionStorage<R> extends RegionFileStorage implements AutoCloseable { // Paper - nuke IOWorker
      private static final Logger LOGGER = LogManager.getLogger();
@@ -3500,22 +3468,22 @@ index e5e138fb23d03eb63e547e74d3e14ec9d96d8107..90f7b06bd2c558be35c4577044fa033e
      private final Function<Runnable, Codec<R>> codec;
 @@ -43,12 +43,13 @@ public class SectionStorage<R> implements AutoCloseable {
      protected final LevelHeightAccessor levelHeightAccessor;
-
-     public SectionStorage(File directory, Function<Runnable, Codec<R>> codecFactory, Function<Runnable, R> factory, DataFixer dataFixer, DataFixTypes dataFixTypes, boolean dsync, LevelHeightAccessor world) {
-+        super(directory, dsync); // Paper - nuke IOWorker
+ 
+     public SectionStorage(Path path, Function<Runnable, Codec<R>> codecFactory, Function<Runnable, R> factory, DataFixer dataFixer, DataFixTypes dataFixTypes, boolean dsync, LevelHeightAccessor world) {
++        super(path, dsync);
          this.codec = codecFactory;
          this.factory = factory;
          this.fixerUpper = dataFixer;
          this.type = dataFixTypes;
          this.levelHeightAccessor = world;
--        this.worker = new IOWorker(directory, dsync, directory.getName());
+-        this.worker = new IOWorker(path, dsync, path.getFileName().toString());
 +        // Paper - remove mojang I/O thread
      }
-
+ 
      protected void tick(BooleanSupplier shouldKeepTicking) {
 @@ -106,13 +107,18 @@ public class SectionStorage<R> implements AutoCloseable {
      }
-
+ 
      private void readColumn(ChunkPos chunkPos) {
 -        this.readColumn(chunkPos, NbtOps.INSTANCE, this.tryRead(chunkPos));
 +        // Paper start - expose function to load in data
@@ -3525,7 +3493,7 @@ index e5e138fb23d03eb63e547e74d3e14ec9d96d8107..90f7b06bd2c558be35c4577044fa033e
 +        this.readColumn(chunkPos, NbtOps.INSTANCE, compound);
 +        // Paper end - expose function to load in data
      }
-
+ 
      @Nullable
      private CompoundTag tryRead(ChunkPos pos) {
          try {
@@ -3543,9 +3511,9 @@ index e5e138fb23d03eb63e547e74d3e14ec9d96d8107..90f7b06bd2c558be35c4577044fa033e
          } else {
              LOGGER.error("Expected compound tag, got {}", (Object)tag);
          }
-
+ 
      }
-
+ 
 +    // Paper start - internal get data function, copied from above
 +    private CompoundTag getDataInternal(ChunkPos chunkcoordintpair) {
 +        Dynamic<Tag> dynamic = this.writeColumn(chunkcoordintpair, NbtOps.INSTANCE);
@@ -3561,7 +3529,7 @@ index e5e138fb23d03eb63e547e74d3e14ec9d96d8107..90f7b06bd2c558be35c4577044fa033e
 +    // Paper end
      private <T> Dynamic<T> writeColumn(ChunkPos chunkPos, DynamicOps<T> dynamicOps) {
          Map<T, T> map = Maps.newHashMap();
-
+ 
 @@ -219,6 +238,23 @@ public class SectionStorage<R> implements AutoCloseable {
  
      @Override
