@@ -8,10 +8,10 @@ ticket level 33 (yes getChunkIfLoaded will actually perform a chunk
 load in that case).
 
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index 5f28cca2793cc9b9c795033e112043d89642c858..43a740eb644629bf88d60d7ab559793a1965f9d8 100644
+index 095a1850fbc0f86ed73d9e321b09e059715dd1e0..27f03389f905e8e051eb4148016de7868c385819 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
-@@ -203,7 +203,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
+@@ -211,7 +211,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
      }
  
      @Override public LevelChunk getChunkIfLoaded(int x, int z) { // Paper - this was added in world too but keeping here for NMS ABI
@@ -19,12 +19,12 @@ index 5f28cca2793cc9b9c795033e112043d89642c858..43a740eb644629bf88d60d7ab559793a
 +        return this.chunkSource.getChunkAtIfLoadedImmediately(x, z); // Paper
      }
  
-     // Paper start
+     @Override
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index d4f0fcff776012841798a0962207e2cb951ac28e..d40c4c491c4ce19b59cb095cdb5f5e83373356f1 100644
+index b0c319175b40b0f1ac87152eb64b6b60ddc36464..8705df3ca3df6b4aa77b38e1a0b6ad5fc3bc3f28 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-@@ -1310,7 +1310,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+@@ -1309,7 +1309,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
                                  speed = this.player.getAbilities().walkingSpeed * 10f;
                              }
                              // Paper start - Prevent moving into unloaded chunks
@@ -34,7 +34,7 @@ index d4f0fcff776012841798a0962207e2cb951ac28e..d40c4c491c4ce19b59cb095cdb5f5e83
                                  return;
                              }
 diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
-index 4dae0525be49bedadd75276c2668209b602ff967..d0cfa782498eca8a13ce7d7f28d5e55ae4e402fa 100644
+index 4def51a0b2a133cf1fb2358974db2533aae0a807..e5cb991543c695bc90256ef250a1d695ac5bc17d 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
 +++ b/src/main/java/net/minecraft/world/level/Level.java
 @@ -193,6 +193,13 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
@@ -44,14 +44,14 @@ index 4dae0525be49bedadd75276c2668209b602ff967..d0cfa782498eca8a13ce7d7f28d5e55a
 +    // Paper start
 +    @Override
 +    public boolean hasChunk(int chunkX, int chunkZ) {
-+        return ((ServerLevel) this).getChunkIfLoaded(chunkX, chunkZ) != null;
++        return this.getChunkIfLoaded(chunkX, chunkZ) != null;
 +    }
 +    // Paper end
 +
-     public ResourceKey<DimensionType> getTypeKey() {
-         return this.typeKey;
-     }
-@@ -1362,7 +1369,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+     public abstract ResourceKey<LevelStem> getTypeKey();
+ 
+     protected Level(WritableLevelData worlddatamutable, ResourceKey<Level> resourcekey, final DimensionType dimensionmanager, Supplier<ProfilerFiller> supplier, boolean flag, boolean flag1, long i, org.bukkit.generator.ChunkGenerator gen, org.bukkit.generator.BiomeProvider biomeProvider, org.bukkit.World.Environment env) {
+@@ -1363,7 +1370,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
  
          for (int l1 = j; l1 <= l; ++l1) {
              for (int i2 = k; i2 <= i1; ++i2) {

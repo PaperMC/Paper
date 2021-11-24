@@ -6,7 +6,7 @@ Subject: [PATCH] Add more LimitedRegion API
 
 diff --git a/src/main/java/io/papermc/paper/world/generation/CraftProtoWorld.java b/src/main/java/io/papermc/paper/world/generation/CraftProtoWorld.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..1c6668c2b5e1816db7e0ebabc99af3586849e606
+index 0000000000000000000000000000000000000000..3160766243e2ce90d07f71d02c7410ff4e9d9562
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/world/generation/CraftProtoWorld.java
 @@ -0,0 +1,116 @@
@@ -65,19 +65,19 @@ index 0000000000000000000000000000000000000000..1c6668c2b5e1816db7e0ebabc99af358
 +    @Override
 +    public @NotNull BlockState getBlockState(int x, int y, int z) {
 +        BlockEntity entity = getDelegate().getBlockEntity(new BlockPos(x, y, z));
-+        return CraftMetaBlockState.createBlockState(entity.getBlockState().getBukkitMaterial(), entity.save(new CompoundTag()));
++        return CraftMetaBlockState.createBlockState(entity.getBlockState().getBukkitMaterial(), entity.saveWithFullMetadata());
 +    }
 +
 +    @Override
 +    public void scheduleBlockUpdate(int x, int y, int z) {
 +        BlockPos position = new BlockPos(x, y, z);
-+        getDelegate().getBlockTicks().scheduleTick(position, getDelegate().getBlockIfLoaded(position), 0);
++        getDelegate().scheduleTick(position, getDelegate().getBlockIfLoaded(position), 0);
 +    }
 +
 +    @Override
 +    public void scheduleFluidUpdate(int x, int y, int z) {
 +        BlockPos position = new BlockPos(x, y, z);
-+        getDelegate().getLiquidTicks().scheduleTick(position, getDelegate().getFluidState(position).getType(), 0);
++        getDelegate().scheduleTick(position, getDelegate().getFluidState(position).getType(), 0);
 +    }
 +
 +    @Override
@@ -116,7 +116,7 @@ index 0000000000000000000000000000000000000000..1c6668c2b5e1816db7e0ebabc99af358
 +            function.accept((T) entity.getBukkitEntity());
 +        }
 +
-+        getDelegate().addEntity(entity, reason);
++        getDelegate().addFreshEntity(entity, reason);
 +        return (T) entity.getBukkitEntity();
 +    }
 +
@@ -127,7 +127,7 @@ index 0000000000000000000000000000000000000000..1c6668c2b5e1816db7e0ebabc99af358
 +}
 +
 diff --git a/src/main/java/org/bukkit/craftbukkit/generator/CraftLimitedRegion.java b/src/main/java/org/bukkit/craftbukkit/generator/CraftLimitedRegion.java
-index d91c88d7bdfd954fa81fbf1c9ad92161d70993a6..f5ef7e026061351590f1ce77694e2d8fb8521048 100644
+index 94fee76f0b2145e3cf99460c407815bb32bd19d0..671ec060981790043f5685a5b647324ddfee6af2 100644
 --- a/src/main/java/org/bukkit/craftbukkit/generator/CraftLimitedRegion.java
 +++ b/src/main/java/org/bukkit/craftbukkit/generator/CraftLimitedRegion.java
 @@ -151,7 +151,10 @@ public class CraftLimitedRegion extends CraftRegionAccessor implements LimitedRe
@@ -137,7 +137,7 @@ index d91c88d7bdfd954fa81fbf1c9ad92161d70993a6..f5ef7e026061351590f1ce77694e2d8f
 -        return super.getBlockState(x, y, z);
 +        // Paper start
 +        net.minecraft.world.level.block.entity.BlockEntity entity = getHandle().getBlockEntity(new BlockPos(x, y, z));
-+        return org.bukkit.craftbukkit.inventory.CraftMetaBlockState.createBlockState(entity.getBlockState().getBukkitMaterial(), entity.save(new CompoundTag()));
++        return org.bukkit.craftbukkit.inventory.CraftMetaBlockState.createBlockState(entity.getBlockState().getBukkitMaterial(), entity.saveWithFullMetadata());
 +        // Paper end
      }
  
@@ -169,13 +169,13 @@ index d91c88d7bdfd954fa81fbf1c9ad92161d70993a6..f5ef7e026061351590f1ce77694e2d8f
 +    @Override
 +    public void scheduleBlockUpdate(int x, int y, int z) {
 +        BlockPos position = new BlockPos(x, y, z);
-+        getHandle().getBlockTicks().scheduleTick(position, getHandle().getBlockIfLoaded(position), 0);
++        getHandle().scheduleTick(position, getHandle().getBlockIfLoaded(position), 0);
 +    }
 +
 +    @Override
 +    public void scheduleFluidUpdate(int x, int y, int z) {
 +        BlockPos position = new BlockPos(x, y, z);
-+        getHandle().getLiquidTicks().scheduleTick(position, getHandle().getFluidState(position).getType(), 0);
++        getHandle().scheduleTick(position, getHandle().getFluidState(position).getType(), 0);
 +    }
 +
 +    @Override
@@ -198,12 +198,12 @@ index d91c88d7bdfd954fa81fbf1c9ad92161d70993a6..f5ef7e026061351590f1ce77694e2d8f
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/generator/CustomChunkGenerator.java b/src/main/java/org/bukkit/craftbukkit/generator/CustomChunkGenerator.java
-index eb82aaf9dcbc912d780a90842601da85497fa443..1b05bb78eaee548806df8ebfff1a1401e30d52e0 100644
+index c8e81b0a5495cd138a7b7a4aed98fd64beda59aa..cb49867045b1fdd9802ec815ab6bc17a6923c822 100644
 --- a/src/main/java/org/bukkit/craftbukkit/generator/CustomChunkGenerator.java
 +++ b/src/main/java/org/bukkit/craftbukkit/generator/CustomChunkGenerator.java
-@@ -196,6 +196,12 @@ public class CustomChunkGenerator extends InternalChunkGenerator {
+@@ -205,6 +205,12 @@ public class CustomChunkGenerator extends InternalChunkGenerator {
          for (BlockPos lightPosition : craftData.getLights()) {
-             ((ProtoChunk) chunk).addLight(new BlockPos((x << 4) + lightPosition.getX(), lightPosition.getY(), (z << 4) + lightPosition.getZ())); // PAIL rename addLightBlock
+             ((ProtoChunk) chunk).addLight(new BlockPos((x << 4) + lightPosition.getX(), lightPosition.getY(), (z << 4) + lightPosition.getZ()));
          }
 +
 +        // Paper start
