@@ -44,25 +44,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        // Paper end
      }
  }
-diff --git a/src/main/java/net/minecraft/world/entity/ai/sensing/NearestLivingEntitySensor.java b/src/main/java/net/minecraft/world/entity/ai/sensing/NearestLivingEntitySensor.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/world/entity/ai/sensing/NearestLivingEntitySensor.java
-+++ b/src/main/java/net/minecraft/world/entity/ai/sensing/NearestLivingEntitySensor.java
-@@ -0,0 +0,0 @@ public class NearestLivingEntitySensor extends Sensor<LivingEntity> {
-         list.sort(Comparator.comparingDouble(entity::distanceToSqr));
-         Brain<?> brain = entity.getBrain();
-         brain.setMemory(MemoryModuleType.NEAREST_LIVING_ENTITIES, list);
--        brain.setMemory(MemoryModuleType.NEAREST_VISIBLE_LIVING_ENTITIES, list.stream().filter((livingEntity2) -> {
--            return isEntityTargetable(entity, livingEntity2);
--        }).collect(Collectors.toList()));
-+        // Paper start - remove streams in favour of lists
-+        List<LivingEntity> visibleMobs = new java.util.ArrayList<>(list);
-+        visibleMobs.removeIf(otherEntityLiving -> !Sensor.isEntityTargetable(entity, otherEntityLiving));
-+        brain.setMemory(MemoryModuleType.NEAREST_VISIBLE_LIVING_ENTITIES, visibleMobs);
-+        // Paper end
-     }
- 
-     @Override
 diff --git a/src/main/java/net/minecraft/world/entity/ai/sensing/PlayerSensor.java b/src/main/java/net/minecraft/world/entity/ai/sensing/PlayerSensor.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/sensing/PlayerSensor.java
@@ -71,12 +52,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      @Override
      protected void doTick(ServerLevel world, LivingEntity entity) {
--        List<Player> list = world.players().stream().filter(EntitySelector.NO_SPECTATORS).filter((serverPlayer) -> {
--            return entity.closerThan(serverPlayer, 16.0D);
+-        List<Player> list = world.players().stream().filter(EntitySelector.NO_SPECTATORS).filter((player) -> {
+-            return entity.closerThan(player, 16.0D);
 -        }).sorted(Comparator.comparingDouble(entity::distanceToSqr)).collect(Collectors.toList());
-+        // Paper start - remove streams in favour of lists
-+        List<Player> players = new java.util.ArrayList<>(world.players());
-+        players.removeIf(player -> !EntitySelector.NO_SPECTATORS.test(player) || !entity.closerThan(player, 16.0D)); // Paper - removeIf only re-allocates once compared to iterator
++        List<Player> players= new java.util.ArrayList<>(world.players());
++        players.removeIf(player -> !EntitySelector.NO_SPECTATORS.test(player) || !entity.closerThan(player, 16.0D));
++        players.sort(Comparator.comparingDouble(entity::distanceTo));
          Brain<?> brain = entity.getBrain();
 -        brain.setMemory(MemoryModuleType.NEAREST_PLAYERS, list);
 -        List<Player> list2 = list.stream().filter((player) -> {
