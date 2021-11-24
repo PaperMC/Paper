@@ -14,7 +14,7 @@ And since minecart hoppers are used _very_ rarely near we can avoid alot of sear
 Combined, this adds up a lot.
 
 diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
-index 04ef0245877ab7e6978149209549151e4f157920..de069f9f7af5ff3e346d68e254ae7138fb19f3f3 100644
+index 77e58257dc3fb517aeca8f8436a4279aa133b570..9842e4d39130f45481b643df38ee4b25076c5c08 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
 +++ b/src/main/java/net/minecraft/world/level/Level.java
 @@ -985,7 +985,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
@@ -27,7 +27,7 @@ index 04ef0245877ab7e6978149209549151e4f157920..de069f9f7af5ff3e346d68e254ae7138
      }
  
 diff --git a/src/main/java/net/minecraft/world/level/entity/EntitySection.java b/src/main/java/net/minecraft/world/level/entity/EntitySection.java
-index 06649ebed94f2d3e1a076e06e1027e4ee37a8c37..8cf4373486cbb913f9876891ed3bd6f5ee2b405f 100644
+index e3027cae3674502bdc34fdbd7002980515ffc837..07691d38960add169d24bc830ac7b951bd5afaef 100644
 --- a/src/main/java/net/minecraft/world/level/entity/EntitySection.java
 +++ b/src/main/java/net/minecraft/world/level/entity/EntitySection.java
 @@ -13,6 +13,10 @@ public class EntitySection<T extends EntityAccess> {
@@ -44,60 +44,59 @@ index 06649ebed94f2d3e1a076e06e1027e4ee37a8c37..8cf4373486cbb913f9876891ed3bd6f5
 @@ -20,10 +24,24 @@ public class EntitySection<T extends EntityAccess> {
      }
  
-     public void add(T entityAccess) {
+     public void add(T entity) {
 +        // Paper start
-+        if (entityAccess instanceof net.minecraft.world.entity.item.ItemEntity) {
++        if (entity instanceof net.minecraft.world.entity.item.ItemEntity) {
 +            this.itemCount++;
-+        } else if (entityAccess instanceof net.minecraft.world.Container) {
++        } else if (entity instanceof net.minecraft.world.Container) {
 +            this.inventoryEntityCount++;
 +        }
 +        // Paper end
-         this.storage.add(entityAccess);
+         this.storage.add(entity);
      }
  
-     public boolean remove(T entityAccess) {
+     public boolean remove(T entity) {
 +        // Paper start
-+        if (entityAccess instanceof net.minecraft.world.entity.item.ItemEntity) {
++        if (entity instanceof net.minecraft.world.entity.item.ItemEntity) {
 +            this.itemCount--;
-+        } else if (entityAccess instanceof net.minecraft.world.Container) {
++        } else if (entity instanceof net.minecraft.world.Container) {
 +            this.inventoryEntityCount--;
 +        }
 +        // Paper end
-         return this.storage.remove(entityAccess);
+         return this.storage.remove(entity);
      }
  
 @@ -42,7 +60,7 @@ public class EntitySection<T extends EntityAccess> {
              for(T entityAccess : collection) {
                  U entityAccess2 = (U)((EntityAccess)type.tryCast(entityAccess));
-                 if (entityAccess2 != null && entityAccess.getBoundingBox().intersects(aABB)) {
+                 if (entityAccess2 != null && entityAccess.getBoundingBox().intersects(box)) {
 -                    action.accept((T)entityAccess2);
 +                    action.accept(entityAccess2); // Paper - decompile fixes
                  }
              }
  
 diff --git a/src/main/java/net/minecraft/world/level/entity/EntitySectionStorage.java b/src/main/java/net/minecraft/world/level/entity/EntitySectionStorage.java
-index 2e070899554a04c6be650b5b0557b704f972d63b..344e994887e44477c0fb070b5ddcbdb18e6d8e67 100644
+index 13df7889b2b5249fb81c54fadf55315a4c515116..984e940a1d8060e5945a6efd10c9f81bed2bf057 100644
 --- a/src/main/java/net/minecraft/world/level/entity/EntitySectionStorage.java
 +++ b/src/main/java/net/minecraft/world/level/entity/EntitySectionStorage.java
-@@ -111,13 +111,20 @@ public class EntitySectionStorage<T extends EntityAccess> {
+@@ -111,13 +111,19 @@ public class EntitySectionStorage<T extends EntityAccess> {
      }
  
      public void getEntities(AABB box, Consumer<T> action) {
 +        // Paper start
-+        this.getEntities(box, action, false);
 +    }
 +    public void getEntities(AABB box, Consumer<T> action, boolean isContainerSearch) {
 +        // Paper end
-         this.forEachAccessibleNonEmptySection(box, (entitySection) -> {
-+            if (isContainerSearch && entitySection.inventoryEntityCount <= 0) return; // Paper
-             entitySection.getEntities(box, action);
+         this.forEachAccessibleNonEmptySection(box, (section) -> {
++            if (isContainerSearch && section.inventoryEntityCount <= 0) return; // Paper
+             section.getEntities(box, action);
          });
      }
  
      public <U extends T> void getEntities(EntityTypeTest<T, U> filter, AABB box, Consumer<U> action) {
-         this.forEachAccessibleNonEmptySection(box, (entitySection) -> {
-+            if (filter.getBaseClass() == net.minecraft.world.entity.item.ItemEntity.class && entitySection.itemCount <= 0) return; // Paper
-             entitySection.getEntities(filter, box, action);
+         this.forEachAccessibleNonEmptySection(box, (section) -> {
++            if (filter.getBaseClass() == net.minecraft.world.entity.item.ItemEntity.class && section.itemCount <= 0) return; // Paper
+             section.getEntities(filter, box, action);
          });
      }
 diff --git a/src/main/java/net/minecraft/world/level/entity/LevelEntityGetter.java b/src/main/java/net/minecraft/world/level/entity/LevelEntityGetter.java

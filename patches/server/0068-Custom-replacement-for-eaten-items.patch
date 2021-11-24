@@ -5,25 +5,25 @@ Subject: [PATCH] Custom replacement for eaten items
 
 
 diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-index 60356e889f2da17b313ee5cf223ee0c5066182c4..c8e60153986e9be21a1e372d5c1cb25c762ab81b 100644
+index 09cea6b92aa8a0b60716163b7bda61823268bed7..76da306041b61f6c93e6f58f580054af7dfc234e 100644
 --- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-@@ -3563,9 +3563,10 @@ public abstract class LivingEntity extends Entity {
-                 this.triggerItemUseEffects(this.useItem, 16);
-                 // CraftBukkit start - fire PlayerItemConsumeEvent
-                 ItemStack itemstack;
+@@ -3564,9 +3564,10 @@ public abstract class LivingEntity extends Entity {
+                     this.triggerItemUseEffects(this.useItem, 16);
+                     // CraftBukkit start - fire PlayerItemConsumeEvent
+                     ItemStack itemstack;
 +                PlayerItemConsumeEvent event = null; // Paper
-                 if (this instanceof ServerPlayer) {
-                     org.bukkit.inventory.ItemStack craftItem = CraftItemStack.asBukkitCopy(this.useItem);
--                    PlayerItemConsumeEvent event = new PlayerItemConsumeEvent((Player) this.getBukkitEntity(), craftItem);
+                     if (this instanceof ServerPlayer) {
+                         org.bukkit.inventory.ItemStack craftItem = CraftItemStack.asBukkitCopy(this.useItem);
+-                        PlayerItemConsumeEvent event = new PlayerItemConsumeEvent((Player) this.getBukkitEntity(), craftItem);
 +                    event = new PlayerItemConsumeEvent((Player) this.getBukkitEntity(), craftItem); // Paper
-                     level.getCraftServer().getPluginManager().callEvent(event);
+                         level.getCraftServer().getPluginManager().callEvent(event);
  
-                     if (event.isCancelled()) {
-@@ -3579,6 +3580,13 @@ public abstract class LivingEntity extends Entity {
-                 } else {
-                     itemstack = this.useItem.finishUsingItem(this.level, this);
-                 }
+                         if (event.isCancelled()) {
+@@ -3580,6 +3581,13 @@ public abstract class LivingEntity extends Entity {
+                     } else {
+                         itemstack = this.useItem.finishUsingItem(this.level, this);
+                     }
 +
 +                // Paper start - save the default replacement item and change it if necessary
 +                final ItemStack defaultReplacement = itemstack;
@@ -31,18 +31,18 @@ index 60356e889f2da17b313ee5cf223ee0c5066182c4..c8e60153986e9be21a1e372d5c1cb25c
 +                    itemstack = CraftItemStack.asNMSCopy(event.getReplacement());
 +                }
 +                // Paper end
-                 // CraftBukkit end
+                     // CraftBukkit end
  
-                 if (itemstack != this.useItem) {
-@@ -3586,6 +3594,11 @@ public abstract class LivingEntity extends Entity {
-                 }
+                     if (itemstack != this.useItem) {
+@@ -3587,6 +3595,11 @@ public abstract class LivingEntity extends Entity {
+                     }
  
-                 this.stopUsingItem();
+                     this.stopUsingItem();
 +                // Paper start - if the replacement is anything but the default, update the client inventory
 +                if (this instanceof ServerPlayer && !com.google.common.base.Objects.equal(defaultReplacement, itemstack)) {
 +                    ((ServerPlayer) this).getBukkitEntity().updateInventory();
 +                }
 +                // Paper end
-             }
+                 }
  
-         }
+             }

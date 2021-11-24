@@ -8,7 +8,7 @@ This patch also adds a chunk status cache on region files (note that
 its only purpose is to cache the status on DISK)
 
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index a605b0868b8214408e20419e336ad52659b12e4f..18d442feb77f7763d8f6c411b0e5cb0aeca1f725 100644
+index 347cb9f7d403047b99c913a96292147ebbaaff2b..d302c074d8808145e425380eb0f8e5ccf8f256c3 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
 @@ -86,6 +86,7 @@ import net.minecraft.world.level.chunk.ProtoChunk;
@@ -19,7 +19,7 @@ index a605b0868b8214408e20419e336ad52659b12e4f..18d442feb77f7763d8f6c411b0e5cb0a
  import net.minecraft.world.level.entity.ChunkStatusUpdateListener;
  import net.minecraft.world.level.levelgen.blending.BlendingData;
  import net.minecraft.world.level.levelgen.structure.StructureStart;
-@@ -1182,10 +1183,59 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1210,10 +1211,59 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
      @Nullable
      public CompoundTag readChunk(ChunkPos pos) throws IOException {
          CompoundTag nbttagcompound = this.read(pos);
@@ -103,7 +103,7 @@ index 328f482a0bae8d2f8013ae9a90f0500ef889ffb5..6c72854aa975800bd6160d104936a5ba
          return (ChunkStatus) Registry.CHUNK_STATUS.get(ResourceLocation.tryParse(id));
      }
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
-index 3215238699f46d64d0291597f5936d1f3d7b6d6c..cef593299d6363eb9d07e8d2ef0b0ad49d63a0f2 100644
+index 9168bc15f8fbc8719e6c83428b8241053505441e..384ee6fbc65baff381d875665fd2462dbc99683e 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
 @@ -597,6 +597,17 @@ public class ChunkSerializer {
@@ -125,7 +125,7 @@ index 3215238699f46d64d0291597f5936d1f3d7b6d6c..cef593299d6363eb9d07e8d2ef0b0ad4
          return nbt != null ? ChunkStatus.byName(nbt.getString("Status")).getChunkType() : ChunkStatus.ChunkType.PROTOCHUNK;
      }
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
-index d511db5453b722f747cc24cf2b4d97a0be75ce6a..988bc12ce011839dddbcb2f3ff96ed3829b3538e 100644
+index 44de464b5f2190944c7a7316a76e13f9c3b954ab..293cce2c80fbdc18480977f5f6b24d6b4fa8dcf3 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
 @@ -24,6 +24,7 @@ import net.minecraft.Util;
@@ -164,8 +164,8 @@ index d511db5453b722f747cc24cf2b4d97a0be75ce6a..988bc12ce011839dddbcb2f3ff96ed38
 +    }
 +    // Paper end
 +
-     public RegionFile(Path path, Path path1, boolean dsync) throws IOException {
-         this(path, path1, RegionFileVersion.VERSION_DEFLATE, dsync);
+     public RegionFile(Path file, Path directory, boolean dsync) throws IOException {
+         this(file, directory, RegionFileVersion.VERSION_DEFLATE, dsync);
      }
 @@ -398,6 +423,7 @@ public class RegionFile implements AutoCloseable {
          return this.getOffset(pos) != 0;
