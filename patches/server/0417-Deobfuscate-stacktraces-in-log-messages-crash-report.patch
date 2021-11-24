@@ -6,20 +6,17 @@ Subject: [PATCH] Deobfuscate stacktraces in log messages, crash reports, and
 
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index 44f5a30a16f3d5604cd99bb39c8d744bb607d923..8f65d5d3a5fa58394b0e398bed80044aec3fcc7c 100644
+index caf8a5d3797883b4dad64a9da6b566c92cf1c506..99ab6194dbcea67875c6cdf3f29bb41fff4a39b9 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
-@@ -1,7 +1,9 @@
- import com.github.jengelman.gradle.plugins.shadow.transformers.Log4j2PluginsCacheFileTransformer
- import com.github.jengelman.gradle.plugins.shadow.transformers.Transformer
+@@ -1,4 +1,6 @@
 +import io.papermc.paperweight.tasks.BaseTask
  import io.papermc.paperweight.util.*
- import shadow.org.apache.logging.log4j.core.config.plugins.processor.PluginProcessor.PLUGIN_CACHE_FILE
 +import java.nio.file.Files
  import java.util.Locale
  
  plugins {
-@@ -12,6 +14,11 @@ plugins {
+@@ -9,6 +11,11 @@ plugins {
  
  repositories {
      maven("https://libraries.minecraft.net/")
@@ -31,7 +28,15 @@ index 44f5a30a16f3d5604cd99bb39c8d744bb607d923..8f65d5d3a5fa58394b0e398bed80044a
  }
  
  dependencies {
-@@ -43,6 +50,8 @@ dependencies {
+@@ -24,6 +31,7 @@ dependencies {
+           Scanning takes about 1-2 seconds so adding this speeds up the server start.
+      */
+     implementation("org.apache.logging.log4j:log4j-core:2.14.1") // Paper - implementation
++    annotationProcessor("org.apache.logging.log4j:log4j-core:2.14.1") // Paper - Needed to generate meta for our Log4j plugins
+     // Paper end
+     implementation("org.apache.logging.log4j:log4j-iostreams:2.14.1") // Paper
+     implementation("org.ow2.asm:asm:9.2")
+@@ -40,6 +48,8 @@ dependencies {
      runtimeOnly("org.apache.maven.resolver:maven-resolver-connector-basic:1.7.0")
      runtimeOnly("org.apache.maven.resolver:maven-resolver-transport-http:1.7.0")
  
@@ -40,16 +45,8 @@ index 44f5a30a16f3d5604cd99bb39c8d744bb607d923..8f65d5d3a5fa58394b0e398bed80044a
      testImplementation("junit:junit:4.13.1")
      testImplementation("org.hamcrest:hamcrest-library:1.3")
  }
-@@ -87,6 +96,7 @@ relocation {
-     relocate("org.bukkit.craftbukkit" to "org.bukkit.craftbukkit.v$packageVersion") {
-         exclude("org.bukkit.craftbukkit.Main*")
+@@ -106,6 +116,45 @@ tasks.shadowJar {
      }
-+    relocate("net.fabricmc.mapping-io" to "io.papermc.dependency.mappingio") // Paper
- }
- 
- val generatePom = tasks.named<GenerateMavenPom>("generatePomFileForMavenPublication")
-@@ -111,6 +121,45 @@ tasks.shadowJar {
-     transform(ModifiedLog4j2PluginsCacheFileTransformer::class.java)
  }
  
 +// Paper start - include reobf mappings in jar for stacktrace deobfuscation
