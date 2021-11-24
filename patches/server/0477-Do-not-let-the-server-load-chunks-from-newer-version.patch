@@ -9,23 +9,20 @@ the game, immediately stop the server to prevent data corruption.
 You can override this functionality at your own peril.
 
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
-index ed05a11f5038fdac90576ca33a0b710c83ab39a1..80b9f3547bc30cb470d272132e96fcce188efd91 100644
+index 5c21871c7bdfce191db499860725da769dc9caac..d44ce73ea91abd7199695c417c534b6e4ca34e6a 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
-@@ -96,10 +96,25 @@ public class ChunkSerializer {
-         holder.tasks.forEach(Runnable::run);
+@@ -103,9 +103,22 @@ public class ChunkSerializer {
          return holder.protoChunk;
      }
-+
+ 
 +    // Paper start
-+    private static final int CURRENT_DATA_VERSION = SharedConstants.getCurrentVersion().getWorldVersion();
++    private static final int CURRENT_DATA_VERSION = SharedConstants.getCurrentVersion().getDataVersion().getVersion();
 +    private static final boolean JUST_CORRUPT_IT = Boolean.getBoolean("Paper.ignoreWorldDataVersion");
 +    // Paper end
-+
-     public static InProgressChunkHolder loadChunk(ServerLevel world, StructureManager structureManager, PoiManager poiStorage, ChunkPos pos, CompoundTag nbt, boolean distinguish) {
+     public static InProgressChunkHolder loadChunk(ServerLevel world, PoiManager poiStorage, ChunkPos chunkPos, CompoundTag nbt, boolean distinguish) {
          java.util.ArrayDeque<Runnable> tasksToExecuteOnMain = new java.util.ArrayDeque<>();
          // Paper end
-         ChunkGenerator chunkgenerator = world.getChunkSource().getGenerator();
 +        // Paper start - Do NOT attempt to load chunks saved with newer versions
 +        if (nbt.contains("DataVersion", 99)) {
 +            int dataVersion = nbt.getInt("DataVersion");
@@ -35,6 +32,6 @@ index ed05a11f5038fdac90576ca33a0b710c83ab39a1..80b9f3547bc30cb470d272132e96fcce
 +            }
 +        }
 +        // Paper end
-         BiomeSource worldchunkmanager = chunkgenerator.getBiomeSource();
-         CompoundTag nbttagcompound1 = nbt.getCompound("Level"); // Paper - diff on change, see ChunkSerializer#getChunkCoordinate
-         ChunkPos chunkcoordintpair1 = new ChunkPos(nbttagcompound1.getInt("xPos"), nbttagcompound1.getInt("zPos")); // Paper - diff on change, see ChunkSerializer#getChunkCoordinate
+         ChunkPos chunkcoordintpair1 = new ChunkPos(nbt.getInt("xPos"), nbt.getInt("zPos")); // Paper - diff on change, see ChunkSerializer#getChunkCoordinate
+ 
+         if (!Objects.equals(chunkPos, chunkcoordintpair1)) {

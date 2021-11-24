@@ -5,7 +5,7 @@ Subject: [PATCH] Brand support
 
 
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index ce4f1ab41ec2e5f656114fbd7b6f825bccf15d17..76794189454f5dd935fcd77e3c89a1ce58a9b570 100644
+index 26bd27d3dd6e99488fd0a77257866b1eb1b191b8..c5fc4a2470093202f38472df84355ba0404645c5 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 @@ -4,6 +4,7 @@ import com.google.common.collect.Lists;
@@ -16,15 +16,15 @@ index ce4f1ab41ec2e5f656114fbd7b6f825bccf15d17..76794189454f5dd935fcd77e3c89a1ce
  import io.netty.util.concurrent.Future;
  import io.netty.util.concurrent.GenericFutureListener;
  import it.unimi.dsi.fastutil.ints.Int2ObjectMap.Entry;
-@@ -38,6 +39,7 @@ import net.minecraft.nbt.ListTag;
+@@ -37,6 +38,7 @@ import net.minecraft.nbt.CompoundTag;
+ import net.minecraft.nbt.ListTag;
  import net.minecraft.nbt.StringTag;
- import net.minecraft.nbt.Tag;
  import net.minecraft.network.Connection;
 +import net.minecraft.network.FriendlyByteBuf;
  import net.minecraft.network.chat.ChatType;
  import net.minecraft.network.chat.Component;
  import net.minecraft.network.chat.MutableComponent;
-@@ -258,6 +260,8 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+@@ -257,6 +259,8 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
      private static final int MAX_SIGN_LINE_LENGTH = Integer.getInteger("Paper.maxSignLength", 80);
      private static final long KEEPALIVE_LIMIT = Long.getLong("paper.playerconnection.keepalive", 30) * 1000; // Paper - provide property to set keepalive limit
  
@@ -33,7 +33,7 @@ index ce4f1ab41ec2e5f656114fbd7b6f825bccf15d17..76794189454f5dd935fcd77e3c89a1ce
      public ServerGamePacketListenerImpl(MinecraftServer server, Connection connection, ServerPlayer player) {
          this.server = server;
          this.connection = connection;
-@@ -2992,6 +2996,8 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+@@ -2996,6 +3000,8 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
      private static final ResourceLocation CUSTOM_REGISTER = new ResourceLocation("register");
      private static final ResourceLocation CUSTOM_UNREGISTER = new ResourceLocation("unregister");
  
@@ -42,7 +42,7 @@ index ce4f1ab41ec2e5f656114fbd7b6f825bccf15d17..76794189454f5dd935fcd77e3c89a1ce
      @Override
      public void handleCustomPayload(ServerboundCustomPayloadPacket packet) {
          PacketUtils.ensureRunningOnSameThread(packet, this, this.player.getLevel());
-@@ -3019,6 +3025,15 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+@@ -3023,6 +3029,15 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
              try {
                  byte[] data = new byte[packet.data.readableBytes()];
                  packet.data.readBytes(data);
@@ -58,7 +58,7 @@ index ce4f1ab41ec2e5f656114fbd7b6f825bccf15d17..76794189454f5dd935fcd77e3c89a1ce
                  this.cserver.getMessenger().dispatchIncomingMessage(this.player.getBukkitEntity(), packet.identifier.toString(), data);
              } catch (Exception ex) {
                  ServerGamePacketListenerImpl.LOGGER.error("Couldn\'t dispatch custom payload", ex);
-@@ -3028,6 +3043,12 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+@@ -3032,6 +3047,12 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
  
      }
  
@@ -72,10 +72,10 @@ index ce4f1ab41ec2e5f656114fbd7b6f825bccf15d17..76794189454f5dd935fcd77e3c89a1ce
          return (!this.player.joining && !this.connection.isConnected()) || this.processedDisconnect; // Paper
      }
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index 21a2f83aa91a41ea1f4e9e87e804d587838c0d45..c15d0bc8df85b81f8dec2d17b3b6eee9ef9ad1c8 100644
+index ac535aef823ebe286847dafb8b0678de5d3128a1..465961e0e21fe15c366a492a1de94c6da7bbc51c 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-@@ -2484,6 +2484,13 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -2482,6 +2482,13 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          // Paper end
      };
  
