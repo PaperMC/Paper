@@ -28,10 +28,10 @@ index 67fb370cad6924895a6b27052dbd5c1767e3f0c9..bb338269c9e3bef4c274157c490d8b8f
 +/.factorypath
 diff --git a/build.gradle.kts b/build.gradle.kts
 new file mode 100644
-index 0000000000000000000000000000000000000000..273746fe476a9a09ebca01c6ecd814b70fe1b4c2
+index 0000000000000000000000000000000000000000..a19e05379d81e6f0bb0a78bc734a1cfdd355dc74
 --- /dev/null
 +++ b/build.gradle.kts
-@@ -0,0 +1,145 @@
+@@ -0,0 +1,153 @@
 +import com.github.jengelman.gradle.plugins.shadow.transformers.Log4j2PluginsCacheFileTransformer
 +import com.github.jengelman.gradle.plugins.shadow.transformers.Transformer
 +import io.papermc.paperweight.util.*
@@ -130,29 +130,37 @@ index 0000000000000000000000000000000000000000..273746fe476a9a09ebca01c6ecd814b7
 +}
 +
 +fun TaskContainer.registerRunTask(
-+    name: String, block: JavaExec.() -> Unit
++    name: String,
++    block: JavaExec.() -> Unit
 +): TaskProvider<JavaExec> = register<JavaExec>(name) {
 +    group = "paper"
 +    standardInput = System.`in`
-+    workingDir = rootProject.layout.projectDirectory.dir(
-+        providers.gradleProperty("runWorkDir").forUseAtConfigurationTime().orElse("run")
-+    ).get().asFile
++    workingDir = rootProject.layout.projectDirectory
++        .dir(providers.gradleProperty("paper.runWorkDir").forUseAtConfigurationTime().getOrElse("run"))
++        .asFile
++    javaLauncher.set(project.javaToolchains.defaultJavaLauncher(project))
 +
 +    if (rootProject.childProjects["test-plugin"] != null) {
 +        val testPluginJar = rootProject.project(":test-plugin").tasks.jar.flatMap { it.archiveFile }
 +        inputs.file(testPluginJar)
-+        // args("-add-plugin=${testPluginJar.get().asFile.absolutePath}") // todo - uncomment
++        args("-add-plugin=${testPluginJar.get().asFile.absolutePath}")
 +    }
 +
 +    args("--nogui")
 +    systemProperty("net.kyori.adventure.text.warnWhenLegacyFormattingDetected", true)
-+    if (project.hasProperty("disableWatchdog")) {
++    if (providers.gradleProperty("paper.runDisableWatchdog").getOrElse("false") == "true") {
 +        systemProperty("disable.watchdog", true)
 +    }
++
++    val memoryGb = providers.gradleProperty("paper.runMemoryGb").forUseAtConfigurationTime().getOrElse("2")
++    val modifiedJvmArgs = jvmArgs ?: arrayListOf()
++    modifiedJvmArgs.addAll(listOf("-Xms${memoryGb}G", "-Xmx${memoryGb}G"))
++    jvmArgs = modifiedJvmArgs
++
 +    doFirst {
 +        workingDir.mkdirs()
 +    }
-+    javaLauncher.set(project.javaToolchains.defaultJavaLauncher(project))
++
 +    block(this)
 +}
 +
