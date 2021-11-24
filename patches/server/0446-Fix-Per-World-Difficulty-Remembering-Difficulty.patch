@@ -8,19 +8,19 @@ makes it so that the server keeps the last difficulty used instead
 of restoring the server.properties every single load.
 
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index f07dd72d2ba1b3e1d30dab5973ca3785ea517471..f37e55afee9486ec1884461a0a2b89f5204e7d00 100644
+index 22885b3d7931f2e439769cad39a37e8af3b3de54..f7a0976488732e41e197a3a77f20a937d44c7be3 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -857,7 +857,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -823,7 +823,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          chunkproviderserver.getLightEngine().setTaskPerBatch(worldserver.paperConfig.lightQueueSize); // Paper - increase light queue size
          // CraftBukkit start
-         // this.updateSpawnFlags();
+         // this.updateMobSpawningFlags();
 -        worldserver.setSpawnSettings(this.isSpawningMonsters(), this.isSpawningAnimals());
 +        worldserver.setSpawnSettings(worldserver.serverLevelData.getDifficulty() != Difficulty.PEACEFUL && ((DedicatedServer) this).settings.getProperties().spawnMonsters, this.isSpawningAnimals()); // Paper - per level difficulty (from setDifficulty(ServerLevel, Difficulty, boolean))
  
          this.forceTicks = false;
          // CraftBukkit end
-@@ -1727,11 +1727,14 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1696,11 +1696,14 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          }
      }
  
@@ -40,7 +40,7 @@ index f07dd72d2ba1b3e1d30dab5973ca3785ea517471..f37e55afee9486ec1884461a0a2b89f5
          }
      }
  
-@@ -1745,7 +1748,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1714,7 +1717,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          while (iterator.hasNext()) {
              ServerLevel worldserver = (ServerLevel) iterator.next();
  
@@ -68,10 +68,10 @@ index 33c859df0b669d0c3e97ccba29f17c1ba2166a27..9f03b738aea623fe409ca176397f48be
              return 0;
          }
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-index 8098875a5c4146dec81f5daed0e34ddfe17a26c6..286863b7eb9ee0389154304e61942dd68f978ff1 100644
+index 2b7ba5d8dda0297c8b35a0cea68c3ae10188e3f2..e968b880e435b8753314d85b919a0abc4f35be25 100644
 --- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-@@ -370,7 +370,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+@@ -366,7 +366,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
  
      @Override
      public void forceDifficulty() {
@@ -81,10 +81,10 @@ index 8098875a5c4146dec81f5daed0e34ddfe17a26c6..286863b7eb9ee0389154304e61942dd6
  
      @Override
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index 08c7c2f9e87cc5ec3d8fce5ad449df4761ebad8a..001167097afed95f93f54ff0e61220148849dd85 100644
+index dd29bad410ff74ce3f1f94bc60560cf10b12375f..0bcafeb8008bd2556bcdc556b17d00ff936d7aa9 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-@@ -3023,7 +3023,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+@@ -3028,7 +3028,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
      public void handleChangeDifficulty(ServerboundChangeDifficultyPacket packet) {
          PacketUtils.ensureRunningOnSameThread(packet, this, this.player.getLevel());
          if (this.player.hasPermissions(2) || this.isSingleplayerOwner()) {
@@ -94,10 +94,10 @@ index 08c7c2f9e87cc5ec3d8fce5ad449df4761ebad8a..001167097afed95f93f54ff0e6122014
      }
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index f647c541c6908cae5f7b64054d71db2971bd5d1d..740bbfdfecd953d91075c507d1f8ee00dd02c9a8 100644
+index a603013de589fad75ff783771a04f10e3bf2ee90..835ff36cfd8c15bf11b3b6a70eb02f6c5b693b8a 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -880,8 +880,8 @@ public final class CraftServer implements Server {
+@@ -923,8 +923,8 @@ public final class CraftServer implements Server {
          org.spigotmc.SpigotConfig.init((File) console.options.valueOf("spigot-settings")); // Spigot
          com.destroystokyo.paper.PaperConfig.init((File) console.options.valueOf("paper-settings")); // Paper
          for (ServerLevel world : this.console.getAllLevels()) {
