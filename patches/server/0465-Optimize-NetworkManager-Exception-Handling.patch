@@ -5,10 +5,10 @@ Subject: [PATCH] Optimize NetworkManager Exception Handling
 
 
 diff --git a/src/main/java/net/minecraft/network/ConnectionProtocol.java b/src/main/java/net/minecraft/network/ConnectionProtocol.java
-index 6611aebafb14b83bce3eeb87701e2edc8a0828ab..bb3b450c7e81ba47e1e8b2244d331f2ce44a7ee1 100644
+index ea69f11e3cd9775998679baaccdaf980ee8fd498..1e0e64568167f1525285abb043e93c8b4316d11c 100644
 --- a/src/main/java/net/minecraft/network/ConnectionProtocol.java
 +++ b/src/main/java/net/minecraft/network/ConnectionProtocol.java
-@@ -275,6 +275,7 @@ public enum ConnectionProtocol {
+@@ -294,6 +294,7 @@ public enum ConnectionProtocol {
  
          @Nullable
          public Packet<?> createPacket(int id, FriendlyByteBuf buf) {
@@ -17,15 +17,15 @@ index 6611aebafb14b83bce3eeb87701e2edc8a0828ab..bb3b450c7e81ba47e1e8b2244d331f2c
              return function != null ? function.apply(buf) : null;
          }
 diff --git a/src/main/java/net/minecraft/network/Varint21FrameDecoder.java b/src/main/java/net/minecraft/network/Varint21FrameDecoder.java
-index 5356f6484751e4b4740720aecac90bdfe044283b..ed54479b14dcfc736ac90749106557f0ff537550 100644
+index 99b581052f937b0f2d6b5d73de699008c1d51774..ed54479b14dcfc736ac90749106557f0ff537550 100644
 --- a/src/main/java/net/minecraft/network/Varint21FrameDecoder.java
 +++ b/src/main/java/net/minecraft/network/Varint21FrameDecoder.java
-@@ -8,9 +8,20 @@ import io.netty.handler.codec.CorruptedFrameException;
+@@ -8,8 +8,20 @@ import io.netty.handler.codec.CorruptedFrameException;
  import java.util.List;
  
  public class Varint21FrameDecoder extends ByteToMessageDecoder {
 +    private final byte[] lenBuf = new byte[3]; // Paper
-     @Override
++    @Override
      protected void decode(ChannelHandlerContext channelHandlerContext, ByteBuf byteBuf, List<Object> list) {
 +        // Paper start - if channel is not active just discard the packet
 +        if (!channelHandlerContext.channel().isActive()) {
