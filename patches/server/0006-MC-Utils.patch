@@ -1950,13 +1950,15 @@ index 0000000000000000000000000000000000000000..d0c77068e9a53d1b8bbad0f3f6b420d6
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/util/set/OptimizedSmallEnumSet.java b/src/main/java/com/destroystokyo/paper/util/set/OptimizedSmallEnumSet.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..9df0006c1a283f77c4d01d9fce9062fc1c9bbb1f
+index 0000000000000000000000000000000000000000..66f6423d2732d23809fe86418537e35d40d24373
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/util/set/OptimizedSmallEnumSet.java
-@@ -0,0 +1,67 @@
+@@ -0,0 +1,92 @@
 +package com.destroystokyo.paper.util.set;
 +
 +import java.util.Collection;
++import java.util.function.Consumer;
++import java.util.function.Predicate;
 +
 +/**
 + * @author Spottedleaf <Spottedleaf@users.noreply.github.com>
@@ -2019,6 +2021,29 @@ index 0000000000000000000000000000000000000000..9df0006c1a283f77c4d01d9fce9062fc
 +
 +    public boolean hasCommonElements(final OptimizedSmallEnumSet<E> other) {
 +        return (other.backingSet & this.backingSet) != 0;
++    }
++
++    public void forEach(final E[] values, final Consumer<E> action) {
++        long iterator = this.getBackingSet();
++        int wrappedGoalSize = this.size();
++        for (int i = 0; i < wrappedGoalSize; ++i) {
++            final E type = values[Long.numberOfTrailingZeros(iterator)];
++            iterator ^= io.papermc.paper.util.IntegerUtil.getTrailingBit(iterator);
++            action.accept(type);
++        }
++    }
++
++    public boolean anyMatch(final E[] values, final Predicate<E> predicate) {
++        long iterator = this.getBackingSet();
++        int wrappedGoalSize = this.size();
++        for (int i = 0; i < wrappedGoalSize; ++i) {
++            final E type = values[Long.numberOfTrailingZeros(iterator)];
++            iterator ^= io.papermc.paper.util.IntegerUtil.getTrailingBit(iterator);
++            if (predicate.test(type)) {
++                return true;
++            }
++        }
++        return false;
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/chunk/SingleThreadChunkRegionManager.java b/src/main/java/io/papermc/paper/chunk/SingleThreadChunkRegionManager.java
