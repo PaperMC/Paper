@@ -20,10 +20,10 @@ this is going to be the best soultion all around.
 Improvements/suggestions welcome!
 
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-index d32e6feca6c39a28f80574e4b080ddd4cbb60fdc..42035548577b7c60806a557dd9f9931ca9584e8c 100644
+index db7f2715534ed71a2b285de095238586fe6a35b0..f51c416e7938b7905f7efb154ab14cad643962e9 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-@@ -1296,11 +1296,13 @@ public class ServerPlayer extends Player {
+@@ -1323,11 +1323,13 @@ public class ServerPlayer extends Player {
          }
      }
  
@@ -41,18 +41,18 @@ index d32e6feca6c39a28f80574e4b080ddd4cbb60fdc..42035548577b7c60806a557dd9f9931c
  
          if (entity1 != entity && this.connection != null) {
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index b4f2b969ad30be38c0a9e3f8efd2a57c3e0f7df0..3c7e75b8fc1bfbe08e232fcba412c83f4aba274c 100644
+index 752e4593bed746e663f018f85ae1ac43cd7b0795..a1744b820a49cd4195b0e9ced960dc6bd2d58d45 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
-@@ -2245,12 +2245,15 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, n
- 
+@@ -2279,11 +2279,16 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, i
      }
  
--    public void removeVehicle() {
-+    // Paper start
-+    public void removeVehicle() { stopRiding(false); }
+     public void removeVehicle() {
++        // Paper start
++        stopRiding(false);
++    }
 +    public void stopRiding(boolean suppressCancellation) {
-+    // Paper end
++        // Paper end
          if (this.vehicle != null) {
              Entity entity = this.vehicle;
  
@@ -62,7 +62,7 @@ index b4f2b969ad30be38c0a9e3f8efd2a57c3e0f7df0..3c7e75b8fc1bfbe08e232fcba412c83f
          }
  
      }
-@@ -2313,7 +2316,10 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, n
+@@ -2346,7 +2351,10 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, i
          return true; // CraftBukkit
      }
  
@@ -74,7 +74,7 @@ index b4f2b969ad30be38c0a9e3f8efd2a57c3e0f7df0..3c7e75b8fc1bfbe08e232fcba412c83f
          if (entity.getVehicle() == this) {
              throw new IllegalStateException("Use x.stopRiding(y), not y.removePassenger(x)");
          } else {
-@@ -2323,7 +2329,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, n
+@@ -2356,7 +2364,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, i
              if (this.getBukkitEntity() instanceof Vehicle && entity.getBukkitEntity() instanceof LivingEntity) {
                  VehicleExitEvent event = new VehicleExitEvent(
                          (Vehicle) this.getBukkitEntity(),
@@ -83,7 +83,7 @@ index b4f2b969ad30be38c0a9e3f8efd2a57c3e0f7df0..3c7e75b8fc1bfbe08e232fcba412c83f
                  );
                  // Suppress during worldgen
                  if (this.valid) {
-@@ -2337,7 +2343,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, n
+@@ -2370,7 +2378,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, i
              }
              // CraftBukkit end
              // Spigot start
@@ -93,18 +93,18 @@ index b4f2b969ad30be38c0a9e3f8efd2a57c3e0f7df0..3c7e75b8fc1bfbe08e232fcba412c83f
              if (this.valid) {
                  Bukkit.getPluginManager().callEvent(event);
 diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-index a7aa62e52105b7adb7725f7abeae376df8f7bb3e..472b8db386dfb580734999900562d358e5ea146a 100644
+index 5d47b536e89f192b10aa1434cd9cdccc49cd3eec..00900427e88f8e9118df4fb2e0e98c26b9f1b7d4 100644
 --- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-@@ -3335,11 +3335,13 @@ public abstract class LivingEntity extends Entity {
-         return ((Byte) this.entityData.get(LivingEntity.DATA_LIVING_ENTITY_FLAGS) & 4) != 0;
-     }
+@@ -3336,9 +3336,15 @@ public abstract class LivingEntity extends Entity {
  
--    @Override
--    public void stopRiding() {
-+    // Paper start
-+    @Override public void stopRiding() { stopRiding(false); }
-+    @Override public void stopRiding(boolean suppressCancellation) {
+     @Override
+     public void stopRiding() {
++        // Paper start
++        stopRiding(false);
++    }
++    @Override
++    public void stopRiding(boolean suppressCancellation) {
 +        // Paper end
          Entity entity = this.getVehicle();
  
@@ -114,19 +114,19 @@ index a7aa62e52105b7adb7725f7abeae376df8f7bb3e..472b8db386dfb580734999900562d358
              this.dismountVehicle(entity);
          }
 diff --git a/src/main/java/net/minecraft/world/entity/player/Player.java b/src/main/java/net/minecraft/world/entity/player/Player.java
-index f5bc151aae4f8335994507c89a094177347dfce1..19b5538e54f1c6073c3478393c1388ffca33291e 100644
+index 37b65c7a12b4dc8ff4e9017015abbb86890dbf5e..6927eeb04a9aa1a33666f3655f2bb889bf046dc9 100644
 --- a/src/main/java/net/minecraft/world/entity/player/Player.java
 +++ b/src/main/java/net/minecraft/world/entity/player/Player.java
-@@ -1094,9 +1094,11 @@ public abstract class Player extends LivingEntity {
-         return -0.35D;
-     }
+@@ -1094,7 +1094,13 @@ public abstract class Player extends LivingEntity {
  
--    @Override
--    public void removeVehicle() {
+     @Override
+     public void removeVehicle() {
 -        super.removeVehicle();
-+    // Paper start
-+    @Override public void removeVehicle() { stopRiding(false); }
-+    @Override public void stopRiding(boolean suppressCancellation) {
++        // Paper start
++        stopRiding(false);
++    }
++    @Override
++    public void stopRiding(boolean suppressCancellation) {
 +        // Paper end
 +        super.stopRiding(suppressCancellation); // Paper - suppress
          this.boardingCooldown = 0;
