@@ -28,14 +28,11 @@ index 67fb370cad6924895a6b27052dbd5c1767e3f0c9..bb338269c9e3bef4c274157c490d8b8f
 +/.factorypath
 diff --git a/build.gradle.kts b/build.gradle.kts
 new file mode 100644
-index 0000000000000000000000000000000000000000..a19e05379d81e6f0bb0a78bc734a1cfdd355dc74
+index 0000000000000000000000000000000000000000..9778c18a2822b00d48134583de87ea281623427d
 --- /dev/null
 +++ b/build.gradle.kts
-@@ -0,0 +1,153 @@
-+import com.github.jengelman.gradle.plugins.shadow.transformers.Log4j2PluginsCacheFileTransformer
-+import com.github.jengelman.gradle.plugins.shadow.transformers.Transformer
+@@ -0,0 +1,150 @@
 +import io.papermc.paperweight.util.*
-+import shadow.org.apache.logging.log4j.core.config.plugins.processor.PluginProcessor.PLUGIN_CACHE_FILE
 +import java.util.Locale
 +
 +plugins {
@@ -112,6 +109,7 @@ index 0000000000000000000000000000000000000000..a19e05379d81e6f0bb0a78bc734a1cfd
 +}
 +
 +tasks.shadowJar {
++    configurations = listOf(project.configurations.vanillaServer.get())
 +    archiveClassifier.set("mojang-mapped")
 +
 +    for (relocation in relocation.relocations.get()) {
@@ -121,8 +119,6 @@ index 0000000000000000000000000000000000000000..a19e05379d81e6f0bb0a78bc734a1cfd
 +            }
 +        }
 +    }
-+    mergeServiceFiles()
-+    transform(ModifiedLog4j2PluginsCacheFileTransformer::class.java)
 +}
 +
 +tasks.test {
@@ -134,6 +130,7 @@ index 0000000000000000000000000000000000000000..a19e05379d81e6f0bb0a78bc734a1cfd
 +    block: JavaExec.() -> Unit
 +): TaskProvider<JavaExec> = register<JavaExec>(name) {
 +    group = "paper"
++    mainClass.set("org.bukkit.craftbukkit.Main")
 +    standardInput = System.`in`
 +    workingDir = rootProject.layout.projectDirectory
 +        .dir(providers.gradleProperty("paper.runWorkDir").forUseAtConfigurationTime().getOrElse("run"))
@@ -164,26 +161,26 @@ index 0000000000000000000000000000000000000000..a19e05379d81e6f0bb0a78bc734a1cfd
 +    block(this)
 +}
 +
++val runtimeClasspathWithoutVanillaServer = configurations.runtimeClasspath.flatMap { it.elements }
++    .zip(configurations.vanillaServer.map { it.singleFile.absolutePath }) { runtime, vanilla ->
++        runtime.filterNot { it.asFile.absolutePath == vanilla }
++    }
++
 +tasks.registerRunTask("runShadow") {
 +    description = "Spin up a test server from the shadowJar archiveFile"
 +    classpath(tasks.shadowJar.flatMap { it.archiveFile })
++    classpath(runtimeClasspathWithoutVanillaServer)
 +}
 +
 +tasks.registerRunTask("runReobf") {
 +    description = "Spin up a test server from the reobfJar output jar"
 +    classpath(tasks.reobfJar.flatMap { it.outputJar })
++    classpath(runtimeClasspathWithoutVanillaServer)
 +}
 +
 +tasks.registerRunTask("runDev") {
-+    description = "Spin up a non-shaded non-remapped test server"
-+    classpath = java.sourceSets.main.get().runtimeClasspath
-+    mainClass.set("org.bukkit.craftbukkit.Main")
-+}
-+
-+class ModifiedLog4j2PluginsCacheFileTransformer : Transformer by Log4j2PluginsCacheFileTransformer() {
-+    override fun canTransformResource(element: FileTreeElement): Boolean {
-+        return PLUGIN_CACHE_FILE == element.name || element.name == "Log4j2Plugins.dat"
-+    }
++    description = "Spin up a non-relocated Mojang-mapped test server"
++    classpath(sourceSets.main.map { it.runtimeClasspath })
 +}
 diff --git a/pom.xml b/pom.xml
 deleted file mode 100644
