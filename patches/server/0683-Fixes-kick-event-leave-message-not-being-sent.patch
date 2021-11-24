@@ -5,10 +5,10 @@ Subject: [PATCH] Fixes kick event leave message not being sent
 
 
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index cdfdad5932f0e03a41cddd8cb7acb0ede43a6a3d..5edb274101f92c442b876cae5749b85c81978bc8 100644
+index d66c9c09ae3874dd53ef298f94a0e5c6177f2b35..43cd0b67f31d0340893672c9bf5a00467d9cdb54 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-@@ -457,7 +457,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+@@ -456,7 +456,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
          this.connection.send(new ClientboundDisconnectPacket(ichatbasecomponent), (future) -> {
              this.connection.disconnect(ichatbasecomponent);
          });
@@ -17,7 +17,7 @@ index cdfdad5932f0e03a41cddd8cb7acb0ede43a6a3d..5edb274101f92c442b876cae5749b85c
          this.connection.setReadOnly();
          MinecraftServer minecraftserver = this.server;
          Connection networkmanager = this.connection;
-@@ -1872,6 +1872,11 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+@@ -1877,6 +1877,11 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
  
      @Override
      public void onDisconnect(Component reason) {
@@ -29,32 +29,32 @@ index cdfdad5932f0e03a41cddd8cb7acb0ede43a6a3d..5edb274101f92c442b876cae5749b85c
          // CraftBukkit start - Rarely it would send a disconnect line twice
          if (this.processedDisconnect) {
              return;
-@@ -1888,7 +1893,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+@@ -1893,7 +1898,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
  
          this.player.disconnect();
          // Paper start - Adventure
--        net.kyori.adventure.text.Component quitMessage = this.server.getPlayerList().disconnect(this.player);
-+        quitMessage = quitMessage == null ? this.server.getPlayerList().disconnect(this.player) : this.server.getPlayerList().disconnect(this.player, quitMessage); // Paper - pass in quitMessage to fix kick message not being used
+-        net.kyori.adventure.text.Component quitMessage = this.server.getPlayerList().remove(this.player);
++        quitMessage = quitMessage == null ? this.server.getPlayerList().remove(this.player) : this.server.getPlayerList().remove(this.player, quitMessage); // Paper - pass in quitMessage to fix kick message not being used
          if ((quitMessage != null) && !quitMessage.equals(net.kyori.adventure.text.Component.empty())) {
              this.server.getPlayerList().broadcastMessage(PaperAdventure.asVanilla(quitMessage), ChatType.SYSTEM, Util.NIL_UUID);
              // Paper end
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
-index f68fc7fcebe250a40905b52f6ec29ee6d094aad5..eaae43ffe4701c10133ad4fd2256b22b565e6f51 100644
+index de8a14e86b337954fd0f730c1096758e1db409aa..963d40bf7cf7c12a22472f3a5b7080daf1c90e7b 100644
 --- a/src/main/java/net/minecraft/server/players/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/players/PlayerList.java
-@@ -588,6 +588,11 @@ public abstract class PlayerList {
+@@ -585,6 +585,11 @@ public abstract class PlayerList {
      }
  
-     public net.kyori.adventure.text.Component disconnect(ServerPlayer entityplayer) { // Paper - return Component
+     public net.kyori.adventure.text.Component remove(ServerPlayer entityplayer) { // Paper - return Component
 +        // Paper start
-+        return this.disconnect(entityplayer, net.kyori.adventure.text.Component.translatable("multiplayer.player.left", net.kyori.adventure.text.format.NamedTextColor.YELLOW, com.destroystokyo.paper.PaperConfig.useDisplayNameInQuit ? entityplayer.getBukkitEntity().displayName() : net.kyori.adventure.text.Component.text(entityplayer.getScoreboardName())));
++        return this.remove(entityplayer, net.kyori.adventure.text.Component.translatable("multiplayer.player.left", net.kyori.adventure.text.format.NamedTextColor.YELLOW, com.destroystokyo.paper.PaperConfig.useDisplayNameInQuit ? entityplayer.getBukkitEntity().displayName() : net.kyori.adventure.text.Component.text(entityplayer.getScoreboardName())));
 +    }
-+    public net.kyori.adventure.text.Component disconnect(ServerPlayer entityplayer, net.kyori.adventure.text.Component leaveMessage) {
++    public net.kyori.adventure.text.Component remove(ServerPlayer entityplayer, net.kyori.adventure.text.Component leaveMessage) {
 +        // Paper end
          ServerLevel worldserver = entityplayer.getLevel();
  
          entityplayer.awardStat(Stats.LEAVE_GAME);
-@@ -598,7 +603,7 @@ public abstract class PlayerList {
+@@ -595,7 +600,7 @@ public abstract class PlayerList {
              entityplayer.closeContainer(org.bukkit.event.inventory.InventoryCloseEvent.Reason.DISCONNECT); // Paper
          }
  
