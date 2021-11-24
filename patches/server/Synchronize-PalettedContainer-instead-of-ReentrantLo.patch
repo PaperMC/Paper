@@ -1,0 +1,91 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Fri, 29 May 2020 20:29:02 -0400
+Subject: [PATCH] Synchronize PalettedContainer instead of ReentrantLock
+
+Mojang has flaws in their logic about chunks being concurrently
+wrote to. So we constantly see crashes around multiple threads writing.
+
+Additionally, java has optimized synchronization so well that its
+in many times faster than trying to manage read wrote locks for low
+contention situations.
+
+And this is extremely a low contention situation.
+
+diff --git a/src/main/java/net/minecraft/world/level/chunk/PalettedContainer.java b/src/main/java/net/minecraft/world/level/chunk/PalettedContainer.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/PalettedContainer.java
++++ b/src/main/java/net/minecraft/world/level/chunk/PalettedContainer.java
+@@ -0,0 +0,0 @@ public class PalettedContainer<T> implements PaletteResize<T> {
+     private final ThreadingDetector threadingDetector = new ThreadingDetector("PalettedContainer");
+ 
+     public void acquire() {
+-        this.threadingDetector.checkAndLock();
++        // this.threadingDetector.checkAndLock(); // Paper - disable this - use proper synchronization
+     }
+ 
+     public void release() {
+-        this.threadingDetector.checkAndUnlock();
++        // this.threadingDetector.checkAndUnlock(); // Paper - disable this
+     }
+ 
+     public static <T> Codec<PalettedContainer<T>> codec(IdMap<T> idList, Codec<T> entryCodec, PalettedContainer.Strategy provider, T object) {
+-        return RecordCodecBuilder.create((instance) -> {
++        return RecordCodecBuilder.<DiscData<T>>create((instance) -> { // Paper - decompile fixes
+             return instance.group(entryCodec.mapResult(ExtraCodecs.orElsePartial(object)).listOf().fieldOf("palette").forGetter(PalettedContainer.DiscData::paletteEntries), Codec.LONG_STREAM.optionalFieldOf("data").forGetter(PalettedContainer.DiscData::storage)).apply(instance, PalettedContainer.DiscData::new);
+         }).comapFlatMap((serialized) -> {
+             return read(idList, provider, serialized);
+@@ -0,0 +0,0 @@ public class PalettedContainer<T> implements PaletteResize<T> {
+         return data2.palette.idFor(object);
+     }
+ 
+-    public T getAndSet(int x, int y, int z, T value) {
++    public synchronized T getAndSet(int x, int y, int z, T value) { // Paper - synchronize
+         this.acquire();
+ 
+         Object var5;
+@@ -0,0 +0,0 @@ public class PalettedContainer<T> implements PaletteResize<T> {
+         return this.data.palette.valueFor(j);
+     }
+ 
+-    public void set(int x, int y, int z, T value) {
++    public synchronized void set(int x, int y, int z, T value) { // Paper - synchronize
+         this.acquire();
+ 
+         try {
+@@ -0,0 +0,0 @@ public class PalettedContainer<T> implements PaletteResize<T> {
+         });
+     }
+ 
+-    public void read(FriendlyByteBuf buf) {
++    public synchronized void read(FriendlyByteBuf buf) { // Paper - synchronize
+         this.acquire();
+ 
+         try {
+@@ -0,0 +0,0 @@ public class PalettedContainer<T> implements PaletteResize<T> {
+ 
+     }
+ 
+-    public void write(FriendlyByteBuf buf) {
++    public synchronized void write(FriendlyByteBuf buf) { // Paper - synchronize
+         this.acquire();
+ 
+         try {
+@@ -0,0 +0,0 @@ public class PalettedContainer<T> implements PaletteResize<T> {
+ 
+     }
+ 
+-    private static <T> DataResult<PalettedContainer<T>> read(IdMap<T> idList, PalettedContainer.Strategy provider, PalettedContainer.DiscData<T> serialized) {
++    private static synchronized <T> DataResult<PalettedContainer<T>> read(IdMap<T> idList, PalettedContainer.Strategy provider, PalettedContainer.DiscData<T> serialized) { // Paper - synchronize
+         List<T> list = serialized.paletteEntries();
+         int i = provider.size();
+         int j = provider.calculateBitsForSerialization(idList, list.size());
+@@ -0,0 +0,0 @@ public class PalettedContainer<T> implements PaletteResize<T> {
+         return DataResult.success(new PalettedContainer<>(idList, provider, configuration, bitStorage, list));
+     }
+ 
+-    private PalettedContainer.DiscData<T> write(IdMap<T> idList, PalettedContainer.Strategy provider) {
++    private synchronized PalettedContainer.DiscData<T> write(IdMap<T> idList, PalettedContainer.Strategy provider) { // Paper - synchronize
+         this.acquire();
+ 
+         PalettedContainer.DiscData var12;
