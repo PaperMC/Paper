@@ -8,23 +8,22 @@ diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/j
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
-@@ -0,0 +0,0 @@ Sections go from 0..16. Now whenever a section is not empty, it can potentially
+@@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          public void updatePlayer(ServerPlayer player) {
              org.spigotmc.AsyncCatcher.catchOp("player tracker update"); // Spigot
              if (player != this.entity) {
 -                Vec3 vec3d = player.position().subtract(this.entity.position()); // MC-155077, SPIGOT-5113
 +                // Paper start - remove allocation of Vec3D here
-+                //Vec3D vec3d = entityplayer.getPositionVector().d(this.tracker.getPositionVector()); // MC-155077, SPIGOT-5113
++                //Vec3 vec3d = player.position().subtract(this.entity.position()); // MC-155077, SPIGOT-5113
 +                double vec3d_dx = player.getX() - this.entity.getX();
-+                double vec3d_dy = player.getY() - this.entity.getY();
 +                double vec3d_dz = player.getZ() - this.entity.getZ();
 +                // Paper end - remove allocation of Vec3D here
-                 int i = Math.min(this.getEffectiveRange(), (ChunkMap.this.viewDistance - 1) * 16);
--                boolean flag = vec3d.x >= (double) (-i) && vec3d.x <= (double) i && vec3d.z >= (double) (-i) && vec3d.z <= (double) i && this.entity.broadcastToPlayer(player);
-+                boolean flag = vec3d_dx >= (double) (-i) && vec3d_dx <= (double) i && vec3d_dz >= (double) (-i) && vec3d_dz <= (double) i && this.entity.broadcastToPlayer(player); // Paper - remove allocation of Vec3D here
+                 double d0 = (double) Math.min(this.getEffectiveRange(), (ChunkMap.this.viewDistance - 1) * 16);
+-                double d1 = vec3d.x * vec3d.x + vec3d.z * vec3d.z;
++                double d1 = vec3d_dx * vec3d_dx + vec3d_dz * vec3d_dz; // Paper
+                 double d2 = d0 * d0;
+                 boolean flag = d1 <= d2 && this.entity.broadcastToPlayer(player);
  
-                 // CraftBukkit start - respect vanish API
-                 if (this.entity instanceof ServerPlayer) {
 diff --git a/src/main/java/net/minecraft/server/level/ServerEntity.java b/src/main/java/net/minecraft/server/level/ServerEntity.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/level/ServerEntity.java
