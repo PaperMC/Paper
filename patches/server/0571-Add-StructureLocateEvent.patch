@@ -5,25 +5,17 @@ Subject: [PATCH] Add StructureLocateEvent
 
 
 diff --git a/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java b/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java
-index 6fbfe7a61df0efd4d85a00f02096410a1d29e62f..fde436065aeeb47cd177656a7c9fe8dc34178e87 100644
+index 583b87b20490fd7254f5e966af3b6a627f53a7cb..13e789b3b7ea3be73ec73bb5357cb603da8d5e0d 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java
-@@ -2,6 +2,7 @@ package net.minecraft.world.level.chunk;
- 
- import com.google.common.collect.Lists;
- import com.mojang.serialization.Codec;
-+import io.papermc.paper.event.world.StructureLocateEvent; // Paper - Add import due to naming conflict.
- import java.util.BitSet;
- import java.util.Iterator;
- import java.util.List;
-@@ -185,6 +186,20 @@ public abstract class ChunkGenerator {
+@@ -183,6 +183,20 @@ public abstract class ChunkGenerator implements BiomeManager.NoiseBiomeSource {
  
      @Nullable
-     public BlockPos findNearestMapFeature(ServerLevel world, StructureFeature<?> feature, BlockPos center, int radius, boolean skipExistingChunks) {
+     public BlockPos findNearestMapFeature(ServerLevel world, StructureFeature<?> structureFeature, BlockPos center, int radius, boolean skipExistingChunks) {
 +        // Paper start
 +        org.bukkit.World world1 = world.getWorld();
 +        org.bukkit.Location originLocation = new org.bukkit.Location(world1, center.getX(), center.getY(), center.getZ());
-+        StructureLocateEvent event = new StructureLocateEvent(world1, originLocation, org.bukkit.StructureType.getStructureTypes().get(feature.getFeatureName()), radius, skipExistingChunks);
++        io.papermc.paper.event.world.StructureLocateEvent event = new io.papermc.paper.event.world.StructureLocateEvent(world1, originLocation, org.bukkit.StructureType.getStructureTypes().get(structureFeature.getFeatureName()), radius, skipExistingChunks);
 +        if(!event.callEvent()) return null;
 +        // If event call set a final location, skip structure finding and just return set result.
 +        if(event.getResult() != null) return new BlockPos(event.getResult().getBlockX(), event.getResult().getBlockY(), event.getResult().getBlockZ());
@@ -32,8 +24,8 @@ index 6fbfe7a61df0efd4d85a00f02096410a1d29e62f..fde436065aeeb47cd177656a7c9fe8dc
 +        // Get radius and whether to find unexplored structures (re)defined by event call.
 +        radius = event.getRadius();
 +        skipExistingChunks = event.shouldFindUnexplored();
-+        feature = StructureFeature.STRUCTURES_REGISTRY.get(event.getType().getName());
++        structureFeature = StructureFeature.STRUCTURES_REGISTRY.get(event.getType().getName());
 +        // Paper end
-         if (!this.biomeSource.canGenerateStructure(feature)) {
-             return null;
-         } else if (feature == StructureFeature.STRONGHOLD) {
+         if (structureFeature == StructureFeature.STRONGHOLD) {
+             this.generateStrongholds();
+             BlockPos blockposition1 = null;
