@@ -4,7 +4,7 @@ Date: Tue, 23 Jul 2019 20:29:20 -0500
 Subject: [PATCH] Configurable projectile relative velocity
 
 This patch adds an option "disable relative projectile velocity", which, when
-nabled, will cause projectiles to ignore the shooter's current velocity,
+enabled, will cause projectiles to ignore the shooter's current velocity,
 like they did in Minecraft 1.8 and prior.
 If a player is falling, for example, their shooting range will be drastically
 reduced, as a downwards velocity is applied to the projectile. This prevents
@@ -25,10 +25,10 @@ P3) Solutions for 1) and especially 2) might not be future-proof, while this
 server-internal fix makes this change future-proof.
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index 6295242e1926ae3f03c304f3372dcca16a84bf3f..d9437b3ef3919bff5d2eebd8b5e016ddb7a0e793 100644
+index 1d81b47a0d9e16902f01a563408780a58e45dffe..30ac8abfd5473de3ca262d988d437b459d6a5690 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-@@ -452,5 +452,10 @@ public class PaperWorldConfig {
+@@ -447,5 +447,10 @@ public class PaperWorldConfig {
              log("Using improved mob spawn limits (Only Natural Spawns impact spawn limits for more natural spawns)");
          }
      }
@@ -40,15 +40,15 @@ index 6295242e1926ae3f03c304f3372dcca16a84bf3f..d9437b3ef3919bff5d2eebd8b5e016dd
  }
  
 diff --git a/src/main/java/net/minecraft/world/entity/projectile/Projectile.java b/src/main/java/net/minecraft/world/entity/projectile/Projectile.java
-index 458a70f6e76eba707b890c78cbfd4f967eaf8a1b..6339203bda5e569d5df241dd589eb36e7233704b 100644
+index 47d27f95bdd4d556f1750e7ad8493248ba63888a..15744949537430d8d8ae71ea72481126c9aff7bd 100644
 --- a/src/main/java/net/minecraft/world/entity/projectile/Projectile.java
 +++ b/src/main/java/net/minecraft/world/entity/projectile/Projectile.java
 @@ -161,7 +161,7 @@ public abstract class Projectile extends Entity {
-         this.shoot((double) f5, (double) f6, (double) f7, modifierZ, modifierXYZ);
-         Vec3 vec3d = user.getDeltaMovement();
+         this.shoot((double) f5, (double) f6, (double) f7, speed, divergence);
+         Vec3 vec3d = shooter.getDeltaMovement();
  
--        this.setDeltaMovement(this.getDeltaMovement().add(vec3d.x, user.isOnGround() ? 0.0D : vec3d.y, vec3d.z));
-+        if (!user.level.paperConfig.disableRelativeProjectileVelocity) this.setDeltaMovement(this.getDeltaMovement().add(vec3d.x, user.isOnGround() ? 0.0D : vec3d.y, vec3d.z)); // Paper - allow disabling relative velocity
+-        this.setDeltaMovement(this.getDeltaMovement().add(vec3d.x, shooter.isOnGround() ? 0.0D : vec3d.y, vec3d.z));
++        if (!shooter.level.paperConfig.disableRelativeProjectileVelocity) this.setDeltaMovement(this.getDeltaMovement().add(vec3d.x, shooter.isOnGround() ? 0.0D : vec3d.y, vec3d.z)); // Paper - allow disabling relative velocity
      }
  
      // CraftBukkit start - call projectile hit event
