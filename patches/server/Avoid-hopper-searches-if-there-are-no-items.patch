@@ -30,7 +30,7 @@ diff --git a/src/main/java/net/minecraft/world/level/entity/EntitySection.java b
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/entity/EntitySection.java
 +++ b/src/main/java/net/minecraft/world/level/entity/EntitySection.java
-@@ -0,0 +0,0 @@ public class EntitySection<T> {
+@@ -0,0 +0,0 @@ public class EntitySection<T extends EntityAccess> {
      protected static final Logger LOGGER = LogManager.getLogger();
      private final ClassInstanceMultiMap<T> storage;
      private Visibility chunkStatus;
@@ -41,53 +41,44 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      public EntitySection(Class<T> entityClass, Visibility status) {
          this.chunkStatus = status;
-@@ -0,0 +0,0 @@ public class EntitySection<T> {
+@@ -0,0 +0,0 @@ public class EntitySection<T extends EntityAccess> {
      }
  
-     public void add(T obj) {
+     public void add(T entityAccess) {
 +        // Paper start
-+        if (obj instanceof net.minecraft.world.entity.item.ItemEntity) {
++        if (entityAccess instanceof net.minecraft.world.entity.item.ItemEntity) {
 +            this.itemCount++;
-+        } else if (obj instanceof net.minecraft.world.Container) {
++        } else if (entityAccess instanceof net.minecraft.world.Container) {
 +            this.inventoryEntityCount++;
 +        }
 +        // Paper end
-         this.storage.add(obj);
+         this.storage.add(entityAccess);
      }
  
-     public boolean remove(T obj) {
+     public boolean remove(T entityAccess) {
 +        // Paper start
-+        if (obj instanceof net.minecraft.world.entity.item.ItemEntity) {
++        if (entityAccess instanceof net.minecraft.world.entity.item.ItemEntity) {
 +            this.itemCount--;
-+        } else if (obj instanceof net.minecraft.world.Container) {
++        } else if (entityAccess instanceof net.minecraft.world.Container) {
 +            this.inventoryEntityCount--;
 +        }
 +        // Paper end
-         return this.storage.remove(obj);
+         return this.storage.remove(entityAccess);
      }
  
-@@ -0,0 +0,0 @@ public class EntitySection<T> {
-         for(T object : this.storage.find(type.getBaseClass())) {
-             U object2 = (U)type.tryCast(object);
-             if (object2 != null && filter.test(object2)) {
--                action.accept((T)object2);
-+                action.accept(object2); // Paper - decompile fix
+@@ -0,0 +0,0 @@ public class EntitySection<T extends EntityAccess> {
+             for(T entityAccess : collection) {
+                 U entityAccess2 = (U)((EntityAccess)type.tryCast(entityAccess));
+                 if (entityAccess2 != null && entityAccess.getBoundingBox().intersects(aABB)) {
+-                    action.accept((T)entityAccess2);
++                    action.accept(entityAccess2); // Paper - decompile fixes
+                 }
              }
-         }
  
 diff --git a/src/main/java/net/minecraft/world/level/entity/EntitySectionStorage.java b/src/main/java/net/minecraft/world/level/entity/EntitySectionStorage.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/entity/EntitySectionStorage.java
 +++ b/src/main/java/net/minecraft/world/level/entity/EntitySectionStorage.java
-@@ -0,0 +0,0 @@ public class EntitySectionStorage<T extends EntityAccess> {
- 
-     public LongSet getAllChunksWithExistingSections() {
-         LongSet longSet = new LongOpenHashSet();
--        this.sections.keySet().forEach((sectionPos) -> {
-+        this.sections.keySet().forEach((java.util.function.LongConsumer) (sectionPos) -> { // Paper - decompile fix
-             longSet.add(getChunkKeyFromSectionKey(sectionPos));
-         });
-         return longSet;
 @@ -0,0 +0,0 @@ public class EntitySectionStorage<T extends EntityAccess> {
      }
  
@@ -97,16 +88,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +    public void getEntities(AABB box, Consumer<T> action, boolean isContainerSearch) {
 +        // Paper end
-         this.forEachAccessibleSection(box, (entitySection) -> {
+         this.forEachAccessibleNonEmptySection(box, (entitySection) -> {
 +            if (isContainerSearch && entitySection.inventoryEntityCount <= 0) return; // Paper
-             entitySection.getEntities(createBoundingBoxCheck(box), action);
+             entitySection.getEntities(box, action);
          });
      }
  
      public <U extends T> void getEntities(EntityTypeTest<T, U> filter, AABB box, Consumer<U> action) {
-         this.forEachAccessibleSection(box, (entitySection) -> {
+         this.forEachAccessibleNonEmptySection(box, (entitySection) -> {
 +            if (filter.getBaseClass() == net.minecraft.world.entity.item.ItemEntity.class && entitySection.itemCount <= 0) return; // Paper
-             entitySection.getEntities(filter, createBoundingBoxCheck(box), action);
+             entitySection.getEntities(filter, box, action);
          });
      }
 diff --git a/src/main/java/net/minecraft/world/level/entity/LevelEntityGetter.java b/src/main/java/net/minecraft/world/level/entity/LevelEntityGetter.java

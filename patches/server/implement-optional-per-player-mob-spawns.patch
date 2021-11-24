@@ -29,7 +29,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 @@ -0,0 +0,0 @@ public class PaperWorldConfig {
-             Bukkit.getLogger().warning("You have enabled permission-based Anti-Xray checking - depending on your permission plugin, this may cause performance issues");
+             }
          }
      }
 +
@@ -41,7 +41,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        perPlayerMobSpawns = getBoolean("per-player-mob-spawns", true);
 +    }
  }
- 
 diff --git a/src/main/java/com/destroystokyo/paper/util/PlayerMobDistanceMap.java b/src/main/java/com/destroystokyo/paper/util/PlayerMobDistanceMap.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
@@ -560,10 +559,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      // CraftBukkit start - recursion-safe executor for Chunk loadCallback() and unloadCallback()
      public final CallbackExecutor callbackExecutor = new CallbackExecutor();
 @@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
-                 ChunkMap.this.updateChunkTracking(player, new ChunkPos(rangeX, rangeZ), null, true, false); // unloaded, loaded
-             });
-         // Paper end - no-tick view distance
+         this.dataRegionManager = new io.papermc.paper.chunk.SingleThreadChunkRegionManager(this.level, 2, (1.0 / 3.0), 1, 6, "Data", DataRegionData::new, DataRegionSectionData::new);
+         this.regionManagers.add(this.dataRegionManager);
+         // Paper end
 +        this.playerMobDistanceMap = this.level.paperConfig.perPlayerMobSpawns ? new com.destroystokyo.paper.util.PlayerMobDistanceMap() : null; // Paper
+     }
+ 
+     protected ChunkGenerator generator() {
+@@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+         });
      }
  
 +    // Paper start
@@ -593,10 +597,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 @@ -0,0 +0,0 @@ public class ServerChunkCache extends ChunkSource {
-             this.level.getProfiler().push("naturalSpawnCount");
+             gameprofilerfiller.push("naturalSpawnCount");
              this.level.timings.countNaturalMobs.startTiming(); // Paper - timings
              int l = this.distanceManager.getNaturalSpawnChunkCount();
--            NaturalSpawner.SpawnState spawnercreature_d = NaturalSpawner.createState(l, this.level.getAllEntities(), this::getFullChunk);
+-            NaturalSpawner.SpawnState spawnercreature_d = NaturalSpawner.createState(l, this.level.getAllEntities(), this::getFullChunk, new LocalMobCapCalculator(this.chunkMap));
 +            // Paper start - per player mob spawning
 +            NaturalSpawner.SpawnState spawnercreature_d; // moved down
 +            if (this.chunkMap.playerMobDistanceMap != null) {
@@ -608,9 +612,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                for (ServerPlayer player : this.level.players) {
 +                    Arrays.fill(player.mobCounts, 0);
 +                }
-+                spawnercreature_d = NaturalSpawner.createState(l, this.level.getAllEntities(), this::getFullChunk, true);
++                spawnercreature_d = NaturalSpawner.createState(l, this.level.getAllEntities(), this::getFullChunk, new LocalMobCapCalculator(this.chunkMap), true);
 +            } else {
-+                spawnercreature_d = NaturalSpawner.createState(l, this.level.getAllEntities(), this::getFullChunk, false);
++                spawnercreature_d = NaturalSpawner.createState(l, this.level.getAllEntities(), this::getFullChunk, new LocalMobCapCalculator(this.chunkMap), false);
 +            }
 +            // Paper end
              this.level.timings.countNaturalMobs.stopTiming(); // Paper - timings
@@ -644,24 +648,17 @@ diff --git a/src/main/java/net/minecraft/world/level/NaturalSpawner.java b/src/m
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/NaturalSpawner.java
 +++ b/src/main/java/net/minecraft/world/level/NaturalSpawner.java
-@@ -0,0 +0,0 @@ import net.minecraft.core.Registry;
- import net.minecraft.core.SectionPos;
- import net.minecraft.nbt.CompoundTag;
- import net.minecraft.server.level.ServerLevel;
-+import net.minecraft.server.level.ServerPlayer;
- import net.minecraft.tags.BlockTags;
- import net.minecraft.tags.FluidTags;
- import net.minecraft.tags.Tag;
 @@ -0,0 +0,0 @@ public final class NaturalSpawner {
  
      private NaturalSpawner() {}
  
 +    // Paper start - add countMobs parameter
-     public static NaturalSpawner.SpawnState createState(int spawningChunkCount, Iterable<Entity> entities, NaturalSpawner.ChunkGetter chunkSource) {
-+        return createState(spawningChunkCount, entities, chunkSource, false);
+     public static NaturalSpawner.SpawnState createState(int spawningChunkCount, Iterable<Entity> entities, NaturalSpawner.ChunkGetter chunkSource, LocalMobCapCalculator localmobcapcalculator) {
++        return createState(spawningChunkCount, entities, chunkSource, localmobcapcalculator, false);
 +    }
-+    public static NaturalSpawner.SpawnState createState(int spawningChunkCount, Iterable<Entity> entities, NaturalSpawner.ChunkGetter chunkSource, boolean countMobs) {
-+    // Paper end - add countMobs parameter
++
++    public static NaturalSpawner.SpawnState createState(int spawningChunkCount, Iterable<Entity> entities, NaturalSpawner.ChunkGetter chunkSource, LocalMobCapCalculator localmobcapcalculator, boolean countMobs) {
++        // Paper end
          PotentialCalculator spawnercreatureprobabilities = new PotentialCalculator();
          Object2IntOpenHashMap<MobCategory> object2intopenhashmap = new Object2IntOpenHashMap();
          Iterator iterator = entities.iterator();
@@ -669,11 +666,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                      }
  
                      object2intopenhashmap.addTo(enumcreaturetype, 1);
-+                    // Paper start
 +                    if (countMobs) {
 +                        chunk.level.getChunkSource().chunkMap.updatePlayerMobTypeMap(entity);
 +                    }
-+                    // Paper end
                  });
              }
          }
@@ -681,7 +676,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  continue;
              }
  
--            if ((spawnAnimals || !enumcreaturetype.isFriendly()) && (spawnMonsters || enumcreaturetype.isFriendly()) && (rareSpawn || !enumcreaturetype.isPersistent()) && info.canSpawnForCategory(enumcreaturetype, limit)) {
+-            if ((spawnAnimals || !enumcreaturetype.isFriendly()) && (spawnMonsters || enumcreaturetype.isFriendly()) && (rareSpawn || !enumcreaturetype.isPersistent()) && info.canSpawnForCategory(enumcreaturetype, chunk.getPos(), limit)) {
 +            // Paper start - only allow spawns upto the limit per chunk and update count afterwards
 +            int currEntityCount = info.mobCategoryCounts.getInt(enumcreaturetype);
 +            int k1 = limit * info.getSpawnableChunkCount() / NaturalSpawner.MAGIC_NUMBER;
@@ -689,25 +684,24 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +            if (world.paperConfig.perPlayerMobSpawns) {
 +                int minDiff = Integer.MAX_VALUE;
-+                for (ServerPlayer entityplayer : world.getChunkSource().chunkMap.playerMobDistanceMap.getPlayersInRange(chunk.getPos())) {
++                for (net.minecraft.server.level.ServerPlayer entityplayer : world.getChunkSource().chunkMap.playerMobDistanceMap.getPlayersInRange(chunk.getPos())) {
 +                    minDiff = Math.min(limit - world.getChunkSource().chunkMap.getMobCountNear(entityplayer, enumcreaturetype), minDiff);
 +                }
 +                difference = (minDiff == Integer.MAX_VALUE) ? 0 : minDiff;
 +            }
-+            // Paper end
-+
-+            // Paper start - per player mob spawning
 +            if ((spawnAnimals || !enumcreaturetype.isFriendly()) && (spawnMonsters || enumcreaturetype.isFriendly()) && (rareSpawn || !enumcreaturetype.isPersistent()) && difference > 0) {
++                // Paper end
                  // CraftBukkit end
                  Objects.requireNonNull(info);
                  NaturalSpawner.SpawnPredicate spawnercreature_c = info::canSpawn;
  
                  Objects.requireNonNull(info);
 -                NaturalSpawner.spawnCategoryForChunk(enumcreaturetype, world, chunk, spawnercreature_c, info::afterSpawn);
++                // Paper start
 +                int spawnCount = NaturalSpawner.spawnCategoryForChunk(enumcreaturetype, world, chunk, spawnercreature_c, info::afterSpawn,
 +                    difference, world.paperConfig.perPlayerMobSpawns ? world.getChunkSource().chunkMap::updatePlayerMobTypeMap : null);
 +                info.mobCategoryCounts.mergeInt(enumcreaturetype, spawnCount, Integer::sum);
-+                // Paper end - per player mob spawning
++                // Paper end
              }
          }
  
@@ -724,10 +718,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          BlockPos blockposition = NaturalSpawner.getRandomPosWithin(world, chunk);
  
          if (blockposition.getY() >= world.getMinBuildHeight() + 1) {
--            NaturalSpawner.spawnCategoryForPosition(group, world, (ChunkAccess) chunk, blockposition, checker, runner);
-+            return NaturalSpawner.spawnCategoryForPosition(group, world, (ChunkAccess) chunk, blockposition, checker, runner, maxSpawns, trackEntity); // Paper
+-            NaturalSpawner.spawnCategoryForPosition(group, world, chunk, blockposition, checker, runner);
++            return NaturalSpawner.spawnCategoryForPosition(group, world, chunk, blockposition, checker, runner, maxSpawns, trackEntity); // Paper
          }
-+        return 0; // Paper
++        return 0; // paper
      }
  
      @VisibleForDebug
@@ -750,7 +744,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          if (iblockdata != null && !iblockdata.isRedstoneConductor(chunk, pos)) { // Paper - don't load chunks for mob spawn
              BlockPos.MutableBlockPos blockposition_mutableblockposition = new BlockPos.MutableBlockPos();
 -            int j = 0;
-+            // Paper - moved up
++            //int j = 0; // Paper - moved up
              int k = 0;
  
              while (k < 3) {
