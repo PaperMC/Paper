@@ -9,33 +9,26 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
 @@ -0,0 +0,0 @@ public abstract class LivingEntity extends Entity {
-         this.entityData.set(LivingEntity.DATA_LIVING_ENTITY_FLAGS, (byte) j);
      }
  
--    public void startUsingItem(InteractionHand hand) {
--        ItemStack itemstack = this.getItemInHand(hand);
-+    // Paper start -- OBFHELPER and forwarder to method with forceUpdate parameter
-+    public void startUsingItem(InteractionHand hand) { this.updateActiveItem(hand, false); }
-+    public void updateActiveItem(InteractionHand enumhand, boolean forceUpdate) {
-+    // Paper end
-+        ItemStack itemstack = this.getItemInHand(enumhand);
+     public void startUsingItem(InteractionHand hand) {
++        // Paper start - forwarder to method with forceUpdate parameter
++        this.startUsingItem(hand, false);
++    }
++    public void startUsingItem(InteractionHand hand, boolean forceUpdate) {
++        // Paper end
+         ItemStack itemstack = this.getItemInHand(hand);
  
 -        if (!itemstack.isEmpty() && !this.isUsingItem()) {
 +        if (!itemstack.isEmpty() && !this.isUsingItem() || forceUpdate) { // Paper use override flag
              this.useItem = itemstack;
              this.useItemRemaining = itemstack.getUseDuration();
              if (!this.level.isClientSide) {
-                 this.setLivingEntityFlag(1, true);
--                this.setLivingEntityFlag(2, hand == InteractionHand.OFF_HAND);
-+                this.setLivingEntityFlag(2, enumhand == InteractionHand.OFF_HAND);
-             }
- 
-         }
 @@ -0,0 +0,0 @@ public abstract class LivingEntity extends Entity {
              this.releaseUsingItem();
          } else {
              if (!this.useItem.isEmpty() && this.isUsingItem()) {
-+                this.updateActiveItem(this.getUsedItemHand(), true); // Paper
++                this.startUsingItem(this.getUsedItemHand(), true); // Paper
                  this.triggerItemUseEffects(this.useItem, 16);
                  // CraftBukkit start - fire PlayerItemConsumeEvent
                  ItemStack itemstack;
