@@ -10,10 +10,10 @@ persistenting Living Entity, SPAWNER for spawners,
 or DEFAULT since data was not stored.
 
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index 5be5f95fe01e0132f9d4477149ba022351d8b2be..891633981124a5b864af0f9bd50f11e48da2835d 100644
+index 93751b6df3c8eab6445262e98296eaaa2a65e1b3..d5d72c70d4e414f618d7a6478843deec82f2386a 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
-@@ -1162,6 +1162,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
+@@ -1183,6 +1183,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
              return true;
          }
          // Paper end
@@ -22,20 +22,20 @@ index 5be5f95fe01e0132f9d4477149ba022351d8b2be..891633981124a5b864af0f9bd50f11e4
              // Paper start
              if (DEBUG_ENTITIES) {
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
-index bc73d5052611dba90c2d9c86854447be6a31fdac..d63977984ebec1b4c32bcd2626bdddc15f9e078a 100644
+index 601eb789e19efe4a2fa697c0b5e7c28b245f0990..de713d1c41642ff6d9e992981252c91f23fb19b6 100644
 --- a/src/main/java/net/minecraft/server/players/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/players/PlayerList.java
-@@ -343,7 +343,7 @@ public abstract class PlayerList {
+@@ -342,7 +342,7 @@ public abstract class PlayerList {
              // CraftBukkit start
              ServerLevel finalWorldServer = worldserver1;
              Entity entity = EntityType.loadEntityRecursive(nbttagcompound1.getCompound("Entity"), finalWorldServer, (entity1) -> {
 -                return !finalWorldServer.addWithUUID(entity1) ? null : entity1;
-+                return !finalWorldServer.addEntitySerialized(entity1, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.MOUNT) ? null : entity1; // Paper
++                return !finalWorldServer.addWithUUID(entity1, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.MOUNT) ? null : entity1; // Paper
                  // CraftBukkit end
              });
  
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index 3c7e75b8fc1bfbe08e232fcba412c83f4aba274c..8e30a0d42d422fea6bda77d16d5eae8bab01224d 100644
+index a1744b820a49cd4195b0e9ced960dc6bd2d58d45..d9feae255354f5577b5fa2b202f33bbc7e645867 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
 @@ -67,6 +67,8 @@ import net.minecraft.world.InteractionHand;
@@ -47,7 +47,7 @@ index 3c7e75b8fc1bfbe08e232fcba412c83f4aba274c..8e30a0d42d422fea6bda77d16d5eae8b
  import net.minecraft.world.entity.item.ItemEntity;
  import net.minecraft.world.entity.player.Player;
  import net.minecraft.world.entity.vehicle.Boat;
-@@ -166,6 +168,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, n
+@@ -166,6 +168,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, i
              }
          }
      };
@@ -55,7 +55,7 @@ index 3c7e75b8fc1bfbe08e232fcba412c83f4aba274c..8e30a0d42d422fea6bda77d16d5eae8b
      // Paper end
  
      public com.destroystokyo.paper.loottable.PaperLootableInventoryData lootableData; // Paper
-@@ -1871,6 +1874,9 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, n
+@@ -1900,6 +1903,9 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, i
                  }
                  nbt.put("Paper.Origin", this.newDoubleList(origin.getX(), origin.getY(), origin.getZ()));
              }
@@ -65,7 +65,7 @@ index 3c7e75b8fc1bfbe08e232fcba412c83f4aba274c..8e30a0d42d422fea6bda77d16d5eae8b
              // Save entity's from mob spawner status
              if (spawnedViaMobSpawner) {
                  nbt.putBoolean("Paper.FromMobSpawner", true);
-@@ -2016,6 +2022,26 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, n
+@@ -2045,6 +2051,26 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, i
              }
  
              spawnedViaMobSpawner = nbt.getBoolean("Paper.FromMobSpawner"); // Restore entity's from mob spawner status
@@ -93,10 +93,10 @@ index 3c7e75b8fc1bfbe08e232fcba412c83f4aba274c..8e30a0d42d422fea6bda77d16d5eae8b
  
          } catch (Throwable throwable) {
 diff --git a/src/main/java/net/minecraft/world/level/BaseSpawner.java b/src/main/java/net/minecraft/world/level/BaseSpawner.java
-index 8c266bd81b9350b056067d83415bf2b581e19c94..f2c69ce7a33ef69c71e218cdb2f6a429c5e7b531 100644
+index 36d1bdef298cecd84fdaa400f414f2798a9a49bb..66ce7d852cf7a6070c29402c80700b2b31d08832 100644
 --- a/src/main/java/net/minecraft/world/level/BaseSpawner.java
 +++ b/src/main/java/net/minecraft/world/level/BaseSpawner.java
-@@ -189,6 +189,7 @@ public abstract class BaseSpawner {
+@@ -179,6 +179,7 @@ public abstract class BaseSpawner {
                              // Spigot End
                          }
                          entity.spawnedViaMobSpawner = true; // Paper
