@@ -67,8 +67,6 @@ paperweight {
         mappingsPatch.set(layout.projectDirectory.file("build-data/mappings-patch.tiny"))
         reobfMappingsPatch.set(layout.projectDirectory.file("build-data/reobf-mappings-patch.tiny"))
 
-        additionalSpigotMemberMappings.set(layout.projectDirectory.file("build-data/additional-spigot-member-mappings.csrg"))
-
         reobfPackagesToFix.addAll(
             "co.aikar.timings",
             "com.destroystokyo.paper",
