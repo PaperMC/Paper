@@ -33,10 +33,10 @@ this fix, as the data will remain in the oversized file. Once the server returns
 to a jar with this fix, the data will be restored.
 
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
-index 298b5abbc792dd33be38acbd1c572c9778c4d2d2..46226dd2d16a9f4017661712fe2bfc0c46f63cb2 100644
+index 6f7bcf74b0ff42841e37f36561d6c54e1ee8c989..d511db5453b722f747cc24cf2b4d97a0be75ce6a 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
-@@ -20,8 +20,12 @@ import java.nio.file.LinkOption;
+@@ -17,8 +17,12 @@ import java.nio.file.LinkOption;
  import java.nio.file.Path;
  import java.nio.file.StandardCopyOption;
  import java.nio.file.StandardOpenOption;
@@ -49,24 +49,24 @@ index 298b5abbc792dd33be38acbd1c572c9778c4d2d2..46226dd2d16a9f4017661712fe2bfc0c
  import net.minecraft.world.level.ChunkPos;
  import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
-@@ -48,6 +52,7 @@ public class RegionFile implements AutoCloseable {
+@@ -45,6 +49,7 @@ public class RegionFile implements AutoCloseable {
      @VisibleForTesting
      protected final RegionBitmap usedSectors;
      public final java.util.concurrent.locks.ReentrantLock fileLock = new java.util.concurrent.locks.ReentrantLock(true); // Paper
-+    public final File regionFile; // Paper
++    public final Path regionFile; // Paper
  
-     public RegionFile(File file, File directory, boolean dsync) throws IOException {
-         this(file.toPath(), directory.toPath(), RegionFileVersion.VERSION_DEFLATE, dsync);
-@@ -55,6 +60,8 @@ public class RegionFile implements AutoCloseable {
+     public RegionFile(Path path, Path path1, boolean dsync) throws IOException {
+         this(path, path1, RegionFileVersion.VERSION_DEFLATE, dsync);
+@@ -52,6 +57,8 @@ public class RegionFile implements AutoCloseable {
  
      public RegionFile(Path file, Path directory, RegionFileVersion outputChunkStreamVersion, boolean dsync) throws IOException {
          this.header = ByteBuffer.allocateDirect(8192);
-+        this.regionFile = file.toFile(); // Paper
++        this.regionFile = file; // Paper
 +        initOversizedState(); // Paper
          this.usedSectors = new RegionBitmap();
          this.version = outputChunkStreamVersion;
          if (!Files.isDirectory(directory, new LinkOption[0])) {
-@@ -433,6 +440,74 @@ public class RegionFile implements AutoCloseable {
+@@ -430,6 +437,74 @@ public class RegionFile implements AutoCloseable {
  
      }
  
@@ -75,9 +75,9 @@ index 298b5abbc792dd33be38acbd1c572c9778c4d2d2..46226dd2d16a9f4017661712fe2bfc0c
 +    private int oversizedCount = 0;
 +
 +    private synchronized void initOversizedState() throws IOException {
-+        File metaFile = getOversizedMetaFile();
-+        if (metaFile.exists()) {
-+            final byte[] read = java.nio.file.Files.readAllBytes(metaFile.toPath());
++        Path metaFile = getOversizedMetaFile();
++        if (Files.exists(metaFile)) {
++            final byte[] read = java.nio.file.Files.readAllBytes(metaFile);
 +            System.arraycopy(read, 0, oversized, 0, oversized.length);
 +            for (byte temp : oversized) {
 +                oversizedCount += temp;
@@ -101,9 +101,9 @@ index 298b5abbc792dd33be38acbd1c572c9778c4d2d2..46226dd2d16a9f4017661712fe2bfc0c
 +            oversizedCount--;
 +        }
 +        if (previous && !oversized) {
-+            File oversizedFile = getOversizedFile(x, z);
-+            if (oversizedFile.exists()) {
-+                oversizedFile.delete();
++            Path oversizedFile = getOversizedFile(x, z);
++            if (Files.exists(oversizedFile)) {
++                Files.delete(oversizedFile);
 +            }
 +        }
 +        if (oversizedCount > 0) {
@@ -111,28 +111,28 @@ index 298b5abbc792dd33be38acbd1c572c9778c4d2d2..46226dd2d16a9f4017661712fe2bfc0c
 +                writeOversizedMeta();
 +            }
 +        } else if (previous) {
-+            File oversizedMetaFile = getOversizedMetaFile();
-+            if (oversizedMetaFile.exists()) {
-+                oversizedMetaFile.delete();
++            Path oversizedMetaFile = getOversizedMetaFile();
++            if (Files.exists(oversizedMetaFile)) {
++                Files.delete(oversizedMetaFile);
 +            }
 +        }
 +    }
 +
 +    private void writeOversizedMeta() throws IOException {
-+        java.nio.file.Files.write(getOversizedMetaFile().toPath(), oversized);
++        java.nio.file.Files.write(getOversizedMetaFile(), oversized);
 +    }
 +
-+    private File getOversizedMetaFile() {
-+        return new File(this.regionFile.getParentFile(), this.regionFile.getName().replaceAll("\\.mca$", "") + ".oversized.nbt");
++    private Path getOversizedMetaFile() {
++        return this.regionFile.getParent().resolve(this.regionFile.getFileName().toString().replaceAll("\\.mca$", "") + ".oversized.nbt");
 +    }
 +
-+    private File getOversizedFile(int x, int z) {
-+        return new File(this.regionFile.getParentFile(), this.regionFile.getName().replaceAll("\\.mca$", "") + "_oversized_" + x + "_" + z + ".nbt");
++    private Path getOversizedFile(int x, int z) {
++        return this.regionFile.getParent().resolve(this.regionFile.getFileName().toString().replaceAll("\\.mca$", "") + "_oversized_" + x + "_" + z + ".nbt");
 +    }
 +
 +    synchronized CompoundTag getOversizedData(int x, int z) throws IOException {
-+        File file = getOversizedFile(x, z);
-+        try (DataInputStream out = new DataInputStream(new BufferedInputStream(new InflaterInputStream(new java.io.FileInputStream(file))))) {
++        Path file = getOversizedFile(x, z);
++        try (DataInputStream out = new DataInputStream(new java.io.BufferedInputStream(new InflaterInputStream(Files.newInputStream(file))))) {
 +            return NbtIo.read((java.io.DataInput) out);
 +        }
 +
@@ -142,25 +142,26 @@ index 298b5abbc792dd33be38acbd1c572c9778c4d2d2..46226dd2d16a9f4017661712fe2bfc0c
  
          private final ChunkPos pos;
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
-index ebb1a050beab9530942c4498335f084c89faef06..24092d3d3d234b6f1f2b90e22d90f297532358cc 100644
+index 40830a2b231df9bbf676d8325e76c8252a6c1d6c..164db987210aae06432a6abd9b22796c2168e212 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
-@@ -10,7 +10,9 @@ import java.io.File;
- import java.io.IOException;
+@@ -11,8 +11,10 @@ import java.nio.file.Files;
+ import java.nio.file.Path;
  import javax.annotation.Nullable;
  import net.minecraft.nbt.CompoundTag;
 +import net.minecraft.nbt.ListTag;
  import net.minecraft.nbt.NbtIo;
+ import net.minecraft.nbt.StreamTagVisitor;
 +import net.minecraft.nbt.Tag;
- import net.minecraft.server.MinecraftServer;
  import net.minecraft.util.ExceptionCollector;
  import net.minecraft.world.level.ChunkPos;
-@@ -81,6 +83,74 @@ public class RegionFileStorage implements AutoCloseable {
+ 
+@@ -79,6 +81,74 @@ public class RegionFileStorage implements AutoCloseable {
          }
      }
  
 +    // Paper start
-+    private static void printOversizedLog(String msg, File file, int x, int z) {
++    private static void printOversizedLog(String msg, Path file, int x, int z) {
 +        org.apache.logging.log4j.LogManager.getLogger().fatal(msg + " (" + file.toString().replaceAll(".+[\\\\/]", "") + " - " + x + "," + z + ") Go clean it up to remove this message. /minecraft:tp " + (x<<4)+" 128 "+(z<<4) + " - DO NOT REPORT THIS TO PAPER - You may ask for help on Discord, but do not file an issue. These error messages can not be removed.");
 +    }
 +
@@ -230,7 +231,7 @@ index ebb1a050beab9530942c4498335f084c89faef06..24092d3d3d234b6f1f2b90e22d90f297
      @Nullable
      public CompoundTag read(ChunkPos pos) throws IOException {
          // CraftBukkit start - SPIGOT-5680: There's no good reason to preemptively create files on read, save that for writing
-@@ -92,6 +162,12 @@ public class RegionFileStorage implements AutoCloseable {
+@@ -90,6 +160,12 @@ public class RegionFileStorage implements AutoCloseable {
          try { // Paper
          DataInputStream datainputstream = regionfile.getChunkDataInputStream(pos);
  
@@ -243,7 +244,7 @@ index ebb1a050beab9530942c4498335f084c89faef06..24092d3d3d234b6f1f2b90e22d90f297
          CompoundTag nbttagcompound;
          label43:
          {
-@@ -143,6 +219,7 @@ public class RegionFileStorage implements AutoCloseable {
+@@ -172,6 +248,7 @@ public class RegionFileStorage implements AutoCloseable {
  
              try {
                  NbtIo.write(nbt, (DataOutput) dataoutputstream);
