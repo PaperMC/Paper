@@ -113,7 +113,7 @@ index 67ff66e232592203cf8dad605ad01eabc4dded89..f357a3473682c2d37a20fb862522c67b
  
      public void clearCache() {
 diff --git a/src/main/java/net/minecraft/world/level/lighting/LayerLightSectionStorage.java b/src/main/java/net/minecraft/world/level/lighting/LayerLightSectionStorage.java
-index ee32aba07aad4a3f101a6a57f7aa6c07f74dd0c3..cc9eb8273d5157fb649d84a3ec589b0b923b5bc9 100644
+index 99a758341d4b31cb1703fdce0a257f65ed602ca0..4f7b63f2cc8a69fa8efb3a84f6abc3d3dcf05b49 100644
 --- a/src/main/java/net/minecraft/world/level/lighting/LayerLightSectionStorage.java
 +++ b/src/main/java/net/minecraft/world/level/lighting/LayerLightSectionStorage.java
 @@ -28,7 +28,7 @@ public abstract class LayerLightSectionStorage<M extends DataLayerStorageMap<M>>
@@ -153,7 +153,7 @@ index ee32aba07aad4a3f101a6a57f7aa6c07f74dd0c3..cc9eb8273d5157fb649d84a3ec589b0b
      }
  
      @Nullable
-@@ -346,9 +354,11 @@ public abstract class LayerLightSectionStorage<M extends DataLayerStorageMap<M>>
+@@ -343,9 +351,11 @@ public abstract class LayerLightSectionStorage<M extends DataLayerStorageMap<M>>
  
      protected void swapSectionMap() {
          if (!this.changedSections.isEmpty()) {
@@ -167,7 +167,7 @@ index ee32aba07aad4a3f101a6a57f7aa6c07f74dd0c3..cc9eb8273d5157fb649d84a3ec589b0b
          }
  
 diff --git a/src/main/java/net/minecraft/world/level/lighting/SkyLightSectionStorage.java b/src/main/java/net/minecraft/world/level/lighting/SkyLightSectionStorage.java
-index c436ba1f09f6034679dc3dc7af28c00776e165f2..24030bcb3303d0419c7859ded7613608c5f82308 100644
+index 1f6ed4309f0f5e06cd2981864feaa6ea16df0350..9797254e981d08d3934f7ca8f369dd78a6ef1a48 100644
 --- a/src/main/java/net/minecraft/world/level/lighting/SkyLightSectionStorage.java
 +++ b/src/main/java/net/minecraft/world/level/lighting/SkyLightSectionStorage.java
 @@ -21,7 +21,7 @@ public class SkyLightSectionStorage extends LayerLightSectionStorage<SkyLightSec
@@ -180,20 +180,20 @@ index c436ba1f09f6034679dc3dc7af28c00776e165f2..24030bcb3303d0419c7859ded7613608
  
      @Override
 @@ -32,8 +32,9 @@ public class SkyLightSectionStorage extends LayerLightSectionStorage<SkyLightSec
-     protected int getLightValue(long l, boolean bl) {
-         long m = SectionPos.blockToSection(l);
-         int i = SectionPos.y(m);
--        SkyLightSectionStorage.SkyDataLayerStorageMap skyDataLayerStorageMap = bl ? this.updatingSectionData : this.visibleSectionData;
--        int j = skyDataLayerStorageMap.topSections.get(SectionPos.getZeroNode(m));
+     protected int getLightValue(long blockPos, boolean cached) {
+         long l = SectionPos.blockToSection(blockPos);
+         int i = SectionPos.y(l);
+-        SkyLightSectionStorage.SkyDataLayerStorageMap skyDataLayerStorageMap = cached ? this.updatingSectionData : this.visibleSectionData;
+-        int j = skyDataLayerStorageMap.topSections.get(SectionPos.getZeroNode(l));
 +        synchronized (this.visibleUpdateLock) { // Paper - avoid copying light data
 +        SkyLightSectionStorage.SkyDataLayerStorageMap skyDataLayerStorageMap = (SkyLightSectionStorage.SkyDataLayerStorageMap) this.e_visible; // Paper - avoid copying light data - must be after lock acquire
-+        int j = skyDataLayerStorageMap.otherData.getVisibleAsync(SectionPos.getZeroNode(m)); // Paper - avoid copying light data
++        int j = skyDataLayerStorageMap.otherData.getVisibleAsync(SectionPos.getZeroNode(l)); // Paper - avoid copying light data
          if (j != skyDataLayerStorageMap.currentLowestY && i < j) {
-             DataLayer dataLayer = this.getDataLayer(skyDataLayerStorageMap, m);
+             DataLayer dataLayer = this.getDataLayer(skyDataLayerStorageMap, l);
              if (dataLayer == null) {
 @@ -52,6 +53,7 @@ public class SkyLightSectionStorage extends LayerLightSectionStorage<SkyLightSec
          } else {
-             return bl && !this.lightOnInSection(m) ? 0 : 15;
+             return cached && !this.lightOnInSection(l) ? 0 : 15;
          }
 +        } // Paper - avoid copying light data
      }

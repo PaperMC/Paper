@@ -8,26 +8,91 @@ an object pool for these.
 
 Uses lots of advanced new capabilities of the Paper codebase :)
 
-diff --git a/src/main/java/net/minecraft/network/protocol/game/ClientboundLightUpdatePacket.java b/src/main/java/net/minecraft/network/protocol/game/ClientboundLightUpdatePacket.java
-index 24d5a44cb81ec5f10bfcce002a193f4566de88fc..d8be2ad889f46491e50404916fb4ae0de5f42098 100644
---- a/src/main/java/net/minecraft/network/protocol/game/ClientboundLightUpdatePacket.java
-+++ b/src/main/java/net/minecraft/network/protocol/game/ClientboundLightUpdatePacket.java
-@@ -2,11 +2,14 @@ package net.minecraft.network.protocol.game;
+diff --git a/src/main/java/net/minecraft/network/protocol/game/ClientboundLevelChunkWithLightPacket.java b/src/main/java/net/minecraft/network/protocol/game/ClientboundLevelChunkWithLightPacket.java
+index 079734654c0fd421561b5f9003cd318bad5787a9..a15dbd37bf810c89b751710537203d6bf1d085bc 100644
+--- a/src/main/java/net/minecraft/network/protocol/game/ClientboundLevelChunkWithLightPacket.java
++++ b/src/main/java/net/minecraft/network/protocol/game/ClientboundLevelChunkWithLightPacket.java
+@@ -2,8 +2,11 @@ package net.minecraft.network.protocol.game;
  
- import com.google.common.collect.Lists;
  import java.util.BitSet;
-+import io.netty.channel.ChannelFuture; // Paper
- import java.util.List;
  import javax.annotation.Nullable;
- import net.minecraft.core.SectionPos;
++
++import io.netty.channel.ChannelFuture;
  import net.minecraft.network.FriendlyByteBuf;
  import net.minecraft.network.protocol.Packet;
-+import net.minecraft.server.MCUtil;
 +import net.minecraft.server.level.ServerPlayer;
  import net.minecraft.world.level.ChunkPos;
- import net.minecraft.world.level.LightLayer;
- import net.minecraft.world.level.chunk.DataLayer;
-@@ -22,6 +25,35 @@ public class ClientboundLightUpdatePacket implements Packet<ClientGamePacketList
+ import net.minecraft.world.level.chunk.LevelChunk;
+ import net.minecraft.world.level.lighting.LevelLightEngine;
+@@ -14,6 +17,23 @@ public class ClientboundLevelChunkWithLightPacket implements Packet<ClientGamePa
+     private final ClientboundLevelChunkPacketData chunkData;
+     private final ClientboundLightUpdatePacketData lightData;
+ 
++    // Paper start
++    @Override
++    public void onPacketDispatch(ServerPlayer player) {
++        lightData.onPacketDispatch(player);
++    }
++
++    @Override
++    public void onPacketDispatchFinish(ServerPlayer player, ChannelFuture future) {
++        lightData.onPacketDispatchFinish(player, future);
++    }
++
++    @Override
++    public boolean hasFinishListener() {
++        return true;
++    }
++    // Paper end
++
+     public ClientboundLevelChunkWithLightPacket(LevelChunk chunk, LevelLightEngine lightProvider, @Nullable BitSet bitSet, @Nullable BitSet bitSet2, boolean bl) {
+         ChunkPos chunkPos = chunk.getPos();
+         this.x = chunkPos.x;
+diff --git a/src/main/java/net/minecraft/network/protocol/game/ClientboundLightUpdatePacket.java b/src/main/java/net/minecraft/network/protocol/game/ClientboundLightUpdatePacket.java
+index 15350c301ba670cd86c83c7051c3571ff2759d8f..da46695e4d45f701a216767a048b21e289f056f6 100644
+--- a/src/main/java/net/minecraft/network/protocol/game/ClientboundLightUpdatePacket.java
++++ b/src/main/java/net/minecraft/network/protocol/game/ClientboundLightUpdatePacket.java
+@@ -2,8 +2,11 @@ package net.minecraft.network.protocol.game;
+ 
+ import java.util.BitSet;
+ import javax.annotation.Nullable;
++
++import io.netty.channel.ChannelFuture;
+ import net.minecraft.network.FriendlyByteBuf;
+ import net.minecraft.network.protocol.Packet;
++import net.minecraft.server.level.ServerPlayer;
+ import net.minecraft.world.level.ChunkPos;
+ import net.minecraft.world.level.lighting.LevelLightEngine;
+ 
+@@ -12,6 +15,23 @@ public class ClientboundLightUpdatePacket implements Packet<ClientGamePacketList
+     private final int z;
+     private final ClientboundLightUpdatePacketData lightData;
+ 
++    // Paper start
++    @Override
++    public void onPacketDispatch(ServerPlayer player) {
++        lightData.onPacketDispatch(player);
++    }
++
++    @Override
++    public void onPacketDispatchFinish(ServerPlayer player, ChannelFuture future) {
++        lightData.onPacketDispatchFinish(player, future);
++    }
++
++    @Override
++    public boolean hasFinishListener() {
++        return true;
++    }
++    // Paper end
++
+     public ClientboundLightUpdatePacket(ChunkPos chunkPos, LevelLightEngine lightProvider, @Nullable BitSet skyBits, @Nullable BitSet blockBits, boolean nonEdge) {
+         this.x = chunkPos.x;
+         this.z = chunkPos.z;
+diff --git a/src/main/java/net/minecraft/network/protocol/game/ClientboundLightUpdatePacketData.java b/src/main/java/net/minecraft/network/protocol/game/ClientboundLightUpdatePacketData.java
+index fe9cfb2c6e3ecbe8966bc33a16785f03f870e7cf..e887317e8fcf71740ec96d85b7ea5b819a39d468 100644
+--- a/src/main/java/net/minecraft/network/protocol/game/ClientboundLightUpdatePacketData.java
++++ b/src/main/java/net/minecraft/network/protocol/game/ClientboundLightUpdatePacketData.java
+@@ -19,6 +19,27 @@ public class ClientboundLightUpdatePacketData {
      private final List<byte[]> skyUpdates;
      private final List<byte[]> blockUpdates;
      private final boolean trustEdges;
@@ -36,16 +101,14 @@ index 24d5a44cb81ec5f10bfcce002a193f4566de88fc..d8be2ad889f46491e50404916fb4ae0d
 +    java.lang.Runnable cleaner2;
 +    java.util.concurrent.atomic.AtomicInteger remainingSends = new java.util.concurrent.atomic.AtomicInteger(0);
 +
-+    @Override
-+    public void onPacketDispatch(ServerPlayer player) {
++    public void onPacketDispatch(net.minecraft.server.level.ServerPlayer player) {
 +        remainingSends.incrementAndGet();
 +    }
 +
-+    @Override
-+    public void onPacketDispatchFinish(ServerPlayer player, ChannelFuture future) {
++    public void onPacketDispatchFinish(net.minecraft.server.level.ServerPlayer player, io.netty.channel.ChannelFuture future) {
 +        if (remainingSends.decrementAndGet() <= 0) {
 +            // incase of any race conditions, schedule this delayed
-+            MCUtil.scheduleTask(5, () -> {
++            net.minecraft.server.MCUtil.scheduleTask(5, () -> {
 +                if (remainingSends.get() == 0) {
 +                    cleaner1.run();
 +                    cleaner2.run();
@@ -53,38 +116,32 @@ index 24d5a44cb81ec5f10bfcce002a193f4566de88fc..d8be2ad889f46491e50404916fb4ae0d
 +            }, "Light Packet Release");
 +        }
 +    }
-+
-+    @Override
-+    public boolean hasFinishListener() {
-+        return true;
-+    }
-+
 +    // Paper end
  
-     public ClientboundLightUpdatePacket(ChunkPos chunkPos, LevelLightEngine lightProvider, @Nullable BitSet bitSet, @Nullable BitSet bitSet2, boolean nonEdge) {
-         this.x = chunkPos.x;
-@@ -31,8 +63,8 @@ public class ClientboundLightUpdatePacket implements Packet<ClientGamePacketList
+     public ClientboundLightUpdatePacketData(ChunkPos pos, LevelLightEngine lightProvider, @Nullable BitSet skyBits, @Nullable BitSet blockBits, boolean nonEdge) {
+         this.trustEdges = nonEdge;
+@@ -26,8 +47,8 @@ public class ClientboundLightUpdatePacketData {
          this.blockYMask = new BitSet();
          this.emptySkyYMask = new BitSet();
          this.emptyBlockYMask = new BitSet();
 -        this.skyUpdates = Lists.newArrayList();
 -        this.blockUpdates = Lists.newArrayList();
-+        this.skyUpdates = Lists.newArrayList();this.cleaner1 = MCUtil.registerListCleaner(this, this.skyUpdates, DataLayer::releaseBytes); // Paper
-+        this.blockUpdates = Lists.newArrayList();this.cleaner2 = MCUtil.registerListCleaner(this, this.blockUpdates, DataLayer::releaseBytes); // Paper
++        this.skyUpdates = Lists.newArrayList();this.cleaner1 = net.minecraft.server.MCUtil.registerListCleaner(this, this.skyUpdates, DataLayer::releaseBytes); // Paper
++        this.blockUpdates = Lists.newArrayList();this.cleaner2 = net.minecraft.server.MCUtil.registerListCleaner(this, this.blockUpdates, DataLayer::releaseBytes); // Paper
  
          for(int i = 0; i < lightProvider.getLightSectionCount(); ++i) {
-             if (bitSet == null || bitSet.get(i)) {
-@@ -53,7 +85,7 @@ public class ClientboundLightUpdatePacket implements Packet<ClientGamePacketList
-                 bitSet2.set(i);
+             if (skyBits == null || skyBits.get(i)) {
+@@ -72,7 +93,7 @@ public class ClientboundLightUpdatePacketData {
+                 uninitialized.set(y);
              } else {
-                 bitSet.set(i);
--                list.add((byte[])dataLayer.getData().clone());
-+                list.add((byte[])dataLayer.getCloneIfSet()); // Paper
+                 initialized.set(y);
+-                nibbles.add((byte[])dataLayer.getData().clone());
++                nibbles.add((byte[])dataLayer.getCloneIfSet()); // Paper
              }
          }
  
 diff --git a/src/main/java/net/minecraft/world/level/chunk/DataLayer.java b/src/main/java/net/minecraft/world/level/chunk/DataLayer.java
-index 4ddcdb3881f616f922cb539bf9d00a1ac89f051f..68a6c4db5980e733d81ef9a34cf32950f0983de6 100644
+index 81701abd11fbc4671393a76a42973f53835ca234..e8cf0088e94925934acd02ba05b9411bd7cf186e 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/DataLayer.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/DataLayer.java
 @@ -13,11 +13,65 @@ public final class DataLayer {
@@ -151,7 +208,7 @@ index 4ddcdb3881f616f922cb539bf9d00a1ac89f051f..68a6c4db5980e733d81ef9a34cf32950
 +        registerCleaner();
 +        // Paper end
          if (bytes.length != 2048) {
-             throw (IllegalArgumentException) Util.pauseInIde((Throwable) (new IllegalArgumentException("DataLayer should be 2048 bytes not: " + bytes.length)));
+             throw (IllegalArgumentException) Util.pauseInIde(new IllegalArgumentException("DataLayer should be 2048 bytes not: " + bytes.length));
          }
 @@ -52,7 +106,8 @@ public final class DataLayer {
  
@@ -199,23 +256,23 @@ index 4ddcdb3881f616f922cb539bf9d00a1ac89f051f..68a6c4db5980e733d81ef9a34cf32950
  
      public String toString() {
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
-index d113b4835e86a789c0ba124eb839e1c56a5437d2..ed05a11f5038fdac90576ca33a0b710c83ab39a1 100644
+index fdc80d70cf444e9b6d968764e4232f23f3ae9c37..5c21871c7bdfce191db499860725da769dc9caac 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
-@@ -488,11 +488,11 @@ public class ChunkSerializer {
+@@ -496,11 +496,11 @@ public class ChunkSerializer {
                  }
  
                  if (nibblearray != null && !nibblearray.isEmpty()) {
--                    nbttagcompound2.putByteArray("BlockLight", nibblearray.getData());
-+                    nbttagcompound2.putByteArray("BlockLight", nibblearray.asBytesPoolSafe().clone()); // Paper
+-                    nbttagcompound1.putByteArray("BlockLight", nibblearray.getData());
++                    nbttagcompound1.putByteArray("BlockLight", nibblearray.asBytesPoolSafe().clone()); // Paper
                  }
  
                  if (nibblearray1 != null && !nibblearray1.isEmpty()) {
--                    nbttagcompound2.putByteArray("SkyLight", nibblearray1.getData());
-+                    nbttagcompound2.putByteArray("SkyLight", nibblearray1.asBytesPoolSafe().clone()); // Paper
+-                    nbttagcompound1.putByteArray("SkyLight", nibblearray1.getData());
++                    nbttagcompound1.putByteArray("SkyLight", nibblearray1.asBytesPoolSafe().clone()); // Paper
                  }
  
-                 nbttaglist.add(nbttagcompound2);
+                 if (!nbttagcompound1.isEmpty()) {
 diff --git a/src/main/java/net/minecraft/world/level/lighting/DataLayerStorageMap.java b/src/main/java/net/minecraft/world/level/lighting/DataLayerStorageMap.java
 index f357a3473682c2d37a20fb862522c67b9979402a..52682471adc13dffc0383fc4abacbd3397f3bb10 100644
 --- a/src/main/java/net/minecraft/world/level/lighting/DataLayerStorageMap.java
@@ -232,10 +289,10 @@ index f357a3473682c2d37a20fb862522c67b9979402a..52682471adc13dffc0383fc4abacbd33
      }
  
 diff --git a/src/main/java/net/minecraft/world/level/lighting/LayerLightSectionStorage.java b/src/main/java/net/minecraft/world/level/lighting/LayerLightSectionStorage.java
-index cc9eb8273d5157fb649d84a3ec589b0b923b5bc9..fd1cdb6e2023713f947b9497c605cf6f4bae8994 100644
+index 4f7b63f2cc8a69fa8efb3a84f6abc3d3dcf05b49..cae559b37b5404851fa99d1d206232b5e7ab770c 100644
 --- a/src/main/java/net/minecraft/world/level/lighting/LayerLightSectionStorage.java
 +++ b/src/main/java/net/minecraft/world/level/lighting/LayerLightSectionStorage.java
-@@ -162,7 +162,7 @@ public abstract class LayerLightSectionStorage<M extends DataLayerStorageMap<M>>
+@@ -157,7 +157,7 @@ public abstract class LayerLightSectionStorage<M extends DataLayerStorageMap<M>>
  
      protected DataLayer createDataLayer(long sectionPos) {
          DataLayer dataLayer = this.queuedSections.get(sectionPos);
@@ -244,13 +301,13 @@ index cc9eb8273d5157fb649d84a3ec589b0b923b5bc9..fd1cdb6e2023713f947b9497c605cf6f
      }
  
      protected void clearQueuedSectionBlocks(LayerLightEngine<?, ?> storage, long sectionPos) {
-@@ -321,12 +321,12 @@ public abstract class LayerLightSectionStorage<M extends DataLayerStorageMap<M>>
+@@ -318,12 +318,12 @@ public abstract class LayerLightSectionStorage<M extends DataLayerStorageMap<M>>
  
-     protected void queueSectionData(long sectionPos, @Nullable DataLayer array, boolean bl) {
+     protected void queueSectionData(long sectionPos, @Nullable DataLayer array, boolean nonEdge) {
          if (array != null) {
 -            this.queuedSections.put(sectionPos, array);
 +            DataLayer remove = this.queuedSections.put(sectionPos, array); if (remove != null && remove.cleaner != null) remove.cleaner.run(); // Paper - clean up when removed
-             if (!bl) {
+             if (!nonEdge) {
                  this.untrustedSections.add(sectionPos);
              }
          } else {
@@ -260,7 +317,7 @@ index cc9eb8273d5157fb649d84a3ec589b0b923b5bc9..fd1cdb6e2023713f947b9497c605cf6f
  
      }
 diff --git a/src/main/java/net/minecraft/world/level/lighting/SkyLightSectionStorage.java b/src/main/java/net/minecraft/world/level/lighting/SkyLightSectionStorage.java
-index 24030bcb3303d0419c7859ded7613608c5f82308..ec3837a64e8ac6892028611d57a111a7fd5c58f7 100644
+index 9797254e981d08d3934f7ca8f369dd78a6ef1a48..4012d87dc27c3b1096fdaa60bfdfd68f27a22da7 100644
 --- a/src/main/java/net/minecraft/world/level/lighting/SkyLightSectionStorage.java
 +++ b/src/main/java/net/minecraft/world/level/lighting/SkyLightSectionStorage.java
 @@ -163,14 +163,14 @@ public class SkyLightSectionStorage extends LayerLightSectionStorage<SkyLightSec
@@ -299,23 +356,23 @@ index 24030bcb3303d0419c7859ded7613608c5f82308..ec3837a64e8ac6892028611d57a111a7
                              int k = SectionPos.sectionToBlockCoord(SectionPos.y(l));
                              int m = SectionPos.sectionToBlockCoord(SectionPos.z(l));
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftChunk.java b/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
-index 46136c5daa1b4ea9103c736cc4b035195177368e..5088c84f6518cb686241b1db54faa8d813cb3eaa 100644
+index 7bc1219523eeb0880493e6fb42692f1fdb30c110..187366c33c86b220581c3deac9168d6b6a2c5a3e 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
-@@ -343,14 +343,14 @@ public class CraftChunk implements Chunk {
-                     sectionSkyLights[i] = CraftChunk.emptyLight;
-                 } else {
-                     sectionSkyLights[i] = new byte[2048];
--                    System.arraycopy(skyLightArray.getData(), 0, sectionSkyLights[i], 0, 2048);
-+                    System.arraycopy(skyLightArray.getIfSet(), 0, sectionSkyLights[i], 0, 2048); // Paper
-                 }
-                 DataLayer emitLightArray = lightengine.getLayerListener(LightLayer.BLOCK).getDataLayerData(SectionPos.of(x, i, z));
-                 if (emitLightArray == null) {
-                     sectionEmitLights[i] = CraftChunk.emptyLight;
-                 } else {
-                     sectionEmitLights[i] = new byte[2048];
--                    System.arraycopy(emitLightArray.getData(), 0, sectionEmitLights[i], 0, 2048);
-+                    System.arraycopy(emitLightArray.getIfSet(), 0, sectionEmitLights[i], 0, 2048); // Paper
-                 }
+@@ -339,14 +339,14 @@ public class CraftChunk implements Chunk {
+                 sectionSkyLights[i] = CraftChunk.emptyLight;
+             } else {
+                 sectionSkyLights[i] = new byte[2048];
+-                System.arraycopy(skyLightArray.getData(), 0, sectionSkyLights[i], 0, 2048);
++                System.arraycopy(skyLightArray.getIfSet(), 0, sectionSkyLights[i], 0, 2048); // Paper
              }
-         }
+             DataLayer emitLightArray = lightengine.getLayerListener(LightLayer.BLOCK).getDataLayerData(SectionPos.of(x, i, z));
+             if (emitLightArray == null) {
+                 sectionEmitLights[i] = CraftChunk.emptyLight;
+             } else {
+                 sectionEmitLights[i] = new byte[2048];
+-                System.arraycopy(emitLightArray.getData(), 0, sectionEmitLights[i], 0, 2048);
++                System.arraycopy(emitLightArray.getIfSet(), 0, sectionEmitLights[i], 0, 2048); // Paper
+             }
+ 
+             if (biome != null) {
