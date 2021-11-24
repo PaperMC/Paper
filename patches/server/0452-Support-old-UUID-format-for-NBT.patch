@@ -8,10 +8,10 @@ We have stored UUID in plenty of places that did not get DFU'd
 So just look for old format and load it if it exists.
 
 diff --git a/src/main/java/net/minecraft/nbt/CompoundTag.java b/src/main/java/net/minecraft/nbt/CompoundTag.java
-index 5456387ade8932fb0d9804abe0fd66f1c565e1ae..7199be3b9c00c66f452e92ad35795017112f1658 100644
+index be2bd47a509a03e78c380cf749cd476f332ab03d..210f81e380cb38c2d5d69849e593d2fdb54e8856 100644
 --- a/src/main/java/net/minecraft/nbt/CompoundTag.java
 +++ b/src/main/java/net/minecraft/nbt/CompoundTag.java
-@@ -120,6 +120,12 @@ public class CompoundTag implements Tag {
+@@ -182,6 +182,12 @@ public class CompoundTag implements Tag {
      }
  
      public void putUUID(String key, UUID value) {
@@ -24,7 +24,7 @@ index 5456387ade8932fb0d9804abe0fd66f1c565e1ae..7199be3b9c00c66f452e92ad35795017
          this.tags.put(key, NbtUtils.createUUID(value));
      }
  
-@@ -128,10 +134,20 @@ public class CompoundTag implements Tag {
+@@ -190,10 +196,20 @@ public class CompoundTag implements Tag {
       * You must use {@link #hasUUID(String)} before or else it <b>will</b> throw an NPE.
       */
      public UUID getUUID(String key) {
@@ -46,55 +46,44 @@ index 5456387ade8932fb0d9804abe0fd66f1c565e1ae..7199be3b9c00c66f452e92ad35795017
          return tag != null && tag.getType() == IntArrayTag.TYPE && ((IntArrayTag)tag).getAsIntArray().length == 4;
      }
 diff --git a/src/main/java/net/minecraft/nbt/NbtUtils.java b/src/main/java/net/minecraft/nbt/NbtUtils.java
-index 57c9575a9714acb95d9dced672955a96d71dfd1e..06fe97e05608fc21f90c9884d745d910beb6883d 100644
+index a61f480bc2e2169969e614bccd3e143f47c1a40e..b77b806b28dfada3e84e25d868aa8a8f8556f5af 100644
 --- a/src/main/java/net/minecraft/nbt/NbtUtils.java
 +++ b/src/main/java/net/minecraft/nbt/NbtUtils.java
 @@ -40,14 +40,14 @@ import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
  
  public final class NbtUtils {
--    private static final Comparator<ListTag> YXZ_LISTTAG_INT_COMPARATOR = Comparator.comparingInt((listTag) -> {
-+    private static final Comparator<ListTag> YXZ_LISTTAG_INT_COMPARATOR = Comparator.<ListTag>comparingInt((listTag) -> { // Paper - decompile fix
-         return listTag.getInt(1);
-     }).thenComparingInt((listTag) -> {
-         return listTag.getInt(0);
-     }).thenComparingInt((listTag) -> {
-         return listTag.getInt(2);
+-    private static final Comparator<ListTag> YXZ_LISTTAG_INT_COMPARATOR = Comparator.comparingInt((nbt) -> {
++    private static final Comparator<ListTag> YXZ_LISTTAG_INT_COMPARATOR = Comparator.<ListTag>comparingInt((nbt) -> { // Paper - decompile fix
+         return nbt.getInt(1);
+     }).thenComparingInt((nbt) -> {
+         return nbt.getInt(0);
+     }).thenComparingInt((nbt) -> {
+         return nbt.getInt(2);
      });
--    private static final Comparator<ListTag> YXZ_LISTTAG_DOUBLE_COMPARATOR = Comparator.comparingDouble((listTag) -> {
-+    private static final Comparator<ListTag> YXZ_LISTTAG_DOUBLE_COMPARATOR = Comparator.<ListTag>comparingDouble((listTag) -> { // Paper - decompile fix
-         return listTag.getDouble(1);
-     }).thenComparingDouble((listTag) -> {
-         return listTag.getDouble(0);
-@@ -76,6 +76,11 @@ public final class NbtUtils {
+-    private static final Comparator<ListTag> YXZ_LISTTAG_DOUBLE_COMPARATOR = Comparator.comparingDouble((nbt) -> {
++    private static final Comparator<ListTag> YXZ_LISTTAG_DOUBLE_COMPARATOR = Comparator.<ListTag>comparingDouble((nbt) -> { // Paper - decompile fix
+         return nbt.getDouble(1);
+     }).thenComparingDouble((nbt) -> {
+         return nbt.getDouble(0);
+@@ -75,6 +75,11 @@ public final class NbtUtils {
+         if (compound.contains("Name", 8)) {
              string = compound.getString("Name");
          }
- 
 +        // Paper start - support string UUID's
 +        if (compound.contains("Id", 8)) {
 +            uUID = UUID.fromString(compound.getString("Id"));
 +        }
 +        // Paper end
+ 
          if (compound.hasUUID("Id")) {
              uUID = compound.getUUID("Id");
-         }
 @@ -495,7 +500,7 @@ public final class NbtUtils {
      }
  
      public static CompoundTag update(DataFixer fixer, DataFixTypes fixTypes, CompoundTag compound, int oldVersion, int targetVersion) {
 -        return fixer.update(fixTypes.getType(), new Dynamic<>(NbtOps.INSTANCE, compound), oldVersion, targetVersion).getValue();
-+        return (CompoundTag) fixer.update(fixTypes.getType(), new com.mojang.serialization.Dynamic<>(NbtOps.INSTANCE, compound), oldVersion, targetVersion).getValue(); // Paper - decompile fix
++        return (CompoundTag) fixer.update(fixTypes.getType(), new Dynamic<>(NbtOps.INSTANCE, compound), oldVersion, targetVersion).getValue(); // Paper - decompile fix
      }
  
      public static Component toPrettyComponent(Tag element) {
-@@ -620,8 +625,8 @@ public final class NbtUtils {
-             CompoundTag compoundTag2 = new CompoundTag();
-             if (i + 2 <= string.length()) {
-                 String string3 = string.substring(i + 1, string.indexOf(125, i));
--                COMMA_SPLITTER.split(string3).forEach((string2) -> {
--                    List<String> list = COLON_SPLITTER.splitToList(string2);
-+                COMMA_SPLITTER.split(string3).forEach(it -> { // Paper - decompile fix
-+                    List<String> list = COLON_SPLITTER.splitToList(it); // Paper - decompile fix
-                     if (list.size() == 2) {
-                         compoundTag2.putString(list.get(0), list.get(1));
-                     } else {
