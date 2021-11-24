@@ -3,6 +3,9 @@ From: Shane Freeder <theboyetronic@gmail.com>
 Date: Sun, 17 Mar 2019 23:04:30 +0000
 Subject: [PATCH] Annotation Test changes
 
+- Allow use of TYPE_USE annotations
+- Ignore package-private methods for nullability annotations
+- Add excludes for classes which don't pass
 
 diff --git a/src/test/java/org/bukkit/AnnotationTest.java b/src/test/java/org/bukkit/AnnotationTest.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
@@ -27,3 +30,62 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      };
  
      @Test
+@@ -0,0 +0,0 @@ public class AnnotationTest {
+                 }
+ 
+                 if (mustBeAnnotated(Type.getReturnType(method.desc)) && !isWellAnnotated(method.invisibleAnnotations)) {
++                    // Paper start - Allow use of TYPE_USE annotations
++                    boolean warn = true;
++                    if (isWellAnnotated(method.visibleTypeAnnotations)) {
++                        warn = false;
++                    } else if (method.invisibleTypeAnnotations != null) {
++                        dance: for (final org.objectweb.asm.tree.TypeAnnotationNode invisibleTypeAnnotation : method.invisibleTypeAnnotations) {
++                            final org.objectweb.asm.TypeReference ref = new org.objectweb.asm.TypeReference(invisibleTypeAnnotation.typeRef);
++                            if (ref.getSort() == org.objectweb.asm.TypeReference.METHOD_RETURN && java.util.Arrays.binarySearch(ACCEPTED_ANNOTATIONS, invisibleTypeAnnotation.desc) >= 0) {
++                                warn = false;
++                                break dance; // cha cha real smooth
++                            }
++                        }
++                    }
++                    if (warn)
++                    // Paper end
+                     warn(errors, clazz, method, "return value");
+                 }
+ 
+                 Type[] paramTypes = Type.getArgumentTypes(method.desc);
+                 List<ParameterNode> parameters = method.parameters;
+ 
++                dancing: // Paper
+                 for (int i = 0; i < paramTypes.length; i++) {
+                     if (mustBeAnnotated(paramTypes[i]) && !isWellAnnotated(method.invisibleParameterAnnotations == null ? null : method.invisibleParameterAnnotations[i])) {
++                        // Paper start
++                        if (method.invisibleTypeAnnotations != null) {
++                            for (final org.objectweb.asm.tree.TypeAnnotationNode invisibleTypeAnnotation : method.invisibleTypeAnnotations) {
++                                final org.objectweb.asm.TypeReference ref = new org.objectweb.asm.TypeReference(invisibleTypeAnnotation.typeRef);
++                                if (ref.getSort() == org.objectweb.asm.TypeReference.METHOD_FORMAL_PARAMETER && ref.getTypeParameterIndex() == i && java.util.Arrays.binarySearch(ACCEPTED_ANNOTATIONS, invisibleTypeAnnotation.desc) >= 0) {
++                                    continue dancing;
++                                }
++                            }
++                        }
++                        // Paper end - Allow use of TYPE_USE annotations
+                         ParameterNode paramNode = parameters == null ? null : parameters.get(i);
+                         String paramName = paramNode == null ? null : paramNode.name;
+ 
+@@ -0,0 +0,0 @@ public class AnnotationTest {
+ 
+     private static boolean isMethodIncluded(@NotNull ClassNode clazz, @NotNull MethodNode method, @NotNull Map<String, ClassNode> allClasses) {
+         // Exclude private, synthetic and deprecated methods
+-        if ((method.access & (Opcodes.ACC_PRIVATE | Opcodes.ACC_SYNTHETIC | Opcodes.ACC_DEPRECATED)) != 0) {
++        if ((method.access & (Opcodes.ACC_PRIVATE | Opcodes.ACC_SYNTHETIC | Opcodes.ACC_DEPRECATED)) != 0 || (method.access & (Opcodes.ACC_PRIVATE | Opcodes.ACC_PROTECTED | Opcodes.ACC_PUBLIC)) == 0) { // Paper - ignore package-private
+             return false;
+         }
+ 
+@@ -0,0 +0,0 @@ public class AnnotationTest {
+         return true;
+     }
+ 
+-    private static boolean isWellAnnotated(@Nullable List<AnnotationNode> annotations) {
++    private static boolean isWellAnnotated(@Nullable List<? extends AnnotationNode> annotations) { // Paper
+         if (annotations == null) {
+             return false;
+         }
