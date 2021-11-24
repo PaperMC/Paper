@@ -21,8 +21,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/level/DistanceManager.java
 +++ b/src/main/java/net/minecraft/server/level/DistanceManager.java
 @@ -0,0 +0,0 @@ public abstract class DistanceManager {
-     private final DistanceManager.ChunkTicketTracker ticketTracker = new DistanceManager.ChunkTicketTracker();
      private final DistanceManager.FixedPlayerDistanceChunkTracker naturalSpawnChunkCounter = new DistanceManager.FixedPlayerDistanceChunkTracker(8);
+     private final TickingTracker tickingTicketsTracker = new TickingTracker();
      private final DistanceManager.PlayerTicketTracker playerTicketManager = new DistanceManager.PlayerTicketTracker(33);
 -    final Set<ChunkHolder> chunksToUpdateFutures = Sets.newHashSet();
 +    // Paper start use a queue, but still keep unique requirement
@@ -52,7 +52,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -                iter.remove();
 -                expectedSize--;
 -
--                playerchunk.updateFutures(playerchunkmap, this.mainThreadExecutor);
+-                playerchunk.updateFutures(chunkStorage, this.mainThreadExecutor);
 -
 -                // Reset iterator if set was modified using add()
 -                if (this.chunksToUpdateFutures.size() != expectedSize) {
@@ -67,7 +67,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            while(!this.pendingChunkUpdates.isEmpty()) {
 +                ChunkHolder remove = this.pendingChunkUpdates.remove();
 +                remove.isUpdateQueued = false;
-+                remove.updateFutures(playerchunkmap, this.mainThreadExecutor);
++                remove.updateFutures(chunkStorage, this.mainThreadExecutor);
 +            }
 +            // Paper end
              return true;

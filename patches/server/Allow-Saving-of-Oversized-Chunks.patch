@@ -53,15 +53,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      @VisibleForTesting
      protected final RegionBitmap usedSectors;
      public final java.util.concurrent.locks.ReentrantLock fileLock = new java.util.concurrent.locks.ReentrantLock(true); // Paper
-+    public final File regionFile; // Paper
++    public final Path regionFile; // Paper
  
-     public RegionFile(File file, File directory, boolean dsync) throws IOException {
-         this(file.toPath(), directory.toPath(), RegionFileVersion.VERSION_DEFLATE, dsync);
+     public RegionFile(Path path, Path path1, boolean dsync) throws IOException {
+         this(path, path1, RegionFileVersion.VERSION_DEFLATE, dsync);
 @@ -0,0 +0,0 @@ public class RegionFile implements AutoCloseable {
  
      public RegionFile(Path file, Path directory, RegionFileVersion outputChunkStreamVersion, boolean dsync) throws IOException {
          this.header = ByteBuffer.allocateDirect(8192);
-+        this.regionFile = file.toFile(); // Paper
++        this.regionFile = file; // Paper
 +        initOversizedState(); // Paper
          this.usedSectors = new RegionBitmap();
          this.version = outputChunkStreamVersion;
@@ -75,9 +75,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    private int oversizedCount = 0;
 +
 +    private synchronized void initOversizedState() throws IOException {
-+        File metaFile = getOversizedMetaFile();
-+        if (metaFile.exists()) {
-+            final byte[] read = java.nio.file.Files.readAllBytes(metaFile.toPath());
++        Path metaFile = getOversizedMetaFile();
++        if (Files.exists(metaFile)) {
++            final byte[] read = java.nio.file.Files.readAllBytes(metaFile);
 +            System.arraycopy(read, 0, oversized, 0, oversized.length);
 +            for (byte temp : oversized) {
 +                oversizedCount += temp;
@@ -101,9 +101,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            oversizedCount--;
 +        }
 +        if (previous && !oversized) {
-+            File oversizedFile = getOversizedFile(x, z);
-+            if (oversizedFile.exists()) {
-+                oversizedFile.delete();
++            Path oversizedFile = getOversizedFile(x, z);
++            if (Files.exists(oversizedFile)) {
++                Files.delete(oversizedFile);
 +            }
 +        }
 +        if (oversizedCount > 0) {
@@ -111,28 +111,28 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                writeOversizedMeta();
 +            }
 +        } else if (previous) {
-+            File oversizedMetaFile = getOversizedMetaFile();
-+            if (oversizedMetaFile.exists()) {
-+                oversizedMetaFile.delete();
++            Path oversizedMetaFile = getOversizedMetaFile();
++            if (Files.exists(oversizedMetaFile)) {
++                Files.delete(oversizedMetaFile);
 +            }
 +        }
 +    }
 +
 +    private void writeOversizedMeta() throws IOException {
-+        java.nio.file.Files.write(getOversizedMetaFile().toPath(), oversized);
++        java.nio.file.Files.write(getOversizedMetaFile(), oversized);
 +    }
 +
-+    private File getOversizedMetaFile() {
-+        return new File(this.regionFile.getParentFile(), this.regionFile.getName().replaceAll("\\.mca$", "") + ".oversized.nbt");
++    private Path getOversizedMetaFile() {
++        return this.regionFile.getParent().resolve(this.regionFile.getFileName().toString().replaceAll("\\.mca$", "") + ".oversized.nbt");
 +    }
 +
-+    private File getOversizedFile(int x, int z) {
-+        return new File(this.regionFile.getParentFile(), this.regionFile.getName().replaceAll("\\.mca$", "") + "_oversized_" + x + "_" + z + ".nbt");
++    private Path getOversizedFile(int x, int z) {
++        return this.regionFile.getParent().resolve(this.regionFile.getFileName().toString().replaceAll("\\.mca$", "") + "_oversized_" + x + "_" + z + ".nbt");
 +    }
 +
 +    synchronized CompoundTag getOversizedData(int x, int z) throws IOException {
-+        File file = getOversizedFile(x, z);
-+        try (DataInputStream out = new DataInputStream(new BufferedInputStream(new InflaterInputStream(new java.io.FileInputStream(file))))) {
++        Path file = getOversizedFile(x, z);
++        try (DataInputStream out = new DataInputStream(new java.io.BufferedInputStream(new InflaterInputStream(Files.newInputStream(file))))) {
 +            return NbtIo.read((java.io.DataInput) out);
 +        }
 +
@@ -145,22 +145,23 @@ diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileSto
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
-@@ -0,0 +0,0 @@ import java.io.File;
- import java.io.IOException;
+@@ -0,0 +0,0 @@ import java.nio.file.Files;
+ import java.nio.file.Path;
  import javax.annotation.Nullable;
  import net.minecraft.nbt.CompoundTag;
 +import net.minecraft.nbt.ListTag;
  import net.minecraft.nbt.NbtIo;
+ import net.minecraft.nbt.StreamTagVisitor;
 +import net.minecraft.nbt.Tag;
- import net.minecraft.server.MinecraftServer;
  import net.minecraft.util.ExceptionCollector;
  import net.minecraft.world.level.ChunkPos;
+ 
 @@ -0,0 +0,0 @@ public class RegionFileStorage implements AutoCloseable {
          }
      }
  
 +    // Paper start
-+    private static void printOversizedLog(String msg, File file, int x, int z) {
++    private static void printOversizedLog(String msg, Path file, int x, int z) {
 +        org.apache.logging.log4j.LogManager.getLogger().fatal(msg + " (" + file.toString().replaceAll(".+[\\\\/]", "") + " - " + x + "," + z + ") Go clean it up to remove this message. /minecraft:tp " + (x<<4)+" 128 "+(z<<4) + " - DO NOT REPORT THIS TO PAPER - You may ask for help on Discord, but do not file an issue. These error messages can not be removed.");
 +    }
 +
