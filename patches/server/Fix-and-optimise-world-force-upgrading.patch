@@ -37,15 +37,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +package io.papermc.paper.world;
 +
 +import com.mojang.datafixers.DataFixer;
++import com.mojang.serialization.Codec;
 +import net.minecraft.SharedConstants;
 +import net.minecraft.nbt.CompoundTag;
 +import net.minecraft.resources.ResourceKey;
 +import net.minecraft.util.worldupdate.WorldUpgrader;
 +import net.minecraft.world.level.ChunkPos;
++import net.minecraft.world.level.Level;
++import net.minecraft.world.level.chunk.ChunkGenerator;
 +import net.minecraft.world.level.chunk.storage.ChunkStorage;
 +import net.minecraft.world.level.chunk.storage.RegionFileStorage;
 +import net.minecraft.world.level.dimension.DimensionType;
 +import net.minecraft.world.level.dimension.LevelStem;
++import net.minecraft.world.level.levelgen.WorldGenSettings;
 +import net.minecraft.world.level.storage.DimensionDataStorage;
 +import net.minecraft.world.level.storage.LevelStorageSource;
 +import org.apache.logging.log4j.LogManager;
@@ -53,6 +57,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import java.io.File;
 +import java.io.IOException;
 +import java.text.DecimalFormat;
++import java.util.Optional;
 +import java.util.concurrent.ExecutorService;
 +import java.util.concurrent.Executors;
 +import java.util.concurrent.ThreadFactory;
@@ -70,10 +75,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    private final File worldDir;
 +    private final ExecutorService threadPool;
 +    private final DataFixer dataFixer;
++    private final Optional<ResourceKey<Codec<? extends ChunkGenerator>>> generatorKey;
 +    private final boolean removeCaches;
 +
 +    public ThreadedWorldUpgrader(final ResourceKey<LevelStem> dimensionType, final ResourceKey<DimensionType> worldKey, final String worldName, final File worldDir, final int threads,
-+                                 final DataFixer dataFixer, final boolean removeCaches) {
++                                 final DataFixer dataFixer, final Optional<ResourceKey<Codec<? extends ChunkGenerator>>> generatorKey, final boolean removeCaches) {
 +        this.dimensionType = dimensionType;
 +        this.worldKey = worldKey;
 +        this.worldName = worldName;
@@ -94,11 +100,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            }
 +        });
 +        this.dataFixer = dataFixer;
++        this.generatorKey = generatorKey;
 +        this.removeCaches = removeCaches;
 +    }
 +
 +    public void convert() {
-+        final File worldFolder = LevelStorageSource.getFolder(this.worldDir, this.dimensionType);
++        final File worldFolder = LevelStorageSource.getStorageFolder(this.worldDir.toPath(), this.dimensionType).toFile();
 +        final DimensionDataStorage worldPersistentData = new DimensionDataStorage(new File(worldFolder, "data"), this.dataFixer);
 +
 +        final File regionFolder = new File(worldFolder, "region");
@@ -116,12 +123,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        LOGGER.info("Starting conversion now for world " + this.worldName);
 +
 +        final WorldInfo info = new WorldInfo(() -> worldPersistentData,
-+                new ChunkStorage(regionFolder, this.dataFixer, false), this.removeCaches, this.worldKey);
++                new ChunkStorage(regionFolder.toPath(), this.dataFixer, false), this.removeCaches, this.dimensionType, this.generatorKey);
 +
 +        long expectedChunks = (long)regionFiles.length * (32L * 32L);
 +
 +        for (final File regionFile : regionFiles) {
-+            final ChunkPos regionPos = RegionFileStorage.getRegionFileCoordinates(regionFile);
++            final ChunkPos regionPos = RegionFileStorage.getRegionFileCoordinates(regionFile.toPath());
 +            if (regionPos == null) {
 +                expectedChunks -= (32L * 32L);
 +                continue;
@@ -161,16 +168,18 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        public final Supplier<DimensionDataStorage> persistentDataSupplier;
 +        public final ChunkStorage loader;
 +        public final boolean removeCaches;
-+        public final ResourceKey<DimensionType> worldKey;
++        public final ResourceKey<LevelStem> worldKey;
++        public final Optional<ResourceKey<Codec<? extends ChunkGenerator>>> generatorKey;
 +        public final AtomicLong convertedChunks = new AtomicLong();
 +        public final AtomicLong modifiedChunks = new AtomicLong();
 +
 +        private WorldInfo(final Supplier<DimensionDataStorage> persistentDataSupplier, final ChunkStorage loader, final boolean removeCaches,
-+                          final ResourceKey<DimensionType> worldKey) {
++                          final ResourceKey<LevelStem> worldKey, Optional<ResourceKey<Codec<? extends ChunkGenerator>>> generatorKey) {
 +            this.persistentDataSupplier = persistentDataSupplier;
 +            this.loader = loader;
 +            this.removeCaches = removeCaches;
 +            this.worldKey = worldKey;
++            this.generatorKey = generatorKey;
 +        }
 +    }
 +
@@ -194,7 +203,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            final Supplier<DimensionDataStorage> persistentDataSupplier = this.worldInfo.persistentDataSupplier;
 +            final ChunkStorage loader = this.worldInfo.loader;
 +            final boolean removeCaches = this.worldInfo.removeCaches;
-+            final ResourceKey<DimensionType> worldKey = this.worldInfo.worldKey;
++            final ResourceKey<LevelStem> worldKey = this.worldInfo.worldKey;
 +
 +            for (int cz = regionCZ; cz < (regionCZ + 32); ++cz) {
 +                for (int cx = regionCX; cx < (regionCX + 32); ++cx) {
@@ -210,7 +219,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +                        final int versionBefore = ChunkStorage.getVersion(chunkNBT);
 +
-+                        chunkNBT = loader.getChunkData(worldKey, persistentDataSupplier, chunkNBT, chunkPos, null);
++                        chunkNBT = loader.upgradeChunkTag(worldKey, persistentDataSupplier, chunkNBT, this.worldInfo.generatorKey, chunkPos, null);
 +
 +                        boolean modified = versionBefore < SharedConstants.getCurrentVersion().getWorldVersion();
 +
@@ -253,17 +262,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      // Paper end
  
 +    // Paper start - fix and optimise world upgrading
-+    public static void convertWorldButItWorks(ResourceKey<LevelStem> dimensionType, ResourceKey<DimensionType> worldKey, net.minecraft.world.level.storage.LevelStorageSource.LevelStorageAccess worldSession,
-+                                              DataFixer dataFixer, boolean removeCaches) {
++    public static void convertWorldButItWorks(net.minecraft.resources.ResourceKey<net.minecraft.world.level.dimension.LevelStem> dimensionType, net.minecraft.resources.ResourceKey<net.minecraft.world.level.dimension.DimensionType> worldKey, net.minecraft.world.level.storage.LevelStorageSource.LevelStorageAccess worldSession,
++                                              DataFixer dataFixer, Optional<net.minecraft.resources.ResourceKey<com.mojang.serialization.Codec<? extends net.minecraft.world.level.chunk.ChunkGenerator>>> generatorKey, boolean removeCaches) {
 +        int threads = Runtime.getRuntime().availableProcessors() * 3 / 8;
-+        final ThreadedWorldUpgrader worldUpgrader = new ThreadedWorldUpgrader(dimensionType, worldKey, worldSession.getLevelId(), worldSession.levelPath.toFile(), threads, dataFixer, removeCaches);
++        final ThreadedWorldUpgrader worldUpgrader = new ThreadedWorldUpgrader(dimensionType, worldKey, worldSession.getLevelId(), worldSession.levelPath.toFile(), threads, dataFixer, generatorKey, removeCaches);
 +        worldUpgrader.convert();
 +    }
 +    // Paper end - fix and optimise world upgrading
 +
-     public static void forceUpgrade(LevelStorageSource.LevelStorageAccess session, DataFixer dataFixer, boolean eraseCache, BooleanSupplier booleansupplier, ImmutableSet<ResourceKey<DimensionType>> worlds) { // CraftBukkit
+     public static void forceUpgrade(LevelStorageSource.LevelStorageAccess session, DataFixer dataFixer, boolean eraseCache, BooleanSupplier continueCheck, WorldGenSettings generatorOptions) {
          Main.LOGGER.info("Forcing world upgrade! {}", session.getLevelId()); // CraftBukkit
-         WorldUpgrader worldupgrader = new WorldUpgrader(session, dataFixer, worlds, eraseCache);
+         WorldUpgrader worldupgrader = new WorldUpgrader(session, dataFixer, generatorOptions, eraseCache);
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
@@ -275,9 +284,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -            if (this.options.has("forceUpgrade")) {
 -                net.minecraft.server.Main.forceUpgrade(worldSession, DataFixers.getDataFixer(), this.options.has("eraseCache"), () -> {
 -                    return true;
--                }, worlddata.worldGenSettings().dimensions().entrySet().stream().map((entry1) -> {
--                    return ResourceKey.create(Registry.DIMENSION_TYPE_REGISTRY, ((ResourceKey) entry1.getKey()).location());
--                }).collect(ImmutableSet.toImmutableSet()));
+-                }, worlddata.worldGenSettings());
 -            }
 +            // Paper - move down
  
@@ -290,7 +297,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            // Paper start - fix and optimise world upgrading
 +            if (options.has("forceUpgrade")) {
 +                net.minecraft.server.Main.convertWorldButItWorks(
-+                        dimensionKey, Level.getDimensionKey(dimensionmanager), worldSession, DataFixers.getDataFixer(), options.has("eraseCache")
++                        dimensionKey, Level.getDimensionKey(dimensionmanager), worldSession, DataFixers.getDataFixer(), chunkgenerator.getTypeNameForDataFixer(), options.has("eraseCache")
 +                );
 +            }
 +            // Paper end - fix and optimise world upgrading
@@ -326,8 +333,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
      // Paper start
-+    public static ChunkPos getRegionFileCoordinates(File file) {
-+        String fileName = file.getName();
++    public static @Nullable ChunkPos getRegionFileCoordinates(Path file) {
++        String fileName = file.getFileName().toString();
 +        if (!fileName.startsWith("r.") || !fileName.endsWith(".mca")) {
 +            return null;
 +        }
@@ -358,14 +365,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public final class CraftServer implements Server {
          }
          worlddata.checkName(name);
-         worlddata.setModdedInfo(this.console.getServerModName(), this.console.getModdedStatus().isPresent());
+         worlddata.setModdedInfo(this.console.getServerModName(), this.console.getModdedStatus().shouldReportAsModified());
 -
 -        if (console.options.has("forceUpgrade")) {
 -            net.minecraft.server.Main.forceUpgrade(worldSession, DataFixers.getDataFixer(), console.options.has("eraseCache"), () -> {
 -                return true;
--            }, worlddata.worldGenSettings().dimensions().entrySet().stream().map((entry) -> {
--                return ResourceKey.create(Registry.DIMENSION_TYPE_REGISTRY, ((ResourceKey) entry.getKey()).location());
--            }).collect(ImmutableSet.toImmutableSet()));
+-            }, worlddata.worldGenSettings());
 -        }
 +        // Paper - move down
  
@@ -378,7 +383,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        // Paper start - fix and optimise world upgrading
 +        if (console.options.has("forceUpgrade")) {
 +            net.minecraft.server.Main.convertWorldButItWorks(
-+                actualDimension, net.minecraft.world.level.Level.getDimensionKey(dimensionmanager), worldSession, DataFixers.getDataFixer(), console.options.has("eraseCache")
++                actualDimension, net.minecraft.world.level.Level.getDimensionKey(dimensionmanager), worldSession, DataFixers.getDataFixer(), chunkgenerator.getTypeNameForDataFixer(), console.options.has("eraseCache")
 +            );
 +        }
 +        // Paper end - fix and optimise world upgrading
