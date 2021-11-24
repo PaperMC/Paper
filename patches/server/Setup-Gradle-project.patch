@@ -130,29 +130,37 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +}
 +
 +fun TaskContainer.registerRunTask(
-+    name: String, block: JavaExec.() -> Unit
++    name: String,
++    block: JavaExec.() -> Unit
 +): TaskProvider<JavaExec> = register<JavaExec>(name) {
 +    group = "paper"
 +    standardInput = System.`in`
-+    workingDir = rootProject.layout.projectDirectory.dir(
-+        providers.gradleProperty("runWorkDir").forUseAtConfigurationTime().orElse("run")
-+    ).get().asFile
++    workingDir = rootProject.layout.projectDirectory
++        .dir(providers.gradleProperty("paper.runWorkDir").forUseAtConfigurationTime().getOrElse("run"))
++        .asFile
++    javaLauncher.set(project.javaToolchains.defaultJavaLauncher(project))
 +
 +    if (rootProject.childProjects["test-plugin"] != null) {
 +        val testPluginJar = rootProject.project(":test-plugin").tasks.jar.flatMap { it.archiveFile }
 +        inputs.file(testPluginJar)
-+        // args("-add-plugin=${testPluginJar.get().asFile.absolutePath}") // todo - uncomment
++        args("-add-plugin=${testPluginJar.get().asFile.absolutePath}")
 +    }
 +
 +    args("--nogui")
 +    systemProperty("net.kyori.adventure.text.warnWhenLegacyFormattingDetected", true)
-+    if (project.hasProperty("disableWatchdog")) {
++    if (providers.gradleProperty("paper.runDisableWatchdog").getOrElse("false") == "true") {
 +        systemProperty("disable.watchdog", true)
 +    }
++
++    val memoryGb = providers.gradleProperty("paper.runMemoryGb").forUseAtConfigurationTime().getOrElse("2")
++    val modifiedJvmArgs = jvmArgs ?: arrayListOf()
++    modifiedJvmArgs.addAll(listOf("-Xms${memoryGb}G", "-Xmx${memoryGb}G"))
++    jvmArgs = modifiedJvmArgs
++
 +    doFirst {
 +        workingDir.mkdirs()
 +    }
-+    javaLauncher.set(project.javaToolchains.defaultJavaLauncher(project))
++
 +    block(this)
 +}
 +

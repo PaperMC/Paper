@@ -10,7 +10,7 @@ rootProject.name = "Paper"
 include(
     "Paper-API",
     "Paper-Server",
-     "Paper-MojangAPI",
+    "Paper-MojangAPI",
 )
 
 val testPlugin = file("test-plugin.settings.gradle.kts")
