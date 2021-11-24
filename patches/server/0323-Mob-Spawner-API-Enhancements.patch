@@ -1,0 +1,101 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: William Blake Galbreath <blake.galbreath@gmail.com>
+Date: Fri, 19 Apr 2019 12:41:13 -0500
+Subject: [PATCH] Mob Spawner API Enhancements
+
+
+diff --git a/src/main/java/net/minecraft/world/level/BaseSpawner.java b/src/main/java/net/minecraft/world/level/BaseSpawner.java
+index 1e0d630a5c192a0fb60882acecd8a6ed68d00a92..dba24bb35085a14a3780c10762f229eb40f84ef9 100644
+--- a/src/main/java/net/minecraft/world/level/BaseSpawner.java
++++ b/src/main/java/net/minecraft/world/level/BaseSpawner.java
+@@ -230,7 +230,13 @@ public abstract class BaseSpawner {
+     }
+ 
+     public void load(@Nullable Level world, BlockPos pos, CompoundTag nbt) {
++        // Paper start - use larger int if set
++        if (nbt.contains("Paper.Delay")) {
++            this.spawnDelay = nbt.getInt("Paper.Delay");
++        } else {
+         this.spawnDelay = nbt.getShort("Delay");
++        }
++        // Paper end
+         boolean flag = nbt.contains("SpawnPotentials", 9);
+         boolean flag1 = nbt.contains("SpawnData", 10);
+ 
+@@ -266,9 +272,15 @@ public abstract class BaseSpawner {
+             }
+         }
+ 
++        // Paper start - use ints if set
++        if (nbt.contains("Paper.MinSpawnDelay", 99)) {
++            this.minSpawnDelay = nbt.getInt("Paper.MinSpawnDelay");
++            this.maxSpawnDelay = nbt.getInt("Paper.MaxSpawnDelay");
++            this.spawnCount = nbt.getShort("SpawnCount");
++        } else // Paper end
+         if (nbt.contains("MinSpawnDelay", 99)) {
+-            this.minSpawnDelay = nbt.getShort("MinSpawnDelay");
+-            this.maxSpawnDelay = nbt.getShort("MaxSpawnDelay");
++            this.minSpawnDelay = nbt.getInt("MinSpawnDelay"); // Paper - short -> int
++            this.maxSpawnDelay = nbt.getInt("MaxSpawnDelay"); // Paper - short -> int
+             this.spawnCount = nbt.getShort("SpawnCount");
+         }
+ 
+@@ -285,9 +297,20 @@ public abstract class BaseSpawner {
+     }
+ 
+     public CompoundTag save(CompoundTag nbttagcompound) {
+-        nbttagcompound.putShort("Delay", (short) this.spawnDelay);
+-        nbttagcompound.putShort("MinSpawnDelay", (short) this.minSpawnDelay);
+-        nbttagcompound.putShort("MaxSpawnDelay", (short) this.maxSpawnDelay);
++        // Paper start
++        if (spawnDelay > Short.MAX_VALUE) {
++            nbttagcompound.putInt("Paper.Delay", this.spawnDelay);
++        }
++        nbttagcompound.putShort("Delay", (short) Math.min(Short.MAX_VALUE, this.spawnDelay));
++
++        if (minSpawnDelay > Short.MAX_VALUE || maxSpawnDelay > Short.MAX_VALUE) {
++            nbttagcompound.putInt("Paper.MinSpawnDelay", this.minSpawnDelay);
++            nbttagcompound.putInt("Paper.MaxSpawnDelay", this.maxSpawnDelay);
++        }
++
++        nbttagcompound.putShort("MinSpawnDelay", (short) Math.min(Short.MAX_VALUE, this.minSpawnDelay));
++        nbttagcompound.putShort("MaxSpawnDelay", (short) Math.min(Short.MAX_VALUE, this.maxSpawnDelay));
++        // Paper end
+         nbttagcompound.putShort("SpawnCount", (short) this.spawnCount);
+         nbttagcompound.putShort("MaxNearbyEntities", (short) this.maxNearbyEntities);
+         nbttagcompound.putShort("RequiredPlayerRange", (short) this.requiredPlayerRange);
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftCreatureSpawner.java b/src/main/java/org/bukkit/craftbukkit/block/CraftCreatureSpawner.java
+index 6c427b15f78970912bae881f5aba1cfae2a4ba53..128a675a5af5148216dfa4bea6a5762b639f69f6 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/CraftCreatureSpawner.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/CraftCreatureSpawner.java
+@@ -116,4 +116,30 @@ public class CraftCreatureSpawner extends CraftBlockEntityState<SpawnerBlockEnti
+     public void setSpawnRange(int spawnRange) {
+         this.getSnapshot().getSpawner().spawnRange = spawnRange;
+     }
++
++    // Paper start
++    @Override
++    public boolean isActivated() {
++        return this.getSnapshot().getSpawner().isNearPlayer(world.getHandle(), getPosition());
++    }
++
++    @Override
++    public void resetTimer() {
++        this.getSnapshot().getSpawner().delay(world.getHandle(), getPosition());
++    }
++
++    @Override
++    public void setSpawnedItem(org.bukkit.inventory.ItemStack itemStack) {
++        Preconditions.checkArgument(itemStack != null && !itemStack.getType().isAir(), "spawners cannot spawn air");
++        net.minecraft.world.item.ItemStack item = org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(itemStack);
++        net.minecraft.nbt.CompoundTag compound = new net.minecraft.nbt.CompoundTag();
++        net.minecraft.nbt.CompoundTag entity = new net.minecraft.nbt.CompoundTag();
++        entity.putString("id", net.minecraft.core.Registry.ENTITY_TYPE.getKey(net.minecraft.world.entity.EntityType.ITEM).toString());
++        entity.put("Item", item.save(new net.minecraft.nbt.CompoundTag()));
++        compound.put("Entity", entity);
++        compound.putInt("Weight", this.getSnapshotNBT().contains("Weight", org.bukkit.craftbukkit.util.CraftMagicNumbers.NBT.TAG_ANY_NUMBER) ? this.getSnapshotNBT().getInt("Weight") : 1);
++        this.getSnapshot().getSpawner().setNextSpawnData(world.getHandle(), getPosition(), new net.minecraft.world.level.SpawnData(compound, java.util.Optional.empty())); // 1.18 todo - is empty optional correct
++        this.getSnapshot().getSpawner().spawnPotentials = net.minecraft.util.random.SimpleWeightedRandomList.empty(); // 1.18 todo - previously used removed field, check
++    }
++    // Paper end
+ }
