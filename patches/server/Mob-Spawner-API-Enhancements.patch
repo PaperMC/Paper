@@ -9,33 +9,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/world/level/BaseSpawner.java
 +++ b/src/main/java/net/minecraft/world/level/BaseSpawner.java
 @@ -0,0 +0,0 @@ public abstract class BaseSpawner {
- 
-     private static final Logger LOGGER = LogManager.getLogger();
-     private static final int EVENT_SPAWN = 1;
--    private static WeightedRandomList<SpawnData> EMPTY_POTENTIALS = WeightedRandomList.create();
-+    public static WeightedRandomList<SpawnData> EMPTY_POTENTIALS = WeightedRandomList.create(); // Paper - private->public
-     public int spawnDelay = 20;
-     public WeightedRandomList<SpawnData> spawnPotentials;
-     public SpawnData nextSpawnData;
-@@ -0,0 +0,0 @@ public abstract class BaseSpawner {
-         this.spawnPotentials = BaseSpawner.EMPTY_POTENTIALS; // CraftBukkit - SPIGOT-3496, MC-92282
-     }
- 
--    private boolean isNearPlayer(Level world, BlockPos pos) {
-+    public boolean isNearPlayer(Level world, BlockPos pos) { // Paper private->public
-         return world.isAffectsSpawningPlayerNearby((double) pos.getX() + 0.5D, (double) pos.getY() + 0.5D, (double) pos.getZ() + 0.5D, (double) this.requiredPlayerRange); // Paper
-     }
- 
-@@ -0,0 +0,0 @@ public abstract class BaseSpawner {
-         }
-     }
- 
--    private void delay(Level world, BlockPos pos) {
-+    public void delay(Level world, BlockPos pos) { // Paper private->public
-         if (this.maxSpawnDelay <= this.minSpawnDelay) {
-             this.spawnDelay = this.minSpawnDelay;
-         } else {
-@@ -0,0 +0,0 @@ public abstract class BaseSpawner {
      }
  
      public void load(@Nullable Level world, BlockPos pos, CompoundTag nbt) {
@@ -46,14 +19,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          this.spawnDelay = nbt.getShort("Delay");
 +        }
 +        // Paper end
-         List<SpawnData> list = Lists.newArrayList();
+         boolean flag = nbt.contains("SpawnPotentials", 9);
+         boolean flag1 = nbt.contains("SpawnData", 10);
  
-         if (nbt.contains("SpawnPotentials", 9)) {
 @@ -0,0 +0,0 @@ public abstract class BaseSpawner {
-                 this.setNextSpawnData(world, pos, mobspawnerdata);
-             });
+             }
          }
--
+ 
 +        // Paper start - use ints if set
 +        if (nbt.contains("Paper.MinSpawnDelay", 99)) {
 +            this.minSpawnDelay = nbt.getInt("Paper.MinSpawnDelay");
@@ -63,35 +35,35 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          if (nbt.contains("MinSpawnDelay", 99)) {
 -            this.minSpawnDelay = nbt.getShort("MinSpawnDelay");
 -            this.maxSpawnDelay = nbt.getShort("MaxSpawnDelay");
-+            this.minSpawnDelay = nbt.getInt("MinSpawnDelay"); // Paper - short->int
-+            this.maxSpawnDelay = nbt.getInt("MaxSpawnDelay"); // Paper - short->int
++            this.minSpawnDelay = nbt.getInt("MinSpawnDelay"); // Paper - short -> int
++            this.maxSpawnDelay = nbt.getInt("MaxSpawnDelay"); // Paper - short -> int
              this.spawnCount = nbt.getShort("SpawnCount");
          }
  
 @@ -0,0 +0,0 @@ public abstract class BaseSpawner {
-         if (minecraftkey == null) {
-             return nbt;
-         } else {
--            nbt.putShort("Delay", (short) this.spawnDelay);
--            nbt.putShort("MinSpawnDelay", (short) this.minSpawnDelay);
--            nbt.putShort("MaxSpawnDelay", (short) this.maxSpawnDelay);
-+            // Paper start
-+            if (spawnDelay > Short.MAX_VALUE) {
-+                nbt.putInt("Paper.Delay", this.spawnDelay);
-+            }
-+            nbt.putShort("Delay", (short) Math.min(Short.MAX_VALUE, this.spawnDelay));
+     }
+ 
+     public CompoundTag save(CompoundTag nbttagcompound) {
+-        nbttagcompound.putShort("Delay", (short) this.spawnDelay);
+-        nbttagcompound.putShort("MinSpawnDelay", (short) this.minSpawnDelay);
+-        nbttagcompound.putShort("MaxSpawnDelay", (short) this.maxSpawnDelay);
++        // Paper start
++        if (spawnDelay > Short.MAX_VALUE) {
++            nbttagcompound.putInt("Paper.Delay", this.spawnDelay);
++        }
++        nbttagcompound.putShort("Delay", (short) Math.min(Short.MAX_VALUE, this.spawnDelay));
 +
-+            if (minSpawnDelay > Short.MAX_VALUE || maxSpawnDelay > Short.MAX_VALUE) {
-+                nbt.putInt("Paper.MinSpawnDelay", this.minSpawnDelay);
-+                nbt.putInt("Paper.MaxSpawnDelay", this.maxSpawnDelay);
-+            }
++        if (minSpawnDelay > Short.MAX_VALUE || maxSpawnDelay > Short.MAX_VALUE) {
++            nbttagcompound.putInt("Paper.MinSpawnDelay", this.minSpawnDelay);
++            nbttagcompound.putInt("Paper.MaxSpawnDelay", this.maxSpawnDelay);
++        }
 +
-+            nbt.putShort("MinSpawnDelay", (short) Math.min(Short.MAX_VALUE, this.minSpawnDelay));
-+            nbt.putShort("MaxSpawnDelay", (short) Math.min(Short.MAX_VALUE, this.maxSpawnDelay));
-+            // Paper end
-             nbt.putShort("SpawnCount", (short) this.spawnCount);
-             nbt.putShort("MaxNearbyEntities", (short) this.maxNearbyEntities);
-             nbt.putShort("RequiredPlayerRange", (short) this.requiredPlayerRange);
++        nbttagcompound.putShort("MinSpawnDelay", (short) Math.min(Short.MAX_VALUE, this.minSpawnDelay));
++        nbttagcompound.putShort("MaxSpawnDelay", (short) Math.min(Short.MAX_VALUE, this.maxSpawnDelay));
++        // Paper end
+         nbttagcompound.putShort("SpawnCount", (short) this.spawnCount);
+         nbttagcompound.putShort("MaxNearbyEntities", (short) this.maxNearbyEntities);
+         nbttagcompound.putShort("RequiredPlayerRange", (short) this.requiredPlayerRange);
 diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftCreatureSpawner.java b/src/main/java/org/bukkit/craftbukkit/block/CraftCreatureSpawner.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/block/CraftCreatureSpawner.java
@@ -122,8 +94,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        entity.put("Item", item.save(new net.minecraft.nbt.CompoundTag()));
 +        compound.put("Entity", entity);
 +        compound.putInt("Weight", this.getSnapshotNBT().contains("Weight", org.bukkit.craftbukkit.util.CraftMagicNumbers.NBT.TAG_ANY_NUMBER) ? this.getSnapshotNBT().getInt("Weight") : 1);
-+        this.getSnapshot().getSpawner().setNextSpawnData(world.getHandle(), getPosition(), new net.minecraft.world.level.SpawnData(compound));
-+        this.getSnapshot().getSpawner().spawnPotentials= net.minecraft.world.level.BaseSpawner.EMPTY_POTENTIALS;
++        this.getSnapshot().getSpawner().setNextSpawnData(world.getHandle(), getPosition(), new net.minecraft.world.level.SpawnData(compound, java.util.Optional.empty())); // 1.18 todo - is empty optional correct
++        this.getSnapshot().getSpawner().spawnPotentials = net.minecraft.util.random.SimpleWeightedRandomList.empty(); // 1.18 todo - previously used removed field, check
 +    }
 +    // Paper end
  }
