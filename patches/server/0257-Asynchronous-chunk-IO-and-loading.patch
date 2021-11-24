@@ -2938,7 +2938,7 @@ index 2a73700b0cd31e2a88c478b884de0a7f3d018259..0a1e667487e2c7849e11c0395816dc8c
          HAS_SPACE(PoiRecord::hasSpace),
          IS_OCCUPIED(PoiRecord::isOccupied),
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
-index 2fd969d1450d1251c139f3721d146fd2e191c4dd..ff53c9238325e025c502886cc5f4bc02b25f8fda 100644
+index 2fd969d1450d1251c139f3721d146fd2e191c4dd..3215238699f46d64d0291597f5936d1f3d7b6d6c 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
 @@ -75,7 +75,31 @@ public class ChunkSerializer {
@@ -3023,15 +3023,15 @@ index 2fd969d1450d1251c139f3721d146fd2e191c4dd..ff53c9238325e025c502886cc5f4bc02
          } else {
              ProtoChunk protochunk1 = (ProtoChunk) object;
  
-@@ -297,10 +335,67 @@ public class ChunkSerializer {
+@@ -297,9 +335,67 @@ public class ChunkSerializer {
                  protochunk1.setCarvingMask(worldgenstage_features, new CarvingMask(nbttagcompound4.getLongArray(s1), ((ChunkAccess) object).getMinBuildHeight()));
              }
  
 -            return protochunk1;
 +            return new InProgressChunkHolder(protochunk1, tasksToExecuteOnMain); // Paper - Async chunk loading
-         }
-     }
- 
++        }
++    }
++
 +    // Paper start - async chunk save for unload
 +    public record AsyncSaveData(
 +        DataLayer[] blockLight,
@@ -3077,7 +3077,7 @@ index 2fd969d1450d1251c139f3721d146fd2e191c4dd..ff53c9238325e025c502886cc5f4bc02
 +            if (blockEntityNbt != null) {
 +                blockEntitiesSerialized.add(blockEntityNbt);
 +            }
-+         }
+         }
 +
 +        return new AsyncSaveData(
 +            blockLight,
@@ -3087,15 +3087,16 @@ index 2fd969d1450d1251c139f3721d146fd2e191c4dd..ff53c9238325e025c502886cc5f4bc02
 +            blockEntitiesSerialized,
 +            world.getGameTime()
 +        );
-+     }
-+
+     }
++    // Paper end
+ 
      private static void logErrors(ChunkPos chunkPos, int y, String message) {
          ChunkSerializer.LOGGER.error("Recoverable errors when loading section [" + chunkPos.x + ", " + y + ", " + chunkPos.z + "]: " + message);
-     }
-@@ -310,6 +405,10 @@ public class ChunkSerializer {
+@@ -310,6 +406,11 @@ public class ChunkSerializer {
      }
  
      public static CompoundTag write(ServerLevel world, ChunkAccess chunk) {
++        // Paper start
 +        return saveChunk(world, chunk, null);
 +    }
 +    public static CompoundTag saveChunk(ServerLevel world, ChunkAccess chunk, @org.checkerframework.checker.nullness.qual.Nullable AsyncSaveData asyncsavedata) {
@@ -3103,7 +3104,7 @@ index 2fd969d1450d1251c139f3721d146fd2e191c4dd..ff53c9238325e025c502886cc5f4bc02
          ChunkPos chunkcoordintpair = chunk.getPos();
          CompoundTag nbttagcompound = new CompoundTag();
  
-@@ -317,7 +416,7 @@ public class ChunkSerializer {
+@@ -317,7 +418,7 @@ public class ChunkSerializer {
          nbttagcompound.putInt("xPos", chunkcoordintpair.x);
          nbttagcompound.putInt("yPos", chunk.getMinSection());
          nbttagcompound.putInt("zPos", chunkcoordintpair.z);
@@ -3112,7 +3113,7 @@ index 2fd969d1450d1251c139f3721d146fd2e191c4dd..ff53c9238325e025c502886cc5f4bc02
          nbttagcompound.putLong("InhabitedTime", chunk.getInhabitedTime());
          nbttagcompound.putString("Status", chunk.getStatus().getName());
          BlendingData blendingdata = chunk.getBlendingData();
-@@ -360,8 +459,17 @@ public class ChunkSerializer {
+@@ -360,8 +461,17 @@ public class ChunkSerializer {
          for (int i = lightenginethreaded.getMinLightSection(); i < lightenginethreaded.getMaxLightSection(); ++i) {
              int j = chunk.getSectionIndexFromSectionY(i);
              boolean flag1 = j >= 0 && j < achunksection.length;
@@ -3132,7 +3133,7 @@ index 2fd969d1450d1251c139f3721d146fd2e191c4dd..ff53c9238325e025c502886cc5f4bc02
  
              if (flag1 || nibblearray != null || nibblearray1 != null) {
                  CompoundTag nbttagcompound1 = new CompoundTag();
-@@ -399,8 +507,17 @@ public class ChunkSerializer {
+@@ -399,8 +509,17 @@ public class ChunkSerializer {
              nbttagcompound.putBoolean("isLightOn", true);
          }
  
@@ -3152,7 +3153,7 @@ index 2fd969d1450d1251c139f3721d146fd2e191c4dd..ff53c9238325e025c502886cc5f4bc02
  
          CompoundTag nbttagcompound2;
  
-@@ -437,7 +554,14 @@ public class ChunkSerializer {
+@@ -437,7 +556,14 @@ public class ChunkSerializer {
              nbttagcompound.put("CarvingMasks", nbttagcompound2);
          }
  
