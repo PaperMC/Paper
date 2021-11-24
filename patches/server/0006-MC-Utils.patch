@@ -6177,7 +6177,7 @@ index 208a713ec4b7b592801eb26860b7b81a2b3f7aa2..df787c12053f799b111c539d866ff8c7
      }
      // CraftBukkit end
 diff --git a/src/main/java/net/minecraft/world/level/BlockGetter.java b/src/main/java/net/minecraft/world/level/BlockGetter.java
-index 76251b5adf41f8e5bf2c07145abe3108fcde8669..03e0254813b977d0342171a37762fec9629afbad 100644
+index 76251b5adf41f8e5bf2c07145abe3108fcde8669..a60b8043540cacfa8cc3baba0872eefd4fc9464d 100644
 --- a/src/main/java/net/minecraft/world/level/BlockGetter.java
 +++ b/src/main/java/net/minecraft/world/level/BlockGetter.java
 @@ -9,10 +9,12 @@ import javax.annotation.Nullable;
@@ -6198,7 +6198,7 @@ index 76251b5adf41f8e5bf2c07145abe3108fcde8669..03e0254813b977d0342171a37762fec9
  
      BlockState getBlockState(BlockPos pos);
 +    // Paper start - if loaded util
-+    BlockState getTypeIfLoaded(BlockPos blockposition);
++    @Nullable BlockState getTypeIfLoaded(BlockPos blockposition);
 +    default Material getMaterialIfLoaded(BlockPos blockposition) {
 +        BlockState type = this.getTypeIfLoaded(blockposition);
 +        return type == null ? null : type.getMaterial();
@@ -6278,7 +6278,7 @@ index 3c707d6674b2594b09503b959a31c1f4ad3981e6..c7d499bfc22152e0a49f50a2a8133f31
      public BlockState getBlockState(BlockPos pos) {
          return Blocks.AIR.defaultBlockState();
 diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
-index e2b9c20a82630f1991228c6194acef5ef6a7b8b0..d449516a2aafebe3cda9810b7d1ee97e61e8f399 100644
+index e2b9c20a82630f1991228c6194acef5ef6a7b8b0..8427d08ca3b61cce9d7bbdfdcf5946e1f459a21f 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
 +++ b/src/main/java/net/minecraft/world/level/Level.java
 @@ -85,6 +85,7 @@ import org.bukkit.craftbukkit.CraftServer;
@@ -6289,7 +6289,7 @@ index e2b9c20a82630f1991228c6194acef5ef6a7b8b0..d449516a2aafebe3cda9810b7d1ee97e
  import org.bukkit.craftbukkit.block.data.CraftBlockData;
  import org.bukkit.craftbukkit.util.CraftNamespacedKey;
  import org.bukkit.event.block.BlockPhysicsEvent;
-@@ -271,18 +272,50 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -271,18 +272,51 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
          return y < -20000000 || y >= 20000000;
      }
  
@@ -6314,6 +6314,7 @@ index e2b9c20a82630f1991228c6194acef5ef6a7b8b0..d449516a2aafebe3cda9810b7d1ee97e
 +    }
 +
 +    @Override
++    @Nullable
 +    public final BlockState getTypeIfLoaded(BlockPos blockposition) {
 +        // CraftBukkit start - tree generation
 +        if (captureTreeGeneration) {
@@ -6344,7 +6345,7 @@ index e2b9c20a82630f1991228c6194acef5ef6a7b8b0..d449516a2aafebe3cda9810b7d1ee97e
          ChunkAccess ichunkaccess = this.getChunkSource().getChunk(chunkX, chunkZ, leastStatus, create);
  
          if (ichunkaccess == null && create) {
-@@ -293,7 +326,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -293,7 +327,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
      }
  
      @Override
@@ -6353,7 +6354,7 @@ index e2b9c20a82630f1991228c6194acef5ef6a7b8b0..d449516a2aafebe3cda9810b7d1ee97e
          return this.setBlock(pos, state, flags, 512);
      }
  
-@@ -598,7 +631,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -598,7 +632,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
          if (this.isOutsideBuildHeight(pos)) {
              return Blocks.VOID_AIR.defaultBlockState();
          } else {
