@@ -1,20 +1,17 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Spottedleaf <spottedleaf@spottedleaf.dev>
 Date: Mon, 6 Apr 2020 17:53:29 -0700
-Subject: [PATCH] Remove streams from Mob AI System
+Subject: [PATCH] Optimize GoalSelector Goal.Flag Set operations
 
-The streams hurt performance and allocate tons of garbage, so
-replace them with the standard iterator.
-
-Also optimise the stream.anyMatch statement to move to a bitset
+Optimise the stream.anyMatch statement to move to a bitset
 where we can replace the call with a single bitwise operation.
 
 diff --git a/src/main/java/net/minecraft/world/entity/ai/goal/Goal.java b/src/main/java/net/minecraft/world/entity/ai/goal/Goal.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/goal/Goal.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/goal/Goal.java
-@@ -0,0 +0,0 @@ package net.minecraft.world.entity.ai.goal;
- import java.util.EnumSet;
+@@ -0,0 +0,0 @@ import java.util.EnumSet;
+ import net.minecraft.util.Mth;
  
  public abstract class Goal {
 -    private final EnumSet<Goal.Flag> flags = EnumSet.noneOf(Goal.Flag.class);
@@ -48,7 +45,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        // Paper end - remove streams from pathfindergoalselector
      }
  
-     public static enum Flag {
+     protected int adjustedTickDelay(int ticks) {
 diff --git a/src/main/java/net/minecraft/world/entity/ai/goal/GoalSelector.java b/src/main/java/net/minecraft/world/entity/ai/goal/GoalSelector.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/goal/GoalSelector.java
@@ -63,7 +60,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      private int tickCount;
      private int newGoalRate = 3;
      private int curRate;
-+    private static final Goal.Flag[] PATHFINDER_GOAL_TYPES = Goal.Flag.values(); // Paper - remove streams from pathfindergoalselector
++    private static final Goal.Flag[] GOAL_FLAG_VALUES = Goal.Flag.values(); // Paper - remove streams from pathfindergoalselector
  
      public GoalSelector(Supplier<ProfilerFiller> profiler) {
          this.profiler = profiler;
@@ -77,6 +74,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -        this.availableGoals.removeIf((wrappedGoal) -> {
 -            return wrappedGoal.getGoal() == goal;
 -        });
+-    }
+-
+-    private static boolean goalContainsAnyFlags(WrappedGoal goal, EnumSet<Goal.Flag> controls) {
+-        for(Goal.Flag flag : goal.getFlags()) {
+-            if (controls.contains(flag)) {
+-                return true;
 +        // Paper start - remove streams from pathfindergoalselector
 +        for (java.util.Iterator<WrappedGoal> iterator = this.availableGoals.iterator(); iterator.hasNext();) {
 +            WrappedGoal goalWrapped = iterator.next();
@@ -85,111 +88,61 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            }
 +            if (goalWrapped.isRunning()) {
 +                goalWrapped.stop();
-+            }
+             }
 +            iterator.remove();
-+        }
+         }
 +        // Paper end - remove streams from pathfindergoalselector
++    }
+ 
+-        return false;
++    private static boolean goalContainsAnyFlags(WrappedGoal goal, com.destroystokyo.paper.util.set.OptimizedSmallEnumSet<Goal.Flag> controls) {
++        return goal.getFlags().hasCommonElements(controls); // Paper
+     }
+ 
+     private static boolean goalCanBeReplacedForAllFlags(WrappedGoal goal, Map<Goal.Flag, WrappedGoal> goalsByControl) {
+-        for(Goal.Flag flag : goal.getFlags()) {
++        // Paper start
++        return !goal.getFlags().anyMatch(GOAL_FLAG_VALUES, flag -> {
+             if (!goalsByControl.getOrDefault(flag, NO_GOAL).canBeReplacedBy(goal)) {
+-                return false;
++                return true;
+             }
+-        }
+-
+-        return true;
++            return false;
++        });
++        // Paper end
      }
  
      public void tick() {
-         ProfilerFiller profilerFiller = this.profiler.get();
+@@ -0,0 +0,0 @@ public class GoalSelector {
          profilerFiller.push("goalCleanup");
--        this.getRunningGoals().filter((wrappedGoal) -> {
--            return !wrappedGoal.isRunning() || wrappedGoal.getFlags().stream().anyMatch(this.disabledFlags::contains) || !wrappedGoal.canContinueToUse();
--        }).forEach(Goal::stop);
--        this.lockedFlags.forEach((flag, wrappedGoal) -> {
-+        // Paper start - remove streams from pathfindergoalselector
-+        for (java.util.Iterator<WrappedGoal> iterator = this.availableGoals.iterator(); iterator.hasNext();) {
-+            WrappedGoal wrappedGoal = iterator.next();
-             if (!wrappedGoal.isRunning()) {
--                this.lockedFlags.remove(flag);
-+                continue;
-+            }
-+            if (!this.goalTypes.hasCommonElements(wrappedGoal.getFlags()) && wrappedGoal.canContinueToUse()) {
-+                continue;
-+            }
-+            wrappedGoal.stop();
-+        }
-+        // Paper end - remove streams from pathfindergoalselector
-+        this.lockedFlags.forEach((pathfindergoal_type, pathfindergoalwrapped) -> {
-+            if (!pathfindergoalwrapped.isRunning()) {
-+                this.lockedFlags.remove(pathfindergoal_type);
+ 
+         for(WrappedGoal wrappedGoal : this.availableGoals) {
+-            if (wrappedGoal.isRunning() && (goalContainsAnyFlags(wrappedGoal, this.disabledFlags) || !wrappedGoal.canContinueToUse())) {
++            if (wrappedGoal.isRunning() && (goalContainsAnyFlags(wrappedGoal, this.goalTypes) || !wrappedGoal.canContinueToUse())) {
+                 wrappedGoal.stop();
              }
- 
-         });
-         profilerFiller.pop();
+         }
+@@ -0,0 +0,0 @@ public class GoalSelector {
          profilerFiller.push("goalUpdate");
--        this.availableGoals.stream().filter((wrappedGoal) -> {
--            return !wrappedGoal.isRunning();
--        }).filter((wrappedGoal) -> {
--            return wrappedGoal.getFlags().stream().noneMatch(this.disabledFlags::contains);
--        }).filter((wrappedGoal) -> {
--            return wrappedGoal.getFlags().stream().allMatch((flag) -> {
--                return this.lockedFlags.getOrDefault(flag, NO_GOAL).canBeReplacedBy(wrappedGoal);
--            });
--        }).filter(WrappedGoal::canUse).forEach((wrappedGoal) -> {
--            wrappedGoal.getFlags().forEach((flag) -> {
--                WrappedGoal wrappedGoal2 = this.lockedFlags.getOrDefault(flag, NO_GOAL);
--                wrappedGoal2.stop();
--                this.lockedFlags.put(flag, wrappedGoal);
--            });
-+
-+        // Paper start - remove streams from pathfindergoalselector
-+        goal_update_loop: for (java.util.Iterator<WrappedGoal> iterator = this.availableGoals.iterator(); iterator.hasNext();) {
-+            WrappedGoal wrappedGoal = iterator.next();
-+            if (wrappedGoal.isRunning()) {
-+                continue;
-+            }
-+
-+            com.destroystokyo.paper.util.set.OptimizedSmallEnumSet<net.minecraft.world.entity.ai.goal.Goal.Flag> wrappedGoalSet = wrappedGoal.getFlags();
-+
-+            if (this.goalTypes.hasCommonElements(wrappedGoalSet)) {
-+                continue;
-+            }
-+
-+            long iterator1 = wrappedGoalSet.getBackingSet();
-+            int wrappedGoalSize = wrappedGoalSet.size();
-+            for (int i = 0; i < wrappedGoalSize; ++i) {
-+                Goal.Flag type = PATHFINDER_GOAL_TYPES[Long.numberOfTrailingZeros(iterator1)];
-+                iterator1 ^= io.papermc.paper.util.IntegerUtil.getTrailingBit(iterator1);
-+                WrappedGoal wrapped = this.lockedFlags.getOrDefault(type, GoalSelector.NO_GOAL);
-+                if (!wrapped.canBeReplacedBy(wrappedGoal)) {
-+                    continue goal_update_loop;
-+                }
-+            }
-+
-+            if (!wrappedGoal.canUse()) {
-+                continue;
-+            }
-+
-+            iterator1 = wrappedGoalSet.getBackingSet();
-+            wrappedGoalSize = wrappedGoalSet.size();
-+            for (int i = 0; i < wrappedGoalSize; ++i) {
-+                Goal.Flag type = PATHFINDER_GOAL_TYPES[Long.numberOfTrailingZeros(iterator1)];
-+                iterator1 ^= io.papermc.paper.util.IntegerUtil.getTrailingBit(iterator1);
-+                WrappedGoal wrapped = this.lockedFlags.getOrDefault(type, GoalSelector.NO_GOAL);
-+
-+                wrapped.stop();
-+                this.lockedFlags.put(type, wrappedGoal);
-+            }
-             wrappedGoal.start();
--        });
-+        }
-+        // Paper end - remove streams from pathfindergoalselector
-         profilerFiller.pop();
-         profilerFiller.push("goalTick");
--        this.getRunningGoals().forEach(WrappedGoal::tick);
-+        // Paper start - remove streams from pathfindergoalselector
-+        for (java.util.Iterator<WrappedGoal> iterator = this.availableGoals.iterator(); iterator.hasNext();) {
-+            WrappedGoal wrappedGoal = iterator.next();
-+            if (wrappedGoal.isRunning()) {
-+                wrappedGoal.tick();
-+            }
-+        }
-+        // Paper end - remove streams from pathfindergoalselector
-         profilerFiller.pop();
-     }
  
+         for(WrappedGoal wrappedGoal2 : this.availableGoals) {
+-            if (!wrappedGoal2.isRunning() && !goalContainsAnyFlags(wrappedGoal2, this.disabledFlags) && goalCanBeReplacedForAllFlags(wrappedGoal2, this.lockedFlags) && wrappedGoal2.canUse()) {
+-                for(Goal.Flag flag : wrappedGoal2.getFlags()) {
++            // Paper start
++            if (!wrappedGoal2.isRunning() && !goalContainsAnyFlags(wrappedGoal2, this.goalTypes) && goalCanBeReplacedForAllFlags(wrappedGoal2, this.lockedFlags) && wrappedGoal2.canUse()) {
++                wrappedGoal2.getFlags().forEach(GOAL_FLAG_VALUES, flag -> {
++                    // Paper end
+                     WrappedGoal wrappedGoal3 = this.lockedFlags.getOrDefault(flag, NO_GOAL);
+                     wrappedGoal3.stop();
+                     this.lockedFlags.put(flag, wrappedGoal2);
+-                }
++                }); // Paper
+ 
+                 wrappedGoal2.start();
+             }
 @@ -0,0 +0,0 @@ public class GoalSelector {
      }
  
@@ -209,10 +162,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/world/entity/ai/goal/WrappedGoal.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/goal/WrappedGoal.java
 @@ -0,0 +0,0 @@ public class WrappedGoal extends Goal {
-         this.goal.setFlags(controls);
      }
  
--    @Override
+     @Override
 -    public EnumSet<Goal.Flag> getFlags() {
 +    // Paper start - remove streams from pathfindergoalselector
 +    public com.destroystokyo.paper.util.set.OptimizedSmallEnumSet<Goal.Flag> getFlags() {

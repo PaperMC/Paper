@@ -1957,6 +1957,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +package com.destroystokyo.paper.util.set;
 +
 +import java.util.Collection;
++import java.util.function.Consumer;
++import java.util.function.Predicate;
 +
 +/**
 + * @author Spottedleaf <Spottedleaf@users.noreply.github.com>
@@ -2019,6 +2021,29 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    public boolean hasCommonElements(final OptimizedSmallEnumSet<E> other) {
 +        return (other.backingSet & this.backingSet) != 0;
++    }
++
++    public void forEach(final E[] values, final Consumer<E> action) {
++        long iterator = this.getBackingSet();
++        int wrappedGoalSize = this.size();
++        for (int i = 0; i < wrappedGoalSize; ++i) {
++            final E type = values[Long.numberOfTrailingZeros(iterator)];
++            iterator ^= io.papermc.paper.util.IntegerUtil.getTrailingBit(iterator);
++            action.accept(type);
++        }
++    }
++
++    public boolean anyMatch(final E[] values, final Predicate<E> predicate) {
++        long iterator = this.getBackingSet();
++        int wrappedGoalSize = this.size();
++        for (int i = 0; i < wrappedGoalSize; ++i) {
++            final E type = values[Long.numberOfTrailingZeros(iterator)];
++            iterator ^= io.papermc.paper.util.IntegerUtil.getTrailingBit(iterator);
++            if (predicate.test(type)) {
++                return true;
++            }
++        }
++        return false;
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/chunk/SingleThreadChunkRegionManager.java b/src/main/java/io/papermc/paper/chunk/SingleThreadChunkRegionManager.java
