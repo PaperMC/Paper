@@ -5,10 +5,10 @@ Subject: [PATCH] Add permission for command blocks
 
 
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java b/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
-index 31e3534d6e15f91d781fabb0670e53ef66cb8977..784e6c2db5bb346408948cff8ac3cc9b964dd6d8 100644
+index 44e5ab0b545de41b937c7ce304ce643f78a43734..f087f48ad9e0b28d9874f3a9c1e3988ce6b60d87 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
-@@ -392,7 +392,7 @@ public class ServerPlayerGameMode {
+@@ -389,7 +389,7 @@ public class ServerPlayerGameMode {
              BlockEntity tileentity = this.level.getBlockEntity(pos);
              Block block = iblockdata.getBlock();
  
@@ -16,12 +16,12 @@ index 31e3534d6e15f91d781fabb0670e53ef66cb8977..784e6c2db5bb346408948cff8ac3cc9b
 +            if (block instanceof GameMasterBlock && !this.player.canUseGameMasterBlocks() && !(block instanceof net.minecraft.world.level.block.CommandBlock && (this.player.isCreative() && this.player.getBukkitEntity().hasPermission("minecraft.commandblock")))) { // Paper - command block permission
                  this.level.sendBlockUpdated(pos, iblockdata, iblockdata, 3);
                  return false;
-             } else if (this.player.blockActionRestricted((Level) this.level, pos, this.gameModeForPlayer)) {
+             } else if (this.player.blockActionRestricted(this.level, pos, this.gameModeForPlayer)) {
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index bdc3402648d85b435ae4feb3c7aaf1af5ef476fa..7bd2a88de8eaf9d72d9424a39d5df2600bed7e58 100644
+index 31d99592c06da5c7eb0738210128509870d44d75..dd29bad410ff74ce3f1f94bc60560cf10b12375f 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-@@ -787,7 +787,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+@@ -786,7 +786,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
          PacketUtils.ensureRunningOnSameThread(packet, this, this.player.getLevel());
          if (!this.server.isCommandBlockEnabled()) {
              this.player.sendMessage(new TranslatableComponent("advMode.notEnabled"), Util.NIL_UUID);
@@ -30,7 +30,7 @@ index bdc3402648d85b435ae4feb3c7aaf1af5ef476fa..7bd2a88de8eaf9d72d9424a39d5df260
              this.player.sendMessage(new TranslatableComponent("advMode.notAllowed"), Util.NIL_UUID);
          } else {
              BaseCommandBlock commandblocklistenerabstract = null;
-@@ -854,7 +854,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+@@ -853,7 +853,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
          PacketUtils.ensureRunningOnSameThread(packet, this, this.player.getLevel());
          if (!this.server.isCommandBlockEnabled()) {
              this.player.sendMessage(new TranslatableComponent("advMode.notEnabled"), Util.NIL_UUID);
@@ -53,10 +53,10 @@ index 2e6172930526efc536a214e420e690a5ea42ac3e..a71cd95291e593a54c66f5672554f91b
          } else {
              if (player.getCommandSenderWorld().isClientSide) {
 diff --git a/src/main/java/net/minecraft/world/level/block/CommandBlock.java b/src/main/java/net/minecraft/world/level/block/CommandBlock.java
-index 363ad038e6c2edc675ded828c7800852d1b0668a..fd73e9100feac8c7bf9a5fee21a0ab2d502dc3e0 100644
+index 324d544355215804ed0b06bf931883d81e550ed8..135f37f79d1463896e47679e1d13e123b78f97c9 100644
 --- a/src/main/java/net/minecraft/world/level/block/CommandBlock.java
 +++ b/src/main/java/net/minecraft/world/level/block/CommandBlock.java
-@@ -129,7 +129,7 @@ public class CommandBlock extends BaseEntityBlock implements GameMasterBlock {
+@@ -130,7 +130,7 @@ public class CommandBlock extends BaseEntityBlock implements GameMasterBlock {
      public InteractionResult use(BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
          BlockEntity tileentity = world.getBlockEntity(pos);
  
