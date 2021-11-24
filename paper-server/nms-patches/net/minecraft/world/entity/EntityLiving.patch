@@ -857,34 +857,34 @@
      @Override
      protected void markHurt() {
          this.hurtMarked = this.random.nextDouble() >= this.getAttributeValue(GenericAttributes.KNOCKBACK_RESISTANCE);
-@@ -3106,7 +3548,25 @@
-         } else {
-             if (!this.useItem.isEmpty() && this.isUsingItem()) {
-                 this.triggerItemUseEffects(this.useItem, 16);
--                ItemStack itemstack = this.useItem.finishUsingItem(this.level, this);
-+                // CraftBukkit start - fire PlayerItemConsumeEvent
-+                ItemStack itemstack;
-+                if (this instanceof EntityPlayer) {
-+                    org.bukkit.inventory.ItemStack craftItem = CraftItemStack.asBukkitCopy(this.useItem);
-+                    PlayerItemConsumeEvent event = new PlayerItemConsumeEvent((Player) this.getBukkitEntity(), craftItem);
-+                    level.getCraftServer().getPluginManager().callEvent(event);
+@@ -3107,7 +3549,25 @@
+             } else {
+                 if (!this.useItem.isEmpty() && this.isUsingItem()) {
+                     this.triggerItemUseEffects(this.useItem, 16);
+-                    ItemStack itemstack = this.useItem.finishUsingItem(this.level, this);
++                    // CraftBukkit start - fire PlayerItemConsumeEvent
++                    ItemStack itemstack;
++                    if (this instanceof EntityPlayer) {
++                        org.bukkit.inventory.ItemStack craftItem = CraftItemStack.asBukkitCopy(this.useItem);
++                        PlayerItemConsumeEvent event = new PlayerItemConsumeEvent((Player) this.getBukkitEntity(), craftItem);
++                        level.getCraftServer().getPluginManager().callEvent(event);
 +
-+                    if (event.isCancelled()) {
-+                        // Update client
-+                        ((EntityPlayer) this).getBukkitEntity().updateInventory();
-+                        ((EntityPlayer) this).getBukkitEntity().updateScaledHealth();
-+                        return;
++                        if (event.isCancelled()) {
++                            // Update client
++                            ((EntityPlayer) this).getBukkitEntity().updateInventory();
++                            ((EntityPlayer) this).getBukkitEntity().updateScaledHealth();
++                            return;
++                        }
++
++                        itemstack = (craftItem.equals(event.getItem())) ? this.useItem.finishUsingItem(this.level, this) : CraftItemStack.asNMSCopy(event.getItem()).finishUsingItem(level, this);
++                    } else {
++                        itemstack = this.useItem.finishUsingItem(this.level, this);
 +                    }
-+
-+                    itemstack = (craftItem.equals(event.getItem())) ? this.useItem.finishUsingItem(this.level, this) : CraftItemStack.asNMSCopy(event.getItem()).finishUsingItem(level, this);
-+                } else {
-+                    itemstack = this.useItem.finishUsingItem(this.level, this);
-+                }
-+                // CraftBukkit end
++                    // CraftBukkit end
  
-                 if (itemstack != this.useItem) {
-                     this.setItemInHand(enumhand, itemstack);
-@@ -3178,6 +3638,12 @@
+                     if (itemstack != this.useItem) {
+                         this.setItemInHand(enumhand, itemstack);
+@@ -3180,6 +3640,12 @@
      }
  
      public boolean randomTeleport(double d0, double d1, double d2, boolean flag) {
@@ -897,7 +897,7 @@
          double d3 = this.getX();
          double d4 = this.getY();
          double d5 = this.getZ();
-@@ -3202,16 +3668,41 @@
+@@ -3204,16 +3670,41 @@
              }
  
              if (flag2) {
@@ -942,7 +942,7 @@
          } else {
              if (flag) {
                  world.broadcastEntityEvent(this, (byte) 46);
-@@ -3221,7 +3712,7 @@
+@@ -3223,7 +3714,7 @@
                  ((EntityCreature) this).getNavigation().stop();
              }
  
@@ -951,7 +951,7 @@
          }
      }
  
-@@ -3304,7 +3795,7 @@
+@@ -3306,7 +3797,7 @@
      }
  
      public void stopSleeping() {
@@ -960,7 +960,7 @@
          World world = this.level;
  
          java.util.Objects.requireNonNull(this.level);
-@@ -3336,7 +3827,7 @@
+@@ -3338,7 +3829,7 @@
  
      @Nullable
      public EnumDirection getBedOrientation() {
@@ -969,7 +969,7 @@
  
          return blockposition != null ? BlockBed.getBedOrientation(this.level, blockposition) : null;
      }
-@@ -3385,7 +3876,7 @@
+@@ -3387,7 +3878,7 @@
                  Pair<MobEffect, Float> pair = (Pair) iterator.next();
  
                  if (!world.isClientSide && pair.getFirst() != null && world.random.nextFloat() < (Float) pair.getSecond()) {
@@ -978,24 +978,23 @@
                  }
              }
          }
-@@ -3488,8 +3979,10 @@
+@@ -3490,8 +3981,10 @@
          this.setDeltaMovement((double) ((float) packetplayoutspawnentityliving.getXd() / 8000.0F), (double) ((float) packetplayoutspawnentityliving.getYd() / 8000.0F), (double) ((float) packetplayoutspawnentityliving.getZd() / 8000.0F));
      }
  
--    public static final class a extends Record {
-+    // CraftBukkit start
-+    public static final record a(SoundEffect small, SoundEffect big) {
+-    public static record a(SoundEffect a, SoundEffect b) {
++    // CraftBukkit start - decompile error
++    public static record a(SoundEffect small, SoundEffect big) {
  
 +        /*
          private final SoundEffect small;
          private final SoundEffect big;
  
-@@ -3509,6 +4002,8 @@
-         public final boolean equals(Object object) {
-             return this.equals<invokedynamic>(this, object);
+@@ -3507,5 +4000,7 @@
+         public SoundEffect big() {
+             return this.big;
          }
 +         */
 +        // CraftBukkit end
- 
-         public SoundEffect small() {
-             return this.small;
+     }
+ }

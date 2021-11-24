@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/Entity.java
 +++ b/net/minecraft/world/entity/Entity.java
-@@ -117,8 +117,59 @@
+@@ -116,8 +116,59 @@
  import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
  
@@ -60,7 +60,7 @@
      protected static final Logger LOGGER = LogManager.getLogger();
      public static final String ID_TAG = "id";
      public static final String PASSENGERS_TAG = "Passengers";
-@@ -229,6 +280,22 @@
+@@ -228,6 +279,22 @@
      public boolean hasVisualFire;
      @Nullable
      private IBlockData feetBlockState;
@@ -83,7 +83,7 @@
  
      public Entity(EntityTypes<?> entitytypes, World world) {
          this.id = Entity.ENTITY_COUNTER.incrementAndGet();
-@@ -366,6 +433,12 @@
+@@ -365,6 +432,12 @@
      public void onClientRemoval() {}
  
      public void setPose(EntityPose entitypose) {
@@ -96,7 +96,7 @@
          this.entityData.set(Entity.DATA_POSE, entitypose);
      }
  
-@@ -382,6 +455,33 @@
+@@ -381,6 +454,33 @@
      }
  
      protected void setRot(float f, float f1) {
@@ -130,7 +130,7 @@
          this.setYRot(f % 360.0F);
          this.setXRot(f1 % 360.0F);
      }
-@@ -423,6 +523,15 @@
+@@ -422,6 +522,15 @@
          this.baseTick();
      }
  
@@ -145,7 +145,7 @@
 +
      public void baseTick() {
          this.level.getProfiler().push("entityBaseTick");
-         if (this.isPassenger() && this.getVehicle().isRemoved()) {
+         this.feetBlockState = null;
 @@ -436,7 +545,7 @@
          this.walkDistO = this.walkDist;
          this.xRotO = this.getXRot();
@@ -232,16 +232,7 @@
                  if (this.onGround && !this.isSteppingCarefully()) {
                      block.stepOn(this.level, blockposition, iblockdata, this);
                  }
-@@ -846,7 +1009,7 @@
-         boolean flag4 = flag && flag1 || flag && flag2 || flag1 && flag2;
- 
-         if (flag4) {
--            List<VoxelShape> list1 = flag3 ? ImmutableList.builderWithExpectedSize(list.size() + 1).addAll(list).add(worldborder.getCollisionShape()).build() : list;
-+            List<VoxelShape> list1 = flag3 ? ImmutableList.<VoxelShape>builderWithExpectedSize(list.size() + 1).addAll(list).add(worldborder.getCollisionShape()).build() : list; // CraftBukkit - decompile error
- 
-             return collideBoundingBox(vec3d, axisalignedbb, world, voxelshapecollision, (List) list1);
-         } else {
-@@ -1306,6 +1469,7 @@
+@@ -1260,6 +1423,7 @@
          this.yo = d1;
          this.zo = d4;
          this.setPos(d3, d1, d4);
@@ -249,7 +240,7 @@
      }
  
      public void moveTo(Vec3D vec3d) {
-@@ -1496,6 +1660,12 @@
+@@ -1450,6 +1614,12 @@
          return false;
      }
  
@@ -262,7 +253,7 @@
      public void awardKillScore(Entity entity, int i, DamageSource damagesource) {
          if (entity instanceof EntityPlayer) {
              CriterionTriggers.ENTITY_KILLED_PLAYER.trigger((EntityPlayer) entity, this, damagesource);
-@@ -1529,7 +1699,7 @@
+@@ -1483,7 +1653,7 @@
          } else {
              String s = this.getEncodeId();
  
@@ -271,7 +262,7 @@
                  return false;
              } else {
                  nbttagcompound.putString("id", s);
-@@ -1554,6 +1724,18 @@
+@@ -1508,6 +1678,18 @@
              Vec3D vec3d = this.getDeltaMovement();
  
              nbttagcompound.put("Motion", this.newDoubleList(vec3d.x, vec3d.y, vec3d.z));
@@ -290,7 +281,7 @@
              nbttagcompound.put("Rotation", this.newFloatList(this.getYRot(), this.getXRot()));
              nbttagcompound.putFloat("FallDistance", this.fallDistance);
              nbttagcompound.putShort("Fire", (short) this.remainingFireTicks);
-@@ -1562,6 +1744,18 @@
+@@ -1516,6 +1698,18 @@
              nbttagcompound.putBoolean("Invulnerable", this.invulnerable);
              nbttagcompound.putInt("PortalCooldown", this.portalCooldown);
              nbttagcompound.putUUID("UUID", this.getUUID());
@@ -309,7 +300,7 @@
              IChatBaseComponent ichatbasecomponent = this.getCustomName();
  
              if (ichatbasecomponent != null) {
-@@ -1629,6 +1823,11 @@
+@@ -1583,6 +1777,11 @@
                  }
              }
  
@@ -321,7 +312,7 @@
              return nbttagcompound;
          } catch (Throwable throwable) {
              CrashReport crashreport = CrashReport.forThrowable(throwable, "Saving entity NBT");
-@@ -1710,6 +1909,49 @@
+@@ -1664,6 +1863,49 @@
              } else {
                  throw new IllegalStateException("Entity has invalid position");
              }
@@ -371,7 +362,7 @@
          } catch (Throwable throwable) {
              CrashReport crashreport = CrashReport.forThrowable(throwable, "Loading entity NBT");
              CrashReportSystemDetails crashreportsystemdetails = crashreport.addCategory("Entity being loaded");
-@@ -1785,9 +2027,22 @@
+@@ -1739,9 +1981,22 @@
          } else if (this.level.isClientSide) {
              return null;
          } else {
@@ -394,7 +385,7 @@
              this.level.addFreshEntity(entityitem);
              return entityitem;
          }
-@@ -1882,7 +2137,7 @@
+@@ -1836,7 +2091,7 @@
  
                  this.setPose(EntityPose.STANDING);
                  this.vehicle = entity;
@@ -403,7 +394,7 @@
                  entity.getIndirectPassengersStream().filter((entity2) -> {
                      return entity2 instanceof EntityPlayer;
                  }).forEach((entity2) -> {
-@@ -1913,7 +2168,7 @@
+@@ -1867,7 +2122,7 @@
              Entity entity = this.vehicle;
  
              this.vehicle = null;
@@ -412,7 +403,7 @@
          }
  
      }
-@@ -1922,10 +2177,31 @@
+@@ -1876,10 +2131,31 @@
          this.removeVehicle();
      }
  
@@ -445,7 +436,7 @@
              if (this.passengers.isEmpty()) {
                  this.passengers = ImmutableList.of(entity);
              } else {
-@@ -1941,12 +2217,32 @@
+@@ -1895,12 +2171,32 @@
              }
  
          }
@@ -479,7 +470,7 @@
              if (this.passengers.size() == 1 && this.passengers.get(0) == entity) {
                  this.passengers = ImmutableList.of();
              } else {
-@@ -1957,6 +2253,7 @@
+@@ -1911,6 +2207,7 @@
  
              entity.boardingCooldown = 60;
          }
@@ -487,7 +478,7 @@
      }
  
      protected boolean canAddPassenger(Entity entity) {
-@@ -2007,14 +2304,20 @@
+@@ -1961,14 +2258,20 @@
  
              if (this.isInsidePortal) {
                  MinecraftServer minecraftserver = worldserver.getServer();
@@ -511,7 +502,7 @@
                      this.level.getProfiler().pop();
                  }
  
-@@ -2132,6 +2435,13 @@
+@@ -2086,6 +2389,13 @@
      }
  
      public void setSwimming(boolean flag) {
@@ -525,7 +516,7 @@
          this.setSharedFlag(4, flag);
      }
  
-@@ -2180,8 +2490,12 @@
+@@ -2134,8 +2444,12 @@
          return this.getTeam() != null ? this.getTeam().isAlliedTo(scoreboardteambase) : false;
      }
  
@@ -539,7 +530,7 @@
      }
  
      public boolean getSharedFlag(int i) {
-@@ -2208,7 +2522,17 @@
+@@ -2162,7 +2476,17 @@
      }
  
      public void setAirSupply(int i) {
@@ -558,7 +549,7 @@
      }
  
      public int getTicksFrozen() {
-@@ -2235,11 +2559,41 @@
+@@ -2189,11 +2513,41 @@
  
      public void thunderHit(WorldServer worldserver, EntityLightning entitylightning) {
          this.setRemainingFireTicks(this.remainingFireTicks + 1);
@@ -602,7 +593,7 @@
      }
  
      public void onAboveBubbleCol(boolean flag) {
-@@ -2393,15 +2747,32 @@
+@@ -2349,15 +2703,32 @@
  
      @Nullable
      public Entity changeDimension(WorldServer worldserver) {
@@ -637,7 +628,7 @@
                  this.level.getProfiler().popPush("reloading");
                  Entity entity = this.getType().create(worldserver);
  
-@@ -2410,9 +2781,17 @@
+@@ -2366,9 +2737,17 @@
                      entity.moveTo(shapedetectorshape.pos.x, shapedetectorshape.pos.y, shapedetectorshape.pos.z, shapedetectorshape.yRot, entity.getXRot());
                      entity.setDeltaMovement(shapedetectorshape.speed);
                      worldserver.addDuringTeleport(entity);
@@ -657,7 +648,7 @@
                  }
  
                  this.removeAfterChangingDimensions();
-@@ -2433,20 +2812,33 @@
+@@ -2389,20 +2768,33 @@
  
      @Nullable
      protected ShapeDetectorShape findDimensionEntryPoint(WorldServer worldserver) {
@@ -696,7 +687,7 @@
                      IBlockData iblockdata = this.level.getBlockState(this.portalEntrancePos);
                      EnumDirection.EnumAxis enumdirection_enumaxis;
                      Vec3D vec3d;
-@@ -2463,8 +2855,8 @@
+@@ -2419,8 +2811,8 @@
                          vec3d = new Vec3D(0.5D, 0.0D, 0.0D);
                      }
  
@@ -707,7 +698,7 @@
              }
          } else {
              BlockPosition blockposition1;
-@@ -2474,8 +2866,15 @@
+@@ -2430,8 +2822,15 @@
              } else {
                  blockposition1 = worldserver.getHeightmapPos(HeightMap.Type.MOTION_BLOCKING_NO_LEAVES, worldserver.getSharedSpawnPos());
              }
@@ -724,7 +715,7 @@
          }
      }
  
-@@ -2483,8 +2882,23 @@
+@@ -2439,8 +2838,23 @@
          return BlockPortalShape.getRelativePosition(blockutil_rectangle, enumdirection_enumaxis, this.position(), this.getDimensions(this.getPose()));
      }
  
@@ -750,7 +741,7 @@
      }
  
      public boolean canChangeDimensions() {
-@@ -2693,7 +3107,26 @@
+@@ -2649,7 +3063,26 @@
      }
  
      public final void setBoundingBox(AxisAlignedBB axisalignedbb) {
