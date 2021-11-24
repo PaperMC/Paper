@@ -44,32 +44,32 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public class EntitySection<T extends EntityAccess> {
      }
  
-     public void add(T entityAccess) {
+     public void add(T entity) {
 +        // Paper start
-+        if (entityAccess instanceof net.minecraft.world.entity.item.ItemEntity) {
++        if (entity instanceof net.minecraft.world.entity.item.ItemEntity) {
 +            this.itemCount++;
-+        } else if (entityAccess instanceof net.minecraft.world.Container) {
++        } else if (entity instanceof net.minecraft.world.Container) {
 +            this.inventoryEntityCount++;
 +        }
 +        // Paper end
-         this.storage.add(entityAccess);
+         this.storage.add(entity);
      }
  
-     public boolean remove(T entityAccess) {
+     public boolean remove(T entity) {
 +        // Paper start
-+        if (entityAccess instanceof net.minecraft.world.entity.item.ItemEntity) {
++        if (entity instanceof net.minecraft.world.entity.item.ItemEntity) {
 +            this.itemCount--;
-+        } else if (entityAccess instanceof net.minecraft.world.Container) {
++        } else if (entity instanceof net.minecraft.world.Container) {
 +            this.inventoryEntityCount--;
 +        }
 +        // Paper end
-         return this.storage.remove(entityAccess);
+         return this.storage.remove(entity);
      }
  
 @@ -0,0 +0,0 @@ public class EntitySection<T extends EntityAccess> {
              for(T entityAccess : collection) {
                  U entityAccess2 = (U)((EntityAccess)type.tryCast(entityAccess));
-                 if (entityAccess2 != null && entityAccess.getBoundingBox().intersects(aABB)) {
+                 if (entityAccess2 != null && entityAccess.getBoundingBox().intersects(box)) {
 -                    action.accept((T)entityAccess2);
 +                    action.accept(entityAccess2); // Paper - decompile fixes
                  }
@@ -84,20 +84,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      public void getEntities(AABB box, Consumer<T> action) {
 +        // Paper start
-+        this.getEntities(box, action, false);
 +    }
 +    public void getEntities(AABB box, Consumer<T> action, boolean isContainerSearch) {
 +        // Paper end
-         this.forEachAccessibleNonEmptySection(box, (entitySection) -> {
-+            if (isContainerSearch && entitySection.inventoryEntityCount <= 0) return; // Paper
-             entitySection.getEntities(box, action);
+         this.forEachAccessibleNonEmptySection(box, (section) -> {
++            if (isContainerSearch && section.inventoryEntityCount <= 0) return; // Paper
+             section.getEntities(box, action);
          });
      }
  
      public <U extends T> void getEntities(EntityTypeTest<T, U> filter, AABB box, Consumer<U> action) {
-         this.forEachAccessibleNonEmptySection(box, (entitySection) -> {
-+            if (filter.getBaseClass() == net.minecraft.world.entity.item.ItemEntity.class && entitySection.itemCount <= 0) return; // Paper
-             entitySection.getEntities(filter, box, action);
+         this.forEachAccessibleNonEmptySection(box, (section) -> {
++            if (filter.getBaseClass() == net.minecraft.world.entity.item.ItemEntity.class && section.itemCount <= 0) return; // Paper
+             section.getEntities(filter, box, action);
          });
      }
 diff --git a/src/main/java/net/minecraft/world/level/entity/LevelEntityGetter.java b/src/main/java/net/minecraft/world/level/entity/LevelEntityGetter.java

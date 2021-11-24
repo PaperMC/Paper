@@ -39,6 +39,21 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                      }
                  }
              };
+diff --git a/src/main/java/net/minecraft/core/MappedRegistry.java b/src/main/java/net/minecraft/core/MappedRegistry.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/core/MappedRegistry.java
++++ b/src/main/java/net/minecraft/core/MappedRegistry.java
+@@ -0,0 +0,0 @@ public class MappedRegistry<T> extends WritableRegistry<T> {
+     }
+ 
+     static record RegistryEntry<T>(ResourceKey<T> key, int id, T value) {
+-        RegistryEntry(ResourceKey<T> key, int rawId, T entry) {
+-            this.key = key;
+-            this.id = rawId;
+-            this.value = entry;
+-        }
+     }
+ }
 diff --git a/src/main/java/net/minecraft/nbt/ListTag.java b/src/main/java/net/minecraft/nbt/ListTag.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/nbt/ListTag.java
@@ -126,15 +141,7 @@ diff --git a/src/main/java/net/minecraft/network/protocol/game/ClientboundLoginP
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/network/protocol/game/ClientboundLoginPacket.java
 +++ b/src/main/java/net/minecraft/network/protocol/game/ClientboundLoginPacket.java
-@@ -0,0 +0,0 @@ import net.minecraft.world.level.GameType;
- import net.minecraft.world.level.Level;
- import net.minecraft.world.level.dimension.DimensionType;
- 
--public record ClientboundLoginPacket(int playerId, boolean hardcore, GameType gameType, GameType previousGameType, Set<ResourceKey<Level>> levels, RegistryAccess.RegistryHolder registryHolder, DimensionType dimensionType, ResourceKey<Level> dimension, long seed, int maxPlayers, int chunkRadius, int simulationDistance, boolean reducedDebugInfo, boolean showDeathScreen, boolean isDebug, boolean isFlat) implements Packet {
-+public record ClientboundLoginPacket(int playerId, boolean hardcore, GameType gameType, GameType previousGameType, Set<ResourceKey<Level>> levels, RegistryAccess.RegistryHolder registryHolder, DimensionType dimensionType, ResourceKey<Level> dimension, long seed, int maxPlayers, int chunkRadius, int simulationDistance, boolean reducedDebugInfo, boolean showDeathScreen, boolean isDebug, boolean isFlat) implements Packet<ClientGamePacketListener> { // Paper - fix missing generic
-     public ClientboundLoginPacket(FriendlyByteBuf buf) {
-         this(buf.readInt(), buf.readBoolean(), GameType.byId(buf.readByte()), GameType.byNullableId(buf.readByte()), buf.readCollection(Sets::newHashSetWithExpectedSize, (b) -> {
-             return ResourceKey.create(Registry.DIMENSION_REGISTRY, b.readResourceLocation());
+@@ -0,0 +0,0 @@ public record ClientboundLoginPacket(int playerId, boolean hardcore, GameType ga
          }), buf.readWithCodec(RegistryAccess.RegistryHolder.NETWORK_CODEC), buf.readWithCodec(DimensionType.CODEC).get(), ResourceKey.create(Registry.DIMENSION_REGISTRY, buf.readResourceLocation()), buf.readLong(), buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readBoolean(), buf.readBoolean(), buf.readBoolean(), buf.readBoolean());
      }
  
@@ -223,8 +230,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -            return (entry1.getValue()); // CraftBukkit
 +            return entry1.getValue(); // CraftBukkit // Paper - decompile fix - *shrugs internally* // todo: is this needed anymore?
          }));
+         this.byName = Maps.newHashMap(builder.build()); // CraftBukkit
          RecipeManager.LOGGER.info("Loaded {} recipes", map1.size());
-     }
 diff --git a/src/main/java/net/minecraft/world/level/biome/Biome.java b/src/main/java/net/minecraft/world/level/biome/Biome.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/biome/Biome.java
