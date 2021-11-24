@@ -5,10 +5,10 @@ Subject: [PATCH] fix PigZombieAngerEvent cancellation
 
 
 diff --git a/src/main/java/net/minecraft/world/entity/monster/ZombifiedPiglin.java b/src/main/java/net/minecraft/world/entity/monster/ZombifiedPiglin.java
-index 92a4ac2d70bf806b149876ff8d033811da7be43f..6b508fb0850eb29e31ad960458ea2922c5bdd2bf 100644
+index aa81dba877e6611b23ec514ee1bcf9ac29c94515..c1e0cf7d86d7b45cc4ca342d80f0dc3fe43b0bfd 100644
 --- a/src/main/java/net/minecraft/world/entity/monster/ZombifiedPiglin.java
 +++ b/src/main/java/net/minecraft/world/entity/monster/ZombifiedPiglin.java
-@@ -51,6 +51,7 @@ public class ZombifiedPiglin extends Zombie implements NeutralMob {
+@@ -52,6 +52,7 @@ public class ZombifiedPiglin extends Zombie implements NeutralMob {
      private static final int ALERT_RANGE_Y = 10;
      private static final UniformInt ALERT_INTERVAL = TimeUtil.rangeOfSeconds(4, 6);
      private int ticksUntilNextAlert;
@@ -16,16 +16,16 @@ index 92a4ac2d70bf806b149876ff8d033811da7be43f..6b508fb0850eb29e31ad960458ea2922
  
      public ZombifiedPiglin(EntityType<? extends ZombifiedPiglin> type, Level world) {
          super(type, world);
-@@ -71,7 +72,7 @@ public class ZombifiedPiglin extends Zombie implements NeutralMob {
+@@ -72,7 +73,7 @@ public class ZombifiedPiglin extends Zombie implements NeutralMob {
      protected void addBehaviourGoals() {
          this.goalSelector.addGoal(2, new ZombieAttackGoal(this, 1.0D, false));
          this.goalSelector.addGoal(7, new WaterAvoidingRandomStrollGoal(this, 1.0D));
--        this.targetSelector.addGoal(1, new HurtByTargetGoal(this).setAlertOthers(new Class[0])); // CraftBukkit - decompile error
-+        this.targetSelector.addGoal(1, pathfinderGoalHurtByTarget = new HurtByTargetGoal(this).setAlertOthers(new Class[0])); // CraftBukkit - decompile error // Paper - assign field
+-        this.targetSelector.addGoal(1, (new HurtByTargetGoal(this, new Class[0])).setAlertOthers());
++        this.targetSelector.addGoal(1, pathfinderGoalHurtByTarget = (new HurtByTargetGoal(this, new Class[0])).setAlertOthers()); // Paper - assign field
          this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Player.class, 10, true, false, this::isAngryAt));
          this.targetSelector.addGoal(3, new ResetUniversalAngerTargetGoal<>(this, true));
      }
-@@ -174,6 +175,7 @@ public class ZombifiedPiglin extends Zombie implements NeutralMob {
+@@ -175,6 +176,7 @@ public class ZombifiedPiglin extends Zombie implements NeutralMob {
          this.level.getCraftServer().getPluginManager().callEvent(event);
          if (event.isCancelled()) {
              this.setPersistentAngerTarget(null);

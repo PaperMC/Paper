@@ -5,21 +5,23 @@ Subject: [PATCH] Enhance console tab completions for brigadier commands
 
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-index 4e824a87b463a417c204a9ee188450bdd9f4fbc2..ef1e6e898b3cb9d012b2cf24aedffea4afce8a38 100644
+index 408e359e6f1a07c5616822e2ecf7549bf481c77d..1a7f2074de8938b59c06d3a891265c574e3899dc 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-@@ -503,4 +503,11 @@ public class PaperConfig {
-     private static void fixEntityPositionDesync() {
+@@ -106,6 +106,13 @@ public class PaperConfig {
          fixEntityPositionDesync = getBoolean("settings.fix-entity-position-desync", fixEntityPositionDesync);
      }
-+
+ 
 +    public static boolean enableBrigadierConsoleHighlighting = true;
 +    public static boolean enableBrigadierConsoleCompletions = true;
 +    private static void consoleSettings() {
 +        enableBrigadierConsoleHighlighting = getBoolean("settings.console.enable-brigadier-highlighting", enableBrigadierConsoleHighlighting);
 +        enableBrigadierConsoleCompletions = getBoolean("settings.console.enable-brigadier-completions", enableBrigadierConsoleCompletions);
 +    }
- }
++
+     public static void registerCommands() {
+         for (Map.Entry<String, Command> entry : commands.entrySet()) {
+             MinecraftServer.getServer().server.getCommandMap().register(entry.getKey(), "Paper", entry.getValue());
 diff --git a/src/main/java/com/destroystokyo/paper/console/PaperConsole.java b/src/main/java/com/destroystokyo/paper/console/PaperConsole.java
 index a4070b59e261f0f1ac4beec47b11492f4724bf27..e0b1f0671d16ddddcb6725acd25a1d1d69e42701 100644
 --- a/src/main/java/com/destroystokyo/paper/console/PaperConsole.java
@@ -214,10 +216,10 @@ index 0000000000000000000000000000000000000000..5ab8365b806dd035800ba9b449c9bc92
 +    public void setErrorIndex(final int errorIndex) {}
 +}
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-index 67afb97e6cb545d319202f3eca771015065089f6..0300390025c3f5461ef5f379c1710a58de164117 100644
+index 02d7b16f81ebf9f902a36d4f31802b20d1820d6e..77f49329cc903ba687c60032ba4b21786f79a56b 100644
 --- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-@@ -184,7 +184,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+@@ -182,7 +182,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
  
          thread.setDaemon(true);
          thread.setUncaughtExceptionHandler(new DefaultUncaughtExceptionHandler(DedicatedServer.LOGGER));
@@ -226,7 +228,7 @@ index 67afb97e6cb545d319202f3eca771015065089f6..0300390025c3f5461ef5f379c1710a58
          DedicatedServer.LOGGER.info("Starting minecraft server version {}", SharedConstants.getCurrentVersion().getName());
          if (Runtime.getRuntime().maxMemory() / 1024L / 1024L < 512L) {
              DedicatedServer.LOGGER.warn("To start the server with more ram, launch it as \"java -Xmx1024M -Xms1024M -jar minecraft_server.jar\"");
-@@ -218,6 +218,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+@@ -216,6 +216,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
              DedicatedServer.LOGGER.error("Unable to load server configuration", e);
              return false;
          }
