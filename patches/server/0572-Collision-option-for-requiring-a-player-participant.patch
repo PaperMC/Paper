@@ -5,10 +5,10 @@ Subject: [PATCH] Collision option for requiring a player participant
 
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index 2c67111621937d9649ac79d133c955d25bc50485..94c6d7013547d3a2a86aaf72aa485761d601acee 100644
+index 4d723f5327a64cd8257bab502ae59a35b4a35cc1..e8f5ad4925b4d02bf79f9f56d0dac3f0cc410e71 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-@@ -84,6 +84,18 @@ public class PaperWorldConfig {
+@@ -82,6 +82,18 @@ public class PaperWorldConfig {
          }
      }
  
@@ -28,10 +28,10 @@ index 2c67111621937d9649ac79d133c955d25bc50485..94c6d7013547d3a2a86aaf72aa485761
      public int wanderingTraderSpawnDayTicks = 24000;
      public int wanderingTraderSpawnChanceFailureIncrement = 25;
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index 1db86fbfdc705c33948fb4c26be622616bcbdb12..392fa93b37cc79988c60b3215f69f5fff0ea97e5 100644
+index a6ef4b05daaa93ef333647cc00f8a708d466aaba..8725f949d643d21339caab19a914dc26eb515658 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
-@@ -1632,6 +1632,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, n
+@@ -1626,6 +1626,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, i
      public void push(Entity entity) {
          if (!this.isPassengerOfSameVehicle(entity)) {
              if (!entity.noPhysics && !this.noPhysics) {
@@ -40,42 +40,26 @@ index 1db86fbfdc705c33948fb4c26be622616bcbdb12..392fa93b37cc79988c60b3215f69f5ff
                  double d1 = entity.getZ() - this.getZ();
                  double d2 = Mth.absMax(d0, d1);
 diff --git a/src/main/java/net/minecraft/world/entity/vehicle/AbstractMinecart.java b/src/main/java/net/minecraft/world/entity/vehicle/AbstractMinecart.java
-index 9653b142c199c068e4d6175bcd3cbecb6465853f..309bafd257d4932cfd69c2c212b32306938cd234 100644
+index 75cff07051d3b81d37926fb1da50af5ba27c34dc..ad49dcc3473fbad306d21cbac4600574e80220a7 100644
 --- a/src/main/java/net/minecraft/world/entity/vehicle/AbstractMinecart.java
 +++ b/src/main/java/net/minecraft/world/entity/vehicle/AbstractMinecart.java
-@@ -21,6 +21,7 @@ import net.minecraft.network.protocol.game.ClientboundAddEntityPacket;
- import net.minecraft.network.syncher.EntityDataAccessor;
- import net.minecraft.network.syncher.EntityDataSerializers;
- import net.minecraft.network.syncher.SynchedEntityData;
-+import net.minecraft.server.level.ServerPlayer;
- import net.minecraft.tags.BlockTags;
- import net.minecraft.tags.Tag;
- import net.minecraft.util.Mth;
-@@ -833,6 +834,7 @@ public abstract class AbstractMinecart extends Entity {
+@@ -832,6 +832,7 @@ public abstract class AbstractMinecart extends Entity {
      public void push(Entity entity) {
          if (!this.level.isClientSide) {
              if (!entity.noPhysics && !this.noPhysics) {
-+                if (!this.level.paperConfig.allowVehicleCollisions && this.level.paperConfig.onlyPlayersCollide && !(entity instanceof ServerPlayer)) return; // Paper
++                if (!this.level.paperConfig.allowVehicleCollisions && this.level.paperConfig.onlyPlayersCollide && !(entity instanceof Player)) return; // Paper
                  if (!this.hasPassenger(entity)) {
                      // CraftBukkit start
                      VehicleEntityCollisionEvent collisionEvent = new VehicleEntityCollisionEvent((Vehicle) this.getBukkitEntity(), entity.getBukkitEntity());
 diff --git a/src/main/java/net/minecraft/world/entity/vehicle/Boat.java b/src/main/java/net/minecraft/world/entity/vehicle/Boat.java
-index a1b93f2878e22fa1d0cad639416d2dc5b8339c73..aa7c022c4faade23bd9061311d4152cf845d3331 100644
+index b4516094996c80886b8d7af599ba7c3d4229ba9d..c3d111204601270b57389e1f85456a9e2ada4629 100644
 --- a/src/main/java/net/minecraft/world/entity/vehicle/Boat.java
 +++ b/src/main/java/net/minecraft/world/entity/vehicle/Boat.java
-@@ -16,6 +16,7 @@ import net.minecraft.network.protocol.game.ServerboundPaddleBoatPacket;
- import net.minecraft.network.syncher.EntityDataAccessor;
- import net.minecraft.network.syncher.EntityDataSerializers;
- import net.minecraft.network.syncher.SynchedEntityData;
-+import net.minecraft.server.level.ServerPlayer;
- import net.minecraft.sounds.SoundEvent;
- import net.minecraft.sounds.SoundEvents;
- import net.minecraft.tags.FluidTags;
-@@ -240,6 +241,7 @@ public class Boat extends Entity {
+@@ -240,6 +240,7 @@ public class Boat extends Entity {
  
      @Override
      public void push(Entity entity) {
-+        if (!this.level.paperConfig.allowVehicleCollisions && this.level.paperConfig.onlyPlayersCollide && !(entity instanceof ServerPlayer)) return; // Paper
++        if (!this.level.paperConfig.allowVehicleCollisions && this.level.paperConfig.onlyPlayersCollide && !(entity instanceof Player)) return; // Paper
          if (entity instanceof Boat) {
              if (entity.getBoundingBox().minY < this.getBoundingBox().maxY) {
                  // CraftBukkit start
