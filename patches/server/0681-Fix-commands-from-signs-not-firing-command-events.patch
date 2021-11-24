@@ -10,10 +10,10 @@ This patch changes sign command logic so that `run_command` click events:
   - sends failure messages to the player who clicked the sign
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index d40d6ead65bd0f6ae64155ee7960245fd0e72b77..37cb74b27763db6f4a6a68030f88c37fc731affc 100644
+index bdecc8ea27253150d0b5c57fe7a018155739647f..3af1cfc75af23edd3cbfbf202427856761b42ce7 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-@@ -894,5 +894,10 @@ public class PaperWorldConfig {
+@@ -803,4 +803,9 @@ public class PaperWorldConfig {
      private void fixInvulnerableEndCrystalExploit() {
          fixInvulnerableEndCrystalExploit = getBoolean("unsupported-settings.fix-invulnerable-end-crystal-exploit", fixInvulnerableEndCrystalExploit);
      }
@@ -23,7 +23,6 @@ index d40d6ead65bd0f6ae64155ee7960245fd0e72b77..37cb74b27763db6f4a6a68030f88c37f
 +        showSignClickCommandFailureMessagesToPlayer = getBoolean("show-sign-click-command-failure-msgs-to-player", showSignClickCommandFailureMessagesToPlayer);
 +    }
  }
- 
 diff --git a/src/main/java/io/papermc/paper/commands/DelegatingCommandSource.java b/src/main/java/io/papermc/paper/commands/DelegatingCommandSource.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..1f6747d7a4c33f0ee7b0dc2120081bb87a855d35
@@ -73,10 +72,10 @@ index 0000000000000000000000000000000000000000..1f6747d7a4c33f0ee7b0dc2120081bb8
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/world/level/block/entity/SignBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/SignBlockEntity.java
-index 9b5d11ece006d7aa893360a84ba652c666517ac1..344d3a8c1162f1a4ab5fc2b7676680ddace46649 100644
+index 615c4f9d9841f7ddc3e5c854e90f41c3905c2e8f..6371176fba41218a209ea59b4cafe5b2d4a685fd 100644
 --- a/src/main/java/net/minecraft/world/level/block/entity/SignBlockEntity.java
 +++ b/src/main/java/net/minecraft/world/level/block/entity/SignBlockEntity.java
-@@ -41,6 +41,7 @@ public class SignBlockEntity extends BlockEntity implements CommandSource { // C
+@@ -40,6 +40,7 @@ public class SignBlockEntity extends BlockEntity implements CommandSource { // C
      private boolean renderMessagedFiltered;
      private DyeColor color;
      private boolean hasGlowingText;
@@ -84,7 +83,7 @@ index 9b5d11ece006d7aa893360a84ba652c666517ac1..344d3a8c1162f1a4ab5fc2b7676680dd
  
      public SignBlockEntity(BlockPos pos, BlockState state) {
          super(BlockEntityType.SIGN, pos, state);
-@@ -227,7 +228,17 @@ public class SignBlockEntity extends BlockEntity implements CommandSource { // C
+@@ -224,7 +225,17 @@ public class SignBlockEntity extends BlockEntity implements CommandSource { // C
              ClickEvent chatclickable = chatmodifier.getClickEvent();
  
              if (chatclickable != null && chatclickable.getAction() == ClickEvent.Action.RUN_COMMAND) {
@@ -103,14 +102,14 @@ index 9b5d11ece006d7aa893360a84ba652c666517ac1..344d3a8c1162f1a4ab5fc2b7676680dd
              }
          }
  
-@@ -263,8 +274,21 @@ public class SignBlockEntity extends BlockEntity implements CommandSource { // C
+@@ -260,8 +271,21 @@ public class SignBlockEntity extends BlockEntity implements CommandSource { // C
          String s = player == null ? "Sign" : player.getName().getString();
          Object object = player == null ? new TextComponent("Sign") : player.getDisplayName();
  
 +        // Paper start - send messages back to the player
 +        CommandSource commandSource = this.level.paperConfig.showSignClickCommandFailureMessagesToPlayer ? new io.papermc.paper.commands.DelegatingCommandSource(this) {
 +            @Override
-+            public void sendMessage(net.minecraft.network.chat.Component message, java.util.UUID sender) {
++            public void sendMessage(Component message, UUID sender) {
 +                player.sendMessage(message, sender);
 +            }
 +
@@ -121,8 +120,8 @@ index 9b5d11ece006d7aa893360a84ba652c666517ac1..344d3a8c1162f1a4ab5fc2b7676680dd
 +        } : this;
 +        // Paper end
          // CraftBukkit - this
--        return new CommandSourceStack(this, Vec3.atCenterOf((Vec3i) this.worldPosition), Vec2.ZERO, (ServerLevel) this.level, 2, s, (Component) object, this.level.getServer(), player);
-+        return new CommandSourceStack(commandSource, Vec3.atCenterOf((Vec3i) this.worldPosition), Vec2.ZERO, (ServerLevel) this.level, 2, s, (Component) object, this.level.getServer(), player); // Paper
+-        return new CommandSourceStack(this, Vec3.atCenterOf(this.worldPosition), Vec2.ZERO, (ServerLevel) this.level, 2, s, (Component) object, this.level.getServer(), player);
++        return new CommandSourceStack(commandSource, Vec3.atCenterOf(this.worldPosition), Vec2.ZERO, (ServerLevel) this.level, 2, s, (Component) object, this.level.getServer(), player); // Paper
      }
  
      public DyeColor getColor() {
