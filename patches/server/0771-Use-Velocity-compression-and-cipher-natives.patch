@@ -5,11 +5,11 @@ Subject: [PATCH] Use Velocity compression and cipher natives
 
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index c7ebad49e04c36c27341cabc4a024f170d762f3f..f46f11c32560da6f4955284d93da3dd7e22555a3 100644
+index 7d69f9e39361644796895254dfa518ef83d9e578..e572f524046d4799adec7f08b1609d82a64ab94f 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
-@@ -55,6 +55,7 @@ dependencies {
-     implementation("io.netty:netty-all:4.1.65.Final") // Paper
+@@ -49,6 +49,7 @@ dependencies {
+     runtimeOnly("org.apache.maven.resolver:maven-resolver-transport-http:1.7.0")
  
      implementation("net.fabricmc:mapping-io:0.3.0") // Paper - needed to read mappings for stacktrace deobfuscation
 +    implementation("com.velocitypowered:velocity-native:1.1.0-SNAPSHOT") // Paper
@@ -17,10 +17,10 @@ index c7ebad49e04c36c27341cabc4a024f170d762f3f..f46f11c32560da6f4955284d93da3dd7
      testImplementation("io.github.classgraph:classgraph:4.8.47") // Paper - mob goal test
      testImplementation("junit:junit:4.13.1")
 diff --git a/src/main/java/net/minecraft/network/CipherDecoder.java b/src/main/java/net/minecraft/network/CipherDecoder.java
-index 06d545bc7206dd0d56cf27c31935c0f5ed21ef08..201e5eb2d0ec985ea60c59ac89593bd88ad3ee4d 100644
+index 778beb445eac5769b9e4e07b4d1294c50ae2602b..c712fb8193115e1ab71b5e40fb0ccb9413062b03 100644
 --- a/src/main/java/net/minecraft/network/CipherDecoder.java
 +++ b/src/main/java/net/minecraft/network/CipherDecoder.java
-@@ -7,14 +7,30 @@ import java.util.List;
+@@ -7,13 +7,29 @@ import java.util.List;
  import javax.crypto.Cipher;
  
  public class CipherDecoder extends MessageToMessageDecoder<ByteBuf> {
@@ -33,7 +33,6 @@ index 06d545bc7206dd0d56cf27c31935c0f5ed21ef08..201e5eb2d0ec985ea60c59ac89593bd8
 +        this.cipher = cipher;  // Paper
      }
  
-     @Override
      protected void decode(ChannelHandlerContext channelHandlerContext, ByteBuf byteBuf, List<Object> list) throws Exception {
 -        list.add(this.cipher.decipher(channelHandlerContext, byteBuf));
 +        // Paper start
@@ -56,10 +55,10 @@ index 06d545bc7206dd0d56cf27c31935c0f5ed21ef08..201e5eb2d0ec985ea60c59ac89593bd8
 +    // Paper end
  }
 diff --git a/src/main/java/net/minecraft/network/CipherEncoder.java b/src/main/java/net/minecraft/network/CipherEncoder.java
-index 50a7058b18a8ca05363b73eaefbd812ef50d53f1..7319da27dfa5029c9893ec04bfd4325531af8a98 100644
+index 0f3d502a9680006bcdcd7d272240a2e5c3b46790..5dd7be70603e8754d2625bb9d16900cb01b9c730 100644
 --- a/src/main/java/net/minecraft/network/CipherEncoder.java
 +++ b/src/main/java/net/minecraft/network/CipherEncoder.java
-@@ -4,16 +4,33 @@ import io.netty.buffer.ByteBuf;
+@@ -4,15 +4,32 @@ import io.netty.buffer.ByteBuf;
  import io.netty.channel.ChannelHandlerContext;
  import io.netty.handler.codec.MessageToByteEncoder;
  import javax.crypto.Cipher;
@@ -76,7 +75,6 @@ index 50a7058b18a8ca05363b73eaefbd812ef50d53f1..7319da27dfa5029c9893ec04bfd43255
 +        this.cipher = cipher;  // Paper
      }
  
-     @Override
 -    protected void encode(ChannelHandlerContext channelHandlerContext, ByteBuf byteBuf, ByteBuf byteBuf2) throws Exception {
 -        this.cipher.encipher(byteBuf, byteBuf2);
 +    protected void encode(ChannelHandlerContext channelHandlerContext, ByteBuf byteBuf, List<Object> list) throws Exception {
@@ -100,7 +98,7 @@ index 50a7058b18a8ca05363b73eaefbd812ef50d53f1..7319da27dfa5029c9893ec04bfd43255
 +    // Paper end
  }
 diff --git a/src/main/java/net/minecraft/network/CompressionDecoder.java b/src/main/java/net/minecraft/network/CompressionDecoder.java
-index efd05c8c1114aab4c237ccbc2e4e935a08c076ee..3569fc49e87b773dce0e59b9069797834ae32613 100644
+index b62be99c57b0a5bba0dc29809557d4d247698b13..f4d4ad983baf24d889441541d5a84dc1f49ea4d4 100644
 --- a/src/main/java/net/minecraft/network/CompressionDecoder.java
 +++ b/src/main/java/net/minecraft/network/CompressionDecoder.java
 @@ -12,13 +12,20 @@ public class CompressionDecoder extends ByteToMessageDecoder {
@@ -112,20 +110,20 @@ index efd05c8c1114aab4c237ccbc2e4e935a08c076ee..3569fc49e87b773dce0e59b906979783
      private boolean validateDecompressed;
  
 +    // Paper start
-     public CompressionDecoder(int compressionThreshold, boolean bl) {
-+        this(null, compressionThreshold, bl);
+     public CompressionDecoder(int compressionThreshold, boolean rejectsBadPackets) {
++        this(null, compressionThreshold, rejectsBadPackets);
 +    }
-+    public CompressionDecoder(com.velocitypowered.natives.compression.VelocityCompressor compressor, int compressionThreshold, boolean bl) {
++    public CompressionDecoder(com.velocitypowered.natives.compression.VelocityCompressor compressor, int compressionThreshold, boolean rejectsBadPackets) {
          this.threshold = compressionThreshold;
-         this.validateDecompressed = bl;
+         this.validateDecompressed = rejectsBadPackets;
 -        this.inflater = new Inflater();
 +        this.inflater = compressor == null ? new Inflater() : null;
 +        this.compressor = compressor;
 +        // Paper end
      }
  
-     @Override
-@@ -39,6 +46,8 @@ public class CompressionDecoder extends ByteToMessageDecoder {
+     protected void decode(ChannelHandlerContext channelHandlerContext, ByteBuf byteBuf, List<Object> list) throws Exception {
+@@ -38,6 +45,8 @@ public class CompressionDecoder extends ByteToMessageDecoder {
                      }
                  }
  
@@ -134,7 +132,7 @@ index efd05c8c1114aab4c237ccbc2e4e935a08c076ee..3569fc49e87b773dce0e59b906979783
                  byte[] bs = new byte[friendlyByteBuf.readableBytes()];
                  friendlyByteBuf.readBytes(bs);
                  this.inflater.setInput(bs);
-@@ -46,10 +55,36 @@ public class CompressionDecoder extends ByteToMessageDecoder {
+@@ -45,10 +54,36 @@ public class CompressionDecoder extends ByteToMessageDecoder {
                  this.inflater.inflate(cs);
                  list.add(Unpooled.wrappedBuffer(cs));
                  this.inflater.reset();
@@ -168,14 +166,14 @@ index efd05c8c1114aab4c237ccbc2e4e935a08c076ee..3569fc49e87b773dce0e59b906979783
 +    }
 +    // Paper end
 +
-     public void setThreshold(int compressionThreshold, boolean bl) {
+     public void setThreshold(int compressionThreshold, boolean rejectsBadPackets) {
          this.threshold = compressionThreshold;
-         this.validateDecompressed = bl;
+         this.validateDecompressed = rejectsBadPackets;
 diff --git a/src/main/java/net/minecraft/network/CompressionEncoder.java b/src/main/java/net/minecraft/network/CompressionEncoder.java
-index 524c0c674f63cfcb601416a18348f37aabb4e3ff..89bf5066b83e8d79c77c90fce1f7858c06b01730 100644
+index 792883afe53d2b7989c25a81c2f9a639d5e21d20..c04379ca8a4db0f4de46ad2b3b3384310eebddf3 100644
 --- a/src/main/java/net/minecraft/network/CompressionEncoder.java
 +++ b/src/main/java/net/minecraft/network/CompressionEncoder.java
-@@ -6,23 +6,38 @@ import io.netty.handler.codec.MessageToByteEncoder;
+@@ -6,22 +6,37 @@ import io.netty.handler.codec.MessageToByteEncoder;
  import java.util.zip.Deflater;
  
  public class CompressionEncoder extends MessageToByteEncoder<ByteBuf> {
@@ -203,7 +201,6 @@ index 524c0c674f63cfcb601416a18348f37aabb4e3ff..89bf5066b83e8d79c77c90fce1f7858c
 +        // Paper end
      }
  
-     @Override
 -    protected void encode(ChannelHandlerContext channelHandlerContext, ByteBuf byteBuf, ByteBuf byteBuf2) {
 +    protected void encode(ChannelHandlerContext channelHandlerContext, ByteBuf byteBuf, ByteBuf byteBuf2) throws Exception { // Paper
          int i = byteBuf.readableBytes();
@@ -217,7 +214,7 @@ index 524c0c674f63cfcb601416a18348f37aabb4e3ff..89bf5066b83e8d79c77c90fce1f7858c
              byte[] bs = new byte[i];
              byteBuf.readBytes(bs);
              friendlyByteBuf.writeVarInt(bs.length);
-@@ -35,10 +50,48 @@ public class CompressionEncoder extends MessageToByteEncoder<ByteBuf> {
+@@ -34,10 +49,48 @@ public class CompressionEncoder extends MessageToByteEncoder<ByteBuf> {
              }
  
              this.deflater.reset();
@@ -267,10 +264,10 @@ index 524c0c674f63cfcb601416a18348f37aabb4e3ff..89bf5066b83e8d79c77c90fce1f7858c
          return this.threshold;
      }
 diff --git a/src/main/java/net/minecraft/network/Connection.java b/src/main/java/net/minecraft/network/Connection.java
-index 0dae504f49a4a3c66a01eb03896833a010cd5821..5f43459884daea61178c3fdb913204e64f833f61 100644
+index a1aafb037fd340dc93dd2afb758ffc7457d15f84..a7e7fe4be2784ff34f7f8d0b6c2f82d65de8c145 100644
 --- a/src/main/java/net/minecraft/network/Connection.java
 +++ b/src/main/java/net/minecraft/network/Connection.java
-@@ -657,11 +657,28 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -628,11 +628,28 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
          return networkmanager;
      }
  
@@ -303,16 +300,16 @@ index 0dae504f49a4a3c66a01eb03896833a010cd5821..5f43459884daea61178c3fdb913204e6
  
      public boolean isEncrypted() {
          return this.encrypted;
-@@ -690,16 +707,17 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -661,16 +678,17 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
  
-     public void setupCompression(int compressionThreshold, boolean flag) {
+     public void setupCompression(int compressionThreshold, boolean rejectsBadPackets) {
          if (compressionThreshold >= 0) {
 +            com.velocitypowered.natives.compression.VelocityCompressor compressor = com.velocitypowered.natives.util.Natives.compress.get().create(-1); // Paper
              if (this.channel.pipeline().get("decompress") instanceof CompressionDecoder) {
-                 ((CompressionDecoder) this.channel.pipeline().get("decompress")).setThreshold(compressionThreshold, flag);
+                 ((CompressionDecoder) this.channel.pipeline().get("decompress")).setThreshold(compressionThreshold, rejectsBadPackets);
              } else {
--                this.channel.pipeline().addBefore("decoder", "decompress", new CompressionDecoder(compressionThreshold, flag));
-+                this.channel.pipeline().addBefore("decoder", "decompress", new CompressionDecoder(compressor, compressionThreshold, flag)); // Paper
+-                this.channel.pipeline().addBefore("decoder", "decompress", new CompressionDecoder(compressionThreshold, rejectsBadPackets));
++                this.channel.pipeline().addBefore("decoder", "decompress", new CompressionDecoder(compressor, compressionThreshold, rejectsBadPackets)); // Paper
              }
  
              if (this.channel.pipeline().get("compress") instanceof CompressionEncoder) {
@@ -324,7 +321,7 @@ index 0dae504f49a4a3c66a01eb03896833a010cd5821..5f43459884daea61178c3fdb913204e6
          } else {
              if (this.channel.pipeline().get("decompress") instanceof CompressionDecoder) {
 diff --git a/src/main/java/net/minecraft/server/network/ServerConnectionListener.java b/src/main/java/net/minecraft/server/network/ServerConnectionListener.java
-index 961660f6f9e00b93252519e38b74c66c53388ed2..a7046da8c097254907e01cd17f4107c8744f4a6e 100644
+index f7aa0125e4724f1efddf28814f926289c1ae37d4..477aa83c3b342705a8a9b7ab41b2f77008e2e281 100644
 --- a/src/main/java/net/minecraft/server/network/ServerConnectionListener.java
 +++ b/src/main/java/net/minecraft/server/network/ServerConnectionListener.java
 @@ -104,6 +104,11 @@ public class ServerConnectionListener {
@@ -340,10 +337,10 @@ index 961660f6f9e00b93252519e38b74c66c53388ed2..a7046da8c097254907e01cd17f4107c8
                  protected void initChannel(Channel channel) {
                      try {
 diff --git a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
-index 45e77d96f673ce68cf15ce3d45fd1eeffed4d8d8..01fee879c946b6640da34d5890d686f0152437dc 100644
+index 45db764f4499ee71bef691d37b604f21da120fe7..d2dd8b802ecea7fd2efe5f07fcef65c26e1adfbc 100644
 --- a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
-@@ -275,12 +275,14 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener
+@@ -276,12 +276,14 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener
              }
  
              SecretKey secretkey = packet.getSecretKey(privatekey);
