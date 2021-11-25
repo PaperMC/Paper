@@ -130,6 +130,27 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    private static final LongArrayList BREAKPOINTS = MCVersionRegistry.getBreakpoints();
 +
++    public static <T> T copy(final T type) {
++        if (type instanceof CompoundTag) {
++            return (T)((CompoundTag)type).copy();
++        } else if (type instanceof JsonObject) {
++            return (T)((JsonObject)type).deepCopy();
++        }
++
++        return type;
++    }
++
++    public static <T, R> R convertUnwrapped(final DataType<T, R> type, final T data, final boolean compressedJson, final int fromVersion, final int toVersion) {
++        if (data instanceof CompoundTag) {
++            return (R)convertTag((MCDataType)type, (CompoundTag)data, fromVersion, toVersion);
++        }
++        if (data instanceof JsonObject) {
++            return (R)convertJson((MCDataType)type, (JsonObject)data, compressedJson, fromVersion, toVersion);
++        }
++
++        return convert(type, data, fromVersion, toVersion);
++    }
++
 +    public static CompoundTag convertTag(final MCDataType type, final CompoundTag data, final int fromVersion, final int toVersion) {
 +        final NBTMapType wrapped = new NBTMapType(data);
 +
@@ -356,6 +377,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                2688,
 +                2690,
 +                2691,
++                2693,
 +                2696,
 +                2700,
 +                2701,
@@ -363,8 +385,18 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                2704,
 +                2707,
 +                2710,
-+                2717
-+                // All up to 1.17.1
++                2717,
++                2825,
++                2831,
++                2832,
++                2833,
++                2838,
++                2841,
++                2842,
++                2843,
++                2846,
++                2852,
++                // All up to 1.18-pre6
 +        };
 +        Arrays.sort(converterVersions);
 +
@@ -382,7 +414,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        registerSubVersion(MCVersions.V17W47A, 7);
 +
 +        // register breakpoints here
-+        // for all major releases after 1.16, add them here. this reduces the work required to determine if a breakpoint
++        // for all major releases after 1.16, add them. this reduces the work required to determine if a breakpoint
 +        // is needed for new converters
 +
 +        // Too much changed in this version.
@@ -893,6 +925,166 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    public static final int V1_17_1_RC1           = 2728;
 +    public static final int V1_17_1_RC2           = 2729;
 +    public static final int V1_17_1               = 2730;
++    public static final int V21W37A               = 2834;
++    public static final int V21W38A               = 2835;
++    public static final int V21W39A               = 2836;
++    public static final int V21W40A               = 2838;
++    public static final int V21W41A               = 2839;
++    public static final int V21W42A               = 2840;
++    public static final int V21W43A               = 2844;
++    public static final int V21W44A               = 2845;
++    public static final int V1_18_PRE1            = 2847;
++    public static final int V1_18_PRE2            = 2848;
++    public static final int V1_18_PRE3            = 2849;
++    public static final int V1_18_PRE4            = 2850;
++    public static final int V1_18_PRE5            = 2851;
++    public static final int V1_18_PRE6            = 2853;
++}
+diff --git a/src/main/java/ca/spottedleaf/dataconverter/minecraft/ReplacedDataFixerUpper.java b/src/main/java/ca/spottedleaf/dataconverter/minecraft/ReplacedDataFixerUpper.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/java/ca/spottedleaf/dataconverter/minecraft/ReplacedDataFixerUpper.java
+@@ -0,0 +0,0 @@
++package ca.spottedleaf.dataconverter.minecraft;
++
++import ca.spottedleaf.dataconverter.converters.datatypes.DataType;
++import ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry;
++import com.mojang.datafixers.DSL;
++import com.mojang.datafixers.DataFixer;
++import com.mojang.datafixers.schemas.Schema;
++import com.mojang.serialization.Dynamic;
++import net.minecraft.SharedConstants;
++import net.minecraft.util.datafix.fixes.References;
++import org.apache.logging.log4j.LogManager;
++import org.apache.logging.log4j.Logger;
++import java.util.Set;
++import java.util.concurrent.ConcurrentHashMap;
++
++public class ReplacedDataFixerUpper implements DataFixer {
++
++    protected static final Set<DSL.TypeReference> WARNED_TYPES = ConcurrentHashMap.newKeySet();
++
++    private static final Logger LOGGER = LogManager.getLogger();
++
++    public final DataFixer wrapped;
++
++    public ReplacedDataFixerUpper(final DataFixer wrapped) {
++        this.wrapped = wrapped;
++    }
++
++    @Override
++    public <T> Dynamic<T> update(final DSL.TypeReference type, final Dynamic<T> input, final int version, final int newVersion) {
++        DataType<?, ?> equivType = null;
++        boolean warn = true;
++
++        if (type == References.LEVEL) {
++            warn = false;
++        }
++        if (type == References.PLAYER) {
++            equivType = MCTypeRegistry.PLAYER;
++        }
++        if (type == References.CHUNK) {
++            equivType = MCTypeRegistry.CHUNK;
++        }
++        if (type == References.HOTBAR) {
++            warn = false;
++        }
++        if (type == References.OPTIONS) {
++            warn = false;
++        }
++        if (type == References.STRUCTURE) {
++            equivType = MCTypeRegistry.STRUCTURE;
++        }
++        if (type == References.STATS) {
++            warn = false;
++        }
++        if (type == References.SAVED_DATA) {
++            equivType = MCTypeRegistry.SAVED_DATA;
++        }
++        if (type == References.ADVANCEMENTS) {
++            warn = false;
++        }
++        if (type == References.POI_CHUNK) {
++            equivType = MCTypeRegistry.POI_CHUNK;
++        }
++        if (type == References.ENTITY_CHUNK) {
++            equivType = MCTypeRegistry.ENTITY_CHUNK;
++        }
++        if (type == References.BLOCK_ENTITY) {
++            equivType = MCTypeRegistry.TILE_ENTITY;
++        }
++        if (type == References.ITEM_STACK) {
++            equivType = MCTypeRegistry.ITEM_STACK;
++        }
++        if (type == References.BLOCK_STATE) {
++            equivType = MCTypeRegistry.BLOCK_STATE;
++        }
++        if (type == References.ENTITY_NAME) {
++            equivType = MCTypeRegistry.ENTITY_NAME;
++        }
++        if (type == References.ENTITY_TREE) {
++            equivType = MCTypeRegistry.ENTITY;
++        }
++        if (type == References.ENTITY) {
++            // NO EQUIV TYPE (this is ENTITY without passengers/riding)
++            // Only used internally for DFU, so we shouldn't get here
++        }
++        if (type == References.BLOCK_NAME) {
++            equivType = MCTypeRegistry.BLOCK_NAME;
++        }
++        if (type == References.ITEM_NAME) {
++            equivType = MCTypeRegistry.ITEM_NAME;
++        }
++        if (type == References.UNTAGGED_SPAWNER) {
++            equivType = MCTypeRegistry.UNTAGGED_SPAWNER;
++        }
++        if (type == References.STRUCTURE_FEATURE) {
++            equivType = MCTypeRegistry.STRUCTURE_FEATURE;
++        }
++        if (type == References.OBJECTIVE) {
++            warn = false;
++        }
++        if (type == References.TEAM) {
++            warn = false;
++        }
++        if (type == References.RECIPE) {
++            warn = false;
++        }
++        if (type == References.BIOME) {
++            equivType = MCTypeRegistry.BIOME;
++        }
++        if (type == References.WORLD_GEN_SETTINGS) {
++            warn = false;
++        }
++
++        if (equivType != null) {
++            if (newVersion > version) {
++                try {
++                    final Dynamic<T> ret = new Dynamic<>(input.getOps(), (T)MCDataConverter.copy(MCDataConverter.convertUnwrapped((DataType)equivType, input.getValue(), false, version, newVersion)));
++                    return ret;
++                } catch (final Exception ex) {
++                    LOGGER.error("Failed to convert data using DataConverter, falling back to DFU", new Throwable());
++                    // In dev environment this should hard fail
++                }
++
++                return this.wrapped.update(type, input, version, newVersion);
++            } else {
++                return input;
++            }
++        } else {
++            if (warn && WARNED_TYPES.add(type)) {
++                LOGGER.error("No equiv type for " + type, new Throwable());
++            }
++
++            return this.wrapped.update(type, input, version, newVersion);
++        }
++    }
++
++    @Override
++    public Schema getSchema(final int key) {
++        return this.wrapped.getSchema(key);
++    }
 +}
 diff --git a/src/main/java/ca/spottedleaf/dataconverter/minecraft/converters/advancements/ConverterAbstractAdvancementsRename.java b/src/main/java/ca/spottedleaf/dataconverter/minecraft/converters/advancements/ConverterAbstractAdvancementsRename.java
 new file mode 100644
@@ -903,6 +1095,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +package ca.spottedleaf.dataconverter.minecraft.converters.advancements;
 +
 +import ca.spottedleaf.dataconverter.converters.DataConverter;
++import ca.spottedleaf.dataconverter.minecraft.converters.helpers.RenameHelper;
 +import ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry;
 +import ca.spottedleaf.dataconverter.types.MapType;
 +import java.util.ArrayList;
@@ -920,14 +1113,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        MCTypeRegistry.ADVANCEMENTS.addStructureConverter(new DataConverter<>(version, subVersion) {
 +            @Override
 +            public MapType<String> convert(final MapType<String> data, final long sourceVersion, final long toVersion) {
-+                for (final String key : new ArrayList<>(data.keys())) {
-+                    final String updated = renamer.apply(key);
-+                    if (updated != null) {
-+                        final Object value = data.getGeneric(key);
-+                        data.remove(key);
-+                        data.setGeneric(updated, value);
-+                    }
-+                }
++                RenameHelper.renameKeys(data, renamer);
 +                return null;
 +            }
 +        });
@@ -2453,6 +2639,42 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +        data.setMap(outputStatePath, HelperBlockFlatteningV1450.getNBTForId((blockId << 4) | blockData).copy()); // copy to avoid problems with later state datafixers
 +
++        return null;
++    }
++}
+diff --git a/src/main/java/ca/spottedleaf/dataconverter/minecraft/converters/helpers/AddFlagIfAbsent.java b/src/main/java/ca/spottedleaf/dataconverter/minecraft/converters/helpers/AddFlagIfAbsent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/java/ca/spottedleaf/dataconverter/minecraft/converters/helpers/AddFlagIfAbsent.java
+@@ -0,0 +0,0 @@
++package ca.spottedleaf.dataconverter.minecraft.converters.helpers;
++
++import ca.spottedleaf.dataconverter.converters.DataConverter;
++import ca.spottedleaf.dataconverter.types.MapType;
++
++public final class AddFlagIfAbsent extends DataConverter<MapType<String>, MapType<String>> {
++
++    public final String path;
++    public final boolean dfl;
++
++    public AddFlagIfAbsent(final int toVersion, final String path, final boolean dfl) {
++        super(toVersion);
++        this.path = path;
++        this.dfl = dfl;
++    }
++
++    public AddFlagIfAbsent(final int toVersion, final int versionStep, final String path, final boolean dfl) {
++        super(toVersion, versionStep);
++        this.path = path;
++        this.dfl = dfl;
++    }
++
++    @Override
++    public MapType<String> convert(final MapType<String> data, final long sourceVersion, final long toVersion) {
++        if (!data.hasKey(this.path)) {
++            data.setBoolean(this.path, this.dfl);
++        }
 +        return null;
 +    }
 +}
@@ -4979,6 +5201,70 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return ID_TO_STRING[id & 255];
 +    }
 +}
+diff --git a/src/main/java/ca/spottedleaf/dataconverter/minecraft/converters/helpers/RenameHelper.java b/src/main/java/ca/spottedleaf/dataconverter/minecraft/converters/helpers/RenameHelper.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/java/ca/spottedleaf/dataconverter/minecraft/converters/helpers/RenameHelper.java
+@@ -0,0 +0,0 @@
++package ca.spottedleaf.dataconverter.minecraft.converters.helpers;
++
++import ca.spottedleaf.dataconverter.types.MapType;
++import java.util.ArrayList;
++import java.util.List;
++import java.util.function.Function;
++
++public final class RenameHelper {
++
++    // assumes no two or more entries are renamed to a single value, otherwise result will be only one of them will win
++    // and there is no defined winner in such a case
++    public static void renameKeys(final MapType<String> data, final Function<String, String> renamer) {
++        boolean needsRename = false;
++        for (final String key : data.keys()) {
++            if (renamer.apply(key) != null) {
++                needsRename = true;
++                break;
++            }
++        }
++
++        if (!needsRename) {
++            return;
++        }
++
++        final List<String> newKeys = new ArrayList<>();
++        final List<Object> newValues = new ArrayList<>();
++
++        for (final String key : new ArrayList<>(data.keys())) {
++            final String renamed = renamer.apply(key);
++
++            if (renamed != null) {
++                newValues.add(data.getGeneric(key));
++                newKeys.add(renamed);
++                data.remove(key);
++            }
++        }
++
++        // insert new keys
++        for (int i = 0, len = newKeys.size(); i < len; ++i) {
++            final String key = newKeys.get(i);
++            final Object value = newValues.get(i);
++
++            data.setGeneric(key, value);
++        }
++    }
++
++    // Clobbers anything in toKey if fromKey exists
++    public static void renameSingle(final MapType<String> data, final String fromKey, final String toKey) {
++        final Object value = data.getGeneric(fromKey);
++        if (value != null) {
++            data.remove(fromKey);
++            data.setGeneric(toKey, value);
++        }
++    }
++
++    private RenameHelper() {}
++
++}
 diff --git a/src/main/java/ca/spottedleaf/dataconverter/minecraft/converters/itemname/ConverterAbstractItemRename.java b/src/main/java/ca/spottedleaf/dataconverter/minecraft/converters/itemname/ConverterAbstractItemRename.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
@@ -5568,6 +5854,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +package ca.spottedleaf.dataconverter.minecraft.converters.options;
 +
 +import ca.spottedleaf.dataconverter.converters.DataConverter;
++import ca.spottedleaf.dataconverter.minecraft.converters.helpers.RenameHelper;
 +import ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry;
 +import ca.spottedleaf.dataconverter.types.MapType;
 +import java.util.ArrayList;
@@ -5585,13 +5872,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        MCTypeRegistry.OPTIONS.addStructureConverter(new DataConverter<>(version, subVersion) {
 +            @Override
 +            public MapType<String> convert(final MapType<String> data, final long sourceVersion, final long toVersion) {
-+                for (final String key : new ArrayList<>(data.keys())) {
-+                    final String updated = renamer.apply(key);
-+                    if (updated != null) {
-+                        data.setGeneric(updated, data.getGeneric(key));
-+                        data.remove(key);
-+                    }
-+                }
++                RenameHelper.renameKeys(data, renamer);
 +                return null;
 +            }
 +        });
@@ -5690,6 +5971,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +package ca.spottedleaf.dataconverter.minecraft.converters.stats;
 +
 +import ca.spottedleaf.dataconverter.converters.DataConverter;
++import ca.spottedleaf.dataconverter.minecraft.converters.helpers.RenameHelper;
 +import ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry;
 +import ca.spottedleaf.dataconverter.types.MapType;
 +import java.util.ArrayList;
@@ -5745,17 +6027,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                    return null;
 +                }
 +
-+                for (final String key : new ArrayList<>(custom.keys())) {
-+                    final String rename = renamer.apply(key);
-+                    if (rename == null) {
-+                        continue;
-+                    }
-+
-+                    final Object value = custom.getGeneric(key);
-+                    custom.remove(key);
-+
-+                    custom.setGeneric(rename, value);
-+                }
++                RenameHelper.renameKeys(custom, renamer);
 +
 +                return null;
 +            }
@@ -5953,7 +6225,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                break;
 +            }
 +
-+            final List<DataHook<MapType<String>, MapType<String>>> hooks = this.structureHooks.getFloor(converterVersion);
++            List<DataHook<MapType<String>, MapType<String>>> hooks = this.structureHooks.getFloor(converterVersion);
 +
 +            if (hooks != null) {
 +                for (int k = 0, klen = hooks.size(); k < klen; ++k) {
@@ -5968,6 +6240,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            if (replace != null) {
 +                ret = data = replace;
 +            }
++
++            // possibly new data format, update hooks
++            hooks = this.structureHooks.getFloor(toVersion);
 +
 +            if (hooks != null) {
 +                for (int klen = hooks.size(), k = klen - 1; k >= 0; --k) {
@@ -6104,7 +6379,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                break;
 +            }
 +
-+            final List<DataHook<MapType<String>, MapType<String>>> hooks = this.structureHooks.getFloor(converterVersion);
++            List<DataHook<MapType<String>, MapType<String>>> hooks = this.structureHooks.getFloor(converterVersion);
 +
 +            if (hooks != null) {
 +                for (int k = 0, klen = hooks.size(); k < klen; ++k) {
@@ -6119,6 +6394,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            if (replace != null) {
 +                ret = data = replace;
 +            }
++
++            // possibly new data format, update hooks
++            hooks = this.structureHooks.getFloor(toVersion);
 +
 +            if (hooks != null) {
 +                for (int klen = hooks.size(), k = klen - 1; k >= 0; --k) {
@@ -6276,6 +6554,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import ca.spottedleaf.dataconverter.minecraft.versions.V2688;
 +import ca.spottedleaf.dataconverter.minecraft.versions.V2690;
 +import ca.spottedleaf.dataconverter.minecraft.versions.V2691;
++import ca.spottedleaf.dataconverter.minecraft.versions.V2693;
 +import ca.spottedleaf.dataconverter.minecraft.versions.V2696;
 +import ca.spottedleaf.dataconverter.minecraft.versions.V2700;
 +import ca.spottedleaf.dataconverter.minecraft.versions.V2701;
@@ -6283,6 +6562,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import ca.spottedleaf.dataconverter.minecraft.versions.V2707;
 +import ca.spottedleaf.dataconverter.minecraft.versions.V2710;
 +import ca.spottedleaf.dataconverter.minecraft.versions.V2717;
++import ca.spottedleaf.dataconverter.minecraft.versions.V2825;
++import ca.spottedleaf.dataconverter.minecraft.versions.V2831;
++import ca.spottedleaf.dataconverter.minecraft.versions.V2832;
++import ca.spottedleaf.dataconverter.minecraft.versions.V2833;
++import ca.spottedleaf.dataconverter.minecraft.versions.V2838;
++import ca.spottedleaf.dataconverter.minecraft.versions.V2841;
++import ca.spottedleaf.dataconverter.minecraft.versions.V2842;
++import ca.spottedleaf.dataconverter.minecraft.versions.V2843;
++import ca.spottedleaf.dataconverter.minecraft.versions.V2846;
++import ca.spottedleaf.dataconverter.minecraft.versions.V2852;
 +import ca.spottedleaf.dataconverter.minecraft.versions.V501;
 +import ca.spottedleaf.dataconverter.minecraft.versions.V502;
 +import ca.spottedleaf.dataconverter.minecraft.versions.V505;
@@ -6473,6 +6762,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        V2688.register();
 +        V2690.register();
 +        V2691.register();
++        V2693.register();
 +        V2696.register();
 +        V2700.register();
 +        V2701.register();
@@ -6481,6 +6771,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        V2707.register();
 +        V2710.register();
 +        V2717.register();
++        // V1.18
++        V2825.register();
++        V2831.register();
++        V2832.register();
++        V2833.register();
++        V2838.register();
++        V2841.register();
++        V2842.register();
++        V2843.register();
++        V2846.register();
++        V2852.register();
 +    }
 +
 +    private MCTypeRegistry() {}
@@ -6545,7 +6846,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                break;
 +            }
 +
-+            final List<DataHook<Object, Object>> hooks = this.structureHooks.getFloor(converterVersion);
++            List<DataHook<Object, Object>> hooks = this.structureHooks.getFloor(converterVersion);
 +
 +            if (hooks != null) {
 +                for (int k = 0, klen = hooks.size(); k < klen; ++k) {
@@ -6560,6 +6861,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            if (converted != null) {
 +                ret = converted;
 +            }
++
++            // possibly new data format, update hooks
++            hooks = this.structureHooks.getFloor(toVersion);
 +
 +            if (hooks != null) {
 +                for (int k = 0, klen = hooks.size(); k < klen; ++k) {
@@ -11911,7 +12215,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +                final int[] oldBiomes = level.getInts("Biomes");
 +
-+                if (oldBiomes == null) {
++                if (oldBiomes == null || oldBiomes.length != 256) {
 +                    return null;
 +                }
 +
@@ -11924,7 +12228,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                        int k = (j << 2) + 2;
 +                        int l = (n << 2) + 2;
 +                        int m = l << 4 | k;
-+                        newBiomes[n << 2 | j] = m < oldBiomes.length ? oldBiomes[m] : -1;
++                        newBiomes[n << 2 | j] = oldBiomes[m];
 +                    }
 +                }
 +
@@ -14501,6 +14805,27 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        ConverterAbstractBlockRename.registerAndFixJigsaw(VERSION, RENAMES::get);
 +    }
 +}
+diff --git a/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V2693.java b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V2693.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V2693.java
+@@ -0,0 +0,0 @@
++package ca.spottedleaf.dataconverter.minecraft.versions;
++
++import ca.spottedleaf.dataconverter.minecraft.MCVersions;
++import ca.spottedleaf.dataconverter.minecraft.converters.helpers.AddFlagIfAbsent;
++import ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry;
++
++public final class V2693 {
++
++    protected static final int VERSION = MCVersions.V21W05B + 1;
++
++    public static void register() {
++        MCTypeRegistry.WORLD_GEN_SETTINGS.addStructureConverter(new AddFlagIfAbsent(VERSION, "has_increased_height_already", false));
++    }
++
++}
 diff --git a/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V2696.java b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V2696.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
@@ -14629,12 +14954,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +                    final MapType<String> feature = child.getMap("feature");
 +                    if (feature == null) {
-+                        continue;
-+                    }
-+
-+                    final String featureName = feature.getString("name");
-+
-+                    if (featureName == null) {
 +                        continue;
 +                    }
 +
@@ -14829,6 +15148,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +package ca.spottedleaf.dataconverter.minecraft.versions;
 +
 +import ca.spottedleaf.dataconverter.minecraft.MCVersions;
++import ca.spottedleaf.dataconverter.minecraft.converters.helpers.AddFlagIfAbsent;
 +import ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry;
 +import ca.spottedleaf.dataconverter.minecraft.walkers.itemstack.DataWalkerItemLists;
 +
@@ -14841,6 +15161,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +
 +    public static void register() {
++        MCTypeRegistry.WORLD_GEN_SETTINGS.addStructureConverter(new AddFlagIfAbsent(VERSION, "has_increased_height_already", true));
++
 +        registerMob("minecraft:marker"); // ?????????????
 +    }
 +}
@@ -14892,6 +15214,1503 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        ConverterAbstractBlockRename.register(VERSION, rename::get);
 +    }
 +
++}
+diff --git a/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V2825.java b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V2825.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V2825.java
+@@ -0,0 +0,0 @@
++package ca.spottedleaf.dataconverter.minecraft.versions;
++
++import ca.spottedleaf.dataconverter.minecraft.MCVersions;
++import ca.spottedleaf.dataconverter.minecraft.converters.helpers.AddFlagIfAbsent;
++import ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry;
++
++public final class V2825 {
++
++    protected static final int VERSION = MCVersions.V1_17_1 + 95;
++
++    public static void register() {
++        MCTypeRegistry.WORLD_GEN_SETTINGS.addStructureConverter(new AddFlagIfAbsent(VERSION, "has_increased_height_already", false));
++    }
++
++}
+diff --git a/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V2831.java b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V2831.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V2831.java
+@@ -0,0 +0,0 @@
++package ca.spottedleaf.dataconverter.minecraft.versions;
++
++import ca.spottedleaf.dataconverter.converters.DataConverter;
++import ca.spottedleaf.dataconverter.minecraft.MCVersions;
++import ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry;
++import ca.spottedleaf.dataconverter.minecraft.walkers.generic.WalkerUtils;
++import ca.spottedleaf.dataconverter.types.ListType;
++import ca.spottedleaf.dataconverter.types.MapType;
++import ca.spottedleaf.dataconverter.types.ObjectType;
++import ca.spottedleaf.dataconverter.types.Types;
++
++public final class V2831 {
++
++    protected static final int VERSION = MCVersions.V1_17_1 + 101;
++
++    public static void register() {
++        MCTypeRegistry.UNTAGGED_SPAWNER.addStructureWalker(VERSION, (final MapType<String> root, final long fromVersion, final long toVersion) -> {
++            final ListType spawnPotentials = root.getList("SpawnPotentials", ObjectType.MAP);
++            if (spawnPotentials != null) {
++                for (int i = 0, len = spawnPotentials.size(); i < len; ++i) {
++                    final MapType<String> spawnPotential = spawnPotentials.getMap(i);
++
++                    WalkerUtils.convert(MCTypeRegistry.ENTITY, spawnPotential.getMap("data"), "entity", fromVersion, toVersion);
++                }
++            }
++
++            WalkerUtils.convert(MCTypeRegistry.ENTITY, root.getMap("SpawnData"), "entity", fromVersion, toVersion);
++
++            return null;
++        });
++
++        MCTypeRegistry.UNTAGGED_SPAWNER.addStructureConverter(new DataConverter<>(VERSION) {
++            @Override
++            public MapType<String> convert(final MapType<String> root, final long sourceVersion, final long toVersion) {
++                final MapType<String> spawnData = root.getMap("SpawnData");
++                if (spawnData != null) {
++                    final MapType<String> wrapped = Types.NBT.createEmptyMap();
++                    root.setMap("SpawnData", wrapped);
++
++                    wrapped.setMap("entity", spawnData);
++                }
++
++                final ListType spawnPotentials = root.getList("SpawnPotentials", ObjectType.MAP);
++                if (spawnPotentials != null) {
++                    for (int i = 0, len = spawnPotentials.size(); i < len; ++i) {
++                        final MapType<String> spawnPotential = spawnPotentials.getMap(i);
++
++                        // new format of weighted list (SpawnPotentials):
++                        // root.data -> data
++                        // root.weight -> weight
++
++                        final MapType<String> entity = spawnPotential.getMap("Entity");
++                        final int weight = spawnPotential.getInt("Weight", 1);
++                        spawnPotential.remove("Entity");
++                        spawnPotential.remove("Weight");
++                        spawnPotential.setInt("weight", weight);
++
++                        final MapType<String> data = Types.NBT.createEmptyMap();
++                        spawnPotential.setMap("data", data);
++
++                        data.setMap("entity", entity);
++                    }
++                }
++
++                return null;
++            }
++        });
++    }
++}
+diff --git a/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V2832.java b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V2832.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V2832.java
+@@ -0,0 +0,0 @@
++package ca.spottedleaf.dataconverter.minecraft.versions;
++
++import ca.spottedleaf.dataconverter.converters.DataConverter;
++import ca.spottedleaf.dataconverter.minecraft.MCVersions;
++import ca.spottedleaf.dataconverter.minecraft.converters.helpers.RenameHelper;
++import ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry;
++import ca.spottedleaf.dataconverter.minecraft.walkers.generic.WalkerUtils;
++import ca.spottedleaf.dataconverter.types.ListType;
++import ca.spottedleaf.dataconverter.types.MapType;
++import ca.spottedleaf.dataconverter.types.ObjectType;
++import ca.spottedleaf.dataconverter.types.Types;
++import it.unimi.dsi.fastutil.ints.Int2IntLinkedOpenHashMap;
++import it.unimi.dsi.fastutil.ints.IntIterator;
++import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
++import org.apache.commons.lang3.mutable.MutableBoolean;
++import org.apache.logging.log4j.LogManager;
++import org.apache.logging.log4j.Logger;
++import java.util.Arrays;
++import java.util.BitSet;
++import java.util.HashSet;
++import java.util.Set;
++
++public final class V2832 {
++
++    protected static final Logger LOGGER = LogManager.getLogger();
++
++    protected static final int VERSION = MCVersions.V1_17_1 + 102;
++
++    private static final String[] BIOMES_BY_ID = new String[256]; // rip datapacks
++    static {
++        BIOMES_BY_ID[0] = "minecraft:ocean";
++        BIOMES_BY_ID[1] = "minecraft:plains";
++        BIOMES_BY_ID[2] = "minecraft:desert";
++        BIOMES_BY_ID[3] = "minecraft:mountains";
++        BIOMES_BY_ID[4] = "minecraft:forest";
++        BIOMES_BY_ID[5] = "minecraft:taiga";
++        BIOMES_BY_ID[6] = "minecraft:swamp";
++        BIOMES_BY_ID[7] = "minecraft:river";
++        BIOMES_BY_ID[8] = "minecraft:nether_wastes";
++        BIOMES_BY_ID[9] = "minecraft:the_end";
++        BIOMES_BY_ID[10] = "minecraft:frozen_ocean";
++        BIOMES_BY_ID[11] = "minecraft:frozen_river";
++        BIOMES_BY_ID[12] = "minecraft:snowy_tundra";
++        BIOMES_BY_ID[13] = "minecraft:snowy_mountains";
++        BIOMES_BY_ID[14] = "minecraft:mushroom_fields";
++        BIOMES_BY_ID[15] = "minecraft:mushroom_field_shore";
++        BIOMES_BY_ID[16] = "minecraft:beach";
++        BIOMES_BY_ID[17] = "minecraft:desert_hills";
++        BIOMES_BY_ID[18] = "minecraft:wooded_hills";
++        BIOMES_BY_ID[19] = "minecraft:taiga_hills";
++        BIOMES_BY_ID[20] = "minecraft:mountain_edge";
++        BIOMES_BY_ID[21] = "minecraft:jungle";
++        BIOMES_BY_ID[22] = "minecraft:jungle_hills";
++        BIOMES_BY_ID[23] = "minecraft:jungle_edge";
++        BIOMES_BY_ID[24] = "minecraft:deep_ocean";
++        BIOMES_BY_ID[25] = "minecraft:stone_shore";
++        BIOMES_BY_ID[26] = "minecraft:snowy_beach";
++        BIOMES_BY_ID[27] = "minecraft:birch_forest";
++        BIOMES_BY_ID[28] = "minecraft:birch_forest_hills";
++        BIOMES_BY_ID[29] = "minecraft:dark_forest";
++        BIOMES_BY_ID[30] = "minecraft:snowy_taiga";
++        BIOMES_BY_ID[31] = "minecraft:snowy_taiga_hills";
++        BIOMES_BY_ID[32] = "minecraft:giant_tree_taiga";
++        BIOMES_BY_ID[33] = "minecraft:giant_tree_taiga_hills";
++        BIOMES_BY_ID[34] = "minecraft:wooded_mountains";
++        BIOMES_BY_ID[35] = "minecraft:savanna";
++        BIOMES_BY_ID[36] = "minecraft:savanna_plateau";
++        BIOMES_BY_ID[37] = "minecraft:badlands";
++        BIOMES_BY_ID[38] = "minecraft:wooded_badlands_plateau";
++        BIOMES_BY_ID[39] = "minecraft:badlands_plateau";
++        BIOMES_BY_ID[40] = "minecraft:small_end_islands";
++        BIOMES_BY_ID[41] = "minecraft:end_midlands";
++        BIOMES_BY_ID[42] = "minecraft:end_highlands";
++        BIOMES_BY_ID[43] = "minecraft:end_barrens";
++        BIOMES_BY_ID[44] = "minecraft:warm_ocean";
++        BIOMES_BY_ID[45] = "minecraft:lukewarm_ocean";
++        BIOMES_BY_ID[46] = "minecraft:cold_ocean";
++        BIOMES_BY_ID[47] = "minecraft:deep_warm_ocean";
++        BIOMES_BY_ID[48] = "minecraft:deep_lukewarm_ocean";
++        BIOMES_BY_ID[49] = "minecraft:deep_cold_ocean";
++        BIOMES_BY_ID[50] = "minecraft:deep_frozen_ocean";
++        BIOMES_BY_ID[127] = "minecraft:the_void";
++        BIOMES_BY_ID[129] = "minecraft:sunflower_plains";
++        BIOMES_BY_ID[130] = "minecraft:desert_lakes";
++        BIOMES_BY_ID[131] = "minecraft:gravelly_mountains";
++        BIOMES_BY_ID[132] = "minecraft:flower_forest";
++        BIOMES_BY_ID[133] = "minecraft:taiga_mountains";
++        BIOMES_BY_ID[134] = "minecraft:swamp_hills";
++        BIOMES_BY_ID[140] = "minecraft:ice_spikes";
++        BIOMES_BY_ID[149] = "minecraft:modified_jungle";
++        BIOMES_BY_ID[151] = "minecraft:modified_jungle_edge";
++        BIOMES_BY_ID[155] = "minecraft:tall_birch_forest";
++        BIOMES_BY_ID[156] = "minecraft:tall_birch_hills";
++        BIOMES_BY_ID[157] = "minecraft:dark_forest_hills";
++        BIOMES_BY_ID[158] = "minecraft:snowy_taiga_mountains";
++        BIOMES_BY_ID[160] = "minecraft:giant_spruce_taiga";
++        BIOMES_BY_ID[161] = "minecraft:giant_spruce_taiga_hills";
++        BIOMES_BY_ID[162] = "minecraft:modified_gravelly_mountains";
++        BIOMES_BY_ID[163] = "minecraft:shattered_savanna";
++        BIOMES_BY_ID[164] = "minecraft:shattered_savanna_plateau";
++        BIOMES_BY_ID[165] = "minecraft:eroded_badlands";
++        BIOMES_BY_ID[166] = "minecraft:modified_wooded_badlands_plateau";
++        BIOMES_BY_ID[167] = "minecraft:modified_badlands_plateau";
++        BIOMES_BY_ID[168] = "minecraft:bamboo_jungle";
++        BIOMES_BY_ID[169] = "minecraft:bamboo_jungle_hills";
++        BIOMES_BY_ID[170] = "minecraft:soul_sand_valley";
++        BIOMES_BY_ID[171] = "minecraft:crimson_forest";
++        BIOMES_BY_ID[172] = "minecraft:warped_forest";
++        BIOMES_BY_ID[173] = "minecraft:basalt_deltas";
++        BIOMES_BY_ID[174] = "minecraft:dripstone_caves";
++        BIOMES_BY_ID[175] = "minecraft:lush_caves";
++        BIOMES_BY_ID[177] = "minecraft:meadow";
++        BIOMES_BY_ID[178] = "minecraft:grove";
++        BIOMES_BY_ID[179] = "minecraft:snowy_slopes";
++        BIOMES_BY_ID[180] = "minecraft:snowcapped_peaks";
++        BIOMES_BY_ID[181] = "minecraft:lofty_peaks";
++        BIOMES_BY_ID[182] = "minecraft:stony_peaks";
++    }
++
++    private static final String[] HEIGHTMAP_TYPES = new String[] {
++            "WORLD_SURFACE_WG",
++            "WORLD_SURFACE",
++            "WORLD_SURFACE_IGNORE_SNOW",
++            "OCEAN_FLOOR_WG",
++            "OCEAN_FLOOR",
++            "MOTION_BLOCKING",
++            "MOTION_BLOCKING_NO_LEAVES"
++    };
++
++    private static final Set<String> STATUS_IS_OR_AFTER_SURFACE = new HashSet<>(Arrays.asList(
++            "surface",
++            "carvers",
++            "liquid_carvers",
++            "features",
++            "light",
++            "spawn",
++            "heightmaps",
++            "full"
++    ));
++    private static final Set<String> STATUS_IS_OR_AFTER_NOISE = new HashSet<>(Arrays.asList(
++            "noise",
++            "surface",
++            "carvers",
++            "liquid_carvers",
++            "features",
++            "light",
++            "spawn",
++            "heightmaps",
++            "full"
++    ));
++    private static final Set<String> BLOCKS_BEFORE_FEATURE_STATUS = new HashSet<>(Arrays.asList(
++            "minecraft:air",
++            "minecraft:basalt",
++            "minecraft:bedrock",
++            "minecraft:blackstone",
++            "minecraft:calcite",
++            "minecraft:cave_air",
++            "minecraft:coarse_dirt",
++            "minecraft:crimson_nylium",
++            "minecraft:dirt",
++            "minecraft:end_stone",
++            "minecraft:grass_block",
++            "minecraft:gravel",
++            "minecraft:ice",
++            "minecraft:lava",
++            "minecraft:mycelium",
++            "minecraft:nether_wart_block",
++            "minecraft:netherrack",
++            "minecraft:orange_terracotta",
++            "minecraft:packed_ice",
++            "minecraft:podzol",
++            "minecraft:powder_snow",
++            "minecraft:red_sand",
++            "minecraft:red_sandstone",
++            "minecraft:sand",
++            "minecraft:sandstone",
++            "minecraft:snow_block",
++            "minecraft:soul_sand",
++            "minecraft:soul_soil",
++            "minecraft:stone",
++            "minecraft:terracotta",
++            "minecraft:warped_nylium",
++            "minecraft:warped_wart_block",
++            "minecraft:water",
++            "minecraft:white_terracotta"
++    ));
++
++    private static int getObjectsPerValue(final long[] val) {
++        return (4096 + val.length - 1) / (val.length); // expression is invalid if it returns > 64
++    }
++
++    private static long[] resize(final long[] val, final int oldBitsPerObject, final int newBitsPerObject) {
++        final long oldMask = (1L << oldBitsPerObject) - 1; // works even if bitsPerObject == 64
++        final long newMask = (1L << newBitsPerObject) - 1;
++        final int oldObjectsPerValue = 64 / oldBitsPerObject;
++        final int newObjectsPerValue = 64 / newBitsPerObject;
++
++        if (newBitsPerObject == oldBitsPerObject) {
++            return val;
++        }
++
++        final int items = 4096;
++
++        final long[] ret = new long[(items + newObjectsPerValue - 1) / newObjectsPerValue];
++
++        final int expectedSize = ((items + oldObjectsPerValue - 1) / oldObjectsPerValue);
++        if (val.length != expectedSize) {
++            throw new IllegalStateException("Expected size: " + expectedSize + ", got: " + val.length);
++        }
++
++        int shift = 0;
++        int idx = 0;
++        long newCurr = 0L;
++
++        int currItem = 0;
++        for (int i = 0; i < val.length; ++i) {
++            final long oldCurr = val[i];
++
++            for (int objIdx = 0; currItem < items && objIdx + oldBitsPerObject <= 64; objIdx += oldBitsPerObject, ++currItem) {
++                final long value = (oldCurr >> objIdx) & oldMask;
++
++                if ((value & newMask) != value) {
++                    throw new IllegalStateException("Old data storage has values that cannot be moved into new palette (would erase data)!");
++                }
++
++                newCurr |= value << shift;
++                shift += newBitsPerObject;
++
++                if (shift + newBitsPerObject > 64) { // will next write overflow?
++                    // must move to next idx
++                    ret[idx++] = newCurr;
++                    shift = 0;
++                    newCurr = 0L;
++                }
++            }
++        }
++
++        // don't forget to write the last one
++        if (shift != 0) {
++            ret[idx] = newCurr;
++        }
++
++        return ret;
++    }
++
++    private static void fixLithiumChunks(final MapType<String> data) {
++        // See https://github.com/CaffeineMC/lithium-fabric/issues/279
++        final MapType<String> level = data.getMap("Level");
++        if (level == null) {
++            return;
++        }
++
++        final int chunkX = level.getInt("xPos");
++        final int chunkZ = level.getInt("zPos");
++
++        final ListType sections = level.getList("Sections", ObjectType.MAP);
++        if (sections == null) {
++            return;
++        }
++
++        for (int i = 0, len = sections.size(); i < len; ++i) {
++            final MapType<String> section = sections.getMap(i);
++
++            final int sectionY = section.getInt("Y");
++
++            final ListType palette = section.getList("Palette", ObjectType.MAP);
++            final long[] blockStates = section.getLongs("BlockStates");
++
++            if (palette == null || blockStates == null) {
++                continue;
++            }
++
++            final int expectedBits = Math.max(4, ceilLog2(palette.size()));
++            final int gotObjectsPerValue = getObjectsPerValue(blockStates);
++            final int gotBits = 64 / gotObjectsPerValue;
++
++            if (expectedBits == gotBits) {
++                continue;
++            }
++
++            try {
++                section.setLongs("BlockStates", resize(blockStates, gotBits, expectedBits));
++            } catch (final Exception ex) {
++                LOGGER.fatal("Failed to rewrite mismatched palette and data storage for section y: " + sectionY
++                        + " for chunk [" + chunkX + "," + chunkZ + "], palette entries: " + palette.size() + ", data storage size: "
++                        + blockStates.length,
++                        ex
++                );
++            }
++        }
++    }
++
++    public static void register() {
++        // See V2551 for the layout of world gen settings
++        MCTypeRegistry.WORLD_GEN_SETTINGS.addStructureConverter(new DataConverter<>(VERSION) {
++            @Override
++            public MapType<String> convert(final MapType<String> data, final long sourceVersion, final long toVersion) {
++                // converters were added to older versions note whether the world has increased height already or not
++                final boolean noHeightFlag = !data.hasKey("has_increased_height_already");
++                final boolean hasIncreasedHeight = data.getBoolean("has_increased_height_already", true);
++                data.remove("has_increased_height_already");
++
++                final MapType<String> dimensions = data.getMap("dimensions");
++                if (dimensions == null) {
++                    // wat
++                    return null;
++                }
++
++                // only care about overworld
++                final MapType<String> overworld = dimensions.getMap("minecraft:overworld");
++                if (overworld == null) {
++                    // wat
++                    return null;
++                }
++
++                final MapType<String> generator = overworld.getMap("generator");
++                if (generator == null) {
++                    // wat
++                    return null;
++                }
++
++                final String type = generator.getString("type", "");
++                switch (type) {
++                    case "minecraft:noise": {
++                        final MapType<String> biomeSource = generator.getMap("biome_source");
++                        final String sourceType = biomeSource.getString("type");
++
++                        boolean largeBiomes = false;
++
++                        if ("minecraft:vanilla_layered".equals(sourceType) || (noHeightFlag && "minecraft:multi_noise".equals(sourceType))) {
++                            largeBiomes = biomeSource.getBoolean("large_biomes");
++
++                            final MapType<String> newBiomeSource = Types.NBT.createEmptyMap();
++                            generator.setMap("biome_source", newBiomeSource);
++
++                            newBiomeSource.setString("preset", "minecraft:overworld");
++                            newBiomeSource.setString("type", "minecraft:multi_noise");
++                        }
++
++                        if (largeBiomes) {
++                            if ("minecraft:overworld".equals(generator.getString("settings"))) {
++                                generator.setString("settings", "minecraft:large_biomes");
++                            }
++                        }
++
++                        break;
++                    }
++                    case "minecraft:flat": {
++                        if (!hasIncreasedHeight) {
++                            final MapType<String> settings = generator.getMap("settings");
++                            if (settings == null) {
++                                break;
++                            }
++
++                            updateLayers(settings.getList("layers", ObjectType.MAP));
++                        }
++                        break;
++                    }
++                    default:
++                        // do nothing
++                        break;
++                }
++
++                return null;
++            }
++        });
++
++
++        // It looks like DFU will only support worlds in the old height format or the new one, any custom one isn't supported
++        // and by not supported I mean it will just treat it as the old format... maybe at least throw in that case?
++        MCTypeRegistry.CHUNK.addStructureConverter(new DataConverter<>(VERSION) {
++            @Override
++            public MapType<String> convert(final MapType<String> data, final long sourceVersion, final long toVersion) {
++                // The below covers padPaletteEntries - this was written BEFORE that code was added to the datafixer -
++                // and this still works, so I'm keeping it. Don't fix what isn't broken.
++                fixLithiumChunks(data); // See https://github.com/CaffeineMC/lithium-fabric/issues/279
++
++                final MapType<String> level = data.getMap("Level");
++
++                if (level == null) {
++                    return null;
++                }
++
++                final MapType<String> context = data.getMap("__context"); // Passed through by ChunkStorage
++                final String dimension = context == null ? "" : context.getString("dimension", "");
++                final String generator = context == null ? "" : context.getString("generator", "");
++                final boolean isOverworld = "minecraft:overworld".equals(dimension);
++                final int minSection = isOverworld ? -4 : 0;
++                final MutableBoolean isAlreadyExtended = new MutableBoolean();
++
++                final MapType<String>[] newBiomes = createBiomeSections(level, isOverworld, minSection, isAlreadyExtended);
++                final MapType<String> wrappedEmptyBlockPalette = getEmptyBlockPalette();
++
++                final ListType sections = level.getList("Sections", ObjectType.MAP);
++
++                // must update sections for two things:
++                // 1. the biomes are now stored per section, so we must insert the biomes palette into each section (and create them if they don't exist)
++                // 2. each section must now have block states (or at least DFU is ensuring they do, but current code does not require)
++                V2841.SimplePaletteReader bottomSection = null;
++                final Set<String> allBlocks = new HashSet<>();
++                if (sections != null) {
++                    final IntOpenHashSet existingSections = new IntOpenHashSet();
++
++                    for (int i = 0, len = sections.size(); i < len; ++i) {
++                        final MapType<String> section = sections.getMap(i);
++
++                        final int y = section.getInt("Y");
++                        final int sectionIndex = y - minSection;
++
++                        existingSections.add(y);
++
++                        // add in relevant biome section
++                        if (sectionIndex >= 0 && sectionIndex < newBiomes.length) {
++                            // exclude out of bounds sections (i.e the light sections above and below the world)
++                            section.setMap("biomes", newBiomes[sectionIndex]);
++                        }
++
++                        // update palette
++                        final ListType palette = section.getList("Palette", ObjectType.MAP);
++                        final long[] blockStates = section.getLongs("BlockStates");
++
++                        section.remove("Palette");
++                        section.remove("BlockStates");
++
++                        if (palette != null) {
++                            for (int j = 0, len2 = palette.size(); j < len2; ++j) {
++                                allBlocks.add(V2841.getBlockId(palette.getMap(j)));
++                            }
++                        }
++
++                        final MapType<String> palettedContainer;
++                        if (palette != null && blockStates != null) {
++                            // only if both exist, same as DFU, same as legacy chunk loading code
++                            section.setMap("block_states", palettedContainer = wrapPaletteOptimised(palette, blockStates));
++                        } else {
++                            section.setMap("block_states", palettedContainer = wrappedEmptyBlockPalette.copy()); // must write a palette now, copy so that later edits do not edit them all
++                        }
++
++                        if (section.getInt("Y", Integer.MAX_VALUE) == 0) {
++                            bottomSection = new V2841.SimplePaletteReader(palettedContainer.getList("palette", ObjectType.MAP), palettedContainer.getLongs("data"));
++                        }
++                    }
++
++                    // all existing sections updated, now we must create new sections just for the biomes migration
++                    for (int sectionIndex = 0; sectionIndex < newBiomes.length; ++sectionIndex) {
++                        final int sectionY = sectionIndex + minSection;
++                        if (!existingSections.add(sectionY)) {
++                            // exists already
++                            continue;
++                        }
++
++                        final MapType<String> newSection = Types.NBT.createEmptyMap();
++                        sections.addMap(newSection);
++
++                        newSection.setByte("Y", (byte)sectionY);
++                        // must write a palette now, copy so that later edits do not edit them all
++                        newSection.setMap("block_states", wrappedEmptyBlockPalette.copy());
++
++                        newSection.setGeneric("biomes", newBiomes[sectionIndex]);
++                    }
++                }
++
++                // update status so interpolation can take place
++                predictChunkStatusBeforeSurface(level, allBlocks);
++
++                // done with sections, update the rest of the chunk
++                updateChunkData(level, isOverworld, isAlreadyExtended.getValue(), "minecraft:noise".equals(generator), bottomSection);
++
++                return null;
++            }
++        });
++
++        MCTypeRegistry.WORLD_GEN_SETTINGS.addStructureWalker(VERSION, (final MapType<String> data, final long fromVersion, final long toVersion) -> {
++            final MapType<String> dimensions = data.getMap("dimensions");
++
++            if (dimensions == null) {
++                return null;
++            }
++
++            for (final String dimension : dimensions.keys()) {
++                final MapType<String> dimensionData = dimensions.getMap(dimension);
++                if (dimensionData == null) {
++                    continue;
++                }
++
++                final MapType<String> generator = dimensionData.getMap("generator");
++                if (generator == null) {
++                    continue;
++                }
++
++                final String type = generator.getString("type");
++                if (type == null) {
++                    continue;
++                }
++
++                switch (type) {
++                    case "minecraft:flat": {
++                        final MapType<String> settings = generator.getMap("settings");
++                        if (settings == null) {
++                            continue;
++                        }
++
++                        WalkerUtils.convert(MCTypeRegistry.BIOME, settings, "biome", fromVersion, toVersion);
++
++                        final ListType layers = settings.getList("layers", ObjectType.MAP);
++                        if (layers != null) {
++                            for (int i = 0, len = layers.size(); i < len; ++i) {
++                                WalkerUtils.convert(MCTypeRegistry.BLOCK_NAME, layers.getMap(i), "block", fromVersion, toVersion);
++                            }
++                        }
++
++                        break;
++                    }
++                    case "minecraft:noise": {
++                        final MapType<String> settings = generator.getMap("settings");
++                        if (settings != null) {
++                            WalkerUtils.convert(MCTypeRegistry.BLOCK_NAME, settings, "default_block", fromVersion, toVersion);
++                            WalkerUtils.convert(MCTypeRegistry.BLOCK_NAME, settings, "default_fluid", fromVersion, toVersion);
++                        }
++
++                        final MapType<String> biomeSource = generator.getMap("biome_source");
++                        if (biomeSource != null) {
++                            final String biomeSourceType = biomeSource.getString("type", "");
++                            switch (biomeSourceType) {
++                                case "minecraft:fixed": {
++                                    WalkerUtils.convert(MCTypeRegistry.BIOME, biomeSource, "biome", fromVersion, toVersion);
++                                    break;
++                                }
++
++                                case "minecraft:multi_noise": {
++                                    // preset is absent, no type for namespaced string
++
++                                    // Vanilla's schema is _still_ wrong. It should be DSL.fields("biomes", DSL.list(DSL.fields("biome")))
++                                    // But it just contains the list part. That obviously can never be the case, because
++                                    // the root object is a compound, not a list.
++
++                                    final ListType biomes = biomeSource.getList("biomes", ObjectType.MAP);
++                                    if (biomes != null) {
++                                        for (int i = 0, len = biomes.size(); i < len; ++i) {
++                                            WalkerUtils.convert(MCTypeRegistry.BIOME, biomes.getMap(i), "biome", fromVersion, toVersion);
++                                        }
++                                    }
++                                    break;
++                                }
++
++                                case "minecraft:checkerboard": {
++                                    WalkerUtils.convertList(MCTypeRegistry.BIOME, biomeSource, "biomes", fromVersion, toVersion);
++                                    break;
++                                }
++                            }
++                        }
++
++                        break;
++                    }
++                }
++            }
++
++            return null;
++        });
++
++        MCTypeRegistry.CHUNK.addStructureWalker(VERSION, (final MapType<String> data, final long fromVersion, final long toVersion) -> {
++            final MapType<String> level = data.getMap("Level");
++            if (level == null) {
++                return null;
++            }
++
++            WalkerUtils.convertList(MCTypeRegistry.ENTITY, level, "Entities", fromVersion, toVersion);
++            WalkerUtils.convertList(MCTypeRegistry.TILE_ENTITY, level, "TileEntities", fromVersion, toVersion);
++
++            final ListType tileTicks = level.getList("TileTicks", ObjectType.MAP);
++            if (tileTicks != null) {
++                for (int i = 0, len = tileTicks.size(); i < len; ++i) {
++                    final MapType<String> tileTick = tileTicks.getMap(i);
++                    WalkerUtils.convert(MCTypeRegistry.BLOCK_NAME, tileTick, "i", fromVersion, toVersion);
++                }
++            }
++
++            final ListType sections = level.getList("Sections", ObjectType.MAP);
++            if (sections != null) {
++                for (int i = 0, len = sections.size(); i < len; ++i) {
++                    final MapType<String> section = sections.getMap(i);
++
++                    WalkerUtils.convertList(MCTypeRegistry.BIOME, section.getMap("biomes"), "palette", fromVersion, toVersion);
++                    WalkerUtils.convertList(MCTypeRegistry.BLOCK_STATE, section.getMap("block_states"), "palette", fromVersion, toVersion);
++                }
++            }
++
++            WalkerUtils.convertValues(MCTypeRegistry.STRUCTURE_FEATURE, level.getMap("Structures"), "Starts", fromVersion, toVersion);
++
++            return null;
++        });
++    }
++
++    private static void predictChunkStatusBeforeSurface(final MapType<String> level, final Set<String> chunkBlocks) {
++        final String status = level.getString("Status", "empty");
++        if (STATUS_IS_OR_AFTER_SURFACE.contains(status)) {
++            return;
++        }
++
++        chunkBlocks.remove("minecraft:air");
++        final boolean chunkNotEmpty = !chunkBlocks.isEmpty();
++        chunkBlocks.removeAll(BLOCKS_BEFORE_FEATURE_STATUS);
++        final boolean chunkFeatureStatus = !chunkBlocks.isEmpty();
++
++        final String update;
++        if (chunkFeatureStatus) {
++            update = "liquid_carvers";
++        } else if (!"noise".equals(status) && !chunkNotEmpty) {
++            update = "biomes".equals(status) ? "structure_references" : status;
++        } else {
++            update = "noise";
++        }
++
++        level.setString("Status", update);
++    }
++
++    private static MapType<String> getEmptyBlockPalette() {
++        final MapType<String> airBlockState = Types.NBT.createEmptyMap();
++        airBlockState.setString("Name", "minecraft:air");
++
++        final ListType emptyBlockPalette = Types.NBT.createEmptyList();
++        emptyBlockPalette.addMap(airBlockState);
++
++        return V2832.wrapPalette(emptyBlockPalette);
++    }
++
++    private static void shiftUpgradeData(final MapType<String> upgradeData, final int shift) {
++        if (upgradeData == null) {
++            return;
++        }
++
++        final MapType<String> indices = upgradeData.getMap("Indices");
++        if (indices == null) {
++            return;
++        }
++
++        RenameHelper.renameKeys(indices, (final String input) -> {
++            return Integer.toString(Integer.parseInt(input) + shift);
++        });
++    }
++
++    private static void updateChunkData(final MapType<String> level, final boolean wantExtendedHeight, final boolean isAlreadyExtended,
++                                        final boolean onNoiseGenerator, final V2841.SimplePaletteReader bottomSection) {
++        level.remove("Biomes");
++        if (!wantExtendedHeight) {
++            padCarvingMasks(level, 16, 0);
++            return;
++        }
++
++        if (isAlreadyExtended) {
++            padCarvingMasks(level, 24, 0);
++            return;
++        }
++
++        offsetHeightmaps(level);
++        addEmptyListPadding(level, "Lights");
++        addEmptyListPadding(level, "LiquidsToBeTicked");
++        addEmptyListPadding(level, "PostProcessing");
++        addEmptyListPadding(level, "ToBeTicked");
++        shiftUpgradeData(level.getMap("UpgradeData"), 4); // https://bugs.mojang.com/browse/MC-238076 - fixed now, Mojang fix is identical. No change required.
++        padCarvingMasks(level, 24, 4);
++
++        if (!onNoiseGenerator) {
++            return;
++        }
++
++        final String status = level.getString("Status");
++        if (status == null || "empty".equals(status)) {
++            return;
++        }
++
++        final MapType<String> blendingData = Types.NBT.createEmptyMap();
++        level.setMap("blending_data", blendingData);
++
++        blendingData.setBoolean("old_noise", STATUS_IS_OR_AFTER_NOISE.contains(status));
++
++        if (bottomSection == null) {
++            return;
++        }
++
++        final BitSet missingBedrock = new BitSet(256);
++        boolean hasBedrock = status.equals("noise");
++
++        for (int z = 0; z <= 15; ++z) {
++            for (int x = 0; x <= 15; ++x) {
++                final MapType<String> state = bottomSection.getState(x, 0, z);
++                final String blockId = V2841.getBlockId(state);
++                final boolean isBedrock = state != null && "minecraft:bedrock".equals(blockId);
++                final boolean isAir = state != null && "minecraft:air".equals(blockId);
++                if (isAir) {
++                    missingBedrock.set((z << 4) | x);
++                }
++
++                hasBedrock |= isBedrock;
++            }
++        }
++
++        if (hasBedrock && missingBedrock.cardinality() != missingBedrock.size()) {
++            final String targetStatus = "full".equals(status) ? "heightmaps" : status;
++
++            final MapType<String> belowZeroRetrogen = Types.NBT.createEmptyMap();
++            level.setMap("below_zero_retrogen", belowZeroRetrogen);
++
++            belowZeroRetrogen.setString("target_status", targetStatus);
++            belowZeroRetrogen.setLongs("missing_bedrock", missingBedrock.toLongArray());
++
++            level.setString("Status", "empty");
++        }
++
++        level.setBoolean("isLightOn", false);
++    }
++
++    private static void padCarvingMasks(final MapType<String> level, final int newSize, final int offset) {
++        final MapType<String> carvingMasks = level.getMap("CarvingMasks");
++        if (carvingMasks == null) {
++            // if empty, DFU still writes
++            level.setMap("CarvingMasks", Types.NBT.createEmptyMap());
++            return;
++        }
++
++        for (final String key : carvingMasks.keys()) {
++            final long[] old = BitSet.valueOf(carvingMasks.getBytes(key)).toLongArray();
++            final long[] newVal = new long[64 * newSize];
++
++            System.arraycopy(old, 0, newVal, 64 * offset, old.length);
++
++            carvingMasks.setLongs(key, newVal); // no CME: key exists already
++        }
++    }
++
++    private static void addEmptyListPadding(final MapType<String> level, final String path) {
++        ListType list = level.getListUnchecked(path);
++        if (list != null && list.size() == 24) {
++            return;
++        }
++
++        if (list == null) {
++            // difference from DFU: Don't create the damn thing!
++            return;
++        }
++
++
++        // offset the section array to the new format
++        for (int i = 0; i < 4; ++i) {
++            // always create new copies, so that modifying one doesn't modify ALL of them!
++            list.addList(0, Types.NBT.createEmptyList()); // add below
++            list.addList(Types.NBT.createEmptyList()); // add above
++        }
++    }
++
++    private static void offsetHeightmaps(final MapType<String> level) {
++        final MapType<String> heightmaps = level.getMap("Heightmaps");
++        if (heightmaps == null) {
++            return;
++        }
++
++        for (final String key : HEIGHTMAP_TYPES) {
++            offsetHeightmap(heightmaps.getLongs(key));
++        }
++    }
++
++    private static void offsetHeightmap(final long[] heightmap) {
++        if (heightmap == null) {
++            return;
++        }
++
++        // heightmaps are configured to have 9 bits per value, with 256 total values
++        // heightmaps are also relative to the lowest position
++        for (int idx = 0, len = heightmap.length; idx < len; ++idx) {
++            long curr = heightmap[idx];
++            long next = 0L;
++
++            for (int objIdx = 0; objIdx + 9 <= 64; objIdx += 9) {
++                final long value = (curr >> objIdx) & 511L;
++                if (value != 0L) {
++                    final long offset = Math.min(511L, value + 64L);
++
++                    next |= (offset << objIdx);
++                }
++            }
++
++            heightmap[idx] = next;
++        }
++    }
++
++    private static MapType<String>[] createBiomeSections(final MapType<String> level, final boolean wantExtendedHeight,
++                                                         final int minSection, final MutableBoolean isAlreadyExtended) {
++        final MapType<String>[] ret = new MapType[wantExtendedHeight ? 24 : 16];
++
++        final int[] biomes = level.getInts("Biomes");
++        if (biomes == null) {
++            final ListType palette = Types.NBT.createEmptyList();
++            palette.addString("minecraft:plains");
++
++            for (int i = 0; i < ret.length; ++i) {
++                ret[i] = wrapPalette(palette.copy()); // copy palette so that later possible modifications don't trash all sections
++            }
++
++            return ret;
++        }
++
++        final boolean isExtended = biomes.length == 1536; // magic value for 24 sections of biomes (24 * 4^3)
++        isAlreadyExtended.setValue(isExtended);
++
++        if (isExtended) {
++            for (int sectionIndex = 0; sectionIndex < 24; ++sectionIndex) {
++                ret[sectionIndex] = createBiomeSection(biomes, sectionIndex * 64, -1); // -1 is all 1s
++            }
++        } else {
++            for (int sectionY = 0; sectionY < 16; ++sectionY) {
++                ret[sectionY - minSection] = createBiomeSection(biomes, sectionY * 64, -1); // -1 is all 1s
++            }
++
++            if (wantExtendedHeight) {
++                // must set the new sections at top and bottom
++                final MapType<String> bottomCopy = createBiomeSection(biomes, 0, 15); // just want the biomes at y = 0
++                final MapType<String> topCopy = createBiomeSection(biomes, 1008, 15); // just want the biomes at y = 252
++
++                for (int sectionIndex = 0; sectionIndex < 4; ++sectionIndex) {
++                    ret[sectionIndex] = bottomCopy.copy(); // copy palette so that later possible modifications don't trash all sections
++                }
++
++                for (int sectionIndex = 20; sectionIndex < 24; ++sectionIndex) {
++                    ret[sectionIndex] = topCopy.copy(); // copy palette so that later possible modifications don't trash all sections
++                }
++            }
++        }
++
++        return ret;
++    }
++
++    private static MapType<String> createBiomeSection(final int[] biomes, final int offset, final int mask) {
++        final Int2IntLinkedOpenHashMap paletteId = new Int2IntLinkedOpenHashMap();
++
++        for (int idx = 0; idx < 64; ++idx) {
++            final int biome = biomes[offset + (idx & mask)];
++            paletteId.putIfAbsent(biome, paletteId.size());
++        }
++
++        final ListType paletteString = Types.NBT.createEmptyList();
++        for (final IntIterator iterator = paletteId.keySet().iterator(); iterator.hasNext();) {
++            final int biomeId = iterator.nextInt();
++            final String biome = biomeId >= 0 && biomeId < BIOMES_BY_ID.length ? BIOMES_BY_ID[biomeId] : null;
++            paletteString.addString(biome == null ? "minecraft:plains" : biome);
++        }
++
++        final int bitsPerObject = ceilLog2(paletteString.size());
++        if (bitsPerObject == 0) {
++            return wrapPalette(paletteString);
++        }
++
++        // manually create packed integer data
++        final int objectsPerValue = 64 / bitsPerObject;
++        final long[] packed = new long[(64 + objectsPerValue - 1) / objectsPerValue];
++
++        int shift = 0;
++        int idx = 0;
++        long curr = 0;
++
++        for (int biome_idx = 0; biome_idx < 64; ++biome_idx) {
++            final int biome = biomes[offset + (biome_idx & mask)];
++
++            curr |= ((long)paletteId.get(biome)) << shift;
++
++            shift += bitsPerObject;
++
++            if (shift + bitsPerObject > 64) { // will next write overflow?
++                // must move to next idx
++                packed[idx++] = curr;
++                shift = 0;
++                curr = 0L;
++            }
++        }
++
++        // don't forget to write the last one
++        if (shift != 0) {
++            packed[idx] = curr;
++        }
++
++        return wrapPalette(paletteString, packed);
++    }
++
++    private static MapType<String> wrapPalette(final ListType palette) {
++        return wrapPalette(palette, null);
++    }
++
++    private static MapType<String> wrapPalette(final ListType palette, final long[] blockStates) {
++        final MapType<String> ret = Types.NBT.createEmptyMap();
++        ret.setList("palette", palette);
++        if (blockStates != null) {
++            ret.setLongs("data", blockStates);
++        }
++
++        return ret;
++    }
++
++    private static MapType<String> wrapPaletteOptimised(final ListType palette, final long[] blockStates) {
++        if (palette.size() == 1) {
++            return wrapPalette(palette);
++        }
++
++        return wrapPalette(palette, blockStates);
++    }
++
++    public static int ceilLog2(final int value) {
++        return value == 0 ? 0 : Integer.SIZE - Integer.numberOfLeadingZeros(value - 1); // see doc of numberOfLeadingZeros
++    }
++
++    private static void updateLayers(final ListType layers) {
++        if (layers == null) {
++            return;
++        }
++
++        layers.addMap(0, createEmptyLayer()); // add at the bottom
++    }
++
++    private static MapType<String> createEmptyLayer() {
++        final MapType<String> ret = Types.NBT.createEmptyMap();
++        ret.setInt("height", 64);
++        ret.setString("block", "minecraft:air");
++
++        return ret;
++    }
++}
+diff --git a/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V2833.java b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V2833.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V2833.java
+@@ -0,0 +0,0 @@
++package ca.spottedleaf.dataconverter.minecraft.versions;
++
++import ca.spottedleaf.dataconverter.converters.DataConverter;
++import ca.spottedleaf.dataconverter.minecraft.MCVersions;
++import ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry;
++import ca.spottedleaf.dataconverter.types.MapType;
++
++public final class V2833 {
++
++    protected static final int VERSION = MCVersions.V1_17_1 + 103;
++
++    public static void register() {
++        MCTypeRegistry.WORLD_GEN_SETTINGS.addStructureConverter(new DataConverter<>(VERSION) {
++            @Override
++            public MapType<String> convert(final MapType<String> data, final long sourceVersion, final long toVersion) {
++                final MapType<String> dimensions = data.getMap("dimensions");
++
++                for (final String dimensionKey : dimensions.keys()) {
++                    final MapType<String> dimension = dimensions.getMap(dimensionKey);
++                    if (!dimension.hasKey("type")) {
++                        throw new IllegalStateException("Unable load old custom worlds.");
++                    }
++                }
++
++                return null;
++            }
++        });
++    }
++
++}
+diff --git a/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V2838.java b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V2838.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V2838.java
+@@ -0,0 +0,0 @@
++package ca.spottedleaf.dataconverter.minecraft.versions;
++
++import ca.spottedleaf.dataconverter.minecraft.MCVersions;
++import ca.spottedleaf.dataconverter.minecraft.converters.helpers.ConverterAbstractStringValueTypeRename;
++import ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry;
++import com.google.common.collect.ImmutableMap;
++
++public final class V2838 {
++
++    protected static final int VERSION = MCVersions.V21W40A;
++
++    public static final ImmutableMap<String, String> BIOME_UPDATE = ImmutableMap.<String, String>builder()
++            .put("minecraft:badlands_plateau", "minecraft:badlands")
++            .put("minecraft:bamboo_jungle_hills", "minecraft:bamboo_jungle")
++            .put("minecraft:birch_forest_hills", "minecraft:birch_forest")
++            .put("minecraft:dark_forest_hills", "minecraft:dark_forest")
++            .put("minecraft:desert_hills", "minecraft:desert")
++            .put("minecraft:desert_lakes", "minecraft:desert")
++            .put("minecraft:giant_spruce_taiga_hills", "minecraft:old_growth_spruce_taiga")
++            .put("minecraft:giant_spruce_taiga", "minecraft:old_growth_spruce_taiga")
++            .put("minecraft:giant_tree_taiga_hills", "minecraft:old_growth_pine_taiga")
++            .put("minecraft:giant_tree_taiga", "minecraft:old_growth_pine_taiga")
++            .put("minecraft:gravelly_mountains", "minecraft:windswept_gravelly_hills")
++            .put("minecraft:jungle_edge", "minecraft:sparse_jungle")
++            .put("minecraft:jungle_hills", "minecraft:jungle")
++            .put("minecraft:modified_badlands_plateau", "minecraft:badlands")
++            .put("minecraft:modified_gravelly_mountains", "minecraft:windswept_gravelly_hills")
++            .put("minecraft:modified_jungle_edge", "minecraft:sparse_jungle")
++            .put("minecraft:modified_jungle", "minecraft:jungle")
++            .put("minecraft:modified_wooded_badlands_plateau", "minecraft:wooded_badlands")
++            .put("minecraft:mountain_edge", "minecraft:windswept_hills")
++            .put("minecraft:mountains", "minecraft:windswept_hills")
++            .put("minecraft:mushroom_field_shore", "minecraft:mushroom_fields")
++            .put("minecraft:shattered_savanna", "minecraft:windswept_savanna")
++            .put("minecraft:shattered_savanna_plateau", "minecraft:windswept_savanna")
++            .put("minecraft:snowy_mountains", "minecraft:snowy_plains")
++            .put("minecraft:snowy_taiga_hills", "minecraft:snowy_taiga")
++            .put("minecraft:snowy_taiga_mountains", "minecraft:snowy_taiga")
++            .put("minecraft:snowy_tundra", "minecraft:snowy_plains")
++            .put("minecraft:stone_shore", "minecraft:stony_shore")
++            .put("minecraft:swamp_hills", "minecraft:swamp")
++            .put("minecraft:taiga_hills", "minecraft:taiga")
++            .put("minecraft:taiga_mountains", "minecraft:taiga")
++            .put("minecraft:tall_birch_forest", "minecraft:old_growth_birch_forest")
++            .put("minecraft:tall_birch_hills", "minecraft:old_growth_birch_forest")
++            .put("minecraft:wooded_badlands_plateau", "minecraft:wooded_badlands")
++            .put("minecraft:wooded_hills", "minecraft:forest")
++            .put("minecraft:wooded_mountains", "minecraft:windswept_forest")
++            .put("minecraft:lofty_peaks", "minecraft:jagged_peaks")
++            .put("minecraft:snowcapped_peaks", "minecraft:frozen_peaks")
++            .build();
++
++    public static void register() {
++        ConverterAbstractStringValueTypeRename.register(VERSION, MCTypeRegistry.BIOME, BIOME_UPDATE::get);
++    }
++}
+diff --git a/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V2841.java b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V2841.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V2841.java
+@@ -0,0 +0,0 @@
++package ca.spottedleaf.dataconverter.minecraft.versions;
++
++import ca.spottedleaf.dataconverter.converters.DataConverter;
++import ca.spottedleaf.dataconverter.minecraft.MCVersions;
++import ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry;
++import ca.spottedleaf.dataconverter.types.ListType;
++import ca.spottedleaf.dataconverter.types.MapType;
++import ca.spottedleaf.dataconverter.types.ObjectType;
++import ca.spottedleaf.dataconverter.types.Types;
++import ca.spottedleaf.dataconverter.util.IntegerUtil;
++import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
++import java.util.Arrays;
++import java.util.HashSet;
++import java.util.Set;
++
++public final class V2841 {
++
++    protected static final int VERSION = MCVersions.V21W42A + 1;
++
++    protected static final Set<String> ALWAYS_WATERLOGGED = new HashSet<>(Arrays.asList(
++            "minecraft:bubble_column",
++            "minecraft:kelp",
++            "minecraft:kelp_plant",
++            "minecraft:seagrass",
++            "minecraft:tall_seagrass"
++    ));
++
++    public static void register() {
++        MCTypeRegistry.CHUNK.addStructureConverter(new DataConverter<>(VERSION) {
++            @Override
++            public MapType<String> convert(final MapType<String> root, final long sourceVersion, final long toVersion) {
++                final MapType<String> level = root.getMap("Level");
++                if (level == null) {
++                    return null;
++                }
++
++                {
++                    // Why it's renamed here and not the next data version is beyond me.
++                    final MapType<String> liquidTicks = level.getMap("LiquidTicks");
++                    if (liquidTicks != null) {
++                        level.remove("LiquidTicks");
++                        level.setMap("fluid_ticks", liquidTicks);
++                    }
++                }
++
++                final Int2ObjectOpenHashMap<SimplePaletteReader> sectionBlocks = new Int2ObjectOpenHashMap<>();
++                final ListType sections = level.getList("Sections", ObjectType.MAP);
++                int minSection = 0; // TODO wtf is this
++                if (sections != null) {
++                    for (int i = 0, len = sections.size(); i < len; ++i) {
++                        final MapType<String> section = sections.getMap(i);
++
++                        final int sectionY = section.getInt("Y");
++                        if (sectionY < minSection && section.hasKey("biomes")) {
++                            minSection = sectionY;
++                        }
++
++                        final MapType<String> blockStates = section.getMap("block_states");
++                        if (blockStates == null) {
++                            continue;
++                        }
++
++                        sectionBlocks.put(sectionY, new SimplePaletteReader(section.getList("palette", ObjectType.MAP), section.getLongs("data")));
++                    }
++                }
++
++                level.setByte("yPos", (byte)minSection); // TODO ???????????????????????????????????????
++
++                if (level.hasKey("fluid_ticks") || level.hasKey("TileTicks")) {
++                    return null;
++                }
++
++                final int sectionX = level.getInt("xPos");
++                final int sectionZ = level.getInt("zPos");
++
++                final ListType fluidTicks = level.getList("LiquidsToBeTicked", ObjectType.LIST);
++                final ListType blockTicks = level.getList("ToBeTicked", ObjectType.LIST);
++                level.remove("LiquidsToBeTicked");
++                level.remove("ToBeTicked");
++
++                level.setList("fluid_ticks", migrateTickList(fluidTicks, false, sectionBlocks, sectionX, minSection, sectionZ));
++                level.setList("TileTicks", migrateTickList(blockTicks, true, sectionBlocks, sectionX, minSection, sectionZ));
++
++                return null;
++            }
++        });
++    }
++
++    public static ListType migrateTickList(final ListType ticks, final boolean blockTicks, final Int2ObjectOpenHashMap<SimplePaletteReader> sectionBlocks,
++                                           final int sectionX, final int minSection, final int sectionZ) {
++        final ListType ret = Types.NBT.createEmptyList();
++
++        if (ticks == null) {
++            return ret;
++        }
++
++        for (int sectionIndex = 0, totalSections = ticks.size(); sectionIndex < totalSections; ++sectionIndex) {
++            final int sectionY = sectionIndex + minSection;
++            final ListType sectionTicks = ticks.getList(sectionIndex);
++            final SimplePaletteReader palette = sectionBlocks.get(sectionY);
++
++            for (int i = 0, len = sectionTicks.size(); i < len; ++i) {
++                final int localIndex = sectionTicks.getShort(i) & 0xFFFF;
++                final MapType<String> blockState = palette == null ? null : palette.getState(localIndex);
++                final String subjectId = blockTicks ? getBlockId(blockState) : getLiquidId(blockState);
++
++                ret.addMap(createNewTick(subjectId, localIndex, sectionX, sectionY, sectionZ));
++            }
++        }
++
++        return ret;
++    }
++
++    public static MapType<String> createNewTick(final String subjectId, final int localIndex, final int sectionX, final int sectionY, final int sectionZ) {
++        final int newX = (localIndex & 15) + (sectionX << 4);
++        final int newZ = ((localIndex >> 4) & 15) + (sectionZ << 4);
++        final int newY = ((localIndex >> 8) & 15) + (sectionY << 4);
++
++        final MapType<String> ret = Types.NBT.createEmptyMap();
++
++        ret.setString("i", subjectId);
++        ret.setInt("x", newX);
++        ret.setInt("y", newY);
++        ret.setInt("z", newZ);
++        ret.setInt("t", 0);
++        ret.setInt("p", 0);
++
++        return ret;
++    }
++
++    public static String getBlockId(final MapType<String> blockState) {
++        return blockState == null ? "minecraft:air" : blockState.getString("Name", "minecraft:air");
++    }
++
++    private static String getLiquidId(final MapType<String> blockState) {
++        if (blockState == null) {
++            return "minecraft:empty";
++        }
++
++        final String name = blockState.getString("Name");
++        if (ALWAYS_WATERLOGGED.contains(name)) {
++            return "minecraft:water";
++        }
++
++        final MapType<String> properties = blockState.getMap("Properties");
++        if ("minecraft:water".equals(name)) {
++            return properties != null && properties.getInt("level") == 0 ? "minecraft:water" : "minecraft:flowing_water";
++        } else if ("minecraft:lava".equals(name)) {
++            return properties != null && properties.getInt("level") == 0 ? "minecraft:lava" : "minecraft:flowing_lava";
++        }
++
++        return (properties != null && properties.getBoolean("waterlogged")) ? "minecraft:water" : "minecraft:empty";
++    }
++
++    public static final class SimplePaletteReader {
++
++        public final ListType palette;
++        public final long[] data;
++        private final int bitsPerValue;
++        private final long mask;
++        private final int valuesPerLong;
++
++        public SimplePaletteReader(final ListType palette, final long[] data) {
++            this.palette = palette == null ? null : (palette.size() == 0 ? null : palette);
++            this.data = data;
++            this.bitsPerValue = Math.max(4, IntegerUtil.ceilLog2(this.palette == null ? 0 : this.palette.size()));
++            this.mask = (1L << this.bitsPerValue) - 1L;
++            this.valuesPerLong = (int)(64L / this.bitsPerValue);
++        }
++
++        public MapType<String> getState(final int x, final int y, final int z) {
++            final int index = x | (z << 4) | (y << 8);
++            return this.getState(index);
++        }
++
++        public MapType<String> getState(final int index) {
++            final ListType palette = this.palette;
++            if (palette == null) {
++                return null;
++            }
++
++            final int paletteSize = palette.size();
++            if (paletteSize == 1) {
++                return palette.getMap(0);
++            }
++
++            // x86 div computes mod. no loss here using mod
++            // if needed, can compute magic mul and shift for div values using IntegerUtil
++            final int dataIndex = index / this.valuesPerLong;
++            final int localIndex = (index % this.valuesPerLong) * this.bitsPerValue;
++            final long[] data = this.data;
++            if (dataIndex < 0 || dataIndex >= data.length) {
++                return null;
++            }
++
++            final long value = data[dataIndex];
++            final int paletteIndex = (int)((value >>> localIndex) & this.mask);
++            if (paletteIndex < 0 || paletteIndex >= paletteSize) {
++                return null;
++            }
++
++            return palette.getMap(paletteIndex);
++        }
++    }
++}
+diff --git a/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V2842.java b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V2842.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V2842.java
+@@ -0,0 +0,0 @@
++package ca.spottedleaf.dataconverter.minecraft.versions;
++
++import ca.spottedleaf.dataconverter.converters.DataConverter;
++import ca.spottedleaf.dataconverter.minecraft.MCVersions;
++import ca.spottedleaf.dataconverter.minecraft.converters.helpers.RenameHelper;
++import ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry;
++import ca.spottedleaf.dataconverter.minecraft.walkers.generic.WalkerUtils;
++import ca.spottedleaf.dataconverter.types.ListType;
++import ca.spottedleaf.dataconverter.types.MapType;
++import ca.spottedleaf.dataconverter.types.ObjectType;
++
++public final class V2842 {
++
++    protected static final int VERSION = MCVersions.V21W42A + 2;
++
++    public static void register() {
++        MCTypeRegistry.CHUNK.addStructureConverter(new DataConverter<>(VERSION) {
++            @Override
++            public MapType<String> convert(final MapType<String> root, final long sourceVersion, final long toVersion) {
++                final MapType<String> level = root.getMap("Level");
++                root.remove("Level");
++
++                if (!root.isEmpty()) {
++                    for (final String key : root.keys()) {
++                        if (level.hasKey(key)) {
++                            // Don't clobber level's data
++                            continue;
++                        }
++                        level.setGeneric(key, root.getGeneric(key));
++                    }
++                }
++
++                // Rename top level first
++                RenameHelper.renameSingle(level, "TileEntities", "block_entities");
++                RenameHelper.renameSingle(level, "TileTicks", "block_ticks");
++                RenameHelper.renameSingle(level, "Entities", "entities");
++                RenameHelper.renameSingle(level, "Sections", "sections");
++                RenameHelper.renameSingle(level, "Structures", "structures");
++
++                // 2nd level
++                final MapType<String> structures = level.getMap("structures");
++                if (structures != null) {
++                    RenameHelper.renameSingle(structures, "Starts", "starts");
++                }
++
++                return level; // Level is now root tag.
++            }
++        });
++
++        MCTypeRegistry.CHUNK.addStructureWalker(VERSION, (final MapType<String> data, final long fromVersion, final long toVersion) -> {
++            WalkerUtils.convertList(MCTypeRegistry.ENTITY, data, "entities", fromVersion, toVersion);
++            WalkerUtils.convertList(MCTypeRegistry.TILE_ENTITY, data, "block_entities", fromVersion, toVersion);
++
++            final ListType blockTicks = data.getList("block_ticks", ObjectType.MAP);
++            if (blockTicks != null) {
++                for (int i = 0, len = blockTicks.size(); i < len; ++i) {
++                    WalkerUtils.convert(MCTypeRegistry.BLOCK_NAME, blockTicks.getMap(i), "i", fromVersion, toVersion);
++                }
++            }
++
++            final ListType sections = data.getList("sections", ObjectType.MAP);
++            if (sections != null) {
++                for (int i = 0, len = sections.size(); i < len; ++i) {
++                    final MapType<String> section = sections.getMap(i);
++
++                    WalkerUtils.convertList(MCTypeRegistry.BIOME, section.getMap("biomes"), "palette", fromVersion, toVersion);
++                    WalkerUtils.convertList(MCTypeRegistry.BLOCK_STATE, section.getMap("block_states"), "palette", fromVersion, toVersion);
++                }
++            }
++
++            WalkerUtils.convertValues(MCTypeRegistry.STRUCTURE_FEATURE, data.getMap("structures"), "starts", fromVersion, toVersion);
++
++            return null;
++        });
++    }
++}
+diff --git a/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V2843.java b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V2843.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V2843.java
+@@ -0,0 +0,0 @@
++package ca.spottedleaf.dataconverter.minecraft.versions;
++
++import ca.spottedleaf.dataconverter.minecraft.MCVersions;
++import ca.spottedleaf.dataconverter.minecraft.converters.helpers.ConverterAbstractStringValueTypeRename;
++import ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry;
++import java.util.Map;
++
++public final class V2843 {
++
++    protected static final int VERSION = MCVersions.V21W42A + 3;
++
++    public static void register() {
++        ConverterAbstractStringValueTypeRename.register(VERSION, MCTypeRegistry.BIOME, Map.of("minecraft:deep_warm_ocean", "minecraft:warm_ocean")::get);
++    }
++}
+diff --git a/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V2846.java b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V2846.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V2846.java
+@@ -0,0 +0,0 @@
++package ca.spottedleaf.dataconverter.minecraft.versions;
++
++import ca.spottedleaf.dataconverter.minecraft.MCVersions;
++import ca.spottedleaf.dataconverter.minecraft.converters.advancements.ConverterAbstractAdvancementsRename;
++import com.google.common.collect.ImmutableMap;
++
++public final class V2846 {
++
++    protected static final int VERSION = MCVersions.V21W44A + 1;
++
++    public static void register() {
++        ConverterAbstractAdvancementsRename.register(VERSION, ImmutableMap.of(
++                "minecraft:husbandry/play_jukebox_in_meadows", "minecraft:adventure/play_jukebox_in_meadows",
++                "minecraft:adventure/caves_and_cliff", "minecraft:adventure/fall_from_world_height",
++                "minecraft:adventure/ride_strider_in_overworld_lava", "minecraft:nether/ride_strider_in_overworld_lava"
++        )::get);
++    }
++}
+diff --git a/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V2852.java b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V2852.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V2852.java
+@@ -0,0 +0,0 @@
++package ca.spottedleaf.dataconverter.minecraft.versions;
++
++import ca.spottedleaf.dataconverter.converters.DataConverter;
++import ca.spottedleaf.dataconverter.minecraft.MCVersions;
++import ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry;
++import ca.spottedleaf.dataconverter.types.MapType;
++
++public final class V2852 {
++
++    protected static final int VERSION = MCVersions.V1_18_PRE5 + 1;
++
++    public static void register() {
++        MCTypeRegistry.WORLD_GEN_SETTINGS.addStructureConverter(new DataConverter<>(VERSION) {
++            @Override
++            public MapType<String> convert(final MapType<String> data, final long sourceVersion, final long toVersion) {
++                final MapType<String> dimensions = data.getMap("dimensions");
++
++                for (final String dimensionKey : dimensions.keys()) {
++                    final MapType<String> dimension = dimensions.getMap(dimensionKey);
++                    if (!dimension.hasKey("type")) {
++                        throw new IllegalStateException("Unable load old custom worlds.");
++                    }
++                }
++
++                return null;
++            }
++        });
++    }
 +}
 diff --git a/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V501.java b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V501.java
 new file mode 100644
@@ -16540,6 +18359,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@
 +package ca.spottedleaf.dataconverter.minecraft.walkers.generic;
 +
++import ca.spottedleaf.dataconverter.minecraft.converters.helpers.RenameHelper;
 +import ca.spottedleaf.dataconverter.minecraft.datatypes.MCDataType;
 +import ca.spottedleaf.dataconverter.minecraft.datatypes.MCValueType;
 +import ca.spottedleaf.dataconverter.types.ObjectType;
@@ -16634,13 +18454,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            return;
 +        }
 +
-+        for (final String key : new ArrayList<>(data.keys())) {
-+            final String updated = (String)type.convert(key, fromVersion, toVersion);
-+            if (updated != null) {
-+                data.setGeneric(updated, data.getGeneric(key));
-+                data.remove(key);
-+            }
-+        }
++        RenameHelper.renameKeys(data, (final String input) -> {
++            return (String)type.convert(input, fromVersion, toVersion);
++        });
 +    }
 +
 +    public static void convertValues(final MCDataType type, final MapType<String> data, final String path, final long fromVersion, final long toVersion) {
@@ -19373,6 +21189,235 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return this.val[index];
 +    }
 +}
+diff --git a/src/main/java/ca/spottedleaf/dataconverter/util/IntegerUtil.java b/src/main/java/ca/spottedleaf/dataconverter/util/IntegerUtil.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/java/ca/spottedleaf/dataconverter/util/IntegerUtil.java
+@@ -0,0 +0,0 @@
++package ca.spottedleaf.dataconverter.util;
++
++public final class IntegerUtil {
++    public static final int HIGH_BIT_U32 = Integer.MIN_VALUE;
++    public static final long HIGH_BIT_U64 = Long.MIN_VALUE;
++
++    public static int ceilLog2(final int value) {
++        return Integer.SIZE - Integer.numberOfLeadingZeros(value - 1); // see doc of numberOfLeadingZeros
++    }
++
++    public static long ceilLog2(final long value) {
++        return Long.SIZE - Long.numberOfLeadingZeros(value - 1); // see doc of numberOfLeadingZeros
++    }
++
++    public static int floorLog2(final int value) {
++        // xor is optimized subtract for 2^n -1
++        // note that (2^n -1) - k = (2^n -1) ^ k for k <= (2^n - 1)
++        return (Integer.SIZE - 1) ^ Integer.numberOfLeadingZeros(value); // see doc of numberOfLeadingZeros
++    }
++
++    public static int floorLog2(final long value) {
++        // xor is optimized subtract for 2^n -1
++        // note that (2^n -1) - k = (2^n -1) ^ k for k <= (2^n - 1)
++        return (Long.SIZE - 1) ^ Long.numberOfLeadingZeros(value); // see doc of numberOfLeadingZeros
++    }
++
++    public static int roundCeilLog2(final int value) {
++        // optimized variant of 1 << (32 - leading(val - 1))
++        // given
++        // 1 << n = HIGH_BIT_32 >>> (31 - n) for n [0, 32)
++        // 1 << (32 - leading(val - 1)) = HIGH_BIT_32 >>> (31 - (32 - leading(val - 1)))
++        // HIGH_BIT_32 >>> (31 - (32 - leading(val - 1)))
++        // HIGH_BIT_32 >>> (31 - 32 + leading(val - 1))
++        // HIGH_BIT_32 >>> (-1 + leading(val - 1))
++        return HIGH_BIT_U32 >>> (Integer.numberOfLeadingZeros(value - 1) - 1);
++    }
++
++    public static long roundCeilLog2(final long value) {
++        // see logic documented above
++        return HIGH_BIT_U64 >>> (Long.numberOfLeadingZeros(value - 1) - 1);
++    }
++
++    public static int roundFloorLog2(final int value) {
++        // optimized variant of 1 << (31 - leading(val))
++        // given
++        // 1 << n = HIGH_BIT_32 >>> (31 - n) for n [0, 32)
++        // 1 << (31 - leading(val)) = HIGH_BIT_32 >> (31 - (31 - leading(val)))
++        // HIGH_BIT_32 >> (31 - (31 - leading(val)))
++        // HIGH_BIT_32 >> (31 - 31 + leading(val))
++        return HIGH_BIT_U32 >>> Integer.numberOfLeadingZeros(value);
++    }
++
++    public static long roundFloorLog2(final long value) {
++        // see logic documented above
++        return HIGH_BIT_U64 >>> Long.numberOfLeadingZeros(value);
++    }
++
++    public static boolean isPowerOfTwo(final int n) {
++        // 2^n has one bit
++        // note: this rets true for 0 still
++        return IntegerUtil.getTrailingBit(n) == n;
++    }
++
++    public static boolean isPowerOfTwo(final long n) {
++        // 2^n has one bit
++        // note: this rets true for 0 still
++        return IntegerUtil.getTrailingBit(n) == n;
++    }
++
++    public static int getTrailingBit(final int n) {
++        return -n & n;
++    }
++
++    public static long getTrailingBit(final long n) {
++        return -n & n;
++    }
++
++    public static int trailingZeros(final int n) {
++        return Integer.numberOfTrailingZeros(n);
++    }
++
++    public static int trailingZeros(final long n) {
++        return Long.numberOfTrailingZeros(n);
++    }
++
++    // from hacker's delight (signed division magic value)
++    public static int getDivisorMultiple(final long numbers) {
++        return (int)(numbers >>> 32);
++    }
++
++    // from hacker's delight (signed division magic value)
++    public static int getDivisorShift(final long numbers) {
++        return (int)numbers;
++    }
++
++    public static long getDivisorNumbers(final int d) {
++        final int ad = Math.abs(d);
++
++        if (ad < 2) {
++            throw new IllegalArgumentException("|number| must be in [2, 2^31 -1], not: " + d);
++        }
++
++        final int two31 = 0x80000000;
++        final long mask = 0xFFFFFFFFL; // mask for enforcing unsigned behaviour
++
++        int p = 31;
++
++        // all these variables are UNSIGNED!
++        int t = two31 + (d >>> 31);
++        int anc = t - 1 - (int)((t & mask)%ad);
++        int q1 = (int)((two31 & mask)/(anc & mask));
++        int r1 = two31 - q1*anc;
++        int q2 = (int)((two31 & mask)/(ad & mask));
++        int r2 = two31 - q2*ad;
++        int delta;
++
++        do {
++            p = p + 1;
++            q1 = 2*q1;                        // Update q1 = 2**p/|nc|.
++            r1 = 2*r1;                        // Update r1 = rem(2**p, |nc|).
++            if ((r1 & mask) >= (anc & mask)) {// (Must be an unsigned comparison here)
++                q1 = q1 + 1;
++                r1 = r1 - anc;
++            }
++            q2 = 2*q2;                       // Update q2 = 2**p/|d|.
++            r2 = 2*r2;                       // Update r2 = rem(2**p, |d|).
++            if ((r2 & mask) >= (ad & mask)) {// (Must be an unsigned comparison here)
++                q2 = q2 + 1;
++                r2 = r2 - ad;
++            }
++            delta = ad - r2;
++        } while ((q1 & mask) < (delta & mask) || (q1 == delta && r1 == 0));
++
++        int magicNum = q2 + 1;
++        if (d < 0) {
++            magicNum = -magicNum;
++        }
++        int shift = p - 32;
++        return ((long)magicNum << 32) | shift;
++    }
++
++    public static int branchlessAbs(final int val) {
++        // -n = -1 ^ n + 1
++        final int mask = val >> (Integer.SIZE - 1); // -1 if < 0, 0 if >= 0
++        return (mask ^ val) - mask; // if val < 0, then (0 ^ val) - 0 else (-1 ^ val) + 1
++    }
++
++    public static long branchlessAbs(final long val) {
++        // -n = -1 ^ n + 1
++        final long mask = val >> (Long.SIZE - 1); // -1 if < 0, 0 if >= 0
++        return (mask ^ val) - mask; // if val < 0, then (0 ^ val) - 0 else (-1 ^ val) + 1
++    }
++
++    //https://github.com/skeeto/hash-prospector for hash functions
++
++    //score = ~590.47984224483832
++    public static int hash0(int x) {
++        x *= 0x36935555;
++        x ^= x >>> 16;
++        return x;
++    }
++
++    //score = ~310.01596637036749
++    public static int hash1(int x) {
++        x ^= x >>> 15;
++        x *= 0x356aaaad;
++        x ^= x >>> 17;
++        return x;
++    }
++
++    public static int hash2(int x) {
++        x ^= x >>> 16;
++        x *= 0x7feb352d;
++        x ^= x >>> 15;
++        x *= 0x846ca68b;
++        x ^= x >>> 16;
++        return x;
++    }
++
++    public static int hash3(int x) {
++        x ^= x >>> 17;
++        x *= 0xed5ad4bb;
++        x ^= x >>> 11;
++        x *= 0xac4c1b51;
++        x ^= x >>> 15;
++        x *= 0x31848bab;
++        x ^= x >>> 14;
++        return x;
++    }
++
++    //score = ~365.79959673201887
++    public static long hash1(long x) {
++        x ^= x >>> 27;
++        x *= 0xb24924b71d2d354bL;
++        x ^= x >>> 28;
++        return x;
++    }
++
++    //h2 hash
++    public static long hash2(long x) {
++        x ^= x >>> 32;
++        x *= 0xd6e8feb86659fd93L;
++        x ^= x >>> 32;
++        x *= 0xd6e8feb86659fd93L;
++        x ^= x >>> 32;
++        return x;
++    }
++
++    public static long hash3(long x) {
++        x ^= x >>> 45;
++        x *= 0xc161abe5704b6c79L;
++        x ^= x >>> 41;
++        x *= 0xe3e5389aedbc90f7L;
++        x ^= x >>> 56;
++        x *= 0x1f9aba75a52db073L;
++        x ^= x >>> 53;
++        return x;
++    }
++
++    private IntegerUtil() {
++        throw new RuntimeException();
++    }
++}
 diff --git a/src/main/java/ca/spottedleaf/dataconverter/util/Long2IntArraySortedMap.java b/src/main/java/ca/spottedleaf/dataconverter/util/Long2IntArraySortedMap.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
@@ -19567,81 +21612,25 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return correct.equals(value) ? null : correct;
 +    }
 +}
-diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkStorage.java b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkStorage.java
+diff --git a/src/main/java/net/minecraft/util/datafix/DataFixers.java b/src/main/java/net/minecraft/util/datafix/DataFixers.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkStorage.java
-+++ b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkStorage.java
-@@ -0,0 +0,0 @@ public class ChunkStorage implements AutoCloseable {
-         boolean flag = true;
+--- a/src/main/java/net/minecraft/util/datafix/DataFixers.java
++++ b/src/main/java/net/minecraft/util/datafix/DataFixers.java
+@@ -0,0 +0,0 @@ public class DataFixers {
+         DataFixerBuilder datafixerbuilder = new DataFixerBuilder(SharedConstants.getCurrentVersion().getWorldVersion());
  
-         // CraftBukkit start
--        if (i < 1466) {
-+        if (false && i < 1466) { // Paper - no longer needed, data converter system handles it now
-             CompoundTag level = nbttagcompound.getCompound("Level");
-             if (level.getBoolean("TerrainPopulated") && !level.getBoolean("LightPopulated")) {
-                 ServerChunkCache cps = (generatoraccess == null) ? null : ((ServerLevel) generatoraccess).getChunkSource();
-@@ -0,0 +0,0 @@ public class ChunkStorage implements AutoCloseable {
-         // CraftBukkit end
- 
-         if (i < 1493) {
--            nbttagcompound = NbtUtils.update(this.fixerUpper, DataFixTypes.CHUNK, nbttagcompound, i, 1493);
-+            ca.spottedleaf.dataconverter.minecraft.MCDataConverter.convertTag(ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry.CHUNK, nbttagcompound, i, 1493); // Paper - replace chunk converter
-             if (nbttagcompound.getCompound("Level").getBoolean("hasLegacyStructureData")) {
-                 synchronized (this.persistentDataLock) { // Paper - Async chunk loading
-                 if (this.legacyStructureHandler == null) {
-@@ -0,0 +0,0 @@ public class ChunkStorage implements AutoCloseable {
-             }
-         }
- 
--        nbttagcompound = NbtUtils.update(this.fixerUpper, DataFixTypes.CHUNK, nbttagcompound, Math.max(1493, i));
-+        nbttagcompound = ca.spottedleaf.dataconverter.minecraft.MCDataConverter.convertTag(ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry.CHUNK, nbttagcompound, Math.max(1493, i), SharedConstants.getCurrentVersion().getWorldVersion()); // Paper - replace chunk converter
-         if (i < SharedConstants.getCurrentVersion().getWorldVersion()) {
-             nbttagcompound.putInt("DataVersion", SharedConstants.getCurrentVersion().getWorldVersion());
-         }
-diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/EntityStorage.java b/src/main/java/net/minecraft/world/level/chunk/storage/EntityStorage.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/world/level/chunk/storage/EntityStorage.java
-+++ b/src/main/java/net/minecraft/world/level/chunk/storage/EntityStorage.java
-@@ -0,0 +0,0 @@ public class EntityStorage implements EntityPersistentStorage<Entity> {
-     private CompoundTag upgradeChunkTag(CompoundTag chunkTag) {
-         int i = EntityStorage.getVersion(chunkTag);
- 
--        return NbtUtils.update(this.fixerUpper, DataFixTypes.ENTITY_CHUNK, chunkTag, i);
-+        return ca.spottedleaf.dataconverter.minecraft.MCDataConverter.convertTag(ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry.ENTITY_CHUNK, chunkTag, i, SharedConstants.getCurrentVersion().getWorldVersion()); // Paper - route to new converter system
+         DataFixers.addFixers(datafixerbuilder);
+-        return datafixerbuilder.build(Util.bootstrapExecutor());
++        return redirectToDataconverter(datafixerbuilder, Util.bootstrapExecutor()); // Paper
      }
  
-     public static int getVersion(CompoundTag chunkTag) {
-diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/SectionStorage.java b/src/main/java/net/minecraft/world/level/chunk/storage/SectionStorage.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/world/level/chunk/storage/SectionStorage.java
-+++ b/src/main/java/net/minecraft/world/level/chunk/storage/SectionStorage.java
-@@ -0,0 +0,0 @@ public class SectionStorage<R> extends RegionFileStorage implements AutoCloseabl
-             int j = getVersion(dynamic);
-             int k = SharedConstants.getCurrentVersion().getWorldVersion();
-             boolean bl = j != k;
--            Dynamic<T> dynamic2 = this.fixerUpper.update(this.type.getType(), dynamic, j, k);
-+            // Paper start - route to new converter system
-+            Dynamic<T> dynamic2;
++    // Paper start
++    private static DataFixer redirectToDataconverter(final DataFixerBuilder instance, final java.util.concurrent.Executor executor) {
++        final DataFixer wrap = instance.build(executor);
++        return new ca.spottedleaf.dataconverter.minecraft.ReplacedDataFixerUpper(wrap);
++    }
++    // Paper end
 +
-+            if (this.type.getType() == net.minecraft.util.datafix.fixes.References.POI_CHUNK) {
-+                dynamic2 = new Dynamic<>(dynamic.getOps(), (T)ca.spottedleaf.dataconverter.minecraft.MCDataConverter.convertTag(ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry.POI_CHUNK, (CompoundTag)dynamic.getValue(), j, k));
-+            } else {
-+                dynamic2 = this.fixerUpper.update(this.type.getType(), dynamic, j, k);
-+            }
-+            // Paper end - route to new converter system
-             OptionalDynamic<T> optionalDynamic = dynamic2.get("Sections");
- 
-             for(int l = this.levelHeightAccessor.getMinSection(); l < this.levelHeightAccessor.getMaxSection(); ++l) {
-diff --git a/src/main/java/net/minecraft/world/level/storage/PlayerDataStorage.java b/src/main/java/net/minecraft/world/level/storage/PlayerDataStorage.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/world/level/storage/PlayerDataStorage.java
-+++ b/src/main/java/net/minecraft/world/level/storage/PlayerDataStorage.java
-@@ -0,0 +0,0 @@ public class PlayerDataStorage {
-             // CraftBukkit end
-             int i = nbttagcompound.contains("DataVersion", 3) ? nbttagcompound.getInt("DataVersion") : -1;
- 
--            player.load(NbtUtils.update(this.fixerUpper, DataFixTypes.PLAYER, nbttagcompound, i));
-+            player.load(ca.spottedleaf.dataconverter.minecraft.MCDataConverter.convertTag(ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry.PLAYER, nbttagcompound, i, net.minecraft.SharedConstants.getCurrentVersion().getWorldVersion())); // Paper - replace player converter
-         }
- 
-         return nbttagcompound;
+     public static DataFixer getDataFixer() {
+         return DataFixers.DATA_FIXER;
+     }

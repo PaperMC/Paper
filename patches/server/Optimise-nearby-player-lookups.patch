@@ -13,9 +13,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/level/ChunkHolder.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkHolder.java
 @@ -0,0 +0,0 @@ public class ChunkHolder {
-         long key = net.minecraft.server.MCUtil.getCoordinateKey(this.pos);
-         this.playersInMobSpawnRange = this.chunkMap.playerMobSpawnMap.getObjectsInRange(key);
-         this.playersInChunkTickRange = this.chunkMap.playerChunkTickRangeMap.getObjectsInRange(key);
+         this.setTicketLevel(level);
+         this.changedBlocksPerSection = new ShortSet[world.getSectionsCount()];
+         this.chunkMap = (ChunkMap)playersWatchingChunkProvider; // Paper
 +        // Paper start - optimise checkDespawn
 +        LevelChunk chunk = this.getFullChunkUnchecked();
 +        if (chunk != null) {
@@ -23,16 +23,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +        // Paper end - optimise checkDespawn
      }
-     // Paper end - optimise isOutsideOfRange
-     long lastAutoSaveTime; // Paper - incremental autosave
+ 
+     // CraftBukkit start
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
 @@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
-     public final com.destroystokyo.paper.util.misc.PlayerAreaMap playerMobSpawnMap; // this map is absent from updateMaps since it's controlled at the start of the chunkproviderserver tick
-     public final com.destroystokyo.paper.util.misc.PlayerAreaMap playerChunkTickRangeMap;
-     // Paper end - optimise PlayerChunkMap#isOutsideRange
+     final CallbackExecutor chunkLoadConversionCallbackExecutor = new CallbackExecutor(); // Paper
+     // Paper start - distance maps
+     private final com.destroystokyo.paper.util.misc.PooledLinkedHashSets<ServerPlayer> pooledLinkedPlayerHashSets = new com.destroystokyo.paper.util.misc.PooledLinkedHashSets<>();
 +    // Paper start - optimise checkDespawn
 +    public static final int GENERAL_AREA_MAP_SQUARE_RADIUS = 40;
 +    public static final double GENERAL_AREA_MAP_ACCEPTABLE_SEARCH_RANGE = 16.0 * (GENERAL_AREA_MAP_SQUARE_RADIUS - 1);
@@ -42,30 +42,24 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      void addPlayerToDistanceMaps(ServerPlayer player) {
          int chunkX = MCUtil.getChunkCoordinate(player.getX());
-@@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
-         this.playerChunkTickRangeMap.add(player, chunkX, chunkZ, DistanceManager.MOB_SPAWN_RANGE);
-         // Paper end - optimise PlayerChunkMap#isOutsideRange
-         this.playerChunkManager.addPlayer(player); // Paper - replace chunk loader
+         int chunkZ = MCUtil.getChunkCoordinate(player.getZ());
+         // Note: players need to be explicitly added to distance maps before they can be updated
 +        // Paper start - optimise checkDespawn
 +        this.playerGeneralAreaMap.add(player, chunkX, chunkZ, GENERAL_AREA_MAP_SQUARE_RADIUS);
 +        // Paper end - optimise checkDespawn
      }
  
      void removePlayerFromDistanceMaps(ServerPlayer player) {
-@@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
-         this.playerChunkTickRangeMap.remove(player);
-         // Paper end - optimise PlayerChunkMap#isOutsideRange
-         this.playerChunkManager.removePlayer(player); // Paper - replace chunk loader
+ 
 +        // Paper start - optimise checkDespawn
 +        this.playerGeneralAreaMap.remove(player);
 +        // Paper end - optimise checkDespawn
      }
  
      void updateMaps(ServerPlayer player) {
-@@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
-         this.playerChunkTickRangeMap.update(player, chunkX, chunkZ, DistanceManager.MOB_SPAWN_RANGE);
-         // Paper end - optimise PlayerChunkMap#isOutsideRange
-         this.playerChunkManager.updatePlayer(player); // Paper - replace chunk loader
+         int chunkX = MCUtil.getChunkCoordinate(player.getX());
+         int chunkZ = MCUtil.getChunkCoordinate(player.getZ());
+         // Note: players need to be explicitly added to distance maps before they can be updated
 +        // Paper start - optimise checkDespawn
 +        this.playerGeneralAreaMap.update(player, chunkX, chunkZ, GENERAL_AREA_MAP_SQUARE_RADIUS);
 +        // Paper end - optimise checkDespawn
@@ -73,9 +67,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      // Paper end
      // Paper start
 @@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
-                 }
-             });
-         // Paper end - optimise PlayerChunkMap#isOutsideRange
+         this.regionManagers.add(this.dataRegionManager);
+         // Paper end
+         this.playerMobDistanceMap = this.level.paperConfig.perPlayerMobSpawns ? new com.destroystokyo.paper.util.PlayerMobDistanceMap() : null; // Paper
 +        // Paper start - optimise checkDespawn
 +        this.playerGeneralAreaMap = new com.destroystokyo.paper.util.misc.PlayerAreaMap(this.pooledLinkedPlayerHashSets,
 +            (ServerPlayer player, int rangeX, int rangeZ, int currPosX, int currPosZ, int prevPosX, int prevPosZ,
@@ -95,32 +89,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        // Paper end - optimise checkDespawn
      }
  
-     // Paper start - Chunk Prioritization
-@@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
-         } else {
-             if (holder != null) {
-                 holder.setTicketLevel(level);
--                holder.updateRanges(); // Paper - optimise isOutsideOfRange
-+                // Paper - move to correct place
-             }
- 
-             if (holder != null) {
-@@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
-                 holder = (ChunkHolder) this.pendingUnloads.remove(pos);
-                 if (holder != null) {
-                     holder.setTicketLevel(level);
-+                    holder.updateRanges(); // Paper - optimise isOutsideOfRange // Paper - move to correct place
-                 } else {
-                     holder = new ChunkHolder(new ChunkPos(pos), level, this.level, this.lightEngine, this.queueSorter, this);
-                     // Paper start
+     protected ChunkGenerator generator() {
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
 @@ -0,0 +0,0 @@ public class ServerLevel extends Level implements WorldGenLevel {
-         }
+         return this.getServer().getPlayerList().getPlayer(uuid);
      }
-     // Paper end - rewrite ticklistserver
+     // Paper end
 +    // Paper start - optimise checkDespawn
 +    public final List<ServerPlayer> playersAffectingSpawning = new java.util.ArrayList<>();
 +    // Paper end - optimise checkDespawn
@@ -233,7 +210,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            // Paper end - optimise checkDespawn
  
              if (entityhuman != null) {
-                 double d0 = entityhuman.distanceToSqr((Entity) this); // CraftBukkit - decompile error
+                 double d0 = entityhuman.distanceToSqr((Entity) this);
 diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
@@ -306,7 +283,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +    // Paper end - optimise checkDespawn
  
-     protected Level(WritableLevelData worlddatamutable, ResourceKey<Level> resourcekey, final DimensionType dimensionmanager, Supplier<ProfilerFiller> supplier, boolean flag, boolean flag1, long i, org.bukkit.generator.ChunkGenerator gen, org.bukkit.generator.BiomeProvider biomeProvider, org.bukkit.World.Environment env, java.util.concurrent.Executor executor) { // Paper - Anti-Xray - Pass executor
+     protected Level(WritableLevelData worlddatamutable, ResourceKey<Level> resourcekey, final DimensionType dimensionmanager, Supplier<ProfilerFiller> supplier, boolean flag, boolean flag1, long i, org.bukkit.generator.ChunkGenerator gen, org.bukkit.generator.BiomeProvider biomeProvider, org.bukkit.World.Environment env) {
          this.spigotConfig = new org.spigotmc.SpigotWorldConfig(((net.minecraft.world.level.storage.PrimaryLevelData) worlddatamutable).getLevelName()); // Spigot
 diff --git a/src/main/java/net/minecraft/world/level/NaturalSpawner.java b/src/main/java/net/minecraft/world/level/NaturalSpawner.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
@@ -334,7 +311,7 @@ diff --git a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java b/src
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
-@@ -0,0 +0,0 @@ public class LevelChunk implements ChunkAccess {
+@@ -0,0 +0,0 @@ public class LevelChunk extends ChunkAccess {
          }
      }
      // Paper end
@@ -426,5 +403,5 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +    // Paper end - optimise checkDespawn
  
-     public LevelChunk(ServerLevel worldserver, ProtoChunk protoChunk, @Nullable Consumer<LevelChunk> consumer) {
-         this(worldserver, protoChunk.getPos(), protoChunk.getBiomes(), protoChunk.getUpgradeData(), protoChunk.getBlockTicks(), protoChunk.getLiquidTicks(), protoChunk.getInhabitedTime(), protoChunk.getSections(), consumer);
+     public LevelChunk(ServerLevel world, ProtoChunk protoChunk, @Nullable LevelChunk.PostLoadProcessor chunk_c) {
+         this(world, protoChunk.getPos(), protoChunk.getUpgradeData(), protoChunk.unpackBlockTicks(), protoChunk.unpackFluidTicks(), protoChunk.getInhabitedTime(), protoChunk.getSections(), chunk_c, protoChunk.getBlendingData());
