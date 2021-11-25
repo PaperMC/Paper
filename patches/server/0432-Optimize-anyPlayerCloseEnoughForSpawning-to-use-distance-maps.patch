@@ -1,7 +1,7 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Spottedleaf <Spottedleaf@users.noreply.github.com>
 Date: Tue, 5 May 2020 20:40:53 -0700
-Subject: [PATCH] Optimize isOutsideRange to use distance maps
+Subject: [PATCH] Optimize anyPlayerCloseEnoughForSpawning to use distance maps
 
 Use a distance map to find the players in range quickly
 
@@ -37,7 +37,7 @@ index 51175994b37e966af8983df1f15a0fc5a638a0b5..347cf5d00d986ae8ad60af7f6eabde9f
  
      // CraftBukkit start
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index 7f4b68199b0cd8adb09ef09539b43e62885e19c5..4aad2cee76f4368f607475425c5bf516f51f830d 100644
+index 7f4b68199b0cd8adb09ef09539b43e62885e19c5..344d18b91a9a5d1c0d55d3a0a12073246de24046 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
 @@ -176,21 +176,40 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
@@ -181,7 +181,7 @@ index 7f4b68199b0cd8adb09ef09539b43e62885e19c5..4aad2cee76f4368f607475425c5bf516
 -                    if (event == null || event.isCancelled()) return false;
 -                    blockRange = (double) ((event.getSpawnRadius() << 4) * (event.getSpawnRadius() << 4));
 +                // don't check spectator and whatnot, already handled by mob spawn map update
-+                if (this.playerIsCloseEnoughForSpawning(player, chunkcoordintpair, player.lastEntitySpawnRadiusSquared)) {
++                if (euclideanDistanceSquared(chunkcoordintpair, player) < player.lastEntitySpawnRadiusSquared) {
 +                    return true; // in range
                  }
 -                // Paper end
@@ -198,7 +198,7 @@ index 7f4b68199b0cd8adb09ef09539b43e62885e19c5..4aad2cee76f4368f607475425c5bf516
 +                    continue;
 +                }
 +                // don't check spectator and whatnot, already handled by mob spawn map update
-+                if (this.playerIsCloseEnoughForSpawning(player, chunkcoordintpair, range)) {
++                if (euclideanDistanceSquared(chunkcoordintpair, player) < range) {
 +                    return true; // in range
 +                }
 +            }
