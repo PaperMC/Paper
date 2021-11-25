@@ -9,7 +9,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
 @@ -0,0 +0,0 @@ dependencies {
-     implementation("io.netty:netty-all:4.1.65.Final") // Paper
+     runtimeOnly("org.apache.maven.resolver:maven-resolver-transport-http:1.7.0")
  
      implementation("net.fabricmc:mapping-io:0.3.0") // Paper - needed to read mappings for stacktrace deobfuscation
 +    implementation("com.velocitypowered:velocity-native:1.1.0-SNAPSHOT") // Paper
@@ -33,7 +33,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        this.cipher = cipher;  // Paper
      }
  
-     @Override
      protected void decode(ChannelHandlerContext channelHandlerContext, ByteBuf byteBuf, List<Object> list) throws Exception {
 -        list.add(this.cipher.decipher(channelHandlerContext, byteBuf));
 +        // Paper start
@@ -76,7 +75,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        this.cipher = cipher;  // Paper
      }
  
-     @Override
 -    protected void encode(ChannelHandlerContext channelHandlerContext, ByteBuf byteBuf, ByteBuf byteBuf2) throws Exception {
 -        this.cipher.encipher(byteBuf, byteBuf2);
 +    protected void encode(ChannelHandlerContext channelHandlerContext, ByteBuf byteBuf, List<Object> list) throws Exception {
@@ -112,19 +110,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      private boolean validateDecompressed;
  
 +    // Paper start
-     public CompressionDecoder(int compressionThreshold, boolean bl) {
-+        this(null, compressionThreshold, bl);
+     public CompressionDecoder(int compressionThreshold, boolean rejectsBadPackets) {
++        this(null, compressionThreshold, rejectsBadPackets);
 +    }
-+    public CompressionDecoder(com.velocitypowered.natives.compression.VelocityCompressor compressor, int compressionThreshold, boolean bl) {
++    public CompressionDecoder(com.velocitypowered.natives.compression.VelocityCompressor compressor, int compressionThreshold, boolean rejectsBadPackets) {
          this.threshold = compressionThreshold;
-         this.validateDecompressed = bl;
+         this.validateDecompressed = rejectsBadPackets;
 -        this.inflater = new Inflater();
 +        this.inflater = compressor == null ? new Inflater() : null;
 +        this.compressor = compressor;
 +        // Paper end
      }
  
-     @Override
+     protected void decode(ChannelHandlerContext channelHandlerContext, ByteBuf byteBuf, List<Object> list) throws Exception {
 @@ -0,0 +0,0 @@ public class CompressionDecoder extends ByteToMessageDecoder {
                      }
                  }
@@ -168,9 +166,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +    // Paper end
 +
-     public void setThreshold(int compressionThreshold, boolean bl) {
+     public void setThreshold(int compressionThreshold, boolean rejectsBadPackets) {
          this.threshold = compressionThreshold;
-         this.validateDecompressed = bl;
+         this.validateDecompressed = rejectsBadPackets;
 diff --git a/src/main/java/net/minecraft/network/CompressionEncoder.java b/src/main/java/net/minecraft/network/CompressionEncoder.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/network/CompressionEncoder.java
@@ -203,7 +201,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        // Paper end
      }
  
-     @Override
 -    protected void encode(ChannelHandlerContext channelHandlerContext, ByteBuf byteBuf, ByteBuf byteBuf2) {
 +    protected void encode(ChannelHandlerContext channelHandlerContext, ByteBuf byteBuf, ByteBuf byteBuf2) throws Exception { // Paper
          int i = byteBuf.readableBytes();
@@ -305,14 +302,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          return this.encrypted;
 @@ -0,0 +0,0 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
  
-     public void setupCompression(int compressionThreshold, boolean flag) {
+     public void setupCompression(int compressionThreshold, boolean rejectsBadPackets) {
          if (compressionThreshold >= 0) {
 +            com.velocitypowered.natives.compression.VelocityCompressor compressor = com.velocitypowered.natives.util.Natives.compress.get().create(-1); // Paper
              if (this.channel.pipeline().get("decompress") instanceof CompressionDecoder) {
-                 ((CompressionDecoder) this.channel.pipeline().get("decompress")).setThreshold(compressionThreshold, flag);
+                 ((CompressionDecoder) this.channel.pipeline().get("decompress")).setThreshold(compressionThreshold, rejectsBadPackets);
              } else {
--                this.channel.pipeline().addBefore("decoder", "decompress", new CompressionDecoder(compressionThreshold, flag));
-+                this.channel.pipeline().addBefore("decoder", "decompress", new CompressionDecoder(compressor, compressionThreshold, flag)); // Paper
+-                this.channel.pipeline().addBefore("decoder", "decompress", new CompressionDecoder(compressionThreshold, rejectsBadPackets));
++                this.channel.pipeline().addBefore("decoder", "decompress", new CompressionDecoder(compressor, compressionThreshold, rejectsBadPackets)); // Paper
              }
  
              if (this.channel.pipeline().get("compress") instanceof CompressionEncoder) {
