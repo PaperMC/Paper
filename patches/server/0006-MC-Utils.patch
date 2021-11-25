@@ -5067,7 +5067,7 @@ index 18f1bfed979e756a62ff8f5ee434d8270ab987d4..2361a92630d2639d602bc1434b061ad9
              } catch (Throwable throwable) {
                  // Spigot Start
 diff --git a/src/main/java/net/minecraft/server/level/ChunkHolder.java b/src/main/java/net/minecraft/server/level/ChunkHolder.java
-index d2fbb6e28db27b3207879be3027bb74410a53900..303125c4d0f8f235703975eab5eccb9aa045ccf8 100644
+index d2fbb6e28db27b3207879be3027bb74410a53900..faa0f1c72693977b65b3deb0f689756fbc83f568 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkHolder.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkHolder.java
 @@ -49,9 +49,9 @@ public class ChunkHolder {
@@ -5286,8 +5286,27 @@ index d2fbb6e28db27b3207879be3027bb74410a53900..303125c4d0f8f235703975eab5eccb9a
          }
  
          if (!playerchunk_state1.isOrAfter(playerchunk_state)) {
+@@ -563,4 +642,18 @@ public class ChunkHolder {
+             }
+         };
+     }
++
++    // Paper start
++    public final boolean isEntityTickingReady() {
++        return this.isEntityTickingReady;
++    }
++
++    public final boolean isTickingReady() {
++        return this.isTickingReady;
++    }
++
++    public final boolean isFullChunkReady() {
++        return this.isFullChunkReady;
++    }
++    // Paper end
+ }
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index f41f0e6aa12c89b7a8dd95a7c43510bae2d58525..85c177bdf9ab329b7ff30294fd8d45b6690d6b71 100644
+index f41f0e6aa12c89b7a8dd95a7c43510bae2d58525..3c43b9e510ec1df43a54cde475490c49e57ca1b8 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
 @@ -58,6 +58,7 @@ import net.minecraft.network.protocol.game.ClientboundSetChunkCacheCenterPacket;
@@ -5446,6 +5465,38 @@ index f41f0e6aa12c89b7a8dd95a7c43510bae2d58525..85c177bdf9ab329b7ff30294fd8d45b6
      }
  
      @Override
+@@ -1414,7 +1496,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+     public class ChunkDistanceManager extends DistanceManager {
+ 
+         protected ChunkDistanceManager(Executor workerExecutor, Executor mainThreadExecutor) {
+-            super(workerExecutor, mainThreadExecutor);
++            super(workerExecutor, mainThreadExecutor, ChunkMap.this);
+         }
+ 
+         @Override
+diff --git a/src/main/java/net/minecraft/server/level/DistanceManager.java b/src/main/java/net/minecraft/server/level/DistanceManager.java
+index ef87c37633cee4ab438f1991144188ade1c4e65f..19d3802becd353e130b785f8286e595e08dc5c5f 100644
+--- a/src/main/java/net/minecraft/server/level/DistanceManager.java
++++ b/src/main/java/net/minecraft/server/level/DistanceManager.java
+@@ -59,8 +59,9 @@ public abstract class DistanceManager {
+     final Executor mainThreadExecutor;
+     private long ticketTickCounter;
+     private int simulationDistance = 10;
++    private final ChunkMap chunkMap; // Paper
+ 
+-    protected DistanceManager(Executor workerExecutor, Executor mainThreadExecutor) {
++    protected DistanceManager(Executor workerExecutor, Executor mainThreadExecutor, ChunkMap chunkMap) {
+         Objects.requireNonNull(mainThreadExecutor);
+         ProcessorHandle<Runnable> mailbox = ProcessorHandle.of("player ticket throttler", mainThreadExecutor::execute);
+         ChunkTaskPriorityQueueSorter chunktaskqueuesorter = new ChunkTaskPriorityQueueSorter(ImmutableList.of(mailbox), workerExecutor, 4);
+@@ -69,6 +70,7 @@ public abstract class DistanceManager {
+         this.ticketThrottlerInput = chunktaskqueuesorter.getProcessor(mailbox, true);
+         this.ticketThrottlerReleaser = chunktaskqueuesorter.getReleaseProcessor(mailbox);
+         this.mainThreadExecutor = mainThreadExecutor;
++        this.chunkMap = chunkMap; // Paper
+     }
+ 
+     protected void purgeStaleTickets() {
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 index bdc774e3fbb949290fbc94c4b0cbc8f2c09f5bd8..8509bf94f64c6b761ee38e39278d12fcedeeff75 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
