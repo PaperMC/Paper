@@ -5286,6 +5286,25 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          }
  
          if (!playerchunk_state1.isOrAfter(playerchunk_state)) {
+@@ -0,0 +0,0 @@ public class ChunkHolder {
+             }
+         };
+     }
++
++    // Paper start
++    public final boolean isEntityTickingReady() {
++        return this.isEntityTickingReady;
++    }
++
++    public final boolean isTickingReady() {
++        return this.isTickingReady;
++    }
++
++    public final boolean isFullChunkReady() {
++        return this.isFullChunkReady;
++    }
++    // Paper end
+ }
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
@@ -5446,6 +5465,38 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
      @Override
+@@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+     public class ChunkDistanceManager extends DistanceManager {
+ 
+         protected ChunkDistanceManager(Executor workerExecutor, Executor mainThreadExecutor) {
+-            super(workerExecutor, mainThreadExecutor);
++            super(workerExecutor, mainThreadExecutor, ChunkMap.this);
+         }
+ 
+         @Override
+diff --git a/src/main/java/net/minecraft/server/level/DistanceManager.java b/src/main/java/net/minecraft/server/level/DistanceManager.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/level/DistanceManager.java
++++ b/src/main/java/net/minecraft/server/level/DistanceManager.java
+@@ -0,0 +0,0 @@ public abstract class DistanceManager {
+     final Executor mainThreadExecutor;
+     private long ticketTickCounter;
+     private int simulationDistance = 10;
++    private final ChunkMap chunkMap; // Paper
+ 
+-    protected DistanceManager(Executor workerExecutor, Executor mainThreadExecutor) {
++    protected DistanceManager(Executor workerExecutor, Executor mainThreadExecutor, ChunkMap chunkMap) {
+         Objects.requireNonNull(mainThreadExecutor);
+         ProcessorHandle<Runnable> mailbox = ProcessorHandle.of("player ticket throttler", mainThreadExecutor::execute);
+         ChunkTaskPriorityQueueSorter chunktaskqueuesorter = new ChunkTaskPriorityQueueSorter(ImmutableList.of(mailbox), workerExecutor, 4);
+@@ -0,0 +0,0 @@ public abstract class DistanceManager {
+         this.ticketThrottlerInput = chunktaskqueuesorter.getProcessor(mailbox, true);
+         this.ticketThrottlerReleaser = chunktaskqueuesorter.getReleaseProcessor(mailbox);
+         this.mainThreadExecutor = mainThreadExecutor;
++        this.chunkMap = chunkMap; // Paper
+     }
+ 
+     protected void purgeStaleTickets() {
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
