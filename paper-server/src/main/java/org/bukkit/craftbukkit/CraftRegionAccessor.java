@@ -214,7 +214,7 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
 
     @Override
     public Biome getBiome(int x, int y, int z) {
-        return CraftBlock.biomeBaseToBiome(getHandle().registryAccess().registryOrThrow(IRegistry.BIOME_REGISTRY), getHandle().getNoiseBiome(x, y, z));
+        return CraftBlock.biomeBaseToBiome(getHandle().registryAccess().registryOrThrow(IRegistry.BIOME_REGISTRY), getHandle().getNoiseBiome(x >> 2, y >> 2, z >> 2));
     }
 
     @Override
