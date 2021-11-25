@@ -265,14 +265,10 @@
              boolean flag = scoreboardteam != null && scoreboard.addPlayerToTeam(this.getStringUUID(), scoreboardteam);
  
              if (!flag) {
-@@ -815,13 +902,36 @@
+@@ -819,9 +906,32 @@
  
-         if (nbt.contains("Brain", 10)) {
-             this.brain = this.makeBrain(new Dynamic(NbtOps.INSTANCE, nbt.get("Brain")));
-+        }
-+
-+    }
-+
+     }
+ 
 +    // CraftBukkit start
 +    private boolean isTickingEffects = false;
 +    private List<ProcessableEffect> effectsToProcess = Lists.newArrayList();
@@ -286,15 +282,15 @@
 +        private ProcessableEffect(MobEffectInstance effect, EntityPotionEffectEvent.Cause cause) {
 +            this.effect = effect;
 +            this.cause = cause;
-         }
- 
++        }
++
 +        private ProcessableEffect(Holder<MobEffect> type, EntityPotionEffectEvent.Cause cause) {
 +            this.type = type;
 +            this.cause = cause;
 +        }
-     }
++    }
 +    // CraftBukkit end
- 
++
      protected void tickEffects() {
          Iterator<Holder<MobEffect>> iterator = this.activeEffects.keySet().iterator();
  
@@ -969,10 +965,12 @@
          }
      }
  
-@@ -1683,6 +2059,20 @@
-         return new LivingEntity.Fallsounds(SoundEvents.GENERIC_SMALL_FALL, SoundEvents.GENERIC_BIG_FALL);
-     }
+@@ -1681,8 +2057,22 @@
  
+     public LivingEntity.Fallsounds getFallSounds() {
+         return new LivingEntity.Fallsounds(SoundEvents.GENERIC_SMALL_FALL, SoundEvents.GENERIC_BIG_FALL);
++    }
++
 +    // CraftBukkit start - Add delegate methods
 +    public SoundEvent getHurtSound0(DamageSource damagesource) {
 +        return this.getHurtSound(damagesource);
@@ -980,8 +978,8 @@
 +
 +    public SoundEvent getDeathSound0() {
 +        return this.getDeathSound();
-+    }
-+
+     }
+ 
 +    public SoundEvent getFallDamageSound0(int fallHeight) {
 +        return this.getFallDamageSound(fallHeight);
 +    }
@@ -1242,27 +1240,26 @@
      }
  
      public CombatTracker getCombatTracker() {
-@@ -1935,9 +2502,19 @@
+@@ -1935,8 +2502,18 @@
      }
  
      public final void setArrowCount(int stuckArrowCount) {
 -        this.entityData.set(LivingEntity.DATA_ARROW_COUNT_ID, stuckArrowCount);
 +        // CraftBukkit start
 +        this.setArrowCount(stuckArrowCount, false);
-     }
- 
++    }
++
 +    public final void setArrowCount(int i, boolean flag) {
 +        ArrowBodyCountChangeEvent event = CraftEventFactory.callArrowBodyCountChangeEvent(this, this.getArrowCount(), i, flag);
 +        if (event.isCancelled()) {
 +            return;
 +        }
 +        this.entityData.set(LivingEntity.DATA_ARROW_COUNT_ID, event.getNewAmount());
-+    }
+     }
 +    // CraftBukkit end
-+
+ 
      public final int getStingerCount() {
          return (Integer) this.entityData.get(LivingEntity.DATA_STINGER_COUNT_ID);
-     }
 @@ -1999,7 +2576,7 @@
                      this.playSound(soundeffect, this.getSoundVolume(), (this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F);
                  }
@@ -1272,20 +1269,51 @@
                      this.setHealth(0.0F);
                      this.die(this.damageSources().generic());
                  }
-@@ -2181,6 +2758,12 @@
-     public abstract Iterable<ItemStack> getArmorSlots();
+@@ -2182,6 +2759,12 @@
  
      public abstract ItemStack getItemBySlot(EquipmentSlot slot);
-+
+ 
 +    // CraftBukkit start
 +    public void setItemSlot(EquipmentSlot enumitemslot, ItemStack itemstack, boolean silent) {
 +        this.setItemSlot(enumitemslot, itemstack);
 +    }
 +    // CraftBukkit end
- 
++
      public abstract void setItemSlot(EquipmentSlot slot, ItemStack stack);
  
-@@ -2494,7 +3077,7 @@
+     public Iterable<ItemStack> getHandSlots() {
+@@ -2292,17 +2875,29 @@
+         return this.hasEffect(MobEffects.JUMP) ? 0.1F * ((float) this.getEffect(MobEffects.JUMP).getAmplifier() + 1.0F) : 0.0F;
+     }
+ 
++    protected long lastJumpTime = 0L; // Paper - Prevent excessive velocity through repeated crits
+     @VisibleForTesting
+     public void jumpFromGround() {
+         float f = this.getJumpPower();
+ 
+         if (f > 1.0E-5F) {
+             Vec3 vec3d = this.getDeltaMovement();
++            // Paper start - Prevent excessive velocity through repeated crits
++            long time = System.nanoTime();
++            boolean canCrit = true;
++            if (this instanceof net.minecraft.world.entity.player.Player) {
++                canCrit = false;
++                if (time - this.lastJumpTime > (long)(0.250e9)) {
++                    this.lastJumpTime = time;
++                    canCrit = true;
++                }
++            }
++            // Paper end - Prevent excessive velocity through repeated crits
+ 
+             this.setDeltaMovement(vec3d.x, Math.max((double) f, vec3d.y), vec3d.z);
+             if (this.isSprinting()) {
+                 float f1 = this.getYRot() * 0.017453292F;
+-
++                if (canCrit) // Paper - Prevent excessive velocity through repeated crits
+                 this.addDeltaMovement(new Vec3((double) (-Mth.sin(f1)) * 0.2D, 0.0D, (double) Mth.cos(f1) * 0.2D));
+             }
+ 
+@@ -2494,7 +3089,7 @@
  
      }
  
@@ -1294,7 +1322,7 @@
          Vec3 vec3d1 = this.getRiddenInput(controllingPlayer, movementInput);
  
          this.tickRidden(controllingPlayer, vec3d1);
-@@ -2507,13 +3090,13 @@
+@@ -2507,13 +3102,13 @@
  
      }
  
@@ -1311,7 +1339,7 @@
          return this.getSpeed();
      }
  
-@@ -2571,7 +3154,7 @@
+@@ -2571,7 +3166,7 @@
              double d1 = Mth.clamp(motion.z, -0.15000000596046448D, 0.15000000596046448D);
              double d2 = Math.max(motion.y, -0.15000000596046448D);
  
@@ -1320,7 +1348,7 @@
                  d2 = 0.0D;
              }
  
-@@ -2586,7 +3169,7 @@
+@@ -2586,7 +3181,7 @@
      }
  
      protected float getFlyingSpeed() {
@@ -1329,7 +1357,7 @@
      }
  
      public float getSpeed() {
-@@ -2634,7 +3217,7 @@
+@@ -2634,7 +3229,7 @@
                  }
              }
  
@@ -1338,7 +1366,7 @@
              if (this.tickCount % 20 == 0) {
                  this.getCombatTracker().recheckStatus();
              }
-@@ -2741,7 +3324,7 @@
+@@ -2741,7 +3336,7 @@
          this.elytraAnimationState.tick();
      }
  
@@ -1347,15 +1375,14 @@
          Map<EquipmentSlot, ItemStack> map = this.collectEquipmentChanges();
  
          if (map != null) {
-@@ -2778,10 +3361,17 @@
+@@ -2778,10 +3373,17 @@
                      throw new MatchException((String) null, (Throwable) null);
              }
  
 -            ItemStack itemstack2 = itemstack1;
--
--            itemstack = this.getItemBySlot(enumitemslot);
 +            ItemStack itemstack2 = itemstack1; final ItemStack oldEquipment = itemstack2; // Paper - PlayerArmorChangeEvent - obfhelper 
-+
+ 
+-            itemstack = this.getItemBySlot(enumitemslot);
 +            itemstack = this.getItemBySlot(enumitemslot); final ItemStack newEquipment = itemstack;// Paper - PlayerArmorChangeEvent - obfhelper
              if (this.equipmentHasChanged(itemstack2, itemstack)) {
 +                // Paper start - PlayerArmorChangeEvent
@@ -1368,7 +1395,7 @@
                  if (map == null) {
                      map = Maps.newEnumMap(EquipmentSlot.class);
                  }
-@@ -2974,8 +3564,10 @@
+@@ -2974,8 +3576,10 @@
              } else if (this.isInLava() && (!this.onGround() || d3 > d4)) {
                  this.jumpInLiquid(FluidTags.LAVA);
              } else if ((this.onGround() || flag && d3 <= d4) && this.noJumpDelay == 0) {
@@ -1379,7 +1406,7 @@
              }
          } else {
              this.noJumpDelay = 0;
-@@ -3000,7 +3592,7 @@
+@@ -3000,7 +3604,7 @@
          {
              LivingEntity entityliving = this.getControllingPassenger();
  
@@ -1388,7 +1415,7 @@
                  if (this.isAlive()) {
                      this.travelRidden(entityhuman, vec3d1);
                      break label112;
-@@ -3046,6 +3638,20 @@
+@@ -3046,6 +3650,20 @@
  
          this.pushEntities();
          gameprofilerfiller.pop();
@@ -1409,7 +1436,7 @@
          world = this.level();
          if (world instanceof ServerLevel worldserver) {
              if (this.isSensitiveToWater() && this.isInWaterRainOrBubble()) {
-@@ -3063,6 +3669,7 @@
+@@ -3063,6 +3681,7 @@
          this.checkSlowFallDistance();
          if (!this.level().isClientSide) {
              if (!this.canGlide()) {
@@ -1417,7 +1444,7 @@
                  this.setSharedFlag(7, false);
                  return;
              }
-@@ -3113,12 +3720,26 @@
+@@ -3113,12 +3732,26 @@
          Level world = this.level();
  
          if (!(world instanceof ServerLevel worldserver)) {
@@ -1447,7 +1474,7 @@
  
                  if (i > 0 && list.size() > i - 1 && this.random.nextInt(4) == 0) {
                      int j = 0;
-@@ -3138,10 +3759,12 @@
+@@ -3138,10 +3771,12 @@
                  }
  
                  Iterator iterator1 = list.iterator();
@@ -1462,7 +1489,7 @@
                      this.doPush(entity1);
                  }
              }
-@@ -3190,10 +3813,16 @@
+@@ -3190,10 +3825,16 @@
  
      @Override
      public void stopRiding() {
@@ -1481,7 +1508,7 @@
              this.dismountVehicle(entity);
          }
  
-@@ -3284,7 +3913,8 @@
+@@ -3284,7 +3925,8 @@
              Vec3 vec3d = new Vec3(this.getX(), this.getEyeY(), this.getZ());
              Vec3 vec3d1 = new Vec3(entity.getX(), entityY, entity.getZ());
  
@@ -1491,7 +1518,7 @@
          }
      }
  
-@@ -3305,15 +3935,29 @@
+@@ -3305,15 +3947,29 @@
  
      @Override
      public boolean isPickable() {
@@ -1523,7 +1550,7 @@
      public float getYHeadRot() {
          return this.yHeadRot;
      }
-@@ -3342,7 +3986,7 @@
+@@ -3342,7 +3998,7 @@
      }
  
      public final void setAbsorptionAmount(float absorptionAmount) {
@@ -1532,7 +1559,7 @@
      }
  
      protected void internalSetAbsorptionAmount(float absorptionAmount) {
-@@ -3410,9 +4054,14 @@
+@@ -3410,9 +4066,14 @@
      }
  
      public void startUsingItem(InteractionHand hand) {
@@ -1548,7 +1575,7 @@
              this.useItem = itemstack;
              this.useItemRemaining = itemstack.getUseDuration(this);
              if (!this.level().isClientSide) {
-@@ -3483,13 +4132,50 @@
+@@ -3483,13 +4144,50 @@
                  this.releaseUsingItem();
              } else {
                  if (!this.useItem.isEmpty() && this.isUsingItem()) {
@@ -1600,7 +1627,7 @@
                  }
  
              }
-@@ -3544,11 +4230,68 @@
+@@ -3544,11 +4242,68 @@
          if (this.isUsingItem() && !this.useItem.isEmpty()) {
              Item item = this.useItem.getItem();
  
@@ -1670,7 +1697,7 @@
  
      public boolean isSuppressingSlidingDownLadder() {
          return this.isShiftKeyDown();
-@@ -3568,12 +4311,18 @@
+@@ -3568,12 +4323,18 @@
      }
  
      public boolean randomTeleport(double x, double y, double z, boolean particleEffects) {
@@ -1691,7 +1718,7 @@
          Level world = this.level();
  
          if (world.hasChunkAt(blockposition)) {
-@@ -3592,18 +4341,43 @@
+@@ -3592,18 +4353,43 @@
              }
  
              if (flag2) {
@@ -1739,7 +1766,7 @@
                  world.broadcastEntityEvent(this, (byte) 46);
              }
  
-@@ -3613,7 +4387,7 @@
+@@ -3613,7 +4399,7 @@
                  entitycreature.getNavigation().stop();
              }
  
@@ -1748,7 +1775,7 @@
          }
      }
  
-@@ -3706,7 +4480,7 @@
+@@ -3706,7 +4492,7 @@
      }
  
      public void stopSleeping() {
@@ -1757,7 +1784,7 @@
          Level world = this.level();
  
          java.util.Objects.requireNonNull(world);
-@@ -3718,9 +4492,9 @@
+@@ -3718,9 +4504,9 @@
  
                  this.level().setBlock(blockposition, (BlockState) iblockdata.setValue(BedBlock.OCCUPIED, false), 3);
                  Vec3 vec3d = (Vec3) BedBlock.findStandUpPosition(this.getType(), this.level(), blockposition, enumdirection, this.getYRot()).orElseGet(() -> {
@@ -1769,7 +1796,7 @@
                  });
                  Vec3 vec3d1 = Vec3.atBottomCenterOf(blockposition).subtract(vec3d).normalize();
                  float f = (float) Mth.wrapDegrees(Mth.atan2(vec3d1.z, vec3d1.x) * 57.2957763671875D - 90.0D);
-@@ -3740,7 +4514,7 @@
+@@ -3740,7 +4526,7 @@
  
      @Nullable
      public Direction getBedOrientation() {
@@ -1778,7 +1805,7 @@
  
          return blockposition != null ? BedBlock.getBedOrientation(this.level(), blockposition) : null;
      }
-@@ -3905,7 +4679,7 @@
+@@ -3905,7 +4691,7 @@
      public float maxUpStep() {
          float f = (float) this.getAttributeValue(Attributes.STEP_HEIGHT);
  
