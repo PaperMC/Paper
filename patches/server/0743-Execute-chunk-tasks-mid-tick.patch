@@ -18,23 +18,11 @@ index b27021a42cbed3f0648a8d0903d00d03922ae221..eada966d7f108a6081be7a848f5c1dfc
      private static final Map<Class<?>, String> taskNameCache = new MapMaker().weakKeys().makeMap();
  
      private MinecraftTimings() {}
-diff --git a/src/main/java/com/destroystokyo/paper/server/ticklist/PaperTickList.java b/src/main/java/com/destroystokyo/paper/server/ticklist/PaperTickList.java
-index 5fdaefc128956581be4bb9b34199fd6410563991..b7edc1121797bc1c57e25f540ed0124fa8b36b7a 100644
---- a/src/main/java/com/destroystokyo/paper/server/ticklist/PaperTickList.java
-+++ b/src/main/java/com/destroystokyo/paper/server/ticklist/PaperTickList.java
-@@ -312,6 +312,7 @@ public final class PaperTickList<T> extends ServerTickList<T> { // extend to avo
-                     toTick.tickState = STATE_SCHEDULED;
-                     this.addToNotTickingReady(toTick);
-                 }
-+                MinecraftServer.getServer().executeMidTickTasks(); // Paper - exec chunk tasks during world tick
-             } catch (final Throwable thr) {
-                 // start copy from TickListServer // TODO check on update
-                 CrashReport crashreport = CrashReport.forThrowable(thr, "Exception while ticking");
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 98eb8318413014f0650dc5c80125aa84b51cfc93..57cb2722e973cfc8edc845bc7154b8b8bbb11e12 100644
+index 983bc6b8600489696899b5aaa09e7f7b674d2e42..86b57776a42261053237d62f3b666793457c5e2f 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -330,6 +330,76 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -331,6 +331,76 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          return s0;
      }
  
@@ -111,7 +99,7 @@ index 98eb8318413014f0650dc5c80125aa84b51cfc93..57cb2722e973cfc8edc845bc7154b8b8
      public MinecraftServer(OptionSet options, DataPackConfig datapackconfiguration, Thread thread, RegistryAccess.RegistryHolder iregistrycustom_dimension, LevelStorageSource.LevelStorageAccess convertable_conversionsession, WorldData savedata, PackRepository resourcepackrepository, Proxy proxy, DataFixer datafixer, ServerResources datapackresources, @Nullable MinecraftSessionService minecraftsessionservice, @Nullable GameProfileRepository gameprofilerepository, @Nullable GameProfileCache usercache, ChunkProgressListenerFactory worldloadlistenerfactory) {
          super("Server");
          SERVER = this; // Paper - better singleton
-@@ -1325,6 +1395,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1311,6 +1381,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
  
      private boolean pollTaskInternal() {
          if (super.pollTask()) {
@@ -119,33 +107,13 @@ index 98eb8318413014f0650dc5c80125aa84b51cfc93..57cb2722e973cfc8edc845bc7154b8b8
              return true;
          } else {
              if (this.haveTime()) {
-diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-index d6981bbcf480c5856b51960013d144beba2361b3..39840403da99252c5d634e99e1da19f6066dee7c 100644
---- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-+++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-@@ -1023,6 +1023,7 @@ public class ServerChunkCache extends ChunkSource {
-                 Collections.shuffle(shuffled);
-                 iterator = shuffled.iterator();
-             }
-+            int chunksTicked = 0; // Paper
-             try { while (iterator.hasNext()) {
-                 LevelChunk chunk = iterator.next();
-                 ChunkHolder playerchunk = chunk.playerChunk;
-@@ -1045,6 +1046,7 @@ public class ServerChunkCache extends ChunkSource {
-                         this.level.tickChunk(chunk, k);
-                         // this.level.timings.doTickTiles.stopTiming(); // Spigot // Paper
-                     }
-+                    if ((chunksTicked++ & 1) == 0) net.minecraft.server.MinecraftServer.getServer().executeMidTickTasks(); // Paper
-                 }
-             } // Paper start - optimise chunk tick iteration
-             } finally {
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index 5c588c39de11bbabdc2f50ef4204007c622fdc6a..e219e385df356531639cb1b4bf993dca9034aa1d 100644
+index 0ffd53590c883c0090c913356665058b6c5d3f3f..5d4f20a31ad99b4e808bb9a7aaa2153666af493f 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
-@@ -190,7 +190,9 @@ public class ServerLevel extends Level implements WorldGenLevel {
-     final Int2ObjectMap<EnderDragonPart> dragonParts;
+@@ -198,7 +198,9 @@ public class ServerLevel extends Level implements WorldGenLevel {
      private final StructureFeatureManager structureFeatureManager;
+     private final StructureCheck structureCheck;
      private final boolean tickTime;
 -
 +    // Paper start - execute chunk tasks mid tick
@@ -155,10 +123,10 @@ index 5c588c39de11bbabdc2f50ef4204007c622fdc6a..e219e385df356531639cb1b4bf993dca
      // CraftBukkit start
      private int tickPosition;
 diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
-index 1dd2e968bde16da2d2da63ca3c30515e1fd5b620..3a6f79233cec7aee87be20787b6deae4b313f0ac 100644
+index 4484c455f4be73763f5aa1112be5969e18c092bc..9cc34ff8ec5db5a87faf0afb574543f01c8381c2 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
 +++ b/src/main/java/net/minecraft/world/level/Level.java
-@@ -903,6 +903,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -893,6 +893,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
      public <T extends Entity> void guardEntityTick(Consumer<T> tickConsumer, T entity) {
          try {
              tickConsumer.accept(entity);

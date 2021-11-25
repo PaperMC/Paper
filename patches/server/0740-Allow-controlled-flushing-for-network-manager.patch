@@ -9,7 +9,7 @@ This patch will be used to optimise out flush calls in later
 patches.
 
 diff --git a/src/main/java/net/minecraft/network/Connection.java b/src/main/java/net/minecraft/network/Connection.java
-index 3eff1c97dcdc6bd8a0c4b7c5bbead2bd68490a4b..032d65a489d65e9b5b5066dff80c65d2e1b28c82 100644
+index 16954170ffeeedf18d8f8079b5e75915e0c682ba..a6b438543a12f5ecf05fb631ef53b18d4d253dff 100644
 --- a/src/main/java/net/minecraft/network/Connection.java
 +++ b/src/main/java/net/minecraft/network/Connection.java
 @@ -94,6 +94,39 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
@@ -91,14 +91,14 @@ index 3eff1c97dcdc6bd8a0c4b7c5bbead2bd68490a4b..032d65a489d65e9b5b5066dff80c65d2
  
      }
  
-     private void doSendPacket(Packet<?> packet, @Nullable GenericFutureListener<? extends Future<? super Void>> callback, ConnectionProtocol enumprotocol, ConnectionProtocol enumprotocol1) {
+     private void doSendPacket(Packet<?> packet, @Nullable GenericFutureListener<? extends Future<? super Void>> callback, ConnectionProtocol packetState, ConnectionProtocol currentState) {
 +        // Paper start - add flush parameter
-+        this.doSendPacket(packet, callback, enumprotocol, enumprotocol1, true);
++        this.doSendPacket(packet, callback, packetState, currentState, true);
 +    }
-+    private void doSendPacket(Packet<?> packet, @Nullable GenericFutureListener<? extends Future<? super Void>> callback, ConnectionProtocol enumprotocol, ConnectionProtocol enumprotocol1, boolean flush) {
++    private void doSendPacket(Packet<?> packet, @Nullable GenericFutureListener<? extends Future<? super Void>> callback, ConnectionProtocol packetState, ConnectionProtocol currentState, boolean flush) {
 +        // Paper end - add flush parameter
-         if (enumprotocol != enumprotocol1) {
-             this.setProtocol(enumprotocol);
+         if (packetState != currentState) {
+             this.setProtocol(packetState);
          }
 @@ -312,7 +358,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
  

@@ -802,7 +802,7 @@ index 84a0ee595bebcc1947c602c4c06e7437706ce37c..afbb2acd27416c801af3d718850b82a1
          if (path != null && path.canReach()) {
              BlockPos blockPos = path.getTarget();
 diff --git a/src/main/java/net/minecraft/world/entity/ai/sensing/NearestBedSensor.java b/src/main/java/net/minecraft/world/entity/ai/sensing/NearestBedSensor.java
-index e41b2fa1db6fb77a26cdb498904021b430e35be0..488d1e24b3e8f0fd8dc973d450215e4216720db3 100644
+index 0eea3e39616e40e15d1662b973c097cda3b2cee7..3ccc1421f4a5a08dadb9fe3c9fa3ac3131e6ba1e 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/sensing/NearestBedSensor.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/sensing/NearestBedSensor.java
 @@ -49,8 +49,12 @@ public class NearestBedSensor extends Sensor<Mob> {
@@ -821,7 +821,7 @@ index e41b2fa1db6fb77a26cdb498904021b430e35be0..488d1e24b3e8f0fd8dc973d450215e42
                  BlockPos blockPos = path.getTarget();
                  Optional<PoiType> optional = poiManager.getType(blockPos);
 diff --git a/src/main/java/net/minecraft/world/entity/ai/village/poi/PoiManager.java b/src/main/java/net/minecraft/world/entity/ai/village/poi/PoiManager.java
-index 7b1d2748328ffc1447bcacd1316f2c6fdbaf92b0..2b79ace854461b216dc4970d1cc4a3953a51dd50 100644
+index 4a972b26242cf4c9d7e8f655cb1264cddad5f143..8a569e3300543cb171c3befae59969628adc424c 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/village/poi/PoiManager.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/village/poi/PoiManager.java
 @@ -37,7 +37,7 @@ public class PoiManager extends SectionStorage<PoiSection> {
@@ -831,8 +831,8 @@ index 7b1d2748328ffc1447bcacd1316f2c6fdbaf92b0..2b79ace854461b216dc4970d1cc4a395
 -    private final net.minecraft.server.level.ServerLevel world; // Paper
 +    public final net.minecraft.server.level.ServerLevel world; // Paper // Paper public
  
-     public PoiManager(File directory, DataFixer dataFixer, boolean dsync, LevelHeightAccessor world) {
-         super(directory, PoiSection::codec, PoiSection::new, dataFixer, DataFixTypes.POI_CHUNK, dsync, world);
+     public PoiManager(Path path, DataFixer dataFixer, boolean dsync, LevelHeightAccessor world) {
+         super(path, PoiSection::codec, PoiSection::new, dataFixer, DataFixTypes.POI_CHUNK, dsync, world);
 @@ -100,36 +100,55 @@ public class PoiManager extends SectionStorage<PoiSection> {
      }
  
@@ -854,12 +854,12 @@ index 7b1d2748328ffc1447bcacd1316f2c6fdbaf92b0..2b79ace854461b216dc4970d1cc4a395
 +        // Paper end - re-route to faster logic
      }
  
-     public Optional<BlockPos> findClosest(Predicate<PoiType> predicate, Predicate<BlockPos> predicate2, BlockPos blockPos, int i, PoiManager.Occupancy occupancy) {
--        return this.getInRange(predicate, blockPos, i, occupancy).map(PoiRecord::getPos).filter(predicate2).min(Comparator.comparingDouble((blockPos2) -> {
--            return blockPos2.distSqr(blockPos);
+     public Optional<BlockPos> findClosest(Predicate<PoiType> typePredicate, Predicate<BlockPos> posPredicate, BlockPos pos, int radius, PoiManager.Occupancy occupationStatus) {
+-        return this.getInRange(typePredicate, pos, radius, occupationStatus).map(PoiRecord::getPos).filter(posPredicate).min(Comparator.comparingDouble((blockPos2) -> {
+-            return blockPos2.distSqr(pos);
 -        }));
 +        // Paper start - re-route to faster logic
-+        BlockPos ret = io.papermc.paper.util.PoiAccess.findClosestPoiDataPosition(this, predicate, predicate2, blockPos, i, i*i, occupancy, false);
++        BlockPos ret = io.papermc.paper.util.PoiAccess.findClosestPoiDataPosition(this, typePredicate, posPredicate, pos, radius, radius * radius, occupationStatus, false);
 +        return Optional.ofNullable(ret);
 +        // Paper end - re-route to faster logic
      }
@@ -886,8 +886,8 @@ index 7b1d2748328ffc1447bcacd1316f2c6fdbaf92b0..2b79ace854461b216dc4970d1cc4a395
      public Optional<BlockPos> getRandom(Predicate<PoiType> typePredicate, Predicate<BlockPos> positionPredicate, PoiManager.Occupancy occupationStatus, BlockPos pos, int radius, Random random) {
 -        List<PoiRecord> list = this.getInRange(typePredicate, pos, radius, occupationStatus).collect(Collectors.toList());
 -        Collections.shuffle(list, random);
--        return list.stream().filter((poiRecord) -> {
--            return positionPredicate.test(poiRecord.getPos());
+-        return list.stream().filter((poi) -> {
+-            return positionPredicate.test(poi.getPos());
 -        }).findFirst().map(PoiRecord::getPos);
 +        // Paper start - re-route to faster logic
 +        List<PoiRecord> list = new java.util.ArrayList<>();
@@ -908,7 +908,7 @@ index 7b1d2748328ffc1447bcacd1316f2c6fdbaf92b0..2b79ace854461b216dc4970d1cc4a395
  
      public boolean release(BlockPos pos) {
 diff --git a/src/main/java/net/minecraft/world/entity/ai/village/poi/PoiSection.java b/src/main/java/net/minecraft/world/entity/ai/village/poi/PoiSection.java
-index 5a86bc6f552913e2978c61233148db22e3a240f1..16f9796adcb83350e97220ba0e96bfee998f1ff4 100644
+index 63f283f32bdad02299d4a16c305a28c3bfbce9a8..de94f25792261c6c89986ad3dee3255c2a89357b 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/village/poi/PoiSection.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/village/poi/PoiSection.java
 @@ -25,7 +25,7 @@ import org.apache.logging.log4j.Logger;
@@ -921,7 +921,7 @@ index 5a86bc6f552913e2978c61233148db22e3a240f1..16f9796adcb83350e97220ba0e96bfee
      private boolean isValid;
  
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/SectionStorage.java b/src/main/java/net/minecraft/world/level/chunk/storage/SectionStorage.java
-index 90f7b06bd2c558be35c4577044fa033e1fb5cc22..e2d1149cbe75b0689c9f816b87ebb7ba0d6f56c8 100644
+index ff6cadec530dedf9efc5d6226e48a096a1073ad6..d73b99d7fde724da4503b5176c3ad7b013197c6a 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/SectionStorage.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/SectionStorage.java
 @@ -61,11 +61,11 @@ public class SectionStorage<R> extends RegionFileStorage implements AutoCloseabl
@@ -939,17 +939,19 @@ index 90f7b06bd2c558be35c4577044fa033e1fb5cc22..e2d1149cbe75b0689c9f816b87ebb7ba
              return Optional.empty();
          } else {
 diff --git a/src/main/java/net/minecraft/world/level/portal/PortalForcer.java b/src/main/java/net/minecraft/world/level/portal/PortalForcer.java
-index ca3e143e641933fa6b9499bbaaa1836877d90c52..4e3987e6233e84647d019e41ba6afe7c5d09ea80 100644
+index ed79058696eb26a89b9d4116821840dbad9ea449..d990d1652b71205816d678618bf360a60f309ad2 100644
 --- a/src/main/java/net/minecraft/world/level/portal/PortalForcer.java
 +++ b/src/main/java/net/minecraft/world/level/portal/PortalForcer.java
-@@ -52,16 +52,37 @@ public class PortalForcer {
+@@ -51,18 +51,40 @@ public class PortalForcer {
          // int i = flag ? 16 : 128;
          // CraftBukkit end
  
 -        villageplace.ensureLoadedAndValid(this.level, blockposition, i);
 -        Optional<PoiRecord> optional = villageplace.getInSquare((villageplacetype) -> {
 -            return villageplacetype == PoiType.NETHER_PORTAL;
--        }, blockposition, i, PoiManager.Occupancy.ANY).sorted(Comparator.comparingDouble((PoiRecord villageplacerecord) -> { // CraftBukkit - decompile error
+-        }, blockposition, i, PoiManager.Occupancy.ANY).filter((villageplacerecord) -> {
+-            return worldborder.isWithinBounds(villageplacerecord.getPos());
+-        }).sorted(Comparator.comparingDouble((PoiRecord villageplacerecord) -> { // CraftBukkit - decompile error
 -            return villageplacerecord.getPos().distSqr(blockposition);
 -        }).thenComparingInt((villageplacerecord) -> {
 -            return villageplacerecord.getPos().getY();
@@ -968,6 +970,9 @@ index ca3e143e641933fa6b9499bbaaa1836877d90c52..4e3987e6233e84647d019e41ba6afe7c
 +                net.minecraft.world.level.chunk.ChunkAccess lowest = this.level.getChunk(pos.getX() >> 4, pos.getZ() >> 4, net.minecraft.world.level.chunk.ChunkStatus.EMPTY);
 +                if (!lowest.getStatus().isOrAfter(net.minecraft.world.level.chunk.ChunkStatus.FULL)) {
 +                    // why would we generate the chunk?
++                    return false;
++                }
++                if (!worldborder.isWithinBounds(pos)) {
 +                    return false;
 +                }
 +                return lowest.getBlockState(pos).hasProperty(BlockStateProperties.HORIZONTAL_AXIS);
