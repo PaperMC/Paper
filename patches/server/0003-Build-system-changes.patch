@@ -5,7 +5,7 @@ Subject: [PATCH] Build system changes
 
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index 9778c18a2822b00d48134583de87ea281623427d..3d10012abdc43d4cf29f53a2271434991da798be 100644
+index 9778c18a2822b00d48134583de87ea281623427d..a5494ea5ee3354bae16dab1b5a910ddce4e02def 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
 @@ -14,10 +14,9 @@ repositories {
@@ -38,25 +38,6 @@ index 9778c18a2822b00d48134583de87ea281623427d..3d10012abdc43d4cf29f53a227143499
          )
          for (tld in setOf("net", "com", "org")) {
              attributes("$tld/bukkit", "Sealed" to true)
-@@ -74,10 +76,18 @@ relocation {
-     }
- }
- 
-+val generatePom = tasks.named<GenerateMavenPom>("generatePomFileForMavenPublication")
-+
- tasks.shadowJar {
-     configurations = listOf(project.configurations.vanillaServer.get())
-     archiveClassifier.set("mojang-mapped")
- 
-+    // Needed for Paperclip's install to maven local feature // todo: are we keeping this? if so is this still correct?
-+    from(generatePom) {
-+        into("META-INF/maven/io.papermc.paper/paper")
-+        rename { "pom.xml" }
-+    }
-+
-     for (relocation in relocation.relocations.get()) {
-         relocate(relocation.fromPackage, relocation.toPackage) {
-             for (exclude in relocation.excludes) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/Main.java b/src/main/java/org/bukkit/craftbukkit/Main.java
 index 189c262b22cad352fc87565ff499a5340d92b4e4..09c33e8613d31f4519109f29b44cfea754184c3f 100644
 --- a/src/main/java/org/bukkit/craftbukkit/Main.java
