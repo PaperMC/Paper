@@ -6,10 +6,10 @@ Subject: [PATCH] Configurable feature seeds
 Co-authored-by: Thonk <30448663+ExcessiveAmountsOfZombies@users.noreply.github.com>
 
 diff --git a/src/main/java/co/aikar/timings/TimingsExport.java b/src/main/java/co/aikar/timings/TimingsExport.java
-index 7d44abcb4fff9717a1af55879deb7eb9c2d9e7e9..e29b0a90019b12bd6586ad0f7b5314f307e527ba 100644
+index ee53453440177537fc653ea156785d7591498614..5e3b7fb2e0b7608610555cd23e7ad25a05883181 100644
 --- a/src/main/java/co/aikar/timings/TimingsExport.java
 +++ b/src/main/java/co/aikar/timings/TimingsExport.java
-@@ -274,7 +274,7 @@ public class TimingsExport extends Thread {
+@@ -273,7 +273,7 @@ public class TimingsExport extends Thread {
          JSONObject object = new JSONObject();
          for (String key : config.getKeys(false)) {
              String fullKey = (parentKey != null ? parentKey + "." + key : key);
@@ -19,10 +19,10 @@ index 7d44abcb4fff9717a1af55879deb7eb9c2d9e7e9..e29b0a90019b12bd6586ad0f7b5314f3
              }
              final Object val = config.get(key);
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index 9a99211e183958c0327e69457efaeb87fc617964..f1b1e0455806443cd55c350f9b4f74ef8f3a1158 100644
+index e5543b3a261f80bd9b0346d595a62b5458d9b229..45abadeb2568566b3646004d03e7ba8c1766c18a 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-@@ -975,6 +975,55 @@ public class PaperWorldConfig {
+@@ -898,6 +898,55 @@ public class PaperWorldConfig {
          return table;
      }
  
@@ -78,34 +78,33 @@ index 9a99211e183958c0327e69457efaeb87fc617964..f1b1e0455806443cd55c350f9b4f74ef
      public int getBehaviorTickRate(String typeName, String entityType, int def) {
          return getIntOrDefault(behaviorTickRates, typeName, entityType, def);
      }
-diff --git a/src/main/java/net/minecraft/world/level/biome/Biome.java b/src/main/java/net/minecraft/world/level/biome/Biome.java
-index a7a7e6cd87270e64a92448f03f8b0b0c7e375ec7..2b814006fa30dd233dcb345d1d20ce3bf6469053 100644
---- a/src/main/java/net/minecraft/world/level/biome/Biome.java
-+++ b/src/main/java/net/minecraft/world/level/biome/Biome.java
-@@ -221,7 +221,7 @@ public final class Biome {
+diff --git a/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java b/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java
+index e2b7da265e9616ac47e6be72cc6e6d2c75cfec44..f8a2aa31e38f64f88a82d5a388b58f1962d5fda0 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java
++++ b/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java
+@@ -278,7 +278,7 @@ public abstract class ChunkGenerator implements BiomeManager.NoiseBiomeSource {
  
-     public void generate(StructureFeatureManager structureAccessor, ChunkGenerator chunkGenerator, WorldGenRegion region, long populationSeed, WorldgenRandom random, BlockPos origin) {
-         List<List<Supplier<ConfiguredFeature<?, ?>>>> list = this.generationSettings.features();
--        Registry<ConfiguredFeature<?, ?>> registry = region.registryAccess().registryOrThrow(Registry.CONFIGURED_FEATURE_REGISTRY);
-+        Registry<ConfiguredFeature<?, ?>> registry = region.registryAccess().registryOrThrow(Registry.CONFIGURED_FEATURE_REGISTRY); // Paper - diff on change
-         Registry<StructureFeature<?>> registry2 = region.registryAccess().registryOrThrow(Registry.STRUCTURE_FEATURE_REGISTRY);
-         int i = GenerationStep.Decoration.values().length;
+             try {
+                 Registry<PlacedFeature> iregistry = generatoraccessseed.registryAccess().registryOrThrow(Registry.PLACED_FEATURE_REGISTRY);
+-                Registry<StructureFeature<?>> iregistry1 = generatoraccessseed.registryAccess().registryOrThrow(Registry.STRUCTURE_FEATURE_REGISTRY);
++                Registry<StructureFeature<?>> iregistry1 = generatoraccessseed.registryAccess().registryOrThrow(Registry.STRUCTURE_FEATURE_REGISTRY); // Paper - diff on change
+                 int k = Math.max(GenerationStep.Decoration.values().length, j);
  
-@@ -263,7 +263,16 @@ public final class Biome {
-                     Supplier<String> supplier3 = () -> {
-                         return registry.getResourceKey(configuredFeature).map(Object::toString).orElseGet(configuredFeature::toString);
-                     };
--                    random.setFeatureSeed(populationSeed, k, j);
-+                    // Paper start - change populationSeed used in random
-+                    long featurePopulationSeed = populationSeed;
-+                    final ResourceLocation location = registry.getKey(configuredFeature);
-+                    final long configFeatureSeed = region.getMinecraftWorld().paperConfig.featureSeeds.getLong(location);
-+                    if (configFeatureSeed != -1) {
-+                        final ChunkPos center = region.getCenter();
-+                        featurePopulationSeed = random.setDecorationSeed(configFeatureSeed, center.getMinBlockX(), center.getMinBlockZ()); // See ChunkGenerator#addVanillaDecorations
-+                    }
-+                    random.setFeatureSeed(featurePopulationSeed, k, j);
-+                    // Paper end
+                 for (int l = 0; l < k; ++l) {
+@@ -292,7 +292,15 @@ public abstract class ChunkGenerator implements BiomeManager.NoiseBiomeSource {
+                         for (iterator = list1.iterator(); iterator.hasNext(); ++i1) {
+                             StructureFeature<?> structuregenerator = (StructureFeature) iterator.next();
  
-                     try {
-                         region.setCurrentlyGenerating(supplier3);
+-                            seededrandom.setFeatureSeed(i, i1, l);
++                            // Paper start - change populationSeed used in random
++                            long featurePopulationSeed = i;
++                            final net.minecraft.resources.ResourceLocation location = iregistry1.getKey(structuregenerator);
++                            final long configFeatureSeed = generatoraccessseed.getMinecraftWorld().paperConfig.featureSeeds.getLong(location);
++                            if (configFeatureSeed != -1) {
++                                featurePopulationSeed = seededrandom.setDecorationSeed(configFeatureSeed, blockposition.getX(), blockposition.getZ()); // See seededrandom.setDecorationSeed from above
++                            }
++                            seededrandom.setFeatureSeed(featurePopulationSeed, i1, l);;
++                            // Paper end
+                             Supplier<String> supplier = () -> { // CraftBukkit - decompile error
+                                 Optional optional = iregistry1.getResourceKey(structuregenerator).map(Object::toString);
+ 
