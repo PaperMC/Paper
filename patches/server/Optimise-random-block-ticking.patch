@@ -114,7 +114,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            // Paper end
              Biome biomebase = this.getBiome(blockposition);
  
--            if (biomebase.shouldFreeze((LevelReader) this, blockposition1)) {
+-            if (biomebase.shouldFreeze(this, blockposition1)) {
 -                org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockFormEvent(this, blockposition1, Blocks.ICE.defaultBlockState(), null); // CraftBukkit
 +            // Paper start - optimise chunk ticking
 +            blockposition.setY(downY);
@@ -135,14 +135,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                blockposition.setY(normalY); // Paper
                  Biome.Precipitation biomebase_precipitation = this.getBiome(blockposition).getPrecipitation();
  
--                if (biomebase_precipitation == Biome.Precipitation.RAIN && biomebase.isColdEnoughToSnow(blockposition1)) {
+-                if (biomebase_precipitation == Biome.Precipitation.RAIN && biomebase.coldEnoughToSnow(blockposition1)) {
 +                blockposition.setY(downY); // Paper
-+                if (biomebase_precipitation == Biome.Precipitation.RAIN && biomebase.isColdEnoughToSnow(blockposition)) { // Paper
++                if (biomebase_precipitation == Biome.Precipitation.RAIN && biomebase.coldEnoughToSnow(blockposition)) { // Paper
                      biomebase_precipitation = Biome.Precipitation.SNOW;
                  }
  
--                iblockdata.getBlock().handlePrecipitation(iblockdata, (Level) this, blockposition1, biomebase_precipitation);
-+                iblockdata.getBlock().handlePrecipitation(iblockdata, (Level) this, blockposition, biomebase_precipitation); // Paper
+-                iblockdata.getBlock().handlePrecipitation(iblockdata, this, blockposition1, biomebase_precipitation);
++                iblockdata.getBlock().handlePrecipitation(iblockdata, this, blockposition, biomebase_precipitation); // Paper
              }
          }
  
@@ -157,7 +157,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -            for (int i1 = 0; i1 < l; ++i1) {
 -                LevelChunkSection chunksection = achunksection[i1];
 -
--                if (chunksection != LevelChunk.EMPTY_SECTION && chunksection.isRandomlyTicking()) {
+-                if (chunksection.isRandomlyTicking()) {
 -                    int j1 = chunksection.bottomBlockY();
 -
 -                    for (int k1 = 0; k1 < randomTickSpeed; ++k1) {
@@ -214,12 +214,32 @@ diff --git a/src/main/java/net/minecraft/util/BitStorage.java b/src/main/java/ne
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/util/BitStorage.java
 +++ b/src/main/java/net/minecraft/util/BitStorage.java
-@@ -0,0 +0,0 @@ public class BitStorage {
-         }
+@@ -0,0 +0,0 @@ public interface BitStorage {
+     void unpack(int[] is);
  
-     }
+     BitStorage copy();
 +
 +    // Paper start
++    void forEach(DataBitConsumer consumer);
++
++    @FunctionalInterface
++    interface DataBitConsumer {
++
++        void accept(int location, int data);
++
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/net/minecraft/util/SimpleBitStorage.java b/src/main/java/net/minecraft/util/SimpleBitStorage.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/util/SimpleBitStorage.java
++++ b/src/main/java/net/minecraft/util/SimpleBitStorage.java
+@@ -0,0 +0,0 @@ public class SimpleBitStorage implements BitStorage {
+         return this.bits;
+     }
+ 
++    // Paper start
++    @Override
 +    public final void forEach(DataBitConsumer consumer) {
 +        int i = 0;
 +        long[] along = this.data;
@@ -238,15 +258,31 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            }
 +        }
 +    }
++    // Paper end
 +
-+    @FunctionalInterface
-+    public static interface DataBitConsumer {
-+
-+        void accept(int location, int data);
-+
+     @Override
+     public void getAll(IntConsumer action) {
+         int i = 0;
+diff --git a/src/main/java/net/minecraft/util/ZeroBitStorage.java b/src/main/java/net/minecraft/util/ZeroBitStorage.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/util/ZeroBitStorage.java
++++ b/src/main/java/net/minecraft/util/ZeroBitStorage.java
+@@ -0,0 +0,0 @@ public class ZeroBitStorage implements BitStorage {
+         return 0;
+     }
+ 
++    // Paper start
++    @Override
++    public void forEach(DataBitConsumer consumer) {
++        for(int i = 0; i < this.size; ++i) {
++            consumer.accept(i, 0);
++        }
 +    }
 +    // Paper end
- }
++
+     @Override
+     public void getAll(IntConsumer action) {
+         for(int i = 0; i < this.size; ++i) {
 diff --git a/src/main/java/net/minecraft/world/entity/animal/Turtle.java b/src/main/java/net/minecraft/world/entity/animal/Turtle.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/animal/Turtle.java
@@ -289,16 +325,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/world/level/chunk/LevelChunkSection.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/LevelChunkSection.java
 @@ -0,0 +0,0 @@ public class LevelChunkSection {
-     private short tickingBlockCount;
      private short tickingFluidCount;
-     public final PalettedContainer<BlockState> states; // Paper - package-private // Paper - public
+     public final PalettedContainer<BlockState> states;
+     private final PalettedContainer<Biome> biomes;
 +    public final com.destroystokyo.paper.util.maplist.IBlockDataList tickingList = new com.destroystokyo.paper.util.maplist.IBlockDataList(); // Paper
  
-     // Paper start - Anti-Xray - Add parameters
-     @Deprecated public LevelChunkSection(int yOffset) { this(yOffset, null, null, true); } // Notice for updates: Please make sure this constructor isn't used anywhere
+     public LevelChunkSection(int chunkPos, PalettedContainer<BlockState> blockStateContainer, PalettedContainer<Biome> biomeContainer) {
+         this.bottomBlockY = LevelChunkSection.getBottomBlockY(chunkPos);
 @@ -0,0 +0,0 @@ public class LevelChunkSection {
              --this.nonEmptyBlockCount;
-             if (blockState.isRandomlyTicking()) {
+             if (iblockdata1.isRandomlyTicking()) {
                  --this.tickingBlockCount;
 +                // Paper start
 +                this.tickingList.remove(x, y, z);
@@ -326,27 +362,28 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          this.nonEmptyBlockCount = 0;
          this.tickingBlockCount = 0;
          this.tickingFluidCount = 0;
--        this.states.count((state, count) -> {
-+        this.states.forEachLocation((state, location) -> { // Paper
-             FluidState fluidState = state.getFluidState();
-             if (!state.isAir()) {
--                this.nonEmptyBlockCount = (short)(this.nonEmptyBlockCount + count);
-+                this.nonEmptyBlockCount = (short)(this.nonEmptyBlockCount + 1); // Paper
-                 if (state.isRandomlyTicking()) {
--                    this.tickingBlockCount = (short)(this.tickingBlockCount + count);
+-        this.states.count((iblockdata, i) -> {
++        this.states.forEachLocation((iblockdata, i) -> { // Paper
+             FluidState fluid = iblockdata.getFluidState();
+ 
+             if (!iblockdata.isAir()) {
+-                this.nonEmptyBlockCount = (short) (this.nonEmptyBlockCount + i);
++                this.nonEmptyBlockCount = (short) (this.nonEmptyBlockCount + 1); // Paper
+                 if (iblockdata.isRandomlyTicking()) {
+-                    this.tickingBlockCount = (short) (this.tickingBlockCount + i);
 +                    // Paper start
 +                    this.tickingBlockCount = (short)(this.tickingBlockCount + 1);
-+                    this.tickingList.add(location, state);
++                    this.tickingList.add(i, iblockdata);
 +                    // Paper end
                  }
              }
  
-             if (!fluidState.isEmpty()) {
--                this.nonEmptyBlockCount = (short)(this.nonEmptyBlockCount + count);
-+                this.nonEmptyBlockCount = (short)(this.nonEmptyBlockCount + 1); // Paper
-                 if (fluidState.isRandomlyTicking()) {
--                    this.tickingFluidCount = (short)(this.tickingFluidCount + count);
-+                    this.tickingFluidCount = (short)(this.tickingFluidCount + 1); // Paper
+             if (!fluid.isEmpty()) {
+-                this.nonEmptyBlockCount = (short) (this.nonEmptyBlockCount + i);
++                this.nonEmptyBlockCount = (short) (this.nonEmptyBlockCount + 1); // Paper
+                 if (fluid.isRandomlyTicking()) {
+-                    this.tickingFluidCount = (short) (this.tickingFluidCount + i);
++                    this.tickingFluidCount = (short) (this.tickingFluidCount + 1); // Paper
                  }
              }
  
@@ -355,15 +392,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/world/level/chunk/PalettedContainer.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/PalettedContainer.java
 @@ -0,0 +0,0 @@ public class PalettedContainer<T> implements PaletteResize<T> {
+         }
+     }
+ 
++    // Paper start
++    public void forEachLocation(PalettedContainer.CountConsumer<T> consumer) {
++        this.data.storage.forEach((int location, int data) -> {
++            consumer.accept(this.data.palette.valueFor(data), location);
++        });
++    }
++    // Paper end
++
+     @FunctionalInterface
      public interface CountConsumer<T> {
          void accept(T object, int count);
-     }
-+
-+    // Paper start
-+   public void forEachLocation(PalettedContainer.CountConsumer<T> datapaletteblock_a) {
-+       this.storage.forEach((int location, int data) -> {
-+           datapaletteblock_a.accept(this.palette.valueFor(data), location);
-+       });
-+   }
-+    // Paper end
- }
