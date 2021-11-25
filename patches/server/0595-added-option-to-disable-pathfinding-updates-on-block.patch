@@ -1,0 +1,42 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: lukas81298 <lukas81298@gommehd.net>
+Date: Mon, 25 Jan 2021 14:37:57 +0100
+Subject: [PATCH] added option to disable pathfinding updates on block changes
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 686a649b23e81c36ae392c79c736eafe22be0c54..168dd88fd1fabff8e63e6429e989dabe2c40cbfa 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -711,6 +711,11 @@ public class PaperWorldConfig {
+         enderDragonsDeathAlwaysPlacesDragonEgg = getBoolean("ender-dragons-death-always-places-dragon-egg", enderDragonsDeathAlwaysPlacesDragonEgg);
+     }
+ 
++    public boolean updatePathfindingOnBlockUpdate = true;
++    private void setUpdatePathfindingOnBlockUpdate() {
++        updatePathfindingOnBlockUpdate = getBoolean("update-pathfinding-on-block-update", this.updatePathfindingOnBlockUpdate);
++    }
++
+     public boolean phantomIgnoreCreative = true;
+     public boolean phantomOnlyAttackInsomniacs = true;
+     private void phantomSettings() {
+diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
+index bfedc4aab1a991d0cffca8e7a816c87c81c6f8d9..3a776dc937d5ea08f5f7343799b00a67af197d2f 100644
+--- a/src/main/java/net/minecraft/server/level/ServerLevel.java
++++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
+@@ -1360,6 +1360,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
+     @Override
+     public void sendBlockUpdated(BlockPos pos, BlockState oldState, BlockState newState, int flags) {
+         this.getChunkSource().blockChanged(pos);
++        if(this.paperConfig.updatePathfindingOnBlockUpdate) { // Paper - option to disable pathfinding updates
+         VoxelShape voxelshape = oldState.getCollisionShape(this, pos);
+         VoxelShape voxelshape1 = newState.getCollisionShape(this, pos);
+ 
+@@ -1387,6 +1388,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
+             }
+ 
+         }
++        } // Paper
+     }
+ 
+     @Override
