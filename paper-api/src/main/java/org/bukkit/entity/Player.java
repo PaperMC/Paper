@@ -1309,6 +1309,14 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
     public void openBook(@NotNull ItemStack book);
 
     /**
+     * Shows the demo screen to the player, this screen is normally only seen in
+     * the demo version of the game.
+     * <br>
+     * Servers can modify the text on this screen using a resource pack.
+     */
+    public void showDemoScreen();
+
+    /**
      * Gets whether the player has the "Allow Server Listings" setting enabled.
      *
      * @return whether the player allows server listings
