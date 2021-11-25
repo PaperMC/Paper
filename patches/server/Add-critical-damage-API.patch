@@ -28,39 +28,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      public static DamageSource sting(LivingEntity attacker) {
          return new EntityDamageSource("sting", attacker);
-diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
-+++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-@@ -0,0 +0,0 @@ public abstract class LivingEntity extends Entity {
-         return this.hasEffect(MobEffects.JUMP) ? (double) (0.1F * (float) (this.getEffect(MobEffects.JUMP).getAmplifier() + 1)) : 0.0D;
-     }
- 
-+    protected long lastJumpTime = 0L; // Paper - add critical damage API
-     protected void jumpFromGround() {
-         double d0 = (double) this.getJumpPower() + this.getJumpBoostPower();
-         Vec3 vec3d = this.getDeltaMovement();
-+        // Paper start - add critical damage API
-+        long time = System.nanoTime();
-+        boolean canCrit = true;
-+        if (this instanceof net.minecraft.world.entity.player.Player) {
-+            canCrit = false;
-+            if (time - this.lastJumpTime > (long)(0.250e9)) {
-+                this.lastJumpTime = time;
-+                canCrit = true;
-+            }
-+        }
-+        // Paper end - add critical damage API
- 
-         this.setDeltaMovement(vec3d.x, d0, vec3d.z);
-         if (this.isSprinting()) {
-             float f = this.getYRot() * 0.017453292F;
- 
--            this.setDeltaMovement(this.getDeltaMovement().add((double) (-Mth.sin(f) * 0.2F), 0.0D, (double) (Mth.cos(f) * 0.2F)));
-+            if (canCrit) this.setDeltaMovement(this.getDeltaMovement().add((double) (-Mth.sin(f) * 0.2F), 0.0D, (double) (Mth.cos(f) * 0.2F))); // Paper - add critical damage API
-         }
- 
-         this.hasImpulse = true;
 diff --git a/src/main/java/net/minecraft/world/entity/player/Player.java b/src/main/java/net/minecraft/world/entity/player/Player.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/player/Player.java

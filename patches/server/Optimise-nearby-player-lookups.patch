@@ -13,9 +13,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/level/ChunkHolder.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkHolder.java
 @@ -0,0 +0,0 @@ public class ChunkHolder {
-         this.setTicketLevel(level);
-         this.changedBlocksPerSection = new ShortSet[world.getSectionsCount()];
-         this.chunkMap = (ChunkMap)playersWatchingChunkProvider; // Paper
+         long key = net.minecraft.server.MCUtil.getCoordinateKey(this.pos);
+         this.playersInMobSpawnRange = this.chunkMap.playerMobSpawnMap.getObjectsInRange(key);
+         this.playersInChunkTickRange = this.chunkMap.playerChunkTickRangeMap.getObjectsInRange(key);
 +        // Paper start - optimise checkDespawn
 +        LevelChunk chunk = this.getFullChunkUnchecked();
 +        if (chunk != null) {
@@ -23,53 +23,57 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +        // Paper end - optimise checkDespawn
      }
+     // Paper end - optimise isOutsideOfRange
  
-     // CraftBukkit start
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
 @@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
-     final CallbackExecutor chunkLoadConversionCallbackExecutor = new CallbackExecutor(); // Paper
-     // Paper start - distance maps
-     private final com.destroystokyo.paper.util.misc.PooledLinkedHashSets<ServerPlayer> pooledLinkedPlayerHashSets = new com.destroystokyo.paper.util.misc.PooledLinkedHashSets<>();
+     int viewDistance;
+     public final com.destroystokyo.paper.util.PlayerMobDistanceMap playerMobDistanceMap; // Paper
+ 
 +    // Paper start - optimise checkDespawn
 +    public static final int GENERAL_AREA_MAP_SQUARE_RADIUS = 40;
 +    public static final double GENERAL_AREA_MAP_ACCEPTABLE_SEARCH_RANGE = 16.0 * (GENERAL_AREA_MAP_SQUARE_RADIUS - 1);
 +    public static final double GENERAL_AREA_MAP_ACCEPTABLE_SEARCH_RANGE_SQUARED = GENERAL_AREA_MAP_ACCEPTABLE_SEARCH_RANGE * GENERAL_AREA_MAP_ACCEPTABLE_SEARCH_RANGE;
 +    public final com.destroystokyo.paper.util.misc.PlayerAreaMap playerGeneralAreaMap;
 +    // Paper end - optimise checkDespawn
- 
-     void addPlayerToDistanceMaps(ServerPlayer player) {
-         int chunkX = MCUtil.getChunkCoordinate(player.getX());
-         int chunkZ = MCUtil.getChunkCoordinate(player.getZ());
-         // Note: players need to be explicitly added to distance maps before they can be updated
-+        // Paper start - optimise checkDespawn
-+        this.playerGeneralAreaMap.add(player, chunkX, chunkZ, GENERAL_AREA_MAP_SQUARE_RADIUS);
-+        // Paper end - optimise checkDespawn
++
+     // CraftBukkit start - recursion-safe executor for Chunk loadCallback() and unloadCallback()
+     public final CallbackExecutor callbackExecutor = new CallbackExecutor();
+     public static final class CallbackExecutor implements java.util.concurrent.Executor, Runnable {
+@@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+         this.playerChunkTickRangeMap.update(player, chunkX, chunkZ, DistanceManager.MOB_SPAWN_RANGE);
+         this.playerChunkTickRangeMap.add(player, chunkX, chunkZ, DistanceManager.MOB_SPAWN_RANGE);
+         // Paper end - optimise PlayerChunkMap#isOutsideRange
++        this.playerGeneralAreaMap.add(player, chunkX, chunkZ, GENERAL_AREA_MAP_SQUARE_RADIUS); // Paper - optimise checkDespawn
      }
  
      void removePlayerFromDistanceMaps(ServerPlayer player) {
- 
-+        // Paper start - optimise checkDespawn
-+        this.playerGeneralAreaMap.remove(player);
-+        // Paper end - optimise checkDespawn
+@@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+         this.playerMobSpawnMap.remove(player);
+         this.playerChunkTickRangeMap.remove(player);
+         // Paper end - optimise PlayerChunkMap#isOutsideRange
++        this.playerGeneralAreaMap.remove(player); // Paper - optimise checkDespawns
      }
  
      void updateMaps(ServerPlayer player) {
-         int chunkX = MCUtil.getChunkCoordinate(player.getX());
-         int chunkZ = MCUtil.getChunkCoordinate(player.getZ());
-         // Note: players need to be explicitly added to distance maps before they can be updated
-+        // Paper start - optimise checkDespawn
-+        this.playerGeneralAreaMap.update(player, chunkX, chunkZ, GENERAL_AREA_MAP_SQUARE_RADIUS);
-+        // Paper end - optimise checkDespawn
+@@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+ 
+             trackMap.update(player, chunkX, chunkZ, Math.min(trackRange, this.getEffectiveViewDistance()));
+         }
+-        // Paper end - use distance map to optimise entity tracker
++        // Paper end - use distance map to optimise entity trackerD
+         this.playerChunkTickRangeMap.update(player, chunkX, chunkZ, DistanceManager.MOB_SPAWN_RANGE); // Paper - optimise PlayerChunkMap#isOutsideRange
++        this.playerGeneralAreaMap.update(player, chunkX, chunkZ, GENERAL_AREA_MAP_SQUARE_RADIUS); // Paper - optimise checkDespawn
      }
      // Paper end
      // Paper start
 @@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
-         this.regionManagers.add(this.dataRegionManager);
-         // Paper end
-         this.playerMobDistanceMap = this.level.paperConfig.perPlayerMobSpawns ? new com.destroystokyo.paper.util.PlayerMobDistanceMap() : null; // Paper
+                 }
+             });
+         // Paper end - optimise PlayerChunkMap#isOutsideRange
 +        // Paper start - optimise checkDespawn
 +        this.playerGeneralAreaMap = new com.destroystokyo.paper.util.misc.PlayerAreaMap(this.pooledLinkedPlayerHashSets,
 +            (ServerPlayer player, int rangeX, int rangeZ, int currPosX, int currPosZ, int prevPosX, int prevPosZ,
