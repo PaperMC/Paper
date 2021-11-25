@@ -45,6 +45,7 @@ import net.minecraft.network.protocol.game.PacketPlayOutCustomPayload;
 import net.minecraft.network.protocol.game.PacketPlayOutCustomSoundEffect;
 import net.minecraft.network.protocol.game.PacketPlayOutEntityEquipment;
 import net.minecraft.network.protocol.game.PacketPlayOutExperience;
+import net.minecraft.network.protocol.game.PacketPlayOutGameStateChange;
 import net.minecraft.network.protocol.game.PacketPlayOutMap;
 import net.minecraft.network.protocol.game.PacketPlayOutNamedSoundEffect;
 import net.minecraft.network.protocol.game.PacketPlayOutPlayerInfo;
@@ -1719,6 +1720,13 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         getInventory().setItemInMainHand(book);
         getHandle().openItemGui(org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(book), net.minecraft.world.EnumHand.MAIN_HAND);
         getInventory().setItemInMainHand(hand);
+    }
+
+    @Override
+    public void showDemoScreen() {
+        if (getHandle().connection == null) return;
+
+        getHandle().connection.send(new PacketPlayOutGameStateChange(PacketPlayOutGameStateChange.DEMO_EVENT, PacketPlayOutGameStateChange.DEMO_PARAM_INTRO));
     }
 
     @Override
