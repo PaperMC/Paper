@@ -5,17 +5,17 @@ Subject: [PATCH] Remove streams for villager AI
 
 
 diff --git a/src/main/java/net/minecraft/world/entity/ai/behavior/GateBehavior.java b/src/main/java/net/minecraft/world/entity/ai/behavior/GateBehavior.java
-index 09998d160a6d79fdb5a5041a5d572649a1532e6a..84bd9298840ba60abbdb0675cda0458e0d6a534a 100644
+index e644bdd3a6f7c09a44149da03587b796674fa568..c67c448e0d8bdd788b94189651304110694c95da 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/behavior/GateBehavior.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/behavior/GateBehavior.java
 @@ -30,11 +30,19 @@ public class GateBehavior<E extends LivingEntity> extends Behavior<E> {
  
      @Override
      protected boolean canStillUse(ServerLevel world, E entity, long time) {
--        return this.behaviors.stream().filter((behavior) -> {
--            return behavior.getStatus() == Behavior.Status.RUNNING;
--        }).anyMatch((behavior) -> {
--            return behavior.canStillUse(world, entity, time);
+-        return this.behaviors.stream().filter((task) -> {
+-            return task.getStatus() == Behavior.Status.RUNNING;
+-        }).anyMatch((task) -> {
+-            return task.canStillUse(world, entity, time);
 -        });
 +        // Paper start - remove streams
 +        List<ShufflingList.WeightedEntry<Behavior<? super E>>> entries = this.behaviors.entries;
@@ -43,10 +43,10 @@ index 09998d160a6d79fdb5a5041a5d572649a1532e6a..84bd9298840ba60abbdb0675cda0458e
  
      @Override
      protected void tick(ServerLevel world, E entity, long time) {
--        this.behaviors.stream().filter((behavior) -> {
--            return behavior.getStatus() == Behavior.Status.RUNNING;
--        }).forEach((behavior) -> {
--            behavior.tickOrStop(world, entity, time);
+-        this.behaviors.stream().filter((task) -> {
+-            return task.getStatus() == Behavior.Status.RUNNING;
+-        }).forEach((task) -> {
+-            task.tickOrStop(world, entity, time);
 -        });
 +        // Paper start - remove streams
 +        List<ShufflingList.WeightedEntry<Behavior<? super E>>> entries = this.behaviors.entries;
@@ -62,10 +62,10 @@ index 09998d160a6d79fdb5a5041a5d572649a1532e6a..84bd9298840ba60abbdb0675cda0458e
  
      @Override
      protected void stop(ServerLevel world, E entity, long time) {
--        this.behaviors.stream().filter((behavior) -> {
--            return behavior.getStatus() == Behavior.Status.RUNNING;
--        }).forEach((behavior) -> {
--            behavior.doStop(world, entity, time);
+-        this.behaviors.stream().filter((task) -> {
+-            return task.getStatus() == Behavior.Status.RUNNING;
+-        }).forEach((task) -> {
+-            task.doStop(world, entity, time);
 -        });
 +        // Paper start - remove streams
 +        List<ShufflingList.WeightedEntry<Behavior<? super E>>> entries = this.behaviors.entries;
@@ -85,10 +85,10 @@ index 09998d160a6d79fdb5a5041a5d572649a1532e6a..84bd9298840ba60abbdb0675cda0458e
          RUN_ONE {
              @Override
 -            public <E extends LivingEntity> void apply(Stream<Behavior<? super E>> tasks, ServerLevel world, E entity, long time) {
--                tasks.filter((behavior) -> {
--                    return behavior.getStatus() == Behavior.Status.STOPPED;
--                }).filter((behavior) -> {
--                    return behavior.tryStart(world, entity, time);
+-                tasks.filter((task) -> {
+-                    return task.getStatus() == Behavior.Status.STOPPED;
+-                }).filter((task) -> {
+-                    return task.tryStart(world, entity, time);
 -                }).findFirst();
 +            // Paper start - remove streams
 +            public <E extends LivingEntity> void apply(List<ShufflingList.WeightedEntry<Behavior<? super E>>> tasks, ServerLevel world, E entity, long time) {
@@ -105,10 +105,10 @@ index 09998d160a6d79fdb5a5041a5d572649a1532e6a..84bd9298840ba60abbdb0675cda0458e
          TRY_ALL {
              @Override
 -            public <E extends LivingEntity> void apply(Stream<Behavior<? super E>> tasks, ServerLevel world, E entity, long time) {
--                tasks.filter((behavior) -> {
--                    return behavior.getStatus() == Behavior.Status.STOPPED;
--                }).forEach((behavior) -> {
--                    behavior.tryStart(world, entity, time);
+-                tasks.filter((task) -> {
+-                    return task.getStatus() == Behavior.Status.STOPPED;
+-                }).forEach((task) -> {
+-                    task.tryStart(world, entity, time);
 -                });
 +            // Paper start - remove streams
 +            public <E extends LivingEntity> void apply(List<ShufflingList.WeightedEntry<Behavior<? super E>>> tasks, ServerLevel world, E entity, long time) {
@@ -127,64 +127,8 @@ index 09998d160a6d79fdb5a5041a5d572649a1532e6a..84bd9298840ba60abbdb0675cda0458e
 +        public abstract <E extends LivingEntity> void apply(List<ShufflingList.WeightedEntry<Behavior<? super E>>> tasks, ServerLevel world, E entity, long time); // Paper - remove streams
      }
  }
-diff --git a/src/main/java/net/minecraft/world/entity/ai/behavior/SetLookAndInteract.java b/src/main/java/net/minecraft/world/entity/ai/behavior/SetLookAndInteract.java
-index 1f59e790d62f0be8e505e339a6699ca3964aea0d..ee783bb7cbec2f58549cb95fde7cbc4c47efa1cb 100644
---- a/src/main/java/net/minecraft/world/entity/ai/behavior/SetLookAndInteract.java
-+++ b/src/main/java/net/minecraft/world/entity/ai/behavior/SetLookAndInteract.java
-@@ -34,21 +34,42 @@ public class SetLookAndInteract extends Behavior<LivingEntity> {
- 
-     @Override
-     public boolean checkExtraStartConditions(ServerLevel world, LivingEntity entity) {
--        return this.selfFilter.test(entity) && this.getVisibleEntities(entity).stream().anyMatch(this::isMatchingTarget);
-+        // Paper start - remove streams
-+        if (!this.selfFilter.test(entity)) {
-+            return false;
-+        }
-+
-+        List<LivingEntity> visibleEntities = this.getVisibleEntities(entity);
-+        for (int i = 0; i < visibleEntities.size(); i++) {
-+            LivingEntity livingEntity = visibleEntities.get(i);
-+            if (this.isMatchingTarget(livingEntity)) {
-+                return true;
-+            }
-+        }
-+        return false;
-+        // Paper end - remove streams
-     }
- 
-     @Override
-     public void start(ServerLevel world, LivingEntity entity, long time) {
-         super.start(world, entity, time);
-         Brain<?> brain = entity.getBrain();
--        brain.getMemory(MemoryModuleType.NEAREST_VISIBLE_LIVING_ENTITIES).ifPresent((list) -> {
--            list.stream().filter((livingEntity2) -> {
--                return livingEntity2.distanceToSqr(entity) <= (double)this.interactionRangeSqr;
--            }).filter(this::isMatchingTarget).findFirst().ifPresent((livingEntity) -> {
--                brain.setMemory(MemoryModuleType.INTERACTION_TARGET, livingEntity);
--                brain.setMemory(MemoryModuleType.LOOK_TARGET, new EntityTracker(livingEntity, true));
--            });
--        });
-+        // Paper start - remove streams
-+        List<LivingEntity> list = brain.getMemory(MemoryModuleType.NEAREST_VISIBLE_LIVING_ENTITIES).orElse(null);
-+        if (list != null) {
-+            double maxRangeSquared = (double)this.interactionRangeSqr;
-+            for (int i = 0; i < list.size(); i++) {
-+                LivingEntity livingEntity2 = list.get(i);
-+                if (livingEntity2.distanceToSqr(entity) <= maxRangeSquared) {
-+                    if (this.isMatchingTarget(livingEntity2)) {
-+                        brain.setMemory(MemoryModuleType.INTERACTION_TARGET, livingEntity2);
-+                        brain.setMemory(MemoryModuleType.LOOK_TARGET, new EntityTracker(livingEntity2, true));
-+                        break;
-+                    }
-+                }
-+            }
-+        }
-+        // Paper end - remove streams
-     }
- 
-     private boolean isMatchingTarget(LivingEntity entity) {
 diff --git a/src/main/java/net/minecraft/world/entity/ai/behavior/ShufflingList.java b/src/main/java/net/minecraft/world/entity/ai/behavior/ShufflingList.java
-index 4fa64b1e2004810906bb0b174436c8e687a75ada..aaff4038867820ab2694f036dcd3c419657be6b8 100644
+index 1bc34453933bc7590af45a5559a4fc75eb3e0c5c..204ca4fbd89bdadd902529f1f191df46fce3cace 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/behavior/ShufflingList.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/behavior/ShufflingList.java
 @@ -12,7 +12,7 @@ import java.util.Random;
@@ -225,44 +169,17 @@ index 49f3b25d28072b61f5cc97260df61df892a58714..71f2692c83feafbb31f45427e6c738cb
          brain.setMemory(MemoryModuleType.NEAREST_VISIBLE_WANTED_ITEM, Optional.ofNullable(nearest));
          // Paper end
      }
-diff --git a/src/main/java/net/minecraft/world/entity/ai/sensing/NearestLivingEntitySensor.java b/src/main/java/net/minecraft/world/entity/ai/sensing/NearestLivingEntitySensor.java
-index ffd83db0a419ab589e89feeddd3fb038d6ed5839..c6947aa93b7d2fbc23b0c0e76eed061eb03140c7 100644
---- a/src/main/java/net/minecraft/world/entity/ai/sensing/NearestLivingEntitySensor.java
-+++ b/src/main/java/net/minecraft/world/entity/ai/sensing/NearestLivingEntitySensor.java
-@@ -18,12 +18,19 @@ public class NearestLivingEntitySensor extends Sensor<LivingEntity> {
-         List<LivingEntity> list = world.getEntitiesOfClass(LivingEntity.class, aABB, (livingEntity2) -> {
-             return livingEntity2 != entity && livingEntity2.isAlive();
-         });
--        list.sort(Comparator.comparingDouble(entity::distanceToSqr));
-+        // Paper start - remove streams
-+        list.sort((e1, e2) -> Double.compare(entity.distanceToSqr(e1), entity.distanceToSqr(e2)));
-         Brain<?> brain = entity.getBrain();
-         brain.setMemory(MemoryModuleType.NEAREST_LIVING_ENTITIES, list);
-         // Paper start - remove streams in favour of lists
--        List<LivingEntity> visibleMobs = new java.util.ArrayList<>(list);
--        visibleMobs.removeIf(otherEntityLiving -> !Sensor.isEntityTargetable(entity, otherEntityLiving));
-+        List<LivingEntity> visibleMobs = new java.util.ArrayList<>();
-+        for (int i = 0, len = list.size(); i < len; i++) {
-+            LivingEntity nearby = list.get(i);
-+            if (Sensor.isEntityTargetable(entity, nearby)) {
-+                visibleMobs.add(nearby);
-+            }
-+        }
-+        // Paper end - remove streams
-         brain.setMemory(MemoryModuleType.NEAREST_VISIBLE_LIVING_ENTITIES, visibleMobs);
-         // Paper end
-     }
 diff --git a/src/main/java/net/minecraft/world/entity/ai/sensing/PlayerSensor.java b/src/main/java/net/minecraft/world/entity/ai/sensing/PlayerSensor.java
-index 457ea75137b8b02dc32bf1769ae8d57c470da470..217c8fd1edf664dc568ee0559a38e0bd2a36696c 100644
+index 312775d0430f793720211dc29bb293503e799d11..75d9c4f011b5a97def215784c92bb57bbb35d06b 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/sensing/PlayerSensor.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/sensing/PlayerSensor.java
-@@ -21,25 +21,31 @@ public class PlayerSensor extends Sensor<LivingEntity> {
+@@ -21,25 +21,30 @@ public class PlayerSensor extends Sensor<LivingEntity> {
  
      @Override
      protected void doTick(ServerLevel world, LivingEntity entity) {
--        // Paper start - remove streams in favour of lists
 -        List<Player> players = new java.util.ArrayList<>(world.players());
--        players.removeIf(player -> !EntitySelector.NO_SPECTATORS.test(player) || !entity.closerThan(player, 16.0D)); // Paper - removeIf only re-allocates once compared to iterator
+-        players.removeIf(player -> !EntitySelector.NO_SPECTATORS.test(player) || !entity.closerThan(player, 16.0D));
+-        players.sort(Comparator.comparingDouble(entity::distanceTo));
 +        // Paper start - remove streams
 +        List<Player> players = (List)world.getNearbyPlayers(entity, entity.getX(), entity.getY(), entity.getZ(), 16.0D, EntitySelector.NO_SPECTATORS);
 +        players.sort((e1, e2) -> Double.compare(entity.distanceToSqr(e1), entity.distanceToSqr(e2)));
@@ -296,32 +213,8 @@ index 457ea75137b8b02dc32bf1769ae8d57c470da470..217c8fd1edf664dc568ee0559a38e0bd
 -        brain.setMemory(MemoryModuleType.NEAREST_VISIBLE_PLAYER, nearest);
 -        brain.setMemory(MemoryModuleType.NEAREST_VISIBLE_ATTACKABLE_PLAYER, nearestTargetable);
 -        // Paper end
-+
 +        brain.setMemory(MemoryModuleType.NEAREST_VISIBLE_PLAYER, firstTargetable);
 +        brain.setMemory(MemoryModuleType.NEAREST_VISIBLE_ATTACKABLE_PLAYER, Optional.ofNullable(firstAttackable));
 +        // Paper end - remove streams
      }
  }
-diff --git a/src/main/java/net/minecraft/world/entity/ai/sensing/VillagerBabiesSensor.java b/src/main/java/net/minecraft/world/entity/ai/sensing/VillagerBabiesSensor.java
-index 478010bc291fa3276aab0f66ce6283403af710ec..de39b608856bdf9bef7120a6922c01c5745f3771 100644
---- a/src/main/java/net/minecraft/world/entity/ai/sensing/VillagerBabiesSensor.java
-+++ b/src/main/java/net/minecraft/world/entity/ai/sensing/VillagerBabiesSensor.java
-@@ -22,7 +22,17 @@ public class VillagerBabiesSensor extends Sensor<LivingEntity> {
-     }
- 
-     private List<LivingEntity> getNearestVillagerBabies(LivingEntity entities) {
--        return this.getVisibleEntities(entities).stream().filter(this::isVillagerBaby).collect(Collectors.toList());
-+        // Paper start - remove streams
-+        List<LivingEntity> list = new java.util.ArrayList<>();
-+        List<LivingEntity> visibleEntities = this.getVisibleEntities(entities);
-+        for (int i = 0; i < visibleEntities.size(); i++) {
-+            LivingEntity livingEntity = visibleEntities.get(i);
-+            if (this.isVillagerBaby(livingEntity)) {
-+                list.add(livingEntity);
-+            }
-+        }
-+        return list;
-+        // Paper end - remove streams
-     }
- 
-     private boolean isVillagerBaby(LivingEntity entity) {

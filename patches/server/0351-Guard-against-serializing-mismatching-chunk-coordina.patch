@@ -6,23 +6,29 @@ Subject: [PATCH] Guard against serializing mismatching chunk coordinate
 Should help if something dumb happens
 
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
-index 992a7d6c4372942711a1381ac08ee13910a62cb0..37855d2183212cb043b30418740c0fd047dbc07f 100644
+index 384ee6fbc65baff381d875665fd2462dbc99683e..980c784b8e5365b62cbeef7f32af9f4383cc01e6 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
-@@ -75,6 +75,12 @@ public class ChunkSerializer {
+@@ -75,6 +75,18 @@ public class ChunkSerializer {
  
      public ChunkSerializer() {}
  
 +    // Paper start - guard against serializing mismatching coordinates
 +    // TODO Note: This needs to be re-checked each update
 +    public static ChunkPos getChunkCoordinate(CompoundTag chunkData) {
-+        return new ChunkPos(chunkData.getInt("xPos"), chunkData.getInt("zPos"));
++        final int dataVersion = ChunkStorage.getVersion(chunkData);
++        if (dataVersion < 2842) { // Level tag is removed after this version
++            final CompoundTag levelData = chunkData.getCompound("Level");
++            return new ChunkPos(levelData.getInt("xPos"), levelData.getInt("zPos"));
++        } else {
++            return new ChunkPos(chunkData.getInt("xPos"), chunkData.getInt("zPos"));
++        }
 +    }
 +    // Paper end
      // Paper start
      public static final class InProgressChunkHolder {
  
-@@ -100,7 +106,7 @@ public class ChunkSerializer {
+@@ -100,7 +112,7 @@ public class ChunkSerializer {
      public static InProgressChunkHolder loadChunk(ServerLevel world, PoiManager poiStorage, ChunkPos chunkPos, CompoundTag nbt, boolean distinguish) {
          java.util.ArrayDeque<Runnable> tasksToExecuteOnMain = new java.util.ArrayDeque<>();
          // Paper end
@@ -32,7 +38,7 @@ index 992a7d6c4372942711a1381ac08ee13910a62cb0..37855d2183212cb043b30418740c0fd0
          if (!Objects.equals(chunkPos, chunkcoordintpair1)) {
              ChunkSerializer.LOGGER.error("Chunk file at {} is in the wrong location; relocating. (Expected {}, got {})", chunkPos, chunkPos, chunkcoordintpair1);
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkStorage.java b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkStorage.java
-index 1fc202caf9051f12192ed479898b01b0a02eebbd..0631a5b1af38ace5ad167d1986271081bd2ee7a6 100644
+index 2eba8c2d1e978f677eaedac2e09cd1124f1d03db..a750b40be3ba5ba258ca2540ab0398deac5a6c5e 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkStorage.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkStorage.java
 @@ -132,6 +132,13 @@ public class ChunkStorage implements AutoCloseable {
