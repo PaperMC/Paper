@@ -6,10 +6,10 @@ Subject: [PATCH] Lag compensate block breaking
 Use time instead of ticks if ticks fall behind
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-index 5ccc86d714d5e6e40df853bb30be11662cd53809..cf9a72b7fe0b41e1ca68bbae2164162447405fc5 100644
+index e311e1dd8b0e07b8787ec42a58c4e6559ac661ed..dbf8f1b605b8abbfd668e05a3e6fc004784f934a 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-@@ -648,4 +648,10 @@ public class PaperConfig {
+@@ -605,4 +605,10 @@ public class PaperConfig {
              }
          }
      }
@@ -21,10 +21,10 @@ index 5ccc86d714d5e6e40df853bb30be11662cd53809..cf9a72b7fe0b41e1ca68bbae21641624
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java b/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
-index 35d05cc4bddea5b168a6498add1de9bcbdbfc1cb..12998d0e9ae0e148a155faa4468b0f78b8462cc9 100644
+index 3ab74a721d9d9bec82a68a30bf523292a3038587..17a59fba538f8a7bdd96964c6acda94b33655d27 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
-@@ -56,14 +56,28 @@ public class ServerPlayerGameMode {
+@@ -54,14 +54,28 @@ public class ServerPlayerGameMode {
      @Nullable
      private GameType previousGameModeForPlayer;
      private boolean isDestroyingBlock;
@@ -55,7 +55,7 @@ index 35d05cc4bddea5b168a6498add1de9bcbdbfc1cb..12998d0e9ae0e148a155faa4468b0f78
      public ServerPlayerGameMode(ServerPlayer player) {
          this.gameModeForPlayer = GameType.DEFAULT_MODE;
          this.destroyPos = BlockPos.ZERO;
-@@ -130,7 +144,7 @@ public class ServerPlayerGameMode {
+@@ -128,7 +142,7 @@ public class ServerPlayerGameMode {
              if (iblockdata == null || iblockdata.isAir()) { // Paper
                  this.hasDelayedDestroy = false;
              } else {
@@ -64,7 +64,7 @@ index 35d05cc4bddea5b168a6498add1de9bcbdbfc1cb..12998d0e9ae0e148a155faa4468b0f78
  
                  if (f >= 1.0F) {
                      this.hasDelayedDestroy = false;
-@@ -150,7 +164,7 @@ public class ServerPlayerGameMode {
+@@ -148,7 +162,7 @@ public class ServerPlayerGameMode {
                  this.lastSentState = -1;
                  this.isDestroyingBlock = false;
              } else {
@@ -73,7 +73,7 @@ index 35d05cc4bddea5b168a6498add1de9bcbdbfc1cb..12998d0e9ae0e148a155faa4468b0f78
              }
          }
  
-@@ -158,6 +172,12 @@ public class ServerPlayerGameMode {
+@@ -156,6 +170,12 @@ public class ServerPlayerGameMode {
  
      private float incrementDestroyProgress(BlockState state, BlockPos pos, int i) {
          int j = this.gameTicks - i;
@@ -86,7 +86,7 @@ index 35d05cc4bddea5b168a6498add1de9bcbdbfc1cb..12998d0e9ae0e148a155faa4468b0f78
          float f = state.getDestroyProgress(this.player, this.player.level, pos) * (float) (j + 1);
          int k = (int) (f * 10.0F);
  
-@@ -226,7 +246,7 @@ public class ServerPlayerGameMode {
+@@ -224,7 +244,7 @@ public class ServerPlayerGameMode {
                      return;
                  }
  
@@ -95,7 +95,7 @@ index 35d05cc4bddea5b168a6498add1de9bcbdbfc1cb..12998d0e9ae0e148a155faa4468b0f78
                  float f = 1.0F;
  
                  iblockdata = this.level.getBlockState(pos);
-@@ -279,12 +299,12 @@ public class ServerPlayerGameMode {
+@@ -277,12 +297,12 @@ public class ServerPlayerGameMode {
                      int j = (int) (f * 10.0F);
  
                      this.level.destroyBlockProgress(this.player.getId(), pos, j);
@@ -110,7 +110,7 @@ index 35d05cc4bddea5b168a6498add1de9bcbdbfc1cb..12998d0e9ae0e148a155faa4468b0f78
  
                      iblockdata = this.level.getBlockState(pos);
                      if (!iblockdata.isAir()) {
-@@ -301,12 +321,18 @@ public class ServerPlayerGameMode {
+@@ -299,12 +319,18 @@ public class ServerPlayerGameMode {
                              this.isDestroyingBlock = false;
                              this.hasDelayedDestroy = true;
                              this.delayedDestroyPos = pos;
@@ -130,7 +130,7 @@ index 35d05cc4bddea5b168a6498add1de9bcbdbfc1cb..12998d0e9ae0e148a155faa4468b0f78
              } else if (action == ServerboundPlayerActionPacket.Action.ABORT_DESTROY_BLOCK) {
                  this.isDestroyingBlock = false;
                  if (!Objects.equals(this.destroyPos, pos) && !BlockPos.ZERO.equals(this.destroyPos)) {
-@@ -318,7 +344,7 @@ public class ServerPlayerGameMode {
+@@ -316,7 +342,7 @@ public class ServerPlayerGameMode {
                  }
  
                  this.level.destroyBlockProgress(this.player.getId(), pos, -1);
@@ -139,7 +139,7 @@ index 35d05cc4bddea5b168a6498add1de9bcbdbfc1cb..12998d0e9ae0e148a155faa4468b0f78
              }
  
          }
-@@ -328,7 +354,13 @@ public class ServerPlayerGameMode {
+@@ -324,7 +350,13 @@ public class ServerPlayerGameMode {
  
      public void destroyAndAck(BlockPos pos, ServerboundPlayerActionPacket.Action action, String reason) {
          if (this.destroyBlock(pos)) {
