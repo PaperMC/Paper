@@ -55,7 +55,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
      boolean unloadingPlayerChunk = false; // Paper - do not allow ticket level changes while unloading chunks
      public ChunkMap(ServerLevel world, LevelStorageSource.LevelStorageAccess session, DataFixer dataFixer, StructureManager structureManager, Executor executor, BlockableEventLoop<Runnable> mainThreadExecutor, LightChunkGetter chunkProvider, ChunkGenerator chunkGenerator, ChunkProgressListener worldGenerationProgressListener, ChunkStatusUpdateListener chunkStatusChangeListener, Supplier<DimensionDataStorage> persistentStateManagerFactory, int viewDistance, boolean dsync) {
-         super(new File(session.getDimensionPath(world.dimension()), "region"), dataFixer, dsync);
+         super(session.getDimensionPath(world.dimension()).resolve("region"), dataFixer, dsync);
 -        this.visibleChunkMap = this.updatingChunkMap.clone();
 +        // Paper - don't copy
          this.pendingUnloads = new Long2ObjectLinkedOpenHashMap();
@@ -100,14 +100,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
              do {
 @@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+             //this.flushWorker(); // Paper - nuke IOWorker
              this.level.asyncChunkTaskManager.flush(); // Paper - flush to preserve behavior compat with pre-async behaviour
- //            this.i(); // Paper - nuke IOWorker
          } else {
--            this.visibleChunkMap.values().stream().filter(ChunkHolder::wasAccessibleSinceLastSave).forEach((playerchunk) -> {
-+            this.updatingChunks.getVisibleValuesCopy().stream().filter(ChunkHolder::wasAccessibleSinceLastSave).forEach((playerchunk) -> { // Paper
-                 ChunkAccess ichunkaccess = (ChunkAccess) playerchunk.getChunkToSave().getNow(null); // CraftBukkit - decompile error
+-            this.visibleChunkMap.values().forEach(this::saveChunkIfNeeded);
++            this.updatingChunks.getVisibleValuesCopy().forEach(this::saveChunkIfNeeded); // Paper
+         }
  
-                 if (ichunkaccess instanceof ImposterProtoChunk || ichunkaccess instanceof LevelChunk) {
+     }
 @@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          while (longiterator.hasNext()) { // Spigot
              long j = longiterator.nextLong();
@@ -117,6 +117,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
              if (playerchunk != null) {
                  this.pendingUnloads.put(j, playerchunk);
+@@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+         }
+ 
+         int l = 0;
+-        ObjectIterator objectiterator = this.visibleChunkMap.values().iterator();
++        Iterator objectiterator = this.updatingChunks.getVisibleValuesCopy().iterator(); // Paper
+ 
+         while (l < 20 && shouldKeepTicking.getAsBoolean() && objectiterator.hasNext()) {
+             if (this.saveChunkIfNeeded((ChunkHolder) objectiterator.next())) {
 @@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          if (!this.modified) {
              return false;
@@ -132,6 +141,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              return true;
          }
 @@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+ 
+             this.viewDistance = j;
+             this.distanceManager.updatePlayerTickets(this.viewDistance);
+-            ObjectIterator objectiterator = this.updatingChunkMap.values().iterator();
++            Iterator objectiterator = this.updatingChunks.getVisibleValuesCopy().iterator(); // Paper
+ 
+             while (objectiterator.hasNext()) {
+                 ChunkHolder playerchunk = (ChunkHolder) objectiterator.next();
+@@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
      }
  
      public int size() {
@@ -139,7 +157,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return this.updatingChunks.getVisibleMap().size(); // Paper - Don't copy
      }
  
-     protected DistanceManager getDistanceManager() {
+     public DistanceManager getDistanceManager() {
 @@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
      }
  
@@ -149,7 +167,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
      void dumpChunks(Writer writer) throws IOException {
-         CsvOutput csvwriter = CsvOutput.builder().addColumn("x").addColumn("z").addColumn("level").addColumn("in_memory").addColumn("status").addColumn("full_status").addColumn("accessible_ready").addColumn("ticking_ready").addColumn("entity_ticking_ready").addColumn("ticket").addColumn("spawning").addColumn("block_entity_count").build(writer);
+         CsvOutput csvwriter = CsvOutput.builder().addColumn("x").addColumn("z").addColumn("level").addColumn("in_memory").addColumn("status").addColumn("full_status").addColumn("accessible_ready").addColumn("ticking_ready").addColumn("entity_ticking_ready").addColumn("ticket").addColumn("spawning").addColumn("block_entity_count").addColumn("ticking_ticket").addColumn("ticking_level").addColumn("block_ticks").addColumn("fluid_ticks").build(writer);
+         TickingTracker tickingtracker = this.distanceManager.tickingTracker();
 -        ObjectBidirectionalIterator objectbidirectionaliterator = this.visibleChunkMap.long2ObjectEntrySet().iterator();
 +        ObjectBidirectionalIterator objectbidirectionaliterator = this.updatingChunks.getVisibleMap().clone().long2ObjectEntrySet().fastIterator(); // Paper
  

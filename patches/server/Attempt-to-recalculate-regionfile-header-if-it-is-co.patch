@@ -13,38 +13,28 @@ diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializ
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
-@@ -0,0 +0,0 @@ public class ChunkSerializer {
-     private static final String SKYLIGHT_STATE_TAG = "starlight.skylight_state";
-     private static final String STARLIGHT_VERSION_TAG = "starlight.light_version";
-     // Paper end - replace light engine impl
+@@ -0,0 +0,0 @@ import org.apache.logging.log4j.LogManager;
+ import org.apache.logging.log4j.Logger;
+ 
+ public class ChunkSerializer {
 +    // Paper start
 +    // TODO: Check on update
 +    public static long getLastWorldSaveTime(CompoundTag chunkData) {
-+        CompoundTag levelData = chunkData.getCompound("Level");
-+        return levelData.getLong("LastUpdate");
++        return chunkData.getLong("LastUpdate");
 +    }
 +    // Paper end
  
+     public static final Codec<PalettedContainer<BlockState>> BLOCK_STATE_CODEC = PalettedContainer.codec(Block.BLOCK_STATE_REGISTRY, BlockState.CODEC, PalettedContainer.Strategy.SECTION_STATES, Blocks.AIR.defaultBlockState());
      private static final Logger LOGGER = LogManager.getLogger();
-     public static final String TAG_UPGRADE_DATA = "UpgradeData";
 @@ -0,0 +0,0 @@ public class ChunkSerializer {
-         }
-         // Paper end
-         BiomeSource worldchunkmanager = chunkgenerator.getBiomeSource();
--        CompoundTag nbttagcompound1 = nbt.getCompound("Level"); // Paper - diff on change, see ChunkSerializer#getChunkCoordinate
-+        CompoundTag nbttagcompound1 = nbt.getCompound("Level"); // Paper - diff on change, see ChunkSerializer#getChunkCoordinate // Paper - diff on change
-         ChunkPos chunkcoordintpair1 = new ChunkPos(nbttagcompound1.getInt("xPos"), nbttagcompound1.getInt("zPos")); // Paper - diff on change, see ChunkSerializer#getChunkCoordinate
- 
-         if (!Objects.equals(pos, chunkcoordintpair1)) {
-@@ -0,0 +0,0 @@ public class ChunkSerializer {
-         nbttagcompound.put("Level", nbttagcompound1);
-         nbttagcompound1.putInt("xPos", chunkcoordintpair.x);
-         nbttagcompound1.putInt("zPos", chunkcoordintpair.z);
--        nbttagcompound1.putLong("LastUpdate", asyncsavedata != null ? asyncsavedata.worldTime : world.getGameTime()); // Paper - async chunk unloading
-+        nbttagcompound1.putLong("LastUpdate", asyncsavedata != null ? asyncsavedata.worldTime : world.getGameTime()); // Paper - async chunk unloading  // Paper - diff on change
-         nbttagcompound1.putLong("InhabitedTime", chunk.getInhabitedTime());
-         nbttagcompound1.putString("Status", chunk.getStatus().getName());
-         UpgradeData chunkconverter = chunk.getUpgradeData();
+         nbttagcompound.putInt("xPos", chunkcoordintpair.x);
+         nbttagcompound.putInt("yPos", chunk.getMinSection());
+         nbttagcompound.putInt("zPos", chunkcoordintpair.z);
+-        nbttagcompound.putLong("LastUpdate", asyncsavedata != null ? asyncsavedata.worldTime : world.getGameTime()); // Paper - async chunk unloading
++        nbttagcompound.putLong("LastUpdate", asyncsavedata != null ? asyncsavedata.worldTime : world.getGameTime()); // Paper - async chunk unloading // Paper - diff on change
+         nbttagcompound.putLong("InhabitedTime", chunk.getInhabitedTime());
+         nbttagcompound.putString("Status", chunk.getStatus().getName());
+         BlendingData blendingdata = chunk.getBlendingData();
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkStorage.java b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkStorage.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkStorage.java
@@ -96,7 +86,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
 @@ -0,0 +0,0 @@ public class RegionFile implements AutoCloseable {
      public final java.util.concurrent.locks.ReentrantLock fileLock = new java.util.concurrent.locks.ReentrantLock(true); // Paper
-     public final File regionFile; // Paper
+     public final Path regionFile; // Paper
  
 +    // Paper start - try to recover from RegionFile header corruption
 +    private static long roundToSectors(long bytes) {
@@ -140,7 +130,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +            InputStream input = compression.wrap(new ByteArrayInputStream(chunkData.array(), chunkData.position(), chunkDataLength - chunkData.position()));
 +
-+            return NbtIo.read((java.io.DataInput)new DataInputStream(new BufferedInputStream(input)));
++            return NbtIo.read(new DataInputStream(input));
 +        } catch (Exception ex) {
 +            return null;
 +        }
@@ -156,18 +146,18 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +
 +    private void backupRegionFile() {
-+        File backup = new File(this.regionFile.getParent(), this.regionFile.getName() + "." + new java.util.Random().nextLong() + ".backup");
++        Path backup = this.regionFile.getParent().resolve(this.regionFile.getFileName() + "." + new java.util.Random().nextLong() + ".backup");
 +        this.backupRegionFile(backup);
 +    }
 +
-+    private void backupRegionFile(File to) {
++    private void backupRegionFile(Path to) {
 +        try {
 +            this.file.force(true);
-+            LOGGER.warn("Backing up regionfile \"" + this.regionFile.getAbsolutePath() + "\" to " + to.getAbsolutePath());
-+            java.nio.file.Files.copy(this.regionFile.toPath(), to.toPath());
-+            LOGGER.warn("Backed up the regionfile to " + to.getAbsolutePath());
++            LOGGER.warn("Backing up regionfile \"" + this.regionFile.toAbsolutePath() + "\" to " + to.toAbsolutePath());
++            java.nio.file.Files.copy(this.regionFile, to);
++            LOGGER.warn("Backed up the regionfile to " + to.toAbsolutePath());
 +        } catch (IOException ex) {
-+            LOGGER.error("Failed to backup to " + to.getAbsolutePath(), ex);
++            LOGGER.error("Failed to backup to " + to.toAbsolutePath(), ex);
 +        }
 +    }
 +
@@ -182,11 +172,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +        ChunkPos ourLowerLeftPosition = RegionFileStorage.getRegionFileCoordinates(this.regionFile);
 +        if (ourLowerLeftPosition == null) {
-+            LOGGER.fatal("Unable to get chunk location of regionfile " + this.regionFile.getAbsolutePath() + ", cannot recover header");
++            LOGGER.fatal("Unable to get chunk location of regionfile " + this.regionFile.toAbsolutePath() + ", cannot recover header");
 +            return false;
 +        }
 +        synchronized (this) {
-+            LOGGER.warn("Corrupt regionfile header detected! Attempting to re-calculate header offsets for regionfile " + this.regionFile.getAbsolutePath(), new Throwable());
++            LOGGER.warn("Corrupt regionfile header detected! Attempting to re-calculate header offsets for regionfile " + this.regionFile.toAbsolutePath(), new Throwable());
 +
 +            // try to backup file so maybe it could be sent to us for further investigation
 +
@@ -210,7 +200,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +                ChunkPos chunkPos = ChunkSerializer.getChunkCoordinate(compound);
 +                if (!inSameRegionfile(ourLowerLeftPosition, chunkPos)) {
-+                    LOGGER.error("Ignoring absolute chunk " + chunkPos + " in regionfile as it is not contained in the bounds of the regionfile '" + this.regionFile.getAbsolutePath() + "'. It should be in regionfile (" + (chunkPos.x >> 5) + "," + (chunkPos.z >> 5) + ")");
++                    LOGGER.error("Ignoring absolute chunk " + chunkPos + " in regionfile as it is not contained in the bounds of the regionfile '" + this.regionFile.toAbsolutePath() + "'. It should be in regionfile (" + (chunkPos.x >> 5) + "," + (chunkPos.z >> 5) + ")");
 +                    continue;
 +                }
 +                int location = (chunkPos.x & 31) | ((chunkPos.z & 31) << 5);
@@ -222,9 +212,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                }
 +
 +                // aikar oversized?
-+                File aikarOversizedFile = this.getOversizedFile(chunkPos.x, chunkPos.z);
++                Path aikarOversizedFile = this.getOversizedFile(chunkPos.x, chunkPos.z);
 +                boolean isAikarOversized = false;
-+                if (aikarOversizedFile.exists()) {
++                if (Files.exists(aikarOversizedFile)) {
 +                    try {
 +                        CompoundTag aikarOversizedCompound = this.getOversizedData(chunkPos.x, chunkPos.z);
 +                        if (ChunkSerializer.getLastWorldSaveTime(compound) == ChunkSerializer.getLastWorldSaveTime(aikarOversizedCompound)) {
@@ -232,7 +222,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                            isAikarOversized = true;
 +                        }
 +                    } catch (Exception ex) {
-+                        LOGGER.error("Failed to read aikar oversized data for absolute chunk (" + chunkPos.x + "," + chunkPos.z + ") in regionfile " + this.regionFile.getAbsolutePath() + ", oversized data for this chunk will be lost", ex);
++                        LOGGER.error("Failed to read aikar oversized data for absolute chunk (" + chunkPos.x + "," + chunkPos.z + ") in regionfile " + this.regionFile.toAbsolutePath() + ", oversized data for this chunk will be lost", ex);
 +                        // fall through, if we can't read aikar oversized we can't risk corrupting chunk data
 +                    }
 +                }
@@ -252,7 +242,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            // local data compound
 +
 +            java.nio.file.Path containingFolder = this.externalFileDir;
-+            File[] regionFiles = containingFolder.toFile().listFiles();
++            Path[] regionFiles = Files.list(containingFolder).toArray(Path[]::new);
 +            boolean[] oversized = new boolean[32 * 32];
 +            RegionFileVersion[] oversizedCompressionTypes = new RegionFileVersion[32 * 32];
 +
@@ -263,7 +253,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                int upperZBound = lowerZBound + 32 - 1; // inclusive
 +
 +                // read mojang oversized data
-+                for (File regionFile : regionFiles) {
++                for (Path regionFile : regionFiles) {
 +                    ChunkPos oversizedCoords = getOversizedChunkPair(regionFile);
 +                    if (oversizedCoords == null) {
 +                        continue;
@@ -279,9 +269,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +                    byte[] chunkData;
 +                    try {
-+                        chunkData = Files.readAllBytes(regionFile.toPath());
++                        chunkData = Files.readAllBytes(regionFile);
 +                    } catch (Exception ex) {
-+                        LOGGER.error("Failed to read oversized chunk data in file " + regionFile.getAbsolutePath() + ", data will be lost", ex);
++                        LOGGER.error("Failed to read oversized chunk data in file " + regionFile.toAbsolutePath() + ", data will be lost", ex);
 +                        continue;
 +                    }
 +
@@ -291,7 +281,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                    RegionFileVersion compression = null;
 +                    for (RegionFileVersion compressionType : RegionFileVersion.VERSIONS.values()) {
 +                        try {
-+                            DataInputStream in = new DataInputStream(new BufferedInputStream(compressionType.wrap(new ByteArrayInputStream(chunkData)))); // typical java
++                            DataInputStream in = new DataInputStream(compressionType.wrap(new ByteArrayInputStream(chunkData))); // typical java
 +                            compound = NbtIo.read((java.io.DataInput)in);
 +                            compression = compressionType;
 +                            break; // reaches here iff readNBT does not throw
@@ -301,12 +291,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                    }
 +
 +                    if (compound == null) {
-+                        LOGGER.error("Failed to read oversized chunk data in file " + regionFile.getAbsolutePath() + ", it's corrupt. Its data will be lost");
++                        LOGGER.error("Failed to read oversized chunk data in file " + regionFile.toAbsolutePath() + ", it's corrupt. Its data will be lost");
 +                        continue;
 +                    }
 +
 +                    if (!ChunkSerializer.getChunkCoordinate(compound).equals(oversizedCoords)) {
-+                        LOGGER.error("Can't use oversized chunk stored in " + regionFile.getAbsolutePath() + ", got absolute chunkpos: " + ChunkSerializer.getChunkCoordinate(compound) + ", expected " + oversizedCoords);
++                        LOGGER.error("Can't use oversized chunk stored in " + regionFile.toAbsolutePath() + ", got absolute chunkpos: " + ChunkSerializer.getChunkCoordinate(compound) + ", expected " + oversizedCoords);
 +                        continue;
 +                    }
 +
@@ -340,7 +330,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                    if (newSectorAllocations.tryAllocate(sectorOffset, sectorLength)) {
 +                        calculatedOffsets[location] = sectorOffset << 8 | (sectorLength > 255 ? 255 : sectorLength); // support forge style oversized
 +                    } else {
-+                        LOGGER.error("Failed to allocate space for local chunk (overlapping data??) at (" + chunkX + "," + chunkZ + ") in regionfile " + this.regionFile.getAbsolutePath() + ", chunk will be regenerated");
++                        LOGGER.error("Failed to allocate space for local chunk (overlapping data??) at (" + chunkX + "," + chunkZ + ") in regionfile " + this.regionFile.toAbsolutePath() + ", chunk will be regenerated");
 +                    }
 +                }
 +            }
@@ -364,7 +354,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                        calculatedOffsets[location] = sectorOffset << 8 | (sectorLength > 255 ? 255 : sectorLength); // support forge style oversized
 +                    } catch (IOException ex) {
 +                        newSectorAllocations.free(sectorOffset, sectorLength);
-+                        LOGGER.error("Failed to write new oversized chunk data holder, local chunk at (" + chunkX + "," + chunkZ + ") in regionfile " + this.regionFile.getAbsolutePath() + " will be regenerated");
++                        LOGGER.error("Failed to write new oversized chunk data holder, local chunk at (" + chunkX + "," + chunkZ + ") in regionfile " + this.regionFile.toAbsolutePath() + " will be regenerated");
 +                    }
 +                }
 +            }
@@ -386,18 +376,18 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                try {
 +                    this.writeOversizedMeta();
 +                } catch (Exception ex) {
-+                    LOGGER.error("Failed to write aikar oversized chunk meta, all aikar style oversized chunk data will be lost for regionfile " + this.regionFile.getAbsolutePath(), ex);
-+                    this.getOversizedMetaFile().delete();
++                    LOGGER.error("Failed to write aikar oversized chunk meta, all aikar style oversized chunk data will be lost for regionfile " + this.regionFile.toAbsolutePath(), ex);
++                    Files.deleteIfExists(this.getOversizedMetaFile());
 +                }
 +            } else {
-+                this.getOversizedMetaFile().delete();
++                Files.deleteIfExists(this.getOversizedMetaFile());
 +            }
 +
 +            this.usedSectors.copyFrom(newSectorAllocations);
 +
 +            // before we overwrite the old sectors, print a summary of the chunks that got changed.
 +
-+            LOGGER.info("Starting summary of changes for regionfile " + this.regionFile.getAbsolutePath());
++            LOGGER.info("Starting summary of changes for regionfile " + this.regionFile.toAbsolutePath());
 +
 +            for (int chunkX = 0; chunkX < 32; ++chunkX) {
 +                for (int chunkZ = 0; chunkZ < 32; ++chunkZ) {
@@ -414,16 +404,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +                    if (oldOffset == 0) {
 +                        // found lost data
-+                        LOGGER.info("Found missing data for local chunk (" + chunkX + "," + chunkZ + ") in regionfile " + this.regionFile.getAbsolutePath());
++                        LOGGER.info("Found missing data for local chunk (" + chunkX + "," + chunkZ + ") in regionfile " + this.regionFile.toAbsolutePath());
 +                    } else if (newOffset == 0) {
-+                        LOGGER.warn("Data for local chunk (" + chunkX + "," + chunkZ + ") could not be recovered in regionfile " + this.regionFile.getAbsolutePath() + ", it will be regenerated");
++                        LOGGER.warn("Data for local chunk (" + chunkX + "," + chunkZ + ") could not be recovered in regionfile " + this.regionFile.toAbsolutePath() + ", it will be regenerated");
 +                    } else {
-+                        LOGGER.info("Local chunk (" + chunkX + "," + chunkZ + ") changed to point to newer data or correct chunk in regionfile " + this.regionFile.getAbsolutePath());
++                        LOGGER.info("Local chunk (" + chunkX + "," + chunkZ + ") changed to point to newer data or correct chunk in regionfile " + this.regionFile.toAbsolutePath());
 +                    }
 +                }
 +            }
 +
-+            LOGGER.info("End of change summary for regionfile " + this.regionFile.getAbsolutePath());
++            LOGGER.info("End of change summary for regionfile " + this.regionFile.toAbsolutePath());
 +
 +            // simply destroy the timestamp header, it's not used
 +
@@ -435,9 +425,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            try {
 +                this.flush();
 +                this.file.force(true); // try to ensure it goes through...
-+                LOGGER.info("Successfully wrote new header to disk for regionfile " + this.regionFile.getAbsolutePath());
++                LOGGER.info("Successfully wrote new header to disk for regionfile " + this.regionFile.toAbsolutePath());
 +            } catch (IOException ex) {
-+                LOGGER.fatal("Failed to write new header to disk for regionfile " + this.regionFile.getAbsolutePath(), ex);
++                LOGGER.fatal("Failed to write new header to disk for regionfile " + this.regionFile.toAbsolutePath(), ex);
 +            }
 +        }
 +
@@ -451,12 +441,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      private final ChunkStatus[] statuses = new ChunkStatus[32 * 32];
  
 @@ -0,0 +0,0 @@ public class RegionFile implements AutoCloseable {
-     public RegionFile(File file, File directory, boolean dsync) throws IOException {
-         this(file.toPath(), directory.toPath(), RegionFileVersion.VERSION_DEFLATE, dsync);
+     public RegionFile(Path file, Path directory, boolean dsync) throws IOException {
+         this(file, directory, RegionFileVersion.VERSION_DEFLATE, dsync);
      }
 +    // Paper start - add can recalc flag
-+    public RegionFile(File file, File directory, boolean dsync, boolean canRecalcHeader) throws IOException {
-+        this(file.toPath(), directory.toPath(), RegionFileVersion.VERSION_DEFLATE, dsync, canRecalcHeader);
++    public RegionFile(Path file, Path directory, boolean dsync, boolean canRecalcHeader) throws IOException {
++        this(file, directory, RegionFileVersion.VERSION_DEFLATE, dsync, canRecalcHeader);
 +    }
 +    // Paper end - add can recalc flag
  
@@ -468,7 +458,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        this.canRecalcHeader = canRecalcHeader;
 +        // Paper end - add can recalc flag
          this.header = ByteBuffer.allocateDirect(8192);
-         this.regionFile = file.toFile(); // Paper
+         this.regionFile = file; // Paper
          initOversizedState(); // Paper
 @@ -0,0 +0,0 @@ public class RegionFile implements AutoCloseable {
                      RegionFile.LOGGER.warn("Region file {} has truncated header: {}", file, i);
@@ -516,12 +506,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                        // Paper start - recalculate header on header corruption
 +                        if (offset < 2 || sectorLength <= 0 || ((long)offset * 4096L) > regionFileSize) {
 +                            if (canRecalcHeader) {
-+                                LOGGER.error("Detected invalid header for regionfile " + this.regionFile.getAbsolutePath() + "! Recalculating header...");
++                                LOGGER.error("Detected invalid header for regionfile " + this.regionFile.toAbsolutePath() + "! Recalculating header...");
 +                                needsHeaderRecalc = true;
 +                                break;
 +                            } else {
 +                                // location = chunkX | (chunkZ << 5);
-+                                LOGGER.fatal("Detected invalid header for regionfile " + this.regionFile.getAbsolutePath() +
++                                LOGGER.fatal("Detected invalid header for regionfile " + this.regionFile.toAbsolutePath() +
 +                                        "! Cannot recalculate, removing local chunk (" + (headerLocation & 31) + "," + (headerLocation >>> 5) + ") from header");
 +                                if (!hasBackedUp) {
 +                                    hasBackedUp = true;
@@ -534,11 +524,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                        }
 +                        boolean failedToAllocate = !this.usedSectors.tryAllocate(offset, sectorLength);
 +                        if (failedToAllocate) {
-+                            LOGGER.error("Overlapping allocation by local chunk (" + (headerLocation & 31) + "," + (headerLocation >>> 5) + ") in regionfile " + this.regionFile.getAbsolutePath());
++                            LOGGER.error("Overlapping allocation by local chunk (" + (headerLocation & 31) + "," + (headerLocation >>> 5) + ") in regionfile " + this.regionFile.toAbsolutePath());
                          }
 +                        if (failedToAllocate & !canRecalcHeader) {
 +                            // location = chunkX | (chunkZ << 5);
-+                            LOGGER.fatal("Detected invalid header for regionfile " + this.regionFile.getAbsolutePath() +
++                            LOGGER.fatal("Detected invalid header for regionfile " + this.regionFile.toAbsolutePath() +
 +                                    "! Cannot recalculate, removing local chunk (" + (headerLocation & 31) + "," + (headerLocation >>> 5) + ") from header");
 +                            if (!hasBackedUp) {
 +                                hasBackedUp = true;
@@ -555,7 +545,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                // Paper start - recalculate header on header corruption
 +                // we move the recalc here so comparison to old header is correct when logging to console
 +                if (needsHeaderRecalc) { // true if header gave us overlapping allocations or had other issues
-+                    LOGGER.error("Recalculating regionfile " + this.regionFile.getAbsolutePath() + ", header gave erroneous offsets & locations");
++                    LOGGER.error("Recalculating regionfile " + this.regionFile.toAbsolutePath() + ", header gave erroneous offsets & locations");
 +                    this.recalculateHeader();
 +                }
 +                // Paper end
@@ -572,8 +562,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
 +    // Paper start
-+    private static ChunkPos getOversizedChunkPair(File file) {
-+        String fileName = file.getName();
++    private static ChunkPos getOversizedChunkPair(Path file) {
++        String fileName = file.getFileName().toString();
 +
 +        if (!fileName.startsWith("c.") || !fileName.endsWith(".mcc")) {
 +            return null;
@@ -692,30 +682,30 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
 @@ -0,0 +0,0 @@ public class RegionFileStorage implements AutoCloseable {
-     private final File folder;
+     private final Path folder;
      private final boolean sync;
  
 +    private final boolean isChunkData; // Paper
 +
-     RegionFileStorage(File directory, boolean dsync) {
+     RegionFileStorage(Path directory, boolean dsync) {
 +        // Paper start - add isChunkData param
 +        this(directory, dsync, false);
 +    }
-+    RegionFileStorage(File directory, boolean dsync, boolean isChunkData) {
++    RegionFileStorage(Path directory, boolean dsync, boolean isChunkData) {
 +        this.isChunkData = isChunkData;
 +        // Paper end - add isChunkData param
          this.folder = directory;
          this.sync = dsync;
      }
 @@ -0,0 +0,0 @@ public class RegionFileStorage implements AutoCloseable {
- 
-             File file = this.folder;
+             Files.createDirectories(this.folder);
+             Path path = this.folder;
              int j = chunkcoordintpair.getRegionX();
--            File file1 = new File(file, "r." + j + "." + chunkcoordintpair.getRegionZ() + ".mca");
-+            File file1 = new File(file, "r." + j + "." + chunkcoordintpair.getRegionZ() + ".mca"); // Paper - diff on change
-             if (existingOnly && !file1.exists()) return null; // CraftBukkit
--            RegionFile regionfile1 = new RegionFile(file1, this.folder, this.sync);
-+            RegionFile regionfile1 = new RegionFile(file1, this.folder, this.sync, this.isChunkData); // Paper - allow for chunk regionfiles to regen header
+-            Path path1 = path.resolve("r." + j + "." + chunkcoordintpair.getRegionZ() + ".mca");
++            Path path1 = path.resolve("r." + j + "." + chunkcoordintpair.getRegionZ() + ".mca"); // Paper - diff on change
+             if (existingOnly && !Files.exists(path1)) return null; // CraftBukkit
+-            RegionFile regionfile1 = new RegionFile(path1, this.folder, this.sync);
++            RegionFile regionfile1 = new RegionFile(path1, this.folder, this.sync, this.isChunkData); // Paper - allow for chunk regionfiles to regen header
  
              this.regionCache.putAndMoveToFirst(i, regionfile1);
              // Paper start
@@ -741,12 +731,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                    if (this.isChunkData) {
 +                        ChunkPos chunkPos = ChunkSerializer.getChunkCoordinate(nbttagcompound);
 +                        if (!chunkPos.equals(pos)) {
-+                            MinecraftServer.LOGGER.error("Attempting to read chunk data at " + pos.toString() + " but got chunk data for " + chunkPos.toString() + " instead! Attempting regionfile recalculation for regionfile " + regionfile.regionFile.getAbsolutePath());
++                            net.minecraft.server.MinecraftServer.LOGGER.error("Attempting to read chunk data at " + pos + " but got chunk data for " + chunkPos + " instead! Attempting regionfile recalculation for regionfile " + regionfile.regionFile.toAbsolutePath());
 +                            if (regionfile.recalculateHeader()) {
 +                                regionfile.fileLock.lock(); // otherwise we will unlock twice and only lock once.
 +                                return this.read(pos, regionfile);
 +                            }
-+                            MinecraftServer.LOGGER.fatal("Can't recalculate regionfile header, regenerating chunk " + pos.toString() + " for " + regionfile.regionFile.getAbsolutePath());
++                            net.minecraft.server.MinecraftServer.LOGGER.fatal("Can't recalculate regionfile header, regenerating chunk " + pos + " for " + regionfile.regionFile.toAbsolutePath());
 +                            return null;
 +                        }
 +                    }
@@ -758,12 +748,12 @@ diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileVer
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileVersion.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileVersion.java
-@@ -0,0 +0,0 @@ import java.util.zip.InflaterInputStream;
- import javax.annotation.Nullable;
+@@ -0,0 +0,0 @@ import javax.annotation.Nullable;
+ import net.minecraft.util.FastBufferedInputStream;
  
  public class RegionFileVersion {
 -    private static final Int2ObjectMap<RegionFileVersion> VERSIONS = new Int2ObjectOpenHashMap<>();
 +    public static final Int2ObjectMap<RegionFileVersion> VERSIONS = new Int2ObjectOpenHashMap<>(); // Paper - public
-     public static final RegionFileVersion VERSION_GZIP = register(new RegionFileVersion(1, GZIPInputStream::new, GZIPOutputStream::new));
-     public static final RegionFileVersion VERSION_DEFLATE = register(new RegionFileVersion(2, InflaterInputStream::new, DeflaterOutputStream::new));
-     public static final RegionFileVersion VERSION_NONE = register(new RegionFileVersion(3, (inputStream) -> {
+     public static final RegionFileVersion VERSION_GZIP = register(new RegionFileVersion(1, (inputStream) -> {
+         return new FastBufferedInputStream(new GZIPInputStream(inputStream));
+     }, (outputStream) -> {

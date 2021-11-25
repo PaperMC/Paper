@@ -919,21 +919,22 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
 @@ -0,0 +0,0 @@ public class ServerLevel extends Level implements WorldGenLevel {
          DataFixer datafixer = minecraftserver.getFixerUpper();
-         EntityPersistentStorage<Entity> entitypersistentstorage = new EntityStorage(this, new File(convertable_conversionsession.getDimensionPath(resourcekey), "entities"), datafixer, flag2, minecraftserver);
+         EntityPersistentStorage<Entity> entitypersistentstorage = new EntityStorage(this, convertable_conversionsession.getDimensionPath(resourcekey).resolve("entities"), datafixer, flag2, minecraftserver);
  
 -        this.entityManager = new PersistentEntitySectionManager<>(Entity.class, new ServerLevel.EntityCallbacks(), entitypersistentstorage);
 +        this.entityManager = new PersistentEntitySectionManager<>(Entity.class, new ServerLevel.EntityCallbacks(), entitypersistentstorage, this.entitySliceManager); // Paper
          StructureManager definedstructuremanager = minecraftserver.getStructureManager();
          int j = this.spigotConfig.viewDistance; // Spigot
-         PersistentEntitySectionManager persistententitysectionmanager = this.entityManager;
+         int k = this.spigotConfig.simulationDistance; // Spigot
 diff --git a/src/main/java/net/minecraft/server/level/WorldGenRegion.java b/src/main/java/net/minecraft/server/level/WorldGenRegion.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/level/WorldGenRegion.java
 +++ b/src/main/java/net/minecraft/server/level/WorldGenRegion.java
 @@ -0,0 +0,0 @@ public class WorldGenRegion implements WorldGenLevel {
-     @Nullable
-     private Supplier<String> currentlyGenerating;
- 
+     public long nextSubTickCount() {
+         return this.subTickCount.getAndIncrement();
+     }
++
 +    // Paper start
 +    // No-op, this class doesn't provide entity access
 +    @Override
@@ -950,15 +951,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    @Override
 +    public <T> void getEntitiesByClass(Class<? extends T> clazz, Entity except, AABB box, List<? super T> into, Predicate<? super T> predicate) {}
 +    // Paper end
-+
-     public WorldGenRegion(ServerLevel world, List<ChunkAccess> list, ChunkStatus chunkstatus, int i) {
-         this.generatingStatus = chunkstatus;
-         this.writeRadiusCutoff = i;
+ }
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
-@@ -0,0 +0,0 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, n
+@@ -0,0 +0,0 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, i
      }
      // Paper end - make end portalling safe
  
@@ -1015,7 +1013,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public Entity(EntityType<?> type, Level world) {
          this.id = Entity.ENTITY_COUNTER.incrementAndGet();
          this.passengers = ImmutableList.of();
-@@ -0,0 +0,0 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, n
+@@ -0,0 +0,0 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, i
          return InteractionResult.PASS;
      }
  
@@ -1052,42 +1050,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      List<Entity> getEntities(@Nullable Entity except, AABB box, Predicate<? super Entity> predicate);
  
      <T extends Entity> List<T> getEntities(EntityTypeTest<Entity, T> filter, AABB box, Predicate<? super T> predicate);
-@@ -0,0 +0,0 @@ public interface EntityGetter {
-             return Stream.empty();
-         } else {
-             AABB aABB = box.inflate(1.0E-7D);
--            return this.getEntities(entity, aABB, predicate.and((entityx) -> {
--                if (entityx.getBoundingBox().intersects(aABB)) {
-+            Predicate<Entity> hardCollides = (entityx) -> { // Paper - optimise entity hard collisions
-+                if (true || entityx.getBoundingBox().intersects(aABB)) { // Paper - always true
-                     if (entity == null) {
-                         if (entityx.canBeCollidedWith()) {
-                             return true;
-@@ -0,0 +0,0 @@ public interface EntityGetter {
-                 }
- 
-                 return false;
--            })).stream().map(Entity::getBoundingBox).map(Shapes::create);
-+            }; // Paper start - optimise entity hard collisions
-+            predicate = predicate == null ? hardCollides : hardCollides.and(predicate);
-+            return (entity != null && entity.hardCollides() ? this.getEntities(entity, aABB, predicate) : this.getHardCollidingEntities(entity, aABB, predicate))
-+                .stream().map(Entity::getBoundingBox).map(Shapes::create);
-+            // Paper end - optimise entity hard collisions
-         }
-     }
- 
 diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
 +++ b/src/main/java/net/minecraft/world/level/Level.java
 @@ -0,0 +0,0 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
-         return this.typeKey;
-     }
+ 
+     public abstract ResourceKey<LevelStem> getTypeKey();
  
 +    // Paper start
 +    protected final io.papermc.paper.world.EntitySliceManager entitySliceManager;
 +
-+    // Paper start - optimise CraftChunk#getEntities
 +    public org.bukkit.entity.Entity[] getChunkEntities(int chunkX, int chunkZ) {
 +        io.papermc.paper.world.ChunkEntitySlices slices = this.entitySliceManager.getChunk(chunkX, chunkZ);
 +        if (slices == null) {
@@ -1095,7 +1068,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +        return slices.getChunkEntities();
 +    }
-+    // Paper end - optimise CraftChunk#getEntities
 +
 +    @Override
 +    public List<Entity> getHardCollidingEntities(Entity except, AABB box, Predicate<? super Entity> predicate) {
@@ -1128,13 +1100,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +    // Paper end
 +
-     protected Level(WritableLevelData worlddatamutable, ResourceKey<Level> resourcekey, final DimensionType dimensionmanager, Supplier<ProfilerFiller> supplier, boolean flag, boolean flag1, long i, org.bukkit.generator.ChunkGenerator gen, org.bukkit.generator.BiomeProvider biomeProvider, org.bukkit.World.Environment env, java.util.concurrent.Executor executor) { // Paper - Anti-Xray - Pass executor
+     protected Level(WritableLevelData worlddatamutable, ResourceKey<Level> resourcekey, final DimensionType dimensionmanager, Supplier<ProfilerFiller> supplier, boolean flag, boolean flag1, long i, org.bukkit.generator.ChunkGenerator gen, org.bukkit.generator.BiomeProvider biomeProvider, org.bukkit.World.Environment env) {
          this.spigotConfig = new org.spigotmc.SpigotWorldConfig(((net.minecraft.world.level.storage.PrimaryLevelData) worlddatamutable).getLevelName()); // Spigot
          this.paperConfig = new com.destroystokyo.paper.PaperWorldConfig(((net.minecraft.world.level.storage.PrimaryLevelData) worlddatamutable).getLevelName(), this.spigotConfig); // Paper
 @@ -0,0 +0,0 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
-         this.chunkPacketBlockController = this.paperConfig.antiXray ?
-             new com.destroystokyo.paper.antixray.ChunkPacketBlockControllerAntiXray(this, executor)
-             : com.destroystokyo.paper.antixray.ChunkPacketBlockController.NO_OPERATION_INSTANCE; // Paper - Anti-Xray
+         this.keepSpawnInMemory = this.paperConfig.keepSpawnInMemory; // Paper
+         this.entityLimiter = new org.spigotmc.TickLimiter(spigotConfig.entityMaxTickTime);
+         this.tileLimiter = new org.spigotmc.TickLimiter(spigotConfig.tileMaxTickTime);
 +        this.entitySliceManager = new io.papermc.paper.world.EntitySliceManager((ServerLevel)this); // Paper
      }
  
@@ -1177,12 +1149,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -            }
 -
 -            if (entity instanceof EnderDragon) {
--                EnderDragonPart[] aentitycomplexpart = ((EnderDragon) entity).getSubEntities();
+-                EnderDragon entityenderdragon = (EnderDragon) entity;
+-                EnderDragonPart[] aentitycomplexpart = entityenderdragon.getSubEntities();
 -                int i = aentitycomplexpart.length;
 -
 -                for (int j = 0; j < i; ++j) {
 -                    EnderDragonPart entitycomplexpart = aentitycomplexpart[j];
--                    T t0 = filter.tryCast(entitycomplexpart);
+-                    T t0 = filter.tryCast(entitycomplexpart); // CraftBukkit - decompile error
 -
 -                    if (t0 != null && predicate.test(t0)) {
 -                        list.add(t0);
@@ -1228,7 +1201,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public class PersistentEntitySectionManager<T extends EntityAccess> implements A
              EntitySection<T> entitysection = this.sectionStorage.getOrCreateSection(i);
  
-             entitysection.add(entity); // CraftBukkit - decompile error
+             entitysection.add(entity);
 +            this.entitySliceManager.addEntity((Entity)entity); // Paper
              entity.setLevelCallback(new PersistentEntitySectionManager.Callback(entity, i, entitysection));
              if (!existing) {
@@ -1264,7 +1237,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public class CraftChunk implements Chunk {
          long pair = ChunkPos.asLong(x, z);
  
-         if (entityManager.areEntitiesLoaded(pair)) { // PAIL rename isEntitiesLoaded
+         if (entityManager.areEntitiesLoaded(pair)) {
 -            return entityManager.getEntities(new ChunkPos(this.x, this.z)).stream()
 -                    .map(net.minecraft.world.entity.Entity::getBukkitEntity)
 -                    .filter(Objects::nonNull).toArray(Entity[]::new);
@@ -1288,8 +1261,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/org/bukkit/craftbukkit/util/DummyGeneratorAccess.java
 +++ b/src/main/java/org/bukkit/craftbukkit/util/DummyGeneratorAccess.java
 @@ -0,0 +0,0 @@ public class DummyGeneratorAccess implements WorldGenLevel {
-     public Stream<? extends StructureStart<?>> startsForFeature(SectionPos pos, StructureFeature<?> feature) {
-         throw new UnsupportedOperationException("Not supported yet.");
+     public boolean destroyBlock(BlockPos pos, boolean drop, Entity breakingEntity, int maxUpdateDepth) {
+         return false; // SPIGOT-6515
      }
 +
 +    // Paper start

@@ -831,8 +831,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -    private final net.minecraft.server.level.ServerLevel world; // Paper
 +    public final net.minecraft.server.level.ServerLevel world; // Paper // Paper public
  
-     public PoiManager(File directory, DataFixer dataFixer, boolean dsync, LevelHeightAccessor world) {
-         super(directory, PoiSection::codec, PoiSection::new, dataFixer, DataFixTypes.POI_CHUNK, dsync, world);
+     public PoiManager(Path path, DataFixer dataFixer, boolean dsync, LevelHeightAccessor world) {
+         super(path, PoiSection::codec, PoiSection::new, dataFixer, DataFixTypes.POI_CHUNK, dsync, world);
 @@ -0,0 +0,0 @@ public class PoiManager extends SectionStorage<PoiSection> {
      }
  
@@ -854,12 +854,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        // Paper end - re-route to faster logic
      }
  
-     public Optional<BlockPos> findClosest(Predicate<PoiType> predicate, Predicate<BlockPos> predicate2, BlockPos blockPos, int i, PoiManager.Occupancy occupancy) {
--        return this.getInRange(predicate, blockPos, i, occupancy).map(PoiRecord::getPos).filter(predicate2).min(Comparator.comparingDouble((blockPos2) -> {
--            return blockPos2.distSqr(blockPos);
+     public Optional<BlockPos> findClosest(Predicate<PoiType> typePredicate, Predicate<BlockPos> posPredicate, BlockPos pos, int radius, PoiManager.Occupancy occupationStatus) {
+-        return this.getInRange(typePredicate, pos, radius, occupationStatus).map(PoiRecord::getPos).filter(posPredicate).min(Comparator.comparingDouble((blockPos2) -> {
+-            return blockPos2.distSqr(pos);
 -        }));
 +        // Paper start - re-route to faster logic
-+        BlockPos ret = io.papermc.paper.util.PoiAccess.findClosestPoiDataPosition(this, predicate, predicate2, blockPos, i, i*i, occupancy, false);
++        BlockPos ret = io.papermc.paper.util.PoiAccess.findClosestPoiDataPosition(this, typePredicate, posPredicate, pos, radius, radius * radius, occupationStatus, false);
 +        return Optional.ofNullable(ret);
 +        // Paper end - re-route to faster logic
      }
@@ -886,8 +886,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public Optional<BlockPos> getRandom(Predicate<PoiType> typePredicate, Predicate<BlockPos> positionPredicate, PoiManager.Occupancy occupationStatus, BlockPos pos, int radius, Random random) {
 -        List<PoiRecord> list = this.getInRange(typePredicate, pos, radius, occupationStatus).collect(Collectors.toList());
 -        Collections.shuffle(list, random);
--        return list.stream().filter((poiRecord) -> {
--            return positionPredicate.test(poiRecord.getPos());
+-        return list.stream().filter((poi) -> {
+-            return positionPredicate.test(poi.getPos());
 -        }).findFirst().map(PoiRecord::getPos);
 +        // Paper start - re-route to faster logic
 +        List<PoiRecord> list = new java.util.ArrayList<>();
@@ -949,7 +949,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -        villageplace.ensureLoadedAndValid(this.level, blockposition, i);
 -        Optional<PoiRecord> optional = villageplace.getInSquare((villageplacetype) -> {
 -            return villageplacetype == PoiType.NETHER_PORTAL;
--        }, blockposition, i, PoiManager.Occupancy.ANY).sorted(Comparator.comparingDouble((PoiRecord villageplacerecord) -> { // CraftBukkit - decompile error
+-        }, blockposition, i, PoiManager.Occupancy.ANY).filter((villageplacerecord) -> {
+-            return worldborder.isWithinBounds(villageplacerecord.getPos());
+-        }).sorted(Comparator.comparingDouble((PoiRecord villageplacerecord) -> { // CraftBukkit - decompile error
 -            return villageplacerecord.getPos().distSqr(blockposition);
 -        }).thenComparingInt((villageplacerecord) -> {
 -            return villageplacerecord.getPos().getY();
@@ -968,6 +970,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                net.minecraft.world.level.chunk.ChunkAccess lowest = this.level.getChunk(pos.getX() >> 4, pos.getZ() >> 4, net.minecraft.world.level.chunk.ChunkStatus.EMPTY);
 +                if (!lowest.getStatus().isOrAfter(net.minecraft.world.level.chunk.ChunkStatus.FULL)) {
 +                    // why would we generate the chunk?
++                    return false;
++                }
++                if (!worldborder.isWithinBounds(pos)) {
 +                    return false;
 +                }
 +                return lowest.getBlockState(pos).hasProperty(BlockStateProperties.HORIZONTAL_AXIS);

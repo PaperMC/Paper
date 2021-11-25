@@ -18,18 +18,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      private static final Map<Class<?>, String> taskNameCache = new MapMaker().weakKeys().makeMap();
  
      private MinecraftTimings() {}
-diff --git a/src/main/java/com/destroystokyo/paper/server/ticklist/PaperTickList.java b/src/main/java/com/destroystokyo/paper/server/ticklist/PaperTickList.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/com/destroystokyo/paper/server/ticklist/PaperTickList.java
-+++ b/src/main/java/com/destroystokyo/paper/server/ticklist/PaperTickList.java
-@@ -0,0 +0,0 @@ public final class PaperTickList<T> extends ServerTickList<T> { // extend to avo
-                     toTick.tickState = STATE_SCHEDULED;
-                     this.addToNotTickingReady(toTick);
-                 }
-+                MinecraftServer.getServer().executeMidTickTasks(); // Paper - exec chunk tasks during world tick
-             } catch (final Throwable thr) {
-                 // start copy from TickListServer // TODO check on update
-                 CrashReport crashreport = CrashReport.forThrowable(thr, "Exception while ticking");
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
@@ -119,33 +107,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              return true;
          } else {
              if (this.haveTime()) {
-diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-+++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-@@ -0,0 +0,0 @@ public class ServerChunkCache extends ChunkSource {
-                 Collections.shuffle(shuffled);
-                 iterator = shuffled.iterator();
-             }
-+            int chunksTicked = 0; // Paper
-             try { while (iterator.hasNext()) {
-                 LevelChunk chunk = iterator.next();
-                 ChunkHolder playerchunk = chunk.playerChunk;
-@@ -0,0 +0,0 @@ public class ServerChunkCache extends ChunkSource {
-                         this.level.tickChunk(chunk, k);
-                         // this.level.timings.doTickTiles.stopTiming(); // Spigot // Paper
-                     }
-+                    if ((chunksTicked++ & 1) == 0) net.minecraft.server.MinecraftServer.getServer().executeMidTickTasks(); // Paper
-                 }
-             } // Paper start - optimise chunk tick iteration
-             } finally {
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
 @@ -0,0 +0,0 @@ public class ServerLevel extends Level implements WorldGenLevel {
-     final Int2ObjectMap<EnderDragonPart> dragonParts;
      private final StructureFeatureManager structureFeatureManager;
+     private final StructureCheck structureCheck;
      private final boolean tickTime;
 -
 +    // Paper start - execute chunk tasks mid tick
