@@ -1,0 +1,39 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Phoenix616 <max@themoep.de>
+Date: Sun, 20 Jun 2021 16:35:42 +0100
+Subject: [PATCH] Don't apply cramming damage to players
+
+It does not make a lot of sense to damage players if they get crammed,
+ especially as the usecase of teleporting lots of players to the same
+ location isn't too uncommon and killing all those players isn't
+ really what one would expect to happen.
+
+For those who really want it a config option is provided.
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index c58b18cd75eca14ce61d59c6beffa34337917ddd..f21bd06d7f0531e8ae0412377757a147e9db4e85 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -823,4 +823,9 @@ public class PaperWorldConfig {
+     private void showSignClickCommandFailureMessagesToPlayer() {
+         showSignClickCommandFailureMessagesToPlayer = getBoolean("show-sign-click-command-failure-msgs-to-player", showSignClickCommandFailureMessagesToPlayer);
+     }
++
++    public boolean allowPlayerCrammingDamage = false;
++    private void playerCrammingDamage() {
++        allowPlayerCrammingDamage = getBoolean("allow-player-cramming-damage", allowPlayerCrammingDamage);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+index 254c02b88bf0025d0c4af44aa95cf29c6303345c..73e7df6e847a4efd4557b676f96c6af54840ea73 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+@@ -1433,7 +1433,7 @@ public class ServerPlayer extends Player {
+ 
+     @Override
+     public boolean isInvulnerableTo(DamageSource damageSource) {
+-        return super.isInvulnerableTo(damageSource) || this.isChangingDimension() || this.getAbilities().invulnerable && damageSource == DamageSource.WITHER;
++        return super.isInvulnerableTo(damageSource) || this.isChangingDimension() || this.getAbilities().invulnerable && damageSource == DamageSource.WITHER || !level.paperConfig.allowPlayerCrammingDamage && damageSource == DamageSource.CRAMMING; // Paper - disable player cramming
+     }
+ 
+     @Override

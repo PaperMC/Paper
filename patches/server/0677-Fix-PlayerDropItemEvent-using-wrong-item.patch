@@ -1,0 +1,35 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Sun, 20 Jun 2021 21:55:59 -0700
+Subject: [PATCH] Fix PlayerDropItemEvent using wrong item
+
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+index 0407973474ce463a4dae91dd518e67d38def94bb..254c02b88bf0025d0c4af44aa95cf29c6303345c 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+@@ -2174,7 +2174,7 @@ public class ServerPlayer extends Player {
+ 
+             if (retainOwnership) {
+                 if (!itemstack1.isEmpty()) {
+-                    this.awardStat(Stats.ITEM_DROPPED.get(itemstack1.getItem()), stack.getCount());
++                    this.awardStat(Stats.ITEM_DROPPED.get(itemstack1.getItem()), itemstack1.getCount()); // Paper
+                 }
+ 
+                 this.awardStat(Stats.DROP);
+diff --git a/src/main/java/net/minecraft/world/entity/player/Player.java b/src/main/java/net/minecraft/world/entity/player/Player.java
+index 6f406d8d945f3938961fe1a0df42f8cb558d8716..44c2820a33ed40b4ef2ebd20708347d3cc2437ae 100644
+--- a/src/main/java/net/minecraft/world/entity/player/Player.java
++++ b/src/main/java/net/minecraft/world/entity/player/Player.java
+@@ -703,6 +703,11 @@ public abstract class Player extends LivingEntity {
+             }
+ 
+             double d0 = this.getEyeY() - 0.30000001192092896D;
++            // Paper start
++            ItemStack tmp = stack.copy();
++            stack.setCount(0);
++            stack = tmp;
++            // Paper end
+             ItemEntity entityitem = new ItemEntity(this.level, this.getX(), d0, this.getZ(), stack);
+ 
+             entityitem.setPickUpDelay(40);
