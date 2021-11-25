@@ -78,34 +78,33 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public int getBehaviorTickRate(String typeName, String entityType, int def) {
          return getIntOrDefault(behaviorTickRates, typeName, entityType, def);
      }
-diff --git a/src/main/java/net/minecraft/world/level/biome/Biome.java b/src/main/java/net/minecraft/world/level/biome/Biome.java
+diff --git a/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java b/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/world/level/biome/Biome.java
-+++ b/src/main/java/net/minecraft/world/level/biome/Biome.java
-@@ -0,0 +0,0 @@ public final class Biome {
+--- a/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java
++++ b/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java
+@@ -0,0 +0,0 @@ public abstract class ChunkGenerator implements BiomeManager.NoiseBiomeSource {
  
-     public void generate(StructureFeatureManager structureAccessor, ChunkGenerator chunkGenerator, WorldGenRegion region, long populationSeed, WorldgenRandom random, BlockPos origin) {
-         List<List<Supplier<ConfiguredFeature<?, ?>>>> list = this.generationSettings.features();
--        Registry<ConfiguredFeature<?, ?>> registry = region.registryAccess().registryOrThrow(Registry.CONFIGURED_FEATURE_REGISTRY);
-+        Registry<ConfiguredFeature<?, ?>> registry = region.registryAccess().registryOrThrow(Registry.CONFIGURED_FEATURE_REGISTRY); // Paper - diff on change
-         Registry<StructureFeature<?>> registry2 = region.registryAccess().registryOrThrow(Registry.STRUCTURE_FEATURE_REGISTRY);
-         int i = GenerationStep.Decoration.values().length;
+             try {
+                 Registry<PlacedFeature> iregistry = generatoraccessseed.registryAccess().registryOrThrow(Registry.PLACED_FEATURE_REGISTRY);
+-                Registry<StructureFeature<?>> iregistry1 = generatoraccessseed.registryAccess().registryOrThrow(Registry.STRUCTURE_FEATURE_REGISTRY);
++                Registry<StructureFeature<?>> iregistry1 = generatoraccessseed.registryAccess().registryOrThrow(Registry.STRUCTURE_FEATURE_REGISTRY); // Paper - diff on change
+                 int k = Math.max(GenerationStep.Decoration.values().length, j);
  
-@@ -0,0 +0,0 @@ public final class Biome {
-                     Supplier<String> supplier3 = () -> {
-                         return registry.getResourceKey(configuredFeature).map(Object::toString).orElseGet(configuredFeature::toString);
-                     };
--                    random.setFeatureSeed(populationSeed, k, j);
-+                    // Paper start - change populationSeed used in random
-+                    long featurePopulationSeed = populationSeed;
-+                    final ResourceLocation location = registry.getKey(configuredFeature);
-+                    final long configFeatureSeed = region.getMinecraftWorld().paperConfig.featureSeeds.getLong(location);
-+                    if (configFeatureSeed != -1) {
-+                        final ChunkPos center = region.getCenter();
-+                        featurePopulationSeed = random.setDecorationSeed(configFeatureSeed, center.getMinBlockX(), center.getMinBlockZ()); // See ChunkGenerator#addVanillaDecorations
-+                    }
-+                    random.setFeatureSeed(featurePopulationSeed, k, j);
-+                    // Paper end
+                 for (int l = 0; l < k; ++l) {
+@@ -0,0 +0,0 @@ public abstract class ChunkGenerator implements BiomeManager.NoiseBiomeSource {
+                         for (iterator = list1.iterator(); iterator.hasNext(); ++i1) {
+                             StructureFeature<?> structuregenerator = (StructureFeature) iterator.next();
  
-                     try {
-                         region.setCurrentlyGenerating(supplier3);
+-                            seededrandom.setFeatureSeed(i, i1, l);
++                            // Paper start - change populationSeed used in random
++                            long featurePopulationSeed = i;
++                            final net.minecraft.resources.ResourceLocation location = iregistry1.getKey(structuregenerator);
++                            final long configFeatureSeed = generatoraccessseed.getMinecraftWorld().paperConfig.featureSeeds.getLong(location);
++                            if (configFeatureSeed != -1) {
++                                featurePopulationSeed = seededrandom.setDecorationSeed(configFeatureSeed, blockposition.getX(), blockposition.getZ()); // See seededrandom.setDecorationSeed from above
++                            }
++                            seededrandom.setFeatureSeed(featurePopulationSeed, i1, l);;
++                            // Paper end
+                             Supplier<String> supplier = () -> { // CraftBukkit - decompile error
+                                 Optional optional = iregistry1.getResourceKey(structuregenerator).map(Object::toString);
+ 
