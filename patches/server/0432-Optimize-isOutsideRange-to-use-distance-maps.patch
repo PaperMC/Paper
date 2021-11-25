@@ -272,10 +272,48 @@ index 8868ffcda194e8c2300181a2cdda9337dbde6284..95f195980e28bb59f43e5ca1d5e79ebe
  
      public String getDebugStatus() {
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-index a66d9d6df1fc0ad68f51ea96d4e1a2d725c73b05..00305a06885b2457615b6bd35bb1a84721ca1d77 100644
+index a66d9d6df1fc0ad68f51ea96d4e1a2d725c73b05..c3875acfad91c50a7fec4b1f8e06e8a32e2ea037 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-@@ -928,15 +928,7 @@ public class ServerChunkCache extends ChunkSource {
+@@ -881,6 +881,37 @@ public class ServerChunkCache extends ChunkSource {
+         if (flag) {
+             this.chunkMap.tick();
+         } else {
++            // Paper start - optimize isOutisdeRange
++            ChunkMap playerChunkMap = this.chunkMap;
++            for (ServerPlayer player : this.level.players) {
++                if (!player.affectsSpawning || player.isSpectator()) {
++                    playerChunkMap.playerMobSpawnMap.remove(player);
++                    continue;
++                }
++
++                int viewDistance = this.chunkMap.getEffectiveViewDistance();
++
++                // copied and modified from isOutisdeRange
++                int chunkRange = level.spigotConfig.mobSpawnRange;
++                chunkRange = (chunkRange > viewDistance) ? (byte)viewDistance : chunkRange;
++                chunkRange = (chunkRange > DistanceManager.MOB_SPAWN_RANGE) ? DistanceManager.MOB_SPAWN_RANGE : chunkRange;
++
++                com.destroystokyo.paper.event.entity.PlayerNaturallySpawnCreaturesEvent event = new com.destroystokyo.paper.event.entity.PlayerNaturallySpawnCreaturesEvent(player.getBukkitEntity(), (byte)chunkRange);
++                event.callEvent();
++                if (event.isCancelled() || event.getSpawnRadius() < 0 || playerChunkMap.playerChunkTickRangeMap.getLastViewDistance(player) == -1) {
++                    playerChunkMap.playerMobSpawnMap.remove(player);
++                    continue;
++                }
++
++                int range = Math.min(event.getSpawnRadius(), 32); // limit to max view distance
++                int chunkX = net.minecraft.server.MCUtil.getChunkCoordinate(player.getX());
++                int chunkZ = net.minecraft.server.MCUtil.getChunkCoordinate(player.getZ());
++
++                playerChunkMap.playerMobSpawnMap.addOrUpdate(player, chunkX, chunkZ, range);
++                player.lastEntitySpawnRadiusSquared = (double)((range << 4) * (range << 4)); // used in isOutsideRange
++                player.playerNaturallySpawnedEvent = event;
++            }
++            // Paper end - optimize isOutisdeRange
+             LevelData worlddata = this.level.getLevelData();
+             ProfilerFiller gameprofilerfiller = this.level.getProfiler();
+ 
+@@ -928,15 +959,7 @@ public class ServerChunkCache extends ChunkSource {
              boolean flag2 = this.level.getGameRules().getBoolean(GameRules.RULE_DOMOBSPAWNING) && !this.level.players().isEmpty(); // CraftBukkit
  
              //Collections.shuffle(list); // Paper - no... just no...
@@ -292,7 +330,7 @@ index a66d9d6df1fc0ad68f51ea96d4e1a2d725c73b05..00305a06885b2457615b6bd35bb1a847
              Iterator iterator1 = list.iterator();
  
              while (iterator1.hasNext()) {
-@@ -944,9 +936,9 @@ public class ServerChunkCache extends ChunkSource {
+@@ -944,9 +967,9 @@ public class ServerChunkCache extends ChunkSource {
                  LevelChunk chunk1 = chunkproviderserver_a.chunk;
                  ChunkPos chunkcoordintpair = chunk1.getPos();
  
