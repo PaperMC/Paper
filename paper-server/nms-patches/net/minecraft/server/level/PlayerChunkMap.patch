@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/level/PlayerChunkMap.java
 +++ b/net/minecraft/server/level/PlayerChunkMap.java
-@@ -95,6 +95,11 @@
+@@ -96,6 +96,11 @@
  import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
  
@@ -12,7 +12,7 @@
  public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.e {
  
      private static final byte CHUNK_TYPE_REPLACEABLE = -1;
-@@ -134,6 +139,27 @@
+@@ -135,6 +140,27 @@
      private final Queue<Runnable> unloadQueue;
      int viewDistance;
  
@@ -40,22 +40,22 @@
      public PlayerChunkMap(WorldServer worldserver, Convertable.ConversionSession convertable_conversionsession, DataFixer datafixer, DefinedStructureManager definedstructuremanager, Executor executor, IAsyncTaskHandler<Runnable> iasynctaskhandler, ILightAccess ilightaccess, ChunkGenerator chunkgenerator, WorldLoadListener worldloadlistener, ChunkStatusUpdateListener chunkstatusupdatelistener, Supplier<WorldPersistentData> supplier, int i, boolean flag) {
          super(convertable_conversionsession.getDimensionPath(worldserver.dimension()).resolve("region"), datafixer, flag);
          this.visibleChunkMap = this.updatingChunkMap.clone();
-@@ -327,9 +353,12 @@
- 
-         return completablefuture1.thenApply((list1) -> {
-             List<IChunkAccess> list2 = Lists.newArrayList();
+@@ -329,9 +355,12 @@
+         CompletableFuture<List<Either<IChunkAccess, PlayerChunk.Failure>>> completablefuture1 = SystemUtils.sequence(list);
+         CompletableFuture<Either<List<IChunkAccess>, PlayerChunk.Failure>> completablefuture2 = completablefuture1.thenApply((list2) -> {
+             List<IChunkAccess> list3 = Lists.newArrayList();
 -            final int l1 = 0;
 +            // CraftBukkit start - decompile error
 +            int cnt = 0;
  
--            for (Iterator iterator = list1.iterator(); iterator.hasNext(); ++l1) {
-+            for (Iterator iterator = list1.iterator(); iterator.hasNext(); ++cnt) {
+-            for (Iterator iterator = list2.iterator(); iterator.hasNext(); ++l1) {
++            for (Iterator iterator = list2.iterator(); iterator.hasNext(); ++cnt) {
 +                final int l1 = cnt;
 +                // CraftBukkit end
                  final Either<IChunkAccess, PlayerChunk.Failure> either = (Either) iterator.next();
                  Optional<IChunkAccess> optional = either.left();
  
-@@ -490,7 +519,7 @@
+@@ -501,7 +530,7 @@
  
      private void scheduleUnload(long i, PlayerChunk playerchunk) {
          CompletableFuture<IChunkAccess> completablefuture = playerchunk.getChunkToSave();
@@ -64,7 +64,7 @@
              CompletableFuture<IChunkAccess> completablefuture1 = playerchunk.getChunkToSave();
  
              if (completablefuture1 != completablefuture) {
-@@ -669,7 +698,21 @@
+@@ -680,7 +709,21 @@
  
      private static void postLoadProtoChunk(WorldServer worldserver, List<NBTTagCompound> list) {
          if (!list.isEmpty()) {
@@ -87,16 +87,16 @@
          }
  
      }
-@@ -767,7 +810,7 @@
+@@ -778,7 +821,7 @@
          if (!playerchunk.wasAccessibleSinceLastSave()) {
              return false;
          } else {
 -            IChunkAccess ichunkaccess = (IChunkAccess) playerchunk.getChunkToSave().getNow((Object) null);
 +            IChunkAccess ichunkaccess = (IChunkAccess) playerchunk.getChunkToSave().getNow(null); // CraftBukkit - decompile error
-             boolean flag;
  
-             if (ichunkaccess instanceof ProtoChunkExtension) {
-@@ -922,7 +965,8 @@
+             if (!(ichunkaccess instanceof ProtoChunkExtension) && !(ichunkaccess instanceof Chunk)) {
+                 return false;
+@@ -927,7 +970,8 @@
                  return ichunkaccess instanceof Chunk ? Optional.of((Chunk) ichunkaccess) : Optional.empty();
              });
  
@@ -106,7 +106,7 @@
                  return chunk.getBlockEntities().size();
              }).orElse(0), tickingtracker.getTicketDebugString(i), tickingtracker.getLevel(i), optional1.map((chunk) -> {
                  return chunk.getBlockTicks().count();
-@@ -935,7 +979,7 @@
+@@ -940,7 +984,7 @@
  
      private static String printFuture(CompletableFuture<Either<Chunk, PlayerChunk.Failure>> completablefuture) {
          try {
@@ -115,7 +115,7 @@
  
              return either != null ? (String) either.map((chunk) -> {
                  return "done";
-@@ -953,7 +997,7 @@
+@@ -958,7 +1002,7 @@
      private NBTTagCompound readChunk(ChunkCoordIntPair chunkcoordintpair) throws IOException {
          NBTTagCompound nbttagcompound = this.read(chunkcoordintpair);
  
@@ -124,7 +124,7 @@
      }
  
      boolean anyPlayerCloseEnoughForSpawning(ChunkCoordIntPair chunkcoordintpair) {
-@@ -1377,7 +1421,7 @@
+@@ -1382,7 +1426,7 @@
          public final Set<ServerPlayerConnection> seenBy = Sets.newIdentityHashSet();
  
          public EntityTracker(Entity entity, int i, int j, boolean flag) {
@@ -133,7 +133,7 @@
              this.entity = entity;
              this.range = i;
              this.lastSectionPos = SectionPosition.of(entity);
-@@ -1430,12 +1474,20 @@
+@@ -1435,12 +1479,20 @@
  
          public void updatePlayer(EntityPlayer entityplayer) {
              if (entityplayer != this.entity) {
