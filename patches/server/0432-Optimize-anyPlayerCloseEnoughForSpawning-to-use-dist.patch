@@ -6,7 +6,7 @@ Subject: [PATCH] Optimize anyPlayerCloseEnoughForSpawning to use distance maps
 Use a distance map to find the players in range quickly
 
 diff --git a/src/main/java/net/minecraft/server/level/ChunkHolder.java b/src/main/java/net/minecraft/server/level/ChunkHolder.java
-index 51175994b37e966af8983df1f15a0fc5a638a0b5..347cf5d00d986ae8ad60af7f6eabde9fbfd78561 100644
+index b3dc875fde93095d20ae88159afe82c6b452ed8e..7c3eaa72263708f5b2cea455b3eea230bc633c5d 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkHolder.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkHolder.java
 @@ -73,6 +73,18 @@ public class ChunkHolder {
@@ -37,10 +37,10 @@ index 51175994b37e966af8983df1f15a0fc5a638a0b5..347cf5d00d986ae8ad60af7f6eabde9f
  
      // CraftBukkit start
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index 7f4b68199b0cd8adb09ef09539b43e62885e19c5..344d18b91a9a5d1c0d55d3a0a12073246de24046 100644
+index f4fddfcb33ae463c6a86e7282d069279258bc4ff..e64d1493c5e77daad2e410647412a2e1e9813109 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
-@@ -176,21 +176,40 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -177,21 +177,40 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
      final CallbackExecutor chunkLoadConversionCallbackExecutor = new CallbackExecutor(); // Paper
      // Paper start - distance maps
      private final com.destroystokyo.paper.util.misc.PooledLinkedHashSets<ServerPlayer> pooledLinkedPlayerHashSets = new com.destroystokyo.paper.util.misc.PooledLinkedHashSets<>();
@@ -82,7 +82,7 @@ index 7f4b68199b0cd8adb09ef09539b43e62885e19c5..344d18b91a9a5d1c0d55d3a0a1207324
      }
      // Paper end
      // Paper start
-@@ -265,6 +284,38 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -266,6 +285,38 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          this.regionManagers.add(this.dataRegionManager);
          // Paper end
          this.playerMobDistanceMap = this.level.paperConfig.perPlayerMobSpawns ? new com.destroystokyo.paper.util.PlayerMobDistanceMap() : null; // Paper
@@ -121,7 +121,7 @@ index 7f4b68199b0cd8adb09ef09539b43e62885e19c5..344d18b91a9a5d1c0d55d3a0a1207324
      }
  
      protected ChunkGenerator generator() {
-@@ -493,6 +544,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -504,6 +555,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          } else {
              if (holder != null) {
                  holder.setTicketLevel(level);
@@ -129,7 +129,7 @@ index 7f4b68199b0cd8adb09ef09539b43e62885e19c5..344d18b91a9a5d1c0d55d3a0a1207324
              }
  
              if (holder != null) {
-@@ -1342,43 +1394,48 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1347,43 +1399,48 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          return this.anyPlayerCloseEnoughForSpawning(pos, false);
      }
  
