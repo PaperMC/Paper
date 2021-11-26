@@ -316,16 +316,17 @@ index 0000000000000000000000000000000000000000..b8b17d046f836c8652ab094db00ab1af
 +}
 diff --git a/src/main/java/io/papermc/paper/util/StacktraceDeobfuscator.java b/src/main/java/io/papermc/paper/util/StacktraceDeobfuscator.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..5019d22fa2ab8d72fac5ffcf5dc2a3715ae63760
+index 0000000000000000000000000000000000000000..3c3051c2917548faf7e72276fb642202b33d1794
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/util/StacktraceDeobfuscator.java
-@@ -0,0 +1,153 @@
+@@ -0,0 +1,163 @@
 +package io.papermc.paper.util;
 +
 +import com.destroystokyo.paper.PaperConfig;
 +import it.unimi.dsi.fastutil.ints.IntArrayList;
 +import it.unimi.dsi.fastutil.ints.IntList;
 +import java.io.IOException;
++import java.io.InputStream;
 +import java.util.Collections;
 +import java.util.HashMap;
 +import java.util.LinkedHashMap;
@@ -465,7 +466,16 @@ index 0000000000000000000000000000000000000000..5019d22fa2ab8d72fac5ffcf5dc2a371
 +            }
 +        };
 +        try {
-+            final ClassReader reader = new ClassReader(key.getName());
++            final @Nullable InputStream inputStream = StacktraceDeobfuscator.class.getClassLoader()
++                .getResourceAsStream(key.getName().replace('.', '/') + ".class");
++            if (inputStream == null) {
++                throw new IllegalStateException("Could not find class file: " + key.getName());
++            }
++            final byte[] classData;
++            try (inputStream) {
++                classData = inputStream.readAllBytes();
++            }
++            final ClassReader reader = new ClassReader(classData);
 +            reader.accept(classVisitor, 0);
 +        } catch (final IOException ex) {
 +            throw new RuntimeException(ex);
