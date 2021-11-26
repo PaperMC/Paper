@@ -326,6 +326,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import it.unimi.dsi.fastutil.ints.IntArrayList;
 +import it.unimi.dsi.fastutil.ints.IntList;
 +import java.io.IOException;
++import java.io.InputStream;
 +import java.util.Collections;
 +import java.util.HashMap;
 +import java.util.LinkedHashMap;
@@ -465,7 +466,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            }
 +        };
 +        try {
-+            final ClassReader reader = new ClassReader(key.getName());
++            final @Nullable InputStream inputStream = StacktraceDeobfuscator.class.getClassLoader()
++                .getResourceAsStream(key.getName().replace('.', '/') + ".class");
++            if (inputStream == null) {
++                throw new IllegalStateException("Could not find class file: " + key.getName());
++            }
++            final byte[] classData;
++            try (inputStream) {
++                classData = inputStream.readAllBytes();
++            }
++            final ClassReader reader = new ClassReader(classData);
 +            reader.accept(classVisitor, 0);
 +        } catch (final IOException ex) {
 +            throw new RuntimeException(ex);
