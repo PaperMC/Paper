@@ -7,7 +7,7 @@ pluginManagement {
     }
 }
 
-rootProject.name = "Paper"
+rootProject.name = "paper"
 
 for (name in listOf("Paper-API", "Paper-Server", "Paper-MojangAPI")) {
     val projName = name.toLowerCase(Locale.ENGLISH)
