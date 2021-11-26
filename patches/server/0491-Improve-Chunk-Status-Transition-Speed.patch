@@ -36,13 +36,13 @@ scenario / path:
 Previously would have hopped to SERVER around 12+ times there extra.
 
 diff --git a/src/main/java/net/minecraft/server/level/ChunkHolder.java b/src/main/java/net/minecraft/server/level/ChunkHolder.java
-index 64fa9affc32057f09268a6f92dbc88c9decd6ed8..6782e2b100b1619016c637a9e71f9e880ff974e1 100644
+index 05814028d205f7a1e468bdaaae9e9916047ff4ce..8950470bbaa57ac0ef6ca4d6e3796a712e0b6cd6 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkHolder.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkHolder.java
-@@ -85,6 +85,13 @@ public class ChunkHolder {
-         this.playersInChunkTickRange = this.chunkMap.playerChunkTickRangeMap.getObjectsInRange(key);
-     }
+@@ -87,6 +87,13 @@ public class ChunkHolder {
      // Paper end - optimise isOutsideOfRange
+     long lastAutoSaveTime; // Paper - incremental autosave
+     long inactiveTimeStart; // Paper - incremental autosave
 +    // Paper start - optimize chunk status progression without jumping through thread pool
 +    public boolean canAdvanceStatus() {
 +        ChunkStatus status = getChunkHolderStatus();
@@ -54,10 +54,10 @@ index 64fa9affc32057f09268a6f92dbc88c9decd6ed8..6782e2b100b1619016c637a9e71f9e88
      public ChunkHolder(ChunkPos pos, int level, LevelHeightAccessor world, LevelLightEngine lightingProvider, ChunkHolder.LevelChangeListener levelUpdateListener, ChunkHolder.PlayerProvider playersWatchingChunkProvider) {
          this.futures = new AtomicReferenceArray(ChunkHolder.CHUNK_STATUSES.size());
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index 373ac9909666302fd6b9c6891866a9baf3977316..c637a9b0a978700a0cd941be22208ae3c01f6eb2 100644
+index d3d5041bddafd03e053c1bc04883c67d7d98556f..b75ad5ee074489e3c66ef6524106241c6d577916 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
-@@ -662,7 +662,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -663,7 +663,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
              return either.mapLeft((list) -> {
                  return (LevelChunk) list.get(list.size() / 2);
              });
@@ -66,7 +66,7 @@ index 373ac9909666302fd6b9c6891866a9baf3977316..c637a9b0a978700a0cd941be22208ae3
      }
  
      @Nullable
-@@ -1013,6 +1013,12 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1073,6 +1073,12 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
              return "chunkGenerate " + requiredStatus.getName();
          });
          Executor executor = (runnable) -> {
