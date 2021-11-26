@@ -9,7 +9,7 @@ since the penalty of a map lookup could outweigh the benefits of
 searching less players (as it basically did in the outside range patch).
 
 diff --git a/src/main/java/net/minecraft/server/level/ChunkHolder.java b/src/main/java/net/minecraft/server/level/ChunkHolder.java
-index dcd95e4cb169fa5eefc34b6fff8f21893052576b..380f8f133cc38fa005548bad23e12fa873e7349f 100644
+index 223f6e0dd7df135f0d15fc8a9e78cb426cda911d..c3d1adaf7abfafa8e4c5d173c0d2ec40ca655cfb 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkHolder.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkHolder.java
 @@ -83,6 +83,12 @@ public class ChunkHolder {
@@ -24,12 +24,12 @@ index dcd95e4cb169fa5eefc34b6fff8f21893052576b..380f8f133cc38fa005548bad23e12fa8
 +        // Paper end - optimise checkDespawn
      }
      // Paper end - optimise isOutsideOfRange
-     // Paper start - optimize chunk status progression without jumping through thread pool
+     long lastAutoSaveTime; // Paper - incremental autosave
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index cde82f240924640575d4261d862052af03f31849..3d6d68b1f52d507a1f4db9a0c5da09072624046e 100644
+index edb94ce747afae854fcfa63e08467b18982f6db7..399a98437ea632b8768a7c153dee7723c8499317 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
-@@ -157,6 +157,13 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -158,6 +158,13 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
      int viewDistance;
      public final com.destroystokyo.paper.util.PlayerMobDistanceMap playerMobDistanceMap; // Paper
  
@@ -43,7 +43,7 @@ index cde82f240924640575d4261d862052af03f31849..3d6d68b1f52d507a1f4db9a0c5da0907
      // CraftBukkit start - recursion-safe executor for Chunk loadCallback() and unloadCallback()
      public final CallbackExecutor callbackExecutor = new CallbackExecutor();
      public static final class CallbackExecutor implements java.util.concurrent.Executor, Runnable {
-@@ -237,6 +244,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -238,6 +245,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          this.playerChunkTickRangeMap.update(player, chunkX, chunkZ, DistanceManager.MOB_SPAWN_RANGE);
          this.playerChunkTickRangeMap.add(player, chunkX, chunkZ, DistanceManager.MOB_SPAWN_RANGE);
          // Paper end - optimise PlayerChunkMap#isOutsideRange
@@ -51,7 +51,7 @@ index cde82f240924640575d4261d862052af03f31849..3d6d68b1f52d507a1f4db9a0c5da0907
      }
  
      void removePlayerFromDistanceMaps(ServerPlayer player) {
-@@ -249,6 +257,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -250,6 +258,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          this.playerMobSpawnMap.remove(player);
          this.playerChunkTickRangeMap.remove(player);
          // Paper end - optimise PlayerChunkMap#isOutsideRange
@@ -59,7 +59,7 @@ index cde82f240924640575d4261d862052af03f31849..3d6d68b1f52d507a1f4db9a0c5da0907
      }
  
      void updateMaps(ServerPlayer player) {
-@@ -264,6 +273,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -265,6 +274,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          }
          // Paper end - use distance map to optimise entity tracker
          this.playerChunkTickRangeMap.update(player, chunkX, chunkZ, DistanceManager.MOB_SPAWN_RANGE); // Paper - optimise PlayerChunkMap#isOutsideRange
@@ -67,7 +67,7 @@ index cde82f240924640575d4261d862052af03f31849..3d6d68b1f52d507a1f4db9a0c5da0907
      }
      // Paper end
      // Paper start
-@@ -419,6 +429,23 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -420,6 +430,23 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
                  }
              });
          // Paper end - optimise PlayerChunkMap#isOutsideRange
@@ -92,7 +92,7 @@ index cde82f240924640575d4261d862052af03f31849..3d6d68b1f52d507a1f4db9a0c5da0907
  
      protected ChunkGenerator generator() {
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index 1c92416c3dc07d2348f092eee663e0226d43c8ba..dec294b771966ac42fd89fe5788af503c1f2ba8b 100644
+index 94ba82b4c7d4a308eec0475d3fe790f0498dbe29..d47b21b5edc2734cdd45ed3282df98babe0045c0 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
 @@ -396,6 +396,83 @@ public class ServerLevel extends Level implements WorldGenLevel {
@@ -309,10 +309,10 @@ index 63ba93538d990fdd4c9e8c491bb715adc8d57986..e9a37fc6791366ea421f2766a36dc2e0
  
      private static Boolean isValidSpawnPostitionForType(ServerLevel world, MobCategory group, StructureFeatureManager structureAccessor, ChunkGenerator chunkGenerator, MobSpawnSettings.SpawnerData spawnEntry, BlockPos.MutableBlockPos pos, double squaredDistance) { // Paper
 diff --git a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
-index 875977f11678b34465abac30463675f57cf9fc4e..65541807d19cb3e14d86f72bed843b0d2d2d4511 100644
+index ddf362fc14fcf83b22536b76cfc6ac1387b4c57a..0435c750ec03f65bad3f904070960d56c2ed4832 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
-@@ -231,6 +231,93 @@ public class LevelChunk extends ChunkAccess {
+@@ -237,6 +237,93 @@ public class LevelChunk extends ChunkAccess {
          }
      }
      // Paper end
