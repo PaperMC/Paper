@@ -1,3 +1,5 @@
+import java.util.Locale
+
 pluginManagement {
     repositories {
         gradlePluginPortal()
@@ -7,11 +9,11 @@ pluginManagement {
 
 rootProject.name = "Paper"
 
-include(
-    "Paper-API",
-    "Paper-Server",
-    "Paper-MojangAPI",
-)
+for (name in listOf("Paper-API", "Paper-Server", "Paper-MojangAPI")) {
+    val projName = name.toLowerCase(Locale.ENGLISH)
+    include(projName)
+    findProject(":$projName")!!.projectDir = file(name)
+}
 
 val testPlugin = file("test-plugin.settings.gradle.kts")
 if (testPlugin.exists()) {
