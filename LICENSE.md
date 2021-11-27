@@ -28,7 +28,7 @@ chickeneer <emcchickeneer@gmail.com>
 Minecrell <minecrell@minecrell.net>
 Techcable <Techcable@outlook.com>
 BillyGalbreath <blake.galbreath@gmail.com>
-MiniDigger <admin@minidigger.me>
+MiniDigger <admin@benndorf.dev>
 Brokkonaut <hannos17@gmx.de>
 vemacs <d@nkmem.es>
 stonar96 <minecraft.stonar96@gmail.com>
