@@ -21,6 +21,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import java.util.jar.Manifest;
 +import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
 +
 +@ApiStatus.Internal
 +public final class JarManifests {
@@ -29,19 +30,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    private static final Map<ClassLoader, Manifest> MANIFESTS = Collections.synchronizedMap(new WeakHashMap<>());
 +
-+    public static @NotNull Manifest manifest(final @NotNull Class<?> clazz) {
++    public static @Nullable Manifest manifest(final @NotNull Class<?> clazz) {
 +        return MANIFESTS.computeIfAbsent(clazz.getClassLoader(), classLoader -> {
 +            final String classLocation = "/" + clazz.getName().replace(".", "/") + ".class";
 +            final URL resource = clazz.getResource(classLocation);
 +            if (resource == null) {
-+                throw new IllegalStateException("Could not find class file for loaded class: " + clazz.getName());
++                return null;
 +            }
 +            final String classFilePath = resource.toString().replace("\\", "/");
 +            final String archivePath = classFilePath.substring(0, classFilePath.length() - classLocation.length());
 +            try (final InputStream stream = new URL(archivePath + "/META-INF/MANIFEST.MF").openStream()) {
 +                return new Manifest(stream);
 +            } catch (final IOException ex) {
-+                throw new RuntimeException("Failed to locate or read manifest", ex);
++                return null;
 +            }
 +        });
 +    }
@@ -73,14 +74,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +      */
 +    @NotNull
 +    public static String getVersionMessage() {
-+        final java.util.jar.Manifest manifest;
-+        if (java.lang.reflect.Proxy.isProxyClass(Bukkit.getServer().getClass())) { // TestServer
-+            manifest = new java.util.jar.Manifest();
-+        } else {
-+            manifest = JarManifests.manifest(Bukkit.getServer().getClass());
-+        }
-+        final String gitBranch = manifest.getMainAttributes().getValue("Git-Branch");
-+        final String gitCommit = manifest.getMainAttributes().getValue("Git-Commit");
++        final var manifest = JarManifests.manifest(Bukkit.getServer().getClass());
++        final String gitBranch = manifest == null ? null : manifest.getMainAttributes().getValue("Git-Branch");
++        final String gitCommit = manifest == null ? null : manifest.getMainAttributes().getValue("Git-Commit");
 +        String branchMsg = " on " + gitBranch;
 +        if ("master".equals(gitBranch) || "main".equals(gitBranch)) {
 +            branchMsg = "";  // Don't show branch on main/master
