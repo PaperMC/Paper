@@ -1,0 +1,72 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sun, 3 Jan 2021 22:27:43 -0800
+Subject: [PATCH] Configurable door breaking difficulty
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 556bf08491466a061119338a05d6165d041e6668..79c8618eb1300239d457013c44d47277e2962904 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -6,6 +6,9 @@ import java.util.stream.Collectors;
+ import it.unimi.dsi.fastutil.objects.Reference2IntMap;
+ import it.unimi.dsi.fastutil.objects.Reference2IntOpenHashMap;
+ import net.minecraft.world.entity.MobCategory;
++import net.minecraft.world.Difficulty;
++import net.minecraft.world.entity.monster.Vindicator;
++import net.minecraft.world.entity.monster.Zombie;
+ import org.bukkit.Bukkit;
+ import org.bukkit.configuration.file.YamlConfiguration;
+ import org.spigotmc.SpigotWorldConfig;
+@@ -107,6 +110,25 @@ public class PaperWorldConfig {
+         disableMobSpawnerSpawnEggTransformation = getBoolean("game-mechanics.disable-mob-spawner-spawn-egg-transformation", disableMobSpawnerSpawnEggTransformation);
+     }
+ 
++    public List<Difficulty> zombieBreakDoors;
++    public List<Difficulty> vindicatorBreakDoors;
++    private void setupEntityBreakingDoors() {
++        zombieBreakDoors = getEnumList(
++            "door-breaking-difficulty.zombie",
++            java.util.Arrays.stream(Difficulty.values())
++                .filter(Zombie.DOOR_BREAKING_PREDICATE)
++                .collect(Collectors.toList()),
++            Difficulty.class
++        );
++        vindicatorBreakDoors = getEnumList(
++            "door-breaking-difficulty.vindicator",
++            java.util.Arrays.stream(Difficulty.values())
++                .filter(Vindicator.DOOR_BREAKING_PREDICATE)
++                .collect(Collectors.toList()),
++            Difficulty.class
++        );
++    }
++
+     public short keepLoadedRange;
+     private void keepLoadedRange() {
+         keepLoadedRange = (short) (getInt("keep-spawn-loaded-range", Math.min(spigotConfig.viewDistance, 10)) * 16);
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Vindicator.java b/src/main/java/net/minecraft/world/entity/monster/Vindicator.java
+index ddf77350b1762be523eeed760669bc33f634109f..85294ab8eaa654be9358f489cec7e1ae665fc34b 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Vindicator.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Vindicator.java
+@@ -195,7 +195,7 @@ public class Vindicator extends AbstractIllager {
+ 
+     static class VindicatorBreakDoorGoal extends BreakDoorGoal {
+         public VindicatorBreakDoorGoal(Mob mob) {
+-            super(mob, 6, Vindicator.DOOR_BREAKING_PREDICATE);
++            super(mob, 6, com.google.common.base.Predicates.in(mob.level.paperConfig.vindicatorBreakDoors)); // Paper
+             this.setFlags(EnumSet.of(Goal.Flag.MOVE));
+         }
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Zombie.java b/src/main/java/net/minecraft/world/entity/monster/Zombie.java
+index 64222cced10e87438ee3ada26aead0284649be78..e72e9b748b3f3e34baddf01366c703efba50c67c 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Zombie.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Zombie.java
+@@ -97,7 +97,7 @@ public class Zombie extends Monster {
+ 
+     public Zombie(EntityType<? extends Zombie> type, Level world) {
+         super(type, world);
+-        this.breakDoorGoal = new BreakDoorGoal(this, Zombie.DOOR_BREAKING_PREDICATE);
++        this.breakDoorGoal = new BreakDoorGoal(this, com.google.common.base.Predicates.in(world.paperConfig.zombieBreakDoors)); // Paper
+     }
+ 
+     public Zombie(Level world) {
