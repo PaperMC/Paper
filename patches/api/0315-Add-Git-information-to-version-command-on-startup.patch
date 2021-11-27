@@ -6,22 +6,21 @@ Subject: [PATCH] Add Git information to version command/on startup
 
 diff --git a/src/main/java/io/papermc/paper/util/JarManifests.java b/src/main/java/io/papermc/paper/util/JarManifests.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..2b06b17e20826fb95c9ad58101b4102308ea4b29
+index 0000000000000000000000000000000000000000..2a49f4198b07b3ecdc320c330c58eab2f15c5c74
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/util/JarManifests.java
-@@ -0,0 +1,34 @@
+@@ -0,0 +1,36 @@
 +package io.papermc.paper.util;
 +
 +import java.io.IOException;
 +import java.io.InputStream;
++import java.net.URL;
 +import java.util.Collections;
 +import java.util.Map;
 +import java.util.WeakHashMap;
 +import java.util.jar.Manifest;
-+
 +import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.NotNull;
-+import org.jetbrains.annotations.Nullable;
 +
 +@ApiStatus.Internal
 +public final class JarManifests {
@@ -30,22 +29,25 @@ index 0000000000000000000000000000000000000000..2b06b17e20826fb95c9ad58101b41023
 +
 +    private static final Map<ClassLoader, Manifest> MANIFESTS = Collections.synchronizedMap(new WeakHashMap<>());
 +
-+    public static @NotNull Manifest manifest(final @NotNull ClassLoader loader) {
-+        return MANIFESTS.computeIfAbsent(loader, classLoader -> {
-+            final @Nullable InputStream stream = classLoader.getResourceAsStream("META-INF/MANIFEST.MF");
-+            if (stream == null) {
-+                throw new IllegalArgumentException("Provided ClassLoader does not have a manifest file in the correct location!");
++    public static @NotNull Manifest manifest(final @NotNull Class<?> clazz) {
++        return MANIFESTS.computeIfAbsent(clazz.getClassLoader(), classLoader -> {
++            final String classLocation = "/" + clazz.getName().replace(".", "/") + ".class";
++            final URL resource = clazz.getResource(classLocation);
++            if (resource == null) {
++                throw new IllegalStateException("Could not find class file for loaded class: " + clazz.getName());
 +            }
-+            try (stream) {
++            final String classFilePath = resource.toString().replace("\\", "/");
++            final String archivePath = classFilePath.substring(0, classFilePath.length() - classLocation.length());
++            try (final InputStream stream = new URL(archivePath + "/META-INF/MANIFEST.MF").openStream()) {
 +                return new Manifest(stream);
 +            } catch (final IOException ex) {
-+                throw new RuntimeException("Failed to read manifest.");
++                throw new RuntimeException("Failed to locate or read manifest", ex);
 +            }
 +        });
 +    }
 +}
 diff --git a/src/main/java/org/bukkit/Bukkit.java b/src/main/java/org/bukkit/Bukkit.java
-index 0521781a48d326c0a4a01b920188e9ce00b51ef0..7868a54eec71f7b31d7fabf3288eb2dc62649e92 100644
+index 0521781a48d326c0a4a01b920188e9ce00b51ef0..5a3dbcc9d67ba7f22c12e8854a36bb2076d2d81a 100644
 --- a/src/main/java/org/bukkit/Bukkit.java
 +++ b/src/main/java/org/bukkit/Bukkit.java
 @@ -51,6 +51,7 @@ import org.bukkit.util.CachedServerIcon;
@@ -71,7 +73,7 @@ index 0521781a48d326c0a4a01b920188e9ce00b51ef0..7868a54eec71f7b31d7fabf3288eb2dc
 +      */
 +    @NotNull
 +    public static String getVersionMessage() {
-+        final var manifest = JarManifests.manifest(Bukkit.getServer().getClass().getClassLoader());
++        final var manifest = JarManifests.manifest(Bukkit.getServer().getClass());
 +        final String gitBranch = manifest.getMainAttributes().getValue("Git-Branch");
 +        final String gitCommit = manifest.getMainAttributes().getValue("Git-Commit");
 +        String branchMsg = " on " + gitBranch;
