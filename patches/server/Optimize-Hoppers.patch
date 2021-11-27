@@ -46,24 +46,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
              this.profiler.push(() -> {
                  return worldserver + " " + worldserver.dimension().location();
-diff --git a/src/main/java/net/minecraft/world/entity/vehicle/MinecartHopper.java b/src/main/java/net/minecraft/world/entity/vehicle/MinecartHopper.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/world/entity/vehicle/MinecartHopper.java
-+++ b/src/main/java/net/minecraft/world/entity/vehicle/MinecartHopper.java
-@@ -0,0 +0,0 @@ public class MinecartHopper extends AbstractMinecartContainer implements Hopper
-         this.enabled = enabled;
-     }
- 
-+    // Paper start - add back getLevel
-+    @Override
-+    public net.minecraft.world.level.Level getLevel() {
-+        return this.level;
-+    }
-+    // Paper end
-+
-     @Override
-     public double getLevelX() {
-         return this.getX();
 diff --git a/src/main/java/net/minecraft/world/item/ItemStack.java b/src/main/java/net/minecraft/world/item/ItemStack.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/item/ItemStack.java
@@ -112,8 +94,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          return SUCK;
      }
  
-+    net.minecraft.world.level.Level getLevel(); // Paper
-+
 +    default net.minecraft.core.BlockPos getBlockPosition() { return new net.minecraft.core.BlockPos(getLevelX(), getLevelY(), getLevelZ()); } // Paper
 +
      double getLevelX();
@@ -192,11 +172,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return false;
 +    }
 +
-+    private static boolean hopperPull(Hopper ihopper, Container iinventory, ItemStack origItemStack, int i) {
++    private static boolean hopperPull(Level level, Hopper ihopper, Container iinventory, ItemStack origItemStack, int i) {
 +        ItemStack itemstack = origItemStack;
 +        final int origCount = origItemStack.getCount();
-+        final Level world = ihopper.getLevel();
-+        final int moved = Math.min(world.spigotConfig.hopperAmount, origCount);
++        final int moved = Math.min(level.spigotConfig.hopperAmount, origCount);
 +        itemstack.setCount(moved);
 +
 +        if (!skipPullModeEventFire) {
@@ -226,7 +205,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +        origItemStack.setCount(origCount);
 +
-+        if (world.paperConfig.cooldownHopperWhenFull) {
++        if (level.paperConfig.cooldownHopperWhenFull) {
 +            cooldownHopper(ihopper);
 +        }
 +
@@ -289,10 +268,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +
 +    private static void cooldownHopper(Hopper hopper) {
-+        if (hopper instanceof HopperBlockEntity) {
-+            ((HopperBlockEntity) hopper).setCooldown(hopper.getLevel().spigotConfig.hopperTransfer);
-+        } else if (hopper instanceof MinecartHopper) {
-+            ((MinecartHopper) hopper).setCooldown(hopper.getLevel().spigotConfig.hopperTransfer / 2);
++        if (hopper instanceof HopperBlockEntity blockEntity) {
++            blockEntity.setCooldown(blockEntity.getLevel().spigotConfig.hopperTransfer);
++        } else if (hopper instanceof MinecartHopper blockEntity) {
++            blockEntity.setCooldown(blockEntity.getLevel().spigotConfig.hopperTransfer / 2);
 +        }
 +    }
 +    // Paper end
@@ -387,7 +366,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            return !HopperBlockEntity.isEmptyContainer(iinventory, enumdirection) && anyMatch(iinventory, enumdirection, (item, i) -> {
 +                // Logic copied from below to avoid extra getItem calls
 +                if (!item.isEmpty() && canTakeItemFromContainer(iinventory, item, i, enumdirection)) {
-+                    return hopperPull(hopper, iinventory, item, i);
++                    return hopperPull(world, hopper, iinventory, item, i);
 +                } else {
 +                    return false;
 +                }
@@ -405,7 +384,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
 -        if (!itemstack.isEmpty() && HopperBlockEntity.canTakeItemFromContainer(iinventory, itemstack, i, enumdirection)) {
 +        if (!itemstack.isEmpty() && HopperBlockEntity.canTakeItemFromContainer(iinventory, itemstack, i, enumdirection)) { // If this logic changes, update above. this is left inused incase reflective plugins
-+            return hopperPull(ihopper, iinventory, itemstack, i); /* // Paper - disable rest
++            return hopperPull(world, ihopper, iinventory, itemstack, i); /* // Paper - disable rest
              ItemStack itemstack1 = itemstack.copy();
              // ItemStack itemstack2 = addItem(iinventory, ihopper, iinventory.removeItem(i, 1), (EnumDirection) null);
              // CraftBukkit start - Call event on collection of items from inventories into the hopper
