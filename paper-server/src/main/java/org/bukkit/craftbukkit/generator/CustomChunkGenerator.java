@@ -66,7 +66,7 @@ public class CustomChunkGenerator extends InternalChunkGenerator {
 
         @Override
         public void setBiome(int x, int z, Biome bio) {
-            for (int y = 0; y < world.getWorld().getMaxHeight(); y += 4) {
+            for (int y = world.getWorld().getMinHeight(); y < world.getWorld().getMaxHeight(); y += 4) {
                 setBiome(x, y, z, bio);
             }
         }

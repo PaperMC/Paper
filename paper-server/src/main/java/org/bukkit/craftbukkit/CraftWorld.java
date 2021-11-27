@@ -734,7 +734,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public void setBiome(int x, int z, Biome bio) {
-        for (int y = 0; y < getMaxHeight(); y++) {
+        for (int y = getMinHeight(); y < getMaxHeight(); y++) {
             setBiome(x, y, z, bio);
         }
     }
@@ -746,7 +746,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
             net.minecraft.world.level.chunk.Chunk chunk = this.world.getChunkAt(pos);
 
             if (chunk != null) {
-                chunk.setBiome(x, y, z, bb);
+                chunk.setBiome(x >> 2, y >> 2, z >> 2, bb);
 
                 chunk.setUnsaved(true); // SPIGOT-2890
             }
