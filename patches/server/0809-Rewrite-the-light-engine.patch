@@ -4090,10 +4090,10 @@ index 0000000000000000000000000000000000000000..177d0a969f3d72a34e773e8309c3719a
 +}
 diff --git a/src/main/java/ca/spottedleaf/starlight/common/util/SaveUtil.java b/src/main/java/ca/spottedleaf/starlight/common/util/SaveUtil.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..0cfb9c213e7970e98895cafdc9dd4b66cf557d72
+index 0000000000000000000000000000000000000000..8cb5c999aa48892d0054e769962aca2fb9400e44
 --- /dev/null
 +++ b/src/main/java/ca/spottedleaf/starlight/common/util/SaveUtil.java
-@@ -0,0 +1,185 @@
+@@ -0,0 +1,183 @@
 +package ca.spottedleaf.starlight.common.util;
 +
 +import ca.spottedleaf.starlight.common.light.SWMRNibbleArray;
@@ -4128,8 +4128,8 @@ index 0000000000000000000000000000000000000000..0cfb9c213e7970e98895cafdc9dd4b66
 +        }
 +    }
 +
-+    private static void saveLightHookReal(final Level world, final ChunkAccess chunk, final CompoundTag nbt) {
-+        if (nbt == null) {
++    private static void saveLightHookReal(final Level world, final ChunkAccess chunk, final CompoundTag tag) {
++        if (tag == null) {
 +            return;
 +        }
 +
@@ -4139,18 +4139,17 @@ index 0000000000000000000000000000000000000000..0cfb9c213e7970e98895cafdc9dd4b66
 +        SWMRNibbleArray[] blockNibbles = chunk.getBlockNibbles();
 +        SWMRNibbleArray[] skyNibbles = chunk.getSkyNibbles();
 +
-+        CompoundTag level = nbt.getCompound("Level");
 +        boolean lit = chunk.isLightCorrect() || !(world instanceof ServerLevel);
 +        // diff start - store our tag for whether light data is init'd
 +        if (lit) {
-+            level.putBoolean("isLightOn", false);
++            tag.putBoolean("isLightOn", false);
 +        }
 +        // diff end - store our tag for whether light data is init'd
-+        ChunkStatus status = ChunkStatus.byName(level.getString("Status"));
++        ChunkStatus status = ChunkStatus.byName(tag.getString("Status"));
 +
 +        CompoundTag[] sections = new CompoundTag[maxSection - minSection + 1];
 +
-+        ListTag sectionsStored = level.getList("Sections", 10);
++        ListTag sectionsStored = tag.getList("sections", 10);
 +
 +        for (int i = 0; i < sectionsStored.size(); ++i) {
 +            CompoundTag sectionStored = sectionsStored.getCompound(i);
@@ -4207,9 +4206,9 @@ index 0000000000000000000000000000000000000000..0cfb9c213e7970e98895cafdc9dd4b66
 +                sectionsStored.add(section);
 +            }
 +        }
-+        level.put("Sections", sectionsStored);
++        tag.put("sections", sectionsStored);
 +        if (lit) {
-+            level.putInt(STARLIGHT_VERSION_TAG, STARLIGHT_LIGHT_VERSION); // only mark as fully lit after we have successfully injected our data
++            tag.putInt(STARLIGHT_VERSION_TAG, STARLIGHT_LIGHT_VERSION); // only mark as fully lit after we have successfully injected our data
 +        }
 +    }
 +
@@ -4237,12 +4236,11 @@ index 0000000000000000000000000000000000000000..0cfb9c213e7970e98895cafdc9dd4b66
 +
 +
 +        // start copy from from the original method
-+        CompoundTag levelTag = tag.getCompound("Level");
-+        boolean lit = levelTag.get("isLightOn") != null && levelTag.getInt(STARLIGHT_VERSION_TAG) == STARLIGHT_LIGHT_VERSION;
++        boolean lit = tag.get("isLightOn") != null && tag.getInt(STARLIGHT_VERSION_TAG) == STARLIGHT_LIGHT_VERSION;
 +        boolean canReadSky = world.dimensionType().hasSkyLight();
-+        ChunkStatus status = ChunkStatus.byName(tag.getCompound("Level").getString("Status"));
++        ChunkStatus status = ChunkStatus.byName(tag.getString("Status"));
 +        if (lit && status.isOrAfter(ChunkStatus.LIGHT)) { // diff - we add the status check here
-+            ListTag sections = levelTag.getList("Sections", 10);
++            ListTag sections = tag.getList("sections", 10);
 +
 +            for (int i = 0; i < sections.size(); ++i) {
 +                CompoundTag sectionData = sections.getCompound(i);

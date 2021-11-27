@@ -142,7 +142,7 @@ index 04e45b4de2f4e26853a4fed6271cf79ef8607154..44de464b5f2190944c7a7316a76e13f9
  
          private final ChunkPos pos;
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
-index 40830a2b231df9bbf676d8325e76c8252a6c1d6c..164db987210aae06432a6abd9b22796c2168e212 100644
+index 40830a2b231df9bbf676d8325e76c8252a6c1d6c..2cbc17288b1dc52edb2bdad29976d0f551b1e176 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
 @@ -11,8 +11,10 @@ import java.nio.file.Files;
@@ -156,7 +156,7 @@ index 40830a2b231df9bbf676d8325e76c8252a6c1d6c..164db987210aae06432a6abd9b22796c
  import net.minecraft.util.ExceptionCollector;
  import net.minecraft.world.level.ChunkPos;
  
-@@ -79,6 +81,74 @@ public class RegionFileStorage implements AutoCloseable {
+@@ -79,6 +81,71 @@ public class RegionFileStorage implements AutoCloseable {
          }
      }
  
@@ -190,12 +190,9 @@ index 40830a2b231df9bbf676d8325e76c8252a6c1d6c..164db987210aae06432a6abd9b22796c
 +                    return chunk;
 +                }
 +                CompoundTag oversizedLevel = oversizedData.getCompound("Level");
-+                CompoundTag level = chunk.getCompound("Level");
 +
-+                mergeChunkList(level, oversizedLevel, "Entities");
-+                mergeChunkList(level, oversizedLevel, "TileEntities");
-+
-+                chunk.put("Level", level);
++                mergeChunkList(chunk, oversizedLevel, "entities", "Entities");
++                mergeChunkList(chunk, oversizedLevel, "block_entities", "TileEntities");
 +
 +                return chunk;
 +            } catch (Throwable throwable) {
@@ -205,9 +202,9 @@ index 40830a2b231df9bbf676d8325e76c8252a6c1d6c..164db987210aae06432a6abd9b22796c
 +        }
 +    }
 +
-+    private static void mergeChunkList(CompoundTag level, CompoundTag oversizedLevel, String key) {
++    private static void mergeChunkList(CompoundTag level, CompoundTag oversizedLevel, String key, String oversizedKey) {
 +        ListTag levelList = level.getList(key, 10);
-+        ListTag oversizedList = oversizedLevel.getList(key, 10);
++        ListTag oversizedList = oversizedLevel.getList(oversizedKey, 10);
 +
 +        if (!oversizedList.isEmpty()) {
 +            levelList.addAll(oversizedList);
@@ -231,7 +228,7 @@ index 40830a2b231df9bbf676d8325e76c8252a6c1d6c..164db987210aae06432a6abd9b22796c
      @Nullable
      public CompoundTag read(ChunkPos pos) throws IOException {
          // CraftBukkit start - SPIGOT-5680: There's no good reason to preemptively create files on read, save that for writing
-@@ -90,6 +160,12 @@ public class RegionFileStorage implements AutoCloseable {
+@@ -90,6 +157,12 @@ public class RegionFileStorage implements AutoCloseable {
          try { // Paper
          DataInputStream datainputstream = regionfile.getChunkDataInputStream(pos);
  
@@ -244,7 +241,7 @@ index 40830a2b231df9bbf676d8325e76c8252a6c1d6c..164db987210aae06432a6abd9b22796c
          CompoundTag nbttagcompound;
          label43:
          {
-@@ -172,6 +248,7 @@ public class RegionFileStorage implements AutoCloseable {
+@@ -172,6 +245,7 @@ public class RegionFileStorage implements AutoCloseable {
  
              try {
                  NbtIo.write(nbt, (DataOutput) dataoutputstream);
