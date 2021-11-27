@@ -6,10 +6,10 @@ Subject: [PATCH] Add Git information to version command/on startup
 
 diff --git a/src/main/java/io/papermc/paper/util/JarManifests.java b/src/main/java/io/papermc/paper/util/JarManifests.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..2a49f4198b07b3ecdc320c330c58eab2f15c5c74
+index 0000000000000000000000000000000000000000..909617079db61b675cc7b60b44ef96b306076343
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/util/JarManifests.java
-@@ -0,0 +1,36 @@
+@@ -0,0 +1,37 @@
 +package io.papermc.paper.util;
 +
 +import java.io.IOException;
@@ -21,6 +21,7 @@ index 0000000000000000000000000000000000000000..2a49f4198b07b3ecdc320c330c58eab2
 +import java.util.jar.Manifest;
 +import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
 +
 +@ApiStatus.Internal
 +public final class JarManifests {
@@ -29,25 +30,25 @@ index 0000000000000000000000000000000000000000..2a49f4198b07b3ecdc320c330c58eab2
 +
 +    private static final Map<ClassLoader, Manifest> MANIFESTS = Collections.synchronizedMap(new WeakHashMap<>());
 +
-+    public static @NotNull Manifest manifest(final @NotNull Class<?> clazz) {
++    public static @Nullable Manifest manifest(final @NotNull Class<?> clazz) {
 +        return MANIFESTS.computeIfAbsent(clazz.getClassLoader(), classLoader -> {
 +            final String classLocation = "/" + clazz.getName().replace(".", "/") + ".class";
 +            final URL resource = clazz.getResource(classLocation);
 +            if (resource == null) {
-+                throw new IllegalStateException("Could not find class file for loaded class: " + clazz.getName());
++                return null;
 +            }
 +            final String classFilePath = resource.toString().replace("\\", "/");
 +            final String archivePath = classFilePath.substring(0, classFilePath.length() - classLocation.length());
 +            try (final InputStream stream = new URL(archivePath + "/META-INF/MANIFEST.MF").openStream()) {
 +                return new Manifest(stream);
 +            } catch (final IOException ex) {
-+                throw new RuntimeException("Failed to locate or read manifest", ex);
++                return null;
 +            }
 +        });
 +    }
 +}
 diff --git a/src/main/java/org/bukkit/Bukkit.java b/src/main/java/org/bukkit/Bukkit.java
-index 0521781a48d326c0a4a01b920188e9ce00b51ef0..7bbeed0c0514d5da243e205a78f82116b464acd1 100644
+index 0521781a48d326c0a4a01b920188e9ce00b51ef0..eb0aa2a2a9def0270341ee15d8a7a0629a67a823 100644
 --- a/src/main/java/org/bukkit/Bukkit.java
 +++ b/src/main/java/org/bukkit/Bukkit.java
 @@ -51,6 +51,7 @@ import org.bukkit.util.CachedServerIcon;
@@ -58,7 +59,7 @@ index 0521781a48d326c0a4a01b920188e9ce00b51ef0..7bbeed0c0514d5da243e205a78f82116
  
  /**
   * Represents the Bukkit core, for version and Server singleton handling
-@@ -100,7 +101,30 @@ public final class Bukkit {
+@@ -100,7 +101,25 @@ public final class Bukkit {
          }
  
          Bukkit.server = server;
@@ -73,14 +74,9 @@ index 0521781a48d326c0a4a01b920188e9ce00b51ef0..7bbeed0c0514d5da243e205a78f82116
 +      */
 +    @NotNull
 +    public static String getVersionMessage() {
-+        final java.util.jar.Manifest manifest;
-+        if (java.lang.reflect.Proxy.isProxyClass(Bukkit.getServer().getClass())) { // TestServer
-+            manifest = new java.util.jar.Manifest();
-+        } else {
-+            manifest = JarManifests.manifest(Bukkit.getServer().getClass());
-+        }
-+        final String gitBranch = manifest.getMainAttributes().getValue("Git-Branch");
-+        final String gitCommit = manifest.getMainAttributes().getValue("Git-Commit");
++        final var manifest = JarManifests.manifest(Bukkit.getServer().getClass());
++        final String gitBranch = manifest == null ? null : manifest.getMainAttributes().getValue("Git-Branch");
++        final String gitCommit = manifest == null ? null : manifest.getMainAttributes().getValue("Git-Commit");
 +        String branchMsg = " on " + gitBranch;
 +        if ("master".equals(gitBranch) || "main".equals(gitBranch)) {
 +            branchMsg = "";  // Don't show branch on main/master
