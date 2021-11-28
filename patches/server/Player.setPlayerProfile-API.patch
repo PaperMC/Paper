@@ -25,19 +25,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                              playerName = gameProfile.getName();
                              uniqueId = gameProfile.getId();
                              // Paper end
-diff --git a/src/main/java/net/minecraft/world/entity/player/Player.java b/src/main/java/net/minecraft/world/entity/player/Player.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/world/entity/player/Player.java
-+++ b/src/main/java/net/minecraft/world/entity/player/Player.java
-@@ -0,0 +0,0 @@ public abstract class Player extends LivingEntity {
-     protected int enchantmentSeed;
-     protected final float defaultFlySpeed = 0.02F;
-     private int lastLevelUpTime;
--    private final GameProfile gameProfile;
-+    public GameProfile gameProfile; // Paper - private->public
-     private boolean reducedDebugInfo;
-     private ItemStack lastItemInMainHand;
-     private final ItemCooldowns cooldowns;
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
@@ -51,44 +38,44 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  import net.minecraft.world.level.saveddata.maps.MapDecoration;
  import net.minecraft.world.level.saveddata.maps.MapItemSavedData;
 @@ -0,0 +0,0 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
-         this.hiddenPlayers.put(player.getUniqueId(), hidingPlugins);
+         this.hiddenEntities.put(entity.getUniqueId(), hidingPlugins);
  
-         // Remove this player from the hidden player's EntityTrackerEntry
--        ChunkMap tracker = ((ServerLevel) entity.level).getChunkSource().chunkMap;
+         // Remove this entity from the hidden player's EntityTrackerEntry
+-        ChunkMap tracker = ((ServerLevel) this.getHandle().level).getChunkSource().chunkMap;
 +        // Paper start
-         ServerPlayer other = ((CraftPlayer) player).getHandle();
-+        unregisterPlayer(other);
+         Entity other = ((CraftEntity) entity).getHandle();
++        unregisterEntity(other);
 +    }
-+    private void unregisterPlayer(ServerPlayer other) {
-+        ChunkMap tracker = ((ServerLevel) entity.level).getChunkSource().chunkMap;
++    private void unregisterEntity(Entity other) {
 +        // Paper end
++        ChunkMap tracker = ((ServerLevel) this.getHandle().level).getChunkSource().chunkMap;
          ChunkMap.TrackedEntity entry = tracker.entityMap.get(other.getId());
          if (entry != null) {
              entry.removePlayer(this.getHandle());
 @@ -0,0 +0,0 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          }
-         this.hiddenPlayers.remove(player.getUniqueId());
+         this.hiddenEntities.remove(entity.getUniqueId());
  
--        ChunkMap tracker = ((ServerLevel) entity.level).getChunkSource().chunkMap;
+-        ChunkMap tracker = ((ServerLevel) this.getHandle().level).getChunkSource().chunkMap;
 +        // Paper start
-         ServerPlayer other = ((CraftPlayer) player).getHandle();
-+        registerPlayer(other);
+         Entity other = ((CraftEntity) entity).getHandle();
++        registerEntity(other);
 +    }
-+    private void registerPlayer(ServerPlayer other) {
-+        ChunkMap tracker = ((ServerLevel) entity.level).getChunkSource().chunkMap;
++    private void registerEntity(Entity other) {
++        ChunkMap tracker = ((ServerLevel) this.getHandle().level).getChunkSource().chunkMap;
 +        // Paper end
  
-         this.getHandle().connection.send(new ClientboundPlayerInfoPacket(ClientboundPlayerInfoPacket.Action.ADD_PLAYER, other));
- 
+         if (other instanceof ServerPlayer) {
+             ServerPlayer otherPlayer = (ServerPlayer) other;
 @@ -0,0 +0,0 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
              entry.updatePlayer(this.getHandle());
          }
      }
 +    // Paper start
 +    private void reregisterPlayer(ServerPlayer player) {
-+        if (!hiddenPlayers.containsKey(player.getUUID())) {
-+            unregisterPlayer(player);
-+            registerPlayer(player);
++        if (!hiddenEntities.containsKey(player.getUUID())) {
++            unregisterEntity(player);
++            registerEntity(player);
 +        }
 +    }
 +    public void setPlayerProfile(com.destroystokyo.paper.profile.PlayerProfile profile) {
@@ -130,4 +117,4 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    // Paper end
  
      public void removeDisconnectingPlayer(Player player) {
-         this.hiddenPlayers.remove(player.getUniqueId());
+         this.hiddenEntities.remove(player.getUniqueId());
