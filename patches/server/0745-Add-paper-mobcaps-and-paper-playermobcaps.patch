@@ -10,7 +10,7 @@ Also has a hover text on each mob category listing what entity types are
 in said category
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperCommand.java b/src/main/java/com/destroystokyo/paper/PaperCommand.java
-index 85beb460aa59313cf2ace2d6a6bf24938e3e2b80..f9064589216c679d9305988534aba8ef94b9a5fe 100644
+index f436ab35798c9b6e6cb2eb60d2c02cbf9b742e69..4d7575087947f3b199dd895cd9aa02a7d61768b1 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperCommand.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperCommand.java
 @@ -3,6 +3,7 @@ package com.destroystokyo.paper;
@@ -21,12 +21,13 @@ index 85beb460aa59313cf2ace2d6a6bf24938e3e2b80..f9064589216c679d9305988534aba8ef
  import com.google.common.collect.ImmutableSet;
  import com.google.common.collect.Iterables;
  import com.google.common.collect.Lists;
-@@ -10,6 +11,12 @@ import com.google.common.collect.Maps;
+@@ -10,6 +11,13 @@ import com.google.common.collect.Maps;
  import com.google.gson.JsonObject;
  import com.google.gson.internal.Streams;
  import com.google.gson.stream.JsonWriter;
 +import net.kyori.adventure.text.Component;
 +import net.kyori.adventure.text.ComponentLike;
++import net.kyori.adventure.text.JoinConfiguration;
 +import net.kyori.adventure.text.TextComponent;
 +import net.kyori.adventure.text.format.NamedTextColor;
 +import net.kyori.adventure.text.format.TextColor;
@@ -34,7 +35,7 @@ index 85beb460aa59313cf2ace2d6a6bf24938e3e2b80..f9064589216c679d9305988534aba8ef
  import net.minecraft.resources.ResourceLocation;
  import net.minecraft.server.MCUtil;
  import net.minecraft.server.MinecraftServer;
-@@ -19,10 +26,12 @@ import net.minecraft.server.level.ServerLevel;
+@@ -19,10 +27,12 @@ import net.minecraft.server.level.ServerLevel;
  import net.minecraft.server.level.ServerPlayer;
  import net.minecraft.server.level.ThreadedLevelLightEngine;
  import net.minecraft.world.entity.EntityType;
@@ -47,7 +48,7 @@ index 85beb460aa59313cf2ace2d6a6bf24938e3e2b80..f9064589216c679d9305988534aba8ef
  import org.apache.commons.lang3.tuple.MutablePair;
  import org.apache.commons.lang3.tuple.Pair;
  import org.bukkit.Bukkit;
-@@ -55,11 +64,12 @@ import java.util.List;
+@@ -55,11 +65,12 @@ import java.util.List;
  import java.util.Locale;
  import java.util.Map;
  import java.util.Set;
@@ -61,7 +62,7 @@ index 85beb460aa59313cf2ace2d6a6bf24938e3e2b80..f9064589216c679d9305988534aba8ef
  
      public PaperCommand(String name) {
          super(name);
-@@ -92,6 +102,10 @@ public class PaperCommand extends Command {
+@@ -92,6 +103,10 @@ public class PaperCommand extends Command {
                      return getListMatchingLast(sender, args, "help", "chunks");
                  }
                  break;
@@ -72,7 +73,7 @@ index 85beb460aa59313cf2ace2d6a6bf24938e3e2b80..f9064589216c679d9305988534aba8ef
              case "chunkinfo":
                  List<String> worldNames = new ArrayList<>();
                  worldNames.add("*");
-@@ -188,6 +202,12 @@ public class PaperCommand extends Command {
+@@ -188,6 +203,12 @@ public class PaperCommand extends Command {
              case "syncloadinfo":
                  this.doSyncLoadInfo(sender, args);
                  break;
@@ -85,7 +86,7 @@ index 85beb460aa59313cf2ace2d6a6bf24938e3e2b80..f9064589216c679d9305988534aba8ef
              case "ver":
                  if (!testPermission(sender, "version")) break; // "ver" needs a special check because it's an alias. All other commands are checked up before the switch statement (because they are present in the SUBCOMMANDS set)
              case "version":
-@@ -246,6 +266,184 @@ public class PaperCommand extends Command {
+@@ -246,6 +267,184 @@ public class PaperCommand extends Command {
          }
      }
  
@@ -161,7 +162,7 @@ index 85beb460aa59313cf2ace2d6a6bf24938e3e2b80..f9064589216c679d9305988534aba8ef
 +            } else {
 +                chunks = state.getSpawnableChunkCount();
 +            }
-+            sender.sendMessage(TextComponent.ofChildren(
++            sender.sendMessage(Component.join(JoinConfiguration.noSeparators(),
 +                Component.text("Mobcaps for world: "),
 +                Component.text(world.getName(), NamedTextColor.AQUA),
 +                Component.text(" (" + chunks + " spawnable chunks)")
@@ -209,7 +210,7 @@ index 85beb460aa59313cf2ace2d6a6bf24938e3e2b80..f9064589216c679d9305988534aba8ef
 +            return;
 +        }
 +
-+        sender.sendMessage(TextComponent.ofChildren(Component.text("Mobcaps for player: "), Component.text(player.getName(), NamedTextColor.GREEN)));
++        sender.sendMessage(Component.join(JoinConfiguration.noSeparators(), Component.text("Mobcaps for player: "), Component.text(player.getName(), NamedTextColor.GREEN)));
 +        sender.sendMessage(this.buildMobcapsComponent(
 +            category -> level.chunkSource.chunkMap.getMobCountNear(serverPlayer, category),
 +            category -> NaturalSpawner.limitForCategory(level, category)
@@ -222,7 +223,7 @@ index 85beb460aa59313cf2ace2d6a6bf24938e3e2b80..f9064589216c679d9305988534aba8ef
 +                final MobCategory category = entry.getKey();
 +                final TextColor color = entry.getValue();
 +
-+                final Component categoryHover = TextComponent.ofChildren(
++                final Component categoryHover = Component.join(JoinConfiguration.noSeparators(),
 +                    Component.text("Entity types in category ", TextColor.color(0xE0E0E0)),
 +                    Component.text(category.getName(), color),
 +                    Component.text(':', NamedTextColor.GRAY),
