@@ -401,4 +401,9 @@ public class SpigotConfig
     private static void disablePlayerDataSaving() {
         SpigotConfig.disablePlayerDataSaving = SpigotConfig.getBoolean("players.disable-saving", false);
     }
+
+    public static boolean belowZeroGenerationInExistingChunks;
+    private static void belowZeroGenerationInExistingChunks() {
+        SpigotConfig.belowZeroGenerationInExistingChunks = SpigotConfig.getBoolean("world-settings.default.below-zero-generation-in-existing-chunks", true);
+    }
 }

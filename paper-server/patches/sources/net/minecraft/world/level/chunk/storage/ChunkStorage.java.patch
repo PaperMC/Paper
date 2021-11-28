@@ -18,7 +18,7 @@
  import net.minecraft.world.level.levelgen.structure.LegacyStructureDataHandler;
  import net.minecraft.world.level.storage.DimensionDataStorage;
  
-@@ -39,27 +45,71 @@
+@@ -39,27 +45,85 @@
          return this.worker.isOldChunkAround(chunkPos, checkRadius);
      }
  
@@ -94,15 +94,29 @@
 -                ChunkStorage.removeDatafixingContext(nbt);
 -                NbtUtils.addCurrentDataVersion(nbt);
 -                return nbt;
++                // Spigot start - SPIGOT-6806: Quick and dirty way to prevent below zero generation in old chunks, by setting the status to heightmap instead of empty
++                boolean stopBelowZero = false;
++                boolean belowZeroGenerationInExistingChunks = (generatoraccess != null) ? ((ServerLevel) generatoraccess).spigotConfig.belowZeroGenerationInExistingChunks : org.spigotmc.SpigotConfig.belowZeroGenerationInExistingChunks;
++
++                if (i <= 2730 && !belowZeroGenerationInExistingChunks) {
++                    stopBelowZero = "full".equals(nbttagcompound.getCompound("Level").getString("Status"));
++                }
++                // Spigot end
++
 +                ChunkStorage.injectDatafixingContext(nbttagcompound, resourcekey, optional);
 +                nbttagcompound = DataFixTypes.CHUNK.updateToCurrentVersion(this.fixerUpper, nbttagcompound, Math.max(1493, i));
++                // Spigot start
++                if (stopBelowZero) {
++                    nbttagcompound.putString("Status", net.minecraft.core.registries.BuiltInRegistries.CHUNK_STATUS.getKey(ChunkStatus.SPAWN).toString());
++                }
++                // Spigot end
 +                ChunkStorage.removeDatafixingContext(nbttagcompound);
 +                NbtUtils.addCurrentDataVersion(nbttagcompound);
 +                return nbttagcompound;
              } catch (Exception exception) {
                  CrashReport crashreport = CrashReport.forThrowable(exception, "Updated chunk");
                  CrashReportCategory crashreportsystemdetails = crashreport.addCategory("Updated chunk details");
-@@ -70,7 +120,7 @@
+@@ -70,7 +134,7 @@
          }
      }
  
@@ -111,7 +125,7 @@
          LegacyStructureDataHandler persistentstructurelegacy = this.legacyStructureHandler;
  
          if (persistentstructurelegacy == null) {
-@@ -85,7 +135,7 @@
+@@ -85,7 +149,7 @@
          return persistentstructurelegacy;
      }
  
