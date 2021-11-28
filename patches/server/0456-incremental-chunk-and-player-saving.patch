@@ -1,7 +1,7 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Shane Freeder <theboyetronic@gmail.com>
 Date: Sun, 9 Jun 2019 03:53:22 +0100
-Subject: [PATCH] incremental chunk saving
+Subject: [PATCH] incremental chunk and player saving
 
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
@@ -50,7 +50,7 @@ index 845f105457d659a4bd88d4a8ce91b20d6abb7865..bf0c6e1b2b1934bc3fa5c17c414b3730
          config.addDefault("world-settings.default." + path, def);
          return config.getBoolean("world-settings." + worldName + "." + path, config.getBoolean("world-settings.default." + path));
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 4351dd9c293d1db48c87c5df28bcb2b9a59583f7..8a3583bcf2d2a694b30718062bc7f2e1158c9b4f 100644
+index 4351dd9c293d1db48c87c5df28bcb2b9a59583f7..faa6f999f620712b90df465e0dc68e4ff35f94af 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -901,7 +901,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
@@ -62,7 +62,7 @@ index 4351dd9c293d1db48c87c5df28bcb2b9a59583f7..8a3583bcf2d2a694b30718062bc7f2e1
              flag3 = this.saveAllChunks(suppressLogs, flush, force);
          } finally {
              this.isSaving = false;
-@@ -1408,13 +1408,27 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1408,13 +1408,28 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
              }
          }
  
@@ -78,6 +78,7 @@ index 4351dd9c293d1db48c87c5df28bcb2b9a59583f7..8a3583bcf2d2a694b30718062bc7f2e1
 +            playerSaveInterval = autosavePeriod;
          }
 +        this.profiler.push("save");
++        final boolean fullSave = autosavePeriod > 0 && this.tickCount % autosavePeriod == 0;
 +        try {
 +            this.isSaving = true;
 +            if (playerSaveInterval > 0) {
@@ -85,7 +86,7 @@ index 4351dd9c293d1db48c87c5df28bcb2b9a59583f7..8a3583bcf2d2a694b30718062bc7f2e1
 +            }
 +            for (ServerLevel level : this.getAllLevels()) {
 +                if (level.paperConfig.autoSavePeriod > 0) {
-+                    level.saveIncrementally(autosavePeriod > 0 && this.tickCount % autosavePeriod == 0);
++                    level.saveIncrementally(fullSave);
 +                }
 +            }
 +        } finally {
@@ -97,7 +98,7 @@ index 4351dd9c293d1db48c87c5df28bcb2b9a59583f7..8a3583bcf2d2a694b30718062bc7f2e1
          // Paper start - move executeAll() into full server tick timing
          try (co.aikar.timings.Timing ignored = MinecraftTimings.processTasksTimer.startTiming()) {
 diff --git a/src/main/java/net/minecraft/server/level/ChunkHolder.java b/src/main/java/net/minecraft/server/level/ChunkHolder.java
-index 7c3eaa72263708f5b2cea455b3eea230bc633c5d..9c58274f680c1f873b7832d2175d1d449544bff1 100644
+index 0f859c9548487bcf3b254e39027ec4114ec6d4d7..35ff6e3b796068a6dd4a422a0106747eadacfa5a 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkHolder.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkHolder.java
 @@ -84,6 +84,8 @@ public class ChunkHolder {
@@ -274,7 +275,7 @@ index c9a10f327f971e68bf5bb4ed0793a046233e3d74..a65f3f24fe00b130520ba9af178f1cf7
              ChunkPos chunkcoordintpair = chunk.getPos();
  
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-index c3875acfad91c50a7fec4b1f8e06e8a32e2ea037..3f9366019d19f8fb5f636f1b301c2824a54865cd 100644
+index f02643d12ac1959d92e895174b22775ee18a32d8..f9caa9524ebf0e1f073f23e97c84095b25a30023 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 @@ -825,6 +825,15 @@ public class ServerChunkCache extends ChunkSource {
@@ -396,7 +397,7 @@ index 04b58d6aec04cc98777f88c2bcc9a820c5fd2f57..a44901edc49259ebbbb4367b0d10b8da
      // CraftBukkit start - decompile error
      public static record TicksToSave(SerializableTickContainer<Block> blocks, SerializableTickContainer<Fluid> fluids) {
 diff --git a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
-index b92da719a5d35a60a2e13ccb0f55c41b242f9b50..6a881c2abdbc23366a1b0ac69e363b196b99197b 100644
+index e44b0b2c0b22cdf64bf0e1f014fd4e5a21008fed..adc786dc249fbdd4f871fbeb1b47426447e224bc 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
 @@ -87,6 +87,12 @@ public class LevelChunk extends ChunkAccess {
