@@ -144,7 +144,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     private boolean hasPlayedBefore = false;
     private final ConversationTracker conversationTracker = new ConversationTracker();
     private final Set<String> channels = new HashSet<String>();
-    private final Map<UUID, Set<WeakReference<Plugin>>> hiddenPlayers = new HashMap<>();
+    private final Map<UUID, Set<WeakReference<Plugin>>> hiddenEntities = new HashMap<>();
     private static final WeakHashMap<Plugin, WeakReference<Plugin>> pluginWeakReferences = new WeakHashMap<>();
     private int hash = 0;
     private double health = 20;
@@ -1057,94 +1057,115 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     @Override
     @Deprecated
     public void hidePlayer(Player player) {
-        hidePlayer0(null, player);
+        hideEntity0(null, player);
     }
 
     @Override
     public void hidePlayer(Plugin plugin, Player player) {
+        hideEntity(plugin, player);
+    }
+
+    @Override
+    public void hideEntity(Plugin plugin, org.bukkit.entity.Entity entity) {
         Validate.notNull(plugin, "Plugin cannot be null");
         Validate.isTrue(plugin.isEnabled(), "Plugin attempted to hide player while disabled");
 
-        hidePlayer0(plugin, player);
+        hideEntity0(plugin, entity);
     }
 
-    private void hidePlayer0(@Nullable Plugin plugin, Player player) {
-        Validate.notNull(player, "hidden player cannot be null");
+    private void hideEntity0(@Nullable Plugin plugin, org.bukkit.entity.Entity entity) {
+        Validate.notNull(entity, "hidden entity cannot be null");
         if (getHandle().connection == null) return;
-        if (equals(player)) return;
+        if (equals(entity)) return;
 
-        Set<WeakReference<Plugin>> hidingPlugins = hiddenPlayers.get(player.getUniqueId());
+        Set<WeakReference<Plugin>> hidingPlugins = hiddenEntities.get(entity.getUniqueId());
         if (hidingPlugins != null) {
-            // Some plugins are already hiding the player. Just mark that this
-            // plugin wants the player hidden too and end.
+            // Some plugins are already hiding the entity. Just mark that this
+            // plugin wants the entity hidden too and end.
             hidingPlugins.add(getPluginWeakReference(plugin));
             return;
         }
         hidingPlugins = new HashSet<>();
         hidingPlugins.add(getPluginWeakReference(plugin));
-        hiddenPlayers.put(player.getUniqueId(), hidingPlugins);
+        hiddenEntities.put(entity.getUniqueId(), hidingPlugins);
 
-        // Remove this player from the hidden player's EntityTrackerEntry
-        PlayerChunkMap tracker = ((WorldServer) entity.level).getChunkSource().chunkMap;
-        EntityPlayer other = ((CraftPlayer) player).getHandle();
+        // Remove this entity from the hidden player's EntityTrackerEntry
+        PlayerChunkMap tracker = ((WorldServer) getHandle().level).getChunkSource().chunkMap;
+        Entity other = ((CraftEntity) entity).getHandle();
         PlayerChunkMap.EntityTracker entry = tracker.entityMap.get(other.getId());
         if (entry != null) {
             entry.removePlayer(getHandle());
         }
 
-        // Remove the hidden player from this player user list, if they're on it
-        if (other.sentListPacket) {
-            getHandle().connection.send(new PacketPlayOutPlayerInfo(PacketPlayOutPlayerInfo.EnumPlayerInfoAction.REMOVE_PLAYER, other));
+        // Remove the hidden entity from this player user list, if they're on it
+        if (other instanceof EntityPlayer) {
+            EntityPlayer otherPlayer = (EntityPlayer) other;
+            if (otherPlayer.sentListPacket) {
+                getHandle().connection.send(new PacketPlayOutPlayerInfo(PacketPlayOutPlayerInfo.EnumPlayerInfoAction.REMOVE_PLAYER, otherPlayer));
+            }
         }
     }
 
     @Override
     @Deprecated
     public void showPlayer(Player player) {
-        showPlayer0(null, player);
+        showEntity0(null, player);
     }
 
     @Override
     public void showPlayer(Plugin plugin, Player player) {
+        showEntity(plugin, player);
+    }
+
+    @Override
+    public void showEntity(Plugin plugin, org.bukkit.entity.Entity entity) {
         Validate.notNull(plugin, "Plugin cannot be null");
         // Don't require that plugin be enabled. A plugin must be allowed to call
         // showPlayer during its onDisable() method.
-        showPlayer0(plugin, player);
+        showEntity0(plugin, entity);
     }
 
-    private void showPlayer0(@Nullable Plugin plugin, Player player) {
-        Validate.notNull(player, "shown player cannot be null");
+    private void showEntity0(@Nullable Plugin plugin, org.bukkit.entity.Entity entity) {
+        Validate.notNull(entity, "shown entity cannot be null");
         if (getHandle().connection == null) return;
-        if (equals(player)) return;
+        if (equals(entity)) return;
 
-        Set<WeakReference<Plugin>> hidingPlugins = hiddenPlayers.get(player.getUniqueId());
+        Set<WeakReference<Plugin>> hidingPlugins = hiddenEntities.get(entity.getUniqueId());
         if (hidingPlugins == null) {
-            return; // Player isn't hidden
+            return; // Entity isn't hidden
         }
         hidingPlugins.remove(getPluginWeakReference(plugin));
         if (!hidingPlugins.isEmpty()) {
-            return; // Some other plugins still want the player hidden
+            return; // Some other plugins still want the entity hidden
         }
-        hiddenPlayers.remove(player.getUniqueId());
+        hiddenEntities.remove(entity.getUniqueId());
 
-        PlayerChunkMap tracker = ((WorldServer) entity.level).getChunkSource().chunkMap;
-        EntityPlayer other = ((CraftPlayer) player).getHandle();
+        PlayerChunkMap tracker = ((WorldServer) getHandle().level).getChunkSource().chunkMap;
+        Entity other = ((CraftEntity) entity).getHandle();
 
-        getHandle().connection.send(new PacketPlayOutPlayerInfo(PacketPlayOutPlayerInfo.EnumPlayerInfoAction.ADD_PLAYER, other));
+        if (other instanceof EntityPlayer) {
+            EntityPlayer otherPlayer = (EntityPlayer) other;
+            getHandle().connection.send(new PacketPlayOutPlayerInfo(PacketPlayOutPlayerInfo.EnumPlayerInfoAction.ADD_PLAYER, otherPlayer));
+        }
 
         PlayerChunkMap.EntityTracker entry = tracker.entityMap.get(other.getId());
-        if (entry != null && !entry.seenBy.contains(getHandle())) {
+        if (entry != null && !entry.seenBy.contains(getHandle().connection)) {
             entry.updatePlayer(getHandle());
         }
     }
 
     public void removeDisconnectingPlayer(Player player) {
-        hiddenPlayers.remove(player.getUniqueId());
+        hiddenEntities.remove(player.getUniqueId());
     }
 
     @Override
     public boolean canSee(Player player) {
-        return !hiddenPlayers.containsKey(player.getUniqueId());
+        return canSee((org.bukkit.entity.Entity) player);
+    }
+
+    @Override
+    public boolean canSee(org.bukkit.entity.Entity entity) {
+        return !hiddenEntities.containsKey(entity.getUniqueId());
     }
 
     @Override
