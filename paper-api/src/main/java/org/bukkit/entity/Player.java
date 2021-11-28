@@ -771,6 +771,39 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
     public boolean canSee(@NotNull Player player);
 
     /**
+     * Visually hides an entity from this player.
+     *
+     * @param plugin Plugin that wants to hide the player
+     * @param entity Player to hide
+     * @deprecated draft API
+     */
+    @Deprecated
+    public void hideEntity(@NotNull Plugin plugin, @NotNull Entity entity);
+
+    /**
+     * Allows this player to see an entity that was previously hidden. If
+     * another another plugin had hidden the player too, then the player will
+     * remain hidden until the other plugin calls this method too.
+     *
+     * @param plugin Plugin that wants to show the player
+     * @param entity Player to show
+     * @deprecated draft API
+     */
+    @Deprecated
+    public void showEntity(@NotNull Plugin plugin, @NotNull Entity entity);
+
+    /**
+     * Checks to see if an entity has been visually hidden from this player.
+     *
+     * @param entity Player to check
+     * @return True if the provided player is not being hidden from this
+     *     player
+     * @deprecated draft API
+     */
+    @Deprecated
+    public boolean canSee(@NotNull Entity entity);
+
+    /**
      * Checks to see if this player is currently flying or not.
      *
      * @return True if the player is flying, else false.
