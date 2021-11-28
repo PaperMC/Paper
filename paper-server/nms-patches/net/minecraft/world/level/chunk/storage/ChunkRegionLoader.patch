@@ -9,7 +9,21 @@
  
                  Objects.requireNonNull(protochunk);
                  optional.ifPresent(protochunk::setBelowZeroRetrogen);
-@@ -321,7 +321,7 @@
+@@ -219,6 +219,13 @@
+             }
+         }
+ 
++        // CraftBukkit start - load chunk persistent data from nbt - SPIGOT-6814: Already load PDC here to account for 1.17 to 1.18 chunk upgrading.
++        net.minecraft.nbt.NBTBase persistentBase = nbttagcompound.get("ChunkBukkitValues");
++        if (persistentBase instanceof NBTTagCompound) {
++            ((IChunkAccess) object).persistentDataContainer.putAll((NBTTagCompound) persistentBase);
++        }
++        // CraftBukkit end
++
+         ((IChunkAccess) object).setLightCorrect(flag);
+         NBTTagCompound nbttagcompound2 = nbttagcompound.getCompound("Heightmaps");
+         EnumSet<HeightMap.Type> enumset = EnumSet.noneOf(HeightMap.Type.class);
+@@ -321,7 +328,7 @@
          nbttagcompound.putLong("InhabitedTime", ichunkaccess.getInhabitedTime());
          nbttagcompound.putString("Status", ichunkaccess.getStatus().getName());
          BlendingData blendingdata = ichunkaccess.getBlendingData();
@@ -18,28 +32,15 @@
          Logger logger;
  
          if (blendingdata != null) {
-@@ -452,6 +452,11 @@
+@@ -452,6 +459,11 @@
  
          nbttagcompound.put("Heightmaps", nbttagcompound3);
          nbttagcompound.put("structures", packStructureData(StructurePieceSerializationContext.fromLevel(worldserver), chunkcoordintpair, ichunkaccess.getAllStarts(), ichunkaccess.getAllReferences()));
 +        // CraftBukkit start - store chunk persistent data in nbt
-+        if (ichunkaccess instanceof Chunk && !((Chunk) ichunkaccess).persistentDataContainer.isEmpty()) {
-+            nbttagcompound.put("ChunkBukkitValues", ((Chunk) ichunkaccess).persistentDataContainer.toTagCompound());
++        if (!ichunkaccess.persistentDataContainer.isEmpty()) { // SPIGOT-6814: Always save PDC to account for 1.17 to 1.18 chunk upgrading.
++            nbttagcompound.put("ChunkBukkitValues", ichunkaccess.persistentDataContainer.toTagCompound());
 +        }
 +        // CraftBukkit end
          return nbttagcompound;
-     }
- 
-@@ -498,6 +503,12 @@
-                 }
-             }
- 
-+            // CraftBukkit start - load chunk persistent data from nbt
-+            net.minecraft.nbt.NBTBase persistentBase = nbttagcompound.get("ChunkBukkitValues");
-+            if (persistentBase instanceof NBTTagCompound) {
-+                chunk.persistentDataContainer.putAll((NBTTagCompound) persistentBase);
-+            }
-+            // CraftBukkit end
-         };
      }
  

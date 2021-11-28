@@ -1,18 +1,31 @@
 --- a/net/minecraft/world/level/chunk/IChunkAccess.java
 +++ b/net/minecraft/world/level/chunk/IChunkAccess.java
-@@ -94,7 +94,11 @@
+@@ -77,6 +77,11 @@
+     protected final LevelHeightAccessor levelHeightAccessor;
+     protected final ChunkSection[] sections;
+ 
++    // CraftBukkit start - SPIGOT-6814: move to IChunkAccess to account for 1.17 to 1.18 chunk upgrading.
++    private static final org.bukkit.craftbukkit.persistence.CraftPersistentDataTypeRegistry DATA_TYPE_REGISTRY = new org.bukkit.craftbukkit.persistence.CraftPersistentDataTypeRegistry();
++    public org.bukkit.craftbukkit.persistence.CraftPersistentDataContainer persistentDataContainer = new org.bukkit.craftbukkit.persistence.CraftPersistentDataContainer(DATA_TYPE_REGISTRY);
++    // CraftBukkit end
++
+     public IChunkAccess(ChunkCoordIntPair chunkcoordintpair, ChunkConverter chunkconverter, LevelHeightAccessor levelheightaccessor, IRegistry<BiomeBase> iregistry, long i, @Nullable ChunkSection[] achunksection, @Nullable BlendingData blendingdata) {
+         this.chunkPos = chunkcoordintpair;
+         this.upgradeData = chunkconverter;
+@@ -94,7 +99,12 @@
          }
  
          replaceMissingSections(levelheightaccessor, iregistry, this.sections);
 +        // CraftBukkit start
 +        this.biomeRegistry = iregistry;
++        this.persistentDataContainer.setCallback(() -> setUnsaved(true)); // CraftBukkit - SPIGOT-6814: Handle cases were only persistentData is saved
      }
 +    public final IRegistry<BiomeBase> biomeRegistry;
 +    // CraftBukkit end
  
      private static void replaceMissingSections(LevelHeightAccessor levelheightaccessor, IRegistry<BiomeBase> iregistry, ChunkSection[] achunksection) {
          for (int i = 0; i < achunksection.length; ++i) {
-@@ -394,6 +398,27 @@
+@@ -394,6 +404,27 @@
          }
      }
  
@@ -40,7 +53,7 @@
      public void fillBiomesFromNoise(BiomeResolver biomeresolver, Climate.Sampler climate_sampler) {
          ChunkCoordIntPair chunkcoordintpair = this.getPos();
          int i = QuartPos.fromBlock(chunkcoordintpair.getMinBlockX());
-@@ -425,8 +450,10 @@
+@@ -425,8 +456,10 @@
          return this;
      }
  
@@ -52,7 +65,7 @@
          private final SerializableTickContainer<Block> blocks;
          private final SerializableTickContainer<FluidType> fluids;
  
-@@ -442,5 +469,7 @@
+@@ -442,5 +475,7 @@
          public SerializableTickContainer<FluidType> fluids() {
              return this.fluids;
          }

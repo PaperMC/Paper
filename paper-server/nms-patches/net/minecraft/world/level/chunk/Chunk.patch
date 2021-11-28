@@ -18,7 +18,7 @@
          this.gameEventDispatcherSections = new Int2ObjectOpenHashMap();
          HeightMap.Type[] aheightmap_type = HeightMap.Type.values();
          int j = aheightmap_type.length;
-@@ -110,8 +110,22 @@
+@@ -110,8 +110,20 @@
          this.postLoad = chunk_c;
          this.blockTicks = levelchunkticks;
          this.fluidTicks = levelchunkticks1;
@@ -34,22 +34,24 @@
 +    public boolean mustNotSave;
 +    public boolean needsDecoration;
 +
-+    private static final org.bukkit.craftbukkit.persistence.CraftPersistentDataTypeRegistry DATA_TYPE_REGISTRY = new org.bukkit.craftbukkit.persistence.CraftPersistentDataTypeRegistry();
-+    public final org.bukkit.craftbukkit.persistence.CraftPersistentDataContainer persistentDataContainer = new org.bukkit.craftbukkit.persistence.CraftPersistentDataContainer(DATA_TYPE_REGISTRY);
 +    // CraftBukkit end
 +
      public Chunk(WorldServer worldserver, ProtoChunk protochunk, @Nullable Chunk.c chunk_c) {
          this(worldserver, protochunk.getPos(), protochunk.getUpgradeData(), protochunk.unpackBlockTicks(), protochunk.unpackFluidTicks(), protochunk.getInhabitedTime(), protochunk.getSections(), chunk_c, protochunk.getBlendingData());
          Iterator iterator = protochunk.getBlockEntities().values().iterator();
-@@ -142,6 +156,7 @@
+@@ -142,6 +154,11 @@
  
          this.setLightCorrect(protochunk.isLightCorrect());
          this.unsaved = true;
 +        this.needsDecoration = true; // CraftBukkit
++        // CraftBukkit start
++        this.persistentDataContainer = protochunk.persistentDataContainer; // SPIGOT-6814: copy PDC to account for 1.17 to 1.18 chunk upgrading.
++        this.persistentDataContainer.setCallback(() -> setUnsaved(true)); // SPIGOT-6814: Handle cases were only persistentData is saved
++        // CraftBukkit end
      }
  
      @Override
-@@ -238,9 +253,16 @@
+@@ -238,9 +255,16 @@
          }
      }
  
@@ -66,7 +68,7 @@
          int i = blockposition.getY();
          ChunkSection chunksection = this.getSection(this.getSectionIndex(i));
          boolean flag1 = chunksection.hasOnlyAir();
-@@ -279,7 +301,8 @@
+@@ -279,7 +303,8 @@
                  if (!chunksection.getBlockState(j, k, l).is(block)) {
                      return null;
                  } else {
@@ -76,7 +78,7 @@
                          iblockdata.onPlace(this.level, blockposition, iblockdata1, flag);
                      }
  
-@@ -324,7 +347,12 @@
+@@ -324,7 +349,12 @@
  
      @Nullable
      public TileEntity getBlockEntity(BlockPosition blockposition, Chunk.EnumTileEntityState chunk_enumtileentitystate) {
@@ -90,7 +92,7 @@
  
          if (tileentity == null) {
              NBTTagCompound nbttagcompound = (NBTTagCompound) this.pendingBlockEntities.remove(blockposition);
-@@ -395,6 +423,13 @@
+@@ -395,6 +425,13 @@
                  tileentity1.setRemoved();
              }
  
@@ -104,7 +106,7 @@
          }
      }
  
-@@ -424,6 +459,12 @@
+@@ -424,6 +461,12 @@
          if (this.isInLevel()) {
              TileEntity tileentity = (TileEntity) this.blockEntities.remove(blockposition);
  
@@ -117,7 +119,7 @@
              if (tileentity != null) {
                  this.removeGameEventListener(tileentity);
                  tileentity.setRemoved();
-@@ -471,6 +512,55 @@
+@@ -471,6 +514,55 @@
  
      }
  
@@ -173,7 +175,7 @@
      public boolean isEmpty() {
          return false;
      }
-@@ -659,7 +749,7 @@
+@@ -659,7 +751,7 @@
  
      private <T extends TileEntity> void updateBlockEntityTicker(T t0) {
          IBlockData iblockdata = t0.getBlockState();
@@ -182,7 +184,7 @@
  
          if (blockentityticker == null) {
              this.removeBlockEntityTicker(t0.getBlockPos());
-@@ -752,7 +842,7 @@
+@@ -752,7 +844,7 @@
          private boolean loggedInvalidBlockState;
  
          a(TileEntity tileentity, BlockEntityTicker blockentityticker) {
@@ -191,7 +193,7 @@
              this.ticker = blockentityticker;
          }
  
-@@ -775,7 +865,7 @@
+@@ -775,7 +867,7 @@
                              this.loggedInvalidBlockState = true;
                              Chunk.LOGGER.warn("Block entity {} @ {} state {} invalid for ticking:", new org.apache.logging.log4j.util.Supplier[]{this::getType, this::getPos, () -> {
                                          return iblockdata;
