@@ -22,11 +22,13 @@ import java.util.UUID;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import net.minecraft.core.BlockPosition;
+import net.minecraft.network.protocol.game.ClientboundLevelChunkWithLightPacket;
 import net.minecraft.network.protocol.game.PacketPlayOutCustomSoundEffect;
 import net.minecraft.network.protocol.game.PacketPlayOutUpdateTime;
 import net.minecraft.network.protocol.game.PacketPlayOutWorldEvent;
 import net.minecraft.resources.MinecraftKey;
 import net.minecraft.server.level.ChunkMapDistance;
+import net.minecraft.server.level.EntityPlayer;
 import net.minecraft.server.level.PlayerChunk;
 import net.minecraft.server.level.Ticket;
 import net.minecraft.server.level.TicketType;
@@ -292,21 +294,22 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public boolean refreshChunk(int x, int z) {
-        if (!isChunkLoaded(x, z)) {
-            return false;
-        }
+        PlayerChunk playerChunk = world.getChunkSource().chunkMap.visibleChunkMap.get(ChunkCoordIntPair.asLong(x, z));
+        if (playerChunk == null) return false;
 
-        int px = x << 4;
-        int pz = z << 4;
+        playerChunk.getTickingChunkFuture().thenAccept(either -> {
+            either.left().ifPresent(chunk -> {
+                List<EntityPlayer> playersInRange = playerChunk.playerProvider.getPlayers(playerChunk.getPos(), false);
+                if (playersInRange.isEmpty()) return;
 
-        // If there are more than 64 updates to a chunk at once, it will update all 'touched' sections within the chunk
-        // And will include biome data if all sections have been 'touched'
-        // This flags 65 blocks distributed across all the sections of the chunk, so that everything is sent, including biomes
-        int height = getMaxHeight() / 16;
-        for (int idx = 0; idx < 64; idx++) {
-            world.sendBlockUpdated(new BlockPosition(px + (idx / height), ((idx % height) * 16), pz), Blocks.AIR.defaultBlockState(), Blocks.STONE.defaultBlockState(), 3);
-        }
-        world.sendBlockUpdated(new BlockPosition(px + 15, (height * 16) - 1, pz + 15), Blocks.AIR.defaultBlockState(), Blocks.STONE.defaultBlockState(), 3);
+                ClientboundLevelChunkWithLightPacket refreshPacket = new ClientboundLevelChunkWithLightPacket(chunk, world.getLightEngine(), null, null, true);
+                for (EntityPlayer player : playersInRange) {
+                    if (player.connection == null) continue;
+
+                    player.connection.send(refreshPacket);
+                }
+            });
+        });
 
         return true;
     }
