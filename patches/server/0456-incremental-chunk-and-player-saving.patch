@@ -98,13 +98,13 @@ index 4351dd9c293d1db48c87c5df28bcb2b9a59583f7..faa6f999f620712b90df465e0dc68e4f
          // Paper start - move executeAll() into full server tick timing
          try (co.aikar.timings.Timing ignored = MinecraftTimings.processTasksTimer.startTiming()) {
 diff --git a/src/main/java/net/minecraft/server/level/ChunkHolder.java b/src/main/java/net/minecraft/server/level/ChunkHolder.java
-index 0f859c9548487bcf3b254e39027ec4114ec6d4d7..35ff6e3b796068a6dd4a422a0106747eadacfa5a 100644
+index 626bcbc6dd013260c3f8b38a1d14e7ba35dc1e01..9e96b0465717bfa761289c255fd8d2f1df1be3d8 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkHolder.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkHolder.java
 @@ -84,6 +84,8 @@ public class ChunkHolder {
          this.playersInChunkTickRange = this.chunkMap.playerChunkTickRangeMap.getObjectsInRange(key);
      }
-     // Paper end - optimise isOutsideOfRange
+     // Paper end - optimise anyPlayerCloseEnoughForSpawning
 +    long lastAutoSaveTime; // Paper - incremental autosave
 +    long inactiveTimeStart; // Paper - incremental autosave
  
@@ -165,7 +165,7 @@ index 0f859c9548487bcf3b254e39027ec4114ec6d4d7..35ff6e3b796068a6dd4a422a0106747e
          for (int i = 0; i < this.futures.length(); ++i) {
              CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> completablefuture = (CompletableFuture) this.futures.get(i);
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index c9a10f327f971e68bf5bb4ed0793a046233e3d74..a65f3f24fe00b130520ba9af178f1cf7ad3ece26 100644
+index ea61f5df9a0998272dd5da1332aa0fbb8704cd5e..beb930fdb2535e32692906c54b8654401706086e 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
 @@ -101,6 +101,7 @@ import net.minecraft.world.level.levelgen.structure.templatesystem.StructureMana
@@ -275,7 +275,7 @@ index c9a10f327f971e68bf5bb4ed0793a046233e3d74..a65f3f24fe00b130520ba9af178f1cf7
              ChunkPos chunkcoordintpair = chunk.getPos();
  
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-index f02643d12ac1959d92e895174b22775ee18a32d8..f9caa9524ebf0e1f073f23e97c84095b25a30023 100644
+index 76b56ea346d843aba482c52c4bfe877fdf0e9225..eb0c5ceb05f37bc653ea0cc91cc778866861688a 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 @@ -825,6 +825,15 @@ public class ServerChunkCache extends ChunkSource {
@@ -295,7 +295,7 @@ index f02643d12ac1959d92e895174b22775ee18a32d8..f9caa9524ebf0e1f073f23e97c84095b
      public void close() throws IOException {
          // CraftBukkit start
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index a5f0fe87bd5d75bf9a12ef284b0d635d8f6dd3a1..d55d2627b7e0c847250c551989d438280bef9ab8 100644
+index 44bc8657d1436114db9ac5f4bca23d330eb49d79..f82ad531d356a663bb085f50eeffbe8746fc6cd3 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
 @@ -1055,6 +1055,37 @@ public class ServerLevel extends Level implements WorldGenLevel {
@@ -349,7 +349,7 @@ index 2f13055a39c26fe12d2c1094103186635e536166..4b83617a81db1749faaf49fc3ee77e44
      private static final int NEUTRAL_MOB_DEATH_NOTIFICATION_RADII_Y = 10;
      public ServerGamePacketListenerImpl connection;
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
-index 30fa9ac91be2ecc55efeee9222835cbedc53acff..a40ca089d92df8f3ea0a444e3293531e787b196b 100644
+index 9b7fcd8be912cd211b6226386bd3340076953442..a8048e3af5bccb4cabe1ed1bc774aac6b8486bec 100644
 --- a/src/main/java/net/minecraft/server/players/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/players/PlayerList.java
 @@ -556,6 +556,7 @@ public abstract class PlayerList {
@@ -385,10 +385,10 @@ index 30fa9ac91be2ecc55efeee9222835cbedc53acff..a40ca089d92df8f3ea0a444e3293531e
          MinecraftTimings.savePlayers.stopTiming(); // Paper
          return null; }); // Paper - ensure main
 diff --git a/src/main/java/net/minecraft/world/level/chunk/ChunkAccess.java b/src/main/java/net/minecraft/world/level/chunk/ChunkAccess.java
-index 04b58d6aec04cc98777f88c2bcc9a820c5fd2f57..a44901edc49259ebbbb4367b0d10b8daa76b07cd 100644
+index 96dc50a24821016e53dfeac344c0e61f110a5a53..5093e34dddbea0f0d5c26f25c257b85bdf841a47 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/ChunkAccess.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/ChunkAccess.java
-@@ -451,6 +451,7 @@ public abstract class ChunkAccess implements BlockGetter, BiomeManager.NoiseBiom
+@@ -457,6 +457,7 @@ public abstract class ChunkAccess implements BlockGetter, BiomeManager.NoiseBiom
      public LevelHeightAccessor getHeightAccessorForGeneration() {
          return this;
      }
@@ -397,7 +397,7 @@ index 04b58d6aec04cc98777f88c2bcc9a820c5fd2f57..a44901edc49259ebbbb4367b0d10b8da
      // CraftBukkit start - decompile error
      public static record TicksToSave(SerializableTickContainer<Block> blocks, SerializableTickContainer<Fluid> fluids) {
 diff --git a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
-index e44b0b2c0b22cdf64bf0e1f014fd4e5a21008fed..adc786dc249fbdd4f871fbeb1b47426447e224bc 100644
+index 8c4cd4a82dcf5295a992c37914d3124d6615148a..93e9ef06f02e5dc0c1bd0e8d714f44b2fea24db0 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
 @@ -87,6 +87,12 @@ public class LevelChunk extends ChunkAccess {

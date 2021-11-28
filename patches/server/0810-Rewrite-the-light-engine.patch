@@ -4405,7 +4405,7 @@ index 315bd2408e4a45993c9b2572e0ab5260a70522ec..c0d123bff1825366c30aadd3ad8a7fde
          Deque<ChunkPos> queue = new ArrayDeque<>(MCUtil.getSpiralOutChunks(center, radius));
          updateLight(sender, world, lightengine, queue);
 diff --git a/src/main/java/net/minecraft/server/level/ChunkHolder.java b/src/main/java/net/minecraft/server/level/ChunkHolder.java
-index fe618afd578e4b2af6a0879e84f2b10985dbf639..31592058edcb27ba1557efcdd2eec7b8e2e7985c 100644
+index 7f663523b8c43b356763d6d5249e1aec416de37c..873a9767687ee78a852e2392d12bafa25e4ddca3 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkHolder.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkHolder.java
 @@ -52,7 +52,7 @@ public class ChunkHolder {
@@ -4418,7 +4418,7 @@ index fe618afd578e4b2af6a0879e84f2b10985dbf639..31592058edcb27ba1557efcdd2eec7b8
      private final DebugBuffer<ChunkHolder.ChunkSaveDebug> chunkToSaveHistory;
      public int oldTicketLevel;
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index 7c4154b1b5ccc53af5f5fb186c2a5d1ff88c7af1..cf6f5388e171035a22e9c35c9dd5d75d147562a4 100644
+index 8f5e443c49ce2dd1319d3fcb2dee1f6104c367fb..dad9553cd47731cffbf0a10865e54f584ad794c7 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
 @@ -130,7 +130,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
@@ -4797,13 +4797,13 @@ index ce4848bdd00c091b9eb5fa2d47b03378d43c91b2..1831588b275f11aff37573fead835f6d
          }
  
 diff --git a/src/main/java/net/minecraft/world/level/chunk/ChunkAccess.java b/src/main/java/net/minecraft/world/level/chunk/ChunkAccess.java
-index a44901edc49259ebbbb4367b0d10b8daa76b07cd..4a04e742ffa090046341974cf8ec9c1b97dc382d 100644
+index 5093e34dddbea0f0d5c26f25c257b85bdf841a47..f932cd79e58e472e76aaf36382494c2ad3206311 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/ChunkAccess.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/ChunkAccess.java
-@@ -77,6 +77,48 @@ public abstract class ChunkAccess implements BlockGetter, BiomeManager.NoiseBiom
-     protected final LevelHeightAccessor levelHeightAccessor;
-     protected final LevelChunkSection[] sections;
- 
+@@ -81,6 +81,47 @@ public abstract class ChunkAccess implements BlockGetter, BiomeManager.NoiseBiom
+     private static final org.bukkit.craftbukkit.persistence.CraftPersistentDataTypeRegistry DATA_TYPE_REGISTRY = new org.bukkit.craftbukkit.persistence.CraftPersistentDataTypeRegistry();
+     public org.bukkit.craftbukkit.persistence.CraftPersistentDataContainer persistentDataContainer = new org.bukkit.craftbukkit.persistence.CraftPersistentDataContainer(ChunkAccess.DATA_TYPE_REGISTRY);
+     // CraftBukkit end
 +    // Paper start - rewrite light engine
 +    private volatile ca.spottedleaf.starlight.common.light.SWMRNibbleArray[] blockNibbles;
 +
@@ -4845,10 +4845,9 @@ index a44901edc49259ebbbb4367b0d10b8daa76b07cd..4a04e742ffa090046341974cf8ec9c1b
 +        this.blockEmptinessMap = emptinessMap;
 +    }
 +    // Paper end - rewrite light engine
-+
+ 
      public ChunkAccess(ChunkPos pos, UpgradeData upgradeData, LevelHeightAccessor heightLimitView, Registry<Biome> biome, long inhabitedTime, @Nullable LevelChunkSection[] sectionArrayInitializer, @Nullable BlendingData blendingData) {
          this.locX = pos.x; this.locZ = pos.z; // Paper - reduce need for field lookups
-         this.chunkPos = pos; this.coordinateKey = ChunkPos.asLong(locX, locZ); // Paper - cache long key
 diff --git a/src/main/java/net/minecraft/world/level/chunk/EmptyLevelChunk.java b/src/main/java/net/minecraft/world/level/chunk/EmptyLevelChunk.java
 index 25e9cc39d748dfd99d38f504c14f40f9ec7bdd2d..d14416f186292f2dda5f6539d285705226b7c699 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/EmptyLevelChunk.java
@@ -4946,7 +4945,7 @@ index 7c5b3acd299c5b021bd20f17ff0b89c8208a6623..d29739c3a67e60741a06fb25bcaf7705
          super(wrapped.getPos(), UpgradeData.EMPTY, wrapped.levelHeightAccessor, wrapped.getLevel().registryAccess().registryOrThrow(Registry.BIOME_REGISTRY), wrapped.getBlendingData());
          this.wrapped = wrapped;
 diff --git a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
-index 376099c21d9e0ddeeeac28a7c3c21200c657404b..5ade22df6f8a2b839f494ab0898a87c3b7cd4e63 100644
+index b64272b8353cceb2489bc33e36585155347b7d58..86875d7593598850ab08003820895771e1ba2e2b 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
 @@ -100,6 +100,10 @@ public class LevelChunk extends ChunkAccess {
@@ -4960,7 +4959,7 @@ index 376099c21d9e0ddeeeac28a7c3c21200c657404b..5ade22df6f8a2b839f494ab0898a87c3
          this.tickersInLevel = Maps.newHashMap();
          this.clientLightReady = false;
          this.level = (ServerLevel) world; // CraftBukkit - type
-@@ -327,6 +331,12 @@ public class LevelChunk extends ChunkAccess {
+@@ -325,6 +329,12 @@ public class LevelChunk extends ChunkAccess {
  
      public LevelChunk(ServerLevel world, ProtoChunk protoChunk, @Nullable LevelChunk.PostLoadProcessor entityLoader) {
          this(world, protoChunk.getPos(), protoChunk.getUpgradeData(), protoChunk.unpackBlockTicks(), protoChunk.unpackFluidTicks(), protoChunk.getInhabitedTime(), protoChunk.getSections(), entityLoader, protoChunk.getBlendingData());
@@ -5004,7 +5003,7 @@ index 568dc3c9cbf009a3892766cacdd00667556e27c5..e7676e86c08affa8e730c13f11d4b269
          this.fluidTicks = fluidTickScheduler;
      }
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
-index 45930793e7fffe6ce243c7637cb9c0e948c6a83d..e072a895ed71bb2e98a3a0c4aef37418c7c39f41 100644
+index 859e23a182e97afa179419973485208bb0aa84ca..d81a2e74cadccebeb5242b34f4550686db684fdb 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
 @@ -79,6 +79,14 @@ public class ChunkSerializer {
@@ -5115,7 +5114,7 @@ index 45930793e7fffe6ce243c7637cb9c0e948c6a83d..e072a895ed71bb2e98a3a0c4aef37418
  
              object = protochunk;
              protochunk.setInhabitedTime(l);
-@@ -390,7 +415,7 @@ public class ChunkSerializer {
+@@ -397,7 +422,7 @@ public class ChunkSerializer {
          DataLayer[] blockLight = new DataLayer[lightenginethreaded.getMaxLightSection() - lightenginethreaded.getMinLightSection()];
          DataLayer[] skyLight = new DataLayer[lightenginethreaded.getMaxLightSection() - lightenginethreaded.getMinLightSection()];
  
@@ -5124,7 +5123,7 @@ index 45930793e7fffe6ce243c7637cb9c0e948c6a83d..e072a895ed71bb2e98a3a0c4aef37418
              DataLayer blockArray = lightenginethreaded.getLayerListener(LightLayer.BLOCK).getDataLayerData(SectionPos.of(chunkPos, i));
              DataLayer skyArray = lightenginethreaded.getLayerListener(LightLayer.SKY).getDataLayerData(SectionPos.of(chunkPos, i));
  
-@@ -442,6 +467,12 @@ public class ChunkSerializer {
+@@ -449,6 +474,12 @@ public class ChunkSerializer {
      }
      public static CompoundTag saveChunk(ServerLevel world, ChunkAccess chunk, @org.checkerframework.checker.nullness.qual.Nullable AsyncSaveData asyncsavedata) {
          // Paper end
@@ -5137,7 +5136,7 @@ index 45930793e7fffe6ce243c7637cb9c0e948c6a83d..e072a895ed71bb2e98a3a0c4aef37418
          ChunkPos chunkcoordintpair = chunk.getPos();
          CompoundTag nbttagcompound = new CompoundTag();
  
-@@ -492,20 +523,14 @@ public class ChunkSerializer {
+@@ -499,20 +530,14 @@ public class ChunkSerializer {
          for (int i = lightenginethreaded.getMinLightSection(); i < lightenginethreaded.getMaxLightSection(); ++i) {
              int j = chunk.getSectionIndexFromSectionY(i);
              boolean flag1 = j >= 0 && j < achunksection.length;
@@ -5165,7 +5164,7 @@ index 45930793e7fffe6ce243c7637cb9c0e948c6a83d..e072a895ed71bb2e98a3a0c4aef37418
  
                  if (flag1) {
                      LevelChunkSection chunksection = achunksection[j];
-@@ -520,13 +545,27 @@ public class ChunkSerializer {
+@@ -527,13 +552,27 @@ public class ChunkSerializer {
                      nbttagcompound1.put("biomes", (Tag) dataresult1.getOrThrow(false, logger1::error));
                  }
  
@@ -5197,7 +5196,7 @@ index 45930793e7fffe6ce243c7637cb9c0e948c6a83d..e072a895ed71bb2e98a3a0c4aef37418
  
                  if (!nbttagcompound1.isEmpty()) {
                      nbttagcompound1.putByte("Y", (byte) i);
-@@ -537,7 +576,8 @@ public class ChunkSerializer {
+@@ -544,7 +583,8 @@ public class ChunkSerializer {
  
          nbttagcompound.put("sections", nbttaglist);
          if (flag) {
