@@ -1,0 +1,132 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: CullanP <cullanpage@gmail.com>
+Date: Thu, 3 Mar 2016 02:13:38 -0600
+Subject: [PATCH] Avoid hopper searches if there are no items
+
+Hoppers searching for items and minecarts is the most expensive part of hopper ticking.
+We keep track of the number of minecarts and items in a chunk.
+If there are no items in the chunk, we skip searching for items.
+If there are no minecarts in the chunk, we skip searching for them.
+
+Usually hoppers aren't near items, so we can skip most item searches.
+And since minecart hoppers are used _very_ rarely near we can avoid alot of searching there.
+
+Combined, this adds up a lot.
+
+diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
+index 8cde961332f4671bdd361e8f88d0eedd595bf745..9154f434ab1a1b11d19cef8fc80f351f3eefcb57 100644
+--- a/src/main/java/net/minecraft/world/level/Level.java
++++ b/src/main/java/net/minecraft/world/level/Level.java
+@@ -988,7 +988,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+                 }
+             }
+ 
+-        });
++        }, predicate == net.minecraft.world.entity.EntitySelector.CONTAINER_ENTITY_SELECTOR); // Paper
+         return list;
+     }
+ 
+diff --git a/src/main/java/net/minecraft/world/level/entity/EntitySection.java b/src/main/java/net/minecraft/world/level/entity/EntitySection.java
+index e3027cae3674502bdc34fdbd7002980515ffc837..07691d38960add169d24bc830ac7b951bd5afaef 100644
+--- a/src/main/java/net/minecraft/world/level/entity/EntitySection.java
++++ b/src/main/java/net/minecraft/world/level/entity/EntitySection.java
+@@ -13,6 +13,10 @@ public class EntitySection<T extends EntityAccess> {
+     protected static final Logger LOGGER = LogManager.getLogger();
+     private final ClassInstanceMultiMap<T> storage;
+     private Visibility chunkStatus;
++    // Paper start - track number of items and minecarts
++    public int itemCount;
++    public int inventoryEntityCount;
++    // Paper end
+ 
+     public EntitySection(Class<T> entityClass, Visibility status) {
+         this.chunkStatus = status;
+@@ -20,10 +24,24 @@ public class EntitySection<T extends EntityAccess> {
+     }
+ 
+     public void add(T entity) {
++        // Paper start
++        if (entity instanceof net.minecraft.world.entity.item.ItemEntity) {
++            this.itemCount++;
++        } else if (entity instanceof net.minecraft.world.Container) {
++            this.inventoryEntityCount++;
++        }
++        // Paper end
+         this.storage.add(entity);
+     }
+ 
+     public boolean remove(T entity) {
++        // Paper start
++        if (entity instanceof net.minecraft.world.entity.item.ItemEntity) {
++            this.itemCount--;
++        } else if (entity instanceof net.minecraft.world.Container) {
++            this.inventoryEntityCount--;
++        }
++        // Paper end
+         return this.storage.remove(entity);
+     }
+ 
+@@ -42,7 +60,7 @@ public class EntitySection<T extends EntityAccess> {
+             for(T entityAccess : collection) {
+                 U entityAccess2 = (U)((EntityAccess)type.tryCast(entityAccess));
+                 if (entityAccess2 != null && entityAccess.getBoundingBox().intersects(box)) {
+-                    action.accept((T)entityAccess2);
++                    action.accept(entityAccess2); // Paper - decompile fixes
+                 }
+             }
+ 
+diff --git a/src/main/java/net/minecraft/world/level/entity/EntitySectionStorage.java b/src/main/java/net/minecraft/world/level/entity/EntitySectionStorage.java
+index 13df7889b2b5249fb81c54fadf55315a4c515116..984e940a1d8060e5945a6efd10c9f81bed2bf057 100644
+--- a/src/main/java/net/minecraft/world/level/entity/EntitySectionStorage.java
++++ b/src/main/java/net/minecraft/world/level/entity/EntitySectionStorage.java
+@@ -111,13 +111,19 @@ public class EntitySectionStorage<T extends EntityAccess> {
+     }
+ 
+     public void getEntities(AABB box, Consumer<T> action) {
++        // Paper start
++    }
++    public void getEntities(AABB box, Consumer<T> action, boolean isContainerSearch) {
++        // Paper end
+         this.forEachAccessibleNonEmptySection(box, (section) -> {
++            if (isContainerSearch && section.inventoryEntityCount <= 0) return; // Paper
+             section.getEntities(box, action);
+         });
+     }
+ 
+     public <U extends T> void getEntities(EntityTypeTest<T, U> filter, AABB box, Consumer<U> action) {
+         this.forEachAccessibleNonEmptySection(box, (section) -> {
++            if (filter.getBaseClass() == net.minecraft.world.entity.item.ItemEntity.class && section.itemCount <= 0) return; // Paper
+             section.getEntities(filter, box, action);
+         });
+     }
+diff --git a/src/main/java/net/minecraft/world/level/entity/LevelEntityGetter.java b/src/main/java/net/minecraft/world/level/entity/LevelEntityGetter.java
+index 9723a0ad61548c8c6c4c5ef20a150d5b17d80afd..da1ad0b2679e392ed81b50c15f012c63cb5c939e 100644
+--- a/src/main/java/net/minecraft/world/level/entity/LevelEntityGetter.java
++++ b/src/main/java/net/minecraft/world/level/entity/LevelEntityGetter.java
+@@ -17,6 +17,7 @@ public interface LevelEntityGetter<T extends EntityAccess> {
+     <U extends T> void get(EntityTypeTest<T, U> filter, Consumer<U> action);
+ 
+     void get(AABB box, Consumer<T> action);
++    void get(AABB box, Consumer<T> action, boolean isContainerSearch); // Paper
+ 
+     <U extends T> void get(EntityTypeTest<T, U> filter, AABB box, Consumer<U> action);
+ }
+diff --git a/src/main/java/net/minecraft/world/level/entity/LevelEntityGetterAdapter.java b/src/main/java/net/minecraft/world/level/entity/LevelEntityGetterAdapter.java
+index d5129c12c79eb6fe6b7e5f8eed4d24226423f5fd..3b13f6ea36a3bfecabe09221eb5c48dddab119db 100644
+--- a/src/main/java/net/minecraft/world/level/entity/LevelEntityGetterAdapter.java
++++ b/src/main/java/net/minecraft/world/level/entity/LevelEntityGetterAdapter.java
+@@ -38,7 +38,13 @@ public class LevelEntityGetterAdapter<T extends EntityAccess> implements LevelEn
+ 
+     @Override
+     public void get(AABB box, Consumer<T> action) {
+-        this.sectionStorage.getEntities(box, action);
++        // Paper start
++        this.get(box, action, false);
++    }
++    @Override
++    public void get(AABB box, Consumer<T> action, boolean isContainerSearch) {
++        this.sectionStorage.getEntities(box, action, isContainerSearch);
++        // Paper end
+     }
+ 
+     @Override
