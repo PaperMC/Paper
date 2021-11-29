@@ -1,0 +1,93 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Fri, 29 May 2020 20:29:02 -0400
+Subject: [PATCH] Synchronize PalettedContainer instead of ReentrantLock
+
+Mojang has flaws in their logic about chunks being concurrently
+wrote to. So we constantly see crashes around multiple threads writing.
+
+Additionally, java has optimized synchronization so well that its
+in many times faster than trying to manage read wrote locks for low
+contention situations.
+
+And this is extremely a low contention situation.
+
+diff --git a/src/main/java/net/minecraft/world/level/chunk/PalettedContainer.java b/src/main/java/net/minecraft/world/level/chunk/PalettedContainer.java
+index cdd357a8dd82cfd2a8abd45c1b7937b409af4b05..5bbbb10a567963a451db8cf29d8d16f1cd013a16 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/PalettedContainer.java
++++ b/src/main/java/net/minecraft/world/level/chunk/PalettedContainer.java
+@@ -35,17 +35,17 @@ public class PalettedContainer<T> implements PaletteResize<T> {
+     private final ThreadingDetector threadingDetector = new ThreadingDetector("PalettedContainer");
+ 
+     public void acquire() {
+-        this.threadingDetector.checkAndLock();
++        // this.threadingDetector.checkAndLock(); // Paper - disable this - use proper synchronization
+     }
+ 
+     public void release() {
+-        this.threadingDetector.checkAndUnlock();
++        // this.threadingDetector.checkAndUnlock(); // Paper - disable this
+     }
+ 
+     // Paper start - Anti-Xray - Add preset values
+     @Deprecated public static <T> Codec<PalettedContainer<T>> codec(IdMap<T> idList, Codec<T> entryCodec, PalettedContainer.Strategy provider, T object) { return PalettedContainer.codec(idList, entryCodec, provider, object, null); } // Notice for updates: Please make sure this function isn't used anywhere
+     public static <T> Codec<PalettedContainer<T>> codec(IdMap<T> idList, Codec<T> entryCodec, PalettedContainer.Strategy provider, T object, T[] presetValues) {
+-        return RecordCodecBuilder.create((instance) -> {
++        return RecordCodecBuilder.<DiscData<T>>create((instance) -> { // Paper - decompile fixes
+             return instance.group(entryCodec.mapResult(ExtraCodecs.orElsePartial(object)).listOf().fieldOf("palette").forGetter(PalettedContainer.DiscData::paletteEntries), Codec.LONG_STREAM.optionalFieldOf("data").forGetter(PalettedContainer.DiscData::storage)).apply(instance, PalettedContainer.DiscData::new);
+         }).comapFlatMap((serialized) -> {
+             return read(idList, provider, serialized, object, presetValues);
+@@ -143,7 +143,7 @@ public class PalettedContainer<T> implements PaletteResize<T> {
+     }
+     // Paper end
+ 
+-    public T getAndSet(int x, int y, int z, T value) {
++    public synchronized T getAndSet(int x, int y, int z, T value) { // Paper - synchronize
+         this.acquire();
+ 
+         Object var5;
+@@ -166,7 +166,7 @@ public class PalettedContainer<T> implements PaletteResize<T> {
+         return this.data.palette.valueFor(j);
+     }
+ 
+-    public void set(int x, int y, int z, T value) {
++    public synchronized void set(int x, int y, int z, T value) { // Paper - synchronize
+         this.acquire();
+ 
+         try {
+@@ -200,7 +200,7 @@ public class PalettedContainer<T> implements PaletteResize<T> {
+         });
+     }
+ 
+-    public void read(FriendlyByteBuf buf) {
++    public synchronized void read(FriendlyByteBuf buf) { // Paper - synchronize
+         this.acquire();
+ 
+         try {
+@@ -218,7 +218,7 @@ public class PalettedContainer<T> implements PaletteResize<T> {
+ 
+     // Paper start - Anti-Xray - Add chunk packet info
+     @Deprecated public void write(FriendlyByteBuf buf) { this.write(buf, null, 0); } // Notice for updates: Please make sure this method isn't used anywhere
+-    public void write(FriendlyByteBuf buf, com.destroystokyo.paper.antixray.ChunkPacketInfo<T> chunkPacketInfo, int bottomBlockY) {
++    public synchronized void write(FriendlyByteBuf buf, com.destroystokyo.paper.antixray.ChunkPacketInfo<T> chunkPacketInfo, int bottomBlockY) { // Paper - synchronize
+         this.acquire();
+ 
+         try {
+@@ -236,7 +236,7 @@ public class PalettedContainer<T> implements PaletteResize<T> {
+ 
+     }
+ 
+-    private static <T> DataResult<PalettedContainer<T>> read(IdMap<T> idList, PalettedContainer.Strategy provider, PalettedContainer.DiscData<T> serialized, T defaultValue, T[] presetValues) { // Paper - Anti-Xray - Add preset values
++    private synchronized static <T> DataResult<PalettedContainer<T>> read(IdMap<T> idList, PalettedContainer.Strategy provider, PalettedContainer.DiscData<T> serialized, T defaultValue, T[] presetValues) { // Paper - Anti-Xray - Add preset values // Paper - synchronize
+         List<T> list = serialized.paletteEntries();
+         int i = provider.size();
+         int j = provider.calculateBitsForSerialization(idList, list.size());
+@@ -275,7 +275,7 @@ public class PalettedContainer<T> implements PaletteResize<T> {
+         return DataResult.success(new PalettedContainer<>(idList, provider, configuration, bitStorage, list, defaultValue, presetValues)); // Paper - Anti-Xray - Add preset values
+     }
+ 
+-    private PalettedContainer.DiscData<T> write(IdMap<T> idList, PalettedContainer.Strategy provider) {
++    private synchronized PalettedContainer.DiscData<T> write(IdMap<T> idList, PalettedContainer.Strategy provider) { // Paper - synchronize
+         this.acquire();
+ 
+         PalettedContainer.DiscData var12;
