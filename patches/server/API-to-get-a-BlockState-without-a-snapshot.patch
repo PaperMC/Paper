@@ -43,9 +43,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    public InventoryHolder getOwner(boolean useSnapshot) {
 +        // Paper end
          if (this.level == null) return null;
-         org.bukkit.block.Block block = this.level.getWorld().getBlockAt(this.worldPosition.getX(), this.worldPosition.getY(), this.worldPosition.getZ());
-         if (block.getType() == org.bukkit.Material.AIR) return null;
--        org.bukkit.block.BlockState state = block.getState();
+-        org.bukkit.block.BlockState state = this.level.getWorld().getBlockAt(this.worldPosition.getX(), this.worldPosition.getY(), this.worldPosition.getZ()).getState();
++        org.bukkit.block.Block block = this.level.getWorld().getBlockAt(this.worldPosition.getX(), this.worldPosition.getY(), this.worldPosition.getZ());
++        if (block.getType() == org.bukkit.Material.AIR) return null;
 +        org.bukkit.block.BlockState state = block.getState(useSnapshot); // Paper
          if (state instanceof InventoryHolder) return (InventoryHolder) state;
          return null;
@@ -79,7 +79,12 @@ diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftBlockEntityState.ja
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/block/CraftBlockEntityState.java
 +++ b/src/main/java/org/bukkit/craftbukkit/block/CraftBlockEntityState.java
-@@ -0,0 +0,0 @@ public abstract class CraftBlockEntityState<T extends BlockEntity> extends Craft
+@@ -0,0 +0,0 @@ import org.bukkit.World;
+ import org.bukkit.block.TileState;
+ import org.bukkit.persistence.PersistentDataContainer;
+ 
+-public class CraftBlockEntityState<T extends BlockEntity> extends CraftBlockState implements TileState {
++public abstract class CraftBlockEntityState<T extends BlockEntity> extends CraftBlockState implements TileState { // Paper - revert revert
  
      private final T tileEntity;
      private final T snapshot;
@@ -108,6 +113,27 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
      public void refreshSnapshot() {
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftBlockStates.java b/src/main/java/org/bukkit/craftbukkit/block/CraftBlockStates.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/CraftBlockStates.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/CraftBlockStates.java
+@@ -0,0 +0,0 @@ public final class CraftBlockStates {
+     private static final BlockStateFactory<?> DEFAULT_FACTORY = new BlockStateFactory<CraftBlockState>(CraftBlockState.class) {
+         @Override
+         public CraftBlockState createBlockState(World world, BlockPos blockPosition, net.minecraft.world.level.block.state.BlockState blockData, BlockEntity tileEntity) {
+-            // SPIGOT-6754, SPIGOT-6817: Restore previous behaviour for tile entities with removed blocks (loot generation post-destroy)
+-            if (tileEntity != null) {
+-                // block with unhandled TileEntity:
+-                return new CraftBlockEntityState<>(world, tileEntity);
+-            }
+-            Preconditions.checkState(tileEntity == null, "Unexpected BlockState for %s", CraftMagicNumbers.getMaterial(blockData.getBlock()));
++            // Paper start - revert revert
++            // When a block is being destroyed, the TileEntity may temporarily still exist while the block's type has already been set to AIR. We ignore the TileEntity in this case.
++            Preconditions.checkState(tileEntity == null || CraftMagicNumbers.getMaterial(blockData.getBlock()) == Material.AIR, "Unexpected BlockState for %s", CraftMagicNumbers.getMaterial(blockData.getBlock()));
++            // Paper end
+             return new CraftBlockState(world, blockPosition, blockData);
+         }
+     };
 diff --git a/src/main/java/org/bukkit/craftbukkit/persistence/CraftPersistentDataContainer.java b/src/main/java/org/bukkit/craftbukkit/persistence/CraftPersistentDataContainer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/persistence/CraftPersistentDataContainer.java
