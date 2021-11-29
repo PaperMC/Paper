@@ -773,8 +773,8 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
     /**
      * Visually hides an entity from this player.
      *
-     * @param plugin Plugin that wants to hide the player
-     * @param entity Player to hide
+     * @param plugin Plugin that wants to hide the entity
+     * @param entity Entity to hide
      * @deprecated draft API
      */
     @Deprecated
@@ -782,11 +782,11 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
 
     /**
      * Allows this player to see an entity that was previously hidden. If
-     * another another plugin had hidden the player too, then the player will
+     * another another plugin had hidden the entity too, then the entity will
      * remain hidden until the other plugin calls this method too.
      *
-     * @param plugin Plugin that wants to show the player
-     * @param entity Player to show
+     * @param plugin Plugin that wants to show the entity
+     * @param entity Entity to show
      * @deprecated draft API
      */
     @Deprecated
@@ -795,8 +795,8 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
     /**
      * Checks to see if an entity has been visually hidden from this player.
      *
-     * @param entity Player to check
-     * @return True if the provided player is not being hidden from this
+     * @param entity Entity to check
+     * @return True if the provided entity is not being hidden from this
      *     player
      * @deprecated draft API
      */
