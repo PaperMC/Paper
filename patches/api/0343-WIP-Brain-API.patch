@@ -1,0 +1,523 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Owen1212055 <23108066+Owen1212055@users.noreply.github.com>
+Date: Mon, 29 Nov 2021 21:57:09 -0500
+Subject: [PATCH] WIP Brain API
+
+
+diff --git a/src/main/java/io/papermc/paper/entity/brain/BrainHolder.java b/src/main/java/io/papermc/paper/entity/brain/BrainHolder.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..21e0f2fa10766b257cac7f21e5389255e77b7647
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/entity/brain/BrainHolder.java
+@@ -0,0 +1,83 @@
++package io.papermc.paper.entity.brain;
++
++import io.papermc.paper.entity.brain.activity.ActivityKey;
++import io.papermc.paper.entity.brain.activity.behavior.BehaviorPair;
++import io.papermc.paper.entity.brain.memory.MemoryKeyStatus;
++import io.papermc.paper.entity.brain.memory.MemoryPair;
++import io.papermc.paper.entity.brain.sensor.Sensor;
++import io.papermc.paper.entity.brain.sensor.SensorKey;
++import org.bukkit.entity.LivingEntity;
++import org.bukkit.entity.memory.MemoryKey;
++import org.jetbrains.annotations.NotNull;
++
++import javax.annotation.Nullable;
++import java.util.Collection;
++
++/*
++
++Initial implementation details:
++
++All entities have a brain, but not all entities actually tick their brain.
++
++
++Behaviors are just goals combined with eachother, and are defined by "Activities".
++
++Sensors populate memories, and memories are used to trigger/read by activities.
++
++
++ */
++public interface BrainHolder<T extends LivingEntity> {
++
++    void clearActivities();
++
++    void removeActivity(ActivityKey key);
++
++    @NotNull
++    Collection<ActivityKey> getActivities();
++
++    @NotNull
++    Collection<ActivityKey> getActiveActivities();
++
++    @NotNull
++    Collection<ActivityKey> getCoreActivities();
++
++    void startActivity(ActivityKey key);
++
++    void startFirstValidActivity(Collection<ActivityKey> keys);
++
++    void addActivity(ActivityKey key, Collection<BehaviorPair<T>> behavior, Collection<MemoryPair> requiredMemories, Collection<MemoryKey<?>> keysToRemoveOnFinish);
++
++    void setDefaultActivity(ActivityKey key);
++
++    void setCoreActivities(Collection<ActivityKey> keys);
++
++    // Sensors
++
++    void addSensor(SensorKey key, Sensor sensor);
++
++    void clearSensors();
++
++    void removeSensor(SensorKey key);
++
++    @Nullable
++    Sensor getSensor(SensorKey key);
++
++    @NotNull
++    Collection<Sensor> getAllSensors();
++
++    void registerMemory(MemoryKey<?> memoryKey);
++
++    <V> void setMemory(MemoryKey<V> memoryKey, V value, long expireIn);
++
++    @NotNull
++    boolean isMemoryStatus(MemoryKey<?> memoryKey, MemoryKeyStatus status);
++
++    void forgetMemory(MemoryKey<?> memoryKey);
++
++    @NotNull
++    Collection<MemoryKey<?>> getMemories();
++
++    void clearMemories();
++
++
++}
+diff --git a/src/main/java/io/papermc/paper/entity/brain/BrainManager.java b/src/main/java/io/papermc/paper/entity/brain/BrainManager.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..7bfb174d952598827edc45540becd4e8cf489005
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/entity/brain/BrainManager.java
+@@ -0,0 +1,23 @@
++package io.papermc.paper.entity.brain;
++
++import io.papermc.paper.entity.brain.activity.ActivityKey;
++import io.papermc.paper.entity.brain.activity.behavior.BehaviorPair;
++import io.papermc.paper.entity.brain.memory.MemoryKeyStatus;
++import io.papermc.paper.entity.brain.memory.MemoryPair;
++import io.papermc.paper.entity.brain.sensor.Sensor;
++import io.papermc.paper.entity.brain.sensor.SensorKey;
++import org.bukkit.entity.LivingEntity;
++import org.bukkit.entity.Mob;
++import org.bukkit.entity.memory.MemoryKey;
++import org.jetbrains.annotations.NotNull;
++
++import javax.annotation.Nullable;
++import java.util.Collection;
++
++
++
++public interface BrainManager {
++
++
++
++}
+diff --git a/src/main/java/io/papermc/paper/entity/brain/activity/ActivityKey.java b/src/main/java/io/papermc/paper/entity/brain/activity/ActivityKey.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..d6f046b82f9a48a2e256674d2f95ee89bf6fd8bc
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/entity/brain/activity/ActivityKey.java
+@@ -0,0 +1,32 @@
++package io.papermc.paper.entity.brain.activity;
++
++import org.bukkit.NamespacedKey;
++
++/**
++ *
++ *
++ *
++ */
++public final class ActivityKey {
++
++    private final NamespacedKey key;
++
++    ActivityKey(NamespacedKey key) {
++        this.key = key;
++    }
++
++    public static ActivityKey of(NamespacedKey key) {
++        return new ActivityKey(key);
++    }
++
++    public NamespacedKey getKey() {
++        return key;
++    }
++
++    @Override
++    public String toString() {
++        return "ActivityKey{" +
++            "key=" + key +
++            '}';
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/entity/brain/activity/VanillaActivityKey.java b/src/main/java/io/papermc/paper/entity/brain/activity/VanillaActivityKey.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..856c80629c0207c0cc31437efc36bfea12bf1857
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/entity/brain/activity/VanillaActivityKey.java
+@@ -0,0 +1,45 @@
++package io.papermc.paper.entity.brain.activity;
++
++import org.bukkit.NamespacedKey;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++import java.util.HashMap;
++import java.util.Map;
++
++public final class VanillaActivityKey {
++
++    public static final Map<NamespacedKey, ActivityKey> ACTIVITY_KEYS = new HashMap<>();
++
++    public static final ActivityKey CORE = of("core");
++    public static final ActivityKey IDLE = of("idle");
++    public static final ActivityKey WORK = of("work");
++    public static final ActivityKey PLAY = of("play");
++    public static final ActivityKey REST = of("rest");
++    public static final ActivityKey MEET = of("meet");
++    public static final ActivityKey PANIC = of("panic");
++    public static final ActivityKey RAID = of("raid");
++    public static final ActivityKey PRE_RAID = of("pre_raid");
++    public static final ActivityKey HIDE = of("hide");
++    public static final ActivityKey FIGHT = of("fight");
++    public static final ActivityKey CELEBRATE = of("celebrate");
++    public static final ActivityKey ADMIRE_ITEM = of("admire_item");
++    public static final ActivityKey AVOID = of("avoid");
++    public static final ActivityKey RIDE = of("ride");
++    public static final ActivityKey PLAY_DEAD = of("play_dead");
++    public static final ActivityKey LONG_JUMP = of("long_jump");
++    public static final ActivityKey RAM = of("ram");
++
++
++    private static ActivityKey of(String key) {
++        NamespacedKey mcKey = NamespacedKey.minecraft(key);
++
++        return ACTIVITY_KEYS.put(mcKey, new ActivityKey(mcKey));
++    }
++
++    @Nullable
++    public static ActivityKey getByKey(@NotNull NamespacedKey namespacedKey) {
++        return ACTIVITY_KEYS.get(namespacedKey);
++    }
++
++}
+diff --git a/src/main/java/io/papermc/paper/entity/brain/activity/behavior/Behavior.java b/src/main/java/io/papermc/paper/entity/brain/activity/behavior/Behavior.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..51f854b04846d57613e98ea8fa55ce0777e0088c
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/entity/brain/activity/behavior/Behavior.java
+@@ -0,0 +1,32 @@
++package io.papermc.paper.entity.brain.activity.behavior;
++
++import io.papermc.paper.entity.brain.memory.MemoryKeyStatus;
++import org.bukkit.entity.LivingEntity;
++import org.bukkit.entity.memory.MemoryKey;
++
++import java.util.Map;
++
++
++public interface Behavior<T extends LivingEntity> {
++
++    void start(T entity);
++
++    void tick(T entity);
++
++    void stop(T entity);
++
++    default boolean canStart(T entity) {
++        return true;
++    }
++
++    int getMinRuntime();
++
++    int getMaxRuntime();
++
++    default boolean canStillRun(T entity) {
++        return true;
++    }
++
++    Map<MemoryKey<?>, MemoryKeyStatus> getMemoryRequirements();
++
++}
+diff --git a/src/main/java/io/papermc/paper/entity/brain/activity/behavior/BehaviorPair.java b/src/main/java/io/papermc/paper/entity/brain/activity/behavior/BehaviorPair.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..b3d9afa8e95009b558ba15454bd1dd068e24ca21
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/entity/brain/activity/behavior/BehaviorPair.java
+@@ -0,0 +1,6 @@
++package io.papermc.paper.entity.brain.activity.behavior;
++
++import org.bukkit.entity.LivingEntity;
++
++public record BehaviorPair<T extends LivingEntity>(int priority, Behavior behavior) {
++}
+diff --git a/src/main/java/io/papermc/paper/entity/brain/activity/behavior/BehaviorStatus.java b/src/main/java/io/papermc/paper/entity/brain/activity/behavior/BehaviorStatus.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..2955e8a07e75e66d7654550f709e87f1c971516e
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/entity/brain/activity/behavior/BehaviorStatus.java
+@@ -0,0 +1,7 @@
++package io.papermc.paper.entity.brain.activity.behavior;
++
++public enum BehaviorStatus {
++    RUNNING,
++    STOPPED,
++    ;
++}
+diff --git a/src/main/java/io/papermc/paper/entity/brain/memory/CustomMemoryKey.java b/src/main/java/io/papermc/paper/entity/brain/memory/CustomMemoryKey.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..79668e391b90fd0beeec5069c07e58f7bd646621
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/entity/brain/memory/CustomMemoryKey.java
+@@ -0,0 +1,12 @@
++package io.papermc.paper.entity.brain.memory;
++
++import org.bukkit.NamespacedKey;
++import org.bukkit.entity.memory.MemoryKey;
++
++public class CustomMemoryKey<T> extends MemoryKey<T> {
++
++    public CustomMemoryKey(NamespacedKey namespacedKey, Class<T> tClass) {
++        super(namespacedKey, tClass, false);
++    }
++
++}
+diff --git a/src/main/java/io/papermc/paper/entity/brain/memory/MemoryKeyStatus.java b/src/main/java/io/papermc/paper/entity/brain/memory/MemoryKeyStatus.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..4b104021057b28f8e21dab0d23f2061614ae9ee7
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/entity/brain/memory/MemoryKeyStatus.java
+@@ -0,0 +1,8 @@
++package io.papermc.paper.entity.brain.memory;
++
++public enum MemoryKeyStatus {
++    PRESENT,
++    ABSENT,
++    REGISTERED,
++    ;
++}
+diff --git a/src/main/java/io/papermc/paper/entity/brain/memory/MemoryPair.java b/src/main/java/io/papermc/paper/entity/brain/memory/MemoryPair.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..f5232bb8ba5e727a5ffa7641aacc18e04f657cee
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/entity/brain/memory/MemoryPair.java
+@@ -0,0 +1,6 @@
++package io.papermc.paper.entity.brain.memory;
++
++import org.bukkit.entity.memory.MemoryKey;
++
++public record MemoryPair(MemoryKeyStatus requiredStatus, MemoryKey<?> key) {
++}
+diff --git a/src/main/java/io/papermc/paper/entity/brain/sensor/Sensor.java b/src/main/java/io/papermc/paper/entity/brain/sensor/Sensor.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..a80c57363cc5e6b36c93a62110514d7da468d4fa
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/entity/brain/sensor/Sensor.java
+@@ -0,0 +1,15 @@
++package io.papermc.paper.entity.brain.sensor;
++
++import org.bukkit.entity.LivingEntity;
++import org.bukkit.entity.memory.MemoryKey;
++
++import java.util.Set;
++
++public interface Sensor {
++
++    int getInterval();
++
++    void tick(LivingEntity entity);
++
++    Set<MemoryKey<?>> requiredMemories();
++}
+diff --git a/src/main/java/io/papermc/paper/entity/brain/sensor/SensorKey.java b/src/main/java/io/papermc/paper/entity/brain/sensor/SensorKey.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..dff49b01478870f1639710fac50a0cf3a021c961
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/entity/brain/sensor/SensorKey.java
+@@ -0,0 +1,32 @@
++package io.papermc.paper.entity.brain.sensor;
++
++import org.bukkit.NamespacedKey;
++
++/**
++ *
++ *
++ *
++ */
++public final class SensorKey {
++
++    private final NamespacedKey key;
++
++    SensorKey(NamespacedKey key) {
++        this.key = key;
++    }
++
++    public static SensorKey of(NamespacedKey key) {
++        return new SensorKey(key);
++    }
++
++    public NamespacedKey getKey() {
++        return key;
++    }
++
++    @Override
++    public String toString() {
++        return "SensorKey{" +
++            "key=" + key +
++            '}';
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/entity/brain/sensor/VanillaSensorKey.java b/src/main/java/io/papermc/paper/entity/brain/sensor/VanillaSensorKey.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..cb1f6361d5e0e469d780d6f56a633d03e50cffdc
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/entity/brain/sensor/VanillaSensorKey.java
+@@ -0,0 +1,28 @@
++package io.papermc.paper.entity.brain.sensor;
++
++import org.bukkit.NamespacedKey;
++
++public interface VanillaSensorKey {
++
++    SensorKey NEAREST_ITEMS = of("nearest_items");
++    SensorKey NEAREST_LIVING_ENTITIES = of("nearest_living_entities");
++    SensorKey NEAREST_PLAYERS = of("nearest_players");
++    SensorKey NEAREST_BED = of("nearest_bed");
++    SensorKey HURT_BY = of("hurt_by");
++    SensorKey VILLAGER_HOSTILES = of("villager_hostiles");
++    SensorKey VILLAGER_BABIES = of("villager_babies");
++    SensorKey SECONDARY_POIS = of("secondary_pois");
++    SensorKey GOLEM_DETECTED = of("golem_detected");
++    SensorKey PIGLIN_SPECIFIC_SENSOR = of("piglin_specific_sensor");
++    SensorKey PIGLIN_BRUTE_SPECIFIC_SENSOR = of("piglin_brute_specific_sensor");
++    SensorKey HOGLIN_SPECIFIC_SENSOR = of("hoglin_specific_sensor");
++    SensorKey NEAREST_ADULT = of("nearest_adult");
++    SensorKey AXOLOTL_ATTACKABLES = of("axolotl_attackables");
++    SensorKey AXOLOTL_TEMPTATIONS = of("axolotl_temptations");
++    SensorKey GOAT_TEMPTATIONS = of("goat_temptations");
++
++    private static SensorKey of(String key) {
++        return new SensorKey(NamespacedKey.minecraft(key));
++    }
++
++}
+diff --git a/src/main/java/org/bukkit/entity/Axolotl.java b/src/main/java/org/bukkit/entity/Axolotl.java
+index 9763f3b9ac8f32c082a476f4b50a32622b2720a0..b9decae3139969b314879419ac525a063fbb6ae9 100644
+--- a/src/main/java/org/bukkit/entity/Axolotl.java
++++ b/src/main/java/org/bukkit/entity/Axolotl.java
+@@ -5,7 +5,7 @@ import org.jetbrains.annotations.NotNull;
+ /**
+  * An Axolotl.
+  */
+-public interface Axolotl extends Animals {
++public interface Axolotl extends Animals, io.papermc.paper.entity.brain.BrainHolder<Axolotl> {
+ 
+     /**
+      * Gets if this axolotl is playing dead.
+diff --git a/src/main/java/org/bukkit/entity/Goat.java b/src/main/java/org/bukkit/entity/Goat.java
+index 01827c4118df36fe1b77115f181fb4d225c3c866..af32db2c7de68040ed1e76b9f3dc6d1bbead22f6 100644
+--- a/src/main/java/org/bukkit/entity/Goat.java
++++ b/src/main/java/org/bukkit/entity/Goat.java
+@@ -3,7 +3,7 @@ package org.bukkit.entity;
+ /**
+  * A Goat.
+  */
+-public interface Goat extends Animals {
++public interface Goat extends Animals, io.papermc.paper.entity.brain.BrainHolder<Goat>  {
+ 
+     /**
+      * Gets if this is a screaming goat.
+diff --git a/src/main/java/org/bukkit/entity/Hoglin.java b/src/main/java/org/bukkit/entity/Hoglin.java
+index b49670816d0d42aee08614d9a59a1f785ad8e6bc..00c1fcfa3d14463c0bde2bb06d19717440bda4d4 100644
+--- a/src/main/java/org/bukkit/entity/Hoglin.java
++++ b/src/main/java/org/bukkit/entity/Hoglin.java
+@@ -3,7 +3,7 @@ package org.bukkit.entity;
+ /**
+  * Represents a Hoglin.
+  */
+-public interface Hoglin extends Animals {
++public interface Hoglin extends Animals, io.papermc.paper.entity.brain.BrainHolder<Hoglin> {
+ 
+     /**
+      * Gets whether the hoglin is immune to zombification.
+diff --git a/src/main/java/org/bukkit/entity/Piglin.java b/src/main/java/org/bukkit/entity/Piglin.java
+index 6fdc0e0bb62189dbf3cf9ce7a87b7fbb995956a3..66f5e97c6e196506180ddfac85aef4ca4e75ba69 100644
+--- a/src/main/java/org/bukkit/entity/Piglin.java
++++ b/src/main/java/org/bukkit/entity/Piglin.java
+@@ -8,7 +8,7 @@ import org.jetbrains.annotations.NotNull;
+ /**
+  * Represents a Piglin.
+  */
+-public interface Piglin extends PiglinAbstract, InventoryHolder, com.destroystokyo.paper.entity.RangedEntity { // Paper
++public interface Piglin extends PiglinAbstract, InventoryHolder, com.destroystokyo.paper.entity.RangedEntity, io.papermc.paper.entity.brain.BrainHolder<Piglin>  { // Paper
+ 
+     /**
+      * Get whether the piglin is able to hunt hoglins.
+diff --git a/src/main/java/org/bukkit/entity/PiglinBrute.java b/src/main/java/org/bukkit/entity/PiglinBrute.java
+index e230c17524cd25939c7f85f3ecd7aa43cd20fdf8..3f39351af4a44c2f6a4f1d2711c69ec0490ddfed 100644
+--- a/src/main/java/org/bukkit/entity/PiglinBrute.java
++++ b/src/main/java/org/bukkit/entity/PiglinBrute.java
+@@ -3,4 +3,4 @@ package org.bukkit.entity;
+ /**
+  * Represents a Piglin Brute.
+  */
+-public interface PiglinBrute extends PiglinAbstract { }
++public interface PiglinBrute extends PiglinAbstract, io.papermc.paper.entity.brain.BrainHolder<PiglinBrute> { }
+diff --git a/src/main/java/org/bukkit/entity/Villager.java b/src/main/java/org/bukkit/entity/Villager.java
+index 02ecc87a90bbd81e7d21279fac701ba41c74fd9f..744dac62d8e77ec8e6f70b9f05629650ac2ccbb0 100644
+--- a/src/main/java/org/bukkit/entity/Villager.java
++++ b/src/main/java/org/bukkit/entity/Villager.java
+@@ -12,7 +12,7 @@ import org.jetbrains.annotations.Nullable; // Paper
+ /**
+  * Represents a villager NPC
+  */
+-public interface Villager extends AbstractVillager {
++public interface Villager extends AbstractVillager, io.papermc.paper.entity.brain.BrainHolder<Villager>  {
+ 
+     /**
+      * Gets the current profession of this villager.
+diff --git a/src/main/java/org/bukkit/entity/Zoglin.java b/src/main/java/org/bukkit/entity/Zoglin.java
+index ebf4ffac777a815d516d9e9b0d2aa6b85d8376ab..81dee03657cf3a174933b50efdb76b0bd3fc3ad4 100644
+--- a/src/main/java/org/bukkit/entity/Zoglin.java
++++ b/src/main/java/org/bukkit/entity/Zoglin.java
+@@ -3,7 +3,7 @@ package org.bukkit.entity;
+ /**
+  * Represents a Zoglin.
+  */
+-public interface Zoglin extends Monster, Ageable {
++public interface Zoglin extends Monster, Ageable, io.papermc.paper.entity.brain.BrainHolder<Zoglin> {
+ 
+     /**
+      * Gets whether the zoglin is a baby
+diff --git a/src/main/java/org/bukkit/entity/memory/MemoryKey.java b/src/main/java/org/bukkit/entity/memory/MemoryKey.java
+index d023b6497c0f56ebcc8eeb4e3226ea9f974989ff..b45d3aef285a4262053317ab857f1278b37bbb78 100644
+--- a/src/main/java/org/bukkit/entity/memory/MemoryKey.java
++++ b/src/main/java/org/bukkit/entity/memory/MemoryKey.java
+@@ -17,11 +17,16 @@ import org.jetbrains.annotations.Nullable;
+  *
+  * @param <T> the class type of the memory value
+  */
+-public final class MemoryKey<T> implements Keyed {
++public class MemoryKey<T> implements Keyed {
+ 
+     private final NamespacedKey namespacedKey;
+     private final Class<T> tClass;
+ 
++    protected MemoryKey(NamespacedKey namespacedKey, Class<T> tClass, boolean dummy) {
++        this.namespacedKey = namespacedKey;
++        this.tClass = tClass;
++    }
++
+     private MemoryKey(NamespacedKey namespacedKey, Class<T> tClass) {
+         this.namespacedKey = namespacedKey;
+         this.tClass = tClass;
