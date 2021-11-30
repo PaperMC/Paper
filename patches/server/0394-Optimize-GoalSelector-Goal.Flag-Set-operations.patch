@@ -47,7 +47,7 @@ index 6667ecc4b7eded4e20a415cef1e1b1179e6710b8..4379b9948f1eecfe6fd7dea98e298ad5
  
      protected int adjustedTickDelay(int ticks) {
 diff --git a/src/main/java/net/minecraft/world/entity/ai/goal/GoalSelector.java b/src/main/java/net/minecraft/world/entity/ai/goal/GoalSelector.java
-index 2bb32378b19a21c94ff3ec8ed32fc9d6f0ad0fdb..ad82395c46943e91e7f65d8d67824cc0c965362b 100644
+index 2bb32378b19a21c94ff3ec8ed32fc9d6f0ad0fdb..7fdc1cbd04a5bba9648272985f51c849b07b8223 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/goal/GoalSelector.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/goal/GoalSelector.java
 @@ -30,10 +30,12 @@ public class GoalSelector {
@@ -64,7 +64,7 @@ index 2bb32378b19a21c94ff3ec8ed32fc9d6f0ad0fdb..ad82395c46943e91e7f65d8d67824cc0
  
      public GoalSelector(Supplier<ProfilerFiller> profiler) {
          this.profiler = profiler;
-@@ -63,32 +65,33 @@ public class GoalSelector {
+@@ -63,26 +65,32 @@ public class GoalSelector {
      }
      // Paper end
      public void removeGoal(Goal goal) {
@@ -85,10 +85,10 @@ index 2bb32378b19a21c94ff3ec8ed32fc9d6f0ad0fdb..ad82395c46943e91e7f65d8d67824cc0
 +            WrappedGoal goalWrapped = iterator.next();
 +            if (goalWrapped.getGoal() != goal) {
 +                continue;
-+            }
+             }
 +            if (goalWrapped.isRunning()) {
 +                goalWrapped.stop();
-             }
++            }
 +            iterator.remove();
          }
 +        // Paper end - remove streams from pathfindergoalselector
@@ -102,21 +102,16 @@ index 2bb32378b19a21c94ff3ec8ed32fc9d6f0ad0fdb..ad82395c46943e91e7f65d8d67824cc0
      private static boolean goalCanBeReplacedForAllFlags(WrappedGoal goal, Map<Goal.Flag, WrappedGoal> goalsByControl) {
 -        for(Goal.Flag flag : goal.getFlags()) {
 +        // Paper start
-+        return !goal.getFlags().anyMatch(GOAL_FLAG_VALUES, flag -> {
++        long flagIterator = goal.getFlags().getBackingSet();
++        int wrappedGoalSize = goal.getFlags().size();
++        for (int i = 0; i < wrappedGoalSize; ++i) {
++            final Goal.Flag flag = GOAL_FLAG_VALUES[Long.numberOfTrailingZeros(flagIterator)];
++            flagIterator ^= io.papermc.paper.util.IntegerUtil.getTrailingBit(flagIterator);
++            // Paper end
              if (!goalsByControl.getOrDefault(flag, NO_GOAL).canBeReplacedBy(goal)) {
--                return false;
-+                return true;
+                 return false;
              }
--        }
--
--        return true;
-+            return false;
-+        });
-+        // Paper end
-     }
- 
-     public void tick() {
-@@ -96,7 +99,7 @@ public class GoalSelector {
+@@ -96,7 +104,7 @@ public class GoalSelector {
          profilerFiller.push("goalCleanup");
  
          for(WrappedGoal wrappedGoal : this.availableGoals) {
@@ -125,7 +120,7 @@ index 2bb32378b19a21c94ff3ec8ed32fc9d6f0ad0fdb..ad82395c46943e91e7f65d8d67824cc0
                  wrappedGoal.stop();
              }
          }
-@@ -114,12 +117,14 @@ public class GoalSelector {
+@@ -114,8 +122,14 @@ public class GoalSelector {
          profilerFiller.push("goalUpdate");
  
          for(WrappedGoal wrappedGoal2 : this.availableGoals) {
@@ -133,17 +128,16 @@ index 2bb32378b19a21c94ff3ec8ed32fc9d6f0ad0fdb..ad82395c46943e91e7f65d8d67824cc0
 -                for(Goal.Flag flag : wrappedGoal2.getFlags()) {
 +            // Paper start
 +            if (!wrappedGoal2.isRunning() && !goalContainsAnyFlags(wrappedGoal2, this.goalTypes) && goalCanBeReplacedForAllFlags(wrappedGoal2, this.lockedFlags) && wrappedGoal2.canUse()) {
-+                wrappedGoal2.getFlags().forEach(GOAL_FLAG_VALUES, flag -> {
++                long flagIterator = wrappedGoal2.getFlags().getBackingSet();
++                int wrappedGoalSize = wrappedGoal2.getFlags().size();
++                for (int i = 0; i < wrappedGoalSize; ++i) {
++                    final Goal.Flag flag = GOAL_FLAG_VALUES[Long.numberOfTrailingZeros(flagIterator)];
++                    flagIterator ^= io.papermc.paper.util.IntegerUtil.getTrailingBit(flagIterator);
 +                    // Paper end
                      WrappedGoal wrappedGoal3 = this.lockedFlags.getOrDefault(flag, NO_GOAL);
                      wrappedGoal3.stop();
                      this.lockedFlags.put(flag, wrappedGoal2);
--                }
-+                }); // Paper
- 
-                 wrappedGoal2.start();
-             }
-@@ -155,11 +160,11 @@ public class GoalSelector {
+@@ -155,11 +169,11 @@ public class GoalSelector {
      }
  
      public void disableControlFlag(Goal.Flag control) {
