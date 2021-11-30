@@ -1,0 +1,90 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: astei <andrew@steinborn.me>
+Date: Tue, 30 Nov 2021 19:39:21 +0100
+Subject: [PATCH] Optimize VarInts
+
+
+diff --git a/src/main/java/net/minecraft/network/FriendlyByteBuf.java b/src/main/java/net/minecraft/network/FriendlyByteBuf.java
+index 896a4237f871d46cf39b0721e909c2cc3b5fc728..7ac737b51d9238d4de3410b81d050a49f6520e88 100644
+--- a/src/main/java/net/minecraft/network/FriendlyByteBuf.java
++++ b/src/main/java/net/minecraft/network/FriendlyByteBuf.java
+@@ -65,19 +65,22 @@ public class FriendlyByteBuf extends ByteBuf {
+     public java.util.Locale adventure$locale; // Paper
+     public static final short MAX_STRING_LENGTH = 32767;
+     public static final int MAX_COMPONENT_STRING_LENGTH = 262144;
++    // Paper start - Optimize VarInts
++    private static final int[] VARINT_EXACT_BYTE_LENGTHS = new int[33];
++    static {
++        for (int i = 0; i <= 32; ++i) {
++            VARINT_EXACT_BYTE_LENGTHS[i] = (int) Math.ceil((31d - (i - 1)) / 7d);
++        }
++        VARINT_EXACT_BYTE_LENGTHS[32] = 1; // Special case for the number 0.
++    }
++    // Paper end - Optimize VarInts
+ 
+     public FriendlyByteBuf(ByteBuf parent) {
+         this.source = parent;
+     }
+ 
+     public static int getVarIntSize(int value) {
+-        for (int j = 1; j < 5; ++j) {
+-            if ((value & -1 << j * 7) == 0) {
+-                return j;
+-            }
+-        }
+-
+-        return 5;
++        return VARINT_EXACT_BYTE_LENGTHS[Integer.numberOfLeadingZeros(value)]; // Paper - Optimize VarInts
+     }
+ 
+     public static int getVarLongSize(long value) {
+@@ -420,16 +423,44 @@ public class FriendlyByteBuf extends ByteBuf {
+         return new UUID(this.readLong(), this.readLong());
+     }
+ 
++    // Paper start - Optimize VarInts
+     public FriendlyByteBuf writeVarInt(int value) {
+-        while ((value & -128) != 0) {
+-            this.writeByte(value & 127 | 128);
+-            value >>>= 7;
++        // Peel the one and two byte count cases explicitly as they are the most common VarInt sizes
++        // that the proxy will write, to improve inlining.
++        if ((value & (0xFFFFFFFF << 7)) == 0) {
++            writeByte(value);
++        } else if ((value & (0xFFFFFFFF << 14)) == 0) {
++            int w = (value & 0x7F | 0x80) << 8 | (value >>> 7);
++            writeShort(w);
++        } else {
++            writeVartFull(value);
+         }
+-
+-        this.writeByte(value);
+         return this;
+     }
+ 
++    private void writeVartFull(int value) {
++        // See https://steinborn.me/posts/performance/how-fast-can-you-write-a-varint/
++        if ((value & (0xFFFFFFFF << 7)) == 0) {
++            writeByte(value);
++        } else if ((value & (0xFFFFFFFF << 14)) == 0) {
++            int w = (value & 0x7F | 0x80) << 8 | (value >>> 7);
++            writeShort(w);
++        } else if ((value & (0xFFFFFFFF << 21)) == 0) {
++            int w = (value & 0x7F | 0x80) << 16 | ((value >>> 7) & 0x7F | 0x80) << 8 | (value >>> 14);
++            writeMedium(w);
++        } else if ((value & (0xFFFFFFFF << 28)) == 0) {
++            int w = (value & 0x7F | 0x80) << 24 | (((value >>> 7) & 0x7F | 0x80) << 16)
++                | ((value >>> 14) & 0x7F | 0x80) << 8 | (value >>> 21);
++            writeInt(w);
++        } else {
++            int w = (value & 0x7F | 0x80) << 24 | ((value >>> 7) & 0x7F | 0x80) << 16
++                | ((value >>> 14) & 0x7F | 0x80) << 8 | ((value >>> 21) & 0x7F | 0x80);
++            writeInt(w);
++            writeByte(value >>> 28);
++        }
++    }
++    // Paper end - Optimize VarInts
++
+     public FriendlyByteBuf writeVarLong(long value) {
+         while ((value & -128L) != 0L) {
+             this.writeByte((int) (value & 127L) | 128);
