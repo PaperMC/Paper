@@ -5,10 +5,10 @@ Subject: [PATCH] Prevent unload() calls removing tickets for sync loads
 
 
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-index 6d0c56e4071a990a3b168143e8ac73f8b5ed0379..d03ca9b30380209397aed5371686e0022bf631d5 100644
+index e13a8e3dc11292aed13ff12ee8e0f9d6a95f0c34..9f0321179fb1d87b6e1b74e128955157983b0500 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-@@ -734,6 +734,8 @@ public class ServerChunkCache extends ChunkSource {
+@@ -725,6 +725,8 @@ public class ServerChunkCache extends ChunkSource {
          return completablefuture;
      }
  
@@ -17,7 +17,7 @@ index 6d0c56e4071a990a3b168143e8ac73f8b5ed0379..d03ca9b30380209397aed5371686e002
      private CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> getChunkFutureMainThread(int chunkX, int chunkZ, ChunkStatus leastStatus, boolean create) {
          // Paper start - add isUrgent - old sig left in place for dirty nms plugins
          return getChunkFutureMainThread(chunkX, chunkZ, leastStatus, create, false);
-@@ -752,9 +754,12 @@ public class ServerChunkCache extends ChunkSource {
+@@ -743,9 +745,12 @@ public class ServerChunkCache extends ChunkSource {
              ChunkHolder.FullChunkStatus currentChunkState = ChunkHolder.getFullChunkStatus(playerchunk.getTicketLevel());
              currentlyUnloading = (oldChunkState.isOrAfter(ChunkHolder.FullChunkStatus.BORDER) && !currentChunkState.isOrAfter(ChunkHolder.FullChunkStatus.BORDER));
          }
@@ -30,12 +30,12 @@ index 6d0c56e4071a990a3b168143e8ac73f8b5ed0379..d03ca9b30380209397aed5371686e002
              if (isUrgent) this.distanceManager.markUrgent(chunkcoordintpair); // Paper - Chunk priority
              if (this.chunkAbsent(playerchunk, l)) {
                  ProfilerFiller gameprofilerfiller = this.level.getProfiler();
-@@ -765,13 +770,21 @@ public class ServerChunkCache extends ChunkSource {
+@@ -756,13 +761,21 @@ public class ServerChunkCache extends ChunkSource {
                  playerchunk = this.getVisibleChunkIfPresent(k);
                  gameprofilerfiller.pop();
                  if (this.chunkAbsent(playerchunk, l)) {
 +                    this.distanceManager.removeTicketAtLevel(TicketType.REQUIRED_LOAD, chunkcoordintpair, l, identifier); // Paper
-                     throw (IllegalStateException) Util.pauseInIde((Throwable) (new IllegalStateException("No chunk holder after ticket has been added")));
+                     throw (IllegalStateException) Util.pauseInIde(new IllegalStateException("No chunk holder after ticket has been added"));
                  }
              }
 -        }
