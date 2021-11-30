@@ -224,7 +224,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
      * @return string
      */
     public String getMappingsVersion() {
-        return "9658396dadb575219230b3235b8a9144";
+        return "9e9fe6961a80f3e586c25601590b51ec";
     }
 
     @Override
