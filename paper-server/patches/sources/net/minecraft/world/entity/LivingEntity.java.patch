@@ -495,7 +495,7 @@
              return flag;
          }
      }
-@@ -1031,13 +1234,39 @@
+@@ -1031,14 +1234,40 @@
          return this.getType().is(EntityTypeTags.INVERTED_HEALING_AND_HARM);
      }
  
@@ -530,13 +530,14 @@
 -        MobEffectInstance mobeffect = this.removeEffectNoUpdate(effect);
 +        return this.removeEffect(effect, org.bukkit.event.entity.EntityPotionEffectEvent.Cause.UNKNOWN);
 +    }
-+
+ 
 +    public boolean removeEffect(Holder<MobEffect> holder, EntityPotionEffectEvent.Cause cause) {
 +        MobEffectInstance mobeffect = this.removeEffectNoUpdate(holder, cause);
 +        // CraftBukkit end
- 
++
          if (mobeffect != null) {
              this.onEffectsRemoved(List.of(mobeffect));
+             return true;
 @@ -1142,20 +1371,65 @@
  
      }
@@ -1420,7 +1421,7 @@
              if (this.tickCount % 20 == 0) {
                  this.getCombatTracker().recheckStatus();
              }
-@@ -2687,38 +3310,16 @@
+@@ -2687,37 +3310,15 @@
          gameprofilerfiller.pop();
          gameprofilerfiller.push("rangeChecks");
  
@@ -1455,16 +1456,15 @@
 -        while (this.yHeadRot - this.yHeadRotO < -180.0F) {
 -            this.yHeadRotO -= 360.0F;
 -        }
-+        this.yHeadRotO += Math.round((this.yHeadRot - this.yHeadRotO) / 360.0F) * 360.0F;
-+        // Paper end
- 
+-
 -        while (this.yHeadRot - this.yHeadRotO >= 180.0F) {
 -            this.yHeadRotO += 360.0F;
 -        }
--
++        this.yHeadRotO += Math.round((this.yHeadRot - this.yHeadRotO) / 360.0F) * 360.0F;
++        // Paper end
+ 
          gameprofilerfiller.pop();
          this.animStep += f2;
-         if (this.isFallFlying()) {
 @@ -2741,7 +3342,7 @@
          this.elytraAnimationState.tick();
      }
@@ -1494,6 +1494,15 @@
                  if (map == null) {
                      map = Maps.newEnumMap(EquipmentSlot.class);
                  }
+@@ -2864,7 +3472,7 @@
+             }
+ 
+         });
+-        ((ServerLevel) this.level()).getChunkSource().broadcast(this, new ClientboundSetEquipmentPacket(this.getId(), list));
++        ((ServerLevel) this.level()).getChunkSource().broadcast(this, new ClientboundSetEquipmentPacket(this.getId(), list, true)); // Paper - data sanitization
+     }
+ 
+     private ItemStack getLastArmorItem(EquipmentSlot slot) {
 @@ -2974,8 +3582,10 @@
              } else if (this.isInLava() && (!this.onGround() || d3 > d4)) {
                  this.jumpInLiquid(FluidTags.LAVA);
@@ -1715,7 +1724,7 @@
 +                        org.bukkit.inventory.EquipmentSlot hand = org.bukkit.craftbukkit.CraftEquipmentSlot.getHand(enumhand);
 +                        event = new PlayerItemConsumeEvent((Player) this.getBukkitEntity(), craftItem, hand); // Paper
 +                        this.level().getCraftServer().getPluginManager().callEvent(event);
-+
+ 
 +                        if (event.isCancelled()) {
 +                            // Update client
 +                            Consumable consumable = this.useItem.get(DataComponents.CONSUMABLE);
@@ -1739,7 +1748,7 @@
 +                    }
 +                    // Paper end
 +                    // CraftBukkit end
- 
++
                      if (itemstack != this.useItem) {
                          this.setItemInHand(enumhand, itemstack);
                      }
@@ -1770,8 +1779,8 @@
          } else {
              return null;
          }
-+    }
-+
+     }
+ 
 +    // Paper start - Make shield blocking delay configurable
 +    public HitResult getRayTrace(int maxDistance, ClipContext.Fluid fluidCollisionOption) {
 +        if (maxDistance < 1 || maxDistance > 120) {
@@ -1822,8 +1831,8 @@
 +
 +    public int getShieldBlockingDelay() {
 +        return shieldBlockingDelay;
-     }
- 
++    }
++
 +    public void setShieldBlockingDelay(int shieldBlockingDelay) {
 +        this.shieldBlockingDelay = shieldBlockingDelay;
 +    }
@@ -1865,7 +1874,7 @@
 +                this.setPos(d0, d6, d2);
                  if (world.noCollision((Entity) this) && !world.containsAnyLiquid(this.getBoundingBox())) {
                      flag1 = true;
-+                }
+                 }
 +                // now revert and call event if the teleport place is valid
 +                this.setPos(d3, d4, d5);
 +
@@ -1885,7 +1894,7 @@
 +                            return Optional.empty();
 +                        }
 +                    }
-                 }
++                }
 +                // CraftBukkit end
              }
          }
