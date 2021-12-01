@@ -1,0 +1,26 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake <jake.m.potrebic@gmail.com>
+Date: Tue, 30 Nov 2021 21:29:35 -0800
+Subject: [PATCH] Properly handle damage inside EntityDamageByBlockEvent
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+index aaf47d3f58819ead3553973c159c5c6eec4abe43..7d57d5283a12880cb18ee4d8192d0d8afbbc9b83 100644
+--- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
++++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+@@ -1009,6 +1009,7 @@ public class CraftEventFactory {
+         } else if (CraftEventFactory.blockDamage != null) {
+             DamageCause cause = null;
+             Block damager = CraftEventFactory.blockDamage;
++            CraftEventFactory.blockDamage = null; // Paper - clear block damage in case damage is caused in the event
+             if (source == DamageSource.CACTUS || source == DamageSource.SWEET_BERRY_BUSH || source == DamageSource.STALAGMITE || source == DamageSource.FALLING_STALACTITE || source == DamageSource.ANVIL) {
+                 cause = DamageCause.CONTACT;
+             } else if (source == DamageSource.HOT_FLOOR) {
+@@ -1023,6 +1024,7 @@ public class CraftEventFactory {
+             EntityDamageEvent event = new EntityDamageByBlockEvent(damager, entity.getBukkitEntity(), cause, modifiers, modifierFunctions);
+             event.setCancelled(cancelled);
+             CraftEventFactory.callEvent(event);
++            CraftEventFactory.blockDamage = damager; // Paper - re-assign blockDamage incase original cause propagates to other entities like passengers
+             if (!event.isCancelled()) {
+                 event.getEntity().setLastDamageCause(event);
+             }
