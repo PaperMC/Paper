@@ -63,7 +63,14 @@ public class MapFont {
         int result = 0;
         for (int i = 0; i < text.length(); ++i) {
             char ch = text.charAt(i);
-            if (ch == ChatColor.COLOR_CHAR) continue;
+            if (ch == ChatColor.COLOR_CHAR) {
+                int j = text.indexOf(';', i);
+                if (j >= 0) {
+                    i = j;
+                    continue;
+                }
+                throw new IllegalArgumentException("Text contains unterminated color string");
+            }
             result += chars.get(ch).getWidth();
         }
         result += text.length() - 1; // Account for 1px spacing between characters
