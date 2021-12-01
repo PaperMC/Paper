@@ -12,7 +12,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          behaviorTickRates = loadTickRates("behavior");
      }
  
-+    public boolean hideItemmetaFromClients = true;
++    public boolean hideItemmetaFromClients = false;
 +    public boolean hideDurabilityFromClients = false;
 +    private void getHideItemmetaFromClients() {
 +        hideItemmetaFromClients = getBoolean("anticheat.obfuscation.items.hide-itemmeta", hideItemmetaFromClients);
@@ -22,88 +22,75 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      private com.google.common.collect.Table<String, String, Integer> loadTickRates(String type) {
          log("  " + type + ":");
          com.google.common.collect.Table<String, String, Integer> table = com.google.common.collect.HashBasedTable.create();
-diff --git a/src/main/java/net/minecraft/network/syncher/EntityDataSerializers.java b/src/main/java/net/minecraft/network/syncher/EntityDataSerializers.java
+diff --git a/src/main/java/net/minecraft/server/level/ServerEntity.java b/src/main/java/net/minecraft/server/level/ServerEntity.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/network/syncher/EntityDataSerializers.java
-+++ b/src/main/java/net/minecraft/network/syncher/EntityDataSerializers.java
-@@ -0,0 +0,0 @@ public class EntityDataSerializers {
-     public static final EntityDataSerializer<ItemStack> ITEM_STACK = new EntityDataSerializer<ItemStack>() {
-         @Override
-         public void write(FriendlyByteBuf buf, ItemStack value) {
-+            value = net.minecraft.world.entity.LivingEntity.stripMeta(value, null, false); // Paper - strip items to prevent oversized data
-             buf.writeItem(value);
-         }
- 
+--- a/src/main/java/net/minecraft/server/level/ServerEntity.java
++++ b/src/main/java/net/minecraft/server/level/ServerEntity.java
+@@ -0,0 +0,0 @@ public class ServerEntity {
+                 if (!itemstack.isEmpty()) {
+                     // Paper start - prevent oversized data
+                     final ItemStack sanitized = LivingEntity.sanitizeItemStack(itemstack.copy(), false);
+-                    list.add(Pair.of(enumitemslot, sanitized));
++                    list.add(Pair.of(enumitemslot, ((LivingEntity) this.entity).stripMeta(sanitized, false))); // Paper - remove unnecessary item meta
+                     // Paper end
+                 }
+             }
 diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
 @@ -0,0 +0,0 @@ public abstract class LivingEntity extends Entity {
  
-     }
- 
-+    public static ItemStack stripMeta(ItemStack itemStack, @org.jetbrains.annotations.Nullable Level level, boolean copy) {
-+        if ((itemStack.getCount() > 1 || itemStack.hasTag()) && !itemStack.isEmpty()) {
-+            if (copy) itemStack = itemStack.copy();
-+            CompoundTag nbt = itemStack.getTag();
-+            if (level != null && level.paperConfig.hideDurabilityFromClients) {
-+                // Only show damage values for elytra's, since they show a different texture when broken.
-+                if (!itemStack.is(Items.ELYTRA) || itemStack.getDamageValue() < itemStack.getMaxDamage() - 1) {
-+                    itemStack.setDamageValue(0);
-+                }
-+            }
-+
-+            if (level != null && level.paperConfig.hideItemmetaFromClients) {
-+                // Some resource packs show different textures when there is more than one item. Since this shouldn't provide a big advantage,
-+                // we'll tell the client if there's one or (more than) two items.
-+                itemStack.setCount(itemStack.getCount() > 1 ? 2 : 1);
-+                // We can't just strip out display, leather helmets still use the display.color tag.
-+                if (nbt != null) {
-+                    if (nbt.get("display") instanceof CompoundTag displayTag) {
-+                        displayTag.remove("Lore");
-+                        displayTag.remove("Name");
-+                    }
-+
-+                    if (nbt.get("Enchantments") instanceof ListTag enchantmentsTag && !enchantmentsTag.isEmpty()) {
-+                        // The client still renders items with the enchantment glow if the enchantments tag contains at least one (empty) child.
-+                        ListTag enchantments = new ListTag();
-+                        enchantments.add(new CompoundTag());
-+                        nbt.put("Enchantments", enchantments);
-+                    }
-+                    nbt.remove("AttributeModifiers");
-+                }
-+            }
-+            // Always remove items to prevent oversized data
-+            // Bundles change their texture based on their fullness.
-+            if (nbt != null) {
-+                if (itemStack.is(Items.BUNDLE) && nbt.get("Items") instanceof ListTag oldItems && !oldItems.isEmpty()) {
-+                    org.bukkit.inventory.meta.BundleMeta bundleMeta = (org.bukkit.inventory.meta.BundleMeta) itemStack.asBukkitMirror().getItemMeta();
-+                    int sizeUsed = 0;
-+                    for (org.bukkit.inventory.ItemStack item : bundleMeta.getItems()) {
-+                        int scale = 64 / item.getMaxStackSize();
-+                        sizeUsed += scale * item.getAmount();
-+                    }
-+                    // Now we add a single fake item that uses the same amount of slots as all other items.
-+                    ListTag items = new ListTag();
-+                    items.add(new ItemStack(Items.PAPER, sizeUsed).save(new CompoundTag()));
-+                    nbt.put("Items", items);
-+                }
-+                nbt.remove("BlockEntityTag");
-+                nbt.remove("EntityTag");
-+            }
-+        }
-+        return itemStack;
-+    }
-+
-     private void handleEquipmentChanges(Map<EquipmentSlot, ItemStack> equipmentChanges) {
-         List<Pair<EquipmentSlot, ItemStack>> list = Lists.newArrayListWithCapacity(equipmentChanges.size());
- 
-         equipmentChanges.forEach((enumitemslot, itemstack) -> {
-             ItemStack itemstack1 = itemstack.copy();
-+            final ItemStack toSend = stripMeta(itemstack1, this.level, true); // Paper - hide unnecessary itemmeta from clients
- 
--            list.add(Pair.of(enumitemslot, itemstack1));
-+            list.add(Pair.of(enumitemslot, toSend)); // Paper - hide unnecessary itemmeta from clients
+             // Paper start - prevent oversized data
+             ItemStack toSend = sanitizeItemStack(itemstack1, true);
+-            list.add(Pair.of(enumitemslot, toSend));
++            list.add(Pair.of(enumitemslot, stripMeta(toSend, toSend == itemstack1))); // Paper - hide unnecessary item meta
+             // Paper end
              switch (enumitemslot.getType()) {
                  case HAND:
-                     this.setLastHandItem(enumitemslot, itemstack1);
+@@ -0,0 +0,0 @@ public abstract class LivingEntity extends Entity {
+         ((ServerLevel) this.level).getChunkSource().broadcast(this, new ClientboundSetEquipmentPacket(this.getId(), list));
+     }
+ 
++    // Paper start - hide unnecessary item meta
++    public ItemStack stripMeta(final ItemStack itemStack, final boolean copyItemStack) {
++        if (itemStack.isEmpty() || (!itemStack.hasTag() && itemStack.getCount() < 2)) {
++            return itemStack;
++        }
++
++        final ItemStack copy = copyItemStack ? itemStack.copy() : itemStack;
++        if (level.paperConfig.hideDurabilityFromClients) {
++            // Only show damage values for elytra's, since they show a different texture when broken.
++            if (!copy.is(Items.ELYTRA) || copy.getDamageValue() < copy.getMaxDamage() - 1) {
++                copy.setDamageValue(0);
++            }
++        }
++
++        if (level.paperConfig.hideItemmetaFromClients) {
++            // Some resource packs show different textures when there is more than one item. Since this shouldn't provide a big advantage,
++            // we'll tell the client if there's one or (more than) two items.
++            copy.setCount(copy.getCount() > 1 ? 2 : 1);
++            // We can't just strip out display, leather helmets still use the display.color tag.
++            final CompoundTag tag = copy.getTag();
++            if (tag != null) {
++                if (tag.get("display") instanceof CompoundTag displayTag) {
++                    displayTag.remove("Lore");
++                    displayTag.remove("Name");
++                }
++
++                if (tag.get("Enchantments") instanceof ListTag enchantmentsTag && !enchantmentsTag.isEmpty()) {
++                    // The client still renders items with the enchantment glow if the enchantments tag contains at least one (empty) child.
++                    ListTag enchantments = new ListTag();
++                    enchantments.add(new CompoundTag());
++                    tag.put("Enchantments", enchantments);
++                }
++                tag.remove("AttributeModifiers");
++            }
++        }
++        return copy;
++    }
++    // Paper end
++
+     // Paper end - prevent oversized data
+     public static ItemStack sanitizeItemStack(final ItemStack itemStack, final boolean copyItemStack) {
+         if (itemStack.isEmpty() || !itemStack.hasTag()) {
