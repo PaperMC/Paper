@@ -23,27 +23,28 @@ index fd5927247e23878fd8bf6ab62a2eb477d07f4cc3..19ee843fa118a3b1b2c6b5551e9c6af7
          log("  " + type + ":");
          com.google.common.collect.Table<String, String, Integer> table = com.google.common.collect.HashBasedTable.create();
 diff --git a/src/main/java/net/minecraft/network/syncher/EntityDataSerializers.java b/src/main/java/net/minecraft/network/syncher/EntityDataSerializers.java
-index 3eb6bf4258b1de4697f96c2011df493cf7414a0c..0feadee6077dd6a8d8fd05b7a7d15ec1aa728fbb 100644
+index 3eb6bf4258b1de4697f96c2011df493cf7414a0c..7b7fe3f47144aa92b335aa4cc55e7e897ac11fc8 100644
 --- a/src/main/java/net/minecraft/network/syncher/EntityDataSerializers.java
 +++ b/src/main/java/net/minecraft/network/syncher/EntityDataSerializers.java
 @@ -127,6 +127,7 @@ public class EntityDataSerializers {
      public static final EntityDataSerializer<ItemStack> ITEM_STACK = new EntityDataSerializer<ItemStack>() {
          @Override
          public void write(FriendlyByteBuf buf, ItemStack value) {
-+            net.minecraft.world.entity.LivingEntity.stripMeta(value, null); // Paper - strip items to prevent oversized data
++            value = net.minecraft.world.entity.LivingEntity.stripMeta(value, null, false); // Paper - strip items to prevent oversized data
              buf.writeItem(value);
          }
  
 diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-index 62daf918d4ab00963041ca869ae718f14f2e3337..09f3b7eba463a647c38ce0f87af6ad5c1c8ed0c0 100644
+index 62daf918d4ab00963041ca869ae718f14f2e3337..a7ab33d1a6c30ffde7bf2ab8588df4437197fb9a 100644
 --- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-@@ -3047,11 +3047,59 @@ public abstract class LivingEntity extends Entity {
+@@ -3047,13 +3047,67 @@ public abstract class LivingEntity extends Entity {
  
      }
  
-+    public static void stripMeta(ItemStack itemStack, @org.jetbrains.annotations.Nullable Level level) {
-+        if (itemStack.getTag() != null && !itemStack.isEmpty()) {
++    public static ItemStack stripMeta(ItemStack itemStack, @org.jetbrains.annotations.Nullable Level level, boolean copy) {
++        if ((itemStack.getCount() > 1 || itemStack.hasTag()) && !itemStack.isEmpty()) {
++            if (copy) itemStack = itemStack.copy();
 +            CompoundTag nbt = itemStack.getTag();
 +            if (level != null && level.paperConfig.hideDurabilityFromClients) {
 +                // Only show damage values for elytra's, since they show a different texture when broken.
@@ -57,36 +58,41 @@ index 62daf918d4ab00963041ca869ae718f14f2e3337..09f3b7eba463a647c38ce0f87af6ad5c
 +                // we'll tell the client if there's one or (more than) two items.
 +                itemStack.setCount(itemStack.getCount() > 1 ? 2 : 1);
 +                // We can't just strip out display, leather helmets still use the display.color tag.
-+                if (nbt.get("display") instanceof CompoundTag displayTag) {
-+                    displayTag.remove("Lore");
-+                    displayTag.remove("Name");
-+                }
++                if (nbt != null) {
++                    if (nbt.get("display") instanceof CompoundTag displayTag) {
++                        displayTag.remove("Lore");
++                        displayTag.remove("Name");
++                    }
 +
-+                if (nbt.get("Enchantments") instanceof ListTag enchantmentsTag && !enchantmentsTag.isEmpty()) {
-+                    // The client still renders items with the enchantment glow if the enchantments tag contains at least one (empty) child.
-+                    ListTag enchantments = new ListTag();
-+                    enchantments.add(new CompoundTag());
-+                    nbt.put("Enchantments", enchantments);
++                    if (nbt.get("Enchantments") instanceof ListTag enchantmentsTag && !enchantmentsTag.isEmpty()) {
++                        // The client still renders items with the enchantment glow if the enchantments tag contains at least one (empty) child.
++                        ListTag enchantments = new ListTag();
++                        enchantments.add(new CompoundTag());
++                        nbt.put("Enchantments", enchantments);
++                    }
++                    nbt.remove("AttributeModifiers");
 +                }
-+                nbt.remove("AttributeModifiers");
 +            }
 +            // Always remove items to prevent oversized data
 +            // Bundles change their texture based on their fullness.
-+            if (itemStack.is(Items.BUNDLE) && nbt.get("Items") instanceof ListTag oldItems && !oldItems.isEmpty()) {
-+                org.bukkit.inventory.meta.BundleMeta bundleMeta = (org.bukkit.inventory.meta.BundleMeta) itemStack.asBukkitMirror().getItemMeta();
-+                int sizeUsed = 0;
-+                for (org.bukkit.inventory.ItemStack item : bundleMeta.getItems()) {
-+                    int scale = 64 / item.getMaxStackSize();
-+                    sizeUsed += scale * item.getAmount();
++            if (nbt != null) {
++                if (itemStack.is(Items.BUNDLE) && nbt.get("Items") instanceof ListTag oldItems && !oldItems.isEmpty()) {
++                    org.bukkit.inventory.meta.BundleMeta bundleMeta = (org.bukkit.inventory.meta.BundleMeta) itemStack.asBukkitMirror().getItemMeta();
++                    int sizeUsed = 0;
++                    for (org.bukkit.inventory.ItemStack item : bundleMeta.getItems()) {
++                        int scale = 64 / item.getMaxStackSize();
++                        sizeUsed += scale * item.getAmount();
++                    }
++                    // Now we add a single fake item that uses the same amount of slots as all other items.
++                    ListTag items = new ListTag();
++                    items.add(new ItemStack(Items.PAPER, sizeUsed).save(new CompoundTag()));
++                    nbt.put("Items", items);
 +                }
-+                // Now we add a single fake item that uses the same amount of slots as all other items.
-+                ListTag items = new ListTag();
-+                items.add(new ItemStack(Items.PAPER, sizeUsed).save(new CompoundTag()));
-+                nbt.put("Items", items);
++                nbt.remove("BlockEntityTag");
++                nbt.remove("EntityTag");
 +            }
-+            nbt.remove("BlockEntityTag");
-+            nbt.remove("EntityTag");
 +        }
++        return itemStack;
 +    }
 +
      private void handleEquipmentChanges(Map<EquipmentSlot, ItemStack> equipmentChanges) {
@@ -94,7 +100,10 @@ index 62daf918d4ab00963041ca869ae718f14f2e3337..09f3b7eba463a647c38ce0f87af6ad5c
  
          equipmentChanges.forEach((enumitemslot, itemstack) -> {
              ItemStack itemstack1 = itemstack.copy();
-+            stripMeta(itemstack1, this.level); // Paper - hide unnecessary itemmeta from clients
++            final ItemStack toSend = stripMeta(itemstack1, this.level, true); // Paper - hide unnecessary itemmeta from clients
  
-             list.add(Pair.of(enumitemslot, itemstack1));
+-            list.add(Pair.of(enumitemslot, itemstack1));
++            list.add(Pair.of(enumitemslot, toSend)); // Paper - hide unnecessary itemmeta from clients
              switch (enumitemslot.getType()) {
+                 case HAND:
+                     this.setLastHandItem(enumitemslot, itemstack1);
