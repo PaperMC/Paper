@@ -30,7 +30,7 @@ Some IDEs such as [NetBeans](https://netbeans.org/) can perform these steps for 
 
 Contributing
 ------------
-Contributions of all sorts are welcome. To manage community contributions, we use the pull request functionality of Stash. In to gain access to Stash and create a pull request, you will first need to perform the following steps:
+Contributions of all sorts are welcome. To manage community contributions, we use the pull request functionality of Stash. In order to gain access to Stash and create a pull request, you will first need to perform the following steps:
 
 * Create an account on [JIRA](http://hub.spigotmc.org/jira/).
 * Fill in the [SpigotMC CLA](http://www.spigotmc.org/go/cla) and wait up to 24 hours for your Stash account to be activated. Please ensure that your username and email addresses match.
