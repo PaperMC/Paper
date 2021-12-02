@@ -72,10 +72,11 @@ paperweight {
             "com.destroystokyo.paper",
             "com.mojang",
             "io.papermc.paper",
+            "ca.spottedleaf",
             "net.kyori.adventure.bossbar",
             "net.minecraft",
             "org.bukkit.craftbukkit",
-            "org.spigotmc"
+            "org.spigotmc",
         )
     }
 }
