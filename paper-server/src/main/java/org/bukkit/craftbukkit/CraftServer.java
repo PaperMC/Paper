@@ -1033,8 +1033,7 @@ public final class CraftServer implements Server {
 
         boolean hardcore = creator.hardcore();
 
-        RegistryReadOps<NBTBase> registryreadops = RegistryReadOps.createAndLoad(DynamicOpsNBT.INSTANCE, console.resources.getResourceManager(), console.registryHolder);
-        WorldDataServer worlddata = (WorldDataServer) worldSession.getDataTag(registryreadops, console.datapackconfiguration);
+        WorldDataServer worlddata = (WorldDataServer) worldSession.getDataTag(console.registryreadops, console.datapackconfiguration);
 
         WorldSettings worldSettings;
         // See MinecraftServer.a(String, String, long, WorldType, JsonElement)
