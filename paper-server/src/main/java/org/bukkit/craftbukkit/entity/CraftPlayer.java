@@ -1154,8 +1154,8 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         }
     }
 
-    public void removeDisconnectingPlayer(Player player) {
-        hiddenEntities.remove(player.getUniqueId());
+    public void onEntityRemove(Entity entity) {
+        hiddenEntities.remove(entity.getUUID());
     }
 
     @Override
