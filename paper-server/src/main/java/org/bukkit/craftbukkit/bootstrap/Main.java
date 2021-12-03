@@ -34,7 +34,9 @@ public class Main {
 
             String repoDir = System.getProperty("bundlerRepoDir", "bundler");
             Path outputDir = Paths.get(repoDir).toAbsolutePath();
-            Files.createDirectories(outputDir);
+            if (!Files.isDirectory(outputDir)) {
+                Files.createDirectories(outputDir);
+            }
 
             System.out.println("Unbundling libraries to " + outputDir);
 
