@@ -116,19 +116,19 @@ index e6408251ed836715f324b1c1e49ff2473f0963ae..db123ef36fc4cb0206349ac696572714
          } else {
              passenger.stopRiding();
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index c116987952f53026ef0b5d67ec8da1fa9baa71b6..ba436054bcbce6ef990b71d58d74ff5d4d53fef2 100644
+index 9723109a678f9532cd7ca0034d30bc4b450fcab5..09c70c911bfa7be9883b6b83c1e8600fc9031463 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
-@@ -330,6 +330,8 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, i
-     public final org.spigotmc.ActivationRange.ActivationType activationType = org.spigotmc.ActivationRange.initializeEntityActivationType(this);
-     public final boolean defaultActivationState;
-     public long activatedTick = Integer.MIN_VALUE;
+@@ -313,6 +313,8 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, i
+     public void inactiveTick() { }
+     // Spigot end
+     // Paper start
 +    public long activatedImmunityTick = Integer.MIN_VALUE; // Paper
 +    public boolean isTemporarilyActive = false; // Paper
-     public boolean spawnedViaMobSpawner; // Paper - Yes this name is similar to above, upstream took the better one
      protected int numCollisions = 0; // Paper
-     public void inactiveTick() { }
-@@ -779,6 +781,8 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, i
+     public boolean spawnedViaMobSpawner; // Paper - Yes this name is similar to above, upstream took the better one
+     @javax.annotation.Nullable
+@@ -784,6 +786,8 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, i
          } else {
              this.wasOnFire = this.isOnFire();
              if (movementType == MoverType.PISTON) {
@@ -137,7 +137,7 @@ index c116987952f53026ef0b5d67ec8da1fa9baa71b6..ba436054bcbce6ef990b71d58d74ff5d
                  movement = this.limitPistonMovement(movement);
                  if (movement.equals(Vec3.ZERO)) {
                      return;
-@@ -791,6 +795,13 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, i
+@@ -796,6 +800,13 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, i
                  this.stuckSpeedMultiplier = Vec3.ZERO;
                  this.setDeltaMovement(Vec3.ZERO);
              }
@@ -256,7 +256,7 @@ index 8d8cce87acc5a93afb4b8925a5a5dbf71d371fcd..7fc40bb5fb6265b283c7c611f63aae76
                          }
                      }
 diff --git a/src/main/java/net/minecraft/world/entity/npc/Villager.java b/src/main/java/net/minecraft/world/entity/npc/Villager.java
-index 55e4e7fcefc60e66239035e72ad44e0c796bf300..785fcb94d707b6790ef2191f7c9db77d253e9c6d 100644
+index fc47ef685539addfcfc6b5defea8936fbca9f69d..55b44d0391e9b946536f070ea5bbdd19cd0ae981 100644
 --- a/src/main/java/net/minecraft/world/entity/npc/Villager.java
 +++ b/src/main/java/net/minecraft/world/entity/npc/Villager.java
 @@ -223,17 +223,29 @@ public class Villager extends AbstractVillager implements ReputationEventHandler
@@ -343,7 +343,7 @@ index 6b29f66aec8a82b367a979b5b04857416b697c14..78d252b829e5c1f19532656a72862085
                              }
                          }
 diff --git a/src/main/java/org/spigotmc/ActivationRange.java b/src/main/java/org/spigotmc/ActivationRange.java
-index 84ce3d38d5decb4a2f9fae78e0ef5d715860dc7d..e0302f82356e8cba848aa8cec1e821e02abbd6f6 100644
+index ffca120995c6f3eac1db7642bec08ce210321249..d0e697138ec1a2a0570d4cf46e4f28b4a7eaa946 100644
 --- a/src/main/java/org/spigotmc/ActivationRange.java
 +++ b/src/main/java/org/spigotmc/ActivationRange.java
 @@ -1,39 +1,51 @@
@@ -503,7 +503,7 @@ index 84ce3d38d5decb4a2f9fae78e0ef5d715860dc7d..e0302f82356e8cba848aa8cec1e821e0
 +        maxRange = Math.max( maxRange, waterActivationRange );
 +        maxRange = Math.max( maxRange, villagerActivationRange );
 +        // Paper end
-         maxRange = Math.min( ( world.spigotConfig.viewDistance << 4 ) - 8, maxRange );
+         maxRange = Math.min( ( world.spigotConfig.simulationDistance << 4 ) - 8, maxRange );
  
          for ( Player player : world.players() )
 @@ -128,6 +199,11 @@ public class ActivationRange
@@ -690,7 +690,7 @@ index 84ce3d38d5decb4a2f9fae78e0ef5d715860dc7d..e0302f82356e8cba848aa8cec1e821e0
              isActive = false;
          }
 diff --git a/src/main/java/org/spigotmc/SpigotWorldConfig.java b/src/main/java/org/spigotmc/SpigotWorldConfig.java
-index a6d07b9b8f4fc45d737a2769eeb5ad6eacba978e..54911d9b26c8cfbecf48f4187b0c914481fbcb27 100644
+index 21e0f9b4d3e1dc6e104bffdffcc23d62a739ab3c..58aaf0d98cbd6814ecdf00f46f8ff9fc7901006c 100644
 --- a/src/main/java/org/spigotmc/SpigotWorldConfig.java
 +++ b/src/main/java/org/spigotmc/SpigotWorldConfig.java
 @@ -199,13 +199,59 @@ public class SpigotWorldConfig
