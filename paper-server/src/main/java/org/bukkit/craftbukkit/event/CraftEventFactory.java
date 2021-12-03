@@ -887,7 +887,7 @@ public class CraftEventFactory {
             }
             return event;
         } else if (source == DamageSource.LAVA) {
-            EntityDamageEvent event = (new EntityDamageByBlockEvent(null, entity.getBukkitEntity(), DamageCause.LAVA, modifiers, modifierFunctions));
+            EntityDamageEvent event = (new EntityDamageByBlockEvent(blockDamage, entity.getBukkitEntity(), DamageCause.LAVA, modifiers, modifierFunctions));
             event.setCancelled(cancelled);
             callEvent(event);
             if (!event.isCancelled()) {
