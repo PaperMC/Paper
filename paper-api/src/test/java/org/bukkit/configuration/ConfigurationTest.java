@@ -104,6 +104,43 @@ public abstract class ConfigurationTest {
     }
 
     /**
+     * Test of addDefaults method, of class Configuration but with existing
+     * defaults in a child section.
+     */
+    @Test
+    public void testAddDefaults_Configuration_WithExisting() {
+        Configuration config = getConfig();
+        Map<String, Object> values = getTestValues();
+        values.put("default-section.string", "String Value");
+        Configuration defaults = getConfig();
+        Configuration defaultsAdditional = getConfig();
+
+        for (Map.Entry<String, Object> entry : values.entrySet()) {
+            defaults.set(entry.getKey(), entry.getValue());
+        }
+        config.addDefaults(defaults);
+
+        Map<String, Object> additionalValues = new HashMap<>();
+        additionalValues.put("default-section.additionalString", "Additional String");
+        additionalValues.put("default-section.additionalInt", 42);
+        for (Map.Entry<String, Object> entry : additionalValues.entrySet()) {
+            defaultsAdditional.set(entry.getKey(), entry.getValue());
+        }
+        config.addDefaults(defaultsAdditional);
+        values.putAll(additionalValues);
+
+        for (Map.Entry<String, Object> entry : values.entrySet()) {
+            String path = entry.getKey();
+            Object object = entry.getValue();
+
+            assertEquals(object, config.get(path));
+            assertTrue(config.contains(path));
+            assertFalse(config.isSet(path));
+            assertTrue(config.getDefaults().isSet(path));
+        }
+    }
+
+    /**
      * Test of setDefaults method, of class Configuration.
      */
     @Test
