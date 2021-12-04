@@ -16,6 +16,7 @@ import org.bukkit.WeatherType;
 import org.bukkit.advancement.Advancement;
 import org.bukkit.advancement.AdvancementProgress;
 import org.bukkit.block.Block;
+import org.bukkit.block.Sign;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.conversations.Conversable;
 import org.bukkit.event.block.BlockBreakEvent;
@@ -1340,6 +1341,15 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @param book The book to open for this player
      */
     public void openBook(@NotNull ItemStack book);
+
+    /**
+     * Open a Sign for editing by the Player.
+     *
+     * The Sign must be placed in the same world as the player.
+     *
+     * @param sign The sign to edit
+     */
+    public void openSign(@NotNull Sign sign);
 
     /**
      * Shows the demo screen to the player, this screen is normally only seen in
