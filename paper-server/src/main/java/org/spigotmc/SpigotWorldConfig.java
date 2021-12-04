@@ -96,6 +96,7 @@ public class SpigotWorldConfig
     public int beetrootModifier;
     public int carrotModifier;
     public int potatoModifier;
+    public int torchFlowerModifier; // Paper
     public int wheatModifier;
     public int wartModifier;
     public int vineModifier;
@@ -106,6 +107,8 @@ public class SpigotWorldConfig
     public int twistingVinesModifier;
     public int weepingVinesModifier;
     public int caveVinesModifier;
+    public int glowBerryModifier; // Paper
+    public int pitcherPlantModifier; // Paper
     private int getAndValidateGrowth(String crop)
     {
         int modifier = this.getInt( "growth." + crop.toLowerCase(java.util.Locale.ENGLISH) + "-modifier", 100 );
@@ -129,6 +132,7 @@ public class SpigotWorldConfig
         this.beetrootModifier = this.getAndValidateGrowth( "Beetroot" );
         this.carrotModifier = this.getAndValidateGrowth( "Carrot" );
         this.potatoModifier = this.getAndValidateGrowth( "Potato" );
+        this.torchFlowerModifier = this.getAndValidateGrowth("TorchFlower"); // Paper
         this.wheatModifier = this.getAndValidateGrowth( "Wheat" );
         this.wartModifier = this.getAndValidateGrowth( "NetherWart" );
         this.vineModifier = this.getAndValidateGrowth( "Vine" );
@@ -139,6 +143,8 @@ public class SpigotWorldConfig
         this.twistingVinesModifier = this.getAndValidateGrowth( "TwistingVines" );
         this.weepingVinesModifier = this.getAndValidateGrowth( "WeepingVines" );
         this.caveVinesModifier = this.getAndValidateGrowth( "CaveVines" );
+        this.glowBerryModifier = this.getAndValidateGrowth("GlowBerry"); // Paper
+        this.pitcherPlantModifier = this.getAndValidateGrowth("PitcherPlant"); // Paper
     }
 
     public double itemMerge;
