@@ -1,0 +1,47 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sat, 4 Dec 2021 11:37:21 -0800
+Subject: [PATCH] Prevent unnecessary creation of CraftEntity instances
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index 516015eb48900abaf0e2f47de4ffd10e9cf4d9a7..b569d8734dd2e0817826c9bfd2d98f7dec9a41e7 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -2188,7 +2188,11 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, i
+ 
+                 ((ServerPlayer) this).setLevel(bworld == null ? null : ((CraftWorld) bworld).getHandle());
+             }
+-            this.getBukkitEntity().readBukkitValues(nbt);
++            // Paper start - don't create a bukkit entity needlessly
++            if (this.bukkitEntity != null) {
++                this.bukkitEntity.readBukkitValues(nbt);
++            }
++            // Paper end
+             if (nbt.contains("Bukkit.invisible")) {
+                 boolean bukkitInvisible = nbt.getBoolean("Bukkit.invisible");
+                 this.setInvisible(bukkitInvisible);
+@@ -2856,15 +2860,18 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, i
+ 
+     public void setAirSupply(int air) {
+         // CraftBukkit start
+-        EntityAirChangeEvent event = new EntityAirChangeEvent(this.getBukkitEntity(), air);
++        // Paper start, don't even create the event
+         // Suppress during worldgen
+         if (this.valid) {
++            EntityAirChangeEvent event = new EntityAirChangeEvent(this.getBukkitEntity(), air);
+             event.getEntity().getServer().getPluginManager().callEvent(event);
++            if (event.isCancelled()) {
++                return;
++            }
++            air = event.getAmount();
+         }
+-        if (event.isCancelled()) {
+-            return;
+-        }
+-        this.entityData.set(Entity.DATA_AIR_SUPPLY_ID, event.getAmount());
++        this.entityData.set(Entity.DATA_AIR_SUPPLY_ID, air);
++        // Paper end
+         // CraftBukkit end
+     }
+ 
