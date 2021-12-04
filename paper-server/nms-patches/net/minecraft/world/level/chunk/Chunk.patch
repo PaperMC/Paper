@@ -39,19 +39,18 @@
      public Chunk(WorldServer worldserver, ProtoChunk protochunk, @Nullable Chunk.c chunk_c) {
          this(worldserver, protochunk.getPos(), protochunk.getUpgradeData(), protochunk.unpackBlockTicks(), protochunk.unpackFluidTicks(), protochunk.getInhabitedTime(), protochunk.getSections(), chunk_c, protochunk.getBlendingData());
          Iterator iterator = protochunk.getBlockEntities().values().iterator();
-@@ -142,6 +154,11 @@
+@@ -142,6 +154,10 @@
  
          this.setLightCorrect(protochunk.isLightCorrect());
          this.unsaved = true;
 +        this.needsDecoration = true; // CraftBukkit
 +        // CraftBukkit start
 +        this.persistentDataContainer = protochunk.persistentDataContainer; // SPIGOT-6814: copy PDC to account for 1.17 to 1.18 chunk upgrading.
-+        this.persistentDataContainer.setCallback(() -> setUnsaved(true)); // SPIGOT-6814: Handle cases were only persistentData is saved
 +        // CraftBukkit end
      }
  
      @Override
-@@ -238,9 +255,16 @@
+@@ -238,9 +254,16 @@
          }
      }
  
@@ -68,7 +67,7 @@
          int i = blockposition.getY();
          ChunkSection chunksection = this.getSection(this.getSectionIndex(i));
          boolean flag1 = chunksection.hasOnlyAir();
-@@ -279,7 +303,8 @@
+@@ -279,7 +302,8 @@
                  if (!chunksection.getBlockState(j, k, l).is(block)) {
                      return null;
                  } else {
@@ -78,7 +77,7 @@
                          iblockdata.onPlace(this.level, blockposition, iblockdata1, flag);
                      }
  
-@@ -324,7 +349,12 @@
+@@ -324,7 +348,12 @@
  
      @Nullable
      public TileEntity getBlockEntity(BlockPosition blockposition, Chunk.EnumTileEntityState chunk_enumtileentitystate) {
@@ -92,7 +91,7 @@
  
          if (tileentity == null) {
              NBTTagCompound nbttagcompound = (NBTTagCompound) this.pendingBlockEntities.remove(blockposition);
-@@ -395,6 +425,13 @@
+@@ -395,6 +424,13 @@
                  tileentity1.setRemoved();
              }
  
@@ -106,7 +105,7 @@
          }
      }
  
-@@ -424,6 +461,12 @@
+@@ -424,6 +460,12 @@
          if (this.isInLevel()) {
              TileEntity tileentity = (TileEntity) this.blockEntities.remove(blockposition);
  
@@ -119,7 +118,7 @@
              if (tileentity != null) {
                  this.removeGameEventListener(tileentity);
                  tileentity.setRemoved();
-@@ -471,6 +514,55 @@
+@@ -471,6 +513,55 @@
  
      }
  
@@ -175,7 +174,7 @@
      public boolean isEmpty() {
          return false;
      }
-@@ -659,7 +751,7 @@
+@@ -659,7 +750,7 @@
  
      private <T extends TileEntity> void updateBlockEntityTicker(T t0) {
          IBlockData iblockdata = t0.getBlockState();
@@ -184,7 +183,7 @@
  
          if (blockentityticker == null) {
              this.removeBlockEntityTicker(t0.getBlockPos());
-@@ -752,7 +844,7 @@
+@@ -752,7 +843,7 @@
          private boolean loggedInvalidBlockState;
  
          a(TileEntity tileentity, BlockEntityTicker blockentityticker) {
@@ -193,7 +192,7 @@
              this.ticker = blockentityticker;
          }
  
-@@ -775,7 +867,7 @@
+@@ -775,7 +866,7 @@
                              this.loggedInvalidBlockState = true;
                              Chunk.LOGGER.warn("Block entity {} @ {} state {} invalid for ticking:", new org.apache.logging.log4j.util.Supplier[]{this::getType, this::getPos, () -> {
                                          return iblockdata;

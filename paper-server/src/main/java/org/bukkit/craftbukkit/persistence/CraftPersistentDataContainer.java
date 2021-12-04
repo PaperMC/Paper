@@ -15,13 +15,11 @@ import org.bukkit.persistence.PersistentDataAdapterContext;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 
-public final class CraftPersistentDataContainer implements PersistentDataContainer {
+public class CraftPersistentDataContainer implements PersistentDataContainer {
 
-    private static final Callback EMPTY = () -> { };
     private final Map<String, NBTBase> customDataTags = new HashMap<>();
     private final CraftPersistentDataTypeRegistry registry;
     private final CraftPersistentDataAdapterContext adapterContext;
-    private Callback callback = EMPTY;
 
     public CraftPersistentDataContainer(Map<String, NBTBase> customTags, CraftPersistentDataTypeRegistry registry) {
         this(registry);
@@ -33,14 +31,6 @@ public final class CraftPersistentDataContainer implements PersistentDataContain
         this.adapterContext = new CraftPersistentDataAdapterContext(this.registry);
     }
 
-    public void setCallback(Callback callback) {
-        if (callback == null) {
-            this.callback = EMPTY;
-            return;
-        }
-
-        this.callback = callback;
-    }
 
     @Override
     public <T, Z> void set(NamespacedKey key, PersistentDataType<T, Z> type, Z value) {
@@ -49,7 +39,6 @@ public final class CraftPersistentDataContainer implements PersistentDataContain
         Validate.notNull(value, "The provided value for the custom value was null");
 
         this.customDataTags.put(key.toString(), registry.wrap(type.getPrimitiveType(), type.toPrimitive(value, adapterContext)));
-        callback.onValueChange();
     }
 
     @Override
@@ -103,7 +92,6 @@ public final class CraftPersistentDataContainer implements PersistentDataContain
         Validate.notNull(key, "The provided key for the custom value was null");
 
         this.customDataTags.remove(key.toString());
-        callback.onValueChange();
     }
 
     @Override
@@ -138,19 +126,16 @@ public final class CraftPersistentDataContainer implements PersistentDataContain
 
     public void put(String key, NBTBase base) {
         this.customDataTags.put(key, base);
-        callback.onValueChange();
     }
 
     public void putAll(Map<String, NBTBase> map) {
         this.customDataTags.putAll(map);
-        callback.onValueChange();
     }
 
     public void putAll(NBTTagCompound compound) {
         for (String key : compound.getAllKeys()) {
             this.customDataTags.put(key, compound.get(key));
         }
-        callback.onValueChange();
     }
 
     public Map<String, NBTBase> getRaw() {
@@ -170,10 +155,5 @@ public final class CraftPersistentDataContainer implements PersistentDataContain
 
     public Map<String, Object> serialize() {
         return (Map<String, Object>) CraftNBTTagConfigSerializer.serialize(toTagCompound());
-    }
-
-    @FunctionalInterface
-    public interface Callback {
-        void onValueChange();
     }
 }
