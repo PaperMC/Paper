@@ -251,10 +251,10 @@ public class MemorySection implements ConfigurationSection {
         int i1 = -1, i2;
         ConfigurationSection section = this;
         while ((i1 = path.indexOf(separator, i2 = i1 + 1)) != -1) {
-            section = section.getConfigurationSection(path.substring(i2, i1));
-            if (section == null) {
+            if (section == null || !section.contains(path.substring(i2, i1), true)) {
                 return def;
             }
+            section = section.getConfigurationSection(path.substring(i2, i1));
         }
 
         String key = path.substring(i2);
