@@ -1,0 +1,191 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Alexander <alexander.neitzel@codineerdigital.com>
+Date: Sun, 5 Dec 2021 22:40:27 +0100
+Subject: [PATCH] World Loader
+
+
+diff --git a/src/main/java/net/bluebolt/commands/EnterWorldCommand.java b/src/main/java/net/bluebolt/commands/EnterWorldCommand.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..2a84b221414b58812a66747a09c6d22b8b2eb0d0
+--- /dev/null
++++ b/src/main/java/net/bluebolt/commands/EnterWorldCommand.java
+@@ -0,0 +1,33 @@
++package net.bluebolt.commands;
++
++import org.bukkit.*;
++import org.bukkit.command.Command;
++import org.bukkit.command.CommandSender;
++import org.bukkit.entity.Player;
++
++public class EnterWorldCommand extends Command {
++
++    public EnterWorldCommand(String name) {
++        super(name);
++        this.description = "Enter a world";
++        this.usageMessage = "/enterworld <name>";
++        this.setPermission("bluebolt.command.enterworld");
++    }
++
++    @Override
++    public boolean execute(CommandSender sender, String commandLabel, String[] args) {
++        if (!testPermission(sender)) return true;
++        if (args.length != 1) return false;
++        sender.sendMessage(ChatColor.BLUE + "⚡ Blue Bolt " + ChatColor.DARK_GRAY + "» " + ChatColor.GRAY + "Entering world " + ChatColor.GOLD + args[0]);
++        try {
++            Player player = (Player) sender;
++            World world = Bukkit.getWorld(args[0]);
++            player.teleport(new Location(world, world.getSpawnLocation().getX(), world.getSpawnLocation().getY(), world.getSpawnLocation().getZ()));
++        } catch (Exception e) {
++            sender.sendMessage(ChatColor.BLUE + "⚡ Blue Bolt " + ChatColor.DARK_GRAY + "» " + ChatColor.RED + "Failed to enter world " + args[0]);
++            return true;
++        }
++        sender.sendMessage(ChatColor.BLUE + "⚡ Blue Bolt " + ChatColor.DARK_GRAY + "» " + ChatColor.GREEN + "World " + ChatColor.GOLD + args[0] + ChatColor.GRAY + " has been entered");
++        return true;
++    }
++}
+diff --git a/src/main/java/net/bluebolt/commands/GenerateWorldCommand.java b/src/main/java/net/bluebolt/commands/GenerateWorldCommand.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..eb24adc5e8ac3343c276226bb3c271d457fcd1bb
+--- /dev/null
++++ b/src/main/java/net/bluebolt/commands/GenerateWorldCommand.java
+@@ -0,0 +1,36 @@
++package net.bluebolt.commands;
++
++import org.bukkit.Bukkit;
++import org.bukkit.ChatColor;
++import org.bukkit.WorldCreator;
++import org.bukkit.command.Command;
++import org.bukkit.command.CommandSender;
++
++public class GenerateWorldCommand extends Command {
++
++    public GenerateWorldCommand(String name) {
++        super(name);
++        this.description = "Generates a new world";
++        this.usageMessage = "/generateworld <name> [seed]";
++        this.setPermission("bluebolt.command.generateworld");
++    }
++
++    @Override
++    public boolean execute(CommandSender sender, String commandLabel, String[] args) {
++        if (!testPermission(sender)) return true;
++        if (!(args.length == 1 || args.length == 2)) return false;
++        sender.sendMessage(ChatColor.BLUE + "⚡ Blue Bolt " + ChatColor.DARK_GRAY + "» " + ChatColor.GRAY + "Generating world " + ChatColor.GOLD + args[0]);
++        try {
++            WorldCreator worldCreator = new WorldCreator(args[0]);
++            if (args.length == 2) {
++                worldCreator = worldCreator.seed(Long.parseLong(args[1]));
++            }
++            Bukkit.getServer().createWorld(worldCreator);
++        } catch (Exception e) {
++            sender.sendMessage(ChatColor.BLUE + "⚡ Blue Bolt " + ChatColor.DARK_GRAY + "» " + ChatColor.RED + "Failed to generate world " + args[0]);
++            return true;
++        }
++        sender.sendMessage(ChatColor.BLUE + "⚡ Blue Bolt " + ChatColor.DARK_GRAY + "» " + ChatColor.GREEN + "World " + ChatColor.GOLD + args[0] + ChatColor.GRAY + " has been generated");
++        return true;
++    }
++}
+diff --git a/src/main/java/net/bluebolt/commands/LoadWorldCommand.java b/src/main/java/net/bluebolt/commands/LoadWorldCommand.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..219cd7d2190be55146b7286e25f8541f30890d36
+--- /dev/null
++++ b/src/main/java/net/bluebolt/commands/LoadWorldCommand.java
+@@ -0,0 +1,33 @@
++package net.bluebolt.commands;
++
++import org.bukkit.Bukkit;
++import org.bukkit.ChatColor;
++import org.bukkit.WorldCreator;
++import org.bukkit.command.Command;
++import org.bukkit.command.CommandSender;
++import org.bukkit.craftbukkit.Main;
++
++public class LoadWorldCommand extends Command {
++
++    public LoadWorldCommand(String name) {
++        super(name);
++        this.description = "Loads in a new world";
++        this.usageMessage = "/loadworld <name>";
++        this.setPermission("bluebolt.command.loadworld");
++    }
++
++    @Override
++    public boolean execute(CommandSender sender, String commandLabel, String[] args) {
++        if (!testPermission(sender)) return true;
++        if (args.length != 1) return false;
++        sender.sendMessage(ChatColor.BLUE + "⚡ Blue Bolt " + ChatColor.DARK_GRAY + "» " + ChatColor.GRAY + "Loading world " + ChatColor.GOLD + args[0]);
++        try {
++            Bukkit.getServer().createWorld(new WorldCreator(args[0]));
++        } catch (Exception e) {
++            sender.sendMessage(ChatColor.BLUE + "⚡ Blue Bolt " + ChatColor.DARK_GRAY + "» " + ChatColor.RED + "Failed to load world " + args[0]);
++            return true;
++        }
++        sender.sendMessage(ChatColor.BLUE + "⚡ Blue Bolt " + ChatColor.DARK_GRAY + "» " + ChatColor.GREEN + "World " + ChatColor.GOLD + args[0] + ChatColor.GRAY + " has been loaded");
++        return true;
++    }
++}
+diff --git a/src/main/java/net/bluebolt/commands/UnloadWorldCommand.java b/src/main/java/net/bluebolt/commands/UnloadWorldCommand.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..32d34b7b2e62cb0f99bc21b86792c43d51529405
+--- /dev/null
++++ b/src/main/java/net/bluebolt/commands/UnloadWorldCommand.java
+@@ -0,0 +1,32 @@
++package net.bluebolt.commands;
++
++import org.bukkit.Bukkit;
++import org.bukkit.ChatColor;
++import org.bukkit.WorldCreator;
++import org.bukkit.command.Command;
++import org.bukkit.command.CommandSender;
++
++public class UnloadWorldCommand extends Command {
++
++    public UnloadWorldCommand(String name) {
++        super(name);
++        this.description = "Unloads an existing world";
++        this.usageMessage = "/unloadworld <name>";
++        this.setPermission("bluebolt.command.unloadworld");
++    }
++
++    @Override
++    public boolean execute(CommandSender sender, String commandLabel, String[] args) {
++        if (!testPermission(sender)) return true;
++        if (args.length != 1) return false;
++        sender.sendMessage(ChatColor.BLUE + "⚡ Blue Bolt " + ChatColor.DARK_GRAY + "» " + ChatColor.GRAY + "Unloading world " + ChatColor.GOLD + args[0]);
++        try {
++            Bukkit.unloadWorld(args[0], true);
++        } catch (Exception e) {
++            sender.sendMessage(ChatColor.BLUE + "⚡ Blue Bolt " + ChatColor.DARK_GRAY + "» " + ChatColor.RED + "Failed to unload world " + args[0]);
++            return true;
++        }
++        sender.sendMessage(ChatColor.BLUE + "⚡ Blue Bolt " + ChatColor.DARK_GRAY + "» " + ChatColor.GREEN + "World " + ChatColor.GOLD + args[0] + ChatColor.GRAY + " has been unloaded");
++        return true;
++    }
++}
+diff --git a/src/main/java/org/spigotmc/SpigotConfig.java b/src/main/java/org/spigotmc/SpigotConfig.java
+index c326ea95ce3abf540090a2f799a2f06a01c45240..086c526b52962641e32e4b79cc2d229b733f003d 100644
+--- a/src/main/java/org/spigotmc/SpigotConfig.java
++++ b/src/main/java/org/spigotmc/SpigotConfig.java
+@@ -14,7 +14,7 @@ import java.util.Map;
+ import java.util.Set;
+ import java.util.logging.Level;
+ 
+-import net.bluebolt.commands.RebootCommand;
++import net.bluebolt.commands.*;
+ import net.minecraft.core.Registry;
+ import net.minecraft.resources.ResourceLocation;
+ import net.minecraft.server.MinecraftServer;
+@@ -72,8 +72,12 @@ public class SpigotConfig
+ 
+         SpigotConfig.commands = new HashMap<String, Command>();
+         SpigotConfig.commands.put( "spigot", new SpigotCommand( "spigot" ) );
+-        // BlueBolt start - add reboot command
++        // BlueBolt start - add commands
+         SpigotConfig.commands.put( "reboot", new RebootCommand( "reboot" ) );
++        SpigotConfig.commands.put( "enterworld", new EnterWorldCommand( "enterworld" ) );
++        SpigotConfig.commands.put( "generateworld", new GenerateWorldCommand( "generateworld" ) );
++        SpigotConfig.commands.put( "loadworld", new LoadWorldCommand( "loadworld" ) );
++        SpigotConfig.commands.put( "unloadworld", new UnloadWorldCommand( "unloadworld" ) );
+         // BlueBolt end
+ 
+         SpigotConfig.version = SpigotConfig.getInt( "config-version", 12 );
