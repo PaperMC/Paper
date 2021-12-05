@@ -6041,13 +6041,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +
 +    @Override
-+    public BlockState getTypeIfLoaded(BlockPos blockposition) {
++    public final BlockState getBlockStateIfLoaded(BlockPos blockposition) {
 +        ChunkAccess chunk = this.getChunkIfLoadedImmediately(blockposition.getX() >> 4, blockposition.getZ() >> 4);
 +        return chunk == null ? null : chunk.getBlockState(blockposition);
 +    }
 +
 +    @Override
-+    public FluidState getFluidIfLoaded(BlockPos blockposition) {
++    public final FluidState getFluidIfLoaded(BlockPos blockposition) {
 +        ChunkAccess chunk = this.getChunkIfLoadedImmediately(blockposition.getX() >> 4, blockposition.getZ() >> 4);
 +        return chunk == null ? null : chunk.getFluidState(blockposition);
 +    }
@@ -6216,17 +6216,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      BlockState getBlockState(BlockPos pos);
 +    // Paper start - if loaded util
-+    @Nullable BlockState getTypeIfLoaded(BlockPos blockposition);
-+    default Material getMaterialIfLoaded(BlockPos blockposition) {
-+        BlockState type = this.getTypeIfLoaded(blockposition);
++    @Nullable BlockState getBlockStateIfLoaded(BlockPos blockposition);
++    default @Nullable Material getMaterialIfLoaded(BlockPos blockposition) {
++        BlockState type = this.getBlockStateIfLoaded(blockposition);
 +        return type == null ? null : type.getMaterial();
 +    }
 +
-+    default Block getBlockIfLoaded(BlockPos blockposition) {
-+        BlockState type = this.getTypeIfLoaded(blockposition);
++    default @Nullable Block getBlockIfLoaded(BlockPos blockposition) {
++        BlockState type = this.getBlockStateIfLoaded(blockposition);
 +        return type == null ? null : type.getBlock();
 +    }
-+    FluidState getFluidIfLoaded(BlockPos blockposition);
++    @Nullable FluidState getFluidIfLoaded(BlockPos blockposition);
 +    // Paper end
  
      FluidState getFluidState(BlockPos pos);
@@ -6282,13 +6282,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
 +    // Paper start - If loaded util
 +    @Override
-+    public FluidState getFluidIfLoaded(BlockPos blockposition) {
-+        return this.getFluidState(blockposition);
++    public final FluidState getFluidIfLoaded(BlockPos blockposition) {
++        return Fluids.EMPTY.defaultFluidState();
 +    }
 +
 +    @Override
-+    public BlockState getTypeIfLoaded(BlockPos blockposition) {
-+        return this.getBlockState(blockposition);
++    public final BlockState getBlockStateIfLoaded(BlockPos blockposition) {
++        return Blocks.AIR.defaultBlockState();
 +    }
 +    // Paper end
 +
@@ -6333,7 +6333,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    @Override
 +    @Nullable
-+    public final BlockState getTypeIfLoaded(BlockPos blockposition) {
++    public final BlockState getBlockStateIfLoaded(BlockPos blockposition) {
 +        // CraftBukkit start - tree generation
 +        if (captureTreeGeneration) {
 +            CraftBlockState previous = capturedBlockStates.get(blockposition);
@@ -6351,15 +6351,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +
 +    @Override
-+    public FluidState getFluidIfLoaded(BlockPos blockposition) {
++    public final FluidState getFluidIfLoaded(BlockPos blockposition) {
 +        ChunkAccess chunk = this.getChunkIfLoadedImmediately(blockposition.getX() >> 4, blockposition.getZ() >> 4);
 +
 +        return chunk == null ? null : chunk.getFluidState(blockposition);
 +    }
-+    // Paper end
 +
 +    @Override
 +    public final ChunkAccess getChunk(int chunkX, int chunkZ, ChunkStatus leastStatus, boolean create) { // Paper - final for inline
++        // Paper end
          ChunkAccess ichunkaccess = this.getChunkSource().getChunk(chunkX, chunkZ, leastStatus, create);
  
          if (ichunkaccess == null && create) {
@@ -6406,35 +6406,45 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  import net.minecraft.world.level.block.Blocks;
  import net.minecraft.world.level.block.entity.BlockEntity;
 @@ -0,0 +0,0 @@ public class PathNavigationRegion implements BlockGetter, CollisionGetter {
-         return List.of();
+     private ChunkAccess getChunk(int chunkX, int chunkZ) {
+         int i = chunkX - this.centerX;
+         int j = chunkZ - this.centerZ;
+-        if (i >= 0 && i < this.chunks.length && j >= 0 && j < this.chunks[i].length) {
++        if (i >= 0 && i < this.chunks.length && j >= 0 && j < this.chunks[i].length) { // Paper - if this changes, update getChunkIfLoaded below
+             ChunkAccess chunkAccess = this.chunks[i][j];
+             return (ChunkAccess)(chunkAccess != null ? chunkAccess : new EmptyLevelChunk(this.level, new ChunkPos(chunkX, chunkZ)));
+         } else {
+@@ -0,0 +0,0 @@ public class PathNavigationRegion implements BlockGetter, CollisionGetter {
+         }
      }
  
 +    // Paper start - if loaded util
-+    private ChunkAccess getChunkIfLoaded(int x, int z) {
-+        int k = x - this.centerX;
-+        int l = z - this.centerZ;
++    private @Nullable ChunkAccess getChunkIfLoaded(int x, int z) {
++        // Based on getChunk(int, int)
++        int xx = x - this.centerX;
++        int zz = z - this.centerZ;
 +
-+        if (k >= 0 && k < this.chunks.length && l >= 0 && l < this.chunks[k].length) { // Paper - if this changes, update getChunkIfLoaded below
-+            return this.chunks[k][l];
++        if (xx >= 0 && xx < this.chunks.length && zz >= 0 && zz < this.chunks[xx].length) {
++            return this.chunks[xx][zz];
 +        }
 +        return null;
 +    }
 +    @Override
-+    public FluidState getFluidIfLoaded(BlockPos blockposition) {
++    public final FluidState getFluidIfLoaded(BlockPos blockposition) {
 +        ChunkAccess chunk = getChunkIfLoaded(blockposition.getX() >> 4, blockposition.getZ() >> 4);
 +        return chunk == null ? null : chunk.getFluidState(blockposition);
 +    }
 +
 +    @Override
-+    public BlockState getTypeIfLoaded(BlockPos blockposition) {
++    public final BlockState getBlockStateIfLoaded(BlockPos blockposition) {
 +        ChunkAccess chunk = getChunkIfLoaded(blockposition.getX() >> 4, blockposition.getZ() >> 4);
 +        return chunk == null ? null : chunk.getBlockState(blockposition);
 +    }
 +    // Paper end
 +
-     @Nullable
      @Override
-     public BlockEntity getBlockEntity(BlockPos pos) {
+     public WorldBorder getWorldBorder() {
+         return this.level.getWorldBorder();
 diff --git a/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java b/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java
@@ -6639,12 +6649,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
 +    // Paper start - If loaded util
 +    @Override
-+    public FluidState getFluidIfLoaded(BlockPos blockposition) {
++    public final FluidState getFluidIfLoaded(BlockPos blockposition) {
 +        return this.getFluidState(blockposition);
 +    }
 +
 +    @Override
-+    public BlockState getTypeIfLoaded(BlockPos blockposition) {
++    public final BlockState getBlockStateIfLoaded(BlockPos blockposition) {
 +        return this.getBlockState(blockposition);
 +    }
 +    // Paper end
@@ -6719,12 +6729,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
 +    // Paper start - If loaded util
 +    @Override
-+    public FluidState getFluidIfLoaded(BlockPos blockposition) {
++    public final FluidState getFluidIfLoaded(BlockPos blockposition) {
 +        return this.getFluidState(blockposition);
 +    }
 +
 +    @Override
-+    public BlockState getTypeIfLoaded(BlockPos blockposition) {
++    public final BlockState getBlockStateIfLoaded(BlockPos blockposition) {
 +        return this.getBlockState(blockposition);
 +    }
 +    // Paper end
@@ -7007,7 +7017,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +
 +    @Override
-+    public BlockState getTypeIfLoaded(BlockPos blockposition) {
++    public BlockState getBlockStateIfLoaded(BlockPos blockposition) {
 +        throw new UnsupportedOperationException("Not supported yet.");
 +    }
  

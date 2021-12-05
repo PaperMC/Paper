@@ -1,8 +1,7 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Thu, 3 Mar 2016 02:07:55 -0600
-Subject: [PATCH] Optimize isValidLocation, getType and getBlockData for
- inlining
+Subject: [PATCH] Optimize isInWorldBounds and getBlockState for inlining
 
 Hot methods, so reduce # of instructions for the method.
 
@@ -21,11 +20,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
 +    // Paper start
-+    public boolean isValidLocation(net.minecraft.world.level.LevelHeightAccessor levelHeightAccessor) {
++    public final boolean isInsideBuildHeightAndWorldBoundsHorizontal(net.minecraft.world.level.LevelHeightAccessor levelHeightAccessor) {
 +        return getX() >= -30000000 && getZ() >= -30000000 && getX() < 30000000 && getZ() < 30000000 && !levelHeightAccessor.isOutsideBuildHeight(getY());
-+    }
-+    public boolean isInvalidYLocation(net.minecraft.world.level.LevelHeightAccessor levelHeightAccessor) {
-+        return levelHeightAccessor.isOutsideBuildHeight(getY());
 +    }
 +    // Paper end
 +
@@ -41,7 +37,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      public boolean isInWorldBounds(BlockPos pos) {
 -        return !this.isOutsideBuildHeight(pos) && Level.isInWorldBoundsHorizontal(pos);
-+        return pos.isValidLocation(this); // Paper - use better/optimized check
++        return pos.isInsideBuildHeightAndWorldBoundsHorizontal(this); // Paper - use better/optimized check
      }
  
      public static boolean isInSpawnableBounds(BlockPos pos) {
@@ -53,7 +49,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          return GameEventDispatcher.NOOP;
      }
  
-+    public abstract BlockState getType(final int x, final int y, final int z); // Paper
++    public abstract BlockState getBlockState(final int x, final int y, final int z); // Paper
      @Nullable
      public abstract BlockState setBlockState(BlockPos pos, BlockState state, boolean moved);
  
@@ -66,7 +62,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
 +    // Paper start
-+    @Override public BlockState getType(int x, int y, int z) {
++    @Override
++    public BlockState getBlockState(int x, int y, int z) {
 +        return Blocks.VOID_AIR.defaultBlockState();
 +    }
 +    // Paper end
@@ -82,8 +79,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          return this.wrapped.getBlockState(pos);
      }
 +    // Paper start
-+    public final BlockState getType(final int x, final int y, final int z) {
-+        return this.wrapped.getBlockData(x, y, z);
++    @Override
++    public final BlockState getBlockState(final int x, final int y, final int z) {
++        return this.wrapped.getBlockStateFinal(x, y, z);
 +    }
 +    // Paper end
  
@@ -103,16 +101,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -        int i = pos.getX();
 -        int j = pos.getY();
 -        int k = pos.getZ();
-+        return this.getBlockData(pos.getX(), pos.getY(), pos.getZ());
++        return this.getBlockStateFinal(pos.getX(), pos.getY(), pos.getZ());
 +    }
 +
-+    public BlockState getType(final int x, final int y, final int z) {
-+        return this.getBlockData(x, y, z);
++    @Override
++    public BlockState getBlockState(final int x, final int y, final int z) {
++        return this.getBlockStateFinal(x, y, z);
 +    }
-+    public final BlockState getBlockData(final int x, final int y, final int z) {
++    public final BlockState getBlockStateFinal(final int x, final int y, final int z) {
 +        // Method body / logic copied from below
 +        final int i = this.getSectionIndex(y);
-+        if (i < 0 || i >= this.sections.length || this.sections[i] == null || this.sections[i].nonEmptyBlockCount == 0) {
++        if (i < 0 || i >= this.sections.length || this.sections[i].nonEmptyBlockCount == 0 || this.sections[i].hasOnlyAir()) {
 +            return Blocks.AIR.defaultBlockState();
 +        }
 +        // Inlined ChunkSection.getType() and DataPaletteBlock.a(int,int,int)
@@ -120,7 +119,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
 +    }
 +
-+    public BlockState getBlockData_unused(int i, int j, int k) {
++    public BlockState getBlockState_unused(int i, int j, int k) {
 +        // Paper end
          if (this.level.isDebug()) {
              BlockState iblockdata = null;
@@ -149,9 +148,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -        int i = pos.getY();
 -        if (this.isOutsideBuildHeight(i)) {
 +        // Paper start
-+        return getType(pos.getX(), pos.getY(), pos.getZ());
++        return getBlockState(pos.getX(), pos.getY(), pos.getZ());
 +    }
-+    public BlockState getType(final int x, final int y, final int z) {
++    public BlockState getBlockState(final int x, final int y, final int z) {
 +        if (this.isOutsideBuildHeight(y)) {
              return Blocks.VOID_AIR.defaultBlockState();
          } else {
