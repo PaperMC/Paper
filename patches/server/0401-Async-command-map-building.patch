@@ -5,7 +5,7 @@ Subject: [PATCH] Async command map building
 
 
 diff --git a/src/main/java/net/minecraft/commands/Commands.java b/src/main/java/net/minecraft/commands/Commands.java
-index 780f46c8fdbaafaca6babfa34ebd97f420d0d612..07c4d909324c8aad3a8c5d27811e2c28fe7a91f3 100644
+index 780f46c8fdbaafaca6babfa34ebd97f420d0d612..1140325637868d60b80394016d936759b1edded1 100644
 --- a/src/main/java/net/minecraft/commands/Commands.java
 +++ b/src/main/java/net/minecraft/commands/Commands.java
 @@ -29,6 +29,7 @@ import net.minecraft.network.chat.MutableComponent;
@@ -16,14 +16,12 @@ index 780f46c8fdbaafaca6babfa34ebd97f420d0d612..07c4d909324c8aad3a8c5d27811e2c28
  import net.minecraft.server.commands.AdvancementCommands;
  import net.minecraft.server.commands.AttributeCommand;
  import net.minecraft.server.commands.BanIpCommands;
-@@ -335,6 +336,14 @@ public class Commands {
+@@ -335,6 +336,12 @@ public class Commands {
          if ( org.spigotmc.SpigotConfig.tabComplete < 0 ) return; // Spigot
          // CraftBukkit start
          // Register Vanilla commands into builtRoot as before
 +        // Paper start - Async command map building
-+        java.util.concurrent.ForkJoinPool.commonPool().execute(() -> {
-+            sendAsync(player);
-+        });
++        net.minecraft.server.MCUtil.scheduleAsyncTask(() -> this.sendAsync(player));
 +    }
 +
 +    private void sendAsync(ServerPlayer player) {
@@ -31,7 +29,7 @@ index 780f46c8fdbaafaca6babfa34ebd97f420d0d612..07c4d909324c8aad3a8c5d27811e2c28
          Map<CommandNode<CommandSourceStack>, CommandNode<SharedSuggestionProvider>> map = Maps.newIdentityHashMap(); // Use identity to prevent aliasing issues
          RootCommandNode vanillaRoot = new RootCommandNode();
  
-@@ -352,7 +361,14 @@ public class Commands {
+@@ -352,7 +359,14 @@ public class Commands {
          for (CommandNode node : rootcommandnode.getChildren()) {
              bukkit.add(node.getName());
          }
