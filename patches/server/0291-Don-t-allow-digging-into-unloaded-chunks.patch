@@ -5,7 +5,7 @@ Subject: [PATCH] Don't allow digging into unloaded chunks
 
 
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java b/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
-index 1d1f355a49e2324902feee10c1717fd772e359c6..44e5ab0b545de41b937c7ce304ce643f78a43734 100644
+index 1d1f355a49e2324902feee10c1717fd772e359c6..d0b54ebc05cac6535a023709c76efd802f7150f9 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
 @@ -118,8 +118,8 @@ public class ServerPlayerGameMode {
@@ -14,7 +14,7 @@ index 1d1f355a49e2324902feee10c1717fd772e359c6..44e5ab0b545de41b937c7ce304ce643f
          if (this.hasDelayedDestroy) {
 -            iblockdata = this.level.getBlockState(this.delayedDestroyPos);
 -            if (iblockdata.isAir()) {
-+            iblockdata = this.level.getTypeIfLoaded(this.delayedDestroyPos); // Paper
++            iblockdata = this.level.getBlockStateIfLoaded(this.delayedDestroyPos); // Paper
 +            if (iblockdata == null || iblockdata.isAir()) { // Paper
                  this.hasDelayedDestroy = false;
              } else {
@@ -25,7 +25,7 @@ index 1d1f355a49e2324902feee10c1717fd772e359c6..44e5ab0b545de41b937c7ce304ce643f
          } else if (this.isDestroyingBlock) {
 -            iblockdata = this.level.getBlockState(this.destroyPos);
 +            // Paper start - don't want to do same logic as above, return instead
-+            iblockdata = this.level.getTypeIfLoaded(this.destroyPos);
++            iblockdata = this.level.getBlockStateIfLoaded(this.destroyPos);
 +            if (iblockdata == null) {
 +                this.isDestroyingBlock = false;
 +                return;
@@ -51,7 +51,7 @@ index 1d1f355a49e2324902feee10c1717fd772e359c6..44e5ab0b545de41b937c7ce304ce643f
                      ServerPlayerGameMode.LOGGER.debug("Mismatch in destroy block pos: {} {}", this.destroyPos, pos); // CraftBukkit - SPIGOT-5457 sent by client when interact event cancelled
 -                    this.level.destroyBlockProgress(this.player.getId(), this.destroyPos, -1);
 -                    this.player.connection.send(new ClientboundBlockBreakAckPacket(this.destroyPos, this.level.getBlockState(this.destroyPos), action, true, "aborted mismatched destroying"));
-+                    BlockState type = this.level.getTypeIfLoaded(this.destroyPos); // Paper - don't load unloaded chunks for stale records here
++                    BlockState type = this.level.getBlockStateIfLoaded(this.destroyPos); // Paper - don't load unloaded chunks for stale records here
 +                    if (type != null) this.level.destroyBlockProgress(this.player.getId(), this.destroyPos, -1); // Paper
 +                    if (type != null) this.player.connection.send(new ClientboundBlockBreakAckPacket(this.destroyPos, type, action, true, "aborted mismatched destroying")); // Paper
 +                    this.destroyPos = BlockPos.ZERO; // Paper
@@ -59,7 +59,7 @@ index 1d1f355a49e2324902feee10c1717fd772e359c6..44e5ab0b545de41b937c7ce304ce643f
  
                  this.level.destroyBlockProgress(this.player.getId(), pos, -1);
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index 26ca0db447a76c3028dacf96bf9afd3b735bda74..25ec1613f4c9ecc59ec5e27717ff7de9ad9e4398 100644
+index ab5a6bba572bc27dbf9473cf7042c4cdef6843dc..7960a57c25dc80c6ca762e65c3ef82065cce2b7a 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 @@ -1550,7 +1550,12 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
