@@ -1,0 +1,36 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: "Rafael S. M. Santos" <eu@rafaelsms.com>
+Date: Sun, 5 Dec 2021 18:51:24 -0300
+Subject: [PATCH] Cache GameRule.Key hashCode
+
+It is expensive since it is calculated from the entire String and
+the value is used on every Map retrival (very frequently for
+spawning and fluid ticking)
+
+diff --git a/src/main/java/net/minecraft/world/level/GameRules.java b/src/main/java/net/minecraft/world/level/GameRules.java
+index e7ca5d6fb8922e7e8065864f736b06056be080a0..891ed62cfa1d916ee900119d3679602421440237 100644
+--- a/src/main/java/net/minecraft/world/level/GameRules.java
++++ b/src/main/java/net/minecraft/world/level/GameRules.java
+@@ -179,11 +179,13 @@ public class GameRules {
+     public static final class Key<T extends GameRules.Value<T>> {
+ 
+         final String id;
++        private final int hashCode;
+         private final GameRules.Category category;
+ 
+         public Key(String name, GameRules.Category category) {
+             this.id = name;
+             this.category = category;
++            this.hashCode = this.id.hashCode(); // Paper - cache original hashCode function
+         }
+ 
+         public String toString() {
+@@ -195,7 +197,7 @@ public class GameRules {
+         }
+ 
+         public int hashCode() {
+-            return this.id.hashCode();
++            return hashCode; // Paper
+         }
+ 
+         public String getId() {
