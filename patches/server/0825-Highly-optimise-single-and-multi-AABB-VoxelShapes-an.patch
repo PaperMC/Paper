@@ -70,7 +70,7 @@ index be668387f65a633c6ac497fca632a4767a1bf3a2..e08f4e39db4ee3fed62e37364d17dcc5
  }
 diff --git a/src/main/java/io/papermc/paper/util/CollisionUtil.java b/src/main/java/io/papermc/paper/util/CollisionUtil.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..58629451977c89db2fa895bde946135784a0d8bc
+index 0000000000000000000000000000000000000000..594cb62fffcd5458ad8f381cf1c784583ed7cbca
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/util/CollisionUtil.java
 @@ -0,0 +1,639 @@
@@ -380,7 +380,7 @@ index 0000000000000000000000000000000000000000..58629451977c89db2fa895bde9461357
 +
 +            return ret;
 +        } else {
-+            final List<AABB> boxes = shape.toAabbs();
++            final List<AABB> boxes = shape.toAabbsStrict();
 +
 +            boolean ret = false;
 +
@@ -416,7 +416,7 @@ index 0000000000000000000000000000000000000000..58629451977c89db2fa895bde9461357
 +                }
 +            }
 +        } else {
-+            final List<AABB> boxes = shape.toAabbs();
++            final List<AABB> boxes = shape.toAabbsStrict();
 +            for (int i = 0, len = boxes.size(); i < len; ++i) {
 +                final AABB box = boxes.get(i);
 +                if (!isEmpty(box)) {
@@ -715,10 +715,10 @@ index 0000000000000000000000000000000000000000..58629451977c89db2fa895bde9461357
 +}
 diff --git a/src/main/java/io/papermc/paper/voxel/AABBVoxelShape.java b/src/main/java/io/papermc/paper/voxel/AABBVoxelShape.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..d67a40e7be030142443680c89e1763fc9ecdfe0a
+index 0000000000000000000000000000000000000000..86a80542b5714429f5ca3708d87d42d1a6f2c106
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/voxel/AABBVoxelShape.java
-@@ -0,0 +1,200 @@
+@@ -0,0 +1,205 @@
 +package io.papermc.paper.voxel;
 +
 +import io.papermc.paper.util.CollisionUtil;
@@ -842,6 +842,11 @@ index 0000000000000000000000000000000000000000..d67a40e7be030142443680c89e1763fc
 +        List<AABB> ret = new ArrayList<>(1);
 +        ret.add(this.aabb);
 +        return ret;
++    }
++
++    @Override
++    public List<AABB> toAabbsStrict() {
++        return this.toAabbs();
 +    }
 +
 +    @Override
@@ -1251,7 +1256,7 @@ index 120498a39b7ca7aee9763084507508d4a1c425aa..68cc6f2a78a06293a29317fda72ab3ee
          this((double)pos.getX(), (double)pos.getY(), (double)pos.getZ(), (double)(pos.getX() + 1), (double)(pos.getY() + 1), (double)(pos.getZ() + 1));
      }
 diff --git a/src/main/java/net/minecraft/world/phys/shapes/ArrayVoxelShape.java b/src/main/java/net/minecraft/world/phys/shapes/ArrayVoxelShape.java
-index cdb785619b4fce3cb7f0b4a996a15fa43de5f4d1..6db47035fe940ef1f78a14cae6103e22aa1a184e 100644
+index cdb785619b4fce3cb7f0b4a996a15fa43de5f4d1..2f0ba8e136553528b7a73f40e9d28e99abacca56 100644
 --- a/src/main/java/net/minecraft/world/phys/shapes/ArrayVoxelShape.java
 +++ b/src/main/java/net/minecraft/world/phys/shapes/ArrayVoxelShape.java
 @@ -6,6 +6,9 @@ import java.util.Arrays;
@@ -1269,19 +1274,21 @@ index cdb785619b4fce3cb7f0b4a996a15fa43de5f4d1..6db47035fe940ef1f78a14cae6103e22
  
      ArrayVoxelShape(DiscreteVoxelShape shape, DoubleList xPoints, DoubleList yPoints, DoubleList zPoints) {
 +        // Paper start - optimise multi-aabb shapes
-+        this(shape, xPoints, yPoints, zPoints, null, 0.0, 0.0, 0.0);
++        this(shape, xPoints, yPoints, zPoints, null, null, 0.0, 0.0, 0.0);
 +    }
-+    ArrayVoxelShape(DiscreteVoxelShape shape, DoubleList xPoints, DoubleList yPoints, DoubleList zPoints, net.minecraft.world.phys.AABB[] boundingBoxesRepresentation, double offsetX, double offsetY, double offsetZ) {
++    ArrayVoxelShape(DiscreteVoxelShape shape, DoubleList xPoints, DoubleList yPoints, DoubleList zPoints, net.minecraft.world.phys.AABB[] toAABBs, net.minecraft.world.phys.AABB[] boundingBoxesRepresentation, double offsetX, double offsetY, double offsetZ) {
 +        // Paper end - optimise multi-aabb shapes
          super(shape);
          int i = shape.getXSize() + 1;
          int j = shape.getYSize() + 1;
-@@ -27,6 +35,12 @@ public class ArrayVoxelShape extends VoxelShape {
+@@ -27,6 +35,14 @@ public class ArrayVoxelShape extends VoxelShape {
          } else {
              throw (IllegalArgumentException)Util.pauseInIde(new IllegalArgumentException("Lengths of point arrays must be consistent with the size of the VoxelShape."));
          }
 +        // Paper start - optimise multi-aabb shapes
-+        this.boundingBoxesRepresentation = boundingBoxesRepresentation == null ? this.toAabbs().toArray(EMPTY) : boundingBoxesRepresentation;
++
++        this.toAABBs = toAABBs == null ? this.toAabbs().toArray(EMPTY) : toAABBs;
++        this.boundingBoxesRepresentation = boundingBoxesRepresentation == null ? this.toAabbsStrict().toArray(EMPTY) : boundingBoxesRepresentation;
 +        this.offsetX = offsetX;
 +        this.offsetY = offsetY;
 +        this.offsetZ = offsetZ;
@@ -1289,7 +1296,7 @@ index cdb785619b4fce3cb7f0b4a996a15fa43de5f4d1..6db47035fe940ef1f78a14cae6103e22
      }
  
      @Override
-@@ -42,4 +56,152 @@ public class ArrayVoxelShape extends VoxelShape {
+@@ -42,4 +58,171 @@ public class ArrayVoxelShape extends VoxelShape {
              throw new IllegalArgumentException();
          }
      }
@@ -1318,6 +1325,7 @@ index cdb785619b4fce3cb7f0b4a996a15fa43de5f4d1..6db47035fe940ef1f78a14cae6103e22
 +
 +    static final net.minecraft.world.phys.AABB[] EMPTY = new net.minecraft.world.phys.AABB[0];
 +    final net.minecraft.world.phys.AABB[] boundingBoxesRepresentation;
++    final net.minecraft.world.phys.AABB[] toAABBs;
 +
 +    final double offsetX;
 +    final double offsetY;
@@ -1341,8 +1349,26 @@ index cdb785619b4fce3cb7f0b4a996a15fa43de5f4d1..6db47035fe940ef1f78a14cae6103e22
 +
 +    @Override
 +    public java.util.List<net.minecraft.world.phys.AABB> toAabbs() {
-+        if (this.boundingBoxesRepresentation == null) {
++        if (this.toAABBs == null) {
 +            return super.toAabbs();
++        }
++        java.util.List<net.minecraft.world.phys.AABB> ret = new java.util.ArrayList<>(this.toAABBs.length);
++
++        double offX = this.offsetX;
++        double offY = this.offsetY;
++        double offZ = this.offsetZ;
++
++        for (net.minecraft.world.phys.AABB boundingBox : this.toAABBs) {
++            ret.add(boundingBox.move(offX, offY, offZ));
++        }
++
++        return ret;
++    }
++
++    @Override
++    public java.util.List<net.minecraft.world.phys.AABB> toAabbsStrict() {
++        if (this.boundingBoxesRepresentation == null) {
++            return super.toAabbsStrict();
 +        }
 +        java.util.List<net.minecraft.world.phys.AABB> ret = new java.util.ArrayList<>(this.boundingBoxesRepresentation.length);
 +
@@ -1383,7 +1409,7 @@ index cdb785619b4fce3cb7f0b4a996a15fa43de5f4d1..6db47035fe940ef1f78a14cae6103e22
 +            zPoints = new DoubleListOffsetExposed(getList(this.zs), offsetZ = z);
 +        }
 +
-+        return new ArrayVoxelShape(this.shape, xPoints, yPoints, zPoints, this.boundingBoxesRepresentation, offsetX, offsetY, offsetZ);
++        return new ArrayVoxelShape(this.shape, xPoints, yPoints, zPoints, this.toAABBs, this.boundingBoxesRepresentation, offsetX, offsetY, offsetZ);
 +    }
 +
 +    @Override
@@ -1443,7 +1469,7 @@ index cdb785619b4fce3cb7f0b4a996a15fa43de5f4d1..6db47035fe940ef1f78a14cae6103e22
 +
  }
 diff --git a/src/main/java/net/minecraft/world/phys/shapes/Shapes.java b/src/main/java/net/minecraft/world/phys/shapes/Shapes.java
-index 9176735c08a75854209f24113b0e78332249dc4d..7213acf7ac083e37888eeba28f740c31f1fa0d34 100644
+index 9176735c08a75854209f24113b0e78332249dc4d..e28cff4e831c28b2f6c0a818330e4a2bd6657334 100644
 --- a/src/main/java/net/minecraft/world/phys/shapes/Shapes.java
 +++ b/src/main/java/net/minecraft/world/phys/shapes/Shapes.java
 @@ -19,16 +19,17 @@ public final class Shapes {
@@ -1466,40 +1492,16 @@ index 9176735c08a75854209f24113b0e78332249dc4d..7213acf7ac083e37888eeba28f740c31
      }
  
      public static VoxelShape box(double minX, double minY, double minZ, double maxX, double maxY, double maxZ) {
-@@ -40,30 +41,11 @@ public final class Shapes {
-     }
- 
-     public static VoxelShape create(double minX, double minY, double minZ, double maxX, double maxY, double maxZ) {
--        if (!(maxX - minX < 1.0E-7D) && !(maxY - minY < 1.0E-7D) && !(maxZ - minZ < 1.0E-7D)) {
--            int i = findBits(minX, maxX);
--            int j = findBits(minY, maxY);
--            int k = findBits(minZ, maxZ);
--            if (i >= 0 && j >= 0 && k >= 0) {
--                if (i == 0 && j == 0 && k == 0) {
--                    return block();
--                } else {
--                    int l = 1 << i;
--                    int m = 1 << j;
--                    int n = 1 << k;
--                    BitSetDiscreteVoxelShape bitSetDiscreteVoxelShape = BitSetDiscreteVoxelShape.withFilledBounds(l, m, n, (int)Math.round(minX * (double)l), (int)Math.round(minY * (double)m), (int)Math.round(minZ * (double)n), (int)Math.round(maxX * (double)l), (int)Math.round(maxY * (double)m), (int)Math.round(maxZ * (double)n));
--                    return new CubeVoxelShape(bitSetDiscreteVoxelShape);
--                }
--            } else {
+@@ -55,7 +56,7 @@ public final class Shapes {
+                     return new CubeVoxelShape(bitSetDiscreteVoxelShape);
+                 }
+             } else {
 -                return new ArrayVoxelShape(BLOCK.shape, (DoubleList)DoubleArrayList.wrap(new double[]{minX, maxX}), (DoubleList)DoubleArrayList.wrap(new double[]{minY, maxY}), (DoubleList)DoubleArrayList.wrap(new double[]{minZ, maxZ}));
--            }
--        } else {
--            return empty();
--        }
-+        return new io.papermc.paper.voxel.AABBVoxelShape(new AABB(minX, minY, minZ, maxX, maxY, maxZ)); // Paper
-     }
- 
-     public static VoxelShape create(AABB box) {
--        return create(box.minX, box.minY, box.minZ, box.maxX, box.maxY, box.maxZ);
-+        return new io.papermc.paper.voxel.AABBVoxelShape(box); // Paper
-     }
- 
-     @VisibleForTesting
-@@ -125,6 +107,20 @@ public final class Shapes {
++                return new io.papermc.paper.voxel.AABBVoxelShape(new AABB(minX, minY, minZ, maxX, maxY, maxZ)); // Paper
+             }
+         } else {
+             return empty();
+@@ -125,6 +126,20 @@ public final class Shapes {
      }
  
      public static boolean joinIsNotEmpty(VoxelShape shape1, VoxelShape shape2, BooleanOp predicate) {
@@ -1520,7 +1522,7 @@ index 9176735c08a75854209f24113b0e78332249dc4d..7213acf7ac083e37888eeba28f740c31
          if (predicate.apply(false, false)) {
              throw (IllegalArgumentException)Util.pauseInIde(new IllegalArgumentException());
          } else {
-@@ -196,6 +192,43 @@ public final class Shapes {
+@@ -196,6 +211,43 @@ public final class Shapes {
      }
  
      public static VoxelShape getFaceShape(VoxelShape shape, Direction direction) {
@@ -1564,7 +1566,7 @@ index 9176735c08a75854209f24113b0e78332249dc4d..7213acf7ac083e37888eeba28f740c31
          if (shape == block()) {
              return block();
          } else {
-@@ -210,7 +243,7 @@ public final class Shapes {
+@@ -210,7 +262,7 @@ public final class Shapes {
                  i = 0;
              }
  
@@ -1573,7 +1575,7 @@ index 9176735c08a75854209f24113b0e78332249dc4d..7213acf7ac083e37888eeba28f740c31
          }
      }
  
-@@ -235,6 +268,53 @@ public final class Shapes {
+@@ -235,6 +287,53 @@ public final class Shapes {
      }
  
      public static boolean faceShapeOccludes(VoxelShape one, VoxelShape two) {
@@ -1628,7 +1630,7 @@ index 9176735c08a75854209f24113b0e78332249dc4d..7213acf7ac083e37888eeba28f740c31
              if (one.isEmpty() && two.isEmpty()) {
                  return false;
 diff --git a/src/main/java/net/minecraft/world/phys/shapes/VoxelShape.java b/src/main/java/net/minecraft/world/phys/shapes/VoxelShape.java
-index c4ca051720f790f5b8eb860b14e268de8557454d..2182afd1b95acf14c55bddfeec17dae0a63e1f00 100644
+index c4ca051720f790f5b8eb860b14e268de8557454d..c01031c5f3f2591515d89674ff5329afa96653dd 100644
 --- a/src/main/java/net/minecraft/world/phys/shapes/VoxelShape.java
 +++ b/src/main/java/net/minecraft/world/phys/shapes/VoxelShape.java
 @@ -16,11 +16,17 @@ import net.minecraft.world.phys.BlockHitResult;
@@ -1651,7 +1653,33 @@ index c4ca051720f790f5b8eb860b14e268de8557454d..2182afd1b95acf14c55bddfeec17dae0
          this.shape = voxels;
      }
  
-@@ -163,7 +169,7 @@ public abstract class VoxelShape {
+@@ -79,6 +85,25 @@ public abstract class VoxelShape {
+         }, true);
+     }
+ 
++    // Paper start - strict AABB retrieval
++    public void forAllBoxesStrict(Shapes.DoubleLineConsumer doubleLineConsumer) {
++        DoubleList doubleList = this.getCoords(Direction.Axis.X);
++        DoubleList doubleList2 = this.getCoords(Direction.Axis.Y);
++        DoubleList doubleList3 = this.getCoords(Direction.Axis.Z);
++        this.shape.forAllBoxes((i, j, k, l, m, n) -> {
++            doubleLineConsumer.consume(doubleList.getDouble(i), doubleList2.getDouble(j), doubleList3.getDouble(k), doubleList.getDouble(l), doubleList2.getDouble(m), doubleList3.getDouble(n));
++        }, false);
++    }
++
++    public List<AABB> toAabbsStrict() {
++        List<AABB> list = Lists.newArrayList();
++        this.forAllBoxesStrict((x1, y1, z1, x2, y2, z2) -> {
++            list.add(new AABB(x1, y1, z1, x2, y2, z2));
++        });
++        return list;
++    }
++    // Paper end - strict AABB retrieval
++
+     public List<AABB> toAabbs() {
+         List<AABB> list = Lists.newArrayList();
+         this.forAllBoxes((x1, y1, z1, x2, y2, z2) -> {
+@@ -163,7 +188,7 @@ public abstract class VoxelShape {
          }
      }
  
