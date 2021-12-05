@@ -1,0 +1,50 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Shane Freeder <theboyetronic@gmail.com>
+Date: Sun, 5 Dec 2021 15:19:10 +0000
+Subject: [PATCH] Revert "#686: Fix contains for default section generating
+ real sections"
+
+This commit causes an NPE when getting from the config in some states,
+given upstream issue and PR in the works, I have 0 inclination to debug
+this
+
+This reverts commit e4358b8217126bbcc3a38b0d17097ad5ab87c50a.
+
+diff --git a/src/main/java/org/bukkit/configuration/MemorySection.java b/src/main/java/org/bukkit/configuration/MemorySection.java
+index 09f1debef5fad469a05a0d97b740a7310890fd64..90cc523f658f3632d4dbdec3a5d2ce7c3c02341f 100644
+--- a/src/main/java/org/bukkit/configuration/MemorySection.java
++++ b/src/main/java/org/bukkit/configuration/MemorySection.java
+@@ -251,10 +251,10 @@ public class MemorySection implements ConfigurationSection {
+         int i1 = -1, i2;
+         ConfigurationSection section = this;
+         while ((i1 = path.indexOf(separator, i2 = i1 + 1)) != -1) {
+-            if (section == null || !section.contains(path.substring(i2, i1), true)) {
++            section = section.getConfigurationSection(path.substring(i2, i1));
++            if (section == null) {
+                 return def;
+             }
+-            section = section.getConfigurationSection(path.substring(i2, i1));
+         }
+ 
+         String key = path.substring(i2);
+diff --git a/src/test/java/org/bukkit/configuration/ConfigurationSectionTest.java b/src/test/java/org/bukkit/configuration/ConfigurationSectionTest.java
+index bfaacbaa33d05042eb5e8eea46e6a884d40e1aae..1e529928393e1554bf02d2bfb1e1c3c7e4def07e 100644
+--- a/src/test/java/org/bukkit/configuration/ConfigurationSectionTest.java
++++ b/src/test/java/org/bukkit/configuration/ConfigurationSectionTest.java
+@@ -110,16 +110,6 @@ public abstract class ConfigurationSectionTest {
+         assertTrue(section.contains("doenst-exist-two", false));
+     }
+ 
+-    @Test
+-    public void testContainsDoesNotCreateSection() {
+-        ConfigurationSection section = getConfigurationSection();
+-        section.addDefault("notExistingSection.Value", "Test String");
+-
+-        assertFalse(section.contains("notExistingSection", true));
+-        assertFalse(section.contains("notExistingSection.Value", true));
+-        assertFalse(section.contains("notExistingSection", true));
+-    }
+-
+     @Test
+     public void testIsSet() {
+         ConfigurationSection section = getConfigurationSection();
