@@ -168,10 +168,10 @@ index 589527215b10aa848a079b964e748c8c2e6137a1..a6e036165ce1a387195cf3db190a42c5
  
          return itemstack;
 diff --git a/src/main/java/net/minecraft/world/inventory/MerchantResultSlot.java b/src/main/java/net/minecraft/world/inventory/MerchantResultSlot.java
-index 74b28315197b81f80334ae6023113904e4fac4c3..9e65c9535e01b3c858050a7881aff3f99edbeaac 100644
+index 74b28315197b81f80334ae6023113904e4fac4c3..1fb70ac171788d099e220b83421958976281f127 100644
 --- a/src/main/java/net/minecraft/world/inventory/MerchantResultSlot.java
 +++ b/src/main/java/net/minecraft/world/inventory/MerchantResultSlot.java
-@@ -47,13 +47,30 @@ public class MerchantResultSlot extends Slot {
+@@ -47,13 +47,35 @@ public class MerchantResultSlot extends Slot {
  
      @Override
      public void onTake(Player player, ItemStack stack) {
@@ -180,20 +180,25 @@ index 74b28315197b81f80334ae6023113904e4fac4c3..9e65c9535e01b3c858050a7881aff3f9
          MerchantOffer merchantOffer = this.slots.getActiveOffer();
 +        // Paper start
 +        io.papermc.paper.event.player.PlayerPurchaseEvent event = null;
-+        if (this.merchant instanceof net.minecraft.world.entity.npc.AbstractVillager && this.merchant.getTradingPlayer().getBukkitEntity() instanceof org.bukkit.entity.Player) {
-+            event = new io.papermc.paper.event.player.PlayerTradeEvent((org.bukkit.entity.Player) this.merchant.getTradingPlayer().getBukkitEntity(), (org.bukkit.entity.AbstractVillager) ((net.minecraft.world.entity.npc.AbstractVillager) this.merchant).getBukkitEntity(), merchantOffer.asBukkit(), true, true);
-+        } else if (this.merchant instanceof org.bukkit.craftbukkit.inventory.CraftMerchantCustom.MinecraftMerchant && this.merchant.getTradingPlayer().getBukkitEntity() instanceof org.bukkit.entity.Player) {
-+            event = new io.papermc.paper.event.player.PlayerPurchaseEvent((org.bukkit.entity.Player) this.merchant.getTradingPlayer().getBukkitEntity(), merchantOffer.asBukkit(), false, true);
-+        }
-+        if (event != null) {
-+            if (!event.callEvent()) {
-+                stack.setCount(0);
-+                event.getPlayer().updateInventory();
++        if (merchantOffer != null) {
++            if (this.merchant instanceof net.minecraft.world.entity.npc.AbstractVillager && this.merchant.getTradingPlayer().getBukkitEntity() instanceof org.bukkit.entity.Player) {
++                event = new io.papermc.paper.event.player.PlayerTradeEvent((org.bukkit.entity.Player) this.merchant.getTradingPlayer().getBukkitEntity(), (org.bukkit.entity.AbstractVillager) ((net.minecraft.world.entity.npc.AbstractVillager) this.merchant).getBukkitEntity(), merchantOffer.asBukkit(), true, true);
++            } else if (this.merchant instanceof org.bukkit.craftbukkit.inventory.CraftMerchantCustom.MinecraftMerchant && this.merchant.getTradingPlayer().getBukkitEntity() instanceof org.bukkit.entity.Player) {
++                event = new io.papermc.paper.event.player.PlayerPurchaseEvent((org.bukkit.entity.Player) this.merchant.getTradingPlayer().getBukkitEntity(), merchantOffer.asBukkit(), false, true);
++            }
++            if (event != null) {
++                if (!event.callEvent()) {
++                    stack.setCount(0);
++                    event.getPlayer().updateInventory();
++                    return;
++                }
++                merchantOffer = org.bukkit.craftbukkit.inventory.CraftMerchantRecipe.fromBukkit(event.getTrade()).toMinecraft();
++            } else {
++                // TODO: Check this, I don't see how this would be hit and the logic below should be fired, warn for missing cases?
 +                return;
 +            }
-+            merchantOffer = org.bukkit.craftbukkit.inventory.CraftMerchantRecipe.fromBukkit(event.getTrade()).toMinecraft();
++            this.checkTakeAchievements(stack);
 +        }
-+        this.checkTakeAchievements(stack);
 +        // Paper end
          if (merchantOffer != null) {
              ItemStack itemStack = this.slots.getItem(0);
