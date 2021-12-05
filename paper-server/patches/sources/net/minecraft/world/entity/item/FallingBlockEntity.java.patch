@@ -12,7 +12,15 @@
  public class FallingBlockEntity extends Entity {
  
      private static final Logger LOGGER = LogUtils.getLogger();
-@@ -87,10 +92,17 @@
+@@ -66,6 +71,7 @@
+     public CompoundTag blockData;
+     public boolean forceTickAfterTeleportToDuplicate;
+     protected static final EntityDataAccessor<BlockPos> DATA_START_POS = SynchedEntityData.defineId(FallingBlockEntity.class, EntityDataSerializers.BLOCK_POS);
++    public boolean autoExpire = true; // Paper - Expand FallingBlock API
+ 
+     public FallingBlockEntity(EntityType<? extends FallingBlockEntity> type, Level world) {
+         super(type, world);
+@@ -87,10 +93,17 @@
      }
  
      public static FallingBlockEntity fall(Level world, BlockPos pos, BlockState state) {
@@ -33,7 +41,7 @@
          return entityfallingblock;
      }
  
-@@ -139,7 +151,7 @@
+@@ -139,7 +152,7 @@
      @Override
      public void tick() {
          if (this.blockState.isAir()) {
@@ -42,7 +50,7 @@
          } else {
              Block block = this.blockState.getBlock();
  
-@@ -147,6 +159,16 @@
+@@ -147,6 +160,16 @@
              this.applyGravity();
              this.move(MoverType.SELF, this.getDeltaMovement());
              this.applyEffectsFromBlocks();
@@ -59,7 +67,13 @@
              this.handlePortal();
              Level world = this.level();
  
-@@ -174,7 +196,7 @@
+@@ -169,12 +192,12 @@
+                     }
+ 
+                     if (!this.onGround() && !flag1) {
+-                        if (this.time > 100 && (blockposition.getY() <= this.level().getMinY() || blockposition.getY() > this.level().getMaxY()) || this.time > 600) {
++                        if ((this.time > 100 && autoExpire) && (blockposition.getY() <= this.level().getMinY() || blockposition.getY() > this.level().getMaxY()) || (this.time > 600 && autoExpire)) { // Paper - Expand FallingBlock API
+                             if (this.dropItem && worldserver.getGameRules().getBoolean(GameRules.RULE_DOENTITYDROPS)) {
                                  this.spawnAtLocation(worldserver, (ItemLike) block);
                              }
  
@@ -68,7 +82,7 @@
                          }
                      } else {
                          BlockState iblockdata = this.level().getBlockState(blockposition);
-@@ -191,9 +213,15 @@
+@@ -191,9 +214,15 @@
                                          this.blockState = (BlockState) this.blockState.setValue(BlockStateProperties.WATERLOGGED, true);
                                      }
  
@@ -85,7 +99,7 @@
                                          if (block instanceof Fallable) {
                                              ((Fallable) block).onLand(this.level(), blockposition, this.blockState, iblockdata, this);
                                          }
-@@ -221,19 +249,19 @@
+@@ -221,19 +250,19 @@
                                              }
                                          }
                                      } else if (this.dropItem && worldserver.getGameRules().getBoolean(GameRules.RULE_DOENTITYDROPS)) {
@@ -108,7 +122,15 @@
                                  this.callOnBrokenAfterFall(block, blockposition);
                              }
                          }
-@@ -328,7 +356,7 @@
+@@ -310,6 +339,7 @@
+         }
+ 
+         nbt.putBoolean("CancelDrop", this.cancelDrop);
++        if (!autoExpire) {nbt.putBoolean("Paper.AutoExpire", false);} // Paper - Expand FallingBlock API
+     }
+ 
+     @Override
+@@ -328,7 +358,7 @@
              this.dropItem = nbt.getBoolean("DropItem");
          }
  
@@ -117,3 +139,15 @@
              this.blockData = nbt.getCompound("TileEntityData").copy();
          }
  
+@@ -337,6 +367,11 @@
+             this.blockState = Blocks.SAND.defaultBlockState();
+         }
+ 
++        // Paper start - Expand FallingBlock API
++         if (nbt.contains("Paper.AutoExpire")) {
++            this.autoExpire = nbt.getBoolean("Paper.AutoExpire");
++         }
++        // Paper end - Expand FallingBlock API
+     }
+ 
+     public void setHurtsEntities(float fallHurtAmount, int fallHurtMax) {
