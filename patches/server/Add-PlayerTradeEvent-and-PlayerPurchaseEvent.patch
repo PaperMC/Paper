@@ -15,11 +15,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
 +    // Paper start
 +    @Override
-+    public void processTrade(MerchantOffer recipe, io.papermc.paper.event.player.PlayerPurchaseEvent event) { // The MerchantRecipe passed in here is the one set by the PlayerPurchaseEvent
-+        if (event.willIncreaseTradeUses()) {
++    public void processTrade(MerchantOffer recipe, @Nullable io.papermc.paper.event.player.PlayerPurchaseEvent event) { // The MerchantRecipe passed in here is the one set by the PlayerPurchaseEvent
++        if (event == null || event.willIncreaseTradeUses()) {
 +            recipe.increaseUses();
 +        }
-+        if (event.isRewardingExp()) {
++        if (event == null || event.isRewardingExp()) {
 +            this.rewardTradeXp(recipe);
 +        }
 +        this.notifyTrade(recipe);
@@ -180,11 +180,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          MerchantOffer merchantOffer = this.slots.getActiveOffer();
 +        // Paper start
 +        io.papermc.paper.event.player.PlayerPurchaseEvent event = null;
-+        if (merchantOffer != null) {
-+            if (this.merchant instanceof net.minecraft.world.entity.npc.AbstractVillager && this.merchant.getTradingPlayer().getBukkitEntity() instanceof org.bukkit.entity.Player) {
-+                event = new io.papermc.paper.event.player.PlayerTradeEvent((org.bukkit.entity.Player) this.merchant.getTradingPlayer().getBukkitEntity(), (org.bukkit.entity.AbstractVillager) ((net.minecraft.world.entity.npc.AbstractVillager) this.merchant).getBukkitEntity(), merchantOffer.asBukkit(), true, true);
-+            } else if (this.merchant instanceof org.bukkit.craftbukkit.inventory.CraftMerchantCustom.MinecraftMerchant && this.merchant.getTradingPlayer().getBukkitEntity() instanceof org.bukkit.entity.Player) {
-+                event = new io.papermc.paper.event.player.PlayerPurchaseEvent((org.bukkit.entity.Player) this.merchant.getTradingPlayer().getBukkitEntity(), merchantOffer.asBukkit(), false, true);
++        if (merchantOffer != null && player instanceof net.minecraft.server.level.ServerPlayer serverPlayer) {
++            if (this.merchant instanceof net.minecraft.world.entity.npc.AbstractVillager abstractVillager) {
++                event = new io.papermc.paper.event.player.PlayerTradeEvent(serverPlayer.getBukkitEntity(), (org.bukkit.entity.AbstractVillager) abstractVillager.getBukkitEntity(), merchantOffer.asBukkit(), true, true);
++            } else if (this.merchant instanceof org.bukkit.craftbukkit.inventory.CraftMerchantCustom.MinecraftMerchant) {
++                event = new io.papermc.paper.event.player.PlayerPurchaseEvent(serverPlayer.getBukkitEntity(), merchantOffer.asBukkit(), false, true);
 +            }
 +            if (event != null) {
 +                if (!event.callEvent()) {
@@ -193,12 +193,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                    return;
 +                }
 +                merchantOffer = org.bukkit.craftbukkit.inventory.CraftMerchantRecipe.fromBukkit(event.getTrade()).toMinecraft();
-+            } else {
-+                // TODO: Check this, I don't see how this would be hit and the logic below should be fired, warn for missing cases?
-+                return;
 +            }
-+            this.checkTakeAchievements(stack);
 +        }
++        this.checkTakeAchievements(stack);
 +        // Paper end
          if (merchantOffer != null) {
              ItemStack itemStack = this.slots.getItem(0);
@@ -217,7 +214,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      void overrideOffers(MerchantOffers offers);
  
-+    default void processTrade(MerchantOffer merchantRecipe, io.papermc.paper.event.player.PlayerPurchaseEvent event) { this.notifyTrade(merchantRecipe); } // Paper
++    default void processTrade(MerchantOffer merchantRecipe, @Nullable io.papermc.paper.event.player.PlayerPurchaseEvent event) { this.notifyTrade(merchantRecipe); } // Paper
      void notifyTrade(MerchantOffer offer);
  
      void notifyTradeUpdated(ItemStack stack);
@@ -231,13 +228,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
 +        // Paper start
 +        @Override
-+        public void processTrade(MerchantOffer merchantRecipe, io.papermc.paper.event.player.PlayerPurchaseEvent event) { // The MerchantRecipe passed in here is the one set by the PlayerPurchaseEvent
++        public void processTrade(MerchantOffer merchantRecipe, @javax.annotation.Nullable io.papermc.paper.event.player.PlayerPurchaseEvent event) { // The MerchantRecipe passed in here is the one set by the PlayerPurchaseEvent
 +            /** Based on {@link net.minecraft.world.entity.npc.AbstractVillager#processTrade(MerchantOffer, io.papermc.paper.event.player.PlayerPurchaseEvent)} */
 +            if (getTradingPlayer() instanceof net.minecraft.server.level.ServerPlayer) {
-+                if (event.willIncreaseTradeUses()) {
++                if (event == null || event.willIncreaseTradeUses()) {
 +                    merchantRecipe.increaseUses();
 +                }
-+                if (event.isRewardingExp()) {
++                if (event == null || event.isRewardingExp()) {
 +                    this.tradingWorld.addFreshEntity(new net.minecraft.world.entity.ExperienceOrb(tradingWorld, tradingPlayer.getX(), tradingPlayer.getY(), tradingPlayer.getZ(), merchantRecipe.getXp(), org.bukkit.entity.ExperienceOrb.SpawnReason.VILLAGER_TRADE, this.tradingPlayer, null));
 +                }
 +            }
