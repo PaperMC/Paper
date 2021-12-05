@@ -1,0 +1,39 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Alexander <alexander.neitzel@codineerdigital.com>
+Date: Sun, 5 Dec 2021 16:00:44 +0100
+Subject: [PATCH] Added TPS warning message
+
+
+diff --git a/src/main/java/org/spigotmc/WatchdogThread.java b/src/main/java/org/spigotmc/WatchdogThread.java
+index bee38307494188800886a1622fed229b88dbd8f1..25ae9f0b6bfabe610275c34ba45e533e224e945d 100644
+--- a/src/main/java/org/spigotmc/WatchdogThread.java
++++ b/src/main/java/org/spigotmc/WatchdogThread.java
+@@ -6,8 +6,10 @@ import java.lang.management.ThreadInfo;
+ import java.util.logging.Level;
+ import java.util.logging.Logger;
+ import com.destroystokyo.paper.PaperConfig;
++import net.minecraft.ChatFormatting;
+ import net.minecraft.server.MinecraftServer;
+ import org.bukkit.Bukkit;
++import org.bukkit.ChatColor;
+ 
+ public class WatchdogThread extends Thread
+ {
+@@ -146,6 +148,17 @@ public class WatchdogThread extends Thread
+             Logger log = Bukkit.getServer().getLogger();
+             long currentTime = WatchdogThread.monotonicMillis();
+             MinecraftServer server = MinecraftServer.getServer();
++
++            // Blue Bolt start - TPS warning
++            if (Bukkit.getTPS()[0] < 15) {
++                Bukkit.broadcastMessage(ChatColor.BLUE + "⚡ Blue Bolt " + ChatColor.DARK_GRAY + "» " + ChatColor.RED + ChatColor.BOLD + "The server is running at less than 15 TPS. Please consider upgrading server or restricting laggy activities.");
++            } else if (Bukkit.getTPS()[0] < 10) {
++                Bukkit.broadcastMessage(ChatColor.BLUE + "⚡ Blue Bolt " + ChatColor.DARK_GRAY + "» " + ChatColor.RED + ChatColor.BOLD + "The server is running at less than 10 TPS. Please consider upgrading server or restricting laggy activities immediately.");
++            } else if (Bukkit.getTPS()[0] < 5) {
++                Bukkit.broadcastMessage(ChatColor.BLUE + "⚡ Blue Bolt " + ChatColor.DARK_GRAY + "» " + ChatColor.RED + ChatColor.BOLD + "WARNING: Server is running at less than 5 TPS. The game is UNPLAYABLE. Fix the issue immediately or the server will stop soon.");
++            }
++            // Blue Bolt End
++
+             if ( this.lastTick != 0 && this.timeoutTime > 0 && WatchdogThread.hasStarted && (!server.isRunning() || (currentTime > this.lastTick + this.earlyWarningEvery && !DISABLE_WATCHDOG) )) // Paper - add property to disable
+             {
+                 boolean isLongTimeout = currentTime > lastTick + timeoutTime || (!server.isRunning() && !server.hasStopped() && currentTime > lastTick + 1000);
