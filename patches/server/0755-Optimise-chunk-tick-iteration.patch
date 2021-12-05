@@ -6,10 +6,10 @@ Subject: [PATCH] Optimise chunk tick iteration
 Use a dedicated list of entity ticking chunks to reduce the cost
 
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-index 51c4ca36221e9af074fa92f6ab94fa7ba5403080..8d38a5a4c74d3f9298ba4f215e978fbc25ba91f0 100644
+index 280ca8758cbaf710c2bf357e41dd2af6e14b49bc..4f502f1c8a86a28e2cd6513516f3846ed74be891 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-@@ -1001,34 +1001,46 @@ public class ServerChunkCache extends ChunkSource {
+@@ -999,34 +999,46 @@ public class ServerChunkCache extends ChunkSource {
  
              this.lastSpawnState = spawnercreature_d;
              gameprofilerfiller.popPush("filteringLoadedChunks");
@@ -72,7 +72,7 @@ index 51c4ca36221e9af074fa92f6ab94fa7ba5403080..8d38a5a4c74d3f9298ba4f215e978fbc
                          NaturalSpawner.spawnForChunk(this.level, chunk1, spawnercreature_d, this.spawnFriendlies, this.spawnEnemies, flag1);
                      }
  
-@@ -1036,7 +1048,16 @@ public class ServerChunkCache extends ChunkSource {
+@@ -1034,7 +1046,16 @@ public class ServerChunkCache extends ChunkSource {
                          this.level.tickChunk(chunk1, k);
                      }
                  }
@@ -89,7 +89,7 @@ index 51c4ca36221e9af074fa92f6ab94fa7ba5403080..8d38a5a4c74d3f9298ba4f215e978fbc
              this.level.timings.chunkTicks.stopTiming(); // Paper
              gameprofilerfiller.popPush("customSpawners");
              if (flag2) {
-@@ -1045,13 +1066,7 @@ public class ServerChunkCache extends ChunkSource {
+@@ -1043,13 +1064,7 @@ public class ServerChunkCache extends ChunkSource {
                  } // Paper - timings
              }
  
@@ -102,5 +102,5 @@ index 51c4ca36221e9af074fa92f6ab94fa7ba5403080..8d38a5a4c74d3f9298ba4f215e978fbc
 -            gameprofilerfiller.pop();
 +            //  Paper - no, iterating just ONCE is expensive enough! Don't do it TWICE! Code moved up
              gameprofilerfiller.pop();
-             // Paper start - controlled flush for entity tracker packets
-             List<net.minecraft.network.Connection> disabledFlushes = new java.util.ArrayList<>(this.level.players.size());
+             this.chunkMap.tick();
+         }
