@@ -2281,8 +2281,10 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @return The spawned {@link FallingBlock} instance
      * @throws IllegalArgumentException if {@link Location} or {@link
      *     MaterialData} are null or {@link Material} of the {@link MaterialData} is not a block
+     * @deprecated Use {@link #spawn(Location, Class, Consumer)} (or a variation thereof) in combination with {@link FallingBlock#setBlockData(BlockData)}
      */
     @NotNull
+    @Deprecated(since = "1.20.2") // Paper
     public FallingBlock spawnFallingBlock(@NotNull Location location, @NotNull MaterialData data) throws IllegalArgumentException;
 
     /**
@@ -2295,8 +2297,10 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @return The spawned {@link FallingBlock} instance
      * @throws IllegalArgumentException if {@link Location} or {@link
      *     BlockData} are null
+     * @deprecated Use {@link #spawn(Location, Class, Consumer)} (or a variation thereof) in combination with {@link FallingBlock#setBlockData(BlockData)}
      */
     @NotNull
+    @org.jetbrains.annotations.ApiStatus.Obsolete(since = "1.20.2") // Paper
     public FallingBlock spawnFallingBlock(@NotNull Location location, @NotNull BlockData data) throws IllegalArgumentException;
 
     /**
@@ -2313,7 +2317,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @return The spawned {@link FallingBlock} instance
      * @throws IllegalArgumentException if {@link Location} or {@link
      *     Material} are null or {@link Material} is not a block
-     * @deprecated Magic value
+     * @deprecated Magic value. Use {@link #spawn(Location, Class, Consumer)} (or a variation thereof) in combination with {@link FallingBlock#setBlockData(BlockData)}
      */
     @Deprecated(since = "1.7.5")
     @NotNull

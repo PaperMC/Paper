@@ -26,6 +26,33 @@ public interface FallingBlock extends Entity {
      */
     @NotNull
     BlockData getBlockData();
+    // Paper start
+    /**
+     * Sets the data for the falling block.
+     * <br>
+     * Any potential additional data currently stored in the falling blocks {@link #getBlockState()} will be
+     * purged by calling this setter.
+     *
+     * @param blockData the data to use as the block
+     */
+    void setBlockData(@NotNull BlockData blockData);
+
+    /**
+     * Get the data of the falling block represented as a {@link org.bukkit.block.BlockState BlockState}
+     * which includes potential NBT data that gets applied when the block gets placed on landing.
+     *
+     * @return the BlockState representing this block
+     */
+    @NotNull
+    org.bukkit.block.BlockState getBlockState();
+
+    /**
+     * Sets the {@link BlockData} and possibly present tile entity data for the falling block.
+     *
+     * @param blockState the BlockState to use
+     */
+    void setBlockState(@NotNull org.bukkit.block.BlockState blockState);
+    // Paper end
 
     /**
      * Get if the falling block will break into an item if it cannot be placed.
@@ -137,4 +164,23 @@ public interface FallingBlock extends Entity {
     default org.bukkit.Location getSourceLoc() {
         return this.getOrigin();
     }
+    // Paper start - Auto expire setting
+    /**
+     * Sets if this falling block should expire after:
+     * - 30 seconds
+     * - 5 seconds and is outside of the world
+     *
+     * @return if this behavior occurs
+     */
+    boolean doesAutoExpire();
+
+    /**
+     * Sets if this falling block should expire after:
+     * - 30 seconds
+     * - 5 seconds and is outside of the world
+     *
+     * @param autoExpires if this behavior should occur
+     */
+    void shouldAutoExpire(boolean autoExpires);
+    // Paper end - Auto expire setting
 }
