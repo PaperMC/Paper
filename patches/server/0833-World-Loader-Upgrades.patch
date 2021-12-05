@@ -1,0 +1,73 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Alexander <alexander.neitzel@codineerdigital.com>
+Date: Sun, 5 Dec 2021 23:16:13 +0100
+Subject: [PATCH] World Loader Upgrades
+
+
+diff --git a/src/main/java/net/bluebolt/commands/ListWorldsCommand.java b/src/main/java/net/bluebolt/commands/ListWorldsCommand.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..815e647c73ce5a474f03934cd7c7492c206ad2e8
+--- /dev/null
++++ b/src/main/java/net/bluebolt/commands/ListWorldsCommand.java
+@@ -0,0 +1,36 @@
++package net.bluebolt.commands;
++
++import net.md_5.bungee.api.chat.ClickEvent;
++import net.md_5.bungee.api.chat.ComponentBuilder;
++import net.md_5.bungee.api.chat.HoverEvent;
++import net.md_5.bungee.api.chat.TextComponent;
++import org.bukkit.Bukkit;
++import org.bukkit.ChatColor;
++import org.bukkit.World;
++import org.bukkit.WorldCreator;
++import org.bukkit.command.Command;
++import org.bukkit.command.CommandSender;
++
++public class ListWorldsCommand extends Command {
++
++    public ListWorldsCommand(String name) {
++        super(name);
++        this.description = "Shows a list of all worlds";
++        this.usageMessage = "/listworlds";
++        this.setPermission("bluebolt.command.listworlds");
++    }
++
++    @Override
++    public boolean execute(CommandSender sender, String commandLabel, String[] args) {
++        if (!testPermission(sender)) return true;
++        if (args.length != 1) return false;
++        sender.sendMessage(ChatColor.BLUE + "⚡ Blue Bolt " + ChatColor.DARK_GRAY + "» " + ChatColor.GRAY + "Loaded worlds: ");
++        for (World world : Bukkit.getWorlds()) {
++            TextComponent component = new TextComponent(ChatColor.BLUE + "⚡ " + world.getName());
++            component.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "enterworld " + world.getName()));
++            component.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder("Click to enter").create()));
++            sender.sendMessage(component);
++        }
++        return true;
++    }
++}
+diff --git a/src/main/java/net/bluebolt/commands/LoadWorldCommand.java b/src/main/java/net/bluebolt/commands/LoadWorldCommand.java
+index 219cd7d2190be55146b7286e25f8541f30890d36..e6ff25ec045199cadc6019f712e426b8950170e7 100644
+--- a/src/main/java/net/bluebolt/commands/LoadWorldCommand.java
++++ b/src/main/java/net/bluebolt/commands/LoadWorldCommand.java
+@@ -22,7 +22,7 @@ public class LoadWorldCommand extends Command {
+         if (args.length != 1) return false;
+         sender.sendMessage(ChatColor.BLUE + "⚡ Blue Bolt " + ChatColor.DARK_GRAY + "» " + ChatColor.GRAY + "Loading world " + ChatColor.GOLD + args[0]);
+         try {
+-            Bukkit.getServer().createWorld(new WorldCreator(args[0]));
++            new WorldCreator(args[0]).createWorld();
+         } catch (Exception e) {
+             sender.sendMessage(ChatColor.BLUE + "⚡ Blue Bolt " + ChatColor.DARK_GRAY + "» " + ChatColor.RED + "Failed to load world " + args[0]);
+             return true;
+diff --git a/src/main/java/org/spigotmc/SpigotConfig.java b/src/main/java/org/spigotmc/SpigotConfig.java
+index 086c526b52962641e32e4b79cc2d229b733f003d..5093ba1e84cc5fe184212b7b1c34d0e46816122b 100644
+--- a/src/main/java/org/spigotmc/SpigotConfig.java
++++ b/src/main/java/org/spigotmc/SpigotConfig.java
+@@ -78,6 +78,7 @@ public class SpigotConfig
+         SpigotConfig.commands.put( "generateworld", new GenerateWorldCommand( "generateworld" ) );
+         SpigotConfig.commands.put( "loadworld", new LoadWorldCommand( "loadworld" ) );
+         SpigotConfig.commands.put( "unloadworld", new UnloadWorldCommand( "unloadworld" ) );
++        SpigotConfig.commands.put( "listworlds", new ListWorldsCommand( "listworlds" ) );
+         // BlueBolt end
+ 
+         SpigotConfig.version = SpigotConfig.getInt( "config-version", 12 );
