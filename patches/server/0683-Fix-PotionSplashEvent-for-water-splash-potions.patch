@@ -6,7 +6,7 @@ Subject: [PATCH] Fix PotionSplashEvent for water splash potions
 Fixes SPIGOT-6221: https://hub.spigotmc.org/jira/projects/SPIGOT/issues/SPIGOT-6221
 
 diff --git a/src/main/java/net/minecraft/world/entity/projectile/ThrownPotion.java b/src/main/java/net/minecraft/world/entity/projectile/ThrownPotion.java
-index 517a0f6bf847c5bf01851ae326d1b12332c2672c..1adcc0321b5528a4a173027be67139a9e9be5770 100644
+index 517a0f6bf847c5bf01851ae326d1b12332c2672c..1b93afaae1e5129369c13e887d37cef808403382 100644
 --- a/src/main/java/net/minecraft/world/entity/projectile/ThrownPotion.java
 +++ b/src/main/java/net/minecraft/world/entity/projectile/ThrownPotion.java
 @@ -125,6 +125,7 @@ public class ThrownPotion extends ThrowableItemProjectile implements ItemSupplie
@@ -17,7 +17,7 @@ index 517a0f6bf847c5bf01851ae326d1b12332c2672c..1adcc0321b5528a4a173027be67139a9
  
          if (!list.isEmpty()) {
              Iterator iterator = list.iterator();
-@@ -134,11 +135,23 @@ public class ThrownPotion extends ThrowableItemProjectile implements ItemSupplie
+@@ -134,7 +135,11 @@ public class ThrownPotion extends ThrowableItemProjectile implements ItemSupplie
                  double d0 = this.distanceToSqr((Entity) entityliving);
  
                  if (d0 < 16.0D && entityliving.isSensitiveToWater()) {
@@ -26,23 +26,34 @@ index 517a0f6bf847c5bf01851ae326d1b12332c2672c..1adcc0321b5528a4a173027be67139a9
 +                    double intensity = 1.0D - Math.sqrt(d0) / 4.0D;
 +                    affected.put(entityliving.getBukkitLivingEntity(), intensity);
 +                    // entityliving.hurt(DamageSource.indirectMagic(this, this.getOwner()), 1.0F); // Paper - moved down
++                    // Paper end
                  }
              }
          }
+@@ -145,7 +150,21 @@ public class ThrownPotion extends ThrowableItemProjectile implements ItemSupplie
+         while (iterator1.hasNext()) {
+             Axolotl axolotl = (Axolotl) iterator1.next();
  
+-            axolotl.rehydrate();
++            // Paper start - move down to include axolotls
++            affected.put(axolotl.getBukkitLivingEntity(), 1.0);
++            // axolotl.rehydrate();
++        }
 +        org.bukkit.event.entity.PotionSplashEvent event = CraftEventFactory.callPotionSplashEvent(this, affected);
 +        if (!event.isCancelled()) {
 +            for (LivingEntity affectedEntity : event.getAffectedEntities()) {
 +                net.minecraft.world.entity.LivingEntity entityliving = ((CraftLivingEntity) affectedEntity).getHandle();
-+                entityliving.hurt(DamageSource.indirectMagic(entityliving, this.getOwner()), 1.0F);
++                if (entityliving instanceof Axolotl axolotl && event.getIntensity(affectedEntity) > 0) {
++                    axolotl.rehydrate();
++                } else {
++                    entityliving.hurt(DamageSource.indirectMagic(this, this.getOwner()), 1.0F);
++                }
 +            }
-+        }
-+        // Paper end
-+
-         List<Axolotl> list1 = this.level.getEntitiesOfClass(Axolotl.class, axisalignedbb);
-         Iterator iterator1 = list1.iterator();
++            // Paper end
+         }
  
-@@ -166,6 +179,7 @@ public class ThrownPotion extends ThrowableItemProjectile implements ItemSupplie
+     }
+@@ -166,6 +185,7 @@ public class ThrownPotion extends ThrowableItemProjectile implements ItemSupplie
                      double d0 = this.distanceToSqr((Entity) entityliving);
  
                      if (d0 < 16.0D) {
