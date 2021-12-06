@@ -1,0 +1,48 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AlphaBlend <whizkid3000@hotmail.com>
+Date: Sun, 16 Oct 2016 23:19:30 -0700
+Subject: [PATCH] Add EntityZapEvent
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/npc/Villager.java b/src/main/java/net/minecraft/world/entity/npc/Villager.java
+index 4529692f3e5df444bf4d58704d7608d8f4219a77..d9539f906348c13afc6f1b0032c3ce259f1c87c0 100644
+--- a/src/main/java/net/minecraft/world/entity/npc/Villager.java
++++ b/src/main/java/net/minecraft/world/entity/npc/Villager.java
+@@ -829,9 +829,17 @@ public class Villager extends AbstractVillager implements ReputationEventHandler
+     @Override
+     public void thunderHit(ServerLevel world, LightningBolt lightning) {
+         if (world.getDifficulty() != Difficulty.PEACEFUL) {
+-            Villager.LOGGER.info("Villager {} was struck by lightning {}.", this, lightning);
++            // Paper - move log down, event can cancel
+             Witch entitywitch = (Witch) EntityType.WITCH.create(world);
+ 
++            // Paper start
++            if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityZapEvent(this, lightning, entitywitch).isCancelled()) {
++                return;
++            }
++            // Paper end
++
++            if (org.spigotmc.SpigotConfig.logVillagerDeaths) Villager.LOGGER.info("Villager {} was struck by lightning {}.", this, lightning); // Paper - move log down, event can cancel
++
+             entitywitch.moveTo(this.getX(), this.getY(), this.getZ(), this.getYRot(), this.getXRot());
+             entitywitch.finalizeSpawn(world, world.getCurrentDifficultyAt(entitywitch.blockPosition()), MobSpawnType.CONVERSION, (SpawnGroupData) null, (CompoundTag) null);
+             entitywitch.setNoAi(this.isNoAi());
+diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+index e172f574d5a5ab848197a113167872ec82355471..918ea9531e5cb37cc60ad00f78a1b4d31037704f 100644
+--- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
++++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+@@ -1121,6 +1121,14 @@ public class CraftEventFactory {
+         return event;
+     }
+ 
++    // Paper start
++    public static com.destroystokyo.paper.event.entity.EntityZapEvent callEntityZapEvent (Entity entity, Entity lightning, Entity changedEntity) {
++        com.destroystokyo.paper.event.entity.EntityZapEvent event = new com.destroystokyo.paper.event.entity.EntityZapEvent(entity.getBukkitEntity(), (LightningStrike) lightning.getBukkitEntity(), changedEntity.getBukkitEntity());
++        entity.getBukkitEntity().getServer().getPluginManager().callEvent(event);
++        return event;
++    }
++    // Paper end
++
+     public static HorseJumpEvent callHorseJumpEvent(Entity horse, float power) {
+         HorseJumpEvent event = new HorseJumpEvent((AbstractHorse) horse.getBukkitEntity(), power);
+         horse.getBukkitEntity().getServer().getPluginManager().callEvent(event);

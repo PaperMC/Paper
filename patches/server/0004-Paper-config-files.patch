@@ -1,0 +1,818 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Zach Brown <zach.brown@destroystokyo.com>
+Date: Mon, 29 Feb 2016 21:02:09 -0600
+Subject: [PATCH] Paper config files
+
+Loads each yml file for early init too so it can be used for early options
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperCommand.java b/src/main/java/com/destroystokyo/paper/PaperCommand.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..bee2fa2bfbb61209381f24ed6508d3d1c73a344a
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/PaperCommand.java
+@@ -0,0 +1,285 @@
++package com.destroystokyo.paper;
++
++import com.google.common.base.Functions;
++import com.google.common.base.Joiner;
++import com.google.common.collect.ImmutableSet;
++import com.google.common.collect.Iterables;
++import com.google.common.collect.Lists;
++import com.google.common.collect.Maps;
++import net.minecraft.resources.ResourceLocation;
++import net.minecraft.server.MinecraftServer;
++import net.minecraft.server.level.ServerChunkCache;
++import net.minecraft.server.level.ServerLevel;
++import net.minecraft.world.entity.Entity;
++import net.minecraft.world.entity.EntityType;
++import net.minecraft.world.level.ChunkPos;
++import org.apache.commons.lang3.tuple.MutablePair;
++import org.apache.commons.lang3.tuple.Pair;
++import org.bukkit.Bukkit;
++import org.bukkit.ChatColor;
++import org.bukkit.Location;
++import org.bukkit.World;
++import org.bukkit.command.Command;
++import org.bukkit.command.CommandSender;
++import org.bukkit.craftbukkit.CraftServer;
++import org.bukkit.craftbukkit.CraftWorld;
++import org.bukkit.entity.Player;
++
++import java.io.File;
++import java.time.LocalDateTime;
++import java.time.format.DateTimeFormatter;
++import java.util.ArrayList;
++import java.util.Arrays;
++import java.util.Collection;
++import java.util.Collections;
++import java.util.Iterator;
++import java.util.List;
++import java.util.Locale;
++import java.util.Map;
++import java.util.Set;
++import java.util.stream.Collectors;
++
++public class PaperCommand extends Command {
++    private static final String BASE_PERM = "bukkit.command.paper.";
++    private static final ImmutableSet<String> SUBCOMMANDS = ImmutableSet.<String>builder().add("heap", "entity", "reload", "version").build();
++
++    public PaperCommand(String name) {
++        super(name);
++        this.description = "Paper related commands";
++        this.usageMessage = "/paper [" + Joiner.on(" | ").join(SUBCOMMANDS) + "]";
++        this.setPermission("bukkit.command.paper;" + Joiner.on(';').join(SUBCOMMANDS.stream().map(s -> BASE_PERM + s).collect(Collectors.toSet())));
++    }
++
++    private static boolean testPermission(CommandSender commandSender, String permission) {
++        if (commandSender.hasPermission(BASE_PERM + permission) || commandSender.hasPermission("bukkit.command.paper")) return true;
++        commandSender.sendMessage(ChatColor.RED + "I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error."); // Sorry, kashike
++        return false;
++    }
++
++    @Override
++    public List<String> tabComplete(CommandSender sender, String alias, String[] args, Location location) throws IllegalArgumentException {
++        if (args.length <= 1)
++            return getListMatchingLast(sender, args, SUBCOMMANDS);
++
++        switch (args[0].toLowerCase(Locale.ENGLISH))
++        {
++            case "entity":
++                if (args.length == 2)
++                    return getListMatchingLast(sender, args, "help", "list");
++                if (args.length == 3)
++                    return getListMatchingLast(sender, args, EntityType.getEntityNameList().stream().map(ResourceLocation::toString).sorted().toArray(String[]::new));
++                break;
++        }
++        return Collections.emptyList();
++    }
++
++    // Code from Mojang - copyright them
++    public static List<String> getListMatchingLast(CommandSender sender, String[] args, String... matches) {
++        return getListMatchingLast(sender, args, (Collection) Arrays.asList(matches));
++    }
++
++    public static boolean matches(String s, String s1) {
++        return s1.regionMatches(true, 0, s, 0, s.length());
++    }
++
++    public static List<String> getListMatchingLast(CommandSender sender, String[] strings, Collection<?> collection) {
++        String last = strings[strings.length - 1];
++        ArrayList<String> results = Lists.newArrayList();
++
++        if (!collection.isEmpty()) {
++            Iterator iterator = Iterables.transform(collection, Functions.toStringFunction()).iterator();
++
++            while (iterator.hasNext()) {
++                String s1 = (String) iterator.next();
++
++                if (matches(last, s1) && (sender.hasPermission(BASE_PERM + s1) || sender.hasPermission("bukkit.command.paper"))) {
++                    results.add(s1);
++                }
++            }
++
++            if (results.isEmpty()) {
++                iterator = collection.iterator();
++
++                while (iterator.hasNext()) {
++                    Object object = iterator.next();
++
++                    if (object instanceof ResourceLocation && matches(last, ((ResourceLocation) object).getPath())) {
++                        results.add(String.valueOf(object));
++                    }
++                }
++            }
++        }
++
++        return results;
++    }
++    // end copy stuff
++
++    @Override
++    public boolean execute(CommandSender sender, String commandLabel, String[] args) {
++        if (!testPermission(sender)) return true;
++
++        if (args.length == 0) {
++            sender.sendMessage(ChatColor.RED + "Usage: " + usageMessage);
++            return false;
++        }
++        if (SUBCOMMANDS.contains(args[0].toLowerCase(Locale.ENGLISH))) {
++            if (!testPermission(sender, args[0].toLowerCase(Locale.ENGLISH))) return true;
++        }
++        switch (args[0].toLowerCase(Locale.ENGLISH))  {
++            case "heap":
++                dumpHeap(sender);
++                break;
++            case "entity":
++                listEntities(sender, args);
++                break;
++            case "reload":
++                doReload(sender);
++                break;
++            case "ver":
++                if (!testPermission(sender, "version")) break; // "ver" needs a special check because it's an alias. All other commands are checked up before the switch statement (because they are present in the SUBCOMMANDS set)
++            case "version":
++                Command ver = MinecraftServer.getServer().server.getCommandMap().getCommand("version");
++                if (ver != null) {
++                    ver.execute(sender, commandLabel, new String[0]);
++                    break;
++                }
++                // else - fall through to default
++            default:
++                sender.sendMessage(ChatColor.RED + "Usage: " + usageMessage);
++                return false;
++        }
++
++        return true;
++    }
++
++    /*
++     * Ported from MinecraftForge - author: LexManos <LexManos@gmail.com> - License: LGPLv2.1
++     */
++    private void listEntities(CommandSender sender, String[] args) {
++        if (args.length < 2 || args[1].toLowerCase(Locale.ENGLISH).equals("help")) {
++            sender.sendMessage(ChatColor.RED + "Use /paper entity [list] help for more information on a specific command.");
++            return;
++        }
++
++        switch (args[1].toLowerCase(Locale.ENGLISH)) {
++            case "list":
++                String filter = "*";
++                if (args.length > 2) {
++                    if (args[2].toLowerCase(Locale.ENGLISH).equals("help")) {
++                        sender.sendMessage(ChatColor.RED + "Use /paper entity list [filter] [worldName] to get entity info that matches the optional filter.");
++                        return;
++                    }
++                    filter = args[2];
++                }
++                final String cleanfilter = filter.replace("?", ".?").replace("*", ".*?");
++                Set<ResourceLocation> names = EntityType.getEntityNameList().stream()
++                        .filter(n -> n.toString().matches(cleanfilter))
++                        .collect(Collectors.toSet());
++
++                if (names.isEmpty()) {
++                    sender.sendMessage(ChatColor.RED + "Invalid filter, does not match any entities. Use /paper entity list for a proper list");
++                    sender.sendMessage(ChatColor.RED + "Usage: /paper entity list [filter] [worldName]");
++                    return;
++                }
++
++                String worldName;
++                if (args.length > 3) {
++                    worldName = args[3];
++                } else if (sender instanceof Player) {
++                    worldName = ((Player) sender).getWorld().getName();
++                } else {
++                    sender.sendMessage(ChatColor.RED + "Please specify the name of a world");
++                    sender.sendMessage(ChatColor.RED + "To do so without a filter, specify '*' as the filter");
++                    sender.sendMessage(ChatColor.RED + "Usage: /paper entity list [filter] [worldName]");
++                    return;
++                }
++
++                Map<ResourceLocation, MutablePair<Integer, Map<ChunkPos, Integer>>> list = Maps.newHashMap();
++                World bukkitWorld = Bukkit.getWorld(worldName);
++                if (bukkitWorld == null) {
++                    sender.sendMessage(ChatColor.RED + "Could not load world for " + worldName + ". Please select a valid world.");
++                    sender.sendMessage(ChatColor.RED + "Usage: /paper entity list [filter] [worldName]");
++                    return;
++                }
++                ServerLevel world = ((CraftWorld) Bukkit.getWorld(worldName)).getHandle();
++
++                Map<ResourceLocation, Integer> nonEntityTicking = Maps.newHashMap();
++                ServerChunkCache chunkProviderServer = world.getChunkSource();
++
++                world.getAllEntities().forEach(e -> {
++                    ResourceLocation key = new ResourceLocation(""); // TODO: update in next patch
++
++                    MutablePair<Integer, Map<ChunkPos, Integer>> info = list.computeIfAbsent(key, k -> MutablePair.of(0, Maps.newHashMap()));
++                    ChunkPos chunk = e.chunkPosition();
++                    info.left++;
++                    info.right.put(chunk, info.right.getOrDefault(chunk, 0) + 1);
++                    if (!chunkProviderServer.isPositionTicking(e)) {
++                        nonEntityTicking.merge(key, Integer.valueOf(1), Integer::sum);
++                    }
++                });
++
++                if (names.size() == 1) {
++                    ResourceLocation name = names.iterator().next();
++                    Pair<Integer, Map<ChunkPos, Integer>> info = list.get(name);
++                    int nonTicking = nonEntityTicking.getOrDefault(name, Integer.valueOf(0)).intValue();
++                    if (info == null) {
++                        sender.sendMessage(ChatColor.RED + "No entities found.");
++                        return;
++                    }
++                    sender.sendMessage("Entity: " + name + " Total Ticking: " + (info.getLeft() - nonTicking) + ", Total Non-Ticking: " + nonTicking);
++                    info.getRight().entrySet().stream()
++                            .sorted((a, b) -> !a.getValue().equals(b.getValue()) ? b.getValue() - a.getValue() : a.getKey().toString().compareTo(b.getKey().toString()))
++                            .limit(10).forEach(e -> sender.sendMessage("  " + e.getValue() + ": " + e.getKey().x + ", " + e.getKey().z + (chunkProviderServer.isPositionTicking(e.getKey().toLong()) ? " (Ticking)" : " (Non-Ticking)")));
++                } else {
++                    List<Pair<ResourceLocation, Integer>> info = list.entrySet().stream()
++                            .filter(e -> names.contains(e.getKey()))
++                            .map(e -> Pair.of(e.getKey(), e.getValue().left))
++                            .sorted((a, b) -> !a.getRight().equals(b.getRight()) ? b.getRight() - a.getRight() : a.getKey().toString().compareTo(b.getKey().toString()))
++                            .collect(Collectors.toList());
++
++                    if (info == null || info.size() == 0) {
++                        sender.sendMessage(ChatColor.RED + "No entities found.");
++                        return;
++                    }
++
++                    int count = info.stream().mapToInt(Pair::getRight).sum();
++                    int nonTickingCount = nonEntityTicking.values().stream().mapToInt(Integer::intValue).sum();
++                    sender.sendMessage("Total Ticking: " + (count - nonTickingCount) + ", Total Non-Ticking: " + nonTickingCount);
++                    info.forEach(e -> {
++                        int nonTicking = nonEntityTicking.getOrDefault(e.getKey(), Integer.valueOf(0)).intValue();
++                        sender.sendMessage("  " + (e.getValue() - nonTicking) + " (" + nonTicking + ") " + ": " + e.getKey());
++                    });
++                    sender.sendMessage("* First number is ticking entities, second number is non-ticking entities");
++                }
++                break;
++        }
++    }
++
++    private void dumpHeap(CommandSender sender) {
++        java.nio.file.Path dir = java.nio.file.Paths.get("./dumps");
++        String name = "heap-dump-" + DateTimeFormatter.ofPattern("yyyy-MM-dd_HH.mm.ss").format(LocalDateTime.now());
++
++        Command.broadcastCommandMessage(sender, ChatColor.YELLOW + "Writing JVM heap data...");
++
++        java.nio.file.Path file = CraftServer.dumpHeap(dir, name);
++        if (file != null) {
++            Command.broadcastCommandMessage(sender, ChatColor.GREEN + "Heap dump saved to " + file);
++        } else {
++            Command.broadcastCommandMessage(sender, ChatColor.RED + "Failed to write heap dump, see sever log for details");
++        }
++    }
++
++    private void doReload(CommandSender sender) {
++        Command.broadcastCommandMessage(sender, ChatColor.RED + "Please note that this command is not supported and may cause issues.");
++        Command.broadcastCommandMessage(sender, ChatColor.RED + "If you encounter any issues please use the /stop command to restart your server.");
++
++        MinecraftServer console = MinecraftServer.getServer();
++        com.destroystokyo.paper.PaperConfig.init((File) console.options.valueOf("paper-settings"));
++        for (ServerLevel world : console.getAllLevels()) {
++            world.paperConfig.init();
++        }
++        console.server.reloadCount++;
++
++        Command.broadcastCommandMessage(sender, ChatColor.GREEN + "Paper config reload complete.");
++    }
++}
+diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..e4368db074da7b5e48b47d41875c1e63b9745c2a
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+@@ -0,0 +1,188 @@
++package com.destroystokyo.paper;
++
++import com.google.common.base.Throwables;
++
++import java.io.File;
++import java.io.IOException;
++import java.lang.reflect.InvocationTargetException;
++import java.lang.reflect.Method;
++import java.lang.reflect.Modifier;
++import java.util.HashMap;
++import java.util.List;
++import java.util.Map;
++import java.util.concurrent.TimeUnit;
++import java.util.logging.Level;
++import java.util.regex.Pattern;
++
++import net.minecraft.server.MinecraftServer;
++import org.bukkit.Bukkit;
++import org.bukkit.command.Command;
++import org.bukkit.configuration.ConfigurationSection;
++import org.bukkit.configuration.InvalidConfigurationException;
++import org.bukkit.configuration.file.YamlConfiguration;
++
++public class PaperConfig {
++
++    private static File CONFIG_FILE;
++    private static final String HEADER = "This is the main configuration file for Paper.\n"
++            + "As you can see, there's tons to configure. Some options may impact gameplay, so use\n"
++            + "with caution, and make sure you know what each option does before configuring.\n"
++            + "\n"
++            + "If you need help with the configuration or have any questions related to Paper,\n"
++            + "join us in our Discord or IRC channel.\n"
++            + "\n"
++            + "Discord: https://discord.gg/papermc\n"
++            + "IRC: #paper @ irc.esper.net ( https://webchat.esper.net/?channels=paper ) \n"
++            + "Website: https://papermc.io/ \n"
++            + "Docs: https://paper.readthedocs.org/ \n";
++    /*========================================================================*/
++    public static YamlConfiguration config;
++    static int version;
++    static Map<String, Command> commands;
++    private static boolean verbose;
++    private static boolean fatalError;
++    /*========================================================================*/
++
++    public static void init(File configFile) {
++        CONFIG_FILE = configFile;
++        config = new YamlConfiguration();
++        try {
++            config.load(CONFIG_FILE);
++        } catch (IOException ex) {
++        } catch (InvalidConfigurationException ex) {
++            Bukkit.getLogger().log(Level.SEVERE, "Could not load paper.yml, please correct your syntax errors", ex);
++            throw Throwables.propagate(ex);
++        }
++        config.options().header(HEADER);
++        config.options().copyDefaults(true);
++        verbose = getBoolean("verbose", false);
++
++        commands = new HashMap<String, Command>();
++        commands.put("paper", new PaperCommand("paper"));
++
++        version = getInt("config-version", 24);
++        set("config-version", 24);
++        readConfig(PaperConfig.class, null);
++    }
++
++    protected static void logError(String s) {
++        Bukkit.getLogger().severe(s);
++    }
++
++    protected static void fatal(String s) {
++        fatalError = true;
++        throw new RuntimeException("Fatal paper.yml config error: " + s);
++    }
++
++    protected static void log(String s) {
++        if (verbose) {
++            Bukkit.getLogger().info(s);
++        }
++    }
++
++    public static void registerCommands() {
++        for (Map.Entry<String, Command> entry : commands.entrySet()) {
++            MinecraftServer.getServer().server.getCommandMap().register(entry.getKey(), "Paper", entry.getValue());
++        }
++    }
++
++    static void readConfig(Class<?> clazz, Object instance) {
++        for (Method method : clazz.getDeclaredMethods()) {
++            if (Modifier.isPrivate(method.getModifiers())) {
++                if (method.getParameterTypes().length == 0 && method.getReturnType() == Void.TYPE) {
++                    try {
++                        method.setAccessible(true);
++                        method.invoke(instance);
++                    } catch (InvocationTargetException ex) {
++                        throw Throwables.propagate(ex.getCause());
++                    } catch (Exception ex) {
++                        Bukkit.getLogger().log(Level.SEVERE, "Error invoking " + method, ex);
++                    }
++                }
++            }
++        }
++        saveConfig();
++    }
++
++    static void saveConfig() {
++        try {
++            config.save(CONFIG_FILE);
++        } catch (IOException ex) {
++            Bukkit.getLogger().log(Level.SEVERE, "Could not save " + CONFIG_FILE, ex);
++        }
++    }
++
++    private static final Pattern SPACE = Pattern.compile(" ");
++    private static final Pattern NOT_NUMERIC = Pattern.compile("[^-\\d.]");
++    public static int getSeconds(String str) {
++        str = SPACE.matcher(str).replaceAll("");
++        final char unit = str.charAt(str.length() - 1);
++        str = NOT_NUMERIC.matcher(str).replaceAll("");
++        double num;
++        try {
++            num = Double.parseDouble(str);
++        } catch (Exception e) {
++            num = 0D;
++        }
++        switch (unit) {
++            case 'd': num *= (double) 60*60*24; break;
++            case 'h': num *= (double) 60*60; break;
++            case 'm': num *= (double) 60; break;
++            default: case 's': break;
++        }
++        return (int) num;
++    }
++
++    protected static String timeSummary(int seconds) {
++        String time = "";
++
++        if (seconds > 60 * 60 * 24) {
++            time += TimeUnit.SECONDS.toDays(seconds) + "d";
++            seconds %= 60 * 60 * 24;
++        }
++
++        if (seconds > 60 * 60) {
++            time += TimeUnit.SECONDS.toHours(seconds) + "h";
++            seconds %= 60 * 60;
++        }
++
++        if (seconds > 0) {
++            time += TimeUnit.SECONDS.toMinutes(seconds) + "m";
++        }
++        return time;
++    }
++
++    private static void set(String path, Object val) {
++        config.set(path, val);
++    }
++
++    private static boolean getBoolean(String path, boolean def) {
++        config.addDefault(path, def);
++        return config.getBoolean(path, config.getBoolean(path));
++    }
++
++    private static double getDouble(String path, double def) {
++        config.addDefault(path, def);
++        return config.getDouble(path, config.getDouble(path));
++    }
++
++    private static float getFloat(String path, float def) {
++        // TODO: Figure out why getFloat() always returns the default value.
++        return (float) getDouble(path, (double) def);
++    }
++
++    private static int getInt(String path, int def) {
++        config.addDefault(path, def);
++        return config.getInt(path, config.getInt(path));
++    }
++
++    private static <T> List getList(String path, T def) {
++        config.addDefault(path, def);
++        return (List<T>) config.getList(path, config.getList(path));
++    }
++
++    private static String getString(String path, String def) {
++        config.addDefault(path, def);
++        return config.getString(path, config.getString(path));
++    }
++}
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..4adf44026fc6269934dfa4513f06a7f8a3b41f90
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -0,0 +1,94 @@
++package com.destroystokyo.paper;
++
++import java.util.List;
++
++import java.util.stream.Collectors;
++import org.bukkit.Bukkit;
++import org.bukkit.configuration.file.YamlConfiguration;
++import org.spigotmc.SpigotWorldConfig;
++
++import static com.destroystokyo.paper.PaperConfig.log;
++import static com.destroystokyo.paper.PaperConfig.logError;
++import static com.destroystokyo.paper.PaperConfig.saveConfig;
++
++public class PaperWorldConfig {
++
++    private final String worldName;
++    private final SpigotWorldConfig spigotConfig;
++    private YamlConfiguration config;
++    private boolean verbose;
++
++    public PaperWorldConfig(String worldName, SpigotWorldConfig spigotConfig) {
++        this.worldName = worldName;
++        this.spigotConfig = spigotConfig;
++        this.config = PaperConfig.config;
++        init();
++    }
++
++    public void init() {
++        this.config = PaperConfig.config; // grab updated reference
++        log("-------- World Settings For [" + worldName + "] --------");
++        PaperConfig.readConfig(PaperWorldConfig.class, this);
++    }
++
++    private void set(String path, Object val) {
++        config.set("world-settings.default." + path, val);
++        if (config.get("world-settings." + worldName + "." + path) != null) {
++            config.set("world-settings." + worldName + "." + path, val);
++        }
++    }
++
++    public void removeOldValues() {
++        boolean needsSave = false;
++
++        if (needsSave) {
++            saveConfig();
++        }
++    }
++
++    private boolean getBoolean(String path, boolean def) {
++        config.addDefault("world-settings.default." + path, def);
++        return config.getBoolean("world-settings." + worldName + "." + path, config.getBoolean("world-settings.default." + path));
++    }
++
++    private double getDouble(String path, double def) {
++        config.addDefault("world-settings.default." + path, def);
++        return config.getDouble("world-settings." + worldName + "." + path, config.getDouble("world-settings.default." + path));
++    }
++
++    private int getInt(String path, int def) {
++        return getInt(path, def, true);
++    }
++
++    private int getInt(String path, int def, boolean setDefault) {
++        if (setDefault) {
++            config.addDefault("world-settings.default." + path, def);
++        }
++        return config.getInt("world-settings." + worldName + "." + path, config.getInt("world-settings.default." + path, def));
++    }
++
++    private long getLong(String path, long def) {
++        config.addDefault("world-settings.default." + path, def);
++        return config.getLong("world-settings." + worldName + "." + path, config.getLong("world-settings.default." + path));
++    }
++
++    private float getFloat(String path, float def) {
++        // TODO: Figure out why getFloat() always returns the default value.
++        return (float) getDouble(path, (double) def);
++    }
++
++    private <T> List<T> getList(String path, List<T> def) {
++        config.addDefault("world-settings.default." + path, def);
++        return (List<T>) config.getList("world-settings." + worldName + "." + path, config.getList("world-settings.default." + path));
++    }
++
++    private String getString(String path, String def) {
++        config.addDefault("world-settings.default." + path, def);
++        return config.getString("world-settings." + worldName + "." + path, config.getString("world-settings.default." + path));
++    }
++
++    private <T extends Enum<T>> List<T> getEnumList(String path, List<T> def, Class<T> type) {
++        config.addDefault("world-settings.default." + path, def.stream().map(Enum::name).collect(Collectors.toList()));
++        return ((List<String>) (config.getList("world-settings." + worldName + "." + path, config.getList("world-settings.default." + path)))).stream().map(s -> Enum.valueOf(type, s)).collect(Collectors.toList());
++    }
++}
+diff --git a/src/main/java/net/minecraft/server/Main.java b/src/main/java/net/minecraft/server/Main.java
+index dc2cb18ec926e2eed1caa8e2106e70bcb04f6c0f..a497b281d03c097587b21e9f141a6a66f36e4dad 100644
+--- a/src/main/java/net/minecraft/server/Main.java
++++ b/src/main/java/net/minecraft/server/Main.java
+@@ -106,6 +106,12 @@ public class Main {
+             DedicatedServerSettings dedicatedserversettings = new DedicatedServerSettings(optionset); // CraftBukkit - CLI argument support
+ 
+             dedicatedserversettings.forceSave();
++            // Paper start - load config files for access below if needed
++            org.bukkit.configuration.file.YamlConfiguration bukkitConfiguration = loadConfigFile((File) optionset.valueOf("bukkit-settings"));
++            org.bukkit.configuration.file.YamlConfiguration spigotConfiguration = loadConfigFile((File) optionset.valueOf("spigot-settings"));
++            org.bukkit.configuration.file.YamlConfiguration paperConfiguration = loadConfigFile((File) optionset.valueOf("paper-settings"));
++            // Paper end
++
+             Path path1 = Paths.get("eula.txt");
+             Eula eula = new Eula(path1);
+ 
+@@ -261,6 +267,20 @@ public class Main {
+ 
+     }
+ 
++    // Paper start - load config files
++    private static org.bukkit.configuration.file.YamlConfiguration loadConfigFile(File configFile) throws Exception {
++        org.bukkit.configuration.file.YamlConfiguration config = new org.bukkit.configuration.file.YamlConfiguration();
++        if (configFile.exists()) {
++            try {
++                config.load(configFile);
++            } catch (Exception ex) {
++                throw new Exception("Failed to load configuration file: " + configFile.getName(), ex);
++            }
++        }
++        return config;
++    }
++    // Paper end
++
+     public static void forceUpgrade(LevelStorageSource.LevelStorageAccess session, DataFixer dataFixer, boolean eraseCache, BooleanSupplier continueCheck, WorldGenSettings generatorOptions) {
+         Main.LOGGER.info("Forcing world upgrade! {}", session.getLevelId()); // CraftBukkit
+         WorldUpgrader worldupgrader = new WorldUpgrader(session, dataFixer, generatorOptions, eraseCache);
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index ebb914e7cf3e5ba2d862e341392e904f325d720a..b3629065ebbe601802703b8671b24c7156f12d03 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -602,6 +602,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         }
+         this.forceDifficulty();
+         for (ServerLevel worldserver : this.getAllLevels()) {
++            worldserver.paperConfig.removeOldValues(); // Paper - callback for clearing old config options, after any migrations have taken place
+             this.prepareLevels(worldserver.getChunkSource().chunkMap.progressListener, worldserver);
+             worldserver.entityManager.tick(); // SPIGOT-6526: Load pending entities so they are available to the API
+             this.server.getPluginManager().callEvent(new org.bukkit.event.world.WorldLoadEvent(worldserver.getWorld()));
+diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
+index 2599fbabd5e5c0d10d0c915016f7cc982bda0e20..4dd57007af218ba1c0e666117a49939c5884f2c6 100644
+--- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
++++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
+@@ -192,6 +192,15 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+         org.spigotmc.SpigotConfig.init((java.io.File) options.valueOf("spigot-settings"));
+         org.spigotmc.SpigotConfig.registerCommands();
+         // Spigot end
++        // Paper start
++        try {
++            com.destroystokyo.paper.PaperConfig.init((java.io.File) options.valueOf("paper-settings"));
++        } catch (Exception e) {
++            DedicatedServer.LOGGER.error("Unable to load server configuration", e);
++            return false;
++        }
++        com.destroystokyo.paper.PaperConfig.registerCommands();
++        // Paper end
+ 
+         this.setPvpAllowed(dedicatedserverproperties.pvp);
+         this.setFlightAllowed(dedicatedserverproperties.allowFlight);
+diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
+index a44b47c8ed611078764841a5b591877242c10db1..d672c467267ef4d96184e104c35d0379116880db 100644
+--- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
++++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
+@@ -337,6 +337,12 @@ public class ServerChunkCache extends ChunkSource {
+         }
+     }
+ 
++    // Paper start - helper
++    public boolean isPositionTicking(Entity entity) {
++        return this.isPositionTicking(ChunkPos.asLong(net.minecraft.util.Mth.floor(entity.getX()) >> 4, net.minecraft.util.Mth.floor(entity.getZ()) >> 4));
++    }
++    // Paper end
++
+     public boolean isPositionTicking(long pos) {
+         ChunkHolder playerchunk = this.getVisibleChunkIfPresent(pos);
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/EntityType.java b/src/main/java/net/minecraft/world/entity/EntityType.java
+index 1bee6fc5b9fa70adf2f7cac792778f5ed203d291..e688949fc2f3031dc9c9817bc59554e9f5a436af 100644
+--- a/src/main/java/net/minecraft/world/entity/EntityType.java
++++ b/src/main/java/net/minecraft/world/entity/EntityType.java
+@@ -664,4 +664,10 @@ public class EntityType<T extends Entity> implements EntityTypeTest<Entity, T> {
+ 
+         T create(EntityType<T> type, Level world);
+     }
++
++    // Paper start
++    public static java.util.Set<ResourceLocation> getEntityNameList() {
++        return Registry.ENTITY_TYPE.keySet();
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
+index aaf71bfb582d1d86d67205618825411babd2625a..f18ae5b80c930c3a7c2da079b9926ab2657c36a3 100644
+--- a/src/main/java/net/minecraft/world/level/Level.java
++++ b/src/main/java/net/minecraft/world/level/Level.java
+@@ -149,6 +149,8 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+     public boolean populating;
+     public final org.spigotmc.SpigotWorldConfig spigotConfig; // Spigot
+ 
++    public final com.destroystokyo.paper.PaperWorldConfig paperConfig; // Paper
++
+     public final SpigotTimings.WorldTimingsHandler timings; // Spigot
+     public static BlockPos lastPhysicsProblem; // Spigot
+     private org.spigotmc.TickLimiter entityLimiter;
+@@ -167,6 +169,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+ 
+     protected Level(WritableLevelData worlddatamutable, ResourceKey<Level> resourcekey, final DimensionType dimensionmanager, Supplier<ProfilerFiller> supplier, boolean flag, boolean flag1, long i, org.bukkit.generator.ChunkGenerator gen, org.bukkit.generator.BiomeProvider biomeProvider, org.bukkit.World.Environment env) {
+         this.spigotConfig = new org.spigotmc.SpigotWorldConfig(((net.minecraft.world.level.storage.PrimaryLevelData) worlddatamutable).getLevelName()); // Spigot
++        this.paperConfig = new com.destroystokyo.paper.PaperWorldConfig(((net.minecraft.world.level.storage.PrimaryLevelData) worlddatamutable).getLevelName(), this.spigotConfig); // Paper
+         this.generator = gen;
+         this.world = new CraftWorld((ServerLevel) this, gen, biomeProvider, env);
+         this.ticksPerAnimalSpawns = this.getCraftServer().getTicksPerAnimalSpawns(); // CraftBukkit
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index ae0e8dc6fd3f8323c34df83450a16fc3c44a9e5e..980e5abe159ebfdf5334332b8d8201c0c0b66a7b 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -842,6 +842,7 @@ public final class CraftServer implements Server {
+         }
+ 
+         org.spigotmc.SpigotConfig.init((File) console.options.valueOf("spigot-settings")); // Spigot
++        com.destroystokyo.paper.PaperConfig.init((File) console.options.valueOf("paper-settings")); // Paper
+         for (ServerLevel world : this.console.getAllLevels()) {
+             world.serverLevelData.setDifficulty(config.difficulty);
+             world.setSpawnSettings(config.spawnMonsters, config.spawnAnimals);
+@@ -881,12 +882,14 @@ public final class CraftServer implements Server {
+                 world.ticksPerAmbientSpawns = this.getTicksPerAmbientSpawns();
+             }
+             world.spigotConfig.init(); // Spigot
++            world.paperConfig.init(); // Paper
+         }
+ 
+         this.pluginManager.clearPlugins();
+         this.commandMap.clearCommands();
+         this.reloadData();
+         org.spigotmc.SpigotConfig.registerCommands(); // Spigot
++        com.destroystokyo.paper.PaperConfig.registerCommands(); // Paper
+         this.overrideAllCommandBlockCommands = this.commandsConfiguration.getStringList("command-block-overrides").contains("*");
+         this.ignoreVanillaPermissions = this.commandsConfiguration.getBoolean("ignore-vanilla-permissions");
+ 
+@@ -2293,4 +2296,35 @@ public final class CraftServer implements Server {
+         return this.spigot;
+     }
+     // Spigot end
++
++    // Paper start
++    @SuppressWarnings({"rawtypes", "unchecked"})
++    public static java.nio.file.Path dumpHeap(java.nio.file.Path dir, String name) {
++        try {
++            java.nio.file.Files.createDirectories(dir);
++
++            javax.management.MBeanServer server = java.lang.management.ManagementFactory.getPlatformMBeanServer();
++            java.nio.file.Path file;
++
++            try {
++                Class clazz = Class.forName("openj9.lang.management.OpenJ9DiagnosticsMXBean");
++                Object openj9Mbean = java.lang.management.ManagementFactory.newPlatformMXBeanProxy(server, "openj9.lang.management:type=OpenJ9Diagnostics", clazz);
++                java.lang.reflect.Method m = clazz.getMethod("triggerDumpToFile", String.class, String.class);
++                file = dir.resolve(name + ".phd");
++                m.invoke(openj9Mbean, "heap", file.toString());
++            } catch (ClassNotFoundException e) {
++                Class clazz = Class.forName("com.sun.management.HotSpotDiagnosticMXBean");
++                Object hotspotMBean = java.lang.management.ManagementFactory.newPlatformMXBeanProxy(server, "com.sun.management:type=HotSpotDiagnostic", clazz);
++                java.lang.reflect.Method m = clazz.getMethod("dumpHeap", String.class, boolean.class);
++                file = dir.resolve(name + ".hprof");
++                m.invoke(hotspotMBean, file.toString(), true);
++            }
++
++            return file;
++        } catch (Throwable t) {
++            Bukkit.getLogger().log(Level.SEVERE, "Could not write heap", t);
++            return null;
++        }
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/Main.java b/src/main/java/org/bukkit/craftbukkit/Main.java
+index 09c33e8613d31f4519109f29b44cfea754184c3f..aa4b21c9d3c4af08c4d3a309f948692cc585c9c9 100644
+--- a/src/main/java/org/bukkit/craftbukkit/Main.java
++++ b/src/main/java/org/bukkit/craftbukkit/Main.java
+@@ -129,6 +129,14 @@ public class Main {
+                         .defaultsTo(new File("spigot.yml"))
+                         .describedAs("Yml file");
+                 // Spigot End
++
++                // Paper Start
++                acceptsAll(asList("paper", "paper-settings"), "File for paper settings")
++                        .withRequiredArg()
++                        .ofType(File.class)
++                        .defaultsTo(new File("paper.yml"))
++                        .describedAs("Yml file");
++                // Paper end
+             }
+         };
+ 
+diff --git a/src/main/java/org/spigotmc/SpigotWorldConfig.java b/src/main/java/org/spigotmc/SpigotWorldConfig.java
+index af8c42ed04d9a79cd426bdaa8c2ee3feac1163e3..6c5113545914842ffb310522a7549ae7dd2466b2 100644
+--- a/src/main/java/org/spigotmc/SpigotWorldConfig.java
++++ b/src/main/java/org/spigotmc/SpigotWorldConfig.java
+@@ -58,8 +58,14 @@ public class SpigotWorldConfig
+ 
+     public int getInt(String path, int def)
+     {
+-        this.config.addDefault( "world-settings.default." + path, def );
+-        return this.config.getInt( "world-settings." + this.worldName + "." + path, this.config.getInt( "world-settings.default." + path ) );
++        // Paper start - get int without setting default
++        return this.getInt(path, def, true);
++    }
++    public int getInt(String path, int def, boolean setDef)
++    {
++        if (setDef) this.config.addDefault( "world-settings.default." + path, def );
++        return this.config.getInt( "world-settings." + this.worldName + "." + path, this.config.getInt( "world-settings.default." + path, def ) );
++        // Paper end
+     }
+ 
+     public <T> List getList(String path, T def)

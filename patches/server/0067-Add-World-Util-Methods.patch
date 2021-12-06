@@ -1,0 +1,47 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Fri, 18 Mar 2016 20:16:03 -0400
+Subject: [PATCH] Add World Util Methods
+
+Methods that can be used for other patches to help improve logic.
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
+index 7bc41c8546bc665b085cad6c384d0a5fab9f0b8b..51046d9fb37eabdbf76dee23cea81b6ee3406140 100644
+--- a/src/main/java/net/minecraft/server/level/ServerLevel.java
++++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
+@@ -206,7 +206,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
+     public final LevelStorageSource.LevelStorageAccess convertable;
+     public final UUID uuid;
+ 
+-    public LevelChunk getChunkIfLoaded(int x, int z) {
++    @Override public LevelChunk getChunkIfLoaded(int x, int z) { // Paper - this was added in world too but keeping here for NMS ABI
+         return this.chunkSource.getChunk(x, z, false);
+     }
+ 
+diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
+index 731e1cefd2a9c829bfe82ec87038d9333ef21fb3..648642a30b499532f55f80a103f759740d815691 100644
+--- a/src/main/java/net/minecraft/world/level/Level.java
++++ b/src/main/java/net/minecraft/world/level/Level.java
+@@ -320,6 +320,22 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+         return chunk == null ? null : chunk.getFluidState(blockposition);
+     }
+ 
++    public final boolean isLoadedAndInBounds(BlockPos blockposition) { // Paper - final for inline
++        return getWorldBorder().isWithinBounds(blockposition) && getChunkIfLoadedImmediately(blockposition.getX() >> 4, blockposition.getZ() >> 4) != null;
++    }
++
++    public @Nullable LevelChunk getChunkIfLoaded(int x, int z) { // Overridden in WorldServer for ABI compat which has final
++        return ((ServerLevel) this).getChunkSource().getChunkAtIfLoadedImmediately(x, z);
++    }
++    public final @Nullable LevelChunk getChunkIfLoaded(BlockPos blockposition) {
++        return ((ServerLevel) this).getChunkSource().getChunkAtIfLoadedImmediately(blockposition.getX() >> 4, blockposition.getZ() >> 4);
++    }
++
++    //  reduces need to do isLoaded before getType
++    public final @Nullable BlockState getBlockStateIfLoadedAndInBounds(BlockPos blockposition) {
++        return getWorldBorder().isWithinBounds(blockposition) ? getBlockStateIfLoaded(blockposition) : null;
++    }
++
+     @Override
+     public final ChunkAccess getChunk(int chunkX, int chunkZ, ChunkStatus leastStatus, boolean create) { // Paper - final for inline
+         // Paper end

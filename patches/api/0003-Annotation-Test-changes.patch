@@ -1,0 +1,114 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Shane Freeder <theboyetronic@gmail.com>
+Date: Sun, 17 Mar 2019 23:04:30 +0000
+Subject: [PATCH] Annotation Test changes
+
+- Allow use of TYPE_USE annotations
+- Ignore package-private methods for nullability annotations
+- Add excludes for classes which don't pass
+
+diff --git a/src/test/java/org/bukkit/AnnotationTest.java b/src/test/java/org/bukkit/AnnotationTest.java
+index 0c7377247ad9251c9e498039511e7220370aba2d..c6a8a37a933cfc5a5885602a8a70fdda8fb6aa10 100644
+--- a/src/test/java/org/bukkit/AnnotationTest.java
++++ b/src/test/java/org/bukkit/AnnotationTest.java
+@@ -40,7 +40,17 @@ public class AnnotationTest {
+         "org/bukkit/util/io/Wrapper",
+         "org/bukkit/plugin/java/PluginClassLoader",
+         // Generic functional interface
+-        "org/bukkit/util/Consumer"
++        "org/bukkit/util/Consumer",
++        // Paper start
++        // Timings history is broken in terms of nullability due to guavas Function defining that the param is NonNull
++        "co/aikar/timings/TimingHistory$2",
++        "co/aikar/timings/TimingHistory$2$1",
++        "co/aikar/timings/TimingHistory$2$1$1",
++        "co/aikar/timings/TimingHistory$2$1$2",
++        "co/aikar/timings/TimingHistory$3",
++        "co/aikar/timings/TimingHistory$4",
++        "co/aikar/timings/TimingHistoryEntry$1"
++        // Paper end
+     };
+ 
+     @Test
+@@ -67,14 +77,40 @@ public class AnnotationTest {
+                 }
+ 
+                 if (mustBeAnnotated(Type.getReturnType(method.desc)) && !isWellAnnotated(method.invisibleAnnotations)) {
++                    // Paper start - Allow use of TYPE_USE annotations
++                    boolean warn = true;
++                    if (isWellAnnotated(method.visibleTypeAnnotations)) {
++                        warn = false;
++                    } else if (method.invisibleTypeAnnotations != null) {
++                        dance: for (final org.objectweb.asm.tree.TypeAnnotationNode invisibleTypeAnnotation : method.invisibleTypeAnnotations) {
++                            final org.objectweb.asm.TypeReference ref = new org.objectweb.asm.TypeReference(invisibleTypeAnnotation.typeRef);
++                            if (ref.getSort() == org.objectweb.asm.TypeReference.METHOD_RETURN && java.util.Arrays.binarySearch(ACCEPTED_ANNOTATIONS, invisibleTypeAnnotation.desc) >= 0) {
++                                warn = false;
++                                break dance; // cha cha real smooth
++                            }
++                        }
++                    }
++                    if (warn)
++                    // Paper end
+                     warn(errors, clazz, method, "return value");
+                 }
+ 
+                 Type[] paramTypes = Type.getArgumentTypes(method.desc);
+                 List<ParameterNode> parameters = method.parameters;
+ 
++                dancing: // Paper
+                 for (int i = 0; i < paramTypes.length; i++) {
+                     if (mustBeAnnotated(paramTypes[i]) && !isWellAnnotated(method.invisibleParameterAnnotations == null ? null : method.invisibleParameterAnnotations[i])) {
++                        // Paper start
++                        if (method.invisibleTypeAnnotations != null) {
++                            for (final org.objectweb.asm.tree.TypeAnnotationNode invisibleTypeAnnotation : method.invisibleTypeAnnotations) {
++                                final org.objectweb.asm.TypeReference ref = new org.objectweb.asm.TypeReference(invisibleTypeAnnotation.typeRef);
++                                if (ref.getSort() == org.objectweb.asm.TypeReference.METHOD_FORMAL_PARAMETER && ref.getTypeParameterIndex() == i && java.util.Arrays.binarySearch(ACCEPTED_ANNOTATIONS, invisibleTypeAnnotation.desc) >= 0) {
++                                    continue dancing;
++                                }
++                            }
++                        }
++                        // Paper end - Allow use of TYPE_USE annotations
+                         ParameterNode paramNode = parameters == null ? null : parameters.get(i);
+                         String paramName = paramNode == null ? null : paramNode.name;
+ 
+@@ -91,13 +127,18 @@ public class AnnotationTest {
+ 
+         Collections.sort(errors);
+ 
+-        System.out.println(errors.size() + " missing annotation(s):");
++        StringBuilder builder = new StringBuilder()
++            .append("There ")
++            .append(errors.size() != 1 ? "are " : "is ")
++            .append(errors.size())
++            .append(" missing annotation")
++            .append(errors.size() != 1 ? "s:\n" : ":\n");
++
+         for (String message : errors) {
+-            System.out.print("\t");
+-            System.out.println(message);
++            builder.append("\t").append(message).append("\n");
+         }
+ 
+-        Assert.fail("There " + errors.size() + " are missing annotation(s)");
++        Assert.fail(builder.toString());
+     }
+ 
+     private static void collectClasses(@NotNull File from, @NotNull Map<String, ClassNode> to) throws IOException {
+@@ -152,7 +193,7 @@ public class AnnotationTest {
+ 
+     private static boolean isMethodIncluded(@NotNull ClassNode clazz, @NotNull MethodNode method, @NotNull Map<String, ClassNode> allClasses) {
+         // Exclude private, synthetic and deprecated methods
+-        if ((method.access & (Opcodes.ACC_PRIVATE | Opcodes.ACC_SYNTHETIC | Opcodes.ACC_DEPRECATED)) != 0) {
++        if ((method.access & (Opcodes.ACC_PRIVATE | Opcodes.ACC_SYNTHETIC | Opcodes.ACC_DEPRECATED)) != 0 || (method.access & (Opcodes.ACC_PRIVATE | Opcodes.ACC_PROTECTED | Opcodes.ACC_PUBLIC)) == 0) { // Paper - ignore package-private
+             return false;
+         }
+ 
+@@ -174,7 +215,7 @@ public class AnnotationTest {
+         return true;
+     }
+ 
+-    private static boolean isWellAnnotated(@Nullable List<AnnotationNode> annotations) {
++    private static boolean isWellAnnotated(@Nullable List<? extends AnnotationNode> annotations) { // Paper
+         if (annotations == null) {
+             return false;
+         }
