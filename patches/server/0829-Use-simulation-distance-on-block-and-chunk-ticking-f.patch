@@ -107,22 +107,42 @@ index 451d5e9b5906e662a0c2e04b407068ea49d1089e..913ff20bfce611eb4c719568cba8e707
      }
  
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-index e7e110b53e79e0606262982555dd9eb096c7c4a8..929d19e584c426245bf6cf5f737fe153124a0cdd 100644
+index e7e110b53e79e0606262982555dd9eb096c7c4a8..d3b867a1cb030bc2808a31f5a62fae4db15b3a37 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-@@ -948,11 +948,9 @@ public class ServerChunkCache extends ChunkSource {
+@@ -23,6 +23,7 @@ import net.minecraft.core.BlockPos;
+ import net.minecraft.core.SectionPos;
+ import net.minecraft.network.protocol.Packet;
+ import net.minecraft.server.level.progress.ChunkProgressListener;
++import net.minecraft.util.Mth;
+ import net.minecraft.util.VisibleForDebug;
+ import net.minecraft.util.profiling.ProfilerFiller;
+ import net.minecraft.util.thread.BlockableEventLoop;
+@@ -941,6 +942,10 @@ public class ServerChunkCache extends ChunkSource {
+             this.chunkMap.tick();
+         } else {
+             // Paper start - optimize isOutisdeRange
++            // copied and modified from isOutisdeRange
++            int chunkRange = Math.min(level.spigotConfig.mobSpawnRange, DistanceManager.MOB_SPAWN_RANGE);
++            chunkRange = Math.min(chunkRange, Math.max(level.spigotConfig.viewDistance, level.spigotConfig.simulationDistance));
++
+             ChunkMap playerChunkMap = this.chunkMap;
+             for (ServerPlayer player : this.level.players) {
+                 if (!player.affectsSpawning || player.isSpectator()) {
+@@ -948,13 +953,6 @@ public class ServerChunkCache extends ChunkSource {
                      continue;
                  }
  
 -                int viewDistance = this.chunkMap.getEffectiveViewDistance();
 -
-                 // copied and modified from isOutisdeRange
-                 int chunkRange = level.spigotConfig.mobSpawnRange;
+-                // copied and modified from isOutisdeRange
+-                int chunkRange = level.spigotConfig.mobSpawnRange;
 -                chunkRange = (chunkRange > viewDistance) ? (byte)viewDistance : chunkRange;
-+                chunkRange = (chunkRange > level.spigotConfig.simulationDistance) ? (byte) level.spigotConfig.simulationDistance : chunkRange;
-                 chunkRange = (chunkRange > DistanceManager.MOB_SPAWN_RANGE) ? DistanceManager.MOB_SPAWN_RANGE : chunkRange;
- 
+-                chunkRange = (chunkRange > DistanceManager.MOB_SPAWN_RANGE) ? DistanceManager.MOB_SPAWN_RANGE : chunkRange;
+-
                  com.destroystokyo.paper.event.entity.PlayerNaturallySpawnCreaturesEvent event = new com.destroystokyo.paper.event.entity.PlayerNaturallySpawnCreaturesEvent(player.getBukkitEntity(), (byte)chunkRange);
+                 event.callEvent();
+                 if (event.isCancelled() || event.getSpawnRadius() < 0 || playerChunkMap.playerChunkTickRangeMap.getLastViewDistance(player) == -1) {
 @@ -986,7 +984,7 @@ public class ServerChunkCache extends ChunkSource {
              if ((this.spawnFriendlies || this.spawnEnemies) && this.chunkMap.playerMobDistanceMap != null) { // don't update when animals and monsters are disabled
                  // update distance map
