@@ -1,0 +1,205 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: "Rafael S. M. Santos" <eu@rafaelsms.com>
+Date: Mon, 6 Dec 2021 15:32:42 -0300
+Subject: [PATCH] Use simulation distance on block and chunk ticking, fix mob
+ spawn range
+
+
+diff --git a/src/main/java/co/aikar/timings/TimingsExport.java b/src/main/java/co/aikar/timings/TimingsExport.java
+index 5e3b7fb2e0b7608610555cd23e7ad25a05883181..78dca07318a5995a442576db9da0f9741737508e 100644
+--- a/src/main/java/co/aikar/timings/TimingsExport.java
++++ b/src/main/java/co/aikar/timings/TimingsExport.java
+@@ -152,7 +152,7 @@ public class TimingsExport extends Thread {
+                 pair("gamerules", toObjectMapper(world.getWorld().getGameRules(), rule -> {
+                     return pair(rule, world.getWorld().getGameRuleValue(rule));
+                 })),
+-                pair("ticking-distance", world.getChunkSource().chunkMap.getEffectiveViewDistance())
++                pair("ticking-distance", world.spigotConfig.simulationDistance)
+             ));
+         }));
+ 
+diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
+index d8d1b8cd0104f1c916de443af291ec36988405c2..9210d769f957a07fa30d0b2b782e58de1c4bd2d9 100644
+--- a/src/main/java/net/minecraft/server/level/ChunkMap.java
++++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
+@@ -238,13 +238,13 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+             com.destroystokyo.paper.util.misc.PlayerAreaMap trackMap = this.playerEntityTrackerTrackMaps[i];
+             int trackRange = this.entityTrackerTrackRanges[i];
+ 
+-            trackMap.add(player, chunkX, chunkZ, Math.min(trackRange, this.getEffectiveViewDistance()));
++            trackMap.add(player, chunkX, chunkZ, Math.min(trackRange, viewDistance - 1)); // we can track entities even though they are not ticked
+         }
+         // Paper end - use distance map to optimise entity tracker
+         // Note: players need to be explicitly added to distance maps before they can be updated
+         // Paper start - optimise ChunkMap#anyPlayerCloseEnoughForSpawning
+-        this.playerChunkTickRangeMap.update(player, chunkX, chunkZ, DistanceManager.MOB_SPAWN_RANGE);
+-        this.playerChunkTickRangeMap.add(player, chunkX, chunkZ, DistanceManager.MOB_SPAWN_RANGE);
++        this.playerChunkTickRangeMap.update(player, chunkX, chunkZ, level.spigotConfig.simulationDistance);
++        this.playerChunkTickRangeMap.add(player, chunkX, chunkZ, level.spigotConfig.simulationDistance);
+         // Paper end - optimise ChunkMap#anyPlayerCloseEnoughForSpawning
+         this.playerGeneralAreaMap.add(player, chunkX, chunkZ, GENERAL_AREA_MAP_SQUARE_RADIUS); // Paper - optimise checkDespawn
+     }
+@@ -271,10 +271,10 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+             com.destroystokyo.paper.util.misc.PlayerAreaMap trackMap = this.playerEntityTrackerTrackMaps[i];
+             int trackRange = this.entityTrackerTrackRanges[i];
+ 
+-            trackMap.update(player, chunkX, chunkZ, Math.min(trackRange, this.getEffectiveViewDistance()));
++            trackMap.update(player, chunkX, chunkZ, Math.min(trackRange, viewDistance - 1)); // we can track entities even though they are not ticked
+         }
+         // Paper end - use distance map to optimise entity tracker
+-        this.playerChunkTickRangeMap.update(player, chunkX, chunkZ, DistanceManager.MOB_SPAWN_RANGE); // Paper - optimise ChunkMap#anyPlayerCloseEnoughForSpawning
++        this.playerChunkTickRangeMap.update(player, chunkX, chunkZ, level.spigotConfig.simulationDistance); // Paper - optimise ChunkMap#anyPlayerCloseEnoughForSpawning
+         this.playerGeneralAreaMap.update(player, chunkX, chunkZ, GENERAL_AREA_MAP_SQUARE_RADIUS); // Paper - optimise checkDespawn
+     }
+     // Paper end
+@@ -705,14 +705,6 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+         }
+     }
+ 
+-    // Paper start
+-    public final int getEffectiveViewDistance() {
+-        // TODO this needs to be checked on update
+-        // Mojang currently sets it to +1 of the configured view distance. So subtract one to get the one we really want.
+-        return this.viewDistance - 1;
+-    }
+-    // Paper end
+-
+     private CompletableFuture<Either<List<ChunkAccess>, ChunkHolder.ChunkLoadingFailure>> getChunkRangeFuture(ChunkPos centerChunk, int margin, IntFunction<ChunkStatus> distanceToStatus) {
+         List<CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>>> list = new ArrayList();
+         List<ChunkHolder> list1 = new ArrayList();
+@@ -1791,7 +1783,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+                 }
+             }
+         } else {
+-            final double range = (DistanceManager.MOB_SPAWN_RANGE * 16) * (DistanceManager.MOB_SPAWN_RANGE * 16);
++            final double range = (level.spigotConfig.simulationDistance * 16.0) * (level.spigotConfig.simulationDistance * 16.0);
+             // before spigot, mob spawn range was actually mob spawn range + tick range, but it was split
+             for (int i = 0, len = backingSet.length; i < len; ++i) {
+                 Object raw = backingSet[i];
+@@ -1821,7 +1813,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+             while (iterator.hasNext()) {
+                 ServerPlayer entityplayer = (ServerPlayer) iterator.next();
+ 
+-                if (this.playerIsCloseEnoughForSpawning(entityplayer, pos, 16384.0D)) { // Spigot
++                if (this.playerIsCloseEnoughForSpawning(entityplayer, pos, (level.spigotConfig.mobSpawnRange * 16.0D) * (level.spigotConfig.mobSpawnRange * 16.0D))) { // Spigot
+                     builder.add(entityplayer);
+                 }
+             }
+diff --git a/src/main/java/net/minecraft/server/level/DistanceManager.java b/src/main/java/net/minecraft/server/level/DistanceManager.java
+index 451d5e9b5906e662a0c2e04b407068ea49d1089e..913ff20bfce611eb4c719568cba8e7079a516251 100644
+--- a/src/main/java/net/minecraft/server/level/DistanceManager.java
++++ b/src/main/java/net/minecraft/server/level/DistanceManager.java
+@@ -466,14 +466,14 @@ public abstract class DistanceManager {
+     public int getNaturalSpawnChunkCount() {
+         // Paper start - use distance map to implement
+         // note: this is the spawn chunk count
+-        return this.chunkMap.playerChunkTickRangeMap.size();
++        return this.chunkMap.playerMobSpawnMap.size();
+         // Paper end - use distance map to implement
+     }
+ 
+     public boolean hasPlayersNearby(long chunkPos) {
+         // Paper start - use distance map to implement
+         // note: this is the is spawn chunk method
+-        return this.chunkMap.playerChunkTickRangeMap.getObjectsInRange(chunkPos) != null;
++        return this.chunkMap.playerMobSpawnMap.getObjectsInRange(chunkPos) != null;
+         // Paper end - use distance map to implement
+     }
+ 
+diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
+index e7e110b53e79e0606262982555dd9eb096c7c4a8..929d19e584c426245bf6cf5f737fe153124a0cdd 100644
+--- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
++++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
+@@ -948,11 +948,9 @@ public class ServerChunkCache extends ChunkSource {
+                     continue;
+                 }
+ 
+-                int viewDistance = this.chunkMap.getEffectiveViewDistance();
+-
+                 // copied and modified from isOutisdeRange
+                 int chunkRange = level.spigotConfig.mobSpawnRange;
+-                chunkRange = (chunkRange > viewDistance) ? (byte)viewDistance : chunkRange;
++                chunkRange = (chunkRange > level.spigotConfig.simulationDistance) ? (byte) level.spigotConfig.simulationDistance : chunkRange;
+                 chunkRange = (chunkRange > DistanceManager.MOB_SPAWN_RANGE) ? DistanceManager.MOB_SPAWN_RANGE : chunkRange;
+ 
+                 com.destroystokyo.paper.event.entity.PlayerNaturallySpawnCreaturesEvent event = new com.destroystokyo.paper.event.entity.PlayerNaturallySpawnCreaturesEvent(player.getBukkitEntity(), (byte)chunkRange);
+@@ -986,7 +984,7 @@ public class ServerChunkCache extends ChunkSource {
+             if ((this.spawnFriendlies || this.spawnEnemies) && this.chunkMap.playerMobDistanceMap != null) { // don't update when animals and monsters are disabled
+                 // update distance map
+                 this.level.timings.playerMobDistanceMapUpdate.startTiming();
+-                this.chunkMap.playerMobDistanceMap.update(this.level.players, this.chunkMap.viewDistance);
++                this.chunkMap.playerMobDistanceMap.update(this.level.players, this.level.spigotConfig.mobSpawnRange);
+                 this.level.timings.playerMobDistanceMapUpdate.stopTiming();
+                 // re-set mob counts
+                 for (ServerPlayer player : this.level.players) {
+@@ -1013,11 +1011,20 @@ public class ServerChunkCache extends ChunkSource {
+             // Paper - moved natural spawn event up
+             // Paper start - optimise chunk tick iteration
+             Iterator<LevelChunk> iterator1;
++            boolean spawnRangeGreater = this.level.spigotConfig.mobSpawnRange > this.level.spigotConfig.simulationDistance;
+             if (this.level.paperConfig.perPlayerMobSpawns) {
+-                iterator1 = this.entityTickingChunks.iterator();
++                iterator1 = this.tickingChunks.iterator();
++                if (spawnRangeGreater) {
++                    iterator1 = this.entityTickingChunks.iterator();
++                }
+             } else {
+-                iterator1 = this.entityTickingChunks.unsafeIterator();
+-                List<LevelChunk> shuffled = Lists.newArrayListWithCapacity(this.entityTickingChunks.size());
++                int size = this.tickingChunks.size();
++                iterator1 = this.tickingChunks.unsafeIterator();
++                if (spawnRangeGreater) {
++                    size = this.entityTickingChunks.size();
++                    iterator1 = this.entityTickingChunks.unsafeIterator();
++                }
++                List<LevelChunk> shuffled = Lists.newArrayListWithCapacity(size);
+                 while (iterator1.hasNext()) {
+                     shuffled.add(iterator1.next());
+                 }
+@@ -1036,21 +1043,23 @@ public class ServerChunkCache extends ChunkSource {
+                     holder.broadcastChanges(chunk1);
+                     this.level.timings.broadcastChunkUpdates.stopTiming(); // Paper - timing
+                     gameprofilerfiller.pop();
+-                // Paper end - optimise chunk tick iteration
+-                ChunkPos chunkcoordintpair = chunk1.getPos();
+-
+-                if ((true || this.level.isPositionEntityTicking(chunkcoordintpair)) && this.chunkMap.anyPlayerCloseEnoughForSpawning(holder, chunkcoordintpair, false)) { // Paper - optimise anyPlayerCloseEnoughForSpawning & optimise chunk tick iteration
+-                    chunk1.incrementInhabitedTime(j);
+-                    if (flag2 && (this.spawnEnemies || this.spawnFriendlies) && this.level.getWorldBorder().isWithinBounds(chunkcoordintpair) && this.chunkMap.anyPlayerCloseEnoughForSpawning(holder, chunkcoordintpair, true)) { // Spigot // Paper - optimise anyPlayerCloseEnoughForSpawning & optimise chunk tick iteration
+-                        NaturalSpawner.spawnForChunk(this.level, chunk1, spawnercreature_d, this.spawnFriendlies, this.spawnEnemies, flag1);
++                    // Paper end - optimise chunk tick iteration
++                    ChunkPos chunkcoordintpair = chunk1.getPos();
++
++                    // Either mob spawn range is greater than chunk ticking range (all chunks here will be spawning) or there is a player in the mob spawn range
++                    if (spawnRangeGreater || this.chunkMap.anyPlayerCloseEnoughForSpawning(holder, chunkcoordintpair, true)) {
++                        chunk1.incrementInhabitedTime(j);
++                        if (flag2 && (this.spawnEnemies || this.spawnFriendlies) && this.level.getWorldBorder().isWithinBounds(chunkcoordintpair) && this.level.isPositionEntityTicking(chunkcoordintpair)) { // Spigot // Paper - optimise anyPlayerCloseEnoughForSpawning & optimise chunk tick iteration
++                            NaturalSpawner.spawnForChunk(this.level, chunk1, spawnercreature_d, this.spawnFriendlies, this.spawnEnemies, flag1);
++                        }
+                     }
+ 
+-                    if (this.level.shouldTickBlocksAt(chunkcoordintpair.toLong())) {
++                    // Either chunk ticking range is greater than mob spawn range (all chunks here should tick) or we must tick blocks on this chunk
++                    if (!spawnRangeGreater || this.level.shouldTickBlocksAt(chunkcoordintpair.toLong())) { // Paper - optimise anyPlayerCloseEnoughForSpawning & optimise chunk tick iteration
+                         this.level.tickChunk(chunk1, k);
+                         if ((chunksTicked++ & 1) == 0) net.minecraft.server.MinecraftServer.getServer().executeMidTickTasks(); // Paper
+                     }
+-                }
+-                // Paper start - optimise chunk tick iteration
++                    // Paper start - optimise chunk tick iteration
+                 }
+             }
+ 
+diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
+index e371ffb1f88e08883a1a2460260ff368c0cfe853..86570930548039d37ddc555fd560d21ddd9864a2 100644
+--- a/src/main/java/net/minecraft/server/level/ServerLevel.java
++++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
+@@ -2343,7 +2343,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
+     private boolean isPositionTickingWithEntitiesLoaded(long chunkPos) {
+         // Paper start - optimize is ticking ready type functions
+         ChunkHolder chunkHolder = this.chunkSource.chunkMap.getVisibleChunkIfPresent(chunkPos);
+-        return chunkHolder != null && chunkHolder.isTickingReady() && this.areEntitiesLoaded(chunkPos);
++        return chunkHolder != null && chunkHolder.isTickingReady() && this.areEntitiesLoaded(chunkPos) && shouldTickBlocksAt(chunkPos); // Paper - check if blocks should be ticked at this position
+         // Paper end
+     }
+ 
