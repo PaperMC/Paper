@@ -6,18 +6,31 @@ Subject: [PATCH] Fix PotionSplashEvent for water splash potions
 Fixes SPIGOT-6221: https://hub.spigotmc.org/jira/projects/SPIGOT/issues/SPIGOT-6221
 
 diff --git a/src/main/java/net/minecraft/world/entity/projectile/ThrownPotion.java b/src/main/java/net/minecraft/world/entity/projectile/ThrownPotion.java
-index 517a0f6bf847c5bf01851ae326d1b12332c2672c..1b93afaae1e5129369c13e887d37cef808403382 100644
+index 517a0f6bf847c5bf01851ae326d1b12332c2672c..aca9d1c2cf92ee47c646de060ae8e8f4eb7b3ddd 100644
 --- a/src/main/java/net/minecraft/world/entity/projectile/ThrownPotion.java
 +++ b/src/main/java/net/minecraft/world/entity/projectile/ThrownPotion.java
-@@ -125,6 +125,7 @@ public class ThrownPotion extends ThrowableItemProjectile implements ItemSupplie
+@@ -122,30 +122,47 @@ public class ThrownPotion extends ThrowableItemProjectile implements ItemSupplie
+         }
+     }
+ 
++    private static final Predicate<net.minecraft.world.entity.LivingEntity> APPLY_WATER_GET_ENTITIES_PREDICATE = ThrownPotion.WATER_SENSITIVE.or(Axolotl.class::isInstance); // Paper
      private void applyWater() {
          AABB axisalignedbb = this.getBoundingBox().inflate(4.0D, 2.0D, 4.0D);
-         List<net.minecraft.world.entity.LivingEntity> list = this.level.getEntitiesOfClass(net.minecraft.world.entity.LivingEntity.class, axisalignedbb, ThrownPotion.WATER_SENSITIVE);
+-        List<net.minecraft.world.entity.LivingEntity> list = this.level.getEntitiesOfClass(net.minecraft.world.entity.LivingEntity.class, axisalignedbb, ThrownPotion.WATER_SENSITIVE);
++        List<net.minecraft.world.entity.LivingEntity> list = this.level.getEntitiesOfClass(net.minecraft.world.entity.LivingEntity.class, axisalignedbb, ThrownPotion.APPLY_WATER_GET_ENTITIES_PREDICATE); // Paper
 +        Map<LivingEntity, Double> affected = new HashMap<>(); // Paper
  
          if (!list.isEmpty()) {
              Iterator iterator = list.iterator();
-@@ -134,7 +135,11 @@ public class ThrownPotion extends ThrowableItemProjectile implements ItemSupplie
+ 
+             while (iterator.hasNext()) {
+                 net.minecraft.world.entity.LivingEntity entityliving = (net.minecraft.world.entity.LivingEntity) iterator.next();
++                // Paper start - Change into single getEntities for axolotls & water sensitive
++                if (entityliving instanceof Axolotl axolotl) {
++                    affected.put(axolotl.getBukkitLivingEntity(), 1.0);
++                    continue;
++                }
++                // Paper end
                  double d0 = this.distanceToSqr((Entity) entityliving);
  
                  if (d0 < 16.0D && entityliving.isSensitiveToWater()) {
@@ -30,15 +43,15 @@ index 517a0f6bf847c5bf01851ae326d1b12332c2672c..1b93afaae1e5129369c13e887d37cef8
                  }
              }
          }
-@@ -145,7 +150,21 @@ public class ThrownPotion extends ThrowableItemProjectile implements ItemSupplie
-         while (iterator1.hasNext()) {
-             Axolotl axolotl = (Axolotl) iterator1.next();
  
+-        List<Axolotl> list1 = this.level.getEntitiesOfClass(Axolotl.class, axisalignedbb);
+-        Iterator iterator1 = list1.iterator();
+-
+-        while (iterator1.hasNext()) {
+-            Axolotl axolotl = (Axolotl) iterator1.next();
+-
 -            axolotl.rehydrate();
-+            // Paper start - move down to include axolotls
-+            affected.put(axolotl.getBukkitLivingEntity(), 1.0);
-+            // axolotl.rehydrate();
-+        }
++        // Paper start
 +        org.bukkit.event.entity.PotionSplashEvent event = CraftEventFactory.callPotionSplashEvent(this, affected);
 +        if (!event.isCancelled()) {
 +            for (LivingEntity affectedEntity : event.getAffectedEntities()) {
@@ -53,7 +66,7 @@ index 517a0f6bf847c5bf01851ae326d1b12332c2672c..1b93afaae1e5129369c13e887d37cef8
          }
  
      }
-@@ -166,6 +185,7 @@ public class ThrownPotion extends ThrowableItemProjectile implements ItemSupplie
+@@ -166,6 +183,7 @@ public class ThrownPotion extends ThrowableItemProjectile implements ItemSupplie
                      double d0 = this.distanceToSqr((Entity) entityliving);
  
                      if (d0 < 16.0D) {
