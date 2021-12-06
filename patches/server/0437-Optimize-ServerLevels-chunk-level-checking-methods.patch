@@ -7,8 +7,552 @@ These can be hot functions (i.e entity ticking and block ticking),
 so inline where possible, and avoid the abstraction of the
 Either class.
 
+diff --git a/src/main/java/co/aikar/timings/TimingsExport.java b/src/main/java/co/aikar/timings/TimingsExport.java
+index ee53453440177537fc653ea156785d7591498614..d73e053fedceb5c04d36c51d1a205d32866247f6 100644
+--- a/src/main/java/co/aikar/timings/TimingsExport.java
++++ b/src/main/java/co/aikar/timings/TimingsExport.java
+@@ -152,7 +152,7 @@ public class TimingsExport extends Thread {
+                 pair("gamerules", toObjectMapper(world.getWorld().getGameRules(), rule -> {
+                     return pair(rule, world.getWorld().getGameRuleValue(rule));
+                 })),
+-                pair("ticking-distance", world.getChunkSource().chunkMap.getEffectiveViewDistance())
++                pair("ticking-distance", world.getChunkSource().chunkMap.distanceManager.simulationDistance)
+             ));
+         }));
+ 
+diff --git a/src/main/java/com/destroystokyo/paper/util/misc/AreaMap.java b/src/main/java/com/destroystokyo/paper/util/misc/AreaMap.java
+index c89f6986eda5a132a948732ea1b6923370685317..a7d60690555537db9f0e0e5e09ae202f67959467 100644
+--- a/src/main/java/com/destroystokyo/paper/util/misc/AreaMap.java
++++ b/src/main/java/com/destroystokyo/paper/util/misc/AreaMap.java
+@@ -17,10 +17,10 @@ public abstract class AreaMap<E> {
+     /* Tested via https://gist.github.com/Spottedleaf/520419c6f41ef348fe9926ce674b7217 */
+ 
+     protected final Object2LongOpenHashMap<E> objectToLastCoordinate = new Object2LongOpenHashMap<>();
+-    protected final Object2IntOpenHashMap<E> objectToViewDistance = new Object2IntOpenHashMap<>();
++    protected final Object2IntOpenHashMap<E> objectToDistance = new Object2IntOpenHashMap<>();
+ 
+     {
+-        this.objectToViewDistance.defaultReturnValue(-1);
++        this.objectToDistance.defaultReturnValue(-1);
+         this.objectToLastCoordinate.defaultReturnValue(Long.MIN_VALUE);
+     }
+ 
+@@ -73,8 +73,8 @@ public abstract class AreaMap<E> {
+     }
+ 
+     // -1 indicates the object is not mapped
+-    public final int getLastViewDistance(final E object) {
+-        return this.objectToViewDistance.getOrDefault(object, -1);
++    public final int getLastDistance(final E object) {
++        return this.objectToDistance.getOrDefault(object, -1);
+     }
+ 
+     // returns the total number of mapped chunks
+@@ -82,89 +82,89 @@ public abstract class AreaMap<E> {
+         return this.areaMap.size();
+     }
+ 
+-    public final void addOrUpdate(final E object, final int chunkX, final int chunkZ, final int viewDistance) {
+-        final int oldViewDistance = this.objectToViewDistance.put(object, viewDistance);
++    public final void addOrUpdate(final E object, final int chunkX, final int chunkZ, final int distance) {
++        final int oldDistance = this.objectToDistance.put(object, distance);
+         final long newPos = MCUtil.getCoordinateKey(chunkX, chunkZ);
+         final long oldPos = this.objectToLastCoordinate.put(object, newPos);
+ 
+-        if (oldViewDistance == -1) {
+-            this.addObject(object, chunkX, chunkZ, Integer.MIN_VALUE, Integer.MIN_VALUE, viewDistance);
+-            this.addObjectCallback(object, chunkX, chunkZ, viewDistance);
++        if (oldDistance == -1) {
++            this.addObject(object, chunkX, chunkZ, Integer.MIN_VALUE, Integer.MIN_VALUE, distance);
++            this.addObjectCallback(object, chunkX, chunkZ, distance);
+         } else {
+-            this.updateObject(object, oldPos, newPos, oldViewDistance, viewDistance);
+-            this.updateObjectCallback(object, oldPos, newPos, oldViewDistance, viewDistance);
++            this.updateObject(object, oldPos, newPos, oldDistance, distance);
++            this.updateObjectCallback(object, oldPos, newPos, oldDistance, distance);
+         }
+-        //this.validate(object, viewDistance);
++        //this.validate(object, distance);
+     }
+ 
+-    public final boolean update(final E object, final int chunkX, final int chunkZ, final int viewDistance) {
+-        final int oldViewDistance = this.objectToViewDistance.replace(object, viewDistance);
+-        if (oldViewDistance == -1) {
++    public final boolean update(final E object, final int chunkX, final int chunkZ, final int distance) {
++        final int oldDistance = this.objectToDistance.replace(object, distance);
++        if (oldDistance == -1) {
+             return false;
+         } else {
+             final long newPos = MCUtil.getCoordinateKey(chunkX, chunkZ);
+             final long oldPos = this.objectToLastCoordinate.put(object, newPos);
+-            this.updateObject(object, oldPos, newPos, oldViewDistance, viewDistance);
+-            this.updateObjectCallback(object, oldPos, newPos, oldViewDistance, viewDistance);
++            this.updateObject(object, oldPos, newPos, oldDistance, distance);
++            this.updateObjectCallback(object, oldPos, newPos, oldDistance, distance);
+         }
+-        //this.validate(object, viewDistance);
++        //this.validate(object, distance);
+         return true;
+     }
+ 
+     // called after the distance map updates
+-    protected void updateObjectCallback(final E Object, final long oldPosition, final long newPosition, final int oldViewDistance, final int newViewDistance) {
++    protected void updateObjectCallback(final E Object, final long oldPosition, final long newPosition, final int oldDistance, final int newDistance) {
+         if (newPosition != oldPosition && this.changeSourceCallback != null) {
+             this.changeSourceCallback.accept(Object, oldPosition, newPosition);
+         }
+     }
+ 
+-    public final boolean add(final E object, final int chunkX, final int chunkZ, final int viewDistance) {
+-        final int oldViewDistance = this.objectToViewDistance.putIfAbsent(object, viewDistance);
+-        if (oldViewDistance != -1) {
++    public final boolean add(final E object, final int chunkX, final int chunkZ, final int distance) {
++        final int oldDistance = this.objectToDistance.putIfAbsent(object, distance);
++        if (oldDistance != -1) {
+             return false;
+         }
+ 
+         final long newPos = MCUtil.getCoordinateKey(chunkX, chunkZ);
+         this.objectToLastCoordinate.put(object, newPos);
+-        this.addObject(object, chunkX, chunkZ, Integer.MIN_VALUE, Integer.MIN_VALUE, viewDistance);
+-        this.addObjectCallback(object, chunkX, chunkZ, viewDistance);
++        this.addObject(object, chunkX, chunkZ, Integer.MIN_VALUE, Integer.MIN_VALUE, distance);
++        this.addObjectCallback(object, chunkX, chunkZ, distance);
+ 
+-        //this.validate(object, viewDistance);
++        //this.validate(object, distance);
+ 
+         return true;
+     }
+ 
+     // called after the distance map updates
+-    protected void addObjectCallback(final E object, final int chunkX, final int chunkZ, final int viewDistance) {}
++    protected void addObjectCallback(final E object, final int chunkX, final int chunkZ, final int distance) {}
+ 
+     public final boolean remove(final E object) {
+         final long position = this.objectToLastCoordinate.removeLong(object);
+-        final int viewDistance = this.objectToViewDistance.removeInt(object);
++        final int distance = this.objectToDistance.removeInt(object);
+ 
+-        if (viewDistance == -1) {
++        if (distance == -1) {
+             return false;
+         }
+ 
+         final int currentX = MCUtil.getCoordinateX(position);
+         final int currentZ = MCUtil.getCoordinateZ(position);
+ 
+-        this.removeObject(object, currentX, currentZ, currentX, currentZ, viewDistance);
+-        this.removeObjectCallback(object, currentX, currentZ, viewDistance);
++        this.removeObject(object, currentX, currentZ, currentX, currentZ, distance);
++        this.removeObjectCallback(object, currentX, currentZ, distance);
+         //this.validate(object, -1);
+         return true;
+     }
+ 
+     // called after the distance map updates
+-    protected void removeObjectCallback(final E object, final int chunkX, final int chunkZ, final int viewDistance) {}
++    protected void removeObjectCallback(final E object, final int chunkX, final int chunkZ, final int distance) {}
+ 
+     protected abstract PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<E> getEmptySetFor(final E object);
+ 
+     // expensive op, only for debug
+-    protected void validate(final E object, final int viewDistance) {
++    protected void validate(final E object, final int distance) {
+         int entiesGot = 0;
+-        int expectedEntries = (2 * viewDistance + 1);
++        int expectedEntries = (2 * distance + 1);
+         expectedEntries *= expectedEntries;
+-        if (viewDistance < 0) {
++        if (distance < 0) {
+             expectedEntries = 0;
+         }
+ 
+@@ -192,8 +192,8 @@ public abstract class AreaMap<E> {
+ 
+                 final int dist = Math.max(IntegerUtil.branchlessAbs(chunkX - centerX), IntegerUtil.branchlessAbs(chunkZ - centerZ));
+ 
+-                if (dist > viewDistance) {
+-                    throw new IllegalStateException("Expected view distance " + viewDistance + ", got " + dist);
++                if (dist > distance) {
++                    throw new IllegalStateException("Expected view distance " + distance + ", got " + dist);
+                 }
+             }
+         }
+@@ -269,11 +269,11 @@ public abstract class AreaMap<E> {
+         }
+     }
+ 
+-    private void addObject(final E object, final int chunkX, final int chunkZ, final int prevChunkX, final int prevChunkZ, final int viewDistance) {
+-        final int maxX = chunkX + viewDistance;
+-        final int maxZ = chunkZ + viewDistance;
+-        final int minX = chunkX - viewDistance;
+-        final int minZ = chunkZ - viewDistance;
++    private void addObject(final E object, final int chunkX, final int chunkZ, final int prevChunkX, final int prevChunkZ, final int distance) {
++        final int maxX = chunkX + distance;
++        final int maxZ = chunkZ + distance;
++        final int minX = chunkX - distance;
++        final int minZ = chunkZ - distance;
+         for (int x = minX; x <= maxX; ++x) {
+             for (int z = minZ; z <= maxZ; ++z) {
+                 this.addObjectTo(object, x, z, chunkX, chunkZ, prevChunkX, prevChunkZ);
+@@ -281,11 +281,11 @@ public abstract class AreaMap<E> {
+         }
+     }
+ 
+-    private void removeObject(final E object, final int chunkX, final int chunkZ, final int currentChunkX, final int currentChunkZ, final int viewDistance) {
+-        final int maxX = chunkX + viewDistance;
+-        final int maxZ = chunkZ + viewDistance;
+-        final int minX = chunkX - viewDistance;
+-        final int minZ = chunkZ - viewDistance;
++    private void removeObject(final E object, final int chunkX, final int chunkZ, final int currentChunkX, final int currentChunkZ, final int distance) {
++        final int maxX = chunkX + distance;
++        final int maxZ = chunkZ + distance;
++        final int minX = chunkX - distance;
++        final int minZ = chunkZ - distance;
+         for (int x = minX; x <= maxX; ++x) {
+             for (int z = minZ; z <= maxZ; ++z) {
+                 this.removeObjectFrom(object, x, z, currentChunkX, currentChunkZ, chunkX, chunkZ);
+@@ -298,7 +298,7 @@ public abstract class AreaMap<E> {
+         return 1 | (val >> (Integer.SIZE - 1));
+     }
+ 
+-    private void updateObject(final E object, final long oldPosition, final long newPosition, final int oldViewDistance, final int newViewDistance) {
++    private void updateObject(final E object, final long oldPosition, final long newPosition, final int oldDistance, final int newDistance) {
+         final int toX = MCUtil.getCoordinateX(newPosition);
+         final int toZ = MCUtil.getCoordinateZ(newPosition);
+         final int fromX = MCUtil.getCoordinateX(oldPosition);
+@@ -310,25 +310,25 @@ public abstract class AreaMap<E> {
+         final int totalX = IntegerUtil.branchlessAbs(fromX - toX);
+         final int totalZ = IntegerUtil.branchlessAbs(fromZ - toZ);
+ 
+-        if (Math.max(totalX, totalZ) > (2 * Math.max(newViewDistance, oldViewDistance))) {
++        if (Math.max(totalX, totalZ) > (2 * Math.max(newDistance, oldDistance))) {
+             // teleported?
+-            this.removeObject(object, fromX, fromZ, fromX, fromZ, oldViewDistance);
+-            this.addObject(object, toX, toZ, fromX, fromZ, newViewDistance);
++            this.removeObject(object, fromX, fromZ, fromX, fromZ, oldDistance);
++            this.addObject(object, toX, toZ, fromX, fromZ, newDistance);
+             return;
+         }
+ 
+-        if (oldViewDistance != newViewDistance) {
++        if (oldDistance != newDistance) {
+             // remove loop
+ 
+-            final int oldMinX = fromX - oldViewDistance;
+-            final int oldMinZ = fromZ - oldViewDistance;
+-            final int oldMaxX = fromX + oldViewDistance;
+-            final int oldMaxZ = fromZ + oldViewDistance;
++            final int oldMinX = fromX - oldDistance;
++            final int oldMinZ = fromZ - oldDistance;
++            final int oldMaxX = fromX + oldDistance;
++            final int oldMaxZ = fromZ + oldDistance;
+             for (int currX = oldMinX; currX <= oldMaxX; ++currX) {
+                 for (int currZ = oldMinZ; currZ <= oldMaxZ; ++currZ) {
+ 
+                     // only remove if we're outside the new view distance...
+-                    if (Math.max(IntegerUtil.branchlessAbs(currX - toX), IntegerUtil.branchlessAbs(currZ - toZ)) > newViewDistance) {
++                    if (Math.max(IntegerUtil.branchlessAbs(currX - toX), IntegerUtil.branchlessAbs(currZ - toZ)) > newDistance) {
+                         this.removeObjectFrom(object, currX, currZ, toX, toZ, fromX, fromZ);
+                     }
+                 }
+@@ -336,15 +336,15 @@ public abstract class AreaMap<E> {
+ 
+             // add loop
+ 
+-            final int newMinX = toX - newViewDistance;
+-            final int newMinZ = toZ - newViewDistance;
+-            final int newMaxX = toX + newViewDistance;
+-            final int newMaxZ = toZ + newViewDistance;
++            final int newMinX = toX - newDistance;
++            final int newMinZ = toZ - newDistance;
++            final int newMaxX = toX + newDistance;
++            final int newMaxZ = toZ + newDistance;
+             for (int currX = newMinX; currX <= newMaxX; ++currX) {
+                 for (int currZ = newMinZ; currZ <= newMaxZ; ++currZ) {
+ 
+                     // only add if we're outside the old view distance...
+-                    if (Math.max(IntegerUtil.branchlessAbs(currX - fromX), IntegerUtil.branchlessAbs(currZ - fromZ)) > oldViewDistance) {
++                    if (Math.max(IntegerUtil.branchlessAbs(currX - fromX), IntegerUtil.branchlessAbs(currZ - fromZ)) > oldDistance) {
+                         this.addObjectTo(object, currX, currZ, toX, toZ, fromX, fromZ);
+                     }
+                 }
+@@ -379,10 +379,10 @@ public abstract class AreaMap<E> {
+         if (dx != 0) {
+             // handle right addition
+ 
+-            maxX = toX + (oldViewDistance * right) + right; // exclusive
+-            minX = fromX + (oldViewDistance * right) + right; // inclusive
+-            maxZ = fromZ + (oldViewDistance * up) + up; // exclusive
+-            minZ = toZ - (oldViewDistance * up); // inclusive
++            maxX = toX + (oldDistance * right) + right; // exclusive
++            minX = fromX + (oldDistance * right) + right; // inclusive
++            maxZ = fromZ + (oldDistance * up) + up; // exclusive
++            minZ = toZ - (oldDistance * up); // inclusive
+ 
+             for (int currX = minX; currX != maxX; currX += right) {
+                 for (int currZ = minZ; currZ != maxZ; currZ += up) {
+@@ -394,10 +394,10 @@ public abstract class AreaMap<E> {
+         if (dz != 0) {
+             // handle up addition
+ 
+-            maxX = toX + (oldViewDistance * right) + right; // exclusive
+-            minX = toX - (oldViewDistance * right); // inclusive
+-            maxZ = toZ + (oldViewDistance * up) + up; // exclusive
+-            minZ = fromZ + (oldViewDistance * up) + up; // inclusive
++            maxX = toX + (oldDistance * right) + right; // exclusive
++            minX = toX - (oldDistance * right); // inclusive
++            maxZ = toZ + (oldDistance * up) + up; // exclusive
++            minZ = fromZ + (oldDistance * up) + up; // inclusive
+ 
+             for (int currX = minX; currX != maxX; currX += right) {
+                 for (int currZ = minZ; currZ != maxZ; currZ += up) {
+@@ -409,10 +409,10 @@ public abstract class AreaMap<E> {
+         if (dx != 0) {
+             // handle left removal
+ 
+-            maxX = toX - (oldViewDistance * right); // exclusive
+-            minX = fromX - (oldViewDistance * right); // inclusive
+-            maxZ = fromZ + (oldViewDistance * up) + up; // exclusive
+-            minZ = toZ - (oldViewDistance * up); // inclusive
++            maxX = toX - (oldDistance * right); // exclusive
++            minX = fromX - (oldDistance * right); // inclusive
++            maxZ = fromZ + (oldDistance * up) + up; // exclusive
++            minZ = toZ - (oldDistance * up); // inclusive
+ 
+             for (int currX = minX; currX != maxX; currX += right) {
+                 for (int currZ = minZ; currZ != maxZ; currZ += up) {
+@@ -424,10 +424,10 @@ public abstract class AreaMap<E> {
+         if (dz != 0) {
+             // handle down removal
+ 
+-            maxX = fromX + (oldViewDistance * right) + right; // exclusive
+-            minX = fromX - (oldViewDistance * right); // inclusive
+-            maxZ = toZ - (oldViewDistance * up); // exclusive
+-            minZ = fromZ - (oldViewDistance * up); // inclusive
++            maxX = fromX + (oldDistance * right) + right; // exclusive
++            minX = fromX - (oldDistance * right); // inclusive
++            maxZ = toZ - (oldDistance * up); // exclusive
++            minZ = fromZ - (oldDistance * up); // inclusive
+ 
+             for (int currX = minX; currX != maxX; currX += right) {
+                 for (int currZ = minZ; currZ != maxZ; currZ += up) {
+diff --git a/src/main/java/com/destroystokyo/paper/util/misc/DistanceTrackingAreaMap.java b/src/main/java/com/destroystokyo/paper/util/misc/DistanceTrackingAreaMap.java
+index eacec5074ab1237986635c6cb19a4d34a89d4d3f..adc3de532f6d64cf31e6099c1b9351c2db1b9913 100644
+--- a/src/main/java/com/destroystokyo/paper/util/misc/DistanceTrackingAreaMap.java
++++ b/src/main/java/com/destroystokyo/paper/util/misc/DistanceTrackingAreaMap.java
+@@ -93,11 +93,11 @@ public abstract class DistanceTrackingAreaMap<E> extends AreaMap<E> {
+     }
+ 
+     @Override
+-    protected void addObjectCallback(final E object, final int chunkX, final int chunkZ, final int viewDistance) {
+-        final int maxX = chunkX + viewDistance;
+-        final int maxZ = chunkZ + viewDistance;
+-        final int minX = chunkX - viewDistance;
+-        final int minZ = chunkZ - viewDistance;
++    protected void addObjectCallback(final E object, final int chunkX, final int chunkZ, final int distance) {
++        final int maxX = chunkX + distance;
++        final int maxZ = chunkZ + distance;
++        final int minX = chunkX - distance;
++        final int minZ = chunkZ - distance;
+         for (int x = minX; x <= maxX; ++x) {
+             for (int z = minZ; z <= maxZ; ++z) {
+                 this.recalculateDistance(x, z);
+@@ -106,11 +106,11 @@ public abstract class DistanceTrackingAreaMap<E> extends AreaMap<E> {
+     }
+ 
+     @Override
+-    protected void removeObjectCallback(final E object, final int chunkX, final int chunkZ, final int viewDistance) {
+-        final int maxX = chunkX + viewDistance;
+-        final int maxZ = chunkZ + viewDistance;
+-        final int minX = chunkX - viewDistance;
+-        final int minZ = chunkZ - viewDistance;
++    protected void removeObjectCallback(final E object, final int chunkX, final int chunkZ, final int distance) {
++        final int maxX = chunkX + distance;
++        final int maxZ = chunkZ + distance;
++        final int minX = chunkX - distance;
++        final int minZ = chunkZ - distance;
+         for (int x = minX; x <= maxX; ++x) {
+             for (int z = minZ; z <= maxZ; ++z) {
+                 this.recalculateDistance(x, z);
+@@ -119,8 +119,8 @@ public abstract class DistanceTrackingAreaMap<E> extends AreaMap<E> {
+     }
+ 
+     @Override
+-    protected void updateObjectCallback(final E object, final long oldPosition, final long newPosition, final int oldViewDistance, final int newViewDistance) {
+-        if (oldPosition == newPosition && newViewDistance == oldViewDistance) {
++    protected void updateObjectCallback(final E object, final long oldPosition, final long newPosition, final int oldDistance, final int newDistance) {
++        if (oldPosition == newPosition && newDistance == oldDistance) {
+             return;
+         }
+ 
+@@ -132,24 +132,24 @@ public abstract class DistanceTrackingAreaMap<E> extends AreaMap<E> {
+         final int totalX = IntegerUtil.branchlessAbs(fromX - toX);
+         final int totalZ = IntegerUtil.branchlessAbs(fromZ - toZ);
+ 
+-        if (Math.max(totalX, totalZ) > (2 * Math.max(newViewDistance, oldViewDistance))) {
++        if (Math.max(totalX, totalZ) > (2 * Math.max(newDistance, oldDistance))) {
+             // teleported?
+-            this.removeObjectCallback(object, fromX, fromZ, oldViewDistance);
+-            this.addObjectCallback(object, toX, toZ, newViewDistance);
++            this.removeObjectCallback(object, fromX, fromZ, oldDistance);
++            this.addObjectCallback(object, toX, toZ, newDistance);
+             return;
+         }
+ 
+-        final int minX = Math.min(fromX - oldViewDistance, toX - newViewDistance);
+-        final int maxX = Math.max(fromX + oldViewDistance, toX + newViewDistance);
+-        final int minZ = Math.min(fromZ - oldViewDistance, toZ - newViewDistance);
+-        final int maxZ = Math.max(fromZ + oldViewDistance, toZ + newViewDistance);
++        final int minX = Math.min(fromX - oldDistance, toX - newDistance);
++        final int maxX = Math.max(fromX + oldDistance, toX + newDistance);
++        final int minZ = Math.min(fromZ - oldDistance, toZ - newDistance);
++        final int maxZ = Math.max(fromZ + oldDistance, toZ + newDistance);
+ 
+         for (int x = minX; x <= maxX; ++x) {
+             for (int z = minZ; z <= maxZ; ++z) {
+                 final int distXOld = IntegerUtil.branchlessAbs(x - fromX);
+                 final int distZOld = IntegerUtil.branchlessAbs(z - fromZ);
+ 
+-                if (Math.max(distXOld, distZOld) <= oldViewDistance) {
++                if (Math.max(distXOld, distZOld) <= oldDistance) {
+                     this.recalculateDistance(x, z);
+                     continue;
+                 }
+@@ -157,7 +157,7 @@ public abstract class DistanceTrackingAreaMap<E> extends AreaMap<E> {
+                 final int distXNew = IntegerUtil.branchlessAbs(x - toX);
+                 final int distZNew = IntegerUtil.branchlessAbs(z - toZ);
+ 
+-                if (Math.max(distXNew, distZNew) <= newViewDistance) {
++                if (Math.max(distXNew, distZNew) <= newDistance) {
+                     this.recalculateDistance(x, z);
+                     continue;
+                 }
+diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
+index b1ae9e1aa68aaa0435ecdd50d78f82d4e36441bf..9ea21661c0215eda42d3bf11f1a39baa54101eae 100644
+--- a/src/main/java/net/minecraft/server/level/ChunkMap.java
++++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
+@@ -210,18 +210,19 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+     void addPlayerToDistanceMaps(ServerPlayer player) {
+         int chunkX = MCUtil.getChunkCoordinate(player.getX());
+         int chunkZ = MCUtil.getChunkCoordinate(player.getZ());
++        int upperLimit = Math.max(distanceManager.simulationDistance, level.spigotConfig.mobSpawnRange);
+         // Paper start - use distance map to optimise entity tracker
+         for (int i = 0, len = TRACKING_RANGE_TYPES.length; i < len; ++i) {
+             com.destroystokyo.paper.util.misc.PlayerAreaMap trackMap = this.playerEntityTrackerTrackMaps[i];
+             int trackRange = this.entityTrackerTrackRanges[i];
+ 
+-            trackMap.add(player, chunkX, chunkZ, Math.min(trackRange, this.getEffectiveViewDistance()));
++            trackMap.add(player, chunkX, chunkZ, Math.min(trackRange, upperLimit));
+         }
+         // Paper end - use distance map to optimise entity tracker
+         // Note: players need to be explicitly added to distance maps before they can be updated
+         // Paper start - optimise ChunkMap#anyPlayerCloseEnoughForSpawning
+-        this.playerChunkTickRangeMap.update(player, chunkX, chunkZ, DistanceManager.MOB_SPAWN_RANGE);
+-        this.playerChunkTickRangeMap.add(player, chunkX, chunkZ, DistanceManager.MOB_SPAWN_RANGE);
++        this.playerChunkTickRangeMap.update(player, chunkX, chunkZ, distanceManager.simulationDistance);
++        this.playerChunkTickRangeMap.add(player, chunkX, chunkZ, distanceManager.simulationDistance);
+         // Paper end - optimise ChunkMap#anyPlayerCloseEnoughForSpawning
+     }
+ 
+@@ -240,16 +241,17 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+     void updateMaps(ServerPlayer player) {
+         int chunkX = MCUtil.getChunkCoordinate(player.getX());
+         int chunkZ = MCUtil.getChunkCoordinate(player.getZ());
++        int upperLimit = Math.max(distanceManager.simulationDistance, level.spigotConfig.mobSpawnRange);
+         // Note: players need to be explicitly added to distance maps before they can be updated
+         // Paper start - use distance map to optimise entity tracker
+         for (int i = 0, len = TRACKING_RANGE_TYPES.length; i < len; ++i) {
+             com.destroystokyo.paper.util.misc.PlayerAreaMap trackMap = this.playerEntityTrackerTrackMaps[i];
+             int trackRange = this.entityTrackerTrackRanges[i];
+ 
+-            trackMap.update(player, chunkX, chunkZ, Math.min(trackRange, this.getEffectiveViewDistance()));
++            trackMap.update(player, chunkX, chunkZ, Math.min(trackRange, upperLimit));
+         }
+         // Paper end - use distance map to optimise entity tracker
+-        this.playerChunkTickRangeMap.update(player, chunkX, chunkZ, DistanceManager.MOB_SPAWN_RANGE); // Paper - optimise ChunkMap#anyPlayerCloseEnoughForSpawning
++        this.playerChunkTickRangeMap.update(player, chunkX, chunkZ, distanceManager.simulationDistance); // Paper - optimise ChunkMap#anyPlayerCloseEnoughForSpawning
+     }
+     // Paper end
+     // Paper start
+@@ -541,14 +543,6 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+         }
+     }
+ 
+-    // Paper start
+-    public final int getEffectiveViewDistance() {
+-        // TODO this needs to be checked on update
+-        // Mojang currently sets it to +1 of the configured view distance. So subtract one to get the one we really want.
+-        return this.viewDistance - 1;
+-    }
+-    // Paper end
+-
+     private CompletableFuture<Either<List<ChunkAccess>, ChunkHolder.ChunkLoadingFailure>> getChunkRangeFuture(ChunkPos centerChunk, int margin, IntFunction<ChunkStatus> distanceToStatus) {
+         List<CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>>> list = new ArrayList();
+         List<ChunkHolder> list1 = new ArrayList();
+@@ -1503,7 +1497,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+                 }
+             }
+         } else {
+-            final double range = (DistanceManager.MOB_SPAWN_RANGE * 16) * (DistanceManager.MOB_SPAWN_RANGE * 16);
++            final double range = (level.spigotConfig.mobSpawnRange * 16) * (level.spigotConfig.mobSpawnRange * 16);
+             // before spigot, mob spawn range was actually mob spawn range + tick range, but it was split
+             for (int i = 0, len = backingSet.length; i < len; ++i) {
+                 Object raw = backingSet[i];
+@@ -1528,12 +1522,13 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+             return List.of();
+         } else {
+             Builder<ServerPlayer> builder = ImmutableList.builder();
++            double distSq = (level.spigotConfig.mobSpawnRange * 16.0) * (level.spigotConfig.mobSpawnRange * 16.0); // Paper
+             Iterator iterator = this.playerMap.getPlayers(i).iterator();
+ 
+             while (iterator.hasNext()) {
+                 ServerPlayer entityplayer = (ServerPlayer) iterator.next();
+ 
+-                if (this.playerIsCloseEnoughForSpawning(entityplayer, pos, 16384.0D)) { // Spigot
++                if (this.playerIsCloseEnoughForSpawning(entityplayer, pos, distSq)) { // Spigot // Paper
+                     builder.add(entityplayer);
+                 }
+             }
+diff --git a/src/main/java/net/minecraft/server/level/DistanceManager.java b/src/main/java/net/minecraft/server/level/DistanceManager.java
+index 95f195980e28bb59f43e5ca1d5e79ebe8c3ddaea..9b6e2ca7cf8e84969b632beec145af2d4d575013 100644
+--- a/src/main/java/net/minecraft/server/level/DistanceManager.java
++++ b/src/main/java/net/minecraft/server/level/DistanceManager.java
+@@ -67,7 +67,7 @@ public abstract class DistanceManager {
+     final LongSet ticketsToRelease = new LongOpenHashSet();
+     final Executor mainThreadExecutor;
+     private long ticketTickCounter;
+-    private int simulationDistance = 10;
++    public int simulationDistance = 10; // Paper private -> public
+     private final ChunkMap chunkMap; // Paper
+ 
+     protected DistanceManager(Executor workerExecutor, Executor mainThreadExecutor, ChunkMap chunkMap) {
+diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
+index 24d0b02264e4cced08a60f36b5c41bb350a1dc60..0ef60c307aa2ab92b8676013598a5d4707a5fe55 100644
+--- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
++++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
+@@ -889,16 +889,13 @@ public class ServerChunkCache extends ChunkSource {
+                     continue;
+                 }
+ 
+-                int viewDistance = this.chunkMap.getEffectiveViewDistance();
+-
+                 // copied and modified from isOutisdeRange
+                 int chunkRange = level.spigotConfig.mobSpawnRange;
+-                chunkRange = (chunkRange > viewDistance) ? (byte)viewDistance : chunkRange;
+-                chunkRange = (chunkRange > DistanceManager.MOB_SPAWN_RANGE) ? DistanceManager.MOB_SPAWN_RANGE : chunkRange;
++                chunkRange = (chunkRange > distanceManager.simulationDistance) ? (byte)distanceManager.simulationDistance : chunkRange;
+ 
+                 com.destroystokyo.paper.event.entity.PlayerNaturallySpawnCreaturesEvent event = new com.destroystokyo.paper.event.entity.PlayerNaturallySpawnCreaturesEvent(player.getBukkitEntity(), (byte)chunkRange);
+                 event.callEvent();
+-                if (event.isCancelled() || event.getSpawnRadius() < 0 || playerChunkMap.playerChunkTickRangeMap.getLastViewDistance(player) == -1) {
++                if (event.isCancelled() || event.getSpawnRadius() < 0 || playerChunkMap.playerChunkTickRangeMap.getLastDistance(player) == -1) {
+                     playerChunkMap.playerMobSpawnMap.remove(player);
+                     continue;
+                 }
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index 3d4961418f3ee7e2d421738d8a8104aac09361d6..fe572c99263a44a23e2dc5141295d98973684a88 100644
+index 3fea7315ed3caf7363dd9349f8e977282dfa4c07..2758cfbef294887a86daa38aef8ac97da0829cd7 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
 @@ -2139,15 +2139,18 @@ public class ServerLevel extends Level implements WorldGenLevel {
