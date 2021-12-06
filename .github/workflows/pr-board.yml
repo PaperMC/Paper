@@ -1,0 +1,42 @@
+# This workflow handles adding new PRs to the Paper PR Queue project:
+# https://github.com/orgs/PaperMC/projects/2/views/4
+
+# You can get the project ID via:
+# {
+#  organization(login: "PaperMC") {
+#    projectNext(number: 2) {
+#      id
+#    }
+#  }
+#}
+
+name: PR Queue
+on:
+    pull_request:
+        types: [ opened ]
+
+jobs:
+    addToBoard:
+        runs-on: ubuntu-latest
+        steps:
+            -   name: Generate token
+                id: generate_token
+                uses: tibdex/github-app-token@v1
+                with:
+                    app_id: ${{ secrets.APP_ID }}
+                    private_key: ${{ secrets.APP_PEM }}
+            -   name: Add to board
+                id: add-to-board
+                uses: octokit/graphql-action@v2.x
+                with:
+                    query: |
+                        mutation {
+                            addProjectNextItem(input: {projectId: "PN_kwDOAHQads2-_A", contentId: "${{ github.event.pull_request.node_id }}"}) {
+                                projectNextItem {
+                                    id
+                                }
+                            }
+                        }
+                env:
+                    GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}
+            -   run: "echo 'created: ${{ steps.add-to-board.outputs.data }}'"
