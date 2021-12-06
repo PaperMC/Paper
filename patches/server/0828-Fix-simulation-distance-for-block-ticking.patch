@@ -1,0 +1,63 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: "Rafael S. M. Santos" <eu@rafaelsms.com>
+Date: Sun, 5 Dec 2021 23:56:03 -0300
+Subject: [PATCH] Fix simulation distance for block ticking
+
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
+index 540ff2cfd2d5aab3db56934e7b03282799db188c..90a507636dbfd2c94077fe1d795574bdbbd89f8d 100644
+--- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
++++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
+@@ -983,7 +983,7 @@ public class ServerChunkCache extends ChunkSource {
+             if ((this.spawnFriendlies || this.spawnEnemies) && this.chunkMap.playerMobDistanceMap != null) { // don't update when animals and monsters are disabled
+                 // update distance map
+                 this.level.timings.playerMobDistanceMapUpdate.startTiming();
+-                this.chunkMap.playerMobDistanceMap.update(this.level.players, this.chunkMap.viewDistance);
++                this.chunkMap.playerMobDistanceMap.update(this.level.players, distanceManager.simulationDistance);
+                 this.level.timings.playerMobDistanceMapUpdate.stopTiming();
+                 // re-set mob counts
+                 for (ServerPlayer player : this.level.players) {
+@@ -1011,10 +1011,10 @@ public class ServerChunkCache extends ChunkSource {
+             // Paper start - optimise chunk tick iteration
+             Iterator<LevelChunk> iterator1;
+             if (this.level.paperConfig.perPlayerMobSpawns) {
+-                iterator1 = this.entityTickingChunks.iterator();
++                iterator1 = this.tickingChunks.iterator();
+             } else {
+-                iterator1 = this.entityTickingChunks.unsafeIterator();
+-                List<LevelChunk> shuffled = Lists.newArrayListWithCapacity(this.entityTickingChunks.size());
++                iterator1 = this.tickingChunks.unsafeIterator();
++                List<LevelChunk> shuffled = Lists.newArrayListWithCapacity(this.tickingChunks.size());
+                 while (iterator1.hasNext()) {
+                     shuffled.add(iterator1.next());
+                 }
+@@ -1035,13 +1035,13 @@ public class ServerChunkCache extends ChunkSource {
+                 // Paper end - optimise chunk tick iteration
+                 ChunkPos chunkcoordintpair = chunk1.getPos();
+ 
+-                if ((true || this.level.isPositionEntityTicking(chunkcoordintpair)) && this.chunkMap.anyPlayerCloseEnoughForSpawning(holder, chunkcoordintpair, false)) { // Paper - optimise anyPlayerCloseEnoughForSpawning & optimise chunk tick iteration
++                if (true || this.chunkMap.anyPlayerCloseEnoughForSpawning(holder, chunkcoordintpair, false)) { // Paper - optimise anyPlayerCloseEnoughForSpawning & optimise chunk tick iteration
+                     chunk1.incrementInhabitedTime(j);
+                     if (flag2 && (this.spawnEnemies || this.spawnFriendlies) && this.level.getWorldBorder().isWithinBounds(chunkcoordintpair) && this.chunkMap.anyPlayerCloseEnoughForSpawning(holder, chunkcoordintpair, true)) { // Spigot // Paper - optimise anyPlayerCloseEnoughForSpawning & optimise chunk tick iteration
+                         NaturalSpawner.spawnForChunk(this.level, chunk1, spawnercreature_d, this.spawnFriendlies, this.spawnEnemies, flag1);
+                     }
+ 
+-                    if (this.level.shouldTickBlocksAt(chunkcoordintpair.toLong())) {
++                    if (true || this.level.shouldTickBlocksAt(chunkcoordintpair.toLong())) {
+                         this.level.tickChunk(chunk1, k);
+                     }
+                 }
+diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
+index e371ffb1f88e08883a1a2460260ff368c0cfe853..6730144edc0d1eb92dde8686892b8b4051a280bd 100644
+--- a/src/main/java/net/minecraft/server/level/ServerLevel.java
++++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
+@@ -2342,6 +2342,9 @@ public class ServerLevel extends Level implements WorldGenLevel {
+ 
+     private boolean isPositionTickingWithEntitiesLoaded(long chunkPos) {
+         // Paper start - optimize is ticking ready type functions
++        if (!this.shouldTickBlocksAt(chunkPos)) {
++            return false;
++        }
+         ChunkHolder chunkHolder = this.chunkSource.chunkMap.getVisibleChunkIfPresent(chunkPos);
+         return chunkHolder != null && chunkHolder.isTickingReady() && this.areEntitiesLoaded(chunkPos);
+         // Paper end
