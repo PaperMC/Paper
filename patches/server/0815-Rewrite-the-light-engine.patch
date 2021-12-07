@@ -1489,10 +1489,10 @@ index 0000000000000000000000000000000000000000..5f771962afb44175d446f138c8e74532
 +}
 diff --git a/src/main/java/ca/spottedleaf/starlight/common/light/StarLightEngine.java b/src/main/java/ca/spottedleaf/starlight/common/light/StarLightEngine.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..f0ef2192df6ef7f9decceaa790a054ecd99794cc
+index 0000000000000000000000000000000000000000..1b0d92c68407cdb09ed8aac271b625d92db87017
 --- /dev/null
 +++ b/src/main/java/ca/spottedleaf/starlight/common/light/StarLightEngine.java
-@@ -0,0 +1,1571 @@
+@@ -0,0 +1,1572 @@
 +package ca.spottedleaf.starlight.common.light;
 +
 +import ca.spottedleaf.starlight.common.util.CoordinateUtils;
@@ -1757,7 +1757,8 @@ index 0000000000000000000000000000000000000000..f0ef2192df6ef7f9decceaa790a054ec
 +
 +            final int chunkX = (index % 5) - this.chunkOffsetX;
 +            final int chunkZ = ((index / 5) % 5) - this.chunkOffsetZ;
-+            final int chunkY = ((index / (5*5)) % (16 + 2 + 2)) - this.chunkOffsetY;
++            final int ySections = (this.maxSection - this.minSection) + 1;
++            final int chunkY = ((index / (5*5)) % (ySections + 2 + 2)) - this.chunkOffsetY;
 +            if ((nibble != null && nibble.updateVisible()) || this.notifyUpdateCache[index]) {
 +                lightAccess.onLightUpdate(this.skylightPropagator ? LightLayer.SKY : LightLayer.BLOCK, SectionPos.of(chunkX, chunkY, chunkZ));
 +            }
@@ -4407,7 +4408,7 @@ index 315bd2408e4a45993c9b2572e0ab5260a70522ec..c0d123bff1825366c30aadd3ad8a7fde
          Deque<ChunkPos> queue = new ArrayDeque<>(MCUtil.getSpiralOutChunks(center, radius));
          updateLight(sender, world, lightengine, queue);
 diff --git a/src/main/java/net/minecraft/server/level/ChunkHolder.java b/src/main/java/net/minecraft/server/level/ChunkHolder.java
-index 7f663523b8c43b356763d6d5249e1aec416de37c..873a9767687ee78a852e2392d12bafa25e4ddca3 100644
+index 825fdb0336b0388dbbc54c8da99781900612031c..d271871563fa883efb77b35ec3b1dfbba87f0b62 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkHolder.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkHolder.java
 @@ -52,7 +52,7 @@ public class ChunkHolder {
@@ -4949,7 +4950,7 @@ index e15263a152c88371ebc65b47f0be938f7c19a8f2..59c053deb52c9307f1b4c1515384a7c6
          super(wrapped.getPos(), UpgradeData.EMPTY, wrapped.levelHeightAccessor, wrapped.getLevel().registryAccess().registryOrThrow(Registry.BIOME_REGISTRY), wrapped.getBlendingData());
          this.wrapped = wrapped;
 diff --git a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
-index f1fbaf9889cc35510d08deeba72d3c7988c57aa4..8de09ffb835bd08e6a7a3ca86953c9e0312cf300 100644
+index 4a9a1fef5603b073e6d2d12e3e8e5dca73a7bd1b..7567a8bf848c82b27383f084056cb43c41df6d0c 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
 @@ -100,6 +100,10 @@ public class LevelChunk extends ChunkAccess {
@@ -4990,7 +4991,7 @@ index d850cae1ec024a557e62cd561fbca137dc2be96c..eef1b58cfaf3cfa90f3786785dd94d05
          return data.palette.valueFor(data.storage.get(index));
      }
 diff --git a/src/main/java/net/minecraft/world/level/chunk/ProtoChunk.java b/src/main/java/net/minecraft/world/level/chunk/ProtoChunk.java
-index 150dd90598bbe4057b4e9ad17c87a4c07af3d56d..91550928949f11df9c9732e86c8380c3b3708ff7 100644
+index 0dfa51c8826b9e984586a3e4e050a50a4fbb1bd3..e947a47dd8c6906bc36eca757c4b9f9f2ab3cedc 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/ProtoChunk.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/ProtoChunk.java
 @@ -54,6 +54,12 @@ public class ProtoChunk extends ChunkAccess {
