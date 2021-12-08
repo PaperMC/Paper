@@ -104,7 +104,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              Entity entity = source.getEntity();
              LivingEntity entityliving = this.getKillCredit();
 -
-+            /* // Paper - move down to make death event cancellable - this is the runKillTrigger below
++            /* // Paper - move down to make death event cancellable - this is the awardKillScore below
              if (this.deathScore >= 0 && entityliving != null) {
                  entityliving.awardKillScore(this, this.deathScore, source);
              }
@@ -112,7 +112,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              if (!this.level.isClientSide && this.hasCustomName()) {
                  if (org.spigotmc.SpigotConfig.logNamedDeaths) LivingEntity.LOGGER.info("Named entity {} died: {}", this, this.getCombatTracker().getDeathMessage().getString()); // Spigot
              }
-+             */ // Paper - move down to make death event cancellable - this is the runKillTrigger below
++             */ // Paper - move down to make death event cancellable - this is the awardKillScore below
  
              this.dead = true;
 -            this.getCombatTracker().recheckStatus();
@@ -130,6 +130,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                    if (this.deathScore >= 0 && entityliving != null) {
 +                        entityliving.awardKillScore(this, this.deathScore, source);
 +                    }
++                    // Paper start - clear equipment if event is not cancelled
++                    if (this instanceof Mob mob) {
++                        java.util.Collections.fill(mob.handItems, ItemStack.EMPTY);
++                        java.util.Collections.fill(mob.armorItems, ItemStack.EMPTY);
++                    }
++                    // Paper end
 +
 +                    if (this.isSleeping()) {
 +                        this.stopSleeping();
@@ -172,12 +178,18 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
 -    protected void dropAllDeathLoot(DamageSource source) {
++    protected boolean clearEquipmentSlots = true; // Paper
 +    protected org.bukkit.event.entity.EntityDeathEvent dropAllDeathLoot(DamageSource source) { // Paper
          Entity entity = source.getEntity();
          int i;
  
 @@ -0,0 +0,0 @@ public abstract class LivingEntity extends Entity {
+         this.dropEquipment(); // CraftBukkit - from below
+         if (this.shouldDropLoot() && this.level.getGameRules().getBoolean(GameRules.RULE_DOMOBLOOT)) {
+             this.dropFromLootTable(source, flag);
++            this.clearEquipmentSlots = false; // Paper
              this.dropCustomDeathLoot(source, i, flag);
++            this.clearEquipmentSlots = true; // Paper
          }
          // CraftBukkit start - Call death event
 -        CraftEventFactory.callEntityDeathEvent(this, this.drops);
@@ -196,6 +208,20 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      // CraftBukkit start
      public int getExpReward() {
+diff --git a/src/main/java/net/minecraft/world/entity/Mob.java b/src/main/java/net/minecraft/world/entity/Mob.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/entity/Mob.java
++++ b/src/main/java/net/minecraft/world/entity/Mob.java
+@@ -0,0 +0,0 @@ public abstract class Mob extends LivingEntity {
+                 }
+ 
+                 this.spawnAtLocation(itemstack);
++                if (this.clearEquipmentSlots) { // Paper
+                 this.setItemSlot(enumitemslot, ItemStack.EMPTY);
++                } // Paper
+             }
+         }
+ 
 diff --git a/src/main/java/net/minecraft/world/entity/animal/Fox.java b/src/main/java/net/minecraft/world/entity/animal/Fox.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/animal/Fox.java
