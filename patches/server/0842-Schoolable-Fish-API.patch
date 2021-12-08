@@ -1,0 +1,173 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Owen1212055 <23108066+Owen1212055@users.noreply.github.com>
+Date: Tue, 7 Dec 2021 19:50:33 -0500
+Subject: [PATCH] Schoolable Fish API
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/entity/ai/MobGoalHelper.java b/src/main/java/com/destroystokyo/paper/entity/ai/MobGoalHelper.java
+index 181abe014baba9ac51064c003381281a8fa43fe4..685d18b86e20e252f22ae377239ead94e2826767 100644
+--- a/src/main/java/com/destroystokyo/paper/entity/ai/MobGoalHelper.java
++++ b/src/main/java/com/destroystokyo/paper/entity/ai/MobGoalHelper.java
+@@ -163,7 +163,7 @@ public class MobGoalHelper {
+         bukkitMap.put(net.minecraft.world.entity.monster.Endermite.class, Endermite.class);
+         bukkitMap.put(net.minecraft.world.entity.monster.Evoker.class, Evoker.class);
+         bukkitMap.put(AbstractFish.class, Fish.class);
+-        bukkitMap.put(AbstractSchoolingFish.class, Fish.class); // close enough
++        bukkitMap.put(AbstractSchoolingFish.class, io.papermc.paper.entity.SchoolableFish.class);
+         bukkitMap.put(FlyingMob.class, Flying.class);
+         bukkitMap.put(net.minecraft.world.entity.animal.Fox.class, Fox.class);
+         bukkitMap.put(net.minecraft.world.entity.monster.Ghast.class, Ghast.class);
+diff --git a/src/main/java/io/papermc/paper/entity/PaperSchoolableFish.java b/src/main/java/io/papermc/paper/entity/PaperSchoolableFish.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..b1861e596b3d7cfd65d3791819ddcf980a8dc37a
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/entity/PaperSchoolableFish.java
+@@ -0,0 +1,55 @@
++package io.papermc.paper.entity;
++
++import net.minecraft.world.entity.animal.AbstractSchoolingFish;
++import org.bukkit.craftbukkit.CraftServer;
++import org.bukkit.craftbukkit.entity.CraftFish;
++
++public class PaperSchoolableFish extends CraftFish implements SchoolableFish {
++
++    public PaperSchoolableFish(CraftServer server, AbstractSchoolingFish entity) {
++        super(server, entity);
++    }
++
++    @Override
++    public AbstractSchoolingFish getHandle() {
++        return (AbstractSchoolingFish) super.getHandle();
++    }
++
++    @Override
++    public void startFollowing(SchoolableFish fish) {
++        if (this.getHandle().isFollower()) { // If following a fish already, properly remove the old one
++            stopFollowing();
++        }
++
++        this.getHandle().startFollowing(((PaperSchoolableFish) fish).getHandle());
++    }
++
++    @Override
++    public void stopFollowing() {
++        if (!this.getHandle().isFollower()) { // Avoid nullpointer
++            return;
++        }
++
++        this.getHandle().stopFollowing();
++    }
++
++    @Override
++    public int getSchoolSize() {
++        return this.getHandle().schoolSize;
++    }
++
++    @Override
++    public int getMaxSchoolSize() {
++        return this.getHandle().getMaxSchoolSize();
++    }
++
++    @Override
++    public SchoolableFish getSchoolLeader() {
++        var leader = this.getHandle().leader;
++        if (leader == null) {
++            return null;
++        }
++
++        return (SchoolableFish) leader.getBukkitEntity();
++    }
++}
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftRegionAccessor.java b/src/main/java/org/bukkit/craftbukkit/CraftRegionAccessor.java
+index 15341c07f9e07ba1d875ef9de16476c07751cab6..7e3593fd722c716bf0d47e491ade4d874503f873 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftRegionAccessor.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftRegionAccessor.java
+@@ -771,14 +771,18 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
+             } else if (Phantom.class.isAssignableFrom(clazz)) {
+                 entity = net.minecraft.world.entity.EntityType.PHANTOM.create(world);
+             } else if (Fish.class.isAssignableFrom(clazz)) {
+-                if (Cod.class.isAssignableFrom(clazz)) {
+-                    entity = net.minecraft.world.entity.EntityType.COD.create(world);
++                // Paper start - Schooling Fish API
++                if (io.papermc.paper.entity.SchoolableFish.class.isAssignableFrom(clazz)) {
++                    if (Cod.class.isAssignableFrom(clazz)) {
++                        entity = net.minecraft.world.entity.EntityType.COD.create(world);
++                    } else if (Salmon.class.isAssignableFrom(clazz)) {
++                        entity = net.minecraft.world.entity.EntityType.SALMON.create(world);
++                    } else if (TropicalFish.class.isAssignableFrom(clazz)) {
++                        entity = net.minecraft.world.entity.EntityType.TROPICAL_FISH.create(world);
++                    }
+                 } else if (PufferFish.class.isAssignableFrom(clazz)) {
+                     entity = net.minecraft.world.entity.EntityType.PUFFERFISH.create(world);
+-                } else if (Salmon.class.isAssignableFrom(clazz)) {
+-                    entity = net.minecraft.world.entity.EntityType.SALMON.create(world);
+-                } else if (TropicalFish.class.isAssignableFrom(clazz)) {
+-                    entity = net.minecraft.world.entity.EntityType.TROPICAL_FISH.create(world);
++                    // Paper end
+                 }
+             } else if (Dolphin.class.isAssignableFrom(clazz)) {
+                 entity = net.minecraft.world.entity.EntityType.DOLPHIN.create(world);
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftCod.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftCod.java
+index fb4b3d30eded561f526dbd2daa74e49149eb55ac..801ed8241cad4ac890a6d99cd19a3dd7490d9339 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftCod.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftCod.java
+@@ -4,7 +4,7 @@ import org.bukkit.craftbukkit.CraftServer;
+ import org.bukkit.entity.Cod;
+ import org.bukkit.entity.EntityType;
+ 
+-public class CraftCod extends CraftFish implements Cod {
++public class CraftCod extends io.papermc.paper.entity.PaperSchoolableFish implements Cod { // Paper - School Fish API
+ 
+     public CraftCod(CraftServer server, net.minecraft.world.entity.animal.Cod entity) {
+         super(server, entity);
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
+index 5893d2028679d23315a32433f6affa0c8d63c01c..784a594a08a89ce759f7804ad1b992a85c4c8622 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
+@@ -215,10 +215,15 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
+                     else { return new CraftSquid(server, (Squid) entity); }
+                 }
+                 else if (entity instanceof AbstractFish) {
+-                    if (entity instanceof Cod) { return new CraftCod(server, (Cod) entity); }
++                    // Paper start - Schooling Fish API
++                    if (entity instanceof net.minecraft.world.entity.animal.AbstractSchoolingFish abstractSchoolingFish) {
++                        if (entity instanceof Cod) { return new CraftCod(server, (Cod) entity); }
++                        else if (entity instanceof Salmon) { return new CraftSalmon(server, (Salmon) entity); }
++                        else if (entity instanceof TropicalFish) { return new CraftTropicalFish(server, (TropicalFish) entity); }
++                        else { return new io.papermc.paper.entity.PaperSchoolableFish(server, abstractSchoolingFish); }
++                    }
+                     else if (entity instanceof Pufferfish) { return new CraftPufferFish(server, (Pufferfish) entity); }
+-                    else if (entity instanceof Salmon) { return new CraftSalmon(server, (Salmon) entity); }
+-                    else if (entity instanceof TropicalFish) { return new CraftTropicalFish(server, (TropicalFish) entity); }
++                    // Paper end
+                     else { return new CraftFish(server, (AbstractFish) entity); }
+                 }
+                 else if (entity instanceof Dolphin) { return new CraftDolphin(server, (Dolphin) entity); }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftSalmon.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftSalmon.java
+index f27a451f2e2343ab66c8cae24053fd1b6a0ea086..c888415f9b4f19db69667525e37279ab8be794f6 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftSalmon.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftSalmon.java
+@@ -4,7 +4,7 @@ import org.bukkit.craftbukkit.CraftServer;
+ import org.bukkit.entity.EntityType;
+ import org.bukkit.entity.Salmon;
+ 
+-public class CraftSalmon extends CraftFish implements Salmon {
++public class CraftSalmon extends io.papermc.paper.entity.PaperSchoolableFish implements Salmon { // Paper - Schooling Fish API
+ 
+     public CraftSalmon(CraftServer server, net.minecraft.world.entity.animal.Salmon entity) {
+         super(server, entity);
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftTropicalFish.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftTropicalFish.java
+index aca8111f7e435d7ab5499b0bba4100c6bc4cd079..608cc20a1f4fe6c77f5a15d01268965a35b3b9d4 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftTropicalFish.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftTropicalFish.java
+@@ -6,9 +6,8 @@ import org.bukkit.DyeColor;
+ import org.bukkit.craftbukkit.CraftServer;
+ import org.bukkit.entity.EntityType;
+ import org.bukkit.entity.TropicalFish;
+-import org.bukkit.entity.TropicalFish.Pattern;
+ 
+-public class CraftTropicalFish extends CraftFish implements TropicalFish {
++public class CraftTropicalFish extends io.papermc.paper.entity.PaperSchoolableFish implements TropicalFish { // Paper - Schooling Fish API
+ 
+     public CraftTropicalFish(CraftServer server, net.minecraft.world.entity.animal.TropicalFish entity) {
+         super(server, entity);
