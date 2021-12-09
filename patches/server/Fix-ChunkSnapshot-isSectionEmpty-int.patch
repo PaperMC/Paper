@@ -1,0 +1,39 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jason Penilla <11360596+jpenilla@users.noreply.github.com>
+Date: Thu, 9 Dec 2021 00:08:11 -0800
+Subject: [PATCH] Fix ChunkSnapshot#isSectionEmpty(int)
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftChunk.java b/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
+@@ -0,0 +0,0 @@ public class CraftChunk implements Chunk {
+     private final int x;
+     private final int z;
+     private static final PalettedContainer<net.minecraft.world.level.block.state.BlockState> emptyBlockIDs = new PalettedContainer<>(net.minecraft.world.level.block.Block.BLOCK_STATE_REGISTRY, Blocks.AIR.defaultBlockState(), PalettedContainer.Strategy.SECTION_STATES, null); // Paper - Anti-Xray - Add preset block states
++    private static final PalettedContainer<net.minecraft.world.level.biome.Biome> EMPTY_BIOMES = new PalettedContainer<>(net.minecraft.server.MinecraftServer.getServer().registryAccess().registryOrThrow(Registry.BIOME_REGISTRY), net.minecraft.server.MinecraftServer.getServer().registryAccess().registryOrThrow(Registry.BIOME_REGISTRY).getOrThrow(Biomes.PLAINS), PalettedContainer.Strategy.SECTION_BIOMES, null); // Paper
+     private static final byte[] emptyLight = new byte[2048];
+ 
+     public CraftChunk(net.minecraft.world.level.chunk.LevelChunk chunk) {
+@@ -0,0 +0,0 @@ public class CraftChunk implements Chunk {
+         Codec<PalettedContainer<Biome>> biomeCodec = PalettedContainer.codec(iregistry, iregistry.byNameCodec(), PalettedContainer.Strategy.SECTION_BIOMES, iregistry.getOrThrow(Biomes.PLAINS), null); // Paper - Anti-Xray - Add preset biomes
+ 
+         for (int i = 0; i < cs.length; i++) {
++            // Paper start
++            if (cs[i].hasOnlyAir()) {
++                sectionEmpty[i] = true;
++                sectionBlockIDs[i] = emptyBlockIDs;
++                sectionSkyLights[i] = emptyLight;
++                sectionEmitLights[i] = emptyLight;
++                if (biome != null) {
++                    biome[i] = EMPTY_BIOMES;
++                }
++                continue;
++            } else {
++                sectionEmpty[i] = false;
++            }
++            // Paper end
+             CompoundTag data = new CompoundTag();
+ 
+             data.put("block_states", ChunkSerializer.BLOCK_STATE_CODEC.encodeStart(NbtOps.INSTANCE, cs[i].getStates()).get().left().get());
