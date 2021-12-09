@@ -1,0 +1,384 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Ralph Goers <rgoers@apache.org>
+Date: Sat, 4 Dec 2021 21:03:32 -0700
+Subject: [PATCH] Backport log4j 2.15.0 bugfix
+
+
+diff --git a/src/main/java/org/apache/logging/log4j/core/appender/mom/JmsAppender.java b/src/main/java/org/apache/logging/log4j/core/appender/mom/JmsAppender.java
+index ddac6663a164ce362773cab3257e867a418a17a0..2c6f065299431099e0066d9ad74421ecac1daa44 100644
+--- a/src/main/java/org/apache/logging/log4j/core/appender/mom/JmsAppender.java
++++ b/src/main/java/org/apache/logging/log4j/core/appender/mom/JmsAppender.java
+@@ -21,8 +21,6 @@ import java.io.Serializable;
+ import java.util.Properties;
+ import java.util.concurrent.TimeUnit;
+ 
+-import javax.jms.JMSException;
+-
+ import org.apache.logging.log4j.core.Appender;
+ import org.apache.logging.log4j.core.Filter;
+ import org.apache.logging.log4j.core.Layout;
+@@ -88,6 +86,15 @@ public class JmsAppender extends AbstractAppender {
+         @PluginBuilderAttribute
+         private boolean immediateFail;
+ 
++        @PluginBuilderAttribute
++        private String allowedLdapClasses;
++
++        @PluginBuilderAttribute
++        private String allowedLdapHosts;
++
++        @PluginBuilderAttribute
++        private String allowedJndiProtocols;
++
+         // Programmatic access only for now.
+         private JmsManager jmsManager;
+ 
+@@ -100,8 +107,21 @@ public class JmsAppender extends AbstractAppender {
+             JmsManager actualJmsManager = jmsManager;
+             JmsManagerConfiguration configuration = null;
+             if (actualJmsManager == null) {
++                Properties additionalProperties = null;
++                if (allowedLdapClasses != null || allowedLdapHosts != null) {
++                    additionalProperties = new Properties();
++                    if (allowedLdapHosts != null) {
++                        additionalProperties.put(JndiManager.ALLOWED_HOSTS, allowedLdapHosts);
++                    }
++                    if (allowedLdapClasses != null) {
++                        additionalProperties.put(JndiManager.ALLOWED_CLASSES, allowedLdapClasses);
++                    }
++                    if (allowedJndiProtocols != null) {
++                        additionalProperties.put(JndiManager.ALLOWED_PROTOCOLS, allowedJndiProtocols);
++                    }
++                }
+                 final Properties jndiProperties = JndiManager.createProperties(factoryName, providerUrl, urlPkgPrefixes,
+-                        securityPrincipalName, securityCredentials, null);
++                        securityPrincipalName, securityCredentials, additionalProperties);
+                 configuration = new JmsManagerConfiguration(jndiProperties, factoryBindingName, destinationBindingName,
+                         userName, password, false, reconnectIntervalMillis);
+                 actualJmsManager = AbstractManager.getManager(getName(), JmsManager.FACTORY, configuration);
+@@ -115,13 +135,13 @@ public class JmsAppender extends AbstractAppender {
+                 LOGGER.error("No layout provided for JmsAppender");
+                 return null;
+             }
+-            try {
++            //try {
+                 return new JmsAppender(getName(), getFilter(), layout, isIgnoreExceptions(), getPropertyArray(),
+                         actualJmsManager);
+-            } catch (final JMSException e) {
++            /*} catch (final JMSException e) {
+                 // Never happens since the ctor no longer actually throws a JMSException.
+                 throw new IllegalStateException(e);
+-            }
++            }*/
+         }
+ 
+         public Builder setDestinationBindingName(final String destinationBindingName) {
+@@ -202,6 +222,21 @@ public class JmsAppender extends AbstractAppender {
+             return this;
+         }
+ 
++        public Builder setAllowedLdapClasses(final String allowedLdapClasses) {
++            this.allowedLdapClasses = allowedLdapClasses;
++            return this;
++        }
++
++        public Builder setAllowedLdapHosts(final String allowedLdapHosts) {
++            this.allowedLdapHosts = allowedLdapHosts;
++            return this;
++        }
++
++        public Builder setAllowedJndiProtocols(final String allowedJndiProtocols) {
++            this.allowedJndiProtocols = allowedJndiProtocols;
++            return this;
++        }
++
+         /**
+          * Does not include the password.
+          */
+@@ -212,7 +247,8 @@ public class JmsAppender extends AbstractAppender {
+                     + ", securityCredentials=" + securityCredentials + ", factoryBindingName=" + factoryBindingName
+                     + ", destinationBindingName=" + destinationBindingName + ", username=" + userName + ", layout="
+                     + getLayout() + ", filter=" + getFilter() + ", ignoreExceptions=" + isIgnoreExceptions()
+-                    + ", jmsManager=" + jmsManager + "]";
++                    + ", jmsManager=" + jmsManager + ", allowedLdapClasses=" + allowedLdapClasses
++                    + ", allowedLdapHosts=" + allowedLdapHosts + ", allowedJndiProtocols=" + allowedJndiProtocols + "]";
+         }
+ 
+     }
+@@ -224,24 +260,15 @@ public class JmsAppender extends AbstractAppender {
+ 
+     private volatile JmsManager manager;
+ 
+-    /**
+-     *
+-     * @throws JMSException not thrown as of 2.9 but retained in the signature for compatibility, will be removed in 3.0
+-     */
+     protected JmsAppender(final String name, final Filter filter, final Layout<? extends Serializable> layout,
+-            final boolean ignoreExceptions, final Property[] properties, final JmsManager manager) throws JMSException {
++            final boolean ignoreExceptions, final Property[] properties, final JmsManager manager) /*throws JMSException*/ {
+         super(name, filter, layout, ignoreExceptions, properties);
+         this.manager = manager;
+     }
+ 
+-    /**
+-     *
+-     * @throws JMSException not thrown as of 2.9 but retained in the signature for compatibility, will be removed in 3.0
+-     * @deprecated
+-     */
+     @Deprecated
+     protected JmsAppender(final String name, final Filter filter, final Layout<? extends Serializable> layout,
+-            final boolean ignoreExceptions, final JmsManager manager) throws JMSException {
++            final boolean ignoreExceptions, final JmsManager manager) /*throws JMSException*/ {
+         super(name, filter, layout, ignoreExceptions, Property.EMPTY_ARRAY);
+         this.manager = manager;
+     }
+diff --git a/src/main/java/org/apache/logging/log4j/core/net/JndiManager.java b/src/main/java/org/apache/logging/log4j/core/net/JndiManager.java
+index 267085788482dbc8f8252b8a4fc42259d3de45e4..2d7604fee68c27f644e1c2915f09758ee7c15cb8 100644
+--- a/src/main/java/org/apache/logging/log4j/core/net/JndiManager.java
++++ b/src/main/java/org/apache/logging/log4j/core/net/JndiManager.java
+@@ -17,31 +17,69 @@
+ 
+ package org.apache.logging.log4j.core.net;
+ 
++import java.net.URI;
++import java.net.URISyntaxException;
++import java.util.ArrayList;
++import java.util.Arrays;
++import java.util.HashMap;
++import java.util.List;
++import java.util.Locale;
++import java.util.Map;
+ import java.util.Properties;
+ import java.util.concurrent.TimeUnit;
+ 
+ import javax.naming.Context;
+-import javax.naming.InitialContext;
++import javax.naming.NamingEnumeration;
+ import javax.naming.NamingException;
++import javax.naming.directory.Attribute;
++import javax.naming.directory.Attributes;
++import javax.naming.directory.DirContext;
++import javax.naming.directory.InitialDirContext;
+ 
+ import org.apache.logging.log4j.core.appender.AbstractManager;
+ import org.apache.logging.log4j.core.appender.ManagerFactory;
+ import org.apache.logging.log4j.core.util.JndiCloser;
++import org.apache.logging.log4j.core.util.NetUtils;
++import org.apache.logging.log4j.util.PropertiesUtil;
+ 
+ /**
+- * Manages a JNDI {@link javax.naming.Context}.
++ * Manages a JNDI {@link javax.naming.directory.DirContext}.
+  *
+  * @since 2.1
+  */
+ public class JndiManager extends AbstractManager {
+ 
++    public static final String ALLOWED_HOSTS = "allowedLdapHosts";
++    public static final String ALLOWED_CLASSES = "allowedLdapClasses";
++    public static final String ALLOWED_PROTOCOLS = "allowedJndiProtocols";
++
+     private static final JndiManagerFactory FACTORY = new JndiManagerFactory();
++    private static final String PREFIX = "log4j2.";
++    private static final String LDAP = "ldap";
++    private static final String LDAPS = "ldaps";
++    private static final String JAVA = "java";
++    private static final List<String> permanentAllowedHosts = NetUtils.getLocalIps();
++    private static final List<String> permanentAllowedClasses = Arrays.asList(Boolean.class.getName(),
++            Byte.class.getName(), Character.class.getName(), Double.class.getName(), Float.class.getName(),
++            Integer.class.getName(), Long.class.getName(), Short.class.getName(), String.class.getName());
++    private static final List<String> permanentAllowedProtocols = Arrays.asList(JAVA, LDAP, LDAPS);
++    private static final String SERIALIZED_DATA = "javaSerializedData";
++    private static final String CLASS_NAME = "javaClassName";
++    private static final String REFERENCE_ADDRESS = "javaReferenceAddress";
++    private static final String OBJECT_FACTORY = "javaFactory";
++    private final List<String> allowedHosts;
++    private final List<String> allowedClasses;
++    private final List<String> allowedProtocols;
+ 
+-    private final Context context;
++    private final DirContext context;
+ 
+-    private JndiManager(final String name, final Context context) {
++    private JndiManager(final String name, final DirContext context, final List<String> allowedHosts,
++            final List<String> allowedClasses, final List<String> allowedProtocols) {
+         super(null, name);
+         this.context = context;
++        this.allowedHosts = allowedHosts;
++        this.allowedClasses = allowedClasses;
++        this.allowedProtocols = allowedProtocols;
+     }
+ 
+     /**
+@@ -168,7 +206,54 @@ public class JndiManager extends AbstractManager {
+      * @throws  NamingException if a naming exception is encountered
+      */
+     @SuppressWarnings("unchecked")
+-    public <T> T lookup(final String name) throws NamingException {
++    public synchronized <T> T lookup(final String name) throws NamingException {
++        try {
++            URI uri = new URI(name);
++            if (uri.getScheme() != null) {
++                if (!allowedProtocols.contains(uri.getScheme().toLowerCase(Locale.ROOT))) {
++                    LOGGER.warn("Log4j JNDI does not allow protocol {}", uri.getScheme());
++                    return null;
++                }
++                if (LDAP.equalsIgnoreCase(uri.getScheme()) || LDAPS.equalsIgnoreCase(uri.getScheme())) {
++                    if (!allowedHosts.contains(uri.getHost())) {
++                        LOGGER.warn("Attempt to access ldap server not in allowed list");
++                        return null;
++                    }
++                    Attributes attributes = this.context.getAttributes(name);
++                    if (attributes != null) {
++                        // In testing the "key" for attributes seems to be lowercase while the attribute id is
++                        // camelcase, but that may just be true for the test LDAP used here. This copies the Attributes
++                        // to a Map ignoring the "key" and using the Attribute's id as the key in the Map so it matches
++                        // the Java schema.
++                        Map<String, Attribute> attributeMap = new HashMap<>();
++                        NamingEnumeration<? extends Attribute> enumeration = attributes.getAll();
++                        while (enumeration.hasMore()) {
++                            Attribute attribute = enumeration.next();
++                            attributeMap.put(attribute.getID(), attribute);
++                        }
++                        Attribute classNameAttr = attributeMap.get(CLASS_NAME);
++                        if (attributeMap.get(SERIALIZED_DATA) != null) {
++                            if (classNameAttr != null) {
++                                String className = classNameAttr.get().toString();
++                                if (!allowedClasses.contains(className)) {
++                                    LOGGER.warn("Deserialization of {} is not allowed", className);
++                                    return null;
++                                }
++                            } else {
++                                LOGGER.warn("No class name provided for {}", name);
++                                return null;
++                            }
++                        } else if (attributeMap.get(REFERENCE_ADDRESS) != null
++                                || attributeMap.get(OBJECT_FACTORY) != null) {
++                            LOGGER.warn("Referenceable class is not allowed for {}", name);
++                            return null;
++                        }
++                    }
++                }
++            }
++        } catch (URISyntaxException ex) {
++            // This is OK.
++        }
+         return (T) this.context.lookup(name);
+     }
+ 
+@@ -176,13 +261,36 @@ public class JndiManager extends AbstractManager {
+ 
+         @Override
+         public JndiManager createManager(final String name, final Properties data) {
++            String hosts = data != null ? data.getProperty(ALLOWED_HOSTS) : null;
++            String classes = data != null ? data.getProperty(ALLOWED_CLASSES) : null;
++            String protocols = data != null ? data.getProperty(ALLOWED_PROTOCOLS) : null;
++            List<String> allowedHosts = new ArrayList<>();
++            List<String> allowedClasses = new ArrayList<>();
++            List<String> allowedProtocols = new ArrayList<>();
++            addAll(hosts, allowedHosts, permanentAllowedHosts, ALLOWED_HOSTS, data);
++            addAll(classes, allowedClasses, permanentAllowedClasses, ALLOWED_CLASSES, data);
++            addAll(protocols, allowedProtocols, permanentAllowedProtocols, ALLOWED_PROTOCOLS, data);
+             try {
+-                return new JndiManager(name, new InitialContext(data));
++                return new JndiManager(name, new InitialDirContext(data), allowedHosts, allowedClasses,
++                        allowedProtocols);
+             } catch (final NamingException e) {
+                 LOGGER.error("Error creating JNDI InitialContext.", e);
+                 return null;
+             }
+         }
++
++        private void addAll(String toSplit, List<String> list, List<String> permanentList, String propertyName,
++                Properties data) {
++            if (toSplit != null) {
++                list.addAll(Arrays.asList(toSplit.split("\\s*,\\s*")));
++                data.remove(propertyName);
++            }
++            toSplit = PropertiesUtil.getProperties().getStringProperty(PREFIX + propertyName);
++            if (toSplit != null) {
++                list.addAll(Arrays.asList(toSplit.split("\\s*,\\s*")));
++            }
++            list.addAll(permanentList);
++        }
+     }
+ 
+     @Override
+diff --git a/src/main/java/org/apache/logging/log4j/core/util/NetUtils.java b/src/main/java/org/apache/logging/log4j/core/util/NetUtils.java
+index 8a8353e7f907a009cba6664652ab69f25d12201c..661f74f90b1a731f5be76eca6b61b6cec33e2439 100644
+--- a/src/main/java/org/apache/logging/log4j/core/util/NetUtils.java
++++ b/src/main/java/org/apache/logging/log4j/core/util/NetUtils.java
+@@ -17,6 +17,8 @@
+ package org.apache.logging.log4j.core.util;
+ 
+ import java.io.File;
++import java.net.Inet4Address;
++import java.net.Inet6Address;
+ import java.net.InetAddress;
+ import java.net.MalformedURLException;
+ import java.net.NetworkInterface;
+@@ -25,11 +27,14 @@ import java.net.URI;
+ import java.net.URISyntaxException;
+ import java.net.URL;
+ import java.net.UnknownHostException;
++import java.util.ArrayList;
+ import java.util.Arrays;
+ import java.util.Enumeration;
++import java.util.List;
+ 
+ import org.apache.logging.log4j.Logger;
+ import org.apache.logging.log4j.status.StatusLogger;
++import org.apache.logging.log4j.util.Strings;
+ 
+ /**
+  * Networking-related convenience methods.
+@@ -79,6 +84,49 @@ public final class NetUtils {
+         }
+     }
+ 
++    /**
++     * Returns all the local host names and ip addresses.
++     * @return The local host names and ip addresses.
++     */
++    public static List<String> getLocalIps() {
++        List<String> localIps = new ArrayList<>();
++        localIps.add("localhost");
++        localIps.add("127.0.0.1");
++        try {
++            final InetAddress addr = Inet4Address.getLocalHost();
++            setHostName(addr, localIps);
++        } catch (final UnknownHostException ex) {
++            // Ignore this.
++        }
++        try {
++            final Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
++            if (interfaces != null) {
++                while (interfaces.hasMoreElements()) {
++                    final NetworkInterface nic = interfaces.nextElement();
++                    final Enumeration<InetAddress> addresses = nic.getInetAddresses();
++                    while (addresses.hasMoreElements()) {
++                        final InetAddress address = addresses.nextElement();
++                        setHostName(address, localIps);
++                    }
++                }
++            }
++        } catch (final SocketException se) {
++            // ignore.
++        }
++        return localIps;
++    }
++
++    private static void setHostName(InetAddress address, List<String> localIps) {
++        String[] parts = address.toString().split("\\s*/\\s*");
++        if (parts.length > 0) {
++            for (String part : parts) {
++                if (Strings.isNotBlank(part) && !localIps.contains(part)) {
++                    localIps.add(part);
++                }
++            }
++        }
++    }
++
+     /**
+      *  Returns the local network interface's MAC address if possible. The local network interface is defined here as
+      *  the {@link java.net.NetworkInterface} that is both up and not a loopback interface.
