@@ -5,35 +5,22 @@ Subject: [PATCH] Fix ChunkSnapshot#isSectionEmpty(int)
 
 
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftChunk.java b/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
-index db344e5b9f96f317a232304587e6b1673fc6067d..ca9282a0e608541837573d155bf9b95a105ba87d 100644
+index db344e5b9f96f317a232304587e6b1673fc6067d..b4f7b91ac165e3171ffcf7d6a993af248d268959 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
-@@ -53,6 +53,7 @@ public class CraftChunk implements Chunk {
-     private final int x;
-     private final int z;
-     private static final PalettedContainer<net.minecraft.world.level.block.state.BlockState> emptyBlockIDs = new PalettedContainer<>(net.minecraft.world.level.block.Block.BLOCK_STATE_REGISTRY, Blocks.AIR.defaultBlockState(), PalettedContainer.Strategy.SECTION_STATES, null); // Paper - Anti-Xray - Add preset block states
-+    private static final PalettedContainer<net.minecraft.world.level.biome.Biome> EMPTY_BIOMES = new PalettedContainer<>(net.minecraft.server.MinecraftServer.getServer().registryAccess().registryOrThrow(Registry.BIOME_REGISTRY), net.minecraft.server.MinecraftServer.getServer().registryAccess().registryOrThrow(Registry.BIOME_REGISTRY).getOrThrow(Biomes.PLAINS), PalettedContainer.Strategy.SECTION_BIOMES, null); // Paper
-     private static final byte[] emptyLight = new byte[2048];
- 
-     public CraftChunk(net.minecraft.world.level.chunk.LevelChunk chunk) {
-@@ -284,6 +285,20 @@ public class CraftChunk implements Chunk {
-         Codec<PalettedContainer<Biome>> biomeCodec = PalettedContainer.codec(iregistry, iregistry.byNameCodec(), PalettedContainer.Strategy.SECTION_BIOMES, iregistry.getOrThrow(Biomes.PLAINS), null); // Paper - Anti-Xray - Add preset biomes
- 
+@@ -286,8 +286,15 @@ public class CraftChunk implements Chunk {
          for (int i = 0; i < cs.length; i++) {
-+            // Paper start
-+            if (cs[i].hasOnlyAir()) {
-+                sectionEmpty[i] = true;
-+                sectionBlockIDs[i] = emptyBlockIDs;
-+                sectionSkyLights[i] = emptyLight;
-+                sectionEmitLights[i] = emptyLight;
-+                if (biome != null) {
-+                    biome[i] = EMPTY_BIOMES;
-+                }
-+                continue;
-+            } else {
-+                sectionEmpty[i] = false;
-+            }
-+            // Paper end
              CompoundTag data = new CompoundTag();
  
++            // Paper start
++            sectionEmpty[i] = cs[i].hasOnlyAir();
++            if (!sectionEmpty[i]) {
              data.put("block_states", ChunkSerializer.BLOCK_STATE_CODEC.encodeStart(NbtOps.INSTANCE, cs[i].getStates()).get().left().get());
+             sectionBlockIDs[i] = ChunkSerializer.BLOCK_STATE_CODEC.parse(NbtOps.INSTANCE, data.getCompound("block_states")).get().left().get();
++            } else {
++                sectionBlockIDs[i] = CraftChunk.emptyBlockIDs;
++            }
++            // Paper end
+ 
+             LevelLightEngine lightengine = chunk.level.getLightEngine();
+             DataLayer skyLightArray = lightengine.getLayerListener(LightLayer.SKY).getDataLayerData(SectionPos.of(x, i, z));
