@@ -19,6 +19,8 @@ public class Main {
     public static boolean useConsole = true;
 
     public static void main(String[] args) {
+        System.setProperty("log4j2.formatMsgNoLookups", "true");
+
         // Todo: Installation script
         OptionParser parser = new OptionParser() {
             {
