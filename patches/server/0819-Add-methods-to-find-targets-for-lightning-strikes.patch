@@ -1,0 +1,58 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jakub Zacek <dawon@dawon.eu>
+Date: Mon, 4 Oct 2021 10:16:44 +0200
+Subject: [PATCH] Add methods to find targets for lightning strikes
+
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
+index c01b5611fe6946a24fe21eac6a80e3ddadf9f3c1..536c53fd1d009b86d2c1c3ca2364f458448bc38c 100644
+--- a/src/main/java/net/minecraft/server/level/ServerLevel.java
++++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
+@@ -956,6 +956,11 @@ public class ServerLevel extends Level implements WorldGenLevel {
+     }
+ 
+     protected BlockPos findLightningTargetAround(BlockPos pos) {
++        // Paper start
++        return this.findLightningTargetAround(pos, false);
++    }
++    public BlockPos findLightningTargetAround(BlockPos pos, boolean returnNullWhenNoTarget) {
++        // Paper end
+         BlockPos blockposition1 = this.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING, pos);
+         Optional<BlockPos> optional = this.findLightningRod(blockposition1);
+ 
+@@ -970,6 +975,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
+             if (!list.isEmpty()) {
+                 return ((LivingEntity) list.get(this.random.nextInt(list.size()))).blockPosition();
+             } else {
++                if (returnNullWhenNoTarget) return null; // Paper
+                 if (blockposition1.getY() == this.getMinBuildHeight() - 1) {
+                     blockposition1 = blockposition1.above(2);
+                 }
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+index e5e23c907d49ee64218f3302e2a2323d6937a8a1..858e29ad77aee8a1b7797c2d82902abbfd662da2 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+@@ -701,6 +701,23 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+         return (LightningStrike) lightning.getBukkitEntity();
+     }
+ 
++    // Paper start
++    @Override
++    public Location findLightningRod(Location location) {
++        return this.world.findLightningRod(net.minecraft.server.MCUtil.toBlockPosition(location))
++            .map(blockPos -> net.minecraft.server.MCUtil.toLocation(this.world, blockPos)
++                // get the actual rod pos
++                .subtract(0, 1, 0))
++            .orElse(null);
++    }
++
++    @Override
++    public Location findLightningTarget(Location location) {
++        final BlockPos pos = this.world.findLightningTargetAround(net.minecraft.server.MCUtil.toBlockPosition(location), true);
++        return pos == null ? null : net.minecraft.server.MCUtil.toLocation(this.world, pos);
++    }
++    // Paper end
++
+     @Override
+     public boolean generateTree(Location loc, TreeType type) {
+         return generateTree(loc, CraftWorld.rand, type);
