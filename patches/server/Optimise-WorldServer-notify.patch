@@ -122,9 +122,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              if (currentlyTickingEntity.get() == null) {
                  currentlyTickingEntity.lazySet(entity);
 @@ -0,0 +0,0 @@ public class ServerLevel extends Level implements WorldGenLevel {
-         VoxelShape voxelshape1 = newState.getCollisionShape(this, pos);
  
          if (Shapes.joinIsNotEmpty(voxelshape, voxelshape1, BooleanOp.NOT_SAME)) {
+             List<PathNavigation> list = new ObjectArrayList();
 -            Iterator iterator = this.navigatingMobs.iterator();
 +            // Paper start - optimise notify()
 +            io.papermc.paper.chunk.SingleThreadChunkRegionManager.Region region = this.getChunkSource().chunkMap.dataRegionManager.getRegion(pos.getX() >> 4, pos.getZ() >> 4);
@@ -138,14 +138,28 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            io.papermc.paper.util.maplist.IteratorSafeOrderedReferenceSet.Iterator<Mob> iterator = navigatorsFromRegion.iterator();
  
 -            while (iterator.hasNext()) {
-+
 +            try { while (iterator.hasNext()) { // Paper end - optimise notify()
                  // CraftBukkit start - fix SPIGOT-6362
                  Mob entityinsentient;
                  try {
 @@ -0,0 +0,0 @@ public class ServerLevel extends Level implements WorldGenLevel {
-                     navigationabstract.recomputePath(pos);
+ 
+             try {
+                 this.isUpdatingNavigations = true;
+-                iterator = list.iterator();
++                // Paper start - optimise notify()
++                Iterator<PathNavigation> navigationIterator = list.iterator();
+ 
+-                while (iterator.hasNext()) {
+-                    PathNavigation navigationabstract1 = (PathNavigation) iterator.next();
++                while (navigationIterator.hasNext()) {
++                    PathNavigation navigationabstract1 = navigationIterator.next();
++                    // Paper end - optimise notify()
+ 
+                     navigationabstract1.recomputePath();
                  }
+             } finally {
+                 this.isUpdatingNavigations = false;
              }
 +            // Paper start - optimise notify()
 +            } finally {
@@ -205,14 +219,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          this.mob = mob;
          this.level = world;
 @@ -0,0 +0,0 @@ public abstract class PathNavigation {
-     }
- 
-     public void recomputePath(BlockPos pos) {
--        if (this.path != null && !this.path.isDone() && this.path.getNodeCount() != 0) {
-+        if (this.path != null && !this.path.isDone() && this.path.getNodeCount() != 0) { // Paper - diff on change - needed for isViableForPathRecalculationChecking()
+     public boolean shouldRecomputePath(BlockPos pos) {
+         if (this.hasDelayedRecomputation) {
+             return false;
+-        } else if (this.path != null && !this.path.isDone() && this.path.getNodeCount() != 0) {
++        } else if (this.path != null && !this.path.isDone() && this.path.getNodeCount() != 0) { // Paper - diff on change - needed for isViableForPathRecalculationChecking()
              Node node = this.path.getEndNode();
              Vec3 vec3 = new Vec3(((double)node.x + this.mob.getX()) / 2.0D, ((double)node.y + this.mob.getY()) / 2.0D, ((double)node.z + this.mob.getZ()) / 2.0D);
-             if (pos.closerThan(vec3, (double)(this.path.getNodeCount() - this.path.getNextNodeIndex()))) {
+             return pos.closerThan(vec3, (double)(this.path.getNodeCount() - this.path.getNextNodeIndex()));
 diff --git a/src/main/java/net/minecraft/world/level/entity/PersistentEntitySectionManager.java b/src/main/java/net/minecraft/world/level/entity/PersistentEntitySectionManager.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/entity/PersistentEntitySectionManager.java
