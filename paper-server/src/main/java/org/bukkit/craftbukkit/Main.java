@@ -19,8 +19,6 @@ public class Main {
     public static boolean useConsole = true;
 
     public static void main(String[] args) {
-        System.setProperty("log4j2.formatMsgNoLookups", "true");
-
         // Todo: Installation script
         OptionParser parser = new OptionParser() {
             {
@@ -183,7 +181,7 @@ public class Main {
                     useConsole = false;
                 }
 
-                if (false && Main.class.getPackage().getImplementationVendor() != null && System.getProperty("IReallyKnowWhatIAmDoingISwear") == null) {
+                if (Main.class.getPackage().getImplementationVendor() != null && System.getProperty("IReallyKnowWhatIAmDoingISwear") == null) {
                     Date buildDate = new Date(Integer.parseInt(Main.class.getPackage().getImplementationVendor()) * 1000L);
 
                     Calendar deadline = Calendar.getInstance();
