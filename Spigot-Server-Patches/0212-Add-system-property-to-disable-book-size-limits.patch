@@ -1,4 +1,4 @@
-From 266c59f458cc4862a706054efa751b6f83c45ee5 Mon Sep 17 00:00:00 2001
+From a5713fdf5ec9f69a1beb2de8aac7af4d3d1467fc Mon Sep 17 00:00:00 2001
 From: Zach Brown <zach.brown@destroystokyo.com>
 Date: Sat, 13 May 2017 20:11:21 -0500
 Subject: [PATCH] Add system property to disable book size limits
@@ -11,12 +11,12 @@ to make books with as much data as they want. Do not use this without
 limiting incoming data from packets in some other way.
 
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBook.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBook.java
-index 5d971f07b..6a7d10344 100644
+index 78065e13..01456324 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBook.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBook.java
 @@ -37,6 +37,7 @@ public class CraftMetaBook extends CraftMetaItem implements BookMeta {
      static final int MAX_PAGES = 50;
-     static final int MAX_PAGE_LENGTH = 320; // 256 limit + 64 characters to allow for psuedo colour codes
+     static final int MAX_PAGE_LENGTH = 256;
      static final int MAX_TITLE_LENGTH = 32;
 +    private static final boolean OVERRIDE_CHECKS = Boolean.getBoolean("disable.book-limits"); // Paper - Add override
  
@@ -31,21 +31,23 @@ index 5d971f07b..6a7d10344 100644
              return false;
          }
  
-@@ -229,7 +230,7 @@ public class CraftMetaBook extends CraftMetaItem implements BookMeta {
+@@ -229,8 +230,8 @@ public class CraftMetaBook extends CraftMetaItem implements BookMeta {
              throw new IllegalArgumentException("Invalid page number " + page + "/" + pages.size());
          }
  
 -        String newText = text == null ? "" : text.length() > MAX_PAGE_LENGTH ? text.substring(0, MAX_PAGE_LENGTH) : text;
-+        String newText = text == null ? "" : text.length() > MAX_PAGE_LENGTH && !OVERRIDE_CHECKS ? text.substring(0, MAX_PAGE_LENGTH) : text;
-         pages.set(page - 1, CraftChatMessage.fromString(newText, true)[0]);
+-        pages.set(page - 1, CraftChatMessage.fromString(newText, true)[0]);
++    String newText = text == null ? "" : text.length() > MAX_PAGE_LENGTH && !OVERRIDE_CHECKS ? text.substring(0, MAX_PAGE_LENGTH) : text;    
++    pages.set(page - 1, CraftChatMessage.fromString(newText, true)[0]);
      }
  
+     public void setPages(final String... pages) {
 @@ -241,13 +242,13 @@ public class CraftMetaBook extends CraftMetaItem implements BookMeta {
  
      public void addPage(final String... pages) {
          for (String page : pages) {
 -            if (this.pages.size() >= MAX_PAGES) {
-+            if (this.pages.size() >= MAX_PAGES && !OVERRIDE_CHECKS) {
++            if (this.pages.size() >= MAX_PAGES && !OVERRIDE_CHECKS) { // Paper - Add override
                  return;
              }
  
@@ -57,5 +59,5 @@ index 5d971f07b..6a7d10344 100644
              }
  
 -- 
-2.13.0.windows.1
+2.34.0
 
