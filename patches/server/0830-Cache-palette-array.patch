@@ -1,0 +1,38 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Paul Sauve <paul@technove.co>
+Date: Thu, 4 Feb 2021 23:28:46 -0600
+Subject: [PATCH] Cache palette array
+
+Instead of allocating the 4KB for every chunk section, cache it locally and
+reuse it for other chunk sections to save on allocations. These allocations add
+up very quickly when saving chunks frequently.
+
+1.18: PalettedContainer changed, mojang introduced a Codec into the mix to make things
+more complicated. Needs a complete rework, but probably still viable as a perf improvement.
+
+diff --git a/src/main/java/net/minecraft/world/level/chunk/PalettedContainer.java b/src/main/java/net/minecraft/world/level/chunk/PalettedContainer.java
+index eef1b58cfaf3cfa90f3786785dd94d050dfdd4c2..d7bd66ecfc91be833bc8f0e54783e4a9b2d8ae99 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/PalettedContainer.java
++++ b/src/main/java/net/minecraft/world/level/chunk/PalettedContainer.java
+@@ -282,7 +282,7 @@ public class PalettedContainer<T> implements PaletteResize<T> {
+         try {
+             HashMapPalette<T> hashMapPalette = new HashMapPalette<>(idList, this.data.storage.getBits(), this.dummyPaletteResize);
+             int i = provider.size();
+-            int[] is = new int[i];
++            int[] is = provider.paletteArray(); // Paper - cache palette array
+             this.data.storage.unpack(is);
+             swapPalette(is, (id) -> {
+                 return hashMapPalette.idFor(this.data.palette.valueFor(id));
+@@ -455,9 +455,12 @@ public class PalettedContainer<T> implements PaletteResize<T> {
+             }
+         };
+         private final int sizeBits;
++        private int[] paletteArray; // Paper
++        public int[] paletteArray() { return this.paletteArray; } // Paper
+ 
+         Strategy(int edgeBits) {
+             this.sizeBits = edgeBits;
++            this.paletteArray = new int[size()]; // Paper
+         }
+ 
+         public int size() {
