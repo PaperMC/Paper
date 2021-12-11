@@ -91,7 +91,7 @@ Special Thanks To:
 
 [<img src="https://user-images.githubusercontent.com/21148213/121807008-8ffc6700-cc52-11eb-96a7-2f6f260f8fda.png" alt="" width="150">](https://www.jetbrains.com)
 
-[JetBrains](https://www.jetbrains.com/), creators of the [IntelliJ IDEA](https://www.jetbrains.com/idea/), supports Paper with one of their [Open Source Licenses](https://www.jetbrains.com/opensource/). IntelliJ IDEA is the recommended IDE for working with Paper, and most of the Paper team uses it.
+[JetBrains](https://www.jetbrains.com/), creators of the [IntelliJ IDEA](https://www.jetbrains.com/idea/), supports Paper with one of their [Open Source Licenses](https://www.jetbrains.com/opensource/). [IntelliJ IDEA]((https://www.jetbrains.com/idea/)) is the recommended IDE for working with Paper, and most of the Paper team uses it.
 
 All our sponsors!  
 [![Sponsor Image](https://raw.githubusercontent.com/PaperMC/papermc.io/data/sponsors.png)](https://papermc.io/sponsors)
