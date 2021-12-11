@@ -27,12 +27,10 @@ index e431e3435737e28394d81b56568a08b3c3148b9b..b23bde3b5e881f146539a307d0a59f21
 +/.factorypath
 diff --git a/build.gradle.kts b/build.gradle.kts
 new file mode 100644
-index 0000000000000000000000000000000000000000..fd30d2e6d3716777be7bc2f28267ab5b03131342
+index 0000000000000000000000000000000000000000..1b16a242187079f80720fc1990ee09bb6a5c2768
 --- /dev/null
 +++ b/build.gradle.kts
-@@ -0,0 +1,67 @@
-+import java.util.Locale
-+
+@@ -0,0 +1,66 @@
 +plugins {
 +    `java-library`
 +    `maven-publish`
@@ -46,8 +44,8 @@ index 0000000000000000000000000000000000000000..fd30d2e6d3716777be7bc2f28267ab5b
 +dependencies {
 +    // api dependencies are listed transitively to API consumers
 +    api("commons-lang:commons-lang:2.6")
-+    api("com.google.guava:guava:21.0")
-+    api("com.google.code.gson:gson:2.8.0")
++    api("com.google.guava:guava:31.0.1-jre")
++    api("com.google.code.gson:gson:2.8.8")
 +    api("net.md-5:bungeecord-chat:1.16-R0.4")
 +    api("org.yaml:snakeyaml:1.28")
 +
@@ -66,33 +64,34 @@ index 0000000000000000000000000000000000000000..fd30d2e6d3716777be7bc2f28267ab5b
 +
 +configure<PublishingExtension> {
 +    publications.create<MavenPublication>("maven") {
-+        artifactId = project.name.toLowerCase(Locale.ENGLISH)
 +        from(components["java"])
 +    }
 +}
 +
 +val generateApiVersioningFile by tasks.registering {
++    inputs.property("version", project.version)
 +    val pomProps = layout.buildDirectory.file("pom.properties")
 +    outputs.file(pomProps)
++    val projectVersion = project.version
 +    doLast {
-+        pomProps.get().asFile.writeText("version=${project.version}")
++        pomProps.get().asFile.writeText("version=$projectVersion")
 +    }
 +}
 +
 +tasks.jar {
 +    from(generateApiVersioningFile.map { it.outputs.files.singleFile }) {
-+        into("META-INF/maven/${project.group}/${project.name.toLowerCase(Locale.ENGLISH)}")
++        into("META-INF/maven/${project.group}/${project.name}")
 +    }
 +    manifest {
-+        attributes += mapOf(
++        attributes(
 +            "Automatic-Module-Name" to "org.bukkit"
 +        )
 +    }
 +}
 +
-+tasks.withType<Javadoc>().configureEach {
++tasks.withType<Javadoc> {
 +    (options as StandardJavadocDocletOptions).links(
-+        "https://guava.dev/releases/21.0/api/docs/",
++        "https://guava.dev/releases/31.0.1-jre/api/docs/",
 +        "https://javadoc.io/doc/org.yaml/snakeyaml/1.28/",
 +        "https://javadoc.io/doc/org.jetbrains/annotations-java5/21.0.1/",
 +        "https://javadoc.io/doc/net.md-5/bungeecord-chat/1.16-R0.4/",
@@ -100,7 +99,7 @@ index 0000000000000000000000000000000000000000..fd30d2e6d3716777be7bc2f28267ab5b
 +}
 diff --git a/pom.xml b/pom.xml
 deleted file mode 100644
-index 538a424d42bc2b67d26e8b866da60f66bf0f22d8..0000000000000000000000000000000000000000
+index 0e69806e4b6fa44d1d2f8ebf1cf0dc4ef386e69e..0000000000000000000000000000000000000000
 --- a/pom.xml
 +++ /dev/null
 @@ -1,262 +0,0 @@
@@ -111,7 +110,7 @@ index 538a424d42bc2b67d26e8b866da60f66bf0f22d8..00000000000000000000000000000000
 -
 -    <groupId>org.spigotmc</groupId>
 -    <artifactId>spigot-api</artifactId>
--    <version>1.17.1-R0.1-SNAPSHOT</version>
+-    <version>1.18.1-R0.1-SNAPSHOT</version>
 -    <packaging>jar</packaging>
 -
 -    <name>Spigot-API</name>
@@ -147,14 +146,14 @@ index 538a424d42bc2b67d26e8b866da60f66bf0f22d8..00000000000000000000000000000000
 -        <dependency>
 -            <groupId>com.google.guava</groupId>
 -            <artifactId>guava</artifactId>
--            <version>21.0</version>
+-            <version>31.0.1-jre</version>
 -            <scope>compile</scope>
 -        </dependency>
 -        <!-- bundled with Minecraft, should be kept in sync -->
 -        <dependency>
 -            <groupId>com.google.code.gson</groupId>
 -            <artifactId>gson</artifactId>
--            <version>2.8.0</version>
+-            <version>2.8.8</version>
 -            <scope>compile</scope>
 -        </dependency>
 -        <dependency>
@@ -249,7 +248,7 @@ index 538a424d42bc2b67d26e8b866da60f66bf0f22d8..00000000000000000000000000000000
 -                    <dependency>
 -                        <groupId>org.eclipse.jdt</groupId>
 -                        <artifactId>ecj</artifactId>
--                        <version>3.26.0</version>
+-                        <version>3.27.0</version>
 -                    </dependency>
 -                </dependencies>
 -            </plugin>
@@ -296,10 +295,10 @@ index 538a424d42bc2b67d26e8b866da60f66bf0f22d8..00000000000000000000000000000000
 -            <plugin>
 -                <groupId>org.apache.maven.plugins</groupId>
 -                <artifactId>maven-javadoc-plugin</artifactId>
--                <version>3.3.0</version>
+-                <version>3.3.1</version>
 -                <configuration>
 -                    <links>
--                        <link>https://guava.dev/releases/21.0/api/docs/</link>
+-                        <link>https://guava.dev/releases/31.0.1-jre/api/docs/</link>
 -                        <link>https://javadoc.io/doc/org.yaml/snakeyaml/1.28/</link>
 -                        <link>https://javadoc.io/doc/org.jetbrains/annotations-java5/21.0.1/</link>
 -                        <link>https://javadoc.io/doc/net.md-5/bungeecord-chat/1.16-R0.4/</link>
@@ -337,7 +336,7 @@ index 538a424d42bc2b67d26e8b866da60f66bf0f22d8..00000000000000000000000000000000
 -                            <dependency>
 -                                <groupId>com.puppycrawl.tools</groupId>
 -                                <artifactId>checkstyle</artifactId>
--                                <version>8.44</version>
+-                                <version>8.45.1</version>
 -                            </dependency>
 -                        </dependencies>
 -                    </plugin>

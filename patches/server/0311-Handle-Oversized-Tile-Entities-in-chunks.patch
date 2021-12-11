@@ -8,43 +8,57 @@ creating too large of a packet to sed.
 
 Co authored by Spottedleaf
 
-diff --git a/src/main/java/net/minecraft/network/protocol/game/ClientboundLevelChunkPacket.java b/src/main/java/net/minecraft/network/protocol/game/ClientboundLevelChunkPacket.java
-index 96626835fee3c0fdb452acacdc9f737ad90c08de..c28879f32b004f36ff746ea2274f91ddd9501e71 100644
---- a/src/main/java/net/minecraft/network/protocol/game/ClientboundLevelChunkPacket.java
-+++ b/src/main/java/net/minecraft/network/protocol/game/ClientboundLevelChunkPacket.java
-@@ -27,6 +27,15 @@ public class ClientboundLevelChunkPacket implements Packet<ClientGamePacketListe
-     private final int[] biomes;
+diff --git a/src/main/java/net/minecraft/network/protocol/game/ClientboundLevelChunkPacketData.java b/src/main/java/net/minecraft/network/protocol/game/ClientboundLevelChunkPacketData.java
+index 4ed3b1291ac443502e9b99f83ecf02b22509451c..dba11f277f3703e1ee7f5a62f021d319e4ab18fc 100644
+--- a/src/main/java/net/minecraft/network/protocol/game/ClientboundLevelChunkPacketData.java
++++ b/src/main/java/net/minecraft/network/protocol/game/ClientboundLevelChunkPacketData.java
+@@ -24,6 +24,14 @@ public class ClientboundLevelChunkPacketData {
+     private final CompoundTag heightmaps;
      private final byte[] buffer;
-     private final List<CompoundTag> blockEntitiesTags;
+     private final List<ClientboundLevelChunkPacketData.BlockEntityInfo> blockEntitiesData;
 +    // Paper start
-+    private final java.util.List<Packet> extraPackets = new java.util.ArrayList<>();
++    private final java.util.List<net.minecraft.network.protocol.Packet> extraPackets = new java.util.ArrayList<>();
 +    private static final int TE_LIMIT = Integer.getInteger("Paper.excessiveTELimit", 750);
 +
-+    @Override
-+    public java.util.List<Packet> getExtraPackets() {
-+        return extraPackets;
++    public List<net.minecraft.network.protocol.Packet> getExtraPackets() {
++        return this.extraPackets;
 +    }
 +    // Paper end
  
-     public ClientboundLevelChunkPacket(LevelChunk chunk) {
-         ChunkPos chunkPos = chunk.getPos();
-@@ -44,9 +53,19 @@ public class ClientboundLevelChunkPacket implements Packet<ClientGamePacketListe
-         this.buffer = new byte[this.calculateChunkSize(chunk)];
-         this.availableSections = this.extractChunkData(new FriendlyByteBuf(this.getWriteBuffer()), chunk);
-         this.blockEntitiesTags = Lists.newArrayList();
+     public ClientboundLevelChunkPacketData(LevelChunk chunk) {
+         this.heightmaps = new CompoundTag();
+@@ -37,8 +45,18 @@ public class ClientboundLevelChunkPacketData {
+         this.buffer = new byte[calculateChunkSize(chunk)];
+         extractChunkData(new FriendlyByteBuf(this.getWriteBuffer()), chunk);
+         this.blockEntitiesData = Lists.newArrayList();
 +        int totalTileEntities = 0; // Paper
  
          for(Entry<BlockPos, BlockEntity> entry2 : chunk.getBlockEntities().entrySet()) {
-             BlockEntity blockEntity = entry2.getValue();
-+            // Paper start - improve oversized chunk data packet handling
++            // Paper start
 +            if (++totalTileEntities > TE_LIMIT) {
-+                ClientboundBlockEntityDataPacket updatePacket = blockEntity.getUpdatePacket();
-+                if (updatePacket != null) {
-+                    this.extraPackets.add(updatePacket);
++                var packet = entry2.getValue().getUpdatePacket();
++                if (packet != null) {
++                    this.extraPackets.add(packet);
 +                    continue;
 +                }
 +            }
 +            // Paper end
-             CompoundTag compoundTag = blockEntity.getUpdateTag();
-             if (blockEntity instanceof net.minecraft.world.level.block.entity.SkullBlockEntity) { net.minecraft.world.level.block.entity.SkullBlockEntity.sanitizeTileEntityUUID(compoundTag); } // Paper
-             this.blockEntitiesTags.add(compoundTag);
+             this.blockEntitiesData.add(ClientboundLevelChunkPacketData.BlockEntityInfo.create(entry2.getValue()));
+         }
+ 
+diff --git a/src/main/java/net/minecraft/network/protocol/game/ClientboundLevelChunkWithLightPacket.java b/src/main/java/net/minecraft/network/protocol/game/ClientboundLevelChunkWithLightPacket.java
+index aee73c4e20aff9bd0a560dc891f74f4f601c24b6..7825d6f0fdcfda6212cff8033ec55fb7db236154 100644
+--- a/src/main/java/net/minecraft/network/protocol/game/ClientboundLevelChunkWithLightPacket.java
++++ b/src/main/java/net/minecraft/network/protocol/game/ClientboundLevelChunkWithLightPacket.java
+@@ -57,4 +57,11 @@ public class ClientboundLevelChunkWithLightPacket implements Packet<ClientGamePa
+     public ClientboundLightUpdatePacketData getLightData() {
+         return this.lightData;
+     }
++
++    // Paper start - handle over-sized TE packets
++    @Override
++    public java.util.List<Packet> getExtraPackets() {
++        return this.chunkData.getExtraPackets();
++    }
++    // Paper end
+ }

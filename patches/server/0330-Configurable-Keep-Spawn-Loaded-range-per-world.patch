@@ -6,10 +6,10 @@ Subject: [PATCH] Configurable Keep Spawn Loaded range per world
 This lets you disable it for some worlds and lower it for others.
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index 2a7d31f533240e0b683c00d65f5632d7a8ff236d..3816623fa85db14a89bd165221695de1a39e70c0 100644
+index eb44aef0aecf65f5c1b19f42bf85a3a263965a7c..5589ee42959e3665dd5df9049fe108b6f6629608 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-@@ -36,6 +36,12 @@ public class PaperWorldConfig {
+@@ -56,6 +56,12 @@ public class PaperWorldConfig {
          }
      }
  
@@ -23,19 +23,19 @@ index 2a7d31f533240e0b683c00d65f5632d7a8ff236d..3816623fa85db14a89bd165221695de1
          config.addDefault("world-settings.default." + path, def);
          return config.getBoolean("world-settings." + worldName + "." + path, config.getBoolean("world-settings.default." + path));
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 3ca73d8c4709d6a95bc8f6b81b977a069f9cba17..d284ed9d1cc6ea3ee2e7878faf43184507f91186 100644
+index bd8e654c1580a0ac7dd411b9f1dcad4a20d1d3e5..7576047ea9695434ca06ca8fefde0dce68980be8 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -787,35 +787,36 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -760,35 +760,36 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
  
      // CraftBukkit start
-     public void loadSpawn(ChunkProgressListener worldloadlistener, ServerLevel worldserver) {
+     public void prepareLevels(ChunkProgressListener worldloadlistener, ServerLevel worldserver) {
 -        if (!worldserver.getWorld().getKeepSpawnInMemory()) {
 -            return;
 -        }
 +        ServerChunkCache chunkproviderserver = worldserver.getChunkSource(); // Paper
  
-         // WorldServer worldserver = this.E();
+         // WorldServer worldserver = this.overworld();
          this.forceTicks = true;
          // CraftBukkit end
 +        if (worldserver.getWorld().getKeepSpawnInMemory()) { // Paper
@@ -53,7 +53,7 @@ index 3ca73d8c4709d6a95bc8f6b81b977a069f9cba17..d284ed9d1cc6ea3ee2e7878faf431845
 -
 -        while (chunkproviderserver.getTickingGenerated() != 441) {
 -            // CraftBukkit start
--            // this.nextTickTime = SystemUtils.getMonotonicMillis() + 10L;
+-            // this.nextTickTime = SystemUtils.getMillis() + 10L;
 -            this.executeModerately();
 -            // CraftBukkit end
 -        }
@@ -68,27 +68,27 @@ index 3ca73d8c4709d6a95bc8f6b81b977a069f9cba17..d284ed9d1cc6ea3ee2e7878faf431845
 +        // Paper end
  
          // CraftBukkit start
-         // this.nextTickTime = SystemUtils.getMonotonicMillis() + 10L;
+         // this.nextTickTime = SystemUtils.getMillis() + 10L;
          this.executeModerately();
-         // Iterator iterator = this.worldServer.values().iterator();
+         // Iterator iterator = this.levels.values().iterator();
 +        }
  
          if (true) {
              ServerLevel worldserver1 = worldserver;
-@@ -838,7 +839,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
-         // this.nextTick = SystemUtils.getMonotonicMillis() + 10L;
+@@ -811,7 +812,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         // this.nextTickTime = SystemUtils.getMillis() + 10L;
          this.executeModerately();
          // CraftBukkit end
 -        worldloadlistener.stop();
 +        if (worldserver.getWorld().getKeepSpawnInMemory()) worldloadlistener.stop(); // Paper
          chunkproviderserver.getLightEngine().setTaskPerBatch(5);
          // CraftBukkit start
-         // this.updateSpawnFlags();
+         // this.updateMobSpawningFlags();
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index 174f94b8bc5b3830ff5bcfb9777f3d57c1f781ff..b3d54c90e87347cb7c709059c090371a40c7b047 100644
+index 2950ad995f322570cd647d3217f340327cc3e7c8..fef3846a978dcba95c5dbe5c528ac20cb4f56178 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
-@@ -61,6 +61,7 @@ import net.minecraft.network.protocol.game.ClientboundSoundEntityPacket;
+@@ -60,6 +60,7 @@ import net.minecraft.network.protocol.game.ClientboundSoundEntityPacket;
  import net.minecraft.network.protocol.game.ClientboundSoundPacket;
  import net.minecraft.network.protocol.game.DebugPackets;
  import net.minecraft.resources.ResourceKey;
@@ -96,7 +96,7 @@ index 174f94b8bc5b3830ff5bcfb9777f3d57c1f781ff..b3d54c90e87347cb7c709059c090371a
  import net.minecraft.server.MinecraftServer;
  import net.minecraft.server.ServerScoreboard;
  import net.minecraft.server.level.progress.ChunkProgressListener;
-@@ -1555,12 +1556,84 @@ public class ServerLevel extends Level implements WorldGenLevel {
+@@ -1606,12 +1607,84 @@ public class ServerLevel extends Level implements WorldGenLevel {
          return ((MapIndex) this.getServer().overworld().getDataStorage().computeIfAbsent(MapIndex::load, MapIndex::new, "idcounts")).getFreeAuxValueForMap();
      }
  
@@ -221,10 +221,10 @@ index 4185e6bcf9b2bb65b2a0fa5fcbeb5684615169a7..dbc29442f2b2ad3ea451910f4944e901
          this.maxCount = i * i;
      }
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index 7db56c1b150ba58777cd5d017bbe5522837c4cb7..d99238423aa3a699dcf302283cf5bf8dd57785d6 100644
+index 29509d3ae956fd4da2bf12c6a352ab115fc75f5c..255616aa45b06487c67aa6011dbe29e18d82bc68 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-@@ -1336,15 +1336,21 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -1340,15 +1340,21 @@ public class CraftWorld extends CraftRegionAccessor implements World {
  
      @Override
      public void setKeepSpawnInMemory(boolean keepLoaded) {

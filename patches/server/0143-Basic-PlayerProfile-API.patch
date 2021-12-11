@@ -315,7 +315,7 @@ index 0000000000000000000000000000000000000000..84551164b76bc8f064a3a0c030c3a1b4
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/profile/PaperAuthenticationService.java b/src/main/java/com/destroystokyo/paper/profile/PaperAuthenticationService.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..d64d45eb01c65864fca1077982d89bc05e0f811b
+index 0000000000000000000000000000000000000000..1459a1f99fe614d072a087cda18788cf13102645
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/profile/PaperAuthenticationService.java
 @@ -0,0 +1,31 @@
@@ -332,7 +332,7 @@ index 0000000000000000000000000000000000000000..d64d45eb01c65864fca1077982d89bc0
 +    private final Environment environment;
 +    public PaperAuthenticationService(Proxy proxy) {
 +        super(proxy);
-+        this.environment = (Environment)EnvironmentParser.getEnvironmentFromProperties().orElse(YggdrasilEnvironment.PROD);;
++        this.environment = EnvironmentParser.getEnvironmentFromProperties().orElse(YggdrasilEnvironment.PROD.getEnvironment());
 +    }
 +
 +    @Override
@@ -429,7 +429,7 @@ index 0000000000000000000000000000000000000000..3cdd06d3af7ff94f1fe1a11b9a9275e1
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/MCUtil.java b/src/main/java/net/minecraft/server/MCUtil.java
-index 80f8d6ce6dd717d4b37b78539c65b6ac814ec93d..966f0951832040c38fdd2caa58f7eae372aa0f59 100644
+index ff4def7ec3dcfa30fdc0135bd1add8e47989fb36..4f45ac04a219e619c13b31befd2c4e452057079c 100644
 --- a/src/main/java/net/minecraft/server/MCUtil.java
 +++ b/src/main/java/net/minecraft/server/MCUtil.java
 @@ -1,5 +1,7 @@
@@ -439,8 +439,8 @@ index 80f8d6ce6dd717d4b37b78539c65b6ac814ec93d..966f0951832040c38fdd2caa58f7eae3
 +import com.destroystokyo.paper.profile.PlayerProfile;
  import com.google.common.util.concurrent.ThreadFactoryBuilder;
  import it.unimi.dsi.fastutil.objects.ObjectRBTreeSet;
- import net.minecraft.core.BlockPos;
-@@ -10,6 +12,7 @@ import net.minecraft.world.level.ChunkPos;
+ import java.lang.ref.Cleaner;
+@@ -11,6 +13,7 @@ import net.minecraft.world.level.ChunkPos;
  import net.minecraft.world.level.ClipContext;
  import net.minecraft.world.level.Level;
  import org.apache.commons.lang.exception.ExceptionUtils;
@@ -448,7 +448,7 @@ index 80f8d6ce6dd717d4b37b78539c65b6ac814ec93d..966f0951832040c38fdd2caa58f7eae3
  import org.bukkit.Location;
  import org.bukkit.block.BlockFace;
  import org.bukkit.craftbukkit.CraftWorld;
-@@ -344,6 +347,10 @@ public final class MCUtil {
+@@ -349,6 +352,10 @@ public final class MCUtil {
          return run.get();
      }
  
@@ -460,10 +460,10 @@ index 80f8d6ce6dd717d4b37b78539c65b6ac814ec93d..966f0951832040c38fdd2caa58f7eae3
       * Calculates distance between 2 entities
       * @param e1
 diff --git a/src/main/java/net/minecraft/server/Main.java b/src/main/java/net/minecraft/server/Main.java
-index c8385460701395cb5c65fba41335469ffb2d9b9a..fb0b3c5770f66cc3590f5ac4e690a33cb6179be3 100644
+index a497b281d03c097587b21e9f141a6a66f36e4dad..4ab820c43ddc79f5a280e2d4b322a667b9ba725f 100644
 --- a/src/main/java/net/minecraft/server/Main.java
 +++ b/src/main/java/net/minecraft/server/Main.java
-@@ -130,7 +130,7 @@ public class Main {
+@@ -135,7 +135,7 @@ public class Main {
              }
  
              File file = (File) optionset.valueOf("universe"); // CraftBukkit
@@ -473,7 +473,7 @@ index c8385460701395cb5c65fba41335469ffb2d9b9a..fb0b3c5770f66cc3590f5ac4e690a33c
              GameProfileRepository gameprofilerepository = yggdrasilauthenticationservice.createProfileRepository();
              GameProfileCache usercache = new GameProfileCache(gameprofilerepository, new File(file, MinecraftServer.USERID_CACHE_FILE.getName()));
 diff --git a/src/main/java/net/minecraft/server/players/GameProfileCache.java b/src/main/java/net/minecraft/server/players/GameProfileCache.java
-index 6e1b7d5b20e9f6ed1b650eb9d6ac9f8c4867b4b7..61405c2b53e03a4b83e2c70c6e4d3739ca9676cb 100644
+index 00f783aafd81fa7e836e4eea5bfeac7434f33b0f..3789441e2df9410aa1c6efe59054aaba2c738633 100644
 --- a/src/main/java/net/minecraft/server/players/GameProfileCache.java
 +++ b/src/main/java/net/minecraft/server/players/GameProfileCache.java
 @@ -135,6 +135,13 @@ public class GameProfileCache {
@@ -491,10 +491,10 @@ index 6e1b7d5b20e9f6ed1b650eb9d6ac9f8c4867b4b7..61405c2b53e03a4b83e2c70c6e4d3739
          String s1 = name.toLowerCase(Locale.ROOT);
          GameProfileCache.GameProfileInfo usercache_usercacheentry = (GameProfileCache.GameProfileInfo) this.profilesByName.get(s1);
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index fafd9f8d46c9bb5cce81f58376482dd0f9196b5a..a761dbe6fd7e2ed1805d080832acda768d0b3c03 100644
+index e873cc1e27fc3fe65e7bb07c5bec7f599c32be32..0c1378bbee14a9fc3c81288e963e2709238830ae 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -244,6 +244,9 @@ import org.yaml.snakeyaml.error.MarkedYAMLException;
+@@ -248,6 +248,9 @@ import org.yaml.snakeyaml.error.MarkedYAMLException;
  
  import net.md_5.bungee.api.chat.BaseComponent; // Spigot
  
@@ -504,7 +504,7 @@ index fafd9f8d46c9bb5cce81f58376482dd0f9196b5a..a761dbe6fd7e2ed1805d080832acda76
  public final class CraftServer implements Server {
      private final String serverName = "Paper"; // Paper
      private final String serverVersion;
-@@ -2466,5 +2469,24 @@ public final class CraftServer implements Server {
+@@ -2537,5 +2540,24 @@ public final class CraftServer implements Server {
      public boolean suggestPlayerNamesWhenNullTabCompletions() {
          return com.destroystokyo.paper.PaperConfig.suggestPlayersWhenNullTabCompletions;
      }

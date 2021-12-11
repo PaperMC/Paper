@@ -5,10 +5,10 @@ Subject: [PATCH] Fix MC-117075: TE Unload Lag Spike
 
 
 diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
-index d6e6b5a29ddf980e179471059372dfda8e0d7b1b..62d7c9056c0836b53804e84cc1464cd50380d392 100644
+index ea1e85fa125f2dd1a251e1589fff32d7083e2c13..73ff83f2c3a6b9796305abd5a98e8a77f7a44240 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
 +++ b/src/main/java/net/minecraft/world/level/Level.java
-@@ -728,6 +728,8 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -732,6 +732,8 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
          // Spigot start
          // Iterator iterator = this.blockEntityTickers.iterator();
          int tilesThisCycle = 0;
@@ -17,7 +17,7 @@ index d6e6b5a29ddf980e179471059372dfda8e0d7b1b..62d7c9056c0836b53804e84cc1464cd5
          for (tileTickPosition = 0; tileTickPosition < this.blockEntityTickers.size(); tileTickPosition++) { // Paper - Disable tick limiters
              this.tileTickPosition = (this.tileTickPosition < this.blockEntityTickers.size()) ? this.tileTickPosition : 0;
              TickingBlockEntity tickingblockentity = (TickingBlockEntity) this.blockEntityTickers.get(tileTickPosition);
-@@ -735,7 +737,6 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -739,7 +741,6 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
              if (tickingblockentity == null) {
                  this.getCraftServer().getLogger().severe("Spigot has detected a null entity and has removed it, preventing a crash");
                  tilesThisCycle--;
@@ -25,14 +25,14 @@ index d6e6b5a29ddf980e179471059372dfda8e0d7b1b..62d7c9056c0836b53804e84cc1464cd5
                  continue;
              }
              // Spigot end
-@@ -743,12 +744,13 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -747,12 +748,13 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
              if (tickingblockentity.isRemoved()) {
                  // Spigot start
                  tilesThisCycle--;
 -                this.blockEntityTickers.remove(this.tileTickPosition--);
 +                toRemove.add(tickingblockentity); // Paper - use removeAll
                  // Spigot end
-             } else {
+             } else if (this.shouldTickBlocksAt(ChunkPos.asLong(tickingblockentity.getPos()))) {
                  tickingblockentity.tick();
              }
          }

@@ -1,0 +1,34 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Madeline Miller <mnmiller1@me.com>
+Date: Sun, 17 Jan 2021 13:16:09 +1000
+Subject: [PATCH] Implement BlockPreDispenseEvent
+
+
+diff --git a/src/main/java/net/minecraft/world/level/block/DispenserBlock.java b/src/main/java/net/minecraft/world/level/block/DispenserBlock.java
+index 07d357b5fcb30ed9ff074a196a19de1481fe3738..83ac86b3c1e7b9233f2db8e5488f97c5b44f8843 100644
+--- a/src/main/java/net/minecraft/world/level/block/DispenserBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/DispenserBlock.java
+@@ -92,6 +92,7 @@ public class DispenserBlock extends BaseEntityBlock {
+             DispenseItemBehavior idispensebehavior = this.getDispenseMethod(itemstack);
+ 
+             if (idispensebehavior != DispenseItemBehavior.NOOP) {
++                if (!org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockPreDispenseEvent(world, pos, itemstack, i)) return; // Paper - BlockPreDispenseEvent is called here
+                 DispenserBlock.eventFired = false; // CraftBukkit - reset event status
+                 tileentitydispenser.setItem(i, idispensebehavior.dispense(sourceblock, itemstack));
+             }
+diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+index bfc3442e7952e1ec927f3ebdbefba153e7304e19..da0a74415dcaddc3f692106faf11403e27feee80 100644
+--- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
++++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+@@ -1854,5 +1854,11 @@ public class CraftEventFactory {
+         io.papermc.paper.event.block.BlockFailedDispenseEvent event = new io.papermc.paper.event.block.BlockFailedDispenseEvent(block);
+         return event.callEvent();
+     }
++
++    public static boolean handleBlockPreDispenseEvent(ServerLevel serverLevel, BlockPos pos, ItemStack itemStack, int slot) {
++        org.bukkit.block.Block block = serverLevel.getWorld().getBlockAt(pos.getX(), pos.getY(), pos.getZ());
++        io.papermc.paper.event.block.BlockPreDispenseEvent event = new io.papermc.paper.event.block.BlockPreDispenseEvent(block, org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemStack), slot);
++        return event.callEvent();
++    }
+     // Paper end
+ }

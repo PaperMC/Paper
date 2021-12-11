@@ -298,10 +298,10 @@ index 0000000000000000000000000000000000000000..bee2fa2bfbb61209381f24ed6508d3d1
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..a632a796a3e5f2b361a521d70581b83a6839fc73
+index 0000000000000000000000000000000000000000..e4368db074da7b5e48b47d41875c1e63b9745c2a
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-@@ -0,0 +1,185 @@
+@@ -0,0 +1,188 @@
 +package com.destroystokyo.paper;
 +
 +import com.google.common.base.Throwables;
@@ -364,8 +364,8 @@ index 0000000000000000000000000000000000000000..a632a796a3e5f2b361a521d70581b83a
 +        commands = new HashMap<String, Command>();
 +        commands.put("paper", new PaperCommand("paper"));
 +
-+        version = getInt("config-version", 22);
-+        set("config-version", 22);
++        version = getInt("config-version", 24);
++        set("config-version", 24);
 +        readConfig(PaperConfig.class, null);
 +    }
 +
@@ -405,7 +405,10 @@ index 0000000000000000000000000000000000000000..a632a796a3e5f2b361a521d70581b83a
 +                }
 +            }
 +        }
++        saveConfig();
++    }
 +
++    static void saveConfig() {
 +        try {
 +            config.save(CONFIG_FILE);
 +        } catch (IOException ex) {
@@ -489,20 +492,22 @@ index 0000000000000000000000000000000000000000..a632a796a3e5f2b361a521d70581b83a
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..0f80a0d930bff8c19440ee33a4c8d56d17495b5f
+index 0000000000000000000000000000000000000000..4adf44026fc6269934dfa4513f06a7f8a3b41f90
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-@@ -0,0 +1,73 @@
+@@ -0,0 +1,94 @@
 +package com.destroystokyo.paper;
 +
 +import java.util.List;
 +
++import java.util.stream.Collectors;
 +import org.bukkit.Bukkit;
 +import org.bukkit.configuration.file.YamlConfiguration;
 +import org.spigotmc.SpigotWorldConfig;
 +
 +import static com.destroystokyo.paper.PaperConfig.log;
 +import static com.destroystokyo.paper.PaperConfig.logError;
++import static com.destroystokyo.paper.PaperConfig.saveConfig;
 +
 +public class PaperWorldConfig {
 +
@@ -531,6 +536,14 @@ index 0000000000000000000000000000000000000000..0f80a0d930bff8c19440ee33a4c8d56d
 +        }
 +    }
 +
++    public void removeOldValues() {
++        boolean needsSave = false;
++
++        if (needsSave) {
++            saveConfig();
++        }
++    }
++
 +    private boolean getBoolean(String path, boolean def) {
 +        config.addDefault("world-settings.default." + path, def);
 +        return config.getBoolean("world-settings." + worldName + "." + path, config.getBoolean("world-settings.default." + path));
@@ -542,8 +555,14 @@ index 0000000000000000000000000000000000000000..0f80a0d930bff8c19440ee33a4c8d56d
 +    }
 +
 +    private int getInt(String path, int def) {
-+        config.addDefault("world-settings.default." + path, def);
-+        return config.getInt("world-settings." + worldName + "." + path, config.getInt("world-settings.default." + path));
++        return getInt(path, def, true);
++    }
++
++    private int getInt(String path, int def, boolean setDefault) {
++        if (setDefault) {
++            config.addDefault("world-settings.default." + path, def);
++        }
++        return config.getInt("world-settings." + worldName + "." + path, config.getInt("world-settings.default." + path, def));
 +    }
 +
 +    private long getLong(String path, long def) {
@@ -565,12 +584,17 @@ index 0000000000000000000000000000000000000000..0f80a0d930bff8c19440ee33a4c8d56d
 +        config.addDefault("world-settings.default." + path, def);
 +        return config.getString("world-settings." + worldName + "." + path, config.getString("world-settings.default." + path));
 +    }
++
++    private <T extends Enum<T>> List<T> getEnumList(String path, List<T> def, Class<T> type) {
++        config.addDefault("world-settings.default." + path, def.stream().map(Enum::name).collect(Collectors.toList()));
++        return ((List<String>) (config.getList("world-settings." + worldName + "." + path, config.getList("world-settings.default." + path)))).stream().map(s -> Enum.valueOf(type, s)).collect(Collectors.toList());
++    }
 +}
 diff --git a/src/main/java/net/minecraft/server/Main.java b/src/main/java/net/minecraft/server/Main.java
-index 1707449cbbfa5eab585657cdde811b34a92e1d17..c8385460701395cb5c65fba41335469ffb2d9b9a 100644
+index 82d04f803201e39b48cd514cd8d9e2b90b28c1d4..156fa293626119caf0cf414505fdf0e96eaa08b7 100644
 --- a/src/main/java/net/minecraft/server/Main.java
 +++ b/src/main/java/net/minecraft/server/Main.java
-@@ -101,6 +101,12 @@ public class Main {
+@@ -106,6 +106,12 @@ public class Main {
              DedicatedServerSettings dedicatedserversettings = new DedicatedServerSettings(optionset); // CraftBukkit - CLI argument support
  
              dedicatedserversettings.forceSave();
@@ -583,7 +607,7 @@ index 1707449cbbfa5eab585657cdde811b34a92e1d17..c8385460701395cb5c65fba41335469f
              Path path1 = Paths.get("eula.txt");
              Eula eula = new Eula(path1);
  
-@@ -251,6 +257,20 @@ public class Main {
+@@ -261,6 +267,20 @@ public class Main {
  
      }
  
@@ -601,14 +625,26 @@ index 1707449cbbfa5eab585657cdde811b34a92e1d17..c8385460701395cb5c65fba41335469f
 +    }
 +    // Paper end
 +
-     public static void forceUpgrade(LevelStorageSource.LevelStorageAccess session, DataFixer dataFixer, boolean eraseCache, BooleanSupplier booleansupplier, ImmutableSet<ResourceKey<DimensionType>> worlds) { // CraftBukkit
+     public static void forceUpgrade(LevelStorageSource.LevelStorageAccess session, DataFixer dataFixer, boolean eraseCache, BooleanSupplier continueCheck, WorldGenSettings generatorOptions) {
          Main.LOGGER.info("Forcing world upgrade! {}", session.getLevelId()); // CraftBukkit
-         WorldUpgrader worldupgrader = new WorldUpgrader(session, dataFixer, worlds, eraseCache);
+         WorldUpgrader worldupgrader = new WorldUpgrader(session, dataFixer, generatorOptions, eraseCache);
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index ebb914e7cf3e5ba2d862e341392e904f325d720a..b3629065ebbe601802703b8671b24c7156f12d03 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -602,6 +602,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         }
+         this.forceDifficulty();
+         for (ServerLevel worldserver : this.getAllLevels()) {
++            worldserver.paperConfig.removeOldValues(); // Paper - callback for clearing old config options, after any migrations have taken place
+             this.prepareLevels(worldserver.getChunkSource().chunkMap.progressListener, worldserver);
+             worldserver.entityManager.tick(); // SPIGOT-6526: Load pending entities so they are available to the API
+             this.server.getPluginManager().callEvent(new org.bukkit.event.world.WorldLoadEvent(worldserver.getWorld()));
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-index cd65a5bb6da734a39b0bb6e9a0571455d19ceac4..fac993d58bd6e3bb19fd69881092a863c8952c65 100644
+index 2599fbabd5e5c0d10d0c915016f7cc982bda0e20..4dd57007af218ba1c0e666117a49939c5884f2c6 100644
 --- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-@@ -194,6 +194,15 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+@@ -192,6 +192,15 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
          org.spigotmc.SpigotConfig.init((java.io.File) options.valueOf("spigot-settings"));
          org.spigotmc.SpigotConfig.registerCommands();
          // Spigot end
@@ -625,10 +661,10 @@ index cd65a5bb6da734a39b0bb6e9a0571455d19ceac4..fac993d58bd6e3bb19fd69881092a863
          this.setPvpAllowed(dedicatedserverproperties.pvp);
          this.setFlightAllowed(dedicatedserverproperties.allowFlight);
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-index 1ff471fb8a4f69f02debe9c40b13cc1e8b8045d7..9591f50922343283597bad6d9ac17c175d8ae230 100644
+index a44b47c8ed611078764841a5b591877242c10db1..d672c467267ef4d96184e104c35d0379116880db 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-@@ -334,6 +334,12 @@ public class ServerChunkCache extends ChunkSource {
+@@ -337,6 +337,12 @@ public class ServerChunkCache extends ChunkSource {
          }
      }
  
@@ -639,36 +675,28 @@ index 1ff471fb8a4f69f02debe9c40b13cc1e8b8045d7..9591f50922343283597bad6d9ac17c17
 +    // Paper end
 +
      public boolean isPositionTicking(long pos) {
-         return this.checkChunkFuture(pos, (Function<ChunkHolder, CompletableFuture<Either<LevelChunk, ChunkHolder.ChunkLoadingFailure>>>) ChunkHolder::getTickingChunkFuture); // CraftBukkit - decompile error
-     }
+         ChunkHolder playerchunk = this.getVisibleChunkIfPresent(pos);
+ 
 diff --git a/src/main/java/net/minecraft/world/entity/EntityType.java b/src/main/java/net/minecraft/world/entity/EntityType.java
-index 067216078c7b50390957d1fcfbfbaaeb81cfba21..7f3d83d3d071f6b441ad119b1c93be035e911e70 100644
+index 1bee6fc5b9fa70adf2f7cac792778f5ed203d291..e688949fc2f3031dc9c9817bc59554e9f5a436af 100644
 --- a/src/main/java/net/minecraft/world/entity/EntityType.java
 +++ b/src/main/java/net/minecraft/world/entity/EntityType.java
-@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableSet;
- import java.util.List;
- import java.util.Optional;
- import java.util.Spliterator;
-+import java.util.Set; // Paper
- import java.util.UUID;
- import java.util.function.Consumer;
- import java.util.function.Function;
-@@ -666,4 +667,10 @@ public class EntityType<T extends Entity> implements EntityTypeTest<Entity, T> {
+@@ -664,4 +664,10 @@ public class EntityType<T extends Entity> implements EntityTypeTest<Entity, T> {
  
          T create(EntityType<T> type, Level world);
      }
 +
 +    // Paper start
-+    public static Set<ResourceLocation> getEntityNameList() {
++    public static java.util.Set<ResourceLocation> getEntityNameList() {
 +        return Registry.ENTITY_TYPE.keySet();
 +    }
 +    // Paper end
  }
 diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
-index ae26cf65169fd25520263a3edb93424383fa7bb0..5de52a4c33fd136b43b150b7ed0df7703f4b2817 100644
+index aaf71bfb582d1d86d67205618825411babd2625a..f18ae5b80c930c3a7c2da079b9926ab2657c36a3 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
 +++ b/src/main/java/net/minecraft/world/level/Level.java
-@@ -147,6 +147,8 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -149,6 +149,8 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
      public boolean populating;
      public final org.spigotmc.SpigotWorldConfig spigotConfig; // Spigot
  
@@ -686,10 +714,10 @@ index ae26cf65169fd25520263a3edb93424383fa7bb0..5de52a4c33fd136b43b150b7ed0df770
          this.world = new CraftWorld((ServerLevel) this, gen, biomeProvider, env);
          this.ticksPerAnimalSpawns = this.getCraftServer().getTicksPerAnimalSpawns(); // CraftBukkit
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 14989d371a04e4b86e1ad3c2f7905c602cf73834..2a4c75cd96626c8a6df844b72056644520008729 100644
+index ae0e8dc6fd3f8323c34df83450a16fc3c44a9e5e..980e5abe159ebfdf5334332b8d8201c0c0b66a7b 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -823,6 +823,7 @@ public final class CraftServer implements Server {
+@@ -842,6 +842,7 @@ public final class CraftServer implements Server {
          }
  
          org.spigotmc.SpigotConfig.init((File) console.options.valueOf("spigot-settings")); // Spigot
@@ -697,7 +725,7 @@ index 14989d371a04e4b86e1ad3c2f7905c602cf73834..2a4c75cd96626c8a6df844b720566445
          for (ServerLevel world : this.console.getAllLevels()) {
              world.serverLevelData.setDifficulty(config.difficulty);
              world.setSpawnSettings(config.spawnMonsters, config.spawnAnimals);
-@@ -856,12 +857,14 @@ public final class CraftServer implements Server {
+@@ -881,12 +882,14 @@ public final class CraftServer implements Server {
                  world.ticksPerAmbientSpawns = this.getTicksPerAmbientSpawns();
              }
              world.spigotConfig.init(); // Spigot
@@ -712,7 +740,7 @@ index 14989d371a04e4b86e1ad3c2f7905c602cf73834..2a4c75cd96626c8a6df844b720566445
          this.overrideAllCommandBlockCommands = this.commandsConfiguration.getStringList("command-block-overrides").contains("*");
          this.ignoreVanillaPermissions = this.commandsConfiguration.getBoolean("ignore-vanilla-permissions");
  
-@@ -2256,4 +2259,35 @@ public final class CraftServer implements Server {
+@@ -2293,4 +2296,35 @@ public final class CraftServer implements Server {
          return this.spigot;
      }
      // Spigot end
@@ -749,7 +777,7 @@ index 14989d371a04e4b86e1ad3c2f7905c602cf73834..2a4c75cd96626c8a6df844b720566445
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/Main.java b/src/main/java/org/bukkit/craftbukkit/Main.java
-index 90af1b123722bac1c4c5956465a153ec1ea998ff..11d1bc56439ff867224ef1c2058aee67ba0ee332 100644
+index ec50a122331b2ceb19822273f89f32b66a9f7db0..2bd2f436d5514b5e9bbc8bbd27ead4d4cb529b4f 100644
 --- a/src/main/java/org/bukkit/craftbukkit/Main.java
 +++ b/src/main/java/org/bukkit/craftbukkit/Main.java
 @@ -129,6 +129,14 @@ public class Main {
@@ -767,3 +795,24 @@ index 90af1b123722bac1c4c5956465a153ec1ea998ff..11d1bc56439ff867224ef1c2058aee67
              }
          };
  
+diff --git a/src/main/java/org/spigotmc/SpigotWorldConfig.java b/src/main/java/org/spigotmc/SpigotWorldConfig.java
+index af8c42ed04d9a79cd426bdaa8c2ee3feac1163e3..6c5113545914842ffb310522a7549ae7dd2466b2 100644
+--- a/src/main/java/org/spigotmc/SpigotWorldConfig.java
++++ b/src/main/java/org/spigotmc/SpigotWorldConfig.java
+@@ -58,8 +58,14 @@ public class SpigotWorldConfig
+ 
+     public int getInt(String path, int def)
+     {
+-        this.config.addDefault( "world-settings.default." + path, def );
+-        return this.config.getInt( "world-settings." + this.worldName + "." + path, this.config.getInt( "world-settings.default." + path ) );
++        // Paper start - get int without setting default
++        return this.getInt(path, def, true);
++    }
++    public int getInt(String path, int def, boolean setDef)
++    {
++        if (setDef) this.config.addDefault( "world-settings.default." + path, def );
++        return this.config.getInt( "world-settings." + this.worldName + "." + path, this.config.getInt( "world-settings.default." + path, def ) );
++        // Paper end
+     }
+ 
+     public <T> List getList(String path, T def)

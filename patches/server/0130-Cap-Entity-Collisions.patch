@@ -12,37 +12,37 @@ just as it does in Vanilla, but entity pushing logic will be capped.
 You can set this to 0 to disable collisions.
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index b2b3f336ac4e5d9c2598ecc7b3202d1efdd55feb..91e9672d01b6042d6f9a0f96c351ad97dfee0b73 100644
+index f383f30b9dd1a7c6cf69d342f99118beec70b206..47b717e8741bb2b8f3aa776dcdc73a3e7dbb5960 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-@@ -329,4 +329,10 @@ public class PaperWorldConfig {
+@@ -370,4 +370,10 @@ public class PaperWorldConfig {
              log("Treasure Maps will return already discovered locations");
          }
      }
 +
-+    public int maxCollisionsPerEntity;
++    public int maxCollisionsPerEntity = 8;
 +    private void maxEntityCollision() {
-+        maxCollisionsPerEntity = getInt( "max-entity-collisions", this.spigotConfig.getInt("max-entity-collisions", 8) );
++        maxCollisionsPerEntity = getInt( "max-entity-collisions", this.spigotConfig.getInt("max-entity-collisions", this.maxCollisionsPerEntity, false) );
 +        log( "Max Entity Collisions: " + maxCollisionsPerEntity );
 +    }
  }
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index 6211a425e81f9ba9718af6c30e534d35b10bad02..bf52f5f9b13e8b4eb3c7ee19b0e57bb872d2af1d 100644
+index b1d86df7002d6f6398288bc24c0d92a6349e0dcb..d6e1860772724347d62fb6990304ec8f4cde4035 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
-@@ -322,6 +322,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, n
-     public final org.spigotmc.ActivationRange.ActivationType activationType = org.spigotmc.ActivationRange.initializeEntityActivationType(this);
-     public final boolean defaultActivationState;
-     public long activatedTick = Integer.MIN_VALUE;
-+    protected int numCollisions = 0; // Paper
+@@ -308,6 +308,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, i
      public void inactiveTick() { }
      // Spigot end
- 
+     // Paper start
++    protected int numCollisions = 0; // Paper
+     @javax.annotation.Nullable
+     private org.bukkit.util.Vector origin;
+     @javax.annotation.Nullable
 diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-index b71b611f3b4506a68ab6c9195c67ba0f52c84ed2..290cf1289cdbe344d4009f8012309fc1f7875100 100644
+index 36aef3dbfe407ca6fa206bc3fc4390e5c2770aa3..e0fe53045da81fc9b2eac3b215d641cf0c722895 100644
 --- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-@@ -3228,8 +3228,11 @@ public abstract class LivingEntity extends Entity {
+@@ -3227,8 +3227,11 @@ public abstract class LivingEntity extends Entity {
                  }
              }
  

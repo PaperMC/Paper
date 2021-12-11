@@ -27,12 +27,12 @@ which can be obtained in (most) package managers such as `apt` (Debian / Ubuntu;
 you will most likely use this for WSL), `homebrew` (macOS / Linux), and more:
 
 - `git` (package `git` everywhere);
-- A Java 16 or later JDK (packages vary, use Google/DuckDuckGo/etc.).
+- A Java 17 or later JDK (packages vary, use Google/DuckDuckGo/etc.).
   - [Adoptium](https://adoptium.net/) has builds for most operating systems.
-  - Paper requires JDK 16 to build, however makes use of Gradle's
+  - Paper requires JDK 17 to build, however makes use of Gradle's
     [Toolchains](https://docs.gradle.org/current/userguide/toolchains.html)
     feature to allow building with only JRE 8 or later installed. (Gradle will
-    automatically provision JDK 16 for compilation if it cannot find an existing
+    automatically provision JDK 17 for compilation if it cannot find an existing
     install).
 
 If you're on Windows, check
@@ -42,11 +42,11 @@ If you're compiling with Docker, you can use Adoptium's
 [`eclipse-temurin`](https://hub.docker.com/_/eclipse-temurin/) images like so:
 
 ```console
-# docker run -it -v "$(pwd)":/data --rm eclipse-temurin:16.0.2_7-jdk bash
+# docker run -it -v "$(pwd)":/data --rm eclipse-temurin:17.0.1_12-jdk bash
 Pulling image...
 
 root@abcdefg1234:/# javac -version
-javac 16.0.2
+javac 17.0.1
 ```
 
 ## Understanding Patches
