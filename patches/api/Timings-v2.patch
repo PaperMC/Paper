@@ -3565,21 +3565,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 + */
  package org.spigotmc;
  
- import java.io.PrintStream;
-@@ -0,0 +0,0 @@ import java.util.Queue;
- import java.util.concurrent.ConcurrentLinkedQueue;
+-import java.io.PrintStream;
+-import java.util.Queue;
+-import java.util.concurrent.ConcurrentLinkedQueue;
  import org.bukkit.Bukkit;
- import org.bukkit.World;
+-import org.bukkit.World;
 -import org.bukkit.command.defaults.TimingsCommand;
  import org.jetbrains.annotations.NotNull;
- import org.jetbrains.annotations.Nullable;
+-import org.jetbrains.annotations.Nullable;
 +import org.bukkit.plugin.AuthorNagException;
-+import org.bukkit.plugin.Plugin;
 +import co.aikar.timings.Timing;
 +import co.aikar.timings.Timings;
 +import co.aikar.timings.TimingsManager;
 +
-+import java.lang.reflect.InvocationTargetException;
 +import java.lang.reflect.Method;
 +import java.util.logging.Level;
  
@@ -3607,25 +3605,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +@Deprecated
 +public final class CustomTimingsHandler {
 +    private final Timing handler;
-+    private static Boolean sunReflectAvailable;
-+    private static Method getCallerClass;
  
      public CustomTimingsHandler(@NotNull String name) {
 -        this(name, null);
 -    }
-+        if (sunReflectAvailable == null) {
-+            String javaVer = System.getProperty("java.version");
-+            String[] elements = javaVer.split("\\.");
- 
+-
 -    public CustomTimingsHandler(@NotNull String name, @Nullable CustomTimingsHandler parent) {
 -        this.name = name;
 -        this.parent = parent;
 -        HANDLERS.add(this);
 -    }
-+            int major = Integer.parseInt(elements.length >= 2 ? elements[1] : javaVer);
-+            if (major <= 8) {
-+                sunReflectAvailable = true;
- 
+-
 -    /**
 -     * Prints the timings and extra data to the given stream.
 -     *
@@ -3638,14 +3628,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -            long count = timings.count;
 -            if (count == 0) {
 -                continue;
-+                try {
-+                    Class<?> reflection = Class.forName("sun.reflect.Reflection");
-+                    getCallerClass = reflection.getMethod("getCallerClass", int.class);
-+                } catch (ClassNotFoundException | NoSuchMethodException ignored) {
-+                }
-+            } else {
-+                sunReflectAvailable = false;
-             }
+-            }
 -            long avg = time / count;
 -
 -            printStream.println("    " + timings.name + " Time: " + time + " Count: " + count + " Avg: " + avg + " Violations: " + timings.violations);
@@ -3656,11 +3639,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -        for (World world : Bukkit.getWorlds()) {
 -            entities += world.getEntities().size();
 -            livingEntities += world.getLivingEntities().size();
-         }
+-        }
 -        printStream.println("# Entities " + entities);
 -        printStream.println("# LivingEntities " + livingEntities);
 -    }
- 
+-
 -    /**
 -     * Resets all timings.
 -     */
@@ -3668,16 +3651,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -        if (Bukkit.getPluginManager().useTimings()) {
 -            for (CustomTimingsHandler timings : HANDLERS) {
 -                timings.reset();
-+        Class calling = null;
-+        if (sunReflectAvailable) {
-+            try {
-+                calling = (Class) getCallerClass.invoke(null, 2);
-+            } catch (IllegalAccessException | InvocationTargetException ignored) {
-             }
-         }
+-            }
+-        }
 -        TimingsCommand.timingStart = System.nanoTime();
 -    }
- 
+-
 -    /**
 -     * Ticked every tick by CraftBukkit to count the number of times a timer
 -     * caused TPS loss.
@@ -3705,12 +3683,18 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -            if (parent != null && ++parent.timingDepth == 1) {
 -                parent.start = start;
 -            }
--        }
--    }
-+        Plugin plugin = null;
++        new AuthorNagException("Deprecated use of CustomTimingsHandler. Please Switch to Timings.of ASAP").printStackTrace();
 +        try {
-+             plugin = TimingsManager.getPluginByClassloader(calling);
-+        } catch (Exception ignored) {}
++            final Method ofSafe = TimingsManager.class.getDeclaredMethod("getHandler", String.class, String.class, Timing.class);
++            ofSafe.setAccessible(true);
++            timing = (Timing) ofSafe.invoke(null,"Minecraft", "(Deprecated API) " + name, null);
++        } catch (Exception e) {
++            e.printStackTrace();
++            Bukkit.getLogger().log(Level.SEVERE, "This handler could not be registered");
++            timing = Timings.NULL_HANDLER;
+         }
++        handler = timing;
+     }
  
 -    /**
 -     * Stops timing a section of code.
@@ -3727,22 +3711,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -            start = 0;
 -            if (parent != null) {
 -                parent.stopTiming();
-+        new AuthorNagException("Deprecated use of CustomTimingsHandler. Please Switch to Timings.of ASAP").printStackTrace();
-+        if (plugin != null) {
-+            timing = Timings.of(plugin, "(Deprecated API) " + name);
-+        } else {
-+            try {
-+                final Method ofSafe = TimingsManager.class.getDeclaredMethod("getHandler", String.class, String.class, Timing.class);
-+                ofSafe.setAccessible(true);
-+                timing = (Timing) ofSafe.invoke(null,"Minecraft", "(Deprecated API) " + name, null);
-+            } catch (Exception e) {
-+                e.printStackTrace();
-+                Bukkit.getLogger().log(Level.SEVERE, "This handler could not be registered");
-+                timing = Timings.NULL_HANDLER;
-             }
-         }
-+        handler = timing;
-     }
+-            }
+-        }
+-    }
++    public void startTiming() { handler.startTiming(); }
++    public void stopTiming() { handler.stopTiming(); }
  
 -    /**
 -     * Reset this timer, setting all values to zero.
@@ -3755,7 +3728,4 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -        start = 0;
 -        timingDepth = 0;
 -    }
-+    public void startTiming() { handler.startTiming(); }
-+    public void stopTiming() { handler.stopTiming(); }
-+
  }
