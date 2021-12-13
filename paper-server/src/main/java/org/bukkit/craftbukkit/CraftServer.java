@@ -1364,13 +1364,7 @@ public final class CraftServer implements Server {
         Preconditions.checkArgument(recipeKey != null, "recipeKey == null");
 
         MinecraftKey mcKey = CraftNamespacedKey.toMinecraft(recipeKey);
-        for (Object2ObjectLinkedOpenHashMap<MinecraftKey, IRecipe<?>> recipes : getServer().getRecipeManager().recipes.values()) {
-            if (recipes.remove(mcKey) != null) {
-                return true;
-            }
-        }
-
-        return false;
+        return getServer().getRecipeManager().removeRecipe(mcKey);
     }
 
     @Override
