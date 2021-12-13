@@ -5,7 +5,7 @@ Subject: [PATCH] Item#canEntityPickup
 
 
 diff --git a/src/main/java/net/minecraft/world/entity/Mob.java b/src/main/java/net/minecraft/world/entity/Mob.java
-index a2310dc7b045d4e4c3924d656a4dcf0a1d66c095..3eda6821d12bf616037f6c00815602428afbcdaf 100644
+index 405ed6034c894bdff889307d9bbf8900f7085a94..bd00b33e4e8e4f8177ad6c8056d2e693effa9965 100644
 --- a/src/main/java/net/minecraft/world/entity/Mob.java
 +++ b/src/main/java/net/minecraft/world/entity/Mob.java
 @@ -622,6 +622,11 @@ public abstract class Mob extends LivingEntity {
@@ -21,17 +21,34 @@ index a2310dc7b045d4e4c3924d656a4dcf0a1d66c095..3eda6821d12bf616037f6c0081560242
                  }
              }
 diff --git a/src/main/java/net/minecraft/world/entity/item/ItemEntity.java b/src/main/java/net/minecraft/world/entity/item/ItemEntity.java
-index 8d3242a1436b0622d0aebb0a61a447ddf5819273..6df6204c9d4099afeb8ff07dd747f756d8e380d6 100644
+index 8d3242a1436b0622d0aebb0a61a447ddf5819273..0f06996a9d088fb5c705d465eeb68f53d5c6194d 100644
 --- a/src/main/java/net/minecraft/world/entity/item/ItemEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/item/ItemEntity.java
-@@ -52,6 +52,7 @@ public class ItemEntity extends Entity {
+@@ -52,6 +52,8 @@ public class ItemEntity extends Entity {
      private UUID owner;
      public final float bobOffs;
      private int lastTick = MinecraftServer.currentTick - 1; // CraftBukkit
 +    public boolean canMobPickup = true; // Paper
++    private static final String PAPER_CAN_MOB_PICKUP_TAG = "Paper.canMobPickup"; // Paper
  
      public ItemEntity(EntityType<? extends ItemEntity> type, Level world) {
          super(type, world);
+@@ -336,6 +338,7 @@ public class ItemEntity extends Entity {
+             nbt.putUUID("Owner", this.getOwner());
+         }
+ 
++        nbt.putBoolean(PAPER_CAN_MOB_PICKUP_TAG, this.canMobPickup); // Paper
+         if (!this.getItem().isEmpty()) {
+             nbt.put("Item", this.getItem().save(new CompoundTag()));
+         }
+@@ -358,6 +361,7 @@ public class ItemEntity extends Entity {
+             this.thrower = nbt.getUUID("Thrower");
+         }
+ 
++        this.canMobPickup = !nbt.contains(PAPER_CAN_MOB_PICKUP_TAG) || nbt.getBoolean(PAPER_CAN_MOB_PICKUP_TAG); // Paper
+         CompoundTag nbttagcompound1 = nbt.getCompound("Item");
+ 
+         this.setItem(ItemStack.of(nbttagcompound1));
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftItem.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftItem.java
 index b9044654d22a47cfa952dcf25754ad0d87fc0844..0d262c99c7e9ef06e297612b1802c493700f64ae 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftItem.java
