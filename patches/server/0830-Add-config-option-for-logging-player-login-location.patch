@@ -1,0 +1,41 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Simon Gardling <titaniumtown@gmail.com>
+Date: Sun, 12 Dec 2021 19:56:35 -0500
+Subject: [PATCH] Add config option for logging player login location
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+index cd918cec00d8202252af0d20b1a8891371c538e3..f6dab8134ca835a7593c73a50e06f46ad250f89e 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+@@ -96,6 +96,11 @@ public class PaperConfig {
+         logPlayerIpAddresses = getBoolean("settings.log-player-ip-addresses", logPlayerIpAddresses);
+     }
+ 
++    public static boolean logPlayerLoginLocation = true;
++    private static void playerLoginLocation() {
++        logPlayerLoginLocation = getBoolean("settings.log-player-login-location", logPlayerLoginLocation);
++    }
++
+     public static int maxJoinsPerTick;
+     private static void maxJoinsPerTick() {
+         maxJoinsPerTick = getInt("settings.max-joins-per-tick", 3);
+diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
+index 042be2cf60a9d01698808d84f2e537a5eb952079..bbdc799a1e89aa5932652896b3bd9f35c34fbc8e 100644
+--- a/src/main/java/net/minecraft/server/players/PlayerList.java
++++ b/src/main/java/net/minecraft/server/players/PlayerList.java
+@@ -483,7 +483,13 @@ public abstract class PlayerList {
+         }
+         // Paper end
+         // CraftBukkit - Moved from above, added world
+-        PlayerList.LOGGER.info("{}[{}] logged in with entity id {} at ([{}]{}, {}, {})", player.getName().getString(), s1, player.getId(), worldserver1.serverLevelData.getLevelName(), player.getX(), player.getY(), player.getZ());
++        // Paper start - configurable logging of player login location
++        if (com.destroystokyo.paper.PaperConfig.logPlayerLoginLocation) {
++            PlayerList.LOGGER.info("{}[{}] logged in with entity id {} at ([{}]{}, {}, {})", player.getName().getString(), s1, player.getId(), worldserver1.serverLevelData.getLevelName(), player.getX(), player.getY(), player.getZ());
++        } else {
++            PlayerList.LOGGER.info("{}[{}] logged in with entity id {}", player.getName().getString(), s1, player.getId());
++        }
++        // Paper end
+     }
+ 
+     public void updateEntireScoreboard(ServerScoreboard scoreboard, ServerPlayer player) {
