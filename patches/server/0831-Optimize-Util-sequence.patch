@@ -6,18 +6,10 @@ Subject: [PATCH] Optimize Util#sequence
 Original method allocates O(n^2) memory on n-size list.
 
 diff --git a/src/main/java/net/minecraft/Util.java b/src/main/java/net/minecraft/Util.java
-index f6561599391583ba7d669af42b5716cda0df2d68..d7a167245c0ec72d435f0eef72c7801fe8905e2f 100644
+index f6561599391583ba7d669af42b5716cda0df2d68..15b6e36242fd91c66bc15f7407c22b6d78a24457 100644
 --- a/src/main/java/net/minecraft/Util.java
 +++ b/src/main/java/net/minecraft/Util.java
-@@ -27,6 +27,7 @@ import java.security.PrivilegedActionException;
- import java.security.PrivilegedExceptionAction;
- import java.time.Duration;
- import java.time.Instant;
-+import java.util.ArrayList;
- import java.util.Arrays;
- import java.util.Iterator;
- import java.util.List;
-@@ -391,21 +392,16 @@ public class Util {
+@@ -391,21 +391,16 @@ public class Util {
      }
  
      public static <V> CompletableFuture<List<V>> sequence(List<? extends CompletableFuture<? extends V>> futures) {
@@ -37,7 +29,7 @@ index f6561599391583ba7d669af42b5716cda0df2d68..d7a167245c0ec72d435f0eef72c7801f
 +        // Paper start - optimize
 +        return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
 +            .thenApply(v -> {
-+                var list = new ArrayList<V>(futures.size());
++                var list = Lists.<V>newArrayListWithCapacity(futures.size());
 +                for (CompletableFuture<? extends V> future : futures) {
 +                    list.add(future.join());
 +                }
