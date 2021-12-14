@@ -1,0 +1,23 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jason Penilla <11360596+jpenilla@users.noreply.github.com>
+Date: Sun, 12 Dec 2021 04:43:30 -0800
+Subject: [PATCH] Fix WorldGenRegion leak when converting pre-1.18 chunks
+
+The Blender passed in here holds a WorldGenRegion which contains a list of surrounding chunks
+
+diff --git a/src/main/java/net/minecraft/world/level/chunk/ChunkAccess.java b/src/main/java/net/minecraft/world/level/chunk/ChunkAccess.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/ChunkAccess.java
++++ b/src/main/java/net/minecraft/world/level/chunk/ChunkAccess.java
+@@ -0,0 +0,0 @@ public abstract class ChunkAccess implements BlockGetter, BiomeManager.NoiseBiom
+     }
+ 
+     public NoiseChunk getOrCreateNoiseChunk(NoiseSampler noiseColumnSampler, Supplier<NoiseChunk.NoiseFiller> columnSampler, NoiseGeneratorSettings chunkGeneratorSettings, Aquifer.FluidPicker fluidLevelSampler, Blender blender) {
++        // Paper start - create a new one each time to avoid leaking
++        if (blender != Blender.empty()) {
++            return NoiseChunk.forChunk(this, noiseColumnSampler, columnSampler, chunkGeneratorSettings, fluidLevelSampler, blender);
++        }
++        // Paper end
+         if (this.noiseChunk == null) {
+             this.noiseChunk = NoiseChunk.forChunk(this, noiseColumnSampler, columnSampler, chunkGeneratorSettings, fluidLevelSampler, blender);
+         }
