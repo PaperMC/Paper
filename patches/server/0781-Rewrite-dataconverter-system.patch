@@ -15313,10 +15313,10 @@ index 0000000000000000000000000000000000000000..d28ade80499dce882a9a84309a2a0da5
 +}
 diff --git a/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V2832.java b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V2832.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..68971097a9d9a1be63258518985d406d2a3392d8
+index 0000000000000000000000000000000000000000..6a975a5e69f4aad4b65aaf1300b5136d72ea6499
 --- /dev/null
 +++ b/src/main/java/ca/spottedleaf/dataconverter/minecraft/versions/V2832.java
-@@ -0,0 +1,924 @@
+@@ -0,0 +1,919 @@
 +package ca.spottedleaf.dataconverter.minecraft.versions;
 +
 +import ca.spottedleaf.dataconverter.converters.DataConverter;
@@ -16107,25 +16107,13 @@ index 0000000000000000000000000000000000000000..68971097a9d9a1be63258518985d406d
 +        final MapType<String>[] ret = new MapType[wantExtendedHeight ? 24 : 16];
 +
 +        final int[] biomes = level.getInts("Biomes");
-+        if (biomes == null) {
-+            final ListType palette = Types.NBT.createEmptyList();
-+            palette.addString("minecraft:plains");
 +
-+            for (int i = 0; i < ret.length; ++i) {
-+                ret[i] = wrapPalette(palette.copy()); // copy palette so that later possible modifications don't trash all sections
-+            }
-+
-+            return ret;
-+        }
-+
-+        final boolean isExtended = biomes.length == 1536; // magic value for 24 sections of biomes (24 * 4^3)
-+        isAlreadyExtended.setValue(isExtended);
-+
-+        if (isExtended) {
++        if (biomes != null && biomes.length == 1536) { // magic value for 24 sections of biomes (24 * 4^3)
++            isAlreadyExtended.setValue(true);
 +            for (int sectionIndex = 0; sectionIndex < 24; ++sectionIndex) {
 +                ret[sectionIndex] = createBiomeSection(biomes, sectionIndex * 64, -1); // -1 is all 1s
 +            }
-+        } else {
++        } else if (biomes != null && biomes.length == 1024) { // magic value for 24 sections of biomes (16 * 4^3)
 +            for (int sectionY = 0; sectionY < 16; ++sectionY) {
 +                ret[sectionY - minSection] = createBiomeSection(biomes, sectionY * 64, -1); // -1 is all 1s
 +            }
@@ -16142,6 +16130,13 @@ index 0000000000000000000000000000000000000000..68971097a9d9a1be63258518985d406d
 +                for (int sectionIndex = 20; sectionIndex < 24; ++sectionIndex) {
 +                    ret[sectionIndex] = topCopy.copy(); // copy palette so that later possible modifications don't trash all sections
 +                }
++            }
++        } else {
++            final ListType palette = Types.NBT.createEmptyList();
++            palette.addString("minecraft:plains");
++
++            for (int i = 0; i < ret.length; ++i) {
++                ret[i] = wrapPalette(palette.copy()); // copy palette so that later possible modifications don't trash all sections
 +            }
 +        }
 +
