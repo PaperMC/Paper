@@ -8,10 +8,10 @@ Add -Ddebug.entities=true to your JVM flags to gain more information
 1.17: Needs to be reworked for new entity storage system
 
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index fb9a82b4fabdb73e9a44bcbc20b848d8116df3e9..488682910779bcfbd16f7658b1fb3be5f7984627 100644
+index 871c5839ec7ea39282380a42e1a45ea18897a507..a8c47535ec8c0cf992c40ec74a7a3a1f78da4865 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
-@@ -1352,6 +1352,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1312,6 +1312,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
                  } else {
                      ChunkMap.TrackedEntity playerchunkmap_entitytracker = new ChunkMap.TrackedEntity(entity, i, j, entitytypes.trackDeltas());
  
@@ -19,7 +19,7 @@ index fb9a82b4fabdb73e9a44bcbc20b848d8116df3e9..488682910779bcfbd16f7658b1fb3be5
                      this.entityMap.put(entity.getId(), playerchunkmap_entitytracker);
                      playerchunkmap_entitytracker.updatePlayers(this.level.players());
                      if (entity instanceof ServerPlayer) {
-@@ -1394,7 +1395,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1354,7 +1355,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          if (playerchunkmap_entitytracker1 != null) {
              playerchunkmap_entitytracker1.broadcastRemoved();
          }
@@ -29,10 +29,10 @@ index fb9a82b4fabdb73e9a44bcbc20b848d8116df3e9..488682910779bcfbd16f7658b1fb3be5
  
      protected void tick() {
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index 9a51aa9f40ceaaa3500595bf08b2b5515704b91a..9a9ae2cac9f44e38f58bd58c279fc648ec728032 100644
+index 17eb43f6bb0a9bbc4e0abb991255b322a56f6160..2d0e04cd2ab6403b3f5324cad130ec768a39d608 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
-@@ -206,6 +206,9 @@ public class ServerLevel extends Level implements WorldGenLevel {
+@@ -208,6 +208,9 @@ public class ServerLevel extends Level implements WorldGenLevel {
      public final LevelStorageSource.LevelStorageAccess convertable;
      public final UUID uuid;
      public boolean hasPhysicsEvent = true; // Paper
@@ -42,7 +42,7 @@ index 9a51aa9f40ceaaa3500595bf08b2b5515704b91a..9a9ae2cac9f44e38f58bd58c279fc648
  
      @Override public LevelChunk getChunkIfLoaded(int x, int z) { // Paper - this was added in world too but keeping here for NMS ABI
          return this.chunkSource.getChunk(x, z, false);
-@@ -1091,7 +1094,28 @@ public class ServerLevel extends Level implements WorldGenLevel {
+@@ -1093,7 +1096,28 @@ public class ServerLevel extends Level implements WorldGenLevel {
      // CraftBukkit start
      private boolean addEntity(Entity entity, CreatureSpawnEvent.SpawnReason spawnReason) {
          org.spigotmc.AsyncCatcher.catchOp("entity add"); // Spigot
@@ -72,20 +72,20 @@ index 9a51aa9f40ceaaa3500595bf08b2b5515704b91a..9a9ae2cac9f44e38f58bd58c279fc648
              return false;
          } else {
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index 5df955eea09b5abd32c12abf5d13030bf9a3a9ae..d442725c1c9ae274b11f3a11ea4cf15f51d62def 100644
+index 2a11514554b6aea819046282cfcaeeb43d1ed920..2981a29b011cb1a08a776abc5ec6a94228061f98 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
 @@ -170,6 +170,8 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, i
      public com.destroystokyo.paper.loottable.PaperLootableInventoryData lootableData; // Paper
      private CraftEntity bukkitEntity;
  
-+    public net.minecraft.server.level.ChunkMap.TrackedEntity tracker; // Paper
++    public @org.jetbrains.annotations.Nullable net.minecraft.server.level.ChunkMap.TrackedEntity tracker; // Paper
 +    public Throwable addedToWorldStack; // Paper - entity debug
      public CraftEntity getBukkitEntity() {
          if (this.bukkitEntity == null) {
              this.bukkitEntity = CraftEntity.getEntity(this.level.getCraftServer(), this);
 diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
-index aa8bbf6435c19013e3ccaa963118d71200b6efea..2cdf117a5041830f201d5f1e98f7cc8f9cb6dd6f 100644
+index c239a71a9d864107c3a8e9537e4160c50b3a76c9..ee5415574dea0712f08e2467ecf93aa1ce39a2e5 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
 +++ b/src/main/java/net/minecraft/world/level/Level.java
 @@ -142,6 +142,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
