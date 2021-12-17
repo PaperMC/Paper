@@ -5,10 +5,36 @@ Subject: [PATCH] Disable spigot tick limiters
 
 
 diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
-index 809f1ac0aca97d484e2f92ebf38a0303499f08ae..db226fe9515e904b8520a063b6dcde62b315a9b1 100644
+index 16f212b4005469dc99fdd83ed6e5810a5b6f8abf..7ec372adae2ea59b71af9c503c12ac1e0786dd47 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
 +++ b/src/main/java/net/minecraft/world/level/Level.java
-@@ -704,9 +704,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -153,8 +153,10 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+ 
+     public final co.aikar.timings.WorldTimingsHandler timings; // Paper
+     public static BlockPos lastPhysicsProblem; // Spigot
+-    private org.spigotmc.TickLimiter entityLimiter;
+-    private org.spigotmc.TickLimiter tileLimiter;
++    // Paper start - Disable tick limiters
++    // private org.spigotmc.TickLimiter entityLimiter;
++    // private org.spigotmc.TickLimiter tileLimiter;
++    // Paper end
+     private int tileTickPosition;
+     public final Map<Explosion.CacheKey, Float> explosionDensityCache = new HashMap<>(); // Paper - Optimize explosions
+ 
+@@ -242,8 +244,10 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+         // CraftBukkit end
+         timings = new co.aikar.timings.WorldTimingsHandler(this); // Paper - code below can generate new world and access timings
+         this.keepSpawnInMemory = this.paperConfig.keepSpawnInMemory; // Paper
+-        this.entityLimiter = new org.spigotmc.TickLimiter(spigotConfig.entityMaxTickTime);
+-        this.tileLimiter = new org.spigotmc.TickLimiter(spigotConfig.tileMaxTickTime);
++        // Paper start - Disable tick limiters
++        // this.entityLimiter = new org.spigotmc.TickLimiter(spigotConfig.entityMaxTickTime);
++        // this.tileLimiter = new org.spigotmc.TickLimiter(spigotConfig.tileMaxTickTime);
++        // Paper end
+     }
+ 
+     @Override
+@@ -704,9 +708,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
          // Spigot start
          // Iterator iterator = this.blockEntityTickers.iterator();
          int tilesThisCycle = 0;
@@ -19,3 +45,51 @@ index 809f1ac0aca97d484e2f92ebf38a0303499f08ae..db226fe9515e904b8520a063b6dcde62
              this.tileTickPosition = (this.tileTickPosition < this.blockEntityTickers.size()) ? this.tileTickPosition : 0;
              TickingBlockEntity tickingblockentity = (TickingBlockEntity) this.blockEntityTickers.get(tileTickPosition);
              // Spigot start
+diff --git a/src/main/java/org/spigotmc/SpigotWorldConfig.java b/src/main/java/org/spigotmc/SpigotWorldConfig.java
+index 6c5113545914842ffb310522a7549ae7dd2466b2..3bc6d46f36691ccdc019a17f41dd8e614a7b30ab 100644
+--- a/src/main/java/org/spigotmc/SpigotWorldConfig.java
++++ b/src/main/java/org/spigotmc/SpigotWorldConfig.java
+@@ -370,6 +370,8 @@ public class SpigotWorldConfig
+         this.hangingTickFrequency = this.getInt( "hanging-tick-frequency", 100 );
+     }
+ 
++    // Paper start - Disable tick limiters
++    /*
+     public int tileMaxTickTime;
+     public int entityMaxTickTime;
+     private void maxTickTimes()
+@@ -378,6 +380,8 @@ public class SpigotWorldConfig
+         this.entityMaxTickTime = this.getInt("max-tick-time.entity", 50);
+         this.log("Tile Max Tick Time: " + this.tileMaxTickTime + "ms Entity max Tick Time: " + this.entityMaxTickTime + "ms");
+     }
++    */
++    // Paper end
+ 
+     public int thunderChance;
+     private void thunderChance()
+diff --git a/src/main/java/org/spigotmc/TickLimiter.java b/src/main/java/org/spigotmc/TickLimiter.java
+deleted file mode 100644
+index 4074538ea6090bf99d8ab04b1e98c2832a0e9a98..0000000000000000000000000000000000000000
+--- a/src/main/java/org/spigotmc/TickLimiter.java
++++ /dev/null
+@@ -1,20 +0,0 @@
+-package org.spigotmc;
+-
+-public class TickLimiter {
+-
+-    private final int maxTime;
+-    private long startTime;
+-
+-    public TickLimiter(int maxtime) {
+-        this.maxTime = maxtime;
+-    }
+-
+-    public void initTick() {
+-        this.startTime = System.currentTimeMillis();
+-    }
+-
+-    public boolean shouldContinue() {
+-        long remaining = System.currentTimeMillis() - this.startTime;
+-        return remaining < this.maxTime;
+-    }
+-}
