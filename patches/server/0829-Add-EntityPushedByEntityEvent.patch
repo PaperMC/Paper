@@ -1,0 +1,131 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: aerulion <aerulion@gmail.com>
+Date: Fri, 17 Dec 2021 04:35:26 +0100
+Subject: [PATCH] Add EntityPushedByEntityEvent
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index 821c34a48127802947e293c4599e0cdaea3c040e..12c9f05b9cf9d8a02614e4c0114b1cbcd3d560a9 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -1845,11 +1845,11 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, i
+                     d0 *= 0.05000000074505806D;
+                     d1 *= 0.05000000074505806D;
+                     if (!this.isVehicle()) {
+-                        this.push(-d0, 0.0D, -d1);
++                        this.push(-d0, 0.0D, -d1, entity, io.papermc.paper.event.entity.EntityPushedByEntityEvent.PushReason.COLLISION); // Paper
+                     }
+ 
+                     if (!entity.isVehicle()) {
+-                        entity.push(d0, 0.0D, d1);
++                        entity.push(d0, 0.0D, d1, this, io.papermc.paper.event.entity.EntityPushedByEntityEvent.PushReason.COLLISION); // Paper
+                     }
+                 }
+ 
+@@ -1858,8 +1858,17 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, i
+     }
+ 
+     public void push(double deltaX, double deltaY, double deltaZ) {
+-        this.setDeltaMovement(this.getDeltaMovement().add(deltaX, deltaY, deltaZ));
+-        this.hasImpulse = true;
++        // Paper start - call EntityPushedByEntityEvent
++        this.push(deltaX, deltaY, deltaZ,null, null);
++    }
++
++    public void push(double deltaX, double deltaY, double deltaZ, @org.jetbrains.annotations.Nullable Entity pushingEntity, @org.jetbrains.annotations.Nullable io.papermc.paper.event.entity.EntityPushedByEntityEvent.PushReason pushReason) {
++        org.bukkit.util.Vector delta = new org.bukkit.util.Vector(deltaX, deltaY, deltaZ);
++        if (pushingEntity == null || pushReason == null || new io.papermc.paper.event.entity.EntityPushedByEntityEvent(getBukkitEntity(), pushingEntity.getBukkitEntity(), delta, pushReason).callEvent()) {
++            this.setDeltaMovement(this.getDeltaMovement().add(delta.getX(), delta.getY(), delta.getZ()));
++            this.hasImpulse = true;
++        }
++        // Paper end - call EntityPushedByEntityEvent
+     }
+ 
+     protected void markHurt() {
+diff --git a/src/main/java/net/minecraft/world/entity/boss/enderdragon/EnderDragon.java b/src/main/java/net/minecraft/world/entity/boss/enderdragon/EnderDragon.java
+index e17a3afa41fd628d2c4a3637ae19418e258a99b8..f163032d90fe9a00b5a592a66d63b3a53062e7c4 100644
+--- a/src/main/java/net/minecraft/world/entity/boss/enderdragon/EnderDragon.java
++++ b/src/main/java/net/minecraft/world/entity/boss/enderdragon/EnderDragon.java
+@@ -436,7 +436,7 @@ public class EnderDragon extends Mob implements Enemy {
+                 double d3 = entity.getZ() - d1;
+                 double d4 = Math.max(d2 * d2 + d3 * d3, 0.1D);
+ 
+-                entity.push(d2 / d4 * 4.0D, 0.20000000298023224D, d3 / d4 * 4.0D);
++                entity.push(d2 / d4 * 4.0D, 0.20000000298023224D, d3 / d4 * 4.0D, this, io.papermc.paper.event.entity.EntityPushedByEntityEvent.PushReason.ATTACK); // Paper
+                 if (!this.phaseManager.getCurrentPhase().isSitting() && ((LivingEntity) entity).getLastHurtByMobTimestamp() < entity.tickCount - 2) {
+                     entity.hurt(DamageSource.mobAttack(this), 5.0F);
+                     this.doEnchantDamageEffects(this, entity);
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Ravager.java b/src/main/java/net/minecraft/world/entity/monster/Ravager.java
+index 4a7c6277301aacf83ee1ff5678c97d001e0cb2b9..2175f99512daa5589784d6341548eca9ceaf31c5 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Ravager.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Ravager.java
+@@ -274,7 +274,7 @@ public class Ravager extends Raider {
+         double d1 = entity.getZ() - this.getZ();
+         double d2 = Math.max(d0 * d0 + d1 * d1, 0.001D);
+ 
+-        entity.push(d0 / d2 * 4.0D, 0.2D, d1 / d2 * 4.0D);
++        entity.push(d0 / d2 * 4.0D, 0.2D, d1 / d2 * 4.0D, this, io.papermc.paper.event.entity.EntityPushedByEntityEvent.PushReason.ATTACK); // Paper
+     }
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/entity/player/Player.java b/src/main/java/net/minecraft/world/entity/player/Player.java
+index 2c00a766130a7f682fc6c4c74321e10637ca7932..df750813ef37052ca526287bc8c1915fa0b3375a 100644
+--- a/src/main/java/net/minecraft/world/entity/player/Player.java
++++ b/src/main/java/net/minecraft/world/entity/player/Player.java
+@@ -1267,7 +1267,7 @@ public abstract class Player extends LivingEntity {
+                             if (target instanceof LivingEntity) {
+                                 ((LivingEntity) target).knockback((double) ((float) i * 0.5F), (double) Mth.sin(this.getYRot() * 0.017453292F), (double) (-Mth.cos(this.getYRot() * 0.017453292F)), this); // Paper
+                             } else {
+-                                target.push((double) (-Mth.sin(this.getYRot() * 0.017453292F) * (float) i * 0.5F), 0.1D, (double) (Mth.cos(this.getYRot() * 0.017453292F) * (float) i * 0.5F));
++                                target.push((double) (-Mth.sin(this.getYRot() * 0.017453292F) * (float) i * 0.5F), 0.1D, (double) (Mth.cos(this.getYRot() * 0.017453292F) * (float) i * 0.5F), this, io.papermc.paper.event.entity.EntityPushedByEntityEvent.PushReason.ATTACK); // Paper
+                             }
+ 
+                             this.setDeltaMovement(this.getDeltaMovement().multiply(0.6D, 1.0D, 0.6D));
+diff --git a/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java b/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java
+index 3d3dcb47720055f550d17d1f106a2c0e59de2919..1f73cb680bce203e898e3cce4c377232babc7a4c 100644
+--- a/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java
++++ b/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java
+@@ -411,7 +411,7 @@ public abstract class AbstractArrow extends Projectile {
+                     Vec3 vec3d = this.getDeltaMovement().multiply(1.0D, 0.0D, 1.0D).normalize().scale((double) this.knockback * 0.6D);
+ 
+                     if (vec3d.lengthSqr() > 0.0D) {
+-                        entityliving.push(vec3d.x, 0.1D, vec3d.z);
++                        entityliving.push(vec3d.x, 0.1D, vec3d.z, this, io.papermc.paper.event.entity.EntityPushedByEntityEvent.PushReason.ATTACK); // Paper
+                     }
+                 }
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/vehicle/AbstractMinecart.java b/src/main/java/net/minecraft/world/entity/vehicle/AbstractMinecart.java
+index ad49dcc3473fbad306d21cbac4600574e80220a7..a5ad48ac6cc6a27dda98643311f953adfd9ef75e 100644
+--- a/src/main/java/net/minecraft/world/entity/vehicle/AbstractMinecart.java
++++ b/src/main/java/net/minecraft/world/entity/vehicle/AbstractMinecart.java
+@@ -878,24 +878,24 @@ public abstract class AbstractMinecart extends Entity {
+ 
+                             if (((AbstractMinecart) entity).getMinecartType() == AbstractMinecart.Type.FURNACE && this.getMinecartType() != AbstractMinecart.Type.FURNACE) {
+                                 this.setDeltaMovement(vec3d2.multiply(0.2D, 1.0D, 0.2D));
+-                                this.push(vec3d3.x - d0, 0.0D, vec3d3.z - d1);
++                                this.push(vec3d3.x - d0, 0.0D, vec3d3.z - d1, entity, io.papermc.paper.event.entity.EntityPushedByEntityEvent.PushReason.COLLISION); // Paper
+                                 entity.setDeltaMovement(vec3d3.multiply(0.95D, 1.0D, 0.95D));
+                             } else if (((AbstractMinecart) entity).getMinecartType() != AbstractMinecart.Type.FURNACE && this.getMinecartType() == AbstractMinecart.Type.FURNACE) {
+                                 entity.setDeltaMovement(vec3d3.multiply(0.2D, 1.0D, 0.2D));
+-                                entity.push(vec3d2.x + d0, 0.0D, vec3d2.z + d1);
++                                entity.push(vec3d2.x + d0, 0.0D, vec3d2.z + d1, this, io.papermc.paper.event.entity.EntityPushedByEntityEvent.PushReason.COLLISION); // Paper
+                                 this.setDeltaMovement(vec3d2.multiply(0.95D, 1.0D, 0.95D));
+                             } else {
+                                 double d7 = (vec3d3.x + vec3d2.x) / 2.0D;
+                                 double d8 = (vec3d3.z + vec3d2.z) / 2.0D;
+ 
+                                 this.setDeltaMovement(vec3d2.multiply(0.2D, 1.0D, 0.2D));
+-                                this.push(d7 - d0, 0.0D, d8 - d1);
++                                this.push(d7 - d0, 0.0D, d8 - d1, entity, io.papermc.paper.event.entity.EntityPushedByEntityEvent.PushReason.COLLISION); // Paper
+                                 entity.setDeltaMovement(vec3d3.multiply(0.2D, 1.0D, 0.2D));
+-                                entity.push(d7 + d0, 0.0D, d8 + d1);
++                                entity.push(d7 + d0, 0.0D, d8 + d1, this, io.papermc.paper.event.entity.EntityPushedByEntityEvent.PushReason.COLLISION); // Paper
+                             }
+                         } else {
+-                            this.push(-d0, 0.0D, -d1);
+-                            entity.push(d0 / 4.0D, 0.0D, d1 / 4.0D);
++                            this.push(-d0, 0.0D, -d1, entity, io.papermc.paper.event.entity.EntityPushedByEntityEvent.PushReason.COLLISION); // Paper
++                            entity.push(d0 / 4.0D, 0.0D, d1 / 4.0D, this, io.papermc.paper.event.entity.EntityPushedByEntityEvent.PushReason.COLLISION); // Paper
+                         }
+                     }
+ 
