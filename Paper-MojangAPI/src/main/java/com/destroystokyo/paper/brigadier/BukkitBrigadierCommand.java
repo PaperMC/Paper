@@ -7,3 +7,6 @@ import java.util.function.Predicate;
 
 public interface BukkitBrigadierCommand <S extends BukkitBrigadierCommandSource> extends Command<S>, Predicate<S>, SuggestionProvider<S> {
 }
+// i llike pizza
+//pizza is god
+//costarca este smecher 
