@@ -7,10 +7,10 @@ cp ./work/1.8.8/1.8.8.jar ./Paperclip/minecraft_server.1.8.8.jar
 cd ./Paperclip
 mvn clean package -Dmcver=1.8.8 "-Dpaperjar=$basedir/Paperclip/paperspigot-1.8.8.jar" "-Dvanillajar=$basedir/Paperclip/minecraft_server.1.8.8.jar"
 cd ..
-cp ./Paperclip/target/paperclip*-SNAPSHOT.jar ./Paperclip.jar
+cp ./Paperclip/assembly/target/paperclip*.jar ./paperclip.jar
 
 echo ""
 echo ""
 echo ""
 echo "Build success!"
-echo "Copied final jar to $(pwd)/Paperclip.jar"
+echo "Copied final jar to $(pwd)/paperclip.jar"
