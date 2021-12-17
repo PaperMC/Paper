@@ -6,12 +6,14 @@ Subject: [PATCH] Optimize Util#sequence
 Original method allocates O(n^2) memory on n-size list.
 
 diff --git a/src/main/java/net/minecraft/Util.java b/src/main/java/net/minecraft/Util.java
-index f6561599391583ba7d669af42b5716cda0df2d68..15b6e36242fd91c66bc15f7407c22b6d78a24457 100644
+index 9c111d479bbcc101886c12950c97f10941125ae7..34e571b702684673b89103176838dc246ff9b24d 100644
 --- a/src/main/java/net/minecraft/Util.java
 +++ b/src/main/java/net/minecraft/Util.java
-@@ -391,21 +391,16 @@ public class Util {
+@@ -390,22 +390,18 @@ public class Util {
+         return (Strategy<K>) Util.IdentityStrategy.INSTANCE; // Paper - decompile fix
      }
  
++    private static final CompletableFuture<?>[] EMPTY_FUTURE = new CompletableFuture[0]; // Paper
      public static <V> CompletableFuture<List<V>> sequence(List<? extends CompletableFuture<? extends V>> futures) {
 -        return futures.stream().reduce(CompletableFuture.completedFuture(Lists.newArrayList()), (completableFuture, completableFuture2) -> {
 -            return completableFuture2.thenCombine(completableFuture, (object, list) -> {
@@ -27,9 +29,9 @@ index f6561599391583ba7d669af42b5716cda0df2d68..15b6e36242fd91c66bc15f7407c22b6d
 -                list3.addAll(list2);
 -                return list3;
 +        // Paper start - optimize
-+        return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
++        return CompletableFuture.allOf(futures.toArray(EMPTY_FUTURE))
 +            .thenApply(v -> {
-+                var list = Lists.<V>newArrayListWithCapacity(futures.size());
++                List<V> list = Lists.newArrayListWithCapacity(futures.size());
 +                for (CompletableFuture<? extends V> future : futures) {
 +                    list.add(future.join());
 +                }
