@@ -186,6 +186,17 @@ public class CustomChunkGenerator extends InternalChunkGenerator {
             }
             ChunkSection section = sections[sec];
 
+            // SPIGOT-6843: Copy biomes over to new section.
+            // Not the most performant way, but has a small footprint and developer should move to the new api anyway
+            ChunkSection oldSection = csect[sec];
+            for (int biomeX = 0; biomeX < 4; biomeX++) {
+                for (int biomeY = 0; biomeY < 4; biomeY++) {
+                    for (int biomeZ = 0; biomeZ < 4; biomeZ++) {
+                        section.setBiome(biomeX, biomeY, biomeZ, oldSection.getNoiseBiome(biomeX, biomeY, biomeZ));
+                    }
+                }
+            }
+
             csect[sec] = section;
         }
 
