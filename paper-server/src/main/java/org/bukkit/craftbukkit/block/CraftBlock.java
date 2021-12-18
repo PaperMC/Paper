@@ -470,7 +470,8 @@ public class CraftBlock implements Block {
             result = true;
         }
 
-        return setTypeAndData(Blocks.AIR.defaultBlockState(), true) && result;
+        // SPIGOT-6778: Directly call setBlock instead of setTypeAndData, so that the tile entiy is not removed and custom remove logic is run.
+        return world.setBlock(position, Blocks.AIR.defaultBlockState(), 3) && result;
     }
 
     @Override
