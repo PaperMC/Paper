@@ -246,6 +246,49 @@ public final class Bukkit {
     }
 
     /**
+     * Gets the server resource pack uri, or empty string if not specified.
+     *
+     * @return the server resource pack uri, otherwise empty string
+     */
+    @NotNull
+    public static String getResourcePack() {
+        return server.getResourcePack();
+    }
+
+    /**
+     * Gets the SHA-1 digest of the server resource pack, or empty string if
+     * not specified.
+     *
+     * @return the SHA-1 digest of the server resource pack, otherwise empty
+     *     string
+     */
+    @NotNull
+    public static String getResourcePackHash() {
+        return server.getResourcePackHash();
+    }
+
+    /**
+     * Gets the custom prompt message to be shown when the server resource
+     * pack is required, or empty string if not specified.
+     *
+     * @return the custom prompt message to be shown when the server resource,
+     *     otherwise empty string
+     */
+    @NotNull
+    public static String getResourcePackPrompt() {
+        return server.getResourcePackPrompt();
+    }
+
+    /**
+     * Gets whether the server resource pack is enforced.
+     *
+     * @return whether the server resource pack is enforced
+     */
+    public static boolean isResourcePackRequired() {
+        return server.isResourcePackRequired();
+    }
+
+    /**
      * Gets whether this server has a whitelist or not.
      *
      * @return whether this server has a whitelist or not
