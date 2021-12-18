@@ -36,6 +36,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -668,6 +669,26 @@ public final class CraftServer implements Server {
 
     public boolean getQueryPlugins() {
         return this.configuration.getBoolean("settings.query-plugins");
+    }
+
+    @Override
+    public String getResourcePack() {
+        return this.getServer().getResourcePack();
+    }
+
+    @Override
+    public String getResourcePackHash() {
+        return this.getServer().getResourcePackHash().toUpperCase(Locale.ROOT);
+    }
+
+    @Override
+    public String getResourcePackPrompt() {
+        return CraftChatMessage.fromComponent(this.getServer().getResourcePackPrompt());
+    }
+
+    @Override
+    public boolean isResourcePackRequired() {
+        return this.getServer().isResourcePackRequired();
     }
 
     @Override

@@ -1306,18 +1306,35 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     @Override
     public void setResourcePack(String url) {
-        Validate.notNull(url, "Resource pack URL cannot be null");
-
-        getHandle().sendTexturePack(url, "null", false, null);
+        setResourcePack(url, null);
     }
 
     @Override
     public void setResourcePack(String url, byte[] hash) {
-        Validate.notNull(url, "Resource pack URL cannot be null");
-        Validate.notNull(hash, "Resource pack hash cannot be null");
-        Validate.isTrue(hash.length == 20, "Resource pack hash should be 20 bytes long but was " + hash.length);
+        setResourcePack(url, hash, false);
+    }
 
-        getHandle().sendTexturePack(url, BaseEncoding.base16().lowerCase().encode(hash), false, null);
+    @Override
+    public void setResourcePack(String url, byte[] hash, String prompt) {
+        setResourcePack(url, hash, prompt, false);
+    }
+
+    @Override
+    public void setResourcePack(String url, byte[] hash, boolean force) {
+        setResourcePack(url, hash, null, force);
+    }
+
+    @Override
+    public void setResourcePack(String url, byte[] hash, String prompt, boolean force) {
+        Validate.notNull(url, "Resource pack URL cannot be null");
+
+        if (hash != null) {
+            Validate.isTrue(hash.length == 20, "Resource pack hash should be 20 bytes long but was " + hash.length);
+
+            getHandle().sendTexturePack(url, BaseEncoding.base16().lowerCase().encode(hash), force, CraftChatMessage.fromStringOrNull(prompt, true));
+        } else {
+            getHandle().sendTexturePack(url, "", force, CraftChatMessage.fromStringOrNull(prompt, true));
+        }
     }
 
     public void addChannel(String channel) {
