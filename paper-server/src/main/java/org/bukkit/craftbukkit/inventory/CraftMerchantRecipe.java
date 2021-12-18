@@ -2,6 +2,8 @@ package org.bukkit.craftbukkit.inventory;
 
 import com.google.common.base.Preconditions;
 import java.util.List;
+import net.minecraft.util.MathHelper;
+import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.MerchantRecipe;
 
@@ -17,7 +19,11 @@ public class CraftMerchantRecipe extends MerchantRecipe {
     }
 
     public CraftMerchantRecipe(ItemStack result, int uses, int maxUses, boolean experienceReward, int experience, float priceMultiplier) {
-        super(result, uses, maxUses, experienceReward, experience, priceMultiplier);
+        this(result, uses, maxUses, experienceReward, experience, priceMultiplier, 0, 0);
+    }
+
+    public CraftMerchantRecipe(ItemStack result, int uses, int maxUses, boolean experienceReward, int experience, float priceMultiplier, int demand, int specialPrice) {
+        super(result, uses, maxUses, experienceReward, experience, priceMultiplier, demand, specialPrice);
         this.handle = new net.minecraft.world.item.trading.MerchantRecipe(
                 net.minecraft.world.item.ItemStack.EMPTY,
                 net.minecraft.world.item.ItemStack.EMPTY,
@@ -26,9 +32,31 @@ public class CraftMerchantRecipe extends MerchantRecipe {
                 maxUses,
                 experience,
                 priceMultiplier,
+                demand,
                 this
         );
+        this.setSpecialPrice(specialPrice);
         this.setExperienceReward(experienceReward);
+    }
+
+    @Override
+    public int getSpecialPrice() {
+        return handle.getSpecialPriceDiff();
+    }
+
+    @Override
+    public void setSpecialPrice(int specialPrice) {
+        handle.specialPriceDiff = specialPrice;
+    }
+
+    @Override
+    public int getDemand() {
+        return handle.demand;
+    }
+
+    @Override
+    public void setDemand(int demand) {
+        handle.demand = demand;
     }
 
     @Override
