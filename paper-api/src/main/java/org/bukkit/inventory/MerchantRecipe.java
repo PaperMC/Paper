@@ -3,7 +3,12 @@ package org.bukkit.inventory;
 import com.google.common.base.Preconditions;
 import java.util.ArrayList;
 import java.util.List;
+import org.bukkit.Material;
+import org.bukkit.event.entity.VillagerReplenishTradeEvent;
+import org.bukkit.potion.PotionEffectType;
+import org.bukkit.util.NumberConversions;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents a merchant's trade.
@@ -16,6 +21,30 @@ import org.jetbrains.annotations.NotNull;
  * uses to increase.
  * <br>
  * A trade may or may not reward experience for being completed.
+ * <br>
+ * During trades, the {@link MerchantRecipe} dynamically adjusts the amount of
+ * its first ingredient based on the following criteria:
+ * <ul>
+ * <li>{@link #getDemand() Demand}: This value is periodically updated by the
+ * villager that owns this merchant recipe based on how often the recipe has
+ * been used since it has been last restocked in relation to its
+ * {@link #getMaxUses maximum uses}. The amount by which the demand influences
+ * the amount of the first ingredient is scaled by the recipe's
+ * {@link #getPriceMultiplier price multiplier}, and can never be below zero.
+ * <li>{@link #getSpecialPrice() Special price}: This value is dynamically
+ * updated whenever a player starts and stops trading with a villager that owns
+ * this merchant recipe. It is based on the player's individual reputation with
+ * the villager, and the player's currently active status effects (see
+ * {@link PotionEffectType#HERO_OF_THE_VILLAGE}). The influence of the player's
+ * reputation on the special price is scaled by the recipe's
+ * {@link #getPriceMultiplier price multiplier}.
+ * </ul>
+ * The adjusted amount of the first ingredient is calculated by adding up the
+ * original amount of the first ingredient, the demand scaled by the recipe's
+ * {@link #getPriceMultiplier price multiplier} and truncated to the next lowest
+ * integer value greater than or equal to 0, and the special price, and then
+ * constraining the resulting value between <code>1</code> and the item stack's
+ * {@link ItemStack#getMaxStackSize() maximum stack size}.
  *
  * @see org.bukkit.event.entity.VillagerReplenishTradeEvent
  */
@@ -26,6 +55,8 @@ public class MerchantRecipe implements Recipe {
     private int uses;
     private int maxUses;
     private boolean experienceReward;
+    private int specialPrice;
+    private int demand;
     private int villagerExperience;
     private float priceMultiplier;
 
@@ -34,16 +65,22 @@ public class MerchantRecipe implements Recipe {
     }
 
     public MerchantRecipe(@NotNull ItemStack result, int uses, int maxUses, boolean experienceReward) {
-        this(result, uses, maxUses, experienceReward, 0, 0.0F);
+        this(result, uses, maxUses, experienceReward, 0, 0.0F, 0, 0);
     }
 
     public MerchantRecipe(@NotNull ItemStack result, int uses, int maxUses, boolean experienceReward, int villagerExperience, float priceMultiplier) {
+        this(result, uses, maxUses, experienceReward, villagerExperience, priceMultiplier, 0, 0);
+    }
+
+    public MerchantRecipe(@NotNull ItemStack result, int uses, int maxUses, boolean experienceReward, int villagerExperience, float priceMultiplier, int demand, int specialPrice) {
         this.result = result;
         this.uses = uses;
         this.maxUses = maxUses;
         this.experienceReward = experienceReward;
         this.villagerExperience = villagerExperience;
         this.priceMultiplier = priceMultiplier;
+        this.demand = demand;
+        this.specialPrice = specialPrice;
     }
 
     @NotNull
@@ -76,6 +113,95 @@ public class MerchantRecipe implements Recipe {
             copy.add(item.clone());
         }
         return copy;
+    }
+
+    /**
+     * Gets the {@link #adjust(ItemStack) adjusted} first ingredient.
+     *
+     * @return the adjusted first ingredient, or <code>null</code> if this
+     * recipe has no ingredients
+     * @see #adjust(ItemStack)
+     */
+    @Nullable
+    public ItemStack getAdjustedIngredient1() {
+        if (this.ingredients.isEmpty()) {
+            return null;
+        }
+
+        ItemStack firstIngredient = this.ingredients.get(0).clone();
+        adjust(firstIngredient);
+        return firstIngredient;
+    }
+
+    /**
+     * Modifies the amount of the given {@link ItemStack} in the same way as
+     * MerchantRecipe dynamically adjusts the amount of the first ingredient
+     * during trading.
+     * <br>
+     * This is calculated by adding up the original amount of the item, the
+     * demand scaled by the recipe's
+     * {@link #getPriceMultiplier price multiplier} and truncated to the next
+     * lowest integer value greater than or equal to 0, and the special price,
+     * and then constraining the resulting value between <code>1</code> and the
+     * {@link ItemStack}'s {@link ItemStack#getMaxStackSize()
+     * maximum stack size}.
+     *
+     * @param itemStack the item to adjust
+     */
+    public void adjust(@Nullable ItemStack itemStack) {
+        if (itemStack == null || itemStack.getType() == Material.AIR || itemStack.getAmount() <= 0) {
+            return;
+        }
+
+        int amount = itemStack.getAmount();
+        int demandAdjustment = Math.max(0, NumberConversions.floor((float) (amount * getDemand()) * getPriceMultiplier()));
+        itemStack.setAmount(Math.max(1, Math.min(itemStack.getMaxStackSize(), amount + demandAdjustment + getSpecialPrice())));
+    }
+
+    /**
+     * Get the value of the demand for the item in {@link #getResult()}.
+     *
+     * @return the demand for the item
+     */
+    public int getDemand() {
+        return demand;
+    }
+
+    /**
+     * Set the value of the demand for the item in {@link #getResult()}.
+     * <br>
+     * <b>Note: </b> This value is updated when the item is purchase
+     *
+     * @param demand demand value
+     */
+    public void setDemand(int demand) {
+        this.demand = demand;
+    }
+
+    /**
+     * Get the special price for this trade.
+     * <br>
+     * <b>Note: </b> This value can be updated by
+     * {@link VillagerReplenishTradeEvent#getBonus()} or by
+     * {@link PotionEffectType#HERO_OF_THE_VILLAGE}
+     *
+     * @return special price value
+     */
+    public int getSpecialPrice() {
+        return specialPrice;
+    }
+
+    /**
+     * Set the special value for this trade.
+     * <br>
+     * <b>Note: </b> This value can be updated by
+     * {@link VillagerReplenishTradeEvent#getBonus()} or by
+     * {@link PotionEffectType#HERO_OF_THE_VILLAGE}
+     *
+     * @param specialPrice special price value
+     */
+    public void setSpecialPrice(int specialPrice) {
+        this.specialPrice = specialPrice;
     }
 
     /**
