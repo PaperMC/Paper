@@ -15710,73 +15710,74 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                final MapType<String>[] newBiomes = createBiomeSections(level, isOverworld, minSection, isAlreadyExtended);
 +                final MapType<String> wrappedEmptyBlockPalette = getEmptyBlockPalette();
 +
-+                final ListType sections = level.getList("Sections", ObjectType.MAP);
++                ListType sections = level.getList("Sections", ObjectType.MAP);
++                if (sections == null) {
++                    level.setList("Sections", sections = Types.NBT.createEmptyList());
++                }
 +
 +                // must update sections for two things:
 +                // 1. the biomes are now stored per section, so we must insert the biomes palette into each section (and create them if they don't exist)
 +                // 2. each section must now have block states (or at least DFU is ensuring they do, but current code does not require)
 +                V2841.SimplePaletteReader bottomSection = null;
 +                final Set<String> allBlocks = new HashSet<>();
-+                if (sections != null) {
-+                    final IntOpenHashSet existingSections = new IntOpenHashSet();
++                final IntOpenHashSet existingSections = new IntOpenHashSet();
 +
-+                    for (int i = 0, len = sections.size(); i < len; ++i) {
-+                        final MapType<String> section = sections.getMap(i);
++                for (int i = 0, len = sections.size(); i < len; ++i) {
++                    final MapType<String> section = sections.getMap(i);
 +
-+                        final int y = section.getInt("Y");
-+                        final int sectionIndex = y - minSection;
++                    final int y = section.getInt("Y");
++                    final int sectionIndex = y - minSection;
 +
-+                        existingSections.add(y);
++                    existingSections.add(y);
 +
-+                        // add in relevant biome section
-+                        if (sectionIndex >= 0 && sectionIndex < newBiomes.length) {
-+                            // exclude out of bounds sections (i.e the light sections above and below the world)
-+                            section.setMap("biomes", newBiomes[sectionIndex]);
-+                        }
++                    // add in relevant biome section
++                    if (sectionIndex >= 0 && sectionIndex < newBiomes.length) {
++                        // exclude out of bounds sections (i.e the light sections above and below the world)
++                        section.setMap("biomes", newBiomes[sectionIndex]);
++                    }
 +
-+                        // update palette
-+                        final ListType palette = section.getList("Palette", ObjectType.MAP);
-+                        final long[] blockStates = section.getLongs("BlockStates");
++                    // update palette
++                    final ListType palette = section.getList("Palette", ObjectType.MAP);
++                    final long[] blockStates = section.getLongs("BlockStates");
 +
-+                        section.remove("Palette");
-+                        section.remove("BlockStates");
++                    section.remove("Palette");
++                    section.remove("BlockStates");
 +
-+                        if (palette != null) {
-+                            for (int j = 0, len2 = palette.size(); j < len2; ++j) {
-+                                allBlocks.add(V2841.getBlockId(palette.getMap(j)));
-+                            }
-+                        }
-+
-+                        final MapType<String> palettedContainer;
-+                        if (palette != null && blockStates != null) {
-+                            // only if both exist, same as DFU, same as legacy chunk loading code
-+                            section.setMap("block_states", palettedContainer = wrapPaletteOptimised(palette, blockStates));
-+                        } else {
-+                            section.setMap("block_states", palettedContainer = wrappedEmptyBlockPalette.copy()); // must write a palette now, copy so that later edits do not edit them all
-+                        }
-+
-+                        if (section.getInt("Y", Integer.MAX_VALUE) == 0) {
-+                            bottomSection = new V2841.SimplePaletteReader(palettedContainer.getList("palette", ObjectType.MAP), palettedContainer.getLongs("data"));
++                    if (palette != null) {
++                        for (int j = 0, len2 = palette.size(); j < len2; ++j) {
++                            allBlocks.add(V2841.getBlockId(palette.getMap(j)));
 +                        }
 +                    }
 +
-+                    // all existing sections updated, now we must create new sections just for the biomes migration
-+                    for (int sectionIndex = 0; sectionIndex < newBiomes.length; ++sectionIndex) {
-+                        final int sectionY = sectionIndex + minSection;
-+                        if (!existingSections.add(sectionY)) {
-+                            // exists already
-+                            continue;
-+                        }
-+
-+                        final MapType<String> newSection = Types.NBT.createEmptyMap();
-+                        sections.addMap(newSection);
-+
-+                        newSection.setByte("Y", (byte)sectionY);
-+                        // must write a palette now, copy so that later edits do not edit them all
-+                        newSection.setMap("block_states", wrappedEmptyBlockPalette.copy());
-+
-+                        newSection.setGeneric("biomes", newBiomes[sectionIndex]);
++                    final MapType<String> palettedContainer;
++                    if (palette != null && blockStates != null) {
++                        // only if both exist, same as DFU, same as legacy chunk loading code
++                        section.setMap("block_states", palettedContainer = wrapPaletteOptimised(palette, blockStates));
++                    } else {
++                        section.setMap("block_states", palettedContainer = wrappedEmptyBlockPalette.copy()); // must write a palette now, copy so that later edits do not edit them all
 +                    }
++
++                    if (section.getInt("Y", Integer.MAX_VALUE) == 0) {
++                        bottomSection = new V2841.SimplePaletteReader(palettedContainer.getList("palette", ObjectType.MAP), palettedContainer.getLongs("data"));
++                    }
++                }
++
++                // all existing sections updated, now we must create new sections just for the biomes migration
++                for (int sectionIndex = 0; sectionIndex < newBiomes.length; ++sectionIndex) {
++                    final int sectionY = sectionIndex + minSection;
++                    if (!existingSections.add(sectionY)) {
++                        // exists already
++                        continue;
++                    }
++
++                    final MapType<String> newSection = Types.NBT.createEmptyMap();
++                    sections.addMap(newSection);
++
++                    newSection.setByte("Y", (byte)sectionY);
++                    // must write a palette now, copy so that later edits do not edit them all
++                    newSection.setMap("block_states", wrappedEmptyBlockPalette.copy());
++
++                    newSection.setGeneric("biomes", newBiomes[sectionIndex]);
 +                }
 +
 +                // update status so interpolation can take place
