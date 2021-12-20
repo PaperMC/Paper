@@ -1,0 +1,30 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Mon, 20 Dec 2021 11:55:17 -0800
+Subject: [PATCH] Fix cancelling entity interacts on bucketable entity
+
+
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index 057fcbc389e54e0c9f7a90a3e8b965cd46db9d58..7e93a6018b21c99a604fe44d719c41ba2cf2e3c4 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -2461,6 +2461,19 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+ 
+                         if (event.isCancelled()) {
+                             ServerGamePacketListenerImpl.this.player.containerMenu.sendAllDataToRemote(); // Paper - Refresh player inventory
++                            // Paper start - re-add bucketable entities if cancelled
++                            if (!ServerGamePacketListenerImpl.this.player.isSpectator() // from Player#interactOn
++                                && entity instanceof Mob mob // to make sure Mob#interact is called from Player#interactOn
++                                && entity instanceof net.minecraft.world.entity.animal.Bucketable
++                                && entity.isAlive() // From Mob#interact
++                                && mob.getLeashHolder() != ServerGamePacketListenerImpl.this.player // from Mob#interact
++                                && itemInHand.is(Items.WATER_BUCKET) // to make sure no other interact check passes and from Bucketable#bucketMobPickup
++                            ) {
++                                ServerGamePacketListenerImpl.this.connection.send(new ClientboundAddMobPacket(mob));
++                                ServerGamePacketListenerImpl.this.connection.send(new ClientboundSetEntityDataPacket(mob.getId(), mob.getEntityData(), true));
++                            }
++
++                            // Paper end
+                             return;
+                         }
+                         // CraftBukkit end
