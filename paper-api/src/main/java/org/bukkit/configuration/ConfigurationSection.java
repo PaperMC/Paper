@@ -996,4 +996,66 @@ public interface ConfigurationSection {
      * @throws IllegalArgumentException Thrown if path is null.
      */
     public void addDefault(@NotNull String path, @Nullable Object value);
+
+    /**
+     * Gets the requested comment list by path.
+     * <p>
+     * If no comments exist, an empty list will be returned. A null entry
+     * represents an empty line and an empty String represents an empty comment
+     * line.
+     *
+     * @param path Path of the comments to get.
+     * @return A unmodifiable list of the requested comments, every entry
+     * represents one line.
+     */
+    @NotNull
+    public List<String> getComments(@NotNull String path);
+
+    /**
+     * Gets the requested inline comment list by path.
+     * <p>
+     * If no comments exist, an empty list will be returned. A null entry
+     * represents an empty line and an empty String represents an empty comment
+     * line.
+     *
+     * @param path Path of the comments to get.
+     * @return A unmodifiable list of the requested comments, every entry
+     * represents one line.
+     */
+    @NotNull
+    public List<String> getInlineComments(@NotNull String path);
+
+    /**
+     * Sets the comment list at the specified path.
+     * <p>
+     * If value is null, the comments will be removed. A null entry is an empty
+     * line and an empty String entry is an empty comment line. If the path does
+     * not exist, no comments will be set. Any existing comments will be
+     * replaced, regardless of what the new comments are.
+     * <p>
+     * Some implementations may have limitations on what persists. See their
+     * individual javadocs for details.
+     *
+     * @param path Path of the comments to set.
+     * @param comments New comments to set at the path, every entry represents
+     * one line.
+     */
+    public void setComments(@NotNull String path, @Nullable List<String> comments);
+
+    /**
+     * Sets the inline comment list at the specified path.
+     * <p>
+     * If value is null, the comments will be removed. A null entry is an empty
+     * line and an empty String entry is an empty comment line. If the path does
+     * not exist, no comment will be set. Any existing comments will be
+     * replaced, regardless of what the new comments are.
+     * <p>
+     * Some implementations may have limitations on what persists. See their
+     * individual javadocs for details.
+     *
+     * @param path Path of the comments to set.
+     * @param comments New comments to set at the path, every entry represents
+     * one line.
+     */
+    public void setInlineComments(@NotNull String path, @Nullable List<String> comments);
 }

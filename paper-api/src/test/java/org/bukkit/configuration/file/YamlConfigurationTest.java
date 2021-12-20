@@ -1,6 +1,9 @@
 package org.bukkit.configuration.file;
 
 import static org.junit.Assert.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import org.junit.Test;
 
 public class YamlConfigurationTest extends FileConfigurationTest {
@@ -11,13 +14,43 @@ public class YamlConfigurationTest extends FileConfigurationTest {
     }
 
     @Override
-    public String getTestHeaderInput() {
-        return "This is a sample\nheader.\n\nNewline above should be commented.\n\n";
+    public List<String> getTestCommentInput() {
+        List<String> comments = new ArrayList<>();
+        comments.add(" This is a sample");
+        comments.add(" header.");
+        comments.add(" Newline above should be commented.");
+        comments.add("");
+        comments.add("");
+        comments.add(null);
+        comments.add(null);
+        comments.add(" Comment of first Key");
+        comments.add(" and a second line.");
+        return comments;
     }
 
     @Override
-    public String getTestHeaderResult() {
-        return "# This is a sample\n# header.\n# \n# Newline above should be commented.\n\n";
+    public String getTestCommentResult() {
+        return "# This is a sample\n# header.\n# Newline above should be commented.\n#\n#\n\n\n# Comment of first Key\n# and a second line.";
+    }
+
+    @Override
+    public List<String> getTestHeaderComments() {
+        return Arrays.asList(" Header", " Second Line");
+    }
+
+    @Override
+    public String getTestHeaderCommentsResult() {
+        return "# Header\n# Second Line\n";
+    }
+
+    @Override
+    public List<String> getTestKeyComments() {
+        return Arrays.asList(" First key Comment", " Second Line");
+    }
+
+    @Override
+    public String getTestHeaderKeyCommentResult() {
+        return "# Header\n# Second Line\n\n# First key Comment\n# Second Line\n";
     }
 
     @Override

@@ -1,5 +1,8 @@
 package org.bukkit.configuration.file;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import org.bukkit.configuration.MemoryConfiguration;
 import org.bukkit.configuration.MemoryConfigurationOptions;
 import org.jetbrains.annotations.NotNull;
@@ -10,8 +13,9 @@ import org.jetbrains.annotations.Nullable;
  * FileConfiguration}
  */
 public class FileConfigurationOptions extends MemoryConfigurationOptions {
-    private String header = null;
-    private boolean copyHeader = true;
+    private List<String> header = Collections.emptyList();
+    private List<String> footer = Collections.emptyList();
+    private boolean parseComments = true;
 
     protected FileConfigurationOptions(@NotNull MemoryConfiguration configuration) {
         super(configuration);
@@ -46,14 +50,30 @@ public class FileConfigurationOptions extends MemoryConfigurationOptions {
      * automatically be applied, but you may include one if you wish for extra
      * spacing.
      * <p>
-     * Null is a valid value which will indicate that no header is to be
-     * applied. The default value is null.
+     * If no comments exist, an empty list will be returned. A null entry
+     * represents an empty line and an empty String represents an empty comment
+     * line.
      *
-     * @return Header
+     * @return Unmodifiable header, every entry represents one line.
      */
-    @Nullable
-    public String header() {
+    @NotNull
+    public List<String> getHeader() {
         return header;
+    }
+
+    /**
+     * @return The string header.
+     *
+     * @deprecated use getHeader() instead.
+     */
+    @NotNull
+    @Deprecated
+    public String header() {
+        StringBuilder stringHeader = new StringBuilder();
+        for (String line : header) {
+            stringHeader.append(line == null ? "\n" : line + "\n");
+        }
+        return stringHeader.toString();
     }
 
     /**
@@ -65,63 +85,119 @@ public class FileConfigurationOptions extends MemoryConfigurationOptions {
      * automatically be applied, but you may include one if you wish for extra
      * spacing.
      * <p>
-     * Null is a valid value which will indicate that no header is to be
-     * applied.
+     * If no comments exist, an empty list will be returned. A null entry
+     * represents an empty line and an empty String represents an empty comment
+     * line.
      *
-     * @param value New header
+     * @param value New header, every entry represents one line.
      * @return This object, for chaining
      */
     @NotNull
-    public FileConfigurationOptions header(@Nullable String value) {
-        this.header = value;
+    public FileConfigurationOptions setHeader(@Nullable List<String> value) {
+        this.header = (value == null) ? Collections.emptyList() : Collections.unmodifiableList(value);
         return this;
     }
 
     /**
-     * Gets whether or not the header should be copied from a default source.
-     * <p>
-     * If this is true, if a default {@link FileConfiguration} is passed to
-     * {@link
-     * FileConfiguration#setDefaults(org.bukkit.configuration.Configuration)}
-     * then upon saving it will use the header from that config, instead of
-     * the one provided here.
-     * <p>
-     * If no default is set on the configuration, or the default is not of
-     * type FileConfiguration, or that config has no header ({@link #header()}
-     * returns null) then the header specified in this configuration will be
-     * used.
-     * <p>
-     * Defaults to true.
+     * @param value The string header.
+     * @return This object, for chaining.
      *
-     * @return Whether or not to copy the header
+     * @deprecated use setHeader() instead
      */
-    public boolean copyHeader() {
-        return copyHeader;
+    @NotNull
+    @Deprecated
+    public FileConfigurationOptions header(@Nullable String value) {
+        this.header = (value == null) ? Collections.emptyList() : Collections.unmodifiableList(Arrays.asList(value.split("\\n")));
+        return this;
     }
 
     /**
-     * Sets whether or not the header should be copied from a default source.
+     * Gets the footer that will be applied to the bottom of the saved output.
      * <p>
-     * If this is true, if a default {@link FileConfiguration} is passed to
-     * {@link
-     * FileConfiguration#setDefaults(org.bukkit.configuration.Configuration)}
-     * then upon saving it will use the header from that config, instead of
-     * the one provided here.
+     * This footer will be commented out and applied directly at the bottom of
+     * the generated output of the {@link FileConfiguration}. It is not required
+     * to include a newline at the beginning of the footer as it will
+     * automatically be applied, but you may include one if you wish for extra
+     * spacing.
      * <p>
-     * If no default is set on the configuration, or the default is not of
-     * type FileConfiguration, or that config has no header ({@link #header()}
-     * returns null) then the header specified in this configuration will be
-     * used.
-     * <p>
-     * Defaults to true.
+     * If no comments exist, an empty list will be returned. A null entry
+     * represents an empty line and an empty String represents an empty comment
+     * line.
      *
-     * @param value Whether or not to copy the header
+     * @return Unmodifiable footer, every entry represents one line.
+     */
+    @NotNull
+    public List<String> getFooter() {
+        return footer;
+    }
+
+    /**
+     * Sets the footer that will be applied to the bottom of the saved output.
+     * <p>
+     * This footer will be commented out and applied directly at the bottom of
+     * the generated output of the {@link FileConfiguration}. It is not required
+     * to include a newline at the beginning of the footer as it will
+     * automatically be applied, but you may include one if you wish for extra
+     * spacing.
+     * <p>
+     * If no comments exist, an empty list will be returned. A null entry
+     * represents an empty line and an empty String represents an empty comment
+     * line.
+     *
+     * @param value New footer, every entry represents one line.
      * @return This object, for chaining
      */
     @NotNull
-    public FileConfigurationOptions copyHeader(boolean value) {
-        copyHeader = value;
+    public FileConfigurationOptions setFooter(@Nullable List<String> value) {
+        this.footer = (value == null) ? Collections.emptyList() : Collections.unmodifiableList(value);
+        return this;
+    }
 
+    /**
+     * Gets whether or not comments should be loaded and saved.
+     * <p>
+     * Defaults to true.
+     *
+     * @return Whether or not comments are parsed.
+     */
+    public boolean parseComments() {
+        return parseComments;
+    }
+
+    /**
+     * Sets whether or not comments should be loaded and saved.
+     * <p>
+     * Defaults to true.
+     *
+     * @param value Whether or not comments are parsed.
+     * @return This object, for chaining
+     */
+    @NotNull
+    public MemoryConfigurationOptions parseComments(boolean value) {
+        parseComments = value;
+        return this;
+    }
+
+    /**
+     * @return Whether or not comments are parsed.
+     *
+     * @deprecated Call {@link #parseComments()} instead.
+     */
+    @Deprecated
+    public boolean copyHeader() {
+        return parseComments;
+    }
+
+    /**
+     * @param value Should comments be parsed.
+     * @return This object, for chaining
+     *
+     * @deprecated Call {@link #parseComments(boolean)} instead.
+     */
+    @NotNull
+    @Deprecated
+    public FileConfigurationOptions copyHeader(boolean value) {
+        parseComments = value;
         return this;
     }
 }

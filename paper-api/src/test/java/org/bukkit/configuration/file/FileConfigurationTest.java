@@ -4,6 +4,8 @@ import static org.junit.Assert.*;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import org.bukkit.configuration.MemoryConfigurationTest;
 import org.junit.Rule;
@@ -19,9 +21,17 @@ public abstract class FileConfigurationTest extends MemoryConfigurationTest {
 
     public abstract String getTestValuesString();
 
-    public abstract String getTestHeaderInput();
+    public abstract List<String> getTestCommentInput();
 
-    public abstract String getTestHeaderResult();
+    public abstract String getTestCommentResult();
+
+    public abstract List<String> getTestHeaderComments();
+
+    public abstract String getTestHeaderCommentsResult();
+
+    public abstract List<String> getTestKeyComments();
+
+    public abstract String getTestHeaderKeyCommentResult();
 
     @Test
     public void testSave_File() throws Exception {
@@ -128,69 +138,6 @@ public abstract class FileConfigurationTest extends MemoryConfigurationTest {
     }
 
     @Test
-    public void testSaveToStringWithHeader() {
-        FileConfiguration config = getConfig();
-        config.options().header(getTestHeaderInput());
-
-        for (Map.Entry<String, Object> entry : getTestValues().entrySet()) {
-            config.set(entry.getKey(), entry.getValue());
-        }
-
-        String result = config.saveToString();
-        String expected = getTestHeaderResult() + "\n" + getTestValuesString();
-
-        assertEquals(expected, result);
-    }
-
-    @Test
-    public void testParseHeader() throws Exception {
-        FileConfiguration config = getConfig();
-        Map<String, Object> values = getTestValues();
-        String saved = getTestValuesString();
-        String header = getTestHeaderResult();
-        String expected = getTestHeaderInput();
-
-        config.loadFromString(header + "\n" + saved);
-
-        assertEquals(expected, config.options().header());
-
-        for (Map.Entry<String, Object> entry : values.entrySet()) {
-            assertEquals(entry.getValue(), config.get(entry.getKey()));
-        }
-
-        assertEquals(values.keySet(), config.getKeys(true));
-        assertEquals(header + "\n" + saved, config.saveToString());
-    }
-
-    @Test
-    public void testCopyHeader() throws Exception {
-        FileConfiguration config = getConfig();
-        FileConfiguration defaults = getConfig();
-        Map<String, Object> values = getTestValues();
-        String saved = getTestValuesString();
-        String header = getTestHeaderResult();
-        String expected = getTestHeaderInput();
-
-        defaults.loadFromString(header);
-        config.loadFromString(saved);
-        config.setDefaults(defaults);
-
-        assertNull(config.options().header());
-        assertEquals(expected, defaults.options().header());
-
-        for (Map.Entry<String, Object> entry : values.entrySet()) {
-            assertEquals(entry.getValue(), config.get(entry.getKey()));
-        }
-
-        assertEquals(values.keySet(), config.getKeys(true));
-        assertEquals(header + "\n" + saved, config.saveToString());
-
-        config = getConfig();
-        config.loadFromString(getTestHeaderResult() + saved);
-        assertEquals(getTestHeaderResult() + saved, config.saveToString());
-    }
-
-    @Test
     public void testReloadEmptyConfig() throws Exception {
         FileConfiguration config = getConfig();
 
@@ -271,4 +218,178 @@ public abstract class FileConfigurationTest extends MemoryConfigurationTest {
         assertFalse(config.contains("test"));
         assertFalse(config.getBoolean("test"));
     }
+
+    @Test
+    public void testSaveWithComments() {
+        FileConfiguration config = getConfig();
+        config.options().parseComments(true);
+
+        for (Map.Entry<String, Object> entry : getTestValues().entrySet()) {
+            config.set(entry.getKey(), entry.getValue());
+        }
+        String key = getTestValues().keySet().iterator().next();
+        config.setComments(key, getTestCommentInput());
+
+        String result = config.saveToString();
+        String expected = getTestCommentResult() + "\n" + getTestValuesString();
+
+        assertEquals(expected, result);
+    }
+
+    @Test
+    public void testSaveWithoutComments() {
+        FileConfiguration config = getConfig();
+        config.options().parseComments(false);
+
+        for (Map.Entry<String, Object> entry : getTestValues().entrySet()) {
+            config.set(entry.getKey(), entry.getValue());
+        }
+        String key = getTestValues().keySet().iterator().next();
+        config.setComments(key, getTestCommentInput());
+
+        String result = config.saveToString();
+        String expected = getTestValuesString();
+
+        assertEquals(expected, result);
+    }
+
+    @Test
+    public void testLoadWithComments() throws Exception {
+        FileConfiguration config = getConfig();
+        Map<String, Object> values = getTestValues();
+        String saved = getTestValuesString();
+        String comments = getTestCommentResult();
+
+        config.options().parseComments(true);
+        config.loadFromString(comments + "\n" + saved);
+
+        for (Map.Entry<String, Object> entry : values.entrySet()) {
+            assertEquals(entry.getValue(), config.get(entry.getKey()));
+        }
+
+        assertEquals(values.keySet(), config.getKeys(true));
+        assertEquals(comments + "\n" + saved, config.saveToString());
+    }
+
+    @Test
+    public void testLoadWithoutComments() throws Exception {
+        FileConfiguration config = getConfig();
+        Map<String, Object> values = getTestValues();
+        String saved = getTestValuesString();
+        String comments = getTestCommentResult();
+
+        config.options().parseComments(false);
+        config.loadFromString(comments + "\n" + saved);
+        config.options().parseComments(true);
+
+        for (Map.Entry<String, Object> entry : values.entrySet()) {
+            assertEquals(entry.getValue(), config.get(entry.getKey()));
+        }
+
+        assertEquals(values.keySet(), config.getKeys(true));
+        assertEquals(saved, config.saveToString());
+    }
+
+    @Test
+    public void testSaveWithCommentsHeader() {
+        FileConfiguration config = getConfig();
+        config.options().parseComments(true);
+
+        for (Map.Entry<String, Object> entry : getTestValues().entrySet()) {
+            config.set(entry.getKey(), entry.getValue());
+        }
+        String key = getTestValues().keySet().iterator().next();
+        config.options().setHeader(getTestHeaderComments());
+        config.setComments(key, getTestKeyComments());
+
+        String result = config.saveToString();
+        String expected = getTestHeaderKeyCommentResult() + getTestValuesString();
+
+        assertEquals(expected, result);
+    }
+
+    @Test
+    public void testLoadWithCommentsHeader() throws Exception {
+        FileConfiguration config = getConfig();
+        Map<String, Object> values = getTestValues();
+        String saved = getTestValuesString();
+        String comments = getTestHeaderKeyCommentResult();
+
+        config.options().parseComments(true);
+        config.loadFromString(comments + saved);
+
+        for (Map.Entry<String, Object> entry : values.entrySet()) {
+            assertEquals(entry.getValue(), config.get(entry.getKey()));
+        }
+
+        String key = getTestValues().keySet().iterator().next();
+        assertEquals(getTestHeaderComments(), config.options().getHeader());
+        assertEquals(getTestKeyComments(), config.getComments(key));
+
+        assertEquals(values.keySet(), config.getKeys(true));
+        assertEquals(comments + saved, config.saveToString());
+    }
+
+    @Test
+    public void testSaveWithCommentsFooter() {
+        FileConfiguration config = getConfig();
+        config.options().parseComments(true);
+
+        for (Map.Entry<String, Object> entry : getTestValues().entrySet()) {
+            config.set(entry.getKey(), entry.getValue());
+        }
+        config.options().setFooter(getTestHeaderComments());
+
+        String result = config.saveToString();
+        String expected = getTestValuesString() + getTestHeaderCommentsResult();
+
+        assertEquals(expected, result);
+    }
+
+    @Test
+    public void testLoadWithCommentsFooter() throws Exception {
+        FileConfiguration config = getConfig();
+        Map<String, Object> values = getTestValues();
+        String saved = getTestValuesString();
+        String comments = getTestHeaderCommentsResult();
+
+        config.options().parseComments(true);
+        config.loadFromString(saved + comments);
+
+        for (Map.Entry<String, Object> entry : values.entrySet()) {
+            assertEquals(entry.getValue(), config.get(entry.getKey()));
+        }
+
+        assertEquals(getTestHeaderComments(), config.options().getFooter());
+
+        assertEquals(values.keySet(), config.getKeys(true));
+        assertEquals(saved + comments, config.saveToString());
+    }
+
+    @Test
+    public void testLoadWithCommentsInline() throws Exception {
+        FileConfiguration config = getConfig();
+
+        config.options().parseComments(true);
+        config.loadFromString("key1: value1\nkey2: value2 # Test inline\nkey3: value3");
+
+        assertEquals(Arrays.asList(" Test inline"), config.getInlineComments("key2"));
+    }
+
+    @Test
+    public void testSaveWithCommentsInline() {
+        FileConfiguration config = getConfig();
+
+        config.options().parseComments(true);
+        config.set("key1", "value1");
+        config.set("key2", "value2");
+        config.set("key3", "value3");
+        config.setInlineComments("key2", Arrays.asList(" Test inline"));
+
+        String result = config.saveToString();
+        String expected = "key1: value1\nkey2: value2 # Test inline\nkey3: value3\n";
+
+        assertEquals(expected, result);
+    }
+
 }

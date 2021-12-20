@@ -16,6 +16,11 @@ public class YamlConstructor extends SafeConstructor {
         this.yamlConstructors.put(Tag.MAP, new ConstructCustomObject());
     }
 
+    @NotNull
+    public Object construct(@NotNull Node node) {
+        return constructObject(node);
+    }
+
     private class ConstructCustomObject extends ConstructYamlMap {
 
         @Nullable
