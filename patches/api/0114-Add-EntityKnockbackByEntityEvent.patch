@@ -6,10 +6,10 @@ Subject: [PATCH] Add EntityKnockbackByEntityEvent
 
 diff --git a/src/main/java/com/destroystokyo/paper/event/entity/EntityKnockbackByEntityEvent.java b/src/main/java/com/destroystokyo/paper/event/entity/EntityKnockbackByEntityEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..9efecabab813f575bb447a356e5e7e952d110f30
+index 0000000000000000000000000000000000000000..cff7f42e84798be2789c7ebb8f2b60b9dd40a711
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/event/entity/EntityKnockbackByEntityEvent.java
-@@ -0,0 +1,82 @@
+@@ -0,0 +1,106 @@
 +package com.destroystokyo.paper.event.entity;
 +
 +import org.bukkit.entity.Entity;
@@ -19,6 +19,7 @@ index 0000000000000000000000000000000000000000..9efecabab813f575bb447a356e5e7e95
 +import org.bukkit.event.entity.EntityEvent;
 +import org.bukkit.util.Vector;
 +import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
 +
 +/**
 + * Fired when an Entity is knocked back by the hit of another Entity. The acceleration
@@ -29,13 +30,19 @@ index 0000000000000000000000000000000000000000..9efecabab813f575bb447a356e5e7e95
 +    private static final HandlerList handlers = new HandlerList();
 +
 +    @NotNull private final Entity hitBy;
++    @Nullable private final Entity directHitBy;
 +    private final float knockbackStrength;
 +    @NotNull private final Vector acceleration;
 +    private boolean cancelled = false;
 +
++    @Deprecated
 +    public EntityKnockbackByEntityEvent(@NotNull LivingEntity entity, @NotNull Entity hitBy, float knockbackStrength, @NotNull Vector acceleration) {
++        this(entity, hitBy, null, knockbackStrength, acceleration);
++    }
++    public EntityKnockbackByEntityEvent(@NotNull LivingEntity entity, @NotNull Entity hitBy, @Nullable Entity directHitBy, float knockbackStrength, @NotNull Vector acceleration) {
 +        super(entity);
 +        this.hitBy = hitBy;
++        this.directHitBy = directHitBy;
 +        this.knockbackStrength = knockbackStrength;
 +        this.acceleration = acceleration;
 +    }
@@ -77,11 +84,28 @@ index 0000000000000000000000000000000000000000..9efecabab813f575bb447a356e5e7e95
 +    }
 +
 +    /**
-+     * @return the Entity which hit
++     * Gets the Entity which hit. Note that this method returns
++     * the source entity (if available) for a projectile like
++     * the thrower of a snowball rather than the snowball itself.
++     *
++     * @return the entity that hit
++     * @see #getDirectHitBy()
 +     */
 +    @NotNull
 +    public Entity getHitBy() {
 +        return hitBy;
++    }
++
++    /**
++     * Get the entity directly responsible for the knockback. Where
++     * {@link #getHitBy()} would return the player for a thrown snowball,
++     * this would return the actual snowball entity.
++     *
++     * @return the direct entity (or null if this event used its legacy constructor)
++     * @see #getHitBy()
++     */
++    public @Nullable Entity getDirectHitBy() {
++        return this.directHitBy;
 +    }
 +
 +    /**
