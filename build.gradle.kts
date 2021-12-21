@@ -1,8 +1,8 @@
 plugins {
     java
     `maven-publish`
-    id("com.github.johnrengelman.shadow") version "7.1.0" apply false
-    id("io.papermc.paperweight.core") version "1.3.2"
+    id("com.github.johnrengelman.shadow") version "7.1.1" apply false
+    id("io.papermc.paperweight.core") version "1.3.3"
 }
 
 allprojects {
