@@ -163,16 +163,19 @@ public abstract class PotionEffectType implements Keyed {
     public static final PotionEffectType CONDUIT_POWER = new PotionEffectTypeWrapper(29, "conduit_power");
 
     /**
+     * Increses underwater movement speed.<br>
      * Squee'ek uh'k kk'kkkk squeek eee'eek.
      */
     public static final PotionEffectType DOLPHINS_GRACE = new PotionEffectTypeWrapper(30, "dolphins_grace");
 
     /**
+     * Triggers a raid when the player enters a village.<br>
      * oof.
      */
     public static final PotionEffectType BAD_OMEN = new PotionEffectTypeWrapper(31, "bad_omen");
 
     /**
+     * Reduces the cost of villager trades.<br>
      * \o/.
      */
     public static final PotionEffectType HERO_OF_THE_VILLAGE = new PotionEffectTypeWrapper(32, "hero_of_the_village");
