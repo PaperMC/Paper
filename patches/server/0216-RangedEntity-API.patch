@@ -8,43 +8,30 @@ and to perform an attack.
 
 diff --git a/src/main/java/com/destroystokyo/paper/entity/CraftRangedEntity.java b/src/main/java/com/destroystokyo/paper/entity/CraftRangedEntity.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..e75e1d0d833c96af139fd955b2585ec24281b294
+index 0000000000000000000000000000000000000000..d7a8eb1b8f24ed2741ae9dae62d3f6146f273e1d
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/entity/CraftRangedEntity.java
-@@ -0,0 +1,19 @@
+@@ -0,0 +1,20 @@
 +package com.destroystokyo.paper.entity;
 +
++import net.minecraft.world.entity.Mob;
 +import net.minecraft.world.entity.monster.RangedAttackMob;
 +import org.bukkit.craftbukkit.entity.CraftLivingEntity;
 +import org.bukkit.entity.LivingEntity;
 +
-+public interface CraftRangedEntity<T extends RangedAttackMob> extends RangedEntity {
++public interface CraftRangedEntity<T extends Mob & RangedAttackMob> extends RangedEntity {
 +    T getHandle();
 +
 +    @Override
 +    default void rangedAttack(LivingEntity target, float charge) {
-+        getHandle().rangedAttack(((CraftLivingEntity) target).getHandle(), charge);
++        getHandle().performRangedAttack(((CraftLivingEntity) target).getHandle(), charge);
 +    }
 +
 +    @Override
 +    default void setChargingAttack(boolean raiseHands) {
-+        getHandle().setChargingAttack(raiseHands);
++        getHandle().setAggressive(raiseHands);
 +    }
 +}
-diff --git a/src/main/java/net/minecraft/world/entity/monster/RangedAttackMob.java b/src/main/java/net/minecraft/world/entity/monster/RangedAttackMob.java
-index 6c3162606ccf799e99d591da33fd649847db54b8..ad9a8198cec21ab766ad8a274937ecbbed56bef6 100644
---- a/src/main/java/net/minecraft/world/entity/monster/RangedAttackMob.java
-+++ b/src/main/java/net/minecraft/world/entity/monster/RangedAttackMob.java
-@@ -3,5 +3,8 @@ package net.minecraft.world.entity.monster;
- import net.minecraft.world.entity.LivingEntity;
- 
- public interface RangedAttackMob {
--    void performRangedAttack(LivingEntity target, float pullProgress);
-+    void performRangedAttack(LivingEntity target, float pullProgress); @Deprecated default void rangedAttack(LivingEntity entityliving, float f) { performRangedAttack(entityliving, f); } // Paper - OBFHELPER
-+
-+    // - see EntitySkeletonAbstract melee goal
-+    void setAggressive(boolean flag); default void setChargingAttack(boolean charging) { setAggressive(charging); }; // Paper
- }
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftAbstractSkeleton.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftAbstractSkeleton.java
 index db6ad6eea8fa6f2755bbb0e1325df8bda98e708a..5ff566186431440c25a26900aba14e4adb642031 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftAbstractSkeleton.java
@@ -96,7 +83,7 @@ index 59b866e54e0d7e1dd8815ffa85275e36271113da..bbf7189a0fc9921e7a6007494f91229d
      public CraftIllusioner(CraftServer server, net.minecraft.world.entity.monster.Illusioner entity) {
          super(server, entity);
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftLlama.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftLlama.java
-index bda998c9e621bd9bca6642bfa86befed08f4902b..6ad12711a82d7be42ba41c0428779f86536fd900 100644
+index 140a5e916b36bd6eeee5b1b636e950a49c421bfa..ae05f526f9ec70a2992ef3ee66b7f57eca2351fc 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftLlama.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftLlama.java
 @@ -9,7 +9,7 @@ import org.bukkit.entity.Llama;
