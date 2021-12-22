@@ -1,0 +1,52 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: darbyjack <admin@glaremasters.me>
+Date: Wed, 22 Dec 2021 14:21:25 -0600
+Subject: [PATCH] Library Loader Improvements
+
+
+diff --git a/src/main/java/org/bukkit/UnsafeValues.java b/src/main/java/org/bukkit/UnsafeValues.java
+index 558b00b5876396cf3bca748b6317d7fb9b8c039a..c4b7ea18e5091dd6dcceed5a51fcbeb1bd2b1d19 100644
+--- a/src/main/java/org/bukkit/UnsafeValues.java
++++ b/src/main/java/org/bukkit/UnsafeValues.java
+@@ -217,5 +217,13 @@ public interface UnsafeValues {
+      * @throws IllegalArgumentException if {@link Material#isBlock()} is false
+      */
+     boolean isCollidable(@org.jetbrains.annotations.NotNull Material material);
++
++
++    /**
++     * Obtains the list of all extra Maven Repositories to resolve in LibraryLoader
++     *
++     * @return list of repositories
++     */
++    java.util.List<String> getLibraryLoaderRepos();
+     // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/plugin/java/LibraryLoader.java b/src/main/java/org/bukkit/plugin/java/LibraryLoader.java
+index 6d634b0ea813ccb19f1562a7d0e5a59cea4eab21..1e620ae3194e1fd325503095fd3252e938806c76 100644
+--- a/src/main/java/org/bukkit/plugin/java/LibraryLoader.java
++++ b/src/main/java/org/bukkit/plugin/java/LibraryLoader.java
+@@ -6,7 +6,6 @@ import java.net.MalformedURLException;
+ import java.net.URL;
+ import java.net.URLClassLoader;
+ import java.util.ArrayList;
+-import java.util.Arrays;
+ import java.util.List;
+ import java.util.logging.Level;
+ import java.util.logging.Logger;
+@@ -67,7 +66,14 @@ class LibraryLoader
+         } );
+         session.setReadOnly();
+ 
+-        this.repositories = repository.newResolutionRepositories( session, Arrays.asList( new RemoteRepository.Builder( "central", "default", "https://repo.maven.apache.org/maven2" ).build() ) );
++        // Paper start - library loader improvements
++        final List<RemoteRepository> extra = new ArrayList<>();
++        for (String repo : org.bukkit.Bukkit.getUnsafe().getLibraryLoaderRepos()) {
++            extra.add(new RemoteRepository.Builder(repo, "default", repo).build());
++        }
++
++        this.repositories = repository.newResolutionRepositories( session, extra );
++        // Paper end - library loader improvements
+     }
+ 
+     @Nullable
