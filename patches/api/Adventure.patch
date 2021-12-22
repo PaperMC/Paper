@@ -390,9 +390,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import net.kyori.adventure.text.format.NamedTextColor;
 +import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
 +import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
-+import net.kyori.adventure.text.serializer.plain.PlainComponentSerializer;
++import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 +import org.bukkit.Bukkit;
-+import org.checkerframework.checker.nullness.qual.NonNull;
++import org.jetbrains.annotations.NotNull;
 +
 +/**
 + * Paper API-specific methods for working with {@link Component}s and related.
@@ -407,7 +407,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     *
 +     * @return a component flattener
 +     */
-+    public static @NonNull ComponentFlattener flattener() {
++    public static @NotNull ComponentFlattener flattener() {
 +        return Bukkit.getUnsafe().componentFlattener();
 +    }
 +
@@ -420,7 +420,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     *
 +     * @return a serializer to plain text
 +     */
-+    public static @NonNull PlainComponentSerializer plainSerializer() {
++    public static @NotNull PlainTextComponentSerializer plainSerializer() {
 +        return Bukkit.getUnsafe().plainComponentSerializer();
 +    }
 +
@@ -434,7 +434,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     *
 +     * @return a json component serializer
 +     */
-+    public static @NonNull GsonComponentSerializer gsonSerializer() {
++    public static @NotNull GsonComponentSerializer gsonSerializer() {
 +        return Bukkit.getUnsafe().gsonComponentSerializer();
 +    }
 +
@@ -449,7 +449,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     *
 +     * @return a json component serializer
 +     */
-+    public static @NonNull GsonComponentSerializer colorDownsamplingGsonSerializer() {
++    public static @NotNull GsonComponentSerializer colorDownsamplingGsonSerializer() {
 +        return Bukkit.getUnsafe().colorDownsamplingGsonComponentSerializer();
 +    }
 +
@@ -467,7 +467,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     *
 +     * @return a section serializer
 +     */
-+    public static @NonNull LegacyComponentSerializer legacySectionSerializer() {
++    public static @NotNull LegacyComponentSerializer legacySectionSerializer() {
 +        return Bukkit.getUnsafe().legacyComponentSerializer();
 +    }
 +}
@@ -1095,7 +1095,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  public interface UnsafeValues {
 +    // Paper start
 +    net.kyori.adventure.text.flattener.ComponentFlattener componentFlattener();
-+    net.kyori.adventure.text.serializer.plain.PlainComponentSerializer plainComponentSerializer();
++    net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer plainComponentSerializer();
 +    net.kyori.adventure.text.serializer.gson.GsonComponentSerializer gsonComponentSerializer();
 +    net.kyori.adventure.text.serializer.gson.GsonComponentSerializer colorDownsamplingGsonComponentSerializer();
 +    net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer legacyComponentSerializer();
@@ -1776,18 +1776,23 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        this.sendSignChange(loc, lines, DyeColor.BLACK);
 +    }
 +
-     /**
-      * Send a sign change. This fakes a sign change packet for a user at
-      * a certain location. This will not actually change the world in any way.
-@@ -0,0 +0,0 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
-      *
-      * @param loc the location of the sign
-      * @param lines the new text on the sign or null to clear it
++    /**
++     * Send a sign change. This fakes a sign change packet for a user at
++     * a certain location. This will not actually change the world in any way.
++     * This method will use a sign at the location's block or a faked sign
++     * sent via
++     * {@link #sendBlockChange(org.bukkit.Location, org.bukkit.Material, byte)}.
++     * <p>
++     * If the client does not have a sign at the given location it will
++     * display an error message to the user.
++     *
++     * @param loc the location of the sign
++     * @param lines the new text on the sign or null to clear it
 +     * @param dyeColor the color of the sign
-      * @throws IllegalArgumentException if location is null
++     * @throws IllegalArgumentException if location is null
 +     * @throws IllegalArgumentException if dyeColor is null
-      * @throws IllegalArgumentException if lines is non-null and has a length less than 4
-      */
++     * @throws IllegalArgumentException if lines is non-null and has a length less than 4
++     */
 +    default void sendSignChange(@NotNull Location loc, @Nullable java.util.List<net.kyori.adventure.text.Component> lines, @NotNull DyeColor dyeColor) throws IllegalArgumentException {
 +        this.sendSignChange(loc, lines, dyeColor, false);
 +    }
@@ -1835,22 +1840,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        throws IllegalArgumentException;
 +    // Paper end
 +
-+    /**
-+     * Send a sign change. This fakes a sign change packet for a user at
-+     * a certain location. This will not actually change the world in any way.
-+     * This method will use a sign at the location's block or a faked sign
-+     * sent via
-+     * {@link #sendBlockChange(org.bukkit.Location, org.bukkit.Material, byte)}.
-+     * <p>
-+     * If the client does not have a sign at the given location it will
-+     * display an error message to the user.
-+     *
-+     * @param loc the location of the sign
-+     * @param lines the new text on the sign or null to clear it
-+     * @throws IllegalArgumentException if location is null
-+     * @throws IllegalArgumentException if lines is non-null and has a length less than 4
+     /**
+      * Send a sign change. This fakes a sign change packet for a user at
+      * a certain location. This will not actually change the world in any way.
+@@ -0,0 +0,0 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+      * @param lines the new text on the sign or null to clear it
+      * @throws IllegalArgumentException if location is null
+      * @throws IllegalArgumentException if lines is non-null and has a length less than 4
 +     * @deprecated in favour of {@link #sendSignChange(org.bukkit.Location, java.util.List)}
-+     */
+      */
 +    @Deprecated // Paper
      public void sendSignChange(@NotNull Location loc, @Nullable String[] lines) throws IllegalArgumentException;
  
@@ -1875,6 +1873,116 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public void sendSignChange(@NotNull Location loc, @Nullable String[] lines, @NotNull DyeColor dyeColor, boolean hasGlowingText) throws IllegalArgumentException;
  
      /**
+@@ -0,0 +0,0 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+      */
+     public void setResourcePack(@NotNull String url, @Nullable byte[] hash, @Nullable String prompt);
+ 
++    // Paper start
++    /**
++     * Request that the player's client download and switch resource packs.
++     * <p>
++     * The player's client will download the new resource pack asynchronously
++     * in the background, and will automatically switch to it once the
++     * download is complete. If the client has downloaded and cached a
++     * resource pack with the same hash in the past it will not download but
++     * directly apply the cached pack. If the hash is null and the client has
++     * downloaded and cached the same resource pack in the past, it will
++     * perform a file size check against the response content to determine if
++     * the resource pack has changed and needs to be downloaded again. When
++     * this request is sent for the very first time from a given server, the
++     * client will first display a confirmation GUI to the player before
++     * proceeding with the download.
++     * <p>
++     * Notes:
++     * <ul>
++     * <li>Players can disable server resources on their client, in which
++     *     case this method will have no affect on them. Use the
++     *     {@link PlayerResourcePackStatusEvent} to figure out whether or not
++     *     the player loaded the pack!
++     * <li>There is no concept of resetting resource packs back to default
++     *     within Minecraft, so players will have to relog to do so or you
++     *     have to send an empty pack.
++     * <li>The request is sent with empty string as the hash when the hash is
++     *     not provided. This might result in newer versions not loading the
++     *     pack correctly.
++     * </ul>
++     *
++     * @param url The URL from which the client will download the resource
++     *     pack. The string must contain only US-ASCII characters and should
++     *     be encoded as per RFC 1738.
++     * @param hash The sha1 hash sum of the resource pack file which is used
++     *     to apply a cached version of the pack directly without downloading
++     *     if it is available. Hast to be 20 bytes long!
++     * @param prompt The optional custom prompt message to be shown to client.
++     * @throws IllegalArgumentException Thrown if the URL is null.
++     * @throws IllegalArgumentException Thrown if the URL is too long. The
++     *     length restriction is an implementation specific arbitrary value.
++     * @throws IllegalArgumentException Thrown if the hash is not 20 bytes
++     *     long.
++     */
++    default void setResourcePack(@NotNull String url, byte @Nullable [] hash, net.kyori.adventure.text.@Nullable Component prompt) {
++        this.setResourcePack(url, hash, prompt, false);
++    }
++    // Paper end
++
+     /**
+      * Request that the player's client download and switch resource packs.
+      * <p>
+@@ -0,0 +0,0 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+      */
+     public void setResourcePack(@NotNull String url, @Nullable byte[] hash, @Nullable String prompt, boolean force);
+ 
++    // Paper end
++    /**
++     * Request that the player's client download and switch resource packs.
++     * <p>
++     * The player's client will download the new resource pack asynchronously
++     * in the background, and will automatically switch to it once the
++     * download is complete. If the client has downloaded and cached a
++     * resource pack with the same hash in the past it will not download but
++     * directly apply the cached pack. If the hash is null and the client has
++     * downloaded and cached the same resource pack in the past, it will
++     * perform a file size check against the response content to determine if
++     * the resource pack has changed and needs to be downloaded again. When
++     * this request is sent for the very first time from a given server, the
++     * client will first display a confirmation GUI to the player before
++     * proceeding with the download.
++     * <p>
++     * Notes:
++     * <ul>
++     * <li>Players can disable server resources on their client, in which
++     *     case this method will have no affect on them. Use the
++     *     {@link PlayerResourcePackStatusEvent} to figure out whether or not
++     *     the player loaded the pack!
++     * <li>There is no concept of resetting resource packs back to default
++     *     within Minecraft, so players will have to relog to do so or you
++     *     have to send an empty pack.
++     * <li>The request is sent with empty string as the hash when the hash is
++     *     not provided. This might result in newer versions not loading the
++     *     pack correctly.
++     * </ul>
++     *
++     * @param url The URL from which the client will download the resource
++     *     pack. The string must contain only US-ASCII characters and should
++     *     be encoded as per RFC 1738.
++     * @param hash The sha1 hash sum of the resource pack file which is used
++     *     to apply a cached version of the pack directly without downloading
++     *     if it is available. Hast to be 20 bytes long!
++     * @param prompt The optional custom prompt message to be shown to client.
++     * @param force If true, the client will be disconnected from the server
++     *     when it declines to use the resource pack.
++     * @throws IllegalArgumentException Thrown if the URL is null.
++     * @throws IllegalArgumentException Thrown if the URL is too long. The
++     *     length restriction is an implementation specific arbitrary value.
++     * @throws IllegalArgumentException Thrown if the hash is not 20 bytes
++     *     long.
++     */
++    public void setResourcePack(@NotNull String url, byte @Nullable [] hash, net.kyori.adventure.text.@Nullable Component prompt, boolean force);
++    // Paper end
++
+     /**
+      * Gets the Scoreboard displayed to this player
+      *
 @@ -0,0 +0,0 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
       *
       * @param title Title text
@@ -4122,3 +4230,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          "Lorg/jetbrains/annotations/Nullable;",
          "Lorg/jetbrains/annotations/NotNull;",
          "Lorg/jetbrains/annotations/Contract;",
+@@ -0,0 +0,0 @@ public class AnnotationTest {
+                         if (method.invisibleTypeAnnotations != null) {
+                             for (final org.objectweb.asm.tree.TypeAnnotationNode invisibleTypeAnnotation : method.invisibleTypeAnnotations) {
+                                 final org.objectweb.asm.TypeReference ref = new org.objectweb.asm.TypeReference(invisibleTypeAnnotation.typeRef);
+-                                if (ref.getSort() == org.objectweb.asm.TypeReference.METHOD_FORMAL_PARAMETER && ref.getTypeParameterIndex() == i && java.util.Arrays.binarySearch(ACCEPTED_ANNOTATIONS, invisibleTypeAnnotation.desc) >= 0) {
++                                if (ref.getSort() == org.objectweb.asm.TypeReference.METHOD_FORMAL_PARAMETER && ref.getTypeParameterIndex() == i && org.apache.commons.lang.ArrayUtils.contains(ACCEPTED_ANNOTATIONS, invisibleTypeAnnotation.desc)) {
+                                     continue dancing;
+                                 }
+                             }

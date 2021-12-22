@@ -43,27 +43,27 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import net.minecraft.network.chat.Style;
 +import net.minecraft.util.FormattedCharSequence;
 +import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
-+import org.checkerframework.checker.nullness.qual.Nullable;
++import org.jetbrains.annotations.Nullable;
 +
 +public final class AdventureComponent implements net.minecraft.network.chat.Component {
-+    final Component wrapped;
-+    private net.minecraft.network.chat.@MonotonicNonNull Component converted;
++    final Component adventure;
++    private net.minecraft.network.chat.@MonotonicNonNull Component vanilla;
 +
-+    public AdventureComponent(final Component wrapped) {
-+        this.wrapped = wrapped;
++    public AdventureComponent(final Component adventure) {
++        this.adventure = adventure;
 +    }
 +
 +    public net.minecraft.network.chat.Component deepConverted() {
-+        net.minecraft.network.chat.Component converted = this.converted;
-+        if (converted == null) {
-+            converted = PaperAdventure.WRAPPER_AWARE_SERIALIZER.serialize(this.wrapped);
-+            this.converted = converted;
++        net.minecraft.network.chat.Component vanilla = this.vanilla;
++        if (vanilla == null) {
++            vanilla = PaperAdventure.WRAPPER_AWARE_SERIALIZER.serialize(this.adventure);
++            this.vanilla = vanilla;
 +        }
-+        return converted;
++        return vanilla;
 +    }
 +
 +    public net.minecraft.network.chat.@Nullable Component deepConvertedIfPresent() {
-+        return this.converted;
++        return this.vanilla;
 +    }
 +
 +    @Override
@@ -73,8 +73,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    @Override
 +    public String getContents() {
-+        if (this.wrapped instanceof TextComponent) {
-+            return ((TextComponent) this.wrapped).content();
++        if (this.adventure instanceof TextComponent) {
++            return ((TextComponent) this.adventure).content();
 +        } else {
 +            return this.deepConverted().getContents();
 +        }
@@ -82,7 +82,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    @Override
 +    public String getString() {
-+        return PaperAdventure.PLAIN.serialize(this.wrapped);
++        return PaperAdventure.PLAIN.serialize(this.adventure);
 +    }
 +
 +    @Override
@@ -108,7 +108,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    public static class Serializer implements JsonSerializer<AdventureComponent> {
 +        @Override
 +        public JsonElement serialize(final AdventureComponent src, final Type type, final JsonSerializationContext context) {
-+            return PaperAdventure.GSON.serializer().toJsonTree(src.wrapped, Component.class);
++            return PaperAdventure.GSON.serializer().toJsonTree(src.adventure, Component.class);
 +        }
 +    }
 +}
@@ -527,7 +527,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import net.kyori.adventure.text.format.TextColor;
 +import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
 +import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
-+import net.kyori.adventure.text.serializer.plain.PlainComponentSerializer;
++import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 +import net.kyori.adventure.translation.GlobalTranslator;
 +import net.kyori.adventure.translation.TranslationRegistry;
 +import net.kyori.adventure.translation.Translator;
@@ -544,8 +544,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import net.minecraft.world.item.ItemStack;
 +import net.minecraft.world.item.WrittenBookItem;
 +import org.bukkit.ChatColor;
-+import org.checkerframework.checker.nullness.qual.NonNull;
-+import org.checkerframework.checker.nullness.qual.Nullable;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
 +
 +public final class PaperAdventure {
 +    public static final AttributeKey<Locale> LOCALE_ATTRIBUTE = AttributeKey.valueOf("adventure:locale");
@@ -560,7 +560,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                    }
 +                }
 +            }
-+            final @NonNull String translated = Language.getInstance().getOrDefault(translatable.key());
++            final @NotNull String translated = Language.getInstance().getOrDefault(translatable.key());
 +
 +            final Matcher matcher = LOCALIZATION_PATTERN.matcher(translated);
 +            final List<Component> args = translatable.args();
@@ -599,7 +599,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        })
 +        .build();
 +    public static final LegacyComponentSerializer LEGACY_SECTION_UXRC = LegacyComponentSerializer.builder().flattener(FLATTENER).hexColors().useUnusualXRepeatedCharacterHexFormat().build();
-+    public static final PlainComponentSerializer PLAIN = PlainComponentSerializer.builder().flattener(FLATTENER).build();
++    public static final PlainTextComponentSerializer PLAIN = PlainTextComponentSerializer.builder().flattener(FLATTENER).build();
 +    public static final GsonComponentSerializer GSON = GsonComponentSerializer.builder()
 +        .legacyHoverEventSerializer(NBTLegacyHoverEventSerializer.INSTANCE)
 +        .build();
@@ -609,7 +609,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        .build();
 +    private static final Codec<CompoundTag, String, IOException, IOException> NBT_CODEC = new Codec<CompoundTag, String, IOException, IOException>() {
 +        @Override
-+        public @NonNull CompoundTag decode(final @NonNull String encoded) throws IOException {
++        public @NotNull CompoundTag decode(final @NotNull String encoded) throws IOException {
 +            try {
 +                return TagParser.parseTag(encoded);
 +            } catch (final CommandSyntaxException e) {
@@ -618,7 +618,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +
 +        @Override
-+        public @NonNull String encode(final @NonNull CompoundTag decoded) {
++        public @NotNull String encode(final @NotNull CompoundTag decoded) {
 +            return decoded.toString();
 +        }
 +    };
@@ -671,6 +671,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +
 +    public static net.minecraft.network.chat.Component asVanilla(final Component component) {
++        if (component == null) return null;
 +        if (true) return new AdventureComponent(component);
 +        return net.minecraft.network.chat.Component.Serializer.fromJson(GSON.serializer().toJsonTree(component));
 +    }
@@ -697,7 +698,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    public static String asJsonString(final net.minecraft.network.chat.Component component, final Locale locale) {
 +        if (component instanceof AdventureComponent) {
-+            return asJsonString(((AdventureComponent) component).wrapped, locale);
++            return asJsonString(((AdventureComponent) component).adventure, locale);
 +        }
 +        return net.minecraft.network.chat.Component.Serializer.toJson(component);
 +    }
@@ -722,71 +723,47 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    // BossBar
 +
 +    public static BossEvent.BossBarColor asVanilla(final BossBar.Color color) {
-+        if (color == BossBar.Color.PINK) {
-+            return BossEvent.BossBarColor.PINK;
-+        } else if (color == BossBar.Color.BLUE) {
-+            return BossEvent.BossBarColor.BLUE;
-+        } else if (color == BossBar.Color.RED) {
-+            return BossEvent.BossBarColor.RED;
-+        } else if (color == BossBar.Color.GREEN) {
-+            return BossEvent.BossBarColor.GREEN;
-+        } else if (color == BossBar.Color.YELLOW) {
-+            return BossEvent.BossBarColor.YELLOW;
-+        } else if (color == BossBar.Color.PURPLE) {
-+            return BossEvent.BossBarColor.PURPLE;
-+        } else if (color == BossBar.Color.WHITE) {
-+            return BossEvent.BossBarColor.WHITE;
-+        }
-+        throw new IllegalArgumentException(color.name());
++        return switch (color) {
++            case PINK -> BossEvent.BossBarColor.PINK;
++            case BLUE -> BossEvent.BossBarColor.BLUE;
++            case RED -> BossEvent.BossBarColor.RED;
++            case GREEN -> BossEvent.BossBarColor.GREEN;
++            case YELLOW -> BossEvent.BossBarColor.YELLOW;
++            case PURPLE -> BossEvent.BossBarColor.PURPLE;
++            case WHITE -> BossEvent.BossBarColor.WHITE;
++        };
 +    }
 +
 +    public static BossBar.Color asAdventure(final BossEvent.BossBarColor color) {
-+        if(color == BossEvent.BossBarColor.PINK) {
-+            return BossBar.Color.PINK;
-+        } else if(color == BossEvent.BossBarColor.BLUE) {
-+            return BossBar.Color.BLUE;
-+        } else if(color == BossEvent.BossBarColor.RED) {
-+            return BossBar.Color.RED;
-+        } else if(color == BossEvent.BossBarColor.GREEN) {
-+            return BossBar.Color.GREEN;
-+        } else if(color == BossEvent.BossBarColor.YELLOW) {
-+            return BossBar.Color.YELLOW;
-+        } else if(color == BossEvent.BossBarColor.PURPLE) {
-+            return BossBar.Color.PURPLE;
-+        } else if(color == BossEvent.BossBarColor.WHITE) {
-+            return BossBar.Color.WHITE;
-+        }
-+        throw new IllegalArgumentException(color.name());
++        return switch (color) {
++            case PINK -> BossBar.Color.PINK;
++            case BLUE -> BossBar.Color.BLUE;
++            case RED -> BossBar.Color.RED;
++            case GREEN -> BossBar.Color.GREEN;
++            case YELLOW -> BossBar.Color.YELLOW;
++            case PURPLE -> BossBar.Color.PURPLE;
++            case WHITE -> BossBar.Color.WHITE;
++        };
 +    }
 +
 +    public static BossEvent.BossBarOverlay asVanilla(final BossBar.Overlay overlay) {
-+        if (overlay == BossBar.Overlay.PROGRESS) {
-+            return BossEvent.BossBarOverlay.PROGRESS;
-+        } else if (overlay == BossBar.Overlay.NOTCHED_6) {
-+            return BossEvent.BossBarOverlay.NOTCHED_6;
-+        } else if (overlay == BossBar.Overlay.NOTCHED_10) {
-+            return BossEvent.BossBarOverlay.NOTCHED_10;
-+        } else if (overlay == BossBar.Overlay.NOTCHED_12) {
-+            return BossEvent.BossBarOverlay.NOTCHED_12;
-+        } else if (overlay == BossBar.Overlay.NOTCHED_20) {
-+            return BossEvent.BossBarOverlay.NOTCHED_20;
-+        }
-+        throw new IllegalArgumentException(overlay.name());
++        return switch (overlay) {
++            case PROGRESS -> BossEvent.BossBarOverlay.PROGRESS;
++            case NOTCHED_6 -> BossEvent.BossBarOverlay.NOTCHED_6;
++            case NOTCHED_10 -> BossEvent.BossBarOverlay.NOTCHED_10;
++            case NOTCHED_12 -> BossEvent.BossBarOverlay.NOTCHED_12;
++            case NOTCHED_20 -> BossEvent.BossBarOverlay.NOTCHED_20;
++        };
 +    }
 +
 +    public static BossBar.Overlay asAdventure(final BossEvent.BossBarOverlay overlay) {
-+        if (overlay == BossEvent.BossBarOverlay.PROGRESS) {
-+            return BossBar.Overlay.PROGRESS;
-+        } else if (overlay == BossEvent.BossBarOverlay.NOTCHED_6) {
-+            return BossBar.Overlay.NOTCHED_6;
-+        } else if (overlay == BossEvent.BossBarOverlay.NOTCHED_10) {
-+            return BossBar.Overlay.NOTCHED_10;
-+        } else if (overlay == BossEvent.BossBarOverlay.NOTCHED_12) {
-+            return BossBar.Overlay.NOTCHED_12;
-+        } else if (overlay == BossEvent.BossBarOverlay.NOTCHED_20) {
-+            return BossBar.Overlay.NOTCHED_20;
-+        }
-+        throw new IllegalArgumentException(overlay.name());
++        return switch (overlay) {
++            case PROGRESS -> BossBar.Overlay.PROGRESS;
++            case NOTCHED_6 -> BossBar.Overlay.NOTCHED_6;
++            case NOTCHED_10 -> BossBar.Overlay.NOTCHED_10;
++            case NOTCHED_12 -> BossBar.Overlay.NOTCHED_12;
++            case NOTCHED_20 -> BossBar.Overlay.NOTCHED_20;
++        };
 +    }
 +
 +    public static void setFlag(final BossBar bar, final BossBar.Flag flag, final boolean value) {
@@ -876,14 +853,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    // Colors
 +
-+    public static @NonNull TextColor asAdventure(ChatFormatting minecraftColor) {
-+        if (minecraftColor.getColor() == null) {
++    public static @NotNull TextColor asAdventure(final ChatFormatting formatting) {
++        final Integer color = formatting.getColor();
++        if (color == null) {
 +            throw new IllegalArgumentException("Not a valid color");
 +        }
-+        return TextColor.color(minecraftColor.getColor());
++        return TextColor.color(color);
 +    }
 +
-+    public static @Nullable ChatFormatting asVanilla(TextColor color) {
++    public static @Nullable ChatFormatting asVanilla(final TextColor color) {
 +        return ChatFormatting.getByHexValue(color.value());
 +    }
 +}
@@ -952,7 +930,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    @Override
 +    public Component deserialize(final net.minecraft.network.chat.Component input) {
 +        if (input instanceof AdventureComponent) {
-+            return ((AdventureComponent) input).wrapped;
++            return ((AdventureComponent) input).adventure;
 +        }
 +        return PaperAdventure.GSON.serializer().fromJson(net.minecraft.network.chat.Component.Serializer.toJsonTree(input), Component.class);
 +    }
@@ -2534,6 +2512,46 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      @Override
 @@ -0,0 +0,0 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+ 
+     @Override
+     public void setResourcePack(String url) {
+-        this.setResourcePack(url, null);
++        this.setResourcePack(url, (byte[]) null);
+     }
+ 
+     @Override
+@@ -0,0 +0,0 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+ 
+     @Override
+     public void setResourcePack(String url, byte[] hash, boolean force) {
+-        this.setResourcePack(url, hash, null, force);
++        this.setResourcePack(url, hash, (String) null, force);
+     }
+ 
+     @Override
+@@ -0,0 +0,0 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+         }
+     }
+ 
++    // Paper start
++    @Override
++    public void setResourcePack(String url, byte[] hashBytes, net.kyori.adventure.text.Component prompt, boolean force) {
++        Validate.notNull(url, "Resource pack URL cannot be null");
++        final String hash;
++        if (hashBytes != null) {
++            Validate.isTrue(hashBytes.length == 20, "Resource pack hash should be 20 bytes long but was " + hashBytes.length);
++            hash = BaseEncoding.base16().lowerCase().encode(hashBytes);
++        } else {
++            hash = "";
++        }
++        this.getHandle().sendTexturePack(url, hash, force, io.papermc.paper.adventure.PaperAdventure.asVanilla(prompt));
++    }
++    // Paper end
++
+     public void addChannel(String channel) {
+         Preconditions.checkState(this.channels.size() < 128, "Cannot register channel '%s'. Too many channels registered!", channel);
+         channel = StandardMessenger.validateAndCorrectChannel(channel);
+@@ -0,0 +0,0 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          return (this.getHandle().clientViewDistance == null) ? Bukkit.getViewDistance() : this.getHandle().clientViewDistance;
      }
  
@@ -3529,7 +3547,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +
 +    @Override
-+    public net.kyori.adventure.text.serializer.plain.PlainComponentSerializer plainComponentSerializer() {
++    public net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer plainComponentSerializer() {
 +        return io.papermc.paper.adventure.PaperAdventure.PLAIN;
 +    }
 +
