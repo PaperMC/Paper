@@ -1,0 +1,126 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sun, 22 Aug 2021 15:21:57 -0700
+Subject: [PATCH] Fix entity type tags suggestions in selectors
+
+This would really be better as a client fix because just to fix it
+all EntityArguments have been told to ask the server for completions
+when if this was fixed on the client, that wouldn't be needed.
+
+Mojira Issue: https://bugs.mojang.com/browse/MC-235045
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+@@ -0,0 +0,0 @@ public class PaperConfig {
+         itemValidationBookPageLength = getInt("settings.item-validation.book.page", itemValidationBookPageLength);
+     }
+ 
++    public static boolean fixTargetSelectorTagCompletion = true;
++    private static void fixTargetSelectorTagCompletion() {
++        fixTargetSelectorTagCompletion = getBoolean("settings.fix-target-selector-tag-completion", fixTargetSelectorTagCompletion);
++    }
++
+     public static final class PacketLimit {
+         public final double packetLimitInterval;
+         public final double maxPacketRate;
+diff --git a/src/main/java/net/minecraft/commands/Commands.java b/src/main/java/net/minecraft/commands/Commands.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/commands/Commands.java
++++ b/src/main/java/net/minecraft/commands/Commands.java
+@@ -0,0 +0,0 @@ public class Commands {
+     }
+ 
+     public static <T> RequiredArgumentBuilder<CommandSourceStack, T> argument(String name, ArgumentType<T> type) {
++        // Paper start
++        if (com.destroystokyo.paper.PaperConfig.fixTargetSelectorTagCompletion && type.getClass() == net.minecraft.commands.arguments.EntityArgument.class) {
++            return RequiredArgumentBuilder.<CommandSourceStack, T>argument(name, type).suggests(type::listSuggestions);
++        }
++        // Paper end
+         return RequiredArgumentBuilder.argument(name, type);
+     }
+ 
+diff --git a/src/main/java/net/minecraft/commands/arguments/EntityArgument.java b/src/main/java/net/minecraft/commands/arguments/EntityArgument.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/commands/arguments/EntityArgument.java
++++ b/src/main/java/net/minecraft/commands/arguments/EntityArgument.java
+@@ -0,0 +0,0 @@ public class EntityArgument implements ArgumentType<EntitySelector> {
+ 
+             stringreader.setCursor(suggestionsbuilder.getStart());
+             SharedSuggestionProvider icompletionprovider = (SharedSuggestionProvider) commandcontext.getSource();
+-            EntitySelectorParser argumentparserselector = new EntitySelectorParser(stringreader, icompletionprovider.hasPermission(2));
++            EntitySelectorParser argumentparserselector = new EntitySelectorParser(stringreader, icompletionprovider.hasPermission(2), true); // Paper
+ 
+             try {
+                 argumentparserselector.parse();
+diff --git a/src/main/java/net/minecraft/commands/arguments/selector/EntitySelectorParser.java b/src/main/java/net/minecraft/commands/arguments/selector/EntitySelectorParser.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/commands/arguments/selector/EntitySelectorParser.java
++++ b/src/main/java/net/minecraft/commands/arguments/selector/EntitySelectorParser.java
+@@ -0,0 +0,0 @@ public class EntitySelectorParser {
+     private boolean hasScores;
+     private boolean hasAdvancements;
+     private boolean usesSelectors;
++    public boolean parsingEntityArgumentSuggestions; // Paper - track when parsing EntityArgument suggestions
+ 
+     public EntitySelectorParser(StringReader reader) {
+         this(reader, true);
+     }
+ 
+     public EntitySelectorParser(StringReader reader, boolean atAllowed) {
++        // Paper start
++        this(reader, atAllowed, false);
++    }
++    public EntitySelectorParser(StringReader reader, boolean atAllowed, boolean parsingEntityArgumentSuggestions) {
++        this.parsingEntityArgumentSuggestions = parsingEntityArgumentSuggestions;
++        // Paper end
+         this.distance = MinMaxBounds.Doubles.ANY;
+         this.level = MinMaxBounds.Ints.ANY;
+         this.rotX = WrappedMinMaxBounds.ANY;
+diff --git a/src/main/java/net/minecraft/commands/arguments/selector/options/EntitySelectorOptions.java b/src/main/java/net/minecraft/commands/arguments/selector/options/EntitySelectorOptions.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/commands/arguments/selector/options/EntitySelectorOptions.java
++++ b/src/main/java/net/minecraft/commands/arguments/selector/options/EntitySelectorOptions.java
+@@ -0,0 +0,0 @@ public class EntitySelectorOptions {
+     public static final DynamicCommandExceptionType ERROR_ENTITY_TYPE_INVALID = new DynamicCommandExceptionType((entity) -> {
+         return new TranslatableComponent("argument.entity.options.type.invalid", entity);
+     });
++    // Paper start
++    public static final DynamicCommandExceptionType ERROR_ENTITY_TAG_INVALID = new DynamicCommandExceptionType((object) -> {
++        return io.papermc.paper.adventure.PaperAdventure
++            .asVanilla(net.kyori.adventure.text.Component
++                .text("Invalid or unknown entity type tag '" + object + "'")
++                .hoverEvent(net.kyori.adventure.text.event.HoverEvent
++                    .showText(net.kyori.adventure.text.Component
++                        .text("You can disable this error in 'paper.yml'")
++                    )
++                )
++            );
++    });
++    // Paper end
+ 
+     private static void register(String id, EntitySelectorOptions.Modifier handler, Predicate<EntitySelectorParser> condition, Component description) {
+         OPTIONS.put(id, new EntitySelectorOptions.Option(handler, condition, description));
+@@ -0,0 +0,0 @@ public class EntitySelectorOptions {
+ 
+                     if (reader.isTag()) {
+                         ResourceLocation resourceLocation = ResourceLocation.read(reader.getReader());
++                        // Paper start - throw error if invalid entity tag (only on suggestions to keep cmd success behavior)
++                        final net.minecraft.tags.Tag<EntityType<?>> tag;
++                        if (com.destroystokyo.paper.PaperConfig.fixTargetSelectorTagCompletion && reader.parsingEntityArgumentSuggestions) {
++                            tag = EntityTypeTags.getAllTags().getTag(resourceLocation);
++                        } else {
++                            tag = EntityTypeTags.getAllTags().getTagOrEmpty(resourceLocation);
++                        }
++                        if (tag == null) {
++                            reader.getReader().setCursor(i);
++                            throw ERROR_ENTITY_TAG_INVALID.createWithContext(reader.getReader(), resourceLocation.toString());
++                        }
++                        // Paper end
+                         reader.addPredicate((entity) -> {
+-                            return entity.getType().is(entity.getServer().getTags().getOrEmpty(Registry.ENTITY_TYPE_REGISTRY).getTagOrEmpty(resourceLocation)) != bl;
++                            return entity.getType().is(tag) != bl; // Paper
+                         });
+                     } else {
+                         ResourceLocation resourceLocation2 = ResourceLocation.read(reader.getReader());
