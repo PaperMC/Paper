@@ -38,6 +38,16 @@ import org.yaml.snakeyaml.reader.UnicodeReader;
  * Note that this implementation is not synchronized.
  */
 public class YamlConfiguration extends FileConfiguration {
+    /**
+     * @deprecated unused, not intended to be API
+     */
+    @Deprecated
+    protected static final String COMMENT_PREFIX = "# ";
+    /**
+     * @deprecated unused, not intended to be API
+     */
+    @Deprecated
+    protected static final String BLANK_CONFIG = "{}\n";
     private final DumperOptions yamlDumperOptions;
     private final LoaderOptions yamlLoaderOptions;
     private final YamlConstructor constructor;
