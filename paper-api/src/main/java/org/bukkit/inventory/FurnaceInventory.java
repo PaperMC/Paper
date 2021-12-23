@@ -53,6 +53,24 @@ public interface FurnaceInventory extends Inventory {
      */
     void setSmelting(@Nullable ItemStack stack);
 
+    // Paper start
+    /**
+     * Check if an item can be used as a fuel source in this furnace container
+     *
+     * @param item Item to check
+     * @return True if a valid fuel source
+     */
+    public boolean isFuel(@Nullable ItemStack item);
+
+    /**
+     * Check if an item can be smelted in this furnace container
+     *
+     * @param item Item to check
+     * @return True if can be smelt
+     */
+    public boolean canSmelt(@Nullable ItemStack item);
+    // Paper end
+
     @Override
     @Nullable
     Furnace getHolder();
