@@ -373,7 +373,7 @@ public abstract class FileConfigurationTest extends MemoryConfigurationTest {
         config.options().parseComments(true);
         config.loadFromString("key1: value1\nkey2: value2 # Test inline\nkey3: value3");
 
-        assertEquals(Arrays.asList(" Test inline"), config.getInlineComments("key2"));
+        assertEquals(Arrays.asList("Test inline"), config.getInlineComments("key2"));
     }
 
     @Test
@@ -384,7 +384,7 @@ public abstract class FileConfigurationTest extends MemoryConfigurationTest {
         config.set("key1", "value1");
         config.set("key2", "value2");
         config.set("key3", "value3");
-        config.setInlineComments("key2", Arrays.asList(" Test inline"));
+        config.setInlineComments("key2", Arrays.asList("Test inline"));
 
         String result = config.saveToString();
         String expected = "key1: value1\nkey2: value2 # Test inline\nkey3: value3\n";

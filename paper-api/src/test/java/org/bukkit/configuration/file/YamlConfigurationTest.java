@@ -16,15 +16,15 @@ public class YamlConfigurationTest extends FileConfigurationTest {
     @Override
     public List<String> getTestCommentInput() {
         List<String> comments = new ArrayList<>();
-        comments.add(" This is a sample");
-        comments.add(" header.");
-        comments.add(" Newline above should be commented.");
+        comments.add("This is a sample");
+        comments.add("header.");
+        comments.add("Newline above should be commented.");
         comments.add("");
         comments.add("");
         comments.add(null);
         comments.add(null);
-        comments.add(" Comment of first Key");
-        comments.add(" and a second line.");
+        comments.add("Comment of first Key");
+        comments.add("and a second line.");
         return comments;
     }
 
@@ -35,7 +35,7 @@ public class YamlConfigurationTest extends FileConfigurationTest {
 
     @Override
     public List<String> getTestHeaderComments() {
-        return Arrays.asList(" Header", " Second Line");
+        return Arrays.asList("Header", "Second Line");
     }
 
     @Override
@@ -45,7 +45,7 @@ public class YamlConfigurationTest extends FileConfigurationTest {
 
     @Override
     public List<String> getTestKeyComments() {
-        return Arrays.asList(" First key Comment", " Second Line");
+        return Arrays.asList("First key Comment", "Second Line");
     }
 
     @Override

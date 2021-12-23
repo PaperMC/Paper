@@ -204,7 +204,9 @@ public class YamlConfiguration extends FileConfiguration {
                 if (comment.getCommentType() == CommentType.BLANK_LINE) {
                     lines.add(null);
                 } else {
-                    lines.add(comment.getValue());
+                    String line = comment.getValue();
+                    line = line.startsWith(" ") ? line.substring(1) : line;
+                    lines.add(line);
                 }
             }
         }
@@ -217,7 +219,9 @@ public class YamlConfiguration extends FileConfiguration {
             if (comment == null) {
                 lines.add(new CommentLine(null, null, "", CommentType.BLANK_LINE));
             } else {
-                lines.add(new CommentLine(null, null, comment, commentType));
+                String line = comment;
+                line = line.isEmpty() ? line : " " + line;
+                lines.add(new CommentLine(null, null, line, commentType));
             }
         }
         return lines;
