@@ -1,0 +1,106 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: simpleauthority <jacob@algorithmjunkie.com>
+Date: Fri, 24 Dec 2021 14:04:23 -0800
+Subject: [PATCH] Add "/paper bugreport" command.
+
+This fulfills the feature request in issue #5347 and prefills datapacks, plugins, and the server version into the Paper bug report template.
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperCommand.java b/src/main/java/com/destroystokyo/paper/PaperCommand.java
+index c0d123bff1825366c30aadd3ad8a7fde68ef74e4..2c967c4a92be1d0ca5a5a061eb1a3763db167ca4 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperCommand.java
++++ b/src/main/java/com/destroystokyo/paper/PaperCommand.java
+@@ -11,12 +11,15 @@ import com.google.common.collect.Maps;
+ import com.google.gson.JsonObject;
+ import com.google.gson.internal.Streams;
+ import com.google.gson.stream.JsonWriter;
++import io.papermc.paper.datapack.Datapack;
+ import net.kyori.adventure.text.Component;
+ import net.kyori.adventure.text.ComponentLike;
+ import net.kyori.adventure.text.JoinConfiguration;
+ import net.kyori.adventure.text.TextComponent;
++import net.kyori.adventure.text.event.ClickEvent;
+ import net.kyori.adventure.text.format.NamedTextColor;
+ import net.kyori.adventure.text.format.TextColor;
++import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
+ import net.minecraft.core.Registry;
+ import net.minecraft.resources.ResourceLocation;
+ import net.minecraft.server.MCUtil;
+@@ -47,11 +50,14 @@ import org.bukkit.craftbukkit.entity.CraftPlayer;
+ import org.bukkit.craftbukkit.inventory.CraftItemStack;
+ import org.bukkit.entity.Player;
+ import org.bukkit.inventory.ItemStack;
++import org.bukkit.plugin.Plugin;
+ 
+ import java.io.File;
+ import java.io.FileOutputStream;
+ import java.io.PrintStream;
+ import java.io.StringWriter;
++import java.net.URLEncoder;
++import java.nio.charset.StandardCharsets;
+ import java.time.LocalDateTime;
+ import java.time.format.DateTimeFormatter;
+ import java.util.ArrayDeque;
+@@ -70,7 +76,8 @@ import java.util.stream.Collectors;
+ 
+ public class PaperCommand extends Command {
+     private static final String BASE_PERM = "bukkit.command.paper.";
+-    private static final ImmutableSet<String> SUBCOMMANDS = ImmutableSet.<String>builder().add("heap", "entity", "reload", "version", "debug", "chunkinfo", "fixlight", "syncloadinfo", "dumpitem", "mobcaps", "playermobcaps").build();
++    private static final String BUG_REPORT_URL = "https://github.com/simpleauthority/Paper/issues/new?labels=status%%3A+needs+triage%%2Ctype%%3A+bug&template=behavior-bug-or-plugin-incompatibility.yml&plugins_and_datapacks=%s&version=%s";
++    private static final ImmutableSet<String> SUBCOMMANDS = ImmutableSet.<String>builder().add("heap", "entity", "reload", "version", "debug", "chunkinfo", "fixlight", "syncloadinfo", "dumpitem", "mobcaps", "playermobcaps", "reportbug").build();
+ 
+     public PaperCommand(String name) {
+         super(name);
+@@ -209,6 +216,9 @@ public class PaperCommand extends Command {
+             case "playermobcaps":
+                 this.printPlayerMobcaps(sender, args);
+                 break;
++            case "reportbug":
++                this.printBugReportLink(sender, args);
++                break;
+             case "ver":
+                 if (!testPermission(sender, "version")) break; // "ver" needs a special check because it's an alias. All other commands are checked up before the switch statement (because they are present in the SUBCOMMANDS set)
+             case "version":
+@@ -394,6 +404,43 @@ public class PaperCommand extends Command {
+         ));
+     }
+ 
++    private void printBugReportLink(CommandSender sender, String[] args) {
++        StringBuilder pluginsAndDatapacksMessageBuilder = new StringBuilder("**Plugins**:\n");
++        Plugin[] plugins = Bukkit.getServer().getPluginManager().getPlugins();
++        if (plugins.length == 0) {
++            pluginsAndDatapacksMessageBuilder.append("None");
++        } else {
++            for (Plugin plugin : plugins) {
++                pluginsAndDatapacksMessageBuilder
++                        .append(String.format("%s (%s)", plugin.getName(), plugin.isEnabled() ? "enabled" : "disabled"))
++                        .append("\n");
++            }
++        }
++
++        pluginsAndDatapacksMessageBuilder.append("\n\n**Datapacks**:\n");
++        Collection<Datapack> datapacks = Bukkit.getServer().getDatapackManager().getPacks();
++        if (datapacks.size() == 0) {
++            pluginsAndDatapacksMessageBuilder.append("None");
++        } else {
++            for (Datapack datapack : datapacks) {
++                pluginsAndDatapacksMessageBuilder
++                        .append(String.format("%s (%s)", datapack.getName(), datapack.isEnabled() ? "enabled" : "disabled"))
++                        .append("\n");
++            }
++        }
++
++        String pluginsAndDatapacksMessage = URLEncoder.encode(pluginsAndDatapacksMessageBuilder.toString(), StandardCharsets.UTF_8);
++        String versionMessage = URLEncoder.encode(PlainTextComponentSerializer.plainText().serialize(Bukkit.getUnsafe().getVersionFetcher().getVersionMessage(Bukkit.getVersion())), StandardCharsets.UTF_8);
++        String formattedBugReportUrl = String.format(BUG_REPORT_URL, pluginsAndDatapacksMessage, versionMessage);
++
++        if (sender instanceof Player player) {
++            player.sendMessage(Component.text("Click here to make a bug report!", NamedTextColor.GREEN).clickEvent(ClickEvent.openUrl(formattedBugReportUrl)));
++        } else {
++            sender.sendMessage(Component.text("Use the following link to make a bug report:", NamedTextColor.GREEN));
++            sender.sendMessage(Component.text(formattedBugReportUrl, NamedTextColor.GOLD));
++        }
++    }
++
+     private Component buildMobcapsComponent(final ToIntFunction<MobCategory> countGetter, final ToIntFunction<MobCategory> limitGetter) {
+         return MOB_CATEGORY_COLORS.entrySet().stream()
+             .map(entry -> {
