@@ -1,11 +1,14 @@
 package org.bukkit;
 
 import com.google.common.collect.Maps;
+import com.google.common.collect.Multimap;
 import java.lang.reflect.Constructor;
 import java.util.Locale;
 import java.util.Map;
 import java.util.function.Consumer;
 import org.apache.commons.lang.Validate;
+import org.bukkit.attribute.Attribute;
+import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.block.data.Ageable;
 import org.bukkit.block.data.AnaloguePowerable;
 import org.bukkit.block.data.Bisected;
@@ -9756,5 +9759,25 @@ public enum Material implements Keyed {
                 return EquipmentSlot.HAND;
             // </editor-fold>
         }
+    }
+
+    /**
+     * Return an immutable copy of all default {@link Attribute}s and their
+     * {@link AttributeModifier}s for a given {@link EquipmentSlot}.
+     *
+     * Default attributes are those that are always preset on some items, such
+     * as the attack damage on weapons or the armor value on armor.
+     *
+     * Only available when {@link #isItem()} is true.
+     *
+     * @param slot the {@link EquipmentSlot} to check
+     * @return the immutable {@link Multimap} with the respective default
+     * Attributes and modifiers, or an empty map if no attributes are set.
+     */
+    @NotNull
+    public Multimap<Attribute, AttributeModifier> getDefaultAttributeModifiers(@NotNull EquipmentSlot slot) {
+        Validate.isTrue(isItem(), "The Material is not an item!");
+
+        return Bukkit.getUnsafe().getDefaultAttributeModifiers(this, slot);
     }
 }
