@@ -4,7 +4,7 @@ import com.google.common.base.Preconditions;
 import java.util.ArrayList;
 import java.util.List;
 import org.bukkit.Material;
-import org.bukkit.event.entity.VillagerReplenishTradeEvent;
+import org.bukkit.entity.Villager;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.NumberConversions;
 import org.jetbrains.annotations.NotNull;
@@ -12,16 +12,16 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents a merchant's trade.
- *
+ * <p>
  * Trades can take one or two ingredients, and provide one result. The
  * ingredients' ItemStack amounts are respected in the trade.
- * <br>
- * A trade has a limited number of uses, after which the trade can no longer be
- * used, unless the player uses a different trade, which will cause its maximum
- * uses to increase.
- * <br>
+ * <p>
+ * A trade has a maximum number of uses. A {@link Villager} may periodically
+ * replenish its trades by resetting the {@link #getUses uses} of its merchant
+ * recipes to <code>0</code>, allowing them to be used again.
+ * <p>
  * A trade may or may not reward experience for being completed.
- * <br>
+ * <p>
  * During trades, the {@link MerchantRecipe} dynamically adjusts the amount of
  * its first ingredient based on the following criteria:
  * <ul>
@@ -45,8 +45,6 @@ import org.jetbrains.annotations.Nullable;
  * integer value greater than or equal to 0, and the special price, and then
  * constraining the resulting value between <code>1</code> and the item stack's
  * {@link ItemStack#getMaxStackSize() maximum stack size}.
- *
- * @see org.bukkit.event.entity.VillagerReplenishTradeEvent
  */
 public class MerchantRecipe implements Recipe {
 
@@ -159,20 +157,18 @@ public class MerchantRecipe implements Recipe {
     }
 
     /**
-     * Get the value of the demand for the item in {@link #getResult()}.
+     * Get the demand for this trade.
      *
-     * @return the demand for the item
+     * @return the demand
      */
     public int getDemand() {
         return demand;
     }
 
     /**
-     * Set the value of the demand for the item in {@link #getResult()}.
-     * <br>
-     * <b>Note: </b> This value is updated when the item is purchase
+     * Set the demand for this trade.
      *
-     * @param demand demand value
+     * @param demand the new demand
      */
     public void setDemand(int demand) {
         this.demand = demand;
@@ -180,10 +176,6 @@ public class MerchantRecipe implements Recipe {
 
     /**
      * Get the special price for this trade.
-     * <br>
-     * <b>Note: </b> This value can be updated by
-     * {@link VillagerReplenishTradeEvent#getBonus()} or by
-     * {@link PotionEffectType#HERO_OF_THE_VILLAGE}
      *
      * @return special price value
      */
@@ -192,11 +184,7 @@ public class MerchantRecipe implements Recipe {
     }
 
     /**
-     * Set the special value for this trade.
-     * <br>
-     * <b>Note: </b> This value can be updated by
-     * {@link VillagerReplenishTradeEvent#getBonus()} or by
-     * {@link PotionEffectType#HERO_OF_THE_VILLAGE}
+     * Set the special price for this trade.
      *
      * @param specialPrice special price value
      */
@@ -224,9 +212,6 @@ public class MerchantRecipe implements Recipe {
 
     /**
      * Get the maximum number of uses this trade has.
-     * <br>
-     * The maximum uses of this trade may increase when a player trades with the
-     * owning merchant.
      *
      * @return the maximum number of uses
      */
@@ -282,7 +267,7 @@ public class MerchantRecipe implements Recipe {
     }
 
     /**
-     * Gets the additive price multiplier for the cost of this trade.
+     * Gets the price multiplier for the cost of this trade.
      *
      * @return price multiplier
      */
@@ -291,7 +276,7 @@ public class MerchantRecipe implements Recipe {
     }
 
     /**
-     * Sets the additive price multiplier for the cost of this trade.
+     * Sets the price multiplier for the cost of this trade.
      *
      * @param priceMultiplier new price multiplier
      */

@@ -1,16 +1,18 @@
 package org.bukkit.event.entity;
 
 import org.bukkit.entity.AbstractVillager;
+import org.bukkit.entity.Villager;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.MerchantRecipe;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Called when a villager's trade's maximum uses is increased, due to a player's
- * trade.
- *
- * @see MerchantRecipe#getMaxUses()
+ * Called when a {@link Villager} is about to restock one of its trades.
+ * <p>
+ * If this event passes, the villager will reset the
+ * {@link MerchantRecipe#getUses() uses} of the affected {@link #getRecipe()
+ * MerchantRecipe} to <code>0</code>.
  */
 public class VillagerReplenishTradeEvent extends EntityEvent implements Cancellable {
 
@@ -18,12 +20,10 @@ public class VillagerReplenishTradeEvent extends EntityEvent implements Cancella
     private boolean cancelled;
     //
     private MerchantRecipe recipe;
-    private int bonus;
 
-    public VillagerReplenishTradeEvent(@NotNull AbstractVillager what, @NotNull MerchantRecipe recipe, int bonus) {
+    public VillagerReplenishTradeEvent(@NotNull AbstractVillager what, @NotNull MerchantRecipe recipe) {
         super(what);
         this.recipe = recipe;
-        this.bonus = bonus;
     }
 
     /**
@@ -46,23 +46,26 @@ public class VillagerReplenishTradeEvent extends EntityEvent implements Cancella
     }
 
     /**
-     * Get the bonus uses added. The maximum uses of the recipe will be
-     * increased by this number.
+     * Get the bonus uses added.
      *
      * @return the extra uses added
+     * @deprecated MC 1.14 has changed how villagers restock their trades. Use
+     * {@link MerchantRecipe#getUses()}.
      */
+    @Deprecated
     public int getBonus() {
-        return bonus;
+        return recipe.getUses();
     }
 
     /**
      * Set the bonus uses added.
      *
      * @param bonus the extra uses added
-     * @see VillagerReplenishTradeEvent#getBonus()
+     * @deprecated MC 1.14 has changed how villagers restock their trades. This
+     * has no effect anymore.
      */
+    @Deprecated
     public void setBonus(int bonus) {
-        this.bonus = bonus;
     }
 
     @Override
