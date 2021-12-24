@@ -7,6 +7,7 @@ import java.util.List;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.attribute.AttributeModifier;
+import org.bukkit.inventory.EquipmentSlot;
 
 public class CraftAttributeInstance implements AttributeInstance {
 
@@ -71,5 +72,9 @@ public class CraftAttributeInstance implements AttributeInstance {
 
     public static AttributeModifier convert(net.minecraft.world.entity.ai.attributes.AttributeModifier nms) {
         return new AttributeModifier(nms.getId(), nms.getName(), nms.getAmount(), AttributeModifier.Operation.values()[nms.getOperation().ordinal()]);
+    }
+
+    public static AttributeModifier convert(net.minecraft.world.entity.ai.attributes.AttributeModifier nms, EquipmentSlot slot) {
+        return new AttributeModifier(nms.getId(), nms.getName(), nms.getAmount(), AttributeModifier.Operation.values()[nms.getOperation().ordinal()], slot);
     }
 }
