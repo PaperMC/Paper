@@ -25,6 +25,18 @@ dependencies {
     testImplementation("org.ow2.asm:asm-tree:7.3.1")
 }
 
+configurations {
+    val outgoing = arrayOf(runtimeElements, apiElements, named("sourcesElements"), named("javadocElements"))
+    for (config in outgoing) {
+        config {
+            outgoing {
+                capability("${project.group}:${project.name}:${project.version}")
+                capability("com.destroystokyo.paper:paper-mojangapi:${project.version}")
+            }
+        }
+    }
+}
+
 configure<PublishingExtension> {
     publications.create<MavenPublication>("maven") {
         from(components["java"])
