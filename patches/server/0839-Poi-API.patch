@@ -143,11 +143,11 @@ index 0000000000000000000000000000000000000000..6d8874bf20ca4f05786e81eeb5a3e650
 +        return PoiType.getByKey(NamespacedKey.minecraft(type.getName()));
 +    }
 +}
-diff --git a/src/main/java/io/papermc/paper/world/poi/PaperPoiSRecord.java b/src/main/java/io/papermc/paper/world/poi/PaperPoiSRecord.java
+diff --git a/src/main/java/io/papermc/paper/world/poi/PaperPoiRecord.java b/src/main/java/io/papermc/paper/world/poi/PaperPoiRecord.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..90236499f44535d6fc7da498592ea945d9a762fd
+index 0000000000000000000000000000000000000000..a5d4271bdb6d11c67a53158cf095924acf63dc47
 --- /dev/null
-+++ b/src/main/java/io/papermc/paper/world/poi/PaperPoiSRecord.java
++++ b/src/main/java/io/papermc/paper/world/poi/PaperPoiRecord.java
 @@ -0,0 +1,33 @@
 +package io.papermc.paper.world.poi;
 +
@@ -156,12 +156,12 @@ index 0000000000000000000000000000000000000000..90236499f44535d6fc7da498592ea945
 +import net.minecraft.world.entity.ai.village.poi.PoiRecord;
 +import org.bukkit.Location;
 +
-+public class PaperPoiSRecord implements RegisteredPoi {
++public class PaperPoiRecord implements RegisteredPoi {
 +
 +    private final ServerLevel level;
 +    private final PoiRecord record;
 +
-+    public PaperPoiSRecord(ServerLevel level, PoiRecord record) {
++    public PaperPoiRecord(ServerLevel level, PoiRecord record) {
 +        this.level = level;
 +        this.record = record;
 +    }
@@ -183,133 +183,26 @@ index 0000000000000000000000000000000000000000..90236499f44535d6fc7da498592ea945
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/world/entity/ai/village/poi/PoiRecord.java b/src/main/java/net/minecraft/world/entity/ai/village/poi/PoiRecord.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..e52674f60d1cd9799c62868f1636e91db4a654f5
---- /dev/null
+index c33670ce22cd59cf21ea03d2dcb1cb24ed9c0466..185372d35505acbdd80ab8e930cfdd1e78a9c8d3 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/village/poi/PoiRecord.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/village/poi/PoiRecord.java
-@@ -0,0 +1,109 @@
-+//
-+// Source code recreated from a .class file by IntelliJ IDEA
-+// (powered by FernFlower decompiler)
-+//
-+
-+package net.minecraft.world.entity.ai.village.poi;
-+
-+import com.mojang.serialization.Codec;
-+import com.mojang.serialization.codecs.RecordCodecBuilder;
-+import java.util.Objects;
-+
-+import io.papermc.paper.world.poi.PaperPoiSRecord;
-+import net.minecraft.core.BlockPos;
-+import net.minecraft.core.Registry;
-+import net.minecraft.util.VisibleForDebug;
-+
-+public class PoiRecord {
-+    private final BlockPos pos;
-+    private final PoiType poiType;
-+    private int freeTickets;
-+    private final Runnable setDirty;
-+
-+    public static Codec<PoiRecord> codec(Runnable updateListener) {
-+        return RecordCodecBuilder.create((instance) -> {
-+            return instance.group(BlockPos.CODEC.fieldOf("pos").forGetter((poi) -> {
-+                return poi.pos;
-+            }), Registry.POINT_OF_INTEREST_TYPE.byNameCodec().fieldOf("type").forGetter((poi) -> {
-+                return poi.poiType;
-+            }), Codec.INT.fieldOf("free_tickets").orElse(0).forGetter((poi) -> {
-+                return poi.freeTickets;
-+            }), RecordCodecBuilder.point(updateListener)).apply(instance, PoiRecord::new);
-+        });
-+    }
-+
-+    private PoiRecord(BlockPos pos, PoiType type, int freeTickets, Runnable updateListener) {
-+        this.pos = pos.immutable();
-+        this.poiType = type;
-+        this.freeTickets = freeTickets;
-+        this.setDirty = updateListener;
-+    }
-+
-+    public PoiRecord(BlockPos pos, PoiType type, Runnable updateListener) {
-+        this(pos, type, type.getMaxTickets(), updateListener);
-+    }
-+
-+    /** @deprecated */
-+    @Deprecated
-+    @VisibleForDebug
-+    public int getFreeTickets() {
-+        return this.freeTickets;
-+    }
-+
-+    protected boolean acquireTicket() {
-+        if (this.freeTickets <= 0) {
-+            return false;
-+        } else {
-+            --this.freeTickets;
-+            this.setDirty.run();
-+            return true;
-+        }
-+    }
-+
-+    protected boolean releaseTicket() {
-+        if (this.freeTickets >= this.poiType.getMaxTickets()) {
-+            return false;
-+        } else {
-+            ++this.freeTickets;
-+            this.setDirty.run();
-+            return true;
-+        }
-+    }
-+
-+    public boolean hasSpace() {
-+        return this.freeTickets > 0;
-+    }
-+
-+    public boolean isOccupied() {
-+        return this.freeTickets != this.poiType.getMaxTickets();
-+    }
-+
-+    public BlockPos getPos() {
-+        return this.pos;
-+    }
-+
-+    public PoiType getPoiType() {
-+        return this.poiType;
-+    }
-+
-+    @Override
-+    public boolean equals(Object object) {
-+        if (this == object) {
-+            return true;
-+        } else {
-+            return object != null && this.getClass() == object.getClass() ? Objects.equals(this.pos, ((PoiRecord)object).pos) : false;
-+        }
-+    }
-+
-+    @Override
-+    public int hashCode() {
-+        return this.pos.hashCode();
-+    }
+@@ -92,4 +92,16 @@ public class PoiRecord {
+     public int hashCode() {
+         return this.pos.hashCode();
+     }
 +
 +    // Paper Start - POI API
-+    private io.papermc.paper.world.poi.RegisteredPoi paperPoi;
++    private @org.jetbrains.annotations.Nullable io.papermc.paper.world.poi.RegisteredPoi paperPoi;
++
 +    public io.papermc.paper.world.poi.RegisteredPoi getPaperPoi(net.minecraft.server.level.ServerLevel level) {
-+        return new PaperPoiSRecord(level, this);
++        if (paperPoi == null) {
++            paperPoi = new io.papermc.paper.world.poi.PaperPoiRecord(level, this);
++        }
++
++        return paperPoi;
 +    }
 +    // Paper End - POI API
-+}
-diff --git a/src/main/java/net/minecraft/world/entity/ai/village/poi/PoiSection.java b/src/main/java/net/minecraft/world/entity/ai/village/poi/PoiSection.java
-index de94f25792261c6c89986ad3dee3255c2a89357b..e33dcc8fb783b07a97df6a2235dcd046f5691503 100644
---- a/src/main/java/net/minecraft/world/entity/ai/village/poi/PoiSection.java
-+++ b/src/main/java/net/minecraft/world/entity/ai/village/poi/PoiSection.java
-@@ -128,7 +128,7 @@ public class PoiSection {
-         return this.getPoiRecord(pos).map(PoiRecord::getPoiType);
-     }
- 
--    private Optional<PoiRecord> getPoiRecord(BlockPos pos) {
-+    public Optional<PoiRecord> getPoiRecord(BlockPos pos) {
-         return Optional.ofNullable(this.records.get(SectionPos.sectionRelativePos(pos)));
-     }
- 
+ }
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 index ac41bc23d2f7e16bbacdc9b33fcf6c0d706fa023..5026db012f775913558b32b57eeed214826a260c 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
