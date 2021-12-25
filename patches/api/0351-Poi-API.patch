@@ -1,0 +1,190 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Owen1212055 <23108066+Owen1212055@users.noreply.github.com>
+Date: Fri, 24 Dec 2021 23:24:03 -0500
+Subject: [PATCH] Poi API
+
+
+diff --git a/src/main/java/io/papermc/paper/world/poi/PoiManager.java b/src/main/java/io/papermc/paper/world/poi/PoiManager.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..d3a4972d375569abda103d82ed2d6e1842ca7d3d
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/world/poi/PoiManager.java
+@@ -0,0 +1,47 @@
++package io.papermc.paper.world.poi;
++
++import org.bukkit.Chunk;
++import org.bukkit.Location;
++import org.bukkit.block.data.BlockData;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++import java.util.Collection;
++import java.util.Set;
++import java.util.function.Predicate;
++
++public interface PoiManager {
++
++    @Nullable
++    PoiType getPoiType(BlockData blockData);
++
++    @NotNull
++    Set<BlockData> getBlockTypes(@NotNull PoiType poiType);
++
++    int getMaximumTickets(@NotNull PoiType poiType);
++
++    int getPathFindMinDistance(@NotNull PoiType poiType);
++
++    @NotNull
++    default Collection<RegisteredPoi> getPoisInChunk(@NotNull Location location) {
++        return getPoisInChunk(location.getBlockX() >> 4, location.getBlockZ() >> 4);
++    }
++
++    @NotNull
++    default Collection<RegisteredPoi> getPoisInChunk(@NotNull Chunk chunk) {
++        return getPoisInChunk(chunk.getX(), chunk.getZ());
++    }
++
++    @NotNull
++    Collection<RegisteredPoi> getPoisInChunk(int x, int z);
++
++    @NotNull
++    Collection<RegisteredPoi> getPoisInRange(@NotNull Location location, int range);
++
++    @Nullable
++    RegisteredPoi getClosestPoi(@NotNull Location location, int range, @NotNull Predicate<PoiType> poiTypePredicate, @NotNull Predicate<Location> locationPredicate);
++
++    @Nullable
++    RegisteredPoi getPoi(@NotNull Location location);
++
++}
+diff --git a/src/main/java/io/papermc/paper/world/poi/PoiType.java b/src/main/java/io/papermc/paper/world/poi/PoiType.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..9215458d823dcad9af867f0b5f74b86c26d2ce00
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/world/poi/PoiType.java
+@@ -0,0 +1,66 @@
++package io.papermc.paper.world.poi;
++
++import org.bukkit.Keyed;
++import org.bukkit.NamespacedKey;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++import java.util.Collection;
++import java.util.HashMap;
++import java.util.Map;
++
++public final class PoiType implements Keyed {
++
++    public static final PoiType UNEMPLOYED = register("unemployed");
++    public static final PoiType ARMORER = register("armorer");
++    public static final PoiType BUTCHER = register("butcher");
++    public static final PoiType CARTOGRAPHER = register("cartographer");
++    public static final PoiType CLERIC = register("cleric");
++    public static final PoiType FARMER = register("farmer");
++    public static final PoiType FISHERMAN = register("fisherman");
++    public static final PoiType FLETCHER = register("fletcher");
++    public static final PoiType LEATHERWORKER = register("leatherworker");
++    public static final PoiType LIBRARIAN = register("librarian");
++    public static final PoiType MASON = register("mason");
++    public static final PoiType NITWIT = register("nitwit");
++    public static final PoiType SHEPHERD = register("shepherd");
++    public static final PoiType TOOLSMITH = register("toolsmith");
++    public static final PoiType WEAPONSMITH = register("weaponsmith");
++    public static final PoiType HOME = register("home");
++    public static final PoiType MEETING = register("meeting");
++    public static final PoiType BEEHIVE = register("beehive");
++    public static final PoiType BEE_NEST = register("bee_nest");
++    public static final PoiType NETHER_PORTAL = register("nether_portal");
++    public static final PoiType LODESTONE = register("lodestone");
++    public static final PoiType LIGHTNING_ROD = register("lightning_rod");
++
++    private static final Map<NamespacedKey, PoiType> REGISTRY = new HashMap<>();
++
++    private static PoiType register(String key) {
++        PoiType type = new PoiType(NamespacedKey.minecraft(key));
++        REGISTRY.put(type.key, type);
++
++        return type;
++    }
++
++    private final NamespacedKey key;
++
++    public PoiType(NamespacedKey key) {
++        this.key = key;
++    }
++
++    @Override
++    public @NotNull NamespacedKey getKey() {
++        return key;
++    }
++
++    @Nullable
++    public static PoiType getByKey(@NotNull NamespacedKey key) {
++        return REGISTRY.get(key);
++    }
++
++    @NotNull
++    public static Collection<PoiType> values() {
++        return REGISTRY.values();
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/world/poi/RegisteredPoi.java b/src/main/java/io/papermc/paper/world/poi/RegisteredPoi.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..5f0ec34fedc32546a8f177b6b9d869cc872e7fad
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/world/poi/RegisteredPoi.java
+@@ -0,0 +1,13 @@
++package io.papermc.paper.world.poi;
++
++import org.bukkit.Location;
++
++public interface RegisteredPoi {
++
++    Location getLocation();
++
++    PoiType getType();
++
++    int getTickets();
++
++}
+diff --git a/src/main/java/org/bukkit/Registry.java b/src/main/java/org/bukkit/Registry.java
+index a696fcaffa03af9e6c92e2ef3e12b38eb59e5db4..060d3f0f09efae1047d12d0886313657261f502e 100644
+--- a/src/main/java/org/bukkit/Registry.java
++++ b/src/main/java/org/bukkit/Registry.java
+@@ -189,6 +189,22 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
+             return GameEvent.getByKey(key);
+         }
+     };
++    // Paper Start - Poi Types
++    Registry<io.papermc.paper.world.poi.PoiType> POI_TYPES = new Registry<>() {
++
++        @NotNull
++        @Override
++        public Iterator iterator() {
++            return io.papermc.paper.world.poi.PoiType.values().iterator();
++        }
++
++        @Nullable
++        @Override
++        public io.papermc.paper.world.poi.PoiType get(@NotNull NamespacedKey key) {
++            return io.papermc.paper.world.poi.PoiType.getByKey(key);
++        }
++    };
++    // Paper End - Poi Types
+ 
+     /**
+      * Get the object by its key.
+diff --git a/src/main/java/org/bukkit/World.java b/src/main/java/org/bukkit/World.java
+index 1f8a51897d9de00f0004ab1de479198390483f7d..8ea1f3e2cd833d3828a61ef2e8bd2b5463136772 100644
+--- a/src/main/java/org/bukkit/World.java
++++ b/src/main/java/org/bukkit/World.java
+@@ -82,6 +82,8 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
+      * @return whether a line of sight exists between {@code from} and {@code to}
+      */
+     public boolean lineOfSightExists(@NotNull Location from, @NotNull Location to);
++
++    io.papermc.paper.world.poi.PoiManager getPoiManager();
+     // Paper end
+ 
+     /**
