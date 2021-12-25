@@ -25,21 +25,55 @@ index cd918cec00d8202252af0d20b1a8891371c538e3..6d02910a903f2c6352202c49149172e3
      public static final class PacketLimit {
          public final double packetLimitInterval;
          public final double maxPacketRate;
+diff --git a/src/main/java/net/minecraft/commands/CommandSourceStack.java b/src/main/java/net/minecraft/commands/CommandSourceStack.java
+index cb0045fc4ddd738c45dee89d57b213a633b9a136..098182d2426a25cef0bc285356bc346db0af8172 100644
+--- a/src/main/java/net/minecraft/commands/CommandSourceStack.java
++++ b/src/main/java/net/minecraft/commands/CommandSourceStack.java
+@@ -322,4 +322,20 @@ public class CommandSourceStack implements SharedSuggestionProvider, com.destroy
+         return this.source.getBukkitSender(this);
+     }
+     // CraftBukkit end
++    // Paper start - override getSelectedEntities
++    @Override
++    public Collection<String> getSelectedEntities() {
++        if (com.destroystokyo.paper.PaperConfig.fixTargetSelectorTagCompletion && this.source instanceof ServerPlayer player) {
++            double pickDistance = player.gameMode.getGameModeForPlayer().isCreative() ? 5.0F : 4.5F;
++            Vec3 min = player.getEyePosition(1.0F);
++            Vec3 viewVector = player.getViewVector(1.0F);
++            Vec3 max = min.add(viewVector.x * pickDistance, viewVector.y * pickDistance, viewVector.z * pickDistance);
++            net.minecraft.world.phys.AABB aabb = player.getBoundingBox().expandTowards(viewVector.scale(pickDistance)).inflate(1.0D, 1.0D, 1.0D);
++            pickDistance = player.gameMode.getGameModeForPlayer().isCreative() ? 6.0F : pickDistance;
++            net.minecraft.world.phys.EntityHitResult hitResult = net.minecraft.world.entity.projectile.ProjectileUtil.getEntityHitResult(player, min, max, aabb, (e) -> !e.isSpectator() && e.isPickable(), pickDistance);
++            return hitResult != null ? java.util.Collections.singletonList(hitResult.getEntity().getStringUUID()) : SharedSuggestionProvider.super.getSelectedEntities();
++        }
++        return SharedSuggestionProvider.super.getSelectedEntities();
++    }
++    // Paper end
+ }
 diff --git a/src/main/java/net/minecraft/commands/Commands.java b/src/main/java/net/minecraft/commands/Commands.java
-index f6b73f8c6638ddf79e45042f5c8902ea1f271f5c..78603232b62549427401f9d5217d083405cb2659 100644
+index f6b73f8c6638ddf79e45042f5c8902ea1f271f5c..1617437515590a32c42687d290dd11bc8fa8edf5 100644
 --- a/src/main/java/net/minecraft/commands/Commands.java
 +++ b/src/main/java/net/minecraft/commands/Commands.java
-@@ -452,6 +452,11 @@ public class Commands {
-     }
+@@ -407,6 +407,7 @@ public class Commands {
+     private void fillUsableCommands(CommandNode<CommandSourceStack> tree, CommandNode<SharedSuggestionProvider> result, CommandSourceStack source, Map<CommandNode<CommandSourceStack>, CommandNode<SharedSuggestionProvider>> resultNodes) {
+         Iterator iterator = tree.getChildren().iterator();
  
-     public static <T> RequiredArgumentBuilder<CommandSourceStack, T> argument(String name, ArgumentType<T> type) {
-+        // Paper start
-+        if (com.destroystokyo.paper.PaperConfig.fixTargetSelectorTagCompletion && type.getClass() == net.minecraft.commands.arguments.EntityArgument.class) {
-+            return RequiredArgumentBuilder.<CommandSourceStack, T>argument(name, type).suggests(type::listSuggestions);
-+        }
-+        // Paper end
-         return RequiredArgumentBuilder.argument(name, type);
-     }
++        boolean registeredAskServerSuggestionsForTree = false; // Paper - tell clients to ask server for suggestions for EntityArguments
+         while (iterator.hasNext()) {
+             CommandNode<CommandSourceStack> commandnode2 = (CommandNode) iterator.next();
+             if ( !org.spigotmc.SpigotConfig.sendNamespaced && commandnode2.getName().contains( ":" ) ) continue; // Spigot
+@@ -428,6 +429,12 @@ public class Commands {
+ 
+                     if (requiredargumentbuilder.getSuggestionsProvider() != null) {
+                         requiredargumentbuilder.suggests(SuggestionProviders.safelySwap(requiredargumentbuilder.getSuggestionsProvider()));
++                        // Paper start - tell clients to ask server for suggestions for EntityArguments
++                        registeredAskServerSuggestionsForTree = requiredargumentbuilder.getSuggestionsProvider() == net.minecraft.commands.synchronization.SuggestionProviders.ASK_SERVER;
++                    } else if (com.destroystokyo.paper.PaperConfig.fixTargetSelectorTagCompletion && !registeredAskServerSuggestionsForTree && requiredargumentbuilder.getType() instanceof net.minecraft.commands.arguments.EntityArgument) {
++                        requiredargumentbuilder.suggests(requiredargumentbuilder.getType()::listSuggestions);
++                        registeredAskServerSuggestionsForTree = true; // You can only
++                        // Paper end - tell clients to ask server for suggestions for EntityArguments
+                     }
+                 }
  
 diff --git a/src/main/java/net/minecraft/commands/arguments/EntityArgument.java b/src/main/java/net/minecraft/commands/arguments/EntityArgument.java
 index 1f3076e59bac23d428c747ae12619e4b4e5fdd5a..1d23d05d7028c5f820f172cc54153f56848e1d05 100644
