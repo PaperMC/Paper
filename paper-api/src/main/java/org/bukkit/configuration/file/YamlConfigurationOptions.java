@@ -11,6 +11,7 @@ import org.jetbrains.annotations.Nullable;
  */
 public class YamlConfigurationOptions extends FileConfigurationOptions {
     private int indent = 2;
+    private int width = 80;
 
     protected YamlConfigurationOptions(@NotNull YamlConfiguration configuration) {
         super(configuration);
@@ -98,6 +99,27 @@ public class YamlConfigurationOptions extends FileConfigurationOptions {
         Validate.isTrue(value <= 9, "Indent cannot be greater than 9 characters");
 
         this.indent = value;
+        return this;
+    }
+
+    /**
+     * Gets how long a line can be, before it gets split.
+     *
+     * @return How the max line width
+     */
+    public int width() {
+        return width;
+    }
+
+    /**
+     * Sets how long a line can be, before it gets split.
+     *
+     * @param value New width
+     * @return This object, for chaining
+     */
+    @NotNull
+    public YamlConfigurationOptions width(int value) {
+        this.width = value;
         return this;
     }
 }

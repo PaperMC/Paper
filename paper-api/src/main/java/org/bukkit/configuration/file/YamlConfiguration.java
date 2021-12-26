@@ -71,6 +71,7 @@ public class YamlConfiguration extends FileConfiguration {
     @Override
     public String saveToString() {
         yamlDumperOptions.setIndent(options().indent());
+        yamlDumperOptions.setWidth(options().width());
         yamlDumperOptions.setProcessComments(options().parseComments());
 
         MappingNode node = toNodeTree(this);
