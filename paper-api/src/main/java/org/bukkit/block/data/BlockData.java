@@ -295,4 +295,14 @@ public interface BlockData extends Cloneable {
      */
     float getDestroySpeed(@NotNull ItemStack itemStack, boolean considerEnchants);
     // Paper end - destroy speed API
+
+    // Paper start - Tick API
+    /**
+     * Gets if this block is ticked randomly in the world.
+     * The blocks current state may change this value.
+     *
+     * @return is ticked randomly
+     */
+    boolean isRandomlyTicked();
+    // Paper end - Tick API
 }

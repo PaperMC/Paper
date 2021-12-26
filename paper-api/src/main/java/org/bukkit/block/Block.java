@@ -593,6 +593,41 @@ public interface Block extends Metadatable, Translatable, net.kyori.adventure.tr
      * @return true if the block was destroyed
      */
     boolean breakNaturally(@NotNull ItemStack tool, boolean triggerEffect, boolean dropExperience);
+
+    /**
+     * Causes the block to be ticked, this is different from {@link Block#randomTick()},
+     * in that it is usually scheduled to occur, for example
+     * redstone components being activated, sand falling, etc.
+     * <p>
+     * This method may directly fire events relating to block ticking.
+     *
+     * @see #fluidTick()
+     */
+    void tick();
+
+    /**
+     * Causes the fluid to be ticked, this is different from {@link Block#randomTick()},
+     * in that it is usually scheduled to occur, for example
+     * causing waterlogged blocks to spread.
+     * <p>
+     * This method may directly fire events relating to fluid ticking.
+     *
+     * @see #tick()
+     */
+    void fluidTick();
+
+    /**
+     * Causes the block to be ticked randomly.
+     * This has a chance to execute naturally if {@link BlockData#isRandomlyTicked()} is true.
+     * <p>
+     * For certain blocks, this behavior may be the same as {@link Block#tick()}.
+     * <p>
+     * This method may directly fire events relating to block random ticking.
+     *
+     * @see #tick()
+     * @see #fluidTick()
+     */
+    void randomTick();
     // Paper end
 
     /**
