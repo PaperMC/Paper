@@ -1,0 +1,63 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Owen1212055 <23108066+Owen1212055@users.noreply.github.com>
+Date: Sun, 26 Dec 2021 00:22:36 -0500
+Subject: [PATCH] Sleep Message API
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 5a5db15493cd9b83815c36487c2f38cb8ac76f3a..4746263918a61c53a22248a2e67b2a3755681c82 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -1019,4 +1019,14 @@ public class PaperWorldConfig {
+     private void minBlockLightForMobSpawning() {
+         this.maxBlockLightForMonsterSpawning = getInt("monster-spawn-max-light-level", maxBlockLightForMonsterSpawning);
+     }
++
++    public boolean skippingNightMessage = true;
++    private void skippingNightMessage() {
++        this.skippingNightMessage = getBoolean("sleep-skipping-night-message", skippingNightMessage);
++    }
++
++    public boolean playersSleepingMessage = true;
++    private void playersSleepingMessage() {
++        this.playersSleepingMessage = getBoolean("sleep-players-sleeping-message", playersSleepingMessage);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
+index 28f605c3daa969c1a54745e552d55ecb874120a9..86843a5a3fd3b53e0b0078cfd70c5c333d60310f 100644
+--- a/src/main/java/net/minecraft/server/level/ServerLevel.java
++++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
+@@ -898,18 +898,32 @@ public class ServerLevel extends Level implements WorldGenLevel {
+                 int i = this.getGameRules().getInt(GameRules.RULE_PLAYERS_SLEEPING_PERCENTAGE);
+                 TranslatableComponent chatmessage;
+ 
++                io.papermc.paper.event.player.PlayerSleepMessageEvent.SleepMessageType messageType; // Paper - Sleep Message API
+                 if (this.sleepStatus.areEnoughSleeping(i)) {
+                     chatmessage = new TranslatableComponent("sleep.skipping_night");
++                    messageType = io.papermc.paper.event.player.PlayerSleepMessageEvent.SleepMessageType.SKIPPING_NIGHT; // Paper - Sleep Message API
+                 } else {
+                     chatmessage = new TranslatableComponent("sleep.players_sleeping", new Object[]{this.sleepStatus.amountSleeping(), this.sleepStatus.sleepersNeeded(i)});
++                    messageType = io.papermc.paper.event.player.PlayerSleepMessageEvent.SleepMessageType.PLAYERS_SLEEPING_COUNT; // Paper - Sleep Message API
+                 }
++                // Paper Start - Sleep Message API
++                boolean shouldDisplayMessage =
++                    (messageType == io.papermc.paper.event.player.PlayerSleepMessageEvent.SleepMessageType.SKIPPING_NIGHT && paperConfig.skippingNightMessage)
++                    || (messageType == io.papermc.paper.event.player.PlayerSleepMessageEvent.SleepMessageType.PLAYERS_SLEEPING_COUNT && paperConfig.playersSleepingMessage);
++                var adventureComponent = io.papermc.paper.adventure.PaperAdventure.asAdventure(chatmessage);
++                // Paper End - Sleep Message API
+ 
+                 Iterator iterator = this.players.iterator();
+ 
+                 while (iterator.hasNext()) {
+                     ServerPlayer entityplayer = (ServerPlayer) iterator.next();
+ 
+-                    entityplayer.displayClientMessage(chatmessage, true);
++                    // Paper Start - Sleep Message API
++                    var event = new io.papermc.paper.event.player.PlayerSleepMessageEvent(entityplayer.getBukkitEntity(), messageType, adventureComponent, !shouldDisplayMessage);
++                    if (event.callEvent()) {
++                    entityplayer.displayClientMessage(io.papermc.paper.adventure.PaperAdventure.asVanilla(event.getMessage()), true);
++                    }
++                    // Paper End - Sleep Message API
+                 }
+ 
+             }
