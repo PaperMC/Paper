@@ -1,0 +1,89 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Owen1212055 <23108066+Owen1212055@users.noreply.github.com>
+Date: Sat, 25 Dec 2021 23:04:14 -0500
+Subject: [PATCH] FoodLevelChangeEvent Expose Saturation
+
+
+diff --git a/src/main/java/net/minecraft/world/effect/MobEffect.java b/src/main/java/net/minecraft/world/effect/MobEffect.java
+index 8bbb9bdcf95989f1737714655f6f6a269d46d7f2..a6f311c6ed4ad64a3e0857121a1f6ef250c7bbf2 100644
+--- a/src/main/java/net/minecraft/world/effect/MobEffect.java
++++ b/src/main/java/net/minecraft/world/effect/MobEffect.java
+@@ -65,10 +65,10 @@ public class MobEffect {
+                 Player entityhuman = (Player) entity;
+                 int oldFoodLevel = entityhuman.getFoodData().foodLevel;
+ 
+-                org.bukkit.event.entity.FoodLevelChangeEvent event = CraftEventFactory.callFoodLevelChangeEvent(entityhuman, amplifier + 1 + oldFoodLevel);
++                org.bukkit.event.entity.FoodLevelChangeEvent event = CraftEventFactory.callFoodLevelChangeEvent(entityhuman, amplifier + 1 + oldFoodLevel, 1.0F); // Paper - Expose Saturation
+ 
+                 if (!event.isCancelled()) {
+-                    entityhuman.getFoodData().eat(event.getFoodLevel() - oldFoodLevel, 1.0F);
++                    entityhuman.getFoodData().eat(event.getFoodLevel() - oldFoodLevel, event.getSaturationModifier()); // Paper - Expose Saturation
+                 }
+ 
+                 ((ServerPlayer) entityhuman).connection.send(new ClientboundSetHealthPacket(((ServerPlayer) entityhuman).getBukkitEntity().getScaledHealth(), entityhuman.getFoodData().foodLevel, entityhuman.getFoodData().saturationLevel));
+diff --git a/src/main/java/net/minecraft/world/food/FoodData.java b/src/main/java/net/minecraft/world/food/FoodData.java
+index 2934b6de1f1fb914a532ee20184df99d1acd8e65..a5af470bc89c9f27807b24026fbf1051917e4efe 100644
+--- a/src/main/java/net/minecraft/world/food/FoodData.java
++++ b/src/main/java/net/minecraft/world/food/FoodData.java
+@@ -44,10 +44,10 @@ public class FoodData {
+             // CraftBukkit start
+             int oldFoodLevel = this.foodLevel;
+ 
+-            org.bukkit.event.entity.FoodLevelChangeEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callFoodLevelChangeEvent(entityhuman, foodinfo.getNutrition() + oldFoodLevel, stack);
++            org.bukkit.event.entity.FoodLevelChangeEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callFoodLevelChangeEvent(entityhuman, foodinfo.getNutrition() + oldFoodLevel, foodinfo.getSaturationModifier(), stack); // Paper - Expose Saturation
+ 
+             if (!event.isCancelled()) {
+-                this.eat(event.getFoodLevel() - oldFoodLevel, foodinfo.getSaturationModifier());
++                this.eat(event.getFoodLevel() - oldFoodLevel, event.getSaturationModifier()); // Paper - Expose Saturation
+             }
+ 
+             ((ServerPlayer) this.entityhuman).getBukkitEntity().sendHealthUpdate();
+@@ -66,10 +66,11 @@ public class FoodData {
+                 this.saturationLevel = Math.max(this.saturationLevel - 1.0F, 0.0F);
+             } else if (enumdifficulty != Difficulty.PEACEFUL) {
+                 // CraftBukkit start
+-                org.bukkit.event.entity.FoodLevelChangeEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callFoodLevelChangeEvent(player, Math.max(this.foodLevel - 1, 0));
++                org.bukkit.event.entity.FoodLevelChangeEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callFoodLevelChangeEvent(player, Math.max(this.foodLevel - 1, 0), this.saturationLevel); // Paper - Expose Saturation
+ 
+                 if (!event.isCancelled()) {
+                     this.foodLevel = event.getFoodLevel();
++                    this.saturationLevel = event.getSaturationModifier(); // Paper - Expose Saturation
+                 }
+ 
+                 ((ServerPlayer) player).connection.send(new ClientboundSetHealthPacket(((ServerPlayer) player).getBukkitEntity().getScaledHealth(), this.foodLevel, this.saturationLevel));
+diff --git a/src/main/java/net/minecraft/world/level/block/CakeBlock.java b/src/main/java/net/minecraft/world/level/block/CakeBlock.java
+index 1a87a1553bb94e33c86b9d8947cf39fd193e7859..5dd54ae207e30fa0d7e1bfd10165feb58c3182c1 100644
+--- a/src/main/java/net/minecraft/world/level/block/CakeBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/CakeBlock.java
+@@ -89,7 +89,7 @@ public class CakeBlock extends Block {
+             // entityhuman.getFoodData().eat(2, 0.1F);
+             int oldFoodLevel = player.getFoodData().foodLevel;
+ 
+-            org.bukkit.event.entity.FoodLevelChangeEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callFoodLevelChangeEvent(player, 2 + oldFoodLevel);
++            org.bukkit.event.entity.FoodLevelChangeEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callFoodLevelChangeEvent(player, 2 + oldFoodLevel, 0.1F); // Paper - Expose Saturation
+ 
+             if (!event.isCancelled()) {
+                 player.getFoodData().eat(event.getFoodLevel() - oldFoodLevel, 0.1F);
+diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+index c667baa2da8222eb66344c8f1cc0fed416c4df01..525bf21785e4d8d09e904757c40fde912313a92b 100644
+--- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
++++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+@@ -1235,12 +1235,14 @@ public class CraftEventFactory {
+         return event;
+     }
+ 
+-    public static FoodLevelChangeEvent callFoodLevelChangeEvent(net.minecraft.world.entity.player.Player entity, int level) {
+-        return CraftEventFactory.callFoodLevelChangeEvent(entity, level, null);
++    // Paper start - Expose Saturation
++    public static FoodLevelChangeEvent callFoodLevelChangeEvent(net.minecraft.world.entity.player.Player entity, int level, float saturationModifier) {
++        return CraftEventFactory.callFoodLevelChangeEvent(entity, level, saturationModifier, null);
+     }
+ 
+-    public static FoodLevelChangeEvent callFoodLevelChangeEvent(net.minecraft.world.entity.player.Player entity, int level, ItemStack item) {
+-        FoodLevelChangeEvent event = new FoodLevelChangeEvent(entity.getBukkitEntity(), level, (item == null) ? null : CraftItemStack.asBukkitCopy(item));
++    public static FoodLevelChangeEvent callFoodLevelChangeEvent(net.minecraft.world.entity.player.Player entity, int level, float saturationModifier, ItemStack item) {
++        FoodLevelChangeEvent event = new FoodLevelChangeEvent(entity.getBukkitEntity(), level, (item == null) ? null : CraftItemStack.asBukkitCopy(item), saturationModifier);
++        // Paper end - Expose Saturation
+         entity.getBukkitEntity().getServer().getPluginManager().callEvent(event);
+         return event;
+     }
