@@ -761,4 +761,11 @@ public class CraftBlockData implements BlockData {
         return speed;
     }
     // Paper end - destroy speed API
+
+    // Paper start - Block tick API
+    @Override
+    public boolean isRandomlyTicked() {
+        return this.state.isRandomlyTicking();
+    }
+    // Paper end - Block tick API
 }

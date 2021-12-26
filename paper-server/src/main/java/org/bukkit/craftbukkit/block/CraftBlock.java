@@ -78,6 +78,12 @@ public class CraftBlock implements Block {
         return this.world.getBlockState(this.position);
     }
 
+    // Paper start
+    public net.minecraft.world.level.material.FluidState getNMSFluid() {
+        return this.world.getFluidState(this.position);
+    }
+    // Paper end
+
     public BlockPos getPosition() {
         return this.position;
     }
@@ -708,6 +714,24 @@ public class CraftBlock implements Block {
 
     public boolean isValidTool(ItemStack itemStack) {
         return getDrops(itemStack).size() != 0;
+    }
+
+    @Override
+    public void tick() {
+        final ServerLevel level = this.world.getMinecraftWorld();
+        this.getNMS().tick(level, this.position, level.random);
+    }
+
+
+    @Override
+    public void fluidTick() {
+        this.getNMSFluid().tick(this.world.getMinecraftWorld(), this.position, this.getNMS());
+    }
+
+    @Override
+    public void randomTick() {
+        final ServerLevel level = this.world.getMinecraftWorld();
+        this.getNMS().randomTick(level, this.position, level.random);
     }
     // Paper end
 }
