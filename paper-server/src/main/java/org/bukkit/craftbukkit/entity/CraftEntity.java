@@ -324,6 +324,17 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         return this.getHandle().isFullyFrozen();
     }
 
+    // Paper start - Freeze Tick Lock API
+    @Override
+    public boolean isFreezeTickingLocked() {
+        return this.entity.freezeLocked;
+    }
+
+    @Override
+    public void lockFreezeTicks(boolean locked) {
+        this.entity.freezeLocked = locked;
+    }
+    // Paper end - Freeze Tick Lock API
     @Override
     public void remove() {
         this.entity.pluginRemoved = true;

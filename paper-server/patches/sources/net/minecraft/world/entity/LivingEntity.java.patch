@@ -265,10 +265,14 @@
              boolean flag = scoreboardteam != null && scoreboard.addPlayerToTeam(this.getStringUUID(), scoreboardteam);
  
              if (!flag) {
-@@ -819,9 +906,32 @@
+@@ -815,13 +902,36 @@
  
-     }
- 
+         if (nbt.contains("Brain", 10)) {
+             this.brain = this.makeBrain(new Dynamic(NbtOps.INSTANCE, nbt.get("Brain")));
++        }
++
++    }
++
 +    // CraftBukkit start
 +    private boolean isTickingEffects = false;
 +    private List<ProcessableEffect> effectsToProcess = Lists.newArrayList();
@@ -282,15 +286,15 @@
 +        private ProcessableEffect(MobEffectInstance effect, EntityPotionEffectEvent.Cause cause) {
 +            this.effect = effect;
 +            this.cause = cause;
-+        }
-+
+         }
+ 
 +        private ProcessableEffect(Holder<MobEffect> type, EntityPotionEffectEvent.Cause cause) {
 +            this.type = type;
 +            this.cause = cause;
 +        }
-+    }
+     }
 +    // CraftBukkit end
-+
+ 
      protected void tickEffects() {
          Iterator<Holder<MobEffect>> iterator = this.activeEffects.keySet().iterator();
  
@@ -1415,6 +1419,15 @@
                  if (this.isAlive()) {
                      this.travelRidden(entityhuman, vec3d1);
                      break label112;
+@@ -3017,7 +3621,7 @@
+         this.calculateEntityAnimation(this instanceof FlyingAnimal);
+         gameprofilerfiller.pop();
+         gameprofilerfiller.push("freezing");
+-        if (!this.level().isClientSide && !this.isDeadOrDying()) {
++        if (!this.level().isClientSide && !this.isDeadOrDying() && !this.freezeLocked) { // Paper - Freeze Tick Lock API
+             int i = this.getTicksFrozen();
+ 
+             if (this.isInPowderSnow && this.canFreeze()) {
 @@ -3046,6 +3650,20 @@
  
          this.pushEntities();
@@ -1627,7 +1640,7 @@
                  }
  
              }
-@@ -3544,11 +4242,68 @@
+@@ -3544,12 +4242,69 @@
          if (this.isUsingItem() && !this.useItem.isEmpty()) {
              Item item = this.useItem.getItem();
  
@@ -1636,8 +1649,8 @@
          } else {
              return null;
          }
-+    }
-+
+     }
+ 
 +    // Paper start - Make shield blocking delay configurable
 +    public HitResult getRayTrace(int maxDistance, ClipContext.Fluid fluidCollisionOption) {
 +        if (maxDistance < 1 || maxDistance > 120) {
@@ -1692,11 +1705,12 @@
 +
 +    public void setShieldBlockingDelay(int shieldBlockingDelay) {
 +        this.shieldBlockingDelay = shieldBlockingDelay;
-     }
++    }
 +    // Paper end - Make shield blocking delay configurable
- 
++
      public boolean isSuppressingSlidingDownLadder() {
          return this.isShiftKeyDown();
+     }
 @@ -3568,12 +4323,18 @@
      }
  
@@ -1730,7 +1744,7 @@
 +                this.setPos(d0, d6, d2);
                  if (world.noCollision((Entity) this) && !world.containsAnyLiquid(this.getBoundingBox())) {
                      flag1 = true;
-+                }
+                 }
 +                // now revert and call event if the teleport place is valid
 +                this.setPos(d3, d4, d5);
 +
@@ -1750,7 +1764,7 @@
 +                            return Optional.empty();
 +                        }
 +                    }
-                 }
++                }
 +                // CraftBukkit end
              }
          }
