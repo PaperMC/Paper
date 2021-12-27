@@ -10,23 +10,29 @@ hoping that at least then we don't swap chunks, and maybe recover
 them all.
 
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
-index 8866ded0567fee710aa301dbc89f4c45b7283447..cf042295fe250d74c67a04f8f0d2b233860d4d1d 100644
+index 8866ded0567fee710aa301dbc89f4c45b7283447..75ef7c9ddafc23fa122c1421f55b3d7e0dcb2eef 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
-@@ -66,6 +66,12 @@ import org.apache.logging.log4j.LogManager;
+@@ -66,6 +66,18 @@ import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
  
  public class ChunkSerializer {
 +    // Paper start
 +    // TODO: Check on update
 +    public static long getLastWorldSaveTime(CompoundTag chunkData) {
-+        return chunkData.getLong("LastUpdate");
++        final int dataVersion = ChunkStorage.getVersion(chunkData);
++        if (dataVersion < 2842) { // Level tag is removed after this version
++            final CompoundTag levelData = chunkData.getCompound("Level");
++            return levelData.getLong("LastUpdate");
++        } else {
++            return chunkData.getLong("LastUpdate");
++        }
 +    }
 +    // Paper end
  
      public static final Codec<PalettedContainer<BlockState>> BLOCK_STATE_CODEC = PalettedContainer.codec(Block.BLOCK_STATE_REGISTRY, BlockState.CODEC, PalettedContainer.Strategy.SECTION_STATES, Blocks.AIR.defaultBlockState(), null); // Paper - Anti-Xray - Add preset block states
      private static final Logger LOGGER = LogManager.getLogger();
-@@ -454,7 +460,7 @@ public class ChunkSerializer {
+@@ -454,7 +466,7 @@ public class ChunkSerializer {
          nbttagcompound.putInt("xPos", chunkcoordintpair.x);
          nbttagcompound.putInt("yPos", chunk.getMinSection());
          nbttagcompound.putInt("zPos", chunkcoordintpair.z);
@@ -36,7 +42,7 @@ index 8866ded0567fee710aa301dbc89f4c45b7283447..cf042295fe250d74c67a04f8f0d2b233
          nbttagcompound.putString("Status", chunk.getStatus().getName());
          BlendingData blendingdata = chunk.getBlendingData();
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkStorage.java b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkStorage.java
-index b1b1fa19cfd533d5625a462af399c5fd055629b0..a99a0ea2d04ebee66982a7da9422ae7a64127d3b 100644
+index 392fd2f5919d6a8f37c9f2b0421831d6ce381e0c..f706058877dc3f88aab4e7028665ca53376beac1 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkStorage.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkStorage.java
 @@ -38,7 +38,7 @@ public class ChunkStorage implements AutoCloseable {
