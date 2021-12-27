@@ -327,6 +327,26 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
     boolean hasNoPhysics();
     // Paper end - missing entity api
 
+    // Paper start - Freeze Tick Lock API
+    /**
+     * Gets if the entity currently has its freeze ticks locked
+     * to a set amount.
+     * <p>
+     * This is only set by plugins
+     *
+     * @return locked or not
+     */
+    boolean isFreezeTickingLocked();
+
+    /**
+     * Sets if the entity currently has its freeze ticks locked,
+     * preventing default vanilla freeze tick modification.
+     *
+     * @param locked prevent vanilla modification or not
+     */
+    void lockFreezeTicks(boolean locked);
+    // Paper end - Freeze Tick Lock API
+
     /**
      * Mark the entity's removal.
      *
