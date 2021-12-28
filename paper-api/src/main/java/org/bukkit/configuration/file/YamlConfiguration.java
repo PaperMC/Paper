@@ -140,7 +140,7 @@ public class YamlConfiguration extends FileConfiguration {
         }
     }
 
-    protected void fromNodeTree(@NotNull MappingNode input, @NotNull ConfigurationSection section) {
+    private void fromNodeTree(@NotNull MappingNode input, @NotNull ConfigurationSection section) {
         for (NodeTuple nodeTuple : input.getValue()) {
             ScalarNode key = (ScalarNode) nodeTuple.getKeyNode();
             String keyString = key.getValue();
