@@ -40,24 +40,6 @@ This is to ensure that if main isn't truely stuck, it's not manipulating state w
 This also moves all plugins who register "delayed init" tasks to occur just before "Done" so they
 are properly accounted for and wont trip watchdog on init.
 
-diff --git a/src/main/java/com/destroystokyo/paper/Metrics.java b/src/main/java/com/destroystokyo/paper/Metrics.java
-index e3b74dbdf8e14219a56fab939f3174e0c2f66de6..218f5bafeed8551b55b91c7fccaf6935c8b631ca 100644
---- a/src/main/java/com/destroystokyo/paper/Metrics.java
-+++ b/src/main/java/com/destroystokyo/paper/Metrics.java
-@@ -92,7 +92,12 @@ public class Metrics {
-      * Starts the Scheduler which submits our data every 30 minutes.
-      */
-     private void startSubmitting() {
--        final Runnable submitTask = this::submitData;
-+        final Runnable submitTask = () -> {
-+            if (MinecraftServer.getServer().hasStopped()) {
-+                return;
-+            }
-+            submitData();
-+        };
- 
-         // Many servers tend to restart at a fixed time at xx:00 which causes an uneven distribution of requests on the
-         // bStats backend. To circumvent this problem, we introduce some randomness into the initial and second delay.
 diff --git a/src/main/java/net/minecraft/CrashReport.java b/src/main/java/net/minecraft/CrashReport.java
 index c54530d1c66845b190a9cb6d06f985943bb4dbe1..35c9b3e6c5a2d11b4dbd491b16647df105960d1a 100644
 --- a/src/main/java/net/minecraft/CrashReport.java
