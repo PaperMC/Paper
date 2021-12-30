@@ -31,8 +31,6 @@ subprojects {
         filteringCharset = Charsets.UTF_8.name()
     }
     tasks.withType<Test> {
-        exclude("org/bukkit/craftbukkit/inventory/ItemStack*Test.class")
-
         testLogging {
             showStackTraces = true
             exceptionFormat = TestExceptionFormat.FULL
