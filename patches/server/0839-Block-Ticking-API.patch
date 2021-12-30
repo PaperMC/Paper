@@ -5,10 +5,10 @@ Subject: [PATCH] Block Ticking API
 
 
 diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java b/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java
-index 7cf7b845620ab5b118da79f6057c0d80a254585e..64520f8190b4aa3906cdd4ba77544d908f8c9021 100644
+index 7cf7b845620ab5b118da79f6057c0d80a254585e..ce350ef0995d4851aa66c42a7c4cdfbc678f83c3 100644
 --- a/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java
 +++ b/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java
-@@ -521,6 +521,30 @@ public class CraftBlock implements Block {
+@@ -521,6 +521,23 @@ public class CraftBlock implements Block {
          // SPIGOT-6778: Directly call setBlock instead of setTypeAndData, so that the tile entiy is not removed and custom remove logic is run.
          return this.world.setBlock(position, fluidState.createLegacyBlock(), 3) && result; // Paper - leave liquid if waterlogged
      }
@@ -22,20 +22,29 @@ index 7cf7b845620ab5b118da79f6057c0d80a254585e..64520f8190b4aa3906cdd4ba77544d90
 +    }
 +
 +    @Override
-+    public void tickRandomly() {
++    public void randomlyTick() {
 +        net.minecraft.world.level.block.state.BlockState blockData = this.getNMS();
 +        var level = this.world.getMinecraftWorld();
 +
 +        blockData.getBlock().randomTick(blockData, level, position, level.random);
 +    }
-+
-+    @Override
-+    public boolean isRandomlyTicked() {
-+        net.minecraft.world.level.block.state.BlockState blockData = this.getNMS();
-+
-+        return blockData.getBlock().isRandomlyTicking(blockData);
-+    }
-+    // Paper start - Block tick API
++    // Paper end
  
      @Override
      public boolean applyBoneMeal(BlockFace face) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/data/CraftBlockData.java b/src/main/java/org/bukkit/craftbukkit/block/data/CraftBlockData.java
+index 7f49c7c7048b5778f20ddce1d844d4b389e6597f..4032d313e28d394fe5ef31a4453410c73ba9ea3a 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/data/CraftBlockData.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/data/CraftBlockData.java
+@@ -576,4 +576,11 @@ public class CraftBlockData implements BlockData {
+     public SoundGroup getSoundGroup() {
+         return CraftSoundGroup.getSoundGroup(this.state.getSoundType());
+     }
++
++    // Paper start - Ticking API
++    @Override
++    public boolean isRandomlyTicked() {
++        return state.isRandomlyTicking();
++    }
++    // Paper end
+ }
