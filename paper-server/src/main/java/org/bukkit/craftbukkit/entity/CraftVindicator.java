@@ -25,4 +25,14 @@ public class CraftVindicator extends CraftIllager implements Vindicator {
     public EntityType getType() {
         return EntityType.VINDICATOR;
     }
+
+    @Override
+    public boolean isJohnny() {
+        return getHandle().isJohnny;
+    }
+
+    @Override
+    public void setJohnny(boolean johnny) {
+        getHandle().isJohnny = johnny;
+    }
 }
