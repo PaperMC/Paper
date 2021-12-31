@@ -1,10 +1,10 @@
-import org.gradle.api.tasks.testing.logging.TestExceptionFormat;
-import org.gradle.api.tasks.testing.logging.TestLogEvent;
+import org.gradle.api.tasks.testing.logging.TestExceptionFormat
+import org.gradle.api.tasks.testing.logging.TestLogEvent
 
 plugins {
     java
     `maven-publish`
-    id("com.github.johnrengelman.shadow") version "7.1.1" apply false
+    id("com.github.johnrengelman.shadow") version "7.1.2" apply false
     id("io.papermc.paperweight.core") version "1.3.3"
 }
 
