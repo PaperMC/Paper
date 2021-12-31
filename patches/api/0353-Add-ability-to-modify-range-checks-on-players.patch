@@ -1,0 +1,110 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Camotoy <20743703+Camotoy@users.noreply.github.com>
+Date: Mon, 20 Dec 2021 15:21:18 -0500
+Subject: [PATCH] Add ability to modify range checks on players
+
+
+diff --git a/src/main/java/io/papermc/paper/world/PlayerReachSettings.java b/src/main/java/io/papermc/paper/world/PlayerReachSettings.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..69dfb75c4806ef434fecd482bebaef34d6807a89
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/world/PlayerReachSettings.java
+@@ -0,0 +1,65 @@
++package io.papermc.paper.world;
++
++import org.jetbrains.annotations.Contract;
++import org.jetbrains.annotations.Range;
++
++public interface PlayerReachSettings {
++    /**
++     * Used when placing or interacting with blocks in creative mode. Cannot be lower than 49.
++     */
++    @Contract(pure = true)
++    @Range(from = 49, to = Integer.MAX_VALUE)
++    int creativeBlockReachSquared();
++
++    /**
++     * {@link #maxBlockReachSquared(int)} must also be modified for changes to take effect
++     */
++    void creativeBlockReachSquared(@Range(from = 49, to = Integer.MAX_VALUE) int range);
++
++    /**
++     * Used when placing or interacting with blocks in survival mode. Cannot be lower than 36.
++     */
++    @Contract(pure = true)
++    @Range(from = 36, to = Integer.MAX_VALUE)
++    int survivalBlockReachSquared();
++
++    /**
++     * {@link #maxBlockReachSquared(int)} must also be modified for changes to take effect
++     */
++    void survivalBlockReachSquared(@Range(from = 36, to = Integer.MAX_VALUE) int range);
++
++    /**
++     * @return the absolute maximum squared distance that the player can interact with a block
++     */
++    @Contract(pure = true)
++    @Range(from = 64, to = Integer.MAX_VALUE)
++    int maxBlockReachSquared();
++
++    void maxBlockReachSquared(@Range(from = 64, to = Integer.MAX_VALUE) int range);
++
++    @Contract(pure = true)
++    double creativeInteractReach();
++
++    void creativeInteractReach(double range);
++
++    @Contract(pure = true)
++    double survivalInteractReach();
++
++    void survivalInteractReach(double range);
++
++    /**
++     * Used when checking range of entity interactions.
++     */
++    @Contract(pure = true)
++    double entityInteractReach();
++
++    void entityInteractReach(double range);
++
++    /**
++     * @return the value used as an upper bound when checking block break range.
++     */
++    @Contract(pure = true)
++    double blockBreakReach();
++
++    void blockBreakReach(double range);
++}
+diff --git a/src/main/java/org/bukkit/entity/Player.java b/src/main/java/org/bukkit/entity/Player.java
+index 5e4a9ce5f899624255e806152c59f60664bcf701..c4bf7767ac62b30f43f0a7ab79115d6539c392c3 100644
+--- a/src/main/java/org/bukkit/entity/Player.java
++++ b/src/main/java/org/bukkit/entity/Player.java
+@@ -4,6 +4,7 @@ import java.net.InetSocketAddress;
+ import java.util.UUID;
+ import com.destroystokyo.paper.ClientOption; // Paper
+ import com.destroystokyo.paper.Title; // Paper
++import io.papermc.paper.world.PlayerReachSettings;
+ import net.kyori.adventure.text.Component;
+ import com.destroystokyo.paper.profile.PlayerProfile; // Paper
+ import java.util.Date; // Paper
+@@ -37,6 +38,7 @@ import org.bukkit.map.MapView;
+ import org.bukkit.plugin.Plugin;
+ import org.bukkit.plugin.messaging.PluginMessageRecipient;
+ import org.bukkit.scoreboard.Scoreboard;
++import org.jetbrains.annotations.Contract;
+ import org.jetbrains.annotations.NotNull;
+ import org.jetbrains.annotations.Nullable;
+ 
+@@ -2461,6 +2463,12 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+      * @throws IllegalArgumentException If the level is negative or greater than {@code 4} (i.e. not within {@code [0, 4]}).
+      */
+     void sendOpLevel(byte level);
++
++    /**
++     * @return a container that manages the reach distances that the server permits
++     */
++    @Contract(pure = true)
++    @NotNull PlayerReachSettings playerReachSettings();
+     // Paper end
+ 
+     // Spigot start

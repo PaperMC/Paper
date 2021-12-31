@@ -1,0 +1,222 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Camotoy <20743703+Camotoy@users.noreply.github.com>
+Date: Mon, 20 Dec 2021 15:21:56 -0500
+Subject: [PATCH] Add ability to modify range checks on players
+
+
+diff --git a/src/main/java/io/papermc/paper/world/PaperPlayerReachSettings.java b/src/main/java/io/papermc/paper/world/PaperPlayerReachSettings.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..1a18803e8141e62b550cfc6653af912c73d78ded
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/world/PaperPlayerReachSettings.java
+@@ -0,0 +1,90 @@
++package io.papermc.paper.world;
++
++import com.google.common.base.Preconditions;
++
++public final class PaperPlayerReachSettings implements PlayerReachSettings {
++    private int creativeBlockReachSquared = 47;
++    private int survivalBlockReachSquared = 36;
++    private int maxBlockReachSquared = 64;
++    private double creativeItemReach = 5.0D;
++    private double survivalItemReach = 4.5D;
++    private double entityInteractReach = 36D;
++    private double blockBreakReach = 36D;
++
++    @Override
++    public int creativeBlockReachSquared() {
++        return this.creativeBlockReachSquared;
++    }
++
++    @Override
++    public void creativeBlockReachSquared(int range) {
++        Preconditions.checkArgument(range >= 47, "Creative block reach must be 47 or larger!");
++        this.creativeBlockReachSquared = range;
++    }
++
++    @Override
++    public int survivalBlockReachSquared() {
++        return this.survivalBlockReachSquared;
++    }
++
++    @Override
++    public void survivalBlockReachSquared(int range) {
++        Preconditions.checkArgument(range >= 36, "Survival block reach must be 36 or larger!");
++        this.survivalBlockReachSquared = range;
++    }
++
++    @Override
++    public int maxBlockReachSquared() {
++        return this.maxBlockReachSquared;
++    }
++
++    @Override
++    public void maxBlockReachSquared(int range) {
++        Preconditions.checkArgument(range >= 64, "Max block reach must be 64 or larger!");
++        this.maxBlockReachSquared = range;
++    }
++
++    @Override
++    public double creativeInteractReach() {
++        return this.creativeItemReach;
++    }
++
++    @Override
++    public void creativeInteractReach(double range) {
++        Preconditions.checkArgument(range >= 5.0D, "Creative interact reach must be 5.0 or larger!");
++        this.creativeItemReach = range;
++    }
++
++    @Override
++    public double survivalInteractReach() {
++        return this.survivalItemReach;
++    }
++
++    @Override
++    public void survivalInteractReach(double range) {
++        Preconditions.checkArgument(range >= 4.5D, "Survival interact reach must be 4.5 or larger!");
++        this.survivalItemReach = range;
++    }
++
++    @Override
++    public double entityInteractReach() {
++        return this.entityInteractReach;
++    }
++
++    @Override
++    public void entityInteractReach(double range) {
++        Preconditions.checkArgument(range >= 36D, "Entity interact reach must be 36 or larger!");
++        this.entityInteractReach = range;
++    }
++
++    @Override
++    public double blockBreakReach() {
++        return this.blockBreakReach;
++    }
++
++    @Override
++    public void blockBreakReach(double range) {
++        Preconditions.checkArgument(range >= 36D, "Block break reach must be 36 or larger!");
++        this.blockBreakReach = range;
++    }
++}
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java b/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
+index 3125af569ec2bb1cd613a9dd96c3a181d723006d..e83bd7a9c52fa00d13fd4ce56f02b3cdd5c13220 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
+@@ -193,7 +193,7 @@ public class ServerPlayerGameMode {
+         double d2 = this.player.getZ() - ((double) pos.getZ() + 0.5D);
+         double d3 = d0 * d0 + d1 * d1 + d2 * d2;
+ 
+-        if (d3 > 36.0D) {
++        if (d3 > this.player.getBukkitEntity().playerReachSettings().blockBreakReach()) {
+             if (true) return; // Paper - Don't notify if unreasonably far away
+             this.player.connection.send(new ClientboundBlockBreakAckPacket(pos, this.level.getBlockState(pos), action, false, "too far"));
+         } else if (pos.getY() >= worldHeight) {
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index b9e0dc98243bee3de7eb291dd3fb25049c0a8f2b..d662389af359da93289b6812659de97f7cf59233 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -148,7 +148,6 @@ import net.minecraft.world.level.block.entity.CommandBlockEntity;
+ import net.minecraft.world.level.block.entity.JigsawBlockEntity;
+ import net.minecraft.world.level.block.entity.SignBlockEntity;
+ import net.minecraft.world.level.block.entity.StructureBlockEntity;
+-import net.minecraft.world.level.block.state.BlockBehaviour;
+ import net.minecraft.world.level.block.state.BlockState;
+ import net.minecraft.world.phys.AABB;
+ import net.minecraft.world.phys.BlockHitResult;
+@@ -176,7 +175,6 @@ import org.bukkit.Location;
+ import org.bukkit.craftbukkit.entity.CraftPlayer;
+ import org.bukkit.craftbukkit.event.CraftEventFactory;
+ import org.bukkit.craftbukkit.inventory.CraftItemStack;
+-import org.bukkit.craftbukkit.util.CraftChatMessage;
+ import org.bukkit.craftbukkit.util.CraftMagicNumbers;
+ import org.bukkit.craftbukkit.util.LazyPlayerSet;
+ import org.bukkit.craftbukkit.util.Waitable;
+@@ -193,7 +191,6 @@ import org.bukkit.event.inventory.InventoryCreativeEvent;
+ import org.bukkit.event.inventory.InventoryType.SlotType;
+ import org.bukkit.event.inventory.SmithItemEvent;
+ import org.bukkit.event.player.AsyncPlayerChatEvent;
+-import org.bukkit.event.player.PlayerAnimationEvent;
+ import org.bukkit.event.player.PlayerChatEvent;
+ import org.bukkit.event.player.PlayerCommandPreprocessEvent;
+ import org.bukkit.event.player.PlayerInteractAtEntityEvent;
+@@ -1787,7 +1784,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+     private boolean isOutsideOfReach(double x, double y, double z) {
+         Location eyeLoc = this.getCraftPlayer().getEyeLocation();
+         double reachDistance = NumberConversions.square(eyeLoc.getX() - x) + NumberConversions.square(eyeLoc.getY() - y) + NumberConversions.square(eyeLoc.getZ() - z);
+-        return reachDistance > (this.getCraftPlayer().getGameMode() == org.bukkit.GameMode.CREATIVE ? CREATIVE_PLACE_DISTANCE_SQUARED : SURVIVAL_PLACE_DISTANCE_SQUARED);
++        return reachDistance > (this.getCraftPlayer().getGameMode() == org.bukkit.GameMode.CREATIVE ? this.getCraftPlayer().playerReachSettings().creativeBlockReachSquared() : this.getCraftPlayer().playerReachSettings().survivalBlockReachSquared()); // Paper - customizable reach
+     }
+     // Paper end
+ 
+@@ -1816,7 +1813,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+         int i = this.player.level.getMaxBuildHeight();
+ 
+         if (blockposition.getY() < i) {
+-            if (this.awaitingPositionFromClient == null && this.player.distanceToSqr((double) blockposition.getX() + 0.5D, (double) blockposition.getY() + 0.5D, (double) blockposition.getZ() + 0.5D) < 64.0D && (worldserver.mayInteract(this.player, blockposition) || (worldserver.paperConfig.allowUsingSignsInsideSpawnProtection && worldserver.getBlockState(blockposition).getBlock() instanceof net.minecraft.world.level.block.SignBlock))) { // Paper
++            if (this.awaitingPositionFromClient == null && this.player.distanceToSqr((double) blockposition.getX() + 0.5D, (double) blockposition.getY() + 0.5D, (double) blockposition.getZ() + 0.5D) < this.getCraftPlayer().playerReachSettings().maxBlockReachSquared() && (worldserver.mayInteract(this.player, blockposition) || (worldserver.paperConfig.allowUsingSignsInsideSpawnProtection && worldserver.getBlockState(blockposition).getBlock() instanceof net.minecraft.world.level.block.SignBlock))) { // Paper
+                 // CraftBukkit start - Check if we can actually do something over this large a distance
+                 // Paper - move check up
+                 this.player.stopUsingItem(); // SPIGOT-4706
+@@ -1867,7 +1864,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+             float f6 = Mth.sin(-f1 * 0.017453292F);
+             float f7 = f4 * f5;
+             float f8 = f3 * f5;
+-            double d3 = player.gameMode.getGameModeForPlayer()== GameType.CREATIVE ? 5.0D : 4.5D;
++            double d3 = player.gameMode.getGameModeForPlayer()== GameType.CREATIVE ? this.getCraftPlayer().playerReachSettings().creativeInteractReach() : this.getCraftPlayer().playerReachSettings().survivalInteractReach(); // Paper - customizable reach settings
+             Vec3 vec3d1 = vec3d.add((double) f7 * d3, (double) f6 * d3, (double) f8 * d3);
+             HitResult movingobjectposition = this.player.level.clip(new ClipContext(vec3d, vec3d1, ClipContext.Block.OUTLINE, ClipContext.Fluid.NONE, this.player));
+ 
+@@ -2301,7 +2298,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+         float f6 = Mth.sin(-f1 * 0.017453292F);
+         float f7 = f4 * f5;
+         float f8 = f3 * f5;
+-        double d3 = player.gameMode.getGameModeForPlayer()== GameType.CREATIVE ? 5.0D : 4.5D;
++        double d3 = player.gameMode.getGameModeForPlayer()== GameType.CREATIVE ? this.getCraftPlayer().playerReachSettings().creativeInteractReach() : this.getCraftPlayer().playerReachSettings().survivalInteractReach(); // Paper - customizable reach
+         Vec3 vec3d1 = vec3d.add((double) f7 * d3, (double) f6 * d3, (double) f8 * d3);
+         HitResult movingobjectposition = this.player.level.clip(new ClipContext(vec3d, vec3d1, ClipContext.Block.OUTLINE, ClipContext.Fluid.NONE, this.player));
+ 
+@@ -2428,7 +2425,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+ 
+             double d0 = 36.0D;
+ 
+-            if (this.player.distanceToSqr(entity) < 36.0D) {
++            if (this.player.distanceToSqr(entity) < this.getCraftPlayer().playerReachSettings().entityInteractReach()) { // Paper - customizable reach
+                 packet.dispatch(new ServerboundInteractPacket.Handler() {
+                     private void performInteraction(InteractionHand enumhand, ServerGamePacketListenerImpl.EntityInteraction playerconnection_a, PlayerInteractEntityEvent event) { // CraftBukkit
+                         ItemStack itemstack = ServerGamePacketListenerImpl.this.player.getItemInHand(enumhand).copy();
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index 8de4ad9f2120d22b78202981624abd1d2fc70148..04675fd3b2e7ce8bddf31125d9967814dfd8998e 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -27,6 +27,9 @@ import java.util.WeakHashMap;
+ import java.util.logging.Level;
+ import java.util.logging.Logger;
+ import javax.annotation.Nullable;
++
++import io.papermc.paper.world.PaperPlayerReachSettings;
++import io.papermc.paper.world.PlayerReachSettings;
+ import net.minecraft.Util;
+ import net.minecraft.advancements.AdvancementProgress;
+ import net.minecraft.core.BlockPos;
+@@ -157,6 +160,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+     private String resourcePackHash;
+     private static final boolean DISABLE_CHANNEL_LIMIT = System.getProperty("paper.disableChannelLimit") != null; // Paper - add a flag to disable the channel limit
+     private long lastSaveTime;
++    private final PaperPlayerReachSettings playerReachSettings = new PaperPlayerReachSettings();
+     // Paper end
+ 
+     public CraftPlayer(CraftServer server, ServerPlayer entity) {
+@@ -590,6 +594,11 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+ 
+         this.getHandle().getServer().getPlayerList().sendPlayerPermissionLevel(this.getHandle(), level, false);
+     }
++
++    @Override
++    public @NotNull PaperPlayerReachSettings playerReachSettings() {
++        return this.playerReachSettings;
++    }
+     // Paper end
+ 
+     @Override
