@@ -15,7 +15,10 @@ import org.jetbrains.annotations.Nullable;
 public class FileConfigurationOptions extends MemoryConfigurationOptions {
     private List<String> header = Collections.emptyList();
     private List<String> footer = Collections.emptyList();
-    private boolean parseComments = true;
+    // Paper start - add system prop for comment parsing
+    private static final boolean PAPER_PARSE_COMMENTS_BY_DEFAULT = Boolean.parseBoolean(System.getProperty("Paper.parseYamlCommentsByDefault", "true"));
+    private boolean parseComments = PAPER_PARSE_COMMENTS_BY_DEFAULT;
+    // Paper end
 
     protected FileConfigurationOptions(@NotNull MemoryConfiguration configuration) {
         super(configuration);
