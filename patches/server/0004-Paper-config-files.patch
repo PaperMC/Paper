@@ -298,7 +298,7 @@ index 0000000000000000000000000000000000000000..bee2fa2bfbb61209381f24ed6508d3d1
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..e4368db074da7b5e48b47d41875c1e63b9745c2a
+index 0000000000000000000000000000000000000000..5c7b2850d311e4d54236ba9acce148bca05672fd
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
 @@ -0,0 +1,188 @@
@@ -364,8 +364,8 @@ index 0000000000000000000000000000000000000000..e4368db074da7b5e48b47d41875c1e63
 +        commands = new HashMap<String, Command>();
 +        commands.put("paper", new PaperCommand("paper"));
 +
-+        version = getInt("config-version", 24);
-+        set("config-version", 24);
++        version = getInt("config-version", 25);
++        set("config-version", 25);
 +        readConfig(PaperConfig.class, null);
 +    }
 +
@@ -492,10 +492,10 @@ index 0000000000000000000000000000000000000000..e4368db074da7b5e48b47d41875c1e63
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..4adf44026fc6269934dfa4513f06a7f8a3b41f90
+index 0000000000000000000000000000000000000000..86411fca9c200d59fb5360b69f7ef360c81adc40
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-@@ -0,0 +1,94 @@
+@@ -0,0 +1,119 @@
 +package com.destroystokyo.paper;
 +
 +import java.util.List;
@@ -536,6 +536,25 @@ index 0000000000000000000000000000000000000000..4adf44026fc6269934dfa4513f06a7f8
 +        }
 +    }
 +
++    private void setForWorld(String path, Object val) {
++        this.config.set("world-settings." + this.worldName + "." + path, val);
++    }
++
++    private boolean isSet(String world, String path) {
++        return this.config.isSet("world-settings." + world + "." + path);
++    }
++
++    private void clear(String path) {
++        clear("default", path);
++        if (this.config.isSet("world-settings." + this.worldName + "." + path)) {
++            clear(this.worldName, path);
++        }
++    }
++
++    private void clear(String world, String path) {
++        this.config.set("world-settings." + world  + "." + path, null);
++    }
++
 +    public void removeOldValues() {
 +        boolean needsSave = false;
 +
@@ -545,8 +564,14 @@ index 0000000000000000000000000000000000000000..4adf44026fc6269934dfa4513f06a7f8
 +    }
 +
 +    private boolean getBoolean(String path, boolean def) {
-+        config.addDefault("world-settings.default." + path, def);
-+        return config.getBoolean("world-settings." + worldName + "." + path, config.getBoolean("world-settings.default." + path));
++        return this.getBoolean(path, def, true);
++    }
++
++    private boolean getBoolean(String path, boolean def, boolean setDefault) {
++        if (setDefault) {
++            config.addDefault("world-settings.default." + path, def);
++        }
++        return config.getBoolean("world-settings." + worldName + "." + path, config.getBoolean("world-settings.default." + path, def));
 +    }
 +
 +    private double getDouble(String path, double def) {

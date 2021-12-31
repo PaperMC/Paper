@@ -5,21 +5,41 @@ Subject: [PATCH] Add config to disable ender dragon legacy check
 
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index 97ad6c164281df845b3789e68287157c2a3d8ee8..825f8de6f5a6f6221724ba35dde265aadb15e4e8 100644
+index b25521adfb1d28d8040dd378d93b97c3582fd3c1..278345dc65850d978cc8c462070c838434da8d71 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-@@ -409,4 +409,9 @@ public class PaperWorldConfig {
+@@ -70,6 +70,11 @@ public class PaperWorldConfig {
+             set("despawn-ranges.hard", null);
+         }
+ 
++        if (PaperConfig.version < 25) {
++            needsSave = true;
++            set(OLD_ENABLE_FIRST_DRAGON_SPAWN, null);
++        }
++
+         if (needsSave) {
+             saveConfig();
+         }
+@@ -434,4 +439,17 @@ public class PaperWorldConfig {
      private void shieldBlockingDelay() {
          shieldBlockingDelay = getInt("game-mechanics.shield-blocking-delay", 5);
      }
 +
-+    public boolean scanForLegacyEnderDragon = true;
++    private static final String OLD_ENABLE_FIRST_DRAGON_SPAWN = "game-mechanics.scan-for-legacy-ender-dragon";
++    private static final String ENABLE_FIRST_DRAGON_SPAWN = "game-mechanics.enable-first-dragon-spawn";
++    public boolean enableFirstDragonSpawn = true;
 +    private void scanForLegacyEnderDragon() {
-+        scanForLegacyEnderDragon = getBoolean("game-mechanics.scan-for-legacy-ender-dragon", true);
++        if (PaperConfig.version < 25) {
++            this.enableFirstDragonSpawn = getBoolean(OLD_ENABLE_FIRST_DRAGON_SPAWN, this.enableFirstDragonSpawn, false);
++            if (isSet(this.worldName, OLD_ENABLE_FIRST_DRAGON_SPAWN)) {
++                setForWorld(ENABLE_FIRST_DRAGON_SPAWN, this.enableFirstDragonSpawn);
++            }
++        }
++        this.enableFirstDragonSpawn = getBoolean(ENABLE_FIRST_DRAGON_SPAWN, this.enableFirstDragonSpawn);
 +    }
  }
 diff --git a/src/main/java/net/minecraft/world/level/dimension/end/EndDragonFight.java b/src/main/java/net/minecraft/world/level/dimension/end/EndDragonFight.java
-index 2b7ffbc125d01db093a31ed6147fc1d736a01e80..9a6b2c75b8622b0f9eda85011ef6f2f1dca574c9 100644
+index 2b7ffbc125d01db093a31ed6147fc1d736a01e80..12e38e7b9c7390640708b25f6630b725e4d55e6e 100644
 --- a/src/main/java/net/minecraft/world/level/dimension/end/EndDragonFight.java
 +++ b/src/main/java/net/minecraft/world/level/dimension/end/EndDragonFight.java
 @@ -88,6 +88,10 @@ public class EndDragonFight {
@@ -27,7 +47,7 @@ index 2b7ffbc125d01db093a31ed6147fc1d736a01e80..9a6b2c75b8622b0f9eda85011ef6f2f1
  
      public EndDragonFight(ServerLevel world, long gatewaysSeed, CompoundTag nbt) {
 +        // Paper start
-+        this.needsStateScanning = world.paperConfig.scanForLegacyEnderDragon;
++        this.needsStateScanning = world.paperConfig.enableFirstDragonSpawn;
 +        if (!this.needsStateScanning) this.dragonKilled = true;
 +        // Paper end
          this.level = world;
