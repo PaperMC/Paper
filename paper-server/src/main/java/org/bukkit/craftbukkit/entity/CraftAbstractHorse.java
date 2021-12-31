@@ -98,6 +98,16 @@ public abstract class CraftAbstractHorse extends CraftAnimals implements Abstrac
     }
 
     @Override
+    public boolean isEatingHaystack() {
+        return getHandle().isEating();
+    }
+
+    @Override
+    public void setEatingHaystack(boolean eatingHaystack) {
+        getHandle().setEating(eatingHaystack);
+    }
+
+    @Override
     public AbstractHorseInventory getInventory() {
         return new CraftInventoryAbstractHorse(getHandle().inventory);
     }
