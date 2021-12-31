@@ -186,3 +186,63 @@ index 5e4a9ce5f899624255e806152c59f60664bcf701..d4cabd04757738a7d8bbfdf5398d7f86
      @NotNull
      @Override
      Spigot spigot();
+diff --git a/src/main/java/org/bukkit/event/player/PlayerTeleportEvent.java b/src/main/java/org/bukkit/event/player/PlayerTeleportEvent.java
+index 553d7740489fe729166c8ca8ef8c7834db3663ad..55f1101a6a2c10ca3054dc1e820c939d7f3e1ddd 100644
+--- a/src/main/java/org/bukkit/event/player/PlayerTeleportEvent.java
++++ b/src/main/java/org/bukkit/event/player/PlayerTeleportEvent.java
+@@ -13,6 +13,11 @@ public class PlayerTeleportEvent extends PlayerMoveEvent {
+     private static final HandlerList handlers = new HandlerList();
+     private TeleportCause cause = TeleportCause.UNKNOWN;
+ 
++    // Paper start - Teleport API
++    private boolean dismounted = true;
++    private java.util.Set<io.papermc.paper.entity.RelativeTeleportFlag> teleportFlagSet = java.util.Collections.emptySet();
++    // Paper end
++
+     public PlayerTeleportEvent(@NotNull final Player player, @NotNull final Location from, @Nullable final Location to) {
+         super(player, from, to);
+     }
+@@ -22,7 +27,13 @@ public class PlayerTeleportEvent extends PlayerMoveEvent {
+ 
+         this.cause = cause;
+     }
+-
++    // Paper start - Teleport API
++    public PlayerTeleportEvent(@NotNull final Player player, @NotNull final Location from, @Nullable final Location to, @NotNull final TeleportCause cause, boolean dismounted, java.util.Set<io.papermc.paper.entity.RelativeTeleportFlag> teleportFlagSet) {
++        this(player, from, to, cause);
++        this.dismounted = dismounted;
++        this.teleportFlagSet = teleportFlagSet;
++    }
++    // Paper end
+     /**
+      * Gets the cause of this teleportation event
+      *
+@@ -80,6 +91,28 @@ public class PlayerTeleportEvent extends PlayerMoveEvent {
+         UNKNOWN;
+     }
+ 
++    // Paper start - Teleport API
++    /**
++     * Gets if the player will be dismounted in this teleportation.
++     *
++     * @return dismounted or not
++     */
++    public boolean willDismountPlayer() {
++        return dismounted;
++    }
++
++    /**
++     * Returns the relative teleportation flags used in this teleportation.
++     * This determines which axis the player will not lose their velocity in.
++     *
++     * @return relative teleportation flags
++     */
++    @NotNull
++    public java.util.Set<io.papermc.paper.entity.RelativeTeleportFlag> getRelativeTeleportationFlags() {
++        return teleportFlagSet;
++    }
++    // Paper end
++
+     @NotNull
+     @Override
+     public HandlerList getHandlers() {
