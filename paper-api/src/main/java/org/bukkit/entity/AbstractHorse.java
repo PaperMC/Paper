@@ -102,6 +102,20 @@ public interface AbstractHorse extends Vehicle, InventoryHolder, Tameable {
      */
     public void setJumpStrength(double strength);
 
+    /**
+     * Gets whether the horse is currently grazing hay.
+     *
+     * @return true if eating hay
+     */
+    boolean isEatingHaystack();
+
+    /**
+     * Sets whether the horse is grazing hay.
+     *
+     * @param eatingHaystack new hay grazing status
+     */
+    void setEatingHaystack(boolean eatingHaystack);
+
     @NotNull
     @Override
     public AbstractHorseInventory getInventory();
