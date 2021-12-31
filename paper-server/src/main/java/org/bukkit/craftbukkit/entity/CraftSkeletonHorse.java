@@ -26,4 +26,29 @@ public class CraftSkeletonHorse extends CraftAbstractHorse implements SkeletonHo
     public Variant getVariant() {
         return Variant.SKELETON_HORSE;
     }
+
+    @Override
+    public EntityHorseSkeleton getHandle() {
+        return (EntityHorseSkeleton) entity;
+    }
+
+    @Override
+    public boolean isTrapped() {
+        return getHandle().isTrap();
+    }
+
+    @Override
+    public void setTrapped(boolean trapped) {
+        getHandle().setTrap(trapped);
+    }
+
+    @Override
+    public int getTrapTime() {
+        return getHandle().trapTime;
+    }
+
+    @Override
+    public void setTrapTime(int trapTime) {
+        getHandle().trapTime = trapTime;
+    }
 }
