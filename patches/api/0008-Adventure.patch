@@ -7,7 +7,7 @@ Co-authored-by: zml <zml@stellardrift.ca>
 Co-authored-by: Jake Potrebic <jake.m.potrebic@gmail.com>
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index 0a202cb63769d68ecda1644cb259c17740e5b00e..c0279749aacf5735309545cd40d164676dcf75fc 100644
+index 55ee0c6330e4dbba22b4044346d1e1dd39c745ce..80fdd05dd593455ca89b66636ed30f1d9facf4ed 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
 @@ -8,6 +8,19 @@ java {
@@ -41,7 +41,7 @@ index 0a202cb63769d68ecda1644cb259c17740e5b00e..c0279749aacf5735309545cd40d16467
 +    apiAndDocs("net.kyori:adventure-text-serializer-plain")
      // Paper end
  
-     compileOnly("org.apache.maven:maven-resolver-provider:3.8.1")
+     compileOnly("org.apache.maven:maven-resolver-provider:3.8.4")
 @@ -70,10 +88,25 @@ tasks.jar {
  }
  
@@ -57,8 +57,8 @@ index 0a202cb63769d68ecda1644cb259c17740e5b00e..c0279749aacf5735309545cd40d16467
 +    }
      (options as StandardJavadocDocletOptions).links(
          "https://guava.dev/releases/31.0.1-jre/api/docs/",
-         "https://javadoc.io/doc/org.yaml/snakeyaml/1.28/",
-         "https://javadoc.io/doc/org.jetbrains/annotations/21.0.1/", // Paper - we don't want Java 5 annotations
+         "https://javadoc.io/doc/org.yaml/snakeyaml/1.30/",
+         "https://javadoc.io/doc/org.jetbrains/annotations/23.0.0/", // Paper - we don't want Java 5 annotations
          "https://javadoc.io/doc/net.md-5/bungeecord-chat/1.16-R0.4/",
 +        // Paper start
 +        "https://jd.adventure.kyori.net/api/$adventureVersion/",
@@ -379,10 +379,10 @@ index 0000000000000000000000000000000000000000..eb179aae1e1d2ce842442e49fe275827
 +}
 diff --git a/src/main/java/io/papermc/paper/text/PaperComponents.java b/src/main/java/io/papermc/paper/text/PaperComponents.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..77db592d05b754f879f8d1790642e9d9bbd30a4e
+index 0000000000000000000000000000000000000000..15ecb12fd2fefcac96edbaef7cdd487a1d2c5641
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/text/PaperComponents.java
-@@ -0,0 +1,88 @@
+@@ -0,0 +1,104 @@
 +package io.papermc.paper.text;
 +
 +import net.kyori.adventure.text.Component;
@@ -391,8 +391,9 @@ index 0000000000000000000000000000000000000000..77db592d05b754f879f8d1790642e9d9
 +import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
 +import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 +import net.kyori.adventure.text.serializer.plain.PlainComponentSerializer;
++import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 +import org.bukkit.Bukkit;
-+import org.checkerframework.checker.nullness.qual.NonNull;
++import org.jetbrains.annotations.NotNull;
 +
 +/**
 + * Paper API-specific methods for working with {@link Component}s and related.
@@ -407,8 +408,23 @@ index 0000000000000000000000000000000000000000..77db592d05b754f879f8d1790642e9d9
 +     *
 +     * @return a component flattener
 +     */
-+    public static @NonNull ComponentFlattener flattener() {
++    public static @NotNull ComponentFlattener flattener() {
 +        return Bukkit.getUnsafe().componentFlattener();
++    }
++
++    /**
++     * Get a serializer for {@link Component}s that will convert components to
++     * a plain-text string.
++     *
++     * <p>Implementations may provide a serializer capable of processing any
++     * information that requires access to implementation details.</p>
++     *
++     * @deprecated will be removed in adventure 5.0.0, use {@link #plainTextSerializer()}
++     * @return a serializer to plain text
++     */
++    @Deprecated
++    public static @NotNull PlainComponentSerializer plainSerializer() {
++        return Bukkit.getUnsafe().plainComponentSerializer();
 +    }
 +
 +    /**
@@ -420,8 +436,8 @@ index 0000000000000000000000000000000000000000..77db592d05b754f879f8d1790642e9d9
 +     *
 +     * @return a serializer to plain text
 +     */
-+    public static @NonNull PlainComponentSerializer plainSerializer() {
-+        return Bukkit.getUnsafe().plainComponentSerializer();
++    public static @NotNull PlainTextComponentSerializer plainTextSerializer() {
++        return Bukkit.getUnsafe().plainTextSerializer();
 +    }
 +
 +    /**
@@ -434,7 +450,7 @@ index 0000000000000000000000000000000000000000..77db592d05b754f879f8d1790642e9d9
 +     *
 +     * @return a json component serializer
 +     */
-+    public static @NonNull GsonComponentSerializer gsonSerializer() {
++    public static @NotNull GsonComponentSerializer gsonSerializer() {
 +        return Bukkit.getUnsafe().gsonComponentSerializer();
 +    }
 +
@@ -449,7 +465,7 @@ index 0000000000000000000000000000000000000000..77db592d05b754f879f8d1790642e9d9
 +     *
 +     * @return a json component serializer
 +     */
-+    public static @NonNull GsonComponentSerializer colorDownsamplingGsonSerializer() {
++    public static @NotNull GsonComponentSerializer colorDownsamplingGsonSerializer() {
 +        return Bukkit.getUnsafe().colorDownsamplingGsonComponentSerializer();
 +    }
 +
@@ -467,15 +483,15 @@ index 0000000000000000000000000000000000000000..77db592d05b754f879f8d1790642e9d9
 +     *
 +     * @return a section serializer
 +     */
-+    public static @NonNull LegacyComponentSerializer legacySectionSerializer() {
++    public static @NotNull LegacyComponentSerializer legacySectionSerializer() {
 +        return Bukkit.getUnsafe().legacyComponentSerializer();
 +    }
 +}
 diff --git a/src/main/java/org/bukkit/Bukkit.java b/src/main/java/org/bukkit/Bukkit.java
-index cc42bfa74b41ef6d6374efa7b882f71677fb0824..ef06bd2972e0a4e7ffa0e91d2b0de5d7f8425edc 100644
+index 0d96b6bdc744a23cc7322f2bd6a7a7b38acb6830..84a620bbbc24ded4075bce0209caed7fa03a92eb 100644
 --- a/src/main/java/org/bukkit/Bukkit.java
 +++ b/src/main/java/org/bukkit/Bukkit.java
-@@ -326,7 +326,9 @@ public final class Bukkit {
+@@ -369,7 +369,9 @@ public final class Bukkit {
       *
       * @param message the message
       * @return the number of players
@@ -485,7 +501,7 @@ index cc42bfa74b41ef6d6374efa7b882f71677fb0824..ef06bd2972e0a4e7ffa0e91d2b0de5d7
      public static int broadcastMessage(@NotNull String message) {
          return server.broadcastMessage(message);
      }
-@@ -969,6 +971,19 @@ public final class Bukkit {
+@@ -1012,6 +1014,19 @@ public final class Bukkit {
          server.shutdown();
      }
  
@@ -505,7 +521,7 @@ index cc42bfa74b41ef6d6374efa7b882f71677fb0824..ef06bd2972e0a4e7ffa0e91d2b0de5d7
      /**
       * Broadcasts the specified message to every user with the given
       * permission name.
-@@ -978,6 +993,21 @@ public final class Bukkit {
+@@ -1021,6 +1036,21 @@ public final class Bukkit {
       *     permissibles} must have to receive the broadcast
       * @return number of message recipients
       */
@@ -527,7 +543,7 @@ index cc42bfa74b41ef6d6374efa7b882f71677fb0824..ef06bd2972e0a4e7ffa0e91d2b0de5d7
      public static int broadcast(@NotNull String message, @NotNull String permission) {
          return server.broadcast(message, permission);
      }
-@@ -1177,6 +1207,7 @@ public final class Bukkit {
+@@ -1220,6 +1250,7 @@ public final class Bukkit {
          return server.createInventory(owner, type);
      }
  
@@ -535,7 +551,7 @@ index cc42bfa74b41ef6d6374efa7b882f71677fb0824..ef06bd2972e0a4e7ffa0e91d2b0de5d7
      /**
       * Creates an empty inventory with the specified type and title. If the type
       * is {@link InventoryType#CHEST}, the new inventory has a size of 27;
-@@ -1202,6 +1233,38 @@ public final class Bukkit {
+@@ -1245,6 +1276,38 @@ public final class Bukkit {
       * @see InventoryType#isCreatable()
       */
      @NotNull
@@ -574,7 +590,7 @@ index cc42bfa74b41ef6d6374efa7b882f71677fb0824..ef06bd2972e0a4e7ffa0e91d2b0de5d7
      public static Inventory createInventory(@Nullable InventoryHolder owner, @NotNull InventoryType type, @NotNull String title) {
          return server.createInventory(owner, type, title);
      }
-@@ -1220,6 +1283,7 @@ public final class Bukkit {
+@@ -1263,6 +1326,7 @@ public final class Bukkit {
          return server.createInventory(owner, size);
      }
  
@@ -582,7 +598,7 @@ index cc42bfa74b41ef6d6374efa7b882f71677fb0824..ef06bd2972e0a4e7ffa0e91d2b0de5d7
      /**
       * Creates an empty inventory of type {@link InventoryType#CHEST} with the
       * specified size and title.
-@@ -1232,10 +1296,30 @@ public final class Bukkit {
+@@ -1275,10 +1339,30 @@ public final class Bukkit {
       * @throws IllegalArgumentException if the size is not a multiple of 9
       */
      @NotNull
@@ -613,7 +629,7 @@ index cc42bfa74b41ef6d6374efa7b882f71677fb0824..ef06bd2972e0a4e7ffa0e91d2b0de5d7
      /**
       * Creates an empty merchant.
       *
-@@ -1243,7 +1327,20 @@ public final class Bukkit {
+@@ -1286,7 +1370,20 @@ public final class Bukkit {
       * when the merchant inventory is viewed
       * @return a new merchant
       */
@@ -634,7 +650,7 @@ index cc42bfa74b41ef6d6374efa7b882f71677fb0824..ef06bd2972e0a4e7ffa0e91d2b0de5d7
      public static Merchant createMerchant(@Nullable String title) {
          return server.createMerchant(title);
      }
-@@ -1323,22 +1420,47 @@ public final class Bukkit {
+@@ -1366,22 +1463,47 @@ public final class Bukkit {
          return server.isPrimaryThread();
      }
  
@@ -786,7 +802,7 @@ index 803fa0019869127ee8c7e4fb1777a59c43e66f8a..c65f0d6569c130b4920a9e71ad24af64
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/Server.java b/src/main/java/org/bukkit/Server.java
-index 1fb1d4f32af8150711ca766fcd7d0a0c177df7c4..4bea157f06924d80a850dd315152812975855fe9 100644
+index 7f4d6d605934e47ec97b8ad7cca3c48460bc0082..ede5de4c310a93989608bf48b3e5116f380589dd 100644
 --- a/src/main/java/org/bukkit/Server.java
 +++ b/src/main/java/org/bukkit/Server.java
 @@ -56,7 +56,7 @@ import org.jetbrains.annotations.Nullable;
@@ -816,7 +832,7 @@ index 1fb1d4f32af8150711ca766fcd7d0a0c177df7c4..4bea157f06924d80a850dd3151528129
       */
      public static final String BROADCAST_CHANNEL_USERS = "bukkit.broadcast.user";
  
-@@ -269,7 +269,9 @@ public interface Server extends PluginMessageRecipient {
+@@ -304,7 +304,9 @@ public interface Server extends PluginMessageRecipient {
       *
       * @param message the message
       * @return the number of players
@@ -826,7 +842,7 @@ index 1fb1d4f32af8150711ca766fcd7d0a0c177df7c4..4bea157f06924d80a850dd3151528129
      public int broadcastMessage(@NotNull String message);
  
      /**
-@@ -821,8 +823,33 @@ public interface Server extends PluginMessageRecipient {
+@@ -856,8 +858,33 @@ public interface Server extends PluginMessageRecipient {
       * @param permission the required permission {@link Permissible
       *     permissibles} must have to receive the broadcast
       * @return number of message recipients
@@ -860,7 +876,7 @@ index 1fb1d4f32af8150711ca766fcd7d0a0c177df7c4..4bea157f06924d80a850dd3151528129
  
      /**
       * Gets the player by the given name, regardless if they are offline or
-@@ -987,6 +1014,7 @@ public interface Server extends PluginMessageRecipient {
+@@ -1022,6 +1049,7 @@ public interface Server extends PluginMessageRecipient {
      @NotNull
      Inventory createInventory(@Nullable InventoryHolder owner, @NotNull InventoryType type);
  
@@ -868,7 +884,7 @@ index 1fb1d4f32af8150711ca766fcd7d0a0c177df7c4..4bea157f06924d80a850dd3151528129
      /**
       * Creates an empty inventory with the specified type and title. If the type
       * is {@link InventoryType#CHEST}, the new inventory has a size of 27;
-@@ -1012,6 +1040,36 @@ public interface Server extends PluginMessageRecipient {
+@@ -1047,6 +1075,36 @@ public interface Server extends PluginMessageRecipient {
       * @see InventoryType#isCreatable()
       */
      @NotNull
@@ -905,7 +921,7 @@ index 1fb1d4f32af8150711ca766fcd7d0a0c177df7c4..4bea157f06924d80a850dd3151528129
      Inventory createInventory(@Nullable InventoryHolder owner, @NotNull InventoryType type, @NotNull String title);
  
      /**
-@@ -1026,6 +1084,22 @@ public interface Server extends PluginMessageRecipient {
+@@ -1061,6 +1119,22 @@ public interface Server extends PluginMessageRecipient {
      @NotNull
      Inventory createInventory(@Nullable InventoryHolder owner, int size) throws IllegalArgumentException;
  
@@ -928,7 +944,7 @@ index 1fb1d4f32af8150711ca766fcd7d0a0c177df7c4..4bea157f06924d80a850dd3151528129
      /**
       * Creates an empty inventory of type {@link InventoryType#CHEST} with the
       * specified size and title.
-@@ -1036,10 +1110,13 @@ public interface Server extends PluginMessageRecipient {
+@@ -1071,10 +1145,13 @@ public interface Server extends PluginMessageRecipient {
       *     viewed
       * @return a new inventory
       * @throws IllegalArgumentException if the size is not a multiple of 9
@@ -942,7 +958,7 @@ index 1fb1d4f32af8150711ca766fcd7d0a0c177df7c4..4bea157f06924d80a850dd3151528129
      /**
       * Creates an empty merchant.
       *
-@@ -1047,7 +1124,18 @@ public interface Server extends PluginMessageRecipient {
+@@ -1082,7 +1159,18 @@ public interface Server extends PluginMessageRecipient {
       * when the merchant inventory is viewed
       * @return a new merchant
       */
@@ -961,7 +977,7 @@ index 1fb1d4f32af8150711ca766fcd7d0a0c177df7c4..4bea157f06924d80a850dd3151528129
      Merchant createMerchant(@Nullable String title);
  
      /**
-@@ -1111,20 +1199,41 @@ public interface Server extends PluginMessageRecipient {
+@@ -1146,20 +1234,41 @@ public interface Server extends PluginMessageRecipient {
       */
      boolean isPrimaryThread();
  
@@ -1003,7 +1019,7 @@ index 1fb1d4f32af8150711ca766fcd7d0a0c177df7c4..4bea157f06924d80a850dd3151528129
      String getShutdownMessage();
  
      /**
-@@ -1501,7 +1610,9 @@ public interface Server extends PluginMessageRecipient {
+@@ -1536,7 +1645,9 @@ public interface Server extends PluginMessageRecipient {
           * Sends the component to the player
           *
           * @param component the components to send
@@ -1013,7 +1029,7 @@ index 1fb1d4f32af8150711ca766fcd7d0a0c177df7c4..4bea157f06924d80a850dd3151528129
          public void broadcast(@NotNull net.md_5.bungee.api.chat.BaseComponent component) {
              throw new UnsupportedOperationException("Not supported yet.");
          }
-@@ -1510,7 +1621,9 @@ public interface Server extends PluginMessageRecipient {
+@@ -1545,7 +1656,9 @@ public interface Server extends PluginMessageRecipient {
           * Sends an array of components as a single message to the player
           *
           * @param components the components to send
@@ -1086,16 +1102,17 @@ index ac5e263d737973af077e3406a84a84baca4370db..2d91924b7f5ef16a91d40cdc1bfc3d68
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/UnsafeValues.java b/src/main/java/org/bukkit/UnsafeValues.java
-index 945b8b030d1b2a13afc0c4efad76997eb7bf00ba..207c656c0a11a3a630bc70491efcf433b2681e18 100644
+index 93345eaf4bd987490d32f9e60ab54140dbeda5c4..e9306f581b733b717efa932408cf9d74da4d911d 100644
 --- a/src/main/java/org/bukkit/UnsafeValues.java
 +++ b/src/main/java/org/bukkit/UnsafeValues.java
-@@ -17,6 +17,13 @@ import org.bukkit.plugin.PluginDescriptionFile;
+@@ -21,6 +21,14 @@ import org.bukkit.plugin.PluginDescriptionFile;
   */
  @Deprecated
  public interface UnsafeValues {
 +    // Paper start
 +    net.kyori.adventure.text.flattener.ComponentFlattener componentFlattener();
 +    net.kyori.adventure.text.serializer.plain.PlainComponentSerializer plainComponentSerializer();
++    net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer plainTextSerializer();
 +    net.kyori.adventure.text.serializer.gson.GsonComponentSerializer gsonComponentSerializer();
 +    net.kyori.adventure.text.serializer.gson.GsonComponentSerializer colorDownsamplingGsonComponentSerializer();
 +    net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer legacyComponentSerializer();
@@ -1579,7 +1596,7 @@ index 25a6f9313a1953def7470e411b53016f2ca14bef..10cb6088c4618f228c757f4e592b44ed
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/entity/Player.java b/src/main/java/org/bukkit/entity/Player.java
-index 4a20f96268ea831ed4fdd236b582abdf07dc4748..4f8c4a736c5c78cae66dd76b25d787f0d5d00831 100644
+index c36e4ceb1094aa9469f976e0952e2725358ff761..e3cc40a54b48e8a90ccc93c272c1a2dca1da9595 100644
 --- a/src/main/java/org/bukkit/entity/Player.java
 +++ b/src/main/java/org/bukkit/entity/Player.java
 @@ -35,7 +35,28 @@ import org.jetbrains.annotations.Nullable;
@@ -1752,7 +1769,7 @@ index 4a20f96268ea831ed4fdd236b582abdf07dc4748..4f8c4a736c5c78cae66dd76b25d787f0
      /**
       * Says a message (or runs a command).
       *
-@@ -473,6 +554,26 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -473,6 +554,90 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
       */
      public void sendEquipmentChange(@NotNull LivingEntity entity, @NotNull EquipmentSlot slot, @NotNull ItemStack item);
  
@@ -1776,18 +1793,23 @@ index 4a20f96268ea831ed4fdd236b582abdf07dc4748..4f8c4a736c5c78cae66dd76b25d787f0
 +        this.sendSignChange(loc, lines, DyeColor.BLACK);
 +    }
 +
-     /**
-      * Send a sign change. This fakes a sign change packet for a user at
-      * a certain location. This will not actually change the world in any way.
-@@ -485,9 +586,75 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
-      *
-      * @param loc the location of the sign
-      * @param lines the new text on the sign or null to clear it
++    /**
++     * Send a sign change. This fakes a sign change packet for a user at
++     * a certain location. This will not actually change the world in any way.
++     * This method will use a sign at the location's block or a faked sign
++     * sent via
++     * {@link #sendBlockChange(org.bukkit.Location, org.bukkit.Material, byte)}.
++     * <p>
++     * If the client does not have a sign at the given location it will
++     * display an error message to the user.
++     *
++     * @param loc the location of the sign
++     * @param lines the new text on the sign or null to clear it
 +     * @param dyeColor the color of the sign
-      * @throws IllegalArgumentException if location is null
++     * @throws IllegalArgumentException if location is null
 +     * @throws IllegalArgumentException if dyeColor is null
-      * @throws IllegalArgumentException if lines is non-null and has a length less than 4
-      */
++     * @throws IllegalArgumentException if lines is non-null and has a length less than 4
++     */
 +    default void sendSignChange(@NotNull Location loc, @Nullable java.util.List<net.kyori.adventure.text.Component> lines, @NotNull DyeColor dyeColor) throws IllegalArgumentException {
 +        this.sendSignChange(loc, lines, dyeColor, false);
 +    }
@@ -1835,22 +1857,15 @@ index 4a20f96268ea831ed4fdd236b582abdf07dc4748..4f8c4a736c5c78cae66dd76b25d787f0
 +        throws IllegalArgumentException;
 +    // Paper end
 +
-+    /**
-+     * Send a sign change. This fakes a sign change packet for a user at
-+     * a certain location. This will not actually change the world in any way.
-+     * This method will use a sign at the location's block or a faked sign
-+     * sent via
-+     * {@link #sendBlockChange(org.bukkit.Location, org.bukkit.Material, byte)}.
-+     * <p>
-+     * If the client does not have a sign at the given location it will
-+     * display an error message to the user.
-+     *
-+     * @param loc the location of the sign
-+     * @param lines the new text on the sign or null to clear it
-+     * @throws IllegalArgumentException if location is null
-+     * @throws IllegalArgumentException if lines is non-null and has a length less than 4
+     /**
+      * Send a sign change. This fakes a sign change packet for a user at
+      * a certain location. This will not actually change the world in any way.
+@@ -487,7 +652,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+      * @param lines the new text on the sign or null to clear it
+      * @throws IllegalArgumentException if location is null
+      * @throws IllegalArgumentException if lines is non-null and has a length less than 4
 +     * @deprecated in favour of {@link #sendSignChange(org.bukkit.Location, java.util.List)}
-+     */
+      */
 +    @Deprecated // Paper
      public void sendSignChange(@NotNull Location loc, @Nullable String[] lines) throws IllegalArgumentException;
  
@@ -1875,7 +1890,117 @@ index 4a20f96268ea831ed4fdd236b582abdf07dc4748..4f8c4a736c5c78cae66dd76b25d787f0
      public void sendSignChange(@NotNull Location loc, @Nullable String[] lines, @NotNull DyeColor dyeColor, boolean hasGlowingText) throws IllegalArgumentException;
  
      /**
-@@ -1051,7 +1222,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -1008,6 +1179,54 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+      */
+     public void setResourcePack(@NotNull String url, @Nullable byte[] hash, @Nullable String prompt);
+ 
++    // Paper start
++    /**
++     * Request that the player's client download and switch resource packs.
++     * <p>
++     * The player's client will download the new resource pack asynchronously
++     * in the background, and will automatically switch to it once the
++     * download is complete. If the client has downloaded and cached a
++     * resource pack with the same hash in the past it will not download but
++     * directly apply the cached pack. If the hash is null and the client has
++     * downloaded and cached the same resource pack in the past, it will
++     * perform a file size check against the response content to determine if
++     * the resource pack has changed and needs to be downloaded again. When
++     * this request is sent for the very first time from a given server, the
++     * client will first display a confirmation GUI to the player before
++     * proceeding with the download.
++     * <p>
++     * Notes:
++     * <ul>
++     * <li>Players can disable server resources on their client, in which
++     *     case this method will have no affect on them. Use the
++     *     {@link PlayerResourcePackStatusEvent} to figure out whether or not
++     *     the player loaded the pack!
++     * <li>There is no concept of resetting resource packs back to default
++     *     within Minecraft, so players will have to relog to do so or you
++     *     have to send an empty pack.
++     * <li>The request is sent with empty string as the hash when the hash is
++     *     not provided. This might result in newer versions not loading the
++     *     pack correctly.
++     * </ul>
++     *
++     * @param url The URL from which the client will download the resource
++     *     pack. The string must contain only US-ASCII characters and should
++     *     be encoded as per RFC 1738.
++     * @param hash The sha1 hash sum of the resource pack file which is used
++     *     to apply a cached version of the pack directly without downloading
++     *     if it is available. Hast to be 20 bytes long!
++     * @param prompt The optional custom prompt message to be shown to client.
++     * @throws IllegalArgumentException Thrown if the URL is null.
++     * @throws IllegalArgumentException Thrown if the URL is too long. The
++     *     length restriction is an implementation specific arbitrary value.
++     * @throws IllegalArgumentException Thrown if the hash is not 20 bytes
++     *     long.
++     */
++    default void setResourcePack(@NotNull String url, byte @Nullable [] hash, net.kyori.adventure.text.@Nullable Component prompt) {
++        this.setResourcePack(url, hash, prompt, false);
++    }
++    // Paper end
++
+     /**
+      * Request that the player's client download and switch resource packs.
+      * <p>
+@@ -1099,6 +1318,54 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+      */
+     public void setResourcePack(@NotNull String url, @Nullable byte[] hash, @Nullable String prompt, boolean force);
+ 
++    // Paper end
++    /**
++     * Request that the player's client download and switch resource packs.
++     * <p>
++     * The player's client will download the new resource pack asynchronously
++     * in the background, and will automatically switch to it once the
++     * download is complete. If the client has downloaded and cached a
++     * resource pack with the same hash in the past it will not download but
++     * directly apply the cached pack. If the hash is null and the client has
++     * downloaded and cached the same resource pack in the past, it will
++     * perform a file size check against the response content to determine if
++     * the resource pack has changed and needs to be downloaded again. When
++     * this request is sent for the very first time from a given server, the
++     * client will first display a confirmation GUI to the player before
++     * proceeding with the download.
++     * <p>
++     * Notes:
++     * <ul>
++     * <li>Players can disable server resources on their client, in which
++     *     case this method will have no affect on them. Use the
++     *     {@link PlayerResourcePackStatusEvent} to figure out whether or not
++     *     the player loaded the pack!
++     * <li>There is no concept of resetting resource packs back to default
++     *     within Minecraft, so players will have to relog to do so or you
++     *     have to send an empty pack.
++     * <li>The request is sent with empty string as the hash when the hash is
++     *     not provided. This might result in newer versions not loading the
++     *     pack correctly.
++     * </ul>
++     *
++     * @param url The URL from which the client will download the resource
++     *     pack. The string must contain only US-ASCII characters and should
++     *     be encoded as per RFC 1738.
++     * @param hash The sha1 hash sum of the resource pack file which is used
++     *     to apply a cached version of the pack directly without downloading
++     *     if it is available. Hast to be 20 bytes long!
++     * @param prompt The optional custom prompt message to be shown to client.
++     * @param force If true, the client will be disconnected from the server
++     *     when it declines to use the resource pack.
++     * @throws IllegalArgumentException Thrown if the URL is null.
++     * @throws IllegalArgumentException Thrown if the URL is too long. The
++     *     length restriction is an implementation specific arbitrary value.
++     * @throws IllegalArgumentException Thrown if the hash is not 20 bytes
++     *     long.
++     */
++    public void setResourcePack(@NotNull String url, byte @Nullable [] hash, net.kyori.adventure.text.@Nullable Component prompt, boolean force);
++    // Paper end
++
+     /**
+      * Gets the Scoreboard displayed to this player
+      *
+@@ -1192,7 +1459,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
       *
       * @param title Title text
       * @param subtitle Subtitle text
@@ -1884,7 +2009,7 @@ index 4a20f96268ea831ed4fdd236b582abdf07dc4748..4f8c4a736c5c78cae66dd76b25d787f0
       */
      @Deprecated
      public void sendTitle(@Nullable String title, @Nullable String subtitle);
-@@ -1070,7 +1241,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -1211,7 +1478,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
       * @param fadeIn time in ticks for titles to fade in. Defaults to 10.
       * @param stay time in ticks for titles to stay. Defaults to 70.
       * @param fadeOut time in ticks for titles to fade out. Defaults to 20.
@@ -1894,7 +2019,7 @@ index 4a20f96268ea831ed4fdd236b582abdf07dc4748..4f8c4a736c5c78cae66dd76b25d787f0
      public void sendTitle(@Nullable String title, @Nullable String subtitle, int fadeIn, int stay, int fadeOut);
  
      /**
-@@ -1297,6 +1470,14 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -1438,6 +1707,14 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
       */
      public int getClientViewDistance();
  
@@ -1909,7 +2034,7 @@ index 4a20f96268ea831ed4fdd236b582abdf07dc4748..4f8c4a736c5c78cae66dd76b25d787f0
      /**
       * Gets the player's estimated ping in milliseconds.
       *
-@@ -1322,8 +1503,10 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -1463,8 +1740,10 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
       * they wish.
       *
       * @return the player's locale
@@ -1920,7 +2045,7 @@ index 4a20f96268ea831ed4fdd236b582abdf07dc4748..4f8c4a736c5c78cae66dd76b25d787f0
      public String getLocale();
  
      /**
-@@ -1365,6 +1548,14 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -1506,6 +1785,14 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
       */
      public boolean isAllowingServerListings();
  
@@ -1935,7 +2060,7 @@ index 4a20f96268ea831ed4fdd236b582abdf07dc4748..4f8c4a736c5c78cae66dd76b25d787f0
      // Spigot start
      public class Spigot extends Entity.Spigot {
  
-@@ -1419,11 +1610,13 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -1560,11 +1847,13 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
              throw new UnsupportedOperationException("Not supported yet.");
          }
  
@@ -1949,7 +2074,7 @@ index 4a20f96268ea831ed4fdd236b582abdf07dc4748..4f8c4a736c5c78cae66dd76b25d787f0
          @Override
          public void sendMessage(@NotNull net.md_5.bungee.api.chat.BaseComponent... components) {
              throw new UnsupportedOperationException("Not supported yet.");
-@@ -1434,7 +1627,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -1575,7 +1864,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
           *
           * @param position the screen position
           * @param component the components to send
@@ -1959,7 +2084,7 @@ index 4a20f96268ea831ed4fdd236b582abdf07dc4748..4f8c4a736c5c78cae66dd76b25d787f0
          public void sendMessage(@NotNull net.md_5.bungee.api.ChatMessageType position, @NotNull net.md_5.bungee.api.chat.BaseComponent component) {
              throw new UnsupportedOperationException("Not supported yet.");
          }
-@@ -1444,7 +1639,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -1585,7 +1876,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
           *
           * @param position the screen position
           * @param components the components to send
@@ -1969,7 +2094,7 @@ index 4a20f96268ea831ed4fdd236b582abdf07dc4748..4f8c4a736c5c78cae66dd76b25d787f0
          public void sendMessage(@NotNull net.md_5.bungee.api.ChatMessageType position, @NotNull net.md_5.bungee.api.chat.BaseComponent... components) {
              throw new UnsupportedOperationException("Not supported yet.");
          }
-@@ -1455,7 +1652,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -1596,7 +1889,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
           * @param position the screen position
           * @param sender the sender of the message
           * @param component the components to send
@@ -1979,7 +2104,7 @@ index 4a20f96268ea831ed4fdd236b582abdf07dc4748..4f8c4a736c5c78cae66dd76b25d787f0
          public void sendMessage(@NotNull net.md_5.bungee.api.ChatMessageType position, @Nullable UUID sender, @NotNull net.md_5.bungee.api.chat.BaseComponent component) {
              throw new UnsupportedOperationException("Not supported yet.");
          }
-@@ -1466,7 +1665,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -1607,7 +1902,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
           * @param position the screen position
           * @param sender the sender of the message
           * @param components the components to send
@@ -4106,7 +4231,7 @@ index 0db7fe1b9fe5621ceed3f4f046691e359f5949dd..d5b39fb4fc16a342b5661e08df150685
  
      /**
 diff --git a/src/test/java/org/bukkit/AnnotationTest.java b/src/test/java/org/bukkit/AnnotationTest.java
-index c6a8a37a933cfc5a5885602a8a70fdda8fb6aa10..61441e56da69ee8cb92a2b1239f5406425a8344d 100644
+index c6a8a37a933cfc5a5885602a8a70fdda8fb6aa10..7f57b95727d0336f1f1548055574e0c129fe9643 100644
 --- a/src/test/java/org/bukkit/AnnotationTest.java
 +++ b/src/test/java/org/bukkit/AnnotationTest.java
 @@ -26,6 +26,12 @@ import org.objectweb.asm.tree.ParameterNode;
@@ -4122,3 +4247,12 @@ index c6a8a37a933cfc5a5885602a8a70fdda8fb6aa10..61441e56da69ee8cb92a2b1239f54064
          "Lorg/jetbrains/annotations/Nullable;",
          "Lorg/jetbrains/annotations/NotNull;",
          "Lorg/jetbrains/annotations/Contract;",
+@@ -105,7 +111,7 @@ public class AnnotationTest {
+                         if (method.invisibleTypeAnnotations != null) {
+                             for (final org.objectweb.asm.tree.TypeAnnotationNode invisibleTypeAnnotation : method.invisibleTypeAnnotations) {
+                                 final org.objectweb.asm.TypeReference ref = new org.objectweb.asm.TypeReference(invisibleTypeAnnotation.typeRef);
+-                                if (ref.getSort() == org.objectweb.asm.TypeReference.METHOD_FORMAL_PARAMETER && ref.getTypeParameterIndex() == i && java.util.Arrays.binarySearch(ACCEPTED_ANNOTATIONS, invisibleTypeAnnotation.desc) >= 0) {
++                                if (ref.getSort() == org.objectweb.asm.TypeReference.METHOD_FORMAL_PARAMETER && ref.getTypeParameterIndex() == i && org.apache.commons.lang.ArrayUtils.contains(ACCEPTED_ANNOTATIONS, invisibleTypeAnnotation.desc)) {
+                                     continue dancing;
+                                 }
+                             }

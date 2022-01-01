@@ -1,8 +1,11 @@
+import org.gradle.api.tasks.testing.logging.TestExceptionFormat
+import org.gradle.api.tasks.testing.logging.TestLogEvent
+
 plugins {
     java
     `maven-publish`
-    id("com.github.johnrengelman.shadow") version "7.1.0" apply false
-    id("io.papermc.paperweight.core") version "1.3.2"
+    id("com.github.johnrengelman.shadow") version "7.1.2" apply false
+    id("io.papermc.paperweight.core") version "1.3.3"
 }
 
 allprojects {
@@ -26,6 +29,13 @@ subprojects {
     }
     tasks.withType<ProcessResources> {
         filteringCharset = Charsets.UTF_8.name()
+    }
+    tasks.withType<Test> {
+        testLogging {
+            showStackTraces = true
+            exceptionFormat = TestExceptionFormat.FULL
+            events(TestLogEvent.STANDARD_OUT)
+        }
     }
 
     if (name == "Paper-MojangAPI") {
