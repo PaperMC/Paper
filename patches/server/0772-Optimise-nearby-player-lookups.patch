@@ -26,12 +26,12 @@ index 1f602d50f3212078490c0092ceefd3b17e0b1532..825fdb0336b0388dbbc54c8da9978190
      // Paper end - optimise anyPlayerCloseEnoughForSpawning
      long lastAutoSaveTime; // Paper - incremental autosave
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index 9b70613762310f50f2c036f3d462b76538d1165f..db739bc7d10db0e27fdeba24165bbf2951b2802b 100644
+index 075c09e241ca71d21049b71e0b520ba71caebd24..1ceb4f282fdcbe3bc7b75db95a93e547bee227ae 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
 @@ -159,6 +159,13 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
      int viewDistance;
-     public final com.destroystokyo.paper.util.PlayerMobDistanceMap playerMobDistanceMap; // Paper
+     public final com.destroystokyo.paper.util.misc.PlayerAreaMap playerMobDistanceMap; // Paper
  
 +    // Paper start - optimise checkDespawn
 +    public static final int GENERAL_AREA_MAP_SQUARE_RADIUS = 40;
@@ -48,26 +48,26 @@ index 9b70613762310f50f2c036f3d462b76538d1165f..db739bc7d10db0e27fdeba24165bbf29
          // Note: players need to be explicitly added to distance maps before they can be updated
          this.playerChunkTickRangeMap.add(player, chunkX, chunkZ, DistanceManager.MOB_SPAWN_RANGE); // Paper - optimise ChunkMap#anyPlayerCloseEnoughForSpawning
 +        this.playerGeneralAreaMap.add(player, chunkX, chunkZ, GENERAL_AREA_MAP_SQUARE_RADIUS); // Paper - optimise checkDespawn
-     }
- 
-     void removePlayerFromDistanceMaps(ServerPlayer player) {
-@@ -248,6 +256,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+         // Paper start - per player mob spawning
+         if (this.playerMobDistanceMap != null) {
+             this.playerMobDistanceMap.add(player, chunkX, chunkZ, this.distanceManager.getSimulationDistance());
+@@ -254,6 +262,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          this.playerMobSpawnMap.remove(player);
          this.playerChunkTickRangeMap.remove(player);
          // Paper end - optimise ChunkMap#anyPlayerCloseEnoughForSpawning
 +        this.playerGeneralAreaMap.remove(player); // Paper - optimise checkDespawns
-     }
- 
-     void updateMaps(ServerPlayer player) {
-@@ -263,6 +272,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+         // Paper start - per player mob spawning
+         if (this.playerMobDistanceMap != null) {
+             this.playerMobDistanceMap.remove(player);
+@@ -274,6 +283,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          }
          // Paper end - use distance map to optimise entity tracker
          this.playerChunkTickRangeMap.update(player, chunkX, chunkZ, DistanceManager.MOB_SPAWN_RANGE); // Paper - optimise ChunkMap#anyPlayerCloseEnoughForSpawning
 +        this.playerGeneralAreaMap.update(player, chunkX, chunkZ, GENERAL_AREA_MAP_SQUARE_RADIUS); // Paper - optimise checkDespawn
-     }
-     // Paper end
-     // Paper start
-@@ -418,6 +428,23 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+         // Paper start - per player mob spawning
+         if (this.playerMobDistanceMap != null) {
+             this.playerMobDistanceMap.update(player, chunkX, chunkZ, this.distanceManager.getSimulationDistance());
+@@ -434,6 +444,23 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
                  }
              });
          // Paper end - optimise ChunkMap#anyPlayerCloseEnoughForSpawning
@@ -195,7 +195,7 @@ index 83517c4eaf419770178f0520210218e0a70c4642..0918bb28fd058e6b79f45993a46738a5
  
          this.handlingTick = true;
 diff --git a/src/main/java/net/minecraft/world/entity/Mob.java b/src/main/java/net/minecraft/world/entity/Mob.java
-index 72888f28583d89f5cc38b6d6628f6557df16638b..153d866a09f598ae08cab7dedbcddfc9ce969d4b 100644
+index 736b51e411b009db0482d9a72f179cc7b6241265..031660f7d0ea270f87e5174a4fe65ccad1f7a561 100644
 --- a/src/main/java/net/minecraft/world/entity/Mob.java
 +++ b/src/main/java/net/minecraft/world/entity/Mob.java
 @@ -792,7 +792,12 @@ public abstract class Mob extends LivingEntity {
@@ -287,10 +287,10 @@ index 103428df78d1efe805ab425f1b4085077239bdf6..4247dcb003626535dbb997f48ad9f613
      protected Level(WritableLevelData worlddatamutable, ResourceKey<Level> resourcekey, final DimensionType dimensionmanager, Supplier<ProfilerFiller> supplier, boolean flag, boolean flag1, long i, org.bukkit.generator.ChunkGenerator gen, org.bukkit.generator.BiomeProvider biomeProvider, org.bukkit.World.Environment env, java.util.concurrent.Executor executor) { // Paper - Async-Anti-Xray - Pass executor
          this.spigotConfig = new org.spigotmc.SpigotWorldConfig(((net.minecraft.world.level.storage.PrimaryLevelData) worlddatamutable).getLevelName()); // Spigot
 diff --git a/src/main/java/net/minecraft/world/level/NaturalSpawner.java b/src/main/java/net/minecraft/world/level/NaturalSpawner.java
-index 4e18272192fc3bbb22cc98f2640480c30a056239..4286a4b3e2dabcc4c512d250d909e7b074cbfae7 100644
+index abb57345a97f36d05eab9bc96ffd6396926c219f..c6bddf5e08376f1f254a27fc38647587eefcb00a 100644
 --- a/src/main/java/net/minecraft/world/level/NaturalSpawner.java
 +++ b/src/main/java/net/minecraft/world/level/NaturalSpawner.java
-@@ -275,7 +275,7 @@ public final class NaturalSpawner {
+@@ -282,7 +282,7 @@ public final class NaturalSpawner {
                              blockposition_mutableblockposition.set(l, i, i1);
                              double d0 = (double) l + 0.5D;
                              double d1 = (double) i1 + 0.5D;
@@ -299,7 +299,7 @@ index 4e18272192fc3bbb22cc98f2640480c30a056239..4286a4b3e2dabcc4c512d250d909e7b0
  
                              if (entityhuman != null) {
                                  double d2 = entityhuman.distanceToSqr(d0, (double) i, d1);
-@@ -348,7 +348,7 @@ public final class NaturalSpawner {
+@@ -355,7 +355,7 @@ public final class NaturalSpawner {
      }
  
      private static boolean isRightDistanceToPlayerAndSpawnPoint(ServerLevel world, ChunkAccess chunk, BlockPos.MutableBlockPos pos, double squaredDistance) {
