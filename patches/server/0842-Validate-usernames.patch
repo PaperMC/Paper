@@ -1,0 +1,62 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Sat, 1 Jan 2022 05:19:37 -0800
+Subject: [PATCH] Validate usernames
+
+
+diff --git a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
+index 33a29890435d6065a2cc4f8e8bf8209c01d5d114..0df723378b49aecacc15400db4b5f56c87a965b3 100644
+--- a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
+@@ -230,10 +230,38 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener
+         // Paper end
+     }
+ 
++    // Paper start - validate usernames
++    public static boolean validateUsername(String in) {
++        if (in == null || in.isEmpty() || in.length() > 16) {
++            return false;
++        }
++
++        for (int i = 0, len = in.length(); i < len; ++i) {
++            char c = in.charAt(i);
++
++            if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || (c == '_')) {
++                continue;
++            }
++
++            return false;
++        }
++
++        return true;
++    }
++    // Paper end - validate usernames
++
+     @Override
+     public void handleHello(ServerboundHelloPacket packet) {
+         Validate.validState(this.state == ServerLoginPacketListenerImpl.State.HELLO, "Unexpected hello packet", new Object[0]);
+         this.gameProfile = packet.getGameProfile();
++        // Paper start - validate usernames
++        if (com.destroystokyo.paper.PaperConfig.isProxyOnlineMode()) {
++            if (!validateUsername(this.gameProfile.getName())) {
++                ServerLoginPacketListenerImpl.this.disconnect("Failed to verify username!");
++                return;
++            }
++        }
++        // Paper end - validate usernames
+         if (this.server.usesAuthentication() && !this.connection.isMemoryConnection()) {
+             this.state = ServerLoginPacketListenerImpl.State.KEY;
+             this.connection.send(new ClientboundHelloPacket("", this.server.getKeyPair().getPublic().getEncoded(), this.nonce));
+diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
+index 042be2cf60a9d01698808d84f2e537a5eb952079..f55f8c0b2c748a5442199c0a7f772b02ed533753 100644
+--- a/src/main/java/net/minecraft/server/players/PlayerList.java
++++ b/src/main/java/net/minecraft/server/players/PlayerList.java
+@@ -703,7 +703,7 @@ public abstract class PlayerList {
+ 
+         for (int i = 0; i < this.players.size(); ++i) {
+             entityplayer = (ServerPlayer) this.players.get(i);
+-            if (entityplayer.getUUID().equals(uuid)) {
++            if (entityplayer.getUUID().equals(uuid) || (com.destroystokyo.paper.PaperConfig.isProxyOnlineMode() && entityplayer.getGameProfile().getName().equalsIgnoreCase(gameprofile.getName()))) { // Paper - validate usernames
+                 list.add(entityplayer);
+             }
+         }
