@@ -612,9 +612,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                for (ServerPlayer player : this.level.players) {
 +                    Arrays.fill(player.mobCounts, 0);
 +                }
-+                spawnercreature_d = NaturalSpawner.createState(l, this.level.getAllEntities(), this::getFullChunk, new LocalMobCapCalculator(this.chunkMap), true);
++                spawnercreature_d = NaturalSpawner.createState(l, this.level.getAllEntities(), this::getFullChunk, null, true);
 +            } else {
-+                spawnercreature_d = NaturalSpawner.createState(l, this.level.getAllEntities(), this::getFullChunk, new LocalMobCapCalculator(this.chunkMap), false);
++                spawnercreature_d = NaturalSpawner.createState(l, this.level.getAllEntities(), this::getFullChunk, this.chunkMap.playerMobDistanceMap == null ? new LocalMobCapCalculator(this.chunkMap) : null, false);
 +            }
 +            // Paper end
              this.level.timings.countNaturalMobs.stopTiming(); // Paper - timings
@@ -663,6 +663,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          Object2IntOpenHashMap<MobCategory> object2intopenhashmap = new Object2IntOpenHashMap();
          Iterator iterator = entities.iterator();
 @@ -0,0 +0,0 @@ public final class NaturalSpawner {
+                         spawnercreatureprobabilities.addCharge(entity.blockPosition(), biomesettingsmobs_b.getCharge());
+                     }
+ 
+-                    if (entity instanceof Mob) {
++                    if (localmobcapcalculator != null && entity instanceof Mob) {
+                         localmobcapcalculator.addMob(chunk.getPos(), enumcreaturetype);
                      }
  
                      object2intopenhashmap.addTo(enumcreaturetype, 1);
@@ -793,3 +799,20 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
      private static boolean isRightDistanceToPlayerAndSpawnPoint(ServerLevel world, ChunkAccess chunk, BlockPos.MutableBlockPos pos, double squaredDistance) {
+@@ -0,0 +0,0 @@ public final class NaturalSpawner {
+             MobCategory enumcreaturetype = entitytypes.getCategory();
+ 
+             this.mobCategoryCounts.addTo(enumcreaturetype, 1);
+-            this.localMobCapCalculator.addMob(new ChunkPos(blockposition), enumcreaturetype);
++            if (this.localMobCapCalculator != null) this.localMobCapCalculator.addMob(new ChunkPos(blockposition), enumcreaturetype); // Paper
+         }
+ 
+         public int getSpawnableChunkCount() {
+@@ -0,0 +0,0 @@ public final class NaturalSpawner {
+             int i = limit * this.spawnableChunkCount / NaturalSpawner.MAGIC_NUMBER;
+             // CraftBukkit end
+ 
++            if (this.localMobCapCalculator == null) return this.mobCategoryCounts.getInt(enumcreaturetype) < i; // Paper
+             return this.mobCategoryCounts.getInt(enumcreaturetype) >= i ? false : this.localMobCapCalculator.canSpawn(enumcreaturetype, chunkcoordintpair);
+         }
+     }
