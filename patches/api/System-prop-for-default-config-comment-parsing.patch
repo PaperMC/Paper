@@ -1,0 +1,51 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Thu, 30 Dec 2021 16:35:56 -0800
+Subject: [PATCH] System prop for default config comment parsing
+
+Allows for certain legacy plugins to continue to work without changing
+by setting `Paper.parseYamlCommentsByDefault` to false
+
+diff --git a/src/main/java/org/bukkit/configuration/file/FileConfigurationOptions.java b/src/main/java/org/bukkit/configuration/file/FileConfigurationOptions.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/configuration/file/FileConfigurationOptions.java
++++ b/src/main/java/org/bukkit/configuration/file/FileConfigurationOptions.java
+@@ -0,0 +0,0 @@ import org.jetbrains.annotations.Nullable;
+ public class FileConfigurationOptions extends MemoryConfigurationOptions {
+     private List<String> header = Collections.emptyList();
+     private List<String> footer = Collections.emptyList();
+-    private boolean parseComments = true;
++    // Paper start - add system prop for comment parsing
++    private static final boolean PAPER_PARSE_COMMENTS_BY_DEFAULT = Boolean.parseBoolean(System.getProperty("Paper.parseYamlCommentsByDefault", "true"));
++    private boolean parseComments = PAPER_PARSE_COMMENTS_BY_DEFAULT;
++    // Paper end
+ 
+     protected FileConfigurationOptions(@NotNull MemoryConfiguration configuration) {
+         super(configuration);
+diff --git a/src/main/java/org/bukkit/configuration/file/YamlRepresenter.java b/src/main/java/org/bukkit/configuration/file/YamlRepresenter.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/configuration/file/YamlRepresenter.java
++++ b/src/main/java/org/bukkit/configuration/file/YamlRepresenter.java
+@@ -0,0 +0,0 @@ import org.yaml.snakeyaml.representer.Representer;
+ public class YamlRepresenter extends Representer {
+ 
+     public YamlRepresenter() {
++        this.multiRepresenters.put(org.bukkit.configuration.ConfigurationSection.class, new RepresentConfigurationSection()); // Paper - restore old yaml config section representer
+         this.multiRepresenters.put(ConfigurationSerializable.class, new RepresentConfigurationSerializable());
+         // SPIGOT-6234: We could just switch YamlConstructor to extend Constructor rather than SafeConstructor, however there is a very small risk of issues with plugins treating config as untrusted input
+         // So instead we will just allow future plugins to have their enums extend ConfigurationSerializable
+         this.multiRepresenters.remove(Enum.class);
+     }
++    // Paper start - restore old yaml config section representer
++    private class RepresentConfigurationSection extends RepresentMap {
++
++        @NotNull
++        @Override
++        public Node representData(@NotNull Object data) {
++            return super.representData(((org.bukkit.configuration.ConfigurationSection) data).getValues(false));
++        }
++    }
++    // Paper end
+ 
+     private class RepresentConfigurationSerializable extends RepresentMap {
+ 
