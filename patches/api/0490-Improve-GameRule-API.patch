@@ -1,0 +1,103 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sat, 1 Jan 2022 15:54:09 -0800
+Subject: [PATCH] Improve GameRule API
+
+
+diff --git a/src/main/java/org/bukkit/GameRule.java b/src/main/java/org/bukkit/GameRule.java
+index 4482e8f2c617c2f51b2b53762e775d118002363a..684c546479f0103c538b7af5d612fe53839c771a 100644
+--- a/src/main/java/org/bukkit/GameRule.java
++++ b/src/main/java/org/bukkit/GameRule.java
+@@ -357,6 +357,16 @@ public final class GameRule<T> implements net.kyori.adventure.translation.Transl
+     }
+ 
+     // Paper start
++    /**
++     * Get the default value this {@link GameRule}.
++     *
++     * @return the default value
++     */
++    @SuppressWarnings("deprecation") // using unsafe as bridge
++    public @NotNull T getDefaultValue() {
++        return Bukkit.getUnsafe().getGameRuleDefault(this);
++    }
++
+     @Override
+     public @NotNull String translationKey() {
+         return "gamerule." + this.name;
+diff --git a/src/main/java/org/bukkit/RegionAccessor.java b/src/main/java/org/bukkit/RegionAccessor.java
+index 05ecf3cb38ff42c8b52405d900197e6bf47dd1e6..a19adcde803b6ae8da223ac8451b3d0a8c21cc5e 100644
+--- a/src/main/java/org/bukkit/RegionAccessor.java
++++ b/src/main/java/org/bukkit/RegionAccessor.java
+@@ -539,4 +539,27 @@ public interface RegionAccessor extends Keyed, io.papermc.paper.world.flag.Featu
+      */
+     boolean hasCollisionsIn(@NotNull org.bukkit.util.BoundingBox boundingBox);
+     // Paper end
++
++    // Paper start - add gamerule methods here
++    /**
++     * Get the current value for a given {@link GameRule}.
++     *
++     * @param rule the GameRule to check
++     * @param <T> the GameRule's type
++     * @return the current value
++     * @see GameRule#getValue(World)
++     */
++    <T> @NotNull T getGameRuleValue(@NotNull GameRule<T> rule);
++
++    /**
++     * Set the given {@link GameRule}'s new value.
++     *
++     * @param rule the GameRule to update
++     * @param newValue the new value
++     * @param <T> the value type of the GameRule
++     * @return true if the value was successfully set
++     * @see GameRule#setValue(World, Object)
++     */
++    <T> boolean setGameRule(@NotNull GameRule<T> rule, @NotNull T newValue);
++    // Paper end - add gamerule methods here
+ }
+diff --git a/src/main/java/org/bukkit/UnsafeValues.java b/src/main/java/org/bukkit/UnsafeValues.java
+index 10c87b7c19ed3eab28fdce5f225df3767292ee0a..961174b4a87b797b8dceffbe9cb91d8ce8758276 100644
+--- a/src/main/java/org/bukkit/UnsafeValues.java
++++ b/src/main/java/org/bukkit/UnsafeValues.java
+@@ -316,4 +316,6 @@ public interface UnsafeValues {
+     <A extends Keyed, M> io.papermc.paper.registry.tag.@Nullable Tag<A> getTag(io.papermc.paper.registry.tag.@NotNull TagKey<A> tagKey); // Paper - hack to get tags for non-server backed registries
+ 
+     ItemStack createEmptyStack(); // Paper - proxy ItemStack
++
++    <T> @NotNull T getGameRuleDefault(@NotNull GameRule<T> rule); // Paper - get default game rule value
+ }
+diff --git a/src/main/java/org/bukkit/World.java b/src/main/java/org/bukkit/World.java
+index d8a23aa0d898ca3360757721e38ddb97387f7d21..4ffcba883ae71ce7b4079130a3d7c07da1a7cd60 100644
+--- a/src/main/java/org/bukkit/World.java
++++ b/src/main/java/org/bukkit/World.java
+@@ -3509,8 +3509,9 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
+      * @param rule the GameRule to check
+      * @param <T> the GameRule's type
+      * @return the current value
++     * @see GameRule#getValue(World)
+      */
+-    @Nullable
++    @NotNull // Paper - make not null
+     public <T> T getGameRuleValue(@NotNull GameRule<T> rule);
+ 
+     /**
+@@ -3520,7 +3521,9 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
+      * @param rule the rule to return a default value for
+      * @param <T> the type of GameRule
+      * @return the default value
++     * @deprecated use {@link GameRule#getDefaultValue()} instead
+      */
++    @Deprecated(since = "1.21") // Paper
+     @Nullable
+     public <T> T getGameRuleDefault(@NotNull GameRule<T> rule);
+ 
+@@ -3531,6 +3534,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
+      * @param newValue the new value
+      * @param <T> the value type of the GameRule
+      * @return true if the value was successfully set
++     * @see GameRule#setValue(World, Object)
+      */
+     public <T> boolean setGameRule(@NotNull GameRule<T> rule, @NotNull T newValue);
+ 

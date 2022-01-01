@@ -1,0 +1,100 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sat, 1 Jan 2022 15:53:52 -0800
+Subject: [PATCH] Improve GameRule API
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftRegionAccessor.java b/src/main/java/org/bukkit/craftbukkit/CraftRegionAccessor.java
+index c9ecec5da937bc5458f69736b68ff6ae50aa5ebc..b852ead129951eaeddd47c1e90b10f2aa5a5e58b 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftRegionAccessor.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftRegionAccessor.java
+@@ -565,4 +565,27 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
+         return io.papermc.paper.world.flag.PaperFeatureFlagProviderImpl.fromNms(this.getHandle().enabledFeatures());
+     }
+     // Paper end - feature flag API
++
++    // Paper start - move gamerule methods here
++    @Override
++    public <T> T getGameRuleValue(org.bukkit.GameRule<T> rule) {
++        Preconditions.checkArgument(rule != null, "GameRule cannot be null");
++        return java.util.Objects.requireNonNull(CraftWorld.convert(rule, this.getHandle().getLevelData().getGameRules().getRule(CraftWorld.getGameRulesNMS().get(rule.getName()))), rule + " is an unrecognized game rule"); // Paper - make not null
++    }
++
++    @Override
++    public <T> boolean setGameRule(org.bukkit.GameRule<T> rule, T newValue) {
++        Preconditions.checkArgument(rule != null, "GameRule cannot be null");
++        Preconditions.checkArgument(newValue != null, "GameRule value cannot be null");
++
++        // Paper start - Add WorldGameRuleChangeEvent
++        io.papermc.paper.event.world.WorldGameRuleChangeEvent event = new io.papermc.paper.event.world.WorldGameRuleChangeEvent(this.getHandle().getLevel().getWorld(), null, rule, String.valueOf(newValue));
++        if (!event.callEvent()) return false;
++        // Paper end - Add WorldGameRuleChangeEvent
++        net.minecraft.world.level.GameRules.Value<?> handle = this.getHandle().getLevelData().getGameRules().getRule(CraftWorld.getGameRulesNMS().get(rule.getName()));
++        handle.deserialize(event.getValue()); // Paper - Add WorldGameRuleChangeEvent
++        handle.onChanged(this.getHandle().getLevel());
++        return true;
++    }
++    // Paper end - move gamerule methods here
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+index cd3381d8225e0322b3e285b3c4aa0a1265a91cc0..c1bdaaec30cdca995580c3d7efde60f56f526d71 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+@@ -2046,11 +2046,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+         return CraftWorld.getGameRulesNMS().containsKey(rule);
+     }
+ 
+-    @Override
+-    public <T> T getGameRuleValue(GameRule<T> rule) {
+-        Preconditions.checkArgument(rule != null, "GameRule cannot be null");
+-        return this.convert(rule, this.getHandle().getGameRules().getRule(CraftWorld.getGameRulesNMS().get(rule.getName())));
+-    }
++    // Paper - move to CraftRegionAccessor
+ 
+     @Override
+     public <T> T getGameRuleDefault(GameRule<T> rule) {
+@@ -2058,24 +2054,9 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+         return this.convert(rule, CraftWorld.getGameRuleDefinitions().get(rule.getName()).createRule());
+     }
+ 
+-    @Override
+-    public <T> boolean setGameRule(GameRule<T> rule, T newValue) {
+-        Preconditions.checkArgument(rule != null, "GameRule cannot be null");
+-        Preconditions.checkArgument(newValue != null, "GameRule value cannot be null");
+-
+-        if (!this.isGameRule(rule.getName())) return false;
+-
+-        // Paper start - Add WorldGameRuleChangeEvent
+-        io.papermc.paper.event.world.WorldGameRuleChangeEvent event = new io.papermc.paper.event.world.WorldGameRuleChangeEvent(this, null, rule, String.valueOf(newValue));
+-        if (!event.callEvent()) return false;
+-        // Paper end - Add WorldGameRuleChangeEvent
+-        GameRules.Value<?> handle = this.getHandle().getGameRules().getRule(CraftWorld.getGameRulesNMS().get(rule.getName()));
+-        handle.deserialize(event.getValue()); // Paper - Add WorldGameRuleChangeEvent
+-        handle.onChanged(this.getHandle());
+-        return true;
+-    }
++    // Paper - move to CraftRegionAccessor
+ 
+-    private <T> T convert(GameRule<T> rule, GameRules.Value<?> value) {
++    public static <T> T convert(GameRule<T> rule, GameRules.Value<?> value) { // Paper - make static
+         if (value == null) {
+             return null;
+         }
+diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
+index f78744b6d6075f584d9a88612661854f3f04aed1..5c98de39f9e55567d480ba4c01710fa3e6424ba4 100644
+--- a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
++++ b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
+@@ -719,6 +719,13 @@ public final class CraftMagicNumbers implements UnsafeValues {
+     }
+     // Paper end - proxy ItemStack
+ 
++    // Paper start - game rule default
++    @Override
++    public <T> T getGameRuleDefault(org.bukkit.GameRule<T> rule) {
++        return java.util.Objects.requireNonNull(org.bukkit.craftbukkit.CraftWorld.convert(rule, org.bukkit.craftbukkit.CraftWorld.getGameRuleDefinitions().get(rule.getName()).createRule()), rule + " is an unrecognized game rule");
++    }
++    // Paper end - game rule default
++
+     /**
+      * This helper class represents the different NBT Tags.
+      * <p>
