@@ -1,0 +1,51 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Fri, 31 Dec 2021 17:41:29 -0800
+Subject: [PATCH] Add subtitle translation keys
+
+
+diff --git a/src/main/java/org/bukkit/Sound.java b/src/main/java/org/bukkit/Sound.java
+index da844079a9d3efd1a92c892de79fc7b3aeecaf4b..32c14a571acb2020f89ba2b45970275f95d7da11 100644
+--- a/src/main/java/org/bukkit/Sound.java
++++ b/src/main/java/org/bukkit/Sound.java
+@@ -1334,6 +1334,24 @@ public enum Sound implements Keyed, net.kyori.adventure.sound.Sound.Type { // Pa
+     WEATHER_RAIN("weather.rain"),
+     WEATHER_RAIN_ABOVE("weather.rain.above");
+ 
++    // Paper start
++    private static final java.util.Map<String, String> SUBTITLE_TRANSLATION_KEYS;
++
++    static {
++        java.util.Map<String, String> map = new java.util.LinkedHashMap<>();
++        java.io.InputStream stream = Sound.class.getResourceAsStream("/assets/paper/data/sounds.json");
++        if (stream != null) {
++            com.google.gson.JsonObject sounds = new com.google.gson.Gson().fromJson(new java.io.BufferedReader(new java.io.InputStreamReader(stream)), com.google.gson.JsonObject.class);
++            for (String key : sounds.keySet()) {
++                if (sounds.get(key).getAsJsonObject().has("subtitle")) {
++                    map.put(key, sounds.get(key).getAsJsonObject().get("subtitle").getAsString());
++                }
++            }
++        }
++        SUBTITLE_TRANSLATION_KEYS = java.util.Collections.unmodifiableMap(map);
++    }
++    // Paper end
++
+     private final NamespacedKey key;
+ 
+     private Sound(String key) {
+@@ -1352,5 +1370,15 @@ public enum Sound implements Keyed, net.kyori.adventure.sound.Sound.Type { // Pa
+     public net.kyori.adventure.key.@org.checkerframework.checker.nullness.qual.NonNull Key key() {
+         return this.key;
+     }
++
++    /**
++     * Get the subtitle translation key for this sound. Not all sounds
++     * have a subtitle and some sounds have the same as others.
++     *
++     * @return the subtitle translation key or null if none
++     */
++    public @org.jetbrains.annotations.Nullable String subtitleTranslationKey() {
++        return SUBTITLE_TRANSLATION_KEYS.get(this.key.getKey());
++    }
+     // Paper end
+ }
