@@ -56,7 +56,7 @@
      private static final int MAX_TICKS_BEFORE_LOGIN = 600;
      private final byte[] challenge;
      final MinecraftServer server;
-@@ -57,9 +86,10 @@
+@@ -57,9 +86,11 @@
      @Nullable
      String requestedUsername;
      @Nullable
@@ -65,10 +65,11 @@
      private final String serverId;
      private final boolean transferred;
 +    private ServerPlayer player; // CraftBukkit
++    public boolean iKnowThisMayNotBeTheBestIdeaButPleaseDisableUsernameValidation = false; // Paper - username validation overriding
  
      public ServerLoginPacketListenerImpl(MinecraftServer server, Connection connection, boolean transferred) {
          this.state = ServerLoginPacketListenerImpl.State.HELLO;
-@@ -72,10 +102,24 @@
+@@ -72,10 +103,24 @@
  
      @Override
      public void tick() {
@@ -93,7 +94,7 @@
          if (this.state == ServerLoginPacketListenerImpl.State.WAITING_FOR_DUPE_DISCONNECT && !this.isPlayerAlreadyInWorld((GameProfile) Objects.requireNonNull(this.authenticatedProfile))) {
              this.finishLoginAndWaitForClient(this.authenticatedProfile);
          }
-@@ -86,6 +130,13 @@
+@@ -86,6 +131,13 @@
  
      }
  
@@ -107,7 +108,22 @@
      @Override
      public boolean isAcceptingMessages() {
          return this.connection.isConnected();
-@@ -131,7 +182,26 @@
+@@ -120,7 +172,13 @@
+     @Override
+     public void handleHello(ServerboundHelloPacket packet) {
+         Validate.validState(this.state == ServerLoginPacketListenerImpl.State.HELLO, "Unexpected hello packet", new Object[0]);
+-        Validate.validState(StringUtil.isValidPlayerName(packet.name()), "Invalid characters in username", new Object[0]);
++        // Paper start - Validate usernames
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.isProxyOnlineMode()
++            && io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.performUsernameValidation
++            && !this.iKnowThisMayNotBeTheBestIdeaButPleaseDisableUsernameValidation) {
++            Validate.validState(StringUtil.isReasonablePlayerName(packet.name()), "Invalid characters in username", new Object[0]);
++        }
++        // Paper end - Validate usernames
+         this.requestedUsername = packet.name();
+         GameProfile gameprofile = this.server.getSingleplayerProfile();
+ 
+@@ -131,7 +189,26 @@
                  this.state = ServerLoginPacketListenerImpl.State.KEY;
                  this.connection.send(new ClientboundHelloPacket("", this.server.getKeyPair().getPublic().getEncoded(), this.challenge, true));
              } else {
@@ -135,7 +151,7 @@
              }
  
          }
-@@ -144,10 +214,24 @@
+@@ -144,10 +221,24 @@
  
      private void verifyLoginAndFinishConnectionSetup(GameProfile profile) {
          PlayerList playerlist = this.server.getPlayerList();
@@ -163,7 +179,7 @@
          } else {
              if (this.server.getCompressionThreshold() >= 0 && !this.connection.isMemoryConnection()) {
                  this.connection.send(new ClientboundLoginCompressionPacket(this.server.getCompressionThreshold()), PacketSendListener.thenRun(() -> {
-@@ -155,12 +239,12 @@
+@@ -155,12 +246,12 @@
                  }));
              }
  
@@ -178,7 +194,7 @@
              }
          }
  
-@@ -195,7 +279,8 @@
+@@ -195,7 +286,8 @@
              throw new IllegalStateException("Protocol error", cryptographyexception);
          }
  
@@ -188,7 +204,7 @@
              public void run() {
                  String s1 = (String) Objects.requireNonNull(ServerLoginPacketListenerImpl.this.requestedUsername, "Player name not initialized");
  
-@@ -205,11 +290,17 @@
+@@ -205,11 +297,17 @@
                      if (profileresult != null) {
                          GameProfile gameprofile = profileresult.profile();
  
@@ -207,7 +223,7 @@
                      } else {
                          ServerLoginPacketListenerImpl.this.disconnect(Component.translatable("multiplayer.disconnect.unverified_username"));
                          ServerLoginPacketListenerImpl.LOGGER.error("Username '{}' tried to join with an invalid session", s1);
-@@ -217,11 +308,16 @@
+@@ -217,11 +315,16 @@
                  } catch (AuthenticationUnavailableException authenticationunavailableexception) {
                      if (ServerLoginPacketListenerImpl.this.server.isSingleplayer()) {
                          ServerLoginPacketListenerImpl.LOGGER.warn("Authentication servers are down but will let them in anyway!");
@@ -226,7 +242,7 @@
                  }
  
              }
-@@ -232,11 +328,54 @@
+@@ -232,11 +335,54 @@
  
                  return ServerLoginPacketListenerImpl.this.server.getPreventProxyConnections() && socketaddress instanceof InetSocketAddress ? ((InetSocketAddress) socketaddress).getAddress() : null;
              }
@@ -284,7 +300,7 @@
  
      @Override
      public void handleCustomQueryPacket(ServerboundCustomQueryAnswerPacket packet) {
-@@ -245,10 +384,11 @@
+@@ -245,10 +391,11 @@
  
      @Override
      public void handleLoginAcknowledgement(ServerboundLoginAcknowledgedPacket packet) {
@@ -297,7 +313,7 @@
  
          this.connection.setupInboundProtocol(ConfigurationProtocols.SERVERBOUND, serverconfigurationpacketlistenerimpl);
          serverconfigurationpacketlistenerimpl.startConfiguration();
-@@ -264,12 +404,44 @@
+@@ -264,12 +411,44 @@
  
      @Override
      public void handleCookieResponse(ServerboundCookieResponsePacket packet) {
