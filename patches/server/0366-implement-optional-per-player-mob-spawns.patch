@@ -593,7 +593,7 @@ index 0c82b270c7095c7e4666a8078ecc7142503795c4..0583d7ee24f694fbf5138dfae9f7b8c8
          double d0 = (double) SectionPos.sectionToBlockCoord(pos.x, 8);
          double d1 = (double) SectionPos.sectionToBlockCoord(pos.z, 8);
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-index 7b391d6ab84eeaed7bdd27ea70d5e3f9690a0abf..313e1ba78abd6394def9d00ae671b901a6298bd1 100644
+index 7b391d6ab84eeaed7bdd27ea70d5e3f9690a0abf..17a36ee61aacfc41e2d926335c460350cd25ab42 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 @@ -916,7 +916,22 @@ public class ServerChunkCache extends ChunkSource {
@@ -612,9 +612,9 @@ index 7b391d6ab84eeaed7bdd27ea70d5e3f9690a0abf..313e1ba78abd6394def9d00ae671b901
 +                for (ServerPlayer player : this.level.players) {
 +                    Arrays.fill(player.mobCounts, 0);
 +                }
-+                spawnercreature_d = NaturalSpawner.createState(l, this.level.getAllEntities(), this::getFullChunk, new LocalMobCapCalculator(this.chunkMap), true);
++                spawnercreature_d = NaturalSpawner.createState(l, this.level.getAllEntities(), this::getFullChunk, null, true);
 +            } else {
-+                spawnercreature_d = NaturalSpawner.createState(l, this.level.getAllEntities(), this::getFullChunk, new LocalMobCapCalculator(this.chunkMap), false);
++                spawnercreature_d = NaturalSpawner.createState(l, this.level.getAllEntities(), this::getFullChunk, this.chunkMap.playerMobDistanceMap == null ? new LocalMobCapCalculator(this.chunkMap) : null, false);
 +            }
 +            // Paper end
              this.level.timings.countNaturalMobs.stopTiming(); // Paper - timings
@@ -645,7 +645,7 @@ index b193f8dfbe7b61c919ad5eb452d29885982e25e4..01b9edc8aaf472650f171f1b88229807
  
      // Yes, this doesn't match Vanilla, but it's the best we can do for now.
 diff --git a/src/main/java/net/minecraft/world/level/NaturalSpawner.java b/src/main/java/net/minecraft/world/level/NaturalSpawner.java
-index 6f63f471c2c9a3b85c6fc92bdee31a5ff9714ff5..c88bd5bc044b5f9722cb5826936e31811a8312c7 100644
+index 6f63f471c2c9a3b85c6fc92bdee31a5ff9714ff5..3a9e20bdf445c019e60a814ea6fc267758df10ed 100644
 --- a/src/main/java/net/minecraft/world/level/NaturalSpawner.java
 +++ b/src/main/java/net/minecraft/world/level/NaturalSpawner.java
 @@ -65,7 +65,13 @@ public final class NaturalSpawner {
@@ -662,7 +662,13 @@ index 6f63f471c2c9a3b85c6fc92bdee31a5ff9714ff5..c88bd5bc044b5f9722cb5826936e3181
          PotentialCalculator spawnercreatureprobabilities = new PotentialCalculator();
          Object2IntOpenHashMap<MobCategory> object2intopenhashmap = new Object2IntOpenHashMap();
          Iterator iterator = entities.iterator();
-@@ -106,6 +112,11 @@ public final class NaturalSpawner {
+@@ -101,11 +107,16 @@ public final class NaturalSpawner {
+                         spawnercreatureprobabilities.addCharge(entity.blockPosition(), biomesettingsmobs_b.getCharge());
+                     }
+ 
+-                    if (entity instanceof Mob) {
++                    if (localmobcapcalculator != null && entity instanceof Mob) {
+                         localmobcapcalculator.addMob(chunk.getPos(), enumcreaturetype);
                      }
  
                      object2intopenhashmap.addTo(enumcreaturetype, 1);
@@ -793,3 +799,20 @@ index 6f63f471c2c9a3b85c6fc92bdee31a5ff9714ff5..c88bd5bc044b5f9722cb5826936e3181
      }
  
      private static boolean isRightDistanceToPlayerAndSpawnPoint(ServerLevel world, ChunkAccess chunk, BlockPos.MutableBlockPos pos, double squaredDistance) {
+@@ -572,7 +618,7 @@ public final class NaturalSpawner {
+             MobCategory enumcreaturetype = entitytypes.getCategory();
+ 
+             this.mobCategoryCounts.addTo(enumcreaturetype, 1);
+-            this.localMobCapCalculator.addMob(new ChunkPos(blockposition), enumcreaturetype);
++            if (this.localMobCapCalculator != null) this.localMobCapCalculator.addMob(new ChunkPos(blockposition), enumcreaturetype); // Paper
+         }
+ 
+         public int getSpawnableChunkCount() {
+@@ -588,6 +634,7 @@ public final class NaturalSpawner {
+             int i = limit * this.spawnableChunkCount / NaturalSpawner.MAGIC_NUMBER;
+             // CraftBukkit end
+ 
++            if (this.localMobCapCalculator == null) return this.mobCategoryCounts.getInt(enumcreaturetype) < i; // Paper
+             return this.mobCategoryCounts.getInt(enumcreaturetype) >= i ? false : this.localMobCapCalculator.canSpawn(enumcreaturetype, chunkcoordintpair);
+         }
+     }
