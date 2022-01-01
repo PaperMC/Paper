@@ -8,7 +8,7 @@ our own relocation. Also lets us rewrite NMS calls for when we're
 debugging in an IDE pre-relocate.
 
 diff --git a/src/main/java/org/bukkit/craftbukkit/util/Commodore.java b/src/main/java/org/bukkit/craftbukkit/util/Commodore.java
-index a679133a3de51e26eb19932ece9ade292879aefd..d5330d1dff2d02e585eba3ec7c48bf261cdce8ef 100644
+index a679133a3de51e26eb19932ece9ade292879aefd..89a32de0a3fbb7465b078b2aa1cc1d156a4a174d 100644
 --- a/src/main/java/org/bukkit/craftbukkit/util/Commodore.java
 +++ b/src/main/java/org/bukkit/craftbukkit/util/Commodore.java
 @@ -6,7 +6,9 @@ import java.io.FileOutputStream;
@@ -43,18 +43,18 @@ index a679133a3de51e26eb19932ece9ade292879aefd..d5330d1dff2d02e585eba3ec7c48bf26
  
 +    // Paper start - Plugin rewrites
 +    private static final Map<String, String> SEARCH_AND_REMOVE = initReplacementsMap();
++    private static final java.util.jar.Manifest manifest = io.papermc.paper.util.JarManifests.manifest(Commodore.class);
 +    private static Map<String, String> initReplacementsMap()
 +    {
 +        Map<String, String> getAndRemove = new HashMap<>();
 +        // Be wary of maven shade's relocations
 +        getAndRemove.put( "org/bukkit/".concat( "craftbukkit/libs/it/unimi/dsi/fastutil/" ), "org/bukkit/".concat( "craftbukkit/libs/" ) ); // Remap fastutil to our location
 +
-+        if ( Boolean.getBoolean( "debug.rewriteForIde" ) )
++        if ( Boolean.getBoolean( "debug.rewriteForIde" ) && manifest != null)
 +        {
 +            // unversion incoming calls for pre-relocate debug work
-+            final String NMS_REVISION_PACKAGE = "v1_16_R3/";
++            final String NMS_REVISION_PACKAGE = "v" + manifest.getMainAttributes().getValue("CraftBukkit-Package-Version") + "/";
 +
-+            getAndRemove.put( "net/minecraft/".concat( "server/" + NMS_REVISION_PACKAGE ), NMS_REVISION_PACKAGE );
 +            getAndRemove.put( "org/bukkit/".concat( "craftbukkit/" + NMS_REVISION_PACKAGE ), NMS_REVISION_PACKAGE );
 +        }
 +
