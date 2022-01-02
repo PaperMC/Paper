@@ -1,0 +1,65 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sun, 2 Jan 2022 00:39:54 -0800
+Subject: [PATCH] Better menu property API
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java
+index c3dbcb317b7d366feb31f707ad1199c60169f07f..5beb71c97fbee77b7505c874d8c754290586f023 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java
+@@ -598,6 +598,12 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
+     public boolean setWindowProperty(InventoryView.Property prop, int value) {
+         return false;
+     }
++    // Paper start
++    @Override
++    public <T> boolean setWindowProperty(final io.papermc.paper.inventory.data.MenuProperty<T> prop, final T value) {
++        return false;
++    }
++    // Paper end
+ 
+     @Override
+     public int getEnchantmentSeed() {
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index 3be5e4df190bff0087c8450b16e4e37b07169040..8aa8db505f9b174b19d0b4fd7e53cc7c2a14f108 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -2466,11 +2466,35 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+ 
+     @Override
+     public boolean setWindowProperty(Property prop, int value) {
++        // Paper start
++        return this.setWindowProperty0(prop.getReplacementDataProperty(), value);
++    }
++
++    @Override
++    public <T> boolean setWindowProperty(final io.papermc.paper.inventory.data.MenuProperty<T> prop, final T value) {
++        Preconditions.checkNotNull(value, "property value must be nonnull");
++        final int rawValue;
++        if (value instanceof Integer integer) {
++            rawValue = integer;
++        } else if (value instanceof org.bukkit.craftbukkit.enchantments.CraftEnchantment enchantment) {
++            rawValue = net.minecraft.core.registries.BuiltInRegistries.ENCHANTMENT.getId(enchantment.getHandle());
++        } else if (value instanceof org.bukkit.craftbukkit.potion.CraftPotionEffectType potionEffectType) {
++            rawValue = net.minecraft.core.registries.BuiltInRegistries.MOB_EFFECT.getId(potionEffectType.getHandle());
++        } else if (value instanceof Boolean bool) {
++            rawValue = bool ? 1 : 0;
++        } else {
++            throw new IllegalArgumentException(value + " is of an unknown type (" + value.getClass().getSimpleName() + ")");
++        }
++        return this.setWindowProperty0(prop, rawValue);
++    }
++
++    private boolean setWindowProperty0(final io.papermc.paper.inventory.data.MenuProperty<?> prop, final int value) {
++        // Paper end
+         AbstractContainerMenu container = this.getHandle().containerMenu;
+-        if (container.getBukkitView().getType() != prop.getType()) {
++        if (!prop.isValidType(container.getBukkitView().getType())) { // Paper - handle window data props for multiple inv types
+             return false;
+         }
+-        container.setData(prop.getId(), value);
++        container.setData(prop.dataId(), value); // Paper - better window data API
+         return true;
+     }
+ 
