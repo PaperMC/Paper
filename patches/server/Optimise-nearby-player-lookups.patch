@@ -31,7 +31,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
 @@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
      int viewDistance;
-     public final com.destroystokyo.paper.util.PlayerMobDistanceMap playerMobDistanceMap; // Paper
+     public final com.destroystokyo.paper.util.misc.PlayerAreaMap playerMobDistanceMap; // Paper
  
 +    // Paper start - optimise checkDespawn
 +    public static final int GENERAL_AREA_MAP_SQUARE_RADIUS = 40;
@@ -48,25 +48,25 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          // Note: players need to be explicitly added to distance maps before they can be updated
          this.playerChunkTickRangeMap.add(player, chunkX, chunkZ, DistanceManager.MOB_SPAWN_RANGE); // Paper - optimise ChunkMap#anyPlayerCloseEnoughForSpawning
 +        this.playerGeneralAreaMap.add(player, chunkX, chunkZ, GENERAL_AREA_MAP_SQUARE_RADIUS); // Paper - optimise checkDespawn
-     }
- 
-     void removePlayerFromDistanceMaps(ServerPlayer player) {
+         // Paper start - per player mob spawning
+         if (this.playerMobDistanceMap != null) {
+             this.playerMobDistanceMap.add(player, chunkX, chunkZ, this.distanceManager.getSimulationDistance());
 @@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          this.playerMobSpawnMap.remove(player);
          this.playerChunkTickRangeMap.remove(player);
          // Paper end - optimise ChunkMap#anyPlayerCloseEnoughForSpawning
 +        this.playerGeneralAreaMap.remove(player); // Paper - optimise checkDespawns
-     }
- 
-     void updateMaps(ServerPlayer player) {
+         // Paper start - per player mob spawning
+         if (this.playerMobDistanceMap != null) {
+             this.playerMobDistanceMap.remove(player);
 @@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          }
          // Paper end - use distance map to optimise entity tracker
          this.playerChunkTickRangeMap.update(player, chunkX, chunkZ, DistanceManager.MOB_SPAWN_RANGE); // Paper - optimise ChunkMap#anyPlayerCloseEnoughForSpawning
 +        this.playerGeneralAreaMap.update(player, chunkX, chunkZ, GENERAL_AREA_MAP_SQUARE_RADIUS); // Paper - optimise checkDespawn
-     }
-     // Paper end
-     // Paper start
+         // Paper start - per player mob spawning
+         if (this.playerMobDistanceMap != null) {
+             this.playerMobDistanceMap.update(player, chunkX, chunkZ, this.distanceManager.getSimulationDistance());
 @@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
                  }
              });

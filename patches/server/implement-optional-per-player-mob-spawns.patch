@@ -4,26 +4,6 @@ Date: Mon, 19 Aug 2019 01:27:58 +0500
 Subject: [PATCH] implement optional per player mob spawns
 
 
-diff --git a/src/main/java/co/aikar/timings/WorldTimingsHandler.java b/src/main/java/co/aikar/timings/WorldTimingsHandler.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/co/aikar/timings/WorldTimingsHandler.java
-+++ b/src/main/java/co/aikar/timings/WorldTimingsHandler.java
-@@ -0,0 +0,0 @@ public class WorldTimingsHandler {
- 
- 
-     public final Timing miscMobSpawning;
-+    public final Timing playerMobDistanceMapUpdate;
- 
-     public final Timing poiUnload;
-     public final Timing chunkUnload;
-@@ -0,0 +0,0 @@ public class WorldTimingsHandler {
- 
- 
-         miscMobSpawning = Timings.ofSafe(name + "Mob spawning - Misc");
-+        playerMobDistanceMapUpdate = Timings.ofSafe(name + "Per Player Mob Spawning - Distance Map Update");
- 
-         poiUnload = Timings.ofSafe(name + "Chunk unload - POI");
-         chunkUnload = Timings.ofSafe(name + "Chunk unload - Chunk");
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
@@ -41,264 +21,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        perPlayerMobSpawns = getBoolean("per-player-mob-spawns", true);
 +    }
  }
-diff --git a/src/main/java/com/destroystokyo/paper/util/PlayerMobDistanceMap.java b/src/main/java/com/destroystokyo/paper/util/PlayerMobDistanceMap.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
---- /dev/null
-+++ b/src/main/java/com/destroystokyo/paper/util/PlayerMobDistanceMap.java
-@@ -0,0 +0,0 @@
-+package com.destroystokyo.paper.util;
-+
-+import it.unimi.dsi.fastutil.longs.Long2ObjectLinkedOpenHashMap;
-+import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
-+import it.unimi.dsi.fastutil.objects.ObjectLinkedOpenHashSet;
-+import java.util.List;
-+import java.util.Map;
-+import net.minecraft.core.SectionPos;
-+import net.minecraft.server.level.ServerPlayer;
-+import net.minecraft.world.level.ChunkPos;
-+import org.spigotmc.AsyncCatcher;
-+import java.util.HashMap;
-+
-+/** @author Spottedleaf */
-+public final class PlayerMobDistanceMap {
-+
-+    private static final PooledHashSets.PooledObjectLinkedOpenHashSet<ServerPlayer> EMPTY_SET = new PooledHashSets.PooledObjectLinkedOpenHashSet<>();
-+
-+    private final Map<ServerPlayer, SectionPos> players = new HashMap<>();
-+    // we use linked for better iteration.
-+    private final Long2ObjectOpenHashMap<PooledHashSets.PooledObjectLinkedOpenHashSet<ServerPlayer>> playerMap = new Long2ObjectOpenHashMap<>(32, 0.5f);
-+    private int viewDistance;
-+
-+    private final PooledHashSets<ServerPlayer> pooledHashSets = new PooledHashSets<>();
-+
-+    public PooledHashSets.PooledObjectLinkedOpenHashSet<ServerPlayer> getPlayersInRange(final ChunkPos chunkPos) {
-+        return this.getPlayersInRange(chunkPos.x, chunkPos.z);
-+    }
-+
-+    public PooledHashSets.PooledObjectLinkedOpenHashSet<ServerPlayer> getPlayersInRange(final int chunkX, final int chunkZ) {
-+        return this.playerMap.getOrDefault(ChunkPos.asLong(chunkX, chunkZ), EMPTY_SET);
-+    }
-+
-+    public void update(final List<ServerPlayer> currentPlayers, final int newViewDistance) {
-+        AsyncCatcher.catchOp("Distance map update");
-+        final ObjectLinkedOpenHashSet<ServerPlayer> gone = new ObjectLinkedOpenHashSet<>(this.players.keySet());
-+
-+        final int oldViewDistance = this.viewDistance;
-+        this.viewDistance = newViewDistance;
-+
-+        for (final ServerPlayer player : currentPlayers) {
-+            if (player.isSpectator() || !player.affectsSpawning) {
-+                continue; // will be left in 'gone' (or not added at all)
-+            }
-+
-+            gone.remove(player);
-+
-+            final SectionPos newPosition = player.getLastSectionPos();
-+            final SectionPos oldPosition = this.players.put(player, newPosition);
-+
-+            if (oldPosition == null) {
-+                this.addNewPlayer(player, newPosition, newViewDistance);
-+            } else {
-+                this.updatePlayer(player, oldPosition, newPosition, oldViewDistance, newViewDistance);
-+            }
-+            //this.validatePlayer(player, newViewDistance); // debug only
-+        }
-+
-+        for (final ServerPlayer player : gone) {
-+            final SectionPos oldPosition = this.players.remove(player);
-+            if (oldPosition != null) {
-+                this.removePlayer(player, oldPosition, oldViewDistance);
-+            }
-+        }
-+    }
-+
-+    // expensive op, only for debug
-+    private void validatePlayer(final ServerPlayer player, final int viewDistance) {
-+        int entiesGot = 0;
-+        int expectedEntries = (2 * viewDistance + 1);
-+        expectedEntries *= expectedEntries;
-+
-+        final SectionPos currPosition = player.getLastSectionPos();
-+
-+        final int centerX = currPosition.getX();
-+        final int centerZ = currPosition.getZ();
-+
-+        for (final Long2ObjectLinkedOpenHashMap.Entry<PooledHashSets.PooledObjectLinkedOpenHashSet<ServerPlayer>> entry : this.playerMap.long2ObjectEntrySet()) {
-+            final long key = entry.getLongKey();
-+            final PooledHashSets.PooledObjectLinkedOpenHashSet<ServerPlayer> map = entry.getValue();
-+
-+            if (map.referenceCount == 0) {
-+                throw new IllegalStateException("Invalid map");
-+            }
-+
-+            if (map.set.contains(player)) {
-+                ++entiesGot;
-+
-+                final int chunkX = ChunkPos.getX(key);
-+                final int chunkZ = ChunkPos.getZ(key);
-+
-+                final int dist = Math.max(Math.abs(chunkX - centerX), Math.abs(chunkZ - centerZ));
-+
-+                if (dist > viewDistance) {
-+                    throw new IllegalStateException("Expected view distance " + viewDistance + ", got " + dist);
-+                }
-+            }
-+        }
-+
-+        if (entiesGot != expectedEntries) {
-+            throw new IllegalStateException("Expected " + expectedEntries + ", got " + entiesGot);
-+        }
-+    }
-+
-+    private void addPlayerTo(final ServerPlayer player, final int chunkX, final int chunkZ) {
-+       this.playerMap.compute(ChunkPos.asLong(chunkX, chunkZ), (final Long key, final PooledHashSets.PooledObjectLinkedOpenHashSet<ServerPlayer> players) -> {
-+           if (players == null) {
-+               return player.cachedSingleMobDistanceMap;
-+           } else {
-+               return PlayerMobDistanceMap.this.pooledHashSets.findMapWith(players, player);
-+           }
-+        });
-+    }
-+
-+    private void removePlayerFrom(final ServerPlayer player, final int chunkX, final int chunkZ) {
-+        this.playerMap.compute(ChunkPos.asLong(chunkX, chunkZ), (final Long keyInMap, final PooledHashSets.PooledObjectLinkedOpenHashSet<ServerPlayer> players) -> {
-+            return PlayerMobDistanceMap.this.pooledHashSets.findMapWithout(players, player); // rets null instead of an empty map
-+        });
-+    }
-+
-+    private void updatePlayer(final ServerPlayer player, final SectionPos oldPosition, final SectionPos newPosition, final int oldViewDistance, final int newViewDistance) {
-+        final int toX = newPosition.getX();
-+        final int toZ = newPosition.getZ();
-+        final int fromX = oldPosition.getX();
-+        final int fromZ = oldPosition.getZ();
-+
-+        final int dx = toX - fromX;
-+        final int dz = toZ - fromZ;
-+
-+        final int totalX = Math.abs(fromX - toX);
-+        final int totalZ = Math.abs(fromZ - toZ);
-+
-+        if (Math.max(totalX, totalZ) > (2 * oldViewDistance)) {
-+            // teleported?
-+            this.removePlayer(player, oldPosition, oldViewDistance);
-+            this.addNewPlayer(player, newPosition, newViewDistance);
-+            return;
-+        }
-+
-+        // x axis is width
-+        // z axis is height
-+        // right refers to the x axis of where we moved
-+        // top refers to the z axis of where we moved
-+
-+        if (oldViewDistance == newViewDistance) {
-+            // same view distance
-+
-+            // used for relative positioning
-+            final int up = 1 | (dz >> (Integer.SIZE - 1)); // 1 if dz >= 0, -1 otherwise
-+            final int right = 1 | (dx >> (Integer.SIZE - 1)); // 1 if dx >= 0, -1 otherwise
-+
-+            // The area excluded by overlapping the two view distance squares creates four rectangles:
-+            // Two on the left, and two on the right. The ones on the left we consider the "removed" section
-+            // and on the right the "added" section.
-+            // https://i.imgur.com/MrnOBgI.png is a reference image. Note that the outside border is not actually
-+            // exclusive to the regions they surround.
-+
-+            // 4 points of the rectangle
-+            int maxX; // exclusive
-+            int minX; // inclusive
-+            int maxZ; // exclusive
-+            int minZ; // inclusive
-+
-+            if (dx != 0) {
-+                // handle right addition
-+
-+                maxX = toX + (oldViewDistance * right) + right; // exclusive
-+                minX = fromX + (oldViewDistance * right) + right; // inclusive
-+                maxZ = fromZ + (oldViewDistance * up) + up; // exclusive
-+                minZ = toZ - (oldViewDistance * up); // inclusive
-+
-+                for (int currX = minX; currX != maxX; currX += right) {
-+                    for (int currZ = minZ; currZ != maxZ; currZ += up) {
-+                        this.addPlayerTo(player, currX, currZ);
-+                    }
-+                }
-+            }
-+
-+            if (dz != 0) {
-+                // handle up addition
-+
-+                maxX = toX + (oldViewDistance * right) + right; // exclusive
-+                minX = toX - (oldViewDistance * right); // inclusive
-+                maxZ = toZ + (oldViewDistance * up) + up; // exclusive
-+                minZ = fromZ + (oldViewDistance * up) + up; // inclusive
-+
-+                for (int currX = minX; currX != maxX; currX += right) {
-+                    for (int currZ = minZ; currZ != maxZ; currZ += up) {
-+                        this.addPlayerTo(player, currX, currZ);
-+                    }
-+                }
-+            }
-+
-+            if (dx != 0) {
-+                // handle left removal
-+
-+                maxX = toX - (oldViewDistance * right); // exclusive
-+                minX = fromX - (oldViewDistance * right); // inclusive
-+                maxZ = fromZ + (oldViewDistance * up) + up; // exclusive
-+                minZ = toZ - (oldViewDistance * up); // inclusive
-+
-+                for (int currX = minX; currX != maxX; currX += right) {
-+                    for (int currZ = minZ; currZ != maxZ; currZ += up) {
-+                        this.removePlayerFrom(player, currX, currZ);
-+                    }
-+                }
-+            }
-+
-+            if (dz != 0) {
-+                // handle down removal
-+
-+                maxX = fromX + (oldViewDistance * right) + right; // exclusive
-+                minX = fromX - (oldViewDistance * right); // inclusive
-+                maxZ = toZ - (oldViewDistance * up); // exclusive
-+                minZ = fromZ - (oldViewDistance * up); // inclusive
-+
-+                for (int currX = minX; currX != maxX; currX += right) {
-+                    for (int currZ = minZ; currZ != maxZ; currZ += up) {
-+                        this.removePlayerFrom(player, currX, currZ);
-+                    }
-+                }
-+            }
-+        } else {
-+            // different view distance
-+            // for now :)
-+            this.removePlayer(player, oldPosition, oldViewDistance);
-+            this.addNewPlayer(player, newPosition, newViewDistance);
-+        }
-+    }
-+
-+    private void removePlayer(final ServerPlayer player, final SectionPos position, final int viewDistance) {
-+        final int x = position.getX();
-+        final int z = position.getZ();
-+
-+        for (int xoff = -viewDistance; xoff <= viewDistance; ++xoff) {
-+            for (int zoff = -viewDistance; zoff <= viewDistance; ++zoff) {
-+                this.removePlayerFrom(player, x + xoff, z + zoff);
-+            }
-+        }
-+    }
-+
-+    private void addNewPlayer(final ServerPlayer player, final SectionPos position, final int viewDistance) {
-+        final int x = position.getX();
-+        final int z = position.getZ();
-+
-+        for (int xoff = -viewDistance; xoff <= viewDistance; ++xoff) {
-+            for (int zoff = -viewDistance; zoff <= viewDistance; ++zoff) {
-+                this.addPlayerTo(player, x + xoff, z + zoff);
-+            }
-+        }
-+    }
-+}
 diff --git a/src/main/java/com/destroystokyo/paper/util/PooledHashSets.java b/src/main/java/com/destroystokyo/paper/util/PooledHashSets.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
@@ -554,15 +276,47 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      private final Long2ByteMap chunkTypeCache;
      private final Queue<Runnable> unloadQueue;
      int viewDistance;
-+    public final com.destroystokyo.paper.util.PlayerMobDistanceMap playerMobDistanceMap; // Paper
++    public final com.destroystokyo.paper.util.misc.PlayerAreaMap playerMobDistanceMap; // Paper
  
      // CraftBukkit start - recursion-safe executor for Chunk loadCallback() and unloadCallback()
      public final CallbackExecutor callbackExecutor = new CallbackExecutor();
 @@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+         int chunkX = MCUtil.getChunkCoordinate(player.getX());
+         int chunkZ = MCUtil.getChunkCoordinate(player.getZ());
+         // Note: players need to be explicitly added to distance maps before they can be updated
++        // Paper start - per player mob spawning
++        if (this.playerMobDistanceMap != null) {
++            this.playerMobDistanceMap.add(player, chunkX, chunkZ, this.distanceManager.getSimulationDistance());
++        }
++        // Paper end - per player mob spawning
+     }
+ 
+     void removePlayerFromDistanceMaps(ServerPlayer player) {
+ 
++        // Paper start - per player mob spawning
++        if (this.playerMobDistanceMap != null) {
++            this.playerMobDistanceMap.remove(player);
++        }
++        // Paper end - per player mob spawning
+     }
+ 
+     void updateMaps(ServerPlayer player) {
+         int chunkX = MCUtil.getChunkCoordinate(player.getX());
+         int chunkZ = MCUtil.getChunkCoordinate(player.getZ());
+         // Note: players need to be explicitly added to distance maps before they can be updated
++        // Paper start - per player mob spawning
++        if (this.playerMobDistanceMap != null) {
++            this.playerMobDistanceMap.update(player, chunkX, chunkZ, this.distanceManager.getSimulationDistance());
++        }
++        // Paper end - per player mob spawning
+     }
+     // Paper end
+     // Paper start
+@@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          this.dataRegionManager = new io.papermc.paper.chunk.SingleThreadChunkRegionManager(this.level, 2, (1.0 / 3.0), 1, 6, "Data", DataRegionData::new, DataRegionSectionData::new);
          this.regionManagers.add(this.dataRegionManager);
          // Paper end
-+        this.playerMobDistanceMap = this.level.paperConfig.perPlayerMobSpawns ? new com.destroystokyo.paper.util.PlayerMobDistanceMap() : null; // Paper
++        this.playerMobDistanceMap = this.level.paperConfig.perPlayerMobSpawns ? new com.destroystokyo.paper.util.misc.PlayerAreaMap(this.pooledLinkedPlayerHashSets) : null; // Paper
      }
  
      protected ChunkGenerator generator() {
@@ -575,11 +329,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        if (!this.level.paperConfig.perPlayerMobSpawns) {
 +            return;
 +        }
-+        int chunkX = (int)Math.floor(entity.getX()) >> 4;
-+        int chunkZ = (int)Math.floor(entity.getZ()) >> 4;
 +        int index = entity.getType().getCategory().ordinal();
 +
-+        for (ServerPlayer player : this.playerMobDistanceMap.getPlayersInRange(chunkX, chunkZ)) {
++        final com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<ServerPlayer> inRange = this.playerMobDistanceMap.getObjectsInRange(entity.chunkPosition());
++        if (inRange == null) {
++            return;
++        }
++        final Object[] backingSet = inRange.getBackingSet();
++        for (int i = 0; i < backingSet.length; i++) {
++            if (!(backingSet[i] instanceof final ServerPlayer player)) {
++                continue;
++            }
 +            ++player.mobCounts[index];
 +        }
 +    }
@@ -620,11 +380,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -            NaturalSpawner.SpawnState spawnercreature_d = NaturalSpawner.createState(l, this.level.getAllEntities(), this::getFullChunk, new LocalMobCapCalculator(this.chunkMap));
 +            // Paper start - per player mob spawning
 +            NaturalSpawner.SpawnState spawnercreature_d; // moved down
-+            if (this.chunkMap.playerMobDistanceMap != null) {
-+                // update distance map
-+                this.level.timings.playerMobDistanceMapUpdate.startTiming();
-+                this.chunkMap.playerMobDistanceMap.update(this.level.players, this.distanceManager.getSimulationDistance());
-+                this.level.timings.playerMobDistanceMapUpdate.stopTiming();
++            if ((this.spawnFriendlies || this.spawnEnemies) && this.chunkMap.playerMobDistanceMap != null) { // don't count mobs when animals and monsters are disabled
 +                // re-set mob counts
 +                for (ServerPlayer player : this.level.players) {
 +                    Arrays.fill(player.mobCounts, 0);
@@ -684,7 +440,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                      }
  
 -                    if (entity instanceof Mob) {
-+                    if (localmobcapcalculator != null && entity instanceof Mob) {
++                    if (localmobcapcalculator != null && entity instanceof Mob) { // Paper
                          localmobcapcalculator.addMob(chunk.getPos(), enumcreaturetype);
                      }
  
@@ -709,8 +465,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +            if (world.paperConfig.perPlayerMobSpawns) {
 +                int minDiff = Integer.MAX_VALUE;
-+                for (net.minecraft.server.level.ServerPlayer entityplayer : world.getChunkSource().chunkMap.playerMobDistanceMap.getPlayersInRange(chunk.getPos())) {
-+                    minDiff = Math.min(limit - world.getChunkSource().chunkMap.getMobCountNear(entityplayer, enumcreaturetype), minDiff);
++                final com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<net.minecraft.server.level.ServerPlayer> inRange = world.getChunkSource().chunkMap.playerMobDistanceMap.getObjectsInRange(chunk.getPos());
++                if (inRange != null) {
++                    final Object[] backingSet = inRange.getBackingSet();
++                    for (int k = 0; k < backingSet.length; k++) {
++                        if (!(backingSet[k] instanceof final net.minecraft.server.level.ServerPlayer player)) {
++                            continue;
++                        }
++                        minDiff = Math.min(limit - world.getChunkSource().chunkMap.getMobCountNear(player, enumcreaturetype), minDiff);
++                    }
 +                }
 +                difference = (minDiff == Integer.MAX_VALUE) ? 0 : minDiff;
 +            }

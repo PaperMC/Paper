@@ -61,28 +61,32 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          int chunkZ = MCUtil.getChunkCoordinate(player.getZ());
          // Note: players need to be explicitly added to distance maps before they can be updated
 +        this.playerChunkTickRangeMap.add(player, chunkX, chunkZ, DistanceManager.MOB_SPAWN_RANGE); // Paper - optimise ChunkMap#anyPlayerCloseEnoughForSpawning
-     }
+         // Paper start - per player mob spawning
+         if (this.playerMobDistanceMap != null) {
+             this.playerMobDistanceMap.add(player, chunkX, chunkZ, this.distanceManager.getSimulationDistance());
+@@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
  
      void removePlayerFromDistanceMaps(ServerPlayer player) {
--
+ 
 +        // Paper start - optimise ChunkMap#anyPlayerCloseEnoughForSpawning
 +        this.playerMobSpawnMap.remove(player);
 +        this.playerChunkTickRangeMap.remove(player);
 +        // Paper end - optimise ChunkMap#anyPlayerCloseEnoughForSpawning
-     }
- 
-     void updateMaps(ServerPlayer player) {
+         // Paper start - per player mob spawning
+         if (this.playerMobDistanceMap != null) {
+             this.playerMobDistanceMap.remove(player);
+@@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          int chunkX = MCUtil.getChunkCoordinate(player.getX());
          int chunkZ = MCUtil.getChunkCoordinate(player.getZ());
          // Note: players need to be explicitly added to distance maps before they can be updated
 +        this.playerChunkTickRangeMap.update(player, chunkX, chunkZ, DistanceManager.MOB_SPAWN_RANGE); // Paper - optimise ChunkMap#anyPlayerCloseEnoughForSpawning
-     }
-     // Paper end
-     // Paper start
+         // Paper start - per player mob spawning
+         if (this.playerMobDistanceMap != null) {
+             this.playerMobDistanceMap.update(player, chunkX, chunkZ, this.distanceManager.getSimulationDistance());
 @@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          this.regionManagers.add(this.dataRegionManager);
          // Paper end
-         this.playerMobDistanceMap = this.level.paperConfig.perPlayerMobSpawns ? new com.destroystokyo.paper.util.PlayerMobDistanceMap() : null; // Paper
+         this.playerMobDistanceMap = this.level.paperConfig.perPlayerMobSpawns ? new com.destroystokyo.paper.util.misc.PlayerAreaMap(this.pooledLinkedPlayerHashSets) : null; // Paper
 +        // Paper start - optimise ChunkMap#anyPlayerCloseEnoughForSpawning
 +        this.playerChunkTickRangeMap = new com.destroystokyo.paper.util.misc.PlayerAreaMap(this.pooledLinkedPlayerHashSets,
 +            (ServerPlayer player, int rangeX, int rangeZ, int currPosX, int currPosZ, int prevPosX, int prevPosZ,
