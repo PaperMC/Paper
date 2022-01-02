@@ -7,6 +7,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
 import org.yaml.snakeyaml.error.YAMLException;
+import org.yaml.snakeyaml.nodes.MappingNode;
 import org.yaml.snakeyaml.nodes.Node;
 import org.yaml.snakeyaml.nodes.Tag;
 
@@ -14,6 +15,11 @@ public class YamlConstructor extends SafeConstructor {
 
     public YamlConstructor() {
         this.yamlConstructors.put(Tag.MAP, new ConstructCustomObject());
+    }
+
+    @Override
+    public void flattenMapping(@NotNull final MappingNode node) {
+        super.flattenMapping(node);
     }
 
     @NotNull

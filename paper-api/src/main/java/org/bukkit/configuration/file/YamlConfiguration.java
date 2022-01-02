@@ -141,6 +141,7 @@ public class YamlConfiguration extends FileConfiguration {
     }
 
     private void fromNodeTree(@NotNull MappingNode input, @NotNull ConfigurationSection section) {
+        constructor.flattenMapping(input);
         for (NodeTuple nodeTuple : input.getValue()) {
             ScalarNode key = (ScalarNode) nodeTuple.getKeyNode();
             String keyString = key.getValue();

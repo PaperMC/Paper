@@ -4,6 +4,7 @@ import static org.junit.Assert.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import org.bukkit.configuration.InvalidConfigurationException;
 import org.junit.Test;
 
 public class YamlConfigurationTest extends FileConfigurationTest {
@@ -88,5 +89,59 @@ public class YamlConfigurationTest extends FileConfigurationTest {
         String expected = "section:\n         key: 1\n";
 
         assertEquals(expected, result);
+    }
+
+    @Test
+    public void testAnchorNode() throws InvalidConfigurationException {
+        YamlConfiguration config = getConfig();
+        String content = "effects:\n"
+                + "  eff1: &novaEarth\n"
+                + "    position: special\n"
+                + "    effect: nova\n"
+                + "  eff2: *novaEarth\n"
+                + "  eff3: *novaEarth";
+        config.loadFromString(content);
+
+        String expected = "effects:\n"
+                + "  eff1:\n"
+                + "    position: special\n"
+                + "    effect: nova\n"
+                + "  eff2:\n"
+                + "    position: special\n"
+                + "    effect: nova\n"
+                + "  eff3:\n"
+                + "    position: special\n"
+                + "    effect: nova\n";
+        assertEquals(expected, config.saveToString());
+    }
+
+    @Test
+    public void testMergeNode() throws InvalidConfigurationException {
+        YamlConfiguration config = getConfig();
+        String content = "effects:\n"
+                + "  eff1: &novaEarth\n"
+                + "    position: special\n"
+                + "    effect: nova\n"
+                + "  eff2: \n"
+                + "    <<: *novaEarth\n"
+                + "    height-offset: 0\n"
+                + "  eff3: \n"
+                + "    <<: *novaEarth\n"
+                + "    height-offset: 2";
+        config.loadFromString(content);
+
+        String expected = "effects:\n"
+                + "  eff1:\n"
+                + "    position: special\n"
+                + "    effect: nova\n"
+                + "  eff2:\n"
+                + "    position: special\n"
+                + "    effect: nova\n"
+                + "    height-offset: 0\n"
+                + "  eff3:\n"
+                + "    position: special\n"
+                + "    effect: nova\n"
+                + "    height-offset: 2\n";
+        assertEquals(expected, config.saveToString());
     }
 }
