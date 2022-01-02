@@ -65,7 +65,7 @@ public abstract class CraftTileInventoryConverter implements CraftInventoryCreat
         return new CraftInventory(tileEntity);
     }
 
-    public static class Furnace extends CraftTileInventoryConverter {
+    public static class Furnace extends AbstractFurnaceInventoryConverter { // Paper - Furnace, BlastFurnace, and Smoker are pretty much identical
 
         @Override
         public Container getTileEntity() {
@@ -73,6 +73,11 @@ public abstract class CraftTileInventoryConverter implements CraftInventoryCreat
             return furnace;
         }
 
+    // Paper start - abstract furnace converter to apply to all 3 furnaces
+    }
+
+    public static abstract class AbstractFurnaceInventoryConverter extends CraftTileInventoryConverter {
+    // Paper end - abstract furnace converter to apply to all 3 furnaces
         // Paper start
         @Override
         public Inventory createInventory(InventoryHolder owner, InventoryType type, net.kyori.adventure.text.Component title) {
@@ -170,7 +175,7 @@ public abstract class CraftTileInventoryConverter implements CraftInventoryCreat
         }
     }
 
-    public static class BlastFurnace extends CraftTileInventoryConverter {
+    public static class BlastFurnace extends AbstractFurnaceInventoryConverter { // Paper - Furnace, BlastFurnace, and Smoker are pretty much identical
 
         @Override
         public Container getTileEntity() {
@@ -186,7 +191,7 @@ public abstract class CraftTileInventoryConverter implements CraftInventoryCreat
         }
     }
 
-    public static class Smoker extends CraftTileInventoryConverter {
+    public static class Smoker extends AbstractFurnaceInventoryConverter { // Paper - Furnace, BlastFurnace, and Smoker are pretty much identical
 
         @Override
         public Container getTileEntity() {
