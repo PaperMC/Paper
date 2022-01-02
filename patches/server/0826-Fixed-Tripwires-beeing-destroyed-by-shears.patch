@@ -1,0 +1,76 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Nassim Jahnke <jahnke.nassim@gmail.com>
+Date: Sun, 19 Dec 2021 21:11:20 +0100
+Subject: [PATCH] Fixed Tripwires beeing destroyed by shears
+
+
+diff --git a/src/main/java/net/minecraft/world/level/block/TripWireBlock.java b/src/main/java/net/minecraft/world/level/block/TripWireBlock.java
+index 6b40bf94fbaa18605b59b92ad1582e8dc3a6a9cd..eda578574503ed21da4fb722c343d16a7640b0ee 100644
+--- a/src/main/java/net/minecraft/world/level/block/TripWireBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/TripWireBlock.java
+@@ -23,6 +23,9 @@ import net.minecraft.world.level.block.state.properties.Property;
+ import net.minecraft.world.level.gameevent.GameEvent;
+ import net.minecraft.world.phys.shapes.CollisionContext;
+ import net.minecraft.world.phys.shapes.VoxelShape;
++import net.minecraft.world.level.block.entity.BlockEntity;
++import net.minecraft.world.item.ItemStack;
++import javax.annotation.Nullable;
+ import org.bukkit.event.entity.EntityInteractEvent; // CraftBukkit
+ 
+ public class TripWireBlock extends Block {
+@@ -74,21 +77,29 @@ public class TripWireBlock extends Block {
+     @Override
+     public void onRemove(BlockState state, Level world, BlockPos pos, BlockState newState, boolean moved) {
+         if (!moved && !state.is(newState.getBlock())) {
+-            this.updateSource(world, pos, (BlockState) state.setValue(TripWireBlock.POWERED, true));
++            this.updateSource(world, pos, (BlockState) state.setValue(TripWireBlock.POWERED, true), true); // Paper - fix state inconsistency
+         }
+     }
+ 
++    //Paper start
+     @Override
+-    public void playerWillDestroy(Level world, BlockPos pos, BlockState state, Player player) {
++    public void playerDestroy(Level world, Player player, BlockPos pos, BlockState state, @Nullable BlockEntity blockEntity, ItemStack stack) {
+         if (!world.isClientSide && !player.getMainHandItem().isEmpty() && player.getMainHandItem().is(Items.SHEARS)) {
+             world.setBlock(pos, (BlockState) state.setValue(TripWireBlock.DISARMED, true), 4);
+             world.gameEvent(player, GameEvent.SHEAR, pos);
++            return;
+         }
+-
+-        super.playerWillDestroy(world, pos, state, player);
++        super.playerDestroy(world, player, pos, state, blockEntity, stack);
+     }
++    //Paper end
+ 
+     private void updateSource(Level world, BlockPos pos, BlockState state) {
++        // Paper start - fix state inconsistency
++        this.updateSource(world, pos, state, false);
++    }
++
++    private void updateSource(Level world, BlockPos pos, BlockState state, boolean beingRemoved) {
++        // Paper end
+         Direction[] aenumdirection = new Direction[]{Direction.SOUTH, Direction.WEST};
+         int i = aenumdirection.length;
+         int j = 0;
+@@ -104,7 +115,11 @@ public class TripWireBlock extends Block {
+ 
+                     if (iblockdata1.is((Block) this.hook)) {
+                         if (iblockdata1.getValue(TripWireHookBlock.FACING) == enumdirection.getOpposite()) {
+-                            this.hook.calculateState(world, blockposition1, iblockdata1, false, true, k, state);
++                            // Paper - fix state inconsistency
++                            final int distance = beingRemoved ? -1 : k;
++                            final BlockState self = beingRemoved ? null : state;
++                            this.hook.calculateState(world, blockposition1, iblockdata1, false, true, distance, self);
++                            // Paper end
+                         }
+                     } else if (iblockdata1.is((Block) this)) {
+                         ++k;
+@@ -123,7 +138,7 @@ public class TripWireBlock extends Block {
+     public void entityInside(BlockState state, Level world, BlockPos pos, Entity entity) {
+         if (!new io.papermc.paper.event.entity.EntityInsideBlockEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.block.CraftBlock.at(world, pos)).callEvent()) { return; } // Paper
+         if (!world.isClientSide) {
+-            if (!(Boolean) state.getValue(TripWireBlock.POWERED)) {
++            if (!(Boolean) state.getValue(TripWireBlock.POWERED) && !(Boolean)state.getValue(TripWireBlock.DISARMED)) { //Paper
+                 this.checkPressed(world, pos);
+             }
+         }
