@@ -40,7 +40,7 @@ public interface Chunk extends PersistentDataHolder {
      * Gets a block from this chunk
      *
      * @param x 0-15
-     * @param y 0-255
+     * @param y world minHeight (inclusive) - world maxHeight (exclusive)
      * @param z 0-15
      * @return the Block
      */

@@ -38,7 +38,7 @@ public interface ChunkSnapshot {
      * Get block type for block at corresponding coordinate in the chunk
      *
      * @param x 0-15
-     * @param y 0-255
+     * @param y world minHeight (inclusive) - world maxHeight (exclusive)
      * @param z 0-15
      * @return block material type
      */
@@ -49,7 +49,7 @@ public interface ChunkSnapshot {
      * Get block data for block at corresponding coordinate in the chunk
      *
      * @param x 0-15
-     * @param y 0-255
+     * @param y world minHeight (inclusive) - world maxHeight (exclusive)
      * @param z 0-15
      * @return block material type
      */
@@ -60,7 +60,7 @@ public interface ChunkSnapshot {
      * Get block data for block at corresponding coordinate in the chunk
      *
      * @param x 0-15
-     * @param y 0-255
+     * @param y world minHeight (inclusive) - world maxHeight (exclusive)
      * @param z 0-15
      * @return 0-15
      * @deprecated Magic value
@@ -72,7 +72,7 @@ public interface ChunkSnapshot {
      * Get sky light level for block at corresponding coordinate in the chunk
      *
      * @param x 0-15
-     * @param y 0-255
+     * @param y world minHeight (inclusive) - world maxHeight (exclusive)
      * @param z 0-15
      * @return 0-15
      */
@@ -83,7 +83,7 @@ public interface ChunkSnapshot {
      * chunk
      *
      * @param x 0-15
-     * @param y 0-255
+     * @param y world minHeight (inclusive) - world maxHeight (exclusive)
      * @param z 0-15
      * @return 0-15
      */
@@ -114,7 +114,7 @@ public interface ChunkSnapshot {
      * Get biome at given coordinates
      *
      * @param x X-coordinate (0-15)
-     * @param y Y-coordinate (0-255)
+     * @param y Y-coordinate (world minHeight (inclusive) - world maxHeight (exclusive))
      * @param z Z-coordinate (0-15)
      * @return Biome at given coordinate
      */
@@ -152,7 +152,7 @@ public interface ChunkSnapshot {
     /**
      * Test if section is empty
      *
-     * @param sy - section Y coordinate (block Y / 16, 0-255)
+     * @param sy - section Y coordinate (block Y / 16, world minHeight (inclusive) - world maxHeight (exclusive))
      * @return true if empty, false if not
      */
     boolean isSectionEmpty(int sy);
