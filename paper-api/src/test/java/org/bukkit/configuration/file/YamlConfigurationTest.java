@@ -144,4 +144,23 @@ public class YamlConfigurationTest extends FileConfigurationTest {
                 + "    height-offset: 2\n";
         assertEquals(expected, config.saveToString());
     }
+
+    @Test
+    public void test100Comments() throws InvalidConfigurationException {
+        StringBuilder commentBuilder = new StringBuilder();
+        for (int i = 0; i < 100; i++) {
+            commentBuilder.append("# Comment ").append(i).append("\n");
+        }
+
+        final String data = ""
+                + commentBuilder
+                + "simpleKey: simpleValue\n"
+                + "\n";
+
+        YamlConfiguration config = getConfig();
+        config.loadFromString(data);
+
+        String result = config.saveToString();
+        assertEquals(data, result);
+    }
 }
