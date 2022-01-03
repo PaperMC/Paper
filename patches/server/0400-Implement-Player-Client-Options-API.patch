@@ -85,22 +85,22 @@ index 0000000000000000000000000000000000000000..b6f4400df3d8ec7e06a996de54f8cabb
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-index 9cbca14b0a111e57a1d01bcbcf2164ab8b53b1a5..cdb0eb8e21299ca70ed7ed5c1195d07f44e47838 100644
+index 9cbca14b0a111e57a1d01bcbcf2164ab8b53b1a5..5dba4021e993db1fc7e8dfd89411c6e02b2df5dc 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
 @@ -1830,6 +1830,7 @@ public class ServerPlayer extends Player {
      public String locale = null; // CraftBukkit - add, lowercase // Paper - default to null
      public java.util.Locale adventure$locale = java.util.Locale.US; // Paper
      public void updateOptions(ServerboundClientInformationPacket packet) {
-+        new com.destroystokyo.paper.event.player.PlayerClientOptionsChangeEvent(getBukkitEntity(), packet.language, packet.viewDistance, com.destroystokyo.paper.ClientOption.ChatVisibility.valueOf(packet.chatVisibility().name()), packet.chatColors(), new com.destroystokyo.paper.PaperSkinParts(packet.modelCustomisation()), packet.mainHand() == HumanoidArm.LEFT ? MainHand.LEFT : MainHand.RIGHT).callEvent(); // Paper - settings event
++        new com.destroystokyo.paper.event.player.PlayerClientOptionsChangeEvent(getBukkitEntity(), packet.language, packet.viewDistance, com.destroystokyo.paper.ClientOption.ChatVisibility.valueOf(packet.chatVisibility().name()), packet.chatColors(), new com.destroystokyo.paper.PaperSkinParts(packet.modelCustomisation()), packet.mainHand() == HumanoidArm.LEFT ? MainHand.LEFT : MainHand.RIGHT, packet.allowsListing(), packet.textFilteringEnabled()).callEvent(); // Paper - settings event
          // CraftBukkit start
          if (getMainArm() != packet.mainHand()) {
              PlayerChangedMainHandEvent event = new PlayerChangedMainHandEvent(this.getBukkitEntity(), getMainArm() == HumanoidArm.LEFT ? MainHand.LEFT : MainHand.RIGHT);
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index b04aaab4f7cb7367d0fbc6268b0db269b55b2d17..3f25e799ba13d8280c644a943ca0d191fde9eb7b 100644
+index b04aaab4f7cb7367d0fbc6268b0db269b55b2d17..384530bb7ebd6e43467d93ed12137f162011640a 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-@@ -546,6 +546,24 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -546,6 +546,28 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
      public void setSendViewDistance(int viewDistance) {
          throw new NotImplementedException("Per-Player View Distance APIs need further understanding to properly implement (There are per world view distances though!)"); // TODO
      }
@@ -119,6 +119,10 @@ index b04aaab4f7cb7367d0fbc6268b0db269b55b2d17..3f25e799ba13d8280c644a943ca0d191
 +            return type.getType().cast(getMainHand());
 +        } else if(com.destroystokyo.paper.ClientOption.VIEW_DISTANCE.equals(type)) {
 +            return type.getType().cast(getClientViewDistance());
++        } else if (com.destroystokyo.paper.ClientOption.ALLOW_SERVER_LISTINGS.equals(type)) {
++            return type.getType().cast(isAllowingServerListings());
++        } else if (com.destroystokyo.paper.ClientOption.TEXT_FILTERING_ENABLED.equals(type)) {
++            return type.getType().cast(getHandle().isTextFilteringEnabled());
 +        }
 +        throw new RuntimeException("Unknown settings type");
 +    }
