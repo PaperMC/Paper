@@ -1,44 +1,30 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Jan Trummer <jan.trummer@hotmail.com>
-Date: Mon, 3 Jan 2022 18:48:50 +0100
+Date: Mon, 3 Jan 2022 21:09:57 +0100
 Subject: [PATCH] Added EntityClimbEvent
 
 
 diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-index 43378561cf48f969f5bf1fd0db349415f4d1c866..25028d8e1880bff3ca251ebf3e09e812e5ae60a3 100644
+index 43378561cf48f969f5bf1fd0db349415f4d1c866..ccc21b60a1b26c53d927a1168d6fb6ddf515810b 100644
 --- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-@@ -19,6 +19,7 @@ import java.util.Random;
- import java.util.UUID;
- import java.util.function.Predicate;
- import javax.annotation.Nullable;
-+
- import net.minecraft.BlockUtil;
- import net.minecraft.advancements.CriteriaTriggers;
- import net.minecraft.commands.arguments.EntityAnchorArgument;
-@@ -139,7 +140,6 @@ import org.bukkit.event.entity.EntityTeleportEvent;
- import org.bukkit.event.player.PlayerItemConsumeEvent;
- // CraftBukkit end
- 
--import co.aikar.timings.MinecraftTimings; // Paper
- 
- public abstract class LivingEntity extends Entity {
- 
-@@ -1849,6 +1849,12 @@ public abstract class LivingEntity extends Entity {
-             BlockState iblockdata = this.getFeetBlockState();
- 
-             if (iblockdata.is((Tag) BlockTags.CLIMBABLE)) {
-+                //Paper start
+@@ -2838,8 +2838,17 @@ public abstract class LivingEntity extends Entity {
+             if (d2 < 0.0D && !this.getFeetBlockState().is(Blocks.SCAFFOLDING) && this.isSuppressingSlidingDownLadder() && this instanceof net.minecraft.world.entity.player.Player) {
+                 d2 = 0.0D;
+             }
+-
+-            motion = new Vec3(d0, d2, d1);
++            //Paper start
++            Vec3 newMotion = new Vec3(d0, d2, d1);
++            if(!motion.equals(newMotion))  //check if the motion changes, only the trigger the event if it does to prevent the event from being spammed by spiders hanging on walls
++            {
 +                io.papermc.paper.event.entity.EntityClimbEvent event = null;
-+                org.bukkit.craftbukkit.block.CraftBlock craftBlock = org.bukkit.craftbukkit.block.CraftBlock.at(this.level, blockposition);
++                org.bukkit.craftbukkit.block.CraftBlock craftBlock = org.bukkit.craftbukkit.block.CraftBlock.at(this.level, this.blockPosition());
 +                event = new io.papermc.paper.event.entity.EntityClimbEvent(this.getBukkitLivingEntity(), craftBlock);
 +                event.callEvent();
-+                //Paper end
-                 this.lastClimbablePos = Optional.of(blockposition);
-                 return true;
-             } else if (iblockdata.getBlock() instanceof TrapDoorBlock && this.trapdoorUsableAsLadder(blockposition, iblockdata)) {
-@@ -4337,3 +4343,4 @@ public abstract class LivingEntity extends Entity {
-         // CraftBukkit end
-     }
- }
-+
++            }
++            return newMotion;
++            //Paper end
+         }
+ 
+         return motion;
