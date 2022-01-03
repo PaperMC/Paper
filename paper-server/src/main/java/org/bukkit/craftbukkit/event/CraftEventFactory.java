@@ -860,6 +860,8 @@ public class CraftEventFactory {
 
             if (!event.isCancelled()) {
                 event.getEntity().setLastDamageCause(event);
+            } else {
+                entity.lastDamageCancelled = true; // SPIGOT-5339, SPIGOT-6252, SPIGOT-6777: Keep track if the event was canceled
             }
             return event;
         } else if (source instanceof EntityDamageSource) {
@@ -884,6 +886,8 @@ public class CraftEventFactory {
             callEvent(event);
             if (!event.isCancelled()) {
                 event.getEntity().setLastDamageCause(event);
+            } else {
+                entity.lastDamageCancelled = true; // SPIGOT-5339, SPIGOT-6252, SPIGOT-6777: Keep track if the event was canceled
             }
             return event;
         } else if (source == DamageSource.LAVA) {
@@ -892,6 +896,8 @@ public class CraftEventFactory {
             callEvent(event);
             if (!event.isCancelled()) {
                 event.getEntity().setLastDamageCause(event);
+            } else {
+                entity.lastDamageCancelled = true; // SPIGOT-5339, SPIGOT-6252, SPIGOT-6777: Keep track if the event was canceled
             }
             return event;
         } else if (blockDamage != null) {
@@ -913,6 +919,8 @@ public class CraftEventFactory {
             callEvent(event);
             if (!event.isCancelled()) {
                 event.getEntity().setLastDamageCause(event);
+            } else {
+                entity.lastDamageCancelled = true; // SPIGOT-5339, SPIGOT-6252, SPIGOT-6777: Keep track if the event was canceled
             }
             return event;
         } else if (entityDamage != null) {
@@ -937,6 +945,8 @@ public class CraftEventFactory {
             callEvent(event);
             if (!event.isCancelled()) {
                 event.getEntity().setLastDamageCause(event);
+            } else {
+                entity.lastDamageCancelled = true; // SPIGOT-5339, SPIGOT-6252, SPIGOT-6777: Keep track if the event was canceled
             }
             return event;
         }
@@ -997,6 +1007,8 @@ public class CraftEventFactory {
 
         if (!event.isCancelled()) {
             event.getEntity().setLastDamageCause(event);
+        } else {
+            damagee.lastDamageCancelled = true; // SPIGOT-5339, SPIGOT-6252, SPIGOT-6777: Keep track if the event was canceled
         }
 
         return event;
