@@ -1,0 +1,54 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jan Trummer <jan.trummer@hotmail.com>
+Date: Tue, 4 Jan 2022 10:09:09 +0100
+Subject: [PATCH] Added fire-tick-delay config option
+
+Added a config option to set the fire tick delay. The default value is 30, the game adds a random integer with a max value of 10 to that base value.
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 5a5db15493cd9b83815c36487c2f38cb8ac76f3a..66393244a5e63575454dc8a530aec7569b170313 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -1019,4 +1019,10 @@ public class PaperWorldConfig {
+     private void minBlockLightForMobSpawning() {
+         this.maxBlockLightForMonsterSpawning = getInt("monster-spawn-max-light-level", maxBlockLightForMonsterSpawning);
+     }
++
++
++    public int fireTickDelay = 30;
++    private void fireTickDelay() {
++        fireTickDelay = getInt("fire-tick-delay", 30);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/world/level/block/FireBlock.java b/src/main/java/net/minecraft/world/level/block/FireBlock.java
+index d8e4fda2d501545e5f891bca317e2aa5f9368f47..d1eadf4d700a22fa100746920226d1bd7abefe7d 100644
+--- a/src/main/java/net/minecraft/world/level/block/FireBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/FireBlock.java
+@@ -164,7 +164,7 @@ public class FireBlock extends BaseFireBlock {
+ 
+     @Override
+     public void tick(BlockState state, ServerLevel world, BlockPos pos, Random random) {
+-        world.scheduleTick(pos, (Block) this, FireBlock.getFireTickDelay(world.random));
++        world.scheduleTick(pos, (Block) this, FireBlock.getFireTickDelay(world.random, world.paperConfig.fireTickDelay)); //Paper
+         if (world.getGameRules().getBoolean(GameRules.RULE_DOFIRETICK)) {
+             if (!state.canSurvive(world, pos)) {
+                 fireExtinguished(world, pos); // CraftBukkit - invalid place location
+@@ -362,13 +362,15 @@ public class FireBlock extends BaseFireBlock {
+     // Paper start - ItemActionContext param
+     public void onPlace(BlockState iblockdata, Level world, BlockPos blockposition, BlockState iblockdata1, boolean flag, UseOnContext itemActionContext) {
+         super.onPlace(iblockdata, world, blockposition, iblockdata1, flag, itemActionContext);
++        world.scheduleTick(blockposition, this, getFireTickDelay(world.random, world.paperConfig.fireTickDelay));
+         // Paper end
+-        world.scheduleTick(blockposition, this, getFireTickDelay(world.random));
+     }
+ 
+-    private static int getFireTickDelay(Random random) {
+-        return 30 + random.nextInt(10);
++    //Paper start
++    private static int getFireTickDelay(Random random, int tickDelayBase) {
++        return tickDelayBase + random.nextInt(10);
+     }
++    //Paper end
+ 
+     @Override
+     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
