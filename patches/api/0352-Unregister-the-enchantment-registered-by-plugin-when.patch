@@ -1,0 +1,63 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Hai_tun <1346653001@qq.com>
+Date: Wed, 5 Jan 2022 04:12:52 +0800
+Subject: [PATCH] Unregister the enchantment registered by plugin when reload.
+ And optimize the tab completion of the reload command.
+
+
+diff --git a/src/main/java/org/bukkit/command/defaults/ReloadCommand.java b/src/main/java/org/bukkit/command/defaults/ReloadCommand.java
+index 0c7ba0718de2b93d013968ca0fec34ffd423990f..46d6f62589498b43743f1bdcba4e66e013d331dd 100644
+--- a/src/main/java/org/bukkit/command/defaults/ReloadCommand.java
++++ b/src/main/java/org/bukkit/command/defaults/ReloadCommand.java
+@@ -8,6 +8,7 @@ import org.bukkit.ChatColor;
+ import org.bukkit.command.Command;
+ import org.bukkit.command.CommandSender;
+ import org.jetbrains.annotations.NotNull;
++import com.google.common.collect.Lists; // Paper
+ 
+ public class ReloadCommand extends BukkitCommand {
+     public ReloadCommand(@NotNull String name) {
+@@ -60,6 +61,6 @@ public class ReloadCommand extends BukkitCommand {
+     @NotNull
+     @Override
+     public List<String> tabComplete(@NotNull CommandSender sender, @NotNull String alias, @NotNull String[] args) throws IllegalArgumentException {
+-        return com.google.common.collect.Lists.newArrayList("permissions", "commands"); // Paper
++        return args.length == 1 ? Lists.newArrayList("permissions", "commands") : Collections.emptyList(); // Paper
+     }
+ }
+diff --git a/src/main/java/org/bukkit/enchantments/Enchantment.java b/src/main/java/org/bukkit/enchantments/Enchantment.java
+index 1e1c5a9d9a769018c4604e6e44fc5ed2312981e9..6ca77ad15d077a8e2c8a1e7b5d1cb0ea35e29588 100644
+--- a/src/main/java/org/bukkit/enchantments/Enchantment.java
++++ b/src/main/java/org/bukkit/enchantments/Enchantment.java
+@@ -342,6 +342,17 @@ public abstract class Enchantment implements Keyed, net.kyori.adventure.translat
+      */
+     @NotNull
+     public abstract java.util.Set<org.bukkit.inventory.EquipmentSlot> getActiveSlots();
++
++    /**
++     * Gets the enchantment is registered by server.
++     * If the enchantment is registered by plugin, it should return false and can be unregistered when reload.
++     *
++     * @return true if the enchantment is registered by server.
++     */
++    public boolean isServerEnchantment()
++    {
++        return false;
++    }
+     // Paper end
+ 
+     @Override
+@@ -387,6 +398,13 @@ public abstract class Enchantment implements Keyed, net.kyori.adventure.translat
+         byName.put(enchantment.getName(), enchantment);
+     }
+ 
++    // Paper start
++    public static void clearPluginEnchantments() {
++        byKey.values().removeIf(enchantment -> !(enchantment.isServerEnchantment()));
++        byName.values().removeIf(enchantment -> !(enchantment.isServerEnchantment()));
++    }
++    // Paper end
++
+     /**
+      * Checks if this is accepting Enchantment registrations.
+      *

@@ -1,0 +1,44 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Hai_tun <1346653001@qq.com>
+Date: Wed, 5 Jan 2022 04:12:52 +0800
+Subject: [PATCH] Unregister the enchantment registered by plugin when reload.
+ And optimize the tab completion of the reload command.
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index ba7023e7ca5d29375ff53c2951892138d155f69f..99657222fe9ffff1bc36dee3afe8b5dee8b1fe5a 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -197,6 +197,7 @@ import org.bukkit.craftbukkit.util.CraftNamespacedKey;
+ import org.bukkit.craftbukkit.util.DatFileFilter;
+ import org.bukkit.craftbukkit.util.Versioning;
+ import org.bukkit.craftbukkit.util.permissions.CraftDefaultPermissions;
++import org.bukkit.enchantments.Enchantment; // Paper
+ import org.bukkit.entity.Entity;
+ import org.bukkit.entity.Player;
+ import org.bukkit.event.inventory.InventoryType;
+@@ -1005,6 +1006,7 @@ public final class CraftServer implements Server {
+         }
+         // Paper end
+         this.reloadData();
++        Enchantment.clearPluginEnchantments(); // Paper
+         org.spigotmc.SpigotConfig.registerCommands(); // Spigot
+         com.destroystokyo.paper.PaperConfig.registerCommands(); // Paper
+         this.overrideAllCommandBlockCommands = this.commandsConfiguration.getStringList("command-block-overrides").contains("*");
+diff --git a/src/main/java/org/bukkit/craftbukkit/enchantments/CraftEnchantment.java b/src/main/java/org/bukkit/craftbukkit/enchantments/CraftEnchantment.java
+index 11c1eb0e0bc326b28dc0cab16f67c413cc52e98c..7687f86b1c4f9dd8ff441aefccb57ae40c4350a9 100644
+--- a/src/main/java/org/bukkit/craftbukkit/enchantments/CraftEnchantment.java
++++ b/src/main/java/org/bukkit/craftbukkit/enchantments/CraftEnchantment.java
+@@ -223,6 +223,12 @@ public class CraftEnchantment extends Enchantment {
+         return java.util.stream.Stream.of(target.slots).map(org.bukkit.craftbukkit.CraftEquipmentSlot::getSlot).collect(java.util.stream.Collectors.toSet());
+     }
+ 
++    @Override
++    public boolean isServerEnchantment()
++    {
++        return true;
++    }
++
+     public static io.papermc.paper.enchantments.EnchantmentRarity fromNMSRarity(net.minecraft.world.item.enchantment.Enchantment.Rarity nmsRarity) {
+         if (nmsRarity == net.minecraft.world.item.enchantment.Enchantment.Rarity.COMMON) {
+             return io.papermc.paper.enchantments.EnchantmentRarity.COMMON;
