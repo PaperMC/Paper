@@ -57,6 +57,7 @@ public class CraftPersistentDataContainer implements PersistentDataContainer {
 
     @Override
     public boolean has(NamespacedKey key) {
+        Preconditions.checkArgument(key != null, "The provided key for the custom value was null"); // Paper
         return this.customDataTags.get(key.toString()) != null;
     }
 
