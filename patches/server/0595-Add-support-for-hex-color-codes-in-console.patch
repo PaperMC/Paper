@@ -6,7 +6,7 @@ Subject: [PATCH] Add support for hex color codes in console
 Converts upstream's hex color code legacy format into actual hex color codes in the console.
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-index a0a3cec47c8f9e379a5bc1d43eeda5eb9d81f814..23d849872109e43d6e22a953d3a4298565d4621d 100644
+index 1adbceadd5df96e17796561a40eb7b760493440e..c07257314e070d4423c4f53f58cb0962e3ead131 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
 @@ -454,8 +454,10 @@ public class PaperConfig {
@@ -21,17 +21,17 @@ index a0a3cec47c8f9e379a5bc1d43eeda5eb9d81f814..23d849872109e43d6e22a953d3a42985
  
      public static boolean allowBlockPermanentBreakingExploits = false;
 diff --git a/src/main/java/com/destroystokyo/paper/console/TerminalConsoleCommandSender.java b/src/main/java/com/destroystokyo/paper/console/TerminalConsoleCommandSender.java
-index 685deaa0e5d1ddc13e3a7c0471b1cfcf1710c869..84243e10c115104cadfe84c4f152f53c1b5f7c6f 100644
+index 685deaa0e5d1ddc13e3a7c0471b1cfcf1710c869..709f2a420ceaffe0101c676ec23e949e8d684465 100644
 --- a/src/main/java/com/destroystokyo/paper/console/TerminalConsoleCommandSender.java
 +++ b/src/main/java/com/destroystokyo/paper/console/TerminalConsoleCommandSender.java
 @@ -1,5 +1,10 @@
  package com.destroystokyo.paper.console;
  
-+import io.papermc.paper.adventure.PaperAdventure;
 +import io.papermc.paper.console.HexFormattingConverter;
 +import net.kyori.adventure.audience.MessageType;
 +import net.kyori.adventure.identity.Identity;
 +import net.kyori.adventure.text.Component;
++import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
  import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
  import org.bukkit.craftbukkit.command.CraftConsoleCommandSender;
@@ -41,7 +41,7 @@ index 685deaa0e5d1ddc13e3a7c0471b1cfcf1710c869..84243e10c115104cadfe84c4f152f53c
      public void sendRawMessage(String message) {
 -        // TerminalConsoleAppender supports color codes directly in log messages
 -        LOGGER.info(message);
-+        final Component msg = PaperAdventure.LEGACY_SECTION_UXRC.deserialize(message);
++        final Component msg = LegacyComponentSerializer.legacySection().deserialize(message);
 +        this.sendMessage(Identity.nil(), msg, MessageType.SYSTEM);
 +    }
 +
@@ -270,14 +270,14 @@ index 0000000000000000000000000000000000000000..ea83ee8762c126c449993a7497257b0b
 +
 +}
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 445efad6a35b819dcb845524a28055a90da6e7f6..2914355be3f6c45b2dbd7ceb0ea65c7f22255a6d 100644
+index 3a73d834c3c8481ff3af3eee7634309f7abe60ab..2914355be3f6c45b2dbd7ceb0ea65c7f22255a6d 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -1712,7 +1712,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
  
      @Override
      public void sendMessage(Component message, UUID sender) {
--        MinecraftServer.LOGGER.info(io.papermc.paper.adventure.PaperAdventure.LEGACY_SECTION_UXRC.serialize(io.papermc.paper.adventure.PaperAdventure.asAdventure(message))); // Paper - Log message with colors
+-        MinecraftServer.LOGGER.info(net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().serialize(io.papermc.paper.adventure.PaperAdventure.asAdventure(message))); // Paper - Log message with colors
 +        MinecraftServer.LOGGER.info(io.papermc.paper.console.HexFormattingConverter.SERIALIZER.serialize(io.papermc.paper.adventure.PaperAdventure.asAdventure(message))); // Paper - Log message with colors
      }
  
