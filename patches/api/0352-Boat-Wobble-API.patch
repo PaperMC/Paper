@@ -1,0 +1,120 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: thamid-gamer <60953955+thamid-gamer@users.noreply.github.com>
+Date: Tue, 4 Jan 2022 21:20:08 -0500
+Subject: [PATCH] Boat Wobble API
+
+
+diff --git a/src/main/java/io/papermc/paper/event/entity/BoatBobEvent.java b/src/main/java/io/papermc/paper/event/entity/BoatBobEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..e5634c4faa7bd10c832b4563015b011514670606
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/event/entity/BoatBobEvent.java
+@@ -0,0 +1,75 @@
++package io.papermc.paper.event.entity;
++
++import org.apache.commons.lang.Validate;
++import org.bukkit.entity.Boat;
++import org.bukkit.event.Cancellable;
++import org.bukkit.event.HandlerList;
++import org.bukkit.event.entity.EntityEvent;
++import org.bukkit.util.Vector;
++import org.jetbrains.annotations.NotNull;
++
++/**
++ * Is called when a {@link Boat} either sinks or rises due to a {@link org.bukkit.block.data.type.BubbleColumn}
++ */
++public class BoatBobEvent extends EntityEvent implements Cancellable {
++    private static final HandlerList handlers = new HandlerList();
++
++    private boolean cancelled = false;
++    private Vector velocity;
++
++    public BoatBobEvent(@NotNull Boat boat, @NotNull Vector velocity) {
++        super(boat);
++        this.velocity = velocity;
++    }
++
++    /**
++     * The boat that is bobbing
++     *
++     * @return the boat
++     */
++    @NotNull
++    public Boat getEntity() {
++        return (Boat) entity;
++    }
++
++    /**
++     * Gets the velocity the boat will have
++     *
++     * @return the boat's resulting velocity
++     */
++    @NotNull
++    public Vector getVelocity() {
++        return velocity.clone();
++    }
++
++    /**
++     * Sets the velocity the boat will have
++     *
++     * @param velocity the boat's resulting velocity
++     */
++    public void setVelocity(@NotNull Vector velocity) {
++        Validate.notNull(velocity, "New velocity cannot be null");
++        this.velocity = velocity;
++    }
++
++    @Override
++    public @NotNull HandlerList getHandlers() {
++        return handlers;
++    }
++
++    @NotNull
++    public static HandlerList getHandlerList() {
++        return handlers;
++    }
++
++    @Override
++    public boolean isCancelled() {
++        return cancelled;
++    }
++
++    @Override
++    public void setCancelled(boolean cancel) {
++        this.cancelled = cancel;
++    }
++
++}
+diff --git a/src/main/java/org/bukkit/entity/Boat.java b/src/main/java/org/bukkit/entity/Boat.java
+index e0d0537606d4f9a3fe588ebf7d02f314c0359335..bf78299944456c69410e1a71267dec13c68935d6 100644
+--- a/src/main/java/org/bukkit/entity/Boat.java
++++ b/src/main/java/org/bukkit/entity/Boat.java
+@@ -113,5 +113,28 @@ public interface Boat extends Vehicle {
+      */
+     @NotNull
+     public Material getBoatMaterial();
++
++    /**
++     * Gets the number of ticks the boat will wobble for until it either rises or sinks due to a {@link org.bukkit.block.data.type.BubbleColumn}.
++     * If the boat is not above a {@link org.bukkit.block.data.type.BubbleColumn}, this will return 0.
++     * @return the number of ticks the boat will wobble for until it either rises or sinks due to a {@link org.bukkit.block.data.type.BubbleColumn}
++     */
++    public int getWobbleTicks();
++
++    /**
++     * Sets the number of ticks the boat will wobble for until it either rises or sinks due to a {@link org.bukkit.block.data.type.BubbleColumn}.
++     * @param ticks the number of ticks the boat will wobble for until it either rises or sinks due to a {@link org.bukkit.block.data.type.BubbleColumn}
++     */
++    public void setWobbleTicks(int ticks);
++
++    /**
++     * Gets a {@link net.kyori.adventure.util.TriState} of whether the boat will sink after it wobbles.
++     * If the boat will sink, this will return {@link net.kyori.adventure.util.TriState#TRUE}.
++     * If the boat will rise, this will return {@link net.kyori.adventure.util.TriState#FALSE}.
++     * If the boat is not wobbling, this returns {@link net.kyori.adventure.util.TriState#NOT_SET}
++     *
++     * @return a {@link net.kyori.adventure.util.TriState} of whether the boat will sink after it wobbles.
++     */
++    public net.kyori.adventure.util.@NotNull TriState willSinkAfterWobble();
+     // Paper end
+ }

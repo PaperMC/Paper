@@ -1,0 +1,70 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: thamid-gamer <60953955+thamid-gamer@users.noreply.github.com>
+Date: Tue, 4 Jan 2022 21:20:18 -0500
+Subject: [PATCH] Boat Wobble API
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/vehicle/Boat.java b/src/main/java/net/minecraft/world/entity/vehicle/Boat.java
+index a00eddfad284d63f2bb8b04caf2c9d405fd0721e..94d290ccb561894358b161f8be63c159c3a69f49 100644
+--- a/src/main/java/net/minecraft/world/entity/vehicle/Boat.java
++++ b/src/main/java/net/minecraft/world/entity/vehicle/Boat.java
+@@ -446,14 +446,23 @@ public class Boat extends Entity {
+                     this.setBubbleTime(0);
+                     Vec3 vec3d = this.getDeltaMovement();
+ 
++                    org.bukkit.util.Vector velocity = org.bukkit.craftbukkit.util.CraftVector.toBukkit(vec3d); // Paper
+                     if (this.bubbleColumnDirectionIsDown) {
+-                        this.setDeltaMovement(vec3d.add(0.0D, -0.7D, 0.0D));
+-                        this.ejectPassengers();
++                        velocity.setY(velocity.getY() - 0.7D); // Paper
+                     } else {
+-                        this.setDeltaMovement(vec3d.x, this.hasPassenger((entity) -> {
++                        velocity.setY(this.hasPassenger((entity) -> { // Paper
+                             return entity instanceof Player;
+-                        }) ? 2.7D : 0.6D, vec3d.z);
++                        }) ? 2.7D : 0.6D); // Paper
+                     }
++                    // Paper start
++                    io.papermc.paper.event.entity.BoatBobEvent event = new io.papermc.paper.event.entity.BoatBobEvent((org.bukkit.entity.Boat) this.getBukkitEntity(), velocity);
++                    if (event.callEvent()) {
++                        if (event.getVelocity().getY() < 0.0D) {
++                            this.ejectPassengers();
++                        }
++                        this.getBukkitEntity().setVelocity(event.getVelocity());
++                    }
++                    // Paper end
+                 }
+ 
+                 this.isAboveBubbleColumn = false;
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftBoat.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftBoat.java
+index 39e7aeb409a39bd8cd8200b18dd3da1e427519ab..7efd6b8b4836c743eec772680c9b082ffdbcba22 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftBoat.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftBoat.java
+@@ -70,6 +70,27 @@ public class CraftBoat extends CraftVehicle implements Boat {
+     public org.bukkit.Material getBoatMaterial() {
+         return org.bukkit.craftbukkit.util.CraftMagicNumbers.getMaterial(getHandle().getDropItem());
+     }
++
++    @Override
++    public int getWobbleTicks() {
++        return this.getHandle().getBubbleTime();
++    }
++
++    @Override
++    public void setWobbleTicks(int ticks) {
++        com.google.common.base.Preconditions.checkArgument(0 <= ticks, "Ticks cannot be less than 0");
++
++        this.getHandle().setBubbleTime(ticks);
++    }
++
++    @Override
++    public net.kyori.adventure.util.TriState willSinkAfterWobble() {
++        if (this.getWobbleTicks() == 0) {
++            return net.kyori.adventure.util.TriState.NOT_SET;
++        }
++
++        return net.kyori.adventure.util.TriState.byBoolean(this.getHandle().bubbleColumnDirectionIsDown);
++    }
+     // Paper end
+ 
+     @Override
