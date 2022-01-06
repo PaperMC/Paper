@@ -1,0 +1,2560 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Space Walker <spacedoesrs@gmail.com>
+Date: Thu, 6 Jan 2022 17:17:10 -0500
+Subject: [PATCH] Add Alternate Current redstone implementation
+
+Co-authored by: Simon Gardling <titaniumtown@gmail.com>
+
+Originally created by SpaceWalkerRS for the alternate-current (<https://github.com/SpaceWalkerRS/alternate-current>) project and licensed under the MIT license.
+
+This patch implements SpaceWalkerRS's optimized redstone algorithm as an alternative to Eigencraft and Vanilla's implementations. This patch also sets Eigencraft as the default redstone implementation
+
+diff --git a/src/main/java/alternate/current/redstone/Node.java b/src/main/java/alternate/current/redstone/Node.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..28af1c501da4c7fbfa943a008b5450d16b757423
+--- /dev/null
++++ b/src/main/java/alternate/current/redstone/Node.java
+@@ -0,0 +1,98 @@
++package alternate.current.redstone;
++
++import java.util.Arrays;
++import net.minecraft.core.BlockPos;
++import net.minecraft.world.level.block.state.BlockState;
++import alternate.current.redstone.WireHandler.Directions;
++
++/**
++ * A Node represents a block in the world. It is tied to a
++ * specific wire block type so it can be identified as part of
++ * a wire network or as a neighbor of a wire network. It also
++ * holds a few other pieces of information that speed up the
++ * calculations in the WireHandler class.
++ * 
++ * @author Space Walker
++ */
++public class Node {
++	
++	// flags that encode the Node type
++	private static final int CONDUCTOR = 0b01;
++	private static final int REDSTONE  = 0b10;
++	
++	public final WireBlock wireBlock;
++	public final WorldAccess world;
++	public final Node[] neighbors;
++	
++	public BlockPos pos;
++	public BlockState state;
++	public boolean invalid;
++	
++	private int flags;
++	
++	public Node(WireBlock wireBlock, WorldAccess world) {
++		this.wireBlock = wireBlock;
++		this.world = world;
++		this.neighbors = new Node[Directions.ALL.length];
++	}
++	
++	@Override
++	public boolean equals(Object o) {
++		if (o instanceof Node) {
++			Node node = (Node)o;
++			return world == node.world && pos.equals(node.pos);
++		}
++		
++		return false;
++	}
++	
++	@Override
++	public int hashCode() {
++		return pos.hashCode();
++	}
++	
++	public Node update(BlockPos pos, BlockState state, boolean clearNeighbors) {
++		if (wireBlock.isOf(state)) {
++			throw new IllegalStateException("Cannot update a regular Node to a WireNode!");
++		}
++		
++		if (clearNeighbors) {
++			Arrays.fill(neighbors, null);
++		}
++		
++		this.pos = pos.immutable();
++		this.state = state;
++		this.invalid = false;
++		
++		this.flags = 0;
++		
++		if (this.world.isConductor(this.pos, this.state)) {
++			this.flags |= CONDUCTOR;
++		}
++		if (this.state.isSignalSource()) {
++			this.flags |= REDSTONE;
++		}
++		
++		return this;
++	}
++	
++	public boolean isOf(WireBlock wireBlock) {
++		return this.wireBlock == wireBlock;
++	}
++	
++	public boolean isWire() {
++		return false;
++	}
++	
++	public boolean isConductor() {
++		return (flags & CONDUCTOR) != 0;
++	}
++	
++	public boolean isRedstoneComponent() {
++		return (flags & REDSTONE) != 0;
++	}
++	
++	public WireNode asWire() {
++		throw new UnsupportedOperationException("Not a WireNode!");
++	}
++}
+diff --git a/src/main/java/alternate/current/redstone/PowerQueue.java b/src/main/java/alternate/current/redstone/PowerQueue.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..070973f35bbb07b974f638754547b821143b4c6b
+--- /dev/null
++++ b/src/main/java/alternate/current/redstone/PowerQueue.java
+@@ -0,0 +1,91 @@
++package alternate.current.redstone;
++
++import java.util.AbstractQueue;
++import java.util.Iterator;
++import java.util.Queue;
++
++import alternate.current.util.collection.SimpleQueue;
++
++public class PowerQueue extends AbstractQueue<WireNode> {
++	
++	private final int minPower;
++	private final int maxPower;
++	private final Queue<WireNode>[] queues;
++	
++	private int size;
++	private int currentQueue;
++	
++	public PowerQueue(int minPower, int maxPower) {
++		this.minPower = minPower;
++		this.maxPower = maxPower;
++		this.queues = createQueues(this.maxPower - this.minPower + 1);
++	}
++	
++	private static Queue<WireNode>[] createQueues(int queueCount) {
++		@SuppressWarnings("unchecked")
++		Queue<WireNode>[] queues = new Queue[queueCount];
++		
++		for (int index = 0; index < queueCount; index++) {
++			queues[index] = new SimpleQueue<>();
++		}
++		
++		return queues;
++	}
++	
++	@Override
++	public boolean offer(WireNode wire) {
++		int queueIndex = wire.nextPower() - minPower;
++		queues[queueIndex].offer(wire);
++		size++;
++		
++		if (queueIndex > currentQueue) {
++			currentQueue = queueIndex;
++		}
++		
++		return true;
++	}
++	
++	@Override
++	public WireNode poll() {
++		if (size == 0) {
++			return null;
++		}
++		
++		WireNode wire;
++		
++		do {
++			wire = queues[currentQueue].poll();
++		} while (wire == null && currentQueue-- > 0);
++		
++		if (wire != null) {
++			size--;
++		}
++		
++		return wire;
++	}
++	
++	@Override
++	public WireNode peek() {
++		if (size == 0) {
++			return null;
++		}
++		
++		WireNode wire;
++		
++		do {
++			wire = queues[currentQueue].peek();
++		} while (wire == null && currentQueue-- > 0);
++		
++		return wire;
++	}
++	
++	@Override
++	public Iterator<WireNode> iterator() {
++		throw new UnsupportedOperationException();
++	}
++	
++	@Override
++	public int size() {
++		return size;
++	}
++}
+diff --git a/src/main/java/alternate/current/redstone/WireBlock.java b/src/main/java/alternate/current/redstone/WireBlock.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..3b3ba9325717a4bd9399537fd15746ae2fc731b2
+--- /dev/null
++++ b/src/main/java/alternate/current/redstone/WireBlock.java
+@@ -0,0 +1,64 @@
++package alternate.current.redstone;
++
++import net.minecraft.core.BlockPos;
++import net.minecraft.util.Mth;
++import net.minecraft.world.level.block.Block;
++import net.minecraft.world.level.block.state.BlockState;
++
++/**
++ * This interface should be implemented by each wire block type.
++ * While Vanilla only has one wire block type, they could add
++ * more in the future, and any mods that add more wire block
++ * types that wish to take advantage of Alternate Current's
++ * performance improvements should have those wire blocks
++ * implement this interface.
++ * 
++ * @author Space Walker
++ */
++public interface WireBlock {
++	
++	public default Block asBlock() {
++		return (Block)this;
++	}
++	
++	public default boolean isOf(BlockState state) {
++		return asBlock() == state.getBlock();
++	}
++	
++	/**
++	 * The lowest possible power level a wire can have.
++	 */
++	public int getMinPower();
++	
++	/**
++	 * The largest possible power level a wire can have.
++	 */
++	public int getMaxPower();
++	
++	/**
++	 * The drop in power level from one wire to the next.
++	 */
++	public int getPowerStep();
++	
++	default int clampPower(int power) {
++		return Mth.clamp(power, getMinPower(), getMaxPower());
++	}
++	
++	/**
++	 * Return the power level of the given wire based on its
++	 * location and block state.
++	 */
++	public int getPower(WorldAccess world, BlockPos pos, BlockState state);
++	
++	/**
++	 * Return a block state that holds the given new power level.
++	 */
++	public BlockState updatePowerState(WorldAccess world, BlockPos pos, BlockState state, int power);
++	
++	/**
++	 * Find the connections between the given WireNode and
++	 * neighboring WireNodes.
++	 */
++	public void findWireConnections(WireNode wire, WireHandler.NodeProvider nodeProvider);
++	
++}
+diff --git a/src/main/java/alternate/current/redstone/WireConnection.java b/src/main/java/alternate/current/redstone/WireConnection.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..fccf3d6b86fd4948c2f7dd7ef30a5f8d407f7444
+--- /dev/null
++++ b/src/main/java/alternate/current/redstone/WireConnection.java
+@@ -0,0 +1,28 @@
++package alternate.current.redstone;
++
++/**
++ * This class represents a connection between some WireNode (the
++ * 'owner') and a neighboring WireNode. Two wires are considered
++ * to be connected if power can flow from one wire to the other
++ * (and/or vice versa).
++ * 
++ * @author Space Walker
++ */
++public class WireConnection {
++	
++	/** Position of the connected wire. */
++	public final WireNode wire;
++	/** Cardinal direction to the connected wire. */
++	public final int iDir;
++	/** True if the connected wire can provide power to the owner of the connection. */
++	public final boolean in;
++	/** True if the connected wire can accept power from the owner of the connection. */
++	public final boolean out;
++	
++	public WireConnection(WireNode wire, int iDir, boolean in, boolean out) {
++		this.wire = wire;
++		this.iDir = iDir;
++		this.in = in;
++		this.out = out;
++	}
++}
+diff --git a/src/main/java/alternate/current/redstone/WireConnectionManager.java b/src/main/java/alternate/current/redstone/WireConnectionManager.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..4db24a54d1e5c577755a966e88651014192fb454
+--- /dev/null
++++ b/src/main/java/alternate/current/redstone/WireConnectionManager.java
+@@ -0,0 +1,123 @@
++package alternate.current.redstone;
++
++import java.util.Arrays;
++import java.util.function.BiConsumer;
++
++import alternate.current.redstone.WireHandler.Directions;
++
++public class WireConnectionManager {
++	
++	/**
++	 * The number of bits allocated to store the start indices
++	 * of connections in any cardinal direction.
++	 */
++	private static final int BITS = 4;
++	private static final int MASK = (1 << BITS) - 1;
++	
++	/** The owner of these connections. */
++	public final WireNode wire;
++	
++	/** All connections to other wires. */
++	public WireConnection[] all;
++	
++	/** The total number of connections. */
++	public int count;
++	/** The number of connections per cardinal direction. */
++	private int indices;
++	
++	/**
++	 * A 4 bit number that encodes which in direction(s) the owner
++	 * has connections to other wires.
++	 */
++	private int flowTotal;
++	/** The direction of flow  based connections to other wires. */
++	public int flow;
++	
++	public WireConnectionManager(WireNode wire) {
++		this.wire = wire;
++		this.all = new WireConnection[Directions.HORIZONTAL.length];
++		
++		this.count = 0;
++		this.indices = 0;
++		
++		this.flowTotal = 0;
++		this.flow = -1;
++	}
++	
++	public void set(BiConsumer<ConnectionConsumer, Integer> setter) {
++		if (count > 0) {
++			clear();
++		}
++		
++		for (int iDir = 0; iDir < Directions.HORIZONTAL.length; iDir++) {
++			setIndex(iDir, count);
++			setter.accept(this::add, iDir);
++		}
++		
++		setIndex(Directions.HORIZONTAL.length, count);
++	}
++	
++	private void clear() {
++		Arrays.fill(all, null);
++		
++		count = 0;
++		indices = 0;
++		
++		flowTotal = 0;
++		flow = -1;
++	}
++	
++	private void add(WireNode wire, int iDir, boolean in, boolean out) {
++		addConnection(new WireConnection(wire, iDir, in, out));
++	}
++	
++	private void addConnection(WireConnection connection) {
++		if (count == all.length) {
++			all = doubleSize(all);
++		}
++		
++		all[count++] = connection;
++		
++		flowTotal |= (1 << connection.iDir);
++		flow = WireHandler.FLOW_IN_TO_FLOW_OUT[flowTotal];
++	}
++	
++	/**
++	 * Retrieve the start index of all connections in the given direction.
++	 */
++	public int start(int iDir) {
++		return getIndex(iDir);
++	}
++	
++	/**
++	 * Retrieve the end index of all connections in the given direction.
++	 */
++	public int end(int iDir) {
++		return getIndex(iDir + 1);
++	}
++	
++	private void setIndex(int i, int index) {
++		indices |= (index & MASK) << (i * BITS);
++	}
++	
++	private int getIndex(int i) {
++		return (indices >> (i * BITS)) & MASK;
++	}
++	
++	private static WireConnection[] doubleSize(WireConnection[] array) {
++		WireConnection[] newArray = new WireConnection[array.length << 1];
++		
++		for (int index = 0; index < array.length; index++) {
++			newArray[index] = array[index];
++		}
++		
++		return newArray;
++	}
++	
++	@FunctionalInterface
++	public interface ConnectionConsumer {
++		
++		public void add(WireNode wire, int iDir, boolean in, boolean out);
++		
++	}
++}
+diff --git a/src/main/java/alternate/current/redstone/WireHandler.java b/src/main/java/alternate/current/redstone/WireHandler.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..1f71f1d511d8078d8efce9732e48154f99c8ff2e
+--- /dev/null
++++ b/src/main/java/alternate/current/redstone/WireHandler.java
+@@ -0,0 +1,1158 @@
++package alternate.current.redstone;
++
++import java.util.ArrayList;
++import java.util.Iterator;
++import java.util.List;
++import java.util.Queue;
++import net.minecraft.core.BlockPos;
++import net.minecraft.core.Direction;
++import net.minecraft.world.level.block.state.BlockState;
++//import alternate.current.AlternateCurrentMod;
++import alternate.current.util.BlockUtil;
++//import alternate.current.util.profiler.Profiler;
++
++import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
++import it.unimi.dsi.fastutil.longs.Long2ObjectMap.Entry;
++import it.unimi.dsi.fastutil.longs.Long2ObjectMaps;
++import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
++
++/**
++ * This class handles power changes for redstone wire. The algorithm
++ * was designed with the following goals in mind:
++ * <br>
++ * 1. Minimize the number of times a wire checks its surroundings to
++ *    determine its power level.
++ * <br>
++ * 2. Minimize the number of block and shape updates emitted.
++ * <br>
++ * 3. Emit block and shape updates in a deterministic, non-locational
++ *    order, fixing bug MC-11193.
++ * 
++ * <p>
++ * In Vanilla redstone wire is laggy because it fails on points 1 and 2.
++ * 
++ * <p>
++ * Redstone wire updates recursively and each wire calculates its power
++ * level in isolation rather than in the context of the network it is a
++ * part of. This means a wire in a grid can change its power level over
++ * half a dozen times before settling on its final value. This problem
++ * used to be worse in 1.14 and below, where a wire would only decrease
++ * its power level by 1 at a time.
++ * 
++ * <p>
++ * In addition to this, a wire emits 42 block updates and up to 22 shape
++ * updates each time it changes its power level.
++ * 
++ * <p>
++ * Of those 42 block updates, 6 are to itself, which are thus not only
++ * redundant, but a big source of lag, since those cause the wire to
++ * unnecessarily re-calculate its power level. A block only has 24 
++ * neighbors within a Manhattan distance of 2, meaning 12 of the remaining
++ * 36 block updates are duplicates and thus also redundant.
++ * 
++ * <p>
++ * Of the 22 shape updates, only 6 are strictly necessary. The other 16
++ * are sent to blocks diagonally above and below. These are necessary
++ * if a wire changes its connections, but not when it changes its power
++ * level.
++ * 
++ * <p>
++ * Redstone wire in Vanilla also fails on point 3, though this is more of
++ * a quality-of-life issue than a lag issue. The recursive nature in which
++ * it updates, combined with the location-dependent order in which each
++ * wire updates its neighbors, makes the order in which neighbors of a
++ * wire network are updated incredibly inconsistent and seemingly random.
++ * 
++ * <p>
++ * Alternate Current fixes each of these problems as follows.
++ * 
++ * <p>
++ * 1.
++ * To make sure a wire calculates its power level as little as possible,
++ * we remove the recursive nature in which redstone wire updates in
++ * Vanilla. Instead, we build a network of connected wires, find those
++ * wires that receive redstone power from "outside" the network, and
++ * spread the power from there. This has a few advantages:
++ * <br>
++ * - Each wire checks for power from non-wire components just once, and
++ *   from nearby wires just twice.
++ * <br>
++ * - Each wire only sets its power level in the world once. This is
++ *   important, because calls to World.setBlockState are even more
++ *   expensive than calls to World.getBlockState.
++ * 
++ * <p>
++ * 2.
++ * There are 2 obvious ways in which we can reduce the number of block
++ * and shape updates.
++ * <br>
++ * - Get rid of the 18 redundant block updates and 16 redundant shape
++ *   updates, so each wire only emits 24 block updates and 6 shape updates
++ *   whenever it changes its power level.
++ * <br>
++ * - Only emit block updates and shape updates once a wire reaches its
++ *   final power level, rather than at each intermediary stage. 
++ * <br>
++ * For an individual wire, these two optimizations are the best you can
++ * do, but for an entire grid, you can do better!
++ * 
++ * <p>
++ * Since we calculate the power of the entire network, sending block and
++ * shape updates to the wires in it is redundant. Removing those updates
++ * can reduce the number of block and shape updates by up to 20%.
++ * 
++ * <p>
++ * 3.
++ * To make the order of block updates to neighbors of a network
++ * deterministic, the first thing we must do is to replace the location-
++ * dependent order in which a wire updates its neighbors. Instead, we
++ * base it on the direction of power flow. This part of the algorithm
++ * was heavily inspired by theosib's 'RedstoneWireTurbo', which you can
++ * read more about in theosib's comment on Mojira
++ * <a href="https://bugs.mojang.com/browse/MC-81098?focusedCommentId=420777&page=com.atlassian.jira.plugin.system.issuetabpanels%3Acomment-tabpanel#comment-420777">here</a>
++ * or by checking out its implementation in carpet mod
++ * <a href="https://github.com/gnembon/fabric-carpet/blob/master/src/main/java/carpet/helpers/RedstoneWireTurbo.java">here</a>.
++ * 
++ * <p>
++ * The idea is to determine the direction of power flow through a wire
++ * based on the power it receives from neighboring wires. For example, if
++ * the only power a wire receives is from a neighboring wire to its west,
++ * it can be said that the direction of power flow through the wire is east. 
++ * 
++ * <p>
++ * We make the order of block updates to neighbors of a wire depend on what
++ * is determined to be the direction of power flow. This not only removes
++ * locationality entirely, it even removes directionality in a large
++ * number of cases. Unlike in 'RedstoneWireTurbo', however, I have decided
++ * to keep a directional element in ambiguous cases, rather than to 
++ * introduce randomness, though this is trivial to change.
++ * 
++ * <p>
++ * While this change fixes the block update order of individual wires,
++ * we must still address the overall block update order of a network. This
++ * turns out to be a simple fix, because of a change we made earlier: we
++ * search through the network for wires that receive power from outside it,
++ * and spread the power from there. If we make each wire transmit its power
++ * to neighboring wires in an order dependent on the direction of power
++ * flow, we end up with a non-locational and largely non-directional wire
++ * update order.
++ * 
++ * @author Space Walker
++ */
++public class WireHandler {
++	
++	public static class Directions {
++		
++		public static final Direction[] ALL        = { Direction.WEST, Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.DOWN, Direction.UP };
++		public static final Direction[] HORIZONTAL = { Direction.WEST, Direction.NORTH, Direction.EAST, Direction.SOUTH };
++		
++		// Indices for the arrays above.
++		// The cardinal directions are ordered clockwise. This allows
++		// for conversion between relative and absolute directions
++		// ('left' 'right' vs 'east' 'west') with simple arithmetic:
++		// If some Direction index 'iDir' is considered 'forward', then
++		// '(iDir + 1) & 0b11' is 'right', '(iDir + 2) & 0b11' is 'backward', etc.
++		public static final int WEST  = 0;
++		public static final int NORTH = 1;
++		public static final int EAST  = 2;
++		public static final int SOUTH = 3;
++		public static final int DOWN  = 4;
++		public static final int UP    = 5;
++		
++		public static int iOpposite(int iDir) {
++			return iDir ^ (0b10 >>> (iDir >>> 2));
++		}
++		
++		public static final int[][] EXCEPT = {
++			{ NORTH, EAST , SOUTH, DOWN , UP   },
++			{ WEST , EAST , SOUTH, DOWN , UP   },
++			{ WEST , NORTH, SOUTH, DOWN , UP   },
++			{ WEST , NORTH, EAST , DOWN , UP   },
++			{ WEST , NORTH, EAST , SOUTH, UP   },
++			{ WEST , NORTH, EAST , SOUTH, DOWN }
++		};
++	}
++	
++	/**
++	 * This conversion table takes in information about incoming flow, and
++	 * outputs the determined outgoing flow.
++	 * 
++	 * <p>
++	 * The input is a 4 bit number that encodes the incoming flow. Each bit
++	 * represents a cardinal direction, and when it is 'on', there is flow
++	 * in that direction.
++	 * 
++	 * <p>
++	 * The output is a single Direction index, or -1 for ambiguous cases.
++	 * 
++	 * <p>
++	 * The outgoing flow is determined as follows:
++	 * 
++	 * <p>
++	 * If there is just 1 direction of incoming flow, that direction will
++	 * be the direction of outgoing flow.
++	 * 
++	 * <p>
++	 * If there are 2 directions of incoming flow, and these directions are
++	 * not each other's opposites, the direction that is 'more clockwise'
++	 * will be the direction of outgoing flow. More precisely, the
++	 * direction that is 1 clockwise turn from the other is picked.
++	 * 
++	 * <p>
++	 * If there are 3 directions of incoming flow, the two opposing
++	 * directions cancel each other out, and the remaining direction will
++	 * be the direction of outgoing flow.
++	 * 
++	 * <p>
++	 * In all other cases, the flow is completely ambiguous.
++	 */
++	public static final int[] FLOW_IN_TO_FLOW_OUT = {
++		-1, // 0b0000: -                      -> x
++		0 , // 0b0001: west                   -> west
++		1 , // 0b0010: north                  -> north
++		1 , // 0b0011: west/north             -> north
++		2 , // 0b0100: east                   -> east
++		-1, // 0b0101: west/east              -> x
++		2 , // 0b0110: north/east             -> east
++		1 , // 0b0111: west/north/east        -> north
++		3 , // 0b1000: south                  -> south
++		0 , // 0b1001: west/south             -> west
++		-1, // 0b1010: north/south            -> x
++		0 , // 0b1011: west/north/south       -> west
++		3 , // 0b1100: east/south             -> south
++		3 , // 0b1101: west/east/south        -> south
++		2 , // 0b1110: north/east/south       -> east
++		-1, // 0b1111: west/north/east/south  -> x
++	};
++	/**
++	 * Update order of cardinal directions. Given that the index is
++	 * to be considered the direction that is 'forward', the resulting
++	 * update order is { front, back, right, left }.
++	 */
++	private static final int[][] CARDINAL_UPDATE_ORDERS = {
++		{ Directions.WEST , Directions.EAST , Directions.NORTH, Directions.SOUTH },
++		{ Directions.EAST , Directions.NORTH, Directions.SOUTH, Directions.WEST  },
++		{ Directions.NORTH, Directions.SOUTH, Directions.WEST , Directions.EAST  },
++		{ Directions.SOUTH, Directions.WEST , Directions.EAST , Directions.NORTH }
++	};
++	/**
++	 * The default update order of all directions. It is equivalent to
++	 * the order of shape updates in vanilla Minecraft.
++	 */
++	private static final int[] DEFAULT_FULL_UPDATE_ORDER = {
++		Directions.WEST,
++		Directions.EAST,
++		Directions.NORTH,
++		Directions.SOUTH,
++		Directions.DOWN,
++		Directions.UP
++	};
++	
++	/*
++	 * While these fields are not strictly necessary, I opted to add
++	 * them with "future proofing" in mind, and to avoid hard-coding
++	 * certain constants.
++	 * 
++	 * If Vanilla will ever multi-thread the ticking of dimensions,
++	 * there should be only one WireHandler per dimension, in case 
++	 * redstone updates in both dimensions at the same time. There are
++	 * already mods that add multi-threading as well.
++	 * 
++	 * If Vanilla ever adds new redstone wire types that cannot interact
++	 * with each other, there should be one WireHandler for each wire
++	 * type, in case two networks of different types update each other.
++	 */
++	private final WireBlock wireBlock;
++	private final WorldAccess world;
++	private final int minPower;
++	private final int maxPower;
++	private final int powerStep;
++	
++	/** All the wires in the network. */
++	private final List<WireNode> network;
++	/** Map of wires and neighboring blocks. */
++	private final Long2ObjectMap<Node> nodes;
++	/** All the power changes that need to happen. */
++	private final Queue<WireNode> powerChanges;
++	
++	private int rootCount;
++	// Rather than creating new nodes every time a network is updated
++	// we keep a cache of nodes that can be re-used.
++	private Node[] nodeCache;
++	private int nodeCount;
++	
++	private boolean updatingPower;
++	
++	public WireHandler(WireBlock wireBlock, WorldAccess world) {
++		this.wireBlock = wireBlock;
++		this.world = world;
++		this.minPower = this.wireBlock.getMinPower();
++		this.maxPower = this.wireBlock.getMaxPower();
++		this.powerStep = this.wireBlock.getPowerStep();
++		
++		this.network = new ArrayList<>();
++		this.nodes = new Long2ObjectOpenHashMap<>();
++		this.powerChanges = new PowerQueue(this.minPower, this.maxPower);
++		
++		this.nodeCache = new Node[16];
++		this.fillNodeCache(0, 16);
++	}
++	
++	private Node getOrAddNode(BlockPos pos) {
++		return nodes.compute(pos.asLong(), (key, node) -> {
++			if (node == null) {
++				// If there is not yet a node at this position,
++				// retrieve and update one from the cache.
++				return getNextNode(pos);
++			}
++			if (node.invalid) {
++				return revalidateNode(node);
++			}
++			
++			return node;
++		});
++	}
++	
++	/**
++	 * Retrieve the neighbor of a node in the given direction and
++	 * create a link between the two nodes.
++	 */
++	private Node getNeighbor(Node node, int iDir) {
++		Node neighbor = node.neighbors[iDir];
++		
++		if (neighbor == null || neighbor.invalid) {
++			Direction dir = Directions.ALL[iDir];
++			BlockPos pos = node.pos.relative(dir);
++			
++			Node oldNeighbor = neighbor;
++			neighbor = getOrAddNode(pos);
++			
++			if (neighbor != oldNeighbor) {
++				int iOpp = Directions.iOpposite(iDir);
++				
++				node.neighbors[iDir] = neighbor;
++				neighbor.neighbors[iOpp] = node;
++			}
++		}
++		
++		return neighbor;
++	}
++	
++	private Node removeNode(BlockPos pos) {
++		return nodes.remove(pos.asLong());
++	}
++	
++	private Node revalidateNode(Node node) {
++		node.invalid = false;
++		
++		if (node.isWire()) {
++			WireNode wire = node.asWire();
++			
++			wire.prepared = false;
++			wire.inNetwork = false;
++		} else {
++			BlockPos pos = node.pos;
++			BlockState state = world.getBlockState(pos);
++			
++			node.update(pos, state, false);
++		}
++		
++		return node;
++	}
++	
++	/**
++	 * Check the BlockState that occupies the given position. If it is
++	 * a wire, then create a new WireNode. Otherwise, grab the next
++	 * Node from the cache and update it.
++	 */
++	private Node getNextNode(BlockPos pos) {
++		BlockState state = world.getBlockState(pos);
++		
++		if (wireBlock.isOf(state)) {
++			return new WireNode(wireBlock, world, pos, state);
++		}
++		
++		return getNextNode().update(pos, state, true);
++	}
++	
++	/**
++	 * Grab the first unused Node from the cache. If all of the cache
++	 * is already in use, increase it in size first.
++	 */
++	private Node getNextNode() {
++		if (nodeCount == nodeCache.length) {
++			increaseNodeCache();
++		}
++		
++		return nodeCache[nodeCount++];
++	}
++	
++	private void increaseNodeCache() {
++		Node[] oldCache = nodeCache;
++		nodeCache = new Node[oldCache.length << 1];
++		
++		for (int index = 0; index < oldCache.length; index++) {
++			nodeCache[index] = oldCache[index];
++		}
++		
++		fillNodeCache(oldCache.length, nodeCache.length);
++	}
++	
++	private void fillNodeCache(int start, int end) {
++		for (int index = start; index < end; index++) {
++			nodeCache[index] = new Node(wireBlock, world);
++		}
++	}
++	
++	/**
++	 * This method is called whenever a redstone wire receives a block
++	 * update.
++	 */
++	public void onWireUpdated(BlockPos pos) {
++		invalidateNodes();
++		findRoots(pos, true);
++		tryUpdatePower();
++	}
++	
++	/**
++	 * This method is called whenever a redstone wire is placed.
++	 */
++	public void onWireAdded(BlockPos pos) {
++		invalidateNodes();
++		findRoots(pos, false);
++		tryUpdatePower();
++	}
++	
++	/**
++	 * This method is called whenever a redstone wire is broken.
++	 */
++	public void onWireRemoved(BlockPos pos) {
++		Node node = removeNode(pos);
++		WireNode wire;
++		
++		if (node == null || !node.isWire()) {
++			wire = new WireNode(wireBlock, world, pos, wireBlock.asBlock().defaultBlockState());
++		} else {
++			wire = node.asWire();
++			
++			// If this field is set to 'true', the removal of this
++			// wire was part of already ongoing power changes, so
++			// we can exit early here.
++			if (updatingPower && wire.shouldBreak) {
++				return;
++			}
++		}
++		
++		wire.invalid = true;
++		wire.removed = true;
++		
++		invalidateNodes();
++		tryAddRoot(wire);
++		tryUpdatePower();
++	}
++	
++	/**
++	 * The nodes map is a snapshot of the state of the world. It
++	 * becomes invalid when power changes are carried out, since
++	 * the block and shape updates can lead to block changes. If
++	 * these block changes cause the network to be updated again
++	 * every node must be invalidated, and revalidated before it
++	 * is used again. This ensures the power calculations of the
++	 * network are accurate.
++	 */
++	private void invalidateNodes() {
++		if (updatingPower && !nodes.isEmpty()) {
++			Iterator<Entry<Node>> it = Long2ObjectMaps.fastIterator(nodes);
++			
++			while (it.hasNext()) {
++				Entry<Node> entry = it.next();
++				Node node = entry.getValue();
++				
++				node.invalid = true;
++			}
++		}
++	}
++	
++	/**
++	 * Look for wires at and around the given position that are
++	 * in an invalid state and require power changes. These wires
++	 * are called 'roots' because it is only when these wires
++	 * change power level that neighboring wires must adjust as
++	 * well.
++	 * 
++	 * <p>
++	 * While it is strictly only necessary to check the wire at
++	 * the given position, if that wire is part of a network, it
++	 * is beneficial to check its surroundings for other wires
++	 * that require power changes. This is because a network can
++	 * receive power at multiple points. Consider the following
++	 * setup:
++	 * 
++	 * <p>
++	 * (top-down view, W = wire, L = lever, _ = air/other)
++	 * <br> {@code _ _ W _ _ }
++	 * <br> {@code _ W W W _ }
++	 * <br> {@code W W L W W }
++	 * <br> {@code _ W W W _ }
++	 * <br> {@code _ _ W _ _ }
++	 * 
++	 * <p>
++	 * The lever powers four wires in the network at once. If this
++	 * is identified correctly, the entire network can (un)power
++	 * at once. While it is not practical to cover every possible
++	 * situation where a network is (un)powered from multiple
++	 * points at once, checking for common cases like the one
++	 * described above is relatively straight-forward.
++	 * 
++	 * <p>
++	 * While these extra checks can provide significant performance
++	 * gains in some cases, in the majority of cases they will have
++	 * little to no effect, but do require extra code modifications
++	 * to all redstone power emitters. Removing these optimizations
++	 * would limit code modifications to the RedstoneWireBlock and
++	 * ServerWorld classes while leaving the performance mostly 
++	 * intact.
++	 */
++	private void findRoots(BlockPos pos, boolean checkNeighbors) {
++		Node node = getOrAddNode(pos);
++		
++		if (!node.isWire()) {
++			return; // we should never get here
++		}
++		
++		WireNode wire = node.asWire();
++		tryAddRoot(wire);
++		
++		// If the wire at the given position is not in an invalid
++		// state or is not part of a larger network, we can exit
++		// early.
++		if (!checkNeighbors || !wire.inNetwork || wire.connections.count == 0) {
++			return;
++		}
++		
++		for (int iDir : DEFAULT_FULL_UPDATE_ORDER) {
++			Node neighbor = getNeighbor(wire, iDir);
++			
++			if (neighbor.isConductor()) {
++				// Redstone components can power multiple wires through
++				// solid blocks.
++				findRedstoneAround(neighbor, Directions.iOpposite(iDir));
++			} else if (world.emitsWeakPowerTo(neighbor.pos, neighbor.state, Directions.ALL[iDir])) {
++				// Redstone components can also power multiple wires
++				// directly.
++				findRootsAroundRedstone(neighbor, Directions.iOpposite(iDir));
++			}
++		}
++	}
++	
++	/**
++	 * Find redstone components around the given node that can
++	 * strongly power that node, and then search for wires that
++	 * require power changes around those redstone components.
++	 */
++	private void findRedstoneAround(Node node, int except) {
++		for (int iDir : Directions.EXCEPT[except]) {
++			Node neighbor = getNeighbor(node, iDir);
++			
++			if (world.emitsStrongPowerTo(neighbor.pos, neighbor.state, Directions.ALL[iDir])) {
++				findRootsAroundRedstone(neighbor, iDir);
++			}
++		}
++	}
++	
++	/**
++	 * Find wires around the given redstone component that require
++	 * power changes.
++	 */
++	private void findRootsAroundRedstone(Node node, int except) {
++		for (int iDir : Directions.EXCEPT[except]) {
++			// Directions are backwards in Minecraft, so we must check
++			// for power emitted in the opposite direction that we are
++			// interested in.
++			int iOpp = Directions.iOpposite(iDir);
++			Direction opp = Directions.ALL[iOpp];
++			
++			boolean weak = world.emitsWeakPowerTo(node.pos, node.state, opp);
++			boolean strong = world.emitsStrongPowerTo(node.pos, node.state, opp);
++			
++			// If the redstone component does not emit any power in
++			// this direction, move on to the next direction.
++			if (!weak && !strong) {
++				continue;
++			}
++			
++			Node neighbor = getNeighbor(node, iDir);
++			
++			if (weak && neighbor.isWire()) {
++				tryAddRoot(neighbor.asWire());
++			} else if (strong && neighbor.isConductor()) {
++				findRootsAround(neighbor, iOpp);
++			}
++		}
++	}
++	
++	/**
++	 * Look for wires around the given node that require power
++	 * changes.
++	 */
++	private void findRootsAround(Node node, int except) {
++		for (int iDir : Directions.EXCEPT[except]) {
++			Node neighbor = getNeighbor(node, iDir);
++			
++			if (neighbor.isWire()) {
++				tryAddRoot(neighbor.asWire());
++			}
++		}
++	}
++	
++	/**
++	 * Check if the given wire is in an illegal state and needs
++	 * power changes.
++	 */
++	private void tryAddRoot(WireNode wire) {
++		// We only want need to check each wire once
++		if (wire.prepared) {
++			return;
++		}
++		
++		prepareWire(wire);
++		findPower(wire, false);
++		
++		if (needsPowerChange(wire)) {
++			network.add(wire);
++			rootCount++;
++			
++			if (wire.connections.flow >= 0) {
++				wire.flowOut = wire.connections.flow;
++			}
++			
++			wire.inNetwork = true;
++		}
++	}
++	
++	/**
++	 * Before a wire can be added to the network, it must be
++	 * properly prepared. This method
++	 * <br>
++	 * - checks if this wire should break. Rather than break
++	 *   the wire right away, its effects are integrated into
++	 *   the power calculations.
++	 * <br>
++	 * - determines the 'external power' this wire receives
++	 *   (power from non-wire components).
++	 * <br>
++	 * - finds connections this wire has to neighboring wires.
++	 */
++	private void prepareWire(WireNode wire) {
++		// Each wire only needs to be prepared once.
++		if (wire.prepared) {
++			return;
++		}
++		
++		wire.prepared = true;
++		wire.inNetwork = false;
++		
++		if (!wire.removed && !wire.shouldBreak && world.shouldBreak(wire.pos, wire.state)) {
++			wire.shouldBreak = true;
++		}
++		
++		wire.virtualPower = wire.externalPower = (wire.removed || wire.shouldBreak) ? minPower : getExternalPower(wire);
++		wireBlock.findWireConnections(wire, this::getNeighbor);
++	}
++	
++	private int getExternalPower(WireNode wire) {
++		int power = minPower;
++		
++		for (int iDir = 0; iDir < Directions.ALL.length; iDir++) {
++			Node neighbor = getNeighbor(wire, iDir);
++			
++			if (neighbor.isWire()) {
++				continue;
++			}
++			
++			if (neighbor.isConductor()) {
++				power = Math.max(power, getStrongPowerTo(neighbor, Directions.iOpposite(iDir)));
++			}
++			if (neighbor.isRedstoneComponent()) {
++				power = Math.max(power, world.getWeakPowerFrom(neighbor.pos, neighbor.state, Directions.ALL[iDir]));
++			}
++			
++			if (power >= maxPower) {
++				return maxPower;
++			}
++		}
++		
++		return power;
++	}
++	
++	/**
++	 * Determine the strong power the given node receives from
++	 * neighboring redstone components.
++	 */
++	private int getStrongPowerTo(Node node, int except) {
++		int power = minPower;
++		
++		for (int iDir : Directions.EXCEPT[except]) {
++			Node neighbor = getNeighbor(node, iDir);
++			
++			if (neighbor.isRedstoneComponent()) {
++				power = Math.max(power, world.getStrongPowerFrom(neighbor.pos, neighbor.state, Directions.ALL[iDir]));
++				
++				if (power >= maxPower) {
++					return maxPower;
++				}
++			}
++		}
++		
++		return power;
++	}
++	
++	/**
++	 * Determine the power level the given wire receives from the
++	 * blocks around it. Power from non-wire components has
++	 * already been determined, so only power received from other
++	 * wires needs to be checked. There are a few exceptions:
++	 * <br>
++	 * - If the wire is removed or going to break, its power level
++	 *   should always be the minimum value. This is because it
++	 *   (effectively) no longer exists, so cannot provide any
++	 *   power to neighboring wires.
++	 * <br>
++	 * - Power received from neighboring wires will never exceed
++	 *   {@code maxPower - powerStep}, so if the external power
++	 *   is already larger than or equal to that, there is no need
++	 *   to check for power from neighboring wires.
++	 */
++	private void findPower(WireNode wire, boolean ignoreNetwork) {
++		if (wire.removed || wire.shouldBreak || wire.externalPower >= (maxPower - powerStep)) {
++			return;
++		}
++		
++		// The virtual power is reset to the external power, so
++		// the flow information must be reset as well.
++		wire.virtualPower = wire.externalPower;
++		wire.flowIn = 0;
++		
++		findWirePower(wire, ignoreNetwork);
++	}
++	
++	/**
++	 * Determine the power level the given wire receives from
++	 * connected wires.
++	 */
++	private void findWirePower(WireNode wire, boolean ignoreNetwork) {
++		for (int c = 0; c < wire.connections.count; c++) {
++			WireConnection connection = wire.connections.all[c];
++			
++			if (!connection.in) {
++				continue;
++			}
++			
++			WireNode neighbor = connection.wire;
++			
++			if (!ignoreNetwork || !neighbor.inNetwork) {
++				int power = Math.max(minPower, neighbor.virtualPower - powerStep);
++				int iOpp = Directions.iOpposite(connection.iDir);
++				
++				wire.offerPower(power, iOpp);
++			}
++		}
++	}
++	
++	private boolean needsPowerChange(WireNode wire) {
++		return wire.removed || wire.shouldBreak || wire.virtualPower != wire.currentPower;
++	}
++	
++	private void tryUpdatePower() {
++		if (rootCount > 0 ) {
++			updatePower();
++		}
++		if (!updatingPower) {
++			nodeCount = 0;
++			nodes.clear();
++		}
++	}
++	
++	/**
++	 * Propagate power changes through the network and notify
++	 * neighboring blocks of these changes.
++	 * 
++	 * <p>
++	 * Power changes are done in the following 3 steps.
++	 * 
++	 * <p>
++	 * <b>1. Build up the network</b>
++	 * <br>
++	 * Collect all the wires around the roots that need to change
++	 * their power levels.
++	 * 
++	 * <p>
++	 * <b>2. Find powered wires</b>
++	 * <br>
++	 * Find those wires in the network that receive redstone power
++	 * from outside the network. This can come in 2 forms:
++	 * <br>
++	 * - Power from non-wire components (repeaters, torches, etc.).
++	 * <br>
++	 * - Power from wires that are not in the network.
++	 * <br>
++	 * These powered wires will then queue their power changes.
++	 * 
++	 * <p>
++	 * <b>3. Let power flow</b>
++	 * <br>
++	 * Work through the queue of power changes. After each wire's
++	 * power change, emit shape and block updates to neighboring
++	 * blocks, then queue power changes for connected wires.
++	 */
++	private void updatePower() {
++		// The profiler keeps track of how long various parts of the
++		// algorithm take. It is only here for debugging purposes,
++		// and is commented out in production.
++//		Profiler profiler = AlternateCurrentMod.createProfiler();
++//		profiler.start();
++		
++		// Build a network of wires that need power changes. This 
++		// includes the roots as well as any wires that will be
++		// affected by power changes to those roots.
++//		profiler.push("build network");
++		buildNetwork();
++		
++		// Find those wires in the network that receive redstone power
++		// from outside it. Remember that the power changes for those
++		// wires are already queued here!
++//		profiler.swap("find powered wires");
++		findPoweredWires();
++		
++		// Once the powered wires have been found, the network is
++		// no longer needed. In fact, it should be cleared before
++		// block and shape updates are emitted, in case a different
++		// network is updated that needs power changes.
++//		profiler.swap("clear " + rootCount + " roots and network of " + network.size());
++		rootCount = 0;
++		network.clear();
++		
++		// Carry out the power changes and emit shape and block updates.
++//		profiler.swap("let power flow");
++		try {
++			letPowerFlow();
++		} catch (Throwable t) {
++			// If anything goes wrong while carrying out power changes,
++			// this value must be reset to 'false', or the wire handler
++			// will be locked out of carrying out power changes until
++			// the world is reloaded.
++			updatingPower = false;
++			
++			throw t;
++		} finally {
++//			profiler.pop();
++//			profiler.end();
++		}
++	}
++	
++	/**
++	 * Build up a network of wires that need power changes. This
++	 * includes the roots that were already added and any wires
++	 * powered by those roots that will need power changes as a
++	 * result of power changes to the roots.
++	 */
++	private void buildNetwork() {
++		for (int index = 0; index < network.size(); index++) {
++			WireNode wire = network.get(index);
++			
++			// The order in which wires are added to the network
++			// can influence the order in which they update their
++			// power levels.
++			for (int iDir : CARDINAL_UPDATE_ORDERS[wire.flowOut]) {
++				int start = wire.connections.start(iDir);
++				int end = wire.connections.end(iDir);
++				
++				for (int c = start; c < end; c++) {
++					WireConnection connection = wire.connections.all[c];
++					
++					if (!connection.out) {
++						continue;
++					}
++					
++					WireNode neighbor = connection.wire;
++					
++					if (neighbor.inNetwork) {
++						continue;
++					}
++					
++					prepareWire(neighbor);
++					findPower(neighbor, false);
++					
++					if (needsPowerChange(neighbor)) {
++						addToNetwork(neighbor, iDir);
++					}
++				}
++			}
++		}
++	}
++	
++	/**
++	 * Add the given wire to the network and set its outgoing flow
++	 * to some backup value. This avoids directionality in redstone
++	 * grids.
++	 */
++	private void addToNetwork(WireNode wire, int backupFlow) {
++		network.add(wire);
++		
++		wire.inNetwork = true;
++		// Normally the flow is not set until the power level is
++		// updated. However, in networks with multiple power
++		// sources the update order between them depends on which
++		// was discovered first. To make this less prone to
++		// directionality, each wire node is given a 'backup' flow.
++		// For roots, this is the determined flow of their
++		// connections. For non-roots this is the direction from
++		// which they were discovered.
++		wire.flowOut = backupFlow;
++	}
++	
++	/**
++	 * Find those wires in the network that receive power from
++	 * outside it, either from non-wire components or from wires
++	 * that are not in the network, and queue the power changes for
++	 * those wires.
++	 */
++	private void findPoweredWires() {
++		for (int index = 0; index < network.size(); index++) {
++			WireNode wire = network.get(index);
++			findPower(wire, true);
++			
++			if (index < rootCount || wire.removed || wire.shouldBreak || wire.virtualPower > minPower) {
++				queuePowerChange(wire);
++			} else {
++				// Wires that do not receive any power do not queue
++				// power changes until they are offered power from a
++				// neighboring wire. To ensure that they accept any
++				// power from neighboring wires and thus queue their
++				// power changes, their virtual power is set to below
++				// the minimum.
++				wire.virtualPower--;
++			}
++		}
++	}
++	
++	/**
++	 * Queue the power change for the given wire.
++	 */
++	private void queuePowerChange(WireNode wire) {
++		if (needsPowerChange(wire)) {
++			powerChanges.add(wire);
++		} else {
++			findPowerFlow(wire);
++			transmitPower(wire);
++		}
++	}
++	
++	/**
++	 * Use the information of incoming power flow to determine the
++	 * direction of power flow through this wire. If that flow is
++	 * ambiguous, try to use a flow direction based on connections
++	 * to neighboring wires. If that is also ambiguous, use the
++	 * backup value that was set when the wire was prepared.
++	 */
++	private void findPowerFlow(WireNode wire) {
++		int flow = FLOW_IN_TO_FLOW_OUT[wire.flowIn];
++		
++		if (flow >= 0) {
++			wire.flowOut = flow;
++		} else if (wire.connections.flow >= 0) {
++			wire.flowOut = wire.connections.flow;
++		}
++	}
++	
++	/**
++	 * Transmit power from the given wire to neighboring wires.
++	 */
++	private void transmitPower(WireNode wire) {
++		int nextPower = Math.max(minPower, wire.virtualPower - powerStep);
++		
++		for (int iDir : CARDINAL_UPDATE_ORDERS[wire.flowOut]) {
++			int start = wire.connections.start(iDir);
++			int end = wire.connections.end(iDir);
++			
++			for (int c = start; c < end; c++) {
++				WireConnection connection = wire.connections.all[c];
++				
++				if (!connection.out) {
++					continue;
++				}
++				
++				WireNode connectedWire = connection.wire;
++				
++				if (connectedWire.offerPower(nextPower, iDir)) {
++					queuePowerChange(connectedWire);
++				}
++			}
++		}
++	}
++	
++	/**
++	 * Carry out power changes, setting the new power of each wire
++	 * in the world, notifying neighbors of the power change, then
++	 * queueing power changes of neighboring wires.
++	 */
++	private void letPowerFlow() {
++		// If an instantaneous update chain causes updates to another
++		// network (or the same network in another place), new power
++		// changes will be integrated into the already ongoing power
++		// queue, so we can exit early here.
++		if (updatingPower) {
++			return;
++		}
++		
++		updatingPower = true;
++		
++		while (!powerChanges.isEmpty()) {
++			WireNode wire = powerChanges.poll();
++			
++			if (!needsPowerChange(wire)) {
++				continue;
++			}
++			
++			findPowerFlow(wire);
++			
++			if (wire.updateState()) {
++				// If the wire was removed, shape updates have already
++				// been emitted.
++				if (!wire.shouldBreak) {
++					updateNeighborShapes(wire);
++				}
++				
++				updateNeighborBlocks(wire);
++			}
++			
++			transmitPower(wire);
++		}
++		
++		updatingPower = false;
++	}
++	
++	/**
++	 * Emit shape updates around the given wire.
++	 */
++	private void updateNeighborShapes(WireNode wire) {
++		BlockPos wirePos = wire.pos;
++		BlockState wireState = wire.state;
++		
++		for (Direction dir : BlockUtil.DIRECTIONS) {
++			updateNeighborShape(wirePos.relative(dir), dir.getOpposite(), wirePos, wireState);
++		}
++	}
++	
++	private void updateNeighborShape(BlockPos pos, Direction fromDir, BlockPos fromPos, BlockState fromState) {
++		BlockState state = world.getBlockState(pos);
++		
++		// Shape updates to redstone wire are very expensive,
++		// and should never happen as a result of power changes
++		// anyway.
++		if (!state.isAir() && !wireBlock.isOf(state)) {
++			world.updateNeighborShape(pos, state, fromDir, fromPos, fromState);
++		}
++	}
++	
++	/**
++	 * Emit block updates around the given wire. The order in which neighbors
++	 * are updated is determined as follows:
++	 * <br>
++	 * 1. The direction of power flow through the wire is to be considered
++	 *    'forward'. The order in which neighbors are updated depends on their
++	 *    relative positions to the wire.
++	 * <br>
++	 * 2. Each neighbor is identified by the step(s) you must take, starting
++	 *    at the wire, to reach it. Each step is 1 block, thus the position
++	 *    of a neighbor is encoded by the direction(s) of the step(s), e.g.
++	 *    (right), (down), (up, left), etc.
++	 * <br>
++	 * 3. Neighbors are updated in pairs that lie on opposite sides of the wire.
++	 * <br>
++	 * 4. Neighbors are updated in order of their distance from the wire. This
++	 *    means they are updated in 3 groups: direct neighbors are updated
++	 *    first, then diagonal neighbors, and last are the far neighbors that
++	 *    are 2 blocks directly out.
++	 * <br>
++	 * 5. The order within each group is determined using the following basic
++	 *    order: { front, back, right, left, down, up }.
++	 *    This order was chosen because it converts to the following order of
++	 *    absolute directions when west is said to be 'forward':
++	 *    { west, east, north, south, down, up } - this is the order of shape
++	 *    updates.
++	 */
++	private void updateNeighborBlocks(WireNode wire) {
++		int iDir = wire.flowOut;
++		
++		Direction forward   = Directions.HORIZONTAL[ iDir            ];
++		Direction rightward = Directions.HORIZONTAL[(iDir + 1) & 0b11];
++		Direction backward  = Directions.HORIZONTAL[(iDir + 2) & 0b11];
++		Direction leftward  = Directions.HORIZONTAL[(iDir + 3) & 0b11];
++		Direction downward  = Direction.DOWN;
++		Direction upward    = Direction.UP;
++		
++		BlockPos self  = wire.pos;
++		BlockPos front = self.relative(forward);
++		BlockPos right = self.relative(rightward);
++		BlockPos back  = self.relative(backward);
++		BlockPos left  = self.relative(leftward);
++		BlockPos below = self.relative(downward);
++		BlockPos above = self.relative(upward);
++		
++		// direct neighbors (6)
++		updateNeighbor(front, self);
++		updateNeighbor(back, self);
++		updateNeighbor(right, self);
++		updateNeighbor(left, self);
++		updateNeighbor(below, self);
++		updateNeighbor(above, self);
++		
++		// diagonal neighbors (12)
++		updateNeighbor(front.relative(rightward), self);
++		updateNeighbor(back .relative(leftward), self);
++		updateNeighbor(front.relative(leftward), self);
++		updateNeighbor(back .relative(rightward), self);
++		updateNeighbor(front.relative(downward), self);
++		updateNeighbor(back .relative(upward), self);
++		updateNeighbor(front.relative(upward), self);
++		updateNeighbor(back .relative(downward), self);
++		updateNeighbor(right.relative(downward), self);
++		updateNeighbor(left .relative(upward), self);
++		updateNeighbor(right.relative(upward), self);
++		updateNeighbor(left .relative(downward), self);
++		
++		// far neighbors (6)
++		updateNeighbor(front.relative(forward), self);
++		updateNeighbor(back .relative(backward), self);
++		updateNeighbor(right.relative(rightward), self);
++		updateNeighbor(left .relative(leftward), self);
++		updateNeighbor(below.relative(downward), self);
++		updateNeighbor(above.relative(upward), self);
++	}
++	
++	private void updateNeighbor(BlockPos pos, BlockPos fromPos) {
++		BlockState state = world.getBlockState(pos);
++		
++		// While this check makes sure wires in the network are not given
++		// block updates, it also prevents block updates to wires in
++		// neighboring networks. While this should not make a difference
++		// in theory, in practice, it is possible to force a network into
++		// an invalid state without updating it, even if it is relatively
++		// obscure.
++		// While I was willing to make this compromise in return for some
++		// significant performance gains in certain setups, if you are not,
++		// you can add all the positions of the network to a set and filter
++		// out block updates to wires in the network that way.
++		if (!state.isAir() && !wireBlock.isOf(state)) {
++			world.updateNeighborBlock(pos, state, fromPos, wireBlock.asBlock());
++		}
++	}
++	
++	@FunctionalInterface
++	public interface NodeProvider {
++		
++		public Node getNeighbor(Node node, int iDir);
++		
++	}
++}
+\ No newline at end of file
+diff --git a/src/main/java/alternate/current/redstone/WireNode.java b/src/main/java/alternate/current/redstone/WireNode.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..ed4f071245ae94d4ced5476ef88def48e9768ca7
+--- /dev/null
++++ b/src/main/java/alternate/current/redstone/WireNode.java
+@@ -0,0 +1,103 @@
++package alternate.current.redstone;
++
++import net.minecraft.core.BlockPos;
++import net.minecraft.world.level.block.state.BlockState;
++
++/**
++ * A WireNode is a Node that represents a redstone wire in the world.
++ * It stores all the information about the redstone wire that the
++ * WireHandler needs to calculate power changes.
++ * 
++ * @author Space Walker
++ */
++public class WireNode extends Node {
++	
++	public final WireConnectionManager connections;
++	
++	/** The power level this wire currently holds in the world. */
++	public int currentPower;
++	/**
++	 * While calculating power changes for a network, this field
++	 * is used to keep track of the power level this wire should
++	 * have.
++	 */
++	public int virtualPower;
++	/** The power level received from non-wire components. */
++	public int externalPower;
++	/**
++	 * A 4-bit number that keeps track of the power flow of the
++	 * wires that give this wire its power level.
++	 */
++	public int flowIn;
++	/** The direction of power flow, based on the incoming flow. */
++	public int flowOut;
++	public boolean removed;
++	public boolean shouldBreak;
++	public boolean prepared;
++	public boolean inNetwork;
++	
++	public WireNode(WireBlock wireBlock, WorldAccess world, BlockPos pos, BlockState state) {
++		super(wireBlock, world);
++		
++		this.pos = pos.immutable();
++		this.state = state;
++		
++		this.connections = new WireConnectionManager(this);
++		
++		this.virtualPower = this.currentPower = this.wireBlock.getPower(this.world, this.pos, this.state);
++	}
++	
++	@Override
++	public Node update(BlockPos pos, BlockState state, boolean clearNeighbors) {
++		throw new UnsupportedOperationException("Cannot update a WireNode!");
++	}
++	
++	@Override
++	public boolean isWire() {
++		return true;
++	}
++	
++	@Override
++	public WireNode asWire() {
++		return this;
++	}
++	
++	public int nextPower() {
++		return wireBlock.clampPower(virtualPower);
++	}
++	
++	public boolean offerPower(int power, int iDir) {
++		if (removed || shouldBreak) {
++			return false;
++		}
++		if (power == virtualPower) {
++			flowIn |= (1 << iDir);
++			return false;
++		}
++		if (power > virtualPower) {
++			virtualPower = power;
++			flowIn = (1 << iDir);
++			
++			return true;
++		}
++		
++		return false;
++	}
++	
++	public boolean updateState() {
++		if (removed) {
++			return true;
++		}
++		
++		state = world.getBlockState(pos);
++		
++		if (shouldBreak) {
++			return world.breakBlock(pos, state);
++		}
++		
++		currentPower = wireBlock.clampPower(virtualPower);
++		state = wireBlock.updatePowerState(world, pos, state, currentPower);
++		
++		return world.setWireState(pos, state);
++	}
++}
+diff --git a/src/main/java/alternate/current/redstone/WorldAccess.java b/src/main/java/alternate/current/redstone/WorldAccess.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..4f1ac60f3070412f9c9286624f76ad39154e28ec
+--- /dev/null
++++ b/src/main/java/alternate/current/redstone/WorldAccess.java
+@@ -0,0 +1,139 @@
++package alternate.current.redstone;
++
++import net.minecraft.core.BlockPos;
++import net.minecraft.core.Direction;
++import net.minecraft.server.level.ServerLevel;
++import net.minecraft.world.level.block.Block;
++import net.minecraft.world.level.block.Blocks;
++import net.minecraft.world.level.block.state.BlockState;
++import net.minecraft.world.level.chunk.ChunkAccess;
++import net.minecraft.world.level.chunk.ChunkStatus;
++import net.minecraft.world.level.chunk.LevelChunkSection;
++
++public class WorldAccess {
++	
++	private final WireBlock wireBlock;
++	private final ServerLevel world;
++	private final WireHandler wireHandler;
++	
++	public WorldAccess(WireBlock wireBlock, ServerLevel world) {
++		this.wireBlock = wireBlock;
++		this.world = world;
++		this.wireHandler = new WireHandler(this.wireBlock, this);
++	}
++	
++	public WireHandler getWireHandler() {
++		return wireHandler;
++	}
++	
++	/**
++	 * A slightly optimized version of World.getBlockState.
++	 */
++	public BlockState getBlockState(BlockPos pos) {
++		int y = pos.getY();
++		
++		if (y < world.getMinBuildHeight() || y >= world.getMaxBuildHeight()) {
++			return Blocks.VOID_AIR.defaultBlockState();
++		}
++		
++		int x = pos.getX();
++		int z = pos.getZ();
++		int index = world.getSectionIndex(y);
++		
++		ChunkAccess chunk = world.getChunk(x >> 4, z >> 4, ChunkStatus.FULL, true);
++		LevelChunkSection section = chunk.getSections()[index];
++		
++		if (section == null) {
++			return Blocks.AIR.defaultBlockState();
++		}
++		
++		return section.getBlockState(x & 15, y & 15, z & 15);
++	}
++	
++	/**
++	 * An optimized version of World.setBlockState. Since this method is
++	 * only used to update redstone wire block states, lighting checks,
++	 * height map updates, and block entity updates are omitted.
++	 */
++	public boolean setWireState(BlockPos pos, BlockState state) {
++		if (!wireBlock.isOf(state)) {
++			return false;
++		}
++		
++		int y = pos.getY();
++		
++		if (y < world.getMinBuildHeight() || y >= world.getMaxBuildHeight()) {
++			return false;
++		}
++		
++		int x = pos.getX();
++		int z = pos.getZ();
++		int index = world.getSectionIndex(y);
++		
++		ChunkAccess chunk = world.getChunk(x >> 4, z >> 4, ChunkStatus.FULL, true);
++		LevelChunkSection section = chunk.getSections()[index];
++		
++		if (section == null) {
++			return false; // we should never get here
++		}
++		
++		BlockState prevState = section.setBlockState(x & 15, y & 15, z & 15, state);
++		
++		if (state == prevState) {
++			return false;
++		}
++		
++		// notify clients of the BlockState change
++		world.getChunkSource().blockChanged(pos);
++		// mark the chunk for saving
++		chunk.setUnsaved(true);
++		
++		return true;
++	}
++	
++	public boolean breakBlock(BlockPos pos, BlockState state) {
++		Block.dropResources(state, world, pos);
++		return world.setBlock(pos, Blocks.AIR.defaultBlockState(), Block.UPDATE_CLIENTS);
++	}
++	
++	public void updateNeighborShape(BlockPos pos, BlockState state, Direction fromDir, BlockPos fromPos, BlockState fromState) {
++		BlockState newState = state.updateShape(fromDir, fromState, world, pos, fromPos);
++		Block.updateOrDestroy(state, newState, world, pos, Block.UPDATE_CLIENTS);
++	}
++	
++	public void updateNeighborBlock(BlockPos pos, BlockPos fromPos, Block fromBlock) {
++		getBlockState(pos).neighborChanged(world, pos, fromBlock, fromPos, false);
++	}
++	
++	public void updateNeighborBlock(BlockPos pos, BlockState state, BlockPos fromPos, Block fromBlock) {
++		state.neighborChanged(world, pos, fromBlock, fromPos, false);
++	}
++	
++	public boolean isConductor(BlockPos pos) {
++		return getBlockState(pos).isRedstoneConductor(world, pos);
++	}
++	
++	public boolean isConductor(BlockPos pos, BlockState state) {
++		return state.isRedstoneConductor(world, pos);
++	}
++	
++	public boolean emitsWeakPowerTo(BlockPos pos, BlockState state, Direction dir) {
++		return state.getBlock().emitsWeakPowerTo(world, pos, state, dir);
++	}
++	
++	public boolean emitsStrongPowerTo(BlockPos pos, BlockState state, Direction dir) {
++		return state.getBlock().emitsStrongPowerTo(world, pos, state, dir);
++	}
++	
++	public int getWeakPowerFrom(BlockPos pos, BlockState state, Direction dir) {
++		return state.getSignal(world, pos, dir);
++	}
++	
++	public int getStrongPowerFrom(BlockPos pos, BlockState state, Direction dir) {
++		return state.getDirectSignal(world, pos, dir);
++	}
++	
++	public boolean shouldBreak(BlockPos pos, BlockState state) {
++		return !state.canSurvive(world, pos);
++	}
++}
+diff --git a/src/main/java/alternate/current/util/BlockUtil.java b/src/main/java/alternate/current/util/BlockUtil.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..b605c78c20912794a23cc7dbf07bdff12116b666
+--- /dev/null
++++ b/src/main/java/alternate/current/util/BlockUtil.java
+@@ -0,0 +1,14 @@
++package alternate.current.util;
++
++import net.minecraft.core.Direction;
++import net.minecraft.world.level.block.state.BlockBehaviour;
++
++public abstract class BlockUtil extends BlockBehaviour {
++	
++	/** Directions in the order in which they are used for emitting shape updates. */
++	public static final Direction[] DIRECTIONS = BlockBehaviour.UPDATE_SHAPE_ORDER;
++	
++	private BlockUtil(Properties settings) {
++		super(settings);
++	}
++}
+diff --git a/src/main/java/alternate/current/util/collection/SimpleQueue.java b/src/main/java/alternate/current/util/collection/SimpleQueue.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..6d6c1b81b696187add53e744aaffa54df7193864
+--- /dev/null
++++ b/src/main/java/alternate/current/util/collection/SimpleQueue.java
+@@ -0,0 +1,105 @@
++package alternate.current.util.collection;
++
++import java.util.AbstractQueue;
++import java.util.Iterator;
++
++public class SimpleQueue<E> extends AbstractQueue<E> {
++	
++	private static final int MINIMUM_CAPACITY = 16;
++	
++	private Object[] queue;
++	private int size;
++	private int head;
++	private int tail;
++	
++	public SimpleQueue() {
++		this(MINIMUM_CAPACITY);
++	}
++	
++	public SimpleQueue(int initialCapacity) {
++		if (initialCapacity <= 0) {
++			throw new IllegalArgumentException("The value of initialCapacity must be greater than 0!");
++		}
++		
++		this.queue = new Object[initialCapacity];
++	}
++	
++	@Override
++	public boolean offer(E e) {
++		if (e == null) {
++            throw new NullPointerException();
++		}
++		
++		if (size == queue.length) {
++			resize(size << 1);
++		}
++		
++		queue[tail] = e;
++		tail = incr(tail);
++		size++;
++		
++		return true;
++	}
++	
++	@Override
++	public E poll() {
++		@SuppressWarnings("unchecked")
++		E e = (E)queue[head];
++		
++		if (e != null) {
++			queue[head] = null;
++			head = incr(head);
++			size--;
++			
++			if (queue.length > MINIMUM_CAPACITY && size == (queue.length >> 2)) {
++				resize(size << 1);
++			}
++		}
++		
++		return e;
++	}
++	
++	@Override
++	public E peek() {
++		@SuppressWarnings("unchecked")
++		E e = (E)queue[head];
++		return e;
++	}
++	
++	@Override
++	public Iterator<E> iterator() {
++		throw new UnsupportedOperationException();
++	}
++	
++	@Override
++	public int size() {
++		return size;
++	}
++	
++	private void resize(int newSize) {
++		Object[] oldQueue = queue;
++		queue = new Object[newSize];
++		
++		int i = 0;
++		
++		if (head < tail) {
++			for (int j = head; j < tail; ) {
++				queue[i++] = oldQueue[j++];
++			}
++		} else {
++			for (int j = head; j < oldQueue.length; ) {
++				queue[i++] = oldQueue[j++];
++			}
++			for (int j = 0; j < tail; ) {
++				queue[i++] = oldQueue[j++];
++			}
++		}
++		
++		head = 0;
++		tail = size;
++	}
++	
++	private int incr(int i) {
++		return ++i < queue.length ? i : 0;
++	}
++}
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index bd65472d989334557f0706929f2388ff6177f9cc..14c21ab46cb5e1260015f4fda52d0cb566d2cee8 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -78,7 +78,7 @@ public class PaperWorldConfig {
+     }
+ 
+     public enum RedstoneAlgo {
+-        VANILLA, EIGENCRAFT
++        VANILLA, EIGENCRAFT, ALTERNATE_CURRENT
+     }
+ 
+     public RedstoneAlgo redstoneAlgo = RedstoneAlgo.EIGENCRAFT;
+@@ -100,8 +100,12 @@ public class PaperWorldConfig {
+                 log("Using Eigencraft redstone algorithm by theosib.");
+                 redstoneAlgo = RedstoneAlgo.EIGENCRAFT;
+                 break;
++            case "alternate-current":
++                log("Using Alternate Current redstone algorithm by SpaceWalkerRS.");
++                redstoneAlgo = RedstoneAlgo.ALTERNATE_CURRENT;
++                break;
+             default:
+-                logError("Warning: redstone-algo set to an invalid value of " + redstoneAlgoString + " must be one of: vanilla and eigencraft. Defaulting to eigencraft.");
++                logError("Warning: redstone-algo set to an invalid value of " + redstoneAlgoString + " must be one of: vanilla, eigencraft, alternate-current. Defaulting to eigencraft.");
+                 redstoneAlgo = RedstoneAlgo.EIGENCRAFT;
+                 break;
+         }
+diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
+index e9de8f8ac62dab370c28b4ef6a4b61c8d3ebbb15..4bb393520a7d5213b73d7d029b3459b4cf7296ef 100644
+--- a/src/main/java/net/minecraft/server/level/ServerLevel.java
++++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
+@@ -161,9 +161,14 @@ import org.bukkit.event.weather.LightningStrikeEvent;
+ import org.bukkit.event.world.TimeSkipEvent;
+ // CraftBukkit end
+ import it.unimi.dsi.fastutil.ints.IntArrayList; // Paper
++import alternate.current.redstone.WireBlock; // Paper
++import alternate.current.redstone.WorldAccess; // Paper
++import java.util.Map; // Paper
+ 
+ public class ServerLevel extends Level implements WorldGenLevel {
+ 
++    private final Map<WireBlock, WorldAccess> access = new java.util.HashMap<>(); // Paper
++
+     public static final BlockPos END_SPAWN_POINT = new BlockPos(100, 50, 0);
+     private static final int MIN_RAIN_DELAY_TIME = 12000;
+     private static final int MAX_RAIN_DELAY_TIME = 180000;
+@@ -224,6 +229,12 @@ public class ServerLevel extends Level implements WorldGenLevel {
+         return convertable.dimensionType;
+     }
+ 
++    // Paper start - port alternate-current
++    public WorldAccess getAccess(WireBlock wireBlock) {
++		return access.computeIfAbsent(wireBlock, key -> new WorldAccess(wireBlock, this));
++	}
++    // Paper end
++
+     // Paper start
+     public final boolean areChunksLoadedForMove(AABB axisalignedbb) {
+         // copied code from collision methods, so that we can guarantee that they wont load chunks (we don't override
+diff --git a/src/main/java/net/minecraft/world/level/block/BasePressurePlateBlock.java b/src/main/java/net/minecraft/world/level/block/BasePressurePlateBlock.java
+index 2036006b934ba1f27da606320b4c456af019a361..c5fa5c6725b8054e2e5b7f0b8bbc679266008f78 100644
+--- a/src/main/java/net/minecraft/world/level/block/BasePressurePlateBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/BasePressurePlateBlock.java
+@@ -21,6 +21,18 @@ import org.bukkit.event.block.BlockRedstoneEvent; // CraftBukkit
+ 
+ public abstract class BasePressurePlateBlock extends Block {
+ 
++    // Paper start - port alternate-current
++    @Override
++	public boolean emitsWeakPowerTo(Level world, BlockPos pos, BlockState state, Direction dir) {
++		return true;
++	}
++    
++	@Override
++	public boolean emitsStrongPowerTo(Level world, BlockPos pos, BlockState state, Direction dir) {
++		return dir == Direction.UP;
++	}
++    // Paper end
++
+     protected static final VoxelShape PRESSED_AABB = Block.box(1.0D, 0.0D, 1.0D, 15.0D, 0.5D, 15.0D);
+     protected static final VoxelShape AABB = Block.box(1.0D, 0.0D, 1.0D, 15.0D, 1.0D, 15.0D);
+     protected static final AABB TOUCH_AABB = new AABB(0.125D, 0.0D, 0.125D, 0.875D, 0.25D, 0.875D);
+diff --git a/src/main/java/net/minecraft/world/level/block/Block.java b/src/main/java/net/minecraft/world/level/block/Block.java
+index ab5b9f00123e2ede2931ffc520684e482aac49b4..f1c3404fe0ae02b07438ad19f5eb9d1facbfb443 100644
+--- a/src/main/java/net/minecraft/world/level/block/Block.java
++++ b/src/main/java/net/minecraft/world/level/block/Block.java
+@@ -65,6 +65,16 @@ import org.apache.logging.log4j.Logger;
+ 
+ public class Block extends BlockBehaviour implements ItemLike {
+ 
++    // Paper start - port Alternate Current
++	public boolean emitsWeakPowerTo(Level world, BlockPos pos, BlockState state, Direction dir) {
++		return false;
++	}
++	
++	public boolean emitsStrongPowerTo(Level world, BlockPos pos, BlockState state, Direction dir) {
++		return false;
++	}
++    // Paper end
++
+     protected static final Logger LOGGER = LogManager.getLogger();
+     public static final IdMapper<BlockState> BLOCK_STATE_REGISTRY = new IdMapper<>();
+     private static final LoadingCache<VoxelShape, Boolean> SHAPE_FULL_BLOCK_CACHE = CacheBuilder.newBuilder().maximumSize(512L).weakKeys().build(new CacheLoader<VoxelShape, Boolean>() {
+diff --git a/src/main/java/net/minecraft/world/level/block/ButtonBlock.java b/src/main/java/net/minecraft/world/level/block/ButtonBlock.java
+index b7f37475192bf79252482314080c9ba08e9aefdb..7c10e817cacec1fbacbf9d67da941748c6785165 100644
+--- a/src/main/java/net/minecraft/world/level/block/ButtonBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/ButtonBlock.java
+@@ -33,6 +33,18 @@ import org.bukkit.event.entity.EntityInteractEvent;
+ 
+ public abstract class ButtonBlock extends FaceAttachedHorizontalDirectionalBlock {
+ 
++    // Paper start - port alternate-current
++    @Override
++    public boolean emitsWeakPowerTo(Level world, BlockPos pos, BlockState state, Direction dir) {
++		return true;
++	}
++	
++    @Override
++	public boolean emitsStrongPowerTo(Level world, BlockPos pos, BlockState state, Direction dir) {
++		return getConnectedDirection(state) == dir;
++	}
++    // Paper end
++
+     public static final BooleanProperty POWERED = BlockStateProperties.POWERED;
+     private static final int PRESSED_DEPTH = 1;
+     private static final int UNPRESSED_DEPTH = 2;
+diff --git a/src/main/java/net/minecraft/world/level/block/DaylightDetectorBlock.java b/src/main/java/net/minecraft/world/level/block/DaylightDetectorBlock.java
+index 40b0380aa6fd052bf6376a15939c08e603f2f60c..f2c556ff5556f467c84359ed61afa6a3ab6929a1 100644
+--- a/src/main/java/net/minecraft/world/level/block/DaylightDetectorBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/DaylightDetectorBlock.java
+@@ -26,6 +26,13 @@ import net.minecraft.world.phys.shapes.VoxelShape;
+ 
+ public class DaylightDetectorBlock extends BaseEntityBlock {
+ 
++    // Paper start - port alternate-current
++    @Override
++    public boolean emitsWeakPowerTo(Level world, BlockPos pos, BlockState state, Direction dir) {
++        return true;
++    }
++    // Paper end
++
+     public static final IntegerProperty POWER = BlockStateProperties.POWER;
+     public static final BooleanProperty INVERTED = BlockStateProperties.INVERTED;
+     protected static final VoxelShape SHAPE = Block.box(0.0D, 0.0D, 0.0D, 16.0D, 6.0D, 16.0D);
+diff --git a/src/main/java/net/minecraft/world/level/block/DiodeBlock.java b/src/main/java/net/minecraft/world/level/block/DiodeBlock.java
+index 9c764d2273d70b8dffcaa7f324544cb48f12acc3..63adeacd5f05e56cebca89ac2c2fba221dc60607 100644
+--- a/src/main/java/net/minecraft/world/level/block/DiodeBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/DiodeBlock.java
+@@ -22,6 +22,18 @@ import org.bukkit.craftbukkit.event.CraftEventFactory; // CraftBukkit
+ 
+ public abstract class DiodeBlock extends HorizontalDirectionalBlock {
+ 
++    // Paper start - port alternate-current
++    @Override
++	public boolean emitsWeakPowerTo(Level world, BlockPos pos, BlockState state, Direction dir) {
++		return state.getValue(BlockStateProperties.HORIZONTAL_FACING) == dir;
++	}
++	
++    @Override
++	public boolean emitsStrongPowerTo(Level world, BlockPos pos, BlockState state, Direction dir) {
++		return state.getValue(BlockStateProperties.HORIZONTAL_FACING) == dir;
++	}
++    // Paper end
++
+     protected static final VoxelShape SHAPE = Block.box(0.0D, 0.0D, 0.0D, 16.0D, 2.0D, 16.0D);
+     public static final BooleanProperty POWERED = BlockStateProperties.POWERED;
+ 
+diff --git a/src/main/java/net/minecraft/world/level/block/LecternBlock.java b/src/main/java/net/minecraft/world/level/block/LecternBlock.java
+index 4d19c5f4653831a7c02e691e0585bf45d1d0ee64..7f68958f6c9357198bdfd8ef1832e758cab2aebe 100644
+--- a/src/main/java/net/minecraft/world/level/block/LecternBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/LecternBlock.java
+@@ -38,6 +38,18 @@ import net.minecraft.world.phys.shapes.VoxelShape;
+ 
+ public class LecternBlock extends BaseEntityBlock {
+ 
++    // Paper start - port alternate-current
++    @Override
++	public boolean emitsWeakPowerTo(Level world, BlockPos pos, BlockState state, Direction dir) {
++		return true;
++	}
++    
++	@Override
++	public boolean emitsStrongPowerTo(Level world, BlockPos pos, BlockState state, Direction dir) {
++		return dir == Direction.UP;
++	}
++    // Paper end
++
+     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
+     public static final BooleanProperty POWERED = BlockStateProperties.POWERED;
+     public static final BooleanProperty HAS_BOOK = BlockStateProperties.HAS_BOOK;
+diff --git a/src/main/java/net/minecraft/world/level/block/LeverBlock.java b/src/main/java/net/minecraft/world/level/block/LeverBlock.java
+index 1093dc8595e42a90e74e19f74965f5be07a1d6cf..9dd3e28a809c251c54e85f84ff3a292c7825fb70 100644
+--- a/src/main/java/net/minecraft/world/level/block/LeverBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/LeverBlock.java
+@@ -26,6 +26,18 @@ import org.bukkit.event.block.BlockRedstoneEvent; // CraftBukkit
+ 
+ public class LeverBlock extends FaceAttachedHorizontalDirectionalBlock {
+ 
++    // Paper start - port alternate-current
++    @Override
++    public boolean emitsWeakPowerTo(Level world, BlockPos pos, BlockState state, Direction dir) {
++		return true;
++	}
++	
++    @Override
++	public boolean emitsStrongPowerTo(Level world, BlockPos pos, BlockState state, Direction dir) {
++		return getConnectedDirection(state) == dir;
++	}
++    // Paper end
++
+     public static final BooleanProperty POWERED = BlockStateProperties.POWERED;
+     protected static final int DEPTH = 6;
+     protected static final int WIDTH = 6;
+diff --git a/src/main/java/net/minecraft/world/level/block/LightningRodBlock.java b/src/main/java/net/minecraft/world/level/block/LightningRodBlock.java
+index b7605dda79c4d907f5822a0ded694b080e08dae5..1a98b3fcb250ee6c0ff2de84bb4b3b65b8ca20ce 100644
+--- a/src/main/java/net/minecraft/world/level/block/LightningRodBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/LightningRodBlock.java
+@@ -38,6 +38,18 @@ import org.bukkit.event.block.BlockRedstoneEvent;
+ 
+ public class LightningRodBlock extends RodBlock implements SimpleWaterloggedBlock {
+ 
++    // Paper start - port alternate-current
++    @Override
++	public boolean emitsWeakPowerTo(Level world, BlockPos pos, BlockState state, Direction dir) {
++		return true;
++	}
++	
++    @Override
++	public boolean emitsStrongPowerTo(Level world, BlockPos pos, BlockState state, Direction dir) {
++		return state.getValue(BlockStateProperties.FACING) == dir;
++	}
++    // Paper end
++
+     public static final BooleanProperty WATERLOGGED = BlockStateProperties.WATERLOGGED;
+     public static final BooleanProperty POWERED = BlockStateProperties.POWERED;
+     private static final int ACTIVATION_TICKS = 8;
+diff --git a/src/main/java/net/minecraft/world/level/block/ObserverBlock.java b/src/main/java/net/minecraft/world/level/block/ObserverBlock.java
+index 4a34a08a1d46e4d3020644a51d9e30a36a18791a..7c1871fbf327b9423fd59639db6c1c276bac416b 100644
+--- a/src/main/java/net/minecraft/world/level/block/ObserverBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/ObserverBlock.java
+@@ -17,6 +17,18 @@ import org.bukkit.craftbukkit.event.CraftEventFactory; // CraftBukkit
+ 
+ public class ObserverBlock extends DirectionalBlock {
+ 
++    // Paper start - port alternate-current
++    @Override
++	public boolean emitsWeakPowerTo(Level world, BlockPos pos, BlockState state, Direction dir) {
++		return state.getValue(BlockStateProperties.FACING) == dir;
++	}
++	
++    @Override
++	public boolean emitsStrongPowerTo(Level world, BlockPos pos, BlockState state, Direction dir) {
++		return state.getValue(BlockStateProperties.FACING) == dir;
++	}
++    // Paper end
++
+     public static final BooleanProperty POWERED = BlockStateProperties.POWERED;
+ 
+     public ObserverBlock(BlockBehaviour.Properties settings) {
+diff --git a/src/main/java/net/minecraft/world/level/block/PoweredBlock.java b/src/main/java/net/minecraft/world/level/block/PoweredBlock.java
+index 0afffc33f3be221a28c62115f493808aeffb1bd8..eb792a5d16826bbed2c9b4d306b9eed09aeaaa02 100644
+--- a/src/main/java/net/minecraft/world/level/block/PoweredBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/PoweredBlock.java
+@@ -11,6 +11,13 @@ public class PoweredBlock extends Block {
+         super(settings);
+     }
+ 
++    // Paper start - port alternate-current
++    @Override
++    public boolean emitsWeakPowerTo(net.minecraft.world.level.Level world, BlockPos pos, BlockState state, Direction dir) {
++        return true;
++    }
++    // Paper end
++
+     @Override
+     public boolean isSignalSource(BlockState state) {
+         return true;
+diff --git a/src/main/java/net/minecraft/world/level/block/RedStoneWireBlock.java b/src/main/java/net/minecraft/world/level/block/RedStoneWireBlock.java
+index 661b7e8787d0d3257b7aa649be3dc26e02d8b5f9..9e3e65ac4e21a44d4cf563e11453b38f8b68c93d 100644
+--- a/src/main/java/net/minecraft/world/level/block/RedStoneWireBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/RedStoneWireBlock.java
+@@ -40,8 +40,81 @@ import net.minecraft.world.phys.shapes.Shapes;
+ import net.minecraft.world.phys.shapes.VoxelShape;
+ import org.bukkit.event.block.BlockRedstoneEvent; // CraftBukkit
+ import com.destroystokyo.paper.PaperWorldConfig; // Paper
++// Paper start
++import alternate.current.redstone.Node;
++import alternate.current.redstone.WireBlock;
++import alternate.current.redstone.WireHandler;
++import alternate.current.redstone.WireNode;
++import alternate.current.redstone.WorldAccess;
++import alternate.current.redstone.WireHandler.NodeProvider;
++import net.minecraft.server.level.ServerLevel;
++// Paper end
++
++public class RedStoneWireBlock extends Block implements WireBlock { // Paper
++
++    // Paper start - port alternate-current
++    @Override
++	public int getMinPower() {
++		return 0;
++	}
++	
++	@Override
++	public int getMaxPower() {
++		return 15;
++	}
++	
++	@Override
++	public int getPowerStep() {
++		return 1;
++    }
++
++	@Override
++	public int getPower(WorldAccess world, BlockPos pos, BlockState state) {
++		return state.getValue(BlockStateProperties.POWER);
++	}
++	
++	@Override
++	public BlockState updatePowerState(WorldAccess world, BlockPos pos, BlockState state, int power) {
++		return state.setValue(BlockStateProperties.POWER, power);
++	}
+ 
+-public class RedStoneWireBlock extends Block {
++    @Override
++    public Block asBlock() {
++		return (Block)this;
++	}
++	
++	@Override
++	public void findWireConnections(WireNode wire, NodeProvider nodes) {
++		boolean belowIsConductor = nodes.getNeighbor(wire, WireHandler.Directions.DOWN).isConductor();
++		boolean aboveIsConductor = nodes.getNeighbor(wire, WireHandler.Directions.UP).isConductor();
++		
++		wire.connections.set((connections, iDir) -> {
++			Node neighbor = nodes.getNeighbor(wire, iDir);
++			
++			if (neighbor.isWire()) {
++				connections.add(neighbor.asWire(), iDir, true, true);
++				return;
++			}
++			
++			boolean sideIsConductor = neighbor.isConductor();
++			
++			if (!sideIsConductor) {
++				Node node = nodes.getNeighbor(neighbor, WireHandler.Directions.DOWN);
++				
++				if (node.isWire()) {
++					connections.add(node.asWire(), iDir, true, belowIsConductor);
++				}
++			}
++			if (!aboveIsConductor) {
++				Node node = nodes.getNeighbor(neighbor, WireHandler.Directions.UP);
++				
++				if (node.isWire()) {
++					connections.add(node.asWire(), iDir, sideIsConductor, true);
++				}
++			}
++		});
++	}
++    // Paper end
+ 
+     public static final EnumProperty<RedstoneSide> NORTH = BlockStateProperties.NORTH_REDSTONE;
+     public static final EnumProperty<RedstoneSide> EAST = BlockStateProperties.EAST_REDSTONE;
+@@ -374,6 +447,7 @@ public class RedStoneWireBlock extends Block {
+     // Paper end
+ 
+     private void updatePowerStrength(Level world, BlockPos pos, BlockState state) {
++        if (world.paperConfig.redstoneAlgo == PaperWorldConfig.RedstoneAlgo.ALTERNATE_CURRENT) return; // Paper - port Alternate Current
+         int i = this.calculateTargetStrength(world, pos);
+ 
+         // CraftBukkit start
+@@ -465,7 +539,19 @@ public class RedStoneWireBlock extends Block {
+     @Override
+     public void onPlace(BlockState state, Level world, BlockPos pos, BlockState oldState, boolean notify) {
+         if (!oldState.is(state.getBlock()) && !world.isClientSide) {
+-            this.updateSurroundingRedstone(world, pos, state, null); // Paper - Optimize redstone
++            // Paper start - port Alternate Current
++            if (world.paperConfig.redstoneAlgo == PaperWorldConfig.RedstoneAlgo.ALTERNATE_CURRENT) {
++                ((ServerLevel)world).getAccess(this).getWireHandler().onWireAdded(pos);
++                BlockState newState = world.getBlockState(pos);
++            
++                if (newState != state) {
++                    newState.updateNeighbourShapes(world, pos, Block.UPDATE_CLIENTS);
++                    newState.updateIndirectNeighbourShapes(world, pos, Block.UPDATE_CLIENTS);
++                }
++            } else {
++                this.updateSurroundingRedstone(world, pos, state, null);
++            }
++            // Paper end
+             Iterator iterator = Direction.Plane.VERTICAL.iterator();
+ 
+             while (iterator.hasNext()) {
+@@ -492,7 +578,13 @@ public class RedStoneWireBlock extends Block {
+                     world.updateNeighborsAt(pos.relative(enumdirection), this);
+                 }
+ 
+-                this.updateSurroundingRedstone(world, pos, state, null); // Paper - Optimize redstone
++                // Paper start - port Alternate Current
++                if (world.paperConfig.redstoneAlgo == PaperWorldConfig.RedstoneAlgo.ALTERNATE_CURRENT) {
++                    ((ServerLevel)world).getAccess(this).getWireHandler().onWireRemoved(pos); // Paper
++                } else {
++                    this.updateSurroundingRedstone(world, pos, state, null); 
++                }
++                // Paper end
+                 this.updateNeighborsOfNeighboringWires(world, pos);
+             }
+         }
+@@ -525,15 +617,18 @@ public class RedStoneWireBlock extends Block {
+ 
+     @Override
+     public void neighborChanged(BlockState state, Level world, BlockPos pos, Block block, BlockPos fromPos, boolean notify) {
+-        if (!world.isClientSide) {
++        // Paper start - port alternate-current
++        if (world.paperConfig.redstoneAlgo == PaperWorldConfig.RedstoneAlgo.ALTERNATE_CURRENT) {
++            ((ServerLevel)world).getAccess(this).getWireHandler().onWireUpdated(pos);
++        } else {
+             if (state.canSurvive(world, pos)) {
+                 this.updateSurroundingRedstone(world, pos, state, fromPos); // Paper - Optimize redstone
+             } else {
+                 dropResources(state, world, pos);
+                 world.removeBlock(pos, false);
+             }
+-
+         }
++        // Paper end
+     }
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/level/block/RedstoneTorchBlock.java b/src/main/java/net/minecraft/world/level/block/RedstoneTorchBlock.java
+index 954b86bea345a8e0e3a8dd425f356db6f5cd496f..6b18f1947df9ddc427ec8deb2890592ae61d621c 100644
+--- a/src/main/java/net/minecraft/world/level/block/RedstoneTorchBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/RedstoneTorchBlock.java
+@@ -20,6 +20,18 @@ import org.bukkit.event.block.BlockRedstoneEvent; // CraftBukkit
+ 
+ public class RedstoneTorchBlock extends TorchBlock {
+ 
++    // Paper start - port alternate-current
++    @Override
++	public boolean emitsWeakPowerTo(Level world, BlockPos pos, BlockState state, Direction dir) {
++		return dir != Direction.UP;
++	}
++    
++	@Override
++	public boolean emitsStrongPowerTo(Level world, BlockPos pos, BlockState state, Direction dir) {
++		return dir == Direction.DOWN;
++	}
++    // Paper end
++
+     public static final BooleanProperty LIT = BlockStateProperties.LIT;
+     // Paper - Move the mapped list to World
+     public static final int RECENT_TOGGLE_TIMER = 60;
+diff --git a/src/main/java/net/minecraft/world/level/block/RedstoneWallTorchBlock.java b/src/main/java/net/minecraft/world/level/block/RedstoneWallTorchBlock.java
+index 5cf0ae04059533385a19f7b07909a67b57350c09..8551e4ef9f42d4114f42daa0f128244c15399d08 100644
+--- a/src/main/java/net/minecraft/world/level/block/RedstoneWallTorchBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/RedstoneWallTorchBlock.java
+@@ -17,7 +17,17 @@ import net.minecraft.world.level.block.state.properties.DirectionProperty;
+ import net.minecraft.world.phys.shapes.CollisionContext;
+ import net.minecraft.world.phys.shapes.VoxelShape;
+ 
++import net.minecraft.world.level.block.state.properties.BlockStateProperties; // Paper
++
+ public class RedstoneWallTorchBlock extends RedstoneTorchBlock {
++
++    // Paper start - port alternate-current
++    @Override
++    public boolean emitsWeakPowerTo(Level world, BlockPos pos, BlockState state, Direction dir) {
++        return state.getValue(BlockStateProperties.HORIZONTAL_FACING) != dir;
++    }
++    // Paper end
++
+     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
+     public static final BooleanProperty LIT = RedstoneTorchBlock.LIT;
+ 
+diff --git a/src/main/java/net/minecraft/world/level/block/SculkSensorBlock.java b/src/main/java/net/minecraft/world/level/block/SculkSensorBlock.java
+index 33bca696c1ae0a63055eea5d2e05551458da50b4..591b99bb2d362d442f7c771446dd48f52e6e6f6c 100644
+--- a/src/main/java/net/minecraft/world/level/block/SculkSensorBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/SculkSensorBlock.java
+@@ -44,6 +44,13 @@ import org.bukkit.event.block.BlockRedstoneEvent;
+ 
+ public class SculkSensorBlock extends BaseEntityBlock implements SimpleWaterloggedBlock {
+ 
++    // Paper start - port alternate-current
++    @Override
++    public boolean emitsWeakPowerTo(Level world, BlockPos pos, BlockState state, Direction dir) {
++        return true;
++    }
++    // Paper end
++
+     public static final int ACTIVE_TICKS = 40;
+     public static final int COOLDOWN_TICKS = 1;
+     public static final Object2IntMap<GameEvent> VIBRATION_STRENGTH_FOR_EVENT = Object2IntMaps.unmodifiable((Object2IntMap) Util.make(new Object2IntOpenHashMap(), (object2intopenhashmap) -> {
+diff --git a/src/main/java/net/minecraft/world/level/block/TargetBlock.java b/src/main/java/net/minecraft/world/level/block/TargetBlock.java
+index d609c60c1650a5b7f860154e0a4f4c6d84fa63fc..850b2de7cc961f7b3e460a90297cf6eb4d92a25b 100644
+--- a/src/main/java/net/minecraft/world/level/block/TargetBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/TargetBlock.java
+@@ -23,6 +23,14 @@ import net.minecraft.world.phys.BlockHitResult;
+ import net.minecraft.world.phys.Vec3;
+ 
+ public class TargetBlock extends Block {
++
++    // Paper start - port alternate-current
++    @Override
++    public boolean emitsWeakPowerTo(Level world, BlockPos pos, BlockState state, Direction dir) {
++        return true;
++    }
++    // Paper end
++
+     private static final IntegerProperty OUTPUT_POWER = BlockStateProperties.POWER;
+     private static final int ACTIVATION_TICKS_ARROWS = 20;
+     private static final int ACTIVATION_TICKS_OTHER = 8;
+diff --git a/src/main/java/net/minecraft/world/level/block/TrappedChestBlock.java b/src/main/java/net/minecraft/world/level/block/TrappedChestBlock.java
+index 184c70cd2954f4904518c3fee2a377d9c4e81cc3..ec5b7f28a151539d678e85132f6aeb27cf2f3612 100644
+--- a/src/main/java/net/minecraft/world/level/block/TrappedChestBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/TrappedChestBlock.java
+@@ -14,7 +14,22 @@ import net.minecraft.world.level.block.entity.TrappedChestBlockEntity;
+ import net.minecraft.world.level.block.state.BlockBehaviour;
+ import net.minecraft.world.level.block.state.BlockState;
+ 
++import net.minecraft.world.level.Level; // Paper
++
+ public class TrappedChestBlock extends ChestBlock {
++
++    // Paper start - port alternate-current
++    @Override
++	public boolean emitsWeakPowerTo(Level world, BlockPos pos, BlockState state, Direction dir) {
++		return true;
++	}
++    
++	@Override
++	public boolean emitsStrongPowerTo(Level world, BlockPos pos, BlockState state, Direction dir) {
++		return dir == Direction.UP;
++	}
++    // Paper end
++
+     public TrappedChestBlock(BlockBehaviour.Properties settings) {
+         super(settings, () -> {
+             return BlockEntityType.TRAPPED_CHEST;
+diff --git a/src/main/java/net/minecraft/world/level/block/TripWireHookBlock.java b/src/main/java/net/minecraft/world/level/block/TripWireHookBlock.java
+index a4344bf2267112e3c1e31c07c9f6b8eae9666947..3b4ef54b11cb98c390ea6b494112dcf450613f08 100644
+--- a/src/main/java/net/minecraft/world/level/block/TripWireHookBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/TripWireHookBlock.java
+@@ -27,8 +27,22 @@ import net.minecraft.world.phys.shapes.CollisionContext;
+ import net.minecraft.world.phys.shapes.VoxelShape;
+ import org.bukkit.event.block.BlockRedstoneEvent; // CraftBukkit
+ 
++import net.minecraft.world.level.block.state.properties.BlockStateProperties; // Paper
++
+ public class TripWireHookBlock extends Block {
+ 
++    // Paper start - port alternate-current
++    @Override
++	public boolean emitsWeakPowerTo(Level world, BlockPos pos, BlockState state, Direction dir) {
++		return true;
++	}
++    
++	@Override
++	public boolean emitsStrongPowerTo(Level world, BlockPos pos, BlockState state, Direction dir) {
++		return state.getValue(BlockStateProperties.HORIZONTAL_FACING) == dir;
++	}
++    // Paper end
++
+     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
+     public static final BooleanProperty POWERED = BlockStateProperties.POWERED;
+     public static final BooleanProperty ATTACHED = BlockStateProperties.ATTACHED;
