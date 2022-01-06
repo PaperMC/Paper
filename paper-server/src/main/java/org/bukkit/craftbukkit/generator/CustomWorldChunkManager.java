@@ -31,7 +31,11 @@ public class CustomWorldChunkManager extends BiomeSource {
         return biomeBases;
     }
 
-    public CustomWorldChunkManager(WorldInfo worldInfo, BiomeProvider biomeProvider, Registry<net.minecraft.world.level.biome.Biome> registry) {
+    // Paper start - add vanillaBiomeProvider
+    public final BiomeSource vanillaBiomeSource;
+    public CustomWorldChunkManager(WorldInfo worldInfo, BiomeProvider biomeProvider, Registry<net.minecraft.world.level.biome.Biome> registry, BiomeSource vanillaBiomeSource) {
+        this.vanillaBiomeSource = vanillaBiomeSource;
+        // Paper end - add vanillaBiomeProvider
         this.worldInfo = worldInfo;
         this.biomeProvider = biomeProvider;
         this.registry = registry;
