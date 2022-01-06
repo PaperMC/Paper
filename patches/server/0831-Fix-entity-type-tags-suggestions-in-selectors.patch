@@ -113,7 +113,7 @@ index 466d1d8d80df028ff842ce21be198be6a1c77b42..015d01242a9e8e7c6ef5b6bbf1b6d6ad
          this.level = MinMaxBounds.Ints.ANY;
          this.rotX = WrappedMinMaxBounds.ANY;
 diff --git a/src/main/java/net/minecraft/commands/arguments/selector/options/EntitySelectorOptions.java b/src/main/java/net/minecraft/commands/arguments/selector/options/EntitySelectorOptions.java
-index 061181381e4eabad5fa0122f049c4ce05996ffd2..90e023be5c38a038f1c03141ef4325abb25fd615 100644
+index 061181381e4eabad5fa0122f049c4ce05996ffd2..167acc0d469bb11039055fbd54fd8d82187a05f4 100644
 --- a/src/main/java/net/minecraft/commands/arguments/selector/options/EntitySelectorOptions.java
 +++ b/src/main/java/net/minecraft/commands/arguments/selector/options/EntitySelectorOptions.java
 @@ -69,6 +69,19 @@ public class EntitySelectorOptions {
@@ -136,25 +136,18 @@ index 061181381e4eabad5fa0122f049c4ce05996ffd2..90e023be5c38a038f1c03141ef4325ab
  
      private static void register(String id, EntitySelectorOptions.Modifier handler, Predicate<EntitySelectorParser> condition, Component description) {
          OPTIONS.put(id, new EntitySelectorOptions.Option(handler, condition, description));
-@@ -316,8 +329,20 @@ public class EntitySelectorOptions {
+@@ -316,6 +329,14 @@ public class EntitySelectorOptions {
  
                      if (reader.isTag()) {
                          ResourceLocation resourceLocation = ResourceLocation.read(reader.getReader());
 +                        // Paper start - throw error if invalid entity tag (only on suggestions to keep cmd success behavior)
-+                        final net.minecraft.tags.Tag<EntityType<?>> tag;
 +                        if (com.destroystokyo.paper.PaperConfig.fixTargetSelectorTagCompletion && reader.parsingEntityArgumentSuggestions) {
-+                            tag = EntityTypeTags.getAllTags().getTag(resourceLocation);
-+                        } else {
-+                            tag = EntityTypeTags.getAllTags().getTagOrEmpty(resourceLocation);
-+                        }
-+                        if (tag == null) {
-+                            reader.getReader().setCursor(i);
-+                            throw ERROR_ENTITY_TAG_INVALID.createWithContext(reader.getReader(), resourceLocation.toString());
++                            if (EntityTypeTags.getAllTags().getTag(resourceLocation) == null) {
++                                reader.getReader().setCursor(i);
++                                throw ERROR_ENTITY_TAG_INVALID.createWithContext(reader.getReader(), resourceLocation.toString());
++                            }
 +                        }
 +                        // Paper end
                          reader.addPredicate((entity) -> {
--                            return entity.getType().is(entity.getServer().getTags().getOrEmpty(Registry.ENTITY_TYPE_REGISTRY).getTagOrEmpty(resourceLocation)) != bl;
-+                            return entity.getType().is(tag) != bl; // Paper
+                             return entity.getType().is(entity.getServer().getTags().getOrEmpty(Registry.ENTITY_TYPE_REGISTRY).getTagOrEmpty(resourceLocation)) != bl;
                          });
-                     } else {
-                         ResourceLocation resourceLocation2 = ResourceLocation.read(reader.getReader());
