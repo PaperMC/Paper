@@ -1,6 +1,31 @@
 --- a/net/minecraft/world/level/levelgen/structure/templatesystem/DefinedStructure.java
 +++ b/net/minecraft/world/level/levelgen/structure/templatesystem/DefinedStructure.java
-@@ -142,7 +142,7 @@
+@@ -50,6 +50,12 @@
+ import net.minecraft.world.phys.shapes.VoxelShapeBitSet;
+ import net.minecraft.world.phys.shapes.VoxelShapeDiscrete;
+ 
++// CraftBukkit start
++import net.minecraft.nbt.NBTBase;
++import org.bukkit.craftbukkit.persistence.CraftPersistentDataContainer;
++import org.bukkit.craftbukkit.persistence.CraftPersistentDataTypeRegistry;
++// CraftBukkit end
++
+ public class DefinedStructure {
+ 
+     public static final String PALETTE_TAG = "palette";
+@@ -69,6 +75,11 @@
+     private BaseBlockPosition size;
+     private String author;
+ 
++    // CraftBukkit start - data containers
++    private static final CraftPersistentDataTypeRegistry DATA_TYPE_REGISTRY = new CraftPersistentDataTypeRegistry();
++    public CraftPersistentDataContainer persistentDataContainer = new CraftPersistentDataContainer(DATA_TYPE_REGISTRY);
++    // CraftBukkit end
++
+     public DefinedStructure() {
+         this.size = BaseBlockPosition.ZERO;
+         this.author = "?";
+@@ -142,7 +153,7 @@
      }
  
      private static List<DefinedStructure.BlockInfo> buildInfoList(List<DefinedStructure.BlockInfo> list, List<DefinedStructure.BlockInfo> list1, List<DefinedStructure.BlockInfo> list2) {
@@ -9,7 +34,7 @@
              return definedstructure_blockinfo.pos.getY();
          }).thenComparingInt((definedstructure_blockinfo) -> {
              return definedstructure_blockinfo.pos.getX();
-@@ -463,11 +463,13 @@
+@@ -463,11 +474,13 @@
      }
  
      private static Optional<Entity> createEntityIgnoreException(WorldAccess worldaccess, NBTTagCompound nbttagcompound) {
@@ -27,7 +52,34 @@
      }
  
      public BaseBlockPosition getSize(EnumBlockRotation enumblockrotation) {
-@@ -860,7 +862,7 @@
+@@ -682,6 +695,13 @@
+         nbttagcompound.put("entities", nbttaglist3);
+         nbttagcompound.put("size", this.newIntegerList(this.size.getX(), this.size.getY(), this.size.getZ()));
+         nbttagcompound.putInt("DataVersion", SharedConstants.getCurrentVersion().getWorldVersion());
++
++        // CraftBukkit Start - PDC
++        if (!this.persistentDataContainer.isEmpty()) {
++            nbttagcompound.put("BukkitValues", this.persistentDataContainer.toTagCompound());
++        }
++        // CraftBukkit end
++
+         return nbttagcompound;
+     }
+ 
+@@ -721,6 +741,12 @@
+             }
+         }
+ 
++        // CraftBukkit start - PDC
++        NBTBase base = nbttagcompound.get("BukkitValues");
++        if (base instanceof NBTTagCompound) {
++            this.persistentDataContainer.putAll((NBTTagCompound) base);
++        }
++        // CraftBukkit end
+     }
+ 
+     private void loadPalette(NBTTagList nbttaglist, NBTTagList nbttaglist1) {
+@@ -860,7 +886,7 @@
          public IBlockData stateFor(int i) {
              IBlockData iblockdata = (IBlockData) this.ids.byId(i);
  
