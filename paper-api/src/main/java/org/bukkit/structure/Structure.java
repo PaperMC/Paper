@@ -7,6 +7,7 @@ import org.bukkit.RegionAccessor;
 import org.bukkit.block.structure.Mirror;
 import org.bukkit.block.structure.StructureRotation;
 import org.bukkit.entity.Entity;
+import org.bukkit.persistence.PersistentDataHolder;
 import org.bukkit.util.BlockVector;
 import org.jetbrains.annotations.NotNull;
 
@@ -24,7 +25,7 @@ import org.jetbrains.annotations.NotNull;
  * world folder, a DataPack, or the server's own default resources, so that the
  * StructureManager can find it.
  */
-public interface Structure {
+public interface Structure extends PersistentDataHolder {
 
     /**
      * Gets the current size of the structure.
