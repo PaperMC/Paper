@@ -57,4 +57,13 @@ public interface WorldInfo {
      * @return Maximum height of the world
      */
     int getMaxHeight();
+
+    // Paper start
+    /**
+     * Get the vanilla {@link BiomeProvider} for this world.
+     *
+     * @return vanilla biome provider
+     */
+    @NotNull BiomeProvider vanillaBiomeProvider();
+    // Paper end
 }
