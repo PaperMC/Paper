@@ -22,7 +22,7 @@
  
  public class BlockItem extends Item {
  
-@@ -62,6 +66,12 @@
+@@ -62,6 +66,13 @@
                  return InteractionResult.FAIL;
              } else {
                  BlockState iblockdata = this.getPlacementState(blockactioncontext1);
@@ -31,13 +31,29 @@
 +                if (this instanceof PlaceOnWaterBlockItem || this instanceof SolidBucketItem) {
 +                    blockstate = org.bukkit.craftbukkit.block.CraftBlockStates.getBlockState(blockactioncontext1.getLevel(), blockactioncontext1.getClickedPos());
 +                }
++                final org.bukkit.block.BlockState oldBlockstate = blockstate != null ? blockstate : org.bukkit.craftbukkit.block.CraftBlockStates.getBlockState(blockactioncontext1.getLevel(), blockactioncontext1.getClickedPos()); // Paper - Reset placed block on exception
 +                // CraftBukkit end
  
                  if (iblockdata == null) {
                      return InteractionResult.FAIL;
-@@ -79,6 +89,19 @@
+@@ -76,9 +87,34 @@
+ 
+                     if (iblockdata1.is(iblockdata.getBlock())) {
+                         iblockdata1 = this.updateBlockStateFromTag(blockposition, world, itemstack, iblockdata1);
++                        // Paper start - Reset placed block on exception
++                        try {
                          this.updateCustomBlockEntityTag(blockposition, world, entityhuman, itemstack, iblockdata1);
                          BlockItem.updateBlockEntityComponents(world, blockposition, itemstack);
++                        } catch (Exception e) {
++                            oldBlockstate.update(true, false);
++                            if (entityhuman instanceof ServerPlayer player) {
++                                org.apache.logging.log4j.LogManager.getLogger().error("Player {} tried placing invalid block", player.getScoreboardName(), e);
++                                player.getBukkitEntity().kickPlayer("Packet processing error");
++                                return InteractionResult.FAIL;
++                            }
++                            throw e; // Rethrow exception if not placed by a player
++                        }
++                        // Paper end - Reset placed block on exception
                          iblockdata1.getBlock().setPlacedBy(world, blockposition, iblockdata1, entityhuman, itemstack);
 +                        // CraftBukkit start
 +                        if (blockstate != null) {
@@ -55,7 +71,7 @@
                          if (entityhuman instanceof ServerPlayer) {
                              CriteriaTriggers.PLACED_BLOCK.trigger((ServerPlayer) entityhuman, blockposition, itemstack);
                          }
-@@ -86,7 +109,7 @@
+@@ -86,7 +122,7 @@
  
                      SoundType soundeffecttype = iblockdata1.getSoundType();
  
@@ -64,7 +80,7 @@
                      world.gameEvent((Holder) GameEvent.BLOCK_PLACE, blockposition, GameEvent.Context.of(entityhuman, iblockdata1));
                      itemstack.consume(1, entityhuman);
                      return InteractionResult.SUCCESS;
-@@ -144,8 +167,16 @@
+@@ -144,8 +180,16 @@
      protected boolean canPlace(BlockPlaceContext context, BlockState state) {
          Player entityhuman = context.getPlayer();
          CollisionContext voxelshapecollision = entityhuman == null ? CollisionContext.empty() : CollisionContext.of(entityhuman);
@@ -82,7 +98,7 @@
      }
  
      protected boolean mustSurvive() {
-@@ -178,7 +209,7 @@
+@@ -178,7 +222,7 @@
                          return false;
                      }
  
