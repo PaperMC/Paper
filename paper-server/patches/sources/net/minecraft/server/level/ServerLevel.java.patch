@@ -136,7 +136,7 @@
 +
 +        int minChunkX = minBlockX >> 4;
 +        int minChunkZ = minBlockZ >> 4;
-+
+ 
 +        int maxChunkX = maxBlockX >> 4;
 +        int maxChunkZ = maxBlockZ >> 4;
 +
@@ -227,7 +227,7 @@
 +        boolean flag2 = minecraftserver.forceSynchronousWrites();
 +        DataFixer datafixer = minecraftserver.getFixerUpper();
 +        EntityPersistentStorage<Entity> entitypersistentstorage = new EntityStorage(new SimpleRegionStorage(new RegionStorageInfo(convertable_conversionsession.getLevelId(), resourcekey, "entities"), convertable_conversionsession.getDimensionPath(resourcekey).resolve("entities"), datafixer, flag2, DataFixTypes.ENTITY_CHUNK), this, minecraftserver);
- 
++
          this.entityManager = new PersistentEntitySectionManager<>(Entity.class, new ServerLevel.EntityCallbacks(), entitypersistentstorage);
 -        StructureTemplateManager structuretemplatemanager = server.getStructureManager();
 -        int j = server.getPlayerList().getViewDistance();
@@ -830,14 +830,15 @@
              case NONE:
                  explosion_effect = Explosion.BlockInteraction.KEEP;
                  break;
-@@ -1144,16 +1491,27 @@
+@@ -1143,17 +1490,28 @@
+                 break;
              case TRIGGER:
                  explosion_effect = Explosion.BlockInteraction.TRIGGER_BLOCK;
-                 break;
++                break;
 +            // CraftBukkit start - handle custom explosion type
 +            case STANDARD:
 +                explosion_effect = Explosion.BlockInteraction.DESTROY;
-+                break;
+                 break;
 +            // CraftBukkit end
              default:
                  throw new MatchException((String) null, (Throwable) null);
@@ -1035,7 +1036,15 @@
      @Override
      public CrashReportCategory fillReportDetails(CrashReport report) {
          CrashReportCategory crashreportsystemdetails = super.fillReportDetails(report);
-@@ -1836,7 +2242,8 @@
+@@ -1828,6 +2234,7 @@
+         }
+ 
+         public void onTickingStart(Entity entity) {
++            if (entity instanceof net.minecraft.world.entity.Marker && !paperConfig().entities.markers.tick) return; // Paper - Configurable marker ticking
+             ServerLevel.this.entityTickList.add(entity);
+         }
+ 
+@@ -1836,7 +2243,8 @@
          }
  
          public void onTrackingStart(Entity entity) {
@@ -1045,7 +1054,7 @@
              if (entity instanceof ServerPlayer entityplayer) {
                  ServerLevel.this.players.add(entityplayer);
                  ServerLevel.this.updateSleepingPlayerList();
-@@ -1864,9 +2271,58 @@
+@@ -1864,9 +2272,58 @@
              }
  
              entity.updateDynamicGameEventListener(DynamicGameEventListener::add);
@@ -1104,7 +1113,7 @@
              ServerLevel.this.getChunkSource().removeEntity(entity);
              if (entity instanceof ServerPlayer entityplayer) {
                  ServerLevel.this.players.remove(entityplayer);
-@@ -1895,6 +2351,15 @@
+@@ -1895,6 +2352,15 @@
              }
  
              entity.updateDynamicGameEventListener(DynamicGameEventListener::remove);

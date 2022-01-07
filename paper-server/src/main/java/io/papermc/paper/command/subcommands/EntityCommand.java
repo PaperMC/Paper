@@ -109,7 +109,7 @@ public final class EntityCommand implements PaperSubcommand {
                 ChunkPos chunk = e.chunkPosition();
                 info.left++;
                 info.right.put(chunk, info.right.getOrDefault(chunk, 0) + 1);
-                if (!world.isPositionEntityTicking(e.blockPosition())) {
+                if (!world.isPositionEntityTicking(e.blockPosition()) || (e instanceof net.minecraft.world.entity.Marker && !world.paperConfig().entities.markers.tick)) { // Paper - Configurable marker ticking
                     nonEntityTicking.merge(key, 1, Integer::sum);
                 }
             });
