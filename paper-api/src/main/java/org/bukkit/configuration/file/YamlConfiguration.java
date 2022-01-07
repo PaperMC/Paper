@@ -8,6 +8,7 @@ import java.io.Reader;
 import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
@@ -80,7 +81,7 @@ public class YamlConfiguration extends FileConfiguration {
         node.setEndComments(getCommentLines(options().getFooter(), CommentType.BLOCK));
 
         StringWriter writer = new StringWriter();
-        if (node.getEndComments().isEmpty() && node.getEndComments().isEmpty() && node.getValue().isEmpty()) {
+        if (node.getBlockComments().isEmpty() && node.getEndComments().isEmpty() && node.getValue().isEmpty()) {
             writer.write("");
         } else {
             if (node.getValue().isEmpty()) {
@@ -231,16 +232,23 @@ public class YamlConfiguration extends FileConfiguration {
 
     /**
      * Removes the empty line at the end of the header that separates the header
-     * from further comments.
+     * from further comments. Also removes all empty header starts (backwards
+     * compat).
      *
      * @param header The list of heading comments
      * @return The modified list
      */
     private List<String> loadHeader(List<String> header) {
-        ArrayList<String> list = new ArrayList<String>(header);
-        if (list.size() != 0) {
-            list.remove(list.size() - 1);
+        LinkedList<String> list = new LinkedList<>(header);
+
+        if (!list.isEmpty()) {
+            list.removeLast();
         }
+
+        while (!list.isEmpty() && list.peek() == null) {
+            list.remove();
+        }
+
         return list;
     }
 
@@ -252,10 +260,12 @@ public class YamlConfiguration extends FileConfiguration {
      * @return The modified list
      */
     private List<String> saveHeader(List<String> header) {
-        ArrayList<String> list = new ArrayList<String>(header);
-        if (list.size() != 0) {
+        LinkedList<String> list = new LinkedList<>(header);
+
+        if (!list.isEmpty()) {
             list.add(null);
         }
+
         return list;
     }
 

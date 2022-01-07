@@ -163,4 +163,15 @@ public class YamlConfigurationTest extends FileConfigurationTest {
         String result = config.saveToString();
         assertEquals(data, result);
     }
+
+    @Test
+    public void testOnlyHeader() {
+        YamlConfiguration config = getConfig();
+        config.options().header("# Test");
+
+        String result = config.saveToString();
+        String expected = "# # Test\n\n{}\n";
+
+        assertEquals(expected, result);
+    }
 }
