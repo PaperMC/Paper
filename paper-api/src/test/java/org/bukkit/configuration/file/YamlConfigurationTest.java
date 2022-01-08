@@ -174,4 +174,31 @@ public class YamlConfigurationTest extends FileConfigurationTest {
 
         assertEquals(expected, result);
     }
+
+    @Test
+    public void testUnusualMappingKeys() throws InvalidConfigurationException {
+        YamlConfiguration config = getConfig();
+        String content = "[1]: odd\n"
+                + "{2}: choice\n"
+                + "\"3\": of\n"
+                + "4: keys\n"
+                + "null: A\n"
+                + "'null': B\n"
+                + "!!null null: C\n"
+                + "'!!null': X\n";
+        // The keys are parsed as arbitrary Yaml types and then converted to their String representation during config loading.
+        // Consequently, the String representation used by the loaded config might be different to how these keys were originally represented.
+        // Since SnakeYaml does not preserve the original representation in its parsed node tree, we are also not able to reconstruct the original keys during config loading.
+        config.loadFromString(content);
+
+        // This difference in representations also becomes apparent when the config is written back.
+        // Also note: All keys that are parsed as null overwrite each other's values.
+        String expected = "'[1]': odd\n"
+                + "'{2=null}': choice\n"
+                + "'3': of\n"
+                + "'4': keys\n"
+                + "'null': C\n"
+                + "'!!null': X\n";
+        assertEquals(expected, config.saveToString());
+    }
 }

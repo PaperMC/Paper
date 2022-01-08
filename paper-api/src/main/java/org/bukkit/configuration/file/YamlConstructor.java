@@ -22,7 +22,7 @@ public class YamlConstructor extends SafeConstructor {
         super.flattenMapping(node);
     }
 
-    @NotNull
+    @Nullable
     public Object construct(@NotNull Node node) {
         return constructObject(node);
     }

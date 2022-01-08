@@ -144,8 +144,8 @@ public class YamlConfiguration extends FileConfiguration {
     private void fromNodeTree(@NotNull MappingNode input, @NotNull ConfigurationSection section) {
         constructor.flattenMapping(input);
         for (NodeTuple nodeTuple : input.getValue()) {
-            ScalarNode key = (ScalarNode) nodeTuple.getKeyNode();
-            String keyString = key.getValue();
+            Node key = nodeTuple.getKeyNode();
+            String keyString = String.valueOf(constructor.construct(key));
             Node value = nodeTuple.getValueNode();
 
             while (value instanceof AnchorNode) {
@@ -169,7 +169,9 @@ public class YamlConfiguration extends FileConfiguration {
 
     private boolean hasSerializedTypeKey(MappingNode node) {
         for (NodeTuple nodeTuple : node.getValue()) {
-            String key = ((ScalarNode) nodeTuple.getKeyNode()).getValue();
+            Node keyNode = nodeTuple.getKeyNode();
+            if (!(keyNode instanceof ScalarNode)) continue;
+            String key = ((ScalarNode) keyNode).getValue();
             if (key.equals(ConfigurationSerialization.SERIALIZED_TYPE_KEY)) {
                 return true;
             }
@@ -180,7 +182,7 @@ public class YamlConfiguration extends FileConfiguration {
     private MappingNode toNodeTree(@NotNull ConfigurationSection section) {
         List<NodeTuple> nodeTuples = new ArrayList<>();
         for (Map.Entry<String, Object> entry : section.getValues(false).entrySet()) {
-            ScalarNode key = (ScalarNode) representer.represent(entry.getKey());
+            Node key = representer.represent(entry.getKey());
             Node value;
             if (entry.getValue() instanceof ConfigurationSection) {
                 value = toNodeTree((ConfigurationSection) entry.getValue());
