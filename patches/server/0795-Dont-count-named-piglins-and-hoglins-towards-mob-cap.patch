@@ -4,16 +4,25 @@ Date: Fri, 20 Aug 2021 18:36:02 -0700
 Subject: [PATCH] Dont count named piglins and hoglins towards mob cap
 
 
-diff --git a/src/main/java/net/minecraft/world/level/NaturalSpawner.java b/src/main/java/net/minecraft/world/level/NaturalSpawner.java
-index c6bddf5e08376f1f254a27fc38647587eefcb00a..302803aa25b713cb087bdb2991cb0803dfe6005b 100644
---- a/src/main/java/net/minecraft/world/level/NaturalSpawner.java
-+++ b/src/main/java/net/minecraft/world/level/NaturalSpawner.java
-@@ -83,7 +83,7 @@ public final class NaturalSpawner {
-                 Mob entityinsentient = (Mob) entity;
+diff --git a/src/main/java/net/minecraft/world/entity/monster/hoglin/Hoglin.java b/src/main/java/net/minecraft/world/entity/monster/hoglin/Hoglin.java
+index c5b9c0c650df5f4b7e3d2a431dc900e210104dea..373ec915412899e4893aa182abd6fb63f3dff0aa 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/hoglin/Hoglin.java
++++ b/src/main/java/net/minecraft/world/entity/monster/hoglin/Hoglin.java
+@@ -123,7 +123,7 @@ public class Hoglin extends Animal implements Enemy, HoglinBase {
  
-                 // CraftBukkit - Split out persistent check, don't apply it to special persistent mobs
--                if (entityinsentient.removeWhenFarAway(0) && entityinsentient.isPersistenceRequired()) {
-+                if ((entityinsentient instanceof net.minecraft.world.entity.monster.piglin.Piglin || entityinsentient instanceof net.minecraft.world.entity.monster.hoglin.Hoglin || entityinsentient.removeWhenFarAway(0)) && entityinsentient.isPersistenceRequired()) { // Paper - what a jank fix, CBs like totally tried to change what removeWhenFarAway does, that method isnt even called here in vanilla, idk wtf is going on
-                     continue;
-                 }
-             }
+     @Override
+     public Brain<Hoglin> getBrain() {
+-        return super.getBrain();
++        return (Brain<Hoglin>) super.getBrain(); // Paper - decompile fix
+     }
+ 
+     @Override
+@@ -181,7 +181,7 @@ public class Hoglin extends Animal implements Enemy, HoglinBase {
+ 
+     @Override
+     public boolean removeWhenFarAway(double distanceSquared) {
+-        return !this.isPersistenceRequired();
++        return /*!this.isPersistenceRequired();*/ true; // Paper - what a jank fix, CBs like totally tried to change what removeWhenFarAway does, that method isnt even called in NaturalSpawner in vanilla, idk wtf is going on, there are so many places where this is done, for whatever reason
+     }
+ 
+     @Override

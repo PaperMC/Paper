@@ -7,7 +7,7 @@ Allows you to determine why an inventory was closed, enabling plugin developers
 to "confirm" things based on if it was player triggered close or not.
 
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index 377c8a43e063522478037c1368cefd71fec701cb..17eb43f6bb0a9bbc4e0abb991255b322a56f6160 100644
+index 11b0f1ef4aa02cf719e4d937c98d41b82ffca23a..9f3b3c34e625e27c9c56ccbfd244dd053c2e703f 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
 @@ -1130,7 +1130,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
@@ -21,7 +21,7 @@ index 377c8a43e063522478037c1368cefd71fec701cb..17eb43f6bb0a9bbc4e0abb991255b322
          }
 @@ -2063,7 +2063,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
              // Spigot Start
-             if (entity.getBukkitEntity() instanceof org.bukkit.inventory.InventoryHolder) {
+             if (entity.getBukkitEntity() instanceof org.bukkit.inventory.InventoryHolder && (!(entity instanceof ServerPlayer) || entity.getRemovalReason() != Entity.RemovalReason.KILLED)) { // SPIGOT-6876: closeInventory clears death message
                  for (org.bukkit.entity.HumanEntity h : Lists.newArrayList(((org.bukkit.inventory.InventoryHolder) entity.getBukkitEntity()).getInventory().getViewers())) {
 -                    h.closeInventory();
 +                    h.closeInventory(org.bukkit.event.inventory.InventoryCloseEvent.Reason.UNLOADED); // Paper
@@ -118,7 +118,7 @@ index be65d315af3089f49d2f5c9fe59c9ec0e8d3e2f9..f2efbb954ca56040ed39937750c4a01a
  
          PlayerQuitEvent playerQuitEvent = new PlayerQuitEvent(entityplayer.getBukkitEntity(), net.kyori.adventure.text.Component.translatable("multiplayer.player.left", net.kyori.adventure.text.format.NamedTextColor.YELLOW, com.destroystokyo.paper.PaperConfig.useDisplayNameInQuit ? entityplayer.getBukkitEntity().displayName() : net.kyori.adventure.text.Component.text(entityplayer.getScoreboardName())));
 diff --git a/src/main/java/net/minecraft/world/entity/player/Player.java b/src/main/java/net/minecraft/world/entity/player/Player.java
-index 1a7f45c3faf5335efbdaf5a91ba61dc2b5e907d8..0cd00d0b1017b2995f565ed6a871653a2644ffa1 100644
+index e72657009686461a28d27883573ecff09a77ccee..fcd66b668008a0c3be8d20f7f169b213fabe91a5 100644
 --- a/src/main/java/net/minecraft/world/entity/player/Player.java
 +++ b/src/main/java/net/minecraft/world/entity/player/Player.java
 @@ -262,7 +262,7 @@ public abstract class Player extends LivingEntity {
@@ -187,10 +187,10 @@ index c66767e94cb123d9286b43a115ba4fda7727337f..9495c5c41b1671fbc3930fb374efd7c7
  
          // Check if the fromWorld and toWorld are the same.
 diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-index 17757b90c440c2f181978f682ead2653ba7b7812..917d0804ff7ecb149a6c4524b2b6ecc6ae56b7e6 100644
+index 2b641a47f81c49dedc915d55dd43b7415f310582..b3a2a865f7b7346566cf84bc20d845d1ca481711 100644
 --- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 +++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-@@ -1193,7 +1193,7 @@ public class CraftEventFactory {
+@@ -1205,7 +1205,7 @@ public class CraftEventFactory {
  
      public static AbstractContainerMenu callInventoryOpenEvent(ServerPlayer player, AbstractContainerMenu container, boolean cancelled) {
          if (player.containerMenu != player.inventoryMenu) { // fire INVENTORY_CLOSE if one already open
@@ -199,7 +199,7 @@ index 17757b90c440c2f181978f682ead2653ba7b7812..917d0804ff7ecb149a6c4524b2b6ecc6
          }
  
          CraftServer server = player.level.getCraftServer();
-@@ -1359,8 +1359,18 @@ public class CraftEventFactory {
+@@ -1371,8 +1371,18 @@ public class CraftEventFactory {
          return event;
      }
  
