@@ -5,7 +5,7 @@ Subject: [PATCH] Build system changes
 
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index 75c858870a55f7282a0e3500f803cb330b462f37..d39ed9a8a32913193aec1bba2a59a352b8032dae 100644
+index 3167619a2466fe1d3678828437b7eb17bb78ecce..60a1a94c8c9e2abf3704e6e93904f2a4a3f96fe5 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
 @@ -9,10 +9,9 @@ plugins {
@@ -39,6 +39,31 @@ index 75c858870a55f7282a0e3500f803cb330b462f37..d39ed9a8a32913193aec1bba2a59a352
          )
          for (tld in setOf("net", "com", "org")) {
              attributes("$tld/bukkit", "Sealed" to true)
+@@ -61,14 +64,20 @@ relocation {
+     }
+ }
+ 
++val noRelocation = providers.systemProperty("Paper.noRelocation"); // Paper
+ tasks.shadowJar {
++    inputs.property("noRelocation", noRelocation) // Paper
+     configurations = listOf(project.configurations.vanillaServer.get())
+     archiveClassifier.set("mojang-mapped")
+ 
+-    for (relocation in relocation.relocations.get()) {
+-        relocate(relocation.fromPackage, relocation.toPackage) {
+-            for (exclude in relocation.excludes) {
+-                exclude(exclude)
++    // Paper start
++    if (!noRelocation.getOrElse("false").toBoolean()) {
++        for (relocation in relocation.relocations.get()) {
++            relocate(relocation.fromPackage, relocation.toPackage) {
++                for (exclude in relocation.excludes) {
++                    exclude(exclude)
++                }
++    // Paper end
+             }
+         }
+     }
 diff --git a/src/main/java/org/bukkit/craftbukkit/Main.java b/src/main/java/org/bukkit/craftbukkit/Main.java
 index 2c90c116d87e060b6da4a8ce79f839fff80db86d..e75ff70c52b097af447b7a91ef2c20c08a904d92 100644
 --- a/src/main/java/org/bukkit/craftbukkit/Main.java
