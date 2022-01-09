@@ -4,16 +4,25 @@ Date: Fri, 20 Aug 2021 18:36:02 -0700
 Subject: [PATCH] Dont count named piglins and hoglins towards mob cap
 
 
-diff --git a/src/main/java/net/minecraft/world/level/NaturalSpawner.java b/src/main/java/net/minecraft/world/level/NaturalSpawner.java
+diff --git a/src/main/java/net/minecraft/world/entity/monster/hoglin/Hoglin.java b/src/main/java/net/minecraft/world/entity/monster/hoglin/Hoglin.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/world/level/NaturalSpawner.java
-+++ b/src/main/java/net/minecraft/world/level/NaturalSpawner.java
-@@ -0,0 +0,0 @@ public final class NaturalSpawner {
-                 Mob entityinsentient = (Mob) entity;
+--- a/src/main/java/net/minecraft/world/entity/monster/hoglin/Hoglin.java
++++ b/src/main/java/net/minecraft/world/entity/monster/hoglin/Hoglin.java
+@@ -0,0 +0,0 @@ public class Hoglin extends Animal implements Enemy, HoglinBase {
  
-                 // CraftBukkit - Split out persistent check, don't apply it to special persistent mobs
--                if (entityinsentient.removeWhenFarAway(0) && entityinsentient.isPersistenceRequired()) {
-+                if ((entityinsentient instanceof net.minecraft.world.entity.monster.piglin.Piglin || entityinsentient instanceof net.minecraft.world.entity.monster.hoglin.Hoglin || entityinsentient.removeWhenFarAway(0)) && entityinsentient.isPersistenceRequired()) { // Paper - what a jank fix, CBs like totally tried to change what removeWhenFarAway does, that method isnt even called here in vanilla, idk wtf is going on
-                     continue;
-                 }
-             }
+     @Override
+     public Brain<Hoglin> getBrain() {
+-        return super.getBrain();
++        return (Brain<Hoglin>) super.getBrain(); // Paper - decompile fix
+     }
+ 
+     @Override
+@@ -0,0 +0,0 @@ public class Hoglin extends Animal implements Enemy, HoglinBase {
+ 
+     @Override
+     public boolean removeWhenFarAway(double distanceSquared) {
+-        return !this.isPersistenceRequired();
++        return /*!this.isPersistenceRequired();*/ true; // Paper - what a jank fix, CBs like totally tried to change what removeWhenFarAway does, that method isnt even called in NaturalSpawner in vanilla, idk wtf is going on, there are so many places where this is done, for whatever reason
+     }
+ 
+     @Override
