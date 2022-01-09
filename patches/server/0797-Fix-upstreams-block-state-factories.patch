@@ -22,8 +22,21 @@ index 0e37da7227eaba0d089e5bd136eca088ab2b5eb3..5601d0c2fe635a2a4f073c333531e1a8
          org.bukkit.block.BlockState state = block.getState(useSnapshot); // Paper
          if (state instanceof InventoryHolder) return (InventoryHolder) state;
          return null;
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftBlockEntityState.java b/src/main/java/org/bukkit/craftbukkit/block/CraftBlockEntityState.java
+index d46e3812ef058c119d327cf752e7deaa341736e3..8c847183a398df386ae5a24467378c5c3b889dc7 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/CraftBlockEntityState.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/CraftBlockEntityState.java
+@@ -6,7 +6,7 @@ import org.bukkit.World;
+ import org.bukkit.block.TileState;
+ import org.bukkit.persistence.PersistentDataContainer;
+ 
+-public class CraftBlockEntityState<T extends BlockEntity> extends CraftBlockState implements TileState {
++public abstract class CraftBlockEntityState<T extends BlockEntity> extends CraftBlockState implements TileState { // Paper - revert upstream's revert of the block state changes
+ 
+     private final T tileEntity;
+     private final T snapshot;
 diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftBlockStates.java b/src/main/java/org/bukkit/craftbukkit/block/CraftBlockStates.java
-index 9d0934656bbd27df4b47b816540d02cfbfc80636..a6b47006760e0711e9f667b733efaae6928d27e1 100644
+index 93a8aeb5545c794ac425c35f8af52a443cd060ca..9a4d79973af25853c4173a1df0131830505b623b 100644
 --- a/src/main/java/org/bukkit/craftbukkit/block/CraftBlockStates.java
 +++ b/src/main/java/org/bukkit/craftbukkit/block/CraftBlockStates.java
 @@ -19,6 +19,7 @@ import net.minecraft.world.level.block.entity.BeehiveBlockEntity;
@@ -34,13 +47,17 @@ index 9d0934656bbd27df4b47b816540d02cfbfc80636..a6b47006760e0711e9f667b733efaae6
  import net.minecraft.world.level.block.entity.BrewingStandBlockEntity;
  import net.minecraft.world.level.block.entity.CampfireBlockEntity;
  import net.minecraft.world.level.block.entity.ChestBlockEntity;
-@@ -107,184 +108,55 @@ public final class CraftBlockStates {
+@@ -105,188 +106,55 @@ public final class CraftBlockStates {
+     private static final BlockStateFactory<?> DEFAULT_FACTORY = new BlockStateFactory<CraftBlockState>(CraftBlockState.class) {
+         @Override
          public CraftBlockState createBlockState(World world, BlockPos blockPosition, net.minecraft.world.level.block.state.BlockState blockData, BlockEntity tileEntity) {
-             // Paper start - revert revert
-             // When a block is being destroyed, the TileEntity may temporarily still exist while the block's type has already been set to AIR. We ignore the TileEntity in this case.
--            Preconditions.checkState(tileEntity == null || CraftMagicNumbers.getMaterial(blockData.getBlock()) == Material.AIR, "Unexpected BlockState for %s", CraftMagicNumbers.getMaterial(blockData.getBlock()));
-+            Preconditions.checkState(tileEntity == null/* || CraftMagicNumbers.getMaterial(blockData.getBlock()) == Material.AIR*/, "Unexpected BlockState for %s", CraftMagicNumbers.getMaterial(blockData.getBlock())); // Paper - don't ignore the TileEntity while its still valid
-             // Paper end
+-            // SPIGOT-6754, SPIGOT-6817: Restore previous behaviour for tile entities with removed blocks (loot generation post-destroy)
+-            if (tileEntity != null) {
+-                // block with unhandled TileEntity:
+-                return new CraftBlockEntityState<>(world, tileEntity);
+-            }
++            // Paper - revert upstream's revert of the block state changes. Block entities that have already had the block type set to AIR are still valid, upstream decided to ignore them
+             Preconditions.checkState(tileEntity == null, "Unexpected BlockState for %s", CraftMagicNumbers.getMaterial(blockData.getBlock()));
              return new CraftBlockState(world, blockPosition, blockData);
          }
      };
@@ -262,7 +279,7 @@ index 9d0934656bbd27df4b47b816540d02cfbfc80636..a6b47006760e0711e9f667b733efaae6
      }
  
      private static void register(Material blockType, BlockStateFactory<?> factory) {
-@@ -292,35 +164,45 @@ public final class CraftBlockStates {
+@@ -294,35 +162,45 @@ public final class CraftBlockStates {
      }
  
      private static <T extends BlockEntity, B extends CraftBlockEntityState<T>> void register(
@@ -321,9 +338,9 @@ index 9d0934656bbd27df4b47b816540d02cfbfc80636..a6b47006760e0711e9f667b733efaae6
 +    // Paper end
 +
      public static BlockState getBlockState(Block block) {
-         Preconditions.checkNotNull(block, "block is null");
-         CraftBlock craftBlock = (CraftBlock) block;
-@@ -363,7 +245,7 @@ public final class CraftBlockStates {
+         // Paper start
+         return CraftBlockStates.getBlockState(block, true);
+@@ -380,7 +258,7 @@ public final class CraftBlockStates {
          if (world != null && tileEntity == null && CraftBlockStates.isTileEntityOptional(material)) {
              factory = CraftBlockStates.DEFAULT_FACTORY;
          } else {

@@ -51,40 +51,28 @@ index 1e416b23a38458f16add472cea09b0ac5ac91869..6f61fd8224fb4094f38a851300ab55f9
          return null;
      }
 diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java b/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java
-index d8b9a8276204ad8a2f045af9fe94185dbf150bc6..3250559589eb4db7b3df828144cee81a19651842 100644
+index c0af4b05b5d77aad99487fa7f8d840e797b6554c..40fc3268e7b662cdd45b569224ccd2abfad0a595 100644
 --- a/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java
 +++ b/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java
-@@ -317,7 +317,20 @@ public class CraftBlock implements Block {
- 
-     @Override
-     public BlockState getState() {
-+        // Paper start
-+        return this.getState(true);
-+    }
-+
-+    @Override
-+    public BlockState getState(boolean useSnapshot) {
-+        boolean prev = CraftBlockEntityState.DISABLE_SNAPSHOT;
-+        CraftBlockEntityState.DISABLE_SNAPSHOT = !useSnapshot;
-+        try {
+@@ -320,6 +320,13 @@ public class CraftBlock implements Block {
          return CraftBlockStates.getBlockState(this);
-+        } finally {
-+            CraftBlockEntityState.DISABLE_SNAPSHOT = prev;
-+        }
-+        // Paper end
      }
  
++    // Paper start
++    @Override
++    public BlockState getState(boolean useSnapshot) {
++        return CraftBlockStates.getBlockState(this, useSnapshot);
++    }
++    // Paper end
++
      @Override
+     public Biome getBiome() {
+         return this.getWorld().getBiome(this.getX(), this.getY(), this.getZ());
 diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftBlockEntityState.java b/src/main/java/org/bukkit/craftbukkit/block/CraftBlockEntityState.java
-index 7629a51ec284cab0db7e9238027d6acfa4f3083c..27f38af1eb71dda5dd175dcabc7a467ed772757a 100644
+index 7629a51ec284cab0db7e9238027d6acfa4f3083c..c2c0b4bfab64394e55f2832e37e49bccb7e955ab 100644
 --- a/src/main/java/org/bukkit/craftbukkit/block/CraftBlockEntityState.java
 +++ b/src/main/java/org/bukkit/craftbukkit/block/CraftBlockEntityState.java
-@@ -6,19 +6,30 @@ import org.bukkit.World;
- import org.bukkit.block.TileState;
- import org.bukkit.persistence.PersistentDataContainer;
- 
--public class CraftBlockEntityState<T extends BlockEntity> extends CraftBlockState implements TileState {
-+public abstract class CraftBlockEntityState<T extends BlockEntity> extends CraftBlockState implements TileState { // Paper - revert revert
+@@ -10,15 +10,26 @@ public class CraftBlockEntityState<T extends BlockEntity> extends CraftBlockStat
  
      private final T tileEntity;
      private final T snapshot;
@@ -114,26 +102,40 @@ index 7629a51ec284cab0db7e9238027d6acfa4f3083c..27f38af1eb71dda5dd175dcabc7a467e
  
      public void refreshSnapshot() {
 diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftBlockStates.java b/src/main/java/org/bukkit/craftbukkit/block/CraftBlockStates.java
-index 51ea68c433c4d530f8404d3174c5a121ce808a96..9d0934656bbd27df4b47b816540d02cfbfc80636 100644
+index 51ea68c433c4d530f8404d3174c5a121ce808a96..93a8aeb5545c794ac425c35f8af52a443cd060ca 100644
 --- a/src/main/java/org/bukkit/craftbukkit/block/CraftBlockStates.java
 +++ b/src/main/java/org/bukkit/craftbukkit/block/CraftBlockStates.java
-@@ -105,12 +105,10 @@ public final class CraftBlockStates {
-     private static final BlockStateFactory<?> DEFAULT_FACTORY = new BlockStateFactory<CraftBlockState>(CraftBlockState.class) {
-         @Override
-         public CraftBlockState createBlockState(World world, BlockPos blockPosition, net.minecraft.world.level.block.state.BlockState blockData, BlockEntity tileEntity) {
--            // SPIGOT-6754, SPIGOT-6817: Restore previous behaviour for tile entities with removed blocks (loot generation post-destroy)
--            if (tileEntity != null) {
--                // block with unhandled TileEntity:
--                return new CraftBlockEntityState<>(world, tileEntity);
--            }
--            Preconditions.checkState(tileEntity == null, "Unexpected BlockState for %s", CraftMagicNumbers.getMaterial(blockData.getBlock()));
-+            // Paper start - revert revert
-+            // When a block is being destroyed, the TileEntity may temporarily still exist while the block's type has already been set to AIR. We ignore the TileEntity in this case.
-+            Preconditions.checkState(tileEntity == null || CraftMagicNumbers.getMaterial(blockData.getBlock()) == Material.AIR, "Unexpected BlockState for %s", CraftMagicNumbers.getMaterial(blockData.getBlock()));
-+            // Paper end
-             return new CraftBlockState(world, blockPosition, blockData);
-         }
-     };
+@@ -324,15 +324,30 @@ public final class CraftBlockStates {
+     }
+ 
+     public static BlockState getBlockState(Block block) {
++        // Paper start
++        return CraftBlockStates.getBlockState(block, true);
++    }
++    public static BlockState getBlockState(Block block, boolean useSnapshot) {
++        // Paper end
+         Preconditions.checkNotNull(block, "block is null");
+         CraftBlock craftBlock = (CraftBlock) block;
+         CraftWorld world = (CraftWorld) block.getWorld();
+         BlockPos blockPosition = craftBlock.getPosition();
+         net.minecraft.world.level.block.state.BlockState blockData = craftBlock.getNMS();
+         BlockEntity tileEntity = craftBlock.getHandle().getBlockEntity(blockPosition);
++        // Paper start - block state snapshots
++        boolean prev = CraftBlockEntityState.DISABLE_SNAPSHOT;
++        CraftBlockEntityState.DISABLE_SNAPSHOT = !useSnapshot;
++        try {
++        // Paper end
+         CraftBlockState blockState = CraftBlockStates.getBlockState(world, blockPosition, blockData, tileEntity);
+         blockState.setWorldHandle(craftBlock.getHandle()); // Inject the block's generator access
+         return blockState;
++        // Paper start
++        } finally {
++            CraftBlockEntityState.DISABLE_SNAPSHOT = prev;
++        }
++        // Paper end
+     }
+ 
+     public static BlockState getBlockState(Material material, @Nullable CompoundTag blockEntityTag) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/persistence/CraftPersistentDataContainer.java b/src/main/java/org/bukkit/craftbukkit/persistence/CraftPersistentDataContainer.java
 index 3fc3907172f12ee24ea70bd6a1ffbbc6084ed971..2c59f09a9261a1690951161fd856a5848d9885b7 100644
 --- a/src/main/java/org/bukkit/craftbukkit/persistence/CraftPersistentDataContainer.java
