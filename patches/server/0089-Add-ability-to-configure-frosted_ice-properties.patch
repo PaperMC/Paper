@@ -1,0 +1,52 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: kashike <kashike@vq.lc>
+Date: Thu, 21 Apr 2016 23:51:55 -0700
+Subject: [PATCH] Add ability to configure frosted_ice properties
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 97693c33ba5a7efe40f05e0494216ee105e8bf74..7d92c9830206dacf34fc0f2f02d9453b3e0c0a5e 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -305,4 +305,14 @@ public class PaperWorldConfig {
+     private void useVanillaScoreboardColoring() {
+         useVanillaScoreboardColoring = getBoolean("use-vanilla-world-scoreboard-name-coloring", false);
+     }
++
++    public boolean frostedIceEnabled = true;
++    public int frostedIceDelayMin = 20;
++    public int frostedIceDelayMax = 40;
++    private void frostedIce() {
++        this.frostedIceEnabled = this.getBoolean("frosted-ice.enabled", this.frostedIceEnabled);
++        this.frostedIceDelayMin = this.getInt("frosted-ice.delay.min", this.frostedIceDelayMin);
++        this.frostedIceDelayMax = this.getInt("frosted-ice.delay.max", this.frostedIceDelayMax);
++        log("Frosted Ice: " + (this.frostedIceEnabled ? "enabled" : "disabled") + " / delay: min=" + this.frostedIceDelayMin + ", max=" + this.frostedIceDelayMax);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/world/level/block/FrostedIceBlock.java b/src/main/java/net/minecraft/world/level/block/FrostedIceBlock.java
+index 0c063ec7c5907710947d8e1ee0f122448364e64e..48776edab1479b5e861eca8146da04ebee01c46a 100644
+--- a/src/main/java/net/minecraft/world/level/block/FrostedIceBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/FrostedIceBlock.java
+@@ -32,6 +32,7 @@ public class FrostedIceBlock extends IceBlock {
+ 
+     @Override
+     public void tick(BlockState state, ServerLevel world, BlockPos pos, Random random) {
++        if (!world.paperConfig.frostedIceEnabled) return; // Paper - add ability to disable frosted ice
+         if ((random.nextInt(3) == 0 || this.fewerNeigboursThan(world, pos, 4)) && world.getMaxLocalRawBrightness(pos) > 11 - state.getValue(AGE) - state.getLightBlock(world, pos) && this.slightlyMelt(state, world, pos)) {
+             BlockPos.MutableBlockPos mutableBlockPos = new BlockPos.MutableBlockPos();
+ 
+@@ -39,12 +40,12 @@ public class FrostedIceBlock extends IceBlock {
+                 mutableBlockPos.setWithOffset(pos, direction);
+                 BlockState blockState = world.getBlockState(mutableBlockPos);
+                 if (blockState.is(this) && !this.slightlyMelt(blockState, world, mutableBlockPos)) {
+-                    world.scheduleTick(mutableBlockPos, this, Mth.nextInt(random, 20, 40));
++                    world.scheduleTick(mutableBlockPos, this, Mth.nextInt(random, world.paperConfig.frostedIceDelayMin, world.paperConfig.frostedIceDelayMax)); // Paper - use configurable min/max delay
+                 }
+             }
+ 
+         } else {
+-            world.scheduleTick(pos, this, Mth.nextInt(random, 20, 40));
++            world.scheduleTick(pos, this, Mth.nextInt(random, world.paperConfig.frostedIceDelayMin, world.paperConfig.frostedIceDelayMax)); // Paper - use configurable min/max delay
+         }
+     }
+ 

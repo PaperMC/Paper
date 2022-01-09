@@ -1,0 +1,148 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: BillyGalbreath <Blake.Galbreath@GMail.com>
+Date: Mon, 3 Sep 2018 18:13:53 -0500
+Subject: [PATCH] Add ray tracing methods to LivingEntity
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/block/TargetBlockInfo.java b/src/main/java/com/destroystokyo/paper/block/TargetBlockInfo.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..18a96dbb01d3b34476652264b2d6be3782a154ec
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/block/TargetBlockInfo.java
+@@ -0,0 +1,54 @@
++package com.destroystokyo.paper.block;
++
++import org.bukkit.block.Block;
++import org.bukkit.block.BlockFace;
++import org.jetbrains.annotations.NotNull;
++
++/**
++ * Represents information about a targeted block
++ */
++public class TargetBlockInfo {
++    private final Block block;
++    private final BlockFace blockFace;
++
++    public TargetBlockInfo(@NotNull Block block, @NotNull BlockFace blockFace) {
++        this.block = block;
++        this.blockFace = blockFace;
++    }
++
++    /**
++     * Get the block that is targeted
++     *
++     * @return Targeted block
++     */
++    @NotNull
++    public Block getBlock() {
++        return block;
++    }
++
++    /**
++     * Get the targeted BlockFace
++     *
++     * @return Targeted blockface
++     */
++    @NotNull
++    public BlockFace getBlockFace() {
++        return blockFace;
++    }
++
++    /**
++     * Get the relative Block to the targeted block on the side it is targeted at
++     *
++     * @return Block relative to targeted block
++     */
++    @NotNull
++    public Block getRelativeBlock() {
++        return block.getRelative(blockFace);
++    }
++
++    public enum FluidMode {
++        NEVER,
++        SOURCE_ONLY,
++        ALWAYS
++    }
++}
+diff --git a/src/main/java/org/bukkit/entity/LivingEntity.java b/src/main/java/org/bukkit/entity/LivingEntity.java
+index 6d8d96976bcef4e176453fede81a529478f11234..ad885a0775b387e3e8ca6bfae80c18465038056c 100644
+--- a/src/main/java/org/bukkit/entity/LivingEntity.java
++++ b/src/main/java/org/bukkit/entity/LivingEntity.java
+@@ -82,6 +82,77 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
+     @NotNull
+     public Block getTargetBlock(@Nullable Set<Material> transparent, int maxDistance);
+ 
++    // Paper start
++    /**
++     * Gets the block that the living entity has targeted, ignoring fluids
++     *
++     * @param maxDistance this is the maximum distance to scan
++     * @return block that the living entity has targeted,
++     *     or null if no block is within maxDistance
++     */
++    @Nullable
++    public default Block getTargetBlock(int maxDistance) {
++        return getTargetBlock(maxDistance, com.destroystokyo.paper.block.TargetBlockInfo.FluidMode.NEVER);
++    }
++
++    /**
++     * Gets the block that the living entity has targeted
++     *
++     * @param maxDistance this is the maximum distance to scan
++     * @param fluidMode whether to check fluids or not
++     * @return block that the living entity has targeted,
++     *     or null if no block is within maxDistance
++     */
++    @Nullable
++    public Block getTargetBlock(int maxDistance, @NotNull com.destroystokyo.paper.block.TargetBlockInfo.FluidMode fluidMode);
++
++    /**
++     * Gets the blockface of that block that the living entity has targeted, ignoring fluids
++     *
++     * @param maxDistance this is the maximum distance to scan
++     * @return blockface of the block that the living entity has targeted,
++     *     or null if no block is targeted
++     */
++    @Nullable
++    public default org.bukkit.block.BlockFace getTargetBlockFace(int maxDistance) {
++        return getTargetBlockFace(maxDistance, com.destroystokyo.paper.block.TargetBlockInfo.FluidMode.NEVER);
++    }
++
++    /**
++     * Gets the blockface of that block that the living entity has targeted
++     *
++     * @param maxDistance this is the maximum distance to scan
++     * @param fluidMode whether to check fluids or not
++     * @return blockface of the block that the living entity has targeted,
++     *     or null if no block is targeted
++     */
++    @Nullable
++    public org.bukkit.block.BlockFace getTargetBlockFace(int maxDistance, @NotNull com.destroystokyo.paper.block.TargetBlockInfo.FluidMode fluidMode);
++
++    /**
++     * Gets information about the block the living entity has targeted, ignoring fluids
++     *
++     * @param maxDistance this is the maximum distance to scan
++     * @return TargetBlockInfo about the block the living entity has targeted,
++     *     or null if no block is targeted
++     */
++    @Nullable
++    public default com.destroystokyo.paper.block.TargetBlockInfo getTargetBlockInfo(int maxDistance) {
++        return getTargetBlockInfo(maxDistance, com.destroystokyo.paper.block.TargetBlockInfo.FluidMode.NEVER);
++    }
++
++    /**
++     * Gets information about the block the living entity has targeted
++     *
++     * @param maxDistance this is the maximum distance to scan
++     * @param fluidMode whether to check fluids or not
++     * @return TargetBlockInfo about the block the living entity has targeted,
++     *     or null if no block is targeted
++     */
++    @Nullable
++    public com.destroystokyo.paper.block.TargetBlockInfo getTargetBlockInfo(int maxDistance, @NotNull com.destroystokyo.paper.block.TargetBlockInfo.FluidMode fluidMode);
++    // Paper end
++
+     /**
+      * Gets the last two blocks along the living entity's line of sight.
+      * <p>

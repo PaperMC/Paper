@@ -1,0 +1,4258 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Riley Park <riley.park@meino.net>
+Date: Fri, 29 Jan 2021 17:21:55 +0100
+Subject: [PATCH] Adventure
+
+Co-authored-by: zml <zml@stellardrift.ca>
+Co-authored-by: Jake Potrebic <jake.m.potrebic@gmail.com>
+
+diff --git a/build.gradle.kts b/build.gradle.kts
+index 55ee0c6330e4dbba22b4044346d1e1dd39c745ce..80fdd05dd593455ca89b66636ed30f1d9facf4ed 100644
+--- a/build.gradle.kts
++++ b/build.gradle.kts
+@@ -8,6 +8,19 @@ java {
+     withJavadocJar()
+ }
+ 
++val adventureVersion = "4.9.3"
++val apiAndDocs: Configuration by configurations.creating {
++    attributes {
++        attribute(Category.CATEGORY_ATTRIBUTE, objects.named(Category.DOCUMENTATION))
++        attribute(Bundling.BUNDLING_ATTRIBUTE, objects.named(Bundling.EXTERNAL))
++        attribute(DocsType.DOCS_TYPE_ATTRIBUTE, objects.named(DocsType.SOURCES))
++        attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage.JAVA_RUNTIME))
++    }
++}
++configurations.api {
++    extendsFrom(apiAndDocs)
++}
++
+ dependencies {
+     // api dependencies are listed transitively to API consumers
+     api("commons-lang:commons-lang:2.6")
+@@ -20,6 +33,11 @@ dependencies {
+         isTransitive = false // includes junit
+     }
+     api("it.unimi.dsi:fastutil:8.5.6")
++    apiAndDocs(platform("net.kyori:adventure-bom:$adventureVersion"))
++    apiAndDocs("net.kyori:adventure-api")
++    apiAndDocs("net.kyori:adventure-text-serializer-gson")
++    apiAndDocs("net.kyori:adventure-text-serializer-legacy")
++    apiAndDocs("net.kyori:adventure-text-serializer-plain")
+     // Paper end
+ 
+     compileOnly("org.apache.maven:maven-resolver-provider:3.8.4")
+@@ -70,10 +88,25 @@ tasks.jar {
+ }
+ 
+ tasks.withType<Javadoc> {
++    inputs.files(apiAndDocs)
++        .ignoreEmptyDirectories()
++        .withPropertyName(apiAndDocs.name + "-configuration")
++    doFirst {
++        (options as CoreJavadocOptions).addStringOption(
++            "sourcepath",
++            apiAndDocs.resolvedConfiguration.files.joinToString(separator = File.pathSeparator, transform = File::getPath)
++        )
++    }
+     (options as StandardJavadocDocletOptions).links(
+         "https://guava.dev/releases/31.0.1-jre/api/docs/",
+         "https://javadoc.io/doc/org.yaml/snakeyaml/1.30/",
+         "https://javadoc.io/doc/org.jetbrains/annotations/23.0.0/", // Paper - we don't want Java 5 annotations
+         "https://javadoc.io/doc/net.md-5/bungeecord-chat/1.16-R0.4/",
++        // Paper start
++        "https://jd.adventure.kyori.net/api/$adventureVersion/",
++        "https://jd.adventure.kyori.net/text-serializer-gson/$adventureVersion/",
++        "https://jd.adventure.kyori.net/text-serializer-legacy/$adventureVersion/",
++        "https://jd.adventure.kyori.net/text-serializer-plain/$adventureVersion/",
++        // Paper end
+     )
+ }
+diff --git a/src/main/java/co/aikar/timings/TimingsReportListener.java b/src/main/java/co/aikar/timings/TimingsReportListener.java
+index ef58a6c00f444bd498a2d8fc4e457236f393954f..ecd149157d4fb80444f34bf5633d74bcdb63dec5 100644
+--- a/src/main/java/co/aikar/timings/TimingsReportListener.java
++++ b/src/main/java/co/aikar/timings/TimingsReportListener.java
+@@ -15,7 +15,7 @@ import org.jetbrains.annotations.NotNull;
+ import org.jetbrains.annotations.Nullable;
+ 
+ @SuppressWarnings("WeakerAccess")
+-public class TimingsReportListener implements MessageCommandSender {
++public class TimingsReportListener implements net.kyori.adventure.audience.ForwardingAudience, MessageCommandSender { // Paper
+     private final List<CommandSender> senders;
+     private final Runnable onDone;
+     private String timingsURL;
+@@ -74,4 +74,17 @@ public class TimingsReportListener implements MessageCommandSender {
+             this.senders.add(Bukkit.getConsoleSender());
+         }
+     }
++
++    // Paper start
++    @Override
++    public void sendMessage(final @NotNull net.kyori.adventure.identity.Identity source, final @NotNull net.kyori.adventure.text.Component message, final @NotNull net.kyori.adventure.audience.MessageType type) {
++        net.kyori.adventure.audience.ForwardingAudience.super.sendMessage(source, message, type);
++    }
++
++    @NotNull
++    @Override
++    public Iterable<? extends net.kyori.adventure.audience.Audience> audiences() {
++        return this.senders;
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/io/papermc/paper/chat/ChatRenderer.java b/src/main/java/io/papermc/paper/chat/ChatRenderer.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..85fd5d6777b53bab09cc54c360bb75141635bdd3
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/chat/ChatRenderer.java
+@@ -0,0 +1,75 @@
++package io.papermc.paper.chat;
++
++import net.kyori.adventure.audience.Audience;
++import net.kyori.adventure.text.Component;
++import org.bukkit.entity.Player;
++import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
++import org.jetbrains.annotations.NotNull;
++
++/**
++ * A chat renderer is responsible for rendering chat messages sent by {@link Player}s to the server.
++ */
++@FunctionalInterface
++public interface ChatRenderer {
++    /**
++     * Renders a chat message. This will be called once for each receiving {@link Audience}.
++     *
++     * @param source the message source
++     * @param sourceDisplayName the display name of the source player
++     * @param message the chat message
++     * @param viewer the receiving {@link Audience}
++     * @return a rendered chat message
++     */
++    @NotNull
++    Component render(@NotNull Player source, @NotNull Component sourceDisplayName, @NotNull Component message, @NotNull Audience viewer);
++
++    /**
++     * Create a new instance of the default {@link ChatRenderer}.
++     *
++     * @return a new {@link ChatRenderer}
++     */
++    @NotNull
++    static ChatRenderer defaultRenderer() {
++        return viewerUnaware((source, sourceDisplayName, message) -> Component.translatable("chat.type.text", sourceDisplayName, message));
++    }
++
++    /**
++     * Creates a new viewer-unaware {@link ChatRenderer}, which will render the chat message a single time,
++     * displaying the same rendered message to every viewing {@link Audience}.
++     *
++     * @param renderer the viewer unaware renderer
++     * @return a new {@link ChatRenderer}
++     */
++    @NotNull
++    static ChatRenderer viewerUnaware(final @NotNull ViewerUnaware renderer) {
++        return new ChatRenderer() {
++            private @MonotonicNonNull Component message;
++
++            @Override
++            public @NotNull Component render(final @NotNull Player source, final @NotNull Component sourceDisplayName, final @NotNull Component message, final @NotNull Audience viewer) {
++                if (this.message == null) {
++                    this.message = renderer.render(source, sourceDisplayName, message);
++                }
++                return this.message;
++            }
++        };
++    }
++
++    /**
++     * Similar to {@link ChatRenderer}, but without knowledge of the message viewer.
++     *
++     * @see ChatRenderer#viewerUnaware(ViewerUnaware)
++     */
++    interface ViewerUnaware {
++        /**
++         * Renders a chat message.
++         *
++         * @param source the message source
++         * @param sourceDisplayName the display name of the source player
++         * @param message the chat message
++         * @return a rendered chat message
++         */
++        @NotNull
++        Component render(@NotNull Player source, @NotNull Component sourceDisplayName, @NotNull Component message);
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/event/player/AbstractChatEvent.java b/src/main/java/io/papermc/paper/event/player/AbstractChatEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..fa03a5cb2d3e3e0a60d84bacc911d96c454f81da
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/event/player/AbstractChatEvent.java
+@@ -0,0 +1,112 @@
++package io.papermc.paper.event.player;
++
++import java.util.Set;
++import io.papermc.paper.chat.ChatRenderer;
++import net.kyori.adventure.audience.Audience;
++import net.kyori.adventure.text.Component;
++import org.bukkit.entity.Player;
++import org.bukkit.event.Cancellable;
++import org.bukkit.event.player.PlayerEvent;
++import org.jetbrains.annotations.NotNull;
++
++import static java.util.Objects.requireNonNull;
++
++/**
++ * An abstract implementation of a chat event, handling shared logic.
++ */
++public abstract class AbstractChatEvent extends PlayerEvent implements Cancellable {
++    private final Set<Audience> viewers;
++    private final Component originalMessage;
++    private ChatRenderer renderer;
++    private Component message;
++    private boolean cancelled = false;
++
++    AbstractChatEvent(final boolean async, final @NotNull Player player, final @NotNull Set<Audience> viewers, final @NotNull ChatRenderer renderer, final @NotNull Component message, final @NotNull Component originalMessage) {
++        super(player, async);
++        this.viewers = viewers;
++        this.renderer = renderer;
++        this.message = message;
++        this.originalMessage = originalMessage;
++    }
++
++    /**
++     * Gets a set of {@link Audience audiences} that this chat message will be displayed to.
++     *
++     * <p>The set returned is not guaranteed to be mutable and may auto-populate
++     * on access. Any listener accessing the returned set should be aware that
++     * it may reduce performance for a lazy set implementation.</p>
++     *
++     * <p>Listeners should be aware that modifying the list may throw {@link
++     * UnsupportedOperationException} if the event caller provides an
++     * unmodifiable set.</p>
++     *
++     * @return a set of {@link Audience audiences} who will receive the chat message
++     */
++    @NotNull
++    public final Set<Audience> viewers() {
++        return this.viewers;
++    }
++
++    /**
++     * Sets the chat renderer.
++     *
++     * @param renderer the chat renderer
++     * @throws NullPointerException if {@code renderer} is {@code null}
++     */
++    public final void renderer(final @NotNull ChatRenderer renderer) {
++        this.renderer = requireNonNull(renderer, "renderer");
++    }
++
++    /**
++     * Gets the chat renderer.
++     *
++     * @return the chat renderer
++     */
++    @NotNull
++    public final ChatRenderer renderer() {
++        return this.renderer;
++    }
++
++    /**
++     * Gets the user-supplied message.
++     * The return value will reflect changes made using {@link #message(Component)}.
++     *
++     * @return the user-supplied message
++     */
++    @NotNull
++    public final Component message() {
++        return this.message;
++    }
++
++    /**
++     * Sets the user-supplied message.
++     *
++     * @param message the user-supplied message
++     * @throws NullPointerException if {@code message} is {@code null}
++     */
++    public final void message(final @NotNull Component message) {
++        this.message = requireNonNull(message, "message");
++    }
++
++    /**
++     * Gets the original and unmodified user-supplied message.
++     * The return value will <b>not</b> reflect changes made using
++     * {@link #message(Component)}.
++     *
++     * @return the original user-supplied message
++     */
++    @NotNull
++    public final Component originalMessage() {
++        return this.originalMessage;
++    }
++
++    @Override
++    public final boolean isCancelled() {
++        return this.cancelled;
++    }
++
++    @Override
++    public final void setCancelled(final boolean cancelled) {
++        this.cancelled = cancelled;
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/event/player/AsyncChatEvent.java b/src/main/java/io/papermc/paper/event/player/AsyncChatEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0d9e3c23027e3af90cb70e4bb6fb0ac1da35fc4d
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/event/player/AsyncChatEvent.java
+@@ -0,0 +1,31 @@
++package io.papermc.paper.event.player;
++
++import java.util.Set;
++import io.papermc.paper.chat.ChatRenderer;
++import net.kyori.adventure.audience.Audience;
++import net.kyori.adventure.text.Component;
++import org.bukkit.entity.Player;
++import org.bukkit.event.HandlerList;
++import org.jetbrains.annotations.NotNull;
++
++/**
++ * An event fired when a {@link Player} sends a chat message to the server.
++ */
++public final class AsyncChatEvent extends AbstractChatEvent {
++    private static final HandlerList HANDLERS = new HandlerList();
++
++    public AsyncChatEvent(final boolean async, final @NotNull Player player, final @NotNull Set<Audience> viewers, final @NotNull ChatRenderer renderer, final @NotNull Component message, final @NotNull Component originalMessage) {
++        super(async, player, viewers, renderer, message, originalMessage);
++    }
++
++    @NotNull
++    @Override
++    public HandlerList getHandlers() {
++        return HANDLERS;
++    }
++
++    @NotNull
++    public static HandlerList getHandlerList() {
++        return HANDLERS;
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/event/player/ChatEvent.java b/src/main/java/io/papermc/paper/event/player/ChatEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..eb179aae1e1d2ce842442e49fe275827a430ccd0
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/event/player/ChatEvent.java
+@@ -0,0 +1,36 @@
++package io.papermc.paper.event.player;
++
++import java.util.Set;
++import io.papermc.paper.chat.ChatRenderer;
++import net.kyori.adventure.audience.Audience;
++import net.kyori.adventure.text.Component;
++import org.bukkit.Warning;
++import org.bukkit.entity.Player;
++import org.bukkit.event.HandlerList;
++import org.jetbrains.annotations.NotNull;
++
++/**
++ * An event fired when a {@link Player} sends a chat message to the server.
++ *
++ * @deprecated Listening to this event forces chat to wait for the main thread, delaying chat messages. It is recommended to use {@link AsyncChatEvent} instead, wherever possible.
++ */
++@Deprecated
++@Warning(reason = "Listening to this event forces chat to wait for the main thread, delaying chat messages.")
++public final class ChatEvent extends AbstractChatEvent {
++    private static final HandlerList HANDLERS = new HandlerList();
++
++    public ChatEvent(final @NotNull Player player, final @NotNull Set<Audience> viewers, final @NotNull ChatRenderer renderer, final @NotNull Component message, final @NotNull Component originalMessage) {
++        super(false, player, viewers, renderer, message, originalMessage);
++    }
++
++    @NotNull
++    @Override
++    public HandlerList getHandlers() {
++        return HANDLERS;
++    }
++
++    @NotNull
++    public static HandlerList getHandlerList() {
++        return HANDLERS;
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/text/PaperComponents.java b/src/main/java/io/papermc/paper/text/PaperComponents.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..15ecb12fd2fefcac96edbaef7cdd487a1d2c5641
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/text/PaperComponents.java
+@@ -0,0 +1,104 @@
++package io.papermc.paper.text;
++
++import net.kyori.adventure.text.Component;
++import net.kyori.adventure.text.flattener.ComponentFlattener;
++import net.kyori.adventure.text.format.NamedTextColor;
++import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
++import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
++import net.kyori.adventure.text.serializer.plain.PlainComponentSerializer;
++import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
++import org.bukkit.Bukkit;
++import org.jetbrains.annotations.NotNull;
++
++/**
++ * Paper API-specific methods for working with {@link Component}s and related.
++ */
++public final class PaperComponents {
++    private PaperComponents() {
++        throw new RuntimeException("PaperComponents is not to be instantiated!");
++    }
++
++    /**
++     * Return a component flattener that can use game data to resolve extra information about components.
++     *
++     * @return a component flattener
++     */
++    public static @NotNull ComponentFlattener flattener() {
++        return Bukkit.getUnsafe().componentFlattener();
++    }
++
++    /**
++     * Get a serializer for {@link Component}s that will convert components to
++     * a plain-text string.
++     *
++     * <p>Implementations may provide a serializer capable of processing any
++     * information that requires access to implementation details.</p>
++     *
++     * @deprecated will be removed in adventure 5.0.0, use {@link #plainTextSerializer()}
++     * @return a serializer to plain text
++     */
++    @Deprecated
++    public static @NotNull PlainComponentSerializer plainSerializer() {
++        return Bukkit.getUnsafe().plainComponentSerializer();
++    }
++
++    /**
++     * Get a serializer for {@link Component}s that will convert components to
++     * a plain-text string.
++     *
++     * <p>Implementations may provide a serializer capable of processing any
++     * information that requires access to implementation details.</p>
++     *
++     * @return a serializer to plain text
++     */
++    public static @NotNull PlainTextComponentSerializer plainTextSerializer() {
++        return Bukkit.getUnsafe().plainTextSerializer();
++    }
++
++    /**
++     * Get a serializer for {@link Component}s that will convert to and from the
++     * standard JSON serialization format using Gson.
++     *
++     * <p>Implementations may provide a serializer capable of processing any
++     * information that requires implementation details, such as legacy
++     * (pre-1.16) hover events.</p>
++     *
++     * @return a json component serializer
++     */
++    public static @NotNull GsonComponentSerializer gsonSerializer() {
++        return Bukkit.getUnsafe().gsonComponentSerializer();
++    }
++
++    /**
++     * Get a serializer for {@link Component}s that will convert to and from the
++     * standard JSON serialization format using Gson, downsampling any RGB colors
++     * to their nearest {@link NamedTextColor} counterpart.
++     *
++     * <p>Implementations may provide a serializer capable of processing any
++     * information that requires implementation details, such as legacy
++     * (pre-1.16) hover events.</p>
++     *
++     * @return a json component serializer
++     */
++    public static @NotNull GsonComponentSerializer colorDownsamplingGsonSerializer() {
++        return Bukkit.getUnsafe().colorDownsamplingGsonComponentSerializer();
++    }
++
++    /**
++     * Get a serializer for {@link Component}s that will convert to and from the
++     * legacy component format used by Bukkit. This serializer uses the
++     * {@link LegacyComponentSerializer.Builder#useUnusualXRepeatedCharacterHexFormat()}
++     * option to match upstream behavior.
++     *
++     * <p>This legacy serializer uses the standard section symbol to mark
++     * formatting characters.</p>
++     *
++     * <p>Implementations may provide a serializer capable of processing any
++     * information that requires access to implementation details.</p>
++     *
++     * @return a section serializer
++     */
++    public static @NotNull LegacyComponentSerializer legacySectionSerializer() {
++        return Bukkit.getUnsafe().legacyComponentSerializer();
++    }
++}
+diff --git a/src/main/java/org/bukkit/Bukkit.java b/src/main/java/org/bukkit/Bukkit.java
+index 0d96b6bdc744a23cc7322f2bd6a7a7b38acb6830..84a620bbbc24ded4075bce0209caed7fa03a92eb 100644
+--- a/src/main/java/org/bukkit/Bukkit.java
++++ b/src/main/java/org/bukkit/Bukkit.java
+@@ -369,7 +369,9 @@ public final class Bukkit {
+      *
+      * @param message the message
+      * @return the number of players
++     * @deprecated in favour of {@link Server#broadcast(net.kyori.adventure.text.Component)}
+      */
++    @Deprecated // Paper
+     public static int broadcastMessage(@NotNull String message) {
+         return server.broadcastMessage(message);
+     }
+@@ -1012,6 +1014,19 @@ public final class Bukkit {
+         server.shutdown();
+     }
+ 
++    // Paper start
++    /**
++     * Broadcast a message to all players.
++     * <p>
++     * This is the same as calling {@link #broadcast(net.kyori.adventure.text.Component,
++     * java.lang.String)} with the {@link Server#BROADCAST_CHANNEL_USERS} permission.
++     *
++     * @param message the message
++     * @return the number of players
++     */
++    public static int broadcast(@NotNull net.kyori.adventure.text.Component message) {
++        return server.broadcast(message);
++    }
+     /**
+      * Broadcasts the specified message to every user with the given
+      * permission name.
+@@ -1021,6 +1036,21 @@ public final class Bukkit {
+      *     permissibles} must have to receive the broadcast
+      * @return number of message recipients
+      */
++    public static int broadcast(@NotNull net.kyori.adventure.text.Component message, @NotNull String permission) {
++        return server.broadcast(message, permission);
++    }
++    // Paper end
++    /**
++     * Broadcasts the specified message to every user with the given
++     * permission name.
++     *
++     * @param message message to broadcast
++     * @param permission the required permission {@link Permissible
++     *     permissibles} must have to receive the broadcast
++     * @return number of message recipients
++     * @deprecated in favour of {@link #broadcast(net.kyori.adventure.text.Component, String)}
++     */
++    @Deprecated // Paper
+     public static int broadcast(@NotNull String message, @NotNull String permission) {
+         return server.broadcast(message, permission);
+     }
+@@ -1220,6 +1250,7 @@ public final class Bukkit {
+         return server.createInventory(owner, type);
+     }
+ 
++    // Paper start
+     /**
+      * Creates an empty inventory with the specified type and title. If the type
+      * is {@link InventoryType#CHEST}, the new inventory has a size of 27;
+@@ -1245,6 +1276,38 @@ public final class Bukkit {
+      * @see InventoryType#isCreatable()
+      */
+     @NotNull
++    public static Inventory createInventory(@Nullable InventoryHolder owner, @NotNull InventoryType type, @NotNull net.kyori.adventure.text.Component title) {
++        return server.createInventory(owner, type, title);
++    }
++    // Paper end
++
++    /**
++     * Creates an empty inventory with the specified type and title. If the type
++     * is {@link InventoryType#CHEST}, the new inventory has a size of 27;
++     * otherwise the new inventory has the normal size for its type.<br>
++     * It should be noted that some inventory types do not support titles and
++     * may not render with said titles on the Minecraft client.
++     * <br>
++     * {@link InventoryType#WORKBENCH} will not process crafting recipes if
++     * created with this method. Use
++     * {@link Player#openWorkbench(Location, boolean)} instead.
++     * <br>
++     * {@link InventoryType#ENCHANTING} will not process {@link ItemStack}s
++     * for possible enchanting results. Use
++     * {@link Player#openEnchanting(Location, boolean)} instead.
++     *
++     * @param owner The holder of the inventory; can be null if there's no holder.
++     * @param type The type of inventory to create.
++     * @param title The title of the inventory, to be displayed when it is viewed.
++     * @return The new inventory.
++     * @throws IllegalArgumentException if the {@link InventoryType} cannot be
++     * viewed.
++     * @deprecated in favour of {@link #createInventory(InventoryHolder, InventoryType, net.kyori.adventure.text.Component)}
++     *
++     * @see InventoryType#isCreatable()
++     */
++    @Deprecated // Paper
++    @NotNull
+     public static Inventory createInventory(@Nullable InventoryHolder owner, @NotNull InventoryType type, @NotNull String title) {
+         return server.createInventory(owner, type, title);
+     }
+@@ -1263,6 +1326,7 @@ public final class Bukkit {
+         return server.createInventory(owner, size);
+     }
+ 
++    // Paper start
+     /**
+      * Creates an empty inventory of type {@link InventoryType#CHEST} with the
+      * specified size and title.
+@@ -1275,10 +1339,30 @@ public final class Bukkit {
+      * @throws IllegalArgumentException if the size is not a multiple of 9
+      */
+     @NotNull
++    public static Inventory createInventory(@Nullable InventoryHolder owner, int size, @NotNull net.kyori.adventure.text.Component title) throws IllegalArgumentException {
++        return server.createInventory(owner, size, title);
++    }
++    // Paper end
++
++    /**
++     * Creates an empty inventory of type {@link InventoryType#CHEST} with the
++     * specified size and title.
++     *
++     * @param owner the holder of the inventory, or null to indicate no holder
++     * @param size a multiple of 9 as the size of inventory to create
++     * @param title the title of the inventory, displayed when inventory is
++     *     viewed
++     * @return a new inventory
++     * @throws IllegalArgumentException if the size is not a multiple of 9
++     * @deprecated in favour of {@link #createInventory(InventoryHolder, InventoryType, net.kyori.adventure.text.Component)}
++     */
++    @Deprecated // Paper
++    @NotNull
+     public static Inventory createInventory(@Nullable InventoryHolder owner, int size, @NotNull String title) throws IllegalArgumentException {
+         return server.createInventory(owner, size, title);
+     }
+ 
++    // Paper start
+     /**
+      * Creates an empty merchant.
+      *
+@@ -1286,7 +1370,20 @@ public final class Bukkit {
+      * when the merchant inventory is viewed
+      * @return a new merchant
+      */
++    public static @NotNull Merchant createMerchant(@Nullable net.kyori.adventure.text.Component title) {
++        return server.createMerchant(title);
++    }
++    // Paper start
++    /**
++     * Creates an empty merchant.
++     *
++     * @param title the title of the corresponding merchant inventory, displayed
++     * when the merchant inventory is viewed
++     * @return a new merchant
++     * @deprecated in favour of {@link #createMerchant(net.kyori.adventure.text.Component)}
++     */
+     @NotNull
++    @Deprecated // Paper
+     public static Merchant createMerchant(@Nullable String title) {
+         return server.createMerchant(title);
+     }
+@@ -1366,22 +1463,47 @@ public final class Bukkit {
+         return server.isPrimaryThread();
+     }
+ 
++    // Paper start
++    /**
++     * Gets the message that is displayed on the server list.
++     *
++     * @return the server's MOTD
++     */
++    @NotNull public static net.kyori.adventure.text.Component motd() {
++        return server.motd();
++    }
++    // Paper end
++
+     /**
+      * Gets the message that is displayed on the server list.
+      *
+      * @return the servers MOTD
++     * @deprecated in favour of {@link #motd()}
+      */
+     @NotNull
++    @Deprecated // Paper
+     public static String getMotd() {
+         return server.getMotd();
+     }
+ 
++    // Paper start
++    /**
++     * Gets the default message that is displayed when the server is stopped.
++     *
++     * @return the shutdown message
++     */
++    public static @Nullable net.kyori.adventure.text.Component shutdownMessage() {
++        return server.shutdownMessage();
++    }
++    // Paper end
+     /**
+      * Gets the default message that is displayed when the server is stopped.
+      *
+      * @return the shutdown message
++     * @deprecated in favour of {@link #shutdownMessage()}
+      */
+     @Nullable
++    @Deprecated // Paper
+     public static String getShutdownMessage() {
+         return server.getShutdownMessage();
+     }
+diff --git a/src/main/java/org/bukkit/Keyed.java b/src/main/java/org/bukkit/Keyed.java
+index 32c92621c2c15eec14c50965f5ecda00c46e6c80..e076d447da62445764a9776ee2554c077637d270 100644
+--- a/src/main/java/org/bukkit/Keyed.java
++++ b/src/main/java/org/bukkit/Keyed.java
+@@ -5,7 +5,7 @@ import org.jetbrains.annotations.NotNull;
+ /**
+  * Represents an object which has a {@link NamespacedKey} attached to it.
+  */
+-public interface Keyed {
++public interface Keyed extends net.kyori.adventure.key.Keyed { // Paper -- extend Adventure Keyed
+ 
+     /**
+      * Return the namespaced identifier for this object.
+@@ -14,4 +14,16 @@ public interface Keyed {
+      */
+     @NotNull
+     NamespacedKey getKey();
++
++    // Paper start
++    /**
++     * Returns the unique identifier for this object.
++     *
++     * @return this object's key
++     */
++    @Override
++    default net.kyori.adventure.key.@NotNull Key key() {
++        return this.getKey();
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/Nameable.java b/src/main/java/org/bukkit/Nameable.java
+index fee814e01a653d2b53c56e8b566383ca44aa5346..2acdf2a6d3955923c721222b9da784f3278f6418 100644
+--- a/src/main/java/org/bukkit/Nameable.java
++++ b/src/main/java/org/bukkit/Nameable.java
+@@ -4,6 +4,30 @@ import org.jetbrains.annotations.Nullable;
+ 
+ public interface Nameable {
+ 
++    // Paper start
++    /**
++     * Gets the custom name.
++     *
++     * <p>This value has no effect on players, they will always use their real name.</p>
++     *
++     * @return the custom name
++     */
++    @Nullable net.kyori.adventure.text.Component customName();
++
++    /**
++     * Sets the custom name.
++     *
++     * <p>This name will be used in death messages and can be sent to the client as a nameplate over the mob.</p>
++     *
++     * <p>Setting the name to {@code null} will clear it.</p>
++     *
++     * <p>This value has no effect on players, they will always use their real name.</p>
++     *
++     * @param customName the custom name to set
++     */
++    void customName(final @Nullable net.kyori.adventure.text.Component customName);
++    // Paper end
++
+     /**
+      * Gets the custom name on a mob or block. If there is no name this method
+      * will return null.
+diff --git a/src/main/java/org/bukkit/NamespacedKey.java b/src/main/java/org/bukkit/NamespacedKey.java
+index 803fa0019869127ee8c7e4fb1777a59c43e66f8a..c65f0d6569c130b4920a9e71ad24af6427f1f030 100644
+--- a/src/main/java/org/bukkit/NamespacedKey.java
++++ b/src/main/java/org/bukkit/NamespacedKey.java
+@@ -19,7 +19,7 @@ import org.jetbrains.annotations.Nullable;
+  * underscores, hyphens, and forward slashes.
+  *
+  */
+-public final class NamespacedKey {
++public final class NamespacedKey implements net.kyori.adventure.key.Key { // Paper - implement Key
+ 
+     /**
+      * The namespace representing all inbuilt keys.
+@@ -212,4 +212,24 @@ public final class NamespacedKey {
+     public static NamespacedKey fromString(@NotNull String key) {
+         return fromString(key, null);
+     }
++
++    // Paper start
++    @NotNull
++    @Override
++    public String namespace() {
++        return this.getNamespace();
++    }
++
++    @NotNull
++    @Override
++    public String value() {
++        return this.getKey();
++    }
++
++    @NotNull
++    @Override
++    public String asString() {
++        return this.namespace + ':' + this.key;
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/Server.java b/src/main/java/org/bukkit/Server.java
+index 7f4d6d605934e47ec97b8ad7cca3c48460bc0082..ede5de4c310a93989608bf48b3e5116f380589dd 100644
+--- a/src/main/java/org/bukkit/Server.java
++++ b/src/main/java/org/bukkit/Server.java
+@@ -56,7 +56,7 @@ import org.jetbrains.annotations.Nullable;
+ /**
+  * Represents a server implementation.
+  */
+-public interface Server extends PluginMessageRecipient {
++public interface Server extends PluginMessageRecipient, net.kyori.adventure.audience.ForwardingAudience { // Paper
+ 
+     /**
+      * Returns the de facto plugins directory, generally used for storing plugin jars to be loaded,
+@@ -74,7 +74,7 @@ public interface Server extends PluginMessageRecipient {
+      * Used for all administrative messages, such as an operator using a
+      * command.
+      * <p>
+-     * For use in {@link #broadcast(java.lang.String, java.lang.String)}.
++     * For use in {@link #broadcast(net.kyori.adventure.text.Component, java.lang.String)}.
+      */
+     public static final String BROADCAST_CHANNEL_ADMINISTRATIVE = "bukkit.broadcast.admin";
+ 
+@@ -82,7 +82,7 @@ public interface Server extends PluginMessageRecipient {
+      * Used for all announcement messages, such as informing users that a
+      * player has joined.
+      * <p>
+-     * For use in {@link #broadcast(java.lang.String, java.lang.String)}.
++     * For use in {@link #broadcast(net.kyori.adventure.text.Component, java.lang.String)}.
+      */
+     public static final String BROADCAST_CHANNEL_USERS = "bukkit.broadcast.user";
+ 
+@@ -304,7 +304,9 @@ public interface Server extends PluginMessageRecipient {
+      *
+      * @param message the message
+      * @return the number of players
++     * @deprecated use {@link #broadcast(net.kyori.adventure.text.Component)}
+      */
++    @Deprecated // Paper
+     public int broadcastMessage(@NotNull String message);
+ 
+     /**
+@@ -856,8 +858,33 @@ public interface Server extends PluginMessageRecipient {
+      * @param permission the required permission {@link Permissible
+      *     permissibles} must have to receive the broadcast
+      * @return number of message recipients
++     * @deprecated in favour of {@link #broadcast(net.kyori.adventure.text.Component, String)}
+      */
++    @Deprecated // Paper
+     public int broadcast(@NotNull String message, @NotNull String permission);
++    // Paper start
++    /**
++     * Broadcast a message to all players.
++     * <p>
++     * This is the same as calling {@link #broadcast(net.kyori.adventure.text.Component,
++     * java.lang.String)} with the {@link #BROADCAST_CHANNEL_USERS} permission.
++     *
++     * @param message the message
++     * @return the number of players
++     */
++    int broadcast(@NotNull net.kyori.adventure.text.Component message);
++
++    /**
++     * Broadcasts the specified message to every user with the given
++     * permission name.
++     *
++     * @param message message to broadcast
++     * @param permission the required permission {@link Permissible
++     *     permissibles} must have to receive the broadcast
++     * @return number of message recipients
++     */
++    int broadcast(@NotNull net.kyori.adventure.text.Component message, @NotNull String permission);
++    // Paper end
+ 
+     /**
+      * Gets the player by the given name, regardless if they are offline or
+@@ -1022,6 +1049,7 @@ public interface Server extends PluginMessageRecipient {
+     @NotNull
+     Inventory createInventory(@Nullable InventoryHolder owner, @NotNull InventoryType type);
+ 
++    // Paper start
+     /**
+      * Creates an empty inventory with the specified type and title. If the type
+      * is {@link InventoryType#CHEST}, the new inventory has a size of 27;
+@@ -1047,6 +1075,36 @@ public interface Server extends PluginMessageRecipient {
+      * @see InventoryType#isCreatable()
+      */
+     @NotNull
++    Inventory createInventory(@Nullable InventoryHolder owner, @NotNull InventoryType type, @NotNull net.kyori.adventure.text.Component title);
++    // Paper end
++
++    /**
++     * Creates an empty inventory with the specified type and title. If the type
++     * is {@link InventoryType#CHEST}, the new inventory has a size of 27;
++     * otherwise the new inventory has the normal size for its type.<br>
++     * It should be noted that some inventory types do not support titles and
++     * may not render with said titles on the Minecraft client.
++     * <br>
++     * {@link InventoryType#WORKBENCH} will not process crafting recipes if
++     * created with this method. Use
++     * {@link Player#openWorkbench(Location, boolean)} instead.
++     * <br>
++     * {@link InventoryType#ENCHANTING} will not process {@link ItemStack}s
++     * for possible enchanting results. Use
++     * {@link Player#openEnchanting(Location, boolean)} instead.
++     *
++     * @param owner The holder of the inventory; can be null if there's no holder.
++     * @param type The type of inventory to create.
++     * @param title The title of the inventory, to be displayed when it is viewed.
++     * @return The new inventory.
++     * @throws IllegalArgumentException if the {@link InventoryType} cannot be
++     * viewed.
++     * @deprecated in favour of {@link #createInventory(InventoryHolder, InventoryType, net.kyori.adventure.text.Component)}
++     *
++     * @see InventoryType#isCreatable()
++     */
++    @Deprecated // Paper
++    @NotNull
+     Inventory createInventory(@Nullable InventoryHolder owner, @NotNull InventoryType type, @NotNull String title);
+ 
+     /**
+@@ -1061,6 +1119,22 @@ public interface Server extends PluginMessageRecipient {
+     @NotNull
+     Inventory createInventory(@Nullable InventoryHolder owner, int size) throws IllegalArgumentException;
+ 
++    // Paper start
++    /**
++     * Creates an empty inventory of type {@link InventoryType#CHEST} with the
++     * specified size and title.
++     *
++     * @param owner the holder of the inventory, or null to indicate no holder
++     * @param size a multiple of 9 as the size of inventory to create
++     * @param title the title of the inventory, displayed when inventory is
++     *     viewed
++     * @return a new inventory
++     * @throws IllegalArgumentException if the size is not a multiple of 9
++     */
++    @NotNull
++    Inventory createInventory(@Nullable InventoryHolder owner, int size, @NotNull net.kyori.adventure.text.Component title) throws IllegalArgumentException;
++    // Paper end
++
+     /**
+      * Creates an empty inventory of type {@link InventoryType#CHEST} with the
+      * specified size and title.
+@@ -1071,10 +1145,13 @@ public interface Server extends PluginMessageRecipient {
+      *     viewed
+      * @return a new inventory
+      * @throws IllegalArgumentException if the size is not a multiple of 9
++     * @deprecated in favour of {@link #createInventory(InventoryHolder, int, net.kyori.adventure.text.Component)}
+      */
++    @Deprecated // Paper
+     @NotNull
+     Inventory createInventory(@Nullable InventoryHolder owner, int size, @NotNull String title) throws IllegalArgumentException;
+ 
++    // Paper start
+     /**
+      * Creates an empty merchant.
+      *
+@@ -1082,7 +1159,18 @@ public interface Server extends PluginMessageRecipient {
+      * when the merchant inventory is viewed
+      * @return a new merchant
+      */
++    @NotNull Merchant createMerchant(@Nullable net.kyori.adventure.text.Component title);
++    // Paper start
++    /**
++     * Creates an empty merchant.
++     *
++     * @param title the title of the corresponding merchant inventory, displayed
++     * when the merchant inventory is viewed
++     * @return a new merchant
++     * @deprecated in favour of {@link #createMerchant(net.kyori.adventure.text.Component)}
++     */
+     @NotNull
++    @Deprecated // Paper
+     Merchant createMerchant(@Nullable String title);
+ 
+     /**
+@@ -1146,20 +1234,41 @@ public interface Server extends PluginMessageRecipient {
+      */
+     boolean isPrimaryThread();
+ 
++    // Paper start
++    /**
++     * Gets the message that is displayed on the server list.
++     *
++     * @return the server's MOTD
++     */
++    @NotNull net.kyori.adventure.text.Component motd();
++    // Paper end
++
+     /**
+      * Gets the message that is displayed on the server list.
+      *
+      * @return the servers MOTD
++     * @deprecated in favour of {@link #motd()}
+      */
+     @NotNull
++    @Deprecated // Paper
+     String getMotd();
+ 
++    // Paper start
++    /**
++     * Gets the default message that is displayed when the server is stopped.
++     *
++     * @return the shutdown message
++     */
++    @Nullable net.kyori.adventure.text.Component shutdownMessage();
++    // Paper end
+     /**
+      * Gets the default message that is displayed when the server is stopped.
+      *
+      * @return the shutdown message
++     * @deprecated in favour of {@link #shutdownMessage()}
+      */
+     @Nullable
++    @Deprecated // Paper
+     String getShutdownMessage();
+ 
+     /**
+@@ -1536,7 +1645,9 @@ public interface Server extends PluginMessageRecipient {
+          * Sends the component to the player
+          *
+          * @param component the components to send
++         * @deprecated use {@link #broadcast(net.kyori.adventure.text.Component)}
+          */
++        @Deprecated // Paper
+         public void broadcast(@NotNull net.md_5.bungee.api.chat.BaseComponent component) {
+             throw new UnsupportedOperationException("Not supported yet.");
+         }
+@@ -1545,7 +1656,9 @@ public interface Server extends PluginMessageRecipient {
+          * Sends an array of components as a single message to the player
+          *
+          * @param components the components to send
++         * @deprecated use {@link #broadcast(net.kyori.adventure.text.Component)}
+          */
++        @Deprecated // Paper
+         public void broadcast(@NotNull net.md_5.bungee.api.chat.BaseComponent... components) {
+             throw new UnsupportedOperationException("Not supported yet.");
+         }
+diff --git a/src/main/java/org/bukkit/Sound.java b/src/main/java/org/bukkit/Sound.java
+index 77553fe2e7c1b6a4a9c566e663beffd85bdbd21d..c6d09a8bf2157d4c1c8c40fbb78ddcbbef8b762a 100644
+--- a/src/main/java/org/bukkit/Sound.java
++++ b/src/main/java/org/bukkit/Sound.java
+@@ -10,7 +10,7 @@ import org.jetbrains.annotations.NotNull;
+  * guarantee values will not be removed from this Enum. As such, you should not
+  * depend on the ordinal values of this class.
+  */
+-public enum Sound implements Keyed {
++public enum Sound implements Keyed, net.kyori.adventure.sound.Sound.Type { // Paper - implement Sound.Type
+ 
+     AMBIENT_BASALT_DELTAS_ADDITIONS("ambient.basalt_deltas.additions"),
+     AMBIENT_BASALT_DELTAS_LOOP("ambient.basalt_deltas.loop"),
+@@ -1227,4 +1227,12 @@ public enum Sound implements Keyed {
+     public NamespacedKey getKey() {
+         return key;
+     }
++
++    // Paper start
++    @NotNull
++    @Override
++    public net.kyori.adventure.key.@org.checkerframework.checker.nullness.qual.NonNull Key key() {
++        return this.key;
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/SoundCategory.java b/src/main/java/org/bukkit/SoundCategory.java
+index ac5e263d737973af077e3406a84a84baca4370db..2d91924b7f5ef16a91d40cdc1bfc3d68e0fda38d 100644
+--- a/src/main/java/org/bukkit/SoundCategory.java
++++ b/src/main/java/org/bukkit/SoundCategory.java
+@@ -3,7 +3,7 @@ package org.bukkit;
+ /**
+  * An Enum of categories for sounds.
+  */
+-public enum SoundCategory {
++public enum SoundCategory implements net.kyori.adventure.sound.Sound.Source.Provider { // Paper - implement Sound.Source.Provider
+ 
+     MASTER,
+     MUSIC,
+@@ -15,4 +15,22 @@ public enum SoundCategory {
+     PLAYERS,
+     AMBIENT,
+     VOICE;
++
++    // Paper start - implement Sound.Source.Provider
++    @Override
++    public net.kyori.adventure.sound.Sound.@org.jetbrains.annotations.NotNull Source soundSource() {
++        return switch (this) {
++            case MASTER -> net.kyori.adventure.sound.Sound.Source.MASTER;
++            case MUSIC -> net.kyori.adventure.sound.Sound.Source.MUSIC;
++            case RECORDS -> net.kyori.adventure.sound.Sound.Source.RECORD;
++            case WEATHER -> net.kyori.adventure.sound.Sound.Source.WEATHER;
++            case BLOCKS -> net.kyori.adventure.sound.Sound.Source.BLOCK;
++            case HOSTILE -> net.kyori.adventure.sound.Sound.Source.HOSTILE;
++            case NEUTRAL -> net.kyori.adventure.sound.Sound.Source.NEUTRAL;
++            case PLAYERS -> net.kyori.adventure.sound.Sound.Source.PLAYER;
++            case AMBIENT -> net.kyori.adventure.sound.Sound.Source.AMBIENT;
++            case VOICE -> net.kyori.adventure.sound.Sound.Source.VOICE;
++        };
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/UnsafeValues.java b/src/main/java/org/bukkit/UnsafeValues.java
+index 93345eaf4bd987490d32f9e60ab54140dbeda5c4..e9306f581b733b717efa932408cf9d74da4d911d 100644
+--- a/src/main/java/org/bukkit/UnsafeValues.java
++++ b/src/main/java/org/bukkit/UnsafeValues.java
+@@ -21,6 +21,14 @@ import org.bukkit.plugin.PluginDescriptionFile;
+  */
+ @Deprecated
+ public interface UnsafeValues {
++    // Paper start
++    net.kyori.adventure.text.flattener.ComponentFlattener componentFlattener();
++    net.kyori.adventure.text.serializer.plain.PlainComponentSerializer plainComponentSerializer();
++    net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer plainTextSerializer();
++    net.kyori.adventure.text.serializer.gson.GsonComponentSerializer gsonComponentSerializer();
++    net.kyori.adventure.text.serializer.gson.GsonComponentSerializer colorDownsamplingGsonComponentSerializer();
++    net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer legacyComponentSerializer();
++    // Paper end
+ 
+     void reportTimings(); // Paper
+     Material toLegacy(Material material);
+diff --git a/src/main/java/org/bukkit/Warning.java b/src/main/java/org/bukkit/Warning.java
+index efb97712cc9dc7c1e12a59f5b94e4f2ad7c6b7d8..3024468af4c073324e536c1cb26beffb1e09f3f4 100644
+--- a/src/main/java/org/bukkit/Warning.java
++++ b/src/main/java/org/bukkit/Warning.java
+@@ -67,6 +67,7 @@ public @interface Warning {
+          *     </ul>
+          */
+         public boolean printFor(@Nullable Warning warning) {
++            if (Boolean.getBoolean("paper.alwaysPrintWarningState")) return true; // Paper
+             if (this == DEFAULT) {
+                 return warning == null || warning.value();
+             }
+diff --git a/src/main/java/org/bukkit/World.java b/src/main/java/org/bukkit/World.java
+index 8ab8515c55ba5944469084b3b4f093cb9f9648fb..c58b1885662c6a234ffee75995051c9750c1a512 100644
+--- a/src/main/java/org/bukkit/World.java
++++ b/src/main/java/org/bukkit/World.java
+@@ -38,7 +38,7 @@ import org.jetbrains.annotations.Nullable;
+ /**
+  * Represents a world, which may contain entities, chunks and blocks
+  */
+-public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient, Metadatable {
++public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient, Metadatable, net.kyori.adventure.audience.ForwardingAudience { // Paper
+ 
+     /**
+      * Gets the {@link Block} at the given coordinates
+@@ -633,6 +633,14 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
+     @NotNull
+     public List<Player> getPlayers();
+ 
++    // Paper start
++    @NotNull
++    @Override
++    default Iterable<? extends net.kyori.adventure.audience.Audience> audiences() {
++        return this.getPlayers();
++    }
++    // Paper end
++
+     /**
+      * Returns a list of entities within a bounding box centered around a
+      * Location.
+diff --git a/src/main/java/org/bukkit/block/CommandBlock.java b/src/main/java/org/bukkit/block/CommandBlock.java
+index 372c0bd5a4d7800a11c24c95e39fe376a96232bf..73dce588d1f7a5048300073bf8c2b14d6da1e857 100644
+--- a/src/main/java/org/bukkit/block/CommandBlock.java
++++ b/src/main/java/org/bukkit/block/CommandBlock.java
+@@ -33,7 +33,9 @@ public interface CommandBlock extends TileState {
+      * by default is "@".
+      *
+      * @return Name of this CommandBlock.
++     * @deprecated in favour of {@link #name()}
+      */
++    @Deprecated // Paper
+     @NotNull
+     public String getName();
+ 
+@@ -43,6 +45,28 @@ public interface CommandBlock extends TileState {
+      * same as setting it to "@".
+      *
+      * @param name New name for this CommandBlock.
++     * @deprecated in favour of {@link #name(net.kyori.adventure.text.Component)}
+      */
++    @Deprecated // Paper
+     public void setName(@Nullable String name);
++
++    // Paper start
++    /**
++     * Gets the name of this CommandBlock.  The name is used with commands
++     * that this CommandBlock executes.  This name will never be null, and
++     * by default is a {@link net.kyori.adventure.text.TextComponent} containing {@code @}.
++     *
++     * @return Name of this CommandBlock.
++     */
++    public @NotNull net.kyori.adventure.text.Component name();
++
++    /**
++     * Sets the name of this CommandBlock.  The name is used with commands
++     * that this CommandBlock executes.  Setting the name to null is the
++     * same as setting it to a {@link net.kyori.adventure.text.TextComponent} containing {@code @}.
++     *
++     * @param name New name for this CommandBlock.
++     */
++    public void name(@Nullable net.kyori.adventure.text.Component name);
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/block/Sign.java b/src/main/java/org/bukkit/block/Sign.java
+index ab6b0ec328e94bf65a0dafd0403e5ee3b870296c..c8d37184d8e882a4084a1bfef85faa330588600b 100644
+--- a/src/main/java/org/bukkit/block/Sign.java
++++ b/src/main/java/org/bukkit/block/Sign.java
+@@ -7,13 +7,48 @@ import org.jetbrains.annotations.NotNull;
+  * Represents a captured state of either a SignPost or a WallSign.
+  */
+ public interface Sign extends TileState, Colorable {
++    // Paper start
++    /**
++     * Gets all the lines of text currently on this sign.
++     *
++     * @return Array of Strings containing each line of text
++     */
++    @NotNull
++    public java.util.List<net.kyori.adventure.text.Component> lines();
++
++    /**
++     * Gets the line of text at the specified index.
++     * <p>
++     * For example, getLine(0) will return the first line of text.
++     *
++     * @param index Line number to get the text from, starting at 0
++     * @throws IndexOutOfBoundsException Thrown when the line does not exist
++     * @return Text on the given line
++     */
++    @NotNull
++    public net.kyori.adventure.text.Component line(int index) throws IndexOutOfBoundsException;
++
++    /**
++     * Sets the line of text at the specified index.
++     * <p>
++     * For example, setLine(0, "Line One") will set the first line of text to
++     * "Line One".
++     *
++     * @param index Line number to set the text at, starting from 0
++     * @param line New text to set at the specified index
++     * @throws IndexOutOfBoundsException If the index is out of the range 0..3
++     */
++    public void line(int index, @NotNull net.kyori.adventure.text.Component line) throws IndexOutOfBoundsException;
++    // Paper end
+ 
+     /**
+      * Gets all the lines of text currently on this sign.
+      *
+      * @return Array of Strings containing each line of text
++     * @deprecated in favour of {@link #lines()}
+      */
+     @NotNull
++    @Deprecated // Paper
+     public String[] getLines();
+ 
+     /**
+@@ -24,8 +59,10 @@ public interface Sign extends TileState, Colorable {
+      * @param index Line number to get the text from, starting at 0
+      * @return Text on the given line
+      * @throws IndexOutOfBoundsException Thrown when the line does not exist
++     * @deprecated in favour of {@link #line(int)}
+      */
+     @NotNull
++    @Deprecated // Paper
+     public String getLine(int index) throws IndexOutOfBoundsException;
+ 
+     /**
+@@ -37,7 +74,9 @@ public interface Sign extends TileState, Colorable {
+      * @param index Line number to set the text at, starting from 0
+      * @param line New text to set at the specified index
+      * @throws IndexOutOfBoundsException If the index is out of the range 0..3
++     * @deprecated in favour of {@link #line(int, net.kyori.adventure.text.Component)}
+      */
++    @Deprecated // Paper
+     public void setLine(int index, @NotNull String line) throws IndexOutOfBoundsException;
+ 
+     /**
+diff --git a/src/main/java/org/bukkit/command/Command.java b/src/main/java/org/bukkit/command/Command.java
+index 03bdc1622791e1206406c87065978688d602e39e..c4dcafac892169a7bfcc065701fffb43c6cfdf44 100644
+--- a/src/main/java/org/bukkit/command/Command.java
++++ b/src/main/java/org/bukkit/command/Command.java
+@@ -32,7 +32,7 @@ public abstract class Command {
+     protected String description;
+     protected String usageMessage;
+     private String permission;
+-    private String permissionMessage;
++    private net.kyori.adventure.text.Component permissionMessage; // Paper
+     public co.aikar.timings.Timing timings; // Paper
+     @NotNull public String getTimingName() {return getName();} // Paper
+ 
+@@ -186,10 +186,10 @@ public abstract class Command {
+ 
+         if (permissionMessage == null) {
+             target.sendMessage(ChatColor.RED + "I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is a mistake.");
+-        } else if (permissionMessage.length() != 0) {
+-            for (String line : permissionMessage.replace("<permission>", permission).split("\n")) {
+-                target.sendMessage(line);
+-            }
++            // Paper start - use components for permissionMessage
++        } else if (!permissionMessage.equals(net.kyori.adventure.text.Component.empty())) {
++            target.sendMessage(permissionMessage.replaceText(net.kyori.adventure.text.TextReplacementConfig.builder().matchLiteral("<permission>").replacement(permission).build()));
++            // Paper end
+         }
+ 
+         return false;
+@@ -316,10 +316,12 @@ public abstract class Command {
+      * command
+      *
+      * @return Permission check failed message
++     * @deprecated use {@link #permissionMessage()}
+      */
+     @Nullable
++    @Deprecated // Paper
+     public String getPermissionMessage() {
+-        return permissionMessage;
++        return io.papermc.paper.text.PaperComponents.legacySectionSerializer().serializeOrNull(permissionMessage); // Paper
+     }
+ 
+     /**
+@@ -380,10 +382,12 @@ public abstract class Command {
+      * @param permissionMessage new permission message, null to indicate
+      *     default message, or an empty string to indicate no message
+      * @return this command object, for chaining
++     * @deprecated use {@link #permissionMessage(net.kyori.adventure.text.Component)}
+      */
+     @NotNull
++    @Deprecated // Paper
+     public Command setPermissionMessage(@Nullable String permissionMessage) {
+-        this.permissionMessage = permissionMessage;
++        this.permissionMessage = io.papermc.paper.text.PaperComponents.legacySectionSerializer().deserializeOrNull(permissionMessage); // Paper
+         return this;
+     }
+ 
+@@ -398,6 +402,25 @@ public abstract class Command {
+         this.usageMessage = (usage == null) ? "" : usage;
+         return this;
+     }
++    // Paper start
++    /**
++     * Gets the permission message.
++     *
++     * @return the permission message
++     */
++    public @Nullable net.kyori.adventure.text.Component permissionMessage() {
++        return this.permissionMessage;
++    }
++
++    /**
++     * Sets the permission message.
++     *
++     * @param permissionMessage the permission message
++     */
++    public void permissionMessage(@Nullable net.kyori.adventure.text.Component permissionMessage) {
++        this.permissionMessage = permissionMessage;
++    }
++    // Paper end
+ 
+     public static void broadcastCommandMessage(@NotNull CommandSender source, @NotNull String message) {
+         broadcastCommandMessage(source, message, true);
+diff --git a/src/main/java/org/bukkit/command/CommandSender.java b/src/main/java/org/bukkit/command/CommandSender.java
+index 284be63a125624a8ae43d2c164aede810ce6bfe5..f98d46fa45bb7c842d791b09f082a0968ae537fb 100644
+--- a/src/main/java/org/bukkit/command/CommandSender.java
++++ b/src/main/java/org/bukkit/command/CommandSender.java
+@@ -6,12 +6,13 @@ import org.bukkit.permissions.Permissible;
+ import org.jetbrains.annotations.NotNull;
+ import org.jetbrains.annotations.Nullable;
+ 
+-public interface CommandSender extends Permissible {
++public interface CommandSender extends net.kyori.adventure.audience.Audience, Permissible { // Paper
+ 
+     /**
+      * Sends this sender a message
+      *
+      * @param message Message to be displayed
++     * @see #sendMessage(net.kyori.adventure.text.Component)
+      */
+     public void sendMessage(@NotNull String message);
+ 
+@@ -19,6 +20,7 @@ public interface CommandSender extends Permissible {
+      * Sends this sender multiple messages
+      *
+      * @param messages An array of messages to be displayed
++     * @see #sendMessage(net.kyori.adventure.text.Component)
+      */
+     public void sendMessage(@NotNull String... messages);
+ 
+@@ -27,6 +29,7 @@ public interface CommandSender extends Permissible {
+      *
+      * @param message Message to be displayed
+      * @param sender The sender of this message
++     * @see #sendMessage(net.kyori.adventure.identity.Identified, net.kyori.adventure.text.Component)
+      */
+     public void sendMessage(@Nullable UUID sender, @NotNull String message);
+ 
+@@ -35,6 +38,7 @@ public interface CommandSender extends Permissible {
+      *
+      * @param messages An array of messages to be displayed
+      * @param sender The sender of this message
++     * @see #sendMessage(net.kyori.adventure.identity.Identified, net.kyori.adventure.text.Component)
+      */
+     public void sendMessage(@Nullable UUID sender, @NotNull String... messages);
+ 
+@@ -61,7 +65,9 @@ public interface CommandSender extends Permissible {
+          * Sends this sender a chat component.
+          *
+          * @param component the components to send
++         * @deprecated use {@code sendMessage} methods that accept {@link net.kyori.adventure.text.Component}
+          */
++        @Deprecated // Paper
+         public void sendMessage(@NotNull net.md_5.bungee.api.chat.BaseComponent component) {
+             throw new UnsupportedOperationException("Not supported yet.");
+         }
+@@ -70,7 +76,9 @@ public interface CommandSender extends Permissible {
+          * Sends an array of components as a single message to the sender.
+          *
+          * @param components the components to send
++         * @deprecated use {@code sendMessage} methods that accept {@link net.kyori.adventure.text.Component}
+          */
++        @Deprecated // Paper
+         public void sendMessage(@NotNull net.md_5.bungee.api.chat.BaseComponent... components) {
+             throw new UnsupportedOperationException("Not supported yet.");
+         }
+@@ -80,7 +88,9 @@ public interface CommandSender extends Permissible {
+          *
+          * @param component the components to send
+          * @param sender the sender of the message
++         * @deprecated use {@code sendMessage} methods that accept {@link net.kyori.adventure.text.Component}
+          */
++        @Deprecated // Paper
+         public void sendMessage(@Nullable UUID sender, @NotNull net.md_5.bungee.api.chat.BaseComponent component) {
+             throw new UnsupportedOperationException("Not supported yet.");
+         }
+@@ -90,7 +100,9 @@ public interface CommandSender extends Permissible {
+          *
+          * @param components the components to send
+          * @param sender the sender of the message
++         * @deprecated use {@code sendMessage} methods that accept {@link net.kyori.adventure.text.Component}
+          */
++        @Deprecated // Paper
+         public void sendMessage(@Nullable UUID sender, @NotNull net.md_5.bungee.api.chat.BaseComponent... components) {
+             throw new UnsupportedOperationException("Not supported yet.");
+         }
+@@ -99,4 +111,18 @@ public interface CommandSender extends Permissible {
+     @NotNull
+     Spigot spigot();
+     // Spigot end
++
++    // Paper start
++    /**
++     * Gets the name of this command sender
++     *
++     * @return Name of the sender
++     */
++    public @NotNull net.kyori.adventure.text.Component name();
++
++    @Override
++    default void sendMessage(final @NotNull net.kyori.adventure.identity.Identity identity, final @NotNull net.kyori.adventure.text.Component message, final @NotNull net.kyori.adventure.audience.MessageType type) {
++        this.sendMessage(org.bukkit.Bukkit.getUnsafe().legacyComponentSerializer().serialize(message));
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/command/MessageCommandSender.java b/src/main/java/org/bukkit/command/MessageCommandSender.java
+index a7ef1f51c2b96617a32e6e7b1723e8770ba8a6a8..68daa56546d00089d7d6c13ee897d828c377bbc3 100644
+--- a/src/main/java/org/bukkit/command/MessageCommandSender.java
++++ b/src/main/java/org/bukkit/command/MessageCommandSender.java
+@@ -49,6 +49,12 @@ public interface MessageCommandSender extends CommandSender {
+     default String getName() {
+         throw new NotImplementedException();
+     }
++    // Paper start
++    @Override
++    default net.kyori.adventure.text.@org.jetbrains.annotations.NotNull Component name() {
++        throw new NotImplementedException();
++    }
++    // Paper end
+ 
+     @Override
+     default boolean isOp() {
+diff --git a/src/main/java/org/bukkit/command/PluginCommandYamlParser.java b/src/main/java/org/bukkit/command/PluginCommandYamlParser.java
+index a542c4bb3c973bbe4b976642feccde6a4d90cb7b..614cba22c0997dbb45576f800675db4053a9831c 100644
+--- a/src/main/java/org/bukkit/command/PluginCommandYamlParser.java
++++ b/src/main/java/org/bukkit/command/PluginCommandYamlParser.java
+@@ -67,7 +67,7 @@ public class PluginCommandYamlParser {
+             }
+ 
+             if (permissionMessage != null) {
+-                newCmd.setPermissionMessage(permissionMessage.toString());
++                newCmd.permissionMessage(io.papermc.paper.text.PaperComponents.legacySectionSerializer().deserialize(permissionMessage.toString())); // Paper
+             }
+ 
+             pluginCmds.add(newCmd);
+diff --git a/src/main/java/org/bukkit/command/ProxiedCommandSender.java b/src/main/java/org/bukkit/command/ProxiedCommandSender.java
+index fcc34b640265f4dccb46b9f09466ab8e1d96043e..74599b4ee0518481c0e3a5f6ab2f5302837f1ae3 100644
+--- a/src/main/java/org/bukkit/command/ProxiedCommandSender.java
++++ b/src/main/java/org/bukkit/command/ProxiedCommandSender.java
+@@ -3,7 +3,7 @@ package org.bukkit.command;
+ 
+ import org.jetbrains.annotations.NotNull;
+ 
+-public interface ProxiedCommandSender extends CommandSender {
++public interface ProxiedCommandSender extends CommandSender, net.kyori.adventure.audience.ForwardingAudience.Single { // Paper
+ 
+     /**
+      * Returns the CommandSender which triggered this proxied command
+@@ -21,4 +21,16 @@ public interface ProxiedCommandSender extends CommandSender {
+     @NotNull
+     CommandSender getCallee();
+ 
++    // Paper start
++    @Override
++    default void sendMessage(final @NotNull net.kyori.adventure.identity.Identity source, final @NotNull net.kyori.adventure.text.Component message, final @NotNull net.kyori.adventure.audience.MessageType type) {
++        net.kyori.adventure.audience.ForwardingAudience.Single.super.sendMessage(source, message, type);
++    }
++
++    @NotNull
++    @Override
++    default net.kyori.adventure.audience.Audience audience() {
++        return this.getCaller();
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/enchantments/Enchantment.java b/src/main/java/org/bukkit/enchantments/Enchantment.java
+index b833ef63fbe01271ceb2bd83a9eb4a84c9912761..8eb0497c81744874809ebc4bc2e28b128e66a926 100644
+--- a/src/main/java/org/bukkit/enchantments/Enchantment.java
++++ b/src/main/java/org/bukkit/enchantments/Enchantment.java
+@@ -294,6 +294,19 @@ public abstract class Enchantment implements Keyed {
+      * @return True if the enchantment may be applied, otherwise False
+      */
+     public abstract boolean canEnchantItem(@NotNull ItemStack item);
++    // Paper start
++    /**
++     * Get the name of the enchantment with its applied level.
++     * <p>
++     * If the given {@code level} is either less than the {@link #getStartLevel()} or greater than the {@link #getMaxLevel()},
++     * the level may not be shown in the numeral format one may otherwise expect.
++     * </p>
++     *
++     * @param level the level of the enchantment to show
++     * @return the name of the enchantment with {@code level} applied
++     */
++    public abstract @NotNull net.kyori.adventure.text.Component displayName(int level);
++    // Paper end
+ 
+     @Override
+     public boolean equals(Object obj) {
+diff --git a/src/main/java/org/bukkit/enchantments/EnchantmentWrapper.java b/src/main/java/org/bukkit/enchantments/EnchantmentWrapper.java
+index 9566e4306ada5e82dede0f002aa06da12c44996b..4d5f0837bd0e02a30c943d8969fb6b13452322e0 100644
+--- a/src/main/java/org/bukkit/enchantments/EnchantmentWrapper.java
++++ b/src/main/java/org/bukkit/enchantments/EnchantmentWrapper.java
+@@ -63,4 +63,11 @@ public class EnchantmentWrapper extends Enchantment {
+     public boolean conflictsWith(@NotNull Enchantment other) {
+         return getEnchantment().conflictsWith(other);
+     }
++    // Paper start
++    @NotNull
++    @Override
++    public net.kyori.adventure.text.Component displayName(int level) {
++        return getEnchantment().displayName(level);
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/entity/Entity.java b/src/main/java/org/bukkit/entity/Entity.java
+index 25a6f9313a1953def7470e411b53016f2ca14bef..10cb6088c4618f228c757f4e592b44edab81c2dc 100644
+--- a/src/main/java/org/bukkit/entity/Entity.java
++++ b/src/main/java/org/bukkit/entity/Entity.java
+@@ -25,7 +25,7 @@ import org.jetbrains.annotations.Nullable;
+ /**
+  * Represents a base entity in the world
+  */
+-public interface Entity extends Metadatable, CommandSender, Nameable, PersistentDataHolder {
++public interface Entity extends Metadatable, CommandSender, Nameable, PersistentDataHolder, net.kyori.adventure.text.event.HoverEventSource<net.kyori.adventure.text.event.HoverEvent.ShowEntity>, net.kyori.adventure.sound.Sound.Emitter { // Paper
+ 
+     /**
+      * Gets the entity's current position
+@@ -648,4 +648,20 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
+     @Override
+     Spigot spigot();
+     // Spigot end
++
++    // Paper start
++    /**
++     * Gets the entity's display name formatted with their team prefix/suffix and
++     * the entity's default hover/click events.
++     *
++     * @return the team display name
++     */
++    @NotNull net.kyori.adventure.text.Component teamDisplayName();
++
++    @NotNull
++    @Override
++    default net.kyori.adventure.text.event.HoverEvent<net.kyori.adventure.text.event.HoverEvent.ShowEntity> asHoverEvent(final @NotNull java.util.function.UnaryOperator<net.kyori.adventure.text.event.HoverEvent.ShowEntity> op) {
++        return net.kyori.adventure.text.event.HoverEvent.showEntity(op.apply(net.kyori.adventure.text.event.HoverEvent.ShowEntity.of(this.getType().getKey(), this.getUniqueId(), this.customName())));
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/entity/Player.java b/src/main/java/org/bukkit/entity/Player.java
+index c36e4ceb1094aa9469f976e0952e2725358ff761..e3cc40a54b48e8a90ccc93c272c1a2dca1da9595 100644
+--- a/src/main/java/org/bukkit/entity/Player.java
++++ b/src/main/java/org/bukkit/entity/Player.java
+@@ -35,7 +35,28 @@ import org.jetbrains.annotations.Nullable;
+ /**
+  * Represents a player, connected or not
+  */
+-public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginMessageRecipient {
++public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginMessageRecipient, net.kyori.adventure.identity.Identified { // Paper
++
++    // Paper start
++    @Override
++    default @NotNull net.kyori.adventure.identity.Identity identity() {
++        return net.kyori.adventure.identity.Identity.identity(this.getUniqueId());
++    }
++
++    /**
++     * Gets the "friendly" name to display of this player.
++     *
++     * @return the display name
++     */
++    @NotNull net.kyori.adventure.text.Component displayName();
++
++    /**
++     * Sets the "friendly" name to display of this player.
++     *
++     * @param displayName the display name to set
++     */
++    void displayName(final @Nullable net.kyori.adventure.text.Component displayName);
++    // Paper end
+ 
+     /**
+      * Gets the "friendly" name to display of this player. This may include
+@@ -45,7 +66,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+      * places defined by plugins.
+      *
+      * @return the friendly name
++     * @deprecated in favour of {@link #displayName()}
+      */
++    @Deprecated // Paper
+     @NotNull
+     public String getDisplayName();
+ 
+@@ -57,15 +80,50 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+      * places defined by plugins.
+      *
+      * @param name The new display name.
++     * @deprecated in favour of {@link #displayName(net.kyori.adventure.text.Component)}
+      */
++    @Deprecated // Paper
+     public void setDisplayName(@Nullable String name);
+ 
++    // Paper start
++    /**
++     * Sets the name that is shown on the in-game player list.
++     * <p>
++     * If the value is null, the name will be identical to {@link #getName()}.
++     *
++     * @param name new player list name
++     */
++    void playerListName(@Nullable net.kyori.adventure.text.Component name);
++
++    /**
++     * Gets the name that is shown on the in-game player list.
++     *
++     * @return the player list name
++     */
++    @NotNull net.kyori.adventure.text.Component playerListName();
++
++    /**
++     * Gets the currently displayed player list header for this player.
++     *
++     * @return player list header or null
++     */
++    @Nullable net.kyori.adventure.text.Component playerListHeader();
++
++    /**
++     * Gets the currently displayed player list footer for this player.
++     *
++     * @return player list footer or null
++     */
++    @Nullable net.kyori.adventure.text.Component playerListFooter();
++    // Paper end
+     /**
+      * Gets the name that is shown on the player list.
+      *
+      * @return the player list name
++     * @deprecated in favour of {@link #playerListName()}
+      */
+     @NotNull
++    @Deprecated // Paper
+     public String getPlayerListName();
+ 
+     /**
+@@ -74,14 +132,18 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+      * If the value is null, the name will be identical to {@link #getName()}.
+      *
+      * @param name new player list name
++     * @deprecated in favour of {@link #playerListName(net.kyori.adventure.text.Component)}
+      */
++    @Deprecated // Paper
+     public void setPlayerListName(@Nullable String name);
+ 
+     /**
+      * Gets the currently displayed player list header for this player.
+      *
+      * @return player list header or null
++     * @deprecated in favour of {@link #playerListHeader()}
+      */
++    @Deprecated // Paper
+     @Nullable
+     public String getPlayerListHeader();
+ 
+@@ -89,7 +151,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+      * Gets the currently displayed player list footer for this player.
+      *
+      * @return player list header or null
++     * @deprecated in favour of {@link #playerListFooter()}
+      */
++    @Deprecated // Paper
+     @Nullable
+     public String getPlayerListFooter();
+ 
+@@ -97,14 +161,18 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+      * Sets the currently displayed player list header for this player.
+      *
+      * @param header player list header, null for empty
++     * @deprecated in favour of {@link #sendPlayerListHeader(net.kyori.adventure.text.Component)}
+      */
++    @Deprecated // Paper
+     public void setPlayerListHeader(@Nullable String header);
+ 
+     /**
+      * Sets the currently displayed player list footer for this player.
+      *
+      * @param footer player list footer, null for empty
++     * @deprecated in favour of {@link #sendPlayerListFooter(net.kyori.adventure.text.Component)}
+      */
++    @Deprecated // Paper
+     public void setPlayerListFooter(@Nullable String footer);
+ 
+     /**
+@@ -113,7 +181,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+      *
+      * @param header player list header, null for empty
+      * @param footer player list footer, null for empty
++     * @deprecated in favour of {@link #sendPlayerListHeaderAndFooter(net.kyori.adventure.text.Component, net.kyori.adventure.text.Component)}
+      */
++    @Deprecated // Paper
+     public void setPlayerListHeaderFooter(@Nullable String header, @Nullable String footer);
+ 
+     /**
+@@ -151,9 +221,20 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+      * Kicks player with custom kick message.
+      *
+      * @param message kick message
++     * @deprecated in favour of {@link #kick(net.kyori.adventure.text.Component)}
+      */
++    @Deprecated // Paper
+     public void kickPlayer(@Nullable String message);
+ 
++    // Paper start
++    /**
++     * Kicks player with custom kick message.
++     *
++     * @param message kick message
++     */
++    void kick(final @Nullable net.kyori.adventure.text.Component message);
++    // Paper end
++
+     /**
+      * Says a message (or runs a command).
+      *
+@@ -473,6 +554,90 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+      */
+     public void sendEquipmentChange(@NotNull LivingEntity entity, @NotNull EquipmentSlot slot, @NotNull ItemStack item);
+ 
++    // Paper start
++    /**
++     * Send a sign change. This fakes a sign change packet for a user at
++     * a certain location. This will not actually change the world in any way.
++     * This method will use a sign at the location's block or a faked sign
++     * sent via
++     * {@link #sendBlockChange(org.bukkit.Location, org.bukkit.Material, byte)}.
++     * <p>
++     * If the client does not have a sign at the given location it will
++     * display an error message to the user.
++     *
++     * @param loc the location of the sign
++     * @param lines the new text on the sign or null to clear it
++     * @throws IllegalArgumentException if location is null
++     * @throws IllegalArgumentException if lines is non-null and has a length less than 4
++     */
++    default void sendSignChange(@NotNull Location loc, @Nullable java.util.List<net.kyori.adventure.text.Component> lines) throws IllegalArgumentException {
++        this.sendSignChange(loc, lines, DyeColor.BLACK);
++    }
++
++    /**
++     * Send a sign change. This fakes a sign change packet for a user at
++     * a certain location. This will not actually change the world in any way.
++     * This method will use a sign at the location's block or a faked sign
++     * sent via
++     * {@link #sendBlockChange(org.bukkit.Location, org.bukkit.Material, byte)}.
++     * <p>
++     * If the client does not have a sign at the given location it will
++     * display an error message to the user.
++     *
++     * @param loc the location of the sign
++     * @param lines the new text on the sign or null to clear it
++     * @param dyeColor the color of the sign
++     * @throws IllegalArgumentException if location is null
++     * @throws IllegalArgumentException if dyeColor is null
++     * @throws IllegalArgumentException if lines is non-null and has a length less than 4
++     */
++    default void sendSignChange(@NotNull Location loc, @Nullable java.util.List<net.kyori.adventure.text.Component> lines, @NotNull DyeColor dyeColor) throws IllegalArgumentException {
++        this.sendSignChange(loc, lines, dyeColor, false);
++    }
++
++    /**
++     * Send a sign change. This fakes a sign change packet for a user at
++     * a certain location. This will not actually change the world in any way.
++     * This method will use a sign at the location's block or a faked sign
++     * sent via
++     * {@link #sendBlockChange(org.bukkit.Location, org.bukkit.Material, byte)}.
++     * <p>
++     * If the client does not have a sign at the given location it will
++     * display an error message to the user.
++     *
++     * @param loc the location of the sign
++     * @param lines the new text on the sign or null to clear it
++     * @param hasGlowingText whether the text of the sign should glow as if dyed with a glowing ink sac
++     * @throws IllegalArgumentException if location is null
++     * @throws IllegalArgumentException if dyeColor is null
++     * @throws IllegalArgumentException if lines is non-null and has a length less than 4
++     */
++    default void sendSignChange(@NotNull Location loc, @Nullable java.util.List<net.kyori.adventure.text.Component> lines, boolean hasGlowingText) throws IllegalArgumentException {
++        this.sendSignChange(loc, lines, DyeColor.BLACK, hasGlowingText);
++    }
++
++    /**
++     * Send a sign change. This fakes a sign change packet for a user at
++     * a certain location. This will not actually change the world in any way.
++     * This method will use a sign at the location's block or a faked sign
++     * sent via
++     * {@link #sendBlockChange(org.bukkit.Location, org.bukkit.Material, byte)}.
++     * <p>
++     * If the client does not have a sign at the given location it will
++     * display an error message to the user.
++     *
++     * @param loc the location of the sign
++     * @param lines the new text on the sign or null to clear it
++     * @param dyeColor the color of the sign
++     * @param hasGlowingText whether the text of the sign should glow as if dyed with a glowing ink sac
++     * @throws IllegalArgumentException if location is null
++     * @throws IllegalArgumentException if dyeColor is null
++     * @throws IllegalArgumentException if lines is non-null and has a length less than 4
++     */
++    void sendSignChange(@NotNull Location loc, @Nullable java.util.List<net.kyori.adventure.text.Component> lines, @NotNull DyeColor dyeColor, boolean hasGlowingText)
++        throws IllegalArgumentException;
++    // Paper end
++
+     /**
+      * Send a sign change. This fakes a sign change packet for a user at
+      * a certain location. This will not actually change the world in any way.
+@@ -487,7 +652,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+      * @param lines the new text on the sign or null to clear it
+      * @throws IllegalArgumentException if location is null
+      * @throws IllegalArgumentException if lines is non-null and has a length less than 4
++     * @deprecated in favour of {@link #sendSignChange(org.bukkit.Location, java.util.List)}
+      */
++    @Deprecated // Paper
+     public void sendSignChange(@NotNull Location loc, @Nullable String[] lines) throws IllegalArgumentException;
+ 
+     /**
+@@ -506,7 +673,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+      * @throws IllegalArgumentException if location is null
+      * @throws IllegalArgumentException if dyeColor is null
+      * @throws IllegalArgumentException if lines is non-null and has a length less than 4
++     * @deprecated in favour of {@link #sendSignChange(org.bukkit.Location, java.util.List, org.bukkit.DyeColor)}
+      */
++    @Deprecated // Paper
+     public void sendSignChange(@NotNull Location loc, @Nullable String[] lines, @NotNull DyeColor dyeColor) throws IllegalArgumentException;
+ 
+     /**
+@@ -526,7 +695,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+      * @throws IllegalArgumentException if location is null
+      * @throws IllegalArgumentException if dyeColor is null
+      * @throws IllegalArgumentException if lines is non-null and has a length less than 4
++     * @deprecated Deprecated in favour of {@link #sendSignChange(Location, java.util.List, DyeColor, boolean)}
+      */
++    @Deprecated // Paper
+     public void sendSignChange(@NotNull Location loc, @Nullable String[] lines, @NotNull DyeColor dyeColor, boolean hasGlowingText) throws IllegalArgumentException;
+ 
+     /**
+@@ -1008,6 +1179,54 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+      */
+     public void setResourcePack(@NotNull String url, @Nullable byte[] hash, @Nullable String prompt);
+ 
++    // Paper start
++    /**
++     * Request that the player's client download and switch resource packs.
++     * <p>
++     * The player's client will download the new resource pack asynchronously
++     * in the background, and will automatically switch to it once the
++     * download is complete. If the client has downloaded and cached a
++     * resource pack with the same hash in the past it will not download but
++     * directly apply the cached pack. If the hash is null and the client has
++     * downloaded and cached the same resource pack in the past, it will
++     * perform a file size check against the response content to determine if
++     * the resource pack has changed and needs to be downloaded again. When
++     * this request is sent for the very first time from a given server, the
++     * client will first display a confirmation GUI to the player before
++     * proceeding with the download.
++     * <p>
++     * Notes:
++     * <ul>
++     * <li>Players can disable server resources on their client, in which
++     *     case this method will have no affect on them. Use the
++     *     {@link PlayerResourcePackStatusEvent} to figure out whether or not
++     *     the player loaded the pack!
++     * <li>There is no concept of resetting resource packs back to default
++     *     within Minecraft, so players will have to relog to do so or you
++     *     have to send an empty pack.
++     * <li>The request is sent with empty string as the hash when the hash is
++     *     not provided. This might result in newer versions not loading the
++     *     pack correctly.
++     * </ul>
++     *
++     * @param url The URL from which the client will download the resource
++     *     pack. The string must contain only US-ASCII characters and should
++     *     be encoded as per RFC 1738.
++     * @param hash The sha1 hash sum of the resource pack file which is used
++     *     to apply a cached version of the pack directly without downloading
++     *     if it is available. Hast to be 20 bytes long!
++     * @param prompt The optional custom prompt message to be shown to client.
++     * @throws IllegalArgumentException Thrown if the URL is null.
++     * @throws IllegalArgumentException Thrown if the URL is too long. The
++     *     length restriction is an implementation specific arbitrary value.
++     * @throws IllegalArgumentException Thrown if the hash is not 20 bytes
++     *     long.
++     */
++    default void setResourcePack(@NotNull String url, byte @Nullable [] hash, net.kyori.adventure.text.@Nullable Component prompt) {
++        this.setResourcePack(url, hash, prompt, false);
++    }
++    // Paper end
++
+     /**
+      * Request that the player's client download and switch resource packs.
+      * <p>
+@@ -1099,6 +1318,54 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+      */
+     public void setResourcePack(@NotNull String url, @Nullable byte[] hash, @Nullable String prompt, boolean force);
+ 
++    // Paper end
++    /**
++     * Request that the player's client download and switch resource packs.
++     * <p>
++     * The player's client will download the new resource pack asynchronously
++     * in the background, and will automatically switch to it once the
++     * download is complete. If the client has downloaded and cached a
++     * resource pack with the same hash in the past it will not download but
++     * directly apply the cached pack. If the hash is null and the client has
++     * downloaded and cached the same resource pack in the past, it will
++     * perform a file size check against the response content to determine if
++     * the resource pack has changed and needs to be downloaded again. When
++     * this request is sent for the very first time from a given server, the
++     * client will first display a confirmation GUI to the player before
++     * proceeding with the download.
++     * <p>
++     * Notes:
++     * <ul>
++     * <li>Players can disable server resources on their client, in which
++     *     case this method will have no affect on them. Use the
++     *     {@link PlayerResourcePackStatusEvent} to figure out whether or not
++     *     the player loaded the pack!
++     * <li>There is no concept of resetting resource packs back to default
++     *     within Minecraft, so players will have to relog to do so or you
++     *     have to send an empty pack.
++     * <li>The request is sent with empty string as the hash when the hash is
++     *     not provided. This might result in newer versions not loading the
++     *     pack correctly.
++     * </ul>
++     *
++     * @param url The URL from which the client will download the resource
++     *     pack. The string must contain only US-ASCII characters and should
++     *     be encoded as per RFC 1738.
++     * @param hash The sha1 hash sum of the resource pack file which is used
++     *     to apply a cached version of the pack directly without downloading
++     *     if it is available. Hast to be 20 bytes long!
++     * @param prompt The optional custom prompt message to be shown to client.
++     * @param force If true, the client will be disconnected from the server
++     *     when it declines to use the resource pack.
++     * @throws IllegalArgumentException Thrown if the URL is null.
++     * @throws IllegalArgumentException Thrown if the URL is too long. The
++     *     length restriction is an implementation specific arbitrary value.
++     * @throws IllegalArgumentException Thrown if the hash is not 20 bytes
++     *     long.
++     */
++    public void setResourcePack(@NotNull String url, byte @Nullable [] hash, net.kyori.adventure.text.@Nullable Component prompt, boolean force);
++    // Paper end
++
+     /**
+      * Gets the Scoreboard displayed to this player
+      *
+@@ -1192,7 +1459,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+      *
+      * @param title Title text
+      * @param subtitle Subtitle text
+-     * @deprecated API behavior subject to change
++     * @deprecated Use {@link #showTitle(net.kyori.adventure.title.Title)} or {@link #sendTitlePart(net.kyori.adventure.title.TitlePart, Object)}
+      */
+     @Deprecated
+     public void sendTitle(@Nullable String title, @Nullable String subtitle);
+@@ -1211,7 +1478,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+      * @param fadeIn time in ticks for titles to fade in. Defaults to 10.
+      * @param stay time in ticks for titles to stay. Defaults to 70.
+      * @param fadeOut time in ticks for titles to fade out. Defaults to 20.
++     * @deprecated Use {@link #showTitle(net.kyori.adventure.title.Title)} or {@link #sendTitlePart(net.kyori.adventure.title.TitlePart, Object)}
+      */
++    @Deprecated // Paper - Adventure
+     public void sendTitle(@Nullable String title, @Nullable String subtitle, int fadeIn, int stay, int fadeOut);
+ 
+     /**
+@@ -1438,6 +1707,14 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+      */
+     public int getClientViewDistance();
+ 
++    // Paper start
++    /**
++     * Gets the player's current locale.
++     *
++     * @return the player's locale
++     */
++    @NotNull java.util.Locale locale();
++    // Paper end
+     /**
+      * Gets the player's estimated ping in milliseconds.
+      *
+@@ -1463,8 +1740,10 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+      * they wish.
+      *
+      * @return the player's locale
++     * @deprecated in favour of {@link #locale()}
+      */
+     @NotNull
++    @Deprecated // Paper
+     public String getLocale();
+ 
+     /**
+@@ -1506,6 +1785,14 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+      */
+     public boolean isAllowingServerListings();
+ 
++    // Paper start
++    @NotNull
++    @Override
++    default net.kyori.adventure.text.event.HoverEvent<net.kyori.adventure.text.event.HoverEvent.ShowEntity> asHoverEvent(final @NotNull java.util.function.UnaryOperator<net.kyori.adventure.text.event.HoverEvent.ShowEntity> op) {
++        return net.kyori.adventure.text.event.HoverEvent.showEntity(op.apply(net.kyori.adventure.text.event.HoverEvent.ShowEntity.of(this.getType().getKey(), this.getUniqueId(), this.displayName())));
++    }
++    // Paper end
++
+     // Spigot start
+     public class Spigot extends Entity.Spigot {
+ 
+@@ -1560,11 +1847,13 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+             throw new UnsupportedOperationException("Not supported yet.");
+         }
+ 
++        @Deprecated // Paper
+         @Override
+         public void sendMessage(@NotNull net.md_5.bungee.api.chat.BaseComponent component) {
+             throw new UnsupportedOperationException("Not supported yet.");
+         }
+ 
++        @Deprecated // Paper
+         @Override
+         public void sendMessage(@NotNull net.md_5.bungee.api.chat.BaseComponent... components) {
+             throw new UnsupportedOperationException("Not supported yet.");
+@@ -1575,7 +1864,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+          *
+          * @param position the screen position
+          * @param component the components to send
++         * @deprecated use {@code sendMessage} methods that accept {@link net.kyori.adventure.text.Component}
+          */
++        @Deprecated // Paper
+         public void sendMessage(@NotNull net.md_5.bungee.api.ChatMessageType position, @NotNull net.md_5.bungee.api.chat.BaseComponent component) {
+             throw new UnsupportedOperationException("Not supported yet.");
+         }
+@@ -1585,7 +1876,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+          *
+          * @param position the screen position
+          * @param components the components to send
++         * @deprecated use {@code sendMessage} methods that accept {@link net.kyori.adventure.text.Component}
+          */
++        @Deprecated // Paper
+         public void sendMessage(@NotNull net.md_5.bungee.api.ChatMessageType position, @NotNull net.md_5.bungee.api.chat.BaseComponent... components) {
+             throw new UnsupportedOperationException("Not supported yet.");
+         }
+@@ -1596,7 +1889,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+          * @param position the screen position
+          * @param sender the sender of the message
+          * @param component the components to send
++         * @deprecated use {@code sendMessage} methods that accept {@link net.kyori.adventure.text.Component}
+          */
++        @Deprecated // Paper
+         public void sendMessage(@NotNull net.md_5.bungee.api.ChatMessageType position, @Nullable UUID sender, @NotNull net.md_5.bungee.api.chat.BaseComponent component) {
+             throw new UnsupportedOperationException("Not supported yet.");
+         }
+@@ -1607,7 +1902,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+          * @param position the screen position
+          * @param sender the sender of the message
+          * @param components the components to send
++         * @deprecated use {@code sendMessage} methods that accept {@link net.kyori.adventure.text.Component}
+          */
++        @Deprecated // Paper
+         public void sendMessage(@NotNull net.md_5.bungee.api.ChatMessageType position, @Nullable UUID sender, @NotNull net.md_5.bungee.api.chat.BaseComponent... components) {
+             throw new UnsupportedOperationException("Not supported yet.");
+ 
+diff --git a/src/main/java/org/bukkit/entity/minecart/CommandMinecart.java b/src/main/java/org/bukkit/entity/minecart/CommandMinecart.java
+index 63c80b4ee1f7adc8a9efc3b607993104b1991f90..91cab8b13d5bba34007f124838b32a1df58c5ac7 100644
+--- a/src/main/java/org/bukkit/entity/minecart/CommandMinecart.java
++++ b/src/main/java/org/bukkit/entity/minecart/CommandMinecart.java
+@@ -32,7 +32,9 @@ public interface CommandMinecart extends Minecart {
+      * same as setting it to "@".
+      *
+      * @param name New name for this CommandMinecart.
++     * @deprecated in favour of {@link #customName(net.kyori.adventure.text.Component)}
+      */
++    @Deprecated // Paper
+     public void setName(@Nullable String name);
+ 
+ }
+diff --git a/src/main/java/org/bukkit/event/block/SignChangeEvent.java b/src/main/java/org/bukkit/event/block/SignChangeEvent.java
+index 7190db11eff7d48df8a99f405a9dbaefdfa76e3d..1f79f704abf339150df08900b8ea7da4cefef258 100644
+--- a/src/main/java/org/bukkit/event/block/SignChangeEvent.java
++++ b/src/main/java/org/bukkit/event/block/SignChangeEvent.java
+@@ -16,12 +16,25 @@ public class SignChangeEvent extends BlockEvent implements Cancellable {
+     private static final HandlerList handlers = new HandlerList();
+     private boolean cancel = false;
+     private final Player player;
+-    private final String[] lines;
++    // Paper start
++    private final java.util.List<net.kyori.adventure.text.Component> adventure$lines;
+ 
++    public SignChangeEvent(@NotNull final Block theBlock, @NotNull final Player player, @NotNull final java.util.List<net.kyori.adventure.text.Component> adventure$lines) {
++        super(theBlock);
++        this.player = player;
++        this.adventure$lines = adventure$lines;
++    }
++
++    @Deprecated // Paper end
+     public SignChangeEvent(@NotNull final Block theBlock, @NotNull final Player thePlayer, @NotNull final String[] theLines) {
+         super(theBlock);
+         this.player = thePlayer;
+-        this.lines = theLines;
++        // Paper start
++        this.adventure$lines = new java.util.ArrayList<>();
++        for (String theLine : theLines) {
++            this.adventure$lines.add(org.bukkit.Bukkit.getUnsafe().legacyComponentSerializer().deserialize(theLine));
++        }
++        // Paper end
+     }
+ 
+     /**
+@@ -34,14 +47,52 @@ public class SignChangeEvent extends BlockEvent implements Cancellable {
+         return player;
+     }
+ 
++    // Paper start
++    /**
++     * Gets all of the lines of text from the sign involved in this event.
++     *
++     * @return the String array for the sign's lines new text
++     */
++    public @NotNull java.util.List<net.kyori.adventure.text.Component> lines() {
++        return this.adventure$lines;
++    }
++
++    /**
++     * Gets a single line of text from the sign involved in this event.
++     *
++     * @param index index of the line to get
++     * @return the String containing the line of text associated with the
++     *     provided index
++     * @throws IndexOutOfBoundsException thrown when the provided index is {@literal > 3
++     *     or < 0}
++     */
++    public @Nullable net.kyori.adventure.text.Component line(int index) throws IndexOutOfBoundsException {
++        return this.adventure$lines.get(index);
++    }
++
++    /**
++     * Sets a single line for the sign involved in this event
++     *
++     * @param index index of the line to set
++     * @param line text to set
++     * @throws IndexOutOfBoundsException thrown when the provided index is {@literal > 3
++     *     or < 0}
++     */
++    public void line(int index, @Nullable net.kyori.adventure.text.Component line) throws IndexOutOfBoundsException {
++        this.adventure$lines.set(index, line);
++    }
++    // Paper end
++
+     /**
+      * Gets all of the lines of text from the sign involved in this event.
+      *
+      * @return the String array for the sign's lines new text
++     * @deprecated in favour of {@link #lines()}
+      */
+     @NotNull
++    @Deprecated // Paper
+     public String[] getLines() {
+-        return lines;
++        return adventure$lines.stream().map(org.bukkit.Bukkit.getUnsafe().legacyComponentSerializer()::serialize).toArray(String[]::new); // Paper
+     }
+ 
+     /**
+@@ -52,10 +103,12 @@ public class SignChangeEvent extends BlockEvent implements Cancellable {
+      *     provided index
+      * @throws IndexOutOfBoundsException thrown when the provided index is {@literal > 3
+      *     or < 0}
++     * @deprecated in favour of {@link #line(int)}
+      */
+     @Nullable
++    @Deprecated // Paper
+     public String getLine(int index) throws IndexOutOfBoundsException {
+-        return lines[index];
++        return org.bukkit.Bukkit.getUnsafe().legacyComponentSerializer().serialize(this.adventure$lines.get(index)); // Paper
+     }
+ 
+     /**
+@@ -65,9 +118,11 @@ public class SignChangeEvent extends BlockEvent implements Cancellable {
+      * @param line text to set
+      * @throws IndexOutOfBoundsException thrown when the provided index is {@literal > 3
+      *     or < 0}
++     * @deprecated in favour of {@link #line(int, net.kyori.adventure.text.Component)}
+      */
++    @Deprecated // Paper
+     public void setLine(int index, @Nullable String line) throws IndexOutOfBoundsException {
+-        lines[index] = line;
++        adventure$lines.set(index, line != null ? org.bukkit.Bukkit.getUnsafe().legacyComponentSerializer().deserialize(line) : null); // Paper
+     }
+ 
+     @Override
+diff --git a/src/main/java/org/bukkit/event/entity/PlayerDeathEvent.java b/src/main/java/org/bukkit/event/entity/PlayerDeathEvent.java
+index 3c2ea8fec3a748cab7f5ad9100d12bd8213ec6c9..a01d4c21bedc7f1a54f5a330bb4c2909ce3a18e4 100644
+--- a/src/main/java/org/bukkit/event/entity/PlayerDeathEvent.java
++++ b/src/main/java/org/bukkit/event/entity/PlayerDeathEvent.java
+@@ -12,25 +12,48 @@ import org.jetbrains.annotations.Nullable;
+ public class PlayerDeathEvent extends EntityDeathEvent {
+     private int newExp = 0;
+     private String deathMessage = "";
++    private net.kyori.adventure.text.Component adventure$deathMessage; // Paper
+     private int newLevel = 0;
+     private int newTotalExp = 0;
+     private boolean keepLevel = false;
+     private boolean keepInventory = false;
++    // Paper start
++    public PlayerDeathEvent(@NotNull final Player player, @NotNull final List<ItemStack> drops, final int droppedExp, @Nullable final net.kyori.adventure.text.Component adventure$deathMessage) {
++        this(player, drops, droppedExp, 0, adventure$deathMessage, null);
++    }
++
++    public PlayerDeathEvent(@NotNull final Player player, @NotNull final List<ItemStack> drops, final int droppedExp, final int newExp, @Nullable final net.kyori.adventure.text.Component adventure$deathMessage, @Nullable String deathMessage) {
++        this(player, drops, droppedExp, newExp, 0, 0, adventure$deathMessage, deathMessage);
++    }
+ 
++    public PlayerDeathEvent(@NotNull final Player player, @NotNull final List<ItemStack> drops, final int droppedExp, final int newExp, final int newTotalExp, final int newLevel, @Nullable final net.kyori.adventure.text.Component adventure$deathMessage, @Nullable String deathMessage) {
++        super(player, drops, droppedExp);
++        this.newExp = newExp;
++        this.newTotalExp = newTotalExp;
++        this.newLevel = newLevel;
++        this.deathMessage = deathMessage;
++        this.adventure$deathMessage = adventure$deathMessage;
++    }
++    // Paper end
++
++    @Deprecated // Paper
+     public PlayerDeathEvent(@NotNull final Player player, @NotNull final List<ItemStack> drops, final int droppedExp, @Nullable final String deathMessage) {
+         this(player, drops, droppedExp, 0, deathMessage);
+     }
+ 
++    @Deprecated // Paper
+     public PlayerDeathEvent(@NotNull final Player player, @NotNull final List<ItemStack> drops, final int droppedExp, final int newExp, @Nullable final String deathMessage) {
+         this(player, drops, droppedExp, newExp, 0, 0, deathMessage);
+     }
+ 
++    @Deprecated // Paper
+     public PlayerDeathEvent(@NotNull final Player player, @NotNull final List<ItemStack> drops, final int droppedExp, final int newExp, final int newTotalExp, final int newLevel, @Nullable final String deathMessage) {
+         super(player, drops, droppedExp);
+         this.newExp = newExp;
+         this.newTotalExp = newTotalExp;
+         this.newLevel = newLevel;
+         this.deathMessage = deathMessage;
++        this.adventure$deathMessage = deathMessage != null ? org.bukkit.Bukkit.getUnsafe().legacyComponentSerializer().deserialize(deathMessage) : net.kyori.adventure.text.Component.empty(); // Paper
+     }
+ 
+     @NotNull
+@@ -39,25 +62,55 @@ public class PlayerDeathEvent extends EntityDeathEvent {
+         return (Player) entity;
+     }
+ 
++    // Paper start
++    /**
++     * Set the death message that will appear to everyone on the server.
++     *
++     * @param deathMessage Message to appear to other players on the server.
++     */
++    public void deathMessage(@Nullable net.kyori.adventure.text.Component deathMessage) {
++        this.deathMessage = null;
++        this.adventure$deathMessage = deathMessage;
++    }
++
++    /**
++     * Get the death message that will appear to everyone on the server.
++     *
++     * @return Message to appear to other players on the server.
++     */
++    public @Nullable net.kyori.adventure.text.Component deathMessage() {
++        return this.adventure$deathMessage;
++    }
++    // Paper end
++
+     /**
+      * Set the death message that will appear to everyone on the server.
+      *
+      * @param deathMessage Message to appear to other players on the server.
++     * @deprecated in favour of {@link #deathMessage(net.kyori.adventure.text.Component)}
+      */
++    @Deprecated // Paper
+     public void setDeathMessage(@Nullable String deathMessage) {
+         this.deathMessage = deathMessage;
++        this.adventure$deathMessage = deathMessage != null ? org.bukkit.Bukkit.getUnsafe().legacyComponentSerializer().deserialize(deathMessage) : net.kyori.adventure.text.Component.empty(); // Paper
+     }
+ 
+     /**
+      * Get the death message that will appear to everyone on the server.
+      *
+      * @return Message to appear to other players on the server.
++     * @deprecated in favour of {@link #deathMessage()}
+      */
+     @Nullable
++    @Deprecated // Paper
+     public String getDeathMessage() {
+-        return deathMessage;
++        return this.deathMessage != null ? this.deathMessage : (this.adventure$deathMessage != null ? getDeathMessageString(this.adventure$deathMessage) : null); // Paper
+     }
+-
++    // Paper start //TODO: add translation API to drop String deathMessage in favor of just Adventure
++    private static String getDeathMessageString(net.kyori.adventure.text.Component component) {
++        return org.bukkit.Bukkit.getUnsafe().legacyComponentSerializer().serialize(component);
++    }
++    // Paper end
+     /**
+      * Gets how much EXP the Player should have at respawn.
+      * <p>
+diff --git a/src/main/java/org/bukkit/event/inventory/InventoryType.java b/src/main/java/org/bukkit/event/inventory/InventoryType.java
+index 441362d2fbdc9413ed64a1f00b50fb6d06327e79..e1e7f45fd0f65d0874dd0698da436c7ac2e7951b 100644
+--- a/src/main/java/org/bukkit/event/inventory/InventoryType.java
++++ b/src/main/java/org/bukkit/event/inventory/InventoryType.java
+@@ -140,6 +140,18 @@ public enum InventoryType {
+     private final String title;
+     private final boolean isCreatable;
+ 
++    // Paper start
++    private final net.kyori.adventure.text.Component defaultTitleComponent;
++
++    /**
++     * Gets the inventory's default title.
++     *
++     * @return the inventory's default title
++     */
++    public @NotNull net.kyori.adventure.text.Component defaultTitle() {
++        return defaultTitleComponent;
++    }
++    // Paper end
+     private InventoryType(int defaultSize, /*@NotNull*/ String defaultTitle) {
+         this(defaultSize, defaultTitle, true);
+     }
+@@ -148,6 +160,7 @@ public enum InventoryType {
+         size = defaultSize;
+         title = defaultTitle;
+         this.isCreatable = isCreatable;
++        this.defaultTitleComponent = net.kyori.adventure.text.Component.text(defaultTitle); // Paper - Adventure
+     }
+ 
+     public int getDefaultSize() {
+@@ -155,6 +168,7 @@ public enum InventoryType {
+     }
+ 
+     @NotNull
++    @Deprecated // Paper
+     public String getDefaultTitle() {
+         return title;
+     }
+diff --git a/src/main/java/org/bukkit/event/player/AsyncPlayerChatEvent.java b/src/main/java/org/bukkit/event/player/AsyncPlayerChatEvent.java
+index 9c68c3f2d61500479f48b80264f625aaae2f3204..399afcd19fcb6acd24857ed6ab48cf0d105a01a3 100644
+--- a/src/main/java/org/bukkit/event/player/AsyncPlayerChatEvent.java
++++ b/src/main/java/org/bukkit/event/player/AsyncPlayerChatEvent.java
+@@ -22,7 +22,11 @@ import org.jetbrains.annotations.NotNull;
+  * <p>
+  * Care should be taken to check {@link #isAsynchronous()} and treat the event
+  * appropriately.
++ *
++ * @deprecated use {@link io.papermc.paper.event.player.AsyncChatEvent} instead
+  */
++@Deprecated // Paper
++@org.bukkit.Warning(value = false, reason = "Don't nag on old event yet") // Paper
+ public class AsyncPlayerChatEvent extends PlayerEvent implements Cancellable {
+     private static final HandlerList handlers = new HandlerList();
+     private boolean cancel = false;
+diff --git a/src/main/java/org/bukkit/event/player/AsyncPlayerPreLoginEvent.java b/src/main/java/org/bukkit/event/player/AsyncPlayerPreLoginEvent.java
+index 9866c07c999f46cb585709804aaad710c3031d5a..31f6f781a0403bf6388d668f0effaed5aae94468 100644
+--- a/src/main/java/org/bukkit/event/player/AsyncPlayerPreLoginEvent.java
++++ b/src/main/java/org/bukkit/event/player/AsyncPlayerPreLoginEvent.java
+@@ -14,7 +14,7 @@ import org.jetbrains.annotations.NotNull;
+ public class AsyncPlayerPreLoginEvent extends Event {
+     private static final HandlerList handlers = new HandlerList();
+     private Result result;
+-    private String message;
++    private net.kyori.adventure.text.Component message; // Paper
+     private final String name;
+     private final InetAddress ipAddress;
+     private final UUID uniqueId;
+@@ -27,7 +27,7 @@ public class AsyncPlayerPreLoginEvent extends Event {
+     public AsyncPlayerPreLoginEvent(@NotNull final String name, @NotNull final InetAddress ipAddress, @NotNull final UUID uniqueId) {
+         super(true);
+         this.result = Result.ALLOWED;
+-        this.message = "";
++        this.message = net.kyori.adventure.text.Component.empty(); // Paper
+         this.name = name;
+         this.ipAddress = ipAddress;
+         this.uniqueId = uniqueId;
+@@ -79,6 +79,7 @@ public class AsyncPlayerPreLoginEvent extends Event {
+         this.result = result == null ? null : Result.valueOf(result.name());
+     }
+ 
++    // Paper start
+     /**
+      * Gets the current kick message that will be used if getResult() !=
+      * Result.ALLOWED
+@@ -86,7 +87,7 @@ public class AsyncPlayerPreLoginEvent extends Event {
+      * @return Current kick message
+      */
+     @NotNull
+-    public String getKickMessage() {
++    public net.kyori.adventure.text.Component kickMessage() {
+         return message;
+     }
+ 
+@@ -95,16 +96,66 @@ public class AsyncPlayerPreLoginEvent extends Event {
+      *
+      * @param message New kick message
+      */
+-    public void setKickMessage(@NotNull final String message) {
++    public void kickMessage(@NotNull final net.kyori.adventure.text.Component message) {
++        this.message = message;
++    }
++
++    /**
++     * Disallows the player from logging in, with the given reason
++     *
++     * @param result New result for disallowing the player
++     * @param message Kick message to display to the user
++     */
++    public void disallow(@NotNull final Result result, @NotNull final net.kyori.adventure.text.Component message) {
++        this.result = result;
+         this.message = message;
+     }
+ 
++    /**
++     * Disallows the player from logging in, with the given reason
++     *
++     * @param result New result for disallowing the player
++     * @param message Kick message to display to the user
++     * @deprecated This method uses a deprecated enum from {@link
++     *     PlayerPreLoginEvent}
++     * @see #disallow(Result, String)
++     */
++    @Deprecated
++    public void disallow(@NotNull final PlayerPreLoginEvent.Result result, @NotNull final net.kyori.adventure.text.Component message) {
++        this.result = result == null ? null : Result.valueOf(result.name());
++        this.message = message;
++    }
++    // Paper end
++    /**
++     * Gets the current kick message that will be used if getResult() !=
++     * Result.ALLOWED
++     *
++     * @return Current kick message
++     * @deprecated in favour of {@link #kickMessage()}
++     */
++    @NotNull
++    @Deprecated // Paper
++    public String getKickMessage() {
++        return org.bukkit.Bukkit.getUnsafe().legacyComponentSerializer().serialize(this.message); // Paper
++    }
++
++    /**
++     * Sets the kick message to display if getResult() != Result.ALLOWED
++     *
++     * @param message New kick message
++     * @deprecated in favour of {@link #kickMessage(net.kyori.adventure.text.Component)}
++     */
++    @Deprecated // Paper
++    public void setKickMessage(@NotNull final String message) {
++        this.message = org.bukkit.Bukkit.getUnsafe().legacyComponentSerializer().deserialize(message); // Paper
++    }
++
+     /**
+      * Allows the player to log in
+      */
+     public void allow() {
+         result = Result.ALLOWED;
+-        message = "";
++        message = net.kyori.adventure.text.Component.empty(); // Paper
+     }
+ 
+     /**
+@@ -112,10 +163,12 @@ public class AsyncPlayerPreLoginEvent extends Event {
+      *
+      * @param result New result for disallowing the player
+      * @param message Kick message to display to the user
++     * @deprecated in favour of {@link #disallow(org.bukkit.event.player.AsyncPlayerPreLoginEvent.Result, net.kyori.adventure.text.Component)}
+      */
++    @Deprecated // Paper
+     public void disallow(@NotNull final Result result, @NotNull final String message) {
+         this.result = result;
+-        this.message = message;
++        this.message = org.bukkit.Bukkit.getUnsafe().legacyComponentSerializer().deserialize(message); // Paper
+     }
+ 
+     /**
+@@ -130,7 +183,7 @@ public class AsyncPlayerPreLoginEvent extends Event {
+     @Deprecated
+     public void disallow(@NotNull final PlayerPreLoginEvent.Result result, @NotNull final String message) {
+         this.result = result == null ? null : Result.valueOf(result.name());
+-        this.message = message;
++        this.message = org.bukkit.Bukkit.getUnsafe().legacyComponentSerializer().deserialize(message); // Paper
+     }
+ 
+     /**
+diff --git a/src/main/java/org/bukkit/event/player/PlayerChatEvent.java b/src/main/java/org/bukkit/event/player/PlayerChatEvent.java
+index 8ea56aac752544f798728b429e7152afbee497e4..213837794c603cb9f152f917941b912326a08030 100644
+--- a/src/main/java/org/bukkit/event/player/PlayerChatEvent.java
++++ b/src/main/java/org/bukkit/event/player/PlayerChatEvent.java
+@@ -18,6 +18,7 @@ import org.jetbrains.annotations.NotNull;
+  *     Listening to this event forces chat to wait for the main thread which
+  *     causes delays for chat. {@link AsyncPlayerChatEvent} is the encouraged
+  *     alternative for thread safe implementations.
++ * @deprecated use {@link io.papermc.paper.event.player.ChatEvent} instead
+  */
+ @Deprecated
+ @Warning(reason = "Listening to this event forces chat to wait for the main thread, delaying chat messages.")
+diff --git a/src/main/java/org/bukkit/event/player/PlayerEvent.java b/src/main/java/org/bukkit/event/player/PlayerEvent.java
+index 793b661b6d2d05de3d7f4fc26a4c018a2af58e62..f6d3b817de3001f04ea4554c7c39a1290af3fd6d 100644
+--- a/src/main/java/org/bukkit/event/player/PlayerEvent.java
++++ b/src/main/java/org/bukkit/event/player/PlayerEvent.java
+@@ -14,7 +14,7 @@ public abstract class PlayerEvent extends Event {
+         player = who;
+     }
+ 
+-    PlayerEvent(@NotNull final Player who, boolean async) {
++    public PlayerEvent(@NotNull final Player who, boolean async) { // Paper - public
+         super(async);
+         player = who;
+ 
+diff --git a/src/main/java/org/bukkit/event/player/PlayerJoinEvent.java b/src/main/java/org/bukkit/event/player/PlayerJoinEvent.java
+index d06684aba7688ce06777dbd837a46856a9d7767f..851a189d42e271679abc78f95049d8badf7a2b64 100644
+--- a/src/main/java/org/bukkit/event/player/PlayerJoinEvent.java
++++ b/src/main/java/org/bukkit/event/player/PlayerJoinEvent.java
+@@ -10,30 +10,60 @@ import org.jetbrains.annotations.Nullable;
+  */
+ public class PlayerJoinEvent extends PlayerEvent {
+     private static final HandlerList handlers = new HandlerList();
+-    private String joinMessage;
++    // Paper start
++    private net.kyori.adventure.text.Component joinMessage;
++    public PlayerJoinEvent(@NotNull final Player playerJoined, @Nullable final net.kyori.adventure.text.Component joinMessage) {
++        super(playerJoined);
++        this.joinMessage = joinMessage;
++    }
+ 
++    @Deprecated // Paper end
+     public PlayerJoinEvent(@NotNull final Player playerJoined, @Nullable final String joinMessage) {
+         super(playerJoined);
++        this.joinMessage = joinMessage != null ? org.bukkit.Bukkit.getUnsafe().legacyComponentSerializer().deserialize(joinMessage) : null; // Paper end
++    }
++
++    // Paper start
++    /**
++     * Gets the join message to send to all online players
++     *
++     * @return string join message. Can be null
++     */
++    public @Nullable net.kyori.adventure.text.Component joinMessage() {
++        return this.joinMessage;
++    }
++
++    /**
++     * Sets the join message to send to all online players
++     *
++     * @param joinMessage join message. If null, no message will be sent
++     */
++    public void joinMessage(@Nullable net.kyori.adventure.text.Component joinMessage) {
+         this.joinMessage = joinMessage;
+     }
++    // Paper end
+ 
+     /**
+      * Gets the join message to send to all online players
+      *
+      * @return string join message. Can be null
++     * @deprecated in favour of {@link #joinMessage()}
+      */
+     @Nullable
++    @Deprecated // Paper
+     public String getJoinMessage() {
+-        return joinMessage;
++        return this.joinMessage == null ? null : org.bukkit.Bukkit.getUnsafe().legacyComponentSerializer().serialize(this.joinMessage); // Paper
+     }
+ 
+     /**
+      * Sets the join message to send to all online players
+      *
+      * @param joinMessage join message. If null, no message will be sent
++     * @deprecated in favour of {@link #joinMessage(net.kyori.adventure.text.Component)}
+      */
++    @Deprecated // Paper
+     public void setJoinMessage(@Nullable String joinMessage) {
+-        this.joinMessage = joinMessage;
++        this.joinMessage = joinMessage != null ? org.bukkit.Bukkit.getUnsafe().legacyComponentSerializer().deserialize(joinMessage) : null; // Paper
+     }
+ 
+     @NotNull
+diff --git a/src/main/java/org/bukkit/event/player/PlayerKickEvent.java b/src/main/java/org/bukkit/event/player/PlayerKickEvent.java
+index 14c337f15fc804f52e52cb0a185aad38d89303a8..5c0efe74237dbe6803ce023fde99682ff70d1a92 100644
+--- a/src/main/java/org/bukkit/event/player/PlayerKickEvent.java
++++ b/src/main/java/org/bukkit/event/player/PlayerKickEvent.java
+@@ -10,35 +10,84 @@ import org.jetbrains.annotations.NotNull;
+  */
+ public class PlayerKickEvent extends PlayerEvent implements Cancellable {
+     private static final HandlerList handlers = new HandlerList();
+-    private String leaveMessage;
+-    private String kickReason;
++    private net.kyori.adventure.text.Component leaveMessage; // Paper
++    private net.kyori.adventure.text.Component kickReason; // Paper
+     private Boolean cancel;
+ 
++    @Deprecated // Paper
+     public PlayerKickEvent(@NotNull final Player playerKicked, @NotNull final String kickReason, @NotNull final String leaveMessage) {
++        super(playerKicked);
++        this.kickReason = org.bukkit.Bukkit.getUnsafe().legacyComponentSerializer().deserialize(kickReason); // Paper
++        this.leaveMessage = org.bukkit.Bukkit.getUnsafe().legacyComponentSerializer().deserialize(leaveMessage); // Paper
++        this.cancel = false;
++    }
++    // Paper start
++    public PlayerKickEvent(@NotNull final Player playerKicked, @NotNull final net.kyori.adventure.text.Component kickReason, @NotNull final net.kyori.adventure.text.Component leaveMessage) {
+         super(playerKicked);
+         this.kickReason = kickReason;
+         this.leaveMessage = leaveMessage;
+         this.cancel = false;
+     }
+ 
++    /**
++     * Gets the leave message send to all online players
++     *
++     * @return string kick reason
++     */
++    public @NotNull net.kyori.adventure.text.Component leaveMessage() {
++        return this.leaveMessage;
++    }
++
++    /**
++     * Sets the leave message send to all online players
++     *
++     * @param leaveMessage leave message
++     */
++    public void leaveMessage(@NotNull net.kyori.adventure.text.Component leaveMessage) {
++        this.leaveMessage = leaveMessage;
++    }
++
+     /**
+      * Gets the reason why the player is getting kicked
+      *
+      * @return string kick reason
+      */
++    public @NotNull net.kyori.adventure.text.Component reason() {
++        return this.kickReason;
++    }
++
++    /**
++     * Sets the reason why the player is getting kicked
++     *
++     * @param kickReason kick reason
++     */
++    public void reason(@NotNull net.kyori.adventure.text.Component kickReason) {
++        this.kickReason = kickReason;
++    }
++    // Paper end
++
++    /**
++     * Gets the reason why the player is getting kicked
++     *
++     * @return string kick reason
++     * @deprecated in favour of {@link #reason()}
++     */
+     @NotNull
++    @Deprecated // Paper
+     public String getReason() {
+-        return kickReason;
++        return org.bukkit.Bukkit.getUnsafe().legacyComponentSerializer().serialize(this.kickReason); // Paper
+     }
+ 
+     /**
+      * Gets the leave message send to all online players
+      *
+      * @return string kick reason
++     * @deprecated in favour of {@link #leaveMessage()}
+      */
+     @NotNull
++    @Deprecated // Paper
+     public String getLeaveMessage() {
+-        return leaveMessage;
++        return org.bukkit.Bukkit.getUnsafe().legacyComponentSerializer().serialize(this.leaveMessage); // Paper
+     }
+ 
+     @Override
+@@ -55,18 +104,22 @@ public class PlayerKickEvent extends PlayerEvent implements Cancellable {
+      * Sets the reason why the player is getting kicked
+      *
+      * @param kickReason kick reason
++     * @deprecated in favour of {@link #reason(net.kyori.adventure.text.Component)}
+      */
++    @Deprecated // Paper
+     public void setReason(@NotNull String kickReason) {
+-        this.kickReason = kickReason;
++        this.kickReason = org.bukkit.Bukkit.getUnsafe().legacyComponentSerializer().deserialize(kickReason); // Paper
+     }
+ 
+     /**
+      * Sets the leave message send to all online players
+      *
+      * @param leaveMessage leave message
++     * @deprecated in favour of {@link #leaveMessage(net.kyori.adventure.text.Component)}
+      */
++    @Deprecated // Paper
+     public void setLeaveMessage(@NotNull String leaveMessage) {
+-        this.leaveMessage = leaveMessage;
++        this.leaveMessage = org.bukkit.Bukkit.getUnsafe().legacyComponentSerializer().deserialize(leaveMessage); // Paper
+     }
+ 
+     @NotNull
+diff --git a/src/main/java/org/bukkit/event/player/PlayerLocaleChangeEvent.java b/src/main/java/org/bukkit/event/player/PlayerLocaleChangeEvent.java
+index 36b436e145a7215682b692a87ab894df25752c1d..ebd499c1a2d11ea068e8c374edbc3967e4cece3d 100644
+--- a/src/main/java/org/bukkit/event/player/PlayerLocaleChangeEvent.java
++++ b/src/main/java/org/bukkit/event/player/PlayerLocaleChangeEvent.java
+@@ -12,17 +12,31 @@ public class PlayerLocaleChangeEvent extends PlayerEvent {
+     private static final HandlerList handlers = new HandlerList();
+     //
+     private final String locale;
++    // Paper start
++    private final java.util.Locale adventure$locale;
++    /**
++     * @see Player#getLocale()
++     *
++     * @return the player's new locale
++     */
++    public @NotNull java.util.Locale locale() {
++        return this.adventure$locale;
++    }
++    // Paper end
+ 
+     public PlayerLocaleChangeEvent(@NotNull Player who, @NotNull String locale) {
+         super(who);
+         this.locale = locale;
++        this.adventure$locale = net.kyori.adventure.translation.Translator.parseLocale(locale); // Paper
+     }
+ 
+     /**
+      * @return the player's new locale
+      * @see Player#getLocale()
++     * @deprecated in favour of {@link #locale()}
+      */
+     @NotNull
++    @Deprecated // Paper
+     public String getLocale() {
+         return locale;
+     }
+diff --git a/src/main/java/org/bukkit/event/player/PlayerLoginEvent.java b/src/main/java/org/bukkit/event/player/PlayerLoginEvent.java
+index 084ca8cfcb7381bfa4fa6280748cf9b81210a9c1..75cc54739ef841cd90568d74927d6002d4cfa7e0 100644
+--- a/src/main/java/org/bukkit/event/player/PlayerLoginEvent.java
++++ b/src/main/java/org/bukkit/event/player/PlayerLoginEvent.java
+@@ -17,7 +17,7 @@ public class PlayerLoginEvent extends PlayerEvent {
+     private final InetAddress address;
+     private final String hostname;
+     private Result result = Result.ALLOWED;
+-    private String message = "";
++    private net.kyori.adventure.text.Component message = net.kyori.adventure.text.Component.empty();
+     private final InetAddress realAddress; // Spigot
+ 
+     /**
+@@ -53,12 +53,52 @@ public class PlayerLoginEvent extends PlayerEvent {
+      * @param result The result status for this event
+      * @param message The message to be displayed if result denies login
+      * @param realAddress the actual, unspoofed connecting address
++     * @deprecated in favour of {@link #PlayerLoginEvent(Player, String, InetAddress, Result, net.kyori.adventure.text.Component, InetAddress)}
+      */
++    @Deprecated // Paper
+     public PlayerLoginEvent(@NotNull final Player player, @NotNull String hostname, @NotNull final InetAddress address, @NotNull final Result result, @NotNull final String message, @NotNull final InetAddress realAddress) { // Spigot
+         this(player, hostname, address, realAddress); // Spigot
+         this.result = result;
++        this.message = org.bukkit.Bukkit.getUnsafe().legacyComponentSerializer().deserialize(message); // Paper
++    }
++
++    // Paper start
++    /**
++     * This constructor pre-configures the event with a result and message
++     *
++     * @param player The {@link Player} for this event
++     * @param hostname The hostname that was used to connect to the server
++     * @param address The address the player used to connect, provided for
++     *     timing issues
++     * @param result The result status for this event
++     * @param message The message to be displayed if result denies login
++     * @param realAddress the actual, unspoofed connecting address
++     */
++    public PlayerLoginEvent(@NotNull final Player player, @NotNull String hostname, @NotNull final InetAddress address, @NotNull final Result result, @NotNull final net.kyori.adventure.text.Component message, @NotNull final InetAddress realAddress) { // Spigot
++        this(player, hostname, address, realAddress); // Spigot
++        this.result = result;
++        this.message = message;
++    }
++
++    /**
++     * Gets the current kick message that will be used if getResult() !=
++     * Result.ALLOWED
++     *
++     * @return Current kick message
++     */
++    public @NotNull net.kyori.adventure.text.Component kickMessage() {
++        return this.message;
++    }
++
++    /**
++     * Sets the kick message to display if getResult() != Result.ALLOWED
++     *
++     * @param message New kick message
++     */
++    public void kickMessage(@NotNull net.kyori.adventure.text.Component message) {
+         this.message = message;
+     }
++    // Paper end
+ 
+     // Spigot start
+     /**
+@@ -96,19 +136,23 @@ public class PlayerLoginEvent extends PlayerEvent {
+      * Result.ALLOWED
+      *
+      * @return Current kick message
++     * @deprecated in favour of {@link #kickMessage()}
+      */
+     @NotNull
++    @Deprecated // Paper
+     public String getKickMessage() {
+-        return message;
++        return org.bukkit.Bukkit.getUnsafe().legacyComponentSerializer().serialize(this.message); // Paper
+     }
+ 
+     /**
+      * Sets the kick message to display if getResult() != Result.ALLOWED
+      *
+      * @param message New kick message
++     * @deprecated in favour of {@link #kickMessage(net.kyori.adventure.text.Component)}
+      */
++    @Deprecated // Paper
+     public void setKickMessage(@NotNull final String message) {
+-        this.message = message;
++        this.message = org.bukkit.Bukkit.getUnsafe().legacyComponentSerializer().deserialize(message); // Paper
+     }
+ 
+     /**
+@@ -127,7 +171,7 @@ public class PlayerLoginEvent extends PlayerEvent {
+      */
+     public void allow() {
+         result = Result.ALLOWED;
+-        message = "";
++        message = net.kyori.adventure.text.Component.empty(); // Paper
+     }
+ 
+     /**
+@@ -135,8 +179,21 @@ public class PlayerLoginEvent extends PlayerEvent {
+      *
+      * @param result New result for disallowing the player
+      * @param message Kick message to display to the user
++     * @deprecated in favour of {@link #disallow(Result, net.kyori.adventure.text.Component)}
+      */
++    @Deprecated // Paper start
+     public void disallow(@NotNull final Result result, @NotNull final String message) {
++        this.result = result;
++        this.message = org.bukkit.Bukkit.getUnsafe().legacyComponentSerializer().deserialize(message);
++    }
++    /**
++     * Disallows the player from logging in, with the given reason
++     *
++     * @param result New result for disallowing the player
++     * @param message Kick message to display to the user
++     */
++    public void disallow(@NotNull final Result result, @NotNull final net.kyori.adventure.text.Component message) {
++        // Paper end
+         this.result = result;
+         this.message = message;
+     }
+diff --git a/src/main/java/org/bukkit/event/player/PlayerPreLoginEvent.java b/src/main/java/org/bukkit/event/player/PlayerPreLoginEvent.java
+index fb066251f793ec3b41bfc075b9478901b15ee549..123979ed64939d615b061f91c19c630e1e1db8c7 100644
+--- a/src/main/java/org/bukkit/event/player/PlayerPreLoginEvent.java
++++ b/src/main/java/org/bukkit/event/player/PlayerPreLoginEvent.java
+@@ -19,7 +19,7 @@ import org.jetbrains.annotations.NotNull;
+ public class PlayerPreLoginEvent extends Event {
+     private static final HandlerList handlers = new HandlerList();
+     private Result result;
+-    private String message;
++    private net.kyori.adventure.text.Component message; // Paper
+     private final String name;
+     private final InetAddress ipAddress;
+     private final UUID uniqueId;
+@@ -31,7 +31,7 @@ public class PlayerPreLoginEvent extends Event {
+ 
+     public PlayerPreLoginEvent(@NotNull final String name, @NotNull final InetAddress ipAddress, @NotNull final UUID uniqueId) {
+         this.result = Result.ALLOWED;
+-        this.message = "";
++        this.message = net.kyori.adventure.text.Component.empty(); // Paper
+         this.name = name;
+         this.ipAddress = ipAddress;
+         this.uniqueId = uniqueId;
+@@ -56,6 +56,7 @@ public class PlayerPreLoginEvent extends Event {
+         this.result = result;
+     }
+ 
++    // Paper start
+     /**
+      * Gets the current kick message that will be used if getResult() !=
+      * Result.ALLOWED
+@@ -63,7 +64,7 @@ public class PlayerPreLoginEvent extends Event {
+      * @return Current kick message
+      */
+     @NotNull
+-    public String getKickMessage() {
++    public net.kyori.adventure.text.Component kickMessage() {
+         return message;
+     }
+ 
+@@ -72,16 +73,51 @@ public class PlayerPreLoginEvent extends Event {
+      *
+      * @param message New kick message
+      */
+-    public void setKickMessage(@NotNull final String message) {
++    public void kickMessage(@NotNull final net.kyori.adventure.text.Component message) {
+         this.message = message;
+     }
+ 
++    /**
++     * Disallows the player from logging in, with the given reason
++     *
++     * @param result New result for disallowing the player
++     * @param message Kick message to display to the user
++     */
++    public void disallow(@NotNull final Result result, @NotNull final net.kyori.adventure.text.Component message) {
++        this.result = result;
++        this.message = message;
++    }
++    // Paper end
++    /**
++     * Gets the current kick message that will be used if getResult() !=
++     * Result.ALLOWED
++     *
++     * @return Current kick message
++     * @deprecated in favour of {@link #kickMessage()}
++     */
++    @Deprecated // Paper
++    @NotNull
++    public String getKickMessage() {
++        return org.bukkit.Bukkit.getUnsafe().legacyComponentSerializer().serialize(this.message); // Paper
++    }
++
++    /**
++     * Sets the kick message to display if getResult() != Result.ALLOWED
++     *
++     * @param message New kick message
++     * @deprecated in favour of {@link #kickMessage(net.kyori.adventure.text.Component)}
++     */
++    @Deprecated // Paper
++    public void setKickMessage(@NotNull final String message) {
++        this.message = org.bukkit.Bukkit.getUnsafe().legacyComponentSerializer().deserialize(message); // Paper
++    }
++
+     /**
+      * Allows the player to log in
+      */
+     public void allow() {
+         result = Result.ALLOWED;
+-        message = "";
++        message = net.kyori.adventure.text.Component.empty(); // Paper
+     }
+ 
+     /**
+@@ -89,10 +125,12 @@ public class PlayerPreLoginEvent extends Event {
+      *
+      * @param result New result for disallowing the player
+      * @param message Kick message to display to the user
++     * @deprecated in favour of {@link #disallow(org.bukkit.event.player.PlayerPreLoginEvent.Result, net.kyori.adventure.text.Component)}
+      */
++    @Deprecated // Paper
+     public void disallow(@NotNull final Result result, @NotNull final String message) {
+         this.result = result;
+-        this.message = message;
++        this.message = org.bukkit.Bukkit.getUnsafe().legacyComponentSerializer().deserialize(message); // Paper
+     }
+ 
+     /**
+diff --git a/src/main/java/org/bukkit/event/player/PlayerQuitEvent.java b/src/main/java/org/bukkit/event/player/PlayerQuitEvent.java
+index d70c25f404e994766a9ebce89a917c8d0719777c..849e8f10dd77e9fb46aab17752b8f1ff79e9d42e 100644
+--- a/src/main/java/org/bukkit/event/player/PlayerQuitEvent.java
++++ b/src/main/java/org/bukkit/event/player/PlayerQuitEvent.java
+@@ -10,30 +10,59 @@ import org.jetbrains.annotations.Nullable;
+  */
+ public class PlayerQuitEvent extends PlayerEvent {
+     private static final HandlerList handlers = new HandlerList();
+-    private String quitMessage;
++    private net.kyori.adventure.text.Component quitMessage; // Paper
+ 
++    @Deprecated // Paper
+     public PlayerQuitEvent(@NotNull final Player who, @Nullable final String quitMessage) {
+         super(who);
++        this.quitMessage = quitMessage != null ? org.bukkit.Bukkit.getUnsafe().legacyComponentSerializer().deserialize(quitMessage) : null; // Paper
++    }
++    // Paper start
++    public PlayerQuitEvent(@NotNull final Player who, @Nullable final net.kyori.adventure.text.Component quitMessage) {
++        super(who);
++        this.quitMessage = quitMessage;
++    }
++
++    /**
++     * Gets the quit message to send to all online players
++     *
++     * @return string quit message
++     */
++    public @Nullable net.kyori.adventure.text.Component quitMessage() {
++        return quitMessage;
++    }
++
++    /**
++     * Sets the quit message to send to all online players
++     *
++     * @param quitMessage quit message
++     */
++    public void quitMessage(@Nullable net.kyori.adventure.text.Component quitMessage) {
+         this.quitMessage = quitMessage;
+     }
++    // Paper end
+ 
+     /**
+      * Gets the quit message to send to all online players
+      *
+      * @return string quit message
++     * @deprecated in favour of {@link #quitMessage()}
+      */
+     @Nullable
++    @Deprecated // Paper
+     public String getQuitMessage() {
+-        return quitMessage;
++        return this.quitMessage == null ? null : org.bukkit.Bukkit.getUnsafe().legacyComponentSerializer().serialize(this.quitMessage); // Paper
+     }
+ 
+     /**
+      * Sets the quit message to send to all online players
+      *
+      * @param quitMessage quit message
++     * @deprecated in favour of {@link #quitMessage(net.kyori.adventure.text.Component)}
+      */
++    @Deprecated // Paper
+     public void setQuitMessage(@Nullable String quitMessage) {
+-        this.quitMessage = quitMessage;
++        this.quitMessage = quitMessage != null ? org.bukkit.Bukkit.getUnsafe().legacyComponentSerializer().deserialize(quitMessage) : null; // Paper
+     }
+ 
+     @NotNull
+diff --git a/src/main/java/org/bukkit/event/server/BroadcastMessageEvent.java b/src/main/java/org/bukkit/event/server/BroadcastMessageEvent.java
+index 03bfca9d368bbe4b7c1353d52c883e756bf69bda..4f8c85222c7bd33217c7db0ff5f47bf397f8f3e5 100644
+--- a/src/main/java/org/bukkit/event/server/BroadcastMessageEvent.java
++++ b/src/main/java/org/bukkit/event/server/BroadcastMessageEvent.java
+@@ -18,7 +18,7 @@ import org.jetbrains.annotations.NotNull;
+ public class BroadcastMessageEvent extends ServerEvent implements Cancellable {
+ 
+     private static final HandlerList handlers = new HandlerList();
+-    private String message;
++    private net.kyori.adventure.text.Component message; // Paper
+     private final Set<CommandSender> recipients;
+     private boolean cancelled = false;
+ 
+@@ -27,29 +27,66 @@ public class BroadcastMessageEvent extends ServerEvent implements Cancellable {
+         this(false, message, recipients);
+     }
+ 
++    @Deprecated // Paper
+     public BroadcastMessageEvent(boolean isAsync, @NotNull String message, @NotNull Set<CommandSender> recipients) {
++        // Paper start
++        super(isAsync);
++        this.message = org.bukkit.Bukkit.getUnsafe().legacyComponentSerializer().deserialize(message);
++        this.recipients = recipients;
++    }
++
++    @Deprecated
++    public BroadcastMessageEvent(@NotNull net.kyori.adventure.text.Component message, @NotNull Set<CommandSender> recipients) {
++        this(false, message, recipients);
++    }
++
++    public BroadcastMessageEvent(boolean isAsync, @NotNull net.kyori.adventure.text.Component message, @NotNull Set<CommandSender> recipients) {
++        // Paper end
+         super(isAsync);
+         this.message = message;
+         this.recipients = recipients;
+     }
++    // Paper start
++    /**
++     * Get the broadcast message.
++     *
++     * @return Message to broadcast
++     */
++    public @NotNull net.kyori.adventure.text.Component message() {
++        return this.message;
++    }
++
++    /**
++     * Set the broadcast message.
++     *
++     * @param message New message to broadcast
++     */
++    public void message(@NotNull net.kyori.adventure.text.Component message) {
++        this.message = message;
++    }
++    // Paper end
+ 
+     /**
+      * Get the message to broadcast.
+      *
+      * @return Message to broadcast
++     * @deprecated in favour of {@link #message()}
+      */
+     @NotNull
++    @Deprecated // Paper
+     public String getMessage() {
+-        return message;
++        return org.bukkit.Bukkit.getUnsafe().legacyComponentSerializer().serialize(this.message); // Paper
+     }
+ 
+     /**
+      * Set the message to broadcast.
+      *
+      * @param message New message to broadcast
++     * @deprecated in favour of {@link #message(net.kyori.adventure.text.Component)}
+      */
++    @Deprecated // Paper
+     public void setMessage(@NotNull String message) {
+-        this.message = message;
++        this.message = org.bukkit.Bukkit.getUnsafe().legacyComponentSerializer().deserialize(message); // Paper
+     }
+ 
+     /**
+diff --git a/src/main/java/org/bukkit/event/server/ServerListPingEvent.java b/src/main/java/org/bukkit/event/server/ServerListPingEvent.java
+index cc5e2fef75736e56420df4cf4f83152fa97926df..fd4db14bef92b893ddaf5424e14ee71da22dcf84 100644
+--- a/src/main/java/org/bukkit/event/server/ServerListPingEvent.java
++++ b/src/main/java/org/bukkit/event/server/ServerListPingEvent.java
+@@ -21,15 +21,16 @@ public class ServerListPingEvent extends ServerEvent implements Iterable<Player>
+     private static final int MAGIC_PLAYER_COUNT = Integer.MIN_VALUE;
+     private static final HandlerList handlers = new HandlerList();
+     private final InetAddress address;
+-    private String motd;
++    private net.kyori.adventure.text.Component motd; // Paper
+     private final int numPlayers;
+     private int maxPlayers;
+ 
++    @Deprecated // Paper
+     public ServerListPingEvent(@NotNull final InetAddress address, @NotNull final String motd, final int numPlayers, final int maxPlayers) {
+         super(true);
+         Validate.isTrue(numPlayers >= 0, "Cannot have negative number of players online", numPlayers);
+         this.address = address;
+-        this.motd = motd;
++        this.motd = org.bukkit.Bukkit.getUnsafe().legacyComponentSerializer().deserialize(motd); // Paper
+         this.numPlayers = numPlayers;
+         this.maxPlayers = maxPlayers;
+     }
+@@ -42,14 +43,58 @@ public class ServerListPingEvent extends ServerEvent implements Iterable<Player>
+      * @param address the address of the pinger
+      * @param motd the message of the day
+      * @param maxPlayers the max number of players
++     * @deprecated in favour of {@link #ServerListPingEvent(java.net.InetAddress, net.kyori.adventure.text.Component, int)}
+      */
++    @Deprecated // Paper
+     protected ServerListPingEvent(@NotNull final InetAddress address, @NotNull final String motd, final int maxPlayers) {
++        super(true);
++        this.numPlayers = MAGIC_PLAYER_COUNT;
++        this.address = address;
++        this.motd = org.bukkit.Bukkit.getUnsafe().legacyComponentSerializer().deserialize(motd); // Paper
++        this.maxPlayers = maxPlayers;
++    }
++    // Paper start
++    public ServerListPingEvent(@NotNull final InetAddress address, @NotNull final net.kyori.adventure.text.Component motd, final int numPlayers, final int maxPlayers) {
++        super(true);
++        Validate.isTrue(numPlayers >= 0, "Cannot have negative number of players online", numPlayers);
++        this.address = address;
++        this.motd = motd;
++        this.numPlayers = numPlayers;
++        this.maxPlayers = maxPlayers;
++    }
++    /**
++     * This constructor is intended for implementations that provide the
++     * {@link #iterator()} method, thus provided the {@link #getNumPlayers()}
++     * count.
++     *
++     * @param address the address of the pinger
++     * @param motd the message of the day
++     * @param maxPlayers the max number of players
++     */
++    protected ServerListPingEvent(@NotNull final InetAddress address, @NotNull final net.kyori.adventure.text.Component motd, final int maxPlayers) {
+         super(true);
+         this.numPlayers = MAGIC_PLAYER_COUNT;
+         this.address = address;
+         this.motd = motd;
+         this.maxPlayers = maxPlayers;
+     }
++    /**
++     * Get the message of the day message.
++     *
++     * @return the message of the day
++     */
++    public @NotNull net.kyori.adventure.text.Component motd() {
++        return motd;
++    }
++    /**
++     * Change the message of the day message.
++     *
++     * @param motd the message of the day
++     */
++    public void motd(@NotNull net.kyori.adventure.text.Component motd) {
++        this.motd = motd;
++    }
++    // Paper end
+ 
+     /**
+      * Get the address the ping is coming from.
+@@ -65,19 +110,23 @@ public class ServerListPingEvent extends ServerEvent implements Iterable<Player>
+      * Get the message of the day message.
+      *
+      * @return the message of the day
++     * @deprecated in favour of {@link #motd()}
+      */
+     @NotNull
++    @Deprecated // Paper
+     public String getMotd() {
+-        return motd;
++        return org.bukkit.Bukkit.getUnsafe().legacyComponentSerializer().serialize(this.motd); // Paper
+     }
+ 
+     /**
+      * Change the message of the day message.
+      *
+      * @param motd the message of the day
++     * @deprecated in favour of {@link #motd(net.kyori.adventure.text.Component)}
+      */
++    @Deprecated // Paper
+     public void setMotd(@NotNull String motd) {
+-        this.motd = motd;
++        this.motd = org.bukkit.Bukkit.getUnsafe().legacyComponentSerializer().deserialize(motd); // Paper
+     }
+ 
+     /**
+diff --git a/src/main/java/org/bukkit/inventory/InventoryView.java b/src/main/java/org/bukkit/inventory/InventoryView.java
+index 14346d83bc99581b18e53d19af03708c0bf22cf7..664de64b020cf9090a2fbee0afe2bfaf150adc3c 100644
+--- a/src/main/java/org/bukkit/inventory/InventoryView.java
++++ b/src/main/java/org/bukkit/inventory/InventoryView.java
+@@ -446,11 +446,25 @@ public abstract class InventoryView {
+         return getPlayer().setWindowProperty(prop, value);
+     }
+ 
++    // Paper start
+     /**
+      * Get the title of this inventory window.
+      *
+      * @return The title.
+      */
+     @NotNull
++    public /*abstract*/ net.kyori.adventure.text.Component title() {
++        return org.bukkit.Bukkit.getUnsafe().legacyComponentSerializer().deserialize(this.getTitle());
++    }
++    // Paper end
++
++    /**
++     * Get the title of this inventory window.
++     *
++     * @return The title.
++     * @deprecated in favour of {@link #title()}
++     */
++    @Deprecated // Paper
++    @NotNull
+     public abstract String getTitle();
+ }
+diff --git a/src/main/java/org/bukkit/inventory/ItemFactory.java b/src/main/java/org/bukkit/inventory/ItemFactory.java
+index 4ff149fd98895dd8ba45939a37c223b1f8d7281f..6cc4bad2ecd19f44a680ff03cbfb99d48ea5c337 100644
+--- a/src/main/java/org/bukkit/inventory/ItemFactory.java
++++ b/src/main/java/org/bukkit/inventory/ItemFactory.java
+@@ -141,4 +141,24 @@ public interface ItemFactory {
+     @Deprecated
+     @NotNull
+     Material updateMaterial(@NotNull final ItemMeta meta, @NotNull final Material material) throws IllegalArgumentException;
++
++    // Paper start
++    /**
++     * Creates a hover event for the given item.
++     *
++     * @param item The item
++     * @return A hover event
++     */
++    @NotNull
++    net.kyori.adventure.text.event.HoverEvent<net.kyori.adventure.text.event.HoverEvent.ShowItem> asHoverEvent(final @NotNull ItemStack item, final @NotNull java.util.function.UnaryOperator<net.kyori.adventure.text.event.HoverEvent.ShowItem> op);
++
++    /**
++     * Get the formatted display name of the {@link ItemStack}.
++     *
++     * @param itemStack the {@link ItemStack}
++     * @return display name of the {@link ItemStack}
++     */
++    @NotNull
++    net.kyori.adventure.text.Component displayName(@NotNull ItemStack itemStack);
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/inventory/ItemStack.java b/src/main/java/org/bukkit/inventory/ItemStack.java
+index f70a6a22b85ff0da76e67e9b223ad4e0b020b5c4..a15abec467bac70116a6fc21a300d4930b909f15 100644
+--- a/src/main/java/org/bukkit/inventory/ItemStack.java
++++ b/src/main/java/org/bukkit/inventory/ItemStack.java
+@@ -22,7 +22,7 @@ import org.jetbrains.annotations.Nullable;
+  * use this class to encapsulate Materials for which {@link Material#isItem()}
+  * returns false.</b>
+  */
+-public class ItemStack implements Cloneable, ConfigurationSerializable {
++public class ItemStack implements Cloneable, ConfigurationSerializable, net.kyori.adventure.text.event.HoverEventSource<net.kyori.adventure.text.event.HoverEvent.ShowItem> { // Paper
+     private Material type = Material.AIR;
+     private int amount = 0;
+     private MaterialData data = null;
+@@ -595,4 +595,21 @@ public class ItemStack implements Cloneable, ConfigurationSerializable {
+ 
+         return true;
+     }
++
++    // Paper start
++    @NotNull
++    @Override
++    public net.kyori.adventure.text.event.HoverEvent<net.kyori.adventure.text.event.HoverEvent.ShowItem> asHoverEvent(final @NotNull java.util.function.UnaryOperator<net.kyori.adventure.text.event.HoverEvent.ShowItem> op) {
++        return org.bukkit.Bukkit.getServer().getItemFactory().asHoverEvent(this, op);
++    }
++
++    /**
++     * Get the formatted display name of the {@link ItemStack}.
++     *
++     * @return display name of the {@link ItemStack}
++     */
++    public @NotNull net.kyori.adventure.text.Component displayName() {
++        return Bukkit.getServer().getItemFactory().displayName(this);
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/inventory/meta/BookMeta.java b/src/main/java/org/bukkit/inventory/meta/BookMeta.java
+index 94852d50e88d0594b84b581cd627174043629995..4947251f347d83fa326a67735293401c10d87ba4 100644
+--- a/src/main/java/org/bukkit/inventory/meta/BookMeta.java
++++ b/src/main/java/org/bukkit/inventory/meta/BookMeta.java
+@@ -1,8 +1,12 @@
+ package org.bukkit.inventory.meta;
+ 
+ import java.util.List;
++
++import net.kyori.adventure.inventory.Book;
+ import net.md_5.bungee.api.chat.BaseComponent;
+ import org.bukkit.Material;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.common.returnsreceiver.qual.This;
+ import org.jetbrains.annotations.NotNull;
+ import org.jetbrains.annotations.Nullable;
+ 
+@@ -10,7 +14,7 @@ import org.jetbrains.annotations.Nullable;
+  * Represents a book ({@link Material#WRITABLE_BOOK} or {@link
+  * Material#WRITTEN_BOOK}) that can have a title, an author, and pages.
+  */
+-public interface BookMeta extends ItemMeta {
++public interface BookMeta extends ItemMeta, net.kyori.adventure.inventory.Book { // Paper
+ 
+     /**
+      * Represents the generation (or level of copying) of a written book
+@@ -119,6 +123,117 @@ public interface BookMeta extends ItemMeta {
+      */
+     boolean hasPages();
+ 
++    // Paper start
++    /**
++     * Gets the title of the book.
++     * <p>
++     * Plugins should check that hasTitle() returns true before calling this
++     * method.
++     *
++     * @return the title of the book
++     */
++    @Nullable
++    @Override
++    net.kyori.adventure.text.Component title();
++
++    /**
++     * Sets the title of the book.
++     * <p>
++     * Limited to 32 characters. Removes title when given null.
++     *
++     * @param title the title to set
++     * @return the same {@link BookMeta} instance
++     */
++    @NotNull
++    @Override
++    @This BookMeta title(@Nullable net.kyori.adventure.text.Component title);
++
++    /**
++     * Gets the author of the book.
++     * <p>
++     * Plugins should check that hasAuthor() returns true before calling this
++     * method.
++     *
++     * @return the author of the book
++     */
++    @Nullable
++    @Override
++    net.kyori.adventure.text.Component author();
++
++    /**
++     * Sets the author of the book. Removes author when given null.
++     *
++     * @param author the author to set
++     * @return the same {@link BookMeta} instance
++     */
++    @NotNull
++    @Override
++    @This BookMeta author(@Nullable net.kyori.adventure.text.Component author);
++    /**
++     * Gets the specified page in the book. The page must exist.
++     * <p>
++     * Pages are 1-indexed.
++     *
++     * @param page the page number to get, in range [1, getPageCount()]
++     * @return the page from the book
++     */
++    @NotNull net.kyori.adventure.text.Component page(int page);
++
++    /**
++     * Sets the specified page in the book. Pages of the book must be
++     * contiguous.
++     * <p>
++     * The data can be up to 256 characters in length, additional characters
++     * are truncated.
++     * <p>
++     * Pages are 1-indexed.
++     *
++     * @param page the page number to set, in range [1, getPageCount()]
++     * @param data the data to set for that page
++     */
++    void page(int page, @NotNull net.kyori.adventure.text.Component data);
++
++    /**
++     * Adds new pages to the end of the book. Up to a maximum of 50 pages with
++     * 256 characters per page.
++     *
++     * @param pages A list of strings, each being a page
++     */
++    void addPages(@NotNull net.kyori.adventure.text.Component... pages);
++
++    interface BookMetaBuilder extends Builder {
++
++        @NotNull
++        @Override
++        BookMetaBuilder title(@Nullable net.kyori.adventure.text.Component title);
++
++        @NotNull
++        @Override
++        BookMetaBuilder author(@Nullable net.kyori.adventure.text.Component author);
++
++        @NotNull
++        @Override
++        BookMetaBuilder addPage(@NotNull net.kyori.adventure.text.Component page);
++
++        @NotNull
++        @Override
++        BookMetaBuilder pages(@NotNull net.kyori.adventure.text.Component... pages);
++
++        @NotNull
++        @Override
++        BookMetaBuilder pages(@NotNull java.util.Collection<net.kyori.adventure.text.Component> pages);
++
++        @NotNull
++        @Override
++        BookMeta build();
++    }
++
++    @Override
++    @NonNull
++    BookMetaBuilder toBuilder();
++
++    // Paper end
++
+     /**
+      * Gets the specified page in the book. The given page must exist.
+      * <p>
+@@ -126,8 +241,10 @@ public interface BookMeta extends ItemMeta {
+      *
+      * @param page the page number to get, in range [1, getPageCount()]
+      * @return the page from the book
++     * @deprecated in favour of {@link #page(int)}
+      */
+     @NotNull
++    @Deprecated // Paper
+     String getPage(int page);
+ 
+     /**
+@@ -141,15 +258,19 @@ public interface BookMeta extends ItemMeta {
+      *
+      * @param page the page number to set, in range [1, getPageCount()]
+      * @param data the data to set for that page
++     * @deprecated in favour of {@link #page(int, net.kyori.adventure.text.Component)}
+      */
++    @Deprecated // Paper
+     void setPage(int page, @NotNull String data);
+ 
+     /**
+      * Gets all the pages in the book.
+      *
+      * @return list of all the pages in the book
++     * @deprecated in favour of {@link #pages()}
+      */
+     @NotNull
++    @Deprecated // Paper
+     List<String> getPages();
+ 
+     /**
+@@ -157,7 +278,9 @@ public interface BookMeta extends ItemMeta {
+      * pages. Maximum 100 pages with 256 characters per page.
+      *
+      * @param pages A list of pages to set the book to use
++     * @deprecated in favour of {@link #pages(List)}
+      */
++    @Deprecated // Paper
+     void setPages(@NotNull List<String> pages);
+ 
+     /**
+@@ -165,7 +288,9 @@ public interface BookMeta extends ItemMeta {
+      * pages. Maximum 50 pages with 256 characters per page.
+      *
+      * @param pages A list of strings, each being a page
++     * @deprecated in favour of {@link #pages(net.kyori.adventure.text.Component...)}
+      */
++    @Deprecated // Paper
+     void setPages(@NotNull String... pages);
+ 
+     /**
+@@ -173,7 +298,9 @@ public interface BookMeta extends ItemMeta {
+      * 256 characters per page.
+      *
+      * @param pages A list of strings, each being a page
++     * @deprecated in favour of {@link #addPages(net.kyori.adventure.text.Component...)}
+      */
++    @Deprecated // Paper
+     void addPage(@NotNull String... pages);
+ 
+     /**
+@@ -195,8 +322,10 @@ public interface BookMeta extends ItemMeta {
+          *
+          * @param page the page number to get
+          * @return the page from the book
++         * @deprecated in favour of {@link #page(int)}
+          */
+         @NotNull
++        @Deprecated // Paper
+         public BaseComponent[] getPage(int page) {
+             throw new UnsupportedOperationException("Not supported yet.");
+         }
+@@ -210,7 +339,9 @@ public interface BookMeta extends ItemMeta {
+          *
+          * @param page the page number to set
+          * @param data the data to set for that page
++         * @deprecated in favour of {@link #page(int, net.kyori.adventure.text.Component)}
+          */
++        @Deprecated // Paper
+         public void setPage(int page, @Nullable BaseComponent... data) {
+             throw new UnsupportedOperationException("Not supported yet.");
+         }
+@@ -219,8 +350,10 @@ public interface BookMeta extends ItemMeta {
+          * Gets all the pages in the book.
+          *
+          * @return list of all the pages in the book
++         * @deprecated in favour of {@link #pages()}
+          */
+         @NotNull
++        @Deprecated // Paper
+         public List<BaseComponent[]> getPages() {
+             throw new UnsupportedOperationException("Not supported yet.");
+         }
+@@ -230,7 +363,9 @@ public interface BookMeta extends ItemMeta {
+          * pages. Maximum 50 pages with 256 characters per page.
+          *
+          * @param pages A list of pages to set the book to use
++         * @deprecated in favour of {@link #pages(java.util.List)}
+          */
++        @Deprecated // Paper
+         public void setPages(@NotNull List<BaseComponent[]> pages) {
+             throw new UnsupportedOperationException("Not supported yet.");
+         }
+@@ -240,7 +375,9 @@ public interface BookMeta extends ItemMeta {
+          * pages. Maximum 50 pages with 256 characters per page.
+          *
+          * @param pages A list of component arrays, each being a page
++         * @deprecated in favour of {@link #pages(net.kyori.adventure.text.Component...)}
+          */
++        @Deprecated // Paper
+         public void setPages(@NotNull BaseComponent[]... pages) {
+             throw new UnsupportedOperationException("Not supported yet.");
+         }
+@@ -250,7 +387,9 @@ public interface BookMeta extends ItemMeta {
+          * with 256 characters per page.
+          *
+          * @param pages A list of component arrays, each being a page
++         * @deprecated in favour of {@link #addPages(net.kyori.adventure.text.Component...)}
+          */
++        @Deprecated // Paper
+         public void addPage(@NotNull BaseComponent[]... pages) {
+             throw new UnsupportedOperationException("Not supported yet.");
+         }
+diff --git a/src/main/java/org/bukkit/inventory/meta/ItemMeta.java b/src/main/java/org/bukkit/inventory/meta/ItemMeta.java
+index f2e9f2753ec92aa4a3e3f06ca6053bd70b9091d7..1c362636c56db0e6c118171ba367c43c4f7cff33 100644
+--- a/src/main/java/org/bukkit/inventory/meta/ItemMeta.java
++++ b/src/main/java/org/bukkit/inventory/meta/ItemMeta.java
+@@ -31,6 +31,24 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
+      */
+     boolean hasDisplayName();
+ 
++    // Paper start
++    /**
++     * Gets the display name.
++     *
++     * <p>Plugins should check that {@link #hasDisplayName()} returns <code>true</code> before calling this method.</p>
++     *
++     * @return the display name
++     */
++    @Nullable net.kyori.adventure.text.Component displayName();
++
++    /**
++     * Sets the display name.
++     *
++     * @param displayName the display name to set
++     */
++    void displayName(final @Nullable net.kyori.adventure.text.Component displayName);
++    // Paper end
++
+     /**
+      * Gets the display name that is set.
+      * <p>
+@@ -38,7 +56,9 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
+      * before calling this method.
+      *
+      * @return the display name that is set
++     * @deprecated in favour of {@link #displayName()}
+      */
++    @Deprecated // Paper
+     @NotNull
+     String getDisplayName();
+ 
+@@ -46,7 +66,9 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
+      * Sets the display name.
+      *
+      * @param name the name to set
++     * @deprecated in favour of {@link #displayName(net.kyori.adventure.text.Component)}
+      */
++    @Deprecated // Paper
+     void setDisplayName(@Nullable String name);
+ 
+     /**
+@@ -81,6 +103,24 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
+      */
+     boolean hasLore();
+ 
++    // Paper start
++    /**
++     * Gets the lore.
++     *
++     * <p>Plugins should check that {@link #hasLore()} returns <code>true</code> before calling this method.</p>
++     *
++     * @return the display name
++     */
++    @Nullable List<net.kyori.adventure.text.Component> lore();
++
++    /**
++     * Sets the lore.
++     *
++     * @param lore the lore to set
++     */
++    void lore(final @Nullable List<net.kyori.adventure.text.Component> lore);
++    // Paper end
++
+     /**
+      * Gets the lore that is set.
+      * <p>
+@@ -88,7 +128,9 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
+      * calling this method.
+      *
+      * @return a list of lore that is set
++     * @deprecated in favour of {@link #lore()}
+      */
++    @Deprecated // Paper
+     @Nullable
+     List<String> getLore();
+ 
+@@ -97,7 +139,9 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
+      * Removes lore when given null.
+      *
+      * @param lore the lore that will be set
++     * @deprecated in favour of {@link #lore(List)}
+      */
++    @Deprecated // Paper
+     void setLore(@Nullable List<String> lore);
+ 
+     /**
+diff --git a/src/main/java/org/bukkit/map/MapCursor.java b/src/main/java/org/bukkit/map/MapCursor.java
+index 83354b2a38b6261b172b91c1008dcf3313cc4a8f..ed0bc2024a0bb85837e25f75ae89d1fe257b2e60 100644
+--- a/src/main/java/org/bukkit/map/MapCursor.java
++++ b/src/main/java/org/bukkit/map/MapCursor.java
+@@ -10,7 +10,7 @@ public final class MapCursor {
+     private byte x, y;
+     private byte direction, type;
+     private boolean visible;
+-    private String caption;
++    private net.kyori.adventure.text.Component caption; // Paper
+ 
+     /**
+      * Initialize the map cursor.
+@@ -24,7 +24,7 @@ public final class MapCursor {
+      */
+     @Deprecated
+     public MapCursor(byte x, byte y, byte direction, byte type, boolean visible) {
+-        this(x, y, direction, type, visible, null);
++        this(x, y, direction, type, visible, (String) null); // Paper
+     }
+ 
+     /**
+@@ -37,7 +37,7 @@ public final class MapCursor {
+      * @param visible Whether the cursor is visible by default.
+      */
+     public MapCursor(byte x, byte y, byte direction, @NotNull Type type, boolean visible) {
+-        this(x, y, direction, type, visible, null);
++        this(x, y, direction, type, visible, (String) null); // Paper
+     }
+ 
+     /**
+@@ -49,7 +49,7 @@ public final class MapCursor {
+      * @param type The type (color/style) of the map cursor.
+      * @param visible Whether the cursor is visible by default.
+      * @param caption cursor caption
+-     * @deprecated Magic value
++     * @deprecated Magic value. Use {@link #MapCursor(byte, byte, byte, byte, boolean, net.kyori.adventure.text.Component)}
+      */
+     @Deprecated
+     public MapCursor(byte x, byte y, byte direction, byte type, boolean visible, @Nullable String caption) {
+@@ -58,8 +58,42 @@ public final class MapCursor {
+         setDirection(direction);
+         setRawType(type);
+         this.visible = visible;
+-        this.caption = caption;
++        this.caption = caption == null ? null : org.bukkit.Bukkit.getUnsafe().legacyComponentSerializer().deserialize(caption); // Paper
+     }
++    // Paper start
++    /**
++     * Initialize the map cursor.
++     *
++     * @param x The x coordinate, from -128 to 127.
++     * @param y The y coordinate, from -128 to 127.
++     * @param direction The facing of the cursor, from 0 to 15.
++     * @param type The type (color/style) of the map cursor.
++     * @param visible Whether the cursor is visible by default.
++     * @param caption cursor caption
++     * @deprecated Magic value
++     */
++    @Deprecated
++    public MapCursor(byte x, byte y, byte direction, byte type, boolean visible, @Nullable net.kyori.adventure.text.Component caption) {
++        this.x = x; this.y = y; this.visible = visible; this.caption = caption;
++        setDirection(direction);
++        setRawType(type);
++    }
++    /**
++     * Initialize the map cursor.
++     *
++     * @param x The x coordinate, from -128 to 127.
++     * @param y The y coordinate, from -128 to 127.
++     * @param direction The facing of the cursor, from 0 to 15.
++     * @param type The type (color/style) of the map cursor.
++     * @param visible Whether the cursor is visible by default.
++     * @param caption cursor caption
++     */
++    public MapCursor(byte x, byte y, byte direction, @NotNull Type type, boolean visible, @Nullable net.kyori.adventure.text.Component caption) {
++        this.x = x; this.y = y; this.visible = visible; this.caption = caption;
++        setDirection(direction);
++        setType(type);
++    }
++    // Paper end
+ 
+     /**
+      * Initialize the map cursor.
+@@ -77,7 +111,7 @@ public final class MapCursor {
+         setDirection(direction);
+         setType(type);
+         this.visible = visible;
+-        this.caption = caption;
++        this.caption = caption == null ? null : org.bukkit.Bukkit.getUnsafe().legacyComponentSerializer().deserialize(caption); // Paper
+     }
+ 
+     /**
+@@ -200,23 +234,45 @@ public final class MapCursor {
+         this.visible = visible;
+     }
+ 
++    // Paper start
++    /**
++     * Gets the caption on this cursor.
++     *
++     * @return caption
++     */
++    public @Nullable net.kyori.adventure.text.Component caption() {
++        return this.caption;
++    }
++    /**
++     * Sets the caption on this cursor.
++     *
++     * @param caption new caption
++     */
++    public void caption(@Nullable net.kyori.adventure.text.Component caption) {
++        this.caption = caption;
++    }
++    // Paper end
+     /**
+      * Gets the caption on this cursor.
+      *
+      * @return caption
++     * @deprecated in favour of {@link #caption()}
+      */
+     @Nullable
++    @Deprecated // Paper
+     public String getCaption() {
+-        return caption;
++        return this.caption == null ? null : org.bukkit.Bukkit.getUnsafe().legacyComponentSerializer().serialize(this.caption); // Paper
+     }
+ 
+     /**
+      * Sets the caption on this cursor.
+      *
+      * @param caption new caption
++     * @deprecated in favour of {@link #caption(net.kyori.adventure.text.Component)}
+      */
++    @Deprecated // Paper
+     public void setCaption(@Nullable String caption) {
+-        this.caption = caption;
++        this.caption = caption == null ? null : org.bukkit.Bukkit.getUnsafe().legacyComponentSerializer().deserialize(caption); // Paper
+     }
+ 
+     /**
+diff --git a/src/main/java/org/bukkit/map/MapCursorCollection.java b/src/main/java/org/bukkit/map/MapCursorCollection.java
+index 4dba721aefe4fc6699b3b4bfa7ecb0b19c2a2a1a..01dec2c877df58c9dc22445e8b1f9ce2e53066da 100644
+--- a/src/main/java/org/bukkit/map/MapCursorCollection.java
++++ b/src/main/java/org/bukkit/map/MapCursorCollection.java
+@@ -117,4 +117,22 @@ public final class MapCursorCollection {
+     public MapCursor addCursor(int x, int y, byte direction, byte type, boolean visible, @Nullable String caption) {
+         return addCursor(new MapCursor((byte) x, (byte) y, direction, type, visible, caption));
+     }
++    // Paper start
++    /**
++     * Add a cursor to the collection.
++     *
++     * @param x The x coordinate, from -128 to 127.
++     * @param y The y coordinate, from -128 to 127.
++     * @param direction The facing of the cursor, from 0 to 15.
++     * @param type The type (color/style) of the map cursor.
++     * @param visible Whether the cursor is visible.
++     * @param caption banner caption
++     * @return The newly added MapCursor.
++     * @deprecated Magic value
++     */
++    @Deprecated
++    public @NotNull MapCursor addCursor(int x, int y, byte direction, byte type, boolean visible, @Nullable net.kyori.adventure.text.Component caption) {
++        return addCursor(new MapCursor((byte) x, (byte) y, direction, type, visible, caption));
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/permissions/Permissible.java b/src/main/java/org/bukkit/permissions/Permissible.java
+index 228421154913116069c20323afb519bdde2134df..26791db3c267670d5782f1d2b67ff7d5b55b9dac 100644
+--- a/src/main/java/org/bukkit/permissions/Permissible.java
++++ b/src/main/java/org/bukkit/permissions/Permissible.java
+@@ -126,4 +126,34 @@ public interface Permissible extends ServerOperator {
+      */
+     @NotNull
+     public Set<PermissionAttachmentInfo> getEffectivePermissions();
++
++    // Paper start - add TriState permission checks
++    /**
++     * Checks if this object has a permission set and, if it is set, the value of the permission.
++     *
++     * @param permission the permission to check
++     * @return a tri-state of if the permission is set and, if it is set, it's value
++     */
++    default net.kyori.adventure.util.@NotNull TriState permissionValue(final @NotNull Permission permission) {
++        if (this.isPermissionSet(permission)) {
++            return net.kyori.adventure.util.TriState.byBoolean(this.hasPermission(permission));
++        } else {
++            return net.kyori.adventure.util.TriState.NOT_SET;
++        }
++    }
++
++    /**
++     * Checks if this object has a permission set and, if it is set, the value of the permission.
++     *
++     * @param permission the permission to check
++     * @return a tri-state of if the permission is set and, if it is set, it's value
++     */
++    default net.kyori.adventure.util.@NotNull TriState permissionValue(final @NotNull String permission) {
++        if (this.isPermissionSet(permission)) {
++            return net.kyori.adventure.util.TriState.byBoolean(this.hasPermission(permission));
++        } else {
++            return net.kyori.adventure.util.TriState.NOT_SET;
++        }
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/scoreboard/Objective.java b/src/main/java/org/bukkit/scoreboard/Objective.java
+index ff3fcb2697eb00736238d0efdcaefe43043334d3..75acd6f8f3d774bb79e8e513125e801c5569a244 100644
+--- a/src/main/java/org/bukkit/scoreboard/Objective.java
++++ b/src/main/java/org/bukkit/scoreboard/Objective.java
+@@ -19,14 +19,35 @@ public interface Objective {
+      */
+     @NotNull
+     String getName() throws IllegalStateException;
++    // Paper start
++    /**
++     * Gets the name displayed to players for this objective
++     *
++     * @return this objective's display name
++     * @throws IllegalStateException if this objective has been unregistered
++     */
++    @NotNull net.kyori.adventure.text.Component displayName() throws IllegalStateException;
++    /**
++     * Sets the name displayed to players for this objective.
++     *
++     * @param displayName Display name to set
++     * @throws IllegalStateException if this objective has been unregistered
++     * @throws IllegalArgumentException if displayName is null
++     * @throws IllegalArgumentException if displayName is longer than 128
++     *     characters.
++     */
++    void displayName(@Nullable net.kyori.adventure.text.Component displayName) throws IllegalStateException, IllegalArgumentException;
++    // Paper end
+ 
+     /**
+      * Gets the name displayed to players for this objective
+      *
+      * @return this objective's display name
+      * @throws IllegalStateException if this objective has been unregistered
++     * @deprecated in favour of {@link #displayName()}
+      */
+     @NotNull
++    @Deprecated // Paper
+     String getDisplayName() throws IllegalStateException;
+ 
+     /**
+@@ -37,7 +58,9 @@ public interface Objective {
+      * @throws IllegalArgumentException if displayName is null
+      * @throws IllegalArgumentException if displayName is longer than 128
+      *     characters.
++     * @deprecated in favour of {@link #displayName(net.kyori.adventure.text.Component)}
+      */
++    @Deprecated // Paper
+     void setDisplayName(@NotNull String displayName) throws IllegalStateException, IllegalArgumentException;
+ 
+     /**
+diff --git a/src/main/java/org/bukkit/scoreboard/Scoreboard.java b/src/main/java/org/bukkit/scoreboard/Scoreboard.java
+index 5c855dbd0da895392f7a6e92cdc90782baf614ad..f7754ab421c7b452a53c28d1e2fafdccfbba24bf 100644
+--- a/src/main/java/org/bukkit/scoreboard/Scoreboard.java
++++ b/src/main/java/org/bukkit/scoreboard/Scoreboard.java
+@@ -27,6 +27,48 @@ public interface Scoreboard {
+     @Deprecated
+     @NotNull
+     Objective registerNewObjective(@NotNull String name, @NotNull String criteria) throws IllegalArgumentException;
++    // Paper start
++    /**
++     * Registers an Objective on this Scoreboard
++     *
++     * @param name Name of the Objective
++     * @param criteria Criteria for the Objective
++     * @param displayName Name displayed to players for the Objective.
++     * @return The registered Objective
++     * @throws IllegalArgumentException if name is null
++     * @throws IllegalArgumentException if name is longer than 16
++     *     characters.
++     * @throws IllegalArgumentException if criteria is null
++     * @throws IllegalArgumentException if displayName is null
++     * @throws IllegalArgumentException if displayName is longer than 128
++     *     characters.
++     * @throws IllegalArgumentException if an objective by that name already
++     *     exists
++     */
++    @NotNull
++    Objective registerNewObjective(@NotNull String name, @NotNull String criteria, @Nullable net.kyori.adventure.text.Component displayName) throws IllegalArgumentException;
++    /**
++     * Registers an Objective on this Scoreboard
++     *
++     * @param name Name of the Objective
++     * @param criteria Criteria for the Objective
++     * @param displayName Name displayed to players for the Objective.
++     * @param renderType Manner of rendering the Objective
++     * @return The registered Objective
++     * @throws IllegalArgumentException if name is null
++     * @throws IllegalArgumentException if name is longer than 16
++     *     characters.
++     * @throws IllegalArgumentException if criteria is null
++     * @throws IllegalArgumentException if displayName is null
++     * @throws IllegalArgumentException if displayName is longer than 128
++     *     characters.
++     * @throws IllegalArgumentException if renderType is null
++     * @throws IllegalArgumentException if an objective by that name already
++     *     exists
++     */
++    @NotNull
++    Objective registerNewObjective(@NotNull String name, @NotNull String criteria, @Nullable net.kyori.adventure.text.Component displayName, @NotNull RenderType renderType) throws IllegalArgumentException;
++    // Paper end
+ 
+     /**
+      * Registers an Objective on this Scoreboard
+@@ -44,8 +86,10 @@ public interface Scoreboard {
+      *     characters.
+      * @throws IllegalArgumentException if an objective by that name already
+      *     exists
++     * @deprecated in favour of {@link #registerNewObjective(String, String, net.kyori.adventure.text.Component)}
+      */
+     @NotNull
++    @Deprecated // Paper
+     Objective registerNewObjective(@NotNull String name, @NotNull String criteria, @NotNull String displayName) throws IllegalArgumentException;
+ 
+     /**
+@@ -66,8 +110,10 @@ public interface Scoreboard {
+      * @throws IllegalArgumentException if renderType is null
+      * @throws IllegalArgumentException if an objective by that name already
+      *     exists
++     * @deprecated in favour of {@link #registerNewObjective(String, String, net.kyori.adventure.text.Component, RenderType)}
+      */
+     @NotNull
++    @Deprecated // Paper
+     Objective registerNewObjective(@NotNull String name, @NotNull String criteria, @NotNull String displayName, @NotNull RenderType renderType) throws IllegalArgumentException;
+ 
+     /**
+diff --git a/src/main/java/org/bukkit/scoreboard/Team.java b/src/main/java/org/bukkit/scoreboard/Team.java
+index 0db7fe1b9fe5621ceed3f4f046691e359f5949dd..d5b39fb4fc16a342b5661e08df1506858168d20d 100644
+--- a/src/main/java/org/bukkit/scoreboard/Team.java
++++ b/src/main/java/org/bukkit/scoreboard/Team.java
+@@ -22,14 +22,93 @@ public interface Team {
+      */
+     @NotNull
+     String getName() throws IllegalStateException;
++    // Paper start
++    /**
++     * Gets the name displayed to entries for this team
++     *
++     * @return Team display name
++     * @throws IllegalStateException if this team has been unregistered
++     */
++    @NotNull net.kyori.adventure.text.Component displayName() throws IllegalStateException;
++
++    /**
++     * Sets the name displayed to entries for this team
++     *
++     * @param displayName New display name
++     * @throws IllegalArgumentException if displayName is longer than 128
++     *     characters.
++     * @throws IllegalStateException if this team has been unregistered
++     */
++    void displayName(@Nullable net.kyori.adventure.text.Component displayName) throws IllegalStateException, IllegalArgumentException;
++
++    /**
++     * Gets the prefix prepended to the display of entries on this team.
++     *
++     * @return Team prefix
++     * @throws IllegalStateException if this team has been unregistered
++     */
++    @NotNull net.kyori.adventure.text.Component prefix() throws IllegalStateException;
++
++    /**
++     * Sets the prefix prepended to the display of entries on this team.
++     *
++     * @param prefix New prefix
++     * @throws IllegalArgumentException if prefix is null
++     *     characters
++     * @throws IllegalStateException if this team has been unregistered
++     */
++    void prefix(@Nullable net.kyori.adventure.text.Component prefix) throws IllegalStateException, IllegalArgumentException;
++
++    /**
++     * Gets the suffix appended to the display of entries on this team.
++     *
++     * @return the team's current suffix
++     * @throws IllegalStateException if this team has been unregistered
++     */
++    @NotNull net.kyori.adventure.text.Component suffix() throws IllegalStateException;
++
++    /**
++     * Sets the suffix appended to the display of entries on this team.
++     *
++     * @param suffix the new suffix for this team.
++     * @throws IllegalArgumentException if suffix is null
++     *     characters
++     * @throws IllegalStateException if this team has been unregistered
++     */
++    void suffix(@Nullable net.kyori.adventure.text.Component suffix) throws IllegalStateException, IllegalArgumentException;
++
++    /**
++     * Gets the color of the team.
++     * <br>
++     * This only sets the team outline, other occurrences of colors such as in
++     * names are handled by prefixes / suffixes.
++     *
++     * @return team color, defaults to {@link ChatColor#RESET}
++     * @throws IllegalStateException if this team has been unregistered
++     */
++    @NotNull net.kyori.adventure.text.format.TextColor color() throws IllegalStateException;
++
++    /**
++     * Sets the color of the team.
++     * <br>
++     * This only sets the team outline, other occurrences of colors such as in
++     * names are handled by prefixes / suffixes.
++     *
++     * @param color new color, must be non-null. Use {@link ChatColor#RESET} for
++     * no color
++     */
++    void color(@Nullable net.kyori.adventure.text.format.NamedTextColor color);
++    // Paper end
+ 
+     /**
+      * Gets the name displayed to entries for this team
+      *
+      * @return Team display name
+      * @throws IllegalStateException if this team has been unregistered
++     * @deprecated in favour of {@link #displayName()}
+      */
+     @NotNull
++    @Deprecated // Paper
+     String getDisplayName() throws IllegalStateException;
+ 
+     /**
+@@ -39,7 +118,9 @@ public interface Team {
+      * @throws IllegalArgumentException if displayName is longer than 128
+      *     characters.
+      * @throws IllegalStateException if this team has been unregistered
++     * @deprecated in favour of {@link #displayName(net.kyori.adventure.text.Component)}
+      */
++    @Deprecated // Paper
+     void setDisplayName(@NotNull String displayName) throws IllegalStateException, IllegalArgumentException;
+ 
+     /**
+@@ -47,8 +128,10 @@ public interface Team {
+      *
+      * @return Team prefix
+      * @throws IllegalStateException if this team has been unregistered
++     * @deprecated in favour of {@link #prefix()}
+      */
+     @NotNull
++    @Deprecated // Paper
+     String getPrefix() throws IllegalStateException;
+ 
+     /**
+@@ -59,7 +142,9 @@ public interface Team {
+      * @throws IllegalArgumentException if prefix is longer than 64
+      *     characters
+      * @throws IllegalStateException if this team has been unregistered
++     * @deprecated in favour of {@link #prefix(net.kyori.adventure.text.Component)}
+      */
++    @Deprecated // Paper
+     void setPrefix(@NotNull String prefix) throws IllegalStateException, IllegalArgumentException;
+ 
+     /**
+@@ -67,8 +152,10 @@ public interface Team {
+      *
+      * @return the team's current suffix
+      * @throws IllegalStateException if this team has been unregistered
++     * @deprecated in favour of {@link #suffix()}
+      */
+     @NotNull
++    @Deprecated // Paper
+     String getSuffix() throws IllegalStateException;
+ 
+     /**
+@@ -79,7 +166,9 @@ public interface Team {
+      * @throws IllegalArgumentException if suffix is longer than 64
+      *     characters
+      * @throws IllegalStateException if this team has been unregistered
++     * @deprecated in favour of {@link #suffix(net.kyori.adventure.text.Component)}
+      */
++    @Deprecated // Paper
+     void setSuffix(@NotNull String suffix) throws IllegalStateException, IllegalArgumentException;
+ 
+     /**
+@@ -90,8 +179,10 @@ public interface Team {
+      *
+      * @return team color, defaults to {@link ChatColor#RESET}
+      * @throws IllegalStateException if this team has been unregistered
++     * @deprecated in favour of {@link #color()}
+      */
+     @NotNull
++    @Deprecated // Paper
+     ChatColor getColor() throws IllegalStateException;
+ 
+     /**
+@@ -102,7 +193,9 @@ public interface Team {
+      *
+      * @param color new color, must be non-null. Use {@link ChatColor#RESET} for
+      * no color
++     * @deprecated in favour of {@link #color(net.kyori.adventure.text.format.NamedTextColor)}
+      */
++    @Deprecated // Paper
+     void setColor(@NotNull ChatColor color);
+ 
+     /**
+diff --git a/src/test/java/org/bukkit/AnnotationTest.java b/src/test/java/org/bukkit/AnnotationTest.java
+index c6a8a37a933cfc5a5885602a8a70fdda8fb6aa10..7f57b95727d0336f1f1548055574e0c129fe9643 100644
+--- a/src/test/java/org/bukkit/AnnotationTest.java
++++ b/src/test/java/org/bukkit/AnnotationTest.java
+@@ -26,6 +26,12 @@ import org.objectweb.asm.tree.ParameterNode;
+ public class AnnotationTest {
+ 
+     private static final String[] ACCEPTED_ANNOTATIONS = {
++        // Paper start
++        "Lorg/checkerframework/checker/nullness/qual/Nullable;",
++        "Lorg/checkerframework/checker/nullness/qual/NonNull;",
++        "Lorg/checkerframework/checker/nullness/qual/PolyNull;",
++        "Lorg/checkerframework/checker/nullness/qual/MonotonicNonNull;",
++        // Paper end
+         "Lorg/jetbrains/annotations/Nullable;",
+         "Lorg/jetbrains/annotations/NotNull;",
+         "Lorg/jetbrains/annotations/Contract;",
+@@ -105,7 +111,7 @@ public class AnnotationTest {
+                         if (method.invisibleTypeAnnotations != null) {
+                             for (final org.objectweb.asm.tree.TypeAnnotationNode invisibleTypeAnnotation : method.invisibleTypeAnnotations) {
+                                 final org.objectweb.asm.TypeReference ref = new org.objectweb.asm.TypeReference(invisibleTypeAnnotation.typeRef);
+-                                if (ref.getSort() == org.objectweb.asm.TypeReference.METHOD_FORMAL_PARAMETER && ref.getTypeParameterIndex() == i && java.util.Arrays.binarySearch(ACCEPTED_ANNOTATIONS, invisibleTypeAnnotation.desc) >= 0) {
++                                if (ref.getSort() == org.objectweb.asm.TypeReference.METHOD_FORMAL_PARAMETER && ref.getTypeParameterIndex() == i && org.apache.commons.lang.ArrayUtils.contains(ACCEPTED_ANNOTATIONS, invisibleTypeAnnotation.desc)) {
+                                     continue dancing;
+                                 }
+                             }

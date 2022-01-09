@@ -1,0 +1,63 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Wed, 4 May 2016 23:55:48 -0400
+Subject: [PATCH] ensureServerConversions API
+
+This will take a Bukkit ItemStack and run it through any conversions a server process would perform on it,
+to ensure it meets latest minecraft expectations.
+
+diff --git a/src/main/java/org/bukkit/inventory/ItemFactory.java b/src/main/java/org/bukkit/inventory/ItemFactory.java
+index b1fbb931148a87f29e8b8796b13851d767cc1d68..71e5ee496a947fbd8e3ec579833b157c76b51833 100644
+--- a/src/main/java/org/bukkit/inventory/ItemFactory.java
++++ b/src/main/java/org/bukkit/inventory/ItemFactory.java
+@@ -171,5 +171,17 @@ public interface ItemFactory {
+      */
+     @Nullable
+     String getI18NDisplayName(@Nullable ItemStack item);
++
++    /**
++     * Minecraft updates are converting simple item stacks into more complex NBT oriented Item Stacks.
++     *
++     * Use this method to to ensure any desired data conversions are processed.
++     * The input itemstack will not be the same as the returned itemstack.
++     *
++     * @param item The item to process conversions on
++     * @return A potentially Data Converted ItemStack
++     */
++    @NotNull
++    ItemStack ensureServerConversions(@NotNull ItemStack item);
+     // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/inventory/ItemStack.java b/src/main/java/org/bukkit/inventory/ItemStack.java
+index de5bcdb7b84acdd5e22500e367df292f35a86e19..e8783b0116f4efd5447a5f6f260506000983ffd2 100644
+--- a/src/main/java/org/bukkit/inventory/ItemStack.java
++++ b/src/main/java/org/bukkit/inventory/ItemStack.java
+@@ -536,7 +536,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, net.kyor
+             }
+         }
+ 
+-        return result;
++        return result.ensureServerConversions(); // Paper
+     }
+ 
+     /**
+@@ -612,6 +612,19 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, net.kyor
+         return Bukkit.getServer().getItemFactory().displayName(this);
+     }
+ 
++    /**
++     * Minecraft updates are converting simple item stacks into more complex NBT oriented Item Stacks.
++     *
++     * Use this method to to ensure any desired data conversions are processed.
++     * The input itemstack will not be the same as the returned itemstack.
++     *
++     * @return A potentially Data Converted ItemStack
++     */
++    @NotNull
++    public ItemStack ensureServerConversions() {
++        return Bukkit.getServer().getItemFactory().ensureServerConversions(this);
++    }
++
+     /**
+      * Gets the Display name as seen in the Client.
+      * Currently the server only supports the English language. To override this,
