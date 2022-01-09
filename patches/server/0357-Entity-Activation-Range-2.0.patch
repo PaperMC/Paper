@@ -14,7 +14,7 @@ Adds flying monsters to control ghast and phantoms
 Adds villagers as separate config
 
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index c04402666b9219d508bfd32b4f2e3faea0c9b648..daeb483b7aa0356447381aec8d92f5dfa500d5b1 100644
+index 367e074dd5f85f824b7c4f5506d0ccac60580c1b..83c5b111b98e52f52b7e4cf607aac07be7043709 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
 @@ -2,7 +2,6 @@ package net.minecraft.server.level;
@@ -144,7 +144,7 @@ index aa5fdc74a3b06b8d8b82b86fb4f1469ddd4c629e..ae454b12a0671f6698ff2b889988348e
              movement = this.maybeBackOffFromEdge(movement, movementType);
              Vec3 vec3d1 = this.collide(movement);
 diff --git a/src/main/java/net/minecraft/world/entity/Mob.java b/src/main/java/net/minecraft/world/entity/Mob.java
-index 95058ddac0dd75f84781227cc1061bcc325954e9..77d85265eb090f61476faedbffd4ad3d2e9ae38a 100644
+index 426b3afc7ba5229339f820062f17c1a0775a0df6..e803af4d27f3f005a56696175d7ae8a51d7005a6 100644
 --- a/src/main/java/net/minecraft/world/entity/Mob.java
 +++ b/src/main/java/net/minecraft/world/entity/Mob.java
 @@ -206,6 +206,19 @@ public abstract class Mob extends LivingEntity {
@@ -335,13 +335,12 @@ index 6b29f66aec8a82b367a979b5b04857416b697c14..78d252b829e5c1f19532656a72862085
                              }
                          }
 diff --git a/src/main/java/org/spigotmc/ActivationRange.java b/src/main/java/org/spigotmc/ActivationRange.java
-index c3b7b1bc978eb0d40587682795e86b82981aed82..ec9907947b13ca3367c7ef5cb006bbabec3f2293 100644
+index 07e5ece37af6b02210920ce6cc31738274d447a9..84880151abd193be5f02b5e9abb3fa78f2aa2cac 100644
 --- a/src/main/java/org/spigotmc/ActivationRange.java
 +++ b/src/main/java/org/spigotmc/ActivationRange.java
-@@ -1,40 +1,52 @@
+@@ -1,39 +1,52 @@
  package org.spigotmc;
  
--import java.util.Collection;
 +import net.minecraft.core.BlockPos;
  import net.minecraft.server.MinecraftServer;
 +import net.minecraft.server.level.ServerChunkCache;
@@ -395,7 +394,7 @@ index c3b7b1bc978eb0d40587682795e86b82981aed82..ec9907947b13ca3367c7ef5cb006bbab
          MONSTER,
          ANIMAL,
          RAIDER,
-@@ -42,6 +54,43 @@ public class ActivationRange
+@@ -41,6 +54,43 @@ public class ActivationRange
  
          AABB boundingBox = new AABB( 0, 0, 0, 0, 0, 0 );
      }
@@ -439,7 +438,7 @@ index c3b7b1bc978eb0d40587682795e86b82981aed82..ec9907947b13ca3367c7ef5cb006bbab
  
      static AABB maxBB = new AABB( 0, 0, 0, 0, 0, 0 );
  
-@@ -54,10 +103,13 @@ public class ActivationRange
+@@ -53,10 +103,13 @@ public class ActivationRange
       */
      public static ActivationType initializeEntityActivationType(Entity entity)
      {
@@ -454,7 +453,7 @@ index c3b7b1bc978eb0d40587682795e86b82981aed82..ec9907947b13ca3367c7ef5cb006bbab
          {
              return ActivationType.MONSTER;
          } else if ( entity instanceof PathfinderMob || entity instanceof AmbientCreature )
-@@ -78,10 +130,14 @@ public class ActivationRange
+@@ -77,10 +130,14 @@ public class ActivationRange
       */
      public static boolean initializeEntityActivationState(Entity entity, SpigotWorldConfig config)
      {
@@ -473,7 +472,7 @@ index c3b7b1bc978eb0d40587682795e86b82981aed82..ec9907947b13ca3367c7ef5cb006bbab
                  || entity instanceof Player
                  || entity instanceof ThrowableProjectile
                  || entity instanceof EnderDragon
-@@ -114,10 +170,25 @@ public class ActivationRange
+@@ -113,10 +170,25 @@ public class ActivationRange
          final int raiderActivationRange = world.spigotConfig.raiderActivationRange;
          final int animalActivationRange = world.spigotConfig.animalActivationRange;
          final int monsterActivationRange = world.spigotConfig.monsterActivationRange;
@@ -499,7 +498,7 @@ index c3b7b1bc978eb0d40587682795e86b82981aed82..ec9907947b13ca3367c7ef5cb006bbab
          maxRange = Math.min( ( world.spigotConfig.simulationDistance << 4 ) - 8, maxRange );
  
          for ( Player player : world.players() )
-@@ -129,6 +200,11 @@ public class ActivationRange
+@@ -132,6 +204,11 @@ public class ActivationRange
              ActivationType.RAIDER.boundingBox = player.getBoundingBox().inflate( raiderActivationRange, 256, raiderActivationRange );
              ActivationType.ANIMAL.boundingBox = player.getBoundingBox().inflate( animalActivationRange, 256, animalActivationRange );
              ActivationType.MONSTER.boundingBox = player.getBoundingBox().inflate( monsterActivationRange, 256, monsterActivationRange );
@@ -511,7 +510,7 @@ index c3b7b1bc978eb0d40587682795e86b82981aed82..ec9907947b13ca3367c7ef5cb006bbab
  
              world.getEntities().get(maxBB, ActivationRange::activateEntity);
          }
-@@ -163,60 +239,112 @@ public class ActivationRange
+@@ -166,60 +243,112 @@ public class ActivationRange
       * @param entity
       * @return
       */
@@ -641,7 +640,7 @@ index c3b7b1bc978eb0d40587682795e86b82981aed82..ec9907947b13ca3367c7ef5cb006bbab
      }
  
      /**
-@@ -231,8 +359,19 @@ public class ActivationRange
+@@ -234,8 +363,19 @@ public class ActivationRange
          if ( entity instanceof FireworkRocketEntity ) {
              return true;
          }
@@ -662,7 +661,7 @@ index c3b7b1bc978eb0d40587682795e86b82981aed82..ec9907947b13ca3367c7ef5cb006bbab
  
          // Should this entity tick?
          if ( !isActive )
-@@ -240,15 +379,19 @@ public class ActivationRange
+@@ -243,15 +383,19 @@ public class ActivationRange
              if ( ( MinecraftServer.currentTick - entity.activatedTick - 1 ) % 20 == 0 )
              {
                  // Check immunities every 20 ticks.
@@ -688,10 +687,10 @@ index c3b7b1bc978eb0d40587682795e86b82981aed82..ec9907947b13ca3367c7ef5cb006bbab
              isActive = false;
          }
 diff --git a/src/main/java/org/spigotmc/SpigotWorldConfig.java b/src/main/java/org/spigotmc/SpigotWorldConfig.java
-index 21e0f9b4d3e1dc6e104bffdffcc23d62a739ab3c..58aaf0d98cbd6814ecdf00f46f8ff9fc7901006c 100644
+index 7acf96f2fbf807d4621ad3cfc9d9312adb255287..bc7eaf32867f743edf1644859f7cad063e646120 100644
 --- a/src/main/java/org/spigotmc/SpigotWorldConfig.java
 +++ b/src/main/java/org/spigotmc/SpigotWorldConfig.java
-@@ -199,13 +199,59 @@ public class SpigotWorldConfig
+@@ -199,14 +199,60 @@ public class SpigotWorldConfig
      public int monsterActivationRange = 32;
      public int raiderActivationRange = 48;
      public int miscActivationRange = 16;
@@ -716,6 +715,7 @@ index 21e0f9b4d3e1dc6e104bffdffcc23d62a739ab3c..58aaf0d98cbd6814ecdf00f46f8ff9fc
 +    public boolean villagersActiveForPanic = true;
 +    // Paper end
      public boolean tickInactiveVillagers = true;
+     public boolean ignoreSpectatorActivation = false;
      private void activationRange()
      {
 +        boolean hasAnimalsConfig = config.getInt("entity-activation-range.animals", this.animalActivationRange) != this.animalActivationRange; // Paper
@@ -749,5 +749,5 @@ index 21e0f9b4d3e1dc6e104bffdffcc23d62a739ab3c..58aaf0d98cbd6814ecdf00f46f8ff9fc
 +        this.villagersActiveForPanic = this.getBoolean( "entity-activation-range.villagers-active-for-panic", this.villagersActiveForPanic );
 +        // Paper end
          this.tickInactiveVillagers = this.getBoolean( "entity-activation-range.tick-inactive-villagers", this.tickInactiveVillagers );
-         this.log( "Entity Activation Range: An " + this.animalActivationRange + " / Mo " + this.monsterActivationRange + " / Ra " + this.raiderActivationRange + " / Mi " + this.miscActivationRange + " / Tiv " + this.tickInactiveVillagers );
-     }
+         this.ignoreSpectatorActivation = this.getBoolean( "entity-activation-range.ignore-spectators", this.ignoreSpectatorActivation );
+         this.log( "Entity Activation Range: An " + this.animalActivationRange + " / Mo " + this.monsterActivationRange + " / Ra " + this.raiderActivationRange + " / Mi " + this.miscActivationRange + " / Tiv " + this.tickInactiveVillagers + " / Isa " + this.ignoreSpectatorActivation );
