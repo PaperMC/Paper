@@ -1,0 +1,126 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Cryptite <cryptite@gmail.com>
+Date: Tue, 21 Sep 2021 18:17:33 -0500
+Subject: [PATCH] Multiple Entries with Scoreboards
+
+
+diff --git a/src/main/java/net/minecraft/network/protocol/game/ClientboundSetPlayerTeamPacket.java b/src/main/java/net/minecraft/network/protocol/game/ClientboundSetPlayerTeamPacket.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/network/protocol/game/ClientboundSetPlayerTeamPacket.java
++++ b/src/main/java/net/minecraft/network/protocol/game/ClientboundSetPlayerTeamPacket.java
+@@ -0,0 +0,0 @@ public class ClientboundSetPlayerTeamPacket implements Packet<ClientGamePacketLi
+         return new ClientboundSetPlayerTeamPacket(team.getName(), operation == ClientboundSetPlayerTeamPacket.Action.ADD ? 3 : 4, Optional.empty(), ImmutableList.of(playerName));
+     }
+ 
++    // Paper start
++    public static ClientboundSetPlayerTeamPacket createMultiplePlayerPacket(PlayerTeam team, Collection<String> players, ClientboundSetPlayerTeamPacket.Action operation) {
++        return new ClientboundSetPlayerTeamPacket(team.getName(), operation == ClientboundSetPlayerTeamPacket.Action.ADD ? 3 : 4, Optional.empty(), players);
++    }
++    // Paper end
++
+     public ClientboundSetPlayerTeamPacket(FriendlyByteBuf buf) {
+         this.name = buf.readUtf();
+         this.method = buf.readByte();
+diff --git a/src/main/java/net/minecraft/server/ServerScoreboard.java b/src/main/java/net/minecraft/server/ServerScoreboard.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/ServerScoreboard.java
++++ b/src/main/java/net/minecraft/server/ServerScoreboard.java
+@@ -0,0 +0,0 @@ public class ServerScoreboard extends Scoreboard {
+         }
+     }
+ 
++    // Paper start
++    public boolean addPlayersToTeam(java.util.Collection<String> players, PlayerTeam team) {
++        boolean anyAdded = false;
++        for (String playerName : players) {
++            if (super.addPlayerToTeam(playerName, team)) {
++                anyAdded = true;
++            }
++        }
++
++        if (anyAdded) {
++            this.broadcastAll(ClientboundSetPlayerTeamPacket.createMultiplePlayerPacket(team, players, ClientboundSetPlayerTeamPacket.Action.ADD));
++            this.setDirty();
++            return true;
++        } else {
++            return false;
++        }
++    }
++    // Paper end
++
+     @Override
+     public void removePlayerFromTeam(String playerName, PlayerTeam team) {
+         super.removePlayerFromTeam(playerName, team);
+@@ -0,0 +0,0 @@ public class ServerScoreboard extends Scoreboard {
+         this.setDirty();
+     }
+ 
++    // Paper start
++    public void removePlayersFromTeam(java.util.Collection<String> players, PlayerTeam team) {
++        for (String playerName : players) {
++            super.removePlayerFromTeam(playerName, team);
++        }
++
++        this.broadcastAll(ClientboundSetPlayerTeamPacket.createMultiplePlayerPacket(team, players, ClientboundSetPlayerTeamPacket.Action.REMOVE));
++        this.setDirty();
++    }
++    // Paper end
++
+     @Override
+     public void onObjectiveAdded(Objective objective) {
+         super.onObjectiveAdded(objective);
+diff --git a/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftTeam.java b/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftTeam.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftTeam.java
++++ b/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftTeam.java
+@@ -0,0 +0,0 @@ final class CraftTeam extends CraftScoreboardComponent implements Team {
+         scoreboard.board.addPlayerToTeam(entry, team);
+     }
+ 
++    // Paper start
++    @Override
++    public void addEntities(java.util.Collection<org.bukkit.entity.Entity> entities) throws IllegalStateException, IllegalArgumentException {
++        this.addEntries(entities.stream().map(entity -> ((org.bukkit.craftbukkit.entity.CraftEntity) entity).getHandle().getScoreboardName()).toList());
++    }
++
++    @Override
++    public void addEntries(java.util.Collection<String> entries) throws IllegalStateException, IllegalArgumentException {
++        Validate.notNull(entries, "Entries cannot be null");
++        CraftScoreboard scoreboard = this.checkState();
++
++        ((net.minecraft.server.ServerScoreboard) scoreboard.board).addPlayersToTeam(entries, this.team);
++    }
++    // Paper end
++
+     @Override
+     public boolean removePlayer(OfflinePlayer player) throws IllegalStateException, IllegalArgumentException {
+         Validate.notNull(player, "OfflinePlayer cannot be null");
+@@ -0,0 +0,0 @@ final class CraftTeam extends CraftScoreboardComponent implements Team {
+         return true;
+     }
+ 
++    // Paper start
++    @Override
++    public boolean removeEntities(java.util.Collection<org.bukkit.entity.Entity> entities) throws IllegalStateException, IllegalArgumentException {
++        return this.removeEntries(entities.stream().map(entity -> ((org.bukkit.craftbukkit.entity.CraftEntity) entity).getHandle().getScoreboardName()).toList());
++    }
++
++    @Override
++    public boolean removeEntries(java.util.Collection<String> entries) throws IllegalStateException, IllegalArgumentException {
++        Validate.notNull(entries, "Entry cannot be null");
++        CraftScoreboard scoreboard = this.checkState();
++
++        for (String entry : entries) {
++            if (this.team.getPlayers().contains(entry)) {
++                ((net.minecraft.server.ServerScoreboard) scoreboard.board).removePlayersFromTeam(entries, this.team);
++                return true;
++            }
++        }
++
++        return false;
++    }
++    // Paper end
++
+     @Override
+     public boolean hasPlayer(OfflinePlayer player) throws IllegalArgumentException, IllegalStateException {
+         Validate.notNull(player, "OfflinePlayer cannot be null");
