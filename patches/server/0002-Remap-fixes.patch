@@ -5,7 +5,7 @@ Subject: [PATCH] Remap fixes
 
 
 diff --git a/src/main/java/net/minecraft/core/BlockPos.java b/src/main/java/net/minecraft/core/BlockPos.java
-index 1bd6ef643b17b059eb525035496b816a098279c4..754e65f322ded875ae7614066bab30a8da2aa4a9 100644
+index a492a3ff23a6e4bd1a47bdfbe295163ac3ef66c9..dc88152a1458dadd102989d4fc5ffd5bbc7eb523 100644
 --- a/src/main/java/net/minecraft/core/BlockPos.java
 +++ b/src/main/java/net/minecraft/core/BlockPos.java
 @@ -270,9 +270,11 @@ public class BlockPos extends Vec3i {
@@ -42,10 +42,10 @@ index 1bd6ef643b17b059eb525035496b816a098279c4..754e65f322ded875ae7614066bab30a8
                          }
  
 diff --git a/src/main/java/net/minecraft/server/commands/SummonCommand.java b/src/main/java/net/minecraft/server/commands/SummonCommand.java
-index 71c22f72b6e7507e85ecb6be3166b809b7409ab2..0821cd15071ac10c88f0bcfd869c27cadbe778ba 100644
+index bb57dacc71711abfd9fb22a395ff798920564e5a..f6aed91482d9c7bf8b56fb7c53f938a4f37b9605 100644
 --- a/src/main/java/net/minecraft/server/commands/SummonCommand.java
 +++ b/src/main/java/net/minecraft/server/commands/SummonCommand.java
-@@ -54,9 +54,9 @@ public class SummonCommand {
+@@ -53,9 +53,9 @@ public class SummonCommand {
  
              nbttagcompound1.putString("id", entity.toString());
              ServerLevel worldserver = source.getLevel();
@@ -59,46 +59,37 @@ index 71c22f72b6e7507e85ecb6be3166b809b7409ab2..0821cd15071ac10c88f0bcfd869c27ca
  
              if (entity1 == null) {
 diff --git a/src/main/java/net/minecraft/world/entity/ai/behavior/BehaviorUtils.java b/src/main/java/net/minecraft/world/entity/ai/behavior/BehaviorUtils.java
-index 88a8c2bc4aa30f478122a05fd119486a0107db82..ef17f21574ce37b9ce6f72b9585034db473502c7 100644
+index 88258cc1971c0764912d2f3cbfcd426d8f26cd62..e51a78e52969ec687956d16566494fc524e50cb8 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/behavior/BehaviorUtils.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/behavior/BehaviorUtils.java
-@@ -169,8 +169,8 @@ public class BehaviorUtils {
+@@ -172,11 +172,11 @@ public class BehaviorUtils {
  
          return optional.map((uuid) -> {
              return ((ServerLevel) entity.level).getEntity(uuid);
 -        }).map((entity) -> {
--            return entity instanceof LivingEntity ? (LivingEntity) entity : null;
-+        }).map((entity2) -> { // Paper - remap fix
-+            return entity2 instanceof LivingEntity ? (LivingEntity) entity2 : null; // Paper - remap fix
-         });
-     }
++        }).map((entity1) -> { // Paper - remap fix
+             LivingEntity entityliving1;
  
-diff --git a/src/main/java/net/minecraft/world/entity/monster/Phantom.java b/src/main/java/net/minecraft/world/entity/monster/Phantom.java
-index 296d4ab3dace530cab03c787051c9f2c2626228f..7cbb16646c6c83d443deedaf425d18d6de76e314 100644
---- a/src/main/java/net/minecraft/world/entity/monster/Phantom.java
-+++ b/src/main/java/net/minecraft/world/entity/monster/Phantom.java
-@@ -522,7 +522,7 @@ public class Phantom extends FlyingMob implements Enemy {
-                 List<Player> list = Phantom.this.level.getNearbyPlayers(this.attackTargeting, (LivingEntity) Phantom.this, Phantom.this.getBoundingBox().inflate(16.0D, 64.0D, 16.0D));
+-            if (entity instanceof LivingEntity) {
+-                LivingEntity entityliving2 = (LivingEntity) entity;
++            if (entity1 instanceof LivingEntity) { // Paper - remap fix
++                LivingEntity entityliving2 = (LivingEntity) entity1; // Paper - remap fix
  
-                 if (!list.isEmpty()) {
--                    list.sort(Comparator.comparing(Entity::getY).reversed());
-+                    list.sort(Comparator.<Player, Double>comparing(Entity::getY).reversed()); // Paper - remap fix
-                     Iterator iterator = list.iterator();
- 
-                     while (iterator.hasNext()) {
+                 entityliving1 = entityliving2;
+             } else {
 diff --git a/src/main/java/net/minecraft/world/item/crafting/RecipeManager.java b/src/main/java/net/minecraft/world/item/crafting/RecipeManager.java
-index efb37470d4927def456c382420775a815594aa58..38dd114fbfa07a18987cd774ae05060d723247e4 100644
+index e235729577a80475eaf6e33487363822691d2dce..28d35bde3207b1c06bd97e7c1cdc3f687a28bbf6 100644
 --- a/src/main/java/net/minecraft/world/item/crafting/RecipeManager.java
 +++ b/src/main/java/net/minecraft/world/item/crafting/RecipeManager.java
-@@ -172,7 +172,7 @@ public class RecipeManager extends SimpleJsonResourceReloadListener {
-         Map<RecipeType<?>, Object2ObjectLinkedOpenHashMap<ResourceLocation, Recipe<?>>> map = Maps.newHashMap(); // CraftBukkit
+@@ -175,7 +175,7 @@ public class RecipeManager extends SimpleJsonResourceReloadListener {
+         Builder<ResourceLocation, Recipe<?>> builder = ImmutableMap.builder();
  
          recipes.forEach((irecipe) -> {
 -            Map<ResourceLocation, Recipe<?>> map1 = (Map) map.computeIfAbsent(irecipe.getType(), (recipes) -> {
 +            Map<ResourceLocation, Recipe<?>> map1 = (Map) map.computeIfAbsent(irecipe.getType(), (recipes_) -> { // Paper - remap fix
                  return new Object2ObjectLinkedOpenHashMap<>(); // CraftBukkit
              });
-             Recipe<?> irecipe1 = (Recipe) map1.put(irecipe.getId(), irecipe);
+             ResourceLocation minecraftkey = irecipe.getId();
 diff --git a/src/test/java/org/bukkit/DyeColorsTest.java b/src/test/java/org/bukkit/DyeColorsTest.java
 index ad52c3fc6210939a39ef77a382c640a24ee44838..6b7dd01778f0a5d3a96d2d04af4b525d17efbfba 100644
 --- a/src/test/java/org/bukkit/DyeColorsTest.java
@@ -129,19 +120,6 @@ index ad52c3fc6210939a39ef77a382c640a24ee44838..6b7dd01778f0a5d3a96d2d04af4b525d
          assertThat(color, is(Color.fromRGB(nmsColor)));
      }
  }
-diff --git a/src/test/java/org/bukkit/PerMaterialTest.java b/src/test/java/org/bukkit/PerMaterialTest.java
-index 90baf6e3329d64495da9edd580d5fbc80df8c165..e2fb8a0183885b4ad81d5284297be7a35946aa9c 100644
---- a/src/test/java/org/bukkit/PerMaterialTest.java
-+++ b/src/test/java/org/bukkit/PerMaterialTest.java
-@@ -221,7 +221,7 @@ public class PerMaterialTest extends AbstractTestingBase {
-         if (this.material.isBlock()) {
-             assertThat(this.material.isInteractable(),
-                     is(!CraftMagicNumbers.getBlock(material).getClass()
--                            .getMethod("interact", BlockState.class, net.minecraft.world.level.Level.class, BlockPos.class, Player.class, InteractionHand.class, BlockHitResult.class)
-+                            .getMethod("use", BlockState.class, net.minecraft.world.level.Level.class, BlockPos.class, Player.class, InteractionHand.class, BlockHitResult.class) // Paper - remap fix
-                             .getDeclaringClass().equals(BlockBehaviour.class)));
-         } else {
-             assertFalse(this.material.isInteractable());
 diff --git a/src/test/java/org/bukkit/entity/EntityTypesTest.java b/src/test/java/org/bukkit/entity/EntityTypesTest.java
 index 8c4ad718e113f24a30fd11b345d34d6ca1ef73b0..1e84f541683ddb619c2a8dfcd2a141fba2bd851d 100644
 --- a/src/test/java/org/bukkit/entity/EntityTypesTest.java

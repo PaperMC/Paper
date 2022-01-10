@@ -1,0 +1,38 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Ineusia <ineusia@yahoo.com>
+Date: Mon, 26 Oct 2020 11:48:06 -0500
+Subject: [PATCH] Add Destroy Speed API
+
+Co-authored-by: Jake Potrebic <jake.m.potrebic@gmail.com>
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java b/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java
+index aa783fb4d77c9edb58c56ff98c604a87d9583767..2144126241450fe2d6e801bd9452d211a03b6f7c 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java
+@@ -636,5 +636,26 @@ public class CraftBlock implements Block {
+     public String translationKey() {
+         return org.bukkit.Bukkit.getUnsafe().getTranslationKey(this);
+     }
++
++    @Override
++    public float getDestroySpeed(ItemStack itemStack, boolean considerEnchants) {
++        net.minecraft.world.item.ItemStack nmsItemStack;
++        if (itemStack instanceof CraftItemStack) {
++            nmsItemStack = ((CraftItemStack) itemStack).handle;
++            if (nmsItemStack == null) {
++                nmsItemStack = net.minecraft.world.item.ItemStack.EMPTY;
++            }
++        } else {
++            nmsItemStack = CraftItemStack.asNMSCopy(itemStack);
++        }
++        float speed = nmsItemStack.getDestroySpeed(this.getNMS().getBlock().defaultBlockState());
++        if (speed > 1.0F && considerEnchants) {
++            int enchantLevel = net.minecraft.world.item.enchantment.EnchantmentHelper.getItemEnchantmentLevel(net.minecraft.world.item.enchantment.Enchantments.BLOCK_EFFICIENCY, nmsItemStack);
++            if (enchantLevel > 0) {
++                speed += enchantLevel * enchantLevel + 1;
++            }
++        }
++        return speed;
++    }
+     // Paper end
+ }

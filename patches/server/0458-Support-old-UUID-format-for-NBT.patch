@@ -1,0 +1,89 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Mon, 29 Jun 2020 03:26:17 -0400
+Subject: [PATCH] Support old UUID format for NBT
+
+We have stored UUID in plenty of places that did not get DFU'd
+
+So just look for old format and load it if it exists.
+
+diff --git a/src/main/java/net/minecraft/nbt/CompoundTag.java b/src/main/java/net/minecraft/nbt/CompoundTag.java
+index be2bd47a509a03e78c380cf749cd476f332ab03d..210f81e380cb38c2d5d69849e593d2fdb54e8856 100644
+--- a/src/main/java/net/minecraft/nbt/CompoundTag.java
++++ b/src/main/java/net/minecraft/nbt/CompoundTag.java
+@@ -182,6 +182,12 @@ public class CompoundTag implements Tag {
+     }
+ 
+     public void putUUID(String key, UUID value) {
++        // Paper start - support old format
++        if (this.contains(key + "Most", 99) && this.contains(key + "Least", 99)) {
++            this.tags.remove(key + "Most");
++            this.tags.remove(key + "Least");
++        }
++        // Paper end
+         this.tags.put(key, NbtUtils.createUUID(value));
+     }
+ 
+@@ -190,10 +196,20 @@ public class CompoundTag implements Tag {
+      * You must use {@link #hasUUID(String)} before or else it <b>will</b> throw an NPE.
+      */
+     public UUID getUUID(String key) {
++        // Paper start - support old format
++        if (!contains(key, 11) && this.contains(key + "Most", 99) && this.contains(key + "Least", 99)) {
++            return new UUID(this.getLong(key + "Most"), this.getLong(key + "Least"));
++        }
++        // Paper end
+         return NbtUtils.loadUUID(this.get(key));
+     }
+ 
+     public boolean hasUUID(String key) {
++        // Paper start - support old format
++        if (this.contains(key + "Most", 99) && this.contains(key + "Least", 99)) {
++            return true;
++        }
++        // Paper end
+         Tag tag = this.get(key);
+         return tag != null && tag.getType() == IntArrayTag.TYPE && ((IntArrayTag)tag).getAsIntArray().length == 4;
+     }
+diff --git a/src/main/java/net/minecraft/nbt/NbtUtils.java b/src/main/java/net/minecraft/nbt/NbtUtils.java
+index a61f480bc2e2169969e614bccd3e143f47c1a40e..b77b806b28dfada3e84e25d868aa8a8f8556f5af 100644
+--- a/src/main/java/net/minecraft/nbt/NbtUtils.java
++++ b/src/main/java/net/minecraft/nbt/NbtUtils.java
+@@ -40,14 +40,14 @@ import org.apache.logging.log4j.LogManager;
+ import org.apache.logging.log4j.Logger;
+ 
+ public final class NbtUtils {
+-    private static final Comparator<ListTag> YXZ_LISTTAG_INT_COMPARATOR = Comparator.comparingInt((nbt) -> {
++    private static final Comparator<ListTag> YXZ_LISTTAG_INT_COMPARATOR = Comparator.<ListTag>comparingInt((nbt) -> { // Paper - decompile fix
+         return nbt.getInt(1);
+     }).thenComparingInt((nbt) -> {
+         return nbt.getInt(0);
+     }).thenComparingInt((nbt) -> {
+         return nbt.getInt(2);
+     });
+-    private static final Comparator<ListTag> YXZ_LISTTAG_DOUBLE_COMPARATOR = Comparator.comparingDouble((nbt) -> {
++    private static final Comparator<ListTag> YXZ_LISTTAG_DOUBLE_COMPARATOR = Comparator.<ListTag>comparingDouble((nbt) -> { // Paper - decompile fix
+         return nbt.getDouble(1);
+     }).thenComparingDouble((nbt) -> {
+         return nbt.getDouble(0);
+@@ -75,6 +75,11 @@ public final class NbtUtils {
+         if (compound.contains("Name", 8)) {
+             string = compound.getString("Name");
+         }
++        // Paper start - support string UUID's
++        if (compound.contains("Id", 8)) {
++            uUID = UUID.fromString(compound.getString("Id"));
++        }
++        // Paper end
+ 
+         if (compound.hasUUID("Id")) {
+             uUID = compound.getUUID("Id");
+@@ -495,7 +500,7 @@ public final class NbtUtils {
+     }
+ 
+     public static CompoundTag update(DataFixer fixer, DataFixTypes fixTypes, CompoundTag compound, int oldVersion, int targetVersion) {
+-        return fixer.update(fixTypes.getType(), new Dynamic<>(NbtOps.INSTANCE, compound), oldVersion, targetVersion).getValue();
++        return (CompoundTag) fixer.update(fixTypes.getType(), new Dynamic<>(NbtOps.INSTANCE, compound), oldVersion, targetVersion).getValue(); // Paper - decompile fix
+     }
+ 
+     public static Component toPrettyComponent(Tag element) {

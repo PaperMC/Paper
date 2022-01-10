@@ -19,17 +19,17 @@ Other changes:
     configuration
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index 1f4c0f2156c588fcbb3b0329a416dc20a4b355a8..9b70376813531718c02082633e9f8105f4879a63 100644
+index 4db0cc3f8505747e77d314320545eb71904b4eac..8b424fb5e3c7e9169894438f680be1d43829d060 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
-@@ -16,7 +16,17 @@ repositories {
+@@ -12,7 +12,17 @@ repositories {
  
  dependencies {
-     implementation(project(":Paper-API"))
+     implementation(project(":paper-api"))
 -    implementation("jline:jline:2.12.1")
 +    // Paper start
-+    implementation("org.jline:jline-terminal-jansi:3.12.1")
-+    implementation("net.minecrell:terminalconsoleappender:1.2.0")
++    implementation("org.jline:jline-terminal-jansi:3.21.0")
++    implementation("net.minecrell:terminalconsoleappender:1.3.0")
 +    /*
 +          Required to add the missing Log4j2Plugins.dat file from log4j-core
 +          which has been removed by Mojang. Without it, log4j has to classload
@@ -39,8 +39,8 @@ index 1f4c0f2156c588fcbb3b0329a416dc20a4b355a8..9b70376813531718c02082633e9f8105
 +    runtimeOnly("org.apache.logging.log4j:log4j-core:2.14.1")
 +    // Paper end
      implementation("org.apache.logging.log4j:log4j-iostreams:2.14.1") // Paper
-     implementation("org.apache.logging.log4j:log4j-api:2.14.1") // Paper
      implementation("org.ow2.asm:asm:9.2")
+     implementation("org.ow2.asm:asm-commons:9.2") // Paper - ASM event executor generation
 diff --git a/src/main/java/com/destroystokyo/paper/console/PaperConsole.java b/src/main/java/com/destroystokyo/paper/console/PaperConsole.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..a4070b59e261f0f1ac4beec47b11492f4724bf27
@@ -112,7 +112,7 @@ index 0000000000000000000000000000000000000000..685deaa0e5d1ddc13e3a7c0471b1cfcf
 +
 +}
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 2e0bd32ebe06e39b3dc889be9b06e2d0047c1068..9a8779bed2a2fa7dc869d3283c59dbc132df8968 100644
+index 0cf83ee46754197b2b639d07bff9a0d21566a641..123da97204af4bb40f98e09a5102227fb1359fd2 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -9,6 +9,7 @@ import com.mojang.authlib.GameProfile;
@@ -121,18 +121,18 @@ index 2e0bd32ebe06e39b3dc889be9b06e2d0047c1068..9a8779bed2a2fa7dc869d3283c59dbc1
  import com.mojang.datafixers.DataFixer;
 +import io.papermc.paper.adventure.PaperAdventure; // Paper
  import it.unimi.dsi.fastutil.longs.LongIterator;
- import java.awt.GraphicsEnvironment;
  import java.awt.image.BufferedImage;
-@@ -170,7 +171,7 @@ import org.apache.logging.log4j.Logger;
+ import java.io.BufferedWriter;
+@@ -167,7 +168,7 @@ import org.apache.logging.log4j.Logger;
+ // CraftBukkit start
  import com.mojang.serialization.DynamicOps;
  import com.mojang.serialization.Lifecycle;
- import com.google.common.collect.ImmutableSet;
 -import jline.console.ConsoleReader;
 +// import jline.console.ConsoleReader; // Paper
  import joptsimple.OptionSet;
  import net.minecraft.resources.RegistryReadOps;
  import net.minecraft.server.bossevents.CustomBossEvents;
-@@ -285,7 +286,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -284,7 +285,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
      public OptionSet options;
      public org.bukkit.command.ConsoleCommandSender console;
      public org.bukkit.command.RemoteConsoleCommandSender remoteConsole;
@@ -141,9 +141,9 @@ index 2e0bd32ebe06e39b3dc889be9b06e2d0047c1068..9a8779bed2a2fa7dc869d3283c59dbc1
      public static int currentTick = 0; // Paper - Further improve tick loop
      public java.util.Queue<Runnable> processQueue = new java.util.concurrent.ConcurrentLinkedQueue<Runnable>();
      public int autosavePeriod;
-@@ -364,7 +365,9 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
-         this.options = options;
+@@ -368,7 +369,9 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          this.datapackconfiguration = datapackconfiguration;
+         this.registryreadops = RegistryReadOps.createAndLoad(NbtOps.INSTANCE, datapackresources.getResourceManager(), iregistrycustom_dimension);
          this.vanillaCommandDispatcher = datapackresources.commands; // CraftBukkit
 +        // Paper start - Handled by TerminalConsoleAppender
          // Try to see if we're actually running in a terminal, disable jline if not
@@ -151,7 +151,7 @@ index 2e0bd32ebe06e39b3dc889be9b06e2d0047c1068..9a8779bed2a2fa7dc869d3283c59dbc1
          if (System.console() == null && System.getProperty("jline.terminal") == null) {
              System.setProperty("jline.terminal", "jline.UnsupportedTerminal");
              Main.useJline = false;
-@@ -385,6 +388,8 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -389,6 +392,8 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
                  MinecraftServer.LOGGER.warn((String) null, ex);
              }
          }
@@ -160,7 +160,7 @@ index 2e0bd32ebe06e39b3dc889be9b06e2d0047c1068..9a8779bed2a2fa7dc869d3283c59dbc1
          Runtime.getRuntime().addShutdownHook(new org.bukkit.craftbukkit.util.ServerShutdownThread(this));
      }
      // CraftBukkit end
-@@ -1185,7 +1190,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1175,7 +1180,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
                  org.spigotmc.WatchdogThread.doStop(); // Spigot
                  // CraftBukkit start - Restore terminal to original settings
                  try {
@@ -169,7 +169,7 @@ index 2e0bd32ebe06e39b3dc889be9b06e2d0047c1068..9a8779bed2a2fa7dc869d3283c59dbc1
                  } catch (Exception ignored) {
                  }
                  // CraftBukkit end
-@@ -1574,7 +1579,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1563,7 +1568,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
  
      @Override
      public void sendMessage(Component message, UUID sender) {
@@ -179,10 +179,10 @@ index 2e0bd32ebe06e39b3dc889be9b06e2d0047c1068..9a8779bed2a2fa7dc869d3283c59dbc1
  
      public KeyPair getKeyPair() {
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-index 7d834c1b1588851188372eebd9efad9313c610f7..967552df9d5ae7e58bb39127e1adb51bbf49dc28 100644
+index 2201aeecd9936402825200dd696dc5607fe0f880..eed1d77a91f19722c2d2a3a43184565cd29732f7 100644
 --- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-@@ -109,6 +109,9 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+@@ -107,6 +107,9 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
                  if (!org.bukkit.craftbukkit.Main.useConsole) {
                      return;
                  }
@@ -192,7 +192,7 @@ index 7d834c1b1588851188372eebd9efad9313c610f7..967552df9d5ae7e58bb39127e1adb51b
                  jline.console.ConsoleReader bufferedreader = reader;
  
                  // MC-33041, SPIGOT-5538: if System.in is not valid due to javaw, then return
-@@ -140,7 +143,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+@@ -138,7 +141,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
                              continue;
                          }
                          if (s.trim().length() > 0) { // Trim to filter lines which are just spaces
@@ -201,7 +201,7 @@ index 7d834c1b1588851188372eebd9efad9313c610f7..967552df9d5ae7e58bb39127e1adb51b
                          }
                          // CraftBukkit end
                      }
-@@ -148,6 +151,8 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+@@ -146,6 +149,8 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
                      DedicatedServer.LOGGER.error("Exception handling console input", ioexception);
                  }
  
@@ -210,7 +210,7 @@ index 7d834c1b1588851188372eebd9efad9313c610f7..967552df9d5ae7e58bb39127e1adb51b
              }
          };
  
-@@ -159,6 +164,9 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+@@ -157,6 +162,9 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
          }
          global.addHandler(new org.bukkit.craftbukkit.util.ForwardLogHandler());
  
@@ -220,7 +220,7 @@ index 7d834c1b1588851188372eebd9efad9313c610f7..967552df9d5ae7e58bb39127e1adb51b
          final org.apache.logging.log4j.core.Logger logger = ((org.apache.logging.log4j.core.Logger) LogManager.getRootLogger());
          for (org.apache.logging.log4j.core.Appender appender : logger.getAppenders().values()) {
              if (appender instanceof org.apache.logging.log4j.core.appender.ConsoleAppender) {
-@@ -167,6 +175,8 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+@@ -165,6 +173,8 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
          }
  
          new org.bukkit.craftbukkit.util.TerminalConsoleWriterThread(System.out, this.reader).start();
@@ -230,10 +230,10 @@ index 7d834c1b1588851188372eebd9efad9313c610f7..967552df9d5ae7e58bb39127e1adb51b
          System.setOut(IoBuilder.forLogger(logger).setLevel(Level.INFO).buildPrintStream());
          System.setErr(IoBuilder.forLogger(logger).setLevel(Level.WARN).buildPrintStream());
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
-index 24add1cd1f865012c5382548e415218d481ecefe..31dccb0b4ab60d6cedf236fc7d51a363c8367d71 100644
+index e47642c3164f7f7a358d2c7a9722643acf3e0089..dc891a463ec24b0b1b4c6c00b2c199e710204f61 100644
 --- a/src/main/java/net/minecraft/server/players/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/players/PlayerList.java
-@@ -154,8 +154,7 @@ public abstract class PlayerList {
+@@ -155,8 +155,7 @@ public abstract class PlayerList {
  
      public PlayerList(MinecraftServer server, RegistryAccess.RegistryHolder registryManager, PlayerDataStorage saveHandler, int maxPlayers) {
          this.cserver = server.server = new CraftServer((DedicatedServer) server, this);
@@ -244,12 +244,12 @@ index 24add1cd1f865012c5382548e415218d481ecefe..31dccb0b4ab60d6cedf236fc7d51a363
  
          this.bans = new UserBanList(PlayerList.USERBANLIST_FILE);
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 50427b48a0f823cff8826ca205a9af16b2e2fe93..696e2495ee8046c78ed53126db0e6c696c77c00d 100644
+index 9bd1dac354a14735c3547215f85f1124c933f311..0fd04a4371525d6655c5a6f24c097c55914cd225 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -47,7 +47,6 @@ import java.util.function.Consumer;
- import java.util.logging.Level;
+@@ -49,7 +49,6 @@ import java.util.logging.Level;
  import java.util.logging.Logger;
+ import java.util.stream.Collectors;
  import javax.imageio.ImageIO;
 -import jline.console.ConsoleReader;
  import net.minecraft.advancements.Advancement;
@@ -263,7 +263,7 @@ index 50427b48a0f823cff8826ca205a9af16b2e2fe93..696e2495ee8046c78ed53126db0e6c69
  import net.minecraft.server.MinecraftServer;
  import net.minecraft.server.bossevents.CustomBossEvent;
  import net.minecraft.server.commands.ReloadCommand;
-@@ -1250,9 +1250,13 @@ public final class CraftServer implements Server {
+@@ -1308,9 +1308,13 @@ public final class CraftServer implements Server {
          return this.logger;
      }
  
@@ -278,7 +278,7 @@ index 50427b48a0f823cff8826ca205a9af16b2e2fe93..696e2495ee8046c78ed53126db0e6c69
      @Override
      public PluginCommand getPluginCommand(String name) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/Main.java b/src/main/java/org/bukkit/craftbukkit/Main.java
-index f09520b7723dee6ab04215276d037012d643999f..bbf552bf586de94d8dfc5fb1c18e0af6f75aebe1 100644
+index 60ccdf33a014f3488353045e30526bc3f16e93c5..a19d5abb8188e2fd2382b9b42d65fa7a8c3d1799 100644
 --- a/src/main/java/org/bukkit/craftbukkit/Main.java
 +++ b/src/main/java/org/bukkit/craftbukkit/Main.java
 @@ -12,7 +12,7 @@ import java.util.logging.Level;
@@ -290,7 +290,7 @@ index f09520b7723dee6ab04215276d037012d643999f..bbf552bf586de94d8dfc5fb1c18e0af6
  
  public class Main {
      public static boolean useJline = true;
-@@ -189,6 +189,8 @@ public class Main {
+@@ -195,6 +195,8 @@ public class Main {
              }
  
              try {
@@ -299,7 +299,7 @@ index f09520b7723dee6ab04215276d037012d643999f..bbf552bf586de94d8dfc5fb1c18e0af6
                  // This trick bypasses Maven Shade's clever rewriting of our getProperty call when using String literals
                  String jline_UnsupportedTerminal = new String(new char[]{'j', 'l', 'i', 'n', 'e', '.', 'U', 'n', 's', 'u', 'p', 'p', 'o', 'r', 't', 'e', 'd', 'T', 'e', 'r', 'm', 'i', 'n', 'a', 'l'});
                  String jline_terminal = new String(new char[]{'j', 'l', 'i', 'n', 'e', '.', 't', 'e', 'r', 'm', 'i', 'n', 'a', 'l'});
-@@ -206,9 +208,18 @@ public class Main {
+@@ -212,9 +214,18 @@ public class Main {
                      // This ensures the terminal literal will always match the jline implementation
                      System.setProperty(jline.TerminalFactory.JLINE_TERMINAL, jline.UnsupportedTerminal.class.getName());
                  }
@@ -318,7 +318,7 @@ index f09520b7723dee6ab04215276d037012d643999f..bbf552bf586de94d8dfc5fb1c18e0af6
                  }
  
                  if (Main.class.getPackage().getImplementationVendor() != null && System.getProperty("IReallyKnowWhatIAmDoingISwear") == null) {
-@@ -236,7 +247,7 @@ public class Main {
+@@ -242,7 +253,7 @@ public class Main {
                      System.out.println("Unable to read system info");
                  }
                  // Paper end
