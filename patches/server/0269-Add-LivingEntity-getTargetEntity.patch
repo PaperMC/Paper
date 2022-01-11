@@ -16,11 +16,15 @@ index bd4230a4e5fc9c1264b390b59ddefbd0aa8e73c8..e5c5bdc83804f335d7163cfefba79b57
  import net.minecraft.world.phys.HitResult;
  import net.minecraft.world.phys.Vec3;
  import net.minecraft.world.scores.PlayerTeam;
-@@ -3743,6 +3744,38 @@ public abstract class LivingEntity extends Entity {
+@@ -3745,6 +3746,42 @@ public abstract class LivingEntity extends Entity {
          return level.clip(raytrace);
      }
  
 +    public EntityHitResult getTargetEntity(int maxDistance) {
++        return this.getTargetEntity(maxDistance, EntitySelector.NO_CREATIVE_OR_SPECTATOR.and(Entity::isPickable));
++    }
++
++    public EntityHitResult getTargetEntity(int maxDistance, @Nullable Predicate<Entity> entityPredicate) {
 +        if (maxDistance < 1 || maxDistance > 120) {
 +            throw new IllegalArgumentException("maxDistance must be between 1-120");
 +        }
@@ -29,7 +33,7 @@ index bd4230a4e5fc9c1264b390b59ddefbd0aa8e73c8..e5c5bdc83804f335d7163cfefba79b57
 +        Vec3 direction = this.getLookAngle();
 +        Vec3 end = start.add(direction.x * maxDistance, direction.y * maxDistance, direction.z * maxDistance);
 +
-+        List<Entity> entityList = level.getEntities(this, getBoundingBox().expandTowards(direction.x * maxDistance, direction.y * maxDistance, direction.z * maxDistance).inflate(1.0D, 1.0D, 1.0D), EntitySelector.NO_CREATIVE_OR_SPECTATOR.and(Entity::isPickable));
++        List<Entity> entityList = level.getEntities(this, getBoundingBox().expandTowards(direction.x * maxDistance, direction.y * maxDistance, direction.z * maxDistance).inflate(1.0D, 1.0D, 1.0D), entityPredicate);
 +
 +        double distance = 0.0D;
 +        EntityHitResult result = null;
@@ -56,7 +60,7 @@ index bd4230a4e5fc9c1264b390b59ddefbd0aa8e73c8..e5c5bdc83804f335d7163cfefba79b57
  
      public int getShieldBlockingDelay() {
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
-index 9c024b46522e2984ed662538302fbac68a77fd86..fb0e0c629d16bc97efc3e91f7ba6fe9e87fc950b 100644
+index 9c024b46522e2984ed662538302fbac68a77fd86..d55652c94a43464575f64c9f033bde62587b13a7 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
 @@ -1,5 +1,6 @@
@@ -66,13 +70,17 @@ index 9c024b46522e2984ed662538302fbac68a77fd86..fb0e0c629d16bc97efc3e91f7ba6fe9e
  import com.google.common.base.Preconditions;
  import com.google.common.collect.Sets;
  import java.util.ArrayList;
-@@ -218,6 +219,33 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
+@@ -218,6 +219,43 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
              new com.destroystokyo.paper.block.TargetBlockInfo(org.bukkit.craftbukkit.block.CraftBlock.at(getHandle().level, ((net.minecraft.world.phys.BlockHitResult)rayTrace).getBlockPos()),
                  net.minecraft.server.MCUtil.toBukkitBlockFace(((net.minecraft.world.phys.BlockHitResult)rayTrace).getDirection()));
      }
 +
 +    public Entity getTargetEntity(int maxDistance, boolean ignoreBlocks) {
-+        net.minecraft.world.phys.EntityHitResult rayTrace = rayTraceEntity(maxDistance, ignoreBlocks);
++        return this.getTargetEntity(maxDistance, ignoreBlocks, null);
++    }
++
++    public Entity getTargetEntity(int maxDistance, boolean ignoreBlocks, java.util.function.Predicate<Entity> entityPredicate) {
++        net.minecraft.world.phys.EntityHitResult rayTrace = rayTraceEntity(maxDistance, ignoreBlocks, entityPredicate);
 +        return rayTrace == null ? null : rayTrace.getEntity().getBukkitEntity();
 +    }
 +
@@ -82,7 +90,13 @@ index 9c024b46522e2984ed662538302fbac68a77fd86..fb0e0c629d16bc97efc3e91f7ba6fe9e
 +    }
 +
 +    public net.minecraft.world.phys.EntityHitResult rayTraceEntity(int maxDistance, boolean ignoreBlocks) {
-+        net.minecraft.world.phys.EntityHitResult rayTrace = getHandle().getTargetEntity(maxDistance);
++        return this.rayTraceEntity(maxDistance, ignoreBlocks, null);
++    }
++
++    public net.minecraft.world.phys.EntityHitResult rayTraceEntity(int maxDistance, boolean ignoreBlocks, @org.jetbrains.annotations.Nullable java.util.function.Predicate<Entity> entityPredicate) {
++        net.minecraft.world.phys.EntityHitResult rayTrace = getHandle().getTargetEntity(maxDistance, entityPredicate == null ? null : (entity) -> {
++            return entityPredicate.test(entity.getBukkitEntity());
++        });
 +        if (rayTrace == null) {
 +            return null;
 +        }
