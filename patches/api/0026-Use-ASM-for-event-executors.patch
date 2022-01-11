@@ -6,7 +6,7 @@ Subject: [PATCH] Use ASM for event executors.
 Uses method handles for private or static methods.
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index 0e8e827b5a05ac9423386eaea4188d132cc7f954..70d6503745942ea8637146369aeab8f9357c42d5 100644
+index 80fdd05dd593455ca89b66636ed30f1d9facf4ed..d8d459561cc75935136f8f9888ff27b45ad98f9e 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
 @@ -38,6 +38,9 @@ dependencies {
@@ -118,10 +118,10 @@ index 0000000000000000000000000000000000000000..c83672427324bd068ed52916f700b684
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/event/executor/asm/ASMEventExecutorGenerator.java b/src/main/java/com/destroystokyo/paper/event/executor/asm/ASMEventExecutorGenerator.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..b6e7d8ee8d903ebf975d60bec0e08603d9a49fdb
+index 0000000000000000000000000000000000000000..c5db5d06b28a418efa327dd2f3d34fe265455daa
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/event/executor/asm/ASMEventExecutorGenerator.java
-@@ -0,0 +1,47 @@
+@@ -0,0 +1,48 @@
 +package com.destroystokyo.paper.event.executor.asm;
 +
 +import java.lang.reflect.Method;
@@ -147,14 +147,15 @@ index 0000000000000000000000000000000000000000..b6e7d8ee8d903ebf975d60bec0e08603
 +        methodGenerator.returnValue();
 +        methodGenerator.endMethod();
 +        // Generate the execute method
-+        methodGenerator = new GeneratorAdapter(writer.visitMethod(ACC_PUBLIC, "execute", "(Lorg/bukkit/event/Listener;Lorg/bukkit/event/Event;)V", null, null), ACC_PUBLIC, "execute", "(Lorg/bukkit/event/Listener;Lorg/bukkit/event/Listener;)V");;
++        methodGenerator = new GeneratorAdapter(writer.visitMethod(ACC_PUBLIC, "execute", "(Lorg/bukkit/event/Listener;Lorg/bukkit/event/Event;)V", null, null), ACC_PUBLIC, "execute", "(Lorg/bukkit/event/Listener;Lorg/bukkit/event/Listener;)V");
 +        methodGenerator.loadArg(0);
 +        methodGenerator.checkCast(Type.getType(m.getDeclaringClass()));
 +        methodGenerator.loadArg(1);
 +        methodGenerator.checkCast(Type.getType(m.getParameterTypes()[0]));
 +        methodGenerator.visitMethodInsn(m.getDeclaringClass().isInterface() ? INVOKEINTERFACE : INVOKEVIRTUAL, Type.getInternalName(m.getDeclaringClass()), m.getName(), Type.getMethodDescriptor(m), m.getDeclaringClass().isInterface());
-+        if (m.getReturnType() != void.class) {
-+            methodGenerator.pop();
++        switch (Type.getType(m.getReturnType()).getSize()) {
++            case 1: methodGenerator.pop(); break;
++            case 2: methodGenerator.pop2(); break;
 +        }
 +        methodGenerator.returnValue();
 +        methodGenerator.endMethod();
