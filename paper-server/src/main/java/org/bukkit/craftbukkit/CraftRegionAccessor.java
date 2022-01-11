@@ -7,6 +7,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
+import java.util.function.Predicate;
 import net.minecraft.core.BlockPosition;
 import net.minecraft.core.EnumDirection;
 import net.minecraft.core.IRegistry;
@@ -297,16 +298,23 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
 
     @Override
     public boolean generateTree(Location location, Random random, TreeType treeType, Consumer<BlockState> consumer) {
+        return generateTree(location, random, treeType, (consumer == null) ? null : (block) -> {
+            consumer.accept(block);
+            return true;
+        });
+    }
+
+    @Override
+    public boolean generateTree(Location location, Random random, TreeType treeType, Predicate<BlockState> predicate) {
         BlockPosition pos = new BlockPosition(location.getBlockX(), location.getBlockY(), location.getBlockZ());
         BlockStateListPopulator populator = new BlockStateListPopulator(getHandle());
         boolean result = generateTree(populator, getHandle().getMinecraftWorld().getChunkSource().getGenerator(), pos, random, treeType);
         populator.refreshTiles();
 
         for (BlockState blockState : populator.getList()) {
-            if (consumer != null) {
-                consumer.accept(blockState);
+            if (predicate == null || predicate.test(blockState)) {
+                blockState.update(true, true);
             }
-            blockState.update(true, true);
         }
 
         return result;
