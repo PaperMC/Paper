@@ -3,6 +3,7 @@ package org.bukkit;
 import java.util.Collection;
 import java.util.List;
 import java.util.Random;
+import java.util.function.Predicate;
 import org.bukkit.block.Biome;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.data.BlockData;
@@ -182,6 +183,26 @@ public interface RegionAccessor {
      * @return true if the tree was created successfully, otherwise false
      */
     boolean generateTree(@NotNull Location location, @NotNull Random random, @NotNull TreeType type, @Nullable Consumer<BlockState> stateConsumer);
+
+    /**
+     * Creates a tree at the given {@link Location}
+     * <p>
+     * The provided predicate gets called for every block which gets changed
+     * as a result of the tree generation. When the predicate gets called no
+     * modifications to the world are done yet. Which means, that calling
+     * {@link #getBlockState(Location)} in the predicate will return the state
+     * of the block before the generation.
+     * <p>
+     * If the predicate returns {@code true} the block gets set in the world.
+     * If it returns {@code false} the block won't get set in the world.
+     *
+     * @param location Location to spawn the tree
+     * @param random Random to use to generated the tree
+     * @param type Type of the tree to create
+     * @param statePredicate The predicate which should get used to test if a block should be set or not.
+     * @return true if the tree was created successfully, otherwise false
+     */
+    boolean generateTree(@NotNull Location location, @NotNull Random random, @NotNull TreeType type, @Nullable Predicate<BlockState> statePredicate);
 
     /**
      * Creates a entity at the given {@link Location}
