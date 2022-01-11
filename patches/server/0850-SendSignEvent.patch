@@ -1,0 +1,119 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Mon, 8 Jun 2015 23:55:20 -0400
+Subject: [PATCH] SendSignEvent
+
+
+diff --git a/src/main/java/io/papermc/paper/block/SendSignEventImpl.java b/src/main/java/io/papermc/paper/block/SendSignEventImpl.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..d4fc17586ff4eb07708636ad9ad8c56ea7a882a6
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/block/SendSignEventImpl.java
+@@ -0,0 +1,54 @@
++package io.papermc.paper.block;
++
++import io.papermc.paper.event.block.SendSignEvent;
++
++import net.minecraft.core.BlockPos;
++import net.minecraft.network.chat.Component;
++import net.minecraft.network.chat.TextComponent;
++import net.minecraft.world.level.Level;
++
++import org.bukkit.block.Block;
++import org.jetbrains.annotations.NotNull;
++
++import java.util.Arrays;
++import java.util.List;
++
++import io.papermc.paper.adventure.PaperAdventure;
++
++public class SendSignEventImpl extends SendSignEvent {
++    public final List<net.kyori.adventure.text.Component> lines;
++    public final Component[] filteredMessages;
++    private final Block block;
++
++    public SendSignEventImpl(Level level, BlockPos pos, Component[] messages, Component[] filteredMessages) {
++        this.block = level.getWorld().getBlockAt(pos.getX(), pos.getY(), pos.getZ());
++        this.lines = Arrays.asList(new net.kyori.adventure.text.Component[messages.length]);
++        for (int i = 0; i < messages.length; i++) {
++            this.lines.set(i, PaperAdventure.asAdventure(messages[i]));
++        }
++
++
++        this.filteredMessages = filteredMessages;
++
++    }
++
++    @NotNull
++    public Block getBlock() {
++        return block;
++    }
++
++    @Override
++    @NotNull
++    public List<net.kyori.adventure.text.Component> getLines() {
++        return lines;
++    }
++
++    public Component[] getFilteredMessages() {
++        return filteredMessages;
++    }
++
++    public void setLine(int line, net.kyori.adventure.text.Component component) {
++        lines.set(line, component != null ? component : net.kyori.adventure.text.Component.empty());
++        filteredMessages[line] = TextComponent.EMPTY;
++    }
++}
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/SignBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/SignBlockEntity.java
+index 6371176fba41218a209ea59b4cafe5b2d4a685fd..8527e3c7d814918539ca47ac002c0761ab5fc8fe 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/SignBlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/SignBlockEntity.java
+@@ -27,6 +27,7 @@ import net.minecraft.world.phys.Vec3;
+ public class SignBlockEntity extends BlockEntity implements CommandSource { // CraftBukkit - implements
+     private static final boolean CONVERT_LEGACY_SIGNS = Boolean.getBoolean("convertLegacySigns"); // Paper
+ 
++    private boolean isSending = false; // Paper
+     public static final int LINES = 4;
+     private static final String[] RAW_TEXT_FIELD_NAMES = new String[]{"Text1", "Text2", "Text3", "Text4"};
+     private static final String[] FILTERED_TEXT_FIELD_NAMES = new String[]{"FilteredText1", "FilteredText2", "FilteredText3", "FilteredText4"};
+@@ -54,6 +55,25 @@ public class SignBlockEntity extends BlockEntity implements CommandSource { // C
+     protected void saveAdditional(CompoundTag nbt) {
+         super.saveAdditional(nbt);
+ 
++        // Paper
++        if (isSending && this.level != null) {
++            var signSendEvent = new io.papermc.paper.block.SendSignEventImpl(this.level, this.worldPosition, this.messages, this.filteredMessages);
++            signSendEvent.callEvent();
++            final java.util.List<net.kyori.adventure.text.Component> lines = signSendEvent.getLines();
++            final java.util.List<Component> lineComponents = io.papermc.paper.adventure.PaperAdventure.asVanilla(lines);
++            final Component[] filteredMessages = signSendEvent.getFilteredMessages();
++            for (int i = 0; i < 4; ++i) {
++                final Component component = lineComponents.get(i);
++                final String json = Component.Serializer.toJson(component);
++                nbt.putString(SignBlockEntity.RAW_TEXT_FIELD_NAMES[i], json);
++                Component ichatbasecomponent1 = filteredMessages[i];
++
++                if (!ichatbasecomponent1.equals(component)) {
++                    nbt.putString(SignBlockEntity.FILTERED_TEXT_FIELD_NAMES[i], Component.Serializer.toJson(ichatbasecomponent1));
++                }
++            }
++
++        } else // Paper end
+         for (int i = 0; i < 4; ++i) {
+             Component ichatbasecomponent = this.messages[i];
+             String s = Component.Serializer.toJson(ichatbasecomponent);
+@@ -181,7 +201,14 @@ public class SignBlockEntity extends BlockEntity implements CommandSource { // C
+ 
+     @Override
+     public ClientboundBlockEntityDataPacket getUpdatePacket() {
++        // Paper start - SignSendEvent
++        this.isSending = true;
++        try {
+         return ClientboundBlockEntityDataPacket.create(this);
++        } finally {
++            this.isSending = false;
++        }
++        // Paper end
+     }
+ 
+     @Override
