@@ -1,0 +1,121 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: LoaiDev <lolyakram11@gmail.com>
+Date: Tue, 11 Jan 2022 18:02:25 +0200
+Subject: [PATCH] Pose Api
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index 8ca6388ddd834c4f0e94450c8a6ce6b5e73a5f60..2750ca3c4ea174e2ec78403b9776b65ce179e808 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -92,7 +92,6 @@ import net.minecraft.world.level.block.Mirror;
+ import net.minecraft.world.level.block.RenderShape;
+ import net.minecraft.world.level.block.Rotation;
+ import net.minecraft.world.level.block.SoundType;
+-import net.minecraft.world.level.block.state.BlockBehaviour;
+ import net.minecraft.world.level.block.state.BlockState;
+ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+ import net.minecraft.world.level.border.WorldBorder;
+@@ -326,6 +325,9 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, i
+     private org.bukkit.util.Vector origin;
+     @javax.annotation.Nullable
+     private UUID originWorld;
++    @Nullable
++    private boolean persistPose;
++    private boolean fixedPose;
+ 
+     public void setOrigin(@javax.annotation.Nonnull Location location) {
+         this.origin = location.toVector();
+@@ -612,7 +614,17 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, i
+ 
+     public void onClientRemoval() {}
+ 
++    // Paper start - Pose api
+     public void setPose(net.minecraft.world.entity.Pose pose) {
++        if (this.fixedPose) {
++            return;
++        }
++        setPose(pose, false, false);
++    }
++
++    public void setPose(net.minecraft.world.entity.Pose pose, boolean persist, boolean fixed) {
++        this.fixedPose = fixed;
++        this.persistPose = persist;
+         // CraftBukkit start
+         if (pose == this.getPose()) {
+             return;
+@@ -622,6 +634,11 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, i
+         this.entityData.set(Entity.DATA_POSE, pose);
+     }
+ 
++    public boolean hasFixedPose() {
++        return this.fixedPose;
++    }
++    // Paper end
++
+     public net.minecraft.world.entity.Pose getPose() {
+         return (net.minecraft.world.entity.Pose) this.entityData.get(Entity.DATA_POSE);
+     }
+@@ -2148,6 +2165,12 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, i
+             if (fromNetherPortal) {
+                 nbt.putBoolean("Paper.FromNetherPortal", true);
+             }
++            if (persistPose) {
++                nbt.putString("Paper.Pose", this.getPose().toString());
++                if (fixedPose) {
++                    nbt.putBoolean("Paper.FixedPose", true);
++                }
++            }
+             // Paper end
+             return nbt;
+         } catch (Throwable throwable) {
+@@ -2289,6 +2312,13 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, i
+                 this.originWorld = originWorld;
+                 origin = new org.bukkit.util.Vector(originTag.getDouble(0), originTag.getDouble(1), originTag.getDouble(2));
+             }
++            if (nbt.contains("Paper.Pose")) {
++                this.setPose(net.minecraft.world.entity.Pose.valueOf(nbt.getString("Paper.Pose")));
++                this.persistPose = true;
++                if (nbt.contains("Paper.FixedPose")) {
++                    this.fixedPose = nbt.getBoolean("Paper.FixedPose");
++                }
++            }
+ 
+             spawnedViaMobSpawner = nbt.getBoolean("Paper.FromMobSpawner"); // Restore entity's from mob spawner status
+             fromNetherPortal = nbt.getBoolean("Paper.FromNetherPortal");
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
+index 69223b13e894d86d9529f2ef8b60a08a1f7a9267..49dbbc47f725dc4a4dfd5736d669afc04c28efae 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
+@@ -181,6 +181,7 @@ import org.bukkit.plugin.Plugin;
+ import org.bukkit.util.BoundingBox;
+ import org.bukkit.util.NumberConversions;
+ import org.bukkit.util.Vector;
++import org.jetbrains.annotations.NotNull;
+ 
+ public abstract class CraftEntity implements org.bukkit.entity.Entity {
+     private static PermissibleBase perm;
+@@ -1124,6 +1125,23 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
+         return Pose.values()[this.getHandle().getPose().ordinal()];
+     }
+ 
++    // Paper start - Pose api
++    @Override
++    public void setPose(Pose pose) {
++        this.setPose(pose, false);
++    }
++
++    @Override
++    public void setPose(@NotNull Pose pose, boolean fixed) {
++        this.getHandle().setPose(net.minecraft.world.entity.Pose.values()[pose.ordinal()], true, fixed);
++    }
++
++    @Override
++    public boolean hasFixedPose() {
++        return this.getHandle().hasFixedPose();
++    }
++    // Paper end
++
+     public void storeBukkitValues(CompoundTag c) {
+         if (!this.persistentDataContainer.isEmpty()) {
+             c.put("BukkitValues", this.persistentDataContainer.toTagCompound());
