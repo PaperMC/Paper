@@ -2014,7 +2014,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
     void setAmbientSpawnLimit(int limit);
 
     /**
-     * Play a Sound at the provided Location in the World
+     * Play a Sound at the provided Location in the World.
      * <p>
      * This function will fail silently if Location or Sound are null.
      *
@@ -2066,6 +2066,31 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param pitch the pitch of the sound
      */
     void playSound(@NotNull Location location, @NotNull String sound, @NotNull SoundCategory category, float volume, float pitch);
+
+    /**
+     * Play a Sound at the location of the provided entity in the World.
+     * <p>
+     * This function will fail silently if Entity or Sound are null.
+     *
+     * @param entity The entity to play the sound
+     * @param sound The sound to play
+     * @param volume The volume of the sound
+     * @param pitch The pitch of the sound
+     */
+    void playSound(@NotNull Entity entity, @NotNull Sound sound, float volume, float pitch);
+
+    /**
+     * Play a Sound at the location of the provided entity in the World.
+     * <p>
+     * This function will fail silently if Entity or Sound are null.
+     *
+     * @param entity The entity to play the sound
+     * @param sound The sound to play
+     * @param category the category of the sound
+     * @param volume The volume of the sound
+     * @param pitch The pitch of the sound
+     */
+    void playSound(@NotNull Entity entity, @NotNull Sound sound, @NotNull SoundCategory category, float volume, float pitch);
 
     /**
      * Get an array containing the names of all the {@link GameRule}s.
