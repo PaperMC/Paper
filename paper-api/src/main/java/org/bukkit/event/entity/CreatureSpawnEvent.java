@@ -174,7 +174,7 @@ public class CreatureSpawnEvent extends EntitySpawnEvent {
          */
         BEEHIVE,
         /**
-         * When a piglin is converted to a zombified piglib.
+         * When a piglin is converted to a zombified piglin.
          */
         PIGLIN_ZOMBIFIED,
         /**
