@@ -1,0 +1,376 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Dysaido <tonyyoni@gmail.com>
+Date: Thu, 13 Jan 2022 18:28:37 +0100
+Subject: [PATCH] Optimize explosion and made async blockDensity
+
+
+diff --git a/src/main/java/net/minecraft/Util.java b/src/main/java/net/minecraft/Util.java
+index 9c111d479bbcc101886c12950c97f10941125ae7..e69686beb2d694ccaf3a1ae957e9c78d31a3748c 100644
+--- a/src/main/java/net/minecraft/Util.java
++++ b/src/main/java/net/minecraft/Util.java
+@@ -36,13 +36,7 @@ import java.util.Optional;
+ import java.util.Random;
+ import java.util.UUID;
+ import java.util.Map.Entry;
+-import java.util.concurrent.CompletableFuture;
+-import java.util.concurrent.CompletionException;
+-import java.util.concurrent.ExecutorService;
+-import java.util.concurrent.Executors;
+-import java.util.concurrent.ForkJoinPool;
+-import java.util.concurrent.ForkJoinWorkerThread;
+-import java.util.concurrent.TimeUnit;
++import java.util.concurrent.*;
+ import java.util.concurrent.atomic.AtomicInteger;
+ import java.util.function.BiFunction;
+ import java.util.function.BooleanSupplier;
+@@ -67,6 +61,7 @@ import org.apache.logging.log4j.core.LoggerContext;
+ import org.apache.logging.log4j.core.config.Configuration;
+ import org.apache.logging.log4j.core.lookup.StrLookup;
+ import org.apache.logging.log4j.core.lookup.StrSubstitutor;
++import org.jetbrains.annotations.NotNull;
+ 
+ public class Util {
+     static final Logger LOGGER = LogManager.getLogger();
+@@ -91,6 +86,22 @@ public class Util {
+         }
+     });
+     // Paper end - don't submit BLOCKING PROFILE LOOKUPS to the world gen thread
++
++    // Paper start - explosion thread
++    public static final ExecutorService EXPLOSION_EXECUTOR = Executors.newFixedThreadPool(10, new ThreadFactory() {
++
++        private final AtomicInteger count = new AtomicInteger();
++
++        @Override
++        public Thread newThread(@NotNull Runnable run) {
++            Thread ret = new Thread(run);
++            ret.setName("Explosion Executor #" + this.count.getAndIncrement());
++            ret.setUncaughtExceptionHandler(Util::onThreadException);
++            return ret;
++        }
++    });
++    // Paper end
++
+     private static final ExecutorService IO_POOL = makeIoExecutor();
+     public static LongSupplier timeSource = System::nanoTime;
+     public static final UUID NIL_UUID = new UUID(0L, 0L);
+diff --git a/src/main/java/net/minecraft/world/level/Explosion.java b/src/main/java/net/minecraft/world/level/Explosion.java
+index 97f99a06b8954b08af9f4156abe8abdad359349a..b199df223e9ad86ef94859fb2090423e80ef7f8a 100644
+--- a/src/main/java/net/minecraft/world/level/Explosion.java
++++ b/src/main/java/net/minecraft/world/level/Explosion.java
+@@ -4,6 +4,8 @@ import com.google.common.collect.Lists;
+ import com.google.common.collect.Maps;
+ import com.google.common.collect.Sets;
+ import com.mojang.datafixers.util.Pair;
++import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
++import it.unimi.dsi.fastutil.longs.LongSet;
+ import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+ import it.unimi.dsi.fastutil.objects.ObjectListIterator;
+ import java.util.Collections;
+@@ -13,9 +15,14 @@ import java.util.Map;
+ import java.util.Optional;
+ import java.util.Random;
+ import java.util.Set;
++import java.util.concurrent.CompletableFuture;
++import java.util.concurrent.atomic.AtomicReference;
+ import javax.annotation.Nullable;
++
++import net.minecraft.Util;
+ import net.minecraft.core.BlockPos;
+ import net.minecraft.core.particles.ParticleTypes;
++import net.minecraft.server.MinecraftServer;
+ import net.minecraft.server.level.ServerLevel;
+ import net.minecraft.sounds.SoundEvents;
+ import net.minecraft.sounds.SoundSource;
+@@ -71,6 +78,12 @@ public class Explosion {
+     private final Map<Player, Vec3> hitPlayers;
+     public boolean wasCanceled = false; // CraftBukkit - add field
+ 
++    // Paper start - Add atomic some values
++    private static final AtomicReference<Double> DISTANCE_X = new AtomicReference<>();
++    private static final AtomicReference<Double> DISTANCE_Y = new AtomicReference<>();
++    private static final AtomicReference<Double> DISTANCE_Z = new AtomicReference<>();
++    // Paper end
++
+     public Explosion(Level world, @Nullable Entity entity, double x, double y, double z, float power) {
+         this(world, entity, x, y, z, power, false, Explosion.BlockInteraction.DESTROY);
+     }
+@@ -117,8 +130,8 @@ public class Explosion {
+         double d4 = (1.0D - Math.floor(1.0D / d2) * d2) / 2.0D;
+ 
+         if (d0 >= 0.0D && d1 >= 0.0D && d2 >= 0.0D) {
+-            int i = 0;
+-            int j = 0;
++            int arrived = 0;
++            int rays = 0;
+ 
+             for (float f = 0.0F; f <= 1.0F; f = (float) ((double) f + d0)) {
+                 for (float f1 = 0.0F; f1 <= 1.0F; f1 = (float) ((double) f1 + d1)) {
+@@ -129,15 +142,15 @@ public class Explosion {
+                         Vec3 vec3d1 = new Vec3(d5 + d3, d6, d7 + d4);
+ 
+                         if (entity.level.clip(new ClipContext(vec3d1, source, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, entity)).getType() == HitResult.Type.MISS) {
+-                            ++i;
++                            ++arrived;
+                         }
+ 
+-                        ++j;
++                        ++rays;
+                     }
+                 }
+             }
+ 
+-            return (float) i / (float) j;
++            return (float) arrived / (float) rays;
+         } else {
+             return 0.0F;
+         }
+@@ -156,6 +169,53 @@ public class Explosion {
+         int i;
+         int j;
+ 
++        // Paper start - add custom calculations
++        LongSet blockPositions = new LongOpenHashSet();
++        for(double[] vector : VECTORS) {
++            float strength = this.radius * (0.7F + this.level.random.nextFloat() * 0.6F);
++
++            double stepX = this.x;
++            double stepY = this.y;
++            double stepZ = this.z;
++
++            while (strength > 0.0F) {
++                BlockPos pos = new BlockPos(stepX, stepY, stepZ);
++                BlockState state = this.level.getBlockState(pos);
++                if (!state.isDestroyable()) continue; // Paper
++                FluidState fluid = state.getFluidState(); // Paper
++
++                if (!this.level.isInWorldBounds(pos)) {
++                    break;
++                }
++
++                Optional<Float> optional = this.damageCalculator.getBlockExplosionResistance(this, this.level, pos, state, fluid);
++
++                if (optional.isPresent()) {
++                    strength -= ((Float) optional.get() + 0.3F) * 0.3F;
++                }
++
++                if (strength > 0.0F && this.damageCalculator.shouldBlockExplode(this, this.level, pos, state, strength)) {
++                    blockPositions.add(pos.asLong());
++                    // Paper start - prevent headless pistons from forming
++                    if (!com.destroystokyo.paper.PaperConfig.allowHeadlessPistons && state.getBlock() == Blocks.MOVING_PISTON) {
++                        BlockEntity extension = this.level.getBlockEntity(pos);
++                        if (extension instanceof PistonMovingBlockEntity && ((PistonMovingBlockEntity) extension).isSourcePiston()) {
++                            net.minecraft.core.Direction direction = state.getValue(PistonHeadBlock.FACING);
++                            blockPositions.add(pos.relative(direction.getOpposite()).asLong());
++                        }
++                    }
++                    // Paper end
++                }
++
++                stepX += vector[0];
++                stepY += vector[1];
++                stepZ += vector[2];
++            }
++        }
++        for (Long longSet : blockPositions) {
++            this.toBlow.add(BlockPos.of(longSet));
++        }
++        /*
+         for (int k = 0; k < 16; ++k) {
+             for (i = 0; i < 16; ++i) {
+                 for (j = 0; j < 16; ++j) {
+@@ -210,8 +270,10 @@ public class Explosion {
+                 }
+             }
+         }
++         */
++        // Paper end
++        // this.toBlow.addAll(set); // Paper - remove this
+ 
+-        this.toBlow.addAll(set);
+         float f2 = this.radius * 2.0F;
+ 
+         i = Mth.floor(this.x - (double) f2 - 1.0D);
+@@ -227,64 +289,65 @@ public class Explosion {
+             Entity entity = (Entity) list.get(l1);
+ 
+             if (!entity.ignoreExplosion()) {
+-                double d7 = Math.sqrt(entity.distanceToSqr(vec3d)) / (double) f2;
+-
+-                if (d7 <= 1.0D) {
+-                    double d8 = entity.getX() - this.x;
+-                    double d9 = (entity instanceof PrimedTnt ? entity.getY() : entity.getEyeY()) - this.y;
+-                    double d10 = entity.getZ() - this.z;
+-                    double d11 = Math.sqrt(d8 * d8 + d9 * d9 + d10 * d10);
+-
+-                    if (d11 != 0.0D) {
+-                        d8 /= d11;
+-                        d9 /= d11;
+-                        d10 /= d11;
+-                        double d12 = this.getBlockDensity(vec3d, entity); // Paper - Optimize explosions
+-                        double d13 = (1.0D - d7) * d12;
+-
+-                        // CraftBukkit start
+-                        CraftEventFactory.entityDamage = this.source;
+-                        entity.lastDamageCancelled = false;
+-
+-                        // Special case ender dragon only give knockback if no damage is cancelled
+-                        // Thinks to note:
+-                        // - Setting a velocity to a ComplexEntityPart is ignored (and therefore not needed)
+-                        // - Damaging ComplexEntityPart while forward the damage to EntityEnderDragon
+-                        // - Damaging EntityEnderDragon does nothing
+-                        // - EntityEnderDragon hitbock always covers the other parts and is therefore always present
+-                        if (entity instanceof EnderDragonPart) {
+-                            continue;
+-                        }
+-
+-                        if (entity instanceof EnderDragon) {
+-                            for (EnderDragonPart entityComplexPart : ((EnderDragon) entity).subEntities) {
+-                                if (list.contains(entityComplexPart)) {
+-                                    entityComplexPart.hurt(this.getDamageSource(), (float) ((int) ((d13 * d13 + d13) / 2.0D * 7.0D * (double) f2 + 1.0D)));
++                double squared = Math.sqrt(entity.distanceToSqr(vec3d)) / (double) f2;
++
++                if (squared <= 1.0D) {
++                    DISTANCE_X.setRelease(entity.getX() - this.x);
++                    DISTANCE_Y.setRelease((entity instanceof PrimedTnt ? entity.getY() : entity.getEyeY()) - this.y);
++                    DISTANCE_Z.setRelease(entity.getZ() - this.z);
++                    double distanceSquared = Math.sqrt(DISTANCE_X.get() * DISTANCE_X.get() + DISTANCE_Y.get() * DISTANCE_Y.get() + DISTANCE_Z.get() * DISTANCE_Z.get());
++
++                    if (distanceSquared != 0.0D) {
++                        this.getBlockDensity(vec3d, entity) // Paper start - Optimize explosions and made Async this
++                            .thenAccept(density -> MinecraftServer.getServer().execute(() -> {
++
++                                DISTANCE_X.updateAndGet(v -> v / distanceSquared);
++                                DISTANCE_Y.updateAndGet(v -> v / distanceSquared);
++                                DISTANCE_Z.updateAndGet(v -> v / distanceSquared);
++                                double d13 = (1.0D - squared) * density;
++
++                                // CraftBukkit start
++                                CraftEventFactory.entityDamage = this.source;
++                                entity.lastDamageCancelled = false;
++
++                                // Special case ender dragon only give knockback if no damage is cancelled
++                                // Thinks to note:
++                                // - Setting a velocity to a ComplexEntityPart is ignored (and therefore not needed)
++                                // - Damaging ComplexEntityPart while forward the damage to EntityEnderDragon
++                                // - Damaging EntityEnderDragon does nothing
++                                // - EntityEnderDragon hitbock always covers the other parts and is therefore always present
++                                if (entity instanceof EnderDragonPart) {
++                                    return;
+                                 }
+-                            }
+-                        } else {
+-                            entity.hurt(this.getDamageSource(), (float) ((int) ((d13 * d13 + d13) / 2.0D * 7.0D * (double) f2 + 1.0D)));
+-                        }
+ 
+-                        CraftEventFactory.entityDamage = null;
+-                        if (entity.lastDamageCancelled) { // SPIGOT-5339, SPIGOT-6252, SPIGOT-6777: Skip entity if damage event was cancelled
+-                            continue;
+-                        }
+-                        // CraftBukkit end
+-                        double d14 = d13;
++                                if (entity instanceof EnderDragon) {
++                                    for (EnderDragonPart entityComplexPart : ((EnderDragon) entity).subEntities) {
++                                        if (list.contains(entityComplexPart)) {
++                                            entityComplexPart.hurt(this.getDamageSource(), (float) ((int) ((d13 * d13 + d13) / 2.0D * 7.0D * (double) f2 + 1.0D)));
++                                        }
++                                    }
++                                } else {
++                                    entity.hurt(this.getDamageSource(), (float) ((int) ((d13 * d13 + d13) / 2.0D * 7.0D * (double) f2 + 1.0D)));
++                                }
+ 
+-                        if (entity instanceof LivingEntity) {
+-                            d14 = entity instanceof Player && level.paperConfig.disableExplosionKnockback ? 0 : ProtectionEnchantment.getExplosionKnockbackAfterDampener((LivingEntity) entity, d13); // Paper - Disable explosion knockback
+-                        }
++                                CraftEventFactory.entityDamage = null;
++                                if (entity.lastDamageCancelled) { // SPIGOT-5339, SPIGOT-6252, SPIGOT-6777: Skip entity if damage event was cancelled
++                                    return;
++                                }
++                                // CraftBukkit end
++                                double d14 = d13;
+ 
+-                        entity.setDeltaMovement(entity.getDeltaMovement().add(d8 * d14, d9 * d14, d10 * d14));
+-                        if (entity instanceof Player) {
+-                            Player entityhuman = (Player) entity;
++                                if (entity instanceof LivingEntity) {
++                                    d14 = entity instanceof Player && level.paperConfig.disableExplosionKnockback ? 0 : ProtectionEnchantment.getExplosionKnockbackAfterDampener((LivingEntity) entity, d13); // Paper - Disable explosion knockback
++                                }
+ 
+-                            if (!entityhuman.isSpectator() && (!entityhuman.isCreative() || !entityhuman.getAbilities().flying) && !level.paperConfig.disableExplosionKnockback) { // Paper - Disable explosion knockback
+-                                this.hitPlayers.put(entityhuman, new Vec3(d8 * d13, d9 * d13, d10 * d13));
+-                            }
+-                        }
++                                entity.setDeltaMovement(entity.getDeltaMovement().add(DISTANCE_X.get() * d14, DISTANCE_Y.get() * d14, DISTANCE_Z.get() * d14));
++                                if (entity instanceof Player entityhuman) {
++                                    if (!entityhuman.isSpectator() && (!entityhuman.isCreative() || !entityhuman.getAbilities().flying) && !level.paperConfig.disableExplosionKnockback) { // Paper - Disable explosion knockback
++                                        this.hitPlayers.put(entityhuman, new Vec3(DISTANCE_X.get() * d13, DISTANCE_Y.get() * d13, DISTANCE_Z.get() * d13));
++                                    }
++                                }
++                        }));
+                     }
+                 }
+             }
+@@ -477,19 +540,52 @@ public class Explosion {
+ 
+         private BlockInteraction() {}
+     }
+-    // Paper start - Optimize explosions
+-    private float getBlockDensity(Vec3 vec3d, Entity entity) {
+-        if (!this.level.paperConfig.optimizeExplosions) {
+-            return getSeenPercent(vec3d, entity);
+-        }
+-        CacheKey key = new CacheKey(this, entity.getBoundingBox());
+-        Float blockDensity = this.level.explosionDensityCache.get(key);
+-        if (blockDensity == null) {
+-            blockDensity = getSeenPercent(vec3d, entity);
+-            this.level.explosionDensityCache.put(key, blockDensity);
++
++    // Paper start - Optimize explosions from fabric mod, made static this calculation
++    private final static List<double[]> VECTORS = Lists.newArrayListWithCapacity(1352);
++    /*
++     * Author: Dysaido <tonyyoni@gmail.com>
++     * Source: https://github.com/jellysquid3/lithium-fabric/blob/1.16.x/dev/src/main/java/me/jellysquid/mods/lithium/mixin/world/explosions/ExplosionMixin.java
++     */
++    static {
++        for (int rayX = 0; rayX < 16; ++rayX) {
++            boolean xPlane = rayX == 0 || rayX == 15;
++            double vecX = (((float) rayX / 15.0F) * 2.0F) - 1.0F;
++            for (int rayY = 0; rayY < 16; ++rayY) {
++                boolean yPlane = rayY == 0 || rayY == 15;
++                double vecY = (((float) rayY / 15.0F) * 2.0F) - 1.0F;
++                for (int rayZ = 0; rayZ < 16; ++rayZ) {
++                    boolean zPlane = rayZ == 0 || rayZ == 15;
++                    // We only fire rays from the surface of our origin volume
++                    if (xPlane || yPlane || zPlane) {
++                        double vecZ = (((float) rayZ / 15.0F) * 2.0F) - 1.0F;
++                        double dist = Math.sqrt((vecX * vecX) + (vecY * vecY) + (vecZ * vecZ));
++                        double normX = (vecX / dist) * 0.3D;
++                        double normY = (vecY / dist) * 0.3D;
++                        double normZ = (vecZ / dist) * 0.3D;
++                        VECTORS.add(new double[]{normX, normY, normZ});
++                    }
++                }
++            }
+         }
++    }
++    // Paper end
++
++    // Paper start - Optimize explosions and made Async this function
++    private CompletableFuture<Float> getBlockDensity(Vec3 vec3d, Entity entity) {
++        return CompletableFuture.supplyAsync(() -> {
++            if (!this.level.paperConfig.optimizeExplosions) {
++                return getSeenPercent(vec3d, entity);
++            }
++            CacheKey key = new CacheKey(this, entity.getBoundingBox());
++            Float blockDensity = this.level.explosionDensityCache.get(key);
++            if (blockDensity == null) {
++                blockDensity = getSeenPercent(vec3d, entity);
++                this.level.explosionDensityCache.put(key, blockDensity);
++            }
+ 
+-        return blockDensity;
++            return blockDensity;
++        }, Util.EXPLOSION_EXECUTOR);
+     }
+ 
+     static class CacheKey {
