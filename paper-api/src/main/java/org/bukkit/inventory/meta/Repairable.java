@@ -5,7 +5,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Represents an item that can be repaired at an anvil.
  */
-public interface Repairable {
+public interface Repairable extends ItemMeta {
 
     /**
      * Checks to see if this has a repair penalty
@@ -30,5 +30,6 @@ public interface Repairable {
 
     @SuppressWarnings("javadoc")
     @NotNull
+    @Override
     Repairable clone();
 }
