@@ -92,6 +92,40 @@ public interface Furnace extends Container {
      * @throws IllegalArgumentException if value is more than 200
      */
     public void setCookSpeedMultiplier(double multiplier);
+
+    /**
+     * Gets the number of times a recipe has been used since the
+     * last player removed items from the result slot. This is used
+     * to calculate experience rewards when withdrawing items from furnaces.
+     *
+     * @param furnaceRecipe the recipe to query the count for
+     * @return the count or 0 if none found
+     */
+    int getRecipeUsedCount(@NotNull org.bukkit.NamespacedKey furnaceRecipe);
+
+    /**
+     * Checks if the recipe has a used count present on this furnace.
+     *
+     * @param furnaceRecipe the recipe to check if a count exists for
+     * @return true if there is a positive count, else false
+     */
+    boolean hasRecipeUsedCount(@NotNull org.bukkit.NamespacedKey furnaceRecipe);
+
+    /**
+     * Sets the number of times a recipe has been used. This is used
+     * to calculate experience rewards when withdrawing items from furnaces.
+     *
+     * @param furnaceRecipe the recipe to set the count for
+     * @param count the count, a non-positive number will remove the recipe
+     */
+    void setRecipeUsedCount(@NotNull org.bukkit.inventory.CookingRecipe<?> furnaceRecipe, int count);
+
+    /**
+     * Sets all recipes used by this furnace.
+     *
+     * @param recipesUsed the recipes used
+     */
+    void setRecipesUsed(@NotNull Map<CookingRecipe<?>, Integer> recipesUsed);
     // Paper end
 
     @NotNull
