@@ -937,6 +937,32 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         this.getHandle().connection.send(packet);
     }
 
+    // Paper start
+    @Override
+    public void sendMultiBlockChange(final Map<? extends io.papermc.paper.math.Position, BlockData> blockChanges) {
+        if (this.getHandle().connection == null) return;
+
+        Map<SectionPos, it.unimi.dsi.fastutil.shorts.Short2ObjectMap<net.minecraft.world.level.block.state.BlockState>> sectionMap = new HashMap<>();
+
+        for (Map.Entry<? extends io.papermc.paper.math.Position, BlockData> entry : blockChanges.entrySet()) {
+            BlockData blockData = entry.getValue();
+            BlockPos blockPos = io.papermc.paper.util.MCUtil.toBlockPos(entry.getKey());
+            SectionPos sectionPos = SectionPos.of(blockPos);
+
+            it.unimi.dsi.fastutil.shorts.Short2ObjectMap<net.minecraft.world.level.block.state.BlockState> sectionData = sectionMap.computeIfAbsent(sectionPos, key -> new it.unimi.dsi.fastutil.shorts.Short2ObjectArrayMap<>());
+            sectionData.put(SectionPos.sectionRelativePos(blockPos), ((CraftBlockData) blockData).getState());
+        }
+
+        for (Map.Entry<SectionPos, it.unimi.dsi.fastutil.shorts.Short2ObjectMap<net.minecraft.world.level.block.state.BlockState>> entry : sectionMap.entrySet()) {
+            SectionPos sectionPos = entry.getKey();
+            it.unimi.dsi.fastutil.shorts.Short2ObjectMap<net.minecraft.world.level.block.state.BlockState> blockData = entry.getValue();
+
+            net.minecraft.network.protocol.game.ClientboundSectionBlocksUpdatePacket packet = new net.minecraft.network.protocol.game.ClientboundSectionBlocksUpdatePacket(sectionPos, blockData);
+            this.getHandle().connection.send(packet);
+        }
+    }
+    // Paper end
+
     @Override
     public void sendBlockChanges(Collection<BlockState> blocks) {
         Preconditions.checkArgument(blocks != null, "blocks must not be null");
