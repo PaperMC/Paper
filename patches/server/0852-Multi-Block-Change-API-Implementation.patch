@@ -1,0 +1,79 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Brody Beckwith <brody@beckwith.dev>
+Date: Fri, 14 Jan 2022 00:41:11 -0500
+Subject: [PATCH] Multi Block Change API Implementation
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index 148e1985017f6955267b5c970730645394d700f6..5062f04d328c04f45c99a32927fc8a1d8998fc87 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -30,6 +30,7 @@ import javax.annotation.Nullable;
+ import net.minecraft.Util;
+ import net.minecraft.advancements.AdvancementProgress;
+ import net.minecraft.core.BlockPos;
++import net.minecraft.core.SectionPos; // Paper
+ import net.minecraft.nbt.CompoundTag;
+ import net.minecraft.network.FriendlyByteBuf;
+ import net.minecraft.network.chat.ChatType;
+@@ -46,6 +47,7 @@ import net.minecraft.network.protocol.game.ClientboundLevelEventPacket;
+ import net.minecraft.network.protocol.game.ClientboundLevelParticlesPacket;
+ import net.minecraft.network.protocol.game.ClientboundMapItemDataPacket;
+ import net.minecraft.network.protocol.game.ClientboundPlayerInfoPacket;
++import net.minecraft.network.protocol.game.ClientboundSectionBlocksUpdatePacket; // Paper
+ import net.minecraft.network.protocol.game.ClientboundSetDefaultSpawnPositionPacket;
+ import net.minecraft.network.protocol.game.ClientboundSetEquipmentPacket;
+ import net.minecraft.network.protocol.game.ClientboundSetExperiencePacket;
+@@ -74,6 +76,7 @@ import net.minecraft.world.level.GameType;
+ import net.minecraft.world.level.block.Blocks;
+ import net.minecraft.world.level.biome.BiomeManager;
+ import net.minecraft.world.level.block.entity.SignBlockEntity;
++import net.minecraft.world.level.block.state.BlockState; // Paper
+ import net.minecraft.world.level.saveddata.maps.MapDecoration;
+ import net.minecraft.world.level.saveddata.maps.MapItemSavedData;
+ import net.minecraft.world.phys.Vec3;
+@@ -836,6 +839,44 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+         this.getHandle().connection.send(packet);
+     }
+ 
++    // Paper start
++    @Override
++    public void sendMultiBlockChange(Map<Location, BlockData> blockChanges, boolean suppressLightUpdates) {
++        if (this.getHandle().connection == null) return;
++
++        Map<SectionPos, Map<Short, BlockState>> sectionMap = new HashMap<>();
++
++        for (Map.Entry<Location, BlockData> entry : blockChanges.entrySet()) {
++            Location location = entry.getKey();
++            if (!location.getWorld().equals(this.getWorld())) continue;
++
++            BlockData blockData = entry.getValue();
++            BlockPos blockPos = new BlockPos(location.getBlockX(), location.getBlockY(), location.getBlockZ());
++            SectionPos sectionPos = SectionPos.of(blockPos);
++
++            Map<Short, BlockState> sectionData = sectionMap.computeIfAbsent(sectionPos, key -> new HashMap<>());
++            sectionData.put(SectionPos.sectionRelativePos(blockPos), ((CraftBlockData) blockData).getState());
++        }
++
++        for (Map.Entry<SectionPos, Map<Short, BlockState>> entry : sectionMap.entrySet()) {
++            SectionPos sectionPos = entry.getKey();
++            Map<Short, BlockState> blockData = entry.getValue();
++
++            FriendlyByteBuf friendlyByteBuf = new FriendlyByteBuf(Unpooled.buffer());
++            friendlyByteBuf.writeLong(sectionPos.asLong());
++            friendlyByteBuf.writeBoolean(suppressLightUpdates);
++            friendlyByteBuf.writeVarInt(blockData.size());
++
++            for (Map.Entry<Short, BlockState> blockDataEntry : blockData.entrySet()) {
++                friendlyByteBuf.writeVarLong((long) (net.minecraft.world.level.block.Block.getId(blockDataEntry.getValue()) << 12 | blockDataEntry.getKey()));
++            }
++
++            ClientboundSectionBlocksUpdatePacket packet = new ClientboundSectionBlocksUpdatePacket(friendlyByteBuf);
++            this.getHandle().connection.send(packet);
++        }
++    }
++    // Paper end
++
+     @Override
+     public void sendBlockDamage(Location loc, float progress) {
+         Preconditions.checkArgument(loc != null, "loc must not be null");
