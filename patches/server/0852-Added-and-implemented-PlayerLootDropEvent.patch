@@ -1,0 +1,57 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: NeonOverflow <nneonoverflow@protonmail.com>
+Date: Thu, 13 Jan 2022 22:58:28 -0500
+Subject: [PATCH] Added and implemented PlayerLootDropEvent.
+
+As a result of how the PlayerDeathEvent was implemented, when a player dies their items are simply dropped
+through the "world.dropItem()" method. This makes it very annoying for plugin developers to ultimately
+track down the Item entities dropped when a player dies. This patch implements a "PlayerLootDropEvent",
+making it easy for developers to track down the Item entities dropped when a player dies. Furthermore,
+Item entities dropped on player death are marked as being thrown by the player that died.
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+index 35cc150adf51f79e2fccef8b094c90554aafbee2..7621847b6b777e6c66ac49fc76cb8569a9dcd3ff 100644
+--- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
++++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+@@ -1,5 +1,6 @@
+ package org.bukkit.craftbukkit.event;
+ 
++import com.destroystokyo.paper.event.player.PlayerLootDropEvent;
+ import com.google.common.base.Function;
+ import com.google.common.base.Functions;
+ import com.google.common.collect.Lists;
+@@ -907,14 +908,32 @@ public class CraftEventFactory {
+         victim.expToDrop = event.getDroppedExp();
+         victim.newExp = event.getNewExp();
+ 
++        // Paper start - implement player loot drop event + set item thrower as dead player
++        List<Item> items = new ArrayList<Item>();
++
+         for (org.bukkit.inventory.ItemStack stack : event.getDrops()) {
+             if (stack == null || stack.getType() == Material.AIR) continue;
+-
+-            world.dropItem(entity.getLocation(), stack);
++            Item item = world.dropItem(entity.getLocation(), stack);
++            item.setThrower(victim.getUUID());
++            items.add(item);
+         }
+ 
++        handlePlayerLootDropEvent(entity, items);
++        // Paper end
++
++        return event;
++    }
++
++    // Paper start - callPlayerLootDropEvent
++    public static PlayerLootDropEvent handlePlayerLootDropEvent(Player player, List<Item> items) {
++        PlayerLootDropEvent event = new PlayerLootDropEvent(player, items);
++        Bukkit.getPluginManager().callEvent(event);
++        if(event.isCancelled()) {
++            items.forEach(Item::remove);
++        }
+         return event;
+     }
++    // Paper end
+ 
+     // Paper start - helper methods for making death event cancellable
+     // Add information to death event
