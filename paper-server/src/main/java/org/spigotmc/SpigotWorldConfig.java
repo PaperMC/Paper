@@ -322,6 +322,18 @@ public class SpigotWorldConfig
     public int mansionSeed;
     public int fossilSeed;
     public int portalSeed;
+    // Paper start - add missing structure set configs
+    public int ancientCitySeed;
+    public int trailRuinsSeed;
+    public int trialChambersSeed;
+    public int buriedTreasureSeed;
+    public Integer mineshaftSeed;
+    public Long strongholdSeed;
+    private <N extends Number> N getSeed(String path, java.util.function.Function<String, N> toNumberFunc) {
+        final String value = this.getString(path, "default");
+        return org.apache.commons.lang3.math.NumberUtils.isParsable(value) ? toNumberFunc.apply(value) : null;
+    }
+    // Paper end
     private void initWorldGenSeeds()
     {
         this.villageSeed = this.getInt( "seed-village", 10387312 );
@@ -339,6 +351,14 @@ public class SpigotWorldConfig
         this.mansionSeed = this.getInt( "seed-mansion", 10387319 );
         this.fossilSeed = this.getInt( "seed-fossil", 14357921 );
         this.portalSeed = this.getInt( "seed-portal", 34222645 );
+        // Paper start - add missing structure set configs
+        this.ancientCitySeed = this.getInt("seed-ancientcity", 20083232);
+        this.trailRuinsSeed = this.getInt("seed-trailruins", 83469867);
+        this.trialChambersSeed = this.getInt("seed-trialchambers", 94251327);
+        this.buriedTreasureSeed = this.getInt("seed-buriedtreasure", 10387320); // StructurePlacement#HIGHLY_ARBITRARY_RANDOM_SALT
+        this.mineshaftSeed = this.getSeed("seed-mineshaft", Integer::parseInt);
+        this.strongholdSeed = this.getSeed("seed-stronghold", Long::parseLong);
+        // Paper end
         this.log( "Custom Map Seeds:  Village: " + this.villageSeed + " Desert: " + this.desertSeed + " Igloo: " + this.iglooSeed + " Jungle: " + this.jungleSeed + " Swamp: " + this.swampSeed + " Monument: " + this.monumentSeed
                 + " Ocean: " + this.oceanSeed + " Shipwreck: " + this.shipwreckSeed + " End City: " + this.endCitySeed + " Slime: " + this.slimeSeed + " Nether: " + this.netherSeed + " Mansion: " + this.mansionSeed + " Fossil: " + this.fossilSeed + " Portal: " + this.portalSeed );
     }
