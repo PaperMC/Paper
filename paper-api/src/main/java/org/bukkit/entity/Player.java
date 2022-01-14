@@ -977,6 +977,29 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      */
     public void sendBlockDamage(@NotNull Location loc, float progress);
 
+    // Paper start
+    /**
+     * Send multiple block changes. This fakes a multi block change packet for each
+     * chunk section that a block change occurs. This will not actually change the world in any way.
+     *
+     * @param blockChanges A map of the positions you want to change to their new block data
+     */
+    void sendMultiBlockChange(@NotNull Map<? extends io.papermc.paper.math.Position, BlockData> blockChanges);
+
+    /**
+     * Send multiple block changes. This fakes a multi block change packet for each
+     * chunk section that a block change occurs. This will not actually change the world in any way.
+     *
+     * @param blockChanges A map of the positions you want to change to their new block data
+     * @param suppressLightUpdates Whether to suppress light updates or not
+     * @deprecated suppressLightUpdates is no longer available in 1.20+, use {@link #sendMultiBlockChange(Map)}
+     */
+    @Deprecated
+    default void sendMultiBlockChange(@NotNull Map<? extends io.papermc.paper.math.Position, BlockData> blockChanges, boolean suppressLightUpdates) {
+        this.sendMultiBlockChange(blockChanges);
+    }
+    // Paper end
+
     /**
      * Send block damage. This fakes block break progress at a certain location
      * sourced by the provided entity. This will not actually change the block's
