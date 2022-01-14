@@ -202,8 +202,28 @@ index e88df908377450964ae5b6ff97ee97bd2f09c05f..ba70ac49222c517a38e20e86cee1fd38
      }
  
      static Map<Enchantment, Integer> getEnchantments(net.minecraft.world.item.ItemStack item) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaEnchantedBook.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaEnchantedBook.java
+index ef6902466cce10d699d1541c968b0709654c57d0..2070f90eb4d9fab723c9da906e1fd72de21d896f 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaEnchantedBook.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaEnchantedBook.java
+@@ -39,13 +39,13 @@ class CraftMetaEnchantedBook extends CraftMetaItem implements EnchantmentStorage
+             return;
+         }
+ 
+-        this.enchantments = buildEnchantments(tag, CraftMetaEnchantedBook.STORED_ENCHANTMENTS);
++        this.enchantments = buildEnchantments(tag, CraftMetaEnchantedBook.STORED_ENCHANTMENTS, LinkedHashMap::new); // Paper
+     }
+ 
+     CraftMetaEnchantedBook(Map<String, Object> map) {
+         super(map);
+ 
+-        this.enchantments = buildEnchantments(map, CraftMetaEnchantedBook.STORED_ENCHANTMENTS);
++        this.enchantments = buildEnchantments(map, CraftMetaEnchantedBook.STORED_ENCHANTMENTS, LinkedHashMap::new); // Paper
+     }
+ 
+     @Override
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
-index b42527e0307811a3697f6e7b0afc9a10527acbaf..20d10e5b54edaf1c5212bbc33b8cd1aa426fa826 100644
+index b42527e0307811a3697f6e7b0afc9a10527acbaf..c22851932bc537e85f7ecc2aaab439c1b1e3e137 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
 @@ -6,6 +6,7 @@ import com.google.common.collect.ImmutableList;
@@ -257,39 +277,50 @@ index b42527e0307811a3697f6e7b0afc9a10527acbaf..20d10e5b54edaf1c5212bbc33b8cd1aa
          }
  
          if (meta.hasAttributeModifiers()) {
-@@ -387,13 +390,13 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -387,13 +390,19 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
          }
      }
  
 -    static Map<Enchantment, Integer> buildEnchantments(CompoundTag tag, ItemMetaKey key) {
-+    static EnchantmentMap buildEnchantments(CompoundTag tag, ItemMetaKey key) { // Paper
++    // Paper start
++    static EnchantmentMap buildEnchantments(CompoundTag tag, ItemMetaKey key) {
++        return buildEnchantments(tag, key, ignored -> new EnchantmentMap());
++    }
++
++    static <M extends Map<Enchantment, Integer>> M buildEnchantments(CompoundTag tag, ItemMetaKey key, java.util.function.Function<Integer, M> mapCreator) {
++        // Paper end
          if (!tag.contains(key.NBT)) {
              return null;
          }
  
          ListTag ench = tag.getList(key.NBT, CraftMagicNumbers.NBT.TAG_COMPOUND);
 -        Map<Enchantment, Integer> enchantments = new LinkedHashMap<Enchantment, Integer>(ench.size());
-+        EnchantmentMap enchantments = new EnchantmentMap(); // Paper
++        M enchantments = mapCreator.apply(ench.size()); // Paper
  
          for (int i = 0; i < ench.size(); i++) {
              String id = ((CompoundTag) ench.get(i)).getString(ENCHANTMENTS_ID.NBT);
-@@ -546,13 +549,13 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -546,13 +555,18 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
          }
      }
  
 -    static Map<Enchantment, Integer> buildEnchantments(Map<String, Object> map, ItemMetaKey key) {
-+    static EnchantmentMap buildEnchantments(Map<String, Object> map, ItemMetaKey key) { // Paper
++    // Paper start
++    static EnchantmentMap buildEnchantments(Map<String, Object> map, ItemMetaKey key) {
++        return buildEnchantments(map, key, ignored -> new EnchantmentMap());
++    }
++    static <M extends Map<Enchantment, Integer>> M buildEnchantments(Map<String, Object> map, ItemMetaKey key, java.util.function.Function<Integer, M> mapCreator) {
++        // Paper end
          Map<?, ?> ench = SerializableMeta.getObject(Map.class, map, key.BUKKIT, true);
          if (ench == null) {
              return null;
          }
  
 -        Map<Enchantment, Integer> enchantments = new LinkedHashMap<Enchantment, Integer>(ench.size());
-+        EnchantmentMap enchantments = new EnchantmentMap(); // Paper
++        M enchantments = mapCreator.apply(ench.size()); // Paper
          for (Map.Entry<?, ?> entry : ench.entrySet()) {
              // Doctor older enchants
              String enchantKey = entry.getKey().toString();
-@@ -828,14 +831,14 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -828,14 +842,14 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
  
      @Override
      public Map<Enchantment, Integer> getEnchants() {
@@ -306,7 +337,7 @@ index b42527e0307811a3697f6e7b0afc9a10527acbaf..20d10e5b54edaf1c5212bbc33b8cd1aa
          }
  
          if (ignoreRestrictions || level >= ench.getStartLevel() && level <= ench.getMaxLevel()) {
-@@ -1223,7 +1226,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -1223,7 +1237,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
              clone.customModelData = this.customModelData;
              clone.blockData = this.blockData;
              if (this.enchantments != null) {
@@ -315,7 +346,7 @@ index b42527e0307811a3697f6e7b0afc9a10527acbaf..20d10e5b54edaf1c5212bbc33b8cd1aa
              }
              if (this.hasAttributeModifiers()) {
                  clone.attributeModifiers = LinkedHashMultimap.create(this.attributeModifiers);
-@@ -1458,4 +1461,22 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -1458,4 +1472,22 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
              return CraftMetaItem.HANDLED_TAGS;
          }
      }
