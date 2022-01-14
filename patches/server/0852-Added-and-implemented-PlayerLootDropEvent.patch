@@ -10,17 +10,10 @@ making it easy for developers to track down the Item entities dropped when a pla
 Item entities dropped on player death are marked as being thrown by the player that died.
 
 diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-index 35cc150adf51f79e2fccef8b094c90554aafbee2..7621847b6b777e6c66ac49fc76cb8569a9dcd3ff 100644
+index 35cc150adf51f79e2fccef8b094c90554aafbee2..d811199b4829d34c2b7d8556e61f42ff2ce3e695 100644
 --- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 +++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-@@ -1,5 +1,6 @@
- package org.bukkit.craftbukkit.event;
- 
-+import com.destroystokyo.paper.event.player.PlayerLootDropEvent;
- import com.google.common.base.Function;
- import com.google.common.base.Functions;
- import com.google.common.collect.Lists;
-@@ -907,14 +908,32 @@ public class CraftEventFactory {
+@@ -907,15 +907,35 @@ public class CraftEventFactory {
          victim.expToDrop = event.getDroppedExp();
          victim.newExp = event.getNewExp();
  
@@ -29,7 +22,7 @@ index 35cc150adf51f79e2fccef8b094c90554aafbee2..7621847b6b777e6c66ac49fc76cb8569
 +
          for (org.bukkit.inventory.ItemStack stack : event.getDrops()) {
              if (stack == null || stack.getType() == Material.AIR) continue;
--
+ 
 -            world.dropItem(entity.getLocation(), stack);
 +            Item item = world.dropItem(entity.getLocation(), stack);
 +            item.setThrower(victim.getUUID());
@@ -39,19 +32,21 @@ index 35cc150adf51f79e2fccef8b094c90554aafbee2..7621847b6b777e6c66ac49fc76cb8569
 +        handlePlayerLootDropEvent(entity, items);
 +        // Paper end
 +
-+        return event;
-+    }
-+
-+    // Paper start - callPlayerLootDropEvent
-+    public static PlayerLootDropEvent handlePlayerLootDropEvent(Player player, List<Item> items) {
-+        PlayerLootDropEvent event = new PlayerLootDropEvent(player, items);
-+        Bukkit.getPluginManager().callEvent(event);
-+        if(event.isCancelled()) {
-+            items.forEach(Item::remove);
-+        }
          return event;
      }
-+    // Paper end
  
++    // Paper start - callPlayerLootDropEvent
++    public static void handlePlayerLootDropEvent(Player player, List<Item> items) {
++        if (!new com.destroystokyo.paper.event.player.PlayerLootDropEvent(player, items).callEvent()) {
++            items.forEach((item) -> {
++                if(!item.isDead()) {
++                    item.remove();
++                }
++            });
++        }
++    }
++    // Paper end
++
      // Paper start - helper methods for making death event cancellable
      // Add information to death event
+     private static void populateFields(net.minecraft.world.entity.LivingEntity victim, EntityDeathEvent event) {
