@@ -1612,7 +1612,7 @@ index 0a04980a8015fe08907a040f0f3ff537267bd462..0754c45fadf17d3ee2e30e161e77119a
                  double d2 = d0 * d0;
                  boolean flag = d1 <= d2 && this.entity.broadcastToPlayer(player);
 diff --git a/src/main/java/net/minecraft/server/level/DistanceManager.java b/src/main/java/net/minecraft/server/level/DistanceManager.java
-index 1744f4983b24a87f3861ebd5d68120cfce904934..e018704f7fc2e6ae761fbeca90e4736c4ae311af 100644
+index 1744f4983b24a87f3861ebd5d68120cfce904934..94be1d23683d682285c976f3b48b0e36ea4ecbee 100644
 --- a/src/main/java/net/minecraft/server/level/DistanceManager.java
 +++ b/src/main/java/net/minecraft/server/level/DistanceManager.java
 @@ -49,8 +49,8 @@ public abstract class DistanceManager {
@@ -1700,21 +1700,27 @@ index 1744f4983b24a87f3861ebd5d68120cfce904934..e018704f7fc2e6ae761fbeca90e4736c
          }
  
      }
-@@ -438,11 +438,11 @@ public abstract class DistanceManager {
+@@ -438,11 +438,17 @@ public abstract class DistanceManager {
      }
  
      public boolean inEntityTickingRange(long chunkPos) {
 -        return this.tickingTicketsTracker.getLevel(chunkPos) < 32;
-+        return this.ticketTracker.getLevel(chunkPos) < 32; // Paper - replace player chunk loader system
++        // Paper start - replace player chunk loader system
++        ChunkHolder holder = this.chunkMap.getVisibleChunkIfPresent(chunkPos);
++        return holder != null && holder.isEntityTickingReady();
++        // Paper end - replace player chunk loader system
      }
  
      public boolean inBlockTickingRange(long chunkPos) {
 -        return this.tickingTicketsTracker.getLevel(chunkPos) < 33;
-+        return this.ticketTracker.getLevel(chunkPos) < 33; // Paper - replace player chunk loader system
++        // Paper start - replace player chunk loader system
++        ChunkHolder holder = this.chunkMap.getVisibleChunkIfPresent(chunkPos);
++        return holder != null && holder.isTickingReady();
++        // Paper end - replace player chunk loader system
      }
  
      protected String getTicketDebugString(long pos) {
-@@ -452,20 +452,16 @@ public abstract class DistanceManager {
+@@ -452,20 +458,16 @@ public abstract class DistanceManager {
      }
  
      protected void updatePlayerTickets(int viewDistance) {
@@ -1738,7 +1744,7 @@ index 1744f4983b24a87f3861ebd5d68120cfce904934..e018704f7fc2e6ae761fbeca90e4736c
      }
      // Paper end
  
-@@ -522,10 +518,7 @@ public abstract class DistanceManager {
+@@ -522,10 +524,7 @@ public abstract class DistanceManager {
  
      }
  
@@ -1750,7 +1756,7 @@ index 1744f4983b24a87f3861ebd5d68120cfce904934..e018704f7fc2e6ae761fbeca90e4736c
  
      // CraftBukkit start
      public <T> void removeAllTicketsFor(TicketType<T> ticketType, int ticketLevel, T ticketIdentifier) {
-@@ -592,6 +585,7 @@ public abstract class DistanceManager {
+@@ -592,6 +591,7 @@ public abstract class DistanceManager {
          }
      }
  
@@ -1758,7 +1764,7 @@ index 1744f4983b24a87f3861ebd5d68120cfce904934..e018704f7fc2e6ae761fbeca90e4736c
      private class FixedPlayerDistanceChunkTracker extends ChunkTracker {
  
          protected final Long2ByteMap chunks = new Long2ByteOpenHashMap();
-@@ -765,4 +759,5 @@ public abstract class DistanceManager {
+@@ -765,4 +765,5 @@ public abstract class DistanceManager {
              return distance <= this.viewDistance - 2;
          }
      }
