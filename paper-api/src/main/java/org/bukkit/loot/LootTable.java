@@ -6,6 +6,7 @@ import org.bukkit.Keyed;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * LootTables are technical files that represent what items should be in
@@ -25,7 +26,7 @@ public interface LootTable extends Keyed {
      * @return a list of ItemStacks
      */
     @NotNull
-    Collection<ItemStack> populateLoot(@NotNull Random random, @NotNull LootContext context);
+    Collection<ItemStack> populateLoot(@Nullable Random random, @NotNull LootContext context);
 
     /**
      * Attempt to fill an inventory with this LootTable's loot.
@@ -34,5 +35,5 @@ public interface LootTable extends Keyed {
      * @param random the random instance to use to generate loot
      * @param context context within to populate loot
      */
-    void fillInventory(@NotNull Inventory inventory, @NotNull Random random, @NotNull LootContext context);
+    void fillInventory(@NotNull Inventory inventory, @Nullable Random random, @NotNull LootContext context);
 }
