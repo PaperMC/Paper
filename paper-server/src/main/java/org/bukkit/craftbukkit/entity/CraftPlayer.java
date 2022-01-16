@@ -1002,6 +1002,13 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     @Override
+    public GameMode getPreviousGameMode() {
+        EnumGamemode previousGameMode = getHandle().gameMode.getPreviousGameModeForPlayer();
+
+        return (previousGameMode == null) ? null : GameMode.getByValue(previousGameMode.getId());
+    }
+
+    @Override
     public void giveExp(int exp) {
         getHandle().giveExperiencePoints(exp);
     }
