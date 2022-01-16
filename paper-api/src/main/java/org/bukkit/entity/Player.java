@@ -571,6 +571,14 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
     public void updateInventory();
 
     /**
+     * Gets this player's previous {@link GameMode}
+     *
+     * @return Previous game mode or null
+     */
+    @Nullable
+    public GameMode getPreviousGameMode();
+
+    /**
      * Sets the current time on the player's client. When relative is true the
      * player's time will be kept synchronized to its world time with the
      * specified offset.
