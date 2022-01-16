@@ -85,7 +85,25 @@
          this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, IronGolem.class, true));
          this.targetSelector.addGoal(5, new NearestAttackableTargetGoal<>(this, Turtle.class, 10, true, false, Turtle.BABY_ON_LAND_SELECTOR));
      }
-@@ -178,9 +187,9 @@
+@@ -165,11 +174,16 @@
+ 
+     @Override
+     protected int getBaseExperienceReward(ServerLevel world) {
++        final int previousReward = this.xpReward; // Paper - store previous value to reset after calculating XP reward
+         if (this.isBaby()) {
+             this.xpReward = (int) ((double) this.xpReward * 2.5D);
+         }
+ 
+-        return super.getBaseExperienceReward(world);
++        // Paper start - store previous value to reset after calculating XP reward
++        int reward = super.getBaseExperienceReward(world);
++        this.xpReward = previousReward;
++        return reward;
++        // Paper end - store previous value to reset after calculating XP reward
+     }
+ 
+     @Override
+@@ -178,9 +192,9 @@
          if (this.level() != null && !this.level().isClientSide) {
              AttributeInstance attributemodifiable = this.getAttribute(Attributes.MOVEMENT_SPEED);
  
@@ -97,7 +115,7 @@
              }
          }
  
-@@ -203,7 +212,10 @@
+@@ -203,7 +217,10 @@
      public void tick() {
          if (!this.level().isClientSide && this.isAlive() && !this.isNoAi()) {
              if (this.isUnderWaterConverting()) {
@@ -109,7 +127,7 @@
                  if (this.conversionTime < 0) {
                      this.doUnderWaterConversion();
                  }
-@@ -220,6 +232,7 @@
+@@ -220,6 +237,7 @@
          }
  
          super.tick();
@@ -117,7 +135,7 @@
      }
  
      @Override
-@@ -253,7 +266,14 @@
+@@ -253,7 +271,14 @@
          super.aiStep();
      }
  
@@ -132,7 +150,7 @@
          this.conversionTime = ticksUntilWaterConversion;
          this.getEntityData().set(Zombie.DATA_DROWNED_CONVERSION_ID, true);
      }
-@@ -267,32 +287,51 @@
+@@ -267,32 +292,51 @@
      }
  
      protected void convertToZombieType(EntityType<? extends Zombie> entityType) {
@@ -197,7 +215,7 @@
      @Override
      public boolean hurtServer(ServerLevel world, DamageSource source, float amount) {
          if (!super.hurtServer(world, source, amount)) {
-@@ -323,10 +362,10 @@
+@@ -323,10 +367,10 @@
  
                      if (SpawnPlacements.isSpawnPositionOk(entitytypes, world, blockposition) && SpawnPlacements.checkSpawnRules(entitytypes, world, EntitySpawnReason.REINFORCEMENT, blockposition, world.random)) {
                          entityzombie.setPos((double) i1, (double) j1, (double) k1);
@@ -211,7 +229,7 @@
                              AttributeInstance attributemodifiable = this.getAttribute(Attributes.SPAWN_REINFORCEMENTS_CHANCE);
                              AttributeModifier attributemodifier = attributemodifiable.getModifier(Zombie.REINFORCEMENT_CALLER_CHARGE_ID);
                              double d0 = attributemodifier != null ? attributemodifier.amount() : 0.0D;
-@@ -352,7 +391,14 @@
+@@ -352,7 +396,14 @@
              float f = this.level().getCurrentDifficultyAt(this.blockPosition()).getEffectiveDifficulty();
  
              if (this.getMainHandItem().isEmpty() && this.isOnFire() && this.random.nextFloat() < f * 0.3F) {
@@ -227,7 +245,7 @@
              }
          }
  
-@@ -385,7 +431,7 @@
+@@ -385,7 +436,7 @@
  
      @Override
      public EntityType<? extends Zombie> getType() {
@@ -236,7 +254,7 @@
      }
  
      protected boolean canSpawnInLiquids() {
-@@ -414,6 +460,7 @@
+@@ -414,6 +465,7 @@
          nbt.putBoolean("CanBreakDoors", this.canBreakDoors());
          nbt.putInt("InWaterTime", this.isInWater() ? this.inWaterTime : -1);
          nbt.putInt("DrownedConversionTime", this.isUnderWaterConverting() ? this.conversionTime : -1);
@@ -244,7 +262,7 @@
      }
  
      @Override
-@@ -425,6 +472,11 @@
+@@ -425,6 +477,11 @@
          if (nbt.contains("DrownedConversionTime", 99) && nbt.getInt("DrownedConversionTime") > -1) {
              this.startUnderWaterConversion(nbt.getInt("DrownedConversionTime"));
          }
@@ -256,7 +274,7 @@
  
      }
  
-@@ -432,10 +484,8 @@
+@@ -432,10 +489,8 @@
      public boolean killedEntity(ServerLevel world, LivingEntity other) {
          boolean flag = super.killedEntity(world, other);
  
@@ -269,7 +287,7 @@
  
              if (this.convertVillagerToZombieVillager(world, entityvillager)) {
                  flag = false;
-@@ -468,7 +518,7 @@
+@@ -468,7 +523,7 @@
          float f = difficulty.getSpecialMultiplier();
  
          if (spawnReason != EntitySpawnReason.CONVERSION) {
@@ -278,7 +296,7 @@
          }
  
          if (object == null) {
-@@ -496,7 +546,7 @@
+@@ -496,7 +551,7 @@
                              entitychicken1.finalizeSpawn(world, difficulty, EntitySpawnReason.JOCKEY, (SpawnGroupData) null);
                              entitychicken1.setChickenJockey(true);
                              this.startRiding(entitychicken1);
