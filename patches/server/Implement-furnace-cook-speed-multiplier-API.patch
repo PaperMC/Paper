@@ -70,9 +70,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -    private static int getTotalCookTime(Level world, RecipeType<? extends AbstractCookingRecipe> recipeType, Container inventory) {
 -        return (world != null) ? (Integer) world.getRecipeManager().getRecipeFor((RecipeType<AbstractCookingRecipe>) recipeType, inventory, world).map(AbstractCookingRecipe::getCookingTime).orElse(200) : 200; // CraftBukkit - SPIGOT-4302 // Eclipse fail
 +    // Paper begin - Expose this function so CraftFurnace can correctly scale the total cooking time to a new multiplier
-+    public static int getTotalCookTime(Level world, RecipeType<? extends AbstractCookingRecipe> recipeType, Container inventory, final double cookSpeedMultiplier) {
++    public static int getTotalCookTime(@Nullable Level world, RecipeType<? extends AbstractCookingRecipe> recipeType, Container inventory, final double cookSpeedMultiplier) {
 +        /* Scale the recipe's cooking time to the current cookSpeedMultiplier */
-+        int cookTime = world != null ? world.getRecipeManager().getRecipeFor((RecipeType<AbstractCookingRecipe>) recipeType, inventory, world).map(AbstractCookingRecipe::getCookingTime).orElse(200) : 200; // CraftBukkit - SPIGOT-4302 // Eclipse fail
++        int cookTime = (world != null ? world.getRecipeManager() : net.minecraft.server.MinecraftServer.getServer().getRecipeManager()).getRecipeFor(recipeType, inventory, world /* passing a null level here is safe. world is only used for map extending recipes which won't happen here */).map(AbstractCookingRecipe::getCookingTime).orElse(200); // CraftBukkit - SPIGOT-4302 // Eclipse fail
 +        return (int) Math.ceil (cookTime / cookSpeedMultiplier);
      }
 +    // Paper end
@@ -109,7 +109,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        com.google.common.base.Preconditions.checkArgument(multiplier <= 200, "Furnace speed multiplier cannot more than 200");
 +        T snapshot = this.getSnapshot();
 +        snapshot.cookSpeedMultiplier = multiplier;
-+        snapshot.cookingTotalTime = AbstractFurnaceBlockEntity.getTotalCookTime(this.world.getHandle(), snapshot.recipeType, snapshot, snapshot.cookSpeedMultiplier); // Update the snapshot's current total cook time to scale with the newly set multiplier
++        snapshot.cookingTotalTime = AbstractFurnaceBlockEntity.getTotalCookTime(this.isPlaced() ? this.world.getHandle() : null, snapshot.recipeType, snapshot, snapshot.cookSpeedMultiplier); // Update the snapshot's current total cook time to scale with the newly set multiplier
 +    }
 +    // Paper end
  }
