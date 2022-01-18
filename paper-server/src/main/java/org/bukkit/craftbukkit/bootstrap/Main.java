@@ -50,8 +50,7 @@ public class Main {
                 System.exit(0);
             }
 
-            ClassLoader maybePlatformClassLoader = getClass().getClassLoader().getParent();
-            URLClassLoader classLoader = new URLClassLoader(extractedUrls.toArray(new URL[0]), maybePlatformClassLoader);
+            URLClassLoader classLoader = new URLClassLoader(extractedUrls.toArray(new URL[0]));
 
             System.out.println("Starting server");
             Thread runThread = new Thread(() -> {
