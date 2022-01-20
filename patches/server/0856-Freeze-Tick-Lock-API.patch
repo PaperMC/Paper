@@ -5,10 +5,10 @@ Subject: [PATCH] Freeze Tick Lock API
 
 
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index 8ca6388ddd834c4f0e94450c8a6ce6b5e73a5f60..06893be2543cb3eededab99a197f4928da05b875 100644
+index eac13465c8c1827953a8b1bb2feb4d7f92c773fb..4584dcec835f97e94dcf12788b66703075dafe45 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
-@@ -326,6 +326,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, i
+@@ -332,6 +332,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, i
      private org.bukkit.util.Vector origin;
      @javax.annotation.Nullable
      private UUID originWorld;
@@ -16,7 +16,7 @@ index 8ca6388ddd834c4f0e94450c8a6ce6b5e73a5f60..06893be2543cb3eededab99a197f4928
  
      public void setOrigin(@javax.annotation.Nonnull Location location) {
          this.origin = location.toVector();
-@@ -752,7 +753,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, i
+@@ -758,7 +759,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, i
                  this.setRemainingFireTicks(this.remainingFireTicks - 1);
              }
  
@@ -25,11 +25,31 @@ index 8ca6388ddd834c4f0e94450c8a6ce6b5e73a5f60..06893be2543cb3eededab99a197f4928
                  this.setTicksFrozen(0);
                  this.level.levelEvent((Player) null, 1009, this.blockPosition, 1);
              }
+@@ -2158,6 +2159,9 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, i
+             if (fromNetherPortal) {
+                 nbt.putBoolean("Paper.FromNetherPortal", true);
+             }
++            if (freezeLocked) {
++                nbt.putBoolean("Paper.FreezeLock", true);
++            }
+             // Paper end
+             return nbt;
+         } catch (Throwable throwable) {
+@@ -2326,6 +2330,9 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, i
+             if (spawnReason == null) {
+                 spawnReason = org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.DEFAULT;
+             }
++            if (nbt.contains("Paper.FreezeLock")) {
++                freezeLocked = nbt.getBoolean("Paper.FreezeLock");
++            }
+             // Paper end
+ 
+         } catch (Throwable throwable) {
 diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-index 572f9ca81b78c6229725f6693940ac0a70ecdfd5..1f4b1774e148a642c5af9e240e9f5db414eca685 100644
+index 44a32fd2c08a09af0bba01547847b8594a7cd077..25338fe4cfdc683ca4c01487e166a1649c6f640b 100644
 --- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-@@ -3300,7 +3300,7 @@ public abstract class LivingEntity extends Entity {
+@@ -3299,7 +3299,7 @@ public abstract class LivingEntity extends Entity {
          boolean flag1 = this.getType().is(EntityTypeTags.FREEZE_HURTS_EXTRA_TYPES);
          int i;
  
