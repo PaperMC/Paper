@@ -1,0 +1,62 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Owen1212055 <23108066+Owen1212055@users.noreply.github.com>
+Date: Sun, 26 Dec 2021 20:27:43 -0500
+Subject: [PATCH] Freeze Tick Lock API
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index 8ca6388ddd834c4f0e94450c8a6ce6b5e73a5f60..06893be2543cb3eededab99a197f4928da05b875 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -326,6 +326,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, i
+     private org.bukkit.util.Vector origin;
+     @javax.annotation.Nullable
+     private UUID originWorld;
++    public boolean freezeLocked = false; // Paper - Freeze Tick Lock API
+ 
+     public void setOrigin(@javax.annotation.Nonnull Location location) {
+         this.origin = location.toVector();
+@@ -752,7 +753,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, i
+                 this.setRemainingFireTicks(this.remainingFireTicks - 1);
+             }
+ 
+-            if (this.getTicksFrozen() > 0) {
++            if (this.getTicksFrozen() > 0 && !freezeLocked) { // Paper - Freeze Tick Lock API
+                 this.setTicksFrozen(0);
+                 this.level.levelEvent((Player) null, 1009, this.blockPosition, 1);
+             }
+diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+index 572f9ca81b78c6229725f6693940ac0a70ecdfd5..1f4b1774e148a642c5af9e240e9f5db414eca685 100644
+--- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
++++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+@@ -3300,7 +3300,7 @@ public abstract class LivingEntity extends Entity {
+         boolean flag1 = this.getType().is(EntityTypeTags.FREEZE_HURTS_EXTRA_TYPES);
+         int i;
+ 
+-        if (!this.level.isClientSide && !this.isDeadOrDying()) {
++        if (!this.level.isClientSide && !this.isDeadOrDying() && !freezeLocked) { // Paper - Freeze Tick Lock API
+             i = this.getTicksFrozen();
+             if (this.isInPowderSnow && this.canFreeze()) {
+                 this.setTicksFrozen(Math.min(this.getTicksRequiredToFreeze(), i + 1));
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
+index 69223b13e894d86d9529f2ef8b60a08a1f7a9267..a3673e2943f251e056ecf84a9bff2de12efdb52a 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
+@@ -660,6 +660,17 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
+         return this.getHandle().isFullyFrozen();
+     }
+ 
++    // Paper Start - Freeze Tick Lock API
++    @Override
++    public boolean isFreezeTickingLocked() {
++        return this.entity.freezeLocked;
++    }
++
++    @Override
++    public void lockFreezeTicks(boolean locked) {
++        this.entity.freezeLocked = locked;
++    }
++    // Paper end - Freeze Tick Lock API
+     @Override
+     public void remove() {
+         this.entity.discard();
