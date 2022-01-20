@@ -65,10 +65,10 @@ index 30930a24c197c45f2ed86eaf7a150252005e7a37..c0f33a6cb4812e13204552c125df0621
          nbt.putShort("MaxNearbyEntities", (short) this.maxNearbyEntities);
          nbt.putShort("RequiredPlayerRange", (short) this.requiredPlayerRange);
 diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftCreatureSpawner.java b/src/main/java/org/bukkit/craftbukkit/block/CraftCreatureSpawner.java
-index 6c427b15f78970912bae881f5aba1cfae2a4ba53..3877376619d633f48e37b6c854ae7df77ccca456 100644
+index 6c427b15f78970912bae881f5aba1cfae2a4ba53..0af969746b1984bd5de0510f815b54815c9322bf 100644
 --- a/src/main/java/org/bukkit/craftbukkit/block/CraftCreatureSpawner.java
 +++ b/src/main/java/org/bukkit/craftbukkit/block/CraftCreatureSpawner.java
-@@ -116,4 +116,30 @@ public class CraftCreatureSpawner extends CraftBlockEntityState<SpawnerBlockEnti
+@@ -116,4 +116,28 @@ public class CraftCreatureSpawner extends CraftBlockEntityState<SpawnerBlockEnti
      public void setSpawnRange(int spawnRange) {
          this.getSnapshot().getSpawner().spawnRange = spawnRange;
      }
@@ -76,26 +76,24 @@ index 6c427b15f78970912bae881f5aba1cfae2a4ba53..3877376619d633f48e37b6c854ae7df7
 +    // Paper start
 +    @Override
 +    public boolean isActivated() {
-+        return this.getSnapshot().getSpawner().isNearPlayer(world.getHandle(), getPosition());
++        this.requirePlaced();
++        return this.getSnapshot().getSpawner().isNearPlayer(this.world.getHandle(), this.getPosition());
 +    }
 +
 +    @Override
 +    public void resetTimer() {
-+        this.getSnapshot().getSpawner().delay(world.getHandle(), getPosition());
++        this.requirePlaced();
++        this.getSnapshot().getSpawner().delay(this.world.getHandle(), this.getPosition());
 +    }
 +
 +    @Override
 +    public void setSpawnedItem(org.bukkit.inventory.ItemStack itemStack) {
 +        Preconditions.checkArgument(itemStack != null && !itemStack.getType().isAir(), "spawners cannot spawn air");
 +        net.minecraft.world.item.ItemStack item = org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(itemStack);
-+        net.minecraft.nbt.CompoundTag compound = new net.minecraft.nbt.CompoundTag();
 +        net.minecraft.nbt.CompoundTag entity = new net.minecraft.nbt.CompoundTag();
 +        entity.putString("id", net.minecraft.core.Registry.ENTITY_TYPE.getKey(net.minecraft.world.entity.EntityType.ITEM).toString());
 +        entity.put("Item", item.save(new net.minecraft.nbt.CompoundTag()));
-+        compound.put("Entity", entity);
-+        compound.putInt("Weight", this.getSnapshotNBT().contains("Weight", org.bukkit.craftbukkit.util.CraftMagicNumbers.NBT.TAG_ANY_NUMBER) ? this.getSnapshotNBT().getInt("Weight") : 1);
-+        this.getSnapshot().getSpawner().setNextSpawnData(world.getHandle(), getPosition(), new net.minecraft.world.level.SpawnData(compound, java.util.Optional.empty())); // 1.18 todo - is empty optional correct
-+        this.getSnapshot().getSpawner().spawnPotentials = net.minecraft.util.random.SimpleWeightedRandomList.empty(); // 1.18 todo - previously used removed field, check
++        this.getSnapshot().getSpawner().setNextSpawnData(this.isPlaced() ? this.world.getHandle() : null, this.getPosition(), new net.minecraft.world.level.SpawnData(entity, java.util.Optional.empty()));
 +    }
 +    // Paper end
  }
