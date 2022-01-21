@@ -448,11 +448,11 @@ public interface Block extends Metadatable {
      * into account tools, potion effects, whether or not the player is in
      * water, enchantments, etc.
      *
-     * The returned value is the amount of progress made in breaking the block.
-     * When the total breaking progress reaches {@code 1.0f}, the block is
-     * broken. Note that the break speed can change in the course of breaking a
-     * block, e.g. if a potion effect is applied or expires, or the player
-     * jumps/enters water.
+     * The returned value is the amount of progress made in breaking the block
+     * each tick. When the total breaking progress reaches {@code 1.0f}, the
+     * block is broken. Note that the break speed can change in the course of
+     * breaking a block, e.g. if a potion effect is applied or expires, or the
+     * player jumps/enters water.
      *
      * @param player player breaking the block
      * @return the speed at which the player breaks this block
