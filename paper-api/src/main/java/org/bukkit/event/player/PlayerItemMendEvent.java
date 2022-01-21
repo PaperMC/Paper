@@ -6,6 +6,7 @@ import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -23,14 +24,67 @@ public class PlayerItemMendEvent extends PlayerEvent implements Cancellable {
     private final ExperienceOrb experienceOrb;
     private int repairAmount;
     private boolean cancelled;
+    private final int consumedExperience; // Paper
 
+    @Deprecated // Paper
     public PlayerItemMendEvent(@NotNull Player who, @NotNull ItemStack item, @NotNull EquipmentSlot slot, @NotNull ExperienceOrb experienceOrb, int repairAmount) {
+        // Paper start
+        this(who, item, slot, experienceOrb, repairAmount, repairAmount / 2);
+    }
+
+    @org.jetbrains.annotations.ApiStatus.Internal
+    public PlayerItemMendEvent(@NotNull Player who, @NotNull ItemStack item, @NotNull EquipmentSlot slot, @NotNull ExperienceOrb experienceOrb, int repairAmount, int consumedExperience) {
+        // Paper end
         super(who);
         this.item = item;
         this.slot = slot;
         this.experienceOrb = experienceOrb;
         this.repairAmount = repairAmount;
+        // Paper start
+        this.consumedExperience = consumedExperience;
     }
+
+    /**
+     * Get the operation used to calculate xp used based on
+     * the set repair amount. Used to calculate how much of
+     * an XP orb will be consumed by this mend operation.
+     *
+     * @return the durability-to-xp operation
+     * @deprecated the mending enchantment uses enchantment effects to compute how much durability is granted per xp.
+     * The enchantment effects operation are too complex to reliably offer the inverse function.
+     */
+    @Contract("-> fail")
+    @Deprecated(forRemoval = true, since = "1.21")
+    public @NotNull java.util.function.IntUnaryOperator getDurabilityToXpOperation() {
+        throw new UnsupportedOperationException("Enchantments use effects to compute xp to durability since 1.21.");
+    }
+
+    /**
+     * Sets the operation used to calculate xp used based on
+     * the set repair amount. Used to calculate how much of
+     * an XP orb will be consumed by this mend operation.
+     *
+     * @param durabilityToXpOp the durability-to-xp operation
+     * @deprecated the mending enchantment uses enchantment effects to compute how much durability is granted per xp.
+     * The enchantment effects operation are too complex to reliably offer the inverse function.
+     */
+    @Contract("_ -> fail")
+    @Deprecated(forRemoval = true, since = "1.21")
+    public void setDurabilityToXpOperation(@NotNull java.util.function.IntUnaryOperator durabilityToXpOp) {
+        throw new UnsupportedOperationException("Enchantments use effects to compute xp to durability since 1.21.");
+    }
+
+    /**
+     * Helper method to get the amount of experience that will be consumed.
+     * This method just returns the result of inputting {@link #getRepairAmount()}
+     * into the function {@link #getDurabilityToXpOperation()}.
+     *
+     * @return the amount of xp that will be consumed
+     */
+    public int getConsumedExperience() {
+         return this.consumedExperience;
+    }
+    // Paper end
 
     @Deprecated(since = "1.19.2")
     public PlayerItemMendEvent(@NotNull Player who, @NotNull ItemStack item, @NotNull ExperienceOrb experienceOrb, int repairAmount) {
