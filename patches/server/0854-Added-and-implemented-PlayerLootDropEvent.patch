@@ -10,22 +10,21 @@ making it easy for developers to track down the Item entities dropped when a pla
 Item entities dropped on player death are marked as being thrown by the player that died.
 
 diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-index 35cc150adf51f79e2fccef8b094c90554aafbee2..c484948faf336ca0efb4ce4201c41b749e355483 100644
+index 35cc150adf51f79e2fccef8b094c90554aafbee2..c84de6cb47ee8335ced754dacdeb27e388551f3b 100644
 --- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 +++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-@@ -907,15 +907,35 @@ public class CraftEventFactory {
+@@ -907,15 +907,34 @@ public class CraftEventFactory {
          victim.expToDrop = event.getDroppedExp();
          victim.newExp = event.getNewExp();
  
-+        // Paper start - implement player loot drop event + set item thrower as dead player
++        // Paper start - implement player loot drop event
 +        List<Item> items = new ArrayList<Item>();
 +
          for (org.bukkit.inventory.ItemStack stack : event.getDrops()) {
              if (stack == null || stack.getType() == Material.AIR) continue;
  
 -            world.dropItem(entity.getLocation(), stack);
-+            Item item = world.dropItem(entity.getLocation(), stack);
-+            item.setThrower(victim.getUUID());
++            Item item = (Item) victim.drop(CraftItemStack.toNMSStack(stack), true, false);
 +            items.add(item);
          }
  
@@ -50,3 +49,24 @@ index 35cc150adf51f79e2fccef8b094c90554aafbee2..c484948faf336ca0efb4ce4201c41b74
      // Paper start - helper methods for making death event cancellable
      // Add information to death event
      private static void populateFields(net.minecraft.world.entity.LivingEntity victim, EntityDeathEvent event) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
+index 14da2997b5fff4434b1fe8d5a1b3109dde143740..3c5283e65a70c02e98e3ff6a8eb34e61b352ae25 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
+@@ -22,6 +22,16 @@ import org.bukkit.material.MaterialData;
+ @DelegateDeserialization(ItemStack.class)
+ public final class CraftItemStack extends ItemStack {
+ 
++    // Paper start
++    public static net.minecraft.world.item.ItemStack toNMSStack(ItemStack possibleCraftItemStack) {
++         if (possibleCraftItemStack instanceof CraftItemStack craftItemStack) {
++             return craftItemStack.handle == null ? net.minecraft.world.item.ItemStack.EMPTY : craftItemStack.handle;
++         } else {
++             return CraftItemStack.asNMSCopy(possibleCraftItemStack);
++         }
++    }
++    // Paper end
++
+     public static net.minecraft.world.item.ItemStack asNMSCopy(ItemStack original) {
+         if (original instanceof CraftItemStack) {
+             CraftItemStack stack = (CraftItemStack) original;
