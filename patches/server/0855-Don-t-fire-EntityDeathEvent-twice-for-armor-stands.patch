@@ -1,0 +1,46 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Fri, 21 Jan 2022 15:31:57 -0800
+Subject: [PATCH] Don't fire EntityDeathEvent twice for armor stands
+
+Previously, Armor Stands had their EntityDeathEvent fired twice
+if they were killed by an explosion or by being on/in fire.
+
+diff --git a/src/main/java/net/minecraft/world/entity/decoration/ArmorStand.java b/src/main/java/net/minecraft/world/entity/decoration/ArmorStand.java
+index e5ef24d92de21c4c0e6a98e06985e52d47bfdce0..c03a966461d3a51cab2f783ff2937b695eaca61d 100644
+--- a/src/main/java/net/minecraft/world/entity/decoration/ArmorStand.java
++++ b/src/main/java/net/minecraft/world/entity/decoration/ArmorStand.java
+@@ -498,7 +498,7 @@ public class ArmorStand extends LivingEntity {
+                 // CraftBukkit end
+                 if (source.isExplosion()) {
+                     this.brokenByAnything(source);
+-                    this.kill();
++                    this.kill(false); // Paper - don't fire EntityDeathEvent twice
+                     return false;
+                 } else if (DamageSource.IN_FIRE.equals(source)) {
+                     if (this.isOnFire()) {
+@@ -587,7 +587,7 @@ public class ArmorStand extends LivingEntity {
+         f1 -= amount;
+         if (f1 <= 0.5F) {
+             this.brokenByAnything(damageSource);
+-            this.kill();
++            this.kill(false); // Paper - don't fire EntityDeathEvent twice
+         } else {
+             this.setHealth(f1);
+             this.gameEvent(GameEvent.ENTITY_DAMAGED, damageSource.getEntity());
+@@ -754,8 +754,15 @@ public class ArmorStand extends LivingEntity {
+ 
+     @Override
+     public void kill() {
++        // Paper start
++        this.kill(true);
++    }
++    public void kill(boolean fireDeathEvent) {
++        if (fireDeathEvent) {
++        // Paper end
+         org.bukkit.event.entity.EntityDeathEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityDeathEvent(this, drops); // CraftBukkit - call event // Paper - make cancellable
+         if (event.isCancelled()) return; // Paper - make cancellable
++        } // Paper
+         this.remove(Entity.RemovalReason.KILLED);
+     }
+ 
