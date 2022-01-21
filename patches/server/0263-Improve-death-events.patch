@@ -70,7 +70,7 @@ index 3d5db5ce2e60ca72ad202caebe49f3fc80d1af37..91f8b8e8e2ed15481ceafc8695068c8d
          }
      }
 diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-index db366a5d81dac6748bb0b20188117266aee095d1..f4828c1bdc7d5e67941926f8d772b1bbc83031cf 100644
+index db366a5d81dac6748bb0b20188117266aee095d1..fc284d0f44a6cd0c36ca8a3d7dcdd611fbe6148e 100644
 --- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
 @@ -261,6 +261,7 @@ public abstract class LivingEntity extends Entity {
@@ -104,15 +104,15 @@ index db366a5d81dac6748bb0b20188117266aee095d1..f4828c1bdc7d5e67941926f8d772b1bb
              Entity entity = source.getEntity();
              LivingEntity entityliving = this.getKillCredit();
 -
-+            /* // Paper - move down to make death event cancellable - this is the runKillTrigger below
++            /* // Paper - move down to make death event cancellable - this is the awardKillScore below
              if (this.deathScore >= 0 && entityliving != null) {
                  entityliving.awardKillScore(this, this.deathScore, source);
              }
-@@ -1613,20 +1613,46 @@ public abstract class LivingEntity extends Entity {
+@@ -1613,20 +1613,52 @@ public abstract class LivingEntity extends Entity {
              if (!this.level.isClientSide && this.hasCustomName()) {
                  if (org.spigotmc.SpigotConfig.logNamedDeaths) LivingEntity.LOGGER.info("Named entity {} died: {}", this, this.getCombatTracker().getDeathMessage().getString()); // Spigot
              }
-+             */ // Paper - move down to make death event cancellable - this is the runKillTrigger below
++             */ // Paper - move down to make death event cancellable - this is the awardKillScore below
  
              this.dead = true;
 -            this.getCombatTracker().recheckStatus();
@@ -129,6 +129,12 @@ index db366a5d81dac6748bb0b20188117266aee095d1..f4828c1bdc7d5e67941926f8d772b1bb
 +                if (deathEvent == null || !deathEvent.isCancelled()) {
 +                    if (this.deathScore >= 0 && entityliving != null) {
 +                        entityliving.awardKillScore(this, this.deathScore, source);
++                    }
++                    if (this instanceof Mob) { // Clear equipment slots marked as cleared
++                        for (EquipmentSlot slot : this.clearedEquipmentSlots) {
++                            this.setItemSlot(slot, ItemStack.EMPTY);
++                        }
++                        this.clearedEquipmentSlots.clear();
 +                    }
 +
 +                    if (this.isSleeping()) {
@@ -158,7 +164,7 @@ index db366a5d81dac6748bb0b20188117266aee095d1..f4828c1bdc7d5e67941926f8d772b1bb
          }
      }
  
-@@ -1634,7 +1660,7 @@ public abstract class LivingEntity extends Entity {
+@@ -1634,7 +1666,7 @@ public abstract class LivingEntity extends Entity {
          if (!this.level.isClientSide) {
              boolean flag = false;
  
@@ -167,17 +173,30 @@ index db366a5d81dac6748bb0b20188117266aee095d1..f4828c1bdc7d5e67941926f8d772b1bb
                  if (this.level.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING)) {
                      BlockPos blockposition = this.blockPosition();
                      BlockState iblockdata = Blocks.WITHER_ROSE.defaultBlockState();
-@@ -1663,7 +1689,7 @@ public abstract class LivingEntity extends Entity {
+@@ -1663,7 +1695,11 @@ public abstract class LivingEntity extends Entity {
          }
      }
  
 -    protected void dropAllDeathLoot(DamageSource source) {
-+    protected org.bukkit.event.entity.EntityDeathEvent dropAllDeathLoot(DamageSource source) { // Paper
++    // Paper start
++    protected boolean clearEquipmentSlots = true;
++    protected Set<EquipmentSlot> clearedEquipmentSlots = new HashSet<>();
++    protected org.bukkit.event.entity.EntityDeathEvent dropAllDeathLoot(DamageSource source) {
++    // Paper end
          Entity entity = source.getEntity();
          int i;
  
-@@ -1681,15 +1707,18 @@ public abstract class LivingEntity extends Entity {
+@@ -1678,18 +1714,27 @@ public abstract class LivingEntity extends Entity {
+         this.dropEquipment(); // CraftBukkit - from below
+         if (this.shouldDropLoot() && this.level.getGameRules().getBoolean(GameRules.RULE_DOMOBLOOT)) {
+             this.dropFromLootTable(source, flag);
++            // Paper start - collect cleared slots, but don't clear to run advancement triggers
++            final boolean prev = this.clearEquipmentSlots;
++            this.clearEquipmentSlots = false;
++            this.clearedEquipmentSlots.clear();
++            // Paper end
              this.dropCustomDeathLoot(source, i, flag);
++            this.clearEquipmentSlots = prev; // Paper
          }
          // CraftBukkit start - Call death event
 -        CraftEventFactory.callEntityDeathEvent(this, this.drops);
@@ -196,6 +215,24 @@ index db366a5d81dac6748bb0b20188117266aee095d1..f4828c1bdc7d5e67941926f8d772b1bb
  
      // CraftBukkit start
      public int getExpReward() {
+diff --git a/src/main/java/net/minecraft/world/entity/Mob.java b/src/main/java/net/minecraft/world/entity/Mob.java
+index 3429521aa78596069f3bead01ad04874fea7ee91..0242bb4ee546d6f7044d563433d7fb0639abdb7a 100644
+--- a/src/main/java/net/minecraft/world/entity/Mob.java
++++ b/src/main/java/net/minecraft/world/entity/Mob.java
+@@ -987,7 +987,13 @@ public abstract class Mob extends LivingEntity {
+                 }
+ 
+                 this.spawnAtLocation(itemstack);
++                if (this.clearEquipmentSlots) { // Paper
+                 this.setItemSlot(enumitemslot, ItemStack.EMPTY);
++                // Paper start
++                } else {
++                    this.clearedEquipmentSlots.add(enumitemslot);
++                }
++                // Paper end
+             }
+         }
+ 
 diff --git a/src/main/java/net/minecraft/world/entity/animal/Fox.java b/src/main/java/net/minecraft/world/entity/animal/Fox.java
 index 7de3d73232d985ab18d7266371d301c490b79b9f..bfb042f4828e1cd47124939ca3b9caadc7fe1b39 100644
 --- a/src/main/java/net/minecraft/world/entity/animal/Fox.java
@@ -289,7 +326,7 @@ index 3be9882ac1e96441f479f22099b77a25dd7cb8dd..7b7ceefbcc1f0be710dd8995f0afaad9
  
      public void injectScaledMaxHealth(Collection<AttributeInstance> collection, boolean force) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-index e094b1b00d5fb73da73abcadb02ffd98b91fb869..3ef52d7705f3c59e19c56aac6250f2e5b5712600 100644
+index 0d1c6f609a5198c21c895e8f6ace467355b0f166..61c95f98a3e3e52a23f65f7c957019f7f1aa7417 100644
 --- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 +++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 @@ -807,9 +807,16 @@ public class CraftEventFactory {

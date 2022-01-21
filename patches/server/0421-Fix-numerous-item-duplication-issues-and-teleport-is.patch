@@ -16,7 +16,7 @@ So even if something NEW comes up, it would be impossible to drop the
 same item twice because the source was destroyed.
 
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index 5802b1721a0d8e1c40d87be099d4f1b1c8a921d7..fbcbe0443f843d04738938f10b433bfe1631fe78 100644
+index de4e47ced31b0711eda98c1cf53c80950a730143..326d00f9889cdca2e5af3ca7f7964cd7b43b3411 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
 @@ -2159,11 +2159,12 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, n
@@ -79,6 +79,40 @@ index 5802b1721a0d8e1c40d87be099d4f1b1c8a921d7..fbcbe0443f843d04738938f10b433bfe
      }
  
      public float getBlockExplosionResistance(Explosion explosion, BlockGetter world, BlockPos pos, BlockState blockState, FluidState fluidState, float max) {
+diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+index 4755bfe5f49a8d110dfbb20d241c8496a14b0703..9c6ed2b6384edf8d507ec70852ea65d988528be6 100644
+--- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
++++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+@@ -1626,9 +1626,9 @@ public abstract class LivingEntity extends Entity {
+                 // Paper start
+                 org.bukkit.event.entity.EntityDeathEvent deathEvent = this.dropAllDeathLoot(source);
+                 if (deathEvent == null || !deathEvent.isCancelled()) {
+-                    if (this.deathScore >= 0 && entityliving != null) {
+-                        entityliving.awardKillScore(this, this.deathScore, source);
+-                    }
++                    // if (this.deathScore >= 0 && entityliving != null) { // Paper - moved to be run earlier in #dropAllDeathLoot before destroying the drop items in CraftEventFactory#callEntityDeathEvent
++                    //     entityliving.awardKillScore(this, this.deathScore, source);
++                    // }
+                     if (this instanceof Mob) { // Clear equipment slots marked as cleared
+                         for (EquipmentSlot slot : this.clearedEquipmentSlots) {
+                             this.setItemSlot(slot, ItemStack.EMPTY);
+@@ -1723,8 +1723,14 @@ public abstract class LivingEntity extends Entity {
+             this.dropCustomDeathLoot(source, i, flag);
+             this.clearEquipmentSlots = prev; // Paper
+         }
+-        // CraftBukkit start - Call death event
+-        org.bukkit.event.entity.EntityDeathEvent deathEvent = CraftEventFactory.callEntityDeathEvent(this, this.drops); // Paper
++        // CraftBukkit start - Call death event // Paper start - run advancement triggers before destroying drop itemstacks
++        org.bukkit.event.entity.EntityDeathEvent deathEvent = CraftEventFactory.callEntityDeathEvent(this, this.drops, () -> {
++            final LivingEntity entityliving = this.getKillCredit();
++            if (this.deathScore >= 0 && entityliving != null) {
++                entityliving.awardKillScore(this, this.deathScore, source);
++            }
++        });
++        // Paper end
+         this.postDeathDropItems(deathEvent); // Paper
+         this.drops = new ArrayList<>();
+         // CraftBukkit end
 diff --git a/src/main/java/net/minecraft/world/entity/decoration/ArmorStand.java b/src/main/java/net/minecraft/world/entity/decoration/ArmorStand.java
 index b41e6fb0b7e02b50e5ad05555ed911d09055d694..c5e9273055ff7302941b7475d8175be53eaece1f 100644
 --- a/src/main/java/net/minecraft/world/entity/decoration/ArmorStand.java
@@ -102,10 +136,27 @@ index b41e6fb0b7e02b50e5ad05555ed911d09055d694..c5e9273055ff7302941b7475d8175be5
              }
          }
 diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-index 4c2ebb2eb93c1f8a805dbe0919f9726ccb4fff1f..54aa3a95118176e7f91f4d669253790167fcd958 100644
+index bf7c61c767bdfe8ddb63367f1b38dbbeba17ba02..4533988489fa2af009ffab95314a2a34344d0b87 100644
 --- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 +++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-@@ -827,7 +827,8 @@ public class CraftEventFactory {
+@@ -810,6 +810,11 @@ public class CraftEventFactory {
+     }
+ 
+     public static EntityDeathEvent callEntityDeathEvent(net.minecraft.world.entity.LivingEntity victim, List<org.bukkit.inventory.ItemStack> drops) {
++        // Paper start
++        return CraftEventFactory.callEntityDeathEvent(victim, drops, com.google.common.util.concurrent.Runnables.doNothing());
++    }
++    public static EntityDeathEvent callEntityDeathEvent(net.minecraft.world.entity.LivingEntity victim, List<org.bukkit.inventory.ItemStack> drops, Runnable lootCheck) {
++        // Paper end
+         CraftLivingEntity entity = (CraftLivingEntity) victim.getBukkitEntity();
+         EntityDeathEvent event = new EntityDeathEvent(entity, drops, victim.getExpReward());
+         populateFields(victim, event); // Paper - make cancellable
+@@ -823,11 +828,13 @@ public class CraftEventFactory {
+         playDeathSound(victim, event);
+         // Paper end
+         victim.expToDrop = event.getDroppedExp();
++        lootCheck.run(); // Paper - run advancement triggers before destroying the equipment stacks below
+ 
          for (org.bukkit.inventory.ItemStack stack : event.getDrops()) {
              if (stack == null || stack.getType() == Material.AIR || stack.getAmount() == 0) continue;
  
