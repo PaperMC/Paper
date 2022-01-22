@@ -893,7 +893,12 @@ public class CraftEventFactory {
         } else if (source == DamageSource.LAVA) {
             EntityDamageEvent event = (new EntityDamageByBlockEvent(blockDamage, entity.getBukkitEntity(), DamageCause.LAVA, modifiers, modifierFunctions));
             event.setCancelled(cancelled);
+
+            Block damager = blockDamage;
+            blockDamage = null; // SPIGOT-6639: Clear blockDamage to allow other entity damage during event call
             callEvent(event);
+            blockDamage = damager; // SPIGOT-6639: Re-set blockDamage so that other entities which are also getting damaged have the right cause
+
             if (!event.isCancelled()) {
                 event.getEntity().setLastDamageCause(event);
             } else {
@@ -916,7 +921,11 @@ public class CraftEventFactory {
             }
             EntityDamageEvent event = new EntityDamageByBlockEvent(damager, entity.getBukkitEntity(), cause, modifiers, modifierFunctions);
             event.setCancelled(cancelled);
+
+            blockDamage = null; // SPIGOT-6639: Clear blockDamage to allow other entity damage during event call
             callEvent(event);
+            blockDamage = damager; // SPIGOT-6639: Re-set blockDamage so that other entities which are also getting damaged have the right cause
+
             if (!event.isCancelled()) {
                 event.getEntity().setLastDamageCause(event);
             } else {
