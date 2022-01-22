@@ -1,11 +1,22 @@
 --- a/net/minecraft/world/entity/EntitySelector.java
 +++ b/net/minecraft/world/entity/EntitySelector.java
-@@ -27,8 +27,14 @@
+@@ -27,8 +27,25 @@
      };
      public static final Predicate<Entity> CAN_BE_COLLIDED_WITH = EntitySelector.NO_SPECTATORS.and(Entity::canBeCollidedWith);
      public static final Predicate<Entity> CAN_BE_PICKED = EntitySelector.NO_SPECTATORS.and(Entity::isPickable);
-+    public static Predicate<Player> IS_INSOMNIAC = (player) -> net.minecraft.util.Mth.clamp(((net.minecraft.server.level.ServerPlayer) player).getStats().getValue(net.minecraft.stats.Stats.CUSTOM.get(net.minecraft.stats.Stats.TIME_SINCE_REST)), 1, Integer.MAX_VALUE) >= 72000; // Paper - Add phantom creative and insomniac controls
++    // Paper start - Ability to control player's insomnia and phantoms
++    public static Predicate<Player> IS_INSOMNIAC = (player) -> {
++        net.minecraft.server.level.ServerPlayer serverPlayer = (net.minecraft.server.level.ServerPlayer) player;
++        int playerInsomniaTicks = serverPlayer.level().paperConfig().entities.behavior.playerInsomniaStartTicks;
  
++        if (playerInsomniaTicks <= 0) {
++            return false;
++        }
++
++        return net.minecraft.util.Mth.clamp(serverPlayer.getStats().getValue(net.minecraft.stats.Stats.CUSTOM.get(net.minecraft.stats.Stats.TIME_SINCE_REST)), 1, Integer.MAX_VALUE) >= playerInsomniaTicks;
++    };
++    // Paper end - Ability to control player's insomnia and phantoms
++
      private EntitySelector() {}
 +    // Paper start - Affects Spawning API
 +    public static final Predicate<Entity> PLAYER_AFFECTS_SPAWNING = (entity) -> {
@@ -15,7 +26,7 @@
  
      public static Predicate<Entity> withinDistance(double x, double y, double z, double max) {
          double d4 = max * max;
-@@ -39,13 +45,18 @@
+@@ -39,13 +56,18 @@
      }
  
      public static Predicate<Entity> pushableBy(Entity entity) {

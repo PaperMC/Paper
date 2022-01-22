@@ -1,6 +1,30 @@
 --- a/net/minecraft/world/level/levelgen/PhantomSpawner.java
 +++ b/net/minecraft/world/level/levelgen/PhantomSpawner.java
-@@ -48,7 +48,7 @@
+@@ -32,13 +32,22 @@
+         } else if (!world.getGameRules().getBoolean(GameRules.RULE_DOINSOMNIA)) {
+             return 0;
+         } else {
++            // Paper start - Ability to control player's insomnia and phantoms
++            if (world.paperConfig().entities.behavior.phantomsSpawnAttemptMaxSeconds <= 0) {
++                return 0;
++            }
++            // Paper end - Ability to control player's insomnia and phantoms
+             RandomSource randomsource = world.random;
+ 
+             --this.nextTick;
+             if (this.nextTick > 0) {
+                 return 0;
+             } else {
+-                this.nextTick += (60 + randomsource.nextInt(60)) * 20;
++                // Paper start - Ability to control player's insomnia and phantoms
++                int spawnAttemptMinSeconds = world.paperConfig().entities.behavior.phantomsSpawnAttemptMinSeconds;
++                int spawnAttemptMaxSeconds = world.paperConfig().entities.behavior.phantomsSpawnAttemptMaxSeconds;
++                this.nextTick += (spawnAttemptMinSeconds + randomsource.nextInt(spawnAttemptMaxSeconds - spawnAttemptMinSeconds + 1)) * 20;
++                // Paper end - Ability to control player's insomnia and phantoms
+                 if (world.getSkyDarken() < 5 && world.dimensionType().hasSkyLight()) {
+                     return 0;
+                 } else {
+@@ -48,7 +57,7 @@
                      while (iterator.hasNext()) {
                          ServerPlayer entityplayer = (ServerPlayer) iterator.next();
  
@@ -9,7 +33,16 @@
                              BlockPos blockposition = entityplayer.blockPosition();
  
                              if (!world.dimensionType().hasSkyLight() || blockposition.getY() >= world.getSeaLevel() && world.canSeeSky(blockposition)) {
-@@ -69,12 +69,22 @@
+@@ -59,7 +68,7 @@
+                                     int j = Mth.clamp(serverstatisticmanager.getValue(Stats.CUSTOM.get(Stats.TIME_SINCE_REST)), 1, Integer.MAX_VALUE);
+                                     boolean flag2 = true;
+ 
+-                                    if (randomsource.nextInt(j) >= 72000) {
++                                    if (randomsource.nextInt(j) >= world.paperConfig().entities.behavior.playerInsomniaStartTicks) { // Paper - Ability to control player's insomnia and phantoms
+                                         BlockPos blockposition1 = blockposition.above(20 + randomsource.nextInt(15)).east(-10 + randomsource.nextInt(21)).south(-10 + randomsource.nextInt(21));
+                                         BlockState iblockdata = world.getBlockState(blockposition1);
+                                         FluidState fluid = world.getFluidState(blockposition1);
+@@ -69,12 +78,22 @@
                                              int k = 1 + randomsource.nextInt(difficultydamagescaler.getDifficulty().getId() + 1);
  
                                              for (int l = 0; l < k; ++l) {
