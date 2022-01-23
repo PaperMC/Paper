@@ -4,38 +4,11 @@ Date: Sat, 22 Jan 2022 17:56:19 +0100
 Subject: [PATCH] Ability to control player's insomnia and phantoms
 
 
-diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-index 61ea1c9881ea30c05580044af9496a65fe95d94e..efdedd0834182b15606327fdf73d03fd2330d960 100644
---- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
-+++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-@@ -319,6 +319,22 @@ public class PaperConfig {
-         suggestPlayersWhenNullTabCompletions = getBoolean("settings.suggest-player-names-when-null-tab-completions", suggestPlayersWhenNullTabCompletions);
-     }
- 
-+     public static int phantomsSpawnAttemptMinSeconds = 60;
-+     public static int phantomsSpawnAttemptMaxSeconds = 119;
-+     public static boolean phantomSpawnerEnabled = false;
-+     private static void insomniaControlSettings() {
-+         phantomsSpawnAttemptMinSeconds = getInt("settings.phantoms-spawn-attempt-seconds.min", phantomsSpawnAttemptMinSeconds);
-+         phantomsSpawnAttemptMaxSeconds = getInt("settings.phantoms-spawn-attempt-seconds.max", phantomsSpawnAttemptMaxSeconds);
-+
-+         if (phantomsSpawnAttemptMinSeconds > phantomsSpawnAttemptMaxSeconds) {
-+            int temp = phantomsSpawnAttemptMinSeconds;
-+            phantomsSpawnAttemptMinSeconds = phantomsSpawnAttemptMaxSeconds;
-+            phantomsSpawnAttemptMaxSeconds = temp;
-+         }
-+
-+         phantomSpawnerEnabled = (phantomsSpawnAttemptMinSeconds >= 0 && phantomsSpawnAttemptMaxSeconds >= 0) && (phantomsSpawnAttemptMinSeconds != 0 || phantomsSpawnAttemptMaxSeconds != 0);
-+     }
-+
-     public static String authenticationServersDownKickMessage = ""; // empty = use translatable message
-     private static void authenticationServersDownKickMessage() {
-         authenticationServersDownKickMessage = Strings.emptyToNull(getString("messages.kick.authentication-servers-down", authenticationServersDownKickMessage));
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index d7dcf36c8c972e30320c56e447822cf26f6d5fb3..0c87e991308d57cfb313b380df40f13c05d96e09 100644
+index d7dcf36c8c972e30320c56e447822cf26f6d5fb3..48a87aee52e5fc183ba4243d729348706f095f32 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-@@ -871,6 +871,11 @@ public class PaperWorldConfig {
+@@ -871,6 +871,27 @@ public class PaperWorldConfig {
          phantomOnlyAttackInsomniacs = getBoolean("phantoms-only-attack-insomniacs", phantomOnlyAttackInsomniacs);
      }
  
@@ -44,30 +17,60 @@ index d7dcf36c8c972e30320c56e447822cf26f6d5fb3..0c87e991308d57cfb313b380df40f13c
 +        playerInsomniaStartTicks = getInt("player-insomnia-start-ticks", playerInsomniaStartTicks);
 +    }
 +
++    public int phantomsSpawnAttemptMinSeconds = 60;
++    public int phantomsSpawnAttemptMaxSeconds = 119;
++    public boolean phantomSpawnerEnabled = false;
++    private void phantomsSpawnAttemptSettings() {
++        phantomsSpawnAttemptMinSeconds = getInt("game-mechanics.phantoms-spawn-attempt-seconds.min", phantomsSpawnAttemptMinSeconds);
++        phantomsSpawnAttemptMaxSeconds = getInt("game-mechanics.phantoms-spawn-attempt-seconds.max", phantomsSpawnAttemptMaxSeconds);
++
++        if (phantomsSpawnAttemptMinSeconds > phantomsSpawnAttemptMaxSeconds) {
++            int temp = phantomsSpawnAttemptMinSeconds;
++            phantomsSpawnAttemptMinSeconds = phantomsSpawnAttemptMaxSeconds;
++            phantomsSpawnAttemptMaxSeconds = temp;
++        }
++
++        phantomSpawnerEnabled = (phantomsSpawnAttemptMinSeconds >= 0 && phantomsSpawnAttemptMaxSeconds >= 0) && (phantomsSpawnAttemptMinSeconds != 0 || phantomsSpawnAttemptMaxSeconds != 0);
++    }
++
      public boolean zombiesAlwaysCanPickUpLoot;
      public boolean skeletonsAlwaysCanPickUpLoot;
      private void setMobsAlwaysCanPickUpLoot() {
-diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index c4e8e6af67b57406012612b617a7dcaa6e391d09..34cd20e2136023afbc512db80b43cd09eccb1488 100644
---- a/src/main/java/net/minecraft/server/MinecraftServer.java
-+++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -634,7 +634,15 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
-             boolean flag = generatorsettings.isDebug();
-             long i = generatorsettings.seed();
-             long j = BiomeManager.obfuscateSeed(i);
--            List<CustomSpawner> list = ImmutableList.of(new PhantomSpawner(), new PatrolSpawner(), new CatSpawner(), new VillageSiege(), new WanderingTraderSpawner(iworlddataserver));
-+            // Paper start
-+            List<CustomSpawner> list = Lists.newArrayList(new PatrolSpawner(), new CatSpawner(), new VillageSiege(), new WanderingTraderSpawner(worlddata));
-+
-+            if (com.destroystokyo.paper.PaperConfig.phantomSpawnerEnabled) {
-+                list.add(new PhantomSpawner());
-+            }
-+
-+            list = ImmutableList.copyOf(list);
-+            // Paper end
-             // Paper start - Use correct LevelStem registry
-             final LevelStem worlddimension;
-             if (dimensionKey == LevelStem.END || dimensionKey == LevelStem.NETHER) {
+diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
+index a2abb8aa1a257ccd2b5dbddc037fffc6eb600758..10e501eae443d0239c7b67c8643673c9e491502b 100644
+--- a/src/main/java/net/minecraft/server/level/ServerLevel.java
++++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
+@@ -2,6 +2,7 @@ package net.minecraft.server.level;
+ 
+ import com.google.common.annotations.VisibleForTesting;
+ import co.aikar.timings.TimingHistory; // Paper
++import com.google.common.collect.ImmutableList; // Paper
+ import com.google.common.collect.Lists;
+ import com.mojang.datafixers.DataFixer;
+ import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+@@ -129,6 +130,7 @@ import net.minecraft.world.level.gameevent.GameEvent;
+ import net.minecraft.world.level.gameevent.GameEventListenerRegistrar;
+ import net.minecraft.world.level.gameevent.vibrations.VibrationPath;
+ import net.minecraft.world.level.levelgen.Heightmap;
++import net.minecraft.world.level.levelgen.PhantomSpawner; // Paper
+ import net.minecraft.world.level.levelgen.feature.StructureFeature;
+ import net.minecraft.world.level.levelgen.structure.BoundingBox;
+ import net.minecraft.world.level.levelgen.structure.StructureCheck;
+@@ -495,7 +497,13 @@ public class ServerLevel extends Level implements WorldGenLevel {
+         this.dragonParts = new Int2ObjectOpenHashMap();
+         this.tickTime = flag1;
+         this.server = minecraftserver;
+-        this.customSpawners = list;
++        // Paper start
++        if (this.paperConfig.phantomSpawnerEnabled) {
++            this.customSpawners = list;
++        } else {
++            this.customSpawners = ImmutableList.copyOf(list.stream().filter(s -> !(s instanceof PhantomSpawner)).toList());
++        }
++        // Paper end
+         // CraftBukkit start
+         this.serverLevelData = (PrimaryLevelData) iworlddataserver;
+         serverLevelData.world = this;
 diff --git a/src/main/java/net/minecraft/world/entity/EntitySelector.java b/src/main/java/net/minecraft/world/entity/EntitySelector.java
 index e39965c2e50bc8ee424ea07819346e0611398e28..a09d02d454d165136649b142cf9e88724a62e284 100644
 --- a/src/main/java/net/minecraft/world/entity/EntitySelector.java
@@ -93,7 +96,7 @@ index e39965c2e50bc8ee424ea07819346e0611398e28..a09d02d454d165136649b142cf9e8872
      private EntitySelector() {}
      // Paper start
 diff --git a/src/main/java/net/minecraft/world/level/levelgen/PhantomSpawner.java b/src/main/java/net/minecraft/world/level/levelgen/PhantomSpawner.java
-index 1e21d6cf2f03219fb2b7217c9a72bdd83c2146f7..1baced4d424f17c475637022fd49d7166a87d535 100644
+index 1e21d6cf2f03219fb2b7217c9a72bdd83c2146f7..b91af480dbe866c0c73f9102b331bc5b13f94ab7 100644
 --- a/src/main/java/net/minecraft/world/level/levelgen/PhantomSpawner.java
 +++ b/src/main/java/net/minecraft/world/level/levelgen/PhantomSpawner.java
 @@ -41,7 +41,11 @@ public class PhantomSpawner implements CustomSpawner {
@@ -102,8 +105,8 @@ index 1e21d6cf2f03219fb2b7217c9a72bdd83c2146f7..1baced4d424f17c475637022fd49d716
              } else {
 -                this.nextTick += (60 + random.nextInt(60)) * 20;
 +                // Paper start
-+                int spawnAttemptMinSeconds = com.destroystokyo.paper.PaperConfig.phantomsSpawnAttemptMinSeconds;
-+                int spawnAttemptMaxSeconds = com.destroystokyo.paper.PaperConfig.phantomsSpawnAttemptMaxSeconds;
++                int spawnAttemptMinSeconds = world.getLevel().paperConfig.phantomsSpawnAttemptMinSeconds;
++                int spawnAttemptMaxSeconds = world.getLevel().paperConfig.phantomsSpawnAttemptMaxSeconds;
 +                this.nextTick += (spawnAttemptMinSeconds + random.nextInt(spawnAttemptMaxSeconds - spawnAttemptMinSeconds + 1)) * 20;
 +                // Paper end
                  if (world.getSkyDarken() < 5 && world.dimensionType().hasSkyLight()) {
@@ -118,24 +121,3 @@ index 1e21d6cf2f03219fb2b7217c9a72bdd83c2146f7..1baced4d424f17c475637022fd49d716
                                          BlockPos blockposition1 = blockposition.above(20 + random.nextInt(15)).east(-10 + random.nextInt(21)).south(-10 + random.nextInt(21));
                                          BlockState iblockdata = world.getBlockState(blockposition1);
                                          FluidState fluid = world.getFluidState(blockposition1);
-diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 54e8f0f367645f3aa8af5b1cb69c39c0cec9381f..373c362f7d657792ffe66199b10a45cdf8964b9b 100644
---- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-+++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -1223,7 +1223,15 @@ public final class CraftServer implements Server {
-         // Paper - move down
- 
-         long j = BiomeManager.obfuscateSeed(creator.seed());
--        List<CustomSpawner> list = ImmutableList.of(new PhantomSpawner(), new PatrolSpawner(), new CatSpawner(), new VillageSiege(), new WanderingTraderSpawner(worlddata));
-+        // Paper start
-+        List<CustomSpawner> list = Lists.newArrayList(new PatrolSpawner(), new CatSpawner(), new VillageSiege(), new WanderingTraderSpawner(worlddata));
-+
-+        if (com.destroystokyo.paper.PaperConfig.phantomSpawnerEnabled) {
-+            list.add(new PhantomSpawner());
-+        }
-+
-+        list = ImmutableList.copyOf(list);
-+        // Paper end
-         MappedRegistry<LevelStem> registrymaterials = worlddata.worldGenSettings().dimensions();
-         LevelStem worlddimension = (LevelStem) registrymaterials.get(actualDimension);
-         DimensionType dimensionmanager;
