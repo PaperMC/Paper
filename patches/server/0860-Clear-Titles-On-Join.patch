@@ -1,0 +1,34 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Owen1212055 <23108066+Owen1212055@users.noreply.github.com>
+Date: Sat, 25 Dec 2021 23:24:51 -0500
+Subject: [PATCH] Clear Titles On Join
+
+Fixes MC-55347 by clearing the players titles on join.
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+index 61ea1c9881ea30c05580044af9496a65fe95d94e..4ebeeed7a551722ec49d6c31b5d8e63cb30d4e53 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+@@ -650,4 +650,10 @@ public class PaperConfig {
+     private static void timeCommandAffectsAllWorlds() {
+         timeCommandAffectsAllWorlds = getBoolean("settings.time-command-affects-all-worlds", timeCommandAffectsAllWorlds);
+     }
++
++    public static boolean resetTitleOnJoin;
++
++    private static void resetTitleOnJoin() {
++        resetTitleOnJoin = getBoolean("settings.reset-titles-join", false);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
+index cd08f9b16c065be8f0eacaeba51d3e72d332daf9..89d91da5986136820ad1044233d8edb73bc34078 100644
+--- a/src/main/java/net/minecraft/server/players/PlayerList.java
++++ b/src/main/java/net/minecraft/server/players/PlayerList.java
+@@ -279,6 +279,7 @@ public abstract class PlayerList {
+         playerconnection.send(new ClientboundSetCarriedItemPacket(player.getInventory().selected));
+         playerconnection.send(new ClientboundUpdateRecipesPacket(this.server.getRecipeManager().getRecipes()));
+         playerconnection.send(new ClientboundUpdateTagsPacket(this.server.getTags().serializeToNetwork(this.registryHolder)));
++        if (com.destroystokyo.paper.PaperConfig.resetTitleOnJoin) { playerconnection.send(new net.minecraft.network.protocol.game.ClientboundClearTitlesPacket(true)); } // Paper - Clear title on join MC-55347
+         this.sendPlayerPermissionLevel(player);
+         player.getStats().markAllDirty();
+         player.getRecipeBook().sendInitialRecipeBook(player);
