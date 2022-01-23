@@ -9,39 +9,22 @@ of giving the player experience points.
 
 Both an API To standalone mend, and apply mending logic to .giveExp has been added.
 
-diff --git a/src/main/java/net/minecraft/world/item/enchantment/EnchantmentHelper.java b/src/main/java/net/minecraft/world/item/enchantment/EnchantmentHelper.java
-index 3a09ce6d0ea51436adcae4719d3f28d1868c283c..7bc5aa35b52de0027cf58a6127a9903464ccaf47 100644
---- a/src/main/java/net/minecraft/world/item/enchantment/EnchantmentHelper.java
-+++ b/src/main/java/net/minecraft/world/item/enchantment/EnchantmentHelper.java
-@@ -270,8 +270,11 @@ public class EnchantmentHelper {
-         return getItemEnchantmentLevel(Enchantments.CHANNELING, stack) > 0;
-     }
- 
--    @Nullable
--    public static Entry<EquipmentSlot, ItemStack> getRandomItemWith(Enchantment enchantment, LivingEntity entity) {
-+    @Deprecated public static @javax.annotation.Nonnull ItemStack getRandomEquippedItemWithEnchant(Enchantment enchantment, LivingEntity entityliving) {
-+        Entry<EquipmentSlot, ItemStack> entry = getRandomItemWith(enchantment, entityliving);
-+        return entry != null ? entry.getValue() : ItemStack.EMPTY;
-+    } // Paper - OBFHELPER
-+    @Nullable public static Entry<EquipmentSlot, ItemStack> getRandomItemWith(Enchantment enchantment, LivingEntity entity) {
-         return getRandomItemWith(enchantment, entity, (stack) -> {
-             return true;
-         });
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index 9090c1a400dcb23678ea15234e1517cd707b694c..4061b79b55d0ef3221f74d5cb410f8a1574fd8d2 100644
+index d7a60f85362ef8416f323c075a0017cd4b544045..bc31a9d5f709362f986ce4132287746568bafa56 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-@@ -1239,8 +1239,37 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
-         return GameMode.getByValue(this.getHandle().gameMode.getGameModeForPlayer().getId());
+@@ -1247,7 +1247,37 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
      }
  
+     @Override
+-    public void giveExp(int exp) {
 +    // Paper start
-+    @Override
 +    public int applyMending(int amount) {
-+        ServerPlayer handle = getHandle();
++        ServerPlayer handle = this.getHandle();
 +        // Logic copied from EntityExperienceOrb and remapped to unobfuscated methods/properties
-+        net.minecraft.world.item.ItemStack itemstack = net.minecraft.world.item.enchantment.EnchantmentHelper
-+            .getRandomEquippedItemWithEnchant(net.minecraft.world.item.enchantment.Enchantments.MENDING, handle);
++        final var stackEntry = net.minecraft.world.item.enchantment.EnchantmentHelper
++            .getRandomItemWith(net.minecraft.world.item.enchantment.Enchantments.MENDING, handle);
++        final net.minecraft.world.item.ItemStack itemstack = stackEntry != null ? stackEntry.getValue() : net.minecraft.world.item.ItemStack.EMPTY;
 +        if (!itemstack.isEmpty() && itemstack.getItem().canBeDepleted()) {
 +            net.minecraft.world.entity.ExperienceOrb orb = net.minecraft.world.entity.EntityType.EXPERIENCE_ORB.create(handle.level);
 +            orb.value = amount;
@@ -60,8 +43,7 @@ index 9090c1a400dcb23678ea15234e1517cd707b694c..4061b79b55d0ef3221f74d5cb410f8a1
 +        return amount;
 +    }
 +
-     @Override
--    public void giveExp(int exp) {
++    @Override
 +    public void giveExp(int exp, boolean applyMending) {
 +        if (applyMending) {
 +            exp = this.applyMending(exp);
