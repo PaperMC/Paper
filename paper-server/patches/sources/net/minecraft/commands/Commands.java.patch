@@ -1,9 +1,10 @@
 --- a/net/minecraft/commands/Commands.java
 +++ b/net/minecraft/commands/Commands.java
-@@ -139,6 +139,14 @@
+@@ -138,6 +138,14 @@
+ import net.minecraft.world.flag.FeatureFlags;
  import net.minecraft.world.level.GameRules;
  import org.slf4j.Logger;
- 
++
 +// CraftBukkit start
 +import com.google.common.base.Joiner;
 +import java.util.Collection;
@@ -11,10 +12,9 @@
 +import org.bukkit.event.player.PlayerCommandSendEvent;
 +import org.bukkit.event.server.ServerCommandEvent;
 +// CraftBukkit end
-+
+ 
  public class Commands {
  
-     private static final ThreadLocal<ExecutionContext<CommandSourceStack>> CURRENT_EXECUTION_CONTEXT = new ThreadLocal();
 @@ -151,6 +159,7 @@
      private final com.mojang.brigadier.CommandDispatcher<CommandSourceStack> dispatcher = new com.mojang.brigadier.CommandDispatcher();
  
@@ -23,28 +23,26 @@
          AdvancementCommands.register(this.dispatcher);
          AttributeCommand.register(this.dispatcher, commandRegistryAccess);
          ExecuteCommand.register(this.dispatcher, commandRegistryAccess);
-@@ -250,8 +259,20 @@
- 
-         if (environment.includeIntegrated) {
+@@ -252,6 +261,18 @@
              PublishCommand.register(this.dispatcher);
-+        }
-+
+         }
+ 
 +        // Paper start - Vanilla command permission fixes
 +        for (final CommandNode<CommandSourceStack> node : this.dispatcher.getRoot().getChildren()) {
 +            if (node.getRequirement() == com.mojang.brigadier.builder.ArgumentBuilder.<CommandSourceStack>defaultRequirement()) {
 +                node.requirement = stack -> stack.source == CommandSource.NULL || stack.getBukkitSender().hasPermission(org.bukkit.craftbukkit.command.VanillaCommandWrapper.getPermission(node));
 +            }
-         }
++        }
 +        // Paper end - Vanilla command permission fixes
 +        // CraftBukkit start
 +    }
- 
++
 +    public Commands() {
 +        // CraftBukkkit end
          this.dispatcher.setConsumer(ExecutionCommandSource.resultConsumer());
      }
  
-@@ -262,30 +283,78 @@
+@@ -262,30 +283,69 @@
          return new ParseResults(commandcontextbuilder1, parseResults.getReader(), parseResults.getExceptions());
      }
  
@@ -68,16 +66,7 @@
 +        String[] args = command.split(" ");
 +        if (args.length == 0) return; // Paper - empty commands shall not be dispatched
 +
-+        String cmd = args[0];
-+        if (cmd.startsWith("minecraft:")) cmd = cmd.substring("minecraft:".length());
-+        if (cmd.startsWith("bukkit:")) cmd = cmd.substring("bukkit:".length());
-+
-+        // Block disallowed commands
-+        if (cmd.equalsIgnoreCase("stop") || cmd.equalsIgnoreCase("kick") || cmd.equalsIgnoreCase("op")
-+                || cmd.equalsIgnoreCase("deop") || cmd.equalsIgnoreCase("ban") || cmd.equalsIgnoreCase("ban-ip")
-+                || cmd.equalsIgnoreCase("pardon") || cmd.equalsIgnoreCase("pardon-ip") || cmd.equalsIgnoreCase("reload")) {
-+            return;
-+        }
++        // Paper - Fix permission levels for command blocks
 +
 +        // Handle vanilla commands;
 +        if (sender.getLevel().getCraftServer().getCommandBlockOverride(args[0])) {
@@ -132,7 +121,7 @@
                  StackTraceElement[] astacktraceelement = exception.getStackTrace();
  
                  for (int i = 0; i < Math.min(astacktraceelement.length, 3); ++i) {
-@@ -298,7 +367,7 @@
+@@ -298,7 +358,7 @@
              }));
              if (SharedConstants.IS_RUNNING_IN_IDE) {
                  commandlistenerwrapper.sendFailure(Component.literal(Util.describeError(exception)));
@@ -141,7 +130,7 @@
              }
          } finally {
              Profiler.get().pop();
-@@ -307,18 +376,22 @@
+@@ -307,18 +367,22 @@
      }
  
      @Nullable
@@ -170,7 +159,7 @@
                  });
  
                  if (i > 10) {
-@@ -333,8 +406,18 @@
+@@ -333,8 +397,18 @@
                  }
  
                  ichatmutablecomponent.append((Component) Component.translatable("command.context.here").withStyle(ChatFormatting.RED, ChatFormatting.ITALIC));
@@ -190,7 +179,7 @@
  
              return null;
          }
-@@ -368,7 +451,7 @@
+@@ -368,7 +442,7 @@
  
                  executioncontext1.close();
              } finally {
@@ -199,7 +188,7 @@
              }
          } else {
              callback.accept(executioncontext);
-@@ -377,22 +460,89 @@
+@@ -377,22 +451,89 @@
      }
  
      public void sendCommands(ServerPlayer player) {
@@ -294,7 +283,7 @@
  
                  argumentbuilder.requires((icompletionprovider) -> {
                      return true;
-@@ -415,12 +565,12 @@
+@@ -415,12 +556,12 @@
                      argumentbuilder.redirect((CommandNode) resultNodes.get(argumentbuilder.getRedirect()));
                  }
  
@@ -309,7 +298,7 @@
                  }
              }
          }
-@@ -481,7 +631,7 @@
+@@ -481,7 +622,7 @@
              }
  
              private <T> HolderLookup.RegistryLookup.Delegate<T> createLookup(final HolderLookup.RegistryLookup<T> original) {
