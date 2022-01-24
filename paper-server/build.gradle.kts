@@ -19,6 +19,7 @@ abstract class MockitoAgentProvider : CommandLineArgumentProvider {
 
 dependencies {
     implementation(project(":paper-api"))
+    implementation("ca.spottedleaf:concurrentutil:0.0.2") // Paper - Add ConcurrentUtil dependency
     implementation("jline:jline:2.12.1")
     implementation("org.apache.logging.log4j:log4j-iostreams:2.24.1") // Paper - remove exclusion
     implementation("org.ow2.asm:asm-commons:9.7.1")
