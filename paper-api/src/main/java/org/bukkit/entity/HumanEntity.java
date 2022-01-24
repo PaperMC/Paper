@@ -198,6 +198,7 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      *
      * @param material the material to check
      * @return if a cooldown is active on the material
+     * @throws IllegalArgumentException if the material is not an item
      */
     public boolean hasCooldown(@NotNull Material material);
 
@@ -206,6 +207,7 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      *
      * @param material the material to check
      * @return the remaining cooldown time in ticks
+     * @throws IllegalArgumentException if the material is not an item
      */
     public int getCooldown(@NotNull Material material);
 
@@ -221,6 +223,7 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      *
      * @param material the material to set the cooldown for
      * @param ticks the amount of ticks to set or 0 to remove
+     * @throws IllegalArgumentException if the material is not an item
      */
     public void setCooldown(@NotNull Material material, int ticks);
 
