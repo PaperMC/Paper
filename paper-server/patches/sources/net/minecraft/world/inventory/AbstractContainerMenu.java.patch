@@ -61,26 +61,27 @@
      protected AbstractContainerMenu(@Nullable MenuType<?> type, int syncId) {
          this.carried = ItemStack.EMPTY;
          this.remoteSlots = NonNullList.create();
-@@ -188,9 +228,19 @@
+@@ -188,10 +228,20 @@
  
          if (this.synchronizer != null) {
              this.synchronizer.sendInitialData(this, this.remoteSlots, this.remoteCarried, this.remoteDataSlots.toIntArray());
 +            this.synchronizer.sendOffHandSlotChange(); // Paper - Sync offhand slot in menus; update player's offhand since the offhand slot is not added to the slots for menus but can be changed by swapping from a menu slot
          }
  
-+    }
-+
+     }
+ 
 +    // CraftBukkit start
 +    public void broadcastCarriedItem() {
 +        this.remoteCarried = this.getCarried().copy();
 +        if (this.synchronizer != null) {
 +            this.synchronizer.sendCarriedChange(this, this.remoteCarried);
 +        }
-     }
++    }
 +    // CraftBukkit end
- 
++
      public void removeSlotListener(ContainerListener listener) {
          this.containerListeners.remove(listener);
+     }
 @@ -281,7 +331,7 @@
              while (iterator.hasNext()) {
                  ContainerListener icrafting = (ContainerListener) iterator.next();
@@ -225,3 +226,19 @@
          return this.carried;
      }
  
+@@ -947,4 +1054,15 @@
+         this.stateId = this.stateId + 1 & 32767;
+         return this.stateId;
+     }
++
++    // Paper start - Add missing InventoryHolders
++    // The reason this is a supplier, is that the createHolder method uses the bukkit InventoryView#getTopInventory to get the inventory in question
++    // and that can't be obtained safely until the AbstractContainerMenu has been fully constructed. Using a supplier lazily
++    // initializes the InventoryHolder safely.
++    protected final Supplier<org.bukkit.inventory.BlockInventoryHolder> createBlockHolder(final ContainerLevelAccess context) {
++        //noinspection ConstantValue
++        Preconditions.checkArgument(context != null, "context was null");
++        return () -> context.createBlockHolder(this);
++    }
++    // Paper end - Add missing InventoryHolders
+ }

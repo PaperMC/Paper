@@ -1,6 +1,35 @@
 --- a/net/minecraft/world/inventory/ItemCombinerMenu.java
 +++ b/net/minecraft/world/inventory/ItemCombinerMenu.java
-@@ -50,7 +50,7 @@
+@@ -17,12 +17,7 @@
+     protected final ContainerLevelAccess access;
+     protected final Player player;
+     protected final Container inputSlots;
+-    protected final ResultContainer resultSlots = new ResultContainer() {
+-        @Override
+-        public void setChanged() {
+-            ItemCombinerMenu.this.slotsChanged(this);
+-        }
+-    };
++    protected final ResultContainer resultSlots; // Paper - Add missing InventoryHolders; delay field init
+     private final int resultSlotIndex;
+ 
+     protected boolean mayPickup(Player player, boolean present) {
+@@ -36,6 +31,14 @@
+     public ItemCombinerMenu(@Nullable MenuType<?> type, int syncId, Inventory playerInventory, ContainerLevelAccess context, ItemCombinerMenuSlotDefinition forgingSlotsManager) {
+         super(type, syncId);
+         this.access = context;
++        // Paper start - Add missing InventoryHolders; delay field init
++        this.resultSlots = new ResultContainer(this.createBlockHolder(this.access)) {
++            @Override
++            public void setChanged() {
++                ItemCombinerMenu.this.slotsChanged(this);
++            }
++        };
++        // Paper end - Add missing InventoryHolders; delay field init
+         this.player = playerInventory.player;
+         this.inputSlots = this.createContainer(forgingSlotsManager.getNumOfInputSlots());
+         this.resultSlotIndex = forgingSlotsManager.getResultSlotIndex();
+@@ -50,7 +53,7 @@
          while (iterator.hasNext()) {
              final ItemCombinerMenuSlotDefinition.SlotDefinition itemcombinermenuslotdefinition_b = (ItemCombinerMenuSlotDefinition.SlotDefinition) iterator.next();
  
@@ -9,7 +38,16 @@
                  @Override
                  public boolean mayPlace(ItemStack stack) {
                      return itemcombinermenuslotdefinition_b.mayPlace().test(stack);
-@@ -96,6 +96,7 @@
+@@ -82,7 +85,7 @@
+     public abstract void createResult();
+ 
+     private SimpleContainer createContainer(int size) {
+-        return new SimpleContainer(size) {
++        return new SimpleContainer(this.createBlockHolder(this.access), size) {
+             @Override
+             public void setChanged() {
+                 super.setChanged();
+@@ -96,6 +99,7 @@
          super.slotsChanged(inventory);
          if (inventory == this.inputSlots) {
              this.createResult();
@@ -17,7 +55,7 @@
          }
  
      }
-@@ -110,6 +111,7 @@
+@@ -110,6 +114,7 @@
  
      @Override
      public boolean stillValid(Player player) {
