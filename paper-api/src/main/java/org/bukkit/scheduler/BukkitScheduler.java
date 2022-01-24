@@ -76,7 +76,7 @@ public interface BukkitScheduler {
     public int scheduleSyncRepeatingTask(@NotNull Plugin plugin, @NotNull BukkitRunnable task, long delay, long period);
 
     /**
-     * <b>Asynchronous tasks should never access any API in Bukkit. Great care
+     * <b>Asynchronous tasks should never access any API in Bukkit.</b> <b>Great care
      * should be taken to assure the thread-safety of asynchronous tasks.</b>
      * <p>
      * Schedules a once off task to occur after a delay. This task will be
@@ -93,7 +93,7 @@ public interface BukkitScheduler {
     public int scheduleAsyncDelayedTask(@NotNull Plugin plugin, @NotNull Runnable task, long delay);
 
     /**
-     * <b>Asynchronous tasks should never access any API in Bukkit. Great care
+     * <b>Asynchronous tasks should never access any API in Bukkit.</b> <b>Great care
      * should be taken to assure the thread-safety of asynchronous tasks.</b>
      * <p>
      * Schedules a once off task to occur as soon as possible. This task will
@@ -109,7 +109,7 @@ public interface BukkitScheduler {
     public int scheduleAsyncDelayedTask(@NotNull Plugin plugin, @NotNull Runnable task);
 
     /**
-     * <b>Asynchronous tasks should never access any API in Bukkit. Great care
+     * <b>Asynchronous tasks should never access any API in Bukkit.</b> <b>Great care
      * should be taken to assure the thread-safety of asynchronous tasks.</b>
      * <p>
      * Schedules a repeating task. This task will be executed by a thread
@@ -242,7 +242,7 @@ public interface BukkitScheduler {
     public BukkitTask runTask(@NotNull Plugin plugin, @NotNull BukkitRunnable task) throws IllegalArgumentException;
 
     /**
-     * <b>Asynchronous tasks should never access any API in Bukkit. Great care
+     * <b>Asynchronous tasks should never access any API in Bukkit.</b> <b>Great care
      * should be taken to assure the thread-safety of asynchronous tasks.</b>
      * <p>
      * Returns a task that will run asynchronously.
@@ -257,7 +257,7 @@ public interface BukkitScheduler {
     public BukkitTask runTaskAsynchronously(@NotNull Plugin plugin, @NotNull Runnable task) throws IllegalArgumentException;
 
     /**
-     * <b>Asynchronous tasks should never access any API in Bukkit. Great care
+     * <b>Asynchronous tasks should never access any API in Bukkit.</b> <b>Great care
      * should be taken to assure the thread-safety of asynchronous tasks.</b>
      * <p>
      * Returns a task that will run asynchronously.
@@ -321,7 +321,7 @@ public interface BukkitScheduler {
     public BukkitTask runTaskLater(@NotNull Plugin plugin, @NotNull BukkitRunnable task, long delay) throws IllegalArgumentException;
 
     /**
-     * <b>Asynchronous tasks should never access any API in Bukkit. Great care
+     * <b>Asynchronous tasks should never access any API in Bukkit.</b> <b>Great care
      * should be taken to assure the thread-safety of asynchronous tasks.</b>
      * <p>
      * Returns a task that will run asynchronously after the specified number
@@ -338,7 +338,7 @@ public interface BukkitScheduler {
     public BukkitTask runTaskLaterAsynchronously(@NotNull Plugin plugin, @NotNull Runnable task, long delay) throws IllegalArgumentException;
 
     /**
-     * <b>Asynchronous tasks should never access any API in Bukkit. Great care
+     * <b>Asynchronous tasks should never access any API in Bukkit.</b> <b>Great care
      * should be taken to assure the thread-safety of asynchronous tasks.</b>
      * <p>
      * Returns a task that will run asynchronously after the specified number
@@ -408,7 +408,7 @@ public interface BukkitScheduler {
     public BukkitTask runTaskTimer(@NotNull Plugin plugin, @NotNull BukkitRunnable task, long delay, long period) throws IllegalArgumentException;
 
     /**
-     * <b>Asynchronous tasks should never access any API in Bukkit. Great care
+     * <b>Asynchronous tasks should never access any API in Bukkit.</b> <b>Great care
      * should be taken to assure the thread-safety of asynchronous tasks.</b>
      * <p>
      * Returns a task that will repeatedly run asynchronously until cancelled,
@@ -427,7 +427,7 @@ public interface BukkitScheduler {
     public BukkitTask runTaskTimerAsynchronously(@NotNull Plugin plugin, @NotNull Runnable task, long delay, long period) throws IllegalArgumentException;
 
     /**
-     * <b>Asynchronous tasks should never access any API in Bukkit. Great care
+     * <b>Asynchronous tasks should never access any API in Bukkit.</b> <b>Great care
      * should be taken to assure the thread-safety of asynchronous tasks.</b>
      * <p>
      * Returns a task that will repeatedly run asynchronously until cancelled,
