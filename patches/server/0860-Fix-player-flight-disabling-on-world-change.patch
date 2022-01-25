@@ -1,0 +1,25 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: mxson <m@son.xxx>
+Date: Mon, 24 Jan 2022 18:54:45 -0800
+Subject: [PATCH] Fix player flight disabling on world change
+
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+index 7b23535a680d2a8534dcb8dd87770f66fb982c13..30cc6c77856a93d5642832ba91dc0bb7e5e4eb6b 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+@@ -1721,7 +1721,13 @@ public class ServerPlayer extends Player {
+ 
+     public void restoreFrom(ServerPlayer oldPlayer, boolean alive) {
+         this.textFilteringEnabled = oldPlayer.textFilteringEnabled;
+-        this.gameMode.setGameModeForPlayer(oldPlayer.gameMode.getGameModeForPlayer(), oldPlayer.gameMode.getPreviousGameModeForPlayer());
++
++        // Paper start - only change the player's gamemode if it's different from their current one
++        if (this.gameMode.getGameModeForPlayer() != oldPlayer.gameMode.getGameModeForPlayer()) {
++            this.gameMode.setGameModeForPlayer(oldPlayer.gameMode.getGameModeForPlayer(), oldPlayer.gameMode.getPreviousGameModeForPlayer());
++        }
++        // Paper end
++
+         if (alive) {
+             this.getInventory().replaceWith(oldPlayer.getInventory());
+             this.setHealth(oldPlayer.getHealth());
