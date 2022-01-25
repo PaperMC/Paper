@@ -28,6 +28,16 @@ public class CraftInventoryAnvil extends CraftResultInventory implements AnvilIn
     }
 
     @Override
+    public int getRepairCostAmount() {
+        return container.repairItemCountCost;
+    }
+
+    @Override
+    public void setRepairCostAmount(int amount) {
+        container.repairItemCountCost = amount;
+    }
+
+    @Override
     public int getRepairCost() {
         return container.cost.get();
     }
