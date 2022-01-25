@@ -1,0 +1,29 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Mon, 24 Jan 2022 16:31:44 -0800
+Subject: [PATCH] Add DISMOUNT teleport cause
+
+
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index 630a762b71861bfe21c47a11d4fe05e1a3b7d339..83c97110ff3c7a33eecea516d90013ead7cef73d 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -1620,7 +1620,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+ 
+     // CraftBukkit start - Delegate to teleport(Location)
+     public void dismount(double x, double y, double z, float yaw, float pitch) {
+-        this.dismount(x, y, z, yaw, pitch, PlayerTeleportEvent.TeleportCause.UNKNOWN);
++        this.dismount(x, y, z, yaw, pitch, PlayerTeleportEvent.TeleportCause.DISMOUNT); // Paper
+     }
+ 
+     public void dismount(double d0, double d1, double d2, float f, float f1, PlayerTeleportEvent.TeleportCause cause) {
+@@ -1661,7 +1661,9 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+         }
+ 
+         PlayerTeleportEvent event = new PlayerTeleportEvent(player, from.clone(), to.clone(), cause);
++        if (!this.player.hasDisconnected() || cause != PlayerTeleportEvent.TeleportCause.DISMOUNT) { // Paper - don't fire teleport event on disconnect
+         this.cserver.getPluginManager().callEvent(event);
++        } // Paper
+ 
+         if (event.isCancelled() || !to.equals(event.getTo())) {
+             set.clear(); // Can't relative teleport
