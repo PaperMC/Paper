@@ -1,0 +1,138 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Nassim Jahnke <jahnke.nassim@gmail.com>
+Date: Mon, 31 Jan 2022 11:21:50 +0100
+Subject: [PATCH] Implement regenerateChunk
+
+Co-authored-by: Jason Penilla <11360596+jpenilla@users.noreply.github.com>
+
+diff --git a/src/main/java/net/minecraft/world/level/chunk/ChunkAccess.java b/src/main/java/net/minecraft/world/level/chunk/ChunkAccess.java
+index 5aeaaae6f15050a2da271fe196d0a234ecafc8a1..70f2bc2163b22588dfcd64303a0765cd0df3db5b 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/ChunkAccess.java
++++ b/src/main/java/net/minecraft/world/level/chunk/ChunkAccess.java
+@@ -76,6 +76,7 @@ public abstract class ChunkAccess implements BlockGetter, BiomeManager.NoiseBiom
+     public final Map<BlockPos, BlockEntity> blockEntities = Maps.newHashMap();
+     protected final LevelHeightAccessor levelHeightAccessor;
+     protected final LevelChunkSection[] sections;
++    public boolean forceExecutorOnGen; // Paper - implement regenerateChunk method
+ 
+     // CraftBukkit start - SPIGOT-6814: move to IChunkAccess to account for 1.17 to 1.18 chunk upgrading.
+     private static final org.bukkit.craftbukkit.persistence.CraftPersistentDataTypeRegistry DATA_TYPE_REGISTRY = new org.bukkit.craftbukkit.persistence.CraftPersistentDataTypeRegistry();
+diff --git a/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java b/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java
+index 0009af6e9c6a48a63736ada2653665f74ac396ca..a69b3f53a694db9d4718822662b8218b70eb4024 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java
++++ b/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java
+@@ -169,7 +169,7 @@ public abstract class ChunkGenerator implements BiomeManager.NoiseBiomeSource {
+             Objects.requireNonNull(this.runtimeBiomeSource);
+             chunk.fillBiomesFromNoise(worldchunkmanager::getNoiseBiome, this.climateSampler());
+             return chunk;
+-        }), Util.backgroundExecutor());
++        }), chunk.forceExecutorOnGen ? executor : Util.backgroundExecutor()); // Paper - implement regenerateChunk method
+     }
+ 
+     public abstract Climate.Sampler climateSampler();
+diff --git a/src/main/java/net/minecraft/world/level/levelgen/NoiseBasedChunkGenerator.java b/src/main/java/net/minecraft/world/level/levelgen/NoiseBasedChunkGenerator.java
+index 09d814317443a86210245ab3a7902f2078f08131..4964cc5b164448566fda61c050f2a6ef4626cb11 100644
+--- a/src/main/java/net/minecraft/world/level/levelgen/NoiseBasedChunkGenerator.java
++++ b/src/main/java/net/minecraft/world/level/levelgen/NoiseBasedChunkGenerator.java
+@@ -121,7 +121,7 @@ public final class NoiseBasedChunkGenerator extends ChunkGenerator {
+         return CompletableFuture.supplyAsync(Util.wrapThreadWithTaskName("init_biomes", () -> {
+             this.doCreateBiomes(biomeRegistry, blender, structureAccessor, chunk);
+             return chunk;
+-        }), Util.backgroundExecutor());
++        }), chunk.forceExecutorOnGen ? executor : Util.backgroundExecutor()); // Paper - implement regenerateChunk method
+     }
+ 
+     private void doCreateBiomes(Registry<Biome> biomeRegistry, Blender blender, StructureFeatureManager structureAccessor, ChunkAccess chunk) {
+@@ -306,7 +306,7 @@ public final class NoiseBasedChunkGenerator extends ChunkGenerator {
+ 
+             return CompletableFuture.supplyAsync(Util.wrapThreadWithTaskName("wgen_fill_noise", () -> {
+                 return this.doFill(blender, structureAccessor, chunk, k, l);
+-            }), Util.backgroundExecutor()).whenCompleteAsync((ichunkaccess1, throwable) -> {
++            }), chunk.forceExecutorOnGen ? executor : Util.backgroundExecutor()).whenCompleteAsync((ichunkaccess1, throwable) -> { // Paper - implement regenerateChunk method
+                 Iterator iterator = set.iterator();
+ 
+                 while (iterator.hasNext()) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+index 5fb475b3ccaa98861e2c817b37cd1740e5bfed8d..4c3f27802cb421dbef796297cfc8c91e8b4f0a17 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+@@ -121,6 +121,7 @@ import org.bukkit.util.Vector;
+ 
+ public class CraftWorld extends CraftRegionAccessor implements World {
+     public static final int CUSTOM_DIMENSION_OFFSET = 10;
++    private static final ChunkStatus[] REGEN_CHUNK_STATUSES = {ChunkStatus.BIOMES, ChunkStatus.NOISE, ChunkStatus.SURFACE, ChunkStatus.CARVERS, ChunkStatus.LIQUID_CARVERS, ChunkStatus.FEATURES}; // Paper - implement regenerate chunk method
+ 
+     private final ServerLevel world;
+     private WorldBorder worldBorder;
+@@ -435,27 +436,56 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+     @Override
+     public boolean regenerateChunk(int x, int z) {
+         org.spigotmc.AsyncCatcher.catchOp("chunk regenerate"); // Spigot
+-        throw new UnsupportedOperationException("Not supported in this Minecraft version! Unless you can fix it, this is not a bug :)");
+-        /*
+-        if (!unloadChunk0(x, z, false)) {
+-            return false;
++        // Paper start - implement regenerateChunk method
++        final ServerLevel serverLevel = this.world;
++        final net.minecraft.server.level.ServerChunkCache serverChunkCache = serverLevel.getChunkSource();
++        final ChunkPos chunkPos = new ChunkPos(x, z);
++        if (serverChunkCache.getChunk(chunkPos.x, chunkPos.z, true) != null) {
++            for (final BlockPos blockPos : BlockPos.betweenClosed(chunkPos.getMinBlockX(), serverLevel.getMinBuildHeight(), chunkPos.getMinBlockZ(), chunkPos.getMaxBlockX(), serverLevel.getMaxBuildHeight() - 1, chunkPos.getMaxBlockZ())) {
++                serverLevel.setBlock(blockPos, Blocks.AIR.defaultBlockState(), 16);
++            }
+         }
+ 
+-        final long chunkKey = ChunkCoordIntPair.pair(x, z);
+-        world.getChunkProvider().unloadQueue.remove(chunkKey);
++        final net.minecraft.util.thread.ProcessorMailbox<Runnable> processorMailbox = net.minecraft.util.thread.ProcessorMailbox.create(Runnable::run, "Paper Regenerate Chunks");
++        CompletableFuture<Void> future = CompletableFuture.completedFuture(null);
++        for (final ChunkStatus chunkStatus : REGEN_CHUNK_STATUSES) {
++            final List<ChunkAccess> list = new ArrayList<>();
++            final int range = Math.max(1, chunkStatus.getRange());
++            for (int chunkX = chunkPos.z - range; chunkX <= chunkPos.z + range; chunkX++) {
++                for (int chunkZ = chunkPos.x - range; chunkZ <= chunkPos.x + range; chunkZ++) {
++                    ChunkAccess chunkAccess = serverChunkCache.getChunk(chunkZ, chunkX, chunkStatus.getParent(), true);
++                    if (chunkAccess instanceof ImposterProtoChunk accessProtoChunk) {
++                        chunkAccess = new ImposterProtoChunk(accessProtoChunk.getWrapped(), true);
++                    } else if (chunkAccess instanceof net.minecraft.world.level.chunk.LevelChunk accessLevelChunk) {
++                        chunkAccess = new ImposterProtoChunk(accessLevelChunk, true);
++                    }
++                    chunkAccess.forceExecutorOnGen = true;
++                    list.add(chunkAccess);
++                }
++            }
+ 
+-        net.minecraft.server.Chunk chunk = world.getChunkProvider().generateChunk(x, z);
+-        PlayerChunk playerChunk = world.getPlayerChunkMap().getChunk(x, z);
+-        if (playerChunk != null) {
+-            playerChunk.chunk = chunk;
++            future = future.thenComposeAsync($ -> {
++                org.spigotmc.AsyncCatcher.catchOp("chunk regenerate step"); // Check for potential rescheduling by the individual gen steps
++                return chunkStatus.generate(processorMailbox::tell, serverLevel, serverChunkCache.getGenerator(), serverLevel.getStructureManager(), serverChunkCache.getLightEngine(), chunk -> {
++                    throw new UnsupportedOperationException("Not creating full chunks here");
++                }, list, true).thenApply(either -> {
++                    for (ChunkAccess access : list) {
++                        access.forceExecutorOnGen = false;
++                    }
++                    if (chunkStatus == ChunkStatus.NOISE) {
++                        either.left().ifPresent(chunk -> net.minecraft.world.level.levelgen.Heightmap.primeHeightmaps(chunk, ChunkStatus.POST_FEATURES));
++                    }
++                    return null;
++                });
++            }, processorMailbox::tell);
+         }
++        processorMailbox.runAll();
+ 
+-        if (chunk != null) {
+-            refreshChunk(x, z);
++        for (final BlockPos blockPos : BlockPos.betweenClosed(chunkPos.getMinBlockX(), serverLevel.getMinBuildHeight(), chunkPos.getMinBlockZ(), chunkPos.getMaxBlockX(), serverLevel.getMaxBuildHeight() - 1, chunkPos.getMaxBlockZ())) {
++            serverChunkCache.blockChanged(blockPos);
+         }
+-
+-        return chunk != null;
+-        */
++        return true;
++        // Paper end
+     }
+ 
+     @Override
