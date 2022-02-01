@@ -12,7 +12,7 @@ import org.bukkit.permissions.PermissionAttachmentInfo;
 import org.bukkit.plugin.Plugin;
 
 public abstract class ServerCommandSender implements CommandSender {
-    private final PermissibleBase perm;
+    public final PermissibleBase perm; // Paper
     private net.kyori.adventure.pointer.Pointers adventure$pointers; // Paper - implement pointers
 
     protected ServerCommandSender() {

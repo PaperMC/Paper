@@ -86,6 +86,11 @@ public final class VanillaCommandWrapper extends BukkitCommand {
         if (sender instanceof ProxiedCommandSender) {
             return ((ProxiedNativeCommandSender) sender).getHandle();
         }
+        // Paper start
+        if (sender instanceof io.papermc.paper.commands.FeedbackForwardingSender feedback) {
+            return feedback.asVanilla();
+        }
+        // Paper end
 
         throw new IllegalArgumentException("Cannot make " + sender + " a vanilla command listener");
     }

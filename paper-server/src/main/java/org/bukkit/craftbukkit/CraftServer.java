@@ -2165,6 +2165,13 @@ public final class CraftServer implements Server {
         return this.console.console;
     }
 
+    // Paper start
+    @Override
+    public CommandSender createCommandSender(final java.util.function.Consumer<? super net.kyori.adventure.text.Component> feedback) {
+        return new io.papermc.paper.commands.FeedbackForwardingSender(feedback, this);
+    }
+    // Paper end
+
     public EntityMetadataStore getEntityMetadata() {
         return this.entityMetadata;
     }
