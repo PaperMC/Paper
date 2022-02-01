@@ -724,7 +724,7 @@ index 0000000000000000000000000000000000000000..0133ea6feb1ab88f021f66855669f583
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/util/maplist/IBlockDataList.java b/src/main/java/com/destroystokyo/paper/util/maplist/IBlockDataList.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..277cfd9d1e8fff5d9b5e534b75c3c5162d58b0b7
+index 0000000000000000000000000000000000000000..027bd1e3e7f03bf2e564364edaa5caae7b449371
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/util/maplist/IBlockDataList.java
 @@ -0,0 +1,128 @@
@@ -756,7 +756,7 @@ index 0000000000000000000000000000000000000000..277cfd9d1e8fff5d9b5e534b75c3c516
 +    private int size;
 +
 +    public static int getLocationKey(final int x, final int y, final int z) {
-+        return (x & 15) | (((z & 15) << 4)) | ((y & 255) << (4 + 4));
++        return (x & 15) | ((z & 15) << 4) | ((y & 4095) << 8);
 +    }
 +
 +    public static BlockState getBlockDataFromRaw(final long raw) {
@@ -5001,7 +5001,7 @@ index 0000000000000000000000000000000000000000..9f292deee1b793d52b5774304318e940
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 4d13345f3caa0c8ec55de465fc486d50b43d1e24..02ef6a24565f776986a745a1fa0f58f537e4e8f8 100644
+index 2b76a87213ea8880ede32a6f3bb91f59ed54e681..8c2b1d1a1e7f2716ee27aa10165b94550dccd19a 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -295,6 +295,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
@@ -5291,7 +5291,7 @@ index 40dd2077f26a2c1fa15f21861204faa53748140e..45de5e508540b4ba622985d530f1aada
 +    // Paper end
  }
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index 2fc246ca7ade62c0c2aff3f13f07bd376f032816..ae93a5bd184e084720400a44a3d9b14910343333 100644
+index 09f5ce03f842e357bbe0dd6b0fffde8ec5851f1d..504492c3889fab7b95eec3bcd9b0d1bcd619e8cf 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
 @@ -59,6 +59,7 @@ import net.minecraft.network.protocol.game.ClientboundSetChunkCacheCenterPacket;
@@ -5483,7 +5483,7 @@ index ef87c37633cee4ab438f1991144188ade1c4e65f..19d3802becd353e130b785f8286e595e
  
      protected void purgeStaleTickets() {
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-index d672c467267ef4d96184e104c35d0379116880db..be11caf7c0dcdb11e24cfb053cda45ac1867da63 100644
+index 1231b8425c45326aaf2d59613a1176bf57c9b7f2..7113446e1176145b0ba0df410f58a396a39d1b43 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 @@ -48,6 +48,8 @@ import net.minecraft.world.level.storage.LevelData;
@@ -6055,7 +6055,7 @@ index d679be6c3ce0d57fa2063a45baec1b108a0a2707..de5e18a331178da8f7e82aa2419a0ee6
      public BlockState getBlockState(BlockPos pos) {
          return this.getChunk(SectionPos.blockToSectionCoord(pos.getX()), SectionPos.blockToSectionCoord(pos.getZ())).getBlockState(pos);
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index 02dd09abc24479f5f78a99ab8c3a7f42d62150fc..c3e9391a0a50449fa163c2265efb80dd6e56380d 100644
+index ad62917e3aa6282fbe7159b68bfe81b295457cda..017723d4c067572755c828b4c3b00fe744e6f4ba 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 @@ -218,9 +218,9 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
@@ -6718,7 +6718,7 @@ index 28555314738ba891e0e36d3c85b1623116f743dd..f263022e1d15e78b51cfd148cf024b9a
  
      @Override
 diff --git a/src/main/java/net/minecraft/world/level/chunk/ProtoChunk.java b/src/main/java/net/minecraft/world/level/chunk/ProtoChunk.java
-index 1ea0048e1ee5321a1fd1584ac5371a371de9d45f..41530d0b759604716f739d10f41627871f2ba319 100644
+index 37a75bb9b15356b6fb9c76c1bc1fff8e0a28b1dd..7c2e3331fac1de2e20974c8eed8aeeb9f2c92789 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/ProtoChunk.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/ProtoChunk.java
 @@ -73,6 +73,18 @@ public class ProtoChunk extends ChunkAccess {
