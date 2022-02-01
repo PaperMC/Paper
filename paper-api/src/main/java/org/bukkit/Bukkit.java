@@ -1595,6 +1595,20 @@ public final class Bukkit {
         return server.getConsoleSender();
     }
 
+    // Paper start
+    /**
+     * Creates a special {@link CommandSender} which redirects command feedback (in the form of chat messages) to the
+     * specified listener. The returned sender will have the same effective permissions as {@link #getConsoleSender()}.
+     *
+     * @param feedback feedback listener
+     * @return a command sender
+     */
+    @NotNull
+    public static CommandSender createCommandSender(final @NotNull java.util.function.Consumer<? super net.kyori.adventure.text.Component> feedback) {
+        return server.createCommandSender(feedback);
+    }
+    // Paper end
+
     /**
      * Gets the folder that contains all of the various {@link World}s.
      *
