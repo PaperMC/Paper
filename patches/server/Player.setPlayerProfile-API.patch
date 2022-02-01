@@ -45,6 +45,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        // Paper start
          Entity other = ((CraftEntity) entity).getHandle();
 +        unregisterEntity(other);
++
++        server.getPluginManager().callEvent(new PlayerHideEntityEvent(this, entity));
 +    }
 +    private void unregisterEntity(Entity other) {
 +        // Paper end
@@ -53,6 +55,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          if (entry != null) {
              entry.removePlayer(this.getHandle());
 @@ -0,0 +0,0 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+                 this.getHandle().connection.send(new ClientboundPlayerInfoPacket(ClientboundPlayerInfoPacket.Action.REMOVE_PLAYER, otherPlayer));
+             }
+         }
+-
+-        server.getPluginManager().callEvent(new PlayerHideEntityEvent(this, entity));
+     }
+ 
+     @Override
+@@ -0,0 +0,0 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          }
          this.hiddenEntities.remove(entity.getUniqueId());
  
@@ -60,6 +71,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        // Paper start
          Entity other = ((CraftEntity) entity).getHandle();
 +        registerEntity(other);
++
++        server.getPluginManager().callEvent(new PlayerShowEntityEvent(this, entity));
 +    }
 +    private void registerEntity(Entity other) {
 +        ChunkMap tracker = ((ServerLevel) this.getHandle().level).getChunkSource().chunkMap;
@@ -68,9 +81,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          if (other instanceof ServerPlayer) {
              ServerPlayer otherPlayer = (ServerPlayer) other;
 @@ -0,0 +0,0 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
- 
-         server.getPluginManager().callEvent(new PlayerShowEntityEvent(this, entity));
-     }
+         if (entry != null && !entry.seenBy.contains(this.getHandle().connection)) {
+             entry.updatePlayer(this.getHandle());
+         }
++    }
 +    // Paper start
 +    private void reregisterPlayer(ServerPlayer player) {
 +        if (!hiddenEntities.containsKey(player.getUUID())) {
@@ -93,7 +107,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    public com.destroystokyo.paper.profile.PlayerProfile getPlayerProfile() {
 +        return new com.destroystokyo.paper.profile.CraftPlayerProfile(this).clone();
 +    }
-+
+ 
+-        server.getPluginManager().callEvent(new PlayerShowEntityEvent(this, entity));
 +    private void refreshPlayer() {
 +        ServerPlayer handle = getHandle();
 +
@@ -113,7 +128,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            this.setOp(false);
 +            this.setOp(true);
 +        }
-+    }
+     }
 +    // Paper end
  
      public void onEntityRemove(Entity entity) {
