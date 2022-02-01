@@ -128,6 +128,7 @@ import org.bukkit.event.Cancellable;
 import org.bukkit.event.Event;
 import org.bukkit.event.Event.Result;
 import org.bukkit.event.block.Action;
+import org.bukkit.event.block.BlockDamageAbortEvent;
 import org.bukkit.event.block.BlockDamageEvent;
 import org.bukkit.event.block.BlockDropItemEvent;
 import org.bukkit.event.block.BlockFadeEvent;
@@ -570,6 +571,18 @@ public class CraftEventFactory {
 
         BlockDamageEvent event = new BlockDamageEvent(player, blockClicked, itemInHand, instaBreak);
         craftServer.getPluginManager().callEvent(event);
+
+        return event;
+    }
+
+    public static BlockDamageAbortEvent callBlockDamageAbortEvent(EntityPlayer who, BlockPosition pos, ItemStack itemstack) {
+        Player player = who.getBukkitEntity();
+        CraftItemStack itemInHand = CraftItemStack.asCraftMirror(itemstack);
+
+        Block blockClicked = CraftBlock.at(who.getLevel(), pos);
+
+        BlockDamageAbortEvent event = new BlockDamageAbortEvent(player, blockClicked, itemInHand);
+        player.getServer().getPluginManager().callEvent(event);
 
         return event;
     }
