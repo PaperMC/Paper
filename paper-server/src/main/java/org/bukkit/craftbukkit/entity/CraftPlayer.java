@@ -126,7 +126,9 @@ import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
+import org.bukkit.event.player.PlayerHideEntityEvent;
 import org.bukkit.event.player.PlayerRegisterChannelEvent;
+import org.bukkit.event.player.PlayerShowEntityEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.event.player.PlayerUnregisterChannelEvent;
 import org.bukkit.inventory.EquipmentSlot;
@@ -1126,6 +1128,8 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
                 getHandle().connection.send(new PacketPlayOutPlayerInfo(PacketPlayOutPlayerInfo.EnumPlayerInfoAction.REMOVE_PLAYER, otherPlayer));
             }
         }
+
+        server.getPluginManager().callEvent(new PlayerHideEntityEvent(this, entity));
     }
 
     @Override
@@ -1174,6 +1178,8 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         if (entry != null && !entry.seenBy.contains(getHandle().connection)) {
             entry.updatePlayer(getHandle());
         }
+
+        server.getPluginManager().callEvent(new PlayerShowEntityEvent(this, entity));
     }
 
     public void onEntityRemove(Entity entity) {
