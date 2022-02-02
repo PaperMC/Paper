@@ -187,6 +187,7 @@ import org.bukkit.craftbukkit.metadata.EntityMetadataStore;
 import org.bukkit.craftbukkit.metadata.PlayerMetadataStore;
 import org.bukkit.craftbukkit.metadata.WorldMetadataStore;
 import org.bukkit.craftbukkit.potion.CraftPotionBrewer;
+import org.bukkit.craftbukkit.profile.CraftPlayerProfile;
 import org.bukkit.craftbukkit.scheduler.CraftScheduler;
 import org.bukkit.craftbukkit.scoreboard.CraftScoreboardManager;
 import org.bukkit.craftbukkit.structure.CraftStructureManager;
@@ -244,6 +245,7 @@ import org.bukkit.plugin.messaging.Messenger;
 import org.bukkit.plugin.messaging.StandardMessenger;
 import org.bukkit.potion.Potion;
 import org.bukkit.potion.PotionEffectType;
+import org.bukkit.profile.PlayerProfile;
 import org.bukkit.scheduler.BukkitWorker;
 import org.bukkit.structure.StructureManager;
 import org.bukkit.util.StringUtil;
@@ -294,6 +296,7 @@ public final class CraftServer implements Server {
 
     static {
         ConfigurationSerialization.registerClass(CraftOfflinePlayer.class);
+        ConfigurationSerialization.registerClass(CraftPlayerProfile.class);
         CraftItemFactory.instance();
     }
 
@@ -1641,6 +1644,21 @@ public final class CraftServer implements Server {
         }
 
         return result;
+    }
+
+    @Override
+    public PlayerProfile createPlayerProfile(UUID uniqueId, String name) {
+        return new CraftPlayerProfile(uniqueId, name);
+    }
+
+    @Override
+    public PlayerProfile createPlayerProfile(UUID uniqueId) {
+        return new CraftPlayerProfile(uniqueId, null);
+    }
+
+    @Override
+    public PlayerProfile createPlayerProfile(String name) {
+        return new CraftPlayerProfile(null, name);
     }
 
     public OfflinePlayer getOfflinePlayer(GameProfile profile) {

@@ -19,10 +19,12 @@ import org.bukkit.Server;
 import org.bukkit.Statistic;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.configuration.serialization.SerializableAs;
+import org.bukkit.craftbukkit.profile.CraftPlayerProfile;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.metadata.MetadataValue;
 import org.bukkit.plugin.Plugin;
+import org.bukkit.profile.PlayerProfile;
 
 @SerializableAs("Player")
 public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializable {
@@ -35,10 +37,6 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
         this.profile = profile;
         this.storage = server.console.playerDataStorage;
 
-    }
-
-    public GameProfile getProfile() {
-        return profile;
     }
 
     @Override
@@ -72,6 +70,11 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
     @Override
     public UUID getUniqueId() {
         return profile.getId();
+    }
+
+    @Override
+    public PlayerProfile getPlayerProfile() {
+        return new CraftPlayerProfile(profile);
     }
 
     public Server getServer() {

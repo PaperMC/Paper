@@ -119,6 +119,7 @@ import org.bukkit.craftbukkit.conversations.ConversationTracker;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.map.CraftMapView;
 import org.bukkit.craftbukkit.map.RenderData;
+import org.bukkit.craftbukkit.profile.CraftPlayerProfile;
 import org.bukkit.craftbukkit.scoreboard.CraftScoreboard;
 import org.bukkit.craftbukkit.util.CraftChatMessage;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
@@ -139,6 +140,7 @@ import org.bukkit.map.MapView;
 import org.bukkit.metadata.MetadataValue;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.messaging.StandardMessenger;
+import org.bukkit.profile.PlayerProfile;
 import org.bukkit.scoreboard.Scoreboard;
 
 @DelegateDeserialization(CraftOfflinePlayer.class)
@@ -186,6 +188,11 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     @Override
     public boolean isOnline() {
         return server.getPlayer(getUniqueId()) != null;
+    }
+
+    @Override
+    public PlayerProfile getPlayerProfile() {
+        return new CraftPlayerProfile(getProfile());
     }
 
     @Override
