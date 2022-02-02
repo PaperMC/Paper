@@ -6,6 +6,7 @@ import org.bukkit.entity.AnimalTamer;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.permissions.ServerOperator;
+import org.bukkit.profile.PlayerProfile;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -38,6 +39,18 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
     @Override
     @NotNull
     public UUID getUniqueId();
+
+    /**
+     * Gets a copy of the player's profile.
+     * <p>
+     * If the player is online, the returned profile will be complete.
+     * Otherwise, only the unique id is guaranteed to be present. You can use
+     * {@link PlayerProfile#update()} to complete the returned profile.
+     *
+     * @return the player's profile
+     */
+    @NotNull
+    PlayerProfile getPlayerProfile();
 
     /**
      * Checks if this player is banned or not

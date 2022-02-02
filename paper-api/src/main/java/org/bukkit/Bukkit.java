@@ -44,6 +44,7 @@ import org.bukkit.permissions.Permissible;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.ServicesManager;
 import org.bukkit.plugin.messaging.Messenger;
+import org.bukkit.profile.PlayerProfile;
 import org.bukkit.scheduler.BukkitScheduler;
 import org.bukkit.scoreboard.ScoreboardManager;
 import org.bukkit.structure.StructureManager;
@@ -1046,6 +1047,45 @@ public final class Bukkit {
     @NotNull
     public static OfflinePlayer getOfflinePlayer(@NotNull UUID id) {
         return server.getOfflinePlayer(id);
+    }
+
+    /**
+     * Creates a new {@link PlayerProfile}.
+     *
+     * @param uniqueId the unique id
+     * @param name the name
+     * @return the new PlayerProfile
+     * @throws IllegalArgumentException if both the unique id is
+     * <code>null</code> and the name is <code>null</code> or blank
+     */
+    @NotNull
+    public static PlayerProfile createPlayerProfile(@Nullable UUID uniqueId, @Nullable String name) {
+        return server.createPlayerProfile(uniqueId, name);
+    }
+
+    /**
+     * Creates a new {@link PlayerProfile}.
+     *
+     * @param uniqueId the unique id
+     * @return the new PlayerProfile
+     * @throws IllegalArgumentException if the unique id is <code>null</code>
+     */
+    @NotNull
+    public static PlayerProfile createPlayerProfile(@NotNull UUID uniqueId) {
+        return server.createPlayerProfile(uniqueId);
+    }
+
+    /**
+     * Creates a new {@link PlayerProfile}.
+     *
+     * @param name the name
+     * @return the new PlayerProfile
+     * @throws IllegalArgumentException if the name is <code>null</code> or
+     * blank
+     */
+    @NotNull
+    public static PlayerProfile createPlayerProfile(@NotNull String name) {
+        return server.createPlayerProfile(name);
     }
 
     /**
