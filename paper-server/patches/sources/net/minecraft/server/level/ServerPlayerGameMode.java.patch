@@ -128,9 +128,9 @@
 +                        this.player.connection.send(tileentity.getUpdatePacket());
 +                    }
 +                    // CraftBukkit end
-+                    return;
-+                }
-+
+                     return;
+                 }
+ 
 +                // CraftBukkit start
 +                PlayerInteractEvent event = CraftEventFactory.callPlayerInteractEvent(this.player, Action.LEFT_CLICK_BLOCK, pos, direction, this.player.getInventory().getSelected(), InteractionHand.MAIN_HAND);
 +                if (event.isCancelled()) {
@@ -141,10 +141,10 @@
 +                    if (tileentity != null) {
 +                        this.player.connection.send(tileentity.getUpdatePacket());
 +                    }
-                     return;
-                 }
++                    return;
++                }
 +                // CraftBukkit end
- 
++
                  if (this.isCreative()) {
                      this.destroyAndAck(pos, sequence, "creative destroy");
                      return;
@@ -313,9 +313,12 @@
                  BlockState iblockdata1 = block.playerWillDestroy(this.level, pos, iblockdata, this.player);
                  boolean flag = this.level.removeBlock(pos, false);
  
-@@ -263,19 +428,34 @@
+@@ -262,20 +427,46 @@
+                     block.destroy(this.level, pos, iblockdata1);
                  }
  
++                ItemStack mainHandStack = null; // Paper - Trigger bee_nest_destroyed trigger in the correct place
++                boolean isCorrectTool = false; // Paper - Trigger bee_nest_destroyed trigger in the correct place
                  if (this.isCreative()) {
 -                    return true;
 +                    // return true; // CraftBukkit
@@ -323,6 +326,8 @@
                      ItemStack itemstack = this.player.getMainHandItem();
                      ItemStack itemstack1 = itemstack.copy();
                      boolean flag1 = this.player.hasCorrectToolForDrops(iblockdata1);
++                    mainHandStack = itemstack1; // Paper - Trigger bee_nest_destroyed trigger in the correct place
++                    isCorrectTool = flag1; // Paper - Trigger bee_nest_destroyed trigger in the correct place
  
                      itemstack.mineBlock(this.level, iblockdata1, pos, this.player);
 -                    if (flag && flag1) {
@@ -345,13 +350,20 @@
 +                if (flag && event != null) {
 +                    iblockdata.getBlock().popExperience(this.level, pos, event.getExpToDrop(), this.player); // Paper
 +                }
++                // Paper start - Trigger bee_nest_destroyed trigger in the correct place (check impls of block#playerDestroy)
++                if (mainHandStack != null) {
++                    if (flag && isCorrectTool && event.isDropItems() && block instanceof net.minecraft.world.level.block.BeehiveBlock && tileentity instanceof net.minecraft.world.level.block.entity.BeehiveBlockEntity beehiveBlockEntity) { // simulates the guard on block#playerDestroy above
++                        CriteriaTriggers.BEE_NEST_DESTROYED.trigger(player, iblockdata, mainHandStack, beehiveBlockEntity.getOccupantCount());
++                    }
++                }
++                // Paper end - Trigger bee_nest_destroyed trigger in the correct place
 +
 +                return true;
 +                // CraftBukkit end
              }
          }
      }
-@@ -321,15 +501,58 @@
+@@ -321,15 +512,58 @@
          }
      }
  
@@ -410,7 +422,7 @@
              if (itileinventory != null) {
                  player.openMenu(itileinventory);
                  return InteractionResult.CONSUME;
-@@ -359,7 +582,7 @@
+@@ -359,7 +593,7 @@
                  }
              }
  
