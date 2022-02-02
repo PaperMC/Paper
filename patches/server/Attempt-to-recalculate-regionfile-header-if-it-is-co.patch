@@ -160,7 +160,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        try {
 +            this.file.force(true);
 +            LOGGER.warn("Backing up regionfile \"" + this.regionFile.toAbsolutePath() + "\" to " + to.toAbsolutePath());
-+            java.nio.file.Files.copy(this.regionFile, to);
++            java.nio.file.Files.copy(this.regionFile, to, java.nio.file.StandardCopyOption.COPY_ATTRIBUTES);
 +            LOGGER.warn("Backed up the regionfile to " + to.toAbsolutePath());
 +        } catch (IOException ex) {
 +            LOGGER.error("Failed to backup to " + to.toAbsolutePath(), ex);
@@ -473,11 +473,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -                long j = Files.size(file);
 +                final long j = Files.size(file); final long regionFileSize = j; // Paper - recalculate header on header corruption
  
+-                for (int k = 0; k < 1024; ++k) {
+-                    int l = this.offsets.get(k);
 +                boolean needsHeaderRecalc = false; // Paper - recalculate header on header corruption
 +                boolean hasBackedUp = false; // Paper - recalculate header on header corruption
-                 for (int k = 0; k < 1024; ++k) {
--                    int l = this.offsets.get(k);
-+                    final int l = this.offsets.get(k); final int headerLocation = l; // Paper - we expect this to be the header location
++                for (int k = 0; k < 1024; ++k) { final int headerLocation = k; // Paper - we expect this to be the header location
++                    final int l = this.offsets.get(k);
  
                      if (l != 0) {
 -                        int i1 = RegionFile.getSectorNumber(l);
