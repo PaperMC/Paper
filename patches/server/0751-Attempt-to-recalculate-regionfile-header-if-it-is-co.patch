@@ -87,7 +87,7 @@ index c8298a597818227de33a4afce4698ec0666cf758..6baceb6ce9021c489be6e79d338a9704
          this.used.set(start, start + size);
      }
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
-index 293cce2c80fbdc18480977f5f6b24d6b4fa8dcf3..834fa7048e3affb4fcc734d56526b9fba5fa69ca 100644
+index 293cce2c80fbdc18480977f5f6b24d6b4fa8dcf3..950efcc80455f73ec8ca4e991fcf9a5b2b7fa22e 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
 @@ -52,6 +52,355 @@ public class RegionFile implements AutoCloseable {
@@ -160,7 +160,7 @@ index 293cce2c80fbdc18480977f5f6b24d6b4fa8dcf3..834fa7048e3affb4fcc734d56526b9fb
 +        try {
 +            this.file.force(true);
 +            LOGGER.warn("Backing up regionfile \"" + this.regionFile.toAbsolutePath() + "\" to " + to.toAbsolutePath());
-+            java.nio.file.Files.copy(this.regionFile, to);
++            java.nio.file.Files.copy(this.regionFile, to, java.nio.file.StandardCopyOption.COPY_ATTRIBUTES);
 +            LOGGER.warn("Backed up the regionfile to " + to.toAbsolutePath());
 +        } catch (IOException ex) {
 +            LOGGER.error("Failed to backup to " + to.toAbsolutePath(), ex);
@@ -473,11 +473,12 @@ index 293cce2c80fbdc18480977f5f6b24d6b4fa8dcf3..834fa7048e3affb4fcc734d56526b9fb
 -                long j = Files.size(file);
 +                final long j = Files.size(file); final long regionFileSize = j; // Paper - recalculate header on header corruption
  
+-                for (int k = 0; k < 1024; ++k) {
+-                    int l = this.offsets.get(k);
 +                boolean needsHeaderRecalc = false; // Paper - recalculate header on header corruption
 +                boolean hasBackedUp = false; // Paper - recalculate header on header corruption
-                 for (int k = 0; k < 1024; ++k) {
--                    int l = this.offsets.get(k);
-+                    final int l = this.offsets.get(k); final int headerLocation = l; // Paper - we expect this to be the header location
++                for (int k = 0; k < 1024; ++k) { final int headerLocation = k; // Paper - we expect this to be the header location
++                    final int l = this.offsets.get(k);
  
                      if (l != 0) {
 -                        int i1 = RegionFile.getSectorNumber(l);
@@ -684,7 +685,7 @@ index 293cce2c80fbdc18480977f5f6b24d6b4fa8dcf3..834fa7048e3affb4fcc734d56526b9fb
          return bytebuffer;
      }
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
-index 7b4f3c30cfc4bf68cc872598726f7f7eab5f9830..2dde10324e515bd58fc6ba7e93156ae783492cc2 100644
+index 089e8414c7bdc102ba0d914af576df1a05af7519..9f6c1de59ca011bd1203499f325fdfa305e215ce 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
 @@ -26,7 +26,15 @@ public class RegionFileStorage implements AutoCloseable {
