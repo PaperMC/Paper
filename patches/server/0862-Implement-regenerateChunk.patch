@@ -53,7 +53,7 @@ index 09d814317443a86210245ab3a7902f2078f08131..4964cc5b164448566fda61c050f2a6ef
  
                  while (iterator.hasNext()) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index 5fb475b3ccaa98861e2c817b37cd1740e5bfed8d..4c3f27802cb421dbef796297cfc8c91e8b4f0a17 100644
+index 5fb475b3ccaa98861e2c817b37cd1740e5bfed8d..84418e630be9e6a279a05153dca61b9e4e67a44e 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 @@ -121,6 +121,7 @@ import org.bukkit.util.Vector;
@@ -64,7 +64,7 @@ index 5fb475b3ccaa98861e2c817b37cd1740e5bfed8d..4c3f27802cb421dbef796297cfc8c91e
  
      private final ServerLevel world;
      private WorldBorder worldBorder;
-@@ -435,27 +436,56 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -435,27 +436,61 @@ public class CraftWorld extends CraftRegionAccessor implements World {
      @Override
      public boolean regenerateChunk(int x, int z) {
          org.spigotmc.AsyncCatcher.catchOp("chunk regenerate"); // Spigot
@@ -84,8 +84,6 @@ index 5fb475b3ccaa98861e2c817b37cd1740e5bfed8d..4c3f27802cb421dbef796297cfc8c91e
  
 -        final long chunkKey = ChunkCoordIntPair.pair(x, z);
 -        world.getChunkProvider().unloadQueue.remove(chunkKey);
-+        final net.minecraft.util.thread.ProcessorMailbox<Runnable> processorMailbox = net.minecraft.util.thread.ProcessorMailbox.create(Runnable::run, "Paper Regenerate Chunks");
-+        CompletableFuture<Void> future = CompletableFuture.completedFuture(null);
 +        for (final ChunkStatus chunkStatus : REGEN_CHUNK_STATUSES) {
 +            final List<ChunkAccess> list = new ArrayList<>();
 +            final int range = Math.max(1, chunkStatus.getRange());
@@ -106,22 +104,29 @@ index 5fb475b3ccaa98861e2c817b37cd1740e5bfed8d..4c3f27802cb421dbef796297cfc8c91e
 -        PlayerChunk playerChunk = world.getPlayerChunkMap().getChunk(x, z);
 -        if (playerChunk != null) {
 -            playerChunk.chunk = chunk;
-+            future = future.thenComposeAsync($ -> {
-+                org.spigotmc.AsyncCatcher.catchOp("chunk regenerate step"); // Check for potential rescheduling by the individual gen steps
-+                return chunkStatus.generate(processorMailbox::tell, serverLevel, serverChunkCache.getGenerator(), serverLevel.getStructureManager(), serverChunkCache.getLightEngine(), chunk -> {
-+                    throw new UnsupportedOperationException("Not creating full chunks here");
-+                }, list, true).thenApply(either -> {
-+                    for (ChunkAccess access : list) {
-+                        access.forceExecutorOnGen = false;
-+                    }
-+                    if (chunkStatus == ChunkStatus.NOISE) {
-+                        either.left().ifPresent(chunk -> net.minecraft.world.level.levelgen.Heightmap.primeHeightmaps(chunk, ChunkStatus.POST_FEATURES));
-+                    }
-+                    return null;
-+                });
-+            }, processorMailbox::tell);
++            final com.mojang.datafixers.util.Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure> either;
++            try {
++                either = chunkStatus.generate(
++                    Runnable::run,
++                    serverLevel,
++                    serverChunkCache.getGenerator(),
++                    serverLevel.getStructureManager(),
++                    serverChunkCache.getLightEngine(),
++                    chunk -> {
++                        throw new UnsupportedOperationException("Not creating full chunks here");
++                    },
++                    list,
++                    true
++                ).join();
++            } finally {
++                for (final ChunkAccess access : list) {
++                    access.forceExecutorOnGen = false;
++                }
++            }
++            if (chunkStatus == ChunkStatus.NOISE) {
++                either.left().ifPresent(chunk -> net.minecraft.world.level.levelgen.Heightmap.primeHeightmaps(chunk, ChunkStatus.POST_FEATURES));
++            }
          }
-+        processorMailbox.runAll();
  
 -        if (chunk != null) {
 -            refreshChunk(x, z);
