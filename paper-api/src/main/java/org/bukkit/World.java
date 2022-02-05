@@ -405,8 +405,8 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @return Whether the chunk was actually regenerated
      *
      * @deprecated regenerating a single chunk is not likely to produce the same
-     * chunk as before as terrain decoration may be spread across chunks. Use of
-     * this method should be avoided as it is known to produce buggy results.
+     * chunk as before as terrain decoration may be spread across chunks. It may
+     * or may not change blocks in the adjacent chunks as well.
      */
     @Deprecated(since = "1.13")
     public boolean regenerateChunk(int x, int z);
