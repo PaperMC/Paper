@@ -630,7 +630,7 @@
      }
  
      public void onAboveBubbleCol(boolean flag) {
-@@ -2349,15 +2723,32 @@
+@@ -2349,15 +2723,38 @@
  
      @Nullable
      public Entity changeDimension(WorldServer worldserver) {
@@ -659,13 +659,19 @@
              } else {
 +                // CraftBukkit start
 +                worldserver = shapedetectorshape.world;
++                if (worldserver == level) {
++                    // SPIGOT-6782: Just move the entity if a plugin changed the world to the one the entity is already in
++                    moveTo(shapedetectorshape.pos.x, shapedetectorshape.pos.y, shapedetectorshape.pos.z, shapedetectorshape.yRot, shapedetectorshape.xRot);
++                    setDeltaMovement(shapedetectorshape.speed);
++                    return this;
++                }
 +                this.unRide();
 +                // CraftBukkit end
 +
                  this.level.getProfiler().popPush("reloading");
                  Entity entity = this.getType().create(worldserver);
  
-@@ -2366,9 +2757,17 @@
+@@ -2366,9 +2763,17 @@
                      entity.moveTo(shapedetectorshape.pos.x, shapedetectorshape.pos.y, shapedetectorshape.pos.z, shapedetectorshape.yRot, entity.getXRot());
                      entity.setDeltaMovement(shapedetectorshape.speed);
                      worldserver.addDuringTeleport(entity);
@@ -673,19 +679,19 @@
 -                        WorldServer.makeObsidianPlatform(worldserver);
 +                    if (worldserver.getTypeKey() == WorldDimension.END) { // CraftBukkit
 +                        WorldServer.makeObsidianPlatform(worldserver, this); // CraftBukkit
-+                    }
+                     }
 +                    // CraftBukkit start - Forward the CraftEntity to the new entity
 +                    this.getBukkitEntity().setHandle(entity);
 +                    entity.bukkitEntity = this.getBukkitEntity();
 +
 +                    if (this instanceof EntityInsentient) {
 +                        ((EntityInsentient) this).dropLeash(true, false); // Unleash to prevent duping of leads.
-                     }
++                    }
 +                    // CraftBukkit end
                  }
  
                  this.removeAfterChangingDimensions();
-@@ -2389,20 +2788,34 @@
+@@ -2389,20 +2794,34 @@
  
      @Nullable
      protected ShapeDetectorShape findDimensionEntryPoint(WorldServer worldserver) {
@@ -725,7 +731,7 @@
                      IBlockData iblockdata = this.level.getBlockState(this.portalEntrancePos);
                      EnumDirection.EnumAxis enumdirection_enumaxis;
                      Vec3D vec3d;
-@@ -2419,8 +2832,8 @@
+@@ -2419,8 +2838,8 @@
                          vec3d = new Vec3D(0.5D, 0.0D, 0.0D);
                      }
  
@@ -736,7 +742,7 @@
              }
          } else {
              BlockPosition blockposition1;
-@@ -2430,8 +2843,15 @@
+@@ -2430,8 +2849,15 @@
              } else {
                  blockposition1 = worldserver.getHeightmapPos(HeightMap.Type.MOTION_BLOCKING_NO_LEAVES, worldserver.getSharedSpawnPos());
              }
@@ -753,7 +759,7 @@
          }
      }
  
-@@ -2439,8 +2859,23 @@
+@@ -2439,8 +2865,23 @@
          return BlockPortalShape.getRelativePosition(blockutil_rectangle, enumdirection_enumaxis, this.position(), this.getDimensions(this.getPose()));
      }
  
@@ -779,7 +785,7 @@
      }
  
      public boolean canChangeDimensions() {
-@@ -2649,7 +3084,26 @@
+@@ -2649,7 +3090,26 @@
      }
  
      public final void setBoundingBox(AxisAlignedBB axisalignedbb) {
@@ -807,7 +813,7 @@
      }
  
      protected float getEyeHeight(EntityPose entitypose, EntitySize entitysize) {
-@@ -2933,6 +3387,11 @@
+@@ -2933,6 +3393,11 @@
                                      vec3d = vec3d.add(vec3d1);
                                      ++k1;
                                  }
