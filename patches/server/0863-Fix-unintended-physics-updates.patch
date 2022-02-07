@@ -1,0 +1,80 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Rhagon <Rhagon1337@gmail.com>
+Date: Mon, 7 Feb 2022 16:39:32 +0100
+Subject: [PATCH] Fix unintended physics updates
+
+
+diff --git a/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java b/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java
+index 59db245fe11384282af84ec1d5be08ab0e9484ca..26f4d1629b43506e2c65c2c89c1d6809c43db792 100644
+--- a/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java
++++ b/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java
+@@ -832,7 +832,7 @@ public interface DispenseItemBehavior {
+ 
+                     if (!fertilizeEvent.isCancelled()) {
+                         for (org.bukkit.block.BlockState blockstate : blocks) {
+-                            blockstate.update(true);
++                            blockstate.update(true, false); //Paper - Fertilizing does not apply physics
+                         }
+                     }
+                 }
+diff --git a/src/main/java/net/minecraft/world/item/ItemStack.java b/src/main/java/net/minecraft/world/item/ItemStack.java
+index 66f808cabcf6a9a6584849b285f1c60133adc7b4..74081083e560a1330116648a1f98f8993b5604e9 100644
+--- a/src/main/java/net/minecraft/world/item/ItemStack.java
++++ b/src/main/java/net/minecraft/world/item/ItemStack.java
+@@ -354,7 +354,7 @@ public final class ItemStack {
+                         this.setCount(newCount);
+                     }
+                     for (BlockState blockstate : blocks) {
+-                        blockstate.update(true);
++                        blockstate.update(true, false); //Paper - Fertilizing does not apply physics
+                     }
+                 }
+ 
+diff --git a/src/main/java/net/minecraft/world/level/block/LayeredCauldronBlock.java b/src/main/java/net/minecraft/world/level/block/LayeredCauldronBlock.java
+index e6ea389350cf391a87c4c388ed9a6325bdceb90d..0075817bf6834f451b1d2253886a38a70f4dca75 100644
+--- a/src/main/java/net/minecraft/world/level/block/LayeredCauldronBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/LayeredCauldronBlock.java
+@@ -101,7 +101,7 @@ public class LayeredCauldronBlock extends AbstractCauldronBlock {
+         if (event.isCancelled()) {
+             return false;
+         }
+-        newState.update(true);
++        newState.update(true, false); //Paper - Changes in cauldron level do not apply physics
+         return true;
+     }
+     // CraftBukkit end
+diff --git a/src/main/java/net/minecraft/world/level/block/SaplingBlock.java b/src/main/java/net/minecraft/world/level/block/SaplingBlock.java
+index d920d127dfe9fdcde8c006cee400b9fabff03971..f9dfaa7a754e13b81ac661cd4fe62ff39996bcfd 100644
+--- a/src/main/java/net/minecraft/world/level/block/SaplingBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/SaplingBlock.java
+@@ -60,7 +60,7 @@ public class SaplingBlock extends BushBlock implements BonemealableBlock {
+                 }
+                 if (event == null || !event.isCancelled()) {
+                     for (BlockState blockstate : blocks) {
+-                        blockstate.update(true);
++                        blockstate.update(true, false); //Paper - Sapling growth does not apply physics
+                     }
+                 }
+             }
+diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+index 519b17fac445b7118f5493508bddccd368dadcde..88b0d2ee489f6729760dde9bb4510eeabf1b0b5d 100644
+--- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
++++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+@@ -823,7 +823,7 @@ public class CraftEventFactory {
+         Bukkit.getPluginManager().callEvent(event);
+ 
+         if (!event.isCancelled()) {
+-            state.update(true);
++            state.update(true, false); //Paper - Moisture changes do not apply physics
+         }
+         return !event.isCancelled();
+     }
+@@ -1244,7 +1244,7 @@ public class CraftEventFactory {
+         Bukkit.getPluginManager().callEvent(event);
+ 
+         if (!event.isCancelled()) {
+-            state.update(true);
++            state.update(true, false); //Paper - Block growth does not apply physics
+         }
+ 
+         return !event.isCancelled();
