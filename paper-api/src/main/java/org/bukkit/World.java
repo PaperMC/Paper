@@ -18,6 +18,7 @@ import org.bukkit.entity.Item;
 import org.bukkit.entity.LightningStrike;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.SpawnCategory;
 import org.bukkit.generator.BiomeProvider;
 import org.bukkit.generator.BlockPopulator;
 import org.bukkit.generator.ChunkGenerator;
@@ -1628,7 +1629,9 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * Minecraft default: 400.
      *
      * @return The world's ticks per animal spawns value
+     * @deprecated Deprecated in favor of {@link #getTicksPerSpawns(SpawnCategory)}
      */
+    @Deprecated
     public long getTicksPerAnimalSpawns();
 
     /**
@@ -1655,7 +1658,9 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      *
      * @param ticksPerAnimalSpawns the ticks per animal spawns value you want
      *     to set the world to
+     * @deprecated Deprecated in favor of {@link #setTicksPerSpawns(SpawnCategory, int)}
      */
+    @Deprecated
     public void setTicksPerAnimalSpawns(int ticksPerAnimalSpawns);
 
     /**
@@ -1681,7 +1686,9 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * Minecraft default: 1.
      *
      * @return The world's ticks per monster spawns value
+     * @deprecated Deprecated in favor of {@link #getTicksPerSpawns(SpawnCategory)}
      */
+    @Deprecated
     public long getTicksPerMonsterSpawns();
 
     /**
@@ -1708,7 +1715,9 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      *
      * @param ticksPerMonsterSpawns the ticks per monster spawns value you
      *     want to set the world to
+     * @deprecated Deprecated in favor of {@link #setTicksPerSpawns(SpawnCategory, int)}
      */
+    @Deprecated
     public void setTicksPerMonsterSpawns(int ticksPerMonsterSpawns);
 
     /**
@@ -1732,7 +1741,9 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * Minecraft default: 1.
      *
      * @return The world's ticks per water mob spawns value
+     * @deprecated Deprecated in favor of {@link #getTicksPerSpawns(SpawnCategory)}
      */
+    @Deprecated
     public long getTicksPerWaterSpawns();
 
     /**
@@ -1757,7 +1768,9 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      *
      * @param ticksPerWaterSpawns the ticks per water mob spawns value you
      *     want to set the world to
+     * @deprecated Deprecated in favor of {@link #setTicksPerSpawns(SpawnCategory, int)}
      */
+    @Deprecated
     public void setTicksPerWaterSpawns(int ticksPerWaterSpawns);
 
     /**
@@ -1777,7 +1790,9 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * Minecraft default: 1.
      *
      * @return the default ticks per water ambient mobs spawn value
+     * @deprecated Deprecated in favor of {@link #getTicksPerSpawns(SpawnCategory)}
      */
+    @Deprecated
     public long getTicksPerWaterAmbientSpawns();
 
     /**
@@ -1802,7 +1817,9 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      *
      * @param ticksPerAmbientSpawns the ticks per water ambient mob spawns value you
      *     want to set the world to
+     * @deprecated Deprecated in favor of {@link #setTicksPerSpawns(SpawnCategory, int)}
      */
+    @Deprecated
     public void setTicksPerWaterAmbientSpawns(int ticksPerAmbientSpawns);
 
     /**
@@ -1822,7 +1839,9 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * Minecraft default: 1.
      *
      * @return the default ticks per water underground creature spawn value
+     * @deprecated Deprecated in favor of {@link #getTicksPerSpawns(SpawnCategory)}
      */
+    @Deprecated
     public long getTicksPerWaterUndergroundCreatureSpawns();
 
     /**
@@ -1847,7 +1866,9 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      *
      * @param ticksPerWaterUndergroundCreatureSpawns the ticks per water underground creature spawns value you
      *     want to set the world to
+     * @deprecated Deprecated in favor of {@link #setTicksPerSpawns(SpawnCategory, int)}
      */
+    @Deprecated
     public void setTicksPerWaterUndergroundCreatureSpawns(int ticksPerWaterUndergroundCreatureSpawns);
 
     /**
@@ -1870,8 +1891,10 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * <p>
      * Minecraft default: 1.
      *
-     * @return The world's ticks per ambient mob spawns value
+     * @return the default ticks per ambient mobs spawn value
+     * @deprecated Deprecated in favor of {@link #getTicksPerSpawns(SpawnCategory)}
      */
+    @Deprecated
     public long getTicksPerAmbientSpawns();
 
     /**
@@ -1896,15 +1919,70 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      *
      * @param ticksPerAmbientSpawns the ticks per ambient mob spawns value you
      *     want to set the world to
+     * @deprecated Deprecated in favor of {@link #setTicksPerSpawns(SpawnCategory, int)}
      */
+    @Deprecated
     public void setTicksPerAmbientSpawns(int ticksPerAmbientSpawns);
+
+    /**
+     * Gets the world's ticks per {@link SpawnCategory} mob spawns value
+     * <p>
+     * This value determines how many ticks there are between attempts to
+     * spawn {@link SpawnCategory} mobs.
+     * <p>
+     * <b>Example Usage:</b>
+     * <ul>
+     * <li>A value of 1 will mean the server will attempt to spawn {@link SpawnCategory} mobs in
+     *     this world every tick.
+     * <li>A value of 400 will mean the server will attempt to spawn {@link SpawnCategory} mobs
+     *     in this world every 400th tick.
+     * <li>A value below 0 will be reset back to Minecraft's default.
+     * </ul>
+     * <p>
+     * <b>Note:</b>
+     * If set to 0, {@link SpawnCategory} mobs spawning will be disabled for this world.
+     * <p>
+     * Minecraft default: 1.
+     *
+     * @param spawnCategory the category spawn
+     * @return The world's ticks per {@link SpawnCategory} mob spawns value
+     */
+    public long getTicksPerSpawns(@NotNull SpawnCategory spawnCategory);
+
+    /**
+     * Sets the world's ticks per {@link SpawnCategory} mob spawns value
+     * <p>
+     * This value determines how many ticks there are between attempts to
+     * spawn {@link SpawnCategory} mobs.
+     * <p>
+     * <b>Example Usage:</b>
+     * <ul>
+     * <li>A value of 1 will mean the server will attempt to spawn {@link SpawnCategory} mobs in
+     *     this world on every tick.
+     * <li>A value of 400 will mean the server will attempt to spawn {@link SpawnCategory} mobs
+     *     in this world every 400th tick.
+     * <li>A value below 0 will be reset back to Minecraft's default.
+     * </ul>
+     * <p>
+     * <b>Note:</b>
+     * If set to 0, {@link SpawnCategory} mobs spawning will be disabled for this world.
+     * <p>
+     * Minecraft default: 1.
+     *
+     * @param spawnCategory the category spawn
+     * @param ticksPerCategorySpawn the ticks per {@link SpawnCategory} mob spawns value you
+     *     want to set the world to
+     */
+    public void setTicksPerSpawns(@NotNull SpawnCategory spawnCategory, int ticksPerCategorySpawn);
 
     /**
      * Gets limit for number of monsters that can spawn in a chunk in this
      * world
      *
      * @return The monster spawn limit
+     * @deprecated Deprecated in favor of {@link #getSpawnLimit(SpawnCategory)}
      */
+    @Deprecated
     int getMonsterSpawnLimit();
 
     /**
@@ -1915,7 +1993,9 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * server-wide spawn limit instead.
      *
      * @param limit the new mob limit
+     * @deprecated Deprecated in favor of {@link #setSpawnLimit(SpawnCategory, int)}
      */
+    @Deprecated
     void setMonsterSpawnLimit(int limit);
 
     /**
@@ -1923,7 +2003,9 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * world
      *
      * @return The animal spawn limit
+     * @deprecated Deprecated in favor of {@link #getSpawnLimit(SpawnCategory)}
      */
+    @Deprecated
     int getAnimalSpawnLimit();
 
     /**
@@ -1934,7 +2016,9 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * server-wide spawn limit instead.
      *
      * @param limit the new mob limit
+     * @deprecated Deprecated in favor of {@link #getSpawnLimit(SpawnCategory)}
      */
+    @Deprecated
     void setAnimalSpawnLimit(int limit);
 
     /**
@@ -1942,7 +2026,9 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * this world
      *
      * @return The water animal spawn limit
+     * @deprecated Deprecated in favor of {@link #getSpawnLimit(SpawnCategory)}
      */
+    @Deprecated
     int getWaterAnimalSpawnLimit();
 
     /**
@@ -1953,7 +2039,9 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * server-wide spawn limit instead.
      *
      * @param limit the new mob limit
+     * @deprecated Deprecated in favor of {@link #setSpawnLimit(SpawnCategory, int)}
      */
+    @Deprecated
     void setWaterAnimalSpawnLimit(int limit);
 
     /**
@@ -1961,7 +2049,9 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * this world
      *
      * @return The water underground creature spawn limit
+     * @deprecated Deprecated in favor of {@link #getSpawnLimit(SpawnCategory)}
      */
+    @Deprecated
     int getWaterUndergroundCreatureSpawnLimit();
 
     /**
@@ -1972,7 +2062,9 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * server-wide spawn limit instead.
      *
      * @param limit the new mob limit
+     * @deprecated Deprecated in favor of {@link #setSpawnLimit(SpawnCategory, int)}
      */
+    @Deprecated
     void setWaterUndergroundCreatureSpawnLimit(int limit);
 
     /**
@@ -1980,7 +2072,9 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * in a chunk.
      *
      * @return the water ambient spawn limit
+     * @deprecated Deprecated in favor of {@link #getSpawnLimit(SpawnCategory)}
      */
+    @Deprecated
     int getWaterAmbientSpawnLimit();
 
     /**
@@ -1991,7 +2085,9 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * server-wide spawn limit instead.
      *
      * @param limit the new mob limit
+     * @deprecated Deprecated in favor of {@link #setSpawnLimit(SpawnCategory, int)}
      */
+    @Deprecated
     void setWaterAmbientSpawnLimit(int limit);
 
     /**
@@ -1999,7 +2095,9 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * this world
      *
      * @return The ambient spawn limit
+     * @deprecated Deprecated in favor of {@link #getSpawnLimit(SpawnCategory)}
      */
+    @Deprecated
     int getAmbientSpawnLimit();
 
     /**
@@ -2010,8 +2108,31 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * server-wide spawn limit instead.
      *
      * @param limit the new mob limit
+     * @deprecated Deprecated in favor of {@link #setSpawnLimit(SpawnCategory, int)}
      */
+    @Deprecated
     void setAmbientSpawnLimit(int limit);
+
+    /**
+     * Gets the limit for number of {@link SpawnCategory} entities that can spawn in a chunk in
+     * this world
+     *
+     * @param spawnCategory the entity category
+     * @return The ambient spawn limit
+     */
+    int getSpawnLimit(@NotNull SpawnCategory spawnCategory);
+
+    /**
+     * Sets the limit for number of {@link SpawnCategory} entities that can spawn in a chunk in
+     * this world
+     * <p>
+     * <b>Note:</b> If set to a negative number the world will use the
+     * server-wide spawn limit instead.
+     *
+     * @param spawnCategory the entity category
+     * @param limit the new mob limit
+     */
+    void setSpawnLimit(@NotNull SpawnCategory spawnCategory, int limit);
 
     /**
      * Play a Sound at the provided Location in the World.
