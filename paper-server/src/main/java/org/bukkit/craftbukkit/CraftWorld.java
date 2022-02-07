@@ -6,6 +6,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectLinkedOpenHashMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -52,7 +53,6 @@ import net.minecraft.world.level.Explosion;
 import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.RayTrace;
 import net.minecraft.world.level.biome.BiomeBase;
-import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.chunk.ChunkStatus;
 import net.minecraft.world.level.chunk.IChunkAccess;
 import net.minecraft.world.level.chunk.ProtoChunkExtension;
@@ -94,6 +94,7 @@ import org.bukkit.craftbukkit.metadata.BlockMetadataStore;
 import org.bukkit.craftbukkit.potion.CraftPotionUtil;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.craftbukkit.util.CraftRayTraceResult;
+import org.bukkit.craftbukkit.util.CraftSpawnCategory;
 import org.bukkit.entity.AbstractArrow;
 import org.bukkit.entity.Arrow;
 import org.bukkit.entity.Entity;
@@ -101,6 +102,7 @@ import org.bukkit.entity.FallingBlock;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.LightningStrike;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.SpawnCategory;
 import org.bukkit.entity.SpectralArrow;
 import org.bukkit.entity.TippedArrow;
 import org.bukkit.entity.Trident;
@@ -134,12 +136,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     private final BiomeProvider biomeProvider;
     private final List<BlockPopulator> populators = new ArrayList<BlockPopulator>();
     private final BlockMetadataStore blockMetadata = new BlockMetadataStore(this);
-    private int monsterSpawn = -1;
-    private int animalSpawn = -1;
-    private int waterAnimalSpawn = -1;
-    private int waterAmbientSpawn = -1;
-    private int waterUndergroundCreatureSpawn = -1;
-    private int ambientSpawn = -1;
+    private final Object2IntOpenHashMap<SpawnCategory> spawnCategoryLimit = new Object2IntOpenHashMap<>();
 
     private static final Random rand = new Random();
 
@@ -1320,63 +1317,91 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     }
 
     @Override
+    @Deprecated
     public long getTicksPerAnimalSpawns() {
-        return world.ticksPerAnimalSpawns;
+        return getTicksPerSpawns(SpawnCategory.ANIMAL);
     }
 
     @Override
+    @Deprecated
     public void setTicksPerAnimalSpawns(int ticksPerAnimalSpawns) {
-        world.ticksPerAnimalSpawns = ticksPerAnimalSpawns;
+        setTicksPerSpawns(SpawnCategory.ANIMAL, ticksPerAnimalSpawns);
     }
 
     @Override
+    @Deprecated
     public long getTicksPerMonsterSpawns() {
-        return world.ticksPerMonsterSpawns;
+        return getTicksPerSpawns(SpawnCategory.MONSTER);
     }
 
     @Override
+    @Deprecated
     public void setTicksPerMonsterSpawns(int ticksPerMonsterSpawns) {
-        world.ticksPerMonsterSpawns = ticksPerMonsterSpawns;
+        setTicksPerSpawns(SpawnCategory.MONSTER, ticksPerMonsterSpawns);
     }
 
     @Override
+    @Deprecated
     public long getTicksPerWaterSpawns() {
-        return world.ticksPerWaterSpawns;
+        return getTicksPerSpawns(SpawnCategory.WATER_ANIMAL);
     }
 
     @Override
+    @Deprecated
     public void setTicksPerWaterSpawns(int ticksPerWaterSpawns) {
-        world.ticksPerWaterSpawns = ticksPerWaterSpawns;
+        setTicksPerSpawns(SpawnCategory.WATER_ANIMAL, ticksPerWaterSpawns);
     }
 
     @Override
+    @Deprecated
     public long getTicksPerWaterAmbientSpawns() {
-        return world.ticksPerWaterAmbientSpawns;
+        return getTicksPerSpawns(SpawnCategory.WATER_AMBIENT);
     }
 
     @Override
+    @Deprecated
     public void setTicksPerWaterAmbientSpawns(int ticksPerWaterAmbientSpawns) {
-        world.ticksPerWaterAmbientSpawns = ticksPerWaterAmbientSpawns;
+        setTicksPerSpawns(SpawnCategory.WATER_AMBIENT, ticksPerWaterAmbientSpawns);
     }
 
     @Override
+    @Deprecated
     public long getTicksPerWaterUndergroundCreatureSpawns() {
-        return world.ticksPerWaterUndergroundCreatureSpawns;
+        return getTicksPerSpawns(SpawnCategory.WATER_UNDERGROUND_CREATURE);
     }
 
     @Override
+    @Deprecated
     public void setTicksPerWaterUndergroundCreatureSpawns(int ticksPerWaterUndergroundCreatureSpawns) {
-        world.ticksPerWaterUndergroundCreatureSpawns = ticksPerWaterUndergroundCreatureSpawns;
+        setTicksPerSpawns(SpawnCategory.WATER_UNDERGROUND_CREATURE, ticksPerWaterUndergroundCreatureSpawns);
     }
 
     @Override
+    @Deprecated
     public long getTicksPerAmbientSpawns() {
-        return world.ticksPerAmbientSpawns;
+        return getTicksPerSpawns(SpawnCategory.AMBIENT);
     }
 
     @Override
+    @Deprecated
     public void setTicksPerAmbientSpawns(int ticksPerAmbientSpawns) {
-        world.ticksPerAmbientSpawns = ticksPerAmbientSpawns;
+        setTicksPerSpawns(SpawnCategory.AMBIENT, ticksPerAmbientSpawns);
+    }
+
+    @Override
+    public void setTicksPerSpawns(SpawnCategory spawnCategory, int ticksPerCategorySpawn) {
+        Validate.notNull(spawnCategory, "SpawnCategory cannot be null");
+        Validate.isTrue(CraftSpawnCategory.isValidForLimits(spawnCategory), "SpawnCategory." + spawnCategory + " are not supported.");
+
+        world.ticksPerSpawnCategory.put(spawnCategory, (long) ticksPerCategorySpawn);
+    }
+
+    @Override
+    public long getTicksPerSpawns(SpawnCategory spawnCategory) {
+        Validate.notNull(spawnCategory, "SpawnCategory cannot be null");
+        Validate.isTrue(CraftSpawnCategory.isValidForLimits(spawnCategory), "SpawnCategory." + spawnCategory + " are not supported.");
+
+        return world.ticksPerSpawnCategory.getLong(spawnCategory);
     }
 
     @Override
@@ -1400,87 +1425,95 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     }
 
     @Override
+    @Deprecated
     public int getMonsterSpawnLimit() {
-        if (monsterSpawn < 0) {
-            return server.getMonsterSpawnLimit();
-        }
-
-        return monsterSpawn;
+        return getSpawnLimit(SpawnCategory.MONSTER);
     }
 
     @Override
+    @Deprecated
     public void setMonsterSpawnLimit(int limit) {
-        monsterSpawn = limit;
+        setSpawnLimit(SpawnCategory.MONSTER, limit);
     }
 
     @Override
+    @Deprecated
     public int getAnimalSpawnLimit() {
-        if (animalSpawn < 0) {
-            return server.getAnimalSpawnLimit();
-        }
-
-        return animalSpawn;
+        return getSpawnLimit(SpawnCategory.ANIMAL);
     }
 
     @Override
+    @Deprecated
     public void setAnimalSpawnLimit(int limit) {
-        animalSpawn = limit;
+        setSpawnLimit(SpawnCategory.ANIMAL, limit);
     }
 
     @Override
+    @Deprecated
     public int getWaterAnimalSpawnLimit() {
-        if (waterAnimalSpawn < 0) {
-            return server.getWaterAnimalSpawnLimit();
-        }
-
-        return waterAnimalSpawn;
+        return getSpawnLimit(SpawnCategory.WATER_ANIMAL);
     }
 
     @Override
+    @Deprecated
     public void setWaterAnimalSpawnLimit(int limit) {
-        waterAnimalSpawn = limit;
+        setSpawnLimit(SpawnCategory.WATER_ANIMAL, limit);
     }
 
     @Override
+    @Deprecated
     public int getWaterAmbientSpawnLimit() {
-        if (waterAmbientSpawn < 0) {
-            return server.getWaterAmbientSpawnLimit();
-        }
-
-        return waterAmbientSpawn;
+        return getSpawnLimit(SpawnCategory.WATER_AMBIENT);
     }
 
     @Override
+    @Deprecated
     public void setWaterAmbientSpawnLimit(int limit) {
-        waterAmbientSpawn = limit;
+        setSpawnLimit(SpawnCategory.WATER_AMBIENT, limit);
     }
 
     @Override
+    @Deprecated
     public int getWaterUndergroundCreatureSpawnLimit() {
-        if (waterUndergroundCreatureSpawn < 0) {
-            return server.getWaterUndergroundCreatureSpawnLimit();
-        }
-
-        return waterUndergroundCreatureSpawn;
+        return getSpawnLimit(SpawnCategory.WATER_UNDERGROUND_CREATURE);
     }
 
     @Override
+    @Deprecated
     public void setWaterUndergroundCreatureSpawnLimit(int limit) {
-        waterUndergroundCreatureSpawn = limit;
+        setSpawnLimit(SpawnCategory.WATER_UNDERGROUND_CREATURE, limit);
     }
 
     @Override
+    @Deprecated
     public int getAmbientSpawnLimit() {
-        if (ambientSpawn < 0) {
-            return server.getAmbientSpawnLimit();
-        }
-
-        return ambientSpawn;
+        return getSpawnLimit(SpawnCategory.AMBIENT);
     }
 
     @Override
+    @Deprecated
     public void setAmbientSpawnLimit(int limit) {
-        ambientSpawn = limit;
+        setSpawnLimit(SpawnCategory.AMBIENT, limit);
+    }
+
+    @Override
+    public int getSpawnLimit(SpawnCategory spawnCategory) {
+        Validate.notNull(spawnCategory, "SpawnCategory cannot be null");
+        Validate.isTrue(CraftSpawnCategory.isValidForLimits(spawnCategory), "SpawnCategory." + spawnCategory + " are not supported.");
+
+        int limit = spawnCategoryLimit.getInt(spawnCategory);
+        if (limit < 0) {
+            limit = server.getSpawnLimit(spawnCategory);
+        }
+        return limit;
+    }
+
+    @Override
+    public void setSpawnLimit(SpawnCategory spawnCategory, int limit) {
+        Validate.notNull(spawnCategory, "SpawnCategory cannot be null");
+        Validate.isTrue(CraftSpawnCategory.isValidForLimits(spawnCategory), "SpawnCategory." + spawnCategory + " are not supported.");
+
+        spawnCategoryLimit.put(spawnCategory, limit);
     }
 
     @Override

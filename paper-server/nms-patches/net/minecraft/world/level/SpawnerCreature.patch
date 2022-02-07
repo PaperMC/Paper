@@ -1,18 +1,20 @@
 --- a/net/minecraft/world/level/SpawnerCreature.java
 +++ b/net/minecraft/world/level/SpawnerCreature.java
-@@ -47,6 +47,11 @@
+@@ -47,6 +47,13 @@
  import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
  
 +// CraftBukkit start
 +import net.minecraft.world.level.storage.WorldData;
++import org.bukkit.craftbukkit.util.CraftSpawnCategory;
++import org.bukkit.entity.SpawnCategory;
 +import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
 +// CraftBukkit end
 +
  public final class SpawnerCreature {
  
      private static final Logger LOGGER = LogManager.getLogger();
-@@ -73,7 +78,8 @@
+@@ -73,7 +80,8 @@
              if (entity instanceof EntityInsentient) {
                  EntityInsentient entityinsentient = (EntityInsentient) entity;
  
@@ -22,50 +24,21 @@
                      continue;
                  }
              }
-@@ -111,10 +117,54 @@
+@@ -111,10 +119,25 @@
          EnumCreatureType[] aenumcreaturetype = SpawnerCreature.SPAWNING_CATEGORIES;
          int i = aenumcreaturetype.length;
  
-+        // CraftBukkit start - Other mob type spawn tick rate
-+        WorldData worlddata = worldserver.getLevelData();
-+        boolean spawnAnimalThisTick = worldserver.ticksPerAnimalSpawns != 0L && worlddata.getGameTime() % worldserver.ticksPerAnimalSpawns == 0L;
-+        boolean spawnMonsterThisTick = worldserver.ticksPerMonsterSpawns != 0L && worlddata.getGameTime() % worldserver.ticksPerMonsterSpawns == 0L;
-+        boolean spawnWaterThisTick = worldserver.ticksPerWaterSpawns != 0L && worlddata.getGameTime() % worldserver.ticksPerWaterSpawns == 0L;
-+        boolean spawnAmbientThisTick = worldserver.ticksPerAmbientSpawns != 0L && worlddata.getGameTime() % worldserver.ticksPerAmbientSpawns == 0L;
-+        boolean spawnWaterAmbientThisTick = worldserver.ticksPerWaterAmbientSpawns != 0L && worlddata.getGameTime() % worldserver.ticksPerWaterAmbientSpawns == 0L;
-+        boolean spawnWaterUndergroundCreatureThisTick = worldserver.ticksPerWaterUndergroundCreatureSpawns != 0L && worlddata.getGameTime() % worldserver.ticksPerWaterUndergroundCreatureSpawns == 0L;
-+        // CraftBukkit end
++        WorldData worlddata = worldserver.getLevelData(); // CraftBukkit - Other mob type spawn tick rate
 +
          for (int j = 0; j < i; ++j) {
              EnumCreatureType enumcreaturetype = aenumcreaturetype[j];
 +            // CraftBukkit start - Use per-world spawn limits
 +            boolean spawnThisTick = true;
 +            int limit = enumcreaturetype.getMaxInstancesPerChunk();
-+            switch (enumcreaturetype) {
-+                case MONSTER:
-+                    spawnThisTick = spawnMonsterThisTick;
-+                    limit = worldserver.getWorld().getMonsterSpawnLimit();
-+                    break;
-+                case CREATURE:
-+                    spawnThisTick = spawnAnimalThisTick;
-+                    limit = worldserver.getWorld().getAnimalSpawnLimit();
-+                    break;
-+                case WATER_CREATURE:
-+                    spawnThisTick = spawnWaterThisTick;
-+                    limit = worldserver.getWorld().getWaterAnimalSpawnLimit();
-+                    break;
-+                case UNDERGROUND_WATER_CREATURE:
-+                    spawnThisTick = spawnWaterUndergroundCreatureThisTick;
-+                    limit = worldserver.getWorld().getWaterUndergroundCreatureSpawnLimit();
-+                    break;
-+                case AMBIENT:
-+                    spawnThisTick = spawnAmbientThisTick;
-+                    limit = worldserver.getWorld().getAmbientSpawnLimit();
-+                    break;
-+                case WATER_AMBIENT:
-+                    spawnThisTick = spawnWaterAmbientThisTick;
-+                    limit = worldserver.getWorld().getWaterAmbientSpawnLimit();
-+                    break;
++            SpawnCategory spawnCategory = CraftSpawnCategory.toBukkit(enumcreaturetype);
++            if (CraftSpawnCategory.isValidForLimits(spawnCategory)) {
++                spawnThisTick = worldserver.ticksPerSpawnCategory.getLong(spawnCategory) != 0 && worlddata.getGameTime() % worldserver.ticksPerSpawnCategory.getLong(spawnCategory) == 0;
++                limit = worldserver.getWorld().getSpawnLimit(spawnCategory);
 +            }
  
 -            if ((flag || !enumcreaturetype.isFriendly()) && (flag1 || enumcreaturetype.isFriendly()) && (flag2 || !enumcreaturetype.isPersistent()) && spawnercreature_d.canSpawnForCategory(enumcreaturetype, chunk.getPos())) {
@@ -78,7 +51,7 @@
                  Objects.requireNonNull(spawnercreature_d);
                  SpawnerCreature.c spawnercreature_c = spawnercreature_d::canSpawn;
  
-@@ -199,10 +249,14 @@
+@@ -199,10 +222,14 @@
                                          entityinsentient.moveTo(d0, (double) i, d1, worldserver.random.nextFloat() * 360.0F, 0.0F);
                                          if (isValidPositionForMob(worldserver, entityinsentient, d2)) {
                                              groupdataentity = entityinsentient.finalizeSpawn(worldserver, worldserver.getCurrentDifficultyAt(entityinsentient.blockPosition()), EnumMobSpawn.NATURAL, groupdataentity, (NBTTagCompound) null);
@@ -97,7 +70,7 @@
                                              if (j >= entityinsentient.getMaxSpawnClusterSize()) {
                                                  return;
                                              }
-@@ -377,7 +431,7 @@
+@@ -377,7 +404,7 @@
  
                                      if (entityinsentient.checkSpawnRules(worldaccess, EnumMobSpawn.CHUNK_GENERATION) && entityinsentient.checkSpawnObstruction(worldaccess)) {
                                          groupdataentity = entityinsentient.finalizeSpawn(worldaccess, worldaccess.getCurrentDifficultyAt(entityinsentient.blockPosition()), EnumMobSpawn.CHUNK_GENERATION, groupdataentity, (NBTTagCompound) null);
@@ -106,7 +79,7 @@
                                          flag = true;
                                      }
                                  }
-@@ -498,8 +552,10 @@
+@@ -498,8 +525,10 @@
              return this.unmodifiableMobCategoryCounts;
          }
  
