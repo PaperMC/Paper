@@ -1,0 +1,36 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: LoreSchaeffer <lm.lorenzo@outlook.it>
+Date: Thu, 10 Feb 2022 23:18:41 +0100
+Subject: [PATCH] Added PlayerCommandPostprocessEvent
+
+
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index 23eddc502816e84ab25366c7d5710ce2e660c7a0..878e480e592ff53eedaf86683409d08aa9f9ffd2 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -7,6 +7,7 @@ import com.mojang.brigadier.StringReader;
+ import io.netty.buffer.Unpooled;
+ import io.netty.util.concurrent.Future;
+ import io.netty.util.concurrent.GenericFutureListener;
++import io.papermc.paper.event.player.PlayerCommandPostprocessEvent;
+ import it.unimi.dsi.fastutil.ints.Int2ObjectMap.Entry;
+ import it.unimi.dsi.fastutil.ints.Int2ObjectMaps;
+ import it.unimi.dsi.fastutil.objects.ObjectIterator;
+@@ -2290,9 +2291,16 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+         }
+ 
+         try {
+-            if (this.cserver.dispatchCommand(event.getPlayer(), event.getMessage().substring(1))) {
++            // Paper start
++            boolean success = this.cserver.dispatchCommand(event.getPlayer(), event.getMessage().substring(1));
++
++            PlayerCommandPostprocessEvent event1 = new PlayerCommandPostprocessEvent(player, event.getMessage(), success);
++            this.cserver.getPluginManager().callEvent(event1);
++
++            if (success) {
+                 return;
+             }
++            // Paper end
+         } catch (org.bukkit.command.CommandException ex) {
+             player.sendMessage(org.bukkit.ChatColor.RED + "An internal error occurred while attempting to perform this command");
+             java.util.logging.Logger.getLogger(ServerGamePacketListenerImpl.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
