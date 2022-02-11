@@ -1,0 +1,124 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: LoreSchaeffer <lm.lorenzo@outlook.it>
+Date: Fri, 11 Feb 2022 13:31:13 +0100
+Subject: [PATCH] Added CommandPostprocessEvent
+
+
+diff --git a/src/main/java/io/papermc/paper/event/server/CommandPostprocessEvent.java b/src/main/java/io/papermc/paper/event/server/CommandPostprocessEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..e00afe59cd3ac499e03be28332541c33a7047eb2
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/event/server/CommandPostprocessEvent.java
+@@ -0,0 +1,74 @@
++package io.papermc.paper.event.server;
++
++import org.bukkit.command.CommandSender;
++import org.bukkit.event.Event;
++import org.bukkit.event.HandlerList;
++import org.jetbrains.annotations.NotNull;
++
++/**
++ * Called after a player executes a command.
++ */
++public class CommandPostprocessEvent extends Event {
++    private static final HandlerList handlers = new HandlerList();
++    private final CommandSender sender;
++    private final String command;
++    private final String[] args;
++    private final boolean success;
++
++    public CommandPostprocessEvent(@NotNull final CommandSender sender, @NotNull final String command, @NotNull String[]args, final boolean success) {
++        this.sender = sender;
++        this.command = command;
++        this.args = args;
++        this.success = success;
++    }
++
++    /**
++     * Gets the CommandSender that executed the command.
++     *
++     * @return CommandSender that executed the command
++     */
++    @NotNull
++    public CommandSender getCommandSender() {
++        return sender;
++    }
++
++    /**
++     * Gets the command that the player has executed.
++     *
++     * @return Command the player has executed
++     */
++    @NotNull
++    public String getCommand() {
++        return this.command;
++    }
++
++    /**
++     * Gets the arguments passed to the command.
++     *
++     * @return the arguments passed to the command
++     */
++    @NotNull
++    public String[] getArgs() {
++        return args;
++    }
++
++    /**
++     * Gets whether the command was successful or not.
++     *
++     * @return true if the command was successful, false otherwise
++     */
++    public boolean wasSuccess() {
++        return success;
++    }
++
++    @NotNull
++    @Override
++    public HandlerList getHandlers() {
++        return handlers;
++    }
++
++    @NotNull
++    public static HandlerList getHandlerList() {
++        return handlers;
++    }
++}
+diff --git a/src/main/java/org/bukkit/command/SimpleCommandMap.java b/src/main/java/org/bukkit/command/SimpleCommandMap.java
+index 74252236b138969560e6513f24e7ecc6dc4a4127..a5e003e842d179dbfb445d27057ee4e8a4cdd8b0 100644
+--- a/src/main/java/org/bukkit/command/SimpleCommandMap.java
++++ b/src/main/java/org/bukkit/command/SimpleCommandMap.java
+@@ -12,6 +12,7 @@ import java.util.Map;
+ import com.destroystokyo.paper.event.server.ServerExceptionEvent;
+ import com.destroystokyo.paper.exception.ServerCommandException;
+ import com.destroystokyo.paper.exception.ServerTabCompleteException;
++import io.papermc.paper.event.server.CommandPostprocessEvent;
+ import org.apache.commons.lang.Validate;
+ import org.bukkit.Location;
+ import org.bukkit.Server;
+@@ -153,10 +154,12 @@ public class SimpleCommandMap implements CommandMap {
+         }
+         // Paper end
+ 
++        boolean success = false; // Paper
++
+         try {
+             try (co.aikar.timings.Timing ignored = target.timings.startTiming()) { // Paper - use try with resources
+             // Note: we don't return the result of target.execute as thats success / failure, we return handled (true) or not handled (false)
+-            target.execute(sender, sentCommandLabel, Arrays.copyOfRange(args, 1, args.length));
++            success = target.execute(sender, sentCommandLabel, Arrays.copyOfRange(args, 1, args.length)); // Paper
+             } // target.timings.stopTiming(); // Spigot // Paper
+         } catch (CommandException ex) {
+             server.getPluginManager().callEvent(new ServerExceptionEvent(new ServerCommandException(ex, target, sender, args))); // Paper
+@@ -169,6 +172,11 @@ public class SimpleCommandMap implements CommandMap {
+             throw new CommandException(msg, ex);
+         }
+ 
++        // Paper start
++        CommandPostprocessEvent event = new CommandPostprocessEvent(sender, target.getName(), Arrays.copyOfRange(args, 1, args.length), success);
++        server.getPluginManager().callEvent(event);
++        // Paper end
++
+         // return true as command was handled
+         return true;
+     }
