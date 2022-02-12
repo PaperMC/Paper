@@ -9,27 +9,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/org/bukkit/craftbukkit/generator/CraftLimitedRegion.java
 +++ b/src/main/java/org/bukkit/craftbukkit/generator/CraftLimitedRegion.java
 @@ -0,0 +0,0 @@ public class CraftLimitedRegion extends CraftRegionAccessor implements LimitedRe
-     @Override
-     public BlockState getBlockState(int x, int y, int z) {
-         Preconditions.checkArgument(this.isInRegion(x, y, z), "Coordinates %s, %s, %s are not in the region", x, y, z);
--        return super.getBlockState(x, y, z);
-+        // Paper start
-+        net.minecraft.world.level.block.entity.BlockEntity entity = getHandle().getBlockEntity(new BlockPos(x, y, z));
-+        return org.bukkit.craftbukkit.inventory.CraftMetaBlockState.createBlockState(entity.getBlockState().getBukkitMaterial(), entity.saveWithFullMetadata());
-+        // Paper end
-     }
- 
-     @Override
-@@ -0,0 +0,0 @@ public class CraftLimitedRegion extends CraftRegionAccessor implements LimitedRe
-     @Override
-     public void setBlockData(int x, int y, int z, BlockData blockData) {
-         Preconditions.checkArgument(this.isInRegion(x, y, z), "Coordinates %s, %s, %s are not in the region", x, y, z);
--        super.setBlockData(x, y, z, blockData);
-+        getHandle().setBlock(new BlockPos(x, y, z), ((org.bukkit.craftbukkit.block.data.CraftBlockData) blockData).getState(), 3); // Paper
-     }
- 
-     @Override
-@@ -0,0 +0,0 @@ public class CraftLimitedRegion extends CraftRegionAccessor implements LimitedRe
      public void addEntityToWorld(net.minecraft.world.entity.Entity entity, CreatureSpawnEvent.SpawnReason reason) {
          this.entities.add(entity);
      }
@@ -47,7 +26,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    @Override
 +    public void scheduleBlockUpdate(int x, int y, int z) {
 +        BlockPos position = new BlockPos(x, y, z);
-+        getHandle().scheduleTick(position, getHandle().getBlockIfLoaded(position), 0);
++        getHandle().scheduleTick(position, getHandle().getBlockState(position).getBlock(), 0);
 +    }
 +
 +    @Override
@@ -75,42 +54,3 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +    // Paper end
  }
-diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBlockState.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBlockState.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBlockState.java
-+++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBlockState.java
-@@ -0,0 +0,0 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
- 
-     @Override
-     public BlockState getBlockState() {
--        Material stateMaterial = (this.material != Material.SHIELD) ? this.material : CraftMetaBlockState.shieldToBannerHack(this.blockEntityTag); // Only actually used for jigsaws
--        if (this.blockEntityTag != null) {
--            switch (this.material) {
-+        // Paper start
-+        return createBlockState(this.material, this.blockEntityTag);
-+    }
-+    public static BlockState createBlockState(Material material, CompoundTag blockEntityTag) {
-+        Material stateMaterial = (material != Material.SHIELD) ? material : CraftMetaBlockState.shieldToBannerHack(blockEntityTag); // Only actually used for jigsaws
-+        if (blockEntityTag != null) {
-+            switch (material) {
-+                // Paper end
-                 case SHIELD:
--                    this.blockEntityTag.putString("id", "banner");
-+                    blockEntityTag.putString("id", "banner"); // Paper
-                     break;
-                 case SHULKER_BOX:
-                 case WHITE_SHULKER_BOX:
-@@ -0,0 +0,0 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
-                 case GREEN_SHULKER_BOX:
-                 case RED_SHULKER_BOX:
-                 case BLACK_SHULKER_BOX:
--                    this.blockEntityTag.putString("id", "shulker_box");
-+                    blockEntityTag.putString("id", "shulker_box"); // Paper
-                     break;
-                 case BEE_NEST:
-                 case BEEHIVE:
--                    this.blockEntityTag.putString("id", "beehive");
-+                    blockEntityTag.putString("id", "beehive"); // Paper
-                     break;
-             }
-         }
