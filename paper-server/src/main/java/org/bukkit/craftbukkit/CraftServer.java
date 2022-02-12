@@ -2342,6 +2342,8 @@ public final class CraftServer implements Server {
     @Override
     public int getSpawnLimit(SpawnCategory spawnCategory) {
         // Paper start - Add mobcaps commands
+        Preconditions.checkArgument(spawnCategory != null, "SpawnCategory cannot be null");
+        Preconditions.checkArgument(CraftSpawnCategory.isValidForLimits(spawnCategory), "SpawnCategory." + spawnCategory + " does not have a spawn limit.");
         return this.getSpawnLimitUnsafe(spawnCategory);
     }
     public int getSpawnLimitUnsafe(final SpawnCategory spawnCategory) {
