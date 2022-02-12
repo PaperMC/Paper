@@ -19,10 +19,11 @@
      }
  
      public void clientTick(Level world, BlockPos pos) {
-@@ -82,13 +84,18 @@
+@@ -82,13 +84,19 @@
      }
  
      public void serverTick(ServerLevel world, BlockPos pos) {
++        if (spawnCount <= 0 || maxNearbyEntities <= 0) return; // Paper - Ignore impossible spawn tick
 +        // Paper start - Configurable mob spawner tick rate
 +        if (spawnDelay > 0 && --tickDelay > 0) return;
 +        tickDelay = world.paperConfig().tickRates.mobSpawner;
@@ -40,7 +41,7 @@
              } else {
                  boolean flag = false;
                  RandomSource randomsource = world.getRandom();
-@@ -125,6 +132,20 @@
+@@ -125,6 +133,20 @@
                          } else if (!SpawnPlacements.checkSpawnRules((EntityType) optional.get(), world, EntitySpawnReason.SPAWNER, blockposition1, world.getRandom())) {
                              continue;
                          }
@@ -61,7 +62,7 @@
  
                          Entity entity = EntityType.loadEntityRecursive(nbttagcompound, world, EntitySpawnReason.SPAWNER, (entity1) -> {
                              entity1.moveTo(d0, d1, d2, entity1.getYRot(), entity1.getXRot());
-@@ -143,6 +164,7 @@
+@@ -143,6 +165,7 @@
                              return;
                          }
  
@@ -69,7 +70,7 @@
                          entity.moveTo(entity.getX(), entity.getY(), entity.getZ(), randomsource.nextFloat() * 360.0F, 0.0F);
                          if (entity instanceof Mob) {
                              Mob entityinsentient = (Mob) entity;
-@@ -157,13 +179,27 @@
+@@ -157,13 +180,27 @@
                                  ((Mob) entity).finalizeSpawn(world, world.getCurrentDifficultyAt(entity.blockPosition()), EntitySpawnReason.SPAWNER, (SpawnGroupData) null);
                              }
  
@@ -99,7 +100,7 @@
                              this.delay(world, pos);
                              return;
                          }
-@@ -174,7 +210,7 @@
+@@ -174,7 +211,7 @@
                              ((Mob) entity).spawnAnim();
                          }
  
@@ -108,7 +109,7 @@
                      }
                  }
  
-@@ -202,7 +238,13 @@
+@@ -202,7 +239,13 @@
      }
  
      public void load(@Nullable Level world, BlockPos pos, CompoundTag nbt) {
@@ -122,7 +123,7 @@
          boolean flag = nbt.contains("SpawnData", 10);
  
          if (flag) {
-@@ -225,9 +267,15 @@
+@@ -225,9 +268,15 @@
              this.spawnPotentials = SimpleWeightedRandomList.single(this.nextSpawnData != null ? this.nextSpawnData : new SpawnData());
          }
  
@@ -140,7 +141,7 @@
              this.spawnCount = nbt.getShort("SpawnCount");
          }
  
-@@ -244,9 +292,20 @@
+@@ -244,9 +293,20 @@
      }
  
      public CompoundTag save(CompoundTag nbt) {
