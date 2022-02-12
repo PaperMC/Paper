@@ -13,9 +13,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      // Spigot end
  
 +    // Paper start
++    private static final int SURVIVAL_PLACE_DISTANCE_SQUARED = 6 * 6;
++    private static final int CREATIVE_PLACE_DISTANCE_SQUARED = 7 * 7;
 +    private boolean isOutsideOfReach(double x, double y, double z) {
 +        Location eyeLoc = this.getCraftPlayer().getEyeLocation();
-+        double reachDistance = NumberConversions.square(eyeLoc.getX() - x) + NumberConversions.square(eyeLoc.getY() - y) + NumberConversions.square(eyeLoc.getZ() - z);
++        double reachDistance = org.bukkit.util.NumberConversions.square(eyeLoc.getX() - x) + org.bukkit.util.NumberConversions.square(eyeLoc.getY() - y) + org.bukkit.util.NumberConversions.square(eyeLoc.getZ() - z);
 +        return reachDistance > (this.getCraftPlayer().getGameMode() == org.bukkit.GameMode.CREATIVE ? CREATIVE_PLACE_DISTANCE_SQUARED : SURVIVAL_PLACE_DISTANCE_SQUARED);
 +    }
 +    // Paper end
@@ -24,30 +26,26 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public void handleUseItemOn(ServerboundUseItemOnPacket packet) {
          PacketUtils.ensureRunningOnSameThread(packet, this, this.player.getLevel());
 @@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
-         BlockPos blockposition = movingobjectpositionblock.getBlockPos();
-         Direction enumdirection = movingobjectpositionblock.getDirection();
  
-+        // Paper start - move check up and check actual location as well
+         this.player.resetLastActionTime();
+         int i = this.player.level.getMaxBuildHeight();
+-        // CraftBukkit start
+-        double distanceSqr = this.player.distanceToSqr((double) blockposition.getX() + 0.5D, (double) blockposition.getY() + 0.5D, (double) blockposition.getZ() + 0.5D);
+-        if (distanceSqr > 100.0D) {
++
++        // Paper start - improve distance check
 +        final Vec3 clickedLocation = movingobjectpositionblock.getLocation();
 +        if (isOutsideOfReach(blockposition.getX() + 0.5D, blockposition.getY() + 0.5D, blockposition.getZ() + 0.5D)
 +            || !Double.isFinite(clickedLocation.x) || !Double.isFinite(clickedLocation.y) || !Double.isFinite(clickedLocation.z)
 +            || isOutsideOfReach(clickedLocation.x, clickedLocation.y, clickedLocation.z)) {
-+            return;
-+        }
-+        // Paper end - move check up
-+
-         this.player.resetLastActionTime();
-         int i = this.player.level.getMaxBuildHeight();
+             return;
+         }
+-        // CraftBukkit end
++        // Paper end
  
          if (blockposition.getY() < i) {
-             if (this.awaitingPositionFromClient == null && this.player.distanceToSqr((double) blockposition.getX() + 0.5D, (double) blockposition.getY() + 0.5D, (double) blockposition.getZ() + 0.5D) < 64.0D && worldserver.mayInteract(this.player, blockposition)) {
-                 // CraftBukkit start - Check if we can actually do something over this large a distance
--                Location eyeLoc = this.getCraftPlayer().getEyeLocation();
--                double reachDistance = NumberConversions.square(eyeLoc.getX() - blockposition.getX()) + NumberConversions.square(eyeLoc.getY() - blockposition.getY()) + NumberConversions.square(eyeLoc.getZ() - blockposition.getZ());
--                if (reachDistance > (this.getCraftPlayer().getGameMode() == org.bukkit.GameMode.CREATIVE ? ServerGamePacketListenerImpl.CREATIVE_PLACE_DISTANCE_SQUARED : ServerGamePacketListenerImpl.SURVIVAL_PLACE_DISTANCE_SQUARED)) {
--                    return;
--                }
-+                // Paper - move check up
-                 this.player.stopUsingItem(); // SPIGOT-4706
-                 // CraftBukkit end
+-            if (this.awaitingPositionFromClient == null && distanceSqr < 64.0D && worldserver.mayInteract(this.player, blockposition)) { // CraftBukkit - reuse value
++            if (this.awaitingPositionFromClient == null && this.player.distanceToSqr((double) blockposition.getX() + 0.5D, (double) blockposition.getY() + 0.5D, (double) blockposition.getZ() + 0.5D) < 64.0D && worldserver.mayInteract(this.player, blockposition)) { // CraftBukkit - reuse value // Paper - revert CB change
+                 this.player.stopUsingItem(); // CraftBukkit - SPIGOT-4706
                  InteractionResult enuminteractionresult = this.player.gameMode.useItemOn(this.player, worldserver, itemstack, enumhand, movingobjectpositionblock);
+ 

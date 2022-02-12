@@ -213,7 +213,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        sender.sendMessage(Component.join(JoinConfiguration.noSeparators(), Component.text("Mobcaps for player: "), Component.text(player.getName(), NamedTextColor.GREEN)));
 +        sender.sendMessage(this.buildMobcapsComponent(
 +            category -> level.chunkSource.chunkMap.getMobCountNear(serverPlayer, category),
-+            category -> NaturalSpawner.limitForCategory(level, category)
++            category -> level.getWorld().getSpawnLimit(org.bukkit.craftbukkit.util.CraftSpawnCategory.toBukkit(category))
 +        ));
 +    }
 +
@@ -276,66 +276,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/world/level/NaturalSpawner.java
 +++ b/src/main/java/net/minecraft/world/level/NaturalSpawner.java
 @@ -0,0 +0,0 @@ public final class NaturalSpawner {
-             MobCategory enumcreaturetype = aenumcreaturetype[j];
-             // CraftBukkit start - Use per-world spawn limits
-             boolean spawnThisTick = true;
--            int limit = enumcreaturetype.getMaxInstancesPerChunk();
-+            final int limit = limitForCategory(world, enumcreaturetype); // Paper
-             switch (enumcreaturetype) {
--                case MONSTER:
--                    spawnThisTick = spawnMonsterThisTick;
--                    limit = world.getWorld().getMonsterSpawnLimit();
--                    break;
--                case CREATURE:
--                    spawnThisTick = spawnAnimalThisTick;
--                    limit = world.getWorld().getAnimalSpawnLimit();
--                    break;
--                case WATER_CREATURE:
--                    spawnThisTick = spawnWaterThisTick;
--                    limit = world.getWorld().getWaterAnimalSpawnLimit();
--                    break;
--                case UNDERGROUND_WATER_CREATURE:
--                    spawnThisTick = spawnWaterUndergroundCreatureThisTick;
--                    limit = world.getWorld().getWaterUndergroundCreatureSpawnLimit();
--                    break;
--                case AMBIENT:
--                    spawnThisTick = spawnAmbientThisTick;
--                    limit = world.getWorld().getAmbientSpawnLimit();
--                    break;
--                case WATER_AMBIENT:
--                    spawnThisTick = spawnWaterAmbientThisTick;
--                    limit = world.getWorld().getWaterAmbientSpawnLimit();
--                    break;
-+                // Paper start - not mindiff so we get conflict on change
-+                case MONSTER -> spawnThisTick = spawnMonsterThisTick;
-+                case CREATURE -> spawnThisTick = spawnAnimalThisTick;
-+                case WATER_CREATURE -> spawnThisTick = spawnWaterThisTick;
-+                case UNDERGROUND_WATER_CREATURE -> spawnThisTick = spawnWaterUndergroundCreatureThisTick;
-+                case AMBIENT -> spawnThisTick = spawnAmbientThisTick;
-+                case WATER_AMBIENT -> spawnThisTick = spawnWaterAmbientThisTick;
-+                // Paper end
-             }
- 
-             if (!spawnThisTick || limit == 0) {
-@@ -0,0 +0,0 @@ public final class NaturalSpawner {
          world.getProfiler().pop();
      }
  
 +    // Paper start
-+    public static int limitForCategory(final ServerLevel world, final MobCategory enumcreaturetype) {
-+        return switch (enumcreaturetype) {
-+            case MONSTER -> world.getWorld().getMonsterSpawnLimit();
-+            case CREATURE -> world.getWorld().getAnimalSpawnLimit();
-+            case WATER_CREATURE -> world.getWorld().getWaterAnimalSpawnLimit();
-+            case UNDERGROUND_WATER_CREATURE -> world.getWorld().getWaterUndergroundCreatureSpawnLimit();
-+            case AMBIENT -> world.getWorld().getAmbientSpawnLimit();
-+            case WATER_AMBIENT -> world.getWorld().getWaterAmbientSpawnLimit();
-+            default -> enumcreaturetype.getMaxInstancesPerChunk();
-+        };
-+    }
-+
 +    public static int globalLimitForCategory(final ServerLevel level, final MobCategory category, final int spawnableChunkCount) {
-+        final int categoryLimit = limitForCategory(level, category);
++        final int categoryLimit = level.getWorld().getSpawnLimit(CraftSpawnCategory.toBukkit(category));
 +        if (categoryLimit < 1) {
 +            return categoryLimit;
 +        }
