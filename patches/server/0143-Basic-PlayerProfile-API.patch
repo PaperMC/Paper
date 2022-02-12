@@ -7,10 +7,10 @@ Establishes base extension of profile systems for future edits too
 
 diff --git a/src/main/java/com/destroystokyo/paper/profile/CraftPlayerProfile.java b/src/main/java/com/destroystokyo/paper/profile/CraftPlayerProfile.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..d64a05742ba78aefc64b2e5d824b4caa2c7bc479
+index 0000000000000000000000000000000000000000..2041376dfd5520776f7e32c1828973f2b719d82a
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/profile/CraftPlayerProfile.java
-@@ -0,0 +1,372 @@
+@@ -0,0 +1,399 @@
 +package com.destroystokyo.paper.profile;
 +
 +import com.destroystokyo.paper.PaperConfig;
@@ -23,6 +23,8 @@ index 0000000000000000000000000000000000000000..d64a05742ba78aefc64b2e5d824b4caa
 +import net.minecraft.server.MinecraftServer;
 +import net.minecraft.server.players.GameProfileCache;
 +import org.apache.commons.lang3.Validate;
++import org.bukkit.configuration.serialization.SerializableAs;
++import org.bukkit.craftbukkit.configuration.ConfigSerializationUtil;
 +import org.bukkit.craftbukkit.entity.CraftPlayer;
 +import org.bukkit.craftbukkit.profile.CraftPlayerTextures;
 +import org.bukkit.craftbukkit.profile.CraftProfileProperty;
@@ -34,6 +36,7 @@ index 0000000000000000000000000000000000000000..d64a05742ba78aefc64b2e5d824b4caa
 +import java.util.*;
 +import java.util.concurrent.CompletableFuture;
 +
++@SerializableAs("PlayerProfile")
 +public class CraftPlayerProfile implements PlayerProfile, SharedPlayerProfile {
 +
 +    private GameProfile profile;
@@ -92,6 +95,7 @@ index 0000000000000000000000000000000000000000..d64a05742ba78aefc64b2e5d824b4caa
 +    }
 +
 +    @Override
++    @Deprecated(forRemoval = true)
 +    public UUID setId(@Nullable UUID uuid) {
 +        GameProfile prev = this.profile;
 +        this.profile = new GameProfile(uuid, prev.getName());
@@ -111,6 +115,7 @@ index 0000000000000000000000000000000000000000..d64a05742ba78aefc64b2e5d824b4caa
 +    }
 +
 +    @Override
++    @Deprecated(forRemoval = true)
 +    public String setName(@Nullable String name) {
 +        GameProfile prev = this.profile;
 +        this.profile = new GameProfile(prev.getId(), name);
@@ -160,24 +165,6 @@ index 0000000000000000000000000000000000000000..d64a05742ba78aefc64b2e5d824b4caa
 +        GameProfile profile = new GameProfile(this.profile.getId(), this.profile.getName());
 +        profile.getProperties().putAll(this.profile.getProperties());
 +        return profile;
-+    }
-+
-+    @Override
-+    public boolean equals(Object o) {
-+        if (this == o) return true;
-+        if (o == null || getClass() != o.getClass()) return false;
-+        CraftPlayerProfile that = (CraftPlayerProfile) o;
-+        return Objects.equals(profile, that.profile);
-+    }
-+
-+    @Override
-+    public int hashCode() {
-+        return profile.hashCode();
-+    }
-+
-+    @Override
-+    public String toString() {
-+        return profile.toString();
 +    }
 +
 +    @Override
@@ -326,6 +313,46 @@ index 0000000000000000000000000000000000000000..d64a05742ba78aefc64b2e5d824b4caa
 +            map.put("properties", propertiesData);
 +        }
 +        return map;
++    }
++
++    public static CraftPlayerProfile deserialize(Map<String, Object> map) {
++        UUID uniqueId = ConfigSerializationUtil.getUuid(map, "uniqueId", true);
++        String name = ConfigSerializationUtil.getString(map, "name", true);
++
++        // This also validates the deserialized unique id and name (ensures that not both are null):
++        CraftPlayerProfile profile = new CraftPlayerProfile(uniqueId, name);
++
++        if (map.containsKey("properties")) {
++            for (Object propertyData : (List<?>) map.get("properties")) {
++                if (!(propertyData instanceof Map)) {
++                    throw new IllegalArgumentException("Property data (" + propertyData + ") is not a valid Map");
++                }
++                Property property = CraftProfileProperty.deserialize((Map<?, ?>) propertyData);
++                profile.profile.getProperties().put(property.getName(), property);
++            }
++        }
++
++        return profile;
++    }
++
++    @Override
++    public boolean equals(Object obj) {
++        if (this == obj) return true;
++        if (!(obj instanceof CraftPlayerProfile otherProfile)) return false;
++        return Objects.equals(this.profile, otherProfile.profile);
++    }
++
++    @Override
++    public String toString() {
++        return "CraftPlayerProfile [uniqueId=" + getId() +
++            ", name=" + getName() +
++            ", properties=" + org.bukkit.craftbukkit.profile.CraftPlayerProfile.toString(this.profile.getProperties()) +
++            "]";
++    }
++
++    @Override
++    public int hashCode() {
++        return this.profile.hashCode();
 +    }
 +
 +    private class PropertySet extends AbstractSet<ProfileProperty> {
@@ -590,7 +617,7 @@ index 00f783aafd81fa7e836e4eea5bfeac7434f33b0f..3789441e2df9410aa1c6efe59054aaba
          String s1 = name.toLowerCase(Locale.ROOT);
          GameProfileCache.GameProfileInfo usercache_usercacheentry = (GameProfileCache.GameProfileInfo) this.profilesByName.get(s1);
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 909724efb99f88f3de0967b85d539e0ab1bec8e8..7653c23690b927f93ca4692c6e077abfb9e1c5ca 100644
+index 909724efb99f88f3de0967b85d539e0ab1bec8e8..e93c743500e3c439cd32757b16025804e0552181 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -247,6 +247,9 @@ import org.yaml.snakeyaml.error.MarkedYAMLException;
@@ -603,7 +630,15 @@ index 909724efb99f88f3de0967b85d539e0ab1bec8e8..7653c23690b927f93ca4692c6e077abf
  public final class CraftServer implements Server {
      private final String serverName = "Paper"; // Paper
      private final String serverVersion;
-@@ -2559,5 +2562,24 @@ public final class CraftServer implements Server {
+@@ -286,6 +289,7 @@ public final class CraftServer implements Server {
+     static {
+         ConfigurationSerialization.registerClass(CraftOfflinePlayer.class);
+         ConfigurationSerialization.registerClass(CraftPlayerProfile.class);
++        ConfigurationSerialization.registerClass(com.destroystokyo.paper.profile.CraftPlayerProfile.class); // Paper
+         CraftItemFactory.instance();
+     }
+ 
+@@ -2559,5 +2563,24 @@ public final class CraftServer implements Server {
      public boolean suggestPlayerNamesWhenNullTabCompletions() {
          return com.destroystokyo.paper.PaperConfig.suggestPlayersWhenNullTabCompletions;
      }
@@ -629,7 +664,7 @@ index 909724efb99f88f3de0967b85d539e0ab1bec8e8..7653c23690b927f93ca4692c6e077abf
      // Paper end
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/profile/CraftPlayerProfile.java b/src/main/java/org/bukkit/craftbukkit/profile/CraftPlayerProfile.java
-index 3cd37402c1f98d47ea009fa4ea71c85044bbe59f..992d4cd38246d67ab1220dac611d6540b3c3791f 100644
+index 3cd37402c1f98d47ea009fa4ea71c85044bbe59f..8e4a1598d31e362bd7b10033460c11cb49f6275e 100644
 --- a/src/main/java/org/bukkit/craftbukkit/profile/CraftPlayerProfile.java
 +++ b/src/main/java/org/bukkit/craftbukkit/profile/CraftPlayerProfile.java
 @@ -27,7 +27,7 @@ import org.bukkit.profile.PlayerProfile;
@@ -668,6 +703,63 @@ index 3cd37402c1f98d47ea009fa4ea71c85044bbe59f..992d4cd38246d67ab1220dac611d6540
      }
  
      void rebuildDirtyProperties() {
+@@ -168,7 +170,7 @@ public final class CraftPlayerProfile implements PlayerProfile {
+         return builder.toString();
+     }
+ 
+-    private static String toString(@Nonnull PropertyMap propertyMap) {
++    public static String toString(@Nonnull PropertyMap propertyMap) { // Paper - public
+         StringBuilder builder = new StringBuilder();
+         builder.append("{");
+         propertyMap.asMap().forEach((propertyName, properties) -> {
+@@ -194,7 +196,7 @@ public final class CraftPlayerProfile implements PlayerProfile {
+         return true;
+     }
+ 
+-    private static boolean equals(@Nonnull PropertyMap propertyMap, @Nonnull PropertyMap other) {
++    public static boolean equals(@Nonnull PropertyMap propertyMap, @Nonnull PropertyMap other) { // Paper - public
+         if (propertyMap.size() != other.size()) return false;
+         // We take the order of properties into account here, because it is
+         // also relevant in the serialized and NBT forms of GameProfiles.
+@@ -221,7 +223,7 @@ public final class CraftPlayerProfile implements PlayerProfile {
+         return result;
+     }
+ 
+-    private static int hashCode(PropertyMap propertyMap) {
++    public static int hashCode(PropertyMap propertyMap) { // Paper - public
+         int result = 1;
+         for (Property property : propertyMap.values()) {
+             result = 31 * result + CraftProfileProperty.hashCode(property);
+@@ -236,6 +238,7 @@ public final class CraftPlayerProfile implements PlayerProfile {
+ 
+     @Override
+     public Map<String, Object> serialize() {
++        // Paper - diff on change
+         Map<String, Object> map = new LinkedHashMap<>();
+         if (this.uniqueId != null) {
+             map.put("uniqueId", this.uniqueId.toString());
+@@ -251,10 +254,12 @@ public final class CraftPlayerProfile implements PlayerProfile {
+             });
+             map.put("properties", propertiesData);
+         }
++        // Paper - diff on change
+         return map;
+     }
+ 
+     public static CraftPlayerProfile deserialize(Map<String, Object> map) {
++        // Paper - diff on change
+         UUID uniqueId = ConfigSerializationUtil.getUuid(map, "uniqueId", true);
+         String name = ConfigSerializationUtil.getString(map, "name", true);
+ 
+@@ -270,7 +275,7 @@ public final class CraftPlayerProfile implements PlayerProfile {
+                 profile.properties.put(property.getName(), property);
+             }
+         }
+-
++        // Paper - diff on change
+         return profile;
+     }
+ }
 diff --git a/src/main/java/org/bukkit/craftbukkit/profile/CraftPlayerTextures.java b/src/main/java/org/bukkit/craftbukkit/profile/CraftPlayerTextures.java
 index c930b7557b141650d63d6802c26139b14ddab6b9..bf56d4fbd34586190e2d680cc33d125578a0953e 100644
 --- a/src/main/java/org/bukkit/craftbukkit/profile/CraftPlayerTextures.java
