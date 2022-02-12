@@ -213,7 +213,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        sender.sendMessage(Component.join(JoinConfiguration.noSeparators(), Component.text("Mobcaps for player: "), Component.text(player.getName(), NamedTextColor.GREEN)));
 +        sender.sendMessage(this.buildMobcapsComponent(
 +            category -> level.chunkSource.chunkMap.getMobCountNear(serverPlayer, category),
-+            category -> level.getWorld().getSpawnLimit(org.bukkit.craftbukkit.util.CraftSpawnCategory.toBukkit(category))
++            category -> level.getWorld().getSpawnLimitUnsafe(org.bukkit.craftbukkit.util.CraftSpawnCategory.toBukkit(category))
 +        ));
 +    }
 +
@@ -281,10 +281,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
 +    // Paper start
 +    public static int globalLimitForCategory(final ServerLevel level, final MobCategory category, final int spawnableChunkCount) {
-+        if (category == MobCategory.MISC) {
-+            return -1;
-+        }
-+        final int categoryLimit = level.getWorld().getSpawnLimit(CraftSpawnCategory.toBukkit(category));
++        final int categoryLimit = level.getWorld().getSpawnLimitUnsafe(CraftSpawnCategory.toBukkit(category));
 +        if (categoryLimit < 1) {
 +            return categoryLimit;
 +        }
@@ -295,6 +292,42 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      // Paper start - add parameters and int ret type
      public static void spawnCategoryForChunk(MobCategory group, ServerLevel world, LevelChunk chunk, NaturalSpawner.SpawnPredicate checker, NaturalSpawner.AfterSpawnCallback runner) {
          spawnCategoryForChunk(group, world, chunk, checker, runner, Integer.MAX_VALUE, null);
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -0,0 +0,0 @@ public final class CraftServer implements Server {
+ 
+     @Override
+     public int getSpawnLimit(SpawnCategory spawnCategory) {
++        // Paper start
++        return this.getSpawnLimitUnsafe(spawnCategory);
++    }
++    public int getSpawnLimitUnsafe(final SpawnCategory spawnCategory) {
++        // Paper end
+         return this.spawnCategoryLimit.getOrDefault(spawnCategory, -1);
+     }
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+@@ -0,0 +0,0 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+         Validate.notNull(spawnCategory, "SpawnCategory cannot be null");
+         Validate.isTrue(CraftSpawnCategory.isValidForLimits(spawnCategory), "SpawnCategory." + spawnCategory + " are not supported.");
+ 
++        // Paper start
++        return this.getSpawnLimitUnsafe(spawnCategory);
++    }
++    public final int getSpawnLimitUnsafe(final SpawnCategory spawnCategory) {
+         int limit = this.spawnCategoryLimit.getOrDefault(spawnCategory, -1);
+         if (limit < 0) {
+-            limit = this.server.getSpawnLimit(spawnCategory);
++            limit = this.server.getSpawnLimitUnsafe(spawnCategory);
++            // Paper end
+         }
+         return limit;
+     }
 diff --git a/src/test/java/io/papermc/paper/PaperCommandTest.java b/src/test/java/io/papermc/paper/PaperCommandTest.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
