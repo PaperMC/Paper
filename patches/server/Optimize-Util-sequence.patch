@@ -1,0 +1,44 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: IzzelAliz <csh2001331@126.com>
+Date: Tue, 14 Dec 2021 12:43:03 +0800
+Subject: [PATCH] Optimize Util#sequence
+
+Original method allocates O(n^2) memory on n-size list.
+
+diff --git a/src/main/java/net/minecraft/Util.java b/src/main/java/net/minecraft/Util.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/Util.java
++++ b/src/main/java/net/minecraft/Util.java
+@@ -0,0 +0,0 @@ public class Util {
+         return (Strategy<K>) Util.IdentityStrategy.INSTANCE; // Paper - decompile fix
+     }
+ 
++    private static final CompletableFuture<?>[] EMPTY_FUTURE = new CompletableFuture[0]; // Paper
+     public static <V> CompletableFuture<List<V>> sequence(List<? extends CompletableFuture<? extends V>> futures) {
+-        return futures.stream().reduce(CompletableFuture.completedFuture(Lists.newArrayList()), (completableFuture, completableFuture2) -> {
+-            return completableFuture2.thenCombine(completableFuture, (object, list) -> {
+-                List<V> list2 = Lists.newArrayListWithCapacity(list.size() + 1);
+-                list2.addAll(list);
+-                list2.add(object);
+-                return list2;
+-            });
+-        }, (completableFuture, completableFuture2) -> {
+-            return completableFuture.thenCombine(completableFuture2, (list, list2) -> {
+-                List<V> list3 = Lists.newArrayListWithCapacity(list.size() + list2.size());
+-                list3.addAll(list);
+-                list3.addAll(list2);
+-                return list3;
++        // Paper start - optimize
++        return CompletableFuture.allOf(futures.toArray(EMPTY_FUTURE))
++            .thenApply(v -> {
++                List<V> list = Lists.newArrayListWithCapacity(futures.size());
++                for (CompletableFuture<? extends V> future : futures) {
++                    list.add(future.join());
++                }
++                return list;
+             });
+-        });
++        // Paper end
+     }
+ 
+     public static <V> CompletableFuture<List<V>> sequenceFailFast(List<? extends CompletableFuture<? extends V>> futures) {
