@@ -5,7 +5,6 @@ import com.mojang.authlib.GameProfile;
 import java.util.Map;
 import java.util.UUID;
 import net.minecraft.nbt.GameProfileSerializer;
-import net.minecraft.nbt.NBTBase;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.world.level.block.entity.TileEntitySkull;
 import org.bukkit.Bukkit;
@@ -76,13 +75,6 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
             }
 
             this.setProfile(GameProfileSerializer.readGameProfile(skullTag));
-        }
-    }
-
-    @Override
-    void serializeInternal(final Map<String, NBTBase> internalTags) {
-        if (profile != null) {
-            internalTags.put(SKULL_PROFILE.NBT, serializedProfile);
         }
     }
 
@@ -244,7 +236,7 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
     @Override
     Builder<String, Object> serialize(Builder<String, Object> builder) {
         super.serialize(builder);
-        if (hasOwner()) {
+        if (this.profile != null) {
             return builder.put(SKULL_OWNER.BUKKIT, new CraftPlayerProfile(this.profile));
         }
         return builder;
