@@ -16,15 +16,27 @@
  public class WorldDataServer implements IWorldDataServer, SaveData {
  
      private static final Logger LOGGER = LogManager.getLogger();
-@@ -78,6 +87,7 @@
+@@ -78,6 +87,19 @@
      private final Set<String> knownServerBrands;
      private boolean wasModded;
      private final CustomFunctionCallbackTimerQueue<MinecraftServer> scheduledEvents;
-+    public WorldServer world; // CraftBukkit
++    // CraftBukkit start - Add world and pdc
++    private WorldServer world;
++    protected NBTBase pdc;
++
++    public void setWorld(WorldServer world) {
++        if (this.world != null) {
++            return;
++        }
++        this.world = world;
++        world.getWorld().readBukkitValues(pdc);
++        pdc = null;
++    }
++    // CraftBukkit end
  
      private WorldDataServer(@Nullable DataFixer datafixer, int i, @Nullable NBTTagCompound nbttagcompound, boolean flag, int j, int k, int l, float f, long i1, long j1, int k1, int l1, int i2, boolean flag1, int j2, boolean flag2, boolean flag3, boolean flag4, WorldBorder.c worldborder_c, int k2, int l2, @Nullable UUID uuid, Set<String> set, CustomFunctionCallbackTimerQueue<MinecraftServer> customfunctioncallbacktimerqueue, @Nullable NBTTagCompound nbttagcompound1, NBTTagCompound nbttagcompound2, WorldSettings worldsettings, GeneratorSettings generatorsettings, Lifecycle lifecycle) {
          this.fixerUpper = datafixer;
-@@ -121,7 +131,8 @@
+@@ -121,7 +143,8 @@
              return (NBTBase) dynamic.get("DimensionData").get("1").get("DragonFight").orElseEmptyMap().getValue();
          });
  
@@ -34,7 +46,7 @@
              return SystemUtils.toStream(dynamic1.asString().result());
          }).collect(Collectors.toCollection(Sets::newLinkedHashSet)), new CustomFunctionCallbackTimerQueue<>(CustomFunctionCallbackTimers.SERVER_CALLBACKS, dynamic.get("ScheduledEvents").asStream()), (NBTTagCompound) dynamic.get("CustomBossEvents").orElseEmptyMap().getValue(), nbttagcompound1, worldsettings, generatorsettings, lifecycle);
      }
-@@ -141,7 +152,7 @@
+@@ -141,7 +164,7 @@
  
      private void setTagData(IRegistryCustom iregistrycustom, NBTTagCompound nbttagcompound, @Nullable NBTTagCompound nbttagcompound1) {
          NBTTagList nbttaglist = new NBTTagList();
@@ -43,7 +55,7 @@
  
          Objects.requireNonNull(nbttaglist);
          stream.forEach(nbttaglist::add);
-@@ -156,7 +167,7 @@
+@@ -156,7 +179,7 @@
          nbttagcompound.put("Version", nbttagcompound2);
          nbttagcompound.putInt("DataVersion", SharedConstants.getCurrentVersion().getWorldVersion());
          RegistryWriteOps<NBTBase> registrywriteops = RegistryWriteOps.create(DynamicOpsNBT.INSTANCE, iregistrycustom);
@@ -52,15 +64,16 @@
          Logger logger = WorldDataServer.LOGGER;
  
          Objects.requireNonNull(logger);
-@@ -204,6 +215,7 @@
+@@ -204,6 +227,8 @@
              nbttagcompound.putUUID("WanderingTraderId", this.wanderingTraderId);
          }
  
 +        nbttagcompound.putString("Bukkit.Version", Bukkit.getName() + "/" + Bukkit.getVersion() + "/" + Bukkit.getBukkitVersion()); // CraftBukkit
++        world.getWorld().storeBukkitValues(nbttagcompound); // CraftBukkit - add pdc
      }
  
      @Override
-@@ -321,6 +333,20 @@
+@@ -321,6 +346,20 @@
  
      @Override
      public void setThundering(boolean flag) {
@@ -81,7 +94,7 @@
          this.thundering = flag;
      }
  
-@@ -341,6 +367,20 @@
+@@ -341,6 +380,20 @@
  
      @Override
      public void setRaining(boolean flag) {
@@ -102,7 +115,7 @@
          this.raining = flag;
      }
  
-@@ -407,6 +447,12 @@
+@@ -407,6 +460,12 @@
      @Override
      public void setDifficulty(EnumDifficulty enumdifficulty) {
          this.settings = this.settings.withDifficulty(enumdifficulty);
@@ -115,7 +128,7 @@
      }
  
      @Override
-@@ -527,4 +573,12 @@
+@@ -527,4 +586,12 @@
      public WorldSettings getLevelSettings() {
          return this.settings.copy();
      }
