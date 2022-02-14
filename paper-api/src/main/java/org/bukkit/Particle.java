@@ -36,13 +36,25 @@ public enum Particle {
     FLAME,
     LAVA,
     CLOUD,
+    /**
+     * Uses {@link Particle.DustOptions} as DataType
+     */
     REDSTONE(DustOptions.class),
     SNOWBALL,
     SNOW_SHOVEL,
     SLIME,
     HEART,
+    /**
+     * Uses {@link ItemStack} as DataType
+     */
     ITEM_CRACK(ItemStack.class),
+    /**
+     * Uses {@link BlockData} as DataType
+     */
     BLOCK_CRACK(BlockData.class),
+    /**
+     * Uses {@link BlockData} as DataType
+     */
     BLOCK_DUST(BlockData.class),
     WATER_DROP,
     MOB_APPEARANCE,
@@ -50,6 +62,9 @@ public enum Particle {
     END_ROD,
     DAMAGE_INDICATOR,
     SWEEP_ATTACK,
+    /**
+     * Uses {@link BlockData} as DataType
+     */
     FALLING_DUST(BlockData.class),
     TOTEM,
     SPIT,
@@ -81,7 +96,13 @@ public enum Particle {
     LANDING_OBSIDIAN_TEAR,
     REVERSE_PORTAL,
     WHITE_ASH,
+    /**
+     * Uses {@link DustTransition} as DataType
+     */
     DUST_COLOR_TRANSITION(DustTransition.class),
+    /**
+     * Uses {@link Vibration} as DataType
+     */
     VIBRATION(Vibration.class),
     FALLING_SPORE_BLOSSOM,
     SPORE_BLOSSOM_AIR,
@@ -97,10 +118,22 @@ public enum Particle {
     WAX_OFF,
     ELECTRIC_SPARK,
     SCRAPE,
+    /**
+     * Uses {@link BlockData} as DataType
+     */
     BLOCK_MARKER(BlockData.class),
     // ----- Legacy Separator -----
+    /**
+     * Uses {@link MaterialData} as DataType
+     */
     LEGACY_BLOCK_CRACK(MaterialData.class),
+    /**
+     * Uses {@link MaterialData} as DataType
+     */
     LEGACY_BLOCK_DUST(MaterialData.class),
+    /**
+     * Uses {@link MaterialData} as DataType
+     */
     LEGACY_FALLING_DUST(MaterialData.class);
 
     private final Class<?> dataType;
