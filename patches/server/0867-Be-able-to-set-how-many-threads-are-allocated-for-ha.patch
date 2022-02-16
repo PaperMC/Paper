@@ -1,0 +1,59 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: oop-778 <oskardhavel@gmail.com>
+Date: Wed, 16 Feb 2022 23:22:25 +0200
+Subject: [PATCH] Be able to set how many threads are allocated for handling
+ chat
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+index 61ea1c9881ea30c05580044af9496a65fe95d94e..8c72f7e4df1e20ebb52c338f2441a0fdbdc08a35 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+@@ -650,4 +650,9 @@ public class PaperConfig {
+     private static void timeCommandAffectsAllWorlds() {
+         timeCommandAffectsAllWorlds = getBoolean("settings.time-command-affects-all-worlds", timeCommandAffectsAllWorlds);
+     }
++
++    public static int chatThreads;
++    private static void chatThreads() {
++        chatThreads = getInt("settings.chat-threads", 4);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/network/protocol/game/ServerboundChatPacket.java b/src/main/java/net/minecraft/network/protocol/game/ServerboundChatPacket.java
+index 21588ce5a408fed3454c317b56c05439ad3af27d..dc4dbc76e82e29f49239c5cd3f518dcc4b063fdd 100644
+--- a/src/main/java/net/minecraft/network/protocol/game/ServerboundChatPacket.java
++++ b/src/main/java/net/minecraft/network/protocol/game/ServerboundChatPacket.java
+@@ -1,7 +1,12 @@
+ package net.minecraft.network.protocol.game;
+
++import com.destroystokyo.paper.PaperConfig;
++import java.util.concurrent.ForkJoinPool;
++import java.util.concurrent.ForkJoinWorkerThread;
++import net.minecraft.DefaultUncaughtExceptionHandler;
+ import net.minecraft.network.FriendlyByteBuf;
+ import net.minecraft.network.protocol.Packet;
++import net.minecraft.server.MinecraftServer;
+
+ public class ServerboundChatPacket implements Packet<ServerGamePacketListener> {
+
+@@ -26,9 +31,17 @@ public class ServerboundChatPacket implements Packet<ServerGamePacketListener> {
+     }
+
+     // Spigot Start
+-    private static final java.util.concurrent.ExecutorService executors = java.util.concurrent.Executors.newCachedThreadPool(
+-            new com.google.common.util.concurrent.ThreadFactoryBuilder().setDaemon( true ).setNameFormat( "Async Chat Thread - #%d" ).setUncaughtExceptionHandler(new net.minecraft.DefaultUncaughtExceptionHandlerWithName(net.minecraft.server.MinecraftServer.LOGGER)).build() ); // Paper
+-    public void handle(final ServerGamePacketListener listener) {
++    private static final java.util.concurrent.ExecutorService executors = new ForkJoinPool(
++        PaperConfig.chatThreads,
++        pool -> {
++            final ForkJoinWorkerThread worker = ForkJoinPool.defaultForkJoinWorkerThreadFactory.newThread(pool);
++            worker.setName(String.format("Async Chat Thread - #%s", worker.getPoolIndex()));
++            return worker;
++        },
++        new DefaultUncaughtExceptionHandler(MinecraftServer.LOGGER),
++        true
++    ); // Paper
++    public void handle(ServerGamePacketListener listener) {
+         if ( !this.message.startsWith("/") )
+         {
+             ServerboundChatPacket.executors.execute( new Runnable() // Paper - Use #execute to propagate exceptions up instead of swallowing them
