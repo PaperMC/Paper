@@ -7,7 +7,7 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when a {@link Strider}'s temperature has changed as a result of
- * entering or existing blocks it considers warm.
+ * entering or exiting blocks it considers warm.
  */
 public class StriderTemperatureChangeEvent extends EntityEvent implements Cancellable {
 
