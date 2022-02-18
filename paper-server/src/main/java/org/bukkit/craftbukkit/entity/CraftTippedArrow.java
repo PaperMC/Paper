@@ -116,11 +116,15 @@ public class CraftTippedArrow extends CraftArrow implements Arrow {
 
     @Override
     public void setColor(Color color) {
-        getHandle().setFixedColor(color.asRGB());
+        int colorRGB = (color == null) ? -1 : color.asRGB();
+        getHandle().setFixedColor(colorRGB);
     }
 
     @Override
     public Color getColor() {
+        if (getHandle().getColor() <= -1) {
+            return null;
+        }
         return Color.fromRGB(getHandle().getColor());
     }
 }
