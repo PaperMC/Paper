@@ -6,7 +6,7 @@ Subject: [PATCH] fixup! Highly optimise single and multi-AABB VoxelShapes and
 
 
 diff --git a/src/main/java/io/papermc/paper/util/CollisionUtil.java b/src/main/java/io/papermc/paper/util/CollisionUtil.java
-index 58629451977c89db2fa895bde946135784a0d8bc..3ce132ea28ff9fc6f7afd68bcd0fc1ae843a3cd5 100644
+index 58629451977c89db2fa895bde946135784a0d8bc..b25018ab6cff59e43652c953421f01b6d0bb0a85 100644
 --- a/src/main/java/io/papermc/paper/util/CollisionUtil.java
 +++ b/src/main/java/io/papermc/paper/util/CollisionUtil.java
 @@ -15,6 +15,7 @@ import net.minecraft.world.level.block.state.BlockState;
@@ -25,7 +25,7 @@ index 58629451977c89db2fa895bde946135784a0d8bc..3ce132ea28ff9fc6f7afd68bcd0fc1ae
  import java.util.function.BiPredicate;
  import java.util.function.Predicate;
  
-@@ -33,6 +33,30 @@ public final class CollisionUtil {
+@@ -33,6 +33,15 @@ public final class CollisionUtil {
  
      public static final double COLLISION_EPSILON = 1.0E-7;
  
@@ -34,21 +34,6 @@ index 58629451977c89db2fa895bde946135784a0d8bc..3ce132ea28ff9fc6f7afd68bcd0fc1ae
 +    public static final long KNOWN_UNKNOWN_BLOCK = 0b10; // must read the actual block state for info
 +    public static final long KNOWN_SPECIAL_BLOCK = 0b11; // caller must check this block for special collisions
 +
-+    public static final List<String> BAD_PLUGINS = java.util.Arrays.asList(
-+            "FastAsyncWorldEdit"
-+    );
-+    public static boolean badPlugins = false;
-+    public static void updateBadPlugins() {
-+        if (org.bukkit.Bukkit.getServer() == null) {
-+            return;
-+        }
-+        for (final String plugin : BAD_PLUGINS) {
-+            if (org.bukkit.Bukkit.getServer().getPluginManager().getPlugin(plugin) != null) {
-+                badPlugins = true;
-+            }
-+        }
-+    }
-+
 +    public static boolean isSpecialCollidingBlock(final net.minecraft.world.level.block.state.BlockBehaviour.BlockStateBase block) {
 +        return block.shapeExceedsCube() || block.getBlock() == Blocks.MOVING_PISTON;
 +    }
@@ -56,24 +41,18 @@ index 58629451977c89db2fa895bde946135784a0d8bc..3ce132ea28ff9fc6f7afd68bcd0fc1ae
      public static boolean isEmpty(final AABB aabb) {
          return (aabb.maxX - aabb.minX) < COLLISION_EPSILON && (aabb.maxY - aabb.minY) < COLLISION_EPSILON && (aabb.maxZ - aabb.minZ) < COLLISION_EPSILON;
      }
-@@ -397,6 +421,16 @@ public final class CollisionUtil {
+@@ -395,8 +404,8 @@ public final class CollisionUtil {
+     }
+ 
      public static boolean getCollisionsForBlocksOrWorldBorder(final CollisionGetter getter, final Entity entity, final AABB aabb,
-                                                               final List<AABB> into, final boolean loadChunks, final boolean collidesWithUnloaded,
-                                                               final boolean checkBorder, final boolean checkOnly, final BiPredicate<BlockState, BlockPos> predicate) {
-+        if (badPlugins) {
-+            return getCollisionsForBlocksOrWorldBorderSlow(getter, entity, aabb, into, loadChunks, collidesWithUnloaded, checkBorder, checkOnly, predicate);
-+        } else {
-+            return getCollisionsForBlocksOrWorldBorderFast(getter, entity, aabb, into, loadChunks, collidesWithUnloaded, checkBorder, checkOnly, predicate);
-+        }
-+    }
-+
-+    public static boolean getCollisionsForBlocksOrWorldBorderFast(final CollisionGetter getter, final Entity entity, final AABB aabb,
+-                                                              final List<AABB> into, final boolean loadChunks, final boolean collidesWithUnloaded,
+-                                                              final boolean checkBorder, final boolean checkOnly, final BiPredicate<BlockState, BlockPos> predicate) {
 +                                                                  final List<AABB> into, final boolean loadChunks, final boolean collidesWithUnloaded,
 +                                                                  final boolean checkBorder, final boolean checkOnly, final BiPredicate<BlockState, BlockPos> predicate) {
          boolean ret = false;
  
          if (checkBorder) {
-@@ -410,21 +444,21 @@ public final class CollisionUtil {
+@@ -410,21 +419,21 @@ public final class CollisionUtil {
              }
          }
  
@@ -102,7 +81,7 @@ index 58629451977c89db2fa895bde946135784a0d8bc..3ce132ea28ff9fc6f7afd68bcd0fc1ae
          CollisionContext collisionShape = null;
  
          // special cases:
-@@ -433,16 +467,22 @@ public final class CollisionUtil {
+@@ -433,16 +442,22 @@ public final class CollisionUtil {
              return ret;
          }
  
@@ -132,7 +111,7 @@ index 58629451977c89db2fa895bde946135784a0d8bc..3ce132ea28ff9fc6f7afd68bcd0fc1ae
          if (getter instanceof WorldGenRegion) {
              chunkProvider = null;
          } else if (getter instanceof ServerLevel) {
-@@ -450,26 +490,24 @@ public final class CollisionUtil {
+@@ -450,26 +465,24 @@ public final class CollisionUtil {
          } else {
              chunkProvider = null;
          }
@@ -166,7 +145,7 @@ index 58629451977c89db2fa895bde946135784a0d8bc..3ce132ea28ff9fc6f7afd68bcd0fc1ae
                  if (chunk == null) {
                      if (collidesWithUnloaded) {
                          if (checkOnly) {
-@@ -482,59 +520,306 @@ public final class CollisionUtil {
+@@ -482,59 +495,306 @@ public final class CollisionUtil {
                      continue;
                  }
  
@@ -343,15 +322,11 @@ index 58629451977c89db2fa895bde946135784a0d8bc..3ce132ea28ff9fc6f7afd68bcd0fc1ae
 +        return ret;
 +    }
 +
-+    public static boolean getCollisionsForBlocksOrWorldBorderSlow(final CollisionGetter getter, final Entity entity, final AABB aabb,
-+                                                                  final List<AABB> into, final boolean loadChunks, final boolean collidesWithUnloaded,
-+                                                                  final boolean checkBorder, final boolean checkOnly, final BiPredicate<BlockState, BlockPos> predicate) {
++    public static boolean getCollisionsForBlocksOrWorldBorderReference(final CollisionGetter getter, final Entity entity, final AABB aabb,
++                                                                       final List<AABB> into, final boolean loadChunks, final boolean collidesWithUnloaded,
++                                                                       final boolean checkBorder, final boolean checkOnly, final BiPredicate<BlockState, BlockPos> predicate) {
 +        boolean ret = false;
- 
--                            if ((edgeCount != 1 || blockData.shapeExceedsCube()) && (edgeCount != 2 || blockData.getBlock() == Blocks.MOVING_PISTON)) {
--                                mutablePos.set(blockX, blockY, blockZ);
--                                if (collisionShape == null) {
--                                    collisionShape = new LazyEntityCollisionContext(entity);
++
 +        if (checkBorder) {
 +            if (CollisionUtil.isAlmostCollidingOnBorder(getter.getWorldBorder(), aabb)) {
 +                if (checkOnly) {
@@ -376,7 +351,11 @@ index 58629451977c89db2fa895bde946135784a0d8bc..3ce132ea28ff9fc6f7afd68bcd0fc1ae
 +        final int maxSection = WorldUtil.getMaxSection(getter);
 +        final int minBlock = minSection << 4;
 +        final int maxBlock = (maxSection << 4) | 15;
-+
+ 
+-                            if ((edgeCount != 1 || blockData.shapeExceedsCube()) && (edgeCount != 2 || blockData.getBlock() == Blocks.MOVING_PISTON)) {
+-                                mutablePos.set(blockX, blockY, blockZ);
+-                                if (collisionShape == null) {
+-                                    collisionShape = new LazyEntityCollisionContext(entity);
 +        final BlockPos.MutableBlockPos mutablePos = new BlockPos.MutableBlockPos();
 +        CollisionContext collisionShape = null;
 +
@@ -507,20 +486,6 @@ index 58629451977c89db2fa895bde946135784a0d8bc..3ce132ea28ff9fc6f7afd68bcd0fc1ae
                                      }
                                  }
                              }
-diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 1674deebbeab0995ed7acacf8052e1daf4d2a7bc..887243394fc2578fbcfd3dd150921e221f2d8475 100644
---- a/src/main/java/net/minecraft/server/MinecraftServer.java
-+++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -1466,6 +1466,9 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
-         isOversleep = false;MinecraftTimings.serverOversleep.stopTiming();
-         // Paper end
-         new com.destroystokyo.paper.event.server.ServerTickStartEvent(this.tickCount+1).callEvent(); // Paper
-+        // Paper start
-+        io.papermc.paper.util.CollisionUtil.updateBadPlugins();
-+        // Paper end
- 
-         ++this.tickCount;
-         this.tickChildren(shouldKeepTicking);
 diff --git a/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java b/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java
 index 05c46f3b3bce5225b819d86e6e06729a5093e092..eac017fc521bfd1391e75db8628f42b28329d681 100644
 --- a/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java
