@@ -1377,7 +1377,7 @@ index d271871563fa883efb77b35ec3b1dfbba87f0b62..1b6a4fdefa0a18cb400631ac4cb3c529
  
      public CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> getOrScheduleFuture(ChunkStatus targetStatus, ChunkMap chunkStorage) {
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index 0a04980a8015fe08907a040f0f3ff537267bd462..0754c45fadf17d3ee2e30e161e77119aeefad9ba 100644
+index 2e6e86439173ebdb13b9cebd1e266e91335c1e2d..48db56895a06bd3729ffaaa234d0059823e873b6 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
 @@ -212,6 +212,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
@@ -1468,14 +1468,14 @@ index 0a04980a8015fe08907a040f0f3ff537267bd462..0754c45fadf17d3ee2e30e161e77119a
  
      }
  
--    protected void updateChunkTracking(ServerPlayer player, ChunkPos pos, MutableObject<java.util.Map<Object, ClientboundLevelChunkWithLightPacket>> mutableobject, boolean oldWithinViewDistance, boolean newWithinViewDistance) { // Paper - Anti-Xray - Bypass
+-    protected void updateChunkTracking(ServerPlayer player, ChunkPos pos, MutableObject<java.util.Map<Object, ClientboundLevelChunkWithLightPacket>> packet, boolean oldWithinViewDistance, boolean newWithinViewDistance) { // Paper - Anti-Xray - Bypass
 +    // Paper start - replace player loader system
 +    public void setTickViewDistance(int distance) {
 +        this.playerChunkManager.setTickDistance(distance);
 +    }
 +    // Paper end - replace player loader system
 +
-+    public void updateChunkTracking(ServerPlayer player, ChunkPos pos, MutableObject<java.util.Map<Object, ClientboundLevelChunkWithLightPacket>> mutableobject, boolean oldWithinViewDistance, boolean newWithinViewDistance) { // Paper - Anti-Xray - Bypass // Paper - public
++    public void updateChunkTracking(ServerPlayer player, ChunkPos pos, MutableObject<java.util.Map<Object, ClientboundLevelChunkWithLightPacket>> packet, boolean oldWithinViewDistance, boolean newWithinViewDistance) { // Paper - Anti-Xray - Bypass // Paper - public
          if (player.level == this.level) {
              if (newWithinViewDistance && !oldWithinViewDistance) {
                  ChunkHolder playerchunk = this.getVisibleChunkIfPresent(pos.toLong());
@@ -1485,7 +1485,7 @@ index 0a04980a8015fe08907a040f0f3ff537267bd462..0754c45fadf17d3ee2e30e161e77119a
 +                    LevelChunk chunk = playerchunk.getSendingChunk(); // Paper - replace chunk loader system
  
                      if (chunk != null) {
-                         this.playerLoadedChunk(player, mutableobject, chunk);
+                         this.playerLoadedChunk(player, packet, chunk);
 @@ -1612,7 +1603,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
  
      void dumpChunks(Writer writer) throws IOException {
@@ -1787,7 +1787,7 @@ index 1744f4983b24a87f3861ebd5d68120cfce904934..94be1d23683d682285c976f3b48b0e36
 +     */ // Paper - replace old loader system
  }
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-index 9a07ccbd12675e501a9aebf89ab85adf6fb658ba..3996f7e20834de36b1beb812e2de96bbaaa3a718 100644
+index b143240699f185263728a9241eac52c643225f04..dd4fc5e0d03e07ce300f3e327522401ea0c8cbee 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 @@ -920,6 +920,7 @@ public class ServerChunkCache extends ChunkSource {
@@ -1807,7 +1807,7 @@ index 9a07ccbd12675e501a9aebf89ab85adf6fb658ba..3996f7e20834de36b1beb812e2de96bb
                  return true;
              } else {
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index a2abb8aa1a257ccd2b5dbddc037fffc6eb600758..954a3d9afe32d76ec4afd0722be582b89b709c8b 100644
+index e9de8f8ac62dab370c28b4ef6a4b61c8d3ebbb15..fe22c7a8d30f99313d25fd6391305fb077f8df84 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
 @@ -655,7 +655,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
@@ -1926,10 +1926,10 @@ index 46ca1a11930c57813fbcbab7de7dd2fd47241f64..2429bdc5fc5150dcadbedf6c33810889
                          double deltaZ = soundPos.getZ() - player.getZ();
                          double distanceSquared = deltaX * deltaX + deltaZ * deltaZ;
 diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
-index 4247dcb003626535dbb997f48ad9f61380bd17e9..89bc9f452556bafdcd8b76668639ee33c383596e 100644
+index 7dda99a5464816f1488fb110da587f12d751b3fb..87c8c59b9d47b6c292a92e97471c558c03453cfb 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
 +++ b/src/main/java/net/minecraft/world/level/Level.java
-@@ -656,6 +656,11 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -655,6 +655,11 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
  
              if ((i & 2) != 0 && (!this.isClientSide || (i & 4) == 0) && (this.isClientSide || chunk == null || (chunk.getFullStatus() != null && chunk.getFullStatus().isOrAfter(ChunkHolder.FullChunkStatus.TICKING)))) { // allow chunk to be null here as chunk.isReady() is false when we send our notification during block placement
                  this.sendBlockUpdated(blockposition, iblockdata1, iblockdata, i);
@@ -2021,10 +2021,10 @@ index 7567a8bf848c82b27383f084056cb43c41df6d0c..dc23041e0277396fc0a6a01d68bf32e6
  
      @Nullable
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index 5fb475b3ccaa98861e2c817b37cd1740e5bfed8d..c0e1d53f41bf8ed0de8cca901ea75483bbada3bc 100644
+index 23bd74836e8396720747540829c7b8e27cfb00bd..dfd32e1213056ed1061f647c95fd71bfbab41294 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-@@ -2119,37 +2119,43 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -2215,37 +2215,43 @@ public class CraftWorld extends CraftRegionAccessor implements World {
      // Spigot start
      @Override
      public int getViewDistance() {
@@ -2076,10 +2076,10 @@ index 5fb475b3ccaa98861e2c817b37cd1740e5bfed8d..c0e1d53f41bf8ed0de8cca901ea75483
      // Spigot end
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index 148e1985017f6955267b5c970730645394d700f6..1fbd998fa06de2c2253ecfe62fa0415d2d38504a 100644
+index d309d9f0b54e2a966ccfbb780359bb8e68d15ee3..2088b708d7ed7af8de0df31493084d8fcfed8a70 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-@@ -523,35 +523,59 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -528,35 +528,59 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          }
      }
  
