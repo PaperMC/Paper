@@ -131,9 +131,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                        entityliving.awardKillScore(this, this.deathScore, source);
 +                    }
 +                    // Paper start - clear equipment if event is not cancelled
-+                    if (this instanceof Mob mob) {
-+                        java.util.Collections.fill(mob.handItems, ItemStack.EMPTY);
-+                        java.util.Collections.fill(mob.armorItems, ItemStack.EMPTY);
++                    if (this instanceof Mob) {
++                        for (EquipmentSlot slot : this.clearedEquipmentSlots) {
++                            this.setItemSlot(slot, ItemStack.EMPTY);
++                        }
++                        this.clearedEquipmentSlots.clear();
 +                    }
 +                    // Paper end
 +
@@ -178,8 +180,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
 -    protected void dropAllDeathLoot(DamageSource source) {
-+    protected boolean clearEquipmentSlots = true; // Paper
-+    protected org.bukkit.event.entity.EntityDeathEvent dropAllDeathLoot(DamageSource source) { // Paper
++    // Paper start
++    protected boolean clearEquipmentSlots = true;
++    protected Set<EquipmentSlot> clearedEquipmentSlots = new java.util.HashSet<>();
++    protected org.bukkit.event.entity.EntityDeathEvent dropAllDeathLoot(DamageSource source) {
++    // Paper end
          Entity entity = source.getEntity();
          int i;
  
@@ -187,9 +192,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          this.dropEquipment(); // CraftBukkit - from below
          if (this.shouldDropLoot() && this.level.getGameRules().getBoolean(GameRules.RULE_DOMOBLOOT)) {
              this.dropFromLootTable(source, flag);
-+            this.clearEquipmentSlots = false; // Paper
++            // Paper start
++            final boolean prev = this.clearEquipmentSlots;
++            this.clearEquipmentSlots = false;
++            this.clearedEquipmentSlots.clear();
++            // Paper end
              this.dropCustomDeathLoot(source, i, flag);
-+            this.clearEquipmentSlots = true; // Paper
++            this.clearEquipmentSlots = prev; // Paper
          }
          // CraftBukkit start - Call death event
 -        CraftEventFactory.callEntityDeathEvent(this, this.drops);
@@ -218,7 +227,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  this.spawnAtLocation(itemstack);
 +                if (this.clearEquipmentSlots) { // Paper
                  this.setItemSlot(enumitemslot, ItemStack.EMPTY);
-+                } // Paper
++                // Paper start
++                } else {
++                    this.clearedEquipmentSlots.add(enumitemslot);
++                }
++                // Paper end
              }
          }
  
