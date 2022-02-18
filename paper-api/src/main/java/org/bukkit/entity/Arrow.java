@@ -28,17 +28,17 @@ public interface Arrow extends AbstractArrow {
     /**
      * Gets the color of this arrow.
      *
-     * @return arrow color
+     * @return arrow {@link Color} or null if not color is set
      */
-    @NotNull
+    @Nullable
     Color getColor();
 
     /**
      * Sets the color of this arrow. Will be applied as a tint to its particles.
      *
-     * @param color arrow color
+     * @param color arrow color, null to clear the color
      */
-    void setColor(@NotNull Color color);
+    void setColor(@Nullable Color color);
 
     /**
      * Checks for the presence of custom potion effects.
