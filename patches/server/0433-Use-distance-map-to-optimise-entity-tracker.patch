@@ -6,7 +6,7 @@ Subject: [PATCH] Use distance map to optimise entity tracker
 Use the distance map to find candidate players for tracking.
 
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index d924dfe452244633bcf62e7ccefe3a5a1a3d7f37..e35a47e0c8eebbad7154a1357a6b868887bc4a0c 100644
+index cd58121bfa059366919e098005299dde0c55f46f..25c71ca93c54976cc319abb0d932beb6f95deb79 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
 @@ -67,6 +67,7 @@ import net.minecraft.network.protocol.game.ClientboundSetEntityLinkPacket;
@@ -126,7 +126,7 @@ index d924dfe452244633bcf62e7ccefe3a5a1a3d7f37..e35a47e0c8eebbad7154a1357a6b8688
          // Paper start - optimise ChunkMap#anyPlayerCloseEnoughForSpawning
          this.playerChunkTickRangeMap = new com.destroystokyo.paper.util.misc.PlayerAreaMap(this.pooledLinkedPlayerHashSets,
              (ServerPlayer player, int rangeX, int rangeZ, int currPosX, int currPosZ, int prevPosX, int prevPosZ,
-@@ -1504,17 +1582,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1505,17 +1583,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
      }
  
      public void move(ServerPlayer player) {
@@ -145,7 +145,7 @@ index d924dfe452244633bcf62e7ccefe3a5a1a3d7f37..e35a47e0c8eebbad7154a1357a6b8688
  
          int i = SectionPos.blockToSectionCoord(player.getBlockX());
          int j = SectionPos.blockToSectionCoord(player.getBlockZ());
-@@ -1641,7 +1709,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1642,7 +1710,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
  
                      entity.tracker = playerchunkmap_entitytracker; // Paper - Fast access to tracker
                      this.entityMap.put(entity.getId(), playerchunkmap_entitytracker);
@@ -154,7 +154,7 @@ index d924dfe452244633bcf62e7ccefe3a5a1a3d7f37..e35a47e0c8eebbad7154a1357a6b8688
                      if (entity instanceof ServerPlayer) {
                          ServerPlayer entityplayer = (ServerPlayer) entity;
  
-@@ -1685,7 +1753,37 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1686,7 +1754,37 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          entity.tracker = null; // Paper - We're no longer tracked
      }
  
@@ -192,7 +192,7 @@ index d924dfe452244633bcf62e7ccefe3a5a1a3d7f37..e35a47e0c8eebbad7154a1357a6b8688
          List<ServerPlayer> list = Lists.newArrayList();
          List<ServerPlayer> list1 = this.level.players();
          ObjectIterator objectiterator = this.entityMap.values().iterator();
-@@ -1761,23 +1859,31 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1762,23 +1860,31 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          DebugPackets.sendPoiPacketsForChunk(this.level, chunk.getPos());
          List<Entity> list = Lists.newArrayList();
          List<Entity> list1 = Lists.newArrayList();
@@ -236,7 +236,7 @@ index d924dfe452244633bcf62e7ccefe3a5a1a3d7f37..e35a47e0c8eebbad7154a1357a6b8688
  
          Iterator iterator;
          Entity entity1;
-@@ -1853,6 +1959,42 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1854,6 +1960,42 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
              this.lastSectionPos = SectionPos.of(entity);
          }
  
@@ -280,7 +280,7 @@ index d924dfe452244633bcf62e7ccefe3a5a1a3d7f37..e35a47e0c8eebbad7154a1357a6b8688
              return object instanceof ChunkMap.TrackedEntity ? ((ChunkMap.TrackedEntity) object).entity.getId() == this.entity.getId() : false;
          }
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index a02eb37845e0609ddf14a4214395e00443534b08..8e59a63e8c161e90ccff951ecb2b6530fadf3b80 100644
+index 7bf62752b6604abe0bda6f5d0024f0e93efb3a9a..9a4454746452f64d7a8caa52eef2dca86e9edd94 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
 @@ -51,6 +51,7 @@ import net.minecraft.network.syncher.EntityDataSerializers;
