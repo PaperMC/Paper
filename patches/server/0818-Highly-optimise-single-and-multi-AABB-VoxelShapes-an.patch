@@ -70,10 +70,10 @@ index be668387f65a633c6ac497fca632a4767a1bf3a2..e08f4e39db4ee3fed62e37364d17dcc5
  }
 diff --git a/src/main/java/io/papermc/paper/util/CollisionUtil.java b/src/main/java/io/papermc/paper/util/CollisionUtil.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..58629451977c89db2fa895bde946135784a0d8bc
+index 0000000000000000000000000000000000000000..b25018ab6cff59e43652c953421f01b6d0bb0a85
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/util/CollisionUtil.java
-@@ -0,0 +1,639 @@
+@@ -0,0 +1,899 @@
 +package io.papermc.paper.util;
 +
 +import io.papermc.paper.voxel.AABBVoxelShape;
@@ -91,6 +91,7 @@ index 0000000000000000000000000000000000000000..58629451977c89db2fa895bde9461357
 +import net.minecraft.world.level.border.WorldBorder;
 +import net.minecraft.world.level.chunk.ChunkAccess;
 +import net.minecraft.world.level.chunk.LevelChunkSection;
++import net.minecraft.world.level.chunk.PalettedContainer;
 +import net.minecraft.world.level.material.FlowingFluid;
 +import net.minecraft.world.level.material.FluidState;
 +import net.minecraft.world.phys.AABB;
@@ -101,13 +102,21 @@ index 0000000000000000000000000000000000000000..58629451977c89db2fa895bde9461357
 +import net.minecraft.world.phys.shapes.Shapes;
 +import net.minecraft.world.phys.shapes.VoxelShape;
 +import java.util.List;
-+import java.util.Optional;
 +import java.util.function.BiPredicate;
 +import java.util.function.Predicate;
 +
 +public final class CollisionUtil {
 +
 +    public static final double COLLISION_EPSILON = 1.0E-7;
++
++    public static final long KNOWN_EMPTY_BLOCK = 0b00; // known to always have voxelshape of empty
++    public static final long KNOWN_FULL_BLOCK = 0b01; // known to always have voxelshape of full cube
++    public static final long KNOWN_UNKNOWN_BLOCK = 0b10; // must read the actual block state for info
++    public static final long KNOWN_SPECIAL_BLOCK = 0b11; // caller must check this block for special collisions
++
++    public static boolean isSpecialCollidingBlock(final net.minecraft.world.level.block.state.BlockBehaviour.BlockStateBase block) {
++        return block.shapeExceedsCube() || block.getBlock() == Blocks.MOVING_PISTON;
++    }
 +
 +    public static boolean isEmpty(final AABB aabb) {
 +        return (aabb.maxX - aabb.minX) < COLLISION_EPSILON && (aabb.maxY - aabb.minY) < COLLISION_EPSILON && (aabb.maxZ - aabb.minZ) < COLLISION_EPSILON;
@@ -471,8 +480,8 @@ index 0000000000000000000000000000000000000000..58629451977c89db2fa895bde9461357
 +    }
 +
 +    public static boolean getCollisionsForBlocksOrWorldBorder(final CollisionGetter getter, final Entity entity, final AABB aabb,
-+                                                              final List<AABB> into, final boolean loadChunks, final boolean collidesWithUnloaded,
-+                                                              final boolean checkBorder, final boolean checkOnly, final BiPredicate<BlockState, BlockPos> predicate) {
++                                                                  final List<AABB> into, final boolean loadChunks, final boolean collidesWithUnloaded,
++                                                                  final boolean checkBorder, final boolean checkOnly, final BiPredicate<BlockState, BlockPos> predicate) {
 +        boolean ret = false;
 +
 +        if (checkBorder) {
@@ -486,21 +495,21 @@ index 0000000000000000000000000000000000000000..58629451977c89db2fa895bde9461357
 +            }
 +        }
 +
-+        int minBlockX = Mth.floor(aabb.minX - COLLISION_EPSILON) - 1;
-+        int maxBlockX = Mth.floor(aabb.maxX + COLLISION_EPSILON) + 1;
++        final int minBlockX = Mth.floor(aabb.minX - COLLISION_EPSILON) - 1;
++        final int maxBlockX = Mth.floor(aabb.maxX + COLLISION_EPSILON) + 1;
 +
-+        int minBlockY = Mth.floor(aabb.minY - COLLISION_EPSILON) - 1;
-+        int maxBlockY = Mth.floor(aabb.maxY + COLLISION_EPSILON) + 1;
++        final int minBlockY = Mth.floor(aabb.minY - COLLISION_EPSILON) - 1;
++        final int maxBlockY = Mth.floor(aabb.maxY + COLLISION_EPSILON) + 1;
 +
-+        int minBlockZ = Mth.floor(aabb.minZ - COLLISION_EPSILON) - 1;
-+        int maxBlockZ = Mth.floor(aabb.maxZ + COLLISION_EPSILON) + 1;
++        final int minBlockZ = Mth.floor(aabb.minZ - COLLISION_EPSILON) - 1;
++        final int maxBlockZ = Mth.floor(aabb.maxZ + COLLISION_EPSILON) + 1;
 +
 +        final int minSection = WorldUtil.getMinSection(getter);
 +        final int maxSection = WorldUtil.getMaxSection(getter);
 +        final int minBlock = minSection << 4;
 +        final int maxBlock = (maxSection << 4) | 15;
 +
-+        BlockPos.MutableBlockPos mutablePos = new BlockPos.MutableBlockPos();
++        final BlockPos.MutableBlockPos mutablePos = new BlockPos.MutableBlockPos();
 +        CollisionContext collisionShape = null;
 +
 +        // special cases:
@@ -509,16 +518,22 @@ index 0000000000000000000000000000000000000000..58629451977c89db2fa895bde9461357
 +            return ret;
 +        }
 +
-+        int minYIterate = Math.max(minBlock, minBlockY);
-+        int maxYIterate = Math.min(maxBlock, maxBlockY);
++        final int minYIterate = Math.max(minBlock, minBlockY);
++        final int maxYIterate = Math.min(maxBlock, maxBlockY);
 +
-+        int minChunkX = minBlockX >> 4;
-+        int maxChunkX = maxBlockX >> 4;
++        final int minChunkX = minBlockX >> 4;
++        final int maxChunkX = maxBlockX >> 4;
 +
-+        int minChunkZ = minBlockZ >> 4;
-+        int maxChunkZ = maxBlockZ >> 4;
++        final int minChunkY = minBlockY >> 4;
++        final int maxChunkY = maxBlockY >> 4;
 +
-+        ServerChunkCache chunkProvider;
++        final int minChunkYIterate = minYIterate >> 4;
++        final int maxChunkYIterate = maxYIterate >> 4;
++
++        final int minChunkZ = minBlockZ >> 4;
++        final int maxChunkZ = maxBlockZ >> 4;
++
++        final ServerChunkCache chunkProvider;
 +        if (getter instanceof WorldGenRegion) {
 +            chunkProvider = null;
 +        } else if (getter instanceof ServerLevel) {
@@ -526,25 +541,23 @@ index 0000000000000000000000000000000000000000..58629451977c89db2fa895bde9461357
 +        } else {
 +            chunkProvider = null;
 +        }
-+        // TODO special case single chunk?
 +
 +        for (int currChunkZ = minChunkZ; currChunkZ <= maxChunkZ; ++currChunkZ) {
-+            int minZ = currChunkZ == minChunkZ ? minBlockZ & 15 : 0; // coordinate in chunk
-+            int maxZ = currChunkZ == maxChunkZ ? maxBlockZ & 15 : 15; // coordinate in chunk
++            final int minZ = currChunkZ == minChunkZ ? minBlockZ & 15 : 0; // coordinate in chunk
++            final int maxZ = currChunkZ == maxChunkZ ? maxBlockZ & 15 : 15; // coordinate in chunk
 +
 +            for (int currChunkX = minChunkX; currChunkX <= maxChunkX; ++currChunkX) {
-+                int minX = currChunkX == minChunkX ? minBlockX & 15 : 0; // coordinate in chunk
-+                int maxX = currChunkX == maxChunkX ? maxBlockX & 15 : 15; // coordinate in chunk
++                final int minX = currChunkX == minChunkX ? minBlockX & 15 : 0; // coordinate in chunk
++                final int maxX = currChunkX == maxChunkX ? maxBlockX & 15 : 15; // coordinate in chunk
 +
-+                int chunkXGlobalPos = currChunkX << 4;
-+                int chunkZGlobalPos = currChunkZ << 4;
-+                ChunkAccess chunk;
++                final int chunkXGlobalPos = currChunkX << 4;
++                final int chunkZGlobalPos = currChunkZ << 4;
++                final ChunkAccess chunk;
 +                if (chunkProvider == null) {
 +                    chunk = (ChunkAccess)getter.getChunkForCollisions(currChunkX, currChunkZ);
 +                } else {
 +                    chunk = loadChunks ? chunkProvider.getChunk(currChunkX, currChunkZ, true) : chunkProvider.getChunkAtIfLoadedImmediately(currChunkX, currChunkZ);
 +                }
-+
 +
 +                if (chunk == null) {
 +                    if (collidesWithUnloaded) {
@@ -558,59 +571,306 @@ index 0000000000000000000000000000000000000000..58629451977c89db2fa895bde9461357
 +                    continue;
 +                }
 +
-+                LevelChunkSection[] sections = chunk.getSections();
++                final LevelChunkSection[] sections = chunk.getSections();
 +
 +                // bound y
 +
-+                for (int currY = minYIterate; currY <= maxYIterate; ++currY) {
-+                    LevelChunkSection section = sections[(currY >> 4) - minSection];
-+                    if (section.hasOnlyAir()) {
++                for (int currChunkY = minChunkYIterate; currChunkY <= maxChunkYIterate; ++currChunkY) {
++                    final LevelChunkSection section = sections[currChunkY - minSection];
++                    if (section == null || section.hasOnlyAir()) {
 +                        // empty
-+                        // skip to next section
-+                        currY = (currY & ~(15)) + 15; // increment by 15: iterator loop increments by the extra one
 +                        continue;
 +                    }
++                    final PalettedContainer<BlockState> blocks = section.states;
 +
-+                    net.minecraft.world.level.chunk.PalettedContainer<BlockState> blocks = section.states;
++                    final int minY = currChunkY == minChunkYIterate ? minYIterate & 15 : 0; // coordinate in chunk
++                    final int maxY = currChunkY == maxChunkYIterate ? maxYIterate & 15 : 15; // coordinate in chunk
++                    final int chunkYGlobalPos = currChunkY << 4;
 +
-+                    for (int currZ = minZ; currZ <= maxZ; ++currZ) {
-+                        for (int currX = minX; currX <= maxX; ++currX) {
-+                            int localBlockIndex = (currX) | (currZ << 4) | ((currY & 15) << 8);
-+                            int blockX = currX | chunkXGlobalPos;
-+                            int blockY = currY;
-+                            int blockZ = currZ | chunkZGlobalPos;
++                    final boolean sectionHasSpecial = section.hasSpecialCollidingBlocks();
 +
-+                            int edgeCount = ((blockX == minBlockX || blockX == maxBlockX) ? 1 : 0) +
-+                                    ((blockY == minBlockY || blockY == maxBlockY) ? 1 : 0) +
-+                                    ((blockZ == minBlockZ || blockZ == maxBlockZ) ? 1 : 0);
-+                            if (edgeCount == 3) {
++                    final int minXIterate;
++                    final int maxXIterate;
++                    final int minZIterate;
++                    final int maxZIterate;
++                    final int minYIterateLocal;
++                    final int maxYIterateLocal;
++
++                    if (!sectionHasSpecial) {
++                        minXIterate = currChunkX == minChunkX ? minX + 1 : minX;
++                        maxXIterate = currChunkX == maxChunkX ? maxX - 1 : maxX;
++                        minZIterate = currChunkZ == minChunkZ ? minZ + 1 : minZ;
++                        maxZIterate = currChunkZ == maxChunkZ ? maxZ - 1 : maxZ;
++                        minYIterateLocal = currChunkY == minChunkY ? minY + 1 : minY;
++                        maxYIterateLocal = currChunkY == maxChunkY ? maxY - 1 : maxY;
++                        if (minXIterate > maxXIterate || minZIterate > maxZIterate) {
++                            continue;
++                        }
++                    } else {
++                        minXIterate = minX;
++                        maxXIterate = maxX;
++                        minZIterate = minZ;
++                        maxZIterate = maxZ;
++                        minYIterateLocal = minY;
++                        maxYIterateLocal = maxY;
++                    }
++
++                    for (int currY = minYIterateLocal; currY <= maxYIterateLocal; ++currY) {
++                        long collisionForHorizontal = section.getKnownBlockInfoHorizontalRaw(currY, minZIterate & 15);
++                        for (int currZ = minZIterate; currZ <= maxZIterate; ++currZ,
++                            collisionForHorizontal = (currZ & 1) == 0 ? section.getKnownBlockInfoHorizontalRaw(currY, currZ & 15) : collisionForHorizontal) {
++                            // From getKnownBlockInfoHorizontalRaw:
++                            // important detail: this returns 32 values, one for localZ = localZ & (~1) and one for localZ = localZ | 1
++                            // the even localZ is the lower 32 bits, the odd is the upper 32 bits
++                            // We want to use a bitset to only iterate over non-empty blocks.
++                            // We need to build a bitset mask to and out the other collisions we just don't care at all about
++                            // First, we need to build a bitset from 0..n*2 where n is the number of blocks on the x axis
++                            // It's important to note that the iterate values can be outside [0, 15], but if they are,
++                            // then none of the x or z loops would meet their conditions. So we can assume they are never
++                            // out of bounds here
++                            final int xAxisBits = (maxXIterate - minXIterate + 1) << 1; // << 1 -> * 2 // Never > 32
++                            long bitset = (1L << xAxisBits) - 1;
++                            // Now we need to offset it by 32 bits if current Z is odd (lower 32 bits is 16 block infos for even z, upper is for odd)
++                            int shift = (currZ & 1) << 5; // this will be a LEFT shift
++                            // Now we need to offset shift so that the bitset first position is at minXIterate
++                            shift += (minXIterate << 1); // 0th pos -> 0th bit, 1st pos -> 2nd bit, ...
++
++                            // all done
++                            bitset = bitset << shift;
++                            if ((collisionForHorizontal & bitset) == 0L) {
++                                // All empty
 +                                continue;
 +                            }
++                            for (int currX = minXIterate; currX <= maxXIterate; ++currX) {
++                                final int localBlockIndex = (currX) | (currZ << 4) | (currY << 8);
 +
-+                            BlockState blockData = blocks.get(localBlockIndex);
-+                            if (blockData.isAir()) {
-+                                continue;
-+                            }
++                                final int blockInfo = (int) LevelChunkSection.getKnownBlockInfo(localBlockIndex, collisionForHorizontal);
 +
-+                            if ((edgeCount != 1 || blockData.shapeExceedsCube()) && (edgeCount != 2 || blockData.getBlock() == Blocks.MOVING_PISTON)) {
-+                                mutablePos.set(blockX, blockY, blockZ);
-+                                if (collisionShape == null) {
-+                                    collisionShape = new LazyEntityCollisionContext(entity);
-+                                }
-+                                VoxelShape voxelshape2 = blockData.getCollisionShape(getter, mutablePos, collisionShape);
-+                                if (voxelshape2 != Shapes.empty()) {
-+                                    VoxelShape voxelshape3 = voxelshape2.move((double)blockX, (double)blockY, (double)blockZ);
-+
-+                                    if (predicate != null && !predicate.test(blockData, mutablePos)) {
++                                switch (blockInfo) {
++                                    case (int) CollisionUtil.KNOWN_EMPTY_BLOCK: {
 +                                        continue;
 +                                    }
-+
-+                                    if (checkOnly) {
-+                                        if (voxelshape3.intersects(aabb)) {
-+                                            return true;
++                                    case (int) CollisionUtil.KNOWN_FULL_BLOCK: {
++                                        double blockX = (double)(currX | chunkXGlobalPos);
++                                        double blockY = (double)(currY | chunkYGlobalPos);
++                                        double blockZ = (double)(currZ | chunkZGlobalPos);
++                                        final AABB blockBox = new AABB(
++                                            blockX, blockY, blockZ,
++                                            blockX + 1.0, blockY + 1.0, blockZ + 1.0,
++                                            true
++                                        );
++                                        if (predicate != null) {
++                                            if (!voxelShapeIntersect(aabb, blockBox)) {
++                                                continue;
++                                            }
++                                            // fall through to get the block for the predicate
++                                        } else {
++                                            if (voxelShapeIntersect(aabb, blockBox)) {
++                                                if (checkOnly) {
++                                                    return true;
++                                                } else {
++                                                    into.add(blockBox);
++                                                    ret = true;
++                                                }
++                                            }
++                                            continue;
 +                                        }
-+                                    } else {
-+                                        ret |= addBoxesToIfIntersects(voxelshape3, aabb, into);
++                                    }
++                                    // default: fall through to standard logic
++                                }
++
++                                int blockX = currX | chunkXGlobalPos;
++                                int blockY = currY | chunkYGlobalPos;
++                                int blockZ = currZ | chunkZGlobalPos;
++
++                                int edgeCount = ((blockX == minBlockX || blockX == maxBlockX) ? 1 : 0) +
++                                    ((blockY == minBlockY || blockY == maxBlockY) ? 1 : 0) +
++                                    ((blockZ == minBlockZ || blockZ == maxBlockZ) ? 1 : 0);
++                                if (edgeCount == 3) {
++                                    continue;
++                                }
++
++                                BlockState blockData = blocks.get(localBlockIndex);
++
++                                if ((edgeCount != 1 || blockData.shapeExceedsCube()) && (edgeCount != 2 || blockData.getBlock() == Blocks.MOVING_PISTON)) {
++                                    mutablePos.set(blockX, blockY, blockZ);
++                                    if (collisionShape == null) {
++                                        collisionShape = new LazyEntityCollisionContext(entity);
++                                    }
++                                    VoxelShape voxelshape2 = blockData.getCollisionShape(getter, mutablePos, collisionShape);
++                                    if (voxelshape2 != Shapes.empty()) {
++                                        VoxelShape voxelshape3 = voxelshape2.move((double)blockX, (double)blockY, (double)blockZ);
++
++                                        if (predicate != null && !predicate.test(blockData, mutablePos)) {
++                                            continue;
++                                        }
++
++                                        if (checkOnly) {
++                                            if (voxelshape3.intersects(aabb)) {
++                                                return true;
++                                            }
++                                        } else {
++                                            ret |= addBoxesToIfIntersects(voxelshape3, aabb, into);
++                                        }
++                                    }
++                                }
++                            }
++                        }
++                    }
++                }
++            }
++        }
++
++        return ret;
++    }
++
++    public static boolean getCollisionsForBlocksOrWorldBorderReference(final CollisionGetter getter, final Entity entity, final AABB aabb,
++                                                                       final List<AABB> into, final boolean loadChunks, final boolean collidesWithUnloaded,
++                                                                       final boolean checkBorder, final boolean checkOnly, final BiPredicate<BlockState, BlockPos> predicate) {
++        boolean ret = false;
++
++        if (checkBorder) {
++            if (CollisionUtil.isAlmostCollidingOnBorder(getter.getWorldBorder(), aabb)) {
++                if (checkOnly) {
++                    return true;
++                } else {
++                    CollisionUtil.addBoxesTo(getter.getWorldBorder().getCollisionShape(), into);
++                    ret = true;
++                }
++            }
++        }
++
++        final int minBlockX = Mth.floor(aabb.minX - COLLISION_EPSILON) - 1;
++        final int maxBlockX = Mth.floor(aabb.maxX + COLLISION_EPSILON) + 1;
++
++        final int minBlockY = Mth.floor(aabb.minY - COLLISION_EPSILON) - 1;
++        final int maxBlockY = Mth.floor(aabb.maxY + COLLISION_EPSILON) + 1;
++
++        final int minBlockZ = Mth.floor(aabb.minZ - COLLISION_EPSILON) - 1;
++        final int maxBlockZ = Mth.floor(aabb.maxZ + COLLISION_EPSILON) + 1;
++
++        final int minSection = WorldUtil.getMinSection(getter);
++        final int maxSection = WorldUtil.getMaxSection(getter);
++        final int minBlock = minSection << 4;
++        final int maxBlock = (maxSection << 4) | 15;
++
++        final BlockPos.MutableBlockPos mutablePos = new BlockPos.MutableBlockPos();
++        CollisionContext collisionShape = null;
++
++        // special cases:
++        if (minBlockY > maxBlock || maxBlockY < minBlock) {
++            // no point in checking
++            return ret;
++        }
++
++        final int minYIterate = Math.max(minBlock, minBlockY);
++        final int maxYIterate = Math.min(maxBlock, maxBlockY);
++
++        final int minChunkX = minBlockX >> 4;
++        final int maxChunkX = maxBlockX >> 4;
++
++        final int minChunkY = minBlockY >> 4;
++        final int maxChunkY = maxBlockY >> 4;
++
++        final int minChunkYIterate = minYIterate >> 4;
++        final int maxChunkYIterate = maxYIterate >> 4;
++
++        final int minChunkZ = minBlockZ >> 4;
++        final int maxChunkZ = maxBlockZ >> 4;
++
++        final ServerChunkCache chunkProvider;
++        if (getter instanceof WorldGenRegion) {
++            chunkProvider = null;
++        } else if (getter instanceof ServerLevel) {
++            chunkProvider = ((ServerLevel)getter).getChunkSource();
++        } else {
++            chunkProvider = null;
++        }
++
++        for (int currChunkZ = minChunkZ; currChunkZ <= maxChunkZ; ++currChunkZ) {
++            final int minZ = currChunkZ == minChunkZ ? minBlockZ & 15 : 0; // coordinate in chunk
++            final int maxZ = currChunkZ == maxChunkZ ? maxBlockZ & 15 : 15; // coordinate in chunk
++
++            for (int currChunkX = minChunkX; currChunkX <= maxChunkX; ++currChunkX) {
++                final int minX = currChunkX == minChunkX ? minBlockX & 15 : 0; // coordinate in chunk
++                final int maxX = currChunkX == maxChunkX ? maxBlockX & 15 : 15; // coordinate in chunk
++
++                final int chunkXGlobalPos = currChunkX << 4;
++                final int chunkZGlobalPos = currChunkZ << 4;
++                final ChunkAccess chunk;
++                if (chunkProvider == null) {
++                    chunk = (ChunkAccess)getter.getChunkForCollisions(currChunkX, currChunkZ);
++                } else {
++                    chunk = loadChunks ? chunkProvider.getChunk(currChunkX, currChunkZ, true) : chunkProvider.getChunkAtIfLoadedImmediately(currChunkX, currChunkZ);
++                }
++
++                if (chunk == null) {
++                    if (collidesWithUnloaded) {
++                        if (checkOnly) {
++                            return true;
++                        } else {
++                            into.add(getBoxForChunk(currChunkX, currChunkZ));
++                            ret = true;
++                        }
++                    }
++                    continue;
++                }
++
++                final LevelChunkSection[] sections = chunk.getSections();
++
++                // bound y
++                for (int currChunkY = minChunkYIterate; currChunkY <= maxChunkYIterate; ++currChunkY) {
++                    final LevelChunkSection section = sections[currChunkY - minSection];
++                    if (section == null || section.hasOnlyAir()) {
++                        // empty
++                        continue;
++                    }
++                    final PalettedContainer<BlockState> blocks = section.states;
++
++                    final int minY = currChunkY == minChunkYIterate ? minYIterate & 15 : 0; // coordinate in chunk
++                    final int maxY = currChunkY == maxChunkYIterate ? maxYIterate & 15 : 15; // coordinate in chunk
++                    final int chunkYGlobalPos = currChunkY << 4;
++
++                    for (int currY = minY; currY <= maxY; ++currY) {
++                        for (int currZ = minZ; currZ <= maxZ; ++currZ) {
++                            for (int currX = minX; currX <= maxX; ++currX) {
++                                int localBlockIndex = (currX) | (currZ << 4) | ((currY) << 8);
++                                int blockX = currX | chunkXGlobalPos;
++                                int blockY = currY | chunkYGlobalPos;
++                                int blockZ = currZ | chunkZGlobalPos;
++
++                                int edgeCount = ((blockX == minBlockX || blockX == maxBlockX) ? 1 : 0) +
++                                    ((blockY == minBlockY || blockY == maxBlockY) ? 1 : 0) +
++                                    ((blockZ == minBlockZ || blockZ == maxBlockZ) ? 1 : 0);
++                                if (edgeCount == 3) {
++                                    continue;
++                                }
++
++                                BlockState blockData = blocks.get(localBlockIndex);
++                                if (blockData.getBlockCollisionBehavior() == CollisionUtil.KNOWN_EMPTY_BLOCK) {
++                                    continue;
++                                }
++
++                                if ((edgeCount != 1 || blockData.shapeExceedsCube()) && (edgeCount != 2 || blockData.getBlock() == Blocks.MOVING_PISTON)) {
++                                    mutablePos.set(blockX, blockY, blockZ);
++                                    if (collisionShape == null) {
++                                        collisionShape = new LazyEntityCollisionContext(entity);
++                                    }
++                                    VoxelShape voxelshape2 = blockData.getCollisionShape(getter, mutablePos, collisionShape);
++                                    if (voxelshape2 != Shapes.empty()) {
++                                        VoxelShape voxelshape3 = voxelshape2.move((double)blockX, (double)blockY, (double)blockZ);
++
++                                        if (predicate != null && !predicate.test(blockData, mutablePos)) {
++                                            continue;
++                                        }
++
++                                        if (checkOnly) {
++                                            if (voxelshape3.intersects(aabb)) {
++                                                return true;
++                                            }
++                                        } else {
++                                            ret |= addBoxesToIfIntersects(voxelshape3, aabb, into);
++                                        }
 +                                    }
 +                                }
 +                            }
@@ -955,7 +1215,7 @@ index 80888d5adf7d4377e17e6f530f35053cfcc9eed4..fe9810c3b908339ca050ed832c2e67d6
          }
          // CraftBukkit start
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index 26546c030710685cdc1c75b8018462cd424b9ed6..2e61243b86ea1f21ec799a63badeae329e1ac3fa 100644
+index bf3bf6f359bfbef0fa2c6f872ec3ff35739a15fc..fe6f2ec41c521c8f1ac17aa3af8bb7f7375e5a02 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
 @@ -1082,9 +1082,44 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, i
@@ -1216,18 +1476,202 @@ index f9527d1d867f93b4e0e2758485cfa1f6efa0bf8b..1f4b72a0aca200b2e0860449c718e6e6
                  return List.of();
              } else {
 diff --git a/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java b/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java
-index 1831588b275f11aff37573fead835f6ddabfece1..05c46f3b3bce5225b819d86e6e06729a5093e092 100644
+index 1831588b275f11aff37573fead835f6ddabfece1..eac017fc521bfd1391e75db8628f42b28329d681 100644
 --- a/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java
 +++ b/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java
-@@ -726,7 +726,7 @@ public abstract class BlockBehaviour {
+@@ -717,6 +717,13 @@ public abstract class BlockBehaviour {
+             return this.conditionallyFullOpaque;
+         }
+         // Paper end
++        // Paper start
++        private long blockCollisionBehavior = io.papermc.paper.util.CollisionUtil.KNOWN_SPECIAL_BLOCK;
++
++        public final long getBlockCollisionBehavior() {
++            return this.blockCollisionBehavior;
++        }
++        // Paper end
+ 
+         public void initCache() {
+             this.fluid = this.getBlock().getFluidState(this.asState()); // Paper - moved from getFluid()
+@@ -726,7 +733,35 @@ public abstract class BlockBehaviour {
              }
              this.shapeExceedsCube = this.cache == null || this.cache.largeCollisionShape; // Paper - moved from actual method to here
              this.opacityIfCached = this.cache == null || this.isConditionallyFullOpaque() ? -1 : this.cache.lightBlock; // Paper - cache opacity for light
 -
-+            // TODO optimise light
++            // Paper start
++            if (io.papermc.paper.util.CollisionUtil.isSpecialCollidingBlock(this)) {
++                this.blockCollisionBehavior = io.papermc.paper.util.CollisionUtil.KNOWN_SPECIAL_BLOCK;
++            } else {
++                try {
++                    // There is NOTHING HACKY ABOUT THIS AT ALLLLLLLLLLLLLLL
++                    VoxelShape constantShape = this.getCollisionShape(null, null, null);
++                    if (constantShape == null) {
++                        this.blockCollisionBehavior = io.papermc.paper.util.CollisionUtil.KNOWN_UNKNOWN_BLOCK;
++                    } else {
++                        constantShape = constantShape.optimize();
++                        if (constantShape.isEmpty()) {
++                            this.blockCollisionBehavior = io.papermc.paper.util.CollisionUtil.KNOWN_EMPTY_BLOCK;
++                        } else {
++                            final List<net.minecraft.world.phys.AABB> boxes = constantShape.toAabbs();
++                            if (constantShape == net.minecraft.world.phys.shapes.Shapes.getFullUnoptimisedCube() || (boxes.size() == 1 && boxes.get(0).equals(net.minecraft.world.phys.shapes.Shapes.BLOCK_OPTIMISED.aabb))) {
++                                this.blockCollisionBehavior = io.papermc.paper.util.CollisionUtil.KNOWN_FULL_BLOCK;
++                            } else {
++                                this.blockCollisionBehavior = io.papermc.paper.util.CollisionUtil.KNOWN_UNKNOWN_BLOCK;
++                            }
++                        }
++                    }
++                } catch (final Error error) {
++                    throw error;
++                } catch (final Throwable throwable) {
++                    this.blockCollisionBehavior = io.papermc.paper.util.CollisionUtil.KNOWN_UNKNOWN_BLOCK;
++                }
++            }
++            // Paper end
          }
  
          public Block getBlock() {
+diff --git a/src/main/java/net/minecraft/world/level/chunk/LevelChunkSection.java b/src/main/java/net/minecraft/world/level/chunk/LevelChunkSection.java
+index d5ceebee36885c6470917bc1d0952733e983f030..e962db693510dc261d6456706a459929369f2510 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/LevelChunkSection.java
++++ b/src/main/java/net/minecraft/world/level/chunk/LevelChunkSection.java
+@@ -43,6 +43,110 @@ public class LevelChunkSection {
+         this.biomes = new PalettedContainer<>(biomeRegistry, (Biome) biomeRegistry.getOrThrow(Biomes.PLAINS), PalettedContainer.Strategy.SECTION_BIOMES, null); // Paper - Anti-Xray - Add preset biomes
+     }
+ 
++    // Paper start
++    protected int specialCollidingBlocks;
++    // blockIndex = x | (z << 4) | (y << 8)
++    private long[] knownBlockCollisionData;
++
++    private long[] initKnownDataField() {
++        return this.knownBlockCollisionData = new long[16 * 16 * 16 * 2 / Long.SIZE];
++    }
++
++    public final boolean hasSpecialCollidingBlocks() {
++        return this.specialCollidingBlocks != 0;
++    }
++
++    public static long getKnownBlockInfo(final int blockIndex, final long value) {
++        final int valueShift = (blockIndex & (Long.SIZE / 2 - 1));
++
++        return (value >>> (valueShift << 1)) & 0b11L;
++    }
++
++    public final long getKnownBlockInfo(final int blockIndex) {
++        if (this.knownBlockCollisionData == null) {
++            return 0L;
++        }
++
++        final int arrayIndex = (blockIndex >>> (6 - 1)); // blockIndex / (64/2)
++        final int valueShift = (blockIndex & (Long.SIZE / 2 - 1));
++
++        final long value = this.knownBlockCollisionData[arrayIndex];
++
++        return (value >>> (valueShift << 1)) & 0b11L;
++    }
++
++    // important detail: this returns 32 values, one for localZ = localZ & (~1) and one for localZ = localZ | 1
++    // the even localZ is the lower 32 bits, the odd is the upper 32 bits
++    public final long getKnownBlockInfoHorizontalRaw(final int localY, final int localZ) {
++        if (this.knownBlockCollisionData == null) {
++            return 0L;
++        }
++
++        final int horizontalIndex = (localZ << 4) | (localY << 8);
++        return this.knownBlockCollisionData[horizontalIndex >>> (6 - 1)];
++    }
++
++    private void initBlockCollisionData() {
++        this.specialCollidingBlocks = 0;
++        // In 1.18 all sections will be initialised, whether or not they have blocks (fucking stupid btw)
++        // This means we can't aggressively initialise the backing long[], or else memory usage will just skyrocket.
++        // So only init if we contain non-empty blocks.
++        if (this.nonEmptyBlockCount == 0) {
++            this.knownBlockCollisionData = null;
++            return;
++        }
++        this.initKnownDataField();
++        for (int index = 0; index < (16 * 16 * 16); ++index) {
++            final BlockState state = this.states.get(index);
++            this.setKnownBlockInfo(index, state);
++            if (io.papermc.paper.util.CollisionUtil.isSpecialCollidingBlock(state)) {
++                ++this.specialCollidingBlocks;
++            }
++        }
++    }
++
++    // only use for initBlockCollisionData
++    private void setKnownBlockInfo(final int blockIndex, final BlockState blockState) {
++        final int arrayIndex = (blockIndex >>> (6 - 1)); // blockIndex / (64/2)
++        final int valueShift = (blockIndex & (Long.SIZE / 2 - 1)) << 1;
++
++        long value = this.knownBlockCollisionData[arrayIndex];
++
++        value &= ~(0b11L << valueShift);
++        value |= blockState.getBlockCollisionBehavior() << valueShift;
++
++        this.knownBlockCollisionData[arrayIndex] = value;
++    }
++
++    public void updateKnownBlockInfo(final int blockIndex, final BlockState from, final BlockState to) {
++        if (io.papermc.paper.util.CollisionUtil.isSpecialCollidingBlock(from)) {
++            --this.specialCollidingBlocks;
++        }
++        if (io.papermc.paper.util.CollisionUtil.isSpecialCollidingBlock(to)) {
++            ++this.specialCollidingBlocks;
++        }
++
++        if (this.nonEmptyBlockCount == 0) {
++            this.knownBlockCollisionData = null;
++            return;
++        }
++
++        if (this.knownBlockCollisionData == null) {
++            this.initKnownDataField();
++        }
++
++        final int arrayIndex = (blockIndex >>> (6 - 1)); // blockIndex / (64/2)
++        final int valueShift = (blockIndex & (Long.SIZE / 2 - 1)) << 1;
++
++        long value = this.knownBlockCollisionData[arrayIndex];
++
++        value &= ~(0b11L << valueShift);
++        value |= to.getBlockCollisionBehavior() << valueShift;
++
++        this.knownBlockCollisionData[arrayIndex] = value;
++    }
++    // Paper end
++
+     public static int getBottomBlockY(int chunkPos) {
+         return chunkPos << 4;
+     }
+@@ -67,8 +171,8 @@ public class LevelChunkSection {
+         return this.setBlockState(x, y, z, state, true);
+     }
+ 
+-    public BlockState setBlockState(int x, int y, int z, BlockState state, boolean lock) {
+-        BlockState iblockdata1;
++    public BlockState setBlockState(int x, int y, int z, BlockState state, boolean lock) {  // Paper - state -> new state
++        BlockState iblockdata1; // Paper - iblockdata1 -> oldState
+ 
+         if (lock) {
+             iblockdata1 = (BlockState) this.states.getAndSet(x, y, z, state);
+@@ -107,6 +211,7 @@ public class LevelChunkSection {
+             ++this.tickingFluidCount;
+         }
+ 
++        this.updateKnownBlockInfo(x | (z << 4) | (y << 8), iblockdata1, state); // Paper
+         return iblockdata1;
+     }
+ 
+@@ -158,6 +263,7 @@ public class LevelChunkSection {
+             }
+ 
+         });
++        this.initBlockCollisionData(); // Paper
+     }
+ 
+     public PalettedContainer<BlockState> getStates() {
 diff --git a/src/main/java/net/minecraft/world/phys/AABB.java b/src/main/java/net/minecraft/world/phys/AABB.java
 index 120498a39b7ca7aee9763084507508d4a1c425aa..68cc6f2a78a06293a29317fda72ab3ee79b3533a 100644
 --- a/src/main/java/net/minecraft/world/phys/AABB.java

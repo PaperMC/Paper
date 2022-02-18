@@ -35,7 +35,7 @@ index b3516862d796c2d9fcc1c67a6073445403d73088..b61abf227a04b4565c2525e5f469db30
              List<ChunkHolder> allChunks = new ArrayList<>(visibleChunks.values());
              List<ServerPlayer> players = world.players;
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index f9f1afb49c8dba14d8d9134e84c73fa2e1d13f02..2e11bedafe383242996aeb545d6612f245070e72 100644
+index a7fcf3042e6d26739051ed37efbef4a722561c5a..58dc590cf659cba84d7cb4f7205fdb0bdefded79 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
 @@ -120,9 +120,11 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
@@ -52,7 +52,7 @@ index f9f1afb49c8dba14d8d9134e84c73fa2e1d13f02..2e11bedafe383242996aeb545d6612f2
      private final Long2ObjectLinkedOpenHashMap<ChunkHolder> pendingUnloads;
      public final LongSet entitiesInLevel;
      public final ServerLevel level;
-@@ -312,7 +314,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -313,7 +315,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
      boolean unloadingPlayerChunk = false; // Paper - do not allow ticket level changes while unloading chunks
      public ChunkMap(ServerLevel world, LevelStorageSource.LevelStorageAccess session, DataFixer dataFixer, StructureManager structureManager, Executor executor, BlockableEventLoop<Runnable> mainThreadExecutor, LightChunkGetter chunkProvider, ChunkGenerator chunkGenerator, ChunkProgressListener worldGenerationProgressListener, ChunkStatusUpdateListener chunkStatusChangeListener, Supplier<DimensionDataStorage> persistentStateManagerFactory, int viewDistance, boolean dsync) {
          super(session.getDimensionPath(world.dimension()).resolve("region"), dataFixer, dsync);
@@ -61,7 +61,7 @@ index f9f1afb49c8dba14d8d9134e84c73fa2e1d13f02..2e11bedafe383242996aeb545d6612f2
          this.pendingUnloads = new Long2ObjectLinkedOpenHashMap();
          this.entitiesInLevel = new LongOpenHashSet();
          this.toDrop = new LongOpenHashSet();
-@@ -535,12 +537,17 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -536,12 +538,17 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
  
      @Nullable
      public ChunkHolder getUpdatingChunkIfPresent(long pos) {
@@ -81,7 +81,7 @@ index f9f1afb49c8dba14d8d9134e84c73fa2e1d13f02..2e11bedafe383242996aeb545d6612f2
      }
  
      protected IntSupplier getChunkQueueLevel(long pos) {
-@@ -702,7 +709,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -703,7 +710,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
                      // Paper end
                  }
  
@@ -90,7 +90,7 @@ index f9f1afb49c8dba14d8d9134e84c73fa2e1d13f02..2e11bedafe383242996aeb545d6612f2
                  this.modified = true;
              }
  
-@@ -782,7 +789,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -783,7 +790,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
  
      protected void saveAllChunks(boolean flush) {
          if (flush) {
@@ -99,7 +99,7 @@ index f9f1afb49c8dba14d8d9134e84c73fa2e1d13f02..2e11bedafe383242996aeb545d6612f2
              MutableBoolean mutableboolean = new MutableBoolean();
  
              do {
-@@ -813,7 +820,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -814,7 +821,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
              //this.flushWorker(); // Paper - nuke IOWorker
              this.level.asyncChunkTaskManager.flush(); // Paper - flush to preserve behavior compat with pre-async behaviour
          } else {
@@ -108,7 +108,7 @@ index f9f1afb49c8dba14d8d9134e84c73fa2e1d13f02..2e11bedafe383242996aeb545d6612f2
          }
  
      }
-@@ -847,7 +854,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -848,7 +855,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          while (longiterator.hasNext()) { // Spigot
              long j = longiterator.nextLong();
              longiterator.remove(); // Spigot
@@ -116,8 +116,8 @@ index f9f1afb49c8dba14d8d9134e84c73fa2e1d13f02..2e11bedafe383242996aeb545d6612f2
 +            ChunkHolder playerchunk = this.updatingChunks.queueRemove(j); // Paper - Don't copy
  
              if (playerchunk != null) {
-                 this.pendingUnloads.put(j, playerchunk);
-@@ -946,7 +953,12 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+                 playerchunk.onChunkRemove(); // Paper
+@@ -948,7 +955,12 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          if (!this.modified) {
              return false;
          } else {
@@ -131,7 +131,7 @@ index f9f1afb49c8dba14d8d9134e84c73fa2e1d13f02..2e11bedafe383242996aeb545d6612f2
              this.modified = false;
              return true;
          }
-@@ -1424,7 +1436,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1426,7 +1438,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
  
              this.viewDistance = j;
              this.distanceManager.updatePlayerTickets(this.viewDistance + 1);
@@ -140,7 +140,7 @@ index f9f1afb49c8dba14d8d9134e84c73fa2e1d13f02..2e11bedafe383242996aeb545d6612f2
  
              while (objectiterator.hasNext()) {
                  ChunkHolder playerchunk = (ChunkHolder) objectiterator.next();
-@@ -1467,7 +1479,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1469,7 +1481,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
      }
  
      public int size() {
@@ -149,7 +149,7 @@ index f9f1afb49c8dba14d8d9134e84c73fa2e1d13f02..2e11bedafe383242996aeb545d6612f2
      }
  
      public DistanceManager getDistanceManager() {
-@@ -1475,13 +1487,13 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1477,13 +1489,13 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
      }
  
      protected Iterable<ChunkHolder> getChunks() {
