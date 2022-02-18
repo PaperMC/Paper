@@ -5,10 +5,94 @@ Subject: [PATCH] Optimise chunk tick iteration
 
 Use a dedicated list of entity ticking chunks to reduce the cost
 
+diff --git a/src/main/java/net/minecraft/server/level/ChunkHolder.java b/src/main/java/net/minecraft/server/level/ChunkHolder.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/level/ChunkHolder.java
++++ b/src/main/java/net/minecraft/server/level/ChunkHolder.java
+@@ -0,0 +0,0 @@ public class ChunkHolder {
+         long key = net.minecraft.server.MCUtil.getCoordinateKey(this.pos);
+         this.playersInMobSpawnRange = this.chunkMap.playerMobSpawnMap.getObjectsInRange(key);
+         this.playersInChunkTickRange = this.chunkMap.playerChunkTickRangeMap.getObjectsInRange(key);
++        // Paper start - optimise chunk tick iteration
++        if (this.needsBroadcastChanges()) {
++            this.chunkMap.needsChangeBroadcasting.add(this);
++        }
++        // Paper end - optimise chunk tick iteration
+     }
+ 
+     void onChunkRemove() {
+         this.playersInMobSpawnRange = null;
+         this.playersInChunkTickRange = null;
++        // Paper start - optimise chunk tick iteration
++        if (this.needsBroadcastChanges()) {
++            this.chunkMap.needsChangeBroadcasting.remove(this);
++        }
++        // Paper end - optimise chunk tick iteration
+     }
+     // Paper end - optimise anyPlayerCloseEnoughForSpawning
+     long lastAutoSaveTime; // Paper - incremental autosave
+@@ -0,0 +0,0 @@ public class ChunkHolder {
+ 
+             if (i < 0 || i >= this.changedBlocksPerSection.length) return; // CraftBukkit - SPIGOT-6086, SPIGOT-6296
+             if (this.changedBlocksPerSection[i] == null) {
+-                this.hasChangedSections = true;
++                this.hasChangedSections = true; this.addToBroadcastMap(); // Paper - optimise chunk tick iteration
+                 this.changedBlocksPerSection[i] = new ShortOpenHashSet();
+             }
+ 
+@@ -0,0 +0,0 @@ public class ChunkHolder {
+             int k = this.lightEngine.getMaxLightSection();
+ 
+             if (y >= j && y <= k) {
++                this.addToBroadcastMap(); // Paper - optimise chunk tick iteration
+                 int l = y - j;
+ 
+                 if (lightType == LightLayer.SKY) {
+@@ -0,0 +0,0 @@ public class ChunkHolder {
+         }
+     }
+ 
++    // Paper start - optimise chunk tick iteration
++    public final boolean needsBroadcastChanges() {
++        return this.hasChangedSections || !this.skyChangedLightSectionFilter.isEmpty() || !this.blockChangedLightSectionFilter.isEmpty();
++    }
++
++    private void addToBroadcastMap() {
++        org.spigotmc.AsyncCatcher.catchOp("ChunkHolder update");
++        this.chunkMap.needsChangeBroadcasting.add(this);
++    }
++    // Paper end - optimise chunk tick iteration
++
+     public void broadcastChanges(LevelChunk chunk) {
+-        if (this.hasChangedSections || !this.skyChangedLightSectionFilter.isEmpty() || !this.blockChangedLightSectionFilter.isEmpty()) {
++        if (this.needsBroadcastChanges()) { // Paper - moved into above, other logic needs to call
+             Level world = chunk.getLevel();
+             int i = 0;
+ 
+diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/level/ChunkMap.java
++++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
+@@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+     private final Queue<Runnable> unloadQueue;
+     int viewDistance;
+     public final com.destroystokyo.paper.util.misc.PlayerAreaMap playerMobDistanceMap; // Paper
++    public final ReferenceOpenHashSet<ChunkHolder> needsChangeBroadcasting = new ReferenceOpenHashSet<>();
+ 
+     // CraftBukkit start - recursion-safe executor for Chunk loadCallback() and unloadCallback()
+     public final CallbackExecutor callbackExecutor = new CallbackExecutor();
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
+@@ -0,0 +0,0 @@ import org.apache.logging.log4j.LogManager;
+ import org.apache.logging.log4j.Logger;
+ import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap; // Paper
+ import java.util.function.Function; // Paper
++import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet; // Paper
+ 
+ public class ServerChunkCache extends ChunkSource {
+ 
 @@ -0,0 +0,0 @@ public class ServerChunkCache extends ChunkSource {
  
              this.lastSpawnState = spawnercreature_d;
@@ -56,16 +140,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                LevelChunk chunk1 = iterator1.next();
 +                ChunkHolder holder = chunk1.playerChunk;
 +                if (holder != null) {
-+                    gameprofilerfiller.popPush("broadcast");
-+                    this.level.timings.broadcastChunkUpdates.startTiming(); // Paper - timing
-+                    holder.broadcastChanges(chunk1);
-+                    this.level.timings.broadcastChunkUpdates.stopTiming(); // Paper - timing
-+                    gameprofilerfiller.pop();
++                    // Paper - move down
 +                // Paper end - optimise chunk tick iteration
                  ChunkPos chunkcoordintpair = chunk1.getPos();
  
 -                if (this.level.isPositionEntityTicking(chunkcoordintpair) && this.chunkMap.anyPlayerCloseEnoughForSpawning(chunkproviderserver_a.holder, chunkcoordintpair, false)) { // Paper - optimise anyPlayerCloseEnoughForSpawning
-+                if ((true || this.level.isPositionEntityTicking(chunkcoordintpair)) && this.chunkMap.anyPlayerCloseEnoughForSpawning(holder, chunkcoordintpair, false)) { // Paper - optimise anyPlayerCloseEnoughForSpawning & optimise chunk tick iteration
++                if (this.level.isPositionEntityTicking(chunkcoordintpair) && this.chunkMap.anyPlayerCloseEnoughForSpawning(holder, chunkcoordintpair, false)) { // Paper - optimise anyPlayerCloseEnoughForSpawning
                      chunk1.incrementInhabitedTime(j);
 -                    if (flag2 && (this.spawnEnemies || this.spawnFriendlies) && this.level.getWorldBorder().isWithinBounds(chunkcoordintpair) && this.chunkMap.anyPlayerCloseEnoughForSpawning(chunkproviderserver_a.holder, chunkcoordintpair, true)) { // Spigot // Paper - optimise anyPlayerCloseEnoughForSpawning
 +                    if (flag2 && (this.spawnEnemies || this.spawnFriendlies) && this.level.getWorldBorder().isWithinBounds(chunkcoordintpair) && this.chunkMap.anyPlayerCloseEnoughForSpawning(holder, chunkcoordintpair, true)) { // Spigot // Paper - optimise anyPlayerCloseEnoughForSpawning & optimise chunk tick iteration
@@ -90,17 +170,34 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              gameprofilerfiller.popPush("customSpawners");
              if (flag2) {
 @@ -0,0 +0,0 @@ public class ServerChunkCache extends ChunkSource {
+                 this.level.tickCustomSpawners(this.spawnEnemies, this.spawnFriendlies);
                  } // Paper - timings
              }
- 
+-
 -            gameprofilerfiller.popPush("broadcast");
 -            list.forEach((chunkproviderserver_a1) -> {
 -                this.level.timings.broadcastChunkUpdates.startTiming(); // Paper - timing
 -                chunkproviderserver_a1.holder.broadcastChanges(chunkproviderserver_a1.chunk);
 -                this.level.timings.broadcastChunkUpdates.stopTiming(); // Paper - timing
 -            });
--            gameprofilerfiller.pop();
-+            //  Paper - no, iterating just ONCE is expensive enough! Don't do it TWICE! Code moved up
              gameprofilerfiller.pop();
++            // Paper start - use set of chunks requiring updates, rather than iterating every single one loaded
++            gameprofilerfiller.popPush("broadcast");
++            this.level.timings.broadcastChunkUpdates.startTiming(); // Paper - timing
++            if (!this.chunkMap.needsChangeBroadcasting.isEmpty()) {
++                ReferenceOpenHashSet<ChunkHolder> copy = this.chunkMap.needsChangeBroadcasting.clone();
++                this.chunkMap.needsChangeBroadcasting.clear();
++                for (ChunkHolder holder : copy) {
++                    holder.broadcastChanges(holder.getFullChunkUnchecked()); // LevelChunks are NEVER unloaded
++                    if (holder.needsBroadcastChanges()) {
++                        // I DON'T want to KNOW what DUMB plugins might be doing.
++                        this.chunkMap.needsChangeBroadcasting.add(holder);
++                    }
++                }
++            }
++            this.level.timings.broadcastChunkUpdates.stopTiming(); // Paper - timing
+             gameprofilerfiller.pop();
++            // Paper end - use set of chunks requiring updates, rather than iterating every single one loaded
              this.chunkMap.tick();
          }
+     }

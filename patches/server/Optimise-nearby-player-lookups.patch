@@ -13,13 +13,26 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/level/ChunkHolder.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkHolder.java
 @@ -0,0 +0,0 @@ public class ChunkHolder {
-         long key = net.minecraft.server.MCUtil.getCoordinateKey(this.pos);
-         this.playersInMobSpawnRange = this.chunkMap.playerMobSpawnMap.getObjectsInRange(key);
-         this.playersInChunkTickRange = this.chunkMap.playerChunkTickRangeMap.getObjectsInRange(key);
+             this.chunkMap.needsChangeBroadcasting.add(this);
+         }
+         // Paper end - optimise chunk tick iteration
 +        // Paper start - optimise checkDespawn
 +        LevelChunk chunk = this.getFullChunkUnchecked();
 +        if (chunk != null) {
 +            chunk.updateGeneralAreaCache();
++        }
++        // Paper end - optimise checkDespawn
+     }
+ 
+     void onChunkRemove() {
+@@ -0,0 +0,0 @@ public class ChunkHolder {
+             this.chunkMap.needsChangeBroadcasting.remove(this);
+         }
+         // Paper end - optimise chunk tick iteration
++        // Paper start - optimise checkDespawn
++        LevelChunk chunk = this.getFullChunkUnchecked();
++        if (chunk != null) {
++            chunk.removeGeneralAreaCache();
 +        }
 +        // Paper end - optimise checkDespawn
      }
@@ -30,8 +43,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
 @@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
-     int viewDistance;
      public final com.destroystokyo.paper.util.misc.PlayerAreaMap playerMobDistanceMap; // Paper
+     public final ReferenceOpenHashSet<ChunkHolder> needsChangeBroadcasting = new ReferenceOpenHashSet<>();
  
 +    // Paper start - optimise checkDespawn
 +    public static final int GENERAL_AREA_MAP_SQUARE_RADIUS = 40;
@@ -329,6 +342,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    public void updateGeneralAreaCache() {
 +        this.updateGeneralAreaCache(((ServerLevel)this.level).getChunkSource().chunkMap.playerGeneralAreaMap.getObjectsInRange(this.coordinateKey));
++    }
++
++    public void removeGeneralAreaCache() {
++        this.playerGeneralAreaCacheSet = false;
++        this.playerGeneralAreaCache = null;
 +    }
 +
 +    public void updateGeneralAreaCache(com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<net.minecraft.server.level.ServerPlayer> value) {

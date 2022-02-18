@@ -18,10 +18,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<ServerPlayer> playersInMobSpawnRange;
 +    com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<ServerPlayer> playersInChunkTickRange;
 +
-+    void updateRanges() {
++    void onChunkAdd() {
 +        long key = net.minecraft.server.MCUtil.getCoordinateKey(this.pos);
 +        this.playersInMobSpawnRange = this.chunkMap.playerMobSpawnMap.getObjectsInRange(key);
 +        this.playersInChunkTickRange = this.chunkMap.playerChunkTickRangeMap.getObjectsInRange(key);
++    }
++
++    void onChunkRemove() {
++        this.playersInMobSpawnRange = null;
++        this.playersInChunkTickRange = null;
 +    }
 +    // Paper end - optimise anyPlayerCloseEnoughForSpawning
 +
@@ -32,7 +37,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          this.setTicketLevel(level);
          this.changedBlocksPerSection = new ShortSet[world.getSectionsCount()];
          this.chunkMap = (ChunkMap)playersWatchingChunkProvider; // Paper
-+        this.updateRanges(); // Paper - optimise anyPlayerCloseEnoughForSpawning
++        this.onChunkAdd(); // Paper - optimise anyPlayerCloseEnoughForSpawning
      }
  
      // CraftBukkit start
@@ -123,13 +128,21 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      protected ChunkGenerator generator() {
 @@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
-         } else {
-             if (holder != null) {
-                 holder.setTicketLevel(level);
-+                holder.updateRanges(); // Paper - optimise anyPlayerCloseEnoughForSpawning
-             }
+                 holder = (ChunkHolder) this.pendingUnloads.remove(pos);
+                 if (holder != null) {
+                     holder.setTicketLevel(level);
++                    holder.onChunkAdd(); // Paper - optimise anyPlayerCloseEnoughForSpawning - PUT HERE AFTER RE-ADDING ONLY
+                 } else {
+                     holder = new ChunkHolder(new ChunkPos(pos), level, this.level, this.lightEngine, this.queueSorter, this);
+                     // Paper start
+@@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+             ChunkHolder playerchunk = (ChunkHolder) this.updatingChunkMap.remove(j);
  
-             if (holder != null) {
+             if (playerchunk != null) {
++                playerchunk.onChunkRemove(); // Paper
+                 this.pendingUnloads.put(j, playerchunk);
+                 this.modified = true;
+                 this.scheduleUnload(j, playerchunk); // Paper - Move up - don't leak chunks
 @@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          return this.anyPlayerCloseEnoughForSpawning(pos, false);
      }
