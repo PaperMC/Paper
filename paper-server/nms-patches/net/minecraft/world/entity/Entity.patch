@@ -567,7 +567,7 @@
      }
  
      public int getAirSupply() {
-@@ -2162,7 +2496,17 @@
+@@ -2162,7 +2496,18 @@
      }
  
      public void setAirSupply(int i) {
@@ -578,7 +578,8 @@
 +        if (this.valid) {
 +            event.getEntity().getServer().getPluginManager().callEvent(event);
 +        }
-+        if (event.isCancelled()) {
++        if (event.isCancelled() && this.getAirSupply() != i) {
++            this.entityData.markDirty(Entity.DATA_AIR_SUPPLY_ID);
 +            return;
 +        }
 +        this.entityData.set(Entity.DATA_AIR_SUPPLY_ID, event.getAmount());
@@ -586,7 +587,7 @@
      }
  
      public int getTicksFrozen() {
-@@ -2189,11 +2533,41 @@
+@@ -2189,11 +2534,41 @@
  
      public void thunderHit(WorldServer worldserver, EntityLightning entitylightning) {
          this.setRemainingFireTicks(this.remainingFireTicks + 1);
@@ -630,7 +631,7 @@
      }
  
      public void onAboveBubbleCol(boolean flag) {
-@@ -2349,15 +2723,38 @@
+@@ -2349,15 +2724,38 @@
  
      @Nullable
      public Entity changeDimension(WorldServer worldserver) {
@@ -671,7 +672,7 @@
                  this.level.getProfiler().popPush("reloading");
                  Entity entity = this.getType().create(worldserver);
  
-@@ -2366,9 +2763,17 @@
+@@ -2366,9 +2764,17 @@
                      entity.moveTo(shapedetectorshape.pos.x, shapedetectorshape.pos.y, shapedetectorshape.pos.z, shapedetectorshape.yRot, entity.getXRot());
                      entity.setDeltaMovement(shapedetectorshape.speed);
                      worldserver.addDuringTeleport(entity);
@@ -679,19 +680,19 @@
 -                        WorldServer.makeObsidianPlatform(worldserver);
 +                    if (worldserver.getTypeKey() == WorldDimension.END) { // CraftBukkit
 +                        WorldServer.makeObsidianPlatform(worldserver, this); // CraftBukkit
-                     }
++                    }
 +                    // CraftBukkit start - Forward the CraftEntity to the new entity
 +                    this.getBukkitEntity().setHandle(entity);
 +                    entity.bukkitEntity = this.getBukkitEntity();
 +
 +                    if (this instanceof EntityInsentient) {
 +                        ((EntityInsentient) this).dropLeash(true, false); // Unleash to prevent duping of leads.
-+                    }
+                     }
 +                    // CraftBukkit end
                  }
  
                  this.removeAfterChangingDimensions();
-@@ -2389,20 +2794,34 @@
+@@ -2389,20 +2795,34 @@
  
      @Nullable
      protected ShapeDetectorShape findDimensionEntryPoint(WorldServer worldserver) {
@@ -731,7 +732,7 @@
                      IBlockData iblockdata = this.level.getBlockState(this.portalEntrancePos);
                      EnumDirection.EnumAxis enumdirection_enumaxis;
                      Vec3D vec3d;
-@@ -2419,8 +2838,8 @@
+@@ -2419,8 +2839,8 @@
                          vec3d = new Vec3D(0.5D, 0.0D, 0.0D);
                      }
  
@@ -742,7 +743,7 @@
              }
          } else {
              BlockPosition blockposition1;
-@@ -2430,8 +2849,15 @@
+@@ -2430,8 +2850,15 @@
              } else {
                  blockposition1 = worldserver.getHeightmapPos(HeightMap.Type.MOTION_BLOCKING_NO_LEAVES, worldserver.getSharedSpawnPos());
              }
@@ -759,7 +760,7 @@
          }
      }
  
-@@ -2439,8 +2865,23 @@
+@@ -2439,8 +2866,23 @@
          return BlockPortalShape.getRelativePosition(blockutil_rectangle, enumdirection_enumaxis, this.position(), this.getDimensions(this.getPose()));
      }
  
@@ -785,7 +786,7 @@
      }
  
      public boolean canChangeDimensions() {
-@@ -2649,7 +3090,26 @@
+@@ -2649,7 +3091,26 @@
      }
  
      public final void setBoundingBox(AxisAlignedBB axisalignedbb) {
@@ -813,7 +814,7 @@
      }
  
      protected float getEyeHeight(EntityPose entitypose, EntitySize entitysize) {
-@@ -2933,6 +3393,11 @@
+@@ -2933,6 +3394,11 @@
                                      vec3d = vec3d.add(vec3d1);
                                      ++k1;
                                  }
