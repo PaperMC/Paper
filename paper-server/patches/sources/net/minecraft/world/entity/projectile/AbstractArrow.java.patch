@@ -115,7 +115,29 @@
  
                      this.hasImpulse = true;
                      if (this.getPierceLevel() > 0 && projectiledeflection == ProjectileDeflection.NONE) {
-@@ -356,8 +381,8 @@
+@@ -317,8 +342,21 @@
+ 
+             this.level().addParticle(ParticleTypes.BUBBLE, pos.x - vec3d1.x * 0.25D, pos.y - vec3d1.y * 0.25D, pos.z - vec3d1.z * 0.25D, vec3d1.x, vec3d1.y, vec3d1.z);
+         }
++
++    }
+ 
++    // Paper start - Fix cancelling ProjectileHitEvent for piercing arrows
++    @Override
++    public ProjectileDeflection preHitTargetOrDeflectSelf(HitResult hitResult) {
++        if (hitResult instanceof EntityHitResult entityHitResult && this.hitCancelled && this.getPierceLevel() > 0) {
++            if (this.piercingIgnoreEntityIds == null) {
++                this.piercingIgnoreEntityIds = new IntOpenHashSet(5);
++            }
++            this.piercingIgnoreEntityIds.add(entityHitResult.getEntity().getId());
++        }
++        return super.preHitTargetOrDeflectSelf(hitResult);
+     }
++    // Paper end - Fix cancelling ProjectileHitEvent for piercing arrows
+ 
+     @Override
+     protected double getDefaultGravity() {
+@@ -356,8 +394,8 @@
  
      protected void tickDespawn() {
          ++this.life;
@@ -126,7 +148,7 @@
          }
  
      }
-@@ -386,9 +411,9 @@
+@@ -386,9 +424,9 @@
      }
  
      @Override
@@ -138,7 +160,7 @@
          }
      }
  
-@@ -423,7 +448,7 @@
+@@ -423,7 +461,7 @@
              }
  
              if (this.piercingIgnoreEntityIds.size() >= this.getPierceLevel() + 1) {
@@ -147,7 +169,7 @@
                  return;
              }
  
-@@ -440,11 +465,18 @@
+@@ -440,11 +478,18 @@
              entityliving.setLastHurtMob(entity);
          }
  
@@ -167,7 +189,7 @@
          }
  
          if (entity.hurtOrSimulate(damagesource, (float) i)) {
-@@ -490,7 +522,7 @@
+@@ -490,7 +535,7 @@
  
              this.playSound(this.soundEvent, 1.0F, 1.2F / (this.random.nextFloat() * 0.2F + 0.9F));
              if (this.getPierceLevel() <= 0) {
@@ -176,7 +198,7 @@
              }
          } else {
              entity.setRemainingFireTicks(k);
-@@ -506,7 +538,7 @@
+@@ -506,7 +551,7 @@
                          this.spawnAtLocation(worldserver2, this.getPickupItem(), 0.1F);
                      }
  
@@ -185,7 +207,7 @@
                  }
              }
          }
-@@ -538,7 +570,7 @@
+@@ -538,7 +583,7 @@
              Vec3 vec3d = this.getDeltaMovement().multiply(1.0D, 0.0D, 1.0D).normalize().scale(d0 * 0.6D * d1);
  
              if (vec3d.lengthSqr() > 0.0D) {
@@ -194,7 +216,7 @@
              }
          }
  
-@@ -675,7 +707,7 @@
+@@ -675,7 +720,7 @@
          }
  
          if (nbt.contains("weapon", 10)) {
@@ -203,7 +225,7 @@
          } else {
              this.firedFromWeapon = null;
          }
-@@ -688,34 +720,31 @@
+@@ -688,34 +733,31 @@
          Entity entity1 = entity;
          byte b0 = 0;
  
@@ -250,7 +272,7 @@
          }
  
          this.pickup = entityarrow_pickupstatus;
-@@ -724,9 +753,24 @@
+@@ -724,9 +766,24 @@
      @Override
      public void playerTouch(Player player) {
          if (!this.level().isClientSide && (this.isInGround() || this.isNoPhysics()) && this.shakeTime <= 0) {
