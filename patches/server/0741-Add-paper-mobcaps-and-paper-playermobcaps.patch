@@ -10,7 +10,7 @@ Also has a hover text on each mob category listing what entity types are
 in said category
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperCommand.java b/src/main/java/com/destroystokyo/paper/PaperCommand.java
-index f436ab35798c9b6e6cb2eb60d2c02cbf9b742e69..4d7575087947f3b199dd895cd9aa02a7d61768b1 100644
+index f436ab35798c9b6e6cb2eb60d2c02cbf9b742e69..be1da6ebf8c1468182cbb92a16e4866bfb2ecfc3 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperCommand.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperCommand.java
 @@ -3,6 +3,7 @@ package com.destroystokyo.paper;
@@ -213,7 +213,7 @@ index f436ab35798c9b6e6cb2eb60d2c02cbf9b742e69..4d7575087947f3b199dd895cd9aa02a7
 +        sender.sendMessage(Component.join(JoinConfiguration.noSeparators(), Component.text("Mobcaps for player: "), Component.text(player.getName(), NamedTextColor.GREEN)));
 +        sender.sendMessage(this.buildMobcapsComponent(
 +            category -> level.chunkSource.chunkMap.getMobCountNear(serverPlayer, category),
-+            category -> NaturalSpawner.limitForCategory(level, category)
++            category -> level.getWorld().getSpawnLimitUnsafe(org.bukkit.craftbukkit.util.CraftSpawnCategory.toBukkit(category))
 +        ));
 +    }
 +
@@ -272,70 +272,16 @@ index f436ab35798c9b6e6cb2eb60d2c02cbf9b742e69..4d7575087947f3b199dd895cd9aa02a7
          List<org.bukkit.World> worlds;
          if (args.length < 2 || args[1].equals("*")) {
 diff --git a/src/main/java/net/minecraft/world/level/NaturalSpawner.java b/src/main/java/net/minecraft/world/level/NaturalSpawner.java
-index c0fb5d445ed18fbf52df2be754eab0d8fb6e9239..abb57345a97f36d05eab9bc96ffd6396926c219f 100644
+index 8e63d93a574f2c37094770099ea8e1f45cde3db5..6dba117b4f5dc6c4e078a32037a4026b45bf2176 100644
 --- a/src/main/java/net/minecraft/world/level/NaturalSpawner.java
 +++ b/src/main/java/net/minecraft/world/level/NaturalSpawner.java
-@@ -148,32 +148,16 @@ public final class NaturalSpawner {
-             MobCategory enumcreaturetype = aenumcreaturetype[j];
-             // CraftBukkit start - Use per-world spawn limits
-             boolean spawnThisTick = true;
--            int limit = enumcreaturetype.getMaxInstancesPerChunk();
-+            final int limit = limitForCategory(world, enumcreaturetype); // Paper
-             switch (enumcreaturetype) {
--                case MONSTER:
--                    spawnThisTick = spawnMonsterThisTick;
--                    limit = world.getWorld().getMonsterSpawnLimit();
--                    break;
--                case CREATURE:
--                    spawnThisTick = spawnAnimalThisTick;
--                    limit = world.getWorld().getAnimalSpawnLimit();
--                    break;
--                case WATER_CREATURE:
--                    spawnThisTick = spawnWaterThisTick;
--                    limit = world.getWorld().getWaterAnimalSpawnLimit();
--                    break;
--                case UNDERGROUND_WATER_CREATURE:
--                    spawnThisTick = spawnWaterUndergroundCreatureThisTick;
--                    limit = world.getWorld().getWaterUndergroundCreatureSpawnLimit();
--                    break;
--                case AMBIENT:
--                    spawnThisTick = spawnAmbientThisTick;
--                    limit = world.getWorld().getAmbientSpawnLimit();
--                    break;
--                case WATER_AMBIENT:
--                    spawnThisTick = spawnWaterAmbientThisTick;
--                    limit = world.getWorld().getWaterAmbientSpawnLimit();
--                    break;
-+                // Paper start - not mindiff so we get conflict on change
-+                case MONSTER -> spawnThisTick = spawnMonsterThisTick;
-+                case CREATURE -> spawnThisTick = spawnAnimalThisTick;
-+                case WATER_CREATURE -> spawnThisTick = spawnWaterThisTick;
-+                case UNDERGROUND_WATER_CREATURE -> spawnThisTick = spawnWaterUndergroundCreatureThisTick;
-+                case AMBIENT -> spawnThisTick = spawnAmbientThisTick;
-+                case WATER_AMBIENT -> spawnThisTick = spawnWaterAmbientThisTick;
-+                // Paper end
-             }
- 
-             if (!spawnThisTick || limit == 0) {
-@@ -218,6 +202,28 @@ public final class NaturalSpawner {
+@@ -191,6 +191,16 @@ public final class NaturalSpawner {
          world.getProfiler().pop();
      }
  
 +    // Paper start
-+    public static int limitForCategory(final ServerLevel world, final MobCategory enumcreaturetype) {
-+        return switch (enumcreaturetype) {
-+            case MONSTER -> world.getWorld().getMonsterSpawnLimit();
-+            case CREATURE -> world.getWorld().getAnimalSpawnLimit();
-+            case WATER_CREATURE -> world.getWorld().getWaterAnimalSpawnLimit();
-+            case UNDERGROUND_WATER_CREATURE -> world.getWorld().getWaterUndergroundCreatureSpawnLimit();
-+            case AMBIENT -> world.getWorld().getAmbientSpawnLimit();
-+            case WATER_AMBIENT -> world.getWorld().getWaterAmbientSpawnLimit();
-+            default -> enumcreaturetype.getMaxInstancesPerChunk();
-+        };
-+    }
-+
 +    public static int globalLimitForCategory(final ServerLevel level, final MobCategory category, final int spawnableChunkCount) {
-+        final int categoryLimit = limitForCategory(level, category);
++        final int categoryLimit = level.getWorld().getSpawnLimitUnsafe(CraftSpawnCategory.toBukkit(category));
 +        if (categoryLimit < 1) {
 +            return categoryLimit;
 +        }
@@ -345,7 +291,43 @@ index c0fb5d445ed18fbf52df2be754eab0d8fb6e9239..abb57345a97f36d05eab9bc96ffd6396
 +
      // Paper start - add parameters and int ret type
      public static void spawnCategoryForChunk(MobCategory group, ServerLevel world, LevelChunk chunk, NaturalSpawner.SpawnPredicate checker, NaturalSpawner.AfterSpawnCallback runner) {
-         spawnCategoryForChunk(group, world, chunk, checker, runner);
+         spawnCategoryForChunk(group, world, chunk, checker, runner, Integer.MAX_VALUE, null);
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index e0e7fb4cc5516d8712f384fb5cb4d22c5bdceff5..51f537069c195edf1b7a60f233997d3cc03d304a 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -2145,6 +2145,11 @@ public final class CraftServer implements Server {
+ 
+     @Override
+     public int getSpawnLimit(SpawnCategory spawnCategory) {
++        // Paper start
++        return this.getSpawnLimitUnsafe(spawnCategory);
++    }
++    public int getSpawnLimitUnsafe(final SpawnCategory spawnCategory) {
++        // Paper end
+         return this.spawnCategoryLimit.getOrDefault(spawnCategory, -1);
+     }
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+index d82795b119a7d6d8bde42f052d1915621f65bace..f1301ffcfc03298f65186b043ed3ba173f2a923b 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+@@ -1714,9 +1714,14 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+         Validate.notNull(spawnCategory, "SpawnCategory cannot be null");
+         Validate.isTrue(CraftSpawnCategory.isValidForLimits(spawnCategory), "SpawnCategory." + spawnCategory + " are not supported.");
+ 
++        // Paper start
++        return this.getSpawnLimitUnsafe(spawnCategory);
++    }
++    public final int getSpawnLimitUnsafe(final SpawnCategory spawnCategory) {
+         int limit = this.spawnCategoryLimit.getOrDefault(spawnCategory, -1);
+         if (limit < 0) {
+-            limit = this.server.getSpawnLimit(spawnCategory);
++            limit = this.server.getSpawnLimitUnsafe(spawnCategory);
++            // Paper end
+         }
+         return limit;
+     }
 diff --git a/src/test/java/io/papermc/paper/PaperCommandTest.java b/src/test/java/io/papermc/paper/PaperCommandTest.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..4b5b368ef17bdb90f50e6ccc1f814cf93c7c0590

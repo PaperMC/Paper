@@ -5,31 +5,10 @@ Subject: [PATCH] Add more LimitedRegion API
 
 
 diff --git a/src/main/java/org/bukkit/craftbukkit/generator/CraftLimitedRegion.java b/src/main/java/org/bukkit/craftbukkit/generator/CraftLimitedRegion.java
-index 94fee76f0b2145e3cf99460c407815bb32bd19d0..671ec060981790043f5685a5b647324ddfee6af2 100644
+index a98b39271123e3e7a595d74882f9c453645ee44b..5cc735c973d7c84475c82d93ee4339dd3be64873 100644
 --- a/src/main/java/org/bukkit/craftbukkit/generator/CraftLimitedRegion.java
 +++ b/src/main/java/org/bukkit/craftbukkit/generator/CraftLimitedRegion.java
-@@ -151,7 +151,10 @@ public class CraftLimitedRegion extends CraftRegionAccessor implements LimitedRe
-     @Override
-     public BlockState getBlockState(int x, int y, int z) {
-         Preconditions.checkArgument(this.isInRegion(x, y, z), "Coordinates %s, %s, %s are not in the region", x, y, z);
--        return super.getBlockState(x, y, z);
-+        // Paper start
-+        net.minecraft.world.level.block.entity.BlockEntity entity = getHandle().getBlockEntity(new BlockPos(x, y, z));
-+        return org.bukkit.craftbukkit.inventory.CraftMetaBlockState.createBlockState(entity.getBlockState().getBukkitMaterial(), entity.saveWithFullMetadata());
-+        // Paper end
-     }
- 
-     @Override
-@@ -169,7 +172,7 @@ public class CraftLimitedRegion extends CraftRegionAccessor implements LimitedRe
-     @Override
-     public void setBlockData(int x, int y, int z, BlockData blockData) {
-         Preconditions.checkArgument(this.isInRegion(x, y, z), "Coordinates %s, %s, %s are not in the region", x, y, z);
--        super.setBlockData(x, y, z, blockData);
-+        getHandle().setBlock(new BlockPos(x, y, z), ((org.bukkit.craftbukkit.block.data.CraftBlockData) blockData).getState(), 3); // Paper
-     }
- 
-     @Override
-@@ -199,4 +202,45 @@ public class CraftLimitedRegion extends CraftRegionAccessor implements LimitedRe
+@@ -225,4 +225,45 @@ public class CraftLimitedRegion extends CraftRegionAccessor implements LimitedRe
      public void addEntityToWorld(net.minecraft.world.entity.Entity entity, CreatureSpawnEvent.SpawnReason reason) {
          this.entities.add(entity);
      }
@@ -47,7 +26,7 @@ index 94fee76f0b2145e3cf99460c407815bb32bd19d0..671ec060981790043f5685a5b647324d
 +    @Override
 +    public void scheduleBlockUpdate(int x, int y, int z) {
 +        BlockPos position = new BlockPos(x, y, z);
-+        getHandle().scheduleTick(position, getHandle().getBlockIfLoaded(position), 0);
++        getHandle().scheduleTick(position, getHandle().getBlockState(position).getBlock(), 0);
 +    }
 +
 +    @Override
@@ -75,42 +54,3 @@ index 94fee76f0b2145e3cf99460c407815bb32bd19d0..671ec060981790043f5685a5b647324d
 +    }
 +    // Paper end
  }
-diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBlockState.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBlockState.java
-index 55dd618d8421271063843c6e65dbcaceba9a33de..56f65b49e0ce55ee5aa9d929a98ea055ce27a8a1 100644
---- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBlockState.java
-+++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBlockState.java
-@@ -214,11 +214,16 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
- 
-     @Override
-     public BlockState getBlockState() {
--        Material stateMaterial = (this.material != Material.SHIELD) ? this.material : CraftMetaBlockState.shieldToBannerHack(this.blockEntityTag); // Only actually used for jigsaws
--        if (this.blockEntityTag != null) {
--            switch (this.material) {
-+        // Paper start
-+        return createBlockState(this.material, this.blockEntityTag);
-+    }
-+    public static BlockState createBlockState(Material material, CompoundTag blockEntityTag) {
-+        Material stateMaterial = (material != Material.SHIELD) ? material : CraftMetaBlockState.shieldToBannerHack(blockEntityTag); // Only actually used for jigsaws
-+        if (blockEntityTag != null) {
-+            switch (material) {
-+                // Paper end
-                 case SHIELD:
--                    this.blockEntityTag.putString("id", "banner");
-+                    blockEntityTag.putString("id", "banner"); // Paper
-                     break;
-                 case SHULKER_BOX:
-                 case WHITE_SHULKER_BOX:
-@@ -237,11 +242,11 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
-                 case GREEN_SHULKER_BOX:
-                 case RED_SHULKER_BOX:
-                 case BLACK_SHULKER_BOX:
--                    this.blockEntityTag.putString("id", "shulker_box");
-+                    blockEntityTag.putString("id", "shulker_box"); // Paper
-                     break;
-                 case BEE_NEST:
-                 case BEEHIVE:
--                    this.blockEntityTag.putString("id", "beehive");
-+                    blockEntityTag.putString("id", "beehive"); // Paper
-                     break;
-             }
-         }

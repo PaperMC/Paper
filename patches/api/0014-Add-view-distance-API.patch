@@ -8,10 +8,10 @@ Add per player no-tick, tick, and send view distances.
 Also add send/no-tick view distance to World.
 
 diff --git a/src/main/java/org/bukkit/World.java b/src/main/java/org/bukkit/World.java
-index 5d23c38758b4b9eb5802b6a22a094a3adb64e508..5e9f77a53bffed2e79200e9d8bb8685d3dd89901 100644
+index cf6fe1b5a1531e8d30c0386e36c023d003458b7e..ad342ecd8b86903276c62644624cff55cf190026 100644
 --- a/src/main/java/org/bukkit/World.java
 +++ b/src/main/java/org/bukkit/World.java
-@@ -2475,6 +2475,52 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
+@@ -2597,6 +2597,62 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      int getSimulationDistance();
      // Spigot end
  
@@ -23,13 +23,21 @@ index 5d23c38758b4b9eb5802b6a22a094a3adb64e508..5e9f77a53bffed2e79200e9d8bb8685d
 +    void setViewDistance(int viewDistance);
 +
 +    /**
++     * Sets the simulation distance for this world.
++     * @param simulationDistance simulation distance in [2, 32]
++     */
++    void setSimulationDistance(int simulationDistance);
++
++    /**
 +     * Returns the no-tick view distance for this world.
 +     * <p>
 +     * No-tick view distance is the view distance where chunks will load, however the chunks and their entities will not
 +     * be set to tick.
 +     * </p>
 +     * @return The no-tick view distance for this world.
++     * @deprecated Use {@link #getViewDistance()}
 +     */
++    @Deprecated
 +    int getNoTickViewDistance();
 +
 +    /**
@@ -39,7 +47,9 @@ index 5d23c38758b4b9eb5802b6a22a094a3adb64e508..5e9f77a53bffed2e79200e9d8bb8685d
 +     * be set to tick.
 +     * </p>
 +     * @param viewDistance view distance in [2, 32]
++     * @deprecated Use {@link #setViewDistance(int)}
 +     */
++    @Deprecated
 +    void setNoTickViewDistance(int viewDistance);
 +
 +    /**
@@ -49,7 +59,7 @@ index 5d23c38758b4b9eb5802b6a22a094a3adb64e508..5e9f77a53bffed2e79200e9d8bb8685d
 +     * </p>
 +     * @return The sending view distance for this world.
 +     */
-+    public int getSendViewDistance();
++    int getSendViewDistance();
 +
 +    /**
 +     * Sets the sending view distance for this world.
@@ -58,17 +68,17 @@ index 5d23c38758b4b9eb5802b6a22a094a3adb64e508..5e9f77a53bffed2e79200e9d8bb8685d
 +     * </p>
 +     * @param viewDistance view distance in [2, 32] or -1
 +     */
-+    public void setSendViewDistance(int viewDistance);
++    void setSendViewDistance(int viewDistance);
 +    // Paper end - view distance api
 +
      // Spigot start
      public class Spigot {
  
 diff --git a/src/main/java/org/bukkit/entity/Player.java b/src/main/java/org/bukkit/entity/Player.java
-index 43d91f578b0aefd18f7f5ecd120a366af4ee98e6..2d93f5ad7f9c0df08bcd099a813c1d8e9b8c16eb 100644
+index 43d91f578b0aefd18f7f5ecd120a366af4ee98e6..9f861fcc350b803e63b08631f7a6c30d13b4cb7c 100644
 --- a/src/main/java/org/bukkit/entity/Player.java
 +++ b/src/main/java/org/bukkit/entity/Player.java
-@@ -1793,6 +1793,62 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -1793,6 +1793,78 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
       * @param affects Whether the player can affect mob spawning
       */
      public void setAffectsSpawning(boolean affects);
@@ -78,7 +88,6 @@ index 43d91f578b0aefd18f7f5ecd120a366af4ee98e6..2d93f5ad7f9c0df08bcd099a813c1d8e
 +     *
 +     * @return the player's view distance
 +     * @see org.bukkit.World#getViewDistance()
-+     * @see org.bukkit.World#getNoTickViewDistance()
 +     */
 +    public int getViewDistance();
 +
@@ -87,9 +96,22 @@ index 43d91f578b0aefd18f7f5ecd120a366af4ee98e6..2d93f5ad7f9c0df08bcd099a813c1d8e
 +     *
 +     * @param viewDistance the player's view distance
 +     * @see org.bukkit.World#setViewDistance(int)
-+     * @see org.bukkit.World#setNoTickViewDistance(int)
 +     */
 +    public void setViewDistance(int viewDistance);
++
++    /**
++     * Gets the simulation distance for this player
++     *
++     * @return the player's simulation distance
++     */
++    public int getSimulationDistance();
++
++    /**
++     * Sets the simulation distance for this player
++     *
++     * @param simulationDistance the player's new simulation distance
++     */
++    public void setSimulationDistance(int simulationDistance);
 +    
 +    /**
 +     * Gets the no-ticking view distance for this player.
@@ -98,7 +120,9 @@ index 43d91f578b0aefd18f7f5ecd120a366af4ee98e6..2d93f5ad7f9c0df08bcd099a813c1d8e
 +     * be set to tick.
 +     * </p>
 +     * @return The no-tick view distance for this player.
++     * @deprecated Use {@link #getViewDistance()}
 +     */
++    @Deprecated
 +    public int getNoTickViewDistance();
 +
 +    /**
@@ -108,7 +132,9 @@ index 43d91f578b0aefd18f7f5ecd120a366af4ee98e6..2d93f5ad7f9c0df08bcd099a813c1d8e
 +     * be set to tick.
 +     * </p>
 +     * @param viewDistance view distance in [2, 32] or -1
++     * @deprecated Use {@link #setViewDistance(int)}
 +     */
++    @Deprecated
 +    public void setNoTickViewDistance(int viewDistance);
 +
 +    /**

@@ -5,7 +5,7 @@ Subject: [PATCH] incremental chunk and player saving
 
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-index a545a882335094daa787ec5c7005939080195263..933d3ace21f5a313f1d5e4dfd86777f6fa235f3f 100644
+index df1337c89c943a80a31d127c844f061c1e56eb91..cb967380155d34ff511346d54b61e1c2109780f3 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
 @@ -459,4 +459,14 @@ public class PaperConfig {
@@ -24,7 +24,7 @@ index a545a882335094daa787ec5c7005939080195263..933d3ace21f5a313f1d5e4dfd86777f6
 +    }
  }
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index d6d549df6e8920c936dd0d1b7ba828dbebc60b32..8b4b521a84c8623665d21d0340bca7665953d20b 100644
+index eae27a641ee69f3383f1200f8c8ab8dd7a4105a4..12a6f12ffa8a45b054b01a7edc73ca8a5bcb59b5 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 @@ -64,6 +64,21 @@ public class PaperWorldConfig {
@@ -50,7 +50,7 @@ index d6d549df6e8920c936dd0d1b7ba828dbebc60b32..8b4b521a84c8623665d21d0340bca766
          config.addDefault("world-settings.default." + path, def);
          return config.getBoolean("world-settings." + worldName + "." + path, config.getBoolean("world-settings.default." + path));
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 918fdf14080338983b8725bf2619088fd23c332a..95842327aa08d4717f86e9dcc0519ab24c41ca14 100644
+index 9a926114aa550ca5a6329e3ce993bf1f686cd10e..ab7ca991e5d7940a386a820e1953df1ac2428107 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -902,7 +902,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
@@ -98,11 +98,11 @@ index 918fdf14080338983b8725bf2619088fd23c332a..95842327aa08d4717f86e9dcc0519ab2
          // Paper start - move executeAll() into full server tick timing
          try (co.aikar.timings.Timing ignored = MinecraftTimings.processTasksTimer.startTiming()) {
 diff --git a/src/main/java/net/minecraft/server/level/ChunkHolder.java b/src/main/java/net/minecraft/server/level/ChunkHolder.java
-index 626bcbc6dd013260c3f8b38a1d14e7ba35dc1e01..9e96b0465717bfa761289c255fd8d2f1df1be3d8 100644
+index 560cc04ee7a8fd0c3c7217e08d53d1da682054e2..5479deb3f80a95c58cb6f0f532b2f56b71a68a3a 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkHolder.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkHolder.java
-@@ -84,6 +84,8 @@ public class ChunkHolder {
-         this.playersInChunkTickRange = this.chunkMap.playerChunkTickRangeMap.getObjectsInRange(key);
+@@ -89,6 +89,8 @@ public class ChunkHolder {
+         this.playersInChunkTickRange = null;
      }
      // Paper end - optimise anyPlayerCloseEnoughForSpawning
 +    long lastAutoSaveTime; // Paper - incremental autosave
@@ -110,7 +110,7 @@ index 626bcbc6dd013260c3f8b38a1d14e7ba35dc1e01..9e96b0465717bfa761289c255fd8d2f1
  
      public ChunkHolder(ChunkPos pos, int level, LevelHeightAccessor world, LevelLightEngine lightingProvider, ChunkHolder.LevelChangeListener levelUpdateListener, ChunkHolder.PlayerProvider playersWatchingChunkProvider) {
          this.futures = new AtomicReferenceArray(ChunkHolder.CHUNK_STATUSES.size());
-@@ -473,7 +475,19 @@ public class ChunkHolder {
+@@ -478,7 +480,19 @@ public class ChunkHolder {
          boolean flag2 = playerchunk_state.isOrAfter(ChunkHolder.FullChunkStatus.BORDER);
          boolean flag3 = playerchunk_state1.isOrAfter(ChunkHolder.FullChunkStatus.BORDER);
  
@@ -130,7 +130,7 @@ index 626bcbc6dd013260c3f8b38a1d14e7ba35dc1e01..9e96b0465717bfa761289c255fd8d2f1
          if (!flag2 && flag3) {
              int expectCreateCount = ++this.fullChunkCreateCount; // Paper
              this.fullChunkFuture = chunkStorage.prepareAccessibleChunk(this);
-@@ -604,9 +618,33 @@ public class ChunkHolder {
+@@ -609,9 +623,33 @@ public class ChunkHolder {
      }
  
      public void refreshAccessibility() {
@@ -165,7 +165,7 @@ index 626bcbc6dd013260c3f8b38a1d14e7ba35dc1e01..9e96b0465717bfa761289c255fd8d2f1
          for (int i = 0; i < this.futures.length(); ++i) {
              CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> completablefuture = (CompletableFuture) this.futures.get(i);
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index e35a47e0c8eebbad7154a1357a6b868887bc4a0c..cac9c9ede6024653f4ae83cbbdd9939f75ccad48 100644
+index 25c71ca93c54976cc319abb0d932beb6f95deb79..e66e4d1656e5f6f042c5c63715e13a6b5e7d81c5 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
 @@ -101,6 +101,7 @@ import net.minecraft.world.level.levelgen.structure.templatesystem.StructureMana
@@ -241,7 +241,7 @@ index e35a47e0c8eebbad7154a1357a6b868887bc4a0c..cac9c9ede6024653f4ae83cbbdd9939f
      protected void saveAllChunks(boolean flush) {
          if (flush) {
              List<ChunkHolder> list = (List) this.visibleChunkMap.values().stream().filter(ChunkHolder::wasAccessibleSinceLastSave).peek(ChunkHolder::refreshAccessibility).collect(Collectors.toList());
-@@ -751,13 +810,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -752,13 +811,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          }
  
          int l = 0;
@@ -256,7 +256,7 @@ index e35a47e0c8eebbad7154a1357a6b868887bc4a0c..cac9c9ede6024653f4ae83cbbdd9939f
  
      }
  
-@@ -795,6 +848,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -796,6 +849,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
  
                          this.level.unload(chunk);
                      }
@@ -264,7 +264,7 @@ index e35a47e0c8eebbad7154a1357a6b868887bc4a0c..cac9c9ede6024653f4ae83cbbdd9939f
  
                      this.lightEngine.updateChunkStatus(ichunkaccess.getPos());
                      this.lightEngine.tryScheduleUpdate();
-@@ -1192,6 +1246,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1193,6 +1247,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
              asyncSaveData, chunk);
  
          chunk.setUnsaved(false);
@@ -272,7 +272,7 @@ index e35a47e0c8eebbad7154a1357a6b868887bc4a0c..cac9c9ede6024653f4ae83cbbdd9939f
      }
      // Paper end
  
-@@ -1201,6 +1256,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1202,6 +1257,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          if (!chunk.isUnsaved()) {
              return false;
          } else {
@@ -281,7 +281,7 @@ index e35a47e0c8eebbad7154a1357a6b868887bc4a0c..cac9c9ede6024653f4ae83cbbdd9939f
              ChunkPos chunkcoordintpair = chunk.getPos();
  
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-index b327bd2f48166a4a0c831b0209695fe5935f6a68..73b1018b0aca377ed0ff188e74040cef57036b0b 100644
+index 59cd2b8ecdd2c962a027526fe45032559aa2ee8c..fdc027bc5a7e9d691ac90c5fee0cdfebd959bc5f 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 @@ -825,6 +825,15 @@ public class ServerChunkCache extends ChunkSource {
@@ -301,7 +301,7 @@ index b327bd2f48166a4a0c831b0209695fe5935f6a68..73b1018b0aca377ed0ff188e74040cef
      public void close() throws IOException {
          // CraftBukkit start
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index 0d70647bdd08371beaf476bd4eb5a45d985e498d..b27fb07aacb66259f640de5c5aa6849eb7e8cc9c 100644
+index 04aae918f1951291459ce17b25986e5cac9d2378..3b99a6dda3638f3a7212d7c9fab5470409de4e6f 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
 @@ -1058,6 +1058,37 @@ public class ServerLevel extends Level implements WorldGenLevel {
