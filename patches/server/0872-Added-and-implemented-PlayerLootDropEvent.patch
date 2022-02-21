@@ -6,8 +6,7 @@ Subject: [PATCH] Added and implemented PlayerLootDropEvent.
 As a result of how the PlayerDeathEvent was implemented, when a player dies their items are simply dropped
 through the "world.dropItem()" method. This makes it very annoying for plugin developers to ultimately
 track down the Item entities dropped when a player dies. This patch implements a "PlayerLootDropEvent",
-making it easy for developers to track down the Item entities dropped when a player dies. Furthermore,
-Item entities dropped on player death are marked as being thrown by the player that died.
+making it easy for developers to track down the Item entities dropped when a player dies.
 
 diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 index 35cc150adf51f79e2fccef8b094c90554aafbee2..c84de6cb47ee8335ced754dacdeb27e388551f3b 100644
@@ -16,15 +15,15 @@ index 35cc150adf51f79e2fccef8b094c90554aafbee2..c84de6cb47ee8335ced754dacdeb27e3
 @@ -907,15 +907,34 @@ public class CraftEventFactory {
          victim.expToDrop = event.getDroppedExp();
          victim.newExp = event.getNewExp();
- 
+
 +        // Paper start - implement player loot drop event
 +        List<Item> items = new ArrayList<Item>();
 +
          for (org.bukkit.inventory.ItemStack stack : event.getDrops()) {
              if (stack == null || stack.getType() == Material.AIR) continue;
- 
+
 -            world.dropItem(entity.getLocation(), stack);
-+            Item item = (Item) victim.drop(CraftItemStack.toNMSStack(stack), true, false);
++            Item item = (Item) CraftEntity.getEntity((CraftServer) Bukkit.getServer(), victim.drop(CraftItemStack.toNMSStack(stack), true, false));
 +            items.add(item);
          }
  
