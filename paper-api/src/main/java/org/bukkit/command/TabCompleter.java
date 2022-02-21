@@ -16,12 +16,12 @@ public interface TabCompleter {
      *     command inside of a command block, this will be the player, not
      *     the command block.
      * @param command Command which was executed
-     * @param alias The alias used
+     * @param label Alias of the command which was used
      * @param args The arguments passed to the command, including final
-     *     partial argument to be completed and command label
+     *     partial argument to be completed
      * @return A List of possible completions for the final argument, or null
      *     to default to the command executor
      */
     @Nullable
-    public List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String alias, @NotNull String[] args);
+    public List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args);
 }
