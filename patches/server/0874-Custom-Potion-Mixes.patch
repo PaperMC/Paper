@@ -6,10 +6,10 @@ Subject: [PATCH] Custom Potion Mixes
 
 diff --git a/src/main/java/io/papermc/paper/potion/PaperPotionMix.java b/src/main/java/io/papermc/paper/potion/PaperPotionMix.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..35ce62e49ca81ab7facb23d5b6d6599a7075d310
+index 0000000000000000000000000000000000000000..6b0bed550763f34e18c9e92f9a47ec0c945b2c8b
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/potion/PaperPotionMix.java
-@@ -0,0 +1,31 @@
+@@ -0,0 +1,13 @@
 +package io.papermc.paper.potion;
 +
 +import net.minecraft.world.item.ItemStack;
@@ -17,28 +17,10 @@ index 0000000000000000000000000000000000000000..35ce62e49ca81ab7facb23d5b6d6599a
 +import org.bukkit.craftbukkit.inventory.CraftItemStack;
 +import org.bukkit.craftbukkit.inventory.CraftRecipe;
 +
-+public class PaperPotionMix {
-+
-+    private final ItemStack result;
-+    private final Ingredient input;
-+    private final Ingredient ingredient;
++public record PaperPotionMix(ItemStack result, Ingredient input, Ingredient ingredient) {
 +
 +    public PaperPotionMix(PotionMix potionMix) {
-+        this.result = CraftItemStack.asNMSCopy(potionMix.getResult());
-+        this.input = CraftRecipe.toIngredient(potionMix.getInput(), true);
-+        this.ingredient = CraftRecipe.toIngredient(potionMix.getIngredient(), true);
-+    }
-+
-+    public Ingredient getInput() {
-+        return input;
-+    }
-+
-+    public Ingredient getIngredient() {
-+        return ingredient;
-+    }
-+
-+    public ItemStack getResult() {
-+        return result;
++        this(CraftItemStack.asNMSCopy(potionMix.getResult()), CraftRecipe.toIngredient(potionMix.getInput(), true), CraftRecipe.toIngredient(potionMix.getIngredient(), true));
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
@@ -91,7 +73,7 @@ index a809e8a903f98fcbcea3184fac6dfd04adc735f9..13720c2df8ac37d020d4a785e48c4587
      }
  
 diff --git a/src/main/java/net/minecraft/world/item/alchemy/PotionBrewing.java b/src/main/java/net/minecraft/world/item/alchemy/PotionBrewing.java
-index eee96f87f68d9146b1d19d5923d073fb5c39d507..bc0ac7a721487d8793933d2350bed4bb189cd25f 100644
+index eee96f87f68d9146b1d19d5923d073fb5c39d507..191807404f817716b566cfb81df260349d509efb 100644
 --- a/src/main/java/net/minecraft/world/item/alchemy/PotionBrewing.java
 +++ b/src/main/java/net/minecraft/world/item/alchemy/PotionBrewing.java
 @@ -14,6 +14,7 @@ public class PotionBrewing {
@@ -129,8 +111,8 @@ index eee96f87f68d9146b1d19d5923d073fb5c39d507..bc0ac7a721487d8793933d2350bed4bb
          if (!input.isEmpty()) {
 +            // Paper start
 +            for (var mix : CUSTOM_MIXES.values()) {
-+                if (mix.getInput().test(input) && mix.getIngredient().test(ingredient)) {
-+                    return mix.getResult().copy();
++                if (mix.input().test(input) && mix.ingredient().test(ingredient)) {
++                    return mix.result().copy();
 +                }
 +            }
 +            // Paper end
@@ -144,7 +126,7 @@ index eee96f87f68d9146b1d19d5923d073fb5c39d507..bc0ac7a721487d8793933d2350bed4bb
 +    // Paper start
 +    public static boolean isCustomIngredient(ItemStack stack) {
 +        for (var mix : CUSTOM_MIXES.values()) {
-+            if (mix.getIngredient().test(stack)) {
++            if (mix.ingredient().test(stack)) {
 +                return true;
 +            }
 +        }
@@ -153,7 +135,7 @@ index eee96f87f68d9146b1d19d5923d073fb5c39d507..bc0ac7a721487d8793933d2350bed4bb
 +
 +    public static boolean isCustomInput(ItemStack stack) {
 +        for (var mix : CUSTOM_MIXES.values()) {
-+            if (mix.getInput().test(stack)) {
++            if (mix.input().test(stack)) {
 +                return true;
 +            }
 +        }
@@ -162,7 +144,7 @@ index eee96f87f68d9146b1d19d5923d073fb5c39d507..bc0ac7a721487d8793933d2350bed4bb
 +
 +    private static boolean hasCustomMix(ItemStack input, ItemStack ingredient) {
 +        for (var mix : CUSTOM_MIXES.values()) {
-+            if (mix.getInput().test(input) && mix.getIngredient().test(ingredient)) {
++            if (mix.input().test(input) && mix.ingredient().test(ingredient)) {
 +                return true;
 +            }
 +        }
