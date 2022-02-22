@@ -11,33 +11,59 @@ outside of custom inventories.
 
 diff --git a/src/main/java/io/papermc/paper/inventory/PaperInventoryCustomHolderContainer.java b/src/main/java/io/papermc/paper/inventory/PaperInventoryCustomHolderContainer.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..e6b043e7ceaf7aeda464153b0ac369ef5626fe95
+index 0000000000000000000000000000000000000000..8e02633b2f8676095ca5c5326c88499a8f36c842
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/inventory/PaperInventoryCustomHolderContainer.java
-@@ -0,0 +1,114 @@
+@@ -0,0 +1,140 @@
 +package io.papermc.paper.inventory;
 +
++import io.papermc.paper.adventure.PaperAdventure;
++import net.kyori.adventure.text.Component;
 +import net.minecraft.world.Container;
 +import net.minecraft.world.entity.player.Player;
 +import net.minecraft.world.item.ItemStack;
++import net.minecraft.world.level.block.entity.BaseContainerBlockEntity;
 +import org.bukkit.Location;
 +import org.bukkit.craftbukkit.entity.CraftHumanEntity;
 +import org.bukkit.entity.HumanEntity;
 +import org.bukkit.event.inventory.InventoryType;
 +import org.bukkit.inventory.InventoryHolder;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.checker.nullness.qual.Nullable;
++import org.checkerframework.framework.qual.DefaultQualifier;
 +
 +import java.util.List;
 +
-+public class PaperInventoryCustomHolderContainer implements Container {
++@DefaultQualifier(NonNull.class)
++public final class PaperInventoryCustomHolderContainer implements Container {
 +
 +    private final InventoryHolder owner;
 +    private final Container delegate;
 +    private final InventoryType type;
++    private final String title;
++    private final Component adventure$title;
 +
 +    public PaperInventoryCustomHolderContainer(InventoryHolder owner, Container delegate, InventoryType type) {
 +        this.owner = owner;
 +        this.delegate = delegate;
 +        this.type = type;
++        @Nullable Component adventure$title = null;
++        if (delegate instanceof BaseContainerBlockEntity blockEntity) {
++            adventure$title = blockEntity.getCustomName() != null ? PaperAdventure.asAdventure(blockEntity.getCustomName()) : null;
++        }
++        if (adventure$title == null) {
++            adventure$title = type.defaultTitle();
++        }
++        this.adventure$title = adventure$title;
++        this.title = PaperAdventure.LEGACY_SECTION_UXRC.serialize(this.adventure$title);
++    }
++
++    public Component title() {
++        return this.adventure$title;
++    }
++
++    public String getTitle() {
++        return this.title;
 +    }
 +
 +    public InventoryType getType() {
@@ -130,9 +156,25 @@ index 0000000000000000000000000000000000000000..e6b043e7ceaf7aeda464153b0ac369ef
 +    }
 +}
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftContainer.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftContainer.java
-index 60fa587ce17e138d2baf8959c26e25ed1db17a4a..cbe39d25ddfce0e92273b68f1e1d984b50dd2291 100644
+index 60fa587ce17e138d2baf8959c26e25ed1db17a4a..c50813f3a3ef78ce053249ca0c93360c0bc22e8d 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftContainer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftContainer.java
+@@ -72,13 +72,13 @@ public class CraftContainer extends AbstractContainerMenu {
+             // Paper start
+             @Override
+             public net.kyori.adventure.text.Component title() {
+-                return inventory instanceof CraftInventoryCustom ? ((CraftInventoryCustom.MinecraftInventory) ((CraftInventory) inventory).getInventory()).title() : net.kyori.adventure.text.Component.text(inventory.getType().getDefaultTitle());
++                return inventory instanceof CraftInventoryCustom custom ? custom.title() : inventory.getType().defaultTitle(); // Paper
+             }
+             // Paper end
+ 
+             @Override
+             public String getTitle() {
+-                return inventory instanceof CraftInventoryCustom ? ((CraftInventoryCustom.MinecraftInventory) ((CraftInventory) inventory).getInventory()).getTitle() : inventory.getType().getDefaultTitle();
++                return inventory instanceof CraftInventoryCustom custom ? custom.getTitle() : inventory.getType().getDefaultTitle(); // Paper
+             }
+         }, player, id);
+     }
 @@ -230,6 +230,10 @@ public class CraftContainer extends AbstractContainerMenu {
              this.lastSlots = delegate.lastSlots;
              this.slots = delegate.slots;
@@ -160,7 +202,7 @@ index 6ca8e76d1569f3f631275fea187e7110f09fc69e..3796f8b122ad981b6faacd2afcaf3696
              return InventoryType.ENDER_CHEST;
          } else if (this.inventory instanceof MerchantContainer) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventoryCustom.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventoryCustom.java
-index 08fc05836b26f5f93ae74324705d5f593b57315a..ac38475a293e175b48d19074b19ca68f87dee992 100644
+index 08fc05836b26f5f93ae74324705d5f593b57315a..fdde2b3f2320393ab4acf450d08ab6744c5408ea 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventoryCustom.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventoryCustom.java
 @@ -15,6 +15,11 @@ import org.bukkit.event.inventory.InventoryType;
@@ -175,8 +217,36 @@ index 08fc05836b26f5f93ae74324705d5f593b57315a..ac38475a293e175b48d19074b19ca68f
      public CraftInventoryCustom(InventoryHolder owner, InventoryType type) {
          super(new MinecraftInventory(owner, type));
      }
+@@ -42,6 +47,27 @@ public class CraftInventoryCustom extends CraftInventory {
+     public CraftInventoryCustom(InventoryHolder owner, int size, String title) {
+         super(new MinecraftInventory(owner, size, title));
+     }
++    // Paper start
++    public String getTitle() {
++        if (this.inventory instanceof MinecraftInventory minecraftInventory) {
++            return minecraftInventory.getTitle();
++        } else if (this.inventory instanceof io.papermc.paper.inventory.PaperInventoryCustomHolderContainer customHolderContainer) {
++            return customHolderContainer.getTitle();
++        } else {
++            throw new UnsupportedOperationException(this.inventory.getClass() + " isn't a recognized Container type here");
++        }
++    }
++
++    public net.kyori.adventure.text.Component title() {
++        if (this.inventory instanceof MinecraftInventory minecraftInventory) {
++            return minecraftInventory.title();
++        } else if (this.inventory instanceof io.papermc.paper.inventory.PaperInventoryCustomHolderContainer customHolderContainer) {
++            return customHolderContainer.title();
++        } else {
++            throw new UnsupportedOperationException(this.inventory.getClass() + " isn't a recognized Container type here");
++        }
++    }
++    // Paper end
+ 
+     static class MinecraftInventory implements Container {
+         private final NonNullList<ItemStack> items;
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/util/CraftTileInventoryConverter.java b/src/main/java/org/bukkit/craftbukkit/inventory/util/CraftTileInventoryConverter.java
-index 7a7f3f53aef601f124d474d9890e23d87dd96900..0293f948c2128af13a090931ffcfc3fa7439344b 100644
+index 7a7f3f53aef601f124d474d9890e23d87dd96900..54e61b9b058bee2167461aaaf828ed7a00949c29 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/util/CraftTileInventoryConverter.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/util/CraftTileInventoryConverter.java
 @@ -28,7 +28,7 @@ public abstract class CraftTileInventoryConverter implements CraftInventoryCreat
@@ -193,7 +263,7 @@ index 7a7f3f53aef601f124d474d9890e23d87dd96900..0293f948c2128af13a090931ffcfc3fa
          }
  
 -        return getInventory(te);
-+        return getInventory(owner, type, te); // Paper
++        return this.getInventory(owner, type, te); // Paper
      }
      // Paper end
  
@@ -208,7 +278,7 @@ index 7a7f3f53aef601f124d474d9890e23d87dd96900..0293f948c2128af13a090931ffcfc3fa
 +    @Deprecated // Paper - use getInventory with owner and type
      public Inventory getInventory(Container tileEntity) {
 +        // Paper start
-+        return getInventory(null, null, tileEntity);
++        return this.getInventory(null, null, tileEntity);
 +    }
 +
 +    public Inventory getInventory(InventoryHolder owner, InventoryType type, Container tileEntity) { // Paper
@@ -222,7 +292,7 @@ index 7a7f3f53aef601f124d474d9890e23d87dd96900..0293f948c2128af13a090931ffcfc3fa
              Container tileEntity = getTileEntity();
              ((AbstractFurnaceBlockEntity) tileEntity).setCustomName(io.papermc.paper.adventure.PaperAdventure.asVanilla(title));
 -            return getInventory(tileEntity);
-+            return getInventory(owner, type, tileEntity); // Paper
++            return this.getInventory(owner, type, tileEntity); // Paper
          }
          // Paper end
  
@@ -252,7 +322,7 @@ index 7a7f3f53aef601f124d474d9890e23d87dd96900..0293f948c2128af13a090931ffcfc3fa
                  ((BrewingStandBlockEntity) tileEntity).setCustomName(io.papermc.paper.adventure.PaperAdventure.asVanilla(title));
              }
 -            return getInventory(tileEntity);
-+            return getInventory(owner, type, tileEntity); // Paper
++            return this.getInventory(owner, type, tileEntity); // Paper
          }
          // Paper end
  
