@@ -529,7 +529,7 @@ index e66e4d1656e5f6f042c5c63715e13a6b5e7d81c5..aef2974ecec878a014ada9619d814ae3
      }
  
 diff --git a/src/main/java/net/minecraft/server/level/DistanceManager.java b/src/main/java/net/minecraft/server/level/DistanceManager.java
-index 93a642cd6cf21a268074a73bff22249d32992ad3..7c66e4ed02c80521196b4ca797477dd9573752d8 100644
+index f35912ac4473775336f125fae9495bfe30d0cec9..b3fe2aae24890cf20a4201365bc1ef2912024d63 100644
 --- a/src/main/java/net/minecraft/server/level/DistanceManager.java
 +++ b/src/main/java/net/minecraft/server/level/DistanceManager.java
 @@ -127,6 +127,7 @@ public abstract class DistanceManager {
@@ -597,7 +597,7 @@ index 93a642cd6cf21a268074a73bff22249d32992ad3..7c66e4ed02c80521196b4ca797477dd9
          return removed; // CraftBukkit
      }
  
-@@ -286,6 +299,112 @@ public abstract class DistanceManager {
+@@ -288,6 +301,112 @@ public abstract class DistanceManager {
          });
      }
  
@@ -711,7 +711,7 @@ index 93a642cd6cf21a268074a73bff22249d32992ad3..7c66e4ed02c80521196b4ca797477dd9
          Ticket<ChunkPos> ticket = new Ticket<>(TicketType.FORCED, 31, pos);
          long i = pos.toLong();
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-index fdc027bc5a7e9d691ac90c5fee0cdfebd959bc5f..0eca545278568f5521bd721ff5bdcd7090c75e6e 100644
+index 0854c690762cf603610cd3064b190026b2bede4f..5604638f0f7a0d2619615e97fa2d760e9ead741f 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 @@ -601,6 +601,26 @@ public class ServerChunkCache extends ChunkSource {
@@ -1128,7 +1128,7 @@ index 8770fe0db46b01e8b608637df4f1a669a3f4cdde..3c1698ba0d3bc412ab957777d9b5211d
      private final String name;
      private final Comparator<T> comparator;
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
-index d06e43bfaf8d22e0374bb6ed2e62c65e15699ef5..373f1c600ecdf75293dbe5ff6ef676a0e35e2e80 100644
+index b7a048fad8239704103955bda82f5cc43c4216af..8e0b42d7f88c9156142d940656873ba9996e0532 100644
 --- a/src/main/java/net/minecraft/server/players/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/players/PlayerList.java
 @@ -175,6 +175,7 @@ public abstract class PlayerList {
@@ -1142,7 +1142,7 @@ index d06e43bfaf8d22e0374bb6ed2e62c65e15699ef5..373f1c600ecdf75293dbe5ff6ef676a0
 @@ -289,8 +290,8 @@ public abstract class PlayerList {
          net.minecraft.server.level.ChunkMap playerChunkMap = worldserver1.getChunkSource().chunkMap;
          net.minecraft.server.level.DistanceManager distanceManager = playerChunkMap.distanceManager;
-         distanceManager.addTicketAtLevel(net.minecraft.server.level.TicketType.LOGIN, pos, 31, pos.toLong());
+         distanceManager.addTicket(net.minecraft.server.level.TicketType.LOGIN, pos, 31, pos.toLong());
 -        worldserver1.getChunkSource().runDistanceManagerUpdates();
 -        worldserver1.getChunkSource().getChunkAtAsynchronously(chunkX, chunkZ, true, true).thenApply(chunk -> {
 +        worldserver1.getChunkSource().markAreaHighPriority(pos, 28, 3); // Paper - Chunk priority
@@ -1151,7 +1151,7 @@ index d06e43bfaf8d22e0374bb6ed2e62c65e15699ef5..373f1c600ecdf75293dbe5ff6ef676a0
              if (updatingChunk != null) {
                  return updatingChunk.getEntityTickingChunkFuture();
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index 0b54c4e229aab803683101d7e2b1780ae41b42e0..cd1e850c1d55d203ecba40719a0578a69c33492c 100644
+index 25a3c1c7155ffa07692207fdac34d161370b0d17..32ceb2ce765eec7b235d4305557d3681d25175c0 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
 @@ -228,7 +228,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, i
@@ -1193,7 +1193,7 @@ index 6eaba33b7730d66bf631b6d5c6a7080f9f019f8b..8e03e63a00dd242791ba0d5a8a179222
          org.bukkit.event.world.ChunkUnloadEvent unloadEvent = new org.bukkit.event.world.ChunkUnloadEvent(this.bukkitChunk, this.isUnsaved());
          server.getPluginManager().callEvent(unloadEvent);
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index d4df7a712738d53aa7b9876a2fea9a09b9e3caf1..bbba0658990cf6f10d09b78204788c8b5ad08787 100644
+index 993b5a8281e535fb8ecddfa22bc64b05ed3fdd1d..6685e9eb07d49cec63864f9ccc5768d0a7f4266d 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 @@ -1989,6 +1989,12 @@ public class CraftWorld extends CraftRegionAccessor implements World {

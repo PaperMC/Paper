@@ -5,7 +5,7 @@ Subject: [PATCH] Prevent unload() calls removing tickets for sync loads
 
 
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-index b3b10baad56bf14a31a11a3375000195ce84d4d3..7c3a1622f161409e92c4ccfa13e8c1fc1d66c947 100644
+index 58641bb737a0a8106c94ca5c739ce096731c2838..a07965416a47e7fd387d407947f5c91eb52fffd2 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 @@ -725,6 +725,8 @@ public class ServerChunkCache extends ChunkSource {
@@ -26,7 +26,7 @@ index b3b10baad56bf14a31a11a3375000195ce84d4d3..7c3a1622f161409e92c4ccfa13e8c1fc
              // CraftBukkit end
              this.distanceManager.addTicket(TicketType.UNKNOWN, chunkcoordintpair, l, chunkcoordintpair);
 +            identifier = Long.valueOf(this.syncLoadCounter++); // Paper - prevent plugin unloads from removing our ticket
-+            this.distanceManager.addTicketAtLevel(TicketType.REQUIRED_LOAD, chunkcoordintpair, l, identifier); // Paper - prevent plugin unloads from removing our ticket
++            this.distanceManager.addTicket(TicketType.REQUIRED_LOAD, chunkcoordintpair, l, identifier); // Paper - prevent plugin unloads from removing our ticket
              if (isUrgent) this.distanceManager.markUrgent(chunkcoordintpair); // Paper - Chunk priority
              if (this.chunkAbsent(playerchunk, l)) {
                  ProfilerFiller gameprofilerfiller = this.level.getProfiler();
@@ -34,7 +34,7 @@ index b3b10baad56bf14a31a11a3375000195ce84d4d3..7c3a1622f161409e92c4ccfa13e8c1fc
                  playerchunk = this.getVisibleChunkIfPresent(k);
                  gameprofilerfiller.pop();
                  if (this.chunkAbsent(playerchunk, l)) {
-+                    this.distanceManager.removeTicketAtLevel(TicketType.REQUIRED_LOAD, chunkcoordintpair, l, identifier); // Paper
++                    this.distanceManager.removeTicket(TicketType.REQUIRED_LOAD, chunkcoordintpair, l, identifier); // Paper
                      throw (IllegalStateException) Util.pauseInIde(new IllegalStateException("No chunk holder after ticket has been added"));
                  }
              }
@@ -46,7 +46,7 @@ index b3b10baad56bf14a31a11a3375000195ce84d4d3..7c3a1622f161409e92c4ccfa13e8c1fc
 +        // Paper start - prevent plugin unloads from removing our ticket
 +        if (create && !currentlyUnloading) {
 +            future.thenAcceptAsync((either) -> {
-+                ServerChunkCache.this.distanceManager.removeTicketAtLevel(TicketType.REQUIRED_LOAD, chunkcoordintpair, l, identifier);
++                ServerChunkCache.this.distanceManager.removeTicket(TicketType.REQUIRED_LOAD, chunkcoordintpair, l, identifier);
 +            }, ServerChunkCache.this.mainThreadProcessor);
 +        }
 +        // Paper end - prevent plugin unloads from removing our ticket

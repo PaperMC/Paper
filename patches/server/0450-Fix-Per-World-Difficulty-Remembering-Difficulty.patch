@@ -8,7 +8,7 @@ makes it so that the server keeps the last difficulty used instead
 of restoring the server.properties every single load.
 
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 9d8dd7ac4e471d658ba942e29c5028df410fa2c3..9a926114aa550ca5a6329e3ce993bf1f686cd10e 100644
+index 9d8dd7ac4e471d658ba942e29c5028df410fa2c3..bfcd33e7de5b222f762fa2867ea34f183c9f2a8e 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -824,7 +824,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
@@ -34,41 +34,44 @@ index 9d8dd7ac4e471d658ba942e29c5028df410fa2c3..9a926114aa550ca5a6329e3ce993bf1f
 +        PrimaryLevelData worldData = level.serverLevelData;
 +        if (forceUpdate || !worldData.isDifficultyLocked()) {
 +            worldData.setDifficulty(worldData.isHardcore() ? Difficulty.HARD : difficulty);
-+            level.setSpawnSettings(worldData.getDifficulty() != Difficulty.PEACEFUL && ((DedicatedServer) this).settings.getProperties().spawnMonsters, this.isSpawningAnimals());
-+            // this.getPlayerList().getPlayers().forEach(this::sendDifficultyUpdate);
++            this.updateMobSpawningFlags(level);
++            // this.getPlayerList().getPlayers().forEach(this::sendDifficultyUpdate); // don't send update because CB adds the update packet sending in worldData#setDifficulty
 +            // Paper end
          }
      }
  
-@@ -1718,7 +1721,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1717,8 +1720,15 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+ 
          while (iterator.hasNext()) {
              ServerLevel worldserver = (ServerLevel) iterator.next();
++            // Paper start
++            this.updateMobSpawningFlags(worldserver);
++        }
++    }
++    private void updateMobSpawningFlags(ServerLevel worldserver) {
++        {
++            // Paper end
  
 -            worldserver.setSpawnSettings(this.isSpawningMonsters(), this.isSpawningAnimals());
-+            worldserver.setSpawnSettings(worldserver.serverLevelData.getDifficulty() != Difficulty.PEACEFUL && ((DedicatedServer) this).settings.getProperties().spawnMonsters, this.isSpawningAnimals()); // Paper - per level difficulty (from setDifficulty(ServerLevel, Difficulty, boolean))
++            worldserver.setSpawnSettings(worldserver.serverLevelData.getDifficulty() != Difficulty.PEACEFUL && ((DedicatedServer) this).settings.getProperties().spawnMonsters, this.isSpawningAnimals()); // Paper - per level difficulty (spawnMonsters from DedicatedServerProperties and world setting)
          }
  
      }
 diff --git a/src/main/java/net/minecraft/server/commands/DifficultyCommand.java b/src/main/java/net/minecraft/server/commands/DifficultyCommand.java
-index 33c859df0b669d0c3e97ccba29f17c1ba2166a27..9f03b738aea623fe409ca176397f48be055466da 100644
+index e23dca1a711955417ef3f590960d4e7a388b9147..36dd28498eb75152a79dae4353ef657a0485403d 100644
 --- a/src/main/java/net/minecraft/server/commands/DifficultyCommand.java
 +++ b/src/main/java/net/minecraft/server/commands/DifficultyCommand.java
-@@ -35,10 +35,11 @@ public class DifficultyCommand {
- 
-     public static int setDifficulty(CommandSourceStack source, Difficulty difficulty) throws CommandSyntaxException {
-         MinecraftServer minecraftServer = source.getServer();
--        if (minecraftServer.getWorldData().getDifficulty() == difficulty) {
-+        net.minecraft.server.level.ServerLevel level = source.getLevel(); // Paper
-+        if (level.serverLevelData.getDifficulty() == difficulty) { // Paper
-             throw ERROR_ALREADY_DIFFICULT.create(difficulty.getKey());
+@@ -47,7 +47,7 @@ public class DifficultyCommand {
+         if (worldServer.getDifficulty() == difficulty) { // CraftBukkit
+             throw DifficultyCommand.ERROR_ALREADY_DIFFICULT.create(difficulty.getKey());
          } else {
--            minecraftServer.setDifficulty(difficulty, true);
-+            minecraftServer.setDifficulty(level, difficulty, true); // Paper - use world
-             source.sendSuccess(new TranslatableComponent("commands.difficulty.success", difficulty.getDisplayName()), true);
+-            worldServer.serverLevelData.setDifficulty(difficulty); // CraftBukkit
++            minecraftserver.setDifficulty(worldServer, difficulty, true); // Paper - don't skip other difficulty-changing logic (fix upstream's fix)
+             source.sendSuccess(new TranslatableComponent("commands.difficulty.success", new Object[]{difficulty.getDisplayName()}), true);
              return 0;
          }
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-index 2b7ba5d8dda0297c8b35a0cea68c3ae10188e3f2..e968b880e435b8753314d85b919a0abc4f35be25 100644
+index 2b7ba5d8dda0297c8b35a0cea68c3ae10188e3f2..a9fdb1aa6d676c2084312d111719909ffd7e23f4 100644
 --- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 @@ -366,7 +366,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
@@ -76,7 +79,7 @@ index 2b7ba5d8dda0297c8b35a0cea68c3ae10188e3f2..e968b880e435b8753314d85b919a0abc
      @Override
      public void forceDifficulty() {
 -        this.setDifficulty(this.getProperties().difficulty, true);
-+        //this.a(this.getDedicatedServerProperties().difficulty, true); // Paper - Don't overwrite level.dat's difficulty, keep current
++        // this.setDifficulty(this.getProperties().difficulty, true); // Paper - Don't overwrite level.dat's difficulty, keep current
      }
  
      @Override
@@ -94,7 +97,7 @@ index 2f13055a39c26fe12d2c1094103186635e536166..6b0cb662d9163c360035e19c5faad59f
  
                  playerlist.sendPlayerPermissionLevel(this);
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index ec784bb54f7e4b4cb90a64e636392a752302cf86..1486ac77bf4621a3a2a5da6d53461bada44c27c1 100644
+index ec784bb54f7e4b4cb90a64e636392a752302cf86..22b9d2e44d4abc91a6c30a153441bce49423b66c 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 @@ -3035,7 +3035,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
@@ -102,7 +105,7 @@ index ec784bb54f7e4b4cb90a64e636392a752302cf86..1486ac77bf4621a3a2a5da6d53461bad
          PacketUtils.ensureRunningOnSameThread(packet, this, this.player.getLevel());
          if (this.player.hasPermissions(2) || this.isSingleplayerOwner()) {
 -            this.server.setDifficulty(packet.getDifficulty(), false);
-+            //this.minecraftServer.a(packetplayindifficultychange.b(), false); // Paper - don't allow clients to change this
++            // this.server.setDifficulty(packet.getDifficulty(), false); // Paper - don't allow clients to change this
          }
      }
  

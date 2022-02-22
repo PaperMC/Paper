@@ -5460,7 +5460,7 @@ index 09f5ce03f842e357bbe0dd6b0fffde8ec5851f1d..504492c3889fab7b95eec3bcd9b0d1bc
  
          @Override
 diff --git a/src/main/java/net/minecraft/server/level/DistanceManager.java b/src/main/java/net/minecraft/server/level/DistanceManager.java
-index ef87c37633cee4ab438f1991144188ade1c4e65f..19d3802becd353e130b785f8286e595e08dc5c5f 100644
+index 43f4f2dad621e4eb39b0b32fa70bb84bfffd27f5..c9f79ded29c0e4136117eef16e3acd86ba57bf9b 100644
 --- a/src/main/java/net/minecraft/server/level/DistanceManager.java
 +++ b/src/main/java/net/minecraft/server/level/DistanceManager.java
 @@ -59,8 +59,9 @@ public abstract class DistanceManager {
@@ -5483,7 +5483,7 @@ index ef87c37633cee4ab438f1991144188ade1c4e65f..19d3802becd353e130b785f8286e595e
  
      protected void purgeStaleTickets() {
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-index 0d23c92af7aa381976c45d36e07d965819f19707..9dd0eb49048ceccd82e139dac5d658d168694dda 100644
+index 0d23c92af7aa381976c45d36e07d965819f19707..7dffd704444e1d5f6646c61f3747ea0c83a0bdac 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 @@ -48,6 +48,8 @@ import net.minecraft.world.level.storage.LevelData;
@@ -5608,7 +5608,7 @@ index 0d23c92af7aa381976c45d36e07d965819f19707..9dd0eb49048ceccd82e139dac5d658d1
 +        }
 +        ChunkPos chunkPos = new ChunkPos(x, z);
 +        Long identifier = this.chunkFutureAwaitCounter++;
-+        this.distanceManager.addTicketAtLevel(TicketType.FUTURE_AWAIT, chunkPos, ticketLevel, identifier);
++        this.distanceManager.addTicket(TicketType.FUTURE_AWAIT, chunkPos, ticketLevel, identifier);
 +        this.runDistanceManagerUpdates();
 +
 +        ChunkHolder chunk = this.chunkMap.getUpdatingChunkIfPresent(chunkPos.toLong());
@@ -5643,8 +5643,8 @@ index 0d23c92af7aa381976c45d36e07d965819f19707..9dd0eb49048ceccd82e139dac5d658d1
 +                }
 +            } finally {
 +                // due to odd behaviour with CB unload implementation we need to have these AFTER the load callback.
-+                ServerChunkCache.this.distanceManager.addTicketAtLevel(TicketType.UNKNOWN, chunkPos, ticketLevel, chunkPos);
-+                ServerChunkCache.this.distanceManager.removeTicketAtLevel(TicketType.FUTURE_AWAIT, chunkPos, ticketLevel, identifier);
++                ServerChunkCache.this.distanceManager.addTicket(TicketType.UNKNOWN, chunkPos, ticketLevel, chunkPos);
++                ServerChunkCache.this.distanceManager.removeTicket(TicketType.FUTURE_AWAIT, chunkPos, ticketLevel, identifier);
 +            }
 +        }, this.mainThreadProcessor);
 +    }
@@ -5751,11 +5751,11 @@ index 0d23c92af7aa381976c45d36e07d965819f19707..9dd0eb49048ceccd82e139dac5d658d1
 +    }
 +
 +    public <T> void addTicketAtLevel(TicketType<T> ticketType, ChunkPos chunkPos, int ticketLevel, T identifier) {
-+        this.distanceManager.addTicketAtLevel(ticketType, chunkPos, ticketLevel, identifier);
++        this.distanceManager.addTicket(ticketType, chunkPos, ticketLevel, identifier);
 +    }
 +
 +    public <T> void removeTicketAtLevel(TicketType<T> ticketType, ChunkPos chunkPos, int ticketLevel, T identifier) {
-+        this.distanceManager.removeTicketAtLevel(ticketType, chunkPos, ticketLevel, identifier);
++        this.distanceManager.removeTicket(ticketType, chunkPos, ticketLevel, identifier);
 +    }
 +
 +    void chunkLoadAccept(int chunkX, int chunkZ, ChunkAccess chunk, java.util.function.Consumer<ChunkAccess> consumer) {
@@ -5881,7 +5881,7 @@ index 0d23c92af7aa381976c45d36e07d965819f19707..9dd0eb49048ceccd82e139dac5d658d1
      @Override
      public ChunkAccess getChunk(int x, int z, ChunkStatus leastStatus, boolean create) {
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index b9ef6e33e584099b77b966774e1ae6aa497dfca1..073cea951644f25c276ba05ff1fc48fda08593da 100644
+index 297dc259852dbc17ad7a90de38a930dced64e82f..8181a7422b453fcef7a1146b81eef0a9e82904d9 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
 @@ -159,6 +159,7 @@ import org.bukkit.event.server.MapInitializeEvent;
@@ -6090,7 +6090,7 @@ index a4c5edee297af6d68d518b77f706732b5ccbe4de..7bf4bf5cb2c1b54a7e2733091f48f3a8
      @Override
      public void tell(R runnable) {
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index 595a821e3dbbb0ecac8592356149d839624bcd50..78ea2df454919707a938ff75aa655f5bfa12fc99 100644
+index c06b8048a766f3e2e1e73c969319f485c43865b1..4be6f154358bfb2bdaa3f09af398d82d551196a4 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
 @@ -308,6 +308,11 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
@@ -6118,7 +6118,7 @@ index 1c5f30b199904c74aa3e473b7696c416d93f0efe..a3b6883d7fc856ed8550ffb7aa8dd929
      @Override
      public float getBukkitYaw() {
 diff --git a/src/main/java/net/minecraft/world/entity/Mob.java b/src/main/java/net/minecraft/world/entity/Mob.java
-index 59a54e99baf8219c3878b25a214508e09e819778..31f98763da600c34246d722cb92dda4442a3f046 100644
+index fb0433b01045508fe4853d7af4cdf281cb82553f..4acf6c54778563e315c0a16ed6381b33a2219342 100644
 --- a/src/main/java/net/minecraft/world/entity/Mob.java
 +++ b/src/main/java/net/minecraft/world/entity/Mob.java
 @@ -238,6 +238,7 @@ public abstract class Mob extends LivingEntity {
