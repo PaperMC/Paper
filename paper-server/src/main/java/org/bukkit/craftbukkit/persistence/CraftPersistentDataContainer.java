@@ -184,4 +184,27 @@ public class CraftPersistentDataContainer implements PersistentDataContainer {
         this.customDataTags.clear();
     }
     // Paper end
+
+    // Paper start - byte array serialization
+    @Override
+    public byte[] serializeToBytes() throws java.io.IOException {
+        final net.minecraft.nbt.CompoundTag root = this.toTagCompound();
+        final java.io.ByteArrayOutputStream byteArrayOutput = new java.io.ByteArrayOutputStream();
+        try (final java.io.DataOutputStream dataOutput = new java.io.DataOutputStream(byteArrayOutput)) {
+            net.minecraft.nbt.NbtIo.write(root, dataOutput);
+            return byteArrayOutput.toByteArray();
+        }
+    }
+
+    @Override
+    public void readFromBytes(final byte[] bytes, final boolean clear) throws java.io.IOException {
+        if (clear) {
+            this.clear();
+        }
+        try (final java.io.DataInputStream dataInput = new java.io.DataInputStream(new java.io.ByteArrayInputStream(bytes))) {
+            final net.minecraft.nbt.CompoundTag compound = net.minecraft.nbt.NbtIo.read(dataInput);
+            this.putAll(compound);
+        }
+    }
+    // Paper end - byte array serialization
 }
