@@ -1,0 +1,42 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Fri, 25 Feb 2022 07:14:48 -0800
+Subject: [PATCH] Fix missing Level -> LevelStem in StructureCheck from CB
+
+Need to use the right for injectDatafixingContext
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/level/ServerLevel.java
++++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
+@@ -0,0 +0,0 @@ public class ServerLevel extends Level implements WorldGenLevel {
+ 
+         long l = minecraftserver.getWorldData().worldGenSettings().seed();
+ 
+-        this.structureCheck = new StructureCheck(this.chunkSource.chunkScanner(), this.registryAccess(), minecraftserver.getStructureManager(), resourcekey, chunkgenerator, this, chunkgenerator.getBiomeSource(), l, datafixer);
++        this.structureCheck = new StructureCheck(this.chunkSource.chunkScanner(), this.registryAccess(), minecraftserver.getStructureManager(), this.getTypeKey(), chunkgenerator, this, chunkgenerator.getBiomeSource(), l, datafixer); // Paper - Fix missing CB diff
+         this.structureFeatureManager = new StructureFeatureManager(this, this.serverLevelData.worldGenSettings(), this.structureCheck); // CraftBukkit
+         if (this.dimensionType().createDragonFight()) {
+             this.dragonFight = new EndDragonFight(this, this.serverLevelData.worldGenSettings().seed(), this.serverLevelData.endDragonFightData()); // CraftBukkit
+diff --git a/src/main/java/net/minecraft/world/level/levelgen/structure/StructureCheck.java b/src/main/java/net/minecraft/world/level/levelgen/structure/StructureCheck.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/level/levelgen/structure/StructureCheck.java
++++ b/src/main/java/net/minecraft/world/level/levelgen/structure/StructureCheck.java
+@@ -0,0 +0,0 @@ public class StructureCheck {
+     private final RegistryAccess registryAccess;
+     private final Registry<Biome> biomes;
+     private final StructureManager structureManager;
+-    private final ResourceKey<Level> dimension;
++    private final ResourceKey<net.minecraft.world.level.dimension.LevelStem> dimension; // Paper - fix missing CB diff
+     private final ChunkGenerator chunkGenerator;
+     private final LevelHeightAccessor heightAccessor;
+     private final BiomeSource biomeSource;
+@@ -0,0 +0,0 @@ public class StructureCheck {
+     private final Long2ObjectMap<Object2IntMap<StructureFeature<?>>> loadedChunks = new Long2ObjectOpenHashMap<>();
+     private final Map<StructureFeature<?>, Long2BooleanMap> featureChecks = new HashMap<>();
+ 
+-    public StructureCheck(ChunkScanAccess chunkIoWorker, RegistryAccess registryManager, StructureManager structureManager, ResourceKey<Level> worldKey, ChunkGenerator chunkGenerator, LevelHeightAccessor world, BiomeSource biomeSource, long seed, DataFixer dataFixer) {
++    public StructureCheck(ChunkScanAccess chunkIoWorker, RegistryAccess registryManager, StructureManager structureManager, ResourceKey<net.minecraft.world.level.dimension.LevelStem> worldKey, ChunkGenerator chunkGenerator, LevelHeightAccessor world, BiomeSource biomeSource, long seed, DataFixer dataFixer) { // Paper - fix missing CB diff
+         this.storageAccess = chunkIoWorker;
+         this.registryAccess = registryManager;
+         this.structureManager = structureManager;
