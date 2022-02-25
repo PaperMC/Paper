@@ -26,6 +26,7 @@ import org.bukkit.scheduler.BukkitWorker;
 
 /**
  * The fundamental concepts for this implementation:
+ * <ul>
  * <li>Main thread owns {@link #head} and {@link #currentTick}, but it may be read from any thread</li>
  * <li>Main thread exclusively controls {@link #temp} and {@link #pending}.
  *     They are never to be accessed outside of the main thread; alternatives exist to prevent locking.</li>
@@ -41,6 +42,7 @@ import org.bukkit.scheduler.BukkitWorker;
  * <li>Sync tasks are only to be removed from runners on the main thread when coupled with a removal from pending and temp.</li>
  * <li>Most of the design in this scheduler relies on queuing special tasks to perform any data changes on the main thread.
  *     When executed from inside a synchronous method, the scheduler will be updated before next execution by virtue of the frequent {@link #parsePending()} calls.</li>
+ * </ul>
  */
 public class CraftScheduler implements BukkitScheduler {
 

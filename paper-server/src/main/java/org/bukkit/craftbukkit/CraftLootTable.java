@@ -187,4 +187,11 @@ public class CraftLootTable implements org.bukkit.loot.LootTable {
         org.bukkit.loot.LootTable table = (org.bukkit.loot.LootTable) obj;
         return table.getKey().equals(this.getKey());
     }
+
+    // Paper start - satisfy equals/hashCode contract
+    @Override
+    public int hashCode() {
+        return java.util.Objects.hash(key);
+    }
+    // Paper end
 }

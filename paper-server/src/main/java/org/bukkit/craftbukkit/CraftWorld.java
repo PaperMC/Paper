@@ -1300,6 +1300,10 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         return this.world.getMaxY() + 1;
     }
 
+    public int getMaxY() {
+        return this.world.getMaxY();
+    }
+
     @Override
     public int getLogicalHeight() {
         return this.world.dimensionType().logicalHeight();
