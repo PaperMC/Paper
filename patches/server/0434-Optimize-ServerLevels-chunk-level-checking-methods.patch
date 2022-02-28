@@ -8,10 +8,10 @@ so inline where possible, and avoid the abstraction of the
 Either class.
 
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index fda854c603629e3b9facc8ea3577cd8b23d973d9..083772c2f71851b5521f0ec5c1ecb872e357e8f7 100644
+index 9f1b38c40da90f4224810356b8ee78418b58cb5d..ddf4f4081374910df6c8ad7b92c479066434276f 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
-@@ -2162,15 +2162,18 @@ public class ServerLevel extends Level implements WorldGenLevel {
+@@ -2165,19 +2165,22 @@ public class ServerLevel extends Level implements WorldGenLevel {
      }
  
      private boolean isPositionTickingWithEntitiesLoaded(long chunkPos) {
@@ -23,13 +23,18 @@ index fda854c603629e3b9facc8ea3577cd8b23d973d9..083772c2f71851b5521f0ec5c1ecb872
      }
  
      public boolean isPositionEntityTicking(BlockPos pos) {
--        return this.entityManager.isPositionTicking(pos);
-+        return this.entityManager.isPositionTicking(ChunkPos.asLong(pos)); // Paper
+-        return this.entityManager.canPositionTick(pos) && this.chunkSource.chunkMap.getDistanceManager().inEntityTickingRange(ChunkPos.asLong(pos));
++        return this.entityManager.canPositionTick(ChunkPos.asLong(pos)) && this.chunkSource.chunkMap.getDistanceManager().inEntityTickingRange(ChunkPos.asLong(pos)); // Paper
      }
  
-     public boolean isPositionEntityTicking(ChunkPos pos) {
--        return this.entityManager.isPositionTicking(pos);
-+        return this.entityManager.isPositionTicking(pos.toLong()); // Paper
+     public boolean isNaturalSpawningAllowed(BlockPos pos) {
+-        return this.entityManager.canPositionTick(pos);
++        return this.entityManager.canPositionTick(ChunkPos.asLong(pos)); // Paper
+     }
+ 
+     public boolean isNaturalSpawningAllowed(ChunkPos pos) {
+-        return this.entityManager.canPositionTick(pos);
++        return this.entityManager.canPositionTick(pos.toLong()); // Paper
      }
  
      private final class EntityCallbacks implements LevelCallback<Entity> {
@@ -47,7 +52,7 @@ index 4c5f8a103b550a681178926096d5f758654c61a7..d2952a1a84ae7326e2d4a1f19497db8f
  
      public static int getX(long pos) {
 diff --git a/src/main/java/net/minecraft/world/level/entity/PersistentEntitySectionManager.java b/src/main/java/net/minecraft/world/level/entity/PersistentEntitySectionManager.java
-index e19f5b2c8f485d596a64d5d96e75fa1f4a8255b5..ccafd28e3dc9a03f310eb5bdde85fcb277ef5116 100644
+index 1407f30d467fa78bc207a91da0e6395c0a9ba83d..2110cb437807f99994838b57653caefe2f01a9c5 100644
 --- a/src/main/java/net/minecraft/world/level/entity/PersistentEntitySectionManager.java
 +++ b/src/main/java/net/minecraft/world/level/entity/PersistentEntitySectionManager.java
 @@ -383,6 +383,11 @@ public class PersistentEntitySectionManager<T extends EntityAccess> implements A
@@ -55,10 +60,10 @@ index e19f5b2c8f485d596a64d5d96e75fa1f4a8255b5..ccafd28e3dc9a03f310eb5bdde85fcb2
          return this.entityGetter;
      }
 +    // Paper start
-+    public final boolean isPositionTicking(long position) {
++    public final boolean canPositionTick(long position) {
 +        return this.chunkVisibility.get(position).isTicking();
 +    }
 +    // Paper end
  
-     public boolean isPositionTicking(BlockPos pos) {
+     public boolean canPositionTick(BlockPos pos) {
          return ((Visibility) this.chunkVisibility.get(ChunkPos.asLong(pos))).isTicking();

@@ -28,10 +28,10 @@ and then catch exceptions and close if they fire.
 Part of this commit was authored by: Spottedleaf
 
 diff --git a/src/main/java/net/minecraft/network/Connection.java b/src/main/java/net/minecraft/network/Connection.java
-index 821f22b8fde2d76bfcb417138f9bd83af766dcd7..f13e24eede7f09ecc8f375df5e27e385f589005d 100644
+index 3559f6c54e7674d3eaf023d2ceaee13edfcae5b2..a0d3d9e344f530b713167d0663634c40eefce5b5 100644
 --- a/src/main/java/net/minecraft/network/Connection.java
 +++ b/src/main/java/net/minecraft/network/Connection.java
-@@ -87,6 +87,10 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -97,6 +97,10 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
      public int protocolVersion;
      public java.net.InetSocketAddress virtualHost;
      private static boolean enableExplicitFlush = Boolean.getBoolean("paper.explicit-flush");
@@ -42,7 +42,7 @@ index 821f22b8fde2d76bfcb417138f9bd83af766dcd7..f13e24eede7f09ecc8f375df5e27e385
      // Paper end
  
      public Connection(PacketFlow side) {
-@@ -110,6 +114,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -120,6 +124,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
      }
  
      public void setProtocol(ConnectionProtocol state) {
@@ -50,7 +50,7 @@ index 821f22b8fde2d76bfcb417138f9bd83af766dcd7..f13e24eede7f09ecc8f375df5e27e385
          this.channel.attr(Connection.ATTRIBUTE_PROTOCOL).set(state);
          this.channel.config().setAutoRead(true);
          Connection.LOGGER.debug("Enabled auto read");
-@@ -186,19 +191,87 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -198,19 +203,87 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
          Validate.notNull(listener, "packetListener", new Object[0]);
          this.packetListener = listener;
      }
@@ -142,7 +142,7 @@ index 821f22b8fde2d76bfcb417138f9bd83af766dcd7..f13e24eede7f09ecc8f375df5e27e385
      }
  
      private void sendPacket(Packet<?> packet, @Nullable GenericFutureListener<? extends Future<? super Void>> callback) {
-@@ -226,33 +299,79 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -238,33 +311,79 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
              this.setProtocol(packetState);
          }
  
@@ -231,7 +231,7 @@ index 821f22b8fde2d76bfcb417138f9bd83af766dcd7..f13e24eede7f09ecc8f375df5e27e385
  
      public void tick() {
          this.flushQueue();
-@@ -289,9 +408,22 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -301,9 +420,22 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
          return this.address;
      }
  
@@ -254,7 +254,7 @@ index 821f22b8fde2d76bfcb417138f9bd83af766dcd7..f13e24eede7f09ecc8f375df5e27e385
          // Spigot End
          if (this.channel.isOpen()) {
              this.channel.close(); // We can't wait as this may be called from an event loop.
-@@ -409,7 +541,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -421,7 +553,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
      public void handleDisconnection() {
          if (this.channel != null && !this.channel.isOpen()) {
              if (this.disconnectionHandled) {
@@ -263,7 +263,7 @@ index 821f22b8fde2d76bfcb417138f9bd83af766dcd7..f13e24eede7f09ecc8f375df5e27e385
              } else {
                  this.disconnectionHandled = true;
                  if (this.getDisconnectedReason() != null) {
-@@ -417,7 +549,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -429,7 +561,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
                  } else if (this.getPacketListener() != null) {
                      this.getPacketListener().onDisconnect(new TranslatableComponent("multiplayer.disconnect.generic"));
                  }
@@ -297,7 +297,7 @@ index 74bfe0d3942259c45702b099efdc4e101a4e3022..e8fcd56906d26f6dc87959e32c4c7c78
          return false;
      }
 diff --git a/src/main/java/net/minecraft/server/network/ServerConnectionListener.java b/src/main/java/net/minecraft/server/network/ServerConnectionListener.java
-index 526e07d8ea21af42c271bee4da5bccd766227006..6bf39699700075e295a693b56d237391de4e4f58 100644
+index e174d9803e557470068f7893260d55a042888517..7c820a8f9ae85eb6941dce0e6296775fb331d720 100644
 --- a/src/main/java/net/minecraft/server/network/ServerConnectionListener.java
 +++ b/src/main/java/net/minecraft/server/network/ServerConnectionListener.java
 @@ -63,10 +63,12 @@ public class ServerConnectionListener {

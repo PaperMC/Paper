@@ -6,25 +6,23 @@ Subject: [PATCH] Player.setPlayerProfile API
 This can be useful for changing name or skins after a player has logged in.
 
 diff --git a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
-index 00ef714294b6cce5fec7613eed4ba228a48e3e11..67b300574655854249c1f7440f56a6e8f0fad351 100644
+index d3462cdc5eee37cedbff80f35d5b9c51e8dcd1da..5ebc450432805d52457b9f8ff1e2b1981bdd78e6 100644
 --- a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
-@@ -341,12 +341,12 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener
+@@ -344,11 +344,11 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener
                          final org.bukkit.craftbukkit.CraftServer server = ServerLoginPacketListenerImpl.this.server.server;
  
-                             // Paper start
--                            PlayerProfile profile = Bukkit.createProfile(uniqueId, playerName);
-+                            PlayerProfile profile = CraftPlayerProfile.asBukkitMirror(ServerLoginPacketListenerImpl.this.gameProfile);
-                             AsyncPlayerPreLoginEvent asyncEvent = new AsyncPlayerPreLoginEvent(playerName, address, uniqueId, profile);
+                         // Paper start
+-                        com.destroystokyo.paper.profile.PlayerProfile profile = org.bukkit.Bukkit.createProfile(uniqueId, playerName);
++                        com.destroystokyo.paper.profile.PlayerProfile profile = com.destroystokyo.paper.profile.CraftPlayerProfile.asBukkitMirror(ServerLoginPacketListenerImpl.this.gameProfile);
+                         AsyncPlayerPreLoginEvent asyncEvent = new AsyncPlayerPreLoginEvent(playerName, address, uniqueId, profile);
                          server.getPluginManager().callEvent(asyncEvent);
-                             profile = asyncEvent.getPlayerProfile();
--                            profile.complete();
--                            gameProfile = CraftPlayerProfile.asAuthlibCopy(profile);
-+                            profile.complete(true);
-+                            ServerLoginPacketListenerImpl.this.gameProfile = CraftPlayerProfile.asAuthlib(profile);
-                             playerName = gameProfile.getName();
-                             uniqueId = gameProfile.getId();
-                             // Paper end
+                         profile = asyncEvent.getPlayerProfile();
+-                        profile.complete();
++                        profile.complete(true); // Paper - setPlayerProfileAPI
+                         gameProfile = com.destroystokyo.paper.profile.CraftPlayerProfile.asAuthlibCopy(profile);
+                         playerName = gameProfile.getName();
+                         uniqueId = gameProfile.getId();
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 index 6eaf970663bf5de9ea30db879e135c5e06238b41..e1d81be0a7ad66fc77c89563fd4e814ce80e24a7 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java

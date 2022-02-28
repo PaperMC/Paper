@@ -269,18 +269,18 @@ index 0000000000000000000000000000000000000000..11de56afaf059b00fa5bec293516bcdc
 +    }
 +} 
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index d2755c00a28fa584d506259f33f8da44c2cf4842..6a8d929721f61b5235614496f60473b89a227ee5 100644
+index 6dae228c0d0460d74ed49aee5a38dfd7b145d891..c7114fc8045feab770dde30669d2711313bff189 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
-@@ -151,6 +151,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
-     private final Long2ByteMap chunkTypeCache;
+@@ -155,6 +155,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+     private final Long2LongMap chunkSaveCooldowns;
      private final Queue<Runnable> unloadQueue;
      int viewDistance;
 +    public final com.destroystokyo.paper.util.misc.PlayerAreaMap playerMobDistanceMap; // Paper
  
      // CraftBukkit start - recursion-safe executor for Chunk loadCallback() and unloadCallback()
      public final CallbackExecutor callbackExecutor = new CallbackExecutor();
-@@ -180,16 +181,31 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -184,16 +185,31 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          int chunkX = MCUtil.getChunkCoordinate(player.getX());
          int chunkZ = MCUtil.getChunkCoordinate(player.getZ());
          // Note: players need to be explicitly added to distance maps before they can be updated
@@ -312,7 +312,7 @@ index d2755c00a28fa584d506259f33f8da44c2cf4842..6a8d929721f61b5235614496f60473b8
      }
      // Paper end
      // Paper start
-@@ -263,6 +279,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -268,6 +284,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          this.dataRegionManager = new io.papermc.paper.chunk.SingleThreadChunkRegionManager(this.level, 2, (1.0 / 3.0), 1, 6, "Data", DataRegionData::new, DataRegionSectionData::new);
          this.regionManagers.add(this.dataRegionManager);
          // Paper end
@@ -320,7 +320,7 @@ index d2755c00a28fa584d506259f33f8da44c2cf4842..6a8d929721f61b5235614496f60473b8
      }
  
      protected ChunkGenerator generator() {
-@@ -280,6 +297,31 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -285,6 +302,31 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          });
      }
  
@@ -353,10 +353,10 @@ index d2755c00a28fa584d506259f33f8da44c2cf4842..6a8d929721f61b5235614496f60473b8
          double d0 = (double) SectionPos.sectionToBlockCoord(pos.x, 8);
          double d1 = (double) SectionPos.sectionToBlockCoord(pos.z, 8);
 diff --git a/src/main/java/net/minecraft/server/level/DistanceManager.java b/src/main/java/net/minecraft/server/level/DistanceManager.java
-index f0dac1f596911eb2109192ef16a619f8ae71d1f7..07b616d9d7cde77c001f5c627daef0731d883e61 100644
+index a028de3cec90a097d6f10c49be2c6a7cb0b19318..92bd7382f0e1e19c245587ff32dff3dd87a401a3 100644
 --- a/src/main/java/net/minecraft/server/level/DistanceManager.java
 +++ b/src/main/java/net/minecraft/server/level/DistanceManager.java
-@@ -323,6 +323,12 @@ public abstract class DistanceManager {
+@@ -326,6 +326,12 @@ public abstract class DistanceManager {
  
      }
  
@@ -370,10 +370,10 @@ index f0dac1f596911eb2109192ef16a619f8ae71d1f7..07b616d9d7cde77c001f5c627daef073
          this.naturalSpawnChunkCounter.runAllUpdates();
          return this.naturalSpawnChunkCounter.chunks.size();
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-index 343d54addd67998175db152d38702adda37b7d21..6830d1d9929b472e530b6676c7d0f8b316aea899 100644
+index b6737c0b74e821c948919ca4184dfe0281a19894..cbb8adea5e867a92e1dc4c94a0e7e116b7ac2274 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-@@ -916,7 +916,18 @@ public class ServerChunkCache extends ChunkSource {
+@@ -915,7 +915,18 @@ public class ServerChunkCache extends ChunkSource {
              gameprofilerfiller.push("naturalSpawnCount");
              this.level.timings.countNaturalMobs.startTiming(); // Paper - timings
              int l = this.distanceManager.getNaturalSpawnChunkCount();
@@ -394,10 +394,10 @@ index 343d54addd67998175db152d38702adda37b7d21..6830d1d9929b472e530b6676c7d0f8b3
  
              this.lastSpawnState = spawnercreature_d;
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-index b193f8dfbe7b61c919ad5eb452d29885982e25e4..01b9edc8aaf472650f171f1b88229807bcfdc145 100644
+index 1d0dc77947d1b7fc89d41e5edb660aea86282562..49f272d37fb59fd4c13466217389e626b6ca1e2d 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-@@ -227,6 +227,11 @@ public class ServerPlayer extends Player {
+@@ -225,6 +225,11 @@ public class ServerPlayer extends Player {
      public boolean queueHealthUpdatePacket = false;
      public net.minecraft.network.protocol.game.ClientboundSetHealthPacket queuedHealthUpdatePacket;
      // Paper end
@@ -409,7 +409,7 @@ index b193f8dfbe7b61c919ad5eb452d29885982e25e4..01b9edc8aaf472650f171f1b88229807
  
      // CraftBukkit start
      public String displayName;
-@@ -316,6 +321,7 @@ public class ServerPlayer extends Player {
+@@ -314,6 +319,7 @@ public class ServerPlayer extends Player {
          this.adventure$displayName = net.kyori.adventure.text.Component.text(this.getScoreboardName()); // Paper
          this.bukkitPickUpLoot = true;
          this.maxHealthCache = this.getMaxHealth();
@@ -418,7 +418,7 @@ index b193f8dfbe7b61c919ad5eb452d29885982e25e4..01b9edc8aaf472650f171f1b88229807
  
      // Yes, this doesn't match Vanilla, but it's the best we can do for now.
 diff --git a/src/main/java/net/minecraft/world/level/NaturalSpawner.java b/src/main/java/net/minecraft/world/level/NaturalSpawner.java
-index be1068c305ef0c968caa2ee9412ed7ad1b1946f1..8e63d93a574f2c37094770099ea8e1f45cde3db5 100644
+index 474dc6302d2b0f8c629b2e1f6de9d4ba6faf398b..1622450b53e0f0f48c3ca107e4d705b4ad29dadf 100644
 --- a/src/main/java/net/minecraft/world/level/NaturalSpawner.java
 +++ b/src/main/java/net/minecraft/world/level/NaturalSpawner.java
 @@ -67,7 +67,13 @@ public final class NaturalSpawner {
@@ -579,7 +579,7 @@ index be1068c305ef0c968caa2ee9412ed7ad1b1946f1..8e63d93a574f2c37094770099ea8e1f4
      }
  
      private static boolean isRightDistanceToPlayerAndSpawnPoint(ServerLevel world, ChunkAccess chunk, BlockPos.MutableBlockPos pos, double squaredDistance) {
-@@ -545,7 +598,7 @@ public final class NaturalSpawner {
+@@ -551,7 +604,7 @@ public final class NaturalSpawner {
              MobCategory enumcreaturetype = entitytypes.getCategory();
  
              this.mobCategoryCounts.addTo(enumcreaturetype, 1);
@@ -588,7 +588,7 @@ index be1068c305ef0c968caa2ee9412ed7ad1b1946f1..8e63d93a574f2c37094770099ea8e1f4
          }
  
          public int getSpawnableChunkCount() {
-@@ -561,6 +614,7 @@ public final class NaturalSpawner {
+@@ -567,6 +620,7 @@ public final class NaturalSpawner {
              int i = limit * this.spawnableChunkCount / NaturalSpawner.MAGIC_NUMBER;
              // CraftBukkit end
  

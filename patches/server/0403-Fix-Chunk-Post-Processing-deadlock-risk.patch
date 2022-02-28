@@ -25,10 +25,10 @@ This successfully fixed a reoccurring and highly reproduceable crash
 for heightmaps.
 
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index 4cb7e63b433b8d4a02c2d193a2596e51ddab2779..9396d1164355aa3f10a8e5adad4813be808c0ffb 100644
+index 7e3f7b69fc7a608dd82b471d832cc401a77f0738..a603e74d6bc936db997f9230fff1100946fa8075 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
-@@ -174,6 +174,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -178,6 +178,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
      };
      // CraftBukkit end
  
@@ -36,20 +36,20 @@ index 4cb7e63b433b8d4a02c2d193a2596e51ddab2779..9396d1164355aa3f10a8e5adad4813be
      // Paper start - distance maps
      private final com.destroystokyo.paper.util.misc.PooledLinkedHashSets<ServerPlayer> pooledLinkedPlayerHashSets = new com.destroystokyo.paper.util.misc.PooledLinkedHashSets<>();
  
-@@ -975,7 +976,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
-                 return Either.left(chunk);
+@@ -1043,7 +1044,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+                 return chunk;
              });
          }, (runnable) -> {
 -            this.mainThreadMailbox.tell(ChunkTaskPriorityQueueSorter.message(holder, runnable));
 +            this.mainThreadMailbox.tell(ChunkTaskPriorityQueueSorter.message(holder, () -> ChunkMap.this.chunkLoadConversionCallbackExecutor.execute(runnable))); // Paper - delay running Chunk post processing until outside of the sorter to prevent a deadlock scenario when post processing causes another chunk request.
          });
+     }
  
-         completablefuture1.thenAcceptAsync((either) -> {
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-index 19c44eae78802c9fe0479cdc32f21156dc9b9d45..02516d4a6ee08908765f5bc84b14560754a67680 100644
+index cf56b2ed508352205ef6ec71519b0626aa698987..1b6fb81079d3ad5d3c33be67a1c05111f9dd5f2d 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-@@ -1140,6 +1140,7 @@ public class ServerChunkCache extends ChunkSource {
+@@ -1141,6 +1141,7 @@ public class ServerChunkCache extends ChunkSource {
                  return super.pollTask() || execChunkTask; // Paper
              }
          } finally {

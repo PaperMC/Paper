@@ -5,19 +5,20 @@ Subject: [PATCH] Make targetSize more aggressive in the chunk unload queue
 
 
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index c72d19a903a5cbb48d38f493e00e8c54a8e23b9c..065ee0486ec275f9b61dc18afa86023183f0c73b 100644
+index a10848e6899853f447f101675e3a6aba9d3d43f3..50b2dc91f4926ebc4511e44e3aa3062eadc40ea0 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
-@@ -221,7 +221,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
-         this.playerMap = new PlayerMap();
+@@ -226,8 +226,8 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          this.entityMap = new Int2ObjectOpenHashMap();
          this.chunkTypeCache = new Long2ByteOpenHashMap();
+         this.chunkSaveCooldowns = new Long2LongOpenHashMap();
 -        this.unloadQueue = Queues.newConcurrentLinkedQueue();
-+        this.unloadQueue = new com.destroystokyo.paper.utils.CachedSizeConcurrentLinkedQueue<>(); // Paper - need constant-time size()
          this.structureManager = structureManager;
++        this.unloadQueue = new com.destroystokyo.paper.utils.CachedSizeConcurrentLinkedQueue<>(); // Paper - need constant-time size()
          Path path = session.getDimensionPath(world.dimension());
  
-@@ -529,7 +529,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+         this.storageName = path.getFileName().toString();
+@@ -569,7 +569,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          // Spigot start
          org.spigotmc.SlackActivityAccountant activityAccountant = this.level.getServer().slackActivityAccountant;
          activityAccountant.startActivity(0.5);
@@ -26,7 +27,7 @@ index c72d19a903a5cbb48d38f493e00e8c54a8e23b9c..065ee0486ec275f9b61dc18afa860231
          // Spigot end
          while (longiterator.hasNext()) { // Spigot
              long j = longiterator.nextLong();
-@@ -549,7 +549,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -589,7 +589,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          }
          activityAccountant.endActivity(); // Spigot
  

@@ -920,10 +920,10 @@ index 0000000000000000000000000000000000000000..d67a40e7be030142443680c89e1763fc
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-index d626af3879e558cdfbe95b1e70e0b32e0f4d1170..7b23535a680d2a8534dcb8dd87770f66fb982c13 100644
+index f6410ba180a85b114a296c64ce293f0891f6b96c..b4d20c06a19e021317cff64a9789f0579b5f921d 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-@@ -415,7 +415,7 @@ public class ServerPlayer extends Player {
+@@ -413,7 +413,7 @@ public class ServerPlayer extends Player {
  
                  if (blockposition1 != null) {
                      this.moveTo(blockposition1, 0.0F, 0.0F);
@@ -932,7 +932,7 @@ index d626af3879e558cdfbe95b1e70e0b32e0f4d1170..7b23535a680d2a8534dcb8dd87770f66
                          break;
                      }
                  }
-@@ -423,7 +423,7 @@ public class ServerPlayer extends Player {
+@@ -421,7 +421,7 @@ public class ServerPlayer extends Player {
          } else {
              this.moveTo(blockposition, 0.0F, 0.0F);
  
@@ -942,28 +942,28 @@ index d626af3879e558cdfbe95b1e70e0b32e0f4d1170..7b23535a680d2a8534dcb8dd87770f66
              }
          }
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
-index 80888d5adf7d4377e17e6f530f35053cfcc9eed4..fe9810c3b908339ca050ed832c2e67d62cc97b0b 100644
+index d9cd0bb20be6eca5db889f1350b829c0309e021f..639670e7570beec3dba24b348bc3da0ce0231393 100644
 --- a/src/main/java/net/minecraft/server/players/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/players/PlayerList.java
 @@ -936,7 +936,7 @@ public abstract class PlayerList {
          // CraftBukkit end
  
          worldserver1.getChunkSource().addRegionTicket(net.minecraft.server.level.TicketType.POST_TELEPORT, new net.minecraft.world.level.ChunkPos(location.getBlockX() >> 4, location.getBlockZ() >> 4), 1, entityplayer.getId()); // Paper
--        while (avoidSuffocation && !worldserver1.noCollision(entityplayer1) && entityplayer1.getY() < (double) worldserver1.getMaxBuildHeight()) {
+-        while (avoidSuffocation && !worldserver1.noCollision((Entity) entityplayer1) && entityplayer1.getY() < (double) worldserver1.getMaxBuildHeight()) {
 +        while (avoidSuffocation && !worldserver1.noCollision(entityplayer1, entityplayer1.getBoundingBox(), true) && entityplayer1.getY() < (double) worldserver1.getMaxBuildHeight()) { // Paper - make sure this loads chunks, we default to NOT loading now
              entityplayer1.setPos(entityplayer1.getX(), entityplayer1.getY() + 1.0D, entityplayer1.getZ());
          }
          // CraftBukkit start
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index 26546c030710685cdc1c75b8018462cd424b9ed6..2e61243b86ea1f21ec799a63badeae329e1ac3fa 100644
+index f1c1f58ebb0398df9da9474778d1ad321d9e9433..579c973cd0f9ac5fd1cd9ecd4a9c9e0117cb8ab2 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
-@@ -1082,9 +1082,44 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, i
+@@ -1095,9 +1095,44 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, i
                  float f2 = this.getBlockSpeedFactor();
  
                  this.setDeltaMovement(this.getDeltaMovement().multiply((double) f2, 1.0D, (double) f2));
 -                if (this.level.getBlockStatesIfLoaded(this.getBoundingBox().deflate(1.0E-6D)).noneMatch((iblockdata1) -> {
--                    return iblockdata1.is((Tag) BlockTags.FIRE) || iblockdata1.is(Blocks.LAVA);
+-                    return iblockdata1.is(BlockTags.FIRE) || iblockdata1.is(Blocks.LAVA);
 -                })) {
 +                // Paper start - remove expensive streams from here
 +                boolean noneMatch = true;
@@ -993,7 +993,7 @@ index 26546c030710685cdc1c75b8018462cd424b9ed6..2e61243b86ea1f21ec799a63badeae32
 +                                }
 +
 +                                BlockState type = chunk.getBlockStateFinal(fx, fy, fz);
-+                                if (type.is((Tag) BlockTags.FIRE) || type.is(Blocks.LAVA)) {
++                                if (type.is(BlockTags.FIRE) || type.is(Blocks.LAVA)) {
 +                                    noneMatch = false;
 +                                    // can't break, we need to retain vanilla behavior by ensuring ALL chunks are loaded
 +                                }
@@ -1006,7 +1006,7 @@ index 26546c030710685cdc1c75b8018462cd424b9ed6..2e61243b86ea1f21ec799a63badeae32
                      if (this.remainingFireTicks <= 0) {
                          this.setRemainingFireTicks(-this.getFireImmuneTicks());
                      }
-@@ -1218,32 +1253,78 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, i
+@@ -1231,32 +1266,78 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, i
      }
  
      private Vec3 collide(Vec3 movement) {
@@ -1106,24 +1106,43 @@ index 26546c030710685cdc1c75b8018462cd424b9ed6..2e61243b86ea1f21ec799a63badeae32
      }
  
      public static Vec3 collideBoundingBox(@Nullable Entity entity, Vec3 movement, AABB entityBoundingBox, Level world, List<VoxelShape> collisions) {
-@@ -2376,11 +2457,12 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, i
+@@ -2380,12 +2461,32 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, i
              float f = this.dimensions.width * 0.8F;
-             AABB axisalignedbb = AABB.ofSize(vec3d, (double) f, 1.0E-6D, (double) f);
+             AABB axisalignedbb = AABB.ofSize(this.getEyePosition(), (double) f, 1.0E-6D, (double) f);
  
--            return this.level.getBlockStates(axisalignedbb).filter(Predicate.not(BlockBehaviour.BlockStateBase::isAir)).anyMatch((iblockdata) -> {
--                BlockPos blockposition = new BlockPos(vec3d);
--
--                return iblockdata.isSuffocating(this.level, blockposition) && Shapes.joinIsNotEmpty(iblockdata.getCollisionShape(this.level, blockposition).move(vec3d.x, vec3d.y, vec3d.z), Shapes.create(axisalignedbb), BooleanOp.AND);
+-            return BlockPos.betweenClosedStream(axisalignedbb).anyMatch((blockposition) -> {
+-                BlockState iblockdata = this.level.getBlockState(blockposition);
++            int minX = Mth.floor(axisalignedbb.minX);
++            int minY = Mth.floor(axisalignedbb.minY);
++            int minZ = Mth.floor(axisalignedbb.minZ);
++            int maxX = Mth.floor(axisalignedbb.maxX);
++            int maxY = Mth.floor(axisalignedbb.maxY);
++            int maxZ = Mth.floor(axisalignedbb.maxZ);
++            BlockPos.MutableBlockPos blockposition = new BlockPos.MutableBlockPos();
++            for (int fz = minZ; fz <= maxZ; ++fz) {
++                for (int fx = minX; fx <= maxX; ++fx) {
++                    for (int fy = minY; fy <= maxY; ++fy) {
++                        net.minecraft.world.level.chunk.LevelChunk chunk = (net.minecraft.world.level.chunk.LevelChunk)this.level.getChunkIfLoadedImmediately(fx >> 4, fz >> 4);
++                        if (chunk == null) {
++                            continue;
++                        }
+ 
+-                return !iblockdata.isAir() && iblockdata.isSuffocating(this.level, blockposition) && Shapes.joinIsNotEmpty(iblockdata.getCollisionShape(this.level, blockposition).move((double) blockposition.getX(), (double) blockposition.getY(), (double) blockposition.getZ()), Shapes.create(axisalignedbb), BooleanOp.AND);
 -            });
-+            // Paper start
-+            return io.papermc.paper.util.CollisionUtil.getCollisionsForBlocksOrWorldBorder(this.level, this, axisalignedbb, null,
-+                false, false, false, true, (BlockState blockState, BlockPos blockPos) -> {
-+                    return blockState.isSuffocating(this.level, blockPos);
-+                });
-+            // Paper end
++                        blockposition.set(fx, fy, fz);
++                        BlockState iblockdata = chunk.getBlockStateFinal(fx, fy, fz);
++
++                        if (!iblockdata.isAir() && iblockdata.isSuffocating(this.level, blockposition) && Shapes.joinIsNotEmpty(iblockdata.getCollisionShape(this.level, blockposition).move((double) blockposition.getX(), (double) blockposition.getY(), (double) blockposition.getZ()), Shapes.create(axisalignedbb), BooleanOp.AND)) {
++                            return true;
++                        }
++                    }
++                }
++            }
          }
++        return false;
      }
  
+     public InteractionResult interact(Player player, InteractionHand hand) {
 diff --git a/src/main/java/net/minecraft/world/level/BlockCollisions.java b/src/main/java/net/minecraft/world/level/BlockCollisions.java
 index a733c91700a38634806e9155c693b227e6aa16b6..120e1778f2bdd64ca19ee21dc5c5f2f382895470 100644
 --- a/src/main/java/net/minecraft/world/level/BlockCollisions.java
@@ -1216,10 +1235,10 @@ index f9527d1d867f93b4e0e2758485cfa1f6efa0bf8b..1f4b72a0aca200b2e0860449c718e6e6
                  return List.of();
              } else {
 diff --git a/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java b/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java
-index 1831588b275f11aff37573fead835f6ddabfece1..05c46f3b3bce5225b819d86e6e06729a5093e092 100644
+index d545b05cfbb14e5a15b26efe372509e498605016..fb9e5135ac9e937c69dc3aed0c0bc7a95f0dd5b4 100644
 --- a/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java
 +++ b/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java
-@@ -726,7 +726,7 @@ public abstract class BlockBehaviour {
+@@ -728,7 +728,7 @@ public abstract class BlockBehaviour {
              }
              this.shapeExceedsCube = this.cache == null || this.cache.largeCollisionShape; // Paper - moved from actual method to here
              this.opacityIfCached = this.cache == null || this.isConditionallyFullOpaque() ? -1 : this.cache.lightBlock; // Paper - cache opacity for light

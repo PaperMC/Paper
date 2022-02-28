@@ -19,13 +19,22 @@ index b27021a42cbed3f0648a8d0903d00d03922ae221..eada966d7f108a6081be7a848f5c1dfc
  
      private MinecraftTimings() {}
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 79e5b8a05828bbc07468d2deeb0f4dad51ca12a5..7be369cf60e45a551fb2d274b9514856dca7b2e5 100644
+index 95179d309f668b3fe299ce4641164a1859517d33..eb9a3fecb7c1526d0c5f6194c78ff3a740c94c7e 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -332,6 +332,76 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
-         return s0;
-     }
+@@ -1348,6 +1348,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
  
+     private boolean pollTaskInternal() {
+         if (super.pollTask()) {
++            this.executeMidTickTasks(); // Paper - execute chunk tasks mid tick
+             return true;
+         } else {
+             if (this.haveTime()) {
+@@ -2669,4 +2670,74 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         }
+     }
+     // Paper end
++
 +    // Paper start - execute chunk tasks mid tick
 +    static final long CHUNK_TASK_QUEUE_BACKOFF_MIN_TIME = 25L * 1000L; // 25us
 +    static final long MAX_CHUNK_EXEC_TIME = 1000L; // 1us
@@ -95,23 +104,12 @@ index 79e5b8a05828bbc07468d2deeb0f4dad51ca12a5..7be369cf60e45a551fb2d274b9514856
 +        }
 +    }
 +    // Paper end - execute chunk tasks mid tick
-+
-     public MinecraftServer(OptionSet options, DataPackConfig datapackconfiguration, Thread thread, RegistryAccess.RegistryHolder iregistrycustom_dimension, LevelStorageSource.LevelStorageAccess convertable_conversionsession, WorldData savedata, PackRepository resourcepackrepository, Proxy proxy, DataFixer datafixer, ServerResources datapackresources, @Nullable MinecraftSessionService minecraftsessionservice, @Nullable GameProfileRepository gameprofilerepository, @Nullable GameProfileCache usercache, ChunkProgressListenerFactory worldloadlistenerfactory) {
-         super("Server");
-         SERVER = this; // Paper - better singleton
-@@ -1312,6 +1382,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
- 
-     private boolean pollTaskInternal() {
-         if (super.pollTask()) {
-+            this.executeMidTickTasks(); // Paper - execute chunk tasks mid tick
-             return true;
-         } else {
-             if (this.haveTime()) {
+ }
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-index 579b2ac31034082456de5ee91e3c6906c7199e32..4e7027d739f7d3c8586804fc053931b2dca1de59 100644
+index 0510439dc48e3ce462fc9dcc6e0e0d5cb9f239b3..11f25c93c0a833acdf3b5ffe3f58d179fc73d1aa 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-@@ -1019,6 +1019,7 @@ public class ServerChunkCache extends ChunkSource {
+@@ -1018,6 +1018,7 @@ public class ServerChunkCache extends ChunkSource {
                  iterator1 = shuffled.iterator();
              }
  
@@ -119,7 +117,7 @@ index 579b2ac31034082456de5ee91e3c6906c7199e32..4e7027d739f7d3c8586804fc053931b2
              try {
              while (iterator1.hasNext()) {
                  LevelChunk chunk1 = iterator1.next();
-@@ -1040,6 +1041,7 @@ public class ServerChunkCache extends ChunkSource {
+@@ -1039,6 +1040,7 @@ public class ServerChunkCache extends ChunkSource {
  
                      if (this.level.shouldTickBlocksAt(chunkcoordintpair.toLong())) {
                          this.level.tickChunk(chunk1, k);
@@ -128,10 +126,10 @@ index 579b2ac31034082456de5ee91e3c6906c7199e32..4e7027d739f7d3c8586804fc053931b2
                  }
                  // Paper start - optimise chunk tick iteration
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index 9362b39f4cc321bf0d4fc272bc3fb0463c47d4ce..cb327920cfa8d4eec626af1fe42ec1cc5e8953c7 100644
+index 69dc366684db5229a882c18075465abc389cc8fa..8126e7fcd83bcac45eb75cee0cc191144ca29289 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
-@@ -201,7 +201,9 @@ public class ServerLevel extends Level implements WorldGenLevel {
+@@ -202,7 +202,9 @@ public class ServerLevel extends Level implements WorldGenLevel {
      private final StructureFeatureManager structureFeatureManager;
      private final StructureCheck structureCheck;
      private final boolean tickTime;
@@ -143,10 +141,10 @@ index 9362b39f4cc321bf0d4fc272bc3fb0463c47d4ce..cb327920cfa8d4eec626af1fe42ec1cc
      // CraftBukkit start
      private int tickPosition;
 diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
-index c603dcbe89a49e9e7de7fbc5c863e4b3a9869f95..1a76c8a52926bf15f55640d5c053a7235c58d3ed 100644
+index 944519c4433710610ac5015d3d3de380d9ec39c9..d17c2bcc1537f2a7eb575984b06c5da1bb511e6b 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
 +++ b/src/main/java/net/minecraft/world/level/Level.java
-@@ -895,6 +895,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -852,6 +852,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
      public <T extends Entity> void guardEntityTick(Consumer<T> tickConsumer, T entity) {
          try {
              tickConsumer.accept(entity);

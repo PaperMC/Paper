@@ -6,10 +6,10 @@ Subject: [PATCH] Use distance map to optimise entity tracker
 Use the distance map to find candidate players for tracking.
 
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index d924dfe452244633bcf62e7ccefe3a5a1a3d7f37..e35a47e0c8eebbad7154a1357a6b868887bc4a0c 100644
+index ddda2d6fd0cc12b6d7087b07773b04d7eb258bc1..e5dd64e0d750e8afc6695b36fa2f554d9b1d70c5 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
-@@ -67,6 +67,7 @@ import net.minecraft.network.protocol.game.ClientboundSetEntityLinkPacket;
+@@ -70,6 +70,7 @@ import net.minecraft.network.protocol.game.ClientboundSetEntityLinkPacket;
  import net.minecraft.network.protocol.game.ClientboundSetPassengersPacket;
  import net.minecraft.network.protocol.game.DebugPackets;
  import net.minecraft.server.MCUtil;
@@ -17,7 +17,7 @@ index d924dfe452244633bcf62e7ccefe3a5a1a3d7f37..e35a47e0c8eebbad7154a1357a6b8688
  import net.minecraft.server.level.progress.ChunkProgressListener;
  import net.minecraft.server.network.ServerPlayerConnection;
  import net.minecraft.util.CsvOutput;
-@@ -188,10 +189,35 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -192,10 +193,35 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
      public final com.destroystokyo.paper.util.misc.PlayerAreaMap playerMobSpawnMap; // this map is absent from updateMaps since it's controlled at the start of the chunkproviderserver tick
      public final com.destroystokyo.paper.util.misc.PlayerAreaMap playerChunkTickRangeMap;
      // Paper end - optimise ChunkMap#anyPlayerCloseEnoughForSpawning
@@ -53,7 +53,7 @@ index d924dfe452244633bcf62e7ccefe3a5a1a3d7f37..e35a47e0c8eebbad7154a1357a6b8688
          // Note: players need to be explicitly added to distance maps before they can be updated
          this.playerChunkTickRangeMap.add(player, chunkX, chunkZ, DistanceManager.MOB_SPAWN_RANGE); // Paper - optimise ChunkMap#anyPlayerCloseEnoughForSpawning
          // Paper start - per player mob spawning
-@@ -203,6 +229,11 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -207,6 +233,11 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
  
      void removePlayerFromDistanceMaps(ServerPlayer player) {
  
@@ -65,7 +65,7 @@ index d924dfe452244633bcf62e7ccefe3a5a1a3d7f37..e35a47e0c8eebbad7154a1357a6b8688
          // Paper start - optimise ChunkMap#anyPlayerCloseEnoughForSpawning
          this.playerMobSpawnMap.remove(player);
          this.playerChunkTickRangeMap.remove(player);
-@@ -218,6 +249,14 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -222,6 +253,14 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          int chunkX = MCUtil.getChunkCoordinate(player.getX());
          int chunkZ = MCUtil.getChunkCoordinate(player.getZ());
          // Note: players need to be explicitly added to distance maps before they can be updated
@@ -80,7 +80,7 @@ index d924dfe452244633bcf62e7ccefe3a5a1a3d7f37..e35a47e0c8eebbad7154a1357a6b8688
          this.playerChunkTickRangeMap.update(player, chunkX, chunkZ, DistanceManager.MOB_SPAWN_RANGE); // Paper - optimise ChunkMap#anyPlayerCloseEnoughForSpawning
          // Paper start - per player mob spawning
          if (this.playerMobDistanceMap != null) {
-@@ -298,6 +337,45 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -303,6 +342,45 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          this.regionManagers.add(this.dataRegionManager);
          // Paper end
          this.playerMobDistanceMap = this.level.paperConfig.perPlayerMobSpawns ? new com.destroystokyo.paper.util.misc.PlayerAreaMap(this.pooledLinkedPlayerHashSets) : null; // Paper
@@ -126,7 +126,7 @@ index d924dfe452244633bcf62e7ccefe3a5a1a3d7f37..e35a47e0c8eebbad7154a1357a6b8688
          // Paper start - optimise ChunkMap#anyPlayerCloseEnoughForSpawning
          this.playerChunkTickRangeMap = new com.destroystokyo.paper.util.misc.PlayerAreaMap(this.pooledLinkedPlayerHashSets,
              (ServerPlayer player, int rangeX, int rangeZ, int currPosX, int currPosZ, int prevPosX, int prevPosZ,
-@@ -1504,17 +1582,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1558,17 +1636,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
      }
  
      public void move(ServerPlayer player) {
@@ -145,7 +145,7 @@ index d924dfe452244633bcf62e7ccefe3a5a1a3d7f37..e35a47e0c8eebbad7154a1357a6b8688
  
          int i = SectionPos.blockToSectionCoord(player.getBlockX());
          int j = SectionPos.blockToSectionCoord(player.getBlockZ());
-@@ -1641,7 +1709,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1695,7 +1763,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
  
                      entity.tracker = playerchunkmap_entitytracker; // Paper - Fast access to tracker
                      this.entityMap.put(entity.getId(), playerchunkmap_entitytracker);
@@ -154,7 +154,7 @@ index d924dfe452244633bcf62e7ccefe3a5a1a3d7f37..e35a47e0c8eebbad7154a1357a6b8688
                      if (entity instanceof ServerPlayer) {
                          ServerPlayer entityplayer = (ServerPlayer) entity;
  
-@@ -1685,7 +1753,37 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1739,7 +1807,37 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          entity.tracker = null; // Paper - We're no longer tracked
      }
  
@@ -192,7 +192,7 @@ index d924dfe452244633bcf62e7ccefe3a5a1a3d7f37..e35a47e0c8eebbad7154a1357a6b8688
          List<ServerPlayer> list = Lists.newArrayList();
          List<ServerPlayer> list1 = this.level.players();
          ObjectIterator objectiterator = this.entityMap.values().iterator();
-@@ -1761,23 +1859,31 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1815,23 +1913,31 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          DebugPackets.sendPoiPacketsForChunk(this.level, chunk.getPos());
          List<Entity> list = Lists.newArrayList();
          List<Entity> list1 = Lists.newArrayList();
@@ -236,7 +236,7 @@ index d924dfe452244633bcf62e7ccefe3a5a1a3d7f37..e35a47e0c8eebbad7154a1357a6b8688
  
          Iterator iterator;
          Entity entity1;
-@@ -1853,6 +1959,42 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1907,6 +2013,42 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
              this.lastSectionPos = SectionPos.of(entity);
          }
  
@@ -280,10 +280,10 @@ index d924dfe452244633bcf62e7ccefe3a5a1a3d7f37..e35a47e0c8eebbad7154a1357a6b8688
              return object instanceof ChunkMap.TrackedEntity ? ((ChunkMap.TrackedEntity) object).entity.getId() == this.entity.getId() : false;
          }
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index a02eb37845e0609ddf14a4214395e00443534b08..8e59a63e8c161e90ccff951ecb2b6530fadf3b80 100644
+index 0dc85e33e9748a87e2dfbbbfb1861bdf636dab33..7ac9ca00521a9a265d4d188c3bef5c89736d8852 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
-@@ -51,6 +51,7 @@ import net.minecraft.network.syncher.EntityDataSerializers;
+@@ -54,6 +54,7 @@ import net.minecraft.network.syncher.EntityDataSerializers;
  import net.minecraft.network.syncher.SynchedEntityData;
  import net.minecraft.resources.ResourceKey;
  import net.minecraft.resources.ResourceLocation;
@@ -291,7 +291,7 @@ index a02eb37845e0609ddf14a4214395e00443534b08..8e59a63e8c161e90ccff951ecb2b6530
  import net.minecraft.server.MinecraftServer;
  import net.minecraft.server.level.ServerLevel;
  import net.minecraft.server.level.ServerPlayer;
-@@ -359,6 +360,39 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, i
+@@ -362,6 +363,39 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, i
      }
      // Paper end
  

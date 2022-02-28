@@ -10,15 +10,15 @@ chunk future to complete. We can simply schedule to the immediate
 executor to get this effect, rather than the main mailbox.
 
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index ea0e86c3eb124a3ea10276776bfc9f32f4079792..01f95016dc8974db6d6fc09f54294673d83c2297 100644
+index 8ed9b3a0704ede73005007406b8b2e5ddd229c55..b98660d2b1cc6f5d72162fe72c4654bd4e5dc2de 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
-@@ -1272,9 +1272,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1314,9 +1314,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
  
                  return chunk;
              });
 -        }, (runnable) -> {
--            this.mainThreadMailbox.tell(ChunkTaskPriorityQueueSorter.message(holder, runnable));
+-            this.mainThreadMailbox.tell(ChunkTaskPriorityQueueSorter.message(holder, () -> ChunkMap.this.chunkLoadConversionCallbackExecutor.execute(runnable))); // Paper - delay running Chunk post processing until outside of the sorter to prevent a deadlock scenario when post processing causes another chunk request.
 -        });
 +        }, this.mainThreadExecutor); // Paper - queue to execute immediately so this doesn't delay chunk unloading
      }

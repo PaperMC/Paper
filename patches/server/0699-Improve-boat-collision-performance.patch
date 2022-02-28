@@ -5,22 +5,22 @@ Subject: [PATCH] Improve boat collision performance
 
 
 diff --git a/src/main/java/net/minecraft/Util.java b/src/main/java/net/minecraft/Util.java
-index 6c87ad6e015729db5b10f795b59aa785dff4368a..4605e80bb7dc5408daafb5ccba52efa138ca7cdd 100644
+index a8772417eb54e1a52c490b75b470a502a480f925..c072819c1ebc772f524649c6c2f8b48d919bf805 100644
 --- a/src/main/java/net/minecraft/Util.java
 +++ b/src/main/java/net/minecraft/Util.java
-@@ -84,6 +84,7 @@ public class Util {
+@@ -85,6 +85,7 @@ public class Util {
      }).findFirst().orElseThrow(() -> {
          return new IllegalStateException("No jar file system provider found");
      });
 +    public static final double COLLISION_EPSILON = 1.0E-7; // Paper
-     private static Consumer<String> thePauser = (string) -> {
+     private static Consumer<String> thePauser = (message) -> {
      };
  
 diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-index 73ff544665eed9d999b13462b9635e79866c927c..69e296de6f4dbbcacd516ee1707c1c315dd7f0a1 100644
+index fadf212cef6aa6ea28af397a5e2fac9241b07af9..d96c2d167f94d5a7751ea9365f9fa753b2ed900c 100644
 --- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-@@ -1315,7 +1315,7 @@ public abstract class LivingEntity extends Entity {
+@@ -1318,7 +1318,7 @@ public abstract class LivingEntity extends Entity {
                  if (!source.isProjectile()) {
                      Entity entity = source.getDirectEntity();
  
@@ -29,7 +29,7 @@ index 73ff544665eed9d999b13462b9635e79866c927c..69e296de6f4dbbcacd516ee1707c1c31
                          this.blockUsingShield((LivingEntity) entity);
                      }
                  }
-@@ -1423,11 +1423,12 @@ public abstract class LivingEntity extends Entity {
+@@ -1426,11 +1426,12 @@ public abstract class LivingEntity extends Entity {
                  }
  
                  if (entity1 != null) {
@@ -44,7 +44,7 @@ index 73ff544665eed9d999b13462b9635e79866c927c..69e296de6f4dbbcacd516ee1707c1c31
                          d0 = (Math.random() - Math.random()) * 0.01D;
                      }
  
-@@ -2097,7 +2098,7 @@ public abstract class LivingEntity extends Entity {
+@@ -2100,7 +2101,7 @@ public abstract class LivingEntity extends Entity {
                  this.hurtCurrentlyUsedShield((float) -event.getDamage(DamageModifier.BLOCKING));
                  Entity entity = damagesource.getDirectEntity();
  
@@ -54,10 +54,10 @@ index 73ff544665eed9d999b13462b9635e79866c927c..69e296de6f4dbbcacd516ee1707c1c31
                  }
              }
 diff --git a/src/main/java/net/minecraft/world/entity/vehicle/Boat.java b/src/main/java/net/minecraft/world/entity/vehicle/Boat.java
-index c3d111204601270b57389e1f85456a9e2ada4629..b967177cb10041f96831322c311579e409050e88 100644
+index a8f37fab9c8020e884bf029145d03e3be57b7f2b..0dbc85c450797d7384e641f80e1b1f8c56fd14fc 100644
 --- a/src/main/java/net/minecraft/world/entity/vehicle/Boat.java
 +++ b/src/main/java/net/minecraft/world/entity/vehicle/Boat.java
-@@ -687,8 +687,8 @@ public class Boat extends Entity {
+@@ -686,8 +686,8 @@ public class Boat extends Entity {
          this.invFriction = 0.05F;
          if (this.oldStatus == Boat.Status.IN_AIR && this.status != Boat.Status.IN_AIR && this.status != Boat.Status.ON_LAND) {
              this.waterLevel = this.getY(1.0D);

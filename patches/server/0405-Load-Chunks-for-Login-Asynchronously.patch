@@ -5,10 +5,10 @@ Subject: [PATCH] Load Chunks for Login Asynchronously
 
 
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-index 6d59a813aa752b4233dbe1894cfc8273473c24e9..beebb7a0e6b8b1fa4e7d2f9fdf1962357cc2ebc3 100644
+index fae4880a645c9ea83fc1fa55cbc483543369b12e..89156bd30cc41dd80de47c7e6e45db034904dbf3 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-@@ -174,6 +174,7 @@ public class ServerPlayer extends Player {
+@@ -172,6 +172,7 @@ public class ServerPlayer extends Player {
      private static final int NEUTRAL_MOB_DEATH_NOTIFICATION_RADII_XZ = 32;
      private static final int NEUTRAL_MOB_DEATH_NOTIFICATION_RADII_Y = 10;
      public ServerGamePacketListenerImpl connection;
@@ -16,7 +16,7 @@ index 6d59a813aa752b4233dbe1894cfc8273473c24e9..beebb7a0e6b8b1fa4e7d2f9fdf196235
      public final MinecraftServer server;
      public final ServerPlayerGameMode gameMode;
      private final PlayerAdvancements advancements;
-@@ -247,6 +248,7 @@ public class ServerPlayer extends Player {
+@@ -245,6 +246,7 @@ public class ServerPlayer extends Player {
      public boolean joining = true;
      public boolean sentListPacket = false;
      public boolean supressTrackerForLogin = false; // Paper
@@ -37,10 +37,10 @@ index be677d437d17b74c6188ce1bd5fc6fdc228fd92f..78fbb4c3e52e900956ae0811aaf934c8
      public static final TicketType<ChunkPos> UNKNOWN = TicketType.create("unknown", Comparator.comparingLong(ChunkPos::toLong), 1);
      public static final TicketType<Unit> PLUGIN = TicketType.create("plugin", (a, b) -> 0); // CraftBukkit
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index 78804497375740189d01c594c26786254288ef19..f0630bf6502d0b7be1c63e9c610ca2c8e1edc9d5 100644
+index e9fbbe197b991276111cad87fadde8d1077a7062..2859db2809a3d789b8246dd76f313e304d979e0f 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-@@ -219,6 +219,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+@@ -220,6 +220,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
      private static final int LATENCY_CHECK_INTERVAL = 15000;
      public final Connection connection;
      private final MinecraftServer server;
@@ -48,7 +48,7 @@ index 78804497375740189d01c594c26786254288ef19..f0630bf6502d0b7be1c63e9c610ca2c8
      public ServerPlayer player;
      private int tickCount;
      private long keepAliveTime = Util.getMillis();
-@@ -292,6 +293,15 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+@@ -293,6 +294,15 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
      // CraftBukkit end
  
      public void tick() {
@@ -64,7 +64,7 @@ index 78804497375740189d01c594c26786254288ef19..f0630bf6502d0b7be1c63e9c610ca2c8
          this.resetPosition();
          this.player.xo = this.player.getX();
          this.player.yo = this.player.getY();
-@@ -333,7 +343,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+@@ -334,7 +344,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
              this.lastVehicle = null;
              this.clientVehicleIsFloating = false;
              this.aboveGroundVehicleTickCount = 0;
@@ -74,10 +74,10 @@ index 78804497375740189d01c594c26786254288ef19..f0630bf6502d0b7be1c63e9c610ca2c8
          this.server.getProfiler().push("keepAlive");
          // Paper Start - give clients a longer time to respond to pings as per pre 1.12.2 timings
 diff --git a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
-index bb767f5b626225e70a8af273384bb74dbd21430d..301042e7a0d372a914f27ec0988dd938cf2a8262 100644
+index 4c06e62e967f28eb844d74237948834e61daeab0..0af65f1698e4ee9d94724f19b0abd61c437f18f2 100644
 --- a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
-@@ -88,7 +88,7 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener
+@@ -84,7 +84,7 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener
              }
              // Paper end
          } else if (this.state == ServerLoginPacketListenerImpl.State.DELAY_ACCEPT) {
@@ -86,7 +86,7 @@ index bb767f5b626225e70a8af273384bb74dbd21430d..301042e7a0d372a914f27ec0988dd938
  
              if (entityplayer == null) {
                  this.state = ServerLoginPacketListenerImpl.State.READY_TO_ACCEPT;
-@@ -194,7 +194,7 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener
+@@ -190,7 +190,7 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener
              }
  
              this.connection.send(new ClientboundGameProfilePacket(this.gameProfile));
@@ -96,10 +96,10 @@ index bb767f5b626225e70a8af273384bb74dbd21430d..301042e7a0d372a914f27ec0988dd938
              try {
                  ServerPlayer entityplayer1 = this.server.getPlayerList().getPlayerForLogin(this.gameProfile, s); // CraftBukkit - add player reference
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
-index f096fbe48d8cc70e3749f48bc9972def42b0068d..b84124abaca401406fbffc8bc6bd21245c303156 100644
+index e7904870da5134b397f93c4de29d804775830947..a36d582b8fdd99eba423fbeb8f46f0dd226d3523 100644
 --- a/src/main/java/net/minecraft/server/players/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/players/PlayerList.java
-@@ -39,6 +39,7 @@ import net.minecraft.network.protocol.Packet;
+@@ -40,6 +40,7 @@ import net.minecraft.network.protocol.Packet;
  import net.minecraft.network.protocol.game.ClientboundChangeDifficultyPacket;
  import net.minecraft.network.protocol.game.ClientboundChatPacket;
  import net.minecraft.network.protocol.game.ClientboundCustomPayloadPacket;

@@ -6,10 +6,10 @@ Subject: [PATCH] Optimise chunk tick iteration
 Use a dedicated list of entity ticking chunks to reduce the cost
 
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-index 7c3a1622f161409e92c4ccfa13e8c1fc1d66c947..f7b2fa30eac4da6847d77fd3b2bdd73349b41822 100644
+index 7771fd7c7918aa4852371dc88d46163c168f020e..0510439dc48e3ce462fc9dcc6e0e0d5cb9f239b3 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-@@ -995,34 +995,46 @@ public class ServerChunkCache extends ChunkSource {
+@@ -994,34 +994,46 @@ public class ServerChunkCache extends ChunkSource {
  
              this.lastSpawnState = spawnercreature_d;
              gameprofilerfiller.popPush("filteringLoadedChunks");
@@ -64,15 +64,15 @@ index 7c3a1622f161409e92c4ccfa13e8c1fc1d66c947..f7b2fa30eac4da6847d77fd3b2bdd733
 +                // Paper end - optimise chunk tick iteration
                  ChunkPos chunkcoordintpair = chunk1.getPos();
  
--                if (this.level.isPositionEntityTicking(chunkcoordintpair) && this.chunkMap.anyPlayerCloseEnoughForSpawning(chunkproviderserver_a.holder, chunkcoordintpair, false)) { // Paper - optimise anyPlayerCloseEnoughForSpawning
-+                if ((true || this.level.isPositionEntityTicking(chunkcoordintpair)) && this.chunkMap.anyPlayerCloseEnoughForSpawning(holder, chunkcoordintpair, false)) { // Paper - optimise anyPlayerCloseEnoughForSpawning & optimise chunk tick iteration
+-                if (this.level.isNaturalSpawningAllowed(chunkcoordintpair) && this.chunkMap.anyPlayerCloseEnoughForSpawning(chunkproviderserver_a.holder, chunkcoordintpair, false)) { // Paper - optimise anyPlayerCloseEnoughForSpawning
++                if ((true || this.level.isNaturalSpawningAllowed(chunkcoordintpair)) && this.chunkMap.anyPlayerCloseEnoughForSpawning(holder, chunkcoordintpair, false)) { // Paper - optimise anyPlayerCloseEnoughForSpawning & optimise chunk tick iteration
                      chunk1.incrementInhabitedTime(j);
 -                    if (flag2 && (this.spawnEnemies || this.spawnFriendlies) && this.level.getWorldBorder().isWithinBounds(chunkcoordintpair) && this.chunkMap.anyPlayerCloseEnoughForSpawning(chunkproviderserver_a.holder, chunkcoordintpair, true)) { // Spigot // Paper - optimise anyPlayerCloseEnoughForSpawning
 +                    if (flag2 && (this.spawnEnemies || this.spawnFriendlies) && this.level.getWorldBorder().isWithinBounds(chunkcoordintpair) && this.chunkMap.anyPlayerCloseEnoughForSpawning(holder, chunkcoordintpair, true)) { // Spigot // Paper - optimise anyPlayerCloseEnoughForSpawning & optimise chunk tick iteration
                          NaturalSpawner.spawnForChunk(this.level, chunk1, spawnercreature_d, this.spawnFriendlies, this.spawnEnemies, flag1);
                      }
  
-@@ -1030,7 +1042,16 @@ public class ServerChunkCache extends ChunkSource {
+@@ -1029,7 +1041,16 @@ public class ServerChunkCache extends ChunkSource {
                          this.level.tickChunk(chunk1, k);
                      }
                  }
@@ -89,7 +89,7 @@ index 7c3a1622f161409e92c4ccfa13e8c1fc1d66c947..f7b2fa30eac4da6847d77fd3b2bdd733
              this.level.timings.chunkTicks.stopTiming(); // Paper
              gameprofilerfiller.popPush("customSpawners");
              if (flag2) {
-@@ -1039,13 +1060,7 @@ public class ServerChunkCache extends ChunkSource {
+@@ -1038,13 +1059,7 @@ public class ServerChunkCache extends ChunkSource {
                  } // Paper - timings
              }
  

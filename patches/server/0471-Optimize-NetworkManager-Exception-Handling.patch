@@ -5,10 +5,10 @@ Subject: [PATCH] Optimize NetworkManager Exception Handling
 
 
 diff --git a/src/main/java/net/minecraft/network/ConnectionProtocol.java b/src/main/java/net/minecraft/network/ConnectionProtocol.java
-index ea69f11e3cd9775998679baaccdaf980ee8fd498..1e0e64568167f1525285abb043e93c8b4316d11c 100644
+index 5df72f16e6b954ecee23a6f8daa29de0d3d991fe..7789032797447d3518bf0af15e4e0dcf0826dce8 100644
 --- a/src/main/java/net/minecraft/network/ConnectionProtocol.java
 +++ b/src/main/java/net/minecraft/network/ConnectionProtocol.java
-@@ -294,6 +294,7 @@ public enum ConnectionProtocol {
+@@ -296,6 +296,7 @@ public enum ConnectionProtocol {
  
          @Nullable
          public Packet<?> createPacket(int id, FriendlyByteBuf buf) {
@@ -42,38 +42,28 @@ index 99b581052f937b0f2d6b5d73de699008c1d51774..ed54479b14dcfc736ac90749106557f0
  
          for(int i = 0; i < bs.length; ++i) {
 diff --git a/src/main/java/net/minecraft/network/protocol/PacketUtils.java b/src/main/java/net/minecraft/network/protocol/PacketUtils.java
-index 449f1b2f5dca350dc0912e14c8c2bf3eb4652b92..bcf53ec07b8eeec7a88fb67e6fb908362e6f51b0 100644
+index 049e64c355d5f064009b1107ad15d28c44f999dd..97b05b7145c6a3a379de31b8988c909da9b21139 100644
 --- a/src/main/java/net/minecraft/network/protocol/PacketUtils.java
 +++ b/src/main/java/net/minecraft/network/protocol/PacketUtils.java
-@@ -1,6 +1,9 @@
- package net.minecraft.network.protocol;
- 
-+import net.minecraft.network.Connection;
- import net.minecraft.network.PacketListener;
-+import net.minecraft.network.chat.TextComponent;
-+import net.minecraft.network.protocol.game.ClientboundDisconnectPacket;
- import org.apache.logging.log4j.LogManager;
- import org.apache.logging.log4j.Logger;
- import co.aikar.timings.MinecraftTimings; // Paper
-@@ -32,6 +35,21 @@ public class PacketUtils {
-                     try (Timing ignored = timing.startTiming()) { // Paper - timings
-                     packet.handle(listener);
-                     } // Paper - timings
-+                    // Paper start
-+                    catch (Exception e) {
-+                        Connection networkmanager = listener.getConnection();
+@@ -30,11 +30,17 @@ public class PacketUtils {
+                     try (co.aikar.timings.Timing ignored = timing.startTiming()) { // Paper - timings
+                         packet.handle(listener);
+                     } catch (Exception exception) {
+-                        if (listener.shouldPropagateHandlingExceptions()) {
+-                            throw exception;
++                        net.minecraft.network.Connection networkmanager = listener.getConnection();
 +                        if (networkmanager.getPlayer() != null) {
-+                            LOGGER.error("Error whilst processing packet {} for {}[{}]", packet, networkmanager.getPlayer().getScoreboardName(), networkmanager.getRemoteAddress(), e);
++                            LOGGER.error("Error whilst processing packet {} for {}[{}]", packet, networkmanager.getPlayer().getScoreboardName(), networkmanager.getRemoteAddress(), exception);
 +                        } else {
-+                            LOGGER.error("Error whilst processing packet {} for connection from {}", packet, networkmanager.getRemoteAddress(), e);
-+                        }
-+                        TextComponent error = new TextComponent("Packet processing error");
-+                        networkmanager.send(new ClientboundDisconnectPacket(error), (future) -> {
++                            LOGGER.error("Error whilst processing packet {} for connection from {}", packet, networkmanager.getRemoteAddress(), exception);
+                         }
+-
+-                        PacketUtils.LOGGER.error("Failed to handle packet {}, suppressing error", packet, exception);
++                        net.minecraft.network.chat.TextComponent error = new net.minecraft.network.chat.TextComponent("Packet processing error");
++                        networkmanager.send(new net.minecraft.network.protocol.game.ClientboundDisconnectPacket(error), (future) -> {
 +                            networkmanager.disconnect(error);
 +                        });
 +                        networkmanager.setReadOnly();
-+                    }
-+                    // Paper end
+                     }
                  } else {
                      PacketUtils.LOGGER.debug("Ignoring packet due to disconnection: {}", packet);
-                 }
