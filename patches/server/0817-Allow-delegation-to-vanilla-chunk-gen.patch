@@ -5,10 +5,10 @@ Subject: [PATCH] Allow delegation to vanilla chunk gen
 
 
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index c1b79f21bff6f9f83f06c338a67f9a942f75da68..14f0b550bdbe42c67456e54d88289f0de56ca04e 100644
+index 492f398a1c2dbe7b821dd40be1c1c6952f056c3a..fba20c4228a34d4c956ce2a440eb6e495182f8f2 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -2305,6 +2305,107 @@ public final class CraftServer implements Server {
+@@ -2305,6 +2305,90 @@ public final class CraftServer implements Server {
          return new OldCraftChunkData(world.getMinHeight(), world.getMaxHeight(), handle.registryAccess().registryOrThrow(Registry.BIOME_REGISTRY), world); // Paper - Anti-Xray - Add parameters
      }
  
@@ -25,24 +25,6 @@ index c1b79f21bff6f9f83f06c338a67f9a942f75da68..14f0b550bdbe42c67456e54d88289f0d
 +        net.minecraft.world.level.chunk.ChunkStatus.FEATURES,
 +        net.minecraft.world.level.chunk.ChunkStatus.LIGHT
 +    );
-+
-+    @net.minecraft.MethodsReturnNonnullByDefault
-+    private static final class PaperEmptyLevelChunk extends net.minecraft.world.level.chunk.EmptyLevelChunk {
-+        private final net.minecraft.world.level.biome.Biome biome;
-+
-+        public PaperEmptyLevelChunk(net.minecraft.world.level.Level world, net.minecraft.world.level.ChunkPos pos) {
-+            super(world, pos);
-+            this.biome = this.level.registryAccess().registryOrThrow(Registry.BIOME_REGISTRY).getOrThrow(net.minecraft.world.level.biome.Biomes.PLAINS);
-+        }
-+
-+        @Override
-+        public net.minecraft.world.level.biome.Biome getNoiseBiome(int biomeX, int biomeY, int biomeZ) {
-+            return this.biome;
-+        }
-+
-+        @Override
-+        public void markPosForPostprocessing(BlockPos pos) {}
-+    }
 +
 +    @Override
 +    @Deprecated(forRemoval = true)
@@ -79,7 +61,8 @@ index c1b79f21bff6f9f83f06c338a67f9a942f75da68..14f0b550bdbe42c67456e54d88289f0d
 +                    if (xx == chunkPos.x && zz == chunkPos.z) {
 +                        chunks.add(protoChunk);
 +                    } else {
-+                        final net.minecraft.world.level.chunk.ChunkAccess chunk = new PaperEmptyLevelChunk(serverLevel, new net.minecraft.world.level.ChunkPos(xx, zz));
++                        final Holder<net.minecraft.world.level.biome.Biome> biomeHolder = serverLevel.registryAccess().registryOrThrow(Registry.BIOME_REGISTRY).getHolderOrThrow(net.minecraft.world.level.biome.Biomes.PLAINS);
++                        final net.minecraft.world.level.chunk.ChunkAccess chunk = new net.minecraft.world.level.chunk.EmptyLevelChunk(serverLevel, new net.minecraft.world.level.ChunkPos(xx, zz), biomeHolder);
 +                        chunks.add(chunk);
 +                    }
 +                }
