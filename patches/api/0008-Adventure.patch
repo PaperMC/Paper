@@ -101,16 +101,17 @@ index ef58a6c00f444bd498a2d8fc4e457236f393954f..ecd149157d4fb80444f34bf5633d74bc
  }
 diff --git a/src/main/java/io/papermc/paper/chat/ChatRenderer.java b/src/main/java/io/papermc/paper/chat/ChatRenderer.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..85fd5d6777b53bab09cc54c360bb75141635bdd3
+index 0000000000000000000000000000000000000000..2fc47afbb233e6e5727a7b672f61b88ad3bab097
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/chat/ChatRenderer.java
-@@ -0,0 +1,75 @@
+@@ -0,0 +1,78 @@
 +package io.papermc.paper.chat;
 +
 +import net.kyori.adventure.audience.Audience;
 +import net.kyori.adventure.text.Component;
 +import org.bukkit.entity.Player;
 +import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
++import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.NotNull;
 +
 +/**
@@ -127,6 +128,7 @@ index 0000000000000000000000000000000000000000..85fd5d6777b53bab09cc54c360bb7514
 +     * @param viewer the receiving {@link Audience}
 +     * @return a rendered chat message
 +     */
++    @ApiStatus.OverrideOnly
 +    @NotNull
 +    Component render(@NotNull Player source, @NotNull Component sourceDisplayName, @NotNull Component message, @NotNull Audience viewer);
 +
@@ -176,6 +178,7 @@ index 0000000000000000000000000000000000000000..85fd5d6777b53bab09cc54c360bb7514
 +         * @param message the chat message
 +         * @return a rendered chat message
 +         */
++        @ApiStatus.OverrideOnly
 +        @NotNull
 +        Component render(@NotNull Player source, @NotNull Component sourceDisplayName, @NotNull Component message);
 +    }
@@ -729,7 +732,7 @@ index 32c92621c2c15eec14c50965f5ecda00c46e6c80..e076d447da62445764a9776ee2554c07
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/Nameable.java b/src/main/java/org/bukkit/Nameable.java
-index fee814e01a653d2b53c56e8b566383ca44aa5346..2acdf2a6d3955923c721222b9da784f3278f6418 100644
+index fee814e01a653d2b53c56e8b566383ca44aa5346..b71b780792b672b37c8fe65d43489b860a227381 100644
 --- a/src/main/java/org/bukkit/Nameable.java
 +++ b/src/main/java/org/bukkit/Nameable.java
 @@ -4,6 +4,30 @@ import org.jetbrains.annotations.Nullable;
@@ -763,6 +766,27 @@ index fee814e01a653d2b53c56e8b566383ca44aa5346..2acdf2a6d3955923c721222b9da784f3
      /**
       * Gets the custom name on a mob or block. If there is no name this method
       * will return null.
+@@ -11,8 +35,10 @@ public interface Nameable {
+      * This value has no effect on players, they will always use their real
+      * name.
+      *
++     * @deprecated in favour of {@link #customName()}
+      * @return name of the mob/block or null
+      */
++    @Deprecated // Paper
+     @Nullable
+     public String getCustomName();
+ 
+@@ -25,7 +51,9 @@ public interface Nameable {
+      * This value has no effect on players, they will always use their real
+      * name.
+      *
++     * @deprecated in favour of {@link #customName(net.kyori.adventure.text.Component)}
+      * @param name the name to set
+      */
++    @Deprecated // Paper
+     public void setCustomName(@Nullable String name);
+ }
 diff --git a/src/main/java/org/bukkit/NamespacedKey.java b/src/main/java/org/bukkit/NamespacedKey.java
 index 803fa0019869127ee8c7e4fb1777a59c43e66f8a..c65f0d6569c130b4920a9e71ad24af6427f1f030 100644
 --- a/src/main/java/org/bukkit/NamespacedKey.java
@@ -1596,7 +1620,7 @@ index 922d33ff4fa9d901d3c5c0a9f8399ad8aef62c37..cd287978c34873c7122794e4f3e76291
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/entity/Player.java b/src/main/java/org/bukkit/entity/Player.java
-index 7b256be5b82e34a4591d0cc46a2d49aa1269e844..23a5a2f6dc4f734606a9a6cb6c6f95bf9e5705ac 100644
+index 7b256be5b82e34a4591d0cc46a2d49aa1269e844..ac7a076d92bfb1d9c6ce8836d08e11f52befabc3 100644
 --- a/src/main/java/org/bukkit/entity/Player.java
 +++ b/src/main/java/org/bukkit/entity/Player.java
 @@ -35,7 +35,28 @@ import org.jetbrains.annotations.Nullable;
@@ -1890,8 +1914,19 @@ index 7b256be5b82e34a4591d0cc46a2d49aa1269e844..23a5a2f6dc4f734606a9a6cb6c6f95bf
      public void sendSignChange(@NotNull Location loc, @Nullable String[] lines, @NotNull DyeColor dyeColor, boolean hasGlowingText) throws IllegalArgumentException;
  
      /**
-@@ -1041,6 +1212,54 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -1026,6 +1197,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+      *     pack correctly.
+      * </ul>
+      *
++     * @deprecated in favour of {@link #setResourcePack(String, byte[], Component)}
+      * @param url The URL from which the client will download the resource
+      *     pack. The string must contain only US-ASCII characters and should
+      *     be encoded as per RFC 1738.
+@@ -1039,8 +1211,57 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+      * @throws IllegalArgumentException Thrown if the hash is not 20 bytes
+      *     long.
       */
++    @Deprecated // Paper
      public void setResourcePack(@NotNull String url, @Nullable byte[] hash, @Nullable String prompt);
  
 +    // Paper start
@@ -1945,11 +1980,22 @@ index 7b256be5b82e34a4591d0cc46a2d49aa1269e844..23a5a2f6dc4f734606a9a6cb6c6f95bf
      /**
       * Request that the player's client download and switch resource packs.
       * <p>
-@@ -1132,6 +1351,54 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -1115,6 +1336,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+      *     pack correctly.
+      * </ul>
+      *
++     * @deprecated in favour of {@link #setResourcePack(String, byte[], Component, boolean)}
+      * @param url The URL from which the client will download the resource
+      *     pack. The string must contain only US-ASCII characters and should
+      *     be encoded as per RFC 1738.
+@@ -1130,8 +1352,57 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+      * @throws IllegalArgumentException Thrown if the hash is not 20 bytes
+      *     long.
       */
++    @Deprecated // Paper
      public void setResourcePack(@NotNull String url, @Nullable byte[] hash, @Nullable String prompt, boolean force);
  
-+    // Paper end
++    // Paper start
 +    /**
 +     * Request that the player's client download and switch resource packs.
 +     * <p>
@@ -2000,7 +2046,7 @@ index 7b256be5b82e34a4591d0cc46a2d49aa1269e844..23a5a2f6dc4f734606a9a6cb6c6f95bf
      /**
       * Gets the Scoreboard displayed to this player
       *
-@@ -1225,7 +1492,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -1225,7 +1496,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
       *
       * @param title Title text
       * @param subtitle Subtitle text
@@ -2009,7 +2055,7 @@ index 7b256be5b82e34a4591d0cc46a2d49aa1269e844..23a5a2f6dc4f734606a9a6cb6c6f95bf
       */
      @Deprecated
      public void sendTitle(@Nullable String title, @Nullable String subtitle);
-@@ -1244,7 +1511,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -1244,7 +1515,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
       * @param fadeIn time in ticks for titles to fade in. Defaults to 10.
       * @param stay time in ticks for titles to stay. Defaults to 70.
       * @param fadeOut time in ticks for titles to fade out. Defaults to 20.
@@ -2019,7 +2065,7 @@ index 7b256be5b82e34a4591d0cc46a2d49aa1269e844..23a5a2f6dc4f734606a9a6cb6c6f95bf
      public void sendTitle(@Nullable String title, @Nullable String subtitle, int fadeIn, int stay, int fadeOut);
  
      /**
-@@ -1471,6 +1740,14 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -1471,6 +1744,14 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
       */
      public int getClientViewDistance();
  
@@ -2034,7 +2080,7 @@ index 7b256be5b82e34a4591d0cc46a2d49aa1269e844..23a5a2f6dc4f734606a9a6cb6c6f95bf
      /**
       * Gets the player's estimated ping in milliseconds.
       *
-@@ -1496,8 +1773,10 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -1496,8 +1777,10 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
       * they wish.
       *
       * @return the player's locale
@@ -2045,7 +2091,7 @@ index 7b256be5b82e34a4591d0cc46a2d49aa1269e844..23a5a2f6dc4f734606a9a6cb6c6f95bf
      public String getLocale();
  
      /**
-@@ -1539,6 +1818,14 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -1539,6 +1822,14 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
       */
      public boolean isAllowingServerListings();
  
@@ -2060,7 +2106,7 @@ index 7b256be5b82e34a4591d0cc46a2d49aa1269e844..23a5a2f6dc4f734606a9a6cb6c6f95bf
      // Spigot start
      public class Spigot extends Entity.Spigot {
  
-@@ -1593,11 +1880,13 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -1593,11 +1884,13 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
              throw new UnsupportedOperationException("Not supported yet.");
          }
  
@@ -2074,7 +2120,7 @@ index 7b256be5b82e34a4591d0cc46a2d49aa1269e844..23a5a2f6dc4f734606a9a6cb6c6f95bf
          @Override
          public void sendMessage(@NotNull net.md_5.bungee.api.chat.BaseComponent... components) {
              throw new UnsupportedOperationException("Not supported yet.");
-@@ -1608,7 +1897,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -1608,7 +1901,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
           *
           * @param position the screen position
           * @param component the components to send
@@ -2084,7 +2130,7 @@ index 7b256be5b82e34a4591d0cc46a2d49aa1269e844..23a5a2f6dc4f734606a9a6cb6c6f95bf
          public void sendMessage(@NotNull net.md_5.bungee.api.ChatMessageType position, @NotNull net.md_5.bungee.api.chat.BaseComponent component) {
              throw new UnsupportedOperationException("Not supported yet.");
          }
-@@ -1618,7 +1909,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -1618,7 +1913,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
           *
           * @param position the screen position
           * @param components the components to send
@@ -2094,7 +2140,7 @@ index 7b256be5b82e34a4591d0cc46a2d49aa1269e844..23a5a2f6dc4f734606a9a6cb6c6f95bf
          public void sendMessage(@NotNull net.md_5.bungee.api.ChatMessageType position, @NotNull net.md_5.bungee.api.chat.BaseComponent... components) {
              throw new UnsupportedOperationException("Not supported yet.");
          }
-@@ -1629,7 +1922,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -1629,7 +1926,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
           * @param position the screen position
           * @param sender the sender of the message
           * @param component the components to send
@@ -2104,7 +2150,7 @@ index 7b256be5b82e34a4591d0cc46a2d49aa1269e844..23a5a2f6dc4f734606a9a6cb6c6f95bf
          public void sendMessage(@NotNull net.md_5.bungee.api.ChatMessageType position, @Nullable UUID sender, @NotNull net.md_5.bungee.api.chat.BaseComponent component) {
              throw new UnsupportedOperationException("Not supported yet.");
          }
-@@ -1640,7 +1935,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -1640,7 +1939,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
           * @param position the screen position
           * @param sender the sender of the message
           * @param components the components to send
@@ -3367,23 +3413,10 @@ index f70a6a22b85ff0da76e67e9b223ad4e0b020b5c4..a15abec467bac70116a6fc21a300d493
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/inventory/meta/BookMeta.java b/src/main/java/org/bukkit/inventory/meta/BookMeta.java
-index 94852d50e88d0594b84b581cd627174043629995..4947251f347d83fa326a67735293401c10d87ba4 100644
+index 94852d50e88d0594b84b581cd627174043629995..36bcbb3f3acedf7ebecbf6f6b358cf64af0edfb2 100644
 --- a/src/main/java/org/bukkit/inventory/meta/BookMeta.java
 +++ b/src/main/java/org/bukkit/inventory/meta/BookMeta.java
-@@ -1,8 +1,12 @@
- package org.bukkit.inventory.meta;
- 
- import java.util.List;
-+
-+import net.kyori.adventure.inventory.Book;
- import net.md_5.bungee.api.chat.BaseComponent;
- import org.bukkit.Material;
-+import org.checkerframework.checker.nullness.qual.NonNull;
-+import org.checkerframework.common.returnsreceiver.qual.This;
- import org.jetbrains.annotations.NotNull;
- import org.jetbrains.annotations.Nullable;
- 
-@@ -10,7 +14,7 @@ import org.jetbrains.annotations.Nullable;
+@@ -10,7 +10,7 @@ import org.jetbrains.annotations.Nullable;
   * Represents a book ({@link Material#WRITABLE_BOOK} or {@link
   * Material#WRITTEN_BOOK}) that can have a title, an author, and pages.
   */
@@ -3392,7 +3425,7 @@ index 94852d50e88d0594b84b581cd627174043629995..4947251f347d83fa326a67735293401c
  
      /**
       * Represents the generation (or level of copying) of a written book
-@@ -119,6 +123,117 @@ public interface BookMeta extends ItemMeta {
+@@ -119,6 +119,118 @@ public interface BookMeta extends ItemMeta {
       */
      boolean hasPages();
  
@@ -3419,7 +3452,7 @@ index 94852d50e88d0594b84b581cd627174043629995..4947251f347d83fa326a67735293401c
 +     */
 +    @NotNull
 +    @Override
-+    @This BookMeta title(@Nullable net.kyori.adventure.text.Component title);
++    @org.checkerframework.common.returnsreceiver.qual.This BookMeta title(@Nullable net.kyori.adventure.text.Component title);
 +
 +    /**
 +     * Gets the author of the book.
@@ -3441,7 +3474,8 @@ index 94852d50e88d0594b84b581cd627174043629995..4947251f347d83fa326a67735293401c
 +     */
 +    @NotNull
 +    @Override
-+    @This BookMeta author(@Nullable net.kyori.adventure.text.Component author);
++    @org.checkerframework.common.returnsreceiver.qual.This BookMeta author(@Nullable net.kyori.adventure.text.Component author);
++
 +    /**
 +     * Gets the specified page in the book. The page must exist.
 +     * <p>
@@ -3502,7 +3536,7 @@ index 94852d50e88d0594b84b581cd627174043629995..4947251f347d83fa326a67735293401c
 +    }
 +
 +    @Override
-+    @NonNull
++    @org.checkerframework.checker.nullness.qual.NonNull
 +    BookMetaBuilder toBuilder();
 +
 +    // Paper end
@@ -3510,7 +3544,7 @@ index 94852d50e88d0594b84b581cd627174043629995..4947251f347d83fa326a67735293401c
      /**
       * Gets the specified page in the book. The given page must exist.
       * <p>
-@@ -126,8 +241,10 @@ public interface BookMeta extends ItemMeta {
+@@ -126,8 +238,10 @@ public interface BookMeta extends ItemMeta {
       *
       * @param page the page number to get, in range [1, getPageCount()]
       * @return the page from the book
@@ -3521,7 +3555,7 @@ index 94852d50e88d0594b84b581cd627174043629995..4947251f347d83fa326a67735293401c
      String getPage(int page);
  
      /**
-@@ -141,15 +258,19 @@ public interface BookMeta extends ItemMeta {
+@@ -141,15 +255,19 @@ public interface BookMeta extends ItemMeta {
       *
       * @param page the page number to set, in range [1, getPageCount()]
       * @param data the data to set for that page
@@ -3541,7 +3575,7 @@ index 94852d50e88d0594b84b581cd627174043629995..4947251f347d83fa326a67735293401c
      List<String> getPages();
  
      /**
-@@ -157,7 +278,9 @@ public interface BookMeta extends ItemMeta {
+@@ -157,7 +275,9 @@ public interface BookMeta extends ItemMeta {
       * pages. Maximum 100 pages with 256 characters per page.
       *
       * @param pages A list of pages to set the book to use
@@ -3551,7 +3585,7 @@ index 94852d50e88d0594b84b581cd627174043629995..4947251f347d83fa326a67735293401c
      void setPages(@NotNull List<String> pages);
  
      /**
-@@ -165,7 +288,9 @@ public interface BookMeta extends ItemMeta {
+@@ -165,7 +285,9 @@ public interface BookMeta extends ItemMeta {
       * pages. Maximum 50 pages with 256 characters per page.
       *
       * @param pages A list of strings, each being a page
@@ -3561,7 +3595,7 @@ index 94852d50e88d0594b84b581cd627174043629995..4947251f347d83fa326a67735293401c
      void setPages(@NotNull String... pages);
  
      /**
-@@ -173,7 +298,9 @@ public interface BookMeta extends ItemMeta {
+@@ -173,7 +295,9 @@ public interface BookMeta extends ItemMeta {
       * 256 characters per page.
       *
       * @param pages A list of strings, each being a page
@@ -3571,7 +3605,7 @@ index 94852d50e88d0594b84b581cd627174043629995..4947251f347d83fa326a67735293401c
      void addPage(@NotNull String... pages);
  
      /**
-@@ -195,8 +322,10 @@ public interface BookMeta extends ItemMeta {
+@@ -195,8 +319,10 @@ public interface BookMeta extends ItemMeta {
           *
           * @param page the page number to get
           * @return the page from the book
@@ -3582,7 +3616,7 @@ index 94852d50e88d0594b84b581cd627174043629995..4947251f347d83fa326a67735293401c
          public BaseComponent[] getPage(int page) {
              throw new UnsupportedOperationException("Not supported yet.");
          }
-@@ -210,7 +339,9 @@ public interface BookMeta extends ItemMeta {
+@@ -210,7 +336,9 @@ public interface BookMeta extends ItemMeta {
           *
           * @param page the page number to set
           * @param data the data to set for that page
@@ -3592,7 +3626,7 @@ index 94852d50e88d0594b84b581cd627174043629995..4947251f347d83fa326a67735293401c
          public void setPage(int page, @Nullable BaseComponent... data) {
              throw new UnsupportedOperationException("Not supported yet.");
          }
-@@ -219,8 +350,10 @@ public interface BookMeta extends ItemMeta {
+@@ -219,8 +347,10 @@ public interface BookMeta extends ItemMeta {
           * Gets all the pages in the book.
           *
           * @return list of all the pages in the book
@@ -3603,7 +3637,7 @@ index 94852d50e88d0594b84b581cd627174043629995..4947251f347d83fa326a67735293401c
          public List<BaseComponent[]> getPages() {
              throw new UnsupportedOperationException("Not supported yet.");
          }
-@@ -230,7 +363,9 @@ public interface BookMeta extends ItemMeta {
+@@ -230,7 +360,9 @@ public interface BookMeta extends ItemMeta {
           * pages. Maximum 50 pages with 256 characters per page.
           *
           * @param pages A list of pages to set the book to use
@@ -3613,7 +3647,7 @@ index 94852d50e88d0594b84b581cd627174043629995..4947251f347d83fa326a67735293401c
          public void setPages(@NotNull List<BaseComponent[]> pages) {
              throw new UnsupportedOperationException("Not supported yet.");
          }
-@@ -240,7 +375,9 @@ public interface BookMeta extends ItemMeta {
+@@ -240,7 +372,9 @@ public interface BookMeta extends ItemMeta {
           * pages. Maximum 50 pages with 256 characters per page.
           *
           * @param pages A list of component arrays, each being a page
@@ -3623,7 +3657,7 @@ index 94852d50e88d0594b84b581cd627174043629995..4947251f347d83fa326a67735293401c
          public void setPages(@NotNull BaseComponent[]... pages) {
              throw new UnsupportedOperationException("Not supported yet.");
          }
-@@ -250,7 +387,9 @@ public interface BookMeta extends ItemMeta {
+@@ -250,7 +384,9 @@ public interface BookMeta extends ItemMeta {
           * with 256 characters per page.
           *
           * @param pages A list of component arrays, each being a page

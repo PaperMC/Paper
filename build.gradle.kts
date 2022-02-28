@@ -103,7 +103,7 @@ tasks.generateDevelopmentBundle {
 }
 
 publishing {
-    if (project.providers.gradleProperty("publishDevBundle").forUseAtConfigurationTime().isPresent) {
+    if (project.providers.gradleProperty("publishDevBundle").isPresent) {
         publications.create<MavenPublication>("devBundle") {
             artifact(tasks.generateDevelopmentBundle) {
                 artifactId = "dev-bundle"

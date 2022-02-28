@@ -6,10 +6,10 @@ Subject: [PATCH] Optimize anyPlayerCloseEnoughForSpawning to use distance maps
 Use a distance map to find the players in range quickly
 
 diff --git a/src/main/java/net/minecraft/server/level/ChunkHolder.java b/src/main/java/net/minecraft/server/level/ChunkHolder.java
-index 674a6492e2eb10cfd29989643eedcea08b2d5218..3e4bd6c7f20a7dd57d8a095d4bcce74c4202686a 100644
+index 74d674b2684b0db4aa6c183edc6091d53e9ee882..560cc04ee7a8fd0c3c7217e08d53d1da682054e2 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkHolder.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkHolder.java
-@@ -76,6 +76,18 @@ public class ChunkHolder {
+@@ -73,6 +73,23 @@ public class ChunkHolder {
      boolean isUpdateQueued = false; // Paper
      private final ChunkMap chunkMap; // Paper
  
@@ -18,29 +18,34 @@ index 674a6492e2eb10cfd29989643eedcea08b2d5218..3e4bd6c7f20a7dd57d8a095d4bcce74c
 +    com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<ServerPlayer> playersInMobSpawnRange;
 +    com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<ServerPlayer> playersInChunkTickRange;
 +
-+    void updateRanges() {
++    void onChunkAdd() {
 +        long key = net.minecraft.server.MCUtil.getCoordinateKey(this.pos);
 +        this.playersInMobSpawnRange = this.chunkMap.playerMobSpawnMap.getObjectsInRange(key);
 +        this.playersInChunkTickRange = this.chunkMap.playerChunkTickRangeMap.getObjectsInRange(key);
++    }
++
++    void onChunkRemove() {
++        this.playersInMobSpawnRange = null;
++        this.playersInChunkTickRange = null;
 +    }
 +    // Paper end - optimise anyPlayerCloseEnoughForSpawning
 +
      public ChunkHolder(ChunkPos pos, int level, LevelHeightAccessor world, LevelLightEngine lightingProvider, ChunkHolder.LevelChangeListener levelUpdateListener, ChunkHolder.PlayerProvider playersWatchingChunkProvider) {
          this.futures = new AtomicReferenceArray(ChunkHolder.CHUNK_STATUSES.size());
          this.fullChunkFuture = ChunkHolder.UNLOADED_LEVEL_CHUNK_FUTURE;
-@@ -97,6 +109,7 @@ public class ChunkHolder {
+@@ -94,6 +111,7 @@ public class ChunkHolder {
          this.setTicketLevel(level);
          this.changedBlocksPerSection = new ShortSet[world.getSectionsCount()];
          this.chunkMap = (ChunkMap)playersWatchingChunkProvider; // Paper
-+        this.updateRanges(); // Paper - optimise anyPlayerCloseEnoughForSpawning
++        this.onChunkAdd(); // Paper - optimise anyPlayerCloseEnoughForSpawning
      }
  
-     // Paper start
+     // CraftBukkit start
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index 662954f44da3829e7d828f2290a4934188985a84..ddda2d6fd0cc12b6d7087b07773b04d7eb258bc1 100644
+index 00eeaa04c98a658bac63f72da6b6d157131e9120..cd58121bfa059366919e098005299dde0c55f46f 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
-@@ -181,11 +181,23 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -177,11 +177,23 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
      final CallbackExecutor chunkLoadConversionCallbackExecutor = new CallbackExecutor(); // Paper
      // Paper start - distance maps
      private final com.destroystokyo.paper.util.misc.PooledLinkedHashSets<ServerPlayer> pooledLinkedPlayerHashSets = new com.destroystokyo.paper.util.misc.PooledLinkedHashSets<>();
@@ -64,7 +69,7 @@ index 662954f44da3829e7d828f2290a4934188985a84..ddda2d6fd0cc12b6d7087b07773b04d7
          // Paper start - per player mob spawning
          if (this.playerMobDistanceMap != null) {
              this.playerMobDistanceMap.add(player, chunkX, chunkZ, this.distanceManager.getSimulationDistance());
-@@ -195,6 +207,10 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -191,6 +203,10 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
  
      void removePlayerFromDistanceMaps(ServerPlayer player) {
  
@@ -75,7 +80,7 @@ index 662954f44da3829e7d828f2290a4934188985a84..ddda2d6fd0cc12b6d7087b07773b04d7
          // Paper start - per player mob spawning
          if (this.playerMobDistanceMap != null) {
              this.playerMobDistanceMap.remove(player);
-@@ -206,6 +222,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -202,6 +218,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          int chunkX = MCUtil.getChunkCoordinate(player.getX());
          int chunkZ = MCUtil.getChunkCoordinate(player.getZ());
          // Note: players need to be explicitly added to distance maps before they can be updated
@@ -83,7 +88,7 @@ index 662954f44da3829e7d828f2290a4934188985a84..ddda2d6fd0cc12b6d7087b07773b04d7
          // Paper start - per player mob spawning
          if (this.playerMobDistanceMap != null) {
              this.playerMobDistanceMap.update(player, chunkX, chunkZ, this.distanceManager.getSimulationDistance());
-@@ -286,6 +303,38 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -281,6 +298,38 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          this.regionManagers.add(this.dataRegionManager);
          // Paper end
          this.playerMobDistanceMap = this.level.paperConfig.perPlayerMobSpawns ? new com.destroystokyo.paper.util.misc.PlayerAreaMap(this.pooledLinkedPlayerHashSets) : null; // Paper
@@ -122,15 +127,23 @@ index 662954f44da3829e7d828f2290a4934188985a84..ddda2d6fd0cc12b6d7087b07773b04d7
      }
  
      protected ChunkGenerator generator() {
-@@ -523,6 +572,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
-         } else {
-             if (holder != null) {
-                 holder.setTicketLevel(level);
-+                holder.updateRanges(); // Paper - optimise anyPlayerCloseEnoughForSpawning
-             }
+@@ -501,6 +550,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+                 holder = (ChunkHolder) this.pendingUnloads.remove(pos);
+                 if (holder != null) {
+                     holder.setTicketLevel(level);
++                    holder.onChunkAdd(); // Paper - optimise anyPlayerCloseEnoughForSpawning - PUT HERE AFTER RE-ADDING ONLY
+                 } else {
+                     holder = new ChunkHolder(new ChunkPos(pos), level, this.level, this.lightEngine, this.queueSorter, this);
+                     // Paper start
+@@ -600,6 +650,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+             ChunkHolder playerchunk = (ChunkHolder) this.updatingChunkMap.remove(j);
  
-             if (holder != null) {
-@@ -1385,43 +1435,48 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+             if (playerchunk != null) {
++                playerchunk.onChunkRemove(); // Paper
+                 this.pendingUnloads.put(j, playerchunk);
+                 this.modified = true;
+                 this.scheduleUnload(j, playerchunk); // Paper - Move up - don't leak chunks
+@@ -1331,43 +1382,48 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          return this.anyPlayerCloseEnoughForSpawning(pos, false);
      }
  
@@ -211,10 +224,10 @@ index 662954f44da3829e7d828f2290a4934188985a84..ddda2d6fd0cc12b6d7087b07773b04d7
  
      public List<ServerPlayer> getPlayersCloseForSpawning(ChunkPos pos) {
 diff --git a/src/main/java/net/minecraft/server/level/DistanceManager.java b/src/main/java/net/minecraft/server/level/DistanceManager.java
-index 63eaa40a7061512f6c3981913ed7d7d12a588a8b..478ae5ceb04e3a8db3e58f65b23a395612c6840c 100644
+index 75f11490737018096e7645ce0b991fd210c8f596..14774d51dd35a98471d29230a64fadee74651d19 100644
 --- a/src/main/java/net/minecraft/server/level/DistanceManager.java
 +++ b/src/main/java/net/minecraft/server/level/DistanceManager.java
-@@ -49,7 +49,7 @@ public abstract class DistanceManager {
+@@ -48,7 +48,7 @@ public abstract class DistanceManager {
      final Long2ObjectMap<ObjectSet<ServerPlayer>> playersPerChunk = new Long2ObjectOpenHashMap();
      public final Long2ObjectOpenHashMap<SortedArraySet<Ticket<?>>> tickets = new Long2ObjectOpenHashMap();
      private final DistanceManager.ChunkTicketTracker ticketTracker = new DistanceManager.ChunkTicketTracker();
@@ -223,7 +236,7 @@ index 63eaa40a7061512f6c3981913ed7d7d12a588a8b..478ae5ceb04e3a8db3e58f65b23a3956
      private final TickingTracker tickingTicketsTracker = new TickingTracker();
      private final DistanceManager.PlayerTicketTracker playerTicketManager = new DistanceManager.PlayerTicketTracker(33);
      // Paper start use a queue, but still keep unique requirement
-@@ -126,7 +126,7 @@ public abstract class DistanceManager {
+@@ -139,7 +139,7 @@ public abstract class DistanceManager {
      protected abstract ChunkHolder updateChunkScheduling(long pos, int level, @Nullable ChunkHolder holder, int k);
  
      public boolean runAllUpdates(ChunkMap chunkStorage) {
@@ -232,7 +245,7 @@ index 63eaa40a7061512f6c3981913ed7d7d12a588a8b..478ae5ceb04e3a8db3e58f65b23a3956
          this.tickingTicketsTracker.runAllUpdates();
          this.playerTicketManager.runAllUpdates();
          int i = Integer.MAX_VALUE - this.ticketTracker.runDistanceUpdates(Integer.MAX_VALUE);
-@@ -275,7 +275,7 @@ public abstract class DistanceManager {
+@@ -286,7 +286,7 @@ public abstract class DistanceManager {
          ((ObjectSet) this.playersPerChunk.computeIfAbsent(i, (j) -> {
              return new ObjectOpenHashSet();
          })).add(player);
@@ -241,7 +254,7 @@ index 63eaa40a7061512f6c3981913ed7d7d12a588a8b..478ae5ceb04e3a8db3e58f65b23a3956
          this.playerTicketManager.update(i, 0, true);
          this.tickingTicketsTracker.addTicket(TicketType.PLAYER, chunkcoordintpair, this.getPlayerTicketLevel(), chunkcoordintpair);
      }
-@@ -289,7 +289,7 @@ public abstract class DistanceManager {
+@@ -300,7 +300,7 @@ public abstract class DistanceManager {
          if (objectset != null) objectset.remove(player); // Paper - some state corruption happens here, don't crash, clean up gracefully.
          if (objectset == null || objectset.isEmpty()) { // Paper
              this.playersPerChunk.remove(i);
@@ -250,7 +263,7 @@ index 63eaa40a7061512f6c3981913ed7d7d12a588a8b..478ae5ceb04e3a8db3e58f65b23a3956
              this.playerTicketManager.update(i, Integer.MAX_VALUE, false);
              this.tickingTicketsTracker.removeTicket(TicketType.PLAYER, chunkcoordintpair, this.getPlayerTicketLevel(), chunkcoordintpair);
          }
-@@ -333,13 +333,17 @@ public abstract class DistanceManager {
+@@ -344,13 +344,17 @@ public abstract class DistanceManager {
      // Paper end
  
      public int getNaturalSpawnChunkCount() {
@@ -273,10 +286,10 @@ index 63eaa40a7061512f6c3981913ed7d7d12a588a8b..478ae5ceb04e3a8db3e58f65b23a3956
  
      public String getDebugStatus() {
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-index 1b6fb81079d3ad5d3c33be67a1c05111f9dd5f2d..1d5587bb9cf785de4b6d59234eb700c2e1a8a7dd 100644
+index 8cfd38617b49ea6be318abc819f2ed5b7dabd2e1..59cd2b8ecdd2c962a027526fe45032559aa2ee8c 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-@@ -880,6 +880,37 @@ public class ServerChunkCache extends ChunkSource {
+@@ -881,6 +881,37 @@ public class ServerChunkCache extends ChunkSource {
          if (flag) {
              this.chunkMap.tick();
          } else {
@@ -314,7 +327,7 @@ index 1b6fb81079d3ad5d3c33be67a1c05111f9dd5f2d..1d5587bb9cf785de4b6d59234eb700c2
              LevelData worlddata = this.level.getLevelData();
              ProfilerFiller gameprofilerfiller = this.level.getProfiler();
  
-@@ -923,15 +954,7 @@ public class ServerChunkCache extends ChunkSource {
+@@ -924,15 +955,7 @@ public class ServerChunkCache extends ChunkSource {
              boolean flag2 = this.level.getGameRules().getBoolean(GameRules.RULE_DOMOBSPAWNING) && !this.level.players().isEmpty(); // CraftBukkit
  
              Collections.shuffle(list);
@@ -331,12 +344,12 @@ index 1b6fb81079d3ad5d3c33be67a1c05111f9dd5f2d..1d5587bb9cf785de4b6d59234eb700c2
              Iterator iterator1 = list.iterator();
  
              while (iterator1.hasNext()) {
-@@ -939,9 +962,9 @@ public class ServerChunkCache extends ChunkSource {
+@@ -940,9 +963,9 @@ public class ServerChunkCache extends ChunkSource {
                  LevelChunk chunk1 = chunkproviderserver_a.chunk;
                  ChunkPos chunkcoordintpair = chunk1.getPos();
  
--                if (this.level.isNaturalSpawningAllowed(chunkcoordintpair) && this.chunkMap.anyPlayerCloseEnoughForSpawning(chunkcoordintpair)) {
-+                if (this.level.isNaturalSpawningAllowed(chunkcoordintpair) && this.chunkMap.anyPlayerCloseEnoughForSpawning(chunkproviderserver_a.holder, chunkcoordintpair, false)) { // Paper - optimise anyPlayerCloseEnoughForSpawning
+-                if (this.level.isPositionEntityTicking(chunkcoordintpair) && this.chunkMap.anyPlayerCloseEnoughForSpawning(chunkcoordintpair)) {
++                if (this.level.isPositionEntityTicking(chunkcoordintpair) && this.chunkMap.anyPlayerCloseEnoughForSpawning(chunkproviderserver_a.holder, chunkcoordintpair, false)) { // Paper - optimise anyPlayerCloseEnoughForSpawning
                      chunk1.incrementInhabitedTime(j);
 -                    if (flag2 && (this.spawnEnemies || this.spawnFriendlies) && this.level.getWorldBorder().isWithinBounds(chunkcoordintpair) && this.chunkMap.anyPlayerCloseEnoughForSpawning(chunkcoordintpair, true)) { // Spigot
 +                    if (flag2 && (this.spawnEnemies || this.spawnFriendlies) && this.level.getWorldBorder().isWithinBounds(chunkcoordintpair) && this.chunkMap.anyPlayerCloseEnoughForSpawning(chunkproviderserver_a.holder, chunkcoordintpair, true)) { // Spigot // Paper - optimise anyPlayerCloseEnoughForSpawning
@@ -344,10 +357,10 @@ index 1b6fb81079d3ad5d3c33be67a1c05111f9dd5f2d..1d5587bb9cf785de4b6d59234eb700c2
                      }
  
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-index 89156bd30cc41dd80de47c7e6e45db034904dbf3..a7a3c17cf97486f9f1af0cdc00686c22b37449b6 100644
+index beebb7a0e6b8b1fa4e7d2f9fdf1962357cc2ebc3..2f13055a39c26fe12d2c1094103186635e536166 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-@@ -251,6 +251,7 @@ public class ServerPlayer extends Player {
+@@ -253,6 +253,7 @@ public class ServerPlayer extends Player {
      // CraftBukkit end
      public PlayerNaturallySpawnCreaturesEvent playerNaturallySpawnedEvent; // Paper
  
