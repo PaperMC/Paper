@@ -5,7 +5,7 @@ Subject: [PATCH] incremental chunk and player saving
 
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-index a545a882335094daa787ec5c7005939080195263..933d3ace21f5a313f1d5e4dfd86777f6fa235f3f 100644
+index df1337c89c943a80a31d127c844f061c1e56eb91..cb967380155d34ff511346d54b61e1c2109780f3 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
 @@ -459,4 +459,14 @@ public class PaperConfig {
@@ -98,11 +98,11 @@ index aeceac6fb547b38e7691cb0435e55da556c69147..c37f0527367f1ee842cec150a141087d
          // Paper start - move executeAll() into full server tick timing
          try (co.aikar.timings.Timing ignored = MinecraftTimings.processTasksTimer.startTiming()) {
 diff --git a/src/main/java/net/minecraft/server/level/ChunkHolder.java b/src/main/java/net/minecraft/server/level/ChunkHolder.java
-index 3e4bd6c7f20a7dd57d8a095d4bcce74c4202686a..0d59e227143e1845c72fdc1197e0d9505370b4fe 100644
+index dff475b327d6edaa4dcb9bc09029237f8f659846..05d2790b80a6d2e1dc6b8d2375f783be4eff2343 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkHolder.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkHolder.java
-@@ -87,6 +87,8 @@ public class ChunkHolder {
-         this.playersInChunkTickRange = this.chunkMap.playerChunkTickRangeMap.getObjectsInRange(key);
+@@ -92,6 +92,8 @@ public class ChunkHolder {
+         this.playersInChunkTickRange = null;
      }
      // Paper end - optimise anyPlayerCloseEnoughForSpawning
 +    long lastAutoSaveTime; // Paper - incremental autosave
@@ -110,7 +110,7 @@ index 3e4bd6c7f20a7dd57d8a095d4bcce74c4202686a..0d59e227143e1845c72fdc1197e0d950
  
      public ChunkHolder(ChunkPos pos, int level, LevelHeightAccessor world, LevelLightEngine lightingProvider, ChunkHolder.LevelChangeListener levelUpdateListener, ChunkHolder.PlayerProvider playersWatchingChunkProvider) {
          this.futures = new AtomicReferenceArray(ChunkHolder.CHUNK_STATUSES.size());
-@@ -486,7 +488,19 @@ public class ChunkHolder {
+@@ -491,7 +493,19 @@ public class ChunkHolder {
          boolean flag2 = playerchunk_state.isOrAfter(ChunkHolder.FullChunkStatus.BORDER);
          boolean flag3 = playerchunk_state1.isOrAfter(ChunkHolder.FullChunkStatus.BORDER);
  
@@ -130,7 +130,7 @@ index 3e4bd6c7f20a7dd57d8a095d4bcce74c4202686a..0d59e227143e1845c72fdc1197e0d950
          if (!flag2 && flag3) {
              int expectCreateCount = ++this.fullChunkCreateCount; // Paper
              this.fullChunkFuture = chunkStorage.prepareAccessibleChunk(this);
-@@ -617,9 +631,33 @@ public class ChunkHolder {
+@@ -622,9 +636,33 @@ public class ChunkHolder {
      }
  
      public void refreshAccessibility() {
@@ -165,7 +165,7 @@ index 3e4bd6c7f20a7dd57d8a095d4bcce74c4202686a..0d59e227143e1845c72fdc1197e0d950
          for (int i = 0; i < this.futures.length(); ++i) {
              CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> completablefuture = (CompletableFuture) this.futures.get(i);
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index e5dd64e0d750e8afc6695b36fa2f554d9b1d70c5..7bc748251ced4b103d1df811c68cbf960f009a71 100644
+index b2072b4eb3369f73bd68d3836447ecda802d7007..36181d03c44f2ee4a129129b6fe253f25748af2d 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
 @@ -104,6 +104,7 @@ import net.minecraft.world.level.levelgen.structure.templatesystem.StructureMana
@@ -241,7 +241,7 @@ index e5dd64e0d750e8afc6695b36fa2f554d9b1d70c5..7bc748251ced4b103d1df811c68cbf96
      protected void saveAllChunks(boolean flush) {
          if (flush) {
              List<ChunkHolder> list = (List) this.visibleChunkMap.values().stream().filter(ChunkHolder::wasAccessibleSinceLastSave).peek(ChunkHolder::refreshAccessibility).collect(Collectors.toList());
-@@ -791,13 +850,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -792,13 +851,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          }
  
          int l = 0;
@@ -256,7 +256,7 @@ index e5dd64e0d750e8afc6695b36fa2f554d9b1d70c5..7bc748251ced4b103d1df811c68cbf96
  
      }
  
-@@ -835,6 +888,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -836,6 +889,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
  
                          this.level.unload(chunk);
                      }
@@ -264,7 +264,7 @@ index e5dd64e0d750e8afc6695b36fa2f554d9b1d70c5..7bc748251ced4b103d1df811c68cbf96
  
                      this.lightEngine.updateChunkStatus(ichunkaccess.getPos());
                      this.lightEngine.tryScheduleUpdate();
-@@ -1246,6 +1300,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1247,6 +1301,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
              asyncSaveData, chunk);
  
          chunk.setUnsaved(false);
@@ -272,7 +272,7 @@ index e5dd64e0d750e8afc6695b36fa2f554d9b1d70c5..7bc748251ced4b103d1df811c68cbf96
      }
      // Paper end
  
-@@ -1255,6 +1310,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1256,6 +1311,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          if (!chunk.isUnsaved()) {
              return false;
          } else {
