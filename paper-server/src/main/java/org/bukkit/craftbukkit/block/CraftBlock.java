@@ -7,7 +7,9 @@ import java.util.List;
 import java.util.stream.Collectors;
 import net.minecraft.core.BlockPosition;
 import net.minecraft.core.EnumDirection;
+import net.minecraft.core.Holder;
 import net.minecraft.core.IRegistry;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.WorldServer;
 import net.minecraft.world.EnumHand;
 import net.minecraft.world.EnumInteractionResult;
@@ -333,6 +335,10 @@ public class CraftBlock implements Block {
         getWorld().setBiome(getX(), getY(), getZ(), bio);
     }
 
+    public static Biome biomeBaseToBiome(IRegistry<BiomeBase> registry, Holder<BiomeBase> base) {
+        return biomeBaseToBiome(registry, base.value());
+    }
+
     public static Biome biomeBaseToBiome(IRegistry<BiomeBase> registry, BiomeBase base) {
         if (base == null) {
             return null;
@@ -342,17 +348,17 @@ public class CraftBlock implements Block {
         return (biome == null) ? Biome.CUSTOM : biome;
     }
 
-    public static BiomeBase biomeToBiomeBase(IRegistry<BiomeBase> registry, Biome bio) {
+    public static Holder<BiomeBase> biomeToBiomeBase(IRegistry<BiomeBase> registry, Biome bio) {
         if (bio == null || bio == Biome.CUSTOM) {
             return null;
         }
 
-        return registry.get(CraftNamespacedKey.toMinecraft(bio.getKey()));
+        return registry.getHolderOrThrow(ResourceKey.create(IRegistry.BIOME_REGISTRY, CraftNamespacedKey.toMinecraft(bio.getKey())));
     }
 
     @Override
     public double getTemperature() {
-        return world.getBiome(position).getTemperature(position);
+        return world.getBiome(position).value().getTemperature(position);
     }
 
     @Override

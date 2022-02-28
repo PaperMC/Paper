@@ -93,7 +93,7 @@ public final class DummyServer implements InvocationHandler {
                         @Override
                         public Object handle(DummyServer server, Object[] args) {
                             NamespacedKey key = (NamespacedKey) args[0];
-                            return new CraftLootTable(key, AbstractTestingBase.LOOT_TABLE_REGISTRY.get(CraftNamespacedKey.toMinecraft(key)));
+                            return new CraftLootTable(key, AbstractTestingBase.DATA_PACK.getLootTables().get(CraftNamespacedKey.toMinecraft(key)));
                         }
                     }
                 );

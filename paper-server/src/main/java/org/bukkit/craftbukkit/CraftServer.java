@@ -37,7 +37,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Properties;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
@@ -52,8 +51,8 @@ import net.minecraft.commands.CommandDispatcher;
 import net.minecraft.commands.CommandListenerWrapper;
 import net.minecraft.commands.arguments.ArgumentEntity;
 import net.minecraft.core.BlockPosition;
+import net.minecraft.core.Holder;
 import net.minecraft.core.IRegistry;
-import net.minecraft.core.RegistryMaterials;
 import net.minecraft.resources.MinecraftKey;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.ServerCommand;
@@ -71,11 +70,8 @@ import net.minecraft.server.players.IpBanEntry;
 import net.minecraft.server.players.OpListEntry;
 import net.minecraft.server.players.PlayerList;
 import net.minecraft.server.players.WhiteListEntry;
-import net.minecraft.tags.Tags;
-import net.minecraft.tags.TagsBlock;
-import net.minecraft.tags.TagsEntity;
-import net.minecraft.tags.TagsFluid;
-import net.minecraft.tags.TagsItem;
+import net.minecraft.tags.TagKey;
+import net.minecraft.util.ChatDeserializer;
 import net.minecraft.util.datafix.DataConverterRegistry;
 import net.minecraft.world.EnumDifficulty;
 import net.minecraft.world.effect.MobEffects;
@@ -461,7 +457,7 @@ public final class CraftServer implements Server {
 
     public void syncCommands() {
         // Clear existing commands
-        CommandDispatcher dispatcher = console.resources.commands = new CommandDispatcher();
+        CommandDispatcher dispatcher = console.resources.managers().commands = new CommandDispatcher();
 
         // Register all commands, vanilla ones will be using the old dispatcher references
         for (Map.Entry<String, Command> entry : commandMap.getKnownCommands().entrySet()) {
@@ -1033,16 +1029,12 @@ public final class CraftServer implements Server {
 
         boolean hardcore = creator.hardcore();
 
-        WorldDataServer worlddata = (WorldDataServer) worldSession.getDataTag(console.registryreadops, console.datapackconfiguration);
+        WorldDataServer worlddata = (WorldDataServer) worldSession.getDataTag(console.registryreadops, console.datapackconfiguration, console.registryHolder.allElementsLifecycle());
 
         WorldSettings worldSettings;
         // See MinecraftServer.a(String, String, long, WorldType, JsonElement)
         if (worlddata == null) {
-            Properties properties = new Properties();
-            properties.put("generator-settings", Objects.toString(creator.generatorSettings()));
-            properties.put("level-seed", Objects.toString(creator.seed()));
-            properties.put("generate-structures", Objects.toString(creator.generateStructures()));
-            properties.put("level-type", Objects.toString(creator.type().getName()));
+            DedicatedServerProperties.a properties = new DedicatedServerProperties.a(Objects.toString(creator.seed()), ChatDeserializer.parse(creator.generatorSettings()), creator.generateStructures(), creator.type().name().toLowerCase(Locale.ROOT));
 
             GeneratorSettings generatorsettings = GeneratorSettings.create(console.registryAccess(), properties);
             worldSettings = new WorldSettings(name, EnumGamemode.byId(getDefaultGameMode().getValue()), hardcore, EnumDifficulty.EASY, false, new GameRules(), console.datapackconfiguration);
@@ -1059,28 +1051,28 @@ public final class CraftServer implements Server {
 
         long j = BiomeManager.obfuscateSeed(creator.seed());
         List<MobSpawner> list = ImmutableList.of(new MobSpawnerPhantom(), new MobSpawnerPatrol(), new MobSpawnerCat(), new VillageSiege(), new MobSpawnerTrader(worlddata));
-        RegistryMaterials<WorldDimension> registrymaterials = worlddata.worldGenSettings().dimensions();
-        WorldDimension worlddimension = (WorldDimension) registrymaterials.get(actualDimension);
-        DimensionManager dimensionmanager;
+        IRegistry<WorldDimension> iregistry = worlddata.worldGenSettings().dimensions();
+        WorldDimension worlddimension = (WorldDimension) iregistry.get(actualDimension);
+        Holder<DimensionManager> holder;
         net.minecraft.world.level.chunk.ChunkGenerator chunkgenerator;
 
         if (worlddimension == null) {
-            dimensionmanager = (DimensionManager) console.registryHolder.registryOrThrow(IRegistry.DIMENSION_TYPE_REGISTRY).getOrThrow(DimensionManager.OVERWORLD_LOCATION);
+            holder = console.registryHolder.registryOrThrow(IRegistry.DIMENSION_TYPE_REGISTRY).getOrCreateHolder(DimensionManager.OVERWORLD_LOCATION);
             chunkgenerator = GeneratorSettings.makeDefaultOverworld(console.registryHolder, (new Random()).nextLong());
         } else {
-            dimensionmanager = worlddimension.type();
+            holder = worlddimension.typeHolder();
             chunkgenerator = worlddimension.generator();
         }
 
-        WorldInfo worldInfo = new CraftWorldInfo(worlddata, worldSession, creator.environment(), dimensionmanager);
+        WorldInfo worldInfo = new CraftWorldInfo(worlddata, worldSession, creator.environment(), holder.value());
         if (biomeProvider == null && generator != null) {
             biomeProvider = generator.getDefaultBiomeProvider(worldInfo);
         }
 
         if (biomeProvider != null) {
             WorldChunkManager worldChunkManager = new CustomWorldChunkManager(worldInfo, biomeProvider, console.registryHolder.ownedRegistryOrThrow(IRegistry.BIOME_REGISTRY));
-            if (chunkgenerator instanceof ChunkGeneratorAbstract) {
-                chunkgenerator = new ChunkGeneratorAbstract(((ChunkGeneratorAbstract) chunkgenerator).noises, worldChunkManager, chunkgenerator.strongholdSeed, ((ChunkGeneratorAbstract) chunkgenerator).settings);
+            if (chunkgenerator instanceof ChunkGeneratorAbstract cga) {
+                chunkgenerator = new ChunkGeneratorAbstract(cga.structureSets, cga.noises, worldChunkManager, cga.ringPlacementSeed, cga.settings);
             }
         }
 
@@ -1094,7 +1086,7 @@ public final class CraftServer implements Server {
             worldKey = ResourceKey.create(IRegistry.DIMENSION_REGISTRY, new MinecraftKey(name.toLowerCase(java.util.Locale.ENGLISH)));
         }
 
-        WorldServer internal = (WorldServer) new WorldServer(console, console.executor, worldSession, worlddata, worldKey, dimensionmanager, getServer().progressListenerFactory.create(11),
+        WorldServer internal = (WorldServer) new WorldServer(console, console.executor, worldSession, worlddata, worldKey, holder, getServer().progressListenerFactory.create(11),
                 chunkgenerator, worlddata.worldGenSettings().isDebug(), j, creator.environment() == Environment.NORMAL ? list : ImmutableList.of(), true, creator.environment(), generator, biomeProvider);
 
         if (!(worlds.containsKey(name.toLowerCase(java.util.Locale.ENGLISH)))) {
@@ -2161,19 +2153,19 @@ public final class CraftServer implements Server {
             case org.bukkit.Tag.REGISTRY_BLOCKS:
                 Preconditions.checkArgument(clazz == org.bukkit.Material.class, "Block namespace must have material type");
 
-                return (org.bukkit.Tag<T>) new CraftBlockTag(TagsBlock.getAllTags(), key);
+                return (org.bukkit.Tag<T>) new CraftBlockTag(IRegistry.BLOCK, TagKey.create(IRegistry.BLOCK_REGISTRY, key));
             case org.bukkit.Tag.REGISTRY_ITEMS:
                 Preconditions.checkArgument(clazz == org.bukkit.Material.class, "Item namespace must have material type");
 
-                return (org.bukkit.Tag<T>) new CraftItemTag(TagsItem.getAllTags(), key);
+                return (org.bukkit.Tag<T>) new CraftItemTag(IRegistry.ITEM, TagKey.create(IRegistry.ITEM_REGISTRY, key));
             case org.bukkit.Tag.REGISTRY_FLUIDS:
                 Preconditions.checkArgument(clazz == org.bukkit.Fluid.class, "Fluid namespace must have fluid type");
 
-                return (org.bukkit.Tag<T>) new CraftFluidTag(TagsFluid.getAllTags(), key);
+                return (org.bukkit.Tag<T>) new CraftFluidTag(IRegistry.FLUID, TagKey.create(IRegistry.FLUID_REGISTRY, key));
             case org.bukkit.Tag.REGISTRY_ENTITY_TYPES:
                 Preconditions.checkArgument(clazz == org.bukkit.entity.EntityType.class, "Entity type namespace must have entity type");
 
-                return (org.bukkit.Tag<T>) new CraftEntityTag(TagsEntity.getAllTags(), key);
+                return (org.bukkit.Tag<T>) new CraftEntityTag(IRegistry.ENTITY_TYPE, TagKey.create(IRegistry.ENTITY_TYPE_REGISTRY, key));
             default:
                 throw new IllegalArgumentException();
         }
@@ -2186,23 +2178,23 @@ public final class CraftServer implements Server {
             case org.bukkit.Tag.REGISTRY_BLOCKS:
                 Preconditions.checkArgument(clazz == org.bukkit.Material.class, "Block namespace must have material type");
 
-                Tags<Block> blockTags = TagsBlock.getAllTags();
-                return blockTags.getAllTags().keySet().stream().map(key -> (org.bukkit.Tag<T>) new CraftBlockTag(blockTags, key)).collect(ImmutableList.toImmutableList());
+                IRegistry<Block> blockTags = IRegistry.BLOCK;
+                return blockTags.getTags().map(pair -> (org.bukkit.Tag<T>) new CraftBlockTag(blockTags, pair.getFirst())).collect(ImmutableList.toImmutableList());
             case org.bukkit.Tag.REGISTRY_ITEMS:
                 Preconditions.checkArgument(clazz == org.bukkit.Material.class, "Item namespace must have material type");
 
-                Tags<Item> itemTags = TagsItem.getAllTags();
-                return itemTags.getAllTags().keySet().stream().map(key -> (org.bukkit.Tag<T>) new CraftItemTag(itemTags, key)).collect(ImmutableList.toImmutableList());
+                IRegistry<Item> itemTags = IRegistry.ITEM;
+                return itemTags.getTags().map(pair -> (org.bukkit.Tag<T>) new CraftItemTag(itemTags, pair.getFirst())).collect(ImmutableList.toImmutableList());
             case org.bukkit.Tag.REGISTRY_FLUIDS:
                 Preconditions.checkArgument(clazz == org.bukkit.Material.class, "Fluid namespace must have fluid type");
 
-                Tags<FluidType> fluidTags = TagsFluid.getAllTags();
-                return fluidTags.getAllTags().keySet().stream().map(key -> (org.bukkit.Tag<T>) new CraftFluidTag(fluidTags, key)).collect(ImmutableList.toImmutableList());
+                IRegistry<FluidType> fluidTags = IRegistry.FLUID;
+                return fluidTags.getTags().map(pair -> (org.bukkit.Tag<T>) new CraftFluidTag(fluidTags, pair.getFirst())).collect(ImmutableList.toImmutableList());
             case org.bukkit.Tag.REGISTRY_ENTITY_TYPES:
                 Preconditions.checkArgument(clazz == org.bukkit.entity.EntityType.class, "Entity type namespace must have entity type");
 
-                Tags<EntityTypes<?>> entityTags = TagsEntity.getAllTags();
-                return entityTags.getAllTags().keySet().stream().map(key -> (org.bukkit.Tag<T>) new CraftEntityTag(entityTags, key)).collect(ImmutableList.toImmutableList());
+                IRegistry<EntityTypes<?>> entityTags = IRegistry.ENTITY_TYPE;
+                return entityTags.getTags().map(pair -> (org.bukkit.Tag<T>) new CraftEntityTag(entityTags, pair.getFirst())).collect(ImmutableList.toImmutableList());
             default:
                 throw new IllegalArgumentException();
         }

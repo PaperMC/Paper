@@ -1,8 +1,8 @@
 --- a/net/minecraft/network/protocol/PlayerConnectionUtils.java
 +++ b/net/minecraft/network/protocol/PlayerConnectionUtils.java
 @@ -7,6 +7,11 @@
- import org.apache.logging.log4j.LogManager;
- import org.apache.logging.log4j.Logger;
+ import net.minecraft.util.thread.IAsyncTaskHandler;
+ import org.slf4j.Logger;
  
 +// CraftBukkit start
 +import net.minecraft.server.MinecraftServer;
@@ -11,16 +11,16 @@
 +
  public class PlayerConnectionUtils {
  
-     private static final Logger LOGGER = LogManager.getLogger();
+     private static final Logger LOGGER = LogUtils.getLogger();
 @@ -20,6 +25,7 @@
      public static <T extends PacketListener> void ensureRunningOnSameThread(Packet<T> packet, T t0, IAsyncTaskHandler<?> iasynctaskhandler) throws CancelledPacketHandleException {
          if (!iasynctaskhandler.isSameThread()) {
-             iasynctaskhandler.execute(() -> {
+             iasynctaskhandler.executeIfPossible(() -> {
 +                if (MinecraftServer.getServer().hasStopped() || (t0 instanceof PlayerConnection && ((PlayerConnection) t0).processedDisconnect)) return; // CraftBukkit, MC-142590
                  if (t0.getConnection().isConnected()) {
-                     packet.handle(t0);
-                 } else {
-@@ -28,6 +34,10 @@
+                     try {
+                         packet.handle(t0);
+@@ -36,6 +42,10 @@
  
              });
              throw CancelledPacketHandleException.RUNNING_ON_DIFFERENT_THREAD;

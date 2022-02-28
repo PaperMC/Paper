@@ -1,21 +1,21 @@
 --- a/net/minecraft/world/item/crafting/CraftingManager.java
 +++ b/net/minecraft/world/item/crafting/CraftingManager.java
-@@ -33,11 +33,13 @@
- import org.apache.logging.log4j.LogManager;
- import org.apache.logging.log4j.Logger;
+@@ -32,11 +32,13 @@
+ import net.minecraft.world.level.World;
+ import org.slf4j.Logger;
  
 +import it.unimi.dsi.fastutil.objects.Object2ObjectLinkedOpenHashMap; // CraftBukkit
 +
  public class CraftingManager extends ResourceDataJson {
  
      private static final Gson GSON = (new GsonBuilder()).setPrettyPrinting().disableHtmlEscaping().create();
-     private static final Logger LOGGER = LogManager.getLogger();
+     private static final Logger LOGGER = LogUtils.getLogger();
 -    public Map<Recipes<?>, Map<MinecraftKey, IRecipe<?>>> recipes = ImmutableMap.of();
 +    public Map<Recipes<?>, Object2ObjectLinkedOpenHashMap<MinecraftKey, IRecipe<?>>> recipes = ImmutableMap.of(); // CraftBukkit
      private Map<MinecraftKey, IRecipe<?>> byName = ImmutableMap.of();
      private boolean hasErrors;
  
-@@ -47,7 +49,12 @@
+@@ -46,7 +48,12 @@
  
      protected void apply(Map<MinecraftKey, JsonElement> map, IResourceManager iresourcemanager, GameProfilerFiller gameprofilerfiller) {
          this.hasErrors = false;
@@ -29,7 +29,7 @@
          Builder<MinecraftKey, IRecipe<?>> builder = ImmutableMap.builder();
          Iterator iterator = map.entrySet().iterator();
  
-@@ -58,8 +65,10 @@
+@@ -57,8 +64,10 @@
              try {
                  IRecipe<?> irecipe = fromJson(minecraftkey, ChatDeserializer.convertToJsonObject((JsonElement) entry.getValue(), "top element"));
  
@@ -42,7 +42,7 @@
                  })).put(minecraftkey, irecipe);
                  builder.put(minecraftkey, irecipe);
              } catch (IllegalArgumentException | JsonParseException jsonparseexception) {
-@@ -68,20 +77,37 @@
+@@ -67,20 +76,37 @@
          }
  
          this.recipes = (Map) map1.entrySet().stream().collect(ImmutableMap.toImmutableMap(Entry::getKey, (entry1) -> {
@@ -75,7 +75,7 @@
 -        return this.byType(recipes).values().stream().flatMap((irecipe) -> {
 +        // CraftBukkit start
 +        Optional<T> recipe = this.byType(recipes).values().stream().flatMap((irecipe) -> {
-             return SystemUtils.toStream(recipes.tryMatch(irecipe, world, c0));
+             return recipes.tryMatch(irecipe, world, c0).stream();
          }).findFirst();
 +        c0.setCurrentRecipe(recipe.orElse(null)); // CraftBukkit - Clear recipe when no recipe is found
 +        // CraftBukkit end
@@ -83,7 +83,7 @@
      }
  
      public <C extends IInventory, T extends IRecipe<C>> List<T> getAllRecipesFor(Recipes<T> recipes) {
-@@ -99,7 +125,7 @@
+@@ -98,7 +124,7 @@
      }
  
      private <C extends IInventory, T extends IRecipe<C>> Map<MinecraftKey, IRecipe<C>> byType(Recipes<T> recipes) {
@@ -92,7 +92,7 @@
      }
  
      public <C extends IInventory, T extends IRecipe<C>> NonNullList<ItemStack> getRemainingItemsFor(Recipes<T> recipes, C c0, World world) {
-@@ -119,7 +145,7 @@
+@@ -118,7 +144,7 @@
      }
  
      public Optional<? extends IRecipe<?>> byKey(MinecraftKey minecraftkey) {
@@ -101,7 +101,7 @@
      }
  
      public Collection<IRecipe<?>> getRecipes() {
-@@ -144,12 +170,12 @@
+@@ -143,12 +169,12 @@
  
      public void replaceRecipes(Iterable<IRecipe<?>> iterable) {
          this.hasErrors = false;
@@ -116,7 +116,7 @@
              });
              MinecraftKey minecraftkey = irecipe.getId();
              IRecipe<?> irecipe1 = (IRecipe) map1.put(minecraftkey, irecipe);
-@@ -160,6 +186,26 @@
+@@ -159,6 +185,26 @@
              }
          });
          this.recipes = ImmutableMap.copyOf(map);

@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/level/PlayerChunk.java
 +++ b/net/minecraft/server/level/PlayerChunk.java
-@@ -35,6 +35,10 @@
+@@ -37,6 +37,10 @@
  import net.minecraft.world.level.chunk.ProtoChunkExtension;
  import net.minecraft.world.level.lighting.LightEngine;
  
@@ -11,7 +11,7 @@
  public class PlayerChunk {
  
      public static final Either<IChunkAccess, PlayerChunk.Failure> UNLOADED_CHUNK = Either.right(PlayerChunk.Failure.UNLOADED);
-@@ -72,11 +76,11 @@
+@@ -75,11 +79,11 @@
          this.fullChunkFuture = PlayerChunk.UNLOADED_LEVEL_CHUNK_FUTURE;
          this.tickingChunkFuture = PlayerChunk.UNLOADED_LEVEL_CHUNK_FUTURE;
          this.entityTickingChunkFuture = PlayerChunk.UNLOADED_LEVEL_CHUNK_FUTURE;
@@ -25,27 +25,7 @@
          this.pos = chunkcoordintpair;
          this.levelHeightAccessor = levelheightaccessor;
          this.lightEngine = lightengine;
-@@ -89,6 +93,19 @@
-         this.changedBlocksPerSection = new ShortSet[levelheightaccessor.getSectionsCount()];
-     }
- 
-+    // CraftBukkit start
-+    public Chunk getFullChunk() {
-+        if (!getFullChunkStatus(this.oldTicketLevel).isOrAfter(PlayerChunk.State.BORDER)) return null; // note: using oldTicketLevel for isLoaded checks
-+        return this.getFullChunkUnchecked();
-+    }
-+
-+    public Chunk getFullChunkUnchecked() {
-+        CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> statusFuture = this.getFutureIfPresentUnchecked(ChunkStatus.FULL);
-+        Either<IChunkAccess, PlayerChunk.Failure> either = (Either<IChunkAccess, PlayerChunk.Failure>) statusFuture.getNow(null);
-+        return (either == null) ? null : (Chunk) either.left().orElse(null);
-+    }
-+    // CraftBukkit end
-+
-     public CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> getFutureIfPresentUnchecked(ChunkStatus chunkstatus) {
-         CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> completablefuture = (CompletableFuture) this.futures.get(chunkstatus.getIndex());
- 
-@@ -114,9 +131,9 @@
+@@ -117,17 +121,17 @@
      @Nullable
      public Chunk getTickingChunk() {
          CompletableFuture<Either<Chunk, PlayerChunk.Failure>> completablefuture = this.getTickingChunkFuture();
@@ -57,7 +37,17 @@
      }
  
      @Nullable
-@@ -161,6 +178,7 @@
+     public Chunk getFullChunk() {
+         CompletableFuture<Either<Chunk, PlayerChunk.Failure>> completablefuture = this.getFullChunkFuture();
+-        Either<Chunk, PlayerChunk.Failure> either = (Either) completablefuture.getNow((Object) null);
++        Either<Chunk, PlayerChunk.Failure> either = (Either) completablefuture.getNow(null); // CraftBukkit - decompile error
+ 
+-        return either == null ? null : (Chunk) either.left().orElse((Object) null);
++        return either == null ? null : (Chunk) either.left().orElse(null); // CraftBukkit - decompile error
+     }
+ 
+     @Nullable
+@@ -172,6 +176,7 @@
          if (chunk != null) {
              int i = this.levelHeightAccessor.getSectionIndex(blockposition.getY());
  
@@ -65,16 +55,7 @@
              if (this.changedBlocksPerSection[i] == null) {
                  this.hasChangedSections = true;
                  this.changedBlocksPerSection[i] = new ShortOpenHashSet();
-@@ -271,7 +289,7 @@
-         CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> completablefuture = (CompletableFuture) this.futures.get(i);
- 
-         if (completablefuture != null) {
--            Either<IChunkAccess, PlayerChunk.Failure> either = (Either) completablefuture.getNow((Object) null);
-+            Either<IChunkAccess, PlayerChunk.Failure> either = (Either) completablefuture.getNow(null); // CraftBukkit - decompile error
-             boolean flag = either != null && either.right().isPresent();
- 
-             if (!flag) {
-@@ -348,7 +366,7 @@
+@@ -368,7 +373,7 @@
          this.pendingFullStateConfirmation = completablefuture1;
          completablefuture.thenAccept((either) -> {
              either.ifLeft((chunk) -> {
@@ -83,7 +64,7 @@
              });
          });
      }
-@@ -365,6 +383,30 @@
+@@ -385,6 +390,30 @@
          boolean flag1 = this.ticketLevel <= PlayerChunkMap.MAX_CHUNK_DISTANCE;
          PlayerChunk.State playerchunk_state = getFullChunkStatus(this.oldTicketLevel);
          PlayerChunk.State playerchunk_state1 = getFullChunkStatus(this.ticketLevel);
@@ -103,7 +84,7 @@
 +                }
 +            }).exceptionally((throwable) -> {
 +                // ensure exceptions are printed, by default this is not the case
-+                MinecraftServer.LOGGER.fatal("Failed to schedule unload callback for chunk " + PlayerChunk.this.pos, throwable);
++                MinecraftServer.LOGGER.error("Failed to schedule unload callback for chunk " + PlayerChunk.this.pos, throwable);
 +                return null;
 +            });
 +
@@ -114,7 +95,7 @@
  
          if (flag) {
              Either<IChunkAccess, PlayerChunk.Failure> either = Either.right(new PlayerChunk.Failure() {
-@@ -435,6 +477,26 @@
+@@ -455,6 +484,26 @@
  
          this.onLevelChange.onLevelChange(this.pos, this::getQueueLevel, this.ticketLevel, this::setQueueLevel);
          this.oldTicketLevel = this.ticketLevel;
@@ -130,7 +111,7 @@
 +                }
 +            }).exceptionally((throwable) -> {
 +                // ensure exceptions are printed, by default this is not the case
-+                MinecraftServer.LOGGER.fatal("Failed to schedule load callback for chunk " + PlayerChunk.this.pos, throwable);
++                MinecraftServer.LOGGER.error("Failed to schedule load callback for chunk " + PlayerChunk.this.pos, throwable);
 +                return null;
 +            });
 +

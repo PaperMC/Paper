@@ -5,8 +5,8 @@ import java.util.Random;
 import java.util.function.Predicate;
 import net.minecraft.core.BlockPosition;
 import net.minecraft.core.EnumDirection;
+import net.minecraft.core.Holder;
 import net.minecraft.core.IRegistryCustom;
-import net.minecraft.core.SectionPosition;
 import net.minecraft.core.particles.ParticleParam;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.WorldServer;
@@ -30,8 +30,6 @@ import net.minecraft.world.level.dimension.DimensionManager;
 import net.minecraft.world.level.entity.EntityTypeTest;
 import net.minecraft.world.level.gameevent.GameEvent;
 import net.minecraft.world.level.levelgen.HeightMap;
-import net.minecraft.world.level.levelgen.feature.StructureGenerator;
-import net.minecraft.world.level.levelgen.structure.StructureStart;
 import net.minecraft.world.level.lighting.LightEngine;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.FluidType;
@@ -50,11 +48,6 @@ public class DummyGeneratorAccess implements GeneratorAccessSeed {
 
     @Override
     public long getSeed() {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    @Override
-    public List<? extends StructureStart<?>> startsForFeature(SectionPosition sp, StructureGenerator<?> sg) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
@@ -169,7 +162,7 @@ public class DummyGeneratorAccess implements GeneratorAccessSeed {
     }
 
     @Override
-    public BiomeBase getUncachedNoiseBiome(int i, int i1, int i2) {
+    public Holder<BiomeBase> getUncachedNoiseBiome(int i, int i1, int i2) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 

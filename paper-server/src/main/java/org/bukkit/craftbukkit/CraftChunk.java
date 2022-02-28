@@ -11,6 +11,7 @@ import java.util.concurrent.locks.LockSupport;
 import java.util.function.BooleanSupplier;
 import java.util.function.Predicate;
 import net.minecraft.core.BlockPosition;
+import net.minecraft.core.Holder;
 import net.minecraft.core.IRegistry;
 import net.minecraft.core.SectionPosition;
 import net.minecraft.nbt.DynamicOpsNBT;
@@ -292,10 +293,10 @@ public class CraftChunk implements Chunk {
         byte[][] sectionSkyLights = new byte[cs.length][];
         byte[][] sectionEmitLights = new byte[cs.length][];
         boolean[] sectionEmpty = new boolean[cs.length];
-        DataPaletteBlock<BiomeBase>[] biome = (includeBiome || includeBiomeTempRain) ? new DataPaletteBlock[cs.length] : null;
+        DataPaletteBlock<Holder<BiomeBase>>[] biome = (includeBiome || includeBiomeTempRain) ? new DataPaletteBlock[cs.length] : null;
 
         IRegistry<BiomeBase> iregistry = worldServer.registryAccess().registryOrThrow(IRegistry.BIOME_REGISTRY);
-        Codec<DataPaletteBlock<BiomeBase>> biomeCodec = DataPaletteBlock.codec(iregistry, iregistry.byNameCodec(), DataPaletteBlock.e.SECTION_BIOMES, iregistry.getOrThrow(Biomes.PLAINS));
+        Codec<DataPaletteBlock<Holder<BiomeBase>>> biomeCodec = DataPaletteBlock.codec(iregistry.asHolderIdMap(), iregistry.holderByNameCodec(), DataPaletteBlock.e.SECTION_BIOMES, iregistry.getHolderOrThrow(Biomes.PLAINS));
 
         for (int i = 0; i < cs.length; i++) {
             NBTTagCompound data = new NBTTagCompound();
@@ -333,7 +334,7 @@ public class CraftChunk implements Chunk {
         }
 
         World world = getWorld();
-        return new CraftChunkSnapshot(getX(), getZ(), chunk.getMinBuildHeight(), chunk.getMaxBuildHeight(), world.getName(), world.getFullTime(), sectionBlockIDs, sectionSkyLights, sectionEmitLights, sectionEmpty, hmap, biome);
+        return new CraftChunkSnapshot(getX(), getZ(), chunk.getMinBuildHeight(), chunk.getMaxBuildHeight(), world.getName(), world.getFullTime(), sectionBlockIDs, sectionSkyLights, sectionEmitLights, sectionEmpty, hmap, iregistry, biome);
     }
 
     @Override
@@ -350,7 +351,8 @@ public class CraftChunk implements Chunk {
         byte[][] skyLight = new byte[hSection][];
         byte[][] emitLight = new byte[hSection][];
         boolean[] empty = new boolean[hSection];
-        DataPaletteBlock<BiomeBase>[] biome = (includeBiome || includeBiomeTempRain) ? new DataPaletteBlock[hSection] : null;
+        IRegistry<BiomeBase> iregistry = world.getHandle().registryAccess().registryOrThrow(IRegistry.BIOME_REGISTRY);
+        DataPaletteBlock<Holder<BiomeBase>>[] biome = (includeBiome || includeBiomeTempRain) ? new DataPaletteBlock[hSection] : null;
 
         for (int i = 0; i < hSection; i++) {
             blockIDs[i] = emptyBlockIDs;
@@ -359,12 +361,11 @@ public class CraftChunk implements Chunk {
             empty[i] = true;
 
             if (biome != null) {
-                IRegistry<BiomeBase> iregistry = world.getHandle().registryAccess().registryOrThrow(IRegistry.BIOME_REGISTRY);
-                biome[i] = new DataPaletteBlock<>(iregistry, iregistry.getOrThrow(Biomes.PLAINS), DataPaletteBlock.e.SECTION_BIOMES);
+                biome[i] = new DataPaletteBlock<>(iregistry.asHolderIdMap(), iregistry.getHolderOrThrow(Biomes.PLAINS), DataPaletteBlock.e.SECTION_BIOMES);
             }
         }
 
-        return new CraftChunkSnapshot(x, z, world.getMinHeight(), world.getMaxHeight(), world.getName(), world.getFullTime(), blockIDs, skyLight, emitLight, empty, new HeightMap(actual, HeightMap.Type.MOTION_BLOCKING), biome);
+        return new CraftChunkSnapshot(x, z, world.getMinHeight(), world.getMaxHeight(), world.getName(), world.getFullTime(), blockIDs, skyLight, emitLight, empty, new HeightMap(actual, HeightMap.Type.MOTION_BLOCKING), iregistry, biome);
     }
 
     static void validateChunkCoordinates(int minY, int maxY, int x, int y, int z) {

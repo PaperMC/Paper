@@ -4,6 +4,7 @@ import com.google.common.base.Preconditions;
 import com.mojang.serialization.Codec;
 import java.util.ArrayList;
 import java.util.List;
+import net.minecraft.core.Holder;
 import net.minecraft.core.IRegistry;
 import net.minecraft.world.level.biome.BiomeBase;
 import net.minecraft.world.level.biome.Climate;
@@ -19,8 +20,8 @@ public class CustomWorldChunkManager extends WorldChunkManager {
     private final BiomeProvider biomeProvider;
     private final IRegistry<BiomeBase> registry;
 
-    private static List<BiomeBase> biomeListToBiomeBaseList(List<Biome> biomes, IRegistry<BiomeBase> registry) {
-        List<BiomeBase> biomeBases = new ArrayList<>();
+    private static List<Holder<BiomeBase>> biomeListToBiomeBaseList(List<Biome> biomes, IRegistry<BiomeBase> registry) {
+        List<Holder<BiomeBase>> biomeBases = new ArrayList<>();
 
         for (Biome biome : biomes) {
             Preconditions.checkArgument(biome != Biome.CUSTOM, "Cannot use the biome %s", biome);
@@ -50,7 +51,7 @@ public class CustomWorldChunkManager extends WorldChunkManager {
     }
 
     @Override
-    public BiomeBase getNoiseBiome(int x, int y, int z, Climate.Sampler sampler) {
+    public Holder<BiomeBase> getNoiseBiome(int x, int y, int z, Climate.Sampler sampler) {
         Biome biome = biomeProvider.getBiome(worldInfo, x << 2, y << 2, z << 2);
         Preconditions.checkArgument(biome != Biome.CUSTOM, "Cannot set the biome to %s", biome);
 

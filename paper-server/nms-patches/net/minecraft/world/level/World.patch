@@ -1,8 +1,8 @@
 --- a/net/minecraft/world/level/World.java
 +++ b/net/minecraft/world/level/World.java
-@@ -67,6 +67,31 @@
- import org.apache.logging.log4j.LogManager;
- import org.apache.logging.log4j.Logger;
+@@ -65,6 +65,31 @@
+ import net.minecraft.world.phys.AxisAlignedBB;
+ import net.minecraft.world.scores.Scoreboard;
  
 +// CraftBukkit start
 +import java.util.HashMap;
@@ -31,12 +31,12 @@
 +
  public abstract class World implements GeneratorAccess, AutoCloseable {
  
-     protected static final Logger LOGGER = LogManager.getLogger();
-@@ -104,7 +129,43 @@
+     public static final Codec<ResourceKey<World>> RESOURCE_KEY_CODEC = MinecraftKey.CODEC.xmap(ResourceKey.elementKey(IRegistry.DIMENSION_REGISTRY), ResourceKey::location);
+@@ -102,7 +127,43 @@
      private final ResourceKey<World> dimension;
      private long subTickCount;
  
--    protected World(WorldDataMutable worlddatamutable, ResourceKey<World> resourcekey, final DimensionManager dimensionmanager, Supplier<GameProfilerFiller> supplier, boolean flag, boolean flag1, long i) {
+-    protected World(WorldDataMutable worlddatamutable, ResourceKey<World> resourcekey, Holder<DimensionManager> holder, Supplier<GameProfilerFiller> supplier, boolean flag, boolean flag1, long i) {
 +    // CraftBukkit start Added the following
 +    private final CraftWorld world;
 +    public boolean pvpMode;
@@ -62,7 +62,7 @@
 +
 +    public abstract ResourceKey<WorldDimension> getTypeKey();
 +
-+    protected World(WorldDataMutable worlddatamutable, ResourceKey<World> resourcekey, final DimensionManager dimensionmanager, Supplier<GameProfilerFiller> supplier, boolean flag, boolean flag1, long i, org.bukkit.generator.ChunkGenerator gen, org.bukkit.generator.BiomeProvider biomeProvider, org.bukkit.World.Environment env) {
++    protected World(WorldDataMutable worlddatamutable, ResourceKey<World> resourcekey, Holder<DimensionManager> holder, Supplier<GameProfilerFiller> supplier, boolean flag, boolean flag1, long i, org.bukkit.generator.ChunkGenerator gen, org.bukkit.generator.BiomeProvider biomeProvider, org.bukkit.World.Environment env) {
 +        this.generator = gen;
 +        this.world = new CraftWorld((WorldServer) this, gen, biomeProvider, env);
 +
@@ -76,23 +76,23 @@
 +        // CraftBukkit end
          this.profiler = supplier;
          this.levelData = worlddatamutable;
-         this.dimensionType = dimensionmanager;
-@@ -114,12 +175,12 @@
+         this.dimensionTypeRegistration = holder;
+@@ -113,12 +174,12 @@
              this.worldBorder = new WorldBorder() {
                  @Override
                  public double getCenterX() {
--                    return super.getCenterX() / dimensionmanager.coordinateScale();
+-                    return super.getCenterX() / World.this.dimensionType.coordinateScale();
 +                    return super.getCenterX(); // CraftBukkit
                  }
  
                  @Override
                  public double getCenterZ() {
--                    return super.getCenterZ() / dimensionmanager.coordinateScale();
+-                    return super.getCenterZ() / World.this.dimensionType.coordinateScale();
 +                    return super.getCenterZ(); // CraftBukkit
                  }
              };
          } else {
-@@ -129,6 +190,42 @@
+@@ -128,6 +189,42 @@
          this.thread = Thread.currentThread();
          this.biomeManager = new BiomeManager(this, i);
          this.isDebug = flag1;
@@ -135,7 +135,7 @@
      }
  
      @Override
-@@ -186,6 +283,17 @@
+@@ -185,6 +282,17 @@
  
      @Override
      public boolean setBlock(BlockPosition blockposition, IBlockData iblockdata, int i, int j) {
@@ -153,7 +153,7 @@
          if (this.isOutsideBuildHeight(blockposition)) {
              return false;
          } else if (!this.isClientSide && this.isDebug()) {
-@@ -193,9 +301,24 @@
+@@ -192,9 +300,24 @@
          } else {
              Chunk chunk = this.getChunkAt(blockposition);
              Block block = iblockdata.getBlock();
@@ -179,7 +179,7 @@
                  return false;
              } else {
                  IBlockData iblockdata2 = this.getBlockState(blockposition);
-@@ -206,6 +329,7 @@
+@@ -205,6 +328,7 @@
                      this.getProfiler().pop();
                  }
  
@@ -187,7 +187,7 @@
                  if (iblockdata2 == iblockdata) {
                      if (iblockdata1 != iblockdata2) {
                          this.setBlocksDirty(blockposition, iblockdata1, iblockdata2);
-@@ -232,12 +356,69 @@
+@@ -231,12 +355,69 @@
  
                      this.onBlockStateChange(blockposition, iblockdata1, iblockdata2);
                  }
@@ -257,7 +257,7 @@
      public void onBlockStateChange(BlockPosition blockposition, IBlockData iblockdata, IBlockData iblockdata1) {}
  
      @Override
-@@ -327,6 +508,17 @@
+@@ -326,6 +507,17 @@
              IBlockData iblockdata = this.getBlockState(blockposition);
  
              try {
@@ -275,7 +275,7 @@
                  iblockdata.neighborChanged(this, blockposition, block, blockposition1, false);
              } catch (Throwable throwable) {
                  CrashReport crashreport = CrashReport.forThrowable(throwable, "Exception while updating neighbours");
-@@ -369,6 +561,14 @@
+@@ -368,6 +560,14 @@
  
      @Override
      public IBlockData getBlockState(BlockPosition blockposition) {
@@ -290,7 +290,7 @@
          if (this.isOutsideBuildHeight(blockposition)) {
              return Blocks.VOID_AIR.defaultBlockState();
          } else {
-@@ -494,6 +694,16 @@
+@@ -493,6 +693,16 @@
      @Nullable
      @Override
      public TileEntity getBlockEntity(BlockPosition blockposition) {
@@ -307,7 +307,7 @@
          return this.isOutsideBuildHeight(blockposition) ? null : (!this.isClientSide && Thread.currentThread() != this.thread ? null : this.getChunkAt(blockposition).getBlockEntity(blockposition, Chunk.EnumTileEntityState.IMMEDIATE));
      }
  
-@@ -501,6 +711,12 @@
+@@ -500,6 +710,12 @@
          BlockPosition blockposition = tileentity.getBlockPos();
  
          if (!this.isOutsideBuildHeight(blockposition)) {
@@ -320,7 +320,7 @@
              this.getChunkAt(blockposition).addAndRegisterBlockEntity(tileentity);
          }
      }
-@@ -605,7 +821,7 @@
+@@ -604,7 +820,7 @@
  
                  for (int j = 0; j < i; ++j) {
                      EntityComplexPart entitycomplexpart = aentitycomplexpart[j];
@@ -329,7 +329,7 @@
  
                      if (t0 != null && predicate.test(t0)) {
                          list.add(t0);
-@@ -931,6 +1147,14 @@
+@@ -932,6 +1148,14 @@
      public abstract LevelEntityGetter<Entity> getEntities();
  
      protected void postGameEventInRadius(@Nullable Entity entity, GameEvent gameevent, BlockPosition blockposition, int i) {

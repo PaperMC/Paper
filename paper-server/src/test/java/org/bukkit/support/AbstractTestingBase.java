@@ -4,18 +4,15 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.MoreExecutors;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 import net.minecraft.SharedConstants;
+import net.minecraft.commands.CommandDispatcher;
 import net.minecraft.core.IRegistryCustom;
+import net.minecraft.server.DataPackResources;
 import net.minecraft.server.DispenserRegistry;
 import net.minecraft.server.packs.EnumResourcePackType;
 import net.minecraft.server.packs.ResourcePackVanilla;
 import net.minecraft.server.packs.repository.ResourcePackSourceVanilla;
 import net.minecraft.server.packs.resources.ResourceManager;
-import net.minecraft.tags.TagRegistry;
-import net.minecraft.util.Unit;
-import net.minecraft.world.level.storage.loot.LootPredicateManager;
-import net.minecraft.world.level.storage.loot.LootTableRegistry;
 import org.bukkit.Material;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.junit.Assert;
@@ -32,21 +29,19 @@ public abstract class AbstractTestingBase {
     // Materials that only exist in block form (or are legacy)
     public static final List<Material> INVALIDATED_MATERIALS;
 
-    public static final LootTableRegistry LOOT_TABLE_REGISTRY;
-    public static final TagRegistry TAG_REGISTRY;
+    public static final DataPackResources DATA_PACK;
 
     static {
         SharedConstants.tryDetectVersion();
         DispenserRegistry.bootStrap();
         // Set up resource manager
-        ResourceManager resourceManager = new ResourceManager(EnumResourcePackType.SERVER_DATA);
+        ResourceManager resourceManager = new ResourceManager(EnumResourcePackType.SERVER_DATA, Collections.singletonList(new ResourcePackVanilla(ResourcePackSourceVanilla.BUILT_IN_METADATA, "minecraft")));
         // add tags and loot tables for unit tests
-        resourceManager.registerReloadListener(TAG_REGISTRY = new TagRegistry(IRegistryCustom.builtin()));
-        resourceManager.registerReloadListener(LOOT_TABLE_REGISTRY = new LootTableRegistry(new LootPredicateManager()));
+        IRegistryCustom.Dimension registry = IRegistryCustom.builtinCopy().freeze();
         // Register vanilla pack
-        resourceManager.reload(MoreExecutors.directExecutor(), MoreExecutors.directExecutor(), Collections.singletonList(new ResourcePackVanilla(ResourcePackSourceVanilla.BUILT_IN_METADATA, "minecraft")), CompletableFuture.completedFuture(Unit.INSTANCE)).join();
+        DATA_PACK = DataPackResources.loadResources(resourceManager, registry, CommandDispatcher.ServerType.DEDICATED, 0, MoreExecutors.directExecutor(), MoreExecutors.directExecutor()).join();
         // Bind tags
-        TAG_REGISTRY.getTags().bindToGlobal();
+        DATA_PACK.updateRegistryTags(registry);
 
         DummyServer.setup();
         DummyEnchantments.setup();

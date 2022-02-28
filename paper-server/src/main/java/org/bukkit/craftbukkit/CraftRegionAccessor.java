@@ -5,11 +5,11 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Optional;
 import java.util.Random;
 import java.util.function.Predicate;
 import net.minecraft.core.BlockPosition;
 import net.minecraft.core.EnumDirection;
+import net.minecraft.core.Holder;
 import net.minecraft.core.IRegistry;
 import net.minecraft.data.worldgen.features.TreeFeatures;
 import net.minecraft.world.entity.EntityAreaEffectCloud;
@@ -49,7 +49,7 @@ import net.minecraft.world.level.block.BlockDiodeAbstract;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.IBlockData;
 import net.minecraft.world.level.chunk.ChunkGenerator;
-import net.minecraft.world.level.levelgen.feature.FeaturePlaceContext;
+import net.minecraft.world.level.levelgen.feature.WorldGenFeatureConfigured;
 import net.minecraft.world.phys.AxisAlignedBB;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -226,11 +226,11 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
     @Override
     public void setBiome(int x, int y, int z, Biome biome) {
         Preconditions.checkArgument(biome != Biome.CUSTOM, "Cannot set the biome to %s", biome);
-        BiomeBase biomeBase = CraftBlock.biomeToBiomeBase(getHandle().registryAccess().registryOrThrow(IRegistry.BIOME_REGISTRY), biome);
+        Holder<BiomeBase> biomeBase = CraftBlock.biomeToBiomeBase(getHandle().registryAccess().registryOrThrow(IRegistry.BIOME_REGISTRY), biome);
         setBiome(x, y, z, biomeBase);
     }
 
-    public abstract void setBiome(int x, int y, int z, BiomeBase biomeBase);
+    public abstract void setBiome(int x, int y, int z, Holder<BiomeBase> biomeBase);
 
     @Override
     public BlockState getBlockState(Location location) {
@@ -321,7 +321,7 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
     }
 
     public boolean generateTree(GeneratorAccessSeed access, ChunkGenerator chunkGenerator, BlockPosition pos, Random random, TreeType treeType) {
-        net.minecraft.world.level.levelgen.feature.WorldGenFeatureConfigured gen;
+        Holder<?> gen;
         switch (treeType) {
             case BIG_TREE:
                 gen = TreeFeatures.FANCY_OAK;
@@ -386,7 +386,7 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
                 break;
         }
 
-        return gen.feature.place(new FeaturePlaceContext(Optional.empty(), access, chunkGenerator, random, pos, gen.config));
+        return ((WorldGenFeatureConfigured<?, ?>) gen.value()).place(access, chunkGenerator, random, pos);
     }
 
     @Override
@@ -558,7 +558,8 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
             entity = new EntityBoat(world, x, y, z);
             entity.moveTo(x, y, z, yaw, pitch);
         } else if (FallingBlock.class.isAssignableFrom(clazz)) {
-            entity = new EntityFallingBlock(world, x, y, z, getHandle().getBlockState(new BlockPosition(x, y, z)));
+            BlockPosition pos = new BlockPosition(x, y, z);
+            entity = EntityFallingBlock.fall(world, pos, getHandle().getBlockState(pos));
         } else if (Projectile.class.isAssignableFrom(clazz)) {
             if (Snowball.class.isAssignableFrom(clazz)) {
                 entity = new EntitySnowball(world, x, y, z);

@@ -2,10 +2,12 @@ package org.bukkit.craftbukkit.generator;
 
 import com.google.common.base.Preconditions;
 import com.mojang.serialization.Codec;
+import java.util.List;
 import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import net.minecraft.core.BlockPosition;
+import net.minecraft.core.Holder;
 import net.minecraft.core.IRegistry;
 import net.minecraft.core.IRegistryCustom;
 import net.minecraft.server.level.RegionLimitedWorldAccess;
@@ -73,18 +75,18 @@ public class CustomChunkGenerator extends InternalChunkGenerator {
 
         @Override
         public Biome getBiome(int x, int y, int z) {
-            return CraftBlock.biomeBaseToBiome((IRegistry<BiomeBase>) biome.biomeRegistry, biome.getNoiseBiome(x >> 2, y >> 2, z >> 2));
+            return CraftBlock.biomeBaseToBiome(biome.biomeRegistry, biome.getNoiseBiome(x >> 2, y >> 2, z >> 2));
         }
 
         @Override
         public void setBiome(int x, int y, int z, Biome bio) {
             Preconditions.checkArgument(bio != Biome.CUSTOM, "Cannot set the biome to %s", bio);
-            biome.setBiome(x >> 2, y >> 2, z >> 2, CraftBlock.biomeToBiomeBase((IRegistry<BiomeBase>) biome.biomeRegistry, bio));
+            biome.setBiome(x >> 2, y >> 2, z >> 2, CraftBlock.biomeToBiomeBase(biome.biomeRegistry, bio));
         }
     }
 
     public CustomChunkGenerator(WorldServer world, net.minecraft.world.level.chunk.ChunkGenerator delegate, ChunkGenerator generator) {
-        super(delegate.getBiomeSource(), delegate.getSettings());
+        super(delegate.structureSets, delegate.structureOverrides, delegate.getBiomeSource());
 
         this.world = world;
         this.delegate = delegate;
@@ -279,13 +281,18 @@ public class CustomChunkGenerator extends InternalChunkGenerator {
     }
 
     @Override
-    public WeightedRandomList<BiomeSettingsMobs.c> getMobsAt(BiomeBase biomebase, StructureManager structuremanager, EnumCreatureType enumcreaturetype, BlockPosition blockposition) {
-        return delegate.getMobsAt(biomebase, structuremanager, enumcreaturetype, blockposition);
+    public WeightedRandomList<BiomeSettingsMobs.c> getMobsAt(Holder<BiomeBase> holder, StructureManager structuremanager, EnumCreatureType enumcreaturetype, BlockPosition blockposition) {
+        return delegate.getMobsAt(holder, structuremanager, enumcreaturetype, blockposition);
     }
 
     @Override
     public void applyBiomeDecoration(GeneratorAccessSeed generatoraccessseed, IChunkAccess ichunkaccess, StructureManager structuremanager) {
         super.applyBiomeDecoration(generatoraccessseed, ichunkaccess, structuremanager, generator.shouldGenerateDecorations());
+    }
+
+    @Override
+    public void addDebugScreenInfo(List<String> list, BlockPosition blockposition) {
+        delegate.addDebugScreenInfo(list, blockposition);
     }
 
     @Override

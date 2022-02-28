@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/player/EntityHuman.java
 +++ b/net/minecraft/world/entity/player/EntityHuman.java
-@@ -111,6 +111,19 @@
+@@ -112,6 +112,19 @@
  import net.minecraft.world.scores.ScoreboardTeam;
  import net.minecraft.world.scores.ScoreboardTeamBase;
  
@@ -20,7 +20,7 @@
  public abstract class EntityHuman extends EntityLiving {
  
      public static final String UUID_PREFIX_OFFLINE_PLAYER = "OfflinePlayer:";
-@@ -124,7 +137,8 @@
+@@ -125,7 +138,8 @@
      public static final float SWIMMING_BB_HEIGHT = 0.6F;
      public static final float DEFAULT_EYE_HEIGHT = 1.62F;
      public static final EntitySize STANDING_DIMENSIONS = EntitySize.scalable(0.6F, 1.8F);
@@ -30,7 +30,7 @@
      private static final int FLY_ACHIEVEMENT_SPEED = 25;
      private static final DataWatcherObject<Float> DATA_PLAYER_ABSORPTION_ID = DataWatcher.defineId(EntityHuman.class, DataWatcherRegistry.FLOAT);
      private static final DataWatcherObject<Integer> DATA_SCORE_ID = DataWatcher.defineId(EntityHuman.class, DataWatcherRegistry.INT);
-@@ -134,10 +148,10 @@
+@@ -135,10 +149,10 @@
      protected static final DataWatcherObject<NBTTagCompound> DATA_SHOULDER_RIGHT = DataWatcher.defineId(EntityHuman.class, DataWatcherRegistry.COMPOUND_TAG);
      private long timeEntitySatOnShoulder;
      private final PlayerInventory inventory = new PlayerInventory(this);
@@ -43,7 +43,7 @@
      protected int jumpTriggerTime;
      public float oBob;
      public float bob;
-@@ -164,6 +178,16 @@
+@@ -165,6 +179,16 @@
      @Nullable
      public EntityFishingHook fishing;
  
@@ -60,7 +60,7 @@
      public EntityHuman(World world, BlockPosition blockposition, float f, GameProfile gameprofile) {
          super(EntityTypes.PLAYER, world);
          this.lastItemInMainHand = ItemStack.EMPTY;
-@@ -302,7 +326,7 @@
+@@ -303,7 +327,7 @@
          ItemStack itemstack = this.getItemBySlot(EnumItemSlot.HEAD);
  
          if (itemstack.is(Items.TURTLE_HELMET) && !this.isEyeInFluid(TagsFluid.WATER)) {
@@ -69,7 +69,7 @@
          }
  
      }
-@@ -494,7 +518,8 @@
+@@ -495,7 +519,8 @@
  
          if (this.level.getDifficulty() == EnumDifficulty.PEACEFUL && this.level.getGameRules().getBoolean(GameRules.RULE_NATURAL_REGENERATION)) {
              if (this.getHealth() < this.getMaxHealth() && this.tickCount % 20 == 0) {
@@ -79,7 +79,7 @@
              }
  
              if (this.foodData.needsFood() && this.tickCount % 10 == 0) {
-@@ -682,6 +707,30 @@
+@@ -692,6 +717,30 @@
                  entityitem.setDeltaMovement((double) (-f3 * f2 * 0.3F) + Math.cos((double) f5) * (double) f6, (double) (-f1 * 0.3F + 0.1F + (this.random.nextFloat() - this.random.nextFloat()) * 0.1F), (double) (f4 * f2 * 0.3F) + Math.sin((double) f5) * (double) f6);
              }
  
@@ -110,12 +110,14 @@
              return entityitem;
          }
      }
-@@ -814,10 +863,10 @@
-             if (this.isDeadOrDying()) {
+@@ -825,12 +874,12 @@
                  return false;
              } else {
--                this.removeEntitiesOnShoulder();
-+                // this.releaseShoulderEntities(); // CraftBukkit - moved down
+                 if (!this.level.isClientSide) {
+-                    this.removeEntitiesOnShoulder();
++                    // this.removeEntitiesOnShoulder(); // CraftBukkit - moved down
+                 }
+ 
                  if (damagesource.scalesWithDifficulty()) {
                      if (this.level.getDifficulty() == EnumDifficulty.PEACEFUL) {
 -                        f = 0.0F;
@@ -123,7 +125,7 @@
                      }
  
                      if (this.level.getDifficulty() == EnumDifficulty.EASY) {
-@@ -829,7 +878,13 @@
+@@ -842,7 +891,13 @@
                      }
                  }
  
@@ -138,7 +140,7 @@
              }
          }
      }
-@@ -849,10 +904,29 @@
+@@ -862,10 +917,29 @@
      }
  
      public boolean canHarmPlayer(EntityHuman entityhuman) {
@@ -171,7 +173,7 @@
      }
  
      @Override
-@@ -894,8 +968,13 @@
+@@ -907,8 +981,13 @@
          }
      }
  
@@ -186,7 +188,7 @@
          if (!this.isInvulnerableTo(damagesource)) {
              f = this.getDamageAfterArmorAbsorb(damagesource, f);
              f = this.getDamageAfterMagicAbsorb(damagesource, f);
-@@ -910,7 +989,7 @@
+@@ -923,7 +1002,7 @@
              }
  
              if (f != 0.0F) {
@@ -195,7 +197,7 @@
                  float f3 = this.getHealth();
  
                  this.setHealth(this.getHealth() - f);
-@@ -921,6 +1000,7 @@
+@@ -934,6 +1013,7 @@
  
              }
          }
@@ -203,7 +205,7 @@
      }
  
      @Override
-@@ -1080,7 +1160,7 @@
+@@ -1093,7 +1173,7 @@
  
                  f *= 0.2F + f2 * f2 * 0.8F;
                  f1 *= f2;
@@ -212,7 +214,7 @@
                  if (f > 0.0F || f1 > 0.0F) {
                      boolean flag = f2 > 0.9F;
                      boolean flag1 = false;
-@@ -1119,8 +1199,15 @@
+@@ -1132,8 +1212,15 @@
                      if (entity instanceof EntityLiving) {
                          f3 = ((EntityLiving) entity).getHealth();
                          if (j > 0 && !entity.isOnFire()) {
@@ -230,7 +232,7 @@
                          }
                      }
  
-@@ -1148,8 +1235,11 @@
+@@ -1161,8 +1248,11 @@
                                  EntityLiving entityliving = (EntityLiving) iterator.next();
  
                                  if (entityliving != this && entityliving != entity && !this.isAlliedTo((Entity) entityliving) && (!(entityliving instanceof EntityArmorStand) || !((EntityArmorStand) entityliving).isMarker()) && this.distanceToSqr((Entity) entityliving) < 9.0D) {
@@ -243,7 +245,7 @@
                                  }
                              }
  
-@@ -1158,9 +1248,26 @@
+@@ -1171,9 +1261,26 @@
                          }
  
                          if (entity instanceof EntityPlayer && entity.hurtMarked) {
@@ -270,7 +272,7 @@
                          }
  
                          if (flag2) {
-@@ -1205,7 +1312,14 @@
+@@ -1218,7 +1325,14 @@
  
                              this.awardStat(StatisticList.DAMAGE_DEALT, Math.round(f5 * 10.0F));
                              if (j > 0) {
@@ -286,7 +288,7 @@
                              }
  
                              if (this.level instanceof WorldServer && f5 > 2.0F) {
-@@ -1215,12 +1329,17 @@
+@@ -1228,12 +1342,17 @@
                              }
                          }
  
@@ -305,7 +307,7 @@
                      }
                  }
  
-@@ -1293,6 +1412,12 @@
+@@ -1306,6 +1425,12 @@
      public void updateTutorialInventoryAction(ItemStack itemstack, ItemStack itemstack1, ClickAction clickaction) {}
  
      public Either<EntityHuman.EnumBedResult, Unit> startSleepInBed(BlockPosition blockposition) {
@@ -318,7 +320,7 @@
          this.startSleeping(blockposition);
          this.sleepCounter = 0;
          return Either.right(Unit.INSTANCE);
-@@ -1377,9 +1502,9 @@
+@@ -1390,9 +1515,9 @@
          super.jumpFromGround();
          this.awardStat(StatisticList.JUMP);
          if (this.isSprinting()) {
@@ -330,7 +332,7 @@
          }
  
      }
-@@ -1413,7 +1538,11 @@
+@@ -1426,7 +1551,11 @@
              this.setDeltaMovement(vec3d2.x, d3 * 0.6D, vec3d2.z);
              this.flyingSpeed = f;
              this.resetFallDistance();
@@ -343,7 +345,7 @@
          } else {
              super.travel(vec3d);
          }
-@@ -1448,19 +1577,19 @@
+@@ -1461,19 +1590,19 @@
                  i = Math.round((float) Math.sqrt(d0 * d0 + d1 * d1 + d2 * d2) * 100.0F);
                  if (i > 0) {
                      this.awardStat(StatisticList.SWIM_ONE_CM, i);
@@ -366,7 +368,7 @@
                  }
              } else if (this.onClimbable()) {
                  if (d1 > 0.0D) {
-@@ -1471,13 +1600,13 @@
+@@ -1484,13 +1613,13 @@
                  if (i > 0) {
                      if (this.isSprinting()) {
                          this.awardStat(StatisticList.SPRINT_ONE_CM, i);
@@ -383,7 +385,7 @@
                      }
                  }
              } else if (this.isFallFlying()) {
-@@ -1543,12 +1672,24 @@
+@@ -1556,12 +1685,24 @@
      }
  
      public void startFallFlying() {
@@ -409,7 +411,7 @@
      }
  
      @Override
-@@ -1638,10 +1779,21 @@
+@@ -1651,10 +1792,21 @@
          return this.experienceLevel >= 30 ? 112 + (this.experienceLevel - 30) * 9 : (this.experienceLevel >= 15 ? 37 + (this.experienceLevel - 15) * 5 : 7 + this.experienceLevel * 2);
      }
  
@@ -432,7 +434,7 @@
              }
  
          }
-@@ -1718,15 +1870,22 @@
+@@ -1731,15 +1883,22 @@
  
      @Override
      public void setItemSlot(EnumItemSlot enumitemslot, ItemStack itemstack) {
@@ -458,7 +460,7 @@
              this.inventory.armor.set(enumitemslot.getIndex(), itemstack);
          }
  
-@@ -1767,26 +1926,31 @@
+@@ -1780,26 +1939,31 @@
  
      protected void removeEntitiesOnShoulder() {
          if (this.timeEntitySatOnShoulder + 20L < this.level.getGameTime()) {

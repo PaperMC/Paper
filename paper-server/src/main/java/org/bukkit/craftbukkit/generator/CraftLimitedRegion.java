@@ -7,6 +7,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Random;
 import net.minecraft.core.BlockPosition;
+import net.minecraft.core.Holder;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.level.ChunkCoordIntPair;
@@ -167,7 +168,7 @@ public class CraftLimitedRegion extends CraftRegionAccessor implements LimitedRe
     }
 
     @Override
-    public void setBiome(int x, int y, int z, BiomeBase biomeBase) {
+    public void setBiome(int x, int y, int z, Holder<BiomeBase> biomeBase) {
         Preconditions.checkArgument(isInRegion(x, y, z), "Coordinates %s, %s, %s are not in the region", x, y, z);
         IChunkAccess chunk = getHandle().getChunk(x >> 4, z >> 4, ChunkStatus.EMPTY);
         chunk.setBiome(x >> 2, y >> 2, z >> 2, biomeBase);

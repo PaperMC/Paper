@@ -1,24 +1,15 @@
 --- a/net/minecraft/world/entity/item/EntityFallingBlock.java
 +++ b/net/minecraft/world/entity/item/EntityFallingBlock.java
-@@ -45,6 +45,8 @@
- import net.minecraft.world.phys.MovingObjectPositionBlock;
+@@ -46,6 +46,8 @@
  import net.minecraft.world.phys.Vec3D;
+ import org.slf4j.Logger;
  
 +import org.bukkit.craftbukkit.event.CraftEventFactory; // CraftBukkit
 +
  public class EntityFallingBlock extends Entity {
  
-     private static final int REMOVAL_DELAY_MILLIS = 50;
-@@ -122,7 +124,7 @@
- 
-             if (this.time++ == 0) {
-                 blockposition = this.blockPosition();
--                if (this.level.getBlockState(blockposition).is(block)) {
-+                if (this.level.getBlockState(blockposition).is(block) && !CraftEventFactory.callEntityChangeBlockEvent(this, blockposition, Blocks.AIR.defaultBlockState()).isCancelled()) {
-                     this.level.removeBlock(blockposition, false);
-                 } else if (!this.level.isClientSide) {
-                     this.discard();
-@@ -173,6 +175,12 @@
+     private static final Logger LOGGER = LogUtils.getLogger();
+@@ -166,6 +168,12 @@
                                      this.blockState = (IBlockData) this.blockState.setValue(BlockProperties.WATERLOGGED, true);
                                  }
  
@@ -31,7 +22,7 @@
                                  if (this.level.setBlock(blockposition, this.blockState, 3)) {
                                      ((WorldServer) this.level).getChunkSource().chunkMap.broadcast(this, new PacketPlayOutBlockChange(blockposition, this.level.getBlockState(blockposition)));
                                      this.discard();
-@@ -252,7 +260,7 @@
+@@ -236,7 +244,7 @@
              if (i < 0) {
                  return false;
              } else {
@@ -40,7 +31,7 @@
                  DamageSource damagesource1;
  
                  if (this.blockState.getBlock() instanceof Fallable) {
-@@ -268,7 +276,9 @@
+@@ -252,7 +260,9 @@
                  float f2 = (float) Math.min(MathHelper.floor((float) i * this.fallDamagePerDistance), this.fallDamageMax);
  
                  this.level.getEntities((Entity) this, this.getBoundingBox(), predicate).forEach((entity) -> {
@@ -48,5 +39,5 @@
                      entity.hurt(damagesource1, f2);
 +                    CraftEventFactory.entityDamage = null; // CraftBukkit
                  });
-                 boolean flag = this.blockState.is((Tag) TagsBlock.ANVIL);
+                 boolean flag = this.blockState.is(TagsBlock.ANVIL);
  

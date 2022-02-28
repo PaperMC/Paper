@@ -1,8 +1,8 @@
 --- a/net/minecraft/world/level/saveddata/maps/WorldMap.java
 +++ b/net/minecraft/world/level/saveddata/maps/WorldMap.java
 @@ -31,6 +31,16 @@
- import org.apache.logging.log4j.LogManager;
- import org.apache.logging.log4j.Logger;
+ import net.minecraft.world.level.saveddata.PersistentBase;
+ import org.slf4j.Logger;
  
 +// CraftBukkit start
 +import java.util.UUID;
@@ -16,7 +16,7 @@
 +
  public class WorldMap extends PersistentBase {
  
-     private static final Logger LOGGER = LogManager.getLogger();
+     private static final Logger LOGGER = LogUtils.getLogger();
 @@ -53,6 +63,13 @@
      private final Map<String, WorldMapFrame> frameMarkers = Maps.newHashMap();
      private int trackedDecorationCount;
@@ -42,14 +42,19 @@
      }
  
      public static WorldMap createFresh(double d0, double d1, byte b0, boolean flag, boolean flag1, ResourceKey<World> resourcekey) {
-@@ -83,8 +104,26 @@
+@@ -79,12 +100,30 @@
+     }
+ 
+     public static WorldMap load(NBTTagCompound nbttagcompound) {
+-        DataResult dataresult = DimensionManager.parseLegacy(new Dynamic(DynamicOpsNBT.INSTANCE, nbttagcompound.get("dimension")));
++        DataResult<ResourceKey<World>> dataresult = DimensionManager.parseLegacy(new Dynamic(DynamicOpsNBT.INSTANCE, nbttagcompound.get("dimension"))); // CraftBukkit - decompile error
          Logger logger = WorldMap.LOGGER;
  
          Objects.requireNonNull(logger);
 -        ResourceKey<World> resourcekey = (ResourceKey) dataresult.resultOrPartial(logger::error).orElseThrow(() -> {
 -            return new IllegalArgumentException("Invalid map dimension: " + nbttagcompound.get("dimension"));
 +        // CraftBukkit start
-+        ResourceKey<World> resourcekey = (ResourceKey) dataresult.resultOrPartial(logger::error).orElseGet(() -> {
++        ResourceKey<World> resourcekey = dataresult.resultOrPartial(logger::error).orElseGet(() -> {
 +            long least = nbttagcompound.getLong("UUIDLeast");
 +            long most = nbttagcompound.getLong("UUIDMost");
 +

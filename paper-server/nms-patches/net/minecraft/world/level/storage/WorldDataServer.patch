@@ -1,8 +1,8 @@
 --- a/net/minecraft/world/level/storage/WorldDataServer.java
 +++ b/net/minecraft/world/level/storage/WorldDataServer.java
-@@ -40,6 +40,15 @@
- import org.apache.logging.log4j.LogManager;
- import org.apache.logging.log4j.Logger;
+@@ -41,6 +41,15 @@
+ import net.minecraft.world.level.timers.CustomFunctionCallbackTimers;
+ import org.slf4j.Logger;
  
 +// CraftBukkit start
 +import net.minecraft.network.protocol.game.PacketPlayOutServerDifficulty;
@@ -15,8 +15,8 @@
 +
  public class WorldDataServer implements IWorldDataServer, SaveData {
  
-     private static final Logger LOGGER = LogManager.getLogger();
-@@ -78,6 +87,19 @@
+     private static final Logger LOGGER = LogUtils.getLogger();
+@@ -80,6 +89,19 @@
      private final Set<String> knownServerBrands;
      private boolean wasModded;
      private final CustomFunctionCallbackTimerQueue<MinecraftServer> scheduledEvents;
@@ -36,17 +36,17 @@
  
      private WorldDataServer(@Nullable DataFixer datafixer, int i, @Nullable NBTTagCompound nbttagcompound, boolean flag, int j, int k, int l, float f, long i1, long j1, int k1, int l1, int i2, boolean flag1, int j2, boolean flag2, boolean flag3, boolean flag4, WorldBorder.c worldborder_c, int k2, int l2, @Nullable UUID uuid, Set<String> set, CustomFunctionCallbackTimerQueue<MinecraftServer> customfunctioncallbacktimerqueue, @Nullable NBTTagCompound nbttagcompound1, NBTTagCompound nbttagcompound2, WorldSettings worldsettings, GeneratorSettings generatorsettings, Lifecycle lifecycle) {
          this.fixerUpper = datafixer;
-@@ -121,7 +143,8 @@
+@@ -123,7 +145,8 @@
              return (NBTBase) dynamic.get("DimensionData").get("1").get("DragonFight").orElseEmptyMap().getValue();
          });
  
 -        return new WorldDataServer(datafixer, i, nbttagcompound, dynamic.get("WasModded").asBoolean(false), dynamic.get("SpawnX").asInt(0), dynamic.get("SpawnY").asInt(0), dynamic.get("SpawnZ").asInt(0), dynamic.get("SpawnAngle").asFloat(0.0F), j, dynamic.get("DayTime").asLong(j), levelversion.levelDataVersion(), dynamic.get("clearWeatherTime").asInt(0), dynamic.get("rainTime").asInt(0), dynamic.get("raining").asBoolean(false), dynamic.get("thunderTime").asInt(0), dynamic.get("thundering").asBoolean(false), dynamic.get("initialized").asBoolean(true), dynamic.get("DifficultyLocked").asBoolean(false), WorldBorder.c.read(dynamic, WorldBorder.DEFAULT_SETTINGS), dynamic.get("WanderingTraderSpawnDelay").asInt(0), dynamic.get("WanderingTraderSpawnChance").asInt(0), (UUID) dynamic.get("WanderingTraderId").read(MinecraftSerializableUUID.CODEC).result().orElse((Object) null), (Set) dynamic.get("ServerBrands").asStream().flatMap((dynamic1) -> {
 +        // CraftBukkit - decompile error
 +        return new WorldDataServer(datafixer, i, nbttagcompound, dynamic.get("WasModded").asBoolean(false), dynamic.get("SpawnX").asInt(0), dynamic.get("SpawnY").asInt(0), dynamic.get("SpawnZ").asInt(0), dynamic.get("SpawnAngle").asFloat(0.0F), j, dynamic.get("DayTime").asLong(j), levelversion.levelDataVersion(), dynamic.get("clearWeatherTime").asInt(0), dynamic.get("rainTime").asInt(0), dynamic.get("raining").asBoolean(false), dynamic.get("thunderTime").asInt(0), dynamic.get("thundering").asBoolean(false), dynamic.get("initialized").asBoolean(true), dynamic.get("DifficultyLocked").asBoolean(false), WorldBorder.c.read(dynamic, WorldBorder.DEFAULT_SETTINGS), dynamic.get("WanderingTraderSpawnDelay").asInt(0), dynamic.get("WanderingTraderSpawnChance").asInt(0), (UUID) dynamic.get("WanderingTraderId").read(MinecraftSerializableUUID.CODEC).result().orElse(null), (Set) dynamic.get("ServerBrands").asStream().flatMap((dynamic1) -> {
-             return SystemUtils.toStream(dynamic1.asString().result());
+             return dynamic1.asString().result().stream();
          }).collect(Collectors.toCollection(Sets::newLinkedHashSet)), new CustomFunctionCallbackTimerQueue<>(CustomFunctionCallbackTimers.SERVER_CALLBACKS, dynamic.get("ScheduledEvents").asStream()), (NBTTagCompound) dynamic.get("CustomBossEvents").orElseEmptyMap().getValue(), nbttagcompound1, worldsettings, generatorsettings, lifecycle);
      }
-@@ -141,7 +164,7 @@
+@@ -143,7 +166,7 @@
  
      private void setTagData(IRegistryCustom iregistrycustom, NBTTagCompound nbttagcompound, @Nullable NBTTagCompound nbttagcompound1) {
          NBTTagList nbttaglist = new NBTTagList();
@@ -55,16 +55,16 @@
  
          Objects.requireNonNull(nbttaglist);
          stream.forEach(nbttaglist::add);
-@@ -156,7 +179,7 @@
+@@ -158,7 +181,7 @@
          nbttagcompound.put("Version", nbttagcompound2);
          nbttagcompound.putInt("DataVersion", SharedConstants.getCurrentVersion().getWorldVersion());
-         RegistryWriteOps<NBTBase> registrywriteops = RegistryWriteOps.create(DynamicOpsNBT.INSTANCE, iregistrycustom);
--        DataResult dataresult = GeneratorSettings.CODEC.encodeStart(registrywriteops, this.worldGenSettings);
-+        DataResult<NBTBase> dataresult = GeneratorSettings.CODEC.encodeStart(registrywriteops, this.worldGenSettings); // CraftBukkit - decompile error
+         DynamicOps<NBTBase> dynamicops = RegistryOps.create(DynamicOpsNBT.INSTANCE, iregistrycustom);
+-        DataResult dataresult = GeneratorSettings.CODEC.encodeStart(dynamicops, this.worldGenSettings);
++        DataResult<NBTBase> dataresult = GeneratorSettings.CODEC.encodeStart(dynamicops, this.worldGenSettings); // CraftBukkit - decompile error
          Logger logger = WorldDataServer.LOGGER;
  
          Objects.requireNonNull(logger);
-@@ -204,6 +227,8 @@
+@@ -206,6 +229,8 @@
              nbttagcompound.putUUID("WanderingTraderId", this.wanderingTraderId);
          }
  
@@ -73,7 +73,7 @@
      }
  
      @Override
-@@ -321,6 +346,20 @@
+@@ -323,6 +348,20 @@
  
      @Override
      public void setThundering(boolean flag) {
@@ -94,7 +94,7 @@
          this.thundering = flag;
      }
  
-@@ -341,6 +380,20 @@
+@@ -343,6 +382,20 @@
  
      @Override
      public void setRaining(boolean flag) {
@@ -115,7 +115,7 @@
          this.raining = flag;
      }
  
-@@ -407,6 +460,12 @@
+@@ -409,6 +462,12 @@
      @Override
      public void setDifficulty(EnumDifficulty enumdifficulty) {
          this.settings = this.settings.withDifficulty(enumdifficulty);
@@ -128,7 +128,7 @@
      }
  
      @Override
-@@ -527,4 +586,12 @@
+@@ -529,4 +588,12 @@
      public WorldSettings getLevelSettings() {
          return this.settings.copy();
      }

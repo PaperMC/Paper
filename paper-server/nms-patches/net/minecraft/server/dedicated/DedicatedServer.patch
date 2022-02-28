@@ -1,12 +1,15 @@
 --- a/net/minecraft/server/dedicated/DedicatedServer.java
 +++ b/net/minecraft/server/dedicated/DedicatedServer.java
-@@ -61,6 +61,15 @@
- import org.apache.logging.log4j.LogManager;
- import org.apache.logging.log4j.Logger;
+@@ -59,6 +59,18 @@
+ import net.minecraft.world.level.storage.Convertable;
+ import org.slf4j.Logger;
  
 +// CraftBukkit start
++import com.mojang.serialization.DynamicOps;
++import net.minecraft.nbt.NBTBase;
 +import net.minecraft.world.level.DataPackConfiguration;
 +import org.apache.logging.log4j.Level;
++import org.apache.logging.log4j.LogManager;
 +import org.apache.logging.log4j.io.IoBuilder;
 +import org.bukkit.command.CommandSender;
 +import org.bukkit.event.server.ServerCommandEvent;
@@ -15,21 +18,21 @@
 +
  public class DedicatedServer extends MinecraftServer implements IMinecraftServer {
  
-     static final Logger LOGGER = LogManager.getLogger();
-@@ -81,8 +90,10 @@
+     static final Logger LOGGER = LogUtils.getLogger();
+@@ -79,8 +91,10 @@
      @Nullable
      private final IChatBaseComponent resourcePackPrompt;
  
--    public DedicatedServer(Thread thread, IRegistryCustom.Dimension iregistrycustom_dimension, Convertable.ConversionSession convertable_conversionsession, ResourcePackRepository resourcepackrepository, DataPackResources datapackresources, SaveData savedata, DedicatedServerSettings dedicatedserversettings, DataFixer datafixer, MinecraftSessionService minecraftsessionservice, GameProfileRepository gameprofilerepository, UserCache usercache, WorldLoadListenerFactory worldloadlistenerfactory) {
--        super(thread, iregistrycustom_dimension, convertable_conversionsession, savedata, resourcepackrepository, Proxy.NO_PROXY, datafixer, datapackresources, minecraftsessionservice, gameprofilerepository, usercache, worldloadlistenerfactory);
+-    public DedicatedServer(Thread thread, Convertable.ConversionSession convertable_conversionsession, ResourcePackRepository resourcepackrepository, WorldStem worldstem, DedicatedServerSettings dedicatedserversettings, DataFixer datafixer, MinecraftSessionService minecraftsessionservice, GameProfileRepository gameprofilerepository, UserCache usercache, WorldLoadListenerFactory worldloadlistenerfactory) {
+-        super(thread, convertable_conversionsession, resourcepackrepository, worldstem, Proxy.NO_PROXY, datafixer, minecraftsessionservice, gameprofilerepository, usercache, worldloadlistenerfactory);
 +    // CraftBukkit start - Signature changed
-+    public DedicatedServer(joptsimple.OptionSet options, DataPackConfiguration datapackconfiguration, Thread thread, IRegistryCustom.Dimension iregistrycustom_dimension, Convertable.ConversionSession convertable_conversionsession, ResourcePackRepository resourcepackrepository, DataPackResources datapackresources, SaveData savedata, DedicatedServerSettings dedicatedserversettings, DataFixer datafixer, MinecraftSessionService minecraftsessionservice, GameProfileRepository gameprofilerepository, UserCache usercache, WorldLoadListenerFactory worldloadlistenerfactory) {
-+        super(options, datapackconfiguration, thread, iregistrycustom_dimension, convertable_conversionsession, savedata, resourcepackrepository, Proxy.NO_PROXY, datafixer, datapackresources, minecraftsessionservice, gameprofilerepository, usercache, worldloadlistenerfactory);
++    public DedicatedServer(joptsimple.OptionSet options, DataPackConfiguration datapackconfiguration, DynamicOps<NBTBase> registryreadops, Thread thread, Convertable.ConversionSession convertable_conversionsession, ResourcePackRepository resourcepackrepository, WorldStem worldstem, DedicatedServerSettings dedicatedserversettings, DataFixer datafixer, MinecraftSessionService minecraftsessionservice, GameProfileRepository gameprofilerepository, UserCache usercache, WorldLoadListenerFactory worldloadlistenerfactory) {
++        super(options, datapackconfiguration, registryreadops, thread, convertable_conversionsession, resourcepackrepository, worldstem, Proxy.NO_PROXY, datafixer, minecraftsessionservice, gameprofilerepository, usercache, worldloadlistenerfactory);
 +        // CraftBukkit end
          this.settings = dedicatedserversettings;
          this.rconConsoleSource = new RemoteControlCommandListener(this);
          this.textFilterClient = TextFilter.createFromConfig(dedicatedserversettings.getProperties().textFilteringConfig);
-@@ -93,13 +104,44 @@
+@@ -91,13 +105,44 @@
      public boolean initServer() throws IOException {
          Thread thread = new Thread("Server console handler") {
              public void run() {
@@ -77,7 +80,7 @@
                      }
                  } catch (IOException ioexception) {
                      DedicatedServer.LOGGER.error("Exception handling console input", ioexception);
-@@ -108,6 +150,27 @@
+@@ -106,6 +151,27 @@
              }
          };
  
@@ -105,7 +108,7 @@
          thread.setDaemon(true);
          thread.setUncaughtExceptionHandler(new DefaultUncaughtExceptionHandler(DedicatedServer.LOGGER));
          thread.start();
-@@ -133,7 +196,7 @@
+@@ -131,7 +197,7 @@
          this.setMotd(dedicatedserverproperties.motd);
          super.setPlayerIdleTimeout((Integer) dedicatedserverproperties.playerIdleTimeout.get());
          this.setEnforceWhitelist(dedicatedserverproperties.enforceWhitelist);
@@ -114,7 +117,7 @@
          DedicatedServer.LOGGER.info("Default game type: {}", dedicatedserverproperties.gamemode);
          InetAddress inetaddress = null;
  
-@@ -157,6 +220,12 @@
+@@ -155,6 +221,12 @@
              return false;
          }
  
@@ -127,12 +130,12 @@
          if (!this.usesAuthentication()) {
              DedicatedServer.LOGGER.warn("**** SERVER IS RUNNING IN OFFLINE/INSECURE MODE!");
              DedicatedServer.LOGGER.warn("The server will make no attempt to authenticate usernames. Beware.");
-@@ -171,13 +240,13 @@
+@@ -169,13 +241,13 @@
          if (!NameReferencingFileConverter.serverReadyAfterUserconversion(this)) {
              return false;
          } else {
--            this.setPlayerList(new DedicatedPlayerList(this, this.registryHolder, this.playerDataStorage));
-+            // this.setPlayerList(new DedicatedPlayerList(this, this.registryHolder, this.playerDataStorage)); // CraftBukkit - moved up
+-            this.setPlayerList(new DedicatedPlayerList(this, this.registryAccess(), this.playerDataStorage));
++            // this.setPlayerList(new DedicatedPlayerList(this, this.registryAccess(), this.playerDataStorage)); // CraftBukkit - moved up
              long i = SystemUtils.getNanos();
  
              TileEntitySkull.setup(this.getProfileCache(), this.getSessionService(), this);
@@ -143,7 +146,7 @@
              long j = SystemUtils.getNanos() - i;
              String s = String.format(Locale.ROOT, "%.3fs", (double) j / 1.0E9D);
  
-@@ -194,6 +263,7 @@
+@@ -192,6 +264,7 @@
              if (dedicatedserverproperties.enableRcon) {
                  DedicatedServer.LOGGER.info("Starting remote control listener");
                  this.rconThread = RemoteControlListener.create(this);
@@ -151,7 +154,7 @@
              }
  
              if (this.getMaxTickLength() > 0L) {
-@@ -337,6 +407,7 @@
+@@ -335,6 +408,7 @@
              this.queryThreadGs4.stop();
          }
  
@@ -159,7 +162,7 @@
      }
  
      @Override
-@@ -358,7 +429,15 @@
+@@ -356,7 +430,15 @@
          while (!this.consoleInput.isEmpty()) {
              ServerCommand servercommand = (ServerCommand) this.consoleInput.remove(0);
  
@@ -176,7 +179,7 @@
          }
  
      }
-@@ -568,14 +647,45 @@
+@@ -566,14 +648,45 @@
  
      @Override
      public String getPluginNames() {
@@ -224,7 +227,7 @@
          });
          return this.rconConsoleSource.getCommandResponse();
      }
-@@ -649,4 +759,15 @@
+@@ -647,4 +760,15 @@
      public IChatBaseComponent getResourcePackPrompt() {
          return this.resourcePackPrompt;
      }

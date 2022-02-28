@@ -1,8 +1,8 @@
 --- a/net/minecraft/world/level/storage/Convertable.java
 +++ b/net/minecraft/world/level/storage/Convertable.java
-@@ -56,6 +56,10 @@
- import org.apache.logging.log4j.LogManager;
- import org.apache.logging.log4j.Logger;
+@@ -58,6 +58,10 @@
+ import net.minecraft.world.level.levelgen.GeneratorSettings;
+ import org.slf4j.Logger;
  
 +// CraftBukkit start
 +import net.minecraft.world.level.dimension.WorldDimension;
@@ -10,21 +10,30 @@
 +
  public class Convertable {
  
-     static final Logger LOGGER = LogManager.getLogger();
-@@ -216,7 +220,11 @@
-                 LevelVersion levelversion = LevelVersion.parse(dynamic);
-                 WorldSettings worldsettings = WorldSettings.parse(dynamic, datapackconfiguration);
+     static final Logger LOGGER = LogUtils.getLogger();
+@@ -112,7 +116,7 @@
+     }
  
--                return WorldDataServer.parse(dynamic, datafixer, i, nbttagcompound2, worldsettings, levelversion, (GeneratorSettings) pair.getFirst(), (Lifecycle) pair.getSecond());
+     private static DataPackConfiguration readDataPackConfig(Dynamic<?> dynamic) {
+-        DataResult dataresult = DataPackConfiguration.CODEC.parse(dynamic);
++        DataResult<DataPackConfiguration> dataresult = DataPackConfiguration.CODEC.parse(dynamic); // CraftBukkit - decompile error
+         Logger logger = Convertable.LOGGER;
+ 
+         Objects.requireNonNull(logger);
+@@ -232,7 +236,11 @@
+                 WorldSettings worldsettings = WorldSettings.parse(dynamic, datapackconfiguration);
+                 Lifecycle lifecycle1 = ((Lifecycle) pair.getSecond()).add(lifecycle);
+ 
+-                return WorldDataServer.parse(dynamic, datafixer, i, nbttagcompound2, worldsettings, levelversion, (GeneratorSettings) pair.getFirst(), lifecycle1);
 +                // CraftBukkit start - Add PDC to world
-+                WorldDataServer worldDataServer = WorldDataServer.parse(dynamic, datafixer, i, nbttagcompound2, worldsettings, levelversion, (GeneratorSettings) pair.getFirst(), (Lifecycle) pair.getSecond());
++                WorldDataServer worldDataServer = WorldDataServer.parse(dynamic, datafixer, i, nbttagcompound2, worldsettings, levelversion, (GeneratorSettings) pair.getFirst(), lifecycle1);
 +                worldDataServer.pdc = nbttagcompound1.get("BukkitValues");
 +                return worldDataServer;
 +                // CraftBukkit end
              } catch (Exception exception) {
                  Convertable.LOGGER.error("Exception reading {}", file, exception);
                  return null;
-@@ -277,9 +285,23 @@
+@@ -305,9 +313,23 @@
          return this.backupDir;
      }
  
@@ -50,7 +59,7 @@
  
      public class ConversionSession implements AutoCloseable {
  
-@@ -287,8 +309,12 @@
+@@ -315,8 +337,12 @@
          public final Path levelPath;
          private final String levelId;
          private final Map<SavedFile, Path> resources = Maps.newHashMap();
@@ -64,7 +73,7 @@
              this.levelId = s;
              this.levelPath = Convertable.this.baseDir.resolve(s);
              this.lock = SessionLock.create(this.levelPath);
-@@ -305,7 +331,7 @@
+@@ -333,7 +359,7 @@
          }
  
          public Path getDimensionPath(ResourceKey<World> resourcekey) {

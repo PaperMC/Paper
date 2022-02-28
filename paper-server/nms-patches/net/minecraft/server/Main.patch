@@ -1,19 +1,19 @@
 --- a/net/minecraft/server/Main.java
 +++ b/net/minecraft/server/Main.java
-@@ -56,6 +56,12 @@
- import org.apache.logging.log4j.LogManager;
- import org.apache.logging.log4j.Logger;
+@@ -57,6 +57,12 @@
+ import net.minecraft.world.level.storage.WorldInfo;
+ import org.slf4j.Logger;
  
 +// CraftBukkit start
++import java.util.concurrent.atomic.AtomicReference;
 +import net.minecraft.SharedConstants;
-+import net.minecraft.world.level.dimension.DimensionManager;
 +import net.minecraft.world.level.dimension.WorldDimension;
 +// CraftBukkit end
 +
  public class Main {
  
-     private static final Logger LOGGER;
-@@ -63,8 +69,9 @@
+     private static final Logger LOGGER = LogUtils.getLogger();
+@@ -64,8 +70,9 @@
      public Main() {}
  
      @DontObfuscate
@@ -24,7 +24,7 @@
          OptionParser optionparser = new OptionParser();
          OptionSpec<Void> optionspec = optionparser.accepts("nogui");
          OptionSpec<Void> optionspec1 = optionparser.accepts("initSettings", "Initializes 'server.properties' and 'eula.txt', then quits");
-@@ -89,9 +96,12 @@
+@@ -90,9 +97,12 @@
                  optionparser.printHelpOn(System.err);
                  return;
              }
@@ -39,8 +39,8 @@
              }
  
 @@ -100,13 +110,13 @@
+             DispenserRegistry.validate();
              SystemUtils.startTimerHackThread();
-             IRegistryCustom.Dimension iregistrycustom_dimension = IRegistryCustom.builtin();
              Path path = Paths.get("server.properties");
 -            DedicatedServerSettings dedicatedserversettings = new DedicatedServerSettings(path);
 +            DedicatedServerSettings dedicatedserversettings = new DedicatedServerSettings(optionset); // CraftBukkit - CLI argument support
@@ -73,10 +73,10 @@
              WorldInfo worldinfo = convertable_conversionsession.getSummary();
  
              if (worldinfo != null) {
-@@ -139,13 +150,30 @@
+@@ -138,13 +149,32 @@
+                 }
              }
  
-             DataPackConfiguration datapackconfiguration = convertable_conversionsession.getDataPacks();
 -            boolean flag = optionset.has(optionspec6);
 +            boolean flag = optionset.has("safeMode");
  
@@ -101,26 +101,49 @@
 +            } catch (java.io.IOException ex) {
 +                throw new RuntimeException("Could not initialize Bukkit datapack", ex);
 +            }
++            AtomicReference<DataPackConfiguration> config = new AtomicReference<>();
++            AtomicReference<DynamicOps<NBTBase>> ops = new AtomicReference<>();
 +            // CraftBukkit end
-             DataPackConfiguration datapackconfiguration1 = MinecraftServer.configurePackRepository(resourcepackrepository, datapackconfiguration == null ? DataPackConfiguration.DEFAULT : datapackconfiguration, flag);
-             CompletableFuture completablefuture = DataPackResources.loadResources(resourcepackrepository.openAllSelected(), iregistrycustom_dimension, CommandDispatcher.ServerType.DEDICATED, dedicatedserversettings.getProperties().functionPermissionLevel, SystemUtils.backgroundExecutor(), Runnable::run);
  
-@@ -160,6 +188,7 @@
+             WorldStem worldstem;
+ 
+@@ -158,6 +188,12 @@
+                 }, (iresourcemanager, datapackconfiguration) -> {
+                     IRegistryCustom.e iregistrycustom_e = IRegistryCustom.builtinCopy();
+                     DynamicOps<NBTBase> dynamicops = RegistryOps.createAndLoad(DynamicOpsNBT.INSTANCE, iregistrycustom_e, iresourcemanager);
++                    // CraftBukkit start
++                    config.set(datapackconfiguration);
++                    ops.set(dynamicops);
++                    return Pair.of(null, iregistrycustom_e.freeze());
++                    // CraftBukkit end
++                    /*
+                     SaveData savedata = convertable_conversionsession.getDataTag(dynamicops, datapackconfiguration, iregistrycustom_e.allElementsLifecycle());
+ 
+                     if (savedata != null) {
+@@ -180,6 +216,7 @@
+ 
+                         return Pair.of(worlddataserver, iregistrycustom_e.freeze());
+                     }
++                     */
+                 }, SystemUtils.backgroundExecutor(), Runnable::run).get();
+             } catch (Exception exception) {
+                 Main.LOGGER.warn("Failed to load datapacks, can't proceed with server load. You can either fix your datapacks or reset to vanilla with --safeMode", exception);
+@@ -188,6 +225,7 @@
              }
  
-             datapackresources.updateGlobals();
+             worldstem.updateGlobals();
 +            /*
-             RegistryReadOps<NBTBase> registryreadops = RegistryReadOps.createAndLoad(DynamicOpsNBT.INSTANCE, datapackresources.getResourceManager(), iregistrycustom_dimension);
+             IRegistryCustom.Dimension iregistrycustom_dimension = worldstem.registryAccess();
  
              dedicatedserversettings.getProperties().getWorldGenSettings(iregistrycustom_dimension);
-@@ -189,21 +218,32 @@
+@@ -200,21 +238,32 @@
              }
  
-             convertable_conversionsession.saveDataTag(iregistrycustom_dimension, (SaveData) object);
+             convertable_conversionsession.saveDataTag(iregistrycustom_dimension, savedata);
 +            */
              final DedicatedServer dedicatedserver = (DedicatedServer) MinecraftServer.spin((thread) -> {
--                DedicatedServer dedicatedserver1 = new DedicatedServer(thread, iregistrycustom_dimension, convertable_conversionsession, resourcepackrepository, datapackresources, object, dedicatedserversettings, DataConverterRegistry.getDataFixer(), minecraftsessionservice, gameprofilerepository, usercache, WorldLoadListenerLogger::new);
-+                DedicatedServer dedicatedserver1 = new DedicatedServer(optionset, datapackconfiguration1, thread, iregistrycustom_dimension, convertable_conversionsession, resourcepackrepository, datapackresources, null, dedicatedserversettings, DataConverterRegistry.getDataFixer(), minecraftsessionservice, gameprofilerepository, usercache, WorldLoadListenerLogger::new);
+-                DedicatedServer dedicatedserver1 = new DedicatedServer(thread, convertable_conversionsession, resourcepackrepository, worldstem, dedicatedserversettings, DataConverterRegistry.getDataFixer(), minecraftsessionservice, gameprofilerepository, usercache, WorldLoadListenerLogger::new);
++                DedicatedServer dedicatedserver1 = new DedicatedServer(optionset, config.get(), ops.get(), thread, convertable_conversionsession, resourcepackrepository, worldstem, dedicatedserversettings, DataConverterRegistry.getDataFixer(), minecraftsessionservice, gameprofilerepository, usercache, WorldLoadListenerLogger::new);
  
 +                /*
                  dedicatedserver1.setSingleplayerName((String) optionset.valueOf(optionspec8));
@@ -148,15 +171,15 @@
              Thread thread = new Thread("Server Shutdown Thread") {
                  public void run() {
                      dedicatedserver.halt(true);
-@@ -212,6 +252,7 @@
+@@ -223,6 +272,7 @@
  
              thread.setUncaughtExceptionHandler(new DefaultUncaughtExceptionHandler(Main.LOGGER));
              Runtime.getRuntime().addShutdownHook(thread);
 +            */ // CraftBukkit end
          } catch (Exception exception1) {
-             Main.LOGGER.fatal("Failed to start the minecraft server", exception1);
+             Main.LOGGER.error(LogUtils.FATAL_MARKER, "Failed to start the minecraft server", exception1);
          }
-@@ -219,7 +260,7 @@
+@@ -230,7 +280,7 @@
      }
  
      public static void forceUpgrade(Convertable.ConversionSession convertable_conversionsession, DataFixer datafixer, boolean flag, BooleanSupplier booleansupplier, GeneratorSettings generatorsettings) {
