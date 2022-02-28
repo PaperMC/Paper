@@ -80,7 +80,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      private CraftEntity bukkitEntity;
  
 +    public @org.jetbrains.annotations.Nullable net.minecraft.server.level.ChunkMap.TrackedEntity tracker; // Paper
-+    public Throwable addedToWorldStack; // Paper - entity debug
++    public @Nullable Throwable addedToWorldStack; // Paper - entity debug
      public CraftEntity getBukkitEntity() {
          if (this.bukkitEntity == null) {
              this.bukkitEntity = CraftEntity.getEntity(this.level.getCraftServer(), this);
@@ -114,22 +114,21 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          if (this.byUuid.containsKey(uUID)) {
              LOGGER.warn("Duplicate entity UUID {}: {}", uUID, entity);
 +            // Paper start - extra debug info
-+            if (entity instanceof net.minecraft.world.entity.Entity) {
++            if (entity instanceof net.minecraft.world.entity.Entity entityCast) {
 +                if (net.minecraft.server.level.ServerLevel.DEBUG_ENTITIES) {
-+                    ((net.minecraft.world.entity.Entity) entity).addedToWorldStack = net.minecraft.server.level.ServerLevel.getAddToWorldStackTrace((net.minecraft.world.entity.Entity) entity);
++                    entityCast.addedToWorldStack = net.minecraft.server.level.ServerLevel.getAddToWorldStackTrace(entityCast);
 +                }
 +
 +                T old = this.byUuid.get(entity.getUUID());
-+                if (old instanceof net.minecraft.world.entity.Entity && old != null && old.getId() != entity.getId() && ((net.minecraft.world.entity.Entity) old).valid) {
-+                    Logger logger = LogManager.getLogger();
-+                    logger.error("Overwrote an existing entity " + old + " with " + entity);
++                if (old instanceof net.minecraft.world.entity.Entity oldCast && old != null && oldCast.getId() != entity.getId() && oldCast.valid) {
++                    LOGGER.error("Overwrote an existing entity " + oldCast + " with " + entity);
 +                    if (net.minecraft.server.level.ServerLevel.DEBUG_ENTITIES) {
-+                        if (((net.minecraft.world.entity.Entity) old).addedToWorldStack != null) {
-+                            ((net.minecraft.world.entity.Entity) old).addedToWorldStack.printStackTrace();
++                        if (oldCast.addedToWorldStack != null) {
++                            oldCast.addedToWorldStack.printStackTrace();
 +                        } else {
-+                            logger.error("Oddly, the old entity was not added to the world in the normal way. Plugins?");
++                            LOGGER.error("Oddly, the old entity was not added to the world in the normal way. Plugins?");
 +                        }
-+                        ((net.minecraft.world.entity.Entity) entity).addedToWorldStack.printStackTrace();
++                        entityCast.addedToWorldStack.printStackTrace();
 +                    }
 +                }
 +            }
