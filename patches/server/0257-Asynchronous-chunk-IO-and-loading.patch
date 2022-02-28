@@ -161,7 +161,7 @@ index 0fda52841b5e1643efeda92106124998abc4e0aa..fe79c0add4f7cb18d487c5bb9415c40c
  
      public static Timing getTickList(ServerLevel worldserver, String timingsType) {
 diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-index d9114c5fa141c37270398100db6bb2a8a8e4ed1e..7cec7a377d64dd00ea6fb8f82af489d4bf3bf572 100644
+index 62671d6c04f973594a6ca95446774c4b5a78a575..7682300eec0d097798c1bd68de519513c438fd17 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
 @@ -1,5 +1,6 @@
@@ -300,18 +300,18 @@ index 0000000000000000000000000000000000000000..5af0ac3d9e87c06053e65433060f1577
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/io/PaperFileIOThread.java b/src/main/java/com/destroystokyo/paper/io/PaperFileIOThread.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..a630a84b60b4517e3bc330d4983b914bd064efa4
+index 0000000000000000000000000000000000000000..ab583855d46e2adc56e503f191bdb523c2afdd91
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/io/PaperFileIOThread.java
 @@ -0,0 +1,606 @@
 +package com.destroystokyo.paper.io;
 +
++import com.mojang.logging.LogUtils;
 +import net.minecraft.nbt.CompoundTag;
-+import net.minecraft.server.MinecraftServer;
 +import net.minecraft.server.level.ServerLevel;
 +import net.minecraft.world.level.ChunkPos;
 +import net.minecraft.world.level.chunk.storage.RegionFile;
-+import org.apache.logging.log4j.Logger;
++import org.slf4j.Logger;
 +
 +import java.io.IOException;
 +import java.util.concurrent.CompletableFuture;
@@ -343,7 +343,7 @@ index 0000000000000000000000000000000000000000..a630a84b60b4517e3bc330d4983b914b
 + */
 +public final class PaperFileIOThread extends QueueExecutorThread {
 +
-+    public static final Logger LOGGER = MinecraftServer.LOGGER;
++    public static final Logger LOGGER = LogUtils.getLogger();
 +    public static final CompoundTag FAILURE_VALUE = new CompoundTag();
 +
 +    public static final class Holder {
@@ -362,7 +362,7 @@ index 0000000000000000000000000000000000000000..a630a84b60b4517e3bc330d4983b914b
 +        this.setName("Paper RegionFile IO Thread");
 +        this.setPriority(Thread.NORM_PRIORITY - 1); // we keep priority close to normal because threads can wait on us
 +        this.setUncaughtExceptionHandler((final Thread unused, final Throwable thr) -> {
-+            LOGGER.fatal("Uncaught exception thrown from IO thread, report this!", thr);
++            LOGGER.error("Uncaught exception thrown from IO thread, report this!", thr);
 +        });
 +    }
 +
@@ -717,7 +717,7 @@ index 0000000000000000000000000000000000000000..a630a84b60b4517e3bc330d4983b914b
 +                if (throwable instanceof ThreadDeath) {
 +                    throw (ThreadDeath)throwable;
 +                }
-+                LOGGER.fatal("Failed to execute general task on IO thread " + IOUtil.genericToString(this.run), throwable);
++                LOGGER.error("Failed to execute general task on IO thread " + IOUtil.genericToString(this.run), throwable);
 +            }
 +        }
 +    }
@@ -816,7 +816,7 @@ index 0000000000000000000000000000000000000000..a630a84b60b4517e3bc330d4983b914b
 +                    if (thr instanceof ThreadDeath) {
 +                        throw (ThreadDeath)thr;
 +                    }
-+                    LOGGER.fatal("Failed to read chunk data for task: " + this.toString(), thr);
++                    LOGGER.error("Failed to read chunk data for task: " + this.toString(), thr);
 +                    // fall through to complete with null data
 +                }
 +                read.readFuture.complete(compound);
@@ -874,7 +874,7 @@ index 0000000000000000000000000000000000000000..a630a84b60b4517e3bc330d4983b914b
 +                    if (thr instanceof ThreadDeath) {
 +                        throw (ThreadDeath)thr;
 +                    }
-+                    LOGGER.fatal("Failed to write chunk data for task: " + this.toString(), thr);
++                    LOGGER.error("Failed to write chunk data for task: " + this.toString(), thr);
 +                    failedWrite = true;
 +                }
 +
@@ -1216,14 +1216,14 @@ index 0000000000000000000000000000000000000000..24fe40c14cc50f8357a9c7a7493140fd
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/io/QueueExecutorThread.java b/src/main/java/com/destroystokyo/paper/io/QueueExecutorThread.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..64b772dc1ed857ccd6999591f89dd89aface0649
+index 0000000000000000000000000000000000000000..f1b940704400266e6df186139b57ec72ae314448
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/io/QueueExecutorThread.java
 @@ -0,0 +1,254 @@
 +package com.destroystokyo.paper.io;
 +
-+import net.minecraft.server.MinecraftServer;
-+import org.apache.logging.log4j.Logger;
++import com.mojang.logging.LogUtils;
++import org.slf4j.Logger;
 +
 +import java.util.concurrent.ConcurrentLinkedQueue;
 +import java.util.concurrent.atomic.AtomicBoolean;
@@ -1231,7 +1231,7 @@ index 0000000000000000000000000000000000000000..64b772dc1ed857ccd6999591f89dd89a
 +
 +public class QueueExecutorThread<T extends PrioritizedTaskQueue.PrioritizedTask & Runnable> extends Thread {
 +
-+    private static final Logger LOGGER = MinecraftServer.LOGGER;
++    private static final Logger LOGGER = LogUtils.getLogger();
 +
 +    protected final PrioritizedTaskQueue<T> queue;
 +    protected final long spinWaitTime;
@@ -1342,7 +1342,7 @@ index 0000000000000000000000000000000000000000..64b772dc1ed857ccd6999591f89dd89a
 +                if (throwable instanceof ThreadDeath) {
 +                    throw (ThreadDeath)throwable;
 +                }
-+                LOGGER.fatal("Exception thrown from prioritized runnable task in thread '" + this.getName() + "': " + IOUtil.genericToString(task), throwable);
++                LOGGER.error("Exception thrown from prioritized runnable task in thread '" + this.getName() + "': " + IOUtil.genericToString(task), throwable);
 +            }
 +        }
 +
@@ -1783,7 +1783,7 @@ index 0000000000000000000000000000000000000000..058fb5a41565e6ce2acbd1f4d071a1b8
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/io/chunk/ChunkTaskManager.java b/src/main/java/com/destroystokyo/paper/io/chunk/ChunkTaskManager.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..db6f8ac2ae068d5bc2ec2d587ab625c4956f6947
+index 0000000000000000000000000000000000000000..abf62796cfbfa61392b0776b28eb6bfc284053c1
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/io/chunk/ChunkTaskManager.java
 @@ -0,0 +1,505 @@
@@ -1876,16 +1876,16 @@ index 0000000000000000000000000000000000000000..db6f8ac2ae068d5bc2ec2d587ab625c4
 +    public static void dumpAllChunkLoadInfo() {
 +        ChunkInfo[] chunks = getChunkInfos();
 +        if (chunks.length > 0) {
-+            PaperFileIOThread.LOGGER.log(Level.ERROR, "Chunk wait task info below: ");
++            PaperFileIOThread.LOGGER.error("Chunk wait task info below: ");
 +
 +            for (final ChunkInfo chunkInfo : chunks) {
 +                final long key = IOUtil.getCoordinateKey(chunkInfo.chunkX, chunkInfo.chunkZ);
 +                final ChunkLoadTask loadTask = chunkInfo.world.asyncChunkTaskManager.chunkLoadTasks.get(key);
 +                final ChunkSaveTask saveTask = chunkInfo.world.asyncChunkTaskManager.chunkSaveTasks.get(key);
 +
-+                PaperFileIOThread.LOGGER.log(Level.ERROR, chunkInfo.chunkX + "," + chunkInfo.chunkZ + " in '" + chunkInfo.world.getWorld().getName() + ":");
-+                PaperFileIOThread.LOGGER.log(Level.ERROR, "Load Task - " + (loadTask == null ? "none" : loadTask.toString()));
-+                PaperFileIOThread.LOGGER.log(Level.ERROR, "Save Task - " + (saveTask == null ? "none" : saveTask.toString()));
++                PaperFileIOThread.LOGGER.error(chunkInfo.chunkX + "," + chunkInfo.chunkZ + " in '" + chunkInfo.world.getWorld().getName() + ":");
++                PaperFileIOThread.LOGGER.error("Load Task - " + (loadTask == null ? "none" : loadTask.toString()));
++                PaperFileIOThread.LOGGER.error("Save Task - " + (saveTask == null ? "none" : saveTask.toString()));
 +                // log current status of chunk to indicate whether we're waiting on generation or loading
 +                ChunkHolder chunkHolder = chunkInfo.world.getChunkSource().chunkMap.getVisibleChunkIfPresent(key);
 +
@@ -1908,14 +1908,14 @@ index 0000000000000000000000000000000000000000..db6f8ac2ae068d5bc2ec2d587ab625c4
 +        seenChunks.add(chunkHolder);
 +        String indentStr = StringUtils.repeat("  ", indent);
 +        if (chunkHolder == null) {
-+            PaperFileIOThread.LOGGER.log(Level.ERROR, indentStr + "Chunk Holder - null for (" + x +"," + z +")");
++            PaperFileIOThread.LOGGER.error(indentStr + "Chunk Holder - null for (" + x +"," + z +")");
 +        } else {
 +            ChunkAccess chunk = chunkHolder.getLastAvailable();
 +            ChunkStatus holderStatus = chunkHolder.getChunkHolderStatus();
-+            PaperFileIOThread.LOGGER.log(Level.ERROR, indentStr + "Chunk Holder - non-null");
-+            PaperFileIOThread.LOGGER.log(Level.ERROR, indentStr + "Chunk Status - " + ((chunk == null) ? "null chunk" : chunk.getStatus().toString()));
-+            PaperFileIOThread.LOGGER.log(Level.ERROR, indentStr + "Chunk Ticket Status - "  + ChunkHolder.getStatus(chunkHolder.getTicketLevel()));
-+            PaperFileIOThread.LOGGER.log(Level.ERROR, indentStr + "Chunk Holder Status - " + ((holderStatus == null) ? "null" : holderStatus.toString()));
++            PaperFileIOThread.LOGGER.error(indentStr + "Chunk Holder - non-null");
++            PaperFileIOThread.LOGGER.error(indentStr + "Chunk Status - " + ((chunk == null) ? "null chunk" : chunk.getStatus().toString()));
++            PaperFileIOThread.LOGGER.error(indentStr + "Chunk Ticket Status - "  + ChunkHolder.getStatus(chunkHolder.getTicketLevel()));
++            PaperFileIOThread.LOGGER.error(indentStr + "Chunk Holder Status - " + ((holderStatus == null) ? "null" : holderStatus.toString()));
 +        }
 +    }
 +
@@ -2877,7 +2877,7 @@ index 0d536d72ac918fbd403397ff369d10143ee9c204..be677d437d17b74c6188ce1bd5fc6fdc
      private final String name;
      private final Comparator<T> comparator;
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index 62fda1dd8d560a8e16118e9d1b044ef59c0e5b02..d0adb066fcea5636c88be838fb5eff79306c5f4a 100644
+index 8a1da2b1e667420df97e432b5a5fd9563cadda91..f1d2c9274f4968adab689a08c86bea7a16b76b39 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 @@ -716,6 +716,13 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
@@ -3612,7 +3612,7 @@ index 65b7a4dc767a3fd5c4d0c00f4a4aaa8e04d13f13..5dea397fc7f11db39385c1711364a311
      @Override
      public PersistentDataContainer getPersistentDataContainer() {
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
-index e496a346b12497e5e0834e0bc523c2221b45cab7..16f2479de2c330b17c9ef6f3bee8e4ade5b66d15 100644
+index 20c753f5819652430e4fe7b9e3fd4a4b16fc3647..8e6ae581c714c1fec6b1cdc1c26b83772573ab27 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
 @@ -15,6 +15,7 @@ import net.minecraft.network.chat.Component;

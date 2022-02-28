@@ -35,7 +35,7 @@ index b3516862d796c2d9fcc1c67a6073445403d73088..b61abf227a04b4565c2525e5f469db30
              List<ChunkHolder> allChunks = new ArrayList<>(visibleChunks.values());
              List<ServerPlayer> players = world.players;
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index 6a9f9d93be96bd27be5ac3a7d2e142fda2f45efa..09e2d5bd3ab14a2c43547313394bf1167168d6cc 100644
+index 245ce32ee7b35a07c47c31772208eccf35c85a33..6f2f3f036b983a34a50b43522c30b3ba0ef555d2 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
 @@ -123,9 +123,11 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
@@ -81,6 +81,18 @@ index 6a9f9d93be96bd27be5ac3a7d2e142fda2f45efa..09e2d5bd3ab14a2c43547313394bf116
      }
  
      protected IntSupplier getChunkQueueLevel(long pos) {
+@@ -686,9 +693,9 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+         };
+ 
+         stringbuilder.append("Updating:").append(System.lineSeparator());
+-        this.updatingChunkMap.values().forEach(consumer);
++        this.updatingChunks.getUpdatingValuesCopy().forEach(consumer); // Paper
+         stringbuilder.append("Visible:").append(System.lineSeparator());
+-        this.visibleChunkMap.values().forEach(consumer);
++        this.updatingChunks.getVisibleValuesCopy().forEach(consumer); // Paper
+         CrashReport crashreport = CrashReport.forThrowable(exception, "Chunk loading");
+         CrashReportCategory crashreportsystemdetails = crashreport.addCategory("Chunk loading");
+ 
 @@ -739,7 +746,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
                      // Paper end
                  }
@@ -108,6 +120,15 @@ index 6a9f9d93be96bd27be5ac3a7d2e142fda2f45efa..09e2d5bd3ab14a2c43547313394bf116
          }
  
      }
+@@ -873,7 +880,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+     }
+ 
+     public boolean hasWork() {
+-        return this.lightEngine.hasLightWork() || !this.pendingUnloads.isEmpty() || !this.updatingChunkMap.isEmpty() || this.poiManager.hasWork() || !this.toDrop.isEmpty() || !this.unloadQueue.isEmpty() || this.queueSorter.hasWork() || this.distanceManager.hasTickets();
++        return this.lightEngine.hasLightWork() || !this.pendingUnloads.isEmpty() || !this.updatingChunks.getUpdatingValuesCopy().isEmpty() || this.poiManager.hasWork() || !this.toDrop.isEmpty() || !this.unloadQueue.isEmpty() || this.queueSorter.hasWork() || this.distanceManager.hasTickets(); // Paper
+     }
+ 
+     private static final double UNLOAD_QUEUE_RESIZE_FACTOR = 0.90; // Spigot // Paper - unload more
 @@ -888,7 +895,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          while (longiterator.hasNext()) { // Spigot
              long j = longiterator.nextLong();
@@ -166,7 +187,7 @@ index 6a9f9d93be96bd27be5ac3a7d2e142fda2f45efa..09e2d5bd3ab14a2c43547313394bf116
          while (objectbidirectionaliterator.hasNext()) {
              Entry<ChunkHolder> entry = (Entry) objectbidirectionaliterator.next();
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index b3f447e77619a7a0954a7709f36ad22678fce5f4..71eb9d86738db8eb79ec5dc5574ea9afa934da62 100644
+index 225cdb651775bcc601982ba33b1f5d01aefd9e2a..2420bc805923094d4d7422e69c20ed5de23777de 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 @@ -160,7 +160,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {

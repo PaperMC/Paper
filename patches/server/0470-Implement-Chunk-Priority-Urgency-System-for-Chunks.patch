@@ -23,7 +23,7 @@ Chunks in front of the player have higher priority, to help with
 fast traveling players keep up with their movement.
 
 diff --git a/src/main/java/com/destroystokyo/paper/io/chunk/ChunkTaskManager.java b/src/main/java/com/destroystokyo/paper/io/chunk/ChunkTaskManager.java
-index db6f8ac2ae068d5bc2ec2d587ab625c4956f6947..057968ccce588072662666fef145669d63490791 100644
+index abf62796cfbfa61392b0776b28eb6bfc284053c1..4c78ad72e7e788fbc0c57834a2c89bfa70e1f872 100644
 --- a/src/main/java/com/destroystokyo/paper/io/chunk/ChunkTaskManager.java
 +++ b/src/main/java/com/destroystokyo/paper/io/chunk/ChunkTaskManager.java
 @@ -106,7 +106,7 @@ public final class ChunkTaskManager {
@@ -36,18 +36,18 @@ index db6f8ac2ae068d5bc2ec2d587ab625c4956f6947..057968ccce588072662666fef145669d
  
      static void dumpChunkInfo(Set<ChunkHolder> seenChunks, ChunkHolder chunkHolder, int x, int z, int indent, int maxDepth) {
 @@ -127,6 +127,31 @@ public final class ChunkTaskManager {
-             PaperFileIOThread.LOGGER.log(Level.ERROR, indentStr + "Chunk Status - " + ((chunk == null) ? "null chunk" : chunk.getStatus().toString()));
-             PaperFileIOThread.LOGGER.log(Level.ERROR, indentStr + "Chunk Ticket Status - "  + ChunkHolder.getStatus(chunkHolder.getTicketLevel()));
-             PaperFileIOThread.LOGGER.log(Level.ERROR, indentStr + "Chunk Holder Status - " + ((holderStatus == null) ? "null" : holderStatus.toString()));
+             PaperFileIOThread.LOGGER.error(indentStr + "Chunk Status - " + ((chunk == null) ? "null chunk" : chunk.getStatus().toString()));
+             PaperFileIOThread.LOGGER.error(indentStr + "Chunk Ticket Status - "  + ChunkHolder.getStatus(chunkHolder.getTicketLevel()));
+             PaperFileIOThread.LOGGER.error(indentStr + "Chunk Holder Status - " + ((holderStatus == null) ? "null" : holderStatus.toString()));
 +            // Paper start
-+            PaperFileIOThread.LOGGER.log(Level.ERROR, indentStr + "Chunk Holder Priority - " + chunkHolder.queueLevel);
++            PaperFileIOThread.LOGGER.error(indentStr + "Chunk Holder Priority - " + chunkHolder.queueLevel);
 +
 +            if (!chunkHolder.neighbors.isEmpty()) {
 +                if (indent >= maxDepth) {
-+                    PaperFileIOThread.LOGGER.log(Level.ERROR, indentStr + "Chunk Neighbors: (Can't show, too deeply nested)");
++                    PaperFileIOThread.LOGGER.error(indentStr + "Chunk Neighbors: (Can't show, too deeply nested)");
 +                    return;
 +                }
-+                PaperFileIOThread.LOGGER.log(Level.ERROR, indentStr + "Chunk Neighbors: ");
++                PaperFileIOThread.LOGGER.error(indentStr + "Chunk Neighbors: ");
 +                for (ChunkHolder neighbor : chunkHolder.neighbors.keySet()) {
 +                    ChunkStatus status = neighbor.getChunkHolderStatus();
 +                    if (status != null && status.isOrAfter(ChunkHolder.getStatus(neighbor.getTicketLevel()))) {
@@ -56,10 +56,10 @@ index db6f8ac2ae068d5bc2ec2d587ab625c4956f6947..057968ccce588072662666fef145669d
 +                    int nx = neighbor.pos.x;
 +                    int nz = neighbor.pos.z;
 +                    if (seenChunks.contains(neighbor)) {
-+                        PaperFileIOThread.LOGGER.log(Level.ERROR, indentStr + "  " + nx + "," + nz + " in " + chunkHolder.getWorld().getWorld().getName() + " (CIRCULAR)");
++                        PaperFileIOThread.LOGGER.error(indentStr + "  " + nx + "," + nz + " in " + chunkHolder.getWorld().getWorld().getName() + " (CIRCULAR)");
 +                        continue;
 +                    }
-+                    PaperFileIOThread.LOGGER.log(Level.ERROR, indentStr + "  " + nx + "," + nz + " in " + chunkHolder.getWorld().getWorld().getName() + ":");
++                    PaperFileIOThread.LOGGER.error(indentStr + "  " + nx + "," + nz + " in " + chunkHolder.getWorld().getWorld().getName() + ":");
 +                    dumpChunkInfo(seenChunks, neighbor, nx, nz, indent + 1, maxDepth);
 +                }
 +            }
@@ -1112,7 +1112,7 @@ index 8770fe0db46b01e8b608637df4f1a669a3f4cdde..3c1698ba0d3bc412ab957777d9b5211d
      private final String name;
      private final Comparator<T> comparator;
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
-index c154f5e7708dbb19cf1b1a546bb209d386ef52d4..78270cdd1e8f371f951d317f6cf438069e81c958 100644
+index aa9d32a4c86aade43f91c78ae1179119d12e9a88..d5e5e0a80c1a3dd5823e9975062856b6d0ef3ae1 100644
 --- a/src/main/java/net/minecraft/server/players/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/players/PlayerList.java
 @@ -175,6 +175,7 @@ public abstract class PlayerList {
@@ -1126,7 +1126,7 @@ index c154f5e7708dbb19cf1b1a546bb209d386ef52d4..78270cdd1e8f371f951d317f6cf43806
 @@ -289,8 +290,8 @@ public abstract class PlayerList {
          net.minecraft.server.level.ChunkMap playerChunkMap = worldserver1.getChunkSource().chunkMap;
          net.minecraft.server.level.DistanceManager distanceManager = playerChunkMap.distanceManager;
-         distanceManager.addTicketAtLevel(net.minecraft.server.level.TicketType.LOGIN, pos, 31, pos.toLong());
+         distanceManager.addTicket(net.minecraft.server.level.TicketType.LOGIN, pos, 31, pos.toLong());
 -        worldserver1.getChunkSource().runDistanceManagerUpdates();
 -        worldserver1.getChunkSource().getChunkAtAsynchronously(chunkX, chunkZ, true, true).thenApply(chunk -> {
 +        worldserver1.getChunkSource().markAreaHighPriority(pos, 28, 3); // Paper - Chunk priority
@@ -1135,7 +1135,7 @@ index c154f5e7708dbb19cf1b1a546bb209d386ef52d4..78270cdd1e8f371f951d317f6cf43806
              if (updatingChunk != null) {
                  return updatingChunk.getEntityTickingChunkFuture();
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index a702a53f588ddd9f748f55973cd3782734aafc51..e18b2855791002a20f5afaa87cbfb36023ba4b7f 100644
+index 85c818c6c4a56065699de9f4675240de54a5a1df..5ec5e5256e81e1cb61897f3c6f63f482a56a92d9 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
 @@ -231,7 +231,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, i
@@ -1194,7 +1194,7 @@ index 7bb753f498b10be32726771250dca7e15338d8d1..3741dc458bf78be17144528ef0414848
              net.minecraft.world.level.chunk.LevelChunk chunk = (net.minecraft.world.level.chunk.LevelChunk) either.left().orElse(null);
              if (chunk != null) addTicket(x, z); // Paper
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index 0a9d519596b074fd88fc3594d673189ef2c5e3d9..6ae1b3e95783a0692a72a3754edb1850cd2dc83a 100644
+index 7c406649f112e1b449d07d180c7f2d63b170f2ed..199e0635f4d1ba247624131e8c9fac8b06754c51 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 @@ -927,6 +927,16 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
