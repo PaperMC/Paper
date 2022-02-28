@@ -36,18 +36,18 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      static void dumpChunkInfo(Set<ChunkHolder> seenChunks, ChunkHolder chunkHolder, int x, int z, int indent, int maxDepth) {
 @@ -0,0 +0,0 @@ public final class ChunkTaskManager {
-             PaperFileIOThread.LOGGER.log(Level.ERROR, indentStr + "Chunk Status - " + ((chunk == null) ? "null chunk" : chunk.getStatus().toString()));
-             PaperFileIOThread.LOGGER.log(Level.ERROR, indentStr + "Chunk Ticket Status - "  + ChunkHolder.getStatus(chunkHolder.getTicketLevel()));
-             PaperFileIOThread.LOGGER.log(Level.ERROR, indentStr + "Chunk Holder Status - " + ((holderStatus == null) ? "null" : holderStatus.toString()));
+             PaperFileIOThread.LOGGER.error(indentStr + "Chunk Status - " + ((chunk == null) ? "null chunk" : chunk.getStatus().toString()));
+             PaperFileIOThread.LOGGER.error(indentStr + "Chunk Ticket Status - "  + ChunkHolder.getStatus(chunkHolder.getTicketLevel()));
+             PaperFileIOThread.LOGGER.error(indentStr + "Chunk Holder Status - " + ((holderStatus == null) ? "null" : holderStatus.toString()));
 +            // Paper start
-+            PaperFileIOThread.LOGGER.log(Level.ERROR, indentStr + "Chunk Holder Priority - " + chunkHolder.queueLevel);
++            PaperFileIOThread.LOGGER.error(indentStr + "Chunk Holder Priority - " + chunkHolder.queueLevel);
 +
 +            if (!chunkHolder.neighbors.isEmpty()) {
 +                if (indent >= maxDepth) {
-+                    PaperFileIOThread.LOGGER.log(Level.ERROR, indentStr + "Chunk Neighbors: (Can't show, too deeply nested)");
++                    PaperFileIOThread.LOGGER.error(indentStr + "Chunk Neighbors: (Can't show, too deeply nested)");
 +                    return;
 +                }
-+                PaperFileIOThread.LOGGER.log(Level.ERROR, indentStr + "Chunk Neighbors: ");
++                PaperFileIOThread.LOGGER.error(indentStr + "Chunk Neighbors: ");
 +                for (ChunkHolder neighbor : chunkHolder.neighbors.keySet()) {
 +                    ChunkStatus status = neighbor.getChunkHolderStatus();
 +                    if (status != null && status.isOrAfter(ChunkHolder.getStatus(neighbor.getTicketLevel()))) {
@@ -56,10 +56,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                    int nx = neighbor.pos.x;
 +                    int nz = neighbor.pos.z;
 +                    if (seenChunks.contains(neighbor)) {
-+                        PaperFileIOThread.LOGGER.log(Level.ERROR, indentStr + "  " + nx + "," + nz + " in " + chunkHolder.getWorld().getWorld().getName() + " (CIRCULAR)");
++                        PaperFileIOThread.LOGGER.error(indentStr + "  " + nx + "," + nz + " in " + chunkHolder.getWorld().getWorld().getName() + " (CIRCULAR)");
 +                        continue;
 +                    }
-+                    PaperFileIOThread.LOGGER.log(Level.ERROR, indentStr + "  " + nx + "," + nz + " in " + chunkHolder.getWorld().getWorld().getName() + ":");
++                    PaperFileIOThread.LOGGER.error(indentStr + "  " + nx + "," + nz + " in " + chunkHolder.getWorld().getWorld().getName() + ":");
 +                    dumpChunkInfo(seenChunks, neighbor, nx, nz, indent + 1, maxDepth);
 +                }
 +            }
@@ -1126,7 +1126,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public abstract class PlayerList {
          net.minecraft.server.level.ChunkMap playerChunkMap = worldserver1.getChunkSource().chunkMap;
          net.minecraft.server.level.DistanceManager distanceManager = playerChunkMap.distanceManager;
-         distanceManager.addTicketAtLevel(net.minecraft.server.level.TicketType.LOGIN, pos, 31, pos.toLong());
+         distanceManager.addTicket(net.minecraft.server.level.TicketType.LOGIN, pos, 31, pos.toLong());
 -        worldserver1.getChunkSource().runDistanceManagerUpdates();
 -        worldserver1.getChunkSource().getChunkAtAsynchronously(chunkX, chunkZ, true, true).thenApply(chunk -> {
 +        worldserver1.getChunkSource().markAreaHighPriority(pos, 28, 3); // Paper - Chunk priority
