@@ -114,10 +114,10 @@ index 0000000000000000000000000000000000000000..85546e1ac1d1ed7f70c3c0a1bf49937f
 +}
 diff --git a/src/main/java/io/papermc/paper/adventure/ChatProcessor.java b/src/main/java/io/papermc/paper/adventure/ChatProcessor.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..0bc2c2ef9312ebcc32dacdd2ba9f17d2ba072586
+index 0000000000000000000000000000000000000000..65b6e260464b2003d6bd172610adb5b8651df169
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/adventure/ChatProcessor.java
-@@ -0,0 +1,228 @@
+@@ -0,0 +1,192 @@
 +package io.papermc.paper.adventure;
 +
 +import io.papermc.paper.chat.ChatRenderer;
@@ -127,9 +127,7 @@ index 0000000000000000000000000000000000000000..0bc2c2ef9312ebcc32dacdd2ba9f17d2
 +import java.util.HashSet;
 +import java.util.Set;
 +import java.util.concurrent.ExecutionException;
-+import java.util.function.Consumer;
 +import java.util.regex.Pattern;
-+
 +import net.kyori.adventure.audience.Audience;
 +import net.kyori.adventure.audience.MessageType;
 +import net.kyori.adventure.text.Component;
@@ -137,7 +135,6 @@ index 0000000000000000000000000000000000000000..0bc2c2ef9312ebcc32dacdd2ba9f17d2
 +import net.kyori.adventure.text.event.ClickEvent;
 +import net.minecraft.server.MinecraftServer;
 +import net.minecraft.server.level.ServerPlayer;
-+import org.bukkit.Bukkit;
 +import org.bukkit.craftbukkit.entity.CraftPlayer;
 +import org.bukkit.craftbukkit.util.LazyPlayerSet;
 +import org.bukkit.craftbukkit.util.Waitable;
@@ -177,102 +174,68 @@ index 0000000000000000000000000000000000000000..0bc2c2ef9312ebcc32dacdd2ba9f17d2
 +        this.originalMessage = Component.text(message);
 +    }
 +
-+    @SuppressWarnings({"CodeBlock2Expr", "deprecated"})
++    @SuppressWarnings("deprecated")
 +    public void process() {
-+        this.processingLegacyFirst(
-+            // continuing from AsyncPlayerChatEvent (without PlayerChatEvent)
-+            event -> {
-+                this.processModern(
-+                    legacyRenderer(event.getFormat()),
-+                    this.viewersFromLegacy(event.getRecipients()),
-+                    PaperAdventure.LEGACY_SECTION_UXRC.deserialize(event.getMessage()),
-+                    event.isCancelled()
-+                );
-+            },
-+            // continuing from AsyncPlayerChatEvent and PlayerChatEvent
-+            event -> {
-+                this.processModern(
-+                    legacyRenderer(event.getFormat()),
-+                    this.viewersFromLegacy(event.getRecipients()),
-+                    PaperAdventure.LEGACY_SECTION_UXRC.deserialize(event.getMessage()),
-+                    event.isCancelled()
-+                );
-+            },
-+            // no legacy events called, all nice and fresh!
-+            () -> {
-+                this.processModern(
-+                    ChatRenderer.defaultRenderer(),
-+                    new LazyChatAudienceSet(this.server),
-+                    Component.text(this.message).replaceText(URL_REPLACEMENT_CONFIG),
-+                    false
-+                );
-+            }
-+        );
-+    }
-+
-+    private Set<Audience> viewersFromLegacy(final Set<Player> recipients) {
-+        if (recipients instanceof LazyPlayerSet lazyPlayerSet && lazyPlayerSet.isLazy()) {
-+            return new LazyChatAudienceSet(this.server);
-+        }
-+        final HashSet<Audience> viewers = new HashSet<>(recipients);
-+        viewers.add(this.server.console);
-+        return viewers;
-+    }
-+
-+    @SuppressWarnings("deprecation")
-+    private void processingLegacyFirst(
-+        final Consumer<AsyncPlayerChatEvent> continueAfterAsync,
-+        final Consumer<PlayerChatEvent> continueAfterAsyncAndSync,
-+        final Runnable modernOnly
-+    ) {
-+        final boolean listenersOnAsyncEvent = anyListeners(AsyncPlayerChatEvent.getHandlerList());
-+        final boolean listenersOnSyncEvent = anyListeners(PlayerChatEvent.getHandlerList());
++        final boolean listenersOnAsyncEvent = canYouHearMe(AsyncPlayerChatEvent.getHandlerList());
++        final boolean listenersOnSyncEvent = canYouHearMe(PlayerChatEvent.getHandlerList());
 +        if (listenersOnAsyncEvent || listenersOnSyncEvent) {
 +            final CraftPlayer player = this.player.getBukkitEntity();
 +            final AsyncPlayerChatEvent ae = new AsyncPlayerChatEvent(this.async, player, this.message, new LazyPlayerSet(this.server));
-+            post(ae);
++            this.post(ae);
 +            if (listenersOnSyncEvent) {
 +                final PlayerChatEvent se = new PlayerChatEvent(player, ae.getMessage(), ae.getFormat(), ae.getRecipients());
 +                se.setCancelled(ae.isCancelled()); // propagate cancelled state
 +                this.queueIfAsyncOrRunImmediately(new Waitable<Void>() {
 +                    @Override
 +                    protected Void evaluate() {
-+                        post(se);
++                        ChatProcessor.this.post(se);
 +                        return null;
 +                    }
 +                });
-+                continueAfterAsyncAndSync.accept(se);
++                this.processModern(
++                    legacyRenderer(se.getFormat()),
++                    this.viewersFromLegacy(se.getRecipients()),
++                    PaperAdventure.LEGACY_SECTION_UXRC.deserialize(se.getMessage()),
++                    se.isCancelled()
++                );
 +            } else {
-+                continueAfterAsync.accept(ae);
++                this.processModern(
++                    legacyRenderer(ae.getFormat()),
++                    this.viewersFromLegacy(ae.getRecipients()),
++                    PaperAdventure.LEGACY_SECTION_UXRC.deserialize(ae.getMessage()),
++                    ae.isCancelled()
++                );
 +            }
 +        } else {
-+            modernOnly.run();
++            this.processModern(
++                ChatRenderer.defaultRenderer(),
++                new LazyChatAudienceSet(this.server),
++                Component.text(this.message).replaceText(URL_REPLACEMENT_CONFIG),
++                false
++            );
 +        }
 +    }
 +
 +    private void processModern(final ChatRenderer renderer, final Set<Audience> viewers, final Component message, final boolean cancelled) {
-+        final AsyncChatEvent ae = this.createAsync(renderer, viewers, message);
++        final CraftPlayer player = this.player.getBukkitEntity();
++        final AsyncChatEvent ae = new AsyncChatEvent(this.async, player, viewers, renderer, message, this.originalMessage);
 +        ae.setCancelled(cancelled); // propagate cancelled state
-+        post(ae);
-+        final boolean listenersOnSyncEvent = anyListeners(ChatEvent.getHandlerList());
++        this.post(ae);
++        final boolean listenersOnSyncEvent = canYouHearMe(ChatEvent.getHandlerList());
 +        if (listenersOnSyncEvent) {
-+            this.continueWithSyncFromWhereAsyncLeftOff(ae);
++            this.queueIfAsyncOrRunImmediately(new Waitable<Void>() {
++                @Override
++                protected Void evaluate() {
++                    final ChatEvent se = new ChatEvent(player, ae.viewers(), ae.renderer(), ae.message(), ChatProcessor.this.originalMessage);
++                    se.setCancelled(ae.isCancelled()); // propagate cancelled state
++                    ChatProcessor.this.post(se);
++                    ChatProcessor.this.complete(se);
++                    return null;
++                }
++            });
 +        } else {
 +            this.complete(ae);
 +        }
-+    }
-+
-+    private void continueWithSyncFromWhereAsyncLeftOff(final AsyncChatEvent ae) {
-+        this.queueIfAsyncOrRunImmediately(new Waitable<Void>() {
-+            @Override
-+            protected Void evaluate() {
-+                final ChatEvent se = ChatProcessor.this.createSync(ae.renderer(), ae.viewers(), ae.message());
-+                se.setCancelled(ae.isCancelled()); // propagate cancelled state
-+                post(se);
-+                ChatProcessor.this.complete(se);
-+                return null;
-+            }
-+        });
 +    }
 +
 +    private void complete(final AbstractChatEvent event) {
@@ -300,12 +263,13 @@ index 0000000000000000000000000000000000000000..0bc2c2ef9312ebcc32dacdd2ba9f17d2
 +        }
 +    }
 +
-+    private AsyncChatEvent createAsync(final ChatRenderer renderer, final Set<Audience> viewers, final Component message) {
-+        return new AsyncChatEvent(this.async, this.player.getBukkitEntity(), viewers, renderer, message, this.originalMessage);
-+    }
-+
-+    private ChatEvent createSync(final ChatRenderer renderer, final Set<Audience> viewers, final Component message) {
-+        return new ChatEvent(this.player.getBukkitEntity(), viewers, renderer, message, this.originalMessage);
++    private Set<Audience> viewersFromLegacy(final Set<Player> recipients) {
++        if (recipients instanceof LazyPlayerSet lazyPlayerSet && lazyPlayerSet.isLazy()) {
++            return new LazyChatAudienceSet(this.server);
++        }
++        final HashSet<Audience> viewers = new HashSet<>(recipients);
++        viewers.add(this.server.console);
++        return viewers;
 +    }
 +
 +    private static String legacyDisplayName(final CraftPlayer player) {
@@ -338,20 +302,20 @@ index 0000000000000000000000000000000000000000..0bc2c2ef9312ebcc32dacdd2ba9f17d2
 +        }
 +    }
 +
-+    private static void post(final Event event) {
-+        Bukkit.getPluginManager().callEvent(event);
++    private void post(final Event event) {
++        this.server.server.getPluginManager().callEvent(event);
 +    }
 +
-+    private static boolean anyListeners(final HandlerList handlers) {
++    private static boolean canYouHearMe(final HandlerList handlers) {
 +        return handlers.getRegisteredListeners().length > 0;
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/adventure/DisplayNames.java b/src/main/java/io/papermc/paper/adventure/DisplayNames.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..bfaf5d3c5aae8a587c2b11d90089c588b2a2aba0
+index 0000000000000000000000000000000000000000..fb23f5b733093384fefc331cd3bef7cf16f09293
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/adventure/DisplayNames.java
-@@ -0,0 +1,22 @@
+@@ -0,0 +1,23 @@
 +package io.papermc.paper.adventure;
 +
 +import net.minecraft.server.level.ServerPlayer;
@@ -369,6 +333,7 @@ index 0000000000000000000000000000000000000000..bfaf5d3c5aae8a587c2b11d90089c588
 +    public static String getLegacy(final ServerPlayer player) {
 +        final String legacy = player.displayName;
 +        if (legacy != null) {
++            // thank you for being worse than wet socks, Bukkit
 +            return PaperAdventure.LEGACY_SECTION_UXRC.serialize(player.adventure$displayName) + ChatColor.getLastColors(player.displayName);
 +        }
 +        return PaperAdventure.LEGACY_SECTION_UXRC.serialize(player.adventure$displayName);
@@ -502,10 +467,10 @@ index 0000000000000000000000000000000000000000..eeedc30a45d9637d68f04f185b3dd90d
 +}
 diff --git a/src/main/java/io/papermc/paper/adventure/PaperAdventure.java b/src/main/java/io/papermc/paper/adventure/PaperAdventure.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..3661ac5e3bfdebb2911cb1b118942b9fc7884140
+index 0000000000000000000000000000000000000000..85c9056f92711b985e251f0f06ed551d03deb562
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/adventure/PaperAdventure.java
-@@ -0,0 +1,361 @@
+@@ -0,0 +1,341 @@
 +package io.papermc.paper.adventure;
 +
 +import com.mojang.brigadier.exceptions.CommandSyntaxException;
@@ -554,7 +519,7 @@ index 0000000000000000000000000000000000000000..3661ac5e3bfdebb2911cb1b118942b9f
 +    public static final ComponentFlattener FLATTENER = ComponentFlattener.basic().toBuilder()
 +        .complexMapper(TranslatableComponent.class, (translatable, consumer) -> {
 +            if (!Language.getInstance().has(translatable.key())) {
-+                for (final Translator source : GlobalTranslator.get().sources()) {
++                for (final Translator source : GlobalTranslator.translator().sources()) {
 +                    if (source instanceof TranslationRegistry registry && registry.contains(translatable.key())) {
 +                        consumer.accept(GlobalTranslator.render(translatable, Locale.US));
 +                        return;
@@ -600,6 +565,7 @@ index 0000000000000000000000000000000000000000..3661ac5e3bfdebb2911cb1b118942b9f
 +        })
 +        .build();
 +    public static final LegacyComponentSerializer LEGACY_SECTION_UXRC = LegacyComponentSerializer.builder().flattener(FLATTENER).hexColors().useUnusualXRepeatedCharacterHexFormat().build();
++    @Deprecated
 +    public static final PlainComponentSerializer PLAIN_COMPONENT = PlainComponentSerializer.builder().flattener(FLATTENER).build();
 +    public static final PlainTextComponentSerializer PLAIN = PlainTextComponentSerializer.builder().flattener(FLATTENER).build();
 +    public static final GsonComponentSerializer GSON = GsonComponentSerializer.builder()
@@ -639,7 +605,7 @@ index 0000000000000000000000000000000000000000..3661ac5e3bfdebb2911cb1b118942b9f
 +        if (key == null) {
 +            return null;
 +        }
-+        return new ResourceLocation(key.namespace(), key.value());
++        return asVanilla(key);
 +    }
 +
 +    // Component
@@ -687,15 +653,7 @@ index 0000000000000000000000000000000000000000..3661ac5e3bfdebb2911cb1b118942b9f
 +    }
 +
 +    public static String asJsonString(final Component component, final Locale locale) {
-+        return GSON.serialize(
-+            GlobalTranslator.render(
-+                component,
-+                // play it safe
-+                locale != null
-+                    ? locale
-+                    : Locale.US
-+            )
-+        );
++        return GSON.serialize(translated(component, locale));
 +    }
 +
 +    public static String asJsonString(final net.minecraft.network.chat.Component component, final Locale locale) {
@@ -706,20 +664,17 @@ index 0000000000000000000000000000000000000000..3661ac5e3bfdebb2911cb1b118942b9f
 +    }
 +
 +    public static String asPlain(final Component component, final Locale locale) {
-+        return PLAIN.serialize(
-+            GlobalTranslator.render(
-+                component,
-+                // play it safe
-+                locale != null
-+                    ? locale
-+                    : Locale.US
-+            )
-+        );
++        return PLAIN.serialize(translated(component, locale));
 +    }
 +
-+    // thank you for being worse than wet socks, Bukkit
-+    public static String superHackyLegacyRepresentationOfComponent(final Component component, final String string) {
-+        return LEGACY_SECTION_UXRC.serialize(component) + ChatColor.getLastColors(string);
++    private static Component translated(final Component component, final Locale locale) {
++        return GlobalTranslator.render(
++            component,
++            // play it safe
++            locale != null
++                ? locale
++                : Locale.US
++        );
 +    }
 +
 +    // BossBar
@@ -809,28 +764,18 @@ index 0000000000000000000000000000000000000000..3661ac5e3bfdebb2911cb1b118942b9f
 +    // Sounds
 +
 +    public static SoundSource asVanilla(final Sound.Source source) {
-+        if (source == Sound.Source.MASTER) {
-+            return SoundSource.MASTER;
-+        } else if (source == Sound.Source.MUSIC) {
-+            return SoundSource.MUSIC;
-+        } else if (source == Sound.Source.RECORD) {
-+            return SoundSource.RECORDS;
-+        } else if (source == Sound.Source.WEATHER) {
-+            return SoundSource.WEATHER;
-+        } else if (source == Sound.Source.BLOCK) {
-+            return SoundSource.BLOCKS;
-+        } else if (source == Sound.Source.HOSTILE) {
-+            return SoundSource.HOSTILE;
-+        } else if (source == Sound.Source.NEUTRAL) {
-+            return SoundSource.NEUTRAL;
-+        } else if (source == Sound.Source.PLAYER) {
-+            return SoundSource.PLAYERS;
-+        } else if (source == Sound.Source.AMBIENT) {
-+            return SoundSource.AMBIENT;
-+        } else if (source == Sound.Source.VOICE) {
-+            return SoundSource.VOICE;
-+        }
-+        throw new IllegalArgumentException(source.name());
++        return switch (source) {
++            case MASTER -> SoundSource.MASTER;
++            case MUSIC -> SoundSource.MUSIC;
++            case RECORD -> SoundSource.RECORDS;
++            case WEATHER -> SoundSource.WEATHER;
++            case BLOCK -> SoundSource.BLOCKS;
++            case HOSTILE -> SoundSource.HOSTILE;
++            case NEUTRAL -> SoundSource.NEUTRAL;
++            case PLAYER -> SoundSource.PLAYERS;
++            case AMBIENT -> SoundSource.AMBIENT;
++            case VOICE -> SoundSource.VOICE;
++        };
 +    }
 +
 +    public static @Nullable SoundSource asVanillaNullable(final Sound.@Nullable Source source) {
