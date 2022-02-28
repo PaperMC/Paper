@@ -19,7 +19,7 @@ import org.jetbrains.annotations.Nullable;
  * The registration of new {@link StructureType}s is case-sensitive.
  */
 // Order is retrieved from WorldGenFactory
-public final class StructureType {
+public final class StructureType implements Keyed {
 
     private static final Map<String, StructureType> structureTypeMap = new HashMap<>();
 
@@ -161,7 +161,7 @@ public final class StructureType {
      *  STRUCTURE TYPES REGISTERED ABOVE THIS
      * ****************
      */
-    private final String name;
+    private final NamespacedKey key;
     private final MapCursor.Type mapCursor;
 
     /**
@@ -176,7 +176,7 @@ public final class StructureType {
      */
     private StructureType(@NotNull String name, @Nullable MapCursor.Type mapIcon) {
         Validate.notEmpty(name, "Structure name cannot be empty");
-        this.name = name;
+        this.key = NamespacedKey.minecraft(name);
         this.mapCursor = mapIcon;
     }
 
@@ -188,7 +188,7 @@ public final class StructureType {
      */
     @NotNull
     public String getName() {
-        return name;
+        return key.getKey();
     }
 
     /**
@@ -211,20 +211,20 @@ public final class StructureType {
             return false;
         }
         StructureType that = (StructureType) other;
-        return this.name.equals(that.name) && this.mapCursor == that.mapCursor;
+        return this.key.equals(that.key) && this.mapCursor == that.mapCursor;
     }
 
     @Override
     public int hashCode() {
         int hash = 7;
-        hash = 71 * hash + Objects.hashCode(this.name);
+        hash = 71 * hash + Objects.hashCode(this.key);
         hash = 71 * hash + Objects.hashCode(this.mapCursor);
         return hash;
     }
 
     @Override
     public String toString() {
-        return "StructureType{name=" + this.name + ", cursor=" + this.mapCursor + "}";
+        return "StructureType{key=" + this.key + ", cursor=" + this.mapCursor + "}";
     }
 
     @NotNull
@@ -243,5 +243,11 @@ public final class StructureType {
     @NotNull
     public static Map<String, StructureType> getStructureTypes() {
         return ImmutableMap.copyOf(structureTypeMap);
+    }
+
+    @NotNull
+    @Override
+    public NamespacedKey getKey() {
+        return key;
     }
 }

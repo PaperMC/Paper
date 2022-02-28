@@ -349,6 +349,10 @@ public interface Tag<T extends Keyed> extends Keyed {
      */
     Tag<Material> CLIMBABLE = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("climbable"), Material.class);
     /**
+     * Vanilla block tag representing all blocks which reset fall damage.
+     */
+    Tag<Material> FALL_DAMAGE_RESETTING = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("fall_damage_resetting"), Material.class);
+    /**
      * Vanilla block tag representing all shulker boxes.
      */
     Tag<Material> SHULKER_BOXES = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("shulker_boxes"), Material.class);
