@@ -6,23 +6,16 @@ Subject: [PATCH] Fix ChunkSnapshot#isSectionEmpty(int) and optimize
 
 
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftChunk.java b/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
-index 5931e6a7bf57274c187db62de0482193557d572f..8579c4e632ace486c406bbbe1f6a6c79d5dbdaa2 100644
+index 034b66ad8e75907836d421d0aa42a70cad38ad33..716a76c599d83c85ade72f29d6e6d8f6a03f90c1 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
-@@ -281,18 +281,26 @@ public class CraftChunk implements Chunk {
+@@ -281,14 +281,16 @@ public class CraftChunk implements Chunk {
          boolean[] sectionEmpty = new boolean[cs.length];
          PalettedContainer<Holder<Biome>>[] biome = (includeBiome || includeBiomeTempRain) ? new PalettedContainer[cs.length] : null;
  
-+<<<<<<< HEAD
-         Registry<Biome> iregistry = this.worldServer.registryAccess().registryOrThrow(Registry.BIOME_REGISTRY);
- <<<<<<< HEAD
-         Codec<PalettedContainer<Holder<Biome>>> biomeCodec = PalettedContainer.codec(iregistry.asHolderIdMap(), iregistry.holderByNameCodec(), PalettedContainer.Strategy.SECTION_BIOMES, iregistry.getHolderOrThrow(Biomes.PLAINS));
- =======
-         Codec<PalettedContainer<Biome>> biomeCodec = PalettedContainer.codec(iregistry, iregistry.byNameCodec(), PalettedContainer.Strategy.SECTION_BIOMES, iregistry.getOrThrow(Biomes.PLAINS), null); // Paper - Anti-Xray - Add preset biomes
- >>>>>>> Anti-Xray
-+=======
-+>>>>>>> Fix ChunkSnapshot#isSectionEmpty(int) and optimize PalettedContainer copying by not using codecs
- 
+-        Registry<Biome> iregistry = this.worldServer.registryAccess().registryOrThrow(Registry.BIOME_REGISTRY);
+-        Codec<PalettedContainer<Biome>> biomeCodec = PalettedContainer.codec(iregistry, iregistry.byNameCodec(), PalettedContainer.Strategy.SECTION_BIOMES, iregistry.getOrThrow(Biomes.PLAINS), null); // Paper - Anti-Xray - Add preset biomes
+-
          for (int i = 0; i < cs.length; i++) {
 -            CompoundTag data = new CompoundTag();
  
@@ -39,7 +32,7 @@ index 5931e6a7bf57274c187db62de0482193557d572f..8579c4e632ace486c406bbbe1f6a6c79
  
              LevelLightEngine lightengine = chunk.level.getLightEngine();
              DataLayer skyLightArray = lightengine.getLayerListener(LightLayer.SKY).getDataLayerData(SectionPos.of(x, i, z));
-@@ -311,8 +319,7 @@ public class CraftChunk implements Chunk {
+@@ -307,8 +309,7 @@ public class CraftChunk implements Chunk {
              }
  
              if (biome != null) {
