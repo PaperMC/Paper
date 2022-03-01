@@ -2114,7 +2114,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -        return world.spigotConfig.simulationDistance;
 +        return getHandle().getChunkSource().chunkMap.playerChunkManager.getTargetTickViewDistance(); // Paper - replace old player chunk management
      }
- 
+     // Spigot end
+     // Paper start - view distance api
      @Override
      public void setViewDistance(int viewDistance) {
 -        throw new UnsupportedOperationException(); //TODO
@@ -2125,11 +2126,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        net.minecraft.server.level.ChunkMap chunkMap = getHandle().getChunkSource().chunkMap;
 +        chunkMap.setViewDistance(viewDistance);
 +        // Paper end - replace old player chunk management
-+    }
-+
+     }
+ 
 +    // Paper start - replace old player chunk management
-+    @Override
-+    public void setSimulationDistance(int simulationDistance) {
+     @Override
+     public void setSimulationDistance(int simulationDistance) {
+-        throw new UnsupportedOperationException(); //TODO
 +        // Paper start - replace old player chunk management
 +        if (simulationDistance < 2 || simulationDistance > 32) {
 +            throw new IllegalArgumentException("Simulation distance " + simulationDistance + " is out of range of [2, 32]");
@@ -2162,7 +2164,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -        throw new UnsupportedOperationException(); //TODO
 +        getHandle().getChunkSource().chunkMap.playerChunkManager.setSendDistance(viewDistance); // Paper - replace old player chunk management
      }
-     // Spigot end
+     // Paper end - view distance api
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
@@ -2174,28 +2176,49 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
 +    // Paper start - implement view distances
      @Override
--    public int getViewDistance() {
+     public int getViewDistance() {
 -        throw new NotImplementedException("Per-Player View Distance APIs need further understanding to properly implement (There are per world view distances though!)"); // TODO
-+    public int getSendViewDistance() {
 +        net.minecraft.server.level.ChunkMap chunkMap = this.getHandle().getLevel().getChunkSource().chunkMap;
 +        io.papermc.paper.chunk.PlayerChunkLoader.PlayerLoaderData data = chunkMap.playerChunkManager.getData(this.getHandle());
 +        if (data == null) {
-+            return chunkMap.playerChunkManager.getTargetSendDistance();
++            return chunkMap.playerChunkManager.getTargetNoTickViewDistance();
 +        }
-+        return data.getTargetSendViewDistance();
++        return data.getTargetNoTickViewDistance();
      }
  
      @Override
--    public void setViewDistance(int viewDistance) {
+     public void setViewDistance(int viewDistance) {
 -        throw new NotImplementedException("Per-Player View Distance APIs need further understanding to properly implement (There are per world view distances though!)"); // TODO
-+    public void setSendViewDistance(int viewDistance) {
 +        net.minecraft.server.level.ChunkMap chunkMap = this.getHandle().getLevel().getChunkSource().chunkMap;
 +        io.papermc.paper.chunk.PlayerChunkLoader.PlayerLoaderData data = chunkMap.playerChunkManager.getData(this.getHandle());
 +        if (data == null) {
 +            throw new IllegalStateException("Player is not attached to world");
 +        }
 +
-+        data.setTargetSendViewDistance(viewDistance);
++        data.setTargetNoTickViewDistance(viewDistance);
+     }
+ 
+     @Override
+     public int getSimulationDistance() {
+-        throw new NotImplementedException("Per-Player View Distance APIs need further understanding to properly implement (There are per world view distances though!)"); // TODO
++        net.minecraft.server.level.ChunkMap chunkMap = this.getHandle().getLevel().getChunkSource().chunkMap;
++        io.papermc.paper.chunk.PlayerChunkLoader.PlayerLoaderData data = chunkMap.playerChunkManager.getData(this.getHandle());
++        if (data == null) {
++            return chunkMap.playerChunkManager.getTargetTickViewDistance();
++        }
++        return data.getTargetTickViewDistance();
+     }
+ 
+     @Override
+     public void setSimulationDistance(int simulationDistance) {
+-        throw new NotImplementedException("Per-Player View Distance APIs need further understanding to properly implement (There are per world view distances though!)"); // TODO
++        net.minecraft.server.level.ChunkMap chunkMap = this.getHandle().getLevel().getChunkSource().chunkMap;
++        io.papermc.paper.chunk.PlayerChunkLoader.PlayerLoaderData data = chunkMap.playerChunkManager.getData(this.getHandle());
++        if (data == null) {
++            throw new IllegalStateException("Player is not attached to world");
++        }
++
++        data.setTargetTickViewDistance(simulationDistance);
      }
  
      @Override
@@ -2211,49 +2234,26 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
      @Override
--    public int getSendViewDistance() {
+     public int getSendViewDistance() {
 -        throw new NotImplementedException("Per-Player View Distance APIs need further understanding to properly implement (There are per world view distances though!)"); // TODO
-+    public int getViewDistance() {
 +        net.minecraft.server.level.ChunkMap chunkMap = this.getHandle().getLevel().getChunkSource().chunkMap;
 +        io.papermc.paper.chunk.PlayerChunkLoader.PlayerLoaderData data = chunkMap.playerChunkManager.getData(this.getHandle());
 +        if (data == null) {
-+            return chunkMap.playerChunkManager.getTargetNoTickViewDistance();
++            return chunkMap.playerChunkManager.getTargetSendDistance();
 +        }
-+        return data.getTargetNoTickViewDistance();
++        return data.getTargetSendViewDistance();
      }
  
      @Override
--    public void setSendViewDistance(int viewDistance) {
+     public void setSendViewDistance(int viewDistance) {
 -        throw new NotImplementedException("Per-Player View Distance APIs need further understanding to properly implement (There are per world view distances though!)"); // TODO
-+    public void setViewDistance(int viewDistance) {
 +        net.minecraft.server.level.ChunkMap chunkMap = this.getHandle().getLevel().getChunkSource().chunkMap;
 +        io.papermc.paper.chunk.PlayerChunkLoader.PlayerLoaderData data = chunkMap.playerChunkManager.getData(this.getHandle());
 +        if (data == null) {
 +            throw new IllegalStateException("Player is not attached to world");
 +        }
 +
-+        data.setTargetNoTickViewDistance(viewDistance);
-+    }
-+
-+    @Override
-+    public int getSimulationDistance() {
-+        net.minecraft.server.level.ChunkMap chunkMap = this.getHandle().getLevel().getChunkSource().chunkMap;
-+        io.papermc.paper.chunk.PlayerChunkLoader.PlayerLoaderData data = chunkMap.playerChunkManager.getData(this.getHandle());
-+        if (data == null) {
-+            return chunkMap.playerChunkManager.getTargetTickViewDistance();
-+        }
-+        return data.getTargetTickViewDistance();
-+    }
-+
-+    @Override
-+    public void setSimulationDistance(int simulationDistance) {
-+        net.minecraft.server.level.ChunkMap chunkMap = this.getHandle().getLevel().getChunkSource().chunkMap;
-+        io.papermc.paper.chunk.PlayerChunkLoader.PlayerLoaderData data = chunkMap.playerChunkManager.getData(this.getHandle());
-+        if (data == null) {
-+            throw new IllegalStateException("Player is not attached to world");
-+        }
-+
-+        data.setTargetTickViewDistance(simulationDistance);
++        data.setTargetSendViewDistance(viewDistance);
      }
 +    // Paper end - implement view distances
  
