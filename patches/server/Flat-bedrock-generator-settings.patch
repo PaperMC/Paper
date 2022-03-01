@@ -30,7 +30,22 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
 +    // Paper start
 +    // Taken from SurfaceRules$VerticalGradientConditionSource
-+    private final record PaperBedrockConditionSource(String randomName, VerticalAnchor trueAtAndBelow, VerticalAnchor falseAtAndAbove, boolean invert) implements SurfaceRules.ConditionSource {
++    // isRoof = true if roof, false if floor
++    public record PaperBedrockConditionSource(net.minecraft.resources.ResourceLocation randomName, VerticalAnchor trueAtAndBelow, VerticalAnchor falseAtAndAbove, boolean isRoof) implements SurfaceRules.ConditionSource {
++
++        public static final com.mojang.serialization.Codec<PaperBedrockConditionSource> CODEC = com.mojang.serialization.codecs.RecordCodecBuilder.create((instance) -> {
++            return instance.group(
++                net.minecraft.resources.ResourceLocation.CODEC.fieldOf("random_name").forGetter(PaperBedrockConditionSource::randomName),
++                VerticalAnchor.CODEC.fieldOf("true_at_and_below").forGetter(PaperBedrockConditionSource::trueAtAndBelow),
++                VerticalAnchor.CODEC.fieldOf("false_at_and_above").forGetter(PaperBedrockConditionSource::falseAtAndAbove),
++                com.mojang.serialization.Codec.BOOL.fieldOf("roof").forGetter(PaperBedrockConditionSource::isRoof)
++                ).apply(instance, PaperBedrockConditionSource::new);
++        });
++
++        public PaperBedrockConditionSource(String randomName, net.minecraft.world.level.levelgen.VerticalAnchor trueAtAndBelow, net.minecraft.world.level.levelgen.VerticalAnchor falseAtAndAbove, boolean invert) {
++            this(new net.minecraft.resources.ResourceLocation(randomName), trueAtAndBelow, falseAtAndAbove, invert);
++        }
++
 +        @Override
 +        public com.mojang.serialization.Codec<? extends SurfaceRules.ConditionSource> codec() {
 +            return CODEC;
@@ -42,10 +57,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            int trueAtY = this.trueAtAndBelow().resolveY(context.context);
 +            int falseAtY = this.falseAtAndAbove().resolveY(context.context);
 +
-+            int y = invert ? Math.max(falseAtY, trueAtY) - 1 : Math.min(falseAtY, trueAtY) ;
++            int y = isRoof ? Math.max(falseAtY, trueAtY) - 1 : Math.min(falseAtY, trueAtY) ;
 +            final int i = hasFlatBedrock ? y : trueAtY;
 +            final int j = hasFlatBedrock ? y : falseAtY;
-+            final net.minecraft.world.level.levelgen.PositionalRandomFactory positionalRandomFactory = context.system.getOrCreateRandomFactory(new net.minecraft.resources.ResourceLocation(this.randomName()));
++            final net.minecraft.world.level.levelgen.PositionalRandomFactory positionalRandomFactory = context.system.getOrCreateRandomFactory(this.randomName());
 +
 +            class VerticalGradientCondition extends SurfaceRules.LazyYCondition {
 +                VerticalGradientCondition(SurfaceRules.Context context) {
@@ -98,6 +113,18 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
      public static SurfaceRules.RuleSource end() {
+diff --git a/src/main/java/net/minecraft/server/Bootstrap.java b/src/main/java/net/minecraft/server/Bootstrap.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/Bootstrap.java
++++ b/src/main/java/net/minecraft/server/Bootstrap.java
+@@ -0,0 +0,0 @@ public class Bootstrap {
+                     DispenseItemBehavior.bootStrap();
+                     CauldronInteraction.bootStrap();
+                     ArgumentTypes.bootStrap();
++                    Registry.register(net.minecraft.core.Registry.CONDITION, new net.minecraft.resources.ResourceLocation("paper", "bedrock_condition_source"), net.minecraft.data.worldgen.SurfaceRuleData.PaperBedrockConditionSource.CODEC); // Paper - register custom flat bedrock thing. TODO is this the best place to do this?
+                     Registry.freezeBuiltins();
+                     Bootstrap.wrapStreams();
+                 }
 diff --git a/src/main/java/net/minecraft/world/level/levelgen/NoiseBasedChunkGenerator.java b/src/main/java/net/minecraft/world/level/levelgen/NoiseBasedChunkGenerator.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/levelgen/NoiseBasedChunkGenerator.java
@@ -107,7 +134,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public void buildSurface(WorldGenRegion region, StructureFeatureManager structures, ChunkAccess chunk) {
          if (!SharedConstants.debugVoidTerrain(chunk.getPos())) {
 -            WorldGenerationContext worldgenerationcontext = new WorldGenerationContext(this, region);
-+            WorldGenerationContext worldgenerationcontext = new WorldGenerationContext(this, region, region.getLevel()); // Paper
++            WorldGenerationContext worldgenerationcontext = new WorldGenerationContext(this, region, region.getMinecraftWorld()); // Paper
              NoiseGeneratorSettings generatorsettingbase = (NoiseGeneratorSettings) this.settings.value();
              NoiseChunk noisechunk = chunk.getOrCreateNoiseChunk(this.router, () -> {
                  return new Beardifier(structures, chunk);
@@ -116,7 +143,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          }, (NoiseGeneratorSettings) this.settings.value(), this.globalFluidPicker, Blender.of(chunkRegion));
          Aquifer aquifer = noisechunk.aquifer();
 -        CarvingContext carvingcontext = new CarvingContext(this, chunkRegion.registryAccess(), chunk.getHeightAccessorForGeneration(), noisechunk);
-+        CarvingContext carvingcontext = new CarvingContext(this, chunkRegion.registryAccess(), chunk.getHeightAccessorForGeneration(), noisechunk, chunkRegion.getLevel()); // Paper
++        CarvingContext carvingcontext = new CarvingContext(this, chunkRegion.registryAccess(), chunk.getHeightAccessorForGeneration(), noisechunk, chunkRegion.getMinecraftWorld()); // Paper
          CarvingMask carvingmask = ((ProtoChunk) chunk).getOrCreateCarvingMask(generationStep);
  
          for (int j = -8; j <= 8; ++j) {
@@ -128,7 +155,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  public class WorldGenerationContext {
      private final int minY;
      private final int height;
-+    private final net.minecraft.world.level.Level level; // Paper
++    private final @javax.annotation.Nullable net.minecraft.world.level.Level level; // Paper
  
 -    public WorldGenerationContext(ChunkGenerator generator, LevelHeightAccessor world) {
 +    public WorldGenerationContext(ChunkGenerator generator, LevelHeightAccessor world) { this(generator, world, null); } // Paper
