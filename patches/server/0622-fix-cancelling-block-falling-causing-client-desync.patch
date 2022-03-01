@@ -5,27 +5,15 @@ Subject: [PATCH] fix cancelling block falling causing client desync
 
 
 diff --git a/src/main/java/net/minecraft/world/entity/item/FallingBlockEntity.java b/src/main/java/net/minecraft/world/entity/item/FallingBlockEntity.java
-index e74a87336b47611fa29df4cd3d272fb08b91630b..0c94b4cb6ee0c3dffe0b67a2291d0160ae0ef96f 100644
+index 483127e9418489ad7ba1fbcb14a045d91c1c3c30..880521f25a6c8483c79043f237866cb7a49c3a54 100644
 --- a/src/main/java/net/minecraft/world/entity/item/FallingBlockEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/item/FallingBlockEntity.java
-@@ -128,8 +128,18 @@ public class FallingBlockEntity extends Entity {
+@@ -192,7 +192,7 @@ public class FallingBlockEntity extends Entity {
  
-             if (this.time++ == 0) {
-                 blockposition = this.blockPosition();
--                if (this.level.getBlockState(blockposition).is(block) && !CraftEventFactory.callEntityChangeBlockEvent(this, blockposition, Blocks.AIR.defaultBlockState()).isCancelled()) {
--                    this.level.removeBlock(blockposition, false);
-+                // Paper start - fix cancelling block falling causing client desync
-+                if (this.level.getBlockState(blockposition).is(block)) {
-+                    if (CraftEventFactory.callEntityChangeBlockEvent(this, blockposition, Blocks.AIR.defaultBlockState()).isCancelled()) {
-+                        if (this.level.getBlockState(blockposition).is(block)) { //if listener didn't update the block
-+                            ((ServerLevel) level).getChunkSource().blockChanged(blockposition);
-+                        }
-+                        this.discard();
-+                        return;
-+                    } else {
-+                        this.level.removeBlock(blockposition, false);
-+                    }
-+                    // Paper end - fix cancelling block falling causing client desync
-                 } else if (!this.level.isClientSide) {
-                     this.discard();
-                     return;
+                                 // CraftBukkit start
+                                 if (CraftEventFactory.callEntityChangeBlockEvent(this, blockposition, this.blockState).isCancelled()) {
+-                                    this.discard(); // SPIGOT-6586 called before the event in previous versions
++                                    this.discard(); // SPIGOT-6586 called before the event in previous versions //TODO test if desync happens on cancel
+                                     return;
+                                 }
+                                 // CraftBukkit end

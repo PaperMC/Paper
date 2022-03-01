@@ -15,18 +15,18 @@ will be more effective, since more time will be allocated
 to actually processing chunk tasks vs the ticket level updates.
 
 diff --git a/src/main/java/net/minecraft/server/level/DistanceManager.java b/src/main/java/net/minecraft/server/level/DistanceManager.java
-index fd379155a67794288f7cdae3250767bc3615d421..d278e5b8b3386044e0fbc13add369794fd6f9cd7 100644
+index 1c8020435ab8eb5fec68dc5bf473650f2658bdac..0a0162003830da767a9d49ac62938e8b30d895fd 100644
 --- a/src/main/java/net/minecraft/server/level/DistanceManager.java
 +++ b/src/main/java/net/minecraft/server/level/DistanceManager.java
-@@ -37,6 +37,7 @@ import net.minecraft.world.level.chunk.LevelChunk;
- import org.apache.logging.log4j.LogManager;
- import org.apache.logging.log4j.Logger;
+@@ -38,6 +38,7 @@ import net.minecraft.world.level.chunk.ChunkStatus;
+ import net.minecraft.world.level.chunk.LevelChunk;
+ import org.slf4j.Logger;
  
 +import it.unimi.dsi.fastutil.longs.Long2IntLinkedOpenHashMap; // Paper
  public abstract class DistanceManager {
  
-     static final Logger LOGGER = LogManager.getLogger();
-@@ -47,7 +48,7 @@ public abstract class DistanceManager {
+     static final Logger LOGGER = LogUtils.getLogger();
+@@ -48,7 +49,7 @@ public abstract class DistanceManager {
      private static final int BLOCK_TICKING_LEVEL_THRESHOLD = 33;
      final Long2ObjectMap<ObjectSet<ServerPlayer>> playersPerChunk = new Long2ObjectOpenHashMap();
      public final Long2ObjectOpenHashMap<SortedArraySet<Ticket<?>>> tickets = new Long2ObjectOpenHashMap();
@@ -35,7 +35,7 @@ index fd379155a67794288f7cdae3250767bc3615d421..d278e5b8b3386044e0fbc13add369794
      public static final int MOB_SPAWN_RANGE = 8; // private final ChunkMapDistance.b f = new ChunkMapDistance.b(8); // Paper - no longer used
      //private final TickingTracker tickingTicketsTracker = new TickingTracker(); // Paper - no longer used
      //private final DistanceManager.PlayerTicketTracker playerTicketManager = new DistanceManager.PlayerTicketTracker(33); // Paper - no longer used
-@@ -82,6 +83,46 @@ public abstract class DistanceManager {
+@@ -83,6 +84,46 @@ public abstract class DistanceManager {
          this.chunkMap = chunkMap; // Paper
      }
  
@@ -82,7 +82,7 @@ index fd379155a67794288f7cdae3250767bc3615d421..d278e5b8b3386044e0fbc13add369794
      protected void purgeStaleTickets() {
          ++this.ticketTickCounter;
          ObjectIterator objectiterator = this.tickets.long2ObjectEntrySet().fastIterator();
-@@ -116,7 +157,7 @@ public abstract class DistanceManager {
+@@ -117,7 +158,7 @@ public abstract class DistanceManager {
              }
  
              if (flag) {
@@ -91,7 +91,7 @@ index fd379155a67794288f7cdae3250767bc3615d421..d278e5b8b3386044e0fbc13add369794
              }
  
              if (((SortedArraySet) entry.getValue()).isEmpty()) {
-@@ -139,61 +180,94 @@ public abstract class DistanceManager {
+@@ -140,61 +181,94 @@ public abstract class DistanceManager {
      @Nullable
      protected abstract ChunkHolder updateChunkScheduling(long pos, int level, @Nullable ChunkHolder holder, int k);
  
@@ -220,7 +220,7 @@ index fd379155a67794288f7cdae3250767bc3615d421..d278e5b8b3386044e0fbc13add369794
      }
      boolean pollingPendingChunkUpdates = false; // Paper - Chunk priority
  
-@@ -205,7 +279,7 @@ public abstract class DistanceManager {
+@@ -206,7 +280,7 @@ public abstract class DistanceManager {
  
          ticket1.setCreatedTick(this.ticketTickCounter);
          if (ticket.getTicketLevel() < j) {
@@ -229,7 +229,7 @@ index fd379155a67794288f7cdae3250767bc3615d421..d278e5b8b3386044e0fbc13add369794
          }
  
          return ticket == ticket1; // CraftBukkit
-@@ -249,7 +323,7 @@ public abstract class DistanceManager {
+@@ -250,7 +324,7 @@ public abstract class DistanceManager {
          // Paper start - Chunk priority
          int newLevel = getTicketLevelAt(arraysetsorted);
          if (newLevel > oldLevel) {
@@ -238,7 +238,7 @@ index fd379155a67794288f7cdae3250767bc3615d421..d278e5b8b3386044e0fbc13add369794
          }
          // Paper end
          return removed; // CraftBukkit
-@@ -549,7 +623,7 @@ public abstract class DistanceManager {
+@@ -586,7 +660,7 @@ public abstract class DistanceManager {
              SortedArraySet<Ticket<?>> tickets = entry.getValue();
              if (tickets.remove(target)) {
                  // copied from removeTicket

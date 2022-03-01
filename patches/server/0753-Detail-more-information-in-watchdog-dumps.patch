@@ -7,10 +7,10 @@ Subject: [PATCH] Detail more information in watchdog dumps
 - Dump player name, player uuid, position, and world for packet handling
 
 diff --git a/src/main/java/net/minecraft/network/Connection.java b/src/main/java/net/minecraft/network/Connection.java
-index 4ed1373fdd8f39b3d8d9b4d5cd88f70d3259e2e4..3cb89b76887e46f82a660c3832474bd7dbee5f57 100644
+index 2717252c8c87abeb90c9a0ee82e574276e9d01cf..47eadb4a08953a45300d769518af22b1463f4d11 100644
 --- a/src/main/java/net/minecraft/network/Connection.java
 +++ b/src/main/java/net/minecraft/network/Connection.java
-@@ -452,7 +452,14 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -464,7 +464,14 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
          }
  
          if (this.packetListener instanceof ServerGamePacketListenerImpl) {
@@ -26,12 +26,12 @@ index 4ed1373fdd8f39b3d8d9b4d5cd88f70d3259e2e4..3cb89b76887e46f82a660c3832474bd7
  
          if (!this.isConnected() && !this.disconnectionHandled) {
 diff --git a/src/main/java/net/minecraft/network/protocol/PacketUtils.java b/src/main/java/net/minecraft/network/protocol/PacketUtils.java
-index bcf53ec07b8eeec7a88fb67e6fb908362e6f51b0..acc12307f61e1e055896b68fe16654c9c4a606a0 100644
+index 97b05b7145c6a3a379de31b8988c909da9b21139..f7bb26e8b7a74a9ae5b469351b2fccc6fc80ab6a 100644
 --- a/src/main/java/net/minecraft/network/protocol/PacketUtils.java
 +++ b/src/main/java/net/minecraft/network/protocol/PacketUtils.java
-@@ -20,6 +20,24 @@ public class PacketUtils {
+@@ -15,6 +15,24 @@ public class PacketUtils {
  
-     private static final Logger LOGGER = LogManager.getLogger();
+     private static final Logger LOGGER = LogUtils.getLogger();
  
 +    // Paper start - detailed watchdog information
 +    public static final java.util.concurrent.ConcurrentLinkedDeque<PacketListener> packetProcessing = new java.util.concurrent.ConcurrentLinkedDeque<>();
@@ -54,16 +54,16 @@ index bcf53ec07b8eeec7a88fb67e6fb908362e6f51b0..acc12307f61e1e055896b68fe16654c9
      public PacketUtils() {}
  
      public static <T extends PacketListener> void ensureRunningOnSameThread(Packet<T> packet, T listener, ServerLevel world) throws RunningOnDifferentThreadException {
-@@ -30,6 +48,8 @@ public class PacketUtils {
+@@ -24,6 +42,8 @@ public class PacketUtils {
+     public static <T extends PacketListener> void ensureRunningOnSameThread(Packet<T> packet, T listener, BlockableEventLoop<?> engine) throws RunningOnDifferentThreadException {
          if (!engine.isSameThread()) {
-             Timing timing = MinecraftTimings.getPacketTiming(packet); // Paper - timings
-             engine.execute(() -> {
+             engine.executeIfPossible(() -> {
 +                packetProcessing.push(listener); // Paper - detailed watchdog information
 +                try { // Paper - detailed watchdog information
                  if (MinecraftServer.getServer().hasStopped() || (listener instanceof ServerGamePacketListenerImpl && ((ServerGamePacketListenerImpl) listener).processedDisconnect)) return; // CraftBukkit, MC-142590
                  if (listener.getConnection().isConnected()) {
-                     try (Timing ignored = timing.startTiming()) { // Paper - timings
-@@ -53,6 +73,12 @@ public class PacketUtils {
+                     co.aikar.timings.Timing timing = co.aikar.timings.MinecraftTimings.getPacketTiming(packet); // Paper - timings
+@@ -45,6 +65,12 @@ public class PacketUtils {
                  } else {
                      PacketUtils.LOGGER.debug("Ignoring packet due to disconnection: {}", packet);
                  }
@@ -77,10 +77,10 @@ index bcf53ec07b8eeec7a88fb67e6fb908362e6f51b0..acc12307f61e1e055896b68fe16654c9
              });
              throw RunningOnDifferentThreadException.RUNNING_ON_DIFFERENT_THREAD;
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index d932a4d0688cccac8cf7418bf2eaaa40fa2b649d..8b37f9048495f0da85b811caf4d26930b334edb9 100644
+index 8a68dd633bf67b934f52b2ba286b9d2a05acd369..2a215b9b35978caa61e687c3915df7d5edfae97a 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
-@@ -978,7 +978,26 @@ public class ServerLevel extends Level implements WorldGenLevel {
+@@ -981,7 +981,26 @@ public class ServerLevel extends Level implements WorldGenLevel {
  
      }
  
@@ -107,7 +107,7 @@ index d932a4d0688cccac8cf7418bf2eaaa40fa2b649d..8b37f9048495f0da85b811caf4d26930
          ++TimingHistory.entityTicks; // Paper - timings
          // Spigot start
          co.aikar.timings.Timing timer; // Paper
-@@ -1018,7 +1037,13 @@ public class ServerLevel extends Level implements WorldGenLevel {
+@@ -1021,7 +1040,13 @@ public class ServerLevel extends Level implements WorldGenLevel {
              this.tickPassenger(entity, entity1);
          }
          // } finally { timer.stopTiming(); } // Paper - timings - move up
@@ -123,10 +123,10 @@ index d932a4d0688cccac8cf7418bf2eaaa40fa2b649d..8b37f9048495f0da85b811caf4d26930
  
      private void tickPassenger(Entity vehicle, Entity passenger) {
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index 9d16faa522cf627bc59df56b04d28b4d4896cb7c..e4d6133253fc982858a7b33c2d1104347b149a83 100644
+index af19659eb52abd900a67b1b354bac958f0d37a70..320128ff98867993aa7785cc77b769bdce451795 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
-@@ -904,7 +904,42 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, i
+@@ -908,7 +908,42 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, i
          return this.onGround;
      }
  
@@ -169,7 +169,7 @@ index 9d16faa522cf627bc59df56b04d28b4d4896cb7c..e4d6133253fc982858a7b33c2d110434
          if (this.noPhysics) {
              this.setPos(this.getX() + movement.x, this.getY() + movement.y, this.getZ() + movement.z);
          } else {
-@@ -1066,6 +1101,13 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, i
+@@ -1079,6 +1114,13 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, i
                  this.level.getProfiler().pop();
              }
          }
@@ -183,7 +183,7 @@ index 9d16faa522cf627bc59df56b04d28b4d4896cb7c..e4d6133253fc982858a7b33c2d110434
      }
  
      protected boolean isHorizontalCollisionMinor(Vec3 adjustedMovement) {
-@@ -3869,7 +3911,9 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, i
+@@ -3886,7 +3928,9 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, i
      }
  
      public void setDeltaMovement(Vec3 velocity) {
@@ -193,7 +193,7 @@ index 9d16faa522cf627bc59df56b04d28b4d4896cb7c..e4d6133253fc982858a7b33c2d110434
      }
  
      public void setDeltaMovement(double x, double y, double z) {
-@@ -3945,7 +3989,9 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, i
+@@ -3962,7 +4006,9 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, i
          }
          // Paper end - fix MC-4
          if (this.position.x != x || this.position.y != y || this.position.z != z) {

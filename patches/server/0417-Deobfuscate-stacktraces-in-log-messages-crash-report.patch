@@ -6,7 +6,7 @@ Subject: [PATCH] Deobfuscate stacktraces in log messages, crash reports, and
 
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index 898e2efb764e5bd97ab4e757e6c4c27fc4efdbef..055abcdfd779ce37d657845b3c6322f01fac989d 100644
+index e8badd402381eaae1eafbd751bd2dfecc0427922..962c4eca17efca49f7c738287c90093e340779b4 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
 @@ -1,4 +1,6 @@
@@ -34,7 +34,7 @@ index 898e2efb764e5bd97ab4e757e6c4c27fc4efdbef..055abcdfd779ce37d657845b3c6322f0
      implementation("org.apache.logging.log4j:log4j-core:2.14.1") // Paper - implementation
 +    annotationProcessor("org.apache.logging.log4j:log4j-core:2.14.1") // Paper - Needed to generate meta for our Log4j plugins
      // Paper end
-     implementation("org.apache.logging.log4j:log4j-iostreams:2.14.1") // Paper
+     implementation("org.apache.logging.log4j:log4j-iostreams:2.17.1") // Paper
      implementation("org.ow2.asm:asm:9.2")
 @@ -35,6 +43,8 @@ dependencies {
      runtimeOnly("org.apache.maven.resolver:maven-resolver-connector-basic:1.7.2")
@@ -506,7 +506,7 @@ index 2d5494d2813b773e60ddba6790b750a9a08f21f8..7695bf44503f161523ea612ef8a884ae
      }
  }
 diff --git a/src/main/java/net/minecraft/CrashReport.java b/src/main/java/net/minecraft/CrashReport.java
-index 35c9b3e6c5a2d11b4dbd491b16647df105960d1a..cc0576e8e5e1dc77c22856f0f9c4376b6bf36677 100644
+index 4dd14d73a37b32288a64fbd67ee22c435b6e6d57..1a859fef0848cf23a672012e9764965ae1c07ec5 100644
 --- a/src/main/java/net/minecraft/CrashReport.java
 +++ b/src/main/java/net/minecraft/CrashReport.java
 @@ -30,6 +30,7 @@ public class CrashReport {
@@ -530,11 +530,11 @@ index 3941e14d1c3e6e688e28904948039c8b2200de5f..a4fda4a3bae9ce600e778b44cd3ef432
          }
      }
 diff --git a/src/main/java/net/minecraft/network/Connection.java b/src/main/java/net/minecraft/network/Connection.java
-index f13e24eede7f09ecc8f375df5e27e385f589005d..fc33e1dd5db461d380cfcbb3dacea095dd55b757 100644
+index a0d3d9e344f530b713167d0663634c40eefce5b5..c469688c2b55b1c93435a2ac6e8e4494ab7e5229 100644
 --- a/src/main/java/net/minecraft/network/Connection.java
 +++ b/src/main/java/net/minecraft/network/Connection.java
-@@ -56,13 +56,13 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
-     public static final Marker PACKET_MARKER = MarkerManager.getMarker("NETWORK_PACKETS", Connection.ROOT_MARKER);
+@@ -66,13 +66,13 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+     });
      public static final AttributeKey<ConnectionProtocol> ATTRIBUTE_PROTOCOL = AttributeKey.valueOf("protocol");
      public static final LazyLoadedValue<NioEventLoopGroup> NETWORK_WORKER_GROUP = new LazyLoadedValue<>(() -> {
 -        return new NioEventLoopGroup(0, (new ThreadFactoryBuilder()).setNameFormat("Netty Client IO #%d").setDaemon(true).build());
@@ -564,10 +564,10 @@ index 5165170e3289fe3939497c56a71eae9fdaa4bcfa..8a0ced3f9b9099913ade4b71181aff6c
          if ( !this.message.startsWith("/") )
          {
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-index 0716aaf29f9d76240a0de4ca02daba442b36ec7d..2b7ba5d8dda0297c8b35a0cea68c3ae10188e3f2 100644
+index d0d058287fc1e87e944e99d4fc2cbd38eafb82b3..cec0082718c2a729044d6f19d74b8e4425816725 100644
 --- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-@@ -212,6 +212,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+@@ -215,6 +215,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
          }
          com.destroystokyo.paper.PaperConfig.registerCommands();
          com.destroystokyo.paper.VersionHistoryManager.INSTANCE.getClass(); // load version history now
@@ -576,12 +576,12 @@ index 0716aaf29f9d76240a0de4ca02daba442b36ec7d..2b7ba5d8dda0297c8b35a0cea68c3ae1
  
          this.setPvpAllowed(dedicatedserverproperties.pvp);
 diff --git a/src/main/java/net/minecraft/server/network/ServerConnectionListener.java b/src/main/java/net/minecraft/server/network/ServerConnectionListener.java
-index 6bf39699700075e295a693b56d237391de4e4f58..7fe08a998b4067f9f67c7e7a2244c1de0b194093 100644
+index 7c820a8f9ae85eb6941dce0e6296775fb331d720..888e863b6d605bf587d0c071795a43d2157afa4d 100644
 --- a/src/main/java/net/minecraft/server/network/ServerConnectionListener.java
 +++ b/src/main/java/net/minecraft/server/network/ServerConnectionListener.java
 @@ -52,10 +52,10 @@ public class ServerConnectionListener {
  
-     private static final Logger LOGGER = LogManager.getLogger();
+     private static final Logger LOGGER = LogUtils.getLogger();
      public static final LazyLoadedValue<NioEventLoopGroup> SERVER_EVENT_GROUP = new LazyLoadedValue<>(() -> {
 -        return new NioEventLoopGroup(0, (new ThreadFactoryBuilder()).setNameFormat("Netty Server IO #%d").setDaemon(true).build());
 +        return new NioEventLoopGroup(0, (new ThreadFactoryBuilder()).setNameFormat("Netty Server IO #%d").setDaemon(true).setUncaughtExceptionHandler(new net.minecraft.DefaultUncaughtExceptionHandlerWithName(LOGGER)).build()); // Paper

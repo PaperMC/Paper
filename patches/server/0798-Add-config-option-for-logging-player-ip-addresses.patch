@@ -21,28 +21,28 @@ index 31e057e16c04f6cb6a4fa42e6ac9e81198e24d79..609f7ff543353ede53dc46dafc5a2fd0
      private static void maxJoinsPerTick() {
          maxJoinsPerTick = getInt("settings.max-joins-per-tick", 3);
 diff --git a/src/main/java/net/minecraft/network/protocol/PacketUtils.java b/src/main/java/net/minecraft/network/protocol/PacketUtils.java
-index acc12307f61e1e055896b68fe16654c9c4a606a0..c958a00535c0f7a015a7a566b97e2c80fc9a0efd 100644
+index f7bb26e8b7a74a9ae5b469351b2fccc6fc80ab6a..230f5adc4df1679597f5b9aa9fcd36501efbebdd 100644
 --- a/src/main/java/net/minecraft/network/protocol/PacketUtils.java
 +++ b/src/main/java/net/minecraft/network/protocol/PacketUtils.java
-@@ -58,10 +58,11 @@ public class PacketUtils {
-                     // Paper start
-                     catch (Exception e) {
-                         Connection networkmanager = listener.getConnection();
+@@ -51,10 +51,11 @@ public class PacketUtils {
+                         packet.handle(listener);
+                     } catch (Exception exception) {
+                         net.minecraft.network.Connection networkmanager = listener.getConnection();
 +                        String playerIP = com.destroystokyo.paper.PaperConfig.logPlayerIpAddresses ? String.valueOf(networkmanager.getRemoteAddress()) : "<ip address withheld>"; // Paper
                          if (networkmanager.getPlayer() != null) {
--                            LOGGER.error("Error whilst processing packet {} for {}[{}]", packet, networkmanager.getPlayer().getScoreboardName(), networkmanager.getRemoteAddress(), e);
-+                            LOGGER.error("Error whilst processing packet {} for {}[{}]", packet, networkmanager.getPlayer().getScoreboardName(), playerIP, e); // Paper
+-                            LOGGER.error("Error whilst processing packet {} for {}[{}]", packet, networkmanager.getPlayer().getScoreboardName(), networkmanager.getRemoteAddress(), exception);
++                            LOGGER.error("Error whilst processing packet {} for {}[{}]", packet, networkmanager.getPlayer().getScoreboardName(), playerIP, exception); // Paper
                          } else {
--                            LOGGER.error("Error whilst processing packet {} for connection from {}", packet, networkmanager.getRemoteAddress(), e);
-+                            LOGGER.error("Error whilst processing packet {} for connection from {}", packet, playerIP, e); // Paper
+-                            LOGGER.error("Error whilst processing packet {} for connection from {}", packet, networkmanager.getRemoteAddress(), exception);
++                            LOGGER.error("Error whilst processing packet {} for connection from {}", packet, playerIP, exception); // Paper
                          }
-                         TextComponent error = new TextComponent("Packet processing error");
-                         networkmanager.send(new ClientboundDisconnectPacket(error), (future) -> {
+                         net.minecraft.network.chat.TextComponent error = new net.minecraft.network.chat.TextComponent("Packet processing error");
+                         networkmanager.send(new net.minecraft.network.protocol.game.ClientboundDisconnectPacket(error), (future) -> {
 diff --git a/src/main/java/net/minecraft/server/network/LegacyQueryHandler.java b/src/main/java/net/minecraft/server/network/LegacyQueryHandler.java
-index 3962e82d4e4c5f792a37e825891e6960e737452d..dddc97094f0a7847b2818e6ea3b3f6cd4eb72b38 100644
+index 53e87ea23dacd123cc47bd8ca43d0f19e69acaf2..a03cb44f2296b7df60fa39879e54a5c56b22a3d5 100644
 --- a/src/main/java/net/minecraft/server/network/LegacyQueryHandler.java
 +++ b/src/main/java/net/minecraft/server/network/LegacyQueryHandler.java
-@@ -185,7 +185,7 @@ public class LegacyQueryHandler extends ChannelInboundHandlerAdapter {
+@@ -183,7 +183,7 @@ public class LegacyQueryHandler extends ChannelInboundHandlerAdapter {
          buf.release();
          this.buf = null;
  
@@ -50,9 +50,9 @@ index 3962e82d4e4c5f792a37e825891e6960e737452d..dddc97094f0a7847b2818e6ea3b3f6cd
 +        LOGGER.debug("Ping: (1.6) from {}", com.destroystokyo.paper.PaperConfig.logPlayerIpAddresses ? ctx.channel().remoteAddress() : "<ip address withheld>"); // Paper
  
          InetSocketAddress virtualHost = com.destroystokyo.paper.network.PaperNetworkClient.prepareVirtualHost(host, port);
-         com.destroystokyo.paper.event.server.PaperServerListPingEvent event = PaperLegacyStatusClient.processRequest(
+         com.destroystokyo.paper.event.server.PaperServerListPingEvent event = com.destroystokyo.paper.network.PaperLegacyStatusClient.processRequest(
 diff --git a/src/main/java/net/minecraft/server/network/ServerConnectionListener.java b/src/main/java/net/minecraft/server/network/ServerConnectionListener.java
-index bce781b645cc95f399eacf65edad5ad321fd68a4..54477f1d0d0e2f09fc2d2b1f4c57413e5a0736f9 100644
+index af4d9244102bd0ac204f44a8de7f3a7706e3692d..058fb3696c7ece4a7b6971886b1760b26add733b 100644
 --- a/src/main/java/net/minecraft/server/network/ServerConnectionListener.java
 +++ b/src/main/java/net/minecraft/server/network/ServerConnectionListener.java
 @@ -204,7 +204,7 @@ public class ServerConnectionListener {
@@ -65,10 +65,10 @@ index bce781b645cc95f399eacf65edad5ad321fd68a4..54477f1d0d0e2f09fc2d2b1f4c57413e
  
                              networkmanager.send(new ClientboundDisconnectPacket(chatcomponenttext), (future) -> {
 diff --git a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
-index d2dd8b802ecea7fd2efe5f07fcef65c26e1adfbc..33a29890435d6065a2cc4f8e8bf8209c01d5d114 100644
+index 4cd92875d60c2f1dcce67ac99e9ba257a10f87b1..f5c1dff1d571e89f960f11400edbcbbea0620575 100644
 --- a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
-@@ -224,7 +224,10 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener
+@@ -220,7 +220,10 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener
      }
  
      public String getUserName() {
@@ -81,7 +81,7 @@ index d2dd8b802ecea7fd2efe5f07fcef65c26e1adfbc..33a29890435d6065a2cc4f8e8bf8209c
  
      @Override
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
-index 8feadac9d9d4fb6c1ae290ca2ab2499b707bd56a..80888d5adf7d4377e17e6f530f35053cfcc9eed4 100644
+index 0c2d1a8feb15bc2bc6ce2674b24222d5c501cd18..d9cd0bb20be6eca5db889f1350b829c0309e021f 100644
 --- a/src/main/java/net/minecraft/server/players/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/players/PlayerList.java
 @@ -238,7 +238,7 @@ public abstract class PlayerList {

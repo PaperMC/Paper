@@ -32,18 +32,18 @@ index 8993d8809c109212ab278e15c09cebab9e89342f..005a3058c51a41a39f050b1817e2079b
              buf.writeComponent(this.playerPrefix);
              buf.writeComponent(this.playerSuffix);
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index b8938c4118b61758874624229b6986956f30cc8e..8ba4af81f19e20c7d949edc72c0827bab22c19cb 100644
+index 99478fe8f16783e7d2ae128f32199fa4b465dc83..0f743a46195ce83bb3d96a5a65067cfab3a369e8 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -159,6 +159,7 @@ import net.minecraft.world.level.storage.loot.LootTables;
+@@ -162,6 +162,7 @@ import net.minecraft.world.level.storage.loot.LootTables;
  import net.minecraft.world.level.storage.loot.PredicateManager;
  import net.minecraft.world.phys.Vec2;
  import net.minecraft.world.phys.Vec3;
 +import net.minecraft.world.scores.PlayerTeam; // Paper
  import org.apache.commons.lang3.Validate;
- import org.apache.logging.log4j.LogManager;
- import org.apache.logging.log4j.Logger;
-@@ -609,6 +610,20 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+ import org.slf4j.Logger;
+ 
+@@ -610,6 +611,20 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
              this.server.getPluginManager().callEvent(new org.bukkit.event.world.WorldLoadEvent(worldserver.getWorld()));
          }
  
@@ -65,24 +65,24 @@ index b8938c4118b61758874624229b6986956f30cc8e..8ba4af81f19e20c7d949edc72c0827ba
          this.server.getPluginManager().callEvent(new ServerLoadEvent(ServerLoadEvent.LoadType.STARTUP));
          this.connection.acceptConnections();
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
-index 484f3ca9da6d17c12b8b19883ea8a93ec0d4fb1a..78a03125e5563bfd3baa3912d593ab71054ab606 100644
+index 8e331babd8fdeba77aa3707b7e2e08591fa0d546..5a7ca495a78f33e5449d47ce71dbf9b11678551f 100644
 --- a/src/main/java/net/minecraft/server/players/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/players/PlayerList.java
-@@ -87,6 +87,7 @@ import net.minecraft.world.level.storage.PlayerDataStorage;
+@@ -88,6 +88,7 @@ import net.minecraft.world.level.storage.PlayerDataStorage;
  import net.minecraft.world.phys.Vec3;
  import net.minecraft.world.scores.Objective;
  import net.minecraft.world.scores.PlayerTeam;
 +import net.minecraft.world.scores.Scoreboard; // Paper
  import net.minecraft.world.scores.Team;
- import org.apache.logging.log4j.LogManager;
- import org.apache.logging.log4j.Logger;
+ import org.slf4j.Logger;
+ 
 @@ -150,6 +151,7 @@ public abstract class PlayerList {
      // CraftBukkit start
      private CraftServer cserver;
      private final Map<String,ServerPlayer> playersByName = new java.util.HashMap<>();
 +    public @Nullable String collideRuleTeamName; // Paper - Team name used for collideRule
  
-     public PlayerList(MinecraftServer server, RegistryAccess.RegistryHolder registryManager, PlayerDataStorage saveHandler, int maxPlayers) {
+     public PlayerList(MinecraftServer server, RegistryAccess.Frozen registryManager, PlayerDataStorage saveHandler, int maxPlayers) {
          this.cserver = server.server = new CraftServer((DedicatedServer) server, this);
 @@ -385,6 +387,13 @@ public abstract class PlayerList {
  

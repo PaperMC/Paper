@@ -5,33 +5,34 @@ Subject: [PATCH] Added ServerResourcesReloadedEvent
 
 
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index b75522558c5277c2e8ec725e5b12eb6d4cb2c36c..b5b7bb3c0147f95ac4036e7d2aa8f26ac755f4df 100644
+index 1febf1e49f3ebe68c04efed2fd2da1ab1c6a900c..16ab255e5aba0d0975cf77ae70dca74cba767ad6 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -1958,7 +1958,13 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -2006,8 +2006,13 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          return this.functionManager;
      }
  
 +    // Paper start - add cause
 +    @Deprecated
-     public CompletableFuture<Void> reloadResources(Collection<String> datapacks) {
-+        return this.reloadResources(datapacks, io.papermc.paper.event.server.ServerResourcesReloadedEvent.Cause.PLUGIN);
+     public CompletableFuture<Void> reloadResources(Collection<String> dataPacks) {
+-        RegistryAccess.Frozen iregistrycustom_dimension = this.registryAccess();
++        return this.reloadResources(dataPacks, io.papermc.paper.event.server.ServerResourcesReloadedEvent.Cause.PLUGIN);
 +    }
-+    public CompletableFuture<Void> reloadResources(Collection<String> datapacks, io.papermc.paper.event.server.ServerResourcesReloadedEvent.Cause cause) {
++    public CompletableFuture<Void> reloadResources(Collection<String> dataPacks, io.papermc.paper.event.server.ServerResourcesReloadedEvent.Cause cause) {
 +        // Paper end
          CompletableFuture<Void> completablefuture = CompletableFuture.supplyAsync(() -> {
-             Stream<String> stream = datapacks.stream(); // CraftBukkit - decompile error
+             Stream<String> stream = dataPacks.stream(); // CraftBukkit - decompile error
              PackRepository resourcepackrepository = this.packRepository;
-@@ -1974,6 +1980,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
-             this.packRepository.setSelected(datapacks);
+@@ -2032,6 +2037,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+             this.packRepository.setSelected(dataPacks);
              this.worldData.setDataPackConfig(MinecraftServer.getSelectedPacks(this.packRepository));
-             datapackresources.updateGlobals();
+             this.resources.managers.updateRegistryTags(this.registryAccess());
 +            new io.papermc.paper.event.server.ServerResourcesReloadedEvent(cause).callEvent(); // Paper
              if (Thread.currentThread() != this.serverThread) return; // Paper
-             //this.getPlayerList().savePlayers(); // Paper - we don't need to do this
+             //this.getPlayerList().saveAll(); // Paper - we don't need to do this
              this.getPlayerList().reloadResources();
 diff --git a/src/main/java/net/minecraft/server/commands/ReloadCommand.java b/src/main/java/net/minecraft/server/commands/ReloadCommand.java
-index 3b46b4bf2597354a2c39e8fac2a250ef71034197..23f79f0bef308e6e7dee0bdc0e8b09aa3655cbc7 100644
+index c94252ba962262ed9546d48fe05fd5995b8c73b6..4517e59584213db1f355fd993b75b4b016e02634 100644
 --- a/src/main/java/net/minecraft/server/commands/ReloadCommand.java
 +++ b/src/main/java/net/minecraft/server/commands/ReloadCommand.java
 @@ -20,7 +20,7 @@ public class ReloadCommand {

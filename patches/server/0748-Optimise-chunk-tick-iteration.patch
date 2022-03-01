@@ -6,10 +6,10 @@ Subject: [PATCH] Optimise chunk tick iteration
 Use a dedicated list of entity ticking chunks to reduce the cost
 
 diff --git a/src/main/java/net/minecraft/server/level/ChunkHolder.java b/src/main/java/net/minecraft/server/level/ChunkHolder.java
-index b473a0e3235405dde46d9d6cb300e88d6b1d121b..43f97571f0b837cbba5c3e889edbc5737a6e7b54 100644
+index fbfbe9adeca7364e6346c887616890bf968f38a1..bd43fbc8a93afa7604aa467392520ed7b30a1d83 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkHolder.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkHolder.java
-@@ -83,11 +83,21 @@ public class ChunkHolder {
+@@ -86,11 +86,21 @@ public class ChunkHolder {
          long key = net.minecraft.server.MCUtil.getCoordinateKey(this.pos);
          this.playersInMobSpawnRange = this.chunkMap.playerMobSpawnMap.getObjectsInRange(key);
          this.playersInChunkTickRange = this.chunkMap.playerChunkTickRangeMap.getObjectsInRange(key);
@@ -31,7 +31,7 @@ index b473a0e3235405dde46d9d6cb300e88d6b1d121b..43f97571f0b837cbba5c3e889edbc573
      }
      // Paper end - optimise anyPlayerCloseEnoughForSpawning
      long lastAutoSaveTime; // Paper - incremental autosave
-@@ -242,7 +252,7 @@ public class ChunkHolder {
+@@ -246,7 +256,7 @@ public class ChunkHolder {
  
              if (i < 0 || i >= this.changedBlocksPerSection.length) return; // CraftBukkit - SPIGOT-6086, SPIGOT-6296
              if (this.changedBlocksPerSection[i] == null) {
@@ -40,15 +40,15 @@ index b473a0e3235405dde46d9d6cb300e88d6b1d121b..43f97571f0b837cbba5c3e889edbc573
                  this.changedBlocksPerSection[i] = new ShortOpenHashSet();
              }
  
-@@ -259,6 +269,7 @@ public class ChunkHolder {
-             int k = this.lightEngine.getMaxLightSection();
+@@ -266,6 +276,7 @@ public class ChunkHolder {
+                 int k = this.lightEngine.getMaxLightSection();
  
-             if (y >= j && y <= k) {
-+                this.addToBroadcastMap(); // Paper - optimise chunk tick iteration
-                 int l = y - j;
+                 if (y >= j && y <= k) {
++                    this.addToBroadcastMap(); // Paper - optimise chunk tick iteration
+                     int l = y - j;
  
-                 if (lightType == LightLayer.SKY) {
-@@ -271,8 +282,19 @@ public class ChunkHolder {
+                     if (lightType == LightLayer.SKY) {
+@@ -279,8 +290,19 @@ public class ChunkHolder {
          }
      }
  
@@ -70,10 +70,10 @@ index b473a0e3235405dde46d9d6cb300e88d6b1d121b..43f97571f0b837cbba5c3e889edbc573
              int i = 0;
  
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index c773d6ca536389aac5efda6112440e1b0b85594d..a7fcf3042e6d26739051ed37efbef4a722561c5a 100644
+index 77f17937e90c9b12839f0e64131aa24b5df25dae..6a9f9d93be96bd27be5ac3a7d2e142fda2f45efa 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
-@@ -155,6 +155,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -159,6 +159,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
      private final Queue<Runnable> unloadQueue;
      int viewDistance;
      public final com.destroystokyo.paper.util.misc.PlayerAreaMap playerMobDistanceMap; // Paper
@@ -82,18 +82,18 @@ index c773d6ca536389aac5efda6112440e1b0b85594d..a7fcf3042e6d26739051ed37efbef4a7
      // CraftBukkit start - recursion-safe executor for Chunk loadCallback() and unloadCallback()
      public final CallbackExecutor callbackExecutor = new CallbackExecutor();
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-index 59ebce5b9f4db5e48b4b46d68e7325f2d2820bd6..ab1b24820a5ec576f33095ad5688aaecd44910f4 100644
+index 7771fd7c7918aa4852371dc88d46163c168f020e..e5d8e00199a7aecc67565d01f4d7dc46cf5ea1d7 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-@@ -50,6 +50,7 @@ import org.apache.logging.log4j.LogManager;
- import org.apache.logging.log4j.Logger;
- import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap; // Paper
- import java.util.function.Function; // Paper
+@@ -46,6 +46,7 @@ import net.minecraft.world.level.levelgen.structure.templatesystem.StructureMana
+ import net.minecraft.world.level.storage.DimensionDataStorage;
+ import net.minecraft.world.level.storage.LevelData;
+ import net.minecraft.world.level.storage.LevelStorageSource;
 +import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet; // Paper
  
  public class ServerChunkCache extends ChunkSource {
  
-@@ -995,34 +996,42 @@ public class ServerChunkCache extends ChunkSource {
+@@ -994,34 +995,42 @@ public class ServerChunkCache extends ChunkSource {
  
              this.lastSpawnState = spawnercreature_d;
              gameprofilerfiller.popPush("filteringLoadedChunks");
@@ -144,15 +144,15 @@ index 59ebce5b9f4db5e48b4b46d68e7325f2d2820bd6..ab1b24820a5ec576f33095ad5688aaec
 +                // Paper end - optimise chunk tick iteration
                  ChunkPos chunkcoordintpair = chunk1.getPos();
  
--                if (this.level.isPositionEntityTicking(chunkcoordintpair) && this.chunkMap.anyPlayerCloseEnoughForSpawning(chunkproviderserver_a.holder, chunkcoordintpair, false)) { // Paper - optimise anyPlayerCloseEnoughForSpawning
-+                if (this.level.isPositionEntityTicking(chunkcoordintpair) && this.chunkMap.anyPlayerCloseEnoughForSpawning(holder, chunkcoordintpair, false)) { // Paper - optimise anyPlayerCloseEnoughForSpawning
+-                if (this.level.isNaturalSpawningAllowed(chunkcoordintpair) && this.chunkMap.anyPlayerCloseEnoughForSpawning(chunkproviderserver_a.holder, chunkcoordintpair, false)) { // Paper - optimise anyPlayerCloseEnoughForSpawning
++                if (this.level.isNaturalSpawningAllowed(chunkcoordintpair) && this.chunkMap.anyPlayerCloseEnoughForSpawning(holder, chunkcoordintpair, false)) { // Paper - optimise anyPlayerCloseEnoughForSpawning
                      chunk1.incrementInhabitedTime(j);
 -                    if (flag2 && (this.spawnEnemies || this.spawnFriendlies) && this.level.getWorldBorder().isWithinBounds(chunkcoordintpair) && this.chunkMap.anyPlayerCloseEnoughForSpawning(chunkproviderserver_a.holder, chunkcoordintpair, true)) { // Spigot // Paper - optimise anyPlayerCloseEnoughForSpawning
 +                    if (flag2 && (this.spawnEnemies || this.spawnFriendlies) && this.level.getWorldBorder().isWithinBounds(chunkcoordintpair) && this.chunkMap.anyPlayerCloseEnoughForSpawning(holder, chunkcoordintpair, true)) { // Spigot // Paper - optimise anyPlayerCloseEnoughForSpawning & optimise chunk tick iteration
                          NaturalSpawner.spawnForChunk(this.level, chunk1, spawnercreature_d, this.spawnFriendlies, this.spawnEnemies, flag1);
                      }
  
-@@ -1030,7 +1039,16 @@ public class ServerChunkCache extends ChunkSource {
+@@ -1029,7 +1038,16 @@ public class ServerChunkCache extends ChunkSource {
                          this.level.tickChunk(chunk1, k);
                      }
                  }
@@ -169,7 +169,7 @@ index 59ebce5b9f4db5e48b4b46d68e7325f2d2820bd6..ab1b24820a5ec576f33095ad5688aaec
              this.level.timings.chunkTicks.stopTiming(); // Paper
              gameprofilerfiller.popPush("customSpawners");
              if (flag2) {
-@@ -1038,15 +1056,24 @@ public class ServerChunkCache extends ChunkSource {
+@@ -1037,15 +1055,24 @@ public class ServerChunkCache extends ChunkSource {
                  this.level.tickCustomSpawners(this.spawnEnemies, this.spawnFriendlies);
                  } // Paper - timings
              }
