@@ -27,10 +27,10 @@ index e431e3435737e28394d81b56568a08b3c3148b9b..b23bde3b5e881f146539a307d0a59f21
 +/.factorypath
 diff --git a/build.gradle.kts b/build.gradle.kts
 new file mode 100644
-index 0000000000000000000000000000000000000000..bf1f5a8151ac0a4b25370142fef37145033140ef
+index 0000000000000000000000000000000000000000..d6b99d37c960a7d8de1852dbc74c3ce671101b14
 --- /dev/null
 +++ b/build.gradle.kts
-@@ -0,0 +1,66 @@
+@@ -0,0 +1,80 @@
 +plugins {
 +    `java-library`
 +    `maven-publish`
@@ -90,12 +90,26 @@ index 0000000000000000000000000000000000000000..bf1f5a8151ac0a4b25370142fef37145
 +}
 +
 +tasks.withType<Javadoc> {
-+    (options as StandardJavadocDocletOptions).links(
++    val options = options as StandardJavadocDocletOptions
++    options.overview = "src/main/javadoc/overview.html"
++    options.isDocFilesSubDirs = true
++    options.links(
 +        "https://guava.dev/releases/31.0.1-jre/api/docs/",
 +        "https://javadoc.io/doc/org.yaml/snakeyaml/1.30/",
 +        "https://javadoc.io/doc/org.jetbrains/annotations-java5/23.0.0/",
 +        "https://javadoc.io/doc/net.md-5/bungeecord-chat/1.16-R0.4/",
 +    )
++
++    // workaround for https://github.com/gradle/gradle/issues/4046
++    inputs.dir("src/main/javadoc").withPropertyName("javadoc-sourceset")
++    doLast {
++        copy {
++            from("src/main/javadoc") {
++                include("**/doc-files/**")
++            }
++            into("build/docs/javadoc")
++        }
++    }
 +}
 diff --git a/pom.xml b/pom.xml
 deleted file mode 100644
