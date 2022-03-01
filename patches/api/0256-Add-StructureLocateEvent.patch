@@ -6,10 +6,10 @@ Subject: [PATCH] Add StructureLocateEvent
 
 diff --git a/src/main/java/io/papermc/paper/event/world/StructureLocateEvent.java b/src/main/java/io/papermc/paper/event/world/StructureLocateEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..45b6694fc5741831e2df638b1f760a3ca28a4907
+index 0000000000000000000000000000000000000000..3f9791dba9b0ac4d1565a0f2c2539df67a57ce16
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/event/world/StructureLocateEvent.java
-@@ -0,0 +1,155 @@
+@@ -0,0 +1,157 @@
 +package io.papermc.paper.event.world;
 +
 +import org.bukkit.Location;
@@ -30,7 +30,9 @@ index 0000000000000000000000000000000000000000..45b6694fc5741831e2df638b1f760a3c
 + *     <li>An Explorer/Treasure Map is activated.</li>
 + *     <li>{@link World#locateNearestStructure(Location, StructureType, int, boolean)} is invoked.</li>
 + * </ul>
++ * @deprecated no longer used, see {@link StructuresLocateEvent}
 + */
++@Deprecated
 +public class StructureLocateEvent extends WorldEvent implements Cancellable {
 +    private static final HandlerList handlers = new HandlerList();
 +    private final Location origin;
@@ -165,3 +167,225 @@ index 0000000000000000000000000000000000000000..45b6694fc5741831e2df638b1f760a3c
 +        this.cancelled = cancel;
 +    }
 +}
+diff --git a/src/main/java/io/papermc/paper/event/world/StructuresLocateEvent.java b/src/main/java/io/papermc/paper/event/world/StructuresLocateEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..bf499711f6b0fee1ad267a332bf27f894f29a5f7
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/event/world/StructuresLocateEvent.java
+@@ -0,0 +1,90 @@
++package io.papermc.paper.event.world;
++
++import io.papermc.paper.world.structure.ConfiguredStructure;
++import org.bukkit.Location;
++import org.bukkit.World;
++import org.bukkit.event.Cancellable;
++import org.bukkit.event.HandlerList;
++import org.bukkit.event.world.WorldEvent;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++import java.util.List;
++
++public class StructuresLocateEvent extends WorldEvent implements Cancellable {
++
++    private static final HandlerList HANDLER_LIST = new HandlerList();
++
++    private final Location origin;
++    private Result result;
++    private List<ConfiguredStructure> configuredStructures;
++    private int radius;
++    private boolean findUnexplored;
++    private boolean cancelled;
++
++    public StructuresLocateEvent(@NotNull World world, @NotNull Location origin, @NotNull List<ConfiguredStructure> configuredStructures, int radius, boolean findUnexplored) {
++        super(world);
++        this.origin = origin;
++        this.configuredStructures = configuredStructures;
++        this.radius = radius;
++        this.findUnexplored = findUnexplored;
++    }
++
++    public @NotNull Location getOrigin() {
++        return this.origin;
++    }
++
++    public @Nullable Result getResult() {
++        return this.result;
++    }
++
++    public void setResult(@Nullable Result result) {
++        this.result = result;
++    }
++
++    public @NotNull List<ConfiguredStructure> getConfiguredStructures() {
++        return this.configuredStructures;
++    }
++
++    public void setConfiguredStructures(@NotNull List<ConfiguredStructure> configuredStructures) {
++        this.configuredStructures = configuredStructures;
++    }
++
++    public int getRadius() {
++        return this.radius;
++    }
++
++    public void setRadius(int radius) {
++        this.radius = radius;
++    }
++
++    public boolean shouldFindUnexplored() {
++        return this.findUnexplored;
++    }
++
++    public void setFindUnexplored(boolean findUnexplored) {
++        this.findUnexplored = findUnexplored;
++    }
++
++    @Override
++    public boolean isCancelled() {
++        return this.cancelled;
++    }
++
++    @Override
++    public void setCancelled(boolean cancel) {
++        this.cancelled = cancel;
++    }
++
++    @Override
++    public @NotNull HandlerList getHandlers() {
++        return HANDLER_LIST;
++    }
++
++    public static @NotNull HandlerList getHandlerList() {
++        return HANDLER_LIST;
++    }
++
++    public record Result(@NotNull Location position, @NotNull ConfiguredStructure configuredStructure) {
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/world/structure/ConfiguredStructure.java b/src/main/java/io/papermc/paper/world/structure/ConfiguredStructure.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..5f808d544dbc7edf45d2e00212f57465560d5318
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/world/structure/ConfiguredStructure.java
+@@ -0,0 +1,91 @@
++package io.papermc.paper.world.structure;
++
++import org.bukkit.Keyed;
++import org.bukkit.NamespacedKey;
++import org.bukkit.StructureType;
++import org.jetbrains.annotations.NotNull;
++
++import java.util.HashMap;
++import java.util.Map;
++
++public final class ConfiguredStructure implements Keyed {
++
++    private static final Map<NamespacedKey, ConfiguredStructure> CONFIGURED_STRUCTURE_MAP = new HashMap<>();
++
++    public static final ConfiguredStructure PILLAGER_OUTPOST = create("pillager_outpost", StructureType.PILLAGER_OUTPOST);
++    public static final ConfiguredStructure MINESHAFT = create("mineshaft", StructureType.MINESHAFT);
++    public static final ConfiguredStructure MINESHAFT_MESA = create("mineshaft_mesa", StructureType.MINESHAFT);
++    public static final ConfiguredStructure WOODLAND_MANSION = create("mansion", StructureType.WOODLAND_MANSION);
++    public static final ConfiguredStructure JUNGLE_TEMPLE = create("jungle_pyramid", StructureType.JUNGLE_PYRAMID);
++    public static final ConfiguredStructure DESERT_PYRAMID = create("desert_pyramid", StructureType.DESERT_PYRAMID);
++    public static final ConfiguredStructure IGLOO = create("igloo", StructureType.IGLOO);
++    public static final ConfiguredStructure SHIPWRECK = create("shipwreck", StructureType.SHIPWRECK);
++    public static final ConfiguredStructure SHIPWRECK_BEACHED = create("shipwreck_beached", StructureType.SHIPWRECK);
++    public static final ConfiguredStructure SWAMP_HUT = create("swamp_hut", StructureType.SWAMP_HUT);
++    public static final ConfiguredStructure STRONGHOLD = create("stronghold", StructureType.STRONGHOLD);
++    public static final ConfiguredStructure OCEAN_MONUMENT = create("monument", StructureType.OCEAN_MONUMENT);
++    public static final ConfiguredStructure OCEAN_RUIN_COLD = create("ocean_ruin_cold", StructureType.OCEAN_RUIN);
++    public static final ConfiguredStructure OCEAN_RUIN_WARM = create("ocean_ruin_warm", StructureType.OCEAN_RUIN);
++    public static final ConfiguredStructure FORTRESS = create("fortress", StructureType.NETHER_FORTRESS);
++    public static final ConfiguredStructure NETHER_FOSSIL = create("nether_fossil", StructureType.NETHER_FOSSIL);
++    public static final ConfiguredStructure END_CITY = create("end_city", StructureType.END_CITY);
++    public static final ConfiguredStructure BURIED_TREASURE = create("buried_treasure", StructureType.BURIED_TREASURE);
++    public static final ConfiguredStructure BASTION_REMNANT = create("bastion_remnant", StructureType.BASTION_REMNANT);
++    public static final ConfiguredStructure VILLAGE_PLAINS = create("village_plains", StructureType.VILLAGE);
++    public static final ConfiguredStructure VILLAGE_DESERT = create("village_desert", StructureType.VILLAGE);
++    public static final ConfiguredStructure VILLAGE_SAVANNA = create("village_savanna", StructureType.VILLAGE);
++    public static final ConfiguredStructure VILLAGE_SNOWY = create("village_snowy", StructureType.VILLAGE);
++    public static final ConfiguredStructure VILLAGE_TAIGA = create("village_taiga", StructureType.VILLAGE);
++    public static final ConfiguredStructure RUINED_PORTAL_STANDARD = create("ruined_portal", StructureType.RUINED_PORTAL);
++    public static final ConfiguredStructure RUINED_PORTAL_DESERT = create("ruined_portal_desert", StructureType.RUINED_PORTAL);
++    public static final ConfiguredStructure RUINED_PORTAL_JUNGLE = create("ruined_portal_jungle", StructureType.RUINED_PORTAL);
++    public static final ConfiguredStructure RUINED_PORTAL_SWAMP = create("ruined_portal_swamp", StructureType.RUINED_PORTAL);
++    public static final ConfiguredStructure RUINED_PORTAL_MOUNTAIN = create("ruined_portal_mountain", StructureType.RUINED_PORTAL);
++    public static final ConfiguredStructure RUINED_PORTAL_OCEAN = create("ruined_portal_ocean", StructureType.RUINED_PORTAL);
++    public static final ConfiguredStructure RUINED_PORTAL_NETHER = create("ruined_portal_nether", StructureType.RUINED_PORTAL);
++
++    private final NamespacedKey key;
++    private final StructureType structureType;
++
++    private ConfiguredStructure(@NotNull NamespacedKey key, @NotNull StructureType structureType) {
++        this.key = key;
++        this.structureType = structureType;
++    }
++
++    @Override
++    public @NotNull NamespacedKey getKey() {
++        return this.key;
++    }
++
++    /**
++     * Gets the structure type for this configure structure.
++     *
++     * @return the structure type
++     */
++    public @NotNull StructureType getStructureType() {
++        return this.structureType;
++    }
++
++    @Override
++    public String toString() {
++        return "ConfiguredStructure{" +
++            "key=" + this.key +
++            ", structureType=" + this.structureType +
++            '}';
++    }
++
++    /**
++     * Gets all configure structures.
++     *
++     * @return an immutable map
++     */
++    public static @NotNull Map<NamespacedKey, ConfiguredStructure> getConfiguredStructures() {
++        return Map.copyOf(CONFIGURED_STRUCTURE_MAP);
++    }
++
++    private static @NotNull ConfiguredStructure create(@NotNull String key, @NotNull StructureType type) {
++        final ConfiguredStructure structure = new ConfiguredStructure(NamespacedKey.minecraft(key), type);
++        CONFIGURED_STRUCTURE_MAP.put(structure.key, structure);
++        return structure;
++    }
++}
+diff --git a/src/main/java/org/bukkit/Registry.java b/src/main/java/org/bukkit/Registry.java
+index a696fcaffa03af9e6c92e2ef3e12b38eb59e5db4..e7dce6055db29eb698b6fc1b6a91cb4e2e6a05cd 100644
+--- a/src/main/java/org/bukkit/Registry.java
++++ b/src/main/java/org/bukkit/Registry.java
+@@ -189,6 +189,24 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
+             return GameEvent.getByKey(key);
+         }
+     };
++    // Paper start
++    /**
++     * Configured structures.
++     * @see io.papermc.paper.world.structure.ConfiguredStructure
++     */
++    Registry<io.papermc.paper.world.structure.ConfiguredStructure> CONFIGURED_STRUCTURE = new Registry<io.papermc.paper.world.structure.ConfiguredStructure>() {
++        @Override
++        public @Nullable io.papermc.paper.world.structure.ConfiguredStructure get(@NotNull NamespacedKey key) {
++            return io.papermc.paper.world.structure.ConfiguredStructure.getConfiguredStructures().get(key);
++        }
++
++        @NotNull
++        @Override
++        public Iterator<io.papermc.paper.world.structure.ConfiguredStructure> iterator() {
++            return io.papermc.paper.world.structure.ConfiguredStructure.getConfiguredStructures().values().iterator();
++        }
++    };
++    // Paper end
+ 
+     /**
+      * Get the object by its key.
