@@ -10,17 +10,17 @@ chunk future to complete. We can simply schedule to the immediate
 executor to get this effect, rather than the main mailbox.
 
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index 5261c7a44200e2cc191b67900c7771ca31fb33df..16350310a235c321e48c29fbace2969b43778bf5 100644
+index 7595f2bd6b26946e9f437dbd962a3b23e95a52b6..5602576dd8aea04fc233a801cce9bc14d27a55ec 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
-@@ -1302,9 +1302,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
-                     this.playerLoadedChunk(entityplayer, mutableobject, chunk);
-                 });
+@@ -1315,9 +1315,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+ 
+                 return chunk;
              });
 -        }, (runnable) -> {
--            this.mainThreadMailbox.tell(ChunkTaskPriorityQueueSorter.message(holder, () -> ChunkMap.this.chunkLoadConversionCallbackExecutor.execute(runnable))); // Paper - delay running Chunk post processing until outside of the sorter to prevent a deadlock scenario when post processing causes another chunk request.
+-            this.mainThreadMailbox.tell(ChunkTaskPriorityQueueSorter.message(holder, runnable));
 -        });
 +        }, this.mainThreadExecutor); // Paper - queue to execute immediately so this doesn't delay chunk unloading
-         return completablefuture1;
      }
  
+     public int getTickingGenerated() {
