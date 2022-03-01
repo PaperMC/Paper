@@ -25,7 +25,7 @@ This successfully fixed a reoccurring and highly reproduceable crash
 for heightmaps.
 
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index 7e3f7b69fc7a608dd82b471d832cc401a77f0738..86a06c7ee3b92fbff1e21ad36b6034d892cd0c01 100644
+index 7e3f7b69fc7a608dd82b471d832cc401a77f0738..aeae3fb3d05b513031e4af217fe3db7fa3ec4a75 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
 @@ -178,6 +178,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
@@ -36,15 +36,15 @@ index 7e3f7b69fc7a608dd82b471d832cc401a77f0738..86a06c7ee3b92fbff1e21ad36b6034d8
      // Paper start - distance maps
      private final com.destroystokyo.paper.util.misc.PooledLinkedHashSets<ServerPlayer> pooledLinkedPlayerHashSets = new com.destroystokyo.paper.util.misc.PooledLinkedHashSets<>();
  
-@@ -1030,7 +1031,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
-                 });
+@@ -1012,7 +1013,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+                 return (LevelChunk) list.get(list.size() / 2);
              });
          }, (runnable) -> {
 -            this.mainThreadMailbox.tell(ChunkTaskPriorityQueueSorter.message(holder, runnable));
 +            this.mainThreadMailbox.tell(ChunkTaskPriorityQueueSorter.message(holder, () -> ChunkMap.this.chunkLoadConversionCallbackExecutor.execute(runnable))); // Paper - delay running Chunk post processing until outside of the sorter to prevent a deadlock scenario when post processing causes another chunk request.
-         });
-         return completablefuture1;
-     }
+         }).thenApplyAsync((either) -> {
+             return either.ifLeft((chunk) -> {
+                 chunk.postProcessGeneration();
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 index cf56b2ed508352205ef6ec71519b0626aa698987..1b6fb81079d3ad5d3c33be67a1c05111f9dd5f2d 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
