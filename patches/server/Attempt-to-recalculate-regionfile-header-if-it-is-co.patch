@@ -13,8 +13,8 @@ diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializ
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
-@@ -0,0 +0,0 @@ import org.apache.logging.log4j.LogManager;
- import org.apache.logging.log4j.Logger;
+@@ -0,0 +0,0 @@ import net.minecraft.world.ticks.ProtoChunkTicks;
+ import org.slf4j.Logger;
  
  public class ChunkSerializer {
 +    // Paper start
@@ -31,7 +31,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    // Paper end
  
      public static final Codec<PalettedContainer<BlockState>> BLOCK_STATE_CODEC = PalettedContainer.codec(Block.BLOCK_STATE_REGISTRY, BlockState.CODEC, PalettedContainer.Strategy.SECTION_STATES, Blocks.AIR.defaultBlockState(), null); // Paper - Anti-Xray - Add preset block states
-     private static final Logger LOGGER = LogManager.getLogger();
+     private static final Logger LOGGER = LogUtils.getLogger();
 @@ -0,0 +0,0 @@ public class ChunkSerializer {
          nbttagcompound.putInt("xPos", chunkcoordintpair.x);
          nbttagcompound.putInt("yPos", chunk.getMinSection());
@@ -178,7 +178,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +        ChunkPos ourLowerLeftPosition = RegionFileStorage.getRegionFileCoordinates(this.regionFile);
 +        if (ourLowerLeftPosition == null) {
-+            LOGGER.fatal("Unable to get chunk location of regionfile " + this.regionFile.toAbsolutePath() + ", cannot recover header");
++            LOGGER.error("Unable to get chunk location of regionfile " + this.regionFile.toAbsolutePath() + ", cannot recover header");
 +            return false;
 +        }
 +        synchronized (this) {
@@ -433,7 +433,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                this.file.force(true); // try to ensure it goes through...
 +                LOGGER.info("Successfully wrote new header to disk for regionfile " + this.regionFile.toAbsolutePath());
 +            } catch (IOException ex) {
-+                LOGGER.fatal("Failed to write new header to disk for regionfile " + this.regionFile.toAbsolutePath(), ex);
++                LOGGER.error("Failed to write new header to disk for regionfile " + this.regionFile.toAbsolutePath(), ex);
 +            }
 +        }
 +
@@ -444,7 +444,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    // Paper end
 +
      // Paper start - Cache chunk status
-     private final ChunkStatus[] statuses = new ChunkStatus[32 * 32];
+     private final net.minecraft.world.level.chunk.ChunkStatus[] statuses = new net.minecraft.world.level.chunk.ChunkStatus[32 * 32];
  
 @@ -0,0 +0,0 @@ public class RegionFile implements AutoCloseable {
      public RegionFile(Path file, Path directory, boolean dsync) throws IOException {
@@ -495,7 +495,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                        sectorLength = j1; // Paper - diff on change, we expect this to be sector length of region
  
                          if (i1 < 2) {
-                             RegionFile.LOGGER.warn("Region file {} has invalid sector at index: {}; sector {} overlaps with header", file, k, i1);
+                             RegionFile.LOGGER.warn("Region file {} has invalid sector at index: {}; sector {} overlaps with header", new Object[]{file, k, i1});
 -                            this.offsets.put(k, 0);
 +                            //this.offsets.put(k, 0); // Paper - we catch this, but need it in the header for the summary change
                          } else if (j1 == 0) {
@@ -503,7 +503,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -                            this.offsets.put(k, 0);
 +                            //this.offsets.put(k, 0); // Paper - we catch this, but need it in the header for the summary change
                          } else if ((long) i1 * 4096L > j) {
-                             RegionFile.LOGGER.warn("Region file {} has an invalid sector at index: {}; sector {} is out of bounds", file, k, i1);
+                             RegionFile.LOGGER.warn("Region file {} has an invalid sector at index: {}; sector {} is out of bounds", new Object[]{file, k, i1});
 -                            this.offsets.put(k, 0);
 +                            //this.offsets.put(k, 0); // Paper - we catch this, but need it in the header for the summary change
                          } else {
@@ -518,7 +518,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                                break;
 +                            } else {
 +                                // location = chunkX | (chunkZ << 5);
-+                                LOGGER.fatal("Detected invalid header for regionfile " + this.regionFile.toAbsolutePath() +
++                                LOGGER.error("Detected invalid header for regionfile " + this.regionFile.toAbsolutePath() +
 +                                        "! Cannot recalculate, removing local chunk (" + (headerLocation & 31) + "," + (headerLocation >>> 5) + ") from header");
 +                                if (!hasBackedUp) {
 +                                    hasBackedUp = true;
@@ -535,7 +535,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                          }
 +                        if (failedToAllocate & !canRecalcHeader) {
 +                            // location = chunkX | (chunkZ << 5);
-+                            LOGGER.fatal("Detected invalid header for regionfile " + this.regionFile.toAbsolutePath() +
++                            LOGGER.error("Detected invalid header for regionfile " + this.regionFile.toAbsolutePath() +
 +                                    "! Cannot recalculate, removing local chunk (" + (headerLocation & 31) + "," + (headerLocation >>> 5) + ") from header");
 +                            if (!hasBackedUp) {
 +                                hasBackedUp = true;
@@ -599,7 +599,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public class RegionFile implements AutoCloseable {
              ((java.nio.Buffer) bytebuffer).flip(); // CraftBukkit - decompile error
              if (bytebuffer.remaining() < 5) {
-                 RegionFile.LOGGER.error("Chunk {} header is truncated: expected {} but read {}", pos, l, bytebuffer.remaining());
+                 RegionFile.LOGGER.error("Chunk {} header is truncated: expected {} but read {}", new Object[]{pos, l, bytebuffer.remaining()});
 +                // Paper start - recalculate header on regionfile corruption
 +                if (this.canRecalcHeader && this.recalculateHeader()) {
 +                    return this.getChunkDataInputStream(pos);
@@ -640,7 +640,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                        return ret;
 +                        // Paper end - recalculate header on regionfile corruption
                      } else if (j1 > bytebuffer.remaining()) {
-                         RegionFile.LOGGER.error("Chunk {} stream is truncated: expected {} but read {}", pos, j1, bytebuffer.remaining());
+                         RegionFile.LOGGER.error("Chunk {} stream is truncated: expected {} but read {}", new Object[]{pos, j1, bytebuffer.remaining()});
 +                        // Paper start - recalculate header on regionfile corruption
 +                        if (this.canRecalcHeader && this.recalculateHeader()) {
 +                            return this.getChunkDataInputStream(pos);

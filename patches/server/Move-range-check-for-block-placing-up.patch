@@ -26,26 +26,18 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public void handleUseItemOn(ServerboundUseItemOnPacket packet) {
          PacketUtils.ensureRunningOnSameThread(packet, this, this.player.getLevel());
 @@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+         BlockPos blockposition = movingobjectpositionblock.getBlockPos();
+         Vec3 vec3d1 = vec3d.subtract(Vec3.atCenterOf(blockposition));
  
-         this.player.resetLastActionTime();
-         int i = this.player.level.getMaxBuildHeight();
--        // CraftBukkit start
--        double distanceSqr = this.player.distanceToSqr((double) blockposition.getX() + 0.5D, (double) blockposition.getY() + 0.5D, (double) blockposition.getZ() + 0.5D);
--        if (distanceSqr > 100.0D) {
-+
 +        // Paper start - improve distance check
 +        final Vec3 clickedLocation = movingobjectpositionblock.getLocation();
 +        if (isOutsideOfReach(blockposition.getX() + 0.5D, blockposition.getY() + 0.5D, blockposition.getZ() + 0.5D)
 +            || !Double.isFinite(clickedLocation.x) || !Double.isFinite(clickedLocation.y) || !Double.isFinite(clickedLocation.z)
 +            || isOutsideOfReach(clickedLocation.x, clickedLocation.y, clickedLocation.z)) {
-             return;
-         }
--        // CraftBukkit end
++            return;
++        }
 +        // Paper end
- 
-         if (blockposition.getY() < i) {
--            if (this.awaitingPositionFromClient == null && distanceSqr < 64.0D && worldserver.mayInteract(this.player, blockposition)) { // CraftBukkit - reuse value
-+            if (this.awaitingPositionFromClient == null && this.player.distanceToSqr((double) blockposition.getX() + 0.5D, (double) blockposition.getY() + 0.5D, (double) blockposition.getZ() + 0.5D) < 64.0D && worldserver.mayInteract(this.player, blockposition)) { // CraftBukkit - reuse value // Paper - revert CB change
-                 this.player.stopUsingItem(); // CraftBukkit - SPIGOT-4706
-                 InteractionResult enuminteractionresult = this.player.gameMode.useItemOn(this.player, worldserver, itemstack, enumhand, movingobjectpositionblock);
++
+         if (this.player.level.getServer() != null && this.player.chunkPosition().getChessboardDistance(new ChunkPos(blockposition)) < this.player.level.spigotConfig.viewDistance) { // Spigot
+             double d0 = 1.0000001D;
  

@@ -45,35 +45,25 @@ diff --git a/src/main/java/net/minecraft/network/protocol/PacketUtils.java b/src
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/network/protocol/PacketUtils.java
 +++ b/src/main/java/net/minecraft/network/protocol/PacketUtils.java
-@@ -0,0 +0,0 @@
- package net.minecraft.network.protocol;
- 
-+import net.minecraft.network.Connection;
- import net.minecraft.network.PacketListener;
-+import net.minecraft.network.chat.TextComponent;
-+import net.minecraft.network.protocol.game.ClientboundDisconnectPacket;
- import org.apache.logging.log4j.LogManager;
- import org.apache.logging.log4j.Logger;
- import co.aikar.timings.MinecraftTimings; // Paper
 @@ -0,0 +0,0 @@ public class PacketUtils {
-                     try (Timing ignored = timing.startTiming()) { // Paper - timings
-                     packet.handle(listener);
-                     } // Paper - timings
-+                    // Paper start
-+                    catch (Exception e) {
-+                        Connection networkmanager = listener.getConnection();
+                     try (co.aikar.timings.Timing ignored = timing.startTiming()) { // Paper - timings
+                         packet.handle(listener);
+                     } catch (Exception exception) {
+-                        if (listener.shouldPropagateHandlingExceptions()) {
+-                            throw exception;
++                        net.minecraft.network.Connection networkmanager = listener.getConnection();
 +                        if (networkmanager.getPlayer() != null) {
-+                            LOGGER.error("Error whilst processing packet {} for {}[{}]", packet, networkmanager.getPlayer().getScoreboardName(), networkmanager.getRemoteAddress(), e);
++                            LOGGER.error("Error whilst processing packet {} for {}[{}]", packet, networkmanager.getPlayer().getScoreboardName(), networkmanager.getRemoteAddress(), exception);
 +                        } else {
-+                            LOGGER.error("Error whilst processing packet {} for connection from {}", packet, networkmanager.getRemoteAddress(), e);
-+                        }
-+                        TextComponent error = new TextComponent("Packet processing error");
-+                        networkmanager.send(new ClientboundDisconnectPacket(error), (future) -> {
++                            LOGGER.error("Error whilst processing packet {} for connection from {}", packet, networkmanager.getRemoteAddress(), exception);
+                         }
+-
+-                        PacketUtils.LOGGER.error("Failed to handle packet {}, suppressing error", packet, exception);
++                        net.minecraft.network.chat.TextComponent error = new net.minecraft.network.chat.TextComponent("Packet processing error");
++                        networkmanager.send(new net.minecraft.network.protocol.game.ClientboundDisconnectPacket(error), (future) -> {
 +                            networkmanager.disconnect(error);
 +                        });
 +                        networkmanager.setReadOnly();
-+                    }
-+                    // Paper end
+                     }
                  } else {
                      PacketUtils.LOGGER.debug("Ignoring packet due to disconnection: {}", packet);
-                 }

@@ -1338,11 +1338,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
      public void sectionLightChanged(LightLayer lightType, int y) {
--        LevelChunk chunk = this.getTickingChunk();
-+        LevelChunk chunk = this.getSendingChunk(); // Paper - no-tick view distance
+-        LevelChunk chunk = this.getFullChunk();
++        ChunkAccess chunk = this.getAvailableChunkNow(); // Paper - no-tick view distance
  
          if (chunk != null) {
              chunk.setUnsaved(true);
+-            LevelChunk chunk1 = this.getTickingChunk();
++            LevelChunk chunk1 = this.getSendingChunk(); // Paper - no-tick view distance
+ 
+             if (chunk1 != null) {
+                 int j = this.lightEngine.getMinLightSection();
 @@ -0,0 +0,0 @@ public class ChunkHolder {
      }
  
@@ -1672,23 +1677,23 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          boolean flag = i != 0;
  
 @@ -0,0 +0,0 @@ public abstract class DistanceManager {
-         long j = pos.toLong();
+         long j = chunkcoordintpair.toLong();
  
-         this.addTicket(j, ticket);
+         boolean added = this.addTicket(j, ticket); // CraftBukkit
 -        this.tickingTicketsTracker.addTicket(j, ticket);
 +        //this.tickingTicketsTracker.addTicket(j, ticket); // Paper - no longer used
+         return added; // CraftBukkit
      }
  
-     public <T> void removeRegionTicket(TicketType<T> type, ChunkPos pos, int radius, T argument) {
 @@ -0,0 +0,0 @@ public abstract class DistanceManager {
-         long j = pos.toLong();
+         long j = chunkcoordintpair.toLong();
  
-         this.removeTicket(j, ticket);
+         boolean removed = this.removeTicket(j, ticket); // CraftBukkit
 -        this.tickingTicketsTracker.removeTicket(j, ticket);
 +        //this.tickingTicketsTracker.removeTicket(j, ticket); // Paper - no longer used
+         return removed; // CraftBukkit
      }
  
-     private SortedArraySet<Ticket<?>> getTickets(long position) {
 @@ -0,0 +0,0 @@ public abstract class DistanceManager {
  
          if (forced) {
@@ -1778,8 +1783,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -    }
 +    // Paper - replace player chunk loader
  
-     // CraftBukkit start
-     public <T> void removeAllTicketsFor(TicketType<T> ticketType, int ticketLevel, T ticketIdentifier) {
+     public void removeTicketsOnClosing() {
+         ImmutableSet<TicketType<?>> immutableset = ImmutableSet.of(TicketType.UNKNOWN, TicketType.POST_TELEPORT, TicketType.LIGHT);
 @@ -0,0 +0,0 @@ public abstract class DistanceManager {
          }
      }
@@ -1821,26 +1826,26 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      public void save(boolean flush) {
 @@ -0,0 +0,0 @@ public class ServerChunkCache extends ChunkSource {
-         this.level.timings.doChunkMap.stopTiming(); // Spigot
          this.level.getProfiler().popPush("chunks");
-         this.level.timings.chunks.startTiming(); // Paper - timings
-+        this.chunkMap.playerChunkManager.tick(); // Paper - this is mostly is to account for view distance changes
-         this.tickChunks();
-         this.level.timings.chunks.stopTiming(); // Paper - timings
-         this.level.timings.doChunkUnload.startTiming(); // Spigot
+         if (tickChunks) {
+             this.level.timings.chunks.startTiming(); // Paper - timings
++            this.chunkMap.playerChunkManager.tick(); // Paper - this is mostly is to account for view distance changes
+             this.tickChunks();
+             this.level.timings.chunks.stopTiming(); // Paper - timings
+         }
 @@ -0,0 +0,0 @@ public class ServerChunkCache extends ChunkSource {
                  // Paper end - optimise chunk tick iteration
                  ChunkPos chunkcoordintpair = chunk1.getPos();
  
--                if (this.level.isPositionEntityTicking(chunkcoordintpair) && this.chunkMap.anyPlayerCloseEnoughForSpawning(holder, chunkcoordintpair, false)) { // Paper - optimise anyPlayerCloseEnoughForSpawning
-+                if ((true || this.level.isPositionEntityTicking(chunkcoordintpair)) && this.chunkMap.anyPlayerCloseEnoughForSpawning(holder, chunkcoordintpair, false)) { // Paper - optimise anyPlayerCloseEnoughForSpawning // Paper - replace player chunk loader system
+-                if (this.level.isNaturalSpawningAllowed(chunkcoordintpair) && this.chunkMap.anyPlayerCloseEnoughForSpawning(holder, chunkcoordintpair, false)) { // Paper - optimise anyPlayerCloseEnoughForSpawning
++                if ((true || this.level.isNaturalSpawningAllowed(chunkcoordintpair)) && this.chunkMap.anyPlayerCloseEnoughForSpawning(holder, chunkcoordintpair, false)) { // Paper - optimise anyPlayerCloseEnoughForSpawning // Paper - replace player chunk loader system
                      chunk1.incrementInhabitedTime(j);
                      if (flag2 && (this.spawnEnemies || this.spawnFriendlies) && this.level.getWorldBorder().isWithinBounds(chunkcoordintpair) && this.chunkMap.anyPlayerCloseEnoughForSpawning(holder, chunkcoordintpair, true)) { // Spigot // Paper - optimise anyPlayerCloseEnoughForSpawning & optimise chunk tick iteration
                          NaturalSpawner.spawnForChunk(this.level, chunk1, spawnercreature_d, this.spawnFriendlies, this.spawnEnemies, flag1);
                      }
  
 -                    if (this.level.shouldTickBlocksAt(chunkcoordintpair.toLong())) {
-+                    if ((true || this.level.shouldTickBlocksAt(chunkcoordintpair.toLong()))) { // Paper - replace player chunk loader system
++                    if (true || this.level.shouldTickBlocksAt(chunkcoordintpair.toLong())) { // Paper - replace player chunk loader system
                          this.level.tickChunk(chunk1, k);
                          if ((chunksTicked++ & 1) == 0) net.minecraft.server.MinecraftServer.getServer().executeMidTickTasks(); // Paper
                      }
@@ -1890,15 +1895,13 @@ diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/ma
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-@@ -0,0 +0,0 @@ import org.bukkit.inventory.MainHand;
- 
- public class ServerPlayer extends Player {
+@@ -0,0 +0,0 @@ public class ServerPlayer extends Player {
+     }
+     // CraftBukkit end
  
 -    public final int getViewDistance() { return this.getLevel().getChunkSource().chunkMap.viewDistance - 1; } // Paper - placeholder
 +    public final int getViewDistance() { throw new UnsupportedOperationException("Use PlayerChunkLoader"); } // Paper - placeholder
- 
-     private static final Logger LOGGER = LogManager.getLogger();
-     public long lastSave = MinecraftServer.currentTick; // Paper
+ }
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/players/PlayerList.java
@@ -1907,15 +1910,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          boolean flag1 = gamerules.getBoolean(GameRules.RULE_REDUCEDDEBUGINFO);
  
          // Spigot - view distance
--        playerconnection.send(new ClientboundLoginPacket(player.getId(), worlddata.isHardcore(), player.gameMode.getGameModeForPlayer(), player.gameMode.getPreviousGameModeForPlayer(), this.server.levelKeys(), this.registryHolder, worldserver1.dimensionType(), worldserver1.dimension(), BiomeManager.obfuscateSeed(worldserver1.getSeed()), this.getMaxPlayers(), worldserver1.spigotConfig.viewDistance, worldserver1.spigotConfig.simulationDistance, flag1, !flag, worldserver1.isDebug(), worldserver1.isFlat()));
-+        playerconnection.send(new ClientboundLoginPacket(player.getId(), worlddata.isHardcore(), player.gameMode.getGameModeForPlayer(), player.gameMode.getPreviousGameModeForPlayer(), this.server.levelKeys(), this.registryHolder, worldserver1.dimensionType(), worldserver1.dimension(), BiomeManager.obfuscateSeed(worldserver1.getSeed()), this.getMaxPlayers(), worldserver1.getChunkSource().chunkMap.playerChunkManager.getTargetSendDistance(), worldserver1.getChunkSource().chunkMap.playerChunkManager.getTargetTickViewDistance(), flag1, !flag, worldserver1.isDebug(), worldserver1.isFlat())); // Paper - replace old player chunk management
+-        playerconnection.send(new ClientboundLoginPacket(player.getId(), worlddata.isHardcore(), player.gameMode.getGameModeForPlayer(), player.gameMode.getPreviousGameModeForPlayer(), this.server.levelKeys(), this.registryHolder, worldserver1.dimensionTypeRegistration(), worldserver1.dimension(), BiomeManager.obfuscateSeed(worldserver1.getSeed()), this.getMaxPlayers(), worldserver1.spigotConfig.viewDistance, worldserver1.spigotConfig.simulationDistance, flag1, !flag, worldserver1.isDebug(), worldserver1.isFlat()));
++        playerconnection.send(new ClientboundLoginPacket(player.getId(), worlddata.isHardcore(), player.gameMode.getGameModeForPlayer(), player.gameMode.getPreviousGameModeForPlayer(), this.server.levelKeys(), this.registryHolder, worldserver1.dimensionTypeRegistration(), worldserver1.dimension(), BiomeManager.obfuscateSeed(worldserver1.getSeed()), this.getMaxPlayers(), worldserver1.getChunkSource().chunkMap.playerChunkManager.getTargetSendDistance(), worldserver1.getChunkSource().chunkMap.playerChunkManager.getTargetTickViewDistance(), flag1, !flag, worldserver1.isDebug(), worldserver1.isFlat())); // Paper - replace old player chunk management
          player.getBukkitEntity().sendSupportedChannels(); // CraftBukkit
          playerconnection.send(new ClientboundCustomPayloadPacket(ClientboundCustomPayloadPacket.BRAND, (new FriendlyByteBuf(Unpooled.buffer())).writeUtf(this.getServer().getServerModName())));
          playerconnection.send(new ClientboundChangeDifficultyPacket(worlddata.getDifficulty(), worlddata.isDifficultyLocked()));
 @@ -0,0 +0,0 @@ public abstract class PlayerList {
          // CraftBukkit start
          LevelData worlddata = worldserver1.getLevelData();
-         entityplayer1.connection.send(new ClientboundRespawnPacket(worldserver1.dimensionType(), worldserver1.dimension(), BiomeManager.obfuscateSeed(worldserver1.getSeed()), entityplayer1.gameMode.getGameModeForPlayer(), entityplayer1.gameMode.getPreviousGameModeForPlayer(), worldserver1.isDebug(), worldserver1.isFlat(), flag));
+         entityplayer1.connection.send(new ClientboundRespawnPacket(worldserver1.dimensionTypeRegistration(), worldserver1.dimension(), BiomeManager.obfuscateSeed(worldserver1.getSeed()), entityplayer1.gameMode.getGameModeForPlayer(), entityplayer1.gameMode.getPreviousGameModeForPlayer(), worldserver1.isDebug(), worldserver1.isFlat(), flag));
 -        entityplayer1.connection.send(new ClientboundSetChunkCacheRadiusPacket(worldserver1.spigotConfig.viewDistance)); // Spigot
 -        entityplayer1.connection.send(new ClientboundSetSimulationDistancePacket(worldserver1.spigotConfig.simulationDistance)); // Spigot
 +        entityplayer1.connection.send(new ClientboundSetChunkCacheRadiusPacket(worldserver1.getChunkSource().chunkMap.playerChunkManager.getTargetSendDistance())); // Spigot // Paper - replace old player chunk management

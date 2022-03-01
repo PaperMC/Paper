@@ -4112,6 +4112,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +import ca.spottedleaf.starlight.common.light.SWMRNibbleArray;
 +import ca.spottedleaf.starlight.common.light.StarLightEngine;
++import com.mojang.logging.LogUtils;
 +import net.minecraft.nbt.CompoundTag;
 +import net.minecraft.nbt.ListTag;
 +import net.minecraft.server.level.ServerLevel;
@@ -4119,12 +4120,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import net.minecraft.world.level.Level;
 +import net.minecraft.world.level.chunk.ChunkAccess;
 +import net.minecraft.world.level.chunk.ChunkStatus;
-+import org.apache.logging.log4j.LogManager;
-+import org.apache.logging.log4j.Logger;
++import org.slf4j.Logger;
 +
 +public final class SaveUtil {
 +
-+    private static final Logger LOGGER = LogManager.getLogger();
++    private static final Logger LOGGER = LogUtils.getLogger();
 +
 +    private static final int STARLIGHT_LIGHT_VERSION = 6;
 +
@@ -4448,9 +4448,9 @@ diff --git a/src/main/java/net/minecraft/server/level/ThreadedLevelLightEngine.j
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/level/ThreadedLevelLightEngine.java
 +++ b/src/main/java/net/minecraft/server/level/ThreadedLevelLightEngine.java
-@@ -0,0 +0,0 @@ import net.minecraft.world.level.lighting.LevelLightEngine;
- import org.apache.logging.log4j.LogManager;
- import org.apache.logging.log4j.Logger;
+@@ -0,0 +0,0 @@ import net.minecraft.world.level.chunk.LightChunkGetter;
+ import net.minecraft.world.level.lighting.LevelLightEngine;
+ import org.slf4j.Logger;
  
 +// Paper start
 +import ca.spottedleaf.starlight.common.light.StarLightEngine;
@@ -4464,7 +4464,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +// Paper end
 +
  public class ThreadedLevelLightEngine extends LevelLightEngine implements AutoCloseable {
-     private static final Logger LOGGER = LogManager.getLogger();
+     private static final Logger LOGGER = LogUtils.getLogger();
      private final ProcessorMailbox<Runnable> taskMailbox;
 @@ -0,0 +0,0 @@ public class ThreadedLevelLightEngine extends LevelLightEngine implements AutoCl
      private volatile int taskPerBatch = 5;
@@ -4606,7 +4606,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            }
 +        }, world.getChunkSource().chunkMap.mainThreadExecutor).whenComplete((final Void ignore, final Throwable thr) -> {
 +            if (thr != null) {
-+                LOGGER.fatal("Failed to remove ticket level for post chunk task " + new ChunkPos(chunkX, chunkZ), thr);
++                LOGGER.error("Failed to remove ticket level for post chunk task " + new ChunkPos(chunkX, chunkZ), thr);
 +            }
 +        });
 +    }
@@ -4729,7 +4729,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                this.tryScheduleUpdate();
 +            }).whenComplete((final ChunkAccess c, final Throwable throwable) -> {
 +                if (throwable != null) {
-+                    LOGGER.fatal("Failed to light chunk " + chunkPos, throwable);
++                    LOGGER.error("Failed to light chunk " + chunkPos, throwable);
 +                }
 +            });
 +        }
@@ -4869,7 +4869,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/world/level/chunk/EmptyLevelChunk.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/EmptyLevelChunk.java
 @@ -0,0 +0,0 @@ public class EmptyLevelChunk extends LevelChunk {
-         super(world, pos);
+         this.biome = holder;
      }
  
 +    @Override

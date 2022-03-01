@@ -833,25 +833,9 @@ diff --git a/src/main/java/net/minecraft/server/level/ThreadedLevelLightEngine.j
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/level/ThreadedLevelLightEngine.java
 +++ b/src/main/java/net/minecraft/server/level/ThreadedLevelLightEngine.java
-@@ -0,0 +0,0 @@
- package net.minecraft.server.level;
- 
- import com.mojang.datafixers.util.Pair;
-+import it.unimi.dsi.fastutil.longs.Long2ObjectLinkedOpenHashMap; // Paper
- import it.unimi.dsi.fastutil.objects.ObjectArrayList;
- import it.unimi.dsi.fastutil.objects.ObjectList;
- import it.unimi.dsi.fastutil.objects.ObjectListIterator;
-@@ -0,0 +0,0 @@ import net.minecraft.util.thread.ProcessorMailbox;
- import net.minecraft.world.level.ChunkPos;
- import net.minecraft.world.level.LightLayer;
- import net.minecraft.world.level.chunk.ChunkAccess;
-+import net.minecraft.world.level.chunk.ChunkStatus;
- import net.minecraft.world.level.chunk.DataLayer;
- import net.minecraft.world.level.chunk.LevelChunkSection;
- import net.minecraft.world.level.chunk.LightChunkGetter;
-@@ -0,0 +0,0 @@ import org.apache.logging.log4j.Logger;
+@@ -0,0 +0,0 @@ import org.slf4j.Logger;
  public class ThreadedLevelLightEngine extends LevelLightEngine implements AutoCloseable {
-     private static final Logger LOGGER = LogManager.getLogger();
+     private static final Logger LOGGER = LogUtils.getLogger();
      private final ProcessorMailbox<Runnable> taskMailbox;
 -    private final ObjectList<Pair<ThreadedLevelLightEngine.TaskType, Runnable>> lightTasks = new ObjectArrayList<>();
 -    private final ChunkMap chunkMap;
@@ -886,13 +870,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    // Retain the chunks priority level for queued light tasks
 +    class LightQueue {
 +        private int size = 0;
-+        private final Long2ObjectLinkedOpenHashMap<ChunkLightQueue>[] buckets = new Long2ObjectLinkedOpenHashMap[MAX_PRIORITIES];
++        private final it.unimi.dsi.fastutil.longs.Long2ObjectLinkedOpenHashMap<ChunkLightQueue>[] buckets = new it.unimi.dsi.fastutil.longs.Long2ObjectLinkedOpenHashMap[MAX_PRIORITIES];
 +        private final java.util.concurrent.ConcurrentLinkedQueue<PendingLightTask> pendingTasks = new java.util.concurrent.ConcurrentLinkedQueue<>();
 +        private final java.util.concurrent.ConcurrentLinkedQueue<Runnable> priorityChanges = new java.util.concurrent.ConcurrentLinkedQueue<>();
 +
 +        private LightQueue() {
 +            for (int i = 0; i < buckets.length; i++) {
-+                buckets[i] = new Long2ObjectLinkedOpenHashMap<>();
++                buckets[i] = new it.unimi.dsi.fastutil.longs.Long2ObjectLinkedOpenHashMap<>();
 +            }
 +        }
 +
@@ -952,10 +936,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                run.run();
 +            }
 +            boolean hasWork = false;
-+            Long2ObjectLinkedOpenHashMap<ChunkLightQueue>[] buckets = this.buckets;
++            it.unimi.dsi.fastutil.longs.Long2ObjectLinkedOpenHashMap<ChunkLightQueue>[] buckets = this.buckets;
 +            int priority = 0;
 +            while (priority < MAX_PRIORITIES && !isEmpty()) {
-+                Long2ObjectLinkedOpenHashMap<ChunkLightQueue> bucket = buckets[priority];
++                it.unimi.dsi.fastutil.longs.Long2ObjectLinkedOpenHashMap<ChunkLightQueue> bucket = buckets[priority];
 +                if (bucket.isEmpty()) {
 +                    priority++;
 +                    if (hasWork) {

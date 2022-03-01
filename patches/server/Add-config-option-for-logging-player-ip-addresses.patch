@@ -25,19 +25,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/network/protocol/PacketUtils.java
 +++ b/src/main/java/net/minecraft/network/protocol/PacketUtils.java
 @@ -0,0 +0,0 @@ public class PacketUtils {
-                     // Paper start
-                     catch (Exception e) {
-                         Connection networkmanager = listener.getConnection();
+                         packet.handle(listener);
+                     } catch (Exception exception) {
+                         net.minecraft.network.Connection networkmanager = listener.getConnection();
 +                        String playerIP = com.destroystokyo.paper.PaperConfig.logPlayerIpAddresses ? String.valueOf(networkmanager.getRemoteAddress()) : "<ip address withheld>"; // Paper
                          if (networkmanager.getPlayer() != null) {
--                            LOGGER.error("Error whilst processing packet {} for {}[{}]", packet, networkmanager.getPlayer().getScoreboardName(), networkmanager.getRemoteAddress(), e);
-+                            LOGGER.error("Error whilst processing packet {} for {}[{}]", packet, networkmanager.getPlayer().getScoreboardName(), playerIP, e); // Paper
+-                            LOGGER.error("Error whilst processing packet {} for {}[{}]", packet, networkmanager.getPlayer().getScoreboardName(), networkmanager.getRemoteAddress(), exception);
++                            LOGGER.error("Error whilst processing packet {} for {}[{}]", packet, networkmanager.getPlayer().getScoreboardName(), playerIP, exception); // Paper
                          } else {
--                            LOGGER.error("Error whilst processing packet {} for connection from {}", packet, networkmanager.getRemoteAddress(), e);
-+                            LOGGER.error("Error whilst processing packet {} for connection from {}", packet, playerIP, e); // Paper
+-                            LOGGER.error("Error whilst processing packet {} for connection from {}", packet, networkmanager.getRemoteAddress(), exception);
++                            LOGGER.error("Error whilst processing packet {} for connection from {}", packet, playerIP, exception); // Paper
                          }
-                         TextComponent error = new TextComponent("Packet processing error");
-                         networkmanager.send(new ClientboundDisconnectPacket(error), (future) -> {
+                         net.minecraft.network.chat.TextComponent error = new net.minecraft.network.chat.TextComponent("Packet processing error");
+                         networkmanager.send(new net.minecraft.network.protocol.game.ClientboundDisconnectPacket(error), (future) -> {
 diff --git a/src/main/java/net/minecraft/server/network/LegacyQueryHandler.java b/src/main/java/net/minecraft/server/network/LegacyQueryHandler.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/network/LegacyQueryHandler.java
@@ -50,7 +50,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        LOGGER.debug("Ping: (1.6) from {}", com.destroystokyo.paper.PaperConfig.logPlayerIpAddresses ? ctx.channel().remoteAddress() : "<ip address withheld>"); // Paper
  
          InetSocketAddress virtualHost = com.destroystokyo.paper.network.PaperNetworkClient.prepareVirtualHost(host, port);
-         com.destroystokyo.paper.event.server.PaperServerListPingEvent event = PaperLegacyStatusClient.processRequest(
+         com.destroystokyo.paper.event.server.PaperServerListPingEvent event = com.destroystokyo.paper.network.PaperLegacyStatusClient.processRequest(
 diff --git a/src/main/java/net/minecraft/server/network/ServerConnectionListener.java b/src/main/java/net/minecraft/server/network/ServerConnectionListener.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/network/ServerConnectionListener.java

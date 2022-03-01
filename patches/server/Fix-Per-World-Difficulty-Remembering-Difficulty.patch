@@ -54,17 +54,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/commands/DifficultyCommand.java
 +++ b/src/main/java/net/minecraft/server/commands/DifficultyCommand.java
 @@ -0,0 +0,0 @@ public class DifficultyCommand {
- 
-     public static int setDifficulty(CommandSourceStack source, Difficulty difficulty) throws CommandSyntaxException {
-         MinecraftServer minecraftServer = source.getServer();
--        if (minecraftServer.getWorldData().getDifficulty() == difficulty) {
-+        net.minecraft.server.level.ServerLevel level = source.getLevel(); // Paper
-+        if (level.serverLevelData.getDifficulty() == difficulty) { // Paper
-             throw ERROR_ALREADY_DIFFICULT.create(difficulty.getKey());
+         if (worldServer.getDifficulty() == difficulty) { // CraftBukkit
+             throw DifficultyCommand.ERROR_ALREADY_DIFFICULT.create(difficulty.getKey());
          } else {
--            minecraftServer.setDifficulty(difficulty, true);
-+            minecraftServer.setDifficulty(level, difficulty, true); // Paper - use world
-             source.sendSuccess(new TranslatableComponent("commands.difficulty.success", difficulty.getDisplayName()), true);
+-            worldServer.serverLevelData.setDifficulty(difficulty); // CraftBukkit
++            minecraftserver.setDifficulty(worldServer, difficulty, true); // Paper - don't skip other difficulty-changing logic (fix upstream's fix)
+             source.sendSuccess(new TranslatableComponent("commands.difficulty.success", new Object[]{difficulty.getDisplayName()}), true);
              return 0;
          }
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
@@ -87,9 +82,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public class ServerPlayer extends Player {
                  this.isChangingDimension = true; // CraftBukkit - Set teleport invulnerability only if player changing worlds
  
-                 this.connection.send(new ClientboundRespawnPacket(worldserver.dimensionType(), worldserver.dimension(), BiomeManager.obfuscateSeed(worldserver.getSeed()), this.gameMode.getGameModeForPlayer(), this.gameMode.getPreviousGameModeForPlayer(), worldserver.isDebug(), worldserver.isFlat(), true));
+                 this.connection.send(new ClientboundRespawnPacket(worldserver.dimensionTypeRegistration(), worldserver.dimension(), BiomeManager.obfuscateSeed(worldserver.getSeed()), this.gameMode.getGameModeForPlayer(), this.gameMode.getPreviousGameModeForPlayer(), worldserver.isDebug(), worldserver.isFlat(), true));
 -                this.connection.send(new ClientboundChangeDifficultyPacket(this.level.getDifficulty(), this.level.getLevelData().isDifficultyLocked()));
-+                this.connection.send(new ClientboundChangeDifficultyPacket(worldserver.getDifficulty(), worldserver.getLevelData().isDifficultyLocked())); // Paper - fix difficulty sync issue
++                this.connection.send(new ClientboundChangeDifficultyPacket(worldserver.getDifficulty(), this.level.getLevelData().isDifficultyLocked())); // Paper - fix difficulty sync issue
                  PlayerList playerlist = this.server.getPlayerList();
  
                  playerlist.sendPlayerPermissionLevel(this);

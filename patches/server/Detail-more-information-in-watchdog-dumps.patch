@@ -31,7 +31,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +++ b/src/main/java/net/minecraft/network/protocol/PacketUtils.java
 @@ -0,0 +0,0 @@ public class PacketUtils {
  
-     private static final Logger LOGGER = LogManager.getLogger();
+     private static final Logger LOGGER = LogUtils.getLogger();
  
 +    // Paper start - detailed watchdog information
 +    public static final java.util.concurrent.ConcurrentLinkedDeque<PacketListener> packetProcessing = new java.util.concurrent.ConcurrentLinkedDeque<>();
@@ -55,14 +55,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      public static <T extends PacketListener> void ensureRunningOnSameThread(Packet<T> packet, T listener, ServerLevel world) throws RunningOnDifferentThreadException {
 @@ -0,0 +0,0 @@ public class PacketUtils {
+     public static <T extends PacketListener> void ensureRunningOnSameThread(Packet<T> packet, T listener, BlockableEventLoop<?> engine) throws RunningOnDifferentThreadException {
          if (!engine.isSameThread()) {
-             Timing timing = MinecraftTimings.getPacketTiming(packet); // Paper - timings
-             engine.execute(() -> {
+             engine.executeIfPossible(() -> {
 +                packetProcessing.push(listener); // Paper - detailed watchdog information
 +                try { // Paper - detailed watchdog information
                  if (MinecraftServer.getServer().hasStopped() || (listener instanceof ServerGamePacketListenerImpl && ((ServerGamePacketListenerImpl) listener).processedDisconnect)) return; // CraftBukkit, MC-142590
                  if (listener.getConnection().isConnected()) {
-                     try (Timing ignored = timing.startTiming()) { // Paper - timings
+                     co.aikar.timings.Timing timing = co.aikar.timings.MinecraftTimings.getPacketTiming(packet); // Paper - timings
 @@ -0,0 +0,0 @@ public class PacketUtils {
                  } else {
                      PacketUtils.LOGGER.debug("Ignoring packet due to disconnection: {}", packet);

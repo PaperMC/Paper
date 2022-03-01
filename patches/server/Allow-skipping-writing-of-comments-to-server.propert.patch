@@ -11,24 +11,9 @@ diff --git a/src/main/java/net/minecraft/server/dedicated/Settings.java b/src/ma
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/dedicated/Settings.java
 +++ b/src/main/java/net/minecraft/server/dedicated/Settings.java
-@@ -0,0 +0,0 @@
- package net.minecraft.server.dedicated;
+@@ -0,0 +0,0 @@ public abstract class Settings<T extends Settings<T>> {
  
- import com.google.common.base.MoreObjects;
-+
-+import java.io.BufferedOutputStream; // Paper
- import java.io.IOException;
- import java.io.InputStream;
- import java.io.OutputStream;
-@@ -0,0 +0,0 @@ import org.apache.logging.log4j.Logger;
- 
- import joptsimple.OptionSet; // CraftBukkit
- import net.minecraft.core.RegistryAccess;
-+import org.jetbrains.annotations.NotNull; // Paper
- 
- public abstract class Settings<T extends Settings<T>> {
- 
-     private static final Logger LOGGER = LogManager.getLogger();
+     private static final Logger LOGGER = LogUtils.getLogger();
      public final Properties properties;
 +    private static final boolean skipComments = Boolean.getBoolean("Paper.skipServerPropertiesComments"); // Paper - allow skipping server.properties comments
      // CraftBukkit start
@@ -39,17 +24,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              // CraftBukkit end
              OutputStream outputstream = Files.newOutputStream(path);
 +            // Paper start - disable writing comments to properties file
-+            BufferedOutputStream bufferedOutputStream =  !skipComments ? new BufferedOutputStream(outputstream) : new BufferedOutputStream(outputstream) {
++            java.io.BufferedOutputStream bufferedOutputStream =  !skipComments ? new java.io.BufferedOutputStream(outputstream) : new java.io.BufferedOutputStream(outputstream) {
 +                private boolean isRightAfterNewline = true; // If last written char was newline
 +                private boolean isComment = false; // Are we writing comment currently?
 +
 +                @Override
-+                public void write(@NotNull byte[] b) throws IOException {
++                public void write(@org.jetbrains.annotations.NotNull byte[] b) throws IOException {
 +                    this.write(b, 0, b.length);
 +                }
 +
 +                @Override
-+                public void write(@NotNull byte[] bbuf, int off, int len) throws IOException {
++                public void write(@org.jetbrains.annotations.NotNull byte[] bbuf, int off, int len) throws IOException {
 +                    int latest_offset = off; // The latest offset, updated when comment ends
 +                    for (int index = off; index < off + len; ++index ) {
 +                        byte c = bbuf[index];

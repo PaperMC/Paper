@@ -16,7 +16,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return (Strategy<K>) Util.IdentityStrategy.INSTANCE; // Paper - decompile fix
      }
  
-     public static <V> CompletableFuture<List<V>> sequence(List<? extends CompletableFuture<? extends V>> futures) {
+     public static <V> CompletableFuture<List<V>> sequence(List<? extends CompletableFuture<V>> futures) {
 diff --git a/src/main/java/net/minecraft/core/BlockPos.java b/src/main/java/net/minecraft/core/BlockPos.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/core/BlockPos.java
@@ -39,21 +39,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                      }
                  }
              };
-diff --git a/src/main/java/net/minecraft/core/MappedRegistry.java b/src/main/java/net/minecraft/core/MappedRegistry.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/core/MappedRegistry.java
-+++ b/src/main/java/net/minecraft/core/MappedRegistry.java
-@@ -0,0 +0,0 @@ public class MappedRegistry<T> extends WritableRegistry<T> {
-     }
- 
-     static record RegistryEntry<T>(ResourceKey<T> key, int id, T value) {
--        RegistryEntry(ResourceKey<T> key, int rawId, T entry) {
--            this.key = key;
--            this.id = rawId;
--            this.value = entry;
--        }
-     }
- }
 diff --git a/src/main/java/net/minecraft/nbt/ListTag.java b/src/main/java/net/minecraft/nbt/ListTag.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/nbt/ListTag.java
@@ -121,7 +106,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  import net.minecraft.network.protocol.status.ServerboundPingRequestPacket;
  import net.minecraft.network.protocol.status.ServerboundStatusRequestPacket;
  import net.minecraft.util.VisibleForDebug;
- import org.apache.logging.log4j.LogManager;
+ import org.slf4j.Logger;
  
  public enum ConnectionProtocol {
 -    HANDSHAKING(-1, protocol().addFlow(PacketFlow.SERVERBOUND, (new ConnectionProtocol.PacketSet()).addPacket(ClientIntentionPacket.class, ClientIntentionPacket::new))),
@@ -142,17 +127,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/network/protocol/game/ClientboundLoginPacket.java
 +++ b/src/main/java/net/minecraft/network/protocol/game/ClientboundLoginPacket.java
 @@ -0,0 +0,0 @@ public record ClientboundLoginPacket(int playerId, boolean hardcore, GameType ga
-         }), buf.readWithCodec(RegistryAccess.RegistryHolder.NETWORK_CODEC), buf.readWithCodec(DimensionType.CODEC).get(), ResourceKey.create(Registry.DIMENSION_REGISTRY, buf.readResourceLocation()), buf.readLong(), buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readBoolean(), buf.readBoolean(), buf.readBoolean(), buf.readBoolean());
+         }), buf.readWithCodec(RegistryAccess.NETWORK_CODEC).freeze(), buf.readWithCodec(DimensionType.CODEC), ResourceKey.create(Registry.DIMENSION_REGISTRY, buf.readResourceLocation()), buf.readLong(), buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readBoolean(), buf.readBoolean(), buf.readBoolean(), buf.readBoolean());
      }
  
--    public ClientboundLoginPacket(int playerEntityId, boolean bl, GameType previousGameMode, @Nullable GameType gameType, Set<ResourceKey<Level>> set, RegistryAccess.RegistryHolder registryHolder, DimensionType dimensionType, ResourceKey<Level> resourceKey, long l, int maxPlayers, int chunkLoadDistance, int i, boolean bl2, boolean bl3, boolean bl4, boolean bl5) {
+-    public ClientboundLoginPacket(int playerEntityId, boolean bl, GameType previousGameMode, @Nullable GameType gameType, Set<ResourceKey<Level>> set, RegistryAccess.Frozen frozen, Holder<DimensionType> holder, ResourceKey<Level> resourceKey, long l, int maxPlayers, int chunkLoadDistance, int i, boolean bl2, boolean bl3, boolean bl4, boolean bl5) {
 -        this.playerId = playerEntityId;
 -        this.hardcore = bl;
 -        this.gameType = previousGameMode;
 -        this.previousGameType = gameType;
 -        this.levels = set;
--        this.registryHolder = registryHolder;
--        this.dimensionType = dimensionType;
+-        this.registryHolder = frozen;
+-        this.dimensionType = holder;
 -        this.dimension = resourceKey;
 -        this.seed = l;
 -        this.maxPlayers = maxPlayers;
@@ -178,8 +163,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -            return stream.map(resourcepackrepository::getPack).filter(Objects::nonNull).map(Pack::open).collect(ImmutableList.toImmutableList()); // CraftBukkit - decompile error
 +            return stream.<Pack>map(resourcepackrepository::getPack).filter(Objects::nonNull).map(Pack::open).collect(ImmutableList.toImmutableList()); // CraftBukkit - decompile error // Paper - decompile error // todo: is this needed anymore?
          }, this).thenCompose((immutablelist) -> {
-             return ServerResources.loadResources(immutablelist, this.registryHolder, this.isDedicatedServer() ? Commands.CommandSelection.DEDICATED : Commands.CommandSelection.INTEGRATED, this.getFunctionCompilationLevel(), this.executor, this);
-         }).thenAcceptAsync((datapackresources) -> {
+             MultiPackResourceManager resourcemanager = new MultiPackResourceManager(PackType.SERVER_DATA, immutablelist);
+ 
 diff --git a/src/main/java/net/minecraft/server/level/Ticket.java b/src/main/java/net/minecraft/server/level/Ticket.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/level/Ticket.java
@@ -236,10 +221,10 @@ diff --git a/src/main/java/net/minecraft/world/level/biome/Biome.java b/src/main
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/biome/Biome.java
 +++ b/src/main/java/net/minecraft/world/level/biome/Biome.java
-@@ -0,0 +0,0 @@ import org.apache.logging.log4j.Logger;
+@@ -0,0 +0,0 @@ import net.minecraft.world.level.material.FluidState;
+ import net.minecraft.world.level.material.Fluids;
  
  public final class Biome {
-     public static final Logger LOGGER = LogManager.getLogger();
 -    public static final Codec<Biome> DIRECT_CODEC;
 -    public static final Codec<Biome> NETWORK_CODEC;
 +    // Paper start - decompile fix: move up verbatim from static block
@@ -256,23 +241,23 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            return biome.mobSettings;
 +        })).apply(instance, Biome::new);
 +    });
-+    public static final Codec<Biome> NETWORK_CODEC = RecordCodecBuilder.create((instance) -> {
++    public static final Codec<Biome> NETWORK_CODE = RecordCodecBuilder.create((instance) -> {
 +        return instance.group(Biome.ClimateSettings.CODEC.forGetter((biome) -> {
 +            return biome.climateSettings;
 +        }), Biome.BiomeCategory.CODEC.fieldOf("category").forGetter((biome) -> {
 +            return biome.biomeCategory;
 +        }), BiomeSpecialEffects.CODEC.fieldOf("effects").forGetter((biome) -> {
 +            return biome.specialEffects;
-+        })).apply(instance, (climateSettings, biomeCategory, biomeSpecialEffects) -> {
-+            return new Biome(climateSettings, biomeCategory, biomeSpecialEffects, BiomeGenerationSettings.EMPTY, MobSpawnSettings.EMPTY);
++        })).apply(instance, (weather, category, effects) -> {
++            return new Biome(weather, category, effects, BiomeGenerationSettings.EMPTY, MobSpawnSettings.EMPTY);
 +        });
 +    });
 +    // Paper end
-     public static final Codec<Supplier<Biome>> CODEC = RegistryFileCodec.create(Registry.BIOME_REGISTRY, DIRECT_CODEC);
-     public static final Codec<List<Supplier<Biome>>> LIST_CODEC = RegistryFileCodec.homogeneousList(Registry.BIOME_REGISTRY, DIRECT_CODEC);
+     public static final Codec<Holder<Biome>> CODEC = RegistryFileCodec.create(Registry.BIOME_REGISTRY, DIRECT_CODEC);
+     public static final Codec<HolderSet<Biome>> LIST_CODEC = RegistryCodecs.homogeneousList(Registry.BIOME_REGISTRY, DIRECT_CODEC);
      private static final PerlinSimplexNoise TEMPERATURE_NOISE = new PerlinSimplexNoise(new WorldgenRandom(new LegacyRandomSource(1234L)), ImmutableList.of(0));
 @@ -0,0 +0,0 @@ public final class Biome {
-         return resourceLocation == null ? super.toString() : resourceLocation.toString();
+         return biomeEntry.value().getBiomeCategory();
      }
  
 -    static {
@@ -296,8 +281,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -                return biome.biomeCategory;
 -            }), BiomeSpecialEffects.CODEC.fieldOf("effects").forGetter((biome) -> {
 -                return biome.specialEffects;
--            })).apply(instance, (climateSettings, biomeCategory, biomeSpecialEffects) -> {
--                return new Biome(climateSettings, biomeCategory, biomeSpecialEffects, BiomeGenerationSettings.EMPTY, MobSpawnSettings.EMPTY);
+-            })).apply(instance, (weather, category, effects) -> {
+-                return new Biome(weather, category, effects, BiomeGenerationSettings.EMPTY, MobSpawnSettings.EMPTY);
 -            });
 -        });
 -    }

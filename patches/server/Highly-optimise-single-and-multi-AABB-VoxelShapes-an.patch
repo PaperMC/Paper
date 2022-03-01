@@ -1209,7 +1209,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          // CraftBukkit end
  
          worldserver1.getChunkSource().addRegionTicket(net.minecraft.server.level.TicketType.POST_TELEPORT, new net.minecraft.world.level.ChunkPos(location.getBlockX() >> 4, location.getBlockZ() >> 4), 1, entityplayer.getId()); // Paper
--        while (avoidSuffocation && !worldserver1.noCollision(entityplayer1) && entityplayer1.getY() < (double) worldserver1.getMaxBuildHeight()) {
+-        while (avoidSuffocation && !worldserver1.noCollision((Entity) entityplayer1) && entityplayer1.getY() < (double) worldserver1.getMaxBuildHeight()) {
 +        while (avoidSuffocation && !worldserver1.noCollision(entityplayer1, entityplayer1.getBoundingBox(), true) && entityplayer1.getY() < (double) worldserver1.getMaxBuildHeight()) { // Paper - make sure this loads chunks, we default to NOT loading now
              entityplayer1.setPos(entityplayer1.getX(), entityplayer1.getY() + 1.0D, entityplayer1.getZ());
          }
@@ -1223,7 +1223,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
                  this.setDeltaMovement(this.getDeltaMovement().multiply((double) f2, 1.0D, (double) f2));
 -                if (this.level.getBlockStatesIfLoaded(this.getBoundingBox().deflate(1.0E-6D)).noneMatch((iblockdata1) -> {
--                    return iblockdata1.is((Tag) BlockTags.FIRE) || iblockdata1.is(Blocks.LAVA);
+-                    return iblockdata1.is(BlockTags.FIRE) || iblockdata1.is(Blocks.LAVA);
 -                })) {
 +                // Paper start - remove expensive streams from here
 +                boolean noneMatch = true;
@@ -1253,7 +1253,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                                }
 +
 +                                BlockState type = chunk.getBlockStateFinal(fx, fy, fz);
-+                                if (type.is((Tag) BlockTags.FIRE) || type.is(Blocks.LAVA)) {
++                                if (type.is(BlockTags.FIRE) || type.is(Blocks.LAVA)) {
 +                                    noneMatch = false;
 +                                    // can't break, we need to retain vanilla behavior by ensuring ALL chunks are loaded
 +                                }
@@ -1368,19 +1368,36 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public static Vec3 collideBoundingBox(@Nullable Entity entity, Vec3 movement, AABB entityBoundingBox, Level world, List<VoxelShape> collisions) {
 @@ -0,0 +0,0 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, i
              float f = this.dimensions.width * 0.8F;
-             AABB axisalignedbb = AABB.ofSize(vec3d, (double) f, 1.0E-6D, (double) f);
+             AABB axisalignedbb = AABB.ofSize(this.getEyePosition(), (double) f, 1.0E-6D, (double) f);
  
--            return this.level.getBlockStates(axisalignedbb).filter(Predicate.not(BlockBehaviour.BlockStateBase::isAir)).anyMatch((iblockdata) -> {
--                BlockPos blockposition = new BlockPos(vec3d);
--
--                return iblockdata.isSuffocating(this.level, blockposition) && Shapes.joinIsNotEmpty(iblockdata.getCollisionShape(this.level, blockposition).move(vec3d.x, vec3d.y, vec3d.z), Shapes.create(axisalignedbb), BooleanOp.AND);
+-            return BlockPos.betweenClosedStream(axisalignedbb).anyMatch((blockposition) -> {
+-                BlockState iblockdata = this.level.getBlockState(blockposition);
++            BlockPos.MutableBlockPos blockposition = new BlockPos.MutableBlockPos();
++            int minX = Mth.floor(axisalignedbb.minX);
++            int minY = Mth.floor(axisalignedbb.minY);
++            int minZ = Mth.floor(axisalignedbb.minZ);
++            int maxX = Mth.floor(axisalignedbb.maxX);
++            int maxY = Mth.floor(axisalignedbb.maxY);
++            int maxZ = Mth.floor(axisalignedbb.maxZ);
++            for (int fz = minZ; fz <= maxZ; ++fz) {
++                for (int fx = minX; fx <= maxX; ++fx) {
++                    for (int fy = minY; fy <= maxY; ++fy) {
++                        net.minecraft.world.level.chunk.LevelChunk chunk = (net.minecraft.world.level.chunk.LevelChunk)this.level.getChunkIfLoadedImmediately(fx >> 4, fz >> 4);
++                        if (chunk == null) {
++                            continue;
++                        }
+ 
+-                return !iblockdata.isAir() && iblockdata.isSuffocating(this.level, blockposition) && Shapes.joinIsNotEmpty(iblockdata.getCollisionShape(this.level, blockposition).move((double) blockposition.getX(), (double) blockposition.getY(), (double) blockposition.getZ()), Shapes.create(axisalignedbb), BooleanOp.AND);
 -            });
-+            // Paper start
-+            return io.papermc.paper.util.CollisionUtil.getCollisionsForBlocksOrWorldBorder(this.level, this, axisalignedbb, null,
-+                false, false, false, true, (BlockState blockState, BlockPos blockPos) -> {
-+                    return blockState.isSuffocating(this.level, blockPos);
-+                });
-+            // Paper end
++                        BlockState iblockdata = chunk.getBlockStateFinal(fx, fy, fz);
++                        blockposition.set(fx, fy, fz);
++                        if (!iblockdata.isAir() && iblockdata.isSuffocating(this.level, blockposition) && Shapes.joinIsNotEmpty(iblockdata.getCollisionShape(this.level, blockposition).move((double) blockposition.getX(), (double) blockposition.getY(), (double) blockposition.getZ()), Shapes.create(axisalignedbb), BooleanOp.AND)) {
++                            return true;
++                        }
++                    }
++                }
++            }
++            return false;
          }
      }
  
@@ -1535,7 +1552,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/world/level/chunk/LevelChunkSection.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/LevelChunkSection.java
 @@ -0,0 +0,0 @@ public class LevelChunkSection {
-         this.biomes = new PalettedContainer<>(biomeRegistry, (Biome) biomeRegistry.getOrThrow(Biomes.PLAINS), PalettedContainer.Strategy.SECTION_BIOMES, null); // Paper - Anti-Xray - Add preset biomes
+         this.biomes = new PalettedContainer<>(biomeRegistry.asHolderIdMap(), biomeRegistry.getHolderOrThrow(Biomes.PLAINS), PalettedContainer.Strategy.SECTION_BIOMES, null); // Paper - Anti-Xray - Add preset biomes
      }
  
 +    // Paper start
@@ -1665,9 +1682,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
 @@ -0,0 +0,0 @@ public class LevelChunkSection {
-             }
  
          });
+         // Paper end
 +        this.initBlockCollisionData(); // Paper
      }
  

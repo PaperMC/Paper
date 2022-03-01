@@ -1055,55 +1055,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/world/level/Level.java
 +++ b/src/main/java/net/minecraft/world/level/Level.java
 @@ -0,0 +0,0 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
- 
-     public abstract ResourceKey<LevelStem> getTypeKey();
- 
-+    // Paper start
-+    protected final io.papermc.paper.world.EntitySliceManager entitySliceManager;
-+
-+    public org.bukkit.entity.Entity[] getChunkEntities(int chunkX, int chunkZ) {
-+        io.papermc.paper.world.ChunkEntitySlices slices = this.entitySliceManager.getChunk(chunkX, chunkZ);
-+        if (slices == null) {
-+            return new org.bukkit.entity.Entity[0];
-+        }
-+        return slices.getChunkEntities();
-+    }
-+
-+    @Override
-+    public List<Entity> getHardCollidingEntities(Entity except, AABB box, Predicate<? super Entity> predicate) {
-+        List<Entity> ret = new java.util.ArrayList<>();
-+        this.entitySliceManager.getEntities(except, box, ret, predicate);
-+        return ret;
-+    }
-+
-+    @Override
-+    public void getEntities(Entity except, AABB box, Predicate<? super Entity> predicate, List<Entity> into) {
-+        this.entitySliceManager.getEntities(except, box, into, predicate);
-+    }
-+
-+    @Override
-+    public void getHardCollidingEntities(Entity except, AABB box, Predicate<? super Entity> predicate, List<Entity> into) {
-+        this.entitySliceManager.getHardCollidingEntities(except, box, into, predicate);
-+    }
-+
-+    @Override
-+    public <T> void getEntitiesByClass(Class<? extends T> clazz, Entity except, final AABB box, List<? super T> into,
-+                                       Predicate<? super T> predicate) {
-+        this.entitySliceManager.getEntities((Class)clazz, except, box, (List)into, (Predicate)predicate);
-+    }
-+
-+    @Override
-+    public <T extends Entity> List<T> getEntitiesOfClass(Class<T> entityClass, AABB box, Predicate<? super T> predicate) {
-+        List<T> ret = new java.util.ArrayList<>();
-+        this.entitySliceManager.getEntities(entityClass, null, box, ret, predicate);
-+        return ret;
-+    }
-+    // Paper end
-+
-     protected Level(WritableLevelData worlddatamutable, ResourceKey<Level> resourcekey, final DimensionType dimensionmanager, Supplier<ProfilerFiller> supplier, boolean flag, boolean flag1, long i, org.bukkit.generator.ChunkGenerator gen, org.bukkit.generator.BiomeProvider biomeProvider, org.bukkit.World.Environment env, java.util.concurrent.Executor executor) { // Paper - Async-Anti-Xray - Pass executor
-         this.spigotConfig = new org.spigotmc.SpigotWorldConfig(((net.minecraft.world.level.storage.PrimaryLevelData) worlddatamutable).getLevelName()); // Spigot
-         this.paperConfig = new com.destroystokyo.paper.PaperWorldConfig(((net.minecraft.world.level.storage.PrimaryLevelData) worlddatamutable).getLevelName(), this.spigotConfig); // Paper
-@@ -0,0 +0,0 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
          this.entityLimiter = new org.spigotmc.TickLimiter(spigotConfig.entityMaxTickTime);
          this.tileLimiter = new org.spigotmc.TickLimiter(spigotConfig.tileMaxTickTime);
          this.chunkPacketBlockController = this.paperConfig.antiXray ? new com.destroystokyo.paper.antixray.ChunkPacketBlockControllerAntiXray(this, executor) : com.destroystokyo.paper.antixray.ChunkPacketBlockController.NO_OPERATION_INSTANCE; // Paper - Anti-Xray
@@ -1182,6 +1133,53 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          return list;
      }
  
+@@ -0,0 +0,0 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+     public long nextSubTickCount() {
+         return (long) (this.subTickCount++);
+     }
++
++    // Paper start
++    protected final io.papermc.paper.world.EntitySliceManager entitySliceManager;
++
++    public org.bukkit.entity.Entity[] getChunkEntities(int chunkX, int chunkZ) {
++        io.papermc.paper.world.ChunkEntitySlices slices = this.entitySliceManager.getChunk(chunkX, chunkZ);
++        if (slices == null) {
++            return new org.bukkit.entity.Entity[0];
++        }
++        return slices.getChunkEntities();
++    }
++
++    @Override
++    public List<Entity> getHardCollidingEntities(Entity except, AABB box, Predicate<? super Entity> predicate) {
++        List<Entity> ret = new java.util.ArrayList<>();
++        this.entitySliceManager.getEntities(except, box, ret, predicate);
++        return ret;
++    }
++
++    @Override
++    public void getEntities(Entity except, AABB box, Predicate<? super Entity> predicate, List<Entity> into) {
++        this.entitySliceManager.getEntities(except, box, into, predicate);
++    }
++
++    @Override
++    public void getHardCollidingEntities(Entity except, AABB box, Predicate<? super Entity> predicate, List<Entity> into) {
++        this.entitySliceManager.getHardCollidingEntities(except, box, into, predicate);
++    }
++
++    @Override
++    public <T> void getEntitiesByClass(Class<? extends T> clazz, Entity except, final AABB box, List<? super T> into,
++                                       Predicate<? super T> predicate) {
++        this.entitySliceManager.getEntities((Class)clazz, except, box, (List)into, (Predicate)predicate);
++    }
++
++    @Override
++    public <T extends Entity> List<T> getEntitiesOfClass(Class<T> entityClass, AABB box, Predicate<? super T> predicate) {
++        List<T> ret = new java.util.ArrayList<>();
++        this.entitySliceManager.getEntities(entityClass, null, box, ret, predicate);
++        return ret;
++    }
++    // Paper end
+ }
 diff --git a/src/main/java/net/minecraft/world/level/entity/PersistentEntitySectionManager.java b/src/main/java/net/minecraft/world/level/entity/PersistentEntitySectionManager.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/entity/PersistentEntitySectionManager.java
@@ -1224,7 +1222,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  if (!this.currentSection.remove(this.entity)) {
 @@ -0,0 +0,0 @@ public class PersistentEntitySectionManager<T extends EntityAccess> implements A
              if (!this.currentSection.remove(this.entity)) {
-                 PersistentEntitySectionManager.LOGGER.warn("Entity {} wasn't found in section {} (destroying due to {})", this.entity, SectionPos.of(this.currentSectionKey), reason);
+                 PersistentEntitySectionManager.LOGGER.warn("Entity {} wasn't found in section {} (destroying due to {})", new Object[]{this.entity, SectionPos.of(this.currentSectionKey), reason});
              }
 +            PersistentEntitySectionManager.this.entitySliceManager.removeEntity((Entity)this.entity); // Paper
  

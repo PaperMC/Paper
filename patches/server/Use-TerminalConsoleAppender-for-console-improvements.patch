@@ -38,7 +38,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     */
 +    runtimeOnly("org.apache.logging.log4j:log4j-core:2.14.1")
 +    // Paper end
-     implementation("org.apache.logging.log4j:log4j-iostreams:2.14.1") // Paper
+     implementation("org.apache.logging.log4j:log4j-iostreams:2.17.1") // Paper
      implementation("org.ow2.asm:asm:9.2")
      implementation("org.ow2.asm:asm-commons:9.2") // Paper - ASM event executor generation
 diff --git a/src/main/java/com/destroystokyo/paper/console/PaperConsole.java b/src/main/java/com/destroystokyo/paper/console/PaperConsole.java
@@ -115,23 +115,15 @@ diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -0,0 +0,0 @@ import com.mojang.authlib.GameProfile;
- import com.mojang.authlib.GameProfileRepository;
- import com.mojang.authlib.minecraft.MinecraftSessionService;
- import com.mojang.datafixers.DataFixer;
-+import io.papermc.paper.adventure.PaperAdventure; // Paper
- import it.unimi.dsi.fastutil.longs.LongIterator;
- import java.awt.image.BufferedImage;
- import java.io.BufferedWriter;
-@@ -0,0 +0,0 @@ import org.apache.logging.log4j.Logger;
+@@ -0,0 +0,0 @@ import org.slf4j.Logger;
  // CraftBukkit start
  import com.mojang.serialization.DynamicOps;
  import com.mojang.serialization.Lifecycle;
 -import jline.console.ConsoleReader;
 +// import jline.console.ConsoleReader; // Paper
  import joptsimple.OptionSet;
- import net.minecraft.resources.RegistryReadOps;
  import net.minecraft.server.bossevents.CustomBossEvents;
+ import net.minecraft.server.dedicated.DedicatedServer;
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
      public OptionSet options;
      public org.bukkit.command.ConsoleCommandSender console;
@@ -143,8 +135,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public int autosavePeriod;
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          this.datapackconfiguration = datapackconfiguration;
-         this.registryreadops = RegistryReadOps.createAndLoad(NbtOps.INSTANCE, datapackresources.getResourceManager(), iregistrycustom_dimension);
-         this.vanillaCommandDispatcher = datapackresources.commands; // CraftBukkit
+         this.registryreadops = registryreadops;
+         this.vanillaCommandDispatcher = worldstem.dataPackResources().commands; // CraftBukkit
 +        // Paper start - Handled by TerminalConsoleAppender
          // Try to see if we're actually running in a terminal, disable jline if not
 +        /*
@@ -174,7 +166,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      @Override
      public void sendMessage(Component message, UUID sender) {
 -        MinecraftServer.LOGGER.info(message.getString());
-+        MinecraftServer.LOGGER.info(PaperAdventure.LEGACY_SECTION_UXRC.serialize(PaperAdventure.asAdventure(message))); // Paper - Log message with colors
++        MinecraftServer.LOGGER.info(io.papermc.paper.adventure.PaperAdventure.LEGACY_SECTION_UXRC.serialize(io.papermc.paper.adventure.PaperAdventure.asAdventure(message))); // Paper - Log message with colors
      }
  
      public KeyPair getKeyPair() {
@@ -235,7 +227,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +++ b/src/main/java/net/minecraft/server/players/PlayerList.java
 @@ -0,0 +0,0 @@ public abstract class PlayerList {
  
-     public PlayerList(MinecraftServer server, RegistryAccess.RegistryHolder registryManager, PlayerDataStorage saveHandler, int maxPlayers) {
+     public PlayerList(MinecraftServer server, RegistryAccess.Frozen registryManager, PlayerDataStorage saveHandler, int maxPlayers) {
          this.cserver = server.server = new CraftServer((DedicatedServer) server, this);
 -        server.console = org.bukkit.craftbukkit.command.ColouredConsoleSender.getInstance();
 -        server.reader.addCompleter(new org.bukkit.craftbukkit.command.ConsoleCommandCompleter(server.server));

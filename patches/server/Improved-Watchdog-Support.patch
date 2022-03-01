@@ -220,15 +220,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  }
                  // Spigot End
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
-             this.packRepository.setSelected(datapacks);
+             this.packRepository.setSelected(dataPacks);
              this.worldData.setDataPackConfig(MinecraftServer.getSelectedPacks(this.packRepository));
-             datapackresources.updateGlobals();
+             this.resources.managers.updateRegistryTags(this.registryAccess());
 -            this.getPlayerList().saveAll();
 +            if (Thread.currentThread() != this.serverThread) return; // Paper
-+            //this.getPlayerList().savePlayers(); // Paper - we don't need to do this
++            //this.getPlayerList().saveAll(); // Paper - we don't need to do this
              this.getPlayerList().reloadResources();
-             this.functionManager.replaceLibrary(this.resources.getFunctionLibrary());
-             this.structureManager.onResourceManagerReload(this.resources.getResourceManager());
+             this.functionManager.replaceLibrary(this.resources.managers.getFunctionLibrary());
+             this.structureManager.onResourceManagerReload(this.resources.resourceManager);
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
@@ -295,7 +295,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              task.run();
          } catch (Exception var3) {
 +            if (var3.getCause() instanceof ThreadDeath) throw var3; // Paper
-             LOGGER.fatal("Error executing task on {}", this.name(), var3);
+             LOGGER.error(LogUtils.FATAL_MARKER, "Error executing task on {}", this.name(), var3);
          }
  
 diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java

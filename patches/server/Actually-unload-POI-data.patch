@@ -22,7 +22,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  this.updatingChunks.queueUpdate(pos, holder); // Paper - Don't copy
                  this.modified = true;
 @@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
-         gameprofilerfiller.pop();
+         return this.lightEngine.hasLightWork() || !this.pendingUnloads.isEmpty() || !this.updatingChunkMap.isEmpty() || this.poiManager.hasWork() || !this.toDrop.isEmpty() || !this.unloadQueue.isEmpty() || this.queueSorter.hasWork() || this.distanceManager.hasTickets();
      }
  
 -    private static final double UNLOAD_QUEUE_RESIZE_FACTOR = 0.90; // Spigot // Paper - unload more
@@ -39,11 +39,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                          ((LevelChunk) ichunkaccess).setLoaded(false);
                      }
 @@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
-                     for (int index = 0, len = this.regionManagers.size(); index < len; ++index) {
-                         this.regionManagers.get(index).removeChunk(holder.pos.x, holder.pos.z);
-                     }
-+                    this.getPoiManager().queueUnload(holder.pos.longKey, MinecraftServer.currentTickLong + 1); // Paper - unload POI data
-                 } // Paper end
+                 for (int index = 0, len = this.regionManagers.size(); index < len; ++index) {
+                     this.regionManagers.get(index).removeChunk(holder.pos.x, holder.pos.z);
+                 }
++                this.getPoiManager().queueUnload(holder.pos.longKey, MinecraftServer.currentTickLong + 1); // Paper - unload POI data
+             } // Paper end
                  } finally { this.unloadingPlayerChunk = unloadingBefore; } // Paper - do not allow ticket level changes while unloading chunks
  
 @@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
@@ -313,7 +313,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    // Paper end - actually unload POI data
 +
      protected void tick(BooleanSupplier shouldKeepTicking) {
-         while(!this.dirty.isEmpty() && shouldKeepTicking.getAsBoolean()) {
+         while(this.hasWork() && shouldKeepTicking.getAsBoolean()) {
              ChunkPos chunkPos = SectionPos.of(this.dirty.firstLong()).chunk();
 @@ -0,0 +0,0 @@ public class SectionStorage<R> extends RegionFileStorage implements AutoCloseabl
                  });
