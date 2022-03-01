@@ -64,6 +64,36 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      private final List<Tag> list;
      private byte type;
  
+diff --git a/src/main/java/net/minecraft/nbt/NbtUtils.java b/src/main/java/net/minecraft/nbt/NbtUtils.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/nbt/NbtUtils.java
++++ b/src/main/java/net/minecraft/nbt/NbtUtils.java
+@@ -0,0 +0,0 @@ import net.minecraft.world.level.material.FluidState;
+ import org.slf4j.Logger;
+ 
+ public final class NbtUtils {
+-    private static final Comparator<ListTag> YXZ_LISTTAG_INT_COMPARATOR = Comparator.comparingInt((nbt) -> {
++    private static final Comparator<ListTag> YXZ_LISTTAG_INT_COMPARATOR = Comparator.<ListTag>comparingInt((nbt) -> { // Paper - decompile fix
+         return nbt.getInt(1);
+     }).thenComparingInt((nbt) -> {
+         return nbt.getInt(0);
+     }).thenComparingInt((nbt) -> {
+         return nbt.getInt(2);
+     });
+-    private static final Comparator<ListTag> YXZ_LISTTAG_DOUBLE_COMPARATOR = Comparator.comparingDouble((nbt) -> {
++    private static final Comparator<ListTag> YXZ_LISTTAG_DOUBLE_COMPARATOR = Comparator.<ListTag>comparingDouble((nbt) -> { // Paper - decompile fix
+         return nbt.getDouble(1);
+     }).thenComparingDouble((nbt) -> {
+         return nbt.getDouble(0);
+@@ -0,0 +0,0 @@ public final class NbtUtils {
+     }
+ 
+     public static CompoundTag update(DataFixer fixer, DataFixTypes fixTypes, CompoundTag compound, int oldVersion, int targetVersion) {
+-        return fixer.update(fixTypes.getType(), new Dynamic<>(NbtOps.INSTANCE, compound), oldVersion, targetVersion).getValue();
++        return (CompoundTag) fixer.update(fixTypes.getType(), new Dynamic<>(NbtOps.INSTANCE, compound), oldVersion, targetVersion).getValue(); // Paper - decompile fix
+     }
+ 
+     public static Component toPrettyComponent(Tag element) {
 diff --git a/src/main/java/net/minecraft/network/ConnectionProtocol.java b/src/main/java/net/minecraft/network/ConnectionProtocol.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/network/ConnectionProtocol.java
@@ -204,6 +234,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              return instance.group(RecordCodecBuilder.point(updateListener), Codec.BOOL.optionalFieldOf("Valid", Boolean.valueOf(false)).forGetter((poiSet) -> {
                  return poiSet.isValid;
              }), PoiRecord.codec(updateListener).listOf().fieldOf("Records").forGetter((poiSet) -> {
+diff --git a/src/main/java/net/minecraft/world/entity/monster/hoglin/Hoglin.java b/src/main/java/net/minecraft/world/entity/monster/hoglin/Hoglin.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/hoglin/Hoglin.java
++++ b/src/main/java/net/minecraft/world/entity/monster/hoglin/Hoglin.java
+@@ -0,0 +0,0 @@ public class Hoglin extends Animal implements Enemy, HoglinBase {
+ 
+     @Override
+     public Brain<Hoglin> getBrain() {
+-        return super.getBrain();
++        return (Brain<Hoglin>) super.getBrain(); // Paper - decompile fix
+     }
+ 
+     @Override
 diff --git a/src/main/java/net/minecraft/world/item/crafting/RecipeManager.java b/src/main/java/net/minecraft/world/item/crafting/RecipeManager.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/item/crafting/RecipeManager.java
@@ -221,6 +264,15 @@ diff --git a/src/main/java/net/minecraft/world/level/chunk/PalettedContainer.jav
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/PalettedContainer.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/PalettedContainer.java
+@@ -0,0 +0,0 @@ public class PalettedContainer<T> implements PaletteResize<T> {
+     }
+ 
+     public static <T> Codec<PalettedContainer<T>> codec(IdMap<T> idList, Codec<T> entryCodec, PalettedContainer.Strategy provider, T object) {
+-        return RecordCodecBuilder.create((instance) -> {
++        return RecordCodecBuilder.<DiscData<T>>create((instance) -> { // Paper - decompile fix
+             return instance.group(entryCodec.mapResult(ExtraCodecs.orElsePartial(object)).listOf().fieldOf("palette").forGetter(PalettedContainer.DiscData::paletteEntries), Codec.LONG_STREAM.optionalFieldOf("data").forGetter(PalettedContainer.DiscData::storage)).apply(instance, PalettedContainer.DiscData::new);
+         }).comapFlatMap((serialized) -> {
+             return read(idList, provider, serialized);
 @@ -0,0 +0,0 @@ public class PalettedContainer<T> implements PaletteResize<T> {
      }
  
@@ -243,3 +295,29 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
      public abstract static class Strategy {
+diff --git a/src/main/java/net/minecraft/world/level/entity/EntityLookup.java b/src/main/java/net/minecraft/world/level/entity/EntityLookup.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/level/entity/EntityLookup.java
++++ b/src/main/java/net/minecraft/world/level/entity/EntityLookup.java
+@@ -0,0 +0,0 @@ public class EntityLookup<T extends EntityAccess> {
+         for(T entityAccess : this.byId.values()) {
+             U entityAccess2 = (U)((EntityAccess)filter.tryCast(entityAccess));
+             if (entityAccess2 != null) {
+-                action.accept((T)entityAccess2);
++                action.accept(entityAccess2); // Paper - decompile fix
+             }
+         }
+ 
+diff --git a/src/main/java/net/minecraft/world/level/entity/EntitySection.java b/src/main/java/net/minecraft/world/level/entity/EntitySection.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/level/entity/EntitySection.java
++++ b/src/main/java/net/minecraft/world/level/entity/EntitySection.java
+@@ -0,0 +0,0 @@ public class EntitySection<T extends EntityAccess> {
+             for(T entityAccess : collection) {
+                 U entityAccess2 = (U)((EntityAccess)type.tryCast(entityAccess));
+                 if (entityAccess2 != null && entityAccess.getBoundingBox().intersects(box)) {
+-                    action.accept((T)entityAccess2);
++                    action.accept(entityAccess2); // Paper - decompile fix
+                 }
+             }
+ 
