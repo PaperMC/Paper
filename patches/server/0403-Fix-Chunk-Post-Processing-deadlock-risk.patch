@@ -56,7 +56,7 @@ NEW
         }, this.mainThreadExecutor);
 
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index 7e3f7b69fc7a608dd82b471d832cc401a77f0738..aeae3fb3d05b513031e4af217fe3db7fa3ec4a75 100644
+index 7e3f7b69fc7a608dd82b471d832cc401a77f0738..d251e07eec07f8f822af1f8713e46aebe54b4890 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
 @@ -178,6 +178,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
@@ -67,15 +67,33 @@ index 7e3f7b69fc7a608dd82b471d832cc401a77f0738..aeae3fb3d05b513031e4af217fe3db7f
      // Paper start - distance maps
      private final com.destroystokyo.paper.util.misc.PooledLinkedHashSets<ServerPlayer> pooledLinkedPlayerHashSets = new com.destroystokyo.paper.util.misc.PooledLinkedHashSets<>();
  
-@@ -1012,7 +1013,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
-                 return (LevelChunk) list.get(list.size() / 2);
-             });
-         }, (runnable) -> {
+@@ -1008,17 +1009,18 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+             return ChunkStatus.FULL;
+         });
+         CompletableFuture<Either<LevelChunk, ChunkHolder.ChunkLoadingFailure>> completablefuture1 = completablefuture.thenApplyAsync((either) -> {
+-            return either.mapLeft((list) -> {
+-                return (LevelChunk) list.get(list.size() / 2);
+-            });
+-        }, (runnable) -> {
 -            this.mainThreadMailbox.tell(ChunkTaskPriorityQueueSorter.message(holder, runnable));
-+            this.mainThreadMailbox.tell(ChunkTaskPriorityQueueSorter.message(holder, () -> ChunkMap.this.chunkLoadConversionCallbackExecutor.execute(runnable))); // Paper - delay running Chunk post processing until outside of the sorter to prevent a deadlock scenario when post processing causes another chunk request.
-         }).thenApplyAsync((either) -> {
-             return either.ifLeft((chunk) -> {
+-        }).thenApplyAsync((either) -> {
+-            return either.ifLeft((chunk) -> {
++            // Paper start
++            return either.flatMap((list) -> {
++                LevelChunk chunk = (LevelChunk) list.get(list.size() / 2);
                  chunk.postProcessGeneration();
+                 this.level.startTickingChunk(chunk);
++                return Either.left(chunk);
++
+             });
+-        }, this.mainThreadExecutor);
++        }, (runnable) -> {
++                this.mainThreadMailbox.tell(ChunkTaskPriorityQueueSorter.message(holder, () -> ChunkMap.this.chunkLoadConversionCallbackExecutor.execute(runnable))); // Paper - delay running Chunk post processing until outside of the sorter to prevent a deadlock scenario when post processing causes another chunk request.
++        });
++        // Paper end
+ 
+         completablefuture1.thenAcceptAsync((either) -> {
+             either.ifLeft((chunk) -> {
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 index cf56b2ed508352205ef6ec71519b0626aa698987..1b6fb81079d3ad5d3c33be67a1c05111f9dd5f2d 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
