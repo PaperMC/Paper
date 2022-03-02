@@ -6,13 +6,13 @@ Subject: [PATCH] Add StructuresLocateEvent
 
 diff --git a/src/main/java/io/papermc/paper/world/structure/PaperConfiguredStructure.java b/src/main/java/io/papermc/paper/world/structure/PaperConfiguredStructure.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..0eb386e2d4b6ac20dcef3f4b7cb24bbeb398d40f
+index 0000000000000000000000000000000000000000..e4fb6fe93ce032314483e87bc9c80f55e5161cf0
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/world/structure/PaperConfiguredStructure.java
 @@ -0,0 +1,38 @@
 +package io.papermc.paper.world.structure;
 +
-+import io.papermc.paper.PaperRegistry;
++import io.papermc.paper.registry.PaperRegistry;
 +import net.minecraft.core.Registry;
 +import net.minecraft.resources.ResourceLocation;
 +import net.minecraft.world.level.levelgen.feature.ConfiguredStructureFeature;
@@ -48,6 +48,19 @@ index 0000000000000000000000000000000000000000..0eb386e2d4b6ac20dcef3f4b7cb24bbe
 +        }
 +    }
 +}
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 6d1dd3d33bcaa7a1262a53c4fed57564c74df286..8d197cc55d0afab1bb247623777f6cd8db231846 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -2038,7 +2038,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+             this.packRepository.setSelected(dataPacks);
+             this.worldData.setDataPackConfig(MinecraftServer.getSelectedPacks(this.packRepository));
+             this.resources.managers.updateRegistryTags(this.registryAccess());
+-            io.papermc.paper.PaperRegistry.clearCaches(); // Paper
++            io.papermc.paper.registry.PaperRegistry.clearCaches(); // Paper
+             new io.papermc.paper.event.server.ServerResourcesReloadedEvent(cause).callEvent(); // Paper
+             if (Thread.currentThread() != this.serverThread) return; // Paper
+             //this.getPlayerList().saveAll(); // Paper - we don't need to do this
 diff --git a/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java b/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java
 index f9fc2fc63080a60fe61ebb08ddd93c4f189df84d..97c3ec08f943dd6960f599637037c98825788478 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java
@@ -99,7 +112,7 @@ index af9ef29f5c5a600e4544ba735c833699cc93f93a..473a54963fbe08beeff26a828827f9f7
          this.feature = feature;
 diff --git a/src/test/java/io/papermc/paper/world/structure/ConfiguredStructureTest.java b/src/test/java/io/papermc/paper/world/structure/ConfiguredStructureTest.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..54e1b17c71ec3e208add236d095fd78f568ae670
+index 0000000000000000000000000000000000000000..e44822771a04549da63360d0e64467ea685e18eb
 --- /dev/null
 +++ b/src/test/java/io/papermc/paper/world/structure/ConfiguredStructureTest.java
 @@ -0,0 +1,89 @@
@@ -181,7 +194,7 @@ index 0000000000000000000000000000000000000000..54e1b17c71ec3e208add236d095fd78f
 +        final StringJoiner joiner = new StringJoiner("\n", "Missing: \n", "");
 +
 +        missing.forEach((key, configuredFeature) -> {
-+            joiner.add("public static final Registry.Reference<ConfiguredStructure> " + BUILT_IN_STRUCTURES.get(key) + " = create(\"" + key.getPath() + "\");");
++            joiner.add("public static final Reference<ConfiguredStructure> " + BUILT_IN_STRUCTURES.get(key) + " = create(\"" + key.getPath() + "\");");
 +        });
 +
 +        return joiner.toString();
@@ -192,3 +205,16 @@ index 0000000000000000000000000000000000000000..54e1b17c71ec3e208add236d095fd78f
 +        System.setOut(out);
 +    }
 +}
+diff --git a/src/test/java/org/bukkit/support/AbstractTestingBase.java b/src/test/java/org/bukkit/support/AbstractTestingBase.java
+index acde0f0170a34a8497e81fedb7944e2ef73213ae..37934f0da922d696373e7a3a8cf976fcb9015271 100644
+--- a/src/test/java/org/bukkit/support/AbstractTestingBase.java
++++ b/src/test/java/org/bukkit/support/AbstractTestingBase.java
+@@ -40,7 +40,7 @@ public abstract class AbstractTestingBase {
+         RegistryAccess.Frozen registry = RegistryAccess.builtinCopy().freeze();
+         // Paper start
+         try {
+-            java.lang.reflect.Field field = io.papermc.paper.PaperRegistry.class.getDeclaredField("REGISTRY_ACCESS");
++            java.lang.reflect.Field field = io.papermc.paper.registry.PaperRegistry.class.getDeclaredField("REGISTRY_ACCESS");
+             field.trySetAccessible();
+             field.set(null, com.google.common.base.Suppliers.ofInstance(registry));
+         } catch (ReflectiveOperationException ex) {
