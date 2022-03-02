@@ -6,15 +6,16 @@ Subject: [PATCH] Add StructureLocateEvent
 
 diff --git a/src/main/java/io/papermc/paper/PaperRegistry.java b/src/main/java/io/papermc/paper/PaperRegistry.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..5942311de84094117d2976b9eecef43561d6046d
+index 0000000000000000000000000000000000000000..b7ca264c278f1a9edd2dbdf326ab7acd367b13b6
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/PaperRegistry.java
-@@ -0,0 +1,92 @@
+@@ -0,0 +1,99 @@
 +package io.papermc.paper;
 +
 +import com.google.common.base.Preconditions;
 +import com.google.common.base.Suppliers;
 +import net.minecraft.core.Registry;
++import net.minecraft.core.RegistryAccess;
 +import net.minecraft.resources.ResourceKey;
 +import net.minecraft.server.MinecraftServer;
 +import org.bukkit.Keyed;
@@ -33,6 +34,8 @@ index 0000000000000000000000000000000000000000..5942311de84094117d2976b9eecef435
 +@DefaultQualifier(NonNull.class)
 +public abstract class PaperRegistry<API extends Keyed, MINECRAFT> implements org.bukkit.Registry<API> {
 +
++    @SuppressWarnings("FieldMayBeFinal") // non-final for testing
++    private static Supplier<RegistryAccess> REGISTRY_ACCESS = Suppliers.memoize(() -> MinecraftServer.getServer().registryAccess());
 +    public static final Map<Class<?>, PaperRegistry<?, ?>> REGISTRIES = new HashMap<>();
 +
 +    private boolean registered;
@@ -42,7 +45,7 @@ index 0000000000000000000000000000000000000000..5942311de84094117d2976b9eecef435
 +
 +    public PaperRegistry(ResourceKey<? extends Registry<MINECRAFT>> registryKey) {
 +        this.registryKey = registryKey;
-+        this.registry = Suppliers.memoize(() -> MinecraftServer.getServer().registryAccess().registryOrThrow(this.registryKey));
++        this.registry = Suppliers.memoize(() -> REGISTRY_ACCESS.get().registryOrThrow(this.registryKey));
 +    }
 +
 +    @Override
@@ -90,6 +93,10 @@ index 0000000000000000000000000000000000000000..5942311de84094117d2976b9eecef435
 +        return Objects.hash(this.registryKey);
 +    }
 +
++    protected static <T> Supplier<Registry<T>> registryFor(ResourceKey<? extends Registry<T>> registryKey) {
++        return Suppliers.memoize(() -> REGISTRY_ACCESS.get().registryOrThrow(registryKey));
++    }
++
 +    public static void clearCaches() {
 +        for (PaperRegistry<?, ?> registry : REGISTRIES.values()) {
 +            registry.clearCache();
@@ -104,17 +111,15 @@ index 0000000000000000000000000000000000000000..5942311de84094117d2976b9eecef435
 +}
 diff --git a/src/main/java/io/papermc/paper/world/structure/PaperConfiguredStructure.java b/src/main/java/io/papermc/paper/world/structure/PaperConfiguredStructure.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..5b2327be715e268c2c87cce75c7defbf8ece851a
+index 0000000000000000000000000000000000000000..0eb386e2d4b6ac20dcef3f4b7cb24bbeb398d40f
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/world/structure/PaperConfiguredStructure.java
-@@ -0,0 +1,34 @@
+@@ -0,0 +1,38 @@
 +package io.papermc.paper.world.structure;
 +
-+import com.google.common.base.Suppliers;
 +import io.papermc.paper.PaperRegistry;
 +import net.minecraft.core.Registry;
 +import net.minecraft.resources.ResourceLocation;
-+import net.minecraft.server.MinecraftServer;
 +import net.minecraft.world.level.levelgen.feature.ConfiguredStructureFeature;
 +import net.minecraft.world.level.levelgen.feature.StructureFeature;
 +import org.bukkit.NamespacedKey;
@@ -129,17 +134,23 @@ index 0000000000000000000000000000000000000000..5b2327be715e268c2c87cce75c7defbf
 +public final class PaperConfiguredStructure {
 +
 +    public static void init() {
-+        new PaperRegistry<>(Registry.CONFIGURED_STRUCTURE_FEATURE_REGISTRY) {
++        new ConfiguredStructureRegistry().registerTo(ConfiguredStructure.class);
++    }
 +
-+            private static final Supplier<Registry<StructureFeature<?>>> STRUCTURE_FEATURE_REGISTRY = Suppliers.memoize(() -> MinecraftServer.getServer().registryAccess().registryOrThrow(Registry.STRUCTURE_FEATURE_REGISTRY));
++    static final class ConfiguredStructureRegistry extends PaperRegistry<ConfiguredStructure, ConfiguredStructureFeature<?, ?>> {
 +
-+            @Override
-+            public ConfiguredStructure convertToApi(NamespacedKey key, ConfiguredStructureFeature<?, ?> nms) {
-+                final ResourceLocation structureFeatureLoc = Objects.requireNonNull(STRUCTURE_FEATURE_REGISTRY.get().getKey(nms.feature));
-+                final StructureType structureType = Objects.requireNonNull(StructureType.getStructureTypes().get(structureFeatureLoc.getPath()), structureFeatureLoc + " could not be converted to an API type");
-+                return new ConfiguredStructure(key, structureType);
-+            }
-+        }.registerTo(ConfiguredStructure.class);
++        private static final Supplier<Registry<StructureFeature<?>>> STRUCTURE_FEATURE_REGISTRY = registryFor(Registry.STRUCTURE_FEATURE_REGISTRY);
++
++        public ConfiguredStructureRegistry() {
++            super(Registry.CONFIGURED_STRUCTURE_FEATURE_REGISTRY);
++        }
++
++        @Override
++        public ConfiguredStructure convertToApi(NamespacedKey key, ConfiguredStructureFeature<?, ?> nms) {
++            final ResourceLocation structureFeatureLoc = Objects.requireNonNull(STRUCTURE_FEATURE_REGISTRY.get().getKey(nms.feature));
++            final StructureType structureType = Objects.requireNonNull(StructureType.getStructureTypes().get(structureFeatureLoc.getPath()), structureFeatureLoc + " could not be converted to an API type");
++            return new ConfiguredStructure(key, structureType);
++        }
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
@@ -221,10 +232,10 @@ index 8e9b35d3012ab0bafe5e2194d8723d892402de39..7aaf7f2be7b5795c34f71b24571294e6
      /**
 diff --git a/src/test/java/io/papermc/paper/world/structure/ConfiguredStructureTest.java b/src/test/java/io/papermc/paper/world/structure/ConfiguredStructureTest.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..44084c5cf89178b26615e8fe309c9844ab0e4405
+index 0000000000000000000000000000000000000000..c559eb86993affe879fd80a32ff1c4c70302c45c
 --- /dev/null
 +++ b/src/test/java/io/papermc/paper/world/structure/ConfiguredStructureTest.java
-@@ -0,0 +1,91 @@
+@@ -0,0 +1,89 @@
 +package io.papermc.paper.world.structure;
 +
 +import net.minecraft.data.BuiltinRegistries;
@@ -303,9 +314,7 @@ index 0000000000000000000000000000000000000000..44084c5cf89178b26615e8fe309c9844
 +        final StringJoiner joiner = new StringJoiner("\n", "Missing: \n", "");
 +
 +        missing.forEach((key, configuredFeature) -> {
-+            final ResourceLocation featureKey = Objects.requireNonNull(net.minecraft.core.Registry.STRUCTURE_FEATURE.getKey(configuredFeature.feature));
-+            final StructureType type = StructureType.getStructureTypes().get(featureKey.getPath());
-+            joiner.add("public static final ConfiguredStructure " + BUILT_IN_STRUCTURES.get(key) + " = create(\"" + key.getPath() + "\", StructureType." + API_STRUCTURE_TYPES.get(type) +");");
++            joiner.add("public static final ConfiguredStructure " + BUILT_IN_STRUCTURES.get(key) + " = create(\"" + key.getPath() + "\");");
 +        });
 +
 +        return joiner.toString();
@@ -316,3 +325,23 @@ index 0000000000000000000000000000000000000000..44084c5cf89178b26615e8fe309c9844
 +        System.setOut(out);
 +    }
 +}
+diff --git a/src/test/java/org/bukkit/support/AbstractTestingBase.java b/src/test/java/org/bukkit/support/AbstractTestingBase.java
+index d6b6b7a3d2949126520e8256563afeb2b43bf12c..acde0f0170a34a8497e81fedb7944e2ef73213ae 100644
+--- a/src/test/java/org/bukkit/support/AbstractTestingBase.java
++++ b/src/test/java/org/bukkit/support/AbstractTestingBase.java
+@@ -38,6 +38,15 @@ public abstract class AbstractTestingBase {
+         MultiPackResourceManager resourceManager = new MultiPackResourceManager(PackType.SERVER_DATA, Collections.singletonList(new VanillaPackResources(ServerPacksSource.BUILT_IN_METADATA, "minecraft")));
+         // add tags and loot tables for unit tests
+         RegistryAccess.Frozen registry = RegistryAccess.builtinCopy().freeze();
++        // Paper start
++        try {
++            java.lang.reflect.Field field = io.papermc.paper.PaperRegistry.class.getDeclaredField("REGISTRY_ACCESS");
++            field.trySetAccessible();
++            field.set(null, com.google.common.base.Suppliers.ofInstance(registry));
++        } catch (ReflectiveOperationException ex) {
++            throw new IllegalStateException("Could not reflectively set RegistryAccess in PaperRegistry", ex);
++        }
++        // Paper end
+         // Register vanilla pack
+         DATA_PACK = ReloadableServerResources.loadResources(resourceManager, registry, Commands.CommandSelection.DEDICATED, 0, MoreExecutors.directExecutor(), MoreExecutors.directExecutor()).join();
+         // Bind tags
