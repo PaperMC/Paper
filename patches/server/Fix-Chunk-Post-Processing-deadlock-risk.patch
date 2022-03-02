@@ -68,14 +68,32 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      private final com.destroystokyo.paper.util.misc.PooledLinkedHashSets<ServerPlayer> pooledLinkedPlayerHashSets = new com.destroystokyo.paper.util.misc.PooledLinkedHashSets<>();
  
 @@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
-                 return (LevelChunk) list.get(list.size() / 2);
-             });
-         }, (runnable) -> {
+             return ChunkStatus.FULL;
+         });
+         CompletableFuture<Either<LevelChunk, ChunkHolder.ChunkLoadingFailure>> completablefuture1 = completablefuture.thenApplyAsync((either) -> {
+-            return either.mapLeft((list) -> {
+-                return (LevelChunk) list.get(list.size() / 2);
+-            });
+-        }, (runnable) -> {
 -            this.mainThreadMailbox.tell(ChunkTaskPriorityQueueSorter.message(holder, runnable));
-+            this.mainThreadMailbox.tell(ChunkTaskPriorityQueueSorter.message(holder, () -> ChunkMap.this.chunkLoadConversionCallbackExecutor.execute(runnable))); // Paper - delay running Chunk post processing until outside of the sorter to prevent a deadlock scenario when post processing causes another chunk request.
-         }).thenApplyAsync((either) -> {
-             return either.ifLeft((chunk) -> {
+-        }).thenApplyAsync((either) -> {
+-            return either.ifLeft((chunk) -> {
++            // Paper start
++            return either.flatMap((list) -> {
++                LevelChunk chunk = (LevelChunk) list.get(list.size() / 2);
                  chunk.postProcessGeneration();
+                 this.level.startTickingChunk(chunk);
++                return Either.left(chunk);
++
+             });
+-        }, this.mainThreadExecutor);
++        }, (runnable) -> {
++                this.mainThreadMailbox.tell(ChunkTaskPriorityQueueSorter.message(holder, () -> ChunkMap.this.chunkLoadConversionCallbackExecutor.execute(runnable))); // Paper - delay running Chunk post processing until outside of the sorter to prevent a deadlock scenario when post processing causes another chunk request.
++        });
++        // Paper end
+ 
+         completablefuture1.thenAcceptAsync((either) -> {
+             either.ifLeft((chunk) -> {
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
