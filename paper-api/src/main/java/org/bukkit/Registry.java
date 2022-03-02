@@ -384,6 +384,27 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      */
     @Nullable
     T get(@NotNull NamespacedKey key);
+    // Paper start
+    /**
+     * Get the object by its key.
+     *
+     * @param key non-null key
+     * @return item or null if it does not exist
+     */
+    default @Nullable T get(final net.kyori.adventure.key.@NotNull Key key) {
+        return key instanceof final NamespacedKey nsKey ? this.get(nsKey) : this.get(new NamespacedKey(key.namespace(), key.value()));
+    }
+
+    /**
+     * Get the object by its typed key.
+     *
+     * @param typedKey non-null typed key
+     * @return item or null if it does not exist
+     */
+    default @Nullable T get(final io.papermc.paper.registry.@NotNull TypedKey<T> typedKey) {
+        return this.get(typedKey.key());
+    }
+    // Paper end
 
     // Paper start - improve Registry
     /**
@@ -457,6 +478,34 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
         return null;
     }
     // Paper end - improve Registry
+
+    // Paper start - RegistrySet API
+    /**
+     * Checks if this registry has a tag with the given key.
+     *
+     * @param key the key to check for
+     * @return true if this registry has a tag with the given key, false otherwise
+     * @see #getTag(io.papermc.paper.registry.tag.TagKey)
+     */
+    @ApiStatus.Experimental
+    default boolean hasTag(final io.papermc.paper.registry.tag.@NotNull TagKey<T> key) {
+        throw new UnsupportedOperationException(this + " doesn't have tags");
+    }
+
+    /**
+     * Gets the named registry set (tag) for the given key.
+     *
+     * @param key the key to get the tag for
+     * @return the tag for the key
+     * @throws java.util.NoSuchElementException if no tag with the given key is found
+     * @throws UnsupportedOperationException if this registry doesn't have or support tags
+     * @see #hasTag(io.papermc.paper.registry.tag.TagKey)
+     */
+    @ApiStatus.Experimental
+    default @NotNull io.papermc.paper.registry.tag.Tag<T> getTag(final io.papermc.paper.registry.tag.@NotNull TagKey<T> key) {
+        throw new UnsupportedOperationException(this + " doesn't have tags");
+    }
+    // Paper end - RegistrySet API
 
     /**
      * Get the object by its key.
