@@ -235,7 +235,7 @@
          playerconnection.teleport(player.getX(), player.getY(), player.getZ(), player.getYRot(), player.getXRot());
          ServerStatus serverping = this.server.getStatus();
  
-@@ -222,17 +327,85 @@
+@@ -222,17 +327,95 @@
              player.sendServerStatus(serverping);
          }
  
@@ -323,10 +323,20 @@
 +        }
 +        // Paper end - Configurable player collision
 +        PlayerList.LOGGER.info("{}[{}] logged in with entity id {} at ([{}]{}, {}, {})", player.getName().getString(), s1, player.getId(), worldserver1.serverLevelData.getLevelName(), player.getX(), player.getY(), player.getZ());
++        // Paper start - Send empty chunk, so players aren't stuck in the world loading screen with our chunk system not sending chunks when dead
++        if (player.isDeadOrDying()) {
++            net.minecraft.core.Holder<net.minecraft.world.level.biome.Biome> plains = worldserver1.registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.BIOME)
++                    .getOrThrow(net.minecraft.world.level.biome.Biomes.PLAINS);
++            player.connection.send(new net.minecraft.network.protocol.game.ClientboundLevelChunkWithLightPacket(
++                    new net.minecraft.world.level.chunk.EmptyLevelChunk(worldserver1, player.chunkPosition(), plains),
++                    worldserver1.getLightEngine(), (java.util.BitSet)null, (java.util.BitSet) null)
++            );
++        }
++        // Paper end - Send empty chunk
      }
  
      public void updateEntireScoreboard(ServerScoreboard scoreboard, ServerPlayer player) {
-@@ -269,30 +442,31 @@
+@@ -269,30 +452,31 @@
      }
  
      public void addWorldborderListener(ServerLevel world) {
@@ -363,7 +373,7 @@
              }
  
              @Override
-@@ -319,14 +493,15 @@
+@@ -319,14 +503,15 @@
      }
  
      protected void save(ServerPlayer player) {
@@ -381,7 +391,7 @@
  
          if (advancementdataplayer != null) {
              advancementdataplayer.save();
-@@ -334,95 +509,207 @@
+@@ -334,95 +519,207 @@
  
      }
  
@@ -577,10 +587,11 @@
              }
  
 -            return ichatmutablecomponent;
+-        } else {
+-            return this.players.size() >= this.maxPlayers && !this.canBypassPlayerLimit(profile) ? Component.translatable("multiplayer.disconnect.server_full") : null;
 +            // return chatmessage;
 +            event.disallow(PlayerLoginEvent.Result.KICK_BANNED, io.papermc.paper.adventure.PaperAdventure.asAdventure(ichatmutablecomponent)); // Paper - Adventure
-         } else {
--            return this.players.size() >= this.maxPlayers && !this.canBypassPlayerLimit(profile) ? Component.translatable("multiplayer.disconnect.server_full") : null;
++        } else {
 +            // return this.players.size() >= this.maxPlayers && !this.canBypassPlayerLimit(gameprofile) ? IChatBaseComponent.translatable("multiplayer.disconnect.server_full") : null;
 +            if (this.players.size() >= this.maxPlayers && !this.canBypassPlayerLimit(gameprofile)) {
 +                event.disallow(PlayerLoginEvent.Result.KICK_FULL, net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(org.spigotmc.SpigotConfig.serverFullMessage)); // Spigot // Paper - Adventure
@@ -627,7 +638,7 @@
  
          if (entityplayer1 != null) {
              set.add(entityplayer1);
-@@ -431,72 +718,160 @@
+@@ -431,72 +728,160 @@
          Iterator iterator1 = set.iterator();
  
          while (iterator1.hasNext()) {
@@ -809,7 +820,7 @@
          return entityplayer1;
      }
  
-@@ -516,15 +891,32 @@
+@@ -516,15 +901,32 @@
      }
  
      public void sendPlayerPermissionLevel(ServerPlayer player) {
@@ -844,7 +855,7 @@
              this.sendAllPlayerInfoIn = 0;
          }
  
-@@ -537,9 +929,28 @@
+@@ -537,9 +939,28 @@
              ServerPlayer entityplayer = (ServerPlayer) iterator.next();
  
              entityplayer.connection.send(packet);
@@ -873,7 +884,7 @@
  
      public void broadcastAll(Packet<?> packet, ResourceKey<Level> dimension) {
          Iterator iterator = this.players.iterator();
-@@ -554,7 +965,7 @@
+@@ -554,7 +975,7 @@
  
      }
  
@@ -882,7 +893,7 @@
          PlayerTeam scoreboardteam = source.getTeam();
  
          if (scoreboardteam != null) {
-@@ -573,7 +984,7 @@
+@@ -573,7 +994,7 @@
          }
      }
  
@@ -891,7 +902,7 @@
          PlayerTeam scoreboardteam = source.getTeam();
  
          if (scoreboardteam == null) {
-@@ -619,7 +1030,7 @@
+@@ -619,7 +1040,7 @@
      }
  
      public void deop(GameProfile profile) {
@@ -900,7 +911,7 @@
          ServerPlayer entityplayer = this.getPlayer(profile.getId());
  
          if (entityplayer != null) {
-@@ -629,6 +1040,11 @@
+@@ -629,6 +1050,11 @@
      }
  
      private void sendPlayerPermissionLevel(ServerPlayer player, int permissionLevel) {
@@ -912,7 +923,7 @@
          if (player.connection != null) {
              byte b0;
  
-@@ -643,36 +1059,53 @@
+@@ -643,36 +1069,53 @@
              player.connection.send(new ClientboundEntityEventPacket(player, b0));
          }
  
@@ -979,7 +990,7 @@
              if (entityplayer != player && entityplayer.level().dimension() == worldKey) {
                  double d4 = x - entityplayer.getX();
                  double d5 = y - entityplayer.getY();
-@@ -687,10 +1120,12 @@
+@@ -687,10 +1130,12 @@
      }
  
      public void saveAll() {
@@ -992,7 +1003,7 @@
      }
  
      public UserWhiteList getWhiteList() {
-@@ -712,15 +1147,19 @@
+@@ -712,15 +1157,19 @@
      public void reloadWhiteList() {}
  
      public void sendLevelInfo(ServerPlayer player, ServerLevel world) {
@@ -1016,7 +1027,7 @@
          }
  
          player.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.LEVEL_CHUNKS_LOAD_START, 0.0F));
-@@ -729,8 +1168,16 @@
+@@ -729,8 +1178,16 @@
  
      public void sendAllPlayerInfo(ServerPlayer player) {
          player.inventoryMenu.sendAllDataToRemote();
@@ -1034,7 +1045,7 @@
      }
  
      public int getPlayerCount() {
-@@ -746,6 +1193,7 @@
+@@ -746,6 +1203,7 @@
      }
  
      public void setUsingWhiteList(boolean whitelistEnabled) {
@@ -1042,7 +1053,7 @@
          this.doWhiteList = whitelistEnabled;
      }
  
-@@ -786,12 +1234,36 @@
+@@ -786,12 +1244,36 @@
      }
  
      public void removeAll() {
@@ -1081,7 +1092,7 @@
      public void broadcastSystemMessage(Component message, boolean overlay) {
          this.broadcastSystemMessage(message, (entityplayer) -> {
              return message;
-@@ -819,24 +1291,43 @@
+@@ -819,24 +1301,43 @@
      }
  
      public void broadcastChatMessage(PlayerChatMessage message, ServerPlayer sender, ChatType.Bound params) {
@@ -1128,7 +1139,7 @@
          }
  
          if (flag1 && sender != null) {
-@@ -845,20 +1336,27 @@
+@@ -845,20 +1346,27 @@
  
      }
  
@@ -1161,7 +1172,7 @@
                  Path path = file2.toPath();
  
                  if (FileUtil.isPathNormalized(path) && FileUtil.isPathPortable(path) && path.startsWith(file.getPath()) && file2.isFile()) {
-@@ -867,7 +1365,7 @@
+@@ -867,7 +1375,7 @@
              }
  
              serverstatisticmanager = new ServerStatsCounter(this.server, file1);
@@ -1170,7 +1181,7 @@
          }
  
          return serverstatisticmanager;
-@@ -875,13 +1373,13 @@
+@@ -875,13 +1383,13 @@
  
      public PlayerAdvancements getPlayerAdvancements(ServerPlayer player) {
          UUID uuid = player.getUUID();
@@ -1186,7 +1197,7 @@
          }
  
          advancementdataplayer.setPlayer(player);
-@@ -932,15 +1430,28 @@
+@@ -932,15 +1440,28 @@
      }
  
      public void reloadResources() {
