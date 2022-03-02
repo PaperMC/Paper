@@ -3,10 +3,11 @@ From: dfsek <dfsek@protonmail.com>
 Date: Tue, 15 Sep 2020 21:59:16 -0700
 Subject: [PATCH] Add StructureLocateEvent
 
+Co-authored-by: Jake Potrebic <jake.m.potrebic@gmail.com>
 
 diff --git a/src/main/java/io/papermc/paper/event/world/StructureLocateEvent.java b/src/main/java/io/papermc/paper/event/world/StructureLocateEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..3f9791dba9b0ac4d1565a0f2c2539df67a57ce16
+index 0000000000000000000000000000000000000000..0c83a02059d65672ff191c42932d850950e9ea00
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/event/world/StructureLocateEvent.java
 @@ -0,0 +1,157 @@
@@ -32,7 +33,7 @@ index 0000000000000000000000000000000000000000..3f9791dba9b0ac4d1565a0f2c2539df6
 + * </ul>
 + * @deprecated no longer used, see {@link StructuresLocateEvent}
 + */
-+@Deprecated
++@Deprecated(forRemoval = true)
 +public class StructureLocateEvent extends WorldEvent implements Cancellable {
 +    private static final HandlerList handlers = new HandlerList();
 +    private final Location origin;
@@ -169,10 +170,10 @@ index 0000000000000000000000000000000000000000..3f9791dba9b0ac4d1565a0f2c2539df6
 +}
 diff --git a/src/main/java/io/papermc/paper/event/world/StructuresLocateEvent.java b/src/main/java/io/papermc/paper/event/world/StructuresLocateEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..bf499711f6b0fee1ad267a332bf27f894f29a5f7
+index 0000000000000000000000000000000000000000..2e372d1b6d421b586d1ca5a5d506bc749ba9df21
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/event/world/StructuresLocateEvent.java
-@@ -0,0 +1,90 @@
+@@ -0,0 +1,163 @@
 +package io.papermc.paper.event.world;
 +
 +import io.papermc.paper.world.structure.ConfiguredStructure;
@@ -184,8 +185,21 @@ index 0000000000000000000000000000000000000000..bf499711f6b0fee1ad267a332bf27f89
 +import org.jetbrains.annotations.NotNull;
 +import org.jetbrains.annotations.Nullable;
 +
++import java.util.ArrayList;
 +import java.util.List;
 +
++/**
++ * Called <b>before</b> a set of configured structures is located.
++ * This happens when:
++ * <ul>
++ *     <li>The /locate command is used.<br></li>
++ *     <li>An Eye of Ender is used.</li>
++ *     <li>An Explorer/Treasure Map is activated.</li>
++ *     <li>A dolphin swims to a treasure location.</li>
++ *     <li>A trade is done with a villager for a map.</li>
++ *     <li>{@link World#locateNearestStructure(Location, org.bukkit.StructureType, int, boolean)} is invoked.</li>
++ * </ul>
++ */
 +public class StructuresLocateEvent extends WorldEvent implements Cancellable {
 +
 +    private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -205,38 +219,95 @@ index 0000000000000000000000000000000000000000..bf499711f6b0fee1ad267a332bf27f89
 +        this.findUnexplored = findUnexplored;
 +    }
 +
++    /**
++     * Gets the {@link Location} from which the search is to be conducted.
++     *
++     * @return {@link Location} where search begins
++     */
 +    public @NotNull Location getOrigin() {
 +        return this.origin;
 +    }
 +
++    /**
++     * Gets the {@link Location} and {@link ConfiguredStructure} set as the found location, if it was defined.
++     * <p>
++     * Returns {@code null} if it has not been set by {@link StructuresLocateEvent#setResult(Result)}.
++     * Since this event fires <i>before</i> the search is done, the actual location is unknown at this point.
++     *
++     * @return The result location and structure, if it has been set. null if it has not.
++     * @see World#locateNearestStructure(Location, org.bukkit.StructureType, int, boolean)
++     */
 +    public @Nullable Result getResult() {
 +        return this.result;
 +    }
 +
++    /**
++     * Sets the result {@link Location} and {@link ConfiguredStructure}. This causes the search to be skipped, and the result object passed here to be used as the result.
++     *
++     * @param result the {@link Location} and {@link ConfiguredStructure} of the search.
++     */
 +    public void setResult(@Nullable Result result) {
 +        this.result = result;
 +    }
 +
++    /**
++     * Gets a mutable list of ConfiguredStructures that are valid targets for the search.
++     *
++     * @return a mutable list of ConfiguredStructures
++     */
 +    public @NotNull List<ConfiguredStructure> getConfiguredStructures() {
 +        return this.configuredStructures;
 +    }
 +
++    /**
++     * Sets the list of ConfiguredStructures that are valid targets for the search.
++     *
++     * @param configuredStructures a list of ConfiguredStructure targets
++     */
 +    public void setConfiguredStructures(@NotNull List<ConfiguredStructure> configuredStructures) {
-+        this.configuredStructures = configuredStructures;
++        this.configuredStructures = new ArrayList<>(configuredStructures);
 +    }
 +
++    /**
++     * Gets the search radius in which to attempt locating the structure.
++     * <p>
++     * This radius may not always be obeyed during the structure search!
++     *
++     * @return the search radius.
++     */
 +    public int getRadius() {
 +        return this.radius;
 +    }
 +
++    /**
++     * Sets the search radius in which to attempt locating the structure.
++     * <p>
++     * This radius may not always be obeyed during the structure search!
++     *
++     * @param radius the search radius.
++     */
 +    public void setRadius(int radius) {
 +        this.radius = radius;
 +    }
 +
++    /**
++     * Gets whether to search exclusively for unexplored structures.
++     * <p>
++     * As with the search radius, this value is not always obeyed.
++     *
++     * @return Whether to search for only unexplored structures.
++     */
 +    public boolean shouldFindUnexplored() {
 +        return this.findUnexplored;
 +    }
 +
++    /**
++     * Sets whether to search exclusively for unexplored structures.
++     * <p>
++     * As with the search radius, this value is not always obeyed.
++     *
++     * @param findUnexplored Whether to search for only unexplored structures.
++     */
 +    public void setFindUnexplored(boolean findUnexplored) {
 +        this.findUnexplored = findUnexplored;
 +    }
@@ -260,6 +331,9 @@ index 0000000000000000000000000000000000000000..bf499711f6b0fee1ad267a332bf27f89
 +        return HANDLER_LIST;
 +    }
 +
++    /**
++     * Result for {@link StructuresLocateEvent}.
++     */
 +    public record Result(@NotNull Location position, @NotNull ConfiguredStructure configuredStructure) {
 +    }
 +}
