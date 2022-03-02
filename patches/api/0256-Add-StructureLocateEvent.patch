@@ -339,23 +339,27 @@ index 0000000000000000000000000000000000000000..2e372d1b6d421b586d1ca5a5d506bc74
 +}
 diff --git a/src/main/java/io/papermc/paper/world/structure/ConfiguredStructure.java b/src/main/java/io/papermc/paper/world/structure/ConfiguredStructure.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..5f808d544dbc7edf45d2e00212f57465560d5318
+index 0000000000000000000000000000000000000000..1413f5526fcb8c88bedea90fed2e44f98be770a3
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/world/structure/ConfiguredStructure.java
-@@ -0,0 +1,91 @@
+@@ -0,0 +1,94 @@
 +package io.papermc.paper.world.structure;
 +
 +import org.bukkit.Keyed;
 +import org.bukkit.NamespacedKey;
++import org.bukkit.Registry;
 +import org.bukkit.StructureType;
 +import org.jetbrains.annotations.NotNull;
 +
-+import java.util.HashMap;
 +import java.util.Map;
++import java.util.Objects;
++import java.util.function.Function;
++import java.util.stream.Collectors;
++import java.util.stream.StreamSupport;
 +
 +public final class ConfiguredStructure implements Keyed {
 +
-+    private static final Map<NamespacedKey, ConfiguredStructure> CONFIGURED_STRUCTURE_MAP = new HashMap<>();
++    static Registry<ConfiguredStructure> REGISTRY;
 +
 +    public static final ConfiguredStructure PILLAGER_OUTPOST = create("pillager_outpost", StructureType.PILLAGER_OUTPOST);
 +    public static final ConfiguredStructure MINESHAFT = create("mineshaft", StructureType.MINESHAFT);
@@ -392,7 +396,7 @@ index 0000000000000000000000000000000000000000..5f808d544dbc7edf45d2e00212f57465
 +    private final NamespacedKey key;
 +    private final StructureType structureType;
 +
-+    private ConfiguredStructure(@NotNull NamespacedKey key, @NotNull StructureType structureType) {
++    ConfiguredStructure(@NotNull NamespacedKey key, @NotNull StructureType structureType) {
 +        this.key = key;
 +        this.structureType = structureType;
 +    }
@@ -420,18 +424,17 @@ index 0000000000000000000000000000000000000000..5f808d544dbc7edf45d2e00212f57465
 +    }
 +
 +    /**
-+     * Gets all configure structures.
++     * Gets all configured structures.
 +     *
 +     * @return an immutable map
 +     */
 +    public static @NotNull Map<NamespacedKey, ConfiguredStructure> getConfiguredStructures() {
-+        return Map.copyOf(CONFIGURED_STRUCTURE_MAP);
++        return StreamSupport.stream(Objects.requireNonNull(REGISTRY, "not initialized yet").spliterator(), false)
++            .collect(Collectors.toMap(Keyed::getKey, Function.identity()));
 +    }
 +
 +    private static @NotNull ConfiguredStructure create(@NotNull String key, @NotNull StructureType type) {
-+        final ConfiguredStructure structure = new ConfiguredStructure(NamespacedKey.minecraft(key), type);
-+        CONFIGURED_STRUCTURE_MAP.put(structure.key, structure);
-+        return structure;
++        return new ConfiguredStructure(NamespacedKey.minecraft(key), type);
 +    }
 +}
 diff --git a/src/main/java/org/bukkit/Registry.java b/src/main/java/org/bukkit/Registry.java
