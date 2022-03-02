@@ -38,46 +38,11 @@ public final class TestServer {
 
         when(instance.getBukkitVersion()).thenReturn("BukkitVersion_" + TestServer.class.getPackage().getImplementationVersion());
 
-        Map<Class<? extends Keyed>, Registry<?>> registers = new HashMap<>();
-        when(instance.getRegistry(any())).then(invocationOnMock -> registers.computeIfAbsent(invocationOnMock.getArgument(0), aClass -> new Registry<>() {
-            private final Map<NamespacedKey, Keyed> cache = new HashMap<>();
-
-            @Override
-            public Keyed get(NamespacedKey key) {
-                Class<? extends Keyed> theClass;
-                // Some registries have extra Typed classes such as BlockType and ItemType.
-                // To avoid class cast exceptions during init mock the Typed class.
-                // To get the correct class, we just use the field type.
-                try {
-                    theClass = (Class<? extends Keyed>) aClass.getField(key.getKey().toUpperCase(Locale.ROOT).replace('.', '_')).getType();
-                } catch (ClassCastException | NoSuchFieldException e) {
-                    throw new RuntimeException(e);
-                }
-
-                return cache.computeIfAbsent(key, key2 -> mock(theClass, withSettings().stubOnly()));
-            }
-
-            @NotNull
-            @Override
-            public Keyed getOrThrow(@NotNull NamespacedKey key) {
-                Keyed keyed = get(key);
-
-                Preconditions.checkArgument(keyed != null, "No %s registry entry found for key %s.", aClass, key);
-
-                return keyed;
-            }
-
-            @NotNull
-            @Override
-            public Stream<Keyed> stream() {
-                throw new UnsupportedOperationException("Not supported");
-            }
-
-            @Override
-            public Iterator<Keyed> iterator() {
-                throw new UnsupportedOperationException("Not supported");
-            }
-        }));
+        // Paper start - RegistryAccess
+        when(instance.getRegistry(any())).then(invocationOnMock -> {
+            return io.papermc.paper.registry.RegistryAccess.registryAccess().getRegistry(((Class<Keyed>)invocationOnMock.getArgument(0)));
+        });
+        // Paper end - RegistryAccess
 
         UnsafeValues unsafeValues = mock(withSettings().stubOnly());
         when(instance.getUnsafe()).thenReturn(unsafeValues);

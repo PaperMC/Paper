@@ -2434,8 +2434,11 @@ public final class Bukkit {
      * @param tClass of the registry to get
      * @param <T> type of the registry
      * @return the corresponding registry or null if not present
+     * @deprecated use {@link io.papermc.paper.registry.RegistryAccess#getRegistry(io.papermc.paper.registry.RegistryKey)}
+     * with keys from {@link io.papermc.paper.registry.RegistryKey}
      */
     @Nullable
+    @Deprecated(since = "1.20.6")
     public static <T extends Keyed> Registry<T> getRegistry(@NotNull Class<T> tClass) {
         return server.getRegistry(tClass);
     }

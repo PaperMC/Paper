@@ -12,6 +12,17 @@ record RegistryKeyImpl<T>(Key key) implements RegistryKey<T> {
 
     static final Set<RegistryKey<?>> REGISTRY_KEYS = Sets.newIdentityHashSet();
 
+    // override equals and hashCode to this can be used to simulate an "identity" hashmap
+    @Override
+    public boolean equals(final @Nullable Object obj) {
+        return obj == this;
+    }
+
+    @Override
+    public int hashCode() {
+        return System.identityHashCode(this);
+    }
+
     static <T> RegistryKey<T> create(@Subst("some_key") final String key) {
         final RegistryKey<T> registryKey = createInternal(key);
         REGISTRY_KEYS.add(registryKey);

@@ -163,28 +163,23 @@ public enum Particle implements Keyed {
 
     private final NamespacedKey key;
     private final Class<?> dataType;
-    final boolean register;
+    // Paper - all particles are registered
 
     Particle(String key) {
         this(key, Void.class);
     }
 
-    Particle(String key, boolean register) {
-        this(key, Void.class, register);
-    }
+    // Paper - all particles are registered
 
     Particle(String key, /*@NotNull*/ Class<?> data) {
-        this(key, data, true);
-    }
-
-    Particle(String key, /*@NotNull*/ Class<?> data, boolean register) {
+        // Paper - all particles are registered
         if (key != null) {
             this.key = NamespacedKey.minecraft(key);
         } else {
             this.key = null;
         }
         dataType = data;
-        this.register = register;
+        // Paper - all particles are registered
     }
 
     /**
