@@ -8,7 +8,7 @@ See: https://gist.github.com/aikar/dd22bbd2a3d78a2fd3d92e95e9f28dc6
 as part of post processing a chunk, we can call ChunkConverter.
 
 ChunkConverter then kicks off major physics updates, and when blocks
-that have connections across chunk boundries occur, a recursive risk
+that have connections across chunk boundaries occur, a recursive risk
 can occur where A updates a block that triggers a physics request.
 
 That physics request may trigger a chunk request, that then enqueues
@@ -21,39 +21,8 @@ will be unable to proceed.
 We delay post processing of Chunk.A() 1 "pass" by re stuffing it back into
 the executor so that the mailbox ChunkQueue is now considered empty.
 
-This successfully fixed a reoccurring and highly reproduceable crash
+This successfully fixed a reoccurring and highly reproducible crash
 for heightmaps.
-
-TODO FOR LEAF: 1.18.2 changed this
-
-OLD
-
-        CompletableFuture<Either<LevelChunk, ChunkHolder.ChunkLoadingFailure>> completablefuture1 = completablefuture.thenApplyAsync((either) -> {
-            return either.flatMap((list) -> {
-                LevelChunk chunk = (LevelChunk) list.get(list.size() / 2);
-
-                chunk.postProcessGeneration();
-                this.level.startTickingChunk(chunk);
-                return Either.left(chunk);
-            });
-        }, (runnable) -> {
-            this.mainThreadMailbox.tell(ChunkTaskPriorityQueueSorter.message(holder, () -> ChunkMap.this.chunkLoadConversionCallbackExecutor.execute(runnable))); // Paper - delay running Chunk post processing until outside of the sorter to prevent a deadlock scenario when post processing causes another chunk request.
-        });
-
-NEW
-
-        CompletableFuture<Either<LevelChunk, ChunkHolder.ChunkLoadingFailure>> completablefuture1 = completablefuture.thenApplyAsync((either) -> {
-            return either.mapLeft((list) -> {
-                return (LevelChunk) list.get(list.size() / 2);
-            });
-        }, (runnable) -> {
-            this.mainThreadMailbox.tell(ChunkTaskPriorityQueueSorter.message(holder, () -> ChunkMap.this.chunkLoadConversionCallbackExecutor.execute(runnable))); // Paper - delay running Chunk post processing until outside of the sorter to prevent a deadlock scenario when post processing causes another chunk request.
-        }).thenApplyAsync((either) -> {
-            return either.ifLeft((chunk) -> {
-                chunk.postProcessGeneration();
-                this.level.startTickingChunk(chunk);
-            });
-        }, this.mainThreadExecutor);
 
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
@@ -68,29 +37,25 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      private final com.destroystokyo.paper.util.misc.PooledLinkedHashSets<ServerPlayer> pooledLinkedPlayerHashSets = new com.destroystokyo.paper.util.misc.PooledLinkedHashSets<>();
  
 @@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
-             return ChunkStatus.FULL;
          });
          CompletableFuture<Either<LevelChunk, ChunkHolder.ChunkLoadingFailure>> completablefuture1 = completablefuture.thenApplyAsync((either) -> {
--            return either.mapLeft((list) -> {
+             return either.mapLeft((list) -> {
 -                return (LevelChunk) list.get(list.size() / 2);
 -            });
 -        }, (runnable) -> {
 -            this.mainThreadMailbox.tell(ChunkTaskPriorityQueueSorter.message(holder, runnable));
 -        }).thenApplyAsync((either) -> {
 -            return either.ifLeft((chunk) -> {
-+            // Paper start
-+            return either.flatMap((list) -> {
-+                LevelChunk chunk = (LevelChunk) list.get(list.size() / 2);
++                // Paper start - revert 1.18.2 diff
++                final LevelChunk chunk = (LevelChunk) list.get(list.size() / 2);
                  chunk.postProcessGeneration();
                  this.level.startTickingChunk(chunk);
-+                return Either.left(chunk);
-+
++                return chunk;
              });
 -        }, this.mainThreadExecutor);
 +        }, (runnable) -> {
-+                this.mainThreadMailbox.tell(ChunkTaskPriorityQueueSorter.message(holder, () -> ChunkMap.this.chunkLoadConversionCallbackExecutor.execute(runnable))); // Paper - delay running Chunk post processing until outside of the sorter to prevent a deadlock scenario when post processing causes another chunk request.
-+        });
-+        // Paper end
++            this.mainThreadMailbox.tell(ChunkTaskPriorityQueueSorter.message(holder, () -> ChunkMap.this.chunkLoadConversionCallbackExecutor.execute(runnable))); // Paper - delay running Chunk post processing until outside of the sorter to prevent a deadlock scenario when post processing causes another chunk request.
++        }); // Paper end - revert 1.18.2 diff
  
          completablefuture1.thenAcceptAsync((either) -> {
              either.ifLeft((chunk) -> {
