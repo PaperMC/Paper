@@ -1,0 +1,160 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Wed, 2 Mar 2022 13:33:08 -0800
+Subject: [PATCH] Add PaperRegistry
+
+PaperRegistry is a server-backed impl of bukkit's Registry interface
+
+diff --git a/src/main/java/io/papermc/paper/PaperRegistry.java b/src/main/java/io/papermc/paper/PaperRegistry.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..b7ca264c278f1a9edd2dbdf326ab7acd367b13b6
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/PaperRegistry.java
+@@ -0,0 +1,99 @@
++package io.papermc.paper;
++
++import com.google.common.base.Preconditions;
++import com.google.common.base.Suppliers;
++import net.minecraft.core.Registry;
++import net.minecraft.core.RegistryAccess;
++import net.minecraft.resources.ResourceKey;
++import net.minecraft.server.MinecraftServer;
++import org.bukkit.Keyed;
++import org.bukkit.NamespacedKey;
++import org.bukkit.craftbukkit.util.CraftNamespacedKey;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.checker.nullness.qual.Nullable;
++import org.checkerframework.framework.qual.DefaultQualifier;
++
++import java.util.HashMap;
++import java.util.Iterator;
++import java.util.Map;
++import java.util.Objects;
++import java.util.function.Supplier;
++
++@DefaultQualifier(NonNull.class)
++public abstract class PaperRegistry<API extends Keyed, MINECRAFT> implements org.bukkit.Registry<API> {
++
++    @SuppressWarnings("FieldMayBeFinal") // non-final for testing
++    private static Supplier<RegistryAccess> REGISTRY_ACCESS = Suppliers.memoize(() -> MinecraftServer.getServer().registryAccess());
++    public static final Map<Class<?>, PaperRegistry<?, ?>> REGISTRIES = new HashMap<>();
++
++    private boolean registered;
++    private final ResourceKey<? extends Registry<MINECRAFT>> registryKey;
++    private final Supplier<Registry<MINECRAFT>> registry;
++    private final Map<NamespacedKey, API> cache = new HashMap<>();
++
++    public PaperRegistry(ResourceKey<? extends Registry<MINECRAFT>> registryKey) {
++        this.registryKey = registryKey;
++        this.registry = Suppliers.memoize(() -> REGISTRY_ACCESS.get().registryOrThrow(this.registryKey));
++    }
++
++    @Override
++    public @Nullable API get(NamespacedKey key) {
++        return this.cache.computeIfAbsent(key, k -> {
++            final @Nullable MINECRAFT nms = this.registry.get().get(CraftNamespacedKey.toMinecraft(k));
++            if (nms != null) {
++                return this.convertToApi(k, nms);
++            }
++            return null;
++        });
++    }
++
++    public abstract API convertToApi(NamespacedKey key, MINECRAFT nms);
++
++    @Override
++    public Iterator<API> iterator() {
++        return this.registry.get().keySet().stream().map(key -> this.get(CraftNamespacedKey.fromMinecraft(key))).iterator();
++    }
++
++    public void clearCache() {
++        this.cache.clear();
++    }
++
++    public void registerTo(Class<? extends API> apiClass) {
++        if (this.registered) {
++            throw new IllegalStateException("Already registered: " + apiClass);
++        }
++        if (REGISTRIES.putIfAbsent(apiClass, this) != null) {
++            throw new IllegalStateException("Duplicate registry: " + apiClass);
++        }
++        this.registered = true;
++    }
++
++    @Override
++    public boolean equals(@Nullable Object o) {
++        if (this == o) return true;
++        if (o == null || !PaperRegistry.class.isAssignableFrom(o.getClass())) return false;
++        PaperRegistry<?, ?> that = (PaperRegistry<?, ?>) o;
++        return this.registryKey.equals(that.registryKey);
++    }
++
++    @Override
++    public int hashCode() {
++        return Objects.hash(this.registryKey);
++    }
++
++    protected static <T> Supplier<Registry<T>> registryFor(ResourceKey<? extends Registry<T>> registryKey) {
++        return Suppliers.memoize(() -> REGISTRY_ACCESS.get().registryOrThrow(registryKey));
++    }
++
++    public static void clearCaches() {
++        for (PaperRegistry<?, ?> registry : REGISTRIES.values()) {
++            registry.clearCache();
++        }
++    }
++
++    @SuppressWarnings("unchecked")
++    public static <T extends Keyed> PaperRegistry<T, ?> getRegistry(Class<T> classOfT) {
++        Preconditions.checkArgument(REGISTRIES.containsKey(classOfT), "No registry for that type");
++        return (PaperRegistry<T, ?>) REGISTRIES.get(classOfT);
++    }
++}
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 0f03525066b818a81583618e9a80f245032493b7..6d1dd3d33bcaa7a1262a53c4fed57564c74df286 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -2038,6 +2038,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+             this.packRepository.setSelected(dataPacks);
+             this.worldData.setDataPackConfig(MinecraftServer.getSelectedPacks(this.packRepository));
+             this.resources.managers.updateRegistryTags(this.registryAccess());
++            io.papermc.paper.PaperRegistry.clearCaches(); // Paper
+             new io.papermc.paper.event.server.ServerResourcesReloadedEvent(cause).callEvent(); // Paper
+             if (Thread.currentThread() != this.serverThread) return; // Paper
+             //this.getPlayerList().saveAll(); // Paper - we don't need to do this
+diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
+index 8e9b35d3012ab0bafe5e2194d8723d892402de39..7aaf7f2be7b5795c34f71b24571294e6086b4406 100644
+--- a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
++++ b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
+@@ -503,6 +503,11 @@ public final class CraftMagicNumbers implements UnsafeValues {
+     public int nextEntityId() {
+         return net.minecraft.world.entity.Entity.nextEntityId();
+     }
++
++    @Override
++    public <T extends org.bukkit.Keyed> Registry<T> getPaperRegistry(Class<T> classOfT) {
++        return io.papermc.paper.PaperRegistry.getRegistry(classOfT);
++    }
+     // Paper end
+ 
+     /**
+diff --git a/src/test/java/org/bukkit/support/AbstractTestingBase.java b/src/test/java/org/bukkit/support/AbstractTestingBase.java
+index d6b6b7a3d2949126520e8256563afeb2b43bf12c..acde0f0170a34a8497e81fedb7944e2ef73213ae 100644
+--- a/src/test/java/org/bukkit/support/AbstractTestingBase.java
++++ b/src/test/java/org/bukkit/support/AbstractTestingBase.java
+@@ -38,6 +38,15 @@ public abstract class AbstractTestingBase {
+         MultiPackResourceManager resourceManager = new MultiPackResourceManager(PackType.SERVER_DATA, Collections.singletonList(new VanillaPackResources(ServerPacksSource.BUILT_IN_METADATA, "minecraft")));
+         // add tags and loot tables for unit tests
+         RegistryAccess.Frozen registry = RegistryAccess.builtinCopy().freeze();
++        // Paper start
++        try {
++            java.lang.reflect.Field field = io.papermc.paper.PaperRegistry.class.getDeclaredField("REGISTRY_ACCESS");
++            field.trySetAccessible();
++            field.set(null, com.google.common.base.Suppliers.ofInstance(registry));
++        } catch (ReflectiveOperationException ex) {
++            throw new IllegalStateException("Could not reflectively set RegistryAccess in PaperRegistry", ex);
++        }
++        // Paper end
+         // Register vanilla pack
+         DATA_PACK = ReloadableServerResources.loadResources(resourceManager, registry, Commands.CommandSelection.DEDICATED, 0, MoreExecutors.directExecutor(), MoreExecutors.directExecutor()).join();
+         // Bind tags

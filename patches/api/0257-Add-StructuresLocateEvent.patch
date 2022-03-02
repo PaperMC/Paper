@@ -1,9 +1,8 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: dfsek <dfsek@protonmail.com>
 Date: Tue, 15 Sep 2020 21:59:16 -0700
-Subject: [PATCH] Add StructureLocateEvent
+Subject: [PATCH] Add StructuresLocateEvent
 
-Co-authored-by: Jake Potrebic <jake.m.potrebic@gmail.com>
 
 diff --git a/src/main/java/io/papermc/paper/event/world/StructureLocateEvent.java b/src/main/java/io/papermc/paper/event/world/StructureLocateEvent.java
 new file mode 100644
@@ -450,7 +449,7 @@ index 0000000000000000000000000000000000000000..f1871cc31fcfc5c322e609306712a0a1
 +    }
 +}
 diff --git a/src/main/java/org/bukkit/Registry.java b/src/main/java/org/bukkit/Registry.java
-index a696fcaffa03af9e6c92e2ef3e12b38eb59e5db4..1f4012875867b799ae5d75d77c68e5c0854043ff 100644
+index 3bcca10739909bf2fd1ef90142b942b77c077dcb..1f4012875867b799ae5d75d77c68e5c0854043ff 100644
 --- a/src/main/java/org/bukkit/Registry.java
 +++ b/src/main/java/org/bukkit/Registry.java
 @@ -189,6 +189,13 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
@@ -467,55 +466,3 @@ index a696fcaffa03af9e6c92e2ef3e12b38eb59e5db4..1f4012875867b799ae5d75d77c68e5c0
  
      /**
       * Get the object by its key.
-@@ -231,4 +238,31 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
-             return map.values().iterator();
-         }
-     }
-+    // Paper start
-+    record Reference<T extends Keyed>(Registry<T> registry, NamespacedKey key) implements Keyed {
-+
-+        /**
-+         * Gets the value from the registry with the key.
-+         *
-+         * @return the value
-+         * @throws java.util.NoSuchElementException if there is no value with this key
-+         */
-+        public @NotNull T value() {
-+            final T value = this.registry.get(this.key);
-+            if (value == null) {
-+                throw new java.util.NoSuchElementException("No such value with key " + this.key);
-+            }
-+            return value;
-+        }
-+
-+        public @Nullable T valueOrNull() {
-+            return this.registry.get(this.key);
-+        }
-+
-+        @Override
-+        public @NotNull NamespacedKey getKey() {
-+            return this.key;
-+        }
-+    }
-+    // Paper end
- }
-diff --git a/src/main/java/org/bukkit/UnsafeValues.java b/src/main/java/org/bukkit/UnsafeValues.java
-index 9333f5ff7dda35601c25c5c8daf30676db9488fb..ea96edc4d1c0415defac92a125ad9932124b9cb2 100644
---- a/src/main/java/org/bukkit/UnsafeValues.java
-+++ b/src/main/java/org/bukkit/UnsafeValues.java
-@@ -144,5 +144,15 @@ public interface UnsafeValues {
-      * Use this when sending custom packets, so that there are no collisions on the client or server.
-      */
-     public int nextEntityId();
-+
-+    /**
-+     * Gets the server-backed registry for a type.
-+     *
-+     * @param classOfT type
-+     * @param <T> type
-+     * @return the server-backed registry
-+     * @throws IllegalArgumentException if there isn't a registry for that type
-+     */
-+    <T extends Keyed> @org.jetbrains.annotations.NotNull Registry<T> getPaperRegistry(Class<T> classOfT);
-     // Paper end
- }
