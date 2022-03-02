@@ -170,10 +170,10 @@ index 0000000000000000000000000000000000000000..0c83a02059d65672ff191c42932d8509
 +}
 diff --git a/src/main/java/io/papermc/paper/event/world/StructuresLocateEvent.java b/src/main/java/io/papermc/paper/event/world/StructuresLocateEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..2e372d1b6d421b586d1ca5a5d506bc749ba9df21
+index 0000000000000000000000000000000000000000..566f9df8f615142e14330965f3491f4e83846783
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/event/world/StructuresLocateEvent.java
-@@ -0,0 +1,163 @@
+@@ -0,0 +1,164 @@
 +package io.papermc.paper.event.world;
 +
 +import io.papermc.paper.world.structure.ConfiguredStructure;
@@ -229,10 +229,10 @@ index 0000000000000000000000000000000000000000..2e372d1b6d421b586d1ca5a5d506bc74
 +    }
 +
 +    /**
-+     * Gets the {@link Location} and {@link ConfiguredStructure} set as the found location, if it was defined.
++     * Gets the {@link Location} and {@link ConfiguredStructure} set as the result, if it was defined.
 +     * <p>
 +     * Returns {@code null} if it has not been set by {@link StructuresLocateEvent#setResult(Result)}.
-+     * Since this event fires <i>before</i> the search is done, the actual location is unknown at this point.
++     * Since this event fires <i>before</i> the search is done, the actual result is unknown at this point.
 +     *
 +     * @return The result location and structure, if it has been set. null if it has not.
 +     * @see World#locateNearestStructure(Location, org.bukkit.StructureType, int, boolean)
@@ -242,7 +242,8 @@ index 0000000000000000000000000000000000000000..2e372d1b6d421b586d1ca5a5d506bc74
 +    }
 +
 +    /**
-+     * Sets the result {@link Location} and {@link ConfiguredStructure}. This causes the search to be skipped, and the result object passed here to be used as the result.
++     * Sets the result {@link Location} and {@link ConfiguredStructure}. This causes the search to be
++     * skipped, and the result object passed here to be used as the result.
 +     *
 +     * @param result the {@link Location} and {@link ConfiguredStructure} of the search.
 +     */
@@ -339,27 +340,32 @@ index 0000000000000000000000000000000000000000..2e372d1b6d421b586d1ca5a5d506bc74
 +}
 diff --git a/src/main/java/io/papermc/paper/world/structure/ConfiguredStructure.java b/src/main/java/io/papermc/paper/world/structure/ConfiguredStructure.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..1413f5526fcb8c88bedea90fed2e44f98be770a3
+index 0000000000000000000000000000000000000000..8a90ef26018f28f4f0d269edb200429b41d4f0fa
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/world/structure/ConfiguredStructure.java
-@@ -0,0 +1,94 @@
+@@ -0,0 +1,110 @@
 +package io.papermc.paper.world.structure;
 +
++import org.bukkit.Bukkit;
 +import org.bukkit.Keyed;
 +import org.bukkit.NamespacedKey;
-+import org.bukkit.Registry;
 +import org.bukkit.StructureType;
 +import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.VisibleForTesting;
 +
++import java.util.HashMap;
 +import java.util.Map;
 +import java.util.Objects;
-+import java.util.function.Function;
-+import java.util.stream.Collectors;
-+import java.util.stream.StreamSupport;
 +
++/**
++ * Represents a configured structure each with a
++ * {@link StructureType}. Multiple ConfiguredStructures can have
++ * the same {@link StructureType}.
++ */
 +public final class ConfiguredStructure implements Keyed {
 +
-+    static Registry<ConfiguredStructure> REGISTRY;
++    @VisibleForTesting
++    static final Map<NamespacedKey, ConfiguredStructure> DEFAULTS = new HashMap<>();
 +
 +    public static final ConfiguredStructure PILLAGER_OUTPOST = create("pillager_outpost", StructureType.PILLAGER_OUTPOST);
 +    public static final ConfiguredStructure MINESHAFT = create("mineshaft", StructureType.MINESHAFT);
@@ -416,6 +422,19 @@ index 0000000000000000000000000000000000000000..1413f5526fcb8c88bedea90fed2e44f9
 +    }
 +
 +    @Override
++    public boolean equals(Object o) {
++        if (this == o) return true;
++        if (o == null || getClass() != o.getClass()) return false;
++        ConfiguredStructure structure = (ConfiguredStructure) o;
++        return this.key.equals(structure.key) && this.structureType.equals(structure.structureType);
++    }
++
++    @Override
++    public int hashCode() {
++        return Objects.hash(this.key, this.structureType);
++    }
++
++    @Override
 +    public String toString() {
 +        return "ConfiguredStructure{" +
 +            "key=" + this.key +
@@ -423,25 +442,23 @@ index 0000000000000000000000000000000000000000..1413f5526fcb8c88bedea90fed2e44f9
 +            '}';
 +    }
 +
-+    /**
-+     * Gets all configured structures.
-+     *
-+     * @return an immutable map
-+     */
-+    public static @NotNull Map<NamespacedKey, ConfiguredStructure> getConfiguredStructures() {
-+        return StreamSupport.stream(Objects.requireNonNull(REGISTRY, "not initialized yet").spliterator(), false)
-+            .collect(Collectors.toMap(Keyed::getKey, Function.identity()));
-+    }
-+
-+    private static @NotNull ConfiguredStructure create(@NotNull String key, @NotNull StructureType type) {
-+        return new ConfiguredStructure(NamespacedKey.minecraft(key), type);
++    private static @NotNull ConfiguredStructure create(@NotNull String name, @NotNull StructureType defaultType) {
++        final NamespacedKey key = NamespacedKey.minecraft(name);
++        final ConfiguredStructure configuredStructure;
++        if (java.lang.reflect.Proxy.isProxyClass(Bukkit.getServer().getClass())) { // for tests
++            configuredStructure = new ConfiguredStructure(key, defaultType);
++        } else {
++            configuredStructure = Objects.requireNonNull(Bukkit.getServer().getUnsafe().getPaperRegistry(ConfiguredStructure.class).get(key), "Could not find default ConfiguredStructure: " + name);
++        }
++        DEFAULTS.put(key, configuredStructure);
++        return configuredStructure;
 +    }
 +}
 diff --git a/src/main/java/org/bukkit/Registry.java b/src/main/java/org/bukkit/Registry.java
-index a696fcaffa03af9e6c92e2ef3e12b38eb59e5db4..e7dce6055db29eb698b6fc1b6a91cb4e2e6a05cd 100644
+index a696fcaffa03af9e6c92e2ef3e12b38eb59e5db4..4d52526fcc1a3d5850a2cddf98d9432718f2068a 100644
 --- a/src/main/java/org/bukkit/Registry.java
 +++ b/src/main/java/org/bukkit/Registry.java
-@@ -189,6 +189,24 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
+@@ -189,6 +189,13 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
              return GameEvent.getByKey(key);
          }
      };
@@ -450,19 +467,28 @@ index a696fcaffa03af9e6c92e2ef3e12b38eb59e5db4..e7dce6055db29eb698b6fc1b6a91cb4e
 +     * Configured structures.
 +     * @see io.papermc.paper.world.structure.ConfiguredStructure
 +     */
-+    Registry<io.papermc.paper.world.structure.ConfiguredStructure> CONFIGURED_STRUCTURE = new Registry<io.papermc.paper.world.structure.ConfiguredStructure>() {
-+        @Override
-+        public @Nullable io.papermc.paper.world.structure.ConfiguredStructure get(@NotNull NamespacedKey key) {
-+            return io.papermc.paper.world.structure.ConfiguredStructure.getConfiguredStructures().get(key);
-+        }
-+
-+        @NotNull
-+        @Override
-+        public Iterator<io.papermc.paper.world.structure.ConfiguredStructure> iterator() {
-+            return io.papermc.paper.world.structure.ConfiguredStructure.getConfiguredStructures().values().iterator();
-+        }
-+    };
++    Registry<io.papermc.paper.world.structure.ConfiguredStructure> CONFIGURED_STRUCTURE = Bukkit.getUnsafe().getPaperRegistry(io.papermc.paper.world.structure.ConfiguredStructure.class);
 +    // Paper end
  
      /**
       * Get the object by its key.
+diff --git a/src/main/java/org/bukkit/UnsafeValues.java b/src/main/java/org/bukkit/UnsafeValues.java
+index 9333f5ff7dda35601c25c5c8daf30676db9488fb..ea96edc4d1c0415defac92a125ad9932124b9cb2 100644
+--- a/src/main/java/org/bukkit/UnsafeValues.java
++++ b/src/main/java/org/bukkit/UnsafeValues.java
+@@ -144,5 +144,15 @@ public interface UnsafeValues {
+      * Use this when sending custom packets, so that there are no collisions on the client or server.
+      */
+     public int nextEntityId();
++
++    /**
++     * Gets the server-backed registry for a type.
++     *
++     * @param classOfT type
++     * @param <T> type
++     * @return the server-backed registry
++     * @throws IllegalArgumentException if there isn't a registry for that type
++     */
++    <T extends Keyed> @org.jetbrains.annotations.NotNull Registry<T> getPaperRegistry(Class<T> classOfT);
+     // Paper end
+ }
