@@ -113,12 +113,13 @@ index af9ef29f5c5a600e4544ba735c833699cc93f93a..473a54963fbe08beeff26a828827f9f7
          this.feature = feature;
 diff --git a/src/test/java/io/papermc/paper/world/structure/ConfiguredStructureTest.java b/src/test/java/io/papermc/paper/world/structure/ConfiguredStructureTest.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..e44822771a04549da63360d0e64467ea685e18eb
+index 0000000000000000000000000000000000000000..29c0209327374d5a4dad4e3bacdba7fa56d80749
 --- /dev/null
 +++ b/src/test/java/io/papermc/paper/world/structure/ConfiguredStructureTest.java
 @@ -0,0 +1,89 @@
 +package io.papermc.paper.world.structure;
 +
++import io.papermc.paper.registry.Reference;
 +import net.minecraft.data.BuiltinRegistries;
 +import net.minecraft.resources.ResourceKey;
 +import net.minecraft.resources.ResourceLocation;
@@ -126,7 +127,6 @@ index 0000000000000000000000000000000000000000..e44822771a04549da63360d0e64467ea
 +import net.minecraft.world.level.levelgen.feature.ConfiguredStructureFeature;
 +import net.minecraft.world.level.levelgen.structure.BuiltinStructures;
 +import org.bukkit.NamespacedKey;
-+import org.bukkit.StructureType;
 +import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 +import org.bukkit.support.AbstractTestingBase;
 +import org.junit.AfterClass;
@@ -135,9 +135,9 @@ index 0000000000000000000000000000000000000000..e44822771a04549da63360d0e64467ea
 +
 +import java.io.PrintStream;
 +import java.lang.reflect.Field;
++import java.lang.reflect.Modifier;
 +import java.util.LinkedHashMap;
 +import java.util.Map;
-+import java.util.Objects;
 +import java.util.StringJoiner;
 +
 +import static org.junit.Assert.assertEquals;
@@ -147,7 +147,8 @@ index 0000000000000000000000000000000000000000..e44822771a04549da63360d0e64467ea
 +public class ConfiguredStructureTest extends AbstractTestingBase {
 +
 +    private static final Map<ResourceLocation, String> BUILT_IN_STRUCTURES = new LinkedHashMap<>();
-+    private static final Map<StructureType, String> API_STRUCTURE_TYPES = new LinkedHashMap<>();
++    private static final Map<NamespacedKey, Reference<?>> DEFAULT_CONFIGURED_STRUCTURES = new LinkedHashMap<>();
++
 +    private static PrintStream out;
 +
 +    @BeforeClass
@@ -155,14 +156,14 @@ index 0000000000000000000000000000000000000000..e44822771a04549da63360d0e64467ea
 +        out = System.out;
 +        System.setOut(Bootstrap.STDOUT);
 +        for (Field field : BuiltinStructures.class.getDeclaredFields()) {
-+            if (field.getType().equals(ResourceKey.class)) {
-+                BUILT_IN_STRUCTURES.put(((ResourceKey<ConfiguredStructureFeature<?, ?>>) field.get(null)).location(), field.getName());
++            if (field.getType().equals(ResourceKey.class) && Modifier.isStatic(field.getModifiers())) {
++                BUILT_IN_STRUCTURES.put(((ResourceKey<?>) field.get(null)).location(), field.getName());
 +            }
 +        }
-+
-+        for (Field field : StructureType.class.getDeclaredFields()) {
-+            if (field.getType().equals(StructureType.class)) {
-+                API_STRUCTURE_TYPES.put((StructureType) field.get(null), field.getName());
++        for (Field field : ConfiguredStructure.class.getDeclaredFields()) {
++            if (field.getType().equals(Reference.class) && Modifier.isStatic(field.getModifiers())) {
++                final Reference<?> ref = (Reference<?>) field.get(null);
++                DEFAULT_CONFIGURED_STRUCTURES.put(ref.getKey(), ref);
 +            }
 +        }
 +    }
@@ -170,13 +171,12 @@ index 0000000000000000000000000000000000000000..e44822771a04549da63360d0e64467ea
 +    @Test
 +    public void testMinecraftToApi() {
 +        assertEquals("configured structure maps should be the same size", BUILT_IN_STRUCTURES.size(), BuiltinRegistries.CONFIGURED_STRUCTURE_FEATURE.size());
-+        assertEquals("api structure types map should be the same size", API_STRUCTURE_TYPES.size(), StructureType.getStructureTypes().size());
 +
 +        Map<ResourceLocation, ConfiguredStructureFeature<?, ?>> missing = new LinkedHashMap<>();
 +        for (ConfiguredStructureFeature<?, ?> feature : BuiltinRegistries.CONFIGURED_STRUCTURE_FEATURE) {
 +            final ResourceLocation key = BuiltinRegistries.CONFIGURED_STRUCTURE_FEATURE.getKey(feature);
 +            assertNotNull("Missing built-in registry key", key);
-+            if (ConfiguredStructure.DEFAULTS.get(CraftNamespacedKey.fromMinecraft(key)) == null) {
++            if (DEFAULT_CONFIGURED_STRUCTURES.get(CraftNamespacedKey.fromMinecraft(key)) == null) {
 +                missing.put(key, feature);
 +            }
 +        }
@@ -186,7 +186,7 @@ index 0000000000000000000000000000000000000000..e44822771a04549da63360d0e64467ea
 +
 +    @Test
 +    public void testApiToMinecraft() {
-+        for (NamespacedKey apiKey : ConfiguredStructure.DEFAULTS.keySet()) {
++        for (NamespacedKey apiKey : DEFAULT_CONFIGURED_STRUCTURES.keySet()) {
 +            assertTrue(apiKey + " does not have a minecraft counterpart", BuiltinRegistries.CONFIGURED_STRUCTURE_FEATURE.containsKey(CraftNamespacedKey.toMinecraft(apiKey)));
 +        }
 +    }
@@ -206,16 +206,3 @@ index 0000000000000000000000000000000000000000..e44822771a04549da63360d0e64467ea
 +        System.setOut(out);
 +    }
 +}
-diff --git a/src/test/java/org/bukkit/support/AbstractTestingBase.java b/src/test/java/org/bukkit/support/AbstractTestingBase.java
-index acde0f0170a34a8497e81fedb7944e2ef73213ae..37934f0da922d696373e7a3a8cf976fcb9015271 100644
---- a/src/test/java/org/bukkit/support/AbstractTestingBase.java
-+++ b/src/test/java/org/bukkit/support/AbstractTestingBase.java
-@@ -40,7 +40,7 @@ public abstract class AbstractTestingBase {
-         RegistryAccess.Frozen registry = RegistryAccess.builtinCopy().freeze();
-         // Paper start
-         try {
--            java.lang.reflect.Field field = io.papermc.paper.PaperRegistry.class.getDeclaredField("REGISTRY_ACCESS");
-+            java.lang.reflect.Field field = io.papermc.paper.registry.PaperRegistry.class.getDeclaredField("REGISTRY_ACCESS");
-             field.trySetAccessible();
-             field.set(null, com.google.common.base.Suppliers.ofInstance(registry));
-         } catch (ReflectiveOperationException ex) {
