@@ -122,7 +122,7 @@ public class CraftChunkSnapshot implements ChunkSnapshot {
         Preconditions.checkState(hmap != null, "ChunkSnapshot created without height map. Please call getSnapshot with includeMaxblocky=true");
         validateChunkCoordinates(x, 0, z);
 
-        return hmap.getFirstAvailable(x, z);
+        return hmap.getHighestTaken(x, z);
     }
 
     @Override
