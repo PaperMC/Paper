@@ -6,28 +6,18 @@ Subject: [PATCH] Add DispenserReplaceItemEvent
 Currently handled for any bucket and bottle type, which should be all items that can be replaced on a dispenser as far as I know. This event could be used for servers with a rarity system on items (As mine), as currently I had to use the normal dispense event and delay 1 tick a loop through the dispenser inventory to change the item lore.
 
 diff --git a/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java b/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java
-index 59db245fe11384282af84ec1d5be08ab0e9484ca..40beb96b083e716d5c349c96ee316f0d462122d5 100644
+index 59db245fe11384282af84ec1d5be08ab0e9484ca..20706abbee9eb50667a86fd5e45603439350bde5 100644
 --- a/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java
 +++ b/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java
-@@ -4,6 +4,8 @@ import java.util.Iterator;
- import java.util.List;
- import java.util.Optional;
- import java.util.Random;
-+
-+import io.papermc.paper.event.block.DispenserReplaceItemEvent;
- import net.minecraft.Util;
- import net.minecraft.core.BlockPos;
- import net.minecraft.core.BlockSource;
-@@ -632,6 +634,18 @@ public interface DispenseItemBehavior {
+@@ -632,6 +632,17 @@ public interface DispenseItemBehavior {
                      dispensiblecontaineritem.checkExtraContent((Player) null, worldserver, stack, blockposition);
                      // CraftBukkit start - Handle stacked buckets
                      Item item = Items.BUCKET;
 +
 +                    // Paper start - DispenserReplaceItemEvent
 +                    org.bukkit.block.Block block = worldserver.getWorld().getBlockAt(pointer.getPos().getX(), pointer.getPos().getY(), pointer.getPos().getZ());
-+                    DispenserReplaceItemEvent replaceItemEvent = new DispenserReplaceItemEvent(block, stack.asBukkitCopy(), new ItemStack(item).asBukkitCopy());
-+                    replaceItemEvent.callEvent();
-+                    if (!replaceItemEvent.isCancelled()) {
++                    io.papermc.paper.event.block.DispenserReplaceItemEvent replaceItemEvent = new io.papermc.paper.event.block.DispenserReplaceItemEvent(block, stack.asBukkitCopy(), new ItemStack(item).asBukkitCopy());
++                    if (replaceItemEvent.callEvent()) {
 +                        item = ItemStack.fromBukkitCopy(replaceItemEvent.getReplacement()).getItem();
 +                    } else {
 +                        return stack;
@@ -37,14 +27,13 @@ index 59db245fe11384282af84ec1d5be08ab0e9484ca..40beb96b083e716d5c349c96ee316f0d
                      stack.shrink(1);
                      if (stack.isEmpty()) {
                          stack = new ItemStack(item); // Paper - clear tag
-@@ -699,6 +713,16 @@ public interface DispenseItemBehavior {
+@@ -699,6 +710,15 @@ public interface DispenseItemBehavior {
                          itemstack1 = ((BucketPickup) block).pickupBlock(worldserver, blockposition, iblockdata); // From above
                          // CraftBukkit end
  
 +                        // Paper start - DispenserReplaceItemEvent
-+                        DispenserReplaceItemEvent replaceItemEvent = new DispenserReplaceItemEvent(bukkitBlock, stack.asBukkitCopy(), itemstack1.asBukkitCopy());
-+                        replaceItemEvent.callEvent();
-+                        if (!replaceItemEvent.isCancelled()) {
++                        io.papermc.paper.event.block.DispenserReplaceItemEvent replaceItemEvent = new io.papermc.paper.event.block.DispenserReplaceItemEvent(bukkitBlock, stack.asBukkitCopy(), itemstack1.asBukkitCopy());
++                        if (replaceItemEvent.callEvent()) {
 +                            item = ItemStack.fromBukkitCopy(replaceItemEvent.getReplacement()).getItem();
 +                        } else {
 +                            return stack;
@@ -54,16 +43,15 @@ index 59db245fe11384282af84ec1d5be08ab0e9484ca..40beb96b083e716d5c349c96ee316f0d
                          stack.shrink(1);
                          if (stack.isEmpty()) {
                              return new ItemStack(item);
-@@ -1006,6 +1030,18 @@ public interface DispenseItemBehavior {
+@@ -1006,6 +1026,17 @@ public interface DispenseItemBehavior {
              private final DefaultDispenseItemBehavior defaultDispenseItemBehavior = new DefaultDispenseItemBehavior();
  
              private ItemStack takeLiquid(BlockSource pointer, ItemStack emptyBottleStack, ItemStack filledBottleStack) {
 +
 +                // Paper start - DispenserReplaceItemEvent
 +                org.bukkit.block.Block block = pointer.getLevel().getWorld().getBlockAt(pointer.getPos().getX(), pointer.getPos().getY(), pointer.getPos().getZ());
-+                DispenserReplaceItemEvent event = new DispenserReplaceItemEvent(block, emptyBottleStack.getBukkitStack(), filledBottleStack.getBukkitStack());
-+                event.callEvent();
-+                if (!event.isCancelled()) {
++                io.papermc.paper.event.block.DispenserReplaceItemEvent event = new io.papermc.paper.event.block.DispenserReplaceItemEvent(block, emptyBottleStack.getBukkitStack(), filledBottleStack.getBukkitStack());
++                if (event.callEvent()) {
 +                    filledBottleStack = ItemStack.fromBukkitCopy(event.getReplacement());
 +                } else {
 +                    return emptyBottleStack;
