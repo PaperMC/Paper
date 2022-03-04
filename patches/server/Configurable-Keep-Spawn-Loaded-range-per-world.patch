@@ -30,11 +30,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      // CraftBukkit start
      public void prepareLevels(ChunkProgressListener worldloadlistener, ServerLevel worldserver) {
--        if (!worldserver.getWorld().getKeepSpawnInMemory()) {
--            return;
--        }
 +        ServerChunkCache chunkproviderserver = worldserver.getChunkSource(); // Paper
- 
          // WorldServer worldserver = this.overworld();
          this.forceTicks = true;
          // CraftBukkit end
@@ -49,13 +45,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
          chunkproviderserver.getLightEngine().setTaskPerBatch(500);
          this.nextTickTime = Util.getMillis();
--        chunkproviderserver.addRegionTicket(TicketType.START, new ChunkPos(blockposition), 11, Unit.INSTANCE);
+-        // CraftBukkit start
+-        if (worldserver.getWorld().getKeepSpawnInMemory()) {
+-            chunkproviderserver.addRegionTicket(TicketType.START, new ChunkPos(blockposition), 11, Unit.INSTANCE);
 -
--        while (chunkproviderserver.getTickingGenerated() != 441) {
--            // CraftBukkit start
--            // this.nextTickTime = SystemUtils.getMillis() + 10L;
--            this.executeModerately();
--            // CraftBukkit end
+-            while (chunkproviderserver.getTickingGenerated() != 441) {
+-                // this.nextTickTime = SystemUtils.getMillis() + 10L;
+-                this.executeModerately();
+-            }
 -        }
 +        // Paper start - configurable spawn reason
 +        int radiusBlocks = worldserver.paperConfig.keepLoadedRange;
@@ -67,7 +64,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        worldserver.addTicketsForSpawn(radiusBlocks, blockposition);
 +        // Paper end
  
-         // CraftBukkit start
          // this.nextTickTime = SystemUtils.getMillis() + 10L;
          this.executeModerately();
          // Iterator iterator = this.levels.values().iterator();
