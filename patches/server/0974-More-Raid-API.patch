@@ -1,0 +1,87 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Fri, 4 Mar 2022 09:46:33 -0800
+Subject: [PATCH] More Raid API
+
+== AT ==
+public net.minecraft.world.entity.raid.Raid raidEvent
+
+diff --git a/src/main/java/net/minecraft/world/entity/raid/Raid.java b/src/main/java/net/minecraft/world/entity/raid/Raid.java
+index de640291726d0be2c58c69fbca60a697b2f8bec9..0460a0714c884a494bbc25d464d38f2a87cd2ab4 100644
+--- a/src/main/java/net/minecraft/world/entity/raid/Raid.java
++++ b/src/main/java/net/minecraft/world/entity/raid/Raid.java
+@@ -107,6 +107,11 @@ public class Raid {
+     private Raid.RaidStatus status;
+     private int celebrationTicks;
+     private Optional<BlockPos> waveSpawnPos;
++    // Paper start
++    private static final String PDC_NBT_KEY = "BukkitValues";
++    private static final org.bukkit.craftbukkit.persistence.CraftPersistentDataTypeRegistry PDC_TYPE_REGISTRY = new org.bukkit.craftbukkit.persistence.CraftPersistentDataTypeRegistry();
++    public final org.bukkit.craftbukkit.persistence.CraftPersistentDataContainer persistentDataContainer = new org.bukkit.craftbukkit.persistence.CraftPersistentDataContainer(PDC_TYPE_REGISTRY);
++    // Paper end
+ 
+     public Raid(int id, ServerLevel world, BlockPos pos) {
+         this.raidEvent = new ServerBossEvent(Raid.RAID_NAME_COMPONENT, BossEvent.BossBarColor.RED, BossEvent.BossBarOverlay.NOTCHED_10);
+@@ -147,6 +152,11 @@ public class Raid {
+                 this.heroesOfTheVillage.add(NbtUtils.loadUUID(nbttaglist.get(i)));
+             }
+         }
++        // Paper start
++        if (nbt.contains(PDC_NBT_KEY, net.minecraft.nbt.Tag.TAG_COMPOUND)) {
++            this.persistentDataContainer.putAll(nbt.getCompound(PDC_NBT_KEY));
++        }
++        // Paper end
+ 
+     }
+ 
+@@ -855,6 +865,11 @@ public class Raid {
+         }
+ 
+         nbt.put("HeroesOfTheVillage", nbttaglist);
++        // Paper start
++        if (!this.persistentDataContainer.isEmpty()) {
++            nbt.put(PDC_NBT_KEY, this.persistentDataContainer.toTagCompound());
++        }
++        // Paper end
+         return nbt;
+     }
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftRaid.java b/src/main/java/org/bukkit/craftbukkit/CraftRaid.java
+index 7a5bfc724e42100b7582836ab8c30feed1a3d221..42c190c0c0052853caad991e55f7a9d088d39876 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftRaid.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftRaid.java
+@@ -98,4 +98,34 @@ public final class CraftRaid implements Raid {
+             }
+         }).collect(ImmutableList.toImmutableList());
+     }
++
++    // Paper start
++    @Override
++    public int getId() {
++        return this.handle.getId();
++    }
++
++    @Override
++    public org.bukkit.boss.BossBar getBossBar() {
++        return new org.bukkit.craftbukkit.boss.CraftBossBar(this.handle.raidEvent);
++    }
++
++    @Override
++    public org.bukkit.persistence.PersistentDataContainer getPersistentDataContainer() {
++        return this.handle.persistentDataContainer;
++    }
++
++    @Override
++    public boolean equals(Object o) {
++        if (this == o) return true;
++        if (o == null || getClass() != o.getClass()) return false;
++        org.bukkit.craftbukkit.CraftRaid craftRaid = (org.bukkit.craftbukkit.CraftRaid) o;
++        return handle.equals(craftRaid.handle);
++    }
++
++    @Override
++    public int hashCode() {
++        return java.util.Objects.hash(handle);
++    }
++    // Paper end
+ }
