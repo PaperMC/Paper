@@ -1893,13 +1893,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import org.bukkit.command.RemoteConsoleCommandSender;
 +
 +import java.util.List;
-+import java.util.UUID;
 +
 +import org.jetbrains.annotations.NotNull;
 +import org.jetbrains.annotations.Nullable;
 +
 +@SuppressWarnings("WeakerAccess")
-+public class TimingsReportListener implements MessageCommandSender {
++public class TimingsReportListener implements net.kyori.adventure.audience.ForwardingAudience, MessageCommandSender {
 +    private final List<CommandSender> senders;
 +    private final Runnable onDone;
 +    private String timingsURL;
@@ -1940,6 +1939,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                ((TimingsReportListener) sender).done();
 +            }
 +        }
++    }
++
++    @Override
++    public void sendMessage(final @NotNull net.kyori.adventure.identity.Identity source, final @NotNull net.kyori.adventure.text.Component message, final @NotNull net.kyori.adventure.audience.MessageType type) {
++        net.kyori.adventure.audience.ForwardingAudience.super.sendMessage(source, message, type);
++    }
++
++    @NotNull
++    @Override
++    public Iterable<? extends net.kyori.adventure.audience.Audience> audiences() {
++        return this.senders;
 +    }
 +
 +    @Override
@@ -2797,7 +2807,7 @@ diff --git a/src/main/java/org/bukkit/Server.java b/src/main/java/org/bukkit/Ser
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/Server.java
 +++ b/src/main/java/org/bukkit/Server.java
-@@ -0,0 +0,0 @@ public interface Server extends PluginMessageRecipient {
+@@ -0,0 +0,0 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
              throw new UnsupportedOperationException("Not supported yet.");
          }
  
@@ -2828,9 +2838,9 @@ diff --git a/src/main/java/org/bukkit/UnsafeValues.java b/src/main/java/org/bukk
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/UnsafeValues.java
 +++ b/src/main/java/org/bukkit/UnsafeValues.java
-@@ -0,0 +0,0 @@ import org.bukkit.plugin.PluginDescriptionFile;
- @Deprecated
- public interface UnsafeValues {
+@@ -0,0 +0,0 @@ public interface UnsafeValues {
+     net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer legacyComponentSerializer();
+     // Paper end
  
 +    void reportTimings(); // Paper
      Material toLegacy(Material material);
@@ -2883,8 +2893,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public abstract class Command {
      protected String usageMessage;
      private String permission;
-     private String permissionMessage;
--    public org.spigotmc.CustomTimingsHandler timings; // Spigot
+     private net.kyori.adventure.text.Component permissionMessage; // Paper
 +    public co.aikar.timings.Timing timings; // Paper
 +    @NotNull public String getTimingName() {return getName();} // Paper
  
@@ -2980,6 +2989,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    default Server getServer() {
 +        return Bukkit.getServer();
 +    }
++
++    // Paper start
++    @Override
++    default net.kyori.adventure.text.@org.jetbrains.annotations.NotNull Component name() {
++        throw new NotImplementedException();
++    }
++    // Paper end
 +
 +    @NotNull
 +    @Override
@@ -3381,7 +3397,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/org/bukkit/entity/Player.java
 +++ b/src/main/java/org/bukkit/entity/Player.java
 @@ -0,0 +0,0 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
-          */
+         @Deprecated // Paper
          public void sendMessage(@NotNull net.md_5.bungee.api.ChatMessageType position, @Nullable UUID sender, @NotNull net.md_5.bungee.api.chat.BaseComponent... components) {
              throw new UnsupportedOperationException("Not supported yet.");
 +

@@ -75,37 +75,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      // workaround for https://github.com/gradle/gradle/issues/4046
      inputs.dir("src/main/javadoc").withPropertyName("javadoc-sourceset")
      doLast {
-diff --git a/src/main/java/co/aikar/timings/TimingsReportListener.java b/src/main/java/co/aikar/timings/TimingsReportListener.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/co/aikar/timings/TimingsReportListener.java
-+++ b/src/main/java/co/aikar/timings/TimingsReportListener.java
-@@ -0,0 +0,0 @@ import org.jetbrains.annotations.NotNull;
- import org.jetbrains.annotations.Nullable;
- 
- @SuppressWarnings("WeakerAccess")
--public class TimingsReportListener implements MessageCommandSender {
-+public class TimingsReportListener implements net.kyori.adventure.audience.ForwardingAudience, MessageCommandSender { // Paper
-     private final List<CommandSender> senders;
-     private final Runnable onDone;
-     private String timingsURL;
-@@ -0,0 +0,0 @@ public class TimingsReportListener implements MessageCommandSender {
-             this.senders.add(Bukkit.getConsoleSender());
-         }
-     }
-+
-+    // Paper start
-+    @Override
-+    public void sendMessage(final @NotNull net.kyori.adventure.identity.Identity source, final @NotNull net.kyori.adventure.text.Component message, final @NotNull net.kyori.adventure.audience.MessageType type) {
-+        net.kyori.adventure.audience.ForwardingAudience.super.sendMessage(source, message, type);
-+    }
-+
-+    @NotNull
-+    @Override
-+    public Iterable<? extends net.kyori.adventure.audience.Audience> audiences() {
-+        return this.senders;
-+    }
-+    // Paper end
- }
 diff --git a/src/main/java/io/papermc/paper/chat/ChatRenderer.java b/src/main/java/io/papermc/paper/chat/ChatRenderer.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
@@ -844,8 +813,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +public interface Server extends PluginMessageRecipient, net.kyori.adventure.audience.ForwardingAudience { // Paper
  
      /**
-      * Returns the de facto plugins directory, generally used for storing plugin jars to be loaded,
-@@ -0,0 +0,0 @@ public interface Server extends PluginMessageRecipient {
       * Used for all administrative messages, such as an operator using a
       * command.
       * <p>
@@ -1149,8 +1116,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer legacyComponentSerializer();
 +    // Paper end
  
-     void reportTimings(); // Paper
      Material toLegacy(Material material);
+ 
 diff --git a/src/main/java/org/bukkit/Warning.java b/src/main/java/org/bukkit/Warning.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/Warning.java
@@ -1317,10 +1284,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      protected String usageMessage;
      private String permission;
 -    private String permissionMessage;
+-    public org.spigotmc.CustomTimingsHandler timings; // Spigot
 +    private net.kyori.adventure.text.Component permissionMessage; // Paper
-     public co.aikar.timings.Timing timings; // Paper
-     @NotNull public String getTimingName() {return getName();} // Paper
  
+     protected Command(@NotNull String name) {
+         this(name, "", "/" + name, new ArrayList<String>());
 @@ -0,0 +0,0 @@ public abstract class Command {
  
          if (permissionMessage == null) {
@@ -1492,23 +1460,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +    // Paper end
  }
-diff --git a/src/main/java/org/bukkit/command/MessageCommandSender.java b/src/main/java/org/bukkit/command/MessageCommandSender.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/org/bukkit/command/MessageCommandSender.java
-+++ b/src/main/java/org/bukkit/command/MessageCommandSender.java
-@@ -0,0 +0,0 @@ public interface MessageCommandSender extends CommandSender {
-     default String getName() {
-         throw new NotImplementedException();
-     }
-+    // Paper start
-+    @Override
-+    default net.kyori.adventure.text.@org.jetbrains.annotations.NotNull Component name() {
-+        throw new NotImplementedException();
-+    }
-+    // Paper end
- 
-     @Override
-     default boolean isOp() {
 diff --git a/src/main/java/org/bukkit/command/PluginCommandYamlParser.java b/src/main/java/org/bukkit/command/PluginCommandYamlParser.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/command/PluginCommandYamlParser.java
@@ -2166,7 +2117,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        @Deprecated // Paper
          public void sendMessage(@NotNull net.md_5.bungee.api.ChatMessageType position, @Nullable UUID sender, @NotNull net.md_5.bungee.api.chat.BaseComponent... components) {
              throw new UnsupportedOperationException("Not supported yet.");
- 
+         }
 diff --git a/src/main/java/org/bukkit/entity/minecart/CommandMinecart.java b/src/main/java/org/bukkit/entity/minecart/CommandMinecart.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/entity/minecart/CommandMinecart.java
