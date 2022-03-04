@@ -1401,10 +1401,21 @@ public class CraftEventFactory {
     }
 
     public static AbstractContainerMenu callInventoryOpenEvent(ServerPlayer player, AbstractContainerMenu container) {
-        return CraftEventFactory.callInventoryOpenEvent(player, container, false);
+        // Paper start - Add titleOverride to InventoryOpenEvent
+        return callInventoryOpenEventWithTitle(player, container).getSecond();
+    }
+    public static com.mojang.datafixers.util.Pair<net.kyori.adventure.text.@org.jetbrains.annotations.Nullable Component, @org.jetbrains.annotations.Nullable AbstractContainerMenu> callInventoryOpenEventWithTitle(ServerPlayer player, AbstractContainerMenu container) {
+        return CraftEventFactory.callInventoryOpenEventWithTitle(player, container, false);
+        // Paper end - Add titleOverride to InventoryOpenEvent
     }
 
+    @Deprecated @io.papermc.paper.annotation.DoNotUse // Paper - use method that acknowledges title overrides
     public static AbstractContainerMenu callInventoryOpenEvent(ServerPlayer player, AbstractContainerMenu container, boolean cancelled) {
+        // Paper start - Add titleOverride to InventoryOpenEvent
+        return callInventoryOpenEventWithTitle(player, container, cancelled).getSecond();
+    }
+    public static com.mojang.datafixers.util.Pair<net.kyori.adventure.text.@org.jetbrains.annotations.Nullable Component, @org.jetbrains.annotations.Nullable AbstractContainerMenu> callInventoryOpenEventWithTitle(ServerPlayer player, AbstractContainerMenu container, boolean cancelled) {
+        // Paper end - Add titleOverride to InventoryOpenEvent
         if (player.containerMenu != player.inventoryMenu) { // fire INVENTORY_CLOSE if one already open
             player.connection.handleContainerClose(new ServerboundContainerClosePacket(player.containerMenu.containerId), InventoryCloseEvent.Reason.OPEN_NEW); // Paper - Inventory close reason
         }
@@ -1419,10 +1430,10 @@ public class CraftEventFactory {
 
         if (event.isCancelled()) {
             container.transferTo(player.containerMenu, craftPlayer);
-            return null;
+            return com.mojang.datafixers.util.Pair.of(null, null); // Paper - Add titleOverride to InventoryOpenEvent
         }
 
-        return container;
+        return com.mojang.datafixers.util.Pair.of(event.titleOverride(), container); // Paper - Add titleOverride to InventoryOpenEvent
     }
 
     public static ItemStack callPreCraftEvent(CraftingContainer matrix, Container resultInventory, ItemStack result, InventoryView lastCraftView, boolean isRepair) {

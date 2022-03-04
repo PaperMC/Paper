@@ -114,7 +114,7 @@
      @Nullable
      private Vec3 startingToFallPosition;
      @Nullable
-@@ -258,7 +293,35 @@
+@@ -258,6 +293,34 @@
      private final CommandSource commandSource;
      private int containerCounter;
      public boolean wonGame;
@@ -125,7 +125,7 @@
 +    public boolean queueHealthUpdatePacket;
 +    public net.minecraft.network.protocol.game.ClientboundSetHealthPacket queuedHealthUpdatePacket;
 +    // Paper end - cancellable death event
- 
++
 +    // CraftBukkit start
 +    public CraftPlayer.TransferCookieConnection transferCookieConnection;
 +    public String displayName;
@@ -146,10 +146,9 @@
 +    public com.destroystokyo.paper.event.entity.PlayerNaturallySpawnCreaturesEvent playerNaturallySpawnedEvent; // Paper - PlayerNaturallySpawnCreaturesEvent
 +    public @Nullable String clientBrandName = null; // Paper - Brand support
 +    public org.bukkit.event.player.PlayerQuitEvent.QuitReason quitReason = null; // Paper - Add API for quit reason; there are a lot of changes to do if we change all methods leading to the event
-+
+ 
      public ServerPlayer(MinecraftServer server, ServerLevel world, GameProfile profile, ClientInformation clientOptions) {
          super(world, world.getSharedSpawnPos(), world.getSharedSpawnAngle(), profile);
-         this.chatVisibility = ChatVisiblity.FULL;
 @@ -266,7 +329,7 @@
          this.canChatColor = true;
          this.lastActionTime = Util.getMillis();
@@ -531,10 +530,12 @@
              if (this.experienceLevel != this.lastRecordedLevel) {
                  this.lastRecordedLevel = this.experienceLevel;
                  this.updateScoreForCriteria(ObjectiveCriteria.LEVEL, Mth.ceil((float) this.lastRecordedLevel));
-@@ -865,6 +1083,20 @@
-                 CriteriaTriggers.LOCATION.trigger(this);
-             }
+@@ -863,8 +1081,22 @@
  
+             if (this.tickCount % 20 == 0) {
+                 CriteriaTriggers.LOCATION.trigger(this);
++            }
++
 +            // CraftBukkit start - initialize oldLevel, fire PlayerLevelChangeEvent, and tick client-sided world border
 +            if (this.oldLevel == -1) {
 +                this.oldLevel = this.experienceLevel;
@@ -543,8 +544,8 @@
 +            if (this.oldLevel != this.experienceLevel) {
 +                CraftEventFactory.callPlayerLevelChangeEvent(this.getBukkitEntity(), this.oldLevel, this.experienceLevel);
 +                this.oldLevel = this.experienceLevel;
-+            }
-+
+             }
+ 
 +            if (this.getBukkitEntity().hasClientWorldBorder()) {
 +                ((CraftWorldBorder) this.getBukkitEntity().getWorldBorder()).getHandle().tick();
 +            }
@@ -1168,7 +1169,7 @@
      }
  
      @Override
-@@ -1396,13 +1896,35 @@
+@@ -1396,13 +1896,40 @@
          if (factory == null) {
              return OptionalInt.empty();
          } else {
@@ -1183,12 +1184,17 @@
              this.nextContainerCounter();
              AbstractContainerMenu container = factory.createMenu(this.containerCounter, this.getInventory(), this);
  
++            Component title = null; // Paper - Add titleOverride to InventoryOpenEvent
 +            // CraftBukkit start - Inventory open hook
 +            if (container != null) {
 +                container.setTitle(factory.getDisplayName());
 +
 +                boolean cancelled = false;
-+                container = CraftEventFactory.callInventoryOpenEvent(this, container, cancelled);
++                // Paper start - Add titleOverride to InventoryOpenEvent
++                final com.mojang.datafixers.util.Pair<net.kyori.adventure.text.Component, AbstractContainerMenu> result = CraftEventFactory.callInventoryOpenEventWithTitle(this, container, cancelled);
++                container = result.getSecond();
++                title = PaperAdventure.asVanilla(result.getFirst());
++                // Paper end - Add titleOverride to InventoryOpenEvent
 +                if (container == null && !cancelled) { // Let pre-cancelled events fall through
 +                    // SPIGOT-5263 - close chest if cancelled
 +                    if (factory instanceof Container) {
@@ -1204,7 +1210,7 @@
              if (container == null) {
                  if (this.isSpectator()) {
                      this.displayClientMessage(Component.translatable("container.spectatorCantOpen").withStyle(ChatFormatting.RED), true);
-@@ -1410,9 +1932,11 @@
+@@ -1410,9 +1937,11 @@
  
                  return OptionalInt.empty();
              } else {
@@ -1212,13 +1218,13 @@
 -                this.initMenu(container);
 +                // CraftBukkit start
                  this.containerMenu = container;
-+                if (!this.isImmobile()) this.connection.send(new ClientboundOpenScreenPacket(container.containerId, container.getType(), container.getTitle())); // Paper - Prevent opening inventories when frozen
++                if (!this.isImmobile()) this.connection.send(new ClientboundOpenScreenPacket(container.containerId, container.getType(), Objects.requireNonNullElseGet(title, container::getTitle))); // Paper - Add titleOverride to InventoryOpenEvent
 +                // CraftBukkit end
 +                this.initMenu(container);
                  return OptionalInt.of(this.containerCounter);
              }
          }
-@@ -1425,15 +1949,26 @@
+@@ -1425,15 +1954,26 @@
  
      @Override
      public void openHorseInventory(AbstractHorse horse, Container inventory) {
@@ -1248,7 +1254,7 @@
          this.initMenu(this.containerMenu);
      }
  
-@@ -1456,9 +1991,28 @@
+@@ -1456,9 +1996,28 @@
  
      @Override
      public void closeContainer() {
@@ -1277,7 +1283,7 @@
  
      @Override
      public void doCloseContainer() {
-@@ -1485,19 +2039,19 @@
+@@ -1485,19 +2044,19 @@
                  i = Math.round((float) Math.sqrt(deltaX * deltaX + deltaY * deltaY + deltaZ * deltaZ) * 100.0F);
                  if (i > 0) {
                      this.awardStat(Stats.SWIM_ONE_CM, i);
@@ -1300,7 +1306,7 @@
                  }
              } else if (this.onClimbable()) {
                  if (deltaY > 0.0D) {
-@@ -1508,13 +2062,13 @@
+@@ -1508,13 +2067,13 @@
                  if (i > 0) {
                      if (this.isSprinting()) {
                          this.awardStat(Stats.SPRINT_ONE_CM, i);
@@ -1317,7 +1323,7 @@
                      }
                  }
              } else if (this.isFallFlying()) {
-@@ -1557,7 +2111,7 @@
+@@ -1557,7 +2116,7 @@
      @Override
      public void awardStat(Stat<?> stat, int amount) {
          this.stats.increment(this, stat, amount);
@@ -1326,7 +1332,7 @@
              scoreaccess.add(amount);
          });
      }
-@@ -1565,7 +2119,7 @@
+@@ -1565,7 +2124,7 @@
      @Override
      public void resetStat(Stat<?> stat) {
          this.stats.setValue(this, stat, 0);
@@ -1335,7 +1341,7 @@
      }
  
      @Override
-@@ -1597,9 +2151,9 @@
+@@ -1597,9 +2156,9 @@
          super.jumpFromGround();
          this.awardStat(Stats.JUMP);
          if (this.isSprinting()) {
@@ -1347,7 +1353,7 @@
          }
  
      }
-@@ -1613,6 +2167,13 @@
+@@ -1613,6 +2172,13 @@
      public void disconnect() {
          this.disconnected = true;
          this.ejectPassengers();
@@ -1361,7 +1367,7 @@
          if (this.isSleeping()) {
              this.stopSleepInBed(true, false);
          }
-@@ -1625,6 +2186,7 @@
+@@ -1625,6 +2191,7 @@
  
      public void resetSentInfo() {
          this.lastSentHealth = -1.0E8F;
@@ -1369,7 +1375,7 @@
      }
  
      @Override
-@@ -1661,7 +2223,7 @@
+@@ -1661,7 +2228,7 @@
          this.onUpdateAbilities();
          if (alive) {
              this.getAttributes().assignBaseValues(oldPlayer.getAttributes());
@@ -1378,7 +1384,7 @@
              this.setHealth(oldPlayer.getHealth());
              this.foodData = oldPlayer.foodData;
              Iterator iterator = oldPlayer.getActiveEffects().iterator();
-@@ -1669,7 +2231,7 @@
+@@ -1669,7 +2236,7 @@
              while (iterator.hasNext()) {
                  MobEffectInstance mobeffect = (MobEffectInstance) iterator.next();
  
@@ -1387,7 +1393,7 @@
              }
  
              this.getInventory().replaceWith(oldPlayer.getInventory());
-@@ -1680,7 +2242,7 @@
+@@ -1680,7 +2247,7 @@
              this.portalProcess = oldPlayer.portalProcess;
          } else {
              this.getAttributes().assignBaseValues(oldPlayer.getAttributes());
@@ -1396,7 +1402,7 @@
              if (this.serverLevel().getGameRules().getBoolean(GameRules.RULE_KEEPINVENTORY) || oldPlayer.isSpectator()) {
                  this.getInventory().replaceWith(oldPlayer.getInventory());
                  this.experienceLevel = oldPlayer.experienceLevel;
-@@ -1696,7 +2258,7 @@
+@@ -1696,7 +2263,7 @@
          this.lastSentExp = -1;
          this.lastSentHealth = -1.0F;
          this.lastSentFood = -1;
@@ -1405,7 +1411,7 @@
          this.seenCredits = oldPlayer.seenCredits;
          this.enteredNetherPosition = oldPlayer.enteredNetherPosition;
          this.chunkTrackingView = oldPlayer.chunkTrackingView;
-@@ -1752,19 +2314,19 @@
+@@ -1752,19 +2319,19 @@
      }
  
      @Override
@@ -1429,7 +1435,7 @@
          }
  
          return flag1;
-@@ -1799,10 +2361,18 @@
+@@ -1799,10 +2366,18 @@
      }
  
      public boolean setGameMode(GameType gameMode) {
@@ -1450,7 +1456,7 @@
          } else {
              this.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.CHANGE_GAME_MODE, (float) gameMode.getId()));
              if (gameMode == GameType.SPECTATOR) {
-@@ -1818,7 +2388,7 @@
+@@ -1818,7 +2393,7 @@
  
              this.onUpdateAbilities();
              this.updateEffectVisibility();
@@ -1459,7 +1465,7 @@
          }
      }
  
-@@ -1861,8 +2431,13 @@
+@@ -1861,8 +2436,13 @@
      }
  
      public void sendChatMessage(OutgoingChatMessage message, boolean filterMaskEnabled, ChatType.Bound params) {
@@ -1474,7 +1480,7 @@
          }
  
      }
-@@ -1878,7 +2453,36 @@
+@@ -1878,7 +2458,36 @@
      }
  
      public void updateOptions(ClientInformation clientOptions) {
@@ -1511,7 +1517,7 @@
          this.requestedViewDistance = clientOptions.viewDistance();
          this.chatVisibility = clientOptions.chatVisibility();
          this.canChatColor = clientOptions.chatColors();
-@@ -1957,12 +2561,27 @@
+@@ -1957,12 +2566,27 @@
  
          this.camera = (Entity) (entity == null ? this : entity);
          if (entity1 != this.camera) {
@@ -1540,7 +1546,7 @@
              }
  
              if (entity != null) {
-@@ -1999,11 +2618,11 @@
+@@ -1999,11 +2623,11 @@
  
      @Nullable
      public Component getTabListDisplayName() {
@@ -1554,7 +1560,7 @@
      }
  
      @Override
-@@ -2045,12 +2664,44 @@
+@@ -2045,12 +2669,44 @@
          this.setRespawnPosition(player.getRespawnDimension(), player.getRespawnPosition(), player.getRespawnAngle(), player.isRespawnForced(), false);
      }
  
@@ -1601,7 +1607,7 @@
              }
  
              this.respawnPosition = pos;
-@@ -2064,6 +2715,7 @@
+@@ -2064,6 +2720,7 @@
              this.respawnForced = false;
          }
  
@@ -1609,7 +1615,7 @@
      }
  
      public SectionPos getLastSectionPos() {
-@@ -2088,18 +2740,44 @@
+@@ -2088,18 +2745,44 @@
      }
  
      @Override
@@ -1658,7 +1664,7 @@
                  }
  
                  this.awardStat(Stats.DROP);
-@@ -2115,6 +2793,11 @@
+@@ -2115,6 +2798,11 @@
              return null;
          } else {
              double d0 = this.getEyeY() - 0.30000001192092896D;
@@ -1670,7 +1676,7 @@
              ItemEntity entityitem = new ItemEntity(this.level(), this.getX(), d0, this.getZ(), stack);
  
              entityitem.setPickUpDelay(40);
-@@ -2166,6 +2849,16 @@
+@@ -2166,6 +2854,16 @@
      }
  
      public void loadGameTypes(@Nullable CompoundTag nbt) {
@@ -1687,7 +1693,7 @@
          this.gameMode.setGameModeForPlayer(this.calculateGameModeForNewPlayer(ServerPlayer.readPlayerMode(nbt, "playerGameType")), ServerPlayer.readPlayerMode(nbt, "previousPlayerGameType"));
      }
  
-@@ -2275,9 +2968,15 @@
+@@ -2275,9 +2973,15 @@
  
      @Override
      public void stopRiding() {
@@ -1704,7 +1710,7 @@
          if (entity instanceof LivingEntity entityliving) {
              Iterator iterator = entityliving.getActiveEffects().iterator();
  
-@@ -2375,10 +3074,12 @@
+@@ -2375,10 +3079,12 @@
          return TicketType.ENDER_PEARL.timeout();
      }
  
@@ -1720,7 +1726,7 @@
          }
  
          private static float calculateLookAtYaw(Vec3 respawnPos, BlockPos currentPos) {
-@@ -2387,4 +3088,147 @@
+@@ -2387,4 +3093,147 @@
              return (float) Mth.wrapDegrees(Mth.atan2(vec3d1.z, vec3d1.x) * 57.2957763671875D - 90.0D);
          }
      }

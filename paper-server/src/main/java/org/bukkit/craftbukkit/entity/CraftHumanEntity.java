@@ -366,12 +366,16 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         Preconditions.checkArgument(windowType != null, "Unknown windowType");
         AbstractContainerMenu container = new CraftContainer(inventory, player, player.nextContainerCounter());
 
-        container = CraftEventFactory.callInventoryOpenEvent(player, container);
+        // Paper start - Add titleOverride to InventoryOpenEvent
+        final com.mojang.datafixers.util.Pair<net.kyori.adventure.text.Component, AbstractContainerMenu> result = CraftEventFactory.callInventoryOpenEventWithTitle(player, container);
+        container = result.getSecond();
+        // Paper end - Add titleOverride to InventoryOpenEvent
         if (container == null) return;
 
         //String title = container.getBukkitView().getTitle(); // Paper - comment
         net.kyori.adventure.text.Component adventure$title = container.getBukkitView().title(); // Paper
         if (adventure$title == null) adventure$title = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(container.getBukkitView().getTitle()); // Paper
+        if (result.getFirst() != null) adventure$title = result.getFirst(); // Paper - Add titleOverride to InventoryOpenEvent
 
         //player.connection.send(new ClientboundOpenScreenPacket(container.containerId, windowType, CraftChatMessage.fromString(title)[0])); // Paper - comment
         if (!player.isImmobile()) player.connection.send(new ClientboundOpenScreenPacket(container.containerId, windowType, io.papermc.paper.adventure.PaperAdventure.asVanilla(adventure$title))); // Paper - Prevent opening inventories when frozen
@@ -448,7 +452,10 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         }
 
         // Trigger an INVENTORY_OPEN event
-        container = CraftEventFactory.callInventoryOpenEvent(player, container);
+        // Paper start - Add titleOverride to InventoryOpenEvent
+        final com.mojang.datafixers.util.Pair<net.kyori.adventure.text.Component, AbstractContainerMenu> result = CraftEventFactory.callInventoryOpenEventWithTitle(player, container);
+        container = result.getSecond();
+        // Paper end - Add titleOverride to InventoryOpenEvent
         if (container == null) {
             return;
         }
@@ -459,6 +466,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         //String title = inventory.getTitle(); // Paper - comment
         net.kyori.adventure.text.Component adventure$title = inventory.title(); // Paper
         if (adventure$title == null) adventure$title = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(inventory.getTitle()); // Paper
+        if (result.getFirst() != null) adventure$title = result.getFirst(); // Paper - Add titleOverride to InventoryOpenEvent
         //player.connection.send(new ClientboundOpenScreenPacket(container.containerId, windowType, CraftChatMessage.fromString(title)[0])); // Paper - comment
         if (!player.isImmobile()) player.connection.send(new ClientboundOpenScreenPacket(container.containerId, windowType, io.papermc.paper.adventure.PaperAdventure.asVanilla(adventure$title))); // Paper - Prevent opening inventories when frozen
         player.containerMenu = container;
