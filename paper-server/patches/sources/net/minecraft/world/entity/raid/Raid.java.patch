@@ -1,20 +1,43 @@
 --- a/net/minecraft/world/entity/raid/Raid.java
 +++ b/net/minecraft/world/entity/raid/Raid.java
-@@ -175,7 +175,13 @@
+@@ -107,6 +107,11 @@
+     private Raid.RaidStatus status;
+     private int celebrationTicks;
+     private Optional<BlockPos> waveSpawnPos;
++    // Paper start
++    private static final String PDC_NBT_KEY = "BukkitValues";
++    private static final org.bukkit.craftbukkit.persistence.CraftPersistentDataTypeRegistry PDC_TYPE_REGISTRY = new org.bukkit.craftbukkit.persistence.CraftPersistentDataTypeRegistry();
++    public final org.bukkit.craftbukkit.persistence.CraftPersistentDataContainer persistentDataContainer = new org.bukkit.craftbukkit.persistence.CraftPersistentDataContainer(PDC_TYPE_REGISTRY);
++    // Paper end
  
-     public boolean isLoss() {
+     public Raid(int id, ServerLevel world, BlockPos pos) {
+         this.raidEvent = new ServerBossEvent(Raid.RAID_NAME_COMPONENT, BossEvent.BossBarColor.RED, BossEvent.BossBarOverlay.NOTCHED_10);
+@@ -150,6 +155,11 @@
+                 this.heroesOfTheVillage.add(NbtUtils.loadUUID(nbtbase));
+             }
+         }
++        // Paper start
++        if (nbt.contains(PDC_NBT_KEY, net.minecraft.nbt.Tag.TAG_COMPOUND)) {
++            this.persistentDataContainer.putAll(nbt.getCompound(PDC_NBT_KEY));
++        }
++        // Paper end
+ 
+     }
+ 
+@@ -177,6 +187,12 @@
          return this.status == Raid.RaidStatus.LOSS;
-+    }
-+
+     }
+ 
 +    // CraftBukkit start
 +    public boolean isInProgress() {
 +        return this.status == RaidStatus.ONGOING;
-     }
++    }
 +    // CraftBukkit end
- 
++
      public float getTotalHealth() {
          return this.totalHealth;
-@@ -281,6 +287,7 @@
+     }
+@@ -281,6 +297,7 @@
  
                  this.active = this.level.hasChunkAt(this.center);
                  if (this.level.getDifficulty() == Difficulty.PEACEFUL) {
@@ -22,7 +45,7 @@
                      this.stop();
                      return;
                  }
-@@ -300,13 +307,16 @@
+@@ -300,13 +317,16 @@
                  if (!this.level.isVillage(this.center)) {
                      if (this.groupsSpawned > 0) {
                          this.status = Raid.RaidStatus.LOSS;
@@ -39,7 +62,7 @@
                      this.stop();
                      return;
                  }
-@@ -374,6 +384,7 @@
+@@ -374,6 +394,7 @@
                      }
  
                      if (j > 5) {
@@ -47,7 +70,7 @@
                          this.stop();
                          break;
                      }
-@@ -386,6 +397,7 @@
+@@ -386,6 +407,7 @@
                          this.status = Raid.RaidStatus.VICTORY;
                          Iterator iterator = this.heroesOfTheVillage.iterator();
  
@@ -55,7 +78,7 @@
                          while (iterator.hasNext()) {
                              UUID uuid = (UUID) iterator.next();
                              Entity entity = this.level.getEntity(uuid);
-@@ -400,10 +412,12 @@
+@@ -400,10 +422,12 @@
  
                                          entityplayer.awardStat(Stats.RAID_WIN);
                                          CriteriaTriggers.RAID_WIN.trigger(entityplayer);
@@ -68,7 +91,7 @@
                      }
                  }
  
-@@ -411,6 +425,7 @@
+@@ -411,6 +435,7 @@
              } else if (this.isOver()) {
                  ++this.celebrationTicks;
                  if (this.celebrationTicks >= 600) {
@@ -76,7 +99,7 @@
                      this.stop();
                      return;
                  }
-@@ -544,6 +559,10 @@
+@@ -544,6 +569,10 @@
          int j = araid_wave.length;
          int k = 0;
  
@@ -87,7 +110,7 @@
          while (k < j) {
              Raid.RaiderType raid_wave = araid_wave[k];
              int l = this.getDefaultNumSpawns(raid_wave, i, flag1) + this.getPotentialBonusSpawns(raid_wave, this.random, i, difficultydamagescaler, flag1);
-@@ -559,9 +578,11 @@
+@@ -559,9 +588,11 @@
                              entityraider.setPatrolLeader(true);
                              this.setLeader(i, entityraider);
                              flag = true;
@@ -99,7 +122,7 @@
                          if (raid_wave.entityType == EntityType.RAVAGER) {
                              Raider entityraider1 = null;
  
-@@ -580,6 +601,7 @@
+@@ -580,6 +611,7 @@
                                  this.joinRaid(i, entityraider1, pos, false);
                                  entityraider1.moveTo(pos, 0.0F, 0.0F);
                                  entityraider1.startRiding(entityraider);
@@ -107,7 +130,7 @@
                              }
                          }
  
-@@ -597,6 +619,7 @@
+@@ -597,6 +629,7 @@
          ++this.groupsSpawned;
          this.updateBossbar();
          this.setDirty();
@@ -115,7 +138,7 @@
      }
  
      public void joinRaid(int wave, Raider raider, @Nullable BlockPos pos, boolean existing) {
-@@ -612,7 +635,7 @@
+@@ -612,7 +645,7 @@
                  raider.finalizeSpawn(this.level, this.level.getCurrentDifficultyAt(pos), EntitySpawnReason.EVENT, (SpawnGroupData) null);
                  raider.applyRaidBuffs(this.level, wave, false);
                  raider.setOnGround(true);
@@ -124,7 +147,19 @@
              }
          }
  
-@@ -865,6 +888,12 @@
+@@ -839,6 +872,11 @@
+         }
+ 
+         nbt.put("HeroesOfTheVillage", nbttaglist);
++        // Paper start
++        if (!this.persistentDataContainer.isEmpty()) {
++            nbt.put(PDC_NBT_KEY, this.persistentDataContainer.toTagCompound());
++        }
++        // Paper end
+         return nbt;
+     }
+ 
+@@ -865,6 +903,12 @@
          this.heroesOfTheVillage.add(entity.getUUID());
      }
  

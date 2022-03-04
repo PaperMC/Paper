@@ -2311,6 +2311,14 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         return (raid == null) ? null : new CraftRaid(raid);
     }
 
+    // Paper start - more Raid API
+    @Override
+    public @Nullable Raid getRaid(final int id) {
+        final net.minecraft.world.entity.raid.@Nullable Raid nmsRaid = this.world.getRaids().raidMap.get(id);
+        return nmsRaid != null ? new CraftRaid(nmsRaid) : null;
+    }
+    // Paper end - more Raid API
+
     @Override
     public List<Raid> getRaids() {
         Raids persistentRaid = this.world.getRaids();
