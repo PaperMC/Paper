@@ -4164,6 +4164,17 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
     @Nullable
     public Raid locateNearestRaid(@NotNull Location location, int radius);
 
+    // Paper start - more Raid API
+    /**
+     * Get a raid with the specific id from {@link Raid#getId}
+     * from this world.
+     *
+     * @param id the id of the raid
+     * @return the raid or null if none with that id
+     */
+    @Nullable Raid getRaid(int id);
+    // Paper end - more Raid API
+
     /**
      * Gets all raids that are going on over this world.
      *
