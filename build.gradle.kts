@@ -128,3 +128,9 @@ tasks.register("printMinecraftVersion") {
         println(providers.gradleProperty("mcVersion").get().trim())
     }
 }
+
+tasks.register("printPaperVersion") {
+    doLast {
+        println(project.version)
+    }
+}
