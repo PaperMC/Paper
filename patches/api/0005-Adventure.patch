@@ -75,37 +75,6 @@ index 98afa6a25131dc626ea7a5122f33df6bd2d39178..ac7ecca1a046182e385e2fc77120813e
      // workaround for https://github.com/gradle/gradle/issues/4046
      inputs.dir("src/main/javadoc").withPropertyName("javadoc-sourceset")
      doLast {
-diff --git a/src/main/java/co/aikar/timings/TimingsReportListener.java b/src/main/java/co/aikar/timings/TimingsReportListener.java
-index ef58a6c00f444bd498a2d8fc4e457236f393954f..ecd149157d4fb80444f34bf5633d74bcdb63dec5 100644
---- a/src/main/java/co/aikar/timings/TimingsReportListener.java
-+++ b/src/main/java/co/aikar/timings/TimingsReportListener.java
-@@ -15,7 +15,7 @@ import org.jetbrains.annotations.NotNull;
- import org.jetbrains.annotations.Nullable;
- 
- @SuppressWarnings("WeakerAccess")
--public class TimingsReportListener implements MessageCommandSender {
-+public class TimingsReportListener implements net.kyori.adventure.audience.ForwardingAudience, MessageCommandSender { // Paper
-     private final List<CommandSender> senders;
-     private final Runnable onDone;
-     private String timingsURL;
-@@ -74,4 +74,17 @@ public class TimingsReportListener implements MessageCommandSender {
-             this.senders.add(Bukkit.getConsoleSender());
-         }
-     }
-+
-+    // Paper start
-+    @Override
-+    public void sendMessage(final @NotNull net.kyori.adventure.identity.Identity source, final @NotNull net.kyori.adventure.text.Component message, final @NotNull net.kyori.adventure.audience.MessageType type) {
-+        net.kyori.adventure.audience.ForwardingAudience.super.sendMessage(source, message, type);
-+    }
-+
-+    @NotNull
-+    @Override
-+    public Iterable<? extends net.kyori.adventure.audience.Audience> audiences() {
-+        return this.senders;
-+    }
-+    // Paper end
- }
 diff --git a/src/main/java/io/papermc/paper/chat/ChatRenderer.java b/src/main/java/io/papermc/paper/chat/ChatRenderer.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..2fc47afbb233e6e5727a7b672f61b88ad3bab097
@@ -498,10 +467,10 @@ index 0000000000000000000000000000000000000000..15ecb12fd2fefcac96edbaef7cdd487a
 +    }
 +}
 diff --git a/src/main/java/org/bukkit/Bukkit.java b/src/main/java/org/bukkit/Bukkit.java
-index 4b5486bec19d330404562814a0c4cf63f2f7ef1d..fc7d17fd3028f790ff9e034e8234bf0506f017c2 100644
+index e1cd74a2fb53e054f626641d781e4ac57ea0ea8f..49df3d538413b305acdea8076de5f234cd0b07b9 100644
 --- a/src/main/java/org/bukkit/Bukkit.java
 +++ b/src/main/java/org/bukkit/Bukkit.java
-@@ -371,7 +371,9 @@ public final class Bukkit {
+@@ -357,7 +357,9 @@ public final class Bukkit {
       *
       * @param message the message
       * @return the number of players
@@ -511,7 +480,7 @@ index 4b5486bec19d330404562814a0c4cf63f2f7ef1d..fc7d17fd3028f790ff9e034e8234bf05
      public static int broadcastMessage(@NotNull String message) {
          return server.broadcastMessage(message);
      }
-@@ -1052,6 +1054,19 @@ public final class Bukkit {
+@@ -1039,6 +1041,19 @@ public final class Bukkit {
          server.shutdown();
      }
  
@@ -531,7 +500,7 @@ index 4b5486bec19d330404562814a0c4cf63f2f7ef1d..fc7d17fd3028f790ff9e034e8234bf05
      /**
       * Broadcasts the specified message to every user with the given
       * permission name.
-@@ -1061,6 +1076,21 @@ public final class Bukkit {
+@@ -1048,6 +1063,21 @@ public final class Bukkit {
       *     permissibles} must have to receive the broadcast
       * @return number of message recipients
       */
@@ -553,7 +522,7 @@ index 4b5486bec19d330404562814a0c4cf63f2f7ef1d..fc7d17fd3028f790ff9e034e8234bf05
      public static int broadcast(@NotNull String message, @NotNull String permission) {
          return server.broadcast(message, permission);
      }
-@@ -1299,6 +1329,7 @@ public final class Bukkit {
+@@ -1286,6 +1316,7 @@ public final class Bukkit {
          return server.createInventory(owner, type);
      }
  
@@ -561,7 +530,7 @@ index 4b5486bec19d330404562814a0c4cf63f2f7ef1d..fc7d17fd3028f790ff9e034e8234bf05
      /**
       * Creates an empty inventory with the specified type and title. If the type
       * is {@link InventoryType#CHEST}, the new inventory has a size of 27;
-@@ -1324,6 +1355,38 @@ public final class Bukkit {
+@@ -1311,6 +1342,38 @@ public final class Bukkit {
       * @see InventoryType#isCreatable()
       */
      @NotNull
@@ -600,7 +569,7 @@ index 4b5486bec19d330404562814a0c4cf63f2f7ef1d..fc7d17fd3028f790ff9e034e8234bf05
      public static Inventory createInventory(@Nullable InventoryHolder owner, @NotNull InventoryType type, @NotNull String title) {
          return server.createInventory(owner, type, title);
      }
-@@ -1342,6 +1405,7 @@ public final class Bukkit {
+@@ -1329,6 +1392,7 @@ public final class Bukkit {
          return server.createInventory(owner, size);
      }
  
@@ -608,7 +577,7 @@ index 4b5486bec19d330404562814a0c4cf63f2f7ef1d..fc7d17fd3028f790ff9e034e8234bf05
      /**
       * Creates an empty inventory of type {@link InventoryType#CHEST} with the
       * specified size and title.
-@@ -1354,10 +1418,30 @@ public final class Bukkit {
+@@ -1341,10 +1405,30 @@ public final class Bukkit {
       * @throws IllegalArgumentException if the size is not a multiple of 9
       */
      @NotNull
@@ -639,7 +608,7 @@ index 4b5486bec19d330404562814a0c4cf63f2f7ef1d..fc7d17fd3028f790ff9e034e8234bf05
      /**
       * Creates an empty merchant.
       *
-@@ -1365,7 +1449,20 @@ public final class Bukkit {
+@@ -1352,7 +1436,20 @@ public final class Bukkit {
       * when the merchant inventory is viewed
       * @return a new merchant
       */
@@ -660,7 +629,7 @@ index 4b5486bec19d330404562814a0c4cf63f2f7ef1d..fc7d17fd3028f790ff9e034e8234bf05
      public static Merchant createMerchant(@Nullable String title) {
          return server.createMerchant(title);
      }
-@@ -1471,22 +1568,47 @@ public final class Bukkit {
+@@ -1458,22 +1555,47 @@ public final class Bukkit {
          return server.isPrimaryThread();
      }
  
@@ -833,10 +802,10 @@ index 803fa0019869127ee8c7e4fb1777a59c43e66f8a..c65f0d6569c130b4920a9e71ad24af64
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/Server.java b/src/main/java/org/bukkit/Server.java
-index e38a0d7d48a57364bec0c8d1dc16e256622298a0..dd79325a8f52190c44b833870043d167641211a6 100644
+index 96819d13fa837c7374c5a13bdcad864c6744f0b5..e9859112a6896c7a7cb14fce545d91827a0e7730 100644
 --- a/src/main/java/org/bukkit/Server.java
 +++ b/src/main/java/org/bukkit/Server.java
-@@ -58,7 +58,7 @@ import org.jetbrains.annotations.Nullable;
+@@ -58,13 +58,13 @@ import org.jetbrains.annotations.Nullable;
  /**
   * Represents a server implementation.
   */
@@ -844,8 +813,6 @@ index e38a0d7d48a57364bec0c8d1dc16e256622298a0..dd79325a8f52190c44b833870043d167
 +public interface Server extends PluginMessageRecipient, net.kyori.adventure.audience.ForwardingAudience { // Paper
  
      /**
-      * Returns the de facto plugins directory, generally used for storing plugin jars to be loaded,
-@@ -76,7 +76,7 @@ public interface Server extends PluginMessageRecipient {
       * Used for all administrative messages, such as an operator using a
       * command.
       * <p>
@@ -854,7 +821,7 @@ index e38a0d7d48a57364bec0c8d1dc16e256622298a0..dd79325a8f52190c44b833870043d167
       */
      public static final String BROADCAST_CHANNEL_ADMINISTRATIVE = "bukkit.broadcast.admin";
  
-@@ -84,7 +84,7 @@ public interface Server extends PluginMessageRecipient {
+@@ -72,7 +72,7 @@ public interface Server extends PluginMessageRecipient {
       * Used for all announcement messages, such as informing users that a
       * player has joined.
       * <p>
@@ -863,7 +830,7 @@ index e38a0d7d48a57364bec0c8d1dc16e256622298a0..dd79325a8f52190c44b833870043d167
       */
      public static final String BROADCAST_CHANNEL_USERS = "bukkit.broadcast.user";
  
-@@ -306,7 +306,9 @@ public interface Server extends PluginMessageRecipient {
+@@ -294,7 +294,9 @@ public interface Server extends PluginMessageRecipient {
       *
       * @param message the message
       * @return the number of players
@@ -873,7 +840,7 @@ index e38a0d7d48a57364bec0c8d1dc16e256622298a0..dd79325a8f52190c44b833870043d167
      public int broadcastMessage(@NotNull String message);
  
      /**
-@@ -893,8 +895,33 @@ public interface Server extends PluginMessageRecipient {
+@@ -881,8 +883,33 @@ public interface Server extends PluginMessageRecipient {
       * @param permission the required permission {@link Permissible
       *     permissibles} must have to receive the broadcast
       * @return number of message recipients
@@ -907,7 +874,7 @@ index e38a0d7d48a57364bec0c8d1dc16e256622298a0..dd79325a8f52190c44b833870043d167
  
      /**
       * Gets the player by the given name, regardless if they are offline or
-@@ -1092,6 +1119,7 @@ public interface Server extends PluginMessageRecipient {
+@@ -1080,6 +1107,7 @@ public interface Server extends PluginMessageRecipient {
      @NotNull
      Inventory createInventory(@Nullable InventoryHolder owner, @NotNull InventoryType type);
  
@@ -915,7 +882,7 @@ index e38a0d7d48a57364bec0c8d1dc16e256622298a0..dd79325a8f52190c44b833870043d167
      /**
       * Creates an empty inventory with the specified type and title. If the type
       * is {@link InventoryType#CHEST}, the new inventory has a size of 27;
-@@ -1117,6 +1145,36 @@ public interface Server extends PluginMessageRecipient {
+@@ -1105,6 +1133,36 @@ public interface Server extends PluginMessageRecipient {
       * @see InventoryType#isCreatable()
       */
      @NotNull
@@ -952,7 +919,7 @@ index e38a0d7d48a57364bec0c8d1dc16e256622298a0..dd79325a8f52190c44b833870043d167
      Inventory createInventory(@Nullable InventoryHolder owner, @NotNull InventoryType type, @NotNull String title);
  
      /**
-@@ -1131,6 +1189,22 @@ public interface Server extends PluginMessageRecipient {
+@@ -1119,6 +1177,22 @@ public interface Server extends PluginMessageRecipient {
      @NotNull
      Inventory createInventory(@Nullable InventoryHolder owner, int size) throws IllegalArgumentException;
  
@@ -975,7 +942,7 @@ index e38a0d7d48a57364bec0c8d1dc16e256622298a0..dd79325a8f52190c44b833870043d167
      /**
       * Creates an empty inventory of type {@link InventoryType#CHEST} with the
       * specified size and title.
-@@ -1141,10 +1215,13 @@ public interface Server extends PluginMessageRecipient {
+@@ -1129,10 +1203,13 @@ public interface Server extends PluginMessageRecipient {
       *     viewed
       * @return a new inventory
       * @throws IllegalArgumentException if the size is not a multiple of 9
@@ -989,7 +956,7 @@ index e38a0d7d48a57364bec0c8d1dc16e256622298a0..dd79325a8f52190c44b833870043d167
      /**
       * Creates an empty merchant.
       *
-@@ -1152,7 +1229,18 @@ public interface Server extends PluginMessageRecipient {
+@@ -1140,7 +1217,18 @@ public interface Server extends PluginMessageRecipient {
       * when the merchant inventory is viewed
       * @return a new merchant
       */
@@ -1008,7 +975,7 @@ index e38a0d7d48a57364bec0c8d1dc16e256622298a0..dd79325a8f52190c44b833870043d167
      Merchant createMerchant(@Nullable String title);
  
      /**
-@@ -1239,20 +1327,41 @@ public interface Server extends PluginMessageRecipient {
+@@ -1227,20 +1315,41 @@ public interface Server extends PluginMessageRecipient {
       */
      boolean isPrimaryThread();
  
@@ -1050,7 +1017,7 @@ index e38a0d7d48a57364bec0c8d1dc16e256622298a0..dd79325a8f52190c44b833870043d167
      String getShutdownMessage();
  
      /**
-@@ -1629,7 +1738,9 @@ public interface Server extends PluginMessageRecipient {
+@@ -1597,7 +1706,9 @@ public interface Server extends PluginMessageRecipient {
           * Sends the component to the player
           *
           * @param component the components to send
@@ -1060,7 +1027,7 @@ index e38a0d7d48a57364bec0c8d1dc16e256622298a0..dd79325a8f52190c44b833870043d167
          public void broadcast(@NotNull net.md_5.bungee.api.chat.BaseComponent component) {
              throw new UnsupportedOperationException("Not supported yet.");
          }
-@@ -1638,7 +1749,9 @@ public interface Server extends PluginMessageRecipient {
+@@ -1606,7 +1717,9 @@ public interface Server extends PluginMessageRecipient {
           * Sends an array of components as a single message to the player
           *
           * @param components the components to send
@@ -1133,7 +1100,7 @@ index ac5e263d737973af077e3406a84a84baca4370db..2d91924b7f5ef16a91d40cdc1bfc3d68
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/UnsafeValues.java b/src/main/java/org/bukkit/UnsafeValues.java
-index dca2d5045eb52d3d654d5673732761b0575871b4..ce5794d684a1126ec9acbf4af17f5d6fa783f551 100644
+index 01e11f882abb6c631f810584aa23646042688435..f43ad19a44f3b7368a1a110cc55247277f4d3751 100644
 --- a/src/main/java/org/bukkit/UnsafeValues.java
 +++ b/src/main/java/org/bukkit/UnsafeValues.java
 @@ -22,6 +22,14 @@ import org.bukkit.plugin.PluginDescriptionFile;
@@ -1149,8 +1116,8 @@ index dca2d5045eb52d3d654d5673732761b0575871b4..ce5794d684a1126ec9acbf4af17f5d6f
 +    net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer legacyComponentSerializer();
 +    // Paper end
  
-     void reportTimings(); // Paper
      Material toLegacy(Material material);
+ 
 diff --git a/src/main/java/org/bukkit/Warning.java b/src/main/java/org/bukkit/Warning.java
 index efb97712cc9dc7c1e12a59f5b94e4f2ad7c6b7d8..3024468af4c073324e536c1cb26beffb1e09f3f4 100644
 --- a/src/main/java/org/bukkit/Warning.java
@@ -1309,19 +1276,20 @@ index ab6b0ec328e94bf65a0dafd0403e5ee3b870296c..c8d37184d8e882a4084a1bfef85faa33
  
      /**
 diff --git a/src/main/java/org/bukkit/command/Command.java b/src/main/java/org/bukkit/command/Command.java
-index 03bdc1622791e1206406c87065978688d602e39e..c4dcafac892169a7bfcc065701fffb43c6cfdf44 100644
+index 4bfc214685164a38ba4261b2bae7faa8a3bd297e..50e6d45ec9349b56d20e2ffc664eca15ba936cc6 100644
 --- a/src/main/java/org/bukkit/command/Command.java
 +++ b/src/main/java/org/bukkit/command/Command.java
-@@ -32,7 +32,7 @@ public abstract class Command {
+@@ -32,8 +32,7 @@ public abstract class Command {
      protected String description;
      protected String usageMessage;
      private String permission;
 -    private String permissionMessage;
+-    public org.spigotmc.CustomTimingsHandler timings; // Spigot
 +    private net.kyori.adventure.text.Component permissionMessage; // Paper
-     public co.aikar.timings.Timing timings; // Paper
-     @NotNull public String getTimingName() {return getName();} // Paper
  
-@@ -186,10 +186,10 @@ public abstract class Command {
+     protected Command(@NotNull String name) {
+         this(name, "", "/" + name, new ArrayList<String>());
+@@ -186,10 +185,10 @@ public abstract class Command {
  
          if (permissionMessage == null) {
              target.sendMessage(ChatColor.RED + "I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is a mistake.");
@@ -1336,7 +1304,7 @@ index 03bdc1622791e1206406c87065978688d602e39e..c4dcafac892169a7bfcc065701fffb43
          }
  
          return false;
-@@ -316,10 +316,12 @@ public abstract class Command {
+@@ -317,10 +316,12 @@ public abstract class Command {
       * command
       *
       * @return Permission check failed message
@@ -1350,7 +1318,7 @@ index 03bdc1622791e1206406c87065978688d602e39e..c4dcafac892169a7bfcc065701fffb43
      }
  
      /**
-@@ -380,10 +382,12 @@ public abstract class Command {
+@@ -381,10 +382,12 @@ public abstract class Command {
       * @param permissionMessage new permission message, null to indicate
       *     default message, or an empty string to indicate no message
       * @return this command object, for chaining
@@ -1364,7 +1332,7 @@ index 03bdc1622791e1206406c87065978688d602e39e..c4dcafac892169a7bfcc065701fffb43
          return this;
      }
  
-@@ -398,6 +402,25 @@ public abstract class Command {
+@@ -399,6 +402,25 @@ public abstract class Command {
          this.usageMessage = (usage == null) ? "" : usage;
          return this;
      }
@@ -1492,23 +1460,6 @@ index 284be63a125624a8ae43d2c164aede810ce6bfe5..f98d46fa45bb7c842d791b09f082a096
 +    }
 +    // Paper end
  }
-diff --git a/src/main/java/org/bukkit/command/MessageCommandSender.java b/src/main/java/org/bukkit/command/MessageCommandSender.java
-index a7ef1f51c2b96617a32e6e7b1723e8770ba8a6a8..68daa56546d00089d7d6c13ee897d828c377bbc3 100644
---- a/src/main/java/org/bukkit/command/MessageCommandSender.java
-+++ b/src/main/java/org/bukkit/command/MessageCommandSender.java
-@@ -49,6 +49,12 @@ public interface MessageCommandSender extends CommandSender {
-     default String getName() {
-         throw new NotImplementedException();
-     }
-+    // Paper start
-+    @Override
-+    default net.kyori.adventure.text.@org.jetbrains.annotations.NotNull Component name() {
-+        throw new NotImplementedException();
-+    }
-+    // Paper end
- 
-     @Override
-     default boolean isOp() {
 diff --git a/src/main/java/org/bukkit/command/PluginCommandYamlParser.java b/src/main/java/org/bukkit/command/PluginCommandYamlParser.java
 index a542c4bb3c973bbe4b976642feccde6a4d90cb7b..614cba22c0997dbb45576f800675db4053a9831c 100644
 --- a/src/main/java/org/bukkit/command/PluginCommandYamlParser.java
@@ -1627,7 +1578,7 @@ index 922d33ff4fa9d901d3c5c0a9f8399ad8aef62c37..cd287978c34873c7122794e4f3e76291
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/entity/Player.java b/src/main/java/org/bukkit/entity/Player.java
-index 7b256be5b82e34a4591d0cc46a2d49aa1269e844..ac7a076d92bfb1d9c6ce8836d08e11f52befabc3 100644
+index 5015386d4cd7209a598401932e276077861cea62..29ed72d84b4c4cfcbae5613467076872e0a6871a 100644
 --- a/src/main/java/org/bukkit/entity/Player.java
 +++ b/src/main/java/org/bukkit/entity/Player.java
 @@ -35,7 +35,28 @@ import org.jetbrains.annotations.Nullable;
@@ -2166,7 +2117,7 @@ index 7b256be5b82e34a4591d0cc46a2d49aa1269e844..ac7a076d92bfb1d9c6ce8836d08e11f5
 +        @Deprecated // Paper
          public void sendMessage(@NotNull net.md_5.bungee.api.ChatMessageType position, @Nullable UUID sender, @NotNull net.md_5.bungee.api.chat.BaseComponent... components) {
              throw new UnsupportedOperationException("Not supported yet.");
- 
+         }
 diff --git a/src/main/java/org/bukkit/entity/minecart/CommandMinecart.java b/src/main/java/org/bukkit/entity/minecart/CommandMinecart.java
 index 63c80b4ee1f7adc8a9efc3b607993104b1991f90..91cab8b13d5bba34007f124838b32a1df58c5ac7 100644
 --- a/src/main/java/org/bukkit/entity/minecart/CommandMinecart.java

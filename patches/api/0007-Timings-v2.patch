@@ -1878,10 +1878,10 @@ index 0000000000000000000000000000000000000000..a92925d41110226f7fda055b71ce7be6
 +}
 diff --git a/src/main/java/co/aikar/timings/TimingsReportListener.java b/src/main/java/co/aikar/timings/TimingsReportListener.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..ef58a6c00f444bd498a2d8fc4e457236f393954f
+index 0000000000000000000000000000000000000000..73452e53afc68061245a915c863067f47a1d99f9
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/TimingsReportListener.java
-@@ -0,0 +1,77 @@
+@@ -0,0 +1,87 @@
 +package co.aikar.timings;
 +
 +import com.google.common.collect.Lists;
@@ -1893,13 +1893,12 @@ index 0000000000000000000000000000000000000000..ef58a6c00f444bd498a2d8fc4e457236
 +import org.bukkit.command.RemoteConsoleCommandSender;
 +
 +import java.util.List;
-+import java.util.UUID;
 +
 +import org.jetbrains.annotations.NotNull;
 +import org.jetbrains.annotations.Nullable;
 +
 +@SuppressWarnings("WeakerAccess")
-+public class TimingsReportListener implements MessageCommandSender {
++public class TimingsReportListener implements net.kyori.adventure.audience.ForwardingAudience, MessageCommandSender {
 +    private final List<CommandSender> senders;
 +    private final Runnable onDone;
 +    private String timingsURL;
@@ -1940,6 +1939,17 @@ index 0000000000000000000000000000000000000000..ef58a6c00f444bd498a2d8fc4e457236
 +                ((TimingsReportListener) sender).done();
 +            }
 +        }
++    }
++
++    @Override
++    public void sendMessage(final @NotNull net.kyori.adventure.identity.Identity source, final @NotNull net.kyori.adventure.text.Component message, final @NotNull net.kyori.adventure.audience.MessageType type) {
++        net.kyori.adventure.audience.ForwardingAudience.super.sendMessage(source, message, type);
++    }
++
++    @NotNull
++    @Override
++    public Iterable<? extends net.kyori.adventure.audience.Audience> audiences() {
++        return this.senders;
 +    }
 +
 +    @Override
@@ -2782,10 +2792,10 @@ index 0000000000000000000000000000000000000000..5989ee21297935651b0edd44b8239e65
 +    }
 +}
 diff --git a/src/main/java/org/bukkit/Bukkit.java b/src/main/java/org/bukkit/Bukkit.java
-index e1cd74a2fb53e054f626641d781e4ac57ea0ea8f..f8001cafc3494675dfa31c0c5feb975c0f066c5d 100644
+index 49df3d538413b305acdea8076de5f234cd0b07b9..b1d770a62e499d909de4352303409fcfdc5d58a9 100644
 --- a/src/main/java/org/bukkit/Bukkit.java
 +++ b/src/main/java/org/bukkit/Bukkit.java
-@@ -787,7 +787,6 @@ public final class Bukkit {
+@@ -789,7 +789,6 @@ public final class Bukkit {
       */
      public static void reload() {
          server.reload();
@@ -2794,10 +2804,10 @@ index e1cd74a2fb53e054f626641d781e4ac57ea0ea8f..f8001cafc3494675dfa31c0c5feb975c
  
      /**
 diff --git a/src/main/java/org/bukkit/Server.java b/src/main/java/org/bukkit/Server.java
-index 96819d13fa837c7374c5a13bdcad864c6744f0b5..7cc8f68205f7c0ec2ebada5030f944675b776c76 100644
+index e9859112a6896c7a7cb14fce545d91827a0e7730..465a7f5312a5d5b65f7366f476b7c42795f53105 100644
 --- a/src/main/java/org/bukkit/Server.java
 +++ b/src/main/java/org/bukkit/Server.java
-@@ -1593,6 +1593,26 @@ public interface Server extends PluginMessageRecipient {
+@@ -1702,6 +1702,26 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
              throw new UnsupportedOperationException("Not supported yet.");
          }
  
@@ -2825,18 +2835,18 @@ index 96819d13fa837c7374c5a13bdcad864c6744f0b5..7cc8f68205f7c0ec2ebada5030f94467
           * Sends the component to the player
           *
 diff --git a/src/main/java/org/bukkit/UnsafeValues.java b/src/main/java/org/bukkit/UnsafeValues.java
-index 01e11f882abb6c631f810584aa23646042688435..dca2d5045eb52d3d654d5673732761b0575871b4 100644
+index f43ad19a44f3b7368a1a110cc55247277f4d3751..ce5794d684a1126ec9acbf4af17f5d6fa783f551 100644
 --- a/src/main/java/org/bukkit/UnsafeValues.java
 +++ b/src/main/java/org/bukkit/UnsafeValues.java
-@@ -23,6 +23,7 @@ import org.bukkit.plugin.PluginDescriptionFile;
- @Deprecated
- public interface UnsafeValues {
+@@ -31,6 +31,7 @@ public interface UnsafeValues {
+     net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer legacyComponentSerializer();
+     // Paper end
  
 +    void reportTimings(); // Paper
      Material toLegacy(Material material);
  
      Material fromLegacy(Material material);
-@@ -78,4 +79,12 @@ public interface UnsafeValues {
+@@ -86,4 +87,12 @@ public interface UnsafeValues {
      Multimap<Attribute, AttributeModifier> getDefaultAttributeModifiers(Material material, EquipmentSlot slot);
  
      CreativeCategory getCreativeCategory(Material material);
@@ -2877,20 +2887,19 @@ index 0000000000000000000000000000000000000000..f9a00aecca5ec41b460bf41dfe1c6969
 +    }
 +}
 diff --git a/src/main/java/org/bukkit/command/Command.java b/src/main/java/org/bukkit/command/Command.java
-index 4bfc214685164a38ba4261b2bae7faa8a3bd297e..03bdc1622791e1206406c87065978688d602e39e 100644
+index 50e6d45ec9349b56d20e2ffc664eca15ba936cc6..c4dcafac892169a7bfcc065701fffb43c6cfdf44 100644
 --- a/src/main/java/org/bukkit/command/Command.java
 +++ b/src/main/java/org/bukkit/command/Command.java
-@@ -33,7 +33,8 @@ public abstract class Command {
+@@ -33,6 +33,8 @@ public abstract class Command {
      protected String usageMessage;
      private String permission;
-     private String permissionMessage;
--    public org.spigotmc.CustomTimingsHandler timings; // Spigot
+     private net.kyori.adventure.text.Component permissionMessage; // Paper
 +    public co.aikar.timings.Timing timings; // Paper
 +    @NotNull public String getTimingName() {return getName();} // Paper
  
      protected Command(@NotNull String name) {
          this(name, "", "/" + name, new ArrayList<String>());
-@@ -47,7 +48,6 @@ public abstract class Command {
+@@ -46,7 +48,6 @@ public abstract class Command {
          this.usageMessage = (usageMessage == null) ? "/" + name : usageMessage;
          this.aliases = aliases;
          this.activeAliases = new ArrayList<String>(aliases);
@@ -2898,7 +2907,7 @@ index 4bfc214685164a38ba4261b2bae7faa8a3bd297e..03bdc1622791e1206406c87065978688
      }
  
      /**
-@@ -245,7 +245,6 @@ public abstract class Command {
+@@ -244,7 +245,6 @@ public abstract class Command {
          }
          this.nextLabel = name;
          if (!isRegistered()) {
@@ -2931,10 +2940,10 @@ index d6c8938b1e13b63116b7b0e074ea8ef5997f8dc3..a6ad94ef98a1df1d2842635d850bc990
      }
 diff --git a/src/main/java/org/bukkit/command/MessageCommandSender.java b/src/main/java/org/bukkit/command/MessageCommandSender.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..a7ef1f51c2b96617a32e6e7b1723e8770ba8a6a8
+index 0000000000000000000000000000000000000000..f8f0aa688e337222f305fb07f57eec474e3a3a2b
 --- /dev/null
 +++ b/src/main/java/org/bukkit/command/MessageCommandSender.java
-@@ -0,0 +1,129 @@
+@@ -0,0 +1,136 @@
 +package org.bukkit.command;
 +
 +import org.apache.commons.lang.NotImplementedException;
@@ -2980,6 +2989,13 @@ index 0000000000000000000000000000000000000000..a7ef1f51c2b96617a32e6e7b1723e877
 +    default Server getServer() {
 +        return Bukkit.getServer();
 +    }
++
++    // Paper start
++    @Override
++    default net.kyori.adventure.text.@org.jetbrains.annotations.NotNull Component name() {
++        throw new NotImplementedException();
++    }
++    // Paper end
 +
 +    @NotNull
 +    @Override
@@ -3377,11 +3393,11 @@ index 2a145d851ce30360aa39549745bd87590c034584..00000000000000000000000000000000
 -    // Spigot end
 -}
 diff --git a/src/main/java/org/bukkit/entity/Player.java b/src/main/java/org/bukkit/entity/Player.java
-index 5015386d4cd7209a598401932e276077861cea62..7b256be5b82e34a4591d0cc46a2d49aa1269e844 100644
+index 29ed72d84b4c4cfcbae5613467076872e0a6871a..ac7a076d92bfb1d9c6ce8836d08e11f52befabc3 100644
 --- a/src/main/java/org/bukkit/entity/Player.java
 +++ b/src/main/java/org/bukkit/entity/Player.java
-@@ -1643,7 +1643,14 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
-          */
+@@ -1944,7 +1944,14 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+         @Deprecated // Paper
          public void sendMessage(@NotNull net.md_5.bungee.api.ChatMessageType position, @Nullable UUID sender, @NotNull net.md_5.bungee.api.chat.BaseComponent... components) {
              throw new UnsupportedOperationException("Not supported yet.");
 +
