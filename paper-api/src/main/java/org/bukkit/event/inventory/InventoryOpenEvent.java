@@ -12,6 +12,7 @@ import org.jetbrains.annotations.NotNull;
 public class InventoryOpenEvent extends InventoryEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
     private boolean cancelled;
+    private net.kyori.adventure.text.Component titleOverride; // Paper
 
     public InventoryOpenEvent(@NotNull InventoryView transaction) {
         super(transaction);
@@ -55,6 +56,33 @@ public class InventoryOpenEvent extends InventoryEvent implements Cancellable {
     public void setCancelled(boolean cancel) {
         cancelled = cancel;
     }
+
+    // Paper start
+    /**
+     * Gets the title override set by another event or null
+     * if not set.
+     *
+     * @return the title override or null
+     */
+    public net.kyori.adventure.text.@org.jetbrains.annotations.Nullable Component titleOverride() {
+        return this.titleOverride;
+    }
+
+    /**
+     * Sets the title override or clears the override.
+     * <p>
+     * This is only the title sent to the client in the open packet, this doesn't change
+     * the title returned by {@link InventoryView#title()}, hence "override".
+     * <p>
+     * <b>NOTE:</b> Horse inventories are a special case where setting this will
+     * have no effect. Horse inventory titles are set by the horse display name.
+     *
+     * @param titleOverride the title override or null
+     */
+    public void titleOverride(net.kyori.adventure.text.@org.jetbrains.annotations.Nullable Component titleOverride) {
+        this.titleOverride = titleOverride;
+    }
+    // Paper end
 
     @NotNull
     @Override
