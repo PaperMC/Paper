@@ -5,15 +5,34 @@ Subject: [PATCH] Add StructuresLocateEvent
 
 Co-authored-by: Jake Potrebic <jake.m.potrebic@gmail.com>
 
+diff --git a/src/main/java/io/papermc/paper/registry/RegistryKey.java b/src/main/java/io/papermc/paper/registry/RegistryKey.java
+index 6f39e343147803e15e7681c993b8797a629702e7..cbff75f19e54b37c762b209b04f6d4799152cf5b 100644
+--- a/src/main/java/io/papermc/paper/registry/RegistryKey.java
++++ b/src/main/java/io/papermc/paper/registry/RegistryKey.java
+@@ -1,8 +1,13 @@
+ package io.papermc.paper.registry;
+ 
++import io.papermc.paper.world.structure.ConfiguredStructure;
+ import net.minecraft.core.Registry;
+ import net.minecraft.resources.ResourceKey;
++import net.minecraft.world.level.levelgen.feature.ConfiguredStructureFeature;
+ import org.bukkit.Keyed;
+ 
+ public record RegistryKey<API extends Keyed, MINECRAFT>(Class<API> apiClass, ResourceKey<? extends Registry<MINECRAFT>> resourceKey) {
++
++    public static final RegistryKey<ConfiguredStructure, ConfiguredStructureFeature<?, ?>> CONFIGURED_STRUCTURE_REGISTRY = new RegistryKey<>(ConfiguredStructure.class, Registry.CONFIGURED_STRUCTURE_FEATURE_REGISTRY);
++
+ }
 diff --git a/src/main/java/io/papermc/paper/world/structure/PaperConfiguredStructure.java b/src/main/java/io/papermc/paper/world/structure/PaperConfiguredStructure.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..e4fb6fe93ce032314483e87bc9c80f55e5161cf0
+index 0000000000000000000000000000000000000000..41f6c2e1e60fc32e6393097711412ca2ad643e57
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/world/structure/PaperConfiguredStructure.java
-@@ -0,0 +1,38 @@
+@@ -0,0 +1,42 @@
 +package io.papermc.paper.world.structure;
 +
 +import io.papermc.paper.registry.PaperRegistry;
++import io.papermc.paper.registry.RegistryKey;
 +import net.minecraft.core.Registry;
 +import net.minecraft.resources.ResourceLocation;
 +import net.minecraft.world.level.levelgen.feature.ConfiguredStructureFeature;
@@ -29,8 +48,11 @@ index 0000000000000000000000000000000000000000..e4fb6fe93ce032314483e87bc9c80f55
 +@DefaultQualifier(NonNull.class)
 +public final class PaperConfiguredStructure {
 +
++    private PaperConfiguredStructure() {
++    }
++
 +    public static void init() {
-+        new ConfiguredStructureRegistry().registerTo(ConfiguredStructure.class);
++        new ConfiguredStructureRegistry().register();
 +    }
 +
 +    static final class ConfiguredStructureRegistry extends PaperRegistry<ConfiguredStructure, ConfiguredStructureFeature<?, ?>> {
@@ -38,7 +60,7 @@ index 0000000000000000000000000000000000000000..e4fb6fe93ce032314483e87bc9c80f55
 +        private static final Supplier<Registry<StructureFeature<?>>> STRUCTURE_FEATURE_REGISTRY = registryFor(Registry.STRUCTURE_FEATURE_REGISTRY);
 +
 +        public ConfiguredStructureRegistry() {
-+            super(Registry.CONFIGURED_STRUCTURE_FEATURE_REGISTRY);
++            super(RegistryKey.CONFIGURED_STRUCTURE_REGISTRY);
 +        }
 +
 +        @Override
@@ -63,38 +85,32 @@ index 6d1dd3d33bcaa7a1262a53c4fed57564c74df286..8d197cc55d0afab1bb247623777f6cd8
              if (Thread.currentThread() != this.serverThread) return; // Paper
              //this.getPlayerList().saveAll(); // Paper - we don't need to do this
 diff --git a/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java b/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java
-index f9fc2fc63080a60fe61ebb08ddd93c4f189df84d..97c3ec08f943dd6960f599637037c98825788478 100644
+index f9fc2fc63080a60fe61ebb08ddd93c4f189df84d..97b29671a8df6d102be3982443f6f784e2e1d6e1 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java
-@@ -294,6 +294,32 @@ public abstract class ChunkGenerator implements BiomeManager.NoiseBiomeSource {
+@@ -294,6 +294,26 @@ public abstract class ChunkGenerator implements BiomeManager.NoiseBiomeSource {
  
      @Nullable
      public Pair<BlockPos, Holder<ConfiguredStructureFeature<?, ?>>> findNearestMapFeature(ServerLevel worldserver, HolderSet<ConfiguredStructureFeature<?, ?>> holderset, BlockPos center, int radius, boolean skipExistingChunks) {
 +        // Paper start - StructureLocateEvent
 +        final org.bukkit.World world = worldserver.getWorld();
 +        final org.bukkit.Location origin = net.minecraft.server.MCUtil.toLocation(worldserver, center);
-+        final Registry<ConfiguredStructureFeature<?, ?>> configuredStructureFeatureRegistry = worldserver.registryAccess().registryOrThrow(Registry.CONFIGURED_STRUCTURE_FEATURE_REGISTRY);
++        final var paperRegistry = io.papermc.paper.registry.PaperRegistry.getRegistry(io.papermc.paper.registry.RegistryKey.CONFIGURED_STRUCTURE_REGISTRY);
 +        final List<io.papermc.paper.world.structure.ConfiguredStructure> configuredStructures = new ArrayList<>();
 +        for (Holder<net.minecraft.world.level.levelgen.feature.ConfiguredStructureFeature<?, ?>> holder : holderset) {
-+            final net.minecraft.resources.ResourceLocation configuredStructureResourceLoc = Objects.requireNonNull(configuredStructureFeatureRegistry.getKey(holder.value()));
-+            final io.papermc.paper.world.structure.ConfiguredStructure configuredStructure = org.bukkit.Registry.CONFIGURED_STRUCTURE.get(org.bukkit.craftbukkit.util.CraftNamespacedKey.fromMinecraft(configuredStructureResourceLoc));
-+            if (configuredStructure == null) {
-+                LOGGER.warn("{} could not be converted to an API type", configuredStructureResourceLoc);
-+                continue;
-+            }
-+            configuredStructures.add(configuredStructure);
++            configuredStructures.add(paperRegistry.convertToApi(holder));
 +        }
 +        final io.papermc.paper.event.world.StructuresLocateEvent event = new io.papermc.paper.event.world.StructuresLocateEvent(world, origin, configuredStructures, radius, skipExistingChunks);
 +        if (!event.callEvent()) {
 +            return null;
 +        }
 +        if (event.getResult() != null) {
-+            return Pair.of(net.minecraft.server.MCUtil.toBlockPosition(event.getResult().position()), configuredStructureFeatureRegistry.getHolderOrThrow(ResourceKey.create(Registry.CONFIGURED_STRUCTURE_FEATURE_REGISTRY, org.bukkit.craftbukkit.util.CraftNamespacedKey.toMinecraft(event.getResult().configuredStructure().getKey()))));
++            return Pair.of(net.minecraft.server.MCUtil.toBlockPosition(event.getResult().position()), paperRegistry.getMinecraftHolder(event.getResult().configuredStructure()));
 +        }
 +        center = net.minecraft.server.MCUtil.toBlockPosition(event.getOrigin());
 +        radius = event.getRadius();
 +        skipExistingChunks = event.shouldFindUnexplored();
-+        holderset = HolderSet.direct(cs -> configuredStructureFeatureRegistry.getHolderOrThrow(ResourceKey.create(Registry.CONFIGURED_STRUCTURE_FEATURE_REGISTRY, org.bukkit.craftbukkit.util.CraftNamespacedKey.toMinecraft(cs.getKey()))), event.getConfiguredStructures());
++        holderset = HolderSet.direct(paperRegistry::getMinecraftHolder, event.getConfiguredStructures());
 +        // Paper end
          Set<Holder<Biome>> set = (Set) holderset.stream().flatMap((holder) -> {
              return ((ConfiguredStructureFeature) holder.value()).biomes().stream();

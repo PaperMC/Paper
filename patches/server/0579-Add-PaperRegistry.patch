@@ -7,17 +7,19 @@ PaperRegistry is a server-backed impl of bukkit's Registry interface
 
 diff --git a/src/main/java/io/papermc/paper/registry/PaperRegistry.java b/src/main/java/io/papermc/paper/registry/PaperRegistry.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..dbfd61c29a08e3241bb5bd09304e98b5862b8fd5
+index 0000000000000000000000000000000000000000..51cec316df8bc0c7d36e0b1dfdf8d9fae04e3606
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/PaperRegistry.java
-@@ -0,0 +1,99 @@
+@@ -0,0 +1,145 @@
 +package io.papermc.paper.registry;
 +
 +import com.google.common.base.Preconditions;
 +import com.google.common.base.Suppliers;
++import net.minecraft.core.Holder;
 +import net.minecraft.core.Registry;
 +import net.minecraft.core.RegistryAccess;
 +import net.minecraft.resources.ResourceKey;
++import net.minecraft.resources.ResourceLocation;
 +import net.minecraft.server.MinecraftServer;
 +import org.bukkit.Keyed;
 +import org.bukkit.NamespacedKey;
@@ -26,10 +28,12 @@ index 0000000000000000000000000000000000000000..dbfd61c29a08e3241bb5bd09304e98b5
 +import org.checkerframework.checker.nullness.qual.Nullable;
 +import org.checkerframework.framework.qual.DefaultQualifier;
 +
++import java.util.Collections;
 +import java.util.HashMap;
 +import java.util.Iterator;
 +import java.util.Map;
 +import java.util.Objects;
++import java.util.Optional;
 +import java.util.function.Supplier;
 +
 +@DefaultQualifier(NonNull.class)
@@ -37,16 +41,19 @@ index 0000000000000000000000000000000000000000..dbfd61c29a08e3241bb5bd09304e98b5
 +
 +    @SuppressWarnings("FieldMayBeFinal") // non-final for testing
 +    private static Supplier<RegistryAccess> REGISTRY_ACCESS = Suppliers.memoize(() -> MinecraftServer.getServer().registryAccess());
-+    public static final Map<Class<?>, PaperRegistry<?, ?>> REGISTRIES = new HashMap<>();
++    private static final Map<RegistryKey<?, ?>, PaperRegistry<?, ?>> INTERNAL_REGISTRIES = new HashMap<>();
++    public static final Map<RegistryKey<?, ?>, PaperRegistry<?, ?>> REGISTRIES = Collections.unmodifiableMap(INTERNAL_REGISTRIES);
++    private static final Map<Class<?>, PaperRegistry<?, ?>> REGISTRY_BY_API_CLASS = new HashMap<>();
++    private static final Map<ResourceKey<? extends Registry<?>>, PaperRegistry<?, ?>> REGISTRY_BY_RES_KEY = new HashMap<>();
 +
 +    private boolean registered;
-+    private final ResourceKey<? extends Registry<MINECRAFT>> registryKey;
++    private final RegistryKey<API, MINECRAFT> registryKey;
 +    private final Supplier<Registry<MINECRAFT>> registry;
 +    private final Map<NamespacedKey, API> cache = new HashMap<>();
 +
-+    public PaperRegistry(ResourceKey<? extends Registry<MINECRAFT>> registryKey) {
++    public PaperRegistry(RegistryKey<API, MINECRAFT> registryKey) {
 +        this.registryKey = registryKey;
-+        this.registry = Suppliers.memoize(() -> REGISTRY_ACCESS.get().registryOrThrow(this.registryKey));
++        this.registry = Suppliers.memoize(() -> REGISTRY_ACCESS.get().registryOrThrow(this.registryKey.resourceKey()));
 +    }
 +
 +    @Override
@@ -62,6 +69,33 @@ index 0000000000000000000000000000000000000000..dbfd61c29a08e3241bb5bd09304e98b5
 +
 +    public abstract API convertToApi(NamespacedKey key, MINECRAFT nms);
 +
++    public API convertToApi(ResourceLocation resourceLocation, MINECRAFT nms) {
++        return this.convertToApi(CraftNamespacedKey.fromMinecraft(resourceLocation), nms);
++    }
++
++    public API convertToApi(Holder<MINECRAFT> nmsHolder) {
++        final Optional<ResourceKey<MINECRAFT>> key = nmsHolder.unwrapKey();
++        if (nmsHolder.isBound() && key.isPresent()) {
++            return this.convertToApi(key.get().location(), nmsHolder.value());
++        } else if (!nmsHolder.isBound() && key.isPresent()) {
++            return this.convertToApi(key.get().location(), this.registry.get().getOrThrow(key.get()));
++        } else if (nmsHolder.isBound() && key.isEmpty()) {
++            final @Nullable ResourceLocation loc = this.registry.get().getKey(nmsHolder.value());
++            if (loc != null) {
++                return this.convertToApi(loc, nmsHolder.value());
++            }
++        }
++        throw new IllegalStateException("Cannot convert " + nmsHolder + " to an API type in: " + this.registryKey);
++    }
++
++    public MINECRAFT getMinecraftValue(API apiValue) {
++        return this.registry.get().getOptional(CraftNamespacedKey.toMinecraft(apiValue.getKey())).orElseThrow();
++    }
++
++    public Holder<MINECRAFT> getMinecraftHolder(API apiValue) {
++        return this.registry.get().getHolderOrThrow(ResourceKey.create(this.registryKey.resourceKey(), CraftNamespacedKey.toMinecraft(apiValue.getKey())));
++    }
++
 +    @Override
 +    public Iterator<API> iterator() {
 +        return this.registry.get().keySet().stream().map(key -> this.get(CraftNamespacedKey.fromMinecraft(key))).iterator();
@@ -71,13 +105,13 @@ index 0000000000000000000000000000000000000000..dbfd61c29a08e3241bb5bd09304e98b5
 +        this.cache.clear();
 +    }
 +
-+    public void registerTo(Class<? extends API> apiClass) {
++    public void register() {
 +        if (this.registered) {
-+            throw new IllegalStateException("Already registered: " + apiClass);
++            throw new IllegalStateException("Already registered: " + this.registryKey.apiClass());
 +        }
-+        if (REGISTRIES.putIfAbsent(apiClass, this) != null) {
-+            throw new IllegalStateException("Duplicate registry: " + apiClass);
-+        }
++        INTERNAL_REGISTRIES.put(this.registryKey, this);
++        REGISTRY_BY_API_CLASS.put(this.registryKey.apiClass(), this);
++        REGISTRY_BY_RES_KEY.put(this.registryKey.resourceKey(), this);
 +        this.registered = true;
 +    }
 +
@@ -99,16 +133,42 @@ index 0000000000000000000000000000000000000000..dbfd61c29a08e3241bb5bd09304e98b5
 +    }
 +
 +    public static void clearCaches() {
-+        for (PaperRegistry<?, ?> registry : REGISTRIES.values()) {
++        for (PaperRegistry<?, ?> registry : INTERNAL_REGISTRIES.values()) {
 +            registry.clearCache();
 +        }
 +    }
 +
 +    @SuppressWarnings("unchecked")
 +    public static <T extends Keyed> PaperRegistry<T, ?> getRegistry(Class<T> classOfT) {
-+        Preconditions.checkArgument(REGISTRIES.containsKey(classOfT), "No registry for that type");
-+        return (PaperRegistry<T, ?>) REGISTRIES.get(classOfT);
++        Preconditions.checkArgument(REGISTRY_BY_API_CLASS.containsKey(classOfT), "No registry for that type");
++        return (PaperRegistry<T, ?>) REGISTRY_BY_API_CLASS.get(classOfT);
 +    }
++
++    @SuppressWarnings("unchecked")
++    public static <T> PaperRegistry<?, T> getRegistry(ResourceKey<? extends Registry<T>> resourceKey) {
++        Preconditions.checkArgument(REGISTRY_BY_RES_KEY.containsKey(resourceKey));
++        return (PaperRegistry<?, T>) REGISTRY_BY_RES_KEY.get(resourceKey);
++    }
++
++    @SuppressWarnings("unchecked")
++    public static <A extends Keyed, M> PaperRegistry<A, M> getRegistry(RegistryKey<A, M> registryKey) {
++        Preconditions.checkArgument(INTERNAL_REGISTRIES.containsKey(registryKey));
++        return (PaperRegistry<A, M>) INTERNAL_REGISTRIES.get(registryKey);
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/registry/RegistryKey.java b/src/main/java/io/papermc/paper/registry/RegistryKey.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..6f39e343147803e15e7681c993b8797a629702e7
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/registry/RegistryKey.java
+@@ -0,0 +1,8 @@
++package io.papermc.paper.registry;
++
++import net.minecraft.core.Registry;
++import net.minecraft.resources.ResourceKey;
++import org.bukkit.Keyed;
++
++public record RegistryKey<API extends Keyed, MINECRAFT>(Class<API> apiClass, ResourceKey<? extends Registry<MINECRAFT>> resourceKey) {
 +}
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
 index 0f03525066b818a81583618e9a80f245032493b7..6d1dd3d33bcaa7a1262a53c4fed57564c74df286 100644
