@@ -1,0 +1,21 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jason Penilla <11360596+jpenilla@users.noreply.github.com>
+Date: Fri, 4 Mar 2022 00:12:49 -0700
+Subject: [PATCH] Fix deadlock on watchdog crash
+
+The watchdog thread sets MinecraftServer#forceTicks to true which will
+cause waitUntilNextTick to hang when the task queue is drained.
+
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index d86fa3bbdc6cc838ed0ab96c2c084386dd4593e9..46a959633a88ad146e8935d297ffddee2384e275 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -1014,7 +1014,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+                 }, false);
+             }
+ 
+-            this.waitUntilNextTick();
++            this.managedBlock(() -> !this.canSleepForTickNoOversleep() || this.getPendingTasksCount() == 0); // Paper - based on waitUntilNextTick
+         }
+ 
+         this.saveAllChunks(false, true, false);
