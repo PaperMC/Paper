@@ -53,29 +53,32 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  import net.minecraft.world.level.levelgen.PatrolSpawner;
  import net.minecraft.world.level.levelgen.PhantomSpawner;
 @@ -0,0 +0,0 @@ public final class CraftServer implements Server {
-                 Preconditions.checkArgument(clazz == org.bukkit.entity.EntityType.class, "Entity type namespace must have entity type");
- 
-                 return (org.bukkit.Tag<T>) new CraftEntityTag(Registry.ENTITY_TYPE, TagKey.create(Registry.ENTITY_TYPE_REGISTRY, key));
+                     return (org.bukkit.Tag<T>) new CraftEntityTag(Registry.ENTITY_TYPE, entityTagKey);
+                 }
+             }
 +            // Paper start
-+            case org.bukkit.Tag.REGISTRY_GAME_EVENTS:
++            case org.bukkit.Tag.REGISTRY_GAME_EVENTS -> {
 +                Preconditions.checkArgument(clazz == org.bukkit.GameEvent.class, "Game Event namespace must have GameEvent type");
-+
-+                return (org.bukkit.Tag<T>) new io.papermc.paper.CraftGameEventTag(Registry.GAME_EVENT, TagKey.create(Registry.GAME_EVENT_REGISTRY, key));
++                TagKey<GameEvent> gameEventTagKey = TagKey.create(Registry.GAME_EVENT_REGISTRY, key);
++                if (Registry.GAME_EVENT.isKnownTagName(gameEventTagKey)) {
++                    return (org.bukkit.Tag<T>) new io.papermc.paper.CraftGameEventTag(Registry.GAME_EVENT, gameEventTagKey);
++                }
++            }
 +            // Paper end
-             default:
-                 throw new IllegalArgumentException();
+             default -> throw new IllegalArgumentException();
          }
-@@ -0,0 +0,0 @@ public final class CraftServer implements Server {
  
+@@ -0,0 +0,0 @@ public final class CraftServer implements Server {
                  Registry<EntityType<?>> entityTags = Registry.ENTITY_TYPE;
                  return entityTags.getTags().map(pair -> (org.bukkit.Tag<T>) new CraftEntityTag(entityTags, pair.getFirst())).collect(ImmutableList.toImmutableList());
+             }
 +            // Paper start
-+            case org.bukkit.Tag.REGISTRY_GAME_EVENTS:
++            case org.bukkit.Tag.REGISTRY_GAME_EVENTS -> {
 +                Preconditions.checkArgument(clazz == org.bukkit.GameEvent.class);
-+
 +                Registry<GameEvent> gameEvents = Registry.GAME_EVENT;
 +                return gameEvents.getTags().map(pair -> (org.bukkit.Tag<T>) new io.papermc.paper.CraftGameEventTag(gameEvents, pair.getFirst())).collect(ImmutableList.toImmutableList());
 +            // Paper end
-             default:
-                 throw new IllegalArgumentException();
++            }
+             default -> throw new IllegalArgumentException();
          }
+     }
