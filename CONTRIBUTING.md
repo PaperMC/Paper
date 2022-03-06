@@ -388,6 +388,15 @@ If you use Maven to build your plugin:
   If you use Windows and don't usually build using WSL, you might not need to
   do this.
 
+## Updating Paper to new Minecraft versions
+
+While version updates should always be done by or in close contact with PaperMC development
+team members, having a list of basics steps can always be helpful:
+- Reset/rebase onto Paper's main branch and make sure nothing is pushed to it while working on the update.
+- Update the Minecraft version in the project root's `README.md` and `gradle.properties`,
+  as well as the parameter mappings in `build.gradle`.
+- Run `./scripts/upstreamMerge.sh . all` from the project's root directory.
+
 ## Frequently Asked Questions
 
 ### I can't find the NMS file I need!
