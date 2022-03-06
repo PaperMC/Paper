@@ -10,24 +10,37 @@
  
  public interface NeutralMob {
  
-@@ -48,14 +51,14 @@
-                     if (entity instanceof Mob) {
-                         Mob entityinsentient = (Mob) entity;
+@@ -42,24 +45,11 @@
+                 UUID uuid = nbt.getUUID("AngryAt");
  
+                 this.setPersistentAngerTarget(uuid);
+-                Entity entity = ((ServerLevel) world).getEntity(uuid);
+-
+-                if (entity != null) {
+-                    if (entity instanceof Mob) {
+-                        Mob entityinsentient = (Mob) entity;
+-
 -                        this.setTarget(entityinsentient);
-+                        this.setTarget(entityinsentient, EntityTargetEvent.TargetReason.UNKNOWN, false); // CraftBukkit
-                         this.setLastHurtByMob(entityinsentient);
-                     }
- 
-                     if (entity instanceof Player) {
-                         Player entityhuman = (Player) entity;
- 
+-                        this.setLastHurtByMob(entityinsentient);
+-                    }
+-
+-                    if (entity instanceof Player) {
+-                        Player entityhuman = (Player) entity;
+-
 -                        this.setTarget(entityhuman);
-+                        this.setTarget(entityhuman, EntityTargetEvent.TargetReason.UNKNOWN, false); // CraftBukkit
-                         this.setLastHurtByPlayer(entityhuman);
-                     }
- 
-@@ -114,7 +117,7 @@
+-                        this.setLastHurtByPlayer(entityhuman);
+-                    }
+-
+-                }
++                // Paper - Prevent entity loading causing async lookups; Moved diff to separate method
++                // If this entity already survived its first tick, e.g. is loaded and ticked in sync, actively
++                // tick the initial persistent anger.
++                // If not, let the first tick on the baseTick call the method later down the line.
++                if (this instanceof Entity entity && !entity.firstTick) this.tickInitialPersistentAnger(world);
+             }
+         }
+     }
+@@ -114,7 +104,7 @@
      default void stopBeingAngry() {
          this.setLastHurtByMob((LivingEntity) null);
          this.setPersistentAngerTarget((UUID) null);
@@ -36,7 +49,7 @@
          this.setRemainingPersistentAngerTime(0);
      }
  
-@@ -127,6 +130,8 @@
+@@ -127,8 +117,34 @@
  
      void setTarget(@Nullable LivingEntity target);
  
@@ -45,3 +58,29 @@
      boolean canAttack(LivingEntity target);
  
      @Nullable
+     LivingEntity getTarget();
++
++    // Paper start - Prevent entity loading causing async lookups
++    // Update last hurt when ticking
++    default void tickInitialPersistentAnger(Level level) {
++        UUID target = getPersistentAngerTarget();
++        if (target == null) {
++            return;
++        }
++
++        Entity entity = ((ServerLevel) level).getEntity(target);
++
++        if (entity != null) {
++            if (entity instanceof Mob mob) {
++                this.setTarget(mob, EntityTargetEvent.TargetReason.UNKNOWN, false); // CraftBukkit
++                this.setLastHurtByMob(mob);
++            }
++
++            if (entity instanceof Player player) {
++                this.setTarget(player, EntityTargetEvent.TargetReason.UNKNOWN, false); // CraftBukkit
++                this.setLastHurtByPlayer(player);
++            }
++        }
++    }
++    // Paper end - Prevent entity loading causing async lookups
+ }
