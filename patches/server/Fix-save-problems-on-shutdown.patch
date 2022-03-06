@@ -8,6 +8,8 @@ Subject: [PATCH] Fix save problems on shutdown
   while waiting for the chunk system to empty, as there's simply
   too much trash that could prevent them from executing during
   the chunk source tick (i.e "time left in tick" logic).
+- Set forceTicks to true, so that player packets are always
+  processed so that the main process queue can be drained
 
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
@@ -35,10 +37,23 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              }
  
 -            this.waitUntilNextTick();
++            this.forceTicks = true; // Paper
 +            while (this.pollTask()); // Paper - drain tasks
          }
  
          this.saveAllChunks(false, true, false);
+@@ -0,0 +0,0 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+     }
+ 
+     private boolean haveTime() {
++        // Paper start
++        if (this.forceTicks) {
++            return true;
++        }
++        // Paper end
+         // CraftBukkit start
+         if (isOversleep) return canOversleep();// Paper - because of our changes, this logic is broken
+         return this.forceTicks || this.runningTask() || Util.getMillis() < (this.mayHaveDelayedTasks ? this.delayedTasksMaxNextTickTime : this.nextTickTime);
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
