@@ -6,7 +6,7 @@ Subject: [PATCH] Allow specifying a custom "authentication servers down" kick
 
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-index 352cec8559923189dcea5c97066ef2f90cc4023b..71288ac78dc0adb4fdb692d3f69debbff84ffa74 100644
+index c427ae941e86b116efa659502f46b6640c3a2883..5223527239a1121aaf9c026d9673192088a91c14 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
 @@ -1,5 +1,6 @@
@@ -16,28 +16,32 @@ index 352cec8559923189dcea5c97066ef2f90cc4023b..71288ac78dc0adb4fdb692d3f69debbf
  import com.google.common.base.Throwables;
  
  import java.io.File;
-@@ -285,4 +286,9 @@ public class PaperConfig {
+@@ -285,4 +286,15 @@ public class PaperConfig {
      private static void suggestPlayersWhenNull() {
          suggestPlayersWhenNullTabCompletions = getBoolean("settings.suggest-player-names-when-null-tab-completions", suggestPlayersWhenNullTabCompletions);
      }
 +
-+    public static String authenticationServersDownKickMessage = ""; // empty = use translatable message
++    public static net.kyori.adventure.text.Component authenticationServersDownKickMessage;
 +    private static void authenticationServersDownKickMessage() {
-+        authenticationServersDownKickMessage = Strings.emptyToNull(getString("messages.kick.authentication-servers-down", authenticationServersDownKickMessage));
++        String message = Strings.emptyToNull(getString("messages.kick.authentication-servers-down", ""));
++
++        if (message == null) {
++            authenticationServersDownKickMessage = net.kyori.adventure.text.Component.translatable("multiplayer.disconnect.authservers_down");
++        } else {
++            authenticationServersDownKickMessage = net.kyori.adventure.text.minimessage.MiniMessage.miniMessage().deserialize(message);
++        }
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
-index 03dc5ae09c46ad7be8e444211728a8418f594733..6834c67b38f0679497bef4b2174817d9688cbbd8 100644
+index 2704e78ba1cd7e48517295df1d4593b6cfbe1f95..43975356d8d243c5ae873f10440146781c9a77e5 100644
 --- a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
-@@ -304,6 +304,10 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener
+@@ -304,7 +304,7 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener
                          ServerLoginPacketListenerImpl.this.gameProfile = ServerLoginPacketListenerImpl.this.createFakeProfile(gameprofile);
                          ServerLoginPacketListenerImpl.this.state = ServerLoginPacketListenerImpl.State.READY_TO_ACCEPT;
                      } else {
-+                            // Paper start
-+                            if (com.destroystokyo.paper.PaperConfig.authenticationServersDownKickMessage != null) {
-+                                ServerLoginPacketListenerImpl.this.disconnect(new TextComponent(com.destroystokyo.paper.PaperConfig.authenticationServersDownKickMessage));
-+                            } else // Paper end
-                         ServerLoginPacketListenerImpl.this.disconnect(new TranslatableComponent("multiplayer.disconnect.authservers_down"));
+-                        ServerLoginPacketListenerImpl.this.disconnect(new TranslatableComponent("multiplayer.disconnect.authservers_down"));
++                        ServerLoginPacketListenerImpl.this.disconnect((Component) com.destroystokyo.paper.PaperConfig.authenticationServersDownKickMessage); // Paper - Allow specifying a custom "authentication servers down" kick message
                          ServerLoginPacketListenerImpl.LOGGER.error("Couldn't verify username because servers are unavailable");
                      }
+                     // CraftBukkit start - catch all exceptions

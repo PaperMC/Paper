@@ -5,7 +5,7 @@ Subject: [PATCH] Add packet limiter config
 
 Example config:
 packet-limiter:
-  kick-message: '&cSent too many packets'
+  kick-message: '<red>Sent too many packets'
   limits:
     all:
       interval: 7.0
@@ -24,10 +24,10 @@ and an action can be defined: DROP or KICK
 If interval or rate are less-than 0, the limit is ignored
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-index b33ece9a98f94d0c09b837bc95dbfab82ff6cabe..52dcb9d05dd6ca449850b6ad3c50d8f4192f13bb 100644
+index 9b4de96ee19a53793e805d5d2cd316907f6ae557..ea310260cf978c7938df2e2086b4a2aa4d0fa5e7 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-@@ -519,4 +519,102 @@ public class PaperConfig {
+@@ -525,4 +525,102 @@ public class PaperConfig {
          itemValidationBookAuthorLength = getInt("settings.item-validation.book.author", itemValidationBookAuthorLength);
          itemValidationBookPageLength = getInt("settings.item-validation.book.page", itemValidationBookPageLength);
      }
@@ -48,13 +48,13 @@ index b33ece9a98f94d0c09b837bc95dbfab82ff6cabe..52dcb9d05dd6ca449850b6ad3c50d8f4
 +        }
 +    }
 +
-+    public static String kickMessage;
++    public static net.kyori.adventure.text.Component kickMessage;
 +    public static PacketLimit allPacketsLimit;
 +    public static java.util.Map<Class<? extends net.minecraft.network.protocol.Packet<?>>, PacketLimit> packetSpecificLimits = new java.util.HashMap<>();
 +
 +    private static void packetLimiter() {
 +        packetSpecificLimits.clear();
-+        kickMessage = org.bukkit.ChatColor.translateAlternateColorCodes('&', getString("settings.packet-limiter.kick-message", "&cSent too many packets"));
++        kickMessage = net.kyori.adventure.text.minimessage.MiniMessage.miniMessage().deserialize(getString("settings.packet-limiter.kick-message", "<red>Sent too many packets"));
 +        allPacketsLimit = new PacketLimit(
 +            getDouble("settings.packet-limiter.limits.all.interval", 7.0),
 +            getDouble("settings.packet-limiter.limits.all.max-packet-rate", 500.0),
@@ -131,7 +131,7 @@ index b33ece9a98f94d0c09b837bc95dbfab82ff6cabe..52dcb9d05dd6ca449850b6ad3c50d8f4
 +    }
  }
 diff --git a/src/main/java/net/minecraft/network/Connection.java b/src/main/java/net/minecraft/network/Connection.java
-index 47eadb4a08953a45300d769518af22b1463f4d11..b27610cde8eaa7ff35c777039a0ca9d8eab748fe 100644
+index 47eadb4a08953a45300d769518af22b1463f4d11..1f6044539f8e548c86a8aece29d37c1e1d958996 100644
 --- a/src/main/java/net/minecraft/network/Connection.java
 +++ b/src/main/java/net/minecraft/network/Connection.java
 @@ -136,6 +136,22 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
@@ -147,8 +147,8 @@ index 47eadb4a08953a45300d769518af22b1463f4d11..b27610cde8eaa7ff35c777039a0ca9d8
 +
 +    private boolean stopReadingPackets;
 +    private void killForPacketSpam() {
-+        this.sendPacket(new ClientboundDisconnectPacket(org.bukkit.craftbukkit.util.CraftChatMessage.fromString(com.destroystokyo.paper.PaperConfig.kickMessage, true)[0]), (future) -> {
-+            this.disconnect(org.bukkit.craftbukkit.util.CraftChatMessage.fromString(com.destroystokyo.paper.PaperConfig.kickMessage, true)[0]);
++        this.sendPacket(new ClientboundDisconnectPacket((Component) com.destroystokyo.paper.PaperConfig.kickMessage), (future) -> {
++            this.disconnect((Component) com.destroystokyo.paper.PaperConfig.kickMessage);
 +        });
 +        this.setReadOnly();
 +        this.stopReadingPackets = true;

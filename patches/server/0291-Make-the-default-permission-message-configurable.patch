@@ -5,7 +5,7 @@ Subject: [PATCH] Make the default permission message configurable
 
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperCommand.java b/src/main/java/com/destroystokyo/paper/PaperCommand.java
-index 1fa190e098079522e0fe3593fa261c1b7ad4e24b..1eb45df9dca5d0c31ac46709e706136a246cb8ea 100644
+index 1fa190e098079522e0fe3593fa261c1b7ad4e24b..a71fda98f21db51a296840c3af9cc52a4063a250 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperCommand.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperCommand.java
 @@ -52,7 +52,7 @@ public class PaperCommand extends Command {
@@ -13,12 +13,12 @@ index 1fa190e098079522e0fe3593fa261c1b7ad4e24b..1eb45df9dca5d0c31ac46709e706136a
      private static boolean testPermission(CommandSender commandSender, String permission) {
          if (commandSender.hasPermission(BASE_PERM + permission) || commandSender.hasPermission("bukkit.command.paper")) return true;
 -        commandSender.sendMessage(ChatColor.RED + "I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error."); // Sorry, kashike
-+        commandSender.sendMessage(Bukkit.getPermissionMessage()); // Sorry, kashike
++        commandSender.sendMessage(Bukkit.permissionMessage()); // Sorry, kashike
          return false;
      }
  
 diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-index d728c42ba986c5c354a205b1eb4c4d93b0b2d128..f938bd401c384d8e03c8ff90af08efc70629c77e 100644
+index 78ff5528d8b000f57bb6503ef685c86f83dbec8e..abdf42e804ac92bbbbadf0b10659466b747c7161 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
 @@ -20,6 +20,7 @@ import java.util.regex.Pattern;
@@ -29,28 +29,33 @@ index d728c42ba986c5c354a205b1eb4c4d93b0b2d128..f938bd401c384d8e03c8ff90af08efc7
  import org.bukkit.command.Command;
  import org.bukkit.configuration.ConfigurationSection;
  import org.bukkit.configuration.InvalidConfigurationException;
-@@ -300,6 +301,11 @@ public class PaperConfig {
-         connectionThrottleKickMessage = getString("messages.kick.connection-throttle", connectionThrottleKickMessage);
+@@ -306,6 +307,11 @@ public class PaperConfig {
+         connectionThrottleKickMessage = net.kyori.adventure.text.minimessage.MiniMessage.miniMessage().deserialize(getString("messages.kick.connection-throttle", "Connection throttled! Please wait before reconnecting."));
      }
  
-+    public static String noPermissionMessage = "&cI'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.";
++    public static net.kyori.adventure.text.Component noPermissionMessage;
 +    private static void noPermissionMessage() {
-+        noPermissionMessage = ChatColor.translateAlternateColorCodes('&', getString("messages.no-permission", noPermissionMessage));
++        noPermissionMessage = net.kyori.adventure.text.minimessage.MiniMessage.miniMessage().deserialize(getString("messages.no-permission", "<red>I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error."));
 +    }
 +
      private static void savePlayerData() {
          Object val = config.get("settings.save-player-data");
          if (val instanceof Boolean) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 39389c3389eb6b118b662cb77552d198b0b21c05..ba0b22c45e0bdcda7087a262a82405a9efe8cc61 100644
+index c46e8130a4a487fffb215c0256ee748b6de8dca0..b27e6b37ea9d1324271f75ce51aa7680c852a819 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -2594,6 +2594,11 @@ public final class CraftServer implements Server {
+@@ -2597,6 +2597,16 @@ public final class CraftServer implements Server {
          return com.destroystokyo.paper.PaperConfig.suggestPlayersWhenNullTabCompletions;
      }
  
 +    @Override
 +    public String getPermissionMessage() {
++        return net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().serialize(permissionMessage());
++    }
++
++    @Override
++    public net.kyori.adventure.text.Component permissionMessage() {
 +        return com.destroystokyo.paper.PaperConfig.noPermissionMessage;
 +    }
 +
