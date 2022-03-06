@@ -1,0 +1,85 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Trevor <tmick28@protonmail.com>
+Date: Sun, 6 Mar 2022 17:46:29 -0500
+Subject: [PATCH] Implemeted ability to obtain smelt result of a material, in
+ the Material class
+
+
+diff --git a/src/main/java/org/bukkit/Material.java b/src/main/java/org/bukkit/Material.java
+index ef7054fec75d91082be27fdd2a06469f37a6c174..850f1f3c9e9c9a981e36bb3b312fb0c96d3e541d 100644
+--- a/src/main/java/org/bukkit/Material.java
++++ b/src/main/java/org/bukkit/Material.java
+@@ -3,6 +3,7 @@ package org.bukkit;
+ import com.google.common.collect.Maps;
+ import com.google.common.collect.Multimap;
+ import java.lang.reflect.Constructor;
++import java.util.Iterator;
+ import java.util.Locale;
+ import java.util.Map;
+ import java.util.function.Consumer;
+@@ -96,6 +97,8 @@ import org.bukkit.block.data.type.Wall;
+ import org.bukkit.block.data.type.WallSign;
+ import org.bukkit.inventory.CreativeCategory;
+ import org.bukkit.inventory.EquipmentSlot;
++import org.bukkit.inventory.FurnaceRecipe;
++import org.bukkit.inventory.Recipe;
+ import org.bukkit.material.MaterialData;
+ import org.jetbrains.annotations.NotNull;
+ import org.jetbrains.annotations.Nullable;
+@@ -3927,6 +3930,7 @@ public enum Material implements Keyed, net.kyori.adventure.translation.Translata
+     private final int id;
+     private final Constructor<? extends MaterialData> ctor;
+     private static final Map<String, Material> BY_NAME = Maps.newHashMap();
++    private static final Map<Material, Material> SMELTABLES = Maps.newHashMap();
+     private final int maxStack;
+     private final short durability;
+     public final Class<?> data;
+@@ -5263,6 +5267,48 @@ public enum Material implements Keyed, net.kyori.adventure.translation.Translata
+         }
+     }
+ 
++    // Paper start
++    /**
++     * Iterating over every recipe to store every
++     * material that has an opposing smeltable material
++     *
++     * This exists to obtain a 0(1) time complexity, and
++     * adds quality of life
++     */
++    static {
++        Iterator<Recipe> recipeIterator = Bukkit.recipeIterator();
++
++        while (recipeIterator.hasNext()) {
++            Recipe recipe = recipeIterator.next();
++
++            if (!(recipe instanceof FurnaceRecipe furnaceRecipe))
++                continue;
++
++            Material currentType = furnaceRecipe.getInput().getType();
++
++            if (!currentType.isBlock())
++                continue;
++
++            Material smeltResult = furnaceRecipe.getResult().getType();
++            SMELTABLES.put(currentType, smeltResult);
++        }
++    }
++
++    /**
++     * @return Gets the smelt result of the specific Material
++     */
++    public Material getSmeltResult() {
++        return SMELTABLES.get(this);
++    }
++
++    /**
++     * @return True if material has a smelt result
++     */
++    public boolean isSmeltable() {
++        return getSmeltResult() != null;
++    }
++    // Paper end
++
+     /**
+      * @return True if this material represents a playable music disk.
+      */
