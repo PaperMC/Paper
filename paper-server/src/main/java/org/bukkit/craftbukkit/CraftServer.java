@@ -2147,56 +2147,73 @@ public final class CraftServer implements Server {
     @Override
     @SuppressWarnings("unchecked")
     public <T extends Keyed> org.bukkit.Tag<T> getTag(String registry, NamespacedKey tag, Class<T> clazz) {
+        Validate.notNull(registry, "registry cannot be null");
+        Validate.notNull(tag, "NamespacedKey cannot be null");
+        Validate.notNull(clazz, "Class cannot be null");
         MinecraftKey key = CraftNamespacedKey.toMinecraft(tag);
 
         switch (registry) {
-            case org.bukkit.Tag.REGISTRY_BLOCKS:
+            case org.bukkit.Tag.REGISTRY_BLOCKS -> {
                 Preconditions.checkArgument(clazz == org.bukkit.Material.class, "Block namespace must have material type");
-
-                return (org.bukkit.Tag<T>) new CraftBlockTag(IRegistry.BLOCK, TagKey.create(IRegistry.BLOCK_REGISTRY, key));
-            case org.bukkit.Tag.REGISTRY_ITEMS:
+                TagKey<Block> blockTagKey = TagKey.create(IRegistry.BLOCK_REGISTRY, key);
+                if (IRegistry.BLOCK.isKnownTagName(blockTagKey)) {
+                    return (org.bukkit.Tag<T>) new CraftBlockTag(IRegistry.BLOCK, blockTagKey);
+                }
+            }
+            case org.bukkit.Tag.REGISTRY_ITEMS -> {
                 Preconditions.checkArgument(clazz == org.bukkit.Material.class, "Item namespace must have material type");
-
-                return (org.bukkit.Tag<T>) new CraftItemTag(IRegistry.ITEM, TagKey.create(IRegistry.ITEM_REGISTRY, key));
-            case org.bukkit.Tag.REGISTRY_FLUIDS:
+                TagKey<Item> itemTagKey = TagKey.create(IRegistry.ITEM_REGISTRY, key);
+                if (IRegistry.ITEM.isKnownTagName(itemTagKey)) {
+                    return (org.bukkit.Tag<T>) new CraftItemTag(IRegistry.ITEM, itemTagKey);
+                }
+            }
+            case org.bukkit.Tag.REGISTRY_FLUIDS -> {
                 Preconditions.checkArgument(clazz == org.bukkit.Fluid.class, "Fluid namespace must have fluid type");
-
-                return (org.bukkit.Tag<T>) new CraftFluidTag(IRegistry.FLUID, TagKey.create(IRegistry.FLUID_REGISTRY, key));
-            case org.bukkit.Tag.REGISTRY_ENTITY_TYPES:
+                TagKey<FluidType> fluidTagKey = TagKey.create(IRegistry.FLUID_REGISTRY, key);
+                if (IRegistry.FLUID.isKnownTagName(fluidTagKey)) {
+                    return (org.bukkit.Tag<T>) new CraftFluidTag(IRegistry.FLUID, fluidTagKey);
+                }
+            }
+            case org.bukkit.Tag.REGISTRY_ENTITY_TYPES -> {
                 Preconditions.checkArgument(clazz == org.bukkit.entity.EntityType.class, "Entity type namespace must have entity type");
-
-                return (org.bukkit.Tag<T>) new CraftEntityTag(IRegistry.ENTITY_TYPE, TagKey.create(IRegistry.ENTITY_TYPE_REGISTRY, key));
-            default:
-                throw new IllegalArgumentException();
+                TagKey<EntityTypes<?>> entityTagKey = TagKey.create(IRegistry.ENTITY_TYPE_REGISTRY, key);
+                if (IRegistry.ENTITY_TYPE.isKnownTagName(entityTagKey)) {
+                    return (org.bukkit.Tag<T>) new CraftEntityTag(IRegistry.ENTITY_TYPE, entityTagKey);
+                }
+            }
+            default -> throw new IllegalArgumentException();
         }
+
+        return null;
     }
 
     @Override
     @SuppressWarnings("unchecked")
     public <T extends Keyed> Iterable<org.bukkit.Tag<T>> getTags(String registry, Class<T> clazz) {
+        Validate.notNull(registry, "registry cannot be null");
+        Validate.notNull(clazz, "Class cannot be null");
         switch (registry) {
-            case org.bukkit.Tag.REGISTRY_BLOCKS:
+            case org.bukkit.Tag.REGISTRY_BLOCKS -> {
                 Preconditions.checkArgument(clazz == org.bukkit.Material.class, "Block namespace must have material type");
-
                 IRegistry<Block> blockTags = IRegistry.BLOCK;
                 return blockTags.getTags().map(pair -> (org.bukkit.Tag<T>) new CraftBlockTag(blockTags, pair.getFirst())).collect(ImmutableList.toImmutableList());
-            case org.bukkit.Tag.REGISTRY_ITEMS:
+            }
+            case org.bukkit.Tag.REGISTRY_ITEMS -> {
                 Preconditions.checkArgument(clazz == org.bukkit.Material.class, "Item namespace must have material type");
-
                 IRegistry<Item> itemTags = IRegistry.ITEM;
                 return itemTags.getTags().map(pair -> (org.bukkit.Tag<T>) new CraftItemTag(itemTags, pair.getFirst())).collect(ImmutableList.toImmutableList());
-            case org.bukkit.Tag.REGISTRY_FLUIDS:
+            }
+            case org.bukkit.Tag.REGISTRY_FLUIDS -> {
                 Preconditions.checkArgument(clazz == org.bukkit.Material.class, "Fluid namespace must have fluid type");
-
                 IRegistry<FluidType> fluidTags = IRegistry.FLUID;
                 return fluidTags.getTags().map(pair -> (org.bukkit.Tag<T>) new CraftFluidTag(fluidTags, pair.getFirst())).collect(ImmutableList.toImmutableList());
-            case org.bukkit.Tag.REGISTRY_ENTITY_TYPES:
+            }
+            case org.bukkit.Tag.REGISTRY_ENTITY_TYPES -> {
                 Preconditions.checkArgument(clazz == org.bukkit.entity.EntityType.class, "Entity type namespace must have entity type");
-
                 IRegistry<EntityTypes<?>> entityTags = IRegistry.ENTITY_TYPE;
                 return entityTags.getTags().map(pair -> (org.bukkit.Tag<T>) new CraftEntityTag(entityTags, pair.getFirst())).collect(ImmutableList.toImmutableList());
-            default:
-                throw new IllegalArgumentException();
+            }
+            default -> throw new IllegalArgumentException();
         }
     }
 

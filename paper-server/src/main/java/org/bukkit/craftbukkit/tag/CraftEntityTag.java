@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit.tag;
 
 import java.util.Collections;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import net.minecraft.core.IRegistry;
@@ -24,6 +25,6 @@ public class CraftEntityTag extends CraftTag<EntityTypes<?>, EntityType> {
 
     @Override
     public Set<EntityType> getValues() {
-        return Collections.unmodifiableSet(getHandle().stream().map((nms) -> Registry.ENTITY_TYPE.get(CraftNamespacedKey.fromMinecraft(EntityTypes.getKey(nms.value())))).collect(Collectors.toSet()));
+        return getHandle().stream().map((nms) -> Registry.ENTITY_TYPE.get(CraftNamespacedKey.fromMinecraft(EntityTypes.getKey(nms.value())))).filter(Objects::nonNull).collect(Collectors.toUnmodifiableSet());
     }
 }

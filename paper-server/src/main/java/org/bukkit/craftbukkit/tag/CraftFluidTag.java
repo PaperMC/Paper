@@ -22,6 +22,6 @@ public class CraftFluidTag extends CraftTag<FluidType, Fluid> {
 
     @Override
     public Set<Fluid> getValues() {
-        return Collections.unmodifiableSet(getHandle().stream().map((fluid) -> CraftMagicNumbers.getFluid(fluid.value())).collect(Collectors.toSet()));
+        return getHandle().stream().map((fluid) -> CraftMagicNumbers.getFluid(fluid.value())).collect(Collectors.toUnmodifiableSet());
     }
 }

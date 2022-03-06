@@ -29,6 +29,6 @@ public class CraftBlockTag extends CraftTag<Block, Material> {
 
     @Override
     public Set<Material> getValues() {
-        return Collections.unmodifiableSet(getHandle().stream().map((block) -> CraftMagicNumbers.getMaterial(block.value())).collect(Collectors.toSet()));
+        return getHandle().stream().map((block) -> CraftMagicNumbers.getMaterial(block.value())).collect(Collectors.toUnmodifiableSet());
     }
 }
