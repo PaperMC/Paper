@@ -621,7 +621,7 @@ index c4142568c3188c89142799cc4911dd7eae32a45f..f379e108ec3c762940bddea878a0a711
          String s1 = name.toLowerCase(Locale.ROOT);
          GameProfileCache.GameProfileInfo usercache_usercacheentry = (GameProfileCache.GameProfileInfo) this.profilesByName.get(s1);
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 179ba5ae2406d8babfdec386fc8125960043d586..24f361820f195e948f617cd134352e098b298b5d 100644
+index 179ba5ae2406d8babfdec386fc8125960043d586..3ebb9ee5938d9cd14f352cba4cb8c74e6aa9c60f 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -243,6 +243,9 @@ import org.yaml.snakeyaml.error.MarkedYAMLException;
@@ -642,7 +642,7 @@ index 179ba5ae2406d8babfdec386fc8125960043d586..24f361820f195e948f617cd134352e09
          CraftItemFactory.instance();
      }
  
-@@ -2568,5 +2572,24 @@ public final class CraftServer implements Server {
+@@ -2568,5 +2572,29 @@ public final class CraftServer implements Server {
      public boolean suggestPlayerNamesWhenNullTabCompletions() {
          return com.destroystokyo.paper.PaperConfig.suggestPlayersWhenNullTabCompletions;
      }
@@ -660,10 +660,15 @@ index 179ba5ae2406d8babfdec386fc8125960043d586..24f361820f195e948f617cd134352e09
 +    @Override
 +    public com.destroystokyo.paper.profile.PlayerProfile createProfile(@Nullable UUID uuid, @Nullable String name) {
 +        Player player = uuid != null ? Bukkit.getPlayer(uuid) : (name != null ? Bukkit.getPlayerExact(name) : null);
-+        if (player != null) {
-+            return new com.destroystokyo.paper.profile.CraftPlayerProfile((CraftPlayer)player);
++        if (player == null) return new com.destroystokyo.paper.profile.CraftPlayerProfile(uuid, name);
++
++        if (Objects.equals(uuid, player.getUniqueId()) && Objects.equals(name, player.getName())) {
++            return new com.destroystokyo.paper.profile.CraftPlayerProfile((CraftPlayer) player);
 +        }
-+        return new com.destroystokyo.paper.profile.CraftPlayerProfile(uuid, name);
++
++        final com.mojang.authlib.GameProfile profile = new com.mojang.authlib.GameProfile(uuid, name);
++        profile.getProperties().putAll(((CraftPlayer)player).getHandle().getGameProfile().getProperties());
++        return new com.destroystokyo.paper.profile.CraftPlayerProfile(profile);
 +    }
      // Paper end
  }
