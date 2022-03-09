@@ -1,0 +1,89 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: MiniDigger <admin@benndorf.dev>
+Date: Wed, 29 Apr 2020 02:09:17 +0200
+Subject: [PATCH] Allow delegation to vanilla chunk gen
+
+
+diff --git a/src/main/java/org/bukkit/Bukkit.java b/src/main/java/org/bukkit/Bukkit.java
+index 2af2a948dc9c0d4ad28fccb1c9a2b28d5db99203..416d402b7e885ccc9b187a8e8111da2378197b45 100644
+--- a/src/main/java/org/bukkit/Bukkit.java
++++ b/src/main/java/org/bukkit/Bukkit.java
+@@ -1848,6 +1848,24 @@ public final class Bukkit {
+         return server.createChunkData(world);
+     }
+ 
++    // Paper start
++    /**
++     * Create a ChunkData for use in a generator, that is populated by the vanilla generator for that world
++     *
++     * @param world the world to create the ChunkData for
++     * @param x the x coordinate of the chunk
++     * @param z the z coordinate of the chunk
++     * @return a new ChunkData for the world
++     * @deprecated The new multi-stage worldgen API allows a similar effect by overriding all of the "shouldGenerate..." methods to
++     * return true, and then modifying the chunkdata in a later stage such as surface or bedrock generation.
++     */
++    @NotNull
++    @Deprecated(forRemoval = true)
++    public static ChunkGenerator.ChunkData createVanillaChunkData(@NotNull World world, int x, int z) {
++        return server.createVanillaChunkData(world, x, z);
++    }
++    // Paper stop
++
+     /**
+      * Creates a boss bar instance to display to players. The progress
+      * defaults to 1.0
+diff --git a/src/main/java/org/bukkit/Server.java b/src/main/java/org/bukkit/Server.java
+index 1d2970dc4d18122e95db8cc9830aa5c41a59e24b..d90026c9331321ca749f7090b76c21b4608b2ee8 100644
+--- a/src/main/java/org/bukkit/Server.java
++++ b/src/main/java/org/bukkit/Server.java
+@@ -1553,6 +1553,22 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+     @NotNull
+     public ChunkGenerator.ChunkData createChunkData(@NotNull World world);
+ 
++    // Paper start
++    /**
++     * Create a ChunkData for use in a generator, that is populated by the vanilla generator for that world.
++     *
++     * @param world the world to create the ChunkData for
++     * @param x the x coordinate of the chunk
++     * @param z the z coordinate of the chunk
++     * @return a new ChunkData for the world
++     * @deprecated The new multi-stage worldgen API allows a similar effect by overriding all of the "shouldGenerate..." methods to
++     * return true, and then modifying the chunkdata in a later stage such as surface or bedrock generation.
++     */
++    @NotNull
++    @Deprecated(forRemoval = true)
++    ChunkGenerator.ChunkData createVanillaChunkData(@NotNull World world, int x, int z);
++    // Paper end
++
+     /**
+      * Creates a boss bar instance to display to players. The progress
+      * defaults to 1.0
+diff --git a/src/main/java/org/bukkit/generator/ChunkGenerator.java b/src/main/java/org/bukkit/generator/ChunkGenerator.java
+index d14d3851a7b0340668f44f5213f0e18072d7481b..04be4214bc1c4b476c70aea457118e786fa67eff 100644
+--- a/src/main/java/org/bukkit/generator/ChunkGenerator.java
++++ b/src/main/java/org/bukkit/generator/ChunkGenerator.java
+@@ -454,6 +454,22 @@ public abstract class ChunkGenerator {
+         return false;
+     }
+ 
++    // Paper start
++    /**
++     * Create a ChunkData for use in a generator, that is populated by the vanilla generator for that world
++     *
++     * @param world the world to create the ChunkData for
++     * @param x the x coordinate of the chunk
++     * @param z the z coordinate of the chunk
++     * @return a new ChunkData for the world
++     *
++     */
++    @NotNull
++    public ChunkData createVanillaChunkData(@NotNull World world, int x, int z) {
++        return Bukkit.getServer().createVanillaChunkData(world, x, z);
++    }
++    // Paper end
++
+     /**
+      * Data for a Chunk.
+      */
