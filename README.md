@@ -18,7 +18,7 @@ Download Paper from our [downloads page](https://papermc.io/downloads).
 
 Run the Paperclip jar directly from your server. Just like old times
 
-  * Documentation on using Paper: [paper.readthedocs.io](https://paper.readthedocs.io/)
+  * Documentation on using Paper: [docs.papermc.io](https://docs.papermc.io)
   * For a sneak peek on upcoming features, [see here](https://github.com/PaperMC/Paper/projects)
 
 How To (Plugin Developers)
