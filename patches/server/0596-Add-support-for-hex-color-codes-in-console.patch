@@ -5,20 +5,82 @@ Subject: [PATCH] Add support for hex color codes in console
 
 Converts upstream's hex color code legacy format into actual hex color codes in the console.
 
+diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+index a0a3cec47c8f9e379a5bc1d43eeda5eb9d81f814..23d849872109e43d6e22a953d3a4298565d4621d 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+@@ -454,8 +454,10 @@ public class PaperConfig {
+     }
+ 
+     public static boolean deobfuscateStacktraces = true;
++    public static boolean useRgbForNamedTextColors = true;
+     private static void loggerSettings() {
+         deobfuscateStacktraces = getBoolean("settings.loggers.deobfuscate-stacktraces", deobfuscateStacktraces);
++        useRgbForNamedTextColors = getBoolean("settings.loggers.use-rgb-for-named-text-colors", useRgbForNamedTextColors);
+     }
+ 
+     public static boolean allowBlockPermanentBreakingExploits = false;
+diff --git a/src/main/java/com/destroystokyo/paper/console/TerminalConsoleCommandSender.java b/src/main/java/com/destroystokyo/paper/console/TerminalConsoleCommandSender.java
+index 685deaa0e5d1ddc13e3a7c0471b1cfcf1710c869..aa574c646ee9c9951d183c80e1a0fe10c21850a0 100644
+--- a/src/main/java/com/destroystokyo/paper/console/TerminalConsoleCommandSender.java
++++ b/src/main/java/com/destroystokyo/paper/console/TerminalConsoleCommandSender.java
+@@ -1,5 +1,11 @@
+ package com.destroystokyo.paper.console;
+ 
++import io.papermc.paper.adventure.PaperAdventure;
++import io.papermc.paper.console.HexFormattingConverter;
++import net.kyori.adventure.audience.MessageType;
++import net.kyori.adventure.identity.Identity;
++import net.kyori.adventure.text.Component;
++import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
+ import org.apache.logging.log4j.LogManager;
+ import org.apache.logging.log4j.Logger;
+ import org.bukkit.craftbukkit.command.CraftConsoleCommandSender;
+@@ -7,11 +13,21 @@ import org.bukkit.craftbukkit.command.CraftConsoleCommandSender;
+ public class TerminalConsoleCommandSender extends CraftConsoleCommandSender {
+ 
+     private static final Logger LOGGER = LogManager.getRootLogger();
++    private static final LegacyComponentSerializer SERIALIZER = LegacyComponentSerializer.builder()
++        .hexColors()
++        .flattener(PaperAdventure.FLATTENER)
++        .character(HexFormattingConverter.COLOR_CHAR)
++        .build();
+ 
+     @Override
+     public void sendRawMessage(String message) {
+-        // TerminalConsoleAppender supports color codes directly in log messages
+-        LOGGER.info(message);
++        final Component msg = PaperAdventure.LEGACY_SECTION_UXRC.deserialize(message);
++        this.sendMessage(Identity.nil(), msg, MessageType.SYSTEM);
++    }
++
++    @Override
++    public void sendMessage(Identity identity, Component message, MessageType type) {
++        LOGGER.info(SERIALIZER.serialize(message));
+     }
+ 
+ }
 diff --git a/src/main/java/io/papermc/paper/console/HexFormattingConverter.java b/src/main/java/io/papermc/paper/console/HexFormattingConverter.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..a4315961b7a465fb4872a4d67e7c26d4b4ed1fb9
+index 0000000000000000000000000000000000000000..7800125d0ce59547b9a12b74b9de851ce2ee2f92
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/console/HexFormattingConverter.java
-@@ -0,0 +1,178 @@
+@@ -0,0 +1,205 @@
 +package io.papermc.paper.console;
 +
++import com.destroystokyo.paper.PaperConfig;
++import net.kyori.adventure.text.format.NamedTextColor;
++import net.kyori.adventure.text.format.TextColor;
 +import net.minecrell.terminalconsole.TerminalConsoleAppender;
 +import org.apache.logging.log4j.core.LogEvent;
 +import org.apache.logging.log4j.core.config.Configuration;
 +import org.apache.logging.log4j.core.config.plugins.Plugin;
 +import org.apache.logging.log4j.core.layout.PatternLayout;
-+import org.apache.logging.log4j.core.pattern.*;
++import org.apache.logging.log4j.core.pattern.ConverterKeys;
++import org.apache.logging.log4j.core.pattern.LogEventPatternConverter;
++import org.apache.logging.log4j.core.pattern.PatternConverter;
++import org.apache.logging.log4j.core.pattern.PatternFormatter;
++import org.apache.logging.log4j.core.pattern.PatternParser;
 +import org.apache.logging.log4j.util.PerformanceSensitive;
 +import org.apache.logging.log4j.util.PropertiesUtil;
 +
@@ -30,10 +92,10 @@ index 0000000000000000000000000000000000000000..a4315961b7a465fb4872a4d67e7c26d4
 +
 +/**
 + * Modified version of <a href="https://github.com/Minecrell/TerminalConsoleAppender/blob/master/src/main/java/net/minecrell/terminalconsole/MinecraftFormattingConverter.java">
-+ *     TerminalConsoleAppender's MinecraftFormattingConverter</a> to support hex color codes using the md_5 &x&r&r&g&g&b&b format.
++ * TerminalConsoleAppender's MinecraftFormattingConverter</a> to support hex color codes using the Adventure [char]#rrggbb format.
 + */
 +@Plugin(name = "paperMinecraftFormatting", category = PatternConverter.CATEGORY)
-+@ConverterKeys({ "paperMinecraftFormatting" })
++@ConverterKeys({"paperMinecraftFormatting"})
 +@PerformanceSensitive("allocation")
 +public final class HexFormattingConverter extends LogEventPatternConverter {
 +
@@ -41,14 +103,38 @@ index 0000000000000000000000000000000000000000..a4315961b7a465fb4872a4d67e7c26d4
 +
 +    private static final String ANSI_RESET = "\u001B[m";
 +
-+    private static final char COLOR_CHAR = '§';
++    public static final char COLOR_CHAR = 0x7f;
 +    private static final String LOOKUP = "0123456789abcdefklmnor";
 +
 +    private static final String RGB_ANSI = "\u001B[38;2;%d;%d;%dm";
 +    private static final Pattern NAMED_PATTERN = Pattern.compile(COLOR_CHAR + "[0-9a-fk-orA-FK-OR]");
-+    private static final Pattern RGB_PATTERN = Pattern.compile(COLOR_CHAR + "x(" + COLOR_CHAR + "[0-9a-fA-F]){6}");
++    private static final Pattern RGB_PATTERN = Pattern.compile(COLOR_CHAR + "#([0-9a-fA-F]){6}");
 +
-+    private static final String[] ansiCodes = new String[] {
++    private static final String[] RGB_ANSI_CODES = new String[]{
++        formatHexAnsi(NamedTextColor.BLACK),         // Black §0
++        formatHexAnsi(NamedTextColor.DARK_BLUE),     // Dark Blue §1
++        formatHexAnsi(NamedTextColor.DARK_GREEN),    // Dark Green §2
++        formatHexAnsi(NamedTextColor.DARK_AQUA),     // Dark Aqua §3
++        formatHexAnsi(NamedTextColor.DARK_RED),      // Dark Red §4
++        formatHexAnsi(NamedTextColor.DARK_PURPLE),   // Dark Purple §5
++        formatHexAnsi(NamedTextColor.GOLD),          // Gold §6
++        formatHexAnsi(NamedTextColor.GRAY),          // Gray §7
++        formatHexAnsi(NamedTextColor.DARK_GRAY),     // Dark Gray §8
++        formatHexAnsi(NamedTextColor.BLUE),          // Blue §9
++        formatHexAnsi(NamedTextColor.GREEN),         // Green §a
++        formatHexAnsi(NamedTextColor.AQUA),          // Aqua §b
++        formatHexAnsi(NamedTextColor.RED),           // Red §c
++        formatHexAnsi(NamedTextColor.LIGHT_PURPLE),  // Light Purple §d
++        formatHexAnsi(NamedTextColor.YELLOW),        // Yellow §e
++        formatHexAnsi(NamedTextColor.WHITE),         // White §f
++        "\u001B[5m",                                 // Obfuscated §k
++        "\u001B[21m",                                // Bold §l
++        "\u001B[9m",                                 // Strikethrough §m
++        "\u001B[4m",                                 // Underline §n
++        "\u001B[3m",                                 // Italic §o
++        ANSI_RESET,                                  // Reset §r
++    };
++    private static final String[] ANSI_ANSI_CODES = new String[]{
 +        "\u001B[0;30m",    // Black §0
 +        "\u001B[0;34m",    // Dark Blue §1
 +        "\u001B[0;32m",    // Dark Green §2
@@ -107,30 +193,26 @@ index 0000000000000000000000000000000000000000..a4315961b7a465fb4872a4d67e7c26d4
 +        format(content, toAppendTo, start, useAnsi);
 +    }
 +
-+    private static String convertRGBColors(String input) {
-+        Matcher matcher = RGB_PATTERN.matcher(input);
-+        StringBuffer buffer = new StringBuffer();
-+        while (matcher.find()) {
-+            String s = matcher.group().replace(String.valueOf(COLOR_CHAR), "").replace('x', '#');
-+            int hex = Integer.decode(s);
-+            int red = (hex >> 16) & 0xFF;
-+            int green = (hex >> 8) & 0xFF;
-+            int blue = hex & 0xFF;
-+            String replacement = String.format(RGB_ANSI, red, green, blue);
-+            matcher.appendReplacement(buffer, replacement);
-+        }
-+        matcher.appendTail(buffer);
-+        return buffer.toString();
++    private static String convertRGBColors(final String input) {
++        return RGB_PATTERN.matcher(input).replaceAll(result -> {
++            final int hex = Integer.decode(result.group().substring(1));
++            return formatHexAnsi(hex);
++        });
 +    }
 +
-+    private static String stripRGBColors(String input) {
-+        Matcher matcher = RGB_PATTERN.matcher(input);
-+        StringBuffer buffer = new StringBuffer();
-+        while (matcher.find()) {
-+            matcher.appendReplacement(buffer, "");
-+        }
-+        matcher.appendTail(buffer);
-+        return buffer.toString();
++    private static String formatHexAnsi(final TextColor color) {
++        return formatHexAnsi(color.value());
++    }
++
++    private static String formatHexAnsi(final int color) {
++        final int red = color >> 16 & 0xFF;
++        final int green = color >> 8 & 0xFF;
++        final int blue = color & 0xFF;
++        return String.format(RGB_ANSI, red, green, blue);
++    }
++
++    private static String stripRGBColors(final String input) {
++        return RGB_PATTERN.matcher(input).replaceAll("");
 +    }
 +
 +    static void format(String content, StringBuilder result, int start, boolean ansi) {
@@ -146,7 +228,8 @@ index 0000000000000000000000000000000000000000..a4315961b7a465fb4872a4d67e7c26d4
 +        }
 +
 +        Matcher matcher = NAMED_PATTERN.matcher(content);
-+        StringBuffer buffer = new StringBuffer();
++        StringBuilder buffer = new StringBuilder();
++        final String[] ansiCodes = PaperConfig.useRgbForNamedTextColors ? RGB_ANSI_CODES : ANSI_ANSI_CODES;
 +        while (matcher.find()) {
 +            int format = LOOKUP.indexOf(Character.toLowerCase(matcher.group().charAt(1)));
 +            if (format != -1) {
@@ -156,7 +239,7 @@ index 0000000000000000000000000000000000000000..a4315961b7a465fb4872a4d67e7c26d4
 +        matcher.appendTail(buffer);
 +
 +        result.setLength(start);
-+        result.append(buffer.toString());
++        result.append(buffer);
 +        if (ansi) {
 +            result.append(ANSI_RESET);
 +        }
@@ -169,7 +252,6 @@ index 0000000000000000000000000000000000000000..a4315961b7a465fb4872a4d67e7c26d4
 +     * @param config  The current configuration
 +     * @param options The pattern options
 +     * @return The new instance
-+     *
 +     * @see HexFormattingConverter
 +     */
 +    public static HexFormattingConverter newInstance(Configuration config, String[] options) {
