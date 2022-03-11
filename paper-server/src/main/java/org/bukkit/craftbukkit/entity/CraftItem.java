@@ -42,11 +42,28 @@ public class CraftItem extends CraftEntity implements Item {
     }
 
     @Override
+    public void setUnlimitedLifetime(boolean unlimited) {
+        if (unlimited) {
+            // See EntityItem#INFINITE_LIFETIME
+            item.age = Short.MIN_VALUE;
+        } else {
+            item.age = getTicksLived();
+        }
+    }
+
+    @Override
+    public boolean isUnlimitedLifetime() {
+        return item.age == Short.MIN_VALUE;
+    }
+
+    @Override
     public void setTicksLived(int value) {
         super.setTicksLived(value);
 
-        // Second field for EntityItem
-        item.age = value;
+        // Second field for EntityItem (don't set if lifetime is unlimited)
+        if (!isUnlimitedLifetime()) {
+            item.age = value;
+        }
     }
 
     @Override
