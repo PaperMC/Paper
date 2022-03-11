@@ -3,6 +3,8 @@ From: Owen1212055 <23108066+Owen1212055@users.noreply.github.com>
 Date: Mon, 21 Jun 2021 23:56:07 -0400
 Subject: [PATCH] Missing Entity Behavior API
 
+Co-authored-by: Nassim Jahnke <nassim@njahnke.dev>
+Co-authored-by: Jake Potrebic <jake.m.potrebic@gmail.com>
 
 diff --git a/src/main/java/net/minecraft/world/entity/animal/horse/AbstractHorse.java b/src/main/java/net/minecraft/world/entity/animal/horse/AbstractHorse.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
@@ -35,6 +37,52 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public void setStanding(boolean angry) {
          if (angry) {
              this.setEating(false);
+diff --git a/src/main/java/net/minecraft/world/entity/boss/wither/WitherBoss.java b/src/main/java/net/minecraft/world/entity/boss/wither/WitherBoss.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/entity/boss/wither/WitherBoss.java
++++ b/src/main/java/net/minecraft/world/entity/boss/wither/WitherBoss.java
+@@ -0,0 +0,0 @@ public class WitherBoss extends Monster implements PowerableMob, RangedAttackMob
+         return entityliving.getMobType() != MobType.UNDEAD && entityliving.attackable();
+     };
+     private static final TargetingConditions TARGETING_CONDITIONS = TargetingConditions.forCombat().range(20.0D).selector(WitherBoss.LIVING_ENTITY_SELECTOR);
++    // Paper start
++    private boolean canPortal = false;
++
++    public void setCanTravelThroughPortals(boolean canPortal) { this.canPortal = canPortal; }
++    // Paper end
+ 
+     public WitherBoss(EntityType<? extends WitherBoss> type, Level world) {
+         super(type, world);
+@@ -0,0 +0,0 @@ public class WitherBoss extends Monster implements PowerableMob, RangedAttackMob
+ 
+     @Override
+     public boolean canChangeDimensions() {
+-        return false;
++        return super.canChangeDimensions() && canPortal; // Paper
+     }
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/entity/monster/EnderMan.java b/src/main/java/net/minecraft/world/entity/monster/EnderMan.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/EnderMan.java
++++ b/src/main/java/net/minecraft/world/entity/monster/EnderMan.java
+@@ -0,0 +0,0 @@ public class EnderMan extends Monster implements NeutralMob {
+         this.entityData.set(EnderMan.DATA_STARED_AT, true);
+     }
+ 
++    // Paper start
++    public void setCreepy(boolean creepy) {
++        this.entityData.set(EnderMan.DATA_CREEPY, creepy);
++    }
++
++    public void setHasBeenStaredAt(boolean hasBeenStaredAt) {
++        this.entityData.set(EnderMan.DATA_STARED_AT, hasBeenStaredAt);
++    }
++    // Paper end
++
+     @Override
+     public boolean requiresCustomPersistence() {
+         return super.requiresCustomPersistence() || this.getCarriedBlock() != null;
 diff --git a/src/main/java/net/minecraft/world/entity/monster/Ghast.java b/src/main/java/net/minecraft/world/entity/monster/Ghast.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/monster/Ghast.java
@@ -52,6 +100,31 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      @Override
      protected boolean shouldDespawnInPeaceful() {
          return true;
+diff --git a/src/main/java/net/minecraft/world/entity/projectile/ThrownTrident.java b/src/main/java/net/minecraft/world/entity/projectile/ThrownTrident.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/entity/projectile/ThrownTrident.java
++++ b/src/main/java/net/minecraft/world/entity/projectile/ThrownTrident.java
+@@ -0,0 +0,0 @@ public class ThrownTrident extends AbstractArrow {
+         return (Boolean) this.entityData.get(ThrownTrident.ID_FOIL);
+     }
+ 
++    // Paper start
++    public void setFoil(boolean foil) {
++        this.entityData.set(ThrownTrident.ID_FOIL, foil);
++    }
++
++    public int getLoyalty() {
++        return this.entityData.get(ThrownTrident.ID_LOYALTY);
++    }
++
++    public void setLoyalty(byte loyalty) {
++        this.entityData.set(ThrownTrident.ID_LOYALTY, loyalty);
++    }
++    // Paper end
++
+     @Nullable
+     @Override
+     protected EntityHitResult findHitEntity(Vec3 currentPosition, Vec3 nextPosition) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftAbstractHorse.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftAbstractHorse.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftAbstractHorse.java
@@ -123,6 +196,39 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +    // Paper End - More cat api
  }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEnderman.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEnderman.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEnderman.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftEnderman.java
+@@ -0,0 +0,0 @@ public class CraftEnderman extends CraftMonster implements Enderman {
+         this.getHandle().setCarriedBlock(blockData == null ? null : ((CraftBlockData) blockData).getState());
+     }
+ 
++    // Paper start
++    @Override
++    public boolean isScreaming() {
++        return this.getHandle().isCreepy();
++    }
++
++    @Override
++    public void setScreaming(boolean screaming) {
++        this.getHandle().setCreepy(screaming);
++    }
++
++    @Override
++    public boolean hasBeenStaredAt() {
++        return this.getHandle().hasBeenStaredAt();
++    }
++
++    @Override
++    public void setHasBeenStaredAt(boolean hasBeenStaredAt) {
++        this.getHandle().setHasBeenStaredAt(hasBeenStaredAt);
++    }
++    // Paper end
++
+     @Override
+     public EnderMan getHandle() {
+         return (EnderMan) entity;
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftFox.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftFox.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftFox.java
@@ -287,3 +393,113 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      public static Gene fromNms(net.minecraft.world.entity.animal.Panda.Gene gene) {
          Preconditions.checkArgument(gene != null, "Gene may not be null");
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPolarBear.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPolarBear.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPolarBear.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPolarBear.java
+@@ -0,0 +0,0 @@ public class CraftPolarBear extends CraftAnimals implements PolarBear {
+     public EntityType getType() {
+         return EntityType.POLAR_BEAR;
+     }
++
++    // Paper start
++    @Override
++    public boolean isStanding() {
++        return this.getHandle().isStanding();
++    }
++
++    @Override
++    public void setStanding(boolean standing) {
++        this.getHandle().setStanding(standing);
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftRaider.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftRaider.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftRaider.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftRaider.java
+@@ -0,0 +0,0 @@ public abstract class CraftRaider extends CraftMonster implements Raider {
+     public void setCanJoinRaid(boolean join) {
+         this.getHandle().setCanJoinRaid(join);
+     }
++
++    // Paper start
++    @Override
++    public boolean isCelebrating() {
++        return this.getHandle().isCelebrating();
++    }
++
++    @Override
++    public void setCelebrating(boolean celebrating) {
++        this.getHandle().setCelebrating(celebrating);
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftTrident.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftTrident.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftTrident.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftTrident.java
+@@ -0,0 +0,0 @@ public class CraftTrident extends CraftArrow implements Trident {
+     public EntityType getType() {
+         return EntityType.TRIDENT;
+     }
++
++    // Paper start
++    @Override
++    public boolean hasGlint() {
++        return this.getHandle().isFoil();
++    }
++
++    @Override
++    public void setGlint(boolean glint) {
++        this.getHandle().setFoil(glint);
++    }
++
++    @Override
++    public int getLoyaltyLevel() {
++        return this.getHandle().getLoyalty();
++    }
++
++    @Override
++    public void setLoyaltyLevel(int loyaltyLevel) {
++        com.google.common.base.Preconditions.checkArgument(loyaltyLevel >= 0 && loyaltyLevel <= 127, "The loyalty level has to be between 0 and 127");
++        this.getHandle().setLoyalty((byte) loyaltyLevel);
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftWither.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftWither.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftWither.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftWither.java
+@@ -0,0 +0,0 @@ public class CraftWither extends CraftMonster implements Wither, com.destroystok
+     public BossBar getBossBar() {
+         return this.bossBar;
+     }
++
++    // Paper start
++    @Override
++    public boolean isCharged() {
++        return getHandle().isPowered();
++    }
++
++    @Override
++    public int getInvulnerableTicks() {
++        return getHandle().getInvulnerableTicks();
++    }
++
++    @Override
++    public void setInvulnerableTicks(int ticks) {
++        getHandle().setInvulnerableTicks(ticks);
++    }
++
++    @Override
++    public boolean canTravelThroughPortals() {
++        return getHandle().canChangeDimensions();
++    }
++
++    @Override
++    public void setCanTravelThroughPortals(boolean value) {
++        getHandle().setCanTravelThroughPortals(value);
++    }
++    // Paper end
+ }
