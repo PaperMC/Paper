@@ -40,6 +40,20 @@ public interface Item extends Entity {
     public void setPickupDelay(int delay);
 
     /**
+     * Sets if this Item should live forever
+     *
+     * @param unlimited true if the lifetime is unlimited
+     */
+    public void setUnlimitedLifetime(boolean unlimited);
+
+    /**
+     * Gets if this Item lives forever
+     *
+     * @return true if the lifetime is unlimited
+     */
+    public boolean isUnlimitedLifetime();
+
+    /**
      * Sets the owner of this item.
      *
      * Other entities will not be able to pickup this item when an owner is set.
