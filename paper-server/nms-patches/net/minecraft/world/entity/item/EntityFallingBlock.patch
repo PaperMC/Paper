@@ -9,7 +9,15 @@
  public class EntityFallingBlock extends Entity {
  
      private static final Logger LOGGER = LogUtils.getLogger();
-@@ -166,6 +168,12 @@
+@@ -81,6 +83,7 @@
+ 
+     public static EntityFallingBlock fall(World world, BlockPosition blockposition, IBlockData iblockdata) {
+         EntityFallingBlock entityfallingblock = new EntityFallingBlock(world, (double) blockposition.getX() + 0.5D, (double) blockposition.getY(), (double) blockposition.getZ() + 0.5D, iblockdata.hasProperty(BlockProperties.WATERLOGGED) ? (IBlockData) iblockdata.setValue(BlockProperties.WATERLOGGED, false) : iblockdata);
++        if (CraftEventFactory.callEntityChangeBlockEvent(entityfallingblock, blockposition, iblockdata.getFluidState().createLegacyBlock()).isCancelled()) return entityfallingblock; // CraftBukkit
+ 
+         world.setBlock(blockposition, iblockdata.getFluidState().createLegacyBlock(), 3);
+         world.addFreshEntity(entityfallingblock);
+@@ -166,6 +169,12 @@
                                      this.blockState = (IBlockData) this.blockState.setValue(BlockProperties.WATERLOGGED, true);
                                  }
  
@@ -22,7 +30,7 @@
                                  if (this.level.setBlock(blockposition, this.blockState, 3)) {
                                      ((WorldServer) this.level).getChunkSource().chunkMap.broadcast(this, new PacketPlayOutBlockChange(blockposition, this.level.getBlockState(blockposition)));
                                      this.discard();
-@@ -236,7 +244,7 @@
+@@ -236,7 +245,7 @@
              if (i < 0) {
                  return false;
              } else {
@@ -31,7 +39,7 @@
                  DamageSource damagesource1;
  
                  if (this.blockState.getBlock() instanceof Fallable) {
-@@ -252,7 +260,9 @@
+@@ -252,7 +261,9 @@
                  float f2 = (float) Math.min(MathHelper.floor((float) i * this.fallDamagePerDistance), this.fallDamageMax);
  
                  this.level.getEntities((Entity) this, this.getBoundingBox(), predicate).forEach((entity) -> {
