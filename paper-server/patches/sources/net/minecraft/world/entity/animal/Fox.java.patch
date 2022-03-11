@@ -10,7 +10,29 @@
  
  public class Fox extends Animal implements VariantHolder<Fox.Variant> {
  
-@@ -489,21 +492,22 @@
+@@ -416,7 +419,7 @@
+ 
+         this.setSleeping(nbt.getBoolean("Sleeping"));
+         this.setVariant(Fox.Variant.byName(nbt.getString("Type")));
+-        this.setSitting(nbt.getBoolean("Sitting"));
++        this.setSitting(nbt.getBoolean("Sitting"), false); // Paper - Add EntityToggleSitEvent
+         this.setIsCrouching(nbt.getBoolean("Crouching"));
+         if (this.level() instanceof ServerLevel) {
+             this.setTargetGoals();
+@@ -429,6 +432,12 @@
+     }
+ 
+     public void setSitting(boolean sitting) {
++        // Paper start - Add EntityToggleSitEvent
++        this.setSitting(sitting, true);
++    }
++    public void setSitting(boolean sitting, boolean fireEvent) {
++        if (fireEvent && !new io.papermc.paper.event.entity.EntityToggleSitEvent(this.getBukkitEntity(), sitting).callEvent()) return;
++        // Paper end - Add EntityToggleSitEvent
+         this.setFlag(1, sitting);
+     }
+ 
+@@ -489,21 +498,22 @@
              entityitem.setPickUpDelay(40);
              entityitem.setThrower(this);
              this.playSound(SoundEvents.FOX_SPIT, 1.0F, 1.0F);
@@ -36,7 +58,7 @@
              int i = itemstack.getCount();
  
              if (i > 1) {
-@@ -515,7 +519,7 @@
+@@ -515,7 +525,7 @@
              this.setItemSlot(EquipmentSlot.MAINHAND, itemstack.split(1));
              this.setGuaranteedDrop(EquipmentSlot.MAINHAND);
              this.take(itemEntity, itemstack.getCount());
@@ -45,7 +67,7 @@
              this.ticksSinceEaten = 0;
          }
  
-@@ -685,16 +689,38 @@
+@@ -685,16 +695,38 @@
          return this.getTrustedUUIDs().contains(uuid);
      }
  
@@ -87,7 +109,7 @@
      }
  
      public static boolean isPathClear(Fox fox, LivingEntity chasedEntity) {
-@@ -853,6 +879,16 @@
+@@ -853,6 +885,16 @@
                  if (entityplayer1 != null && entityplayer != entityplayer1) {
                      entityfox.addTrustedUUID(entityplayer1.getUUID());
                  }
@@ -104,7 +126,7 @@
  
                  if (entityplayer2 != null) {
                      entityplayer2.awardStat(Stats.ANIMALS_BRED);
-@@ -863,12 +899,14 @@
+@@ -863,12 +905,14 @@
                  this.partner.setAge(6000);
                  this.animal.resetLove();
                  this.partner.resetLove();
@@ -123,7 +145,7 @@
                  }
  
              }
-@@ -1264,6 +1302,11 @@
+@@ -1264,6 +1308,11 @@
              int i = (Integer) state.getValue(SweetBerryBushBlock.AGE);
  
              state.setValue(SweetBerryBushBlock.AGE, 1);
@@ -135,7 +157,7 @@
              int j = 1 + Fox.this.level().random.nextInt(2) + (i == 3 ? 1 : 0);
              ItemStack itemstack = Fox.this.getItemBySlot(EquipmentSlot.MAINHAND);
  
-@@ -1494,7 +1537,7 @@
+@@ -1494,7 +1543,7 @@
          }
  
          public static Fox.Variant byName(String name) {

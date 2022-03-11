@@ -12,6 +12,15 @@
  
  public abstract class TamableAnimal extends Animal implements OwnableEntity {
  
+@@ -85,7 +90,7 @@
+         }
+ 
+         this.orderedToSit = nbt.getBoolean("Sitting");
+-        this.setInSittingPose(this.orderedToSit);
++        this.setInSittingPose(this.orderedToSit, false); // Paper - Add EntityToggleSitEvent
+     }
+ 
+     @Override
 @@ -96,8 +101,16 @@
      @Override
      public boolean handleLeashAtDistance(Entity leashHolder, float distance) {
@@ -31,7 +40,20 @@
              }
  
              return false;
-@@ -244,7 +257,12 @@
+@@ -161,6 +174,12 @@
+     }
+ 
+     public void setInSittingPose(boolean inSittingPose) {
++        // Paper start - Add EntityToggleSitEvent
++        this.setInSittingPose(inSittingPose, true);
++    }
++    public void setInSittingPose(boolean inSittingPose, boolean callEvent) {
++        if (callEvent && !new io.papermc.paper.event.entity.EntityToggleSitEvent(this.getBukkitEntity(), inSittingPose).callEvent()) return;
++        // Paper end - Add EntityToggleSitEvent
+         byte b0 = (Byte) this.entityData.get(TamableAnimal.DATA_FLAGS_ID);
+ 
+         if (inSittingPose) {
+@@ -244,7 +263,12 @@
                  if (entityliving instanceof ServerPlayer) {
                      ServerPlayer entityplayer = (ServerPlayer) entityliving;
  
@@ -45,7 +67,7 @@
                  }
              }
          }
-@@ -295,7 +313,14 @@
+@@ -295,7 +319,14 @@
          if (!this.canTeleportTo(new BlockPos(x, y, z))) {
              return false;
          } else {
