@@ -1,0 +1,169 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Owen1212055 <23108066+Owen1212055@users.noreply.github.com>
+Date: Tue, 22 Jun 2021 23:41:11 -0400
+Subject: [PATCH] More Projectile API
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftFirework.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftFirework.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftFirework.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftFirework.java
+@@ -0,0 +0,0 @@ import org.bukkit.inventory.meta.FireworkMeta;
+ public class CraftFirework extends CraftProjectile implements Firework {
+ 
+     private final Random random = new Random();
+-    private final CraftItemStack item;
++    //private CraftItemStack item; // Paper - Remove usage, not accurate representation of current item.
+ 
+     public CraftFirework(CraftServer server, FireworkRocketEntity entity) {
+         super(server, entity);
+ 
+-        ItemStack item = this.getHandle().getEntityData().get(FireworkRocketEntity.DATA_ID_FIREWORKS_ITEM);
+-
+-        if (item.isEmpty()) {
+-            item = new ItemStack(Items.FIREWORK_ROCKET);
+-            this.getHandle().getEntityData().set(FireworkRocketEntity.DATA_ID_FIREWORKS_ITEM, item);
+-        }
+-
+-        this.item = CraftItemStack.asCraftMirror(item);
+-
+-        // Ensure the item is a firework...
+-        if (this.item.getType() != Material.FIREWORK_ROCKET) {
+-            this.item.setType(Material.FIREWORK_ROCKET);
+-        }
++//        Paper Start - Expose firework item directly
++//        ItemStack item = this.getHandle().getEntityData().get(FireworkRocketEntity.DATA_ID_FIREWORKS_ITEM);
++//
++//        if (item.isEmpty()) {
++//            item = new ItemStack(Items.FIREWORK_ROCKET);
++//            this.getHandle().getEntityData().set(FireworkRocketEntity.DATA_ID_FIREWORKS_ITEM, item);
++//        }
++//
++//        this.item = CraftItemStack.asCraftMirror(item);
++//
++//        // Ensure the item is a firework...
++//        if (this.item.getType() != Material.FIREWORK_ROCKET) {
++//            this.item.setType(Material.FIREWORK_ROCKET);
++//        }
++        // Paper End - Expose firework item directly
+     }
+ 
+     @Override
+@@ -0,0 +0,0 @@ public class CraftFirework extends CraftProjectile implements Firework {
+ 
+     @Override
+     public FireworkMeta getFireworkMeta() {
+-        return (FireworkMeta) this.item.getItemMeta();
++        return (FireworkMeta) CraftItemStack.getItemMeta(this.getHandle().getEntityData().get(FireworkRocketEntity.DATA_ID_FIREWORKS_ITEM), Material.FIREWORK_ROCKET); // Paper - Expose firework item directly
+     }
+ 
+     @Override
+     public void setFireworkMeta(FireworkMeta meta) {
+-        this.item.setItemMeta(meta);
+ 
++        applyFireworkEffect(meta); // Paper - Expose firework item directly
+         // Copied from EntityFireworks constructor, update firework lifetime/power
+         this.getHandle().lifetime = 10 * (1 + meta.getPower()) + this.random.nextInt(6) + this.random.nextInt(7);
+ 
+@@ -0,0 +0,0 @@ public class CraftFirework extends CraftProjectile implements Firework {
+         return boostedEntity != null ? (org.bukkit.entity.LivingEntity) boostedEntity.getBukkitEntity() : null;
+     }
+     // Paper end
++    // Paper start - Expose firework item directly + manually setting flight
++    @Override
++    public org.bukkit.inventory.ItemStack getItem() {
++        return CraftItemStack.asBukkitCopy(this.getHandle().getItem());
++    }
++
++    @Override
++    public void setItem(org.bukkit.inventory.ItemStack itemStack) {
++        FireworkMeta meta = getFireworkMeta();
++        var nmsItem = itemStack == null ? ItemStack.EMPTY : CraftItemStack.asNMSCopy(itemStack);
++        this.getHandle().getEntityData().set(FireworkRocketEntity.DATA_ID_FIREWORKS_ITEM, nmsItem);
++
++        applyFireworkEffect(meta);
++    }
++
++    @Override
++    public int getTicksFlown() {
++        return this.getHandle().life;
++    }
++
++    @Override
++    public void setTicksFlown(int ticks) {
++        this.getHandle().life = ticks;
++    }
++
++    @Override
++    public int getTicksToDetonate() {
++        return this.getHandle().lifetime;
++    }
++
++    @Override
++    public void setTicksToDetonate(int ticks) {
++        this.getHandle().lifetime = ticks;
++    }
++
++    void applyFireworkEffect(FireworkMeta meta) {
++        CraftItemStack.applyMetaToItem(this.getHandle().getEntityData().get(FireworkRocketEntity.DATA_ID_FIREWORKS_ITEM), meta);
++    }
++    // Paper end - Expose firework item directly + manually setting flight
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftThrownPotion.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftThrownPotion.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftThrownPotion.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftThrownPotion.java
+@@ -0,0 +0,0 @@ public class CraftThrownPotion extends CraftProjectile implements ThrownPotion {
+         Validate.notNull(item, "ItemStack cannot be null.");
+ 
+         // The ItemStack must be a potion.
+-        Validate.isTrue(item.getType() == Material.LINGERING_POTION || item.getType() == Material.SPLASH_POTION, "ItemStack must be a lingering or splash potion. This item stack was " + item.getType() + ".");
++        //Validate.isTrue(item.getType() == Material.LINGERING_POTION || item.getType() == Material.SPLASH_POTION, "ItemStack must be a lingering or splash potion. This item stack was " + item.getType() + "."); // Paper - Projectile API
++        var meta = getPotionMeta(); // Paper - Projectile API
+ 
+         this.getHandle().setItem(CraftItemStack.asNMSCopy(item));
++        setPotionMeta(meta); // Paper - Projectile API
+     }
+ 
++    // Paper start - Projectile API
++    @Override
++    public org.bukkit.inventory.meta.PotionMeta getPotionMeta() {
++        return (org.bukkit.inventory.meta.PotionMeta) CraftItemStack.getItemMeta(this.getHandle().getItemRaw(), Material.SPLASH_POTION);
++    }
++
++    @Override
++    public void setPotionMeta(org.bukkit.inventory.meta.PotionMeta meta) {
++        CraftItemStack.applyMetaToItem(this.getHandle().getItemRaw(), meta);
++        this.getHandle().setItem(this.getHandle().getItemRaw()); // Reset item
++    }
++    // Paper end
+     @Override
+     public net.minecraft.world.entity.projectile.ThrownPotion getHandle() {
+         return (net.minecraft.world.entity.projectile.ThrownPotion) entity;
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
+@@ -0,0 +0,0 @@ public final class CraftItemStack extends ItemStack {
+     public ItemMeta getItemMeta() {
+         return CraftItemStack.getItemMeta(this.handle);
+     }
++    // Paper start
++    public static void applyMetaToItem(net.minecraft.world.item.ItemStack itemStack, ItemMeta meta) {
++        ((org.bukkit.craftbukkit.inventory.CraftMetaItem) meta).applyToItem(itemStack.getOrCreateTag());
++    }
+ 
+     public static ItemMeta getItemMeta(net.minecraft.world.item.ItemStack item) {
++        return getItemMeta(item, CraftItemStack.getType(item));
++    }
++    public static ItemMeta getItemMeta(net.minecraft.world.item.ItemStack item, Material material) {
++        // Paper end
+         if (!CraftItemStack.hasItemMeta(item)) {
+-            return CraftItemFactory.instance().getItemMeta(CraftItemStack.getType(item));
++            return CraftItemFactory.instance().getItemMeta(material); // Paper
+         }
+-        switch (CraftItemStack.getType(item)) {
++        switch (material) {  // Paper
+             case WRITTEN_BOOK:
+                 return new CraftMetaBookSigned(item.getTag());
+             case WRITABLE_BOOK:
