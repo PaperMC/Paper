@@ -1,0 +1,65 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: BillyGalbreath <blake.galbreath@gmail.com>
+Date: Tue, 8 Dec 2020 20:24:52 -0600
+Subject: [PATCH] MC-4: Fix item position desync
+
+This fixes item position desync (MC-4) by running the item coordinates
+through the encode/decode methods of the packet that causes the precision
+loss, which forces the server to lose the same precision as the client
+keeping them in sync.
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+index 7413cbbcf0ab572483adc0ab915978593b8ea658..a0a3cec47c8f9e379a5bc1d43eeda5eb9d81f814 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+@@ -101,6 +101,11 @@ public class PaperConfig {
+         trackPluginScoreboards = getBoolean("settings.track-plugin-scoreboards", false);
+     }
+ 
++    public static boolean fixEntityPositionDesync = true;
++    private static void fixEntityPositionDesync() {
++        fixEntityPositionDesync = getBoolean("settings.fix-entity-position-desync", fixEntityPositionDesync);
++    }
++
+     public static void registerCommands() {
+         for (Map.Entry<String, Command> entry : commands.entrySet()) {
+             MinecraftServer.getServer().server.getCommandMap().register(entry.getKey(), "Paper", entry.getValue());
+diff --git a/src/main/java/net/minecraft/network/protocol/game/ClientboundMoveEntityPacket.java b/src/main/java/net/minecraft/network/protocol/game/ClientboundMoveEntityPacket.java
+index b30c08bfb8c55161543a4ef09f2e462e0a1fe4ae..ec93f5300cc7d423ec0d292f0f8443f900d72dab 100644
+--- a/src/main/java/net/minecraft/network/protocol/game/ClientboundMoveEntityPacket.java
++++ b/src/main/java/net/minecraft/network/protocol/game/ClientboundMoveEntityPacket.java
+@@ -21,11 +21,11 @@ public abstract class ClientboundMoveEntityPacket implements Packet<ClientGamePa
+     protected final boolean hasPos;
+ 
+     public static long entityToPacket(double coord) {
+-        return Mth.lfloor(coord * 4096.0D);
++        return Mth.lfloor(coord * 4096.0D); // Paper - check ItemEntity#setPosRaw on update
+     }
+ 
+     public static double packetToEntity(long coord) {
+-        return (double)coord / 4096.0D;
++        return (double)coord / 4096.0D; // Paper - check ItemEntity#setPosRaw on update
+     }
+ 
+     public Vec3 updateEntityPosition(Vec3 orig) {
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index 1e3436849760430b0db303e716f50555046d6f3e..86a9cbc0768575138c09217cd300c2d9d08540fc 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -3828,6 +3828,16 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, i
+     }
+     public final void setPosRaw(double x, double y, double z, boolean forceBoundingBoxUpdate) {
+         // Paper end
++        // Paper start - fix MC-4
++        if (this instanceof ItemEntity) {
++            if (com.destroystokyo.paper.PaperConfig.fixEntityPositionDesync) {
++                // encode/decode from PacketPlayOutEntity
++                x = Mth.lfloor(x * 4096.0D) * (1 / 4096.0D);
++                y = Mth.lfloor(y * 4096.0D) * (1 / 4096.0D);
++                z = Mth.lfloor(z * 4096.0D) * (1 / 4096.0D);
++            }
++        }
++        // Paper end - fix MC-4
+         if (this.position.x != x || this.position.y != y || this.position.z != z) {
+             this.position = new Vec3(x, y, z);
+             int i = Mth.floor(x);

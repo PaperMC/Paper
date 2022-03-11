@@ -1,0 +1,104 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: kickash32 <kickash32@gmail.com>
+Date: Mon, 3 Jun 2019 02:02:39 -0400
+Subject: [PATCH] Implement alternative item-despawn-rate
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index ed976e0582dee32ccf3aad49efb0dd773f5f9d80..e129794e5cbf5155a232966ef4ff534c0007f1d9 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -560,5 +560,52 @@ public class PaperWorldConfig {
+             Bukkit.getLogger().warning("You have enabled permission-based Anti-Xray checking - depending on your permission plugin, this may cause performance issues");
+         }
+     }
+-}
+ 
++    public boolean altItemDespawnRateEnabled;
++    public java.util.Map<org.bukkit.Material, Integer> altItemDespawnRateMap;
++    private void altItemDespawnRate() {
++        String path = "alt-item-despawn-rate";
++
++        altItemDespawnRateEnabled = getBoolean(path + ".enabled", false);
++
++        java.util.Map<org.bukkit.Material, Integer> altItemDespawnRateMapDefault = new java.util.EnumMap<>(org.bukkit.Material.class);
++        altItemDespawnRateMapDefault.put(org.bukkit.Material.COBBLESTONE, 300);
++        for (org.bukkit.Material key : altItemDespawnRateMapDefault.keySet()) {
++            config.addDefault("world-settings.default." + path + ".items." + key, altItemDespawnRateMapDefault.get(key));
++        }
++
++        java.util.Map<String, Integer> rawMap = new java.util.HashMap<>();
++        try {
++            org.bukkit.configuration.ConfigurationSection mapSection = config.getConfigurationSection("world-settings." + worldName + "." + path + ".items");
++            if (mapSection == null) {
++                mapSection = config.getConfigurationSection("world-settings.default." + path + ".items");
++            }
++            for (String key : mapSection.getKeys(false)) {
++                int val = mapSection.getInt(key);
++                rawMap.put(key, val);
++            }
++        }
++        catch (Exception e) {
++            logError("alt-item-despawn-rate was malformatted");
++            altItemDespawnRateEnabled = false;
++        }
++
++        altItemDespawnRateMap = new java.util.EnumMap<>(org.bukkit.Material.class);
++        if (!altItemDespawnRateEnabled) {
++            return;
++        }
++
++        for(String key : rawMap.keySet()) {
++            try {
++                altItemDespawnRateMap.put(org.bukkit.Material.valueOf(key), rawMap.get(key));
++            } catch (Exception e) {
++                logError("Could not add item " + key + " to altItemDespawnRateMap: " + e.getMessage());
++            }
++        }
++        if(altItemDespawnRateEnabled) {
++            for(org.bukkit.Material key : altItemDespawnRateMap.keySet()) {
++                log("Alternative item despawn rate of " + key + ": " + altItemDespawnRateMap.get(key));
++            }
++        }
++    }
++}
+diff --git a/src/main/java/net/minecraft/world/entity/item/ItemEntity.java b/src/main/java/net/minecraft/world/entity/item/ItemEntity.java
+index 87c92e73d23a1ebb0646ba0293e1c0d51bb0e059..7b2ac6920d5f0a8dc7cbb552a0e45e2fe471190e 100644
+--- a/src/main/java/net/minecraft/world/entity/item/ItemEntity.java
++++ b/src/main/java/net/minecraft/world/entity/item/ItemEntity.java
+@@ -174,7 +174,7 @@ public class ItemEntity extends Entity {
+                 }
+             }
+ 
+-            if (!this.level.isClientSide && this.age >= level.spigotConfig.itemDespawnRate) { // Spigot
++            if (!this.level.isClientSide && this.age >= this.getDespawnRate()) { // Spigot // Paper
+                 // CraftBukkit start - fire ItemDespawnEvent
+                 if (org.bukkit.craftbukkit.event.CraftEventFactory.callItemDespawnEvent(this).isCancelled()) {
+                     this.age = 0;
+@@ -198,7 +198,7 @@ public class ItemEntity extends Entity {
+         this.lastTick = MinecraftServer.currentTick;
+         // CraftBukkit end
+ 
+-        if (!this.level.isClientSide && this.age >= level.spigotConfig.itemDespawnRate) { // Spigot
++        if (!this.level.isClientSide && this.age >= this.getDespawnRate()) { // Spigot // Paper
+             // CraftBukkit start - fire ItemDespawnEvent
+             if (org.bukkit.craftbukkit.event.CraftEventFactory.callItemDespawnEvent(this).isCancelled()) {
+                 this.age = 0;
+@@ -560,9 +560,16 @@ public class ItemEntity extends Entity {
+ 
+     public void makeFakeItem() {
+         this.setNeverPickUp();
+-        this.age = level.spigotConfig.itemDespawnRate - 1; // Spigot
++        this.age = this.getDespawnRate() - 1; // Spigot
+     }
+ 
++    // Paper start
++    public int getDespawnRate(){
++        org.bukkit.Material material = this.getItem().getBukkitStack().getType();
++        return level.paperConfig.altItemDespawnRateMap.getOrDefault(material, level.spigotConfig.itemDespawnRate);
++    }
++    // Paper end
++
+     public float getSpin(float tickDelta) {
+         return ((float) this.getAge() + tickDelta) / 20.0F + this.bobOffs;
+     }

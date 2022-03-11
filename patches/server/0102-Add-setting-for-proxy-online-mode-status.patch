@@ -1,0 +1,81 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Gabriele C <sgdc3.mail@gmail.com>
+Date: Fri, 5 Aug 2016 01:03:08 +0200
+Subject: [PATCH] Add setting for proxy online mode status
+
+TODO: Add isProxyOnlineMode check to Metrics
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+index fc1933160f0bc70438c40fd3c0adb5675093af07..96fbac179e6970f4eeeed9fdc07c1ac1d8e8be0a 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+@@ -23,6 +23,7 @@ import org.bukkit.configuration.InvalidConfigurationException;
+ import org.bukkit.configuration.file.YamlConfiguration;
+ import co.aikar.timings.Timings;
+ import co.aikar.timings.TimingsManager;
++import org.spigotmc.SpigotConfig;
+ 
+ public class PaperConfig {
+ 
+@@ -254,4 +255,13 @@ public class PaperConfig {
+     private static void saveEmptyScoreboardTeams() {
+         saveEmptyScoreboardTeams = getBoolean("settings.save-empty-scoreboard-teams", false);
+     }
++
++    public static boolean bungeeOnlineMode = true;
++    private static void bungeeOnlineMode() {
++        bungeeOnlineMode = getBoolean("settings.bungee-online-mode", true);
++    }
++
++    public static boolean isProxyOnlineMode() {
++        return Bukkit.getOnlineMode() || (SpigotConfig.bungee && bungeeOnlineMode);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/players/GameProfileCache.java b/src/main/java/net/minecraft/server/players/GameProfileCache.java
+index 920a1ded577aa1c265137dd72a6f3d13a431d5c8..c3e3a9950ee05dc97f15ab128e40854901f38a2f 100644
+--- a/src/main/java/net/minecraft/server/players/GameProfileCache.java
++++ b/src/main/java/net/minecraft/server/players/GameProfileCache.java
+@@ -98,6 +98,7 @@ public class GameProfileCache {
+             }
+         };
+ 
++        if (com.destroystokyo.paper.PaperConfig.isProxyOnlineMode()) // Paper - only run in online mode - 100 COL
+         repository.findProfilesByNames(new String[]{name}, Agent.MINECRAFT, profilelookupcallback);
+         GameProfile gameprofile = (GameProfile) atomicreference.get();
+ 
+@@ -115,7 +116,7 @@ public class GameProfileCache {
+     }
+ 
+     private static boolean usesAuthentication() {
+-        return GameProfileCache.usesAuthentication;
++        return com.destroystokyo.paper.PaperConfig.isProxyOnlineMode(); // Paper
+     }
+ 
+     public synchronized void add(GameProfile profile) { // Paper - synchronize
+diff --git a/src/main/java/net/minecraft/server/players/OldUsersConverter.java b/src/main/java/net/minecraft/server/players/OldUsersConverter.java
+index b7b98832be6178a2bca534bf974519ede977b282..aa3caccc58f1cec8d5f396813d7fc40b05985cc8 100644
+--- a/src/main/java/net/minecraft/server/players/OldUsersConverter.java
++++ b/src/main/java/net/minecraft/server/players/OldUsersConverter.java
+@@ -66,7 +66,8 @@ public class OldUsersConverter {
+             return new String[i];
+         });
+ 
+-        if (server.usesAuthentication() || org.spigotmc.SpigotConfig.bungee) { // Spigot: bungee = online mode, for now.
++        if (server.usesAuthentication()
++                || (com.destroystokyo.paper.PaperConfig.isProxyOnlineMode())) { // Spigot: bungee = online mode, for now.  // Paper - Handle via setting
+             server.getProfileRepository().findProfilesByNames(astring, Agent.MINECRAFT, callback);
+         } else {
+             String[] astring1 = astring;
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index 971652c0a9d5cc1dce05a97629c2ae30682d9cfc..630ff9daa7bbe55e0e52f6127c496fdd10876c6e 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -1697,7 +1697,7 @@ public final class CraftServer implements Server {
+             // Spigot Start
+             GameProfile profile = null;
+             // Only fetch an online UUID in online mode
+-            if ( this.getOnlineMode() || org.spigotmc.SpigotConfig.bungee )
++            if ( this.getOnlineMode() || com.destroystokyo.paper.PaperConfig.isProxyOnlineMode() ) // Paper - Handle via setting
+             {
+                 profile = this.console.getProfileCache().get(name).orElse(null);
+             }

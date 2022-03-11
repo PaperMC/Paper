@@ -1,0 +1,43 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Wed, 8 Apr 2020 21:24:05 -0400
+Subject: [PATCH] Increase Light Queue Size
+
+Wiz mentioned that large WorldEdit operations cause light to run on
+main thread. The queue was small, set to 5.. this bumps it to 20
+but makes it configurable per-world.
+
+The main risk of increasing this higher is during shutdown, some
+queued light updates may be lost because mojang did not flush the
+light engine on shutdown...
+
+The queue size only puts a cap on max loss, doesn't solve that problem.
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 73d82e20d7353120a36815dc94be8c2253b2602d..6b88162d286bdabda0449d52b87457ac70f84d69 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -518,5 +518,10 @@ public class PaperWorldConfig {
+         hoppersIgnoreOccludingBlocks = getBoolean("hopper.ignore-occluding-blocks", hoppersIgnoreOccludingBlocks);
+         log("Hopper Ignore Container Entities inside Occluding Blocks: " + (hoppersIgnoreOccludingBlocks ? "enabled" : "disabled"));
+     }
++
++    public int lightQueueSize = 20;
++    private void lightQueueSize() {
++        lightQueueSize = getInt("light-queue-size", lightQueueSize);
++    }
+ }
+ 
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 8e49a648671b4d4c0d07af35ba6558b63bbf28ee..e621d683df00a7d095cc72f74357224208b0dbca 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -811,7 +811,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         this.executeModerately();
+         // CraftBukkit end
+         if (worldserver.getWorld().getKeepSpawnInMemory()) worldloadlistener.stop(); // Paper
+-        chunkproviderserver.getLightEngine().setTaskPerBatch(5);
++        chunkproviderserver.getLightEngine().setTaskPerBatch(worldserver.paperConfig.lightQueueSize); // Paper - increase light queue size
+         // CraftBukkit start
+         // this.updateMobSpawningFlags();
+         worldserver.setSpawnSettings(this.isSpawningMonsters(), this.isSpawningAnimals());

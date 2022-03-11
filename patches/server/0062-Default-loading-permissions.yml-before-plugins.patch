@@ -1,0 +1,52 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Fri, 18 Mar 2016 13:17:38 -0400
+Subject: [PATCH] Default loading permissions.yml before plugins
+
+Under previous behavior, plugins were not able to check if a player had a permission
+if it was defined in permissions.yml. there is no clean way for a plugin to fix that either.
+
+This will change the order so that by default, permissions.yml loads BEFORE plugins instead of after.
+
+This gives plugins expected permission checks.
+
+It also helps improve the expected logic, as servers should set the initial defaults, and then let plugins
+modify that. Under the previous logic, plugins were unable (cleanly) override permissions.yml.
+
+A config option has been added for those who depend on the previous behavior, but I don't expect that.
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+index 11e703e8e78fb49a5f53bdbc20d62422b573ae55..364f9196fb89a6e1bb9cd892971b486205b0c631 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+@@ -234,4 +234,9 @@ public class PaperConfig {
+                 " - Length: " + timeSummary(Timings.getHistoryLength() / 20) +
+                 " - Server Name: " + timingsServerName);
+     }
++
++    public static boolean loadPermsBeforePlugins = true;
++    private static void loadPermsBeforePlugins() {
++        loadPermsBeforePlugins = getBoolean("settings.load-permissions-yml-before-plugins", true);
++    }
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index a73d2ec4db6aff8a92c7d0322eaf999609d5ed33..b89ca165b7103b8a0d6a8e49e62657c70329890a 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -455,6 +455,7 @@ public final class CraftServer implements Server {
+         if (type == PluginLoadOrder.STARTUP) {
+             this.helpMap.clear();
+             this.helpMap.initializeGeneralTopics();
++            if (com.destroystokyo.paper.PaperConfig.loadPermsBeforePlugins) loadCustomPermissions(); // Paper
+         }
+ 
+         Plugin[] plugins = this.pluginManager.getPlugins();
+@@ -474,7 +475,7 @@ public final class CraftServer implements Server {
+             this.commandMap.registerServerAliases();
+             DefaultPermissions.registerCorePermissions();
+             CraftDefaultPermissions.registerCorePermissions();
+-            this.loadCustomPermissions();
++            if (!com.destroystokyo.paper.PaperConfig.loadPermsBeforePlugins) this.loadCustomPermissions(); // Paper
+             this.helpMap.initializeCommands();
+             this.syncCommands();
+         }

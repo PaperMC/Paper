@@ -1,0 +1,38 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Mariell Hoversholm <proximyst@proximyst.com>
+Date: Wed, 30 Sep 2020 22:49:14 +0200
+Subject: [PATCH] Toggle for removing existing dragon
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 5c6c590a859e6a96b392a1146c4cc41dc6004c4c..86cddde870f3ec45e3708aadc1f3e4b19cbaebcc 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -73,6 +73,14 @@ public class PaperWorldConfig {
+         }
+     }
+ 
++    public boolean shouldRemoveDragon = false;
++    private void shouldRemoveDragon() {
++        shouldRemoveDragon = getBoolean("should-remove-dragon", shouldRemoveDragon);
++        if (shouldRemoveDragon) {
++            log("The Ender Dragon will be removed if she already exists without a portal.");
++        }
++    }
++
+     public short keepLoadedRange;
+     private void keepLoadedRange() {
+         keepLoadedRange = (short) (getInt("keep-spawn-loaded-range", Math.min(spigotConfig.viewDistance, 10)) * 16);
+diff --git a/src/main/java/net/minecraft/world/level/dimension/end/EndDragonFight.java b/src/main/java/net/minecraft/world/level/dimension/end/EndDragonFight.java
+index b1a0654ba01c265385db877d528c1aa2103b2eb0..f59de70c4854b10ac39874838db33cdf784a45a1 100644
+--- a/src/main/java/net/minecraft/world/level/dimension/end/EndDragonFight.java
++++ b/src/main/java/net/minecraft/world/level/dimension/end/EndDragonFight.java
+@@ -216,7 +216,7 @@ public class EndDragonFight {
+             this.dragonUUID = enderDragon.getUUID();
+             LOGGER.info("Found that there's a dragon still alive ({})", (Object)enderDragon);
+             this.dragonKilled = false;
+-            if (!bl) {
++            if (!bl && this.level.paperConfig.shouldRemoveDragon) {
+                 LOGGER.info("But we didn't have a portal, let's remove it.");
+                 enderDragon.discard();
+                 this.dragonUUID = null;

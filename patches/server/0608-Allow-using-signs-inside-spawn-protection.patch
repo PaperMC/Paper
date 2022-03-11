@@ -1,0 +1,33 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Anton Lindroth <ntoonio@gmail.com>
+Date: Wed, 15 Apr 2020 01:54:02 +0200
+Subject: [PATCH] Allow using signs inside spawn protection
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index cdcb877e374bcd2dd944c754bfc91e23ef6986ae..3ea410faba8412fa5aa1c1b6bcdd3aeddc982f59 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -784,4 +784,9 @@ public class PaperWorldConfig {
+             delayChunkUnloadsBy *= 20;
+         }
+     }
++
++    public boolean allowUsingSignsInsideSpawnProtection = false;
++    private void allowUsingSignsInsideSpawnProtection() {
++        allowUsingSignsInsideSpawnProtection = getBoolean("allow-using-signs-inside-spawn-protection", allowUsingSignsInsideSpawnProtection);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index 1bd25f0d74ab3a018b56df7a517e661b9af32341..ecd5068a8bfc8d0d4339cf7d6b8da8f81371bbfc 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -1752,7 +1752,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+                 int i = this.player.level.getMaxBuildHeight();
+ 
+                 if (blockposition.getY() < i) {
+-                    if (this.awaitingPositionFromClient == null && this.player.distanceToSqr((double) blockposition.getX() + 0.5D, (double) blockposition.getY() + 0.5D, (double) blockposition.getZ() + 0.5D) < 64.0D && worldserver.mayInteract(this.player, blockposition)) {
++                    if (this.awaitingPositionFromClient == null && this.player.distanceToSqr((double) blockposition.getX() + 0.5D, (double) blockposition.getY() + 0.5D, (double) blockposition.getZ() + 0.5D) < 64.0D && (worldserver.mayInteract(this.player, blockposition)  || (worldserver.paperConfig.allowUsingSignsInsideSpawnProtection && worldserver.getBlockState(blockposition).getBlock() instanceof net.minecraft.world.level.block.SignBlock))) { // Paper - sign check
+                         this.player.stopUsingItem(); // CraftBukkit - SPIGOT-4706
+                         InteractionResult enuminteractionresult = this.player.gameMode.useItemOn(this.player, worldserver, itemstack, enumhand, movingobjectpositionblock);
+ 

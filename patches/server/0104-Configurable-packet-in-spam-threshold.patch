@@ -1,0 +1,45 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Zach Brown <zach.brown@destroystokyo.com>
+Date: Sun, 11 Sep 2016 14:30:57 -0500
+Subject: [PATCH] Configurable packet in spam threshold
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+index 96fbac179e6970f4eeeed9fdc07c1ac1d8e8be0a..081761cd2177bd3cea5a489a85e7088c46d12725 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+@@ -264,4 +264,13 @@ public class PaperConfig {
+     public static boolean isProxyOnlineMode() {
+         return Bukkit.getOnlineMode() || (SpigotConfig.bungee && bungeeOnlineMode);
+     }
++
++    public static int packetInSpamThreshold = 300;
++    private static void packetInSpamThreshold() {
++        if (version < 11) {
++            int oldValue = getInt("settings.play-in-use-item-spam-threshold", 300);
++            set("settings.incoming-packet-spam-threshold", oldValue);
++        }
++        packetInSpamThreshold = getInt("settings.incoming-packet-spam-threshold", 300);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index 8e976184215b2db7684bb0488e4a8124b5dedde0..350a8194ef52242be6a70a16d2692e17216178fb 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -1502,13 +1502,14 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+     // Spigot start - limit place/interactions
+     private int limitedPackets;
+     private long lastLimitedPacket = -1;
++    private static final int THRESHOLD = com.destroystokyo.paper.PaperConfig.packetInSpamThreshold; // Paper - Configurable threshold
+ 
+     private boolean checkLimit(long timestamp) {
+-        if (this.lastLimitedPacket != -1 && timestamp - this.lastLimitedPacket < 30 && this.limitedPackets++ >= 4) {
++        if (this.lastLimitedPacket != -1 && timestamp - this.lastLimitedPacket < THRESHOLD && this.limitedPackets++ >= 8) { // Paper - Use threshold, raise packet limit to 8
+             return false;
+         }
+ 
+-        if (this.lastLimitedPacket == -1 || timestamp - this.lastLimitedPacket >= 30) {
++        if (this.lastLimitedPacket == -1 || timestamp - this.lastLimitedPacket >= THRESHOLD) { // Paper
+             this.lastLimitedPacket = timestamp;
+             this.limitedPackets = 0;
+             return true;
