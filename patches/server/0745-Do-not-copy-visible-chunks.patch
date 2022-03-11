@@ -35,7 +35,7 @@ index b3516862d796c2d9fcc1c67a6073445403d73088..b61abf227a04b4565c2525e5f469db30
              List<ChunkHolder> allChunks = new ArrayList<>(visibleChunks.values());
              List<ServerPlayer> players = world.players;
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index 9b2c5fe2389c6baa239de4f7b479d9ca273e59cf..c19395ab43b956787bf0e59ae242ff3a53d4ca46 100644
+index ef28e0f57ba593265a3eca4d3f21d0b1b51e8740..f4c1316ae1cadc1a7a7fed16e0e99704662c41e8 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
 @@ -123,9 +123,11 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
@@ -120,7 +120,7 @@ index 9b2c5fe2389c6baa239de4f7b479d9ca273e59cf..c19395ab43b956787bf0e59ae242ff3a
          }
  
      }
-@@ -873,7 +880,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -873,14 +880,14 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
      }
  
      public boolean hasWork() {
@@ -128,17 +128,16 @@ index 9b2c5fe2389c6baa239de4f7b479d9ca273e59cf..c19395ab43b956787bf0e59ae242ff3a
 +        return this.lightEngine.hasLightWork() || !this.pendingUnloads.isEmpty() || !this.updatingChunks.getUpdatingValuesCopy().isEmpty() || this.poiManager.hasWork() || !this.toDrop.isEmpty() || !this.unloadQueue.isEmpty() || this.queueSorter.hasWork() || this.distanceManager.hasTickets(); // Paper
      }
  
-     private static final double UNLOAD_QUEUE_RESIZE_FACTOR = 0.90; // Spigot // Paper - unload more
-@@ -888,7 +895,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
-         while (longiterator.hasNext()) { // Spigot
+     private void processUnloads(BooleanSupplier shouldKeepTicking) {
+         LongIterator longiterator = this.toDrop.iterator();
+         for (int i = 0; longiterator.hasNext() && (shouldKeepTicking.getAsBoolean() || i < 200 || this.toDrop.size() > 2000); longiterator.remove()) {
              long j = longiterator.nextLong();
-             longiterator.remove(); // Spigot
 -            ChunkHolder playerchunk = (ChunkHolder) this.updatingChunkMap.remove(j);
 +            ChunkHolder playerchunk = this.updatingChunks.queueRemove(j); // Paper - Don't copy
  
              if (playerchunk != null) {
                  playerchunk.onChunkRemove(); // Paper
-@@ -989,7 +996,12 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -975,7 +982,12 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          if (!this.modified) {
              return false;
          } else {
@@ -152,7 +151,7 @@ index 9b2c5fe2389c6baa239de4f7b479d9ca273e59cf..c19395ab43b956787bf0e59ae242ff3a
              this.modified = false;
              return true;
          }
-@@ -1479,7 +1491,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1465,7 +1477,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
  
              this.viewDistance = j;
              this.distanceManager.updatePlayerTickets(this.viewDistance + 1);
@@ -161,7 +160,7 @@ index 9b2c5fe2389c6baa239de4f7b479d9ca273e59cf..c19395ab43b956787bf0e59ae242ff3a
  
              while (objectiterator.hasNext()) {
                  ChunkHolder playerchunk = (ChunkHolder) objectiterator.next();
-@@ -1522,7 +1534,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1508,7 +1520,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
      }
  
      public int size() {
@@ -170,7 +169,7 @@ index 9b2c5fe2389c6baa239de4f7b479d9ca273e59cf..c19395ab43b956787bf0e59ae242ff3a
      }
  
      public DistanceManager getDistanceManager() {
-@@ -1530,13 +1542,13 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1516,13 +1528,13 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
      }
  
      protected Iterable<ChunkHolder> getChunks() {

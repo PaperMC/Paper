@@ -5,7 +5,7 @@ Subject: [PATCH] Make targetSize more aggressive in the chunk unload queue
 
 
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index a10848e6899853f447f101675e3a6aba9d3d43f3..50b2dc91f4926ebc4511e44e3aa3062eadc40ea0 100644
+index fb8d50dc14e1d23001e184b425bc6ac2f8b0f37e..f5cf71258732aa040443eb82e09ab28f130e4c79 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
 @@ -226,8 +226,8 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
@@ -18,21 +18,20 @@ index a10848e6899853f447f101675e3a6aba9d3d43f3..50b2dc91f4926ebc4511e44e3aa3062e
          Path path = session.getDimensionPath(world.dimension());
  
          this.storageName = path.getFileName().toString();
-@@ -569,7 +569,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
-         // Spigot start
-         org.spigotmc.SlackActivityAccountant activityAccountant = this.level.getServer().slackActivityAccountant;
-         activityAccountant.startActivity(0.5);
--        int targetSize = (int) (this.toDrop.size() * ChunkMap.UNLOAD_QUEUE_RESIZE_FACTOR);
-+        int targetSize = Math.min(this.toDrop.size() - 100,  (int) (this.toDrop.size() * ChunkMap.UNLOAD_QUEUE_RESIZE_FACTOR)); // Paper - Make more aggressive
-         // Spigot end
-         while (longiterator.hasNext()) { // Spigot
+@@ -564,7 +564,6 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+ 
+     private void processUnloads(BooleanSupplier shouldKeepTicking) {
+         LongIterator longiterator = this.toDrop.iterator();
+-
+         for (int i = 0; longiterator.hasNext() && (shouldKeepTicking.getAsBoolean() || i < 200 || this.toDrop.size() > 2000); longiterator.remove()) {
              long j = longiterator.nextLong();
-@@ -589,7 +589,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+             ChunkHolder playerchunk = (ChunkHolder) this.updatingChunkMap.remove(j);
+@@ -577,7 +576,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+             }
          }
-         activityAccountant.endActivity(); // Spigot
  
 -        int k = Math.max(0, this.unloadQueue.size() - 2000);
-+        int k = Math.max(0, Math.min(100, this.unloadQueue.size() - (int) (this.unloadQueue.size() * UNLOAD_QUEUE_RESIZE_FACTOR))); // Paper - Target this queue as well
++        int k = Math.max(100, this.unloadQueue.size() - 2000); // Paper - Unload more than just up to queue size 2000
  
          Runnable runnable;
  

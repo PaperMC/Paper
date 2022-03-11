@@ -12,10 +12,10 @@ Previous implementation did not calculate TPS correctly.
 Switch to a realistic rolling average and factor in std deviation as an extra reporting variable
 
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 8bacbb2289a9e5203766d71be6ba0a31f48b626e..18f03367174651b93682d5e5f4350d8c7e6e3b98 100644
+index eef07309b24e88820d35517dd868fff25f777262..e26818bd6fb2216ab9b363affe99e4b6c83cca6a 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -283,7 +283,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -282,7 +282,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
      public org.bukkit.command.ConsoleCommandSender console;
      public org.bukkit.command.RemoteConsoleCommandSender remoteConsole;
      public ConsoleReader reader;
@@ -24,16 +24,16 @@ index 8bacbb2289a9e5203766d71be6ba0a31f48b626e..18f03367174651b93682d5e5f4350d8c
      public java.util.Queue<Runnable> processQueue = new java.util.concurrent.ConcurrentLinkedQueue<Runnable>();
      public int autosavePeriod;
      public Commands vanillaCommandDispatcher;
-@@ -292,7 +292,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -291,7 +291,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
      // Spigot start
      public static final int TPS = 20;
      public static final int TICK_TIME = 1000000000 / MinecraftServer.TPS;
 -    private static final int SAMPLE_INTERVAL = 100;
 +    private static final int SAMPLE_INTERVAL = 20; // Paper
      public final double[] recentTps = new double[ 3 ];
-     public final SlackActivityAccountant slackActivityAccountant = new SlackActivityAccountant();
      // Spigot end
-@@ -1005,6 +1005,57 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+     public static long currentTickLong = 0L; // Paper
+@@ -1003,6 +1003,57 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
      {
          return ( avg * exp ) + ( tps * ( 1 - exp ) );
      }
@@ -91,7 +91,7 @@ index 8bacbb2289a9e5203766d71be6ba0a31f48b626e..18f03367174651b93682d5e5f4350d8c
      // Spigot End
  
      protected void runServer() {
-@@ -1017,26 +1068,33 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1015,26 +1066,33 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
  
                  // Spigot start
                  Arrays.fill( recentTps, 20 );
@@ -133,7 +133,7 @@ index 8bacbb2289a9e5203766d71be6ba0a31f48b626e..18f03367174651b93682d5e5f4350d8c
                          tickSection = curTime;
                      }
                      // Spigot end
-@@ -1046,7 +1104,8 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1044,7 +1102,8 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
                          this.debugCommandProfiler = new MinecraftServer.TimeProfiler(Util.getNanos(), this.tickCount);
                      }
  

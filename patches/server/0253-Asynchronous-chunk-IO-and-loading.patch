@@ -2318,10 +2318,10 @@ index 8f5784ed4df46f3c7d4c6b4ff76ad839d436be1f..6a006f22d33491be4413fb64649ba9f6
                  DedicatedServer dedicatedserver1 = new DedicatedServer(optionset, config.get(), ops.get(), thread, convertable_conversionsession, resourcepackrepository, worldstem, dedicatedserversettings, DataFixers.getDataFixer(), minecraftsessionservice, gameprofilerepository, usercache, LoggerChunkProgressListener::new);
  
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 432f1d6e5989f861e762a8b919a0048b58e77ce7..f347842c224ee565d45f5120b2e3a359a9cade65 100644
+index d6e6bc73f9bbcae99126876a9abdd3468d6c2a7f..785df5ec8a5a4e307149edd5ccf7db75f7edb1fc 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -998,7 +998,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -996,7 +996,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
              this.getProfileCache().save(false); // Paper
          }
          // Spigot end
@@ -2344,7 +2344,7 @@ index 2b936c67265f3c672d3b623e6aedd81eff0e4358..d930162608e1b765ef222eb0fe61d010
          ChunkHolder.FullChunkStatus playerchunk_state1 = ChunkHolder.getFullChunkStatus(this.ticketLevel);
          // CraftBukkit start
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index b64f42b9ca1da5b6d5c290c157e510797e524117..6a7e6cbc188619b0239e97237069c895a50e8083 100644
+index 4206e1c96cdc7b7e324331681215f735688dd558..04b287c91acef5b9f0b73edb71fbefbb1f08eee6 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
 @@ -502,6 +502,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
@@ -2381,31 +2381,7 @@ index b64f42b9ca1da5b6d5c290c157e510797e524117..6a7e6cbc188619b0239e97237069c895
          }
  
          gameprofilerfiller.pop();
-@@ -562,7 +568,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
-         return this.lightEngine.hasLightWork() || !this.pendingUnloads.isEmpty() || !this.updatingChunkMap.isEmpty() || this.poiManager.hasWork() || !this.toDrop.isEmpty() || !this.unloadQueue.isEmpty() || this.queueSorter.hasWork() || this.distanceManager.hasTickets();
-     }
- 
--    private static final double UNLOAD_QUEUE_RESIZE_FACTOR = 0.96; // Spigot
-+    private static final double UNLOAD_QUEUE_RESIZE_FACTOR = 0.90; // Spigot // Paper - unload more
- 
-     private void processUnloads(BooleanSupplier shouldKeepTicking) {
-         LongIterator longiterator = this.toDrop.iterator();
-@@ -579,12 +585,13 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
-             if (playerchunk != null) {
-                 this.pendingUnloads.put(j, playerchunk);
-                 this.modified = true;
-+                this.scheduleUnload(j, playerchunk); // Paper - Move up - don't leak chunks
-                 // Spigot start
-                 if (!shouldKeepTicking.getAsBoolean() && this.toDrop.size() <= targetSize && activityAccountant.activityTimeIsExhausted()) {
-                     break;
-                 }
-                 // Spigot end
--                this.scheduleUnload(j, playerchunk);
-+                //this.scheduleUnload(j, playerchunk); // Paper - move up because spigot did a dumb
-             }
-         }
-         activityAccountant.endActivity(); // Spigot
-@@ -628,7 +635,16 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -615,7 +621,16 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
                          ((LevelChunk) ichunkaccess).setLoaded(false);
                      }
  
@@ -2423,7 +2399,7 @@ index b64f42b9ca1da5b6d5c290c157e510797e524117..6a7e6cbc188619b0239e97237069c895
                      if (this.entitiesInLevel.remove(pos) && ichunkaccess instanceof LevelChunk) {
                          LevelChunk chunk = (LevelChunk) ichunkaccess;
  
-@@ -694,20 +710,21 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -681,20 +696,21 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
      }
  
      private CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> scheduleChunkLoad(ChunkPos pos) {
@@ -2456,7 +2432,7 @@ index b64f42b9ca1da5b6d5c290c157e510797e524117..6a7e6cbc188619b0239e97237069c895
                          this.markPosition(pos, protochunk.getStatus().getChunkType());
                          return Either.left(protochunk);
                      }
-@@ -729,7 +746,32 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -716,7 +732,32 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
  
              this.markPositionReplaceable(pos);
              return Either.left(new ProtoChunk(pos, UpgradeData.EMPTY, this.level, this.level.registryAccess().registryOrThrow(Registry.BIOME_REGISTRY), (BlendingData) null));
@@ -2490,7 +2466,7 @@ index b64f42b9ca1da5b6d5c290c157e510797e524117..6a7e6cbc188619b0239e97237069c895
      }
  
      private void markPositionReplaceable(ChunkPos pos) {
-@@ -944,7 +986,48 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -931,7 +972,48 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          }
      }
  
@@ -2539,7 +2515,7 @@ index b64f42b9ca1da5b6d5c290c157e510797e524117..6a7e6cbc188619b0239e97237069c895
          this.poiManager.flush(chunk.getPos());
          if (!chunk.isUnsaved()) {
              return false;
-@@ -956,7 +1039,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -943,7 +1025,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
                  ChunkStatus chunkstatus = chunk.getStatus();
  
                  if (chunkstatus.getChunkType() != ChunkStatus.ChunkType.LEVELCHUNK) {
@@ -2548,7 +2524,7 @@ index b64f42b9ca1da5b6d5c290c157e510797e524117..6a7e6cbc188619b0239e97237069c895
                          return false;
                      }
  
-@@ -966,9 +1049,15 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -953,9 +1035,15 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
                  }
  
                  this.level.getProfiler().incrementCounter("chunkSave");
@@ -2566,7 +2542,7 @@ index b64f42b9ca1da5b6d5c290c157e510797e524117..6a7e6cbc188619b0239e97237069c895
                  this.markPosition(chunkcoordintpair, chunkstatus.getChunkType());
                  return true;
              } catch (Exception exception) {
-@@ -977,6 +1066,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -964,6 +1052,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
                  return false;
              }
          }
@@ -2574,7 +2550,7 @@ index b64f42b9ca1da5b6d5c290c157e510797e524117..6a7e6cbc188619b0239e97237069c895
      }
  
      private boolean isExistingChunkFull(ChunkPos pos) {
-@@ -1110,6 +1200,35 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1097,6 +1186,35 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          }
      }
  

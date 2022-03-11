@@ -10,7 +10,7 @@ This patch also prevents the saving/unloading of POI data when
 world saving is disabled.
 
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index 78aab9174f8359ffc38fb5a79930e541b5cd419e..a29b97f941eadb1ede5db805d32f2917469cccb9 100644
+index 727ee42ec573fd1d008f526f49d0e63396ef0a9d..0e6bc8f7b31581fe0e7adb13119b30295aeac48d 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
 @@ -848,6 +848,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
@@ -21,16 +21,16 @@ index 78aab9174f8359ffc38fb5a79930e541b5cd419e..a29b97f941eadb1ede5db805d32f2917
  
                  this.updatingChunks.queueUpdate(pos, holder); // Paper - Don't copy
                  this.modified = true;
-@@ -997,7 +998,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
-         return this.lightEngine.hasLightWork() || !this.pendingUnloads.isEmpty() || !this.updatingChunks.getUpdatingValuesCopy().isEmpty() || this.poiManager.hasWork() || !this.toDrop.isEmpty() || !this.unloadQueue.isEmpty() || this.queueSorter.hasWork() || this.distanceManager.hasTickets(); // Paper
-     }
- 
--    private static final double UNLOAD_QUEUE_RESIZE_FACTOR = 0.90; // Spigot // Paper - unload more
-+    public static final double UNLOAD_QUEUE_RESIZE_FACTOR = 0.90; // Spigot // Paper - unload more
+@@ -999,7 +1000,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
  
      private void processUnloads(BooleanSupplier shouldKeepTicking) {
          LongIterator longiterator = this.toDrop.iterator();
-@@ -1061,6 +1062,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+-        for (int i = 0; longiterator.hasNext() && (shouldKeepTicking.getAsBoolean() || i < 200 || this.toDrop.size() > 2000); longiterator.remove()) {
++        for (int i = 0; longiterator.hasNext() && (shouldKeepTicking.getAsBoolean() || i < 200 || this.toDrop.size() > 2000); longiterator.remove()) { // Paper - diff on change
+             long j = longiterator.nextLong();
+             ChunkHolder playerchunk = this.updatingChunks.queueRemove(j); // Paper - Don't copy
+ 
+@@ -1047,6 +1048,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
                          this.regionManagers.get(index).removeChunk(holder.pos.x, holder.pos.z);
                      }
                      // Paper end
@@ -38,7 +38,7 @@ index 78aab9174f8359ffc38fb5a79930e541b5cd419e..a29b97f941eadb1ede5db805d32f2917
                      if (ichunkaccess instanceof LevelChunk) {
                          ((LevelChunk) ichunkaccess).setLoaded(false);
                      }
-@@ -1090,6 +1092,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1076,6 +1078,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
                  for (int index = 0, len = this.regionManagers.size(); index < len; ++index) {
                      this.regionManagers.get(index).removeChunk(holder.pos.x, holder.pos.z);
                  }
@@ -46,7 +46,7 @@ index 78aab9174f8359ffc38fb5a79930e541b5cd419e..a29b97f941eadb1ede5db805d32f2917
              } // Paper end
                  } finally { this.unloadingPlayerChunk = unloadingBefore; } // Paper - do not allow ticket level changes while unloading chunks
  
-@@ -1166,6 +1169,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1152,6 +1155,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
                  }
                  this.poiManager.loadInData(pos, chunkHolder.poiData);
                  chunkHolder.tasks.forEach(Runnable::run);
@@ -55,7 +55,7 @@ index 78aab9174f8359ffc38fb5a79930e541b5cd419e..a29b97f941eadb1ede5db805d32f2917
  
                  if (chunkHolder.protoChunk != null) {try (Timing ignored2 = this.level.timings.chunkLoadLevelTimer.startTimingIfSync()) { // Paper start - timings // Paper - chunk is created async
 diff --git a/src/main/java/net/minecraft/world/entity/ai/village/poi/PoiManager.java b/src/main/java/net/minecraft/world/entity/ai/village/poi/PoiManager.java
-index 8a569e3300543cb171c3befae59969628adc424c..bbd9fdaa4b12543307b144da72b0604eae638cbb 100644
+index 8a569e3300543cb171c3befae59969628adc424c..54013682ee07cfe34f47070b6460c21ff420130f 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/village/poi/PoiManager.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/village/poi/PoiManager.java
 @@ -1,5 +1,6 @@
@@ -169,9 +169,9 @@ index 8a569e3300543cb171c3befae59969628adc424c..bbd9fdaa4b12543307b144da72b0604e
 +        net.minecraft.server.level.ServerChunkCache chunkProvider = this.world.getChunkSource();
 +        net.minecraft.server.level.ChunkMap playerChunkMap = chunkProvider.chunkMap;
 +        // copied target determination from PlayerChunkMap
-+        int target = Math.min(this.queuedUnloads.size() - 100,  (int) (this.queuedUnloads.size() * net.minecraft.server.level.ChunkMap.UNLOAD_QUEUE_RESIZE_FACTOR)); // Paper - Make more aggressive
-+        for (java.util.Iterator<QueuedUnload> iterator = this.queuedUnloads.iterator();
-+             iterator.hasNext() && (this.queuedUnloads.size() > target || canSleepForTick.getAsBoolean());) {
++
++        java.util.Iterator<QueuedUnload> iterator = this.queuedUnloads.iterator();
++        for (int i = 0; iterator.hasNext() && (i < 200 || this.queuedUnloads.size() > 2000 || canSleepForTick.getAsBoolean()); i++) {
 +            QueuedUnload unload = iterator.next();
 +            if (unload.unloadTick > currentTick) {
 +                break;
