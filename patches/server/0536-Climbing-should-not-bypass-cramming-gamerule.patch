@@ -1,0 +1,173 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: William Blake Galbreath <blake.galbreath@gmail.com>
+Date: Sun, 23 Aug 2020 20:59:00 +0200
+Subject: [PATCH] Climbing should not bypass cramming gamerule
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 681985c8412562fedea841738656ce0b7391964a..657a199a78262442427b308e94344790b6fa55dd 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -94,6 +94,11 @@ public class PaperWorldConfig {
+         wanderingTraderSpawnChanceMax = getInt("wandering-trader.spawn-chance-max", wanderingTraderSpawnChanceMax);
+     }
+ 
++    public boolean fixClimbingBypassingCrammingRule = false;
++    private void fixClimbingBypassingCrammingRule() {
++        fixClimbingBypassingCrammingRule = getBoolean("fix-climbing-bypassing-cramming-rule", fixClimbingBypassingCrammingRule);
++    }
++
+     public short keepLoadedRange;
+     private void keepLoadedRange() {
+         keepLoadedRange = (short) (getInt("keep-spawn-loaded-range", Math.min(spigotConfig.viewDistance, 10)) * 16);
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index c4f528fac063b2f8a4955d00e4220fcbd0867a61..1e3436849760430b0db303e716f50555046d6f3e 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -1748,6 +1748,12 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, i
+     }
+ 
+     public boolean isPushable() {
++        // Paper start
++        return isCollidable(false);
++    }
++
++    public boolean isCollidable(boolean ignoreClimbing) {
++        // Paper end
+         return false;
+     }
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/EntitySelector.java b/src/main/java/net/minecraft/world/entity/EntitySelector.java
+index 22f36cd3df49160f1b6668befdd05c2268edaa49..e39965c2e50bc8ee424ea07819346e0611398e28 100644
+--- a/src/main/java/net/minecraft/world/entity/EntitySelector.java
++++ b/src/main/java/net/minecraft/world/entity/EntitySelector.java
+@@ -45,11 +45,17 @@ public final class EntitySelector {
+     }
+ 
+     public static Predicate<Entity> pushableBy(Entity entity) {
++        // Paper start - ignoreClimbing param
++        return pushable(entity, false);
++    }
++
++    public static Predicate<Entity> pushable(Entity entity, boolean ignoreClimbing) {
++        // Paper end
+         Team scoreboardteambase = entity.getTeam();
+         Team.CollisionRule scoreboardteambase_enumteampush = scoreboardteambase == null ? Team.CollisionRule.ALWAYS : scoreboardteambase.getCollisionRule();
+ 
+         return (Predicate) (scoreboardteambase_enumteampush == Team.CollisionRule.NEVER ? Predicates.alwaysFalse() : EntitySelector.NO_SPECTATORS.and((entity1) -> {
+-            if (!entity1.canCollideWithBukkit(entity) || !entity.canCollideWithBukkit(entity1)) { // CraftBukkit - collidable API
++            if (!entity1.isCollidable(ignoreClimbing) || !entity1.canCollideWithBukkit(entity) || !entity.canCollideWithBukkit(entity1)) { // CraftBukkit - collidable API // Paper - isCollidable
+                 return false;
+             } else if (entity.level.isClientSide && (!(entity1 instanceof Player) || !((Player) entity1).isLocalPlayer())) {
+                 return false;
+diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+index aebf02fbd3823eb05a0823a843e35d94c05a8afe..1dc2af88b8db9f93a92c348e3a73bfe774699dc8 100644
+--- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
++++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+@@ -3300,7 +3300,7 @@ public abstract class LivingEntity extends Entity {
+             return;
+         }
+         // Paper end - don't run getEntities if we're not going to use its result
+-        List<Entity> list = this.level.getEntities((Entity) this, this.getBoundingBox(), EntitySelector.pushableBy(this));
++        List<Entity> list = this.level.getEntities((Entity) this, this.getBoundingBox(), EntitySelector.pushable(this, level.paperConfig.fixClimbingBypassingCrammingRule)); // Paper - fix climbing bypassing cramming rule
+ 
+         if (!list.isEmpty()) {
+             // Paper - move up
+@@ -3463,9 +3463,16 @@ public abstract class LivingEntity extends Entity {
+         return !this.isRemoved() && this.collides; // CraftBukkit
+     }
+ 
++    // Paper start
+     @Override
+     public boolean isPushable() {
+-        return this.isAlive() && !this.isSpectator() && !this.onClimbable() && this.collides; // CraftBukkit
++        return this.isCollidable(level.paperConfig.fixClimbingBypassingCrammingRule);
++    }
++
++    @Override
++    public boolean isCollidable(boolean ignoreClimbing) {
++        return this.isAlive() && !this.isSpectator() && (ignoreClimbing || !this.onClimbable()) && this.collides; // CraftBukkit
++        // Paper end
+     }
+ 
+     // CraftBukkit start - collidable API
+diff --git a/src/main/java/net/minecraft/world/entity/ambient/Bat.java b/src/main/java/net/minecraft/world/entity/ambient/Bat.java
+index f37f9118ff3305d688f55ba978b6fd5f3a428fc7..ed617223942b410fb6f799be7db2001909db67ed 100644
+--- a/src/main/java/net/minecraft/world/entity/ambient/Bat.java
++++ b/src/main/java/net/minecraft/world/entity/ambient/Bat.java
+@@ -82,7 +82,7 @@ public class Bat extends AmbientCreature {
+     }
+ 
+     @Override
+-    public boolean isPushable() {
++    public boolean isCollidable(boolean ignoreClimbing) { // Paper
+         return false;
+     }
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/animal/Parrot.java b/src/main/java/net/minecraft/world/entity/animal/Parrot.java
+index 5f690ffab2a8305ee1229e552ba9d282fcb479a2..eb66cfebce7e8bb9ebce066e5aabff256a8a518d 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/Parrot.java
++++ b/src/main/java/net/minecraft/world/entity/animal/Parrot.java
+@@ -381,8 +381,8 @@ public class Parrot extends ShoulderRidingEntity implements FlyingAnimal {
+     }
+ 
+     @Override
+-    public boolean isPushable() {
+-        return super.isPushable(); // CraftBukkit - collidable API
++    public boolean isCollidable(boolean ignoreClimbing) { // Paper
++        return super.isCollidable(ignoreClimbing); // CraftBukkit - collidable API // Paper
+     }
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/entity/animal/horse/AbstractHorse.java b/src/main/java/net/minecraft/world/entity/animal/horse/AbstractHorse.java
+index e63f55df91d301b18c63ba94dc19966155916b65..cd278a859c87fc89c421378ffab1bd36a45bd65d 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/horse/AbstractHorse.java
++++ b/src/main/java/net/minecraft/world/entity/animal/horse/AbstractHorse.java
+@@ -241,7 +241,7 @@ public abstract class AbstractHorse extends Animal implements ContainerListener,
+     }
+ 
+     @Override
+-    public boolean isPushable() {
++    public boolean isCollidable(boolean ignoreClimbing) { // Paper
+         return !this.isVehicle();
+     }
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/decoration/ArmorStand.java b/src/main/java/net/minecraft/world/entity/decoration/ArmorStand.java
+index 0d468631b9c260091e732925da43c177ebda892f..e5ef24d92de21c4c0e6a98e06985e52d47bfdce0 100644
+--- a/src/main/java/net/minecraft/world/entity/decoration/ArmorStand.java
++++ b/src/main/java/net/minecraft/world/entity/decoration/ArmorStand.java
+@@ -344,7 +344,7 @@ public class ArmorStand extends LivingEntity {
+     }
+ 
+     @Override
+-    public boolean isPushable() {
++    public boolean isCollidable(boolean ignoreClimbing) { // Paper
+         return false;
+     }
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/vehicle/AbstractMinecart.java b/src/main/java/net/minecraft/world/entity/vehicle/AbstractMinecart.java
+index 46ceed03caed9015acfcc45a5afc0d0c9521c9df..110006087af3f87457031dad7756235363af0506 100644
+--- a/src/main/java/net/minecraft/world/entity/vehicle/AbstractMinecart.java
++++ b/src/main/java/net/minecraft/world/entity/vehicle/AbstractMinecart.java
+@@ -147,7 +147,7 @@ public abstract class AbstractMinecart extends Entity {
+     }
+ 
+     @Override
+-    public boolean isPushable() {
++    public boolean isCollidable(boolean ignoreClimbing) { // Paper
+         return true;
+     }
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/vehicle/Boat.java b/src/main/java/net/minecraft/world/entity/vehicle/Boat.java
+index a7f248394d11f0e4a9d5056ffb6fc66cac53cd02..c75e45bcb8cd6da154c7ca1719711622c009f463 100644
+--- a/src/main/java/net/minecraft/world/entity/vehicle/Boat.java
++++ b/src/main/java/net/minecraft/world/entity/vehicle/Boat.java
+@@ -157,7 +157,7 @@ public class Boat extends Entity {
+     }
+ 
+     @Override
+-    public boolean isPushable() {
++    public boolean isCollidable(boolean ignoreClimbing) { // Paper
+         return true;
+     }
+ 

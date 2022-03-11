@@ -1,0 +1,61 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Mariell Hoversholm <proximyst@proximyst.com>
+Date: Sat, 16 May 2020 10:12:15 +0200
+Subject: [PATCH] Add option for console having all permissions
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+index 045a49da7c17e48534b3bd5b7aa3968963681e6c..5dc7e897fdb2a572b800eb34c40961cdfa3c0309 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+@@ -446,4 +446,9 @@ public class PaperConfig {
+         config.set("settings.unsupported-settings.allow-permanent-block-break-exploits-readme", "This setting controls if players should be able to break bedrock, end portals and other intended to be permanent blocks.");
+         allowBlockPermanentBreakingExploits = getBoolean("settings.unsupported-settings.allow-permanent-block-break-exploits", allowBlockPermanentBreakingExploits);
+     }
++
++    public static boolean consoleHasAllPermissions = false;
++    private static void consoleHasAllPermissions() {
++        consoleHasAllPermissions = getBoolean("settings.console-has-all-permissions", consoleHasAllPermissions);
++    }
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/command/CraftConsoleCommandSender.java b/src/main/java/org/bukkit/craftbukkit/command/CraftConsoleCommandSender.java
+index 269738c499c6aab6f8c39ba4ffd12fa09f0d79dc..dbff1eda25b02b16ec123515338d470489f3b3c4 100644
+--- a/src/main/java/org/bukkit/craftbukkit/command/CraftConsoleCommandSender.java
++++ b/src/main/java/org/bukkit/craftbukkit/command/CraftConsoleCommandSender.java
+@@ -93,5 +93,15 @@ public class CraftConsoleCommandSender extends ServerCommandSender implements Co
+     public void sendMessage(final net.kyori.adventure.identity.Identity identity, final net.kyori.adventure.text.Component message, final net.kyori.adventure.audience.MessageType type) {
+         this.sendRawMessage(io.papermc.paper.adventure.PaperAdventure.LEGACY_SECTION_UXRC.serialize(message));
+     }
++
++    @Override
++    public boolean hasPermission(String name) {
++        return com.destroystokyo.paper.PaperConfig.consoleHasAllPermissions || super.hasPermission(name);
++    }
++
++    @Override
++    public boolean hasPermission(org.bukkit.permissions.Permission perm) {
++        return com.destroystokyo.paper.PaperConfig.consoleHasAllPermissions || super.hasPermission(perm);
++    }
+     // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/command/CraftRemoteConsoleCommandSender.java b/src/main/java/org/bukkit/craftbukkit/command/CraftRemoteConsoleCommandSender.java
+index 07f7effaa46afdd8766e3e6bfd8cb923e55f68cf..54e358ffb9c89469a7cd0df6493caf6162a37a21 100644
+--- a/src/main/java/org/bukkit/craftbukkit/command/CraftRemoteConsoleCommandSender.java
++++ b/src/main/java/org/bukkit/craftbukkit/command/CraftRemoteConsoleCommandSender.java
+@@ -46,4 +46,16 @@ public class CraftRemoteConsoleCommandSender extends ServerCommandSender impleme
+     public void setOp(boolean value) {
+         throw new UnsupportedOperationException("Cannot change operator status of remote controller.");
+     }
++
++    // Paper start
++    @Override
++    public boolean hasPermission(String name) {
++        return com.destroystokyo.paper.PaperConfig.consoleHasAllPermissions || super.hasPermission(name);
++    }
++
++    @Override
++    public boolean hasPermission(org.bukkit.permissions.Permission perm) {
++        return com.destroystokyo.paper.PaperConfig.consoleHasAllPermissions || super.hasPermission(perm);
++    }
++    // Paper end
+ }

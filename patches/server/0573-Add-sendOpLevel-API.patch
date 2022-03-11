@@ -1,0 +1,51 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Mariell Hoversholm <proximyst@proximyst.com>
+Date: Tue, 29 Dec 2020 15:03:03 +0100
+Subject: [PATCH] Add sendOpLevel API
+
+
+diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
+index f0e2f637d443db71bd9df26cebb0f02c3e1ae85f..64b8d76642e8bbcdc685ea30d95a83adffca1bbc 100644
+--- a/src/main/java/net/minecraft/server/players/PlayerList.java
++++ b/src/main/java/net/minecraft/server/players/PlayerList.java
+@@ -1123,6 +1123,11 @@ public abstract class PlayerList {
+     }
+ 
+     private void sendPlayerPermissionLevel(ServerPlayer player, int permissionLevel) {
++        // Paper start - add recalculatePermissions parameter
++        this.sendPlayerPermissionLevel(player, permissionLevel, true);
++    }
++    public void sendPlayerPermissionLevel(ServerPlayer player, int permissionLevel, boolean recalculatePermissions) {
++        // Paper end
+         if (player.connection != null) {
+             byte b0;
+ 
+@@ -1137,8 +1142,10 @@ public abstract class PlayerList {
+             player.connection.send(new ClientboundEntityEventPacket(player, b0));
+         }
+ 
++        if (recalculatePermissions) { // Paper
+         player.getBukkitEntity().recalculatePermissions(); // CraftBukkit
+         this.server.getCommands().sendCommands(player);
++        } // Paper
+     }
+ 
+     // Paper start
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index a0b9a611b8b744c24c6263fac5be608b706232b7..d5d73ba9d6c7d1e91aa469c6d0e2df80393a621c 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -593,6 +593,13 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+             ? (org.bukkit.entity.Firework) entity.getBukkitEntity()
+             : null;
+     }
++
++    @Override
++    public void sendOpLevel(byte level) {
++        Preconditions.checkArgument(level >= 0 && level <= 4, "Level must be within [0, 4]");
++
++        this.getHandle().getServer().getPlayerList().sendPlayerPermissionLevel(this.getHandle(), level, false);
++    }
+     // Paper end
+ 
+     @Override
