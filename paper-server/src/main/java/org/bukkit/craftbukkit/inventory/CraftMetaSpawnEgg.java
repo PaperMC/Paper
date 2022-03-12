@@ -41,7 +41,7 @@ public class CraftMetaSpawnEgg extends CraftMetaItem implements SpawnEggMeta {
         super(tag);
 
         if (tag.contains(ENTITY_TAG.NBT)) {
-            entityTag = tag.getCompound(ENTITY_TAG.NBT);
+            entityTag = tag.getCompound(ENTITY_TAG.NBT).copy();
         }
     }
 

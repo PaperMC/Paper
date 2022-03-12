@@ -42,7 +42,7 @@ class CraftMetaTropicalFishBucket extends CraftMetaItem implements TropicalFishB
         }
 
         if (tag.contains(ENTITY_TAG.NBT)) {
-            entityTag = tag.getCompound(ENTITY_TAG.NBT);
+            entityTag = tag.getCompound(ENTITY_TAG.NBT).copy();
         }
     }
 

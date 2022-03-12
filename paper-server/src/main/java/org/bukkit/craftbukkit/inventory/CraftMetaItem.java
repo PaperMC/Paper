@@ -349,7 +349,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
             customModelData = tag.getInt(CUSTOM_MODEL_DATA.NBT);
         }
         if (tag.contains(BLOCK_DATA.NBT, CraftMagicNumbers.NBT.TAG_COMPOUND)) {
-            blockData = tag.getCompound(BLOCK_DATA.NBT);
+            blockData = tag.getCompound(BLOCK_DATA.NBT).copy();
         }
 
         this.enchantments = buildEnchantments(tag, ENCHANTMENTS);
@@ -372,14 +372,14 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
             NBTTagCompound compound = tag.getCompound(BUKKIT_CUSTOM_TAG.NBT);
             Set<String> keys = compound.getAllKeys();
             for (String key : keys) {
-                persistentDataContainer.put(key, compound.get(key));
+                persistentDataContainer.put(key, compound.get(key).copy());
             }
         }
 
         Set<String> keys = tag.getAllKeys();
         for (String key : keys) {
             if (!getHandledTags().contains(key)) {
-                unhandledTags.put(key, tag.get(key));
+                unhandledTags.put(key, tag.get(key).copy());
             }
         }
     }

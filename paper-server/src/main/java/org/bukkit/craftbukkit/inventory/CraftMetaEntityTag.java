@@ -29,7 +29,7 @@ public class CraftMetaEntityTag extends CraftMetaItem {
         super(tag);
 
         if (tag.contains(ENTITY_TAG.NBT)) {
-            entityTag = tag.getCompound(ENTITY_TAG.NBT);
+            entityTag = tag.getCompound(ENTITY_TAG.NBT).copy();
         }
     }
 
