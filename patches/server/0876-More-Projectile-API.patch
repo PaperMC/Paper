@@ -5,7 +5,7 @@ Subject: [PATCH] More Projectile API
 
 
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftFirework.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftFirework.java
-index be86114eac3975b82ca74d4d6ed3f0402a642e8a..a28178f2c2d4dda6481a58c73bada95aa95e6764 100644
+index be86114eac3975b82ca74d4d6ed3f0402a642e8a..93fd9e87de3078f50431b5d80540d4335d7c79e5 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftFirework.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftFirework.java
 @@ -14,24 +14,26 @@ import org.bukkit.inventory.meta.FireworkMeta;
@@ -49,7 +49,7 @@ index be86114eac3975b82ca74d4d6ed3f0402a642e8a..a28178f2c2d4dda6481a58c73bada95a
      }
  
      @Override
-@@ -51,13 +53,13 @@ public class CraftFirework extends CraftProjectile implements Firework {
+@@ -51,12 +53,12 @@ public class CraftFirework extends CraftProjectile implements Firework {
  
      @Override
      public FireworkMeta getFireworkMeta() {
@@ -60,12 +60,11 @@ index be86114eac3975b82ca74d4d6ed3f0402a642e8a..a28178f2c2d4dda6481a58c73bada95a
      @Override
      public void setFireworkMeta(FireworkMeta meta) {
 -        this.item.setItemMeta(meta);
- 
 +        applyFireworkEffect(meta); // Paper - Expose firework item directly
+ 
          // Copied from EntityFireworks constructor, update firework lifetime/power
          this.getHandle().lifetime = 10 * (1 + meta.getPower()) + this.random.nextInt(6) + this.random.nextInt(7);
- 
-@@ -91,4 +93,43 @@ public class CraftFirework extends CraftProjectile implements Firework {
+@@ -91,4 +93,46 @@ public class CraftFirework extends CraftProjectile implements Firework {
          return boostedEntity != null ? (org.bukkit.entity.LivingEntity) boostedEntity.getBukkitEntity() : null;
      }
      // Paper end
@@ -78,7 +77,7 @@ index be86114eac3975b82ca74d4d6ed3f0402a642e8a..a28178f2c2d4dda6481a58c73bada95a
 +    @Override
 +    public void setItem(org.bukkit.inventory.ItemStack itemStack) {
 +        FireworkMeta meta = getFireworkMeta();
-+        var nmsItem = itemStack == null ? ItemStack.EMPTY : CraftItemStack.asNMSCopy(itemStack);
++        ItemStack nmsItem = itemStack == null ? ItemStack.EMPTY : CraftItemStack.asNMSCopy(itemStack);
 +        this.getHandle().getEntityData().set(FireworkRocketEntity.DATA_ID_FIREWORKS_ITEM, nmsItem);
 +
 +        applyFireworkEffect(meta);
@@ -105,15 +104,18 @@ index be86114eac3975b82ca74d4d6ed3f0402a642e8a..a28178f2c2d4dda6481a58c73bada95a
 +    }
 +
 +    void applyFireworkEffect(FireworkMeta meta) {
-+        CraftItemStack.applyMetaToItem(this.getHandle().getEntityData().get(FireworkRocketEntity.DATA_ID_FIREWORKS_ITEM), meta);
++        ItemStack item = this.getHandle().getItem();
++        CraftItemStack.applyMetaToItem(item, meta);
++
++        this.getHandle().getEntityData().set(FireworkRocketEntity.DATA_ID_FIREWORKS_ITEM, item);
 +    }
 +    // Paper end - Expose firework item directly + manually setting flight
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftThrownPotion.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftThrownPotion.java
-index b08739dd1ffd041f0885af6c1f57dca9027763b6..aa3afdf320852e83bb530fff5616a61e33dbc30c 100644
+index b08739dd1ffd041f0885af6c1f57dca9027763b6..2edaae449f936b210a48c52ab8d921544c8a0005 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftThrownPotion.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftThrownPotion.java
-@@ -39,11 +39,25 @@ public class CraftThrownPotion extends CraftProjectile implements ThrownPotion {
+@@ -39,11 +39,26 @@ public class CraftThrownPotion extends CraftProjectile implements ThrownPotion {
          Validate.notNull(item, "ItemStack cannot be null.");
  
          // The ItemStack must be a potion.
@@ -133,8 +135,9 @@ index b08739dd1ffd041f0885af6c1f57dca9027763b6..aa3afdf320852e83bb530fff5616a61e
 +
 +    @Override
 +    public void setPotionMeta(org.bukkit.inventory.meta.PotionMeta meta) {
-+        CraftItemStack.applyMetaToItem(this.getHandle().getItemRaw(), meta);
-+        this.getHandle().setItem(this.getHandle().getItemRaw()); // Reset item
++        net.minecraft.world.item.ItemStack item = this.getHandle().getItem();
++        CraftItemStack.applyMetaToItem(item, meta);
++        this.getHandle().setItem(item); // Reset item
 +    }
 +    // Paper end
      @Override
