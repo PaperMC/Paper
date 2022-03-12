@@ -282,7 +282,7 @@
          }
  
          this.getChunkSource().getDataStorage().save();
-@@ -814,15 +908,34 @@
+@@ -814,15 +908,37 @@
  
      @Override
      public boolean addFreshEntity(Entity entity) {
@@ -311,7 +311,10 @@
      public void addDuringTeleport(Entity entity) {
 -        this.addEntity(entity);
 +        // CraftBukkit start
-+        this.addDuringTeleport(entity, CreatureSpawnEvent.SpawnReason.DEFAULT);
++        // SPIGOT-6415: Don't call spawn event for entities which travel trough worlds,
++        // since it is only an implementation detail, that a new entity is created when
++        // they are traveling between worlds.
++        this.addDuringTeleport(entity, null);
 +    }
 +
 +    public void addDuringTeleport(Entity entity, CreatureSpawnEvent.SpawnReason reason) {
@@ -320,7 +323,7 @@
      }
  
      public void addDuringCommandTeleport(EntityPlayer entityplayer) {
-@@ -853,24 +966,36 @@
+@@ -853,24 +969,37 @@
          this.entityManager.addNewEntity(entityplayer);
      }
  
@@ -332,7 +335,8 @@
 +            // WorldServer.LOGGER.warn("Tried to add entity {} but it was marked as removed already", EntityTypes.getKey(entity.getType())); // CraftBukkit
              return false;
          } else {
-+            if (!CraftEventFactory.doEntityAddEventCalling(this, entity, spawnReason)) {
++            // SPIGOT-6415: Don't call spawn event when reason is null. For example when an entity teleports to a new world.
++            if (spawnReason != null && !CraftEventFactory.doEntityAddEventCalling(this, entity, spawnReason)) {
 +                return false;
 +            }
 +            // CraftBukkit end
@@ -361,7 +365,7 @@
              return true;
          }
      }
-@@ -884,10 +1009,32 @@
+@@ -884,10 +1013,32 @@
          entityplayer.remove(entity_removalreason);
      }
  
@@ -394,7 +398,7 @@
          while (iterator.hasNext()) {
              EntityPlayer entityplayer = (EntityPlayer) iterator.next();
  
-@@ -896,6 +1043,12 @@
+@@ -896,6 +1047,12 @@
                  double d1 = (double) blockposition.getY() - entityplayer.getY();
                  double d2 = (double) blockposition.getZ() - entityplayer.getZ();
  
@@ -407,7 +411,7 @@
                  if (d0 * d0 + d1 * d1 + d2 * d2 < 1024.0D) {
                      entityplayer.connection.send(new PacketPlayOutBlockBreakAnimation(i, blockposition, j));
                  }
-@@ -950,7 +1103,18 @@
+@@ -950,7 +1107,18 @@
              Iterator iterator = this.navigatingMobs.iterator();
  
              while (iterator.hasNext()) {
@@ -427,7 +431,7 @@
                  NavigationAbstract navigationabstract = entityinsentient.getNavigation();
  
                  if (navigationabstract.shouldRecomputePath(blockposition)) {
-@@ -986,10 +1150,20 @@
+@@ -986,10 +1154,20 @@
  
      @Override
      public Explosion explode(@Nullable Entity entity, @Nullable DamageSource damagesource, @Nullable ExplosionDamageCalculator explosiondamagecalculator, double d0, double d1, double d2, float f, boolean flag, Explosion.Effect explosion_effect) {
@@ -448,7 +452,7 @@
          if (explosion_effect == Explosion.Effect.NONE) {
              explosion.clearToBlow();
          }
-@@ -1070,13 +1244,20 @@
+@@ -1070,13 +1248,20 @@
      }
  
      public <T extends ParticleParam> int sendParticles(T t0, double d0, double d1, double d2, int i, double d3, double d4, double d5, double d6) {
@@ -471,7 +475,7 @@
                  ++j;
              }
          }
-@@ -1127,7 +1308,7 @@
+@@ -1127,7 +1312,7 @@
  
      @Nullable
      public BlockPosition findNearestMapFeature(TagKey<StructureFeature<?, ?>> tagkey, BlockPosition blockposition, int i, boolean flag) {
@@ -480,7 +484,7 @@
              return null;
          } else {
              Optional<HolderSet.Named<StructureFeature<?, ?>>> optional = this.registryAccess().registryOrThrow(IRegistry.CONFIGURED_STRUCTURE_FEATURE_REGISTRY).getTag(tagkey);
-@@ -1169,11 +1350,21 @@
+@@ -1169,11 +1354,21 @@
      @Nullable
      @Override
      public WorldMap getMapData(String s) {
@@ -503,7 +507,7 @@
          this.getServer().overworld().getDataStorage().set(s, worldmap);
      }
  
-@@ -1485,6 +1676,11 @@
+@@ -1485,6 +1680,11 @@
      @Override
      public void blockUpdated(BlockPosition blockposition, Block block) {
          if (!this.isDebug()) {
@@ -515,7 +519,7 @@
              this.updateNeighborsAt(blockposition, block);
          }
  
-@@ -1504,12 +1700,12 @@
+@@ -1504,12 +1704,12 @@
      }
  
      public boolean isFlat() {
@@ -530,7 +534,7 @@
      }
  
      @Nullable
-@@ -1532,7 +1728,7 @@
+@@ -1532,7 +1732,7 @@
      private static <T> String getTypeCount(Iterable<T> iterable, Function<T, String> function) {
          try {
              Object2IntOpenHashMap<String> object2intopenhashmap = new Object2IntOpenHashMap();
@@ -539,7 +543,7 @@
  
              while (iterator.hasNext()) {
                  T t0 = iterator.next();
-@@ -1541,7 +1737,7 @@
+@@ -1541,7 +1741,7 @@
                  object2intopenhashmap.addTo(s, 1);
              }
  
@@ -548,7 +552,7 @@
                  String s1 = (String) entry.getKey();
  
                  return s1 + ":" + entry.getIntValue();
-@@ -1552,17 +1748,33 @@
+@@ -1552,17 +1752,33 @@
      }
  
      public static void makeObsidianPlatform(WorldServer worldserver) {
@@ -584,7 +588,7 @@
      }
  
      @Override
-@@ -1672,6 +1884,7 @@
+@@ -1672,6 +1888,7 @@
                  }
              }
  
@@ -592,7 +596,7 @@
          }
  
          public void onTrackingEnd(Entity entity) {
-@@ -1713,6 +1926,14 @@
+@@ -1713,6 +1930,14 @@
                  gameeventlistenerregistrar.onListenerRemoved(entity.level);
              }
  
