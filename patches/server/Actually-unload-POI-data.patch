@@ -22,14 +22,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  this.updatingChunks.queueUpdate(pos, holder); // Paper - Don't copy
                  this.modified = true;
 @@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
-         return this.lightEngine.hasLightWork() || !this.pendingUnloads.isEmpty() || !this.updatingChunks.getUpdatingValuesCopy().isEmpty() || this.poiManager.hasWork() || !this.toDrop.isEmpty() || !this.unloadQueue.isEmpty() || this.queueSorter.hasWork() || this.distanceManager.hasTickets(); // Paper
-     }
- 
--    private static final double UNLOAD_QUEUE_RESIZE_FACTOR = 0.90; // Spigot // Paper - unload more
-+    public static final double UNLOAD_QUEUE_RESIZE_FACTOR = 0.90; // Spigot // Paper - unload more
  
      private void processUnloads(BooleanSupplier shouldKeepTicking) {
          LongIterator longiterator = this.toDrop.iterator();
+-        for (int i = 0; longiterator.hasNext() && (shouldKeepTicking.getAsBoolean() || i < 200 || this.toDrop.size() > 2000); longiterator.remove()) {
++        for (int i = 0; longiterator.hasNext() && (shouldKeepTicking.getAsBoolean() || i < 200 || this.toDrop.size() > 2000); longiterator.remove()) { // Paper - diff on change
+             long j = longiterator.nextLong();
+             ChunkHolder playerchunk = this.updatingChunks.queueRemove(j); // Paper - Don't copy
+ 
 @@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
                          this.regionManagers.get(index).removeChunk(holder.pos.x, holder.pos.z);
                      }
@@ -169,9 +169,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        net.minecraft.server.level.ServerChunkCache chunkProvider = this.world.getChunkSource();
 +        net.minecraft.server.level.ChunkMap playerChunkMap = chunkProvider.chunkMap;
 +        // copied target determination from PlayerChunkMap
-+        int target = Math.min(this.queuedUnloads.size() - 100,  (int) (this.queuedUnloads.size() * net.minecraft.server.level.ChunkMap.UNLOAD_QUEUE_RESIZE_FACTOR)); // Paper - Make more aggressive
-+        for (java.util.Iterator<QueuedUnload> iterator = this.queuedUnloads.iterator();
-+             iterator.hasNext() && (this.queuedUnloads.size() > target || canSleepForTick.getAsBoolean());) {
++
++        java.util.Iterator<QueuedUnload> iterator = this.queuedUnloads.iterator();
++        for (int i = 0; iterator.hasNext() && (i < 200 || this.queuedUnloads.size() > 2000 || canSleepForTick.getAsBoolean()); i++) {
 +            QueuedUnload unload = iterator.next();
 +            if (unload.unloadTick > currentTick) {
 +                break;
