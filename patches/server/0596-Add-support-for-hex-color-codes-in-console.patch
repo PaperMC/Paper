@@ -21,10 +21,10 @@ index a0a3cec47c8f9e379a5bc1d43eeda5eb9d81f814..23d849872109e43d6e22a953d3a42985
  
      public static boolean allowBlockPermanentBreakingExploits = false;
 diff --git a/src/main/java/com/destroystokyo/paper/console/TerminalConsoleCommandSender.java b/src/main/java/com/destroystokyo/paper/console/TerminalConsoleCommandSender.java
-index 685deaa0e5d1ddc13e3a7c0471b1cfcf1710c869..aa574c646ee9c9951d183c80e1a0fe10c21850a0 100644
+index 685deaa0e5d1ddc13e3a7c0471b1cfcf1710c869..84243e10c115104cadfe84c4f152f53c1b5f7c6f 100644
 --- a/src/main/java/com/destroystokyo/paper/console/TerminalConsoleCommandSender.java
 +++ b/src/main/java/com/destroystokyo/paper/console/TerminalConsoleCommandSender.java
-@@ -1,5 +1,11 @@
+@@ -1,5 +1,10 @@
  package com.destroystokyo.paper.console;
  
 +import io.papermc.paper.adventure.PaperAdventure;
@@ -32,19 +32,10 @@ index 685deaa0e5d1ddc13e3a7c0471b1cfcf1710c869..aa574c646ee9c9951d183c80e1a0fe10
 +import net.kyori.adventure.audience.MessageType;
 +import net.kyori.adventure.identity.Identity;
 +import net.kyori.adventure.text.Component;
-+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
  import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
  import org.bukkit.craftbukkit.command.CraftConsoleCommandSender;
-@@ -7,11 +13,21 @@ import org.bukkit.craftbukkit.command.CraftConsoleCommandSender;
- public class TerminalConsoleCommandSender extends CraftConsoleCommandSender {
- 
-     private static final Logger LOGGER = LogManager.getRootLogger();
-+    private static final LegacyComponentSerializer SERIALIZER = LegacyComponentSerializer.builder()
-+        .hexColors()
-+        .flattener(PaperAdventure.FLATTENER)
-+        .character(HexFormattingConverter.COLOR_CHAR)
-+        .build();
+@@ -10,8 +15,13 @@ public class TerminalConsoleCommandSender extends CraftConsoleCommandSender {
  
      @Override
      public void sendRawMessage(String message) {
@@ -56,21 +47,23 @@ index 685deaa0e5d1ddc13e3a7c0471b1cfcf1710c869..aa574c646ee9c9951d183c80e1a0fe10
 +
 +    @Override
 +    public void sendMessage(Identity identity, Component message, MessageType type) {
-+        LOGGER.info(SERIALIZER.serialize(message));
++        LOGGER.info(HexFormattingConverter.SERIALIZER.serialize(message));
      }
  
  }
 diff --git a/src/main/java/io/papermc/paper/console/HexFormattingConverter.java b/src/main/java/io/papermc/paper/console/HexFormattingConverter.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..7800125d0ce59547b9a12b74b9de851ce2ee2f92
+index 0000000000000000000000000000000000000000..ea83ee8762c126c449993a7497257b0bd8663452
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/console/HexFormattingConverter.java
-@@ -0,0 +1,205 @@
+@@ -0,0 +1,212 @@
 +package io.papermc.paper.console;
 +
 +import com.destroystokyo.paper.PaperConfig;
++import io.papermc.paper.adventure.PaperAdventure;
 +import net.kyori.adventure.text.format.NamedTextColor;
 +import net.kyori.adventure.text.format.TextColor;
++import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 +import net.minecrell.terminalconsole.TerminalConsoleAppender;
 +import org.apache.logging.log4j.core.LogEvent;
 +import org.apache.logging.log4j.core.config.Configuration;
@@ -103,7 +96,12 @@ index 0000000000000000000000000000000000000000..7800125d0ce59547b9a12b74b9de851c
 +
 +    private static final String ANSI_RESET = "\u001B[m";
 +
-+    public static final char COLOR_CHAR = 0x7f;
++    private static final char COLOR_CHAR = 0x7f;
++    public static final LegacyComponentSerializer SERIALIZER = LegacyComponentSerializer.builder()
++        .hexColors()
++        .flattener(PaperAdventure.FLATTENER)
++        .character(HexFormattingConverter.COLOR_CHAR)
++        .build();
 +    private static final String LOOKUP = "0123456789abcdefklmnor";
 +
 +    private static final String RGB_ANSI = "\u001B[38;2;%d;%d;%dm";
@@ -271,6 +269,19 @@ index 0000000000000000000000000000000000000000..7800125d0ce59547b9a12b74b9de851c
 +    }
 +
 +}
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 9fb306fdb2071ffcd16e9bb83da75c8923f2ba8e..7aba7d63727f6c7bbc074b5df5421ea449224ba4 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -1716,7 +1716,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+ 
+     @Override
+     public void sendMessage(Component message, UUID sender) {
+-        MinecraftServer.LOGGER.info(io.papermc.paper.adventure.PaperAdventure.LEGACY_SECTION_UXRC.serialize(io.papermc.paper.adventure.PaperAdventure.asAdventure(message))); // Paper - Log message with colors
++        MinecraftServer.LOGGER.info(io.papermc.paper.console.HexFormattingConverter.SERIALIZER.serialize(io.papermc.paper.adventure.PaperAdventure.asAdventure(message))); // Paper - Log message with colors
+     }
+ 
+     public KeyPair getKeyPair() {
 diff --git a/src/main/resources/log4j2.xml b/src/main/resources/log4j2.xml
 index 1a05d23ff886b015fb9396f119822c678a47ec6f..2e421eaac80cf251b32e0bb504dd54a73edf4986 100644
 --- a/src/main/resources/log4j2.xml
