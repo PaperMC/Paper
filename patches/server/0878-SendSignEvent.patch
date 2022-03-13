@@ -6,10 +6,10 @@ Subject: [PATCH] SendSignEvent
 
 diff --git a/src/main/java/io/papermc/paper/block/SendSignEventImpl.java b/src/main/java/io/papermc/paper/block/SendSignEventImpl.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..d4fc17586ff4eb07708636ad9ad8c56ea7a882a6
+index 0000000000000000000000000000000000000000..9c0ac5fe927728279842d92cc85a0979534f2107
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/block/SendSignEventImpl.java
-@@ -0,0 +1,54 @@
+@@ -0,0 +1,55 @@
 +package io.papermc.paper.block;
 +
 +import io.papermc.paper.event.block.SendSignEvent;
@@ -51,7 +51,7 @@ index 0000000000000000000000000000000000000000..d4fc17586ff4eb07708636ad9ad8c56e
 +
 +    @Override
 +    @NotNull
-+    public List<net.kyori.adventure.text.Component> getLines() {
++    public List<net.kyori.adventure.text.Component> lines() {
 +        return lines;
 +    }
 +
@@ -59,13 +59,14 @@ index 0000000000000000000000000000000000000000..d4fc17586ff4eb07708636ad9ad8c56e
 +        return filteredMessages;
 +    }
 +
-+    public void setLine(int line, net.kyori.adventure.text.Component component) {
++    @Override
++    public void line(int line, net.kyori.adventure.text.Component component) {
 +        lines.set(line, component != null ? component : net.kyori.adventure.text.Component.empty());
 +        filteredMessages[line] = TextComponent.EMPTY;
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/world/level/block/entity/SignBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/SignBlockEntity.java
-index 6371176fba41218a209ea59b4cafe5b2d4a685fd..fba8368c89dc7edeaa5aceb47d59c30b9e1d23fc 100644
+index 6371176fba41218a209ea59b4cafe5b2d4a685fd..3a7d1186a86860cab3fc00f98359d263353d2a3d 100644
 --- a/src/main/java/net/minecraft/world/level/block/entity/SignBlockEntity.java
 +++ b/src/main/java/net/minecraft/world/level/block/entity/SignBlockEntity.java
 @@ -27,6 +27,7 @@ import net.minecraft.world.phys.Vec3;
@@ -80,11 +81,11 @@ index 6371176fba41218a209ea59b4cafe5b2d4a685fd..fba8368c89dc7edeaa5aceb47d59c30b
      protected void saveAdditional(CompoundTag nbt) {
          super.saveAdditional(nbt);
  
-+        // Paper
++        // Paper start
 +        if (isSending && this.level != null) {
 +            var signSendEvent = new io.papermc.paper.block.SendSignEventImpl(this.level, this.worldPosition, this.messages, this.filteredMessages);
 +            signSendEvent.callEvent();
-+            final java.util.List<net.kyori.adventure.text.Component> lines = signSendEvent.getLines();
++            final java.util.List<net.kyori.adventure.text.Component> lines = signSendEvent.lines();
 +            final java.util.List<Component> lineComponents = io.papermc.paper.adventure.PaperAdventure.asVanilla(lines);
 +            final Component[] filteredMessages = signSendEvent.getFilteredMessages();
 +            for (int i = 0; i < 4; ++i) {
