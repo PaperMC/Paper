@@ -13,7 +13,7 @@ starting point for future additions in this area.
 Fixes GH-559
 
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaArmorStand.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaArmorStand.java
-index aee796567f11c8b93ac9ec0b8cb8f3a8412b23ce..39b98305632271e7375afe6c7001f241c17e103d 100644
+index 1b8be8a7103e09065a405a22d427b9a747fc1a3e..2afedf24e485dd36e95988843c70af880d679b1f 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaArmorStand.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaArmorStand.java
 @@ -9,9 +9,22 @@ import org.bukkit.configuration.serialization.DelegateDeserialization;
@@ -54,11 +54,10 @@ index aee796567f11c8b93ac9ec0b8cb8f3a8412b23ce..39b98305632271e7375afe6c7001f241
          this.entityTag = armorStand.entityTag;
      }
  
-@@ -30,11 +50,40 @@ public class CraftMetaArmorStand extends CraftMetaItem {
+@@ -30,11 +50,39 @@ public class CraftMetaArmorStand extends CraftMetaItem {
  
          if (tag.contains(ENTITY_TAG.NBT)) {
-             this.entityTag = tag.getCompound(ENTITY_TAG.NBT);
-+
+             this.entityTag = tag.getCompound(ENTITY_TAG.NBT).copy();
 +            // Paper start
 +            if (entityTag.contains(INVISIBLE.NBT)) {
 +                invisible = entityTag.getBoolean(INVISIBLE.NBT);
@@ -95,7 +94,7 @@ index aee796567f11c8b93ac9ec0b8cb8f3a8412b23ce..39b98305632271e7375afe6c7001f241
      }
  
      @Override
-@@ -57,6 +106,31 @@ public class CraftMetaArmorStand extends CraftMetaItem {
+@@ -57,6 +105,31 @@ public class CraftMetaArmorStand extends CraftMetaItem {
      void applyToItem(CompoundTag tag) {
          super.applyToItem(tag);
  
@@ -127,7 +126,7 @@ index aee796567f11c8b93ac9ec0b8cb8f3a8412b23ce..39b98305632271e7375afe6c7001f241
          if (this.entityTag != null) {
              tag.put(ENTITY_TAG.NBT, entityTag);
          }
-@@ -78,7 +152,7 @@ public class CraftMetaArmorStand extends CraftMetaItem {
+@@ -78,7 +151,7 @@ public class CraftMetaArmorStand extends CraftMetaItem {
      }
  
      boolean isArmorStandEmpty() {
@@ -136,7 +135,7 @@ index aee796567f11c8b93ac9ec0b8cb8f3a8412b23ce..39b98305632271e7375afe6c7001f241
      }
  
      @Override
-@@ -89,7 +163,13 @@ public class CraftMetaArmorStand extends CraftMetaItem {
+@@ -89,7 +162,13 @@ public class CraftMetaArmorStand extends CraftMetaItem {
          if (meta instanceof CraftMetaArmorStand) {
              CraftMetaArmorStand that = (CraftMetaArmorStand) meta;
  
@@ -151,7 +150,7 @@ index aee796567f11c8b93ac9ec0b8cb8f3a8412b23ce..39b98305632271e7375afe6c7001f241
          }
          return true;
      }
-@@ -104,9 +184,14 @@ public class CraftMetaArmorStand extends CraftMetaItem {
+@@ -104,9 +183,14 @@ public class CraftMetaArmorStand extends CraftMetaItem {
          final int original;
          int hash = original = super.applyHash();
  
@@ -169,7 +168,7 @@ index aee796567f11c8b93ac9ec0b8cb8f3a8412b23ce..39b98305632271e7375afe6c7001f241
  
          return original != hash ? CraftMetaArmorStand.class.hashCode() ^ hash : hash;
      }
-@@ -115,6 +200,28 @@ public class CraftMetaArmorStand extends CraftMetaItem {
+@@ -115,6 +199,28 @@ public class CraftMetaArmorStand extends CraftMetaItem {
      Builder<String, Object> serialize(Builder<String, Object> builder) {
          super.serialize(builder);
  
@@ -198,7 +197,7 @@ index aee796567f11c8b93ac9ec0b8cb8f3a8412b23ce..39b98305632271e7375afe6c7001f241
          return builder;
      }
  
-@@ -128,4 +235,56 @@ public class CraftMetaArmorStand extends CraftMetaItem {
+@@ -128,4 +234,56 @@ public class CraftMetaArmorStand extends CraftMetaItem {
  
          return clone;
      }
@@ -256,7 +255,7 @@ index aee796567f11c8b93ac9ec0b8cb8f3a8412b23ce..39b98305632271e7375afe6c7001f241
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
-index 51d37a8963a2f8f5381bf802e28e5dfcdcc27eaa..2244a3c61f4effd365ed5fc010ecd1a4858b53a8 100644
+index 3f34d3989df1fedf625dc2bd767794067d8a0c06..ba8a8865e72faa826cb5abff3c428b5a2634bb27 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
 @@ -1445,6 +1445,14 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {

@@ -5001,18 +5001,18 @@ index 0000000000000000000000000000000000000000..9f292deee1b793d52b5774304318e940
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index a47303382db64d8121c6252d70739d597cfd6231..9db23400a5538200ae26ef620da7bafb7fe75c37 100644
+index 868f6799a0e406401eecf18bc939fbdf88f534a2..dd8d14a1b128f801a4e1c811de5990d2602feeb2 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -296,6 +296,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -294,6 +294,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+     private static final int SAMPLE_INTERVAL = 100;
      public final double[] recentTps = new double[ 3 ];
-     public final SlackActivityAccountant slackActivityAccountant = new SlackActivityAccountant();
      // Spigot end
 +    public static long currentTickLong = 0L; // Paper
  
      public static <S extends MinecraftServer> S spin(Function<Thread, S> serverFactory) {
          AtomicReference<S> atomicreference = new AtomicReference();
-@@ -963,6 +964,9 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -961,6 +962,9 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
              MinecraftServer.LOGGER.error("Failed to unlock level {}", this.storageSource.getLevelId(), ioexception1);
          }
          // Spigot start
@@ -5022,7 +5022,7 @@ index a47303382db64d8121c6252d70739d597cfd6231..9db23400a5538200ae26ef620da7bafb
          if (org.spigotmc.SpigotConfig.saveUserCacheOnStopOnly) {
              MinecraftServer.LOGGER.info("Saving usercache.json");
              this.getProfileCache().save();
-@@ -1025,6 +1029,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1023,6 +1027,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
                          this.lastOverloadWarning = this.nextTickTime;
                      }
  
@@ -5030,7 +5030,7 @@ index a47303382db64d8121c6252d70739d597cfd6231..9db23400a5538200ae26ef620da7bafb
                      if ( tickCount++ % MinecraftServer.SAMPLE_INTERVAL == 0 )
                      {
                          double currentTps = 1E3 / ( curTime - tickSection ) * MinecraftServer.SAMPLE_INTERVAL;
-@@ -1267,7 +1272,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1264,7 +1269,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
              MinecraftServer.LOGGER.debug("Autosave finished");
              SpigotTimings.worldSaveTimer.stopTiming(); // Spigot
          }
@@ -5039,7 +5039,7 @@ index a47303382db64d8121c6252d70739d597cfd6231..9db23400a5538200ae26ef620da7bafb
          this.profiler.push("tallying");
          long l = this.tickTimes[this.tickCount % 100] = Util.getNanos() - i;
  
-@@ -1330,6 +1335,11 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1326,6 +1331,11 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
              try {
                  worldserver.timings.doTick.startTiming(); // Spigot
                  worldserver.tick(shouldKeepTicking);
@@ -5296,7 +5296,7 @@ index d1a053dbade32fde28784c79659d9b150c90ed93..2b936c67265f3c672d3b623e6aedd81e
 +    // Paper end
  }
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index 27592093939d3ee3d0395527eead160ecec9330c..a5eb77f3d7cdbf656d11e97f4c27054b1d38b5d2 100644
+index aa9bde92a48ab151145c3b0a77aa8beb6ecc1b5e..d9202f7a5b17d8a5c063c8aba4ce22a53d8f59af 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
 @@ -62,6 +62,7 @@ import net.minecraft.network.protocol.game.ClientboundSetChunkCacheCenterPacket;
@@ -5402,7 +5402,7 @@ index 27592093939d3ee3d0395527eead160ecec9330c..a5eb77f3d7cdbf656d11e97f4c27054b
                  }
  
                  this.updatingChunkMap.put(pos, holder);
-@@ -547,7 +615,13 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -535,7 +603,13 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
              if (completablefuture1 != completablefuture) {
                  this.scheduleUnload(pos, holder);
              } else {
@@ -5417,7 +5417,7 @@ index 27592093939d3ee3d0395527eead160ecec9330c..a5eb77f3d7cdbf656d11e97f4c27054b
                      if (ichunkaccess instanceof LevelChunk) {
                          ((LevelChunk) ichunkaccess).setLoaded(false);
                      }
-@@ -563,7 +637,11 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -551,7 +625,11 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
                      this.lightEngine.tryScheduleUpdate();
                      this.progressListener.onStatusChange(ichunkaccess.getPos(), (ChunkStatus) null);
                      this.chunkSaveCooldowns.remove(ichunkaccess.getPos().toLong());
@@ -5429,7 +5429,7 @@ index 27592093939d3ee3d0395527eead160ecec9330c..a5eb77f3d7cdbf656d11e97f4c27054b
  
              }
          };
-@@ -1111,6 +1189,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1099,6 +1177,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
              if (!flag1) {
                  this.distanceManager.addPlayer(SectionPos.of((Entity) player), player);
              }
@@ -5437,7 +5437,7 @@ index 27592093939d3ee3d0395527eead160ecec9330c..a5eb77f3d7cdbf656d11e97f4c27054b
          } else {
              SectionPos sectionposition = player.getLastSectionPos();
  
-@@ -1118,6 +1197,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1106,6 +1185,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
              if (!flag2) {
                  this.distanceManager.removePlayer(sectionposition, player);
              }
@@ -5445,7 +5445,7 @@ index 27592093939d3ee3d0395527eead160ecec9330c..a5eb77f3d7cdbf656d11e97f4c27054b
          }
  
          for (int k = i - this.viewDistance - 1; k <= i + this.viewDistance + 1; ++k) {
-@@ -1230,6 +1310,8 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1218,6 +1298,8 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
              }
          }
  
@@ -5454,7 +5454,7 @@ index 27592093939d3ee3d0395527eead160ecec9330c..a5eb77f3d7cdbf656d11e97f4c27054b
      }
  
      @Override
-@@ -1433,7 +1515,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1421,7 +1503,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
      public class ChunkDistanceManager extends DistanceManager {
  
          protected ChunkDistanceManager(Executor workerExecutor, Executor mainThreadExecutor) {
