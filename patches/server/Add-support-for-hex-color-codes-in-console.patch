@@ -32,19 +32,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import net.kyori.adventure.audience.MessageType;
 +import net.kyori.adventure.identity.Identity;
 +import net.kyori.adventure.text.Component;
-+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
  import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
  import org.bukkit.craftbukkit.command.CraftConsoleCommandSender;
-@@ -0,0 +0,0 @@ import org.bukkit.craftbukkit.command.CraftConsoleCommandSender;
- public class TerminalConsoleCommandSender extends CraftConsoleCommandSender {
- 
-     private static final Logger LOGGER = LogManager.getRootLogger();
-+    private static final LegacyComponentSerializer SERIALIZER = LegacyComponentSerializer.builder()
-+        .hexColors()
-+        .flattener(PaperAdventure.FLATTENER)
-+        .character(HexFormattingConverter.COLOR_CHAR)
-+        .build();
+@@ -0,0 +0,0 @@ public class TerminalConsoleCommandSender extends CraftConsoleCommandSender {
  
      @Override
      public void sendRawMessage(String message) {
@@ -56,7 +47,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    @Override
 +    public void sendMessage(Identity identity, Component message, MessageType type) {
-+        LOGGER.info(SERIALIZER.serialize(message));
++        LOGGER.info(HexFormattingConverter.SERIALIZER.serialize(message));
      }
  
  }
@@ -69,8 +60,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +package io.papermc.paper.console;
 +
 +import com.destroystokyo.paper.PaperConfig;
++import io.papermc.paper.adventure.PaperAdventure;
 +import net.kyori.adventure.text.format.NamedTextColor;
 +import net.kyori.adventure.text.format.TextColor;
++import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 +import net.minecrell.terminalconsole.TerminalConsoleAppender;
 +import org.apache.logging.log4j.core.LogEvent;
 +import org.apache.logging.log4j.core.config.Configuration;
@@ -103,7 +96,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    private static final String ANSI_RESET = "\u001B[m";
 +
-+    public static final char COLOR_CHAR = 0x7f;
++    private static final char COLOR_CHAR = 0x7f;
++    public static final LegacyComponentSerializer SERIALIZER = LegacyComponentSerializer.builder()
++        .hexColors()
++        .flattener(PaperAdventure.FLATTENER)
++        .character(HexFormattingConverter.COLOR_CHAR)
++        .build();
 +    private static final String LOOKUP = "0123456789abcdefklmnor";
 +
 +    private static final String RGB_ANSI = "\u001B[38;2;%d;%d;%dm";
@@ -271,6 +269,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +
 +}
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -0,0 +0,0 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+ 
+     @Override
+     public void sendMessage(Component message, UUID sender) {
+-        MinecraftServer.LOGGER.info(io.papermc.paper.adventure.PaperAdventure.LEGACY_SECTION_UXRC.serialize(io.papermc.paper.adventure.PaperAdventure.asAdventure(message))); // Paper - Log message with colors
++        MinecraftServer.LOGGER.info(io.papermc.paper.console.HexFormattingConverter.SERIALIZER.serialize(io.papermc.paper.adventure.PaperAdventure.asAdventure(message))); // Paper - Log message with colors
+     }
+ 
+     public KeyPair getKeyPair() {
 diff --git a/src/main/resources/log4j2.xml b/src/main/resources/log4j2.xml
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/resources/log4j2.xml
