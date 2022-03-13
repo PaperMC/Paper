@@ -1,0 +1,187 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sun, 13 Mar 2022 12:23:06 -0700
+Subject: [PATCH] Rework world/dimension storage
+
+
+diff --git a/src/main/java/io/papermc/paper/world/generation/WorldStem.java b/src/main/java/io/papermc/paper/world/generation/WorldStem.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..d2b6a24f2449ab32614900b0d6a144e4f445cc96
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/world/generation/WorldStem.java
+@@ -0,0 +1,53 @@
++package io.papermc.paper.world.generation;
++
++import io.papermc.paper.registry.Reference;
++import org.bukkit.Keyed;
++import org.bukkit.NamespacedKey;
++import org.bukkit.Registry;
++import org.bukkit.World;
++import org.jetbrains.annotations.NotNull;
++
++public final class WorldStem implements Keyed {
++
++    public static final Reference<WorldStem> OVERWORLD = create("overworld");
++    public static final Reference<WorldStem> THE_NETHER = create("the_nether");
++    public static final Reference<WorldStem> THE_END = create("the_end");
++
++    private final NamespacedKey key;
++
++    WorldStem(@NotNull NamespacedKey key) {
++        this.key = key;
++    }
++
++    @Override
++    public @NotNull NamespacedKey getKey() {
++        return this.key;
++    }
++
++    private static Reference<WorldStem> create(@NotNull String name) {
++        return Reference.create(Registry.WORLD_STEM, NamespacedKey.minecraft(name));
++    }
++
++    @Deprecated
++    public static World.Environment convertToLegacy(Reference<WorldStem> worldStem) {
++        if (worldStem.equals(WorldStem.OVERWORLD)) {
++            return World.Environment.NORMAL;
++        } else if (worldStem.equals(WorldStem.THE_NETHER)) {
++            return World.Environment.NETHER;
++        } else if (worldStem.equals(WorldStem.THE_END)) {
++            return World.Environment.THE_END;
++        } else {
++            return World.Environment.CUSTOM;
++        }
++    }
++    
++    @Deprecated
++    public static Reference<WorldStem> convertFromLegacy(World.Environment environment) {
++        return switch (environment) {
++            case NORMAL -> WorldStem.OVERWORLD;
++            case NETHER -> WorldStem.THE_NETHER;
++            case THE_END -> WorldStem.THE_END;
++            case CUSTOM -> throw new IllegalArgumentException("Don't use the deprecated World.Environment#CUSTOM");
++        };
++    }
++}
+diff --git a/src/main/java/org/bukkit/Registry.java b/src/main/java/org/bukkit/Registry.java
+index 41363490b1e72d53ab3f1f26fe464858bb7b8f72..e7b1b5e078329e10f059522933869680dbcf2063 100644
+--- a/src/main/java/org/bukkit/Registry.java
++++ b/src/main/java/org/bukkit/Registry.java
+@@ -233,6 +233,7 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
+             return StructureType.getStructureTypes().values().iterator();
+         }
+     };
++    Registry<io.papermc.paper.world.generation.WorldStem> WORLD_STEM = Bukkit.getUnsafe().registryFor(io.papermc.paper.world.generation.WorldStem.class);
+     // Paper end
+ 
+     /**
+diff --git a/src/main/java/org/bukkit/WorldCreator.java b/src/main/java/org/bukkit/WorldCreator.java
+index 14986911b4d0099ea2c91ab2196a771b7dee4c50..b581cd792b767d58f29f93f1c635b14df9c647ee 100644
+--- a/src/main/java/org/bukkit/WorldCreator.java
++++ b/src/main/java/org/bukkit/WorldCreator.java
+@@ -15,7 +15,7 @@ public class WorldCreator {
+     private final NamespacedKey key; // Paper
+     private final String name;
+     private long seed;
+-    private World.Environment environment = World.Environment.NORMAL;
++    private io.papermc.paper.registry.Reference<io.papermc.paper.world.generation.WorldStem> environment = io.papermc.paper.world.generation.WorldStem.OVERWORLD;
+     private ChunkGenerator generator = null;
+     private BiomeProvider biomeProvider = null;
+     private WorldType type = WorldType.NORMAL;
+@@ -104,7 +104,7 @@ public class WorldCreator {
+         }
+ 
+         seed = world.getSeed();
+-        environment = world.getEnvironment();
++        environment = world.worldStem();
+         generator = world.getGenerator();
+         biomeProvider = world.getBiomeProvider();
+         type = world.getWorldType();
+@@ -127,7 +127,7 @@ public class WorldCreator {
+         }
+ 
+         seed = creator.seed();
+-        environment = creator.environment();
++        environment = creator.worldStem();
+         generator = creator.generator();
+         biomeProvider = creator.biomeProvider();
+         type = creator.type();
+@@ -170,14 +170,38 @@ public class WorldCreator {
+         return this;
+     }
+ 
++    // Paper start
++    /**
++     * Gets the world stem for this creator.
++     *
++     * @return the world stem
++     */
++    public io.papermc.paper.registry.Reference<io.papermc.paper.world.generation.WorldStem> worldStem() {
++        return this.environment;
++    }
++
++    /**
++     * Sets the world stem for this creator.
++     *
++     * @param worldStem the new world stem
++     * @return the creator
++     */
++    public WorldCreator worldStem(@NotNull io.papermc.paper.registry.Reference<io.papermc.paper.world.generation.WorldStem> worldStem) {
++        this.environment = worldStem;
++        return this;
++    }
++    // Paper end
++
+     /**
+      * Gets the environment that will be used to create or load the world
+      *
+      * @return World environment
++     * @deprecated use {@link #worldStem()}
+      */
+     @NotNull
++    @Deprecated // Paper
+     public World.Environment environment() {
+-        return environment;
++        return io.papermc.paper.world.generation.WorldStem.convertToLegacy(this.environment); // Paper
+     }
+ 
+     /**
+@@ -185,11 +209,12 @@ public class WorldCreator {
+      *
+      * @param env World environment
+      * @return This object, for chaining
++     * @deprecated use {@link }
+      */
+     @NotNull
++    @Deprecated // Paper
+     public WorldCreator environment(@NotNull World.Environment env) {
+-        this.environment = env;
+-
++        this.environment = io.papermc.paper.world.generation.WorldStem.convertFromLegacy(env); // Paper
+         return this;
+     }
+ 
+diff --git a/src/main/java/org/bukkit/generator/WorldInfo.java b/src/main/java/org/bukkit/generator/WorldInfo.java
+index 5067f1371433cccd3287af7f03e152f2c3c1ece3..a78b0c42bfa7bbf70fa6f35caf8a41c1bcd03091 100644
+--- a/src/main/java/org/bukkit/generator/WorldInfo.java
++++ b/src/main/java/org/bukkit/generator/WorldInfo.java
+@@ -29,10 +29,19 @@ public interface WorldInfo {
+      * Gets the {@link World.Environment} type of this world
+      *
+      * @return This worlds Environment type
++     * @deprecated use {@link #worldStem()}
+      */
+     @NotNull
++    @Deprecated // Paper
+     World.Environment getEnvironment();
+ 
++    /**
++     * Gets the world stem for this world.
++     *
++     * @return the world stem
++     */
++    io.papermc.paper.registry.Reference<io.papermc.paper.world.generation.WorldStem> worldStem();
++
+     /**
+      * Gets the Seed for this world.
+      *
