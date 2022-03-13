@@ -77,19 +77,32 @@ index 3b4764986302194882e009fe20a9d6406cf2be8e..008c15164a7affb785964f604f8fea93
  
      /**
 diff --git a/src/test/java/io/papermc/paper/world/TranslationKeyTest.java b/src/test/java/io/papermc/paper/world/TranslationKeyTest.java
-index 6cd015dc5a2e012ac827c2b2d9aa5542b0591afb..b2e73df86683b88c83349b6d13456f5b051ac5d5 100644
+index 6cd015dc5a2e012ac827c2b2d9aa5542b0591afb..a5a4026a09b45d7af70a56ce65b8382ac4b22efc 100644
 --- a/src/test/java/io/papermc/paper/world/TranslationKeyTest.java
 +++ b/src/test/java/io/papermc/paper/world/TranslationKeyTest.java
-@@ -7,7 +7,7 @@ import org.bukkit.Difficulty;
+@@ -3,11 +3,20 @@ package io.papermc.paper.world;
+ import com.destroystokyo.paper.ClientOption;
+ import net.minecraft.network.chat.TranslatableComponent;
+ import net.minecraft.world.entity.player.ChatVisiblity;
++import net.minecraft.world.item.CreativeModeTab;
+ import org.bukkit.Difficulty;
++import org.bukkit.FireworkEffect;
++import org.bukkit.GameRule;
++import org.bukkit.attribute.Attribute;
++import org.bukkit.craftbukkit.inventory.CraftCreativeCategory;
++import org.bukkit.inventory.CreativeCategory;
++import org.bukkit.support.AbstractTestingBase;
  import org.junit.Assert;
  import org.junit.Test;
  
 -public class TranslationKeyTest {
-+public class TranslationKeyTest extends org.bukkit.support.AbstractTestingBase {
++import java.util.Objects;
++
++public class TranslationKeyTest extends AbstractTestingBase {
  
      @Test
      public void testChatVisibilityKeys() {
-@@ -16,4 +16,32 @@ public class TranslationKeyTest {
+@@ -16,4 +25,43 @@ public class TranslationKeyTest {
              Assert.assertEquals(chatVisibility + "'s translation key doesn't match", ChatVisiblity.valueOf(chatVisibility.name()).getKey(), chatVisibility.translationKey());
          }
      }
@@ -103,22 +116,33 @@ index 6cd015dc5a2e012ac827c2b2d9aa5542b0591afb..b2e73df86683b88c83349b6d13456f5b
 +
 +    @Test
 +    public void testGameruleKeys() {
-+        for (org.bukkit.GameRule<?> rule : org.bukkit.GameRule.values()) {
++        for (GameRule<?> rule : GameRule.values()) {
 +            Assert.assertEquals(rule.getName() + "'s translation doesn't match", org.bukkit.craftbukkit.CraftWorld.getGameRulesNMS().get(rule.getName()).getDescriptionId(), rule.translationKey());
 +        }
 +    }
 +
 +    @Test
 +    public void testAttributeKeys() {
-+        for (org.bukkit.attribute.Attribute attribute : org.bukkit.attribute.Attribute.values()) {
++        for (Attribute attribute : Attribute.values()) {
 +            Assert.assertEquals("translation key mismatch for " + attribute, org.bukkit.craftbukkit.attribute.CraftAttributeMap.toMinecraft(attribute).getDescriptionId(), attribute.translationKey());
 +        }
 +    }
 +
 +    @Test
 +    public void testFireworkEffectType() {
-+        for (org.bukkit.FireworkEffect.Type type : org.bukkit.FireworkEffect.Type.values()) {
++        for (FireworkEffect.Type type : FireworkEffect.Type.values()) {
 +            Assert.assertEquals("translation key mismatch for " + type, net.minecraft.world.item.FireworkRocketItem.Shape.byId(org.bukkit.craftbukkit.inventory.CraftMetaFirework.getNBT(type)).getName(), org.bukkit.FireworkEffect.Type.NAMES.key(type));
++        }
++    }
++
++    @Test
++    public void testCreativeCategory() {
++        for (CreativeModeTab tab : CreativeModeTab.TABS) {
++            if (tab == CreativeModeTab.TAB_SEARCH || tab == CreativeModeTab.TAB_HOTBAR || tab == CreativeModeTab.TAB_INVENTORY) { // not implemented in the api
++                continue;
++            }
++            CreativeCategory category = Objects.requireNonNull(CraftCreativeCategory.fromNMS(tab));
++            Assert.assertEquals("translation key mismatch for " + category, ((TranslatableComponent) tab.getDisplayName()).getKey(), category.translationKey());
 +        }
 +    }
  }
