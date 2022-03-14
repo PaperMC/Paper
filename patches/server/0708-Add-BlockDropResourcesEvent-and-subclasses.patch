@@ -1,0 +1,169 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sun, 3 Jan 2021 17:58:11 -0800
+Subject: [PATCH] Add BlockDropResourcesEvent and subclasses
+
+Adds events that are called when a block drops resources (items) into the world
+as a result of being broken.
+
+Co-authored-by: qixils <lexi@qixils.dev>
+
+diff --git a/src/main/java/net/minecraft/world/level/block/Block.java b/src/main/java/net/minecraft/world/level/block/Block.java
+index 6b4cd795f23bd8d51dff5f2b72f588ca51404b99..ef834e84abcd891391f1f1dd68937ddea05ea3f2 100644
+--- a/src/main/java/net/minecraft/world/level/block/Block.java
++++ b/src/main/java/net/minecraft/world/level/block/Block.java
+@@ -306,7 +306,7 @@ public class Block extends BlockBehaviour implements ItemLike {
+         ServerLevel worldserver = lootContext.getLevel();
+         BlockPos blockposition = new BlockPos((Vec3) lootContext.getParameter(LootContextParams.ORIGIN));
+ 
+-        state.getDrops(lootContext).forEach((itemstack) -> {
++        org.bukkit.craftbukkit.event.CraftEventFactory.callBlockDropResourcesEvent(worldserver, blockposition, state.getDrops(lootContext)).forEach((itemstack) -> { // Paper - BlockDropResourcesEvent
+             Block.popResource(worldserver, blockposition, itemstack);
+         });
+         state.spawnAfterBreak(worldserver, blockposition, ItemStack.EMPTY);
+@@ -314,7 +314,7 @@ public class Block extends BlockBehaviour implements ItemLike {
+ 
+     public static void dropResources(BlockState state, Level world, BlockPos pos) {
+         if (world instanceof ServerLevel) {
+-            Block.getDrops(state, (ServerLevel) world, pos, (BlockEntity) null).forEach((itemstack) -> {
++            org.bukkit.craftbukkit.event.CraftEventFactory.callBlockDropResourcesEvent(world, pos, Block.getDrops(state, (ServerLevel) world, pos, (BlockEntity) null)).forEach((itemstack) -> { // Paper - BlockDropResourcesEvent
+                 Block.popResource(world, pos, itemstack);
+             });
+             state.spawnAfterBreak((ServerLevel) world, pos, ItemStack.EMPTY);
+@@ -324,17 +324,27 @@ public class Block extends BlockBehaviour implements ItemLike {
+ 
+     public static void dropResources(BlockState state, LevelAccessor world, BlockPos pos, @Nullable BlockEntity blockEntity) {
+         if (world instanceof ServerLevel) {
+-            Block.getDrops(state, (ServerLevel) world, pos, blockEntity).forEach((itemstack) -> {
++            org.bukkit.craftbukkit.event.CraftEventFactory.callBlockDropResourcesEvent(world, pos, Block.getDrops(state, (ServerLevel) world, pos, blockEntity)).forEach((itemstack) -> { // Paper - BlockDropResourcesEvent
+                 Block.popResource((ServerLevel) world, pos, itemstack);
+             });
+             state.spawnAfterBreak((ServerLevel) world, pos, ItemStack.EMPTY);
+         }
+ 
+     }
++    // Paper start
++    public static void dropResources(BlockState state, LevelAccessor world, BlockPos pos, @Nullable BlockEntity blockEntity, BlockPos source) {
++        if (world instanceof ServerLevel serverLevel) {
++            for (ItemStack drop : org.bukkit.craftbukkit.event.CraftEventFactory.callBlockDropResourcesEvent(world, pos, Block.getDrops(state, serverLevel, pos, blockEntity), source)) {
++                popResource(serverLevel, pos, drop);
++            }
++            state.spawnAfterBreak(serverLevel, pos, ItemStack.EMPTY);
++        }
++    }
++    // Paper end
+ 
+     public static void dropResources(BlockState state, Level world, BlockPos pos, @Nullable BlockEntity blockEntity, Entity entity, ItemStack stack) {
+         if (world instanceof ServerLevel) {
+-            Block.getDrops(state, (ServerLevel) world, pos, blockEntity, entity, stack).forEach((itemstack1) -> {
++            org.bukkit.craftbukkit.event.CraftEventFactory.callBlockDropResourcesEvent((ServerLevel) world, pos, Block.getDrops(state, (ServerLevel) world, pos, blockEntity, entity, stack), state, blockEntity, entity).forEach((itemstack1) -> { // Paper - EntityBreakBlockEvent
+                 Block.popResource(world, pos, itemstack1);
+             });
+             state.spawnAfterBreak((ServerLevel) world, pos, stack);
+diff --git a/src/main/java/net/minecraft/world/level/block/piston/PistonBaseBlock.java b/src/main/java/net/minecraft/world/level/block/piston/PistonBaseBlock.java
+index f4f49cc4109d4ae72c0a50f7acbd181d05bf415a..322b3119682fbab5e790ce9255e96a519f03143d 100644
+--- a/src/main/java/net/minecraft/world/level/block/piston/PistonBaseBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/piston/PistonBaseBlock.java
+@@ -399,7 +399,7 @@ public class PistonBaseBlock extends DirectionalBlock {
+                 iblockdata1 = world.getBlockState(blockposition3);
+                 BlockEntity tileentity = iblockdata1.hasBlockEntity() ? world.getBlockEntity(blockposition3) : null;
+ 
+-                dropResources(iblockdata1, world, blockposition3, tileentity);
++                dropResources(iblockdata1, world, blockposition3, tileentity, pos); // Paper
+                 world.setBlock(blockposition3, Blocks.AIR.defaultBlockState(), 18);
+                 if (!iblockdata1.is(BlockTags.FIRE)) {
+                     world.addDestroyBlockEffect(blockposition3, iblockdata1);
+diff --git a/src/main/java/net/minecraft/world/level/material/FlowingFluid.java b/src/main/java/net/minecraft/world/level/material/FlowingFluid.java
+index 02be7c3d104fe3b3a2772201f5ebdfb6d16e9b49..ff40fe323964f173561a6838fb443e79abf9df38 100644
+--- a/src/main/java/net/minecraft/world/level/material/FlowingFluid.java
++++ b/src/main/java/net/minecraft/world/level/material/FlowingFluid.java
+@@ -294,7 +294,7 @@ public abstract class FlowingFluid extends Fluid {
+             ((LiquidBlockContainer) state.getBlock()).placeLiquid(world, pos, state, fluidState);
+         } else {
+             if (!state.isAir()) {
+-                this.beforeDestroyingBlock(world, pos, state);
++                this.beforeDestroyingBlock(world, pos, state, pos.relative(direction.getOpposite())); // Paper
+             }
+ 
+             world.setBlock(pos, fluidState.createLegacyBlock(), 3);
+@@ -302,6 +302,7 @@ public abstract class FlowingFluid extends Fluid {
+ 
+     }
+ 
++    protected void beforeDestroyingBlock(LevelAccessor world, BlockPos pos, BlockState state, BlockPos source) { beforeDestroyingBlock(world, pos, state); } // Paper - add source parameter
+     protected abstract void beforeDestroyingBlock(LevelAccessor world, BlockPos pos, BlockState state);
+ 
+     private static short getCacheKey(BlockPos blockposition, BlockPos blockposition1) {
+diff --git a/src/main/java/net/minecraft/world/level/material/WaterFluid.java b/src/main/java/net/minecraft/world/level/material/WaterFluid.java
+index c2beaba9095c9163f25a46c8b2c423e820639cf6..56d50b9310d30e0f81f3d2549ff5c256eb07cc2a 100644
+--- a/src/main/java/net/minecraft/world/level/material/WaterFluid.java
++++ b/src/main/java/net/minecraft/world/level/material/WaterFluid.java
+@@ -63,6 +63,13 @@ public abstract class WaterFluid extends FlowingFluid {
+         return true;
+     }
+ 
++    // Paper start
++    @Override
++    protected void beforeDestroyingBlock(LevelAccessor world, BlockPos pos, BlockState state,  BlockPos source) {
++        BlockEntity tileentity = state.hasBlockEntity() ? world.getBlockEntity(pos) : null;
++        Block.dropResources(state, world, pos, tileentity, source);
++    }
++    // Paper end
+     @Override
+     protected void beforeDestroyingBlock(LevelAccessor world, BlockPos pos, BlockState state) {
+         BlockEntity blockEntity = state.hasBlockEntity() ? world.getBlockEntity(pos) : null;
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftBlockStates.java b/src/main/java/org/bukkit/craftbukkit/block/CraftBlockStates.java
+index 93a8aeb5545c794ac425c35f8af52a443cd060ca..597a1c2856016537150fdf1702b311d500f34959 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/CraftBlockStates.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/CraftBlockStates.java
+@@ -372,7 +372,7 @@ public final class CraftBlockStates {
+     }
+ 
+     // See BlockStateFactory#createBlockState(World, BlockPosition, IBlockData, TileEntity)
+-    private static CraftBlockState getBlockState(World world, BlockPos blockPosition, net.minecraft.world.level.block.state.BlockState blockData, BlockEntity tileEntity) {
++    public static CraftBlockState getBlockState(@Nullable World world, BlockPos blockPosition, net.minecraft.world.level.block.state.BlockState blockData, @Nullable BlockEntity tileEntity) { // Paper - private->public and clarify nullable params
+         Material material = CraftMagicNumbers.getMaterial(blockData.getBlock());
+         BlockStateFactory<?> factory;
+         // For some types of TileEntity blocks (eg. moving pistons), Minecraft may in some situations (eg. when using Block#setType or the
+diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+index 5c2beec59b0382d80bf97317cbbeab43df24ad55..3fb46b7a19b63cd85db2450e21adff4922767809 100644
+--- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
++++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+@@ -1910,5 +1910,37 @@ public class CraftEventFactory {
+         io.papermc.paper.event.block.BlockPreDispenseEvent event = new io.papermc.paper.event.block.BlockPreDispenseEvent(block, org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemStack), slot);
+         return event.callEvent();
+     }
++
++    private static List<ItemStack> callBlockDropResourcesEvent(LevelAccessor world, BlockPos pos, List<ItemStack> items, java.util.function.BiFunction<Block, List<org.bukkit.inventory.ItemStack>, io.papermc.paper.event.block.BlockDropResourcesEvent> eventCreator) {
++        List<org.bukkit.inventory.ItemStack> bukkitItems = new java.util.ArrayList<>(items.size());
++        for (ItemStack item : items) {
++            bukkitItems.add(CraftItemStack.asBukkitCopy(item));
++        }
++
++        io.papermc.paper.event.block.BlockDropResourcesEvent event = eventCreator.apply(CraftBlock.at(world, pos), bukkitItems);
++        event.callEvent();
++
++        List<ItemStack> processedItems = new java.util.ArrayList<>(bukkitItems.size());
++        for (org.bukkit.inventory.ItemStack item : bukkitItems) {
++            processedItems.add(CraftItemStack.asNMSCopy(item));
++        }
++        return processedItems;
++    }
++
++    public static List<ItemStack> callBlockDropResourcesEvent(LevelAccessor world, BlockPos pos, List<ItemStack> items) {
++        return callBlockDropResourcesEvent(world, pos, items, io.papermc.paper.event.block.BlockDropResourcesEvent::new);
++    }
++
++    public static List<ItemStack> callBlockDropResourcesEvent(LevelAccessor world, BlockPos pos, List<ItemStack> items, @Nullable BlockPos source) {
++        if (source == null)
++            return callBlockDropResourcesEvent(world, pos, items);
++        return callBlockDropResourcesEvent(world, pos, items, (block, itemStacks) -> new io.papermc.paper.event.block.BlockBreakBlockEvent(block, CraftBlock.at(world, source), itemStacks));
++    }
++
++    public static List<ItemStack> callBlockDropResourcesEvent(ServerLevel world, BlockPos pos, List<ItemStack> items, net.minecraft.world.level.block.state.BlockState blockState, @Nullable net.minecraft.world.level.block.entity.BlockEntity tileEntity, @Nullable Entity source) {
++        if (source == null)
++            return callBlockDropResourcesEvent(world, pos, items);
++        return callBlockDropResourcesEvent(world, pos, items, (block, itemStacks) -> new io.papermc.paper.event.block.EntityBreakBlockEvent(block, CraftBlockStates.getBlockState(world.getWorld(), pos, blockState, tileEntity), source.getBukkitEntity(), itemStacks));
++    }
+     // Paper end
+ }

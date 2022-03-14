@@ -1,0 +1,196 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sun, 3 Jan 2021 17:58:25 -0800
+Subject: [PATCH] Add BlockDropResourcesEvent and subclasses
+
+Adds events that are called when a block drops resources (items) into the world
+as a result of being broken.
+
+Co-authored-by: qixils <lexi@qixils.dev>
+
+diff --git a/src/main/java/io/papermc/paper/event/block/BlockBreakBlockEvent.java b/src/main/java/io/papermc/paper/event/block/BlockBreakBlockEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..2390905366f03f618ac231e3f2b6e48a00d49d61
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/event/block/BlockBreakBlockEvent.java
+@@ -0,0 +1,36 @@
++package io.papermc.paper.event.block;
++
++import com.google.common.base.Preconditions;
++import org.bukkit.block.Block;
++import org.bukkit.inventory.ItemStack;
++import org.jetbrains.annotations.NotNull;
++
++import java.util.List;
++
++/**
++ * Called when a block forces another block to break and drop items.
++ * <p>
++ * Unlike the {@link BlockDropResourcesEvent parent event}, the block being broken is guaranteed to
++ * exist in the world at the time of firing.
++ * </p>
++ * This is currently called when blocks are broken by pistons and flowing liquid.
++ */
++public class BlockBreakBlockEvent extends BlockDropResourcesEvent {
++
++    private final Block source;
++
++    public BlockBreakBlockEvent(@NotNull Block block, @NotNull Block source, @NotNull List<ItemStack> drops) {
++        super(block, drops);
++        this.source = Preconditions.checkNotNull(source, "source");
++    }
++
++    /**
++     * Gets the block that caused this event (e.g. a piston, or adjacent liquid)
++     *
++     * @return responsible block
++     */
++    @NotNull
++    public Block getSource() {
++        return source;
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/event/block/BlockDropResourcesEvent.java b/src/main/java/io/papermc/paper/event/block/BlockDropResourcesEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..682d6fac5e65b6c45aaa230bd204762308b516e5
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/event/block/BlockDropResourcesEvent.java
+@@ -0,0 +1,93 @@
++package io.papermc.paper.event.block;
++
++import com.google.common.base.Preconditions;
++import org.bukkit.block.Block;
++import org.bukkit.block.BlockState;
++import org.bukkit.event.HandlerList;
++import org.bukkit.event.block.BlockEvent;
++import org.bukkit.inventory.ItemStack;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++import java.util.List;
++
++/**
++ * Called when a block drops items in a world as a result of being broken.
++ * The block will exist in the world at the time of firing.
++ * <p>
++ * This event fires in between {@link org.bukkit.event.block.BlockBreakEvent BlockBreakEvent}
++ * and {@link org.bukkit.event.block.BlockDropItemEvent BlockDropItemEvent}.
++ * </p>
++ * In rare circumstances, the {@link #getBlock() block} may be removed from the world before this
++ * event is called.
++ * For this reason, it is recommended to use {@link #getBlockState()} to fetch information about the
++ * broken block.
++ */
++public class BlockDropResourcesEvent extends BlockEvent {
++
++    private static final HandlerList HANDLER_LIST = new HandlerList();
++
++    private final List<ItemStack> drops;
++    private final BlockState blockState;
++
++    /**
++     * Creates a BlockDropResourcesEvent from a block that has not been removed from the world.
++     * <p>
++     * If the block might already be removed from the world then the
++     * {@link #BlockDropResourcesEvent(Block, BlockState, List) full constructor}
++     * should be used instead.
++     *
++     * @param block the block dropping resources
++     * @param drops the resources being dropped
++     */
++    public BlockDropResourcesEvent(@NotNull Block block, @NotNull List<ItemStack> drops) {
++        this(block, null, drops);
++    }
++
++    /**
++     * Creates a BlockDropResourcesEvent from a block and, optionally, a snapshot of the block
++     * created before it was (or wasn't) removed from the world.
++     * If a snapshot is not provided then one will be created from {@link Block#getState()}.
++     *
++     * @param block      the block dropping resources
++     * @param blockState a snapshot of the block created before removal from the world
++     * @param drops      the resources being dropped
++     */
++    public BlockDropResourcesEvent(@NotNull Block block, @Nullable BlockState blockState, @NotNull List<ItemStack> drops) {
++        super(block);
++        this.blockState = blockState != null ? blockState : block.getState(true);
++        this.drops = Preconditions.checkNotNull(drops, "drops");
++    }
++
++    /**
++     * Gets the BlockState of the block involved in this event.
++     *
++     * @return snapshot of the block dropping resources
++     */
++    @NotNull
++    public final BlockState getBlockState() {
++        return blockState;
++    }
++
++    /**
++     * Gets the items being dropped by the block.
++     * This list is guaranteed to be mutable and may be safely altered.
++     *
++     * @return mutable list of item drops
++     */
++    @NotNull
++    public final List<ItemStack> getDrops() {
++        return drops;
++    }
++
++    @NotNull
++    @Override
++    public HandlerList getHandlers() {
++        return HANDLER_LIST;
++    }
++
++    @NotNull
++    public static HandlerList getHandlerList() {
++        return HANDLER_LIST;
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/event/block/EntityBreakBlockEvent.java b/src/main/java/io/papermc/paper/event/block/EntityBreakBlockEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..d8ddf74008872988fb54904240aa3d055c276b12
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/event/block/EntityBreakBlockEvent.java
+@@ -0,0 +1,39 @@
++package io.papermc.paper.event.block;
++
++import com.google.common.base.Preconditions;
++import org.bukkit.block.Block;
++import org.bukkit.block.BlockState;
++import org.bukkit.entity.Entity;
++import org.bukkit.inventory.ItemStack;
++import org.jetbrains.annotations.NotNull;
++
++import java.util.List;
++
++/**
++ * Called when an entity breaks a block. Includes players, villagers, etc.
++ * The block being broken will exist in the world at the time of firing.
++ * <p>
++ * In rare circumstances, the {@link #getBlock() block} may be removed from the world before this
++ * event is called.
++ * For this reason, it is recommended to use {@link #getBlockState()} to fetch information about the
++ * broken block.
++ */
++public class EntityBreakBlockEvent extends BlockDropResourcesEvent {
++
++    private final Entity source;
++
++    public EntityBreakBlockEvent(@NotNull Block block, @NotNull BlockState blockState, @NotNull Entity source, @NotNull List<ItemStack> drops) {
++        super(block, blockState, drops);
++        this.source = Preconditions.checkNotNull(source, "source");
++    }
++
++    /**
++     * Gets the entity that caused this event
++     *
++     * @return responsible entity
++     */
++    @NotNull
++    public Entity getSource() {
++        return source;
++    }
++}
