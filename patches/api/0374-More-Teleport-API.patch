@@ -58,7 +58,7 @@ index 0000000000000000000000000000000000000000..4270deba5f4cd85a6789fcd190110f9b
 +
 +}
 diff --git a/src/main/java/org/bukkit/entity/Entity.java b/src/main/java/org/bukkit/entity/Entity.java
-index c2c45a93887f99466a8ac4275355ac75c7f901c4..d0e20ab931c8118cc227f3da41891ad0f3f03019 100644
+index 8bc6876c82935988436597161fa0ec94c032174b..066e6d15e7f5dabb4620e3acea143317cf46bf4d 100644
 --- a/src/main/java/org/bukkit/entity/Entity.java
 +++ b/src/main/java/org/bukkit/entity/Entity.java
 @@ -125,6 +125,64 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
@@ -76,7 +76,7 @@ index c2c45a93887f99466a8ac4275355ac75c7f901c4..d0e20ab931c8118cc227f3da41891ad0
 +     * @throws IllegalArgumentException If teleporting to a different world while ignoring passengers
 +     * @return <code>true</code> if the teleport was successful
 +     */
-+    default public boolean teleport(@NotNull Location location, boolean ignorePassengers) {
++    default boolean teleport(@NotNull Location location, boolean ignorePassengers) {
 +        return teleport(location, TeleportCause.PLUGIN, ignorePassengers);
 +    }
 +
@@ -90,7 +90,7 @@ index c2c45a93887f99466a8ac4275355ac75c7f901c4..d0e20ab931c8118cc227f3da41891ad0
 +     * @throws IllegalArgumentException If teleporting to a different world while ignoring passengers
 +     * @return <code>true</code> if the teleport was successful
 +     */
-+    default public boolean teleport(@NotNull Location location, @NotNull TeleportCause cause, boolean ignorePassengers) {
++    default boolean teleport(@NotNull Location location, @NotNull TeleportCause cause, boolean ignorePassengers) {
 +        return teleport(location, cause, ignorePassengers, true);
 +    }
 +
@@ -105,7 +105,7 @@ index c2c45a93887f99466a8ac4275355ac75c7f901c4..d0e20ab931c8118cc227f3da41891ad0
 +     * @throws IllegalArgumentException If teleporting to a different world while ignoring passengers or dismount is false
 +     * @return <code>true</code> if the teleport was successful
 +     */
-+    default public boolean teleport(@NotNull Location location, boolean ignorePassengers, boolean dismount) {
++    default boolean teleport(@NotNull Location location, boolean ignorePassengers, boolean dismount) {
 +        return teleport(location, TeleportCause.PLUGIN, ignorePassengers, dismount);
 +    }
 +
@@ -120,17 +120,17 @@ index c2c45a93887f99466a8ac4275355ac75c7f901c4..d0e20ab931c8118cc227f3da41891ad0
 +     * @throws IllegalArgumentException If teleporting to a different world while ignoring passengers or dismount is false
 +     * @return <code>true</code> if the teleport was successful
 +     */
-+    public boolean teleport(@NotNull Location location, @NotNull TeleportCause cause, boolean ignorePassengers, boolean dismount);
++    boolean teleport(@NotNull Location location, @NotNull TeleportCause cause, boolean ignorePassengers, boolean dismount);
 +    // Paper end - Teleport API
 +
      /**
       * Teleports this entity to the given location. If this entity is riding a
       * vehicle, it will be dismounted prior to teleportation.
 diff --git a/src/main/java/org/bukkit/entity/Player.java b/src/main/java/org/bukkit/entity/Player.java
-index ec1e115879c4f6608e8ba764ed87063577ee44b0..943154d06cc6a55f90837692c656b2ddfe5a6137 100644
+index f954801f6a5d465b8545e75d7ff5af0352d6ec0d..30cf0a5145bbb9cb98f99bcd115c6b5c07c6df4d 100644
 --- a/src/main/java/org/bukkit/entity/Player.java
 +++ b/src/main/java/org/bukkit/entity/Player.java
-@@ -2653,6 +2653,55 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -2668,6 +2668,55 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      String getClientBrandName();
      // Paper end
  
@@ -187,27 +187,17 @@ index ec1e115879c4f6608e8ba764ed87063577ee44b0..943154d06cc6a55f90837692c656b2dd
      @Override
      Spigot spigot();
 diff --git a/src/main/java/org/bukkit/event/player/PlayerTeleportEvent.java b/src/main/java/org/bukkit/event/player/PlayerTeleportEvent.java
-index 553d7740489fe729166c8ca8ef8c7834db3663ad..98b00b726b674e7729c4e344093f21a4ab7be161 100644
+index 553d7740489fe729166c8ca8ef8c7834db3663ad..2aeaa892af957fa4461a3c211ba7724ab14798f1 100644
 --- a/src/main/java/org/bukkit/event/player/PlayerTeleportEvent.java
 +++ b/src/main/java/org/bukkit/event/player/PlayerTeleportEvent.java
-@@ -13,6 +13,11 @@ public class PlayerTeleportEvent extends PlayerMoveEvent {
-     private static final HandlerList handlers = new HandlerList();
-     private TeleportCause cause = TeleportCause.UNKNOWN;
+@@ -23,6 +23,16 @@ public class PlayerTeleportEvent extends PlayerMoveEvent {
+         this.cause = cause;
+     }
  
 +    // Paper start - Teleport API
 +    private boolean dismounted = true;
 +    private java.util.Set<io.papermc.paper.entity.RelativeTeleportFlag> teleportFlagSet = java.util.Collections.emptySet();
-+    // Paper end
 +
-     public PlayerTeleportEvent(@NotNull final Player player, @NotNull final Location from, @Nullable final Location to) {
-         super(player, from, to);
-     }
-@@ -22,7 +27,13 @@ public class PlayerTeleportEvent extends PlayerMoveEvent {
- 
-         this.cause = cause;
-     }
--
-+    // Paper start - Teleport API
 +    public PlayerTeleportEvent(@NotNull final Player player, @NotNull final Location from, @Nullable final Location to, @NotNull final TeleportCause cause, boolean dismounted, @NotNull java.util.Set<io.papermc.paper.entity.RelativeTeleportFlag> teleportFlagSet) {
 +        this(player, from, to, cause);
 +        this.dismounted = dismounted;
@@ -217,7 +207,7 @@ index 553d7740489fe729166c8ca8ef8c7834db3663ad..98b00b726b674e7729c4e344093f21a4
      /**
       * Gets the cause of this teleportation event
       *
-@@ -80,6 +91,28 @@ public class PlayerTeleportEvent extends PlayerMoveEvent {
+@@ -80,6 +90,28 @@ public class PlayerTeleportEvent extends PlayerMoveEvent {
          UNKNOWN;
      }
  
