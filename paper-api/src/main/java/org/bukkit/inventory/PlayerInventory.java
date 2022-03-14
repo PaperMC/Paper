@@ -104,9 +104,9 @@ public interface PlayerInventory extends Inventory {
      *
      * @param slot the slot to get the ItemStack
      *
-     * @return the ItemStack in the given slot
+     * @return the ItemStack in the given slot or null if there is not one
      */
-    @NotNull
+    @Nullable
     public ItemStack getItem(@NotNull EquipmentSlot slot);
 
     /**
