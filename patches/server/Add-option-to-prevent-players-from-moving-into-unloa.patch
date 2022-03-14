@@ -24,11 +24,27 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 @@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+                 double d0 = entity.getX();
+                 double d1 = entity.getY();
+                 double d2 = entity.getZ();
+-                double d3 = ServerGamePacketListenerImpl.clampHorizontal(packet.getX());
+-                double d4 = ServerGamePacketListenerImpl.clampVertical(packet.getY());
+-                double d5 = ServerGamePacketListenerImpl.clampHorizontal(packet.getZ());
++                double d3 = ServerGamePacketListenerImpl.clampHorizontal(packet.getX()); final double toX = d3; // Paper - OBFHELPER
++                double d4 = ServerGamePacketListenerImpl.clampVertical(packet.getY()); final double toY = d4; // Paper - OBFHELPER
++                double d5 = ServerGamePacketListenerImpl.clampHorizontal(packet.getZ()); final double toZ = d5; // Paper - OBFHELPER
+                 float f = Mth.wrapDegrees(packet.getYRot());
+                 float f1 = Mth.wrapDegrees(packet.getXRot());
+                 double d6 = d3 - this.vehicleFirstGoodX;
+@@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
                  }
                  speed *= 2f; // TODO: Get the speed of the vehicle instead of the player
  
 +                // Paper start - Prevent moving into unloaded chunks
-+                if (player.level.paperConfig.preventMovingIntoUnloadedChunks && worldserver.getChunkIfLoadedImmediately((int) Math.floor(packet.getX()) >> 4, (int) Math.floor(packet.getZ()) >> 4) == null) {
++                if (player.level.paperConfig.preventMovingIntoUnloadedChunks && (
++                    !worldserver.areChunksLoadedForMove(this.player.getBoundingBox().expandTowards(new Vec3(toX, toY, toZ).subtract(this.player.position()))) ||
++                        !worldserver.areChunksLoadedForMove(entity.getBoundingBox().expandTowards(new Vec3(toX, toY, toZ).subtract(entity.position())))
++                    )) {
 +                    this.connection.send(new ClientboundMoveVehiclePacket(entity));
 +                    return;
 +                }
@@ -38,23 +54,24 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  // CraftBukkit end
                      ServerGamePacketListenerImpl.LOGGER.warn("{} (vehicle of {}) moved too quickly! {},{},{}", new Object[]{entity.getName().getString(), this.player.getName().getString(), d6, d7, d8});
 @@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
-                         float prevYaw = this.player.getYRot();
-                         float prevPitch = this.player.getXRot();
-                         // CraftBukkit end
--                        double d3 = this.player.getX();
-+                        double d3 = this.player.getX(); final double toX = d3; // Paper - OBFHELPER
-                         double d4 = this.player.getY();
--                        double d5 = this.player.getZ();
-+                        double d5 = this.player.getZ(); final double toZ = d5; // Paper - OBFHELPER
-                         double d6 = this.player.getY();
-                         double d7 = d0 - this.firstGoodX;
-                         double d8 = d1 - this.firstGoodY;
+                     this.allowedPlayerTicks = 20; // CraftBukkit
+                 } else {
+                     this.awaitingTeleportTime = this.tickCount;
+-                    double d0 = ServerGamePacketListenerImpl.clampHorizontal(packet.getX(this.player.getX()));
+-                    double d1 = ServerGamePacketListenerImpl.clampVertical(packet.getY(this.player.getY()));
+-                    double d2 = ServerGamePacketListenerImpl.clampHorizontal(packet.getZ(this.player.getZ()));
++                    double d0 = ServerGamePacketListenerImpl.clampHorizontal(packet.getX(this.player.getX())); final double toX = d0; // Paper - OBFHELPER
++                    double d1 = ServerGamePacketListenerImpl.clampVertical(packet.getY(this.player.getY())); final double toY = d1;
++                    double d2 = ServerGamePacketListenerImpl.clampHorizontal(packet.getZ(this.player.getZ())); final double toZ = d2; // Paper - OBFHELPER
+                     float f = Mth.wrapDegrees(packet.getYRot(this.player.getYRot()));
+                     float f1 = Mth.wrapDegrees(packet.getXRot(this.player.getXRot()));
+ 
 @@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
                              } else {
                                  speed = this.player.getAbilities().walkingSpeed * 10f;
                              }
 +                            // Paper start - Prevent moving into unloaded chunks
-+                            if (player.level.paperConfig.preventMovingIntoUnloadedChunks && (this.player.getX() != toX || this.player.getZ() != toZ) && !worldserver.hasChunk((int) Math.floor(toX) >> 4, (int) Math.floor(toZ) >> 4)) {
++                            if (player.level.paperConfig.preventMovingIntoUnloadedChunks && (this.player.getX() != toX || this.player.getZ() != toZ) && !worldserver.areChunksLoadedForMove(this.player.getBoundingBox().expandTowards(new Vec3(toX, toY, toZ).subtract(this.player.position())))) {
 +                                this.internalTeleport(this.player.getX(), this.player.getY(), this.player.getZ(), this.player.getYRot(), this.player.getXRot(), Collections.emptySet(), true);
 +                                return;
 +                            }
