@@ -218,7 +218,7 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
         if (blockEntityTag != null) {
             switch (material) {
                 case SHIELD:
-                    blockEntityTag.putString("id", "banner");
+                    blockEntityTag.putString("id", "minecraft:banner");
                     break;
                 case SHULKER_BOX:
                 case WHITE_SHULKER_BOX:
@@ -237,11 +237,11 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
                 case GREEN_SHULKER_BOX:
                 case RED_SHULKER_BOX:
                 case BLACK_SHULKER_BOX:
-                    blockEntityTag.putString("id", "shulker_box");
+                    blockEntityTag.putString("id", "minecraft:shulker_box");
                     break;
                 case BEE_NEST:
                 case BEEHIVE:
-                    blockEntityTag.putString("id", "beehive");
+                    blockEntityTag.putString("id", "minecraft:beehive");
                     break;
             }
         }
