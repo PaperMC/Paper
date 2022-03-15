@@ -155,13 +155,13 @@ public class CraftInventoryPlayer extends CraftInventory implements org.bukkit.i
             case OFF_HAND:
                 return this.getItemInOffHand();
             case FEET:
-                return this.getBoots();
+                return java.util.Objects.requireNonNullElseGet(this.getBoots(), () -> new ItemStack(org.bukkit.Material.AIR)); // Paper - make nonnull
             case LEGS:
-                return this.getLeggings();
+                return java.util.Objects.requireNonNullElseGet(this.getLeggings(), () -> new ItemStack(org.bukkit.Material.AIR)); // Paper - make nonnull
             case CHEST:
-                return this.getChestplate();
+                return java.util.Objects.requireNonNullElseGet(this.getChestplate(), () -> new ItemStack(org.bukkit.Material.AIR)); // Paper - make nonnull
             case HEAD:
-                return this.getHelmet();
+                return java.util.Objects.requireNonNullElseGet(this.getHelmet(), () -> new ItemStack(org.bukkit.Material.AIR)); // Paper - make nonnull
             default:
                 throw new IllegalArgumentException("Could not get slot " + slot + " - not a valid slot for PlayerInventory");
         }
