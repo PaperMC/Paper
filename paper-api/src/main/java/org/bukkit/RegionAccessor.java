@@ -25,6 +25,7 @@ public interface RegionAccessor extends Keyed { // Paper
      *
      * @param location the location of the biome
      * @return Biome at the given location
+     * @see #getComputedBiome(int, int, int)
      */
     @NotNull
     Biome getBiome(@NotNull Location location);
@@ -36,9 +37,32 @@ public interface RegionAccessor extends Keyed { // Paper
      * @param y Y-coordinate of the block
      * @param z Z-coordinate of the block
      * @return Biome at the given coordinates
+     * @see #getComputedBiome(int, int, int)
      */
     @NotNull
     Biome getBiome(int x, int y, int z);
+
+    // Paper start
+    /**
+     * Gets the computed {@link Biome} at the given coordinates.
+     *
+     * <p>The computed Biome is the Biome as seen by clients for rendering
+     * purposes and in the "F3" debug menu. This is computed by looking at the noise biome
+     * at this and surrounding quarts and applying complex math operations.</p>
+     *
+     * <p>Most other Biome-related methods named getBiome, setBiome, and similar
+     * operate on the "noise biome", which is stored per-quart, or in other words,
+     * 1 Biome per 4x4x4 block region. This is how Biomes are currently generated and
+     * stored on disk.</p>
+     *
+     * @param x X-coordinate of the block
+     * @param y Y-coordinate of the block
+     * @param z Z-coordinate of the block
+     * @return Biome at the given coordinates
+     */
+    @NotNull
+    Biome getComputedBiome(int x, int y, int z);
+    // Paper end
 
     /**
      * Sets the {@link Biome} at the given {@link Location}.

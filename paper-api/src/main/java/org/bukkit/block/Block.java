@@ -375,9 +375,21 @@ public interface Block extends Metadatable, Translatable, net.kyori.adventure.tr
      * Returns the biome that this block resides in
      *
      * @return Biome type containing this block
+     * @see #getComputedBiome()
      */
     @NotNull
     Biome getBiome();
+
+    // Paper start
+    /**
+     * Gets the computed biome at the location of this Block.
+     *
+     * @return computed biome at the location of this Block.
+     * @see org.bukkit.RegionAccessor#getComputedBiome(int, int, int)
+     */
+    @NotNull
+    Biome getComputedBiome();
+    // Paper end
 
     /**
      * Sets the biome that this block resides in
