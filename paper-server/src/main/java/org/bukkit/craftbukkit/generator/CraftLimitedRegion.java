@@ -166,6 +166,14 @@ public class CraftLimitedRegion extends CraftRegionAccessor implements LimitedRe
         return super.getBiome(x, y, z);
     }
 
+    // Paper start
+    @Override
+    public Biome getComputedBiome(int x, int y, int z) {
+        Preconditions.checkArgument(this.isInRegion(x, y, z), "Coordinates %s, %s, %s are not in the region", x, y, z);
+        return super.getComputedBiome(x, y, z);
+    }
+    // Paper end
+
     @Override
     public void setBiome(int x, int y, int z, Holder<net.minecraft.world.level.biome.Biome> biomeBase) {
         Preconditions.checkArgument(this.isInRegion(x, y, z), "Coordinates %s, %s, %s are not in the region", x, y, z);

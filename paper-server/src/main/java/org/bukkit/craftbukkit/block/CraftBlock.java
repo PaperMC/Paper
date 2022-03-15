@@ -340,6 +340,13 @@ public class CraftBlock implements Block {
         return this.getWorld().getBiome(this.getX(), this.getY(), this.getZ());
     }
 
+    // Paper start
+    @Override
+    public Biome getComputedBiome() {
+        return this.getWorld().getComputedBiome(this.getX(), this.getY(), this.getZ());
+    }
+    // Paper end
+
     @Override
     public void setBiome(Biome bio) {
         this.getWorld().setBiome(this.getX(), this.getY(), this.getZ(), bio);

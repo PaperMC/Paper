@@ -77,6 +77,13 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
         return CraftBiome.minecraftHolderToBukkit(this.getHandle().getNoiseBiome(x >> 2, y >> 2, z >> 2));
     }
 
+    // Paper start
+    @Override
+    public Biome getComputedBiome(int x, int y, int z) {
+        return CraftBiome.minecraftHolderToBukkit(this.getHandle().getBiome(new BlockPos(x, y, z)));
+    }
+    // Paper end
+
     @Override
     public void setBiome(Location location, Biome biome) {
         this.setBiome(location.getBlockX(), location.getBlockY(), location.getBlockZ(), biome);
