@@ -1385,7 +1385,7 @@ public final class CraftServer implements Server {
 
         try {
             if (save) {
-                handle.save(null, true, true);
+                handle.save(null, true, false); // Paper - Fix saving in unloadWorld
             }
 
             handle.getChunkSource().close(save);
