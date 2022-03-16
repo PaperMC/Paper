@@ -4,11 +4,31 @@ Date: Wed, 7 Jul 2021 16:19:41 -0700
 Subject: [PATCH] Fixes kick event leave message not being sent
 
 
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+index 174f0f1bbe32e8753e360db0194c5ec20fbf22bd..ca9a30a279e7d12c63b351e437fb9dcc11e2ed56 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+@@ -250,7 +250,6 @@ public class ServerPlayer extends Player {
+     public boolean supressTrackerForLogin = false; // Paper
+     public boolean didPlayerJoinEvent = false; // Paper
+     public Integer clientViewDistance;
+-    public String kickLeaveMessage = null; // SPIGOT-3034: Forward leave message to PlayerQuitEvent
+     // CraftBukkit end
+     public PlayerNaturallySpawnCreaturesEvent playerNaturallySpawnedEvent; // Paper
+ 
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index 8a60c81c80ecf6c8d29cc1e24e9a8d63c5edaecb..d9eec6be067b858001c31f25788a63f2d50051ce 100644
+index f6c8ce420c8cbe977897c78f1575b917ee9632ac..d9eec6be067b858001c31f25788a63f2d50051ce 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-@@ -455,7 +455,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+@@ -447,7 +447,6 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+             // Do not kick the player
+             return;
+         }
+-        this.player.kickLeaveMessage = event.getLeaveMessage(); // CraftBukkit - SPIGOT-3034: Forward leave message to PlayerQuitEvent
+         // Send the possibly modified leave message
+         final Component ichatbasecomponent = PaperAdventure.asVanilla(event.reason()); // Paper - Adventure
+         // CraftBukkit end
+@@ -456,7 +455,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
          this.connection.send(new ClientboundDisconnectPacket(ichatbasecomponent), (future) -> {
              this.connection.disconnect(ichatbasecomponent);
          });
@@ -17,7 +37,7 @@ index 8a60c81c80ecf6c8d29cc1e24e9a8d63c5edaecb..d9eec6be067b858001c31f25788a63f2
          this.connection.setReadOnly();
          MinecraftServer minecraftserver = this.server;
          Connection networkmanager = this.connection;
-@@ -1907,6 +1907,11 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+@@ -1908,6 +1907,11 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
  
      @Override
      public void onDisconnect(Component reason) {
@@ -29,7 +49,7 @@ index 8a60c81c80ecf6c8d29cc1e24e9a8d63c5edaecb..d9eec6be067b858001c31f25788a63f2
          // CraftBukkit start - Rarely it would send a disconnect line twice
          if (this.processedDisconnect) {
              return;
-@@ -1923,7 +1928,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+@@ -1924,7 +1928,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
  
          this.player.disconnect();
          // Paper start - Adventure
