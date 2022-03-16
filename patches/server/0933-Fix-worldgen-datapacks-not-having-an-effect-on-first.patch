@@ -1,0 +1,131 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Thu, 4 Aug 2022 00:46:04 -0700
+Subject: [PATCH] Fix worldgen datapacks not having an effect on first run
+
+
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index f23be38ef96a81ce3867a3b6fdccf632fe285f31..b87d5689004b7ec58645c237bb327855c96be529 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -451,7 +451,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+                 DedicatedServerProperties dedicatedserverproperties = ((DedicatedServer) this).getProperties();
+ 
+                 worldsettings = new LevelSettings(dedicatedserverproperties.levelName, dedicatedserverproperties.gamemode, dedicatedserverproperties.hardcore, dedicatedserverproperties.difficulty, false, new GameRules(), this.datapackconfiguration);
+-                generatorsettings = this.options.has("bonusChest") ? dedicatedserverproperties.getWorldGenSettings(iregistrycustom_dimension).withBonusChest() : dedicatedserverproperties.getWorldGenSettings(iregistrycustom_dimension);
++                generatorsettings = this.options.has("bonusChest") ? dedicatedserverproperties.getWorldGenSettings(iregistrycustom_dimension, this.registryreadops).withBonusChest() : dedicatedserverproperties.getWorldGenSettings(iregistrycustom_dimension, this.registryreadops); // Paper
+             }
+ 
+             overworldData = new PrimaryLevelData(worldsettings, generatorsettings, Lifecycle.stable());
+@@ -540,7 +540,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+                     DedicatedServerProperties dedicatedserverproperties = ((DedicatedServer) this).getProperties();
+ 
+                     worldsettings = new LevelSettings(dedicatedserverproperties.levelName, dedicatedserverproperties.gamemode, dedicatedserverproperties.hardcore, dedicatedserverproperties.difficulty, false, new GameRules(), this.datapackconfiguration);
+-                    generatorsettings = this.options.has("bonusChest") ? dedicatedserverproperties.getWorldGenSettings(iregistrycustom_dimension).withBonusChest() : dedicatedserverproperties.getWorldGenSettings(iregistrycustom_dimension);
++                    generatorsettings = this.options.has("bonusChest") ? dedicatedserverproperties.getWorldGenSettings(iregistrycustom_dimension, this.registryreadops).withBonusChest() : dedicatedserverproperties.getWorldGenSettings(iregistrycustom_dimension, this.registryreadops); // Paper
+                 }
+ 
+                 worlddata = new PrimaryLevelData(worldsettings, generatorsettings, Lifecycle.stable());
+diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
+index bdd6560fe85950b0a857a949cb38c044da44ca6b..7c14aa53039d5a936eddf7867d94321cb0221121 100644
+--- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
++++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
+@@ -398,7 +398,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+             bufferedwriter.write(String.format(Locale.ROOT, "view-distance=%d%n", dedicatedserverproperties.viewDistance));
+             bufferedwriter.write(String.format(Locale.ROOT, "simulation-distance=%d%n", dedicatedserverproperties.simulationDistance));
+             bufferedwriter.write(String.format(Locale.ROOT, "spawn-animals=%s%n", dedicatedserverproperties.spawnAnimals));
+-            bufferedwriter.write(String.format(Locale.ROOT, "generate-structures=%s%n", dedicatedserverproperties.getWorldGenSettings(this.registryAccess()).generateStructures()));
++            bufferedwriter.write(String.format(Locale.ROOT, "generate-structures=%s%n", dedicatedserverproperties.getWorldGenSettings(this.registryAccess(), this.registryreadops).generateStructures())); // Paper
+             bufferedwriter.write(String.format(Locale.ROOT, "use-native=%s%n", dedicatedserverproperties.useNativeTransport));
+             bufferedwriter.write(String.format(Locale.ROOT, "rate-limit=%d%n", dedicatedserverproperties.rateLimitPacketsPerSecond));
+         } catch (Throwable throwable) {
+diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServerProperties.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServerProperties.java
+index a32cfa75a9bea896f558bab646d0868391b069a9..4ef5c2f66cad54cb57c92a690b4bba1e7e9da7d1 100644
+--- a/src/main/java/net/minecraft/server/dedicated/DedicatedServerProperties.java
++++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServerProperties.java
+@@ -170,7 +170,7 @@ public class DedicatedServerProperties extends Settings<DedicatedServerPropertie
+         DedicatedServerProperties dedicatedserverproperties = new DedicatedServerProperties(properties, optionset);
+         // CraftBukkit end
+ 
+-        dedicatedserverproperties.getWorldGenSettings(iregistrycustom);
++        dedicatedserverproperties.getWorldGenSettings(iregistrycustom, MinecraftServer.getServer().registryreadops); // Paper
+         return dedicatedserverproperties;
+     }
+ 
+@@ -217,9 +217,9 @@ public class DedicatedServerProperties extends Settings<DedicatedServerPropertie
+         }
+     }
+ 
+-    public WorldGenSettings getWorldGenSettings(RegistryAccess dynamicRegistryManager) {
++    public WorldGenSettings getWorldGenSettings(RegistryAccess dynamicRegistryManager, com.mojang.serialization.DynamicOps<?> dynamicOps) { // Paper
+         if (this.worldGenSettings == null) {
+-            this.worldGenSettings = this.worldGenProperties.create(dynamicRegistryManager);
++            this.worldGenSettings = this.worldGenProperties.create(dynamicRegistryManager, dynamicOps); // Paper
+         }
+ 
+         return this.worldGenSettings;
+@@ -229,7 +229,7 @@ public class DedicatedServerProperties extends Settings<DedicatedServerPropertie
+ 
+         private static final Map<String, ResourceKey<WorldPreset>> LEGACY_PRESET_NAMES = Map.of("default", WorldPresets.NORMAL, "largebiomes", WorldPresets.LARGE_BIOMES);
+ 
+-        public WorldGenSettings create(RegistryAccess dynamicRegistryManager) {
++        public WorldGenSettings create(RegistryAccess dynamicRegistryManager, com.mojang.serialization.DynamicOps<?> dynamicOps) { // Paper
+             long i = WorldGenSettings.parseSeed(this.levelSeed()).orElse(RandomSource.create().nextLong());
+             Registry<WorldPreset> iregistry = dynamicRegistryManager.registryOrThrow(Registry.WORLD_PRESET_REGISTRY);
+             Holder<WorldPreset> holder = (Holder) iregistry.getHolder(WorldPresets.NORMAL).or(() -> {
+@@ -266,6 +266,7 @@ public class DedicatedServerProperties extends Settings<DedicatedServerPropertie
+                     return WorldGenSettings.replaceOverworldGenerator(dynamicRegistryManager, generatorsettings, new FlatLevelSource(iregistry1, (FlatLevelGeneratorSettings) optional1.get()));
+                 }
+             }
++            generatorsettings = WorldGenSettings.withDatapacks(generatorsettings, dynamicOps); // Paper
+ 
+             return generatorsettings;
+         }
+diff --git a/src/main/java/net/minecraft/world/level/levelgen/WorldGenSettings.java b/src/main/java/net/minecraft/world/level/levelgen/WorldGenSettings.java
+index b8869017132d88ff0c771f74c0d88d3e030b7611..1260c1d2dc11ae02b419b5166ed34ff4917ba782 100644
+--- a/src/main/java/net/minecraft/world/level/levelgen/WorldGenSettings.java
++++ b/src/main/java/net/minecraft/world/level/levelgen/WorldGenSettings.java
+@@ -101,6 +101,21 @@ public class WorldGenSettings {
+ 
+         return writableRegistry;
+     }
++    // Paper start
++    public static WorldGenSettings withDatapacks(WorldGenSettings worldGenSettings, com.mojang.serialization.DynamicOps<?> dynamicOps) {
++        if (dynamicOps instanceof net.minecraft.resources.RegistryOps<?> registryOps && registryOps.registryLoader().isPresent()) {
++            WritableRegistry<LevelStem> writableRegistry = new MappedRegistry<>(Registry.LEVEL_STEM_REGISTRY, Lifecycle.experimental(), null);
++            LevelStem.keysInOrder(worldGenSettings.dimensions.registryKeySet().stream()).forEach(key -> {
++                final LevelStem levelStem = worldGenSettings.dimensions.getOrThrow(key);
++                writableRegistry.register(key, levelStem, worldGenSettings.dimensions.lifecycle(levelStem));
++            });
++            registryOps.registryLoader().orElseThrow().loader().overrideRegistryFromResources(writableRegistry, Registry.LEVEL_STEM_REGISTRY, LevelStem.CODEC, registryOps.getAsJson());
++            writableRegistry.freeze();
++            return new WorldGenSettings(worldGenSettings.seed, worldGenSettings.generateStructures, worldGenSettings.generateBonusChest, writableRegistry, worldGenSettings.legacyCustomOptions);
++        }
++        return worldGenSettings;
++    }
++    // Paper end
+ 
+     public Registry<LevelStem> dimensions() {
+         return this.dimensions;
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index bfde5bbcccfaa754ec6bdf4f3817981a93e465bd..4b2cad875148b65f3d459bada41a3358195f16f3 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -712,7 +712,7 @@ public final class CraftServer implements Server {
+ 
+     @Override
+     public boolean getGenerateStructures() {
+-        return this.getProperties().getWorldGenSettings(this.getServer().registryAccess()).generateStructures();
++        return this.getProperties().getWorldGenSettings(this.getServer().registryAccess(), this.getServer().registryreadops).generateStructures(); // Paper
+     }
+ 
+     @Override
+@@ -1199,7 +1199,7 @@ public final class CraftServer implements Server {
+         if (worlddata == null) {
+             DedicatedServerProperties.WorldGenProperties properties = new DedicatedServerProperties.WorldGenProperties(Objects.toString(creator.seed()), GsonHelper.parse((creator.generatorSettings().isEmpty()) ? "{}" : creator.generatorSettings()), creator.generateStructures(), creator.type().name().toLowerCase(Locale.ROOT));
+ 
+-            WorldGenSettings generatorsettings = properties.create(this.console.registryAccess());
++            WorldGenSettings generatorsettings = properties.create(this.console.registryAccess(), this.console.registryreadops); // Paper
+             worldSettings = new LevelSettings(name, GameType.byId(this.getDefaultGameMode().getValue()), hardcore, Difficulty.EASY, false, new GameRules(), console.datapackconfiguration);
+             worlddata = new PrimaryLevelData(worldSettings, generatorsettings, Lifecycle.stable());
+         }
