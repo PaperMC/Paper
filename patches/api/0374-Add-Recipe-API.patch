@@ -7,16 +7,16 @@ Adds methods to utilize the RecipeManager to obtain recipes
 
 diff --git a/src/main/java/io/papermc/paper/inventory/RecipeType.java b/src/main/java/io/papermc/paper/inventory/RecipeType.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..48f059982b452eacdefcb4d8fcbda6230a90ad0f
+index 0000000000000000000000000000000000000000..ae47efbc112a22ab69546ced519f78c6b3db471a
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/inventory/RecipeType.java
-@@ -0,0 +1,111 @@
+@@ -0,0 +1,87 @@
 +package io.papermc.paper.inventory;
 +
-+import com.google.common.base.Preconditions;
-+import net.kyori.adventure.key.Key;
++import io.papermc.paper.registry.Reference;
 +import org.bukkit.Keyed;
 +import org.bukkit.NamespacedKey;
++import org.bukkit.Registry;
 +import org.bukkit.inventory.BlastingRecipe;
 +import org.bukkit.inventory.CampfireRecipe;
 +import org.bukkit.inventory.CraftingInventory;
@@ -27,15 +27,12 @@ index 0000000000000000000000000000000000000000..48f059982b452eacdefcb4d8fcbda623
 +import org.bukkit.inventory.SmokingRecipe;
 +import org.bukkit.inventory.StonecuttingRecipe;
 +import org.jetbrains.annotations.NotNull;
-+import org.jetbrains.annotations.Nullable;
 +
-+import java.util.HashMap;
-+import java.util.Iterator;
-+import java.util.Map;
 +import java.util.Objects;
 +
 +/**
 + * A type of recipe registered by the game or a datapack.
++ * The most common recipe type is the {@link #CRAFTING crafting table} type.
 + *
 + * @param <R> recipe class this type represents
 + * @param <I> inventory class used for matching recipes
@@ -67,60 +64,39 @@ index 0000000000000000000000000000000000000000..48f059982b452eacdefcb4d8fcbda623
 +        return key;
 +    }
 +
-+    private static final Map<NamespacedKey, RecipeType<?, ?>> recipeTypes = new HashMap<>(7);
-+
-+    private static <R extends Recipe, C extends Inventory> RecipeType<R, C> register(final @NotNull String id) {
-+        RecipeType<R, C> recipeType = new RecipeType<>(id);
-+        recipeTypes.put(recipeType.key, recipeType);
-+        return recipeType;
++    private static <R extends Recipe, C extends Inventory> Reference<RecipeType<R, C>> register(final @NotNull String id) {
++        Object reference = Reference.create(Registry.RECIPE_TYPE, NamespacedKey.minecraft(id));
++        return (Reference<RecipeType<R, C>>) reference;
 +    }
 +
 +    /**
 +     * Recipes for crafting in a {@link org.bukkit.Material#CRAFTING_TABLE CRAFTING_TABLE}.
 +     */
-+    public static final RecipeType<Recipe, CraftingInventory> CRAFTING = register("crafting");
++    public static final Reference<RecipeType<Recipe, CraftingInventory>> CRAFTING = register("crafting");
 +    /**
 +     * Recipes for smelting inside a {@link org.bukkit.Material#FURNACE FURNACE}.
 +     */
-+    public static final RecipeType<FurnaceRecipe, Inventory> SMELTING = register("smelting");
++    public static final Reference<RecipeType<FurnaceRecipe, Inventory>> SMELTING = register("smelting");
 +    /**
 +     * Recipes for smelting inside a {@link org.bukkit.Material#BLAST_FURNACE BLAST_FURNACE}.
 +     */
-+    public static final RecipeType<BlastingRecipe, Inventory> BLASTING = register("blasting");
++    public static final Reference<RecipeType<BlastingRecipe, Inventory>> BLASTING = register("blasting");
 +    /**
 +     * Recipes for smelting inside a {@link org.bukkit.Material#SMOKER SMOKER}.
 +     */
-+    public static final RecipeType<SmokingRecipe, Inventory> SMOKING = register("smoking");
++    public static final Reference<RecipeType<SmokingRecipe, Inventory>> SMOKING = register("smoking");
 +    /**
 +     * Recipes for smelting on a {@link org.bukkit.Material#CAMPFIRE CAMPFIRE}.
 +     */
-+    public static final RecipeType<CampfireRecipe, Inventory> CAMPFIRE_COOKING = register("campfire_cooking");
++    public static final Reference<RecipeType<CampfireRecipe, Inventory>> CAMPFIRE_COOKING = register("campfire_cooking");
 +    /**
 +     * Recipes for cutting in a {@link org.bukkit.Material#STONECUTTER STONECUTTER}.
 +     */
-+    public static final RecipeType<StonecuttingRecipe, Inventory> STONECUTTING = register("stonecutting");
++    public static final Reference<RecipeType<StonecuttingRecipe, Inventory>> STONECUTTING = register("stonecutting");
 +    /**
 +     * Recipes for upgrading items in a {@link org.bukkit.Material#SMITHING_TABLE SMITHING_TABLE}.
 +     */
-+    public static final RecipeType<SmithingRecipe, Inventory> SMITHING = register("smithing");
-+
-+    /**
-+     * Gets a registered recipe type by its key.
-+     *
-+     * @return a registered recipe type or null
-+     */
-+    public static @Nullable RecipeType<?, ?> getByKey(final @NotNull NamespacedKey key) {
-+        return recipeTypes.get(Preconditions.checkNotNull(key, "key"));
-+    }
-+
-+    /**
-+     * Gets an iterator across all registered recipe types.
-+     *
-+     * @return recipe type iterator
-+     */
-+    public static @NotNull Iterator<RecipeType<?, ?>> iterator() {
-+        return recipeTypes.values().iterator();
-+    }
++    public static final Reference<RecipeType<SmithingRecipe, Inventory>> SMITHING = register("smithing");
 +}
 diff --git a/src/main/java/org/bukkit/Bukkit.java b/src/main/java/org/bukkit/Bukkit.java
 index 944f9b87a11472ac6d7e328acc00bf09f899e648..3804690913598f8b31d68be7624bb2b0cd305eea 100644
@@ -144,10 +120,10 @@ index 944f9b87a11472ac6d7e328acc00bf09f899e648..3804690913598f8b31d68be7624bb2b0
  
      @NotNull
 diff --git a/src/main/java/org/bukkit/Registry.java b/src/main/java/org/bukkit/Registry.java
-index 41363490b1e72d53ab3f1f26fe464858bb7b8f72..b4abb933df577c86f5060db4e633b781e17e6c5c 100644
+index 41363490b1e72d53ab3f1f26fe464858bb7b8f72..d96776b0af2ae1d39961db7aa4a7da2e8449b016 100644
 --- a/src/main/java/org/bukkit/Registry.java
 +++ b/src/main/java/org/bukkit/Registry.java
-@@ -233,6 +233,24 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
+@@ -233,6 +233,12 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
              return StructureType.getStructureTypes().values().iterator();
          }
      };
@@ -156,19 +132,7 @@ index 41363490b1e72d53ab3f1f26fe464858bb7b8f72..b4abb933df577c86f5060db4e633b781
 +     *
 +     * @see io.papermc.paper.inventory.RecipeType RecipeType
 +     */
-+    Registry<io.papermc.paper.inventory.RecipeType<?, ?>> RECIPE_TYPE = new Registry<>() {
-+        @NotNull
-+        @Override
-+        public Iterator<io.papermc.paper.inventory.RecipeType<?, ?>> iterator() {
-+            return io.papermc.paper.inventory.RecipeType.iterator();
-+        }
-+
-+        @Nullable
-+        @Override
-+        public io.papermc.paper.inventory.RecipeType<?, ?> get(@org.jetbrains.annotations.NotNull NamespacedKey key) {
-+            return io.papermc.paper.inventory.RecipeType.getByKey(key);
-+        }
-+    };
++    Registry<io.papermc.paper.inventory.RecipeType<?, ?>> RECIPE_TYPE = Bukkit.getUnsafe().registryFor((Class<io.papermc.paper.inventory.RecipeType<?, ?>>) (Object) io.papermc.paper.inventory.RecipeType.class);
      // Paper end
  
      /**

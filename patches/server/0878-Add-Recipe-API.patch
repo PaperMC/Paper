@@ -5,26 +5,6 @@ Subject: [PATCH] Add Recipe API
 
 Adds methods to utilize the RecipeManager to obtain recipes
 
-diff --git a/src/main/java/io/papermc/paper/inventory/CraftRecipeType.java b/src/main/java/io/papermc/paper/inventory/CraftRecipeType.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..c26219e8834377910b5fa4f8ed54e7e80278ed53
---- /dev/null
-+++ b/src/main/java/io/papermc/paper/inventory/CraftRecipeType.java
-@@ -0,0 +1,14 @@
-+package io.papermc.paper.inventory;
-+
-+import net.minecraft.core.Registry;
-+import org.bukkit.craftbukkit.util.CraftNamespacedKey;
-+
-+public class CraftRecipeType {
-+    public static net.minecraft.world.item.crafting.RecipeType asNMS(RecipeType bukkit) {
-+        return Registry.RECIPE_TYPE.get(CraftNamespacedKey.toMinecraft(bukkit.getKey()));
-+    }
-+
-+    public static RecipeType asBukkit(net.minecraft.world.item.crafting.RecipeType nms) {
-+        return RecipeType.getByKey(CraftNamespacedKey.fromMinecraft(Registry.RECIPE_TYPE.getKey(nms)));
-+    }
-+}
 diff --git a/src/main/java/io/papermc/paper/inventory/MenulessContainer.java b/src/main/java/io/papermc/paper/inventory/MenulessContainer.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..fa82f292583a862829f9a5c696b82539487f91e4
@@ -72,6 +52,70 @@ index 0000000000000000000000000000000000000000..fa82f292583a862829f9a5c696b82539
 +        getContents().set(slot, stack);
 +    }
 +}
+diff --git a/src/main/java/io/papermc/paper/inventory/PaperRecipeType.java b/src/main/java/io/papermc/paper/inventory/PaperRecipeType.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..ed038cfe4fb2839f13cf98e9a56268d9e5582180
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/inventory/PaperRecipeType.java
+@@ -0,0 +1,40 @@
++package io.papermc.paper.inventory;
++
++import io.papermc.paper.registry.PaperRegistry;
++import io.papermc.paper.registry.RegistryKey;
++import net.minecraft.core.Registry;
++import org.bukkit.NamespacedKey;
++import org.bukkit.craftbukkit.util.CraftMagicNumbers;
++import org.bukkit.craftbukkit.util.CraftNamespacedKey;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.framework.qual.DefaultQualifier;
++
++@DefaultQualifier(NonNull.class)
++public final class PaperRecipeType {
++
++    private PaperRecipeType() {
++    }
++
++    public static net.minecraft.world.item.crafting.RecipeType asNMS(RecipeType bukkit) {
++        return PaperRegistry.getRegistry(RegistryKey.RECIPE_TYPE_REGISTRY).getMinecraftValue(bukkit);
++    }
++
++    public static RecipeType asBukkit(net.minecraft.world.item.crafting.RecipeType nms) {
++        return PaperRegistry.getRegistry(RegistryKey.RECIPE_TYPE_REGISTRY).convertToApi(Registry.RECIPE_TYPE.getKey(nms), nms);
++    }
++
++    public static void init() {
++        new RecipeTypeRegistry().register();
++    }
++
++    static final class RecipeTypeRegistry extends PaperRegistry<RecipeType<?, ?>, net.minecraft.world.item.crafting.RecipeType<?>> {
++        public RecipeTypeRegistry() {
++            super(RegistryKey.RECIPE_TYPE_REGISTRY);
++        }
++
++        @Override
++        public RecipeType<?, ?> convertToApi(NamespacedKey key, net.minecraft.world.item.crafting.RecipeType<?> nms) {
++            return new RecipeType<>(key);
++        }
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/registry/RegistryKey.java b/src/main/java/io/papermc/paper/registry/RegistryKey.java
+index cbff75f19e54b37c762b209b04f6d4799152cf5b..52da122a09f9701d0465e2fba3bd6c2f187ac1e6 100644
+--- a/src/main/java/io/papermc/paper/registry/RegistryKey.java
++++ b/src/main/java/io/papermc/paper/registry/RegistryKey.java
+@@ -1,5 +1,6 @@
+ package io.papermc.paper.registry;
+ 
++import io.papermc.paper.inventory.RecipeType;
+ import io.papermc.paper.world.structure.ConfiguredStructure;
+ import net.minecraft.core.Registry;
+ import net.minecraft.resources.ResourceKey;
+@@ -9,5 +10,6 @@ import org.bukkit.Keyed;
+ public record RegistryKey<API extends Keyed, MINECRAFT>(Class<API> apiClass, ResourceKey<? extends Registry<MINECRAFT>> resourceKey) {
+ 
+     public static final RegistryKey<ConfiguredStructure, ConfiguredStructureFeature<?, ?>> CONFIGURED_STRUCTURE_REGISTRY = new RegistryKey<>(ConfiguredStructure.class, Registry.CONFIGURED_STRUCTURE_FEATURE_REGISTRY);
++    public static final RegistryKey<RecipeType<?, ?>, net.minecraft.world.item.crafting.RecipeType<?>> RECIPE_TYPE_REGISTRY = new RegistryKey<>((Class<RecipeType<?, ?>>) (Object) RecipeType.class, Registry.RECIPE_TYPE_REGISTRY);
+ 
+ }
 diff --git a/src/main/java/net/minecraft/world/item/crafting/RecipeManager.java b/src/main/java/net/minecraft/world/item/crafting/RecipeManager.java
 index 7ef0075cc16613709e145714204a728d8d8dd82b..1bd227fbc209f0b9655a281061d9417f21da84b4 100644
 --- a/src/main/java/net/minecraft/world/item/crafting/RecipeManager.java
@@ -84,8 +128,20 @@ index 7ef0075cc16613709e145714204a728d8d8dd82b..1bd227fbc209f0b9655a281061d9417f
          return (List) this.byType(type).values().stream().map((irecipe) -> {
              return irecipe;
          }).collect(Collectors.toList());
+diff --git a/src/main/java/net/minecraft/world/item/crafting/RecipeType.java b/src/main/java/net/minecraft/world/item/crafting/RecipeType.java
+index db098a1342fd5b30a3ee0dca8434a6696493930b..6d62b3c91b6f3e1aebe983cc74c68fc4cf705f1f 100644
+--- a/src/main/java/net/minecraft/world/item/crafting/RecipeType.java
++++ b/src/main/java/net/minecraft/world/item/crafting/RecipeType.java
+@@ -21,6 +21,7 @@ public interface RecipeType<T extends Recipe<?>> {
+             public String toString() {
+                 return id;
+             }
++            static { io.papermc.paper.inventory.PaperRecipeType.init(); } // Paper
+         });
+     }
+ 
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 55c981f2c8070fc1bd9ecd4f4df140d9d0c68319..e52c0a0c95e4b73df05745ff1cd1195560a7e307 100644
+index 55c981f2c8070fc1bd9ecd4f4df140d9d0c68319..35773d299d94614998bd010bcfe20c323220ccc6 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -2852,5 +2852,14 @@ public final class CraftServer implements Server {
@@ -96,7 +152,7 @@ index 55c981f2c8070fc1bd9ecd4f4df140d9d0c68319..e52c0a0c95e4b73df05745ff1cd11955
 +    public <R extends org.bukkit.inventory.Recipe> List<R> getAllRecipes(io.papermc.paper.inventory.RecipeType<R, ?> recipeType) {
 +        Validate.notNull(recipeType, "recipeType parameter in getAllRecipes cannot be null");
 +        List<R> recipes = new ArrayList<>();
-+        for (net.minecraft.world.item.crafting.Recipe<?> nmsrecipe : (List<net.minecraft.world.item.crafting.Recipe<?>>) getServer().getRecipeManager().getAllRecipesFor(io.papermc.paper.inventory.CraftRecipeType.asNMS(recipeType))) {
++        for (net.minecraft.world.item.crafting.Recipe<?> nmsrecipe : (List<net.minecraft.world.item.crafting.Recipe<?>>) getServer().getRecipeManager().getAllRecipesFor(io.papermc.paper.inventory.PaperRecipeType.asNMS(recipeType))) {
 +            recipes.add((R) nmsrecipe.toBukkitRecipe());
 +        }
 +        return recipes;
@@ -104,7 +160,7 @@ index 55c981f2c8070fc1bd9ecd4f4df140d9d0c68319..e52c0a0c95e4b73df05745ff1cd11955
      // Paper end
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index 028663b86970b8a1ae3e5275429516ee00ef0a04..d2de349f9038cc4fa7d38181f009f212874cfb63 100644
+index 028663b86970b8a1ae3e5275429516ee00ef0a04..12c8a1511a88cf3f863d82e1538dab8fd2a07265 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 @@ -2328,4 +2328,81 @@ public class CraftWorld extends CraftRegionAccessor implements World {
@@ -116,7 +172,7 @@ index 028663b86970b8a1ae3e5275429516ee00ef0a04..d2de349f9038cc4fa7d38181f009f212
 +    public <R extends org.bukkit.inventory.Recipe> R getRecipe(io.papermc.paper.inventory.RecipeType<R, ?> recipeType, net.minecraft.world.Container container) {
 +        Validate.notNull(recipeType, "recipeType parameter in getRecipe cannot be null");
 +        Validate.notNull(container, "container parameter in getRecipe cannot be null");
-+        java.util.Optional<net.minecraft.world.item.crafting.Recipe> optionalRecipe = this.world.getRecipeManager().getRecipeFor(io.papermc.paper.inventory.CraftRecipeType.asNMS(recipeType), container, this.world);
++        java.util.Optional<net.minecraft.world.item.crafting.Recipe> optionalRecipe = this.world.getRecipeManager().getRecipeFor(io.papermc.paper.inventory.PaperRecipeType.asNMS(recipeType), container, this.world);
 +        return (R) optionalRecipe.map(recipe -> recipe.toBukkitRecipe()).orElse(null);
 +    }
 +
@@ -153,7 +209,7 @@ index 028663b86970b8a1ae3e5275429516ee00ef0a04..d2de349f9038cc4fa7d38181f009f212
 +        Validate.notNull(recipeType, "recipeType parameter in getRecipes cannot be null");
 +        Validate.notNull(container, "container parameter in getRecipes cannot be null");
 +        List<R> recipes = new ArrayList<>();
-+        for (net.minecraft.world.item.crafting.Recipe recipe : (List<net.minecraft.world.item.crafting.Recipe>) this.world.getRecipeManager().getRecipesFor(io.papermc.paper.inventory.CraftRecipeType.asNMS(recipeType), container, this.world)) {
++        for (net.minecraft.world.item.crafting.Recipe recipe : (List<net.minecraft.world.item.crafting.Recipe>) this.world.getRecipeManager().getRecipesFor(io.papermc.paper.inventory.PaperRecipeType.asNMS(recipeType), container, this.world)) {
 +            recipes.add((R) recipe.toBukkitRecipe());
 +        }
 +        return recipes;
