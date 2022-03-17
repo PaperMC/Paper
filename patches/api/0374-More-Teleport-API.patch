@@ -58,10 +58,10 @@ index 0000000000000000000000000000000000000000..4270deba5f4cd85a6789fcd190110f9b
 +
 +}
 diff --git a/src/main/java/org/bukkit/entity/Entity.java b/src/main/java/org/bukkit/entity/Entity.java
-index 8bc6876c82935988436597161fa0ec94c032174b..066e6d15e7f5dabb4620e3acea143317cf46bf4d 100644
+index 8bc6876c82935988436597161fa0ec94c032174b..46174b00965301f88fc441fa1a35a42907dd08ce 100644
 --- a/src/main/java/org/bukkit/entity/Entity.java
 +++ b/src/main/java/org/bukkit/entity/Entity.java
-@@ -125,6 +125,64 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
+@@ -125,6 +125,68 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
       */
      public void setRotation(float yaw, float pitch);
  
@@ -69,11 +69,11 @@ index 8bc6876c82935988436597161fa0ec94c032174b..066e6d15e7f5dabb4620e3acea143317
 +    /**
 +     * Teleports this entity to the given location.
 +     * <p>
-+     * Note: You cannot ignore passengers if you are teleporting this entity to another world.
++     * Note: Teleporting to a different world with ignorePassengers to true while the entity has entities riding it
++     * will cause this teleportation to return false.
 +     *
 +     * @param location New location to teleport this entity to
 +     * @param ignorePassengers If passengers should be ignored when teleporting
-+     * @throws IllegalArgumentException If teleporting to a different world while ignoring passengers
 +     * @return <code>true</code> if the teleport was successful
 +     */
 +    default boolean teleport(@NotNull Location location, boolean ignorePassengers) {
@@ -83,11 +83,11 @@ index 8bc6876c82935988436597161fa0ec94c032174b..066e6d15e7f5dabb4620e3acea143317
 +    /**
 +     * Teleports this entity to the given location.
 +     * <p>
-+     * Note: You cannot ignore passengers if you are teleporting this entity to another world.
++     * Note: Teleporting to a different world with ignorePassengers to true while the entity has entities riding it
++     * will cause this teleportation to return false.
 +     *
 +     * @param location New location to teleport this entity to
 +     * @param ignorePassengers If passengers should be ignored when teleporting
-+     * @throws IllegalArgumentException If teleporting to a different world while ignoring passengers
 +     * @return <code>true</code> if the teleport was successful
 +     */
 +    default boolean teleport(@NotNull Location location, @NotNull TeleportCause cause, boolean ignorePassengers) {
@@ -97,12 +97,14 @@ index 8bc6876c82935988436597161fa0ec94c032174b..066e6d15e7f5dabb4620e3acea143317
 +    /**
 +     * Teleports this entity to the given location.
 +     * <p>
-+     * Note: You cannot ignore passengers or stay mounted if you are teleporting this entity to another world.
++     * Note: Teleporting to a different world with ignorePassengers to true while the entity has entities riding it
++     * will cause this teleportation to return false.
++     * Note: Teleporting to a different world with dismount to false while this entity is riding another entity will
++     * cause this teleportation to return false.
 +     *
 +     * @param location New location to teleport this entity to
 +     * @param ignorePassengers If passengers should be ignored when teleporting
 +     * @param dismount If the entity should be dismounted if they are riding another entity
-+     * @throws IllegalArgumentException If teleporting to a different world while ignoring passengers or dismount is false
 +     * @return <code>true</code> if the teleport was successful
 +     */
 +    default boolean teleport(@NotNull Location location, boolean ignorePassengers, boolean dismount) {
@@ -112,12 +114,14 @@ index 8bc6876c82935988436597161fa0ec94c032174b..066e6d15e7f5dabb4620e3acea143317
 +    /**
 +     * Teleports this entity to the given location.
 +     * <p>
-+     * Note: You cannot keep passengers or stay mounted if you are teleporting this entity to another world.
++     * Note: Teleporting to a different world with ignorePassengers to true while the entity has entities riding it
++     * will cause this teleportation to return false.
++     * Note: Teleporting to a different world with dismount to false while this entity is riding another entity will
++     * cause this teleportation to return false.
 +     *
 +     * @param location New location to teleport this entity to
 +     * @param ignorePassengers If passengers should be ignored when teleporting
 +     * @param dismount If the entity should be dismounted if they are riding another entity
-+     * @throws IllegalArgumentException If teleporting to a different world while ignoring passengers or dismount is false
 +     * @return <code>true</code> if the teleport was successful
 +     */
 +    boolean teleport(@NotNull Location location, @NotNull TeleportCause cause, boolean ignorePassengers, boolean dismount);
@@ -127,10 +131,10 @@ index 8bc6876c82935988436597161fa0ec94c032174b..066e6d15e7f5dabb4620e3acea143317
       * Teleports this entity to the given location. If this entity is riding a
       * vehicle, it will be dismounted prior to teleportation.
 diff --git a/src/main/java/org/bukkit/entity/Player.java b/src/main/java/org/bukkit/entity/Player.java
-index f954801f6a5d465b8545e75d7ff5af0352d6ec0d..30cf0a5145bbb9cb98f99bcd115c6b5c07c6df4d 100644
+index f954801f6a5d465b8545e75d7ff5af0352d6ec0d..d7fdac2ea7e7e25c2d04d0dc7a9f56d54c0aa6a4 100644
 --- a/src/main/java/org/bukkit/entity/Player.java
 +++ b/src/main/java/org/bukkit/entity/Player.java
-@@ -2668,6 +2668,55 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -2668,6 +2668,57 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      String getClientBrandName();
      // Paper end
  
@@ -138,7 +142,10 @@ index f954801f6a5d465b8545e75d7ff5af0352d6ec0d..30cf0a5145bbb9cb98f99bcd115c6b5c
 +    /**
 +     * Teleports this entity to the given location.
 +     * <p>
-+     * Note: You cannot ignore passengers or stay mounted if you are teleporting this entity to another world.
++     * Note: Teleporting to a different world with ignorePassengers to true while the entity has entities riding it
++     * will cause this teleportation to return false.
++     * Note: Teleporting to a different world with dismount to false while this entity is riding another entity will
++     * cause this teleportation to return false.
 +     *
 +     * <p>
 +     * Relative teleportation flags are only used client side, and cause the player to not lose velocity in that
@@ -148,7 +155,6 @@ index f954801f6a5d465b8545e75d7ff5af0352d6ec0d..30cf0a5145bbb9cb98f99bcd115c6b5c
 +     * @param ignorePassengers If passengers should be ignored when teleporting
 +     * @param dismount If the entity should be dismounted if they are riding another entity
 +     * @param teleportFlags Coordinates of the location that the client should handle as relative teleportation
-+     * @throws IllegalArgumentException If teleporting to a different world while ignoring passengers or dismount is false
 +     * @return <code>true</code> if the teleport was successful
 +     */
 +    public boolean teleport(@NotNull Location location, @NotNull org.bukkit.event.player.PlayerTeleportEvent.TeleportCause cause, boolean ignorePassengers, boolean dismount, @NotNull io.papermc.paper.entity.RelativeTeleportFlag... teleportFlags);
@@ -187,27 +193,42 @@ index f954801f6a5d465b8545e75d7ff5af0352d6ec0d..30cf0a5145bbb9cb98f99bcd115c6b5c
      @Override
      Spigot spigot();
 diff --git a/src/main/java/org/bukkit/event/player/PlayerTeleportEvent.java b/src/main/java/org/bukkit/event/player/PlayerTeleportEvent.java
-index 553d7740489fe729166c8ca8ef8c7834db3663ad..2aeaa892af957fa4461a3c211ba7724ab14798f1 100644
+index 553d7740489fe729166c8ca8ef8c7834db3663ad..f1780588807689727dda1691c82e9aa4d297035a 100644
 --- a/src/main/java/org/bukkit/event/player/PlayerTeleportEvent.java
 +++ b/src/main/java/org/bukkit/event/player/PlayerTeleportEvent.java
-@@ -23,6 +23,16 @@ public class PlayerTeleportEvent extends PlayerMoveEvent {
+@@ -13,8 +13,14 @@ public class PlayerTeleportEvent extends PlayerMoveEvent {
+     private static final HandlerList handlers = new HandlerList();
+     private TeleportCause cause = TeleportCause.UNKNOWN;
+ 
++    // Paper start - Teleport API
++    private boolean dismounted = true;
++    private final java.util.Set<io.papermc.paper.entity.RelativeTeleportFlag> teleportFlagSet;
++    // Paper end
++
+     public PlayerTeleportEvent(@NotNull final Player player, @NotNull final Location from, @Nullable final Location to) {
+         super(player, from, to);
++        teleportFlagSet = java.util.Collections.emptySet(); // Paper - Teleport API
+     }
+ 
+     public PlayerTeleportEvent(@NotNull final Player player, @NotNull final Location from, @Nullable final Location to, @NotNull final TeleportCause cause) {
+@@ -23,6 +29,16 @@ public class PlayerTeleportEvent extends PlayerMoveEvent {
          this.cause = cause;
      }
  
 +    // Paper start - Teleport API
-+    private boolean dismounted = true;
-+    private java.util.Set<io.papermc.paper.entity.RelativeTeleportFlag> teleportFlagSet = java.util.Collections.emptySet();
-+
 +    public PlayerTeleportEvent(@NotNull final Player player, @NotNull final Location from, @Nullable final Location to, @NotNull final TeleportCause cause, boolean dismounted, @NotNull java.util.Set<io.papermc.paper.entity.RelativeTeleportFlag> teleportFlagSet) {
-+        this(player, from, to, cause);
++        super(player, from, to);
++
 +        this.dismounted = dismounted;
 +        this.teleportFlagSet = teleportFlagSet;
++        this.cause = cause;
 +    }
 +    // Paper end
++
      /**
       * Gets the cause of this teleportation event
       *
-@@ -80,6 +90,28 @@ public class PlayerTeleportEvent extends PlayerMoveEvent {
+@@ -80,6 +96,28 @@ public class PlayerTeleportEvent extends PlayerMoveEvent {
          UNKNOWN;
      }
  
@@ -225,7 +246,7 @@ index 553d7740489fe729166c8ca8ef8c7834db3663ad..2aeaa892af957fa4461a3c211ba7724a
 +     * Returns the relative teleportation flags used in this teleportation.
 +     * This determines which axis the player will not lose their velocity in.
 +     *
-+     * @return relative teleportation flags
++     * @return an immutable set of relative teleportation flags
 +     */
 +    @NotNull
 +    public java.util.Set<io.papermc.paper.entity.RelativeTeleportFlag> getRelativeTeleportationFlags() {
