@@ -4,9 +4,27 @@ Date: Sat, 16 Oct 2021 17:38:35 -0700
 Subject: [PATCH] Use correct LevelStem registry when loading default
  end/nether
 
+Co-authored-by: Jake Potrebic <jake.m.potrebic@gmail.com>
 
+diff --git a/src/main/java/net/minecraft/resources/RegistryLoader.java b/src/main/java/net/minecraft/resources/RegistryLoader.java
+index 75f72b568ee2b27c5042da688b62d4e3c5732e09..8c3555842202d67793d818c96feda4daa2f08a0c 100644
+--- a/src/main/java/net/minecraft/resources/RegistryLoader.java
++++ b/src/main/java/net/minecraft/resources/RegistryLoader.java
+@@ -42,6 +42,12 @@ public class RegistryLoader {
+         RegistryLoader.ReadCache<E> readCache = this.readCache(registryRef);
+         DataResult<Holder<E>> dataResult = readCache.values.get(entryKey);
+         if (dataResult != null) {
++            // Paper start - register in registry due to craftbukkit running this 3 times instead of once
++            if (registryRef == (ResourceKey) Registry.LEVEL_STEM_REGISTRY && dataResult.result().isPresent()) {
++                // OptionalInt.empty() because the LevelStem registry is only loaded from the resource manager, not the InMemory resource access
++                registry.registerOrOverride(java.util.OptionalInt.empty(), entryKey, dataResult.result().get().value(), dataResult.lifecycle());
++            }
++            // Paper end
+             return dataResult;
+         } else {
+             Holder<E> holder = registry.getOrCreateHolder(entryKey);
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index a279368fe144bd41d15e5fe5e565412f8b4ef9f7..f877b956859643b4f3d969992f2e515dc490f90c 100644
+index fddb279d161b30d6944495f0de9f6b7e21761a80..df955666723a8cb1e612311f0b8e77fb577d6be5 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -563,7 +563,14 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
