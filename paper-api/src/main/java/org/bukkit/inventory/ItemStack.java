@@ -678,6 +678,24 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
     }
 
     // Paper start
+    /**
+     * Randomly enchants a copy of this {@link ItemStack} using the given experience levels.
+     *
+     * <p>If this ItemStack is already enchanted, the existing enchants will be removed before enchanting.</p>
+     *
+     * <p>Levels must be in range {@code [1, 30]}.</p>
+     *
+     * @param levels levels to use for enchanting
+     * @param allowTreasure whether to allow enchantments where {@link org.bukkit.enchantments.Enchantment#isTreasure()} returns true
+     * @param random {@link java.util.Random} instance to use for enchanting
+     * @return enchanted copy of the provided ItemStack
+     * @throws IllegalArgumentException on bad arguments
+     */
+    @NotNull
+    public ItemStack enchantWithLevels(final @org.jetbrains.annotations.Range(from = 1, to = 30) int levels, final boolean allowTreasure, final @NotNull java.util.Random random) {
+        return Bukkit.getServer().getItemFactory().enchantWithLevels(this, levels, allowTreasure, random);
+    }
+
     @NotNull
     @Override
     public net.kyori.adventure.text.event.HoverEvent<net.kyori.adventure.text.event.HoverEvent.ShowItem> asHoverEvent(final @NotNull java.util.function.UnaryOperator<net.kyori.adventure.text.event.HoverEvent.ShowItem> op) {

@@ -170,8 +170,11 @@ public interface ItemFactory {
      * @param level the level to use, which is the level in the enchantment table
      * @param allowTreasures allows treasure enchants, e.g. mending, if true.
      * @return a new ItemStack containing the result of the Enchantment
+     * @deprecated use {@link #enchantWithLevels(ItemStack, int, boolean, java.util.Random)}. This method's implementation is poorly
+     * designed and was originally broken.
      */
     @NotNull
+    @Deprecated(since = "1.19.3") // Paper
     ItemStack enchantItem(@NotNull final Entity entity, @NotNull final ItemStack item, final int level, final boolean allowTreasures);
 
     /**
@@ -184,8 +187,11 @@ public interface ItemFactory {
      * @param level the level to use, which is the level in the enchantment table
      * @param allowTreasures allow the treasure enchants, e.g. mending, if true.
      * @return a new ItemStack containing the result of the Enchantment
+     * @deprecated use {@link #enchantWithLevels(ItemStack, int, boolean, java.util.Random)}. This method's implementation is poorly
+     * designed and was originally broken.
      */
     @NotNull
+    @Deprecated(since = "1.19.3") // Paper
     ItemStack enchantItem(@NotNull final World world, @NotNull final ItemStack item, final int level, final boolean allowTreasures);
 
     /**
@@ -197,8 +203,11 @@ public interface ItemFactory {
      * @param level the level to use, which is the level in the enchantment table
      * @param allowTreasures allow treasure enchantments, e.g. mending, if true.
      * @return a new ItemStack containing the result of the Enchantment
+     * @deprecated use {@link #enchantWithLevels(ItemStack, int, boolean, java.util.Random)}. This method's implementation is poorly
+     * designed and was originally broken.
      */
     @NotNull
+    @Deprecated(since = "1.19.3") // Paper
     ItemStack enchantItem(@NotNull final ItemStack item, final int level, final boolean allowTreasures);
 
     // Paper start - Adventure
@@ -311,4 +320,22 @@ public interface ItemFactory {
     @Deprecated
     net.md_5.bungee.api.chat.hover.content.Content hoverContentOf(@NotNull org.bukkit.entity.Entity entity, @NotNull net.md_5.bungee.api.chat.BaseComponent[] customName);
     // Paper end - bungee hover events
+
+    // Paper start - enchantWithLevels API
+    /**
+     * Randomly enchants a copy of the provided {@link ItemStack} using the given experience levels.
+     *
+     * <p>If the provided ItemStack is already enchanted, the existing enchants will be removed before enchanting.</p>
+     *
+     * <p>Levels must be in range {@code [1, 30]}.</p>
+     *
+     * @param itemStack ItemStack to enchant
+     * @param levels levels to use for enchanting
+     * @param allowTreasure whether to allow enchantments where {@link org.bukkit.enchantments.Enchantment#isTreasure()} returns true
+     * @param random {@link java.util.Random} instance to use for enchanting
+     * @return enchanted copy of the provided ItemStack
+     * @throws IllegalArgumentException on bad arguments
+     */
+    @NotNull ItemStack enchantWithLevels(@NotNull ItemStack itemStack, @org.jetbrains.annotations.Range(from = 1, to = 30) int levels, boolean allowTreasure, @NotNull java.util.Random random);
+    // Paper end - enchantWithLevels API
 }
