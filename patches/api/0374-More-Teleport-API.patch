@@ -6,14 +6,22 @@ Subject: [PATCH] More Teleport API
 
 diff --git a/src/main/java/io/papermc/paper/entity/LookAnchor.java b/src/main/java/io/papermc/paper/entity/LookAnchor.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..d29f7b10f86d049e935d614c67c9c2e57287d77e
+index 0000000000000000000000000000000000000000..8a8646e9555b3346fd1c7d493c92c2e7e6233a13
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/entity/LookAnchor.java
-@@ -0,0 +1,16 @@
+@@ -0,0 +1,24 @@
 +package io.papermc.paper.entity;
 +
++import org.bukkit.Location;
++import org.bukkit.entity.Entity;
 +import org.bukkit.entity.LivingEntity;
 +
++/**
++ * Represents what part of the entity should be used when determining where to face a location/entity.
++ *
++ * @see org.bukkit.entity.Player#lookAt(Location, LookAnchor)
++ * @see org.bukkit.entity.Player#lookAt(LookAnchor, Entity, LookAnchor)
++ */
 +public enum LookAnchor {
 +    /**
 +     * Represents the entity's feet.
@@ -28,12 +36,20 @@ index 0000000000000000000000000000000000000000..d29f7b10f86d049e935d614c67c9c2e5
 +}
 diff --git a/src/main/java/io/papermc/paper/entity/RelativeTeleportFlag.java b/src/main/java/io/papermc/paper/entity/RelativeTeleportFlag.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..4270deba5f4cd85a6789fcd190110f9b06ebf310
+index 0000000000000000000000000000000000000000..91dcc8a4ca6d2179fe9ffb079896c7722eae2117
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/entity/RelativeTeleportFlag.java
-@@ -0,0 +1,25 @@
+@@ -0,0 +1,33 @@
 +package io.papermc.paper.entity;
 +
++import org.bukkit.Location;
++import org.bukkit.event.player.PlayerTeleportEvent;
++
++/**
++ * Represents coordinates in a teleportation that should be handled relatively.
++ *
++ * @see org.bukkit.entity.Player#teleport(Location, PlayerTeleportEvent.TeleportCause, boolean, boolean, RelativeTeleportFlag...)
++ */
 +public enum RelativeTeleportFlag {
 +    /**
 +     * Represents the player's X coordinate
@@ -131,7 +147,7 @@ index 8bc6876c82935988436597161fa0ec94c032174b..46174b00965301f88fc441fa1a35a429
       * Teleports this entity to the given location. If this entity is riding a
       * vehicle, it will be dismounted prior to teleportation.
 diff --git a/src/main/java/org/bukkit/entity/Player.java b/src/main/java/org/bukkit/entity/Player.java
-index f954801f6a5d465b8545e75d7ff5af0352d6ec0d..d7fdac2ea7e7e25c2d04d0dc7a9f56d54c0aa6a4 100644
+index f954801f6a5d465b8545e75d7ff5af0352d6ec0d..bff438b8c23df7a47d95b63537b25e036335cb63 100644
 --- a/src/main/java/org/bukkit/entity/Player.java
 +++ b/src/main/java/org/bukkit/entity/Player.java
 @@ -2668,6 +2668,57 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
@@ -157,7 +173,7 @@ index f954801f6a5d465b8545e75d7ff5af0352d6ec0d..d7fdac2ea7e7e25c2d04d0dc7a9f56d5
 +     * @param teleportFlags Coordinates of the location that the client should handle as relative teleportation
 +     * @return <code>true</code> if the teleport was successful
 +     */
-+    public boolean teleport(@NotNull Location location, @NotNull org.bukkit.event.player.PlayerTeleportEvent.TeleportCause cause, boolean ignorePassengers, boolean dismount, @NotNull io.papermc.paper.entity.RelativeTeleportFlag... teleportFlags);
++    boolean teleport(@NotNull Location location, @NotNull org.bukkit.event.player.PlayerTeleportEvent.TeleportCause cause, boolean ignorePassengers, boolean dismount, @NotNull io.papermc.paper.entity.RelativeTeleportFlag... teleportFlags);
 +
 +    /**
 +     * Causes the player to look towards the given position.
@@ -167,7 +183,7 @@ index f954801f6a5d465b8545e75d7ff5af0352d6ec0d..d7fdac2ea7e7e25c2d04d0dc7a9f56d5
 +     * @param z z coordinate
 +     * @param playerAnchor What part of the player should face the given position
 +     */
-+    public void lookAt(double x, double y, double z, @NotNull io.papermc.paper.entity.LookAnchor playerAnchor);
++    void lookAt(double x, double y, double z, @NotNull io.papermc.paper.entity.LookAnchor playerAnchor);
 +
 +    /**
 +     * Causes the player to look towards the given location.
@@ -175,18 +191,18 @@ index f954801f6a5d465b8545e75d7ff5af0352d6ec0d..d7fdac2ea7e7e25c2d04d0dc7a9f56d5
 +     * @param location Location to look at
 +     * @param playerAnchor What part of player should face the location
 +     */
-+    default public void lookAt(@NotNull Location location, @NotNull io.papermc.paper.entity.LookAnchor playerAnchor) {
++    default void lookAt(@NotNull Location location, @NotNull io.papermc.paper.entity.LookAnchor playerAnchor) {
 +        lookAt(location.getX(), location.getY(), location.getZ(), playerAnchor);
 +    }
 +
 +    /**
 +     * Causes the player to look towards the given entity.
 +     *
-+     * @param playerAnchor What part of the player should face the entity
 +     * @param entity Entity to look at
++     * @param playerAnchor What part of the player should face the entity
 +     * @param entityAnchor What part of the entity the player should face
 +     */
-+    public void lookAt(@NotNull io.papermc.paper.entity.LookAnchor playerAnchor, org.bukkit.entity.@NotNull Entity entity, @NotNull io.papermc.paper.entity.LookAnchor entityAnchor);
++    void lookAt(@NotNull org.bukkit.entity.Entity entity, @NotNull io.papermc.paper.entity.LookAnchor playerAnchor,  @NotNull io.papermc.paper.entity.LookAnchor entityAnchor);
 +    // Paper end - Teleport API
 +
      @NotNull
