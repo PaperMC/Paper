@@ -5,24 +5,18 @@ Subject: [PATCH] More Teleport API
 
 
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index 5706d6c28dc20a700dd8b9473ccbcf352608b175..7db5c262649cc085bf10727275f2c0741e0339d5 100644
+index 5706d6c28dc20a700dd8b9473ccbcf352608b175..c2a0fa52ec4862959de961c22824883fd72da1ef 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-@@ -1620,11 +1620,23 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+@@ -1620,11 +1620,17 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
              return false; // CraftBukkit - Return event status
          }
  
 -        PlayerTeleportEvent event = new PlayerTeleportEvent(player, from.clone(), to.clone(), cause);
 +        // Paper start - Teleport API
-+        Set<io.papermc.paper.entity.RelativeTeleportFlag> relativeFlags = new java.util.HashSet<>(set.size());
++        Set<io.papermc.paper.entity.RelativeTeleportFlag> relativeFlags = java.util.EnumSet.noneOf(io.papermc.paper.entity.RelativeTeleportFlag.class);
 +        for (net.minecraft.network.protocol.game.ClientboundPlayerPositionPacket.RelativeArgument relativeArgument : set) {
-+            relativeFlags.add(switch (relativeArgument) {
-+                case X -> io.papermc.paper.entity.RelativeTeleportFlag.X;
-+                case Y -> io.papermc.paper.entity.RelativeTeleportFlag.Y;
-+                case Z -> io.papermc.paper.entity.RelativeTeleportFlag.Z;
-+                case X_ROT -> io.papermc.paper.entity.RelativeTeleportFlag.PITCH;
-+                case Y_ROT -> io.papermc.paper.entity.RelativeTeleportFlag.YAW;
-+            });
++            relativeFlags.add(org.bukkit.craftbukkit.entity.CraftPlayer.toApiRelativeFlag(relativeArgument));
 +        }
 +        PlayerTeleportEvent event = new PlayerTeleportEvent(player, from.clone(), to.clone(), cause, flag, java.util.Set.copyOf(relativeFlags));
 +        // Paper end
@@ -75,10 +69,10 @@ index a92755211e3d42934b5efaa3f201c6c19ab7d2b4..9701e7dd36c0ffeca4ab267ddf70e807
          // Let the server handle cross world teleports
          if (!location.getWorld().equals(this.getWorld())) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index 6feeadad9aecb7d63e24d5daae115a93e39aeb3d..e2b590b6fe7fdf744e84f63ae0609f2e2aad467c 100644
+index 6feeadad9aecb7d63e24d5daae115a93e39aeb3d..f4f685a67e9f4f0f6e5277d95d0217222feb10fa 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-@@ -1040,8 +1040,56 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -1040,8 +1040,66 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
  
      @Override
      public boolean teleport(Location location, PlayerTeleportEvent.TeleportCause cause) {
@@ -102,7 +96,7 @@ index 6feeadad9aecb7d63e24d5daae115a93e39aeb3d..e2b590b6fe7fdf744e84f63ae0609f2e
 +        this.getHandle().lookAt(net.minecraft.commands.arguments.EntityAnchorArgument.Anchor.values()[playerAnchor.ordinal()], new Vec3(x, y, z));
 +    }
 +
-+    public net.minecraft.network.protocol.game.ClientboundPlayerPositionPacket.RelativeArgument toNmsRelativeFlag(io.papermc.paper.entity.RelativeTeleportFlag apiFlag) {
++    public static net.minecraft.network.protocol.game.ClientboundPlayerPositionPacket.RelativeArgument toNmsRelativeFlag(io.papermc.paper.entity.RelativeTeleportFlag apiFlag) {
 +        return switch (apiFlag) {
 +            case X -> net.minecraft.network.protocol.game.ClientboundPlayerPositionPacket.RelativeArgument.X;
 +            case Y -> net.minecraft.network.protocol.game.ClientboundPlayerPositionPacket.RelativeArgument.Y;
@@ -110,6 +104,16 @@ index 6feeadad9aecb7d63e24d5daae115a93e39aeb3d..e2b590b6fe7fdf744e84f63ae0609f2e
 +            case PITCH -> net.minecraft.network.protocol.game.ClientboundPlayerPositionPacket.RelativeArgument.X_ROT;
 +            case YAW -> net.minecraft.network.protocol.game.ClientboundPlayerPositionPacket.RelativeArgument.Y_ROT;
 +        };
++    }
++
++    public static io.papermc.paper.entity.RelativeTeleportFlag toApiRelativeFlag(net.minecraft.network.protocol.game.ClientboundPlayerPositionPacket.RelativeArgument nmsFlag) {
++        return switch (nmsFlag) {
++            case X -> io.papermc.paper.entity.RelativeTeleportFlag.X;
++            case Y -> io.papermc.paper.entity.RelativeTeleportFlag.Y;
++            case Z -> io.papermc.paper.entity.RelativeTeleportFlag.Z;
++            case X_ROT -> io.papermc.paper.entity.RelativeTeleportFlag.PITCH;
++            case Y_ROT -> io.papermc.paper.entity.RelativeTeleportFlag.YAW;
++        }
 +    }
 +
 +    @Override
@@ -135,7 +139,7 @@ index 6feeadad9aecb7d63e24d5daae115a93e39aeb3d..e2b590b6fe7fdf744e84f63ae0609f2e
          location.checkFinite();
  
          ServerPlayer entity = this.getHandle();
-@@ -1054,7 +1102,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -1054,7 +1112,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
             return false;
          }
  
@@ -144,7 +148,7 @@ index 6feeadad9aecb7d63e24d5daae115a93e39aeb3d..e2b590b6fe7fdf744e84f63ae0609f2e
              return false;
          }
  
-@@ -1072,7 +1120,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -1072,7 +1130,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          }
  
          // If this player is riding another entity, we must dismount before teleporting.
@@ -153,7 +157,7 @@ index 6feeadad9aecb7d63e24d5daae115a93e39aeb3d..e2b590b6fe7fdf744e84f63ae0609f2e
  
          // SPIGOT-5509: Wakeup, similar to riding
          if (this.isSleeping()) {
-@@ -1094,7 +1142,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -1094,7 +1152,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
  
          // Check if the fromWorld and toWorld are the same.
          if (fromWorld == toWorld) {
