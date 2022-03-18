@@ -1,9 +1,10 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Spottedleaf <spottedleaf@spottedleaf.dev>
 Date: Sat, 11 Jul 2020 05:09:28 -0700
-Subject: [PATCH] Separate lookup locking from state access in UserCache
+Subject: [PATCH] Fix GameProfileCache concurrency
 
-Prevent lookups from stalling simple state access/write calls
+Separate lookup and state access locks prevent lookups
+from stalling simple state access/write calls
 
 diff --git a/src/main/java/net/minecraft/server/players/GameProfileCache.java b/src/main/java/net/minecraft/server/players/GameProfileCache.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
@@ -38,18 +39,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
 @@ -0,0 +0,0 @@ public class GameProfileCache {
-         return com.destroystokyo.paper.PaperConfig.isProxyOnlineMode(); // Paper
-     }
- 
--    public synchronized void add(GameProfile profile) { // Paper - synchronize
-+    public void add(GameProfile profile) { // Paper - synchronize // Paper - allow better concurrency
-         Calendar calendar = Calendar.getInstance();
- 
-         calendar.setTime(new Date());
-@@ -0,0 +0,0 @@ public class GameProfileCache {
  
      // Paper start
-     @Nullable public GameProfile getProfileIfCached(String name) {
+     public @Nullable GameProfile getProfileIfCached(String name) {
 +        try { this.stateLock.lock(); // Paper - allow better concurrency
          GameProfileCache.GameProfileInfo entry = this.profilesByName.get(name.toLowerCase(Locale.ROOT));
          if (entry == null) {
@@ -61,8 +53,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
      // Paper end
  
--    public synchronized Optional<GameProfile> get(String name) { // Paper - synchronize
-+    public Optional<GameProfile> get(String name) { // Paper - synchronize // Paper start - allow better concurrency
+     public Optional<GameProfile> get(String name) {
          String s1 = name.toLowerCase(Locale.ROOT);
 +        boolean stateLocked = true; try { this.stateLock.lock(); // Paper - allow better concurrency
          GameProfileCache.GameProfileInfo usercache_usercacheentry = (GameProfileCache.GameProfileInfo) this.profilesByName.get(s1);
