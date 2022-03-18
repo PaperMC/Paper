@@ -12,8 +12,7 @@ public final class CraftCreativeCategory {
             .put(CreativeModeTab.TAB_DECORATIONS, CreativeCategory.DECORATIONS)
             .put(CreativeModeTab.TAB_REDSTONE, CreativeCategory.REDSTONE)
             .put(CreativeModeTab.TAB_TRANSPORTATION, CreativeCategory.TRANSPORTATION)
-            .put(CreativeModeTab.TAB_MISC, CreativeCategory.MISC) // Interchangeable in NMS
-            .put(CreativeModeTab.TAB_MATERIALS, CreativeCategory.MISC) // Interchangeable in NMS
+            .put(CreativeModeTab.TAB_MISC, CreativeCategory.MISC) // Interchangeable with TAB_MATERIALS, same instance
             .put(CreativeModeTab.TAB_FOOD, CreativeCategory.FOOD)
             .put(CreativeModeTab.TAB_TOOLS, CreativeCategory.TOOLS)
             .put(CreativeModeTab.TAB_COMBAT, CreativeCategory.COMBAT)
