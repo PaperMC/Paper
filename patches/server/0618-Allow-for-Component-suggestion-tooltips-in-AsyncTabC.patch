@@ -6,7 +6,7 @@ Subject: [PATCH] Allow for Component suggestion tooltips in
 
 
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index 424b7df06f98bb5157b91026854e03cd8c4e3deb..c1a01129070f20bc7f17929b2683bd9ed1591961 100644
+index 424b7df06f98bb5157b91026854e03cd8c4e3deb..171fb8361c688080c2cf29788433c3d87bf3864e 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 @@ -771,12 +771,11 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
@@ -24,7 +24,7 @@ index 424b7df06f98bb5157b91026854e03cd8c4e3deb..c1a01129070f20bc7f17929b2683bd9e
          // If the event isn't handled, we can assume that we have no completions, and so we'll ask the server
          if (!event.isHandled()) {
              if (!event.isCancelled()) {
-@@ -795,10 +794,16 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+@@ -795,10 +794,17 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
                  });
              }
          } else if (!completions.isEmpty()) {
@@ -35,8 +35,9 @@ index 424b7df06f98bb5157b91026854e03cd8c4e3deb..c1a01129070f20bc7f17929b2683bd9e
 -            completions.forEach(builder::suggest);
 +            final com.mojang.brigadier.suggestion.SuggestionsBuilder builder = builder0.createOffset(builder0.getInput().lastIndexOf(' ') + 1);
 +            completions.forEach(completion -> {
-+                if (completion.tooltip() == null) {
-+                    builder.suggest(completion.suggestion());
++                final Integer intSuggestion = com.google.common.primitives.Ints.tryParse(completion.suggestion());
++                if (intSuggestion != null) {
++                    builder.suggest(intSuggestion, PaperAdventure.asVanilla(completion.tooltip()));
 +                } else {
 +                    builder.suggest(completion.suggestion(), PaperAdventure.asVanilla(completion.tooltip()));
 +                }
