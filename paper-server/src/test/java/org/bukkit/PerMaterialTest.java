@@ -286,4 +286,11 @@ public class PerMaterialTest extends AbstractTestingBase {
             }
         }
     }
+
+    @Test
+    public void testCreativeCategory() {
+        if (material.isItem()) {
+            material.getCreativeCategory();
+        }
+    }
 }
