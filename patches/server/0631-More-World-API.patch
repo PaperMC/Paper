@@ -4,15 +4,91 @@ Date: Tue, 7 Jul 2020 10:52:34 -0700
 Subject: [PATCH] More World API
 
 
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 2ec8216d19de795bbe0827f6c9b3f9cdc2ce6760..35b3aa46debc233602269e18cea43c28683cf80e 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -2033,6 +2033,11 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+             this.worldData.setDataPackConfig(MinecraftServer.getSelectedPacks(this.packRepository));
+             this.resources.managers.updateRegistryTags(this.registryAccess());
+             io.papermc.paper.registry.PaperRegistry.clearCaches(); // Paper
++            // Paper start - clear cache cause datapacks can add more configured structures
++            for (ServerLevel level : this.levels.values()) {
++                level.getWorld().structureCache.clear();
++            }
++            // Paper end
+             new io.papermc.paper.event.server.ServerResourcesReloadedEvent(cause).callEvent(); // Paper
+             if (Thread.currentThread() != this.serverThread) return; // Paper
+             //this.getPlayerList().saveAll(); // Paper - we don't need to do this
+diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
+index a1df04f14fb149315e73307a81514b805ef3cb0d..5853ad7f3bba0fa2d93e954c50dc1377a34c5d7e 100644
+--- a/src/main/java/net/minecraft/server/level/ServerLevel.java
++++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
+@@ -1634,9 +1634,20 @@ public class ServerLevel extends Level implements WorldGenLevel {
+             if (optional.isEmpty()) {
+                 return null;
+             } else {
+-                Pair<BlockPos, Holder<ConfiguredStructureFeature<?, ?>>> pair = this.getChunkSource().getGenerator().findNearestMapFeature(this, (HolderSet) optional.get(), pos, radius, skipExistingChunks);
++                // Paper start
++                final Pair<BlockPos, Holder<ConfiguredStructureFeature<?, ?>>> result = this.findNearestMapFeature(optional.get(), pos, radius, skipExistingChunks);
++                return result != null ? result.getFirst() : null;
++            }
++        }
++    }
++    @Nullable
++    public Pair<BlockPos, Holder<ConfiguredStructureFeature<?, ?>>> findNearestMapFeature(HolderSet<ConfiguredStructureFeature<?, ?>> configuredStructureSet, BlockPos pos, int radius, boolean skipExistingChunks) {
++        {
++            {
++                Pair<BlockPos, Holder<ConfiguredStructureFeature<?, ?>>> pair = this.getChunkSource().getGenerator().findNearestMapFeature(this, configuredStructureSet, pos, radius, skipExistingChunks);
++                // Paper end
+ 
+-                return pair != null ? (BlockPos) pair.getFirst() : null;
++                return pair; // Paper - return pair
+             }
+         }
+     }
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index b0e5da5c4515b580b2655cf5a9cb74d1bd9dd9a1..cda29b242989153f32f8f1a87d5cfd5dc9b2f599 100644
+index b0e5da5c4515b580b2655cf5a9cb74d1bd9dd9a1..6727616675c29d21f679b7e6b8b2b89e11406596 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-@@ -1972,6 +1972,65 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -1972,6 +1972,98 @@ public class CraftWorld extends CraftRegionAccessor implements World {
          return (nearest == null) ? null : new Location(this, nearest.getX(), nearest.getY(), nearest.getZ());
      }
  
 +    // Paper start
++    public final Map<StructureType, List<Holder.Reference<net.minecraft.world.level.levelgen.feature.ConfiguredStructureFeature<?, ?>>>> structureCache = new java.util.HashMap<>(); // Paper
++    private static final io.papermc.paper.registry.PaperRegistry<io.papermc.paper.world.structure.ConfiguredStructure, net.minecraft.world.level.levelgen.feature.ConfiguredStructureFeature<?, ?>> CONFIGURED_STRUCTURE_PAPER_REGISTRY = io.papermc.paper.registry.PaperRegistry.getRegistry(io.papermc.paper.registry.RegistryKey.CONFIGURED_STRUCTURE_REGISTRY);
++    @Override
++    public org.apache.commons.lang3.tuple.Pair<Location, io.papermc.paper.world.structure.ConfiguredStructure> locateNearestStructureByType(Location origin, StructureType structureType, int radius, boolean findUnexplored) {
++        Preconditions.checkArgument(origin.getWorld() == null || origin.getWorld() == this, "origin world doesn't match search world");
++        if (!this.getHandle().serverLevelData.worldGenSettings().generateFeatures()) { // from ServerLevel#findNearestMapFeature
++            return null;
++        }
++        final List<Holder.Reference<net.minecraft.world.level.levelgen.feature.ConfiguredStructureFeature<?, ?>>> features = this.structureCache.computeIfAbsent(structureType, (type) -> {
++            final Registry<net.minecraft.world.level.levelgen.feature.StructureFeature<?>> structureFeatureRegistry = this.getHandle().registryAccess().registryOrThrow(Registry.STRUCTURE_FEATURE_REGISTRY);
++            return this.getHandle().registryAccess().registryOrThrow(Registry.CONFIGURED_STRUCTURE_FEATURE_REGISTRY).holders().filter(holder -> {
++                return structureType.getKey().equals(org.bukkit.craftbukkit.util.CraftNamespacedKey.fromMinecraft(Objects.requireNonNull(structureFeatureRegistry.getKey(holder.value().feature))));
++            }).toList();
++        });
++        final com.mojang.datafixers.util.Pair<BlockPos, Holder<net.minecraft.world.level.levelgen.feature.ConfiguredStructureFeature<?, ?>>> result = this.getHandle().findNearestMapFeature(net.minecraft.core.HolderSet.direct(features), net.minecraft.server.MCUtil.toBlockPosition(origin), radius, findUnexplored);
++        if (result == null) {
++            return null;
++        }
++        return org.apache.commons.lang3.tuple.Pair.of(net.minecraft.server.MCUtil.toLocation(this.getHandle(), result.getFirst()), CONFIGURED_STRUCTURE_PAPER_REGISTRY.convertToApi(result.getSecond()));
++    }
++
++    @Override
++    public Location locateNearestConfiguredStructure(Location origin, io.papermc.paper.world.structure.ConfiguredStructure configuredStructure, int radius, boolean findUnexplored) {
++        final com.mojang.datafixers.util.Pair<BlockPos, Holder<net.minecraft.world.level.levelgen.feature.ConfiguredStructureFeature<?, ?>>> result = this.getHandle().findNearestMapFeature(net.minecraft.core.HolderSet.direct(CONFIGURED_STRUCTURE_PAPER_REGISTRY::getMinecraftHolder, configuredStructure), net.minecraft.server.MCUtil.toBlockPosition(origin), radius, findUnexplored);
++        return result != null ? net.minecraft.server.MCUtil.toLocation(this.getHandle(), result.getFirst()) : null;
++    }
++
++    @Override
++    public org.apache.commons.lang3.tuple.Pair<Location, io.papermc.paper.world.structure.ConfiguredStructure> locateNearestConfiguredStructure(Location origin, Collection<io.papermc.paper.world.structure.ConfiguredStructure> configuredStructures, int radius, boolean findUnexplored) {
++        final com.mojang.datafixers.util.Pair<BlockPos, Holder<net.minecraft.world.level.levelgen.feature.ConfiguredStructureFeature<?, ?>>> result = this.getHandle().findNearestMapFeature(net.minecraft.core.HolderSet.direct(CONFIGURED_STRUCTURE_PAPER_REGISTRY::getMinecraftHolder, List.copyOf(configuredStructures)), net.minecraft.server.MCUtil.toBlockPosition(origin), radius, findUnexplored);
++        return result != null ? org.apache.commons.lang3.tuple.Pair.of(net.minecraft.server.MCUtil.toLocation(this.getHandle(), result.getFirst()), CONFIGURED_STRUCTURE_PAPER_REGISTRY.convertToApi(result.getSecond())) : null;
++    }
++
 +    @Override
 +    public Location locateNearestBiome(Location origin, Biome biome, int radius) {
 +        return this.locateNearestBiome(origin, biome, radius, 8);

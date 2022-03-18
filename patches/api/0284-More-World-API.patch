@@ -4,15 +4,104 @@ Date: Tue, 7 Jul 2020 10:53:22 -0700
 Subject: [PATCH] More World API
 
 
+diff --git a/build.gradle.kts b/build.gradle.kts
+index 01798255d45f2a642df00156f11dd2bcd8108079..957474b86da820f80b48b06e2a59fca37eb5bf85 100644
+--- a/build.gradle.kts
++++ b/build.gradle.kts
+@@ -44,6 +44,7 @@ dependencies {
+ 
+     implementation("org.ow2.asm:asm:9.2")
+     implementation("org.ow2.asm:asm-commons:9.2")
++    api("org.apache.commons:commons-lang3:3.8.1")
+     // Paper end
+ 
+     compileOnly("org.apache.maven:maven-resolver-provider:3.8.4")
 diff --git a/src/main/java/org/bukkit/World.java b/src/main/java/org/bukkit/World.java
-index c31c58ea83845ef032bc477e33aa94713454f194..7a519e242a6fb2de41fd1e9cd6e7a237f78ef004 100644
+index 4a9f936f7cf72caf70f9bbd0b651eff3133de796..d2d191ddbd570b9521f1c91f643666d68f44ff26 100644
 --- a/src/main/java/org/bukkit/World.java
 +++ b/src/main/java/org/bukkit/World.java
-@@ -3639,6 +3639,114 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
+@@ -3635,10 +3635,191 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
+      * @param findUnexplored true to only find unexplored structures
+      * @return the closest {@link Location}, or null if no structure of the
+      * specified type exists.
++     * @see #locateNearestStructureByType(Location, StructureType, int, boolean)
+      */
      @Nullable
      public Location locateNearestStructure(@NotNull Location origin, @NotNull StructureType structureType, int radius, boolean findUnexplored);
  
 +    // Paper start
++    /**
++     * Find the closest nearby structure of a given {@link StructureType}.
++     * Finding unexplored structures can, and will, block if the world is
++     * looking in chunks that gave not generated yet. This can lead to the world
++     * temporarily freezing while locating an unexplored structure.
++     * <p>
++     * The {@code radius} is not a rigid square radius. Each structure may alter
++     * how many chunks to check for each iteration. Do not assume that only a
++     * radius x radius chunk area will be checked. For example,
++     * {@link StructureType#WOODLAND_MANSION} can potentially check up to 20,000
++     * blocks away (or more) regardless of the radius used.
++     * <p>
++     * This will <i>not</i> load or generate chunks. This can also lead to
++     * instances where the server can hang if you are only looking for
++     * unexplored structures. This is because it will keep looking further and
++     * further out in order to find the structure.
++     *
++     * @param origin where to start looking for a structure
++     * @param structureType the type of structure to find
++     * @param radius the radius, in chunks, around which to search
++     * @param findUnexplored true to only find unexplored structures
++     * @return the closest structure for the given type with the location, or null if none found
++     */
++    @Nullable org.apache.commons.lang3.tuple.Pair<Location, io.papermc.paper.world.structure.ConfiguredStructure> locateNearestStructureByType(@NotNull Location origin, @NotNull StructureType structureType, int radius, boolean findUnexplored);
++
++    /**
++     * Find the closest nearby structure of a given {@link io.papermc.paper.world.structure.ConfiguredStructure}.
++     * Finding unexplored structures can, and will, block if the world is
++     * looking in chunks that gave not generated yet. This can lead to the world
++     * temporarily freezing while locating an unexplored structure.
++     * <p>
++     * The {@code radius} is not a rigid square radius. Each structure may alter
++     * how many chunks to check for each iteration. Do not assume that only a
++     * radius x radius chunk area will be checked.
++     * <p>
++     * This will <i>not</i> load or generate chunks. This can also lead to
++     * instances where the server can hang if you are only looking for
++     * unexplored structures. This is because it will keep looking further and
++     * further out in order to find the structure.
++     *
++     * @param origin where to start looking for a structure
++     * @param configuredStructure the configured structure to find
++     * @param radius the radius, in chunks, around which to search
++     * @param findUnexplored true to only find unexplored structures
++     * @return the closest {@link Location}, or null if no structure of the
++     * specified type exists.
++     */
++    @Nullable Location locateNearestConfiguredStructure(@NotNull Location origin, @NotNull io.papermc.paper.world.structure.ConfiguredStructure configuredStructure, int radius, boolean findUnexplored);
++
++    /**
++     * Find the closest nearby structure of a given {@link io.papermc.paper.world.structure.ConfiguredStructure}.
++     * Finding unexplored structures can, and will, block if the world is
++     * looking in chunks that gave not generated yet. This can lead to the world
++     * temporarily freezing while locating an unexplored structure.
++     * <p>
++     * The {@code radius} is not a rigid square radius. Each structure may alter
++     * how many chunks to check for each iteration. Do not assume that only a
++     * radius x radius chunk area will be checked.
++     * <p>
++     * This will <i>not</i> load or generate chunks. This can also lead to
++     * instances where the server can hang if you are only looking for
++     * unexplored structures. This is because it will keep looking further and
++     * further out in order to find the structure.
++     *
++     * @param origin where to start looking for a structure
++     * @param configuredStructures the set of configured structures to look for
++     * @param radius the radius, in chunks, around which to search
++     * @param findUnexplored true to only find unexplored structures
++     * @return the closest structure from the given collection with the location, or null if none found
++     */
++    @Nullable org.apache.commons.lang3.tuple.Pair<Location, io.papermc.paper.world.structure.ConfiguredStructure> locateNearestConfiguredStructure(@NotNull Location origin, @NotNull Collection<io.papermc.paper.world.structure.ConfiguredStructure> configuredStructures, int radius, boolean findUnexplored);
++
 +    /**
 +     * Locates the nearest biome based on an origin, biome type, and radius to search.
 +     * Step defaults to {@code 8}.
@@ -123,3 +212,42 @@ index c31c58ea83845ef032bc477e33aa94713454f194..7a519e242a6fb2de41fd1e9cd6e7a237
      // Spigot start
      /**
       * Returns the view distance used for this world.
+diff --git a/src/test/java/org/bukkit/LocationTest.java b/src/test/java/org/bukkit/LocationTest.java
+index 887305c05c3e53079347502c187984ca3e42a1f8..1c93dd24016207d9bf4fc0602edb773cfbb433c5 100644
+--- a/src/test/java/org/bukkit/LocationTest.java
++++ b/src/test/java/org/bukkit/LocationTest.java
+@@ -190,6 +190,7 @@ public class LocationTest {
+     }
+ 
+     private static Location getEmptyLocation() {
++        TestServer.getInstance(); // Paper
+         return new Location(TestWorld.INSTANCE, 0, 0, 0);
+     }
+ 
+diff --git a/src/test/java/org/bukkit/TestServer.java b/src/test/java/org/bukkit/TestServer.java
+index 5f9d348241210689eaf41a39ace5948e7a237b12..406e9383fb01a2f8339d1dedced5cba8a98ce64d 100644
+--- a/src/test/java/org/bukkit/TestServer.java
++++ b/src/test/java/org/bukkit/TestServer.java
+@@ -85,6 +85,22 @@ public final class TestServer implements InvocationHandler {
+                         }
+                     }
+                 );
++            // Paper start
++            methodMap.put(
++                Server.class.getMethod("getUnsafe"),
++                new MethodHandler() {
++                    @Override
++                    public Object handle(org.bukkit.TestServer server, Object[] args) {
++                        return Proxy.newProxyInstance(Server.class.getClassLoader(), new Class[]{UnsafeValues.class}, new com.google.common.reflect.AbstractInvocationHandler() {
++                            @Override
++                            protected Object handleInvocation(Object proxy, java.lang.reflect.Method method, @org.checkerframework.checker.nullness.qual.Nullable Object[] args) throws Throwable {
++                                return null;
++                            }
++                        });
++                    }
++                }
++            );
++            // Paper end
+             methods = methodMap.build();
+ 
+             TestServer server = new TestServer();
