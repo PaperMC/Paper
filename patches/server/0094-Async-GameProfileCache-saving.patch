@@ -1,15 +1,8 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Mon, 16 May 2016 20:47:41 -0400
-Subject: [PATCH] Optimize UserCache / Thread Safe
+Subject: [PATCH] Async GameProfileCache saving
 
-Because Techable keeps complaining about how this isn't thread safe,
-easier to do this than replace the entire thing.
-
-Additionally, move Saving of the User cache to be done async, incase
-the user never changed the default setting for Spigot's save on stop only.
-
-1.17: TODO does this need the synchronized blocks anymore?
 
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
 index 9e95cb40ce6839de2582e71576b73cdf8787a042..49c354fa65e0047a367f0a5410c79b8da8693df9 100644
@@ -38,19 +31,10 @@ index 20ff08f1a802d16d2306b570e9fb529946d90f6b..b99c1b62ce01700d5c374a1801e8323d
  
          if (!OldUsersConverter.serverReadyAfterUserconversion(this)) {
 diff --git a/src/main/java/net/minecraft/server/players/GameProfileCache.java b/src/main/java/net/minecraft/server/players/GameProfileCache.java
-index 975ab6061f9d70eb61885960fdfdb24e71b2239e..981845707f47a674a912bf84509397a42b973e74 100644
+index 975ab6061f9d70eb61885960fdfdb24e71b2239e..fdf2557ed19c6ba9c64eddd2876b2434925dcf36 100644
 --- a/src/main/java/net/minecraft/server/players/GameProfileCache.java
 +++ b/src/main/java/net/minecraft/server/players/GameProfileCache.java
-@@ -118,7 +118,7 @@ public class GameProfileCache {
-         return GameProfileCache.usesAuthentication;
-     }
- 
--    public void add(GameProfile profile) {
-+    public synchronized void add(GameProfile profile) { // Paper - synchronize
-         Calendar calendar = Calendar.getInstance();
- 
-         calendar.setTime(new Date());
-@@ -127,14 +127,14 @@ public class GameProfileCache {
+@@ -127,7 +127,7 @@ public class GameProfileCache {
          GameProfileCache.GameProfileInfo usercache_usercacheentry = new GameProfileCache.GameProfileInfo(profile, date);
  
          this.safeAdd(usercache_usercacheentry);
@@ -59,14 +43,6 @@ index 975ab6061f9d70eb61885960fdfdb24e71b2239e..981845707f47a674a912bf84509397a4
      }
  
      private long getNextOperation() {
-         return this.operationCount.incrementAndGet();
-     }
- 
--    public Optional<GameProfile> get(String name) {
-+    public synchronized Optional<GameProfile> get(String name) { // Paper - synchronize
-         String s1 = name.toLowerCase(Locale.ROOT);
-         GameProfileCache.GameProfileInfo usercache_usercacheentry = (GameProfileCache.GameProfileInfo) this.profilesByName.get(s1);
-         boolean flag = false;
 @@ -160,7 +160,7 @@ public class GameProfileCache {
          }
  
@@ -93,11 +69,10 @@ index 975ab6061f9d70eb61885960fdfdb24e71b2239e..981845707f47a674a912bf84509397a4
  
          try {
              BufferedWriter bufferedwriter = Files.newWriter(this.file, StandardCharsets.UTF_8);
-@@ -306,7 +307,14 @@ public class GameProfileCache {
+@@ -306,6 +307,14 @@ public class GameProfileCache {
          } catch (IOException ioexception) {
              ;
          }
--
 +        // Paper start
 +        };
 +        if (asyncSave) {
@@ -106,6 +81,6 @@ index 975ab6061f9d70eb61885960fdfdb24e71b2239e..981845707f47a674a912bf84509397a4
 +            save.run();
 +        }
 +        // Paper end
+ 
      }
  
-     private Stream<GameProfileCache.GameProfileInfo> getTopMRUProfiles(int limit) {
