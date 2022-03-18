@@ -47,6 +47,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
          calendar.setTime(new Date());
 @@ -0,0 +0,0 @@ public class GameProfileCache {
+ 
+     // Paper start
+     @Nullable public GameProfile getProfileIfCached(String name) {
++        try { this.stateLock.lock(); // Paper - allow better concurrency
+         GameProfileCache.GameProfileInfo entry = this.profilesByName.get(name.toLowerCase(Locale.ROOT));
+         if (entry == null) {
+             return null;
+         }
+         entry.setLastAccess(this.getNextOperation());
+         return entry.getProfile();
++        } finally { this.stateLock.unlock(); } // Paper - allow better concurrency
      }
      // Paper end
  
@@ -95,12 +106,32 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      public void setExecutor(Executor executor) {
 @@ -0,0 +0,0 @@ public class GameProfileCache {
+         JsonArray jsonarray = new JsonArray();
+         DateFormat dateformat = GameProfileCache.createDateFormat();
+ 
+-        this.getTopMRUProfiles(org.spigotmc.SpigotConfig.userCacheCap).forEach((usercache_usercacheentry) -> { // Spigot
++        this.listTopMRUProfiles(org.spigotmc.SpigotConfig.userCacheCap).forEach((usercache_usercacheentry) -> { // Spigot // Paper - allow better concurrency
+             jsonarray.add(GameProfileCache.writeGameProfile(usercache_usercacheentry, dateformat));
+         });
+         String s = this.gson.toJson(jsonarray);
+@@ -0,0 +0,0 @@ public class GameProfileCache {
      }
  
      private Stream<GameProfileCache.GameProfileInfo> getTopMRUProfiles(int limit) {
-+        try { this.stateLock.lock(); // Paper - allow better concurrency
-         return ImmutableList.copyOf(this.profilesByUUID.values()).stream().sorted(Comparator.comparing(GameProfileCache.GameProfileInfo::getLastAccess).reversed()).limit((long) limit);
-+        } finally { this.stateLock.unlock(); } // Paper - allow better concurrency
+-        return ImmutableList.copyOf(this.profilesByUUID.values()).stream().sorted(Comparator.comparing(GameProfileCache.GameProfileInfo::getLastAccess).reversed()).limit((long) limit);
++        // Paper start - allow better concurrency
++        return this.listTopMRUProfiles(limit).stream();
++    }
++
++    private List<GameProfileCache.GameProfileInfo> listTopMRUProfiles(int limit) {
++        try {
++            this.stateLock.lock();
++            return this.profilesByUUID.values().stream().sorted(Comparator.comparing(GameProfileCache.GameProfileInfo::getLastAccess).reversed()).limit(limit).toList();
++        } finally {
++            this.stateLock.unlock();
++        }
      }
++    // Paper end
  
      private static JsonElement writeGameProfile(GameProfileCache.GameProfileInfo entry, DateFormat dateFormat) {
+         JsonObject jsonobject = new JsonObject();
