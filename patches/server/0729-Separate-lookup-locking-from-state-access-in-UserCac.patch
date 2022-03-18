@@ -6,7 +6,7 @@ Subject: [PATCH] Separate lookup locking from state access in UserCache
 Prevent lookups from stalling simple state access/write calls
 
 diff --git a/src/main/java/net/minecraft/server/players/GameProfileCache.java b/src/main/java/net/minecraft/server/players/GameProfileCache.java
-index 95974d78196397136179f8d6acf1597c557e5a23..6349b33939909435120fdef5e506480108cfbfc1 100644
+index d7eba4190110b92641664c827c6bc50f62d2ae15..534373a1e305942d63ffb0fc97ea3f165eca76b5 100644
 --- a/src/main/java/net/minecraft/server/players/GameProfileCache.java
 +++ b/src/main/java/net/minecraft/server/players/GameProfileCache.java
 @@ -62,6 +62,11 @@ public class GameProfileCache {
@@ -46,7 +46,18 @@ index 95974d78196397136179f8d6acf1597c557e5a23..6349b33939909435120fdef5e5064801
          Calendar calendar = Calendar.getInstance();
  
          calendar.setTime(new Date());
-@@ -142,8 +149,9 @@ public class GameProfileCache {
+@@ -137,17 +144,20 @@ public class GameProfileCache {
+ 
+     // Paper start
+     @Nullable public GameProfile getProfileIfCached(String name) {
++        try { this.stateLock.lock(); // Paper - allow better concurrency
+         GameProfileCache.GameProfileInfo entry = this.profilesByName.get(name.toLowerCase(Locale.ROOT));
+         if (entry == null) {
+             return null;
+         }
+         entry.setLastAccess(this.getNextOperation());
+         return entry.getProfile();
++        } finally { this.stateLock.unlock(); } // Paper - allow better concurrency
      }
      // Paper end
  
@@ -57,7 +68,7 @@ index 95974d78196397136179f8d6acf1597c557e5a23..6349b33939909435120fdef5e5064801
          GameProfileCache.GameProfileInfo usercache_usercacheentry = (GameProfileCache.GameProfileInfo) this.profilesByName.get(s1);
          boolean flag = false;
  
-@@ -159,8 +167,12 @@ public class GameProfileCache {
+@@ -163,8 +173,12 @@ public class GameProfileCache {
          if (usercache_usercacheentry != null) {
              usercache_usercacheentry.setLastAccess(this.getNextOperation());
              optional = Optional.of(usercache_usercacheentry.getProfile());
@@ -70,7 +81,7 @@ index 95974d78196397136179f8d6acf1597c557e5a23..6349b33939909435120fdef5e5064801
              if (optional.isPresent()) {
                  this.add((GameProfile) optional.get());
                  flag = false;
-@@ -172,6 +184,7 @@ public class GameProfileCache {
+@@ -176,6 +190,7 @@ public class GameProfileCache {
          }
  
          return optional;
@@ -78,7 +89,7 @@ index 95974d78196397136179f8d6acf1597c557e5a23..6349b33939909435120fdef5e5064801
      }
  
      public void getAsync(String username, Consumer<Optional<GameProfile>> consumer) {
-@@ -198,6 +211,7 @@ public class GameProfileCache {
+@@ -202,6 +217,7 @@ public class GameProfileCache {
      }
  
      public Optional<GameProfile> get(UUID uuid) {
@@ -86,7 +97,7 @@ index 95974d78196397136179f8d6acf1597c557e5a23..6349b33939909435120fdef5e5064801
          GameProfileCache.GameProfileInfo usercache_usercacheentry = (GameProfileCache.GameProfileInfo) this.profilesByUUID.get(uuid);
  
          if (usercache_usercacheentry == null) {
-@@ -206,6 +220,7 @@ public class GameProfileCache {
+@@ -210,6 +226,7 @@ public class GameProfileCache {
              usercache_usercacheentry.setLastAccess(this.getNextOperation());
              return Optional.of(usercache_usercacheentry.getProfile());
          }
@@ -94,13 +105,33 @@ index 95974d78196397136179f8d6acf1597c557e5a23..6349b33939909435120fdef5e5064801
      }
  
      public void setExecutor(Executor executor) {
-@@ -326,7 +341,9 @@ public class GameProfileCache {
+@@ -290,7 +307,7 @@ public class GameProfileCache {
+         JsonArray jsonarray = new JsonArray();
+         DateFormat dateformat = GameProfileCache.createDateFormat();
+ 
+-        this.getTopMRUProfiles(org.spigotmc.SpigotConfig.userCacheCap).forEach((usercache_usercacheentry) -> { // Spigot
++        this.listTopMRUProfiles(org.spigotmc.SpigotConfig.userCacheCap).forEach((usercache_usercacheentry) -> { // Spigot // Paper - allow better concurrency
+             jsonarray.add(GameProfileCache.writeGameProfile(usercache_usercacheentry, dateformat));
+         });
+         String s = this.gson.toJson(jsonarray);
+@@ -330,8 +347,19 @@ public class GameProfileCache {
      }
  
      private Stream<GameProfileCache.GameProfileInfo> getTopMRUProfiles(int limit) {
-+        try { this.stateLock.lock(); // Paper - allow better concurrency
-         return ImmutableList.copyOf(this.profilesByUUID.values()).stream().sorted(Comparator.comparing(GameProfileCache.GameProfileInfo::getLastAccess).reversed()).limit((long) limit);
-+        } finally { this.stateLock.unlock(); } // Paper - allow better concurrency
+-        return ImmutableList.copyOf(this.profilesByUUID.values()).stream().sorted(Comparator.comparing(GameProfileCache.GameProfileInfo::getLastAccess).reversed()).limit((long) limit);
++        // Paper start - allow better concurrency
++        return this.listTopMRUProfiles(limit).stream();
++    }
++
++    private List<GameProfileCache.GameProfileInfo> listTopMRUProfiles(int limit) {
++        try {
++            this.stateLock.lock();
++            return this.profilesByUUID.values().stream().sorted(Comparator.comparing(GameProfileCache.GameProfileInfo::getLastAccess).reversed()).limit(limit).toList();
++        } finally {
++            this.stateLock.unlock();
++        }
      }
++    // Paper end
  
      private static JsonElement writeGameProfile(GameProfileCache.GameProfileInfo entry, DateFormat dateFormat) {
+         JsonObject jsonobject = new JsonObject();
