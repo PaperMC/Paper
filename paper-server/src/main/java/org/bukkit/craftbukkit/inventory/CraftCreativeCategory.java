@@ -20,10 +20,15 @@ public final class CraftCreativeCategory {
             .build();
 
     public static CreativeCategory fromNMS(CreativeModeTab tab) {
-        if (!NMS_TO_BUKKIT.containsKey(tab)) {
+        if (tab == null) {
+            return null;
+        }
+
+        CreativeCategory bukkit = NMS_TO_BUKKIT.get(tab);
+        if (bukkit == null) {
             throw new UnsupportedOperationException("Item is not present in any known CreativeModeTab. This is a bug.");
         }
 
-        return (tab != null) ? NMS_TO_BUKKIT.get(tab) : null;
+        return bukkit;
     }
 }
