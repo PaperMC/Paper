@@ -13,7 +13,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Meow.
  */
-public interface Cat extends Tameable, Sittable {
+public interface Cat extends Tameable, Sittable, io.papermc.paper.entity.CollarColorable { // Paper - CollarColorable
 
     /**
      * Gets the current type of this cat.
@@ -36,6 +36,7 @@ public interface Cat extends Tameable, Sittable {
      * @return the color of the collar
      */
     @NotNull
+    @Override // Paper
     public DyeColor getCollarColor();
 
     /**
@@ -43,6 +44,7 @@ public interface Cat extends Tameable, Sittable {
      *
      * @param color the color to apply
      */
+    @Override // Paper
     public void setCollarColor(@NotNull DyeColor color);
 
     /**
