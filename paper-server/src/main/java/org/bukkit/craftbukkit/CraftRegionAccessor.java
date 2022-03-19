@@ -261,10 +261,10 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
                 ((ChorusFlowerBlock) Blocks.CHORUS_FLOWER).generatePlant(access, pos, random, 8);
                 return true;
             case CRIMSON_FUNGUS:
-                gen = TreeFeatures.CRIMSON_FUNGUS_PLANTED;
+                gen = this.isNormalWorld() ? TreeFeatures.CRIMSON_FUNGUS_PLANTED : TreeFeatures.CRIMSON_FUNGUS; // Paper - Fix async entity add due to fungus trees; if world gen, don't use planted version
                 break;
             case WARPED_FUNGUS:
-                gen = TreeFeatures.WARPED_FUNGUS_PLANTED;
+                gen = this.isNormalWorld() ? TreeFeatures.WARPED_FUNGUS_PLANTED : TreeFeatures.WARPED_FUNGUS; // Paper - Fix async entity add due to fungus trees; if world gen, don't use planted version
                 break;
             case AZALEA:
                 gen = TreeFeatures.AZALEA_TREE;

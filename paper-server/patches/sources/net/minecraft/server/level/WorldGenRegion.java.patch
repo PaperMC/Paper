@@ -1,14 +1,12 @@
 --- a/net/minecraft/server/level/WorldGenRegion.java
 +++ b/net/minecraft/server/level/WorldGenRegion.java
-@@ -167,7 +167,27 @@
-         int k = this.center.getPos().getChessboardDistance(chunkX, chunkZ);
- 
+@@ -169,7 +169,27 @@
          return k < this.generatingStep.directDependencies().size();
-+    }
-+
+     }
+ 
 +    // Paper start - if loaded util
 +    @Nullable
-+    @Override
+     @Override
 +    public ChunkAccess getChunkIfLoadedImmediately(int x, int z) {
 +        return this.getChunk(x, z, ChunkStatus.FULL, false);
 +    }
@@ -23,21 +21,24 @@
 +    public final FluidState getFluidIfLoaded(BlockPos blockposition) {
 +        ChunkAccess chunk = this.getChunkIfLoadedImmediately(blockposition.getX() >> 4, blockposition.getZ() >> 4);
 +        return chunk == null ? null : chunk.getFluidState(blockposition);
-     }
++    }
 +    // Paper end
- 
-     @Override
++
++    @Override
      public BlockState getBlockState(BlockPos pos) {
-@@ -217,7 +237,7 @@
+         return this.getChunk(SectionPos.blockToSectionCoord(pos.getX()), SectionPos.blockToSectionCoord(pos.getZ())).getBlockState(pos);
+     }
+@@ -217,7 +237,8 @@
          if (iblockdata.isAir()) {
              return false;
          } else {
 -            if (drop) {
++            if (drop) LOGGER.warn("Potential async entity add during worldgen", new Throwable()); // Paper - Fix async entity add due to fungus trees; log when this happens
 +            if (false) { // CraftBukkit - SPIGOT-6833: Do not drop during world generation
                  BlockEntity tileentity = iblockdata.hasBlockEntity() ? this.getBlockEntity(pos) : null;
  
                  Block.dropResources(iblockdata, this.level, pos, tileentity, breakingEntity, ItemStack.EMPTY);
-@@ -264,6 +284,7 @@
+@@ -264,6 +285,7 @@
          }
      }
  
@@ -45,7 +46,7 @@
      @Override
      public boolean ensureCanWrite(BlockPos pos) {
          int i = SectionPos.blockToSectionCoord(pos.getX());
-@@ -283,7 +304,15 @@
+@@ -283,7 +305,15 @@
  
              return true;
          } else {
@@ -61,7 +62,7 @@
              return false;
          }
      }
-@@ -336,6 +365,13 @@
+@@ -336,6 +366,13 @@
  
      @Override
      public boolean addFreshEntity(Entity entity) {
