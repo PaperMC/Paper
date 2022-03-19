@@ -6,6 +6,24 @@ Subject: [PATCH] Missing Entity Behavior API
 Co-authored-by: Nassim Jahnke <jahnke.nassim@gmail.com>
 Co-authored-by: Jake Potrebic <jake.m.potrebic@gmail.com>
 
+diff --git a/src/main/java/net/minecraft/world/entity/animal/Bee.java b/src/main/java/net/minecraft/world/entity/animal/Bee.java
+index c49e7ea3e2efc4459f5ed1d4ebd83c9d23420611..79a9fa2a2257925685e45329365d2828ccd4c48c 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/Bee.java
++++ b/src/main/java/net/minecraft/world/entity/animal/Bee.java
+@@ -539,11 +539,13 @@ public class Bee extends Animal implements NeutralMob, FlyingAnimal {
+         this.setFlag(4, hasStung);
+     }
+ 
++    public net.kyori.adventure.util.TriState rollingOverride = net.kyori.adventure.util.TriState.NOT_SET; // Paper - Rolling override
+     public boolean isRolling() {
+         return this.getFlag(2);
+     }
+ 
+     public void setRolling(boolean nearTarget) {
++        nearTarget = rollingOverride.toBooleanOrElse(nearTarget); // Paper - Rolling override
+         this.setFlag(2, nearTarget);
+     }
+ 
 diff --git a/src/main/java/net/minecraft/world/entity/animal/horse/AbstractHorse.java b/src/main/java/net/minecraft/world/entity/animal/horse/AbstractHorse.java
 index cd278a859c87fc89c421378ffab1bd36a45bd65d..a726006888bbbdb290bcda3ac4fd45d68ba51b79 100644
 --- a/src/main/java/net/minecraft/world/entity/animal/horse/AbstractHorse.java
@@ -165,6 +183,33 @@ index 254d4f2e45d7c8f572a4368eccd84560d4d0d836..299ab868252c8f326e3a56e878c9ee23
 +       this.getHandle().setMouthOpen(eating);
 +    }
 +    // Paper end - Horse API
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftBee.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftBee.java
+index 8ada3dfbe89c8b55d85c31c71e365af0cbf66d19..b5d3a00a48d3b7618f974bb0f6909aa7c304b012 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftBee.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftBee.java
+@@ -91,4 +91,22 @@ public class CraftBee extends CraftAnimals implements Bee {
+     public void setCannotEnterHiveTicks(int ticks) {
+         this.getHandle().setStayOutOfHiveCountdown(ticks);
+     }
++    // Paper start
++    @Override
++    public void setRollingOverride(net.kyori.adventure.util.TriState rolling) {
++        this.getHandle().rollingOverride = rolling;
++
++        this.getHandle().setRolling(this.getHandle().isRolling()); // Refresh rolling state
++    }
++
++    @Override
++    public boolean isRolling() {
++        return this.getRollingOverride().toBooleanOrElse(this.getHandle().isRolling());
++    }
++
++    @Override
++    public net.kyori.adventure.util.TriState getRollingOverride() {
++        return this.getHandle().rollingOverride;
++    }
++    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftCat.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftCat.java
 index a4f909123de26d911aea7cd767d2315ed1f697c9..0eee53c068bca070a86645d0ba54fb1ad49a6a5b 100644
@@ -393,6 +438,26 @@ index 2d2620dbb16aec850e8afda02174508a4be5a313..ba4e6deaaa725296be830324d2c64868
  
      public static Gene fromNms(net.minecraft.world.entity.animal.Panda.Gene gene) {
          Preconditions.checkArgument(gene != null, "Gene may not be null");
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPiglin.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPiglin.java
+index aeda5fc001fe4ce55ee467240b275b6050a29f98..48d0a4e42e1b90d1323784d1284acabfe9497dd6 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPiglin.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPiglin.java
+@@ -90,4 +90,15 @@ public class CraftPiglin extends CraftPiglinAbstract implements Piglin, com.dest
+     public String toString() {
+         return "CraftPiglin";
+     }
++    // Paper start
++    @Override
++    public void setChargingCrossbow(boolean chargingCrossbow) {
++        this.getHandle().setChargingCrossbow(chargingCrossbow);
++    }
++
++    @Override
++    public boolean isChargingCrossbow() {
++        return this.getHandle().isChargingCrossbow();
++    }
++    // Paper end
+ }
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPolarBear.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPolarBear.java
 index da1488c9cae53bd554727c850da2192adda2478a..30a0eac179c86b0fe94a2a40b5bfcd3eee01e53b 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPolarBear.java
@@ -467,6 +532,37 @@ index bf5b2fd6676c4430578db4cc6c603c501cc5e349..832981b07ef5c633ef00a382f56798ee
 +    }
 +    // Paper end
  }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftVex.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftVex.java
+index 0f5c81c0d599d3b58f7864d1527391ad50983c4e..606d8485a5fc67b59f8fed38a739d6bc5888d99d 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftVex.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftVex.java
+@@ -26,6 +26,26 @@ public class CraftVex extends CraftMonster implements Vex {
+     public void setSummoner(org.bukkit.entity.Mob summoner) {
+         getHandle().setOwner(summoner == null ? null : ((CraftMob) summoner).getHandle());
+     }
++
++    @Override
++    public boolean hasLimitedLifetime() {
++        return this.getHandle().hasLimitedLife;
++    }
++
++    @Override
++    public void setLimitedLifetime(boolean hasLimitedLifetime) {
++        this.getHandle().hasLimitedLife = hasLimitedLifetime;
++    }
++
++    @Override
++    public int getLimitedLifetimeTicks() {
++        return this.getHandle().limitedLifeTicks;
++    }
++
++    @Override
++    public void setLimitedLifetimeTicks(int ticks) {
++        this.getHandle().limitedLifeTicks = ticks;
++    }
+     // Paper end
+ 
+     @Override
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftWither.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftWither.java
 index 640b0860fbe3412da32d03187e6f355ba8f099ea..299d5e47489cfe489ac130a33a08cdb29ba76d72 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftWither.java
@@ -500,6 +596,26 @@ index 640b0860fbe3412da32d03187e6f355ba8f099ea..299d5e47489cfe489ac130a33a08cdb2
 +    @Override
 +    public void setCanTravelThroughPortals(boolean value) {
 +        getHandle().setCanTravelThroughPortals(value);
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftWolf.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftWolf.java
+index f856b42201c17f8da21251e54fcf052336916e70..a3bec00368aef0f8cc6aa21cce1389938d15f91b 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftWolf.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftWolf.java
+@@ -43,4 +43,15 @@ public class CraftWolf extends CraftTameableAnimal implements Wolf {
+     public void setCollarColor(DyeColor color) {
+         this.getHandle().setCollarColor(net.minecraft.world.item.DyeColor.byId(color.getWoolData()));
+     }
++    // Paper start
++    @Override
++    public void setInterested(boolean interested) {
++        this.getHandle().setIsInterested(interested);
++    }
++
++    @Override
++    public boolean isInterested() {
++        return this.getHandle().isInterested();
 +    }
 +    // Paper end
  }
