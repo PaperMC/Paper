@@ -1,12 +1,14 @@
 --- a/net/minecraft/server/level/WorldGenRegion.java
 +++ b/net/minecraft/server/level/WorldGenRegion.java
-@@ -169,7 +169,27 @@
-         return k < this.generatingStep.directDependencies().size();
-     }
+@@ -167,7 +167,27 @@
+         int k = this.center.getPos().getChessboardDistance(chunkX, chunkZ);
  
+         return k < this.generatingStep.directDependencies().size();
++    }
++
 +    // Paper start - if loaded util
 +    @Nullable
-     @Override
++    @Override
 +    public ChunkAccess getChunkIfLoadedImmediately(int x, int z) {
 +        return this.getChunk(x, z, ChunkStatus.FULL, false);
 +    }
@@ -21,13 +23,11 @@
 +    public final FluidState getFluidIfLoaded(BlockPos blockposition) {
 +        ChunkAccess chunk = this.getChunkIfLoadedImmediately(blockposition.getX() >> 4, blockposition.getZ() >> 4);
 +        return chunk == null ? null : chunk.getFluidState(blockposition);
-+    }
-+    // Paper end
-+
-+    @Override
-     public BlockState getBlockState(BlockPos pos) {
-         return this.getChunk(SectionPos.blockToSectionCoord(pos.getX()), SectionPos.blockToSectionCoord(pos.getZ())).getBlockState(pos);
      }
++    // Paper end
+ 
+     @Override
+     public BlockState getBlockState(BlockPos pos) {
 @@ -217,7 +237,7 @@
          if (iblockdata.isAir()) {
              return false;
@@ -37,7 +37,31 @@
                  BlockEntity tileentity = iblockdata.hasBlockEntity() ? this.getBlockEntity(pos) : null;
  
                  Block.dropResources(iblockdata, this.level, pos, tileentity, breakingEntity, ItemStack.EMPTY);
-@@ -336,6 +356,13 @@
+@@ -264,6 +284,7 @@
+         }
+     }
+ 
++    private boolean hasSetFarWarned = false; // Paper - Buffer OOB setBlock calls
+     @Override
+     public boolean ensureCanWrite(BlockPos pos) {
+         int i = SectionPos.blockToSectionCoord(pos.getX());
+@@ -283,7 +304,15 @@
+ 
+             return true;
+         } else {
++            // Paper start - Buffer OOB setBlock calls
++            if (!hasSetFarWarned) {
+             Util.logAndPauseIfInIde("Detected setBlock in a far chunk [" + i + ", " + j + "], pos: " + String.valueOf(pos) + ", status: " + String.valueOf(this.generatingStep.targetStatus()) + (this.currentlyGenerating == null ? "" : ", currently generating: " + (String) this.currentlyGenerating.get()));
++                hasSetFarWarned = true;
++                if (this.getServer() != null && this.getServer().isDebugging()) {
++                    io.papermc.paper.util.TraceUtil.dumpTraceForThread("far setBlock call");
++                }
++            }
++            // Paper end - Buffer OOB setBlock calls
+             return false;
+         }
+     }
+@@ -336,6 +365,13 @@
  
      @Override
      public boolean addFreshEntity(Entity entity) {
