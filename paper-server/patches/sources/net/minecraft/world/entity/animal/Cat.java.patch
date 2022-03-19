@@ -22,7 +22,21 @@
              this.setVariant((Holder) BuiltInRegistries.CAT_VARIANT.getOrThrow(CatVariant.ALL_BLACK));
              this.setPersistenceRequired();
          }
-@@ -462,7 +462,7 @@
+@@ -386,6 +386,13 @@
+                     DyeColor enumcolor = itemdye.getDyeColor();
+ 
+                     if (enumcolor != this.getCollarColor()) {
++                        // Paper start - Add EntityDyeEvent and CollarColorable interface
++                        final io.papermc.paper.event.entity.EntityDyeEvent event = new io.papermc.paper.event.entity.EntityDyeEvent(this.getBukkitEntity(), org.bukkit.DyeColor.getByWoolData((byte) enumcolor.getId()), ((net.minecraft.server.level.ServerPlayer) player).getBukkitEntity());
++                        if (!event.callEvent()) {
++                            return InteractionResult.FAIL;
++                        }
++                        enumcolor = DyeColor.byId(event.getColor().getWoolData());
++                        // Paper end - Add EntityDyeEvent and CollarColorable interface
+                         if (!this.level().isClientSide()) {
+                             this.setCollarColor(enumcolor);
+                             itemstack.consume(1, player);
+@@ -462,7 +469,7 @@
      }
  
      private void tryToTame(Player player) {
@@ -31,7 +45,7 @@
              this.tame(player);
              this.setOrderedToSit(true);
              this.level().broadcastEntityEvent(this, (byte) 7);
-@@ -480,7 +480,7 @@
+@@ -480,7 +487,7 @@
      private static class CatTemptGoal extends TemptGoal {
  
          @Nullable
@@ -40,7 +54,7 @@
          private final Cat cat;
  
          public CatTemptGoal(Cat cat, double speed, Predicate<ItemStack> foodPredicate, boolean canBeScared) {
-@@ -614,7 +614,15 @@
+@@ -614,7 +621,15 @@
              this.cat.randomTeleport((double) (blockposition_mutableblockposition.getX() + randomsource.nextInt(11) - 5), (double) (blockposition_mutableblockposition.getY() + randomsource.nextInt(5) - 2), (double) (blockposition_mutableblockposition.getZ() + randomsource.nextInt(11) - 5), false);
              blockposition_mutableblockposition.set(this.cat.blockPosition());
              this.cat.dropFromGiftLootTable(getServerLevel((Entity) this.cat), BuiltInLootTables.CAT_MORNING_GIFT, (worldserver, itemstack) -> {
@@ -57,7 +71,7 @@
              });
          }
  
-@@ -645,10 +653,10 @@
+@@ -645,10 +660,10 @@
          private final Cat cat;
  
          public CatAvoidEntityGoal(Cat cat, Class<T> fleeFromType, float distance, double slowSpeed, double fastSpeed) {
