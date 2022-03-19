@@ -660,10 +660,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    @Override
 +    public com.destroystokyo.paper.profile.PlayerProfile createProfile(@Nullable UUID uuid, @Nullable String name) {
 +        Player player = uuid != null ? Bukkit.getPlayer(uuid) : (name != null ? Bukkit.getPlayerExact(name) : null);
-+        if (player != null) {
-+            return new com.destroystokyo.paper.profile.CraftPlayerProfile((CraftPlayer)player);
++        if (player == null) return new com.destroystokyo.paper.profile.CraftPlayerProfile(uuid, name);
++
++        if (Objects.equals(uuid, player.getUniqueId()) && Objects.equals(name, player.getName())) {
++            return new com.destroystokyo.paper.profile.CraftPlayerProfile((CraftPlayer) player);
 +        }
-+        return new com.destroystokyo.paper.profile.CraftPlayerProfile(uuid, name);
++
++        final com.mojang.authlib.GameProfile profile = new com.mojang.authlib.GameProfile(uuid, name);
++        profile.getProperties().putAll(((CraftPlayer)player).getHandle().getGameProfile().getProperties());
++        return new com.destroystokyo.paper.profile.CraftPlayerProfile(profile);
 +    }
      // Paper end
  }
