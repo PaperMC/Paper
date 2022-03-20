@@ -18,29 +18,27 @@ index b079f9cd9dd3c818b859010df74172a84eee544d..2e304d845878ff58a574c11dfa4424ba
          }
      }
  
-diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index 19e4abd0175a19e75521b5adc9ea47bb00abf3c9..f7a7f68edebd304f7ca996cba58979d3fb854217 100644
---- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-+++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-@@ -200,6 +200,18 @@ public class CraftWorld extends CraftRegionAccessor implements World {
-     public io.papermc.paper.world.MoonPhase getMoonPhase() {
-         return io.papermc.paper.world.MoonPhase.getPhase(getFullTime() / 24000L);
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftRegionAccessor.java b/src/main/java/org/bukkit/craftbukkit/CraftRegionAccessor.java
+index b43fcdf2ab50f66f13d0e140375260d64c140f63..0b45a72fa6fac0f6bdd73ee16e7a7742c139c319 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftRegionAccessor.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftRegionAccessor.java
+@@ -919,5 +919,16 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
+     public org.bukkit.NamespacedKey getKey() {
+         return org.bukkit.craftbukkit.util.CraftNamespacedKey.fromMinecraft(this.getHandle().getLevel().dimension().location());
      }
 +
-+    @Override
 +    public boolean lineOfSightExists(Location from, Location to) {
-+        Validate.notNull(from, "from parameter in lineOfSightExists cannot be null");
-+        Validate.notNull(to, "to parameter in lineOfSightExists cannot be null");
++        Preconditions.checkArgument(from != null, "from parameter in lineOfSightExists cannot be null");
++        Preconditions.checkArgument(to != null, "to parameter in lineOfSightExists cannot be null");
 +        if (from.getWorld() != to.getWorld()) return false;
-+        Vec3 vec3d = new Vec3(from.getX(), from.getY(), from.getZ());
-+        Vec3 vec3d1 = new Vec3(to.getX(), to.getY(), to.getZ());
++        net.minecraft.world.phys.Vec3 vec3d = new net.minecraft.world.phys.Vec3(from.getX(), from.getY(), from.getZ());
++        net.minecraft.world.phys.Vec3 vec3d1 = new net.minecraft.world.phys.Vec3(to.getX(), to.getY(), to.getZ());
 +        if (vec3d1.distanceToSqr(vec3d) > 128D * 128D) return false; //Return early if the distance is greater than 128 blocks
 +
-+        return this.getHandle().clip(new ClipContext(vec3d, vec3d1, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, null)).getType() == HitResult.Type.MISS;
++        return this.getHandle().clip(new net.minecraft.world.level.ClipContext(vec3d, vec3d1, net.minecraft.world.level.ClipContext.Block.COLLIDER, net.minecraft.world.level.ClipContext.Fluid.NONE, null)).getType() == net.minecraft.world.phys.HitResult.Type.MISS;
 +    }
      // Paper end
- 
-     private static final Random rand = new Random();
+ }
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
 index 8fe1f5deddfee329c020d93c990dc686fe2b458e..ca176b9331345e343c19a02b6ba2ea886d20962d 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
