@@ -69,10 +69,30 @@ index a92755211e3d42934b5efaa3f201c6c19ab7d2b4..9701e7dd36c0ffeca4ab267ddf70e807
          // Let the server handle cross world teleports
          if (!location.getWorld().equals(this.getWorld())) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index 6feeadad9aecb7d63e24d5daae115a93e39aeb3d..d26bb0032ca0729e68a3418d1c6be84355e63488 100644
+index 6feeadad9aecb7d63e24d5daae115a93e39aeb3d..08758a6a521a72bbfaa2f31afa27faabc9712ee7 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-@@ -1040,8 +1040,66 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -1025,7 +1025,18 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+ 
+     @Override
+     public void setRotation(float yaw, float pitch) {
+-        throw new UnsupportedOperationException("Cannot set rotation of players. Consider teleporting instead.");
++        // Paper start - Teleport API
++        Location playerLocation = getEyeLocation();
++
++        Location targetLocation = playerLocation.clone();
++        targetLocation.setYaw(yaw);
++        targetLocation.setPitch(pitch);
++
++        org.bukkit.util.Vector direction = targetLocation.getDirection();
++        direction.multiply(9999999);
++        targetLocation.add(direction);
++        lookAt(targetLocation, io.papermc.paper.entity.LookAnchor.EYES);
++        // Paper end
+     }
+ 
+     // Paper start - Chunk priority
+@@ -1040,8 +1051,79 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
  
      @Override
      public boolean teleport(Location location, PlayerTeleportEvent.TeleportCause cause) {
@@ -87,13 +107,26 @@ index 6feeadad9aecb7d63e24d5daae115a93e39aeb3d..d26bb0032ca0729e68a3418d1c6be843
 +
 +    @Override
 +    public void lookAt(@NotNull org.bukkit.entity.Entity entity, @NotNull io.papermc.paper.entity.LookAnchor playerAnchor, @NotNull io.papermc.paper.entity.LookAnchor entityAnchor) {
-+        net.minecraft.commands.arguments.EntityAnchorArgument.Anchor[] anchors = net.minecraft.commands.arguments.EntityAnchorArgument.Anchor.values();
-+        getHandle().lookAt(anchors[playerAnchor.ordinal()], ((CraftEntity) entity).getHandle(), anchors[entityAnchor.ordinal()]);
++        getHandle().lookAt(toNmsAnchor(playerAnchor), ((CraftEntity) entity).getHandle(), toNmsAnchor(entityAnchor));
 +    }
 +
 +    @Override
 +    public void lookAt(double x, double y, double z, @NotNull io.papermc.paper.entity.LookAnchor playerAnchor) {
-+        this.getHandle().lookAt(net.minecraft.commands.arguments.EntityAnchorArgument.Anchor.values()[playerAnchor.ordinal()], new Vec3(x, y, z));
++        this.getHandle().lookAt(toNmsAnchor(playerAnchor), new Vec3(x, y, z));
++    }
++
++    public static net.minecraft.commands.arguments.EntityAnchorArgument.Anchor toNmsAnchor(io.papermc.paper.entity.LookAnchor nmsAnchor) {
++        return switch (nmsAnchor) {
++            case EYES -> net.minecraft.commands.arguments.EntityAnchorArgument.Anchor.EYES;
++            case FEET -> net.minecraft.commands.arguments.EntityAnchorArgument.Anchor.FEET;
++        };
++    }
++
++    public static io.papermc.paper.entity.LookAnchor toApiAnchor(net.minecraft.commands.arguments.EntityAnchorArgument.Anchor playerAnchor) {
++        return switch (playerAnchor) {
++            case EYES -> io.papermc.paper.entity.LookAnchor.EYES;
++            case FEET -> io.papermc.paper.entity.LookAnchor.FEET;
++        };
 +    }
 +
 +    public static net.minecraft.network.protocol.game.ClientboundPlayerPositionPacket.RelativeArgument toNmsRelativeFlag(io.papermc.paper.entity.RelativeTeleportFlag apiFlag) {
@@ -139,7 +172,7 @@ index 6feeadad9aecb7d63e24d5daae115a93e39aeb3d..d26bb0032ca0729e68a3418d1c6be843
          location.checkFinite();
  
          ServerPlayer entity = this.getHandle();
-@@ -1054,7 +1112,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -1054,7 +1136,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
             return false;
          }
  
@@ -148,7 +181,7 @@ index 6feeadad9aecb7d63e24d5daae115a93e39aeb3d..d26bb0032ca0729e68a3418d1c6be843
              return false;
          }
  
-@@ -1072,7 +1130,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -1072,7 +1154,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          }
  
          // If this player is riding another entity, we must dismount before teleporting.
@@ -157,7 +190,7 @@ index 6feeadad9aecb7d63e24d5daae115a93e39aeb3d..d26bb0032ca0729e68a3418d1c6be843
  
          // SPIGOT-5509: Wakeup, similar to riding
          if (this.isSleeping()) {
-@@ -1094,7 +1152,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -1094,7 +1176,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
  
          // Check if the fromWorld and toWorld are the same.
          if (fromWorld == toWorld) {
