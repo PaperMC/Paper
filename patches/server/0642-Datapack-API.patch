@@ -1,0 +1,257 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Connor Linfoot <connorlinfoot@me.com>
+Date: Sun, 16 May 2021 15:07:34 +0100
+Subject: [PATCH] Datapack API
+
+Co-authored-by: Noah van der Aa <ndvdaa@gmail.com>
+
+diff --git a/src/main/java/io/papermc/paper/datapack/PaperDatapack.java b/src/main/java/io/papermc/paper/datapack/PaperDatapack.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..9b7dd8a0fba4547f5268b3f99e21ddbe6b5bf566
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/datapack/PaperDatapack.java
+@@ -0,0 +1,50 @@
++package io.papermc.paper.datapack;
++
++import io.papermc.paper.event.server.ServerResourcesReloadedEvent;
++import net.minecraft.server.MinecraftServer;
++import net.minecraft.server.packs.repository.Pack;
++import java.util.List;
++import java.util.stream.Collectors;
++
++public class PaperDatapack implements Datapack {
++    private final String name;
++    private final Compatibility compatibility;
++    private final boolean enabled;
++
++    PaperDatapack(Pack loader, boolean enabled) {
++        this.name = loader.getId();
++        this.compatibility = Compatibility.valueOf(loader.getCompatibility().name());
++        this.enabled = enabled;
++    }
++
++    @Override
++    public String getName() {
++        return name;
++    }
++
++    @Override
++    public Compatibility getCompatibility() {
++        return compatibility;
++    }
++
++    @Override
++    public boolean isEnabled() {
++        return enabled;
++    }
++
++    @Override
++    public void setEnabled(boolean enabled) {
++        if (enabled == this.enabled) {
++            return;
++        }
++
++        MinecraftServer server = MinecraftServer.getServer();
++        List<String> enabledKeys = server.getPackRepository().getSelectedPacks().stream().map(Pack::getId).collect(Collectors.toList());
++        if (enabled) {
++            enabledKeys.add(this.name);
++        } else {
++            enabledKeys.remove(this.name);
++        }
++        server.reloadResources(enabledKeys, ServerResourcesReloadedEvent.Cause.PLUGIN);
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/datapack/PaperDatapackManager.java b/src/main/java/io/papermc/paper/datapack/PaperDatapackManager.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..131f29bb86aded2c01271bf8fbfd7adc74765355
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/datapack/PaperDatapackManager.java
+@@ -0,0 +1,68 @@
++package io.papermc.paper.datapack;
++
++import net.minecraft.server.packs.FilePackResources;
++import net.minecraft.server.packs.FolderPackResources;
++import net.minecraft.server.packs.PackResources;
++import net.minecraft.server.packs.ResourcePackFileNotFoundException;
++import net.minecraft.server.packs.repository.Pack;
++import net.minecraft.server.packs.repository.PackRepository;
++import net.minecraft.server.packs.repository.PackSource;
++import org.apache.commons.lang.Validate;
++import org.jetbrains.annotations.NotNull;
++
++import java.io.File;
++import java.io.FileNotFoundException;
++import java.io.IOException;
++import java.util.Collection;
++import java.util.function.Supplier;
++import java.util.stream.Collectors;
++
++public class PaperDatapackManager implements DatapackManager {
++    private final PackRepository repository;
++
++    public PaperDatapackManager(PackRepository repository) {
++        this.repository = repository;
++    }
++
++    @NotNull
++    @Override
++    public Collection<Datapack> getPacks() {
++        Collection<Pack> enabledPacks = repository.getSelectedPacks();
++        return repository.getAvailablePacks().stream().map(loader -> new PaperDatapack(loader, enabledPacks.contains(loader))).collect(Collectors.toList());
++    }
++
++    @NotNull
++    @Override
++    public Collection<Datapack> getEnabledPacks() {
++        return repository.getSelectedPacks().stream().map(loader -> new PaperDatapack(loader, true)).collect(Collectors.toList());
++    }
++
++    @Override
++    public Datapack loadDatapack(@NotNull String name, @NotNull File file, boolean enable) throws FileNotFoundException, IOException {
++        Validate.notNull(name, "Name cannot be null");
++        Validate.notNull(file, "File cannot be null");
++        Pack pack;
++        try {
++            pack = Pack.createUnsafe(name, false, createSupplier(file), this.repository.constructor, Pack.Position.TOP, PackSource.SERVER);
++        } catch (ResourcePackFileNotFoundException e) {
++            throw new FileNotFoundException(String.format("'%s' in DataPack '%s'", file, e.getResource()));
++        }
++
++        if (pack == null) {
++            return null;
++        }
++
++        PaperRepositorySource repositorySource = (PaperRepositorySource) this.repository.sources.stream().filter(s -> s instanceof PaperRepositorySource).findFirst().get();
++        repositorySource.packs.add(pack);
++
++        Datapack datapack = new PaperDatapack(pack, false);
++        this.repository.reload();
++        datapack.setEnabled(enable);
++
++        return datapack;
++    }
++
++    private static Supplier<PackResources> createSupplier(File file) {
++        return file.isDirectory() ? () -> new FolderPackResources(file) : () -> new FilePackResources(file);
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/datapack/PaperRepositorySource.java b/src/main/java/io/papermc/paper/datapack/PaperRepositorySource.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..bfa9e8cc87b9c40d8430de399edf625a66934e28
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/datapack/PaperRepositorySource.java
+@@ -0,0 +1,17 @@
++package io.papermc.paper.datapack;
++
++import net.minecraft.server.packs.repository.Pack;
++import net.minecraft.server.packs.repository.RepositorySource;
++
++import java.util.ArrayList;
++import java.util.List;
++import java.util.function.Consumer;
++
++public class PaperRepositorySource implements RepositorySource {
++    public List<Pack> packs = new ArrayList<>();
++
++    @Override
++    public void loadPacks(Consumer<Pack> profileAdder, Pack.PackConstructor factory) {
++        packs.forEach(profileAdder::accept);
++    }
++}
+diff --git a/src/main/java/net/minecraft/server/Main.java b/src/main/java/net/minecraft/server/Main.java
+index 8bbc3a1e7f848047ff915d5bdf08d376e71c4025..35625fef038725e5faf7aa4daccbe4844d9705d1 100644
+--- a/src/main/java/net/minecraft/server/Main.java
++++ b/src/main/java/net/minecraft/server/Main.java
+@@ -173,7 +173,7 @@ public class Main {
+                 Main.LOGGER.warn("Safe mode active, only vanilla datapack will be loaded");
+             }
+ 
+-            PackRepository resourcepackrepository = new PackRepository(PackType.SERVER_DATA, new RepositorySource[]{new ServerPacksSource(), new FolderRepositorySource(convertable_conversionsession.getLevelPath(LevelResource.DATAPACK_DIR).toFile(), PackSource.WORLD)});
++            PackRepository resourcepackrepository = new PackRepository(PackType.SERVER_DATA, new RepositorySource[]{new ServerPacksSource(), new FolderRepositorySource(convertable_conversionsession.getLevelPath(LevelResource.DATAPACK_DIR).toFile(), PackSource.WORLD), new io.papermc.paper.datapack.PaperRepositorySource()}); // Paper
+             // CraftBukkit start
+             File bukkitDataPackFolder = new File(convertable_conversionsession.getLevelPath(LevelResource.DATAPACK_DIR).toFile(), "bukkit");
+             if (!bukkitDataPackFolder.exists()) {
+diff --git a/src/main/java/net/minecraft/server/packs/ResourcePackFileNotFoundException.java b/src/main/java/net/minecraft/server/packs/ResourcePackFileNotFoundException.java
+index 60d8a2aab79163e5f959c15edbe4253bb90d736b..b343c5777f120b76e15a128cce925d5654c034f5 100644
+--- a/src/main/java/net/minecraft/server/packs/ResourcePackFileNotFoundException.java
++++ b/src/main/java/net/minecraft/server/packs/ResourcePackFileNotFoundException.java
+@@ -4,7 +4,13 @@ import java.io.File;
+ import java.io.FileNotFoundException;
+ 
+ public class ResourcePackFileNotFoundException extends FileNotFoundException {
++    // Paper start
++    private String resource;
++    public String getResource() { return this.resource; }
++    // Paper end
++
+     public ResourcePackFileNotFoundException(File packSource, String resource) {
+         super(String.format("'%s' in ResourcePack '%s'", resource, packSource));
++        this.resource = resource; // Paper
+     }
+ }
+diff --git a/src/main/java/net/minecraft/server/packs/repository/Pack.java b/src/main/java/net/minecraft/server/packs/repository/Pack.java
+index adc1d4d52787b590f00ba3da4878cecd32da87e7..b14be19d7525d49808bb76573471b7b638a8da76 100644
+--- a/src/main/java/net/minecraft/server/packs/repository/Pack.java
++++ b/src/main/java/net/minecraft/server/packs/repository/Pack.java
+@@ -31,6 +31,17 @@ public class Pack {
+     @Nullable
+     public static Pack create(String name, boolean alwaysEnabled, Supplier<PackResources> packFactory, Pack.PackConstructor profileFactory, Pack.Position insertionPosition, PackSource packSource) {
+         try {
++            // Paper start
++            return createUnsafe(name, alwaysEnabled, packFactory, profileFactory, insertionPosition, packSource);
++        } catch (IOException var11) {
++            LOGGER.warn("Couldn't get pack info for: {}", (Object)var11.toString());
++            return null;
++        }
++    }
++
++    @Nullable
++    public static Pack createUnsafe(String name, boolean alwaysEnabled, Supplier<PackResources> packFactory, Pack.PackConstructor profileFactory, Pack.Position insertionPosition, PackSource packSource) throws IOException {
++        // Paper end
+             PackResources packResources = packFactory.get();
+ 
+             Pack var8;
+@@ -67,10 +78,7 @@ public class Pack {
+             }
+ 
+             return var8;
+-        } catch (IOException var11) {
+-            LOGGER.warn("Couldn't get pack info for: {}", (Object)var11.toString());
+-            return null;
+-        }
++            // Paper - try catch moved up
+     }
+ 
+     public Pack(String name, boolean alwaysEnabled, Supplier<PackResources> packFactory, Component displayName, Component description, PackCompatibility compatibility, Pack.Position direction, boolean pinned, PackSource source) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index a84fb8c6d4af395da08e9a685f3705bcdf8440a6..887bf340b56177099bc5c55ac185fb66d8a080f7 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -280,6 +280,7 @@ public final class CraftServer implements Server {
+     public boolean ignoreVanillaPermissions = false;
+     private final List<CraftPlayer> playerView;
+     public int reloadCount;
++    private final io.papermc.paper.datapack.PaperDatapackManager datapackManager; // Paper
+     public static Exception excessiveVelEx; // Paper - Velocity warnings
+ 
+     static {
+@@ -366,6 +367,7 @@ public final class CraftServer implements Server {
+         if (this.configuration.getBoolean("settings.use-map-color-cache")) {
+             MapPalette.setMapColorCache(new CraftMapColorCache(this.logger));
+         }
++        datapackManager = new io.papermc.paper.datapack.PaperDatapackManager(console.getPackRepository()); // Paper
+     }
+ 
+     public boolean getCommandBlockOverride(String command) {
+@@ -2763,5 +2765,11 @@ public final class CraftServer implements Server {
+     public com.destroystokyo.paper.entity.ai.MobGoals getMobGoals() {
+         return mobGoals;
+     }
++
++    @Override
++    public io.papermc.paper.datapack.PaperDatapackManager getDatapackManager() {
++        return datapackManager;
++    }
++
+     // Paper end
+ }
