@@ -142,27 +142,6 @@ public final class CraftItemStack extends ItemStack {
         this.setItemMeta(itemMeta);
     }
 
-    /**
-     * Gets if the item is marked as an inventory drop in death events.
-     *
-     * @return true if the item is marked as an inventory drop
-     */
-    @ApiStatus.Internal
-    public boolean isForInventoryDrop() {
-        return this.isForInventoryDrop;
-    }
-
-    /**
-     * Marks this item as an inventory drop in death events.
-     *
-     * @return the ItemStack marked as an inventory drop
-     */
-    @ApiStatus.Internal
-    public ItemStack markForInventoryDrop() {
-        this.isForInventoryDrop = true;
-        return this;
-    }
-
     @Override
     public MaterialData getData() {
         return this.handle != null ? CraftMagicNumbers.getMaterialData(this.handle.getItem()) : super.getData();

@@ -622,7 +622,7 @@
 +        if (this.isRemoved()) {
 +            return;
 +        }
-+        java.util.List<org.bukkit.inventory.ItemStack> loot = new java.util.ArrayList<>(this.getInventory().getContainerSize());
++        List<DefaultDrop> loot = new java.util.ArrayList<>(this.getInventory().getContainerSize()); // Paper - Restore vanilla drops behavior
 +        boolean keepInventory = this.serverLevel().getGameRules().getBoolean(GameRules.RULE_KEEPINVENTORY) || this.isSpectator();
  
 -        if (flag) {
@@ -630,14 +630,14 @@
 +        if (!keepInventory) {
 +            for (ItemStack item : this.getInventory().getContents()) {
 +                if (!item.isEmpty() && !EnchantmentHelper.has(item, EnchantmentEffectComponents.PREVENT_EQUIPMENT_DROP)) {
-+                    loot.add(CraftItemStack.asCraftMirror(item).markForInventoryDrop());
++                    loot.add(new DefaultDrop(item, stack -> this.drop(stack, true, false, false))); // Paper - Restore vanilla drops behavior; drop function taken from Inventory#dropAll (don't fire drop event)
 +                }
 +            }
 +        }
 +        if (this.shouldDropLoot() && this.serverLevel().getGameRules().getBoolean(GameRules.RULE_DOMOBLOOT)) { // Paper - fix player loottables running when mob loot gamerule is false
 +        // SPIGOT-5071: manually add player loot tables (SPIGOT-5195 - ignores keepInventory rule)
 +        this.dropFromLootTable(this.serverLevel(), damageSource, this.lastHurtByPlayerTime > 0);
-+        this.dropCustomDeathLoot(this.serverLevel(), damageSource, flag);
++        // Paper - Restore vanilla drops behaviour; custom death loot is a noop on server player, remove.
  
 +        loot.addAll(this.drops);
 +        this.drops.clear(); // SPIGOT-5188: make sure to clear
