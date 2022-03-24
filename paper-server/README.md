@@ -1,6 +1,6 @@
 CraftBukkit
 ======
-An implementation of the [Bukkit](https://hub.spigotmc.org/stash/projects/SPIGOT/repos/bukkit) plugin API for [Minecraft](https://minecraft.net/) servers, currently maintained by [SpigotMC](http://www.spigotmc.org/).
+An implementation of the [Bukkit](https://hub.spigotmc.org/stash/projects/SPIGOT/repos/bukkit) plugin API for [Minecraft](https://minecraft.net/) servers, currently maintained by [SpigotMC](https://www.spigotmc.org/).
 
 #### Index
 
@@ -17,11 +17,13 @@ An implementation of the [Bukkit](https://hub.spigotmc.org/stash/projects/SPIGOT
 
 Bug Reporting
 -------------
-The development team is very open to both bug and feature requests / suggestions. You can submit these on the [JIRA Issue Tracker](http://hub.spigotmc.org/jira/).
+<a name="bug-reporting"></a>
+The development team is very open to both bug and feature requests / suggestions. You can submit these on the [JIRA Issue Tracker](https://hub.spigotmc.org/jira/).
 
 Compilation
 -----------
-CraftBukkit is a Java program which uses [Maven 3](http://maven.apache.org/) for compilation. To compile fresh from Git, simply perform the following steps:
+<a name="compilation"></a>
+CraftBukkit is a Java program which uses [Maven 3](https://maven.apache.org/) for compilation. To compile fresh from Git, simply perform the following steps:
 
 * Install Git using your preferred installation methods.
 * Download and run [BuildTools](https://www.spigotmc.org/wiki/buildtools/)
@@ -30,21 +32,23 @@ Some IDEs such as [NetBeans](https://netbeans.org/) can perform these steps for 
 
 Contributing
 ------------
+<a name="contributing"></a>
 Contributions of all sorts are welcome. To manage community contributions, we use the pull request functionality of Stash. In order to gain access to Stash and create a pull request, you will first need to perform the following steps:
 
-* Create an account on [JIRA](http://hub.spigotmc.org/jira/).
-* Fill in the [SpigotMC CLA](http://www.spigotmc.org/go/cla) and wait up to 24 hours for your Stash account to be activated. Please ensure that your username and email addresses match.
+* Create an account on [JIRA](https://hub.spigotmc.org/jira/).
+* Fill in the [SpigotMC CLA](https://www.spigotmc.org/go/cla) and wait up to 24 hours for your Stash account to be activated. Please ensure that your username and email addresses match.
 * Log into Stash using your JIRA credentials.
 
 Once you have performed these steps you can create a fork, push your code changes, and then submit it for review.
 
 If you submit a PR involving both Bukkit and CraftBukkit, each PR should link the other.
 
-Although the minimum requirement for compilation & usage is Java 8, we prefer all contributions to be written in Java 7 style code unless there is a compelling reason otherwise.
+The minimum requirement for style, compilation & usage is Java 16 unless there is a compelling reason.
 
 Code Requirements
 -----------------
-* For the most part, CraftBukkit and Bukkit use the [Sun/Oracle coding standards](http://www.oracle.com/technetwork/java/javase/documentation/codeconvtoc-136057.html).
+<a name="code-requirements"></a>
+* For the most part, CraftBukkit and Bukkit use the [Sun/Oracle coding standards](https://www.oracle.com/technetwork/java/javase/documentation/codeconvtoc-136057.html).
 * No tabs; use 4 spaces instead.
     * Empty lines should contain no spaces.
 * No trailing whitespaces.
@@ -60,7 +64,7 @@ Code Requirements
 * Do not submit your personal changes to configuration files.
 * Avoid moving or renaming classes.
 
-Bukkit/CraftBukkit employs [JUnit 4](http://www.vogella.com/articles/JUnit/article.html) for testing. Pull Requests(PR) should attempt to integrate within that framework as appropriate.
+Bukkit/CraftBukkit employs [JUnit 4](https://www.vogella.com/tutorials/JUnit4/article.html) for testing. Pull Requests(PR) should attempt to integrate within that framework as appropriate.
 Bukkit is a large project and what seems simple to a PR author at the time of writing may easily be overlooked by other authors and updates. Including unit tests with your PR
 will help to ensure the PR can be easily maintained over time and encourage the Spigot team to pull the PR.
 
@@ -71,10 +75,11 @@ will help to ensure the PR can be easily maintained over time and encourage the 
     * __Absolutely no wildcard imports outside of tests.__
     * If you only use an import once, don't import it. Use the fully qualified name.
 
-Any questions about these requirements can be asked in #spigot-dev in IRC.
+Any questions about these requirements can be asked in #help-development in Discord.
 
 Applying Patches
 ----------------
+<a name="applying-patches"></a>
 Any time new patches are created and/or updated in CraftBukkit, you need to apply them to your development environment.
 
 1. Pull changes from CraftBukkit repo.
@@ -84,6 +89,7 @@ Any time new patches are created and/or updated in CraftBukkit, you need to appl
 
 Making Changes to Minecraft
 ---------------------------
+<a name="making-changes-to-minecraft"></a>
 Importing new NMS classes to CraftBukkit is actually very simple.
 
 1. Find the `work/decompile-XXXXXX` folder in your BuildTools folder.
@@ -102,7 +108,7 @@ Bukkit/CB employs a Minimal Diff policy to help guide when changes should be cha
 This is to ensure that any changes have the smallest impact possible on the update process whenever a new Minecraft version is released.
 As well as the Minimal Diff Policy, *every* change made to a Minecraft class must be marked with the appropriate CraftBukkit comment.
 At no point should you rename an existing/obfuscated field or method. All references to existing/obfusacted fields/methods should be marked with the `// PAIL rename` comment.
-Mapping of new fields/methods are done when there are enough changes to warrant the work. (Any questions can be asked in #spigot-dev in [IRC](https://www.spigotmc.org/wiki/irc-guide/))
+Mapping of new fields/methods are done when there are enough changes to warrant the work. (Any questions can be asked in our [Discord](https://www.spigotmc.org/go/discord))
 
 __*Key Points*__:
 * All additions to patches must be accompanied by an appropriate comment.
@@ -115,6 +121,7 @@ __*Key Points*__:
 
 Minimal Diff Policy
 -------------------
+<a name="minimal-diff-policy"></a>
 
 The Minimal Diff Policy is key to any changes made within Minecraft classes. When people think of the phrase "minimal diffs", they often take it
 to the extreme - they go completely out of their way to abstract the changes they are trying to make away from editing Minecraft's classes as much as possible.
@@ -202,6 +209,7 @@ public void remove(World world, int i, int j, int k, int l, int i1) {
 ```
 
 #### CraftBukkit Comments
+<a name="craftbukkit-comments"></a>
 
 Changes to a Minecraft class should be clearly marked using CraftBukkit comments.
 
@@ -274,11 +282,13 @@ __Imports in Minecraft Classes__
 
 Creating Pull Requests
 ----------------------
+<a name="creating-pull-requests"></a>
 To learn what Spigot expects of a Pull Request please view the [Contributing guidelines](CONTRIBUTING.md)
 
 Useful Resources
 ----------------
+<a name="useful-resources"></a>
 
 * [An example pull request demonstrating the things we look out for](https://hub.spigotmc.org/stash/projects/SPIGOT/repos/craftbukkit/pull-requests/365/overview)
-* [JIRA, our bug tracker](http://hub.spigotmc.org/jira/)
-* [Join us on IRC - #spigot-dev @ irc.spi.gt](https://www.spigotmc.org/wiki/irc-guide/)
+* [JIRA, our bug tracker](https://hub.spigotmc.org/jira/)
+* [Join us on Discord - #help-development](https://www.spigotmc.org/go/discord)
