@@ -5,12 +5,15 @@ Subject: [PATCH] Fix Entity Position Desync
 
 If entities were teleported in the first tick it would not be send to the client.
 
-This also fixes desync caused be relatively teleporting paintings.
+This excludes hanging entities, as this fix caused problematic behavior due to them having their own
+position field.
+
+This also fixes desync caused be relatively teleporting paintings. (https://bugs.mojang.com/browse/MC-249169)
 This is caused by the fact that setPacketCoordinates isn't called on paintings when they are spawned (unlike every other entity, like XP orbs)
 on the client for some reason. This causes it to be relatively teleported to the world origin (0,0,0).
 
 diff --git a/src/main/java/net/minecraft/server/level/ServerEntity.java b/src/main/java/net/minecraft/server/level/ServerEntity.java
-index fe29bf349b987d633b185b9d44d221053fa2cc83..1092ba200a945d8d70e48f956535f56e2743302d 100644
+index fe29bf349b987d633b185b9d44d221053fa2cc83..f91e1a876ad4c46a7c92cead18947a941b4d9e68 100644
 --- a/src/main/java/net/minecraft/server/level/ServerEntity.java
 +++ b/src/main/java/net/minecraft/server/level/ServerEntity.java
 @@ -164,13 +164,14 @@ public class ServerEntity {
@@ -18,7 +21,7 @@ index fe29bf349b987d633b185b9d44d221053fa2cc83..1092ba200a945d8d70e48f956535f56e
                  // CraftBukkit end
  
 -                if (this.tickCount > 0 || this.entity instanceof AbstractArrow) {
-+                if (true || this.tickCount > 0 || this.entity instanceof AbstractArrow) { // Paper - Always update position
++                if (!(this.entity instanceof net.minecraft.world.entity.decoration.HangingEntity) || this.tickCount > 0 || this.entity instanceof AbstractArrow) { // Paper - Always update position
                      // Paper start - remove allocation of Vec3D here
                      long k = ClientboundMoveEntityPacket.entityToPacket(vec3d_dx);
                      long l = ClientboundMoveEntityPacket.entityToPacket(vec3d_dy);
