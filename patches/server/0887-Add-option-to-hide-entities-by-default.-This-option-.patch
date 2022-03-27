@@ -1,0 +1,118 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: CrystallDEV <m.hasselder@gmx.de>
+Date: Sun, 27 Mar 2022 15:05:06 +0200
+Subject: [PATCH] Add option to hide entities by default. This option is
+ currently very strict and overrides all other changes to visibility and
+ interaction. Fixes #7395
+
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
+index 3b1a34b34979ab436ccd33f0a85bfae537cbecb4..d558883804d450d39750e5b2f4d2cf4cd021ebfb 100644
+--- a/src/main/java/net/minecraft/server/level/ServerLevel.java
++++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
+@@ -1524,6 +1524,11 @@ public class ServerLevel extends Level implements WorldGenLevel {
+ 
+     @Override
+     public void playSound(@Nullable Player except, Entity entity, SoundEvent sound, SoundSource category, float volume, float pitch) {
++        // Paper start - dont play sounds of entities that are hidden by default
++        if(entity.isHiddenEntityByDefault()){
++            return;
++        }
++        // Paper end
+         this.server.getPlayerList().broadcast(except, entity.getX(), entity.getY(), entity.getZ(), volume > 1.0F ? (double) (16.0F * volume) : 16.0D, this.dimension(), new ClientboundSoundEntityPacket(sound, category, entity, volume, pitch));
+     }
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index 84fce7dccf9232209f939a32acfc3131e62eb27c..caddfbf572cb83b0a72ec5479de40fb7a7cd84d4 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -326,6 +326,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, i
+     public void inactiveTick() { }
+     // Spigot end
+     // Paper start
++    private boolean hideEntityByDefault = false;
+     public long activatedImmunityTick = Integer.MIN_VALUE; // Paper
+     public boolean isTemporarilyActive = false; // Paper
+     public boolean fromNetherPortal; // Paper
+@@ -337,6 +338,14 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, i
+     private UUID originWorld;
+     public boolean freezeLocked = false; // Paper - Freeze Tick Lock API
+ 
++   public void setHideEntityByDefault(boolean hide){
++       this.hideEntityByDefault = hide;
++   }
++
++   public boolean isHiddenEntityByDefault(){
++       return this.hideEntityByDefault;
++   }
++
+     public void setOrigin(@javax.annotation.Nonnull Location location) {
+         this.origin = location.toVector();
+         this.originWorld = location.getWorld().getUID();
+@@ -1503,7 +1512,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, i
+     }
+ 
+     public boolean isSilent() {
+-        return (Boolean) this.entityData.get(Entity.DATA_SILENT);
++        return (Boolean) this.entityData.get(Entity.DATA_SILENT) || this.isHiddenEntityByDefault();  // Paper - don't play any sounds if this entity is hidden by default
+     }
+ 
+     public void setSilent(boolean silent) {
+@@ -3605,7 +3614,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, i
+     }
+ 
+     public boolean broadcastToPlayer(ServerPlayer spectator) {
+-        return true;
++        return !this.hideEntityByDefault; // Paper - only broadcast to a player if this entity is shown by default
+     }
+ 
+     @Override
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
+index a92755211e3d42934b5efaa3f201c6c19ab7d2b4..2d7dcd08f0e93fa6bb40d2995a88b908e6c35c1b 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
+@@ -1230,6 +1230,22 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
+     // Spigot end
+ 
+     // Paper start
++
++    @Override
++    public boolean isHiddenByDefault() {
++        return getHandle().isHiddenEntityByDefault();
++    }
++
++    @Override
++    public void hideEntityByDefault() {
++        getHandle().setHideEntityByDefault(true);
++    }
++
++    @Override
++    public void showEntityByDefault() {
++        getHandle().setHideEntityByDefault(false);
++    }
++
+     @Override
+     public Location getOrigin() {
+         Vector originVector = this.getHandle().getOriginVector();
+@@ -1270,7 +1286,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
+     public boolean isInWaterOrBubbleColumn() {
+         return getHandle().isInWaterOrBubble();
+     }
+-    
++
+     public boolean isInWaterOrRainOrBubbleColumn() {
+         return getHandle().isInWaterRainOrBubble();
+     }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index 6feeadad9aecb7d63e24d5daae115a93e39aeb3d..f861b695aac3c8633e3bb308cdda42fe5e7c5f06 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -1638,7 +1638,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+ 
+     @Override
+     public boolean canSee(org.bukkit.entity.Entity entity) {
+-        return !this.hiddenEntities.containsKey(entity.getUniqueId());
++        return !this.hiddenEntities.containsKey(entity.getUniqueId()) || !entity.isHiddenByDefault();
+     }
+ 
+     @Override
