@@ -1,0 +1,120 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Thu, 13 Jan 2022 23:05:53 -0800
+Subject: [PATCH] Add missing structure set seed configs
+
+The 3 missing feature seed configs are strongholds,
+mineshafts, and buried treasure.
+
+Strongholds use a ring placement scheme which isn't random so they
+utilize the world seed by default, this adds a config to override it
+for just generating the ring positions.
+
+Mineshafts and Buried Treasure structure sets are special cases
+where the "salt" that can be defined for them via datapacks has 0
+effect because the difference between the spacing and separation is 1
+which is used as the upper bound in the random with salt. So the random
+always returns the same int (0) so the salt has no effect. This adds
+seeds/salts in different parts of the generation to change locations
+
+Co-authored-by: William Blake Galbreath <blake.galbreath@gmail.com>
+
+diff --git a/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java b/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java
+index 8bdf3ec461d870204452833bf6f65fe6c35595d8..afdb58336427ef87bd9dc1dbdccf384d6a6147e4 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java
++++ b/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java
+@@ -126,9 +126,17 @@ public abstract class ChunkGenerator implements BiomeManager.NoiseBiomeSource {
+     public Stream<Holder<StructureSet>> possibleStructureSets() {
+         return this.structureOverrides.isPresent() ? ((HolderSet) this.structureOverrides.get()).stream() : this.structureSets.holders().map(Holder::hackyErase);
+     }
++    // Paper start - add missing structure set seeds
++    public int buriedTreasureSeed;
++    public @Nullable Integer mineshaftSeed;
++    // Paper end
+ 
+     private void generatePositions() {
+         Set<Holder<Biome>> set = this.runtimeBiomeSource.possibleBiomes();
++        // Paper start - add missing structure set seeds
++        this.buriedTreasureSeed = this.conf.buriedTreasureSeed;
++        this.mineshaftSeed = this.conf.mineshaftSeed;
++        // Paper end
+ 
+         this.possibleStructureSets().forEach((holder) -> {
+             StructureSet structureset = (StructureSet) holder.value();
+@@ -223,7 +231,13 @@ public abstract class ChunkGenerator implements BiomeManager.NoiseBiomeSource {
+             int k = placement.spread();
+             Random random = new Random();
+ 
++            // Paper start
++            if (strongholdSet.is(net.minecraft.world.level.levelgen.structure.BuiltinStructureSets.STRONGHOLDS) && this.conf.strongholdSeed != null) {
++                random.setSeed(this.conf.strongholdSeed);
++            } else {
++            // Paper end
+             random.setSeed(this.ringPlacementSeed);
++            } // Paper
+             double d0 = random.nextDouble() * 3.141592653589793D * 2.0D;
+             int l = 0;
+             int i1 = 0;
+diff --git a/src/main/java/net/minecraft/world/level/levelgen/feature/BuriedTreasureFeature.java b/src/main/java/net/minecraft/world/level/levelgen/feature/BuriedTreasureFeature.java
+index ff58437d0ccc4901c84b3df9afb245940fbffef1..24b276e861c9165529a080501579d14c260aa363 100644
+--- a/src/main/java/net/minecraft/world/level/levelgen/feature/BuriedTreasureFeature.java
++++ b/src/main/java/net/minecraft/world/level/levelgen/feature/BuriedTreasureFeature.java
+@@ -20,7 +20,7 @@ public class BuriedTreasureFeature extends StructureFeature<ProbabilityFeatureCo
+ 
+     private static boolean checkLocation(PieceGeneratorSupplier.Context<ProbabilityFeatureConfiguration> context) {
+         WorldgenRandom worldgenRandom = new WorldgenRandom(new LegacyRandomSource(0L));
+-        worldgenRandom.setLargeFeatureWithSalt(context.seed(), context.chunkPos().x, context.chunkPos().z, 10387320);
++        worldgenRandom.setLargeFeatureWithSalt(context.seed(), context.chunkPos().x, context.chunkPos().z, context.chunkGenerator().buriedTreasureSeed); // Paper - add missing structure set seeds
+         return worldgenRandom.nextFloat() < (context.config()).probability && context.validBiomeOnTop(Heightmap.Types.OCEAN_FLOOR_WG);
+     }
+ 
+diff --git a/src/main/java/net/minecraft/world/level/levelgen/feature/MineshaftFeature.java b/src/main/java/net/minecraft/world/level/levelgen/feature/MineshaftFeature.java
+index 45f11284bf65081b3b2e8da85114efbe5efd5b42..ff3c8fcdae65d37e6cd4e388ee6cc047c24fe118 100644
+--- a/src/main/java/net/minecraft/world/level/levelgen/feature/MineshaftFeature.java
++++ b/src/main/java/net/minecraft/world/level/levelgen/feature/MineshaftFeature.java
+@@ -27,7 +27,13 @@ public class MineshaftFeature extends StructureFeature<MineshaftConfiguration> {
+ 
+     private static boolean checkLocation(PieceGeneratorSupplier.Context<MineshaftConfiguration> context) {
+         WorldgenRandom worldgenRandom = new WorldgenRandom(new LegacyRandomSource(0L));
++        // Paper start - add missing structure set seeds
++        if (context.chunkGenerator().mineshaftSeed != null) {
++            worldgenRandom.setLargeFeatureWithSalt(context.seed(), context.chunkPos().x, context.chunkPos().z, context.chunkGenerator().mineshaftSeed);
++        } else {
++        // Paper end
+         worldgenRandom.setLargeFeatureSeed(context.seed(), context.chunkPos().x, context.chunkPos().z);
++        } // Paper
+         double d = (double)(context.config()).probability;
+         return worldgenRandom.nextDouble() >= d ? false : context.validBiome().test(context.chunkGenerator().getNoiseBiome(QuartPos.fromBlock(context.chunkPos().getMiddleBlockX()), QuartPos.fromBlock(50), QuartPos.fromBlock(context.chunkPos().getMiddleBlockZ())));
+     }
+diff --git a/src/main/java/org/spigotmc/SpigotWorldConfig.java b/src/main/java/org/spigotmc/SpigotWorldConfig.java
+index b498b027b127996976a394e9a86cfc90f8a8ed3b..a8ea824af3601a06b5d3783160cd1b2b22e4914c 100644
+--- a/src/main/java/org/spigotmc/SpigotWorldConfig.java
++++ b/src/main/java/org/spigotmc/SpigotWorldConfig.java
+@@ -364,6 +364,15 @@ public class SpigotWorldConfig
+     public int mansionSeed;
+     public int fossilSeed;
+     public int portalSeed;
++    // Paper start - add missing structure set configs
++    public Integer mineshaftSeed;
++    public int buriedTreasureSeed;
++    public Long strongholdSeed;
++    private <N extends Number> N getSeed(String path, java.util.function.Function<String, N> toNumberFunc) {
++        final String value = this.getString(path, "default");
++        return org.apache.commons.lang3.math.NumberUtils.isParsable(value) ? toNumberFunc.apply(value) : null;
++    }
++    // Paper end
+     private void initWorldGenSeeds()
+     {
+         this.villageSeed = this.getInt( "seed-village", 10387312 );
+@@ -381,6 +390,11 @@ public class SpigotWorldConfig
+         this.mansionSeed = this.getInt( "seed-mansion", 10387319 );
+         this.fossilSeed = this.getInt( "seed-fossil", 14357921 );
+         this.portalSeed = this.getInt( "seed-portal", 34222645 );
++        // Paper start - add missing feature seed configs
++        this.mineshaftSeed = this.getSeed("seed-mineshaft", Integer::parseInt);
++        this.buriedTreasureSeed = this.getInt("seed-buried-treasure", 10387320); // def taken from BuriedTreasureFeature#RANDOM_SALT field
++        this.strongholdSeed = this.getSeed("seed-stronghold", Long::parseLong);
++        // Paper end
+         this.log( "Custom Map Seeds:  Village: " + this.villageSeed + " Desert: " + this.desertSeed + " Igloo: " + this.iglooSeed + " Jungle: " + this.jungleSeed + " Swamp: " + this.swampSeed + " Monument: " + this.monumentSeed
+                 + " Ocean: " + this.oceanSeed + " Shipwreck: " + this.shipwreckSeed + " End City: " + this.endCitySeed + " Slime: " + this.slimeSeed + " Nether: " + this.netherSeed + " Mansion: " + this.mansionSeed + " Fossil: " + this.fossilSeed + " Portal: " + this.portalSeed );
+     }
