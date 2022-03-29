@@ -5082,21 +5082,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          this.setTicketLevel(level);
          this.changedBlocksPerSection = new ShortSet[world.getSectionsCount()];
 +        this.chunkMap = (ChunkMap)playersWatchingChunkProvider; // Paper
-+    }
-+
-+    // Paper start
-+    public LevelChunk getFullChunkUnchecked() {
-+        CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> statusFuture = this.getFutureIfPresentUnchecked(ChunkStatus.FULL);
-+        Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure> either = (Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>) statusFuture.getNow(null);
-+        return (either == null) ? null : (LevelChunk) either.left().orElse(null);
      }
  
-+    public ChunkAccess getAvailableChunkNow() {
++    // Paper start
++    public @Nullable ChunkAccess getAvailableChunkNow() {
 +        // TODO can we just getStatusFuture(EMPTY)?
 +        for (ChunkStatus curr = ChunkStatus.FULL, next = curr.getParent(); curr != next; curr = next, next = next.getParent()) {
 +            CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> future = this.getFutureIfPresentUnchecked(curr);
 +            Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure> either = future.getNow(null);
-+            if (either == null || !either.left().isPresent()) {
++            if (either == null || either.left().isEmpty()) {
 +                continue;
 +            }
 +            return either.left().get();
@@ -5104,10 +5098,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return null;
 +    }
 +    // Paper end
-+
-     public CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> getFutureIfPresentUnchecked(ChunkStatus leastStatus) {
-         CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> completablefuture = (CompletableFuture) this.futures.get(leastStatus.getIndex());
- 
+     // CraftBukkit start
+     public LevelChunk getFullChunkNow() {
+         // Note: We use the oldTicketLevel for isLoaded checks.
 @@ -0,0 +0,0 @@ public class ChunkHolder {
          return ChunkHolder.getStatus(this.ticketLevel).isOrAfter(leastStatus) ? this.getFutureIfPresentUnchecked(leastStatus) : ChunkHolder.UNLOADED_CHUNK_FUTURE;
      }
@@ -5238,7 +5231,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            this.tickingChunkFuture.complete(ChunkHolder.UNLOADED_LEVEL_CHUNK); this.isTickingReady = false; // Paper - cache chunk ticking stage
              this.tickingChunkFuture = ChunkHolder.UNLOADED_LEVEL_CHUNK_FUTURE;
 +            // Paper start - ticking chunk set
-+            LevelChunk chunkIfCached = this.getFullChunkUnchecked();
++            LevelChunk chunkIfCached = this.getFullChunkNowUnchecked();
 +            if (chunkIfCached != null) {
 +                this.chunkMap.level.getChunkSource().tickingChunks.remove(chunkIfCached);
 +            }
@@ -5268,7 +5261,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            this.entityTickingChunkFuture.complete(ChunkHolder.UNLOADED_LEVEL_CHUNK); this.isEntityTickingReady = false; // Paper - cache chunk ticking stage
              this.entityTickingChunkFuture = ChunkHolder.UNLOADED_LEVEL_CHUNK_FUTURE;
 +            // Paper start - entity ticking chunk set
-+            LevelChunk chunkIfCached = this.getFullChunkUnchecked();
++            LevelChunk chunkIfCached = this.getFullChunkNowUnchecked();
 +            if (chunkIfCached != null) {
 +                this.chunkMap.level.getChunkSource().entityTickingChunks.remove(chunkIfCached);
 +            }
@@ -5859,7 +5852,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            return null;
 +        }
 +
-+        return playerChunk.getFullChunkUnchecked();
++        return playerChunk.getFullChunkNowUnchecked();
 +    }
 +
 +    @Nullable
