@@ -6,7 +6,7 @@ Subject: [PATCH] Optimise chunk tick iteration
 Use a dedicated list of entity ticking chunks to reduce the cost
 
 diff --git a/src/main/java/net/minecraft/server/level/ChunkHolder.java b/src/main/java/net/minecraft/server/level/ChunkHolder.java
-index fbfbe9adeca7364e6346c887616890bf968f38a1..bd43fbc8a93afa7604aa467392520ed7b30a1d83 100644
+index b9d3535dd4e0af771bb74c85f18265e38f383e0e..469b921cceabc3f42961e8aa5314bdc849ad41b9 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkHolder.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkHolder.java
 @@ -86,11 +86,21 @@ public class ChunkHolder {
@@ -31,7 +31,7 @@ index fbfbe9adeca7364e6346c887616890bf968f38a1..bd43fbc8a93afa7604aa467392520ed7
      }
      // Paper end - optimise anyPlayerCloseEnoughForSpawning
      long lastAutoSaveTime; // Paper - incremental autosave
-@@ -246,7 +256,7 @@ public class ChunkHolder {
+@@ -253,7 +263,7 @@ public class ChunkHolder {
  
              if (i < 0 || i >= this.changedBlocksPerSection.length) return; // CraftBukkit - SPIGOT-6086, SPIGOT-6296
              if (this.changedBlocksPerSection[i] == null) {
@@ -40,7 +40,7 @@ index fbfbe9adeca7364e6346c887616890bf968f38a1..bd43fbc8a93afa7604aa467392520ed7
                  this.changedBlocksPerSection[i] = new ShortOpenHashSet();
              }
  
-@@ -266,6 +276,7 @@ public class ChunkHolder {
+@@ -273,6 +283,7 @@ public class ChunkHolder {
                  int k = this.lightEngine.getMaxLightSection();
  
                  if (y >= j && y <= k) {
@@ -48,7 +48,7 @@ index fbfbe9adeca7364e6346c887616890bf968f38a1..bd43fbc8a93afa7604aa467392520ed7
                      int l = y - j;
  
                      if (lightType == LightLayer.SKY) {
-@@ -279,8 +290,19 @@ public class ChunkHolder {
+@@ -286,8 +297,19 @@ public class ChunkHolder {
          }
      }
  
@@ -82,7 +82,7 @@ index 5d60fa26e9f5d3c9c57a61c509d5b924bbed3281..ef28e0f57ba593265a3eca4d3f21d0b1
      // CraftBukkit start - recursion-safe executor for Chunk loadCallback() and unloadCallback()
      public final CallbackExecutor callbackExecutor = new CallbackExecutor();
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-index adab778c11ef11cb57418675a98129afb01ec06e..d5eb5a365c8e8cdcd8e9cf54918cc2fb383c6625 100644
+index eca75916c5e476db280e58522e5540def4f4de68..d06ad4f2c76eebd3b8191f3de6c0199fa3bb5f22 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 @@ -46,6 +46,7 @@ import net.minecraft.world.level.levelgen.structure.templatesystem.StructureMana
@@ -93,7 +93,7 @@ index adab778c11ef11cb57418675a98129afb01ec06e..d5eb5a365c8e8cdcd8e9cf54918cc2fb
  
  public class ServerChunkCache extends ChunkSource {
  
-@@ -994,34 +995,42 @@ public class ServerChunkCache extends ChunkSource {
+@@ -986,34 +987,42 @@ public class ServerChunkCache extends ChunkSource {
  
              this.lastSpawnState = spawnercreature_d;
              gameprofilerfiller.popPush("filteringLoadedChunks");
@@ -152,7 +152,7 @@ index adab778c11ef11cb57418675a98129afb01ec06e..d5eb5a365c8e8cdcd8e9cf54918cc2fb
                          NaturalSpawner.spawnForChunk(this.level, chunk1, spawnercreature_d, this.spawnFriendlies, this.spawnEnemies, flag1);
                      }
  
-@@ -1029,7 +1038,16 @@ public class ServerChunkCache extends ChunkSource {
+@@ -1021,7 +1030,16 @@ public class ServerChunkCache extends ChunkSource {
                          this.level.tickChunk(chunk1, k);
                      }
                  }
@@ -169,7 +169,7 @@ index adab778c11ef11cb57418675a98129afb01ec06e..d5eb5a365c8e8cdcd8e9cf54918cc2fb
              this.level.timings.chunkTicks.stopTiming(); // Paper
              gameprofilerfiller.popPush("customSpawners");
              if (flag2) {
-@@ -1037,15 +1055,24 @@ public class ServerChunkCache extends ChunkSource {
+@@ -1029,15 +1047,24 @@ public class ServerChunkCache extends ChunkSource {
                  this.level.tickCustomSpawners(this.spawnEnemies, this.spawnFriendlies);
                  } // Paper - timings
              }
@@ -188,7 +188,7 @@ index adab778c11ef11cb57418675a98129afb01ec06e..d5eb5a365c8e8cdcd8e9cf54918cc2fb
 +                ReferenceOpenHashSet<ChunkHolder> copy = this.chunkMap.needsChangeBroadcasting.clone();
 +                this.chunkMap.needsChangeBroadcasting.clear();
 +                for (ChunkHolder holder : copy) {
-+                    holder.broadcastChanges(holder.getFullChunkUnchecked()); // LevelChunks are NEVER unloaded
++                    holder.broadcastChanges(holder.getFullChunkNowUnchecked()); // LevelChunks are NEVER unloaded
 +                    if (holder.needsBroadcastChanges()) {
 +                        // I DON'T want to KNOW what DUMB plugins might be doing.
 +                        this.chunkMap.needsChangeBroadcasting.add(holder);
