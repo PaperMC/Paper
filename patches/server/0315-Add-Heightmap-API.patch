@@ -1,0 +1,40 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Tue, 1 Jan 2019 02:22:01 -0800
+Subject: [PATCH] Add Heightmap API
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+index b2388c3c2afa324ea21c5fb3265613f48f6ccfd1..80fe72b22afcb72fda1398197f1eec8e1c18a161 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+@@ -215,6 +215,29 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+         return this.getHighestBlockYAt(x, z, org.bukkit.HeightMap.MOTION_BLOCKING);
+     }
+ 
++    // Paper start - Implement heightmap api
++    @Override
++    public int getHighestBlockYAt(final int x, final int z, final com.destroystokyo.paper.HeightmapType heightmap) throws UnsupportedOperationException {
++        this.getChunkAt(x >> 4, z >> 4); // heightmap will ret 0 on unloaded areas
++
++        switch (heightmap) {
++            case LIGHT_BLOCKING:
++                throw new UnsupportedOperationException(); // TODO
++                //return this.world.getHighestBlockY(HeightMap.Type.LIGHT_BLOCKING, x, z);
++            case ANY:
++                return this.world.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.WORLD_SURFACE, x, z);
++            case SOLID:
++                return this.world.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.OCEAN_FLOOR, x, z);
++            case SOLID_OR_LIQUID:
++                return this.world.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING, x, z);
++            case SOLID_OR_LIQUID_NO_LEAVES:
++                return this.world.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z);
++            default:
++                throw new UnsupportedOperationException();
++        }
++    }
++    // Paper end
++
+     @Override
+     public Location getSpawnLocation() {
+         BlockPos spawn = this.world.getSharedSpawnPos();

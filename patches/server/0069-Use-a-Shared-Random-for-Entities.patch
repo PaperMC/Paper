@@ -1,0 +1,55 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Tue, 22 Mar 2016 00:33:47 -0400
+Subject: [PATCH] Use a Shared Random for Entities
+
+Reduces memory usage and provides ensures more randomness, Especially since a lot of garbage entity objects get created.
+
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index 68a1756e5a259fd1165d51835890127e0416dfd6..d400b612557cfc976e9644a740be94757e0d20bb 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -155,6 +155,21 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
+         return tag.contains("Bukkit.updateLevel") && tag.getInt("Bukkit.updateLevel") >= level;
+     }
+ 
++    // Paper start
++    public static Random SHARED_RANDOM = new Random() {
++        private boolean locked = false;
++        @Override
++        public synchronized void setSeed(long seed) {
++            if (locked) {
++                LOGGER.error("Ignoring setSeed on Entity.SHARED_RANDOM", new Throwable());
++            } else {
++                super.setSeed(seed);
++                locked = true;
++            }
++        }
++    };
++    // Paper end
++
+     private CraftEntity bukkitEntity;
+ 
+     public CraftEntity getBukkitEntity() {
+@@ -342,7 +357,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
+         this.bb = Entity.INITIAL_AABB;
+         this.stuckSpeedMultiplier = Vec3.ZERO;
+         this.nextStep = 1.0F;
+-        this.random = new Random();
++        this.random = SHARED_RANDOM; // Paper
+         this.remainingFireTicks = -this.getFireImmuneTicks();
+         this.fluidHeight = new Object2DoubleArrayMap(2);
+         this.fluidOnEyes = new HashSet();
+diff --git a/src/main/java/net/minecraft/world/entity/animal/Squid.java b/src/main/java/net/minecraft/world/entity/animal/Squid.java
+index 8e63ab510e4c2e458da726ca67be4d3b5274e7b7..a51424d29ac353cf1bec4d1484db0acb63bebba5 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/Squid.java
++++ b/src/main/java/net/minecraft/world/entity/animal/Squid.java
+@@ -46,7 +46,7 @@ public class Squid extends WaterAnimal {
+ 
+     public Squid(EntityType<? extends Squid> type, Level world) {
+         super(type, world);
+-        this.random.setSeed((long) this.getId());
++        //this.random.setSeed((long) this.getId()); // Paper - we set the random to shared, do not clobber the seed
+         this.tentacleSpeed = 1.0F / (this.random.nextFloat() + 1.0F) * 0.2F;
+     }
+ 

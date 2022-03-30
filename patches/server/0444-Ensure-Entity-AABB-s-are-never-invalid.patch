@@ -1,0 +1,46 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sun, 10 May 2020 22:12:46 -0400
+Subject: [PATCH] Ensure Entity AABB's are never invalid
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index f81bf7d1b0c2f355b71ce2e5f68ec9fb7aad824a..57ec20f963c440051b318bf29b59db965d9d744e 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -599,8 +599,8 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
+     }
+ 
+     public void setPos(double x, double y, double z) {
+-        this.setPosRaw(x, y, z);
+-        this.setBoundingBox(this.makeBoundingBox());
++        this.setPosRaw(x, y, z, true); // Paper - force bounding box update
++        // this.setBoundingBox(this.makeBoundingBox()); // Paper - move into setPositionRaw
+     }
+ 
+     protected AABB makeBoundingBox() {
+@@ -3789,6 +3789,11 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
+     }
+ 
+     public final void setPosRaw(double x, double y, double z) {
++        // Paper start
++        this.setPosRaw(x, y, z, false);
++    }
++    public final void setPosRaw(double x, double y, double z, boolean forceBoundingBoxUpdate) {
++        // Paper end
+         if (this.position.x != x || this.position.y != y || this.position.z != z) {
+             this.position = new Vec3(x, y, z);
+             int i = Mth.floor(x);
+@@ -3811,6 +3816,12 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
+             }
+         }
+ 
++        // Paper start - never allow AABB to become desynced from position
++        // hanging has its own special logic
++        if (!(this instanceof net.minecraft.world.entity.decoration.HangingEntity) && (forceBoundingBoxUpdate || this.position.x != x || this.position.y != y || this.position.z != z)) {
++            this.setBoundingBox(this.makeBoundingBox());
++        }
++        // Paper end
+     }
+ 
+     public void checkDespawn() {}
