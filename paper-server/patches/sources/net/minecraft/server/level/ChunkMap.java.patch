@@ -67,20 +67,19 @@
          this.mainThreadExecutor = mainThreadExecutor;
          ConsecutiveExecutor consecutiveexecutor = new ConsecutiveExecutor(executor, "worldgen");
  
-@@ -196,7 +233,13 @@
- 
-     private void setChunkUnsaved(ChunkPos pos) {
+@@ -198,6 +235,12 @@
          this.chunksToEagerlySave.add(pos.toLong());
-+    }
-+
+     }
+ 
 +    // Paper start
 +    public int getMobCountNear(final ServerPlayer player, final net.minecraft.world.entity.MobCategory mobCategory) {
 +        return -1;
-     }
++    }
 +    // Paper end
- 
++
      protected ChunkGenerator generator() {
          return this.worldGenContext.generator();
+     }
 @@ -325,7 +368,7 @@
                          throw this.debugFuturesAndCreateReportedException(new IllegalStateException("At least one of the chunk futures were null"), "n/a");
                      }
@@ -387,7 +386,7 @@
              if (player != this.entity) {
                  Vec3 vec3d = player.position().subtract(this.entity.position());
                  int i = ChunkMap.this.getPlayerViewDistance(player);
-@@ -1484,6 +1573,11 @@
+@@ -1484,9 +1573,18 @@
                  double d2 = d0 * d0;
                  boolean flag = d1 <= d2 && this.entity.broadcastToPlayer(player) && ChunkMap.this.isChunkTracked(player, this.entity.chunkPosition().x, this.entity.chunkPosition().z);
  
@@ -398,8 +397,15 @@
 +                // CraftBukkit end
                  if (flag) {
                      if (this.seenBy.add(player.connection)) {
++                        // Paper start - entity tracking events
++                        if (io.papermc.paper.event.player.PlayerTrackEntityEvent.getHandlerList().getRegisteredListeners().length == 0 || new io.papermc.paper.event.player.PlayerTrackEntityEvent(player.getBukkitEntity(), this.entity.getBukkitEntity()).callEvent()) {
                          this.serverEntity.addPairing(player);
-@@ -1506,6 +1600,7 @@
++                        }
++                        // Paper end - entity tracking events
+                     }
+                 } else if (this.seenBy.remove(player.connection)) {
+                     this.serverEntity.removePairing(player);
+@@ -1506,6 +1604,7 @@
              while (iterator.hasNext()) {
                  Entity entity = (Entity) iterator.next();
                  int j = entity.getType().clientTrackingRange() * 16;
