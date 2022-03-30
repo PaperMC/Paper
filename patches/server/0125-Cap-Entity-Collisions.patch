@@ -1,0 +1,57 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sun, 22 Jan 2017 18:07:56 -0500
+Subject: [PATCH] Cap Entity Collisions
+
+Limit a single entity to colliding a max of configurable times per tick.
+This will alleviate issues where living entities are hoarded in 1x1 pens
+
+This is not tied to the maxEntityCramming rule. Cramming will still apply
+just as it does in Vanilla, but entity pushing logic will be capped.
+
+You can set this to 0 to disable collisions.
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 5183c756289db3600d04d473c20d08768af91ea9..72501b05d1d5d9304e4ac31bbf694f5ca1637c0f 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -365,4 +365,10 @@ public class PaperWorldConfig {
+             log("Treasure Maps will return already discovered locations");
+         }
+     }
++
++    public int maxCollisionsPerEntity = 8;
++    private void maxEntityCollision() {
++        maxCollisionsPerEntity = getInt( "max-entity-collisions", this.spigotConfig.getInt("max-entity-collisions", this.maxCollisionsPerEntity, false) );
++        log( "Max Entity Collisions: " + maxCollisionsPerEntity );
++    }
+ }
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index 081a95e3bb448a44565f6e75ebbc18bbc5fe1b18..005c44bbabf706d7f35476219153ed91e32665d2 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -317,6 +317,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
+     public void inactiveTick() { }
+     // Spigot end
+     // Paper start
++    protected int numCollisions = 0; // Paper
+     @javax.annotation.Nullable
+     private org.bukkit.util.Vector origin;
+     @javax.annotation.Nullable
+diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+index 7df80e251dbdaff32cdc0f3e7dffc9ea6d163b09..f7d100d5fa85cd2e705e78be8dc6373f02d0adc0 100644
+--- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
++++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+@@ -3228,8 +3228,11 @@ public abstract class LivingEntity extends Entity {
+                 }
+             }
+ 
+-            for (j = 0; j < list.size(); ++j) {
++            this.numCollisions = Math.max(0, this.numCollisions - this.level.paperConfig.maxCollisionsPerEntity); // Paper
++            for (j = 0; j < list.size() && this.numCollisions < this.level.paperConfig.maxCollisionsPerEntity; ++j) { // Paper
+                 Entity entity = (Entity) list.get(j);
++                entity.numCollisions++; // Paper
++                this.numCollisions++; // Paper
+ 
+                 this.doPush(entity);
+             }

@@ -1,0 +1,39 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: William Blake Galbreath <blake.galbreath@gmail.com>
+Date: Sat, 22 Aug 2020 23:36:21 +0200
+Subject: [PATCH] Fix SpawnChangeEvent not firing for all use-cases
+
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
+index c77f464b772e72c23fe00e99bc0fee24d46fb16b..b42637a2e9594cc2a30f910ef08399c11607e094 100644
+--- a/src/main/java/net/minecraft/server/level/ServerLevel.java
++++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
+@@ -1755,6 +1755,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
+         //ChunkCoordIntPair chunkcoordintpair = new ChunkCoordIntPair(new BlockPosition(this.worldData.a(), 0, this.worldData.c()));
+ 
+         this.levelData.setSpawn(pos, angle);
++        new org.bukkit.event.world.SpawnChangeEvent(getWorld(), MCUtil.toLocation(this, prevSpawn)).callEvent(); // Paper
+         if (this.keepSpawnInMemory) {
+             // if this keepSpawnInMemory is false a plugin has already removed our tickets, do not re-add
+             this.removeTicketsForSpawn(this.paperConfig.keepLoadedRange, prevSpawn);
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+index 4d0eb42a3f9ba213f70d856640beaa9aa42149db..de65baee5ae66c4ba5625701b1646e4129b5e054 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+@@ -256,11 +256,13 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+     public boolean setSpawnLocation(int x, int y, int z, float angle) {
+         try {
+             Location previousLocation = this.getSpawnLocation();
+-            world.levelData.setSpawn(new BlockPos(x, y, z), angle);
++            world.setDefaultSpawnPos(new BlockPos(x, y, z), angle); // Paper - use WorldServer#setSpawn
+ 
++            // Paper start - move to nms.World
+             // Notify anyone who's listening.
+-            SpawnChangeEvent event = new SpawnChangeEvent(this, previousLocation);
+-            this.server.getPluginManager().callEvent(event);
++            // SpawnChangeEvent event = new SpawnChangeEvent(this, previousLocation);
++            // server.getPluginManager().callEvent(event);
++            // Paper end
+ 
+             return true;
+         } catch (Exception e) {

@@ -1,0 +1,74 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Sat, 5 Mar 2022 17:12:52 -0800
+Subject: [PATCH] Fix save problems on shutdown
+
+- Save level.dat first, in case the shutdown is killed later
+- Force run minecraftserver tasks and the chunk source tasks
+  while waiting for the chunk system to empty, as there's simply
+  too much trash that could prevent them from executing during
+  the chunk source tick (i.e "time left in tick" logic).
+- Set forceTicks to true, so that player packets are always
+  processed so that the main process queue can be drained
+
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 583d2deffa819c1aa25e1937a7f709d0d6bab294..c8d56947305c981a3268ce4ae3e975db350ceff2 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -996,6 +996,13 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+             }
+         }
+ 
++        // Paper start - let's be a little more intelligent around crashes
++        // make sure level.dat saves
++        for (ServerLevel level : this.getAllLevels()) {
++            level.saveLevelDat();
++        }
++        // Paper end - let's be a little more intelligent around crashes
++
+         while (this.levels.values().stream().anyMatch((worldserver1) -> {
+             return worldserver1.getChunkSource().chunkMap.hasWork();
+         })) {
+@@ -1008,9 +1015,11 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+                 worldserver.getChunkSource().tick(() -> {
+                     return true;
+                 }, false);
++                while (worldserver.getChunkSource().pollTask()); // Paper - drain tasks
+             }
+ 
+-            this.waitUntilNextTick();
++            this.forceTicks = true; // Paper
++            while (this.pollTask()); // Paper - drain tasks
+         }
+ 
+         this.saveAllChunks(false, true, false);
+@@ -1306,6 +1315,11 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+     }
+ 
+     private boolean haveTime() {
++        // Paper start
++        if (this.forceTicks) {
++            return true;
++        }
++        // Paper end
+         // CraftBukkit start
+         if (isOversleep) return canOversleep();// Paper - because of our changes, this logic is broken
+         return this.forceTicks || this.runningTask() || Util.getMillis() < (this.mayHaveDelayedTasks ? this.delayedTasksMaxNextTickTime : this.nextTickTime);
+diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
+index f3cbd803853d99cfa8845115ed6e9eefba3d63e4..3b1a34b34979ab436ccd33f0a85bfae537cbecb4 100644
+--- a/src/main/java/net/minecraft/server/level/ServerLevel.java
++++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
+@@ -1258,7 +1258,13 @@ public class ServerLevel extends Level implements WorldGenLevel {
+             }
+ 
+         }
++        // Paper start
++        this.saveLevelDat();
++    }
+ 
++    public void saveLevelDat() {
++        this.saveLevelData();
++        // Paper end
+         // CraftBukkit start - moved from MinecraftServer.saveChunks
+         ServerLevel worldserver1 = this;
+ 
