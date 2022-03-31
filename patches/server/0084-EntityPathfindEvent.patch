@@ -19,10 +19,41 @@ index 0b2e10a0f508448d9e7d003e6c822f0a56d4022f..27cd393e81f6ef9b5690c051624d8d2a
  
      @Override
 diff --git a/src/main/java/net/minecraft/world/entity/ai/navigation/GroundPathNavigation.java b/src/main/java/net/minecraft/world/entity/ai/navigation/GroundPathNavigation.java
-index 27b072943328aca4489a9565bda700e7e7dcbb6a..f610c06d7bb51ec2c63863dd46711712986a106a 100644
+index 27b072943328aca4489a9565bda700e7e7dcbb6a..f0248d839255763005ba333b0bfcf691407fb69b 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/navigation/GroundPathNavigation.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/navigation/GroundPathNavigation.java
-@@ -69,7 +69,7 @@ public class GroundPathNavigation extends PathNavigation {
+@@ -39,14 +39,14 @@ public class GroundPathNavigation extends PathNavigation {
+     }
+ 
+     @Override
+-    public Path createPath(BlockPos target, int distance) {
++    public Path createPath(BlockPos target, @javax.annotation.Nullable Entity entity, int distance) { // Paper
+         if (this.level.getBlockState(target).isAir()) {
+             BlockPos blockPos;
+             for(blockPos = target.below(); blockPos.getY() > this.level.getMinBuildHeight() && this.level.getBlockState(blockPos).isAir(); blockPos = blockPos.below()) {
+             }
+ 
+             if (blockPos.getY() > this.level.getMinBuildHeight()) {
+-                return super.createPath(blockPos.above(), distance);
++                return super.createPath(blockPos.above(), entity, distance); // Paper
+             }
+ 
+             while(blockPos.getY() < this.level.getMaxBuildHeight() && this.level.getBlockState(blockPos).isAir()) {
+@@ -57,19 +57,19 @@ public class GroundPathNavigation extends PathNavigation {
+         }
+ 
+         if (!this.level.getBlockState(target).getMaterial().isSolid()) {
+-            return super.createPath(target, distance);
++            return super.createPath(target, entity, distance); // Paper
+         } else {
+             BlockPos blockPos2;
+             for(blockPos2 = target.above(); blockPos2.getY() < this.level.getMaxBuildHeight() && this.level.getBlockState(blockPos2).getMaterial().isSolid(); blockPos2 = blockPos2.above()) {
+             }
+ 
+-            return super.createPath(blockPos2, distance);
++            return super.createPath(blockPos2, entity, distance); // Paper
+         }
+     }
  
      @Override
      public Path createPath(Entity entity, int distance) {
@@ -32,18 +63,10 @@ index 27b072943328aca4489a9565bda700e7e7dcbb6a..f610c06d7bb51ec2c63863dd46711712
  
      private int getSurfaceY() {
 diff --git a/src/main/java/net/minecraft/world/entity/ai/navigation/PathNavigation.java b/src/main/java/net/minecraft/world/entity/ai/navigation/PathNavigation.java
-index eaf1653b14e5fdacae38abe75260a64d0ffbfc1d..ff1e04e5e3b8099b0b71eda1c0de864c809c5029 100644
+index eaf1653b14e5fdacae38abe75260a64d0ffbfc1d..30f58f1829d1b500ee49b543e3c15e5bfe63fade 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/navigation/PathNavigation.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/navigation/PathNavigation.java
-@@ -10,6 +10,7 @@ import net.minecraft.core.BlockPos;
- import net.minecraft.core.Vec3i;
- import net.minecraft.network.protocol.game.DebugPackets;
- import net.minecraft.tags.BlockTags;
-+import net.minecraft.server.MCUtil;
- import net.minecraft.util.Mth;
- import net.minecraft.world.entity.Entity;
- import net.minecraft.world.entity.Mob;
-@@ -108,7 +109,13 @@ public abstract class PathNavigation {
+@@ -108,7 +108,13 @@ public abstract class PathNavigation {
  
      @Nullable
      public Path createPath(BlockPos target, int distance) {
@@ -52,13 +75,13 @@ index eaf1653b14e5fdacae38abe75260a64d0ffbfc1d..ff1e04e5e3b8099b0b71eda1c0de864c
 +        return this.createPath(target, null, distance);
 +    }
 +    @Nullable
-+    public Path createPath(BlockPos target, Entity entity, int distance) {
++    public Path createPath(BlockPos target, @Nullable Entity entity, int distance) {
 +        return this.createPath(ImmutableSet.of(target), entity, 8, false, distance);
 +        // Paper end
      }
  
      @Nullable
-@@ -118,7 +125,7 @@ public abstract class PathNavigation {
+@@ -118,7 +124,7 @@ public abstract class PathNavigation {
  
      @Nullable
      public Path createPath(Entity entity, int distance) {
@@ -67,24 +90,24 @@ index eaf1653b14e5fdacae38abe75260a64d0ffbfc1d..ff1e04e5e3b8099b0b71eda1c0de864c
      }
  
      @Nullable
-@@ -128,6 +135,16 @@ public abstract class PathNavigation {
+@@ -128,6 +134,16 @@ public abstract class PathNavigation {
  
      @Nullable
      protected Path createPath(Set<BlockPos> positions, int range, boolean useHeadPos, int distance, float followRange) {
-+        return this.createPath(positions, null, range, useHeadPos, distance, (float) this.mob.getAttributeValue(Attributes.FOLLOW_RANGE));
++        return this.createPath(positions, null, range, useHeadPos, distance, followRange);
 +    }
 +
 +    @Nullable
-+    protected Path createPath(Set<BlockPos> positions, Entity target, int range, boolean useHeadPos, int distance) {
++    protected Path createPath(Set<BlockPos> positions, @Nullable Entity target, int range, boolean useHeadPos, int distance) {
 +        return this.createPath(positions, target, range, useHeadPos, distance, (float) this.mob.getAttributeValue(Attributes.FOLLOW_RANGE));
 +    }
 +
-+    @Nullable protected Path createPath(Set<BlockPos> positions, Entity target, int range, boolean useHeadPos, int distance, float followRange) {
++    @Nullable protected Path createPath(Set<BlockPos> positions, @Nullable Entity target, int range, boolean useHeadPos, int distance, float followRange) {
 +        // Paper end
          if (positions.isEmpty()) {
              return null;
          } else if (this.mob.getY() < (double)this.level.getMinBuildHeight()) {
-@@ -137,6 +154,23 @@ public abstract class PathNavigation {
+@@ -137,6 +153,23 @@ public abstract class PathNavigation {
          } else if (this.path != null && !this.path.isDone() && positions.contains(this.targetPos)) {
              return this.path;
          } else {
@@ -92,7 +115,7 @@ index eaf1653b14e5fdacae38abe75260a64d0ffbfc1d..ff1e04e5e3b8099b0b71eda1c0de864c
 +            boolean copiedSet = false;
 +            for (BlockPos possibleTarget : positions) {
 +                if (!new com.destroystokyo.paper.event.entity.EntityPathfindEvent(this.mob.getBukkitEntity(),
-+                    MCUtil.toLocation(this.mob.level, possibleTarget), target == null ? null : target.getBukkitEntity()).callEvent()) {
++                    net.minecraft.server.MCUtil.toLocation(this.mob.level, possibleTarget), target == null ? null : target.getBukkitEntity()).callEvent()) {
 +                    if (!copiedSet) {
 +                        copiedSet = true;
 +                        positions = new java.util.HashSet<>(positions);
@@ -108,3 +131,19 @@ index eaf1653b14e5fdacae38abe75260a64d0ffbfc1d..ff1e04e5e3b8099b0b71eda1c0de864c
              this.level.getProfiler().push("pathfind");
              BlockPos blockPos = useHeadPos ? this.mob.blockPosition().above() : this.mob.blockPosition();
              int i = (int)(followRange + (float)range);
+diff --git a/src/main/java/net/minecraft/world/entity/ai/navigation/WallClimberNavigation.java b/src/main/java/net/minecraft/world/entity/ai/navigation/WallClimberNavigation.java
+index d11e9f4f7ae5f2666d67878309b4a1359ef90e39..de1f178fa18ae3ff3c73bc59b10eb39857800bf9 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/navigation/WallClimberNavigation.java
++++ b/src/main/java/net/minecraft/world/entity/ai/navigation/WallClimberNavigation.java
+@@ -16,9 +16,9 @@ public class WallClimberNavigation extends GroundPathNavigation {
+     }
+ 
+     @Override
+-    public Path createPath(BlockPos target, int distance) {
++    public Path createPath(BlockPos target, @Nullable Entity entity, int distance) { // Paper
+         this.pathToPosition = target;
+-        return super.createPath(target, distance);
++        return super.createPath(target, entity, distance); // Paper
+     }
+ 
+     @Override
