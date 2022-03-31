@@ -2890,23 +2890,25 @@ index 0000000000000000000000000000000000000000..a1bc1d1d0c86217ef18883d281195bc6
 +}
 diff --git a/src/main/java/io/papermc/paper/util/IntervalledCounter.java b/src/main/java/io/papermc/paper/util/IntervalledCounter.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..059e8c61108cb78a80895cae36f2f8ac644e704c
+index 0000000000000000000000000000000000000000..cea9c098ade00ee87b8efc8164ab72f5279758f0
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/util/IntervalledCounter.java
-@@ -0,0 +1,100 @@
+@@ -0,0 +1,115 @@
 +package io.papermc.paper.util;
 +
 +public final class IntervalledCounter {
 +
 +    protected long[] times;
++    protected long[] counts;
 +    protected final long interval;
 +    protected long minTime;
-+    protected int sum;
++    protected long sum;
 +    protected int head; // inclusive
 +    protected int tail; // exclusive
 +
 +    public IntervalledCounter(final long interval) {
 +        this.times = new long[8];
++        this.counts = new long[8];
 +        this.interval = interval;
 +    }
 +
@@ -2915,7 +2917,7 @@ index 0000000000000000000000000000000000000000..059e8c61108cb78a80895cae36f2f8ac
 +    }
 +
 +    public void updateCurrentTime(final long currentTime) {
-+        int sum = this.sum;
++        long sum = this.sum;
 +        int head = this.head;
 +        final int tail = this.tail;
 +        final long minTime = currentTime - this.interval;
@@ -2924,8 +2926,15 @@ index 0000000000000000000000000000000000000000..059e8c61108cb78a80895cae36f2f8ac
 +
 +        // guard against overflow by using subtraction
 +        while (head != tail && this.times[head] - minTime < 0) {
-+            head = (head + 1) % arrayLen;
-+            --sum;
++            sum -= this.counts[head];
++            // there are two ways we can do this:
++            // 1. free the count when adding
++            // 2. free it now
++            // option #2
++            this.counts[head] = 0;
++            if (++head >= arrayLen) {
++                head = 0;
++            }
 +        }
 +
 +        this.sum = sum;
@@ -2934,6 +2943,10 @@ index 0000000000000000000000000000000000000000..059e8c61108cb78a80895cae36f2f8ac
 +    }
 +
 +    public void addTime(final long currTime) {
++        this.addTime(currTime, 1L);
++    }
++
++    public void addTime(final long currTime, final long count) {
 +        // guard against overflow by using subtraction
 +        if (currTime - this.minTime < 0) {
 +            return;
@@ -2945,28 +2958,29 @@ index 0000000000000000000000000000000000000000..059e8c61108cb78a80895cae36f2f8ac
 +        }
 +
 +        this.times[this.tail] = currTime;
++        this.counts[this.tail] += count;
++        this.sum += count;
 +        this.tail = nextTail;
 +    }
 +
 +    public void updateAndAdd(final int count) {
 +        final long currTime = System.nanoTime();
 +        this.updateCurrentTime(currTime);
-+        for (int i = 0; i < count; ++i) {
-+            this.addTime(currTime);
-+        }
++        this.addTime(currTime, count);
 +    }
 +
 +    public void updateAndAdd(final int count, final long currTime) {
 +        this.updateCurrentTime(currTime);
-+        for (int i = 0; i < count; ++i) {
-+            this.addTime(currTime);
-+        }
++        this.addTime(currTime, count);
 +    }
 +
 +    private void resize() {
 +        final long[] oldElements = this.times;
++        final long[] oldCounts = this.counts;
 +        final long[] newElements = new long[this.times.length * 2];
++        final long[] newCounts = new long[this.times.length * 2];
 +        this.times = newElements;
++        this.counts = newCounts;
 +
 +        final int head = this.head;
 +        final int tail = this.tail;
@@ -2976,9 +2990,13 @@ index 0000000000000000000000000000000000000000..059e8c61108cb78a80895cae36f2f8ac
 +
 +        if (tail >= head) {
 +            System.arraycopy(oldElements, head, newElements, 0, size);
++            System.arraycopy(oldCounts, head, newCounts, 0, size);
 +        } else {
 +            System.arraycopy(oldElements, head, newElements, 0, oldElements.length - head);
 +            System.arraycopy(oldElements, 0, newElements, oldElements.length - head, tail);
++
++            System.arraycopy(oldCounts, head, newCounts, 0, oldCounts.length - head);
++            System.arraycopy(oldCounts, 0, newCounts, oldCounts.length - head, tail);
 +        }
 +    }
 +
@@ -2987,11 +3005,8 @@ index 0000000000000000000000000000000000000000..059e8c61108cb78a80895cae36f2f8ac
 +        return this.size() / (this.interval * 1.0e-9);
 +    }
 +
-+    public int size() {
-+        final int head = this.head;
-+        final int tail = this.tail;
-+
-+        return tail >= head ? (tail - head) : (tail + (this.times.length - head));
++    public long size() {
++        return this.sum;
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/util/WorldUtil.java b/src/main/java/io/papermc/paper/util/WorldUtil.java

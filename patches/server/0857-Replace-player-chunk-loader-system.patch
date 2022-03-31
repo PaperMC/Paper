@@ -84,10 +84,10 @@ index 309dbf5fce3ce940d5e1b57d267b9d6b2c5ff5b6..5ba64e1083b7cb1eec64d1925095c6ca
          }));
  
 diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-index 2e68fe31fc788a3ff1fe4ac52140e5e518f660b1..9bff729df7156b071b08913549838024bb17c3c9 100644
+index 2e68fe31fc788a3ff1fe4ac52140e5e518f660b1..b7cb07e36c0056dea64dea220a465337f0d5c843 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-@@ -652,4 +652,33 @@ public class PaperConfig {
+@@ -652,4 +652,35 @@ public class PaperConfig {
      private static void timeCommandAffectsAllWorlds() {
          timeCommandAffectsAllWorlds = getBoolean("settings.time-command-affects-all-worlds", timeCommandAffectsAllWorlds);
      }
@@ -102,6 +102,7 @@ index 2e68fe31fc788a3ff1fe4ac52140e5e518f660b1..9bff729df7156b071b08913549838024
 +    public static double globalMaxChunkLoadRate;
 +    public static double playerMaxConcurrentChunkLoads;
 +    public static double globalMaxConcurrentChunkLoads;
++    public static double playerMaxChunkLoadRate;
 +
 +    private static void newPlayerChunkManagement() {
 +        playerMinChunkLoadRadius = getInt("settings.chunk-loading.min-load-radius", 2);
@@ -119,14 +120,15 @@ index 2e68fe31fc788a3ff1fe4ac52140e5e518f660b1..9bff729df7156b071b08913549838024
 +            set("settings.chunk-loading.player-max-concurrent-loads", playerMaxConcurrentChunkLoads = 20.0);
 +        }
 +        globalMaxConcurrentChunkLoads = getDouble("settings.chunk-loading.global-max-concurrent-loads", 500.0);
++        playerMaxChunkLoadRate = getDouble("settings.chunk-loading.player-max-chunk-load-rate", -1.0);
 +    }
  }
 diff --git a/src/main/java/io/papermc/paper/chunk/PlayerChunkLoader.java b/src/main/java/io/papermc/paper/chunk/PlayerChunkLoader.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..bdd4cc040111d18b82d3ebeb5dbe2537cf148090
+index 0000000000000000000000000000000000000000..0f62a766a3249d8651a11dce6e9051b162693716
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/chunk/PlayerChunkLoader.java
-@@ -0,0 +1,1108 @@
+@@ -0,0 +1,1128 @@
 +package io.papermc.paper.chunk;
 +
 +import com.destroystokyo.paper.PaperConfig;
@@ -218,8 +220,14 @@ index 0000000000000000000000000000000000000000..bdd4cc040111d18b82d3ebeb5dbe2537
 +
 +        final int priorityCompare = Double.compare(holder1 == null ? Double.MAX_VALUE : holder1.priority, holder2 == null ? Double.MAX_VALUE : holder2.priority);
 +
-+        if (priorityCompare != 0) {
++        final int lastLoadTimeCompare = Long.compare(p1.lastChunkLoad, p2.lastChunkLoad);
++
++        if ((holder1 == null || holder2 == null || lastLoadTimeCompare == 0 || holder1.priority < 0.0 || holder2.priority < 0.0) && priorityCompare != 0) {
 +            return priorityCompare;
++        }
++
++        if (lastLoadTimeCompare != 0) {
++            return lastLoadTimeCompare;
 +        }
 +
 +        final int idCompare = Integer.compare(p1.player.getId(), p2.player.getId());
@@ -744,6 +752,8 @@ index 0000000000000000000000000000000000000000..bdd4cc040111d18b82d3ebeb5dbe2537
 +        for (;;) {
 +            final PlayerLoaderData data = this.chunkLoadQueue.pollFirst();
 +
++            data.lastChunkLoad = time;
++
 +            final ChunkPriorityHolder queuedLoad = data.loadQueue.peekFirst();
 +            if (queuedLoad == null) {
 +                if (this.chunkLoadQueue.isEmpty()) {
@@ -756,6 +766,8 @@ index 0000000000000000000000000000000000000000..bdd4cc040111d18b82d3ebeb5dbe2537
 +                updatedCounters = true;
 +                TICKET_ADDITION_COUNTER_SHORT.updateCurrentTime(time);
 +                TICKET_ADDITION_COUNTER_LONG.updateCurrentTime(time);
++                data.ticketAdditionCounterShort.updateCurrentTime(time);
++                data.ticketAdditionCounterLong.updateCurrentTime(time);
 +            }
 +
 +            if (this.isChunkPlayerLoaded(queuedLoad.chunkX, queuedLoad.chunkZ)) {
@@ -791,7 +803,8 @@ index 0000000000000000000000000000000000000000..bdd4cc040111d18b82d3ebeb5dbe2537
 +                // priority >= 0.0 implies rate limited chunks
 +
 +                final int currentChunkLoads = this.concurrentChunkLoads;
-+                if (currentChunkLoads >= maxLoads || (PaperConfig.globalMaxChunkLoadRate > 0 && (TICKET_ADDITION_COUNTER_SHORT.getRate() >= PaperConfig.globalMaxChunkLoadRate || TICKET_ADDITION_COUNTER_LONG.getRate() >= PaperConfig.globalMaxChunkLoadRate))) {
++                if (currentChunkLoads >= maxLoads || (PaperConfig.globalMaxChunkLoadRate > 0 && (TICKET_ADDITION_COUNTER_SHORT.getRate() >= PaperConfig.globalMaxChunkLoadRate || TICKET_ADDITION_COUNTER_LONG.getRate() >= PaperConfig.globalMaxChunkLoadRate))
++                    || (PaperConfig.playerMaxChunkLoadRate > 0.0 && (data.ticketAdditionCounterShort.getRate() >= PaperConfig.playerMaxChunkLoadRate || data.ticketAdditionCounterLong.getRate() >= PaperConfig.playerMaxChunkLoadRate))) {
 +                    // don't poll, we didn't load it
 +                    this.chunkLoadQueue.add(data);
 +                    break;
@@ -821,6 +834,8 @@ index 0000000000000000000000000000000000000000..bdd4cc040111d18b82d3ebeb5dbe2537
 +                        ++this.concurrentChunkLoads;
 +                        TICKET_ADDITION_COUNTER_SHORT.addTime(time);
 +                        TICKET_ADDITION_COUNTER_LONG.addTime(time);
++                        data.ticketAdditionCounterShort.addTime(time);
++                        data.ticketAdditionCounterLong.addTime(time);
 +                    }
 +                }
 +            }
@@ -925,6 +940,13 @@ index 0000000000000000000000000000000000000000..bdd4cc040111d18b82d3ebeb5dbe2537
 +        protected int tickViewDistance = -1;
 +
 +        protected long nextChunkSendTarget;
++
++        // this interval prevents bursting a lot of chunk loads
++        protected final IntervalledCounter ticketAdditionCounterShort = new IntervalledCounter((long)(1.0e6 * 50.0)); // 50ms
++        // this ensures the rate is kept between ticks correctly
++        protected final IntervalledCounter ticketAdditionCounterLong = new IntervalledCounter((long)(1.0e6 * 1000.0)); // 1000ms
++
++        public long lastChunkLoad;
 +
 +        public PlayerLoaderData(final ServerPlayer player, final PlayerChunkLoader loader) {
 +            this.player = player;
