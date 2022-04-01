@@ -1,0 +1,315 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sun, 24 Mar 2019 18:39:01 -0400
+Subject: [PATCH] Fix Spigot annotation mistakes
+
+while some of these may of been true, they are extreme cases and cause
+a ton of noise to plugin developers.
+
+These do not help plugin developers if they bring moise noise than value.
+
+diff --git a/src/main/java/org/bukkit/Bukkit.java b/src/main/java/org/bukkit/Bukkit.java
+index 52f5750e1cbce6000c72f5f1b4bde41b9fa66b23..19771a9a7a212a71f4cad33981c3b72341d80093 100644
+--- a/src/main/java/org/bukkit/Bukkit.java
++++ b/src/main/java/org/bukkit/Bukkit.java
+@@ -1684,7 +1684,7 @@ public final class Bukkit {
+      *
+      * @return the scoreboard manager or null if no worlds are loaded.
+      */
+-    @Nullable
++    @NotNull // Paper
+     public static ScoreboardManager getScoreboardManager() {
+         return server.getScoreboardManager();
+     }
+@@ -1981,7 +1981,7 @@ public final class Bukkit {
+      * @param clazz the class of the tag entries
+      * @return the tag or null
+      */
+-    @Nullable
++    @UndefinedNullability // Paper
+     public static <T extends Keyed> Tag<T> getTag(@NotNull String registry, @NotNull NamespacedKey tag, @NotNull Class<T> clazz) {
+         return server.getTag(registry, tag, clazz);
+     }
+diff --git a/src/main/java/org/bukkit/Location.java b/src/main/java/org/bukkit/Location.java
+index 57cb548683f7b2972c998afd34176952426f8b47..d4c87bfed81b2d73919705912f59fab05c0ee61b 100644
+--- a/src/main/java/org/bukkit/Location.java
++++ b/src/main/java/org/bukkit/Location.java
+@@ -46,7 +46,7 @@ public class Location implements Cloneable, ConfigurationSerializable {
+      * @param y The y-coordinate of this new location
+      * @param z The z-coordinate of this new location
+      */
+-    public Location(@Nullable final World world, final double x, final double y, final double z) {
++    public Location(@UndefinedNullability final World world, final double x, final double y, final double z) { // Paper
+         this(world, x, y, z, 0, 0);
+     }
+ 
+@@ -60,7 +60,7 @@ public class Location implements Cloneable, ConfigurationSerializable {
+      * @param yaw The absolute rotation on the x-plane, in degrees
+      * @param pitch The absolute rotation on the y-plane, in degrees
+      */
+-    public Location(@Nullable final World world, final double x, final double y, final double z, final float yaw, final float pitch) {
++    public Location(@UndefinedNullability final World world, final double x, final double y, final double z, final float yaw, final float pitch) { // Paper
+         if (world != null) {
+             this.world = new WeakReference<>(world);
+         }
+@@ -102,7 +102,7 @@ public class Location implements Cloneable, ConfigurationSerializable {
+      * @throws IllegalArgumentException when world is unloaded
+      * @see #isWorldLoaded()
+      */
+-    @Nullable
++    @UndefinedNullability // Paper
+     public World getWorld() {
+         if (this.world == null) {
+             return null;
+diff --git a/src/main/java/org/bukkit/Material.java b/src/main/java/org/bukkit/Material.java
+index 53d1609e2a75c007cb7e5e8f963b0deb53bae5f7..a8561434d56f7db7e4f52283759b282e9c2116a2 100644
+--- a/src/main/java/org/bukkit/Material.java
++++ b/src/main/java/org/bukkit/Material.java
+@@ -4003,11 +4003,11 @@ public enum Material implements Keyed {
+     }
+ 
+     /**
+-     * Do not use for any reason.
++     * Checks if this constant is a legacy material.
+      *
+      * @return legacy status
+      */
+-    @Deprecated
++    // @Deprecated // Paper - this is useful, don't deprecate
+     public boolean isLegacy() {
+         return legacy;
+     }
+diff --git a/src/main/java/org/bukkit/Server.java b/src/main/java/org/bukkit/Server.java
+index ef10f62a00f19b6a2ca61c3984465f5cd9fa7479..790c09d8fc67dfe6325faff419be7d980415bad8 100644
+--- a/src/main/java/org/bukkit/Server.java
++++ b/src/main/java/org/bukkit/Server.java
+@@ -1429,7 +1429,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+      *
+      * @return the scoreboard manager or null if no worlds are loaded.
+      */
+-    @Nullable
++    @NotNull // Paper
+     ScoreboardManager getScoreboardManager();
+ 
+     /**
+diff --git a/src/main/java/org/bukkit/entity/LingeringPotion.java b/src/main/java/org/bukkit/entity/LingeringPotion.java
+index f124b35ec76e6cb6a1a0dc464005087043c3efd0..94a2fef0dc9e13c754cd31d5eabc1bde2dbbe6a5 100644
+--- a/src/main/java/org/bukkit/entity/LingeringPotion.java
++++ b/src/main/java/org/bukkit/entity/LingeringPotion.java
+@@ -5,4 +5,5 @@ package org.bukkit.entity;
+  *
+  * @deprecated lingering status depends on only on the potion item.
+  */
++@Deprecated // Paper
+ public interface LingeringPotion extends ThrownPotion { }
+diff --git a/src/main/java/org/bukkit/event/enchantment/PrepareItemEnchantEvent.java b/src/main/java/org/bukkit/event/enchantment/PrepareItemEnchantEvent.java
+index 2ff1b1308571d8f8056d3359e8a8ba4a589c3726..e669ad8ecd182c6899c7820414e6ee1f7312d699 100644
+--- a/src/main/java/org/bukkit/event/enchantment/PrepareItemEnchantEvent.java
++++ b/src/main/java/org/bukkit/event/enchantment/PrepareItemEnchantEvent.java
+@@ -68,6 +68,7 @@ public class PrepareItemEnchantEvent extends InventoryEvent implements Cancellab
+      * @return experience level costs offered
+      * @deprecated Use {@link #getOffers()} instead of this method
+      */
++    @Deprecated // Paper
+     @NotNull
+     public int[] getExpLevelCostsOffered() {
+         int[] levelOffers = new int[offers.length];
+diff --git a/src/main/java/org/bukkit/inventory/CraftingInventory.java b/src/main/java/org/bukkit/inventory/CraftingInventory.java
+index df81bac9ecff697f98941e5c8490e10391e90090..a32977ba3ba60a1c9aee6e469d5d6cd1887c55a2 100644
+--- a/src/main/java/org/bukkit/inventory/CraftingInventory.java
++++ b/src/main/java/org/bukkit/inventory/CraftingInventory.java
+@@ -21,8 +21,7 @@ public interface CraftingInventory extends Inventory {
+      *
+      * @return The contents. Individual entries may be null.
+      */
+-    @NotNull
+-    ItemStack[] getMatrix();
++    @Nullable ItemStack @NotNull [] getMatrix(); // Paper - make array elements nullable instead array
+ 
+     /**
+      * Set the item in the result slot of the crafting inventory.
+@@ -38,7 +37,7 @@ public interface CraftingInventory extends Inventory {
+      * @throws IllegalArgumentException if the length of contents is greater
+      *     than the size of the crafting matrix.
+      */
+-    void setMatrix(@NotNull ItemStack[] contents);
++    void setMatrix(@Nullable ItemStack @NotNull [] contents); // Paper - make array elements nullable instead array
+ 
+     /**
+      * Get the current recipe formed on the crafting inventory, if any.
+diff --git a/src/main/java/org/bukkit/inventory/Inventory.java b/src/main/java/org/bukkit/inventory/Inventory.java
+index 9c6a5bdac8c3ab682bbfae04ff24b76a62bc2883..875c401153349b0f2468525e54cf10ca86430087 100644
+--- a/src/main/java/org/bukkit/inventory/Inventory.java
++++ b/src/main/java/org/bukkit/inventory/Inventory.java
+@@ -158,8 +158,7 @@ public interface Inventory extends Iterable<ItemStack> {
+      *
+      * @return An array of ItemStacks from the inventory. Individual items may be null.
+      */
+-    @NotNull
+-    public ItemStack[] getContents();
++    public @Nullable ItemStack @NotNull [] getContents(); // Paper - make array elements nullable instead array
+ 
+     /**
+      * Completely replaces the inventory's contents. Removes all existing
+@@ -170,7 +169,7 @@ public interface Inventory extends Iterable<ItemStack> {
+      * @throws IllegalArgumentException If the array has more items than the
+      *     inventory.
+      */
+-    public void setContents(@NotNull ItemStack[] items) throws IllegalArgumentException;
++    public void setContents(@Nullable ItemStack @NotNull [] items) throws IllegalArgumentException; // Paper - make array elements nullable instead array
+ 
+     /**
+      * Return the contents from the section of the inventory where items can
+@@ -183,8 +182,7 @@ public interface Inventory extends Iterable<ItemStack> {
+      *
+      * @return inventory storage contents. Individual items may be null.
+      */
+-    @NotNull
+-    public ItemStack[] getStorageContents();
++    public @Nullable ItemStack @NotNull [] getStorageContents(); // Paper - make array elements nullable instead array
+ 
+     /**
+      * Put the given ItemStacks into the storage slots
+@@ -193,7 +191,7 @@ public interface Inventory extends Iterable<ItemStack> {
+      * @throws IllegalArgumentException If the array has more items than the
+      * inventory.
+      */
+-    public void setStorageContents(@NotNull ItemStack[] items) throws IllegalArgumentException;
++    public void setStorageContents(@Nullable ItemStack @NotNull [] items) throws IllegalArgumentException; // Paper - make array elements nullable instead array
+ 
+     /**
+      * Checks if the inventory contains any ItemStacks with the given
+diff --git a/src/main/java/org/bukkit/inventory/ItemFactory.java b/src/main/java/org/bukkit/inventory/ItemFactory.java
+index 9750c52309b32b4b12ecd277300aa4f9998b8072..9ba084c0aefb8d8d654880268cdb7266b4237bbb 100644
+--- a/src/main/java/org/bukkit/inventory/ItemFactory.java
++++ b/src/main/java/org/bukkit/inventory/ItemFactory.java
+@@ -3,6 +3,7 @@ package org.bukkit.inventory;
+ import org.bukkit.Color;
+ import org.bukkit.Material;
+ import org.bukkit.Server;
++import org.bukkit.UndefinedNullability;
+ import org.bukkit.inventory.meta.BookMeta;
+ import org.bukkit.inventory.meta.ItemMeta;
+ import org.bukkit.inventory.meta.SkullMeta;
+@@ -25,7 +26,7 @@ public interface ItemFactory {
+      * @return a new ItemMeta that could be applied to an item stack of the
+      *     specified material
+      */
+-    @Nullable
++    @UndefinedNullability // Paper
+     ItemMeta getItemMeta(@NotNull final Material material);
+ 
+     /**
+diff --git a/src/main/java/org/bukkit/inventory/ItemStack.java b/src/main/java/org/bukkit/inventory/ItemStack.java
+index 487e6a6391123a4792c3bdeba869aa2bcb5922cc..3dd8205dd070901be82c2bef390df5df58b2a9a0 100644
+--- a/src/main/java/org/bukkit/inventory/ItemStack.java
++++ b/src/main/java/org/bukkit/inventory/ItemStack.java
+@@ -8,6 +8,7 @@ import java.util.Set; // Paper
+ import org.apache.commons.lang.Validate;
+ import org.bukkit.Bukkit;
+ import org.bukkit.Material;
++import org.bukkit.UndefinedNullability;
+ import org.bukkit.Utility;
+ import org.bukkit.configuration.serialization.ConfigurationSerializable;
+ import org.bukkit.enchantments.Enchantment;
+@@ -68,6 +69,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, net.kyor
+      * @param damage durability / damage
+      * @deprecated see {@link #setDurability(short)}
+      */
++    @Deprecated // Paper
+     public ItemStack(@NotNull final Material type, final int amount, final short damage) {
+         this(type, amount, damage, null);
+     }
+@@ -546,7 +548,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, net.kyor
+      *
+      * @return a copy of the current ItemStack's ItemData
+      */
+-    @Nullable
++    @UndefinedNullability // Paper
+     public ItemMeta getItemMeta() {
+         return this.meta == null ? Bukkit.getItemFactory().getItemMeta(this.type) : this.meta.clone();
+     }
+diff --git a/src/main/java/org/bukkit/inventory/PlayerInventory.java b/src/main/java/org/bukkit/inventory/PlayerInventory.java
+index 62fbd7f6d8195bebcab7f704a0a485a1bbeca26c..8b5385e39f64c4df8e235a8832d91e55642421ce 100644
+--- a/src/main/java/org/bukkit/inventory/PlayerInventory.java
++++ b/src/main/java/org/bukkit/inventory/PlayerInventory.java
+@@ -14,8 +14,7 @@ public interface PlayerInventory extends Inventory {
+      *
+      * @return All the ItemStacks from the armor slots. Individual items can be null.
+      */
+-    @NotNull
+-    public ItemStack[] getArmorContents();
++    public @Nullable ItemStack @NotNull [] getArmorContents(); // Paper - make array elements nullable instead array
+ 
+     /**
+      * Get all additional ItemStacks stored in this inventory.
+@@ -26,8 +25,7 @@ public interface PlayerInventory extends Inventory {
+      *
+      * @return All additional ItemStacks. Individual items can be null.
+      */
+-    @NotNull
+-    public ItemStack[] getExtraContents();
++    public @Nullable ItemStack @NotNull [] getExtraContents(); // Paper - make array elements nullable instead array
+ 
+     /**
+      * Return the ItemStack from the helmet slot
+@@ -104,9 +102,9 @@ public interface PlayerInventory extends Inventory {
+      *
+      * @param slot the slot to get the ItemStack
+      *
+-     * @return the ItemStack in the given slot or null if there is not one
++     * @return the ItemStack in the given slot
+      */
+-    @Nullable
++    @NotNull // Paper
+     public ItemStack getItem(@NotNull EquipmentSlot slot);
+ 
+     /**
+diff --git a/src/main/java/org/bukkit/inventory/meta/ItemMeta.java b/src/main/java/org/bukkit/inventory/meta/ItemMeta.java
+index 01b462fccce71cef3398dd43944046f322b8e57e..8c48a5c61b5afb5407ebf5d734858a0177e3ffa1 100644
+--- a/src/main/java/org/bukkit/inventory/meta/ItemMeta.java
++++ b/src/main/java/org/bukkit/inventory/meta/ItemMeta.java
+@@ -74,8 +74,10 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
+     /**
+      * Checks for existence of a localized name.
+      *
++     * @deprecated Use {@link ItemMeta#displayName()} and check if it is instanceof a {@link net.kyori.adventure.text.TranslatableComponent}.
+      * @return true if this has a localized name
+      */
++    @Deprecated // Paper - Deprecate old localized API
+     boolean hasLocalizedName();
+ 
+     /**
+@@ -84,16 +86,20 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
+      * Plugins should check that hasLocalizedName() returns <code>true</code>
+      * before calling this method.
+      *
++     * @deprecated Use {@link ItemMeta#displayName()} and cast it to a {@link net.kyori.adventure.text.TranslatableComponent}. No longer used by the client.
+      * @return the localized name that is set
+      */
++    @Deprecated // Paper - Deprecate old localized API
+     @NotNull
+     String getLocalizedName();
+ 
+     /**
+      * Sets the localized name.
+      *
++     * @deprecated Use {@link ItemMeta#displayName(Component)} with a {@link net.kyori.adventure.text.TranslatableComponent}. No longer used by the client.
+      * @param name the name to set
+      */
++    @Deprecated // Paper - Deprecate old localized API
+     void setLocalizedName(@Nullable String name);
+ 
+     /**
+diff --git a/src/main/java/org/bukkit/material/Step.java b/src/main/java/org/bukkit/material/Step.java
+index 9f502e7ee05d0512e190a1722cc112ece068c4e2..10c0465cf58d680bfa9a0f9233f94e8b6d5a9b93 100644
+--- a/src/main/java/org/bukkit/material/Step.java
++++ b/src/main/java/org/bukkit/material/Step.java
+@@ -78,6 +78,7 @@ public class Step extends TexturedMaterial {
+      *
+      * @deprecated Magic value
+      */
++    @Deprecated // Paper
+     @Override
+     protected int getTextureIndex() {
+         return getData() & 0x7;

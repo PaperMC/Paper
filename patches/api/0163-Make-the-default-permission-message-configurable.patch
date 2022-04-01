@@ -1,0 +1,61 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Shane Freeder <theboyetronic@gmail.com>
+Date: Sun, 18 Nov 2018 19:44:54 +0000
+Subject: [PATCH] Make the default permission message configurable
+
+
+diff --git a/src/main/java/org/bukkit/Bukkit.java b/src/main/java/org/bukkit/Bukkit.java
+index d82d06894e3dd09fe57448fd5bc09fabbff08e62..52f5750e1cbce6000c72f5f1b4bde41b9fa66b23 100644
+--- a/src/main/java/org/bukkit/Bukkit.java
++++ b/src/main/java/org/bukkit/Bukkit.java
+@@ -2098,6 +2098,15 @@ public final class Bukkit {
+         return server.suggestPlayerNamesWhenNullTabCompletions();
+     }
+ 
++    /**
++     *
++     * @return the default no permission message used on the server
++     */
++    @NotNull
++    public static String getPermissionMessage() {
++        return server.getPermissionMessage();
++    }
++
+     /**
+      * Creates a PlayerProfile for the specified uuid, with name as null.
+      *
+diff --git a/src/main/java/org/bukkit/Server.java b/src/main/java/org/bukkit/Server.java
+index 9d5e22d1a4b87476a4c0d83dfdf42821131b30b1..ef10f62a00f19b6a2ca61c3984465f5cd9fa7479 100644
+--- a/src/main/java/org/bukkit/Server.java
++++ b/src/main/java/org/bukkit/Server.java
+@@ -1841,6 +1841,13 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+      */
+     boolean suggestPlayerNamesWhenNullTabCompletions();
+ 
++    /**
++     *
++     * @return the default no permission message used on the server
++     */
++    @NotNull
++    String getPermissionMessage();
++
+     /**
+      * Creates a PlayerProfile for the specified uuid, with name as null.
+      *
+diff --git a/src/main/java/org/bukkit/command/Command.java b/src/main/java/org/bukkit/command/Command.java
+index b1152f4dede61383232cc6713d448840612eac13..95847fcb1ac2e430ee192f4f7ac94e981151c5db 100644
+--- a/src/main/java/org/bukkit/command/Command.java
++++ b/src/main/java/org/bukkit/command/Command.java
+@@ -184,10 +184,9 @@ public abstract class Command {
+             return true;
+         }
+ 
+-        if (permissionMessage == null) {
+-            target.sendMessage(ChatColor.RED + "I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is a mistake.");
+             // Paper start - use components for permissionMessage
+-        } else if (!permissionMessage.equals(net.kyori.adventure.text.Component.empty())) {
++        net.kyori.adventure.text.Component permissionMessage = this.permissionMessage != null ? this.permissionMessage : io.papermc.paper.text.PaperComponents.legacySectionSerializer().deserialize(Bukkit.getPermissionMessage());
++        if (!permissionMessage.equals(net.kyori.adventure.text.Component.empty())) {
+             target.sendMessage(permissionMessage.replaceText(net.kyori.adventure.text.TextReplacementConfig.builder().matchLiteral("<permission>").replacement(permission).build()));
+             // Paper end
+         }

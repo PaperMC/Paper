@@ -5,13 +5,19 @@ repositories {
 }
 
 dependencies {
-    compileOnly(project(":Paper-API"))
-    compileOnly(project(":Paper-MojangAPI"))
+    compileOnly(project(":paper-api"))
+    compileOnly(project(":paper-mojangapi"))
 }
 
 tasks.processResources {
-    inputs.property("version", project.version)
+    val apiVersion = rootProject.providers.gradleProperty("mcVersion").get()
+        .split(".", "-").take(2).joinToString(".")
+    val props = mapOf(
+        "version" to project.version,
+        "apiversion" to apiVersion,
+    )
+    inputs.properties(props)
     filesMatching("plugin.yml") {
-        expand("version" to project.version)
+        expand(props)
     }
 }

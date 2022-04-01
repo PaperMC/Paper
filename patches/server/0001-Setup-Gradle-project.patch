@@ -28,16 +28,11 @@ index 67fb370cad6924895a6b27052dbd5c1767e3f0c9..bb338269c9e3bef4c274157c490d8b8f
 +/.factorypath
 diff --git a/build.gradle.kts b/build.gradle.kts
 new file mode 100644
-index 0000000000000000000000000000000000000000..6f084d7500d9de76604440bdcc582be1af04fc8c
+index 0000000000000000000000000000000000000000..bc894c62618437215e1a7185dc20283e4f9963dd
 --- /dev/null
 +++ b/build.gradle.kts
-@@ -0,0 +1,173 @@
-+import com.github.jengelman.gradle.plugins.shadow.transformers.Log4j2PluginsCacheFileTransformer
-+import com.github.jengelman.gradle.plugins.shadow.transformers.Transformer
-+import io.papermc.paperweight.util.Git
-+import io.papermc.paperweight.util.path
-+import shadow.org.apache.logging.log4j.core.config.plugins.processor.PluginProcessor.PLUGIN_CACHE_FILE
-+import java.util.Locale
+@@ -0,0 +1,141 @@
++import io.papermc.paperweight.util.*
 +
 +plugins {
 +    java
@@ -50,24 +45,20 @@ index 0000000000000000000000000000000000000000..6f084d7500d9de76604440bdcc582be1
 +}
 +
 +dependencies {
-+    implementation(project(":Paper-API"))
++    implementation(project(":paper-api"))
 +    implementation("jline:jline:2.12.1")
-+    implementation("org.apache.logging.log4j:log4j-iostreams:2.14.1") {
++    implementation("org.apache.logging.log4j:log4j-iostreams:2.17.0") {
 +        exclude(group = "org.apache.logging.log4j", module = "log4j-api")
 +    }
 +    implementation("org.ow2.asm:asm:9.2")
-+    implementation("com.googlecode.json-simple:json-simple:1.1.1") {
-+        // This includes junit transitively for whatever reason
-+        isTransitive = false
-+    }
-+    runtimeOnly("org.xerial:sqlite-jdbc:3.34.0")
-+    runtimeOnly("mysql:mysql-connector-java:5.1.49")
++    runtimeOnly("org.xerial:sqlite-jdbc:3.36.0.3")
++    runtimeOnly("mysql:mysql-connector-java:8.0.27")
 +
-+    runtimeOnly("org.apache.maven:maven-resolver-provider:3.8.1")
-+    runtimeOnly("org.apache.maven.resolver:maven-resolver-connector-basic:1.7.0")
-+    runtimeOnly("org.apache.maven.resolver:maven-resolver-transport-http:1.7.0")
++    runtimeOnly("org.apache.maven:maven-resolver-provider:3.8.4")
++    runtimeOnly("org.apache.maven.resolver:maven-resolver-connector-basic:1.7.2")
++    runtimeOnly("org.apache.maven.resolver:maven-resolver-transport-http:1.7.2")
 +
-+    testImplementation("junit:junit:4.13.1")
++    testImplementation("junit:junit:4.13.2")
 +    testImplementation("org.hamcrest:hamcrest-library:1.3")
 +}
 +
@@ -96,48 +87,20 @@ index 0000000000000000000000000000000000000000..6f084d7500d9de76604440bdcc582be1
 +
 +publishing {
 +    publications.create<MavenPublication>("maven") {
-+        artifactId = rootProject.name.toLowerCase(Locale.ENGLISH)
-+        artifact(tasks.reobfJar) {
-+            classifier = null
-+        }
 +        artifact(tasks.shadowJar)
 +    }
 +}
 +
 +relocation {
 +    // Order matters here - e.g. craftbukkit proper must be relocated before any of the libs are relocated into the cb package
-+    val packageVersion = "1_17_R1"
++    val packageVersion = "1_18_R2"
 +    relocate("org.bukkit.craftbukkit" to "org.bukkit.craftbukkit.v$packageVersion") {
 +        exclude("org.bukkit.craftbukkit.Main*")
-+    }
-+
-+    fun cb(pack: String) = "org.bukkit.craftbukkit.libs.$pack"
-+
-+    sequenceOf(
-+        "org.jline:jline-terminal-jansi" to "jline",
-+        "commons-codec:commons-codec" to "org.apache.commons.codec",
-+        "commons-io:commons-io" to "org.apache.commons.io",
-+        "it.unimi.dsi:fastutil" to "it.unimi",
-+        "org.apache.commons:commons-lang3" to "org.apache.commons.lang3",
-+        "org.ow2.asm:asm" to "org.objectweb.asm"
-+    ).forEach { (owner, pack) ->
-+        relocate(owner, pack to cb(pack))
-+    }
-+
-+    // runtimeOnly dependencies don't need an owner attached
-+    // owner is used for dev bundle generation, runtimeOnly deps are not included in dev bundle
-+    sequenceOf(
-+        "org.apache.http",
-+        "org.apache.maven",
-+        "org.codehaus.plexus",
-+        "org.eclipse.aether",
-+        "org.eclipse.sisu"
-+    ).forEach { pack ->
-+        relocate(pack to cb(pack))
 +    }
 +}
 +
 +tasks.shadowJar {
++    configurations = listOf(project.configurations.vanillaServer.get())
 +    archiveClassifier.set("mojang-mapped")
 +
 +    for (relocation in relocation.relocations.get()) {
@@ -147,8 +110,6 @@ index 0000000000000000000000000000000000000000..6f084d7500d9de76604440bdcc582be1
 +            }
 +        }
 +    }
-+    mergeServiceFiles()
-+    transform(ModifiedLog4j2PluginsCacheFileTransformer::class.java)
 +}
 +
 +tasks.test {
@@ -156,13 +117,16 @@ index 0000000000000000000000000000000000000000..6f084d7500d9de76604440bdcc582be1
 +}
 +
 +fun TaskContainer.registerRunTask(
-+    name: String, block: JavaExec.() -> Unit
++    name: String,
++    block: JavaExec.() -> Unit
 +): TaskProvider<JavaExec> = register<JavaExec>(name) {
 +    group = "paper"
++    mainClass.set("org.bukkit.craftbukkit.Main")
 +    standardInput = System.`in`
-+    workingDir = rootProject.layout.projectDirectory.dir(
-+        providers.gradleProperty("runWorkDir").forUseAtConfigurationTime().orElse("run")
-+    ).get().asFile
++    workingDir = rootProject.layout.projectDirectory
++        .dir(providers.gradleProperty("paper.runWorkDir").getOrElse("run"))
++        .asFile
++    javaLauncher.set(project.javaToolchains.defaultJavaLauncher(project))
 +
 +    if (rootProject.childProjects["test-plugin"] != null) {
 +        val testPluginJar = rootProject.project(":test-plugin").tasks.jar.flatMap { it.archiveFile }
@@ -172,64 +136,58 @@ index 0000000000000000000000000000000000000000..6f084d7500d9de76604440bdcc582be1
 +
 +    args("--nogui")
 +    systemProperty("net.kyori.adventure.text.warnWhenLegacyFormattingDetected", true)
-+    if (project.hasProperty("disableWatchdog")) {
++    if (providers.gradleProperty("paper.runDisableWatchdog").getOrElse("false") == "true") {
 +        systemProperty("disable.watchdog", true)
 +    }
++
++    val memoryGb = providers.gradleProperty("paper.runMemoryGb").getOrElse("2")
++    val modifiedJvmArgs = jvmArgs ?: arrayListOf()
++    modifiedJvmArgs.addAll(listOf("-Xms${memoryGb}G", "-Xmx${memoryGb}G"))
++    jvmArgs = modifiedJvmArgs
++
 +    doFirst {
 +        workingDir.mkdirs()
 +    }
-+    javaLauncher.set(project.javaToolchains.launcherFor {
-+        languageVersion.set(JavaLanguageVersion.of(project.tasks.compileJava.get().options.release.get()))
-+    })
++
 +    block(this)
 +}
++
++val runtimeClasspathWithoutVanillaServer = configurations.runtimeClasspath.flatMap { it.elements }
++    .zip(configurations.vanillaServer.map { it.singleFile.absolutePath }) { runtime, vanilla ->
++        runtime.filterNot { it.asFile.absolutePath == vanilla }
++    }
 +
 +tasks.registerRunTask("runShadow") {
 +    description = "Spin up a test server from the shadowJar archiveFile"
 +    classpath(tasks.shadowJar.flatMap { it.archiveFile })
++    classpath(runtimeClasspathWithoutVanillaServer)
 +}
 +
 +tasks.registerRunTask("runReobf") {
 +    description = "Spin up a test server from the reobfJar output jar"
 +    classpath(tasks.reobfJar.flatMap { it.outputJar })
++    classpath(runtimeClasspathWithoutVanillaServer)
 +}
 +
 +tasks.registerRunTask("runDev") {
-+    description = "Spin up a non-shaded non-remapped test server"
-+    classpath = java.sourceSets.main.get().runtimeClasspath
-+    mainClass.set("org.bukkit.craftbukkit.Main")
-+}
-+
-+class ModifiedLog4j2PluginsCacheFileTransformer : Transformer by Log4j2PluginsCacheFileTransformer() {
-+    override fun canTransformResource(element: FileTreeElement): Boolean {
-+        return PLUGIN_CACHE_FILE == element.name || element.name == "Log4j2Plugins.dat"
-+    }
++    description = "Spin up a non-relocated Mojang-mapped test server"
++    classpath(sourceSets.main.map { it.runtimeClasspath })
 +}
 diff --git a/pom.xml b/pom.xml
 deleted file mode 100644
-index c936167e107ab76cfb21febb9534353f481a95d3..0000000000000000000000000000000000000000
+index ac2dbe041d8a286ed7a34bf20c88464693f32a25..0000000000000000000000000000000000000000
 --- a/pom.xml
 +++ /dev/null
-@@ -1,472 +0,0 @@
+@@ -1,546 +0,0 @@
 -<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 -         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 -    <modelVersion>4.0.0</modelVersion>
 -    <groupId>org.spigotmc</groupId>
 -    <artifactId>spigot</artifactId>
 -    <packaging>jar</packaging>
--    <version>1.17.1-R0.1-SNAPSHOT</version>
+-    <version>1.18.2-R0.1-SNAPSHOT</version>
 -    <name>Spigot</name>
 -    <url>https://www.spigotmc.org/</url>
--
--    <properties>
--        <skipTests>true</skipTests>
--        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
--        <api.version>unknown</api.version>
--        <bt.name>git</bt.name>
--        <minecraft_version>1_17_R1</minecraft_version>
--        <maven.compiler.source>1.8</maven.compiler.source>
--        <maven.compiler.target>1.8</maven.compiler.target>
--    </properties>
 -
 -    <parent>
 -        <groupId>org.spigotmc</groupId>
@@ -237,6 +195,24 @@ index c936167e107ab76cfb21febb9534353f481a95d3..00000000000000000000000000000000
 -        <version>dev-SNAPSHOT</version>
 -        <relativePath>../pom.xml</relativePath>
 -    </parent>
+-
+-    <properties>
+-        <skipTests>true</skipTests>
+-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+-        <api.version>unknown</api.version>
+-        <bt.name>git</bt.name>
+-        <minecraft_version>1_18_R2</minecraft_version>
+-        <maven.compiler.source>16</maven.compiler.source>
+-        <maven.compiler.target>16</maven.compiler.target>
+-    </properties>
+-
+-    <repositories>
+-        <repository>
+-            <id>minecraft-libraries</id>
+-            <name>Minecraft Libraries</name>
+-            <url>https://libraries.minecraft.net/</url>
+-        </repository>
+-    </repositories>
 -
 -    <dependencies>
 -        <dependency>
@@ -260,20 +236,98 @@ index c936167e107ab76cfb21febb9534353f481a95d3..00000000000000000000000000000000
 -        <dependency>
 -            <groupId>org.apache.logging.log4j</groupId>
 -            <artifactId>log4j-iostreams</artifactId>
--            <version>2.14.1</version>
+-            <version>2.17.0</version>
 -            <scope>compile</scope>
--            <exclusions>
--                <!-- included in minecraft-server -->
--                <exclusion>
--                    <groupId>org.apache.logging.log4j</groupId>
--                    <artifactId>log4j-api</artifactId>
--                </exclusion>
--            </exclusions>
 -        </dependency>
 -        <dependency>
 -            <groupId>org.ow2.asm</groupId>
 -            <artifactId>asm</artifactId>
 -            <version>9.2</version>
+-            <scope>compile</scope>
+-        </dependency>
+-        <!-- Mojang depends -->
+-        <dependency>
+-            <groupId>com.github.oshi</groupId>
+-            <artifactId>oshi-core</artifactId>
+-            <version>5.8.5</version>
+-            <scope>compile</scope>
+-        </dependency>
+-        <dependency>
+-            <groupId>com.mojang</groupId>
+-            <artifactId>authlib</artifactId>
+-            <version>3.3.39</version>
+-            <scope>compile</scope>
+-        </dependency>
+-        <dependency>
+-            <groupId>com.mojang</groupId>
+-            <artifactId>brigadier</artifactId>
+-            <version>1.0.18</version>
+-            <scope>compile</scope>
+-        </dependency>
+-        <dependency>
+-            <groupId>com.mojang</groupId>
+-            <artifactId>datafixerupper</artifactId>
+-            <version>4.1.27</version>
+-            <scope>compile</scope>
+-        </dependency>
+-        <dependency>
+-            <groupId>com.mojang</groupId>
+-            <artifactId>javabridge</artifactId>
+-            <version>1.2.24</version>
+-            <scope>compile</scope>
+-        </dependency>
+-        <dependency>
+-            <groupId>com.mojang</groupId>
+-            <artifactId>logging</artifactId>
+-            <version>1.0.0</version>
+-            <scope>compile</scope>
+-        </dependency>
+-        <dependency>
+-            <groupId>commons-io</groupId>
+-            <artifactId>commons-io</artifactId>
+-            <version>2.11.0</version>
+-            <scope>compile</scope>
+-        </dependency>
+-        <dependency>
+-            <groupId>io.netty</groupId>
+-            <artifactId>netty-all</artifactId>
+-            <version>4.1.68.Final</version>
+-            <scope>compile</scope>
+-        </dependency>
+-        <dependency>
+-            <groupId>it.unimi.dsi</groupId>
+-            <artifactId>fastutil</artifactId>
+-            <version>8.5.6</version>
+-            <scope>compile</scope>
+-        </dependency>
+-        <dependency>
+-            <groupId>net.sf.jopt-simple</groupId>
+-            <artifactId>jopt-simple</artifactId>
+-            <version>5.0.4</version>
+-            <scope>compile</scope>
+-        </dependency>
+-        <dependency>
+-            <groupId>org.apache.commons</groupId>
+-            <artifactId>commons-lang3</artifactId>
+-            <version>3.12.0</version>
+-            <scope>compile</scope>
+-        </dependency>
+-        <dependency>
+-            <groupId>org.apache.logging.log4j</groupId>
+-            <artifactId>log4j-core</artifactId>
+-            <version>2.17.0</version>
+-            <scope>compile</scope>
+-        </dependency>
+-        <dependency>
+-            <groupId>org.apache.logging.log4j</groupId>
+-            <artifactId>log4j-slf4j18-impl</artifactId>
+-            <version>2.17.0</version>
+-            <scope>compile</scope>
+-        </dependency>
+-        <dependency>
+-            <groupId>org.slf4j</groupId>
+-            <artifactId>slf4j-api</artifactId>
+-            <version>1.8.0-beta4</version>
 -            <scope>compile</scope>
 -        </dependency>
 -        <!-- deprecated API depend -->
@@ -286,39 +340,39 @@ index c936167e107ab76cfb21febb9534353f481a95d3..00000000000000000000000000000000
 -        <dependency>
 -            <groupId>org.xerial</groupId>
 -            <artifactId>sqlite-jdbc</artifactId>
--            <version>3.34.0</version>
+-            <version>3.36.0.3</version>
 -            <scope>runtime</scope>
 -        </dependency>
 -        <dependency>
 -            <groupId>mysql</groupId>
 -            <artifactId>mysql-connector-java</artifactId>
--            <version>5.1.49</version>
+-            <version>8.0.27</version>
 -            <scope>runtime</scope>
 -        </dependency>
 -        <!-- add these back in as they are not exposed by the API -->
 -        <dependency>
 -            <groupId>org.apache.maven</groupId>
 -            <artifactId>maven-resolver-provider</artifactId>
--            <version>3.8.1</version>
+-            <version>3.8.4</version>
 -            <scope>runtime</scope>
 -        </dependency>
 -        <dependency>
 -            <groupId>org.apache.maven.resolver</groupId>
 -            <artifactId>maven-resolver-connector-basic</artifactId>
--            <version>1.7.0</version>
+-            <version>1.7.2</version>
 -            <scope>runtime</scope>
 -        </dependency>
 -        <dependency>
 -            <groupId>org.apache.maven.resolver</groupId>
 -            <artifactId>maven-resolver-transport-http</artifactId>
--            <version>1.7.0</version>
+-            <version>1.7.2</version>
 -            <scope>runtime</scope>
 -        </dependency>
 -        <!-- testing -->
 -        <dependency>
 -            <groupId>junit</groupId>
 -            <artifactId>junit</artifactId>
--            <version>4.13.1</version>
+-            <version>4.13.2</version>
 -            <scope>test</scope>
 -        </dependency>
 -        <dependency>
@@ -426,12 +480,12 @@ index c936167e107ab76cfb21febb9534353f481a95d3..00000000000000000000000000000000
 -                    <dependency>
 -                        <groupId>org.ow2.asm</groupId>
 -                        <artifactId>asm</artifactId>
--                        <version>9.1</version>
+-                        <version>9.2</version>
 -                    </dependency>
 -                    <dependency>
 -                        <groupId>org.ow2.asm</groupId>
 -                        <artifactId>asm-commons</artifactId>
--                        <version>9.1</version>
+-                        <version>9.2</version>
 -                    </dependency>
 -                </dependencies>
 -                <executions>
@@ -442,87 +496,21 @@ index c936167e107ab76cfb21febb9534353f481a95d3..00000000000000000000000000000000
 -                        </goals>
 -                        <configuration>
 -                            <createSourcesJar>${shadeSourcesJar}</createSourcesJar>
--                            <filters>
--                                <filter>
--                                    <artifact>org.spigotmc:minecraft-server</artifact>
--                                    <excludes>
--                                        <exclude>com/google/common/**</exclude>
--                                        <exclude>com/google/gson/**</exclude>
--                                        <exclude>com/google/thirdparty/**</exclude>
--                                    </excludes>
--                                </filter>
--                                <filter>
--                                    <artifact>org.eclipse.sisu:org.eclipse.sisu.inject</artifact>
--                                    <excludes>
--                                        <exclude>META-INF/services/javax.annotation.processing.Processor</exclude>
--                                    </excludes>
--                                </filter>
--                            </filters>
+-                            <artifactSet>
+-                                <includes>
+-                                    <include>org.spigotmc:minecraft-server</include>
+-                                </includes>
+-                            </artifactSet>
 -                            <relocations>
--                                <!-- Cannot be relocated as it breaks translation property keys -->
--                                <!--
--                                <relocation>
--                                    <pattern>joptsimple</pattern>
--                                    <shadedPattern>org.bukkit.craftbukkit.libs.joptsimple</shadedPattern>
--                                </relocation>
--                                -->
--                                <relocation>
--                                    <pattern>jline</pattern>
--                                    <shadedPattern>org.bukkit.craftbukkit.libs.jline</shadedPattern>
--                                </relocation>
--                                <relocation>
--                                    <pattern>it.unimi</pattern>
--                                    <shadedPattern>org.bukkit.craftbukkit.libs.it.unimi</shadedPattern>
--                                </relocation>
--                                <relocation>
--                                    <pattern>org.apache.commons.codec</pattern>
--                                    <shadedPattern>org.bukkit.craftbukkit.libs.org.apache.commons.codec</shadedPattern>
--                                </relocation>
--                                <relocation>
--                                    <pattern>org.apache.commons.io</pattern>
--                                    <shadedPattern>org.bukkit.craftbukkit.libs.org.apache.commons.io</shadedPattern>
--                                </relocation>
--                                <relocation>
--                                    <pattern>org.apache.commons.lang3</pattern>
--                                    <shadedPattern>org.bukkit.craftbukkit.libs.org.apache.commons.lang3</shadedPattern>
--                                </relocation>
--                                <relocation>
--                                    <pattern>org.apache.http</pattern>
--                                    <shadedPattern>org.bukkit.craftbukkit.libs.org.apache.http</shadedPattern>
--                                </relocation>
--                                <relocation>
--                                    <pattern>org.apache.maven</pattern>
--                                    <shadedPattern>org.bukkit.craftbukkit.libs.org.apache.maven</shadedPattern>
--                                </relocation>
--                                <relocation>
--                                    <pattern>org.codehaus.plexus</pattern>
--                                    <shadedPattern>org.bukkit.craftbukkit.libs.org.codehaus.plexus</shadedPattern>
--                                </relocation>
--                                <relocation>
--                                    <pattern>org.eclipse.aether</pattern>
--                                    <shadedPattern>org.bukkit.craftbukkit.libs.org.eclipse.aether</shadedPattern>
--                                </relocation>
--                                <relocation>
--                                    <pattern>org.eclipse.sisu</pattern>
--                                    <shadedPattern>org.bukkit.craftbukkit.libs.org.eclipse.sisu</shadedPattern>
--                                </relocation>
--                                <relocation>
--                                    <pattern>org.objectweb.asm</pattern>
--                                    <shadedPattern>org.bukkit.craftbukkit.libs.org.objectweb.asm</shadedPattern>
--                                </relocation>
 -                                <relocation>
 -                                    <pattern>org.bukkit.craftbukkit</pattern>
 -                                    <shadedPattern>org.bukkit.craftbukkit.v${minecraft_version}</shadedPattern>
 -                                    <excludes>
+-                                        <exclude>org.bukkit.craftbukkit.bootstrap.*</exclude>
 -                                        <exclude>org.bukkit.craftbukkit.Main*</exclude>
 -                                    </excludes>
 -                                </relocation>
 -                            </relocations>
--                            <transformers>
--                                <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
--                                    <resource>META-INF/services/java.sql.Driver</resource>
--                                </transformer>
--                            </transformers>
 -                        </configuration>
 -                    </execution>
 -                </executions>
@@ -530,17 +518,71 @@ index c936167e107ab76cfb21febb9534353f481a95d3..00000000000000000000000000000000
 -            <plugin>
 -                <groupId>net.md-5</groupId>
 -                <artifactId>specialsource-maven-plugin</artifactId>
--                <version>1.2.2</version>
+-                <version>1.2.3</version>
 -                <executions>
 -                    <execution>
 -                        <phase>package</phase>
 -                        <goals>
 -                            <goal>remap</goal>
 -                        </goals>
--                        <id>remap-fields</id>
+-                        <id>remap-members</id>
 -                        <configuration>
--                            <srgIn>org.spigotmc:minecraft-server:${project.version}:csrg:maps-spigot-fields</srgIn>
+-                            <logFile>${project.build.directory}/server.txt</logFile>
+-                            <srgIn>org.spigotmc:minecraft-server:${project.version}:csrg:maps-spigot-members</srgIn>
 -                            <reverse>true</reverse>
+-                        </configuration>
+-                    </execution>
+-                </executions>
+-            </plugin>
+-            <plugin>
+-                <groupId>net.nicoulaj.maven.plugins</groupId>
+-                <artifactId>checksum-maven-plugin</artifactId>
+-                <version>1.11</version>
+-                <executions>
+-                    <execution>
+-                        <phase>package</phase>
+-                        <goals>
+-                            <goal>artifacts</goal>
+-                            <goal>dependencies</goal>
+-                        </goals>
+-                        <configuration>
+-                            <algorithms>
+-                                <algorithm>SHA-256</algorithm>
+-                            </algorithms>
+-                            <quiet>true</quiet>
+-                            <scopes>
+-                                <scope>compile</scope>
+-                                <scope>runtime</scope>
+-                            </scopes>
+-                            <shasumSummary>true</shasumSummary>
+-                            <transitive>true</transitive>
+-                        </configuration>
+-                    </execution>
+-                </executions>
+-            </plugin>
+-            <plugin>
+-                <groupId>org.apache.maven.plugins</groupId>
+-                <artifactId>maven-assembly-plugin</artifactId>
+-                <version>3.3.0</version>
+-                <executions>
+-                    <execution>
+-                        <phase>package</phase>
+-                        <goals>
+-                            <goal>single</goal>
+-                        </goals>
+-                        <configuration>
+-                            <archive>
+-                                <manifest>
+-                                    <addDefaultEntries>false</addDefaultEntries>
+-                                </manifest>
+-                                <manifestEntries>
+-                                    <Main-Class>org.bukkit.craftbukkit.bootstrap.Main</Main-Class>
+-                                </manifestEntries>
+-                            </archive>
+-                            <attach>false</attach>
+-                            <descriptors>
+-                                <descriptor>${project.basedir}/src/assembly/bootstrap.xml</descriptor>
+-                            </descriptors>
 -                        </configuration>
 -                    </execution>
 -                </executions>
@@ -562,7 +604,7 @@ index c936167e107ab76cfb21febb9534353f481a95d3..00000000000000000000000000000000
 -                    <dependency>
 -                        <groupId>org.eclipse.jdt</groupId>
 -                        <artifactId>ecj</artifactId>
--                        <version>3.26.0</version>
+-                        <version>3.28.0</version>
 -                    </dependency>
 -                </dependencies>
 -            </plugin>
@@ -601,7 +643,7 @@ index c936167e107ab76cfb21febb9534353f481a95d3..00000000000000000000000000000000
 -                        <version>3.1.2</version>
 -                        <executions>
 -                            <execution>
--                                <phase>process-classes</phase>
+-                                <phase>test-compile</phase>
 -                                <goals>
 -                                    <goal>check</goal>
 -                                </goals>
@@ -615,7 +657,7 @@ index c936167e107ab76cfb21febb9534353f481a95d3..00000000000000000000000000000000
 -                            <dependency>
 -                                <groupId>com.puppycrawl.tools</groupId>
 -                                <artifactId>checkstyle</artifactId>
--                                <version>8.44</version>
+-                                <version>8.45.1</version>
 -                            </dependency>
 -                        </dependencies>
 -                    </plugin>
@@ -627,7 +669,7 @@ index c936167e107ab76cfb21febb9534353f481a95d3..00000000000000000000000000000000
 -                            <execution>
 -                                <phase>process-classes</phase>
 -                                <goals>
--                                    <goal>check</goal>
+-                                    <!--<goal>check</goal>-->
 -                                </goals>
 -                            </execution>
 -                        </executions>
@@ -651,7 +693,7 @@ index c936167e107ab76cfb21febb9534353f481a95d3..00000000000000000000000000000000
 -                        <artifactId>specialsource-maven-plugin</artifactId>
 -                        <executions>
 -                            <execution>
--                                <phase>package</phase>
+-                                <phase>verify</phase>
 -                                <goals>
 -                                    <goal>remap</goal>
 -                                </goals>
@@ -664,7 +706,7 @@ index c936167e107ab76cfb21febb9534353f481a95d3..00000000000000000000000000000000
 -                                </configuration>
 -                            </execution>
 -                            <execution>
--                                <phase>package</phase>
+-                                <phase>verify</phase>
 -                                <goals>
 -                                    <goal>remap</goal>
 -                                </goals>

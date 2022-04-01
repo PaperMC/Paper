@@ -1,5 +1,3 @@
-import java.util.Locale
-
 plugins {
     `java-library`
     `maven-publish`
@@ -16,20 +14,19 @@ repositories {
 }
 
 dependencies {
-    implementation(project(":Paper-API"))
+    implementation(project(":paper-api"))
     api("com.mojang:brigadier:1.0.18")
 
-    compileOnly("it.unimi.dsi:fastutil:8.2.2")
-    compileOnly("org.jetbrains:annotations:18.0.0")
+    compileOnly("it.unimi.dsi:fastutil:8.5.6")
+    compileOnly("org.jetbrains:annotations:23.0.0")
 
-    testImplementation("junit:junit:4.13.1")
+    testImplementation("junit:junit:4.13.2")
     testImplementation("org.hamcrest:hamcrest-library:1.3")
-    testImplementation("org.ow2.asm:asm-tree:7.3.1")
+    testImplementation("org.ow2.asm:asm-tree:9.2")
 }
 
 configure<PublishingExtension> {
     publications.create<MavenPublication>("maven") {
-        artifactId = project.name.toLowerCase(Locale.ENGLISH)
         from(components["java"])
     }
 }

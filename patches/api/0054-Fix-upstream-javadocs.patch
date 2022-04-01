@@ -1,0 +1,124 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Zach Brown <zach.brown@destroystokyo.com>
+Date: Sat, 10 Jun 2017 16:59:40 -0500
+Subject: [PATCH] Fix upstream javadocs
+
+Upstream still refuses to use Java 8 with the API so they are likely unaware these are even issues.
+
+diff --git a/src/main/java/org/bukkit/Bukkit.java b/src/main/java/org/bukkit/Bukkit.java
+index 0da4b67ee4406995692ded99e0f0de51fd78ded2..b175f07b99a07ba50c4721c38f9e6330f02942f8 100644
+--- a/src/main/java/org/bukkit/Bukkit.java
++++ b/src/main/java/org/bukkit/Bukkit.java
+@@ -1299,6 +1299,8 @@ public final class Bukkit {
+ 
+     /**
+      * Gets every player that has ever played on this server.
++     * <p>
++     * <b>This method can be expensive as it loads all the player data files from the disk.</b>
+      *
+      * @return an array containing all previous players
+      */
+diff --git a/src/main/java/org/bukkit/Server.java b/src/main/java/org/bukkit/Server.java
+index 481548001744493fe477ef0713acbef86ccf6718..24e68d5cb4f713984b25ab19330cb77f1eddb5cf 100644
+--- a/src/main/java/org/bukkit/Server.java
++++ b/src/main/java/org/bukkit/Server.java
+@@ -1097,6 +1097,8 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+ 
+     /**
+      * Gets every player that has ever played on this server.
++     * <p>
++     * <b>This method can be expensive as it loads all the player data files from the disk.</b>
+      *
+      * @return an array containing all previous players
+      */
+diff --git a/src/main/java/org/bukkit/entity/ArmorStand.java b/src/main/java/org/bukkit/entity/ArmorStand.java
+index 91fc11dda99de506be83d40df8929bf7cd8e8d85..7dc631ebd009f5f5c3ac1699c3f3515c47609c05 100644
+--- a/src/main/java/org/bukkit/entity/ArmorStand.java
++++ b/src/main/java/org/bukkit/entity/ArmorStand.java
+@@ -360,5 +360,8 @@ public interface ArmorStand extends LivingEntity {
+      * @param move {@code true} if this armour stand can move, {@code false} otherwise
+      */
+     void setCanMove(boolean move);
++
++    @Override
++    org.bukkit.inventory.@NotNull EntityEquipment getEquipment();
+     // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/entity/HumanEntity.java b/src/main/java/org/bukkit/entity/HumanEntity.java
+index 50ac6f0374da5697a38ef5ec7625da91d4a4276c..f607c57275958bf1cbf8e77b4d7efa936064c228 100644
+--- a/src/main/java/org/bukkit/entity/HumanEntity.java
++++ b/src/main/java/org/bukkit/entity/HumanEntity.java
+@@ -21,6 +21,11 @@ import org.jetbrains.annotations.Nullable;
+  */
+ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder {
+ 
++    // Paper start
++    @Override
++    org.bukkit.inventory.@NotNull EntityEquipment getEquipment();
++    // Paper end
++
+     /**
+      * Returns the name of this player
+      *
+diff --git a/src/main/java/org/bukkit/entity/Mob.java b/src/main/java/org/bukkit/entity/Mob.java
+index be9334a8b5fba9181ad63c211697e798be63da25..0514a141cb93a650be38c63d4336d46e4304f4b6 100644
+--- a/src/main/java/org/bukkit/entity/Mob.java
++++ b/src/main/java/org/bukkit/entity/Mob.java
+@@ -8,6 +8,10 @@ import org.jetbrains.annotations.Nullable;
+  */
+ public interface Mob extends LivingEntity, Lootable {
+ 
++    // Paper start
++    @Override
++    org.bukkit.inventory.@org.jetbrains.annotations.NotNull EntityEquipment getEquipment();
++    // Paper end
+     /**
+      * Instructs this Mob to set the specified LivingEntity as its target.
+      * <p>
+diff --git a/src/main/java/org/bukkit/entity/Player.java b/src/main/java/org/bukkit/entity/Player.java
+index 2a4cbda6cf881b850c293e54c142c3fe7a5165bd..9eb3903ec290cb43f129f44c6ef0cd99b5769b5f 100644
+--- a/src/main/java/org/bukkit/entity/Player.java
++++ b/src/main/java/org/bukkit/entity/Player.java
+@@ -753,7 +753,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+      *
+      * Use supplied alternative character to the section symbol to represent legacy color codes.
+      *
+-     * @param alternateChar Alternate symbol such as '&'
++     * @param alternateChar Alternate symbol such as '&amp;'
+      * @param message The message to send
+      * @deprecated use {@link #sendActionBar(Component)}
+      */
+diff --git a/src/main/java/org/bukkit/entity/Slime.java b/src/main/java/org/bukkit/entity/Slime.java
+index 1119e26e270bb45f517955b19d95a9ec3d113634..4631647c64c89ffdde2d9b63bdab974acfe6cb3d 100644
+--- a/src/main/java/org/bukkit/entity/Slime.java
++++ b/src/main/java/org/bukkit/entity/Slime.java
+@@ -11,6 +11,16 @@ public interface Slime extends Mob {
+     public int getSize();
+ 
+     /**
++     * Setting the size of the slime (regardless of previous size)
++     * will set the following attributes:
++     * <ul>
++     *     <li>{@link org.bukkit.attribute.Attribute#GENERIC_MAX_HEALTH}</li>
++     *     <li>{@link org.bukkit.attribute.Attribute#GENERIC_MOVEMENT_SPEED}</li>
++     *     <li>{@link org.bukkit.attribute.Attribute#GENERIC_ATTACK_DAMAGE}</li>
++     * </ul>
++     * to their per-size defaults and heal the
++     * slime to its max health (assuming it's alive).
++     *
+      * @param sz The new size of the slime.
+      */
+     public void setSize(int sz);
+diff --git a/src/main/java/org/bukkit/event/player/PlayerMoveEvent.java b/src/main/java/org/bukkit/event/player/PlayerMoveEvent.java
+index 1b2267f4e8ebded198773ec80e2bff2c861c7084..1a58734d919fae247eeb85dd785fd59990856505 100644
+--- a/src/main/java/org/bukkit/event/player/PlayerMoveEvent.java
++++ b/src/main/java/org/bukkit/event/player/PlayerMoveEvent.java
+@@ -78,7 +78,7 @@ public class PlayerMoveEvent extends PlayerEvent implements Cancellable {
+      *
+      * @return Location the player moved to
+      */
+-    @Nullable
++    @NotNull // Paper
+     public Location getTo() {
+         return to;
+     }

@@ -28,7 +28,7 @@ chickeneer <emcchickeneer@gmail.com>
 Minecrell <minecrell@minecrell.net>
 Techcable <Techcable@outlook.com>
 BillyGalbreath <blake.galbreath@gmail.com>
-MiniDigger <admin@minidigger.me>
+MiniDigger <admin@benndorf.dev>
 Brokkonaut <hannos17@gmx.de>
 vemacs <d@nkmem.es>
 stonar96 <minecraft.stonar96@gmail.com>
@@ -48,4 +48,6 @@ Bjarne Koll <lynxplay101@gmail.com>
 MeFisto94 <MeFisto94@users.noreply.github.com>
 Owen1212055 <23108066+Owen1212055@users.noreply.github.com>
 LemonCaramel <admin@caramel.moe>
+Noah van der Aa <ndvdaa@gmail.com>
+Doc <nachito94@msn.com>
 ```

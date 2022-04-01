@@ -1,0 +1,46 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: vemacs <d@nkmem.es>
+Date: Thu, 3 Mar 2016 01:19:22 -0600
+Subject: [PATCH] All chunks are slime spawn chunks toggle
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 990757a8bbd27fa102c9b408246ed14d97a340dc..1e3c39f0eeeb07f8d49e3651b18a152db9ccba7b 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -237,4 +237,9 @@ public class PaperWorldConfig {
+     private void disableChestCatDetection() {
+         disableChestCatDetection = getBoolean("game-mechanics.disable-chest-cat-detection", false);
+     }
++
++    public boolean allChunksAreSlimeChunks;
++    private void allChunksAreSlimeChunks() {
++        allChunksAreSlimeChunks = getBoolean("all-chunks-are-slime-chunks", false);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Slime.java b/src/main/java/net/minecraft/world/entity/monster/Slime.java
+index cee85fcbe061cf70ba9c828372369a4c41f9fbff..990f2e17aad4a1116482b3aa534686cf8dc3669a 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Slime.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Slime.java
+@@ -321,7 +321,7 @@ public class Slime extends Mob implements Enemy {
+             }
+ 
+             ChunkPos chunkcoordintpair = new ChunkPos(pos);
+-            boolean flag = WorldgenRandom.seedSlimeChunk(chunkcoordintpair.x, chunkcoordintpair.z, ((WorldGenLevel) world).getSeed(), world.getMinecraftWorld().spigotConfig.slimeSeed).nextInt(10) == 0; // Spigot
++            boolean flag = world.getMinecraftWorld().paperConfig.allChunksAreSlimeChunks || WorldgenRandom.seedSlimeChunk(chunkcoordintpair.x, chunkcoordintpair.z, ((WorldGenLevel) world).getSeed(), world.getMinecraftWorld().spigotConfig.slimeSeed).nextInt(10) == 0; // Spigot // Paper
+ 
+             if (random.nextInt(10) == 0 && flag && pos.getY() < 40) {
+                 return checkMobSpawnRules(type, world, spawnReason, pos, random);
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftChunk.java b/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
+index d68bb94bf75d04b3f371518558addc645b55d8a4..404bd3389aaa75ca23f04d23ecea9093443c3976 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
+@@ -219,7 +219,7 @@ public class CraftChunk implements Chunk {
+     @Override
+     public boolean isSlimeChunk() {
+         // 987234911L is deterimined in EntitySlime when seeing if a slime can spawn in a chunk
+-        return WorldgenRandom.seedSlimeChunk(this.getX(), this.getZ(), this.getWorld().getSeed(), worldServer.spigotConfig.slimeSeed).nextInt(10) == 0;
++        return this.worldServer.paperConfig.allChunksAreSlimeChunks || WorldgenRandom.seedSlimeChunk(this.getX(), this.getZ(), this.getWorld().getSeed(), worldServer.spigotConfig.slimeSeed).nextInt(10) == 0; // Paper
+     }
+ 
+     @Override

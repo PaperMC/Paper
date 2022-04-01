@@ -12,10 +12,10 @@ for this on CB at one point but I can't find it. We may need to do this
 ourselves at some point in the future.
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index 2c3754c0bcebc33f88168136b519baef6927553b..d9590dbc3db4ec4d32d86906bb290fbe2ca81ccd 100644
+index c008f1f7f0a1e1b8bf34f2702cb44c5f9d62f848..97693c33ba5a7efe40f05e0494216ee105e8bf74 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-@@ -259,4 +259,9 @@ public class PaperWorldConfig {
+@@ -300,4 +300,9 @@ public class PaperWorldConfig {
          grassUpdateRate = Math.max(0, getInt("grass-spread-tick-rate", grassUpdateRate));
          log("Grass Spread Tick Rate: " + grassUpdateRate);
      }
@@ -26,40 +26,31 @@ index 2c3754c0bcebc33f88168136b519baef6927553b..d9590dbc3db4ec4d32d86906bb290fbe
 +    }
  }
 diff --git a/src/main/java/io/papermc/paper/adventure/ChatProcessor.java b/src/main/java/io/papermc/paper/adventure/ChatProcessor.java
-index 4e9e0a39b876c900fdee1343d04a7046f5b3f80e..eb0053850f53ceb60eb1ae3ac0e34034648fe1eb 100644
+index 65b6e260464b2003d6bd172610adb5b8651df169..55276e9679dcdc38c6716533e9218f81fc146592 100644
 --- a/src/main/java/io/papermc/paper/adventure/ChatProcessor.java
 +++ b/src/main/java/io/papermc/paper/adventure/ChatProcessor.java
-@@ -17,7 +17,11 @@ import net.kyori.adventure.text.TextReplacementConfig;
+@@ -15,6 +15,8 @@ import net.kyori.adventure.text.TextReplacementConfig;
  import net.kyori.adventure.text.event.ClickEvent;
  import net.minecraft.server.MinecraftServer;
  import net.minecraft.server.level.ServerPlayer;
-+import net.minecraft.world.scores.PlayerTeam;
-+import net.minecraft.world.scores.Team;
- import org.bukkit.Bukkit;
 +import org.bukkit.ChatColor;
 +import org.bukkit.craftbukkit.CraftWorld;
  import org.bukkit.craftbukkit.entity.CraftPlayer;
  import org.bukkit.craftbukkit.util.LazyPlayerSet;
  import org.bukkit.craftbukkit.util.Waitable;
-@@ -188,10 +192,22 @@ public final class ChatProcessor {
+@@ -153,10 +155,16 @@ public final class ChatProcessor {
      }
  
      private static String legacyDisplayName(final CraftPlayer player) {
 +        if (((CraftWorld) player.getWorld()).getHandle().paperConfig.useVanillaScoreboardColoring) {
-+            final ServerPlayer ep = player.getHandle();
-+            net.minecraft.network.chat.Component name = ep.getName();
-+            final Team team = ep.getTeam();
-+            if (team != null) {
-+                name = team.getFormattedName(name);
-+            }
-+            return PaperAdventure.LEGACY_SECTION_UXRC.serialize(PaperAdventure.asAdventure(name)) + ChatColor.RESET;
++            return PaperAdventure.LEGACY_SECTION_UXRC.serialize(player.teamDisplayName()) + ChatColor.RESET;
 +        }
          return player.getDisplayName();
      }
  
      private static Component displayName(final CraftPlayer player) {
 +        if (((CraftWorld) player.getWorld()).getHandle().paperConfig.useVanillaScoreboardColoring) {
-+            return PaperAdventure.asAdventure(PlayerTeam.formatNameForTeam(player.getHandle().getTeam(), player.getHandle().getName()));
++            return player.teamDisplayName();
 +        }
          return player.displayName();
      }

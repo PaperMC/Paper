@@ -1,0 +1,22 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Sun, 7 Mar 2021 13:15:04 -0800
+Subject: [PATCH] Do not run raytrace logic for AIR
+
+Saves approx. 5% for the raytrace call, as most (expensive)
+raytracing tends to go through air and returning early is an
+easy win. The remaining problems with this function
+are mostly with the block getting itself.
+
+diff --git a/src/main/java/net/minecraft/world/level/BlockGetter.java b/src/main/java/net/minecraft/world/level/BlockGetter.java
+index 9cf2f046d50a8a0e08189c9b4b5d2f323d1f790d..d1eefa6ef3e9abfe7af4d8310aa64465fa2d5463 100644
+--- a/src/main/java/net/minecraft/world/level/BlockGetter.java
++++ b/src/main/java/net/minecraft/world/level/BlockGetter.java
+@@ -84,6 +84,7 @@ public interface BlockGetter extends LevelHeightAccessor {
+                 return BlockHitResult.miss(raytrace1.getTo(), Direction.getNearest(vec3d.x, vec3d.y, vec3d.z), new BlockPos(raytrace1.getTo()));
+             }
+             // Paper end
++            if (iblockdata.isAir()) return null; // Paper - optimise air cases
+             FluidState fluid = iblockdata.getFluidState(); // Paper - don't need to go to world state again
+             Vec3 vec3d = raytrace1.getFrom();
+             Vec3 vec3d1 = raytrace1.getTo();
