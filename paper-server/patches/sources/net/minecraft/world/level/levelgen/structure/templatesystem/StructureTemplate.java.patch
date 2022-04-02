@@ -59,8 +59,16 @@
              List<StructureTemplate.StructureBlockInfo> list = placementData.getRandomPalette(this.palettes, pos).blocks();
  
              if ((!list.isEmpty() || !placementData.isIgnoreEntities() && !this.entityInfoList.isEmpty()) && this.size.getX() >= 1 && this.size.getY() >= 1 && this.size.getZ() >= 1) {
-@@ -284,6 +306,20 @@
-                             Clearable.tryClear(tileentity);
+@@ -281,9 +303,27 @@
+ 
+                         if (definedstructure_blockinfo.nbt != null) {
+                             tileentity = world.getBlockEntity(blockposition2);
+-                            Clearable.tryClear(tileentity);
++                            // Paper start - Fix NBT pieces overriding a block entity during worldgen deadlock
++                            if (!(world instanceof net.minecraft.world.level.WorldGenLevel)) {
++                                Clearable.tryClear(tileentity);
++                            }
++                            // Paper end - Fix NBT pieces overriding a block entity during worldgen deadlock
                              world.setBlock(blockposition2, Blocks.BARRIER.defaultBlockState(), 20);
                          }
 +                        // CraftBukkit start
@@ -80,7 +88,7 @@
  
                          if (world.setBlock(blockposition2, iblockdata, flags)) {
                              j = Math.min(j, blockposition2.getX());
-@@ -296,7 +332,7 @@
+@@ -296,7 +336,7 @@
                              if (definedstructure_blockinfo.nbt != null) {
                                  tileentity = world.getBlockEntity(blockposition2);
                                  if (tileentity != null) {
@@ -89,7 +97,19 @@
                                          definedstructure_blockinfo.nbt.putLong("LootTableSeed", random.nextLong());
                                      }
  
-@@ -401,7 +437,7 @@
+@@ -394,14 +434,18 @@
+                         if (pair1.getSecond() != null) {
+                             tileentity = world.getBlockEntity(blockposition6);
+                             if (tileentity != null) {
+-                                tileentity.setChanged();
++                                // Paper start - Fix NBT pieces overriding a block entity during worldgen deadlock
++                                if (!(world instanceof net.minecraft.world.level.WorldGenLevel)) {
++                                    tileentity.setChanged();
++                                }
++                                // Paper end - Fix NBT pieces overriding a block entity during worldgen deadlock
+                             }
+                         }
+                     }
                  }
  
                  if (!placementData.isIgnoreEntities()) {
@@ -98,7 +118,7 @@
                  }
  
                  return true;
-@@ -503,11 +539,13 @@
+@@ -503,11 +547,13 @@
      }
  
      private static Optional<Entity> createEntityIgnoreException(ServerLevelAccessor world, CompoundTag nbt) {
@@ -116,7 +136,7 @@
      }
  
      public Vec3i getSize(Rotation rotation) {
-@@ -721,6 +759,11 @@
+@@ -721,6 +767,11 @@
  
          nbt.put("entities", nbttaglist3);
          nbt.put("size", this.newIntegerList(this.size.getX(), this.size.getY(), this.size.getZ()));
@@ -128,7 +148,7 @@
          return NbtUtils.addCurrentDataVersion(nbt);
      }
  
-@@ -760,6 +803,12 @@
+@@ -760,6 +811,12 @@
              }
          }
  
@@ -141,7 +161,7 @@
      }
  
      private void loadPalette(HolderGetter<Block> blockLookup, ListTag palette, ListTag blocks) {
-@@ -840,7 +889,7 @@
+@@ -840,7 +897,7 @@
      public static final class Palette {
  
          private final List<StructureTemplate.StructureBlockInfo> blocks;
@@ -150,7 +170,7 @@
          @Nullable
          private List<StructureTemplate.JigsawBlockInfo> cachedJigsaws;
  
-@@ -924,7 +973,7 @@
+@@ -924,7 +981,7 @@
          public BlockState stateFor(int id) {
              BlockState iblockdata = (BlockState) this.ids.byId(id);
  
