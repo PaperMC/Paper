@@ -108,4 +108,22 @@ public interface EnderDragon extends ComplexLivingEntity, Boss, Mob, Enemy {
      * @return this dragon's death animation ticks
      */
     int getDeathAnimationTicks();
+
+    // Paper start
+
+    /**
+     * Get the podium location used by the ender dragon.
+     *
+     * @return the podium location of the dragon
+     */
+    @NotNull
+    org.bukkit.Location getPodium();
+
+    /**
+     * Sets the location of the podium for the ender dragon.
+     *
+     * @param location the location of the podium or null to use the default podium location (exit portal of the end)
+     */
+    void setPodium(@Nullable org.bukkit.Location location);
+    // Paper end
 }
