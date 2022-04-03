@@ -73,4 +73,22 @@ public class CraftEnderDragon extends CraftMob implements EnderDragon, CraftEnem
     public int getDeathAnimationTicks() {
         return this.getHandle().dragonDeathTime;
     }
+
+    // Paper start - Allow changing the EnderDragon podium
+    @Override
+    public org.bukkit.Location getPodium() {
+        net.minecraft.core.BlockPos blockPosOrigin = this.getHandle().getPodium();
+        return new org.bukkit.Location(getWorld(), blockPosOrigin.getX(), blockPosOrigin.getY(), blockPosOrigin.getZ());
+    }
+
+    @Override
+    public void setPodium(org.bukkit.Location location) {
+        if (location == null) {
+            this.getHandle().setPodium(null);
+        } else {
+            org.apache.commons.lang.Validate.isTrue(location.getWorld() == null || location.getWorld().equals(getWorld()), "You cannot set a podium in a different world to where the dragon is");
+            this.getHandle().setPodium(io.papermc.paper.util.MCUtil.toBlockPos(location));
+        }
+    }
+    // Paper end - Allow changing the EnderDragon podium
 }

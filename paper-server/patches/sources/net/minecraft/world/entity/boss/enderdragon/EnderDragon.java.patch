@@ -40,15 +40,19 @@
  
  public class EnderDragon extends Mob implements Enemy {
  
-@@ -88,6 +103,7 @@
+@@ -88,6 +103,11 @@
      private final Node[] nodes;
      private final int[] nodeAdjacency;
      private final BinaryHeap openSet;
 +    private final Explosion explosionSource; // CraftBukkit - reusable source for CraftTNTPrimed.getSource()
++    // Paper start - Allow changing the EnderDragon podium
++    @Nullable
++    private BlockPos podium;
++    // Paper end - Allow changing the EnderDragon podium
  
      public EnderDragon(EntityType<? extends EnderDragon> entitytypes, Level world) {
          super(EntityType.ENDER_DRAGON, world);
-@@ -108,6 +124,7 @@
+@@ -108,6 +128,7 @@
          this.setHealth(this.getMaxHealth());
          this.noPhysics = true;
          this.phaseManager = new EnderDragonPhaseManager(this);
@@ -56,7 +60,27 @@
      }
  
      public void setDragonFight(EndDragonFight fight) {
-@@ -218,7 +235,7 @@
+@@ -126,6 +147,19 @@
+         return Mob.createMobAttributes().add(Attributes.MAX_HEALTH, 200.0D);
+     }
+ 
++    // Paper start - Allow changing the EnderDragon podium
++    public BlockPos getPodium() {
++        if (this.podium == null) {
++            return EndPodiumFeature.getLocation(this.getFightOrigin());
++        }
++        return this.podium;
++    }
++
++    public void setPodium(@Nullable BlockPos blockPos) {
++        this.podium = blockPos;
++    }
++    // Paper end - Allow changing the EnderDragon podium
++
+     @Override
+     public boolean isFlapping() {
+         float f = Mth.cos(this.flapTime * 6.2831855F);
+@@ -218,7 +252,7 @@
  
                      Vec3 vec3d1 = idragoncontroller.getFlyTargetLocation();
  
@@ -65,7 +89,7 @@
                          double d0 = vec3d1.x - this.getX();
                          double d1 = vec3d1.y - this.getY();
                          double d2 = vec3d1.z - this.getZ();
-@@ -379,7 +396,14 @@
+@@ -379,7 +413,14 @@
              if (this.nearestCrystal.isRemoved()) {
                  this.nearestCrystal = null;
              } else if (this.tickCount % 10 == 0 && this.getHealth() < this.getMaxHealth()) {
@@ -81,7 +105,7 @@
              }
          }
  
-@@ -417,7 +441,7 @@
+@@ -417,7 +458,7 @@
                  double d3 = entity.getZ() - d1;
                  double d4 = Math.max(d2 * d2 + d3 * d3, 0.1D);
  
@@ -90,7 +114,7 @@
                  if (!this.phaseManager.getCurrentPhase().isSitting() && entityliving.getLastHurtByMobTimestamp() < entity.tickCount - 2) {
                      DamageSource damagesource = this.damageSources().mobAttack(this);
  
-@@ -458,6 +482,9 @@
+@@ -458,6 +499,9 @@
          int j1 = Mth.floor(box.maxZ);
          boolean flag = false;
          boolean flag1 = false;
@@ -100,7 +124,7 @@
  
          for (int k1 = i; k1 <= l; ++k1) {
              for (int l1 = j; l1 <= i1; ++l1) {
-@@ -467,7 +494,11 @@
+@@ -467,14 +511,66 @@
  
                      if (!iblockdata.isAir() && !iblockdata.is(BlockTags.DRAGON_TRANSPARENT)) {
                          if (world.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING) && !iblockdata.is(BlockTags.DRAGON_IMMUNE)) {
@@ -113,10 +137,11 @@
                          } else {
                              flag = true;
                          }
-@@ -476,6 +507,54 @@
-             }
-         }
- 
+                     }
++                }
++            }
++        }
++
 +        // CraftBukkit start - Set off an EntityExplodeEvent for the dragon exploding all these blocks
 +        // SPIGOT-4882: don't fire event if nothing hit
 +        if (!flag1) {
@@ -138,7 +163,7 @@
 +                org.bukkit.Material blockId = block.getType();
 +                if (blockId.isAir()) {
 +                    continue;
-+                }
+                 }
 +
 +                CraftBlock craftBlock = ((CraftBlock) block);
 +                BlockPos blockposition = craftBlock.getPosition();
@@ -161,14 +186,13 @@
 +                nmsBlock.wasExploded((ServerLevel) this.level(), blockposition, this.explosionSource);
 +
 +                this.level().removeBlock(blockposition, false);
-+            }
-+        }
+             }
+         }
 +        // CraftBukkit end
-+
+ 
          if (flag1) {
              BlockPos blockposition1 = new BlockPos(i + this.random.nextInt(l - i + 1), j + this.random.nextInt(i1 - j + 1), k + this.random.nextInt(j1 - k + 1));
- 
-@@ -531,7 +610,7 @@
+@@ -531,7 +627,7 @@
  
      @Override
      public void kill(ServerLevel world) {
@@ -177,7 +201,7 @@
          this.gameEvent(GameEvent.ENTITY_DIE);
          if (this.dragonFight != null) {
              this.dragonFight.updateDragon(this);
-@@ -540,7 +619,22 @@
+@@ -540,7 +636,22 @@
  
      }
  
@@ -200,7 +224,7 @@
      protected void tickDeath() {
          if (this.dragonFight != null) {
              this.dragonFight.updateDragon(this);
-@@ -555,21 +649,44 @@
+@@ -555,21 +666,44 @@
              this.level().addParticle(ParticleTypes.EXPLOSION_EMITTER, this.getX() + (double) f, this.getY() + 2.0D + (double) f1, this.getZ() + (double) f2, 0.0D, 0.0D, 0.0D);
          }
  
@@ -248,7 +272,7 @@
              }
          }
  
-@@ -592,15 +709,15 @@
+@@ -592,15 +726,15 @@
              if (world1 instanceof ServerLevel) {
                  ServerLevel worldserver1 = (ServerLevel) world1;
  
@@ -267,7 +291,7 @@
                  this.gameEvent(GameEvent.ENTITY_DIE);
              }
          }
-@@ -814,6 +931,7 @@
+@@ -814,6 +948,7 @@
          super.addAdditionalSaveData(nbt);
          nbt.putInt("DragonPhase", this.phaseManager.getCurrentPhase().getPhase().getId());
          nbt.putInt("DragonDeathTime", this.dragonDeathTime);
@@ -275,7 +299,7 @@
      }
  
      @Override
-@@ -827,6 +945,11 @@
+@@ -827,6 +962,11 @@
              this.dragonDeathTime = nbt.getInt("DragonDeathTime");
          }
  
@@ -287,3 +311,12 @@
      }
  
      @Override
+@@ -879,7 +1019,7 @@
+                 vec3d = this.getViewVector(tickDelta);
+             }
+         } else {
+-            BlockPos blockposition = this.level().getHeightmapPos(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, EndPodiumFeature.getLocation(this.fightOrigin));
++            BlockPos blockposition = this.level().getHeightmapPos(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, this.getPodium()); // Paper - Allow changing the EnderDragon podium
+ 
+             f1 = Math.max((float) Math.sqrt(blockposition.distToCenterSqr(this.position())) / 4.0F, 1.0F);
+             float f3 = 6.0F / f1;
