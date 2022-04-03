@@ -1,7 +1,7 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Space Walker <spacedoesrs@gmail.com>
 Date: Sun, 3 Apr 2022 00:09:40 +0200
-Subject: [PATCH] Add Alternate Current's redstone implementation as an alternative to vanilla and Eigencraft's
+Subject: [PATCH] Add Alternate Current redstone implementation
 
 Author: Space Walker <spacedoesrs@gmail.com>
 
@@ -16,7 +16,7 @@ cannot comment on how the two compare in that aspect.
 
 Alternate Current is more invasive than Eigencraft, though some of the modifications can be removed with only a minor
 performance penalty in a small number of cases. Alternate Current needs the following modifications:
-* Level/ServerLevel: Each level has its own 'wire handler' that handles redstone dust power changes. 
+* Level/ServerLevel: Each level has its own 'wire handler' that handles redstone dust power changes.
 * RedStoneWireBlock: Replace calls to vanilla's or Eigencraft's methods for handling power changes with calls to
 Alternate Current's wire handler.
 * (optional) Every power emitter's block class: new methods added to these classes make it easier for Alternate Current
@@ -293,10 +293,10 @@ index 0000000000000000000000000000000000000000..191ef2fdcbfa4a4bd4707905c9abaf4d
 +}
 diff --git a/src/main/java/alternate/current/wire/PowerQueue.java b/src/main/java/alternate/current/wire/PowerQueue.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..943a529ad88964b902a8f5080da1f37084bbf2d9
+index 0000000000000000000000000000000000000000..4b89ef08947b0adb6cb97afcb7ecd9d06518d05b
 --- /dev/null
 +++ b/src/main/java/alternate/current/wire/PowerQueue.java
-@@ -0,0 +1,227 @@
+@@ -0,0 +1,229 @@
 +package alternate.current.wire;
 +
 +import java.util.AbstractQueue;
@@ -501,13 +501,15 @@ index 0000000000000000000000000000000000000000..943a529ad88964b902a8f5080da1f370
 +	}
 +
 +	private void linkAfter(WireNode prev, WireNode wire) {
-+		prev.next = wire;
-+		wire.prev = prev;
++		linkBetween(prev, wire, prev.next);
++	}
 +
-+		if (prev != tail) {
-+			wire.next = prev.next;
-+			prev.next.prev = wire;
-+		}
++	private void linkBetween(WireNode prev, WireNode wire, WireNode next) {
++		prev.next = wire;
++		wire.next = next;
++
++		wire.prev = prev;
++		next.prev = wire;
 +	}
 +
 +	private WireNode findPrev(WireNode wire) {
@@ -740,10 +742,10 @@ index 0000000000000000000000000000000000000000..497c8c730bb6279141335bbd1ab2fe4f
 +}
 diff --git a/src/main/java/alternate/current/wire/WireHandler.java b/src/main/java/alternate/current/wire/WireHandler.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..2b8d309141b49c00a0bd43c363eb195909524543
+index 0000000000000000000000000000000000000000..8bf304465071079c261913a0e7d5128637ef91e6
 --- /dev/null
 +++ b/src/main/java/alternate/current/wire/WireHandler.java
-@@ -0,0 +1,1128 @@
+@@ -0,0 +1,1114 @@
 +package alternate.current.wire;
 +
 +import java.util.ArrayList;
@@ -751,9 +753,7 @@ index 0000000000000000000000000000000000000000..2b8d309141b49c00a0bd43c363eb1959
 +import java.util.List;
 +import java.util.Queue;
 +
-+//import alternate.current.AlternateCurrentMod;
 +import alternate.current.util.BlockUtil;
-+//import alternate.current.util.profiler.Profiler;
 +
 +import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 +import it.unimi.dsi.fastutil.longs.Long2ObjectMap.Entry;
@@ -1541,30 +1541,21 @@ index 0000000000000000000000000000000000000000..2b8d309141b49c00a0bd43c363eb1959
 +	 * connected wires.
 +	 */
 +	private void updatePower() {
-+		// The profiler keeps track of how long various parts of the algorithm take.
-+		// It is only here for debugging purposes, and is commented out in production.
-+//		Profiler profiler = AlternateCurrentMod.createProfiler();
-+//		profiler.start();
-+
 +		// Build a network of wires that need power changes. This includes the roots
 +		// as well as any wires that will be affected by power changes to those roots.
-+//		profiler.push("build network");
 +		buildNetwork();
 +
 +		// Find those wires in the network that receive power from outside it.
 +		// Remember that the power changes for those wires are already queued here!
-+//		profiler.swap("find powered wires");
 +		findPoweredWires();
 +
 +		// Once the powered wires have been found, the network is no longer needed. In
 +		// fact, it should be cleared before block and shape updates are emitted, in
 +		// case a different network is updated that needs power changes.
-+//		profiler.swap("clear " + rootCount + " roots and network of " + network.size());
 +		network.clear();
 +		rootCount = 0;
 +
 +		// Carry out the power changes and emit shape and block updates.
-+//		profiler.swap("let power flow");
 +		try {
 +			letPowerFlow();
 +		} catch (Throwable t) {
@@ -1574,9 +1565,6 @@ index 0000000000000000000000000000000000000000..2b8d309141b49c00a0bd43c363eb1959
 +			updatingPower = false;
 +
 +			throw t;
-+		} finally {
-+//			profiler.pop();
-+//			profiler.end();
 +		}
 +	}
 +
@@ -2440,7 +2428,7 @@ index 0afffc33f3be221a28c62115f493808aeffb1bd8..def39cd02da68b9be1ecfa5ae70119ef
      public int getSignal(BlockState state, BlockGetter world, BlockPos pos, Direction direction) {
          return 15;
 diff --git a/src/main/java/net/minecraft/world/level/block/RedStoneWireBlock.java b/src/main/java/net/minecraft/world/level/block/RedStoneWireBlock.java
-index 037330bcb10039c013b2ed5fd68dee16ede20fbe..af42721f2097749c772cb9b7202e355303c11562 100644
+index 037330bcb10039c013b2ed5fd68dee16ede20fbe..9f5cd65808c9ec8f03f45bb14b95c0f85b58f70c 100644
 --- a/src/main/java/net/minecraft/world/level/block/RedStoneWireBlock.java
 +++ b/src/main/java/net/minecraft/world/level/block/RedStoneWireBlock.java
 @@ -1,12 +1,20 @@
@@ -2562,7 +2550,7 @@ index 037330bcb10039c013b2ed5fd68dee16ede20fbe..af42721f2097749c772cb9b7202e3553
          if (!world.isClientSide) {
 +            // Paper start - optimize redstone (Alternate Current)
 +            if (world.paperConfig.redstoneImplementation == RedstoneImplementation.ALTERNATE_CURRENT) {
-+                world.getWireHandler().onWireAdded(pos, TYPE);
++                world.getWireHandler().onWireUpdated(pos, TYPE);
 +            } else
 +            // Paper end
              if (state.canSurvive(world, pos)) {
