@@ -7,10 +7,10 @@ PaperRegistry is a server-backed impl of bukkit's Registry interface
 
 diff --git a/src/main/java/io/papermc/paper/registry/PaperRegistry.java b/src/main/java/io/papermc/paper/registry/PaperRegistry.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..51cec316df8bc0c7d36e0b1dfdf8d9fae04e3606
+index 0000000000000000000000000000000000000000..8d1f3c4891870b4239df678dd1e52e9f4ef74b2c
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/PaperRegistry.java
-@@ -0,0 +1,145 @@
+@@ -0,0 +1,147 @@
 +package io.papermc.paper.registry;
 +
 +import com.google.common.base.Preconditions;
@@ -34,6 +34,7 @@ index 0000000000000000000000000000000000000000..51cec316df8bc0c7d36e0b1dfdf8d9fa
 +import java.util.Map;
 +import java.util.Objects;
 +import java.util.Optional;
++import java.util.concurrent.ConcurrentHashMap;
 +import java.util.function.Supplier;
 +
 +@DefaultQualifier(NonNull.class)
@@ -49,7 +50,8 @@ index 0000000000000000000000000000000000000000..51cec316df8bc0c7d36e0b1dfdf8d9fa
 +    private boolean registered;
 +    private final RegistryKey<API, MINECRAFT> registryKey;
 +    private final Supplier<Registry<MINECRAFT>> registry;
-+    private final Map<NamespacedKey, API> cache = new HashMap<>();
++    private final Map<NamespacedKey, API> cache = new ConcurrentHashMap<>();
++    private final Map<NamespacedKey, ResourceKey<MINECRAFT>> resourceKeyCache = new ConcurrentHashMap<>();
 +
 +    public PaperRegistry(RegistryKey<API, MINECRAFT> registryKey) {
 +        this.registryKey = registryKey;
@@ -93,7 +95,7 @@ index 0000000000000000000000000000000000000000..51cec316df8bc0c7d36e0b1dfdf8d9fa
 +    }
 +
 +    public Holder<MINECRAFT> getMinecraftHolder(API apiValue) {
-+        return this.registry.get().getHolderOrThrow(ResourceKey.create(this.registryKey.resourceKey(), CraftNamespacedKey.toMinecraft(apiValue.getKey())));
++        return this.registry.get().getHolderOrThrow(this.resourceKeyCache.computeIfAbsent(apiValue.getKey(), key -> ResourceKey.create(this.registryKey.resourceKey(), CraftNamespacedKey.toMinecraft(key))));
 +    }
 +
 +    @Override
