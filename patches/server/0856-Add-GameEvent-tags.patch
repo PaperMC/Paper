@@ -6,10 +6,10 @@ Subject: [PATCH] Add GameEvent tags
 
 diff --git a/src/main/java/io/papermc/paper/CraftGameEventTag.java b/src/main/java/io/papermc/paper/CraftGameEventTag.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..d5d3c66afb408026513ac436eb1f4fdd381847bf
+index 0000000000000000000000000000000000000000..cb78a3d4e21376ea24347187478525d5f0c24079
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/CraftGameEventTag.java
-@@ -0,0 +1,30 @@
+@@ -0,0 +1,34 @@
 +package io.papermc.paper;
 +
 +import net.minecraft.core.Registry;
@@ -20,6 +20,9 @@ index 0000000000000000000000000000000000000000..d5d3c66afb408026513ac436eb1f4fdd
 +import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 +import org.jetbrains.annotations.NotNull;
 +
++import java.util.Collections;
++import java.util.IdentityHashMap;
++import java.util.Map;
 +import java.util.Objects;
 +import java.util.Set;
 +import java.util.stream.Collectors;
@@ -30,9 +33,10 @@ index 0000000000000000000000000000000000000000..d5d3c66afb408026513ac436eb1f4fdd
 +        super(registry, tag);
 +    }
 +
++    private static final Map<GameEvent, ResourceKey<net.minecraft.world.level.gameevent.GameEvent>> KEY_CACHE = Collections.synchronizedMap(new IdentityHashMap<>());
 +    @Override
-+    public boolean isTagged(@NotNull GameEvent item) {
-+        return registry.getHolderOrThrow(ResourceKey.create(Registry.GAME_EVENT_REGISTRY, CraftNamespacedKey.toMinecraft(item.getKey()))).is(tag);
++    public boolean isTagged(@NotNull GameEvent gameEvent) {
++        return registry.getHolderOrThrow(KEY_CACHE.computeIfAbsent(gameEvent, event -> ResourceKey.create(Registry.GAME_EVENT_REGISTRY, CraftNamespacedKey.toMinecraft(event.getKey())))).is(tag);
 +    }
 +
 +    @Override
