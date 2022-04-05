@@ -6,6 +6,7 @@ Subject: [PATCH] Add Alternate Current redstone implementation
 Author: Space Walker <spacedoesrs@gmail.com>
 
 Original license: MIT
+Original project: https://github.com/SpaceWalkerRS/alternate-current
 
 This patch adds Alternate Current's redstone implementation as an alternative to vanilla and Eigencraft's.
 Performance of (de)powering redstone dust is many times faster than vanilla, and even exceeds Eigencraft.
@@ -22,15 +23,15 @@ Alternate Current's wire handler.
 * (optional) Every power emitter's block class: new methods added to these classes make it easier for Alternate Current
 to check if any block is a potential power source.
 
-The useEigencraftRedstone config has been replaced with the redstoneImplementation config, which can be used to switch
-between the vanilla, Eigencraft, and Alternate Current implementations.
+The use-faster-eigencraft-redstone config has been replaced with the redstone-implementation config, which can be used to
+switch between the vanilla, Eigencraft, and Alternate Current implementations.
 
 diff --git a/src/main/java/alternate/current/wire/LevelAccess.java b/src/main/java/alternate/current/wire/LevelAccess.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..28c64cc988a143c44ac2e744f652df6e18b7cc0b
+index 0000000000000000000000000000000000000000..3ed26ac796d9c3872ecfb572219372bcaf67e25e
 --- /dev/null
 +++ b/src/main/java/alternate/current/wire/LevelAccess.java
-@@ -0,0 +1,120 @@
+@@ -0,0 +1,126 @@
 +package alternate.current.wire;
 +
 +import net.minecraft.core.BlockPos;
@@ -69,7 +70,7 @@ index 0000000000000000000000000000000000000000..28c64cc988a143c44ac2e744f652df6e
 +	 * update redstone wire block states, lighting checks, height map updates, and
 +	 * block entity updates are omitted.
 +	 */
-+	boolean setWireState(BlockPos pos, BlockState state) {
++	boolean setWireState(BlockPos pos, BlockState state, boolean updateNeighborShapes) {
 +		if (!state.is(Blocks.REDSTONE_WIRE)) {
 +			return false;
 +		}
@@ -101,6 +102,12 @@ index 0000000000000000000000000000000000000000..28c64cc988a143c44ac2e744f652df6e
 +		level.getChunkSource().blockChanged(pos);
 +		// mark the chunk for saving
 +		chunk.setUnsaved(true);
++
++		if (updateNeighborShapes) {
++			prevState.updateIndirectNeighbourShapes(level, pos, Block.UPDATE_CLIENTS);
++			state.updateNeighbourShapes(level, pos, Block.UPDATE_CLIENTS);
++			state.updateIndirectNeighbourShapes(level, pos, Block.UPDATE_CLIENTS);
++		}
 +
 +		return true;
 +	}
@@ -643,7 +650,7 @@ index 0000000000000000000000000000000000000000..364d2a9ebe3dc6f16b802a92c1516679
 +}
 diff --git a/src/main/java/alternate/current/wire/WireHandler.java b/src/main/java/alternate/current/wire/WireHandler.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..34a48df6e811d8b1c6b259d02f53fe4b6050ebb7
+index 0000000000000000000000000000000000000000..75b58c5d8d2d8dedfa77ba5dec1ed6ba8b5bc451
 --- /dev/null
 +++ b/src/main/java/alternate/current/wire/WireHandler.java
 @@ -0,0 +1,1105 @@
@@ -1067,12 +1074,12 @@ index 0000000000000000000000000000000000000000..34a48df6e811d8b1c6b259d02f53fe4b
 +	/**
 +	 * This method should be called whenever a wire is removed.
 +	 */
-+	public void onWireRemoved(BlockPos pos) {
++	public void onWireRemoved(BlockPos pos, BlockState state) {
 +		Node node = removeNode(pos);
 +		WireNode wire;
 +
 +		if (node == null || !node.isWire()) {
-+			wire = new WireNode(level, pos);
++			wire = new WireNode(level, pos, state);
 +		} else {
 +			wire = node.asWire();
 +		}
@@ -1616,8 +1623,9 @@ index 0000000000000000000000000000000000000000..34a48df6e811d8b1c6b259d02f53fe4b
 +			findPowerFlow(wire);
 +
 +			if (wire.setPower()) {
-+				// If the wire was removed, shape updates have already been emitted.
-+				if (!wire.shouldBreak) {
++				// If the wire was newly placed or removed, shape updates have
++				// already been emitted.
++				if (!wire.added && !wire.shouldBreak) {
 +					updateNeighborShapes(wire);
 +				}
 +
@@ -1636,19 +1644,18 @@ index 0000000000000000000000000000000000000000..34a48df6e811d8b1c6b259d02f53fe4b
 +	private void updateNeighborShapes(WireNode wire) {
 +		BlockPos wirePos = wire.pos;
 +		BlockState wireState = wire.state;
-+		boolean updateWires = wire.added;
 +
 +		for (Direction dir : Block.UPDATE_SHAPE_ORDER) {
-+			updateNeighborShape(wirePos.relative(dir), dir.getOpposite(), wirePos, wireState, updateWires);
++			updateNeighborShape(wirePos.relative(dir), dir.getOpposite(), wirePos, wireState);
 +		}
 +	}
 +
-+	private void updateNeighborShape(BlockPos pos, Direction fromDir, BlockPos fromPos, BlockState fromState, boolean updateWires) {
++	private void updateNeighborShape(BlockPos pos, Direction fromDir, BlockPos fromPos, BlockState fromState) {
 +		BlockState state = level.getBlockState(pos);
 +
 +		// Shape updates to redstone wire are very expensive, and should never happen
 +		// as a result of power changes anyway.
-+		if (!state.isAir() && (updateWires || !state.is(Blocks.REDSTONE_WIRE))) {
++		if (!state.isAir() && !state.is(Blocks.REDSTONE_WIRE)) {
 +			level.updateNeighborShape(pos, state, fromDir, fromPos, fromState);
 +		}
 +	}
@@ -1754,10 +1761,10 @@ index 0000000000000000000000000000000000000000..34a48df6e811d8b1c6b259d02f53fe4b
 +}
 diff --git a/src/main/java/alternate/current/wire/WireNode.java b/src/main/java/alternate/current/wire/WireNode.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..c9cd7fc67ecc59e8d8cc058a2573f96963ef0e86
+index 0000000000000000000000000000000000000000..18af8d6438a26f9a1543484acf618418889554d5
 --- /dev/null
 +++ b/src/main/java/alternate/current/wire/WireNode.java
-@@ -0,0 +1,118 @@
+@@ -0,0 +1,113 @@
 +package alternate.current.wire;
 +
 +import net.minecraft.core.BlockPos;
@@ -1807,19 +1814,14 @@ index 0000000000000000000000000000000000000000..c9cd7fc67ecc59e8d8cc058a2573f969
 +	WireNode next;
 +
 +	WireNode(LevelAccess level, BlockPos pos, BlockState state) {
-+		this(level, pos);
-+
-+		this.state = state;
-+
-+		this.virtualPower = this.currentPower = this.state.getValue(RedStoneWireBlock.POWER);
-+	}
-+
-+	WireNode(LevelAccess level, BlockPos pos) {
 +		super(level);
 +
 +		this.pos = pos.immutable();
++		this.state = state;
 +
 +		this.connections = new WireConnectionManager(this);
++
++		this.virtualPower = this.currentPower = this.state.getValue(RedStoneWireBlock.POWER);
 +	}
 +
 +	@Override
@@ -1873,7 +1875,7 @@ index 0000000000000000000000000000000000000000..c9cd7fc67ecc59e8d8cc058a2573f969
 +		currentPower = level.doRedstoneEvent(pos, currentPower, power);
 +		state = state.setValue(RedStoneWireBlock.POWER, currentPower);
 +
-+		return level.setWireState(pos, state);
++		return level.setWireState(pos, state, added);
 +	}
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
@@ -2189,7 +2191,7 @@ index 0afffc33f3be221a28c62115f493808aeffb1bd8..def39cd02da68b9be1ecfa5ae70119ef
      public int getSignal(BlockState state, BlockGetter world, BlockPos pos, Direction direction) {
          return 15;
 diff --git a/src/main/java/net/minecraft/world/level/block/RedStoneWireBlock.java b/src/main/java/net/minecraft/world/level/block/RedStoneWireBlock.java
-index 037330bcb10039c013b2ed5fd68dee16ede20fbe..4e26b30a2321bd0a35341a8e3ef78d1aa6bfacfd 100644
+index 037330bcb10039c013b2ed5fd68dee16ede20fbe..fa5874fc3481ca107a72c24c03b3bd4e65a971dd 100644
 --- a/src/main/java/net/minecraft/world/level/block/RedStoneWireBlock.java
 +++ b/src/main/java/net/minecraft/world/level/block/RedStoneWireBlock.java
 @@ -1,6 +1,7 @@
@@ -2267,7 +2269,7 @@ index 037330bcb10039c013b2ed5fd68dee16ede20fbe..4e26b30a2321bd0a35341a8e3ef78d1a
 -                this.updateSurroundingRedstone(world, pos, state, null); // Paper - Optimize redstone
 +                // Paper start - optimize redstone - replace call to updatePowerStrength
 +                if (world.paperConfig.redstoneImplementation == RedstoneImplementation.ALTERNATE_CURRENT) {
-+                    world.getWireHandler().onWireRemoved(pos); // Alternate Current
++                    world.getWireHandler().onWireRemoved(pos, state); // Alternate Current
 +                } else {
 +                    this.updateSurroundingRedstone(world, pos, state, null); // vanilla/Eigencraft
 +                }
