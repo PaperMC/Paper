@@ -152,38 +152,8 @@ index f10ea89e64aac2c11ed442ac7f2ffd15b793ac76..5df72f16e6b954ecee23a6f8daa29de0
  
      private static final int MIN_PROTOCOL_ID = -1;
      private static final int MAX_PROTOCOL_ID = 2;
-diff --git a/src/main/java/net/minecraft/network/protocol/game/ClientboundLoginPacket.java b/src/main/java/net/minecraft/network/protocol/game/ClientboundLoginPacket.java
-index 2a6969baca7c07c52223672de58886dd05c032eb..a620e53021e02da1663b8d8b68d429b22814567f 100644
---- a/src/main/java/net/minecraft/network/protocol/game/ClientboundLoginPacket.java
-+++ b/src/main/java/net/minecraft/network/protocol/game/ClientboundLoginPacket.java
-@@ -20,25 +20,6 @@ public record ClientboundLoginPacket(int playerId, boolean hardcore, GameType ga
-         }), buf.readWithCodec(RegistryAccess.NETWORK_CODEC).freeze(), buf.readWithCodec(DimensionType.CODEC), ResourceKey.create(Registry.DIMENSION_REGISTRY, buf.readResourceLocation()), buf.readLong(), buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readBoolean(), buf.readBoolean(), buf.readBoolean(), buf.readBoolean());
-     }
- 
--    public ClientboundLoginPacket(int playerEntityId, boolean bl, GameType previousGameMode, @Nullable GameType gameType, Set<ResourceKey<Level>> set, RegistryAccess.Frozen frozen, Holder<DimensionType> holder, ResourceKey<Level> resourceKey, long l, int maxPlayers, int chunkLoadDistance, int i, boolean bl2, boolean bl3, boolean bl4, boolean bl5) {
--        this.playerId = playerEntityId;
--        this.hardcore = bl;
--        this.gameType = previousGameMode;
--        this.previousGameType = gameType;
--        this.levels = set;
--        this.registryHolder = frozen;
--        this.dimensionType = holder;
--        this.dimension = resourceKey;
--        this.seed = l;
--        this.maxPlayers = maxPlayers;
--        this.chunkRadius = chunkLoadDistance;
--        this.simulationDistance = i;
--        this.reducedDebugInfo = bl2;
--        this.showDeathScreen = bl3;
--        this.isDebug = bl4;
--        this.isFlat = bl5;
--    }
--
-     @Override
-     public void write(FriendlyByteBuf buf) {
-         buf.writeInt(this.playerId);
 diff --git a/src/main/java/net/minecraft/resources/RegistryLoader.java b/src/main/java/net/minecraft/resources/RegistryLoader.java
-index 858037070db0b0fed07bf542294b76028f0018f9..75f72b568ee2b27c5042da688b62d4e3c5732e09 100644
+index bb2f21e10bad59186f6408b5d6f49ee8375e6870..0d28a3a7f52174e70e044957b37361043b153e42 100644
 --- a/src/main/java/net/minecraft/resources/RegistryLoader.java
 +++ b/src/main/java/net/minecraft/resources/RegistryLoader.java
 @@ -73,7 +73,7 @@ public class RegistryLoader {
@@ -195,17 +165,6 @@ index 858037070db0b0fed07bf542294b76028f0018f9..75f72b568ee2b27c5042da688b62d4e3
              return new RegistryLoader.ReadCache();
          });
      }
-@@ -83,10 +83,6 @@ public class RegistryLoader {
-     }
- 
-     public static record Bound(RegistryAccess.Writable access, RegistryLoader loader) {
--        public Bound(RegistryAccess.Writable writable, RegistryLoader registryLoader) {
--            this.access = writable;
--            this.loader = registryLoader;
--        }
- 
-         public <E> DataResult<? extends Registry<E>> overrideRegistryFromResources(ResourceKey<? extends Registry<E>> registryRef, Codec<E> codec, DynamicOps<JsonElement> ops) {
-             WritableRegistry<E> writableRegistry = this.access.ownedWritableRegistryOrThrow(registryRef);
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
 index ef128de5fe17231b39edb12a7014291d03cf79ec..868f6799a0e406401eecf18bc939fbdf88f534a2 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
@@ -285,7 +244,7 @@ index 92650d816113a0f1c2b589691895ebba3424d661..7ef0075cc16613709e145714204a728d
          this.byName = Maps.newHashMap(builder.build()); // CraftBukkit
          RecipeManager.LOGGER.info("Loaded {} recipes", map1.size());
 diff --git a/src/main/java/net/minecraft/world/level/chunk/PalettedContainer.java b/src/main/java/net/minecraft/world/level/chunk/PalettedContainer.java
-index 57bc78e1a189386443abb02744e88b2fdf803a95..ef093604f001d3e899679f6d308780856f076193 100644
+index 675625a5dda3ededa398da5e25c2c850ba4ef59a..438647aa32e91e35b5a6430961d1ce4d5558d3d4 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/PalettedContainer.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/PalettedContainer.java
 @@ -42,7 +42,7 @@ public class PalettedContainer<T> implements PaletteResize<T> {
@@ -297,28 +256,6 @@ index 57bc78e1a189386443abb02744e88b2fdf803a95..ef093604f001d3e899679f6d30878085
              return instance.group(entryCodec.mapResult(ExtraCodecs.orElsePartial(object)).listOf().fieldOf("palette").forGetter(PalettedContainer.DiscData::paletteEntries), Codec.LONG_STREAM.optionalFieldOf("data").forGetter(PalettedContainer.DiscData::storage)).apply(instance, PalettedContainer.DiscData::new);
          }).comapFlatMap((serialized) -> {
              return read(idList, provider, serialized);
-@@ -278,10 +278,6 @@ public class PalettedContainer<T> implements PaletteResize<T> {
-     }
- 
-     static record Configuration<T>(Palette.Factory factory, int bits) {
--        Configuration(Palette.Factory factory, int i) {
--            this.factory = factory;
--            this.bits = i;
--        }
- 
-         public PalettedContainer.Data<T> createData(IdMap<T> idList, PaletteResize<T> listener, int size) {
-             BitStorage bitStorage = (BitStorage)(this.bits == 0 ? new ZeroBitStorage(size) : new SimpleBitStorage(this.bits, size));
-@@ -316,10 +312,6 @@ public class PalettedContainer<T> implements PaletteResize<T> {
-     }
- 
-     static record DiscData<T>(List<T> paletteEntries, Optional<LongStream> storage) {
--        DiscData(List<T> list, Optional<LongStream> optional) {
--            this.paletteEntries = list;
--            this.storage = optional;
--        }
-     }
- 
-     public abstract static class Strategy {
 diff --git a/src/main/java/net/minecraft/world/level/entity/EntityLookup.java b/src/main/java/net/minecraft/world/level/entity/EntityLookup.java
 index 3864da01056970ae05cc3ca094f923178b4ffc97..e6b9f812e521abd552e0c7dc0429d5a62f2bfc35 100644
 --- a/src/main/java/net/minecraft/world/level/entity/EntityLookup.java

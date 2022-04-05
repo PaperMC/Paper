@@ -56,9 +56,9 @@ repositories {
 }
 
 dependencies {
-    paramMappings("net.fabricmc:yarn:1.18.2+build.1:mergedv2")
+    paramMappings("net.fabricmc:yarn:1.18.2+build.2:mergedv2")
     remapper("net.fabricmc:tiny-remapper:0.8.1:fat")
-    decompiler("net.minecraftforge:forgeflower:1.5.498.22")
+    decompiler("net.minecraftforge:forgeflower:1.5.498.29")
     paperclip("io.papermc:paperclip:3.0.2")
 }
 
