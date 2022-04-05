@@ -1,0 +1,38 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Tue, 21 Dec 2021 22:13:26 -0800
+Subject: [PATCH] Fix issues with effect loading & applying
+
+Healing potions with an amplifier of 29, 61, 93 and 125 will cause negative amounts of healing (commonly referred to as "instant death potions").
+
+MOJIRA: MC-118857 (loading)
+MOJIRA: MC-179180, MC-30540 & MC-10755 (applying)
+
+Co-authored-by: booky10 <boooky10@gmail.com>
+
+diff --git a/src/main/java/net/minecraft/world/effect/MobEffect.java b/src/main/java/net/minecraft/world/effect/MobEffect.java
+index 17ffab92f4ae2c06fa9f9249a474d4b6c9c55090..8b446c16bc907247e76502362b7eb727bae9b417 100644
+--- a/src/main/java/net/minecraft/world/effect/MobEffect.java
++++ b/src/main/java/net/minecraft/world/effect/MobEffect.java
+@@ -111,7 +111,7 @@ public class MobEffect {
+                 }
+             }
+         } else {
+-            j = (int) (proximity * (double) (4 << amplifier) + 0.5D);
++            j = Math.max((int) (proximity * (double) (4 << amplifier) + 0.5D), 0); // Paper - Prevent healing by negative amounts
+             target.heal((float) j, RegainReason.MAGIC); // CraftBukkit
+         }
+ 
+diff --git a/src/main/java/net/minecraft/world/effect/MobEffectInstance.java b/src/main/java/net/minecraft/world/effect/MobEffectInstance.java
+index 3232ecbf96761528be1bc88f223b51771386ad37..f5c9be3fde2654bd5a6b3ee737afe96a9393e836 100644
+--- a/src/main/java/net/minecraft/world/effect/MobEffectInstance.java
++++ b/src/main/java/net/minecraft/world/effect/MobEffectInstance.java
+@@ -265,7 +265,7 @@ public class MobEffectInstance implements Comparable<MobEffectInstance> {
+     }
+ 
+     private static MobEffectInstance loadSpecifiedEffect(MobEffect type, CompoundTag nbt) {
+-        int i = nbt.getByte("Amplifier");
++        int i = Byte.toUnsignedInt(nbt.getByte("Amplifier")); // Paper - correctly load amplifiers > 127
+         int j = nbt.getInt("Duration");
+         boolean bl = nbt.getBoolean("Ambient");
+         boolean bl2 = true;
