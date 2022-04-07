@@ -53,7 +53,20 @@
                  eventloopgroup = (EventLoopGroup) ServerConnectionListener.SERVER_EPOLL_EVENT_GROUP.get();
                  ServerConnectionListener.LOGGER.info("Using epoll channel type");
              } else {
-@@ -100,16 +120,28 @@
+@@ -84,6 +104,12 @@
+                 ServerConnectionListener.LOGGER.info("Using default channel type");
+             }
+ 
++            // Paper start - Warn people with console access that HAProxy is in use.
++            if (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.proxyProtocol) {
++                ServerConnectionListener.LOGGER.warn("Using HAProxy, please ensure the server port is adequately firewalled.");
++            }
++            // Paper end - Warn people with console access that HAProxy is in use.
++
+             this.channels.add(((ServerBootstrap) ((ServerBootstrap) (new ServerBootstrap()).channel(oclass)).childHandler(new ChannelInitializer<Channel>() {
+                 protected void initChannel(Channel channel) {
+                     try {
+@@ -100,16 +126,51 @@
  
                      Connection.configureSerialization(channelpipeline, PacketFlow.SERVERBOUND, false, (BandwidthDebugMonitor) null);
                      int j = ServerConnectionListener.this.server.getRateLimitPacketsPerSecond();
@@ -62,6 +75,29 @@
  
 -                    ServerConnectionListener.this.connections.add(object);
 +                    //ServerConnectionListener.this.connections.add(object); // Paper
++                    // Paper start - Add support for Proxy Protocol
++                    if (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.proxyProtocol) {
++                        channel.pipeline().addAfter("timeout", "haproxy-decoder", new io.netty.handler.codec.haproxy.HAProxyMessageDecoder());
++                        channel.pipeline().addAfter("haproxy-decoder", "haproxy-handler", new ChannelInboundHandlerAdapter() {
++                            @Override
++                            public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
++                                if (msg instanceof io.netty.handler.codec.haproxy.HAProxyMessage message) {
++                                    if (message.command() == io.netty.handler.codec.haproxy.HAProxyCommand.PROXY) {
++                                        String realaddress = message.sourceAddress();
++                                        int realport = message.sourcePort();
++
++                                        SocketAddress socketaddr = new java.net.InetSocketAddress(realaddress, realport);
++
++                                        Connection connection = (Connection) channel.pipeline().get("packet_handler");
++                                        connection.address = socketaddr;
++                                    }
++                                } else {
++                                    super.channelRead(ctx, msg);
++                                }
++                            }
++                        });
++                    }
++                    // Paper end - Add support for proxy protocol
 +                    pending.add(object); // Paper - prevent blocking on adding a new connection while the server is ticking
                      ((Connection) object).configurePacketHandler(channelpipeline);
                      ((Connection) object).setListenerForServerboundHandshake(new ServerHandshakePacketListenerImpl(ServerConnectionListener.this.server, (Connection) object));
@@ -85,7 +121,7 @@
      public SocketAddress startMemoryChannel() {
          List list = this.channels;
          ChannelFuture channelfuture;
-@@ -153,6 +185,14 @@
+@@ -153,6 +214,14 @@
          List list = this.connections;
  
          synchronized (this.connections) {
@@ -100,7 +136,7 @@
              Iterator<Connection> iterator = this.connections.iterator();
  
              while (iterator.hasNext()) {
-@@ -176,6 +216,10 @@
+@@ -176,6 +245,10 @@
                              networkmanager.setReadOnly();
                          }
                      } else {

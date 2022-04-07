@@ -42,6 +42,7 @@ dependencies {
     log4jPlugins.annotationProcessorConfigurationName("org.apache.logging.log4j:log4j-core:2.19.0") // Paper - Needed to generate meta for our Log4j plugins
     runtimeOnly(log4jPlugins.output)
     alsoShade(log4jPlugins.output)
+    implementation("io.netty:netty-codec-haproxy:4.1.97.Final") // Paper - Add support for proxy protocol
     // Paper end
     implementation("org.apache.logging.log4j:log4j-iostreams:2.24.1") // Paper - remove exclusion
     implementation("org.ow2.asm:asm-commons:9.7.1")
