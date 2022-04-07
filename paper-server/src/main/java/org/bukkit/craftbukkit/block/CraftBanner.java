@@ -112,4 +112,26 @@ public class CraftBanner extends CraftBlockEntityState<BannerBlockEntity> implem
     public CraftBanner copy(Location location) {
         return new CraftBanner(this, location);
     }
+
+    // Paper start
+    @Override
+    public net.kyori.adventure.text.Component customName() {
+        return io.papermc.paper.adventure.PaperAdventure.asAdventure(this.getSnapshot().getCustomName());
+    }
+
+    @Override
+    public void customName(net.kyori.adventure.text.Component customName) {
+        this.getSnapshot().name = io.papermc.paper.adventure.PaperAdventure.asVanilla(customName);
+    }
+
+    @Override
+    public String getCustomName() {
+        return net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().serializeOrNull(this.customName());
+    }
+
+    @Override
+    public void setCustomName(String name) {
+       this.customName(net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserializeOrNull(name));
+    }
+    // Paper end
 }
