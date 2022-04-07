@@ -48,10 +48,17 @@ subprojects {
     }
 }
 
+val spigotDecompiler: Configuration by configurations.creating
+
 repositories {
     mavenCentral()
     maven("https://papermc.io/repo/repository/maven-public/") {
-        content { onlyForConfigurations("paperclip") }
+        content {
+            onlyForConfigurations(
+                configurations.paperclip.name,
+                spigotDecompiler.name,
+            )
+        }
     }
 }
 
@@ -59,6 +66,7 @@ dependencies {
     paramMappings("net.fabricmc:yarn:1.18.2+build.2:mergedv2")
     remapper("net.fabricmc:tiny-remapper:0.8.1:fat")
     decompiler("net.minecraftforge:forgeflower:1.5.498.29")
+    spigotDecompiler("io.papermc:patched-spigot-fernflower:0.1+build.4")
     paperclip("io.papermc:paperclip:3.0.2")
 }
 
@@ -69,6 +77,10 @@ paperweight {
     paramMappingsRepo.set("https://maven.fabricmc.net/")
     remapRepo.set("https://maven.fabricmc.net/")
     decompileRepo.set("https://files.minecraftforge.net/maven/")
+
+    craftBukkit {
+        fernFlowerJar.set(layout.file(spigotDecompiler.elements.map { it.single().asFile }))
+    }
 
     paper {
         spigotApiPatchDir.set(layout.projectDirectory.dir("patches/api"))
