@@ -18,54 +18,81 @@
      public String itemName;
      public final ContainerProperty cost;
      private static final int COST_FAIL = 0;
-@@ -32,6 +36,10 @@
+@@ -32,6 +36,11 @@
      private static final int COST_REPAIR_SACRIFICE = 2;
      private static final int COST_INCOMPATIBLE_PENALTY = 1;
      private static final int COST_RENAME = 1;
 +    // CraftBukkit start
++    public static final int DEFAULT_DENIED_COST = -1;
 +    public int maximumRepairCost = 40;
 +    private CraftInventoryView bukkitEntity;
 +    // CraftBukkit end
  
      public ContainerAnvil(int i, PlayerInventory playerinventory) {
          this(i, playerinventory, ContainerAccess.NULL);
-@@ -104,7 +112,7 @@
+@@ -50,7 +59,7 @@
+ 
+     @Override
+     protected boolean mayPickup(EntityHuman entityhuman, boolean flag) {
+-        return (entityhuman.getAbilities().instabuild || entityhuman.experienceLevel >= this.cost.get()) && this.cost.get() > 0;
++        return (entityhuman.getAbilities().instabuild || entityhuman.experienceLevel >= this.cost.get()) && this.cost.get() > ContainerAnvil.DEFAULT_DENIED_COST && flag; // CraftBukkit - allow cost 0 like a free item
+     }
+ 
+     @Override
+@@ -73,7 +82,7 @@
+             this.inputSlots.setItem(1, ItemStack.EMPTY);
+         }
+ 
+-        this.cost.set(0);
++        this.cost.set(DEFAULT_DENIED_COST); // CraftBukkit - use a variable for set a cost for denied item
+         this.access.execute((world, blockposition) -> {
+             IBlockData iblockdata = world.getBlockState(blockposition);
+ 
+@@ -104,8 +113,8 @@
          byte b1 = 0;
  
          if (itemstack.isEmpty()) {
 -            this.resultSlots.setItem(0, ItemStack.EMPTY);
+-            this.cost.set(0);
 +            org.bukkit.craftbukkit.event.CraftEventFactory.callPrepareAnvilEvent(getBukkitView(), ItemStack.EMPTY); // CraftBukkit
-             this.cost.set(0);
++            this.cost.set(DEFAULT_DENIED_COST); // CraftBukkit - use a variable for set a cost for denied item
          } else {
              ItemStack itemstack1 = itemstack.copy();
-@@ -122,7 +130,7 @@
+             ItemStack itemstack2 = this.inputSlots.getItem(1);
+@@ -122,8 +131,8 @@
                  if (itemstack1.isDamageableItem() && itemstack1.getItem().isValidRepairItem(itemstack, itemstack2)) {
                      k = Math.min(itemstack1.getDamageValue(), itemstack1.getMaxDamage() / 4);
                      if (k <= 0) {
 -                        this.resultSlots.setItem(0, ItemStack.EMPTY);
+-                        this.cost.set(0);
 +                        org.bukkit.craftbukkit.event.CraftEventFactory.callPrepareAnvilEvent(getBukkitView(), ItemStack.EMPTY); // CraftBukkit
-                         this.cost.set(0);
++                        this.cost.set(DEFAULT_DENIED_COST); // CraftBukkit - use a variable for set a cost for denied item
                          return;
                      }
-@@ -137,7 +145,7 @@
+ 
+@@ -137,8 +146,8 @@
                      this.repairItemCountCost = i1;
                  } else {
                      if (!flag && (!itemstack1.is(itemstack2.getItem()) || !itemstack1.isDamageableItem())) {
 -                        this.resultSlots.setItem(0, ItemStack.EMPTY);
+-                        this.cost.set(0);
 +                        org.bukkit.craftbukkit.event.CraftEventFactory.callPrepareAnvilEvent(getBukkitView(), ItemStack.EMPTY); // CraftBukkit
-                         this.cost.set(0);
++                        this.cost.set(DEFAULT_DENIED_COST); // CraftBukkit - use a variable for set a cost for denied item
                          return;
                      }
-@@ -227,7 +235,7 @@
+ 
+@@ -227,8 +236,8 @@
                      }
  
                      if (flag2 && !flag1) {
 -                        this.resultSlots.setItem(0, ItemStack.EMPTY);
+-                        this.cost.set(0);
 +                        org.bukkit.craftbukkit.event.CraftEventFactory.callPrepareAnvilEvent(getBukkitView(), ItemStack.EMPTY); // CraftBukkit
-                         this.cost.set(0);
++                        this.cost.set(DEFAULT_DENIED_COST); // CraftBukkit - use a variable for set a cost for denied item
                          return;
                      }
-@@ -251,11 +259,11 @@
+                 }
+@@ -251,11 +260,11 @@
                  itemstack1 = ItemStack.EMPTY;
              }
  
@@ -80,7 +107,7 @@
                  itemstack1 = ItemStack.EMPTY;
              }
  
-@@ -274,7 +282,8 @@
+@@ -274,7 +283,8 @@
                  EnchantmentManager.setEnchantments(map, itemstack1);
              }
  
@@ -90,7 +117,7 @@
              this.broadcastChanges();
          }
      }
-@@ -301,4 +310,18 @@
+@@ -301,4 +311,18 @@
      public int getCost() {
          return this.cost.get();
      }
