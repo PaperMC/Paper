@@ -1,8 +1,18 @@
 package org.bukkit;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public interface WorldBorder {
+
+    /**
+     * Get the {@link World} in which the border resides.
+     *
+     * @return the associated world, or null if this world border is not associated
+     * with any specific world, such as those created via {@link Server#createWorldBorder()}
+     */
+    @Nullable
+    public World getWorld();
 
     /**
      * Resets the border to default values.

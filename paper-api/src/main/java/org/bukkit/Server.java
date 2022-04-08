@@ -605,6 +605,19 @@ public interface Server extends PluginMessageRecipient {
     public World getWorld(@NotNull UUID uid);
 
     /**
+     * Create a new virtual {@link WorldBorder}.
+     * <p>
+     * Note that world borders created by the server will not respect any world
+     * scaling effects (i.e. coordinates are not divided by 8 in the nether).
+     *
+     * @return the created world border instance
+     *
+     * @see Player#setWorldBorder(WorldBorder)
+     */
+    @NotNull
+    public WorldBorder createWorldBorder();
+
+    /**
      * Gets the map from the given item ID.
      *
      * @param id the id of the map to get

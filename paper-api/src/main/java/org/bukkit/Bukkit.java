@@ -716,6 +716,18 @@ public final class Bukkit {
     }
 
     /**
+     * Create a new virtual {@link WorldBorder}.
+     *
+     * @return the created world border instance
+     *
+     * @see Player#setWorldBorder(WorldBorder)
+     */
+    @NotNull
+    public static WorldBorder createWorldBorder() {
+        return server.createWorldBorder();
+    }
+
+    /**
      * Gets the map from the given item ID.
      *
      * @param id the id of the map to get
