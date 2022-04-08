@@ -35,6 +35,11 @@ import net.minecraft.network.chat.ChatComponentText;
 import net.minecraft.network.chat.ChatMessageType;
 import net.minecraft.network.chat.IChatBaseComponent;
 import net.minecraft.network.protocol.game.ClientboundClearTitlesPacket;
+import net.minecraft.network.protocol.game.ClientboundSetBorderCenterPacket;
+import net.minecraft.network.protocol.game.ClientboundSetBorderLerpSizePacket;
+import net.minecraft.network.protocol.game.ClientboundSetBorderSizePacket;
+import net.minecraft.network.protocol.game.ClientboundSetBorderWarningDelayPacket;
+import net.minecraft.network.protocol.game.ClientboundSetBorderWarningDistancePacket;
 import net.minecraft.network.protocol.game.ClientboundSetSubtitleTextPacket;
 import net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket;
 import net.minecraft.network.protocol.game.ClientboundSetTitlesAnimationPacket;
@@ -76,6 +81,7 @@ import net.minecraft.world.item.EnumColor;
 import net.minecraft.world.level.EnumGamemode;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.TileEntitySign;
+import net.minecraft.world.level.border.IWorldBorderListener;
 import net.minecraft.world.level.saveddata.maps.MapIcon;
 import net.minecraft.world.level.saveddata.maps.WorldMap;
 import net.minecraft.world.phys.Vec3D;
@@ -96,6 +102,7 @@ import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.Statistic;
 import org.bukkit.WeatherType;
+import org.bukkit.WorldBorder;
 import org.bukkit.block.Block;
 import org.bukkit.block.Sign;
 import org.bukkit.block.data.BlockData;
@@ -111,6 +118,7 @@ import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftSound;
 import org.bukkit.craftbukkit.CraftStatistic;
 import org.bukkit.craftbukkit.CraftWorld;
+import org.bukkit.craftbukkit.CraftWorldBorder;
 import org.bukkit.craftbukkit.advancement.CraftAdvancement;
 import org.bukkit.craftbukkit.advancement.CraftAdvancementProgress;
 import org.bukkit.craftbukkit.block.CraftSign;
@@ -156,6 +164,8 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     private double health = 20;
     private boolean scaledHealth = false;
     private double healthScale = 20;
+    private CraftWorldBorder clientWorldBorder = null;
+    private IWorldBorderListener clientWorldBorderListener = createWorldBorderListener();
 
     public CraftPlayer(CraftServer server, EntityPlayer entity) {
         super(server, entity);
@@ -661,6 +671,82 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         );
 
         getHandle().connection.send(new PacketPlayOutEntityEquipment(entity.getEntityId(), equipment));
+    }
+
+    @Override
+    public WorldBorder getWorldBorder() {
+        return clientWorldBorder;
+    }
+
+    @Override
+    public void setWorldBorder(WorldBorder border) {
+        CraftWorldBorder craftBorder = (CraftWorldBorder) border;
+
+        if (border != null && !craftBorder.isVirtual() && !craftBorder.getWorld().equals(getWorld())) {
+            throw new UnsupportedOperationException("Cannot set player world border to that of another world");
+        }
+
+        // Nullify the old client-sided world border listeners so that calls to it will not affect this player
+        if (clientWorldBorder != null) {
+            this.clientWorldBorder.getHandle().removeListener(clientWorldBorderListener);
+        }
+
+        net.minecraft.world.level.border.WorldBorder newWorldBorder;
+        if (craftBorder == null || !craftBorder.isVirtual()) {
+            this.clientWorldBorder = null;
+            newWorldBorder = ((CraftWorldBorder) getWorld().getWorldBorder()).getHandle();
+        } else {
+            this.clientWorldBorder = craftBorder;
+            this.clientWorldBorder.getHandle().addListener(clientWorldBorderListener);
+            newWorldBorder = clientWorldBorder.getHandle();
+        }
+
+        // Send all world border update packets to the player
+        PlayerConnection connection = getHandle().connection;
+        connection.send(new ClientboundSetBorderSizePacket(newWorldBorder));
+        connection.send(new ClientboundSetBorderLerpSizePacket(newWorldBorder));
+        connection.send(new ClientboundSetBorderCenterPacket(newWorldBorder));
+        connection.send(new ClientboundSetBorderWarningDelayPacket(newWorldBorder));
+        connection.send(new ClientboundSetBorderWarningDistancePacket(newWorldBorder));
+    }
+
+    private IWorldBorderListener createWorldBorderListener() {
+        return new IWorldBorderListener() {
+            @Override
+            public void onBorderSizeSet(net.minecraft.world.level.border.WorldBorder border, double size) {
+                getHandle().connection.send(new ClientboundSetBorderSizePacket(border));
+            }
+
+            @Override
+            public void onBorderSizeLerping(net.minecraft.world.level.border.WorldBorder border, double size, double newSize, long time) {
+                getHandle().connection.send(new ClientboundSetBorderLerpSizePacket(border));
+            }
+
+            @Override
+            public void onBorderCenterSet(net.minecraft.world.level.border.WorldBorder border, double x, double z) {
+                getHandle().connection.send(new ClientboundSetBorderCenterPacket(border));
+            }
+
+            @Override
+            public void onBorderSetWarningTime(net.minecraft.world.level.border.WorldBorder border, int warningTime) {
+                getHandle().connection.send(new ClientboundSetBorderWarningDelayPacket(border));
+            }
+
+            @Override
+            public void onBorderSetWarningBlocks(net.minecraft.world.level.border.WorldBorder border, int warningBlocks) {
+                getHandle().connection.send(new ClientboundSetBorderWarningDistancePacket(border));
+            }
+
+            @Override
+            public void onBorderSetDamagePerBlock(net.minecraft.world.level.border.WorldBorder border, double damage) {} // NO OP
+
+            @Override
+            public void onBorderSetDamageSafeZOne(net.minecraft.world.level.border.WorldBorder border, double blocks) {} // NO OP
+        };
+    }
+
+    public boolean hasClientWorldBorder() {
+        return clientWorldBorder != null;
     }
 
     @Override

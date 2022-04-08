@@ -16,6 +16,16 @@ public class CraftWorldBorder implements WorldBorder {
         this.handle = world.getHandle().getWorldBorder();
     }
 
+    public CraftWorldBorder(net.minecraft.world.level.border.WorldBorder handle) {
+        this.world = null;
+        this.handle = handle;
+    }
+
+    @Override
+    public World getWorld() {
+        return world;
+    }
+
     @Override
     public void reset() {
         this.setSize(6.0E7D);
@@ -115,6 +125,14 @@ public class CraftWorldBorder implements WorldBorder {
     public boolean isInside(Location location) {
         Preconditions.checkArgument(location != null, "location");
 
-        return location.getWorld().equals(this.world) && this.handle.isWithinBounds(new BlockPosition(location.getX(), location.getY(), location.getZ()));
+        return (world == null || location.getWorld().equals(this.world)) && this.handle.isWithinBounds(new BlockPosition(location.getX(), location.getY(), location.getZ()));
+    }
+
+    public net.minecraft.world.level.border.WorldBorder getHandle() {
+        return handle;
+    }
+
+    public boolean isVirtual() {
+        return world == null;
     }
 }
