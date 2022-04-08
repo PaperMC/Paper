@@ -1,0 +1,63 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aaron <78169748+tl0x@users.noreply.github.com>
+Date: Fri, 8 Apr 2022 17:03:45 -0400
+Subject: [PATCH] allow setting of arrowpickup
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java b/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java
+index 53d0024daf6963ac4dab575666b0d6a74a39a958..00fd2849e4dd31b506645dbb9bd7128a453ac638 100644
+--- a/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java
++++ b/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java
+@@ -603,6 +603,8 @@ public abstract class AbstractArrow extends Projectile {
+ 
+     public abstract ItemStack getPickupItem();
+ 
++    public abstract void setPickupItem(ItemStack stack);
++
+     @Override
+     protected Entity.MovementEmission getMovementEmission() {
+         return Entity.MovementEmission.NONE;
+diff --git a/src/main/java/net/minecraft/world/entity/projectile/Arrow.java b/src/main/java/net/minecraft/world/entity/projectile/Arrow.java
+index 29e97cfec599e19eb85b81e49c997b562c8d3a6b..7dd039a68ab4477881c8fb15a4eec4e6fbebc308 100644
+--- a/src/main/java/net/minecraft/world/entity/projectile/Arrow.java
++++ b/src/main/java/net/minecraft/world/entity/projectile/Arrow.java
+@@ -29,9 +29,11 @@ public class Arrow extends AbstractArrow {
+     private static final EntityDataAccessor<Integer> ID_EFFECT_COLOR = SynchedEntityData.defineId(Arrow.class, EntityDataSerializers.INT);
+     private static final byte EVENT_POTION_PUFF = 0;
+     private Potion potion;
++    private ItemStack pickupItem = null;
+     public final Set<MobEffectInstance> effects;
+     private boolean fixedColor;
+ 
++
+     public Arrow(EntityType<? extends Arrow> type, Level world) {
+         super(type, world);
+         this.potion = Potions.EMPTY;
+@@ -245,7 +247,9 @@ public class Arrow extends AbstractArrow {
+ 
+     @Override
+     public ItemStack getPickupItem() {
+-        if (this.effects.isEmpty() && this.potion == Potions.EMPTY) {
++        if (this.pickupItem != null) {
++            return pickupItem;
++        } else if (this.effects.isEmpty() && this.potion == Potions.EMPTY) {
+             return new ItemStack(Items.ARROW);
+         } else {
+             ItemStack itemstack = new ItemStack(Items.TIPPED_ARROW);
+@@ -260,6 +264,10 @@ public class Arrow extends AbstractArrow {
+         }
+     }
+ 
++    public void setPickupItem(ItemStack pickupItem) {
++        this.pickupItem = pickupItem;
++    }
++
+     @Override
+     public void handleEntityEvent(byte status) {
+         if (status == 0) {
+@@ -279,4 +287,5 @@ public class Arrow extends AbstractArrow {
+         }
+ 
+     }
++
+ }
