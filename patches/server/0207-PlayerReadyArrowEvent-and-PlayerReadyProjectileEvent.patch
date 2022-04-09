@@ -1,13 +1,15 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Mon, 18 Jun 2018 01:12:53 -0400
-Subject: [PATCH] PlayerReadyArrowEvent
+Subject: [PATCH] PlayerReadyArrowEvent and PlayerReadyProjectileEvent
 
 Called when a player is firing a bow and the server is choosing an arrow to use.
 Plugins can skip selection of certain arrows and control which is used.
 
+Co-authored-by: Doc <nachito94@msn.com>
+
 diff --git a/src/main/java/net/minecraft/world/entity/player/Player.java b/src/main/java/net/minecraft/world/entity/player/Player.java
-index 7b81d77649997aeb97cd819f380bdfe848702164..05ef746c6b9057930edb5b3c211eaae5f9ab7bde 100644
+index 7b81d77649997aeb97cd819f380bdfe848702164..3aeeb7deb0aa9e092f85e38394ac1c8cc05caa2c 100644
 --- a/src/main/java/net/minecraft/world/entity/player/Player.java
 +++ b/src/main/java/net/minecraft/world/entity/player/Player.java
 @@ -2204,6 +2204,17 @@ public abstract class Player extends LivingEntity {
@@ -15,11 +17,11 @@ index 7b81d77649997aeb97cd819f380bdfe848702164..05ef746c6b9057930edb5b3c211eaae5
      }
  
 +    // Paper start
-+    protected boolean tryReadyArrow(ItemStack bow, ItemStack itemstack) {
++    protected boolean tryReadyProjectile(ItemStack projectileWeapon, ItemStack itemstack) {
 +        return !(this instanceof ServerPlayer) ||
-+                new com.destroystokyo.paper.event.player.PlayerReadyArrowEvent(
++                new com.destroystokyo.paper.event.player.PlayerReadyProjectileEvent(
 +                    ((ServerPlayer) this).getBukkitEntity(),
-+                    org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(bow),
++                    org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(projectileWeapon),
 +                    org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemstack)
 +                ).callEvent();
 +        // Paper end
@@ -28,23 +30,25 @@ index 7b81d77649997aeb97cd819f380bdfe848702164..05ef746c6b9057930edb5b3c211eaae5
      @Override
      public ItemStack getProjectile(ItemStack stack) {
          if (!(stack.getItem() instanceof ProjectileWeaponItem)) {
-@@ -2212,7 +2223,7 @@ public abstract class Player extends LivingEntity {
+@@ -2211,8 +2222,9 @@ public abstract class Player extends LivingEntity {
+         } else {
              Predicate<ItemStack> predicate = ((ProjectileWeaponItem) stack.getItem()).getSupportedHeldProjectiles();
              ItemStack itemstack1 = ProjectileWeaponItem.getHeldProjectile(this, predicate);
++            boolean isServerPlayer = this instanceof ServerPlayer; // Paper
  
 -            if (!itemstack1.isEmpty()) {
-+            if (!itemstack1.isEmpty() && tryReadyArrow(stack, itemstack1)) { // Paper
++            if (!itemstack1.isEmpty() && tryReadyProjectile(stack, itemstack1)) { // Paper
                  return itemstack1;
              } else {
                  predicate = ((ProjectileWeaponItem) stack.getItem()).getAllSupportedProjectiles();
-@@ -2220,7 +2231,9 @@ public abstract class Player extends LivingEntity {
+@@ -2220,7 +2232,9 @@ public abstract class Player extends LivingEntity {
                  for (int i = 0; i < this.inventory.getContainerSize(); ++i) {
                      ItemStack itemstack2 = this.inventory.getItem(i);
  
 -                    if (predicate.test(itemstack2)) {
-+                    if (predicate.test(itemstack2) && ((ProjectileWeaponItem) stack.getItem()).getSupportedHeldProjectiles().test(itemstack1) && i == 40) continue; // Paper - avoid double check for offhand if skip first validation
++                    if (isServerPlayer && predicate.test(itemstack2) && ((ProjectileWeaponItem) stack.getItem()).getSupportedHeldProjectiles().test(itemstack1) && i == 40) continue; // Paper - avoid double check for bow in offhand
 +
-+                    if (predicate.test(itemstack2) && tryReadyArrow(stack, itemstack2)) { // Paper
++                    if (predicate.test(itemstack2) && tryReadyProjectile(stack, itemstack2)) { // Paper
                          return itemstack2;
                      }
                  }

@@ -1,17 +1,19 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Mon, 18 Jun 2018 01:09:27 -0400
-Subject: [PATCH] PlayerReadyArrowEvent
+Subject: [PATCH] PlayerReadyArrowEvent and PlayerReadyProjectileEvent
 
 Called when a player is firing a bow and the server is choosing an arrow to use.
 Plugins can skip selection of certain arrows and control which is used.
 
+Co-authored-by: Doc <nachito94@msn.com>
+
 diff --git a/src/main/java/com/destroystokyo/paper/event/player/PlayerReadyArrowEvent.java b/src/main/java/com/destroystokyo/paper/event/player/PlayerReadyArrowEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..2f7df9cad12b00a91cfa12a4c31a2e7397a8731a
+index 0000000000000000000000000000000000000000..7b7da146b99fdc32433e170e42f1e35921e69571
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/event/player/PlayerReadyArrowEvent.java
-@@ -0,0 +1,93 @@
+@@ -0,0 +1,78 @@
 +/*
 + * Copyright (c) 2018 Daniel Ennis (Aikar) MIT License
 + *
@@ -47,15 +49,14 @@ index 0000000000000000000000000000000000000000..2f7df9cad12b00a91cfa12a4c31a2e73
 +
 +/**
 + * Called when a player is firing a bow or crossbow and the server is choosing an arrow to use.
++ *
++ * @deprecated Deprecated in favor of {@link PlayerReadyProjectileEvent}
 + */
-+public class PlayerReadyArrowEvent extends PlayerEvent implements Cancellable {
-+    @NotNull private final ItemStack bow;
-+    @NotNull private final ItemStack arrow;
++@Deprecated
++public class PlayerReadyArrowEvent extends PlayerReadyProjectileEvent {
 +
 +    public PlayerReadyArrowEvent(@NotNull Player player, @NotNull ItemStack bow, @NotNull ItemStack arrow) {
-+        super(player);
-+        this.bow = bow;
-+        this.arrow = arrow;
++        super(player, bow, arrow);
 +    }
 +
 +    /**
@@ -63,7 +64,7 @@ index 0000000000000000000000000000000000000000..2f7df9cad12b00a91cfa12a4c31a2e73
 +     */
 +    @NotNull
 +    public ItemStack getBow() {
-+        return bow;
++        return super.getWeaponItem();
 +    }
 +
 +    /**
@@ -71,29 +72,15 @@ index 0000000000000000000000000000000000000000..2f7df9cad12b00a91cfa12a4c31a2e73
 +     */
 +    @NotNull
 +    public ItemStack getArrow() {
-+        return arrow;
++        return super.getProjectileItem();
 +    }
-+
-+    private static final HandlerList handlers = new HandlerList();
-+
-+    @NotNull
-+    public HandlerList getHandlers() {
-+        return handlers;
-+    }
-+
-+    @NotNull
-+    public static HandlerList getHandlerList() {
-+        return handlers;
-+    }
-+
-+    private boolean cancelled = false;
 +
 +    /**
 +     * Whether or not use of this arrow is cancelled. On cancel, the server will try the next arrow available and fire another event.
 +     */
 +    @Override
 +    public boolean isCancelled() {
-+        return cancelled;
++        return super.isCancelled();
 +    }
 +
 +    /**
@@ -102,6 +89,76 @@ index 0000000000000000000000000000000000000000..2f7df9cad12b00a91cfa12a4c31a2e73
 +     */
 +    @Override
 +    public void setCancelled(boolean cancel) {
-+        cancelled = cancel;
++        super.setCancelled(cancel);
++    }
++}
+diff --git a/src/main/java/com/destroystokyo/paper/event/player/PlayerReadyProjectileEvent.java b/src/main/java/com/destroystokyo/paper/event/player/PlayerReadyProjectileEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..fcbd786373942b74aefb8cbe7e1e50ae56915e55
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/event/player/PlayerReadyProjectileEvent.java
+@@ -0,0 +1,64 @@
++package com.destroystokyo.paper.event.player;
++
++import org.bukkit.entity.Player;
++import org.bukkit.event.Cancellable;
++import org.bukkit.event.HandlerList;
++import org.bukkit.event.player.PlayerEvent;
++import org.bukkit.inventory.ItemStack;
++import org.jetbrains.annotations.NotNull;
++
++public class PlayerReadyProjectileEvent extends PlayerEvent implements Cancellable {
++
++    private static final HandlerList handlers = new HandlerList();
++    @NotNull private final ItemStack projectileWeapon;
++    @NotNull private final ItemStack projectileMunition;
++    private boolean cancelled = false;
++
++    public PlayerReadyProjectileEvent(@NotNull Player player, @NotNull ItemStack projectileWeapon, @NotNull ItemStack projectileMunition) {
++        super(player);
++        this.projectileWeapon = projectileWeapon;
++        this.projectileMunition = projectileMunition;
++    }
++
++    /**
++     * @return the weapon is using to fire the projectile
++     */
++    @NotNull
++    public ItemStack getWeaponItem() {
++        return this.projectileWeapon;
++    }
++
++    /**
++     * @return the projectile that is attempting to be used
++     */
++    @NotNull
++    public ItemStack getProjectileItem() {
++        return this.projectileMunition;
++    }
++
++    /**
++     * Whether or not use of this arrow is cancelled. On cancel, the server will try the next arrow available and fire another event.
++     */
++    @Override
++    public boolean isCancelled() {
++        return this.cancelled;
++    }
++
++    /**
++     * Cancel use of this projectile. On cancel, the server will try the next projectile available in base of the {@link #getWeapon()} and fire another event.
++     * @param cancel true if you wish to cancel this event
++     */
++    @Override
++    public void setCancelled(boolean cancel) {
++        this.cancelled = cancel;
++    }
++
++    public HandlerList getHandlers() {
++        return handlers;
++    }
++
++    @NotNull
++    public static HandlerList getHandlerList() {
++        return handlers;
 +    }
 +}
