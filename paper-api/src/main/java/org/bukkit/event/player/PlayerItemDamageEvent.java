@@ -15,12 +15,21 @@ public class PlayerItemDamageEvent extends PlayerEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
     private final ItemStack item;
     private int damage;
+    private int originalDamage; // Paper - Add pre-reduction damage
     private boolean cancelled = false;
 
+    @Deprecated // Paper - Add pre-reduction damage
     public PlayerItemDamageEvent(@NotNull Player player, @NotNull ItemStack what, int damage) {
+        // Paper start - Add pre-reduction damage
+        this(player, what, damage, damage);
+    }
+
+    public PlayerItemDamageEvent(@NotNull Player player, @NotNull ItemStack what, int damage, int originalDamage) {
         super(player);
         this.item = what;
         this.damage = damage;
+        this.originalDamage = originalDamage;
+        // Paper end
     }
 
     /**
@@ -41,6 +50,19 @@ public class PlayerItemDamageEvent extends PlayerEvent implements Cancellable {
     public int getDamage() {
         return damage;
     }
+
+    // Paper start - Add pre-reduction damage
+    /**
+     * Gets the amount of durability damage this item would have taken before
+     * the Unbreaking reduction. If the item has no Unbreaking level then
+     * this value will be the same as the {@link #getDamage()} value.
+     *
+     * @return pre-reduction damage amount
+     */
+    public int getOriginalDamage() {
+        return originalDamage;
+    }
+    // Paper end
 
     public void setDamage(int damage) {
         this.damage = damage;
