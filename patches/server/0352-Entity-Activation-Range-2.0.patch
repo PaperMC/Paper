@@ -14,7 +14,7 @@ Adds flying monsters to control ghast and phantoms
 Adds villagers as separate config
 
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index 7f2b61523ac2293fdc197cf3eaa341357cf6fc31..75d91cb0f432fb9a2b5b9a796ad2a60f4c891060 100644
+index 9b883af58fd87751bdad909a015cb78ca5647e90..12162ff2dc7c82f50f1d892bc807985ebcd44333 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
 @@ -2,7 +2,6 @@ package net.minecraft.server.level;
@@ -335,7 +335,7 @@ index 6b29f66aec8a82b367a979b5b04857416b697c14..78d252b829e5c1f19532656a72862085
                              }
                          }
 diff --git a/src/main/java/org/spigotmc/ActivationRange.java b/src/main/java/org/spigotmc/ActivationRange.java
-index 7bae24598218dcf0012dd21e619e6f5f984bd6f0..88c3022abc5edde312573de4fe499f1f5ee9eeae 100644
+index 7bae24598218dcf0012dd21e619e6f5f984bd6f0..c9a032c5331a918453de5e8c6a6d13f5c9f415ee 100644
 --- a/src/main/java/org/spigotmc/ActivationRange.java
 +++ b/src/main/java/org/spigotmc/ActivationRange.java
 @@ -1,39 +1,52 @@
@@ -510,7 +510,7 @@ index 7bae24598218dcf0012dd21e619e6f5f984bd6f0..88c3022abc5edde312573de4fe499f1f
  
              world.getEntities().get(maxBB, ActivationRange::activateEntity);
          }
-@@ -166,60 +243,112 @@ public class ActivationRange
+@@ -166,60 +243,118 @@ public class ActivationRange
       * @param entity
       * @return
       */
@@ -537,7 +537,13 @@ index 7bae24598218dcf0012dd21e619e6f5f984bd6f0..88c3022abc5edde312573de4fe499f1f
          {
 -            return true;
 +            return 100; // Paper
++        }
++        // Paper start
++        if ( !entity.isOnGround() || entity.getDeltaMovement().horizontalDistanceSqr() > 9.999999747378752E-6D )
++        {
++            return 100;
          }
++        // Paper end
          if ( !( entity instanceof AbstractArrow ) )
          {
 -            if ( !entity.isOnGround() || !entity.passengers.isEmpty() || entity.isPassenger() )
@@ -566,7 +572,8 @@ index 7bae24598218dcf0012dd21e619e6f5f984bd6f0..88c3022abc5edde312573de4fe499f1f
              {
 -                return true;
 +                return 20; // Paper
-+            }
+             }
+-            if ( entity instanceof Villager && ( (Villager) entity ).canBreed() )
 +            // Paper start
 +            if (entity instanceof Bee) {
 +                Bee bee = (Bee)entity;
@@ -594,8 +601,7 @@ index 7bae24598218dcf0012dd21e619e6f5f984bd6f0..88c3022abc5edde312573de4fe499f1f
 +                        return config.villagersWorkImmunityFor;
 +                    }
 +                }
-             }
--            if ( entity instanceof Villager && ( (Villager) entity ).canBreed() )
++            }
 +            if ( entity instanceof Llama && ( (Llama) entity ).inCaravan() )
              {
 -                return true;
@@ -640,7 +646,7 @@ index 7bae24598218dcf0012dd21e619e6f5f984bd6f0..88c3022abc5edde312573de4fe499f1f
      }
  
      /**
-@@ -234,8 +363,19 @@ public class ActivationRange
+@@ -234,8 +369,19 @@ public class ActivationRange
          if ( entity instanceof FireworkRocketEntity ) {
              return true;
          }
@@ -661,7 +667,7 @@ index 7bae24598218dcf0012dd21e619e6f5f984bd6f0..88c3022abc5edde312573de4fe499f1f
  
          // Should this entity tick?
          if ( !isActive )
-@@ -243,15 +383,19 @@ public class ActivationRange
+@@ -243,15 +389,19 @@ public class ActivationRange
              if ( ( MinecraftServer.currentTick - entity.activatedTick - 1 ) % 20 == 0 )
              {
                  // Check immunities every 20 ticks.
