@@ -19,6 +19,8 @@ allprojects {
     }
 }
 
+val paperMavenPublicUrl = "https://papermc.io/repo/repository/maven-public/"
+
 subprojects {
     tasks.withType<JavaCompile> {
         options.encoding = Charsets.UTF_8.name()
@@ -38,13 +40,9 @@ subprojects {
         }
     }
 
-    if (name == "Paper-MojangAPI") {
-        return@subprojects
-    }
-
     repositories {
         mavenCentral()
-        maven("https://papermc.io/repo/repository/maven-public/")
+        maven(paperMavenPublicUrl)
     }
 }
 
@@ -52,7 +50,7 @@ val spigotDecompiler: Configuration by configurations.creating
 
 repositories {
     mavenCentral()
-    maven("https://papermc.io/repo/repository/maven-public/") {
+    maven(paperMavenPublicUrl) {
         content {
             onlyForConfigurations(
                 configurations.paperclip.name,
@@ -74,9 +72,9 @@ paperweight {
     minecraftVersion.set(providers.gradleProperty("mcVersion"))
     serverProject.set(project(":paper-server"))
 
-    paramMappingsRepo.set("https://maven.fabricmc.net/")
-    remapRepo.set("https://maven.fabricmc.net/")
-    decompileRepo.set("https://files.minecraftforge.net/maven/")
+    paramMappingsRepo.set(paperMavenPublicUrl)
+    remapRepo.set(paperMavenPublicUrl)
+    decompileRepo.set(paperMavenPublicUrl)
 
     craftBukkit {
         fernFlowerJar.set(layout.file(spigotDecompiler.elements.map { it.single().asFile }))
@@ -108,9 +106,7 @@ tasks.generateDevelopmentBundle {
     mojangApiCoordinates.set("io.papermc.paper:paper-mojangapi")
     libraryRepositories.addAll(
         "https://repo.maven.apache.org/maven2/",
-        "https://libraries.minecraft.net/",
         "https://papermc.io/repo/repository/maven-public/",
-        "https://maven.fabricmc.net/",
     )
 }
 
