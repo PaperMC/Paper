@@ -8,11 +8,6 @@ java {
     withJavadocJar()
 }
 
-repositories {
-    mavenCentral()
-    maven("https://libraries.minecraft.net")
-}
-
 dependencies {
     implementation(project(":paper-api"))
     api("com.mojang:brigadier:1.0.18")
