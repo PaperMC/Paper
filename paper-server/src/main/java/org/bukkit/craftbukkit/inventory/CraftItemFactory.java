@@ -1,5 +1,10 @@
 package org.bukkit.craftbukkit.inventory;
 
+import com.mojang.brigadier.StringReader;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import net.minecraft.commands.arguments.item.ArgumentParserItemStack;
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.world.item.Item;
 import org.apache.commons.lang.Validate;
 import org.bukkit.Color;
 import org.bukkit.Material;
@@ -338,6 +343,25 @@ public final class CraftItemFactory implements ItemFactory {
     @Override
     public Color getDefaultLeatherColor() {
         return DEFAULT_LEATHER_COLOR;
+    }
+
+    @Override
+    public ItemStack createItemStack(String input) throws IllegalArgumentException {
+        try {
+            ArgumentParserItemStack arg = new ArgumentParserItemStack(new StringReader(input), false).parse(); // false = no tags
+
+            Item item = arg.getItem();
+            net.minecraft.world.item.ItemStack nmsItemStack = new net.minecraft.world.item.ItemStack(item);
+
+            NBTTagCompound nbt = arg.getNbt();
+            if (nbt != null) {
+                nmsItemStack.setTag(nbt);
+            }
+
+            return CraftItemStack.asCraftMirror(nmsItemStack);
+        } catch (CommandSyntaxException ex) {
+            throw new IllegalArgumentException("Could not parse ItemStack: " + input, ex);
+        }
     }
 
     @Override

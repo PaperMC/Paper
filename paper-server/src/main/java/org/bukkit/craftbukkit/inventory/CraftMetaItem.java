@@ -1058,6 +1058,13 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
     }
 
     @Override
+    public String getAsString() {
+        NBTTagCompound tag = new NBTTagCompound();
+        applyToItem(tag);
+        return tag.toString();
+    }
+
+    @Override
     public CustomItemTagContainer getCustomTagContainer() {
         return new DeprecatedCustomTagContainer(this.getPersistentDataContainer());
     }
