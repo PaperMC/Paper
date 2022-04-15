@@ -97,21 +97,39 @@
              }
          }
  
-@@ -411,7 +437,12 @@
+@@ -411,18 +437,28 @@
              }
  
              EntityVillager entityvillager = (EntityVillager) entityliving;
 -            EntityZombieVillager entityzombievillager = (EntityZombieVillager) entityvillager.convertTo(EntityTypes.ZOMBIE_VILLAGER, false);
 +            // CraftBukkit start
-+            EntityZombieVillager entityzombievillager = (EntityZombieVillager) entityvillager.convertTo(EntityTypes.ZOMBIE_VILLAGER, false, EntityTransformEvent.TransformReason.INFECTION, CreatureSpawnEvent.SpawnReason.INFECTION);
-+            if (entityzombievillager == null) {
-+                return;
-+            }
-+            // CraftBukkit end
++            zombifyVillager(worldserver, entityvillager, this.blockPosition(), this.isSilent(), false);
++        }
++    }
  
++    public static EntityZombieVillager zombifyVillager(WorldServer worldserver, EntityVillager entityvillager, net.minecraft.core.BlockPosition blockPosition, boolean silent, boolean custom) {
++        EntityZombieVillager entityzombievillager = (EntityZombieVillager) entityvillager.convertTo(EntityTypes.ZOMBIE_VILLAGER, false, EntityTransformEvent.TransformReason.INFECTION, (custom) ? CreatureSpawnEvent.SpawnReason.CUSTOM : CreatureSpawnEvent.SpawnReason.INFECTION);
++        if (entityzombievillager != null) {
++            // CraftBukkit end
              entityzombievillager.finalizeSpawn(worldserver, worldserver.getCurrentDifficultyAt(entityzombievillager.blockPosition()), EnumMobSpawn.CONVERSION, new EntityZombie.GroupDataZombie(false, true), (NBTTagCompound) null);
              entityzombievillager.setVillagerData(entityvillager.getVillagerData());
-@@ -473,7 +504,7 @@
+             entityzombievillager.setGossips((NBTBase) entityvillager.getGossips().store(DynamicOpsNBT.INSTANCE).getValue());
+             entityzombievillager.setTradeOffers(entityvillager.getOffers().createTag());
+             entityzombievillager.setVillagerXp(entityvillager.getVillagerXp());
+-            if (!this.isSilent()) {
+-                worldserver.levelEvent((EntityHuman) null, 1026, this.blockPosition(), 0);
++            // CraftBukkit start
++            if (!silent) {
++                worldserver.levelEvent((EntityHuman) null, 1026, blockPosition, 0);
+             }
++            // CraftBukkit end
+         }
+ 
++        return entityzombievillager; // CraftBukkit
+     }
+ 
+     @Override
+@@ -473,7 +509,7 @@
                          entitychicken1.finalizeSpawn(worldaccess, difficultydamagescaler, EnumMobSpawn.JOCKEY, (GroupDataEntity) null, (NBTTagCompound) null);
                          entitychicken1.setChickenJockey(true);
                          this.startRiding(entitychicken1);
