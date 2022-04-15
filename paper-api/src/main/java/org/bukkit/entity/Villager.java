@@ -5,6 +5,7 @@ import org.bukkit.Keyed;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents a villager NPC
@@ -100,6 +101,18 @@ public interface Villager extends AbstractVillager {
      * Causes this villager to shake his head.
      */
     public void shakeHead();
+
+    /**
+     * Convert this Villager into a ZombieVillager as if it was killed by a
+     * Zombie.
+     *
+     * <b>Note:</b> this will fire a EntityTransformEvent
+     *
+     * @return the converted entity {@link ZombieVillager} or null if the
+     * conversion its cancelled
+     */
+    @Nullable
+    public ZombieVillager zombify();
 
     /**
      * Represents Villager type, usually corresponding to what biome they spawn
