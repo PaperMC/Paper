@@ -3,6 +3,7 @@ package org.bukkit.inventory;
 import org.bukkit.Color;
 import org.bukkit.Material;
 import org.bukkit.Server;
+import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.meta.BookMeta;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
@@ -127,6 +128,23 @@ public interface ItemFactory {
      */
     @NotNull
     Color getDefaultLeatherColor();
+
+    /**
+     * Create a new {@link ItemStack} given the supplied input.
+     * <p>
+     * The input should match the same input as expected by Minecraft's {@code /give}
+     * command. For example, "minecraft:diamond_sword{Enchantments:[{id:"minecraft:sharpness", lvl:3}]}"
+     * would yield an ItemStack of {@link Material#DIAMOND_SWORD} with an {@link ItemMeta}
+     * containing a level 3 {@link Enchantment#DAMAGE_ALL}
+     * enchantment.
+     *
+     * @param input the item input string
+     * @return the created ItemStack
+     * @throws IllegalArgumentException if the input string was provided in an
+     * invalid or unsupported format
+     */
+    @NotNull
+    ItemStack createItemStack(@NotNull String input) throws IllegalArgumentException;
 
     /**
      * Apply a material change for an item meta. Do not use under any
