@@ -1,0 +1,100 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: BuildTools <unconfigured@null.spigotmc.org>
+Date: Sat, 16 Apr 2022 09:04:15 +0100
+Subject: [PATCH] Add Event Trigger Event
+
+
+diff --git a/src/main/java/io/papermc/paper/event/server/EventTriggerEvent.java b/src/main/java/io/papermc/paper/event/server/EventTriggerEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..40d0bbf76a9559148462a6f5c19a10433f681c88
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/event/server/EventTriggerEvent.java
+@@ -0,0 +1,58 @@
++package io.papermc.paper.event.server;
++
++import org.bukkit.event.*;
++import org.bukkit.event.server.ServerEvent;
++import org.bukkit.plugin.Plugin;
++import org.bukkit.plugin.RegisteredListener;
++import org.jetbrains.annotations.NotNull;
++
++public class EventTriggerEvent extends ServerEvent implements Cancellable {
++
++    private final RegisteredListener listener;
++    private final Event event;
++    private boolean cancelled;
++    private static final HandlerList HANDLER_LIST = new HandlerList();
++
++    public EventTriggerEvent(RegisteredListener listener, Event event) {
++        super(false);
++        this.listener = listener;
++        this.cancelled = false;
++        this.event = event;
++    }
++
++    @Override
++    public @NotNull HandlerList getHandlers() {
++        return HANDLER_LIST;
++    }
++
++    public Event getEventInstance() {
++        return event;
++    }
++
++    public Plugin getPlugin() {
++        return listener.getPlugin();
++    }
++
++    public EventPriority getPriority() {
++        return listener.getPriority();
++    }
++
++    public Listener getListener() {
++        return listener.getListener();
++    }
++
++    @Override
++    public boolean isCancelled() {
++        return this.cancelled;
++    }
++
++    @Override
++    public void setCancelled(boolean cancel) {
++        this.cancelled = cancel;
++    }
++
++    @NotNull
++    public static HandlerList getHandlerList() {
++        return HANDLER_LIST;
++    }
++}
+diff --git a/src/main/java/org/bukkit/plugin/SimplePluginManager.java b/src/main/java/org/bukkit/plugin/SimplePluginManager.java
+index 42da20011544075a9bea63a12ae86f2f21720667..cd7490e69a02fa52894db075d8380522ef03ef6b 100644
+--- a/src/main/java/org/bukkit/plugin/SimplePluginManager.java
++++ b/src/main/java/org/bukkit/plugin/SimplePluginManager.java
+@@ -27,6 +27,7 @@ import java.util.regex.Pattern;
+ import com.destroystokyo.paper.event.server.ServerExceptionEvent;
+ import com.destroystokyo.paper.exception.ServerEventException;
+ import com.destroystokyo.paper.exception.ServerPluginEnableDisableException;
++import io.papermc.paper.event.server.EventTriggerEvent;
+ import org.apache.commons.lang.Validate;
+ import org.bukkit.Server;
+ import org.bukkit.World;
+@@ -626,7 +627,16 @@ public final class SimplePluginManager implements PluginManager {
+             }
+ 
+             try {
+-                registration.callEvent(event);
++                // Paper Start
++                if(!(event instanceof EventTriggerEvent)) {
++                    EventTriggerEvent trigger = new EventTriggerEvent(registration, event);
++                    this.callEvent(trigger);
++                    if(trigger.isCancelled()) return;
++                    registration.callEvent(event);
++                }else { // Do not call event trigger event for event trigger event
++                    registration.callEvent(event);
++                }
++                // Paper End
+             } catch (AuthorNagException ex) {
+                 Plugin plugin = registration.getPlugin();
+ 
