@@ -1,9 +1,9 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT license.
+
 package com.mojang.brigadier.tree;
 
 // CHECKSTYLE:OFF
-import com.google.common.collect.ComparisonChain;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
 import com.mojang.brigadier.AmbiguityConsumer;
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.RedirectModifier;
@@ -17,19 +17,19 @@ import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 import net.minecraft.commands.CommandListenerWrapper; // CraftBukkit
 
 public abstract class CommandNode<S> implements Comparable<CommandNode<S>> {
-    private Map<String, CommandNode<S>> children = Maps.newLinkedHashMap();
-    private Map<String, LiteralCommandNode<S>> literals = Maps.newLinkedHashMap();
-    private Map<String, ArgumentCommandNode<S, ?>> arguments = Maps.newLinkedHashMap();
+    private final Map<String, CommandNode<S>> children = new LinkedHashMap<>();
+    private final Map<String, LiteralCommandNode<S>> literals = new LinkedHashMap<>();
+    private final Map<String, ArgumentCommandNode<S, ?>> arguments = new LinkedHashMap<>();
     private final Predicate<S> requirement;
     private final CommandNode<S> redirect;
     private final RedirectModifier<S> modifier;
@@ -107,12 +107,10 @@ public abstract class CommandNode<S> implements Comparable<CommandNode<S>> {
                 arguments.put(node.getName(), (ArgumentCommandNode<S, ?>) node);
             }
         }
-
-        children = children.entrySet().stream().sorted(Map.Entry.comparingByValue()).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e1, LinkedHashMap::new));
     }
 
     public void findAmbiguities(final AmbiguityConsumer<S> consumer) {
-        Set<String> matches = Sets.newHashSet();
+        Set<String> matches = new HashSet<>();
 
         for (final CommandNode<S> child : children.values()) {
             for (final CommandNode<S> sibling : children.values()) {
@@ -128,7 +126,7 @@ public abstract class CommandNode<S> implements Comparable<CommandNode<S>> {
 
                 if (matches.size() > 0) {
                     consumer.ambiguous(this, child, sibling, matches);
-                    matches = Sets.newHashSet();
+                    matches = new HashSet<>();
                 }
             }
 
@@ -193,11 +191,11 @@ public abstract class CommandNode<S> implements Comparable<CommandNode<S>> {
 
     @Override
     public int compareTo(final CommandNode<S> o) {
-        return ComparisonChain
-            .start()
-            .compareTrueFirst(this instanceof LiteralCommandNode, o instanceof LiteralCommandNode)
-            .compare(getSortedKey(), o.getSortedKey())
-            .result();
+        if (this instanceof LiteralCommandNode == o instanceof LiteralCommandNode) {
+            return getSortedKey().compareTo(o.getSortedKey());
+        }
+
+        return (o instanceof LiteralCommandNode) ? 1 : -1;
     }
 
     public boolean isFork() {
