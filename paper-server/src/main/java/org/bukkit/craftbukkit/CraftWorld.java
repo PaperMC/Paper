@@ -1145,22 +1145,16 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         Validate.notNull(material, "Material cannot be null");
         Validate.isTrue(material.isBlock(), "Material must be a block");
 
-        EntityFallingBlock entity = EntityFallingBlock.fall(world, new BlockPosition(location.getX(), location.getY(), location.getZ()), CraftMagicNumbers.getBlock(material).defaultBlockState());
-        entity.time = 1;
-
-        world.addFreshEntity(entity, SpawnReason.CUSTOM);
+        EntityFallingBlock entity = EntityFallingBlock.fall(world, new BlockPosition(location.getX(), location.getY(), location.getZ()), CraftMagicNumbers.getBlock(material).defaultBlockState(), true);
         return (FallingBlock) entity.getBukkitEntity();
     }
 
     @Override
     public FallingBlock spawnFallingBlock(Location location, BlockData data) throws IllegalArgumentException {
         Validate.notNull(location, "Location cannot be null");
-        Validate.notNull(data, "Material cannot be null");
+        Validate.notNull(data, "BlockData cannot be null");
 
-        EntityFallingBlock entity = EntityFallingBlock.fall(world, new BlockPosition(location.getX(), location.getY(), location.getZ()), ((CraftBlockData) data).getState());
-        entity.time = 1;
-
-        world.addFreshEntity(entity, SpawnReason.CUSTOM);
+        EntityFallingBlock entity = EntityFallingBlock.fall(world, new BlockPosition(location.getX(), location.getY(), location.getZ()), ((CraftBlockData) data).getState(), true);
         return (FallingBlock) entity.getBukkitEntity();
     }
 
