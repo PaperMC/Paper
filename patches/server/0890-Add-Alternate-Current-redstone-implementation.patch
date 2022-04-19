@@ -26,19 +26,17 @@ to check if any block is a potential power source.
 The use-faster-eigencraft-redstone config has been replaced with the redstone-implementation config, which can be used to
 switch between the vanilla, Eigencraft, and Alternate Current implementations.
 
-diff --git a/src/main/java/alternate/current/wire/LevelAccess.java b/src/main/java/alternate/current/wire/LevelAccess.java
+diff --git a/src/main/java/alternate/current/wire/LevelHelper.java b/src/main/java/alternate/current/wire/LevelHelper.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..4be46b13ebb1b7e7a41a1853a16a70f58e4fcbe2
+index 0000000000000000000000000000000000000000..186e0a86ceaed007d394378157ce1596a0601908
 --- /dev/null
-+++ b/src/main/java/alternate/current/wire/LevelAccess.java
-@@ -0,0 +1,126 @@
++++ b/src/main/java/alternate/current/wire/LevelHelper.java
+@@ -0,0 +1,64 @@
 +package alternate.current.wire;
 +
 +import net.minecraft.core.BlockPos;
-+import net.minecraft.core.Direction;
 +import net.minecraft.server.level.ServerLevel;
 +import net.minecraft.world.level.block.Block;
-+import net.minecraft.world.level.block.Blocks;
 +import net.minecraft.world.level.block.state.BlockState;
 +import net.minecraft.world.level.chunk.ChunkAccess;
 +import net.minecraft.world.level.chunk.ChunkStatus;
@@ -46,19 +44,9 @@ index 0000000000000000000000000000000000000000..4be46b13ebb1b7e7a41a1853a16a70f5
 +
 +import org.bukkit.event.block.BlockRedstoneEvent;
 +
-+public class LevelAccess {
++public class LevelHelper {
 +
-+    private final ServerLevel level;
-+
-+    LevelAccess(ServerLevel level) {
-+        this.level = level;
-+    }
-+
-+    BlockState getBlockState(BlockPos pos) {
-+        return level.getBlockState(pos);
-+    }
-+
-+    int doRedstoneEvent(BlockPos pos, int prevPower, int newPower) {
++    static int doRedstoneEvent(ServerLevel level, BlockPos pos, int prevPower, int newPower) {
 +        BlockRedstoneEvent event = new BlockRedstoneEvent(level.getWorld().getBlockAt(pos.getX(), pos.getY(), pos.getZ()), prevPower, newPower);
 +        level.getCraftServer().getPluginManager().callEvent(event);
 +
@@ -70,11 +58,7 @@ index 0000000000000000000000000000000000000000..4be46b13ebb1b7e7a41a1853a16a70f5
 +     * update redstone wire block states, lighting checks, height map updates, and
 +     * block entity updates are omitted.
 +     */
-+    boolean setWireState(BlockPos pos, BlockState state, boolean updateNeighborShapes) {
-+        if (!state.is(Blocks.REDSTONE_WIRE)) {
-+            return false;
-+        }
-+
++    static boolean setWireState(ServerLevel level, BlockPos pos, BlockState state, boolean updateNeighborShapes) {
 +        int y = pos.getY();
 +
 +        if (y < level.getMinBuildHeight() || y >= level.getMaxBuildHeight()) {
@@ -111,59 +95,13 @@ index 0000000000000000000000000000000000000000..4be46b13ebb1b7e7a41a1853a16a70f5
 +
 +        return true;
 +    }
-+
-+    boolean breakWire(BlockPos pos, BlockState state) {
-+        Block.dropResources(state, level, pos);
-+        return level.setBlock(pos, Blocks.AIR.defaultBlockState(), Block.UPDATE_CLIENTS);
-+    }
-+
-+    void updateNeighborShape(BlockPos pos, BlockState state, Direction fromDir, BlockPos fromPos, BlockState fromState) {
-+        BlockState newState = state.updateShape(fromDir, fromState, level, pos, fromPos);
-+        Block.updateOrDestroy(state, newState, level, pos, Block.UPDATE_CLIENTS);
-+    }
-+
-+    void updateNeighborBlock(BlockPos pos, BlockPos fromPos, Block fromBlock) {
-+        getBlockState(pos).neighborChanged(level, pos, fromBlock, fromPos, false);
-+    }
-+
-+    void updateNeighborBlock(BlockPos pos, BlockState state, BlockPos fromPos, Block fromBlock) {
-+        state.neighborChanged(level, pos, fromBlock, fromPos, false);
-+    }
-+
-+    public boolean isConductor(BlockPos pos) {
-+        return getBlockState(pos).isRedstoneConductor(level, pos);
-+    }
-+
-+    public boolean isConductor(BlockPos pos, BlockState state) {
-+        return state.isRedstoneConductor(level, pos);
-+    }
-+
-+    public boolean isSignalSourceTo(BlockPos pos, BlockState state, Direction dir) {
-+        return state.isSignalSourceTo(level, pos, dir);
-+    }
-+
-+    public boolean isDirectSignalSourceTo(BlockPos pos, BlockState state, Direction dir) {
-+        return state.isDirectSignalSourceTo(level, pos, dir);
-+    }
-+
-+    public int getSignalFrom(BlockPos pos, BlockState state, Direction dir) {
-+        return state.getSignal(level, pos, dir);
-+    }
-+
-+    public int getDirectSignalFrom(BlockPos pos, BlockState state, Direction dir) {
-+        return state.getDirectSignal(level, pos, dir);
-+    }
-+
-+    public boolean shouldBreak(BlockPos pos, BlockState state) {
-+        return !state.canSurvive(level, pos);
-+    }
 +}
 diff --git a/src/main/java/alternate/current/wire/Node.java b/src/main/java/alternate/current/wire/Node.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..7b2b19428ccb2809323a38b06d6e77c5ef3946ad
+index 0000000000000000000000000000000000000000..acfe97d62ef863a14e2e43db30917bd57bbd5171
 --- /dev/null
 +++ b/src/main/java/alternate/current/wire/Node.java
-@@ -0,0 +1,96 @@
+@@ -0,0 +1,97 @@
 +package alternate.current.wire;
 +
 +import java.util.Arrays;
@@ -171,6 +109,7 @@ index 0000000000000000000000000000000000000000..7b2b19428ccb2809323a38b06d6e77c5
 +import alternate.current.wire.WireHandler.Directions;
 +
 +import net.minecraft.core.BlockPos;
++import net.minecraft.server.level.ServerLevel;
 +import net.minecraft.world.level.block.Blocks;
 +import net.minecraft.world.level.block.state.BlockState;
 +
@@ -186,7 +125,7 @@ index 0000000000000000000000000000000000000000..7b2b19428ccb2809323a38b06d6e77c5
 +    private static final int CONDUCTOR = 0b01;
 +    private static final int SOURCE    = 0b10;
 +
-+    final LevelAccess level;
++    final ServerLevel level;
 +    final Node[] neighbors;
 +
 +    BlockPos pos;
@@ -195,7 +134,7 @@ index 0000000000000000000000000000000000000000..7b2b19428ccb2809323a38b06d6e77c5
 +
 +    private int flags;
 +
-+    Node(LevelAccess level) {
++    Node(ServerLevel level) {
 +        this.level = level;
 +        this.neighbors = new Node[Directions.ALL.length];
 +    }
@@ -234,7 +173,7 @@ index 0000000000000000000000000000000000000000..7b2b19428ccb2809323a38b06d6e77c5
 +
 +        this.flags = 0;
 +
-+        if (this.level.isConductor(this.pos, this.state)) {
++        if (this.state.isRedstoneConductor(this.level, this.pos)) {
 +            this.flags |= CONDUCTOR;
 +        }
 +        if (this.state.isSignalSource()) {
@@ -651,10 +590,10 @@ index 0000000000000000000000000000000000000000..1dae7c0b896300ac9f0dd360dca23ca1
 +}
 diff --git a/src/main/java/alternate/current/wire/WireHandler.java b/src/main/java/alternate/current/wire/WireHandler.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..c67ca649152e90fe15f21e2813c67dc323a59c7b
+index 0000000000000000000000000000000000000000..ef84b462aa4a0cedbf7c3cfb54ba43f31b8f4e2f
 --- /dev/null
 +++ b/src/main/java/alternate/current/wire/WireHandler.java
-@@ -0,0 +1,1105 @@
+@@ -0,0 +1,1106 @@
 +package alternate.current.wire;
 +
 +import java.util.ArrayList;
@@ -911,7 +850,7 @@ index 0000000000000000000000000000000000000000..c67ca649152e90fe15f21e2813c67dc3
 +    // be only one WireHandler per level, in case redstone updates in multiple
 +    // levels at the same time. There are already mods that add multi-threading
 +    // as well.
-+    private final LevelAccess level;
++    private final ServerLevel level;
 +
 +    /** All the wires in the network. */
 +    private final List<WireNode> network;
@@ -929,7 +868,7 @@ index 0000000000000000000000000000000000000000..c67ca649152e90fe15f21e2813c67dc3
 +    private boolean updatingPower;
 +
 +    public WireHandler(ServerLevel level) {
-+        this.level = new LevelAccess(level);
++        this.level = level;
 +
 +        this.network = new ArrayList<>();
 +        this.nodes = new Long2ObjectOpenHashMap<>();
@@ -1176,7 +1115,7 @@ index 0000000000000000000000000000000000000000..c67ca649152e90fe15f21e2813c67dc3
 +                // Redstone components can power multiple wires through solid
 +                // blocks.
 +                findSignalSourcesAround(neighbor, Directions.iOpposite(iDir));
-+            } else if (level.isSignalSourceTo(neighbor.pos, neighbor.state, Directions.ALL[iDir])) {
++            } else if (neighbor.state.isSignalSourceTo(level, neighbor.pos, Directions.ALL[iDir])) {
 +                // Redstone components can also power multiple wires directly.
 +                findRootsAroundSignalSource(neighbor, Directions.iOpposite(iDir));
 +            }
@@ -1192,7 +1131,7 @@ index 0000000000000000000000000000000000000000..c67ca649152e90fe15f21e2813c67dc3
 +        for (int iDir : Directions.I_EXCEPT[except]) {
 +            Node neighbor = getNeighbor(node, iDir);
 +
-+            if (level.isDirectSignalSourceTo(neighbor.pos, neighbor.state, Directions.ALL[iDir])) {
++            if (neighbor.state.isDirectSignalSourceTo(level, neighbor.pos, Directions.ALL[iDir])) {
 +                findRootsAroundSignalSource(neighbor, iDir);
 +            }
 +        }
@@ -1209,8 +1148,8 @@ index 0000000000000000000000000000000000000000..c67ca649152e90fe15f21e2813c67dc3
 +            int iOpp = Directions.iOpposite(iDir);
 +            Direction opp = Directions.ALL[iOpp];
 +
-+            boolean signal = level.isSignalSourceTo(node.pos, node.state, opp);
-+            boolean directSignal = level.isDirectSignalSourceTo(node.pos, node.state, opp);
++            boolean signal = node.state.isSignalSourceTo(level, node.pos, opp);
++            boolean directSignal = node.state.isDirectSignalSourceTo(level, node.pos, opp);
 +
 +            // If the signal source does not emit any power in this direction,
 +            // move on to the next direction.
@@ -1293,7 +1232,7 @@ index 0000000000000000000000000000000000000000..c67ca649152e90fe15f21e2813c67dc3
 +        wire.prepared = true;
 +        wire.inNetwork = false;
 +
-+        if (!wire.removed && !wire.shouldBreak && level.shouldBreak(wire.pos, wire.state)) {
++        if (!wire.removed && !wire.shouldBreak && !wire.state.canSurvive(level, wire.pos)) {
 +            wire.shouldBreak = true;
 +        }
 +
@@ -1322,7 +1261,7 @@ index 0000000000000000000000000000000000000000..c67ca649152e90fe15f21e2813c67dc3
 +                power = Math.max(power, getDirectSignalTo(wire, neighbor, Directions.iOpposite(iDir)));
 +            }
 +            if (neighbor.isSignalSource()) {
-+                power = Math.max(power, level.getSignalFrom(neighbor.pos, neighbor.state, Directions.ALL[iDir]));
++                power = Math.max(power, neighbor.state.getSignal(level, neighbor.pos, Directions.ALL[iDir]));
 +            }
 +
 +            if (power >= Redstone.SIGNAL_MAX) {
@@ -1344,7 +1283,7 @@ index 0000000000000000000000000000000000000000..c67ca649152e90fe15f21e2813c67dc3
 +            Node neighbor = getNeighbor(node, iDir);
 +
 +            if (neighbor.isSignalSource()) {
-+                power = Math.max(power, level.getDirectSignalFrom(neighbor.pos, neighbor.state, Directions.ALL[iDir]));
++                power = Math.max(power, neighbor.state.getDirectSignal(level, neighbor.pos, Directions.ALL[iDir]));
 +
 +                if (power >= Redstone.SIGNAL_MAX) {
 +                    return Redstone.SIGNAL_MAX;
@@ -1657,7 +1596,8 @@ index 0000000000000000000000000000000000000000..c67ca649152e90fe15f21e2813c67dc3
 +        // Shape updates to redstone wire are very expensive, and should never happen
 +        // as a result of power changes anyway.
 +        if (!state.isAir() && !state.is(Blocks.REDSTONE_WIRE)) {
-+            level.updateNeighborShape(pos, state, fromDir, fromPos, fromState);
++            BlockState newState = state.updateShape(fromDir, fromState, level, pos, fromPos);
++            Block.updateOrDestroy(state, newState, level, pos, Block.UPDATE_CLIENTS);
 +        }
 +    }
 +
@@ -1749,7 +1689,7 @@ index 0000000000000000000000000000000000000000..c67ca649152e90fe15f21e2813c67dc3
 +        // positions of the network to a set and filter out block updates to wires in
 +        // the network that way.
 +        if (!state.isAir() && !state.is(Blocks.REDSTONE_WIRE)) {
-+            level.updateNeighborBlock(pos, state, fromPos, Blocks.REDSTONE_WIRE);
++            state.neighborChanged(level, pos, Blocks.REDSTONE_WIRE, fromPos, false);
 +        }
 +    }
 +
@@ -1762,14 +1702,17 @@ index 0000000000000000000000000000000000000000..c67ca649152e90fe15f21e2813c67dc3
 +}
 diff --git a/src/main/java/alternate/current/wire/WireNode.java b/src/main/java/alternate/current/wire/WireNode.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..c77eb805b66db627e83cf959fa684d077c14d71e
+index 0000000000000000000000000000000000000000..6b5bffd288e2f815d8c3788e73530e69d549e25e
 --- /dev/null
 +++ b/src/main/java/alternate/current/wire/WireNode.java
-@@ -0,0 +1,113 @@
+@@ -0,0 +1,117 @@
 +package alternate.current.wire;
 +
 +import net.minecraft.core.BlockPos;
 +import net.minecraft.util.Mth;
++import net.minecraft.server.level.ServerLevel;
++import net.minecraft.world.level.block.Block;
++import net.minecraft.world.level.block.Blocks;
 +import net.minecraft.world.level.block.RedStoneWireBlock;
 +import net.minecraft.world.level.block.state.BlockState;
 +import net.minecraft.world.level.redstone.Redstone;
@@ -1814,7 +1757,7 @@ index 0000000000000000000000000000000000000000..c77eb805b66db627e83cf959fa684d07
 +    /** The next wire in the power queue. */
 +    WireNode next;
 +
-+    WireNode(LevelAccess level, BlockPos pos, BlockState state) {
++    WireNode(ServerLevel level, BlockPos pos, BlockState state) {
 +        super(level);
 +
 +        this.pos = pos.immutable();
@@ -1870,13 +1813,14 @@ index 0000000000000000000000000000000000000000..c77eb805b66db627e83cf959fa684d07
 +        state = level.getBlockState(pos);
 +
 +        if (shouldBreak) {
-+            return level.breakWire(pos, state);
++            Block.dropResources(state, level, pos);
++            return level.setBlock(pos, Blocks.AIR.defaultBlockState(), Block.UPDATE_CLIENTS);
 +        }
 +
-+        currentPower = level.doRedstoneEvent(pos, currentPower, power);
++        currentPower = LevelHelper.doRedstoneEvent(level, pos, currentPower, power);
 +        state = state.setValue(RedStoneWireBlock.POWER, currentPower);
 +
-+        return level.setWireState(pos, state, added);
++        return LevelHelper.setWireState(level, pos, state, added);
 +    }
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
