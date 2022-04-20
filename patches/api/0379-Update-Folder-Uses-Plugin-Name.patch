@@ -5,7 +5,7 @@ Subject: [PATCH] Update Folder Uses Plugin Name
 
 
 diff --git a/src/main/java/org/bukkit/plugin/SimplePluginManager.java b/src/main/java/org/bukkit/plugin/SimplePluginManager.java
-index 42da20011544075a9bea63a12ae86f2f21720667..bea2e464861771383f8fcf143fa817340cb8ab1d 100644
+index 42da20011544075a9bea63a12ae86f2f21720667..bab8bb3a52cdeef5f7052d4e3f404c42f37d117d 100644
 --- a/src/main/java/org/bukkit/plugin/SimplePluginManager.java
 +++ b/src/main/java/org/bukkit/plugin/SimplePluginManager.java
 @@ -400,7 +400,7 @@ public final class SimplePluginManager implements PluginManager {
@@ -17,7 +17,7 @@ index 42da20011544075a9bea63a12ae86f2f21720667..bea2e464861771383f8fcf143fa81734
  
          Set<Pattern> filters = fileAssociations.keySet();
          Plugin result = null;
-@@ -427,16 +427,50 @@ public final class SimplePluginManager implements PluginManager {
+@@ -427,16 +427,56 @@ public final class SimplePluginManager implements PluginManager {
          return result;
      }
  
@@ -32,7 +32,7 @@ index 42da20011544075a9bea63a12ae86f2f21720667..bea2e464861771383f8fcf143fa81734
          if (updateDirectory == null || !updateDirectory.isDirectory()) {
 -            return;
 +            return file;
-         }
++        }
 +        PluginLoader pluginLoader = getPluginLoader(file);
 +        try {
 +            String pluginName = pluginLoader.getPluginDescription(file).getName();
@@ -40,7 +40,13 @@ index 42da20011544075a9bea63a12ae86f2f21720667..bea2e464861771383f8fcf143fa81734
 +                if (!updateFile.isFile()) continue;
 +                PluginLoader updatePluginLoader = getPluginLoader(updateFile);
 +                if (updatePluginLoader == null) continue;
-+                String updatePluginName = updatePluginLoader.getPluginDescription(updateFile).getName();
++                String updatePluginName;
++                try {
++                     updatePluginName = updatePluginLoader.getPluginDescription(updateFile).getName();
++                     // We failed to load this data for some reason, so, we'll skip over this
++                } catch (InvalidDescriptionException ex) {
++                    continue;
++                }
 +                if (!pluginName.equals(updatePluginName)) continue;
 +                if (!FileUtil.copy(updateFile, file)) continue;
 +                File newName = new File(file.getParentFile(), updateFile.getName());
@@ -51,7 +57,7 @@ index 42da20011544075a9bea63a12ae86f2f21720667..bea2e464861771383f8fcf143fa81734
 +        }
 +        catch (InvalidDescriptionException e) {
 +            throw new InvalidPluginException(e);
-+        }
+         }
 +        return file;
 +    }
  
