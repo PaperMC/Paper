@@ -32,7 +32,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          if (updateDirectory == null || !updateDirectory.isDirectory()) {
 -            return;
 +            return file;
-         }
++        }
 +        PluginLoader pluginLoader = getPluginLoader(file);
 +        try {
 +            String pluginName = pluginLoader.getPluginDescription(file).getName();
@@ -40,7 +40,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                if (!updateFile.isFile()) continue;
 +                PluginLoader updatePluginLoader = getPluginLoader(updateFile);
 +                if (updatePluginLoader == null) continue;
-+                String updatePluginName = updatePluginLoader.getPluginDescription(updateFile).getName();
++                String updatePluginName;
++                try {
++                     updatePluginName = updatePluginLoader.getPluginDescription(updateFile).getName();
++                     // We failed to load this data for some reason, so, we'll skip over this
++                } catch (InvalidDescriptionException ex) {
++                    continue;
++                }
 +                if (!pluginName.equals(updatePluginName)) continue;
 +                if (!FileUtil.copy(updateFile, file)) continue;
 +                File newName = new File(file.getParentFile(), updateFile.getName());
@@ -51,7 +57,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +        catch (InvalidDescriptionException e) {
 +            throw new InvalidPluginException(e);
-+        }
+         }
 +        return file;
 +    }
  
