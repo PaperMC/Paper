@@ -3,8 +3,14 @@ package org.bukkit.configuration.file;
 import static org.junit.Assert.*;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.InvalidConfigurationException;
+import org.bukkit.configuration.MemoryConfiguration;
 import org.junit.Test;
 
 public class YamlConfigurationTest extends FileConfigurationTest {
@@ -200,5 +206,62 @@ public class YamlConfigurationTest extends FileConfigurationTest {
                 + "'null': C\n"
                 + "'!!null': X\n";
         assertEquals(expected, config.saveToString());
+    }
+
+    // SPIGOT-6949
+    @Test
+    public void testNestedConfigSections() throws InvalidConfigurationException {
+        YamlConfiguration config = getConfig();
+        List<Object> configList = new ArrayList<>();
+
+        MemoryConfiguration nestedSection = new MemoryConfiguration();
+        nestedSection.set("something", "value");
+        configList.add(nestedSection);
+
+        Map<String, Object> nestedMap = new HashMap<>();
+        nestedMap.put("scalar", 10);
+        nestedMap.put("string", "something");
+
+        MemoryConfiguration nestedSection2 = new MemoryConfiguration();
+        nestedSection2.set("embedded", "value");
+        nestedMap.put("section", nestedSection2);
+        configList.add(nestedMap);
+
+        config.set("list", configList);
+
+        String serialized = config.saveToString();
+        YamlConfiguration deserialized = new YamlConfiguration();
+        deserialized.loadFromString(serialized);
+
+        // The types of nested maps or configuration sections or configs might not be preserved, but
+        // their contents should be preserved:
+        assertEquals(convertSectionsToMaps(config), convertSectionsToMaps(deserialized));
+    }
+
+    // Recursively converts all configuration sections to Maps, including within any nested data
+    // structures such as Maps and Lists.
+    private Object convertSectionsToMaps(Object object) {
+        if (object instanceof ConfigurationSection) {
+            ConfigurationSection section = (ConfigurationSection) object;
+            Map<String, Object> values = section.getValues(false);
+            return convertSectionsToMaps(values);
+        } else if (object instanceof Map) {
+            Map<?, ?> map = (Map<?, ?>) object; // Might be immutable
+            Map<Object, Object> newMap = new LinkedHashMap<>();
+            for (Entry<?, ?> entry : map.entrySet()) {
+                newMap.put(entry.getKey(), convertSectionsToMaps(entry.getValue()));
+            }
+            return newMap;
+        } else if (object instanceof Iterable) {
+            // Any other type of Collection is converted to a list:
+            Iterable<?> iterable = (Iterable<?>) object; // Might be immutable
+            List<Object> newList = new ArrayList<>();
+            for (Object element : iterable) {
+                newList.add(convertSectionsToMaps(element));
+            }
+            return newList;
+        } else {
+            return object;
+        }
     }
 }
