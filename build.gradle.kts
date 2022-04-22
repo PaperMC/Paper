@@ -5,7 +5,7 @@ plugins {
     java
     `maven-publish`
     id("com.github.johnrengelman.shadow") version "7.1.2" apply false
-    id("io.papermc.paperweight.core") version "1.3.5"
+    id("io.papermc.paperweight.core") version "1.3.6"
 }
 
 allprojects {
@@ -62,7 +62,7 @@ repositories {
 
 dependencies {
     paramMappings("net.fabricmc:yarn:1.18.2+build.2:mergedv2")
-    remapper("net.fabricmc:tiny-remapper:0.8.1:fat")
+    remapper("net.fabricmc:tiny-remapper:0.8.2:fat")
     decompiler("net.minecraftforge:forgeflower:1.5.498.29")
     spigotDecompiler("io.papermc:patched-spigot-fernflower:0.1+build.4")
     paperclip("io.papermc:paperclip:3.0.2")
@@ -106,7 +106,7 @@ tasks.generateDevelopmentBundle {
     mojangApiCoordinates.set("io.papermc.paper:paper-mojangapi")
     libraryRepositories.addAll(
         "https://repo.maven.apache.org/maven2/",
-        "https://papermc.io/repo/repository/maven-public/",
+        paperMavenPublicUrl,
     )
 }
 
