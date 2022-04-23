@@ -9,7 +9,7 @@ a ton of noise to plugin developers.
 These do not help plugin developers if they bring moise noise than value.
 
 diff --git a/src/main/java/org/bukkit/Bukkit.java b/src/main/java/org/bukkit/Bukkit.java
-index c1e106a7af9acf3d84b9c3e377608fa0c3f7eb17..c8580174d88674a8ab115976e93f225bb20b5854 100644
+index 29e62cca52c0264a9662d0c0fb7f0bec877c706e..5e145a95c1259e084aeed08a3b1d773843939e3f 100644
 --- a/src/main/java/org/bukkit/Bukkit.java
 +++ b/src/main/java/org/bukkit/Bukkit.java
 @@ -1696,7 +1696,7 @@ public final class Bukkit {
@@ -79,8 +79,29 @@ index 53d1609e2a75c007cb7e5e8f963b0deb53bae5f7..a8561434d56f7db7e4f52283759b282e
      public boolean isLegacy() {
          return legacy;
      }
+diff --git a/src/main/java/org/bukkit/NamespacedKey.java b/src/main/java/org/bukkit/NamespacedKey.java
+index 01bcb3a1bdb5accdf844d0178cec3d25746b3eaa..236c9aea9ffc36269e5c32eacc9f1fd6bd039c88 100644
+--- a/src/main/java/org/bukkit/NamespacedKey.java
++++ b/src/main/java/org/bukkit/NamespacedKey.java
+@@ -39,12 +39,14 @@ public final class NamespacedKey implements net.kyori.adventure.key.Key, com.des
+ 
+     /**
+      * Create a key in a specific namespace.
++     * <p>
++     * For most plugin related code, you should prefer using the
++     * {@link NamespacedKey#NamespacedKey(Plugin, String)} constructor.
+      *
+      * @param namespace namespace
+      * @param key key
+-     * @deprecated should never be used by plugins, for internal use only!!
++     * @see #NamespacedKey(Plugin, String)
+      */
+-    @Deprecated
+     public NamespacedKey(@NotNull String namespace, @NotNull String key) {
+         Preconditions.checkArgument(namespace != null && VALID_NAMESPACE.matcher(namespace).matches(), "Invalid namespace. Must be [a-z0-9._-]: %s", namespace);
+         Preconditions.checkArgument(key != null && VALID_KEY.matcher(key).matches(), "Invalid key. Must be [a-z0-9/._-]: %s", key);
 diff --git a/src/main/java/org/bukkit/Server.java b/src/main/java/org/bukkit/Server.java
-index 71b32c1ca960a58ae9757e470626fa3e16d3c28b..f673927df360702b07f1fd197a3de07bc47b60cd 100644
+index ec6a47d46cba718e8f5a947ce11f5a6919dbe343..e32e6b87fefa95c07a0aef58cac33c99efea2631 100644
 --- a/src/main/java/org/bukkit/Server.java
 +++ b/src/main/java/org/bukkit/Server.java
 @@ -1442,7 +1442,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
@@ -117,6 +138,43 @@ index f124b35ec76e6cb6a1a0dc464005087043c3efd0..94a2fef0dc9e13c754cd31d5eabc1bde
   */
 +@Deprecated // Paper
  public interface LingeringPotion extends ThrownPotion { }
+diff --git a/src/main/java/org/bukkit/entity/Player.java b/src/main/java/org/bukkit/entity/Player.java
+index 98b856d068c765a277d1e218a04e05588e18fdcb..2c3aba0b8d89d74bfa22ae01232712c8e3516b6b 100644
+--- a/src/main/java/org/bukkit/entity/Player.java
++++ b/src/main/java/org/bukkit/entity/Player.java
+@@ -1356,9 +1356,8 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+      *
+      * @param plugin Plugin that wants to hide the entity
+      * @param entity Entity to hide
+-     * @deprecated draft API
+      */
+-    @Deprecated
++    @org.jetbrains.annotations.ApiStatus.Experimental // Paper
+     public void hideEntity(@NotNull Plugin plugin, @NotNull Entity entity);
+ 
+     /**
+@@ -1368,9 +1367,8 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+      *
+      * @param plugin Plugin that wants to show the entity
+      * @param entity Entity to show
+-     * @deprecated draft API
+      */
+-    @Deprecated
++    @org.jetbrains.annotations.ApiStatus.Experimental // Paper
+     public void showEntity(@NotNull Plugin plugin, @NotNull Entity entity);
+ 
+     /**
+@@ -1379,9 +1377,8 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+      * @param entity Entity to check
+      * @return True if the provided entity is not being hidden from this
+      *     player
+-     * @deprecated draft API
+      */
+-    @Deprecated
++    @org.jetbrains.annotations.ApiStatus.Experimental // Paper
+     public boolean canSee(@NotNull Entity entity);
+ 
+     /**
 diff --git a/src/main/java/org/bukkit/event/enchantment/PrepareItemEnchantEvent.java b/src/main/java/org/bukkit/event/enchantment/PrepareItemEnchantEvent.java
 index 2ff1b1308571d8f8056d3359e8a8ba4a589c3726..8eb6f4090578d9e1b12aff813840108fdeece730 100644
 --- a/src/main/java/org/bukkit/event/enchantment/PrepareItemEnchantEvent.java
@@ -147,6 +205,36 @@ index 2ff1b1308571d8f8056d3359e8a8ba4a589c3726..8eb6f4090578d9e1b12aff813840108f
 +    public @org.jetbrains.annotations.Nullable EnchantmentOffer @NotNull [] getOffers() { // Paper offers can contain null values
          return offers;
      }
+ 
+diff --git a/src/main/java/org/bukkit/event/player/PlayerHideEntityEvent.java b/src/main/java/org/bukkit/event/player/PlayerHideEntityEvent.java
+index d8a73cd22268e90eb438f522b9019f826f343275..78869fdb9cf4c541dff7d67b51866914987abf18 100644
+--- a/src/main/java/org/bukkit/event/player/PlayerHideEntityEvent.java
++++ b/src/main/java/org/bukkit/event/player/PlayerHideEntityEvent.java
+@@ -15,9 +15,8 @@ import org.jetbrains.annotations.NotNull;
+  * This event is called regardless of if the entity was within tracking range.
+  *
+  * @see Player#hideEntity(org.bukkit.plugin.Plugin, org.bukkit.entity.Entity)
+- * @deprecated draft API
+  */
+-@Deprecated
++@org.jetbrains.annotations.ApiStatus.Experimental // Paper
+ @Warning(false)
+ public class PlayerHideEntityEvent extends PlayerEvent {
+ 
+diff --git a/src/main/java/org/bukkit/event/player/PlayerShowEntityEvent.java b/src/main/java/org/bukkit/event/player/PlayerShowEntityEvent.java
+index 5408a8c123942a56ef11597ae6cdb77e14f741e3..29bb84145be18ef9162abdfc8820f2b3f7fd0db5 100644
+--- a/src/main/java/org/bukkit/event/player/PlayerShowEntityEvent.java
++++ b/src/main/java/org/bukkit/event/player/PlayerShowEntityEvent.java
+@@ -16,9 +16,8 @@ import org.jetbrains.annotations.NotNull;
+  * range.
+  *
+  * @see Player#showEntity(org.bukkit.plugin.Plugin, org.bukkit.entity.Entity)
+- * @deprecated draft API
+  */
+-@Deprecated
++@org.jetbrains.annotations.ApiStatus.Experimental // Paper
+ @Warning(false)
+ public class PlayerShowEntityEvent extends PlayerEvent {
  
 diff --git a/src/main/java/org/bukkit/inventory/CraftingInventory.java b/src/main/java/org/bukkit/inventory/CraftingInventory.java
 index df81bac9ecff697f98941e5c8490e10391e90090..a32977ba3ba60a1c9aee6e469d5d6cd1887c55a2 100644
