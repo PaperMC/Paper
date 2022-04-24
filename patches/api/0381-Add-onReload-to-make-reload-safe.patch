@@ -1,0 +1,84 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Turtley12 <76929530+Turtley12@users.noreply.github.com>
+Date: Sat, 23 Apr 2022 17:09:28 -0700
+Subject: [PATCH] Add onReload() to make /reload safe
+
+
+diff --git a/src/main/java/org/bukkit/command/defaults/ReloadCommand.java b/src/main/java/org/bukkit/command/defaults/ReloadCommand.java
+index 0c7ba0718de2b93d013968ca0fec34ffd423990f..aef971d0fe565fd57089f318aed0f3503c9cb8fa 100644
+--- a/src/main/java/org/bukkit/command/defaults/ReloadCommand.java
++++ b/src/main/java/org/bukkit/command/defaults/ReloadCommand.java
+@@ -13,7 +13,7 @@ public class ReloadCommand extends BukkitCommand {
+     public ReloadCommand(@NotNull String name) {
+         super(name);
+         this.description = "Reloads the server configuration and plugins";
+-        this.usageMessage = "/reload [permissions|commands|confirm]"; // Paper
++        this.usageMessage = "/reload [permissions|commands]"; // Paper
+         this.setPermission("bukkit.command.reload");
+         this.setAliases(Arrays.asList("rl"));
+     }
+@@ -22,8 +22,7 @@ public class ReloadCommand extends BukkitCommand {
+     public boolean execute(@NotNull CommandSender sender, @NotNull String currentAlias, @NotNull String[] args) { // Paper
+         if (!testPermission(sender)) return true;
+ 
+-        // Paper start - Reload permissions.yml & require confirm
+-        boolean confirmed = System.getProperty("LetMeReload") != null;
++        // Paper start - Reload permissions.yml
+         if (args.length == 1) {
+             if (args[0].equalsIgnoreCase("permissions")) {
+                 Bukkit.getServer().reloadPermissions();
+@@ -36,20 +35,14 @@ public class ReloadCommand extends BukkitCommand {
+                     Command.broadcastCommandMessage(sender, ChatColor.RED + "An error occurred while trying to reload command aliases.");
+                 }
+                 return true;
+-            } else if ("confirm".equalsIgnoreCase(args[0])) {
+-                confirmed = true;
+             } else {
+                 Command.broadcastCommandMessage(sender, ChatColor.RED + "Usage: " + usageMessage);
+                 return true;
+             }
+         }
+-        if (!confirmed) {
+-            Command.broadcastCommandMessage(sender, ChatColor.RED + "Are you sure you wish to reload your server? Doing so may cause bugs and memory leaks. It is recommended to restart instead of using /reload. To confirm, please type " + ChatColor.YELLOW + "/reload confirm");
+-            return true;
+-        }
+         // Paper end
+ 
+-        Command.broadcastCommandMessage(sender, ChatColor.RED + "Please note that this command is not supported and may cause issues when using some plugins.");
++        Command.broadcastCommandMessage(sender, ChatColor.RED + "Please note that while this command is no longer unsafe, it may not be supported by some plugins"); // Paper - Update unsupported command messages
+         Command.broadcastCommandMessage(sender, ChatColor.RED + "If you encounter any issues please use the /stop command to restart your server.");
+         Bukkit.reload();
+         Command.broadcastCommandMessage(sender, ChatColor.GREEN + "Reload complete.");
+diff --git a/src/main/java/org/bukkit/plugin/Plugin.java b/src/main/java/org/bukkit/plugin/Plugin.java
+index 34438b5362b0ba0949625d81e8371fe0d1f76fdf..7657352a87040f125926e775c95f21b770dd112f 100644
+--- a/src/main/java/org/bukkit/plugin/Plugin.java
++++ b/src/main/java/org/bukkit/plugin/Plugin.java
+@@ -130,6 +130,13 @@ public interface Plugin extends TabExecutor {
+      * Called when this plugin is enabled
+      */
+     public void onEnable();
++    // Paper start
++
++    /**
++     * Called when /reload is run.
++     */
++    public void onReload();
++    // Paper end
+ 
+     /**
+      * Simple boolean if we can still nag to the logs about things
+diff --git a/src/main/java/org/bukkit/plugin/java/JavaPlugin.java b/src/main/java/org/bukkit/plugin/java/JavaPlugin.java
+index c943bd801b54519ba6cf5d45aec593d7b7438f99..d3821327b5711472b1a41095e38a1c70a93f2e78 100644
+--- a/src/main/java/org/bukkit/plugin/java/JavaPlugin.java
++++ b/src/main/java/org/bukkit/plugin/java/JavaPlugin.java
+@@ -333,6 +333,10 @@ public abstract class JavaPlugin extends PluginBase {
+ 
+     @Override
+     public void onEnable() {}
++    // Paper start
++    @Override
++    public void onReload() {}
++    // Paper end
+ 
+     @Nullable
+     @Override
