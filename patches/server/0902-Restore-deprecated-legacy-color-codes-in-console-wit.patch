@@ -1,0 +1,131 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: "James P. Glines" <jamespglines@gmail.com>
+Date: Mon, 25 Apr 2022 14:01:09 -0500
+Subject: [PATCH] Restore deprecated legacy color codes in console with config
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+index c9c08e20f729b40b1d90f3ac144f5245f4f35230..10284eecc7b452b2a7f366e7195aacc9cd796388 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+@@ -688,4 +688,9 @@ public class PaperConfig {
+     private static void useDimensionTypeForCustomSpawners() {
+         useDimensionTypeForCustomSpawners = getBoolean("settings.use-dimension-type-for-custom-spawners", false);
+     }
++
++    public static boolean enableLegacyColorInConsole;
++    private static void enableLegacyColorInConsole() {
++        enableLegacyColorInConsole = getBoolean("settings.console.enable-legacy-deprecated-color-codes", true);
++    }
+ }
+diff --git a/src/main/java/com/destroystokyo/paper/console/TerminalConsoleCommandSender.java b/src/main/java/com/destroystokyo/paper/console/TerminalConsoleCommandSender.java
+index 84243e10c115104cadfe84c4f152f53c1b5f7c6f..923657138ed6b101356836d4e32b9a80792fcefe 100644
+--- a/src/main/java/com/destroystokyo/paper/console/TerminalConsoleCommandSender.java
++++ b/src/main/java/com/destroystokyo/paper/console/TerminalConsoleCommandSender.java
+@@ -1,5 +1,6 @@
+ package com.destroystokyo.paper.console;
+ 
++import com.destroystokyo.paper.PaperConfig;
+ import io.papermc.paper.adventure.PaperAdventure;
+ import io.papermc.paper.console.HexFormattingConverter;
+ import net.kyori.adventure.audience.MessageType;
+@@ -15,13 +16,21 @@ public class TerminalConsoleCommandSender extends CraftConsoleCommandSender {
+ 
+     @Override
+     public void sendRawMessage(String message) {
+-        final Component msg = PaperAdventure.LEGACY_SECTION_UXRC.deserialize(message);
+-        this.sendMessage(Identity.nil(), msg, MessageType.SYSTEM);
++        if (PaperConfig.enableLegacyColorInConsole) {
++            LOGGER.info(message);
++        } else {
++            final Component msg = PaperAdventure.LEGACY_SECTION_UXRC.deserialize(message);
++            this.sendMessage(Identity.nil(), msg, MessageType.SYSTEM);
++        }
+     }
+ 
+     @Override
+     public void sendMessage(Identity identity, Component message, MessageType type) {
+-        LOGGER.info(HexFormattingConverter.SERIALIZER.serialize(message));
++        if (PaperConfig.enableLegacyColorInConsole) {
++            LOGGER.info(PaperAdventure.LEGACY_SECTION_UXRC.serialize(message));
++        } else {
++            LOGGER.info(HexFormattingConverter.SERIALIZER.serialize(message));
++        }
+     }
+ 
+ }
+diff --git a/src/main/java/io/papermc/paper/console/HexFormattingConverter.java b/src/main/java/io/papermc/paper/console/HexFormattingConverter.java
+index ea83ee8762c126c449993a7497257b0bd8663452..3ee98c27e311e470fb9d1236d4f36f8f5e24e770 100644
+--- a/src/main/java/io/papermc/paper/console/HexFormattingConverter.java
++++ b/src/main/java/io/papermc/paper/console/HexFormattingConverter.java
+@@ -38,6 +38,7 @@ public final class HexFormattingConverter extends LogEventPatternConverter {
+     private static final String ANSI_RESET = "\u001B[m";
+ 
+     private static final char COLOR_CHAR = 0x7f;
++    private static final char LEGACY_COLOR_CHAR = '§';
+     public static final LegacyComponentSerializer SERIALIZER = LegacyComponentSerializer.builder()
+         .hexColors()
+         .flattener(PaperAdventure.FLATTENER)
+@@ -47,8 +48,9 @@ public final class HexFormattingConverter extends LogEventPatternConverter {
+ 
+     private static final String RGB_ANSI = "\u001B[38;2;%d;%d;%dm";
+     private static final Pattern NAMED_PATTERN = Pattern.compile(COLOR_CHAR + "[0-9a-fk-orA-FK-OR]");
++    private static final Pattern LEGACY_NAMED_PATTERN = Pattern.compile(LEGACY_COLOR_CHAR + "[0-9a-fk-orA-FK-OR]");
+     private static final Pattern RGB_PATTERN = Pattern.compile(COLOR_CHAR + "#([0-9a-fA-F]){6}");
+-
++    private static final Pattern LEGACY_RGB_PATTERN = Pattern.compile(LEGACY_COLOR_CHAR + "x(" + LEGACY_COLOR_CHAR + "[0-9a-fA-F]){6}");
+     private static final String[] RGB_ANSI_CODES = new String[]{
+         formatHexAnsi(NamedTextColor.BLACK),         // Black §0
+         formatHexAnsi(NamedTextColor.DARK_BLUE),     // Dark Blue §1
+@@ -133,6 +135,13 @@ public final class HexFormattingConverter extends LogEventPatternConverter {
+     }
+ 
+     private static String convertRGBColors(final String input) {
++        if (PaperConfig.enableLegacyColorInConsole) {
++            return LEGACY_RGB_PATTERN.matcher(input).replaceAll(result -> {
++                final String str = '#' + result.group().replace(String.valueOf(LEGACY_COLOR_CHAR), "");
++                return formatHexAnsi(Integer.decode(str.substring(1)));
++            });
++        }
++
+         return RGB_PATTERN.matcher(input).replaceAll(result -> {
+             final int hex = Integer.decode(result.group().substring(1));
+             return formatHexAnsi(hex);
+@@ -155,7 +164,7 @@ public final class HexFormattingConverter extends LogEventPatternConverter {
+     }
+ 
+     static void format(String content, StringBuilder result, int start, boolean ansi) {
+-        int next = content.indexOf(COLOR_CHAR);
++        int next = content.indexOf(PaperConfig.enableLegacyColorInConsole ? LEGACY_COLOR_CHAR : COLOR_CHAR);
+         int last = content.length() - 1;
+         if (next == -1 || next == last) {
+             result.setLength(start);
+@@ -166,7 +175,7 @@ public final class HexFormattingConverter extends LogEventPatternConverter {
+             return;
+         }
+ 
+-        Matcher matcher = NAMED_PATTERN.matcher(content);
++        Matcher matcher = PaperConfig.enableLegacyColorInConsole ? LEGACY_NAMED_PATTERN.matcher(content) : NAMED_PATTERN.matcher(content);
+         StringBuilder buffer = new StringBuilder();
+         final String[] ansiCodes = PaperConfig.useRgbForNamedTextColors ? RGB_ANSI_CODES : ANSI_ANSI_CODES;
+         while (matcher.find()) {
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index c8d56947305c981a3268ce4ae3e975db350ceff2..aff72f1c12d3dc96706847c7d2ad4f201615fd09 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -1747,7 +1747,14 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+ 
+     @Override
+     public void sendMessage(Component message, UUID sender) {
+-        MinecraftServer.LOGGER.info(io.papermc.paper.console.HexFormattingConverter.SERIALIZER.serialize(io.papermc.paper.adventure.PaperAdventure.asAdventure(message))); // Paper - Log message with colors
++        // Paper start - log with color
++        final net.kyori.adventure.text.Component component = io.papermc.paper.adventure.PaperAdventure.asAdventure(message);
++        if (com.destroystokyo.paper.PaperConfig.enableLegacyColorInConsole) {
++            MinecraftServer.LOGGER.info(io.papermc.paper.adventure.PaperAdventure.LEGACY_SECTION_UXRC.serialize(component));
++        } else {
++            MinecraftServer.LOGGER.info(io.papermc.paper.console.HexFormattingConverter.SERIALIZER.serialize(component));
++        }
++        // Paper end - log with color
+     }
+ 
+     public KeyPair getKeyPair() {
