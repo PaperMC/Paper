@@ -1,0 +1,57 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Minh Nguyen <minhh2792.work@gmail.com>
+Date: Thu, 21 Apr 2022 02:46:47 +0000
+Subject: [PATCH] Configurable map update interval
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+index c9c08e20f729b40b1d90f3ac144f5245f4f35230..1aa037867cf0f3161dd77b3cc1277e57c4d9d50c 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+@@ -72,7 +72,7 @@ public class PaperConfig {
+         commands.put("mspt", new MSPTCommand("mspt"));
+ 
+         version = getInt("config-version", 25);
+-        set("config-version", 25);
++        set("config-version", 26);
+         readConfig(PaperConfig.class, null);
+     }
+ 
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index ad3f0ff353a0448babde334641d1b1ac94779b07..ebeb5c2517ce9168e7ed6db4788357bd7c536b2f 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -590,6 +590,11 @@ public class PaperWorldConfig {
+         shieldBlockingDelay = getInt("game-mechanics.shield-blocking-delay", 5);
+     }
+ 
++    public int mapUpdateInterval = 5;
++    private void mapUpdateInterval() {
++        mapUpdateInterval = getInt("game-mechanics.map-update-interval", 5);
++    }
++
+     public boolean scanForLegacyEnderDragon = true;
+     private void scanForLegacyEnderDragon() {
+         scanForLegacyEnderDragon = getBoolean("game-mechanics.scan-for-legacy-ender-dragon", true);
+diff --git a/src/main/java/net/minecraft/world/level/saveddata/maps/MapItemSavedData.java b/src/main/java/net/minecraft/world/level/saveddata/maps/MapItemSavedData.java
+index 6a78374b6ab3198571df7e17023d371667ebb24b..c28271a70b044cb61c1babb2f4cb52b4969e6d4a 100644
+--- a/src/main/java/net/minecraft/world/level/saveddata/maps/MapItemSavedData.java
++++ b/src/main/java/net/minecraft/world/level/saveddata/maps/MapItemSavedData.java
+@@ -624,7 +624,7 @@ public class MapItemSavedData extends SavedData {
+         @Nullable
+         Packet<?> nextUpdatePacket(int mapId) {
+             MapItemSavedData.MapPatch worldmap_b;
+-            if (!this.dirtyData && this.tick % 5 != 0) { this.tick++; return null; } // Paper - this won't end up sending, so don't render it!
++            if (!this.dirtyData && this.tick % player.level.paperConfig.mapUpdateInterval != 0) { this.tick++; return null; } // Paper - this won't end up sending, so don't render it!, faster map update interval
+             boolean vanillaMaps = shouldUseVanillaMap(); // Paper
+             org.bukkit.craftbukkit.map.RenderData render = !vanillaMaps ? MapItemSavedData.this.mapView.render((org.bukkit.craftbukkit.entity.CraftPlayer) this.player.getBukkitEntity()) : MapItemSavedData.this.vanillaRender; // CraftBukkit // Paper
+ 
+@@ -637,7 +637,7 @@ public class MapItemSavedData extends SavedData {
+ 
+             Collection collection;
+ 
+-            if ((true || this.dirtyDecorations) && this.tick++ % 5 == 0) { // CraftBukkit - custom maps don't update this yet
++            if ((true || this.dirtyDecorations) && this.tick++ % player.level.paperConfig.mapUpdateInterval == 0) { // CraftBukkit - custom maps don't update this yet // Paper - faster map update interval
+                 this.dirtyDecorations = false;
+                 // CraftBukkit start
+                 java.util.Collection<MapDecoration> icons = new java.util.ArrayList<MapDecoration>();
