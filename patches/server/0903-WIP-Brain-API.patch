@@ -1,0 +1,1099 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Owen1212055 <23108066+Owen1212055@users.noreply.github.com>
+Date: Mon, 29 Nov 2021 21:57:05 -0500
+Subject: [PATCH] WIP Brain API
+
+
+diff --git a/src/main/java/io/papermc/paper/entity/brain/PaperBrainHolder.java b/src/main/java/io/papermc/paper/entity/brain/PaperBrainHolder.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..924b2289f578c2300649d044a548c2a31d853688
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/entity/brain/PaperBrainHolder.java
+@@ -0,0 +1,312 @@
++package io.papermc.paper.entity.brain;
++
++import com.google.common.collect.ImmutableList;
++import com.mojang.datafixers.util.Pair;
++import io.papermc.paper.entity.brain.activity.ActivityKey;
++import io.papermc.paper.entity.brain.activity.PaperCustomBehavior;
++import io.papermc.paper.entity.brain.activity.PaperVanillaBehavior;
++import io.papermc.paper.entity.brain.activity.behavior.Behavior;
++import io.papermc.paper.entity.brain.activity.behavior.BehaviorPair;
++import io.papermc.paper.entity.brain.memory.MemoryKeyStatus;
++import io.papermc.paper.entity.brain.memory.MemoryPair;
++import io.papermc.paper.entity.brain.sensor.PaperCustomSensor;
++import io.papermc.paper.entity.brain.sensor.PaperVanillaSensor;
++import io.papermc.paper.entity.brain.sensor.Sensor;
++import io.papermc.paper.entity.brain.sensor.SensorKey;
++import net.minecraft.server.level.ServerLevel;
++import net.minecraft.world.entity.LivingEntity;
++import net.minecraft.world.entity.ai.Brain;
++import net.minecraft.world.entity.ai.memory.MemoryModuleType;
++import net.minecraft.world.entity.ai.memory.MemoryStatus;
++import net.minecraft.world.entity.ai.sensing.SensorType;
++import net.minecraft.world.entity.schedule.Activity;
++import org.bukkit.NamespacedKey;
++import org.bukkit.craftbukkit.entity.memory.CraftMemoryMapper;
++import org.bukkit.entity.memory.MemoryKey;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++import java.util.ArrayList;
++import java.util.Collection;
++import java.util.HashMap;
++import java.util.HashSet;
++import java.util.List;
++import java.util.Map;
++import java.util.Optional;
++import java.util.Set;
++
++/*
++So although every entity "has a brain"
++Not every entity uses it!
++*/
++public interface PaperBrainHolder<T extends org.bukkit.entity.LivingEntity> extends BrainHolder<T> {
++
++    LivingEntity getHandle();
++
++    default Brain<?> getBrain() {
++        return this.getHandle().getBrain();
++    }
++
++    @Override
++    default void clearActivities() {
++        Brain<?> brain = this.getBrain();
++
++        // Clear predefined core activities
++        brain.coreActivities = new HashSet<>();
++        brain.activeActivities.clear();
++
++        brain.activityRequirements.clear();
++        brain.activityMemoriesToEraseWhenStopped.clear();
++        brain.availableBehaviorsByPriority.clear();
++    }
++
++    private List<ActivityKey> transformActivities(Collection<Activity> activities) {
++        List<ActivityKey> keys = new ArrayList<>(activities.size());
++        for (Activity activity : activities) {
++            keys.add(PaperBrainUtil.toBukkit(activity));
++        }
++
++        return keys;
++    }
++
++    @Override
++    @NotNull
++    default Map<Integer, Collection<ActivityKey>> getPrioritizedActivities() {
++        Map<Integer, Collection<ActivityKey>> activities = new HashMap<>();
++        for (var entry : this.getBrain().availableBehaviorsByPriority.entrySet()) {
++            activities.put(entry.getKey(), transformActivities(entry.getValue().keySet()));
++        }
++
++        return activities;
++    }
++
++    @Override
++    @NotNull
++    default Collection<ActivityKey> getActiveActivities() {
++        return transformActivities(this.getBrain().activeActivities);
++    }
++
++    @Override
++    @NotNull
++    default Collection<ActivityKey> getCoreActivities() {
++        return transformActivities(this.getBrain().coreActivities);
++    }
++
++
++    @Override
++    default void startActivity(ActivityKey key) {
++        this.getBrain().setActiveActivityIfPossible(PaperBrainUtil.getHandle(key));
++    }
++
++    @SuppressWarnings({"rawtypes", "unchecked"})
++    @Override
++    default void stopActivity(ActivityKey key) {
++        Activity activity = PaperBrainUtil.getHandle(key);
++        Brain<?> brain = this.getBrain();
++
++        if (brain.isActive(activity)) {
++            brain.activeActivities.remove(activity);
++
++            ServerLevel level = (ServerLevel) this.getHandle().level;
++            Map<Integer, Map<Activity, Set<net.minecraft.world.entity.ai.behavior.Behavior>>> map = (Map<Integer, Map<Activity, Set<net.minecraft.world.entity.ai.behavior.Behavior>>>) brain.availableBehaviorsByPriority.values();
++
++            for (var behaviorsMap : map.values()) {
++                Set<net.minecraft.world.entity.ai.behavior.Behavior> behaviors = behaviorsMap.get(activity);
++
++                if (behaviors != null) {
++                    for (var behavior : behaviors) {
++                        if (behavior.getStatus() == net.minecraft.world.entity.ai.behavior.Behavior.Status.RUNNING) {
++                            behavior.doStop(level, this.getHandle(), level.getGameTime());
++                        }
++                    }
++                }
++
++            }
++        }
++    }
++
++    @Override
++    default void startFirstValidActivity(Collection<ActivityKey> keys) {
++        List<Activity> activites = new ArrayList<>(keys.size());
++        for (ActivityKey key : keys) {
++            activites.add(PaperBrainUtil.getHandle(key));
++        }
++
++        this.getBrain().setActiveActivityToFirstValid(activites);
++    }
++
++    @SuppressWarnings({"unchecked", "rawtypes"})
++    @Override
++    default void addActivity(ActivityKey key, Collection<BehaviorPair<? super T>> behaviorPairs, Collection<MemoryPair> requiredMemories, Collection<MemoryKey<?>> keysToRemoveOnFinish) {
++        Brain<?> brain = this.getBrain();
++
++        ImmutableList.Builder behaviorPairList = ImmutableList.builderWithExpectedSize(behaviorPairs.size());
++        for (BehaviorPair<? super T> pair : behaviorPairs) {
++
++            net.minecraft.world.entity.ai.behavior.Behavior mcBehavior;
++            Behavior<?> paperBehavior = pair.behavior();
++            if (paperBehavior instanceof PaperVanillaBehavior vanillaBehavior) { // Don't surround vanilla behaviors
++                mcBehavior = vanillaBehavior.getHandle();
++            } else {
++                mcBehavior = new PaperCustomBehavior<>(pair.behavior());
++            }
++
++            behaviorPairList.add(new Pair<>(pair.priority(), mcBehavior));
++        }
++
++        Set<Pair<MemoryModuleType<?>, MemoryStatus>> memoryPairSet = new HashSet<>(requiredMemories.size());
++        for (MemoryPair pair : requiredMemories) {
++            memoryPairSet.add(new Pair<>(PaperBrainUtil.getHandle(pair.key()), PaperBrainUtil.getHandle(pair.requiredStatus())));
++        }
++
++        Set<MemoryModuleType<?>> removeSet = new HashSet<>(keysToRemoveOnFinish.size());
++        for (MemoryKey<?> memoryKey : keysToRemoveOnFinish) {
++            removeSet.add(PaperBrainUtil.getHandle(memoryKey));
++        }
++
++        brain.addActivityAndRemoveMemoriesWhenStopped(PaperBrainUtil.getHandle(key),
++            behaviorPairList.build(),
++            memoryPairSet,
++            removeSet
++        );
++    }
++
++    @Override
++    default ActivityKey getDefaultActivity() {
++        return PaperBrainUtil.toBukkit(this.getBrain().defaultActivity);
++    }
++
++    @Override
++    default void setDefaultActivity(ActivityKey key) {
++        this.getBrain().setDefaultActivity(PaperBrainUtil.getHandle(key));
++    }
++
++    @Override
++    default void setCoreActivities(Collection<ActivityKey> keys) {
++        Set<Activity> activites = new HashSet<>(keys.size());
++        for (ActivityKey key : keys) {
++            activites.add(PaperBrainUtil.getHandle(key));
++        }
++
++        this.getBrain().setCoreActivities(activites);
++    }
++
++    @SuppressWarnings({"unchecked", "rawtypes"})
++    @Override
++    default void addSensor(SensorKey key, Sensor<? super T> sensor) {
++        Brain<?> brain = this.getBrain();
++
++        // See brain constructor
++        net.minecraft.world.entity.ai.sensing.Sensor mcSensor;
++        if (sensor instanceof PaperVanillaSensor vanillaSensor) { // Don't surround vanilla sensors
++            mcSensor = vanillaSensor.getHandle();
++        } else {
++            mcSensor = new PaperCustomSensor(sensor);
++        }
++
++        SensorType ignoreGenericType = PaperBrainUtil.getHandle(key);
++        // Register sensor
++        brain.sensors.put(ignoreGenericType, mcSensor);
++
++        // Register any required memories
++        Set<MemoryModuleType<?>> thanksIntellij = mcSensor.requires(); // Intellij wants to have this set iterate objects ???????????????????????????
++        for (MemoryModuleType<?> memoryType : thanksIntellij) {
++            brain.memories.putIfAbsent(memoryType, Optional.empty());
++        }
++    }
++
++    @Override
++    default void clearSensors() {
++        Brain<?> brain = this.getBrain();
++        brain.sensors.clear();
++    }
++
++    @Override
++    default void removeSensor(SensorKey key) {
++        Brain<?> brain = this.getBrain();
++        brain.sensors.remove(PaperBrainUtil.getHandle(key));
++    }
++
++    @Nullable
++    @Override
++    default Sensor<? extends org.bukkit.entity.LivingEntity> getSensor(SensorKey key) {
++        Brain<?> brain = this.getBrain();
++        return brain.sensors.get(PaperBrainUtil.getHandle(key)).getPaperSensor();
++    }
++
++    @Override
++    @NotNull
++    default Collection<Sensor<? extends org.bukkit.entity.LivingEntity>> getSensors() {
++        Brain<?> brain = this.getBrain();
++
++        List<Sensor<? extends org.bukkit.entity.LivingEntity>> sensors = new ArrayList<>(brain.sensors.size());
++        for (net.minecraft.world.entity.ai.sensing.Sensor<?> sensor : brain.sensors.values()) {
++            sensors.add(sensor.getPaperSensor());
++        }
++
++        return sensors;
++    }
++
++    @Override
++    default void registerMemory(MemoryKey<?> memoryKey) {
++        Brain<?> brain = this.getBrain();
++        brain.memories.put(PaperBrainUtil.getHandle(memoryKey), Optional.empty());
++    }
++
++    @SuppressWarnings("unchecked")
++    @Override
++    default <V> void setMemory(MemoryKey<V> memoryKey, V value, long expireIn) {
++        Brain<?> brain = this.getBrain();
++
++        if (memoryKey.getKey().getNamespace().equals(NamespacedKey.MINECRAFT_NAMESPACE)) {
++            value = (V) CraftMemoryMapper.toNms(value);
++        }
++
++        if (expireIn == Long.MAX_VALUE) {
++            brain.setMemory(PaperBrainUtil.getHandle(memoryKey), value);
++        } else {
++            brain.setMemoryWithExpiry(PaperBrainUtil.getHandle(memoryKey), value, expireIn);
++        }
++    }
++
++    @Override
++    @NotNull
++    default boolean isMemoryStatus(MemoryKey<?> memoryKey, MemoryKeyStatus status) {
++        Brain<?> brain = this.getBrain();
++
++        return brain.checkMemory(PaperBrainUtil.getHandle(memoryKey), PaperBrainUtil.getHandle(status));
++    }
++
++    @Override
++    default void forgetMemory(MemoryKey<?> memoryKey) {
++        Brain<?> brain = this.getBrain();
++
++        brain.eraseMemory(PaperBrainUtil.getHandle(memoryKey));
++    }
++
++    @Override
++    default void unregisterMemory(MemoryKey<?> memoryKey) {
++        this.getBrain().memories.remove(PaperBrainUtil.getHandle(memoryKey));
++    }
++
++    @Override
++    @NotNull
++    default Collection<MemoryKey<?>> getMemories() {
++        Brain<?> brain = this.getBrain();
++
++        List<MemoryKey<?>> memories = new ArrayList<>(); // Don't specify initial size since keys can be null due to this being a separate api
++        for (MemoryModuleType<?> memory : brain.memories.keySet()) {
++            MemoryKey<?> key = PaperBrainUtil.toBukkit(memory);
++            if (key != null) {
++                memories.add(key);
++            }
++        }
++
++        return memories;
++    }
++
++    @Override
++    default void unregisterMemories() {
++        this.getBrain().memories.clear();
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/entity/brain/PaperBrainUtil.java b/src/main/java/io/papermc/paper/entity/brain/PaperBrainUtil.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..be7cdc86fb990ac8ddea1e67f959d3899078c977
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/entity/brain/PaperBrainUtil.java
+@@ -0,0 +1,97 @@
++package io.papermc.paper.entity.brain;
++
++import io.leangen.geantyref.GenericTypeReflector;
++import io.papermc.paper.entity.brain.activity.ActivityKey;
++import io.papermc.paper.entity.brain.activity.PaperActivity;
++import io.papermc.paper.entity.brain.activity.VanillaActivityKey;
++import io.papermc.paper.entity.brain.memory.MemoryKeyStatus;
++import io.papermc.paper.entity.brain.memory.PaperDataTypeWrapperCodec;
++import io.papermc.paper.entity.brain.sensor.PaperSensor;
++import io.papermc.paper.entity.brain.sensor.SensorKey;
++import net.minecraft.core.Registry;
++import net.minecraft.resources.ResourceLocation;
++import net.minecraft.world.entity.ai.memory.MemoryModuleType;
++import net.minecraft.world.entity.ai.memory.MemoryStatus;
++import net.minecraft.world.entity.ai.sensing.SensorType;
++import net.minecraft.world.entity.schedule.Activity;
++import org.bukkit.NamespacedKey;
++import org.bukkit.craftbukkit.util.CraftNamespacedKey;
++import org.bukkit.entity.memory.MemoryKey;
++import org.bukkit.entity.memory.PaperMemoryKey;
++import org.bukkit.persistence.PersistentDataType;
++import org.jetbrains.annotations.Nullable;
++
++import java.util.Optional;
++
++public class PaperBrainUtil {
++
++    @SuppressWarnings("unchecked")
++    public static <C> MemoryKey<C> registerCustomMemoryKey(NamespacedKey key, io.leangen.geantyref.TypeToken<C> type, @Nullable PersistentDataType<C, ?> dataType) {
++        MemoryKey<C> memoryKey = PaperMemoryKey.create(key, (Class<C>) GenericTypeReflector.erase(type.getType()));
++        Registry.register(Registry.MEMORY_MODULE_TYPE, new ResourceLocation(key.toString()), new MemoryModuleType<>(Optional.ofNullable(dataType == null ? null : new PaperDataTypeWrapperCodec<>(dataType))));
++
++        return memoryKey;
++    }
++
++    @SuppressWarnings("unchecked")
++    public static <T> MemoryModuleType<T> getHandle(MemoryKey<T> key) {
++        return (MemoryModuleType<T>) Registry.MEMORY_MODULE_TYPE.get(CraftNamespacedKey.toMinecraft(key.getKey()));
++    }
++
++    public static MemoryKey<?> toBukkit(MemoryModuleType<?> key) {
++        return MemoryKey.getByKey(CraftNamespacedKey.fromMinecraft(Registry.MEMORY_MODULE_TYPE.getKey(key)));
++    }
++
++    public static MemoryKeyStatus toBukkit(MemoryStatus status) {
++        return switch (status) {
++            case VALUE_ABSENT -> MemoryKeyStatus.ABSENT;
++            case VALUE_PRESENT -> MemoryKeyStatus.PRESENT;
++            case REGISTERED -> MemoryKeyStatus.REGISTERED;
++        };
++    }
++
++    public static MemoryStatus getHandle(MemoryKeyStatus status) {
++        return switch (status) {
++            case ABSENT -> MemoryStatus.VALUE_ABSENT;
++            case PRESENT -> MemoryStatus.VALUE_PRESENT;
++            case REGISTERED -> MemoryStatus.REGISTERED;
++        };
++    }
++
++    public static io.papermc.paper.entity.brain.sensor.SensorKey registerCustomSensorKey(NamespacedKey key) {
++        Registry.register(Registry.SENSOR_TYPE, new ResourceLocation(key.toString()), new SensorType<>(() -> {
++            throw new UnsupportedOperationException("This is only called when the brain is initially created. Paper does not use this and instead directly injects itself into " +
++                "the brain directly.");
++        }));
++
++        return new PaperSensor(key);
++    }
++
++    public static SensorType<?> getHandle(SensorKey key) {
++        if (key == null) { // Null check to prevent confusing exception
++            throw new NullPointerException("Null key provided");
++        }
++
++        return Registry.SENSOR_TYPE.get(CraftNamespacedKey.toMinecraft(key.getKey()));
++    }
++
++    public static ActivityKey registerCustomActivityKey(NamespacedKey key) {
++        ActivityKey activityKey = new PaperActivity(key);
++        Registry.register(Registry.ACTIVITY, new ResourceLocation(key.toString()), new Activity(key.toString()));
++
++        return activityKey;
++    }
++
++    public static Activity getHandle(ActivityKey key) {
++        if (key == null) { // Null check to prevent confusing exception
++            throw new NullPointerException("Null key provided");
++        }
++
++        return Registry.ACTIVITY.get(CraftNamespacedKey.toMinecraft(key.getKey()));
++    }
++
++    public static ActivityKey toBukkit(Activity activity) {
++        return VanillaActivityKey.getByKey(CraftNamespacedKey.fromMinecraft(Registry.ACTIVITY.getKey(activity)));
++    }
++
++}
+diff --git a/src/main/java/io/papermc/paper/entity/brain/activity/PaperActivity.java b/src/main/java/io/papermc/paper/entity/brain/activity/PaperActivity.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..989dfd561de18124034cfa0b1225a680c7c45f5d
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/entity/brain/activity/PaperActivity.java
+@@ -0,0 +1,13 @@
++package io.papermc.paper.entity.brain.activity;
++
++import org.bukkit.NamespacedKey;
++import org.jetbrains.annotations.NotNull;
++
++public record PaperActivity(NamespacedKey key) implements ActivityKey {
++
++    @Override
++    public @NotNull
++    NamespacedKey getKey() {
++        return key;
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/entity/brain/activity/PaperCustomBehavior.java b/src/main/java/io/papermc/paper/entity/brain/activity/PaperCustomBehavior.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..1f8d16a82f4f2bdb4b6a973e815119dfffad0862
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/entity/brain/activity/PaperCustomBehavior.java
+@@ -0,0 +1,61 @@
++package io.papermc.paper.entity.brain.activity;
++
++import io.papermc.paper.entity.brain.PaperBrainUtil;
++import io.papermc.paper.entity.brain.memory.MemoryPair;
++import net.minecraft.server.level.ServerLevel;
++import net.minecraft.world.entity.LivingEntity;
++import net.minecraft.world.entity.ai.behavior.Behavior;
++import net.minecraft.world.entity.ai.memory.MemoryModuleType;
++import net.minecraft.world.entity.ai.memory.MemoryStatus;
++
++import java.util.Collection;
++import java.util.HashMap;
++import java.util.Map;
++
++
++public class PaperCustomBehavior<T extends LivingEntity> extends Behavior<T> {
++
++    private final io.papermc.paper.entity.brain.activity.behavior.Behavior<org.bukkit.entity.LivingEntity> behavior;
++
++    public PaperCustomBehavior(io.papermc.paper.entity.brain.activity.behavior.Behavior behavior) {
++        super(toMinecraft(behavior), behavior.getMinRuntime(), behavior.getMaxRuntime());
++        this.behavior = behavior;
++    }
++
++    @Override
++    protected void start(ServerLevel world, T entity, long time) {
++        behavior.start(entity.getBukkitLivingEntity());
++    }
++
++    @Override
++    protected void tick(ServerLevel world, T entity, long time) {
++        behavior.tick(entity.getBukkitLivingEntity());
++    }
++
++    @Override
++    protected void stop(ServerLevel world, T entity, long time) {
++        behavior.stop(entity.getBukkitLivingEntity());
++    }
++
++    @Override
++    protected boolean checkExtraStartConditions(ServerLevel world, T entity) {
++        return behavior.canStart(entity.getBukkitLivingEntity());
++    }
++
++    @Override
++    protected boolean canStillUse(ServerLevel world, T entity, long time) {
++        return behavior.canStillRun(entity.getBukkitLivingEntity());
++    }
++
++    private static Map<MemoryModuleType<?>, MemoryStatus> toMinecraft(io.papermc.paper.entity.brain.activity.behavior.Behavior behavior) {
++        Collection<MemoryPair> requirement = behavior.getMemoryRequirements();
++
++        Map<MemoryModuleType<?>, MemoryStatus> map = new HashMap<>(requirement.size());
++        for (MemoryPair pair : requirement) {
++            map.put(PaperBrainUtil.getHandle(pair.key()), PaperBrainUtil.getHandle(pair.requiredStatus()));
++        }
++
++        return map;
++    }
++
++}
+diff --git a/src/main/java/io/papermc/paper/entity/brain/activity/PaperVanillaBehavior.java b/src/main/java/io/papermc/paper/entity/brain/activity/PaperVanillaBehavior.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..2da79dc1337745e3484ca5a347455c3dcaa72c12
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/entity/brain/activity/PaperVanillaBehavior.java
+@@ -0,0 +1,81 @@
++package io.papermc.paper.entity.brain.activity;
++
++import io.papermc.paper.entity.brain.PaperBrainUtil;
++import io.papermc.paper.entity.brain.activity.behavior.Behavior;
++import io.papermc.paper.entity.brain.memory.MemoryKeyStatus;
++import io.papermc.paper.entity.brain.memory.MemoryPair;
++import net.minecraft.server.level.ServerLevel;
++import net.minecraft.world.entity.ai.memory.MemoryModuleType;
++import net.minecraft.world.entity.ai.memory.MemoryStatus;
++import org.bukkit.craftbukkit.entity.CraftLivingEntity;
++import org.bukkit.entity.LivingEntity;
++import org.bukkit.entity.memory.MemoryKey;
++
++import java.util.ArrayList;
++import java.util.Collection;
++import java.util.List;
++import java.util.Map;
++
++public class PaperVanillaBehavior implements Behavior<LivingEntity> {
++
++    private final net.minecraft.world.entity.ai.behavior.Behavior<net.minecraft.world.entity.LivingEntity> handle;
++    private final Collection<MemoryPair> memoryRequirements;
++
++    public PaperVanillaBehavior(net.minecraft.world.entity.ai.behavior.Behavior<net.minecraft.world.entity.LivingEntity> handle) {
++        this.handle = handle;
++
++        List<MemoryPair> memoryRequirements = new ArrayList<>(handle.entryCondition.size());
++        for (Map.Entry<MemoryModuleType<?>, MemoryStatus> type : handle.entryCondition.entrySet()) {
++
++            MemoryKey<?> key = PaperBrainUtil.toBukkit(type.getKey());
++            if (key != null) {
++                MemoryKeyStatus status = PaperBrainUtil.toBukkit(type.getValue());
++
++                memoryRequirements.add(new MemoryPair(status, key));
++            }
++        }
++
++        this.memoryRequirements = memoryRequirements;
++    }
++
++    @Override
++    public void start(LivingEntity entity) {
++        net.minecraft.world.entity.LivingEntity entityHandle = ((CraftLivingEntity) entity).getHandle();
++
++        handle.tryStart((ServerLevel) entityHandle.level, entityHandle, entityHandle.level.getGameTime());
++    }
++
++    @Override
++    public void tick(LivingEntity entity) {
++        net.minecraft.world.entity.LivingEntity entityHandle = ((CraftLivingEntity) entity).getHandle();
++
++        handle.tickOrStop((ServerLevel) entityHandle.level, entityHandle, entityHandle.level.getGameTime());
++    }
++
++    @Override
++    public void stop(LivingEntity entity) {
++        net.minecraft.world.entity.LivingEntity entityHandle = ((CraftLivingEntity) entity).getHandle();
++
++        handle.doStop((ServerLevel) entityHandle.level, entityHandle, entityHandle.level.getGameTime());
++    }
++
++    @Override
++    public int getMinRuntime() {
++        return handle.minDuration;
++    }
++
++    @Override
++    public int getMaxRuntime() {
++        return handle.maxDuration;
++    }
++
++    @Override
++    public Collection<MemoryPair> getMemoryRequirements() {
++        return memoryRequirements;
++    }
++
++    public net.minecraft.world.entity.ai.behavior.Behavior<net.minecraft.world.entity.LivingEntity> getHandle() {
++        return handle;
++    }
++
++}
+diff --git a/src/main/java/io/papermc/paper/entity/brain/memory/PaperDataTypeWrapperCodec.java b/src/main/java/io/papermc/paper/entity/brain/memory/PaperDataTypeWrapperCodec.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..83d60a179049fa43450ea1ef15e8efe20c9fd4bd
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/entity/brain/memory/PaperDataTypeWrapperCodec.java
+@@ -0,0 +1,78 @@
++package io.papermc.paper.entity.brain.memory;
++
++import com.mojang.datafixers.DataFixUtils;
++import com.mojang.serialization.Codec;
++import com.mojang.serialization.DataResult;
++import com.mojang.serialization.DynamicOps;
++import com.mojang.serialization.codecs.PrimitiveCodec;
++import org.bukkit.craftbukkit.persistence.CraftPersistentDataAdapterContext;
++import org.bukkit.craftbukkit.persistence.CraftPersistentDataTypeRegistry;
++import org.bukkit.persistence.PersistentDataType;
++
++import java.nio.ByteBuffer;
++import java.util.HashMap;
++import java.util.Map;
++import java.util.stream.IntStream;
++import java.util.stream.LongStream;
++
++public class PaperDataTypeWrapperCodec<P, C, A> implements PrimitiveCodec<C> {
++
++    private static final Map<Class<?>, PrimitiveCodec<?>> CODEC_PDT_MAP = new HashMap<>();
++
++    static {
++        CODEC_PDT_MAP.put(Byte.class, Codec.BYTE);
++        CODEC_PDT_MAP.put(Short.class, Codec.SHORT);
++        CODEC_PDT_MAP.put(Integer.class, Codec.INT);
++        CODEC_PDT_MAP.put(Long.class, Codec.LONG);
++        CODEC_PDT_MAP.put(Float.class, Codec.FLOAT);
++        CODEC_PDT_MAP.put(Double.class, Codec.DOUBLE);
++        CODEC_PDT_MAP.put(String.class, Codec.STRING);
++        CODEC_PDT_MAP.put(byte[].class, Codec.BYTE_BUFFER);
++        CODEC_PDT_MAP.put(int[].class, Codec.INT_STREAM);
++        CODEC_PDT_MAP.put(long[].class, Codec.LONG_STREAM);
++    }
++
++    private static final CraftPersistentDataAdapterContext CONTEXT = new CraftPersistentDataAdapterContext(new CraftPersistentDataTypeRegistry());
++
++    private final PrimitiveCodec<A> codec; // Codec can be a different type than persistentDataType
++    private final PersistentDataType<P, C> dataType;
++
++    @SuppressWarnings("unchecked")
++    public PaperDataTypeWrapperCodec(PersistentDataType<P, C> persistentDataType) {
++        this.dataType = persistentDataType;
++        this.codec = (PrimitiveCodec<A>) CODEC_PDT_MAP.get(persistentDataType.getPrimitiveType());
++        if (codec == null) {
++            throw new IllegalArgumentException("Provided PersistentDataType was not a primitive! Couldn't find fit for: " + persistentDataType.getPrimitiveType());
++        }
++    }
++
++    @SuppressWarnings("unchecked")
++    @Override
++    public <T> DataResult<C> read(DynamicOps<T> ops, T input) {
++        Object deserialized = codec.decode(ops, input).result().orElseThrow().getFirst();
++        if (deserialized instanceof ByteBuffer buffer) {
++            deserialized = DataFixUtils.toArray(buffer);
++        } else if (deserialized instanceof IntStream stream) {
++            deserialized = stream.toArray();
++        } else if (deserialized instanceof LongStream stream) {
++            deserialized = stream.toArray();
++        }
++
++        return DataResult.success(dataType.fromPrimitive((P) deserialized, CONTEXT));
++    }
++
++    @SuppressWarnings("unchecked")
++    @Override
++    public <T> T write(DynamicOps<T> ops, C value) {
++        Object primitive = dataType.toPrimitive(value, CONTEXT);
++        if (primitive instanceof byte[] bytes) {
++            primitive = ByteBuffer.wrap(bytes);
++        } else if (primitive instanceof int[] ints) {
++            primitive = IntStream.of(ints);
++        } else if (primitive instanceof long[] longs) {
++            primitive = LongStream.of(longs);
++        }
++
++        return codec.write(ops, (A) primitive);
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/entity/brain/sensor/PaperCustomSensor.java b/src/main/java/io/papermc/paper/entity/brain/sensor/PaperCustomSensor.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..d54346f6a38edc20e7c5bbee5a2ece4ae2f6e0b2
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/entity/brain/sensor/PaperCustomSensor.java
+@@ -0,0 +1,46 @@
++package io.papermc.paper.entity.brain.sensor;
++
++import io.papermc.paper.entity.brain.PaperBrainUtil;
++import net.minecraft.server.level.ServerLevel;
++import net.minecraft.world.entity.ai.memory.MemoryModuleType;
++import org.bukkit.entity.LivingEntity;
++import org.bukkit.entity.memory.MemoryKey;
++
++import java.util.Collection;
++import java.util.HashSet;
++import java.util.Set;
++
++public class PaperCustomSensor extends net.minecraft.world.entity.ai.sensing.Sensor<net.minecraft.world.entity.LivingEntity> {
++
++    private final Sensor<LivingEntity> sensor;
++    private final Set<MemoryModuleType<?>> requiredMemories;
++
++    @SuppressWarnings("unchecked")
++    public PaperCustomSensor(Sensor<? extends LivingEntity> sensor) {
++        super(sensor.getInterval());
++        this.sensor = (Sensor<LivingEntity>) sensor;
++
++        Set<MemoryModuleType<?>> minecraftRequiredMemories = new HashSet<>(sensor.requiredMemories().size());
++        Collection<MemoryKey<?>> setupidIntellij = sensor.requiredMemories();
++        for (MemoryKey<?> key : setupidIntellij) {
++            minecraftRequiredMemories.add(PaperBrainUtil.getHandle(key));
++        }
++
++        this.requiredMemories = minecraftRequiredMemories;
++    }
++
++    @Override
++    protected void doTick(ServerLevel world, net.minecraft.world.entity.LivingEntity entity) {
++        sensor.tick(entity.getBukkitLivingEntity());
++    }
++
++    @Override
++    public Set<MemoryModuleType<?>> requires() {
++        return requiredMemories;
++    }
++
++    @Override
++    public Sensor<? extends LivingEntity> getPaperSensor() {
++        return sensor;
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/entity/brain/sensor/PaperSensor.java b/src/main/java/io/papermc/paper/entity/brain/sensor/PaperSensor.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..56b8452dab250b362fe200f22469f811b191b481
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/entity/brain/sensor/PaperSensor.java
+@@ -0,0 +1,12 @@
++package io.papermc.paper.entity.brain.sensor;
++
++import org.bukkit.NamespacedKey;
++import org.jetbrains.annotations.NotNull;
++
++public record PaperSensor(NamespacedKey key) implements SensorKey {
++
++    @Override
++    public @NotNull NamespacedKey getKey() {
++        return key;
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/entity/brain/sensor/PaperVanillaSensor.java b/src/main/java/io/papermc/paper/entity/brain/sensor/PaperVanillaSensor.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..1e9a52f987bae5168a3bdb46b9bdd329a31769bb
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/entity/brain/sensor/PaperVanillaSensor.java
+@@ -0,0 +1,58 @@
++package io.papermc.paper.entity.brain.sensor;
++
++import net.minecraft.server.level.ServerLevel;
++import net.minecraft.world.entity.ai.memory.MemoryModuleType;
++import org.bukkit.NamespacedKey;
++import org.bukkit.craftbukkit.entity.CraftLivingEntity;
++import org.bukkit.entity.LivingEntity;
++import org.bukkit.entity.memory.MemoryKey;
++
++import java.util.HashSet;
++import java.util.Set;
++
++public class PaperVanillaSensor implements Sensor<LivingEntity> {
++
++    private final net.minecraft.world.entity.ai.sensing.Sensor<net.minecraft.world.entity.LivingEntity> handle;
++
++    // temp
++    @SuppressWarnings("unchecked")
++    public PaperVanillaSensor(net.minecraft.world.entity.ai.sensing.Sensor<?> handle) {
++        this.handle = (net.minecraft.world.entity.ai.sensing.Sensor<net.minecraft.world.entity.LivingEntity>) handle;
++    }
++
++    @Override
++    public int getInterval() {
++        return handle.scanRate;
++    }
++
++    @Override
++    public void tick(LivingEntity entity) {
++        net.minecraft.world.entity.LivingEntity livingEntityHandle = ((CraftLivingEntity) entity).getHandle();
++
++        handle.tick((ServerLevel) livingEntityHandle.level, livingEntityHandle);
++    }
++
++    @Override
++    public Set<MemoryKey<?>> requiredMemories() {
++        Set<MemoryKey<?>> keys = new HashSet<>(handle.requires().size());
++        for (MemoryModuleType<?> type : handle.requires()) {
++            MemoryKey<?> key = MemoryKey.getByKey(NamespacedKey.minecraft(type.toString()));
++            if (key != null) {
++                keys.add(key);
++            }
++        }
++
++        return keys;
++    }
++
++    public net.minecraft.world.entity.ai.sensing.Sensor<net.minecraft.world.entity.LivingEntity> getHandle() {
++        return handle;
++    }
++
++    @Override
++    public String toString() {
++        return "PaperVanillaSensor{" +
++            "handle=" + handle +
++            '}';
++    }
++}
+diff --git a/src/main/java/net/minecraft/world/entity/ai/behavior/Behavior.java b/src/main/java/net/minecraft/world/entity/ai/behavior/Behavior.java
+index c24ff2ef1054523e58892c2b35080cffb6ab744a..2d530de8cb463c023d42d43cfc491ea672cfe7f6 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/behavior/Behavior.java
++++ b/src/main/java/net/minecraft/world/entity/ai/behavior/Behavior.java
+@@ -9,11 +9,11 @@ import net.minecraft.world.entity.ai.memory.MemoryStatus;
+ 
+ public abstract class Behavior<E extends LivingEntity> {
+     private static final int DEFAULT_DURATION = 60;
+-    protected final Map<MemoryModuleType<?>, MemoryStatus> entryCondition;
++    public final Map<MemoryModuleType<?>, MemoryStatus> entryCondition;
+     private Behavior.Status status = Behavior.Status.STOPPED;
+     private long endTimestamp;
+-    private final int minDuration;
+-    private final int maxDuration;
++    public final int minDuration;
++    public final int maxDuration;
+     // Paper start - configurable behavior tick rate and timings
+     private final String configKey;
+     private final co.aikar.timings.Timing timing;
+diff --git a/src/main/java/net/minecraft/world/entity/ai/sensing/Sensor.java b/src/main/java/net/minecraft/world/entity/ai/sensing/Sensor.java
+index f3b8e253a5bfc3f68121dbe656ae7e2ac0f0eb1c..33948d8387df1e422875a7edc24c3359a7c66026 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/sensing/Sensor.java
++++ b/src/main/java/net/minecraft/world/entity/ai/sensing/Sensor.java
+@@ -17,7 +17,7 @@ public abstract class Sensor<E extends LivingEntity> {
+     private static final TargetingConditions ATTACK_TARGET_CONDITIONS_IGNORE_INVISIBILITY_TESTING = TargetingConditions.forCombat().range(16.0D).ignoreInvisibilityTesting();
+     private static final TargetingConditions ATTACK_TARGET_CONDITIONS_IGNORE_LINE_OF_SIGHT = TargetingConditions.forCombat().range(16.0D).ignoreLineOfSight();
+     private static final TargetingConditions ATTACK_TARGET_CONDITIONS_IGNORE_INVISIBILITY_AND_LINE_OF_SIGHT = TargetingConditions.forCombat().range(16.0D).ignoreLineOfSight().ignoreInvisibilityTesting();
+-    private final int scanRate;
++    public final int scanRate;
+     private long timeToTick;
+     // Paper start - configurable sensor tick rate and timings
+     private final String configKey;
+@@ -69,4 +69,16 @@ public abstract class Sensor<E extends LivingEntity> {
+     public static boolean isEntityAttackableIgnoringLineOfSight(LivingEntity entity, LivingEntity target) {
+         return entity.getBrain().isMemoryValue(MemoryModuleType.ATTACK_TARGET, target) ? ATTACK_TARGET_CONDITIONS_IGNORE_INVISIBILITY_AND_LINE_OF_SIGHT.test(entity, target) : ATTACK_TARGET_CONDITIONS_IGNORE_LINE_OF_SIGHT.test(entity, target);
+     }
++
++    // Paper start - mob goal api
++    private io.papermc.paper.entity.brain.sensor.Sensor<? extends org.bukkit.entity.LivingEntity> paperSensor = null;
++
++    public io.papermc.paper.entity.brain.sensor.Sensor<? extends org.bukkit.entity.LivingEntity> getPaperSensor() {
++        if (this.paperSensor == null) {
++            this.paperSensor = new io.papermc.paper.entity.brain.sensor.PaperVanillaSensor(this);
++        }
++
++        return this.paperSensor;
++    }
++    // Paper end - mob goal api
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index 15278bb897e6169bc5d02bf47b455634baec7be1..d9df54453add3cd5d0fcd76491c48f9e21e4a3ef 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -2872,5 +2872,19 @@ public final class CraftServer implements Server {
+         return this.potionBrewer;
+     }
+ 
++    @Override
++    public io.papermc.paper.entity.brain.activity.ActivityKey createActivityKey(NamespacedKey key) {
++        return io.papermc.paper.entity.brain.PaperBrainUtil.registerCustomActivityKey(key);
++    }
++
++    @Override
++    public io.papermc.paper.entity.brain.sensor.SensorKey createSensorKey(NamespacedKey key) {
++        return io.papermc.paper.entity.brain.PaperBrainUtil.registerCustomSensorKey(key);
++    }
++
++    @Override
++    public <C> org.bukkit.entity.memory.MemoryKey<C> registerMemoryKey(NamespacedKey key, io.leangen.geantyref.TypeToken<C> type, org.bukkit.persistence.PersistentDataType<C, ?> serializer) {
++        return io.papermc.paper.entity.brain.PaperBrainUtil.registerCustomMemoryKey(key, type, serializer);
++    }
+     // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftAxolotl.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftAxolotl.java
+index cdaf860ec1b84c4ad9f2345968786d878f483f74..c97658337f6220ca56ccb81e3c4c6f95f747a077 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftAxolotl.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftAxolotl.java
+@@ -5,7 +5,7 @@ import org.bukkit.craftbukkit.CraftServer;
+ import org.bukkit.entity.Axolotl;
+ import org.bukkit.entity.EntityType;
+ 
+-public class CraftAxolotl extends CraftAnimals implements Axolotl, io.papermc.paper.entity.PaperBucketable { // Paper - Bucketable API
++public class CraftAxolotl extends CraftAnimals implements Axolotl, io.papermc.paper.entity.PaperBucketable, io.papermc.paper.entity.brain.PaperBrainHolder<Axolotl> { // Paper - Bucketable API, Brain API
+ 
+     public CraftAxolotl(CraftServer server, net.minecraft.world.entity.animal.axolotl.Axolotl entity) {
+         super(server, entity);
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftGoat.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftGoat.java
+index 436aa41563b8fab112d03c8cc516cf6ff37587bd..e8a8c5b722bfb012a85bfb3f2c247f33215d58ed 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftGoat.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftGoat.java
+@@ -4,7 +4,7 @@ import org.bukkit.craftbukkit.CraftServer;
+ import org.bukkit.entity.EntityType;
+ import org.bukkit.entity.Goat;
+ 
+-public class CraftGoat extends CraftAnimals implements Goat {
++public class CraftGoat extends CraftAnimals implements Goat, io.papermc.paper.entity.brain.PaperBrainHolder<Goat> { // Paper - Brain API
+ 
+     public CraftGoat(CraftServer server, net.minecraft.world.entity.animal.goat.Goat entity) {
+         super(server, entity);
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftHoglin.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftHoglin.java
+index d5b31e4051f22fee4b91eb0e6be25d72e0471eff..3fbc134b90b1212aade57b5d55d30025eec0833f 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftHoglin.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftHoglin.java
+@@ -3,9 +3,10 @@ package org.bukkit.craftbukkit.entity;
+ import com.google.common.base.Preconditions;
+ import org.bukkit.craftbukkit.CraftServer;
+ import org.bukkit.entity.EntityType;
++import org.bukkit.entity.Goat;
+ import org.bukkit.entity.Hoglin;
+ 
+-public class CraftHoglin extends CraftAnimals implements Hoglin {
++public class CraftHoglin extends CraftAnimals implements Hoglin, io.papermc.paper.entity.brain.PaperBrainHolder<Hoglin> { // Paper - Brain API
+ 
+     public CraftHoglin(CraftServer server, net.minecraft.world.entity.monster.hoglin.Hoglin entity) {
+         super(server, entity);
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
+index c022751e3b45469cc0ad6732e2d6ff08918bafa4..f017d63d404262dc975baeb55fca3c5e5cf50e96 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
+@@ -784,12 +784,21 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
+ 
+     @Override
+     public <T> T getMemory(MemoryKey<T> memoryKey) {
+-        return (T) this.getHandle().getBrain().getMemory(CraftMemoryKey.fromMemoryKey(memoryKey)).map(CraftMemoryMapper::fromNms).orElse(null);
++        if (memoryKey.getKey().getNamespace().equals(org.bukkit.NamespacedKey.MINECRAFT_NAMESPACE)) {
++            return (T) this.getHandle().getBrain().getMemory(CraftMemoryKey.fromMemoryKey(memoryKey)).map(CraftMemoryMapper::fromNms).orElse(null);
++        }
++
++        return (T) this.getHandle().getBrain().getMemory(CraftMemoryKey.fromMemoryKey(memoryKey)).orElse(null);
+     }
+ 
+     @Override
+     public <T> void setMemory(MemoryKey<T> memoryKey, T t) {
+-        this.getHandle().getBrain().setMemory(CraftMemoryKey.fromMemoryKey(memoryKey), CraftMemoryMapper.toNms(t));
++        if (memoryKey.getKey().getNamespace().equals(org.bukkit.NamespacedKey.MINECRAFT_NAMESPACE)) {
++            this.getHandle().getBrain().setMemory(CraftMemoryKey.fromMemoryKey(memoryKey), (T) CraftMemoryMapper.toNms(t));
++            return;
++        }
++
++        this.getHandle().getBrain().setMemory(CraftMemoryKey.fromMemoryKey(memoryKey), t);
+     }
+ 
+     @Override
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPiglin.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPiglin.java
+index 48d0a4e42e1b90d1323784d1284acabfe9497dd6..fc38f788bd1f0b07420f039e865b4ff28dcb965d 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPiglin.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPiglin.java
+@@ -13,7 +13,7 @@ import org.bukkit.entity.EntityType;
+ import org.bukkit.entity.Piglin;
+ import org.bukkit.inventory.Inventory;
+ 
+-public class CraftPiglin extends CraftPiglinAbstract implements Piglin, com.destroystokyo.paper.entity.CraftRangedEntity<net.minecraft.world.entity.monster.piglin.Piglin> { // Paper
++public class CraftPiglin extends CraftPiglinAbstract implements Piglin, com.destroystokyo.paper.entity.CraftRangedEntity<net.minecraft.world.entity.monster.piglin.Piglin>, io.papermc.paper.entity.brain.PaperBrainHolder<Piglin> { // Paper - Brain API
+ 
+     public CraftPiglin(CraftServer server, net.minecraft.world.entity.monster.piglin.Piglin entity) {
+         super(server, entity);
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPiglinBrute.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPiglinBrute.java
+index 689c4ce62f604d023e2f293db17f423fd10acbaf..48fb65275919bd8c180b6086ebbff1e678b2ac2f 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPiglinBrute.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPiglinBrute.java
+@@ -4,7 +4,7 @@ import org.bukkit.craftbukkit.CraftServer;
+ import org.bukkit.entity.EntityType;
+ import org.bukkit.entity.PiglinBrute;
+ 
+-public class CraftPiglinBrute extends CraftPiglinAbstract implements PiglinBrute {
++public class CraftPiglinBrute extends CraftPiglinAbstract implements PiglinBrute, io.papermc.paper.entity.brain.PaperBrainHolder<PiglinBrute> { // Paper - Brain API
+ 
+     public CraftPiglinBrute(CraftServer server, net.minecraft.world.entity.monster.piglin.PiglinBrute entity) {
+         super(server, entity);
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftVillager.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftVillager.java
+index f0b910df1ee471b4d72d97c6197ab14f2854976e..b6aaa1ba719ec167023c6833b06011b10ee501df 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftVillager.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftVillager.java
+@@ -24,7 +24,7 @@ import java.util.Map;
+ import java.util.UUID;
+ // Paper end
+ 
+-public class CraftVillager extends CraftAbstractVillager implements Villager {
++public class CraftVillager extends CraftAbstractVillager implements Villager, io.papermc.paper.entity.brain.PaperBrainHolder<Villager> { // Paper - Brain API
+ 
+     public CraftVillager(CraftServer server, net.minecraft.world.entity.npc.Villager entity) {
+         super(server, entity);
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftZoglin.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftZoglin.java
+index 611e794d86ff63d725de9bb843802ec868f4b1fd..91757bb2ebbc0bc145168c80241a819f3fe7eb59 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftZoglin.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftZoglin.java
+@@ -2,9 +2,11 @@ package org.bukkit.craftbukkit.entity;
+ 
+ import org.bukkit.craftbukkit.CraftServer;
+ import org.bukkit.entity.EntityType;
++import org.bukkit.entity.PiglinBrute;
++import org.bukkit.entity.Villager;
+ import org.bukkit.entity.Zoglin;
+ 
+-public class CraftZoglin extends CraftMonster implements Zoglin {
++public class CraftZoglin extends CraftMonster implements Zoglin, io.papermc.paper.entity.brain.PaperBrainHolder<Zoglin> { // Paper - Brain API
+ 
+     public CraftZoglin(CraftServer server, net.minecraft.world.entity.monster.Zoglin entity) {
+         super(server, entity);
+diff --git a/src/main/java/org/bukkit/entity/memory/PaperMemoryKey.java b/src/main/java/org/bukkit/entity/memory/PaperMemoryKey.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..7f7ece65e8645e3df1fab98b3a082e3e71ca0b3f
+--- /dev/null
++++ b/src/main/java/org/bukkit/entity/memory/PaperMemoryKey.java
+@@ -0,0 +1,13 @@
++package org.bukkit.entity.memory;
++
++import org.bukkit.NamespacedKey;
++
++public final class PaperMemoryKey {
++
++    private PaperMemoryKey() {
++    }
++
++    public static <T> MemoryKey<T> create(NamespacedKey key, Class<T> clazz) {
++        return new MemoryKey<>(key, clazz);
++    }
++}
+diff --git a/src/test/java/io/papermc/paper/entity/brain/MissingBrainAPITest.java b/src/test/java/io/papermc/paper/entity/brain/MissingBrainAPITest.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..99e68796afbd0b121adb55bb1a7580b3252f2ef3
+--- /dev/null
++++ b/src/test/java/io/papermc/paper/entity/brain/MissingBrainAPITest.java
+@@ -0,0 +1,57 @@
++package io.papermc.paper.entity.brain;
++
++import com.google.common.base.Joiner;
++import io.papermc.paper.entity.brain.activity.ActivityKey;
++import io.papermc.paper.entity.brain.activity.VanillaActivityKey;
++import io.papermc.paper.entity.brain.sensor.SensorKey;
++import io.papermc.paper.entity.brain.sensor.VanillaSensorKey;
++import net.minecraft.core.Registry;
++import net.minecraft.resources.ResourceLocation;
++import org.bukkit.NamespacedKey;
++import org.bukkit.craftbukkit.util.CraftNamespacedKey;
++import org.junit.Test;
++
++import java.lang.reflect.Field;
++import java.util.HashSet;
++import java.util.Set;
++
++import static org.junit.Assert.assertTrue;
++
++public class MissingBrainAPITest {
++
++    @Test
++    public void missingActivities() throws IllegalAccessException {
++        Set<NamespacedKey> activities = new HashSet<>();
++        for (ResourceLocation minecraftRegistered : Registry.ACTIVITY.keySet()) {
++            activities.add(CraftNamespacedKey.fromMinecraft(minecraftRegistered));
++        }
++
++        for (Field field : VanillaActivityKey.class.getDeclaredFields()) {
++            if (field.getType() == ActivityKey.class) {
++                activities.remove(((ActivityKey) field.get(null)).getKey());
++            }
++        }
++
++
++        assertTrue(ActivityKey.class.getName() + " instance(s): " + Joiner.on(", ").join(activities) + " do not have bukkit equivalents", activities.size() == 0);
++    }
++
++    @Test
++    public void missingSensors() throws IllegalAccessException {
++        Set<NamespacedKey> sensors = new HashSet<>();
++        for (ResourceLocation minecraftRegistered : Registry.SENSOR_TYPE.keySet()) {
++            sensors.add(CraftNamespacedKey.fromMinecraft(minecraftRegistered));
++        }
++        sensors.remove(NamespacedKey.minecraft("dummy"));
++
++        for (Field field : VanillaSensorKey.class.getDeclaredFields()) {
++            if (field.getType() == SensorKey.class) {
++                sensors.remove(((SensorKey) field.get(null)).getKey());
++            }
++        }
++
++
++        assertTrue(SensorKey.class.getName() + " instance(s): " + Joiner.on(", ").join(sensors) + " do not have bukkit equivalents", sensors.size() == 0);
++    }
++
++}

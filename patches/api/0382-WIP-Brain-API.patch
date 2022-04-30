@@ -1,0 +1,820 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Owen1212055 <23108066+Owen1212055@users.noreply.github.com>
+Date: Mon, 29 Nov 2021 21:57:09 -0500
+Subject: [PATCH] WIP Brain API
+
+
+diff --git a/build.gradle.kts b/build.gradle.kts
+index 01798255d45f2a642df00156f11dd2bcd8108079..5436ecea740fdfbd6533015f857bfb21c9718634 100644
+--- a/build.gradle.kts
++++ b/build.gradle.kts
+@@ -44,6 +44,7 @@ dependencies {
+ 
+     implementation("org.ow2.asm:asm:9.2")
+     implementation("org.ow2.asm:asm-commons:9.2")
++    api("io.leangen.geantyref:geantyref:1.3.13")
+     // Paper end
+ 
+     compileOnly("org.apache.maven:maven-resolver-provider:3.8.4")
+diff --git a/src/main/java/io/papermc/paper/entity/brain/BrainHolder.java b/src/main/java/io/papermc/paper/entity/brain/BrainHolder.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..ee769ee76a5592cce1d475f42008cd5fdc250533
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/entity/brain/BrainHolder.java
+@@ -0,0 +1,274 @@
++package io.papermc.paper.entity.brain;
++
++import io.papermc.paper.entity.brain.activity.ActivityKey;
++import io.papermc.paper.entity.brain.activity.behavior.Behavior;
++import io.papermc.paper.entity.brain.activity.behavior.BehaviorPair;
++import io.papermc.paper.entity.brain.memory.MemoryKeyStatus;
++import io.papermc.paper.entity.brain.memory.MemoryPair;
++import io.papermc.paper.entity.brain.sensor.Sensor;
++import io.papermc.paper.entity.brain.sensor.SensorKey;
++import org.bukkit.entity.LivingEntity;
++import org.bukkit.entity.memory.MemoryKey;
++import org.jetbrains.annotations.NotNull;
++
++import javax.annotation.Nullable;
++import java.util.ArrayList;
++import java.util.Collection;
++import java.util.Collections;
++import java.util.List;
++import java.util.Map;
++
++/**
++ * A brain holder represents an entity which uses a brain.
++ * <p>
++ * All entities have a brain, but not all entities will actually try to tick their brain.
++ *
++ * @param <T> Entity type
++ */
++public interface BrainHolder<T extends LivingEntity> {
++
++    /**
++     * Finds the first activity that can start in the given collection and starts it.
++     * If none meet their criteria, nothing will happen.
++     *
++     * @param keys activities to try to start
++     */
++    void startFirstValidActivity(@NotNull Collection<ActivityKey> keys);
++
++    /**
++     * Tries to start the providied activity.
++     * In the case that it cannot be run, the default activity will run instead.
++     *
++     * @param key activity to attempt to start
++     */
++    void startActivity(@NotNull ActivityKey key);
++
++    /**
++     * Stops the provided activity from executing further if it is currently active.
++     *
++     * @param key activity to stop
++     */
++    void stopActivity(@NotNull ActivityKey key);
++
++    /**
++     * Clears all core and current active
++     * activities.
++     */
++    void clearActivities();
++
++    /**
++     * Gets activities keyed by their priority
++     *
++     * @return keyed activities
++     */
++    @NotNull
++    Map<Integer, Collection<ActivityKey>> getPrioritizedActivities();
++
++    /**
++     * Gets activities that are currently being run.
++     *
++     * @return activities being run
++     */
++    @NotNull
++    Collection<ActivityKey> getActiveActivities();
++
++    /**
++     * Adds a custom activity to this brain.
++     * Activities represent a group of behaviors that can execute when the activity is marked as active.
++     * <p>
++     * This method assigns priority based on the order of the behaviors provided in the collection.
++     *
++     * @param key               key of this activity
++     * @param beginningPriority the priority to begin the provided behaviors at
++     * @param behaviors         behaviors of this activity ordered by priority
++     */
++    default void addActivity(@NotNull ActivityKey key, int beginningPriority, @NotNull Collection<Behavior<? super T>> behaviors) {
++        List<BehaviorPair<? super T>> pairs = new ArrayList<>(behaviors.size());
++        for (Behavior<? super T> behavior : behaviors) {
++            pairs.add(new BehaviorPair<>(beginningPriority, behavior));
++        }
++
++        this.addActivity(key, pairs);
++    }
++
++    /**
++     * Adds a custom activity to this brain.
++     * Activities represent a group of behaviors that can execute when the activity is marked as active.
++     * <p>
++     * This method assigns priority based on the order of the behaviors provided in the collection.
++     *
++     * @param key               key of this activity
++     * @param beginningPriority the priority to begin the provided behaviors at
++     * @param behaviors         behaviors of this activity ordered by priority
++     * @param requiredMemory    present memory required for this activity to start
++     */
++    default void addActivity(@NotNull ActivityKey key, int beginningPriority, @NotNull Collection<Behavior<? super T>> behaviors, @NotNull MemoryKey<?> requiredMemory) {
++        List<BehaviorPair<? super T>> pairs = new ArrayList<>(behaviors.size());
++        for (Behavior<? super T> behavior : behaviors) {
++            pairs.add(new BehaviorPair<>(beginningPriority, behavior));
++        }
++
++        this.addActivity(key, pairs, List.of(new MemoryPair(MemoryKeyStatus.PRESENT, requiredMemory)));
++    }
++
++    /**
++     * Adds a custom activity to this brain.
++     * Activities represent a group of behaviors that can execute when the activity is marked as active.
++     *
++     * @param key           key of this activity
++     * @param behaviorPairs the behaviors and priorities of this activity
++     */
++    default void addActivity(@NotNull ActivityKey key, @NotNull Collection<BehaviorPair<? super T>> behaviorPairs) {
++        this.addActivity(key, behaviorPairs, Collections.emptyList(), Collections.emptyList());
++    }
++
++    /**
++     * Adds a custom activity to this brain.
++     * Activities represent a group of behaviors that can execute when the activity is marked as active.
++     *
++     * @param key              key of this activity
++     * @param behaviorPairs    the behaviors and priorities of this activity
++     * @param requiredMemories the memories required for this activity to run
++     */
++    default void addActivity(@NotNull ActivityKey key, @NotNull Collection<BehaviorPair<? super T>> behaviorPairs, @NotNull Collection<MemoryPair> requiredMemories) {
++        this.addActivity(key, behaviorPairs, requiredMemories, Collections.emptyList());
++    }
++
++    // TODO: FIGURE OUT TICKING AND PROPERLY STARTING CUSTOM ACTIVITIES, READ THE PR FOR MORE INFORMATION
++
++    /**
++     * Adds a custom activity to this brain.
++     * Activities represent a group of behaviors that can execute when the activity is marked as active.
++     *
++     * @param key                  key of this activity
++     * @param behaviorPairs        the behaviors and priorities of this activity
++     * @param requiredMemories     the memories required for this activity to run
++     * @param keysToRemoveOnFinish memories that are removed when this activity is finished
++     */
++    void addActivity(@NotNull ActivityKey key, @NotNull Collection<BehaviorPair<? super T>> behaviorPairs, @NotNull Collection<MemoryPair> requiredMemories, @NotNull Collection<MemoryKey<?>> keysToRemoveOnFinish);
++
++    /**
++     * Gets the default activity.
++     * This activity runs if no other activities are running, which for example is used for idling behavior.
++     *
++     * @return default activity
++     */
++    @NotNull
++    ActivityKey getDefaultActivity();
++
++    /**
++     * Sets the default activity.
++     *
++     * @param key default activity
++     */
++    void setDefaultActivity(@NotNull ActivityKey key);
++
++    /**
++     * Gets the core activities of this entity, these always are running.
++     *
++     * @return core activities
++     */
++    @NotNull
++    Collection<ActivityKey> getCoreActivities();
++
++    /**
++     * Sets the core activities to always run.
++     *
++     * @param keys core activities
++     */
++    void setCoreActivities(@NotNull Collection<ActivityKey> keys);
++
++    /**
++     * Adds a sensor to this brain.
++     *
++     * @param key    key of this sensor
++     * @param sensor sensor
++     */
++    void addSensor(@NotNull SensorKey key, Sensor<? super T> sensor);
++
++    /**
++     * Clears all sensors from this brain
++     */
++    void clearSensors();
++
++    /**
++     * Removes a sensor from this brain.
++     *
++     * @param key sensor
++     */
++    void removeSensor(@NotNull SensorKey key);
++
++    /**
++     * Gets a sensor from this brain.
++     *
++     * @param key key
++     * @return sensor if registered
++     */
++    @Nullable
++    Sensor<? extends LivingEntity> getSensor(@NotNull SensorKey key);
++
++    /**
++     * Gets the current registered sensors in this brain.
++     *
++     * @return sensors
++     */
++    @NotNull
++    Collection<Sensor<? extends LivingEntity>> getSensors();
++
++    /**
++     * Registers a memory in this brain, this is required inorder to set
++     * memories that do not exist already.
++     * This is mostly useful if you are inserting custom memory keys.
++     *
++     * @param memoryKey memorykey to register
++     */
++    void registerMemory(@NotNull MemoryKey<?> memoryKey);
++
++    /**
++     * Sets the value of a memory.
++     *
++     * @param memoryKey key
++     * @param value     value to set
++     * @param expireIn  ticks to expire in
++     * @param <V>       value type
++     */
++    <V> void setMemory(@NotNull MemoryKey<V> memoryKey, @Nullable V value, long expireIn);
++
++    /**
++     * Forgets the provided memory, this is equivalent to setting the memory value to null.
++     * This will not unregister the memory.
++     *
++     * @param memoryKey key
++     */
++    void forgetMemory(@NotNull MemoryKey<?> memoryKey);
++
++    /**
++     * Unregisters the provided memory.
++     *
++     * @param memoryKey key
++     */
++    void unregisterMemory(@NotNull MemoryKey<?> memoryKey);
++
++    /**
++     * Gets if the current memorykey matches the given key status.
++     *
++     * @param memoryKey key
++     * @param status    status
++     * @return if the status is met
++     */
++    boolean isMemoryStatus(@NotNull MemoryKey<?> memoryKey, @NotNull MemoryKeyStatus status);
++
++    /**
++     * Gets the currently registered memory keys in this brain.
++     *
++     * @return keys
++     */
++    @NotNull
++    Collection<MemoryKey<?>> getMemories();
++
++    /**
++     * Unregisters all memories in this brain.
++     */
++    void unregisterMemories();
++
++}
+diff --git a/src/main/java/io/papermc/paper/entity/brain/activity/ActivityKey.java b/src/main/java/io/papermc/paper/entity/brain/activity/ActivityKey.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..1aace077d112e409f7a90d0fe4797519898a212b
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/entity/brain/activity/ActivityKey.java
+@@ -0,0 +1,10 @@
++package io.papermc.paper.entity.brain.activity;
++
++import org.bukkit.Keyed;
++
++/**
++ * Represents a key for an activity.
++ */
++public interface ActivityKey extends Keyed {
++
++}
+diff --git a/src/main/java/io/papermc/paper/entity/brain/activity/VanillaActivityKey.java b/src/main/java/io/papermc/paper/entity/brain/activity/VanillaActivityKey.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..6ce6980659358feca5973ea3f3709f6f65906509
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/entity/brain/activity/VanillaActivityKey.java
+@@ -0,0 +1,60 @@
++package io.papermc.paper.entity.brain.activity;
++
++import org.bukkit.NamespacedKey;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++import java.util.HashMap;
++import java.util.Map;
++
++/**
++ * Represents an activity used by minecraft.
++ */
++public final class VanillaActivityKey implements ActivityKey {
++
++    public static final Map<NamespacedKey, ActivityKey> ACTIVITY_KEYS = new HashMap<>();
++
++    public static final ActivityKey CORE = of("core");
++    public static final ActivityKey IDLE = of("idle");
++    public static final ActivityKey WORK = of("work");
++    public static final ActivityKey PLAY = of("play");
++    public static final ActivityKey REST = of("rest");
++    public static final ActivityKey MEET = of("meet");
++    public static final ActivityKey PANIC = of("panic");
++    public static final ActivityKey RAID = of("raid");
++    public static final ActivityKey PRE_RAID = of("pre_raid");
++    public static final ActivityKey HIDE = of("hide");
++    public static final ActivityKey FIGHT = of("fight");
++    public static final ActivityKey CELEBRATE = of("celebrate");
++    public static final ActivityKey ADMIRE_ITEM = of("admire_item");
++    public static final ActivityKey AVOID = of("avoid");
++    public static final ActivityKey RIDE = of("ride");
++    public static final ActivityKey PLAY_DEAD = of("play_dead");
++    public static final ActivityKey LONG_JUMP = of("long_jump");
++    public static final ActivityKey RAM = of("ram");
++
++
++    private static ActivityKey of(String key) {
++        NamespacedKey mcKey = NamespacedKey.minecraft(key);
++        ActivityKey activityKey = new VanillaActivityKey(mcKey);
++        ACTIVITY_KEYS.put(mcKey, activityKey);
++
++        return activityKey;
++    }
++
++    @Nullable
++    public static ActivityKey getByKey(@NotNull NamespacedKey namespacedKey) {
++        return ACTIVITY_KEYS.get(namespacedKey);
++    }
++
++    private final NamespacedKey key;
++
++    VanillaActivityKey(NamespacedKey key) {
++        this.key = key;
++    }
++
++    @Override
++    public @NotNull NamespacedKey getKey() {
++        return key;
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/entity/brain/activity/behavior/Behavior.java b/src/main/java/io/papermc/paper/entity/brain/activity/behavior/Behavior.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..bac6af1d8c6a050f84b0c9cf00c3a5ba56b98ffc
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/entity/brain/activity/behavior/Behavior.java
+@@ -0,0 +1,76 @@
++package io.papermc.paper.entity.brain.activity.behavior;
++
++import io.papermc.paper.entity.brain.memory.MemoryPair;
++import org.bukkit.entity.LivingEntity;
++
++import java.util.Collection;
++
++
++/**
++ * Behaviors are similar to goals, except that they are bundled together in activities.
++ */
++public interface Behavior<T extends LivingEntity> {
++
++    /**
++     * Starts this behavior with the given entity.
++     *
++     * @param entity given entity
++     */
++    void start(T entity);
++
++    /**
++     * Ticks the behavior for the given entity.
++     *
++     * @param entity given entity
++     */
++    void tick(T entity);
++
++    /**
++     * Stops the ebhavior for the given entity.
++     *
++     * @param entity given entity
++     */
++    void stop(T entity);
++
++    /**
++     * Determines if the behavior can currently start.
++     *
++     * @param entity given entity
++     * @return can start or not
++     */
++    default boolean canStart(T entity) {
++        return true;
++    }
++
++    /**
++     * Gets the miniumum runtime in ticks that this behavior can run.
++     *
++     * @return time in ticks
++     */
++    int getMinRuntime();
++
++    /**
++     * Gets the maximum runtime in ticks that this behavior can run.
++     *
++     * @return time in ticks
++     */
++    int getMaxRuntime();
++
++    /**
++     * Gets if the behavior is still able to run.
++     * If false, this will stop the behavior.
++     *
++     * @return time in ticks
++     */
++    default boolean canStillRun(T entity) {
++        return true;
++    }
++
++    /**
++     * Gets the required memory pairs that this behavior needs inorder to start.
++     *
++     * @return required pairs
++     */
++    Collection<MemoryPair> getMemoryRequirements();
++
++}
+diff --git a/src/main/java/io/papermc/paper/entity/brain/activity/behavior/BehaviorPair.java b/src/main/java/io/papermc/paper/entity/brain/activity/behavior/BehaviorPair.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..5105005291e0f033d615c14fd449298ba758d573
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/entity/brain/activity/behavior/BehaviorPair.java
+@@ -0,0 +1,9 @@
++package io.papermc.paper.entity.brain.activity.behavior;
++
++import org.bukkit.entity.LivingEntity;
++
++/**
++ * Represents a behavior with a priority, used for creating activities.
++ */
++public record BehaviorPair<T extends LivingEntity>(int priority, Behavior<T> behavior) {
++}
+diff --git a/src/main/java/io/papermc/paper/entity/brain/memory/MemoryKeyStatus.java b/src/main/java/io/papermc/paper/entity/brain/memory/MemoryKeyStatus.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..1f7d330d75d0aa76053c3a54786dbfbfac976aa4
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/entity/brain/memory/MemoryKeyStatus.java
+@@ -0,0 +1,19 @@
++package io.papermc.paper.entity.brain.memory;
++
++/**
++ * Represents the current status that a memory may be in.
++ */
++public enum MemoryKeyStatus {
++    /***
++     * Represents a memorykey being only registered.
++     */
++    REGISTERED,
++    /***
++     * Represents a registered memorykey with there currently not being a value present.
++     */
++    ABSENT,
++    /***
++     * Represents a registered memorykey with there being a value present.
++     */
++    PRESENT
++}
+diff --git a/src/main/java/io/papermc/paper/entity/brain/memory/MemoryPair.java b/src/main/java/io/papermc/paper/entity/brain/memory/MemoryPair.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..1ff50af8ac677ae05f60e3deb9a398d2ac9465be
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/entity/brain/memory/MemoryPair.java
+@@ -0,0 +1,9 @@
++package io.papermc.paper.entity.brain.memory;
++
++import org.bukkit.entity.memory.MemoryKey;
++
++/**
++ * A memory pair represents a memory and what key status it is required to have.
++ */
++public record MemoryPair(MemoryKeyStatus requiredStatus, MemoryKey<?> key) {
++}
+diff --git a/src/main/java/io/papermc/paper/entity/brain/sensor/Sensor.java b/src/main/java/io/papermc/paper/entity/brain/sensor/Sensor.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..23a09b4119792388e2a04da8217724f637e68491
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/entity/brain/sensor/Sensor.java
+@@ -0,0 +1,38 @@
++package io.papermc.paper.entity.brain.sensor;
++
++import org.bukkit.entity.LivingEntity;
++import org.bukkit.entity.memory.MemoryKey;
++import org.jetbrains.annotations.NotNull;
++
++import java.util.Collection;
++import java.util.Set;
++
++/**
++ * Represents a brain sensor.
++ * These are periodically ticked depending on the given interval and
++ * are typically responsible for updating entity memories.
++ *
++ * @param <T> entity type
++ */
++public interface Sensor<T extends LivingEntity> {
++
++    /**
++     * @return the interval of this sensor.
++     */
++    int getInterval();
++
++    /**
++     * Ticks this sensor with the provided entity.
++     *
++     * @param entity provided entity
++     */
++    void tick(@NotNull T entity);
++
++    /**
++     * Gets the sensors that are required to be registered
++     * inorder for this sensor to normally be ticked.
++     * @return
++     */
++    @NotNull
++    Collection<MemoryKey<?>> requiredMemories();
++}
+diff --git a/src/main/java/io/papermc/paper/entity/brain/sensor/SensorKey.java b/src/main/java/io/papermc/paper/entity/brain/sensor/SensorKey.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..3abd759c501ee9bc51b0504b07190e22d1097dd1
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/entity/brain/sensor/SensorKey.java
+@@ -0,0 +1,10 @@
++package io.papermc.paper.entity.brain.sensor;
++
++import org.bukkit.Keyed;
++
++/**
++ * Represents a key for a sensor.
++ */
++public interface SensorKey extends Keyed {
++
++}
+diff --git a/src/main/java/io/papermc/paper/entity/brain/sensor/VanillaSensorKey.java b/src/main/java/io/papermc/paper/entity/brain/sensor/VanillaSensorKey.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..9128b85dd8a68ea9b5d32adbd464e5c0294a09bb
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/entity/brain/sensor/VanillaSensorKey.java
+@@ -0,0 +1,40 @@
++package io.papermc.paper.entity.brain.sensor;
++
++import org.bukkit.NamespacedKey;
++import org.jetbrains.annotations.NotNull;
++
++public final class VanillaSensorKey implements SensorKey {
++
++    public static final SensorKey NEAREST_ITEMS = of("nearest_items");
++    public static final SensorKey NEAREST_LIVING_ENTITIES = of("nearest_living_entities");
++    public static final SensorKey NEAREST_PLAYERS = of("nearest_players");
++    public static final SensorKey NEAREST_BED = of("nearest_bed");
++    public static final SensorKey HURT_BY = of("hurt_by");
++    public static final SensorKey VILLAGER_HOSTILES = of("villager_hostiles");
++    public static final SensorKey VILLAGER_BABIES = of("villager_babies");
++    public static final SensorKey SECONDARY_POIS = of("secondary_pois");
++    public static final SensorKey GOLEM_DETECTED = of("golem_detected");
++    public static final SensorKey PIGLIN_SPECIFIC_SENSOR = of("piglin_specific_sensor");
++    public static final SensorKey PIGLIN_BRUTE_SPECIFIC_SENSOR = of("piglin_brute_specific_sensor");
++    public static final SensorKey HOGLIN_SPECIFIC_SENSOR = of("hoglin_specific_sensor");
++    public static final SensorKey NEAREST_ADULT = of("nearest_adult");
++    public static final SensorKey AXOLOTL_ATTACKABLES = of("axolotl_attackables");
++    public static final SensorKey AXOLOTL_TEMPTATIONS = of("axolotl_temptations");
++    public static final SensorKey GOAT_TEMPTATIONS = of("goat_temptations");
++
++    private static SensorKey of(String key) {
++        return new VanillaSensorKey(NamespacedKey.minecraft(key));
++    }
++
++    private final NamespacedKey key;
++
++    VanillaSensorKey(NamespacedKey key) {
++        this.key = key;
++    }
++
++    @Override
++    public @NotNull NamespacedKey getKey() {
++        return key;
++    }
++
++}
+diff --git a/src/main/java/org/bukkit/Bukkit.java b/src/main/java/org/bukkit/Bukkit.java
+index 5dc245bfbc1d466ab96294bbc10ead1fcec4f841..6f07a7f26a2e8de596d37584d0b8d37b7fce03e3 100644
+--- a/src/main/java/org/bukkit/Bukkit.java
++++ b/src/main/java/org/bukkit/Bukkit.java
+@@ -2364,6 +2364,42 @@ public final class Bukkit {
+     public static @NotNull org.bukkit.potion.PotionBrewer getPotionBrewer() {
+         return server.getPotionBrewer();
+     }
++
++    /**
++     * Creates a custom activity key used in the mob brain api
++     * to register your own types.
++     *
++     * @param key activity identifier
++     * @return activity key
++     */
++    @NotNull
++    public static io.papermc.paper.entity.brain.activity.ActivityKey createActivityKey(@NotNull NamespacedKey key) {
++        return server.createActivityKey(key);
++    }
++
++    /**
++     * Creates a custom sensor key used in the mob brain api
++     * to register your own types.
++     *
++     * @param key sensor identifier
++     * @return sensor key
++     */
++    @NotNull
++    public static io.papermc.paper.entity.brain.sensor.SensorKey createSensorKey(@NotNull NamespacedKey key) {
++        return server.createSensorKey(key);
++    }
++
++    /**
++     * Creates a custom memory key used in the mob brain api
++     * to register your own types.
++     *
++     * @param key memory identifier
++     * @return memory key
++     */
++    @NotNull
++    public static <P, C> org.bukkit.entity.memory.MemoryKey<C> registerMemoryKey(@NotNull NamespacedKey key, io.leangen.geantyref.TypeToken<C> type, org.bukkit.persistence.PersistentDataType<C, P> serializer) {
++        return server.registerMemoryKey(key, type, serializer);
++    }
+     // Paper end
+ 
+     @NotNull
+diff --git a/src/main/java/org/bukkit/Server.java b/src/main/java/org/bukkit/Server.java
+index 0eda17c8642aa49c2f57c409c3bd3234948feae9..1dd56324de8031f242c02fb07907c0bf346d0a4f 100644
+--- a/src/main/java/org/bukkit/Server.java
++++ b/src/main/java/org/bukkit/Server.java
+@@ -2059,5 +2059,38 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+      * @return the potion brewer
+      */
+     @NotNull org.bukkit.potion.PotionBrewer getPotionBrewer();
++
++    /**
++     * Creates a custom activity key used in the mob brain api
++     * to register your own types.
++     *
++     * @param key activity identifier
++     * @return activity key
++     */
++    @NotNull
++    io.papermc.paper.entity.brain.activity.ActivityKey createActivityKey(@NotNull NamespacedKey key);
++
++    /**
++     * Creates a custom sensor key used in the mob brain api
++     * to register your own types.
++     *
++     * @param key sensor identifier
++     * @return sensor key
++     */
++    @NotNull
++    io.papermc.paper.entity.brain.sensor.SensorKey createSensorKey(@NotNull NamespacedKey key);
++
++    /**
++     * Creates a custom memory key used in the mob brain api
++     * to register your own types.
++     *
++     * @param key identifier for the memory
++     * @param type type of the value the memory can store
++     * @param serializer serializer that should be used to save the memory to the entity, or null if it should not be saved. Should be a primitive type only!
++     * @param <C> value the memory can store
++     * @return registered memory key
++     */
++    @NotNull
++    <C> org.bukkit.entity.memory.MemoryKey<C> registerMemoryKey(@NotNull NamespacedKey key, @NotNull io.leangen.geantyref.TypeToken<C> type, @Nullable org.bukkit.persistence.PersistentDataType<C, ?> serializer);
+     // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/entity/Axolotl.java b/src/main/java/org/bukkit/entity/Axolotl.java
+index c8c738b1b72e9ad89d97b7a1f5450d58045a72ca..0cb6cd62619589aa5fa80a8d9ab2db48490ea57a 100644
+--- a/src/main/java/org/bukkit/entity/Axolotl.java
++++ b/src/main/java/org/bukkit/entity/Axolotl.java
+@@ -5,7 +5,7 @@ import org.jetbrains.annotations.NotNull;
+ /**
+  * An Axolotl.
+  */
+-public interface Axolotl extends Animals, io.papermc.paper.entity.Bucketable { // Paper - Bucketable API
++public interface Axolotl extends Animals, io.papermc.paper.entity.Bucketable, io.papermc.paper.entity.brain.BrainHolder<Axolotl> { // Paper - Bucketable API, Brain API
+ 
+     /**
+      * Gets if this axolotl is playing dead.
+diff --git a/src/main/java/org/bukkit/entity/Goat.java b/src/main/java/org/bukkit/entity/Goat.java
+index 01827c4118df36fe1b77115f181fb4d225c3c866..830eca2913ee8e64a4b81d264fb8d4800f1a4418 100644
+--- a/src/main/java/org/bukkit/entity/Goat.java
++++ b/src/main/java/org/bukkit/entity/Goat.java
+@@ -3,7 +3,7 @@ package org.bukkit.entity;
+ /**
+  * A Goat.
+  */
+-public interface Goat extends Animals {
++public interface Goat extends Animals, io.papermc.paper.entity.brain.BrainHolder<Goat> { // Paper - Brain API
+ 
+     /**
+      * Gets if this is a screaming goat.
+diff --git a/src/main/java/org/bukkit/entity/Hoglin.java b/src/main/java/org/bukkit/entity/Hoglin.java
+index b49670816d0d42aee08614d9a59a1f785ad8e6bc..fb966976fd5baa8d29784c12fab491e1bbcb5288 100644
+--- a/src/main/java/org/bukkit/entity/Hoglin.java
++++ b/src/main/java/org/bukkit/entity/Hoglin.java
+@@ -3,7 +3,7 @@ package org.bukkit.entity;
+ /**
+  * Represents a Hoglin.
+  */
+-public interface Hoglin extends Animals {
++public interface Hoglin extends Animals, io.papermc.paper.entity.brain.BrainHolder<Hoglin> { // Paper - Brain API
+ 
+     /**
+      * Gets whether the hoglin is immune to zombification.
+diff --git a/src/main/java/org/bukkit/entity/Piglin.java b/src/main/java/org/bukkit/entity/Piglin.java
+index d4cb4b0ed1d9766a87867dcf1a3a839526ba9332..09092216d332843627d40c1101ea22cb8e712e53 100644
+--- a/src/main/java/org/bukkit/entity/Piglin.java
++++ b/src/main/java/org/bukkit/entity/Piglin.java
+@@ -8,7 +8,7 @@ import org.jetbrains.annotations.NotNull;
+ /**
+  * Represents a Piglin.
+  */
+-public interface Piglin extends PiglinAbstract, InventoryHolder, com.destroystokyo.paper.entity.RangedEntity { // Paper
++public interface Piglin extends PiglinAbstract, InventoryHolder, com.destroystokyo.paper.entity.RangedEntity, io.papermc.paper.entity.brain.BrainHolder<Piglin> { // Paper - Brain API
+ 
+     /**
+      * Get whether the piglin is able to hunt hoglins.
+diff --git a/src/main/java/org/bukkit/entity/PiglinBrute.java b/src/main/java/org/bukkit/entity/PiglinBrute.java
+index e230c17524cd25939c7f85f3ecd7aa43cd20fdf8..22c0ed1acc89415c09340fc48e8ff94e7e7edb5b 100644
+--- a/src/main/java/org/bukkit/entity/PiglinBrute.java
++++ b/src/main/java/org/bukkit/entity/PiglinBrute.java
+@@ -3,4 +3,4 @@ package org.bukkit.entity;
+ /**
+  * Represents a Piglin Brute.
+  */
+-public interface PiglinBrute extends PiglinAbstract { }
++public interface PiglinBrute extends PiglinAbstract, io.papermc.paper.entity.brain.BrainHolder<PiglinBrute> { } // Paper - Brain API
+diff --git a/src/main/java/org/bukkit/entity/Villager.java b/src/main/java/org/bukkit/entity/Villager.java
+index d61855b83da0776fe910dee8cde184c720571a71..ceaa04ca1718cfc6506980de36b0aeec9ab1e707 100644
+--- a/src/main/java/org/bukkit/entity/Villager.java
++++ b/src/main/java/org/bukkit/entity/Villager.java
+@@ -12,7 +12,7 @@ import org.jetbrains.annotations.Nullable;
+ /**
+  * Represents a villager NPC
+  */
+-public interface Villager extends AbstractVillager {
++public interface Villager extends AbstractVillager, io.papermc.paper.entity.brain.BrainHolder<Villager> { // Paper - Brain API
+ 
+     /**
+      * Gets the current profession of this villager.
+diff --git a/src/main/java/org/bukkit/entity/Zoglin.java b/src/main/java/org/bukkit/entity/Zoglin.java
+index ebf4ffac777a815d516d9e9b0d2aa6b85d8376ab..97aa620e89e5a3f073aeb92ea439501cb77a2b98 100644
+--- a/src/main/java/org/bukkit/entity/Zoglin.java
++++ b/src/main/java/org/bukkit/entity/Zoglin.java
+@@ -3,7 +3,7 @@ package org.bukkit.entity;
+ /**
+  * Represents a Zoglin.
+  */
+-public interface Zoglin extends Monster, Ageable {
++public interface Zoglin extends Monster, Ageable, io.papermc.paper.entity.brain.BrainHolder<Zoglin> { // Paper - Brain API
+ 
+     /**
+      * Gets whether the zoglin is a baby
+diff --git a/src/main/java/org/bukkit/entity/memory/MemoryKey.java b/src/main/java/org/bukkit/entity/memory/MemoryKey.java
+index d023b6497c0f56ebcc8eeb4e3226ea9f974989ff..819dde2e058d2be9307a55b4e4791524b1573aeb 100644
+--- a/src/main/java/org/bukkit/entity/memory/MemoryKey.java
++++ b/src/main/java/org/bukkit/entity/memory/MemoryKey.java
+@@ -17,12 +17,11 @@ import org.jetbrains.annotations.Nullable;
+  *
+  * @param <T> the class type of the memory value
+  */
+-public final class MemoryKey<T> implements Keyed {
++public class MemoryKey<T> implements Keyed {
+ 
+     private final NamespacedKey namespacedKey;
+     private final Class<T> tClass;
+-
+-    private MemoryKey(NamespacedKey namespacedKey, Class<T> tClass) {
++    MemoryKey(NamespacedKey namespacedKey, Class<T> tClass) {
+         this.namespacedKey = namespacedKey;
+         this.tClass = tClass;
+         MEMORY_KEYS.put(namespacedKey, this);
