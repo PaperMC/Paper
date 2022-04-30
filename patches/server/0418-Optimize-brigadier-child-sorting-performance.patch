@@ -5,23 +5,23 @@ Subject: [PATCH] Optimize brigadier child sorting performance
 
 
 diff --git a/src/main/java/com/mojang/brigadier/tree/CommandNode.java b/src/main/java/com/mojang/brigadier/tree/CommandNode.java
-index 2dd09c97e00d877f5f3beed9583d3fdabc88e181..2b87c6eb28d4db634dd6d8ee42ff3aa78ed7cb68 100644
+index da6250df1c5f3385b683cffde47754bca4606f5e..a4f97c1df86c574af9b9824a38034a3d76d6e357 100644
 --- a/src/main/java/com/mojang/brigadier/tree/CommandNode.java
 +++ b/src/main/java/com/mojang/brigadier/tree/CommandNode.java
-@@ -26,7 +26,7 @@ import java.util.stream.Collectors;
+@@ -26,7 +26,7 @@ import java.util.function.Predicate;
  import net.minecraft.commands.CommandSourceStack;
  
  public abstract class CommandNode<S> implements Comparable<CommandNode<S>> {
--    private Map<String, CommandNode<S>> children = Maps.newLinkedHashMap();
-+    private Map<String, CommandNode<S>> children = Maps.newTreeMap(); // Paper - Switch to tree map for automatic sorting
-     private Map<String, LiteralCommandNode<S>> literals = Maps.newLinkedHashMap();
-     private Map<String, ArgumentCommandNode<S, ?>> arguments = Maps.newLinkedHashMap();
+-    private final Map<String, CommandNode<S>> children = new LinkedHashMap<>();
++    private Map<String, CommandNode<S>> children = com.google.common.collect.Maps.newTreeMap(); // Paper - Switch to tree map for automatic sorting
+     private final Map<String, LiteralCommandNode<S>> literals = new LinkedHashMap<>();
+     private final Map<String, ArgumentCommandNode<S, ?>> arguments = new LinkedHashMap<>();
      public Predicate<S> requirement;
-@@ -107,7 +107,7 @@ public abstract class CommandNode<S> implements Comparable<CommandNode<S>> {
+@@ -106,6 +106,8 @@ public abstract class CommandNode<S> implements Comparable<CommandNode<S>> {
+                 this.arguments.put(node.getName(), (ArgumentCommandNode<S, ?>) node);
              }
          }
- 
--        this.children = this.children.entrySet().stream().sorted(Map.Entry.comparingByValue()).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e1, LinkedHashMap::new));
++
 +        // Paper - Remove manual sorting, it is no longer needed
      }
  
