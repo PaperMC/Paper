@@ -29,22 +29,20 @@
      protected EntityInsentient(EntityTypes<? extends EntityInsentient> entitytypes, World world) {
          super(entitytypes, world);
          this.handItems = NonNullList.withSize(2, ItemStack.EMPTY);
-@@ -139,7 +154,14 @@
-             this.registerGoals();
-         }
+@@ -141,6 +156,12 @@
  
-+        // CraftBukkit start - default persistance to type's persistance value
-+        this.persistenceRequired = !removeWhenFarAway(0);
-+    }
-+
+     }
+ 
++    // CraftBukkit start
 +    public void setPersistenceRequired(boolean persistenceRequired) {
 +        this.persistenceRequired = persistenceRequired;
-     }
++    }
 +    // CraftBukkit end
- 
++
      protected void registerGoals() {}
  
-@@ -219,7 +241,38 @@
+     public static AttributeProvider.Builder createMobAttributes() {
+@@ -219,7 +240,38 @@
      }
  
      public void setTarget(@Nullable EntityLiving entityliving) {
@@ -83,7 +81,7 @@
      }
  
      @Override
-@@ -446,16 +499,26 @@
+@@ -446,16 +498,26 @@
              nbttagcompound.putBoolean("NoAI", this.isNoAi());
          }
  
@@ -112,7 +110,7 @@
          NBTTagList nbttaglist;
          int i;
  
-@@ -502,6 +565,11 @@
+@@ -502,6 +564,11 @@
          }
  
          this.setNoAi(nbttagcompound.getBoolean("NoAI"));
@@ -124,7 +122,7 @@
      }
  
      @Override
-@@ -565,7 +633,7 @@
+@@ -565,7 +632,7 @@
      protected void pickUpItem(EntityItem entityitem) {
          ItemStack itemstack = entityitem.getItem();
  
@@ -133,7 +131,7 @@
              this.onItemPickup(entityitem);
              this.take(entityitem, itemstack.getCount());
              entityitem.discard();
-@@ -574,15 +642,29 @@
+@@ -574,15 +641,29 @@
      }
  
      public boolean equipItemIfPossible(ItemStack itemstack) {
@@ -164,24 +162,7 @@
              }
  
              this.setItemSlotAndDropWhenKilled(enumitemslot, itemstack);
-@@ -699,14 +781,14 @@
-                 int i = this.getType().getCategory().getDespawnDistance();
-                 int j = i * i;
- 
--                if (d0 > (double) j && this.removeWhenFarAway(d0)) {
-+                if (d0 > (double) j) { // CraftBukkit - remove isTypeNotPersistent() check
-                     this.discard();
-                 }
- 
-                 int k = this.getType().getCategory().getNoDespawnDistance();
-                 int l = k * k;
- 
--                if (this.noActionTime > 600 && this.random.nextInt(800) == 0 && d0 > (double) l && this.removeWhenFarAway(d0)) {
-+                if (this.noActionTime > 600 && this.random.nextInt(800) == 0 && d0 > (double) l) { // CraftBukkit - remove isTypeNotPersistent() check
-                     this.discard();
-                 } else if (d0 < (double) l) {
-                     this.noActionTime = 0;
-@@ -721,6 +803,7 @@
+@@ -721,6 +802,7 @@
      @Override
      protected final void serverAiStep() {
          ++this.noActionTime;
@@ -189,7 +170,7 @@
          this.level.getProfiler().push("sensing");
          this.sensing.tick();
          this.level.getProfiler().pop();
-@@ -1116,6 +1199,12 @@
+@@ -1116,6 +1198,12 @@
          if (!this.isAlive()) {
              return EnumInteractionResult.PASS;
          } else if (this.getLeashHolder() == entityhuman) {
@@ -202,7 +183,7 @@
              this.dropLeash(true, !entityhuman.getAbilities().instabuild);
              return EnumInteractionResult.sidedSuccess(this.level.isClientSide);
          } else {
-@@ -1134,6 +1223,12 @@
+@@ -1134,6 +1222,12 @@
          ItemStack itemstack = entityhuman.getItemInHand(enumhand);
  
          if (itemstack.is(Items.LEAD) && this.canBeLeashed(entityhuman)) {
@@ -215,7 +196,7 @@
              this.setLeashedTo(entityhuman, true);
              itemstack.shrink(1);
              return EnumInteractionResult.sidedSuccess(this.level.isClientSide);
-@@ -1149,7 +1244,7 @@
+@@ -1149,7 +1243,7 @@
              if (itemstack.getItem() instanceof ItemMonsterEgg) {
                  if (this.level instanceof WorldServer) {
                      ItemMonsterEgg itemmonsteregg = (ItemMonsterEgg) itemstack.getItem();
@@ -224,7 +205,7 @@
  
                      optional.ifPresent((entityinsentient) -> {
                          this.onOffspringSpawnedFromEgg(entityhuman, entityinsentient);
-@@ -1199,12 +1294,19 @@
+@@ -1199,12 +1293,19 @@
          return this.restrictRadius != -1.0F;
      }
  
@@ -245,7 +226,7 @@
  
              t0.copyPosition(this);
              t0.setBaby(this.isBaby());
-@@ -1236,7 +1338,12 @@
+@@ -1236,7 +1337,12 @@
                  }
              }
  
@@ -259,7 +240,7 @@
              if (this.isPassenger()) {
                  Entity entity = this.getVehicle();
  
-@@ -1256,6 +1363,7 @@
+@@ -1256,6 +1362,7 @@
  
          if (this.leashHolder != null) {
              if (!this.isAlive() || !this.leashHolder.isAlive()) {
@@ -267,7 +248,7 @@
                  this.dropLeash(true, true);
              }
  
-@@ -1267,7 +1375,9 @@
+@@ -1267,7 +1374,9 @@
              this.leashHolder = null;
              this.leashInfoTag = null;
              if (!this.level.isClientSide && flag1) {
@@ -277,7 +258,7 @@
              }
  
              if (!this.level.isClientSide && flag && this.level instanceof WorldServer) {
-@@ -1317,6 +1427,7 @@
+@@ -1317,6 +1426,7 @@
          boolean flag1 = super.startRiding(entity, flag);
  
          if (flag1 && this.isLeashed()) {
@@ -285,7 +266,7 @@
              this.dropLeash(true, true);
          }
  
-@@ -1341,7 +1452,9 @@
+@@ -1341,7 +1451,9 @@
              }
  
              if (this.tickCount > 100) {
@@ -295,7 +276,7 @@
                  this.leashInfoTag = null;
              }
          }
-@@ -1412,7 +1525,14 @@
+@@ -1412,7 +1524,14 @@
          int i = EnchantmentManager.getFireAspect(this);
  
          if (i > 0) {
@@ -311,7 +292,7 @@
          }
  
          boolean flag = entity.hurt(DamageSource.mobAttack(this), f);
-@@ -1480,9 +1600,10 @@
+@@ -1480,9 +1599,10 @@
      @Override
      protected void removeAfterChangingDimensions() {
          super.removeAfterChangingDimensions();
