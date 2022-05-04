@@ -1,0 +1,72 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: lexikiq <noellekiq@gmail.com>
+Date: Mon, 21 Jun 2021 23:21:58 -0400
+Subject: [PATCH] Preserve overstacked loot
+
+Preserves overstacked items in loot tables, such as shulker box drops, to prevent the items
+from being deleted (as they'd overflow past the bounds of the container)-- or worse, causing
+chunk bans via the large amount of NBT created by unstacking the items.
+
+Fixes GH-5140 and GH-4748.
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 5a111ef1aa944500878ac4b2be2a161534894078..1df7006e5b6ffbf002acb2307b146f18a4338379 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -918,6 +918,11 @@ public class PaperWorldConfig {
+         allowPlayerCrammingDamage = getBoolean("allow-player-cramming-damage", allowPlayerCrammingDamage);
+     }
+ 
++    public boolean splitOverstackedLoot = true;
++    private void splitOverstackedLoot() {
++        splitOverstackedLoot = getBoolean("split-overstacked-loot", splitOverstackedLoot);
++    }
++
+     private com.google.common.collect.Table<String, String, Integer> sensorTickRates;
+     private com.google.common.collect.Table<String, String, Integer> behaviorTickRates;
+     private void tickRates() {
+diff --git a/src/main/java/net/minecraft/world/level/storage/loot/LootTable.java b/src/main/java/net/minecraft/world/level/storage/loot/LootTable.java
+index e3897785b055a859bccf6d67eb1a5157f5b54348..ca5d0bb8a8666285075e23f58b7d34ea34f3d94c 100644
+--- a/src/main/java/net/minecraft/world/level/storage/loot/LootTable.java
++++ b/src/main/java/net/minecraft/world/level/storage/loot/LootTable.java
+@@ -54,9 +54,17 @@ public class LootTable {
+         this.compositeFunction = LootItemFunctions.compose(functions);
+     }
+ 
++    @Deprecated // Paper - preserve overstacked items
+     public static Consumer<ItemStack> createStackSplitter(Consumer<ItemStack> lootConsumer) {
++    // Paper start - preserve overstacked items
++        return createStackSplitter(lootConsumer, null);
++    }
++
++    public static Consumer<ItemStack> createStackSplitter(Consumer<ItemStack> lootConsumer, @org.jetbrains.annotations.Nullable net.minecraft.server.level.ServerLevel world) {
++        boolean skipSplitter = world != null && !world.paperConfig.splitOverstackedLoot;
++    // Paper end
+         return (itemstack) -> {
+-            if (itemstack.getCount() < itemstack.getMaxStackSize()) {
++            if (skipSplitter || itemstack.getCount() < itemstack.getMaxStackSize()) { // Paper - preserve overstacked items
+                 lootConsumer.accept(itemstack);
+             } else {
+                 int i = itemstack.getCount();
+@@ -93,7 +101,7 @@ public class LootTable {
+     }
+ 
+     public void getRandomItems(LootContext context, Consumer<ItemStack> lootConsumer) {
+-        this.getRandomItemsRaw(context, LootTable.createStackSplitter(lootConsumer));
++        this.getRandomItemsRaw(context, LootTable.createStackSplitter(lootConsumer, context.getLevel())); // Paper - preserve overstacked items
+     }
+ 
+     public List<ItemStack> getRandomItems(LootContext context) {
+diff --git a/src/main/java/net/minecraft/world/level/storage/loot/functions/SetContainerContents.java b/src/main/java/net/minecraft/world/level/storage/loot/functions/SetContainerContents.java
+index 057676201aa2d19032537832849f3857425d357a..b5c6b7280a9c6964e2ad4aa9bd4517146c98e727 100644
+--- a/src/main/java/net/minecraft/world/level/storage/loot/functions/SetContainerContents.java
++++ b/src/main/java/net/minecraft/world/level/storage/loot/functions/SetContainerContents.java
+@@ -46,7 +46,7 @@ public class SetContainerContents extends LootItemConditionalFunction {
+             NonNullList<ItemStack> nonNullList = NonNullList.create();
+             this.entries.forEach((entry) -> {
+                 entry.expand(context, (choice) -> {
+-                    choice.createItemStack(LootTable.createStackSplitter(nonNullList::add), context);
++                    choice.createItemStack(LootTable.createStackSplitter(nonNullList::add, context.getLevel()), context); // Paper - preserve overstacked items
+                 });
+             });
+             CompoundTag compoundTag = new CompoundTag();
