@@ -1,0 +1,50 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Brokkonaut <hannos17@gmx.de>
+Date: Sat, 18 Dec 2021 08:26:55 +0100
+Subject: [PATCH] Make water animal spawn height configurable
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index b599b500528de9c501c086788e5ceb8433d904f0..a50665c6f5cf838f327dfeeafffc997f24f91e72 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -385,6 +385,24 @@ public class PaperWorldConfig {
+         mobSpawnerTickRate = getInt("mob-spawner-tick-rate", 1);
+     }
+ 
++    public Integer waterAnimalMaxSpawnHeight;
++    private void waterAnimalMaxSpawnHeight() {
++        String v = getString("wateranimal-spawn-height.maximum", "default");
++        try {
++            waterAnimalMaxSpawnHeight = Integer.parseInt(v);
++        } catch (NumberFormatException ignored) {
++        }
++    }
++
++    public Integer waterAnimalMinSpawnHeight;
++    private void waterAnimalMinSpawnHeight() {
++        String v = getString("wateranimal-spawn-height.minimum", "default");
++        try {
++            waterAnimalMinSpawnHeight = Integer.parseInt(v);
++        } catch (NumberFormatException ignored) {
++        }
++    }
++
+     public int containerUpdateTickRate;
+     private void containerUpdateTickRate() {
+         containerUpdateTickRate = getInt("container-update-tick-rate", 1);
+diff --git a/src/main/java/net/minecraft/world/entity/animal/WaterAnimal.java b/src/main/java/net/minecraft/world/entity/animal/WaterAnimal.java
+index 69f7e034cab1bfd7ca5dffc660b6decd739adf35..c039b896ee85543c26a8ab76640080f539deaa4c 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/WaterAnimal.java
++++ b/src/main/java/net/minecraft/world/entity/animal/WaterAnimal.java
+@@ -79,6 +79,10 @@ public abstract class WaterAnimal extends PathfinderMob {
+     public static boolean checkSurfaceWaterAnimalSpawnRules(EntityType<? extends WaterAnimal> type, LevelAccessor world, MobSpawnType reason, BlockPos pos, Random random) {
+         int i = world.getSeaLevel();
+         int j = i - 13;
++        // Paper start
++        i = world.getMinecraftWorld().paperConfig.waterAnimalMaxSpawnHeight != null ? world.getMinecraftWorld().paperConfig.waterAnimalMaxSpawnHeight : i;
++        j = world.getMinecraftWorld().paperConfig.waterAnimalMinSpawnHeight != null ? world.getMinecraftWorld().paperConfig.waterAnimalMinSpawnHeight : j;
++        // Paper end
+         return pos.getY() >= j && pos.getY() <= i && world.getFluidState(pos.below()).is(FluidTags.WATER) && world.getBlockState(pos.above()).is(Blocks.WATER);
+     }
+ }

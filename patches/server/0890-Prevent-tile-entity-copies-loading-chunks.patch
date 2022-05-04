@@ -1,0 +1,24 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Shane Freeder <theboyetronic@gmail.com>
+Date: Wed, 13 Apr 2022 08:25:42 +0100
+Subject: [PATCH] Prevent tile entity copies loading chunks
+
+
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index 1d30776997dda6998d793541bde9410030e25db1..c087d7a1f5e560193f87a681101da8be1b60c8b3 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -2994,7 +2994,12 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+ 
+             if (!itemstack.isEmpty() && nbttagcompound != null && nbttagcompound.contains("x") && nbttagcompound.contains("y") && nbttagcompound.contains("z") && this.player.getBukkitEntity().hasPermission("minecraft.nbt.copy")) { // Spigot
+                 BlockPos blockposition = BlockEntity.getPosFromTag(nbttagcompound);
+-                BlockEntity tileentity = this.player.level.getBlockEntity(blockposition);
++                // Paper start
++                BlockEntity tileentity = null;
++                if (this.player.distanceToSqr(blockposition.getX(), blockposition.getY(), blockposition.getZ()) < 32 * 32 && this.player.getLevel().isLoadedAndInBounds(blockposition)) {
++                    tileentity = this.player.level.getBlockEntity(blockposition);
++                }
++                // Paper end
+ 
+                 if (tileentity != null) {
+                     tileentity.saveToItem(itemstack);

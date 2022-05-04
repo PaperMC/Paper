@@ -1,0 +1,151 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sun, 22 Aug 2021 15:21:57 -0700
+Subject: [PATCH] Fix entity type tags suggestions in selectors
+
+This would really be better as a client fix because just to fix it
+all EntityArguments have been told to ask the server for completions
+when if this was fixed on the client, that wouldn't be needed.
+
+Mojira Issue: https://bugs.mojang.com/browse/MC-235045
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+index e1a6a3ca616fc2119604e6edc3570c3a90466966..c6c9ae9c5217b379ea6ed20f46a81b0e47649a3a 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+@@ -527,6 +527,11 @@ public class PaperConfig {
+         itemValidationBookPageLength = getInt("settings.item-validation.book.page", itemValidationBookPageLength);
+     }
+ 
++    public static boolean fixTargetSelectorTagCompletion = true;
++    private static void fixTargetSelectorTagCompletion() {
++        fixTargetSelectorTagCompletion = getBoolean("settings.fix-target-selector-tag-completion", fixTargetSelectorTagCompletion);
++    }
++
+     public static final class PacketLimit {
+         public final double packetLimitInterval;
+         public final double maxPacketRate;
+diff --git a/src/main/java/net/minecraft/commands/CommandSourceStack.java b/src/main/java/net/minecraft/commands/CommandSourceStack.java
+index db26d834d9a59c4fd60f99077f0118c08293678f..00bbf33aa44e2d5a4e755a2d7c1a60de9e36674f 100644
+--- a/src/main/java/net/minecraft/commands/CommandSourceStack.java
++++ b/src/main/java/net/minecraft/commands/CommandSourceStack.java
+@@ -330,4 +330,20 @@ public class CommandSourceStack implements SharedSuggestionProvider, com.destroy
+         return this.source.getBukkitSender(this);
+     }
+     // CraftBukkit end
++    // Paper start - override getSelectedEntities
++    @Override
++    public Collection<String> getSelectedEntities() {
++        if (com.destroystokyo.paper.PaperConfig.fixTargetSelectorTagCompletion && this.source instanceof ServerPlayer player) {
++            double pickDistance = player.gameMode.getGameModeForPlayer().isCreative() ? 5.0F : 4.5F;
++            Vec3 min = player.getEyePosition(1.0F);
++            Vec3 viewVector = player.getViewVector(1.0F);
++            Vec3 max = min.add(viewVector.x * pickDistance, viewVector.y * pickDistance, viewVector.z * pickDistance);
++            net.minecraft.world.phys.AABB aabb = player.getBoundingBox().expandTowards(viewVector.scale(pickDistance)).inflate(1.0D, 1.0D, 1.0D);
++            pickDistance = player.gameMode.getGameModeForPlayer().isCreative() ? 6.0F : pickDistance;
++            net.minecraft.world.phys.EntityHitResult hitResult = net.minecraft.world.entity.projectile.ProjectileUtil.getEntityHitResult(player, min, max, aabb, (e) -> !e.isSpectator() && e.isPickable(), pickDistance);
++            return hitResult != null ? java.util.Collections.singletonList(hitResult.getEntity().getStringUUID()) : SharedSuggestionProvider.super.getSelectedEntities();
++        }
++        return SharedSuggestionProvider.super.getSelectedEntities();
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/net/minecraft/commands/Commands.java b/src/main/java/net/minecraft/commands/Commands.java
+index 13a0f78abbb00b489b63d88ce14f60cb04402085..b66afde6851ceaeccb84aea00cdc333dfbf3d4b0 100644
+--- a/src/main/java/net/minecraft/commands/Commands.java
++++ b/src/main/java/net/minecraft/commands/Commands.java
+@@ -409,6 +409,7 @@ public class Commands {
+     private void fillUsableCommands(CommandNode<CommandSourceStack> tree, CommandNode<SharedSuggestionProvider> result, CommandSourceStack source, Map<CommandNode<CommandSourceStack>, CommandNode<SharedSuggestionProvider>> resultNodes) {
+         Iterator iterator = tree.getChildren().iterator();
+ 
++        boolean registeredAskServerSuggestionsForTree = false; // Paper - tell clients to ask server for suggestions for EntityArguments
+         while (iterator.hasNext()) {
+             CommandNode<CommandSourceStack> commandnode2 = (CommandNode) iterator.next();
+             if ( !org.spigotmc.SpigotConfig.sendNamespaced && commandnode2.getName().contains( ":" ) ) continue; // Spigot
+@@ -430,6 +431,12 @@ public class Commands {
+ 
+                     if (requiredargumentbuilder.getSuggestionsProvider() != null) {
+                         requiredargumentbuilder.suggests(SuggestionProviders.safelySwap(requiredargumentbuilder.getSuggestionsProvider()));
++                        // Paper start - tell clients to ask server for suggestions for EntityArguments
++                        registeredAskServerSuggestionsForTree = requiredargumentbuilder.getSuggestionsProvider() == net.minecraft.commands.synchronization.SuggestionProviders.ASK_SERVER;
++                    } else if (com.destroystokyo.paper.PaperConfig.fixTargetSelectorTagCompletion && !registeredAskServerSuggestionsForTree && requiredargumentbuilder.getType() instanceof net.minecraft.commands.arguments.EntityArgument) {
++                        requiredargumentbuilder.suggests(requiredargumentbuilder.getType()::listSuggestions);
++                        registeredAskServerSuggestionsForTree = true; // You can only
++                        // Paper end - tell clients to ask server for suggestions for EntityArguments
+                     }
+                 }
+ 
+diff --git a/src/main/java/net/minecraft/commands/arguments/EntityArgument.java b/src/main/java/net/minecraft/commands/arguments/EntityArgument.java
+index 1f3076e59bac23d428c747ae12619e4b4e5fdd5a..1d23d05d7028c5f820f172cc54153f56848e1d05 100644
+--- a/src/main/java/net/minecraft/commands/arguments/EntityArgument.java
++++ b/src/main/java/net/minecraft/commands/arguments/EntityArgument.java
+@@ -127,7 +127,7 @@ public class EntityArgument implements ArgumentType<EntitySelector> {
+ 
+             stringreader.setCursor(suggestionsbuilder.getStart());
+             SharedSuggestionProvider icompletionprovider = (SharedSuggestionProvider) commandcontext.getSource();
+-            EntitySelectorParser argumentparserselector = new EntitySelectorParser(stringreader, icompletionprovider.hasPermission(2));
++            EntitySelectorParser argumentparserselector = new EntitySelectorParser(stringreader, icompletionprovider.hasPermission(2), true); // Paper
+ 
+             try {
+                 argumentparserselector.parse();
+diff --git a/src/main/java/net/minecraft/commands/arguments/selector/EntitySelectorParser.java b/src/main/java/net/minecraft/commands/arguments/selector/EntitySelectorParser.java
+index 2816fd4a57fe51689daf1b4850ad3ab3c9749225..cdbe0695a29d0854d7f59c1f63a74bd0c1dbf4d9 100644
+--- a/src/main/java/net/minecraft/commands/arguments/selector/EntitySelectorParser.java
++++ b/src/main/java/net/minecraft/commands/arguments/selector/EntitySelectorParser.java
+@@ -115,12 +115,19 @@ public class EntitySelectorParser {
+     private boolean hasScores;
+     private boolean hasAdvancements;
+     private boolean usesSelectors;
++    public boolean parsingEntityArgumentSuggestions; // Paper - track when parsing EntityArgument suggestions
+ 
+     public EntitySelectorParser(StringReader reader) {
+         this(reader, true);
+     }
+ 
+     public EntitySelectorParser(StringReader reader, boolean atAllowed) {
++        // Paper start
++        this(reader, atAllowed, false);
++    }
++    public EntitySelectorParser(StringReader reader, boolean atAllowed, boolean parsingEntityArgumentSuggestions) {
++        this.parsingEntityArgumentSuggestions = parsingEntityArgumentSuggestions;
++        // Paper end
+         this.distance = MinMaxBounds.Doubles.ANY;
+         this.level = MinMaxBounds.Ints.ANY;
+         this.rotX = WrappedMinMaxBounds.ANY;
+diff --git a/src/main/java/net/minecraft/commands/arguments/selector/options/EntitySelectorOptions.java b/src/main/java/net/minecraft/commands/arguments/selector/options/EntitySelectorOptions.java
+index ff1e8fafe55fec729b3d8da3c2cd0d6c347013dd..5a078a4ee1f5535399f70ddb2bc6559441c3daf0 100644
+--- a/src/main/java/net/minecraft/commands/arguments/selector/options/EntitySelectorOptions.java
++++ b/src/main/java/net/minecraft/commands/arguments/selector/options/EntitySelectorOptions.java
+@@ -69,6 +69,19 @@ public class EntitySelectorOptions {
+     public static final DynamicCommandExceptionType ERROR_ENTITY_TYPE_INVALID = new DynamicCommandExceptionType((entity) -> {
+         return new TranslatableComponent("argument.entity.options.type.invalid", entity);
+     });
++    // Paper start
++    public static final DynamicCommandExceptionType ERROR_ENTITY_TAG_INVALID = new DynamicCommandExceptionType((object) -> {
++        return io.papermc.paper.adventure.PaperAdventure
++            .asVanilla(net.kyori.adventure.text.Component
++                .text("Invalid or unknown entity type tag '" + object + "'")
++                .hoverEvent(net.kyori.adventure.text.event.HoverEvent
++                    .showText(net.kyori.adventure.text.Component
++                        .text("You can disable this error in 'paper.yml'")
++                    )
++                )
++            );
++    });
++    // Paper end
+ 
+     private static void register(String id, EntitySelectorOptions.Modifier handler, Predicate<EntitySelectorParser> condition, Component description) {
+         OPTIONS.put(id, new EntitySelectorOptions.Option(handler, condition, description));
+@@ -316,6 +329,12 @@ public class EntitySelectorOptions {
+ 
+                     if (reader.isTag()) {
+                         TagKey<EntityType<?>> tagKey = TagKey.create(Registry.ENTITY_TYPE_REGISTRY, ResourceLocation.read(reader.getReader()));
++                        // Paper start - throw error if invalid entity tag (only on suggestions to keep cmd success behavior)
++                        if (com.destroystokyo.paper.PaperConfig.fixTargetSelectorTagCompletion && reader.parsingEntityArgumentSuggestions && !Registry.ENTITY_TYPE.isKnownTagName(tagKey)) {
++                            reader.getReader().setCursor(i);
++                            throw ERROR_ENTITY_TAG_INVALID.createWithContext(reader.getReader(), tagKey);
++                        }
++                        // Paper end
+                         reader.addPredicate((entity) -> {
+                             return entity.getType().is(tagKey) != bl;
+                         });
