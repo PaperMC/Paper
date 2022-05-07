@@ -48,7 +48,7 @@
  import net.minecraft.world.level.GameRules;
  import net.minecraft.world.level.GameType;
  import net.minecraft.world.level.Level;
-@@ -192,11 +196,72 @@
+@@ -192,12 +196,73 @@
  import net.minecraft.world.level.block.state.BlockState;
  import net.minecraft.world.phys.AABB;
  import net.minecraft.world.phys.BlockHitResult;
@@ -59,7 +59,7 @@
  import net.minecraft.world.phys.shapes.VoxelShape;
 +import org.bukkit.NamespacedKey;
  import org.slf4j.Logger;
-+
+ 
 +// CraftBukkit start
 +import io.papermc.paper.adventure.ChatProcessor; // Paper
 +import io.papermc.paper.adventure.PaperAdventure; // Paper
@@ -118,9 +118,10 @@
 +import org.bukkit.inventory.InventoryView;
 +import org.bukkit.inventory.SmithingInventory;
 +// CraftBukkit end
- 
++
  public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl implements ServerGamePacketListener, ServerPlayerConnection, TickablePacketListener {
  
+     static final Logger LOGGER = LogUtils.getLogger();
 @@ -212,6 +277,7 @@
      private int tickCount;
      private int ackBlockChangesUpTo = -1;
@@ -278,7 +279,7 @@
                      ServerGamePacketListenerImpl.LOGGER.warn("{} (vehicle of {}) moved too quickly! {},{},{}", new Object[]{entity.getName().getString(), this.player.getName().getString(), d6, d7, d8});
                      this.send(ClientboundMoveVehiclePacket.fromEntity(entity));
                      return;
-@@ -449,20 +583,73 @@
+@@ -449,19 +583,72 @@
                  d10 = d6 * d6 + d7 * d7 + d8 * d8;
                  boolean flag2 = false;
  
@@ -297,8 +298,8 @@
 +                    this.player.absMoveTo(d0, d1, d2, this.player.getYRot(), this.player.getXRot()); // CraftBukkit
                      this.send(ClientboundMoveVehiclePacket.fromEntity(entity));
                      return;
-                 }
- 
++                }
++
 +                // CraftBukkit start - fire PlayerMoveEvent
 +                Player player = this.getCraftPlayer();
 +                if (!this.hasMoved) {
@@ -347,12 +348,11 @@
 +                        this.justTeleported = false;
 +                        return;
 +                    }
-+                }
+                 }
 +                // CraftBukkit end
-+
+ 
                  this.player.serverLevel().getChunkSource().move(this.player);
                  entity.recordMovementThroughBlocks(new Vec3(d0, d1, d2), entity.position());
-                 Vec3 vec3d = new Vec3(entity.getX() - d0, entity.getY() - d1, entity.getZ() - d2);
 @@ -499,6 +686,7 @@
              this.lastGoodZ = this.awaitingPositionFromClient.z;
              this.player.hasChangedDimension();
@@ -396,8 +396,8 @@
  
          if (stringreader.canRead() && stringreader.peek() == '/') {
              stringreader.skip();
-         }
- 
++        }
++
 +        final com.destroystokyo.paper.event.server.AsyncTabCompleteEvent event = new com.destroystokyo.paper.event.server.AsyncTabCompleteEvent(this.getCraftPlayer(), packet.getCommand(), true, null);
 +        event.callEvent();
 +        final List<com.destroystokyo.paper.event.server.AsyncTabCompleteEvent.Completion> completions = event.isCancelled() ? com.google.common.collect.ImmutableList.of() : event.completions();
@@ -428,14 +428,14 @@
 +                this.connection.send(new ClientboundCommandSuggestionsPacket(packet.getId(), limitTo(suggestEvent.getSuggestions(), ServerGamePacketListenerImpl.MAX_COMMAND_SUGGESTIONS)));
 +            }
 +            // Paper end - Brigadier API
-+        }
+         }
 +    }
 +    // Paper start - brig API
 +    private static Suggestions limitTo(final Suggestions suggestions, final int size) {
 +        return suggestions.getList().size() <= size ? suggestions : new Suggestions(suggestions.getRange(), suggestions.getList().subList(0, size));
 +    }
 +    // Paper end - brig API
-+
+ 
 +    private void sendServerSuggestions(final ServerboundCommandSuggestionPacket packet, final StringReader stringreader) {
 +        // Paper end - AsyncTabCompleteEvent
          ParseResults<CommandSourceStack> parseresults = this.server.getCommands().getDispatcher().parse(stringreader, this.player.createCommandSourceStack());
@@ -629,8 +629,8 @@
 +                                if (i > Math.max(this.allowedPlayerTicks, 5)) {
                                      ServerGamePacketListenerImpl.LOGGER.debug("{} is sending move packets too frequently ({} packets since last tick)", this.player.getName().getString(), i);
                                      i = 1;
-                                 }
- 
++                                }
++
 +                                if (packet.hasRot || d10 > 0) {
 +                                    this.allowedPlayerTicks -= 1;
 +                                } else {
@@ -646,9 +646,9 @@
 +                                if (this.player.level().paperConfig().chunks.preventMovingIntoUnloadedChunks && (this.player.getX() != toX || this.player.getZ() != toZ) && !worldserver.areChunksLoadedForMove(this.player.getBoundingBox().expandTowards(new Vec3(toX, toY, toZ).subtract(this.player.position())))) {
 +                                    this.internalTeleport(PositionMoveRotation.of(this.player), Collections.emptySet());
 +                                    return;
-+                                }
+                                 }
 +                                // Paper end - Prevent moving into unloaded chunks
-+
+ 
                                  if (this.shouldCheckPlayerMovement(flag)) {
                                      float f2 = flag ? 300.0F : 100.0F;
  
@@ -2153,7 +2153,7 @@
          this.player.resetLastActionTime();
          ServerLevel worldserver = this.player.serverLevel();
          BlockPos blockposition = packet.getPos();
-@@ -1993,7 +3336,17 @@
+@@ -1993,15 +3336,33 @@
      @Override
      public void handlePlayerAbilities(ServerboundPlayerAbilitiesPacket packet) {
          PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel());
@@ -2172,7 +2172,15 @@
      }
  
      @Override
-@@ -2002,6 +3355,7 @@
+     public void handleClientInformation(ServerboundClientInformationPacket packet) {
+         PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel());
++        // Paper start - do not accept invalid information
++        if (packet.information().viewDistance() < 0) {
++            LOGGER.warn("Disconnecting " + this.player.getScoreboardName() + " for invalid view distance: " + packet.information().viewDistance());
++            this.disconnect(Component.literal("Invalid client settings"), org.bukkit.event.player.PlayerKickEvent.Cause.ILLEGAL_ACTION);
++            return;
++        }
++        // Paper end - do not accept invalid information
          boolean flag = this.player.isModelPartShown(PlayerModelPart.HAT);
  
          this.player.updateOptions(packet.information());
@@ -2180,7 +2188,7 @@
          if (this.player.isModelPartShown(PlayerModelPart.HAT) != flag) {
              this.server.getPlayerList().broadcastAll(new ClientboundPlayerInfoUpdatePacket(ClientboundPlayerInfoUpdatePacket.Action.UPDATE_HAT, this.player));
          }
-@@ -2012,7 +3366,7 @@
+@@ -2012,7 +3373,7 @@
      public void handleChangeDifficulty(ServerboundChangeDifficultyPacket packet) {
          PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel());
          if (this.player.hasPermissions(2) || this.isSingleplayerOwner()) {
@@ -2189,7 +2197,7 @@
          }
      }
  
-@@ -2058,7 +3412,7 @@
+@@ -2058,7 +3419,7 @@
          if (!this.waitingForSwitchToConfig) {
              throw new IllegalStateException("Client acknowledged config, but none was requested");
          } else {
@@ -2198,7 +2206,7 @@
          }
      }
  
-@@ -2083,8 +3437,10 @@
+@@ -2083,8 +3444,10 @@
          });
      }
  
