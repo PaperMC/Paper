@@ -1,7 +1,7 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: theosib <millerti@172.16.221.1>
 Date: Thu, 27 Sep 2018 01:43:35 -0600
-Subject: [PATCH] Optimize redstone algorithm
+Subject: [PATCH] Eigencraft redstone implementation
 
 Author: theosib <millerti@172.16.221.1>
 Co-authored-by: egg82 <phantom_zero@ymail.com>
@@ -19,20 +19,44 @@ Aside from making the obvious class/function renames and obfhelpers I didn't nee
 Just added Bukkit's event system and took a few liberties with dead code and comment misspellings.
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index d6976656f10707da25e4b4ce51893d2d1bf80f2e..cba7aaed24550eea874f4ae7c37b537548635c43 100644
+index d6976656f10707da25e4b4ce51893d2d1bf80f2e..cc54f13a59463dd4b40b0808086fa3c9f2ecf2b3 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-@@ -68,6 +68,16 @@ public class PaperWorldConfig {
+@@ -68,6 +68,40 @@ public class PaperWorldConfig {
          zombiesTargetTurtleEggs = getBoolean("zombies-target-turtle-eggs", zombiesTargetTurtleEggs);
      }
  
-+    public boolean useEigencraftRedstone = false;
-+    private void useEigencraftRedstone() {
-+        useEigencraftRedstone = this.getBoolean("use-faster-eigencraft-redstone", false);
-+        if (useEigencraftRedstone) {
-+            log("Using Eigencraft redstone algorithm by theosib.");
++    public enum RedstoneImplementation {
++        VANILLA, EIGENCRAFT
++    }
++    public RedstoneImplementation redstoneImplementation = RedstoneImplementation.VANILLA;
++    private void redstoneImplementation() {
++        String implementation;
++        if (PaperConfig.version < 27) {
++            implementation = "vanilla";
++            if (config.contains("world-settings.default.use-faster-eigencraft-redstone")) {
++                implementation = config.getBoolean("world-settings.default.use-faster-eigencraft-redstone") ? "eigencraft" : "vanilla";
++                config.set("world-settings.default.redstone-implementation", implementation);
++            }
++            if (config.contains("world-settings." + worldName + ".use-faster-eigencraft-redstone")) {
++                implementation = config.getBoolean("world-settings." + worldName + ".use-faster-eigencraft-redstone") ? "eigencraft" : "vanilla";
++                config.set("world-settings." + worldName + ".redstone-implementation", implementation);
++            }
++            remove("use-faster-eigencraft-redstone");
 +        } else {
-+            log("Using vanilla redstone algorithm.");
++            implementation = this.getString("redstone-implementation", "vanilla").toLowerCase().trim();
++        }
++        switch (implementation) {
++            default:
++                logError("Invalid redstone-implementation config " + implementation + " - must be one of: vanilla, eigencraft");
++            case "vanilla":
++                redstoneImplementation = RedstoneImplementation.VANILLA;
++                log("Using the Vanilla redstone implementation.");
++                break;
++            case "eigencraft":
++                redstoneImplementation = RedstoneImplementation.EIGENCRAFT;
++                log("Using Eigencraft's redstone implementation by theosib.");
++                break;
 +        }
 +    }
 +
@@ -959,24 +983,16 @@ index 0000000000000000000000000000000000000000..d4273df8124d9d6d4a122f5ecef6f3d0
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/world/level/block/RedStoneWireBlock.java b/src/main/java/net/minecraft/world/level/block/RedStoneWireBlock.java
-index 8472510a4614afd8e292d83aec67115b906b9adb..037330bcb10039c013b2ed5fd68dee16ede20fbe 100644
+index 8472510a4614afd8e292d83aec67115b906b9adb..0acc3b550a5bb809fe99708368114eaccb227312 100644
 --- a/src/main/java/net/minecraft/world/level/block/RedStoneWireBlock.java
 +++ b/src/main/java/net/minecraft/world/level/block/RedStoneWireBlock.java
-@@ -1,5 +1,7 @@
- package net.minecraft.world.level.block;
- 
-+import com.destroystokyo.paper.PaperConfig;
-+import com.destroystokyo.paper.util.RedstoneWireTurbo;
- import com.google.common.collect.ImmutableMap;
- import com.google.common.collect.Maps;
- import com.google.common.collect.Sets;
-@@ -255,6 +257,121 @@ public class RedStoneWireBlock extends Block {
+@@ -255,6 +255,121 @@ public class RedStoneWireBlock extends Block {
          return floor.isFaceSturdy(world, pos, Direction.UP) || floor.is(Blocks.HOPPER);
      }
  
 +    // Paper start - Optimize redstone
 +    // The bulk of the new functionality is found in RedstoneWireTurbo.java
-+    RedstoneWireTurbo turbo = new RedstoneWireTurbo(this);
++    com.destroystokyo.paper.util.RedstoneWireTurbo turbo = new com.destroystokyo.paper.util.RedstoneWireTurbo(this);
 +
 +    /*
 +     * Modified version of pre-existing updateSurroundingRedstone, which is called from
@@ -984,7 +1000,7 @@ index 8472510a4614afd8e292d83aec67115b906b9adb..037330bcb10039c013b2ed5fd68dee16
 +     * Note: Added 'source' argument so as to help determine direction of information flow
 +     */
 +    private void updateSurroundingRedstone(Level worldIn, BlockPos pos, BlockState state, BlockPos source) {
-+        if (worldIn.paperConfig.useEigencraftRedstone) {
++        if (worldIn.paperConfig.redstoneImplementation == com.destroystokyo.paper.PaperWorldConfig.RedstoneImplementation.EIGENCRAFT) {
 +            turbo.updateSurroundingRedstone(worldIn, pos, state, source);
 +            return;
 +        }
@@ -1008,7 +1024,7 @@ index 8472510a4614afd8e292d83aec67115b906b9adb..037330bcb10039c013b2ed5fd68dee16
 +        int k = worldIn.getBestNeighborSignal(pos1);
 +        this.shouldSignal = true;
 +
-+        if (!worldIn.paperConfig.useEigencraftRedstone) {
++        if (worldIn.paperConfig.redstoneImplementation == com.destroystokyo.paper.PaperWorldConfig.RedstoneImplementation.VANILLA) {
 +            // This code is totally redundant to if statements just below the loop.
 +            if (k > 0 && k > j - 1) {
 +                j = k;
@@ -1022,7 +1038,7 @@ index 8472510a4614afd8e292d83aec67115b906b9adb..037330bcb10039c013b2ed5fd68dee16
 +        // redstone wire will be set to 'k'.  If 'k' is already 15, then nothing inside the
 +        // following loop can affect the power level of the wire.  Therefore, the loop is
 +        // skipped if k is already 15.
-+        if (!worldIn.paperConfig.useEigencraftRedstone || k < 15) {
++        if (worldIn.paperConfig.redstoneImplementation == com.destroystokyo.paper.PaperWorldConfig.RedstoneImplementation.VANILLA || k < 15) {
 +            for (Direction enumfacing : Direction.Plane.HORIZONTAL) {
 +                BlockPos blockpos = pos1.relative(enumfacing);
 +                boolean flag = blockpos.getX() != pos2.getX() || blockpos.getZ() != pos2.getZ();
@@ -1041,7 +1057,7 @@ index 8472510a4614afd8e292d83aec67115b906b9adb..037330bcb10039c013b2ed5fd68dee16
 +            }
 +        }
 +
-+        if (!worldIn.paperConfig.useEigencraftRedstone) {
++        if (worldIn.paperConfig.redstoneImplementation == com.destroystokyo.paper.PaperWorldConfig.RedstoneImplementation.VANILLA) {
 +            // The old code would decrement the wire value only by 1 at a time.
 +            if (l > j) {
 +                j = l - 1;
@@ -1092,7 +1108,7 @@ index 8472510a4614afd8e292d83aec67115b906b9adb..037330bcb10039c013b2ed5fd68dee16
      private void updatePowerStrength(Level world, BlockPos pos, BlockState state) {
          int i = this.calculateTargetStrength(world, pos);
  
-@@ -324,6 +441,7 @@ public class RedStoneWireBlock extends Block {
+@@ -324,6 +439,7 @@ public class RedStoneWireBlock extends Block {
          return Math.max(i, j - 1);
      }
  
@@ -1100,7 +1116,7 @@ index 8472510a4614afd8e292d83aec67115b906b9adb..037330bcb10039c013b2ed5fd68dee16
      private int getWireSignal(BlockState state) {
          return state.is((Block) this) ? (Integer) state.getValue(RedStoneWireBlock.POWER) : 0;
      }
-@@ -346,7 +464,7 @@ public class RedStoneWireBlock extends Block {
+@@ -346,7 +462,7 @@ public class RedStoneWireBlock extends Block {
      @Override
      public void onPlace(BlockState state, Level world, BlockPos pos, BlockState oldState, boolean notify) {
          if (!oldState.is(state.getBlock()) && !world.isClientSide) {
@@ -1109,7 +1125,7 @@ index 8472510a4614afd8e292d83aec67115b906b9adb..037330bcb10039c013b2ed5fd68dee16
              Iterator iterator = Direction.Plane.VERTICAL.iterator();
  
              while (iterator.hasNext()) {
-@@ -373,7 +491,7 @@ public class RedStoneWireBlock extends Block {
+@@ -373,7 +489,7 @@ public class RedStoneWireBlock extends Block {
                      world.updateNeighborsAt(pos.relative(enumdirection), this);
                  }
  
@@ -1118,7 +1134,7 @@ index 8472510a4614afd8e292d83aec67115b906b9adb..037330bcb10039c013b2ed5fd68dee16
                  this.updateNeighborsOfNeighboringWires(world, pos);
              }
          }
-@@ -408,7 +526,7 @@ public class RedStoneWireBlock extends Block {
+@@ -408,7 +524,7 @@ public class RedStoneWireBlock extends Block {
      public void neighborChanged(BlockState state, Level world, BlockPos pos, Block block, BlockPos fromPos, boolean notify) {
          if (!world.isClientSide) {
              if (state.canSurvive(world, pos)) {
