@@ -201,10 +201,10 @@ index 0000000000000000000000000000000000000000..acfe97d62ef863a14e2e43db30917bd5
 +}
 diff --git a/src/main/java/alternate/current/wire/PowerQueue.java b/src/main/java/alternate/current/wire/PowerQueue.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..eebf926e4517e41984b85a4bf93f2c9edc801a4c
+index 0000000000000000000000000000000000000000..9c293bef09ad1c95ba24ea6c41a27c5489b548dd
 --- /dev/null
 +++ b/src/main/java/alternate/current/wire/PowerQueue.java
-@@ -0,0 +1,202 @@
+@@ -0,0 +1,209 @@
 +package alternate.current.wire;
 +
 +import java.util.AbstractQueue;
@@ -238,10 +238,12 @@ index 0000000000000000000000000000000000000000..eebf926e4517e41984b85a4bf93f2c9e
 +        int power = wire.nextPower();
 +
 +        if (contains(wire)) {
-+            if (power != wire.power) {
-+                move(wire, power);
-+            } else {
++            if (wire.power == power) {
++                // already queued for this power; exit
 +                return false;
++            } else {
++                // already queued for different power; move it
++                move(wire, power);
 +            }
 +        } else {
 +            insert(wire, power);
@@ -257,16 +259,21 @@ index 0000000000000000000000000000000000000000..eebf926e4517e41984b85a4bf93f2c9e
 +        }
 +
 +        WireNode wire = head;
-+        head = head.next;
++        WireNode next = wire.next;
 +
-+        if (head == null) {
-+            clear();
++        if (next == null) {
++            clear(); // reset the tails array
 +        } else {
-+            head.prev = null;
-+
-+            if (wire.power != head.power) {
++            if (wire.power != next.power) {
++                // if the head is also a tail, its entry in the array
++                // can be cleared; there is no previous wire with the
++                // same power to take its place.
 +                tails[wire.power + OFFSET] = null;
 +            }
++
++            wire.next = null;
++            next.prev = null;
++            head = next;
 +
 +            size--;
 +        }
@@ -308,65 +315,65 @@ index 0000000000000000000000000000000000000000..eebf926e4517e41984b85a4bf93f2c9e
 +    }
 +
 +    public boolean contains(WireNode wire) {
-+        return wire.next != null || wire == tail;
++        return wire == head || wire.prev != null;
 +    }
 +
 +    private void move(WireNode wire, int power) {
++        remove(wire);
++        insert(wire, power);
++    }
++
++    private void remove(WireNode wire) {
 +        if (wire == tail || wire.power != wire.next.power) {
-+            if (wire == head || wire.prev.power != wire.power) {
++            // assign a new tail for this wire's power
++            if (wire == head || wire.power != wire.prev.power) {
++                // there is no other wire with the same power; clear
 +                tails[wire.power + OFFSET] = null;
 +            } else {
++                // the previous wire in the queue becomes the tail
 +                tails[wire.power + OFFSET] = wire.prev;
 +            }
 +        }
 +
-+        size--;
-+
-+        unlink(wire);
-+        insert(wire, power);
-+    }
-+
-+    private void unlink(WireNode wire) {
 +        if (wire == head) {
-+            head = head.next;
++            head = wire.next;
 +        } else {
 +            wire.prev.next = wire.next;
 +        }
 +        if (wire == tail) {
-+            tail = tail.prev;
++            tail = wire.prev;
 +        } else {
 +            wire.next.prev = wire.prev;
 +        }
 +
 +        wire.prev = null;
 +        wire.next = null;
++
++        size--;
 +    }
 +
 +    private void insert(WireNode wire, int power) {
++        // store the power for which this wire is queued
 +        wire.power = power;
 +
-+        link(wire);
-+
-+        size++;
-+
-+        int index = wire.power + OFFSET;
-+        tails[index] = wire;
-+    }
-+
-+    private void link(WireNode wire) {
++        // wires are sorted by power (highest to lowest)
++        // wires with the same power are ordered FIFO
 +        if (head == null) {
-+            linkFirst(wire);
++            // first element in this queue \o/
++            head = tail = wire;
 +        } else if (wire.power > head.power) {
 +            linkHead(wire);
 +        } else if (wire.power <= tail.power) {
 +            linkTail(wire);
 +        } else {
++            // since the wire is neither the head nor the tail
++            // findPrev is guaranteed to find a non-null element
 +            linkAfter(findPrev(wire), wire);
 +        }
-+    }
 +
-+    private void linkFirst(WireNode wire) {
-+        head = tail = wire;
++        tails[power + OFFSET] = wire;
++
++        size++;
 +    }
 +
 +    private void linkHead(WireNode wire) {
@@ -387,9 +394,9 @@ index 0000000000000000000000000000000000000000..eebf926e4517e41984b85a4bf93f2c9e
 +
 +    private void linkBetween(WireNode prev, WireNode wire, WireNode next) {
 +        prev.next = wire;
-+        wire.next = next;
-+
 +        wire.prev = prev;
++
++        wire.next = next;
 +        next.prev = wire;
 +    }
 +
@@ -1824,7 +1831,7 @@ index 0000000000000000000000000000000000000000..6b5bffd288e2f815d8c3788e73530e69
 +    }
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index ad3f0ff353a0448babde334641d1b1ac94779b07..55f3372959fd30e02ac3e233902749ae3e136920 100644
+index 4598c54007a90e9ebf9294f3e99c9f340c4b4fe8..8ba435a3182c8466d999708192b63fcffe697948 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 @@ -77,13 +77,37 @@ public class PaperWorldConfig {
@@ -1842,7 +1849,7 @@ index ad3f0ff353a0448babde334641d1b1ac94779b07..55f3372959fd30e02ac3e233902749ae
 +    public RedstoneImplementation redstoneImplementation = RedstoneImplementation.VANILLA;
 +    private void redstoneImplementation() {
 +        String implementation;
-+        if (PaperConfig.version < 26) {
++        if (PaperConfig.version < 27) {
 +            boolean useEigencraft = this.getBoolean("use-faster-eigencraft-redstone", false);
 +            if (useEigencraft) {
 +                implementation = "eigencraft";
@@ -1872,7 +1879,7 @@ index ad3f0ff353a0448babde334641d1b1ac94779b07..55f3372959fd30e02ac3e233902749ae
      }
  
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index 50fd3419deb668dda64b1056f03fb66da55e6960..f81fbcbf2b0204b225ecb6e207ac8f961932966e 100644
+index 62ec40de8ed8acb293ef21c8d2c624060d51cfe8..98209532ad3e692d7e459640123f78bbd9a65889 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
 @@ -212,6 +212,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
