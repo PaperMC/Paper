@@ -1,7 +1,7 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: theosib <millerti@172.16.221.1>
 Date: Thu, 27 Sep 2018 01:43:35 -0600
-Subject: [PATCH] Optimize redstone algorithm
+Subject: [PATCH] Eigencraft redstone implementation
 
 Author: theosib <millerti@172.16.221.1>
 Co-authored-by: egg82 <eggys82@gmail.com>
@@ -26,13 +26,37 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          zombiesTargetTurtleEggs = getBoolean("zombies-target-turtle-eggs", zombiesTargetTurtleEggs);
      }
  
-+    public boolean useEigencraftRedstone = false;
-+    private void useEigencraftRedstone() {
-+        useEigencraftRedstone = this.getBoolean("use-faster-eigencraft-redstone", false);
-+        if (useEigencraftRedstone) {
-+            log("Using Eigencraft redstone algorithm by theosib.");
++    public enum RedstoneImplementation {
++        VANILLA, EIGENCRAFT
++    }
++    public RedstoneImplementation redstoneImplementation = RedstoneImplementation.VANILLA;
++    private void redstoneImplementation() {
++        String implementation;
++        if (PaperConfig.version < 27) {
++            implementation = "vanilla";
++            if (config.contains("world-settings.default.use-faster-eigencraft-redstone")) {
++                implementation = config.getBoolean("world-settings.default.use-faster-eigencraft-redstone") ? "eigencraft" : "vanilla";
++                config.set("world-settings.default.redstone-implementation", implementation);
++            }
++            if (config.contains("world-settings." + worldName + ".use-faster-eigencraft-redstone")) {
++                implementation = config.getBoolean("world-settings." + worldName + ".use-faster-eigencraft-redstone") ? "eigencraft" : "vanilla";
++                config.set("world-settings." + worldName + ".redstone-implementation", implementation);
++            }
++            remove("use-faster-eigencraft-redstone");
 +        } else {
-+            log("Using vanilla redstone algorithm.");
++            implementation = this.getString("redstone-implementation", "vanilla").toLowerCase().trim();
++        }
++        switch (implementation) {
++            default:
++                logError("Invalid redstone-implementation config " + implementation + " - must be one of: vanilla, eigencraft");
++            case "vanilla":
++                redstoneImplementation = RedstoneImplementation.VANILLA;
++                log("Using the Vanilla redstone implementation.");
++                break;
++            case "eigencraft":
++                redstoneImplementation = RedstoneImplementation.EIGENCRAFT;
++                log("Using Eigencraft's redstone implementation by theosib.");
++                break;
 +        }
 +    }
 +
@@ -962,21 +986,13 @@ diff --git a/src/main/java/net/minecraft/world/level/block/RedStoneWireBlock.jav
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/block/RedStoneWireBlock.java
 +++ b/src/main/java/net/minecraft/world/level/block/RedStoneWireBlock.java
-@@ -0,0 +0,0 @@
- package net.minecraft.world.level.block;
- 
-+import com.destroystokyo.paper.PaperConfig;
-+import com.destroystokyo.paper.util.RedstoneWireTurbo;
- import com.google.common.collect.ImmutableMap;
- import com.google.common.collect.Maps;
- import com.google.common.collect.Sets;
 @@ -0,0 +0,0 @@ public class RedStoneWireBlock extends Block {
          return floor.isFaceSturdy(world, pos, Direction.UP) || floor.is(Blocks.HOPPER);
      }
  
 +    // Paper start - Optimize redstone
 +    // The bulk of the new functionality is found in RedstoneWireTurbo.java
-+    RedstoneWireTurbo turbo = new RedstoneWireTurbo(this);
++    com.destroystokyo.paper.util.RedstoneWireTurbo turbo = new com.destroystokyo.paper.util.RedstoneWireTurbo(this);
 +
 +    /*
 +     * Modified version of pre-existing updateSurroundingRedstone, which is called from
@@ -984,7 +1000,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     * Note: Added 'source' argument so as to help determine direction of information flow
 +     */
 +    private void updateSurroundingRedstone(Level worldIn, BlockPos pos, BlockState state, BlockPos source) {
-+        if (worldIn.paperConfig.useEigencraftRedstone) {
++        if (worldIn.paperConfig.redstoneImplementation == com.destroystokyo.paper.PaperWorldConfig.RedstoneImplementation.EIGENCRAFT) {
 +            turbo.updateSurroundingRedstone(worldIn, pos, state, source);
 +            return;
 +        }
@@ -1008,7 +1024,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        int k = worldIn.getBestNeighborSignal(pos1);
 +        this.shouldSignal = true;
 +
-+        if (!worldIn.paperConfig.useEigencraftRedstone) {
++        if (worldIn.paperConfig.redstoneImplementation == com.destroystokyo.paper.PaperWorldConfig.RedstoneImplementation.VANILLA) {
 +            // This code is totally redundant to if statements just below the loop.
 +            if (k > 0 && k > j - 1) {
 +                j = k;
@@ -1022,7 +1038,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        // redstone wire will be set to 'k'.  If 'k' is already 15, then nothing inside the
 +        // following loop can affect the power level of the wire.  Therefore, the loop is
 +        // skipped if k is already 15.
-+        if (!worldIn.paperConfig.useEigencraftRedstone || k < 15) {
++        if (worldIn.paperConfig.redstoneImplementation == com.destroystokyo.paper.PaperWorldConfig.RedstoneImplementation.VANILLA || k < 15) {
 +            for (Direction enumfacing : Direction.Plane.HORIZONTAL) {
 +                BlockPos blockpos = pos1.relative(enumfacing);
 +                boolean flag = blockpos.getX() != pos2.getX() || blockpos.getZ() != pos2.getZ();
@@ -1041,7 +1057,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            }
 +        }
 +
-+        if (!worldIn.paperConfig.useEigencraftRedstone) {
++        if (worldIn.paperConfig.redstoneImplementation == com.destroystokyo.paper.PaperWorldConfig.RedstoneImplementation.VANILLA) {
 +            // The old code would decrement the wire value only by 1 at a time.
 +            if (l > j) {
 +                j = l - 1;
