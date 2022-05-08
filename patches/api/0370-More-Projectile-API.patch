@@ -5,6 +5,47 @@ Subject: [PATCH] More Projectile API
 
 Co-authored-by: Nassim Jahnke <nassim@njahnke.dev>
 
+diff --git a/src/main/java/org/bukkit/entity/AbstractArrow.java b/src/main/java/org/bukkit/entity/AbstractArrow.java
+index 225a24898acd25038ea2a8448f9f3b57643d3026..8e13512435e5a61439eca4c057cbc0a049e79c72 100644
+--- a/src/main/java/org/bukkit/entity/AbstractArrow.java
++++ b/src/main/java/org/bukkit/entity/AbstractArrow.java
+@@ -151,6 +151,36 @@ public interface AbstractArrow extends Projectile {
+     @NotNull
+     org.bukkit.inventory.ItemStack getItemStack();
+ 
++    /**
++     * Sets the ticks for how long this arrow has been in the world for.
++     * This is used to determine when the arrow should be automatically despawned.
++     *
++     * @param ticks lifetime ticks
++     */
++    void setLifetimeTicks(int ticks);
++
++    /**
++     * Gets the ticks for how long this arrow has been in the world for.
++     *
++     * @return lifetime ticks this arrow has been in the world
++     */
++    int getLifetimeTicks();
++
++    /**
++     * Gets the sound that is played when this arrow hits an entity.
++     *
++     * @return sound that plays
++     */
++    @NotNull
++    org.bukkit.Sound getPickupSound();
++
++    /**
++     * Sets the sound that is played when this arrow hits an entity.
++     *
++     * @param sound sound that is played
++     */
++    void setPickupSound(@NotNull org.bukkit.Sound sound);
++
+     /**
+      * Sets this arrow to "noclip" status.
+      *
 diff --git a/src/main/java/org/bukkit/entity/Firework.java b/src/main/java/org/bukkit/entity/Firework.java
 index 0d31aa0b22cf1e849572294e2cfe38b48c9210af..571712e17551f24b369044b8215b722f7183ae7d 100644
 --- a/src/main/java/org/bukkit/entity/Firework.java
@@ -135,6 +176,70 @@ index d1b37530319f6d37ee37f62080289c1e45848bc8..e94c7e279356c510f60508b26277d489
 +     */
 +    void setWaitTime(int ticks);
 +    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/entity/ShulkerBullet.java b/src/main/java/org/bukkit/entity/ShulkerBullet.java
+index 4623e0d767b343cbdc6fcf20b3b2ff7ff14863cf..00e63e8df54cd6a3cbe0ca8578c6e74e6ab0223d 100644
+--- a/src/main/java/org/bukkit/entity/ShulkerBullet.java
++++ b/src/main/java/org/bukkit/entity/ShulkerBullet.java
+@@ -18,4 +18,59 @@ public interface ShulkerBullet extends Projectile {
+      * @param target the entity to target
+      */
+     void setTarget(@Nullable Entity target);
++
++    /**
++     * Gets where the shulker bullet should move towards.
++     * This is usually relative towards their target.
++     *
++     * @return target
++     */
++    @org.jetbrains.annotations.NotNull
++    org.bukkit.util.Vector getTargetDelta();
++
++
++    /**
++     * Sets where the shulker bullet should move towards.
++     * This is usually relative towards their target.
++     *
++     * @param vector target
++     */
++    void setTargetDelta(@org.jetbrains.annotations.NotNull org.bukkit.util.Vector vector);
++
++    /**
++     * Gets the current movement direction.
++     * This is used to determine the next movement direction to ensure
++     * that the bullet does not move in the same direction.
++     *
++     * @return null or their current direction
++     */
++    @Nullable
++    org.bukkit.block.BlockFace getCurrentMovementDirection();
++
++    /**
++     * Set the current movement direction.
++     * This is used to determine the next movement direction to ensure
++     * that the bullet does not move in the same direction.
++     *
++     * Set to null to simply pick a random direction.
++     *
++     * @param movementDirection null or a direction
++     */
++    void setCurrentMovementDirection(@Nullable org.bukkit.block.BlockFace movementDirection);
++
++    /**
++     * Gets how many steps that the shulker bullet will try to move in
++     * the target delta.
++     *
++     * @return number of steps
++     */
++    int getFlightSteps();
++
++    /**
++     * Sets how many steps that the shulker bullet will try to move in
++     * the target delta.
++     *
++     * @param steps number of steps
++     */
++    void setFlightSteps(int steps);
  }
 diff --git a/src/main/java/org/bukkit/entity/ThrownPotion.java b/src/main/java/org/bukkit/entity/ThrownPotion.java
 index 7051e07b4e456aae0ec9e37808b59e5fa62a4027..225ac312613b9e8f3cf680819f2ebe350d1bf48a 100644

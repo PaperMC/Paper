@@ -7,7 +7,7 @@ Co-authored-by: Nassim Jahnke <nassim@njahnke.dev>
 Co-authored-by: Jake Potrebic <jake.m.potrebic@gmail.com>
 
 diff --git a/src/main/java/net/minecraft/world/entity/animal/Bee.java b/src/main/java/net/minecraft/world/entity/animal/Bee.java
-index d13f3460644f635ded96bf92ddf9ecf8984c8e47..bd048cc30046f19f9eee89c6ba45d0816a160e67 100644
+index ed93f8a7b16b73304d2667ed7aa132593a8fb30a..d05d900527c83f8be386533b9aa068610a2d04c7 100644
 --- a/src/main/java/net/minecraft/world/entity/animal/Bee.java
 +++ b/src/main/java/net/minecraft/world/entity/animal/Bee.java
 @@ -540,11 +540,13 @@ public class Bee extends Animal implements NeutralMob, FlyingAnimal {
@@ -210,11 +210,41 @@ index 254d4f2e45d7c8f572a4368eccd84560d4d0d836..299ab868252c8f326e3a56e878c9ee23
 +    }
 +    // Paper end - Horse API
  }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftBat.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftBat.java
+index 3b960a832df1fe496ea036962083f1ac507a7db7..ee5534972a2b26402f29b146d1f3da69052672b0 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftBat.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftBat.java
+@@ -33,4 +33,25 @@ public class CraftBat extends CraftAmbient implements Bat {
+     public void setAwake(boolean state) {
+         this.getHandle().setResting(!state);
+     }
++    // Paper start
++    @Override
++    public org.bukkit.Location getTargetLocation() {
++        net.minecraft.core.BlockPos pos = this.getHandle().targetPosition;
++        if (pos == null) {
++            return null;
++        }
++
++        return net.minecraft.server.MCUtil.toLocation(this.getHandle().getLevel(), pos);
++    }
++
++    @Override
++    public void setTargetLocation(org.bukkit.Location location) {
++        net.minecraft.core.BlockPos pos = null;
++        if (location != null) {
++            pos = net.minecraft.server.MCUtil.toBlockPosition(location);
++        }
++
++        this.getHandle().targetPosition = pos;
++    }
++    // Paper end
+ }
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftBee.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftBee.java
-index 8ada3dfbe89c8b55d85c31c71e365af0cbf66d19..b5d3a00a48d3b7618f974bb0f6909aa7c304b012 100644
+index 8ada3dfbe89c8b55d85c31c71e365af0cbf66d19..1ae8d6e819cd9d195e1bd31ccf55d2893ba00e2a 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftBee.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftBee.java
-@@ -91,4 +91,22 @@ public class CraftBee extends CraftAnimals implements Bee {
+@@ -91,4 +91,42 @@ public class CraftBee extends CraftAnimals implements Bee {
      public void setCannotEnterHiveTicks(int ticks) {
          this.getHandle().setStayOutOfHiveCountdown(ticks);
      }
@@ -234,6 +264,26 @@ index 8ada3dfbe89c8b55d85c31c71e365af0cbf66d19..b5d3a00a48d3b7618f974bb0f6909aa7
 +    @Override
 +    public net.kyori.adventure.util.TriState getRollingOverride() {
 +        return this.getHandle().rollingOverride;
++    }
++
++    @Override
++    public void setCropsGrownSincePollination(int crops) {
++        this.getHandle().numCropsGrownSincePollination = crops;
++    }
++
++    @Override
++    public int getCropsGrownSincePollination() {
++        return this.getHandle().numCropsGrownSincePollination;
++    }
++
++    @Override
++    public void setTicksSincePollination(int ticks) {
++        this.getHandle().ticksWithoutNectarSinceExitingHive = ticks;
++    }
++
++    @Override
++    public int getTicksSincePollination() {
++        return this.getHandle().ticksWithoutNectarSinceExitingHive;
 +    }
 +    // Paper end
  }
@@ -266,6 +316,36 @@ index 37352ca3ff267d02a26ed182ce3df3ef775fa9bc..6a504f61c55d3983871f8d1c5c002c7a
 +        return this.getHandle().isRelaxStateOne();
 +    }
 +    // Paper End - More cat api
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftChicken.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftChicken.java
+index 178328042ad62f32ca2ae14a6bcf2b694418eb8c..fd87f979ee207dac13e4028d76bdd40911509e56 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftChicken.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftChicken.java
+@@ -24,4 +24,25 @@ public class CraftChicken extends CraftAnimals implements Chicken {
+     public EntityType getType() {
+         return EntityType.CHICKEN;
+     }
++    // Paper start
++    @Override
++    public boolean isChickenJockey() {
++        return this.getHandle().isChickenJockey();
++    }
++
++    @Override
++    public void setIsChickenJockey(boolean isChickenJockey) {
++        this.getHandle().setChickenJockey(isChickenJockey);
++    }
++
++    @Override
++    public int getEggLayTime() {
++        return this.getHandle().eggTime;
++    }
++
++    @Override
++    public void setEggLayTime(int eggLayTime) {
++        this.getHandle().eggTime = eggLayTime;
++    }
++    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEnderman.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEnderman.java
 index ae669a970aa1f17ed786640de8a481364543c58e..acdc4e578d70f8121c8c6be7682ba1ecef7687cf 100644
@@ -300,6 +380,26 @@ index ae669a970aa1f17ed786640de8a481364543c58e..acdc4e578d70f8121c8c6be7682ba1ec
      @Override
      public EnderMan getHandle() {
          return (EnderMan) entity;
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEndermite.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEndermite.java
+index 04976616da8c85b1278dad33ff05554aa74a6b33..75c7645fb5732c43d1da15181cf5c7ee4c3ecd6c 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEndermite.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftEndermite.java
+@@ -34,4 +34,15 @@ public class CraftEndermite extends CraftMonster implements Endermite {
+     public void setPlayerSpawned(boolean playerSpawned) {
+         // Nop
+     }
++    // Paper start
++    @Override
++    public void setLifetimeTicks(int ticks) {
++        this.getHandle().life = ticks;
++    }
++
++    @Override
++    public int getLifetimeTicks() {
++        return this.getHandle().life;
++    }
++    // Paper end
+ }
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftFox.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftFox.java
 index f6369a1b0ea3fc64e9e7902d9da25924a0745855..fce96b67300b8808984904ee19d4e987f5235bfd 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftFox.java
@@ -368,6 +468,107 @@ index 7adda5c93e7c172ea0ba4a3f15828b5e54a283e7..fffaf4108b632ceabac4186d93b34ad0
 +    }
 +    // Paper end
  }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftMinecartHopper.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftMinecartHopper.java
+index ee9648739fb39c5842063d7442df6eb5c9336d7f..569763b3c9e92a4071884f139fb1263201f80e43 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftMinecartHopper.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftMinecartHopper.java
+@@ -39,4 +39,20 @@ public final class CraftMinecartHopper extends CraftMinecartContainer implements
+     public void setEnabled(boolean enabled) {
+         ((MinecartHopper) getHandle()).setEnabled(enabled);
+     }
++    // Paper start
++    @Override
++    public net.minecraft.world.entity.vehicle.MinecartHopper getHandle() {
++        return (net.minecraft.world.entity.vehicle.MinecartHopper) super.getHandle();
++    }
++
++    @Override
++    public int getPickupCooldown() {
++        return this.getHandle().cooldownTime;
++    }
++
++    @Override
++    public void setPickupCooldown(int cooldown) {
++        this.getHandle().setCooldown(cooldown);
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftMinecartTNT.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftMinecartTNT.java
+index 9569068c0a6e1eb934f063634f5d3efe674aa33d..dfd5e830fd262b72256b361e094f6769b323e9c8 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftMinecartTNT.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftMinecartTNT.java
+@@ -19,4 +19,20 @@ final class CraftMinecartTNT extends CraftMinecart implements ExplosiveMinecart
+     public EntityType getType() {
+         return EntityType.MINECART_TNT;
+     }
++    // Paper start
++    @Override
++    public net.minecraft.world.entity.vehicle.MinecartTNT getHandle() {
++        return (net.minecraft.world.entity.vehicle.MinecartTNT) entity;
++    }
++
++    @Override
++    public void setFuseTicks(int fuseTicks) {
++        this.getHandle().fuse = fuseTicks;
++    }
++
++    @Override
++    public int getFuseTicks() {
++        return this.getHandle().getFuse();
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftMushroomCow.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftMushroomCow.java
+index 7fe1eae79dfac7e02f85bae9c1990467a4b0037b..fafd30028d69ff49bcc43a9e6b947265c87393c8 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftMushroomCow.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftMushroomCow.java
+@@ -4,7 +4,6 @@ import com.google.common.base.Preconditions;
+ import org.bukkit.craftbukkit.CraftServer;
+ import org.bukkit.entity.EntityType;
+ import org.bukkit.entity.MushroomCow;
+-import org.bukkit.entity.MushroomCow.Variant;
+ 
+ public class CraftMushroomCow extends CraftCow implements MushroomCow {
+     public CraftMushroomCow(CraftServer server, net.minecraft.world.entity.animal.MushroomCow entity) {
+@@ -28,6 +27,38 @@ public class CraftMushroomCow extends CraftCow implements MushroomCow {
+         this.getHandle().setMushroomType(net.minecraft.world.entity.animal.MushroomCow.MushroomType.values()[variant.ordinal()]);
+     }
+ 
++    // Paper start
++    @Override
++    public int getStewEffectDuration() {
++        return this.getHandle().effectDuration;
++    }
++
++    @Override
++    public void setStewEffectDuration(int duration) {
++        this.getHandle().effectDuration = duration;
++    }
++
++    @Override
++    public org.bukkit.potion.PotionEffectType getStewEffectType() {
++        net.minecraft.world.effect.MobEffect effect = this.getHandle().effect;
++        if (effect == null) {
++            return null;
++        }
++
++        return org.bukkit.potion.PotionEffectType.getById(net.minecraft.world.effect.MobEffect.getId(effect));
++    }
++
++    @Override
++    public void setStewEffect(org.bukkit.potion.PotionEffectType type) {
++        net.minecraft.world.effect.MobEffect effect = null;
++        if (type != null) {
++            effect = net.minecraft.world.effect.MobEffect.byId(type.getId());
++        }
++
++        this.getHandle().effect = effect;
++    }
++    // Paper end
++
+     @Override
+     public String toString() {
+         return "CraftMushroomCow";
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPanda.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPanda.java
 index ff9f711b83a8ea1bf4135751a9ba865224bce787..1f6dcad764240e15083731d017f9bb1c5c84622f 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPanda.java
@@ -405,6 +606,36 @@ index ff9f711b83a8ea1bf4135751a9ba865224bce787..1f6dcad764240e15083731d017f9bb1c
  
      @Override
      public boolean isRolling() {
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPhantom.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPhantom.java
+index dce23f3878b1588c26b6116d80e597d08070edbc..eaa0358051c4ac32cc7e6a45039374dd5c036fa2 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPhantom.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPhantom.java
+@@ -50,5 +50,25 @@ public class CraftPhantom extends CraftFlying implements Phantom {
+     public void setShouldBurnInDay(boolean shouldBurnInDay) {
+         getHandle().setShouldBurnInDay(shouldBurnInDay);
+     }
++
++    @Override
++    public org.bukkit.Location getAnchorLocation() {
++        net.minecraft.core.BlockPos pos = this.getHandle().anchorPoint;
++        if (pos == null) {
++            return null;
++        }
++
++        return net.minecraft.server.MCUtil.toLocation(this.getHandle().getLevel(), pos);
++    }
++
++    @Override
++    public void setAnchorLocation(org.bukkit.Location location) {
++        net.minecraft.core.BlockPos pos = null;
++        if (location != null) {
++            pos = net.minecraft.server.MCUtil.toBlockPosition(location);
++        }
++
++        this.getHandle().anchorPoint = pos;
++    }
+     // Paper end
+ }
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPiglin.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPiglin.java
 index aeda5fc001fe4ce55ee467240b275b6050a29f98..48d0a4e42e1b90d1323784d1284acabfe9497dd6 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPiglin.java
@@ -467,6 +698,46 @@ index b10bcbc19362f0f8596ebcf3f3e1060486cfc74f..e24eec79402843105a13de2bb8554260
 +    }
 +    // Paper end
  }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftRavager.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftRavager.java
+index 796b784d7a50e3a4aea5c67b7cd16d288ed392b0..84899714b96a7ed31ceee10373a62c37cab2ad2a 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftRavager.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftRavager.java
+@@ -24,4 +24,35 @@ public class CraftRavager extends CraftRaider implements Ravager {
+     public String toString() {
+         return "CraftRavager";
+     }
++    // Paper start - Missing Entity Behavior
++    @Override
++    public int getAttackTicks() {
++        return this.getHandle().getAttackTick();
++    }
++
++    @Override
++    public void setAttackTicks(int ticks) {
++        this.getHandle().attackTick = ticks;
++    }
++
++    @Override
++    public int getStunnedTicks() {
++        return this.getHandle().getStunnedTick();
++    }
++
++    @Override
++    public void setStunnedTicks(int ticks) {
++        this.getHandle().stunnedTick = ticks;
++    }
++
++    @Override
++    public int getRoarTicks() {
++        return this.getHandle().getRoarTick();
++    }
++
++    @Override
++    public void setRoarTicks(int ticks) {
++        this.getHandle().roarTick = ticks;
++    }
++    // Paper end
+ }
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftTrident.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftTrident.java
 index bf5b2fd6676c4430578db4cc6c603c501cc5e349..832981b07ef5c633ef00a382f56798ee87eec0df 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftTrident.java
@@ -500,10 +771,10 @@ index bf5b2fd6676c4430578db4cc6c603c501cc5e349..832981b07ef5c633ef00a382f56798ee
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftVex.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftVex.java
-index 2ba16e33dd21c3c72cb12244aa78c59bf53e76d1..634a5099fb6faea03615783f57e643ad0083fa30 100644
+index 2ba16e33dd21c3c72cb12244aa78c59bf53e76d1..35eff8fd775e0be62127b8e821ccdd4e6ce7073c 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftVex.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftVex.java
-@@ -29,6 +29,26 @@ public class CraftVex extends CraftMonster implements Vex {
+@@ -29,6 +29,46 @@ public class CraftVex extends CraftMonster implements Vex {
      public void setSummoner(org.bukkit.entity.Mob summoner) {
          getHandle().setOwner(summoner == null ? null : ((CraftMob) summoner).getHandle());
      }
@@ -526,6 +797,26 @@ index 2ba16e33dd21c3c72cb12244aa78c59bf53e76d1..634a5099fb6faea03615783f57e643ad
 +    @Override
 +    public void setLimitedLifetimeTicks(int ticks) {
 +        this.getHandle().limitedLifeTicks = ticks;
++    }
++
++    @Override
++    public org.bukkit.Location getGuardingLocation() {
++        net.minecraft.core.BlockPos pos = this.getHandle().getBoundOrigin();
++        if (pos == null) {
++            return null;
++        }
++
++        return net.minecraft.server.MCUtil.toLocation(this.getHandle().getLevel(), pos);
++    }
++
++    @Override
++    public void setGuardingLocation(org.bukkit.Location location) {
++        net.minecraft.core.BlockPos pos = null;
++        if (location != null) {
++            pos = net.minecraft.server.MCUtil.toBlockPosition(location);
++        }
++
++        this.getHandle().setBoundOrigin(pos);
 +    }
      // Paper end
  
@@ -574,6 +865,36 @@ index 7ece945d1a4fa29c7b98532788076483037f4bda..963928fc8e29b8abc2026c0b0183ebb0
      @Override
      public void increaseAnger(Entity entity, int increase) {
          Preconditions.checkArgument(entity != null, "Entity cannot be null");
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftWanderingTrader.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftWanderingTrader.java
+index fa7107593b20e0151d8d67104e4a92dcc697d461..d3618b2fd698552b2331f1114654b3339f3f066f 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftWanderingTrader.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftWanderingTrader.java
+@@ -55,5 +55,25 @@ public class CraftWanderingTrader extends CraftAbstractVillager implements Wande
+     public boolean canDrinkMilk() {
+         return getHandle().canDrinkMilk;
+     }
++
++    @Override
++    public org.bukkit.Location getWanderingTowards() {
++        net.minecraft.core.BlockPos pos = this.getHandle().wanderTarget;
++        if (pos == null) {
++            return null;
++        }
++
++        return net.minecraft.server.MCUtil.toLocation(this.getHandle().getLevel(), pos);
++    }
++
++    @Override
++    public void setWanderingTowards(org.bukkit.Location location) {
++        net.minecraft.core.BlockPos pos = null;
++        if (location != null) {
++            pos = net.minecraft.server.MCUtil.toBlockPosition(location);
++        }
++
++        this.getHandle().wanderTarget = pos;
++    }
+     // Paper end
+ }
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftWither.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftWither.java
 index e92355fa2042c4cf15354a11b7058cacbe996f0d..4cf3a374c9ee7c7bcf82e778aa094eb4f8463595 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftWither.java
