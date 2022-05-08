@@ -1090,5 +1090,19 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
     public boolean canRepair(@NotNull ItemStack toBeRepaired) {
         return Bukkit.getUnsafe().isValidRepairItemStack(toBeRepaired, this);
     }
+
+    /**
+     * Damages this itemstack by the specified amount. This
+     * runs all logic associated with damaging an itemstack like
+     * events and stat changes.
+     *
+     * @param amount the amount of damage to do
+     * @param livingEntity the entity related to the damage
+     * @return the damaged itemstack or an empty one if it broke. May return the same instance of ItemStack
+     * @see org.bukkit.entity.LivingEntity#damageItemStack(EquipmentSlot, int) to damage itemstacks in equipment slots
+     */
+    public @NotNull ItemStack damage(int amount, @NotNull org.bukkit.entity.LivingEntity livingEntity) {
+        return livingEntity.damageItemStack(this, amount);
+    }
     // Paper end
 }

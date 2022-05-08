@@ -1375,4 +1375,53 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      */
     void knockback(double strength, double directionX, double directionZ);
     // Paper end - knockback API
+
+    // Paper start - ItemStack damage API
+    /**
+     * Notifies all clients tracking this entity that the item in
+     * the slot of this entity broke.
+     * <p>
+     * NOTE: this does not mutate any entity state
+     *
+     * @param slot the slot
+     */
+    void broadcastSlotBreak(org.bukkit.inventory.@NotNull EquipmentSlot slot);
+
+    /**
+     * Notifies specified players that the item in the slot
+     * of this entity broke.
+     * <p>
+     * NOTE: this does not mutate any entity state
+     *
+     * @param slot the slot
+     * @param players the players to notify
+     */
+    void broadcastSlotBreak(org.bukkit.inventory.@NotNull EquipmentSlot slot, @NotNull Collection<Player> players);
+
+    /**
+     * Damages the itemstack in this slot by the specified amount.
+     * <p>
+     * This runs all logic associated with damaging an itemstack like
+     * gamemode and enchantment checks, events, stat changes, and advancement
+     * triggers.
+     *
+     * @param stack the itemstack to damage
+     * @param amount the amount of damage to do
+     * @return the damaged itemstack, or an empty stack if it broke. There are no
+     * guarantees the returned itemstack is the same instance
+     */
+    @NotNull ItemStack damageItemStack(@NotNull ItemStack stack, int amount);
+
+    /**
+     * Damages the itemstack in this slot by the specified amount.
+     * <p>
+     * This runs all logic associated with damaging an itemstack like
+     * gamemode and enchantment checks, events, stat changes, advancement
+     * triggers, and notifying clients to play break animations.
+     *
+     * @param slot the slot of the stack to damage
+     * @param amount the amount of damage to do
+     */
+    void damageItemStack(org.bukkit.inventory.@NotNull EquipmentSlot slot, int amount);
+    // Paper end - ItemStack damage API
 }
