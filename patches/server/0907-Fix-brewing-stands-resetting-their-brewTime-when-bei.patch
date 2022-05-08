@@ -1,0 +1,30 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: etil2jz <blanchot.arthur@protonmail.ch>
+Date: Sun, 8 May 2022 16:51:32 +0200
+Subject: [PATCH] Fix brewing stands resetting their brewTime when being
+ unloaded
+
+When a brewing stand is unloaded, such as saving and quitting in a world,
+the cycle is reset to the start. This includes consuming another blaze powder.
+See https://bugs.mojang.com/browse/MC-26304.
+
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/BrewingStandBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/BrewingStandBlockEntity.java
+index 5c0f1488c8a8100cd39a03adeccded9984722249..ef99e202ffad483f71702d931767cbde3cab93b0 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/BrewingStandBlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/BrewingStandBlockEntity.java
+@@ -296,6 +296,7 @@ public class BrewingStandBlockEntity extends BaseContainerBlockEntity implements
+         ContainerHelper.loadAllItems(nbt, this.items);
+         this.brewTime = nbt.getShort("BrewTime");
+         this.fuel = nbt.getByte("Fuel");
++        this.ingredient = net.minecraft.core.Registry.ITEM.get(new net.minecraft.resources.ResourceLocation(nbt.getString("ingredient"))); // Paper - fix brewing stands resetting their brewTime when being unloaded
+     }
+ 
+     @Override
+@@ -304,6 +305,7 @@ public class BrewingStandBlockEntity extends BaseContainerBlockEntity implements
+         nbt.putShort("BrewTime", (short) this.brewTime);
+         ContainerHelper.saveAllItems(nbt, this.items);
+         nbt.putByte("Fuel", (byte) this.fuel);
++        nbt.putString("ingredient", net.minecraft.core.Registry.ITEM.getKey(this.ingredient).toString()); // Paper - fix brewing stands resetting their brewTime when being unloaded
+     }
+ 
+     @Override
