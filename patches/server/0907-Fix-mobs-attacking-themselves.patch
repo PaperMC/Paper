@@ -1,0 +1,20 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: etil2jz <blanchot.arthur@protonmail.ch>
+Date: Sun, 8 May 2022 16:40:55 +0200
+Subject: [PATCH] Fix mobs attacking themselves
+
+If an entity is provoked by a second one using commands, the second will join in the fight
+against itself, causing it to attack itself repeatedly. See https://bugs.mojang.com/browse/MC-110386.
+
+diff --git a/src/main/java/net/minecraft/world/entity/ai/goal/target/HurtByTargetGoal.java b/src/main/java/net/minecraft/world/entity/ai/goal/target/HurtByTargetGoal.java
+index 39ea15c7577af186d93d4ad9a48034d746a86fc8..774ebac4fcf46f4a5e506031408984694692c221 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/goal/target/HurtByTargetGoal.java
++++ b/src/main/java/net/minecraft/world/entity/ai/goal/target/HurtByTargetGoal.java
+@@ -114,6 +114,7 @@ public class HurtByTargetGoal extends TargetGoal {
+     }
+ 
+     protected void alertOther(Mob mob, LivingEntity target) {
++        if (mob == target) return; // Paper - fix mobs attacking themselves
+         mob.setTarget(target, org.bukkit.event.entity.EntityTargetEvent.TargetReason.TARGET_ATTACKED_NEARBY_ENTITY, true); // CraftBukkit - reason
+     }
+ }
