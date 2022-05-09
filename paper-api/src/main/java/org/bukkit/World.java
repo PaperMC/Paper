@@ -40,7 +40,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Represents a world, which may contain entities, chunks and blocks
  */
-public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient, Metadatable, PersistentDataHolder {
+public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient, Metadatable, PersistentDataHolder, Keyed {
 
     /**
      * Gets the {@link Block} at the given coordinates
