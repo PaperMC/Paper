@@ -1,0 +1,99 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: u9g <git@u9g.dev>
+Date: Mon, 9 May 2022 12:37:54 -0400
+Subject: [PATCH] Make all recipes implement keyed
+
+
+diff --git a/src/main/java/org/bukkit/inventory/ComplexRecipe.java b/src/main/java/org/bukkit/inventory/ComplexRecipe.java
+index 46381c8f97d6ca2a16931675d1e7dd8a9b9de4e6..02e31fcd7ac23d9fb13fe57f4f169c786dd051fa 100644
+--- a/src/main/java/org/bukkit/inventory/ComplexRecipe.java
++++ b/src/main/java/org/bukkit/inventory/ComplexRecipe.java
+@@ -9,4 +9,4 @@ import org.bukkit.Keyed;
+  * Note: Since a complex recipe has dynamic outputs, {@link #getResult()} will
+  * sometimes return an AIR ItemStack.
+  */
+-public interface ComplexRecipe extends Recipe, Keyed {}
++public interface ComplexRecipe extends Recipe {}
+diff --git a/src/main/java/org/bukkit/inventory/CookingRecipe.java b/src/main/java/org/bukkit/inventory/CookingRecipe.java
+index 6f251252aa96f202139103c657a81c71a0ffbfaf..71cdb98d65c285e76d714cb32607bdb79a2fbbba 100644
+--- a/src/main/java/org/bukkit/inventory/CookingRecipe.java
++++ b/src/main/java/org/bukkit/inventory/CookingRecipe.java
+@@ -11,7 +11,7 @@ import org.jetbrains.annotations.NotNull;
+  * Represents a cooking recipe.
+  * @param <T> type of recipe
+  */
+-public abstract class CookingRecipe<T extends CookingRecipe> implements Recipe, Keyed {
++public abstract class CookingRecipe<T extends CookingRecipe> implements Recipe {
+     private final NamespacedKey key;
+     private ItemStack output;
+     private RecipeChoice ingredient;
+diff --git a/src/main/java/org/bukkit/inventory/MerchantRecipe.java b/src/main/java/org/bukkit/inventory/MerchantRecipe.java
+index afaa21b9347683fa373a938d9b1aa01c2058192a..022628630204d236016cd32f776e16c02c831b1a 100644
+--- a/src/main/java/org/bukkit/inventory/MerchantRecipe.java
++++ b/src/main/java/org/bukkit/inventory/MerchantRecipe.java
+@@ -3,7 +3,10 @@ package org.bukkit.inventory;
+ import com.google.common.base.Preconditions;
+ import java.util.ArrayList;
+ import java.util.List;
++
++import net.kyori.adventure.key.Key;
+ import org.bukkit.Material;
++import org.bukkit.NamespacedKey;
+ import org.bukkit.entity.Villager;
+ import org.bukkit.potion.PotionEffectType;
+ import org.bukkit.util.NumberConversions;
+@@ -58,6 +61,7 @@ public class MerchantRecipe implements Recipe {
+     private int villagerExperience;
+     private float priceMultiplier;
+     private boolean ignoreDiscounts; // Paper
++    private final NamespacedKey key = NamespacedKey.randomKey(); // Paper
+ 
+     public MerchantRecipe(@NotNull ItemStack result, int maxUses) {
+         this(result, 0, maxUses, false);
+@@ -308,5 +312,15 @@ public class MerchantRecipe implements Recipe {
+     public void setIgnoreDiscounts(boolean ignoreDiscounts) {
+         this.ignoreDiscounts = ignoreDiscounts;
+     }
++
++    @Override
++    public @NotNull NamespacedKey getKey() {
++        return key;
++    }
++
++    @Override
++    public @NotNull Key key() {
++        return key;
++    }
+     // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/inventory/Recipe.java b/src/main/java/org/bukkit/inventory/Recipe.java
+index 4927a7ddca27cae0319a486d1d7bb761a67c2d4e..7c361354b4a3d7c2023e478b90a9847c1d2e0cc8 100644
+--- a/src/main/java/org/bukkit/inventory/Recipe.java
++++ b/src/main/java/org/bukkit/inventory/Recipe.java
+@@ -1,11 +1,12 @@
+ package org.bukkit.inventory;
+ 
++import org.bukkit.Keyed;
+ import org.jetbrains.annotations.NotNull;
+ 
+ /**
+  * Represents some type of crafting recipe.
+  */
+-public interface Recipe {
++public interface Recipe extends Keyed {
+ 
+     /**
+      * Get the result of this recipe.
+diff --git a/src/main/java/org/bukkit/inventory/ShapelessRecipe.java b/src/main/java/org/bukkit/inventory/ShapelessRecipe.java
+index 7f6d3c71c5b3a9aa54c84a4c3b7c3614a0d477ce..dde00ec32d8850c615ed167d9ab1b34228f2210a 100644
+--- a/src/main/java/org/bukkit/inventory/ShapelessRecipe.java
++++ b/src/main/java/org/bukkit/inventory/ShapelessRecipe.java
+@@ -16,7 +16,7 @@ import org.jetbrains.annotations.NotNull;
+  * Represents a shapeless recipe, where the arrangement of the ingredients on
+  * the crafting grid does not matter.
+  */
+-public class ShapelessRecipe implements Recipe, Keyed {
++public class ShapelessRecipe implements Recipe {
+     private final NamespacedKey key;
+     private final ItemStack output;
+     private final List<RecipeChoice> ingredients = new ArrayList<>();
