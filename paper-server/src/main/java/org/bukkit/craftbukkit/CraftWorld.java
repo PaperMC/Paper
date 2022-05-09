@@ -75,6 +75,7 @@ import org.bukkit.Effect;
 import org.bukkit.FluidCollisionMode;
 import org.bukkit.GameRule;
 import org.bukkit.Location;
+import org.bukkit.NamespacedKey;
 import org.bukkit.Particle;
 import org.bukkit.Raid;
 import org.bukkit.Sound;
@@ -579,6 +580,11 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     @Override
     public UUID getUID() {
         return world.uuid;
+    }
+
+    @Override
+    public NamespacedKey getKey() {
+        return CraftNamespacedKey.fromMinecraft(world.dimension().location());
     }
 
     @Override
