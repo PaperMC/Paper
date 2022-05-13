@@ -1,0 +1,42 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Doc <nachito94@msn.com>
+Date: Fri, 13 May 2022 17:12:23 -0400
+Subject: [PATCH] Wither AlternativeTargets and related behaviour
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftWither.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftWither.java
+index 299d5e47489cfe489ac130a33a08cdb29ba76d72..aded09dfbbcd085a6517864675de18f3178c7bcd 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftWither.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftWither.java
+@@ -64,5 +64,31 @@ public class CraftWither extends CraftMonster implements Wither, com.destroystok
+     public void setCanTravelThroughPortals(boolean value) {
+         getHandle().setCanTravelThroughPortals(value);
+     }
++
++    @Override
++    public void setTarget(org.bukkit.entity.LivingEntity entity) {
++        super.setTarget(entity);
++        for (Wither.HEAD head : Wither.HEAD.values()) {
++            setAlternativeTarget(head, entity);
++        }
++    }
++
++    @Override
++    public org.bukkit.entity.Entity getAlternativeTarget(Wither.HEAD head) {
++        com.google.common.base.Preconditions.checkNotNull(head, "head cannot be null");
++        int entityId = getHandle().getAlternativeTarget(head.ordinal());
++        net.minecraft.world.entity.Entity entityNms = getHandle().getLevel().getEntity(entityId);
++        return (entityNms != null) ? entityNms.getBukkitEntity() : null;
++    }
++
++    @Override
++    public void setAlternativeTarget(Wither.HEAD head, org.bukkit.entity.Entity target) {
++        com.google.common.base.Preconditions.checkNotNull(head, "head cannot be null");
++        if (target != null) {
++            getHandle().setAlternativeTarget(head.ordinal(), ((CraftEntity) target).getHandle().getId());
++        } else {
++            getHandle().setAlternativeTarget(head.ordinal(), 0);
++        }
++    }
+     // Paper end
+ }
