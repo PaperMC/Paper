@@ -172,7 +172,8 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     @Override
     public Location getSpawnLocation() {
         BlockPosition spawn = world.getSharedSpawnPos();
-        return new Location(this, spawn.getX(), spawn.getY(), spawn.getZ());
+        float yaw = world.getSharedSpawnAngle();
+        return new Location(this, spawn.getX(), spawn.getY(), spawn.getZ(), yaw, 0);
     }
 
     @Override
