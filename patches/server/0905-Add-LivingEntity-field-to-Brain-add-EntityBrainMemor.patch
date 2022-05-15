@@ -1,0 +1,141 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Togira <70365614+Togira123@users.noreply.github.com>
+Date: Sun, 15 May 2022 18:31:03 +0200
+Subject: [PATCH] Add LivingEntity field to Brain & add
+ EntityBrainMemoryRemoveEvent
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+index bd5825c5b5c81e0694a3635b981588f0d2ba83cb..e368d9b7376ae5b961259d429627ebde09c3a429 100644
+--- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
++++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+@@ -311,7 +311,7 @@ public abstract class LivingEntity extends Entity {
+     }
+ 
+     protected Brain<?> makeBrain(Dynamic<?> dynamic) {
+-        return this.brainProvider().makeBrain(dynamic);
++        return this.brainProvider().makeBrain(dynamic, this); // Paper - add an entity reference to the brain
+     }
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/entity/ai/Brain.java b/src/main/java/net/minecraft/world/entity/ai/Brain.java
+index 32456644dfd2e45dfc02cd1fa77d7afd9e1db1e9..0c7052588cd87d4138b408e44151611255ef5bc9 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/Brain.java
++++ b/src/main/java/net/minecraft/world/entity/ai/Brain.java
+@@ -38,6 +38,7 @@ import net.minecraft.world.entity.ai.sensing.SensorType;
+ import net.minecraft.world.entity.schedule.Activity;
+ import net.minecraft.world.entity.schedule.Schedule;
+ import org.apache.commons.lang3.mutable.MutableObject;
++import org.bukkit.craftbukkit.entity.memory.CraftMemoryKey; // Paper
+ import org.slf4j.Logger;
+ 
+ public class Brain<E extends LivingEntity> {
+@@ -54,6 +55,7 @@ public class Brain<E extends LivingEntity> {
+     private final Set<Activity> activeActivities = Sets.newHashSet();
+     private Activity defaultActivity = Activity.IDLE;
+     private long lastScheduleUpdate = -9999L;
++    private LivingEntity owner; // Paper - the entity that belongs to this brain
+ 
+     public static <E extends LivingEntity> Brain.Provider<E> provider(Collection<? extends MemoryModuleType<?>> memoryModules, Collection<? extends SensorType<? extends Sensor<? super E>>> sensors) {
+         return new Brain.Provider<>(memoryModules, sensors);
+@@ -105,8 +107,9 @@ public class Brain<E extends LivingEntity> {
+         return mutableObject.getValue();
+     }
+ 
+-    public Brain(Collection<? extends MemoryModuleType<?>> memories, Collection<? extends SensorType<? extends Sensor<? super E>>> sensors, ImmutableList<Brain.MemoryValue<?>> memoryEntries, Supplier<Codec<Brain<E>>> codecSupplier) {
++    public Brain(Collection<? extends MemoryModuleType<?>> memories, Collection<? extends SensorType<? extends Sensor<? super E>>> sensors, ImmutableList<Brain.MemoryValue<?>> memoryEntries, Supplier<Codec<Brain<E>>> codecSupplier, LivingEntity owner) { // Paper
+         this.codec = codecSupplier;
++        this.owner = owner; // Paper - add the entity reference to the brain
+ 
+         for(MemoryModuleType<?> memoryModuleType : memories) {
+             this.memories.put(memoryModuleType, Optional.empty());
+@@ -143,7 +146,9 @@ public class Brain<E extends LivingEntity> {
+     }
+ 
+     public <U> void eraseMemory(MemoryModuleType<U> type) {
+-        this.setMemory(type, Optional.empty());
++        if (new io.papermc.paper.event.entity.EntityBrainMemoryRemoveEvent(owner.getBukkitLivingEntity(), CraftMemoryKey.toMemoryKey(type)).callEvent()) { // Paper - Add EntityBrainMemoryRemoveEvent
++            this.setMemory(type, Optional.empty());
++        }
+     }
+ 
+     public <U> void setMemory(MemoryModuleType<U> type, @Nullable U value) {
+@@ -496,11 +501,11 @@ public class Brain<E extends LivingEntity> {
+             this.codec = Brain.codec(memoryModules, sensors);
+         }
+ 
+-        public Brain<E> makeBrain(Dynamic<?> data) {
++        public Brain<E> makeBrain(Dynamic<?> data, LivingEntity entity) { // Paper - add an entity reference to the brain
+             return this.codec.parse(data).resultOrPartial(Brain.LOGGER::error).orElseGet(() -> {
+                 return new Brain<>(this.memoryTypes, this.sensorTypes, ImmutableList.of(), () -> {
+                     return this.codec;
+-                });
++                }, entity);
+             });
+         }
+     }
+diff --git a/src/main/java/net/minecraft/world/entity/animal/axolotl/Axolotl.java b/src/main/java/net/minecraft/world/entity/animal/axolotl/Axolotl.java
+index e5617c013f1bd6f89dfbb2ccd404489180cd0573..18200292df299f0fbaafe8b870026c34b88fd3da 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/axolotl/Axolotl.java
++++ b/src/main/java/net/minecraft/world/entity/animal/axolotl/Axolotl.java
+@@ -480,7 +480,7 @@ public class Axolotl extends Animal implements LerpingModel, Bucketable {
+ 
+     @Override
+     protected Brain<?> makeBrain(Dynamic<?> dynamic) {
+-        return AxolotlAi.makeBrain(this.brainProvider().makeBrain(dynamic));
++        return AxolotlAi.makeBrain(this.brainProvider().makeBrain(dynamic, this)); // Paper - add an entity reference to the brain
+     }
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/entity/animal/goat/Goat.java b/src/main/java/net/minecraft/world/entity/animal/goat/Goat.java
+index 78f1082b0a3bad923c1e142d15bc7dad2ae5ff15..eab0afe63ae09d3d38d867673bc9f7519b20c9c8 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/goat/Goat.java
++++ b/src/main/java/net/minecraft/world/entity/animal/goat/Goat.java
+@@ -76,7 +76,7 @@ public class Goat extends Animal {
+ 
+     @Override
+     protected Brain<?> makeBrain(Dynamic<?> dynamic) {
+-        return GoatAi.makeBrain(this.brainProvider().makeBrain(dynamic));
++        return GoatAi.makeBrain(this.brainProvider().makeBrain(dynamic, this)); // Paper - add an entity reference to the brain
+     }
+ 
+     public static AttributeSupplier.Builder createAttributes() {
+diff --git a/src/main/java/net/minecraft/world/entity/monster/hoglin/Hoglin.java b/src/main/java/net/minecraft/world/entity/monster/hoglin/Hoglin.java
+index 49ca4f6a9e33fdb5295dae2b059d071551353c24..4779515654b666b0346b2ed10e4dc01afcf7346a 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/hoglin/Hoglin.java
++++ b/src/main/java/net/minecraft/world/entity/monster/hoglin/Hoglin.java
+@@ -118,7 +118,7 @@ public class Hoglin extends Animal implements Enemy, HoglinBase {
+ 
+     @Override
+     protected Brain<?> makeBrain(Dynamic<?> dynamic) {
+-        return HoglinAi.makeBrain(this.brainProvider().makeBrain(dynamic));
++        return HoglinAi.makeBrain(this.brainProvider().makeBrain(dynamic, this)); // Paper - add an entity reference to the brain
+     }
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/entity/monster/piglin/Piglin.java b/src/main/java/net/minecraft/world/entity/monster/piglin/Piglin.java
+index 63cfda124b5bad20af3050a0b62d73883b6abf7d..e02f8534828858dc5f99948caa90780fb725fc59 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/piglin/Piglin.java
++++ b/src/main/java/net/minecraft/world/entity/monster/piglin/Piglin.java
+@@ -227,7 +227,7 @@ public class Piglin extends AbstractPiglin implements CrossbowAttackMob, Invento
+ 
+     @Override
+     protected Brain<?> makeBrain(Dynamic<?> dynamic) {
+-        return PiglinAi.makeBrain(this, this.brainProvider().makeBrain(dynamic));
++        return PiglinAi.makeBrain(this, this.brainProvider().makeBrain(dynamic, this)); // Paper - add an entity reference to the brain
+     }
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/entity/npc/Villager.java b/src/main/java/net/minecraft/world/entity/npc/Villager.java
+index 268524e256a034520438d5c825e5e419d72d29ce..01211c1d6925d62765cfaef7e758dd85b50182d1 100644
+--- a/src/main/java/net/minecraft/world/entity/npc/Villager.java
++++ b/src/main/java/net/minecraft/world/entity/npc/Villager.java
+@@ -165,7 +165,7 @@ public class Villager extends AbstractVillager implements ReputationEventHandler
+ 
+     @Override
+     protected Brain<?> makeBrain(Dynamic<?> dynamic) {
+-        Brain<Villager> behaviorcontroller = this.brainProvider().makeBrain(dynamic);
++        Brain<Villager> behaviorcontroller = this.brainProvider().makeBrain(dynamic, this); // Paper - add an entity reference to the brain
+ 
+         this.registerBrainGoals(behaviorcontroller);
+         return behaviorcontroller;
