@@ -785,7 +785,7 @@ index 0000000000000000000000000000000000000000..0a88c60161b04a733151c15046358f4b
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/world/entity/ai/behavior/AcquirePoi.java b/src/main/java/net/minecraft/world/entity/ai/behavior/AcquirePoi.java
-index 84a0ee595bebcc1947c602c4c06e7437706ce37c..afbb2acd27416c801af3d718850b82a170734cd3 100644
+index 84a0ee595bebcc1947c602c4c06e7437706ce37c..894092e9335fcbe88f724ac8a23ab8c75aa5ed0a 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/behavior/AcquirePoi.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/behavior/AcquirePoi.java
 @@ -83,7 +83,11 @@ public class AcquirePoi extends Behavior<PathfinderMob> {
@@ -795,7 +795,7 @@ index 84a0ee595bebcc1947c602c4c06e7437706ce37c..afbb2acd27416c801af3d718850b82a1
 -        Set<BlockPos> set = poiManager.findAllClosestFirst(this.poiType.getPredicate(), predicate, entity.blockPosition(), 48, PoiManager.Occupancy.HAS_SPACE).limit(5L).collect(Collectors.toSet());
 +        // Paper start - optimise POI access
 +        java.util.List<BlockPos> poiposes = new java.util.ArrayList<>();
-+        io.papermc.paper.util.PoiAccess.findNearestPoiPositions(poiManager, this.poiType.getPredicate(), predicate, entity.blockPosition(), 48, 48*48, PoiManager.Occupancy.HAS_SPACE, false, 5, poiposes);
++        io.papermc.paper.util.PoiAccess.findNearestPoiPositions(poiManager, this.poiType.getPredicate(), predicate, entity.blockPosition(), 48, 48, PoiManager.Occupancy.HAS_SPACE, false, 5, poiposes);
 +        Set<BlockPos> set = new java.util.HashSet<>(poiposes);
 +        // Paper end - optimise POI access
          Path path = entity.getNavigation().createPath(set, this.poiType.getValidRange());
@@ -821,7 +821,7 @@ index 0eea3e39616e40e15d1662b973c097cda3b2cee7..3ccc1421f4a5a08dadb9fe3c9fa3ac31
                  BlockPos blockPos = path.getTarget();
                  Optional<PoiType> optional = poiManager.getType(blockPos);
 diff --git a/src/main/java/net/minecraft/world/entity/ai/village/poi/PoiManager.java b/src/main/java/net/minecraft/world/entity/ai/village/poi/PoiManager.java
-index 4a972b26242cf4c9d7e8f655cb1264cddad5f143..8a569e3300543cb171c3befae59969628adc424c 100644
+index 4a972b26242cf4c9d7e8f655cb1264cddad5f143..e583c8b47e7094edc7fdd1645e4fa767b46bd636 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/village/poi/PoiManager.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/village/poi/PoiManager.java
 @@ -37,7 +37,7 @@ public class PoiManager extends SectionStorage<PoiSection> {
@@ -849,7 +849,7 @@ index 4a972b26242cf4c9d7e8f655cb1264cddad5f143..8a569e3300543cb171c3befae5996962
 -            return blockPos2.distSqr(pos);
 -        }));
 +        // Paper start - re-route to faster logic
-+        BlockPos ret = io.papermc.paper.util.PoiAccess.findClosestPoiDataPosition(this, typePredicate, null, pos, radius, radius*radius, occupationStatus, false);
++        BlockPos ret = io.papermc.paper.util.PoiAccess.findClosestPoiDataPosition(this, typePredicate, null, pos, radius, radius, occupationStatus, false);
 +        return Optional.ofNullable(ret);
 +        // Paper end - re-route to faster logic
      }
@@ -859,7 +859,7 @@ index 4a972b26242cf4c9d7e8f655cb1264cddad5f143..8a569e3300543cb171c3befae5996962
 -            return blockPos2.distSqr(pos);
 -        }));
 +        // Paper start - re-route to faster logic
-+        BlockPos ret = io.papermc.paper.util.PoiAccess.findClosestPoiDataPosition(this, typePredicate, posPredicate, pos, radius, radius * radius, occupationStatus, false);
++        BlockPos ret = io.papermc.paper.util.PoiAccess.findClosestPoiDataPosition(this, typePredicate, posPredicate, pos, radius, radius, occupationStatus, false);
 +        return Optional.ofNullable(ret);
 +        // Paper end - re-route to faster logic
      }
