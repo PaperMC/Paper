@@ -1,0 +1,161 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Peter Crawley <peterzcrawley@gmail.com>
+Date: Mon, 16 May 2022 13:56:53 +0100
+Subject: [PATCH] Explosion Resistance API
+
+
+diff --git a/src/main/java/org/bukkit/Bukkit.java b/src/main/java/org/bukkit/Bukkit.java
+index 840aaf9e8fc828b5a7ea02252038c6524680f2e0..b2a59bc124041ee40a4b8af4d6b008054d8d12f5 100644
+--- a/src/main/java/org/bukkit/Bukkit.java
++++ b/src/main/java/org/bukkit/Bukkit.java
+@@ -2436,6 +2436,45 @@ public final class Bukkit {
+     public static @NotNull org.bukkit.potion.PotionBrewer getPotionBrewer() {
+         return server.getPotionBrewer();
+     }
++
++    /**
++     * Gets the explosion resistance of the material
++     * @param material Material to get the explosion resistance of
++     * @return The explosion resistance
++     * @throws IllegalArgumentException if Material is not a block
++     */
++    public static float getExplosionResistance(@NotNull Material material) throws IllegalArgumentException {
++        return server.getExplosionResistance(material);
++    }
++
++    /**
++     * Sets the explosion resistance of the material
++     * @param material Material to set the explosion resistance of
++     * @param value Value to set the explosion resistance to
++     * @throws IllegalArgumentException if Material is not a block
++     */
++    public static void setExplosionResistance(@NotNull Material material, float value) throws IllegalArgumentException {
++        server.setExplosionResistance(material, value);
++    }
++
++    /**
++     * Gets the vanilla explosion resistance of the material
++     * @param material Material to get the vanilla explosion resistance of
++     * @return The vanilla explosion resistance
++     * @throws IllegalArgumentException if Material is not a block
++     */
++    public static float getDefaultExplosionResistance(@NotNull Material material) throws IllegalArgumentException {
++        return server.getDefaultExplosionResistance(material);
++    }
++
++    /**
++     * Resets the explosion resistance of the material to the vanilla value
++     * @param material Material to reset the explosion resistance of
++     * @throws IllegalArgumentException if Material is not a block
++     */
++    public static void resetExplosionResistance(@NotNull Material material) throws IllegalArgumentException {
++        server.resetExplosionResistance(material);
++    }
+     // Paper end
+ 
+     @NotNull
+diff --git a/src/main/java/org/bukkit/Material.java b/src/main/java/org/bukkit/Material.java
+index 1d6baee05643607baa40a07022576906ea61a92f..33250e62cf41c824a11ca643beca492de6599123 100644
+--- a/src/main/java/org/bukkit/Material.java
++++ b/src/main/java/org/bukkit/Material.java
+@@ -9256,8 +9256,12 @@ public enum Material implements Keyed, net.kyori.adventure.translation.Translata
+      * Only available when {@link #isBlock()} is true.
+      *
+      * @return the blast resistance of that material.
++     * @deprecated Renamed to getExplosionResistance
+      */
++    @Deprecated // Paper - Explosion Resistance API
+     public float getBlastResistance() {
++        return getExplosionResistance(); // Paper - Explosion Resistance API
++        /*
+         Preconditions.checkArgument(isBlock(), "The Material is not a block!");
+         switch (this) {
+             // <editor-fold defaultstate="collapsed" desc="getBlastResistance">
+@@ -10076,8 +10080,46 @@ public enum Material implements Keyed, net.kyori.adventure.translation.Translata
+                 return 0;
+             // </editor-fold>
+         }
++        */
+     }
+ 
++    // Paper start - Explosion Resistance API
++    /**
++     * Gets the explosion resistance of the material
++     * @return The explosion resistance
++     * @throws IllegalArgumentException if Material is not a block
++     */
++    public float getExplosionResistance() throws IllegalArgumentException {
++        return Bukkit.getExplosionResistance(this);
++    }
++
++    /**
++     * Sets the explosion resistance of the material
++     * @param value Value to set the explosion resistance to
++     * @throws IllegalArgumentException if Material is not a block
++     */
++    public void setExplosionResistance(float value) throws IllegalArgumentException {
++        Bukkit.setExplosionResistance(this, value);
++    }
++
++    /**
++     * Gets the vanilla explosion resistance of the material
++     * @return The vanilla explosion resistance
++     * @throws IllegalArgumentException if Material is not a block
++     */
++    public float getDefaultExplosionResistance() throws IllegalArgumentException {
++        return Bukkit.getDefaultExplosionResistance(this);
++    }
++
++    /**
++     * Resets the explosion resistance of the material to the vanilla value
++     * @throws IllegalArgumentException if Material is not a block
++     */
++    public void resetExplosionResistance() throws IllegalArgumentException {
++        Bukkit.resetExplosionResistance(this);
++    }
++    // Paper end - Explosion Resistance API
++
+     /**
+      * Returns a value that represents how 'slippery' the block is.
+      *
+diff --git a/src/main/java/org/bukkit/Server.java b/src/main/java/org/bukkit/Server.java
+index da5cab4246bd253fcc4e4d9574bdae1867ebb5ab..400b6995003086027aa221cbf47db758125da610 100644
+--- a/src/main/java/org/bukkit/Server.java
++++ b/src/main/java/org/bukkit/Server.java
+@@ -2115,5 +2115,36 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+      * @return the potion brewer
+      */
+     @NotNull org.bukkit.potion.PotionBrewer getPotionBrewer();
++
++    /**
++     * Gets the explosion resistance of the material
++     * @param material Material to get the explosion resistance of
++     * @return The explosion resistance
++     * @throws IllegalArgumentException if Material is not a block
++     */
++    float getExplosionResistance(@NotNull Material material) throws IllegalArgumentException;
++
++    /**
++     * Sets the explosion resistance of the material
++     * @param material Material to set the explosion resistance of
++     * @param value Value to set the explosion resistance to
++     * @throws IllegalArgumentException if Material is not a block
++     */
++    void setExplosionResistance(@NotNull Material material, float value) throws IllegalArgumentException;
++
++    /**
++     * Gets the vanilla explosion resistance of the material
++     * @param material Material to get the vanilla explosion resistance of
++     * @return The vanilla explosion resistance
++     * @throws IllegalArgumentException if Material is not a block
++     */
++    float getDefaultExplosionResistance(@NotNull Material material) throws IllegalArgumentException;
++
++    /**
++     * Resets the explosion resistance of the material to the vanilla value
++     * @param material Material to reset the explosion resistance of
++     * @throws IllegalArgumentException if Material is not a block
++     */
++    void resetExplosionResistance(@NotNull Material material) throws IllegalArgumentException;
+     // Paper end
+ }

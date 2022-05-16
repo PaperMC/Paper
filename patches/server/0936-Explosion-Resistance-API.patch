@@ -1,0 +1,72 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Peter Crawley <peterzcrawley@gmail.com>
+Date: Mon, 16 May 2022 13:55:32 +0100
+Subject: [PATCH] Explosion Resistance API
+
+
+diff --git a/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java b/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java
+index 35c44833ea75f663801cb488171cf5df59b1e366..440a4fa148ba591e3785b9fe3f363c97395f97f3 100644
+--- a/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java
++++ b/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java
+@@ -76,6 +76,7 @@ public abstract class BlockBehaviour {
+     protected final Material material;
+     public final boolean hasCollision;
+     public float explosionResistance;
++    public final float defaultExplosionResistance; // Paper - Explosion Resistance API
+     protected final boolean isRandomlyTicking;
+     protected final SoundType soundType;
+     protected final float friction;
+@@ -91,6 +92,7 @@ public abstract class BlockBehaviour {
+         this.hasCollision = settings.hasCollision;
+         this.drops = settings.drops;
+         this.explosionResistance = settings.explosionResistance;
++        this.defaultExplosionResistance = settings.explosionResistance; // Paper - Explosion Resistance API
+         this.isRandomlyTicking = settings.isRandomlyTicking;
+         this.soundType = settings.soundType;
+         this.friction = settings.friction;
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index b443aba38258f501f8f00be6b055f07b709277c4..6b2ec673b11c0b59d1ff0b7e3b5f7627247f936e 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -2905,5 +2905,27 @@ public final class CraftServer implements Server {
+         return this.potionBrewer;
+     }
+ 
++    @Override
++    public float getExplosionResistance(org.bukkit.Material material) {
++        if (!material.isBlock()) throw new IllegalArgumentException("Material is not Block");
++        return CraftMagicNumbers.getBlock(material).explosionResistance;
++    }
++
++    @Override
++    public void setExplosionResistance(org.bukkit.Material material, float value) {
++        if (!material.isBlock()) throw new IllegalArgumentException("Material is not Block");
++        CraftMagicNumbers.getBlock(material).explosionResistance = value;
++    }
++
++    @Override
++    public float getDefaultExplosionResistance(org.bukkit.Material material) {
++        if (!material.isBlock()) throw new IllegalArgumentException("Material is not Block");
++        return CraftMagicNumbers.getBlock(material).defaultExplosionResistance;
++    }
++
++    @Override
++    public void resetExplosionResistance(org.bukkit.Material material) {
++        setExplosionResistance(material, getDefaultExplosionResistance(material));
++    }
+     // Paper end
+ }
+diff --git a/src/test/java/org/bukkit/support/DummyServer.java b/src/test/java/org/bukkit/support/DummyServer.java
+index 2ddceb709291d3bd713621ffa4020c02ec26bb21..0e3c4bb26e9b41b3d2d9e4cfa59ad77d3a16907f 100644
+--- a/src/test/java/org/bukkit/support/DummyServer.java
++++ b/src/test/java/org/bukkit/support/DummyServer.java
+@@ -116,6 +116,9 @@ public final class DummyServer implements InvocationHandler {
+                     }
+                 }
+             );
++            methods.put(Server.class.getMethod("getExplosionResistance", Material.class),
++                (server, args) -> CraftMagicNumbers.getBlock(((Material) args[0])).explosionResistance
++            );
+             DummyServer server = new DummyServer();
+             Server instance = Proxy.getProxyClass(Server.class.getClassLoader(), Server.class).asSubclass(Server.class).getConstructor(InvocationHandler.class).newInstance(server);
+             Bukkit.setServer(instance);
