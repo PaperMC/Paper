@@ -258,10 +258,10 @@ index 0000000000000000000000000000000000000000..aabad39d13ead83042ec2e4dd7f4ed49
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockControllerAntiXray.java b/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockControllerAntiXray.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..5fa7a7a3584d7078aff260184d9834f34296322c
+index 0000000000000000000000000000000000000000..8e2baa21f71e7105a8e72cba4ded6aa99370fca0
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockControllerAntiXray.java
-@@ -0,0 +1,663 @@
+@@ -0,0 +1,666 @@
 +package com.destroystokyo.paper.antixray;
 +
 +import com.destroystokyo.paper.PaperWorldConfig;
@@ -307,6 +307,7 @@ index 0000000000000000000000000000000000000000..5fa7a7a3584d7078aff260184d9834f3
 +    private final BlockState[] presetBlockStatesEndStone;
 +    private final int[] presetBlockStateBitsGlobal;
 +    private final int[] presetBlockStateBitsStoneGlobal;
++    private final int[] presetBlockStateBitsDeepslateGlobal;
 +    private final int[] presetBlockStateBitsNetherrackGlobal;
 +    private final int[] presetBlockStateBitsEndStoneGlobal;
 +    private final boolean[] solidGlobal = new boolean[Block.BLOCK_STATE_REGISTRY.size()];
@@ -333,6 +334,7 @@ index 0000000000000000000000000000000000000000..5fa7a7a3584d7078aff260184d9834f3
 +            presetBlockStatesEndStone = new BlockState[]{Blocks.END_STONE.defaultBlockState()};
 +            presetBlockStateBitsGlobal = null;
 +            presetBlockStateBitsStoneGlobal = new int[]{GLOBAL_BLOCKSTATE_PALETTE.idFor(Blocks.STONE.defaultBlockState())};
++            presetBlockStateBitsDeepslateGlobal = new int[]{GLOBAL_BLOCKSTATE_PALETTE.idFor(Blocks.DEEPSLATE.defaultBlockState())};
 +            presetBlockStateBitsNetherrackGlobal = new int[]{GLOBAL_BLOCKSTATE_PALETTE.idFor(Blocks.NETHERRACK.defaultBlockState())};
 +            presetBlockStateBitsEndStoneGlobal = new int[]{GLOBAL_BLOCKSTATE_PALETTE.idFor(Blocks.END_STONE.defaultBlockState())};
 +        } else {
@@ -365,6 +367,7 @@ index 0000000000000000000000000000000000000000..5fa7a7a3584d7078aff260184d9834f3
 +            }
 +
 +            presetBlockStateBitsStoneGlobal = null;
++            presetBlockStateBitsDeepslateGlobal = null;
 +            presetBlockStateBitsNetherrackGlobal = null;
 +            presetBlockStateBitsEndStoneGlobal = null;
 +        }
@@ -410,7 +413,7 @@ index 0000000000000000000000000000000000000000..5fa7a7a3584d7078aff260184d9834f3
 +                return switch (level.getWorld().getEnvironment()) {
 +                    case NETHER -> presetBlockStatesNetherrack;
 +                    case THE_END -> presetBlockStatesEndStone;
-+                    default -> bottomBlockY <= 4 ? presetBlockStatesDeepslate : presetBlockStatesStone; // Deepslate starts mixing with stone from y=8 and below. At y=0 all stone is deepslate, for an average of y=4.
++                    default -> bottomBlockY < 0 ? presetBlockStatesDeepslate : presetBlockStatesStone;
 +                };
 +            }
 +
@@ -475,7 +478,7 @@ index 0000000000000000000000000000000000000000..5fa7a7a3584d7078aff260184d9834f3
 +        LevelChunkSection[] nearbyChunkSections = new LevelChunkSection[4];
 +        LevelChunk chunk = chunkPacketInfoAntiXray.getChunk();
 +        Level level = chunk.getLevel();
-+        int maxChunkSectionIndex = Math.min((maxBlockHeight >> 4) - chunk.getMinSection(), chunk.getSectionsCount() - 1);
++        int maxChunkSectionIndex = Math.min((maxBlockHeight >> 4) - chunk.getMinSection(), chunk.getSectionsCount()) - 1;
 +        boolean[] solidTemp = null;
 +        boolean[] obfuscateTemp = null;
 +        bitStorageReader.setBuffer(chunkPacketInfoAntiXray.getBuffer());
@@ -509,7 +512,7 @@ index 0000000000000000000000000000000000000000..5fa7a7a3584d7078aff260184d9834f3
 +                        presetBlockStateBitsTemp = switch (level.getWorld().getEnvironment()) {
 +                            case NETHER -> presetBlockStateBitsNetherrackGlobal;
 +                            case THE_END -> presetBlockStateBitsEndStoneGlobal;
-+                            default -> presetBlockStateBitsStoneGlobal;
++                            default -> chunkSectionIndex + chunk.getMinSection() < 0 ? presetBlockStateBitsDeepslateGlobal : presetBlockStateBitsStoneGlobal;
 +                        };
 +                    } else {
 +                        presetBlockStateBitsTemp = presetBlockStateBitsGlobal;
