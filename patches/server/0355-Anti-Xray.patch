@@ -258,10 +258,10 @@ index 0000000000000000000000000000000000000000..aabad39d13ead83042ec2e4dd7f4ed49
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockControllerAntiXray.java b/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockControllerAntiXray.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..3916d99c746d952e7ae6c3dde750d08f3f208e3e
+index 0000000000000000000000000000000000000000..8e2baa21f71e7105a8e72cba4ded6aa99370fca0
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockControllerAntiXray.java
-@@ -0,0 +1,660 @@
+@@ -0,0 +1,666 @@
 +package com.destroystokyo.paper.antixray;
 +
 +import com.destroystokyo.paper.PaperWorldConfig;
@@ -302,10 +302,12 @@ index 0000000000000000000000000000000000000000..3916d99c746d952e7ae6c3dde750d08f
 +    private final BlockState[] presetBlockStates;
 +    private final BlockState[] presetBlockStatesFull;
 +    private final BlockState[] presetBlockStatesStone;
++    private final BlockState[] presetBlockStatesDeepslate;
 +    private final BlockState[] presetBlockStatesNetherrack;
 +    private final BlockState[] presetBlockStatesEndStone;
 +    private final int[] presetBlockStateBitsGlobal;
 +    private final int[] presetBlockStateBitsStoneGlobal;
++    private final int[] presetBlockStateBitsDeepslateGlobal;
 +    private final int[] presetBlockStateBitsNetherrackGlobal;
 +    private final int[] presetBlockStateBitsEndStoneGlobal;
 +    private final boolean[] solidGlobal = new boolean[Block.BLOCK_STATE_REGISTRY.size()];
@@ -327,10 +329,12 @@ index 0000000000000000000000000000000000000000..3916d99c746d952e7ae6c3dde750d08f
 +            presetBlockStates = null;
 +            presetBlockStatesFull = null;
 +            presetBlockStatesStone = new BlockState[]{Blocks.STONE.defaultBlockState()};
++            presetBlockStatesDeepslate = new BlockState[]{Blocks.DEEPSLATE.defaultBlockState()};
 +            presetBlockStatesNetherrack = new BlockState[]{Blocks.NETHERRACK.defaultBlockState()};
 +            presetBlockStatesEndStone = new BlockState[]{Blocks.END_STONE.defaultBlockState()};
 +            presetBlockStateBitsGlobal = null;
 +            presetBlockStateBitsStoneGlobal = new int[]{GLOBAL_BLOCKSTATE_PALETTE.idFor(Blocks.STONE.defaultBlockState())};
++            presetBlockStateBitsDeepslateGlobal = new int[]{GLOBAL_BLOCKSTATE_PALETTE.idFor(Blocks.DEEPSLATE.defaultBlockState())};
 +            presetBlockStateBitsNetherrackGlobal = new int[]{GLOBAL_BLOCKSTATE_PALETTE.idFor(Blocks.NETHERRACK.defaultBlockState())};
 +            presetBlockStateBitsEndStoneGlobal = new int[]{GLOBAL_BLOCKSTATE_PALETTE.idFor(Blocks.END_STONE.defaultBlockState())};
 +        } else {
@@ -353,6 +357,7 @@ index 0000000000000000000000000000000000000000..3916d99c746d952e7ae6c3dde750d08f
 +            presetBlockStates = presetBlockStateSet.isEmpty() ? new BlockState[]{Blocks.DIAMOND_ORE.defaultBlockState()} : presetBlockStateSet.toArray(new BlockState[0]);
 +            presetBlockStatesFull = presetBlockStateSet.isEmpty() ? new BlockState[]{Blocks.DIAMOND_ORE.defaultBlockState()} : presetBlockStateList.toArray(new BlockState[0]);
 +            presetBlockStatesStone = null;
++            presetBlockStatesDeepslate = null;
 +            presetBlockStatesNetherrack = null;
 +            presetBlockStatesEndStone = null;
 +            presetBlockStateBitsGlobal = new int[presetBlockStatesFull.length];
@@ -362,6 +367,7 @@ index 0000000000000000000000000000000000000000..3916d99c746d952e7ae6c3dde750d08f
 +            }
 +
 +            presetBlockStateBitsStoneGlobal = null;
++            presetBlockStateBitsDeepslateGlobal = null;
 +            presetBlockStateBitsNetherrackGlobal = null;
 +            presetBlockStateBitsEndStoneGlobal = null;
 +        }
@@ -407,7 +413,7 @@ index 0000000000000000000000000000000000000000..3916d99c746d952e7ae6c3dde750d08f
 +                return switch (level.getWorld().getEnvironment()) {
 +                    case NETHER -> presetBlockStatesNetherrack;
 +                    case THE_END -> presetBlockStatesEndStone;
-+                    default -> presetBlockStatesStone;
++                    default -> bottomBlockY < 0 ? presetBlockStatesDeepslate : presetBlockStatesStone;
 +                };
 +            }
 +
@@ -472,7 +478,7 @@ index 0000000000000000000000000000000000000000..3916d99c746d952e7ae6c3dde750d08f
 +        LevelChunkSection[] nearbyChunkSections = new LevelChunkSection[4];
 +        LevelChunk chunk = chunkPacketInfoAntiXray.getChunk();
 +        Level level = chunk.getLevel();
-+        int maxChunkSectionIndex = Math.min((maxBlockHeight >> 4) - chunk.getMinSection(), chunk.getSectionsCount() - 1);
++        int maxChunkSectionIndex = Math.min((maxBlockHeight >> 4) - chunk.getMinSection(), chunk.getSectionsCount()) - 1;
 +        boolean[] solidTemp = null;
 +        boolean[] obfuscateTemp = null;
 +        bitStorageReader.setBuffer(chunkPacketInfoAntiXray.getBuffer());
@@ -506,7 +512,7 @@ index 0000000000000000000000000000000000000000..3916d99c746d952e7ae6c3dde750d08f
 +                        presetBlockStateBitsTemp = switch (level.getWorld().getEnvironment()) {
 +                            case NETHER -> presetBlockStateBitsNetherrackGlobal;
 +                            case THE_END -> presetBlockStateBitsEndStoneGlobal;
-+                            default -> presetBlockStateBitsStoneGlobal;
++                            default -> chunkSectionIndex + chunk.getMinSection() < 0 ? presetBlockStateBitsDeepslateGlobal : presetBlockStateBitsStoneGlobal;
 +                        };
 +                    } else {
 +                        presetBlockStateBitsTemp = presetBlockStateBitsGlobal;
