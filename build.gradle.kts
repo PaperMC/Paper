@@ -19,7 +19,7 @@ allprojects {
     }
 }
 
-val paperMavenPublicUrl = "https://papermc.io/repo/repository/maven-public/"
+val paperMavenPublicUrl = "https://repo.papermc.io/repository/maven-public/"
 
 subprojects {
     tasks.withType<JavaCompile> {
@@ -123,7 +123,7 @@ publishing {
 allprojects {
     publishing {
         repositories {
-            maven("https://papermc.io/repo/repository/maven-snapshots/") {
+            maven("https://repo.papermc.io/repository/maven-snapshots/") {
                 name = "paperSnapshots"
                 credentials(PasswordCredentials::class)
             }
