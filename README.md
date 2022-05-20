@@ -30,7 +30,7 @@ How To (Plugin Developers)
 ```xml
 <repository>
     <id>papermc</id>
-    <url>https://papermc.io/repo/repository/maven-public/</url>
+    <url>https://repo.papermc.io/repository/maven-public/</url>
 </repository>
 ```
  * Artifact Information:
@@ -49,7 +49,7 @@ How To (Plugin Developers)
 ```kotlin
 repositories {
     maven {
-        url = uri("https://papermc.io/repo/repository/maven-public/")
+        url = uri("https://repo.papermc.io/repository/maven-public/")
     }
 }
 
