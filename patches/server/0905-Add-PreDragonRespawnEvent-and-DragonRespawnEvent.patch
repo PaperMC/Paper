@@ -1,0 +1,39 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: HexedHero <6012891+HexedHero@users.noreply.github.com>
+Date: Sat, 27 Feb 2021 07:55:51 +0000
+Subject: [PATCH] Add PreDragonRespawnEvent and DragonRespawnEvent
+
+
+diff --git a/src/main/java/net/minecraft/world/level/dimension/end/EndDragonFight.java b/src/main/java/net/minecraft/world/level/dimension/end/EndDragonFight.java
+index ed6ff35a2112cea4faa6e1458d1effc40fce5dd2..2839eac3765b77e7f29ee65bd77e3a836c85279f 100644
+--- a/src/main/java/net/minecraft/world/level/dimension/end/EndDragonFight.java
++++ b/src/main/java/net/minecraft/world/level/dimension/end/EndDragonFight.java
+@@ -248,6 +248,15 @@ public class EndDragonFight {
+             this.respawnTime = 0;
+             if (spawnState == DragonRespawnAnimation.END) {
+                 this.respawnStage = null;
++                // Paper start - DragonRespawnEvent
++                if (previouslyKilled) {
++                    io.papermc.paper.event.world.DragonRespawnEvent dragonRespawnEvent = new io.papermc.paper.event.world.DragonRespawnEvent(level.getWorld(), new org.bukkit.craftbukkit.boss.CraftDragonBattle(this));
++                    if (!dragonRespawnEvent.callEvent()) {
++                        this.spawnExitPortal(true);
++                        return;
++                    }
++                }
++                // Paper end
+                 this.dragonKilled = false;
+                 EnderDragon enderDragon = this.createNewDragon();
+ 
+@@ -496,6 +505,12 @@ public class EndDragonFight {
+             }
+ 
+             LOGGER.debug("Found all crystals, respawning dragon.");
++            // Paper start - PreDragonRespawnEvent
++            io.papermc.paper.event.world.PreDragonRespawnEvent preDragonRespawnEvent = new io.papermc.paper.event.world.PreDragonRespawnEvent(level.getWorld(), new org.bukkit.craftbukkit.boss.CraftDragonBattle(this), new java.util.ArrayList<>(list.stream().map(e -> (org.bukkit.entity.EnderCrystal) e.getBukkitEntity()).collect(java.util.stream.Collectors.toList())));
++            if (!preDragonRespawnEvent.callEvent()) {
++                return;
++            }
++            // Paper end
+             this.respawnDragon(list);
+         }
+ 
