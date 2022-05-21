@@ -5,19 +5,42 @@ Subject: [PATCH] Fix decompile errors
 
 
 diff --git a/src/main/java/net/minecraft/world/entity/ai/Brain.java b/src/main/java/net/minecraft/world/entity/ai/Brain.java
-index 32456644dfd2e45dfc02cd1fa77d7afd9e1db1e9..7abc629d7e865786372d6e872d997d2e3c73fc7f 100644
+index 32456644dfd2e45dfc02cd1fa77d7afd9e1db1e9..4399ba8b9ddbac908513fe97953bbce1a58994ce 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/Brain.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/Brain.java
-@@ -82,7 +82,7 @@ public class Brain<E extends LivingEntity> {
-                     mutableObject.setValue(mutableObject.getValue().apply2(Builder::add, dataResult2));
+@@ -73,16 +73,16 @@ public class Brain<E extends LivingEntity> {
+             }
+ 
+             public <T> DataResult<Brain<E>> decode(DynamicOps<T> dynamicOps, MapLike<T> mapLike) {
+-                MutableObject<DataResult<Builder<Brain.MemoryValue<?>>>> mutableObject = new MutableObject<>(DataResult.success(ImmutableList.builder()));
++                MutableObject<DataResult<Builder<Brain.MemoryValue<?>>>> mutableObject2 = new MutableObject<>(DataResult.success(ImmutableList.builder())); // Paper - decompile error
+                 mapLike.entries().forEach((pair) -> {
+                     DataResult<MemoryModuleType<?>> dataResult = Registry.MEMORY_MODULE_TYPE.byNameCodec().parse(dynamicOps, pair.getFirst());
+                     DataResult<? extends Brain.MemoryValue<?>> dataResult2 = dataResult.flatMap((memoryModuleType) -> {
+                         return this.captureRead(memoryModuleType, dynamicOps, (T)pair.getSecond());
+                     });
+-                    mutableObject.setValue(mutableObject.getValue().apply2(Builder::add, dataResult2));
++                    mutableObject2.setValue(mutableObject2.getValue().apply2(Builder::add, dataResult2)); // Paper - decompile error
                  });
-                 ImmutableList<Brain.MemoryValue<?>> immutableList = mutableObject.getValue().resultOrPartial(Brain.LOGGER::error).map(Builder::build).orElseGet(ImmutableList::of);
+-                ImmutableList<Brain.MemoryValue<?>> immutableList = mutableObject.getValue().resultOrPartial(Brain.LOGGER::error).map(Builder::build).orElseGet(ImmutableList::of);
 -                return DataResult.success(new Brain<>(memoryModules, sensors, immutableList, mutableObject::getValue));
-+                return DataResult.success(new Brain(memoryModules, sensors, immutableList, mutableObject::getValue)); // Paper - decompile error
++                ImmutableList<Brain.MemoryValue<?>> immutableList = mutableObject2.getValue().resultOrPartial(Brain.LOGGER::error).map(Builder::build).orElseGet(ImmutableList::of); // Paper - decompile error
++                return DataResult.success(new Brain<>(memoryModules, sensors, immutableList, mutableObject::getValue)); // Paper - decompile error
              }
  
              private <T, U> DataResult<Brain.MemoryValue<U>> captureRead(MemoryModuleType<U> memoryModuleType, DynamicOps<T> dynamicOps, T object) {
-@@ -170,7 +170,7 @@ public class Brain<E extends LivingEntity> {
+@@ -143,7 +143,9 @@ public class Brain<E extends LivingEntity> {
+     }
+ 
+     public <U> void eraseMemory(MemoryModuleType<U> type) {
+-        this.setMemory(type, Optional.empty());
++        if (new io.papermc.paper.event.entity.BrainMemoryEraseEvent(org.bukkit.craftbukkit.entity.memory.CraftMemoryKey.toMemoryKey(type)).callEvent()) {
++            this.setMemory(type, Optional.empty());
++        }
+     }
+ 
+     public <U> void setMemory(MemoryModuleType<U> type, @Nullable U value) {
+@@ -170,7 +172,7 @@ public class Brain<E extends LivingEntity> {
      }
  
      public <U> Optional<U> getMemory(MemoryModuleType<U> type) {
@@ -26,12 +49,12 @@ index 32456644dfd2e45dfc02cd1fa77d7afd9e1db1e9..7abc629d7e865786372d6e872d997d2e
      }
  
      public <U> long getTimeUntilExpiry(MemoryModuleType<U> type) {
-@@ -464,7 +464,7 @@ public class Brain<E extends LivingEntity> {
+@@ -464,7 +466,7 @@ public class Brain<E extends LivingEntity> {
          private final Optional<? extends ExpirableValue<U>> value;
  
          static <U> Brain.MemoryValue<U> createUnchecked(MemoryModuleType<U> type, Optional<? extends ExpirableValue<?>> data) {
 -            return new Brain.MemoryValue<>(type, data);
-+            return new Brain.MemoryValue(type, data); // Paper - decompile error
++            return new Brain.MemoryValue<>(type, (Optional<? extends ExpirableValue<U>>) data); // Paper - decompile error
          }
  
          MemoryValue(MemoryModuleType<U> type, Optional<? extends ExpirableValue<U>> data) {
