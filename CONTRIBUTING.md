@@ -427,7 +427,7 @@ file (`CONTRIBUTING.md`), the `LICENSE.md` file, and so forth.
 ### Patching and building is *really* slow, what can I do?
 
 This only applies if you're running Windows. If you're running a prior Windows
-release, either update to Windows 10 or move to macOS/Linux/BSD.
+release, either update to Windows 10/11 or move to macOS/Linux/BSD.
 
 In order to speed up patching process on Windows, it's recommended you get WSL
 2. This is available in Windows 10 v2004, build 19041 or higher. (You can check
