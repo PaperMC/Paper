@@ -1,0 +1,59 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Togira <70365614+Togira123@users.noreply.github.com>
+Date: Sun, 22 May 2022 13:28:47 +0200
+Subject: [PATCH] Add BrainMemoryChangeEvent
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/ai/Brain.java b/src/main/java/net/minecraft/world/entity/ai/Brain.java
+index 4399ba8b9ddbac908513fe97953bbce1a58994ce..5cca31bedc8f18f6e65d6a1879e5085e629d715b 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/Brain.java
++++ b/src/main/java/net/minecraft/world/entity/ai/Brain.java
+@@ -143,9 +143,7 @@ public class Brain<E extends LivingEntity> {
+     }
+ 
+     public <U> void eraseMemory(MemoryModuleType<U> type) {
+-        if (new io.papermc.paper.event.entity.BrainMemoryEraseEvent(org.bukkit.craftbukkit.entity.memory.CraftMemoryKey.toMemoryKey(type)).callEvent()) {
+-            this.setMemory(type, Optional.empty());
+-        }
++        this.setMemory(type, Optional.empty());
+     }
+ 
+     public <U> void setMemory(MemoryModuleType<U> type, @Nullable U value) {
+@@ -165,7 +163,36 @@ public class Brain<E extends LivingEntity> {
+             if (memory.isPresent() && this.isEmptyCollection(memory.get().getValue())) {
+                 this.eraseMemory(type);
+             } else {
+-                this.memories.put(type, memory);
++                if (hasMemoryValue(type)) {
++                    // already has memory
++                    if (memory.isPresent()) {
++                        if (new io.papermc.paper.event.entity.BrainMemoryChangeEvent(
++                                org.bukkit.craftbukkit.entity.memory.CraftMemoryKey.toMemoryKey(type),
++                                io.papermc.paper.event.entity.BrainMemoryChangeEvent.CHANGE).callEvent()) { // Paper - Add BrainMemoryChangeEvent
++                            this.memories.put(type, memory);
++                        }
++                    } else {
++                        if (new io.papermc.paper.event.entity.BrainMemoryChangeEvent(
++                                org.bukkit.craftbukkit.entity.memory.CraftMemoryKey.toMemoryKey(type),
++                                io.papermc.paper.event.entity.BrainMemoryChangeEvent.DELETE).callEvent()) { // Paper - Add BrainMemoryChangeEvent
++                            this.memories.put(type, memory);
++                        }
++                    }
++                } else {
++                    if (memory.isPresent()) {
++                        if (new io.papermc.paper.event.entity.BrainMemoryChangeEvent(
++                                org.bukkit.craftbukkit.entity.memory.CraftMemoryKey.toMemoryKey(type),
++                                io.papermc.paper.event.entity.BrainMemoryChangeEvent.ADD).callEvent()) { // Paper - Add BrainMemoryChangeEvent
++                            this.memories.put(type, memory);
++                        }
++                    } else {
++                        if (new io.papermc.paper.event.entity.BrainMemoryChangeEvent(
++                                org.bukkit.craftbukkit.entity.memory.CraftMemoryKey.toMemoryKey(type),
++                                io.papermc.paper.event.entity.BrainMemoryChangeEvent.DELETE).callEvent()) { // Paper - Add BrainMemoryChangeEvent
++                            this.memories.put(type, memory);
++                        }
++                    }
++                }
+             }
+         }
+ 
