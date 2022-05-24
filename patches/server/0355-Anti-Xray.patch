@@ -5,7 +5,7 @@ Subject: [PATCH] Anti-Xray
 
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index 6b88162d286bdabda0449d52b87457ac70f84d69..ed976e0582dee32ccf3aad49efb0dd773f5f9d80 100644
+index 763b54e0d35730186bab3fc69babd9b5f0af0cf4..0e5091b50b19cb2c0b491479321ac978f272c04c 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 @@ -1,11 +1,13 @@
@@ -22,7 +22,7 @@ index 6b88162d286bdabda0449d52b87457ac70f84d69..ed976e0582dee32ccf3aad49efb0dd77
  import org.bukkit.Bukkit;
  import org.bukkit.configuration.file.YamlConfiguration;
  import org.spigotmc.SpigotWorldConfig;
-@@ -523,5 +525,40 @@ public class PaperWorldConfig {
+@@ -528,5 +530,40 @@ public class PaperWorldConfig {
      private void lightQueueSize() {
          lightQueueSize = getInt("light-queue-size", lightQueueSize);
      }
@@ -258,10 +258,10 @@ index 0000000000000000000000000000000000000000..aabad39d13ead83042ec2e4dd7f4ed49
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockControllerAntiXray.java b/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockControllerAntiXray.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..3916d99c746d952e7ae6c3dde750d08f3f208e3e
+index 0000000000000000000000000000000000000000..8e2baa21f71e7105a8e72cba4ded6aa99370fca0
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockControllerAntiXray.java
-@@ -0,0 +1,660 @@
+@@ -0,0 +1,666 @@
 +package com.destroystokyo.paper.antixray;
 +
 +import com.destroystokyo.paper.PaperWorldConfig;
@@ -302,10 +302,12 @@ index 0000000000000000000000000000000000000000..3916d99c746d952e7ae6c3dde750d08f
 +    private final BlockState[] presetBlockStates;
 +    private final BlockState[] presetBlockStatesFull;
 +    private final BlockState[] presetBlockStatesStone;
++    private final BlockState[] presetBlockStatesDeepslate;
 +    private final BlockState[] presetBlockStatesNetherrack;
 +    private final BlockState[] presetBlockStatesEndStone;
 +    private final int[] presetBlockStateBitsGlobal;
 +    private final int[] presetBlockStateBitsStoneGlobal;
++    private final int[] presetBlockStateBitsDeepslateGlobal;
 +    private final int[] presetBlockStateBitsNetherrackGlobal;
 +    private final int[] presetBlockStateBitsEndStoneGlobal;
 +    private final boolean[] solidGlobal = new boolean[Block.BLOCK_STATE_REGISTRY.size()];
@@ -327,10 +329,12 @@ index 0000000000000000000000000000000000000000..3916d99c746d952e7ae6c3dde750d08f
 +            presetBlockStates = null;
 +            presetBlockStatesFull = null;
 +            presetBlockStatesStone = new BlockState[]{Blocks.STONE.defaultBlockState()};
++            presetBlockStatesDeepslate = new BlockState[]{Blocks.DEEPSLATE.defaultBlockState()};
 +            presetBlockStatesNetherrack = new BlockState[]{Blocks.NETHERRACK.defaultBlockState()};
 +            presetBlockStatesEndStone = new BlockState[]{Blocks.END_STONE.defaultBlockState()};
 +            presetBlockStateBitsGlobal = null;
 +            presetBlockStateBitsStoneGlobal = new int[]{GLOBAL_BLOCKSTATE_PALETTE.idFor(Blocks.STONE.defaultBlockState())};
++            presetBlockStateBitsDeepslateGlobal = new int[]{GLOBAL_BLOCKSTATE_PALETTE.idFor(Blocks.DEEPSLATE.defaultBlockState())};
 +            presetBlockStateBitsNetherrackGlobal = new int[]{GLOBAL_BLOCKSTATE_PALETTE.idFor(Blocks.NETHERRACK.defaultBlockState())};
 +            presetBlockStateBitsEndStoneGlobal = new int[]{GLOBAL_BLOCKSTATE_PALETTE.idFor(Blocks.END_STONE.defaultBlockState())};
 +        } else {
@@ -353,6 +357,7 @@ index 0000000000000000000000000000000000000000..3916d99c746d952e7ae6c3dde750d08f
 +            presetBlockStates = presetBlockStateSet.isEmpty() ? new BlockState[]{Blocks.DIAMOND_ORE.defaultBlockState()} : presetBlockStateSet.toArray(new BlockState[0]);
 +            presetBlockStatesFull = presetBlockStateSet.isEmpty() ? new BlockState[]{Blocks.DIAMOND_ORE.defaultBlockState()} : presetBlockStateList.toArray(new BlockState[0]);
 +            presetBlockStatesStone = null;
++            presetBlockStatesDeepslate = null;
 +            presetBlockStatesNetherrack = null;
 +            presetBlockStatesEndStone = null;
 +            presetBlockStateBitsGlobal = new int[presetBlockStatesFull.length];
@@ -362,6 +367,7 @@ index 0000000000000000000000000000000000000000..3916d99c746d952e7ae6c3dde750d08f
 +            }
 +
 +            presetBlockStateBitsStoneGlobal = null;
++            presetBlockStateBitsDeepslateGlobal = null;
 +            presetBlockStateBitsNetherrackGlobal = null;
 +            presetBlockStateBitsEndStoneGlobal = null;
 +        }
@@ -407,7 +413,7 @@ index 0000000000000000000000000000000000000000..3916d99c746d952e7ae6c3dde750d08f
 +                return switch (level.getWorld().getEnvironment()) {
 +                    case NETHER -> presetBlockStatesNetherrack;
 +                    case THE_END -> presetBlockStatesEndStone;
-+                    default -> presetBlockStatesStone;
++                    default -> bottomBlockY < 0 ? presetBlockStatesDeepslate : presetBlockStatesStone;
 +                };
 +            }
 +
@@ -472,7 +478,7 @@ index 0000000000000000000000000000000000000000..3916d99c746d952e7ae6c3dde750d08f
 +        LevelChunkSection[] nearbyChunkSections = new LevelChunkSection[4];
 +        LevelChunk chunk = chunkPacketInfoAntiXray.getChunk();
 +        Level level = chunk.getLevel();
-+        int maxChunkSectionIndex = Math.min((maxBlockHeight >> 4) - chunk.getMinSection(), chunk.getSectionsCount() - 1);
++        int maxChunkSectionIndex = Math.min((maxBlockHeight >> 4) - chunk.getMinSection(), chunk.getSectionsCount()) - 1;
 +        boolean[] solidTemp = null;
 +        boolean[] obfuscateTemp = null;
 +        bitStorageReader.setBuffer(chunkPacketInfoAntiXray.getBuffer());
@@ -506,7 +512,7 @@ index 0000000000000000000000000000000000000000..3916d99c746d952e7ae6c3dde750d08f
 +                        presetBlockStateBitsTemp = switch (level.getWorld().getEnvironment()) {
 +                            case NETHER -> presetBlockStateBitsNetherrackGlobal;
 +                            case THE_END -> presetBlockStateBitsEndStoneGlobal;
-+                            default -> presetBlockStateBitsStoneGlobal;
++                            default -> chunkSectionIndex + chunk.getMinSection() < 0 ? presetBlockStateBitsDeepslateGlobal : presetBlockStateBitsStoneGlobal;
 +                        };
 +                    } else {
 +                        presetBlockStateBitsTemp = presetBlockStateBitsGlobal;
@@ -1180,7 +1186,7 @@ index 071d821094ce1c13ad5755a1ba76d9a8f27bba97..0fad7ad13be138cbc7c4b09f457adbde
          List<Entity> list = Lists.newArrayList();
          List<Entity> list1 = Lists.newArrayList();
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index 75d91cb0f432fb9a2b5b9a796ad2a60f4c891060..8c91e1de2bd9a42259be32322eb36d4979684edc 100644
+index 12162ff2dc7c82f50f1d892bc807985ebcd44333..9e779490dfea57112ce088fd398892052b4d9d73 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
 @@ -395,7 +395,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
@@ -1597,10 +1603,10 @@ index f3c67a815c570beb14136905cbf5aa4046ee8394..f8f44cb6e823a0150f3abdab133f8ae2
          }
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 66132ce8beb96c6880a72514d8e43438d962c547..4793390fdeb5b1ba15135edb5576b1e4f3ebefbc 100644
+index e9c8eb1ca3e39840b3791d814b66ad5b5919112f..a6e7a609344f693cd0f51cfc4b122f45e24d0050 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -2216,7 +2216,7 @@ public final class CraftServer implements Server {
+@@ -2222,7 +2222,7 @@ public final class CraftServer implements Server {
      public ChunkGenerator.ChunkData createChunkData(World world) {
          Validate.notNull(world, "World cannot be null");
          ServerLevel handle = ((CraftWorld) world).getHandle();

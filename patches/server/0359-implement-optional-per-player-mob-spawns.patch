@@ -5,11 +5,11 @@ Subject: [PATCH] implement optional per player mob spawns
 
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index e129794e5cbf5155a232966ef4ff534c0007f1d9..575f277a5d38ade7d70c632712ea895cde3bfaae 100644
+index 91a36bf77095f6c0c0b15dbed941bc95b3fb3bfe..2c8feeb15c71277e2daebdba5597b7302f9d7eda 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-@@ -608,4 +608,12 @@ public class PaperWorldConfig {
-             }
+@@ -635,4 +635,12 @@ public class PaperWorldConfig {
+             log("Alternative item despawn rate of " + key.getPath() + ": " + altItemDespawnRateMap.get(key));
          }
      }
 +
@@ -394,10 +394,10 @@ index 98f3b91605ecf81538659220354f78d4de9d203e..39b4ddbb87e6ec2e8103445625ff0d7d
  
              this.lastSpawnState = spawnercreature_d;
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-index 910991b0c153a74d35cf097e0ac5a02559729a2e..9815bb19b8210493d549bed5b2baa95331d71469 100644
+index fb486997cf61bc155f8171c55369c6cba35591c0..84c3407961f0011f6579498084b11d92cd546170 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-@@ -225,6 +225,11 @@ public class ServerPlayer extends Player {
+@@ -226,6 +226,11 @@ public class ServerPlayer extends Player {
      public boolean queueHealthUpdatePacket = false;
      public net.minecraft.network.protocol.game.ClientboundSetHealthPacket queuedHealthUpdatePacket;
      // Paper end
@@ -409,7 +409,7 @@ index 910991b0c153a74d35cf097e0ac5a02559729a2e..9815bb19b8210493d549bed5b2baa953
  
      // CraftBukkit start
      public String displayName;
-@@ -315,6 +320,7 @@ public class ServerPlayer extends Player {
+@@ -316,6 +321,7 @@ public class ServerPlayer extends Player {
          this.adventure$displayName = net.kyori.adventure.text.Component.text(this.getScoreboardName()); // Paper
          this.bukkitPickUpLoot = true;
          this.maxHealthCache = this.getMaxHealth();
@@ -418,7 +418,7 @@ index 910991b0c153a74d35cf097e0ac5a02559729a2e..9815bb19b8210493d549bed5b2baa953
  
      // Yes, this doesn't match Vanilla, but it's the best we can do for now.
 diff --git a/src/main/java/net/minecraft/world/level/NaturalSpawner.java b/src/main/java/net/minecraft/world/level/NaturalSpawner.java
-index 474dc6302d2b0f8c629b2e1f6de9d4ba6faf398b..1622450b53e0f0f48c3ca107e4d705b4ad29dadf 100644
+index 6282d5899fe0b78ecbb6236db178c8231f7cd521..ce6051531f021bf20851bc5ab763e732ee10427d 100644
 --- a/src/main/java/net/minecraft/world/level/NaturalSpawner.java
 +++ b/src/main/java/net/minecraft/world/level/NaturalSpawner.java
 @@ -67,7 +67,13 @@ public final class NaturalSpawner {
@@ -435,7 +435,7 @@ index 474dc6302d2b0f8c629b2e1f6de9d4ba6faf398b..1622450b53e0f0f48c3ca107e4d705b4
          PotentialCalculator spawnercreatureprobabilities = new PotentialCalculator();
          Object2IntOpenHashMap<MobCategory> object2intopenhashmap = new Object2IntOpenHashMap();
          Iterator iterator = entities.iterator();
-@@ -103,11 +109,16 @@ public final class NaturalSpawner {
+@@ -102,11 +108,16 @@ public final class NaturalSpawner {
                          spawnercreatureprobabilities.addCharge(entity.blockPosition(), biomesettingsmobs_b.getCharge());
                      }
  
@@ -453,7 +453,7 @@ index 474dc6302d2b0f8c629b2e1f6de9d4ba6faf398b..1622450b53e0f0f48c3ca107e4d705b4
                  });
              }
          }
-@@ -142,13 +153,37 @@ public final class NaturalSpawner {
+@@ -141,13 +152,37 @@ public final class NaturalSpawner {
                  continue;
              }
  
@@ -493,7 +493,7 @@ index 474dc6302d2b0f8c629b2e1f6de9d4ba6faf398b..1622450b53e0f0f48c3ca107e4d705b4
              }
          }
  
-@@ -156,12 +191,18 @@ public final class NaturalSpawner {
+@@ -155,12 +190,18 @@ public final class NaturalSpawner {
          world.getProfiler().pop();
      }
  
@@ -513,7 +513,7 @@ index 474dc6302d2b0f8c629b2e1f6de9d4ba6faf398b..1622450b53e0f0f48c3ca107e4d705b4
      }
  
      @VisibleForDebug
-@@ -172,15 +213,21 @@ public final class NaturalSpawner {
+@@ -171,15 +212,21 @@ public final class NaturalSpawner {
          });
      }
  
@@ -536,7 +536,7 @@ index 474dc6302d2b0f8c629b2e1f6de9d4ba6faf398b..1622450b53e0f0f48c3ca107e4d705b4
              int k = 0;
  
              while (k < 3) {
-@@ -222,14 +269,14 @@ public final class NaturalSpawner {
+@@ -221,14 +268,14 @@ public final class NaturalSpawner {
                                      // Paper start
                                      Boolean doSpawning = isValidSpawnPostitionForType(world, group, structuremanager, chunkgenerator, biomesettingsmobs_c, blockposition_mutableblockposition, d2);
                                      if (doSpawning == null) {
@@ -553,7 +553,7 @@ index 474dc6302d2b0f8c629b2e1f6de9d4ba6faf398b..1622450b53e0f0f48c3ca107e4d705b4
                                          }
  
                                          entityinsentient.moveTo(d0, (double) i, d1, world.random.nextFloat() * 360.0F, 0.0F);
-@@ -241,10 +288,15 @@ public final class NaturalSpawner {
+@@ -240,10 +287,15 @@ public final class NaturalSpawner {
                                                  ++j;
                                                  ++k1;
                                                  runner.run(entityinsentient, chunk);
@@ -571,7 +571,7 @@ index 474dc6302d2b0f8c629b2e1f6de9d4ba6faf398b..1622450b53e0f0f48c3ca107e4d705b4
                                              }
  
                                              if (entityinsentient.isMaxGroupSizeReached(k1)) {
-@@ -266,6 +318,7 @@ public final class NaturalSpawner {
+@@ -265,6 +317,7 @@ public final class NaturalSpawner {
              }
  
          }
@@ -579,7 +579,7 @@ index 474dc6302d2b0f8c629b2e1f6de9d4ba6faf398b..1622450b53e0f0f48c3ca107e4d705b4
      }
  
      private static boolean isRightDistanceToPlayerAndSpawnPoint(ServerLevel world, ChunkAccess chunk, BlockPos.MutableBlockPos pos, double squaredDistance) {
-@@ -551,7 +604,7 @@ public final class NaturalSpawner {
+@@ -550,7 +603,7 @@ public final class NaturalSpawner {
              MobCategory enumcreaturetype = entitytypes.getCategory();
  
              this.mobCategoryCounts.addTo(enumcreaturetype, 1);
@@ -588,7 +588,7 @@ index 474dc6302d2b0f8c629b2e1f6de9d4ba6faf398b..1622450b53e0f0f48c3ca107e4d705b4
          }
  
          public int getSpawnableChunkCount() {
-@@ -567,6 +620,7 @@ public final class NaturalSpawner {
+@@ -566,6 +619,7 @@ public final class NaturalSpawner {
              int i = limit * this.spawnableChunkCount / NaturalSpawner.MAGIC_NUMBER;
              // CraftBukkit end
  
