@@ -1,0 +1,66 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: PanSzelescik <panszelescik@gmail.com>
+Date: Thu, 7 Apr 2022 16:13:39 +0200
+Subject: [PATCH] Add support for Proxy Protocol
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+index 1ac6cf51f2682d5eb14fe19646e79f6617d492dd..fafbebbb5e8c1a381b673f97f1fa210687b52823 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+@@ -688,4 +688,9 @@ public class PaperConfig {
+     private static void useDimensionTypeForCustomSpawners() {
+         useDimensionTypeForCustomSpawners = getBoolean("settings.use-dimension-type-for-custom-spawners", false);
+     }
++
++    public static boolean useProxyProtocol;
++    private static void useProxyProtocol() {
++        useProxyProtocol = getBoolean("settings.proxy-protocol", false);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/network/ServerConnectionListener.java b/src/main/java/net/minecraft/server/network/ServerConnectionListener.java
+index 058fb3696c7ece4a7b6971886b1760b26add733b..bd378482b82c15cba1eeaa620521ad9ed460a1da 100644
+--- a/src/main/java/net/minecraft/server/network/ServerConnectionListener.java
++++ b/src/main/java/net/minecraft/server/network/ServerConnectionListener.java
+@@ -109,6 +109,12 @@ public class ServerConnectionListener {
+             ServerConnectionListener.LOGGER.info("Paper: Using " + com.velocitypowered.natives.util.Natives.cipher.getLoadedVariant() + " cipher from Velocity.");
+             // Paper end
+ 
++            // Paper start - indicate Proxy Protocol usage
++            if (com.destroystokyo.paper.PaperConfig.useProxyProtocol) {
++                ServerConnectionListener.LOGGER.info("Paper: Using Proxy Protocol");
++            }
++            // Paper end
++
+             this.channels.add(((ServerBootstrap) ((ServerBootstrap) (new ServerBootstrap()).channel(oclass)).childHandler(new ChannelInitializer<Channel>() {
+                 protected void initChannel(Channel channel) {
+                     try {
+@@ -122,6 +128,28 @@ public class ServerConnectionListener {
+                     int j = ServerConnectionListener.this.server.getRateLimitPacketsPerSecond();
+                     Object object = j > 0 ? new RateKickingConnection(j) : new Connection(PacketFlow.SERVERBOUND);
+ 
++                    // Paper start - Add support for Proxy Protocol
++                    if (com.destroystokyo.paper.PaperConfig.useProxyProtocol) {
++                        channel.pipeline().addAfter("timeout", "haproxy-decoder", new io.netty.handler.codec.haproxy.HAProxyMessageDecoder());
++                        channel.pipeline().addAfter("haproxy-decoder", "haproxy-handler", new ChannelInboundHandlerAdapter() {
++                            @Override
++                            public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
++                                if (msg instanceof io.netty.handler.codec.haproxy.HAProxyMessage message) {
++                                    String realaddress = message.sourceAddress();
++                                    int realport = message.sourcePort();
++
++                                    SocketAddress socketaddr = new java.net.InetSocketAddress(realaddress, realport);
++
++                                    Connection connection = (Connection) channel.pipeline().get("packet_handler");
++                                    connection.address = socketaddr;
++                                } else {
++                                    super.channelRead(ctx, msg);
++                                }
++                            }
++                        });
++                    }
++                    // Paper end
++
+                     // ServerConnectionListener.this.connections.add((Connection) object); // CraftBukkit - decompile error
+                     pending.add((Connection) object); // Paper
+                     channel.pipeline().addLast("packet_handler", (ChannelHandler) object);
