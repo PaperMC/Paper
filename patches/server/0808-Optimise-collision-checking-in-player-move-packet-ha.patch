@@ -6,7 +6,7 @@ Subject: [PATCH] Optimise collision checking in player move packet handling
 Move collision logic to just the hasNewCollision call instead of getCubes + hasNewCollision
 
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index 7be8b98a61c3d92ef7c473983fe620047a137630..761a87be91e82841632f4f46dec799ae28f05887 100644
+index cc0adbd20bc069e61fc333e57c2e3ccbf8d5c888..fb15e7ec56b91541a4bff810d45edec57adfaeab 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 @@ -587,7 +587,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
@@ -137,7 +137,7 @@ index 7be8b98a61c3d92ef7c473983fe620047a137630..761a87be91e82841632f4f46dec799ae
 +                                } // else: no collision at all detected, why do we care?
 +                            }
 +                            if (!this.player.noPhysics && !this.player.isSleeping() && teleportBack) { // Paper end - optimise out extra getCubes
-                                 this.teleport(d3, d4, d5, f, f1);
+                                 this.internalTeleport(d3, d4, d5, f, f1, Collections.emptySet(), false); // CraftBukkit - SPIGOT-1807: Don't call teleport event, when the client thinks the player is falling, because the chunks are not loaded on the client yet.
                              } else {
                                  // CraftBukkit start - fire PlayerMoveEvent
 @@ -1496,6 +1542,27 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
