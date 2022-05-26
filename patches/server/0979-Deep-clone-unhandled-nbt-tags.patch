@@ -1,0 +1,51 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: SoSeDiK <mrsosedik@gmail.com>
+Date: Thu, 26 May 2022 03:30:05 +0300
+Subject: [PATCH] Deep clone unhandled nbt tags
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
+index 936f8babf74b2be6240e5dbc2d0a84f8badada2e..4a3507143054a8352e513732d1be9da901ddaa88 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
+@@ -344,8 +344,10 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+             this.destroyableKeys = new java.util.HashSet<>(meta.destroyableKeys);
+         }
+         // Paper end
+-        this.unhandledTags.putAll(meta.unhandledTags);
+-        this.persistentDataContainer.putAll(meta.persistentDataContainer.getRaw());
++        // Paper start - Deep clone unhandled nbt tags
++        meta.unhandledTags.forEach((key, tag) -> this.unhandledTags.put(key, tag.copy()));
++        this.persistentDataContainer.putAll(meta.persistentDataContainer.getTagsCloned());
++        // Paper end
+ 
+         this.internalTag = meta.internalTag;
+         if (this.internalTag != null) {
+@@ -1388,7 +1390,10 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+             if (this.hasAttributeModifiers()) {
+                 clone.attributeModifiers = LinkedHashMultimap.create(this.attributeModifiers);
+             }
+-            clone.persistentDataContainer = new CraftPersistentDataContainer(this.persistentDataContainer.getRaw(), CraftMetaItem.DATA_TYPE_REGISTRY);
++            // Paper start - Deep clone unhandled nbt tags
++            clone.persistentDataContainer = new CraftPersistentDataContainer(this.persistentDataContainer.getTagsCloned(), CraftMetaItem.DATA_TYPE_REGISTRY);
++            clone.unhandledTags.replaceAll((key, tag) -> tag.copy());
++            // Paper end
+             clone.hideFlag = this.hideFlag;
+             clone.unbreakable = this.unbreakable;
+             clone.damage = this.damage;
+diff --git a/src/main/java/org/bukkit/craftbukkit/persistence/CraftPersistentDataContainer.java b/src/main/java/org/bukkit/craftbukkit/persistence/CraftPersistentDataContainer.java
+index 20c7144307ecf1eb5c600f3b84df7bc15fa941d6..ae94fd71b8ea8cdbf6fb0420d826ae24c246d43b 100644
+--- a/src/main/java/org/bukkit/craftbukkit/persistence/CraftPersistentDataContainer.java
++++ b/src/main/java/org/bukkit/craftbukkit/persistence/CraftPersistentDataContainer.java
+@@ -189,5 +189,11 @@ public class CraftPersistentDataContainer implements PersistentDataContainer {
+             this.putAll(compound);
+         }
+     }
++
++    public Map<String, Tag> getTagsCloned() {
++        Map<String, Tag> tags = new HashMap<>();
++        customDataTags.forEach((key, tag) -> tags.put(key, tag.copy()));
++        return tags;
++    }
+     // Paper end
+ }
