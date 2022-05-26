@@ -207,4 +207,12 @@ public class CraftPersistentDataContainer implements PersistentDataContainer {
         }
     }
     // Paper end - byte array serialization
+
+    // Paper start - deep clone tags
+    public Map<String, Tag> getTagsCloned() {
+        final Map<String, Tag> tags = new HashMap<>();
+        this.customDataTags.forEach((key, tag) -> tags.put(key, tag.copy()));
+        return tags;
+    }
+    // Paper end - deep clone tags
 }
