@@ -5,10 +5,28 @@ Subject: [PATCH] Add methods to get world by key
 
 
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index f904ce285548a81835b1d3af9c05f00f84d5d3da..3e26f9a4c93f616f4f02edbbd851cf0b9ab0cdb1 100644
+index f904ce285548a81835b1d3af9c05f00f84d5d3da..6f30668471c2076e2bbd8af79791bbe362f4d08e 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -1232,7 +1232,7 @@ public final class CraftServer implements Server {
+@@ -1138,9 +1138,15 @@ public final class CraftServer implements Server {
+         File folder = new File(this.getWorldContainer(), name);
+         World world = this.getWorld(name);
+ 
+-        if (world != null) {
+-            return world;
++        // Paper start
++        World worldByKey = this.getWorld(creator.key());
++        if (world != null || worldByKey != null) {
++            if (world == worldByKey) {
++                return world;
++            }
++            throw new IllegalArgumentException("Cannot create a world with key " + creator.key() + " and name " + name + " one (or both) already match a world that exists");
+         }
++        // Paper end
+ 
+         if ((folder.exists()) && (!folder.isDirectory())) {
+             throw new IllegalArgumentException("File exists with the name '" + name + "' and isn't a folder");
+@@ -1232,7 +1238,7 @@ public final class CraftServer implements Server {
          } else if (name.equals(levelName + "_the_end")) {
              worldKey = net.minecraft.world.level.Level.END;
          } else {
@@ -17,7 +35,7 @@ index f904ce285548a81835b1d3af9c05f00f84d5d3da..3e26f9a4c93f616f4f02edbbd851cf0b
          }
  
          ServerLevel internal = (ServerLevel) new ServerLevel(this.console, console.executor, worldSession, worlddata, worldKey, holder, this.getServer().progressListenerFactory.create(11),
-@@ -1324,6 +1324,15 @@ public final class CraftServer implements Server {
+@@ -1324,6 +1330,15 @@ public final class CraftServer implements Server {
          return null;
      }
  
