@@ -1948,6 +1948,23 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      */
     public void setAllowFlight(boolean flight);
 
+    // Paper start - flying fall damage
+    /**
+     * Allows you to enable fall damage while {@link #getAllowFlight()} is {@code true}
+     *
+     * @param flyingFallDamage Enables fall damage when {@link #getAllowFlight()} is {@code true}
+     */
+    public void setFlyingFallDamage(@NotNull net.kyori.adventure.util.TriState flyingFallDamage);
+
+    /**
+     * Allows you to get if fall damage is enabled while {@link #getAllowFlight()} is {@code true}
+     *
+     * @return A tristate of whether fall damage is enabled, not set, or disabled when {@link #getAllowFlight()} is {@code true}
+     */
+    @NotNull
+    public net.kyori.adventure.util.TriState hasFlyingFallDamage();
+    // Paper end
+
     /**
      * Hides a player from this player
      *
