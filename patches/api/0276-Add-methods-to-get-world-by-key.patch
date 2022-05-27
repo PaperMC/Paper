@@ -49,8 +49,23 @@ index afed6bcf923166065ac9f63dd96191cd42eefcb9..181493def187f72b6ff89c3849598428
      /**
       * Create a new virtual {@link WorldBorder}.
       * <p>
+diff --git a/src/main/java/org/bukkit/UnsafeValues.java b/src/main/java/org/bukkit/UnsafeValues.java
+index abe79e4a2233341d0030742b823a0cfb5af97f41..204ab103eeff976d3da4f5694c31beafab6e1fdd 100644
+--- a/src/main/java/org/bukkit/UnsafeValues.java
++++ b/src/main/java/org/bukkit/UnsafeValues.java
+@@ -157,5 +157,10 @@ public interface UnsafeValues {
+      * @throws IllegalArgumentException if there isn't a registry for that type
+      */
+     <T extends Keyed> @org.jetbrains.annotations.NotNull Registry<T> registryFor(Class<T> classOfT);
++
++    /**
++     * Just don't use it.
++     */
++    @org.jetbrains.annotations.NotNull String getMainLevelName();
+     // Paper end
+ }
 diff --git a/src/main/java/org/bukkit/WorldCreator.java b/src/main/java/org/bukkit/WorldCreator.java
-index cbe6b3a1ba7b04826d97c3558e8eb4e5ba11f92f..9fab6eed92c27ec9dd123171f5c4e1e7cda723e4 100644
+index cbe6b3a1ba7b04826d97c3558e8eb4e5ba11f92f..cbdcac688afb7c13dd7058fa522bbd2c5adc445e 100644
 --- a/src/main/java/org/bukkit/WorldCreator.java
 +++ b/src/main/java/org/bukkit/WorldCreator.java
 @@ -12,6 +12,7 @@ import org.jetbrains.annotations.Nullable;
@@ -61,15 +76,27 @@ index cbe6b3a1ba7b04826d97c3558e8eb4e5ba11f92f..9fab6eed92c27ec9dd123171f5c4e1e7
      private final String name;
      private long seed;
      private World.Environment environment = World.Environment.NORMAL;
-@@ -28,13 +29,67 @@ public class WorldCreator {
+@@ -28,13 +29,80 @@ public class WorldCreator {
       * @param name Name of the world that will be created
       */
      public WorldCreator(@NotNull String name) {
 -        if (name == null) {
 -            throw new IllegalArgumentException("World name cannot be null");
--        }
 +        // Paper start
-+        this(name, NamespacedKey.minecraft(name.toLowerCase(java.util.Locale.ENGLISH).replace(" ", "_")));
++        this(name, getWorldKey(name));
++    }
++
++    private static NamespacedKey getWorldKey(String name) {
++        final String mainLevelName = Bukkit.getUnsafe().getMainLevelName();
++        if (name.equals(mainLevelName)) {
++            return NamespacedKey.minecraft("overworld");
++        } else if (name.equals(mainLevelName + "_nether")) {
++            return NamespacedKey.minecraft("the_nether");
++        } else if (name.equals(mainLevelName + "_the_end")) {
++            return NamespacedKey.minecraft("the_end");
++        } else {
++            return NamespacedKey.minecraft(name.toLowerCase(java.util.Locale.ENGLISH).replace(" ", "_"));
+         }
 +    }
  
 -        this.name = name;
