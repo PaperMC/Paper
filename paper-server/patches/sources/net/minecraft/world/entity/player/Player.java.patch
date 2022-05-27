@@ -35,7 +35,7 @@
      public final InventoryMenu inventoryMenu;
      public AbstractContainerMenu containerMenu;
      protected FoodData foodData = new FoodData();
-@@ -181,14 +191,25 @@
+@@ -181,14 +191,26 @@
      private Optional<GlobalPos> lastDeathLocation;
      @Nullable
      public FishingHook fishing;
@@ -48,6 +48,7 @@
      private boolean ignoreFallDamageFromCurrentImpulse;
      private int currentImpulseContextResetGraceTime;
 +    public boolean affectsSpawning = true; // Paper - Affects Spawning API
++    public net.kyori.adventure.util.TriState flyingFallDamage = net.kyori.adventure.util.TriState.NOT_SET; // Paper - flying fall damage
  
 +    // CraftBukkit start
 +    public boolean fauxSleeping;
@@ -62,7 +63,7 @@
      public Player(Level world, BlockPos pos, float yaw, GameProfile gameProfile) {
          super(EntityType.PLAYER, world);
          this.lastItemInMainHand = ItemStack.EMPTY;
-@@ -244,6 +265,13 @@
+@@ -244,6 +266,13 @@
  
          if (this.isSleeping()) {
              ++this.sleepCounter;
@@ -76,7 +77,7 @@
              if (this.sleepCounter > 100) {
                  this.sleepCounter = 100;
              }
-@@ -261,7 +289,7 @@
+@@ -261,7 +290,7 @@
          this.updateIsUnderwater();
          super.tick();
          if (!this.level().isClientSide && this.containerMenu != null && !this.containerMenu.stillValid(this)) {
@@ -85,7 +86,7 @@
              this.containerMenu = this.inventoryMenu;
          }
  
-@@ -353,7 +381,7 @@
+@@ -353,7 +382,7 @@
      }
  
      private void turtleHelmetTick() {
@@ -94,12 +95,10 @@
      }
  
      private boolean isEquipped(Item item) {
-@@ -511,7 +539,19 @@
-             super.handleEntityEvent(status);
-         }
+@@ -513,6 +542,18 @@
  
-+    }
-+
+     }
+ 
 +    // Paper start - Inventory close reason; unused code, but to keep signatures aligned
 +    public void closeContainer(org.bukkit.event.inventory.InventoryCloseEvent.Reason reason) {
 +        closeContainer();
@@ -109,12 +108,13 @@
 +    // Paper start - special close for unloaded inventory
 +    public void closeUnloadedInventory(org.bukkit.event.inventory.InventoryCloseEvent.Reason reason) {
 +        this.containerMenu = this.inventoryMenu;
-     }
++    }
 +    // Paper end - special close for unloaded inventory
- 
++
      public void closeContainer() {
          this.containerMenu = this.inventoryMenu;
-@@ -523,8 +563,14 @@
+     }
+@@ -523,8 +564,14 @@
      public void rideTick() {
          if (!this.level().isClientSide && this.wantsToStopRiding() && this.isPassenger()) {
              this.stopRiding();
@@ -131,7 +131,7 @@
              super.rideTick();
              this.oBob = this.bob;
              this.bob = 0.0F;
-@@ -593,6 +639,7 @@
+@@ -593,6 +640,7 @@
          this.playShoulderEntityAmbientSound(this.getShoulderEntityLeft());
          this.playShoulderEntityAmbientSound(this.getShoulderEntityRight());
          if (!this.level().isClientSide && (this.fallDistance > 0.5F || this.isInWater()) || this.abilities.flying || this.isSleeping() || this.isInPowderSnow) {
@@ -139,7 +139,7 @@
              this.removeEntitiesOnShoulder();
          }
  
-@@ -719,7 +766,14 @@
+@@ -719,7 +767,14 @@
  
      @Nullable
      public ItemEntity drop(ItemStack stack, boolean throwRandomly, boolean retainOwnership) {
@@ -155,7 +155,7 @@
              this.swing(InteractionHand.MAIN_HAND);
          }
  
-@@ -809,7 +863,7 @@
+@@ -809,7 +864,7 @@
          }
  
          if (nbt.contains("LastDeathLocation", 10)) {
@@ -164,7 +164,7 @@
              Logger logger = Player.LOGGER;
  
              Objects.requireNonNull(logger);
-@@ -817,7 +871,7 @@
+@@ -817,7 +872,7 @@
          }
  
          if (nbt.contains("current_explosion_impact_pos", 9)) {
@@ -173,7 +173,7 @@
              Logger logger1 = Player.LOGGER;
  
              Objects.requireNonNull(logger1);
-@@ -854,7 +908,7 @@
+@@ -854,7 +909,7 @@
          }
  
          this.getLastDeathLocation().flatMap((globalpos) -> {
@@ -182,7 +182,7 @@
              Logger logger = Player.LOGGER;
  
              Objects.requireNonNull(logger);
-@@ -886,10 +940,10 @@
+@@ -886,10 +941,10 @@
              if (this.isDeadOrDying()) {
                  return false;
              } else {
@@ -195,7 +195,7 @@
                      }
  
                      if (world.getDifficulty() == Difficulty.EASY) {
-@@ -901,7 +955,13 @@
+@@ -901,7 +956,13 @@
                      }
                  }
  
@@ -210,7 +210,7 @@
              }
          }
      }
-@@ -923,10 +983,29 @@
+@@ -923,10 +984,29 @@
      }
  
      public boolean canHarmPlayer(Player player) {
@@ -243,7 +243,7 @@
      }
  
      @Override
-@@ -966,32 +1045,38 @@
+@@ -966,32 +1046,38 @@
          }
      }
  
@@ -296,7 +296,7 @@
      }
  
      public boolean isTextFilteringEnabled() {
-@@ -1061,13 +1146,19 @@
+@@ -1061,13 +1147,19 @@
  
      @Override
      public void removeVehicle() {
@@ -318,7 +318,7 @@
      }
  
      @Override
-@@ -1134,8 +1225,17 @@
+@@ -1134,8 +1226,17 @@
      }
  
      public void attack(Entity target) {
@@ -338,7 +338,7 @@
                  float f = this.isAutoSpinAttack() ? this.autoSpinAttackDmg : (float) this.getAttributeValue(Attributes.ATTACK_DAMAGE);
                  ItemStack itemstack = this.getWeaponItem();
                  DamageSource damagesource = (DamageSource) Optional.ofNullable(itemstack.getItem().getDamageSource(this)).orElse(this.damageSources().playerAttack(this));
-@@ -1144,10 +1244,15 @@
+@@ -1144,10 +1245,15 @@
  
                  f *= 0.2F + f2 * f2 * 0.8F;
                  f1 *= f2;
@@ -355,7 +355,7 @@
                      if (iprojectile.deflect(ProjectileDeflection.AIM_DEFLECT, this, this, true)) {
                          this.level().playSound((Player) null, this.getX(), this.getY(), this.getZ(), SoundEvents.PLAYER_ATTACK_NODAMAGE, this.getSoundSource());
                          return;
-@@ -1159,7 +1264,7 @@
+@@ -1159,7 +1265,7 @@
                      boolean flag1;
  
                      if (this.isSprinting() && flag) {
@@ -364,7 +364,7 @@
                          flag1 = true;
                      } else {
                          flag1 = false;
-@@ -1168,7 +1273,9 @@
+@@ -1168,7 +1274,9 @@
                      f += itemstack.getItem().getAttackDamageBonus(target, f, damagesource);
                      boolean flag2 = flag && this.fallDistance > 0.0F && !this.onGround() && !this.onClimbable() && !this.isInWater() && !this.hasEffect(MobEffects.BLINDNESS) && !this.isPassenger() && target instanceof LivingEntity && !this.isSprinting();
  
@@ -374,7 +374,7 @@
                          f *= 1.5F;
                      }
  
-@@ -1202,13 +1309,17 @@
+@@ -1202,13 +1310,17 @@
                              if (target instanceof LivingEntity) {
                                  LivingEntity entityliving1 = (LivingEntity) target;
  
@@ -394,7 +394,7 @@
                          }
  
                          LivingEntity entityliving2;
-@@ -1223,8 +1334,13 @@
+@@ -1223,8 +1335,13 @@
                                  if (entityliving2 != this && entityliving2 != target && !this.isAlliedTo((Entity) entityliving2) && (!(entityliving2 instanceof ArmorStand) || !((ArmorStand) entityliving2).isMarker()) && this.distanceToSqr((Entity) entityliving2) < 9.0D) {
                                      float f7 = this.getEnchantedDamage(entityliving2, f6, damagesource) * f2;
  
@@ -410,7 +410,7 @@
                                      Level world = this.level();
  
                                      if (world instanceof ServerLevel) {
-@@ -1235,26 +1351,43 @@
+@@ -1235,26 +1352,43 @@
                                  }
                              }
  
@@ -458,7 +458,7 @@
                              }
                          }
  
-@@ -1308,9 +1441,14 @@
+@@ -1308,9 +1442,14 @@
                              }
                          }
  
@@ -475,7 +475,7 @@
                      }
                  }
  
-@@ -1351,7 +1489,14 @@
+@@ -1351,7 +1490,14 @@
  
      @Override
      public void remove(Entity.RemovalReason reason) {
@@ -491,7 +491,7 @@
          this.inventoryMenu.removed(this);
          if (this.containerMenu != null && this.hasContainerOpen()) {
              this.doCloseContainer();
-@@ -1391,7 +1536,13 @@
+@@ -1391,7 +1537,13 @@
      }
  
      public Either<Player.BedSleepingProblem, Unit> startSleepInBed(BlockPos pos) {
@@ -506,7 +506,16 @@
          this.sleepCounter = 0;
          return Either.right(Unit.INSTANCE);
      }
-@@ -1545,12 +1696,24 @@
+@@ -1503,7 +1655,7 @@
+ 
+     @Override
+     public boolean causeFallDamage(float fallDistance, float damageMultiplier, DamageSource damageSource) {
+-        if (this.abilities.mayfly) {
++        if (this.abilities.mayfly && !this.flyingFallDamage.toBooleanOrElse(false)) { // Paper - flying fall damage
+             return false;
+         } else {
+             if (fallDistance >= 2.0F) {
+@@ -1545,12 +1697,24 @@
      }
  
      public void startFallFlying() {
@@ -532,7 +541,7 @@
      }
  
      @Override
-@@ -1664,11 +1827,30 @@
+@@ -1664,11 +1828,30 @@
      public int getXpNeededForNextLevel() {
          return this.experienceLevel >= 30 ? 112 + (this.experienceLevel - 30) * 9 : (this.experienceLevel >= 15 ? 37 + (this.experienceLevel - 15) * 5 : 7 + this.experienceLevel * 2);
      }
@@ -564,7 +573,7 @@
              }
  
          }
-@@ -1748,13 +1930,20 @@
+@@ -1748,13 +1931,20 @@
  
      @Override
      public void setItemSlot(EquipmentSlot slot, ItemStack stack) {
@@ -592,7 +601,7 @@
          }
  
      }
-@@ -1798,26 +1987,55 @@
+@@ -1798,26 +1988,55 @@
  
      public void removeEntitiesOnShoulder() {
          if (this.timeEntitySatOnShoulder + 20L < this.level().getGameTime()) {
@@ -655,7 +664,7 @@
      }
  
      @Override
-@@ -2005,18 +2223,29 @@
+@@ -2005,18 +2224,29 @@
          return ImmutableList.of(Pose.STANDING, Pose.CROUCHING, Pose.SWIMMING);
      }
  
