@@ -1,0 +1,72 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: TreyRuffy <TreyRuffy@users.noreply.github.com>
+Date: Fri, 27 May 2022 02:26:08 -0600
+Subject: [PATCH] Flying Fall Damage
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/player/Player.java b/src/main/java/net/minecraft/world/entity/player/Player.java
+index 2483d7df7f1bf94344afd38b37602c645a4a2dff..fb902b997e23a158e5d5faf1a817b46a4be95e88 100644
+--- a/src/main/java/net/minecraft/world/entity/player/Player.java
++++ b/src/main/java/net/minecraft/world/entity/player/Player.java
+@@ -180,6 +180,7 @@ public abstract class Player extends LivingEntity {
+     public FishingHook fishing;
+     // Paper start
+     public boolean affectsSpawning = true;
++    public net.kyori.adventure.util.TriState flyingFallDamage = net.kyori.adventure.util.TriState.NOT_SET;
+     // Paper end
+ 
+     // CraftBukkit start
+@@ -872,6 +873,11 @@ public abstract class Player extends LivingEntity {
+         if (nbt.contains("ShoulderEntityRight", 10)) {
+             this.setShoulderEntityRight(nbt.getCompound("ShoulderEntityRight"));
+         }
++        // Paper start
++        if (nbt.contains("Paper.FlyingFallDamage")) {
++            this.flyingFallDamage = net.kyori.adventure.util.TriState.byBoolean(nbt.getBoolean("Paper.FlyingFallDamage"));
++        }
++        // Paper end
+ 
+     }
+ 
+@@ -897,6 +903,8 @@ public abstract class Player extends LivingEntity {
+         if (!this.getShoulderEntityRight().isEmpty()) {
+             nbt.put("ShoulderEntityRight", this.getShoulderEntityRight());
+         }
++        if (this.flyingFallDamage.toBoolean() != null)
++            nbt.putBoolean("Paper.FlyingFallDamage", this.flyingFallDamage.toBoolean());
+ 
+     }
+ 
+@@ -1714,7 +1722,7 @@ public abstract class Player extends LivingEntity {
+ 
+     @Override
+     public boolean causeFallDamage(float fallDistance, float damageMultiplier, DamageSource damageSource) {
+-        if (this.abilities.mayfly) {
++        if (this.abilities.mayfly && !this.flyingFallDamage.toBooleanOrElse(false)) { // Paper - flying fall damage
+             return false;
+         } else {
+             if (fallDistance >= 2.0F) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index 3b7530408afad6a08b7880f87bab8ece7f6ff724..2021970bb571446cb6e2b0bbd5c43f0ad66f504d 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -2047,6 +2047,19 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+         this.getHandle().onUpdateAbilities();
+     }
+ 
++    // Paper start - flying fall damage
++    @Override
++    public void setFlyingFallDamage(@NotNull net.kyori.adventure.util.TriState flyingFallDamage) {
++        getHandle().flyingFallDamage = flyingFallDamage;
++    }
++
++    @NotNull
++    @Override
++    public net.kyori.adventure.util.TriState hasFlyingFallDamage() {
++        return getHandle().flyingFallDamage;
++    }
++    // Paper end
++
+     @Override
+     public int getNoDamageTicks() {
+         if (this.getHandle().spawnInvulnerableTime > 0) {
