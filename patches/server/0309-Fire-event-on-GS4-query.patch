@@ -26,48 +26,48 @@ index 51cb2644aa516a59e19fecb308d519dbc7e5fb11..e548aa0ca4e1e94ab628614b44fc1156
          this.dataOutputStream.write(value);
      }
 diff --git a/src/main/java/net/minecraft/server/rcon/thread/QueryThreadGs4.java b/src/main/java/net/minecraft/server/rcon/thread/QueryThreadGs4.java
-index fc368dee97eb989a30d6d6115771971d1d733b34..000918fe0cc3fde07145e027b25f148afcb0de62 100644
+index 3ea85dc12a580001c193c4d1fb719234030e1615..61e4fe91ac8648edafd39a952939c667c2838207 100644
 --- a/src/main/java/net/minecraft/server/rcon/thread/QueryThreadGs4.java
 +++ b/src/main/java/net/minecraft/server/rcon/thread/QueryThreadGs4.java
 @@ -105,13 +105,32 @@ public class QueryThreadGs4 extends GenericThread {
-                     NetworkDataOutputStream networkDataOutputStream = new NetworkDataOutputStream(1460);
-                     networkDataOutputStream.write(0);
-                     networkDataOutputStream.writeBytes(this.getIdentBytes(packet.getSocketAddress()));
--                    networkDataOutputStream.writeString(this.serverName);
+                         NetworkDataOutputStream networkDataOutputStream = new NetworkDataOutputStream(1460);
+                         networkDataOutputStream.write(0);
+                         networkDataOutputStream.writeBytes(this.getIdentBytes(packet.getSocketAddress()));
+-                        networkDataOutputStream.writeString(this.serverName);
 +
-+                    com.destroystokyo.paper.event.server.GS4QueryEvent.QueryType queryType =
-+                        com.destroystokyo.paper.event.server.GS4QueryEvent.QueryType.BASIC;
-+                    com.destroystokyo.paper.event.server.GS4QueryEvent.QueryResponse queryResponse = com.destroystokyo.paper.event.server.GS4QueryEvent.QueryResponse.builder()
-+                        .motd(this.serverName)
-+                        .map(this.worldName)
-+                        .currentPlayers(this.serverInterface.getPlayerCount())
-+                        .maxPlayers(this.maxPlayers)
-+                        .port(this.serverPort)
-+                        .hostname(this.hostIp)
-+                        .gameVersion(this.serverInterface.getServerVersion())
-+                        .serverVersion(org.bukkit.Bukkit.getServer().getName() + " on " + org.bukkit.Bukkit.getServer().getBukkitVersion())
-+                        .build();
-+                    com.destroystokyo.paper.event.server.GS4QueryEvent queryEvent =
-+                        new com.destroystokyo.paper.event.server.GS4QueryEvent(queryType, packet.getAddress(), queryResponse);
-+                    queryEvent.callEvent();
-+                    queryResponse = queryEvent.getResponse();
++                        com.destroystokyo.paper.event.server.GS4QueryEvent.QueryType queryType =
++                            com.destroystokyo.paper.event.server.GS4QueryEvent.QueryType.BASIC;
++                        com.destroystokyo.paper.event.server.GS4QueryEvent.QueryResponse queryResponse = com.destroystokyo.paper.event.server.GS4QueryEvent.QueryResponse.builder()
++                            .motd(this.serverName)
++                            .map(this.worldName)
++                            .currentPlayers(this.serverInterface.getPlayerCount())
++                            .maxPlayers(this.maxPlayers)
++                            .port(this.serverPort)
++                            .hostname(this.hostIp)
++                            .gameVersion(this.serverInterface.getServerVersion())
++                            .serverVersion(org.bukkit.Bukkit.getServer().getName() + " on " + org.bukkit.Bukkit.getServer().getBukkitVersion())
++                            .build();
++                        com.destroystokyo.paper.event.server.GS4QueryEvent queryEvent =
++                            new com.destroystokyo.paper.event.server.GS4QueryEvent(queryType, packet.getAddress(), queryResponse);
++                        queryEvent.callEvent();
++                        queryResponse = queryEvent.getResponse();
 +
-+                    networkDataOutputStream.writeString(queryResponse.getMotd());
-                     networkDataOutputStream.writeString("SMP");
--                    networkDataOutputStream.writeString(this.worldName);
--                    networkDataOutputStream.writeString(Integer.toString(this.serverInterface.getPlayerCount()));
--                    networkDataOutputStream.writeString(Integer.toString(this.maxPlayers));
--                    networkDataOutputStream.writeShort((short)this.serverPort);
--                    networkDataOutputStream.writeString(this.hostIp);
-+                    networkDataOutputStream.writeString(queryResponse.getMap());
-+                    networkDataOutputStream.writeString(Integer.toString(queryResponse.getCurrentPlayers()));
-+                    networkDataOutputStream.writeString(Integer.toString(queryResponse.getMaxPlayers()));
-+                    networkDataOutputStream.writeShort((short) queryResponse.getPort());
-+                    networkDataOutputStream.writeString(queryResponse.getHostname());
-+                    // Paper end
-                     this.sendTo(networkDataOutputStream.toByteArray(), packet);
-                     LOGGER.debug("Status [{}]", (Object)socketAddress);
-                 }
++                        networkDataOutputStream.writeString(queryResponse.getMotd());
+                         networkDataOutputStream.writeString("SMP");
+-                        networkDataOutputStream.writeString(this.worldName);
+-                        networkDataOutputStream.writeString(Integer.toString(this.serverInterface.getPlayerCount()));
+-                        networkDataOutputStream.writeString(Integer.toString(this.maxPlayers));
+-                        networkDataOutputStream.writeShort((short)this.serverPort);
+-                        networkDataOutputStream.writeString(this.hostIp);
++                        networkDataOutputStream.writeString(queryResponse.getMap());
++                        networkDataOutputStream.writeString(Integer.toString(queryResponse.getCurrentPlayers()));
++                        networkDataOutputStream.writeString(Integer.toString(queryResponse.getMaxPlayers()));
++                        networkDataOutputStream.writeShort((short) queryResponse.getPort());
++                        networkDataOutputStream.writeString(queryResponse.getHostname());
++                        // Paper end
+                         this.sendTo(networkDataOutputStream.toByteArray(), packet);
+                         LOGGER.debug("Status [{}]", (Object)socketAddress);
+                     }
 @@ -146,31 +165,75 @@ public class QueryThreadGs4 extends GenericThread {
              this.rulesResponse.writeString("splitnum");
              this.rulesResponse.write(128);
