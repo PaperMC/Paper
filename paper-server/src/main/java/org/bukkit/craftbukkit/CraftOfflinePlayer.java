@@ -37,6 +37,7 @@ import org.bukkit.profile.PlayerProfile;
 
 @SerializableAs("Player")
 public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializable {
+    private static final org.slf4j.Logger LOGGER = com.mojang.logging.LogUtils.getLogger(); // Paper
     private final GameProfile profile;
     private final CraftServer server;
     private final PlayerDataStorage storage;
@@ -361,11 +362,20 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
         if (data == null) return null;
 
         if (data.contains("SpawnX") && data.contains("SpawnY") && data.contains("SpawnZ")) {
-            String spawnWorld = data.getString("SpawnWorld");
-            if (spawnWorld.equals("")) {
-                spawnWorld = this.server.getWorlds().get(0).getName();
+            // Paper start - fix wrong world
+            final float respawnAngle = data.getFloat("SpawnAngle");
+            org.bukkit.World spawnWorld = this.server.getWorld(data.getString("SpawnWorld")); // legacy
+            if (data.contains("SpawnDimension")) {
+                com.mojang.serialization.DataResult<net.minecraft.resources.ResourceKey<net.minecraft.world.level.Level>> result = net.minecraft.world.level.Level.RESOURCE_KEY_CODEC.parse(net.minecraft.nbt.NbtOps.INSTANCE, data.get("SpawnDimension"));
+                net.minecraft.resources.ResourceKey<net.minecraft.world.level.Level> levelKey = result.resultOrPartial(LOGGER::error).orElse(net.minecraft.world.level.Level.OVERWORLD);
+                net.minecraft.server.level.ServerLevel level = this.server.console.getLevel(levelKey);
+                spawnWorld = level != null ? level.getWorld() : spawnWorld;
             }
-            return new Location(this.server.getWorld(spawnWorld), data.getInt("SpawnX"), data.getInt("SpawnY"), data.getInt("SpawnZ"));
+            if (spawnWorld == null) {
+                return null;
+            }
+            return new Location(spawnWorld, data.getInt("SpawnX"), data.getInt("SpawnY"), data.getInt("SpawnZ"), respawnAngle, 0);
+            // Paper end
         }
         return null;
     }
