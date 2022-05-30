@@ -12,28 +12,61 @@ Co-authored-by: SoSeDiK <mrsosedik@gmail.com>
 
 diff --git a/src/main/java/io/papermc/paper/math/Rotations.java b/src/main/java/io/papermc/paper/math/Rotations.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..ef5494fe67409c30bfcc6382f2683cbbe0efb112
+index 0000000000000000000000000000000000000000..5a111f15ebe33b22a17e55bd4ec246f72ed9f6be
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/math/Rotations.java
-@@ -0,0 +1,84 @@
+@@ -0,0 +1,104 @@
 +package io.papermc.paper.math;
 +
-+import org.bukkit.entity.ArmorStand;
++import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.NotNull;
 +
 +/**
-+ * Stores rotations for {@link ArmorStand}'s parts
-+ *
-+ * @param x the angle for the X axis in degrees
-+ * @param y the angle for the Y axis in degrees
-+ * @param z the angle for the Z axis in degrees
++ * Rotations is an immutable object that stores rotations
++ * in degrees on each axis (X, Y, Z).
 + */
-+public record Rotations(double x, double y, double z) {
++@ApiStatus.NonExtendable
++public interface Rotations {
 +
 +    /**
-+     * Rotations with every axis set to 0
++     * Returns Rotations instance with every axis set to 0
 +     */
-+    public static final Rotations ZERO = new Rotations(0, 0, 0);
++    static @NotNull Rotations zero() {
++        return RotationsImpl.ZERO;
++    }
++
++    /**
++     * Creates a new Rotations instance holding the provided rotations
++     *
++     * @param x the angle for the X axis in degrees
++     * @param y the angle for the Y axis in degrees
++     * @param z the angle for the Z axis in degrees
++     * @return Rotations instance holding the provided rotations
++     */
++    static @NotNull Rotations ofDegrees(double x, double y, double z) {
++        return new RotationsImpl(x, y, z);
++    }
++
++    /**
++     * Returns the angle on the X axis in degrees
++     *
++     * @return the angle in degrees
++     */
++    double x();
++
++    /**
++     * Returns the angle on the Y axis in degrees
++     *
++     * @return the angle in degrees
++     */
++    double y();
++
++    /**
++     * Returns the angle on the Z axis in degrees
++     *
++     * @return the angle in degrees
++     */
++    double z();
 +
 +    /**
 +     * Returns a new Rotations instance which is the result
@@ -42,10 +75,7 @@ index 0000000000000000000000000000000000000000..ef5494fe67409c30bfcc6382f2683cbb
 +     * @param x the angle in degrees
 +     * @return the resultant Rotations
 +     */
-+    @NotNull
-+    public Rotations withX(double x) {
-+        return new Rotations(x, y, z);
-+    }
++    @NotNull Rotations withX(double x);
 +
 +    /**
 +     * Returns a new Rotations instance which is the result
@@ -54,10 +84,7 @@ index 0000000000000000000000000000000000000000..ef5494fe67409c30bfcc6382f2683cbb
 +     * @param y the angle in degrees
 +     * @return the resultant Rotations
 +     */
-+    @NotNull
-+    public Rotations withY(double y) {
-+        return new Rotations(x, y, z);
-+    }
++    @NotNull Rotations withY(double y);
 +
 +    /**
 +     * Returns a new Rotations instance which is the result
@@ -66,10 +93,7 @@ index 0000000000000000000000000000000000000000..ef5494fe67409c30bfcc6382f2683cbb
 +     * @param z the angle in degrees
 +     * @return the resultant Rotations
 +     */
-+    @NotNull
-+    public Rotations withZ(double z) {
-+        return new Rotations(x, y, z);
-+    }
++    @NotNull Rotations withZ(double z);
 +
 +    /**
 +     * Returns a new Rotations instance which is the result of adding
@@ -80,10 +104,7 @@ index 0000000000000000000000000000000000000000..ef5494fe67409c30bfcc6382f2683cbb
 +     * @param z the angle to add to the Z axis in degrees
 +     * @return the resultant Rotations
 +     */
-+    @NotNull
-+    public Rotations add(double x, double y, double z) {
-+        return new Rotations(this.x + x, this.y + y, this.z + z);
-+    }
++    @NotNull Rotations add(double x, double y, double z);
 +
 +    /**
 +     * Returns a new Rotations instance which is the result of subtracting
@@ -94,9 +115,43 @@ index 0000000000000000000000000000000000000000..ef5494fe67409c30bfcc6382f2683cbb
 +     * @param z the angle to subtract from the Z axis in degrees
 +     * @return the resultant Rotations
 +     */
-+    @NotNull
-+    public Rotations subtract(double x, double y, double z) {
++    default @NotNull Rotations subtract(double x, double y, double z) {
 +        return add(-x, -y, -z);
++    }
++
++}
+diff --git a/src/main/java/io/papermc/paper/math/RotationsImpl.java b/src/main/java/io/papermc/paper/math/RotationsImpl.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..6a11edfce24e512b6be7b7eba2347872029a2afc
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/math/RotationsImpl.java
+@@ -0,0 +1,29 @@
++package io.papermc.paper.math;
++
++import org.jetbrains.annotations.NotNull;
++
++record RotationsImpl(double x, double y, double z) implements Rotations {
++
++    static final Rotations ZERO = new RotationsImpl(0, 0, 0);
++
++    @Override
++    public @NotNull RotationsImpl withX(double x) {
++        return new RotationsImpl(x, y, z);
++    }
++
++    @Override
++    public @NotNull RotationsImpl withY(double y) {
++        return new RotationsImpl(x, y, z);
++    }
++
++    @Override
++    public @NotNull RotationsImpl withZ(double z) {
++        return new RotationsImpl(x, y, z);
++    }
++
++    @Override
++    public @NotNull RotationsImpl add(double x, double y, double z) {
++        return new RotationsImpl(this.x + x, this.y + y, this.z + z);
 +    }
 +
 +}
