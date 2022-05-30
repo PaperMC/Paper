@@ -1,0 +1,166 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Mon, 30 May 2022 15:32:46 -0700
+Subject: [PATCH] Deprecate world names
+
+
+diff --git a/src/main/java/co/aikar/timings/TimingHistory.java b/src/main/java/co/aikar/timings/TimingHistory.java
+index 203cda0f9a4dea4f28a21ea9ee8db7a7369842e3..e643ae6a46d9083548635315423799c70fa325f8 100644
+--- a/src/main/java/co/aikar/timings/TimingHistory.java
++++ b/src/main/java/co/aikar/timings/TimingHistory.java
+@@ -129,7 +129,7 @@ public class TimingHistory {
+                     }
+                 }
+                 return pair(
+-                    worldMap.get(world.getName()),
++                    worldMap.get(world.getKey().toString()), // Paper
+                     toArrayMapper(regions.values(),new Function<RegionData, Object>() {
+                         @NotNull
+                         @Override
+diff --git a/src/main/java/org/bukkit/Bukkit.java b/src/main/java/org/bukkit/Bukkit.java
+index d8666481f9a407403d0114ff02024fd3c50c27c4..0b374e3bc3397e497571f29e9c70a1aa11143127 100644
+--- a/src/main/java/org/bukkit/Bukkit.java
++++ b/src/main/java/org/bukkit/Bukkit.java
+@@ -794,8 +794,10 @@ public final class Bukkit {
+      *
+      * @param name the name of the world to retrieve
+      * @return a world with the given name, or null if none exists
++     * @deprecated use {@link #getWorld(NamespacedKey)}. In the future, worlds may have the same "name".
+      */
+     @Nullable
++    @Deprecated(forRemoval = true) // Paper
+     public static World getWorld(@NotNull String name) {
+         return server.getWorld(name);
+     }
+diff --git a/src/main/java/org/bukkit/ChunkSnapshot.java b/src/main/java/org/bukkit/ChunkSnapshot.java
+index fb3e166ec48b8c0ebb7d541eaa1761b03a140610..9118325d085a8b721c3b73f4053bcb9a6d4c333b 100644
+--- a/src/main/java/org/bukkit/ChunkSnapshot.java
++++ b/src/main/java/org/bukkit/ChunkSnapshot.java
+@@ -30,10 +30,21 @@ public interface ChunkSnapshot {
+      * Gets name of the world containing this chunk
+      *
+      * @return Parent World Name
++     * @deprecated use {@link #getKey()}
+      */
++    @Deprecated(forRemoval = true)
+     @NotNull
+     String getWorldName();
+ 
++    // Paper start
++    /**
++     * Gets the key for the world containing this chunk.
++     *
++     * @return the parent world key
++     */
++    @NotNull NamespacedKey getWorldKey();
++    // Paper end
++
+     /**
+      * Get block type for block at corresponding coordinate in the chunk
+      *
+diff --git a/src/main/java/org/bukkit/Location.java b/src/main/java/org/bukkit/Location.java
+index ef0cb00ca4cb7d2f5e4ec1c950cce036566d1ae4..68414944b611072993d8b816cd4e20b924bac295 100644
+--- a/src/main/java/org/bukkit/Location.java
++++ b/src/main/java/org/bukkit/Location.java
+@@ -507,7 +507,7 @@ public class Location implements Cloneable, ConfigurationSerializable {
+         } else if (o.getWorld() == null || getWorld() == null) {
+             throw new IllegalArgumentException("Cannot measure distance to a null world");
+         } else if (o.getWorld() != getWorld()) {
+-            throw new IllegalArgumentException("Cannot measure distance between " + getWorld().getName() + " and " + o.getWorld().getName());
++            throw new IllegalArgumentException("Cannot measure distance between " + getWorld().getKey() + " and " + o.getWorld().getKey()); // Paper
+         }
+ 
+         return NumberConversions.square(x - o.x) + NumberConversions.square(y - o.y) + NumberConversions.square(z - o.z);
+@@ -1110,6 +1110,7 @@ public class Location implements Cloneable, ConfigurationSerializable {
+ 
+         if (this.world != null) {
+             data.put("world", getWorld().getName());
++            data.put("worldKey", getWorld().getKey().toString());
+         }
+ 
+         data.put("x", this.x);
+@@ -1138,6 +1139,13 @@ public class Location implements Cloneable, ConfigurationSerializable {
+             if (world == null) {
+                 throw new IllegalArgumentException("unknown world");
+             }
++            // Paper start
++        } else if (args.containsKey("worldKey")) {
++            final NamespacedKey key = NamespacedKey.fromString((String) args.get("worldKey"));
++            if (key != null) {
++                world = Bukkit.getWorld(key);
++            }
++            // Paper end
+         }
+ 
+         return new Location(world, NumberConversions.toDouble(args.get("x")), NumberConversions.toDouble(args.get("y")), NumberConversions.toDouble(args.get("z")), NumberConversions.toFloat(args.get("yaw")), NumberConversions.toFloat(args.get("pitch")));
+diff --git a/src/main/java/org/bukkit/Server.java b/src/main/java/org/bukkit/Server.java
+index 79b26045a68ebb9b01e5bd06abbccaaef5489777..d919b7f94310689889b351b551f313656146dfd4 100644
+--- a/src/main/java/org/bukkit/Server.java
++++ b/src/main/java/org/bukkit/Server.java
+@@ -657,8 +657,10 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+      *
+      * @param name the name of the world to retrieve
+      * @return a world with the given name, or null if none exists
++     * @deprecated use {@link #getWorld(NamespacedKey)}. In the future, worlds may have the same "name".
+      */
+     @Nullable
++    @Deprecated(forRemoval = true) // Paper
+     public World getWorld(@NotNull String name);
+ 
+     /**
+diff --git a/src/main/java/org/bukkit/WorldCreator.java b/src/main/java/org/bukkit/WorldCreator.java
+index 355f9f27d29c65efebf099a72c37892a309edef1..bd2390a1cd11e90324f56b83b7f31f4326174f2c 100644
+--- a/src/main/java/org/bukkit/WorldCreator.java
++++ b/src/main/java/org/bukkit/WorldCreator.java
+@@ -28,7 +28,9 @@ public class WorldCreator {
+      * Creates an empty WorldCreationOptions for the given world name
+      *
+      * @param name Name of the world that will be created
++     * @deprecated use {@link #WorldCreator(NamespacedKey)}
+      */
++    @Deprecated(forRemoval = true) // Paper
+     public WorldCreator(@NotNull String name) {
+         // Paper start
+         this(name, getWorldKey(name));
+@@ -52,7 +54,9 @@ public class WorldCreator {
+      *
+      * @param levelName LevelName of the world that will be created
+      * @param worldKey NamespacedKey of the world that will be created
++     * @deprecated use {@link #WorldCreator(NamespacedKey)}
+      */
++    @Deprecated(forRemoval = true) // Paper
+     public WorldCreator(@NotNull String levelName, @NotNull NamespacedKey worldKey) {
+         if (levelName == null || worldKey == null) {
+             throw new IllegalArgumentException("World name and key cannot be null");
+@@ -156,7 +160,9 @@ public class WorldCreator {
+      * Gets the name of the world that is to be loaded or created.
+      *
+      * @return World name
++     * @deprecated use {@link #key()}
+      */
++    @Deprecated(forRemoval = true) // Paper
+     @NotNull
+     public String name() {
+         return name;
+diff --git a/src/main/java/org/bukkit/generator/WorldInfo.java b/src/main/java/org/bukkit/generator/WorldInfo.java
+index 5067f1371433cccd3287af7f03e152f2c3c1ece3..56481f64e6ecbbbb16967a20116802ea63eed185 100644
+--- a/src/main/java/org/bukkit/generator/WorldInfo.java
++++ b/src/main/java/org/bukkit/generator/WorldInfo.java
+@@ -7,14 +7,16 @@ import org.jetbrains.annotations.NotNull;
+ /**
+  * Holds various information of a World
+  */
+-public interface WorldInfo {
++public interface WorldInfo extends org.bukkit.Keyed { // Paper - moved Keyed interface from World to WorldInfo
+ 
+     /**
+      * Gets the unique name of this world
+      *
+      * @return Name of this world
++     * @deprecated use {@link #getKey()} as an identifier
+      */
+     @NotNull
++    @Deprecated(forRemoval = true) // Paper
+     String getName();
+ 
+     /**

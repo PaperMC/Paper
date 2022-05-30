@@ -1,0 +1,652 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Mon, 30 May 2022 15:32:39 -0700
+Subject: [PATCH] Deprecate world names
+
+
+diff --git a/src/main/java/co/aikar/timings/TimingsExport.java b/src/main/java/co/aikar/timings/TimingsExport.java
+index 5ba64e1083b7cb1eec64d1925095c6ca5865ff07..1c1d8b3c39932c3fbe1fcd5d89b72eb4c3b01793 100644
+--- a/src/main/java/co/aikar/timings/TimingsExport.java
++++ b/src/main/java/co/aikar/timings/TimingsExport.java
+@@ -155,7 +155,7 @@ public class TimingsExport extends Thread {
+ 
+         parent.put("worlds", toObjectMapper(MinecraftServer.getServer().getAllLevels(), world -> {
+             if (world.getWorld().getName().equals("worldeditregentempworld")) return null;
+-            return pair(world.getWorld().getName(), createObject(
++            return pair(world.getWorld().getKey().toString(), createObject( // Paper
+                 pair("gamerules", toObjectMapper(world.getWorld().getGameRules(), rule -> {
+                     return pair(rule, world.getWorld().getGameRuleValue(rule));
+                 })),
+diff --git a/src/main/java/com/destroystokyo/paper/PaperCommand.java b/src/main/java/com/destroystokyo/paper/PaperCommand.java
+index 45d1807b31f5acd5f08f729701cec4b464ad9398..ab11b53147c6e9193e3f64d1a53635647cf3970c 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperCommand.java
++++ b/src/main/java/com/destroystokyo/paper/PaperCommand.java
+@@ -111,7 +111,7 @@ public class PaperCommand extends Command {
+                 List<String> worldNames = new ArrayList<>();
+                 worldNames.add("*");
+                 for (org.bukkit.World world : Bukkit.getWorlds()) {
+-                    worldNames.add(world.getName());
++                    worldNames.add(world.getKey().toString());
+                 }
+                 if (args.length == 2) {
+                     return getListMatchingLast(sender, args, worldNames);
+@@ -280,7 +280,7 @@ public class PaperCommand extends Command {
+ 
+     private List<String> suggestMobcaps(CommandSender sender, String[] args) {
+         if (args.length == 2) {
+-            final List<String> worlds = new ArrayList<>(Bukkit.getWorlds().stream().map(World::getName).toList());
++            final List<String> worlds = new ArrayList<>(Bukkit.getWorlds().stream().map(w -> w.getKey().toString()).toList());
+             worlds.add("*");
+             return worlds;
+         }
+@@ -316,7 +316,8 @@ public class PaperCommand extends Command {
+             if (input.equals("*")) {
+                 worlds = Bukkit.getWorlds();
+             } else {
+-                final World world = Bukkit.getWorld(input);
++                final org.bukkit.NamespacedKey key = org.bukkit.NamespacedKey.fromString(input);
++                final World world = key != null ? Bukkit.getWorld(key) : null;
+                 if (world == null) {
+                     sender.sendMessage(Component.text("'" + input + "' is not a valid world!", NamedTextColor.RED));
+                     return;
+@@ -341,7 +342,7 @@ public class PaperCommand extends Command {
+             }
+             sender.sendMessage(Component.join(JoinConfiguration.noSeparators(),
+                 Component.text("Mobcaps for world: "),
+-                Component.text(world.getName(), NamedTextColor.AQUA),
++                Component.text(world.getKey().toString(), NamedTextColor.AQUA),
+                 Component.text(" (" + chunks + " spawnable chunks)")
+             ));
+ 
+@@ -452,7 +453,8 @@ public class PaperCommand extends Command {
+         } else {
+             worlds = new ArrayList<>(args.length - 1);
+             for (int i = 1; i < args.length; ++i) {
+-                org.bukkit.World world = Bukkit.getWorld(args[i]);
++                org.bukkit.NamespacedKey key = org.bukkit.NamespacedKey.fromString(args[i]);
++                org.bukkit.World world = key != null ? Bukkit.getWorld(key) : null;
+                 if (world == null) {
+                     sender.sendMessage(ChatColor.RED + "World '" + args[i] + "' is invalid");
+                     return;
+@@ -507,7 +509,7 @@ public class PaperCommand extends Command {
+             accumulatedTicking += ticking;
+             accumulatedEntityTicking += entityTicking;
+ 
+-            sender.sendMessage(ChatColor.BLUE + "Chunks in " + ChatColor.GREEN + bukkitWorld.getName() + ChatColor.DARK_AQUA + ":");
++            sender.sendMessage(ChatColor.BLUE + "Chunks in " + ChatColor.GREEN + bukkitWorld.getKey() + ChatColor.DARK_AQUA + ":");
+             sender.sendMessage(ChatColor.BLUE + "Total: " + ChatColor.DARK_AQUA + total + ChatColor.BLUE + " Inactive: " + ChatColor.DARK_AQUA
+                                + inactive + ChatColor.BLUE + " Border: " + ChatColor.DARK_AQUA + border + ChatColor.BLUE + " Ticking: "
+                                + ChatColor.DARK_AQUA + ticking + ChatColor.BLUE + " Entity: " + ChatColor.DARK_AQUA + entityTicking);
+@@ -583,11 +585,11 @@ public class PaperCommand extends Command {
+                     return;
+                 }
+ 
+-                String worldName;
++                org.bukkit.NamespacedKey worldKey;
+                 if (args.length > 3) {
+-                    worldName = args[3];
++                    worldKey = org.bukkit.NamespacedKey.fromString(args[3]);
+                 } else if (sender instanceof Player) {
+-                    worldName = ((Player) sender).getWorld().getName();
++                    worldKey = ((Player) sender).getWorld().getKey();
+                 } else {
+                     sender.sendMessage(ChatColor.RED + "Please specify the name of a world");
+                     sender.sendMessage(ChatColor.RED + "To do so without a filter, specify '*' as the filter");
+@@ -596,13 +598,13 @@ public class PaperCommand extends Command {
+                 }
+ 
+                 Map<ResourceLocation, MutablePair<Integer, Map<ChunkPos, Integer>>> list = Maps.newHashMap();
+-                World bukkitWorld = Bukkit.getWorld(worldName);
++                World bukkitWorld = worldKey != null ? Bukkit.getWorld(worldKey) : null;
+                 if (bukkitWorld == null) {
+-                    sender.sendMessage(ChatColor.RED + "Could not load world for " + worldName + ". Please select a valid world.");
++                    sender.sendMessage(ChatColor.RED + "Could not load world for " + worldKey + ". Please select a valid world.");
+                     sender.sendMessage(ChatColor.RED + "Usage: /paper entity list [filter] [worldName]");
+                     return;
+                 }
+-                ServerLevel world = ((CraftWorld) Bukkit.getWorld(worldName)).getHandle();
++                ServerLevel world = ((CraftWorld) bukkitWorld).getHandle();
+ 
+                 Map<ResourceLocation, Integer> nonEntityTicking = Maps.newHashMap();
+                 ServerChunkCache chunkProviderServer = world.getChunkSource();
+diff --git a/src/main/java/com/destroystokyo/paper/io/PaperFileIOThread.java b/src/main/java/com/destroystokyo/paper/io/PaperFileIOThread.java
+index ab583855d46e2adc56e503f191bdb523c2afdd91..ef943d945348de8876c712cc1d8c8c7e28872d54 100644
+--- a/src/main/java/com/destroystokyo/paper/io/PaperFileIOThread.java
++++ b/src/main/java/com/destroystokyo/paper/io/PaperFileIOThread.java
+@@ -470,7 +470,7 @@ public final class PaperFileIOThread extends QueueExecutorThread {
+ 
+         @Override
+         public String toString() {
+-            return "Task for world: '" + this.world.getWorld().getName() + "' at " + this.x + "," + this.z +
++            return "Task for world: '" + this.world.getWorld().getKey() + "' at " + this.x + "," + this.z +
+                 " poi: " + (this.taskController == this.world.poiDataController) + ", hash: " + this.hashCode();
+         }
+ 
+diff --git a/src/main/java/com/destroystokyo/paper/io/SyncLoadFinder.java b/src/main/java/com/destroystokyo/paper/io/SyncLoadFinder.java
+index d3e619655382e50e9ac9323ed942502d85c9599c..70cd3f6823f4e396521f1ad3e92bd3e569c4280d 100644
+--- a/src/main/java/com/destroystokyo/paper/io/SyncLoadFinder.java
++++ b/src/main/java/com/destroystokyo/paper/io/SyncLoadFinder.java
+@@ -70,7 +70,7 @@ public class SyncLoadFinder {
+ 
+             final JsonObject worldData = new JsonObject();
+ 
+-            worldData.addProperty("name", world.getWorld().getName());
++            worldData.addProperty("key", world.getWorld().getKey().toString());
+ 
+             final List<Pair<ThrowableWithEquals, SyncLoadInformation>> data = new ArrayList<>();
+ 
+diff --git a/src/main/java/com/destroystokyo/paper/io/chunk/ChunkTask.java b/src/main/java/com/destroystokyo/paper/io/chunk/ChunkTask.java
+index 058fb5a41565e6ce2acbd1f4d071a1b8be449f5d..aecd91b75a43ebcbb38dc6e9529fe60e1de7fcf5 100644
+--- a/src/main/java/com/destroystokyo/paper/io/chunk/ChunkTask.java
++++ b/src/main/java/com/destroystokyo/paper/io/chunk/ChunkTask.java
+@@ -22,7 +22,7 @@ abstract class ChunkTask extends PrioritizedTaskQueue.PrioritizedTask implements
+ 
+     @Override
+     public String toString() {
+-        return "Chunk task: class:" + this.getClass().getName() + ", for world '" + this.world.getWorld().getName() +
++        return "Chunk task: class:" + this.getClass().getName() + ", for world '" + this.world.dimension().location() +
+             "', (" + this.chunkX + "," + this.chunkZ + "), hashcode:" + this.hashCode() + ", priority: " + this.getPriority();
+     }
+ 
+diff --git a/src/main/java/com/destroystokyo/paper/io/chunk/ChunkTaskManager.java b/src/main/java/com/destroystokyo/paper/io/chunk/ChunkTaskManager.java
+index 311a01d3590dabc7a4e41bb3493cd7ff228a515c..d6e1d9f42e5c3e8d142e7e41272b13b38fcf9e3d 100644
+--- a/src/main/java/com/destroystokyo/paper/io/chunk/ChunkTaskManager.java
++++ b/src/main/java/com/destroystokyo/paper/io/chunk/ChunkTaskManager.java
+@@ -60,7 +60,7 @@ public final class ChunkTaskManager {
+ 
+         @Override
+         public String toString() {
+-            return "[( " + this.chunkX + "," + this.chunkZ + ") in '" + this.world.getWorld().getName() + "']";
++            return "[( " + this.chunkX + "," + this.chunkZ + ") in '" + this.world.dimension().location() + "']";
+         }
+     }
+ 
+@@ -94,7 +94,7 @@ public final class ChunkTaskManager {
+                 final ChunkLoadTask loadTask = chunkInfo.world.asyncChunkTaskManager.chunkLoadTasks.get(key);
+                 final ChunkSaveTask saveTask = chunkInfo.world.asyncChunkTaskManager.chunkSaveTasks.get(key);
+ 
+-                PaperFileIOThread.LOGGER.error(chunkInfo.chunkX + "," + chunkInfo.chunkZ + " in '" + chunkInfo.world.getWorld().getName() + ":");
++                PaperFileIOThread.LOGGER.error(chunkInfo.chunkX + "," + chunkInfo.chunkZ + " in '" + chunkInfo.world.dimension().location() + ":");
+                 PaperFileIOThread.LOGGER.error("Load Task - " + (loadTask == null ? "none" : loadTask.toString()));
+                 PaperFileIOThread.LOGGER.error("Save Task - " + (saveTask == null ? "none" : saveTask.toString()));
+                 // log current status of chunk to indicate whether we're waiting on generation or loading
+@@ -144,10 +144,10 @@ public final class ChunkTaskManager {
+                     int nx = neighbor.pos.x;
+                     int nz = neighbor.pos.z;
+                     if (seenChunks.contains(neighbor)) {
+-                        PaperFileIOThread.LOGGER.error(indentStr + "  " + nx + "," + nz + " in " + chunkHolder.getWorld().getWorld().getName() + " (CIRCULAR)");
++                        PaperFileIOThread.LOGGER.error(indentStr + "  " + nx + "," + nz + " in " + chunkHolder.getWorld().dimension().location() + " (CIRCULAR)");
+                         continue;
+                     }
+-                    PaperFileIOThread.LOGGER.error(indentStr + "  " + nx + "," + nz + " in " + chunkHolder.getWorld().getWorld().getName() + ":");
++                    PaperFileIOThread.LOGGER.error(indentStr + "  " + nx + "," + nz + " in " + chunkHolder.getWorld().dimension().location() + ":");
+                     dumpChunkInfo(seenChunks, neighbor, nx, nz, indent + 1, maxDepth);
+                 }
+             }
+@@ -200,7 +200,7 @@ public final class ChunkTaskManager {
+ 
+         for (int i = 0; i < threads; ++i) {
+             this.workers[i] = new QueueExecutorThread<>(this.queue, (long)0.10e6); //0.1ms
+-            this.workers[i].setName("Async chunk loader thread #" + i +  " for world: " + world.getWorld().getName());
++            this.workers[i].setName("Async chunk loader thread #" + i +  " for world: " + world.dimension().location());
+             this.workers[i].setPriority(Thread.NORM_PRIORITY - 1);
+             this.workers[i].setUncaughtExceptionHandler((final Thread thread, final Throwable throwable) -> {
+                 PaperFileIOThread.LOGGER.error("Thread '" + thread.getName() + "' threw an uncaught exception!", throwable);
+diff --git a/src/main/java/net/minecraft/server/MCUtil.java b/src/main/java/net/minecraft/server/MCUtil.java
+index 6aec679e75aa6655b47a552db011924ea3a6c922..e8556cb119a53c62d79c1dc7a0c063add0a9e76f 100644
+--- a/src/main/java/net/minecraft/server/MCUtil.java
++++ b/src/main/java/net/minecraft/server/MCUtil.java
+@@ -646,7 +646,7 @@ public final class MCUtil {
+                 return Integer.compare(v1.pos.z, v2.pos.z);
+             });
+ 
+-            worldData.addProperty("name", world.getWorld().getName());
++            worldData.addProperty("key", world.dimension().location().toString());
+             worldData.addProperty("view-distance", world.getChunkSource().chunkMap.playerChunkManager.getTargetNoTickViewDistance()); // Paper - replace chunk loader system
+             worldData.addProperty("tick-view-distance", world.getChunkSource().chunkMap.playerChunkManager.getTargetTickViewDistance()); // Paper - replace chunk loader system
+             worldData.addProperty("keep-spawn-loaded", world.keepSpawnInMemory);
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index c8d56947305c981a3268ce4ae3e975db350ceff2..30c5659a0f8f0975cc46754252b5464ca8bb0800 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -581,8 +581,9 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+                 holder = worlddimension.typeHolder();
+                 chunkgenerator = worlddimension.generator();
+             }
++            ResourceKey<Level> worldKey = ResourceKey.create(Registry.DIMENSION_REGISTRY, dimensionKey.location()); // Paper - moved from below
+ 
+-            org.bukkit.generator.WorldInfo worldInfo = new org.bukkit.craftbukkit.generator.CraftWorldInfo(iworlddataserver, worldSession, org.bukkit.World.Environment.getEnvironment(dimension), holder.value(), chunkgenerator, this.registryAccess().registryOrThrow(net.minecraft.core.Registry.BIOME_REGISTRY)); // Paper
++            org.bukkit.generator.WorldInfo worldInfo = new org.bukkit.craftbukkit.generator.CraftWorldInfo(iworlddataserver, worldSession, org.bukkit.World.Environment.getEnvironment(dimension), holder.value(), chunkgenerator, this.registryAccess().registryOrThrow(net.minecraft.core.Registry.BIOME_REGISTRY), worldKey.location()); // Paper
+             if (biomeProvider == null && gen != null) {
+                 biomeProvider = gen.getDefaultBiomeProvider(worldInfo);
+             }
+@@ -602,7 +603,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+             }
+             // Paper end - fix and optimise world upgrading
+ 
+-            ResourceKey<Level> worldKey = ResourceKey.create(Registry.DIMENSION_REGISTRY, dimensionKey.location());
++            // Paper - moved earlier
+ 
+             if (dimensionKey == LevelStem.OVERWORLD) {
+                 this.worldData = worlddata;
+@@ -718,7 +719,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+ 
+                 if (spawn != null) {
+                     if (spawn.getWorld() != world.getWorld()) {
+-                        throw new IllegalStateException("Cannot set spawn point for " + worldProperties.getLevelName() + " to be in another world (" + spawn.getWorld().getName() + ")");
++                        throw new IllegalStateException("Cannot set spawn point for " + world.dimension().location() + " to be in another world (" + spawn.getWorld().getKey() + ")");
+                     } else {
+                         worldProperties.setSpawn(new BlockPos(spawn.getBlockX(), spawn.getBlockY(), spawn.getBlockZ()), spawn.getYaw());
+                         return;
+diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
+index 6ce27675103d4b691216c6b701b6ceb821af528f..5f0e1c19bfe3ff894736d8d29d1a6948213e2931 100644
+--- a/src/main/java/net/minecraft/server/level/ChunkMap.java
++++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
+@@ -1968,7 +1968,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+         org.spigotmc.AsyncCatcher.catchOp("entity track"); // Spigot
+         // Paper start - ignore and warn about illegal addEntity calls instead of crashing server
+         if (!entity.valid || entity.level != this.level || this.entityMap.containsKey(entity.getId())) {
+-            new Throwable("[ERROR] Illegal PlayerChunkMap::addEntity for world " + this.level.getWorld().getName()
++            new Throwable("[ERROR] Illegal PlayerChunkMap::addEntity for world " + this.level.dimension().location()
+                 + ": " + entity  + (this.entityMap.containsKey(entity.getId()) ? " ALREADY CONTAINED (This would have crashed your server)" : ""))
+                 .printStackTrace();
+             return;
+diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
+index fb0757d4bb32123641535a88a22bc074b8d2623f..fa3f6f2ec7a3111d4168c105a9b998531402f76f 100644
+--- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
++++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
+@@ -184,7 +184,7 @@ public class ServerChunkCache extends ChunkSource {
+         ChunkHolder chunk = this.chunkMap.getUpdatingChunkIfPresent(chunkPos.toLong());
+ 
+         if (chunk == null) {
+-            throw new IllegalStateException("Expected playerchunk " + chunkPos + " in world '" + this.level.getWorld().getName() + "'");
++            throw new IllegalStateException("Expected playerchunk " + chunkPos + " in world '" + this.level.dimension().location() + "'");
+         }
+ 
+         CompletableFuture<Either<LevelChunk, ChunkHolder.ChunkLoadingFailure>> future = futureGet.apply(chunk);
+@@ -195,9 +195,9 @@ public class ServerChunkCache extends ChunkSource {
+                     if (throwable instanceof ThreadDeath) {
+                         throw (ThreadDeath)throwable;
+                     }
+-                    net.minecraft.server.MinecraftServer.LOGGER.error("Failed to complete future await for chunk " + chunkPos.toString() + " in world '" + ServerChunkCache.this.level.getWorld().getName() + "'", throwable);
++                    net.minecraft.server.MinecraftServer.LOGGER.error("Failed to complete future await for chunk " + chunkPos.toString() + " in world '" + ServerChunkCache.this.level.dimension().location() + "'", throwable);
+                 } else if (either.right().isPresent()) {
+-                    net.minecraft.server.MinecraftServer.LOGGER.error("Failed to complete future await for chunk " + chunkPos.toString() + " in world '" + ServerChunkCache.this.level.getWorld().getName() + "': " + either.right().get().toString());
++                    net.minecraft.server.MinecraftServer.LOGGER.error("Failed to complete future await for chunk " + chunkPos.toString() + " in world '" + ServerChunkCache.this.level.dimension().location()  + "': " + either.right().get().toString());
+                 }
+ 
+                 try {
+@@ -208,7 +208,7 @@ public class ServerChunkCache extends ChunkSource {
+                     if (thr instanceof ThreadDeath) {
+                         throw (ThreadDeath)thr;
+                     }
+-                    net.minecraft.server.MinecraftServer.LOGGER.error("Load callback for future await failed " + chunkPos.toString() + " in world '" + ServerChunkCache.this.level.getWorld().getName() + "'", thr);
++                    net.minecraft.server.MinecraftServer.LOGGER.error("Load callback for future await failed " + chunkPos.toString() + " in world '" + ServerChunkCache.this.level.dimension().location()  + "'", thr);
+                     return;
+                 }
+             } finally {
+@@ -285,7 +285,7 @@ public class ServerChunkCache extends ChunkSource {
+         ChunkHolder chunk = this.chunkMap.getUpdatingChunkIfPresent(chunkPos.toLong());
+ 
+         if (chunk == null) {
+-            throw new IllegalStateException("Expected playerchunk " + chunkPos + " in world '" + this.level.getWorld().getName() + "'");
++            throw new IllegalStateException("Expected playerchunk " + chunkPos + " in world '" + this.level.dimension().location()  + "'");
+         }
+ 
+         CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> future = function.apply(chunk);
+@@ -296,9 +296,9 @@ public class ServerChunkCache extends ChunkSource {
+                     if (throwable instanceof ThreadDeath) {
+                         throw (ThreadDeath)throwable;
+                     }
+-                    LOGGER.error("Failed to complete future await for chunk " + chunkPos.toString() + " in world '" + ServerChunkCache.this.level.getWorld().getName() + "'", throwable);
++                    LOGGER.error("Failed to complete future await for chunk " + chunkPos.toString() + " in world '" + ServerChunkCache.this.level.dimension().location()  + "'", throwable);
+                 } else if (either.right().isPresent()) {
+-                    LOGGER.error("Failed to complete future await for chunk " + chunkPos.toString() + " in world '" + ServerChunkCache.this.level.getWorld().getName() + "': " + either.right().get().toString());
++                    LOGGER.error("Failed to complete future await for chunk " + chunkPos.toString() + " in world '" + ServerChunkCache.this.level.dimension().location()  + "': " + either.right().get().toString());
+                 }
+ 
+                 try {
+@@ -309,7 +309,7 @@ public class ServerChunkCache extends ChunkSource {
+                     if (thr instanceof ThreadDeath) {
+                         throw (ThreadDeath)thr;
+                     }
+-                    LOGGER.error("Load callback for future await failed " + chunkPos.toString() + " in world '" + ServerChunkCache.this.level.getWorld().getName() + "'", thr);
++                    LOGGER.error("Load callback for future await failed " + chunkPos.toString() + " in world '" + ServerChunkCache.this.level.dimension().location()  + "'", thr);
+                     return;
+                 }
+             } finally {
+@@ -335,7 +335,7 @@ public class ServerChunkCache extends ChunkSource {
+             if (throwable instanceof ThreadDeath) {
+                 throw (ThreadDeath)throwable;
+             }
+-            LOGGER.error("Load callback for chunk " + chunkX + "," + chunkZ + " in world '" + this.level.getWorld().getName() + "' threw an exception", throwable);
++            LOGGER.error("Load callback for chunk " + chunkX + "," + chunkZ + " in world '" + this.level.dimension().location()  + "' threw an exception", throwable);
+         }
+     }
+ 
+diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
+index fee8996f35b38fd79946cdfd677763e0201eb57d..74c7c3a9837bbedbee1c931433751ff4a66ddc05 100644
+--- a/src/main/java/net/minecraft/world/level/Level.java
++++ b/src/main/java/net/minecraft/world/level/Level.java
+@@ -938,7 +938,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+         } catch (Throwable throwable) {
+             if (throwable instanceof ThreadDeath) throw throwable; // Paper
+             // Paper start - Prevent tile entity and entity crashes
+-            final String msg = String.format("Entity threw exception at %s:%s,%s,%s", entity.level.getWorld().getName(), entity.getX(), entity.getY(), entity.getZ());
++            final String msg = String.format("Entity threw exception at %s:%s,%s,%s", entity.level.dimension().location() , entity.getX(), entity.getY(), entity.getZ());
+             MinecraftServer.LOGGER.error(msg, throwable);
+             getCraftServer().getPluginManager().callEvent(new ServerExceptionEvent(new ServerInternalException(msg, throwable)));
+             entity.discard();
+diff --git a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
+index f667dafd44b6652788d3367cbbc76eef3bead23b..5c6d513759693e739ec8bb31d524edc325bd85e9 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
++++ b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
+@@ -1216,7 +1216,7 @@ public class LevelChunk extends ChunkAccess {
+                     } catch (Throwable throwable) {
+                         if (throwable instanceof ThreadDeath) throw throwable; // Paper
+                         // Paper start - Prevent tile entity and entity crashes
+-                        final String msg = String.format("BlockEntity threw exception at %s:%s,%s,%s", LevelChunk.this.getLevel().getWorld().getName(), this.getPos().getX(), this.getPos().getY(), this.getPos().getZ());
++                        final String msg = String.format("BlockEntity threw exception at %s:%s,%s,%s", LevelChunk.this.getLevel().dimension().location() , this.getPos().getX(), this.getPos().getY(), this.getPos().getZ());
+                         net.minecraft.server.MinecraftServer.LOGGER.error(msg, throwable);
+                         net.minecraft.world.level.chunk.LevelChunk.this.level.getCraftServer().getPluginManager().callEvent(new com.destroystokyo.paper.event.server.ServerExceptionEvent(new ServerInternalException(msg, throwable)));
+                         LevelChunk.this.removeBlockEntity(this.getPos());
+diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkStorage.java b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkStorage.java
+index 8dfac195e7f03f8fe18ba6ee79e195efade46bea..aabd062e944d6036d48e82a93423ff768e3fa7e7 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkStorage.java
++++ b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkStorage.java
+@@ -151,7 +151,7 @@ public class ChunkStorage implements AutoCloseable {
+     public void write(ChunkPos chunkPos, CompoundTag nbt) throws IOException {
+         // Paper start
+         if (!chunkPos.equals(ChunkSerializer.getChunkCoordinate(nbt))) {
+-            String world = (this instanceof net.minecraft.server.level.ChunkMap) ? ((net.minecraft.server.level.ChunkMap)this).level.getWorld().getName() : null;
++            String world = (this instanceof net.minecraft.server.level.ChunkMap) ? ((net.minecraft.server.level.ChunkMap)this).level.dimension().location().toString() : null;
+             throw new IllegalArgumentException("Chunk coordinate and serialized data do not have matching coordinates, trying to serialize coordinate " + chunkPos.toString()
+                 + " but compound says coordinate is " + ChunkSerializer.getChunkCoordinate(nbt).toString() + (world == null ? " for an unknown world" : (" for world: " + world)));
+         }
+diff --git a/src/main/java/net/minecraft/world/level/storage/PrimaryLevelData.java b/src/main/java/net/minecraft/world/level/storage/PrimaryLevelData.java
+index 95635cc7367b757d149bb2c81326a041f84782f0..28382b3cedd2bcfc99ae1f62930da84d2a0a67ce 100644
+--- a/src/main/java/net/minecraft/world/level/storage/PrimaryLevelData.java
++++ b/src/main/java/net/minecraft/world/level/storage/PrimaryLevelData.java
+@@ -356,7 +356,7 @@ public class PrimaryLevelData implements ServerLevelData, WorldData {
+             return;
+         }
+ 
+-        org.bukkit.World world = Bukkit.getWorld(this.getLevelName());
++        org.bukkit.World world = this.world != null ? this.world.getWorld() : null; // Paper
+         if (world != null) {
+             ThunderChangeEvent thunder = new ThunderChangeEvent(world, thundering, cause); // Paper
+             Bukkit.getServer().getPluginManager().callEvent(thunder);
+@@ -396,7 +396,7 @@ public class PrimaryLevelData implements ServerLevelData, WorldData {
+             return;
+         }
+ 
+-        org.bukkit.World world = Bukkit.getWorld(this.getLevelName());
++        org.bukkit.World world = this.world != null ? this.world.getWorld() : null; // Paper
+         if (world != null) {
+             WeatherChangeEvent weather = new WeatherChangeEvent(world, raining, cause); // Paper
+             Bukkit.getServer().getPluginManager().callEvent(weather);
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftChunk.java b/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
+index 403aba29347c779da75337531c3723632120e7c9..1dfe1bd6130ea1edc413f6999cd763af5fecc128 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
+@@ -323,7 +323,7 @@ public class CraftChunk implements Chunk {
+         }
+ 
+         World world = this.getWorld();
+-        return new CraftChunkSnapshot(this.getX(), this.getZ(), chunk.getMinBuildHeight(), chunk.getMaxBuildHeight(), world.getName(), world.getFullTime(), sectionBlockIDs, sectionSkyLights, sectionEmitLights, sectionEmpty, hmap, iregistry, biome);
++        return new CraftChunkSnapshot(this.getX(), this.getZ(), chunk.getMinBuildHeight(), chunk.getMaxBuildHeight(), world.getName(), world.getKey(), world.getFullTime(), sectionBlockIDs, sectionSkyLights, sectionEmitLights, sectionEmpty, hmap, iregistry, biome); // Paper
+     }
+ 
+     @Override
+@@ -354,7 +354,7 @@ public class CraftChunk implements Chunk {
+             }
+         }
+ 
+-        return new CraftChunkSnapshot(x, z, world.getMinHeight(), world.getMaxHeight(), world.getName(), world.getFullTime(), blockIDs, skyLight, emitLight, empty, new Heightmap(actual, Heightmap.Types.MOTION_BLOCKING), iregistry, biome);
++        return new CraftChunkSnapshot(x, z, world.getMinHeight(), world.getMaxHeight(), world.getName(), world.getKey(), world.getFullTime(), blockIDs, skyLight, emitLight, empty, new Heightmap(actual, Heightmap.Types.MOTION_BLOCKING), iregistry, biome); // Paper
+     }
+ 
+     static void validateChunkCoordinates(int minY, int maxY, int x, int y, int z) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftChunkSnapshot.java b/src/main/java/org/bukkit/craftbukkit/CraftChunkSnapshot.java
+index 07fa4e4ae5f2cfb4447a608dc645c0b7b0a217dd..c74f1c871c5d8406e27434faa91190e58db83ddb 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftChunkSnapshot.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftChunkSnapshot.java
+@@ -25,6 +25,7 @@ public class CraftChunkSnapshot implements ChunkSnapshot {
+     private final int x, z;
+     private final int minHeight, maxHeight;
+     private final String worldname;
++    private final org.bukkit.NamespacedKey key; // Paper
+     private final PalettedContainer<BlockState>[] blockids;
+     private final byte[][] skylight;
+     private final byte[][] emitlight;
+@@ -34,12 +35,13 @@ public class CraftChunkSnapshot implements ChunkSnapshot {
+     private final Registry<net.minecraft.world.level.biome.Biome> biomeRegistry;
+     private final PalettedContainer<Holder<net.minecraft.world.level.biome.Biome>>[] biome;
+ 
+-    CraftChunkSnapshot(int x, int z, int minHeight, int maxHeight, String wname, long wtime, PalettedContainer<BlockState>[] sectionBlockIDs, byte[][] sectionSkyLights, byte[][] sectionEmitLights, boolean[] sectionEmpty, Heightmap hmap, Registry<net.minecraft.world.level.biome.Biome> biomeRegistry, PalettedContainer<Holder<net.minecraft.world.level.biome.Biome>>[] biome) {
++    CraftChunkSnapshot(int x, int z, int minHeight, int maxHeight, String wname, org.bukkit.NamespacedKey key, long wtime, PalettedContainer<BlockState>[] sectionBlockIDs, byte[][] sectionSkyLights, byte[][] sectionEmitLights, boolean[] sectionEmpty, Heightmap hmap, Registry<net.minecraft.world.level.biome.Biome> biomeRegistry, PalettedContainer<Holder<net.minecraft.world.level.biome.Biome>>[] biome) { // Paper
+         this.x = x;
+         this.z = z;
+         this.minHeight = minHeight;
+         this.maxHeight = maxHeight;
+         this.worldname = wname;
++        this.key = key; // Paper
+         this.captureFulltime = wtime;
+         this.blockids = sectionBlockIDs;
+         this.skylight = sectionSkyLights;
+@@ -65,6 +67,13 @@ public class CraftChunkSnapshot implements ChunkSnapshot {
+         return this.worldname;
+     }
+ 
++    // Paper start
++    @Override
++    public org.bukkit.NamespacedKey getWorldKey() {
++        return this.key;
++    }
++    // Paper end
++
+     @Override
+     public boolean contains(BlockData block) {
+         Preconditions.checkArgument(block != null, "Block cannot be null");
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftCrashReport.java b/src/main/java/org/bukkit/craftbukkit/CraftCrashReport.java
+index f077b8ff0bf0d96628db3569132696b68fd79921..5e17dd4f6ee03753128cc89bb1aa6c28d9589b6e 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftCrashReport.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftCrashReport.java
+@@ -36,7 +36,7 @@ public class CraftCrashReport implements Supplier<String> {
+             value.append("}\n   ").append(Bukkit.getScheduler().toString());
+             value.append("\n   Force Loaded Chunks: {");
+             for (World world : Bukkit.getWorlds()) {
+-                value.append(' ').append(world.getName()).append(": {");
++                value.append(' ').append(world.getKey().toString()).append(": {"); // Paper
+                 for (Map.Entry<Plugin, Collection<Chunk>> entry : world.getPluginChunkTickets().entrySet()) {
+                     value.append(' ').append(entry.getKey().getDescription().getFullName()).append(": ").append(Integer.toString(entry.getValue().size())).append(',');
+                 }
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index ab843069ac0653d03cf3f925f49555016cad84fa..a39021464e54cc2afc66e7d0ae3c6373c56cc999 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -1218,8 +1218,19 @@ public final class CraftServer implements Server {
+             holder = worlddimension.typeHolder();
+             chunkgenerator = worlddimension.generator();
+         }
++        // Paper start - moved from below
++        ResourceKey<net.minecraft.world.level.Level> worldKey;
++        String levelName = this.getServer().getProperties().levelName;
++        if (name.equals(levelName + "_nether")) {
++            worldKey = net.minecraft.world.level.Level.NETHER;
++        } else if (name.equals(levelName + "_the_end")) {
++            worldKey = net.minecraft.world.level.Level.END;
++        } else {
++            worldKey = ResourceKey.create(Registry.DIMENSION_REGISTRY, new net.minecraft.resources.ResourceLocation(creator.key().getNamespace().toLowerCase(java.util.Locale.ENGLISH), creator.key().getKey().toLowerCase(java.util.Locale.ENGLISH))); // Paper
++        }
++        // Paper end
+ 
+-        WorldInfo worldInfo = new CraftWorldInfo(worlddata, worldSession, creator.environment(), holder.value(), chunkgenerator, this.getHandle().getServer().registryAccess().registryOrThrow(net.minecraft.core.Registry.BIOME_REGISTRY)); // Paper
++        WorldInfo worldInfo = new CraftWorldInfo(worlddata, worldSession, creator.environment(), holder.value(), chunkgenerator, this.getHandle().getServer().registryAccess().registryOrThrow(net.minecraft.core.Registry.BIOME_REGISTRY), worldKey.location()); // Paper
+         if (biomeProvider == null && generator != null) {
+             biomeProvider = generator.getDefaultBiomeProvider(worldInfo);
+         }
+@@ -1239,15 +1250,7 @@ public final class CraftServer implements Server {
+         }
+         // Paper end - fix and optimise world upgrading
+ 
+-        ResourceKey<net.minecraft.world.level.Level> worldKey;
+-        String levelName = this.getServer().getProperties().levelName;
+-        if (name.equals(levelName + "_nether")) {
+-            worldKey = net.minecraft.world.level.Level.NETHER;
+-        } else if (name.equals(levelName + "_the_end")) {
+-            worldKey = net.minecraft.world.level.Level.END;
+-        } else {
+-            worldKey = ResourceKey.create(Registry.DIMENSION_REGISTRY, new net.minecraft.resources.ResourceLocation(creator.key().getNamespace().toLowerCase(java.util.Locale.ENGLISH), creator.key().getKey().toLowerCase(java.util.Locale.ENGLISH))); // Paper
+-        }
++        // Paper - moved earlier
+ 
+         ServerLevel internal = (ServerLevel) new ServerLevel(this.console, console.executor, worldSession, worlddata, worldKey, holder, this.getServer().progressListenerFactory.create(11),
+                 chunkgenerator, worlddata.worldGenSettings().isDebug(), j, creator.environment() == Environment.NORMAL ? list : ImmutableList.of(), true, creator.environment(), generator, biomeProvider);
+@@ -1352,7 +1355,7 @@ public final class CraftServer implements Server {
+     public void addWorld(World world) {
+         // Check if a World already exists with the UID.
+         if (this.getWorld(world.getUID()) != null) {
+-            System.out.println("World " + world.getName() + " is a duplicate of another world and has been prevented from loading. Please delete the uid.dat file from " + world.getName() + "'s world directory if you want to be able to load the duplicate world.");
++            System.out.println("World " + world.getKey() + " is a duplicate of another world and has been prevented from loading. Please delete the uid.dat file from " + world.getKey() + "'s world directory if you want to be able to load the duplicate world."); // Paper
+             return;
+         }
+         this.worlds.put(world.getName().toLowerCase(java.util.Locale.ENGLISH), world);
+@@ -2368,7 +2371,7 @@ public final class CraftServer implements Server {
+         final net.minecraft.world.level.ChunkPos chunkPos = new net.minecraft.world.level.ChunkPos(x, z);
+         final net.minecraft.util.thread.ProcessorMailbox<Runnable> mailbox = net.minecraft.util.thread.ProcessorMailbox.create(
+             net.minecraft.Util.backgroundExecutor(),
+-            "CraftServer#createVanillaChunkData(worldName='" + world.getName() + "', x='" + x + "', z='" + z + "')"
++            "CraftServer#createVanillaChunkData(worldKey='" + world.getKey() + "', x='" + x + "', z='" + z + "')"
+         );
+         for (final net.minecraft.world.level.chunk.ChunkStatus chunkStatus : VANILLA_GEN_STATUSES) {
+             final List<net.minecraft.world.level.chunk.ChunkAccess> chunks = Lists.newArrayList();
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+index b6770f6dbd88990151513c44259d926381983cff..e25e3d9511d7c9fffe5543859a9e952f6816e6dd 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+@@ -837,7 +837,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+ 
+     @Override
+     public String toString() {
+-        return "CraftWorld{name=" + this.getName() + '}';
++        return "CraftWorld{key=" + this.getKey() + '}';
+     }
+ 
+     @Override
+@@ -2327,6 +2327,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+         if (this.adventure$pointers == null) {
+             this.adventure$pointers = net.kyori.adventure.pointer.Pointers.builder()
+                 .withDynamic(net.kyori.adventure.identity.Identity.NAME, this::getName)
++                // TODO add key pointer
+                 .withDynamic(net.kyori.adventure.identity.Identity.UUID, this::getUID)
+                 .build();
+         }
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftBlockEntityState.java b/src/main/java/org/bukkit/craftbukkit/block/CraftBlockEntityState.java
+index a2894f02ceb7c58f6eafe055e1ff47b197b100f2..7e20968ccc9b14de95fd52c52cd3b4d823e7205d 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/CraftBlockEntityState.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/CraftBlockEntityState.java
+@@ -36,7 +36,7 @@ public abstract class CraftBlockEntityState<T extends BlockEntity> extends Craft
+             if (thr instanceof ThreadDeath) {
+                 throw (ThreadDeath)thr;
+             }
+-            throw new RuntimeException("Failed to read BlockState at: world: " + this.getWorld().getName() + " location: (" + this.getX() + ", " + this.getY() + ", " + this.getZ() + ")", thr);
++            throw new RuntimeException("Failed to read BlockState at: world: " + this.getWorld().getKey() + " location: (" + this.getX() + ", " + this.getY() + ", " + this.getZ() + ")", thr); // Paper
+         }
+         // Paper end
+     }
+diff --git a/src/main/java/org/bukkit/craftbukkit/generator/CraftWorldInfo.java b/src/main/java/org/bukkit/craftbukkit/generator/CraftWorldInfo.java
+index c5ae71a01c9e7c2a127ac4ddc842700298cc1299..324aa119d7e068263dffe5ed0f431ea8db9c9603 100644
+--- a/src/main/java/org/bukkit/craftbukkit/generator/CraftWorldInfo.java
++++ b/src/main/java/org/bukkit/craftbukkit/generator/CraftWorldInfo.java
+@@ -20,10 +20,12 @@ public class CraftWorldInfo implements WorldInfo {
+     // Paper start
+     private final net.minecraft.world.level.chunk.ChunkGenerator vanillaChunkGenerator;
+     private final net.minecraft.core.Registry<net.minecraft.world.level.biome.Biome> biomeRegistry;
++    private final org.bukkit.NamespacedKey key;
+ 
+-    public CraftWorldInfo(ServerLevelData worldDataServer, LevelStorageSource.LevelStorageAccess session, World.Environment environment, DimensionType dimensionManager, net.minecraft.world.level.chunk.ChunkGenerator chunkGenerator, net.minecraft.core.Registry<net.minecraft.world.level.biome.Biome> biomeRegistry) {
++    public CraftWorldInfo(ServerLevelData worldDataServer, LevelStorageSource.LevelStorageAccess session, World.Environment environment, DimensionType dimensionManager, net.minecraft.world.level.chunk.ChunkGenerator chunkGenerator, net.minecraft.core.Registry<net.minecraft.world.level.biome.Biome> biomeRegistry, net.minecraft.resources.ResourceLocation worldLocation) {
+         this.biomeRegistry = biomeRegistry;
+         this.vanillaChunkGenerator = chunkGenerator;
++        this.key = org.bukkit.craftbukkit.util.CraftNamespacedKey.fromMinecraft(worldLocation);
+         // Paper end
+         this.name = worldDataServer.getLevelName();
+         this.uuid = WorldUUID.getUUID(session.levelPath.toFile());
+@@ -33,10 +35,11 @@ public class CraftWorldInfo implements WorldInfo {
+         this.maxHeight = dimensionManager.minY() + dimensionManager.height();
+     }
+ 
+-    public CraftWorldInfo(String name, UUID uuid, World.Environment environment, long seed, int minHeight, int maxHeight) {
++    public CraftWorldInfo(String name, UUID uuid, World.Environment environment, long seed, int minHeight, int maxHeight, org.bukkit.NamespacedKey key) {
+         // Paper start
+         this.vanillaChunkGenerator = null;
+         this.biomeRegistry = null;
++        this.key = key;
+         // Paper end
+         this.name = name;
+         this.uuid = uuid;
+@@ -94,5 +97,10 @@ public class CraftWorldInfo implements WorldInfo {
+             }
+         };
+     }
++
++    @Override
++    public org.bukkit.NamespacedKey getKey() {
++        return this.key;
++    }
+     // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/metadata/BlockMetadataStore.java b/src/main/java/org/bukkit/craftbukkit/metadata/BlockMetadataStore.java
+index 13e20ef854361b223ae349f96b9493fe7cfcfbf7..20e3af8cd1b2e390cb36b6cda649382e7286e20c 100644
+--- a/src/main/java/org/bukkit/craftbukkit/metadata/BlockMetadataStore.java
++++ b/src/main/java/org/bukkit/craftbukkit/metadata/BlockMetadataStore.java
+@@ -45,7 +45,7 @@ public class BlockMetadataStore extends MetadataStoreBase<Block> implements Meta
+         if (block.getWorld() == this.owningWorld) {
+             return super.getMetadata(block, metadataKey);
+         } else {
+-            throw new IllegalArgumentException("Block does not belong to world " + this.owningWorld.getName());
++            throw new IllegalArgumentException("Block does not belong to world " + this.owningWorld.getKey()); // Paper
+         }
+     }
+ 
+@@ -59,7 +59,7 @@ public class BlockMetadataStore extends MetadataStoreBase<Block> implements Meta
+         if (block.getWorld() == this.owningWorld) {
+             return super.hasMetadata(block, metadataKey);
+         } else {
+-            throw new IllegalArgumentException("Block does not belong to world " + this.owningWorld.getName());
++            throw new IllegalArgumentException("Block does not belong to world " + this.owningWorld.getKey()); // Paper
+         }
+     }
+ 
+@@ -73,7 +73,7 @@ public class BlockMetadataStore extends MetadataStoreBase<Block> implements Meta
+         if (block.getWorld() == this.owningWorld) {
+             super.removeMetadata(block, metadataKey, owningPlugin);
+         } else {
+-            throw new IllegalArgumentException("Block does not belong to world " + this.owningWorld.getName());
++            throw new IllegalArgumentException("Block does not belong to world " + this.owningWorld.getKey()); // Paper
+         }
+     }
+ 
+@@ -87,7 +87,7 @@ public class BlockMetadataStore extends MetadataStoreBase<Block> implements Meta
+         if (block.getWorld() == this.owningWorld) {
+             super.setMetadata(block, metadataKey, newMetadataValue);
+         } else {
+-            throw new IllegalArgumentException("Block does not belong to world " + this.owningWorld.getName());
++            throw new IllegalArgumentException("Block does not belong to world " + this.owningWorld.getKey()); // Paper
+         }
+     }
+ }
+diff --git a/src/main/java/org/spigotmc/WatchdogThread.java b/src/main/java/org/spigotmc/WatchdogThread.java
+index 24fefa521093448e608e217af7b88a6397a4b054..cece47277af67b69d88d4260747b35fbc5e3e400 100644
+--- a/src/main/java/org/spigotmc/WatchdogThread.java
++++ b/src/main/java/org/spigotmc/WatchdogThread.java
+@@ -48,7 +48,7 @@ public class WatchdogThread extends Thread
+         log.log(Level.SEVERE, "Ticking entity: " + entityType + ", entity class: " + entity.getClass().getName());
+         log.log(Level.SEVERE, "Entity status: removed: " + entity.isRemoved() + ", valid: " + entity.valid + ", alive: " + entity.isAlive() + ", is passenger: " + entity.isPassenger());
+         log.log(Level.SEVERE, "Entity UUID: " + entityUUID);
+-        log.log(Level.SEVERE, "Position: world: '" + (world == null ? "unknown world?" : world.getWorld().getName()) + "' at location (" + posX + ", " + posY + ", " + posZ + ")");
++        log.log(Level.SEVERE, "Position: world: '" + (world == null ? "unknown world?" : world.getWorld().getKey()) + "' at location (" + posX + ", " + posY + ", " + posZ + ")"); // Paper
+         log.log(Level.SEVERE, "Velocity: " + (mot == null ? "unknown velocity" : mot.toString()) + " (in blocks per tick)");
+         log.log(Level.SEVERE, "Entity AABB: " + entity.getBoundingBox());
+         if (moveVec != null) {
