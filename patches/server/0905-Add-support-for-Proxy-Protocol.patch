@@ -19,7 +19,7 @@ index 1ac6cf51f2682d5eb14fe19646e79f6617d492dd..fafbebbb5e8c1a381b673f97f1fa2106
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/network/ServerConnectionListener.java b/src/main/java/net/minecraft/server/network/ServerConnectionListener.java
-index 058fb3696c7ece4a7b6971886b1760b26add733b..bd378482b82c15cba1eeaa620521ad9ed460a1da 100644
+index 058fb3696c7ece4a7b6971886b1760b26add733b..98286dd27fc3562ca55ec44cc6e5eb5157269942 100644
 --- a/src/main/java/net/minecraft/server/network/ServerConnectionListener.java
 +++ b/src/main/java/net/minecraft/server/network/ServerConnectionListener.java
 @@ -109,6 +109,12 @@ public class ServerConnectionListener {
@@ -35,7 +35,7 @@ index 058fb3696c7ece4a7b6971886b1760b26add733b..bd378482b82c15cba1eeaa620521ad9e
              this.channels.add(((ServerBootstrap) ((ServerBootstrap) (new ServerBootstrap()).channel(oclass)).childHandler(new ChannelInitializer<Channel>() {
                  protected void initChannel(Channel channel) {
                      try {
-@@ -122,6 +128,28 @@ public class ServerConnectionListener {
+@@ -122,6 +128,30 @@ public class ServerConnectionListener {
                      int j = ServerConnectionListener.this.server.getRateLimitPacketsPerSecond();
                      Object object = j > 0 ? new RateKickingConnection(j) : new Connection(PacketFlow.SERVERBOUND);
  
@@ -46,13 +46,15 @@ index 058fb3696c7ece4a7b6971886b1760b26add733b..bd378482b82c15cba1eeaa620521ad9e
 +                            @Override
 +                            public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
 +                                if (msg instanceof io.netty.handler.codec.haproxy.HAProxyMessage message) {
-+                                    String realaddress = message.sourceAddress();
-+                                    int realport = message.sourcePort();
++                                    if (message.command() == io.netty.handler.codec.haproxy.HAProxyCommand.PROXY) {
++                                        String realaddress = message.sourceAddress();
++                                        int realport = message.sourcePort();
 +
-+                                    SocketAddress socketaddr = new java.net.InetSocketAddress(realaddress, realport);
++                                        SocketAddress socketaddr = new java.net.InetSocketAddress(realaddress, realport);
 +
-+                                    Connection connection = (Connection) channel.pipeline().get("packet_handler");
-+                                    connection.address = socketaddr;
++                                        Connection connection = (Connection) channel.pipeline().get("packet_handler");
++                                        connection.address = socketaddr;
++                                    }
 +                                } else {
 +                                    super.channelRead(ctx, msg);
 +                                }
