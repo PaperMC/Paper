@@ -119,7 +119,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * Plugins should check that hasCustomModelData() returns <code>true</code>
      * before calling this method.
      *
-     * @return the localized name that is set
+     * @return the custom model data that is set
      */
     int getCustomModelData();
 
