@@ -1616,26 +1616,25 @@ index 669e4b41cf0751afb67d94b6a511bcfd18ce7ef4..3ff85d9d8518db712ca1d2977a5865da
  
      @Override
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index 0edb08a391f806e56ed1bd4812eb9c9d2b966bd7..f3a5f08541cb792aed21d3820aade1adde670252 100644
+index 0edb08a391f806e56ed1bd4812eb9c9d2b966bd7..6bdf3679ea9461475b139a0622857b1dc56ea5b2 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-@@ -401,11 +401,17 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -401,11 +401,16 @@ public class CraftWorld extends CraftRegionAccessor implements World {
                  List<ServerPlayer> playersInRange = playerChunk.playerProvider.getPlayers(playerChunk.getPos(), false);
                  if (playersInRange.isEmpty()) return;
  
 -                ClientboundLevelChunkWithLightPacket refreshPacket = new ClientboundLevelChunkWithLightPacket(chunk, this.world.getLightEngine(), null, null, true);
-+                Map<Object, ClientboundLevelChunkWithLightPacket> cacheMap = new HashMap<>(); // Paper - Xray refreshChunk
++                // Paper start - Anti-Xray - Bypass
++                Map<Object, ClientboundLevelChunkWithLightPacket> refreshPackets = new HashMap<>();
                  for (ServerPlayer player : playersInRange) {
                      if (player.connection == null) continue;
  
 -                    player.connection.send(refreshPacket);
-+                    // Paper start - Xray refreshChunk
 +                    Boolean shouldModify = chunk.getLevel().chunkPacketBlockController.shouldModify(player, chunk);
-+
-+                    player.connection.send(cacheMap.computeIfAbsent(shouldModify, (s) -> { // Use  connection to prevent creating firing event
++                    player.connection.send(refreshPackets.computeIfAbsent(shouldModify, s -> { // Use connection to prevent creating firing event
 +                        return new ClientboundLevelChunkWithLightPacket(chunk, this.world.getLightEngine(), null, null, true, (Boolean) s);
 +                    }));
-+                    // Paper end - Xray refreshChunk
++                    // Paper end
                  }
              });
          });
