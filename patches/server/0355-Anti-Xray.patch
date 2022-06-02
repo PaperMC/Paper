@@ -1615,6 +1615,29 @@ index 669e4b41cf0751afb67d94b6a511bcfd18ce7ef4..3ff85d9d8518db712ca1d2977a5865da
      }
  
      @Override
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+index 0edb08a391f806e56ed1bd4812eb9c9d2b966bd7..6bdf3679ea9461475b139a0622857b1dc56ea5b2 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+@@ -401,11 +401,16 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+                 List<ServerPlayer> playersInRange = playerChunk.playerProvider.getPlayers(playerChunk.getPos(), false);
+                 if (playersInRange.isEmpty()) return;
+ 
+-                ClientboundLevelChunkWithLightPacket refreshPacket = new ClientboundLevelChunkWithLightPacket(chunk, this.world.getLightEngine(), null, null, true);
++                // Paper start - Anti-Xray - Bypass
++                Map<Object, ClientboundLevelChunkWithLightPacket> refreshPackets = new HashMap<>();
+                 for (ServerPlayer player : playersInRange) {
+                     if (player.connection == null) continue;
+ 
+-                    player.connection.send(refreshPacket);
++                    Boolean shouldModify = chunk.getLevel().chunkPacketBlockController.shouldModify(player, chunk);
++                    player.connection.send(refreshPackets.computeIfAbsent(shouldModify, s -> { // Use connection to prevent creating firing event
++                        return new ClientboundLevelChunkWithLightPacket(chunk, this.world.getLightEngine(), null, null, true, (Boolean) s);
++                    }));
++                    // Paper end
+                 }
+             });
+         });
 diff --git a/src/main/java/org/bukkit/craftbukkit/generator/OldCraftChunkData.java b/src/main/java/org/bukkit/craftbukkit/generator/OldCraftChunkData.java
 index 960405935e395a31c0300773c41413801cf0d290..6f6bf950cd15b34031618782c82824cf0b191ff8 100644
 --- a/src/main/java/org/bukkit/craftbukkit/generator/OldCraftChunkData.java
