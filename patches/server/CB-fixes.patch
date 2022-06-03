@@ -1,16 +1,20 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
-From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
 Date: Fri, 25 Feb 2022 07:14:48 -0800
 Subject: [PATCH] CB fixes
 
 * Missing Level -> LevelStem generic in StructureCheck
-  Need to use the right for injectDatafixingContext
+  Need to use the right for injectDatafixingContext (Spottedleaf)
 
-* Removed incorrect parent perm for `minecraft.debugstick.always`
+* Removed incorrect parent perm for `minecraft.debugstick.always` (Machine_Maker)
 
-* Fixed method signature of Marker#addPassenger
+* Fixed method signature of Marker#addPassenger (Machine_Maker)
 
-* Removed unneeded UOE in CustomWorldChunkManager (extends BiomeSource)
+* Removed unneeded UOE in CustomWorldChunkManager (extends BiomeSource) (Machine_Maker)
+
+* Honor Server#getLootTable method contract (Machine_Maker)
+
+Co-authored-by: Spottedleaf <Spottedleaf@users.noreply.github.com>
 
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
@@ -62,6 +66,25 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          this.storageAccess = chunkIoWorker;
          this.registryAccess = registryManager;
          this.structureManager = structureManager;
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -0,0 +0,0 @@ public final class CraftServer implements Server {
+         Validate.notNull(key, "NamespacedKey cannot be null");
+ 
+         LootTables registry = this.getServer().getLootTables();
+-        return new CraftLootTable(key, registry.get(CraftNamespacedKey.toMinecraft(key)));
++        // Paper start - honor method contract
++        final ResourceLocation lootTableKey = CraftNamespacedKey.toMinecraft(key);
++        if (!registry.getIds().contains(lootTableKey)) {
++            return null;
++        }
++        return new CraftLootTable(key, registry.get(lootTableKey));
++        // Paper end
+     }
+ 
+     @Override
 diff --git a/src/main/java/org/bukkit/craftbukkit/generator/CustomWorldChunkManager.java b/src/main/java/org/bukkit/craftbukkit/generator/CustomWorldChunkManager.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/generator/CustomWorldChunkManager.java
