@@ -168,7 +168,7 @@ move it under the line of the patch you wish to modify;
   assist you too.
    - Alternatively, if you only know the name of the patch, you can do
   `git commit -a --fixup "Subject of Patch name"`.
-1. Rebase with autosquash: `git rebase --autosquash -i base`.
+1. Rebase with autosquash: `git rebase -i --autosquash base`.
 This will automatically move your fixup commit to the right place, and you just
 need to "save" the changes.
 1. Type `./gradlew rebuildPatches` in the root directory;
