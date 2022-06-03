@@ -31,3 +31,40 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              compoundTag.putBoolean("resolved", true);
              if (!makeSureTagIsValid(compoundTag)) {
                  return false;
+             } else {
+                 ListTag listTag = compoundTag.getList("pages", 8);
++                // Paper start - backport length limit
++                ListTag newPages = new ListTag();
+ 
+                 for(int i = 0; i < listTag.size(); ++i) {
+-                    listTag.set(i, (Tag)StringTag.valueOf(resolvePage(commandSource, player, listTag.getString(i))));
++                    String resolvedPage = resolvePage(commandSource, player, listTag.getString(i));
++                    if (resolvedPage.length() > 32767) {
++                        return false;
++                    }
++
++                    newPages.add(i, StringTag.valueOf(resolvedPage));
+                 }
+ 
+                 if (compoundTag.contains("filtered_pages", 10)) {
+                     CompoundTag compoundTag2 = compoundTag.getCompound("filtered_pages");
++                    CompoundTag newFilteredPages = new CompoundTag();
+ 
+                     for(String string : compoundTag2.getAllKeys()) {
+-                        compoundTag2.putString(string, resolvePage(commandSource, player, compoundTag2.getString(string)));
++                        String resolvedPage = resolvePage(commandSource, player, compoundTag2.getString(string));
++                        if (resolvedPage.length() > 32767) {
++                            return false;
++                        }
++
++                        newFilteredPages.putString(string, resolvedPage);
+                     }
++
++                    compoundTag.put("filtered_pages", newFilteredPages);
+                 }
+ 
++                compoundTag.put("pages", newPages);
++                // Paper end
+                 return true;
+             }
+         } else {
