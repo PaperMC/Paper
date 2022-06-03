@@ -1,0 +1,43 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Wed, 15 Jul 2020 19:34:11 -0700
+Subject: [PATCH] Move range check for block placing up
+
+
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index 3b18f7fafce62cb107a3a7c1558ea544ab10454c..ee9264d090db36668d2fe745734dd27b3f1556db 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -1686,6 +1686,16 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+     }
+     // Spigot end
+ 
++    // Paper start
++    private static final int SURVIVAL_PLACE_DISTANCE_SQUARED = 6 * 6;
++    private static final int CREATIVE_PLACE_DISTANCE_SQUARED = 7 * 7;
++    private boolean isOutsideOfReach(double x, double y, double z) {
++        Location eyeLoc = this.getCraftPlayer().getEyeLocation();
++        double reachDistance = org.bukkit.util.NumberConversions.square(eyeLoc.getX() - x) + org.bukkit.util.NumberConversions.square(eyeLoc.getY() - y) + org.bukkit.util.NumberConversions.square(eyeLoc.getZ() - z);
++        return reachDistance > (this.getCraftPlayer().getGameMode() == org.bukkit.GameMode.CREATIVE ? CREATIVE_PLACE_DISTANCE_SQUARED : SURVIVAL_PLACE_DISTANCE_SQUARED);
++    }
++    // Paper end
++
+     @Override
+     public void handleUseItemOn(ServerboundUseItemOnPacket packet) {
+         PacketUtils.ensureRunningOnSameThread(packet, this, this.player.getLevel());
+@@ -1699,6 +1709,15 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Ser
+         BlockPos blockposition = movingobjectpositionblock.getBlockPos();
+         Vec3 vec3d1 = vec3d.subtract(Vec3.atCenterOf(blockposition));
+ 
++        // Paper start - improve distance check
++        final Vec3 clickedLocation = movingobjectpositionblock.getLocation();
++        if (isOutsideOfReach(blockposition.getX() + 0.5D, blockposition.getY() + 0.5D, blockposition.getZ() + 0.5D)
++            || !Double.isFinite(clickedLocation.x) || !Double.isFinite(clickedLocation.y) || !Double.isFinite(clickedLocation.z)
++            || isOutsideOfReach(clickedLocation.x, clickedLocation.y, clickedLocation.z)) {
++            return;
++        }
++        // Paper end
++
+         if (this.player.level.getServer() != null && this.player.chunkPosition().getChessboardDistance(new ChunkPos(blockposition)) < this.player.level.spigotConfig.viewDistance) { // Spigot
+             double d0 = 1.0000001D;
+ 

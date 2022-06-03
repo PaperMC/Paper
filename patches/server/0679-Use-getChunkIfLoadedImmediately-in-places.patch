@@ -1,0 +1,49 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Mon, 8 Jul 2019 00:13:36 -0700
+Subject: [PATCH] Use getChunkIfLoadedImmediately in places
+
+This prevents us from hitting chunk loads for chunks at or less-than
+ticket level 33 (yes getChunkIfLoaded will actually perform a chunk
+load in that case).
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
+index 958949d972fd7b8ae61041bfe15c21d4d19d9573..384222f321f1678803d62187b76bf3dee1970c0c 100644
+--- a/src/main/java/net/minecraft/server/level/ServerLevel.java
++++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
+@@ -215,7 +215,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
+     }
+ 
+     @Override public LevelChunk getChunkIfLoaded(int x, int z) { // Paper - this was added in world too but keeping here for NMS ABI
+-        return this.chunkSource.getChunk(x, z, false);
++        return this.chunkSource.getChunkAtIfLoadedImmediately(x, z); // Paper
+     }
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
+index c3ae2b4b5b4eb14d24f2c15a7e8ace8ebee84c1a..c293531a6913b365c3bf804d6d0bfae24378dc43 100644
+--- a/src/main/java/net/minecraft/world/level/Level.java
++++ b/src/main/java/net/minecraft/world/level/Level.java
+@@ -189,6 +189,13 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+         return (CraftServer) Bukkit.getServer();
+     }
+ 
++    // Paper start
++    @Override
++    public boolean hasChunk(int chunkX, int chunkZ) {
++        return this.getChunkIfLoaded(chunkX, chunkZ) != null;
++    }
++    // Paper end
++
+     public abstract ResourceKey<LevelStem> getTypeKey();
+ 
+     protected Level(WritableLevelData worlddatamutable, ResourceKey<Level> resourcekey, Holder<DimensionType> holder, Supplier<ProfilerFiller> supplier, boolean flag, boolean flag1, long i, org.bukkit.generator.ChunkGenerator gen, org.bukkit.generator.BiomeProvider biomeProvider, org.bukkit.World.Environment env, java.util.concurrent.Executor executor) { // Paper - Async-Anti-Xray - Pass executor
+@@ -1366,7 +1373,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+ 
+         for (int l1 = j; l1 <= l; ++l1) {
+             for (int i2 = k; i2 <= i1; ++i2) {
+-                LevelChunk chunk = this.getChunkSource().getChunkNow(l1, i2);
++                LevelChunk chunk = (LevelChunk) this.getChunkIfLoadedImmediately(l1, i2); // Paper
+ 
+                 if (chunk != null) {
+                     for (int j2 = j1; j2 <= k1; ++j2) {
